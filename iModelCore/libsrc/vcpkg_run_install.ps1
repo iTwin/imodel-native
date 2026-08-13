@@ -3,12 +3,14 @@
 #  See LICENSE.md in the repository root for full copyright notice.
 #---------------------------------------------------------------------------------------------
 # Wrapper for vcpkg install, invoked from .mke build files.
-# Usage: vcpkg_run_install.ps1 <manifest_dir> <install_root> <triplet>
+# Usage: vcpkg_run_install.ps1 <manifest_dir> <install_root> <triplet> [-OnlyDownloads] [-DisableBinaryCache]
 #---------------------------------------------------------------------------------------------
 param(
     [Parameter(Position = 0)] [string] $ManifestDir,
     [Parameter(Position = 1)] [string] $InstallRoot,
-    [Parameter(Position = 2)] [string] $Triplet
+    [Parameter(Position = 2)] [string] $Triplet,
+    [switch] $OnlyDownloads,
+    [switch] $DisableBinaryCache
 )
 
 $ErrorActionPreference = 'Stop'
@@ -165,7 +167,7 @@ function Invoke-NativeProcessInKillOnCloseJob([string] $exePath, [string[]] $arg
 
 try {
     if (-not $ManifestDir -or -not $InstallRoot -or -not $Triplet) {
-        throw 'Usage: vcpkg_run_install.ps1 <manifest_dir> <install_root> <triplet>'
+        throw 'Usage: vcpkg_run_install.ps1 <manifest_dir> <install_root> <triplet> [-OnlyDownloads] [-DisableBinaryCache]'
     }
 
     $ManifestDir = Normalize-Path $ManifestDir
@@ -382,6 +384,14 @@ namespace VcpkgLock {
                 )
                 if ([System.IO.Directory]::Exists($overlayPorts)) {
                     $arguments += "--overlay-ports=$overlayPorts"
+                }
+                if ($OnlyDownloads) {
+                    $arguments += '--only-downloads'
+                    Write-Output "vcpkg: source download mode enabled; extracted sources will remain under '$InstallRoot\buildtrees'"
+                }
+                if ($DisableBinaryCache) {
+                    $arguments += '--binarysource=clear'
+                    Write-Output 'vcpkg: binary cache disabled for this invocation'
                 }
 
                 exit (Invoke-NativeProcessInKillOnCloseJob $vcpkgExe $arguments)

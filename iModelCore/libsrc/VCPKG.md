@@ -16,10 +16,12 @@ To add a new library:
 
 1. Update `iModelCore/libsrc/README.md` — add a row to the library table with the directory, library name, initial version, and `Yes` in the vcpkg column.
 2. Create a subdirectory (e.g. `mylib/`) containing `vcpkg.json`, `vcpkg-configuration.json`, and any custom triplet files under `mylib/triplets/`. See `./compress/` for examples.
-3. Add a new `vcpkg_install_mylib.mke` in `libsrc/` (next to the other `vcpkg_install_*.mke` files) that calls `vcpkg_run_install.ps1`/`vcpkg_run_install.sh` for that manifest directory.
-4. Add a `vcpkg_install_mylib` part to [vcpkg.PartFile.xml](vcpkg.PartFile.xml), with `<SubPart PartName="vcpkg_install_<previous>" LibType="Static"/>` to preserve sequential ordering. Appending at the end of the chain is the simplest choice, but the only requirement is that the chain stays **linear** — position does not affect correctness, since each consumer depends on its own named part. A more basic/foundational library (e.g. a compression or image codec that other libraries build on) may read more naturally inserted earlier in the chain; if you insert mid-chain, re-parent the following link onto the new part and update the sibling `.mke` "Runs after vcpkg_install_<prev>…" comment on every link whose predecessor changed. The `LibType="Static"` is required — the chain runs static-only, so without it a dynamic build pass could run this chain part concurrently with the static one and collide on `vcpkg-running.lock`.
-5. In your library's PartFile, depend on `vcpkg_install_mylib` (from `iModelCore/libsrc/vcpkg`) instead of the bare `vcpkg` part.
-6. In your library's `.mke`, include [`vcpkg.mki`](./vcpkg.mki) to get the `vcpkgTriplet` variable, then consume the already-installed outputs from `$(OutputRootDir)vcpkg_installed/mylib/`. Do **not** call `vcpkg_run_install` from the `.mke` — the install was already performed by step 3. This path is only correct for **static** builds; for libraries with both static and dynamic deliverables, gate the path with `CREATE_STATIC_LIBRARIES` so dynamic builds read from the static chain's output:
+3. Create `vcpkg-mend.json` beside the manifest with the triplet graph or graphs whose union downloads every upstream source used by that consumer. Every listed triplet must have a matching `triplets/<triplet>.cmake`. These runs use `--only-downloads`, so a triplet does not need to match the host that runs Mend; it selects manifest conditions and platform-specific portfile download branches without compiling for that platform. Prefer one graph when it is a source superset of the others; for example, curl uses only `x64-linux` because that graph includes the common curl/OpenSSL/zlib sources plus conditional c-ares, even though the Mend job runs on Windows. Add multiple triplets when platform-specific portfile branches download different sources.
+4. Add a new `vcpkg_install_mylib.mke` in `libsrc/` (next to the other `vcpkg_install_*.mke` files) that calls `vcpkg_run_install.ps1`/`vcpkg_run_install.sh` for that manifest directory.
+5. Add a `vcpkg_install_mylib` part to [vcpkg.PartFile.xml](vcpkg.PartFile.xml), with `<SubPart PartName="vcpkg_install_<previous>" LibType="Static"/>` to preserve sequential ordering. Appending at the end of the chain is the simplest choice, but the only requirement is that the chain stays **linear** — position does not affect correctness, since each consumer depends on its own named part. A more basic/foundational library (e.g. a compression or image codec that other libraries build on) may read more naturally inserted earlier in the chain; if you insert mid-chain, re-parent the following link onto the new part and update the sibling `.mke` "Runs after vcpkg_install_<prev>…" comment on every link whose predecessor changed. The `LibType="Static"` is required — the chain runs static-only, so without it a dynamic build pass could run this chain part concurrently with the static one and collide on `vcpkg-running.lock`.
+6. Add `vcpkg_install_mylib` to the `vcpkg_install_all` aggregate in that same PartFile so the shared binary-cache warmer includes it. Mend discovers manifests independently and requires the sibling `vcpkg-mend.json` from step 3.
+7. In your library's PartFile, depend on `vcpkg_install_mylib` (from `iModelCore/libsrc/vcpkg`) instead of the bare `vcpkg` part.
+8. In your library's `.mke`, include [`vcpkg.mki`](./vcpkg.mki) to get the `vcpkgTriplet` variable, then consume the already-installed outputs from `$(OutputRootDir)vcpkg_installed/mylib/`. Do **not** call `vcpkg_run_install` from the `.mke` — the install was already performed by step 4. This path is only correct for **static** builds; for libraries with both static and dynamic deliverables, gate the path with `CREATE_STATIC_LIBRARIES` so dynamic builds read from the static chain's output:
 
    ```makefile
    %if defined (CREATE_STATIC_LIBRARIES)
@@ -181,6 +183,31 @@ This avoids accidental use of the bundled root when `vcvars` or Developer Comman
 - All `vcpkg install` calls are driven by a sequential chain of parts in [vcpkg.PartFile.xml](vcpkg.PartFile.xml) (`vcpkg_install_compress` → `vcpkg_install_png` → `vcpkg_install_pugixml` → `vcpkg_install_openssl` → `vcpkg_install_curl` → `vcpkg_install_crashpad`), each blocked on the previous one completing. This prevents concurrent `vcpkg` processes from colliding on shared state.
 - Consumer `.mke` files (e.g. `Zlib.mke`, `BeOpenSSL.mke`, `png.mke`, `pugixml.mke`, `BeCurl.mke`) depend on their corresponding chain part and only consume the already-installed outputs — they do not call `vcpkg_run_install` themselves.
 - **Binary cache resolution.** The install wrappers honor the `VCPKG_BINARY_SOURCES` environment variable. When it is **unset** (the default), vcpkg falls back to a **local** `files` archive cache under the per-user cache directory (see [Cache locations and environment overrides](#cache-locations-and-environment-overrides)), so a second build on the same machine restores instead of recompiling. When it is **set**, that value takes over completely — e.g. Bentley CI points it at an internal shared binary cache to publish/restore binaries across agents, and you can point it at your own vcpkg-supported backend. Setting it to `clear` disables all caching.
+
+### Mend source scans
+
+The Mend pipeline runs `vcpkg_download_mend_sources.ps1`, which recursively discovers every
+`libsrc/**/vcpkg.json` that has a sibling `vcpkg-configuration.json` and requires a sibling
+`vcpkg-mend.json`. Requiring the configuration file distinguishes consumer manifests from nested
+overlay-port package manifests. It invokes the normal Windows vcpkg
+wrapper sequentially with `--only-downloads` for each configured triplet and retains extracted
+sources under
+`$(SrcRoot)vcpkg_scan_sources/<manifest-relative-path>/<triplet>/buildtrees/<port>/src/`, inside
+Mend's filesystem scan root. Preserving the relative path prevents collisions between nested
+consumers with the same directory name. Binary caching is disabled for these runs.
+
+The Mend script requests these behaviors through explicit wrapper options: `-OnlyDownloads` and
+`-DisableBinaryCache` for `vcpkg_run_install.ps1`, or `--only-downloads` and
+`--disable-binary-cache` for `vcpkg_run_install.sh`. The wrappers translate them to vcpkg command
+line options, so the orchestration script does not modify ambient vcpkg environment variables.
+
+Each consumer owns its platform coverage. Choose the smallest triplet set whose dependency and
+portfile branches cover the union of upstream source downloads used on supported platforms. A
+triplet need not match the Mend host because download-only mode resolves and extracts source without
+compiling for the selected target. A single source-superset graph is preferred; otherwise list
+multiple triplets. The script fails when a manifest lacks metadata, a configured overlay triplet
+does not exist, a download fails, or a declared direct dependency has no extracted source in any
+configured graph.
 
 ### Cache locations and environment overrides
 

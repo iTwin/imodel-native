@@ -6,7 +6,7 @@
 # Wrapper script for vcpkg install, invoked from .mke build files.
 # Customize IMODEL_VCPKG_ROOT for developer or CI environments.
 #
-# Usage: vcpkg_install.sh <manifest_dir> <install_root> <triplet>
+# Usage: vcpkg_run_install.sh <manifest_dir> <install_root> <triplet> [--only-downloads] [--disable-binary-cache]
 #   manifest_dir: Directory containing vcpkg.json
 #   install_root: Where vcpkg_installed/<triplet> output goes (e.g., $OutRoot/vcpkg)
 #   triplet:      vcpkg triplet (e.g., arm64-osx, x64-linux)
@@ -14,12 +14,37 @@
 
 set -e
 
+if [ "$#" -lt 3 ]; then
+    echo "Usage: $0 <manifest_dir> <install_root> <triplet> [--only-downloads] [--disable-binary-cache]"
+    exit 1
+fi
+
 MANIFEST_DIR="$1"
 INSTALL_ROOT="$2"
 TRIPLET="$3"
+shift 3
+
+ONLY_DOWNLOADS=0
+DISABLE_BINARY_CACHE=0
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --only-downloads)
+            ONLY_DOWNLOADS=1
+            ;;
+        --disable-binary-cache)
+            DISABLE_BINARY_CACHE=1
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Usage: $0 <manifest_dir> <install_root> <triplet> [--only-downloads] [--disable-binary-cache]"
+            exit 1
+            ;;
+    esac
+    shift
+done
 
 if [ -z "$MANIFEST_DIR" ] || [ -z "$INSTALL_ROOT" ] || [ -z "$TRIPLET" ]; then
-    echo "Usage: $0 <manifest_dir> <install_root> <triplet>"
+    echo "Usage: $0 <manifest_dir> <install_root> <triplet> [--only-downloads] [--disable-binary-cache]"
     exit 1
 fi
 
@@ -209,6 +234,16 @@ VCPKG_CMD=("$VCPKG_EXE" install
     --x-buildtrees-root="$INSTALL_ROOT/buildtrees"
     --x-packages-root="$INSTALL_ROOT/packages"
     "${OVERLAY_ARGS[@]}")
+
+if [ "$ONLY_DOWNLOADS" -eq 1 ]; then
+    VCPKG_CMD+=(--only-downloads)
+    echo "vcpkg: source download mode enabled; extracted sources will remain under $INSTALL_ROOT/buildtrees"
+fi
+
+if [ "$DISABLE_BINARY_CACHE" -eq 1 ]; then
+    VCPKG_CMD+=(--binarysource=clear)
+    echo "vcpkg: binary cache disabled for this invocation"
+fi
 
 # Print "device:inode" for an open descriptor. GNU stat follows /dev/fd to fstat the open file
 # (Linux); BSD stat describes the /dev/fd entry itself, so fall back to Perl's fstat (macOS).
