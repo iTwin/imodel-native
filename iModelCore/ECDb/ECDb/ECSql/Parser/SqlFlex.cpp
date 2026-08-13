@@ -5410,13 +5410,11 @@ sal_Int32 gatherNamePre(yyscan_t yyscanner, const sal_Char* text)
 }
 
 using namespace connectivity;
-static bool IN_SQLyyerror;
 
 //------------------------------------------------------------------------------
 OSQLScanner::OSQLScanner(Utf8CP rNewStatement, const IParseContext* pContext, sal_Bool bInternational)
-    : m_nCurrentPos(0), m_bInternational(bInternational), m_pContext(pContext), yyscanner(nullptr), m_nRule(GetSQLRule()), m_sStatement(rNewStatement)
+    : m_nCurrentPos(0), m_bInternational(bInternational), m_pContext(pContext), yyscanner(nullptr), m_nRule(GetSQLRule()), m_sStatement(rNewStatement), m_inSQLyyerror(false)
     {
-    IN_SQLyyerror = false;
     yylex_init(&yyscanner);
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     YY_FLUSH_BUFFER;
@@ -5431,15 +5429,6 @@ OSQLScanner::~OSQLScanner()
     }
 
  //------------------------------------------------------------------------
-sal_Int32 OSQLScanner::SQLyygetc(void)
-    {
-    sal_Int32 nPos = (static_cast<size_t>(m_nCurrentPos) >= m_sStatement.size()) ? -1 : m_sStatement[m_nCurrentPos];
-    m_nCurrentPos++;
-    return nPos;
-    }
-
-
-//------------------------------------------------------------------------
 // Hands the lexer a block of characters at a time. Feeding flex a single character
 // per YY_INPUT call makes it shift the pending token back to the start of its buffer
 // on every character, which is O(n^2) in the length of a single token (a long
@@ -5472,10 +5461,10 @@ sal_Int32 OSQLScanner::GetScanPos() const
 void OSQLScanner::SQLyyerror(const char *fmt)
     {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
-    if(IN_SQLyyerror)
+    if(m_inSQLyyerror)
         return;
 
-    IN_SQLyyerror = true;
+    m_inSQLyyerror = true;
     OSL_ENSURE(m_pContext, "OSQLScanner::SQLyyerror: No Context set");
     m_sErrorMessage = fmt;
     // m_nCurrentPos is the end of the block last handed to flex, which is typically already the end
@@ -5484,15 +5473,13 @@ void OSQLScanner::SQLyyerror(const char *fmt)
     {
         m_sErrorMessage.append(": ");
         Utf8String aError;
-        static sal_Int32 BUFFERSIZE = 256;
-        static sal_Char* Buffer = 0;
-        if(!Buffer)
-            Buffer = new sal_Char[BUFFERSIZE];
-
-        sal_Char *s = Buffer;
-        sal_Int32 nPos = 1;
+        // A growing Utf8String replaces the former file static char buffer. That buffer was shared
+        // by every thread parsing ECSQL and its growth path advanced the static pointer itself,
+        // which corrupted the heap once the offending text reached the initial capacity.
+        Utf8String offendingText;
+        offendingText.reserve(256);
         sal_Int32 ch = yytext ? (yytext[0] == 0 ? ' ' : yytext[0]): ' ';
-        *s++ = ch;
+        offendingText.push_back((sal_Char) ch);
         while (!checkeof(ch = yyinput(yyscanner)))
         {
             if (ch == ' ')
@@ -5502,31 +5489,18 @@ void OSQLScanner::SQLyyerror(const char *fmt)
                     if (!checkeof(ch))
                         unput(ch);
                 }
-                *s = '\0';
-                aError.assign(Buffer);
+                aError = offendingText;
                 break;
             }
             else
             {
-                *s++ = ch;
-                if (++nPos == BUFFERSIZE)
-                {
-                    Utf8String aBuf(Buffer);
-                    delete[] Buffer;
-                    BUFFERSIZE *=2;
-                    Buffer = new sal_Char[BUFFERSIZE];
-            for(sal_Int32 i=0;i< (sal_Int32)aBuf.size();++i,++Buffer)
-                        *Buffer = aBuf[i];
-                    s = &Buffer[nPos];
-                }
+                offendingText.push_back((sal_Char) ch);
             }
         }
 
         m_sErrorMessage += aError;
-        delete[] Buffer;
-        Buffer = NULL;
     }
-    IN_SQLyyerror = false;
+    m_inSQLyyerror = false;
     YY_FLUSH_BUFFER;
     }
 

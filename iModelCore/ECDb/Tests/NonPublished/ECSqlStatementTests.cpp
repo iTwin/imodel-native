@@ -8,6 +8,7 @@
 #include <cmath>
 #include <algorithm>
 #include <set>
+#include <thread>
 #include <BeRapidJson/BeRapidJson.h>
 
 #define CLASS_ID(S,C) (int)m_ecdb.Schemas().GetClassId( #S, #C, SchemaLookupMode::AutoDetect).GetValueUnchecked()
@@ -225,7 +226,64 @@ TEST_F(ECSqlStatementTestFixture, InvalidSymbolReportsOffendingText) {
     ASSERT_TRUE(error.Contains("#ZZQQ")) << "error must name the offending text, but was: " << listener.GetLastMessage().c_str();
     }
 
+    listener.ClearIssues();
+    {
+    // The offending text used to be collected into a file static char buffer whose growth path
+    // advanced the static pointer itself, so anything past the initial 256 characters wrote out
+    // of bounds and the buffer was then freed through an interior pointer.
+    Utf8String longToken(300, 'Z');
+    Utf8String ecsqlStr("SELECT I FROM ts.Foo WHERE I #");
+    ecsqlStr.append(longToken).append(" 1");
+    Utf8CP ecsql = ecsqlStr.c_str();
+    ECSqlStatement stmt;
+    ASSERT_NE(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+    Utf8String error = parserError(ecsql);
+    ASSERT_TRUE(error.Contains("Invalid symbol")) << "expected an invalid symbol error, but was: " << listener.GetLastMessage().c_str();
+    ASSERT_TRUE(error.Contains(longToken)) << "error must name the whole offending text, but was: " << listener.GetLastMessage().c_str();
+    }
+
     m_ecdb.RemoveIssueListener();
+}
+
+/*---------------------------------------------------------------------------------**//**
+* Regression test: the scanner used to keep its reentrancy flag and its error text buffer in
+* file statics, but ECSQL is parsed on many threads at once. Concurrent lexer errors must not
+* clear each other's state or share a buffer.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECSqlStatementTestFixture, ConcurrentInvalidSymbolPrepares) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("concurrent_syntax_error.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="Foo" modifier="Sealed">
+                <ECProperty propertyName="I" typeName="int"/>
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    m_ecdb.SaveChanges();
+    BeFileName ecdbFile(m_ecdb.GetDbFileName());
+
+    const int threadCount = 8;
+    std::vector<std::thread> threads;
+    for (int i = 0; i < threadCount; ++i)
+        {
+        threads.push_back(std::thread([&ecdbFile] ()
+            {
+            ECDb ecdb;
+            ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbFile, Db::OpenParams(Db::OpenMode::Readonly)));
+            // long offending text so every thread drives the error buffer well past its initial size
+            Utf8String ecsql("SELECT I FROM ts.Foo WHERE I #");
+            ecsql.append(Utf8String(300, 'Z')).append(" 1");
+            for (int n = 0; n < 25; ++n)
+                {
+                ECSqlStatement stmt;
+                ASSERT_NE(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str()));
+                }
+            ecdb.CloseDb();
+            }));
+        }
+
+    for (std::thread& thread : threads)
+        thread.join();
 }
 
 /*---------------------------------------------------------------------------------**//**
