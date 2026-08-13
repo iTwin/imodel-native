@@ -37,20 +37,10 @@ if ($LibsrcDir.Equals($ScanRoot, [System.StringComparison]::OrdinalIgnoreCase) -
     $LibsrcDir.StartsWith($ScanRoot + [System.IO.Path]::DirectorySeparatorChar, [System.StringComparison]::OrdinalIgnoreCase)) {
     throw "scan root '$ScanRoot' must not contain the libsrc directory '$LibsrcDir'"
 }
-
-if ([System.IO.Directory]::Exists($ScanRoot)) {
-    if ($isWindowsHost) {
-        # Extracted vcpkg buildtrees paths routinely exceed MAX_PATH, which Remove-Item cannot delete.
-        & cmd.exe /c rmdir /s /q "$ScanRoot"
-        if ([System.IO.Directory]::Exists($ScanRoot)) {
-            throw "could not remove existing scan root '$ScanRoot'"
-        }
-    }
-    else {
-        Remove-Item -LiteralPath $ScanRoot -Force -Recurse
-    }
+# Manifest discovery below runs before the scan root is emptied, so a nested one would be discovered.
+if ($ScanRoot.StartsWith($LibsrcDir + [System.IO.Path]::DirectorySeparatorChar, [System.StringComparison]::OrdinalIgnoreCase)) {
+    throw "scan root '$ScanRoot' must not be inside the libsrc directory '$LibsrcDir'"
 }
-[void][System.IO.Directory]::CreateDirectory($ScanRoot)
 
 $manifests = @()
 foreach ($manifestFile in @(Get-ChildItem -Path $LibsrcDir -Filter vcpkg.json -File -Recurse | Sort-Object FullName)) {
@@ -89,6 +79,9 @@ foreach ($strayConfig in @(Get-ChildItem -Path $LibsrcDir -Filter vcpkg-mend.jso
     }
 }
 
+# Everything each consumer needs is read and checked up front: a typo in the last consumer must not
+# cost the existing scan output plus a full download of every consumer ahead of it.
+$plan = @()
 foreach ($manifestFile in $manifests) {
     $manifestDir = $manifestFile.Directory.FullName
     $consumer = $manifestDir.Substring($LibsrcDir.Length).TrimStart('\', '/')
@@ -108,7 +101,46 @@ foreach ($manifestFile in $manifests) {
         if (-not [System.IO.File]::Exists($tripletFile)) {
             throw "Mend triplet '$triplet' for '$consumer' does not exist at '$tripletFile'"
         }
+    }
 
+    $manifest = Get-Content -LiteralPath $manifestFile.FullName -Raw | ConvertFrom-Json
+
+    # 'dependencies' names only the direct ports; 'overrides' pins the whole transitively resolved
+    # set, so including it is what catches a transitive port that silently stops being pulled in.
+    $ports = New-Object 'System.Collections.Generic.SortedSet[string]' ([System.StringComparer]::OrdinalIgnoreCase)
+    foreach ($entry in (@($manifest.dependencies) + @($manifest.overrides))) {
+        $name = if ($entry -is [string]) { $entry } else { $entry.name }
+        if ($name) {
+            [void]$ports.Add($name)
+        }
+    }
+
+    $plan += [PSCustomObject]@{
+        Consumer    = $consumer
+        ManifestDir = $manifestDir
+        Triplets    = $triplets
+        Ports       = $ports
+    }
+}
+
+if ([System.IO.Directory]::Exists($ScanRoot)) {
+    if ($isWindowsHost) {
+        # Extracted vcpkg buildtrees paths routinely exceed MAX_PATH, which Remove-Item cannot delete.
+        & cmd.exe /c rmdir /s /q "$ScanRoot"
+        if ([System.IO.Directory]::Exists($ScanRoot)) {
+            throw "could not remove existing scan root '$ScanRoot'"
+        }
+    }
+    else {
+        Remove-Item -LiteralPath $ScanRoot -Force -Recurse
+    }
+}
+[void][System.IO.Directory]::CreateDirectory($ScanRoot)
+
+foreach ($consumerPlan in $plan) {
+    $consumer = $consumerPlan.Consumer
+    $manifestDir = $consumerPlan.ManifestDir
+    foreach ($triplet in $consumerPlan.Triplets) {
         $installRoot = [System.IO.Path]::Combine($ScanRoot, $consumer, $triplet)
         Write-Output "Materializing vcpkg sources for $consumer ($triplet)"
         if ($isWindowsHost) {
@@ -124,22 +156,9 @@ foreach ($manifestFile in $manifests) {
 }
 
 $missing = @()
-foreach ($manifestFile in $manifests) {
-    $manifestDir = $manifestFile.Directory.FullName
-    $consumer = $manifestDir.Substring($LibsrcDir.Length).TrimStart('\', '/')
-    $manifest = Get-Content -LiteralPath $manifestFile.FullName -Raw | ConvertFrom-Json
-
-    # 'dependencies' names only the direct ports; 'overrides' pins the whole transitively resolved
-    # set, so including it is what catches a transitive port that silently stops being pulled in.
-    $ports = New-Object 'System.Collections.Generic.SortedSet[string]' ([System.StringComparer]::OrdinalIgnoreCase)
-    foreach ($entry in (@($manifest.dependencies) + @($manifest.overrides))) {
-        $name = if ($entry -is [string]) { $entry } else { $entry.name }
-        if ($name) {
-            [void]$ports.Add($name)
-        }
-    }
-
-    foreach ($dependency in $ports) {
+foreach ($consumerPlan in $plan) {
+    $consumer = $consumerPlan.Consumer
+    foreach ($dependency in $consumerPlan.Ports) {
         $sourceRoots = @(Get-Item -Path ([System.IO.Path]::Combine($ScanRoot, $consumer, '*', 'buildtrees', $dependency, 'src')) -ErrorAction SilentlyContinue |
             Where-Object { $_.PSIsContainer })
         if ($sourceRoots.Count -eq 0 -or
@@ -153,4 +172,4 @@ if ($missing.Count -ne 0) {
     throw "vcpkg did not materialize source for:`n$($missing -join "`n")"
 }
 
-Write-Output "Materialized and validated vcpkg sources for $($manifests.Count) consumers under '$ScanRoot'."
+Write-Output "Materialized and validated vcpkg sources for $($plan.Count) consumers under '$ScanRoot'."
