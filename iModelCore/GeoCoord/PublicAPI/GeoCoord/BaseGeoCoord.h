@@ -6084,9 +6084,6 @@ private:
     VerticalDatum();
     ~VerticalDatum();
 
-    StatusInt InitializeTransforms(const Utf8String& target, const GeoPoint& latLong, const BaseGCSPtr& targetGCS);
-    void ReleaseTransforms();
-
     DatumCP GetGeodeticDatum() const;
 
 public:
@@ -6109,19 +6106,6 @@ public:
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 static VerticalDatumPtr Create(StatusInt& status, const VerticalDatumInfoPtr verticalDatumInfo);
-
-/*---------------------------------------------------------------------------------**//**
-* Checks to see if we are able to transform to this targetGCS (using the vertical datum
-* info previously stored when this VerticalDatum was created) then initializes the
-* appropriate Transform(s) if necessary and then calls these transform(s). If no transforms
-* are available between this and the target it is not necessarily an error, in this case
-* the elevation will be set to ptIn.elevation and SUCCESS will be returned.
-* @param[in]    ptIn    the elevation will be calculated at this lat/long point
-* @param[in]    targetGCS   the target VerticalDatum will be taken from targetGCCS
-* @return   SUCCESS or GEOCOORDERR_GeoCoordNotInitialized.
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt GetElevation(double& elevation,GeoPointCR ptIn, const BaseGCSPtr& targetGCS);
 
 /*---------------------------------------------------------------------------------**//**
 * Return the name of this Vertical Datum as defined in the Vertical Datum Dictionary.
@@ -6252,28 +6236,13 @@ const Utf8String& GetTarget() const;
 void SetTarget(const Utf8String& target);
 
 /*---------------------------------------------------------------------------------**//**
-* Returns the name of the base HorizontalCRS for the elevation transformation. This
-* horizontal is a latitude/longitude CRS to which latitude and longitude must be converted
+* Returns the name of the base geodetic datum for the elevation transformation. This
+* geodetic datum is a latitude/longitude base to which latitude and longitude must be converted
 * prior to applying the transformation using GetElevation()
-* @return   The name of the base horizontal CRS or an empty string if none is required.
+* @return   The name of the base geodetic datum or an empty string if none is required.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual Utf8String GetRequiredHorizontalCRSBase() const {return "";}
-
-/*---------------------------------------------------------------------------------**//**
-* Must be defined by all subclasses of VerticalTransform, initialize this VerticalTransform
-* in preparation for a following GetElevation() call. 
-* @return   SUCCESS, ERROR or GEOCOORDERR_***, will be defined by the subclass.
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt InitializeTransform() = 0;
-
-/*---------------------------------------------------------------------------------**//**
-* Must be defined by all subclasses of VerticalTransform, release any memory used by
-* this VerticalTransform.
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual void ReleaseTransform() = 0;
+virtual Utf8String GetRequiredHorizontalDatumBase() const {return "";}
 
 virtual StatusInt GetElevation(double& elevationOffset, ElevationType& elevationType, GeoPointCR ptIn) = 0;
 
