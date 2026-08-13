@@ -16,9 +16,13 @@
 
 set -e
 
-if [ "$#" -lt 3 ]; then
-    echo "Usage: $0 <manifest_dir> <install_root> <triplet> [--mend-scan]"
+usage() {
+    echo "Usage: $0 <manifest_dir> <install_root> <triplet> [--mend-scan]" >&2
     exit 1
+}
+
+if [ "$#" -lt 3 ]; then
+    usage
 fi
 
 MANIFEST_DIR="$1"
@@ -33,17 +37,15 @@ while [ "$#" -gt 0 ]; do
             MEND_SCAN=1
             ;;
         *)
-            echo "Unknown option: $1"
-            echo "Usage: $0 <manifest_dir> <install_root> <triplet> [--mend-scan]"
-            exit 1
+            echo "Unknown option: $1" >&2
+            usage
             ;;
     esac
     shift
 done
 
 if [ -z "$MANIFEST_DIR" ] || [ -z "$INSTALL_ROOT" ] || [ -z "$TRIPLET" ]; then
-    echo "Usage: $0 <manifest_dir> <install_root> <triplet> [--mend-scan]"
-    exit 1
+    usage
 fi
 
 # For cross-compilation triplets (iOS, Android), vcpkg/CMake manages its own
