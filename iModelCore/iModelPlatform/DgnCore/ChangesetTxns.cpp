@@ -211,6 +211,18 @@ ChangeSet::ConflictResolution LocalChangeSet::_OnConflict(ChangeSet::ConflictCau
 }
 
 //---------------------------------------------------------------------------------------
+// `dgn_Domain` holds one bookkeeping row per BIS domain present in the briefcase. The row is
+// created automatically by `DgnDomains::SyncWithSchemas()` as soon as the domain's schema is
+// imported, so merging a changeset that registers a domain conflicts with the row that was just
+// created locally. Both rows describe the same domain and the incoming one is authoritative, so
+// this is never fatal.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+static bool IsBenignDomainTableConflict(Changes::Change const& iter) {
+    return iter.GetTableName().EqualsIAscii(DGN_TABLE_Domain);
+}
+
+//---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter) {
@@ -393,6 +405,12 @@ const auto jsIModelDb = m_dgndb->GetJsIModelDb();
         * is passed ApplyChangeset(). The flag will disable CASCADE action and treat
         * them as CASCADE NONE resulting in conflict handler been called.
         */
+        if (IsBenignDomainTableConflict(iter)) {
+            LOG.warning("UPDATE/DELETE conflict on " DGN_TABLE_Domain " - resolved by replacing the existing row with the incoming row");
+            iter.Dump(*m_dgndb, false, 1);
+            return ChangeSet::ConflictResolution::Replace;
+        }
+
         if (!m_dgndb->Txns().HasPendingTxns()) {
             // This changeset is bad. However, it is already in the timeline. We must allow services such as
             // checkpoint-creation, change history, and other apps to apply any changeset that is in the timeline.
@@ -421,6 +439,12 @@ const auto jsIModelDb = m_dgndb->GetJsIModelDb();
 // From the SQLite docs: "CHANGESET_CONFLICT is passed as the second argument to the conflict handler while processing an INSERT change if the operation would result in duplicate primary key values."
         // This is always a fatal error - it can happen only if the app started with a briefcase that is behind the tip and then uses the same primary key values (e.g., ElementIds)
         // that have already been used by some other app using the SAME briefcase ID that recently pushed changes. That can happen only if the app makes changes without first pulling and acquiring locks.
+        if (IsBenignDomainTableConflict(iter)) {
+            LOG.warning("PRIMARY KEY INSERT CONFLICT on " DGN_TABLE_Domain " - resolved by replacing the existing row with the incoming row");
+            iter.Dump(*m_dgndb, false, 1);
+            return ChangeSet::ConflictResolution::Replace;
+        }
+
         if (!m_dgndb->Txns().HasPendingTxns()) {
             // This changeset is bad. However, it is already in the timeline. We must allow services such as
             // checkpoint-creation, change history, and other apps to apply any changeset that is in the timeline.
