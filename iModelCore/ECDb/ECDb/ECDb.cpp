@@ -132,7 +132,7 @@ bool ECDb::IsLevelWithTimeline() { return _IsLevelWithTimeline(); }
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::_AfterDataChangeSetApplied(bool schemaChanged)
+DbResult ECDb::_AfterDataChangeSetApplied(bool schemaChanged, bool deferInstanceUpgrade)
     {
     BentleyStatus status = m_pimpl->GetProfileManager().RefreshProfileVersion();
     if (status != SUCCESS)
@@ -142,7 +142,7 @@ DbResult ECDb::_AfterDataChangeSetApplied(bool schemaChanged)
     if (status != SUCCESS)
         return BE_SQLITE_ERROR;
 
-    if (schemaChanged) {
+    if (schemaChanged && !deferInstanceUpgrade) {
         status = Schemas().UpgradeECInstances();
         if (status != SUCCESS)
             return BE_SQLITE_ERROR;

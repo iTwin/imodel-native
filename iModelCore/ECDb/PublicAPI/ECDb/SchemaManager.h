@@ -788,7 +788,7 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
         //! @note In regular workflows (e.g. when calling SchemaManager::ImportECSchemas)
         //! <b>this method does not have to be called</b>.
         //! @return SUCCESS or ERROR
-        BentleyStatus UpgradeECInstances() const;
+        ECDB_EXPORT BentleyStatus UpgradeECInstances() const;
 
         void ClearCache() const;
         ECN::ECDerivedClassesList const* GetDerivedClassesInternal(ECN::ECClassCR baseClass, Utf8CP tableSpace = nullptr) const;

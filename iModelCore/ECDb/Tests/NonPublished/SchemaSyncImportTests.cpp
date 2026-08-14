@@ -347,7 +347,11 @@ BriefcaseSchemas LoadSchemas(ECDbR briefcase, std::vector<SchemaItem> const& ite
     result.m_context->AddSchemaLocater(briefcase.GetSchemaLocater());
     for (auto const& item : items) {
         ECSchemaPtr schema;
-        if (ECSchema::ReadFromXmlString(schema, item.GetXmlString().c_str(), *result.m_context) != SchemaReadStatus::Success || !schema.IsValid()) {
+        const auto readStatus = ECSchema::ReadFromXmlString(schema, item.GetXmlString().c_str(), *result.m_context);
+        if (readStatus != SchemaReadStatus::Success || !schema.IsValid()) {
+            // Without this the caller sees ImportSchemas fail on an empty list, which says nothing
+            // about the schema being unreadable.
+            ADD_FAILURE() << "could not read the test schema (SchemaReadStatus " << (int)readStatus << "):\n" << item.GetXmlString().c_str();
             result.m_owned.clear();
             result.m_refs.clear();
             return result;
@@ -2064,6 +2068,132 @@ void InsertCensusInstances(ECDbR db, Utf8CP nameSuffix) {
     ASSERT_EQ(BE_SQLITE_OK, db.SaveChanges());
 }
 
+SchemaItem AddedClassSchema(Utf8CP version, bool withAddedClass) {
+    Utf8String xml;
+    xml.Sprintf(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="AddClassTest" alias="acl" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+<ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+<ECEntityClass typeName="Asset">
+<ECCustomAttributes><ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap></ECCustomAttributes>
+<ECProperty propertyName="name" typeName="string" />
+</ECEntityClass>
+%s
+</ECSchema>)xml", version, withAddedClass ? R"xml(
+<ECEntityClass typeName="Sensor">
+<ECCustomAttributes><ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap></ECCustomAttributes>
+<ECProperty propertyName="reading" typeName="double" />
+</ECEntityClass>)xml" : "");
+    return SchemaItem(xml);
+}
+
+SchemaItem SubclassPropertySchema(Utf8CP version, bool withAddedProperty) {
+    Utf8String xml;
+    xml.Sprintf(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="SubclassPropertyTest" alias="spt" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+<ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+<ECEntityClass typeName="Asset">
+<ECCustomAttributes><ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap></ECCustomAttributes>
+<ECProperty propertyName="name" typeName="string" />
+</ECEntityClass>
+<ECEntityClass typeName="Pump">
+<BaseClass>Asset</BaseClass>
+<ECProperty propertyName="flowRate" typeName="double" />
+%s
+</ECEntityClass>
+</ECSchema>)xml", version, withAddedProperty ? R"xml(<ECProperty propertyName="pressure" typeName="double" />)xml" : "");
+    return SchemaItem(xml);
+}
+
+SchemaItem MixinSchema(Utf8CP version, bool withMixin) {
+    Utf8String xml;
+    xml.Sprintf(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="MixinTest" alias="mxt" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+<ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+%s
+<ECEntityClass typeName="Asset">
+<ECCustomAttributes><ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap></ECCustomAttributes>
+<ECProperty propertyName="name" typeName="string" />
+</ECEntityClass>
+<ECEntityClass typeName="Pump">
+<BaseClass>Asset</BaseClass>
+%s
+<ECProperty propertyName="flowRate" typeName="double" />
+</ECEntityClass>
+</ECSchema>)xml", version,
+withMixin ? R"xml(<ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
+<ECEntityClass typeName="AuditMixin" modifier="Abstract">
+<ECCustomAttributes>
+<IsMixin xmlns="CoreCustomAttributes.01.00.00"><AppliesToEntityClass>Pump</AppliesToEntityClass></IsMixin>
+</ECCustomAttributes>
+<ECProperty propertyName="auditCode" typeName="string" />
+</ECEntityClass>)xml" : "",
+withMixin ? R"xml(<BaseClass>AuditMixin</BaseClass>)xml" : "");
+    return SchemaItem(xml);
+}
+
+SchemaItem NavigationPropertySchema(Utf8CP version, bool withNavigationProperty) {
+    Utf8String xml;
+    xml.Sprintf(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="NavigationPropertyTest" alias="nav" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+<ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+<ECEntityClass typeName="Parent">
+<ECCustomAttributes><ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap></ECCustomAttributes>
+<ECProperty propertyName="name" typeName="string" />
+</ECEntityClass>
+<ECEntityClass typeName="Child">
+<ECCustomAttributes><ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap></ECCustomAttributes>
+<ECProperty propertyName="name" typeName="string" />
+%s
+</ECEntityClass>
+%s
+</ECSchema>)xml", version,
+withNavigationProperty ? R"xml(<ECNavigationProperty propertyName="Owner" relationshipName="ParentOwnsChild" direction="Backward" />)xml" : "",
+withNavigationProperty ? R"xml(<ECRelationshipClass typeName="ParentOwnsChild" strength="embedding" modifier="None">
+<Source multiplicity="(0..1)" roleLabel="owns" polymorphic="true"><Class class="Parent" /></Source>
+<Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true"><Class class="Child" /></Target>
+</ECRelationshipClass>)xml" : "");
+    return SchemaItem(xml);
+}
+
+SchemaItem KindOfQuantitySchema(Utf8CP version, bool useSecondKindOfQuantity) {
+    Utf8String xml;
+    xml.Sprintf(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="KindOfQuantityTest" alias="koq" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+<UnitSystem typeName="TESTSYS" displayLabel="Test system" />
+<Phenomenon typeName="TESTLENGTH" definition="TESTLENGTH" displayLabel="Test length" />
+<Unit typeName="SMALL" definition="SMALL" phenomenon="TESTLENGTH" unitSystem="TESTSYS" />
+<KindOfQuantity typeName="LengthOne" description="Length one" persistenceUnit="SMALL" relativeError="0.001" />
+%s
+<ECEntityClass typeName="Measured">
+<ECProperty propertyName="length" typeName="double" kindOfQuantity="%s" />
+<ECProperty propertyName="label" typeName="string" />
+</ECEntityClass>
+</ECSchema>)xml", version,
+useSecondKindOfQuantity ? R"xml(<KindOfQuantity typeName="LengthTwo" description="Length two" persistenceUnit="SMALL" relativeError="0.002" />)xml" : "",
+useSecondKindOfQuantity ? "LengthTwo" : "LengthOne");
+    return SchemaItem(xml);
+}
+
+SchemaItem EnumerationSchema(Utf8CP version, bool withBlueEnumerator) {
+    Utf8String xml;
+    xml.Sprintf(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="EnumerationTest" alias="enm" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+<ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+<ECEnumeration typeName="Colour" backingTypeName="int" isStrict="true">
+<ECEnumerator name="Red" value="1" displayLabel="Red" />
+<ECEnumerator name="Green" value="2" displayLabel="Green" />
+%s
+</ECEnumeration>
+<ECEntityClass typeName="Paint">
+<ECCustomAttributes><ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap></ECCustomAttributes>
+<ECProperty propertyName="name" typeName="string" />
+<ECProperty propertyName="colour" typeName="Colour" />
+</ECEntityClass>
+</ECSchema>)xml", version,
+withBlueEnumerator ? R"xml(<ECEnumerator name="Blue" value="3" displayLabel="Blue" />)xml" : "");
+    return SchemaItem(xml);
+}
+
 // ---------------------------------------------------------------------------------------
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
@@ -2110,6 +2240,11 @@ TEST_F(SchemaSyncImportTestFixture, DataSurvivesOnABriefcaseThatOnlyPulls)
     b1->PullMergePush("pick up CensusTest");
     MaterializeAfterMerge(*b1);
     InsertCensusInstances(*b1, "b1");
+    // Both briefcases have to hold the rows before the schema changes. UpgradeECInstances runs while
+    // a rebase has the local txns reversed, so rows still sitting in an unpushed txn never get their
+    // overflow row.
+    b1->PullMergePush("add instances");
+    b2->PullMergePush("pick up the instances");
     const auto before = InstanceCensus::Take(*b1);
     ASSERT_EQ(2u, before.GetInstanceCount());
 
@@ -2128,6 +2263,476 @@ TEST_F(SchemaSyncImportTestFixture, DataSurvivesOnABriefcaseThatOnlyPulls)
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*b1, "SELECT owner,pressure,serial,spare FROM cen.Pump"))
         << "the pulling briefcase did not materialise the added properties";
+    }
+
+// ---------------------------------------------------------------------------------------
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+// b1 holds committed but unpushed rows when a schema change spills their class into the overflow
+// table. The rebase reverses the local txn, so those rows are not in the file while the incoming
+// changesets are applied. The catch-up therefore runs after the txn is reinstated, or the rows come
+// back without an overflow row and cen.Pump reads as empty - ECDb inner-joins the overflow table.
+TEST_F(SchemaSyncImportTestFixture, DataSurvivesASpillArrivingOnTopOfUnpushedRows)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-census-unpushed");
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    auto& sync2 = b2->Schemas().GetSchemaSync();
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { CensusSchema("01.00.00", false) }).Refs(), SchemaManager::SchemaImportOptions::None));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    b2->PullMergePush("add CensusTest");
+    b1->PullMergePush("pick up CensusTest");
+    MaterializeAfterMerge(*b1);
+
+    InsertCensusInstances(*b1, "unpushed");
+    const auto before = InstanceCensus::Take(*b1);
+    ASSERT_EQ(2u, before.GetInstanceCount());
+
+    // b2 spills Pump into overflow while b1's rows are still sitting in an unpushed txn.
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { CensusSchema("01.00.01", true) }).Refs(), SchemaManager::SchemaImportOptions::None));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    b2->PullMergePush("add properties that spill to overflow");
+    ASSERT_STRNE(TableOf(*b2, "CensusTest", "Pump", "flowRate").c_str(), TableOf(*b2, "CensusTest", "Pump", "spare").c_str())
+        << "the added properties did not spill to overflow";
+
+    b1->PullMergePush("rebase the unpushed rows onto the spilled schema");
+    MaterializeAfterMerge(*b1);
+
+    ExpectCensusPreserved(before, InstanceCensus::Take(*b1), "the briefcase whose unpushed rows were rebased");
+    VerifyFileIsSound(*b1, "rebased briefcase after the spill");
+
+    // The overflow rows have to be in what b1 pushed. A briefcase that only receives the rebased
+    // changeset gets a pure data changeset and runs no catch-up of its own.
+    b2->PullMergePush("pick up the rebased rows");
+    MaterializeAfterMerge(*b2);
+    ExpectCensusPreserved(before, InstanceCensus::Take(*b2), "the briefcase that received the rebased rows");
+    }
+
+// ---------------------------------------------------------------------------------------
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+// The same spill with the rows spread over three unpushed txns, so the catch-up at the end of the
+// rebase has to cover all of them.
+TEST_F(SchemaSyncImportTestFixture, DataSurvivesASpillArrivingOnTopOfSeveralUnpushedTxns)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-census-unpushed-txns");
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    auto& sync2 = b2->Schemas().GetSchemaSync();
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { CensusSchema("01.00.00", false) }).Refs(), SchemaManager::SchemaImportOptions::None));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    b2->PullMergePush("add CensusTest");
+    b1->PullMergePush("pick up CensusTest");
+    MaterializeAfterMerge(*b1);
+
+    // InsertCensusInstances ends in SaveChanges, so each call is its own local txn.
+    InsertCensusInstances(*b1, "first");
+    InsertCensusInstances(*b1, "second");
+    InsertCensusInstances(*b1, "third");
+    const auto before = InstanceCensus::Take(*b1);
+    ASSERT_EQ(6u, before.GetInstanceCount());
+
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { CensusSchema("01.00.01", true) }).Refs(), SchemaManager::SchemaImportOptions::None));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    b2->PullMergePush("add properties that spill to overflow");
+
+    b1->PullMergePush("rebase three unpushed txns onto the spilled schema");
+    MaterializeAfterMerge(*b1);
+
+    ExpectCensusPreserved(before, InstanceCensus::Take(*b1), "the briefcase whose three unpushed txns were rebased");
+    VerifyFileIsSound(*b1, "rebased briefcase after the spill");
+    }
+
+// ---------------------------------------------------------------------------------------
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+// ResetInstanceIdSequence runs from the same hook as UpgradeECInstances, so it also sees the file
+// with the local txns reversed. It is safe where the overflow catch-up is not, and this pins why:
+// the sequence lives in be_Local, which a changeset apply does not touch, and the reset takes
+// max(sequence, max id in the tables) - so the high-water mark of the reversed rows survives.
+// Asset carries no overflow property, which keeps this test independent of the spill.
+TEST_F(SchemaSyncImportTestFixture, ARebaseDoesNotReuseTheInstanceIdsOfReinstatedRows)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-census-id-sequence");
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    auto& sync2 = b2->Schemas().GetSchemaSync();
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { CensusSchema("01.00.00", false) }).Refs(), SchemaManager::SchemaImportOptions::None));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    b2->PullMergePush("add CensusTest");
+    b1->PullMergePush("pick up CensusTest");
+    MaterializeAfterMerge(*b1);
+
+    ECInstanceKey unpushed;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*b1, "INSERT INTO cen.Asset(name) VALUES('unpushed')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(unpushed));
+    }
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { CensusSchema("01.00.01", true) }).Refs(), SchemaManager::SchemaImportOptions::None));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    b2->PullMergePush("add properties that spill to overflow");
+
+    b1->PullMergePush("rebase the unpushed row onto the spilled schema");
+    MaterializeAfterMerge(*b1);
+
+    ECInstanceKey afterRebase;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*b1, "INSERT INTO cen.Asset(name) VALUES('after-rebase')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(afterRebase));
+    }
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+
+    EXPECT_GT(afterRebase.GetInstanceId().GetValue(), unpushed.GetInstanceId().GetValue())
+        << "the rebase handed out an instance id it had already used for a reinstated row";
+
+    // Both rows have to be there, so the second insert did not overwrite the first.
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*b1, "SELECT COUNT(*) FROM cen.Asset"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    EXPECT_EQ(2, stmt.GetValueInt(0));
+    VerifyFileIsSound(*b1, "rebased briefcase after inserting again");
+    }
+
+// ---------------------------------------------------------------------------------------
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, DataSurvivesAClassAddedThroughTheSyncDb)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-census-class");
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    auto& sync2 = b2->Schemas().GetSchemaSync();
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { AddedClassSchema("01.00.00", false) }).Refs(), SchemaManager::SchemaImportOptions::None));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    b2->PullMergePush("add AddClassTest");
+    b1->PullMergePush("pick up AddClassTest");
+    MaterializeAfterMerge(*b1);
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*b2, "INSERT INTO acl.Asset(name) VALUES('asset')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    b2->PullMergePush("add AddClassTest");
+    b1->PullMergePush("pick up AddClassTest");
+
+    const auto beforeImporter = InstanceCensus::Take(*b2);
+    const auto beforePuller = InstanceCensus::Take(*b1);
+    ASSERT_EQ(1u, beforeImporter.GetInstanceCount());
+    ASSERT_EQ(1u, beforePuller.GetInstanceCount());
+
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { AddedClassSchema("01.00.01", true) }).Refs(), SchemaManager::SchemaImportOptions::None));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    EXPECT_TRUE(HasClass(*b2, "AddClassTest", "Sensor"));
+    ExpectCensusPreserved(beforeImporter, InstanceCensus::Take(*b2), "importer after adding a class");
+
+    b2->PullMergePush("add Sensor");
+    b1->PullMergePush("pick up Sensor");
+    MaterializeAfterMerge(*b1);
+    EXPECT_TRUE(HasClass(*b1, "AddClassTest", "Sensor"));
+    ExpectCensusPreserved(beforePuller, InstanceCensus::Take(*b1), "puller after adding a class");
+    VerifyFileIsSound(*b2, "importer after adding a class");
+    VerifyFileIsSound(*b1, "puller after adding a class");
+    }
+
+// ---------------------------------------------------------------------------------------
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, DataSurvivesAPropertyAddedToASubclassThroughTheSyncDb)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-census-subclass-property");
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    auto& sync2 = b2->Schemas().GetSchemaSync();
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { SubclassPropertySchema("01.00.00", false) }).Refs(), SchemaManager::SchemaImportOptions::None));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    b2->PullMergePush("add SubclassPropertyTest");
+    b1->PullMergePush("pick up SubclassPropertyTest");
+    MaterializeAfterMerge(*b1);
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*b2, "INSERT INTO spt.Asset(name) VALUES('asset')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*b2, "INSERT INTO spt.Pump(name,flowRate) VALUES('pump',42.5)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    b2->PullMergePush("add SubclassPropertyTest");
+    b1->PullMergePush("pick up SubclassPropertyTest");
+
+    const auto beforeImporter = InstanceCensus::Take(*b2);
+    const auto beforePuller = InstanceCensus::Take(*b1);
+    ASSERT_EQ(2u, beforeImporter.GetInstanceCount());
+    ASSERT_EQ(2u, beforePuller.GetInstanceCount());
+
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { SubclassPropertySchema("01.00.01", true) }).Refs(), SchemaManager::SchemaImportOptions::None));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    ExpectCensusPreserved(beforeImporter, InstanceCensus::Take(*b2), "importer after adding a subclass property");
+
+    b2->PullMergePush("add subclass property");
+    b1->PullMergePush("pick up subclass property");
+    MaterializeAfterMerge(*b1);
+    ExpectCensusPreserved(beforePuller, InstanceCensus::Take(*b1), "puller after adding a subclass property");
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*b1, "SELECT pressure FROM spt.Pump"));
+    VerifyFileIsSound(*b2, "importer after adding a subclass property");
+    VerifyFileIsSound(*b1, "puller after adding a subclass property");
+    }
+
+// ---------------------------------------------------------------------------------------
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, DataSurvivesAMixinAddedThroughTheSyncDb)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-census-mixin");
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    auto& sync2 = b2->Schemas().GetSchemaSync();
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { MixinSchema("01.00.00", false) }).Refs(), SchemaManager::SchemaImportOptions::None));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    b2->PullMergePush("add MixinTest");
+    b1->PullMergePush("pick up MixinTest");
+    MaterializeAfterMerge(*b1);
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*b2, "INSERT INTO mxt.Pump(name,flowRate) VALUES('pump',42.5)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    b2->PullMergePush("add MixinTest");
+    b1->PullMergePush("pick up MixinTest");
+
+    const auto beforeImporter = InstanceCensus::Take(*b2);
+    const auto beforePuller = InstanceCensus::Take(*b1);
+    ASSERT_EQ(1u, beforeImporter.GetInstanceCount());
+    ASSERT_EQ(1u, beforePuller.GetInstanceCount());
+
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { MixinSchema("01.00.01", true) }).Refs(), SchemaManager::SchemaImportOptions::None));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    EXPECT_TRUE(HasClass(*b2, "MixinTest", "AuditMixin"));
+    ExpectCensusPreserved(beforeImporter, InstanceCensus::Take(*b2), "importer after adding a mixin");
+
+    b2->PullMergePush("add AuditMixin");
+    b1->PullMergePush("pick up AuditMixin");
+    MaterializeAfterMerge(*b1);
+    EXPECT_TRUE(HasClass(*b1, "MixinTest", "AuditMixin"));
+    ExpectCensusPreserved(beforePuller, InstanceCensus::Take(*b1), "puller after adding a mixin");
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*b1, "SELECT auditCode FROM mxt.Pump"));
+    VerifyFileIsSound(*b2, "importer after adding a mixin");
+    VerifyFileIsSound(*b1, "puller after adding a mixin");
+    }
+
+// ---------------------------------------------------------------------------------------
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, DataSurvivesANavigationPropertyAddedThroughTheSyncDb)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-census-navigation");
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    auto& sync2 = b2->Schemas().GetSchemaSync();
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { NavigationPropertySchema("01.00.00", false) }).Refs(), SchemaManager::SchemaImportOptions::None));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    b2->PullMergePush("add NavigationPropertyTest");
+    b1->PullMergePush("pick up NavigationPropertyTest");
+    MaterializeAfterMerge(*b1);
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*b2, "INSERT INTO nav.Parent(name) VALUES('parent')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*b2, "INSERT INTO nav.Child(name) VALUES('child')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    b2->PullMergePush("add NavigationPropertyTest");
+    b1->PullMergePush("pick up NavigationPropertyTest");
+
+    const auto beforeImporter = InstanceCensus::Take(*b2);
+    const auto beforePuller = InstanceCensus::Take(*b1);
+    ASSERT_EQ(2u, beforeImporter.GetInstanceCount());
+    ASSERT_EQ(2u, beforePuller.GetInstanceCount());
+
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { NavigationPropertySchema("01.00.01", true) }).Refs(), SchemaManager::SchemaImportOptions::None));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    EXPECT_TRUE(HasClass(*b2, "NavigationPropertyTest", "ParentOwnsChild"));
+    ExpectCensusPreserved(beforeImporter, InstanceCensus::Take(*b2), "importer after adding a navigation property");
+
+    b2->PullMergePush("add navigation property");
+    b1->PullMergePush("pick up navigation property");
+    MaterializeAfterMerge(*b1);
+    EXPECT_TRUE(HasClass(*b1, "NavigationPropertyTest", "ParentOwnsChild"));
+    ExpectCensusPreserved(beforePuller, InstanceCensus::Take(*b1), "puller after adding a navigation property");
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*b1, "SELECT Owner FROM nav.Child"));
+    VerifyFileIsSound(*b2, "importer after adding a navigation property");
+    VerifyFileIsSound(*b1, "puller after adding a navigation property");
+    }
+
+// ---------------------------------------------------------------------------------------
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, DataSurvivesAKindOfQuantityChangedOnAnExistingPropertyThroughTheSyncDb)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-census-koq");
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    auto& sync2 = b2->Schemas().GetSchemaSync();
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { KindOfQuantitySchema("01.00.00", false) }).Refs(), SchemaManager::SchemaImportOptions::None));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    b2->PullMergePush("add KindOfQuantityTest");
+    b1->PullMergePush("pick up KindOfQuantityTest");
+    MaterializeAfterMerge(*b1);
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*b2, "INSERT INTO koq.Measured(length,label) VALUES(12.5,'measured')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    b2->PullMergePush("add KindOfQuantityTest");
+    b1->PullMergePush("pick up KindOfQuantityTest");
+
+    const auto beforeImporter = InstanceCensus::Take(*b2);
+    const auto beforePuller = InstanceCensus::Take(*b1);
+    ASSERT_EQ(1u, beforeImporter.GetInstanceCount());
+    ASSERT_EQ(1u, beforePuller.GetInstanceCount());
+
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { KindOfQuantitySchema("01.00.01", true) }).Refs(), SchemaManager::SchemaImportOptions::None));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    ExpectCensusPreserved(beforeImporter, InstanceCensus::Take(*b2), "importer after changing a kind of quantity");
+
+    b2->PullMergePush("change KindOfQuantity");
+    b1->PullMergePush("pick up changed KindOfQuantity");
+    MaterializeAfterMerge(*b1);
+    ExpectCensusPreserved(beforePuller, InstanceCensus::Take(*b1), "puller after changing a kind of quantity");
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*b1, "SELECT length FROM koq.Measured"));
+    VerifyFileIsSound(*b2, "importer after changing a kind of quantity");
+    VerifyFileIsSound(*b1, "puller after changing a kind of quantity");
+    }
+
+// ---------------------------------------------------------------------------------------
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, DataSurvivesAnEnumeratorAddedToAnExistingEnumerationThroughTheSyncDb)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-census-enumerator");
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    auto& sync2 = b2->Schemas().GetSchemaSync();
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { EnumerationSchema("01.00.00", false) }).Refs(), SchemaManager::SchemaImportOptions::None));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    b2->PullMergePush("add EnumerationTest");
+    b1->PullMergePush("pick up EnumerationTest");
+    MaterializeAfterMerge(*b1);
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*b2, "INSERT INTO enm.Paint(name,colour) VALUES('paint',1)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    b2->PullMergePush("add EnumerationTest");
+    b1->PullMergePush("pick up EnumerationTest");
+
+    const auto beforeImporter = InstanceCensus::Take(*b2);
+    const auto beforePuller = InstanceCensus::Take(*b1);
+    ASSERT_EQ(1u, beforeImporter.GetInstanceCount());
+    ASSERT_EQ(1u, beforePuller.GetInstanceCount());
+
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { EnumerationSchema("01.00.01", true) }).Refs(), SchemaManager::SchemaImportOptions::None));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    ExpectCensusPreserved(beforeImporter, InstanceCensus::Take(*b2), "importer after adding an enumerator");
+
+    b2->PullMergePush("add Blue");
+    b1->PullMergePush("pick up Blue");
+    MaterializeAfterMerge(*b1);
+    ExpectCensusPreserved(beforePuller, InstanceCensus::Take(*b1), "puller after adding an enumerator");
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*b1, "SELECT colour FROM enm.Paint"));
+    VerifyFileIsSound(*b2, "importer after adding an enumerator");
+    VerifyFileIsSound(*b1, "puller after adding an enumerator");
+    }
+
+// ---------------------------------------------------------------------------------------
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+// The importer holds the data here; DataSurvivesOnABriefcaseThatOnlyPulls covers the other side.
+// The shared-column budget stays at 4 - ECDbMap custom attributes cannot be modified on an existing
+// class, so the spill has to come from the added properties.
+TEST_F(SchemaSyncImportTestFixture, DataSurvivesWhenAddedPropertiesSpillToOverflowThroughTheSyncDb)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-census-overflow");
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    auto& sync2 = b2->Schemas().GetSchemaSync();
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { CensusSchema("01.00.00", false) }).Refs(), SchemaManager::SchemaImportOptions::None));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    b2->PullMergePush("add CensusTest");
+    b1->PullMergePush("pick up CensusTest");
+    MaterializeAfterMerge(*b1);
+
+    InsertCensusInstances(*b2, "overflow");
+    b2->PullMergePush("add instances");
+    b1->PullMergePush("pick up the instances");
+
+    const auto beforeImporter = InstanceCensus::Take(*b2);
+    const auto beforePuller = InstanceCensus::Take(*b1);
+    ASSERT_EQ(2u, beforeImporter.GetInstanceCount());
+    ASSERT_EQ(2u, beforePuller.GetInstanceCount());
+
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { CensusSchema("01.00.01", true) }).Refs(), SchemaManager::SchemaImportOptions::None));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    const auto primaryTable = TableOf(*b2, "CensusTest", "Pump", "flowRate");
+    const auto overflowTable = TableOf(*b2, "CensusTest", "Pump", "spare");
+    ASSERT_FALSE(primaryTable.empty());
+    ASSERT_FALSE(overflowTable.empty());
+    EXPECT_STRNE(primaryTable.c_str(), overflowTable.c_str()) << "the added properties did not spill to overflow";
+    ExpectCensusPreserved(beforeImporter, InstanceCensus::Take(*b2), "importer after the added properties spilled to overflow");
+
+    b2->PullMergePush("add properties that spill to overflow");
+    b1->PullMergePush("pick up the spilled properties");
+    MaterializeAfterMerge(*b1);
+    ExpectCensusPreserved(beforePuller, InstanceCensus::Take(*b1), "puller after the added properties spilled to overflow");
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*b1, "SELECT owner,pressure,serial,spare FROM cen.Pump"));
+    VerifyFileIsSound(*b2, "importer after the added properties spilled to overflow");
+    VerifyFileIsSound(*b1, "puller after the added properties spilled to overflow");
     }
 
 //=======================================================================================
@@ -2340,7 +2945,17 @@ struct MatrixMove {
 
 // The shapes a briefcase can bring to a round. Deliberately overlapping: two of them touch the same
 // class, so the sync db has to serialise them onto different shared columns.
+//
+// Shapes are cumulative across rounds. A caller that reuses one sync db for several rounds leaves
+// each round's properties in it, so round N has to carry rounds 1..N-1 as well - a version that
+// dropped an earlier property would be a deletion, which the update path refuses by design.
 std::vector<MatrixMove> MatrixMoves(int round) {
+    Utf8String aProps, bProps;
+    for (int i = 1; i <= round; ++i) {
+        aProps.append(Utf8PrintfString("<ECProperty propertyName=\"fromA%d\" typeName=\"int\" />", i));
+        bProps.append(Utf8PrintfString("<ECProperty propertyName=\"fromB%d\" typeName=\"double\" />", i));
+    }
+
     Utf8String a, b, c;
     a.Sprintf(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="MatrixShared" alias="mxs" version="01.00.%02d" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -2351,11 +2966,12 @@ std::vector<MatrixMove> MatrixMoves(int round) {
                     <ShareColumns xmlns="ECDbMap.02.00.00"><MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow></ShareColumns>
                 </ECCustomAttributes>
                 <ECProperty propertyName="base" typeName="string" />
-                <ECProperty propertyName="fromA%d" typeName="int" />
+                %s
             </ECEntityClass>
-        </ECSchema>)xml", round, round);
+        </ECSchema>)xml", round, aProps.c_str());
 
-    // Same class, a different property - the collision the sync db exists to resolve.
+    // Same class, one more property. B carries A's properties too, because both are versions of one
+    // schema and B has the higher version, so either import order ends at the union.
     b.Sprintf(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="MatrixShared" alias="mxs" version="01.00.%02d" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -2365,9 +2981,10 @@ std::vector<MatrixMove> MatrixMoves(int round) {
                     <ShareColumns xmlns="ECDbMap.02.00.00"><MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow></ShareColumns>
                 </ECCustomAttributes>
                 <ECProperty propertyName="base" typeName="string" />
-                <ECProperty propertyName="fromB%d" typeName="double" />
+                %s
+                %s
             </ECEntityClass>
-        </ECSchema>)xml", round + 50, round);
+        </ECSchema>)xml", round + 50, aProps.c_str(), bProps.c_str());
 
     // An unrelated schema, so the round also covers two briefcases that do not collide at all.
     c.Sprintf(R"xml(<?xml version="1.0" encoding="UTF-8"?>
@@ -2501,10 +3118,14 @@ TEST_F(SchemaSyncImportExtendedTests, ABriefcaseThatAbandonsItsWorkResynchronise
         b1->PullMergePush(context.c_str());
 
         // b2 comes back and has to end up level with everyone, its abandoned work notwithstanding.
+        // b2 may re-adopt the orphaned metadata from the sync db and push it, so b1 has to pull
+        // afterwards - otherwise this compares a caught-up briefcase against a stale one.
         b2->PullMergePush("b2 rejoins");
         MaterializeAfterMerge(*b2);
         b3->PullMergePush("b3 catches up");
         MaterializeAfterMerge(*b3);
+        b1->PullMergePush("b1 catches up");
+        MaterializeAfterMerge(*b1);
 
         ExpectECTablesIdentical(*b2, *b1, context.c_str());
         ExpectECTablesIdentical(*b3, *b1, context.c_str());
@@ -2512,6 +3133,90 @@ TEST_F(SchemaSyncImportExtendedTests, ABriefcaseThatAbandonsItsWorkResynchronise
         ExpectPhysicalSchemaIdentical(*b3, *b1, context.c_str());
         VerifyFileIsSound(*b2, context.c_str());
         }
+    }
+
+// ---------------------------------------------------------------------------------------
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, ProfileUpgradeReachesTheSyncDbAndTheOtherBriefcase)
+    {
+    // A profile upgrade widens an ec_ table and bumps the EC profile version in be_Prop. Both have
+    // to reach the sync db and every other briefcase. A profile upgrade holds the exclusive lock,
+    // so nothing here races - the question is only whether the change propagates.
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-profile-upgrade");
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    auto& sync2 = b2->Schemas().GetSchemaSync();
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { CensusSchema("01.00.00", false) }).Refs(), SchemaManager::SchemaImportOptions::None));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    b2->PullMergePush("add CensusTest");
+    b1->PullMergePush("pick up CensusTest");
+    MaterializeAfterMerge(*b1);
+
+    InsertCensusInstances(*b2, "b2");
+    b2->PullMergePush("insert census data");
+    b1->PullMergePush("pick up census data");
+
+    const auto beforeImporter = InstanceCensus::Take(*b2);
+    const auto beforePuller = InstanceCensus::Take(*b1);
+    ASSERT_EQ(2u, beforeImporter.GetInstanceCount());
+    ASSERT_EQ(2u, beforePuller.GetInstanceCount());
+
+    // The profile upgrade itself: a column on the end of an ec_ table, and a higher EC profile
+    // version to go with it.
+    const auto oldVersion = b2->GetECDbProfileVersion();
+    const ProfileVersion upgradedVersion(oldVersion.GetMajor(), oldVersion.GetMinor(), oldVersion.GetSub1(), (uint16_t)(oldVersion.GetSub2() + 1));
+    ASSERT_EQ(BE_SQLITE_OK, b2->ExecuteDdl("ALTER TABLE main.ec_Property ADD COLUMN SimulatedProfileColumn INTEGER"))
+        << "could not widen ec_Property";
+    ASSERT_EQ(BE_SQLITE_OK, b2->SavePropertyString(PropertySpec("SchemaVersion", "ec_Db"), upgradedVersion.ToJson()));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+
+    // The sync db can only learn the new table shape from the mirror step.
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.OverwriteSyncDb(syncDb.GetSyncDbUri()))
+        << "the sync db has to be rebuilt from the briefcase after a profile upgrade";
+
+    syncDb.WithReadOnly([&](ECDbR sync) {
+        bvector<Utf8String> columns;
+        sync.GetColumns(columns, "ec_Property");
+        EXPECT_TRUE(std::find(columns.begin(), columns.end(), Utf8String("SimulatedProfileColumn")) != columns.end())
+            << "the mirror step did not carry the new ec_Property column into the sync db";
+
+        // SchemaSyncHelper::UpdateProfileVersion can push the briefcase's version into the sync db,
+        // but its briefcase-to-sync-db direction has no caller, so this records what actually happens.
+        EXPECT_EQ(upgradedVersion.GetSub2(), sync.GetECDbProfileVersion().GetSub2())
+            << "the sync db kept the old EC profile version after the briefcase was upgraded";
+    });
+
+    // The other briefcase learns both from the changeset - the DDL rides along with it, and be_Prop
+    // is an ordinary tracked table.
+    b2->PullMergePush("push the profile upgrade");
+    b1->PullMergePush("pick up the profile upgrade");
+    MaterializeAfterMerge(*b1);
+
+    {
+    bvector<Utf8String> columns;
+    b1->GetColumns(columns, "ec_Property");
+    EXPECT_TRUE(std::find(columns.begin(), columns.end(), Utf8String("SimulatedProfileColumn")) != columns.end())
+        << "the other briefcase never got the widened ec_Property";
+    }
+    EXPECT_EQ(upgradedVersion.GetSub2(), b1->GetECDbProfileVersion().GetSub2())
+        << "the other briefcase kept the old EC profile version";
+
+    // Everything still has to work across the upgraded pair, and nobody may have lost data.
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { CensusSchema("01.00.01", true) }).Refs(), SchemaManager::SchemaImportOptions::None))
+        << "an ordinary update stopped working after the profile upgrade";
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    b2->PullMergePush("add properties after the profile upgrade");
+    b1->PullMergePush("pick up properties after the profile upgrade");
+    MaterializeAfterMerge(*b1);
+
+    ExpectCensusPreserved(beforeImporter, InstanceCensus::Take(*b2), "importer across the profile upgrade");
+    ExpectCensusPreserved(beforePuller, InstanceCensus::Take(*b1), "puller across the profile upgrade");
+    ExpectECTablesIdentical(*b1, *b2, "after the profile upgrade");
+    VerifyFileIsSound(*b2, "importer after the profile upgrade");
+    VerifyFileIsSound(*b1, "puller after the profile upgrade");
     }
 
 END_ECDBUNITTESTS_NAMESPACE

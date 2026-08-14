@@ -371,6 +371,14 @@ SchemaSyncTestFixture::InstanceCensus SchemaSyncTestFixture::InstanceCensus::Tak
         if (schema == nullptr)
             continue;
 
+        // Only the test's own schemas. ECDbMeta in particular maps its classes onto the ec_ tables
+        // themselves, so reading it would report every class in the file as an "instance".
+        if (schema->IsStandardSchema() || schema->IsSystemSchema() ||
+            schema->GetName().EqualsIAscii("ECDbMeta") || schema->GetName().EqualsIAscii("ECDbMap") ||
+            schema->GetName().EqualsIAscii("ECDbChange") || schema->GetName().EqualsIAscii("ECDbFileInfo") ||
+            schema->GetName().EqualsIAscii("ECDbSystem") || schema->GetName().EqualsIAscii("ECDbSchemaPolicies"))
+            continue;
+
         for (ECClassCP ecClass : schema->GetClasses()) {
             if (ecClass == nullptr || (!ecClass->IsEntityClass() && !ecClass->IsRelationshipClass()))
                 continue;
@@ -378,8 +386,11 @@ SchemaSyncTestFixture::InstanceCensus SchemaSyncTestFixture::InstanceCensus::Tak
             // An abstract class with no table of its own, or one the mapper was told to skip, has
             // nothing to read. Asking anyway would fail to prepare and say nothing useful.
             // GetStrategy asserts on an empty result, so the empty check has to come first.
+            // ExistingTable means the rows belong to something else and were never ours to lose.
             const auto mapStrategy = db.Schemas().GetClassMapStrategy(schema->GetName(), ecClass->GetName());
-            if (mapStrategy.IsEmpty() || mapStrategy.GetStrategy() == ClassMapStrategy::MapStrategy::NotMapped)
+            if (mapStrategy.IsEmpty() ||
+                mapStrategy.GetStrategy() == ClassMapStrategy::MapStrategy::NotMapped ||
+                mapStrategy.GetStrategy() == ClassMapStrategy::MapStrategy::ExistingTable)
                 continue;
 
             ECSqlStatement stmt;
@@ -1706,6 +1717,20 @@ DbResult TrackedECDb::RebaseOntoIncoming(std::vector<ECDbChangeSet*> const& inco
         return rc;
     }
 
+    // TxnManager runs the data-side hook too. It refreshes the profile version and resets the instance
+    // id sequence here; the overflow-row catch-up is deferred, because the rows the local changesets
+    // bring back are still reversed at this point.
+    bool incomingChangedSchema = false;
+    for (auto& changeset : incoming)
+        incomingChangedSchema = incomingChangedSchema || changeset->HasSchemaChanges();
+
+    const auto kDeferInstanceUpgrade = true;
+    rc = AfterDataChangeSetApplied(incomingChangedSchema, kDeferInstanceUpgrade);
+    if (rc != BE_SQLITE_OK) {
+        printf("[mockhub] rebase failed in AfterDataChangeSetApplied: %s (%s)\n", BeSQLiteLib::GetErrorName(rc), GetLastError().c_str());
+        return rc;
+    }
+
     m_tracker->EnableTracking(true);
     m_replayingLocalChangesets = true;
     for (auto& local : localChangesets) {
@@ -1725,6 +1750,21 @@ DbResult TrackedECDb::RebaseOntoIncoming(std::vector<ECDbChangeSet*> const& inco
         }
     }
     m_replayingLocalChangesets = false;
+
+    // Mirrors TxnManager::PullMergeRebaseEnd. The catch-up runs once, after the local changesets are
+    // back, so rows that were sitting in an unpushed changeset get the overflow row a schema change
+    // spilled their class into. It has to be tracked, or the rows never reach anybody else.
+    if (incomingChangedSchema) {
+        if (SUCCESS != Schemas().UpgradeECInstances()) {
+            printf("[mockhub] rebase failed to upgrade instances after replaying local changesets\n");
+            return BE_SQLITE_ERROR;
+        }
+        rc = SaveChanges("upgrade instances after rebase");
+        if (rc != BE_SQLITE_OK) {
+            printf("[mockhub] rebase failed to save the upgraded instances: %s\n", BeSQLiteLib::GetErrorName(rc));
+            return rc;
+        }
+    }
     return BE_SQLITE_OK;
 }
 

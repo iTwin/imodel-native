@@ -268,7 +268,7 @@ protected:
     ECDB_EXPORT int _OnAddFunction(DbFunction&) const override;
     ECDB_EXPORT void _OnRemoveFunction(DbFunction&) const override;
     ECDB_EXPORT virtual DbResult _AfterSchemaChangeSetApplied() const;
-    ECDB_EXPORT virtual DbResult _AfterDataChangeSetApplied(bool schemaChanged);
+    ECDB_EXPORT virtual DbResult _AfterDataChangeSetApplied(bool schemaChanged, bool deferInstanceUpgrade);
     ECDB_EXPORT virtual bool _IsLevelWithTimeline();
 
     //! Returns the settings manager to subclasses which gives access to the various access tokens
@@ -551,7 +551,10 @@ public:
     ECDB_EXPORT void RemoveECDbCacheClearListener(IECDbCacheClearListener&);
 
     BeSQLite::DbResult AfterSchemaChangeSetApplied() const { return _AfterSchemaChangeSetApplied(); }
-    BeSQLite::DbResult AfterDataChangeSetApplied(bool schemaChanged) { return _AfterDataChangeSetApplied(schemaChanged); }
+    //! @param[in] deferInstanceUpgrade the caller will run UpgradeECInstances itself once it is done. A pull
+    //! applies several changesets and then replays the local txns, and only the caller knows when the file
+    //! holds every row that may need an overflow row.
+    BeSQLite::DbResult AfterDataChangeSetApplied(bool schemaChanged, bool deferInstanceUpgrade = false) { return _AfterDataChangeSetApplied(schemaChanged, deferInstanceUpgrade); }
 
 #if !defined (DOCUMENTATION_GENERATOR)
     Impl& GetImpl() const;

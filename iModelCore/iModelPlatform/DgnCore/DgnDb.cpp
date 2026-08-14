@@ -405,9 +405,9 @@ bool DgnDb::_IsLevelWithTimeline() {
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-DbResult DgnDb::_AfterDataChangeSetApplied(bool schemaChanged)
+DbResult DgnDb::_AfterDataChangeSetApplied(bool schemaChanged, bool deferInstanceUpgrade)
     {
-    DbResult result = T_Super::_AfterDataChangeSetApplied(schemaChanged);
+    DbResult result = T_Super::_AfterDataChangeSetApplied(schemaChanged, deferInstanceUpgrade);
     if (result != BE_SQLITE_OK)
         return result;
 

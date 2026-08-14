@@ -9477,13 +9477,12 @@ TEST_F(SchemaSyncTestFixture, Delete_ECEntityClass_OwnTable)
     );
     }
 
-// Disabled under schema sync v2: the update path refuses a schema change that destroys data,
-// so these deletes now fail. Kept for whatever the upgrade path ends up looking like.
-#if 0
+// The delete goes through the upgrade path, which is allowed to destroy data. The update path
+// refuses it, which the "returns arbitrary schema changes" step below asserts.
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_TPH)
+TEST_F(SchemaSyncExtendedTests, Delete_Add_ECEntityClass_TPH)
     {
     const auto SCHEMA1_HASH_ECDB_SCHEMA = "3909058e8f808f06e094e0ccca25e3f373c501376d4e3764e5da9f2844b8a88f";
     const auto SCHEMA1_HASH_ECDB_MAP = "9ce71ce4e533c0e9b8bf57198bae832a502d2ef9fc85bf6632d3a4994a9ec8b4";
@@ -9577,7 +9576,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_TPH)
                     </ECEntityClass>
                 </ECSchema>)xml"
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA, false, __LINE__);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
@@ -9625,7 +9624,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_TPH)
                 </ECSchema>)xml"
             );
             ScopedDisableFailOnAssertion disableFailOnAssertion;
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
+            ASSERT_EQ(SchemaImportResult::ERROR_DATA_DELETION_REQUIRED, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA, false, __LINE__);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
@@ -9704,7 +9703,6 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_TPH)
             }
     );
     }
-#endif
 
 // Disabled under schema sync v2: the update path refuses a schema change that destroys data,
 // so these deletes now fail. Kept for whatever the upgrade path ends up looking like.
@@ -10204,9 +10202,8 @@ TEST_F(SchemaSyncExtendedTests, Delete_Add_ECEntityClass_TPH_MaxSharedColumnsBef
     }
 #endif
 
-// Disabled under schema sync v2: the update path refuses a schema change that destroys data,
-// so these deletes now fail. Kept for whatever the upgrade path ends up looking like.
-#if 0
+// The delete goes through the upgrade path, which is allowed to destroy data. The update path
+// refuses it, which the "returns arbitrary schema changes" steps below assert.
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -10321,7 +10318,7 @@ TEST_F(SchemaSyncExtendedTests, Delete_Add_ECEntityClass_JoinedTable)
                     </ECEntityClass>
                 </ECSchema>)xml"
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA, false, __LINE__);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
@@ -10381,7 +10378,7 @@ TEST_F(SchemaSyncExtendedTests, Delete_Add_ECEntityClass_JoinedTable)
                 </ECSchema>)xml"
             );
             ScopedDisableFailOnAssertion disableFailOnAssertion;
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
+            ASSERT_EQ(SchemaImportResult::ERROR_DATA_DELETION_REQUIRED, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA, false, __LINE__);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
@@ -10399,7 +10396,7 @@ TEST_F(SchemaSyncExtendedTests, Delete_Add_ECEntityClass_JoinedTable)
                 </ECSchema>)xml"
             );
             ScopedDisableFailOnAssertion disableFailOnAssertion;
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
+            ASSERT_EQ(SchemaImportResult::ERROR_DATA_DELETION_REQUIRED, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA, false, __LINE__);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
@@ -10488,7 +10485,6 @@ TEST_F(SchemaSyncExtendedTests, Delete_Add_ECEntityClass_JoinedTable)
             }
     );
     }
-#endif
 
 // Disabled under schema sync v2: the update path refuses a schema change that destroys data,
 // so these deletes now fail. Kept for whatever the upgrade path ends up looking like.
