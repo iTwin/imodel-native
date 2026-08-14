@@ -62,6 +62,9 @@ struct SchemaSync final {
         //! The import cannot be done additively because it would have to move data between columns.
         //! Callers route this to the upgrade path, which takes the exclusive schema lock.
         ERROR_DATA_TRANSFORM_REQUIRED,
+        //! The import cannot be done additively because it would destroy instances or property
+        //! values. Same route as ERROR_DATA_TRANSFORM_REQUIRED: the upgrade path.
+        ERROR_DATA_DELETION_REQUIRED,
         //! The sync db was written to while an import was running in it, which can only happen if
         //! somebody wrote without holding the container write lock.
         ERROR_SYNC_DB_CHANGED,
@@ -203,8 +206,9 @@ public:
     //!
     //! @param[in] schemas ECSchemas to import. References they resolve from the sync db or from each
     //!            other need not be listed.
-    //! @return ERROR_DATA_TRANSFORM_REQUIRED if the change would have to move data - that belongs on
-    //!         the upgrade path, not here.
+    //! @return ERROR_DATA_TRANSFORM_REQUIRED if the change would have to move data, or
+    //!         ERROR_DATA_DELETION_REQUIRED if it would destroy data. Both belong on the upgrade
+    //!         path, not here.
     //! @note The caller must hold the sync db's container write lock for the duration of this call,
     //!       as it does for an ordinary import. Additive only, and this does not push the resulting
     //!       changeset; that is the caller's job.
@@ -259,6 +263,7 @@ struct SchemaImportResult final
         OK = BE_SQLITE_OK,
         ERROR = BE_SQLITE_ERROR,
         ERROR_DATA_TRANSFORM_REQUIRED = BE_SQLITE_ERROR_DataTransformRequired,
+        ERROR_DATA_DELETION_REQUIRED = BE_SQLITE_ERROR_DataDeletionRequired,
         ERROR_READONLY = BE_SQLITE_READONLY,
         };
 

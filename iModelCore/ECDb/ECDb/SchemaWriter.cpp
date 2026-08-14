@@ -3627,6 +3627,7 @@ BentleyStatus SchemaWriter::DeleteClass(Context& ctx, ClassChange& classChange, 
 
     if (deletedClassMap->GetMapStrategy().GetStrategy() != MapStrategy::NotMapped && !ctx.ImportCtx().AllowsDataDestroyingChanges())
         {
+        ctx.ImportCtx().SetDataDeletionRefused();
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0687,
             "ECSchema Upgrade failed. ECSchema %s: Deleting ECClass '%s' destroys its instances, which a schema update cannot do while schema sync is enabled. Use the schema upgrade path, which holds an exclusive schema lock.",
             deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
@@ -3842,6 +3843,7 @@ BentleyStatus SchemaWriter::DeleteProperty(Context& ctx, PropertyChange& propert
                 {
                 if (!ctx.ImportCtx().AllowsDataDestroyingChanges())
                     {
+                    ctx.ImportCtx().SetDataDeletionRefused();
                     ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0688,
                         "ECSchema Upgrade failed. ECClass %s: Deleting ECProperty '%s' clears the data in its shared column, which a schema update cannot do while schema sync is enabled. Use the schema upgrade path, which holds an exclusive schema lock.",
                         ecClass.GetFullName(), deletedProperty.GetName().c_str());

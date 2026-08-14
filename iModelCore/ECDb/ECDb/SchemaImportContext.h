@@ -252,6 +252,7 @@ struct SchemaImportContext final
         RemapManager m_remapManager;
         bvector<Utf8String> m_mappingDecisions;
         bool m_semanticRebasing;
+        bool m_dataDeletionRefused = false;
 
     public:
         SchemaImportContext(ECDbCR ecdb, SchemaManager::SchemaImportOptions options, bool semanticRebasing = false)
@@ -267,6 +268,10 @@ struct SchemaImportContext final
         //! An import that owns no data tables cannot delete instances, so schema changes that destroy
         //! data are refused and the caller has to take the upgrade path. An opt-out flag would go here.
         bool AllowsDataDestroyingChanges() const { return MaintainsDataTables(); }
+        //! Set where such a change is refused, so the failure reaches the caller as
+        //! ERROR_DATA_DELETION_REQUIRED rather than a plain ERROR it cannot branch on.
+        void SetDataDeletionRefused() { m_dataDeletionRefused = true; }
+        bool WasDataDeletionRefused() const { return m_dataDeletionRefused; }
         bset<Utf8CP, CompareIUtf8Ascii> const& GetBuiltinSchemaNames() const { return m_builtinSchemaNames; }
         ClassMapLoadContext& GetClassMapLoadContext() { return m_loadContext; }
         ECDbCR GetECDb() const { return m_ecdb; }

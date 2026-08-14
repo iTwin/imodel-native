@@ -1361,6 +1361,9 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
             if (syncStatus == SchemaSync::Status::ERROR_DATA_TRANSFORM_REQUIRED)
                 return SchemaImportResult::ERROR_DATA_TRANSFORM_REQUIRED;
 
+            if (syncStatus == SchemaSync::Status::ERROR_DATA_DELETION_REQUIRED)
+                return SchemaImportResult::ERROR_DATA_DELETION_REQUIRED;
+
             if (syncStatus != SchemaSync::Status::OK)
                 {
                 m_ecdb.GetImpl().Issues().ReportV(
@@ -1385,6 +1388,10 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
     if (SchemaImportResult::OK != rc)
         {
         LOG.debug("MainSchemaManager::ImportSchemas - failed in SchemaWriter::ImportSchemas");
+        // The writer reports every refusal as a plain ERROR. A refused data-destroying deletion is the
+        // one the caller can act on, by retrying through the upgrade path.
+        if (rc == SchemaImportResult::ERROR && ctx.WasDataDeletionRefused())
+            return SchemaImportResult::ERROR_DATA_DELETION_REQUIRED;
         return rc;
         }
 

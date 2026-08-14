@@ -5,6 +5,7 @@
 #include "../BackDoor/PublicAPI/BackDoor/ECDb/BackDoor.h"
 #include "ECDbPublishedTests.h"
 #include "MockHubApi.h"
+#include <algorithm>
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -14,6 +15,11 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 // how it gets there: the two steps of an import, the entry points that drive them, and whether two
 // briefcases end up with the same ec_ rows and the same physical schema.
 struct SchemaSyncImportTestFixture : SchemaSyncTestFixture {};
+
+//! The extended tier of the v2 suite. See SchemaSyncExtendedTests in SchemaSyncTest.cpp - same
+//! split, same reason. This is where the permutation matrices live; the behaviours they permute
+//! each have a representative on SchemaSyncImportTestFixture.
+struct SchemaSyncImportExtendedTests : SchemaSyncImportTestFixture {};
 
 namespace {
 
@@ -71,6 +77,19 @@ SchemaItem ReferencingSchema(Utf8CP version = "01.00.00") {
             </ECEntityClass>
         </ECSchema>)xml", version);
     return SchemaItem(xml);
+}
+
+// ...and the named class within it?
+bool HasClass(ECDbR db, Utf8CP schemaName, Utf8CP className) {
+    Statement stmt;
+    if (stmt.Prepare(db, R"sql(
+        SELECT 1 FROM main.ec_Class c
+        JOIN main.ec_Schema s ON s.Id = c.SchemaId
+        WHERE s.Name=? AND c.Name=?)sql") != BE_SQLITE_OK)
+        return false;
+    stmt.BindText(1, schemaName, Statement::MakeCopy::No);
+    stmt.BindText(2, className, Statement::MakeCopy::No);
+    return stmt.Step() == BE_SQLITE_ROW;
 }
 
 // Does this file know the named schema?
@@ -1930,7 +1949,7 @@ TEST_F(SchemaSyncImportTestFixture, ConcurrentEditsToANewClassInReversedPushOrde
 // ---------------------------------------------------------------------------------------
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaSyncImportTestFixture, ConcurrentLabelEditsInPushOrderMatchingImportOrder)
+TEST_F(SchemaSyncImportExtendedTests, ConcurrentLabelEditsInPushOrderMatchingImportOrder)
     {
     ConcurrentEditScenario scenario("upstream-label-edit-in-order");
     scenario.Start({ MetadataOnlySchema("01.00.00", "before anybody edited it") });
@@ -1945,7 +1964,7 @@ TEST_F(SchemaSyncImportTestFixture, ConcurrentLabelEditsInPushOrderMatchingImpor
 // ---------------------------------------------------------------------------------------
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaSyncImportTestFixture, ConcurrentEditsToANewClassInPushOrderMatchingImportOrder)
+TEST_F(SchemaSyncImportExtendedTests, ConcurrentEditsToANewClassInPushOrderMatchingImportOrder)
     {
     ConcurrentEditScenario scenario("upstream-new-class-in-order");
     scenario.Start({ MetadataOnlySchema("01.00.00", "unchanged throughout") });
@@ -1983,6 +2002,516 @@ TEST_F(SchemaSyncImportTestFixture, UpgradeAfterAConcurrentEditDoesNotRollTheSyn
         EXPECT_STREQ("relabelled by the second importer", DisplayLabelOf(sync, "LabelTest", "Existing").c_str())
             << "the overwrite replaced the sync db's label with the one the upgrading briefcase held";
     });
+    }
+
+//=======================================================================================
+// Data survival.
+//
+// The update path's whole claim is that it never moves or destroys data. Everything above this
+// point checks metadata, mapping or DDL, so the claim itself was untested. These take an
+// InstanceCensus before the change and compare it after.
+//=======================================================================================
+
+// A hierarchy with shared columns, so added properties land in the shared pool and eventually spill
+// into overflow - the arrangement most likely to disturb data that is already there.
+SchemaItem CensusSchema(Utf8CP version, bool withExtraProperties) {
+    Utf8String xml;
+    xml.Sprintf(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="CensusTest" alias="cen" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Asset">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00.00">
+                        <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>
+                    </ShareColumns>
+                </ECCustomAttributes>
+                <ECProperty propertyName="name" typeName="string" />
+                %s
+            </ECEntityClass>
+            <ECEntityClass typeName="Pump">
+                <BaseClass>Asset</BaseClass>
+                <ECProperty propertyName="flowRate" typeName="double" />
+                %s
+            </ECEntityClass>
+        </ECSchema>)xml",
+        version,
+        withExtraProperties ? "<ECProperty propertyName=\"owner\" typeName=\"string\" />" : "",
+        withExtraProperties ? "<ECProperty propertyName=\"pressure\" typeName=\"double\" />"
+                              "<ECProperty propertyName=\"serial\" typeName=\"string\" />"
+                              "<ECProperty propertyName=\"spare\" typeName=\"int\" />" : "");
+    return SchemaItem(xml);
+}
+
+// Two instances, one of each class, with every property of the initial version set.
+void InsertCensusInstances(ECDbR db, Utf8CP nameSuffix) {
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO cen.Asset(name) VALUES(?)"));
+    stmt.BindText(1, Utf8PrintfString("asset-%s", nameSuffix).c_str(), IECSqlBinder::MakeCopy::Yes);
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    }
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO cen.Pump(name,flowRate) VALUES(?,42.5)"));
+    stmt.BindText(1, Utf8PrintfString("pump-%s", nameSuffix).c_str(), IECSqlBinder::MakeCopy::Yes);
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    }
+    ASSERT_EQ(BE_SQLITE_OK, db.SaveChanges());
+}
+
+// ---------------------------------------------------------------------------------------
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, DataSurvivesPropertiesAddedThroughTheSyncDb)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-census-add");
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    auto& sync2 = b2->Schemas().GetSchemaSync();
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { CensusSchema("01.00.00", false) }).Refs(), SchemaManager::SchemaImportOptions::None));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+
+    InsertCensusInstances(*b2, "b2");
+    const auto before = InstanceCensus::Take(*b2);
+    ASSERT_EQ(2u, before.GetInstanceCount()) << "the census did not see the rows the test just inserted";
+
+    // Four new properties against a budget of four shared columns, so some of them spill to overflow.
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { CensusSchema("01.00.01", true) }).Refs(), SchemaManager::SchemaImportOptions::None));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+
+    ExpectCensusPreserved(before, InstanceCensus::Take(*b2), "after adding properties through the sync db");
+    VerifyFileIsSound(*b2, "importer after adding properties");
+    }
+
+// ---------------------------------------------------------------------------------------
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, DataSurvivesOnABriefcaseThatOnlyPulls)
+    {
+    // The briefcase that did not import is the one at risk: it materialises its tables from the ec_
+    // rows the changeset carried rather than from DDL anybody sent it.
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-census-puller");
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    auto& sync2 = b2->Schemas().GetSchemaSync();
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { CensusSchema("01.00.00", false) }).Refs(), SchemaManager::SchemaImportOptions::None));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    b2->PullMergePush("add CensusTest 1.0.0");
+
+    b1->PullMergePush("pick up CensusTest");
+    MaterializeAfterMerge(*b1);
+    InsertCensusInstances(*b1, "b1");
+    const auto before = InstanceCensus::Take(*b1);
+    ASSERT_EQ(2u, before.GetInstanceCount());
+
+    // b2 imports; b1 only ever pulls.
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { CensusSchema("01.00.01", true) }).Refs(), SchemaManager::SchemaImportOptions::None));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    b2->PullMergePush("add properties to CensusTest");
+
+    b1->PullMergePush("pick up the added properties");
+    MaterializeAfterMerge(*b1);
+
+    ExpectCensusPreserved(before, InstanceCensus::Take(*b1), "on the briefcase that only pulled");
+    VerifyFileIsSound(*b1, "puller after the schema change");
+
+    // The new properties have to be usable there, not merely harmless.
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*b1, "SELECT owner,pressure,serial,spare FROM cen.Pump"))
+        << "the pulling briefcase did not materialise the added properties";
+    }
+
+//=======================================================================================
+// Deletions the update path refuses.
+//
+// Both report ERROR_DATA_DELETION_REQUIRED so a caller can route them to the upgrade path, the
+// same way ERROR_DATA_TRANSFORM_REQUIRED routes a remap.
+//=======================================================================================
+
+// The same schema with Pump removed entirely.
+SchemaItem CensusSchemaWithoutPump(Utf8CP version) {
+    Utf8String xml;
+    xml.Sprintf(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="CensusTest" alias="cen" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Asset">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00.00">
+                        <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>
+                    </ShareColumns>
+                </ECCustomAttributes>
+                <ECProperty propertyName="name" typeName="string" />
+            </ECEntityClass>
+        </ECSchema>)xml", version);
+    return SchemaItem(xml);
+}
+
+// ---------------------------------------------------------------------------------------
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, DeletingAClassReportsDataDeletionRequired)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-delete-class");
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    auto& sync2 = b2->Schemas().GetSchemaSync();
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { CensusSchema("01.00.00", false) }).Refs(), SchemaManager::SchemaImportOptions::None));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    InsertCensusInstances(*b2, "b2");
+
+    const auto before = InstanceCensus::Take(*b2);
+
+    // Deleting Pump destroys its instances, which an update may not do.
+    EXPECT_EQ(SchemaSync::Status::ERROR_DATA_DELETION_REQUIRED,
+              sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { CensusSchemaWithoutPump("02.00.00") }).Refs(), SchemaManager::SchemaImportOptions::None))
+        << "a class delete has to be refused with a status the caller can route to the upgrade path";
+
+    // A refused import changes nothing on either side.
+    ExpectCensusPreserved(before, InstanceCensus::Take(*b2), "after the refused class delete");
+    EXPECT_TRUE(HasClass(*b2, "CensusTest", "Pump")) << "the refused delete removed the class anyway";
+    syncDb.WithReadOnly([&](ECDbR sync) {
+        EXPECT_TRUE(HasClass(sync, "CensusTest", "Pump")) << "the refused delete was left behind in the sync db";
+    });
+    VerifyFileIsSound(*b2, "after the refused class delete");
+    }
+
+// ---------------------------------------------------------------------------------------
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, TheUpgradePathPerformsTheDeleteTheUpdatePathRefused)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-delete-upgrade");
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    auto& sync2 = b2->Schemas().GetSchemaSync();
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { CensusSchema("01.00.00", false) }).Refs(), SchemaManager::SchemaImportOptions::None));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    InsertCensusInstances(*b2, "b2");
+
+    // Same delete, through the door the refusal points at.
+    ASSERT_EQ(SchemaImportResult::OK,
+              ImportSchema(*b2, CensusSchemaWithoutPump("02.00.00"), SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade, syncDb.GetSyncDbUri()))
+        << "the upgrade path has to accept what the update path refused";
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+
+    EXPECT_FALSE(HasClass(*b2, "CensusTest", "Pump")) << "the upgrade did not delete the class";
+    syncDb.WithReadOnly([&](ECDbR sync) {
+        EXPECT_FALSE(HasClass(sync, "CensusTest", "Pump")) << "the sync db was not overwritten with the deleted state";
+    });
+
+    // The Asset instance is not part of what was deleted and has to still be there.
+    const auto after = InstanceCensus::Take(*b2);
+    EXPECT_EQ(1u, after.GetInstanceCount()) << "the upgrade took more than the deleted class's instances";
+    VerifyFileIsSound(*b2, "after the upgrade delete");
+    }
+
+// The same schema with Pump's flowRate removed. Pump is TPH with ShareColumns, so flowRate lives in
+// a shared column and dropping it takes the second refusal site - SchemaWriter's UPDATE ... SET NULL.
+SchemaItem CensusSchemaWithoutFlowRate(Utf8CP version) {
+    Utf8String xml;
+    xml.Sprintf(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="CensusTest" alias="cen" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Asset">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00.00">
+                        <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>
+                    </ShareColumns>
+                </ECCustomAttributes>
+                <ECProperty propertyName="name" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Pump">
+                <BaseClass>Asset</BaseClass>
+            </ECEntityClass>
+        </ECSchema>)xml", version);
+    return SchemaItem(xml);
+}
+
+// ---------------------------------------------------------------------------------------
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, DeletingASharedColumnPropertyReportsDataDeletionRequired)
+    {
+    // The other refusal site. A class delete destroys instances; this one only clears a column, so it
+    // is the easier of the two to let through by accident.
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-delete-property");
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    auto& sync2 = b2->Schemas().GetSchemaSync();
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { CensusSchema("01.00.00", false) }).Refs(), SchemaManager::SchemaImportOptions::None));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    InsertCensusInstances(*b2, "b2");
+
+    const auto before = InstanceCensus::Take(*b2);
+
+    ScopedDisableFailOnAssertion disableFailOnAssertion;
+    EXPECT_EQ(SchemaSync::Status::ERROR_DATA_DELETION_REQUIRED,
+              sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { CensusSchemaWithoutFlowRate("02.00.00") }).Refs(), SchemaManager::SchemaImportOptions::None))
+        << "dropping a shared-column property clears the column, so it has to be refused too";
+
+    ExpectCensusPreserved(before, InstanceCensus::Take(*b2), "after the refused property delete");
+    VerifyFileIsSound(*b2, "after the refused property delete");
+    }
+
+//=======================================================================================
+// A profile upgrade that alters an ec_ table.
+//=======================================================================================
+
+// ---------------------------------------------------------------------------------------
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, SyncDbFollowsAnECTableColumnAddedOnTheBriefcase)
+    {
+    // Stands in for a future ECDb profile upgrade that widens an ec_ table. The briefcase gets the
+    // column from the profile upgrade; the sync db can only get it from the mirror step, which is
+    // the half that has no other test.
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-profile-column");
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    auto& sync2 = b2->Schemas().GetSchemaSync();
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { CensusSchema("01.00.00", false) }).Refs(), SchemaManager::SchemaImportOptions::None));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    InsertCensusInstances(*b2, "b2");
+
+    ASSERT_EQ(BE_SQLITE_OK, b2->ExecuteDdl("ALTER TABLE main.ec_Property ADD COLUMN SimulatedProfileColumn INTEGER"))
+        << "could not simulate the profile upgrade";
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.OverwriteSyncDb(syncDb.GetSyncDbUri()))
+        << "the sync db has to be rebuilt from the briefcase after a profile upgrade";
+
+    syncDb.WithReadOnly([&](ECDbR sync) {
+        bvector<Utf8String> columns;
+        sync.GetColumns(columns, "ec_Property");
+        EXPECT_TRUE(std::find(columns.begin(), columns.end(), Utf8String("SimulatedProfileColumn")) != columns.end())
+            << "the mirror step did not carry the new ec_Property column into the sync db";
+    });
+
+    // The pair still has to work afterwards, and the data still has to be there.
+    const auto before = InstanceCensus::Take(*b2);
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { CensusSchema("01.00.01", true) }).Refs(), SchemaManager::SchemaImportOptions::None))
+        << "an ordinary update stopped working after the simulated profile upgrade";
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+
+    ExpectCensusPreserved(before, InstanceCensus::Take(*b2), "after importing across the simulated profile upgrade");
+    VerifyFileIsSound(*b2, "briefcase after the simulated profile upgrade");
+    syncDb.WithReadOnly([&](ECDbR sync) { VerifyFileIsSound(sync, "sync db after the simulated profile upgrade"); });
+    }
+
+//=======================================================================================
+// The permutation matrix.
+//
+// Everything above tests one arrangement each. This walks combinations: N briefcases, each
+// importing one of a few schema shapes, in every order, pushed in every order. Each round ends
+// with the same three questions - do all N agree on ec_, do they agree on the physical schema,
+// and did anybody lose data.
+//
+// This is what the extended tier is for. It is minutes, not seconds.
+//=======================================================================================
+
+// One briefcase's move in a round.
+struct MatrixMove {
+    Utf8CP m_label;
+    SchemaItem m_schema;
+};
+
+// The shapes a briefcase can bring to a round. Deliberately overlapping: two of them touch the same
+// class, so the sync db has to serialise them onto different shared columns.
+std::vector<MatrixMove> MatrixMoves(int round) {
+    Utf8String a, b, c;
+    a.Sprintf(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="MatrixShared" alias="mxs" version="01.00.%02d" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Shared">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00.00"><MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow></ShareColumns>
+                </ECCustomAttributes>
+                <ECProperty propertyName="base" typeName="string" />
+                <ECProperty propertyName="fromA%d" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml", round, round);
+
+    // Same class, a different property - the collision the sync db exists to resolve.
+    b.Sprintf(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="MatrixShared" alias="mxs" version="01.00.%02d" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Shared">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00.00"><MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow></ShareColumns>
+                </ECCustomAttributes>
+                <ECProperty propertyName="base" typeName="string" />
+                <ECProperty propertyName="fromB%d" typeName="double" />
+            </ECEntityClass>
+        </ECSchema>)xml", round + 50, round);
+
+    // An unrelated schema, so the round also covers two briefcases that do not collide at all.
+    c.Sprintf(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="MatrixIsolated%d" alias="mxi%d" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="Standalone">
+                <ECProperty propertyName="value" typeName="string" />
+            </ECEntityClass>
+        </ECSchema>)xml", round, round);
+
+    return { { "shared-A", SchemaItem(a) }, { "shared-B", SchemaItem(b) }, { "isolated", SchemaItem(c) } };
+}
+
+// Every briefcase ends the round holding the same metadata and the same physical layout, and
+// nobody lost an instance.
+void ExpectAllConverged(std::vector<TrackedECDb*> const& briefcases,
+                        std::vector<SchemaSyncTestFixture::InstanceCensus> const& before, Utf8CP context) {
+    ASSERT_FALSE(briefcases.empty());
+    for (size_t i = 0; i < briefcases.size(); ++i) {
+        const Utf8PrintfString where("%s: briefcase %d", context, (int)i);
+        SchemaSyncTestFixture::VerifyFileIsSound(*briefcases[i], where.c_str());
+        SchemaSyncTestFixture::ExpectCensusPreserved(before[i], SchemaSyncTestFixture::InstanceCensus::Take(*briefcases[i]), where.c_str());
+        if (i == 0)
+            continue;
+        SchemaSyncTestFixture::ExpectECTablesIdentical(*briefcases[i], *briefcases[0], where.c_str());
+        SchemaSyncTestFixture::ExpectPhysicalSchemaIdentical(*briefcases[i], *briefcases[0], where.c_str());
+    }
+}
+
+// ---------------------------------------------------------------------------------------
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportExtendedTests, ConcurrentImportsConvergeAcrossEveryOrdering)
+    {
+    // Three briefcases, three schema shapes, every assignment of shape to briefcase, and both push
+    // orders. 3! x 2 = 12 rounds, each ending in a full convergence check.
+    const int briefcaseCount = 3;
+    std::vector<int> order{ 0, 1, 2 };
+    int round = 0;
+
+    do {
+        for (int reversePush = 0; reversePush <= 1; ++reversePush) {
+            ++round;
+            const Utf8PrintfString context("round %d (assignment %d%d%d, push %s)", round,
+                                           order[0], order[1], order[2], reversePush ? "reversed" : "in import order");
+
+            ECDbHub hub;
+            SchemaSyncDb syncDb(Utf8PrintfString("upstream-matrix-%d", round).c_str());
+            std::unique_ptr<TrackedECDb> seed, unused;
+            SetupSyncedPair(hub, syncDb, seed, unused);
+
+            std::vector<std::unique_ptr<TrackedECDb>> briefcases;
+            briefcases.push_back(std::move(seed));
+            for (int i = 1; i < briefcaseCount; ++i)
+                briefcases.push_back(hub.CreateBriefcase());
+
+            // Something to lose, before anybody changes the schema.
+            std::vector<InstanceCensus> before;
+            for (auto& bc : briefcases)
+                before.push_back(InstanceCensus::Take(*bc));
+
+            const auto moves = MatrixMoves(round);
+            for (int i = 0; i < briefcaseCount; ++i) {
+                auto& bc = *briefcases[i];
+                auto& sync = bc.Schemas().GetSchemaSync();
+                const auto& move = moves[order[i]];
+                const auto loaded = LoadSchemas(bc, { move.m_schema });
+                ASSERT_TRUE(loaded.IsValid()) << context.c_str() << ": could not load " << move.m_label;
+
+                // A briefcase importing a schema version the sync db already moved past is a no-op
+                // there, which is a legal outcome rather than a failure.
+                const auto rc = sync.ImportSchemas(syncDb.GetSyncDbUri(), loaded.Refs(), SchemaManager::SchemaImportOptions::None);
+                ASSERT_EQ(SchemaSync::Status::OK, rc) << context.c_str() << ": " << move.m_label << " was refused";
+                ASSERT_EQ(BE_SQLITE_OK, bc.SaveChanges());
+            }
+
+            for (int i = 0; i < briefcaseCount; ++i) {
+                const int idx = reversePush ? briefcaseCount - 1 - i : i;
+                briefcases[idx]->PullMergePush(Utf8PrintfString("%s: briefcase %d", context.c_str(), idx).c_str());
+            }
+
+            // Everyone catches up, then materialises what the changesets described.
+            for (auto& bc : briefcases) {
+                bc->PullMergePush("catch up");
+                MaterializeAfterMerge(*bc);
+            }
+
+            std::vector<TrackedECDb*> raw;
+            for (auto& bc : briefcases)
+                raw.push_back(bc.get());
+            ExpectAllConverged(raw, before, context.c_str());
+
+            syncDb.WithReadOnly([&](ECDbR sync) { VerifyFileIsSound(sync, context.c_str()); });
+            // One broken ordering is enough to look at; the rest would repeat it. HasFailure() is a
+            // member of ::testing::Test, so it is available directly in a TEST_F body.
+            if (HasFailure())
+                return;
+        }
+    } while (std::next_permutation(order.begin(), order.end()));
+    }
+
+// ---------------------------------------------------------------------------------------
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportExtendedTests, ABriefcaseThatAbandonsItsWorkResynchronises)
+    {
+    // The sync db keeps what it decided during an import that was never pushed - only an upgrade
+    // cleans that up. So a briefcase that abandons has to come back and agree with everyone else
+    // anyway, across repeated rounds.
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-abandon-resync");
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    auto b3 = hub.CreateBriefcase();
+
+    for (int round = 1; round <= 4; ++round) {
+        const Utf8PrintfString context("abandon round %d", round);
+        const auto moves = MatrixMoves(round);
+
+        // b2 imports and abandons without pushing.
+        auto& sync2 = b2->Schemas().GetSchemaSync();
+        ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { moves[0].m_schema }).Refs(), SchemaManager::SchemaImportOptions::None))
+            << context.c_str();
+        ASSERT_EQ(BE_SQLITE_OK, b2->AbandonChanges());
+
+        // b1 then imports something else through the same sync db and pushes.
+        auto& sync1 = b1->Schemas().GetSchemaSync();
+        ASSERT_EQ(SchemaSync::Status::OK, sync1.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b1, { moves[2].m_schema }).Refs(), SchemaManager::SchemaImportOptions::None))
+            << context.c_str();
+        ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+        b1->PullMergePush(context.c_str());
+
+        // b2 comes back and has to end up level with everyone, its abandoned work notwithstanding.
+        b2->PullMergePush("b2 rejoins");
+        MaterializeAfterMerge(*b2);
+        b3->PullMergePush("b3 catches up");
+        MaterializeAfterMerge(*b3);
+
+        ExpectECTablesIdentical(*b2, *b1, context.c_str());
+        ExpectECTablesIdentical(*b3, *b1, context.c_str());
+        ExpectPhysicalSchemaIdentical(*b2, *b1, context.c_str());
+        ExpectPhysicalSchemaIdentical(*b3, *b1, context.c_str());
+        VerifyFileIsSound(*b2, context.c_str());
+        }
     }
 
 END_ECDBUNITTESTS_NAMESPACE

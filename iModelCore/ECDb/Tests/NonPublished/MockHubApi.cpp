@@ -1,4 +1,5 @@
 #include "MockHubApi.h"
+#include <ECDb/JsonAdapter.h>
 #include <numeric>
 #include <iostream>
 
@@ -349,6 +350,123 @@ void SchemaSyncTestFixture::ExpectNoForeignKeyViolations(ECDbR db, Utf8CP contex
             context, stmt.GetValueText(0), stmt.GetValueInt64(1), stmt.GetValueText(2), stmt.GetValueInt(3));
     }
     EXPECT_EQ(0, violations) << context << ": rows were copied whose parents are missing";
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t SchemaSyncTestFixture::InstanceCensus::GetInstanceCount() const {
+    size_t count = 0;
+    for (auto const& entry : m_rowsByClass)
+        count += entry.second.size();
+    return count;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaSyncTestFixture::InstanceCensus SchemaSyncTestFixture::InstanceCensus::Take(ECDbCR db) {
+    InstanceCensus census;
+    for (ECSchemaCP schema : db.Schemas().GetSchemas(true)) {
+        if (schema == nullptr)
+            continue;
+
+        for (ECClassCP ecClass : schema->GetClasses()) {
+            if (ecClass == nullptr || (!ecClass->IsEntityClass() && !ecClass->IsRelationshipClass()))
+                continue;
+
+            // An abstract class with no table of its own, or one the mapper was told to skip, has
+            // nothing to read. Asking anyway would fail to prepare and say nothing useful.
+            // GetStrategy asserts on an empty result, so the empty check has to come first.
+            const auto mapStrategy = db.Schemas().GetClassMapStrategy(schema->GetName(), ecClass->GetName());
+            if (mapStrategy.IsEmpty() || mapStrategy.GetStrategy() == ClassMapStrategy::MapStrategy::NotMapped)
+                continue;
+
+            ECSqlStatement stmt;
+            const Utf8PrintfString ecsql("SELECT * FROM ONLY [%s].[%s]", schema->GetName().c_str(), ecClass->GetName().c_str());
+            if (stmt.Prepare(db, ecsql.c_str()) != ECSqlStatus::Success)
+                continue;
+
+            JsonECSqlSelectAdapter adapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
+            bmap<Utf8String, Utf8String> rows;
+            while (stmt.Step() == BE_SQLITE_ROW) {
+                Json::Value row;
+                if (SUCCESS != adapter.GetRow(row))
+                    continue;
+
+                // The id is the identity across the change - every other member is what we compare.
+                const Utf8String id = row.isMember(ECJsonSystemNames::Id()) ? row[ECJsonSystemNames::Id()].asString() : Utf8String();
+                if (id.empty())
+                    continue;
+
+                rows[id] = row.ToString();
+            }
+
+            if (!rows.empty())
+                census.m_rowsByClass[ecClass->GetFullName()] = rows;
+        }
+    }
+    return census;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void SchemaSyncTestFixture::ExpectCensusPreserved(InstanceCensus const& before, InstanceCensus const& after, Utf8CP context,
+                                                  std::vector<Utf8String> const& removedProperties) {
+    auto isRemovalAllowed = [&removedProperties](Utf8StringCR className, Utf8StringCR property) {
+        // The class name in the census is fully qualified; callers name the removal the way they
+        // wrote it in the schema, so match on the unqualified end.
+        for (auto const& allowed : removedProperties) {
+            const auto dot = allowed.find_last_of('.');
+            if (dot == Utf8String::npos)
+                continue;
+            if (!property.EqualsIAscii(allowed.substr(dot + 1).c_str()))
+                continue;
+            if (className.ContainsI(allowed.substr(0, dot).c_str()))
+                return true;
+        }
+        return false;
+    };
+
+    for (auto const& classEntry : before.m_rowsByClass) {
+        Utf8StringCR className = classEntry.first;
+        const auto afterClass = after.m_rowsByClass.find(className);
+        if (afterClass == after.m_rowsByClass.end()) {
+            ADD_FAILURE() << context << ": every instance of " << className.c_str() << " is gone (" << classEntry.second.size() << " of them)";
+            continue;
+        }
+
+        for (auto const& rowEntry : classEntry.second) {
+            const auto afterRow = afterClass->second.find(rowEntry.first);
+            if (afterRow == afterClass->second.end()) {
+                ADD_FAILURE() << context << ": " << className.c_str() << " instance " << rowEntry.first.c_str() << " is gone";
+                continue;
+            }
+
+            if (rowEntry.second.Equals(afterRow->second))
+                continue;
+
+            Json::Value beforeRow, afterRowJson;
+            if (!Json::Reader::Parse(rowEntry.second, beforeRow) || !Json::Reader::Parse(afterRow->second, afterRowJson)) {
+                ADD_FAILURE() << context << ": " << className.c_str() << " instance " << rowEntry.first.c_str() << " changed and could not be parsed for a diff";
+                continue;
+            }
+
+            for (auto const& member : beforeRow.getMemberNames()) {
+                if (!afterRowJson.isMember(member)) {
+                    if (!isRemovalAllowed(className, member))
+                        ADD_FAILURE() << context << ": " << className.c_str() << "." << member.c_str() << " is gone from instance " << rowEntry.first.c_str();
+                    continue;
+                }
+                if (beforeRow[member] != afterRowJson[member]) {
+                    ADD_FAILURE() << context << ": " << className.c_str() << "." << member.c_str() << " changed on instance " << rowEntry.first.c_str()
+                        << "\n    before: " << beforeRow[member].ToString().c_str()
+                        << "\n     after: " << afterRowJson[member].ToString().c_str();
+                }
+            }
+        }
+    }
 }
 
 /*---------------------------------------------------------------------------------**//**

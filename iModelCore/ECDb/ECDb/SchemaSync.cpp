@@ -598,6 +598,8 @@ Utf8String SchemaSync::GetStatusAsString(Status status) {
             return "ERROR_SYNC_SQL_SCHEMA";
         case Status::ERROR_DATA_TRANSFORM_REQUIRED:
             return "ERROR_DATA_TRANSFORM_REQUIRED";
+        case Status::ERROR_DATA_DELETION_REQUIRED:
+            return "ERROR_DATA_DELETION_REQUIRED";
         case Status::ERROR_SYNC_DB_CHANGED:
             return "ERROR_SYNC_DB_CHANGED";
         case Status::ERROR_PROFILE_VERSION_MISMATCH:
@@ -1720,6 +1722,12 @@ SchemaSync::Status SchemaSync::ImportIntoSyncDb(SyncDbUri const& syncDbUri, bvec
         LOG.info("SchemaSync::ImportSchemas(): The import would have to move data, which the additive path does not do.");
         syncConn.AbandonChanges();
         return Status::ERROR_DATA_TRANSFORM_REQUIRED;
+    }
+
+    if (importRc == SchemaImportResult::ERROR_DATA_DELETION_REQUIRED) {
+        LOG.info("SchemaSync::ImportSchemas(): The import would destroy data, which the additive path does not do.");
+        syncConn.AbandonChanges();
+        return Status::ERROR_DATA_DELETION_REQUIRED;
     }
 
     if (!importRc.IsOk()) {

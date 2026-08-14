@@ -257,6 +257,31 @@ struct SchemaSyncTestFixture : public ECDbTestFixture
     //! SaveChanges with nothing to say about its cause. This names the offending row first.
     static void ExpectNoForeignKeyViolations(ECDbR db, Utf8CP context);
 
+    //! Every instance in a file, as JSON, keyed by class and instance id.
+    //!
+    //! Take one before a schema change and one after, then ExpectCensusPreserved. The oracles above
+    //! all read metadata or DDL; this is the only one that reads the data itself, which is what the
+    //! update path claims never to touch.
+    struct InstanceCensus final {
+        //! class full name -> instance id (hex) -> the row as JSON
+        bmap<Utf8String, bmap<Utf8String, Utf8String>> m_rowsByClass;
+
+        //! Read every mapped entity and relationship class in the file. Classes with no instances
+        //! contribute nothing, so the standard schemas cost a prepare and no more.
+        static InstanceCensus Take(ECDbCR db);
+        size_t GetInstanceCount() const;
+        size_t GetClassCount() const { return m_rowsByClass.size(); }
+    };
+
+    //! Every instance in @p before must still be in @p after with the same values.
+    //!
+    //! Properties that appeared since read null and are ignored, so a test that adds a property does
+    //! not have to describe what it added. Properties that disappeared are reported unless named in
+    //! @p removedProperties as "ClassName.PropertyName". Reports the class, instance id and property
+    //! of each divergence.
+    static void ExpectCensusPreserved(InstanceCensus const& before, InstanceCensus const& after, Utf8CP context,
+                                      std::vector<Utf8String> const& removedProperties = {});
+
     void TearDown() override;
 
     SchemaSync::SyncDbUri GetSyncDbUri()

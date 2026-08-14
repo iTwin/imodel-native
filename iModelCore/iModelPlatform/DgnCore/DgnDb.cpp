@@ -305,6 +305,8 @@ DbResult DgnDb::SchemaStatusToDbResult(SchemaStatus status, bool isUpgrade)
             return BE_SQLITE_ERROR_SchemaUpgradeRecommended;
        case SchemaStatus::DataTransformRequired:
            return BE_SQLITE_ERROR_DataTransformRequired;
+        case SchemaStatus::DataDeletionRequired:
+            return BE_SQLITE_ERROR_DataDeletionRequired;
         default:
             return isUpgrade ? BE_SQLITE_ERROR_SchemaUpgradeFailed : BE_SQLITE_ERROR_SchemaImportFailed;
         }
