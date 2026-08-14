@@ -449,9 +449,10 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(libprefix)iTwinSQLiteEC$(lib
                             $(ContextSubpartsLibs)$(libprefix)iTwinNapi$(libext)
 
 %if $(TARGET_PLATFORM)=="MacOS" || $(TARGET_PLATFORM)=="iOS"
+    # curl's Apple SecTrust certificate verification (was previously rustls).
     LINKER_LIBRARIES + -framework Security
+    LINKER_LIBRARIES + -framework CoreServices
     LINKER_LIBRARIES + -framework Foundation
-    LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)rustls$(stlibext)
 %endif
 
 %if $(TARGET_PLATFORM)!="Android" && $(TARGET_PLATFORM)!="Linux"

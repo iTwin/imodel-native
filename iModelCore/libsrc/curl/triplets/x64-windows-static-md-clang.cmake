@@ -1,11 +1,12 @@
 # To force a rebuild and a fresh vcpkg binary-cache entry for this triplet, increment the
 # number below. Triplet file contents feed into vcpkg's ABI hash, so bumping this value
 # invalidates the cached binaries and forces the library to be rebuilt.
-# CACHE_BUST = 1
+# CACHE_BUST = 0
 
-# x64-windows-static-clang: clang-cl variant of x64-windows-static, built with BentleyBuild's
-# LLVM clang-cl via the shared chainload toolchain (../../windows-clang-cl.toolchain.cmake) so
-# the clang (WINDOWS_CLANG) toolset gets its own vcpkg ABI hash, separate from the MSVC build.
+# x64-windows-static-md-clang: clang-cl variant of x64-windows-static-md (static library
+# linkage, dynamic CRT /MD), built with BentleyBuild's LLVM clang-cl via the shared chainload
+# toolchain (../../windows-clang-cl.toolchain.cmake) so the clang (WINDOWS_CLANG) toolset gets
+# its own vcpkg ABI hash, separate from the MSVC build.
 set(VCPKG_TARGET_ARCHITECTURE x64)
 set(VCPKG_CRT_LINKAGE dynamic)
 set(VCPKG_LIBRARY_LINKAGE static)
@@ -21,11 +22,3 @@ set(VCPKG_LOAD_VCVARS_ENV ON)
 # vcpkg scrubs the build environment; whitelist LLVM_DIR so the chainload toolchain can locate
 # clang-cl via $ENV{LLVM_DIR} in every phase (detect_compiler, compiler-ABI try_compile, build).
 set(VCPKG_ENV_PASSTHROUGH "LLVM_DIR")
-
-# Build BOTH configs, forcing the vcpkg Debug config onto the release CRT (see
-# x64-windows-static.cmake for the full CRT / iterator-debug-level rationale). clang-cl accepts
-# -D_ITERATOR_DEBUG_LEVEL=0 and honors a cache-set CMAKE_MSVC_RUNTIME_LIBRARY the same way.
-set(VCPKG_CMAKE_CONFIGURE_OPTIONS_DEBUG
-    "-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreadedDLL")
-set(VCPKG_CXX_FLAGS_DEBUG "${VCPKG_CXX_FLAGS_DEBUG} -D_ITERATOR_DEBUG_LEVEL=0")
-set(VCPKG_C_FLAGS_DEBUG   "${VCPKG_C_FLAGS_DEBUG} -D_ITERATOR_DEBUG_LEVEL=0")

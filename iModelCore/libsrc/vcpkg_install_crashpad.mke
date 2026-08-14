@@ -8,8 +8,8 @@
 
 %include mdl.mki
 
-crashpadDir = $(_MakeFilePath)crashpad/
-installRoot = $(OutputRootDir)vcpkg_installed/crashpad/
+crashpadDir = $(_MakeFilePath)crashpad
+installRoot = $(OutputRootDir)vcpkg_installed/crashpad
 
 # This library's base triplet sets explicit -RTC flags, so use the veracode overlay
 # triplet (which omits them) for veracode builds.
@@ -18,7 +18,7 @@ vcpkgUseVeracodeTriplet = 1
 
 always:
 %if defined (winNT)
-    $(_MakeFilePath)vcpkg_run_install.bat $(crashpadDir) $(installRoot) $(vcpkgTriplet)
+    powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$(_MakeFilePath)vcpkg_run_install.ps1" "$(crashpadDir)" "$(installRoot)" "$(vcpkgTriplet)"
 %else
     $(_MakeFilePath)vcpkg_run_install.sh $(crashpadDir) $(installRoot) $(vcpkgTriplet)
 %endif
