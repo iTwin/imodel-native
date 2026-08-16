@@ -825,6 +825,10 @@ SchemaSync::Status SchemaSync::Init(SyncDbUri const& syncDbUri, Utf8StringCR con
     ECDB_PERF_LOG_SCOPE("Initializing schema sync db");
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaSync::Init");
     BeMutexHolder holder(m_conn.GetImpl().GetMutex());
+    // SQLite refuses to detach a db while this
+    // connection still holds a cursor open - which the instance reader, the instance writer and the
+    // statement cache all do after ordinary element work.
+    m_conn.ClearECDbCache();
     BeginModifiedRowCount();
     const auto rc = InitInternal(syncDbUri, containerId, overrideContainer);
     EndModifiedRowCount();
@@ -1938,6 +1942,8 @@ SchemaSync::Status SchemaSync::OverwriteSyncDb(SyncDbUri const& syncDbUri) {
     ECDB_PERF_LOG_SCOPE("Overwriting the schema sync db from this briefcase");
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaSync::OverwriteSyncDb");
     BeMutexHolder holder(m_conn.GetImpl().GetMutex());
+    // Same as SchemaSync::Init: MirrorToSyncDb detaches, and an open cursor makes that fail.
+    m_conn.ClearECDbCache();
 
     const auto effectiveSyncDbUri = syncDbUri.IsEmpty() ? GetDefaultSyncDbUri() : syncDbUri;
     const auto vrc = VerifySyncDb(effectiveSyncDbUri, false, false);

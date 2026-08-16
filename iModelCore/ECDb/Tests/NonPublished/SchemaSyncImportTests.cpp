@@ -1379,7 +1379,7 @@ TEST_F(SchemaSyncImportTestFixture, ConcurrentImportsThroughSyncDbSameSchemaDive
     });
 
     // 2) The second briefcase imports the older 1.0.1 through the same sync db, without pushing. The
-    //    sync db already holds 1.0.2, so this is a downgrade. What happens is b2 gets schema version 1.0.2. Is this a bug?
+    //    sync db already holds 1.0.2, so this is a downgrade. What happens is b2 gets schema version 1.0.2.
     EXPECT_EQ(SchemaImportResult::OK, ImportSchema(*b2, v101, SchemaManager::SchemaImportOptions::None, syncDb.GetSyncDbUri()))
         << "the sync db accepted an older schema version over a newer one";
     ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
@@ -1848,6 +1848,47 @@ TEST_F(SchemaSyncImportTestFixture, EnablingSchemaSyncOnABriefcaseWithSchemasAnd
         << "enabling schema sync lost data the briefcase already held";
     ExpectECTablesIdentical(*b1, *b2, "after schema sync was enabled on a briefcase that already had schemas");
     ExpectPhysicalSchemaIdentical(*b1, *b2, "after schema sync was enabled on a briefcase that already had schemas");
+    }
+
+// ---------------------------------------------------------------------------------------
+// The entry points that seed the sync db attach it and detach it again, and SQLite refuses to
+// detach a db while this connection holds a cursor open. The instance reader parks a prepared
+// statement on the row it last read, so any caller that read an instance before enabling sync has
+// one open. Init and OverwriteSyncDb clear the ECDb cache for that reason.
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, EnablingSchemaSyncWhileTheInstanceReaderHoldsARow)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-init-reader-parked");
+
+    auto b1 = hub.CreateBriefcase();
+    ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*b1, MachinerySchema("01.00.00", false)));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+
+    ECInstanceKey key;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*b1, "INSERT INTO mch.Machine(name) VALUES('pump')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    }
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    b1->PullMergePush("Machinery, and one machine");
+
+    const auto position = InstanceReader::Position(key.GetInstanceId(), key.GetClassId());
+    ASSERT_TRUE(b1->GetInstanceReader().Seek(position, [](InstanceReader::IRowContext const& row, auto) {
+        EXPECT_FALSE(row.GetJson().Stringify().empty());
+    }));
+
+    ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(syncDb.GetSyncDbUri(), "reader-parked-container", false));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    b1->PullMergePush("enable schema sync");
+
+    syncDb.WithReadOnly([&](ECDbR sync) {
+        EXPECT_TRUE(HasSchema(sync, "Machinery")) << "the sync db was not seeded with the schemas the briefcase already had";
+    });
+    EXPECT_STREQ("pump", ReadStringProperty(*b1, "SELECT name FROM mch.Machine").c_str())
+        << "enabling schema sync lost data the briefcase already held";
     }
 
 // ---------------------------------------------------------------------------------------
