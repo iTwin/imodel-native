@@ -1579,13 +1579,17 @@ SchemaSync::Status SchemaSync::AdoptSchemas(SyncDbUri const& syncDbUri, bvector<
         return cleanup(Status::ERROR);
     }
 
-    // Materialise the physical tables and indexes the adopted rows imply. This is the same step a
-    // pull ends with, and it is why no DDL has to travel between the two files.
-    const auto updateRc = UpdateDbSchema();
-    if (updateRc != Status::OK) {
+    // Materialise the physical tables and indexes the adopted rows imply, and track the DDL so it
+    // travels in this briefcase's changeset the way an ordinary import's does. Nothing else on this
+    // path emits DDL - the import itself ran in the sync db, which holds no data tables - so this is
+    // where a schema changeset produced under schema sync gets its table definitions. A briefcase
+    // that already built the same tables ignores the redundant DDL: TxnManager::ApplyDdlChanges is
+    // best effort, and ECDb::_AfterSchemaChangeSetApplied rebuilds from ec_ either way.
+    const auto kDoNotTrackDdlChanges = false;
+    if (SUCCESS != mainDisp.UpdateDbSchema(kDoNotTrackDdlChanges)) {
         LOG.error("SchemaSync::AdoptSchemas(): Failed to update db schema.");
         m_conn.AbandonChanges();
-        return cleanup(updateRc);
+        return cleanup(Status::ERROR);
     }
 
     // Adopting can push a class that already holds data into an overflow table. An ordinary import

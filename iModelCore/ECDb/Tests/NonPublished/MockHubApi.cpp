@@ -1644,10 +1644,14 @@ static DbResult ApplySchemaChangesInOrder(ECDbChangeSet& changeset, ECDbR db, Ap
 
 /*---------------------------------------------------------------------------------**//**
 * Applies one changeset the way TxnManager::ApplyChanges does: schema rows first and in opcode
-* order, data rows after.
+* order, then the post-schema hook, then the data rows. A briefcase rebuilds its tables from the
+* ec_ rows a changeset carries, so the hook has to run between the two passes or the data rows
+* arrive at a table that does not exist yet and are dropped. That holds even when the changeset
+* also carries DDL, since applying it is best effort. Merge only, matching TxnManager gating it on
+* TxnAction::Merge: reversing and reinstating local txns leave the tables alone.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DbResult ApplyOneChangeset(ECDbChangeSet& changeset, ECDbR db, bool invert) {
+static DbResult ApplyOneChangeset(ECDbChangeSet& changeset, ECDbR db, bool invert, bool isMerge) {
     auto args = [&]() { return ApplyChangesArgs::Default().SetInvert(invert).SetIgnoreNoop(true); };
     if (!changeset.HasSchemaChanges())
         return changeset.ApplyChanges(db, args());
@@ -1655,6 +1659,16 @@ static DbResult ApplyOneChangeset(ECDbChangeSet& changeset, ECDbR db, bool inver
     auto rc = ApplySchemaChangesInOrder(changeset, db, args().ApplyOnlySchemaChanges());
     if (rc != BE_SQLITE_OK)
         return rc;
+
+    if (isMerge) {
+        rc = db.AfterSchemaChangeSetApplied();
+        if (rc != BE_SQLITE_OK) {
+            printf("[mockhub] AfterSchemaChangeSetApplied failed on '%s': %s (%s)\n", changeset.GetOperation().c_str(),
+                BeSQLiteLib::GetErrorName(rc), db.GetLastError().c_str());
+            return rc;
+        }
+    }
+
     return changeset.ApplyChanges(db, args().ApplyOnlyDataChanges());
 }
 
@@ -1687,7 +1701,7 @@ DbResult TrackedECDb::RebaseOntoIncoming(std::vector<ECDbChangeSet*> const& inco
 
     for (auto it = localChangesets.rbegin(); it != localChangesets.rend(); ++it) {
         (*it)->SetECDb(*this);
-        auto rc = ApplyOneChangeset(**it, *this, true);
+        auto rc = ApplyOneChangeset(**it, *this, true, false);
         if (rc != BE_SQLITE_OK) {
             ReportRebaseFailure(*this, "reverse", **it, rc);
             return rc;
@@ -1704,17 +1718,12 @@ DbResult TrackedECDb::RebaseOntoIncoming(std::vector<ECDbChangeSet*> const& inco
         for (auto& ddl : changesetToApply->GetDDLs())
             TryExecuteSql(ddl.c_str());
 
-        auto rc = ApplyOneChangeset(*changesetToApply, *this, false);
+        const auto kIsMerge = true;
+        auto rc = ApplyOneChangeset(*changesetToApply, *this, false, kIsMerge);
         if (rc != BE_SQLITE_OK) {
             ReportRebaseFailure(*this, "apply incoming", *changesetToApply, rc);
             return rc;
         }
-    }
-
-    auto rc = AfterSchemaChangeSetApplied();
-    if (rc != BE_SQLITE_OK) {
-        printf("[mockhub] rebase failed in AfterSchemaChangeSetApplied: %s (%s)\n", BeSQLiteLib::GetErrorName(rc), GetLastError().c_str());
-        return rc;
     }
 
     // TxnManager runs the data-side hook too. It refreshes the profile version and resets the instance
@@ -1725,7 +1734,7 @@ DbResult TrackedECDb::RebaseOntoIncoming(std::vector<ECDbChangeSet*> const& inco
         incomingChangedSchema = incomingChangedSchema || changeset->HasSchemaChanges();
 
     const auto kDeferInstanceUpgrade = true;
-    rc = AfterDataChangeSetApplied(incomingChangedSchema, kDeferInstanceUpgrade);
+    auto rc = AfterDataChangeSetApplied(incomingChangedSchema, kDeferInstanceUpgrade);
     if (rc != BE_SQLITE_OK) {
         printf("[mockhub] rebase failed in AfterDataChangeSetApplied: %s (%s)\n", BeSQLiteLib::GetErrorName(rc), GetLastError().c_str());
         return rc;
@@ -1736,7 +1745,7 @@ DbResult TrackedECDb::RebaseOntoIncoming(std::vector<ECDbChangeSet*> const& inco
     for (auto& local : localChangesets) {
         local->SetECDb(*this);
         local->DetermineSchemaSyncPrecedence();
-        rc = ApplyOneChangeset(*local, *this, false);
+        rc = ApplyOneChangeset(*local, *this, false, false);
         if (rc == BE_SQLITE_OK)
             rc = local->ApplySupersedingRows(*this);
         if (rc == BE_SQLITE_OK) {

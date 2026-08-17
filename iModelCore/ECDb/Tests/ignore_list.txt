@@ -11,8 +11,6 @@
 #   makes that work. A test belongs here when it covers one more permutation of behaviour the
 #   core tier already covers. The behaviour itself stays in the core tier.
 #
-#   Currently: SchemaSyncExtendedTests (157 tests) and SchemaSyncImportExtendedTests. Together
-#   ~35s of the ECDb suite's ~130s, so a plain run is about 27% shorter.
 *ExtendedTests.*
 
 #----------------------------------------------------------------------------------------
