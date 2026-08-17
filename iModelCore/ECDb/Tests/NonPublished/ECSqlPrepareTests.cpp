@@ -1730,7 +1730,9 @@ TEST_F(ECSqlSelectPrepareTests, WhereBasics)
     // a parenthesized qualified name that resolves to neither a class nor an existing property is an
     // error: it is not a class (so it is not a type predicate) and it falls through
     // TryParseParenthesizedNameAsValueExp to a PropertyNameExp that then fails property resolution -
-    // it is not silently accepted.
+    // it is not silently accepted. The exact failure mode (a property/enumeration resolution issue, not
+    // the pre-fix class-resolution issue) is asserted on the reported issue message in
+    // ECSqlStatementTests::IsAndIsNotOperatorNullSafeSemantics.
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE I IS (P.NonExistentProp)"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P p WHERE p.I IS NOT (p.NonExistentProp)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE L < 3.14"));

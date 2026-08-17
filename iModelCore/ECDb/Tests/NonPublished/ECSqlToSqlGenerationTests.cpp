@@ -1365,5 +1365,10 @@ TEST_F(ECSqlToSqlGenerationTests, IsAndIsNotOperatorBetweenOperands)
     }
     EXPECT_TRUE(GetHelper().ECSqlToSql("SELECT 1 FROM ts.Foo WHERE ECClassId IS (ts.Foo, ts.Bar)").Contains("ec_cache_ClassHierarchy"));
     EXPECT_TRUE(GetHelper().ECSqlToSql("SELECT 1 FROM ts.Foo WHERE ECClassId IS NOT (ts.Foo, ts.Bar)").Contains("ec_cache_ClassHierarchy"));
+    // the distinct 'SQL_TOKEN_ALL table_node' grammar alternative: ALL is explicitly polymorphic, so it
+    // stays on the type-predicate path and resolves through ec_cache_ClassHierarchy
+    EXPECT_TRUE(GetHelper().ECSqlToSql("SELECT 1 FROM ts.Foo WHERE ECClassId IS (ALL ts.Foo)").Contains("ec_cache_ClassHierarchy"));
+    EXPECT_TRUE(GetHelper().ECSqlToSql("SELECT 1 FROM ts.Foo WHERE ECClassId IS NOT (ALL ts.Foo)").Contains("ec_cache_ClassHierarchy"));
+    EXPECT_TRUE(GetHelper().ECSqlToSql("SELECT 1 FROM ts.Foo WHERE ECClassId IS (ALL ts.Foo, ALL ts.Bar)").Contains("ec_cache_ClassHierarchy"));
     }
 END_ECDBUNITTESTS_NAMESPACE

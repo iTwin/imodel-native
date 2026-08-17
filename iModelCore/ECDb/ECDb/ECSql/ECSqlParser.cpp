@@ -3516,13 +3516,18 @@ BentleyStatus ECSqlParser::ParseTypePredicate(std::unique_ptr<ValueExp>& valueEx
 // 'valueExp' is left null - so the caller keeps the type-predicate behavior - when the predicate uses
 // an ONLY/ALL prefix, a comma-separated type list, the 'schema:class' (colon) form, or a name that
 // does resolve to a class (e.g. 'ECClassId IS (ts.Foo)' or 'ECClassId IS (main.ts.Foo)').
+// The return value only reports a hard parse failure; "this is not a reinterpretable name" is signalled
+// by SUCCESS with a null 'valueExp' (the caller then keeps the type-predicate path).
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECSqlParser::TryParseParenthesizedNameAsValueExp(std::unique_ptr<ValueExp>& valueExp, OSQLParseNode const* typePredicateNode) const
     {
     valueExp = nullptr;
     if (!SQL_ISRULE(typePredicateNode, type_predicate))
+        {
+        BeAssert(false && "Invalid grammar. Expecting type_predicate");
         return SUCCESS;
+        }
 
     OSQLParseNode const* type_list = typePredicateNode->getChild(1/*type_list*/);
     if (type_list->count() != 1)
@@ -3535,7 +3540,10 @@ BentleyStatus ECSqlParser::TryParseParenthesizedNameAsValueExp(std::unique_ptr<V
 
     OSQLParseNode const* tableNode = type_list_item->getChild(1/*table_node*/);
     if (!SQL_ISRULE(tableNode, table_node))
+        {
+        BeAssert(false && "Invalid grammar. Expecting table_node as second child of type_list_item");
         return SUCCESS;
+        }
 
     OSQLParseNode const* nameNode = tableNode->getChild(0);
     PropertyPath propertyPath;
@@ -3563,7 +3571,10 @@ BentleyStatus ECSqlParser::TryParseParenthesizedNameAsValueExp(std::unique_ptr<V
         Utf8StringCR tableSpaceName = nameNode->getChild(0)->getTokenValue();
         OSQLParseNode const* qualifiedNameNode = nameNode->getChild(2/*qualified_class_name*/);
         if (!SQL_ISRULE(qualifiedNameNode, qualified_class_name))
+            {
+            BeAssert(false && "Invalid grammar. Expecting qualified_class_name as third child of tablespace_qualified_class_name");
             return SUCCESS;
+            }
 
         // The 'tablespace.schema:class' (colon) form is class-only syntax and is never a property path.
         if (!qualifiedNameNode->getChild(1/*'.' or ':'*/)->getTokenValue().Equals("."))

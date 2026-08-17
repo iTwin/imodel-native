@@ -4311,13 +4311,29 @@ TEST_F(ECSqlStatementTestFixture, IsAndIsNotOperatorNullSafeSemantics)
     EXPECT_NE(ECSqlStatus::Success, bad.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE S1 IS P1"));
 
     // a parenthesized qualified name that resolves to neither a class nor an existing property/enumerator
-    // is rejected at prepare time (it falls through to a property reference that fails to resolve):
+    // is rejected at prepare time (it falls through to a property reference that fails to resolve).
+    // The reported issue must be the *property/enumeration* resolution failure - not the pre-fix
+    // "ECClass ... does not exist or could not be loaded" class-resolution failure, which would also
+    // yield a non-success prepare status and so silently hide a regression.
+    TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
+
     ECSqlStatement badProp;
     EXPECT_NE(ECSqlStatus::Success, badProp.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE S1 IS (Foo.NonExistentProp)"));
+    Utf8String badPropMessage = issueListener.GetLastMessage();
+    EXPECT_TRUE(badPropMessage.Contains("No property or enumeration found")) << badPropMessage;
+    EXPECT_TRUE(badPropMessage.Contains("NonExistentProp")) << badPropMessage;
+    EXPECT_FALSE(badPropMessage.Contains("does not exist or could not be loaded")) << "must not be the class-resolution failure: " << badPropMessage;
+    issueListener.ClearIssues();
+
     // enum whose enumerator does not exist: the enum is found but the enumerator is not, so it is not a
-    // silent pass either
+    // silent pass either - and it likewise fails as a property/enumeration resolution, not a class lookup
     ECSqlStatement badEnum;
     EXPECT_NE(ECSqlStatus::Success, badEnum.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE Status IS (ts.Status.DoesNotExist)"));
+    Utf8String badEnumMessage = issueListener.GetLastMessage();
+    EXPECT_TRUE(badEnumMessage.Contains("No property or enumeration found")) << badEnumMessage;
+    EXPECT_TRUE(badEnumMessage.Contains("DoesNotExist")) << badEnumMessage;
+    EXPECT_FALSE(badEnumMessage.Contains("does not exist or could not be loaded")) << "must not be the class-resolution failure: " << badEnumMessage;
     }
 
 //---------------------------------------------------------------------------------------
