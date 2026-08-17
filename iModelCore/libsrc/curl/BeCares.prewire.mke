@@ -1,0 +1,21 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+# BeCares.prewire.mke - Stage the c-ares license notice from the vcpkg build.
+#
+# c-ares is only requested from vcpkg -- and only merged into iTwinCurl -- on macOS and Linux (see
+# vcpkg.json and BeCurl.mke), so share/c-ares/copyright exists only on those platforms. The
+# CAresNotice part that runs this makefile is gated to them for that reason.
+#---------------------------------------------------------------------------------------------
+%include mdl.mki
+
+curlDir   = $(_MakeFilePath)
+libsrcDir = $(curlDir)../
+
+%include $(libsrcDir)vcpkg.mki
+
+vcpkgTripletDir = $(OutputRootDir)vcpkg_installed/curl/$(vcpkgTriplet)/
+
+always:
+    ~linkfile "$(BuildContext)Delivery/c-ares-license.txt=$(vcpkgTripletDir)share/c-ares/copyright"

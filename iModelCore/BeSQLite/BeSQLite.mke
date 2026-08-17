@@ -119,9 +119,10 @@ BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(libprefix)iTwinIcu4c$(libext)
 
 
 %if $(TARGET_PLATFORM)=="MacOS" || $(TARGET_PLATFORM)=="iOS"
+    # curl's Apple SecTrust certificate verification (was previously rustls).
     BeSQLiteRequiredLibs + -framework Security
+    BeSQLiteRequiredLibs + -framework CoreServices
     BeSQLiteRequiredLibs + -framework Foundation
-    BeSQLiteRequiredLibs + $(ContextSubPartsStaticLibs)$(stlibprefix)rustls$(stlibext)
 %endif
 
 %if $(TARGET_PLATFORM)!="Android" && $(TARGET_PLATFORM)!="Linux"

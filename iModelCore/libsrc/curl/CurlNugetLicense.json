@@ -12,11 +12,21 @@
         "authors": "",
         "copyright": "Daniel Stenberg, daniel@haxx.se, and many contributors, see the THANKS file.",
         "description": "The multiprotocol file transfer library.",
-        "homepage": "https://curl.haxx.se/libcurl",
-        "licenseUrl": "https://curl.haxx.se/docs/copyright.html",
+        "homepage": "https://curl.se/libcurl",
+        "licenseUrl": "https://curl.se/docs/copyright.html",
         "name": "Curl",
         "SPDX-ID": "curl",
-        "version": "7.74.0"
+        "version": "8.21.0"
+        },
+        {
+        "authors": "",
+        "copyright": "1998 Massachusetts Institute of Technology; 2007 - 2023 Daniel Stenberg with many contributors, see the AUTHORS file.",
+        "description": "An asynchronous DNS resolver library, statically merged into iTwinCurl on macOS and Linux.",
+        "homepage": "https://c-ares.org",
+        "licenseUrl": "https://c-ares.org/license.html",
+        "name": "c-ares",
+        "SPDX-ID": "MIT",
+        "version": "1.34.8"
         }
     ]
 }
