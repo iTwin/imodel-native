@@ -193,6 +193,9 @@ struct InstanceWriter::Impl final {
 private:
     MruStatementCache m_cache;
     Utf8String m_error;
+    // Detail of the UNIQUE constraint violation reported by the most recent write, or null. See
+    // InstanceWriter::TryGetLastWriteConflictDetail.
+    BeJsDocument m_conflictDetail;
 
     static ECSqlStatus BindDataProperty(BindContext& ctx, ECPropertyCR propMap, IECSqlBinder& binder, BeJsConst val);
     static ECSqlStatus BindNavigationProperty(BindContext& ctx, NavigationECPropertyCR prop, IECSqlBinder& binder, BeJsConst val);
@@ -211,6 +214,13 @@ private:
     // (classId, id). Returns the JSON member names (from checkBindings) of the mismatched properties, or all
     // of checkBindings' JSON member names if the row itself does not exist.
     static std::vector<Utf8String> FindConflictingProperties(BindContext& ctx, ECClassId classId, ECInstanceId id, BeJsConst expectedOldValues, std::vector<CheckPropertyBinding> const& checkBindings);
+    // Binds one leaf column's value when looking up the row that a UNIQUE constraint violation collided with.
+    // Only primitive and navigation-id leaves are supported; anything else fails, which suppresses the lookup.
+    static ECSqlStatus BindConflictLookupValue(BindContext& ctx, SingleColumnDataPropertyMap const& leaf, IECSqlBinder& binder, BeJsConst val);
+    // Populates m_conflictDetail from the SQLite error text of a failed write. \p fallback supplies values for
+    // index columns absent from \p inst (an incremental update writes those from the row's current state), and
+    // \p excludeId, when valid, is the row being updated, which cannot be its own conflicting row.
+    void CaptureUniqueConstraintConflict(Options const& options, ClassMapCR classMap, BeJsConst inst, BeJsConst fallback, Utf8StringCR sqliteError, ECInstanceId excludeId);
 
 public:
     Impl(ECDbCR ecdb, uint32_t cacheSize) : m_cache(ecdb, cacheSize) {}
@@ -221,6 +231,7 @@ public:
     ~Impl() = default;
     ECDbCR GetECDb() const { return m_cache.GetECDb(); }
     Utf8StringCR GetLastError() const { return m_error; }
+    bool TryGetLastWriteConflictDetail(BeJsValue out) const;
     DbResult Insert(BeJsConst inst, InsertOptions const& options, ECInstanceKey& key);
     DbResult Insert(BeJsConst inst, InsertOptions const& options);
     DbResult Update(BeJsConst inst, UpdateOptions const& options);

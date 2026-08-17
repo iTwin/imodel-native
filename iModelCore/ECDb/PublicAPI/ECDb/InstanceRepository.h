@@ -39,6 +39,9 @@ public:
 
     Utf8StringCR GetLastError() const { return m_lastError; }
 
+    //! See InstanceWriter::TryGetLastWriteConflictDetail.
+    ECDB_EXPORT bool TryGetLastWriteConflictDetail(BeJsValue out) const;
+
 };
 
 

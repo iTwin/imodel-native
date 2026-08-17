@@ -990,6 +990,23 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
     }
 
 //---------------------------------------------------------------------------------------
+// Throws the JS error for a failed instance write. On a UNIQUE constraint violation the error additionally
+// carries a "conflictDetail" object describing the violated constraint and the row that was collided with.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+[[noreturn]] static void ThrowInstanceWriteException(Napi::Env env, InstanceRepository const& repo, Utf8CP fallbackMessage, DbResult rc) {
+    auto err = Napi::Error::New(env, repo.GetLastError().empty() ? fallbackMessage : repo.GetLastError().c_str());
+    err.Value()["errorNumber"] = (int)rc;
+    iTwinErrorId{"be-sqlite", BeSQLiteLib::GetErrorName(rc)}.setITwinErrorId(err);
+
+    BeJsNapiObject conflictDetail(env);
+    if (repo.TryGetLastWriteConflictDetail(conflictDetail))
+        err.Value()["conflictDetail"] = (Napi::Object)conflictDetail;
+
+    throw err;
+}
+
+//---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 Napi::Value JsInterop::InsertInstance(ECDbR db, NapiInfoCR info) {
@@ -1008,10 +1025,7 @@ Napi::Value JsInterop::InsertInstance(ECDbR db, NapiInfoCR info) {
     ECInstanceKey newKey;
     auto rc = repo.Insert(inst, args, fmt, newKey);
     if (rc != BE_SQLITE_DONE) {
-        if (repo.GetLastError().empty()) {
-            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to insert instance", rc);
-        }
-        THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), repo.GetLastError().c_str(), rc);
+        ThrowInstanceWriteException(info.Env(), repo, "Failed to insert instance", rc);
     }
 
     return Napi::Value::From(info.Env(), newKey.GetInstanceId().ToHexStr());
@@ -1036,10 +1050,7 @@ Napi::Value JsInterop::UpdateInstance(ECDbR db, NapiInfoCR info) {
     std::vector<Utf8String> conflictingProperties;
     auto rc = repo.Update(inst, args, fmt, conflictingProperties);
     if (rc != BE_SQLITE_DONE) {
-        if (repo.GetLastError().empty()) {
-            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to update instance", rc);
-        }
-        THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), repo.GetLastError().c_str(), rc);
+        ThrowInstanceWriteException(info.Env(), repo, "Failed to update instance", rc);
     }
     bool updated = db.GetModifiedRowCount() > 0;
     if (args.isObjectMember("expectedOldValues")) {

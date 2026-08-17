@@ -464,6 +464,19 @@ export declare namespace IModelJsNative {
     classFullName: string;
   }
 
+  /**
+   * Attached as `conflictDetail` to the error thrown by `insertInstance`/`updateInstance` when the write failed
+   * with a UNIQUE constraint violation (`errorNumber` of `DbResult.BE_SQLITE_CONSTRAINT_UNIQUE`). SQLite reports
+   * only the first index that was violated, so exactly one constraint is ever described.
+   */
+  interface UniqueConstraintConflictDetail {
+    kind: "UniqueConstraint";
+    /** The JS-cased access strings of the properties making up the violated unique index. */
+    uniqueConstraintProperties: string[];
+    /** The pre-existing instance that the write collided with. Absent if it could not be identified. */
+    conflictingRow?: NodeJS.Dict<any>;
+  }
+
   enum FontType { TrueType = 1, Rsc = 2, Shx = 3 }
 
   interface FontFaceProps {
@@ -699,7 +712,9 @@ export declare namespace IModelJsNative {
     public getIModelProps(when?: "pullMerge"): IModelProps;
     public resolveInstanceKey(args: ResolveInstanceKeyArgs): ResolveInstanceKeyResult;
     public readInstance(key: NodeJS.Dict<any>, args: NodeJS.Dict<any>): NodeJS.Dict<any>;
+    /** Throws on failure. A UNIQUE constraint violation additionally carries a [[UniqueConstraintConflictDetail]] as `conflictDetail`. */
     public insertInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): Id64String;
+    /** Throws on failure. A UNIQUE constraint violation additionally carries a [[UniqueConstraintConflictDetail]] as `conflictDetail`. */
     public updateInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean | { updated: boolean, conflictingProperties: string[] };
     public deleteInstance(key: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean | { deleted: boolean, conflictingProperties: string[] };
     public patchJsonProperties(jsonProps: string): string;
@@ -894,7 +909,9 @@ export declare namespace IModelJsNative {
     public getFilePath(): string;
     public resolveInstanceKey(args: ResolveInstanceKeyArgs): ResolveInstanceKeyResult;
     public readInstance(key: NodeJS.Dict<any>, args: NodeJS.Dict<any>): NodeJS.Dict<any>;
+    /** Throws on failure. A UNIQUE constraint violation additionally carries a [[UniqueConstraintConflictDetail]] as `conflictDetail`. */
     public insertInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): Id64String;
+    /** Throws on failure. A UNIQUE constraint violation additionally carries a [[UniqueConstraintConflictDetail]] as `conflictDetail`. */
     public updateInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean | { updated: boolean, conflictingProperties: string[] };
     public deleteInstance(key: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean | { deleted: boolean, conflictingProperties: string[] };
     public getSchemaProps(name: string): SchemaProps;

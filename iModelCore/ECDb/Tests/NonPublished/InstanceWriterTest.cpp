@@ -1128,4 +1128,127 @@ TEST_F(InstanceWriterFixture, DeleteInstanceErrorHandling) {
         m_ecdb.AbandonChanges();    // Make sure successful updates don't affect the next test
     }
 }
+
+//---------------------------------------------------------------------------------------
+// @bsistruct
+//+---------------+---------------+---------------+---------------+---------------+------
+struct UniqueConstraintConflictTests {
+    // Element is mapped TablePerHierarchy so that SpecialElement shares its table, and the unique index is
+    // therefore violated across classes, not just within one.
+    static constexpr Utf8CP schemaXml = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+        <ECEntityClass typeName="Owner" modifier="None">
+            <ECProperty propertyName="Name" typeName="string"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="Element" modifier="None">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <DbIndexList xmlns="ECDbMap.02.00">
+                    <Indexes>
+                        <DbIndex>
+                            <IsUnique>True</IsUnique>
+                            <Name>uix_element_code_owner</Name>
+                            <Properties>
+                                <string>Code</string>
+                                <string>Owner.Id</string>
+                            </Properties>
+                        </DbIndex>
+                    </Indexes>
+                </DbIndexList>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Code" typeName="string"/>
+            <ECProperty propertyName="Label" typeName="string"/>
+            <ECNavigationProperty propertyName="Owner" relationshipName="OwnerOwnsElements" direction="Backward"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="SpecialElement" modifier="None">
+            <BaseClass>Element</BaseClass>
+            <ECProperty propertyName="Extra" typeName="string"/>
+        </ECEntityClass>
+        <ECRelationshipClass typeName="OwnerOwnsElements" strength="referencing" modifier="Sealed">
+            <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="true"><Class class="Owner"/></Source>
+            <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true"><Class class="Element"/></Target>
+        </ECRelationshipClass>
+    </ECSchema>)xml";
+};
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceWriterFixture, UniqueConstraintConflictDetailOnInsert) {
+    ASSERT_EQ(SUCCESS, SetupECDb(BeTest::GetNameOfCurrentTest(), SchemaItem(UniqueConstraintConflictTests::schemaXml)));
+
+    ASSERT_EQ(BE_SQLITE_DONE, insertInstance(R"json({ "id": "0x100", "className": "TestSchema.Owner", "name": "Acme" })json"));
+    ASSERT_EQ(BE_SQLITE_DONE, insertInstance(R"json({ "id": "0x200", "className": "TestSchema.Element", "code": "A", "label": "first", "owner": { "id": "0x100" } })json"));
+    m_ecdb.SaveChanges();
+
+    // A different class in the same table, but the same values for the unique index.
+    ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, insertInstance(R"json({ "id": "0x201", "className": "TestSchema.SpecialElement", "code": "A", "owner": { "id": "0x100" }, "extra": "e" })json"));
+
+    BeJsDocument detail;
+    ASSERT_TRUE(m_ecdb.GetInstanceWriter().TryGetLastWriteConflictDetail(detail)) << detail.Stringify();
+    EXPECT_STREQ("UniqueConstraint", detail["kind"].asCString());
+
+    auto const& properties = detail["uniqueConstraintProperties"];
+    ASSERT_EQ(2, properties.size());
+    EXPECT_STREQ("code", properties[0u].asCString());
+    EXPECT_STREQ("owner.id", properties[1u].asCString());
+
+    ASSERT_TRUE(detail.isMember("conflictingRow"));
+    auto const& conflictingRow = detail["conflictingRow"];
+    EXPECT_STREQ("0x200", conflictingRow["id"].asCString());
+    EXPECT_STREQ("TestSchema.Element", conflictingRow["classFullName"].asCString());
+    EXPECT_STREQ("first", conflictingRow["label"].asCString());
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceWriterFixture, UniqueConstraintConflictDetailOnUpdate) {
+    ASSERT_EQ(SUCCESS, SetupECDb(BeTest::GetNameOfCurrentTest(), SchemaItem(UniqueConstraintConflictTests::schemaXml)));
+
+    ASSERT_EQ(BE_SQLITE_DONE, insertInstance(R"json({ "id": "0x100", "className": "TestSchema.Owner", "name": "Acme" })json"));
+    ASSERT_EQ(BE_SQLITE_DONE, insertInstance(R"json({ "id": "0x200", "className": "TestSchema.Element", "code": "A", "label": "first", "owner": { "id": "0x100" } })json"));
+    ASSERT_EQ(BE_SQLITE_DONE, insertInstance(R"json({ "id": "0x201", "className": "TestSchema.Element", "code": "B", "label": "second", "owner": { "id": "0x100" } })json"));
+    m_ecdb.SaveChanges();
+
+    // Only Code is written; Owner.Id comes from the row's current state via the incremental update.
+    BeJsDocument update;
+    update.Parse(R"json({ "id": "0x201", "className": "TestSchema.Element", "code": "A" })json");
+    auto options = InstanceWriter::UpdateOptions();
+    options.UseJsNames(true);
+    ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, UpdateInstance(m_ecdb, update, options));
+
+    BeJsDocument detail;
+    ASSERT_TRUE(m_ecdb.GetInstanceWriter().TryGetLastWriteConflictDetail(detail)) << detail.Stringify();
+
+    auto const& properties = detail["uniqueConstraintProperties"];
+    ASSERT_EQ(2, properties.size());
+    EXPECT_STREQ("code", properties[0u].asCString());
+    EXPECT_STREQ("owner.id", properties[1u].asCString());
+
+    // The row being updated is never its own conflicting row.
+    EXPECT_STREQ("0x200", detail["conflictingRow"]["id"].asCString());
+}
+
+//---------------------------------------------------------------------------------------
+// The conflict detail is derived from SQLite's error text, so a vendored SQLite upgrade that reworded it would
+// silently stop reporting which columns were involved. Guard the exact format here.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceWriterFixture, UniqueConstraintErrorMessageFormat) {
+    ASSERT_EQ(SUCCESS, SetupECDb(BeTest::GetNameOfCurrentTest(), SchemaItem(UniqueConstraintConflictTests::schemaXml)));
+
+    ASSERT_EQ(BE_SQLITE_DONE, insertInstance(R"json({ "id": "0x100", "className": "TestSchema.Owner", "name": "Acme" })json"));
+    ASSERT_EQ(BE_SQLITE_DONE, insertInstance(R"json({ "id": "0x200", "className": "TestSchema.Element", "code": "A", "owner": { "id": "0x100" } })json"));
+    m_ecdb.SaveChanges();
+
+    ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, insertInstance(R"json({ "id": "0x201", "className": "TestSchema.Element", "code": "A", "owner": { "id": "0x100" } })json"));
+
+    Utf8StringCR error = m_ecdb.GetInstanceWriter().GetLastError();
+    EXPECT_TRUE(error.Contains("UNIQUE constraint failed: ")) << error;
+    EXPECT_TRUE(error.Contains("ts_Element.Code")) << error;
+    EXPECT_TRUE(error.Contains("ts_Element.OwnerId")) << error;
+}
 END_ECDBUNITTESTS_NAMESPACE

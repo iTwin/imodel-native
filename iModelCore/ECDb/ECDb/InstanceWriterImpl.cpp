@@ -3,6 +3,7 @@
  * See LICENSE.md in the repository root for full copyright notice.
  *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
+#include "JsPropertyNaming.h"
 #include <ECDb/InstanceWriter.h>
 #include <GeomSerialization/GeomLibsJsonSerialization.h>
 #include <GeomSerialization/GeomLibsSerialization.h>
@@ -112,6 +113,132 @@ Utf8String GetCurrentTimeStampPropertyName(ClassMapCR classMap) {
         return "";
     }
     return v.GetUtf8CP();
+}
+
+//---------------------------------------------------------------------------------------
+// True if rc reports that a UNIQUE (or primary key, which SQLite implements as one) index was violated.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+bool IsUniqueConstraintResult(DbResult rc) {
+    return rc == BE_SQLITE_CONSTRAINT_UNIQUE || rc == BE_SQLITE_CONSTRAINT_PRIMARYKEY || rc == BE_SQLITE_CONSTRAINT_ROWID;
+}
+
+//---------------------------------------------------------------------------------------
+// Extracts the column names from SQLite's "UNIQUE constraint failed: <table>.<column>[, <table>.<column>...]"
+// error message, which names exactly the columns of the one index that was violated. Db::GetLastError appends
+// " (<error name>)", which is stripped. Returns false if msg is not of that form (e.g. a rowid conflict, whose
+// message names no column).
+// @bsimethod
+//---------------------------------------------------------------------------------------
+bool ParseUniqueConstraintMessage(Utf8StringCR msg, std::vector<Utf8String>& columnNames) {
+    Utf8CP const prefix = "UNIQUE constraint failed: ";
+    const auto start = msg.find(prefix);
+    if (start == Utf8String::npos)
+        return false;
+
+    Utf8String list = msg.substr(start + strlen(prefix));
+    const auto suffix = list.rfind(" (");
+    if (suffix != Utf8String::npos)
+        list.erase(suffix);
+
+    bvector<Utf8String> entries;
+    BeStringUtilities::Split(list.c_str(), ",", entries);
+    for (auto& entry : entries) {
+        entry.Trim();
+        const auto dot = entry.rfind('.');
+        if (dot == Utf8String::npos)
+            return false; // no table qualifier means no real column (e.g. "rowid")
+        columnNames.push_back(entry.substr(dot + 1));
+    }
+    return !columnNames.empty();
+}
+
+//---------------------------------------------------------------------------------------
+// The class map whose polymorphic ECSQL query covers every row of classMap's primary table. A unique index is
+// defined on the table, so a row violating it may belong to any class sharing that table, not just the class
+// being written.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+ClassMap const* GetTableRootClassMap(ECDbCR ecdb, ClassMapCR classMap) {
+    auto const& table = classMap.GetPrimaryTable();
+    if (!table.HasExclusiveRootECClass())
+        return &classMap;
+
+    auto rootClass = ecdb.Schemas().GetClass(table.GetExclusiveRootECClassId());
+    if (rootClass == nullptr)
+        return &classMap;
+
+    auto rootClassMap = ecdb.Schemas().Main().GetClassMap(*rootClass);
+    return rootClassMap != nullptr ? rootClassMap : &classMap;
+}
+
+//---------------------------------------------------------------------------------------
+// Maps each of columnNames back to the leaf (single column) property map it is mapped from, preserving order.
+// Returns false if any column has no such property map (e.g. it is a system column).
+// @bsimethod
+//---------------------------------------------------------------------------------------
+bool FindLeafPropertyMapsForColumns(ClassMapCR classMap, std::vector<Utf8String> const& columnNames, std::vector<SingleColumnDataPropertyMap const*>& out) {
+    SearchPropertyMapVisitor visitor(PropertyMap::Type::SingleColumnData);
+    for (auto propMap : classMap.GetPropertyMaps())
+        propMap->AcceptVisitor(visitor);
+
+    for (auto const& columnName : columnNames) {
+        SingleColumnDataPropertyMap const* found = nullptr;
+        for (auto propMap : visitor.Results()) {
+            auto const& leaf = propMap->GetAs<SingleColumnDataPropertyMap>();
+            if (leaf.GetColumn().GetName().EqualsIAscii(columnName)) {
+                found = &leaf;
+                break;
+            }
+        }
+        if (found == nullptr)
+            return false;
+        out.push_back(found);
+    }
+    return true;
+}
+
+//---------------------------------------------------------------------------------------
+// Looks up the value at a dotted property access string within an EC instance JSON object, accepting either the
+// canonical EC spelling or its JS-cased form for each segment, so the same lookup works for both JS formats.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+std::optional<BeJsConst> TryResolveJsonValue(BeJsConst instance, Utf8StringCR accessString) {
+    bvector<Utf8String> segments;
+    BeStringUtilities::Split(accessString.c_str(), ".", segments);
+
+    std::optional<BeJsConst> current(instance);
+    for (auto const& segment : segments) {
+        if (!current->isObject())
+            return std::nullopt;
+
+        Utf8String jsName = segment;
+        ECN::ECJsonUtilities::LowerFirstChar(jsName);
+        if (current->isMember(segment.c_str()))
+            current.emplace((*current)[segment.c_str()]);
+        else if (current->isMember(jsName.c_str()))
+            current.emplace((*current)[jsName.c_str()]);
+        else
+            return std::nullopt;
+    }
+    return current;
+}
+
+//---------------------------------------------------------------------------------------
+// Renders a dotted access string as an ECSQL property path, e.g. "CodeSpec.Id" -> "[CodeSpec].[Id]".
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Utf8String ToEcsqlPropertyPath(Utf8StringCR accessString) {
+    bvector<Utf8String> segments;
+    BeStringUtilities::Split(accessString.c_str(), ".", segments);
+
+    Utf8String path;
+    for (auto const& segment : segments) {
+        if (!path.empty())
+            path.append(".");
+        path.append("[").append(segment).append("]");
+    }
+    return path;
 }
 
 } // namespace
@@ -1078,6 +1205,110 @@ void Impl::ToJson(BeJsValue out, ECInstanceKeyCR key, JsFormat jsFmt) const {
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
+bool Impl::TryGetLastWriteConflictDetail(BeJsValue out) const {
+    if (m_conflictDetail.isNull())
+        return false;
+
+    out.From(m_conflictDetail);
+    return true;
+}
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+ECSqlStatus Impl::BindConflictLookupValue(BindContext& ctx, SingleColumnDataPropertyMap const& leaf, IECSqlBinder& binder, BeJsConst val) {
+    if (val.isNull())
+        return binder.BindNull();
+
+    switch (leaf.GetType()) {
+        case PropertyMap::Type::Primitive: {
+            auto prim = leaf.GetProperty().GetAsPrimitiveProperty();
+            if (prim == nullptr)
+                return ECSqlStatus(BE_SQLITE_ERROR);
+            return BindPrimitive(ctx, prim->GetType(), binder, val, prim->GetName().c_str(), prim->GetExtendedTypeName());
+        }
+        case PropertyMap::Type::NavigationId: {
+            if (!val.isNumeric() && !val.isString())
+                return ECSqlStatus(BE_SQLITE_ERROR);
+            return binder.BindId(val.GetId64<BeInt64Id>());
+        }
+        default:
+            return ECSqlStatus(BE_SQLITE_ERROR);
+    }
+}
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+void Impl::CaptureUniqueConstraintConflict(Options const& options, ClassMapCR classMap, BeJsConst inst, BeJsConst fallback, Utf8StringCR sqliteError, ECInstanceId excludeId) {
+    std::vector<Utf8String> columnNames;
+    if (!ParseUniqueConstraintMessage(sqliteError, columnNames))
+        return;
+
+    auto& ecdb = m_cache.GetECDb();
+    auto rootClassMap = GetTableRootClassMap(ecdb, classMap);
+    std::vector<SingleColumnDataPropertyMap const*> leaves;
+    if (!FindLeafPropertyMapsForColumns(*rootClassMap, columnNames, leaves))
+        return;
+
+    m_conflictDetail.SetEmptyObject();
+    m_conflictDetail["kind"] = "UniqueConstraint";
+    auto propsJson = m_conflictDetail["uniqueConstraintProperties"];
+    propsJson.toArray();
+    for (auto leaf : leaves)
+        propsJson.appendValue() = GetJsAccessString(*leaf).c_str();
+
+    Utf8String ecsql("SELECT [ECInstanceId], [ECClassId] FROM ");
+    ecsql.append(rootClassMap->GetClass().GetECSqlName()).append(" WHERE ");
+    for (size_t i = 0; i < leaves.size(); ++i) {
+        if (i > 0)
+            ecsql.append(" AND ");
+        ecsql.append(ToEcsqlPropertyPath(leaves[i]->GetAccessString())).append(" = ?");
+    }
+    if (excludeId.IsValid())
+        ecsql.append(" AND [ECInstanceId] <> ?");
+    ecsql.append(" LIMIT 1");
+
+    ECSqlStatement stmt;
+    if (ECSqlStatus::Success != stmt.Prepare(ecdb, ecsql.c_str()))
+        return;
+
+    // A separate context so that a failure to bind here cannot overwrite the caller-visible write error.
+    BindContext lookupCtx(*this, inst, options);
+    auto resolveValue = [&](SingleColumnDataPropertyMap const& leaf) {
+        auto val = TryResolveJsonValue(inst, leaf.GetAccessString());
+        return val.has_value() ? val : TryResolveJsonValue(fallback, leaf.GetAccessString());
+    };
+
+    int parameterIndex = 1;
+    for (auto leaf : leaves) {
+        auto val = resolveValue(*leaf);
+        if (!val.has_value() || !BindConflictLookupValue(lookupCtx, *leaf, stmt.GetBinder(parameterIndex++), *val).IsSuccess())
+            return;
+    }
+    if (excludeId.IsValid())
+        stmt.BindId(parameterIndex++, excludeId);
+
+    if (BE_SQLITE_ROW != stmt.Step())
+        return;
+
+    InstanceReader::Position pos(stmt.GetValueId<ECInstanceId>(0), stmt.GetValueId<ECClassId>(1));
+    InstanceReader::Options readOptions;
+    readOptions.SetForceSeek(true);
+    const bool useJsNames = options.GetUseJsNames();
+    ecdb.GetInstanceReader().Seek(pos, [&](InstanceReader::IRowContext const& row, PropertyReader::Finder) {
+        ECSqlRowAdaptor adaptor(ecdb);
+        adaptor.GetOptions().SetAbbreviateBlobs(false);
+        adaptor.GetOptions().SetConvertClassIdsToClassNames(useJsNames);
+        adaptor.GetOptions().SetUseJsNames(useJsNames);
+        adaptor.GetOptions().SetUseClassFullNameInsteadofClassName(useJsNames);
+        adaptor.RenderRowAsObject(m_conflictDetail["conflictingRow"], row);
+    }, readOptions);
+}
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
 DbResult Impl::Insert(BeJsConst inst, InstanceWriter::InsertOptions const& options) {
     ECInstanceKey key;
     return Insert(inst, options, key);
@@ -1087,6 +1318,7 @@ DbResult Impl::Insert(BeJsConst inst, InstanceWriter::InsertOptions const& optio
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
 DbResult Impl::Insert(BeJsConst inst, InstanceWriter::InsertOptions const& options, ECInstanceKey& out) {
+    m_conflictDetail.SetNull();
     BindContext ctx = BindContext(*this, inst, options);
     if (!inst.isObject()) {
         ctx.SetError("Expected instance to be of type object");
@@ -1157,10 +1389,13 @@ DbResult Impl::Insert(BeJsConst inst, InstanceWriter::InsertOptions const& optio
 
         auto rc = out.IsValid() ? stmt.GetStatement().Step() : stmt.GetStatement().Step(out);
         if (rc != BE_SQLITE_DONE) {
-            ctx.SetError(m_cache.GetECDb().GetLastError().c_str());
+            Utf8String sqliteError = m_cache.GetECDb().GetLastError();
+            ctx.SetError(sqliteError.c_str());
             if (!ctx.HasError()) {
                 ctx.SetError("Failed to insert instance");
             }
+            if (IsUniqueConstraintResult(rc))
+                CaptureUniqueConstraintConflict(options, stmt.GetClassMap(), inst, BeJsDocument::Null(), sqliteError, ECInstanceId());
         }
         return rc;
     });
@@ -1241,6 +1476,7 @@ DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& optio
 //+---------------+---------------+---------------+---------------+---------------+-
 DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& options, std::vector<Utf8String>& conflictingProperties) {
     conflictingProperties.clear();
+    m_conflictDetail.SetNull();
     BindContext ctx = BindContext(*this, inst, options);
     if (!inst.isObject()) {
         ctx.SetError("Expected instance to be of type object");
@@ -1372,9 +1608,27 @@ DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& optio
 
         auto rc = stmt.GetStatement().Step();
         if (rc != BE_SQLITE_DONE) {
-            ctx.SetError(m_cache.GetECDb().GetLastError().c_str());
+            Utf8String sqliteError = m_cache.GetECDb().GetLastError();
+            ctx.SetError(sqliteError.c_str());
             if (!ctx.HasError()) {
                 ctx.SetError("Failed to update instance");
+            }
+            if (IsUniqueConstraintResult(rc)) {
+                // An incremental update writes the row's current value for any property absent from inst, so
+                // that state is what a violated index column would have been compared against.
+                BeJsDocument currentRow;
+                if (options.GetUseIncrementalUpdate()) {
+                    InstanceReader::Position pos(id, classId);
+                    m_cache.GetECDb().GetInstanceReader().Seek(pos, [&](InstanceReader::IRowContext const& row, PropertyReader::Finder) {
+                        JsReadOptions param;
+                        param.SetUseJsNames(options.GetUseJsNames());
+                        param.SetAbbreviateBlobs(false);
+                        param.SetConvertClassIdsToClassNames(options.GetUseJsNames());
+                        param.SetUseClassFullNameInsteadofClassName(options.GetUseJsNames());
+                        currentRow.From(row.GetJson(param));
+                    });
+                }
+                CaptureUniqueConstraintConflict(options, stmt.GetClassMap(), inst, currentRow, sqliteError, id);
             }
         } else if (hasCheck && m_cache.GetECDb().GetModifiedRowCount() == 0) {
             conflictingProperties = FindConflictingProperties(ctx, classId, id, options.GetExpectedOldValues(), checkBindings);
@@ -1396,6 +1650,7 @@ DbResult Impl::Delete(ECInstanceKeyCR key, InstanceWriter::DeleteOptions const& 
 //+---------------+---------------+---------------+---------------+---------------+-
 DbResult Impl::Delete(ECInstanceKeyCR key, InstanceWriter::DeleteOptions const& options, std::vector<Utf8String>& conflictingProperties) {
     conflictingProperties.clear();
+    m_conflictDetail.SetNull();
     BindContext ctx = BindContext(*this, BeJsDocument::Null(), options);
     if (m_cache.GetECDb().IsReadonly()) {
         ctx.SetError("Connection is readonly");
@@ -1496,6 +1751,7 @@ DbResult Impl::Delete(BeJsConst inst, InstanceWriter::DeleteOptions const& optio
 //+---------------+---------------+---------------+---------------+---------------+-
 void Impl::Reset() {
     m_error.clear();
+    m_conflictDetail.SetNull();
     m_cache.Reset();
 }
 
@@ -1515,6 +1771,13 @@ InstanceWriter::~InstanceWriter() { delete m_pImpl; }
 //+---------------+---------------+---------------+---------------+---------------+-
 DbResult InstanceWriter::Insert(BeJsConst inst, InsertOptions const& options, ECInstanceKey& key) {
     return m_pImpl->Insert(inst, options, key);
+}
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+bool InstanceWriter::TryGetLastWriteConflictDetail(BeJsValue out) const {
+    return m_pImpl->TryGetLastWriteConflictDetail(out);
 }
 
 //----------------------------------------------------------------------------------

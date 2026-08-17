@@ -115,6 +115,14 @@ DbResult InstanceRepository::Delete(ECInstanceKeyCR key, BeJsConst userOptions, 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+bool InstanceRepository::TryGetLastWriteConflictDetail(BeJsValue out) const {
+    BeMutexHolder _(m_mutex);
+    return m_ecdb.GetInstanceWriter().TryGetLastWriteConflictDetail(out);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 DbResult InstanceRepository::Read(ECInstanceKeyCR instKey, BeJsValue outInstance, BeJsConst userOptions, JsFormat fmt) const {
     BeMutexHolder _(m_mutex);
     m_lastError.clear();

@@ -5,11 +5,53 @@
  *--------------------------------------------------------------------------------------------*/
 
 #include "ECDbPch.h"
+#include "JsPropertyNaming.h"
 #include <BeRapidJson/BeJsValue.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String GetJsMemberName(ECN::ECPropertyCR ecProperty) {
+    Utf8String memberName = ecProperty.GetName();
+    const auto prim = ecProperty.GetAsPrimitiveProperty();
+    if (prim && !prim->GetExtendedTypeName().empty()) {
+        const auto extendTypeId = ExtendedTypeHelper::GetExtendedType(prim->GetExtendedTypeName());
+        if (extendTypeId == ExtendedTypeHelper::ExtendedType::Id && memberName.EqualsIAscii(ECDBSYS_PROP_ECInstanceId))
+            memberName = ECN::ECJsonSystemNames::Id();
+        else if (extendTypeId == ExtendedTypeHelper::ExtendedType::ClassId && memberName.EqualsIAscii(ECDBSYS_PROP_ECClassId))
+            memberName = ECN::ECJsonSystemNames::ClassFullName();
+        else if (extendTypeId == ExtendedTypeHelper::ExtendedType::SourceId && memberName.EqualsIAscii(ECDBSYS_PROP_SourceECInstanceId))
+            memberName = ECN::ECJsonSystemNames::SourceId();
+        else if (extendTypeId == ExtendedTypeHelper::ExtendedType::SourceClassId && memberName.EqualsIAscii(ECDBSYS_PROP_SourceECClassId))
+            memberName = ECN::ECJsonSystemNames::SourceClassName();
+        else if (extendTypeId == ExtendedTypeHelper::ExtendedType::TargetId && memberName.EqualsIAscii(ECDBSYS_PROP_TargetECInstanceId))
+            memberName = ECN::ECJsonSystemNames::TargetId();
+        else if (extendTypeId == ExtendedTypeHelper::ExtendedType::TargetClassId && memberName.EqualsIAscii(ECDBSYS_PROP_TargetECClassId))
+            memberName = ECN::ECJsonSystemNames::TargetClassName();
+        else
+            ECN::ECJsonUtilities::LowerFirstChar(memberName);
+    } else {
+        ECN::ECJsonUtilities::LowerFirstChar(memberName);
+    }
+    return memberName;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String GetJsAccessString(PropertyMap const& propMap) {
+    Utf8String jsAccessString;
+    for (PropertyMap const* segment : propMap.GetPath()) {
+        if (!jsAccessString.empty())
+            jsAccessString.append(".");
+        jsAccessString.append(GetJsMemberName(segment->GetProperty()));
+    }
+    return jsAccessString;
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -217,49 +259,6 @@ bool DbValuesAreEqual(DbValue const& a, DbValue const& b) {
         }
         default: return false;
     }
-}
-
-// Computes the JS-cased member name for a single EC property, mirroring the special-casing
-// done for system properties (e.g. ECInstanceId -> "id") when rendering column values to JSON
-// (see buildValuesJson below / ECSqlRowAdaptor::RenderRow).
-Utf8String GetJsMemberName(ECN::ECPropertyCR ecProperty) {
-    Utf8String memberName = ecProperty.GetName();
-    const auto prim = ecProperty.GetAsPrimitiveProperty();
-    if (prim && !prim->GetExtendedTypeName().empty()) {
-        const auto extendTypeId = ExtendedTypeHelper::GetExtendedType(prim->GetExtendedTypeName());
-        if (extendTypeId == ExtendedTypeHelper::ExtendedType::Id && memberName.EqualsIAscii(ECDBSYS_PROP_ECInstanceId))
-            memberName = ECN::ECJsonSystemNames::Id();
-        else if (extendTypeId == ExtendedTypeHelper::ExtendedType::ClassId && memberName.EqualsIAscii(ECDBSYS_PROP_ECClassId))
-            memberName = /* m_options.UseClassFullNameInsteadofClassName() */ true ?  ECN::ECJsonSystemNames::ClassFullName() : ECN::ECJsonSystemNames::ClassName();
-            //memberName = ECN::ECJsonSystemNames::ClassName();
-        else if (extendTypeId == ExtendedTypeHelper::ExtendedType::SourceId && memberName.EqualsIAscii(ECDBSYS_PROP_SourceECInstanceId))
-            memberName = ECN::ECJsonSystemNames::SourceId();
-        else if (extendTypeId == ExtendedTypeHelper::ExtendedType::SourceClassId && memberName.EqualsIAscii(ECDBSYS_PROP_SourceECClassId))
-            memberName = ECN::ECJsonSystemNames::SourceClassName();
-        else if (extendTypeId == ExtendedTypeHelper::ExtendedType::TargetId && memberName.EqualsIAscii(ECDBSYS_PROP_TargetECInstanceId))
-            memberName = ECN::ECJsonSystemNames::TargetId();
-        else if (extendTypeId == ExtendedTypeHelper::ExtendedType::TargetClassId && memberName.EqualsIAscii(ECDBSYS_PROP_TargetECClassId))
-            memberName = ECN::ECJsonSystemNames::TargetClassName();
-        else
-            ECN::ECJsonUtilities::LowerFirstChar(memberName);
-    } else {
-        ECN::ECJsonUtilities::LowerFirstChar(memberName);
-    }
-    return memberName;
-}
-
-// Builds the dotted JS-cased access string for a property map by joining the JS member names
-// of every segment from the root property down to (and including) propMap. This lets
-// dataConflictProperties/uniqueConstraintProperties match the JS-cased keys used in the
-// original/theirs/ours/conflictingRow objects built by buildValuesJson below.
-Utf8String GetJsAccessString(PropertyMap const& propMap) {
-    Utf8String jsAccessString;
-    for (PropertyMap const* segment : propMap.GetPath()) {
-        if (!jsAccessString.empty())
-            jsAccessString.append(".");
-        jsAccessString.append(GetJsMemberName(segment->GetProperty()));
-    }
-    return jsAccessString;
 }
 
 struct ConflictRow : public IECSqlRow {
