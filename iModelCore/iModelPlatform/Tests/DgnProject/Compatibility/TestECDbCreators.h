@@ -27,6 +27,8 @@
 #define TESTECDB_EC31KOQS_SCHEMAUPGRADE "ec31koqs_schemaupgrade.ecdb"
 #define TESTECDB_EC32ENUMS_SCHEMAUPGRADE "ec32enums_schemaupgrade.ecdb"
 #define TESTECDB_EC32KOQS_SCHEMAUPGRADE "ec32koqs_schemaupgrade.ecdb"
+#define TESTECDB_ECFEATURES_MIXED "ecfeatures_mixed.ecdb"
+#define TESTECDB_ECFEATURES_REFUSE "ecfeatures_refuse.ecdb"
 
 #define TESTECDBCREATOR_LIST {std::make_shared<EmptyTestECDbCreator>(), \
                               std::make_shared<EC31EnumsTestECDbCreator>(), \
@@ -39,7 +41,9 @@
                               std::make_shared<EC32KoqsTestECDbCreator>(), \
                               std::make_shared<EC31KoqsSchemaUpgradeTestECDbCreator>(), \
                               std::make_shared<EC32KoqsSchemaUpgradeTestECDbCreator>(), \
-                              std::make_shared<EC32UnitsTestECDbCreator>()}
+                              std::make_shared<EC32UnitsTestECDbCreator>(), \
+                              std::make_shared<ECFeaturesMixedTestECDbCreator>(), \
+                              std::make_shared<ECFeaturesRefuseTestECDbCreator>()}
 
 //======================================================================================
 // @bsiclass
@@ -581,4 +585,80 @@ struct EC32UnitsTestECDbCreator final : TestECDbCreator
     public:
         EC32UnitsTestECDbCreator() : TestECDbCreator(TESTECDB_EC32UNITS) {}
         ~EC32UnitsTestECDbCreator() {}
+    };
+
+//======================================================================================
+// @bsiclass
+//======================================================================================
+struct ECFeaturesMixedTestECDbCreator final : TestECDbCreator
+    {
+    private:
+        BentleyStatus _Create() override
+            {
+            ECDb ecdb;
+            if (BE_SQLITE_OK != CreateNewTestFile(ecdb, m_fileName))
+                return ERROR;
+
+            if (!ecdb.TableExists("ec_Feature"))
+                {
+                LOG.errorv("Failed to create '%s': ec_Feature table does not exist at the current profile version.", m_fileName.c_str());
+                return ERROR;
+                }
+
+            auto insertFeature = [&ecdb](Utf8CP name, Utf8CP compat) -> bool
+                {
+                return BE_SQLITE_OK == ecdb.TryExecuteSql(Utf8PrintfString(
+                    "INSERT INTO ec_Feature (Name, Description, Compat, Fallback) VALUES ('%s', 'Synthetic test feature for forward-compat testing', '%s', '%s')",
+                    name, compat, compat).c_str());
+                };
+
+            if (!insertFeature("test-feature-warn", "Warn"))
+                return ERROR;
+            if (!insertFeature("test-feature-readonly", "ReadOnly"))
+                return ERROR;
+            if (!insertFeature("test-feature-noschemaimport", "NoSchemaImport"))
+                return ERROR;
+
+            return BE_SQLITE_OK == ecdb.SaveChanges() ? BentleyStatus::SUCCESS : BentleyStatus::ERROR;
+            }
+
+    public:
+        ECFeaturesMixedTestECDbCreator() : TestECDbCreator(TESTECDB_ECFEATURES_MIXED) {}
+        ~ECFeaturesMixedTestECDbCreator() {}
+    };
+
+//======================================================================================
+// @bsiclass
+//======================================================================================
+struct ECFeaturesRefuseTestECDbCreator final : TestECDbCreator
+    {
+    private:
+        BentleyStatus _Create() override
+            {
+            ECDb ecdb;
+            if (BE_SQLITE_OK != CreateNewTestFile(ecdb, m_fileName))
+                return ERROR;
+
+            if (!ecdb.TableExists("ec_Feature"))
+                {
+                LOG.errorv("Failed to create '%s': ec_Feature table does not exist at the current profile version.", m_fileName.c_str());
+                return ERROR;
+                }
+
+            if (BE_SQLITE_OK != ecdb.TryExecuteSql(
+                "INSERT INTO ec_Feature (Name, Description, Compat, Fallback) VALUES "
+                "('test-feature-refuse', 'Synthetic test feature for forward-compat testing', 'Refuse', 'Refuse')"))
+                return ERROR;
+
+            if (BE_SQLITE_OK != ecdb.TryExecuteSql(
+                "INSERT INTO ec_Feature (Name, Description, Compat, Fallback) VALUES "
+                "('another-test-feature-refuse', 'Another synthetic test feature for forward-compat testing', 'Refuse', 'Refuse')"))
+                return ERROR;
+
+            return BE_SQLITE_OK == ecdb.SaveChanges() ? BentleyStatus::SUCCESS : BentleyStatus::ERROR;
+            }
+
+    public:
+        ECFeaturesRefuseTestECDbCreator() : TestECDbCreator(TESTECDB_ECFEATURES_REFUSE) {}
+        ~ECFeaturesRefuseTestECDbCreator() {}
     };

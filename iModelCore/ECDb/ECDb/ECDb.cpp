@@ -252,6 +252,54 @@ ECN::IECClassLocater& ECDb::GetClassLocater() const { return m_pimpl->GetClassLo
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
+std::vector<Utf8String> const& ECDb::GetFeaturesBlockingSchemaImport() const { return m_pimpl->GetFeaturesBlockingSchemaImport(); }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDb::RevalidateFeatures() const { return m_pimpl->ValidateECFeatures(); }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
+//static
+BentleyStatus ECDb::TryGetBlockingFeatures(std::vector<Utf8String>& blockingFeatureNames, BeFileNameCR fileName)
+    {
+    blockingFeatureNames.clear();
+
+    Db db;
+    if (BE_SQLITE_OK != db.OpenBeSQLiteDb(fileName, Db::OpenParams(Db::OpenMode::Readonly)))
+        return ERROR;
+
+    if (!db.TableExists(TABLE_Feature))
+        return SUCCESS;
+
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(db, "SELECT Name, Compat, Fallback FROM main." TABLE_Feature))
+        return SUCCESS;
+
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        Utf8CP name = stmt.GetValueText(0);
+        if (Utf8String::IsNullOrEmpty(name))
+            continue;
+
+        Utf8String compatStr(stmt.GetValueText(1));
+        Utf8String fallbackStr(stmt.GetValueText(2));
+
+        if (FeatureManager::IsFeatureKnown(name))
+            continue;
+
+        if (Compat::Refuse == FeatureManager::ResolveEffectiveCompat(compatStr, fallbackStr))
+            blockingFeatureNames.push_back(name);
+        }
+
+    return SUCCESS;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
 bool ECDb::IsChangeCacheAttached() const { return m_pimpl->IsChangeCacheAttached(); }
 
 //--------------------------------------------------------------------------------------

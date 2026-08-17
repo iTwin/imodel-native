@@ -292,6 +292,7 @@ enum class ChangesetStatus : int {
     CannotMergeIntoReversed, //! Cannot merge changes into a DgnDb that has reversed revisions.
     BadVersionId, // illegal version length
     CorruptedTxn, // Fail to decompress txn
+    UnknownFeatureAfterMerge, //! The merged changeset introduced an ec_Feature this runtime cannot honor. The merge must be abandoned.
 };
 
 //=======================================================================================

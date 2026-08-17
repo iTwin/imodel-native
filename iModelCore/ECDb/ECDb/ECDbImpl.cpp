@@ -218,6 +218,100 @@ DbResult ECDb::Impl::OnDbCreated() const
     return m_profileManager.CreateProfile();
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDb::Impl::ValidateECFeatures() const
+    {
+    // This may be a re-validation (e.g. after merging a changeset that added ec_Feature rows), so
+    // always recompute from scratch rather than accumulating onto a previous run's results.
+    m_featuresBlockingSchemaImport.clear();
+
+    // Either the profile version does not support ec_Feature table or else the ECDb file is not using any features yet.
+    if (m_ecdb.GetECDbProfileVersion() < ProfileVersion(4, 0, 0, 6) || !m_ecdb.TableExists(TABLE_Feature))
+        return BE_SQLITE_OK;
+
+    Statement stmt;
+    if (const auto status = stmt.Prepare(m_ecdb, "SELECT Name, Compat, Fallback from main." TABLE_Feature); status != BE_SQLITE_OK)
+        return BE_SQLITE_ERROR;
+
+    std::vector<Utf8String> warnFeatures;
+    std::vector<Utf8String> readOnlyFeatures;
+    std::vector<Utf8String> blockingFeatureNames;
+
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        const Utf8String featureName = stmt.GetValueText(0);
+        if (Utf8String::IsNullOrEmpty(featureName.c_str()))
+            continue;
+
+        // Feature is known to the current ECDb runtime, safe to open the Db.
+        if (FeatureManager::IsFeatureKnown(featureName))
+            continue;
+
+        // Feature is not known, look at the compat mode of the issue to decide what to do.
+        const Utf8String compat = stmt.GetValueText(1);
+        const Utf8String fallback = stmt.GetValueText(2);
+        switch (FeatureManager::ResolveEffectiveCompat(compat, fallback))
+            {
+            case Compat::Warn:
+                warnFeatures.push_back(featureName);
+                break;
+
+            case Compat::ReadOnly:
+                if (!m_ecdb.IsReadonly())
+                    readOnlyFeatures.push_back(featureName);
+                break;
+
+            case Compat::NoSchemaImport:
+                m_featuresBlockingSchemaImport.push_back(featureName);
+                break;
+
+            case Compat::Refuse:
+                blockingFeatureNames.push_back(featureName);
+                break;
+            }
+        }
+
+
+    if (!warnFeatures.empty())
+        {
+        m_issueReporter.ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue, ECDbIssueId::ECDb_0744,
+            "ECDb file uses unknown features %s. Some data may not be accessible.",
+            FeatureManager::JoinFeatureNameValues(warnFeatures).c_str());
+        }
+
+    if (!m_featuresBlockingSchemaImport.empty())
+        {
+        m_issueReporter.ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue, ECDbIssueId::ECDb_0745,
+            "ECDb file uses unknown features %s. The file will restrict all schema imports. However, it can still be written to.",
+            FeatureManager::JoinFeatureNameValues(m_featuresBlockingSchemaImport).c_str());
+        }
+
+    if (!blockingFeatureNames.empty())
+        {
+        m_issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue, ECDbIssueId::ECDb_0747,
+            "ECDb file uses unknown features %s. The file cannot be opened.",
+            FeatureManager::JoinFeatureNameValues(blockingFeatureNames).c_str());
+
+        m_featuresBlockingSchemaImport.clear();
+        return BE_SQLITE_ERROR;
+        }
+
+    if (!readOnlyFeatures.empty())
+        {
+        m_issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue, ECDbIssueId::ECDb_0746,
+            "ECDb file uses unknown features %s. The file can only be opened read-only.",
+            FeatureManager::JoinFeatureNameValues(readOnlyFeatures).c_str());
+        return BE_SQLITE_READONLY;
+        }
+
+    return BE_SQLITE_OK;
+    }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
@@ -225,7 +319,11 @@ DbResult ECDb::Impl::OnDbCreated() const
 DbResult ECDb::Impl::OnDbOpening() const
     {
     OnInit();
-    return m_idSequenceManager.InitializeSequences();
+    DbResult stat = m_idSequenceManager.InitializeSequences();
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    return ValidateECFeatures();
     }
 
 //--------------------------------------------------------------------------------------
@@ -268,6 +366,8 @@ void ECDb::Impl::RegisterECSqlPragmas() const
     GetPragmaManager().Register(PragmaECSqlVersion::Create());
     GetPragmaManager().Register(PragmaSqliteSql::Create());
     GetPragmaManager().Register(PragmaSchemaView::Create());
+    GetPragmaManager().Register(PragmaECDbKnownFeatures::Create());
+    GetPragmaManager().Register(PragmaECDbUsedFeatures::Create());
     GetPragmaManager().Register(PragmaSchemaViewFragment::Create());
     }
 

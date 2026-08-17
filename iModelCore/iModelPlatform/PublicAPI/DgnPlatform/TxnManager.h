@@ -482,6 +482,9 @@ private:
     void WriteChangesToFile(BeFileNameCR pathname, BeSQLite::DdlChangesCR ddlChanges, BeSQLite::ChangeGroupCR dataChangeGroup);
     ChangesetStatus MergeDdlChanges(ChangesetPropsCR revision, ChangesetFileReader& revisionReader);
     ChangesetStatus MergeDataChanges(ChangesetPropsCR revision, ChangesetFileReader& revisionReader, bool containsSchemaChanges, bool fastForward, bool noUpdateLoop = false);
+    //! Re-runs ECDb feature validation after changeset content was applied, before the merge is committed.
+    //! @return false if the merged state cannot be honored and must be reverted.
+    bool ValidateFeaturesAfterMerge();
     ChangesetStatus ProcessRevisions(bvector<ChangesetPropsCP> const &revisions, RevisionProcessOption processOptions);
 
     TxnTable* FindTxnTable(Utf8CP tableName) const;

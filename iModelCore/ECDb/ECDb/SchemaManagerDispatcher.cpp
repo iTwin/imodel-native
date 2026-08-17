@@ -1175,6 +1175,8 @@ DropSchemaResult MainSchemaManager::DropSchemas(bvector<Utf8String> schemaNames,
 
     m_ecdb.ClearECDbCache();
     OnAfterSchemaChanges().RaiseEvent(m_ecdb, SchemaChangeType::SchemaImport);
+
+    FeatureManager::ReconcileSchemaFeatures(m_ecdb);
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaManager::DropSchemas");
     return DropSchemaResult::Success;
     }
@@ -1405,6 +1407,12 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
                 resolvedSyncDbUri.GetUri().c_str());
             return SchemaImportResult::ERROR;
             }
+        }
+
+    if (SUCCESS != FeatureManager::ReconcileSchemaFeatures(m_ecdb))
+        {
+        LOG.debug("MainSchemaManager::ImportSchemas - failed to reconcile schema features with the ECDb file.");
+        return SchemaImportResult::ERROR;
         }
 
     return SchemaImportResult::OK;

@@ -161,6 +161,9 @@ DbResult ProfileManager::RunUpgraders(ProfileVersion const& versionBeforeUpgrade
     if (versionBeforeUpgrade < ProfileVersion(4, 0, 0, 5))
         upgraders.push_back(std::make_unique<ProfileUpgrader_4005>());
 
+    if (versionBeforeUpgrade < ProfileVersion(4, 0, 0, 6))
+        upgraders.push_back(std::make_unique<ProfileUpgrader_4006>());
+
     for (std::unique_ptr<ProfileUpgrader> const& upgrader : upgraders)
         {
         DbResult stat = upgrader->Upgrade(m_ecdb);
@@ -583,6 +586,10 @@ DbResult ProfileManager::CreateProfileTables() const
 
     stat = m_ecdb.GetImpl().ExecuteDDL("CREATE INDEX ix_ec_cache_ClassHierarchy_ClassId ON " TABLE_ClassHierarchyCache "(ClassId);"
                            "CREATE INDEX ix_ec_cache_ClassHierarchy_BaseClassId ON " TABLE_ClassHierarchyCache "(BaseClassId);");
+    if(BE_SQLITE_OK != stat)
+        return stat;
+
+    stat = m_ecdb.GetImpl().ExecuteDDL(TABLEDDL_Feature);
     if(BE_SQLITE_OK != stat)
         return stat;
 

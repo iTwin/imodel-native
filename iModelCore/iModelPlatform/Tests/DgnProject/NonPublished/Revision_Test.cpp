@@ -78,6 +78,15 @@ protected:
         EXPECT_EQ(ChangesetStatus::Success, m_db->Txns().PullMergeApply(revision));
     }
 
+    //! True if the named row is currently present in ec_Feature.
+    bool FeatureRowExists(Utf8CP featureName) {
+        Statement stmt;
+        if (BE_SQLITE_OK != stmt.Prepare(*m_db, "SELECT COUNT(*) FROM ec_Feature WHERE Name=?"))
+            return false;
+        stmt.BindText(1, featureName, Statement::MakeCopy::No);
+        return BE_SQLITE_ROW == stmt.Step() && stmt.GetValueInt(0) > 0;
+    }
+
     static Utf8String CodeToString(DgnCodeCR code) { return Utf8PrintfString("%s:%s\n", code.GetScopeString().c_str(), code.GetValueUtf8CP()); }
     static void ExpectCode(DgnCodeCR code, DgnCodeSet const& codes) { EXPECT_FALSE(codes.end() == codes.find(code)) << CodeToString(code).c_str(); }
     static void ExpectCodes(DgnCodeSet const& exp, DgnCodeSet const& actual)
@@ -2476,3 +2485,221 @@ TEST_F(RevisionTestFixture, CheckHealthStatsWithElementCRUD) {
         return false;
     });
 }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, MergedChangesetIntroducingNoSchemaImportFeatureIsHonored)
+    {
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"MergedFeatureNoSchemaImport.bim");
+    m_db->SaveChanges("Created Initial Model");
+
+    ChangesetPropsPtr initialRevision = CreateRevision("-cs1");
+    ASSERT_TRUE(initialRevision.IsValid());
+
+    BackupTestFile();
+
+    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteSql(
+        "INSERT INTO ec_Feature(Name, Description, Compat, Fallback) "
+        "VALUES ('pulled-nosi-feature','Introduced by a pulled changeset','NoSchemaImport','NoSchemaImport')"));
+    m_db->SaveChanges("Declared a new feature");
+
+    ChangesetPropsPtr featureRevision = CreateRevision("-cs2");
+    ASSERT_TRUE(featureRevision.IsValid());
+
+    RestoreTestFile();
+    ASSERT_TRUE(m_db->GetFeaturesBlockingSchemaImport().empty()) << "The restored briefcase must start unrestricted";
+
+    ASSERT_EQ(ChangesetStatus::Success, m_db->Txns().PullMergeApply(*featureRevision));
+
+    ASSERT_EQ(1, m_db->GetFeaturesBlockingSchemaImport().size()) << "Merging must re-run feature validation";
+    EXPECT_STREQ("pulled-nosi-feature", m_db->GetFeaturesBlockingSchemaImport().front().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// A pulled changeset that introduces a Refuse feature would leave the briefcase in a state this
+// runtime must not hold. The merge must be rejected.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, MergedChangesetIntroducingRefuseFeatureIsBackedOut)
+    {
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"MergedFeatureRefuse.bim");
+    m_db->SaveChanges("Created Initial Model");
+
+    ChangesetPropsPtr initialRevision = CreateRevision("-cs1");
+    ASSERT_TRUE(initialRevision.IsValid());
+
+    BackupTestFile();
+
+    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteSql(
+        "INSERT INTO ec_Feature(Name, Description, Compat, Fallback) "
+        "VALUES ('pulled-refuse-feature','Introduced by a pulled changeset','Refuse','Refuse')"));
+    m_db->SaveChanges("Declared a new feature");
+
+    ChangesetPropsPtr featureRevision = CreateRevision("-cs2");
+    ASSERT_TRUE(featureRevision.IsValid());
+
+    RestoreTestFile();
+    Utf8String parentBeforeMerge = m_db->Txns().GetParentChangesetId();
+
+    EXPECT_EQ(ChangesetStatus::UnknownFeatureAfterMerge, m_db->Txns().PullMergeApply(*featureRevision))
+        << "Merging a changeset that introduces a Refuse feature must be rejected";
+
+    // The merge must have been rolled back, leaving the briefcase exactly as it was.
+    EXPECT_STREQ(parentBeforeMerge.c_str(), m_db->Txns().GetParentChangesetId().c_str()) << "A rejected merge must not advance the parent changeset";
+    EXPECT_FALSE(FeatureRowExists("pulled-refuse-feature")) << "The feature row must have been backed out";
+    EXPECT_TRUE(m_db->GetFeaturesBlockingSchemaImport().empty()) << "Cached restrictions must be cleared after the back-out";
+
+    // The briefcase must still be fully usable.
+    InsertFloor(1, 1);
+    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Local change after rejected merge")) << "The briefcase must remain writable";
+    EXPECT_TRUE(CreateRevision("-cs3").IsValid()) << "The briefcase must still be able to publish changesets";
+
+    // It must also survive a reopen, proving nothing was persisted.
+    BeFileName fileName = BeFileName(m_db->GetDbFileName(), true);
+    CloseDgnDb();
+    OpenIModelDb(fileName, Db::OpenMode::ReadWrite);
+    ASSERT_TRUE(m_db.IsValid()) << "The briefcase must still open after a rejected merge";
+    EXPECT_FALSE(m_db->IsReadonly());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, MergedChangesetIntroducingReadOnlyFeatureIsBackedOut)
+    {
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"MergedFeatureReadOnly.bim");
+    m_db->SaveChanges("Created Initial Model");
+
+    ChangesetPropsPtr initialRevision = CreateRevision("-cs1");
+    ASSERT_TRUE(initialRevision.IsValid());
+
+    BackupTestFile();
+
+    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteSql(
+        "INSERT INTO ec_Feature(Name, Description, Compat, Fallback) "
+        "VALUES ('pulled-readonly-feature','Introduced by a pulled changeset','ReadOnly','ReadOnly')"));
+    m_db->SaveChanges("Declared a new feature");
+
+    ChangesetPropsPtr featureRevision = CreateRevision("-cs2");
+    ASSERT_TRUE(featureRevision.IsValid());
+
+    RestoreTestFile();
+    Utf8String parentBeforeMerge = m_db->Txns().GetParentChangesetId();
+
+    EXPECT_EQ(ChangesetStatus::UnknownFeatureAfterMerge, m_db->Txns().PullMergeApply(*featureRevision))
+        << "Merging a changeset that introduces a ReadOnly feature must be rejected on a read-write connection";
+
+    EXPECT_STREQ(parentBeforeMerge.c_str(), m_db->Txns().GetParentChangesetId().c_str()) << "A rejected merge must not advance the parent changeset";
+    EXPECT_FALSE(FeatureRowExists("pulled-readonly-feature")) << "The feature row must have been backed out";
+
+    InsertFloor(1, 1);
+    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Local change after rejected merge")) << "The briefcase must remain writable";
+    EXPECT_TRUE(CreateRevision("-cs3").IsValid()) << "The briefcase must still be able to publish changesets";
+    }
+
+//---------------------------------------------------------------------------------------
+// A briefcase that legitimately acquired a restrictive feature must become unrestricted again when
+// the changeset that introduced it is reversed.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, ReversingChangesetRemovesFeatureRestriction)
+    {
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"ReverseFeatureRestriction.bim");
+    m_db->SaveChanges("Created Initial Model");
+
+    ChangesetPropsPtr initialRevision = CreateRevision("-cs1");
+    ASSERT_TRUE(initialRevision.IsValid());
+
+    BackupTestFile();
+
+    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteSql(
+        "INSERT INTO ec_Feature(Name, Description, Compat, Fallback) "
+        "VALUES ('pulled-nosi-feature','Introduced by a pulled changeset','NoSchemaImport','NoSchemaImport')"));
+    m_db->SaveChanges("Declared a new feature");
+
+    ChangesetPropsPtr featureRevision = CreateRevision("-cs2");
+    ASSERT_TRUE(featureRevision.IsValid());
+
+    RestoreTestFile();
+
+    // This mode is accepted, so the merge succeeds and the restriction takes effect.
+    ASSERT_EQ(ChangesetStatus::Success, m_db->Txns().PullMergeApply(*featureRevision));
+    ASSERT_EQ(1, m_db->GetFeaturesBlockingSchemaImport().size());
+
+    // Reversing the changeset removes the feature row, so the restriction must be lifted.
+    m_db->Txns().ReverseChangeset(*featureRevision);
+    ASSERT_FALSE(FeatureRowExists("pulled-nosi-feature")) << "Reversing must remove the feature row";
+    EXPECT_TRUE(m_db->GetFeaturesBlockingSchemaImport().empty()) << "Reversing the changeset must lift the restriction";
+    }
+
+//---------------------------------------------------------------------------------------
+// Reverting a changeset that had introduced a feature row must remove the row and lift the
+// restriction.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, RevertTimelineChangesRemovesFeatureRestriction)
+    {
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"RevertTimelineFeatureRestriction.bim");
+    m_db->SaveChanges("Created Initial Model");
+
+    ChangesetPropsPtr initialRevision = CreateRevision("-cs1");
+    ASSERT_TRUE(initialRevision.IsValid());
+
+    // Introduce a feature locally and capture it as a revertible changeset of its own
+    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteSql(
+        "INSERT INTO ec_Feature(Name, Description, Compat, Fallback) "
+        "VALUES ('revert-timeline-nosi-feature','Introduced by a changeset being reverted','NoSchemaImport','NoSchemaImport')"));
+    m_db->SaveChanges("Declared a new feature");
+
+    ChangesetPropsPtr featureRevision = CreateRevision("-cs2");
+    ASSERT_TRUE(featureRevision.IsValid());
+
+    // The feature is now live and restricting this connection.
+    ASSERT_EQ(BE_SQLITE_OK, m_db->RevalidateFeatures());
+    ASSERT_EQ(1, m_db->GetFeaturesBlockingSchemaImport().size());
+    EXPECT_STREQ("revert-timeline-nosi-feature", m_db->GetFeaturesBlockingSchemaImport().front().c_str());
+
+    // Revert the changeset that introduced the feature 
+    m_db->Txns().RevertTimelineChanges({ featureRevision }, false);
+
+    ASSERT_FALSE(FeatureRowExists("revert-timeline-nosi-feature")) << "RevertTimelineChanges must remove the feature row";
+    EXPECT_TRUE(m_db->GetFeaturesBlockingSchemaImport().empty()) << "RevertTimelineChanges must lift the restriction it introduced";
+
+    // The briefcase must be fully usable again.
+    InsertFloor(1, 1);
+    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Local change after revert"));
+    EXPECT_TRUE(CreateRevision("-cs3").IsValid()) << "Changeset generation must work again after the restriction is lifted";
+    }
+
+//---------------------------------------------------------------------------------------
+// A pulled changeset carrying only a Warn feature must not restrict anything.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, MergedChangesetIntroducingWarnFeatureIsNotRestrictive)
+    {
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"MergedFeatureWarn.bim");
+    m_db->SaveChanges("Created Initial Model");
+
+    ChangesetPropsPtr initialRevision = CreateRevision("-cs1");
+    ASSERT_TRUE(initialRevision.IsValid());
+
+    BackupTestFile();
+
+    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteSql(
+        "INSERT INTO ec_Feature(Name, Description, Compat, Fallback) "
+        "VALUES ('pulled-warn-feature','Introduced by a pulled changeset','Warn','Warn')"));
+    m_db->SaveChanges("Declared a new feature");
+
+    ChangesetPropsPtr featureRevision = CreateRevision("-cs2");
+    ASSERT_TRUE(featureRevision.IsValid());
+
+    RestoreTestFile();
+
+    ASSERT_EQ(ChangesetStatus::Success, m_db->Txns().PullMergeApply(*featureRevision)) << "A Warn feature must not fail the merge";
+    EXPECT_TRUE(m_db->GetFeaturesBlockingSchemaImport().empty());
+
+    InsertFloor(1, 1);
+    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Local change after pull"));
+    EXPECT_TRUE(CreateRevision("-cs3").IsValid()) << "A Warn feature must leave the briefcase fully usable";
+    }
