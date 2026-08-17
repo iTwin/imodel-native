@@ -106,7 +106,6 @@ protected:
         DbResult m_readWriteOpen = BE_SQLITE_OK;
         DbResult m_readonlyOpen = BE_SQLITE_OK;
         bool m_schemaImportBlocked = false;
-        bool m_changesetGenerationBlocked = false;
         bool m_expectWarning = false;
         };
 

@@ -252,11 +252,6 @@ ECN::IECClassLocater& ECDb::GetClassLocater() const { return m_pimpl->GetClassLo
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-std::vector<Utf8String> const& ECDb::GetFeaturesBlockingChangesetGeneration() const { return m_pimpl->GetFeaturesBlockingChangesetGeneration(); }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod
-//---------------+---------------+---------------+---------------+---------------+------
 std::vector<Utf8String> const& ECDb::GetFeaturesBlockingSchemaImport() const { return m_pimpl->GetFeaturesBlockingSchemaImport(); }
 
 //--------------------------------------------------------------------------------------
@@ -286,16 +281,17 @@ BentleyStatus ECDb::TryGetBlockingFeatures(std::vector<Utf8String>& blockingFeat
     while (BE_SQLITE_ROW == stmt.Step())
         {
         Utf8CP name = stmt.GetValueText(0);
-        Utf8CP compat = stmt.GetValueText(1);
-        Utf8CP fallback = stmt.GetValueText(2);
-
-        if (Utf8String::IsNullOrEmpty(name) || Utf8String::IsNullOrEmpty(compat) || Utf8String::IsNullOrEmpty(fallback))
+        if (Utf8String::IsNullOrEmpty(name))
             continue;
 
-        if (FeatureManager::ResolveEffectiveCompat(compat, fallback) != Compat::Refuse)
+        Utf8String compatStr(stmt.GetValueText(1));
+        Utf8String fallbackStr(stmt.GetValueText(2));
+
+        if (FeatureManager::IsFeatureKnown(name))
             continue;
 
-        blockingFeatureNames.push_back(name);
+        if (Compat::Refuse == FeatureManager::ResolveEffectiveCompat(compatStr, fallbackStr))
+            blockingFeatureNames.push_back(name);
         }
 
     return SUCCESS;

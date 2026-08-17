@@ -1332,33 +1332,19 @@ void BeStringUtilities::Split(Utf8CP str, Utf8CP delimiters, Utf8CP escapeChars,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T> static Utf8String joinStrings(bvector<T> const& strings, Utf8CP delim, bool addQuotes)
+template<typename T> static Utf8String joinStrings(bvector<T> const& strings, Utf8CP delim)
     {
     Utf8String out;
     if (0 < strings.size())
         {
-        if (addQuotes)
-            {
-            out.append("\"");
-            out.append(strings[0]);
-            out.append("\"");
-            }
-        else
-            out.append (strings[0]);
+        out.append (strings[0]);
 
         for (size_t i = 1; i < strings.size(); i++)
             {
             if (NULL != delim)
                 out.append (delim);
 
-            if (addQuotes)
-                {
-                out.append("\"");
-                out.append(strings[i]);
-                out.append("\"");
-                }
-            else
-                out.append (strings[i]);
+            out.append (strings[i]);
             }
         }
 
@@ -1368,17 +1354,17 @@ template<typename T> static Utf8String joinStrings(bvector<T> const& strings, Ut
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String BeStringUtilities::Join (bvector<Utf8String> const& strings, Utf8CP delim, bool addQuotes)
+Utf8String BeStringUtilities::Join (bvector<Utf8String> const& strings, Utf8CP delim)
     {
-    return joinStrings(strings, delim, addQuotes);
+    return joinStrings(strings, delim);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String BeStringUtilities::Join(bvector<Utf8CP> const& strings, Utf8CP delim, bool addQuotes)
+Utf8String BeStringUtilities::Join(bvector<Utf8CP> const& strings, Utf8CP delim)
     {
-    return joinStrings(strings, delim, addQuotes);
+    return joinStrings(strings, delim);
     }
 
 /*---------------------------------------------------------------------------------**//**

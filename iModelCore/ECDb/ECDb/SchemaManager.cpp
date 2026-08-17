@@ -43,8 +43,9 @@ SchemaImportResult SchemaManager::ImportSchemas(bvector<ECSchemaCP> const& schem
     if (!featuresBlockingSchemaImport.empty())
         {
         Main().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties,
-            IssueType::ECDbIssue, ECDbIssueId::ECDb_0746,
-            "Schema import is not allowed. The ECDb file uses an unknown feature %s that disables schema imports.", BeStringUtilities::Join(featuresBlockingSchemaImport, ", ", true).c_str());
+            IssueType::ECDbIssue, ECDbIssueId::ECDb_0749,
+            "Schema import is not allowed. The ECDb file uses an unknown feature %s that disables schema imports.",
+            FeatureManager::JoinFeatureNameValues(featuresBlockingSchemaImport).c_str());
         return SchemaImportResult::ERROR;
         }
     return Main().ImportSchemas(schemas, options, token, syncDbUri);

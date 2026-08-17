@@ -58,7 +58,7 @@ std::map<Feature, ProfileVersion> const* FeatureManager::s_featureMinimumVersion
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-std::map<Utf8String, FeatureInfo> const* FeatureManager::s_knownFeatures = new std::map<Utf8String, FeatureInfo>(KNOWN_FEATURES);
+std::map<Utf8String, FeatureInfo, CompareIUtf8Ascii> const* FeatureManager::s_knownFeatures = new std::map<Utf8String, FeatureInfo, CompareIUtf8Ascii>(KNOWN_FEATURES);
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -102,7 +102,6 @@ Utf8CP FeatureManager::FeatureCompatToString(Compat compat)
         case Compat::Warn:     return "Warn";
         case Compat::ReadOnly: return "ReadOnly";
         case Compat::NoSchemaImport: return "NoSchemaImport";
-        case Compat::NoChangesetGeneration: return "NoChangesetGeneration";
         case Compat::Refuse:   return "Refuse";
         default:
             BeAssert(false && "Unhandled Compat value");
@@ -129,11 +128,6 @@ bool FeatureManager::TryParseCompat(Utf8StringCR compatString, Compat& compat)
     if (compatString.EqualsI("NoSchemaImport"))
         {
         compat = Compat::NoSchemaImport;
-        return true;
-        }
-    if (compatString.EqualsI("NoChangesetGeneration"))
-        {
-        compat = Compat::NoChangesetGeneration;
         return true;
         }
     if (compatString.EqualsI("Refuse"))
@@ -172,7 +166,7 @@ BentleyStatus FeatureManager::InsertFeature(ECDbCR ecdb, Utf8StringCR featureNam
     const FeatureInfo* info = FindKnownFeature(featureName);
     if (info == nullptr)
         {
-        ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0745,
+        ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0748,
             "Feature '%s' is not a known feature and cannot be inserted into the database.", featureName.c_str());
         return BentleyStatus::ERROR;
         }
@@ -230,6 +224,23 @@ BentleyStatus FeatureManager::ReconcileSchemaFeatures(ECDbCR ecdb)
         }
 
     return BentleyStatus::SUCCESS;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+Utf8String FeatureManager::JoinFeatureNameValues(const std::vector<Utf8String>& featureNames)
+    {
+    Utf8String joinedString;
+    for (const auto& featureName : featureNames)
+        {
+        if (!joinedString.empty())
+            joinedString.append(", ");
+
+        joinedString.append("\"").append(featureName).append("\"");
+        }
+    return joinedString;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

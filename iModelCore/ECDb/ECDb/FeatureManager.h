@@ -39,7 +39,7 @@ enum class Feature
     {Feature::SystemPropertiesHaveIdExtendedType, ProfileVersion(4, 0, 0, 2)} \
     }
 
-enum class Compat { Warn, ReadOnly, NoSchemaImport, NoChangesetGeneration, Refuse };
+enum class Compat { Warn, ReadOnly, NoSchemaImport, Refuse };
 
 //! Function that returns true if the feature is currently in use in the given ECDb.
 //! Set to nullptr for write-once features (e.g. profile-upgrade changes)
@@ -67,7 +67,7 @@ private:
 
     //non-POD static members must never be destroyed (Bentley guideline)
     static std::map<Feature, ProfileVersion> const* s_featureMinimumVersions;
-    static std::map<Utf8String, FeatureInfo> const* s_knownFeatures;
+    static std::map<Utf8String, FeatureInfo, CompareIUtf8Ascii> const* s_knownFeatures;
 
     static bool IsAvailable(ProfileVersion const& actualVersion, Feature);
     static FeatureInfo const* FindKnownFeature(Utf8StringCR featureName);
@@ -93,6 +93,8 @@ public:
     //! TODO Rohit: This needs further discussion.
     //! This was easy for the Json primitive type as we can just check the db. But it might get expensive where in memory scans might be needed.
     static BentleyStatus ReconcileSchemaFeatures(ECDbCR ecdb);
+
+    static Utf8String JoinFeatureNameValues(const std::vector<Utf8String>& featureNames);
     };
 
 

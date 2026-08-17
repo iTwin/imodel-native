@@ -226,7 +226,6 @@ DbResult ECDb::Impl::ValidateECFeatures() const
     // This may be a re-validation (e.g. after merging a changeset that added ec_Feature rows), so
     // always recompute from scratch rather than accumulating onto a previous run's results.
     m_featuresBlockingSchemaImport.clear();
-    m_featuresBlockingChangesetGeneration.clear();
 
     // Either the profile version does not support ec_Feature table or else the ECDb file is not using any features yet.
     if (m_ecdb.GetECDbProfileVersion() < ProfileVersion(4, 0, 0, 6) || !m_ecdb.TableExists(TABLE_Feature))
@@ -238,6 +237,7 @@ DbResult ECDb::Impl::ValidateECFeatures() const
 
     std::vector<Utf8String> warnFeatures;
     std::vector<Utf8String> readOnlyFeatures;
+    std::vector<Utf8String> blockingFeatureNames;
 
     while (stmt.Step() == BE_SQLITE_ROW)
         {
@@ -267,53 +267,46 @@ DbResult ECDb::Impl::ValidateECFeatures() const
                 m_featuresBlockingSchemaImport.push_back(featureName);
                 break;
 
-            case Compat::NoChangesetGeneration:
-                // The file itself is safe to read and write locally, but this runtime must not publish a changeset from it
-                m_featuresBlockingChangesetGeneration.push_back(featureName);
-                break;
-
             case Compat::Refuse:
-                m_issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties,
-                    IssueType::ECDbIssue, ECDbIssueId::ECDb_0744,
-                    "ECDb file uses unknown feature '%s'. The file cannot be opened by this ECDb runtime.",
-                    featureName.c_str());
-                return BE_SQLITE_ERROR;
+                blockingFeatureNames.push_back(featureName);
+                break;
             }
         }
-        
-    if (warnFeatures.empty() && readOnlyFeatures.empty() && m_featuresBlockingSchemaImport.empty() && m_featuresBlockingChangesetGeneration.empty())
-        return BE_SQLITE_OK;
+
 
     if (!warnFeatures.empty())
         {
         m_issueReporter.ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties,
-            IssueType::ECDbIssue, ECDbIssueId::ECDb_0742,
+            IssueType::ECDbIssue, ECDbIssueId::ECDb_0744,
             "ECDb file uses unknown features %s. Some data may not be accessible.",
-            BeStringUtilities::Join(warnFeatures, ", ", true).c_str());
+            FeatureManager::JoinFeatureNameValues(warnFeatures).c_str());
         }
 
     if (!m_featuresBlockingSchemaImport.empty())
         {
         m_issueReporter.ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties,
-            IssueType::ECDbIssue, ECDbIssueId::ECDb_0746,
+            IssueType::ECDbIssue, ECDbIssueId::ECDb_0745,
             "ECDb file uses unknown features %s. The file will restrict all schema imports. However, it can still be written to.",
-            BeStringUtilities::Join(m_featuresBlockingSchemaImport, ", ", true).c_str());
+            FeatureManager::JoinFeatureNameValues(m_featuresBlockingSchemaImport).c_str());
         }
 
-    if (!m_featuresBlockingChangesetGeneration.empty())
+    if (!blockingFeatureNames.empty())
         {
-        m_issueReporter.ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties,
+        m_issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties,
             IssueType::ECDbIssue, ECDbIssueId::ECDb_0747,
-            "ECDb file uses unknown features %s. The file cannot generate changesets. However, it can still be read and written to locally.",
-            BeStringUtilities::Join(m_featuresBlockingChangesetGeneration, ", ", true).c_str());
+            "ECDb file uses unknown features %s. The file cannot be opened.",
+            FeatureManager::JoinFeatureNameValues(blockingFeatureNames).c_str());
+
+        m_featuresBlockingSchemaImport.clear();
+        return BE_SQLITE_ERROR;
         }
 
     if (!readOnlyFeatures.empty())
         {
         m_issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties,
-            IssueType::ECDbIssue, ECDbIssueId::ECDb_0743,
+            IssueType::ECDbIssue, ECDbIssueId::ECDb_0746,
             "ECDb file uses unknown features %s. The file can only be opened read-only.",
-            BeStringUtilities::Join(readOnlyFeatures, ", ", true).c_str());
+            FeatureManager::JoinFeatureNameValues(readOnlyFeatures).c_str());
         return BE_SQLITE_READONLY;
         }
 

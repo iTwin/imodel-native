@@ -1134,7 +1134,6 @@ TEST_F(ECSqlPragmasTestFixture, PragmaUsedFeatures_ReturnsTableContents)
         { "used-warn-feature-test", "A used warn Feature", "Warn", "Warn" },
         { "used-readOnly-feature-test", "A used readonly Feature", "ReadOnly", "ReadOnly" },
         { "used-noImport-feature-test", "A used noImport Feature", "NoSchemaImport", "NoSchemaImport" },
-        { "used-noChangeset-feature-test", "A used noChangeset Feature", "NoChangesetGeneration", "NoChangesetGeneration" },
         { "used-refuse-feature-test", "A used refuse Feature", "Refuse", "Refuse" },
         { "used-future-feature-test", "A used future Feature", "SomeFutureMode", "ReadOnly" },
     };

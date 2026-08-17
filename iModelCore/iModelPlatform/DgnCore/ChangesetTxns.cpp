@@ -1030,12 +1030,6 @@ void TxnManager::ForEachLocalChange(std::function<void(ECInstanceKey const&, DbO
  * can save more than one changeset while they work (without mocking iModelHub.)
  */
 ChangesetPropsPtr TxnManager::StartCreateChangeset(Utf8CP extension) {
-    // The file may use an unknown ECDb feature that forbids this runtime from publishing a changeset.
-    const auto& featuresBlockingChangesetGeneration = m_dgndb.GetFeaturesBlockingChangesetGeneration();
-    if (!featuresBlockingChangesetGeneration.empty())
-        m_dgndb.ThrowException(Utf8PrintfString("Changeset generation is not allowed. The iModel uses unknown feature(s) %s that disable changeset generation.",
-            BeStringUtilities::Join(featuresBlockingChangesetGeneration, ", ", true).c_str()).c_str(), static_cast<int>(ChangesetStatus::CannotGenerateChangeset));
-
     if (m_changesetInProgress.IsValid())
         m_dgndb.ThrowException("a changeset is currently in progress", (int) ChangesetStatus::IsCreatingChangeset);
 

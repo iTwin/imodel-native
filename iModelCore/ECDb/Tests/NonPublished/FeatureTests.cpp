@@ -213,7 +213,7 @@ TEST_F(FeatureTests, Feature_UnknownNoSchemaImport_BlocksSchemaImports)
 //---------------------------------------------------------------------------------------
 TEST_F(FeatureTests, Feature_UnknownRefuse_BlocksAllOpen)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("feature_refuse.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("feature_unknown_refuse_blocks_open.ecdb"));
     ASSERT_EQ(BE_SQLITE_OK, InsertRawFeatureRow("unknown-refuse-feature", "Refuse"));
     m_ecdb.SaveChanges();
     BeFileName filePath(m_ecdb.GetDbFileName());
@@ -227,9 +227,8 @@ TEST_F(FeatureTests, Feature_UnknownRefuse_BlocksAllOpen)
     EXPECT_FALSE(m_ecdb.IsDbOpen()) << "The database must remain closed after the failed read-write open";
 
     ASSERT_FALSE(issueListener.IsEmpty()) << "The failed open must report at least one issue";
-    const ReportedIssue& issue = issueListener.m_issues.back();
-    EXPECT_EQ(IssueSeverity::Error, issue.severity) << "The issue severity must be Error";
-    EXPECT_TRUE(issue.message.EqualsI("ECDb file uses unknown feature 'unknown-refuse-feature'. The file cannot be opened by this ECDb runtime."));
+    EXPECT_EQ(IssueSeverity::Error, issueListener.m_issues.back().severity) << "The issue severity must be Error";
+    EXPECT_STREQ("ECDb file uses unknown features \"unknown-refuse-feature\". The file cannot be opened.", issueListener.m_issues.back().message.c_str());
 
     // Try to open the ECDb in read-only mode. Should fail.
     issueListener.ClearIssues();
@@ -239,13 +238,19 @@ TEST_F(FeatureTests, Feature_UnknownRefuse_BlocksAllOpen)
     EXPECT_FALSE(m_ecdb.IsDbOpen()) << "The database must remain closed after the failed read-only open";
 
     ASSERT_FALSE(issueListener.IsEmpty()) << "The failed open must report at least one issue";
-    EXPECT_EQ(IssueSeverity::Error, issue.severity) << "The issue severity must be Error";
-    EXPECT_TRUE(issue.message.EqualsI("ECDb file uses unknown feature 'unknown-refuse-feature'. The file cannot be opened by this ECDb runtime."));
+    EXPECT_EQ(IssueSeverity::Error, issueListener.m_issues.back().severity) << "The issue severity must be Error";
+    EXPECT_STREQ("ECDb file uses unknown features \"unknown-refuse-feature\". The file cannot be opened.", issueListener.m_issues.back().message.c_str());
     }
 
-TEST_F(FeatureTests, Feature_RefuseShouldTakePrecedence)
+//---------------------------------------------------------------------------------------
+// Smoke test: when all four compat modes are present at once, Refuse (the most severe)
+// must determine the outcome. See Feature_RefuseTakesPrecedenceOverReadOnly for the
+// focused Refuse-vs-ReadOnly ordering regression guard.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(FeatureTests, Feature_RefuseWinsOverAllOtherModes)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("feature_readonly_then_refuse.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("feature_all_modes_refuse_wins.ecdb"));
     ASSERT_EQ(BE_SQLITE_OK, InsertRawFeatureRow("future-readonly-feature", "ReadOnly"));
     ASSERT_EQ(BE_SQLITE_OK, InsertRawFeatureRow("future-warn-feature", "Warn"));
     ASSERT_EQ(BE_SQLITE_OK, InsertRawFeatureRow("future-refuse-feature", "Refuse"));
@@ -264,12 +269,113 @@ TEST_F(FeatureTests, Feature_RefuseShouldTakePrecedence)
 
     ReportedIssue issue = issueListener.m_issues.back();
     EXPECT_EQ(IssueSeverity::Error, issue.severity);
-    EXPECT_TRUE(issue.message.EqualsI("ECDb file uses unknown feature 'future-refuse-feature'. The file cannot be opened by this ECDb runtime."));
+    EXPECT_STREQ("ECDb file uses unknown features \"future-refuse-feature\". The file cannot be opened.", issue.message.c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// Regression guard: when a file carries BOTH an unknown ReadOnly feature and an unknown
+// Refuse feature, the more severe mode must win. Refuse must be evaluated before ReadOnly,
+// otherwise a read-write open degrades to BE_SQLITE_READONLY and the file is opened
+// read-only when it must not be opened at all.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(FeatureTests, Feature_RefuseTakesPrecedenceOverReadOnly)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("feature_refuse_beats_readonly.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, InsertRawFeatureRow("future-readonly-feature", "ReadOnly"));
+    ASSERT_EQ(BE_SQLITE_OK, InsertRawFeatureRow("future-refuse-feature", "Refuse"));
+    m_ecdb.SaveChanges();
+    BeFileName filePath(m_ecdb.GetDbFileName());
+    CloseECDb();
+
+    // Read-write: Refuse must win over ReadOnly.
+        {
+        TestIssueListener issueListener;
+        m_ecdb.AddIssueListener(issueListener);
+
+        EXPECT_EQ(BE_SQLITE_ERROR, m_ecdb.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite)))
+            << "Refuse must take precedence over ReadOnly on a read-write open";
+        EXPECT_FALSE(m_ecdb.IsDbOpen()) << "The database must remain closed, not fall back to read-only";
+
+        ASSERT_FALSE(issueListener.IsEmpty());
+        EXPECT_EQ(IssueSeverity::Error, issueListener.m_issues.back().severity);
+        EXPECT_STREQ("ECDb file uses unknown features \"future-refuse-feature\". The file cannot be opened.", issueListener.m_issues.back().message.c_str())
+            << "The reported issue must be the Refuse issue, not the ReadOnly one";
+
+        for (ReportedIssue const& reported : issueListener.m_issues)
+            EXPECT_EQ(Utf8String::npos, reported.message.find("can only be opened read-only"))
+                << "The ReadOnly issue must not be reported once a Refuse feature has already blocked the open";
+        }
+
+    // Read-only: Refuse must still block, even though ReadOnly alone would have been satisfied.
+        {
+        TestIssueListener issueListener;
+        m_ecdb.AddIssueListener(issueListener);
+
+        EXPECT_EQ(BE_SQLITE_ERROR, m_ecdb.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::Readonly)))
+            << "Refuse must block a read-only open as well";
+        EXPECT_FALSE(m_ecdb.IsDbOpen());
+
+        ASSERT_FALSE(issueListener.IsEmpty());
+        EXPECT_EQ(IssueSeverity::Error, issueListener.m_issues.back().severity);
+        EXPECT_STREQ("ECDb file uses unknown features \"future-refuse-feature\". The file cannot be opened.", issueListener.m_issues.back().message.c_str());
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// When a file carries both an unknown NoSchemaImport feature and an unknown Refuse
+// feature, Refuse must win: the file must not open at all, in either mode.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(FeatureTests, Feature_RefuseTakesPrecedenceOverNoSchemaImport)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("feature_refuse_beats_noschemaimport.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, InsertRawFeatureRow("future-no-schema-import-feature", "NoSchemaImport"));
+    ASSERT_EQ(BE_SQLITE_OK, InsertRawFeatureRow("future-refuse-feature", "Refuse"));
+    m_ecdb.SaveChanges();
+    BeFileName filePath(m_ecdb.GetDbFileName());
+    CloseECDb();
+
+    for (Db::OpenMode openMode : {Db::OpenMode::ReadWrite, Db::OpenMode::Readonly})
+        {
+        TestIssueListener issueListener;
+        m_ecdb.AddIssueListener(issueListener);
+
+        EXPECT_EQ(BE_SQLITE_ERROR, m_ecdb.OpenBeSQLiteDb(filePath, Db::OpenParams(openMode)))
+            << "Refuse must take precedence over NoSchemaImport";
+        EXPECT_FALSE(m_ecdb.IsDbOpen());
+
+        ASSERT_FALSE(issueListener.IsEmpty());
+        EXPECT_EQ(IssueSeverity::Error, issueListener.m_issues.back().severity);
+        EXPECT_STREQ("ECDb file uses unknown features \"future-refuse-feature\". The file cannot be opened.", issueListener.m_issues.back().message.c_str());
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// Feature names are matched case-insensitively against the known-feature registry and
+// therefore must also be reported verbatim as written in the file.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(FeatureTests, Feature_UnknownName_IsReportedVerbatimRegardlessOfCasing)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("feature_name_casing.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, InsertRawFeatureRow("FUTURE-Warn-FEATURE", "Warn"));
+    m_ecdb.SaveChanges();
+    BeFileName filePath(m_ecdb.GetDbFileName());
+    CloseECDb();
+
+    TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
+
+    EXPECT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite)));
+    ASSERT_FALSE(issueListener.IsEmpty());
+    EXPECT_STREQ("ECDb file uses unknown features \"FUTURE-Warn-FEATURE\". Some data may not be accessible.", issueListener.m_issues.back().message.c_str())
+        << "The unknown feature name must be echoed exactly as stored in the file";
     }
 
 TEST_F(FeatureTests, Feature_WarningsAndErrorsShouldBeReported)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("feature_readonly_then_refuse.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("feature_warn_and_error_reporting.ecdb"));
     ASSERT_EQ(BE_SQLITE_OK, InsertRawFeatureRow("future-readonly-feature1", "ReadOnly"));
     ASSERT_EQ(BE_SQLITE_OK, InsertRawFeatureRow("future-readonly-feature2", "ReadOnly"));
     ASSERT_EQ(BE_SQLITE_OK, InsertRawFeatureRow("future-warn-feature1", "Warn"));
@@ -287,19 +393,29 @@ TEST_F(FeatureTests, Feature_WarningsAndErrorsShouldBeReported)
     EXPECT_FALSE(m_ecdb.IsDbOpen());
 
     ASSERT_FALSE(issueListener.IsEmpty());
-    EXPECT_EQ(3, issueListener.m_issues.size());
+    ASSERT_EQ(3, issueListener.m_issues.size());
 
-    ReportedIssue warning = issueListener.m_issues[0];
-    EXPECT_EQ(IssueSeverity::Warning, warning.severity);
-    EXPECT_STREQ(warning.message.c_str(), "ECDb file uses unknown features \"future-warn-feature1\", \"future-warn-feature2\", \"future-warn-feature3\". Some data may not be accessible.");
+    auto findIssue = [&](Utf8CP expectedMessage) -> ReportedIssue const*
+        {
+        for (ReportedIssue const& reported : issueListener.m_issues)
+            {
+            if (reported.message.Equals(expectedMessage))
+                return &reported;
+            }
+        return nullptr;
+        };
 
-    ReportedIssue noSchemaImport = issueListener.m_issues[1];
-    EXPECT_EQ(IssueSeverity::Warning, noSchemaImport.severity);
-    EXPECT_STREQ(noSchemaImport.message.c_str(), "ECDb file uses unknown features \"future-no-schema-import-feature\". The file will restrict all schema imports. However, it can still be written to.");
+    ReportedIssue const* warning = findIssue("ECDb file uses unknown features \"future-warn-feature1\", \"future-warn-feature2\", \"future-warn-feature3\". Some data may not be accessible.");
+    ASSERT_NE(nullptr, warning) << "The aggregated Warn issue was not reported";
+    EXPECT_EQ(IssueSeverity::Warning, warning->severity);
 
-    ReportedIssue readOnly = issueListener.m_issues[2];
-    EXPECT_EQ(IssueSeverity::Error, readOnly.severity);
-    EXPECT_STREQ(readOnly.message.c_str(), "ECDb file uses unknown features \"future-readonly-feature1\", \"future-readonly-feature2\". The file can only be opened read-only.");
+    ReportedIssue const* noSchemaImport = findIssue("ECDb file uses unknown features \"future-no-schema-import-feature\". The file will restrict all schema imports. However, it can still be written to.");
+    ASSERT_NE(nullptr, noSchemaImport) << "The NoSchemaImport issue was not reported";
+    EXPECT_EQ(IssueSeverity::Warning, noSchemaImport->severity);
+
+    ReportedIssue const* readOnly = findIssue("ECDb file uses unknown features \"future-readonly-feature1\", \"future-readonly-feature2\". The file can only be opened read-only.");
+    ASSERT_NE(nullptr, readOnly) << "The aggregated ReadOnly issue was not reported";
+    EXPECT_EQ(IssueSeverity::Error, readOnly->severity);
 }
 
 
@@ -405,15 +521,12 @@ TEST_F(FeatureTests, Feature_ResolveEffectiveCompat)
     EXPECT_EQ(Compat::Warn, compat);
     EXPECT_TRUE(FeatureManager::TryParseCompat("noschemaimport", compat));
     EXPECT_EQ(Compat::NoSchemaImport, compat);
-    EXPECT_TRUE(FeatureManager::TryParseCompat("NoChangesetGeneration", compat));
-    EXPECT_EQ(Compat::NoChangesetGeneration, compat);
     EXPECT_FALSE(FeatureManager::TryParseCompat("SomeFutureMode", compat));
 
     // Recognized Compat wins.
     EXPECT_EQ(Compat::ReadOnly, FeatureManager::ResolveEffectiveCompat("ReadOnly", "Warn"));
     // Unrecognized Compat degrades to the declared Fallback.
     EXPECT_EQ(Compat::Warn, FeatureManager::ResolveEffectiveCompat("SomeFutureMode", "Warn"));
-    EXPECT_EQ(Compat::NoChangesetGeneration, FeatureManager::ResolveEffectiveCompat("SomeFutureMode", "NoChangesetGeneration"));
     // Neither recognized -> fail closed.
     EXPECT_EQ(Compat::Refuse, FeatureManager::ResolveEffectiveCompat("SomeFutureMode", "AlsoUnknown"));
     EXPECT_EQ(Compat::Refuse, FeatureManager::ResolveEffectiveCompat("", ""));
@@ -485,17 +598,17 @@ TEST_F(FeatureTests, RevalidatePicksUpFeaturesAddedAfterOpen)
 
     // Nothing unknown yet.
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.RevalidateFeatures());
-    ASSERT_TRUE(m_ecdb.GetFeaturesBlockingChangesetGeneration().empty());
+    ASSERT_TRUE(m_ecdb.GetFeaturesBlockingSchemaImport().empty());
 
     // Simulate a pulled changeset introducing a feature this runtime has never heard of.
-    ASSERT_EQ(BE_SQLITE_OK, InsertRawFeatureRow("post-open-nocs-feature", "NoChangesetGeneration"));
+    ASSERT_EQ(BE_SQLITE_OK, InsertRawFeatureRow("post-open-feature", "NoSchemaImport"));
 
     // Until we revalidate, the cached state is stale - this is exactly the hole being closed.
-    ASSERT_TRUE(m_ecdb.GetFeaturesBlockingChangesetGeneration().empty()) << "Cached state is only refreshed on demand";
+    ASSERT_TRUE(m_ecdb.GetFeaturesBlockingSchemaImport().empty()) << "Cached state is only refreshed on demand";
 
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.RevalidateFeatures()) << "NoChangesetGeneration keeps the file usable";
-    ASSERT_EQ(1, m_ecdb.GetFeaturesBlockingChangesetGeneration().size());
-    EXPECT_STREQ("post-open-nocs-feature", m_ecdb.GetFeaturesBlockingChangesetGeneration().front().c_str());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.RevalidateFeatures()) << "NoSchemaImport keeps the file usable";
+    ASSERT_EQ(1, m_ecdb.GetFeaturesBlockingSchemaImport().size());
+    EXPECT_STREQ("post-open-feature", m_ecdb.GetFeaturesBlockingSchemaImport().front().c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -522,20 +635,17 @@ TEST_F(FeatureTests, RevalidateReportsReadOnlyAndRefuse)
 TEST_F(FeatureTests, RevalidateIsIdempotent)
     {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("feature_revalidate_idempotent.ecdb"));
-    ASSERT_EQ(BE_SQLITE_OK, InsertRawFeatureRow("nocs-feature", "NoChangesetGeneration"));
-    ASSERT_EQ(BE_SQLITE_OK, InsertRawFeatureRow("nosi-feature", "NoSchemaImport"));
+    ASSERT_EQ(BE_SQLITE_OK, InsertRawFeatureRow("no-schema-feature", "NoSchemaImport"));
 
     for (int i = 0; i < 3; ++i)
         {
         ASSERT_EQ(BE_SQLITE_OK, m_ecdb.RevalidateFeatures());
-        ASSERT_EQ(1, m_ecdb.GetFeaturesBlockingChangesetGeneration().size()) << "Repeated revalidation must not accumulate duplicates";
         ASSERT_EQ(1, m_ecdb.GetFeaturesBlockingSchemaImport().size()) << "Repeated revalidation must not accumulate duplicates";
         }
 
     // Reversing a changeset can remove feature rows again - the restriction must be lifted.
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.TryExecuteSql("DELETE FROM ec_Feature"));
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.RevalidateFeatures());
-    EXPECT_TRUE(m_ecdb.GetFeaturesBlockingChangesetGeneration().empty()) << "Stale restrictions must be cleared";
     EXPECT_TRUE(m_ecdb.GetFeaturesBlockingSchemaImport().empty()) << "Stale restrictions must be cleared";
     }
 
@@ -593,7 +703,6 @@ TEST_F(FeatureTests, TryGetBlockingFeatures_OnlyReportsRefuseLevelEntries)
     ASSERT_EQ(BE_SQLITE_OK, InsertRawFeatureRow("feature_warn", "Warn"));
     ASSERT_EQ(BE_SQLITE_OK, InsertRawFeatureRow("feature_readonly", "ReadOnly"));
     ASSERT_EQ(BE_SQLITE_OK, InsertRawFeatureRow("feature_noschemaimport", "NoSchemaImport"));
-    ASSERT_EQ(BE_SQLITE_OK, InsertRawFeatureRow("feature_nochangeset", "NoChangesetGeneration"));
     ASSERT_EQ(BE_SQLITE_OK, InsertRawFeatureRow("feature_refuse", "Refuse"));
     m_ecdb.SaveChanges();
     BeFileName filePath(m_ecdb.GetDbFileName());

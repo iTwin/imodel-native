@@ -1251,8 +1251,12 @@ DbResult PragmaECDbUsedFeatures::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb
 	result->AppendProperty("FeatureFallback", PRIMITIVETYPE_String);
 	result->FreezeSchemaChanges();
 
+	if (ecdb.CurrentECDbProfileVersion() < ProfileVersion(4, 0, 0, 6))
+		ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0750,
+			"PRAGMA '%s' is not supported.", GetName().c_str());
+
 	Statement stmt;
-	if (BE_SQLITE_OK != stmt.Prepare(ecdb, "SELECT Name, Description, Compat, Fallback FROM " TABLE_Feature))
+	if (BE_SQLITE_OK != stmt.Prepare(ecdb, "SELECT Name, Description, Compat, Fallback FROM [main].[ec_Feature]"))
 		{
 		rowSet = std::move(result);
 		return BE_SQLITE_OK;

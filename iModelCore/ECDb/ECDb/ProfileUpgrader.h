@@ -71,7 +71,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
             "Name TEXT PRIMARY KEY NOT NULL COLLATE NOCASE," \
             "Description TEXT NOT NULL," \
             "Compat TEXT NOT NULL," \
-            "Fallback TEXT NOT NULL COLLATE NOCASE CHECK(Fallback IN ('Warn','ReadOnly','NoSchemaImport','NoChangesetGeneration','Refuse')));"
+            "Fallback TEXT NOT NULL COLLATE NOCASE CHECK(Fallback IN ('Warn','ReadOnly','NoSchemaImport','Refuse')));"
 
 //=======================================================================================
 // @bsiclass

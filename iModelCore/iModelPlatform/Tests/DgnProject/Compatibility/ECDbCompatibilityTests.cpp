@@ -2506,7 +2506,6 @@ TEST_F(ECDbCompatibilityTestFixture, FeatureAwareMixedCompatsExpectedOpenBehavio
             testDb.AssertProfileVersion();
 
             EXPECT_TRUE(expected.m_schemaImportBlocked) << testDb.GetDescription();
-            EXPECT_TRUE(expected.m_changesetGenerationBlocked) << testDb.GetDescription();
             if (!isReadonlyOpen)
                 EXPECT_TRUE(expected.m_expectWarning) << testDb.GetDescription();
 
@@ -2522,8 +2521,7 @@ TEST_F(ECDbCompatibilityTestFixture, FeatureAwareMixedCompatsExpectedOpenBehavio
                 </ECSchema>)xml", *ctx)) << testDb.GetDescription();
 
             const BentleyStatus schemaImportStat = testDb.GetDb().Schemas().ImportSchemas(ctx->GetCache().GetSchemas());
-            if (expected.m_schemaImportBlocked)
-                EXPECT_EQ(ERROR, schemaImportStat) << "test-feature-noschemaimport must block schema import | " << testDb.GetDescription();
+            EXPECT_EQ(ERROR, schemaImportStat) << "test-feature-noschemaimport must block schema import | " << testDb.GetDescription();
             }
         }
     }

@@ -618,8 +618,6 @@ struct ECFeaturesMixedTestECDbCreator final : TestECDbCreator
                 return ERROR;
             if (!insertFeature("test-feature-noschemaimport", "NoSchemaImport"))
                 return ERROR;
-            if (!insertFeature("test-feature-nochangesetgen", "NoChangesetGeneration"))
-                return ERROR;
 
             return BE_SQLITE_OK == ecdb.SaveChanges() ? BentleyStatus::SUCCESS : BentleyStatus::ERROR;
             }
