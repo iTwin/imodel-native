@@ -174,7 +174,7 @@ public:
     //! Like Update(BeJsConst, UpdateOptions const&), but when options.HasExpectedOldValues() and the row was not
     //! affected (i.e. 0 rows modified), \p conflictingProperties is populated with the JSON member names (as
     //! given in options.GetExpectedOldValues()) of the properties whose current value no longer matches the
-    //! expected value; an empty \p conflictingProperties then means the row itself does not exist. Otherwise
+    //! expected value; if the row itself does not exist, every checked property is reported instead. Otherwise
     //! (a successful update, or no expected old values were given) \p conflictingProperties is left empty.
     ECDB_EXPORT DbResult Update(BeJsConst inst, UpdateOptions const& options, std::vector<Utf8String>& conflictingProperties);
     ECDB_EXPORT DbResult Delete(BeJsConst inst, DeleteOptions const& options);

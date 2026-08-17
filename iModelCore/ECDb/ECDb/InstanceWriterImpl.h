@@ -208,8 +208,8 @@ private:
     static bool TryGetECClassId(BindContext& ctx, BeJsConst val, ECClassId& id);
     static bool TryGetECInstanceId(BindContext& ctx, BeJsConst val, ECInstanceId& id);
     // Determines which of checkBindings' properties currently differ from their expected value for the row
-    // (classId, id). Returns the JSON member names (from checkBindings) of the mismatched properties, or an
-    // empty vector if the row itself does not exist.
+    // (classId, id). Returns the JSON member names (from checkBindings) of the mismatched properties, or all
+    // of checkBindings' JSON member names if the row itself does not exist.
     static std::vector<Utf8String> FindConflictingProperties(BindContext& ctx, ECClassId classId, ECInstanceId id, BeJsConst expectedOldValues, std::vector<CheckPropertyBinding> const& checkBindings);
 
 public:

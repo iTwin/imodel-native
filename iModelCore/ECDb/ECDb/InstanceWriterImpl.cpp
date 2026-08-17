@@ -1169,8 +1169,8 @@ DbResult Impl::Insert(BeJsConst inst, InstanceWriter::InsertOptions const& optio
 
 //----------------------------------------------------------------------------------
 // Reports the (JSON member) names of checkBindings' properties whose current value in the row (classId, id)
-// no longer matches its expected value. An empty result means the row itself does not exist, since a real
-// mismatch always makes at least one UNION ALL branch below produce a row.
+// no longer matches its expected value. If the row itself no longer exists, every checked property is
+// reported as conflicting instead, since there is no more granular difference to compare against.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
 std::vector<Utf8String> Impl::FindConflictingProperties(BindContext& ctx, ECClassId classId, ECInstanceId id, BeJsConst expectedOldValues, std::vector<CheckPropertyBinding> const& checkBindings) {
@@ -1178,6 +1178,18 @@ std::vector<Utf8String> Impl::FindConflictingProperties(BindContext& ctx, ECClas
     auto cls = ctx.GetECDb().Schemas().GetClass(classId);
     if (cls == nullptr || checkBindings.empty())
         return conflicts;
+
+    Utf8String existsEcsql;
+    existsEcsql.append("SELECT 1 FROM ").append(cls->GetECSqlName()).append(" WHERE [ECInstanceId] = ?");
+    ECSqlStatement existsStmt;
+    if (ECSqlStatus::Success == existsStmt.Prepare(ctx.GetECDb(), existsEcsql.c_str())) {
+        existsStmt.BindId(1, id);
+        if (existsStmt.Step() != BE_SQLITE_ROW) {
+            for (auto const& binding : checkBindings)
+                conflicts.push_back(binding.m_jsonMemberName);
+            return conflicts;
+        }
+    }
 
     Utf8String ecsql;
     for (auto const& binding : checkBindings) {
