@@ -1,0 +1,22 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+# vcpkg_install_pugixml.mke - Run vcpkg install for the pugixml manifest.
+# This mke is part of the sequential vcpkg install chain in vcpkg.PartFile.xml so that
+# only one vcpkg process runs at a time. Runs after vcpkg_install_png.
+#---------------------------------------------------------------------------------------------
+
+%include mdl.mki
+
+pugixmlDir  = $(_MakeFilePath)pugixml
+installRoot = $(OutputRootDir)vcpkg_installed/pugixml
+
+%include $(_MakeFilePath)vcpkg.mki
+
+always:
+%if defined (winNT)
+    powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$(_MakeFilePath)vcpkg_run_install.ps1" "$(pugixmlDir)" "$(installRoot)" "$(vcpkgTriplet)"
+%else
+    $(_MakeFilePath)vcpkg_run_install.sh $(pugixmlDir) $(installRoot) $(vcpkgTriplet)
+%endif

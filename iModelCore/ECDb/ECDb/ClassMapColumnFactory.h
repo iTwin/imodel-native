@@ -153,7 +153,7 @@ struct ClassMapColumnFactory final
             }
             void EnsurePropertyGoesToOverflow(Utf8StringCR propertyName, SchemaImportContext& ctx) const;
             void EvaluateIfPropertyGoesToOverflow(Utf8StringCR propertyName, SchemaImportContext& ctx) const;
-            void EvaluateIfPropertyGoesToOverflow(uint32_t columnsRequired, SchemaImportContext& ctx) const;
+            void EvaluateIfPropertyGoesToOverflow(uint32_t columnsRequired, Utf8StringCR propertyName, SchemaImportContext& ctx) const;
             void ResetCurrentPropertyOverflowFlag() const { m_putCurrentPropertyToOverflow = false; }
             void Debug() const { GetColumnMaps()->Debug(); }
             DbColumn* Allocate(SchemaImportContext&, ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8StringCR accessString, bool forcePhysicalColum = false) const;

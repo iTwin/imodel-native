@@ -534,6 +534,10 @@ void PropertyNameExp::SetPropertyRef(DerivedPropertyExp const& derivedPropertyEx
     }
 
 //------------------------------------------------------------------------------------------
+// Returns the property map backing this exp, or nullptr if there is none.
+// A nullptr result is legitimate and must be handled by callers: an exp referring to an alias
+// of a subquery or of a CTE can be backed by an arbitrary expression (e.g. a literal or a
+// computed value) rather than by a mapped property, in which case no property map exists.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+---------
 PropertyMap const* PropertyNameExp::GetPropertyMap() const
@@ -549,6 +553,8 @@ PropertyMap const* PropertyNameExp::GetPropertyMap() const
             {
             ClassNameExp const& classNameExp = classRefExp->GetAs<ClassNameExp>();
             propertyMap = classNameExp.GetInfo().GetMap().GetPropertyMaps().Find(GetResolvedPropertyPath().ToString(false).c_str());
+            //a property of an actual class is always expected to be mapped
+            BeAssert(propertyMap != nullptr && "PropertyNameExp's PropertyMap should never be nullptr for a class name exp.");
             break;
             }
 
@@ -556,10 +562,8 @@ PropertyMap const* PropertyNameExp::GetPropertyMap() const
             {  
             PropertyNameExp::PropertyRef const* propertyRef = GetPropertyRef();
             BeAssert(propertyRef != nullptr);
+            //may be nullptr if the referenced derived property exp is not a property name exp (e.g. a literal or computed value)
             propertyMap = propertyRef->TryGetPropertyMap(GetResolvedPropertyPath());
-            if (propertyMap == nullptr) {
-                BeAssert(propertyMap != nullptr && "Exp of a derived prop exp referenced from a sub query ref is expected to always be a prop name exp");
-            }
             break;
             }
         case Exp::Type::CommonTableBlockName :
@@ -572,10 +576,8 @@ PropertyMap const* PropertyNameExp::GetPropertyMap() const
                 {
                 PropertyNameExp::PropertyRef const* propertyRef = GetPropertyRef();
                 BeAssert(propertyRef != nullptr);
+                //may be nullptr if the referenced derived property exp is not a property name exp (e.g. a literal or computed value)
                 propertyMap = propertyRef->TryGetPropertyMap(GetResolvedPropertyPath());
-                if (propertyMap == nullptr) {
-                    BeAssert(propertyMap != nullptr && "Exp of a derived prop exp referenced from a common table block name is expected to always be a prop name exp");
-                }
                 break;
                 }
             return nullptr; // This block returns nullptr for proper alias referencing if the cte block has columns
@@ -585,7 +587,6 @@ PropertyMap const* PropertyNameExp::GetPropertyMap() const
                 break;
         }
 
-    BeAssert(propertyMap != nullptr && "PropertyNameExp's PropertyMap should never be nullptr.");
     return propertyMap;
     }
 
