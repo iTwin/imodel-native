@@ -1648,7 +1648,7 @@ static DbResult ApplySchemaChangesInOrder(ECDbChangeSet& changeset, ECDbR db, Ap
 * ec_ rows a changeset carries, so the hook has to run between the two passes or the data rows
 * arrive at a table that does not exist yet and are dropped. That holds even when the changeset
 * also carries DDL, since applying it is best effort. Merge only, matching TxnManager gating it on
-* TxnAction::Merge: reversing and reinstating local txns leave the tables alone.
+* TxnAction::Merge: the reverse pass leaves the tables alone, the reinstate pass does not.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DbResult ApplyOneChangeset(ECDbChangeSet& changeset, ECDbR db, bool invert, bool isMerge) {
@@ -1745,7 +1745,13 @@ DbResult TrackedECDb::RebaseOntoIncoming(std::vector<ECDbChangeSet*> const& inco
     for (auto& local : localChangesets) {
         local->SetECDb(*this);
         local->DetermineSchemaSyncPrecedence();
-        rc = ApplyOneChangeset(*local, *this, false, false);
+        // TxnManager::PullMergeRebaseReinstateTxn passes TxnAction::Merge here, so a reinstated local
+        // schema txn gets the post-schema hook as well. The incoming pass repopulated the ec_cache_
+        // tables while these rows were reversed out, so without it a class this briefcase imported
+        // itself comes back with no ec_cache_ClassHasTables row - its storage description then has no
+        // horizontal partition and the first ECSql against it dereferences an empty vector.
+        const auto kReinstateIsMerge = true;
+        rc = ApplyOneChangeset(*local, *this, false, kReinstateIsMerge);
         if (rc == BE_SQLITE_OK)
             rc = local->ApplySupersedingRows(*this);
         if (rc == BE_SQLITE_OK) {
