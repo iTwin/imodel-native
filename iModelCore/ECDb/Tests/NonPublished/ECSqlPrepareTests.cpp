@@ -3672,9 +3672,8 @@ struct ECSqlPrepareDamagedMappingTests : ECDbTestFixture {};
 // something a changeset carries, so a file can end up with ec_ rows describing a mapped class and
 // no cache row for it. Every partition list is then empty.
 //
-// The polymorphic path already handles that - the union comes out empty and RenderNullView takes
-// over. The ONLY path takes GetRootHorizontalPartition() unconditionally, which indexes an empty
-// vector and dereferences the null reference it gets back.
+// A mapped entity class always sits in at least one table, even when that table is virtual, so this
+// only happens on a damaged file and the prepare has to say so.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlPrepareDamagedMappingTests, PrepareAgainstAClassWithNoHorizontalPartition)
@@ -3700,14 +3699,9 @@ TEST_F(ECSqlPrepareDamagedMappingTests, PrepareAgainstAClassWithNoHorizontalPart
     // through a null pointer.
     ScopedDisableFailOnAssertion disableFailOnAssert;
 
-    ECSqlStatement polymorphic;
-    ASSERT_EQ(ECSqlStatus::Success, polymorphic.Prepare(m_ecdb, "SELECT Name FROM ts.Widget"));
-    EXPECT_EQ(BE_SQLITE_DONE, polymorphic.Step()) << "a class with no partition has nothing to read";
-
-    ECSqlStatement nonPolymorphic;
-    ASSERT_EQ(ECSqlStatus::Success, nonPolymorphic.Prepare(m_ecdb, "SELECT Name FROM ONLY ts.Widget"))
-        << "ONLY has to reach the same null view the polymorphic form already does";
-    EXPECT_EQ(BE_SQLITE_DONE, nonPolymorphic.Step());
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("SELECT Name FROM ONLY ts.Widget"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("SELECT Name FROM ts.Widget"))
+        << "the polymorphic form used to answer with an empty result, which hides the damage";
     }
 
 END_ECDBUNITTESTS_NAMESPACE
