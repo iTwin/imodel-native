@@ -79,9 +79,10 @@ DLM_OBJECT_DEST     = $(o))
 %endif
 
 %if $(TARGET_PLATFORM)=="MacOS" || $(TARGET_PLATFORM)=="iOS"
+    # curl's Apple SecTrust certificate verification (was previously rustls).
     LINKER_LIBRARIES + -framework Security
+    LINKER_LIBRARIES + -framework CoreServices
     LINKER_LIBRARIES + -framework Foundation
-    LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)rustls$(stlibext)
 %endif
 
 LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)iTwinCurl$(stlibext)

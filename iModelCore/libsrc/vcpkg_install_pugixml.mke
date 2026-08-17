@@ -9,14 +9,14 @@
 
 %include mdl.mki
 
-pugixmlDir  = $(_MakeFilePath)pugixml/
-installRoot = $(OutputRootDir)vcpkg_installed/pugixml/
+pugixmlDir  = $(_MakeFilePath)pugixml
+installRoot = $(OutputRootDir)vcpkg_installed/pugixml
 
 %include $(_MakeFilePath)vcpkg.mki
 
 always:
 %if defined (winNT)
-    $(_MakeFilePath)vcpkg_run_install.bat $(pugixmlDir) $(installRoot) $(vcpkgTriplet)
+    powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$(_MakeFilePath)vcpkg_run_install.ps1" "$(pugixmlDir)" "$(installRoot)" "$(vcpkgTriplet)"
 %else
     $(_MakeFilePath)vcpkg_run_install.sh $(pugixmlDir) $(installRoot) $(vcpkgTriplet)
 %endif
