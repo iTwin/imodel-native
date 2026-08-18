@@ -6,20 +6,88 @@
 # Wrapper script for vcpkg install, invoked from .mke build files.
 # Customize IMODEL_VCPKG_ROOT for developer or CI environments.
 #
-# Usage: vcpkg_install.sh <manifest_dir> <install_root> <triplet>
+# Usage: vcpkg_run_install.sh <manifest_dir> <install_root> <triplet> [--mend-scan]
 #   manifest_dir: Directory containing vcpkg.json
 #   install_root: Where vcpkg_installed/<triplet> output goes (e.g., $OutRoot/vcpkg)
 #   triplet:      vcpkg triplet (e.g., arm64-osx, x64-linux)
+#   --mend-scan:  materialize sources for a Mend scan instead of building (download only, no
+#                 binary cache, no compiler tracking)
 #---------------------------------------------------------------------------------------------
 
 set -e
 
+usage() {
+    echo "Usage: $0 <manifest_dir> <install_root> <triplet> [--mend-scan]" >&2
+    exit 1
+}
+
+if [ "$#" -lt 3 ]; then
+    usage
+fi
+
 MANIFEST_DIR="$1"
 INSTALL_ROOT="$2"
 TRIPLET="$3"
+shift 3
+
+MEND_SCAN=0
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --mend-scan)
+            MEND_SCAN=1
+            ;;
+        *)
+            echo "Unknown option: $1" >&2
+            usage
+            ;;
+    esac
+    shift
+done
 
 if [ -z "$MANIFEST_DIR" ] || [ -z "$INSTALL_ROOT" ] || [ -z "$TRIPLET" ]; then
-    echo "Usage: $0 <manifest_dir> <install_root> <triplet>"
+    usage
+fi
+
+# Checked on every build so a consumer that omits it fails here, not in the Mend pipeline.
+MEND_CONFIG="$MANIFEST_DIR/vcpkg-mend.json"
+if [ ! -f "$MEND_CONFIG" ]; then
+    echo "Error: '$MEND_CONFIG' is required so the Mend scan can materialize this library's sources" >&2
+    exit 1
+fi
+
+# Parse the file instead of pattern-matching it, so malformed JSON, a scalar 'triplets', an empty
+# array, and blank entries all fail here exactly as they do on the PowerShell path. BentleyBuild is
+# itself written in Python, so requiring an interpreter adds no new dependency to a build.
+MEND_PYTHON=""
+for _py in python3 python; do
+    if command -v "$_py" >/dev/null 2>&1; then
+        MEND_PYTHON="$_py"
+        break
+    fi
+done
+if [ -z "$MEND_PYTHON" ]; then
+    echo "Error: python3 is required to validate '$MEND_CONFIG'" >&2
+    exit 1
+fi
+# Single-quoted, so the program cannot contain a single quote; it reports paths in double quotes.
+if ! "$MEND_PYTHON" -c '
+import io, json, sys
+
+# Python 2 decodes JSON strings as unicode, so accept either text type.
+text_types = (str, type(u""))
+path = sys.argv[1]
+try:
+    with io.open(path, "r", encoding="utf-8") as config_file:
+        config = json.load(config_file)
+except ValueError as ex:
+    sys.exit("Error: \"%s\" is not valid JSON: %s" % (path, ex))
+if not isinstance(config, dict):
+    sys.exit("Error: \"%s\" must contain a JSON object" % path)
+triplets = config.get("triplets")
+if (not isinstance(triplets, list) or not triplets or
+        any(not isinstance(entry, text_types) or not entry.strip() for entry in triplets)):
+    sys.exit("Error: \"%s\" must contain a triplets array of non-empty strings" % path)
+' "$MEND_CONFIG"; then
     exit 1
 fi
 
@@ -154,6 +222,23 @@ fi
 
 OVERLAY_ARGS=(--overlay-triplets="$OVERLAY_TRIPLETS")
 
+# vcpkg probes the target triplet's compiler only to hash it into the package ABI, which fails when
+# the host cannot compile for that triplet (e.g. a source-only scan of a foreign triplet). Shadow
+# the repo triplet with a generated one that opts out; the repo triplet still supplies every build
+# setting, so nothing else about the invocation changes.
+if [ "$MEND_SCAN" -eq 1 ]; then
+    GENERATED_TRIPLETS="$INSTALL_ROOT/generated-triplets"
+    mkdir -p "$GENERATED_TRIPLETS"
+    # include() of a relative path would resolve against the generated file's directory.
+    INCLUDED_TRIPLET_FILE="$(cd "$(dirname "$OVERLAY_TRIPLET_FILE")" && pwd -P)/$(basename "$OVERLAY_TRIPLET_FILE")"
+    {
+        echo "include(\"$INCLUDED_TRIPLET_FILE\")"
+        echo "set(VCPKG_DISABLE_COMPILER_TRACKING ON)"
+    } > "$GENERATED_TRIPLETS/$TRIPLET.cmake"
+    OVERLAY_ARGS=(--overlay-triplets="$GENERATED_TRIPLETS")
+    echo "vcpkg: compiler tracking disabled; using generated triplet under $GENERATED_TRIPLETS"
+fi
+
 # Use custom overlay ports from the manifest directory (if present), mirroring
 # vcpkg_run_install.ps1. This makes Linux/macOS/Android build from the local
 # crashpad fork (ports/crashpad) instead of the upstream registry port, so
@@ -209,6 +294,12 @@ VCPKG_CMD=("$VCPKG_EXE" install
     --x-buildtrees-root="$INSTALL_ROOT/buildtrees"
     --x-packages-root="$INSTALL_ROOT/packages"
     "${OVERLAY_ARGS[@]}")
+
+if [ "$MEND_SCAN" -eq 1 ]; then
+    VCPKG_CMD+=(--only-downloads --binarysource=clear)
+    echo "vcpkg: source download mode enabled; extracted sources will remain under $INSTALL_ROOT/buildtrees"
+    echo "vcpkg: binary cache disabled for this invocation"
+fi
 
 # Print "device:inode" for an open descriptor. GNU stat follows /dev/fd to fstat the open file
 # (Linux); BSD stat describes the /dev/fd entry itself, so fall back to Perl's fstat (macOS).

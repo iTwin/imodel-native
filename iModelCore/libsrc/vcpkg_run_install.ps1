@@ -3,15 +3,21 @@
 #  See LICENSE.md in the repository root for full copyright notice.
 #---------------------------------------------------------------------------------------------
 # Wrapper for vcpkg install, invoked from .mke build files.
-# Usage: vcpkg_run_install.ps1 <manifest_dir> <install_root> <triplet>
+# Usage: vcpkg_run_install.ps1 <manifest_dir> <install_root> <triplet> [-MendScan]
+#   -MendScan: materialize sources for a Mend scan instead of building (download only, no binary
+#              cache, no compiler tracking).
 #---------------------------------------------------------------------------------------------
 param(
     [Parameter(Position = 0)] [string] $ManifestDir,
     [Parameter(Position = 1)] [string] $InstallRoot,
-    [Parameter(Position = 2)] [string] $Triplet
+    [Parameter(Position = 2)] [string] $Triplet,
+    [switch] $MendScan
 )
 
 $ErrorActionPreference = 'Stop'
+
+# Dot-sourced so Read-MendTriplets runs in this scope and process.
+. ([System.IO.Path]::Combine($PSScriptRoot, 'vcpkg_mend_config.ps1'))
 
 function Normalize-Path([string] $path) {
     $full = [System.IO.Path]::GetFullPath($path)
@@ -165,11 +171,18 @@ function Invoke-NativeProcessInKillOnCloseJob([string] $exePath, [string[]] $arg
 
 try {
     if (-not $ManifestDir -or -not $InstallRoot -or -not $Triplet) {
-        throw 'Usage: vcpkg_run_install.ps1 <manifest_dir> <install_root> <triplet>'
+        throw 'Usage: vcpkg_run_install.ps1 <manifest_dir> <install_root> <triplet> [-MendScan]'
     }
 
     $ManifestDir = Normalize-Path $ManifestDir
     $InstallRoot = Normalize-Path $InstallRoot
+
+    # Checked on every build so a consumer that omits it fails here, not in the Mend pipeline.
+    $mendConfigPath = [System.IO.Path]::Combine($ManifestDir, 'vcpkg-mend.json')
+    if (-not [System.IO.File]::Exists($mendConfigPath)) {
+        throw "'$mendConfigPath' is required so the Mend scan can materialize this library's sources"
+    }
+    [void](Read-MendTriplets $mendConfigPath)
 
     $vsVcpkgRoot = $null
     if ($env:VCINSTALLDIR) {
@@ -260,6 +273,23 @@ try {
         throw "no custom overlay triplet '$Triplet' found at '$overlayTripletFile'; vcpkg's built-in triplets must not be used"
     }
     $overlayPorts = [System.IO.Path]::Combine($ManifestDir, 'ports')
+
+    # vcpkg probes the target triplet's compiler only to hash it into the package ABI, which fails
+    # when the host cannot compile for that triplet (e.g. scanning x64-linux sources on Windows).
+    # Shadow the repo triplet with a generated one that opts out; the repo triplet still supplies
+    # every build setting, so nothing else about the invocation changes.
+    if ($MendScan) {
+        $generatedTriplets = [System.IO.Path]::Combine($InstallRoot, 'generated-triplets')
+        if (-not (Ensure-Directory $generatedTriplets)) {
+            throw "generated triplet directory '$generatedTriplets' could not be created"
+        }
+        $includePath = $overlayTripletFile.Replace('\', '/')
+        [System.IO.File]::WriteAllText(
+            [System.IO.Path]::Combine($generatedTriplets, "$Triplet.cmake"),
+            "include(`"$includePath`")`r`nset(VCPKG_DISABLE_COMPILER_TRACKING ON)`r`n")
+        $overlayTriplets = $generatedTriplets
+        Write-Output "vcpkg: compiler tracking disabled; using generated triplet under '$generatedTriplets'"
+    }
 
     Write-Output "vcpkg: installing packages from '$ManifestDir' (triplet=$Triplet, install-root=$InstallRoot)"
     Write-Output "vcpkg: exe='$vcpkgExe'"
@@ -382,6 +412,12 @@ namespace VcpkgLock {
                 )
                 if ([System.IO.Directory]::Exists($overlayPorts)) {
                     $arguments += "--overlay-ports=$overlayPorts"
+                }
+                if ($MendScan) {
+                    $arguments += '--only-downloads'
+                    $arguments += '--binarysource=clear'
+                    Write-Output "vcpkg: source download mode enabled; extracted sources will remain under '$InstallRoot\buildtrees'"
+                    Write-Output 'vcpkg: binary cache disabled for this invocation'
                 }
 
                 exit (Invoke-NativeProcessInKillOnCloseJob $vcpkgExe $arguments)

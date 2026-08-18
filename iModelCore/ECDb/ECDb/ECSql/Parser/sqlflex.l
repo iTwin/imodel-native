@@ -285,7 +285,7 @@ WINDOW              {SQL_NEW_KEYWORD(SQL_TOKEN_WINDOW);  }
 [-+*/%:(),.;?{}&|~] { return yytext[0]; }
 
 
-<SQL>[A-Za-z\200-\277\300-\337\340-\357\360-\367\370-\373\374-\375_][A-Za-z\200-\277\300-\337\340-\357\360-\367\370-\373\374-\375_0-9]*      {return gatherName(yyscanner, yytext);}
+<SQL>(?-i:[A-Za-z\200-\277\300-\337\340-\357\360-\367\370-\373\374-\375_][A-Za-z\200-\277\300-\337\340-\357\360-\367\370-\373\374-\375_0-9]*)      {return gatherName(yyscanner, yytext);}
 
 <SQL>([0-9]+)                                {SQL_NEW_INTNUM; }
 <SQL>(0[Xx][0-9a-fA-F]+)                     {SQL_NEW_INTNUM; }
@@ -296,7 +296,7 @@ WINDOW              {SQL_NEW_KEYWORD(SQL_TOKEN_WINDOW);  }
 <SQL>[0-9]+"."[0-9]*[eE][+-]?[0-9]+ |
 <SQL>"."[0-9]+[eE][+-]?[0-9]+                {SQL_NEW_APPROXNUM;  }
 
-<PREDICATE_GER,PREDICATE_ENG,DATE>[A-Za-z\200-\277\300-\337\340-\357\360-\367\370-\373\374-\375][A-Za-z0-9_%.,*?\200-\277\300-\337\340-\357\360-\367\370-\373\374-\375]* {return gatherNamePre(yyscanner,yytext);}
+<PREDICATE_GER,PREDICATE_ENG,DATE>(?-i:[A-Za-z\200-\277\300-\337\340-\357\360-\367\370-\373\374-\375][A-Za-z0-9_%.,*?\200-\277\300-\337\340-\357\360-\367\370-\373\374-\375]*) {return gatherNamePre(yyscanner,yytext);}
 
 <PREDICATE_GER,PREDICATE_ENG>([0-9]+)        {SQL_NEW_INTNUM; }
 <PREDICATE_ENG>([0-9]{1,3}(","[0-9]{3})+)    {SQL_NEW_INTNUM; }
