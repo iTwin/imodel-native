@@ -511,7 +511,10 @@ TEST_F(SchemaSyncTestFixture, Verify_SyncInfo_BeProp_Entries)
     SchemaSyncDb schemaSyncDb("sync-db");
 
     ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(schemaSyncDb.GetSyncDbUri(), "xxxxx", false));
-    ASSERT_EQ(b1->Schemas().GetSchemaSync().GetModifiedRowCount(), 3021);
+    // sqlite3_total_changes64 across the mirror: 1501 deleted, 1220 inserted, 5 be_Prop rows. Specific
+    // to this harness, which seeds the sync db at the current profile and the briefcase off the 4003
+    // file, so the two differ by three schemas. Production seeds a blank sync db and moves far less.
+    ASSERT_EQ(b1->Schemas().GetSchemaSync().GetModifiedRowCount(), 2726);
     b1->SaveChanges();
     b1->PullMergePush("init");
 
@@ -613,7 +616,8 @@ TEST_F(SchemaSyncTestFixture, Verify_SyncInfo_BeProp_Entries)
         b1->Schemas().GetSchemaSync().Init(schemaSyncDbNew.GetSyncDbUri(), "yyyyyy", false));
 
     ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(schemaSyncDbNew.GetSyncDbUri(), "yyyyyy", true));
-    ASSERT_EQ(b1->Schemas().GetSchemaSync().GetModifiedRowCount(), 3033);
+    // Same mirror as the Init above, plus the 14 rows of the schema imported since.
+    ASSERT_EQ(b1->Schemas().GetSchemaSync().GetModifiedRowCount(), 2740);
 
     syncDb = schemaSyncDbNew.OpenReadOnly();
     ASSERT_EQ(BE_SQLITE_ROW, syncDb->QueryProperty(strData0, syncDbInfoProp));

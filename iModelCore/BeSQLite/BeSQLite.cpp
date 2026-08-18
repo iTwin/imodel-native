@@ -2668,6 +2668,22 @@ void DisableBloomFilter(SqlDbP db) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+SuppressForeignKeyActions::SuppressForeignKeyActions(DbCR db) : m_db(db) {
+    m_db.GetStatementCache().Empty();
+    sqlite3_test_control(SQLITE_TESTCTRL_FK_NO_ACTION, m_db.GetSqlDb(), 1);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+SuppressForeignKeyActions::~SuppressForeignKeyActions() {
+    sqlite3_test_control(SQLITE_TESTCTRL_FK_NO_ACTION, m_db.GetSqlDb(), 0);
+    m_db.GetStatementCache().Empty();
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Db::CreateNewDb(Utf8CP inName, CreateParams const& params, BeGuid dbGuid) {
     if (IsDbOpen())
         return BE_SQLITE_ERROR_AlreadyOpen;

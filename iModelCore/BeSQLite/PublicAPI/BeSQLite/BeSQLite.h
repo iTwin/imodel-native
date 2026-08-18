@@ -3357,6 +3357,33 @@ public:
 };
 
 //=======================================================================================
+//! Makes every foreign key ON DELETE and ON UPDATE action on a connection behave as NO ACTION for
+//! as long as this is in scope. The constraints themselves are still checked.
+//!
+//! For a bulk row copy that deletes and re-inserts, the actions get in the way: a cascade takes rows
+//! the copy means to keep, and ON DELETE SET NULL rewrites a surviving row in place, which a copy
+//! that only re-inserts missing rows never puts back. Pair this with `PRAGMA defer_foreign_keys=1`
+//! so the check lands at commit, by which point the copy has restored whatever it removed.
+//! @note The copy has to cover every table that references the rows it deletes. Nothing clears an
+//! orphan once the cascade is off.
+//!
+//! This is the same connection flag `sqlite3changeset_apply_v2` sets for SQLITE_CHANGESETAPPLY_FKNOACTION.
+//! @note The setting is read when a statement is prepared, not when it runs. The statement cache is
+//! emptied on both entry and exit for that reason; a statement a caller is holding open across this
+//! scope keeps whichever behaviour it was prepared with.
+//! @note Does not nest. SQLite exposes no way to read the flag back, so the destructor always clears it.
+// @bsiclass
+//=======================================================================================
+struct SuppressForeignKeyActions final : NonCopyableClass
+{
+private:
+    DbCR m_db;
+public:
+    BE_SQLITE_EXPORT explicit SuppressForeignKeyActions(DbCR db);
+    BE_SQLITE_EXPORT ~SuppressForeignKeyActions();
+};
+
+//=======================================================================================
 // @bsiclass
 //=======================================================================================
 struct SQLiteTraceScope final: NonCopyableClass

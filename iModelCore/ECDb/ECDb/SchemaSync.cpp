@@ -1253,19 +1253,29 @@ DbResult SchemaSyncUpstreamHelper::DeleteMissing(ECDbR conn, Utf8CP tableName, U
 // file. So instead:
 //
 //   pass 1 - delete every target row that is not byte-identical to a source row with the same key,
-//            which covers both "no longer exists" and "changed";
+//            which covers both "no longer exists" and "changed", repeated until nothing is deleted;
 //   pass 2 - insert every source row whose key is now absent from the target.
 //
 // Rows that did not change are never written, so their pages - and their blocks - stay as they are.
 // After pass 1 every surviving row equals its source row, so pass 2 cannot hit a unique-index
 // conflict, and inserts trigger no foreign key actions.
 //
-// One thing to watch if this ever comes out wrong: not every ec_ foreign key cascades.
-// ec_Table.ExclusiveRootClassId and ec_RelationshipConstraint.AbstractConstraintClassId are ON
-// DELETE SET NULL, so deleting a stale class rewrites a surviving row in another table - possibly
-// one this pass has already checked and kept. Turning foreign keys off for the duration is not
-// available: SQLite ignores that pragma inside a transaction, and defer_foreign_keys only defers
-// checking, not the actions.
+// Foreign key actions are suppressed for the duration, and both passes depend on it. Not every ec_
+// foreign key cascades: ec_Table.ExclusiveRootClassId and ec_RelationshipConstraint.AbstractConstraintClassId
+// are ON DELETE SET NULL, so removing a stale class would null a column in a surviving row that pass
+// 2 never revisits, since its key is still there. The cascading ones are merely wasteful here -
+// deleting a changed ec_Schema row takes its whole subtree and pass 2 puts it all back, which is
+// exactly the block churn this function exists to avoid. defer_foreign_keys is still needed on top:
+// it defers the *check* to commit, by which point pass 2 has restored what pass 1 removed.
+//
+// Suppressing them puts the whole burden on the table list: with no cascade, an orphan is cleared
+// only by its own table's delete statement, so every table that references a deleted row has to be
+// in `tables`. This is why the mirror covers ec_cache_ where AdoptSchemas does not.
+//
+// The delete sweep repeats until it deletes nothing. With the actions suppressed that is one
+// productive sweep and one clean one, and the clean one only reads. It stays because the
+// suppression is a connection flag read at statement-prepare time: if it ever fails to take, this
+// degrades to slow-but-correct instead of to a silently mangled sync db.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult SchemaSyncUpstreamHelper::MirrorTables(ECDbR conn, StringList const& tables, Utf8CP sourceAlias, Utf8CP targetAlias) {
@@ -1318,18 +1328,36 @@ DbResult SchemaSyncUpstreamHelper::MirrorTables(ECDbR conn, StringList const& ta
             SchemaSyncHelper::Join(keyMatchExprs, " AND ").c_str()).GetUtf8CP());
     }
 
+    // Everything from here writes rows, so the suppression covers both passes. PRAGMA foreign_keys
+    // is not an option: SQLite ignores it inside a transaction and ECDb opens with DefaultTxn::Yes.
+    SuppressForeignKeyActions noForeignKeyActions(conn);
+
+    // Deep enough for any chain the ec_ foreign key graph can produce, low enough that a mistake
+    // here surfaces as an error rather than a hang.
+    constexpr int maxDeleteSweeps = 16;
+
     int64_t deleted = 0;
     Utf8String deletedDetail;
-    for (size_t i = 0; i < deleteStatements.size(); ++i) {
-        rc = conn.ExecuteSql(deleteStatements[i].c_str());
-        if (rc != BE_SQLITE_OK) {
-            LOG.errorv("SchemaSyncUpstreamHelper::MirrorTables(): Failed to drop stale rows. %s (sql: %s)", BeSQLiteLib::GetErrorString(rc), deleteStatements[i].c_str());
-            return rc;
+    int sweeps = 0;
+    for (bool sweepDeletedSomething = true; sweepDeletedSomething; ) {
+        sweepDeletedSomething = false;
+        if (++sweeps > maxDeleteSweeps) {
+            LOG.errorv("SchemaSyncUpstreamHelper::MirrorTables(): The delete pass did not settle after %d sweeps.", maxDeleteSweeps);
+            return BE_SQLITE_ERROR;
         }
-        const auto affected = conn.GetModifiedRowCount();
-        if (affected > 0) {
-            deleted += affected;
-            deletedDetail.append(SqlPrintfString(" %s=%d", tables[i].c_str(), affected).GetUtf8CP());
+
+        for (size_t i = 0; i < deleteStatements.size(); ++i) {
+            rc = conn.ExecuteSql(deleteStatements[i].c_str());
+            if (rc != BE_SQLITE_OK) {
+                LOG.errorv("SchemaSyncUpstreamHelper::MirrorTables(): Failed to drop stale rows. %s (sql: %s)", BeSQLiteLib::GetErrorString(rc), deleteStatements[i].c_str());
+                return rc;
+            }
+            const auto affected = conn.GetModifiedRowCount();
+            if (affected > 0) {
+                sweepDeletedSomething = true;
+                deleted += affected;
+                deletedDetail.append(SqlPrintfString(" %s=%d", tables[i].c_str(), affected).GetUtf8CP());
+            }
         }
     }
 
@@ -1350,7 +1378,7 @@ DbResult SchemaSyncUpstreamHelper::MirrorTables(ECDbR conn, StringList const& ta
 
     // Counts, not rows: this is what says whether the mirror wrote a handful of rows or churned the
     // whole file, which is the difference between a cheap upload and every client re-downloading it.
-    SS_TRACE("mirror %s -> %s: deleted %lld, inserted %lld (of %d tables)", sourceAlias, targetAlias, (long long)deleted, (long long)inserted, (int)tables.size());
+    SS_TRACE("mirror %s -> %s: deleted %lld in %d sweep(s), inserted %lld (of %d tables)", sourceAlias, targetAlias, (long long)deleted, sweeps, (long long)inserted, (int)tables.size());
     if (deleted > 0)
         SS_TRACE("  deleted:%s", deletedDetail.c_str());
     if (inserted > 0)
@@ -1855,16 +1883,12 @@ SchemaSync::Status SchemaSync::MirrorToSyncDb(SyncDbUri const& syncDbUri) {
         return Status::ERROR;
     }
 
-    // ec_cache_ is derived, holds nothing of its own, and every import regenerates it. Copying it
-    // would also be the dominant cost, since its ids are handed out fresh on each rebuild and the
-    // two files therefore disagree on nearly every row even when the class hierarchy is untouched.
-    TableList tablesToMirror;
-    for (auto const& table : tables) {
-        if (!table.StartsWithIAscii("ec_cache_"))
-            tablesToMirror.push_back(table);
-    }
-
-    rc = SchemaSyncUpstreamHelper::MirrorTables(m_conn, tablesToMirror, SchemaSyncHelper::ALIAS_MAIN_DB, SchemaSyncHelper::ALIAS_SYNC_DB);
+    // ec_cache_ goes with the rest. It is derived and the briefcase has just regenerated it, so
+    // mirroring it is what leaves the sync db's cache agreeing with the ec_ rows it now holds. The
+    // opposite direction is where it has to be left out: AdoptSchemas copies a closure rather than a
+    // whole file, the sync db's cache covers schemas outside that closure, and its ids are positional
+    // so they only line up when the whole class graph does. UpdateDbSchema regenerates it there.
+    rc = SchemaSyncUpstreamHelper::MirrorTables(m_conn, tables, SchemaSyncHelper::ALIAS_MAIN_DB, SchemaSyncHelper::ALIAS_SYNC_DB);
     if (rc != BE_SQLITE_OK) {
         LOG.error("SchemaSync::MirrorToSyncDb(): Failed to bring the sync db's ec_ tables in line with this briefcase.");
         m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
