@@ -51,7 +51,36 @@ void expectToNotThrow(std::function<void()> fn, Utf8CP msg)
         ASSERT_TRUE(false) << "Expected no exception, but got one.";
     }
     BeTest::SetFailOnAssert(true);
-    }   
+    }
+
+namespace {
+Utf8CP const kTestDomainName = "TestMergeDomain";
+
+DbResult InsertTestDomain(DgnDbR db, Utf8CP description, int version)
+    {
+    return db.ExecuteSql(Utf8PrintfString("INSERT INTO " DGN_TABLE_Domain " (Name,Description,Version) VALUES('%s','%s',%d)",
+        kTestDomainName, description, version).c_str());
+    }
+
+DbResult UpdateTestDomainDescription(DgnDbR db, Utf8CP description)
+    {
+    return db.ExecuteSql(Utf8PrintfString("UPDATE " DGN_TABLE_Domain " SET Description='%s' WHERE Name='%s'",
+        description, kTestDomainName).c_str());
+    }
+
+bool QueryTestDomain(DgnDbR db, Utf8StringR description, int& version)
+    {
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(db, "SELECT Description, Version FROM " DGN_TABLE_Domain " WHERE Name=?"))
+        return false;
+    stmt.BindText(1, kTestDomainName, Statement::MakeCopy::No);
+    if (stmt.Step() != BE_SQLITE_ROW)
+        return false;
+    description = stmt.GetValueText(0);
+    version = stmt.GetValueInt(1);
+    return true;
+    }
+}
 
 //=======================================================================================
 // @bsiclass
@@ -2476,3 +2505,135 @@ TEST_F(RevisionTestFixture, CheckHealthStatsWithElementCRUD) {
         return false;
     });
 }
+
+//---------------------------------------------------------------------------------------
+// A dgn_Domain INSERT that collides with a locally created row is benign. The native
+// handler must Replace even when earlier changesets in the same merge left pending txns
+// (the production multi-changeset pull path). Call MergeChangeset rather than
+// PullMergeApply so local in-flight rows are not reversed first.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, DgnDomainDuplicateInsertResolvedWithPendingTxns)
+    {
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"DgnDomainDupInsertPending.bim");
+    m_db->SaveChanges("Created Initial Model");
+    ASSERT_TRUE(CreateRevision("-cs0").IsValid());
+    BackupTestFile();
+
+    DgnElementId cs1ElementId = InsertPhysicalElement(*m_db, *m_defaultModel, m_defaultCategoryId, 5, 5, 5);
+    ASSERT_TRUE(cs1ElementId.IsValid());
+    m_db->SaveChanges("cs1 data");
+    ChangesetPropsPtr cs1 = CreateRevision("-cs1");
+    ASSERT_TRUE(cs1.IsValid());
+
+    ASSERT_EQ(BE_SQLITE_OK, InsertTestDomain(*m_db, "incoming", 2));
+    m_db->SaveChanges("cs2 domain insert");
+    ChangesetPropsPtr cs2 = CreateRevision("-cs2");
+    ASSERT_TRUE(cs2.IsValid());
+
+    RestoreTestFile();
+    EXPECT_EQ(ChangesetStatus::Success, m_db->Txns().MergeChangeset(*cs1, false));
+
+    // Simulate SyncWithSchemas() creating the same domain row after the earlier changeset.
+    ASSERT_EQ(BE_SQLITE_OK, InsertTestDomain(*m_db, "local", 1));
+    m_db->SaveChanges("auto-created domain row");
+    ASSERT_TRUE(m_db->Txns().HasPendingTxns());
+
+    EXPECT_EQ(ChangesetStatus::Success, m_db->Txns().MergeChangeset(*cs2, false));
+
+    Utf8String description;
+    int version = 0;
+    ASSERT_TRUE(QueryTestDomain(*m_db, description, version));
+    EXPECT_STREQ("incoming", description.c_str());
+    EXPECT_EQ(2, version);
+    }
+
+//---------------------------------------------------------------------------------------
+// A dgn_Domain UPDATE/DELETE whose before-values do not match is a Data conflict, not
+// the benign duplicate-insert case, and must still abort when local work is pending.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, DgnDomainDataConflictAbortsWithPendingTxns)
+    {
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"DgnDomainDataConflict.bim");
+    m_db->SaveChanges("Created Initial Model");
+    ASSERT_TRUE(CreateRevision("-cs0").IsValid());
+
+    ASSERT_EQ(BE_SQLITE_OK, InsertTestDomain(*m_db, "baseline", 1));
+    m_db->SaveChanges("baseline domain");
+    ASSERT_TRUE(CreateRevision("-cs-domain").IsValid());
+    BackupTestFile();
+
+    ASSERT_EQ(BE_SQLITE_OK, UpdateTestDomainDescription(*m_db, "incoming"));
+    m_db->SaveChanges("update domain");
+    ChangesetPropsPtr csUpdate = CreateRevision("-cs-update");
+    ASSERT_TRUE(csUpdate.IsValid());
+
+    RestoreTestFile();
+    ASSERT_EQ(BE_SQLITE_OK, UpdateTestDomainDescription(*m_db, "divergent"));
+    DgnElementId elementId = InsertPhysicalElement(*m_db, *m_defaultModel, m_defaultCategoryId, 6, 6, 6);
+    ASSERT_TRUE(elementId.IsValid());
+    m_db->SaveChanges("divergent domain + pending work");
+    ASSERT_TRUE(m_db->Txns().HasPendingTxns());
+
+    expectToThrow([&]() { m_db->Txns().MergeChangeset(*csUpdate, false); },
+        "UPDATE/DELETE before value do not match with one in db or CASCADE action was triggered.");
+    }
+
+//---------------------------------------------------------------------------------------
+// A dgn_Domain DELETE whose before-values do not match is also a Data conflict and
+// must abort when local work is pending.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, DgnDomainDeleteDataConflictAbortsWithPendingTxns)
+    {
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"DgnDomainDeleteConflict.bim");
+    m_db->SaveChanges("Created Initial Model");
+    ASSERT_TRUE(CreateRevision("-cs0").IsValid());
+
+    ASSERT_EQ(BE_SQLITE_OK, InsertTestDomain(*m_db, "baseline", 1));
+    m_db->SaveChanges("baseline domain");
+    ASSERT_TRUE(CreateRevision("-cs-domain").IsValid());
+    BackupTestFile();
+
+    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteSql(Utf8PrintfString("DELETE FROM " DGN_TABLE_Domain " WHERE Name='%s'", kTestDomainName).c_str()));
+    m_db->SaveChanges("delete domain");
+    ChangesetPropsPtr csDelete = CreateRevision("-cs-delete");
+    ASSERT_TRUE(csDelete.IsValid());
+
+    RestoreTestFile();
+    ASSERT_EQ(BE_SQLITE_OK, UpdateTestDomainDescription(*m_db, "divergent"));
+    m_db->SaveChanges("divergent domain");
+    ASSERT_TRUE(m_db->Txns().HasPendingTxns());
+
+    expectToThrow([&]() { m_db->Txns().MergeChangeset(*csDelete, false); },
+        "UPDATE/DELETE before value do not match with one in db or CASCADE action was triggered.");
+    }
+
+//---------------------------------------------------------------------------------------
+// Duplicate INSERT on a non-domain table with pending txns must still abort.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, NonDomainDuplicateInsertAbortsWithPendingTxns)
+    {
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"NonDomainDupInsert.bim");
+    m_db->SaveChanges("Created Initial Model");
+    ASSERT_TRUE(CreateRevision("-cs0").IsValid());
+    BackupTestFile();
+
+    DgnElementId incomingId = InsertPhysicalElement(*m_db, *m_defaultModel, m_defaultCategoryId, 7, 7, 7);
+    ASSERT_TRUE(incomingId.IsValid());
+    m_db->SaveChanges("incoming element");
+    ChangesetPropsPtr csInsert = CreateRevision("-cs-elem");
+    ASSERT_TRUE(csInsert.IsValid());
+
+    RestoreTestFile();
+    DgnElementId localId = InsertPhysicalElement(*m_db, *m_defaultModel, m_defaultCategoryId, 7, 7, 7);
+    ASSERT_TRUE(localId.IsValid());
+    ASSERT_EQ(incomingId, localId);
+    m_db->SaveChanges("local element");
+    ASSERT_TRUE(m_db->Txns().HasPendingTxns());
+
+    expectToThrow([&]() { m_db->Txns().MergeChangeset(*csInsert, false); },
+        "PRIMARY KEY INSERT CONFLICT - rejecting this changeset");
+    }
