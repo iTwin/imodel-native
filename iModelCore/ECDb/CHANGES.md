@@ -5,32 +5,40 @@ This document including important changes to syntax or file format.
 | Module  | Version   |
 | ------- | --------- |
 | Profile | `4.0.0.5` |
-| ECSQL   | `2.0.3.2` |
+| ECSQL   | `2.0.3.3` |
 
-## ## `04/24/2026`: Allow optional ON clause with CROSS JOIN
+## `08/18/2026`: Added check `check_diverged_prop_maps` to `PRAGMA integrity_check`
+* ECSql version change `2.0.3.2` -> `2.0.3.3`.
+* Added a new check `check_diverged_prop_maps` to `PRAGMA integrity_check`.
+* The check verifies that a class maps every inherited property to the same column as each of its base classes. A divergence means data written through the derived class is invisible when read through the base class.
+* The check is part of the aggregate `PRAGMA integrity_check` and can also be run on its own.
+* Example: `PRAGMA integrity_check(check_diverged_prop_maps) OPTIONS ENABLE_EXPERIMENTAL_FEATURES`.
+* Result columns: `sno`, `derivedClassId`, `derivedClassName`, `baseClassId`, `baseClassName`, `propertyName`, `baseColumn`, `divergedColumn`. Each row is one derived/base class pair that disagrees about a single property.
+
+## `04/24/2026`: Allow optional ON clause with CROSS JOIN
 * ECSql version change `2.0.3.1` -> `2.0.3.2`.
 * `CROSS JOIN` now accepts an optional `ON` condition, matching standard SQL and SQLite behavior.
 * This allows users to filter the join while retaining SQLite's [special CROSS JOIN optimizer behavior](https://www.sqlite.org/lang_select.html#special_handling_of_cross_join_): unlike `INNER JOIN`, `CROSS JOIN` prevents the query optimizer from reordering tables, giving applications explicit control over the join order and query plan.
 * Previously, achieving this required moving the condition to the `WHERE` clause, which loses the optimizer hint.
 * Example: `SELECT * FROM ts.Person p CROSS JOIN ts.Identifier i ON p.PersonalID = i.PersonId`
 
-## ## `03/09/2026`: Added PRAGMAs `ecsql_ver` and `sqlite_sql`
+## `03/09/2026`: Added PRAGMAs `ecsql_ver` and `sqlite_sql`
 * ECSql version change `2.0.3.0` -> `2.0.3.1`.
 * Added `PRAGMA ecsql_ver` which returns the current ECSQL version. This will allow applications to check feature availability when working with ECSql.
 * Example: `PRAGMA ecsql_ver` returns `2.0.2.2`.
 * Added `PRAGMA sqlite_sql` which returns the underlying sqlite sql as a string. This will help debugging ECSql statements.
 * Example: `PRAGMA sqlite_sql("SELECT * FROM meta.ECClassDef WHERE Name='Element'")`.
 
-## ## `02/26/2026`: Added `VALUES(),()` support to CTE
+## `02/26/2026`: Added `VALUES(),()` support to CTE
 * ECSql version change `2.0.2.2` -> `2.0.3.0`.
 * Added support for use of `VALUES()` list to CTE.
 * Example: `WITH el AS (VALUES(1,2),(3,4)) SELECT * FROM el`
 
-## ## `02/17/2026`: Added `supports_instance_query` function
+## `02/17/2026`: Added `supports_instance_query` function
 * ECSql version change `2.0.2.1` -> `2.0.2.2`.
 * Added `supports_instance_query` sql function.
 
-## ## `05/12/2025`: Added PRAGMA `validate_ecsql_writes` to validate navigation property inserts or updates
+## `05/12/2025`: Added PRAGMA `validate_ecsql_writes` to validate navigation property inserts or updates
 * ECSql version change `2.0.2.0` -> `2.0.2.1`.
 * Add `PRAGMA validate_ecsql_writes` allow to enable validation of RelECClassId when inserting or updating a navigation property of a class.
 * This config defaults to false.
@@ -38,7 +46,7 @@ This document including important changes to syntax or file format.
 * The validation only covers the navigation properties in ECSql insert statements.
 
 
-## ## `01/29/2025`: Made schema names optional for table valued functions
+## `01/29/2025`: Made schema names optional for table valued functions
 * ECSql version change `2.0.1.1` -> `2.0.2.0`.
 * Made schema names optional for table valued functions
 * Table valued functions will now work with and without schema names. Example :- `SELECT * FROM json_each(:json_param)` & 
@@ -46,18 +54,18 @@ This document including important changes to syntax or file format.
 * Example: `Select test.str_prop, test.int_prop, v.id from ts.A test RIGHT OUTER JOIN IdSet(:idSet_param) v on test.ECInstanceId = v.id`,
            `SELECT * FROM json_each(:json_param)`.
 
-## ## `01/22/2025`: Added IdSet Virtual Table in ECSQL
+## `01/22/2025`: Added IdSet Virtual Table in ECSQL
 * ECSql version change `2.0.1.0` -> `2.0.1.1`.
 * Added IdSet Virtual Table in ECSQL
 * Example: `Select test.str_prop, test.int_prop, v.id from ts.A test RIGHT OUTER JOIN ECVLib.IdSet(:idSet_param) v on test.ECInstanceId = v.id`.
 
-## ## `01/10/2025`: Added support for CTE subquery with alias
+## `01/10/2025`: Added support for CTE subquery with alias
 * ECSql version change `2.0.0.0` -> `2.0.1.0`.
 * Added support for CTE subquery with alias
 * Example: `select a.x from (with tmp(x) as (SELECT e.i FROM aps.TestElement e order by e.i LIMIT 1) select x from tmp) a`.
 
 
-## ## `09/05/2024`: Remove class names ALIAS support and Disqualify_polymorphic_constraint(+) support in UPDATE & DELETE statements
+## `09/05/2024`: Remove class names ALIAS support and Disqualify_polymorphic_constraint(+) support in UPDATE & DELETE statements
 * ECSql version change `1.2.14.0` -> `2.0.0.0`.
 * Removed class names ALIAS support and Disqualify_polymorphic_constraint(+) support in UPDATE & DELETE statements
 * Example: `UPDATE ONLY ecsql.PSA t SET t.I = 124, t.L = 100000000000, t.D = -1.2345678, t.S = 'hello, world' WHERE t.D > 0.0`,
@@ -65,7 +73,7 @@ This document including important changes to syntax or file format.
 * Example: `DELETE FROM ONLY ecsql.P t WHERE t.D > 0.0`, `DELETE FROM +ALL ecsql.PASpatial WHERE Geometry_Array IS NULL`. 
             These statements will now result in InvalidECsql.
 
-## ## `08/30/2024`: Add support for CTE without columns
+## `08/30/2024`: Add support for CTE without columns
 * ECSql version change `1.2.13.0` -> `1.2.14.0`.
 * Added support for use of WITH clause or CTE without columns.
 * Example: `WITH el AS ( SELECT ECInstanceId, ECClassId FROM bis.Element ) SELECT * FROM el`

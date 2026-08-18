@@ -1121,6 +1121,63 @@ DbResult IntegrityChecker::CheckMissingChildRows(std::function<bool(Utf8CP, ECIn
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+DbResult IntegrityChecker::CheckDivergedPropMaps(std::function<bool(ECN::ECClassId, Utf8CP, ECN::ECClassId, Utf8CP, Utf8CP, Utf8CP, Utf8CP)> callback)
+	{
+	Statement stmt;
+	auto rc = stmt.Prepare(m_conn, R"(
+        WITH RECURSIVE [tableRoot]([id], [rootId]) AS (
+            SELECT [Id], [Id] FROM [ec_Table] WHERE [ParentTableId] IS NULL
+            UNION ALL
+            SELECT [t].[Id], [r].[rootId] FROM [ec_Table] [t] JOIN [tableRoot] [r] ON [t].[ParentTableId] = [r].[id])
+        SELECT DISTINCT [derivedPm].[ClassId], [basePm].[ClassId], [pp].[AccessString],
+                [derivedTable].[Name] || '.' || [derivedCol].[Name],
+                [baseTable].[Name] || '.' || [baseCol].[Name]
+            FROM [ec_PropertyMap] [derivedPm]
+                JOIN [ec_cache_ClassHierarchy] [ch] ON [ch].[ClassId] = [derivedPm].[ClassId] AND [ch].[BaseClassId] <> [derivedPm].[ClassId]
+                JOIN [ec_PropertyMap] [basePm] ON [basePm].[ClassId] = [ch].[BaseClassId] AND [basePm].[PropertyPathId] = [derivedPm].[PropertyPathId] AND [basePm].[ColumnId] <> [derivedPm].[ColumnId]
+                JOIN [ec_PropertyPath] [pp] ON [pp].[Id] = [derivedPm].[PropertyPathId]
+                JOIN [ec_Property] [rootProp] ON [rootProp].[Id] = [pp].[RootPropertyId]
+                JOIN [ec_Class] [rootClass] ON [rootClass].[Id] = [rootProp].[ClassId]
+                JOIN [ec_Schema] [rootSchema] ON [rootSchema].[Id] = [rootClass].[SchemaId]
+                JOIN [ec_Column] [derivedCol] ON [derivedCol].[Id] = [derivedPm].[ColumnId]
+                JOIN [ec_Column] [baseCol] ON [baseCol].[Id] = [basePm].[ColumnId]
+                JOIN [ec_Table] [derivedTable] ON [derivedTable].[Id] = [derivedCol].[TableId]
+                JOIN [ec_Table] [baseTable] ON [baseTable].[Id] = [baseCol].[TableId]
+                JOIN [tableRoot] [derivedRoot] ON [derivedRoot].[id] = [derivedCol].[TableId]
+                JOIN [tableRoot] [baseRoot] ON [baseRoot].[id] = [baseCol].[TableId] AND [baseRoot].[rootId] = [derivedRoot].[rootId]
+            WHERE [rootSchema].[Name] <> 'ECDbSystem'
+            ORDER BY [derivedPm].[ClassId], [basePm].[ClassId], [pp].[AccessString];)");
+
+	if (rc != BE_SQLITE_OK)
+		{
+		m_lastError = m_conn.GetLastError();
+		return rc;
+		}
+
+	while ((rc = stmt.Step()) == BE_SQLITE_ROW)
+		{
+		const ECClassId derivedClassId = stmt.GetValueId<ECClassId>(0);
+		const ECClassId baseClassId = stmt.GetValueId<ECClassId>(1);
+		const Utf8String propertyName = stmt.GetValueText(2);
+		const Utf8String divergedColumn = stmt.GetValueText(3);
+		const Utf8String baseColumn = stmt.GetValueText(4);
+
+		ECClassCP derivedClass = m_conn.Schemas().GetClass(derivedClassId);
+		ECClassCP baseClass = m_conn.Schemas().GetClass(baseClassId);
+
+		if (!callback(derivedClassId, derivedClass->GetFullName(), baseClassId, baseClass->GetFullName(), propertyName.c_str(), baseColumn.c_str(), divergedColumn.c_str()))
+			return BE_SQLITE_OK;
+		}
+
+	if (rc != BE_SQLITE_DONE)
+		return rc;
+
+	return BE_SQLITE_OK;
+	}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 DbResult IntegrityChecker::CheckDataSchema(std::function<bool(std::string, std::string)> callback) {
     auto rc = CheckDataTableExists([&](std::string table) {
         return callback(table, "table");
@@ -1149,6 +1206,7 @@ Utf8CP IntegrityChecker::GetCheckName(Checks check) {
 		{Checks::CheckClassIds, check_class_ids},
 		{Checks::CheckSchemaLoad, check_schema_load},
 		{Checks::CheckMissingChildRows, check_missing_child_rows},
+		{Checks::CheckDivergedPropMaps, check_diverged_prop_maps},
     };
     const auto it = s_map.find(check);
 	if (it != s_map.end())  {
@@ -1173,6 +1231,7 @@ IntegrityChecker::Checks IntegrityChecker::GetCheckId(Utf8CP checkName) {
 		{check_class_ids, Checks::CheckClassIds},
 		{check_schema_load, Checks::CheckSchemaLoad},
 		{check_missing_child_rows, Checks::CheckMissingChildRows},
+		{check_diverged_prop_maps, Checks::CheckDivergedPropMaps},
     };
     const auto it = s_map.find(checkName);
 	if (it != s_map.end())  {
@@ -1318,6 +1377,18 @@ DbResult IntegrityChecker::QuickCheck(Checks checks, std::function<void(Utf8CP, 
             return rc;
         }
 		callback(GetCheckName(Checks::CheckSchemaLoad), !errorFound, stopWatch.GetCurrent());
+    }
+    if (Enum::Contains<Checks>(checks, Checks::CheckDivergedPropMaps)) {
+		StopWatch stopWatch(true);
+        bool errorFound = false;
+        rc = CheckDivergedPropMaps([&errorFound](ECN::ECClassId, Utf8CP, ECN::ECClassId, Utf8CP, Utf8CP, Utf8CP, Utf8CP) {
+            errorFound = true;
+            return false;
+        });
+		if (rc != BE_SQLITE_OK) {
+            return rc;
+        }
+		callback(GetCheckName(Checks::CheckDivergedPropMaps), !errorFound, stopWatch.GetCurrent());
     }
 	if (Enum::Contains<Checks>(checks, Checks::CheckMissingChildRows)) {
 		StopWatch stopWatch(true);

@@ -243,6 +243,130 @@ TEST_F(SchemaUpgradeTestFixture, ValidateMapCheck_CheckForOrphanCustomAttributeI
     ASSERT_TRUE(std::regex_match (issueListener.m_issues[1].message.c_str(), std::regex (expectedMsg2Pattern.c_str ())));
     ASSERT_STREQ(expectedMsg3.c_str(), issueListener.m_issues[2].message.c_str());
 }
+
+//---------------------------------------------------------------------------------------
+// In a table-per-hierarchy mapping, a derived class must map an inherited property to the
+// same column as the base class. This test simulates diverged class maps (as once produced
+// by a schema remapping bug) by pointing the derived class's property map at a different
+// column, and expects the next schema import to fail with a validation issue.
+// This test will stay disabled until we harden the error on every schema import.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, DISABLED_ValidateMapCheck_InheritedPropertyMapConsistency) {
+    auto testSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+        <ECEntityClass typeName="Base">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Prop1" typeName="string"/>
+            <ECProperty propertyName="Prop2" typeName="string"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="Sub">
+            <BaseClass>Base</BaseClass>
+            <ECProperty propertyName="SubProp" typeName="string"/>
+        </ECEntityClass>
+    </ECSchema>)xml";
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("inheritedPropertyMapConsistency.ecdb", SchemaItem(testSchemaXml)));
+
+    // *** Simulate diverged class maps: point Sub's map of the inherited Prop1 at Prop2's column ***
+    m_ecdb.ClearECDbCache();
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(R"sql(
+        UPDATE ec_PropertyMap SET ColumnId = (SELECT pm2.ColumnId FROM ec_PropertyMap pm2
+                    JOIN ec_PropertyPath pp2 ON pp2.Id = pm2.PropertyPathId
+                    WHERE pm2.ClassId = (SELECT Id FROM ec_Class WHERE Name = 'Sub') AND pp2.AccessString = 'Prop2')
+            WHERE ClassId = (SELECT Id FROM ec_Class WHERE Name = 'Sub')
+              AND PropertyPathId = (SELECT pp.Id FROM ec_PropertyPath pp
+                    JOIN ec_Property p ON p.Id = pp.RootPropertyId
+                    WHERE pp.AccessString = 'Prop1' AND p.ClassId = (SELECT Id FROM ec_Class WHERE Name = 'Base')))sql"));
+    m_ecdb.SaveChanges();
+
+    TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
+
+    // importing another schema triggers the validation check, which must detect the divergence
+    auto unrelatedSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema1" alias="ts1" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"/>)xml";
+    ASSERT_EQ(ERROR, ImportSchema(SchemaItem(unrelatedSchemaXml)));
+
+    Utf8String expectedMsg("Detected inconsistent property mapping: ECClass 'TestSchema:Sub' maps property 'Prop1' to column 'ts_Base.Prop2', but its base ECClass 'TestSchema:Base' maps the same property to column 'ts_Base.Prop1'.");
+    ASSERT_FALSE(issueListener.IsEmpty());
+    ASSERT_STREQ(expectedMsg.c_str(), issueListener.m_issues[0].message.c_str());
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, AddPropertyWithPropertyMapCAToSharedColumnHierarchy) {
+    // Adding a new property with a 'PropertyMap' custom attribute (IsNullable/IsUnique) to an
+    // existing class in a shared-column TPH hierarchy: the constraints cannot be enforced on a
+    // shared column and are dropped with a warning. The derived class must still map the
+    // inherited property to the same shared column as the base class. A former bug in
+    // ClassMapColumnFactory::IsCompatible compared the requested constraints against the
+    // (constraint-free) shared column of the base class, refused to reuse it and silently
+    // allocated a different column for the derived class, causing silent data loss.
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("addPropertyWithPropertyMapCA.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+        <ECEntityClass typeName="Parent">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00"/>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Name" typeName="string"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="Sub">
+            <BaseClass>Parent</BaseClass>
+            <ECProperty propertyName="SubProp" typeName="string"/>
+        </ECEntityClass>
+    </ECSchema>)xml")));
+
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+        <ECEntityClass typeName="Parent">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00"/>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Name" typeName="string"/>
+            <ECProperty propertyName="NewProp" typeName="string">
+                <ECCustomAttributes>
+                    <PropertyMap xmlns="ECDbMap.02.00">
+                        <IsNullable>False</IsNullable>
+                        <IsUnique>True</IsUnique>
+                    </PropertyMap>
+                </ECCustomAttributes>
+            </ECProperty>
+        </ECEntityClass>
+        <ECEntityClass typeName="Sub">
+            <BaseClass>Parent</BaseClass>
+            <ECProperty propertyName="SubProp" typeName="string"/>
+        </ECEntityClass>
+    </ECSchema>)xml")));
+
+    // base and derived class must map the new property to the same shared column
+    // (v1.0 layout: Name -> ps1, SubProp -> ps2, so the new property gets ps3)
+    ASSERT_EQ(ExpectedColumn("ts_Parent", "ps3"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Parent", "NewProp")));
+    ASSERT_EQ(ExpectedColumn("ts_Parent", "ps3"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub", "NewProp"))) << "Sub must map the inherited NewProp to the same column as Parent";
+
+    // data written through the derived class must be visible through the base class
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Sub (Name, NewProp, SubProp) VALUES ('name', 'newPropValue', 'subProp')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    EXPECT_EQ(JsonValue(R"json([{"NewProp":"newPropValue"}])json"), GetHelper().ExecuteSelectECSql("SELECT NewProp FROM ts.Parent"));
+    m_ecdb.AbandonChanges();
+}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
