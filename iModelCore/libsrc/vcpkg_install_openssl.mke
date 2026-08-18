@@ -3,7 +3,8 @@
 #  See LICENSE.md in the repository root for full copyright notice.
 #---------------------------------------------------------------------------------------------
 # vcpkg_install_openssl.mke - Run vcpkg install for the openssl manifest.
-# Runs after vcpkg_install_png as part of the sequential chain in vcpkg.PartFile.xml.
+# This mke is part of the sequential vcpkg install chain in vcpkg.PartFile.xml so that
+# only one vcpkg process runs at a time.
 #---------------------------------------------------------------------------------------------
 
 %include mdl.mki
