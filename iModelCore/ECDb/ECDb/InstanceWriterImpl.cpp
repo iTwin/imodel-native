@@ -1255,8 +1255,16 @@ void Impl::CaptureUniqueConstraintConflict(Options const& options, ClassMapCR cl
     m_conflictDetail["kind"] = "UniqueConstraint";
     auto propsJson = m_conflictDetail["uniqueConstraintProperties"];
     propsJson.toArray();
-    for (auto leaf : leaves)
-        propsJson.appendValue() = GetJsAccessString(*leaf).c_str();
+    // Reported per root property rather than per column, matching the granularity of the properties reported
+    // for an expectedOldValues mismatch. Several columns of one property can take part in the same index.
+    std::vector<Utf8String> rootPropertyNames;
+    for (auto leaf : leaves) {
+        auto name = GetJsMemberName(leaf->GetPath().Front().GetProperty());
+        if (std::find(rootPropertyNames.begin(), rootPropertyNames.end(), name) == rootPropertyNames.end()) {
+            rootPropertyNames.push_back(name);
+            propsJson.appendValue() = name.c_str();
+        }
+    }
 
     Utf8String ecsql("SELECT [ECInstanceId], [ECClassId] FROM ");
     ecsql.append(rootClassMap->GetClass().GetECSqlName()).append(" WHERE ");

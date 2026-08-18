@@ -1193,7 +1193,7 @@ TEST_F(InstanceWriterFixture, UniqueConstraintConflictDetailOnInsert) {
     auto const& properties = detail["uniqueConstraintProperties"];
     ASSERT_EQ(2, properties.size());
     EXPECT_STREQ("code", properties[0u].asCString());
-    EXPECT_STREQ("owner.id", properties[1u].asCString());
+    EXPECT_STREQ("owner", properties[1u].asCString());
 
     ASSERT_TRUE(detail.isMember("conflictingRow"));
     auto const& conflictingRow = detail["conflictingRow"];
@@ -1226,7 +1226,7 @@ TEST_F(InstanceWriterFixture, UniqueConstraintConflictDetailOnUpdate) {
     auto const& properties = detail["uniqueConstraintProperties"];
     ASSERT_EQ(2, properties.size());
     EXPECT_STREQ("code", properties[0u].asCString());
-    EXPECT_STREQ("owner.id", properties[1u].asCString());
+    EXPECT_STREQ("owner", properties[1u].asCString());
 
     // The row being updated is never its own conflicting row.
     EXPECT_STREQ("0x200", detail["conflictingRow"]["id"].asCString());

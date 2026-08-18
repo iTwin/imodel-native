@@ -471,7 +471,7 @@ export declare namespace IModelJsNative {
    */
   interface UniqueConstraintConflictDetail {
     kind: "UniqueConstraint";
-    /** The JS-cased access strings of the properties making up the violated unique index. */
+    /** The JS-cased names of the root properties making up the violated unique index. */
     uniqueConstraintProperties: string[];
     /** The pre-existing instance that the write collided with. Absent if it could not be identified. */
     conflictingRow?: NodeJS.Dict<any>;

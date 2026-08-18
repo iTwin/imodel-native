@@ -170,8 +170,8 @@ public:
     ECDB_EXPORT Utf8StringCR GetLastError() const;
     //! When the most recent Insert/Update failed with a UNIQUE constraint violation, populates \p out with
     //! { "kind": "UniqueConstraint", "uniqueConstraintProperties": [...], "conflictingRow": {...} } and returns
-    //! true. "uniqueConstraintProperties" are the JS-cased access strings of the properties making up the
-    //! violated index; "conflictingRow" is the pre-existing instance the write collided with, and is omitted if
+    //! true. "uniqueConstraintProperties" are the JS-cased names of the root properties making up the violated
+    //! index; "conflictingRow" is the pre-existing instance the write collided with, and is omitted if
     //! it could not be identified. Returns false for any other result, or if the violated index could not be
     //! mapped back to EC properties. Only valid until the next write on this writer.
     ECDB_EXPORT bool TryGetLastWriteConflictDetail(BeJsValue out) const;
