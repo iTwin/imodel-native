@@ -16,6 +16,9 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# Dot-sourced so Read-MendTriplets runs in this scope and process.
+. ([System.IO.Path]::Combine($PSScriptRoot, 'vcpkg_mend_config.ps1'))
+
 function Normalize-Path([string] $path) {
     $full = [System.IO.Path]::GetFullPath($path)
     $root = [System.IO.Path]::GetPathRoot($full)
@@ -179,10 +182,7 @@ try {
     if (-not [System.IO.File]::Exists($mendConfigPath)) {
         throw "'$mendConfigPath' is required so the Mend scan can materialize this library's sources"
     }
-    $mendTriplets = @((Get-Content -LiteralPath $mendConfigPath -Raw | ConvertFrom-Json).triplets)
-    if ($mendTriplets.Count -eq 0 -or $mendTriplets.Where({ -not $_ }).Count -ne 0) {
-        throw "'$mendConfigPath' must contain a non-empty 'triplets' array"
-    }
+    [void](Read-MendTriplets $mendConfigPath)
 
     $vsVcpkgRoot = $null
     if ($env:VCINSTALLDIR) {

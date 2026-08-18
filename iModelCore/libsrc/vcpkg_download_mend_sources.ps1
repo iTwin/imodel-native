@@ -14,6 +14,9 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# Dot-sourced so Read-MendTriplets runs in this scope and process.
+. ([System.IO.Path]::Combine($PSScriptRoot, 'vcpkg_mend_config.ps1'))
+
 # Resolves relative input against PowerShell's current location; [System.IO.Path]::GetFullPath
 # would silently use the process working directory instead, which ScanRoot is then deleted from.
 # GetFullPath is safe on the already-absolute result, and is what collapses mixed separators and
@@ -89,11 +92,7 @@ foreach ($manifestFile in $manifests) {
     $consumer = $manifestDir.Substring($LibsrcDir.Length).TrimStart('\', '/')
     $mendConfigPath = [System.IO.Path]::Combine($manifestDir, 'vcpkg-mend.json')
 
-    $mendConfig = Get-Content -LiteralPath $mendConfigPath -Raw | ConvertFrom-Json
-    $triplets = @($mendConfig.triplets)
-    if ($triplets.Count -eq 0 -or $triplets.Where({ -not $_ }).Count -ne 0) {
-        throw "'$mendConfigPath' must contain a non-empty 'triplets' array"
-    }
+    $triplets = Read-MendTriplets $mendConfigPath
 
     foreach ($triplet in $triplets) {
         $tripletFile = [System.IO.Path]::Combine($manifestDir, 'triplets', "$triplet.cmake")

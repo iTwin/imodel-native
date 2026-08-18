@@ -54,9 +54,40 @@ if [ ! -f "$MEND_CONFIG" ]; then
     echo "Error: '$MEND_CONFIG' is required so the Mend scan can materialize this library's sources" >&2
     exit 1
 fi
-# Whitespace-stripped match keeps this dependency-free; the Mend script does the full validation.
-if ! tr -d ' \t\r\n' < "$MEND_CONFIG" | grep -q '"triplets":\["'; then
-    echo "Error: '$MEND_CONFIG' must contain a non-empty 'triplets' array" >&2
+
+# Parse the file instead of pattern-matching it, so malformed JSON, a scalar 'triplets', an empty
+# array, and blank entries all fail here exactly as they do on the PowerShell path. BentleyBuild is
+# itself written in Python, so requiring an interpreter adds no new dependency to a build.
+MEND_PYTHON=""
+for _py in python3 python; do
+    if command -v "$_py" >/dev/null 2>&1; then
+        MEND_PYTHON="$_py"
+        break
+    fi
+done
+if [ -z "$MEND_PYTHON" ]; then
+    echo "Error: python3 is required to validate '$MEND_CONFIG'" >&2
+    exit 1
+fi
+# Single-quoted, so the program cannot contain a single quote; it reports paths in double quotes.
+if ! "$MEND_PYTHON" -c '
+import io, json, sys
+
+# Python 2 decodes JSON strings as unicode, so accept either text type.
+text_types = (str, type(u""))
+path = sys.argv[1]
+try:
+    with io.open(path, "r", encoding="utf-8") as config_file:
+        config = json.load(config_file)
+except ValueError as ex:
+    sys.exit("Error: \"%s\" is not valid JSON: %s" % (path, ex))
+if not isinstance(config, dict):
+    sys.exit("Error: \"%s\" must contain a JSON object" % path)
+triplets = config.get("triplets")
+if (not isinstance(triplets, list) or not triplets or
+        any(not isinstance(entry, text_types) or not entry.strip() for entry in triplets)):
+    sys.exit("Error: \"%s\" must contain a triplets array of non-empty strings" % path)
+' "$MEND_CONFIG"; then
     exit 1
 fi
 
