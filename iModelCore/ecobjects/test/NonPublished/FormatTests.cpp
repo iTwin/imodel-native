@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
+#include <string>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -816,7 +817,8 @@ TEST_F(FormatJsonTests, FromJson)
     {
     Utf8String json = R"json({"composite":{"includeZero":true,"spacer":" ","units":[{"label":"'","name":"Units.FT"}]},"formatTraits":"KeepSingleZero|KeepDecimalPoint|ShowUnitLabel","precision":4,"type":"Decimal","uomSeparator":""})json";
 
-    auto jsonValue = Json::Value::From(json);
+    BeJsDocument jsonValue;
+    jsonValue.Parse(json);
     ECSchemaPtr out;
     ECSchema::CreateSchema(out, "test", "t", 1, 0, 0);
     out->AddReferencedSchema(*GetUnitsSchema());
@@ -841,15 +843,16 @@ TEST_F(FormatJsonTests, FromJson)
 TEST_F(FormatJsonTests, JsonRoundTrip)
     {
     Utf8String json = R"json({"composite":{"includeZero":true,"spacer":" ","units":[{"label":"'","name":"Units.FT"}]},"formatTraits": ["keepSingleZero", "keepDecimalPoint", "showUnitLabel"],"precision":4,"type":"Decimal","uomSeparator":""})json";
-    auto original = Json::Value::From(json);
+    BeJsDocument original;
+    original.Parse(json);
     ECSchemaPtr out;
     ECSchema::CreateSchema(out, "test", "t", 1, 0, 0);
     out->AddReferencedSchema(*GetUnitsSchema());
     NamedFormat format;
     ASSERT_TRUE(NamedFormat::FromJson(format, original, &out->GetUnitsContext()));
-    Json::Value roundTripped;
+    BeJsDocument roundTripped;
     format.ToJson(roundTripped, false);
-    Json::Reader::Parse(json, original);
+    original.Parse(json);
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(original, roundTripped)) << ECTestUtility::JsonSchemasComparisonString(roundTripped, original);
     }
 
@@ -861,7 +864,8 @@ TEST_F(FormatJsonTests, InvalidJson)
 
     {
     Utf8String json = R"json({"composite":{"includeZero":true,"spacer":" ","units":[{"label":"'","name":"u.FT"}]},"formatTraits": ["keepSingleZero", "keepDecimalPoint", "showUnitLabel"],"precision":4,"type":"Decimal","uomSeparator":""})json";
-    auto original = Json::Value::From(json);
+    BeJsDocument original;
+    original.Parse(json);
     ECSchemaPtr out;
     ECSchema::CreateSchema(out, "test", "t", 1, 0, 0);
     out->AddReferencedSchema(*GetUnitsSchema());
@@ -871,7 +875,8 @@ TEST_F(FormatJsonTests, InvalidJson)
 
     {
     Utf8String json = R"json({"composite":{"includeZero":true,"spacer":" ","units":[{"label":"'","name":"Units:FT"}]},"formatTraits": ["keepSingleZero", "keepDecimalPoint", "showUnitLabel"],"precision":4,"type":"Decimal","uomSeparator":""})json";
-    auto original = Json::Value::From(json);
+    BeJsDocument original;
+    original.Parse(json);
     ECSchemaPtr out;
     ECSchema::CreateSchema(out, "test", "t", 1, 0, 0);
     out->AddReferencedSchema(*GetUnitsSchema());
@@ -881,7 +886,8 @@ TEST_F(FormatJsonTests, InvalidJson)
 
     {
     Utf8String json = R"json({"composite":{"includeZero":true,"spacer":" ","units":[{"label":"'","name":"u:FT"}]},"formatTraits": ["keepSingleZero", "keepDecimalPoint", "showUnitLabel"],"precision":4,"type":"Decimal","uomSeparator":""})json";
-    auto original = Json::Value::From(json);
+    BeJsDocument original;
+    original.Parse(json);
     ECSchemaPtr out;
     ECSchema::CreateSchema(out, "test", "t", 1, 0, 0);
     out->AddReferencedSchema(*GetUnitsSchema());
@@ -900,10 +906,14 @@ TEST_F(FormatJsonTests, EmptyFormat_ToJson)
     ECSchema::CreateSchema(testSchema, "test", "ts", 1, 0, 0);
     ECFormatP testFormat;
     testSchema->CreateFormat(testFormat, "testF");
-    Json::Value output;
+    BeJsDocument output;
     ASSERT_TRUE (testFormat->ToJson(output, false));
     Utf8String expectedJson = R"json({"$schema":"https://dev.bentley.com/json_schemas/ec/32/schemaitem","name":"testF","schema":"test","schemaItemType":"Format"})json";
-    ASSERT_STREQ(expectedJson.c_str(), output.ToString().c_str());
+    // Compare structurally: RapidJson preserves insertion order, so a raw string compare
+    // against the (alphabetically ordered) JsonCpp-era literal is no longer valid.
+    BeJsDocument expectedOutput;
+    expectedOutput.Parse(expectedJson);
+    ASSERT_TRUE(expectedOutput.isExactEqual(output)) << ECTestUtility::JsonSchemasComparisonString(output, expectedOutput);
     }
 
 //---------------------------------------------------------------------------------------
