@@ -2189,13 +2189,13 @@ SchemaWriteStatus ECClass::_WriteXml (BePugiXmlWriterR xmlWriter, ECVersion ecXm
 //---------------+---------------+---------------+---------------+---------------+-------
 bool ECClass::_ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties) const
     {
-    return _ToJson(outValue, standalone, includeSchemaVersion, includeInheritedProperties, bvector<bpair<Utf8String, Json::Value>>());
+    return _ToJson(outValue, standalone, includeSchemaVersion, includeInheritedProperties, BeJsDocument::Null());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-bool ECClass::_ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties, bvector<bpair<Utf8String, Json::Value>> additionalAttributes) const
+bool ECClass::_ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties, BeJsConst additionalAttributes) const
     {
     // Common properties to all Schema items
     if (standalone)
@@ -2266,8 +2266,11 @@ bool ECClass::_ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVer
     else
         WriteCustomAttributes(outValue);
 
-    for (auto const& attribute : additionalAttributes)
-        outValue[attribute.first].From(attribute.second);
+    additionalAttributes.ForEachProperty([&](Utf8CP name, BeJsConst value)
+        {
+        outValue[name].From(value);
+        return false;
+        });
 
     return true;
     }
@@ -2386,39 +2389,34 @@ SchemaWriteStatus ECEntityClass::_WriteXml(BePugiXmlWriterR xmlWriter, ECVersion
 //---------------+---------------+---------------+---------------+---------------+-------
 bool ECEntityClass::_ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties) const
     {
-    bvector<bpair<Utf8String, Json::Value>> attributes;
+    BeJsDocument attributes;
 
     if (IsMixin())
         {
         ECEntityClassCP appliesTo = GetAppliesToClass();
         BeAssert(nullptr != appliesTo);
-        attributes.push_back(bpair<Utf8String, Json::Value>(MIXIN_APPLIES_TO_ATTRIBUTE, ECJsonUtilities::FormatClassName(*appliesTo)));
+        attributes[MIXIN_APPLIES_TO_ATTRIBUTE] = ECJsonUtilities::FormatClassName(*appliesTo);
         if (HasBaseClasses())
-            attributes.push_back(bpair<Utf8String, Json::Value>(ECJSON_BASE_CLASS_ELEMENT, ECJsonUtilities::FormatClassName(*(GetBaseClasses()[0]))));
+            attributes[ECJSON_BASE_CLASS_ELEMENT] = ECJsonUtilities::FormatClassName(*(GetBaseClasses()[0]));
         }
     else
         {
         if (HasBaseClasses())
             {
-            Json::Value mixinArr(Json::ValueType::arrayValue);
+            BeJsDocument mixinArr;
+            mixinArr.toArray();
             for (auto const& baseClass : GetBaseClasses())
                 {
                 if (baseClass->GetEntityClassCP()->IsMixin())
-                    mixinArr.append(ECJsonUtilities::FormatClassName(*baseClass));
+                    mixinArr.appendValue() = ECJsonUtilities::FormatClassName(*baseClass);
                 else
                     {
-                    BeAssert([](auto const& attr) // Assert base element hasn't already been added.
-                        {
-                        for (auto const& elem : attr)
-                            if (elem.first == ECJSON_BASE_CLASS_ELEMENT)
-                                return false;
-                        return true;
-                        }(attributes));
-                    attributes.push_back(bpair<Utf8String, Json::Value>(ECJSON_BASE_CLASS_ELEMENT, ECJsonUtilities::FormatClassName(*baseClass)));
+                    BeAssert(!attributes.isMember(ECJSON_BASE_CLASS_ELEMENT)); // Assert base element hasn't already been added.
+                    attributes[ECJSON_BASE_CLASS_ELEMENT] = ECJsonUtilities::FormatClassName(*baseClass);
                     }
                 }
             if (0 != mixinArr.size())
-                attributes.push_back(bpair<Utf8String, Json::Value>(ECJSON_MIXIN_REFERENCES_ATTRIBUTE, mixinArr));
+                attributes[ECJSON_MIXIN_REFERENCES_ATTRIBUTE].From(mixinArr);
             }
         }
 
@@ -2681,8 +2679,8 @@ SchemaWriteStatus ECCustomAttributeClass::_WriteXml(BePugiXmlWriterR xmlWriter, 
 //---------------+---------------+---------------+---------------+---------------+-------
 bool ECCustomAttributeClass::_ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties) const
     {
-    bvector<bpair<Utf8String, Json::Value>> attributes;
-    attributes.push_back(bpair<Utf8String, Json::Value>(CUSTOM_ATTRIBUTE_APPLIES_TO_ATTRIBUTE, SchemaParseUtils::ContainerTypeToString(m_containerType)));
+    BeJsDocument attributes;
+    attributes[CUSTOM_ATTRIBUTE_APPLIES_TO_ATTRIBUTE] = SchemaParseUtils::ContainerTypeToString(m_containerType);
     return T_Super::_ToJson(outValue, standalone, includeSchemaVersion, includeInheritedProperties, attributes);
     }
 
@@ -4109,20 +4107,16 @@ SchemaWriteStatus ECRelationshipClass::_WriteXml (BePugiXmlWriterR xmlWriter, EC
 //---------------+---------------+---------------+---------------+---------------+-------
 bool ECRelationshipClass::_ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties) const
     {
-    bvector<bpair<Utf8String, Json::Value>> attributes;
+    BeJsDocument attributes;
 
-    attributes.push_back(bpair<Utf8String, Json::Value>(STRENGTH_ATTRIBUTE, SchemaParseUtils::StrengthToJsonString(GetStrength())));
-    attributes.push_back(bpair<Utf8String, Json::Value>(STRENGTHDIRECTION_ATTRIBUTE, SchemaParseUtils::DirectionToJsonString(GetStrengthDirection())));
+    attributes[STRENGTH_ATTRIBUTE] = SchemaParseUtils::StrengthToJsonString(GetStrength());
+    attributes[STRENGTHDIRECTION_ATTRIBUTE] = SchemaParseUtils::DirectionToJsonString(GetStrengthDirection());
 
-    Json::Value sourceJson;
-    if (!GetSource().ToJson(BeJsValue(sourceJson)))
+    if (!GetSource().ToJson(attributes[ECJSON_SOURCECONSTRAINT_ELEMENT]))
         return false;
-    attributes.push_back(bpair<Utf8String, Json::Value>(ECJSON_SOURCECONSTRAINT_ELEMENT, sourceJson));
 
-    Json::Value targetJson;
-    if (!GetTarget().ToJson(BeJsValue(targetJson)))
+    if (!GetTarget().ToJson(attributes[ECJSON_TARGETCONSTRAINT_ELEMENT]))
         return false;
-    attributes.push_back(bpair<Utf8String, Json::Value>(ECJSON_TARGETCONSTRAINT_ELEMENT, targetJson));
 
     return T_Super::_ToJson(outValue, standalone, includeSchemaVersion, includeInheritedProperties, attributes);
     }
