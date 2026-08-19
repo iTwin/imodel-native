@@ -17,7 +17,16 @@
 #include <Bentley/ByteStream.h>
 #include <Bentley/Base64Utilities.h>
 #include <BeRapidJson/BeRapidJson.h>
+// The BeJsValue <-> Json::Value bridge is OPT-IN. imodel-native does not use JsonCpp, so it
+// defines nothing and gets none of it. A downstream repository that still needs the bridge must
+// both define USE_JSONCPP and take a SubPart dependency on iModelCore/libsrc/jsoncpp/BeJsonCpp.
+//
+// This header is public and its definitions are inline, so USE_JSONCPP must be set consistently
+// for every part in a build: two parts that disagree get different BeJsConst/BeJsValue
+// definitions and an ODR violation.
+#ifdef USE_JSONCPP
 #include <json/json.h>
+#endif // USE_JSONCPP
 #include <algorithm>
 #include <cstdio>
 #include <cstring>
@@ -181,7 +190,9 @@ protected:
 public:
     typedef unsigned int ArrayIndex;
 
+#ifdef USE_JSONCPP
     BeJsConst(JsonValueCR);
+#endif
     BeJsConst(RapidJsonDocumentCR);
     BeJsConst(RapidJsonValueCR, rapidjson::MemoryPoolAllocator<>&);
     BeJsConst(Napi::Value);
@@ -428,7 +439,9 @@ public:
     BeJsValue& operator=(BeJsValue const& rhs) = delete; // this usually indicates a logic error. But if you really want this, use .From
 
     BeJsValue(RapidJsonDocumentR);
+#ifdef USE_JSONCPP
     BeJsValue(JsonValueR);
+#endif
     BeJsValue(RapidJsonValueR, rapidjson::MemoryPoolAllocator<>&);
     BeJsValue(Napi::Value);
     BeJsValue(JsValueRef& val) : BeJsConst(val) {}
@@ -446,7 +459,9 @@ public:
     // @note this value must be an object
     // @note this can be less expensive for some implementations since a reference to the string can be stored in the returned object.
     BeJsValue operator[](BeJsStaticString const& key) { return BeJsValue(m_val->GetMember(key, true)); }
+#ifdef USE_JSONCPP
     BeJsValue operator[](Json::StaticString const& key) { return BeJsValue(m_val->GetMember(key, true)); }
+#endif
     // get the value of a member of an object. If it doesn't exist, it is created.
     // @note this value must be an object
     BeJsValue operator[](Utf8CP name) { return BeJsValue(m_val->GetMember(name, false)); }
@@ -695,6 +710,7 @@ private:
     }
 };
 
+#ifdef USE_JSONCPP
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
@@ -792,6 +808,7 @@ private:
     friend struct BeJsConst;
 };
 
+#endif // USE_JSONCPP
 
 //=======================================================================================
 // @bsiclass
@@ -1245,8 +1262,10 @@ inline BeJsValue::BeJsValue(RapidJsonValueR val, rapidjson::MemoryPoolAllocator<
 inline BeJsConst::BeJsConst(RapidJsonDocumentCR val) : m_val(new BeRapidJsonValue(&val, const_cast<RapidJsonDocumentR>(val).GetAllocator())) {}
 inline BeJsConst::BeJsConst(RapidJsonValueCR val, rapidjson::MemoryPoolAllocator<>& alloc) : m_val(new BeRapidJsonValue(&val, alloc)) {}
 
+#ifdef USE_JSONCPP
 inline BeJsValue::BeJsValue(JsonValueR val) : BeJsConst(*new BeJsonCppValue(val)) {}
 inline BeJsConst::BeJsConst(JsonValueCR val) : m_val(new BeJsonCppValue(val)) {}
+#endif
 
 inline void BeJsConst::SaveTo(BeJsValue dest) const { dest.From(*this); }
 

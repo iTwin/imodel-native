@@ -95,7 +95,6 @@ DLM_NO_BENTLEY_LIB  = 1
 DLM_CREATE_LIB_CONTEXT_LINK = 1
 DLM_NOENTRY         = 1
 
-LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(stlibprefix)iTwinJsonCpp$(stlibext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)iTwinBentley$(stlibext)
 
 %include $(sharedMki)linkLibrary.mki
