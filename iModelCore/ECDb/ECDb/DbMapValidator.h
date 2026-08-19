@@ -44,7 +44,8 @@ struct DbMapValidator final
         BentleyStatus ValidateOverflowPropertyMaps(ClassMap const& classMap) const;
         BentleyStatus CheckDuplicateDataPropertyMap() const;
         ECDbCR GetECDb() const { return m_schemaImportContext.GetECDb(); }
-        bool ChecksPhysicalLayer() const { return m_schemaImportContext.MaintainsDataTables(); }
+        // True, if the database does not maintain the physical data layer, which we do e.g. for a schema sync db.
+        bool DbHasDataTables() const { return m_schemaImportContext.MaintainsDataTables(); }
         MainSchemaManager const& GetSchemaManager() const { return m_schemaImportContext.GetSchemaManager(); }
         DbSchema const& GetDbSchema() const { return GetSchemaManager().GetDbSchema(); }
         IssueDataSource const& Issues() const { return GetSchemaManager().Issues(); }

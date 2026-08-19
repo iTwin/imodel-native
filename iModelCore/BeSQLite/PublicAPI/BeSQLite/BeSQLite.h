@@ -608,7 +608,7 @@ enum DbResult
     BE_SQLITE_ERROR_CouldNotAcquireLocksOrCodes = (BE_SQLITE_IOERR | (21<<24)), //!< Error acquiring locks or codes
     BE_SQLITE_ERROR_SchemaUpgradeRecommended    = (BE_SQLITE_IOERR | (22<<24)), //!< Recommended that the schemas found in the database be upgraded
     BE_SQLITE_ERROR_DataTransformRequired       = (BE_SQLITE_IOERR | (23<<24)), //!< Schema update need to update data.
-    BE_SQLITE_ERROR_DataDeletionRequired        = (BE_SQLITE_IOERR | (24<<24)), //!< Schema update would destroy existing instances or property values.
+    BE_SQLITE_ERROR_DataDeletionRequired        = (BE_SQLITE_IOERR | (24<<24)), //!< Schema update needs to remove data (classes/properties)
 
     BE_SQLITE_ERROR_NOTOPEN                     = (BE_SQLITE_ERROR | (1<<24)),  //!< Db not open
     BE_SQLITE_ERROR_PropagateChangesFailed      = (BE_SQLITE_ERROR | (2<<24)),  //!< Error propagating changes during commit
@@ -3358,20 +3358,17 @@ public:
 
 //=======================================================================================
 //! Makes every foreign key ON DELETE and ON UPDATE action on a connection behave as NO ACTION for
-//! as long as this is in scope. The constraints themselves are still checked.
+//! as long as this is in scope.
 //!
-//! For a bulk row copy that deletes and re-inserts, the actions get in the way: a cascade takes rows
-//! the copy means to keep, and ON DELETE SET NULL rewrites a surviving row in place, which a copy
-//! that only re-inserts missing rows never puts back. Pair this with `PRAGMA defer_foreign_keys=1`
-//! so the check lands at commit, by which point the copy has restored whatever it removed.
-//! @note The copy has to cover every table that references the rows it deletes. Nothing clears an
-//! orphan once the cascade is off.
+//! For a bulk row synchronizing, we do not want cascading deletes to fire.
+//! Pair this with `PRAGMA defer_foreign_keys=1`
+//! so the checks happen at commit, by which point the data should be consistent.
 //!
 //! This is the same connection flag `sqlite3changeset_apply_v2` sets for SQLITE_CHANGESETAPPLY_FKNOACTION.
 //! @note The setting is read when a statement is prepared, not when it runs. The statement cache is
 //! emptied on both entry and exit for that reason; a statement a caller is holding open across this
 //! scope keeps whichever behaviour it was prepared with.
-//! @note Does not nest. SQLite exposes no way to read the flag back, so the destructor always clears it.
+//! @note SQLite exposes no way to read the flag back, so the destructor always clears it.
 // @bsiclass
 //=======================================================================================
 struct SuppressForeignKeyActions final : NonCopyableClass

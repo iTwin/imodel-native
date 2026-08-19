@@ -13,8 +13,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus DbMapValidator::ValidateClassViews() const {
-    if (!ChecksPhysicalLayer())
-        return SUCCESS; // a view's query is prepared against data tables
+    if (!DbHasDataTables())
+        return SUCCESS; // a view's query needs data tables, which do not exist on a sync db.
 
     return ClassViews::CheckViews(m_schemaImportContext.GetECDb()) ? SUCCESS : ERROR;
 }
@@ -285,7 +285,7 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
         {
             case DbTable::Type::Existing:
             {
-            if (ChecksPhysicalLayer() && !DbUtilities::TableExists(GetECDb(), table.GetName().c_str(), TABLESPACE_Main))
+            if (DbHasDataTables() && !DbUtilities::TableExists(GetECDb(), table.GetName().c_str(), TABLESPACE_Main))
                 {
                 Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0121,
                     "DbTable '%s' is of type 'Existing' and therefore must exist in the file.", table.GetName().c_str());
@@ -304,7 +304,7 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
 
             case DbTable::Type::Joined:
             {
-            if (ChecksPhysicalLayer() && !DbUtilities::TableExists(GetECDb(), table.GetName().c_str(), TABLESPACE_Main))
+            if (DbHasDataTables() && !DbUtilities::TableExists(GetECDb(), table.GetName().c_str(), TABLESPACE_Main))
                 {
                 Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0123,
                     "DbTable '%s' is if type 'Joined' and therefore must exist in the file.", table.GetName().c_str());
@@ -325,7 +325,7 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
                 return ERROR;
                 }
 
-            if (ChecksPhysicalLayer() && m_schemaImportContext.IsSemanticRebasing())
+            if (DbHasDataTables() && m_schemaImportContext.IsSemanticRebasing())
                 {
                 if (nonVirtualColumnCount > (int) physicalColumns.size())
                     {
@@ -334,7 +334,7 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
                     return ERROR;
                     }
                 }
-            else if (ChecksPhysicalLayer() && nonVirtualColumnCount != (int) physicalColumns.size())
+            else if (DbHasDataTables() && nonVirtualColumnCount != (int) physicalColumns.size())
                 {
                 Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0126,
                     "DbTable '%s' has %d non-virtual columns, but the physical table has %d columns.", table.GetName().c_str(), nonVirtualColumnCount, (int) physicalColumns.size());
@@ -346,7 +346,7 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
 
             case DbTable::Type::Overflow:
             {
-            if (ChecksPhysicalLayer() && !DbUtilities::TableExists(GetECDb(), table.GetName().c_str(), TABLESPACE_Main))
+            if (DbHasDataTables() && !DbUtilities::TableExists(GetECDb(), table.GetName().c_str(), TABLESPACE_Main))
                 {
                 Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0127, 
                     "DbTable '%s' is if type 'Overflow' and therefore must exist in the file.", table.GetName().c_str());
@@ -368,7 +368,7 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
                 return ERROR;
                 }
 
-            if (ChecksPhysicalLayer() && m_schemaImportContext.IsSemanticRebasing())
+            if (DbHasDataTables() && m_schemaImportContext.IsSemanticRebasing())
                 {
                 if (nonVirtualColumnCount > (int) physicalColumns.size())
                     {
@@ -377,7 +377,7 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
                     return ERROR;
                     }
                 }
-            else if (ChecksPhysicalLayer() && nonVirtualColumnCount != (int) physicalColumns.size())
+            else if (DbHasDataTables() && nonVirtualColumnCount != (int) physicalColumns.size())
                 {
                 Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0130,
                     "DbTable '%s' has %d non-virtual columns, but the physical table has %d columns.", table.GetName().c_str(), nonVirtualColumnCount, (int) physicalColumns.size());
@@ -389,7 +389,7 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
 
             case DbTable::Type::Primary:
             {
-            if (ChecksPhysicalLayer() && !DbUtilities::TableExists(GetECDb(), table.GetName().c_str(), TABLESPACE_Main))
+            if (DbHasDataTables() && !DbUtilities::TableExists(GetECDb(), table.GetName().c_str(), TABLESPACE_Main))
                 {
                 Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0131,
                     "DbTable '%s' is if type 'Primary' and therefore must exist in the file.", table.GetName().c_str());
@@ -403,7 +403,7 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
                 return ERROR;
                 }
 
-            if (ChecksPhysicalLayer() && m_schemaImportContext.IsSemanticRebasing())
+            if (DbHasDataTables() && m_schemaImportContext.IsSemanticRebasing())
                 {
                 if (nonVirtualColumnCount > (int) physicalColumns.size())
                     {
@@ -412,7 +412,7 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
                     return ERROR;
                     }
                 }
-            else if (ChecksPhysicalLayer() && nonVirtualColumnCount != (int) physicalColumns.size())
+            else if (DbHasDataTables() && nonVirtualColumnCount != (int) physicalColumns.size())
                 {
                 Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0133,
                     "DbTable '%s' has %d non-virtual columns, but the physical table has %d columns.", table.GetName().c_str(), nonVirtualColumnCount, (int) physicalColumns.size());
@@ -476,7 +476,7 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
 BentleyStatus DbMapValidator::ValidateDbColumn(DbColumn const& column, bset<Utf8String, CompareIUtf8Ascii> const& physicalColumns) const
     {
     DbTable::Type tableType = column.GetTable().GetType();
-    if (ChecksPhysicalLayer() && !column.IsVirtual() && tableType != DbTable::Type::Virtual)
+    if (DbHasDataTables() && !column.IsVirtual() && tableType != DbTable::Type::Virtual)
         {
         if (physicalColumns.find(column.GetName()) == physicalColumns.end())
             {

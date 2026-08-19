@@ -121,10 +121,9 @@ ClassMappingStatus ClassMap::DoMapPart2(ClassMappingContext& ctx)
             return ClassMappingStatus::Error;
         }
 
-    // The joined table's cascading foreign key to its TPH base table, and the current timestamp
-    // trigger, are both worked out again by DerivedDbStructures. They never reached ec_, so the only
-    // way a briefcase that adopts ec_ rows can get them is by deriving them itself - which means
-    // there has to be exactly one implementation, and it cannot be this one.
+    // We used to create joined table's cascading foreign key to its TPH base table, and the current timestamp
+    // trigger here, but now they are both worked out again by DerivedDbStructures which is where this code now lives.
+    // That way a briefcase that adopts ec_ rows via schema sync can properly apply them.
     return ClassMappingStatus::Success;
     }
 
