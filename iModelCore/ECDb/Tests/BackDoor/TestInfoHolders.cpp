@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #include "PublicAPI/BackDoor/ECDb/TestInfoHolders.h"
 #include "PublicAPI/BackDoor/ECDb/TestHelper.h"
+#include <cmath>
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
@@ -17,73 +18,70 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 JsonValue::JsonValue(Utf8CP json)
     {
     if (SUCCESS != TestUtilities::ParseJson(m_value, json))
-        m_value = Json::Value(Json::nullValue);
+        m_value.SetNull();
+    }
+
+//---------------------------------------------------------------------------------------
+// Structural deep comparison, preserving the semantics of the original JsonCpp
+// implementation: same type-dispatch order, the same TestUtilities::Equals tolerance for
+// doubles, and exact int64 comparison for integral values (so ids above 2^53 do not lose
+// precision through a double compare).
+// @bsimethod
+//---------------------------------------------------------------------------------------
+static bool jsonValuesEqual(BeJsConst lhs, BeJsConst rhs)
+    {
+    if (lhs.isNull())
+        return rhs.isNull();
+
+    if (lhs.isArray())
+        {
+        if (!rhs.isArray() || lhs.size() != rhs.size())
+            return false;
+
+        return false == lhs.ForEachArrayMember([&](BeJsConst::ArrayIndex i, BeJsConst member)
+            {
+            return !jsonValuesEqual(member, rhs[i]);
+            });
+        }
+
+    if (lhs.isObject())
+        {
+        if (!rhs.isObject() || lhs.size() != rhs.size())
+            return false;
+
+        return false == lhs.ForEachProperty([&](Utf8CP memberName, BeJsConst member)
+            {
+            return !rhs.isMember(memberName) || !jsonValuesEqual(member, rhs[memberName]);
+            });
+        }
+
+    if (lhs.isBool())
+        return rhs.isBool() && lhs.asBool() == rhs.asBool();
+
+    if (lhs.isNumeric())
+        {
+        if (!rhs.isNumeric())
+            return false;
+
+        double l = lhs.asDouble();
+        double r = rhs.asDouble();
+        if (l == std::trunc(l) && r == std::trunc(r))
+            return lhs.asInt64() == rhs.asInt64();
+
+        return TestUtilities::Equals(l, r);
+        }
+
+    if (lhs.isString())
+        return rhs.isString() && strcmp(lhs.asCString(), rhs.asCString()) == 0;
+
+    BeAssert(false && "Unhandled JSON value type. This method needs to be adjusted");
+    return false;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-bool JsonValue::operator==(JsonValue const& rhs) const
-    {
-    if (m_value.isNull())
-        return rhs.m_value.isNull();
-
-    if (m_value.isArray())
-        {
-        if (!rhs.m_value.isArray() || m_value.size() != rhs.m_value.size())
-            return false;
-
-        for (Json::ArrayIndex i = 0; i < m_value.size(); i++)
-            {
-            if (JsonValue(m_value[i]) != JsonValue(rhs.m_value[i]))
-                return false;
-            }
-
-        return true;
-        }
-
-    if (m_value.isObject())
-        {
-        if (!rhs.m_value.isObject())
-            return false;
-
-        bvector<Utf8String> lhsMemberNames = m_value.getMemberNames();
-        if (lhsMemberNames.size() != rhs.m_value.size())
-            return false;
-
-        for (Utf8StringCR memberName : lhsMemberNames)
-            {
-            if (!rhs.m_value.isMember(memberName))
-                return false;
-
-            if (JsonValue(m_value[memberName]) != JsonValue(rhs.m_value[memberName]))
-                return false;
-            }
-
-        return true;
-        }
-
-    if (m_value.isIntegral() && !rhs.m_value.isIntegral())
-        return false;
-
-    if (m_value.isBool())
-        return rhs.m_value.isBool() && m_value.asBool() == rhs.m_value.asBool();
-
-    if (m_value.isInt())
-        return rhs.m_value.isConvertibleTo(Json::intValue) && m_value.asInt64() == rhs.m_value.asInt64();
-
-    if (m_value.isUInt())
-        return rhs.m_value.isConvertibleTo(Json::uintValue) && m_value.asUInt64() == rhs.m_value.asUInt64();
-
-    if (m_value.isDouble())
-        return rhs.m_value.isDouble() && TestUtilities::Equals(m_value.asDouble(), rhs.m_value.asDouble());
-
-    if (m_value.isString())
-        return rhs.m_value.isString() && strcmp(m_value.asCString(), rhs.m_value.asCString()) == 0;
-
-    BeAssert(false && "Unhandled JsonCPP value type. This method needs to be adjusted");
-    return false;
-    }
+bool JsonValue::operator==(JsonValue const& rhs) const { return jsonValuesEqual(m_value, rhs.m_value); }
 
 
 //---------------------------------------------------------------------------------------
