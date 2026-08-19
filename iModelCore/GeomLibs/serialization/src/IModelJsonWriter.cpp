@@ -22,7 +22,7 @@ static double CurvatureToRadius(double curvature)
 // <ul>
 // <li> appendXXX (data, jsonArray) -- create XXX as json value, append it to jsonArray
 
-// <li> createXXX (data, jsonObj) -- return (!!) Json::Value ()
+// <li> createXXX (data, jsonObj) -- populate jsonObj with XXX
 // </ul>
 // @bsiclass
 //=======================================================================================

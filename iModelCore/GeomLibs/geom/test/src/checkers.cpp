@@ -1788,11 +1788,11 @@ void Check::ClearGeometry (char const *name)
                 }
             }
         if (s_checkIModelJsonRoundTrip){
-            Json::Value value;
-            if (IModelJson::TryGeometryToIModelJsonValue (BeJsValue(value), s_cache))
+            BeJsDocument value;
+            if (IModelJson::TryGeometryToIModelJsonValue (value, s_cache))
                 {
                 bvector<IGeometryPtr> geometryB;
-                IModelJson::TryIModelJsonValueToGeometry (BeJsValue(value), geometryB);
+                IModelJson::TryIModelJsonValueToGeometry (value, geometryB);
                 if (s_cache.size () == geometryB.size ())
                     {
                     uint32_t errors = 0;
@@ -1810,8 +1810,7 @@ void Check::ClearGeometry (char const *name)
                     }
                 else
                     {
-                    Json::FastWriter fastWriter;
-                    auto string = fastWriter.write(value);
+                    auto string = value.Stringify();
                     printf ("\n IMJS size mismatch in %ls (%d) (%d)\n", path.c_str (), (int)s_cache.size (), (int)geometryB.size ());
                     }
                 }

@@ -3,13 +3,13 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include <map>
+#include <memory>
+#include <optional>
 #include <Geom\GeomApi.h>
 #include <Bentley\BeFileName.h>
 #include <Bentley\BeFile.h>
 #include <GeomSerialization\GeomSerializationApi.h>
 #include <Bentley\BeDirectoryIterator.h>
-#include <json/writer.h>
-#include "compareJson.h"
 #include "compareGeometry.h"
 
 static const char * s_messagePrefix = "comparedgnjs";
@@ -24,10 +24,11 @@ void messagePrefix (const char* content = nullptr)
 struct JsonData {
 Utf8String m_filename;
 bvector<IGeometryPtr> m_geometry;
-Json::Value m_value;
+// Held by shared_ptr because BeJsDocument is move-only but JsonData is copied by value (bvector<JsonData> is passed by value).
+std::shared_ptr<BeJsDocument> m_value;
 
 JsonData (Utf8String filename)
-    : m_filename (filename)
+    : m_filename (filename), m_value (std::make_shared<BeJsDocument> ())
     {
     }
 bool Load(bool &canUseGeometry, int &type, int verbose = 0)
@@ -59,9 +60,9 @@ bool Load(bool &canUseGeometry, int &type, int verbose = 0)
 	{
 		messagePrefix(); printf_s("file %s\n%s", m_filename.c_str(), str.c_str());
 	}
-	Json::Reader::Parse(str, m_value, false);
+	m_value->Parse(str);
 	if (type == 1)
-		if (!BentleyGeometryJson::TryJsonValueToGeometry(m_value, m_geometry))
+		if (!BentleyGeometryJson::TryJsonValueToGeometry(*m_value, m_geometry))
 		{
 			type = 2;
 			canUseGeometry = false;
@@ -88,22 +89,24 @@ struct map_cmp {
 // Type-specific compare methods and handler prototypes
 bool compareItems(const double a, const double b);
 bool compareItems(const Utf8String, const Utf8String);
-bool compareHandler(Json::Value const &a, Json::Value const &b, struct TypeCounts &typeCounts, std::map<Utf8String, int, map_cmp> &propertyCounts, bvector<Utf8String> &errorTracker, int &dif);
-bool compareObjects(Json::Value const &a, Json::Value const &b, struct TypeCounts &typeCounts, std::map<Utf8String, int, map_cmp> &propertyCounts, bvector<Utf8String> &errorTracker, int &dif);
-bool compareArrays(Json::Value const &a, Json::Value const &b, struct TypeCounts &typeCounts, std::map<Utf8String, int, map_cmp> &propertyCounts, bvector<Utf8String> &errorTracker, int &dif);
+bool compareHandler(BeJsConst a, BeJsConst b, struct TypeCounts &typeCounts, std::map<Utf8String, int, map_cmp> &propertyCounts, bvector<Utf8String> &errorTracker, int &dif);
+bool compareObjects(BeJsConst a, BeJsConst b, struct TypeCounts &typeCounts, std::map<Utf8String, int, map_cmp> &propertyCounts, bvector<Utf8String> &errorTracker, int &dif);
+bool compareArrays(BeJsConst a, BeJsConst b, struct TypeCounts &typeCounts, std::map<Utf8String, int, map_cmp> &propertyCounts, bvector<Utf8String> &errorTracker, int &dif);
 
-bool findProperty(Json::Value const &source, CharCP targetName, Json::Value &value)
+// Case insensitive property lookup. Returns the value if found (which may itself be null), or nullopt.
+std::optional<BeJsConst> findProperty(BeJsConst source, CharCP targetName)
 {
-	for (Json::Value::iterator iter = source.begin(); iter != source.end(); iter++)
+	std::optional<BeJsConst> found;
+	source.ForEachProperty([&](Utf8CP childName, BeJsConst child)
 	{
-		Utf8CP childName = iter.memberName();
 		if (0 == BeStringUtilities::Stricmp(targetName, childName))
 		{
-			value = *iter;
-			return true;
+			found.emplace(child);
+			return true;	// stop
 		}
-	}
-	return false;
+		return false;
+	});
+	return found;
 }
 
 //
@@ -272,53 +275,63 @@ bool compareGeometry(bvector<JsonData> allData, int verbose)
 	return true;
 	}
 // Function that iterates through an ARRAY and appends to errorTracker
-void appendArrayToErrorTracker(Json::Value const &item, bvector<Utf8String> &errorTracker) {
-	int n = item.size();
+void appendArrayToErrorTracker(BeJsConst item, bvector<Utf8String> &errorTracker) {
+	int n = (int) item.size();
 	int counter = 1;
 	Utf8String lastName;
 	for (int i = 0; i < n; i++)
 	{
-		if (item[i].isObject())
+		BeJsConst entry = item[(BeJsConst::ArrayIndex) i];
+		if (entry.isObject())
 		{
 			unsigned int index = 0;
-			for (Json::Value::iterator iter = item[i].begin(); iter != item[i].end(); iter++)
+			unsigned int entrySize = entry.size();
+			bool isFirstProperty = true;
+			entry.ForEachProperty([&](Utf8CP propName, BeJsConst)
 			{
-				Utf8String currName = iter.memberName();
+				Utf8String currName = propName;
+				bool skip = false;
 				if (strcmp(currName.c_str(), lastName.c_str()) == 0)	// Compare to last property name found
 				{
 					counter++;
 
-					if (!(i == n - 1 && index < item[i].size()))	// If very last item of array and inner object, must continue on to printing step
-						continue;
+					if (!(i == n - 1 && index < entrySize))	// If very last item of array and inner object, must continue on to printing step
+						skip = true;
 				}
 
-				// Add property
-				if (counter > 1)	// Print with number value
+				if (!skip)
 				{
-					char toInsert[100];
-					snprintf(toInsert, sizeof(toInsert), "%s(x%d)", lastName.c_str(), counter);
-					errorTracker.insert(errorTracker.begin(), toInsert);
+					// Add property
+					if (counter > 1)	// Print with number value
+					{
+						char toInsert[100];
+						snprintf(toInsert, sizeof(toInsert), "%s(x%d)", lastName.c_str(), counter);
+						errorTracker.insert(errorTracker.begin(), toInsert);
+					}
+					else
+					{
+						if (!(i == 0 && isFirstProperty))	// If lastName has not yet been set, force insertion
+							errorTracker.insert(errorTracker.begin(), lastName);
+						if (i == n - 1 && index == entrySize)	// If very last item for entire array, force insertion
+							errorTracker.insert(errorTracker.begin(), currName);
+					}
+					counter = 1;
+					index++;
+					lastName = propName;
 				}
-				else
-				{
-					if (!(i == 0 && iter == item[i].begin()))	// If lastName has not yet been set, force insertion
-						errorTracker.insert(errorTracker.begin(), lastName);
-					if (i == n - 1 && index == item[i].size())	// If very last item for entire array, force insertion
-						errorTracker.insert(errorTracker.begin(), currName);
-				}
-				counter = 1;
-				index++;
-				lastName = iter.memberName();
-			}
+				isFirstProperty = false;
+				return false;
+			});
 		}
 	}
 }
 // Function that iterates through an OBJECT and appends to errorTracker
-void appendPropertiesToErrorTracker(Json::Value const &item, bvector<Utf8String> &errorTracker) {
-	for (Json::Value::iterator iter = item.begin(); iter != item.end(); iter++)
+void appendPropertiesToErrorTracker(BeJsConst item, bvector<Utf8String> &errorTracker) {
+	item.ForEachProperty([&](Utf8CP propName, BeJsConst)
 	{
-		errorTracker.insert(errorTracker.begin(), iter.memberName());
-	}
+		errorTracker.insert(errorTracker.begin(), propName);
+		return false;
+	});
 }
 bool compareItems(double a, double b, int &dif)
 {
@@ -356,7 +369,7 @@ bool compareItems(const char* a, const char* b)		// Does not take into account c
 		return false;
 	}
 }
-bool compareArrays(Json::Value const &a, Json::Value const &b, struct TypeCounts &typeCounts, std::map<Utf8String, int, map_cmp> &propertyCounts, bvector<Utf8String> &errorTracker, int &dif)
+bool compareArrays(BeJsConst a, BeJsConst b, struct TypeCounts &typeCounts, std::map<Utf8String, int, map_cmp> &propertyCounts, bvector<Utf8String> &errorTracker, int &dif)
 	{
 	if (a.size() != b.size())	// If not equal... must trace down to the root of the problem in order to provide some form of tracking
 	{
@@ -375,10 +388,10 @@ bool compareArrays(Json::Value const &a, Json::Value const &b, struct TypeCounts
 
 	// Keep track of result for each element of array
 	bool toReturn = true;
-	int n = a.size();
+	int n = (int) a.size();
 	for (int i = 0; i < n; i++)
 	{
-		toReturn = toReturn && compareHandler(a[i], b[i], typeCounts, propertyCounts, errorTracker, dif);
+		toReturn = toReturn && compareHandler(a[(BeJsConst::ArrayIndex) i], b[(BeJsConst::ArrayIndex) i], typeCounts, propertyCounts, errorTracker, dif);
 		// If false, break loop and return immediately
 		if (!toReturn)
 		{
@@ -390,7 +403,7 @@ bool compareArrays(Json::Value const &a, Json::Value const &b, struct TypeCounts
 	}
 	return toReturn;
 	}
-bool compareObjects(Json::Value const &a, Json::Value const &b, struct TypeCounts &typeCounts, std::map<Utf8String, int, map_cmp> &propertyCounts, bvector<Utf8String> &errorTracker, int &dif)
+bool compareObjects(BeJsConst a, BeJsConst b, struct TypeCounts &typeCounts, std::map<Utf8String, int, map_cmp> &propertyCounts, bvector<Utf8String> &errorTracker, int &dif)
 	{
 	if (a.size() != b.size())
 	{
@@ -409,17 +422,17 @@ bool compareObjects(Json::Value const &a, Json::Value const &b, struct TypeCount
 
 	// Keep track of result for each property in object
 	bool toReturn = true;
-	for (Json::Value::iterator iter = a.begin(); iter != a.end(); iter++)
+	a.ForEachProperty([&](Utf8CP propName, BeJsConst aProp)
 	{
 
 		// Add each property found to the propertyCounts
-		if (propertyCounts.count(iter.memberName()) == 0)
-			propertyCounts[iter.memberName()] = 1;
+		if (propertyCounts.count(propName) == 0)
+			propertyCounts[propName] = 1;
 		else
-			propertyCounts[iter.memberName()]++;
+			propertyCounts[propName]++;
 
-		Json::Value bProp;
-		if (!findProperty(b, iter.memberName(), bProp)) {
+		std::optional<BeJsConst> bProp = findProperty(b, propName);
+		if (!bProp) {
 			// Add object contents to errorTracker
 			errorTracker.insert(errorTracker.begin(), "}");
 			appendPropertiesToErrorTracker(b, errorTracker);
@@ -429,68 +442,78 @@ bool compareObjects(Json::Value const &a, Json::Value const &b, struct TypeCount
 			appendPropertiesToErrorTracker(a, errorTracker);
 			errorTracker.insert(errorTracker.begin(), "{");
 
-			messagePrefix(); printf_s("     JSON COMPARE FAIL: Property %s of file 1 not in file 2\n", iter.memberName());
-			return false;
+			messagePrefix(); printf_s("     JSON COMPARE FAIL: Property %s of file 1 not in file 2\n", propName);
+			toReturn = false;
+			return true;	// stop
 		}
 
-		toReturn = toReturn && compareHandler(*iter, bProp, typeCounts, propertyCounts, errorTracker, dif);
+		toReturn = toReturn && compareHandler(aProp, *bProp, typeCounts, propertyCounts, errorTracker, dif);
 		// If toReturn becomes false at any point, push the property and break (will cause a chain reaction up the stack)
 		if (!toReturn)
 		{
-			errorTracker.insert(errorTracker.begin(), iter.memberName());
-			return false;
+			errorTracker.insert(errorTracker.begin(), propName);
+			return true;	// stop
 		}
-	}
+		return false;
+	});
 	return toReturn;
 	}
-bool compareHandler(Json::Value const &a, Json::Value const &b, struct TypeCounts &typeCounts, std::map<Utf8String, int, map_cmp> &propertyCounts, bvector<Utf8String> &errorTracker, int &dif)
+// BeJsConst has no equivalent of JsonCpp's Value::type(); classify into the categories this tool distinguishes.
+// NOTE: JsonCpp reported intValue/uintValue/realValue as distinct types, so an integer and a real used to be
+// reported as a type mismatch even when numerically equal. All numbers are now a single kind.
+enum class JsonKind { Null, Bool, Number, String, Array, Object, Other };
+static JsonKind kindOf(BeJsConst v)
 	{
-	if (a.type() != b.type())
+	if (v.isNull())    return JsonKind::Null;
+	if (v.isBool())    return JsonKind::Bool;
+	if (v.isNumeric()) return JsonKind::Number;
+	if (v.isString())  return JsonKind::String;
+	if (v.isArray())   return JsonKind::Array;	// array must be tested before object
+	if (v.isObject())  return JsonKind::Object;
+	return JsonKind::Other;
+	}
+bool compareHandler(BeJsConst a, BeJsConst b, struct TypeCounts &typeCounts, std::map<Utf8String, int, map_cmp> &propertyCounts, bvector<Utf8String> &errorTracker, int &dif)
 	{
-		messagePrefix(); printf_s("     JSON COMPARE FAIL: Type mismatch (%d != %d)\n", (int) a.type(), (int) b.type());
+	JsonKind aKind = kindOf(a);
+	JsonKind bKind = kindOf(b);
+	if (aKind != bKind)
+	{
+		messagePrefix(); printf_s("     JSON COMPARE FAIL: Type mismatch (%d != %d)\n", (int) aKind, (int) bKind);
 		return false;
 	}
 
 	// handle various cases and increment corresponding counters
-	if (a.isDouble() || a.isInt())
+	switch (aKind)
 	{
-		typeCounts.numbers++;
-		return compareItems(a.asDouble(), b.asDouble(), dif);
-	}
-	else if (a.isArray()) {		// Array and object compare function calls must take the typeCounts propertyCounts, errorTracker, & tol with them...they may call back on the handler
-		typeCounts.arrays++;
-		return compareArrays(a, b, typeCounts, propertyCounts, errorTracker, dif);
-	}
-	else if (a.isObject()) {
-		typeCounts.objects++;
-		return compareObjects(a, b, typeCounts, propertyCounts, errorTracker, dif);
-	}
-	else if (a.isString())
-	{
-		typeCounts.strings++;
-		return compareItems(a.asCString(), b.asCString());
-	}
-	else if (a.isBool())
-	{
-		typeCounts.booleans++;
-		return a.asBool() == b.asBool();
-	}
-	else if (a.isNull())
-	{
-		typeCounts.nulls++;
-		// as long as both are null/undefined, is okay
-		return true;
-	}
-	else
-	{
-		// unsupported type
-		return false;
+		case JsonKind::Number:
+			typeCounts.numbers++;
+			return compareItems(a.asDouble(), b.asDouble(), dif);
+		// Array and object compare function calls must take the typeCounts propertyCounts, errorTracker, & tol with them...they may call back on the handler
+		case JsonKind::Array:
+			typeCounts.arrays++;
+			return compareArrays(a, b, typeCounts, propertyCounts, errorTracker, dif);
+		case JsonKind::Object:
+			typeCounts.objects++;
+			return compareObjects(a, b, typeCounts, propertyCounts, errorTracker, dif);
+		case JsonKind::String:
+			typeCounts.strings++;
+			return compareItems(a.asCString(), b.asCString());
+		case JsonKind::Bool:
+			typeCounts.booleans++;
+			return a.asBool() == b.asBool();
+		case JsonKind::Null:
+			typeCounts.nulls++;
+			// as long as both are null/undefined, is okay
+			return true;
+		default:
+			// unsupported type
+			return false;
 	}
 	}
 bool compareJSON(bvector<JsonData> const &allData, int verbose, int &dif) // initial call for entire json objects
 	{
-	Json::Value a = allData[0].m_value;
-	Json::Value b = allData[1].m_value;
+	BeJsConst a = *allData[0].m_value;
+	BeJsConst b = *allData[1].m_value;
 	struct TypeCounts typeCounts = { 0, 0, 0, 0, 0, 0 };
 	std::map<Utf8String, int, map_cmp> propertyCounts;
 	bvector<Utf8String> errorTracker;
