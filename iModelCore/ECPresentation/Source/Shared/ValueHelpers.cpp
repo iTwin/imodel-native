@@ -5,6 +5,7 @@
 #include <ECPresentationPch.h>
 #include "ValueHelpers.h"
 #include "../RulesEngineTypes.h"
+#include <string>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

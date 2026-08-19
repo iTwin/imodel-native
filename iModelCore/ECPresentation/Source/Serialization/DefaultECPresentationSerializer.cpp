@@ -5,6 +5,7 @@
 #include <ECPresentationPch.h>
 #include <ECPresentation/DefaultECPresentationSerializer.h>
 #include "../Shared/ECSchemaHelper.h"
+#include <string>
 
 // Member names of the serialized NavNode JSON object
 #define NAVNODE_NodeId              "NodeId"

@@ -17,6 +17,7 @@
 #include "PresentationQuery.h"
 #include "QueryBuilderHelpers.h"
 #include "../NodeLabelCalculator.h"
+#include <string>
 
 #define HANDLE_CUSTOM_FUNCTION_FAILURE_RETURN_CSTR(msg) \
     { \

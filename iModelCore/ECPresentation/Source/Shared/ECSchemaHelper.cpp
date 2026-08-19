@@ -12,6 +12,7 @@
 #include "Queries/QueryExecutor.h"
 #include <set>
 #include <regex>
+#include <string>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

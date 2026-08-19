@@ -13,6 +13,7 @@
 #include "NavNodesCache.h"
 #include "NavNodesDataSource.h"
 #include "NavNodeProviders.h"
+#include <string>
 
 USING_NAMESPACE_BENTLEY_LOGGING
 

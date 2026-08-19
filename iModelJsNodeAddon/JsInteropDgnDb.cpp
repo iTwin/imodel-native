@@ -1379,12 +1379,7 @@ void JsInterop::GetIModelProps(BeJsValue val, DgnDbCR dgndb, Utf8StringCR when) 
     if (gcs != nullptr && gcs->IsValid())
         {
         // Here is the definition in old style JSON format.
-        Json::Value CRSOld;
-        gcs->ToJson(CRSOld, true);
-
-        // Convert old style Json value to new style
-        BeJsDocument theDoc(CRSOld.toStyledString());
-        val[json_geographicCoordinateSystem()].From(theDoc);
+        gcs->ToJson(val[json_geographicCoordinateSystem()], true);
 
         // Invalidate current EcefLocation in case it exists (this will force to recompute it using the new gcs)
         EcefLocation invalidLocation;
@@ -1447,7 +1442,7 @@ static void populateGeoCoordResult(BeJsValue result, bvector<DPoint3d> const& po
     {
     for (size_t i = 0; i < points.size(); i++)
         {
-        auto outputPointWithStatus = result[static_cast<Json::ArrayIndex>(i)];
+        auto outputPointWithStatus = result[static_cast<BeJsValue::ArrayIndex>(i)];
         auto outputPoint = outputPointWithStatus["p"];
 
         outputPoint[0] = points[i].x;

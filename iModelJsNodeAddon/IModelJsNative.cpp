@@ -20,6 +20,7 @@
 #include <folly/BeFolly.h>
 #include "SchemaUtil.h"
 #include "JsLogger.h"
+#include <cmath>
 
 // cspell:ignore napi strbuf propsize
 
@@ -3247,7 +3248,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         {
         REQUIRE_ARGUMENT_STRING(0, testName);
         REQUIRE_ARGUMENT_STRING(1, params);
-        return toJsString(Env(), JsInterop::ExecuteTest(GetOpenedDb(info), testName, params).ToString());
+        return toJsString(Env(), JsInterop::ExecuteTest(GetOpenedDb(info), testName, params).Stringify());
         }
 
     //  Create projections
@@ -5818,10 +5819,7 @@ public:
         REQUIRE_ARGUMENT_ANY_OBJ(0, argsObj);
         BeJsValue args(argsObj);
 
-        Json::Value jsonArgs;
-        BeJsValue jsArgs(jsonArgs);
-        jsArgs.From(args);
-        ECSqlParams params(jsonArgs);
+        ECSqlParams params(args);
         if(params.IsEmpty())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "no parameters to bind", IModelJsNativeErrorKey::BadArg);
         std::string errMsg;
@@ -6512,7 +6510,7 @@ struct GetTileTreeWorker : TileWorker
 {
 private:
     // Output
-    Json::Value m_result;
+    BeJsDocument m_result;
 
     void Execute() final
         {

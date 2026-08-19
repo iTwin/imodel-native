@@ -5,6 +5,7 @@
 #include <ECPresentationPch.h>
 #include "NavigationQuery.h"
 #include "../Shared/ValueHelpers.h"
+#include <string>
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
