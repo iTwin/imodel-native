@@ -1,6 +1,6 @@
 ---
 name: vcpkg
-description: Authoritative guide for vcpkg library integration in imodel-native. USE FOR adding a new vcpkg-managed library, migrating an existing library to vcpkg, or updating a vcpkg-managed library version. Covers the sequential install chain, PartFile wiring, mke patterns, triplet selection, and version pinning.
+description: Authoritative guide for vcpkg library integration in imodel-native. USE FOR adding a new vcpkg-managed library, migrating an existing library to vcpkg, updating a vcpkg-managed library version, or diagnosing a failing Mend source scan. Covers the sequential install chain, PartFile wiring, mke patterns, triplet selection, version pinning, and Mend source-scan configuration (`vcpkg-mend.json`).
 ---
 
 # vcpkg Integration in imodel-native
@@ -44,6 +44,7 @@ consumer `.mke` runs, its install is already complete.
 Under `iModelCore/libsrc/<mylib>/`:
 - `vcpkg.json` — list dependency with `version>=` under `dependencies` and exact version under `overrides`
 - `vcpkg-configuration.json` — copy from an existing consumer (e.g. `compress/`); update `baseline` if needed
+- `vcpkg-mend.json` — list the triplet graph(s) whose union downloads all upstream source used by the consumer; the scan never compiles for the selected target, so triplets need not match the Mend host; prefer one source-superset graph, and add multiple triplets only for platform-specific downloads
 - `triplets/` — platform-specific triplet files if the defaults in `iModelCore/libsrc/` are not sufficient (see `compress/triplets/` for examples)
 
 > **Check whether the library links cleanly into Windows DEBUG builds.** Some libraries fail to
@@ -128,6 +129,57 @@ To insert mid-chain, point the new part at its predecessor and re-parent the fol
 link onto the new part, keeping the chain linear.  Whichever position you choose, update
 the sibling `.mke` comment ("Runs after vcpkg_install_<prev>…") on every link whose
 predecessor changed.
+
+Also add the new part to the `vcpkg_install_all` aggregate so the shared binary-cache warmer includes
+it. Mend source scanning treats a directory as a consumer only when it holds all three of
+`vcpkg.json`, `vcpkg-configuration.json`, and `vcpkg-mend.json`; anything else is skipped, so
+vendored upstream trees that ship their own `vcpkg.json` are harmless. Because an omitted
+`vcpkg-mend.json` would just skip the library, `vcpkg_run_install.ps1` and `vcpkg_run_install.sh`
+refuse to install a manifest directory that has no `vcpkg-mend.json` with a non-empty `triplets`
+array — so the omission fails that library's normal build on every platform. Every configured
+triplet must also have a matching overlay file. Select the smallest triplet set whose manifest and portfile branches
+cover all upstream downloads, and make sure it reaches every port pinned in `overrides` — the scan
+verifies that the ports named in `dependencies` **and** `overrides` all produced extracted source.
+The selected triplet does not need to match the Mend host because nothing is compiled for that
+target; for example, curl's `x64-linux` graph includes its common sources plus conditional c-ares,
+so no Windows graph is needed even though Mend runs on Windows. The host still needs a working
+toolchain of its own, since vcpkg builds host-triplet helper ports (`vcpkg-cmake` and friends)
+either way. The cross-consumer checks the wrappers cannot make — a misplaced `vcpkg-mend.json`, or
+a triplet with no overlay file — also run during Windows builds via the `vcpkg_validate_mend` part,
+so those mistakes fail the PR rather than the Mend pipeline.
+
+#### Auditing platform coverage
+
+Every consumer currently lists only `x64-linux`, which is a source-superset claim rather than a
+default. Nothing enforces it: the materialization check only sees ports named in `dependencies` and
+`overrides`, so a download that happens solely on an unlisted platform is skipped in silence. Two
+things put a download there, and both are easy to grep for:
+
+```bash
+# platform-qualified dependency or feature (curl's c-ares is "osx | linux")
+grep -rn --include='vcpkg.json' '"platform"' iModelCore/libsrc/
+# source fetch inside a target branch (crashpad pulls linux-syscall-support on Linux/Android only)
+grep -rn --include='*.cmake' 'VCPKG_TARGET_IS_' iModelCore/libsrc/*/*ports/
+```
+
+Neither grep reaches a port whose portfile we do not vendor, so for those compare the observed
+graphs instead — the ports a real build resolved on a given platform against the ports the scan
+materialized:
+
+```bash
+ls $OutRoot/vcpkg_installed/<consumer>/<triplet>/share/*/vcpkg_abi_info.txt   # per-platform
+ls -d <scan-root>/<consumer>/<triplet>/buildtrees/*/src                       # what Mend saw
+```
+
+Host helper ports (`vcpkg-cmake` and friends) appear only in the first list; ignore them. Anything
+else present on a supported platform but absent from the scan needs a covering triplet added to that
+consumer's `vcpkg-mend.json`.
+
+Pinning a platform-conditional port in `overrides` is worth doing even when its version is already
+correct, because the materialization check then demands that the port appear in some configured
+graph — turning an invisible coverage gap into a scan failure. That lever does nothing for a
+conditional sub-source fetched inside another port's portfile (crashpad's `lss`); only a covering
+triplet helps there.
 
 ### 4. Wire the consumer PartFile
 
@@ -223,6 +275,8 @@ may not run at all.
 1. Edit `iModelCore/libsrc/<consumer>/vcpkg.json`:
    - Update the `version>=` value under `dependencies`
    - Update the matching entry in `overrides`
+   - Re-run the [platform coverage audit](#auditing-platform-coverage): a new upstream version can
+     add a platform-conditional download that the consumer's `vcpkg-mend.json` triplets miss.
 2. If the new version requires a newer port registry, update `baseline` in
    `iModelCore/libsrc/<consumer>/vcpkg-configuration.json`.
 3. No changes to `.mke` or `.PartFile.xml` files are needed — the next build will pick
@@ -318,5 +372,5 @@ implementations: `pugixml/triplets/*.cmake` + `pugixml/pugixml.mke`, and
 | `iModelCore/libsrc/vcpkg.PartFile.xml` | Sequential chain — edit to add new install parts |
 | `iModelCore/libsrc/vcpkg_install_*.mke` | One file per consumer; calls `vcpkg_run_install` |
 | `iModelCore/libsrc/vcpkg.mki` | Triplet selection; include from any install or consumer mke |
-| `iModelCore/libsrc/vcpkg_run_install.ps1` / `.sh` | Wrapper that invokes the `vcpkg` executable |
+| `iModelCore/libsrc/vcpkg_run_install.ps1` / `.sh` | Wrapper that invokes vcpkg; Mend passes the explicit `-MendScan` / `--mend-scan` option rather than ambient environment controls |
 | `iModelCore/libsrc/VCPKG.md` | Human-facing documentation; keep in sync when changing patterns |
