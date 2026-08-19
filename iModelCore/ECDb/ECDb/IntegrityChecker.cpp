@@ -1126,8 +1126,8 @@ DbResult IntegrityChecker::CheckDivergedPropMaps(std::function<bool(ECN::ECClass
 	Statement stmt;
 	auto rc = stmt.Prepare(m_conn, R"(
         WITH RECURSIVE [tableRoot]([id], [rootId]) AS (
-            SELECT [Id], [Id] FROM [ec_Table] WHERE [ParentTableId] IS NULL
-            UNION ALL
+                SELECT [Id], [Id] FROM [ec_Table] WHERE [ParentTableId] IS NULL
+                UNION ALL
             SELECT [t].[Id], [r].[rootId] FROM [ec_Table] [t] JOIN [tableRoot] [r] ON [t].[ParentTableId] = [r].[id])
         SELECT DISTINCT [derivedPm].[ClassId], [basePm].[ClassId], [pp].[AccessString],
                 [derivedTable].[Name] || '.' || [derivedCol].[Name],
@@ -1136,9 +1136,9 @@ DbResult IntegrityChecker::CheckDivergedPropMaps(std::function<bool(ECN::ECClass
                 JOIN [ec_cache_ClassHierarchy] [ch] ON [ch].[ClassId] = [derivedPm].[ClassId] AND [ch].[BaseClassId] <> [derivedPm].[ClassId]
                 JOIN [ec_PropertyMap] [basePm] ON [basePm].[ClassId] = [ch].[BaseClassId] AND [basePm].[PropertyPathId] = [derivedPm].[PropertyPathId] AND [basePm].[ColumnId] <> [derivedPm].[ColumnId]
                 JOIN [ec_PropertyPath] [pp] ON [pp].[Id] = [derivedPm].[PropertyPathId]
-                JOIN [ec_Property] [rootProp] ON [rootProp].[Id] = [pp].[RootPropertyId]
-                JOIN [ec_Class] [rootClass] ON [rootClass].[Id] = [rootProp].[ClassId]
-                JOIN [ec_Schema] [rootSchema] ON [rootSchema].[Id] = [rootClass].[SchemaId]
+                    JOIN [ec_Property] [rootProp] ON [rootProp].[Id] = [pp].[RootPropertyId]
+                    JOIN [ec_Class] [rootClass] ON [rootClass].[Id] = [rootProp].[ClassId]
+                    JOIN [ec_Schema] [rootSchema] ON [rootSchema].[Id] = [rootClass].[SchemaId]
                 JOIN [ec_Column] [derivedCol] ON [derivedCol].[Id] = [derivedPm].[ColumnId]
                 JOIN [ec_Column] [baseCol] ON [baseCol].[Id] = [basePm].[ColumnId]
                 JOIN [ec_Table] [derivedTable] ON [derivedTable].[Id] = [derivedCol].[TableId]
@@ -1165,12 +1165,27 @@ DbResult IntegrityChecker::CheckDivergedPropMaps(std::function<bool(ECN::ECClass
 		ECClassCP derivedClass = m_conn.Schemas().GetClass(derivedClassId);
 		ECClassCP baseClass = m_conn.Schemas().GetClass(baseClassId);
 
+		if (derivedClass == nullptr)
+			{
+			m_lastError = SqlPrintfString("Failed to find class with id '%s'.", derivedClassId.ToHexStr().c_str());
+			return BE_SQLITE_ERROR;
+			}
+
+		if (baseClass == nullptr)
+			{
+			m_lastError = SqlPrintfString("Failed to find class with id '%s'.", baseClassId.ToHexStr().c_str());
+			return BE_SQLITE_ERROR;
+			}
+
 		if (!callback(derivedClassId, derivedClass->GetFullName(), baseClassId, baseClass->GetFullName(), propertyName.c_str(), baseColumn.c_str(), divergedColumn.c_str()))
 			return BE_SQLITE_OK;
 		}
 
 	if (rc != BE_SQLITE_DONE)
+		{
+		m_lastError = m_conn.GetLastError();
 		return rc;
+		}
 
 	return BE_SQLITE_OK;
 	}
