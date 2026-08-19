@@ -5,6 +5,7 @@
 #pragma once
 
 #include "CompatibilityTestFixture.h"
+#include <cmath>
 #include <Bentley/BeNumerical.h>
 
 USING_NAMESPACE_BENTLEY_EC
@@ -95,78 +96,81 @@ BentleyStatus TestFileCreator::Run()
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-JsonValue::JsonValue(Utf8CP json) { EXPECT_TRUE(Json::Reader::Parse(json, m_value)) << json; }
+JsonValue::JsonValue(Utf8CP json)
+    {
+    // BeJsDocument::Parse asserts on nullptr, whereas Json::Reader::Parse silently absorbed it
+    // through its Utf8String parameter.
+    if (Utf8String::IsNullOrEmpty(json))
+        {
+        ADD_FAILURE() << "Empty JSON string";
+        return;
+        }
+
+    m_value.Parse(json);
+    EXPECT_FALSE(m_value.hasParseError()) << json;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-bool JsonValue::operator==(JsonValue const& rhs) const
+// NOTE: this mirrors the original JsonCpp implementation as closely as the BeJs API allows.
+// BeJs has no isInt/isUInt/isIntegral/isConvertibleTo - only isNumeric() - because RapidJson does
+// not preserve JsonCpp's signed/unsigned integral subtype distinction. So whole-number values are
+// compared exactly as int64 and only genuinely fractional values use the numeric tolerance. Note
+// also that bools are NOT numeric in BeJs (JsonCpp counted them as integral), hence the separate
+// isBool() branch first. Object comparison is now key-order-independent, which is required because
+// RapidJson preserves insertion order where JsonCpp sorted keys alphabetically.
+static bool jsonValuesEqual(BeJsConst lhs, BeJsConst rhs)
     {
-    if (m_value.isNull())
-        return rhs.m_value.isNull();
+    if (lhs.isNull())
+        return rhs.isNull();
 
-    if (m_value.isArray())
+    if (lhs.isArray())
         {
-        if (!rhs.m_value.isArray() || m_value.size() != rhs.m_value.size())
+        if (!rhs.isArray() || lhs.size() != rhs.size())
             return false;
 
-        for (Json::ArrayIndex i = 0; i < m_value.size(); i++)
+        return false == lhs.ForEachArrayMember([&](BeJsConst::ArrayIndex i, BeJsConst member)
             {
-            if (JsonValue(m_value[i]) != JsonValue(rhs.m_value[i]))
-                return false;
-            }
-
-        return true;
+            return !jsonValuesEqual(member, rhs[i]);
+            });
         }
 
-    if (m_value.isObject())
+    if (lhs.isObject())
         {
-        if (!rhs.m_value.isObject())
+        if (!rhs.isObject() || lhs.size() != rhs.size())
             return false;
 
-        bvector<Utf8String> lhsMemberNames = m_value.getMemberNames();
-        if (lhsMemberNames.size() != rhs.m_value.size())
-            return false;
-
-        for (Utf8StringCR memberName : lhsMemberNames)
+        return false == lhs.ForEachProperty([&](Utf8CP memberName, BeJsConst member)
             {
-            if (!rhs.m_value.isMember(memberName))
-                return false;
-
-            if (JsonValue(m_value[memberName]) != JsonValue(rhs.m_value[memberName]))
-                return false;
-            }
-
-        return true;
+            return !rhs.hasMember(memberName) || !jsonValuesEqual(member, rhs[memberName]);
+            });
         }
 
-    if (m_value.isIntegral())
+    if (lhs.isBool())
+        return rhs.isBool() && lhs.asBool() == rhs.asBool();
+
+    if (lhs.isNumeric())
         {
-        if (!rhs.m_value.isIntegral())
+        if (!rhs.isNumeric())
             return false;
 
-        if (m_value.isBool())
-            return rhs.m_value.isBool() && m_value.asBool() == rhs.m_value.asBool();
+        double l = lhs.asDouble();
+        double r = rhs.asDouble();
+        if (l == std::trunc(l) && r == std::trunc(r))
+            return lhs.asInt64() == rhs.asInt64();
 
-        if (m_value.isInt())
-            return rhs.m_value.isConvertibleTo(Json::intValue) && m_value.asInt64() == rhs.m_value.asInt64();
-
-        if (m_value.isUInt())
-            return rhs.m_value.isConvertibleTo(Json::uintValue) && m_value.asUInt64() == rhs.m_value.asUInt64();
-
-        BeAssert(false && "Should not end up here");
-        return false;
+        return fabs(l - r) <= BeNumerical::ComputeComparisonTolerance(l, r);
         }
 
-    if (m_value.isDouble())
-        return rhs.m_value.isDouble() && fabs(m_value.asDouble() - rhs.m_value.asDouble()) <= BeNumerical::ComputeComparisonTolerance(m_value.asDouble(), rhs.m_value.asDouble());
+    if (lhs.isString())
+        return rhs.isString() && strcmp(lhs.asCString(), rhs.asCString()) == 0;
 
-    if (m_value.isString())
-        return rhs.m_value.isString() && strcmp(m_value.asCString(), rhs.m_value.asCString()) == 0;
-
-    BeAssert(false && "Unhandled JsonCPP value type. This method needs to be adjusted");
+    BeAssert(false && "Unhandled JSON value type. This method needs to be adjusted");
     return false;
     }
+
+bool JsonValue::operator==(JsonValue const& rhs) const { return jsonValuesEqual(m_value, rhs.m_value); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod

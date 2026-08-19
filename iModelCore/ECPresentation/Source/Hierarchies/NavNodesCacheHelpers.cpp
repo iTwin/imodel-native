@@ -7,6 +7,7 @@
 #include "NavNodesHelper.h"
 #include "NavNodesCacheHelpers.h"
 #include "NavNodesCache.h"
+#include <string>
 
 static const unsigned DS_INDEX_PADDING = 20;
 /*---------------------------------------------------------------------------------**//**

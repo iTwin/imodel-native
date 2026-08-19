@@ -6,6 +6,7 @@
 #include "../Shared/Queries/CustomFunctions.h"
 #include "../Shared/Queries/QueryBuilderHelpers.h"
 #include "NavigationQuery.h"
+#include <string>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

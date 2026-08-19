@@ -6,6 +6,7 @@
 #include <ECPresentation/ECPresentationManager.h>
 #include "ContentCache.h"
 #include "ContentProviders.h"
+#include <deque>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

@@ -7,7 +7,7 @@
 #include "CompatibilityTests.h"
 #include <ECObjects/ECObjectsAPI.h>
 #include <Bentley/BeVersion.h>
-#include <json/json.h>
+#include <BeRapidJson/BeJsValue.h>
 #include <ostream>
 
 //=======================================================================================
@@ -112,24 +112,33 @@ public:
 void PrintTo(QualifiedName const&, std::ostream*);
 
 //=======================================================================================
-// Wrapper for JsonCpp that allows for easy use in GTest macros
+// Wrapper for BeJsDocument that allows for easy use in GTest macros.
+// BeJsDocument is move-only, but this struct is copyable via explicit deep copy.
 // @bsiclass
 //=======================================================================================
 struct JsonValue final
     {
     public:
-        Json::Value m_value = Json::Value(Json::nullValue);
+        BeJsDocument m_value;
 
         JsonValue() {}
-        explicit JsonValue(Json::ValueType type) : m_value(type) {}
-        explicit JsonValue(JsonValueCR json) : m_value(json) {}
+        explicit JsonValue(BeJsConst json) { m_value.From(json); }
         explicit JsonValue(Utf8CP json);
         explicit JsonValue(Utf8StringCR json) : JsonValue(json.c_str()) {}
 
+        // BeJsDocument is move-only; provide explicit deep-copy semantics.
+        JsonValue(JsonValue const& rhs) { m_value.From(rhs.m_value); }
+        JsonValue& operator=(JsonValue const& rhs) { if (this != &rhs) m_value.From(rhs.m_value); return *this; }
+        JsonValue(JsonValue&&) = default;
+        JsonValue& operator=(JsonValue&&) = default;
+
+        static JsonValue CreateArray() { JsonValue v; v.m_value.toArray(); return v; }
+        static JsonValue CreateObject() { JsonValue v; v.m_value.toObject(); return v; }
+
         bool operator==(JsonValue const& rhs) const;
         bool operator!=(JsonValue const& rhs) const { return !(*this == rhs); }
-        Json::Value const &Value() const { return m_value; }
-        Utf8String ToString() const { return m_value.ToString(); }
+        BeJsConst Value() const { return m_value; }
+        Utf8String ToString() const { return m_value.Stringify(); }
     };
 
 void PrintTo(JsonValue const&, std::ostream*);
