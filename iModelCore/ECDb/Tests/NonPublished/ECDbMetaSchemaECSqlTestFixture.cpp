@@ -1101,9 +1101,11 @@ void ECDbMetaSchemaECSqlTestFixture::AssertFormatDef(ECFormatCR expected, ECSqlS
                 ASSERT_TRUE(val.IsNull()) << "FormatDef.NumericSpec of " << expected.GetFullName();
             else
                 {
-                Json::Value jval;
+                BeJsDocument jval;
                 ASSERT_TRUE(expected.GetNumericSpec()->ToJson(jval, false));
-                ASSERT_STREQ(jval.ToString().c_str(), val.GetText()) << "FormatDef.NumericSpec of " << expected.GetFullName();
+                BeJsDocument dbVal(val.GetText());
+                ASSERT_TRUE(jval.isExactEqual(dbVal)) << "FormatDef.NumericSpec of " << expected.GetFullName()
+                    << "\n  ToJson: " << jval.Stringify() << "\n  DB: " << val.GetText();
                 }
 
             continue;
@@ -1115,9 +1117,11 @@ void ECDbMetaSchemaECSqlTestFixture::AssertFormatDef(ECFormatCR expected, ECSqlS
                 ASSERT_TRUE(val.IsNull()) << "FormatDef.CompositeSpec of " << expected.GetFullName();
             else
                 {
-                Json::Value jval;
+                BeJsDocument jval;
                 ASSERT_TRUE(expected.GetCompositeSpec()->ToJson(jval, false, true));
-                ASSERT_STREQ(jval.ToString().c_str(), val.GetText()) << "FormatDef.CompositeSpec of " << expected.GetFullName();
+                BeJsDocument dbVal(val.GetText());
+                ASSERT_TRUE(jval.isExactEqual(dbVal)) << "FormatDef.CompositeSpec of " << expected.GetFullName()
+                    << "\n  ToJson: " << jval.Stringify() << "\n  DB: " << val.GetText();
                 }
 
             continue;
@@ -2036,7 +2040,12 @@ TEST_F(ECDbMetaSchemaECSqlTestFixture, CustomAttributes) {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT XmlCAToJson(ca.Class.Id, ca.Instance) FROM meta.CustomAttribute ca JOIN meta.ECClassDef c ON ca.Class.Id=c.ECInstanceId WHERE c.Name = 'CAClass'"));
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
-        ASSERT_STREQ(stmt.GetValueText(0), "{\"CAClass\":{\"CAProp\":\"Test\"},\"ecClass\":\"CAClass\",\"ecSchema\":\"TestSchema.01.00\"}");
+        // NOTE: compare parsed JSON, not text. JsonCpp emitted object members in sorted name order;
+        // RapidJson preserves insertion order, so XmlCAToJson's output ordering changed even though
+        // the value did not.
+        BeJsDocument expected(R"({"CAClass":{"CAProp":"Test"},"ecClass":"CAClass","ecSchema":"TestSchema.01.00"})");
+        BeJsDocument actual(stmt.GetValueText(0));
+        ASSERT_TRUE(expected.isExactEqual(actual)) << actual.Stringify();
     }
 }
 
