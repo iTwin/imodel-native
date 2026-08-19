@@ -18,9 +18,19 @@
 #include <Bentley/Base64Utilities.h>
 #include <BeRapidJson/BeRapidJson.h>
 #include <json/json.h>
+#include <algorithm>
+#include <cstdio>
+#include <cstring>
 #include <limits>
 #include <cmath>
+#include <functional>
 #include <optional>
+// These were previously reaching this header transitively through <json/json.h>. libc++ still
+// leaks them in via the headers above, but the MSVC STL does not, so declare them explicitly.
+#include <string>
+#include <type_traits>
+#include <utility>
+#include <vector>
 
 namespace Napi {
 class Value;
@@ -35,6 +45,29 @@ enum StringifyFormat {
     Default,
     Indented,
 };
+
+//=======================================================================================
+// A name with static storage duration. Implementations may store the pointer rather than
+// copying the characters, so the referenced string must outlive every value that uses it.
+// @bsiclass
+//=======================================================================================
+struct BeJsStaticString {
+private:
+    Utf8CP m_str;
+
+public:
+    constexpr explicit BeJsStaticString(Utf8CP str) : m_str(str) {}
+    constexpr operator Utf8CP() const { return m_str; }
+    constexpr Utf8CP c_str() const { return m_str; }
+};
+
+// Declares a `json_<name>()` accessor returning the member name as a static string.
+// JsonCpp declares a Json::StaticString-based version of this macro. Redefine it here so a
+// translation unit gets the same expansion no matter which header it included first;
+// BeJsStaticString converts to Utf8CP, so JsonCpp call sites keep compiling.
+#undef BE_JSON_NAME
+#define BE_JSON_NAME(__val__) static constexpr BentleyApi::BeJsStaticString json_##__val__() {return BentleyApi::BeJsStaticString(#__val__);}
+
 //=======================================================================================
 // @internal
 // @bsiclass
@@ -85,6 +118,9 @@ protected:
     virtual void operator=(int32_t value) = 0;
     virtual void operator=(uint32_t value) = 0;
     virtual void operator=(int64_t value) = 0;
+    // Not pure virtual: an out-of-tree implementation of this interface would otherwise fail to
+    // compile. The default is lossy above INT64_MAX; in-tree implementations override it to be exact.
+    virtual void operator=(uint64_t value) { *this = static_cast<int64_t>(value); }
     virtual void operator=(Utf8CP value) = 0;
     virtual double GetDouble(double defVal = 0) const = 0;
     virtual bool GetBoolean(bool defVal) const = 0;
@@ -344,6 +380,19 @@ public:
     // Stringify this value and all its children.
     // @note a null value returns an empty string, not "null". This differs from rapidjson's api.
     Utf8String Stringify(StringifyFormat format = StringifyFormat::Default) const { return m_val->isNull() ? "" : m_val->Stringify(format); }
+    // Stringify this value and all its children so that the result is BYTE-IDENTICAL to what
+    // Bentley's JsonCpp fork produced for the same data (Json::Value::ToString()).
+    // Two things differ between JsonCpp and rapidjson and both are reproduced here:
+    //   1. object members are emitted in alphabetical order, not insertion order;
+    //   2. doubles are spelled with "%#.17g" and trailing zeros trimmed to one (so 0.3 becomes
+    //      "0.29999999999999999" and 1.5 becomes "1.50"), not rapidjson's shortest round-trip form.
+    // @note This exists ONLY for JSON that is PERSISTED and later hashed or compared as text
+    // (e.g. ec_Format.NumericSpec/CompositeSpec, ec_Enumeration.EnumValues). Those bytes are
+    // covered by PRAGMA checksum(ecdb_schema), which SchemaSync compares ACROSS briefcases, so a
+    // briefcase written by old code and one written by new code must agree exactly.
+    // Anything that merely round-trips through a parser should use Stringify() instead: this is
+    // slower, uglier, and is not needed for correctness.
+    Utf8String StringifyLegacy() const;
     // compare this value to another for equality, using default tolerances
     bool operator==(BeJsConst other) const { return isAlmostEqual(other); }
     // compare this value to another for inequality, using default tolerances
@@ -396,6 +445,7 @@ public:
     // get the value of a member of an object using a static string. If it doesn't exist, it is created.
     // @note this value must be an object
     // @note this can be less expensive for some implementations since a reference to the string can be stored in the returned object.
+    BeJsValue operator[](BeJsStaticString const& key) { return BeJsValue(m_val->GetMember(key, true)); }
     BeJsValue operator[](Json::StaticString const& key) { return BeJsValue(m_val->GetMember(key, true)); }
     // get the value of a member of an object. If it doesn't exist, it is created.
     // @note this value must be an object
@@ -507,6 +557,13 @@ public:
         (*m_val) = value;
         return *this;
     }
+    // Assign a uint64 to this value.
+    // @note this must be an empty value or a primitive and the value to be assigned must be less than Number.MAX_SAFE_INTEGER
+    // @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MAX_SAFE_INTEGER
+    BeJsValue& operator=(uint64_t value) {
+        (*m_val) = value;
+        return *this;
+    }
     // Assign an BeInt64Id to this value. This is saved as a hexidecimal-encoded string.
     BeJsValue& operator=(BeInt64Id id) {
         (*m_val) = id.ToHexStr().c_str();
@@ -542,6 +599,13 @@ public:
     }
     // set this value to null
     void SetNull() { m_val->SetNull(); }
+    // Set this value to a JSON *string*.
+    // @note On a BeJsDocument, prefer this over `doc = str`: assigning a string to a *document*
+    // means "parse this JSON" (see BeJsDocument::operator=), which is almost never what you want
+    // when the string is a plain value such as an id or a base64 blob.
+    void SetString(Utf8CP value) { (*m_val) = value; }
+    // Set this value to a JSON *string*. See the Utf8CP overload for why this exists.
+    void SetString(std::string const& value) { SetString(value.c_str()); }
     // Set this value as binary. If this is a JavaScript ArrayBuffer or TypedArray, it's value is stored directly. Otherwise, it is saved as a Base64-encoded string.
     void SetBinary(Byte const* data, size_t size) { m_val->SetBinary(data, size); }
     // Set this value as binary. If this is a JavaScript ArrayBuffer or TypedArray, it's value is stored directly. Otherwise, it is saved as a Base64-encoded string.
@@ -554,6 +618,18 @@ public:
     bool ForEachArrayMemberValue(std::function<bool(ArrayIndex, BeJsValue)> fn) { return m_val->ForEachArrayMemberValue(fn); }
 
 private:
+    // JavaScript's Number.MIN_SAFE_INTEGER / MAX_SAFE_INTEGER, not the int64_t limits.
+    static constexpr int64_t s_minSafeInteger = -9007199254740991;
+    static constexpr int64_t s_maxSafeInteger = 9007199254740991;
+    static constexpr int32_t s_minInt32 = std::numeric_limits<int32_t>::min();
+    static constexpr int32_t s_maxInt32 = std::numeric_limits<int32_t>::max();
+    static constexpr uint32_t s_maxUInt32 = std::numeric_limits<uint32_t>::max();
+
+    static bool IsIntegral(double d) {
+        double integralPart;
+        return std::modf(d, &integralPart) == 0.0;
+    }
+
     void FromOther(BeJsConst other) {
         if (other.isNull()) {
             SetNull();
@@ -565,20 +641,20 @@ private:
         }
         if (other.isNumeric()) {
             double val = other.GetDouble();
-            if (val > Json::Value::minInt64() && Json::Value::IsIntegral(val)) {
-                if (val < Json::Value::minInt()) {
+            if (val > s_minSafeInteger && IsIntegral(val)) {
+                if (val < s_minInt32) {
                     *this = (int64_t)val;
                     return;
                 }
-                if (val < Json::Value::maxInt()) {
+                if (val < s_maxInt32) {
                     *this = (int32_t)val;
                     return;
                 }
-                if (val < Json::Value::maxUInt()) {
+                if (val < s_maxUInt32) {
                     *this = (uint32_t)val;
                     return;
                 }
-                if (val < Json::Value::maxInt64()) {
+                if (val < s_maxSafeInteger) {
                     *this = (int64_t)val;
                     return;
                 }
@@ -665,6 +741,7 @@ private:
     virtual void operator=(double value) override { m_value = value; }
     virtual void operator=(bool value) override { m_value = value; }
     virtual void operator=(int64_t value) override { m_value = Json::Value(value); }
+    virtual void operator=(uint64_t value) override { m_value = Json::Value(static_cast<Json::UInt64>(value)); }
     virtual void operator=(int32_t value) override { m_value = value; }
     virtual void operator=(uint32_t value) override { m_value = value; }
     virtual void operator=(Utf8CP value) override { m_value = value; }
@@ -714,6 +791,7 @@ private:
     friend struct BeJsValue;
     friend struct BeJsConst;
 };
+
 
 //=======================================================================================
 // @bsiclass
@@ -823,6 +901,7 @@ private:
     virtual void operator=(double value) override { *m_value = value; }
     virtual void operator=(bool value) override { *m_value = value; }
     virtual void operator=(int64_t value) override { *m_value = value; }
+    virtual void operator=(uint64_t value) override { *m_value = value; }
     virtual void operator=(int32_t value) override { *m_value = value; }
     virtual void operator=(uint32_t value) override { *m_value = value; }
     virtual void operator=(Utf8CP value) override { m_value->SetString(value, m_allocator); }
@@ -838,17 +917,54 @@ private:
         // Per JavaScript (and unlike JsonCpp), any non-null object or array is truthy - even an empty one.
         return isNull() ? defVal : true;
     }
-    virtual int32_t GetInt(int32_t defVal) const override { return isNumeric() ? m_value->GetInt() : defVal; }
-    virtual uint32_t GetUInt(uint32_t defVal) const override { return isNumeric() ? m_value->GetUint() : defVal; }
-    virtual int64_t GetInt64(int64_t defVal) const override { return isNumeric() ? m_value->GetInt64() : defVal; }
+    // Convert a double to an integral type the way JsonCpp's asInt/asUInt/asInt64 did (truncate toward
+    // zero), but clamp first: an out-of-range double->integer cast is undefined behavior in C++.
+    template <typename T> static T IntegralFromDouble(double d) {
+        if (std::isnan(d))
+            return 0;
+        if (d <= static_cast<double>(std::numeric_limits<T>::lowest()))
+            return std::numeric_limits<T>::lowest();
+        if (d >= static_cast<double>(std::numeric_limits<T>::max()))
+            return std::numeric_limits<T>::max();
+        return static_cast<T>(d);
+    }
+    // NOTE: rapidjson's GetInt/GetUint/GetInt64 assert that the value is stored as that exact type and
+    // then read the raw union field. RAPIDJSON_ASSERT compiles away in a release build, so calling
+    // GetInt() on a value stored as a double returns the low 32 bits of its IEEE-754 representation --
+    // e.g. 3.1415 comes back as -1065151889. JsonCpp instead converted properly, and callers such as
+    // JsonECSqlBinder (which only guards with isNumeric()) depend on that. Always check the stored type
+    // before taking the fast path; otherwise convert through GetDouble(), which is safe for any number.
+    virtual int32_t GetInt(int32_t defVal) const override {
+        if (!isNumeric())
+            return defVal;
+        return m_value->IsInt() ? m_value->GetInt() : IntegralFromDouble<int32_t>(m_value->GetDouble());
+    }
+    virtual uint32_t GetUInt(uint32_t defVal) const override {
+        if (!isNumeric())
+            return defVal;
+        return m_value->IsUint() ? m_value->GetUint() : IntegralFromDouble<uint32_t>(m_value->GetDouble());
+    }
+    virtual int64_t GetInt64(int64_t defVal) const override {
+        if (!isNumeric())
+            return defVal;
+        return m_value->IsInt64() ? m_value->GetInt64() : IntegralFromDouble<int64_t>(m_value->GetDouble());
+    }
     virtual uint64_t GetUInt64(uint64_t defVal) const override {
+        if (!isNumeric())
+            return defVal;
+        if (m_value->IsUint64()) {
+            return m_value->GetUint64();
+        }
+        // Unlike the accessors above, a non-integral double deliberately yields defVal rather than a
+        // truncated value: this accessor is used to round-trip 64-bit ids, where silently losing the
+        // fractional part would hide a real error.
         if (m_value->IsDouble() && IsLosslessUint64(m_value->GetDouble())) {
             return static_cast<uint64_t>(m_value->GetDouble());
         }
         if (m_value->IsFloat() && IsLosslessUint64(m_value->GetFloat())) {
             return static_cast<uint64_t>(m_value->GetFloat());
         }
-        return m_value->IsUint64() ? m_value->GetUint64() : defVal;
+        return defVal;
     }
     bool IsLosslessUint64(double d) const {
         if (d < 0.0 || d > static_cast<double>(std::numeric_limits<uint64_t>::max())) {
@@ -951,9 +1067,36 @@ public:
         m_val = new BeRapidJsonValue(&m_doc, m_doc.GetAllocator());
         return *this;
         }
-    // replace the content of this document with the parsed value of stringified JSON
-    void Parse(Utf8CP jsonString) { m_doc.Parse(jsonString); }
-    // replace the content of this document with the parsed value of stringified JSON
+    // declaring operator= above otherwise hides the inherited scalar assignments, so `doc = 1.0;` would not compile.
+    using BeJsValue::operator=;
+    //! Assigning a string to a *document* means "parse this JSON".
+    //!
+    //! These two overloads are load-bearing. Before `using BeJsValue::operator=` was added above, the
+    //! move-assignment operator hid every inherited assignment, so `doc = someUtf8String;` could only
+    //! compile by going through the implicit BeJsDocument(Utf8CP) / BeJsDocument(std::string const&)
+    //! converting constructors - which parse. The `using` declaration makes
+    //! BeJsValue::operator=(Utf8CP) visible, and it would otherwise win overload resolution and
+    //! silently turn the document into a JSON *string* instead of a parsed object.
+    //! That regression is invisible at the assignment; it only shows up much later as members that
+    //! read back as empty (it broke TxnManager's changeset health statistics map, which stores each
+    //! changeset's stats as `map[id] = stats.Stringify()`).
+    BeJsDocument& operator=(Utf8CP jsonString) { Parse(jsonString); return *this; }
+    BeJsDocument& operator=(std::string const& jsonString) { Parse(jsonString.c_str()); return *this; }
+    //! Replace the content of this document with the parsed value of stringified JSON.
+    //!
+    //! kParseFullPrecisionFlag is deliberate and load-bearing - DO NOT REMOVE IT.
+    //! RapidJson's default number parser uses a fast path that can land 1 ULP away from strtod;
+    //! JsonCpp (which this class replaced) always used strtod. Measured on 17 realistic
+    //! JsonCpp-spelled doubles, the default parser disagreed with strtod on 5 of them, e.g.
+    //! "9.9999999999999995e-21" and "2.2250738585072011e-308".
+    //! Persisted JSON written by JsonCpp is still out there and nothing rewrites it, so a default
+    //! parse silently returns a slightly different number than the one that was stored. That is
+    //! invisible - no compile error, no parse error - and it has already caused real bugs
+    //! (geometry round-trip comparisons, and tile content Ids, which hash the project extents).
+    //! The flag costs roughly 2x on number-heavy payloads and much less on typical mixed JSON;
+    //! correctness of persisted data is worth more than that.
+    void Parse(Utf8CP jsonString) { m_doc.Parse<rapidjson::kParseFullPrecisionFlag>(jsonString); }
+    //! Replace the content of this document with the parsed value of stringified JSON.
     void Parse(std::string const& jsonString) { Parse(jsonString.c_str()); }
 
     bool hasParseError() { return m_doc.HasParseError(); }
@@ -965,6 +1108,104 @@ public:
         return s_nullDoc;
         }
 };
+
+// Format a double exactly the way Bentley's JsonCpp fork did. Mirrors valueToString(double) in
+// iModelCore/libsrc/jsoncpp/src/lib_json/json_writer.cpp, quirks included: "%#.17g" then trailing
+// zeros trimmed back to a single one, which yields "1.0" for 1.0 but "1.50" for 1.5.
+// See BeJsConst::StringifyLegacy.
+inline Utf8String BeJsLegacyDoubleToString(double value) {
+    if (std::isnan(value) || std::isinf(value))
+        return "null";
+
+    char buffer[40];
+    snprintf(buffer, sizeof(buffer), "%#.17g", value);
+
+    char* ch = buffer + strlen(buffer) - 1;
+    if (*ch == '.') { // '#' guarantees a decimal point; never leave it dangling
+        *(ch + 1) = '0';
+        *(ch + 2) = 0;
+        return buffer;
+    }
+    if (*ch != '0')
+        return buffer; // nothing to truncate
+
+    while (ch > buffer && *ch == '0')
+        --ch;
+    char* lastNonZero = ch;
+    while (ch >= buffer) {
+        if (*ch >= '0' && *ch <= '9') {
+            --ch;
+            continue;
+        }
+        if (*ch == '.') {
+            *(lastNonZero + 2) = 0; // truncate the run of zeros, but keep one
+            return buffer;
+        }
+        return buffer; // an exponent or sign: leave the text alone
+    }
+    return buffer;
+}
+
+// Append `in` to `out` as JsonCpp-compatible JSON text. See BeJsConst::StringifyLegacy.
+inline void BeJsLegacyStringify(Utf8StringR out, BeJsConst in) {
+    if (in.isObject()) {
+        bvector<Utf8String> names;
+        in.ForEachProperty([&](Utf8CP name, BeJsConst) { names.push_back(name); return false; });
+        std::sort(names.begin(), names.end());
+        out.append("{");
+        bool first = true;
+        for (auto const& name : names) {
+            if (!first)
+                out.append(",");
+            first = false;
+            BeJsDocument key; // borrow rapidjson's string escaping, which already matches JsonCpp's
+            key.SetString(name);
+            out.append(key.Stringify()).append(":");
+            BeJsLegacyStringify(out, in[name.c_str()]);
+        }
+        out.append("}");
+        return;
+    }
+    if (in.isArray()) {
+        out.append("[");
+        bool first = true;
+        in.ForEachArrayMember([&](BeJsValue::ArrayIndex, BeJsConst member) {
+            if (!first)
+                out.append(",");
+            first = false;
+            BeJsLegacyStringify(out, member);
+            return false;
+            });
+        out.append("]");
+        return;
+    }
+    if (in.isNull()) {
+        out.append("null");
+        return;
+    }
+    if (in.isBool()) {
+        out.append(in.asBool() ? "true" : "false");
+        return;
+    }
+    if (in.isNumeric()) {
+        // rapidjson always spells a double with a '.' or an exponent, and an integer with neither.
+        Utf8String text = in.Stringify();
+        if (Utf8String::npos != text.find_first_of(".eE"))
+            out.append(BeJsLegacyDoubleToString(in.asDouble()));
+        else
+            out.append(text);
+        return;
+    }
+    out.append(in.Stringify()); // strings, dates and binary
+}
+
+inline Utf8String BeJsConst::StringifyLegacy() const {
+    if (isNull())
+        return "";
+    Utf8String out;
+    BeJsLegacyStringify(out, *this);
+    return out;
+}
 
 inline bool BeJsConst::isAlmostEqual(BeJsConst other, double absTol, double relTol) const {
     if (isNull())
@@ -1000,11 +1241,13 @@ inline bool BeJsConst::isAlmostEqual(BeJsConst other, double absTol, double relT
 
 inline BeJsValue::BeJsValue(RapidJsonDocumentR val) : BeJsConst(*new BeRapidJsonValue(&val, val.GetAllocator())) {}
 inline BeJsValue::BeJsValue(RapidJsonValueR val, rapidjson::MemoryPoolAllocator<>& alloc) : BeJsConst(*new BeRapidJsonValue(&val, alloc)) {}
-inline BeJsValue::BeJsValue(JsonValueR val) : BeJsConst(*new BeJsonCppValue(val)) {}
 
 inline BeJsConst::BeJsConst(RapidJsonDocumentCR val) : m_val(new BeRapidJsonValue(&val, const_cast<RapidJsonDocumentR>(val).GetAllocator())) {}
 inline BeJsConst::BeJsConst(RapidJsonValueCR val, rapidjson::MemoryPoolAllocator<>& alloc) : m_val(new BeRapidJsonValue(&val, alloc)) {}
+
+inline BeJsValue::BeJsValue(JsonValueR val) : BeJsConst(*new BeJsonCppValue(val)) {}
 inline BeJsConst::BeJsConst(JsonValueCR val) : m_val(new BeJsonCppValue(val)) {}
+
 inline void BeJsConst::SaveTo(BeJsValue dest) const { dest.From(*this); }
 
 inline void BeJsDocument::PurgeNulls(rapidjson::Value& val) {
@@ -1063,7 +1306,7 @@ private:
                     end++;
                 }
                 if (end < path.size()) {
-                    tokens.push_back({path.substr(start, end - start), stoi(path.substr(start, end - start))});
+                    tokens.push_back({path.substr(start, end - start), std::stoi(path.substr(start, end - start))});
                     start = end + 1;
                 }
             }
