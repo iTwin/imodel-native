@@ -17,14 +17,15 @@ import type {
   BentleyStatus, DbOpcode, DbResult, GuidString, Id64Array, Id64String, IModelStatus, LogLevel, OpenMode
 } from "@itwin/core-bentley";
 import type {
-  ChangesetIndexAndId, CodeProps, CodeSpecProperties, PerStatementHealthStats as CorePerStatementHealthStats, TxnProps as CoreTxnProps, CreateEmptyStandaloneIModelProps, DbRequest, DbResponse, ElementAspectProps,
+  BRepGeometryCreate, ChangesetIndexAndId, CodeProps, CodeSpecProperties, FontType as CoreFontType, PerStatementHealthStats as CorePerStatementHealthStats, TxnProps as CoreTxnProps, CreateEmptyStandaloneIModelProps, DbRequest, DbResponse, ElementAspectProps,
   ElementGeometryBuilderParams,
   ElementGeometryBuilderParamsForPart,
+  ElementGeometryCacheOperationRequestProps, ElementGeometryCacheRequestProps, ElementGeometryCacheResponseProps, ElementGeometryRequest,
   ElementGraphicsRequestProps, ElementLoadOptions, ElementLoadProps, ElementMeshRequestProps, ElementProps,
   FilePropertyProps, FontId, FontProps, GeoCoordinatesRequestProps, GeoCoordinatesResponseProps, GeographicCRSInterpretRequestProps,
   GeographicCRSInterpretResponseProps, GeometryContainmentResponseProps, GeometryStreamProps, ImageBuffer, ImageBufferFormat, ImageSourceFormat, IModelCoordinatesRequestProps,
   IModelCoordinatesResponseProps, IModelProps, LocalDirName, LocalFileName, MassPropertiesResponseProps, ModelExtentsProps, ModelLoadProps,
-  ModelProps, PlacementProps, QueryQuota, RelationshipProps, RscFontEncodingProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, UpgradeOptions
+  ModelProps, PlacementProps, QueryQuota, RelationshipProps, RscFontEncodingProps, SnapRequestProps, SnapResponseProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, UpgradeOptions
 } from "@itwin/core-common";
 import type { LowAndHighXYZProps, Range2dProps, Range3dProps } from "@itwin/core-geometry";
 
@@ -399,6 +400,7 @@ export declare namespace IModelJsNative {
     pushDate: string;
     userCreated: string;
     size?: number;
+    uncompressedSize?: number;
     pathname: string;
   }
 
@@ -407,6 +409,7 @@ export declare namespace IModelJsNative {
 
   interface ChangesetHealthStats {
     changesetId: string;
+    changesetIndex: number;
     uncompressedSizeBytes: number;
     sha1ValidationTimeMs: number;
     insertedRows: number;
@@ -454,7 +457,8 @@ export declare namespace IModelJsNative {
     classFullName: string;
   }
 
-  enum FontType { TrueType = 1, Rsc = 2, Shx = 3 }
+  /** @see `FontType` from `@itwin/core-common` */
+  type FontType = CoreFontType;
 
   interface FontFaceProps {
     faceName: "regular" | "italic" | "bold" | "bolditalic";
@@ -623,7 +627,7 @@ export declare namespace IModelJsNative {
     public concurrentQueryExecute(request: DbRequest, onResponse: ConcurrentQuery.OnResponse): void;
     public concurrentQueryResetConfig(config?: QueryConfig): QueryConfig;
     public concurrentQueryShutdown(): void;
-    public createBRepGeometry(createProps: any/* BRepGeometryCreate */): IModelStatus;
+    public createBRepGeometry(createProps: BRepGeometryCreate): IModelStatus;
     public createChangeCache(changeCacheFile: ECDb, changeCachePath: string): DbResult;
     public createClassViewsInDb(): BentleyStatus;
     public createIModel(fileName: string, props: CreateEmptyStandaloneIModelProps): void;
@@ -638,7 +642,7 @@ export declare namespace IModelJsNative {
     public detachChangeCache(): number;
     public dropSchemas(schemaNames: ReadonlyArray<string>): void;
     public dumpChangeset(changeSet: ChangesetFileProps): void;
-    public elementGeometryCacheOperation(requestProps: any/* ElementGeometryCacheOperationRequestProps */): BentleyStatus;
+    public elementGeometryCacheOperation(requestProps: ElementGeometryCacheOperationRequestProps): BentleyStatus;
     public embedFile(arg: EmbedFileArg): void;
     public embedFontFile(id: number, faces: FontFaceProps[], data: Uint8Array, compress: boolean): void;
     public enableChangesetSizeStats(enabled: boolean): DbResult;
@@ -646,10 +650,10 @@ export declare namespace IModelJsNative {
     public endMultiTxnOperation(): DbResult;
     public endPurgeOperation(): IModelStatus;
     public executeTest(testName: string, params: string): string;
-    public exportGraphics(exportProps: any/* ExportGraphicsProps */): DbResult;
-    public exportPartGraphics(exportProps: any/* ExportPartGraphicsProps */): DbResult;
-    public exportGraphicsAsync(exportProps: any/* ExportGraphicsProps */): Promise<void>;
-    public exportPartGraphicsAsync(exportProps: any/* ExportPartGraphicsProps */): Promise<void>;
+    public exportGraphics(exportProps: any/* ExportGraphicsOptions from @itwin/core-backend */): DbResult;
+    public exportPartGraphics(exportProps: any/* ExportPartGraphicsOptions from @itwin/core-backend */): DbResult;
+    public exportGraphicsAsync(exportProps: any/* ExportGraphicsOptions from @itwin/core-backend */): Promise<void>;
+    public exportPartGraphicsAsync(exportProps: any/* ExportPartGraphicsOptions from @itwin/core-backend */): Promise<void>;
     public exportSchema(schemaName: string, exportDirectory: string, outFileName?: string): SchemaWriteStatus;
     public exportSchemas(exportDirectory: string): SchemaWriteStatus;
     public extractChangedInstanceIdsFromChangeSets(changeSetFileNames: string[]): ErrorStatusOrResult<IModelStatus, ChangedInstanceIdsProps>;
@@ -732,7 +736,7 @@ export declare namespace IModelJsNative {
     public openIModel(dbName: string, mode: OpenMode, upgradeOptions?: UpgradeOptions & SchemaImportOptions, props?: SnapshotOpenOptions, container?: CloudContainer, sqliteOptions?: { busyTimeout?: number }): void;
     public pauseProfiler(): DbResult;
     public pollTileContent(treeId: string, tileId: string): ErrorStatusOrResult<IModelStatus, TileContentState | TileContent>;
-    public processGeometryStream(requestProps: any/* ElementGeometryOptions */): IModelStatus;
+    public processGeometryStream(requestProps: ElementGeometryRequest): IModelStatus;
     public purgeTileTrees(modelIds: Id64Array | undefined): void;
     public queryDefinitionElementUsage(definitionElementIds: Id64Array): DefinitionElementUsageInfo | undefined;
     public queryEmbeddedFile(name: string): EmbedFileQuery | undefined;
@@ -764,12 +768,12 @@ export declare namespace IModelJsNative {
     public saveLocalValue(name: string, value: string | undefined): void;
     public schemaToXmlString(schemaName: string, version?: ECVersion): string | undefined;
     public setGeometricModelTrackingEnabled(enabled: boolean): ErrorStatusOrResult<IModelStatus, boolean>;
-    public setIModelDb(iModelDb?: any/* IModelDb */): void;
+    public setIModelDb(iModelDb?: any/* IModelDb from @itwin/core-backend */): void;
     public setIModelId(guid: GuidString): DbResult;
     public setITwinId(guid: GuidString): DbResult;
     public setBusyTimeout(ms: number): void;
     public setCodeValueBehavior(newBehavior: "exact" | "trim-unicode-whitespace"): void;
-    public simplifyElementGeometry(simplifyArgs: any): IModelStatus;
+    public simplifyElementGeometry(simplifyArgs: any/* SimplifyElementGeometryArgs from @itwin/core-backend */): IModelStatus;
     public startCreateChangeset(): ChangesetFileProps;
     public startProfiler(scopeName?: string, scenarioName?: string, overrideFile?: boolean, computeExecutionPlan?: boolean): DbResult;
     public stopProfiler(): { rc: DbResult, elapsedTime?: number, scopeId?: number, fileName?: string };
@@ -781,7 +785,7 @@ export declare namespace IModelJsNative {
     public changeElementParent(props: { id: Id64String, parentId: Id64String }): void;
     public changeElementModel(props: { id: Id64String, modelId: Id64String }): void;
     public updateElementAspect(aspectProps: ElementAspectProps): void;
-    public updateElementGeometryCache(props: object): Promise<any>;
+    public updateElementGeometryCache(props: ElementGeometryCacheRequestProps): Promise<ElementGeometryCacheResponseProps>;
     public updateIModelProps(props: IModelProps): void;
     public updateLinkTableRelationship(props: RelationshipProps): DbResult;
     public updateModel(modelProps: ModelProps): void;
@@ -1511,7 +1515,7 @@ export declare namespace IModelJsNative {
 
   class SnapRequest {
     constructor();
-    public doSnap(db: DgnDb, request: any): Promise<any>;
+    public doSnap(db: DgnDb, request: SnapRequestProps): Promise<SnapResponseProps>;
     public cancelSnap(): void;
   }
 
