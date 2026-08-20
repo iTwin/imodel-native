@@ -910,7 +910,7 @@ TEST_F(FormatJsonTests, EmptyFormat_ToJson)
     ASSERT_TRUE (testFormat->ToJson(output, false));
     Utf8String expectedJson = R"json({"$schema":"https://dev.bentley.com/json_schemas/ec/32/schemaitem","name":"testF","schema":"test","schemaItemType":"Format"})json";
     // Compare structurally: RapidJson preserves insertion order, so a raw string compare
-    // against the (alphabetically ordered) JsonCpp-era literal is no longer valid.
+    // against an alphabetically ordered literal is not valid.
     BeJsDocument expectedOutput;
     expectedOutput.Parse(expectedJson);
     ASSERT_TRUE(expectedOutput.isExactEqual(output)) << ECTestUtility::JsonSchemasComparisonString(output, expectedOutput);
