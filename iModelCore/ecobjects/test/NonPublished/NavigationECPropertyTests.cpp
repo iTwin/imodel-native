@@ -1519,8 +1519,7 @@ TEST_F(NavigationPropertyValueTests, TestRelClassNameJsonNotSerializedForRelatio
         ASSERT_TRUE(json.isObject());
         ASSERT_TRUE(json[sourceStr].isObject());
         ASSERT_TRUE(json[sourceStr][navPropStr].isObject());
-        // hasMember (not isMember) matches JsonCpp's getMemberNames semantics: it reports
-        // true for a member that is present but null.
+        // hasMember (not isMember): isMember reports false for a member that is present but null.
         EXPECT_EQ(shouldRelClassNameBeSerialized,
             json[sourceStr][navPropStr].hasMember(ECJsonSystemNames::Navigation::RelClassName()));
         };
