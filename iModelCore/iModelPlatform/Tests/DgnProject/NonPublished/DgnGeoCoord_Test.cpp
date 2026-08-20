@@ -1200,11 +1200,10 @@ R"X({"horizontalCRS" : {"id" : "UTM84-10N"}, "verticalCRS" : {"id" : "GEOID"}})X
 R"X({"horizontalCRS" : {"epsg" : 27700} , "verticalCRS" : {"id" : "GEOID"}})X",
 R"X({"horizontalCRS" : {"epsg" : 3857}, "verticalCRS" : {"id" : "ELLIPSOID"}})X",
 R"X({"horizontalCRS" : {"id" : "GRMNY-S5"}, "verticalCRS" : {"id" : "LOCAL_ELLIPSOID"}})X",
-// NOTE: the comma above was missing, so this literal used to be concatenated onto the previous one.
-// JsonCpp's Reader::parse stopped at the end of the first complete value and never reported the
-// trailing garbage, so this case silently never ran - which is also why the malformed JSON below
-// (a trailing comma after "UTM84-10N" and a missing closing brace) went unnoticed. Both are fixed
-// here; RapidJson correctly rejects trailing content with kParseErrorDocumentRootNotSingular.
+// NOTE: the comma above was missing, so this literal used to be concatenated onto the previous one
+// and this case silently never ran - which is also why the malformed JSON below (a trailing comma
+// after "UTM84-10N" and a missing closing brace) went unnoticed. Both are fixed here; trailing
+// content after the first complete value is rejected with kParseErrorDocumentRootNotSingular.
 R"X({
    "additionalTransform" : {
       "helmert2DWithZOffset" : {

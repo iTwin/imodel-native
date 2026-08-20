@@ -47,8 +47,8 @@ struct DgnECNavigatorTest :public DgnDbTestFixture
 
             for (const char* prop : volatileProperties)
                 {
-                // hasMember (not isMember) matches JsonCpp: isMember returns false for a
-                // member that is present but null.
+                // hasMember (not isMember): isMember reports false for a member that is
+                // present but null.
                 if (actualInstance.hasMember(prop)) actualInstance[prop] = "*";
                 if (expectedInstance.hasMember(prop)) expectedInstance[prop] = "*";
                 }
