@@ -458,9 +458,9 @@ bool compareObjects(BeJsConst a, BeJsConst b, struct TypeCounts &typeCounts, std
 	});
 	return toReturn;
 	}
-// BeJsConst has no equivalent of JsonCpp's Value::type(); classify into the categories this tool distinguishes.
-// NOTE: JsonCpp reported intValue/uintValue/realValue as distinct types, so an integer and a real used to be
-// reported as a type mismatch even when numerically equal. All numbers are now a single kind.
+// BeJsConst exposes no single type() accessor; classify into the categories this tool distinguishes.
+// NOTE: all JSON numbers are a single kind here, so an integer and a real that are numerically equal
+// are not reported as a type mismatch.
 enum class JsonKind { Null, Bool, Number, String, Array, Object, Other };
 static JsonKind kindOf(BeJsConst v)
 	{
