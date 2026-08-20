@@ -1393,18 +1393,6 @@ DbResult IntegrityChecker::QuickCheck(Checks checks, std::function<void(Utf8CP, 
         }
 		callback(GetCheckName(Checks::CheckSchemaLoad), !errorFound, stopWatch.GetCurrent());
     }
-    if (Enum::Contains<Checks>(checks, Checks::CheckDivergedPropMaps)) {
-		StopWatch stopWatch(true);
-        bool errorFound = false;
-        rc = CheckDivergedPropMaps([&errorFound](ECN::ECClassId, Utf8CP, ECN::ECClassId, Utf8CP, Utf8CP, Utf8CP, Utf8CP) {
-            errorFound = true;
-            return false;
-        });
-		if (rc != BE_SQLITE_OK) {
-            return rc;
-        }
-		callback(GetCheckName(Checks::CheckDivergedPropMaps), !errorFound, stopWatch.GetCurrent());
-    }
 	if (Enum::Contains<Checks>(checks, Checks::CheckMissingChildRows)) {
 		StopWatch stopWatch(true);
         bool errorFound = false;
@@ -1416,6 +1404,18 @@ DbResult IntegrityChecker::QuickCheck(Checks checks, std::function<void(Utf8CP, 
             return rc;
         }
 		callback(GetCheckName(Checks::CheckMissingChildRows), !errorFound, stopWatch.GetCurrent());
+    }
+	if (Enum::Contains<Checks>(checks, Checks::CheckDivergedPropMaps)) {
+		StopWatch stopWatch(true);
+        bool errorFound = false;
+        rc = CheckDivergedPropMaps([&errorFound](ECN::ECClassId, Utf8CP, ECN::ECClassId, Utf8CP, Utf8CP, Utf8CP, Utf8CP) {
+            errorFound = true;
+            return false;
+        });
+		if (rc != BE_SQLITE_OK) {
+            return rc;
+        }
+		callback(GetCheckName(Checks::CheckDivergedPropMaps), !errorFound, stopWatch.GetCurrent());
     }
     return BE_SQLITE_OK;
 }

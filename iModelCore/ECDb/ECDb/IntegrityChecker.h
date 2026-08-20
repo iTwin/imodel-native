@@ -38,7 +38,7 @@ struct IntegrityChecker final {
 		CheckMissingChildRows = 0x200,
 		CheckDivergedPropMaps = 0x400,
 		OnlyMetaChecks = CheckEcProfile | CheckDataSchema | CheckDataColumns | CheckSchemaLoad | CheckDivergedPropMaps,
-		OnlyDataChecks =CheckNavClassIds | CheckNavIds | CheckLinkTableFkClassIds | CheckLinkTableFkIds | CheckClassIds,
+		OnlyDataChecks =CheckNavClassIds | CheckNavIds | CheckLinkTableFkClassIds | CheckLinkTableFkIds | CheckClassIds | CheckMissingChildRows,
 		All = OnlyMetaChecks | OnlyDataChecks,
 	};
 private:
