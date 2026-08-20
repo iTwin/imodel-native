@@ -596,15 +596,21 @@ export declare namespace IModelJsNative {
     public readonly cloudContainer?: CloudContainer;
     public attachDb(filename: string, alias: string): void;
     public detachDb(alias: string): void;
+    /** @not-used-by-itwinjs-core Covered only by this package's own tests. */
     public getNoCaseCollation(): NoCaseCollation;
+    /** @not-used-by-itwinjs-core Covered only by this package's own tests. */
     public setNoCaseCollation(collation: NoCaseCollation): void;
+    /** @not-used-by-itwinjs-core Covered only by this package's own tests. */
     public schemaSyncSetDefaultUri(syncDbUri: string): void;
+    /** @not-used-by-itwinjs-core Covered only by this package's own tests. */
     public schemaSyncGetDefaultUri(): string;
     public schemaSyncInit(syncDbUri: string, containerId: string, overrideContainer: boolean): void;
     public schemaSyncPull(syncDbUri?: string): void;
     public schemaSyncPush(syncDbUri?: string): void;
     public schemaSyncEnabled(): boolean;
+    /** @not-used-by-itwinjs-core Covered only by this package's own tests. */
     public schemaSyncGetLocalDbInfo(): SchemaLocalDbInfo | undefined;
+    /** @not-used-by-itwinjs-core Covered only by this package's own tests. */
     public schemaSyncGetSyncDbInfo(syncDbUri: string): SchemaSyncDbInfo | undefined;
     public abandonChanges(): DbResult;
     public abandonCreateChangeset(): void;
@@ -641,6 +647,7 @@ export declare namespace IModelJsNative {
     public deleteModel(modelIdJson: string): void;
     public detachChangeCache(): number;
     public dropSchemas(schemaNames: ReadonlyArray<string>): void;
+    /** @not-used-by-itwinjs-core */
     public dumpChangeset(changeSet: ChangesetFileProps): void;
     public elementGeometryCacheOperation(requestProps: ElementGeometryCacheOperationRequestProps): BentleyStatus;
     public embedFile(arg: EmbedFileArg): void;
@@ -656,6 +663,7 @@ export declare namespace IModelJsNative {
     public exportPartGraphicsAsync(exportProps: any/* ExportPartGraphicsOptions from @itwin/core-backend */): Promise<void>;
     public exportSchema(schemaName: string, exportDirectory: string, outFileName?: string): SchemaWriteStatus;
     public exportSchemas(exportDirectory: string): SchemaWriteStatus;
+    /** @not-used-by-itwinjs-core */
     public extractChangedInstanceIdsFromChangeSets(changeSetFileNames: string[]): ErrorStatusOrResult<IModelStatus, ChangedInstanceIdsProps>;
     public extractChangeSummary(changeCacheFile: ECDb, changesetFilePath: string): ErrorStatusOrResult<DbResult, string>;
     public extractEmbeddedFile(arg: EmbeddedFileProps): void;
@@ -714,6 +722,9 @@ export declare namespace IModelJsNative {
     public importSchemasDuringSemanticRebase(schemaFileNames: string[], options?: SchemaImportOptions): void;
     public importSchemas(schemaFileNames: string[], options?: SchemaImportOptions): DbResult;
     public importXmlSchemas(serializedXmlSchemas: string[], options?: SchemaImportOptions): DbResult;
+    /** @not-used-by-itwinjs-core No native implementation is registered for this method, so calling it fails at
+     * runtime. DgnPlatform has `IsBulkOperation`, but it was never bridged through N-API.
+     */
     public inBulkOperation(): boolean;
     public inlineGeometryPartReferences(): InlineGeometryPartsResult;
     public insertCodeSpec(name: string, jsonProperties: CodeSpecProperties): Id64String;
@@ -725,15 +736,19 @@ export declare namespace IModelJsNative {
     public isGeometricModelTrackingSupported(): boolean;
     public isLinkTableRelationship(classFullName: string): boolean | undefined;
     public isOpen(): boolean;
+    /** @not-used-by-itwinjs-core Part of the SQLite profiler API, which iTwin.js does not surface. */
     public isProfilerPaused(): boolean;
+    /** @not-used-by-itwinjs-core Part of the SQLite profiler API, which iTwin.js does not surface. */
     public isProfilerRunning(): boolean;
     public isReadonly(): boolean;
     public isRedoPossible(): boolean;
+    /** @not-used-by-itwinjs-core Covered only by this package's own tests. */
     public isSubClassOf(childClassFullName: string, parentClassFullName: string): boolean;
     public isTxnIdValid(txnId: TxnIdString): boolean;
     public isUndoPossible(): boolean;
     public logTxnError(fatal: boolean): void;
     public openIModel(dbName: string, mode: OpenMode, upgradeOptions?: UpgradeOptions & SchemaImportOptions, props?: SnapshotOpenOptions, container?: CloudContainer, sqliteOptions?: { busyTimeout?: number }): void;
+    /** @not-used-by-itwinjs-core Part of the SQLite profiler API, which iTwin.js does not surface. */
     public pauseProfiler(): DbResult;
     public pollTileContent(treeId: string, tileId: string): ErrorStatusOrResult<IModelStatus, TileContentState | TileContent>;
     public processGeometryStream(requestProps: ElementGeometryRequest): IModelStatus;
@@ -759,6 +774,7 @@ export declare namespace IModelJsNative {
     public restartDefaultTxn(): void;
     public restartTxnSession(): void;
     public currentTxnSessionId(): number;
+    /** @not-used-by-itwinjs-core Part of the SQLite profiler API, which iTwin.js does not surface. */
     public resumeProfiler(): DbResult;
     public reverseAll(): IModelStatus;
     public reverseTo(txnId: TxnIdString): IModelStatus;
@@ -771,14 +787,18 @@ export declare namespace IModelJsNative {
     public setIModelDb(iModelDb?: any/* IModelDb from @itwin/core-backend */): void;
     public setIModelId(guid: GuidString): DbResult;
     public setITwinId(guid: GuidString): DbResult;
+    /** @not-used-by-itwinjs-core */
     public setBusyTimeout(ms: number): void;
     public setCodeValueBehavior(newBehavior: "exact" | "trim-unicode-whitespace"): void;
     public simplifyElementGeometry(simplifyArgs: any/* SimplifyElementGeometryArgs from @itwin/core-backend */): IModelStatus;
     public startCreateChangeset(): ChangesetFileProps;
+    /** @not-used-by-itwinjs-core Part of the SQLite profiler API, which iTwin.js does not surface. */
     public startProfiler(scopeName?: string, scenarioName?: string, overrideFile?: boolean, computeExecutionPlan?: boolean): DbResult;
+    /** @not-used-by-itwinjs-core Part of the SQLite profiler API, which iTwin.js does not surface. */
     public stopProfiler(): { rc: DbResult, elapsedTime?: number, scopeId?: number, fileName?: string };
     public enableChangesetStatsTracking(): void;
     public disableChangesetStatsTracking(): void;
+    /** @not-used-by-itwinjs-core Core calls `getAllChangesetHealthData` instead. */
     public getChangesetHealthData(changesetId: string): ChangesetHealthStats;
     public getAllChangesetHealthData(): ChangesetHealthStats[];
     public updateElement(elemProps: Partial<ElementProps>): void;
@@ -791,12 +811,14 @@ export declare namespace IModelJsNative {
     public updateModel(modelProps: ModelProps): void;
     public updateModelGeometryGuid(modelId: Id64String): IModelStatus;
     public updateProjectExtents(newExtentsJson: string): void;
+    /** @not-used-by-itwinjs-core Covered only by this package's own tests. */
     public writeAffectedElementDependencyGraphToFile(dotFileName: string, changedElems: Id64Array): BentleyStatus;
     public writeFullElementDependencyGraphToFile(dotFileName: string): BentleyStatus;
     public vacuum(arg?: { pageSize?: number, into?: LocalFileName }): void;
     public analyze(): void;
     public enableWalMode(yesNo?: boolean): void;
     public performCheckpoint(mode?: WalCheckpointMode): void;
+    /** @not-used-by-itwinjs-core Covered only by this package's own tests. */
     public setAutoCheckpointThreshold(frames: number): void;
 
     public pullMergeGetStage(): "None" | "Merging" | "Rebasing";
@@ -809,15 +831,19 @@ export declare namespace IModelJsNative {
     public pullMergeReverseLocalChanges(captureInstanceChanges?: boolean): TxnIdString[];
     public stashChanges(args: { stashRootDir: string, description: string, iModelId: string, resetBriefcase?: true}): any;
     public stashRestore(stashFile: string): void;
+    /** @not-used-by-itwinjs-core */
     public getPendingTxnsHash(includeReversedTxns: boolean): string;
     public hasPendingSchemaChanges(): boolean;
     public discardLocalChanges(): void;
     public getTxnProps(id: TxnIdString): TxnProps | undefined;
     public setTxnMode(mode: "direct" | "indirect"): void;
     public getTxnMode(): "direct" | "indirect";
+    /** @not-used-by-itwinjs-core */
     public static enableSharedCache(enable: boolean): DbResult;
     public static getAssetsDir(): string;
+    /** @not-used-by-itwinjs-core Covered only by this package's own tests. */
     public static zlibCompress(data: Uint8Array): Uint8Array;
+    /** @not-used-by-itwinjs-core Covered only by this package's own tests. */
     public static zlibDecompress(data: Uint8Array, actualSize: number): Uint8Array;
     public static computeChangesetId(args: Partial<ChangesetFileProps> & Required<Pick<ChangesetFileProps, "parentId" | "pathname">>): string;
   }
@@ -839,6 +865,7 @@ export declare namespace IModelJsNative {
     public static assembleRevision(targetFile: string, rawChangesetFile: string, prefixFile?: string, lzmaPropsJson?: string): BentleyStatus;
     public static computeStatistics(sourceFile: string, addPrefix: boolean): string;
     public static disassembleRevision(sourceFile: string, targetDir: string): BentleyStatus;
+    /** @not-used-by-itwinjs-core */
     public static dumpChangesetToDb(sourceFile: string, dbFile: string, includeCols: boolean): BentleyStatus;
     public static getUncompressSize(sourceFile: string): string;
     public static normalizeLzmaParams(lzmaPropsJson?: string): string;
@@ -863,13 +890,17 @@ export declare namespace IModelJsNative {
     public createDb(dbName: string): DbResult;
     public dispose(): void;
     public dropSchemas(schemaNames: ReadonlyArray<string>): void;
+    /** @not-used-by-itwinjs-core Covered only by this package's own tests. */
     public schemaSyncSetDefaultUri(syncDbUri: string): void;
+    /** @not-used-by-itwinjs-core Covered only by this package's own tests. */
     public schemaSyncGetDefaultUri(): string;
     public schemaSyncInit(syncDbUri: string, containerId: string, overrideContainer: boolean): void;
     public schemaSyncPull(syncDbUri: string | undefined): void;
     public schemaSyncPush(syncDbUri: string | undefined): void;
     public schemaSyncEnabled(): boolean;
+    /** @not-used-by-itwinjs-core Covered only by this package's own tests. */
     public schemaSyncGetLocalDbInfo(): SchemaLocalDbInfo | undefined;
+    /** @not-used-by-itwinjs-core Covered only by this package's own tests. */
     public schemaSyncGetSyncDbInfo(): SchemaSyncDbInfo | undefined;
     public getFilePath(): string;
     public resolveInstanceKey(args: ResolveInstanceKeyArgs): ResolveInstanceKeyResult;
@@ -884,6 +915,7 @@ export declare namespace IModelJsNative {
     public saveChanges(changesetName?: string): DbResult;
     public getLastError(): string;
     public getLastInsertRowId(): number;
+    /** @not-used-by-itwinjs-core */
     public static enableSharedCache(enable: boolean): DbResult;
     public concurrentQueryExecute(request: DbRequest, onResponse: ConcurrentQuery.OnResponse): void;
     public concurrentQueryResetConfig(config?: QueryConfig): QueryConfig;
@@ -919,6 +951,7 @@ export declare namespace IModelJsNative {
     public step(): DbResult;
     public stepAsync(callback: (result: DbResult) => void): void;
     public stepForInsert(): { status: DbResult, id: string };
+    /** @not-used-by-itwinjs-core */
     public stepForInsertAsync(callback: (result: { status: DbResult, id: string }) => void): void;
     public getNativeSql(): string;
     public toRow(arg: ECSqlRowAdaptorOptions): any;
@@ -950,8 +983,11 @@ export declare namespace IModelJsNative {
     public getAccessString(): string;
     public getPropertyName(): string;
     public getOriginPropertyName(): string | undefined;
+    /** @not-used-by-itwinjs-core Re-declared in @itwin/core-backend's public API, but never called there. */
     public getRootClassAlias(): string;
+    /** @not-used-by-itwinjs-core Re-declared in @itwin/core-backend's public API, but never called there. */
     public getRootClassName(): string;
+    /** @not-used-by-itwinjs-core Re-declared in @itwin/core-backend's public API, but never called there. */
     public getRootClassTableSpace(): string;
     public getType(): number;
     public isEnum(): boolean;
@@ -1083,6 +1119,7 @@ export declare namespace IModelJsNative {
     public analyze(): void;
     public enableWalMode(yesNo?: boolean): void;
     public performCheckpoint(mode?: WalCheckpointMode): void;
+    /** @not-used-by-itwinjs-core Covered only by this package's own tests. */
     public setAutoCheckpointThreshold(frames: number): void;
   }
 
@@ -1122,7 +1159,9 @@ export declare namespace IModelJsNative {
      * @note this BlobIO *may* be reused after this call by calling `open` again.
     */
     public close(): void;
-    /** get the total number of bytes in the blob */
+    /** get the total number of bytes in the blob
+     * @not-used-by-itwinjs-core Re-declared in @itwin/core-backend's public API, but never called there.
+     */
     public getNumBytes(): number;
     /** @return true if this BlobIO was successfully opened and may be use to read or write the blob */
     public isValid(): boolean;
@@ -1153,6 +1192,7 @@ export declare namespace IModelJsNative {
     }): Uint8Array;
     /** Reposition this BlobIO to a new rowId
      * @note this BlobIO must be valid when this methods is called.
+     * @not-used-by-itwinjs-core Re-declared in @itwin/core-backend's public API, but never called there.
      */
     public changeRow(row: number): void;
     /** Write to a blob */
@@ -1206,9 +1246,11 @@ export declare namespace IModelJsNative {
 
   /** A CloudSqlite container that may be connected to a CloudCache. */
   class CloudContainer {
+    /** @not-used-by-itwinjs-core Re-declared in @itwin/core-backend's public API, but never called there. */
     public onConnect?: (container: CloudContainer, cache: CloudCache) => void;
     public onConnected?: (container: CloudContainer) => void;
     public onDisconnect?: (container: CloudContainer, detach: boolean) => void;
+    /** @not-used-by-itwinjs-core Re-declared in @itwin/core-backend's public API, but never called there. */
     public onDisconnected?: (container: CloudContainer, detach: boolean) => void;
 
     public readonly cache?: CloudCache;
@@ -1363,6 +1405,7 @@ export declare namespace IModelJsNative {
      * Get the SHA1 hash of the content of a database.
      * @param dbName the name of the database of interest
      * @note the hash will be empty if the database does not exist
+     * @not-used-by-itwinjs-core Re-declared in @itwin/core-backend's public API, but never called there.
      */
     public queryDatabaseHash(dbName: string): string;
   }
@@ -1650,6 +1693,7 @@ export declare namespace IModelJsNative {
    */
   class NativeDevTools {
     public static signal(signalType: number): boolean;
+    /** @not-used-by-itwinjs-core Covered only by this package's own tests. */
     public static emitLogs(count: number, category: string, severity: LogLevel, thread: "main" | "worker", onDone: () => void): void;
   }
 
@@ -1662,6 +1706,7 @@ export declare namespace IModelJsNative {
      * @param name Name to be encoded
      * @returns Encoded name
      * @param name
+     * @not-used-by-itwinjs-core
      */
     public static encodeToValidName(name: string): string;
 
@@ -1669,6 +1714,7 @@ export declare namespace IModelJsNative {
     * Decodes names that were encoded to comply with EC naming rules
     * @param encodedName Encoded name
     * @returns Decoded name
+     * @not-used-by-itwinjs-core
     */
     public static decodeFromValidName(encodedName: string): string;
   }
