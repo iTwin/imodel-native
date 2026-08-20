@@ -298,7 +298,8 @@ TEST_F(SchemaChangesetTestFixture, ApplySchemaChangesetWithOrphanCustomAttribute
     int orphanWarnings = 0;
     for (ReportedIssue const& issue : issueListener.m_issues)
         {
-        if (issue.id == ECDbIssueId::ECDb_0110 || issue.id == ECDbIssueId::ECDb_0111)
+        const auto issueIdString = Utf8String(issue.id.m_issueId);
+        if (issueIdString.CompareToIAscii("ECDb_0110") == 0 || issueIdString.CompareToIAscii("ECDb_0111") == 0)
             {
             ASSERT_EQ(ECN::IssueSeverity::Warning, issue.severity) << "Orphan custom attribute rows must only be a warning while applying a changeset: " << issue.message.c_str();
             ++orphanWarnings;
@@ -328,7 +329,8 @@ TEST_F(SchemaChangesetTestFixture, ApplySchemaChangesetWithOrphanCustomAttribute
     bool reportedAsError = false;
     for (ReportedIssue const& issue : issueListener.m_issues)
         {
-        if (issue.id == ECDbIssueId::ECDb_0111 && issue.severity == ECN::IssueSeverity::Error)
+        const auto issueIdString = Utf8String(issue.id.m_issueId);
+        if (issueIdString.CompareToIAscii("ECDb_0111") == 0 && issue.severity == ECN::IssueSeverity::Error)
             reportedAsError = true;
         }
     ASSERT_TRUE(reportedAsError) << "schema import must report orphan custom attribute rows as an error";
