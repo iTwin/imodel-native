@@ -4,7 +4,6 @@
 *--------------------------------------------------------------------------------------------*/
 #include "StressTests.h"
 #include "../../Source/TaskScheduler.h"
-#include <string>
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
