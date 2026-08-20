@@ -1270,6 +1270,7 @@ protected:
     struct Flags {
         uint32_t m_preassignedId:1;
         uint32_t m_propState:2; // See PropState
+        uint32_t m_placementData:3;
         Flags() {memset(this, 0, sizeof(*this));}
     };
 
@@ -2307,6 +2308,31 @@ protected:
     DgnCategoryId m_categoryId;
     GeometryStream m_geom;
     mutable bool m_multiChunkGeomStream;
+    // Placement2d/3d default values don't preserve which properties were actually NULL without this.
+    enum PlacementDataFlags : uint8_t
+        {
+        PlacementData_None = 0,
+        PlacementData_Origin = 1 << 0,
+        PlacementData_Angles = 1 << 1,
+        PlacementData_Bbox = 1 << 2,
+        PlacementData_All = PlacementData_Origin | PlacementData_Angles | PlacementData_Bbox,
+        };
+
+    bool HasPlacementData(uint8_t flags) const
+        {
+        return (m_flags.m_placementData & flags) == flags;
+        }
+
+    uint8_t GetPlacementDataFlags() const
+        {
+        return static_cast<uint8_t>(m_flags.m_placementData);
+        }
+
+    void SetPlacementDataFlags(uint8_t flags)
+        {
+        BeAssert((flags & ~PlacementData_All) == 0); // Accept only flags defined in PlacementDataFlags
+        m_flags.m_placementData = flags;
+        }
 
     explicit GeometricElement(CreateParams const& params) : T_Super(params), m_categoryId(params.m_category), m_multiChunkGeomStream(false) {}
 
@@ -2377,7 +2403,10 @@ protected:
     Placement3d m_placement;
     RelatedElement m_typeDefinition;
 
-    explicit GeometricElement3d(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) {}
+    explicit GeometricElement3d(CreateParams const& params) : T_Super(params), m_placement(params.m_placement)
+        {
+        SetPlacementDataFlags(m_placement.IsValid() ? PlacementData_All : PlacementData_None);
+        }
     bool _IsPlacementValid() const override final {return m_placement.IsValid();}
     DgnDbR _GetSourceDgnDb() const override final {return GetDgnDb();}
     DgnElementCP _ToElement() const override final {return this;}
@@ -2461,7 +2490,10 @@ protected:
     Placement2d m_placement;
     RelatedElement m_typeDefinition;
 
-    explicit GeometricElement2d(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) {}
+    explicit GeometricElement2d(CreateParams const& params) : T_Super(params), m_placement(params.m_placement)
+        {
+        SetPlacementDataFlags(m_placement.IsValid() ? PlacementData_All : PlacementData_None);
+        }
     bool _IsPlacementValid() const override final {return m_placement.IsValid();}
     DgnDbR _GetSourceDgnDb() const override final {return GetDgnDb();}
     DgnElementCP _ToElement() const override final {return this;}
