@@ -8,7 +8,6 @@
 #include "ContentQueryBuilder.h"
 #include "PropertyInfoStore.h"
 #include "../Shared/ValueHelpers.h"
-#include <string>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

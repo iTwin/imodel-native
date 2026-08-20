@@ -7,7 +7,6 @@
 #include "ContentSpecificationsHandler.h"
 #include "../Shared/ECExpressions/ECExpressionContextsProvider.h"
 #include "../Shared/Queries/QueryExecutor.h"
-#include <string>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
