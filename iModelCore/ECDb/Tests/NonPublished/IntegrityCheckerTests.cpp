@@ -831,6 +831,89 @@ TEST_F(IntegrityCheckerFixture, check_diverged_prop_maps_across_overflow_table) 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(IntegrityCheckerFixture, check_diverged_prop_maps_property_override) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("check_diverged_prop_maps_override.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+        <ECEntityClass typeName="Parent">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00.00"/>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Name" typeName="string"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="Sub">
+            <BaseClass>Parent</BaseClass>
+            <!-- redeclares the inherited 'Name' in order to attach a PropertyMap CA -->
+            <ECProperty propertyName="Name" typeName="string">
+                <ECCustomAttributes>
+                    <PropertyMap xmlns="ECDbMap.02.00.00">
+                        <IsNullable>False</IsNullable>
+                    </PropertyMap>
+                </ECCustomAttributes>
+            </ECProperty>
+            <ECProperty propertyName="SubProp" typeName="string"/>
+        </ECEntityClass>
+    </ECSchema>)xml")));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
+
+    if ("the override is a distinct ec_Property") {
+        Statement stmt;
+        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, R"sql(
+            SELECT COUNT(*) FROM ec_Property p JOIN ec_Class c ON c.Id = p.ClassId
+                WHERE p.Name = 'Name' AND c.Name IN ('Parent', 'Sub'))sql"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(2, stmt.GetValueInt(0)) << "Parent and Sub must each own an ECProperty named 'Name'";
+    }
+
+    if ("base and derived share the property path and the column") {
+        Statement stmt;
+        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, R"sql(
+            SELECT COUNT(*), COUNT(DISTINCT pm.PropertyPathId), COUNT(DISTINCT pm.ColumnId)
+                FROM ec_PropertyMap pm
+                    JOIN ec_PropertyPath pp ON pp.Id = pm.PropertyPathId
+                    JOIN ec_Property rootProp ON rootProp.Id = pp.RootPropertyId
+                    JOIN ec_Class rootClass ON rootClass.Id = rootProp.ClassId
+                    JOIN ec_Class c ON c.Id = pm.ClassId
+                WHERE pp.AccessString = 'Name' AND c.Name IN ('Parent', 'Sub')
+                    AND rootClass.Name = 'Parent')sql"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(2, stmt.GetValueInt(0)) << "Parent and Sub must both map 'Name' via Parent's property path";
+        ASSERT_EQ(1, stmt.GetValueInt(1)) << "the override must not introduce a second ec_PropertyPath";
+        ASSERT_EQ(1, stmt.GetValueInt(2)) << "the override must reuse the base class' column";
+    }
+
+    const Utf8String baseColumn = GetMappedColumn(m_ecdb, "Parent", "Name");
+    ASSERT_STREQ(baseColumn.c_str(), GetMappedColumn(m_ecdb, "Sub", "Name").c_str());
+    ASSERT_STREQ(ParseJSON("[]").c_str(), RunPropertyMapDivergenceCheck(m_ecdb).c_str()) << "a property override is not a divergence";
+
+    const Utf8String divergedColumn = GetMappedColumn(m_ecdb, "Sub", "SubProp");
+
+    // Repoint Sub's row for the overridden 'Name'. Because the override shares Parent's property
+    // path, the row is found via Parent as the declaring class.
+    ASSERT_EQ(BE_SQLITE_OK, DivergePropertyMap(m_ecdb, "Sub", "Parent", "Name", "SubProp"));
+
+    const auto expectedJSON = Utf8PrintfString(R"json(
+        [
+            {
+                "sno": 1,
+                "derivedClassName": "TestSchema:Sub",
+                "baseClassName": "TestSchema:Parent",
+                "propertyName": "Name",
+                "baseColumn": "%s",
+                "divergedColumn": "%s"
+            }
+        ]
+    )json", baseColumn.c_str(), divergedColumn.c_str());
+    ASSERT_STREQ(ParseJSON(expectedJSON.c_str()).c_str(), RunPropertyMapDivergenceCheck(m_ecdb).c_str()) << "a divergence on an overridden property must be reported";
+    m_ecdb.AbandonChanges();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(IntegrityCheckerFixture, check_diverged_prop_maps_no_false_positives) {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("check_diverged_prop_maps_clean.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
