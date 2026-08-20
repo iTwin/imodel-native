@@ -283,8 +283,8 @@ TEST(Cone, AnnulusJSON)
     Check::ClearGeometry("Cone.AnnulusJSON");
     }
 
-// BeJsConst has no numeric constructor (JsonCpp's Json::Value did), so the doubles are
-// materialized into BeJsDocuments here rather than at each call site.
+// BeJsConst has no numeric constructor, so the doubles are materialized into BeJsDocuments
+// here rather than at each call site.
 bool testIsAlmostEqual(double a, double b)
     {
     BeJsDocument docA, docB;
