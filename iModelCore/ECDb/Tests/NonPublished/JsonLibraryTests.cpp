@@ -1384,11 +1384,9 @@ TEST(JsonValueHelper, Comparisons)
     {
     // Construct JsonValue objects via BeJsDocument with different numeric C++ types.
     // BeJs (wrapping RapidJson) does NOT expose isInt/isUInt/isIntegral — only isNumeric().
-    // The original test verified JsonCpp's strict integral-type discrimination (uint(1) != int(1));
-    // that property cannot be tested through BeJs which unifies all integers under isNumeric().
-    // Coverage change: we now verify isNumeric() and integrality (value == floor(value)) instead
-    // of the per-type predicates, and confirm that JsonValue::operator== still does value-coerced
-    // comparison across numeric types.
+    // So this verifies isNumeric() and integrality (value == floor(value)) rather than per-type
+    // predicates, and confirms that JsonValue::operator== does value-coerced comparison across
+    // numeric types.
 
     BeJsDocument uintDoc; uintDoc = UINT32_C(1);
     JsonValue uintVal{uintDoc};
@@ -1400,7 +1398,7 @@ TEST(JsonValueHelper, Comparisons)
     EXPECT_TRUE(intVal.m_value.isNumeric());
     EXPECT_TRUE(intVal.m_value.asDouble() == std::floor(intVal.m_value.asDouble())) << "integral check";
 
-    // BeJs isExactEqual treats same-valued numerics as equal (unlike old JsonCpp strict type check)
+    // BeJs isExactEqual treats same-valued numerics as equal regardless of their C++ source type.
     EXPECT_TRUE(uintVal.m_value.isExactEqual(intVal.m_value)) << "BeJs comparison is value-based for numerics";
     EXPECT_TRUE(uintVal == intVal) << "JsonValue helper API does integral type coercion";
 
@@ -1429,7 +1427,6 @@ TEST(JsonValueHelper, Comparisons)
     JsonValue boolVal{boolDoc};
     EXPECT_TRUE(boolVal.m_value.isBool());
     EXPECT_FALSE(boolVal.m_value.isNumeric()) << "bools are not numeric in BeJs";
-    // In JsonCpp, bools were isIntegral(); in BeJs, bools are a separate category from numerics.
     EXPECT_FALSE(boolVal.m_value.isExactEqual(int64Val.m_value)) << "BeJs does not equate bools with numerics";
     EXPECT_FALSE(boolVal == int64Val) << "JsonValueHelper does not treat bools equal with other numeric values";
     }

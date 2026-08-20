@@ -9,7 +9,7 @@
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 //**************************************************************************************
-// ComparableJsonCppValue
+// JsonValue
 //**************************************************************************************
 
 //---------------------------------------------------------------------------------------
@@ -22,10 +22,9 @@ JsonValue::JsonValue(Utf8CP json)
     }
 
 //---------------------------------------------------------------------------------------
-// Structural deep comparison, preserving the semantics of the original JsonCpp
-// implementation: same type-dispatch order, the same TestUtilities::Equals tolerance for
-// doubles, and exact int64 comparison for integral values (so ids above 2^53 do not lose
-// precision through a double compare).
+// Structural deep comparison. Integral values are compared exactly as int64 (so ids above 2^53
+// do not lose precision through a double compare); only genuinely fractional values use the
+// TestUtilities::Equals tolerance.
 // @bsimethod
 //---------------------------------------------------------------------------------------
 static bool jsonValuesEqual(BeJsConst lhs, BeJsConst rhs)
