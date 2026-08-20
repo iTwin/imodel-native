@@ -1785,8 +1785,7 @@ TEST_F(InstanceGraphTests, CacheIsInvalidatedOnSchemaImport)
 //---------------------------------------------------------------------------------------
 //! Two distinct relationship rows between the same pair of instances are two distinct edges.
 //! Without the relationship ECInstanceId in the edge identity they collapsed into one and the
-//! second row was silently lost.
-// @bsimethod
+//! second row was silently lost.// @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(InstanceGraphTests, RelationshipInstanceId_DistinguishesDuplicateLinkTableRows)
     {
@@ -1796,11 +1795,12 @@ TEST_F(InstanceGraphTests, RelationshipInstanceId_DistinguishesDuplicateLinkTabl
     auto p1 = InsertInstance("INSERT INTO ig.Pipe(Code, Diameter) VALUES('P1', 1.0)");
     auto p2 = InsertInstance("INSERT INTO ig.Pipe(Code, Diameter) VALUES('P2', 2.0)");
 
-    // ElementConnectsToElement is a TablePerHierarchy link table, so duplicate rows between the
-    // same pair of instances are allowed.
+    // ElementConnectsToElement and its subclass PipeConnectsToPipe share one TablePerHierarchy link
+    // table. The unique index is on (source, target, classid), so the same pair of instances can be
+    // connected by two distinct rows as long as the relationship class differs.
     InsertRelInstance(SqlPrintfString("INSERT INTO ig.ElementConnectsToElement(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
         p1.GetInstanceId().ToString().c_str(), p2.GetInstanceId().ToString().c_str()));
-    InsertRelInstance(SqlPrintfString("INSERT INTO ig.ElementConnectsToElement(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
+    InsertRelInstance(SqlPrintfString("INSERT INTO ig.PipeConnectsToPipe(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
         p1.GetInstanceId().ToString().c_str(), p2.GetInstanceId().ToString().c_str()));
     m_ecdb.SaveChanges();
 
@@ -1813,15 +1813,18 @@ TEST_F(InstanceGraphTests, RelationshipInstanceId_DistinguishesDuplicateLinkTabl
     ASSERT_EQ(2u, related->size()) << "Both persisted relationship rows must be reported";
 
     bset<uint64_t> relInstanceIds;
+    bset<uint64_t> relClassIds;
     for (auto const& rel : *related)
         {
         EXPECT_EQ(p2.GetInstanceId(), rel.GetKey().GetInstanceId());
-        EXPECT_EQ(GetClassId("ElementConnectsToElement"), rel.GetRelClassId());
         ASSERT_TRUE(rel.GetRelInstanceId().IsValid()) << "The relationship ECInstanceId must be resolved for a link table";
         relInstanceIds.insert(rel.GetRelInstanceId().GetValueUnchecked());
+        relClassIds.insert(rel.GetRelClassId().GetValueUnchecked());
         }
 
     EXPECT_EQ(2u, relInstanceIds.size()) << "The two edges must carry different relationship ECInstanceIds";
+    EXPECT_TRUE(relClassIds.end() != relClassIds.find(GetClassId("ElementConnectsToElement").GetValueUnchecked()));
+    EXPECT_TRUE(relClassIds.end() != relClassIds.find(GetClassId("PipeConnectsToPipe").GetValueUnchecked()));
 
     // The same must be observable through the virtual table.
     ECSqlStatement stmt;
