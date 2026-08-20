@@ -76,13 +76,27 @@ struct SchemaSyncUpstreamHelper final {
     //! Upserts one table, restricted to source rows matching whereClause. Mirrors
     //! SchemaSyncHelper::SyncData's insert half, minus the delete half.
     static DbResult UpsertFiltered(ECDbR conn, Utf8CP tableName, Utf8CP sourceAlias, Utf8CP targetAlias, Utf8CP whereClause);
-    //! Deletes target rows matching scopeClause whose primary key is absent from the source.
-    //! scopeClause is evaluated against the target, so it must not reach into the source.
-    static DbResult DeleteMissing(ECDbR conn, Utf8CP tableName, Utf8CP sourceAlias, Utf8CP targetAlias, Utf8CP scopeClause);
-    //! Makes the target's copy of each table equal the source's, writing only the rows that differ.
-    //! Used by the upgrade path, where the briefcase is the authority and the sync db is brought in
-    //! line with it, deletions included. Deliberately neither SchemaSyncHelper::SyncData nor a
-    //! wholesale refill - see the definition for why.
+
+    //! What MirrorTables should do with one table.
+    struct TablePlan final {
+        Utf8CP m_table = nullptr;
+        //! Which source rows belong in the target. Evaluated against the source; empty means all of them.
+        Utf8String m_sourceScope;
+        //! Which target rows may be removed when the source has no row under that key. Evaluated
+        //! against the target, so it must not reach into the source; empty means all of them.
+        //! Wider than m_sourceScope where a row can only be recognised as stale by its container -
+        //! a column the source deleted is not in the closure's column ids, so ec_Column scopes by table.
+        Utf8String m_staleScope;
+        //! False for a table whose rows this direction never removes.
+        bool m_removeStaleRows = true;
+    };
+
+    //! Make the target's copy of each table match the source's within the plan's scopes, writing only
+    //! the rows that differ. Serves both directions: the upgrade path mirrors a whole briefcase into
+    //! the sync db with unscoped plans, and the update path adopts one reference closure out of it.
+    //! Deliberately neither SchemaSyncHelper::SyncData nor a wholesale refill - see the definition.
+    static DbResult MirrorTables(ECDbR conn, bvector<TablePlan> const& plan, Utf8CP sourceAlias, Utf8CP targetAlias);
+    //! MirrorTables over whole tables, for the callers that copy everything.
     static DbResult MirrorTables(ECDbR conn, StringList const& tables, Utf8CP sourceAlias, Utf8CP targetAlias);
     //! Re-point a set of schemas at the sync db.
     //!

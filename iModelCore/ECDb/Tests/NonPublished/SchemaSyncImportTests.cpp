@@ -306,6 +306,25 @@ Utf8String ColumnOf(ECDbR db, Utf8CP schemaName, Utf8CP className, Utf8CP access
     return stmt.Step() == BE_SQLITE_ROW ? Utf8String(stmt.GetValueText(0)) : Utf8String("");
 }
 
+// ...and is that column a dedicated one or a slot out of the shared pool? DbColumn::Kind::SharedData
+// is 4; everything else is a column of its own. The two take different routes through
+// SchemaWriter::DeleteProperty, so a test about deletion has to say which one it is exercising.
+int ColumnKindOf(ECDbR db, Utf8CP schemaName, Utf8CP className, Utf8CP accessString) {
+    Statement stmt;
+    if (stmt.Prepare(db, R"sql(
+        SELECT col.ColumnKind FROM main.ec_PropertyMap pm
+        JOIN main.ec_Column col ON col.Id = pm.ColumnId
+        JOIN main.ec_PropertyPath pp ON pp.Id = pm.PropertyPathId
+        JOIN main.ec_Class c ON c.Id = pm.ClassId
+        JOIN main.ec_Schema s ON s.Id = c.SchemaId
+        WHERE s.Name=? AND c.Name=? AND pp.AccessString=?)sql") != BE_SQLITE_OK)
+        return -1;
+    stmt.BindText(1, schemaName, Statement::MakeCopy::No);
+    stmt.BindText(2, className, Statement::MakeCopy::No);
+    stmt.BindText(3, accessString, Statement::MakeCopy::No);
+    return stmt.Step() == BE_SQLITE_ROW ? stmt.GetValueInt(0) : -1;
+}
+
 // ...and in which physical table does that column live?
 Utf8String TableOf(ECDbR db, Utf8CP schemaName, Utf8CP className, Utf8CP accessString) {
     Statement stmt;
@@ -6853,6 +6872,11 @@ TEST_F(SchemaSyncImportExtendedTests, DeletingAPropertyInItsOwnColumnReportsData
     ASSERT_FALSE(dropColumn.empty()) << "the property was not mapped before testing its deletion";
     ASSERT_FALSE(keepColumn.empty()) << "the surviving property was not mapped before testing its deletion";
     EXPECT_STRNE(dropColumn.c_str(), keepColumn.c_str()) << "the test property did not get its own physical column";
+    // Two different names prove nothing on their own - two slots out of the shared pool are also two
+    // names. Only Kind says which branch of SchemaWriter::DeleteProperty this test reaches, and the
+    // two branches report different statuses, so pin it.
+    EXPECT_EQ((int)DbColumn::Kind::Default, ColumnKindOf(*b2, "BatchOwnColumnDeleteTest", "Record", "dropMe"))
+        << "expected a dedicated column for an OwnTable class with no ShareColumns";
 
     {
     ScopedDisableFailOnAssertion disableFailOnAssertion;

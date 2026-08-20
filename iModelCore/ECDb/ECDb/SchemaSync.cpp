@@ -1204,91 +1204,81 @@ DbResult SchemaSyncUpstreamHelper::UpsertFiltered(ECDbR conn, Utf8CP tableName, 
 }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-DbResult SchemaSyncUpstreamHelper::DeleteMissing(ECDbR conn, Utf8CP tableName, Utf8CP sourceAlias, Utf8CP targetAlias, Utf8CP scopeClause) {
-    SchemaSyncHelper::StringList pkCols;
-    auto rc = SchemaSyncHelper::GetPrimaryKeyColumnNames(conn, targetAlias, tableName, pkCols);
-    if (rc != BE_SQLITE_OK) {
-        LOG.errorv("SchemaSyncUpstreamHelper::DeleteMissing(): Failed to get primary key columns for %s. %s", tableName, BeSQLiteLib::GetErrorString(rc));
-        return rc;
-    }
-    if (pkCols.empty()) {
-        LOG.errorv("SchemaSyncUpstreamHelper::DeleteMissing(): %s has no primary key, so rows cannot be matched up.", tableName);
-        return BE_SQLITE_SCHEMA;
-    }
-
-    SchemaSyncHelper::StringList keyMatchExprs;
-    for (auto const& col : pkCols)
-        keyMatchExprs.push_back(SqlPrintfString("[S].[%s] IS [T].[%s]", col.c_str(), col.c_str()).GetUtf8CP());
-
-    const auto sql = Utf8String{SqlPrintfString(
-        "DELETE FROM [%s].[%s] AS [T] WHERE (%s) AND NOT EXISTS (SELECT 1 FROM [%s].[%s] [S] WHERE %s)",
-        targetAlias, tableName, scopeClause,
-        sourceAlias, tableName,
-        SchemaSyncHelper::Join(keyMatchExprs, " AND ").c_str()).GetUtf8CP()};
-
-    rc = conn.ExecuteSql(sql.c_str());
-    if (rc != BE_SQLITE_OK)
-        LOG.errorv("SchemaSyncUpstreamHelper::DeleteMissing(): Failed to delete stale rows from %s. %s (sql: %s)", tableName, BeSQLiteLib::GetErrorString(rc), sql.c_str());
-
-    return rc;
-}
-
-//---------------------------------------------------------------------------------------
-// Make the target's copy of each table equal the source's, touching as few rows as possible.
+// Make the target's copy of each table match the source's within the plan's scopes, touching as few
+// rows as possible. Both directions of schema sync run through here: the upgrade path mirrors a
+// whole briefcase into the sync db with unscoped plans, and the update path adopts a single
+// reference closure out of it.
 //
-// Two properties are in tension here and both matter.
+// Three properties are in tension and all three matter.
 //
-// Correctness rules out SchemaSyncHelper::SyncData, which upserts with ON CONFLICT DO UPDATE and no
-// conflict target. An upgrade can give the same logical row a different id, so an incoming row can
-// collide with a surviving target row on one of the ec_ tables' unique indexes rather than on the
-// primary key - ec_PropertyMap has UNIQUE(ClassId, PropertyPathId, ColumnId) - and the update then
-// rewrites that surviving row instead of inserting a new one. Pull and push never meet this because
-// both sides evolve in lockstep.
+// Correctness rules out an upsert - SchemaSyncHelper::SyncData, or an INSERT .. ON CONFLICT DO UPDATE
+// with no conflict target. An incoming row can collide with a surviving target row on one of the ec_
+// tables' other unique indexes rather than on the primary key, and the update then rewrites that
+// surviving row instead of inserting a new one. It is not exotic: ec_Property, ec_Column,
+// ec_ClassHasBaseClasses and ec_CustomAttribute all carry a UNIQUE(parent, Ordinal), and inserting a
+// property into the middle of a class shifts the ordinals of its siblings. Removing every row that
+// has to change before inserting anything is what makes that impossible.
 //
-// Efficiency rules out the blunt fix of emptying every table and refilling it. The sync db lives in
-// a CloudSqlite container with 64 KiB blocks, and every other client caches those blocks; rewriting
+// Efficiency rules out the blunt fix of emptying every table and refilling it. The sync db lives in a
+// CloudSqlite container with 64 KiB blocks, and every other client caches those blocks; rewriting
 // rows that did not change would give them all a new block id and force a re-download of the whole
-// file. So instead:
+// file. On the briefcase side the same property keeps a schema changeset proportional to the change
+// rather than to the reference closure.
 //
-//   pass 1 - delete every target row that is not byte-identical to a source row with the same key,
-//            which covers both "no longer exists" and "changed", repeated until nothing is deleted;
-//   pass 2 - insert every source row whose key is now absent from the target.
+// Scoping is the third. Adopting a closure must not touch rows outside it - typically schemas another
+// briefcase imported but has not pushed - and the two scopes are not the same set. A row can only be
+// recognised as *stale* by its container, because a row the source deleted is not in the closure's id
+// sets at all; so ec_Column, for one, inserts by column id and sweeps stale rows by table id. Hence:
 //
-// Rows that did not change are never written, so their pages - and their blocks - stay as they are.
-// After pass 1 every surviving row equals its source row, so pass 2 cannot hit a unique-index
-// conflict, and inserts trigger no foreign key actions.
+//   pass 1a - delete target rows that the source, within m_sourceScope, offers under the same key but
+//             with different values. These are exactly the rows pass 2 will put back.
+//   pass 1b - delete target rows inside m_staleScope that the source has no row for at all.
+//   pass 2  - insert every source row inside m_sourceScope whose key is now absent from the target.
 //
-// Foreign key actions are suppressed for the duration, and both passes depend on it. Not every ec_
-// foreign key cascades: ec_Table.ExclusiveRootClassId and ec_RelationshipConstraint.AbstractConstraintClassId
-// are ON DELETE SET NULL, so removing a stale class would null a column in a surviving row that pass
-// 2 never revisits, since its key is still there. The cascading ones are merely wasteful here -
-// deleting a changed ec_Schema row takes its whole subtree and pass 2 puts it all back, which is
-// exactly the block churn this function exists to avoid. defer_foreign_keys is still needed on top:
-// it defers the *check* to commit, by which point pass 2 has restored what pass 1 removed.
+// Splitting the delete in two is what keeps the wider stale scope safe: a row inside m_staleScope but
+// outside m_sourceScope is only ever removed when the source does not have it, never merely because
+// it differs, so nothing is deleted that pass 2 would not restore.
 //
-// Suppressing them puts the whole burden on the table list: with no cascade, an orphan is cleared
-// only by its own table's delete statement, so every table that references a deleted row has to be
-// in `tables`. This is why the mirror covers ec_cache_ where AdoptSchemas does not.
+// After the deletes, every surviving target row either equals its source row or exists unchanged in
+// the source, so the source holds every row the target does - and the source satisfies the unique
+// indexes. That is why pass 2 cannot conflict, which makes it correct as well as cheap.
+//
+// Foreign key actions are suppressed throughout, and every pass depends on it. Not every ec_ foreign
+// key cascades: ec_Table.ExclusiveRootClassId and ec_RelationshipConstraint.AbstractConstraintClassId
+// are ON DELETE SET NULL, so removing a stale class would null a column in a surviving row that pass 2
+// never revisits, since its key is still there. The cascading ones are worse than wasteful - deleting
+// a KindOfQuantity takes every ec_Property pointing at it, and those properties are restored only if
+// they happen to fall inside m_sourceScope. defer_foreign_keys is still needed on top: it defers the
+// *check* to commit, by which point pass 2 has restored what pass 1 removed.
+//
+// Suppressing them puts the whole burden on the plan: with no cascade, an orphan is cleared only by
+// its own table's statements, so every table that references a deleted row has to be in the plan.
+// This is why the whole-file mirror covers ec_cache_ where the closure does not.
 //
 // The delete sweep repeats until it deletes nothing. With the actions suppressed that is one
-// productive sweep and one clean one, and the clean one only reads. It stays because the
-// suppression is a connection flag read at statement-prepare time: if it ever fails to take, this
-// degrades to slow-but-correct instead of to a silently mangled sync db.
+// productive sweep and one clean one, and the clean one only reads. It stays because the suppression
+// is a connection flag read at statement-prepare time: if it ever fails to take, this degrades to
+// slow-but-correct instead of to a silently mangled target.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult SchemaSyncUpstreamHelper::MirrorTables(ECDbR conn, StringList const& tables, Utf8CP sourceAlias, Utf8CP targetAlias) {
+DbResult SchemaSyncUpstreamHelper::MirrorTables(ECDbR conn, bvector<TablePlan> const& plan, Utf8CP sourceAlias, Utf8CP targetAlias) {
     auto rc = conn.ExecuteSql("PRAGMA defer_foreign_keys=1");
     if (rc != BE_SQLITE_OK) {
         LOG.error("SchemaSyncUpstreamHelper::MirrorTables(): Failed to set defer_foreign_keys=1");
         return rc;
     }
 
-    StringList deleteStatements;
-    StringList insertStatements;
-    for (auto const& tableName : tables) {
-        Utf8CP table = tableName.c_str();
+    struct TableStatements {
+        Utf8CP m_table;
+        Utf8String m_deleteChanged;
+        Utf8String m_deleteStale;
+        Utf8String m_insertMissing;
+        bool m_removeStaleRows;
+    };
+
+    bvector<TableStatements> statements;
+    for (auto const& entry : plan) {
+        Utf8CP table = entry.m_table;
         SchemaSyncHelper::StringList cols, pkCols;
         rc = SchemaSyncHelper::GetColumnNames(conn, targetAlias, table, cols);
         if (rc != BE_SQLITE_OK) {
@@ -1312,28 +1302,47 @@ DbResult SchemaSyncUpstreamHelper::MirrorTables(ECDbR conn, StringList const& ta
 
         SchemaSyncHelper::StringList keyMatchExprs;
         for (auto const& col : pkCols)
-            keyMatchExprs.push_back(SqlPrintfString("[T].[%s] IS [S].[%s]", col.c_str(), col.c_str()).GetUtf8CP());
+            keyMatchExprs.push_back(SqlPrintfString("[S].[%s] IS [T].[%s]", col.c_str(), col.c_str()).GetUtf8CP());
 
-        deleteStatements.push_back(SqlPrintfString(
-            "DELETE FROM [%s].[%s] AS [T] WHERE NOT EXISTS (SELECT 1 FROM [%s].[%s] [S] WHERE %s)",
-            targetAlias, table, sourceAlias, table,
-            SchemaSyncHelper::Join(sameRowExprs, " AND ").c_str()).GetUtf8CP());
-
+        const auto sameRow = SchemaSyncHelper::Join(sameRowExprs, " AND ");
+        const auto sameKey = SchemaSyncHelper::Join(keyMatchExprs, " AND ");
+        const auto sourceScope = entry.m_sourceScope.empty() ? Utf8String("1") : entry.m_sourceScope;
+        const auto staleScope = entry.m_staleScope.empty() ? Utf8String("1") : entry.m_staleScope;
         const auto colsSql = SchemaSyncHelper::Join(cols);
-        insertStatements.push_back(SqlPrintfString(
-            "INSERT INTO [%s].[%s](%s) SELECT %s FROM [%s].[%s] [S] WHERE NOT EXISTS (SELECT 1 FROM [%s].[%s] [T] WHERE %s)",
-            targetAlias, table, colsSql.c_str(),
-            colsSql.c_str(), sourceAlias, table,
+
+        TableStatements built;
+        built.m_table = table;
+        built.m_removeStaleRows = entry.m_removeStaleRows;
+
+        built.m_deleteChanged = SqlPrintfString(
+            "DELETE FROM [%s].[%s] AS [T] WHERE"
+            " EXISTS (SELECT 1 FROM [%s].[%s] [S] WHERE %s AND (%s))"
+            " AND NOT EXISTS (SELECT 1 FROM [%s].[%s] [S] WHERE %s AND (%s))",
             targetAlias, table,
-            SchemaSyncHelper::Join(keyMatchExprs, " AND ").c_str()).GetUtf8CP());
+            sourceAlias, table, sameKey.c_str(), sourceScope.c_str(),
+            sourceAlias, table, sameRow.c_str(), sourceScope.c_str()).GetUtf8CP();
+
+        built.m_deleteStale = SqlPrintfString(
+            "DELETE FROM [%s].[%s] AS [T] WHERE (%s) AND NOT EXISTS (SELECT 1 FROM [%s].[%s] [S] WHERE %s)",
+            targetAlias, table, staleScope.c_str(),
+            sourceAlias, table, sameKey.c_str()).GetUtf8CP();
+
+        built.m_insertMissing = SqlPrintfString(
+            "INSERT INTO [%s].[%s](%s) SELECT %s FROM [%s].[%s] [S] WHERE (%s)"
+            " AND NOT EXISTS (SELECT 1 FROM [%s].[%s] [T] WHERE %s)",
+            targetAlias, table, colsSql.c_str(),
+            colsSql.c_str(), sourceAlias, table, sourceScope.c_str(),
+            targetAlias, table, sameKey.c_str()).GetUtf8CP();
+
+        statements.push_back(built);
     }
 
-    // Everything from here writes rows, so the suppression covers both passes. PRAGMA foreign_keys
-    // is not an option: SQLite ignores it inside a transaction and ECDb opens with DefaultTxn::Yes.
+    // Everything from here writes rows, so the suppression covers every pass. PRAGMA foreign_keys is
+    // not an option: SQLite ignores it inside a transaction and ECDb opens with DefaultTxn::Yes.
     SuppressForeignKeyActions noForeignKeyActions(conn);
 
-    // Deep enough for any chain the ec_ foreign key graph can produce, low enough that a mistake
-    // here surfaces as an error rather than a hang.
+    // Deep enough for any chain the ec_ foreign key graph can produce, low enough that a mistake here
+    // surfaces as an error rather than a hang.
     constexpr int maxDeleteSweeps = 16;
 
     int64_t deleted = 0;
@@ -1346,39 +1355,50 @@ DbResult SchemaSyncUpstreamHelper::MirrorTables(ECDbR conn, StringList const& ta
             return BE_SQLITE_ERROR;
         }
 
-        for (size_t i = 0; i < deleteStatements.size(); ++i) {
-            rc = conn.ExecuteSql(deleteStatements[i].c_str());
-            if (rc != BE_SQLITE_OK) {
-                LOG.errorv("SchemaSyncUpstreamHelper::MirrorTables(): Failed to drop stale rows. %s (sql: %s)", BeSQLiteLib::GetErrorString(rc), deleteStatements[i].c_str());
+        // Children before parents. Only readability rests on this - the actions are suppressed and the
+        // sweep runs to a fixed point either way - but a plan ordered parents-first reads better.
+        for (auto entry = statements.rbegin(); entry != statements.rend(); ++entry) {
+            const auto runDelete = [&](Utf8StringCR sql) {
+                rc = conn.ExecuteSql(sql.c_str());
+                if (rc != BE_SQLITE_OK) {
+                    LOG.errorv("SchemaSyncUpstreamHelper::MirrorTables(): Failed to drop rows from %s. %s (sql: %s)", entry->m_table, BeSQLiteLib::GetErrorString(rc), sql.c_str());
+                    return false;
+                }
+                const auto affected = conn.GetModifiedRowCount();
+                if (affected > 0) {
+                    sweepDeletedSomething = true;
+                    deleted += affected;
+                    deletedDetail.append(SqlPrintfString(" %s=%d", entry->m_table, affected).GetUtf8CP());
+                }
+                return true;
+            };
+
+            if (!runDelete(entry->m_deleteChanged))
                 return rc;
-            }
-            const auto affected = conn.GetModifiedRowCount();
-            if (affected > 0) {
-                sweepDeletedSomething = true;
-                deleted += affected;
-                deletedDetail.append(SqlPrintfString(" %s=%d", tables[i].c_str(), affected).GetUtf8CP());
-            }
+
+            if (entry->m_removeStaleRows && !runDelete(entry->m_deleteStale))
+                return rc;
         }
     }
 
     int64_t inserted = 0;
     Utf8String insertedDetail;
-    for (size_t i = 0; i < insertStatements.size(); ++i) {
-        rc = conn.ExecuteSql(insertStatements[i].c_str());
+    for (auto const& entry : statements) {
+        rc = conn.ExecuteSql(entry.m_insertMissing.c_str());
         if (rc != BE_SQLITE_OK) {
-            LOG.errorv("SchemaSyncUpstreamHelper::MirrorTables(): Failed to insert missing rows. %s (sql: %s)", BeSQLiteLib::GetErrorString(rc), insertStatements[i].c_str());
+            LOG.errorv("SchemaSyncUpstreamHelper::MirrorTables(): Failed to insert missing rows into %s. %s (sql: %s)", entry.m_table, BeSQLiteLib::GetErrorString(rc), entry.m_insertMissing.c_str());
             return rc;
         }
         const auto affected = conn.GetModifiedRowCount();
         if (affected > 0) {
             inserted += affected;
-            insertedDetail.append(SqlPrintfString(" %s=%d", tables[i].c_str(), affected).GetUtf8CP());
+            insertedDetail.append(SqlPrintfString(" %s=%d", entry.m_table, affected).GetUtf8CP());
         }
     }
 
     // Counts, not rows: this is what says whether the mirror wrote a handful of rows or churned the
     // whole file, which is the difference between a cheap upload and every client re-downloading it.
-    SS_TRACE("mirror %s -> %s: deleted %lld in %d sweep(s), inserted %lld (of %d tables)", sourceAlias, targetAlias, (long long)deleted, sweeps, (long long)inserted, (int)tables.size());
+    SS_TRACE("mirror %s -> %s: deleted %lld in %d sweep(s), inserted %lld (of %d tables)", sourceAlias, targetAlias, (long long)deleted, sweeps, (long long)inserted, (int)plan.size());
     if (deleted > 0)
         SS_TRACE("  deleted:%s", deletedDetail.c_str());
     if (inserted > 0)
@@ -1388,27 +1408,36 @@ DbResult SchemaSyncUpstreamHelper::MirrorTables(ECDbR conn, StringList const& ta
 }
 
 //---------------------------------------------------------------------------------------
-// Brings the closure's rows into line with the sync db, table by table.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult SchemaSyncUpstreamHelper::MirrorTables(ECDbR conn, StringList const& tables, Utf8CP sourceAlias, Utf8CP targetAlias) {
+    bvector<TablePlan> plan;
+    plan.reserve(tables.size());
+    for (auto const& table : tables) {
+        TablePlan entry;
+        entry.m_table = table.c_str();
+        plan.push_back(entry);
+    }
+
+    return MirrorTables(conn, plan, sourceAlias, targetAlias);
+}
+
+//---------------------------------------------------------------------------------------
+// Brings the closure's rows into line with the sync db.
 //
-// Two passes, children first then parents, the same shape MirrorTables uses in the other direction:
-// remove rows the sync db no longer has, then upsert everything it does.
+// This is MirrorTables with a scope per table rather than a second mechanism: the shapes were the
+// same and the sync db direction had already worked out the delete-then-insert rules that make an
+// upsert unnecessary. Everything about how the rows move lives there; this function only says which
+// rows belong to the briefcase.
 //
-// The delete pass rests on the sync db being a superset of the briefcase within the closure - every
-// ec_ row a sync-enabled file holds came from there - so a row inside the closure that the sync db
-// lacks was deleted there rather than created here. Its scope clause is evaluated against the
-// briefcase, which is why the predicates that reach through another table need a second version.
+// It rests on the sync db being a superset of the briefcase within the closure - every ec_ row a
+// sync-enabled file holds came from there - so a row inside the closure that the sync db lacks was
+// deleted there rather than created here.
 //
-// ec_cache_* is left out of both passes. Those are derived, and SchemaSync::UpdateDbSchema rebuilds
-// them afterwards.
+// ec_cache_* is left out. Those are derived, and SchemaSync::UpdateDbSchema rebuilds them afterwards.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult SchemaSyncUpstreamHelper::CopyClosure(ECDbR conn, Utf8CP syncAlias, Utf8CP targetAlias) {
-    auto rc = conn.ExecuteSql("PRAGMA defer_foreign_keys=1");
-    if (rc != BE_SQLITE_OK) {
-        LOG.error("SchemaSyncUpstreamHelper::CopyClosure(): Failed to set defer_foreign_keys=1");
-        return rc;
-    }
-
     const auto inSchemas = Utf8String{SqlPrintfString("(SELECT Id FROM %s)", TEMP_SCHEMA_IDS).GetUtf8CP()};
     const auto inClasses = Utf8String{SqlPrintfString("(SELECT Id FROM %s)", TEMP_CLASS_IDS).GetUtf8CP()};
     const auto inTables = Utf8String{SqlPrintfString("(SELECT Id FROM %s)", TEMP_TABLE_IDS).GetUtf8CP()};
@@ -1447,10 +1476,9 @@ DbResult SchemaSyncUpstreamHelper::CopyClosure(ECDbR conn, Utf8CP syncAlias, Utf
     const auto bySchema = Utf8String{SqlPrintfString("SchemaId IN %s", inSchemas.c_str()).GetUtf8CP()};
     const auto byClass = Utf8String{SqlPrintfString("ClassId IN %s", inClasses.c_str()).GetUtf8CP()};
 
-    // Ordered so that a row's parents land before it does. Foreign keys are deferred anyway, but
-    // keeping the order honest makes failures easier to read; the delete pass walks it backwards.
-    // An empty delete scope means the table cannot lose rows on this path.
-    struct TablePlan { Utf8CP table; Utf8String copyWhere; Utf8String deleteScope; };
+    // Ordered so that a row's parents land before it does. MirrorTables reverses it for the deletes.
+    // Where the stale scope is wider than the source scope, it is because a row the sync db deleted is
+    // not in the closure's id sets at all, so only its container can identify it.
     const bvector<TablePlan> plan {
         { "ec_Schema",                    Utf8String{SqlPrintfString("Id IN %s", inSchemas.c_str()).GetUtf8CP()}, Utf8String{SqlPrintfString("Id IN %s", inSchemas.c_str()).GetUtf8CP()} },
         { "ec_SchemaReference",           bySchema, bySchema },
@@ -1471,9 +1499,11 @@ DbResult SchemaSyncUpstreamHelper::CopyClosure(ECDbR conn, Utf8CP syncAlias, Utf
         { "ec_CustomAttribute",           caFilter(syncAlias), caFilter(targetAlias) },
         // A table only disappears when the class that owned it does, which the update path refuses,
         // and a table the sync db dropped is not in the closure to begin with.
-        { "ec_Table",                     Utf8String{SqlPrintfString("Id IN %s", inTables.c_str()).GetUtf8CP()}, Utf8String{} },
+        { "ec_Table",                     Utf8String{SqlPrintfString("Id IN %s", inTables.c_str()).GetUtf8CP()}, Utf8String{}, false },
         // Scoped by table rather than by the closure's column ids, because a column the sync db
-        // deleted is not among them.
+        // deleted is not among them. A shared column in one of these tables that no class of ours maps
+        // to belongs to somebody else's schema: it is outside the source scope, so it is only ever
+        // removed when the sync db has dropped it too.
         { "ec_Column",                    Utf8String{SqlPrintfString("Id IN %s", inColumns.c_str()).GetUtf8CP()}, Utf8String{SqlPrintfString("TableId IN %s", inTables.c_str()).GetUtf8CP()} },
         { "ec_ClassMap",                  byClass, byClass },
         { "ec_PropertyMap",               Utf8String{SqlPrintfString("ClassId IN %s AND ColumnId IN %s", inClasses.c_str(), inColumns.c_str()).GetUtf8CP()}, byClass },
@@ -1481,43 +1511,7 @@ DbResult SchemaSyncUpstreamHelper::CopyClosure(ECDbR conn, Utf8CP syncAlias, Utf
         { "ec_IndexColumn",               Utf8String{SqlPrintfString("ColumnId IN %s AND %s", inColumns.c_str(), indexColumnFilter(syncAlias).c_str()).GetUtf8CP()}, indexColumnFilter(targetAlias) },
     };
 
-    int64_t deleted = 0;
-    Utf8String deletedDetail;
-    for (auto entry = plan.rbegin(); entry != plan.rend(); ++entry) {
-        if (entry->deleteScope.empty())
-            continue;
-
-        rc = DeleteMissing(conn, entry->table, syncAlias, targetAlias, entry->deleteScope.c_str());
-        if (rc != BE_SQLITE_OK) {
-            LOG.errorv("SchemaSyncUpstreamHelper::CopyClosure(): Failed to delete stale rows from %s.", entry->table);
-            return rc;
-        }
-        const auto affected = conn.GetModifiedRowCount();
-        if (affected > 0) {
-            deleted += affected;
-            deletedDetail.append(SqlPrintfString(" %s=%d", entry->table, affected).GetUtf8CP());
-        }
-    }
-
-    int64_t copied = 0;
-    Utf8String detail;
-    for (auto const& entry : plan) {
-        rc = UpsertFiltered(conn, entry.table, syncAlias, targetAlias, entry.copyWhere.c_str());
-        if (rc != BE_SQLITE_OK) {
-            LOG.errorv("SchemaSyncUpstreamHelper::CopyClosure(): Failed on table %s.", entry.table);
-            return rc;
-        }
-        const auto affected = conn.GetModifiedRowCount();
-        if (affected > 0) {
-            copied += affected;
-            detail.append(SqlPrintfString(" %s=%d", entry.table, affected).GetUtf8CP());
-        }
-    }
-
-    if (deleted > 0)
-        SS_TRACE("adopt deleted %lld stale rows:%s", (long long)deleted, deletedDetail.c_str());
-    SS_TRACE("adopt copied %lld rows from the sync db:%s", (long long)copied, detail.c_str());
-    return BE_SQLITE_OK;
+    return MirrorTables(conn, plan, syncAlias, targetAlias);
 }
 
 //---------------------------------------------------------------------------------------
