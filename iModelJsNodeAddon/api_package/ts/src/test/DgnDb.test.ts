@@ -59,13 +59,13 @@ describe("basic tests", () => {
       partialKey: {
         baseClassName: "BisCore:Element"
       } as any // missing id
-    })).to.throw("missing id");
+    } as any)).to.throw("missing id");
 
     expect(() => dgndb.resolveInstanceKey({
       partialKey: {
         id: "0x1b"
       } as any // missing baseClassName
-    })).to.throw("missing baseClassName");
+    } as any)).to.throw("missing baseClassName");
 
     expect(() => dgndb.resolveInstanceKey({
       partialKey: {
@@ -137,21 +137,21 @@ describe("basic tests", () => {
         scope: "0x1",
         value: "test"
       } as any // missing spec
-    })).to.throw("missing spec");
+    } as any)).to.throw("missing spec");
 
     expect(() => dgndb.resolveInstanceKey({
       code: {
         spec: "0x1",
         value: "test"
       } as any // missing scope
-    })).to.throw("missing type");
+    } as any)).to.throw("missing type");
 
     expect(() => dgndb.resolveInstanceKey({
       code: {
         spec: "0x1",
         scope: "0x1"
-      } // missing value
-    })).to.throw("missing value");
+      } as any // missing value
+    } as any)).to.throw("missing value");
 
     expect(() => dgndb.resolveInstanceKey({
       code: {
@@ -173,7 +173,7 @@ describe("basic tests", () => {
     // any attempt to read properties off them
     expect(() => dgndb.resolveInstanceKey(null as any)).to.throw("must be an object");
 
-    expect(() => dgndb.resolveInstanceKey({})).to.throw("must provide partialKey, federationGuid or");
+    expect(() => dgndb.resolveInstanceKey({} as any)).to.throw("must provide partialKey, federationGuid or");
   });
   it("compress/decompress", () => {
     const assertCompressAndThenDecompress = (sourceData: Uint8Array) => {
