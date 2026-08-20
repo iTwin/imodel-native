@@ -35,9 +35,8 @@ TEST_F(BeJsValueTest, RapidJson) {
   ASSERT_TRUE(val.asString() == "test value");
 }
 
-// A uint64_t must be assignable to a BeJsValue and round-trip exactly. JsonCpp had a Json::Value(UInt64)
-// constructor, so this worked before the migration; without an explicit overload the assignment is
-// ambiguous across the double/bool/int32/uint32/int64 overloads and fails to compile.
+// A uint64_t must be assignable to a BeJsValue and round-trip exactly. Without an explicit uint64_t
+// overload the assignment is ambiguous across the double/bool/int32/uint32/int64 overloads.
 TEST_F(BeJsValueTest, AssignUInt64) {
   BeJsDocument doc;
 
