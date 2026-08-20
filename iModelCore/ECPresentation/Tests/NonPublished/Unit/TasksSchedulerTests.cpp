@@ -5,7 +5,6 @@
 #include <folly/futures/DrivableExecutor.h>
 #include "../../../Source/TaskScheduler.h"
 #include "../Helpers/TestHelpers.h"
-#include <deque>
 
 /*=================================================================================**//**
 * @bsiclass

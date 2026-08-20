@@ -3,7 +3,6 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "NavNodesCacheTests.h"
-#include <string>
 
 ECDbTestProject* NodesCacheTests::s_project = nullptr;
 

@@ -17,7 +17,6 @@
 #include <UnitTests/ECPresentation/TestRuleSetLocater.h>
 #include "ECDbTestProject.h"
 #include "TestNavNode.h"
-#include <string>
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE
