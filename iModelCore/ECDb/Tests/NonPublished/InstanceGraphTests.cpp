@@ -1782,4 +1782,151 @@ TEST_F(InstanceGraphTests, CacheIsInvalidatedOnSchemaImport)
     EXPECT_TRUE(after.Contains(p2)) << "The relationship added by the schema import must be discovered";
     }
 
+//---------------------------------------------------------------------------------------
+//! Two distinct relationship rows between the same pair of instances are two distinct edges.
+//! Without the relationship ECInstanceId in the edge identity they collapsed into one and the
+//! second row was silently lost.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, RelationshipInstanceId_DistinguishesDuplicateLinkTableRows)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_DupRelRows.ecdb", SchemaItem(s_testSchemaXml)));
+    m_ecdb.GetECSqlConfig().SetExperimentalFeaturesEnabled(true);
+
+    auto p1 = InsertInstance("INSERT INTO ig.Pipe(Code, Diameter) VALUES('P1', 1.0)");
+    auto p2 = InsertInstance("INSERT INTO ig.Pipe(Code, Diameter) VALUES('P2', 2.0)");
+
+    // ElementConnectsToElement is a TablePerHierarchy link table, so duplicate rows between the
+    // same pair of instances are allowed.
+    InsertRelInstance(SqlPrintfString("INSERT INTO ig.ElementConnectsToElement(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
+        p1.GetInstanceId().ToString().c_str(), p2.GetInstanceId().ToString().c_str()));
+    InsertRelInstance(SqlPrintfString("INSERT INTO ig.ElementConnectsToElement(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
+        p1.GetInstanceId().ToString().c_str(), p2.GetInstanceId().ToString().c_str()));
+    m_ecdb.SaveChanges();
+
+    InstanceGraph graph(m_ecdb);
+    graph.AddSeed(p1);
+    ASSERT_EQ(SUCCESS, graph.ExpandNode(p1, TraversalDirection::Forward));
+
+    auto const* related = graph.GetRelated(p1);
+    ASSERT_NE(nullptr, related);
+    ASSERT_EQ(2u, related->size()) << "Both persisted relationship rows must be reported";
+
+    bset<uint64_t> relInstanceIds;
+    for (auto const& rel : *related)
+        {
+        EXPECT_EQ(p2.GetInstanceId(), rel.GetKey().GetInstanceId());
+        EXPECT_EQ(GetClassId("ElementConnectsToElement"), rel.GetRelClassId());
+        ASSERT_TRUE(rel.GetRelInstanceId().IsValid()) << "The relationship ECInstanceId must be resolved for a link table";
+        relInstanceIds.insert(rel.GetRelInstanceId().GetValueUnchecked());
+        }
+
+    EXPECT_EQ(2u, relInstanceIds.size()) << "The two edges must carry different relationship ECInstanceIds";
+
+    // The same must be observable through the virtual table.
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        SqlPrintfString("SELECT RelationshipECInstanceId FROM ECVLib.Relations(%s, %s, 'forward') ORDER BY RelationshipECInstanceId",
+            p1.GetInstanceId().ToString().c_str(), p1.GetClassId().ToString().c_str())));
+
+    bset<uint64_t> queriedIds;
+    while (stmt.Step() == BE_SQLITE_ROW)
+        queriedIds.insert(stmt.GetValueId<ECInstanceId>(0).GetValueUnchecked());
+
+    EXPECT_EQ(relInstanceIds, queriedIds);
+    }
+
+//---------------------------------------------------------------------------------------
+//! For a foreign key relationship the relationship instance is identified by the ECInstanceId of
+//! the row holding the navigation property, in both traversal directions.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, RelationshipInstanceId_NavPropIsForeignKeyHolderId)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_NavPropRelId.ecdb", SchemaItem(s_testSchemaXml)));
+
+    auto modelKey = InsertInstance("INSERT INTO ig.Model(Name) VALUES('M1')");
+    auto pipeKey = InsertInstance(SqlPrintfString("INSERT INTO ig.Pipe(Code, Diameter, Model.Id) VALUES('P1', 1.0, %s)",
+        modelKey.GetInstanceId().ToString().c_str()));
+    m_ecdb.SaveChanges();
+
+    InstanceGraph fromPipe(m_ecdb);
+    fromPipe.AddSeed(pipeKey);
+    ASSERT_EQ(SUCCESS, fromPipe.ExpandNode(pipeKey, TraversalDirection::Both));
+    auto const* fromPipeRelated = fromPipe.GetRelated(pipeKey);
+    ASSERT_NE(nullptr, fromPipeRelated);
+    ASSERT_EQ(1u, fromPipeRelated->size());
+    EXPECT_EQ(pipeKey.GetInstanceId(), (*fromPipeRelated)[0].GetRelInstanceId());
+
+    InstanceGraph fromModel(m_ecdb);
+    fromModel.AddSeed(modelKey);
+    ASSERT_EQ(SUCCESS, fromModel.ExpandNode(modelKey, TraversalDirection::Both));
+    auto const* fromModelRelated = fromModel.GetRelated(modelKey);
+    ASSERT_NE(nullptr, fromModelRelated);
+    ASSERT_EQ(1u, fromModelRelated->size());
+    EXPECT_EQ(pipeKey.GetInstanceId(), (*fromModelRelated)[0].GetRelInstanceId());
+    }
+
+//---------------------------------------------------------------------------------------
+//! An instance whose id collides with the seed's id but which lives in a different table must
+//! not be picked up. ECInstanceIds are only unique per table, so the seed's own ECClassId has to
+//! take part in the lookup.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, CollidingInstanceIdsInDifferentTablesAreNotConfused)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_IdCollision.ecdb", SchemaItem(s_testSchemaXml)));
+
+    // Model and Element map to different tables, so their ECInstanceIds are independent
+    // sequences and are very likely to collide.
+    auto modelKey = InsertInstance("INSERT INTO ig.Model(Name) VALUES('M1')");
+    auto pipeKey = InsertInstance("INSERT INTO ig.Pipe(Code, Diameter) VALUES('P1', 1.0)");
+    auto catKey = InsertInstance("INSERT INTO ig.Category(CatName) VALUES('Cat1')");
+
+    InsertRelInstance(SqlPrintfString("INSERT INTO ig.ElementInCategory(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
+        pipeKey.GetInstanceId().ToString().c_str(), catKey.GetInstanceId().ToString().c_str()));
+    m_ecdb.SaveChanges();
+
+    // Seeding with the Model - which is not a valid source of ElementInCategory at all - must
+    // not return the Category even when the Model's id happens to equal the Pipe's id.
+    InstanceGraph fromModel(m_ecdb);
+    fromModel.AddSeed(modelKey);
+    ASSERT_EQ(SUCCESS, fromModel.ExpandNode(modelKey, TraversalDirection::Both));
+    auto const* related = fromModel.GetRelated(modelKey);
+    ASSERT_NE(nullptr, related);
+    for (auto const& rel : *related)
+        EXPECT_NE(catKey, rel.GetKey()) << "The Category must only be reachable from the Pipe";
+    }
+
+//---------------------------------------------------------------------------------------
+//! ExpandAll must terminate at the maximum depth even when the graph is fully cyclic.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, ExpandAll_MaxDepthTerminatesOnCyclicGraph)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_MaxDepthCycle.ecdb", SchemaItem(s_testSchemaXml)));
+
+    bvector<ECInstanceKey> pipes;
+    for (int i = 0; i < 12; ++i)
+        pipes.push_back(InsertInstance(SqlPrintfString("INSERT INTO ig.Pipe(Code, Diameter) VALUES('P%d', 1.0)", i)));
+
+    // Fully connected ring, traversable in both directions.
+    for (size_t i = 0; i < pipes.size(); ++i)
+        {
+        ECInstanceKeyCR from = pipes[i];
+        ECInstanceKeyCR to = pipes[(i + 1) % pipes.size()];
+        InsertRelInstance(SqlPrintfString("INSERT INTO ig.ElementConnectsToElement(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
+            from.GetInstanceId().ToString().c_str(), to.GetInstanceId().ToString().c_str()));
+        }
+    m_ecdb.SaveChanges();
+
+    InstanceGraph graph(m_ecdb);
+    graph.AddSeed(pipes[0]);
+    ASSERT_EQ(SUCCESS, graph.ExpandAll(UINT8_MAX)) << "A cyclic graph must not make ExpandAll run forever";
+    EXPECT_EQ(pipes.size(), graph.NodeCount());
+
+    for (auto const& pipe : pipes)
+        EXPECT_TRUE(graph.Contains(pipe));
+    }
+
 END_ECDBUNITTESTS_NAMESPACE

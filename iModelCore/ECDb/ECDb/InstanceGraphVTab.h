@@ -5,11 +5,12 @@
 #pragma once
 #include <ECDb/InstanceGraph.h>
 #include <ECDb/ECDbVirtualTab.h>
+#include "InstanceGraphImpl.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
-//! Virtual table module exposing relationship traversal as relations()
+//! Virtual table module exposing relationship traversal as ECVLib.Relations()
 // @bsiclass
 //=======================================================================================
 struct RelationsModule : ECDbModule
@@ -26,19 +27,28 @@ struct RelationsModule : ECDbModule
                 RelatedECClassId = 1,
                 Direction = 2,
                 RelationshipECClassId = 3,
+                RelationshipECInstanceId = 4,
                 // Hidden input columns
-                ECInstanceId = 4,
-                ECClassId = 5,
-                TraversalDir = 6
+                ECInstanceId = 5,
+                ECClassId = 6,
+                TraversalDir = 7
                 };
 
             private:
-                bvector<RelatedInstance> m_results;
-                size_t m_index;
+                GraphTraversalIterator m_iter;
+                int64_t m_rowId = 0;
+                bool m_eof = true;
+
+                // The hidden argument columns must return the values they were called with:
+                // IndexInfo::SetOmit is only a hint, so SQLite may still evaluate the constraint
+                // and returning NULL would then silently produce zero rows.
+                ECInstanceId m_seedInstanceId;
+                ECN::ECClassId m_seedClassId;
+                TraversalDirection m_dir = TraversalDirection::Both;
 
             public:
-                RelationsCursor(RelationsTable& vt) : ECDbCursor(vt), m_index(0) {}
-                bool Eof() final { return m_index >= m_results.size(); }
+                RelationsCursor(RelationsTable& vt);
+                bool Eof() final { return m_eof; }
                 DbResult Next() final;
                 DbResult GetColumn(int i, Context& ctx) final;
                 DbResult GetRowId(int64_t& rowId) final;
@@ -55,7 +65,7 @@ struct RelationsModule : ECDbModule
         RelationsModule(ECDbR db) : ECDbModule(
             db,
             NAME,
-            "CREATE TABLE x(RelatedECInstanceId, RelatedECClassId, Direction, RelationshipECClassId,"
+            "CREATE TABLE x(RelatedECInstanceId, RelatedECClassId, Direction, RelationshipECClassId, RelationshipECInstanceId,"
             " ECInstanceId HIDDEN, ECClassId HIDDEN, TraversalDirection HIDDEN)",
             R"xml(<?xml version="1.0" encoding="utf-8" ?>
             <ECSchema
@@ -75,6 +85,7 @@ struct RelationsModule : ECDbModule
                     <ECProperty propertyName="RelatedECClassId"     typeName="long" extendedTypeName="Id"/>
                     <ECProperty propertyName="Direction"            typeName="string"/>
                     <ECProperty propertyName="RelationshipECClassId" typeName="long" extendedTypeName="Id"/>
+                    <ECProperty propertyName="RelationshipECInstanceId" typeName="long" extendedTypeName="Id"/>
                 </ECEntityClass>
             </ECSchema>)xml"
             ) {}

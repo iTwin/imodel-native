@@ -87,7 +87,7 @@ PropertyMap* DbMappingManager::Classes::ProcessProperty(Context& ctx, ECProperty
                         IssueSeverity::Error,
                         IssueCategory::BusinessProperties,
                         IssueType::ECDbIssue,
-                        ECDbIssueId::ECDb_0744,
+                        ECDbIssueId::ECDb_0742,
                         "Failed to map ECProperty '%s.%s'. Its values were mapped to columns spanning multiple tables, which is not supported.",
                         ctx.m_classMap.GetClass().GetFullName(),
                         property.GetName().c_str());

@@ -104,6 +104,17 @@ DbResult RelationsModule::RelationsTable::BestIndex(IndexInfo& indexInfo)
     }
 
 // =====================================================================================
+// RelationsCursor — Construction
+// =====================================================================================
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+RelationsModule::RelationsTable::RelationsCursor::RelationsCursor(RelationsTable& vt)
+    : ECDbCursor(vt), m_iter(static_cast<RelationsModule&>(vt.GetModule()).GetECDb())
+    {}
+
+// =====================================================================================
 // RelationsCursor — Filter
 // =====================================================================================
 
@@ -112,8 +123,11 @@ DbResult RelationsModule::RelationsTable::BestIndex(IndexInfo& indexInfo)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult RelationsModule::RelationsTable::RelationsCursor::Filter(int idxNum, const char* idxStr, int argc, DbValue* argv)
     {
-    m_results.clear();
-    m_index = 0;
+    m_rowId = 0;
+    m_eof = true;
+    m_seedInstanceId = ECInstanceId();
+    m_seedClassId = ECClassId();
+    m_dir = TraversalDirection::Both;
 
     // BestIndex rejects any plan without both required arguments, so this is defensive only.
     if ((idxNum & 3) != 3 || argc < 2)
@@ -124,9 +138,8 @@ DbResult RelationsModule::RelationsTable::RelationsCursor::Filter(int idxNum, co
 
     // BestIndex assigns argv indices in a fixed column order: ECInstanceId, ECClassId, TraversalDirection.
     int argIdx = 0;
-    ECInstanceId instanceId((uint64_t) argv[argIdx++].GetValueInt64());
-    ECClassId classId((uint64_t) argv[argIdx++].GetValueInt64());
-    TraversalDirection dir = TraversalDirection::Both;
+    m_seedInstanceId = ECInstanceId((uint64_t) argv[argIdx++].GetValueInt64());
+    m_seedClassId = ECClassId((uint64_t) argv[argIdx++].GetValueInt64());
 
     if ((idxNum & 4) != 0)
         {
@@ -147,11 +160,11 @@ DbResult RelationsModule::RelationsTable::RelationsCursor::Filter(int idxNum, co
                 }
 
             if (BeStringUtilities::StricmpAscii(dirStr, "forward") == 0)
-                dir = TraversalDirection::Forward;
+                m_dir = TraversalDirection::Forward;
             else if (BeStringUtilities::StricmpAscii(dirStr, "backward") == 0)
-                dir = TraversalDirection::Backward;
+                m_dir = TraversalDirection::Backward;
             else if (BeStringUtilities::StricmpAscii(dirStr, "both") == 0)
-                dir = TraversalDirection::Both;
+                m_dir = TraversalDirection::Both;
             else
                 {
                 GetTable().SetError(Utf8PrintfString("Relations(): invalid TraversalDirection '%s'. Expected 'forward', 'backward' or 'both'.", dirStr).c_str());
@@ -162,26 +175,18 @@ DbResult RelationsModule::RelationsTable::RelationsCursor::Filter(int idxNum, co
 
     // An invalid (zero/NULL) seed simply has no relationships. This is not an error, so that
     // Relations() can be joined against columns that are legitimately NULL.
-    if (!instanceId.IsValid() || !classId.IsValid())
+    if (!m_seedInstanceId.IsValid() || !m_seedClassId.IsValid())
         return BE_SQLITE_OK;
 
-    // Build a single-hop InstanceGraph and collect results
-    ECDbR ecdb = static_cast<RelationsModule&>(GetTable().GetModule()).GetECDb();
-    InstanceGraph graph(ecdb);
-    ECInstanceKey seedKey(classId, instanceId);
-    graph.AddSeed(seedKey);
-
-    if (graph.ExpandNode(seedKey, dir) != SUCCESS)
+    // Rows are streamed: the related instances are never materialized as a whole, so a seed with
+    // a very high fan-out does not have to be fully read before the first row is produced.
+    if (SUCCESS != m_iter.Reset(ECInstanceKey(m_seedClassId, m_seedInstanceId), m_dir))
         {
         GetTable().SetError("Relations(): failed to traverse relationships for the given seed instance.");
         return BE_SQLITE_ERROR;
         }
 
-    auto const* related = graph.GetRelated(seedKey);
-    if (related != nullptr)
-        m_results = *related;
-
-    return BE_SQLITE_OK;
+    return Next();
     }
 
 // =====================================================================================
@@ -193,7 +198,17 @@ DbResult RelationsModule::RelationsTable::RelationsCursor::Filter(int idxNum, co
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult RelationsModule::RelationsTable::RelationsCursor::Next()
     {
-    ++m_index;
+    if (SUCCESS != m_iter.MoveNext())
+        {
+        m_eof = true;
+        GetTable().SetError("Relations(): failed to traverse relationships for the given seed instance.");
+        return BE_SQLITE_ERROR;
+        }
+
+    m_eof = m_iter.IsEof();
+    if (!m_eof)
+        ++m_rowId;
+
     return BE_SQLITE_OK;
     }
 
@@ -202,10 +217,28 @@ DbResult RelationsModule::RelationsTable::RelationsCursor::Next()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult RelationsModule::RelationsTable::RelationsCursor::GetColumn(int i, Context& ctx)
     {
-    if (m_index >= m_results.size())
+    switch ((Columns) i)
+        {
+        // The hidden argument columns are answered even at EOF: SQLite is free to ignore the
+        // SetOmit hint and re-check the constraint itself.
+        case Columns::ECInstanceId:
+            ctx.SetResultInt64(m_seedInstanceId.GetValueUnchecked());
+            return BE_SQLITE_OK;
+        case Columns::ECClassId:
+            ctx.SetResultInt64(m_seedClassId.GetValueUnchecked());
+            return BE_SQLITE_OK;
+        case Columns::TraversalDir:
+            ctx.SetResultText(m_dir == TraversalDirection::Forward ? "forward"
+                              : m_dir == TraversalDirection::Backward ? "backward" : "both", -1, Context::CopyData::Yes);
+            return BE_SQLITE_OK;
+        default:
+            break;
+        }
+
+    if (m_eof)
         return BE_SQLITE_ERROR;
 
-    auto const& rel = m_results[m_index];
+    auto const& rel = m_iter.GetCurrent();
 
     switch ((Columns) i)
         {
@@ -221,6 +254,12 @@ DbResult RelationsModule::RelationsTable::RelationsCursor::GetColumn(int i, Cont
         case Columns::RelationshipECClassId:
             ctx.SetResultInt64(rel.GetRelClassId().GetValueUnchecked());
             break;
+        case Columns::RelationshipECInstanceId:
+            if (rel.GetRelInstanceId().IsValid())
+                ctx.SetResultInt64(rel.GetRelInstanceId().GetValueUnchecked());
+            else
+                ctx.SetResultNull();
+            break;
         default:
             ctx.SetResultNull();
             break;
@@ -234,7 +273,7 @@ DbResult RelationsModule::RelationsTable::RelationsCursor::GetColumn(int i, Cont
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult RelationsModule::RelationsTable::RelationsCursor::GetRowId(int64_t& rowId)
     {
-    rowId = (int64_t) m_index;
+    rowId = m_rowId;
     return BE_SQLITE_OK;
     }
 

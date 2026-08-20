@@ -28,15 +28,21 @@ struct RelatedInstance final
     private:
         ECInstanceKey       m_key;
         ECN::ECClassId      m_relClassId;
+        ECInstanceId        m_relInstanceId;
         TraversalDirection  m_direction;
 
     public:
-        RelatedInstance() {}
-        RelatedInstance(ECInstanceKeyCR key, ECN::ECClassId relClassId, TraversalDirection direction)
-            : m_key(key), m_relClassId(relClassId), m_direction(direction) {}
+        RelatedInstance() : m_direction(TraversalDirection::Both) {}
+        RelatedInstance(ECInstanceKeyCR key, ECN::ECClassId relClassId, ECInstanceId relInstanceId, TraversalDirection direction)
+            : m_key(key), m_relClassId(relClassId), m_relInstanceId(relInstanceId), m_direction(direction) {}
 
         ECInstanceKeyCR GetKey() const { return m_key; }
         ECN::ECClassId GetRelClassId() const { return m_relClassId; }
+        //! ECInstanceId of the relationship instance connecting the seed to this instance.
+        //! @remarks Together with GetRelClassId this uniquely identifies the traversed relationship
+        //! instance, which is what makes two distinct relationship rows between the same pair of
+        //! instances distinguishable.
+        ECInstanceId GetRelInstanceId() const { return m_relInstanceId; }
         TraversalDirection GetDirection() const { return m_direction; }
     };
 
@@ -44,9 +50,19 @@ struct RelatedInstance final
 //! Fast instance graph traversal that bypasses ECSql, going directly to raw SQLite
 //! prepared statements built from property maps.
 //!
+//! @note This API is @b experimental. Its shape and behavior may change without notice and
+//! it is not covered by the usual backwards compatibility guarantees.
+//!
 //! @remarks The InstanceGraph lazily discovers applicable relationships, generates
 //! raw SQLite SQL from property maps/class maps, and caches prepared statements at the
 //! ECDb level for reuse across multiple InstanceGraph instances.
+//!
+//! @remarks Only the primary (@c main) table space is traversed. Seeds whose class is not
+//! part of the main table space are rejected.
+//!
+//! @remarks An InstanceGraph is not thread safe and must not be traversed while another
+//! thread clears the ECDb cache (ECDb::ClearECDbCache) or imports schemas: traversal holds
+//! raw pointers into the schema cache.
 //!
 //! Usage:
 //! @code

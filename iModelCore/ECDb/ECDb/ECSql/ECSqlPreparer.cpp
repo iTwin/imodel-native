@@ -904,7 +904,11 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassRefExp(NativeSqlBuilder::List& nativeS
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareTableValuedFunctionExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, TableValuedFunctionExp const& exp) {
-    if (exp.GetFunctionExp()->GetFunctionName().EqualsIAscii("Relations"))
+    // Gate on the resolved virtual class rather than the raw function name, so that an
+    // application registered function that happens to be called 'Relations' is not affected.
+    ECN::ECClassCP tvfClass = exp.GetClass();
+    if (tvfClass != nullptr && tvfClass->GetName().EqualsIAscii("Relations")
+        && tvfClass->GetSchema().GetName().EqualsIAscii("ECVLib"))
         {
         if (!QueryOptionExperimentalFeaturesEnabled(ctx.GetECDb(), exp))
             {
