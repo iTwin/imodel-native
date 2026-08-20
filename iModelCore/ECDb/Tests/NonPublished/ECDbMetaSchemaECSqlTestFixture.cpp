@@ -2040,9 +2040,8 @@ TEST_F(ECDbMetaSchemaECSqlTestFixture, CustomAttributes) {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT XmlCAToJson(ca.Class.Id, ca.Instance) FROM meta.CustomAttribute ca JOIN meta.ECClassDef c ON ca.Class.Id=c.ECInstanceId WHERE c.Name = 'CAClass'"));
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
-        // NOTE: compare parsed JSON, not text. JsonCpp emitted object members in sorted name order;
-        // RapidJson preserves insertion order, so XmlCAToJson's output ordering changed even though
-        // the value did not.
+        // NOTE: compare parsed JSON, not text: XmlCAToJson emits members in insertion order, not
+        // sorted name order.
         BeJsDocument expected(R"({"CAClass":{"CAProp":"Test"},"ecClass":"CAClass","ecSchema":"TestSchema.01.00"})");
         BeJsDocument actual(stmt.GetValueText(0));
         ASSERT_TRUE(expected.isExactEqual(actual)) << actual.Stringify();
