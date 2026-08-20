@@ -5,7 +5,6 @@
 #include <ECPresentationPch.h>
 #include "QueryContracts.h"
 #include "CustomFunctions.h"
-#include <string>
 
 Utf8CP PresentationQueryContract::RelatedInstanceInfoFieldName = "/RelatedInstanceInfo/";
 /*---------------------------------------------------------------------------------**//**

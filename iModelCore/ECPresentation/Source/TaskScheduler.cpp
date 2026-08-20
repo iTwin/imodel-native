@@ -7,7 +7,6 @@
 #include <folly/executors/InlineExecutor.h>
 #include "RulesEngineTypes.h"
 #include "TaskScheduler.h"
-#include <deque>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
