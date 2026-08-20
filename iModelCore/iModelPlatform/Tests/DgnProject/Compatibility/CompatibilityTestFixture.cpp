@@ -113,13 +113,11 @@ JsonValue::JsonValue(Utf8CP json)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-// NOTE: this mirrors the original JsonCpp implementation as closely as the BeJs API allows.
-// BeJs has no isInt/isUInt/isIntegral/isConvertibleTo - only isNumeric() - because RapidJson does
-// not preserve JsonCpp's signed/unsigned integral subtype distinction. So whole-number values are
-// compared exactly as int64 and only genuinely fractional values use the numeric tolerance. Note
-// also that bools are NOT numeric in BeJs (JsonCpp counted them as integral), hence the separate
-// isBool() branch first. Object comparison is now key-order-independent, which is required because
-// RapidJson preserves insertion order where JsonCpp sorted keys alphabetically.
+// BeJs has no isInt/isUInt/isIntegral/isConvertibleTo - only isNumeric() - so whole-number values
+// are compared exactly as int64 and only genuinely fractional values use the numeric tolerance.
+// Note also that bools are NOT numeric in BeJs, hence the separate isBool() branch first. Object
+// comparison is key-order-independent, which is required because RapidJson preserves insertion
+// order.
 static bool jsonValuesEqual(BeJsConst lhs, BeJsConst rhs)
     {
     if (lhs.isNull())

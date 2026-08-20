@@ -1132,9 +1132,7 @@ TEST_F(NodesCacheTests, LocateNode_LocatesCustomNode)
 
 #ifdef wip_ruleset_variables
 // NOTE: this block has not compiled for a long time - UserSettingEntry no longer exists anywhere
-// in the tree. The Json::Value literals were nevertheless converted to BeJsDocument so that
-// re-enabling it does not reintroduce JsonCpp. BeJs types are handles with no value constructors,
-// hence the named documents.
+// in the tree. BeJs types are handles with no value constructors, hence the named documents.
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/

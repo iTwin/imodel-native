@@ -1188,9 +1188,9 @@ void AddEntry(ElementInputPropertyMap& map, DgnElementId elementId, Utf8String a
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TestEqual(BeJsConst json, ECValue value)
     {
-    // NOTE: RapidJson does not preserve JsonCpp's int/uint/real subtype distinction (BeJs offers
-    // only isNumeric()), so the numeric case is dispatched on the ECValue's type instead. Also,
-    // bools are NOT numeric in BeJs (JsonCpp counted them as integral), so isBool() comes first.
+    // NOTE: BeJs offers only isNumeric() - there is no int/uint/real subtype - so the numeric case
+    // is dispatched on the ECValue's type instead. Also, bools are NOT numeric in BeJs, so
+    // isBool() comes first.
     if (json.isBool())
         {
         ASSERT_EQ(json.asBool(), value.GetBoolean());
