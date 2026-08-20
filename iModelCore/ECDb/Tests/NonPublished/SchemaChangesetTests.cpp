@@ -247,7 +247,7 @@ TEST_F(SchemaChangesetTestFixture, ApplySchemaChangesetWithOrphanCustomAttribute
           </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, TestHelper(*b1).ImportSchema(schemaV1));
+    ASSERT_EQ(SchemaImportResult::OK, SchemaSyncTestFixture::ImportSchema(*b1, schemaV1));
     ASSERT_EQ(BE_SQLITE_OK, b1->PullMergePush("schema v1"));
     ASSERT_EQ(BE_SQLITE_OK, b2->PullMergePush("pull schema v1"));
 
@@ -260,7 +260,7 @@ TEST_F(SchemaChangesetTestFixture, ApplySchemaChangesetWithOrphanCustomAttribute
           </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, TestHelper(*b1).ImportSchema(schemaV2));
+    ASSERT_EQ(SchemaImportResult::OK, SchemaSyncTestFixture::ImportSchema(*b1, schemaV2));
 
     // ... and the same changeset carries orphan custom attribute rows, i.e. custom attributes applied to an
     // ECProperty (container type 992) which doesn't exist. Older versions of the software produced those when
@@ -325,7 +325,7 @@ TEST_F(SchemaChangesetTestFixture, ApplySchemaChangesetWithOrphanCustomAttribute
           </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(ERROR, TestHelper(*b2).ImportSchema(schemaV3)) << "Map validation must still reject orphan custom attribute rows on the schema import path";
+    ASSERT_EQ(SchemaImportResult::ERROR, SchemaSyncTestFixture::ImportSchema(*b2, schemaV3)) << "Map validation must still reject orphan custom attribute rows on the schema import path";
     bool reportedAsError = false;
     for (ReportedIssue const& issue : issueListener.m_issues)
         {
