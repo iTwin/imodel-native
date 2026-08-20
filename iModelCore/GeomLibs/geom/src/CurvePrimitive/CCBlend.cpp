@@ -17,9 +17,7 @@ double                  m_distanceA;
 double                  m_distanceB;
 bvector<BlendDetail> m_blends;
 
-CCBlendProcessor (BlendType blendType, double distanceA, double distanceB, bool extend = false) :
-    CurveCurveProcessor (NULL, 0.0),
-    m_blendType (blendType), m_distanceA (distanceA), m_distanceB (distanceB)
+CCBlendProcessor (BlendType blendType, double distanceA, double distanceB, bool extend = false) : CurveCurveProcessor(nullptr), m_blendType (blendType), m_distanceA (distanceA), m_distanceB (distanceB)
     {
     SetExtend (extend);
     }
@@ -77,23 +75,6 @@ bool       bReverseOrder
         m_blends.push_back (detail);
         parabola.ReleaseMem ();
         }
-    }
-
-bool validFraction (CurveLocationDetailCR detail, double fraction)
-    {
-    bool extensible0 = true;
-    bool extensible1 = true;
-    if (detail.componentIndex != 0)
-        extensible0 = false;
-    if (detail.componentIndex + 1 != detail.numComponent)
-        extensible1 = false;
-    if (!m_extend)
-        extensible0 = extensible1 = false;
-    if (fraction < 0.0 && !extensible0)
-        return false;
-    if (fraction > 1.0 && !extensible1)
-        return false;
-    return true;
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -166,8 +147,8 @@ bool bReverseOrder
                 segmentA.ProjectPoint (projectionOnA, projectionFractionA, tangentPointA);
                 segmentB.ProjectPoint (projectionOnB, projectionFractionB, tangentPointB);
 
-                if (   validFraction (detailA0, projectionFractionA)
-                   && validFraction (detailB0, projectionFractionB)
+                if (   ValidFraction (detailA0, projectionFractionA, GetExtendFlag (0, bReverseOrder))
+                   && ValidFraction (detailB0, projectionFractionB, GetExtendFlag (1, bReverseOrder))
                    )
                    {
                    GenerateBlendParabola (approachPointA,

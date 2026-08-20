@@ -169,7 +169,9 @@ describe("basic tests", () => {
       }
     })).to.throw("failed to resolve element from code");
 
-    expect(() => dgndb.resolveInstanceKey(null as any)).to.throw("invalid input");
+    // non-objects (including null) are now rejected by the argument check itself, before
+    // any attempt to read properties off them
+    expect(() => dgndb.resolveInstanceKey(null as any)).to.throw("must be an object");
 
     expect(() => dgndb.resolveInstanceKey({})).to.throw("must provide partialKey, federationGuid or");
   });

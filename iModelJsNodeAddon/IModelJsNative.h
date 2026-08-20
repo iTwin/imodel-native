@@ -60,13 +60,13 @@ USING_NAMESPACE_BENTLEY_EC
     }
 
 #define REQUIRE_ARGUMENT_ANY_OBJ(i, var)\
-    if (ARGUMENT_IS_NOT_PRESENT(i)) {\
+    if (ARGUMENT_IS_NOT_PRESENT(i) || !info[i].IsObject()) {\
         THROW_JS_TYPE_EXCEPTION("Argument " #i " must be an object")\
     }\
     Napi::Object var = info[i].As<Napi::Object>();
 
 #define REQUIRE_ARGUMENT_ANY_OBJ_ASYNC(i, var, deferred)\
-    if (ARGUMENT_IS_NOT_PRESENT(i)) {\
+    if (ARGUMENT_IS_NOT_PRESENT(i) || !info[i].IsObject()) {\
         REJECT_DEFERRED_AND_RETURN(deferred, "Argument " #i " must be an object")\
     }\
     Napi::Object var = info[i].As<Napi::Object>();
@@ -512,6 +512,8 @@ public:
     static DgnDbStatus GetElement(BeJsValue results, DgnDbR db, Napi::Object);
     static Napi::String InsertElement(DgnDbR db, Napi::Object props, Napi::Value options);
     static void UpdateElement(DgnDbR db, Napi::Object);
+    static void ChangeElementParent(DgnDbR db, Napi::Object props);
+    static void ChangeElementModel(DgnDbR db, Napi::Object props);
     static void DeleteElement(DgnDbR db, Utf8StringCR eidStr);
     static BulkDeleteElementsResult DeleteElements(DgnDbR dgndb, Napi::Array elementIds, Napi::Value deleteOptionsObj);
     static DgnDbStatus SimplifyElementGeometry(DgnDbR db, Napi::Object simplifyArgs);

@@ -55,6 +55,80 @@ TEST_F(ECSqlPragmasTestFixture, ecsql_ver)
     }
 
 //---------------------------------------------------------------------------------------
+// A pragma must execute its underlying logic against the data-source connection (the read-only
+// connection used to execute the statement), not the schema/parse connection. This mirrors regular
+// ECSQL, which prepares/steps against the data-source connection. In concurrent query the parse
+// connection is a shared schema-source connection that does NOT carry the executing connection's
+// synced attached databases, so running a pragma there would observe the wrong connection's state.
+//
+// PRAGMA db_list reports the attached databases of whichever connection runs it, so it is a direct,
+// observable proxy for which connection executed the pragma.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlPragmasTestFixture, pragma_runs_on_data_source_connection)
+    {
+    // A standalone ECDb file that will be attached as a table space to the data-source connection only.
+    BeFileName attachedECDbPath = ECDbTestFixture::BuildECDbPath("pragmaDataSourceAttached.ecdb");
+    if (attachedECDbPath.DoesPathExist())
+        ASSERT_EQ(BeFileNameStatus::Success, attachedECDbPath.BeDeleteFile());
+
+    {
+    ECDb attached;
+    ASSERT_EQ(BE_SQLITE_OK, attached.CreateNewDb(attachedECDbPath));
+    ASSERT_EQ(BE_SQLITE_OK, attached.SaveChanges());
+    attached.CloseDb();
+    }
+
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("pragmaDataSource.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    BeFileName mainFile(m_ecdb.GetDbFileName(), true);
+
+    // Two independent read-only connections to the SAME ECDb file. 'parseConn' plays the role of the
+    // shared schema-source connection (no attachments); 'dataSourceConn' plays the role of a worker
+    // connection that has an attached table space synced to it.
+    ECDb parseConn;
+    ASSERT_EQ(BE_SQLITE_OK, parseConn.OpenBeSQLiteDb(mainFile, Db::OpenParams(Db::OpenMode::Readonly)));
+
+    ECDb dataSourceConn;
+    ASSERT_EQ(BE_SQLITE_OK, dataSourceConn.OpenBeSQLiteDb(mainFile, Db::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(BE_SQLITE_OK, dataSourceConn.AttachDb(attachedECDbPath.GetNameUtf8().c_str(), "attached"));
+
+    // PRAGMA db_list columns: sno(0), alias(1), fileName(2), profile(3).
+    auto listsAttachedAlias = [](ECSqlStatement& stmt)
+        {
+        bool found = false;
+        while (BE_SQLITE_ROW == stmt.Step())
+            {
+            if (Utf8String(stmt.GetValueText(1)).EqualsIAscii("attached"))
+                found = true;
+            }
+        return found;
+        };
+
+    // Multi-threaded prepare: parse against parseConn, execute against dataSourceConn. The pragma must
+    // run on the data-source connection and therefore observe ITS attached 'attached' table space.
+    ECSqlStatement multiConnStmt;
+    ASSERT_EQ(ECSqlStatus::Success, multiConnStmt.Prepare(parseConn.Schemas(), dataSourceConn, "PRAGMA db_list"));
+    EXPECT_EQ(static_cast<Db const*>(&dataSourceConn), multiConnStmt.GetDataSourceDb())
+        << "pragma should be associated with the data-source connection";
+    EXPECT_TRUE(listsAttachedAlias(multiConnStmt))
+        << "PRAGMA db_list must run on the data-source connection, which has the 'attached' table space";
+
+    // Control: the parse connection has no attachment, so a single-connection db_list omits it. This is
+    // what the multi-connection statement would have reported if the pragma had (incorrectly) run on the
+    // parse connection.
+    ECSqlStatement parseConnStmt;
+    ASSERT_EQ(ECSqlStatus::Success, parseConnStmt.Prepare(parseConn, "PRAGMA db_list"));
+    EXPECT_FALSE(listsAttachedAlias(parseConnStmt))
+        << "the parse/schema-source connection has no 'attached' table space";
+
+    // Sanity: a single-connection db_list on the data-source connection lists it too.
+    ECSqlStatement dataSourceStmt;
+    ASSERT_EQ(ECSqlStatus::Success, dataSourceStmt.Prepare(dataSourceConn, "PRAGMA db_list"));
+    EXPECT_TRUE(listsAttachedAlias(dataSourceStmt));
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlPragmasTestFixture, experimental_features_enabled){
@@ -669,13 +743,14 @@ TEST_F(ECSqlPragmasTestFixture, schema_view_token_determinism_and_checksum_match
     }
     ASSERT_STREQ(token1.c_str(), token2.c_str()) << "schema_view token must be deterministic across calls";
 
-    // Get checksum from PRAGMA checksum(ecdb_schema) - must match schema_view's schemaToken
+    // schema_view's schemaToken column is the cheap schema-identity hash, so it must match
+    // PRAGMA checksum(schema_token) (and NOT PRAGMA checksum(ecdb_schema), which hashes full schema contents).
     {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA checksum(ecdb_schema)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA checksum(schema_token)"));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        Utf8CP checksumVal = stmt.GetValueText(0);
-        ASSERT_STREQ(token1.c_str(), checksumVal) << "schema_view schemaToken must match checksum(ecdb_schema)";
+        Utf8CP schemaTokenVal = stmt.GetValueText(0);
+        ASSERT_STREQ(token1.c_str(), schemaTokenVal) << "schema_view schemaToken must match PRAGMA checksum(schema_token)";
     }
 }
 
@@ -720,12 +795,247 @@ TEST_F(ECSqlPragmasTestFixture, schema_view_token_changes_after_schema_import) {
     }
     ASSERT_STRNE(tokenBefore.c_str(), tokenAfter.c_str()) << "schema_view token must change after schema import";
 
-    // checksum(ecdb_schema) must still match the new schema_view token
+    // PRAGMA checksum(schema_token) must still match the new schema_view token (both are the cheap
+    // schema-identity hash; the import bumped TestSchema 1.0.0 -> 1.0.1, so the hash changed).
     {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA checksum(ecdb_schema)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA checksum(schema_token)"));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        ASSERT_STREQ(tokenAfter.c_str(), stmt.GetValueText(0)) << "checksum(ecdb_schema) must match schema_view token after import";
+        ASSERT_STREQ(tokenAfter.c_str(), stmt.GetValueText(0)) << "PRAGMA checksum(schema_token) must match schema_view token after import";
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// PRAGMA checksum(schema_token) is the cheap cache-invalidation key: a hash of every schema's name
+// and version only. It must be deterministic across repeated calls, change whenever a schema is added
+// or its version bumped, and be read-only. This walks a small series of imports / minor-version
+// bumps, asking for the token repeatedly along the way.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlPragmasTestFixture, schema_token_reflects_schema_changes) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schema_token.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='SchemaOne' alias='s1' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "  <ECEntityClass typeName='Foo' modifier='None'>"
+        "    <ECProperty propertyName='Name' typeName='string' />"
+        "  </ECEntityClass>"
+        "</ECSchema>")));
+
+    // Reads PRAGMA checksum(schema_token), asserting a single well-formed non-empty string row.
+    auto readToken = [&]() -> Utf8String {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA checksum(schema_token)"));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        Utf8CP const t = stmt.GetValueText(0);
+        EXPECT_TRUE(t != nullptr && *t != '\0') << "schema_token must be a non-empty string";
+        Utf8String const token(t == nullptr ? "" : t);
+        EXPECT_EQ(BE_SQLITE_DONE, stmt.Step()) << "schema_token must return exactly one row";
+        return token;
+    };
+
+    // Deterministic: two back-to-back reads with no schema change are identical.
+    Utf8String const t0 = readToken();
+    ASSERT_STREQ(t0.c_str(), readToken().c_str()) << "schema_token must be deterministic across calls";
+
+    // Adding a new schema changes the token.
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='SchemaTwo' alias='s2' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "  <ECEntityClass typeName='Bar' modifier='None'>"
+        "    <ECProperty propertyName='Value' typeName='int' />"
+        "  </ECEntityClass>"
+        "</ECSchema>")));
+    Utf8String const t1 = readToken();
+    ASSERT_STRNE(t0.c_str(), t1.c_str()) << "schema_token must change when a schema is added";
+    ASSERT_STREQ(t1.c_str(), readToken().c_str()) << "schema_token must be stable when nothing changed";
+
+    // Bumping a schema's minor version changes the token.
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='SchemaTwo' alias='s2' version='1.0.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "  <ECEntityClass typeName='Bar' modifier='None'>"
+        "    <ECProperty propertyName='Value' typeName='int' />"
+        "    <ECProperty propertyName='Extra' typeName='string' />"
+        "  </ECEntityClass>"
+        "</ECSchema>")));
+    Utf8String const t2 = readToken();
+    ASSERT_STRNE(t1.c_str(), t2.c_str()) << "schema_token must change when a schema's version is bumped";
+
+    // Read-only: schema_token is a checksum key (func-style argument), so there is no valid
+    // assignment syntax for it - the grammar's '(val)' and '=val' forms are mutually exclusive,
+    // making 'checksum(schema_token)=1' a parse error rather than a reachable write.
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Status::InvalidECSql, stmt.Prepare(m_ecdb, "PRAGMA checksum(schema_token)=1"));
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// Note on fragment testing scope: the schema_view / schema_view_fragment blob is an internal
+// contract between this C++ writer and the TypeScript reader, and it flows in one direction only.
+// Re-implementing the reader here to peek at the blob's internals would duplicate that contract and
+// rot. So the native tests stay rough - they assert the pragma produces a well-formed row and that
+// bad input is rejected. The content-level guarantees (no-leakage, exactly which schemas/classes
+// land in a view, cross-schema reference resolution) are verified in TypeScript against a live
+// iModel, where the blob is consumed by its real reader.
+//+---------------+---------------+---------------+---------------+---------------+------
+
+//---------------------------------------------------------------------------------------
+// Returns the ec_Schema.Id (== meta.ECSchemaDef.ECInstanceId) of a schema by name, or 0 if absent.
+//+---------------+---------------+---------------+---------------+---------------+------
+static int64_t GetSchemaIdByName(ECDbR ecdb, Utf8CP name) {
+    ECSqlStatement stmt;
+    if (ECSqlStatus::Success != stmt.Prepare(ecdb, "SELECT ECInstanceId FROM meta.ECSchemaDef WHERE Name=?"))
+        return 0;
+    stmt.BindText(1, name, IECSqlBinder::MakeCopy::Yes);
+    if (BE_SQLITE_ROW != stmt.Step())
+        return 0;
+    return stmt.GetValueInt64(0);
+}
+
+//---------------------------------------------------------------------------------------
+// Rough end-to-end check that the fragment pragma emits a single well-formed binary row for a
+// requested subset, and that asking for more schemas carries more data. Exactly which
+// schemas/classes land in the blob, and the no-leakage guarantee, are verified in TypeScript (see
+// the scope note above) - we do not decode the blob here.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlPragmasTestFixture, schema_view_fragment_returns_blob) {
+    // SchemaA references SchemaB and derives AClass from b:BBase; SchemaB also owns an unreferenced
+    // class. The mix gives the two-vs-one size comparison something to measure.
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schema_view_fragment.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='SchemaB' alias='b' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "  <ECEntityClass typeName='BBase' modifier='Abstract' />"
+        "  <ECEntityClass typeName='BOther' modifier='None'>"
+        "    <ECProperty propertyName='BOtherProp' typeName='string' />"
+        "  </ECEntityClass>"
+        "</ECSchema>")));
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='SchemaA' alias='a' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "  <ECSchemaReference name='SchemaB' version='1.0.0' alias='b' />"
+        "  <ECEntityClass typeName='AClass' modifier='None'>"
+        "    <BaseClass>b:BBase</BaseClass>"
+        "    <ECProperty propertyName='AProp' typeName='string' />"
+        "  </ECEntityClass>"
+        "</ECSchema>")));
+
+    int64_t const idA = GetSchemaIdByName(m_ecdb, "SchemaA");
+    int64_t const idB = GetSchemaIdByName(m_ecdb, "SchemaB");
+    ASSERT_GT(idA, 0);
+    ASSERT_GT(idB, 0);
+
+    // Returns the length of the (base64 text) "data" column for a fragment request, asserting it is
+    // a single well-formed binary row along the way.
+    auto fragmentDataLen = [&](Utf8StringCR nameList) -> size_t {
+        Utf8String const sql = Utf8PrintfString("PRAGMA schema_view_fragment('%s')", nameList.c_str());
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql.c_str())) << sql.c_str();
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_STREQ("binary", stmt.GetValueText(0));
+        EXPECT_EQ(1, stmt.GetValueInt(1)); // formatVersion
+        Utf8CP const data = stmt.GetValueText(2);
+        EXPECT_TRUE(data != nullptr && *data != '\0') << "fragment blob must be non-empty";
+        size_t const len = data == nullptr ? 0 : strlen(data);
+        EXPECT_EQ(BE_SQLITE_DONE, stmt.Step()) << "fragment pragma must return exactly one row";
+        return len;
+    };
+
+    // Asking for both schemas must carry more data as asking for one - a coarse proxy
+    // that the request set actually drives what the blob holds. Exact contents are a TS concern.
+    size_t const lenA = fragmentDataLen("SchemaA");
+    size_t const lenAB = fragmentDataLen("SchemaA,SchemaB");
+    EXPECT_GT(lenAB, lenA);
+
+    // Names are matched case-insensitively and duplicates are de-duplicated, not rejected.
+    EXPECT_EQ(fragmentDataLen("schemaa"), lenA);
+    EXPECT_EQ(fragmentDataLen("SchemaA,schemaA"), lenA);
+}
+
+//---------------------------------------------------------------------------------------
+// The optional leading 'v<N>;' token selects the blob format version; omitting it means latest.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlPragmasTestFixture, schema_view_fragment_version_prefix) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schema_view_fragment_ver.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "  <ECEntityClass typeName='Foo' modifier='None'>"
+        "    <ECProperty propertyName='Name' typeName='string' />"
+        "  </ECEntityClass>"
+        "</ECSchema>")));
+
+    int64_t const id = GetSchemaIdByName(m_ecdb, "TestSchema");
+    ASSERT_GT(id, 0);
+
+    { // explicit 'v1;' prefix succeeds and reports format version 1
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA schema_view_fragment('v1;TestSchema')"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("binary", stmt.GetValueText(0));
+        ASSERT_EQ(1, stmt.GetValueInt(1)); // formatVersion
+        Utf8CP const data = stmt.GetValueText(2);
+        ASSERT_TRUE(data != nullptr && *data != '\0') << "fragment blob must be non-empty";
+    }
+
+    { // no prefix defaults to latest, also version 1
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA schema_view_fragment('TestSchema')"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(1, stmt.GetValueInt(1));
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// Malformed argument strings fail the pragma rather than emitting a partial or wrong blob.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlPragmasTestFixture, schema_view_fragment_invalid_arguments) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schema_view_fragment_invalid.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "  <ECEntityClass typeName='Foo' modifier='None'>"
+        "    <ECProperty propertyName='Name' typeName='string' />"
+        "  </ECEntityClass>"
+        "</ECSchema>")));
+
+    int64_t const id = GetSchemaIdByName(m_ecdb, "TestSchema");
+    ASSERT_GT(id, 0);
+
+    auto expectPrepareFails = [&](Utf8CP sql) {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Status::SQLiteError, stmt.Prepare(m_ecdb, sql)) << sql;
+    };
+
+    expectPrepareFails("PRAGMA schema_view_fragment('')");            // empty list
+    expectPrepareFails("PRAGMA schema_view_fragment('NoSuchSchema')"); // non-existent schema name
+    expectPrepareFails("PRAGMA schema_view_fragment('v1;')");         // version present, empty list
+    expectPrepareFails("PRAGMA schema_view_fragment('v;TestSchema')"); // malformed version token (no digits)
+    expectPrepareFails("PRAGMA schema_view_fragment('vx;TestSchema')"); // malformed version token (non-digit)
+    expectPrepareFails("PRAGMA schema_view_fragment('v99;TestSchema')"); // unsupported version
+    expectPrepareFails("PRAGMA schema_view_fragment('123')");         // decimal id, no longer a valid ECName argument
+    expectPrepareFails("PRAGMA schema_view_fragment('Bad Name')");    // space is not valid in an ECName
+    expectPrepareFails("PRAGMA schema_view_fragment(1)");             // integer argument, not a string
+    expectPrepareFails("PRAGMA schema_view_fragment=2");              // assignment form is read-only
+
+    { // sanity: the valid name alone prepares and returns a row
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA schema_view_fragment('TestSchema')"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    }
+
+    { // duplicate names are intentionally de-duplicated, not rejected: same name twice still prepares
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA schema_view_fragment('TestSchema,TestSchema')"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    }
+
+    { // a trailing comma is tolerated: Split skips empty tokens, so only the real name remains
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA schema_view_fragment('TestSchema,')"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     }
 }
 

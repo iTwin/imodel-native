@@ -1,0 +1,16 @@
+{
+  "name": "imodel-native-openssl",
+  "version": "1.0.0",
+  "dependencies": [
+    {
+      "name": "openssl",
+      "version>=": "3.6.3"
+    }
+  ],
+  "overrides": [
+    {
+      "name": "openssl",
+      "version": "3.6.3"
+    }
+  ]
+}

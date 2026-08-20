@@ -10,6 +10,9 @@
 
     <!-- Bind my own VendorAPI into BuildContext/VendorAPI. Note that this part does not cause any sub-part VendorAPI to be bound. I also delivery my license notice. -->
     <Part Name="__PublicAPI" BentleyBuildMakeFile="BeOpenSSL.prewire.mke">
+        <!-- The chain runs static-only; force Static here too so the prewire never triggers a
+            concurrent dynamic chain run, regardless of how __PublicAPI is reached. -->
+        <SubPart PartName="vcpkg_install_openssl" PartFile="iModelCore/libsrc/vcpkg" LibType="Static"/>
         <Bindings>
             <VendorAPI Domain="openssl" />
             <VendorNotices>Delivery/openssl-license.txt</VendorNotices>
@@ -18,6 +21,11 @@
 
     <!-- NOTE: Graphite uses "G" as a library suffix to disambiguate from Vancouver libraries -->
     <Part Name="__Library" BentleyBuildMakeFile="BeOpenSSL.mke">
+        <!-- __PublicAPI delivers headers; LibType="Static" ensures the static chain
+            completes before this part runs. Both static and dynamic consumer mke
+            files read from the static install root — no second vcpkg invocation. -->
+        <SubPart PartName="__PublicAPI" LibType="Static"/>
+        <SubPart PartName="vcpkg_install_openssl" PartFile="iModelCore/libsrc/vcpkg" LibType="Static"/>
         <Bindings>
             <Libs IfNotPresent="Continue">Delivery/$(stlibprefix)iTwinOpenSSL$(stlibdebugext)</Libs>
             <Libs>Delivery/$(libprefix)iTwinOpenSSL$(libext)</Libs>
@@ -26,7 +34,6 @@
     </Part>
 
     <Part Name="Library">
-        <SubPart PartName="__PublicAPI" LibType="Static"/>
         <SubPart PartName="__Library"/>
     </Part>
 

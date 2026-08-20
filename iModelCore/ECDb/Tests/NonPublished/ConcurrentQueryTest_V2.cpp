@@ -11,6 +11,9 @@ USING_NAMESPACE_BENTLEY_EC
 #include <queue>
 #include <thread>
 #include <memory>
+#include <mutex>
+#include <cstdio>
+#include <cstdlib>
 BEGIN_ECDBUNITTESTS_NAMESPACE
 using namespace std::chrono_literals;
 
@@ -40,6 +43,28 @@ struct CountFunc : BeSQLite::ScalarFunction {
     void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override { _rowCount++; }
     void Reset() { _rowCount = 0; }
     static CountFunc& Instance() {static CountFunc countFunc; return countFunc;}
+};
+
+// Records the id of the thread that executes it. The "imodel_" name prefix is required so that
+// the function is propagated to concurrent query worker connections (see
+// CachedConnection::GetPrimaryDbSqlFunctions).
+struct ThreadIdFunc : BeSQLite::ScalarFunction {
+    std::mutex m_mutex;
+    std::thread::id m_lastThreadId;
+    bool m_invoked = false;
+    ThreadIdFunc() : ScalarFunction("imodel_thread_id", 0){}
+    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override {
+        {
+            std::lock_guard<std::mutex> lk(m_mutex);
+            m_lastThreadId = std::this_thread::get_id();
+            m_invoked = true;
+        }
+        ctx.SetResultInt(1);
+    }
+    void Reset() { std::lock_guard<std::mutex> lk(m_mutex); m_invoked = false; m_lastThreadId = std::thread::id(); }
+    std::thread::id LastThreadId() { std::lock_guard<std::mutex> lk(m_mutex); return m_lastThreadId; }
+    bool Invoked() { std::lock_guard<std::mutex> lk(m_mutex); return m_invoked; }
+    static ThreadIdFunc& Instance() { static ThreadIdFunc f; return f; }
 };
 
 struct StressTest {
@@ -1349,6 +1374,347 @@ TEST_F(ConcurrentQueryFixture, ImportSchemaShouldClearQueryCache) {
         BeJsDocument resJson;
         res->ToJs(resJson, true);
         EXPECT_EQ(res->asJsonString(), "[[1]]");
+    });
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+// Reproduces the deadlock from https://github.com/iTwin/itwinjs-backlog/issues/2113
+// Thread A (main): sqlite3_step holds primary SQLite mutex, ExtractInstFunc fires,
+//   calls InstanceReader::GetOrAddClass -> Dispatcher::GetIterable -> needs ECDb mutex.
+// Thread B (worker): QueryAdaptorCache::TryGet holds ECDb mutex, ECSqlStatement::Prepare
+//   resolves schemas via SchemaPersistenceHelper::GetClassId -> sqlite3_bind_text on
+//   primary db -> needs primary SQLite mutex.
+// Without the fix, this test deadlocks (times out). With the fix, the worker uses its
+// own ECDb for schema resolution, avoiding the AB-BA lock ordering violation.
+//
+// NOTE: the deadlock window is probabilistic -- it relies on the OS scheduler interleaving
+// mainStepThread's sqlite3_step loop with a worker Prepare. On a single-core or lightly loaded
+// machine that interleaving may never happen, so a regressed build can pass here without the
+// watchdog firing. The test is therefore most reliable on multi-core CI.
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ConcurrentQueryFixture, DeadlockReproduction_MainStepVsWorkerPrepare) {
+    // Use a schema with a class hierarchy to ensure polymorphic queries trigger extract_inst
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("deadlock_repro.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8" ?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                <ECEntityClass typeName="Base">
+                    <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.02.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="Name" typeName="string" />
+                    <ECProperty propertyName="Value" typeName="int" />
+                </ECEntityClass>
+                <ECEntityClass typeName="DerivedA">
+                    <BaseClass>Base</BaseClass>
+                    <ECProperty propertyName="ExtraA" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="DerivedB">
+                    <BaseClass>Base</BaseClass>
+                    <ECProperty propertyName="ExtraB" typeName="double" />
+                </ECEntityClass>
+            </ECSchema>)xml")));
+
+    // Insert enough rows to keep the main thread stepping for a while
+    const int rowCount = 200;
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.DerivedA(Name,[Value],ExtraA) VALUES(?,?,?)"));
+        for (int i = 0; i < rowCount; ++i) {
+            stmt.Reset();
+            stmt.ClearBindings();
+            stmt.BindText(1, SqlPrintfString("NameA_%d", i).GetUtf8CP(), IECSqlBinder::MakeCopy::Yes);
+            stmt.BindInt(2, i);
+            stmt.BindText(3, SqlPrintfString("ExtraA_%d", i).GetUtf8CP(), IECSqlBinder::MakeCopy::Yes);
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+    }
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.DerivedB(Name,[Value],ExtraB) VALUES(?,?,?)"));
+        for (int i = 0; i < rowCount; ++i) {
+            stmt.Reset();
+            stmt.ClearBindings();
+            stmt.BindText(1, SqlPrintfString("NameB_%d", i).GetUtf8CP(), IECSqlBinder::MakeCopy::Yes);
+            stmt.BindInt(2, i + rowCount);
+            stmt.BindDouble(3, i * 1.5);
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+    }
+    m_ecdb.SaveChanges();
+
+    // Thread A: main thread steps through a polymorphic query using "$" syntax
+    // which triggers extract_inst -> InstanceReader::Seek -> GetOrAddClass -> Dispatcher::GetIterable (needs ECDb mutex)
+    // while holding the primary SQLite mutex (via sqlite3_step).
+    //
+    // Thread B: concurrent query workers prepare ECSQL on the same polymorphic class
+    // which, before the fix, would hold the ECDb mutex and then need the primary SQLite
+    // mutex for schema resolution.
+
+    std::atomic<bool> mainThreadDone{false};
+    std::atomic<int> mainThreadRows{0};
+    std::atomic<bool> mainThreadPrepareFailed{false};
+
+    // Start the concurrent query manager
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
+        // Launch a thread that simulates "Thread A" - stepping through extract_inst on main connection
+        auto mainStepThread = std::thread([&]() {
+            ECSqlStatement stmt;
+            // SELECT $ triggers extract_inst for each row (polymorphic - reads full instance)
+            auto status = stmt.Prepare(m_ecdb, "SELECT $ FROM ts.Base");
+            if (status != ECSqlStatus::Success) {
+                mainThreadPrepareFailed = true;
+                mainThreadDone = true;
+                return;
+            }
+            while (stmt.Step() == BE_SQLITE_ROW) {
+                mainThreadRows++;
+                // Small yield to increase interleaving chances
+                if (mainThreadRows % 10 == 0)
+                    std::this_thread::yield();
+            }
+            mainThreadDone = true;
+        });
+
+        // Meanwhile, enqueue multiple concurrent queries that require fresh prepare
+        // (use unique queries to avoid cache hits and force prepare on worker threads)
+        const int numConcurrentQueries = 20;
+        std::vector<QueryResponse::Future> futures;
+        for (int i = 0; i < numConcurrentQueries; ++i) {
+            // Each query is slightly different to bypass the statement cache and force a Prepare
+            auto ecsql = SqlPrintfString("SELECT Name, [Value] FROM ts.Base WHERE [Value] >= %d", i);
+            auto req = ECSqlRequest::MakeRequest(ecsql.GetUtf8CP());
+            futures.push_back(mgr.Enqueue(std::move(req)));
+        }
+
+        // Also enqueue polymorphic $ queries on the worker to maximize contention
+        for (int i = 0; i < numConcurrentQueries; ++i) {
+            auto ecsql = SqlPrintfString("SELECT $ FROM ts.Base WHERE [Value] >= %d", i);
+            auto req = ECSqlRequest::MakeRequest(ecsql.GetUtf8CP());
+            futures.push_back(mgr.Enqueue(std::move(req)));
+        }
+
+        // Watchdog: if the deadlock regresses, the worker threads stay stuck holding locks, so
+        // mainStepThread.join() (and the result collection below) would block forever. The only
+        // signal would then be the whole test run timing out -- slow and easy to blame on the wrong
+        // thing. The watchdog instead fails fast with a clear message. abort() is heavy-handed, but
+        // stuck threads can't be joined, so it is the only way out. On the success path testCompleted
+        // is set at the end of this block, after which the watchdog exits cleanly and is joined.
+        std::atomic<bool> testCompleted{false};
+        auto watchdog = std::thread([&]() {
+            const auto deadline = std::chrono::steady_clock::now() + 60s;
+            while (!testCompleted.load()) {
+                if (std::chrono::steady_clock::now() > deadline) {
+                    fprintf(stderr, "DEADLOCK DETECTED: main step vs worker prepare did not "
+                                    "complete within 60s (itwinjs-backlog#2113 regression).\n");
+                    fflush(stderr);
+                    std::abort();
+                }
+                std::this_thread::sleep_for(100ms);
+            }
+        });
+
+        // Wait for the main step thread to finish. If the deadlock regresses, this join blocks
+        // until the watchdog above aborts the process with a clear diagnostic.
+        mainStepThread.join();
+
+        // Collect all concurrent query results. Future::Get() blocks until each request
+        // completes; a regressed deadlock surfaces here (or in the join above) as a hang.
+        for (auto& future : futures) {
+            auto response = future.Get();
+            // All queries should succeed (not deadlock/timeout)
+            EXPECT_TRUE(response->GetStatus() == QueryResponse::Status::Done ||
+                        response->GetStatus() == QueryResponse::Status::Partial)
+                << "Concurrent query failed with status: " << (int)response->GetStatus()
+                << " error: " << response->GetError();
+        }
+
+        // Verify main thread completed and read all rows
+        EXPECT_TRUE(mainThreadDone.load());
+        EXPECT_FALSE(mainThreadPrepareFailed);
+        EXPECT_EQ(mainThreadRows.load(), rowCount * 2);
+
+        // No deadlock: disarm the watchdog and join it cleanly while testCompleted is still in scope.
+        testCompleted = true;
+        watchdog.join();
+    });
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+// Worker prepares resolve schemas against a dedicated, shared schema-source connection
+// (QueryAdaptorCache::TryGet) rather than each worker's own cold cache. This exercises that path
+// under concurrency: many distinct queries (each forcing a fresh prepare across the worker pool)
+// must return correct results without deadlocking, and a genuinely invalid ECSQL must still
+// surface a prepare error via the worker's-own-connection fallback instead of hanging or being
+// silently dropped.
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ConcurrentQueryFixture, SharedSchemaSource_ConcurrentPrepareCorrectness) {
+    auto testSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="Foo">
+                <ECProperty propertyName="I" typeName="int" />
+                <ECProperty propertyName="S" typeName="string" />
+            </ECEntityClass>
+        </ECSchema>)xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ConcurrentQuery_SharedSchemaSource.ecdb", testSchema));
+
+    const int rowCount = 100;
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Foo(I,S) VALUES(?,?)"));
+        for (int i = 0; i < rowCount; ++i) {
+            stmt.Reset();
+            stmt.ClearBindings();
+            stmt.BindInt(1, i);
+            stmt.BindText(2, SqlPrintfString("S_%d", i).GetUtf8CP(), IECSqlBinder::MakeCopy::Yes);
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+    }
+    m_ecdb.SaveChanges();
+
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
+        // Correctness: distinct queries prepared via the shared schema-source connection return the
+        // expected rows (WHERE I >= threshold over [0, rowCount) yields rowCount - threshold rows).
+        for (int threshold : {0, 25, 50, 99}) {
+            ECSqlReader reader(mgr, SqlPrintfString("SELECT I FROM ts.Foo WHERE I >= %d", threshold).GetUtf8CP());
+            int count = 0;
+            while (reader.Next())
+                ++count;
+            EXPECT_EQ(count, rowCount - threshold) << "threshold=" << threshold;
+        }
+
+        // Concurrency: many distinct queries forcing fresh prepares across the worker pool must all
+        // succeed and must not deadlock.
+        std::vector<QueryResponse::Future> futures;
+        for (int i = 0; i < 50; ++i)
+            futures.push_back(mgr.Enqueue(ECSqlRequest::MakeRequest(SqlPrintfString("SELECT S FROM ts.Foo WHERE I = %d", i).GetUtf8CP())));
+        for (auto& f : futures) {
+            auto response = f.Get();
+            EXPECT_TRUE(response->IsSuccess())
+                << "status: " << (int)response->GetStatus() << " error: " << response->GetError();
+        }
+
+        // Fallback error path: a genuinely invalid ECSQL fails to prepare against the shared
+        // schema-source connection and then against the worker's own connection, surfacing a prepare
+        // error (rather than hanging or returning success).
+        auto badResponse = mgr.Enqueue(ECSqlRequest::MakeRequest("SELECT DoesNotExist FROM ts.Foo")).Get();
+        EXPECT_TRUE(badResponse->IsError());
+        EXPECT_GE((int)badResponse->GetStatus(), (int)QueryResponse::Status::Error);
+    });
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+// The shared schema-source connection caches schemas across worker prepares. Its cache is never
+// cleared mid-flight; instead, any schema change on the primary routes through
+// ECDb::ClearECDbCache -> ConcurrentQueryMgr::Shutdown, which tears down (and later rebuilds) the
+// whole connection cache including the schema-source connection. This test pins down that invariant:
+// after importing a new schema, a worker query against the newly added class must succeed, proving
+// the schema-source connection was rebuilt and is not serving a stale cache.
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ConcurrentQueryFixture, SharedSchemaSource_SchemaChangeInvalidates) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ConcurrentQuery_SchemaChange.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="Foo">
+                <ECProperty propertyName="I" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    // Warm the shared schema-source cache with the original schema, and confirm a class that does not
+    // exist yet fails to prepare (against the schema-source connection and the worker fallback).
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
+        EXPECT_TRUE(mgr.Enqueue(ECSqlRequest::MakeRequest("SELECT I FROM ts.Foo")).Get()->IsSuccess());
+        EXPECT_TRUE(mgr.Enqueue(ECSqlRequest::MakeRequest("SELECT K FROM ts2.Bar")).Get()->IsError());
+    });
+
+    // Import a new schema. This routes through ECDb::ClearECDbCache -> ConcurrentQueryMgr::Shutdown,
+    // which tears down the (now stale) shared schema-source connection.
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="Bar">
+                <ECProperty propertyName="K" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+    m_ecdb.SaveChanges();
+
+    // The rebuilt schema-source connection must reflect the new schema: a worker query against the new
+    // class now prepares and runs (it would still fail if the shared cache were stale).
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
+        auto response = mgr.Enqueue(ECSqlRequest::MakeRequest("SELECT K FROM ts2.Bar")).Get();
+        EXPECT_TRUE(response->IsSuccess())
+            << "status: " << (int)response->GetStatus() << " error: " << response->GetError();
+    });
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+// Primary-connection requests must be executed synchronously on the caller thread (see
+// RunnableRequestQueue::Enqueue -> ExecuteSynchronously). They must NOT be dispatched to a
+// worker thread, because a worker preparing/executing against the primary connection while
+// holding the primary ECDb mutex reintroduces the worker/main-thread deadlock guarded against
+// in QueryExecutor's worker loop. This test pins down that routing invariant.
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ConcurrentQueryFixture, PrimaryConnectionRequestRunsOnCallerThread) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("primary_conn_thread.ecdb"));
+    m_ecdb.AddFunction(ThreadIdFunc::Instance());
+
+    const auto callerThreadId = std::this_thread::get_id();
+
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
+        // Primary-connection request: runs synchronously on the caller thread, never queued.
+        ThreadIdFunc::Instance().Reset();
+        {
+            auto req = ECSqlRequest::MakeRequest("WITH cnt(x) AS (VALUES(1)) SELECT imodel_thread_id() FROM cnt");
+            req->SetUsePrimaryConnection(true);
+            auto r = mgr.Enqueue(std::move(req)).Get();
+            ASSERT_EQ(r->GetStatus(), QueryResponse::Status::Done);
+            ASSERT_TRUE(ThreadIdFunc::Instance().Invoked());
+            EXPECT_EQ(ThreadIdFunc::Instance().LastThreadId(), callerThreadId)
+                << "primary-connection request must execute on the caller thread, not a worker thread";
+        }
+
+        // Non-primary request: dispatched to the worker queue and executed on a worker thread.
+        ThreadIdFunc::Instance().Reset();
+        {
+            auto req = ECSqlRequest::MakeRequest("WITH cnt(x) AS (VALUES(1)) SELECT imodel_thread_id() FROM cnt");
+            ASSERT_FALSE(req->UsePrimaryConnection()); // default routes to a worker thread
+            auto r = mgr.Enqueue(std::move(req)).Get();
+            ASSERT_EQ(r->GetStatus(), QueryResponse::Status::Done);
+            ASSERT_TRUE(ThreadIdFunc::Instance().Invoked());
+            EXPECT_NE(ThreadIdFunc::Instance().LastThreadId(), callerThreadId)
+                << "non-primary request must execute on a worker thread";
+        }
+    });
+
+    m_ecdb.RemoveFunction(ThreadIdFunc::Instance());
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+// Regression test: calling Future::Cancel() after the query has already completed must be a safe
+// no-op. The RunnableRequest backing the query is destroyed as soon as it completes
+// (CachedConnection::ClearRequest), but the Future (and its cancel callback) can outlive it. The
+// cancel callback must not dereference the freed request - it should look the request up by id and
+// find it already gone. Before the fix the callback captured the request by reference, so this was
+// a use-after-free.
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ConcurrentQueryFixture, CancelAfterCompletionIsSafe) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("cancel_after_complete.ecdb"));
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
+        auto future = mgr.Enqueue(ECSqlRequest::MakeRequest("WITH cnt(x) AS (VALUES(1)) SELECT x FROM cnt"));
+        auto r = future.Get(); // block until the request completes
+        ASSERT_EQ(r->GetStatus(), QueryResponse::Status::Done);
+        // Give the worker thread time to run ClearRequest() (which destroys the RunnableRequest)
+        // before we cancel, so this actually exercises the post-destruction path. The cancel
+        // callback captures the request id and queue pointer by value -- never the request -- so
+        // CancelRequest(id) stays a safe no-op once the request has left the queue.
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+        future.Cancel();
     });
 }
 

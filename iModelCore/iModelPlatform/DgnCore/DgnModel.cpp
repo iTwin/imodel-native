@@ -564,6 +564,56 @@ DgnDbStatus InformationModel::_OnInsertElement(DgnElementR element)
     return element.IsInformationContentElement() ? T_Super::_OnInsertElement(element) : DgnDbStatus::WrongModel;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometricModel3d::_ValidateElementForModel(DgnElementCR element) const
+    {
+    auto geom = element.ToGeometrySource();
+    return (geom && !geom->Is3d()) ? DgnDbStatus::Mismatch2d3d : DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometricModel2d::_ValidateElementForModel(DgnElementCR element) const
+    {
+    auto geom = element.ToGeometrySource();
+    return (geom && !geom->Is2d()) ? DgnDbStatus::Mismatch2d3d : DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus SpatialLocationModel::_ValidateElementForModel(DgnElementCR element) const
+    {
+    return dynamic_cast<PhysicalElement const*>(&element) ? DgnDbStatus::WrongModel : DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus InformationModel::_ValidateElementForModel(DgnElementCR element) const
+    {
+    return element.IsInformationContentElement() ? DgnDbStatus::Success : DgnDbStatus::WrongModel;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GroupInformationModel::_ValidateElementForModel(DgnElementCR element) const
+    {
+    return (nullptr != dynamic_cast<GroupInformationElement const*>(&element)) ? DgnDbStatus::Success : DgnDbStatus::WrongModel;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus InformationRecordModel::_ValidateElementForModel(DgnElementCR element) const
+    {
+    return (nullptr != dynamic_cast<InformationRecordElement const*>(&element)) ? DgnDbStatus::Success : DgnDbStatus::WrongModel;
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

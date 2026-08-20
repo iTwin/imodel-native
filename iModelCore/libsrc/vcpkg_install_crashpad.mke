@@ -1,0 +1,25 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+# vcpkg_install_crashpad.mke - Run vcpkg install for the crashpad manifest.
+# This mke is part of the sequential vcpkg install chain in vcpkg.PartFile.xml so that
+# only one vcpkg process runs at a time.
+#---------------------------------------------------------------------------------------------
+
+%include mdl.mki
+
+crashpadDir = $(_MakeFilePath)crashpad
+installRoot = $(OutputRootDir)vcpkg_installed/crashpad
+
+# This library's base triplet sets explicit -RTC flags, so use the veracode overlay
+# triplet (which omits them) for veracode builds.
+vcpkgUseVeracodeTriplet = 1
+%include $(_MakeFilePath)vcpkg.mki
+
+always:
+%if defined (winNT)
+    powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$(_MakeFilePath)vcpkg_run_install.ps1" "$(crashpadDir)" "$(installRoot)" "$(vcpkgTriplet)"
+%else
+    $(_MakeFilePath)vcpkg_run_install.sh $(crashpadDir) $(installRoot) $(vcpkgTriplet)
+%endif

@@ -3960,7 +3960,7 @@ bool DEllipse3d::IsCCWSweepXY () const
 /*-----------------------------------------------------------------*//**
 @bsimethod
 +----------------------------------------------------------------------*/
-bool DEllipse3d::IsCircularXY () const { double r; return IsCircular (r);}
+bool DEllipse3d::IsCircularXY () const { double r; return IsCircularXY (r);}
 
 /*-----------------------------------------------------------------*//**
 @bsimethod

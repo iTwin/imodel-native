@@ -845,19 +845,13 @@ TEST(CCI,RangeCheck)
                     }
                 Check::True(numMatch > 0, "Expected intersection point found by closest approach");
                 }
-/*
-auto pointsOnAXY = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
-            auto pointsOnBXY = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
-
-            CurveCurve::IntersectionsXY (*pointsOnAXY, *pointsOnBXY, line.get (), arc.get (), nullptr, false);
-            printf("\n     CurveCurve::IntersectionsXY counts %d %d \n", (int)pointsOnAXY->size(), (int)pointsOnBXY->size());
-*/
             Check::EndScope ();
             }
         Check::EndScope ();
         }
     Check::SetMaxVolume (v);
     }
+
 #ifdef CompileCCADebugTracking
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 GEOMDLLIMPEXP void SetCCADebug(int value);

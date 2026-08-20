@@ -1,0 +1,27 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+# vcpkg_install_openssl.mke - Run vcpkg install for the openssl manifest.
+# This mke is part of the sequential vcpkg install chain in vcpkg.PartFile.xml so that
+# only one vcpkg process runs at a time.
+#---------------------------------------------------------------------------------------------
+
+%include mdl.mki
+
+opensslDir  = $(_MakeFilePath)openssl
+installRoot = $(OutputRootDir)vcpkg_installed/openssl
+
+# OpenSSL on Windows uses the dynamic-CRT static triplet (x64-windows-static-md) to match
+# the Bentley build's /MD runtime. Mirror the override from BeOpenSSL.mke and prewire.mke.
+%if $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
+    vcpkgWindowsMDCRT = 1
+%endif
+%include $(_MakeFilePath)vcpkg.mki
+
+always:
+%if defined (winNT)
+    powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$(_MakeFilePath)vcpkg_run_install.ps1" "$(opensslDir)" "$(installRoot)" "$(vcpkgTriplet)"
+%else
+    $(_MakeFilePath)vcpkg_run_install.sh $(opensslDir) $(installRoot) $(vcpkgTriplet)
+%endif

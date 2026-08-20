@@ -637,7 +637,10 @@ BentleyStatus ClassMap::Update(SchemaImportContext& ctx)
         {
         PropertyMap const* propMap = DbMappingManager::Classes::MapProperty(ctx, *this, *property);
         if (propMap == nullptr)
+            {
+            LOG.errorv("Failed to map property '%s.%s' while updating the class map during schema import.", m_ecClass.GetFullName(), property->GetName().c_str());
             return ERROR;
+            }
 
         if (!propMap->IsData())
             {
