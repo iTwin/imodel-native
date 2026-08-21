@@ -722,10 +722,6 @@ export declare namespace IModelJsNative {
     public importSchemasDuringSemanticRebase(schemaFileNames: string[], options?: SchemaImportOptions): void;
     public importSchemas(schemaFileNames: string[], options?: SchemaImportOptions): DbResult;
     public importXmlSchemas(serializedXmlSchemas: string[], options?: SchemaImportOptions): DbResult;
-    /** @not-used-by-itwinjs-core No native implementation is registered for this method, so calling it fails at
-     * runtime. DgnPlatform has `IsBulkOperation`, but it was never bridged through N-API.
-     */
-    public inBulkOperation(): boolean;
     public inlineGeometryPartReferences(): InlineGeometryPartsResult;
     public insertCodeSpec(name: string, jsonProperties: CodeSpecProperties): Id64String;
     public insertElement(elemProps: ElementProps, options?: { forceUseId?: boolean }): Id64String;
@@ -854,22 +850,6 @@ export declare namespace IModelJsNative {
     public static getGeographicCRSInterpretation(props: GeographicCRSInterpretRequestProps): GeographicCRSInterpretResponseProps;
     public static getListOfCRS(extent?: Range2dProps, includeWorld?: boolean, unit?: string): Array<{ name: string, description: string, deprecated: boolean, crsExtent: Range2dProps, unit: string }>;
     public static getAvailableUnitNames(): string[];
-  }
-
-  /**
-   * RevisionUtility help with debugging and testing
-   * @internal
-   */
-  class RevisionUtility {
-    constructor();
-    public static assembleRevision(targetFile: string, rawChangesetFile: string, prefixFile?: string, lzmaPropsJson?: string): BentleyStatus;
-    public static computeStatistics(sourceFile: string, addPrefix: boolean): string;
-    public static disassembleRevision(sourceFile: string, targetDir: string): BentleyStatus;
-    /** @not-used-by-itwinjs-core */
-    public static dumpChangesetToDb(sourceFile: string, dbFile: string, includeCols: boolean): BentleyStatus;
-    public static getUncompressSize(sourceFile: string): string;
-    public static normalizeLzmaParams(lzmaPropsJson?: string): string;
-    public static recompressRevision(sourceFile: string, targetFile: string, lzmaPropsJson?: string): BentleyStatus;
   }
 
   /**
