@@ -70,42 +70,6 @@
 #include "test_sqllog.c"
 #endif
 
-#if !defined (NDEBUG)
-/*---------------------------------------------------------------------------------**//**
-* Logs every prepared statement on this connection that has been stepped but not yet reset
-* or finalized, along with its state, and returns SQLITE_ERROR if any were found, SQLITE_OK
-* otherwise. Such statements still hold locks on the table/db and are a common cause of a
-* failed commit or close, after which it is unclear whether the transaction was committed.
-* A prepared-but-not-stepped statement (e.g. one sitting in the statement cache) holds no
-* lock and is therefore not reported.
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-int checkNoActiveStatements(sqlite3* db)
-    {
-    Vdbe* stmt;
-    int found = 0;
-
-    // A prepared statement is internally a Vdbe; sqlite3_stmt is just its opaque public handle.
-    // The casts cross that public/private boundary and mirror what SQLite does internally.
-    for (stmt = db->pVdbe; stmt != NULL; stmt = (Vdbe*)sqlite3_next_stmt(db, (sqlite3_stmt*)stmt))
-        {
-        const char* state;
-        if (stmt->eVdbeState == VDBE_RUN_STATE)
-            state = "stepped, more rows to go";
-        else if (stmt->eVdbeState == VDBE_HALT_STATE)
-            state = "stepped to end, not finalized";
-        else
-            continue; // not stepped or still under construction: holds no lock
-
-        sqlite3_log(SQLITE_BUSY, "Unfinalized statement (%s): %s", state, stmt->zSql);
-        found = 1;
-        //assert(0);
-        }
-
-    return found ? SQLITE_ERROR : SQLITE_OK;
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
