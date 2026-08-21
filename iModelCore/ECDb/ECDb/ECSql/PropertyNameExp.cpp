@@ -202,10 +202,18 @@ ECSqlTypeInfo PropertyNameExp::GetTypeInfoFromPropertyRef() const {
         if(childExp == &derivedProperty)
             break;
     }
+    if (colIdx < 0)
+        return typeInfo;
+
     ECSqlTypeInfo resolvedTypeInfo;
     for (auto stmtIdx = 0; stmtIdx < flatList.size(); ++stmtIdx) {
-        BeAssert(flatList[stmtIdx]->GetSelection()->GetChildren().Get<DerivedPropertyExp>(colIdx) != nullptr && "Programmer Error: All the select statements in the compound statement are expected to have the same number of columns in their select clause");
-        auto stmtTypeInfo = flatList[stmtIdx]->GetSelection()->GetChildren().Get<DerivedPropertyExp>(colIdx)->GetExpression()->GetTypeInfo();
+        // The select clauses of a compound statement may have a different number of columns. This is an error which is
+        // only reported later during preparation, so the column index must not be assumed to be valid here.
+        auto const* derivedProp = flatList[stmtIdx]->GetSelection()->GetChildren().Get<DerivedPropertyExp>((size_t) colIdx);
+        if (derivedProp == nullptr || derivedProp->GetExpression() == nullptr)
+            continue;
+
+        auto stmtTypeInfo = derivedProp->GetExpression()->GetTypeInfo();
         // try to find non-null type info
         if (resolvedTypeInfo.IsUnset() || resolvedTypeInfo.IsNull() && !stmtTypeInfo.IsNull()) {
             resolvedTypeInfo = stmtTypeInfo;

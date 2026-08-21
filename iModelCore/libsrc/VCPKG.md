@@ -16,10 +16,12 @@ To add a new library:
 
 1. Update `iModelCore/libsrc/README.md` — add a row to the library table with the directory, library name, initial version, and `Yes` in the vcpkg column.
 2. Create a subdirectory (e.g. `mylib/`) containing `vcpkg.json`, `vcpkg-configuration.json`, and any custom triplet files under `mylib/triplets/`. See `./compress/` for examples.
-3. Add a new `vcpkg_install_mylib.mke` in `libsrc/` (next to the other `vcpkg_install_*.mke` files) that calls `vcpkg_run_install.ps1`/`vcpkg_run_install.sh` for that manifest directory.
-4. Add a `vcpkg_install_mylib` part to [vcpkg.PartFile.xml](vcpkg.PartFile.xml), with `<SubPart PartName="vcpkg_install_<previous>" LibType="Static"/>` to preserve sequential ordering. Appending at the end of the chain is the simplest choice, but the only requirement is that the chain stays **linear** — position does not affect correctness, since each consumer depends on its own named part. A more basic/foundational library (e.g. a compression or image codec that other libraries build on) may read more naturally inserted earlier in the chain; if you insert mid-chain, re-parent the following link onto the new part and update the sibling `.mke` "Runs after vcpkg_install_<prev>…" comment on every link whose predecessor changed. The `LibType="Static"` is required — the chain runs static-only, so without it a dynamic build pass could run this chain part concurrently with the static one and collide on `vcpkg-running.lock`.
-5. In your library's PartFile, depend on `vcpkg_install_mylib` (from `iModelCore/libsrc/vcpkg`) instead of the bare `vcpkg` part.
-6. In your library's `.mke`, include [`vcpkg.mki`](./vcpkg.mki) to get the `vcpkgTriplet` variable, then consume the already-installed outputs from `$(OutputRootDir)vcpkg_installed/mylib/`. Do **not** call `vcpkg_run_install` from the `.mke` — the install was already performed by step 3. This path is only correct for **static** builds; for libraries with both static and dynamic deliverables, gate the path with `CREATE_STATIC_LIBRARIES` so dynamic builds read from the static chain's output:
+3. Create `vcpkg-mend.json` beside the manifest with the triplet graph or graphs whose union downloads every upstream source used by that consumer. Every listed triplet must have a matching `triplets/<triplet>.cmake`. These runs use `--only-downloads`, so a triplet does not need to match the host that runs Mend; it selects manifest conditions and platform-specific portfile download branches without compiling for that platform. Prefer one graph when it is a source superset of the others; for example, curl uses only `x64-linux` because that graph includes the common curl/OpenSSL/zlib sources plus conditional c-ares, even though the Mend job runs on Windows. Add multiple triplets when platform-specific portfile branches download different sources.
+4. Add a new `vcpkg_install_mylib.mke` in `libsrc/` (next to the other `vcpkg_install_*.mke` files) that calls `vcpkg_run_install.ps1`/`vcpkg_run_install.sh` for that manifest directory.
+5. Add a `vcpkg_install_mylib` part to [vcpkg.PartFile.xml](vcpkg.PartFile.xml), with `<SubPart PartName="vcpkg_install_<previous>" LibType="Static"/>` to preserve sequential ordering. Appending at the end of the chain is the simplest choice, but the only requirement is that the chain stays **linear** — position does not affect correctness, since each consumer depends on its own named part. A more basic/foundational library (e.g. a compression or image codec that other libraries build on) may read more naturally inserted earlier in the chain; if you insert mid-chain, re-parent the following link onto the new part and update the sibling `.mke` "Runs after vcpkg_install_<prev>…" comment on every link whose predecessor changed. The `LibType="Static"` is required — the chain runs static-only, so without it a dynamic build pass could run this chain part concurrently with the static one and collide on `vcpkg-running.lock`.
+6. Add `vcpkg_install_mylib` to the `vcpkg_install_all` aggregate in that same PartFile so the shared binary-cache warmer includes it. Mend discovers manifests independently and requires the sibling `vcpkg-mend.json` from step 3.
+7. In your library's PartFile, depend on `vcpkg_install_mylib` (from `iModelCore/libsrc/vcpkg`) instead of the bare `vcpkg` part.
+8. In your library's `.mke`, include [`vcpkg.mki`](./vcpkg.mki) to get the `vcpkgTriplet` variable, then consume the already-installed outputs from `$(OutputRootDir)vcpkg_installed/mylib/`. Do **not** call `vcpkg_run_install` from the `.mke` — the install was already performed by step 4. This path is only correct for **static** builds; for libraries with both static and dynamic deliverables, gate the path with `CREATE_STATIC_LIBRARIES` so dynamic builds read from the static chain's output:
 
    ```makefile
    %if defined (CREATE_STATIC_LIBRARIES)
@@ -181,6 +183,61 @@ This avoids accidental use of the bundled root when `vcvars` or Developer Comman
 - All `vcpkg install` calls are driven by a sequential chain of parts in [vcpkg.PartFile.xml](vcpkg.PartFile.xml) (`vcpkg_install_compress` → `vcpkg_install_png` → `vcpkg_install_pugixml` → `vcpkg_install_openssl` → `vcpkg_install_curl` → `vcpkg_install_crashpad`), each blocked on the previous one completing. This prevents concurrent `vcpkg` processes from colliding on shared state.
 - Consumer `.mke` files (e.g. `Zlib.mke`, `BeOpenSSL.mke`, `png.mke`, `pugixml.mke`, `BeCurl.mke`) depend on their corresponding chain part and only consume the already-installed outputs — they do not call `vcpkg_run_install` themselves.
 - **Binary cache resolution.** The install wrappers honor the `VCPKG_BINARY_SOURCES` environment variable. When it is **unset** (the default), vcpkg falls back to a **local** `files` archive cache under the per-user cache directory (see [Cache locations and environment overrides](#cache-locations-and-environment-overrides)), so a second build on the same machine restores instead of recompiling. When it is **set**, that value takes over completely — e.g. Bentley CI points it at an internal shared binary cache to publish/restore binaries across agents, and you can point it at your own vcpkg-supported backend. Setting it to `clear` disables all caching.
+
+### Mend source scans
+
+The Mend pipeline runs `vcpkg_download_mend_sources.ps1`, which recursively discovers every
+directory under `libsrc/` holding all three of `vcpkg.json`, `vcpkg-configuration.json`, and
+`vcpkg-mend.json`, and treats each one as a consumer. Anything else is skipped, so a vendored
+upstream tree that ships its own `vcpkg.json` cannot break discovery. A `vcpkg-mend.json` that is
+not beside the other two manifests is an error, since it can only be a misplaced copy of ours.
+
+A library that omits `vcpkg-mend.json` entirely would simply be skipped here, so the install
+wrappers refuse to run without one: `vcpkg_run_install.ps1` and `vcpkg_run_install.sh` both fail if
+the manifest directory has no `vcpkg-mend.json` with a non-empty `triplets` array. That check runs
+on every platform's normal build, so forgetting the file breaks the build of that library rather
+than silently dropping it from the scan.
+
+The `vcpkg_validate_mend` part additionally runs `vcpkg_download_mend_sources.ps1 -ValidateOnly` on
+Windows builds. That mode discovers and validates every manifest without downloading anything, and
+it gates the head of the install chain, so cross-consumer mistakes the wrappers cannot see — a
+misplaced `vcpkg-mend.json`, or a triplet with no matching `triplets/<triplet>.cmake` — fail a PR
+build instead of a Mend pipeline run.
+
+The script then invokes the normal vcpkg wrapper sequentially for each configured triplet and
+retains extracted sources under
+`$(SrcRoot)vcpkg_scan_sources/<manifest-relative-path>/<triplet>/buildtrees/<port>/src/`, inside
+Mend's filesystem scan root. Preserving the relative path prevents collisions between nested
+consumers with the same directory name. Binary caching is disabled for these runs.
+
+The Mend script requests this behavior through a single explicit wrapper option: `-MendScan` for
+`vcpkg_run_install.ps1`, or `--mend-scan` for `vcpkg_run_install.sh`. The wrappers translate it to
+vcpkg command line options — download-only, no binary cache, and no compiler tracking — so the
+orchestration script does not modify ambient vcpkg environment variables. The three go together:
+compiler tracking must be off because vcpkg otherwise probes the target triplet's compiler to hash
+it into the package ABI, which fails on a host that cannot compile for that triplet (for example
+the `x64-linux` scan run from the Windows Mend agent). The wrappers implement it by generating a
+triplet that includes the repo triplet and sets `VCPKG_DISABLE_COMPILER_TRACKING`, so the scan
+still uses the repo triplet's settings.
+
+Each consumer owns its platform coverage. Choose the smallest triplet set whose dependency and
+portfile branches cover the union of upstream source downloads used on supported platforms. A
+triplet need not match the Mend host because download-only mode resolves and extracts source without
+compiling for the selected target. A single source-superset graph is preferred; otherwise list
+multiple triplets. The script fails when a manifest lacks metadata, a configured overlay triplet
+does not exist, a download fails, or a port named in the manifest's `dependencies` **or**
+`overrides` has no extracted source in any configured graph. Checking `overrides` is what covers
+the transitively resolved ports — curl declares only `curl`, but its overrides pin `openssl`,
+`zlib`, and `c-ares`, so all four must materialize. The corollary is that the configured triplets
+must reach every pinned override: pinning a Windows-only port while listing only `x64-linux` would
+fail this check.
+
+Every consumer currently lists only `x64-linux`. That is a deliberate source-superset claim, not a
+default: the only platform-conditional downloads in the tree are curl's c-ares feature
+(`"osx | linux"`) and crashpad's `linux-syscall-support` fetch (Linux and Android only), and that
+graph performs both. Nothing enforces the claim, since the materialization check sees only the ports
+named in `dependencies` and `overrides`, so re-audit it whenever a manifest or a pinned version
+changes — an upstream bump can add a platform branch without any change on our side.
 
 ### Cache locations and environment overrides
 

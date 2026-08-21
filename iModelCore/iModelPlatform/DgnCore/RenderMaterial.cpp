@@ -287,7 +287,7 @@ BentleyStatus RenderingAsset::Relocate(DgnImportContext& context)
 DgnTextureId RenderingAsset::TextureMap::Relocate(DgnImportContext& context)
     {
     DgnTextureId thisId = GetTextureId();
-    return thisId.IsValid() ? DgnTexture::ImportTexture(context, thisId) : thisId;
+    return thisId.IsValid() ? context.RemapTextureId(thisId) : thisId;
     }
 
 //---------------------------------------------------------------------------------------
