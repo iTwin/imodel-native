@@ -8,7 +8,6 @@
 #include <GeomSerialization/GeomSerializationApi.h>
 #include <GeomSerialization/GeomLibsSerialization.h>
 #include <GeomSerialization/GeomLibsJsonSerialization.h>
-#include <json/value.h>
 
 BEGIN_UNNAMED_NAMESPACE
     BE_JSON_NAME(rawValue)
@@ -136,8 +135,8 @@ void ECJsonUtilities::Int64ToJson(BeJsValue json, int64_t int64Val, ECJsonInt64F
     switch (int64Format)
         {
         case ECJsonInt64Format::AsNumber:
-            if (int64Val < Json::Value::maxInt())
-                json = (Json::Int) int64Val;
+            if (int64Val < std::numeric_limits<int32_t>::max())
+                json = (int32_t) int64Val;
             else
                 json = (double) int64Val;
             return;
@@ -267,7 +266,7 @@ BentleyStatus ECJsonUtilities::JsonToPoint3d(DPoint3d& pt, BeJsConst json) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus ECJsonUtilities::PointCoordinateFromJson(double& coordinate, BeJsConst json, Json::StaticString const& coordinateKey) {
+BentleyStatus ECJsonUtilities::PointCoordinateFromJson(double& coordinate, BeJsConst json, Utf8CP coordinateKey) {
     if (!json.isObject())
         return ERROR;
 
@@ -282,14 +281,6 @@ BentleyStatus ECJsonUtilities::PointCoordinateFromJson(double& coordinate, BeJsC
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus ECJsonUtilities::IGeometryToJson(JsonValueR json, IGeometryCR geom)
-    {
-    return BentleyGeometryJson::TryGeometryToJsonValue(json, geom, false) ? SUCCESS : ERROR;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
 BentleyStatus ECJsonUtilities::IGeometryToIModelJson(BeJsValue json, IGeometryCR geom)
     {
     return IModelJson::TryGeometryToIModelJsonValue(json, geom) ? SUCCESS : ERROR;
@@ -298,7 +289,15 @@ BentleyStatus ECJsonUtilities::IGeometryToIModelJson(BeJsValue json, IGeometryCR
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-IGeometryPtr ECJsonUtilities::JsonToIGeometry(JsonValueCR json)
+BentleyStatus ECJsonUtilities::IGeometryToJson(BeJsValue json, IGeometryCR geom)
+    {
+    return BentleyGeometryJson::TryGeometryToJsonValue(json, geom, false) ? SUCCESS : ERROR;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+IGeometryPtr ECJsonUtilities::JsonToIGeometry(BeJsConst json)
     {
     bvector<IGeometryPtr> geometry;
     if (!BentleyGeometryJson::TryJsonValueToGeometry(json, geometry) || geometry.empty())
@@ -1003,9 +1002,7 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
             {
             if (jsonValue.isObject())
                 {
-                Json::Value tmp;
-                jsonValue.SaveTo(tmp);
-                IGeometryPtr geom = ECJsonUtilities::JsonToIGeometry(tmp);
+                IGeometryPtr geom = ECJsonUtilities::JsonToIGeometry(jsonValue);
                 if (geom == nullptr)
                     return ERROR;
 
@@ -1157,7 +1154,7 @@ StatusInt JsonEcInstanceWriter::WritePrimitiveValue(BeJsValue valueToPopulate, U
             if (koq)
                 BeAssert(false && "KOQ not yet support for this type");
 
-            Json::Value tmp;
+            BeJsDocument tmp;
             auto status =  ECJsonUtilities::IGeometryToIModelJson(tmp, *ecValue.GetIGeometry());
             if (status != SUCCESS)
                 return status;
@@ -1365,8 +1362,8 @@ StatusInt JsonEcInstanceWriter::WriteArrayPropertyValue(BeJsValue valueToPopulat
                 break;
 
             // write the primitive value
-            Json::Value val; // tricky - we have to use Json::Value because WritePrimitive creates an object but we only want one member
-            if (BSISUCCESS != (ixwStatus = WritePrimitiveValue(BeJsValue(val), typeString, ecValue, memberType, koq, casing)))
+            BeJsDocument val; // tricky - WritePrimitiveValue creates an object but we only want one member
+            if (BSISUCCESS != (ixwStatus = WritePrimitiveValue(val, typeString, ecValue, memberType, koq, casing)))
                 {
                 BeAssert(false);
                 return ixwStatus;
