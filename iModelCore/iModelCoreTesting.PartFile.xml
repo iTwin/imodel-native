@@ -24,7 +24,6 @@
         <SubPart PartName="RunGtest" PartFile="iModelCore/ECPresentation/ECPresentation" />
         <SubPart PartName="RunGtest" PartFile="iModelCore/GeomLibs/geomlibs" />
         <SubPart PartName="RunGtest" PartFile="iModelCore/Units/Units" />
-        <SubPart PartName="RunGtest" PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp.PartFile.xml" />
         <SubPart PartName="RunGtest" PartFile="iModelCore/GeoCoord/GeoCoord" />
         <SubPart PartName="RunGtest" PartFile="iModelCore/BRepCore/BRepCore" Repository="imodel-native-internal" />
         <!--
