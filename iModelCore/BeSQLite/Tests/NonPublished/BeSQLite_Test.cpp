@@ -264,8 +264,31 @@ protected:
         return Open(fileName, Db::OpenMode::Readonly);
     }
     static int GetRowCount(DbR db, Utf8CP tableName) {
+        if (!db.TableExists(tableName))
+            return 0;
+
         auto stmt = db.GetCachedStatement(SqlPrintfString("SELECT COUNT(*) FROM %s", tableName));
-        stmt->Step();
+        if (stmt == nullptr || stmt->Step() != BE_SQLITE_ROW)
+            return 0;
+
+        return stmt->GetValueInt(0);
+    }
+    // Returns the number of sqlite_stat1/sqlite_stat4 rows recorded for a specific user table
+    // (these stat tables can already contain rows for BeSQLite's own built-in tables, e.g.
+    // be_Prop/be_Local, so callers that care about a specific table should use this helper
+    // instead of GetRowCount, which returns the row count across all tables).
+    static int GetStatRowCountForTable(DbR db, Utf8CP statTableName, Utf8CP tableName) {
+        if (!db.TableExists(statTableName))
+            return 0;
+
+        auto stmt = db.GetCachedStatement(SqlPrintfString("SELECT COUNT(*) FROM %s WHERE tbl=?", statTableName));
+        if (stmt == nullptr)
+            return 0;
+
+        stmt->BindText(1, tableName, Statement::MakeCopy::No);
+        if (stmt->Step() != BE_SQLITE_ROW)
+            return 0;
+
         return stmt->GetValueInt(0);
     }
     static std::unique_ptr<BeSQLite::ChangeSet> Capture(DbR db, std::function<bool(DbR, void*)> task, void* userObj) {
@@ -368,7 +391,7 @@ TEST_F(BeSQliteTestFixture, WAL_basic_test) {
 
     // main db size should small as the all the above data was written in wal file.
     auto dbSize = getFileSize(dbFileName.c_str());
-    ASSERT_EQ(36864, dbSize);
+    ASSERT_EQ(40960, dbSize);
 
     // auto checkpoint will not happen as there is active reader db1
     stmt = nullptr;
@@ -379,7 +402,7 @@ TEST_F(BeSQliteTestFixture, WAL_basic_test) {
     db2->CloseDb();
 
     dbSize = getFileSize(dbFileName.c_str());
-    ASSERT_EQ(36864, dbSize);
+    ASSERT_EQ(40960, dbSize);
 
     // Perform an explicit checkpoint. Note this will only work if there are no active readers
     int pnLog = -1, pnCkpt = -1;
@@ -391,7 +414,7 @@ TEST_F(BeSQliteTestFixture, WAL_basic_test) {
 
     // After checkpoint the main db file must grow larger and WAL file is deleted
     dbSize = getFileSize(dbFileName.c_str());
-    ASSERT_EQ(6881280, dbSize);
+    ASSERT_EQ(6885376, dbSize);
 
     walFileSize = getFileSize(walFile.c_str());
     ASSERT_EQ(-1, walFileSize);
@@ -400,7 +423,7 @@ TEST_F(BeSQliteTestFixture, WAL_basic_test) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(BeSQliteTestFixture, sqlite_stat1)
+TEST_F(BeSQliteTestFixture, sqlite_stat1_and_stat4)
     {
     auto db1 = Create("first.db");
     ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("create table foo1(id integer primary key, a,b)"));
@@ -413,7 +436,6 @@ TEST_F(BeSQliteTestFixture, sqlite_stat1)
     ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("create unique index uidx_foo1_a_b on foo1(a)"));
     ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("create unique index uidx_foo2_a_b on foo2(a)"));
 
-
     ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("insert into foo1(id,a,b) values(1,'aa1','bb1')"));
     ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("insert into foo1(id,a,b) values(2,'aa2','bb2')"));
     ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("insert into foo1(id,a,b) values(3,'aa3','bb3')"));
@@ -424,10 +446,20 @@ TEST_F(BeSQliteTestFixture, sqlite_stat1)
     ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("insert into foo2(id,a,b) values(3,'aa3','bb3')"));
     ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("insert into foo3(id,a,b) values(1,'aa1','bb1')"));
 
+    // Creating a UNIQUE index causes SQLite to eagerly create (empty) sqlite_stat1/sqlite_stat4
+    // tables so it can track index selectivity; sqlite_stat2/sqlite_stat3 are never used together
+    // with STAT4, and both are superseded by it. Note that BeSQLite's own built-in tables (e.g.
+    // be_Prop/be_Local) already have UNIQUE indexes with data, so sqlite_stat1/sqlite_stat4 may
+    // already contain rows for *those* tables at this point - but not for our foo1/foo2/foo3
+    // tables, since ANALYZE has not run yet.
     ASSERT_TRUE(db1->TableExists("sqlite_stat1"));
     ASSERT_FALSE(db1->TableExists("sqlite_stat2"));
     ASSERT_FALSE(db1->TableExists("sqlite_stat3"));
-    ASSERT_FALSE(db1->TableExists("sqlite_stat4"));
+    ASSERT_TRUE(db1->TableExists("sqlite_stat4"));
+    ASSERT_EQ(0, GetStatRowCountForTable(*db1, "sqlite_stat1", "foo1"));
+    ASSERT_EQ(0, GetStatRowCountForTable(*db1, "sqlite_stat1", "foo2"));
+    ASSERT_EQ(0, GetStatRowCountForTable(*db1, "sqlite_stat4", "foo1"));
+    ASSERT_EQ(0, GetStatRowCountForTable(*db1, "sqlite_stat4", "foo2"));
 
     db1->SaveChanges();
     db1->CloseDb();
@@ -436,23 +468,60 @@ TEST_F(BeSQliteTestFixture, sqlite_stat1)
     db1 = OpenReadWrite("first.db");
     auto db2 = OpenReadWrite("second.db");
 
-    ASSERT_EQ(0, GetRowCount(*db1, "sqlite_stat1"));
-    ASSERT_EQ(0, GetRowCount(*db2, "sqlite_stat1"));
+    ASSERT_EQ(0, GetStatRowCountForTable(*db1, "sqlite_stat1", "foo1"));
+    ASSERT_EQ(0, GetStatRowCountForTable(*db2, "sqlite_stat1", "foo1"));
+    ASSERT_EQ(0, GetStatRowCountForTable(*db1, "sqlite_stat4", "foo1"));
+    ASSERT_EQ(0, GetStatRowCountForTable(*db2, "sqlite_stat4", "foo1"));
 
-    //Make sure change is that system table can be tracked.
-    std::unique_ptr< BeSQLite::ChangeSet> cs = Capture(*db1, [] (DbR db, void*) {
+    std::unique_ptr<BeSQLite::ChangeSet> cs = Capture(*db1, [](DbR db, void*) {
         return db.ExecuteSql("analyze") == BE_SQLITE_OK;
         }, nullptr);
 
+    ASSERT_TRUE(cs != nullptr);
 
-    const int expectedRowCount = GetRowCount(*db1, "sqlite_stat1");
-    ASSERT_NE(expectedRowCount, 0);
+    const int expectedStat1RowCount = GetRowCount(*db1, "sqlite_stat1");
+    ASSERT_GT(expectedStat1RowCount, 0);
+    ASSERT_GT(GetRowCount(*db1, "sqlite_stat4"), 0);
+
+    // sqlite_stat4 is not tracked (see below), so db2 must keep whatever it had before the apply.
+    const int expectedStat4RowCountOnDb2 = GetRowCount(*db2, "sqlite_stat4");
+
+    // After ANALYZE, our foo1/foo2 tables' unique indexes must have actual stat1/stat4 samples.
+    ASSERT_GT(GetStatRowCountForTable(*db1, "sqlite_stat1", "foo1"), 0);
+    ASSERT_GT(GetStatRowCountForTable(*db1, "sqlite_stat1", "foo2"), 0);
+    ASSERT_GT(GetStatRowCountForTable(*db1, "sqlite_stat4", "foo1"), 0);
+    ASSERT_GT(GetStatRowCountForTable(*db1, "sqlite_stat4", "foo2"), 0);
     db1->SaveChanges();
 
-    //apply the change set to a new db
+    int stat1ChangeCount = 0;
+    int stat4ChangeCount = 0;
+    for (auto const& change : cs->GetChanges())
+        {
+        if (change.GetTableName().Equals("sqlite_stat1"))
+            ++stat1ChangeCount;
+        else if (change.GetTableName().Equals("sqlite_stat4"))
+            ++stat4ChangeCount;
+        }
+
+    // sqlite_stat1 IS captured, but sqlite_stat4 is NOT. Upstream SQLite's ANALYZE implementation
+    // attaches a synthetic sqlite_stat1 Table object to that table's OP_Insert opcode so the
+    // preupdate hook fires for those writes; it never does the same for sqlite_stat4. Change
+    // tracking is driven by the preupdate hook, so sqlite_stat4 writes stay invisible to it even
+    // though the table is populated with real rows (verified above). Capturing stat4 as well would
+    // require patching the vendored sqlite3.c; that is deliberately left for a future change, so
+    // this test locks in the current behaviour.
+    ASSERT_GT(stat1ChangeCount, 0);
+    ASSERT_EQ(0, stat4ChangeCount);
+
     ASSERT_EQ(BE_SQLITE_OK, cs->ApplyChanges(*db2));
     db2->SaveChanges();
-    ASSERT_EQ(expectedRowCount, GetRowCount(*db2, "sqlite_stat1"));
+    ASSERT_EQ(expectedStat1RowCount, GetRowCount(*db2, "sqlite_stat1"));
+
+    // db2 gets db1's stat1 rows, but no stat4 rows, since they were never part of the changeset.
+    ASSERT_TRUE(db2->TableExists("sqlite_stat4"));
+    ASSERT_EQ(expectedStat4RowCountOnDb2, GetRowCount(*db2, "sqlite_stat4"));
+    ASSERT_EQ(0, GetStatRowCountForTable(*db2, "sqlite_stat4", "foo1"));
+    ASSERT_EQ(0, GetStatRowCountForTable(*db2, "sqlite_stat4", "foo2"));
     }
 
 //---------------------------------------------------------------------------------------
@@ -854,11 +923,11 @@ TEST_F(BeSQliteTestFixture, SerializeMainDb)
 
     db->ExecuteSql("create table test1(Id integer primary key, c0);");
     auto snapshot0 = db->Serialize();
-    ASSERT_EQ(snapshot0.Size(), 36864);
+    ASSERT_EQ(snapshot0.Size(), 40960);
 
     db->ExecuteSql("create table test2(Id integer primary key, c0);");
     auto snapshot1 = db->Serialize();
-    ASSERT_EQ(snapshot1.Size(), 40960);
+    ASSERT_EQ(snapshot1.Size(), 45056);
 
     db->AbandonChanges();
     db->CloseDb();
@@ -890,7 +959,7 @@ TEST_F(BeSQliteTestFixture, SerializeTempDb)
     ASSERT_EQ(snapshot0.Size(), 8192);
 
     auto snapshot1 = db->Serialize("main");
-    ASSERT_EQ(snapshot1.Size(), 36864);
+    ASSERT_EQ(snapshot1.Size(), 40960);
 
     db->AbandonChanges();
     db->CloseDb();
