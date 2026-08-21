@@ -3,6 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
+#include "InstanceGraphVTab.h"
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -441,6 +442,9 @@ DbResult RegisterBuildInVTabs(ECDbR ecdb) {
     DbResult rcIdSet = (new IdSetModule(ecdb))->Register();
     if(rcIdSet != BE_SQLITE_OK)
         return rcIdSet;
+    DbResult rcRelations = (new RelationsModule(ecdb))->Register();
+    if(rcRelations != BE_SQLITE_OK)
+        return rcRelations;
     return BE_SQLITE_OK;
 }
 END_BENTLEY_SQLITE_EC_NAMESPACE

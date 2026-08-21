@@ -81,6 +81,45 @@ BentleyStatus VirtualSchemaManager::AddAndValidateVirtualSchema(Utf8StringCR sch
             return ERROR;
         }
     }
+
+    // If a schema with the same name already exists, merge the classes into it. This allows
+    // several virtual table modules to contribute classes to one shared virtual schema.
+    auto existingIt = m_schemas.find(schema->GetName());
+    if (existingIt != m_schemas.end()) {
+        auto& existingSchema = *const_cast<ECN::ECSchemaP>(existingIt->second);
+        if (existingSchema.GetVersionRead() != schema->GetVersionRead()
+            || existingSchema.GetVersionWrite() != schema->GetVersionWrite()
+            || existingSchema.GetVersionMinor() != schema->GetVersionMinor()) {
+            LOG.errorv("Virtual schema '%s' is already registered with version %" PRIu32 ".%" PRIu32 ".%" PRIu32
+                       " but was registered again with version %" PRIu32 ".%" PRIu32 ".%" PRIu32
+                       ". All registrations of a virtual schema must use the same version.",
+                       schema->GetName().c_str(),
+                       existingSchema.GetVersionRead(), existingSchema.GetVersionWrite(), existingSchema.GetVersionMinor(),
+                       schema->GetVersionRead(), schema->GetVersionWrite(), schema->GetVersionMinor());
+            return ERROR;
+        }
+
+        for (auto sourceClass : schema->GetClasses()) {
+            if (existingSchema.GetClassCP(sourceClass->GetName().c_str()) != nullptr) {
+                LOG.errorv("Virtual schema '%s' already contains a class named '%s'. Virtual class names must be unique within a virtual schema.",
+                           schema->GetName().c_str(), sourceClass->GetName().c_str());
+                return ERROR;
+            }
+
+            ECN::ECClassP copiedClass = nullptr;
+            if (ECN::ECObjectsStatus::Success != existingSchema.CopyClass(copiedClass, *sourceClass, true)) {
+                LOG.errorv("Failed to merge virtual class '%s' into the already registered virtual schema '%s'.",
+                           sourceClass->GetName().c_str(), schema->GetName().c_str());
+                return ERROR;
+            }
+
+            copiedClass->SetId(ECN::ECClassId(GetNextId()));
+            for (auto& prop : copiedClass->GetProperties(false))
+                const_cast<ECN::ECPropertyP>(prop)->SetId(ECN::ECPropertyId(GetNextId()));
+        }
+        return SUCCESS;
+    }
+
     SetVirtualTypeIds(*schema);
     // schema.SetImmutable(true);
     m_cache->AddSchema(*schema);
