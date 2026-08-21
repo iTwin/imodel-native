@@ -2968,26 +2968,26 @@ void dgn_ElementHandler::Geometric3d::_RegisterPropertyAccessors(ECSqlClassInfo&
 
 #define GETGEOMPLCPROPDBL(EXPR) [](ECValueR value, DgnElementCR elIn){GeometricElement3d const& el = (GeometricElement3d const&)elIn; Placement3dCR plc = el.GetPlacement(); value.SetDouble(EXPR); return DgnDbStatus::Success;}
 #define GETGEOMPLCPROPPT3(EXPR) [](ECValueR value, DgnElementCR elIn){GeometricElement3d const& el = (GeometricElement3d const&)elIn; Placement3dCR plc = el.GetPlacement(); value.SetPoint3d(EXPR); return DgnDbStatus::Success;}
-#define SETGEOMPLCPROP(PTYPE, FLAGS, EXPR) [](DgnElement& elIn, ECN::ECValueCR valueIn)\
-            {                                                                          \
+#define SETGEOMPLCPROP(PTYPE, FLAGS, EXPR) [](DgnElement& elIn, ECN::ECValueCR valueIn)  \
+            {                                                                            \
             if (valueIn.IsNull() || valueIn.IsBoolean() || !valueIn.IsPrimitive())       \
                 return DgnDbStatus::BadArg;                                              \
             ECN::ECValue value(valueIn);                                                 \
             if (!value.ConvertToPrimitiveType(PTYPE))                                    \
                 return DgnDbStatus::BadArg;                                              \
             GeometricElement3d& el = (GeometricElement3d&)elIn;                          \
-            uint8_t placementDataFlags = el.GetPlacementDataFlags();                    \
+            uint8_t placementDataFlags = el.GetPlacementDataFlags();                     \
             Placement3d plc = el.GetPlacement();                                         \
             EXPR;                                                                        \
             auto status = el.SetPlacement(plc);                                          \
-            if (DgnDbStatus::Success == status)                                         \
+            if (DgnDbStatus::Success == status)                                          \
                 {                                                                        \
                 uint8_t newPlacementDataFlags = placementDataFlags | FLAGS;              \
                 if (FLAGS == GeometricElement::PlacementData_Bbox && !plc.GetElementBox().IsValid()) \
-                    newPlacementDataFlags &= ~GeometricElement::PlacementData_Bbox;       \
+                    newPlacementDataFlags &= ~GeometricElement::PlacementData_Bbox;      \
                 el.SetPlacementDataFlags(newPlacementDataFlags);                         \
                 }                                                                        \
-            return status;                                                                \
+            return status;                                                               \
             }
 
 
@@ -3090,26 +3090,26 @@ void dgn_ElementHandler::Geometric2d::_RegisterPropertyAccessors(ECSqlClassInfo&
             value.SetPoint2d(EXPR);                                                      \
             return DgnDbStatus::Success;                                                 \
             }
-#define SETGEOMPLCPROP(PTYPE, FLAGS, EXPR) [](DgnElement& elIn, ECN::ECValueCR valueIn)\
-            {                                                                          \
+#define SETGEOMPLCPROP(PTYPE, FLAGS, EXPR) [](DgnElement& elIn, ECN::ECValueCR valueIn)  \
+            {                                                                            \
             if (valueIn.IsNull() || valueIn.IsBoolean() || !valueIn.IsPrimitive())       \
                 return DgnDbStatus::BadArg;                                              \
             ECN::ECValue value(valueIn);                                                 \
             if (!value.ConvertToPrimitiveType(PTYPE))                                    \
                 return DgnDbStatus::BadArg;                                              \
             GeometricElement2d& el = (GeometricElement2d&)elIn;                          \
-            uint8_t placementDataFlags = el.GetPlacementDataFlags();                    \
+            uint8_t placementDataFlags = el.GetPlacementDataFlags();                     \
             Placement2d plc = el.GetPlacement();                                         \
             EXPR;                                                                        \
             auto status = el.SetPlacement(plc);                                          \
-            if (DgnDbStatus::Success == status)                                         \
+            if (DgnDbStatus::Success == status)                                          \
                 {                                                                        \
                 uint8_t newPlacementDataFlags = placementDataFlags | FLAGS;              \
                 if (FLAGS == GeometricElement::PlacementData_Bbox && !plc.GetElementBox().IsValid()) \
-                    newPlacementDataFlags &= ~GeometricElement::PlacementData_Bbox;       \
+                    newPlacementDataFlags &= ~GeometricElement::PlacementData_Bbox;      \
                 el.SetPlacementDataFlags(newPlacementDataFlags);                         \
                 }                                                                        \
-            return status;                                                                \
+            return status;                                                               \
             }
 
     params.RegisterPropertyAccessors(layout, GeometricElement::prop_Origin(),
@@ -3864,7 +3864,27 @@ DgnDbStatus GeometricElement::_InsertInDb()
 DgnDbStatus GeometricElement::_UpdateInDb()
     {
     auto stat = T_Super::_UpdateInDb();
-    return DgnDbStatus::Success == stat ? UpdateGeomStream() : stat;
+    if (DgnDbStatus::Success != stat)
+        return stat;
+
+    stat = UpdateGeomStream();
+    if (DgnDbStatus::Success != stat)
+        return stat;
+
+    // Only 3D geometric elements can have a row in dgn_SpatialIndex.
+    auto element3d = dynamic_cast<GeometricElement3d const*>(this);
+    if (nullptr == element3d)
+        return stat;
+
+    GeometricModel3dCP model3d = GetModel()->ToGeometricModel3d();
+    bool hasSpatialIndexablePlacement = nullptr != model3d && model3d->IsSpatiallyLocated() && element3d->GetPlacement().IsValid() && element3d->HasPlacementData(PlacementData_Origin) && element3d->HasPlacementData(PlacementData_Bbox);
+    if (hasSpatialIndexablePlacement)
+        return stat;
+
+    // Existing iModels may still have the legacy trigger, so remove a stale row explicitly.
+    CachedStatementPtr stmt = GetDgnDb().Elements().GetStatement("DELETE FROM " DGN_VTABLE_SpatialIndex " WHERE ElementId=?");
+    stmt->BindId(1, GetElementId());
+    return BE_SQLITE_DONE == stmt->Step() ? stat : DgnDbStatus::WriteError;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4184,7 +4204,9 @@ void GeometricElement3d::_BindWriteParams(ECSqlStatement& stmt, ForInsert forIns
         return;
         }
 
-    stmt.BindInt(stmt.GetParameterIndex(prop_InSpatialIndex()), model3d->IsSpatiallyLocated() ? 1 : 0);
+    // Spatial-index triggers require a valid bounding box; partial placements are persisted but not indexed.
+    bool hasSpatialIndexablePlacement = m_placement.IsValid() && HasPlacementData(PlacementData_Origin) && HasPlacementData(PlacementData_Bbox);
+    stmt.BindInt(stmt.GetParameterIndex(prop_InSpatialIndex()), model3d->IsSpatiallyLocated() && hasSpatialIndexablePlacement ? 1 : 0);
     stmt.BindNavigationValue(stmt.GetParameterIndex(prop_TypeDefinition()), m_typeDefinition.m_id, m_typeDefinition.m_relClassId);
 
     if (HasPlacementData(PlacementData_Origin))

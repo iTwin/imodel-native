@@ -255,15 +255,15 @@ TEST_F(DgnElementTests, GenericDomainElements)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnElementTests, SpatialLocationNullPlacementToJson)
     {
-        SetupSeedProject();
+    SetupSeedProject();
 
-        PhysicalModelPtr model = GetDefaultPhysicalModel();
-        GenericSpatialLocationPtr element = GenericSpatialLocation::Create(*model, GetDefaultCategoryId());
-        ASSERT_TRUE(element.IsValid());
+    PhysicalModelPtr model = GetDefaultPhysicalModel();
+    GenericSpatialLocationPtr element = GenericSpatialLocation::Create(*model, GetDefaultCategoryId());
+    ASSERT_TRUE(element.IsValid());
 
-        BeJsDocument json;
-        element->ToJson(json);
-        EXPECT_FALSE(json.hasMember("placement"));
+    BeJsDocument json;
+    element->ToJson(json);
+    EXPECT_FALSE(json.hasMember("placement"));
     }
 
 //---------------------------------------------------------------------------------------
@@ -271,23 +271,23 @@ TEST_F(DgnElementTests, SpatialLocationNullPlacementToJson)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnElementTests, OriginOnlyPlacementToJson)
     {
-        SetupSeedProject();
-        TestElementPtr element = TestElement::CreateWithoutGeometry(*m_db, GetDefaultPhysicalModel()->GetModelId(), GetDefaultCategoryId());
-        ASSERT_TRUE(element.IsValid());
+    SetupSeedProject();
+    TestElementPtr element = TestElement::CreateWithoutGeometry(*m_db, GetDefaultPhysicalModel()->GetModelId(), GetDefaultCategoryId());
+    ASSERT_TRUE(element.IsValid());
 
-        const DPoint3d expectedOrigin = DPoint3d::From(1,2,3);
-        BeJsDocument placementProps;
-        BeJsGeomUtils::DPoint3dToJson(placementProps[GeometricElement::json_placement()][Placement3d::json_origin()], expectedOrigin);
-        element->FromJson(placementProps);
+    const DPoint3d expectedOrigin = DPoint3d::From(1,2,3);
+    BeJsDocument placementProps;
+    BeJsGeomUtils::DPoint3dToJson(placementProps[GeometricElement::json_placement()][Placement3d::json_origin()], expectedOrigin);
+    element->FromJson(placementProps);
 
-        BeJsDocument json;
-        element->ToJson(json);
-        EXPECT_TRUE(json.hasMember(GeometricElement::json_placement()));
-        EXPECT_TRUE(json[GeometricElement::json_placement()].hasMember(Placement3d::json_origin()));
-        EXPECT_EQ(expectedOrigin, BeJsGeomUtils::ToDPoint3d(json[GeometricElement::json_placement()][Placement3d::json_origin()]));
+    BeJsDocument json;
+    element->ToJson(json);
+    EXPECT_TRUE(json.hasMember(GeometricElement::json_placement()));
+    EXPECT_TRUE(json[GeometricElement::json_placement()].hasMember(Placement3d::json_origin()));
+    EXPECT_EQ(expectedOrigin, BeJsGeomUtils::ToDPoint3d(json[GeometricElement::json_placement()][Placement3d::json_origin()]));
 
-        EXPECT_FALSE(json[GeometricElement::json_placement()].hasMember(Placement3d::json_angles()));
-        EXPECT_FALSE(json[GeometricElement::json_placement()].hasMember(Placement3d::json_bbox()));
+    EXPECT_FALSE(json[GeometricElement::json_placement()].hasMember(Placement3d::json_angles()));
+    EXPECT_FALSE(json[GeometricElement::json_placement()].hasMember(Placement3d::json_bbox()));
     }
 
 //---------------------------------------------------------------------------------------
@@ -330,7 +330,7 @@ TEST_F(DgnElementTests, PlacementJsonPreservesNulls)
     ASSERT_TRUE(persistentElement.IsValid());
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_db, "SELECT Origin,Yaw,Pitch,Roll,BBoxLow,BBoxHigh FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_db, "SELECT Origin,Yaw,Pitch,Roll,BBoxLow,BBoxHigh,InSpatialIndex FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " WHERE ECInstanceId=?"));
     stmt.BindId(1, persistentElement->GetElementId());
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     EXPECT_FALSE(stmt.IsValueNull(0));
@@ -340,6 +340,7 @@ TEST_F(DgnElementTests, PlacementJsonPreservesNulls)
     EXPECT_TRUE(stmt.IsValueNull(3));
     EXPECT_TRUE(stmt.IsValueNull(4));
     EXPECT_TRUE(stmt.IsValueNull(5));
+    EXPECT_EQ(0, stmt.GetValueInt(6));
 
     // Import exercises the native CloneForImport path before the destination is persisted.
     PhysicalModelPtr importModel = DgnDbTestUtils::InsertPhysicalModel(*m_db, "PlacementJsonImportModel");
@@ -351,7 +352,7 @@ TEST_F(DgnElementTests, PlacementJsonPreservesNulls)
     ASSERT_TRUE(importedElement.IsValid());
 
     ECSqlStatement importedStmt;
-    ASSERT_EQ(ECSqlStatus::Success, importedStmt.Prepare(*m_db, "SELECT Origin,Yaw,Pitch,Roll,BBoxLow,BBoxHigh FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, importedStmt.Prepare(*m_db, "SELECT Origin,Yaw,Pitch,Roll,BBoxLow,BBoxHigh,InSpatialIndex FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " WHERE ECInstanceId=?"));
     importedStmt.BindId(1, importedElement->GetElementId());
     ASSERT_EQ(BE_SQLITE_ROW, importedStmt.Step());
     EXPECT_FALSE(importedStmt.IsValueNull(0));
@@ -361,6 +362,7 @@ TEST_F(DgnElementTests, PlacementJsonPreservesNulls)
     EXPECT_TRUE(importedStmt.IsValueNull(3));
     EXPECT_TRUE(importedStmt.IsValueNull(4));
     EXPECT_TRUE(importedStmt.IsValueNull(5));
+    EXPECT_EQ(0, importedStmt.GetValueInt(6));
 
     m_db->Elements().ClearCache();
     auto reloadedElement = m_db->Elements().Get<TestElement>(persistentElement->GetElementId());
@@ -414,6 +416,39 @@ TEST_F(DgnElementTests, PlacementJsonPreservesNulls)
     ASSERT_TRUE(json2d.hasMember(GeometricElement::json_placement()));
     EXPECT_FALSE(json2d[GeometricElement::json_placement()].hasMember(Placement2d::json_angle()));
     EXPECT_FALSE(json2d[GeometricElement::json_placement()].hasMember(Placement2d::json_bbox()));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(DgnElementTests, SpatialIndexRemovedForPartialPlacement)
+    {
+    SetupSeedProject();
+
+    const DPoint3d origin = DPoint3d::From(10.0, 20.0, 30.0);
+    TestElementPtr element = TestElement::CreateWithoutGeometry(*m_db, m_defaultModelId, m_defaultCategoryId);
+    ASSERT_EQ(DgnDbStatus::Success, element->SetPlacement(Placement3d(
+        origin,
+        YawPitchRollAngles(Angle::FromDegrees(10.0), Angle::FromDegrees(20.0), Angle::FromDegrees(30.0)),
+        ElementAlignedBox3d(0.0, 0.0, 0.0, 10.0, 10.0, 10.0))));
+
+    DgnElementCPtr persistentElement = element->Insert();
+    ASSERT_TRUE(persistentElement.IsValid());
+
+    auto countSpatialIndexRows = [this](DgnElementId elementId) -> int32_t {
+        CachedStatementPtr stmt = m_db->Elements().GetStatement("SELECT count(*) FROM " DGN_VTABLE_SpatialIndex " WHERE ElementId=?");
+        stmt->BindId(1, elementId);
+        return BE_SQLITE_ROW == stmt->Step() ? stmt->GetValueInt(0) : -1;
+    };
+    ASSERT_EQ(1, countSpatialIndexRows(persistentElement->GetElementId()));
+
+    TestElementPtr elementForEdit = m_db->Elements().GetForEdit<TestElement>(persistentElement->GetElementId());
+    ASSERT_TRUE(elementForEdit.IsValid());
+    BeJsDocument partialPlacement;
+    BeJsGeomUtils::DPoint3dToJson(partialPlacement[GeometricElement::json_placement()][Placement3d::json_origin()], origin);
+    elementForEdit->FromJson(partialPlacement);
+    ASSERT_EQ(DgnDbStatus::Success, elementForEdit->Update());
+    EXPECT_EQ(0, countSpatialIndexRows(persistentElement->GetElementId()));
     }
 
 /*---------------------------------------------------------------------------------**//**
