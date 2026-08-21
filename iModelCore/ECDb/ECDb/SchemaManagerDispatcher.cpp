@@ -13,7 +13,7 @@ Utf8String ECSchemaOwnershipClaimAppData::s_key = "ecdb.owned_by";
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MainSchemaManager::UpdateDbSchema(bool doNotTrackDDLChanges) const{
+BentleyStatus MainSchemaManager::UpdateDbSchema(bool doNotTrackDDLChanges, DbMapValidationMode validationMode) const{
     ECDB_PERF_LOG_SCOPE("Updating sqlite schema");
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin MainSchemaManager::UpdateDbSchema");
 
@@ -51,7 +51,7 @@ BentleyStatus MainSchemaManager::UpdateDbSchema(bool doNotTrackDDLChanges) const
         return ERROR;
     }
 
-    if (SUCCESS != DbMapValidator(ctx).Validate()) {
+    if (SUCCESS != DbMapValidator(ctx, validationMode).Validate()) {
         return ERROR;
     }
 

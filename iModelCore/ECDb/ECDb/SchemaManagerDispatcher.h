@@ -15,6 +15,22 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
+//! Determines how strict DbMapValidator is.
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+enum class DbMapValidationMode
+    {
+    //! Full validation. Any detected inconsistency fails the operation.
+    SchemaImport,
+    //! Used when replaying already accepted timeline changes (changeset apply).
+    //! Inconsistencies which can only originate from history written by older software - currently orphan rows
+    //! in ec_CustomAttribute - are logged as a warning instead of failing the operation. Everything else (in
+    //! particular the sqlite schema which the apply path just updated) is still validated strictly.
+    //! See https://github.com/iTwin/itwinjs-backlog/issues/2331
+    ChangesetApply
+    };
+
+//=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct TableSpaceSchemaManager
@@ -236,7 +252,11 @@ public:
     SchemaChangeEvent& OnBeforeSchemaChanges() const { return m_onBeforeSchemaChanged;}
     SchemaChangeEvent& OnAfterSchemaChanges() const { return m_onAfterSchemaCHanged;};
     ECDbSystemSchemaHelper const& GetSystemSchemaHelper() const { return m_systemSchemaHelper; }
-    BentleyStatus UpdateDbSchema(bool doNotTrackDDLChanges) const;
+    //! Syncs the sqlite schema (tables/indexes) with the ec_* meta tables and validates the resulting map.
+    //! @param[in] doNotTrackDDLChanges if true, DDL changes are not tracked
+    //! @param[in] validationMode use DbMapValidationMode::ChangesetApply when replaying already accepted
+    //! timeline changes so that historical inconsistencies do not fail the apply.
+    BentleyStatus UpdateDbSchema(bool doNotTrackDDLChanges, DbMapValidationMode validationMode) const;
     };
 
 //=======================================================================================

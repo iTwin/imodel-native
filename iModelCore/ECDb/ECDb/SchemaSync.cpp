@@ -888,7 +888,9 @@ SchemaSync::Status SchemaSync::Pull(SyncDbUri const& syncDbUri, SchemaImportToke
 //+---------------+---------------+---------------+---------------+---------------+------
 SchemaSync::Status SchemaSync::UpdateDbSchema() {
     const auto kDoNotTrackDdlChanges = true;
-    const auto rc = m_conn.Schemas().Main().UpdateDbSchema(kDoNotTrackDdlChanges);
+    // SchemaSync::Pull also replays changes which were already accepted by another briefcase, so the same
+    // leniency as for changeset apply applies here. See https://github.com/iTwin/itwinjs-backlog/issues/2331
+    const auto rc = m_conn.Schemas().Main().UpdateDbSchema(kDoNotTrackDdlChanges, DbMapValidationMode::ChangesetApply);
     if (rc != SUCCESS) {
         LOG.error("SchemaSync::UpdateDbSchema(): Failed to update db schema.");
         return Status::ERROR;
@@ -1607,8 +1609,11 @@ SchemaSync::Status SchemaSync::AdoptSchemas(SyncDbUri const& syncDbUri, bvector<
     // where a schema changeset produced under schema sync gets its table definitions. A briefcase
     // that already built the same tables ignores the redundant DDL: TxnManager::ApplyDdlChanges is
     // best effort, and ECDb::_AfterSchemaChangeSetApplied rebuilds from ec_ either way.
+    // Validation runs in ChangesetApply mode for the same reason SchemaSync::Pull does: the strict pass
+    // already ran on the import into the sync db, and this briefcase may carry historical inconsistencies
+    // (orphan ec_CustomAttribute rows) that predate it.
     const auto kDoNotTrackDdlChanges = false;
-    if (SUCCESS != mainDisp.UpdateDbSchema(kDoNotTrackDdlChanges)) {
+    if (SUCCESS != mainDisp.UpdateDbSchema(kDoNotTrackDdlChanges, DbMapValidationMode::ChangesetApply)) {
         LOG.error("SchemaSync::AdoptSchemas(): Failed to update db schema.");
         m_conn.AbandonChanges();
         return cleanup(Status::ERROR);

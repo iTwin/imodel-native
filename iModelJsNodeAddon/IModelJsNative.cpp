@@ -457,7 +457,7 @@ public:
     void ConcurrentQueryExecute(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, requestObj);
         REQUIRE_ARGUMENT_FUNCTION(1, callback);
-        JsInterop::ConcurrentQueryExecute(m_ecdb, requestObj, callback);
+        JsInterop::ConcurrentQueryExecute(GetOpenedDb(info), requestObj, callback);
     }
     void ClearECDbCache(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
@@ -4006,6 +4006,10 @@ struct NativeChangedElementsECDb : BeObjectWrap<NativeChangedElementsECDb>
 // Projects the IECSqlBinder interface into JS.
 //! @bsiclass
 //=======================================================================================
+struct ECSqlBinderLifetime {
+    bool m_isValid = true;
+};
+
 struct NativeECSqlBinder : BeObjectWrap<NativeECSqlBinder>
     {
 private:
@@ -4013,6 +4017,7 @@ private:
     IECSqlBinder* m_binder = nullptr;
     ECDb const* m_ecdb = nullptr;
     ECSqlStatement* m_ecSqlStatement = nullptr;
+    std::shared_ptr<ECSqlBinderLifetime> m_lifetime;
 
     static DbResult ToDbResult(ECSqlStatus status)
         {
@@ -4025,11 +4030,16 @@ private:
         return BE_SQLITE_ERROR;
         }
 
+    bool IsBinderValid() const
+        {
+        return m_binder != nullptr && m_lifetime != nullptr && m_lifetime->m_isValid;
+        }
+
 public:
     NativeECSqlBinder(NapiInfoCR info) : BeObjectWrap<NativeECSqlBinder>(info)
         {
-        if (info.Length() < 2 || info.Length() > 3)
-            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder constructor expects either two or three arguments.", IModelJsNativeErrorKey::BadArg);
+        if (info.Length() != 4)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder constructor expects four arguments.", IModelJsNativeErrorKey::BadArg);
 
         m_binder = info[0].As<Napi::External<IECSqlBinder>>().Data();
         if (m_binder == nullptr)
@@ -4040,6 +4050,11 @@ public:
             THROW_JS_TYPE_EXCEPTION("Invalid second arg for NativeECSqlBinder constructor. ECDb must not be nullptr");
 
         m_ecSqlStatement = info[2].As<Napi::External<ECSqlStatement>>().Data();
+        auto lifetime = info[3].As<Napi::External<std::shared_ptr<ECSqlBinderLifetime>>>().Data();
+        if (lifetime == nullptr || *lifetime == nullptr)
+            THROW_JS_TYPE_EXCEPTION("Invalid fourth arg for NativeECSqlBinder constructor. Binder lifetime must not be nullptr");
+
+        m_lifetime = *lifetime;
         }
 
     ~NativeECSqlBinder() {SetInDestructor();}
@@ -4080,14 +4095,18 @@ public:
         SET_CONSTRUCTOR(t);
         }
 
-    static Napi::Object New(Napi::Env const& env, IECSqlBinder& binder, ECDbCR ecdb, const ECSqlStatement* ecSqlStatement = nullptr)
+    static Napi::Object New(Napi::Env const& env, IECSqlBinder& binder, ECDbCR ecdb, ECSqlStatement const* ecSqlStatement, std::shared_ptr<ECSqlBinderLifetime> const& lifetime)
         {
-        return Constructor().New({Napi::External<IECSqlBinder>::New(env, &binder), Napi::External<ECDb>::New(env, const_cast<ECDb*>(&ecdb)), Napi::External<ECSqlStatement>::New(env, const_cast<ECSqlStatement*>(ecSqlStatement))});
+        auto lifetimeArg = Napi::External<std::shared_ptr<ECSqlBinderLifetime>>::New(
+            env,
+            new std::shared_ptr<ECSqlBinderLifetime>(lifetime),
+            [](Napi::Env, std::shared_ptr<ECSqlBinderLifetime>* value) { delete value; });
+        return Constructor().New({Napi::External<IECSqlBinder>::New(env, &binder), Napi::External<ECDb>::New(env, const_cast<ECDb*>(&ecdb)), Napi::External<ECSqlStatement>::New(env, const_cast<ECSqlStatement*>(ecSqlStatement)), lifetimeArg});
         }
 
     Napi::Value BindNull(NapiInfoCR info)
         {
-        if (m_binder == nullptr)
+        if (!IsBinderValid())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         ECSqlStatus stat = m_binder->BindNull();
@@ -4096,7 +4115,7 @@ public:
 
     Napi::Value BindBlob(NapiInfoCR info)
         {
-        if (m_binder == nullptr)
+        if (!IsBinderValid())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         if (info.Length() == 0)
@@ -4136,7 +4155,7 @@ public:
 
     Napi::Value BindBoolean(NapiInfoCR info)
         {
-        if (m_binder == nullptr)
+        if (!IsBinderValid())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         Napi::Value boolVal;
@@ -4149,7 +4168,7 @@ public:
 
     Napi::Value BindDateTime(NapiInfoCR info)
         {
-        if (m_binder == nullptr)
+        if (!IsBinderValid())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         REQUIRE_ARGUMENT_STRING(0, isoString);
@@ -4164,7 +4183,7 @@ public:
 
     Napi::Value BindDouble(NapiInfoCR info)
         {
-        if (m_binder == nullptr)
+        if (!IsBinderValid())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         REQUIRE_ARGUMENT_NUMBER(0, val);
@@ -4174,7 +4193,7 @@ public:
 
     Napi::Value BindGuid(NapiInfoCR info)
         {
-        if (m_binder == nullptr)
+        if (!IsBinderValid())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         REQUIRE_ARGUMENT_STRING(0, guidString);
@@ -4188,7 +4207,7 @@ public:
 
     Napi::Value BindId(NapiInfoCR info)
         {
-        if (m_binder == nullptr)
+        if (!IsBinderValid())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         REQUIRE_ARGUMENT_STRING(0, hexString);
@@ -4202,7 +4221,7 @@ public:
 
     Napi::Value BindIdSet(NapiInfoCR info)
         {
-        if (m_binder == nullptr)
+        if (!IsBinderValid())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
         if (info.Length() == 0)
             THROW_JS_TYPE_EXCEPTION("BindVirtualSet requires an argument");
@@ -4249,7 +4268,7 @@ public:
 
     Napi::Value BindInteger(NapiInfoCR info)
         {
-        if (m_binder == nullptr)
+        if (!IsBinderValid())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         if (info.Length() == 0)
@@ -4296,7 +4315,7 @@ public:
 
     Napi::Value BindPoint2d(NapiInfoCR info)
         {
-        if (m_binder == nullptr)
+        if (!IsBinderValid())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         REQUIRE_ARGUMENT_NUMBER(0, x);
@@ -4307,7 +4326,7 @@ public:
 
     Napi::Value BindPoint3d(NapiInfoCR info)
         {
-        if (m_binder == nullptr)
+        if (!IsBinderValid())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         REQUIRE_ARGUMENT_NUMBER(0, x);
@@ -4319,7 +4338,7 @@ public:
 
     Napi::Value BindString(NapiInfoCR info)
         {
-        if (m_binder == nullptr)
+        if (!IsBinderValid())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         REQUIRE_ARGUMENT_STRING(0, val);
@@ -4329,7 +4348,7 @@ public:
 
     Napi::Value BindNavigation(NapiInfoCR info)
         {
-        if (m_binder == nullptr || m_ecdb == nullptr)
+        if (!IsBinderValid() || m_ecdb == nullptr)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         REQUIRE_ARGUMENT_STRING(0, navIdHexStr);
@@ -4372,21 +4391,21 @@ public:
 
     Napi::Value BindMember(NapiInfoCR info)
         {
-        if (m_binder == nullptr || m_ecdb == nullptr)
+        if (!IsBinderValid() || m_ecdb == nullptr)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         REQUIRE_ARGUMENT_STRING(0, memberName);
         IECSqlBinder& memberBinder = m_binder->operator[](memberName.c_str());
-        return New(info.Env(), memberBinder, *m_ecdb);
+        return New(info.Env(), memberBinder, *m_ecdb, m_ecSqlStatement, m_lifetime);
         }
 
     Napi::Value AddArrayElement(NapiInfoCR info)
         {
-        if (m_binder == nullptr || m_ecdb == nullptr)
+        if (!IsBinderValid() || m_ecdb == nullptr)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         IECSqlBinder& elementBinder = m_binder->AddArrayElement();
-        return New(info.Env(), elementBinder, *m_ecdb);
+        return New(info.Env(), elementBinder, *m_ecdb, m_ecSqlStatement, m_lifetime);
         }
     };
 
@@ -5637,6 +5656,7 @@ struct NativeECSqlStatement : BeObjectWrap<NativeECSqlStatement> {
 private:
     DEFINE_CONSTRUCTOR;
     ECSqlStatement m_stmt;
+    std::shared_ptr<ECSqlBinderLifetime> m_binderLifetime;
 
     struct IssueListener : BentleyApi::ECN::IIssueListener {
         mutable Utf8String m_lastIssue;
@@ -5651,9 +5671,65 @@ private:
         }
     };
 
+    // Tracks the NativeECSqlStatements prepared against an ECDb so that they can be finalized
+    // *before* the db is closed. Otherwise Db::CloseDb force-finalizes the underlying
+    // sqlite3_stmt, leaving this statement holding a dangling pointer that crashes on any
+    // subsequent use or on finalization.
+    struct StatementRegistry : ECDb::AppData {
+        static ECDb::AppData::Key& GetKey() { static ECDb::AppData::Key s_key; return s_key; }
+
+        bset<NativeECSqlStatement*> m_statements;
+
+        ~StatementRegistry() {
+            auto statements = m_statements; // OnDbClose unregisters, mutating m_statements
+            for (auto statement : statements)
+                statement->OnDbClose();
+        }
+
+        static StatementRegistry* Get(ECDbCR db) {
+            auto appData = db.FindOrAddAppData(GetKey(), []() { return new StatementRegistry(); });
+            return static_cast<StatementRegistry*>(appData.get());
+        }
+    };
+
+    ECDb const* m_ecdb = nullptr;
+
+    void Register(ECDbCR ecdb) {
+        Unregister();
+        if (auto registry = StatementRegistry::Get(ecdb); nullptr != registry) {
+            registry->m_statements.insert(this);
+            m_ecdb = &ecdb;
+        }
+    }
+
+    void Unregister() {
+        if (nullptr == m_ecdb)
+            return;
+
+        // the db is still open here, so its appdata (and therefore the registry) is still alive
+        if (auto appData = m_ecdb->FindAppData(StatementRegistry::GetKey()); appData.IsValid())
+            static_cast<StatementRegistry*>(appData.get())->m_statements.erase(this);
+
+        m_ecdb = nullptr;
+    }
+
+    void InvalidateBinders() {
+        if (m_binderLifetime != nullptr)
+            m_binderLifetime->m_isValid = false;
+
+        m_binderLifetime.reset();
+    }
+
 public:
     NativeECSqlStatement(NapiInfoCR info) : BeObjectWrap<NativeECSqlStatement>(info) {}
-    ~NativeECSqlStatement() { SetInDestructor(); }
+    ~NativeECSqlStatement() { SetInDestructor(); InvalidateBinders(); Unregister(); m_stmt.Finalize(); }
+
+    // called while the db is still open, so finalizing here is safe
+    void OnDbClose() {
+        m_ecdb = nullptr;
+        InvalidateBinders();
+        m_stmt.Finalize();
+    }
 
     //  Create projections
     static void Init(Napi::Env& env, Napi::Object exports) {
@@ -5704,7 +5780,24 @@ public:
         OPTIONAL_ARGUMENT_BOOL(2,logErrors, true);
         IssueListener listener(*ecdb);
 
+        if (m_stmt.IsPrepared()) {
+            // The native statement rejects a second Prepare and stays prepared and usable, so its
+            // registration and binder lifetime must survive the failure. Tearing them down here
+            // would leave a live statement that the db no longer finalizes on close, and binders
+            // without a lifetime.
+            ECSqlStatus status = m_stmt.Prepare(*ecdb, ecsql.c_str(), logErrors);
+            BeAssert(!status.IsSuccess() && "Preparing an already prepared ECSqlStatement is expected to fail");
+            return CreateErrorObject0(ToDbResult(status), !status.IsSuccess() ? listener.m_lastIssue.c_str() : nullptr, Env());
+        }
+
+        InvalidateBinders();
+        Unregister();
         ECSqlStatus status = m_stmt.Prepare(*ecdb, ecsql.c_str(), logErrors);
+        if (status.IsSuccess()) {
+            m_binderLifetime = std::make_shared<ECSqlBinderLifetime>();
+            Register(*ecdb);
+        }
+
         return CreateErrorObject0(ToDbResult(status), !status.IsSuccess() ? listener.m_lastIssue.c_str() : nullptr, Env());
     }
 
@@ -5717,6 +5810,8 @@ public:
     }
 
     void Dispose(NapiInfoCR info) {
+        InvalidateBinders();
+        Unregister();
         m_stmt.Finalize();
     }
 
@@ -5746,7 +5841,7 @@ public:
             paramIndex = m_stmt.GetParameterIndex(paramArg.ToString().Utf8Value().c_str());
 
         IECSqlBinder& binder = m_stmt.GetBinder(paramIndex);
-        return NativeECSqlBinder::New(info.Env(), binder, *m_stmt.GetECDb(), &m_stmt);
+        return NativeECSqlBinder::New(info.Env(), binder, *m_stmt.GetECDb(), &m_stmt, m_binderLifetime);
     }
 
     Napi::Value Step(NapiInfoCR info) {
