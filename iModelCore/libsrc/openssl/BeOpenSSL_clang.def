@@ -38,7 +38,6 @@ EXPORTS
   OPENSSL_instrument_bus
   OPENSSL_instrument_bus2
   OPENSSL_rdtsc
-  OPENSSL_wipe_cpu
   SRP_Calc_A_param
   SSL_CTX_SRP_CTX_free
   SSL_CTX_SRP_CTX_init
@@ -797,7 +796,6 @@ EXPORTS
   ssl_protocol_to_string
   ssl_read_internal
   ssl_set_masks
-  ssl_undefined_const_function
   ssl_undefined_function
   ssl_undefined_void_function
   ssl_update_cache
@@ -1128,7 +1126,6 @@ EXPORTS
   ossl_kdf_sshkdf_functions
   ossl_kdf_scrypt_functions
   ossl_kdf_pkcs12_functions
-  ossl_kdf_pbkdf2_default_checks
   ossl_kdf_pbkdf2_functions
   ossl_kdf_pbkdf1_functions
   ossl_kdf_krb5kdf_functions
@@ -1392,8 +1389,6 @@ EXPORTS
   ossl_cipher_tlsunpadblock
   ossl_cipher_trailingdata
   ossl_cipher_unpadblock
-  ossl_cipher_aead_gettable_ctx_params
-  ossl_cipher_aead_settable_ctx_params
   ossl_cipher_generic_block_final
   ossl_cipher_generic_block_update
   ossl_cipher_generic_cipher
@@ -3734,9 +3729,6 @@ EXPORTS
   ossl_rand_ctx_new
   ossl_random_add_conf_module
   ossl_err_load_RAND_strings
-  RAND_egd
-  RAND_egd_bytes
-  RAND_query_egd_bytes
   ossl_rand_cleanup_entropy
   ossl_rand_cleanup_nonce
   ossl_rand_get_entropy
@@ -3747,7 +3739,6 @@ EXPORTS
   OSSL_PROVIDER_available
   OSSL_PROVIDER_set_default_search_path
   ossl_provider_activate
-  ossl_provider_add_parameter
   ossl_provider_add_to_store
   ossl_provider_ctx
   ossl_provider_deactivate
@@ -3771,7 +3762,6 @@ EXPORTS
   ossl_provider_module_path
   ossl_provider_name
   ossl_provider_new
-  ossl_provider_prov_ctx
   ossl_provider_query_operation
   ossl_provider_self_test
   ossl_provider_set_child
@@ -4689,7 +4679,6 @@ EXPORTS
   MD5_Init
   MD5_Transform
   MD5_Update
-  md5_block_data_order
   MD4
   MD4_Final
   MD4_Init
@@ -6479,7 +6468,6 @@ EXPORTS
   i2d_DSAPublicKey
   i2d_DSAparams
   ossl_dsa_asn1_meths
-  DllMain
   DH_get_1024_160
   DH_get_2048_224
   DH_get_2048_256

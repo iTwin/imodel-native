@@ -6,6 +6,22 @@
 bmap<ECN::ECClassCP, bvector<ECN::ECPropertyCP>> AutoHandledPropertiesCollection::s_orphanCustomHandledProperties;
 
 /*---------------------------------------------------------------------------------**//**
+* BisCore:DefinitionSet.Rank is marked as a CustomHandledProperty in the schema, but
+* DefinitionSet (the base class of DefinitionContainer and DefinitionGroup) has no
+* ClassHasHandler and thus no C++ handler that ever reads or writes it. Since neither the
+* schema (bis-schemas) nor a handler can be added right now, hardcode this single property
+* as auto-handled so it flows through the standard ECSQL select/insert/update binding instead
+* of being silently dropped. See https://github.com/iTwin/itwinjs-backlog/issues/2314 and
+* https://github.com/iTwin/itwinjs-core/issues/9500.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool isHardcodedAutoHandledProperty(ECN::ECPropertyCR prop)
+    {
+    ECN::ECClassCR eclass = prop.GetClass();
+    return 0 == strcmp(eclass.GetName().c_str(), "DefinitionSet") && 0 == strcmp(prop.GetName().c_str(), "Rank") && 0 == strcmp(eclass.GetSchema().GetName().c_str(), BIS_ECSCHEMA_NAME);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AutoHandledPropertiesCollection::DetectOrphanCustomHandledProperty(DgnDbR db, ECN::ECClassCR eclass)
@@ -35,6 +51,9 @@ bool AutoHandledPropertiesCollection::IsOrphanCustomHandledProperty(ECN::ECPrope
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DgnElement::IsCustomHandledProperty(ECN::ECPropertyCR prop) const
     {
+    if (isHardcodedAutoHandledProperty(prop))
+        return false;
+
     auto customHandledProperty = GetDgnDb().Schemas().GetClass(BIS_ECSCHEMA_NAME, "CustomHandledProperty");
     if (nullptr == customHandledProperty)
         return false;
@@ -118,7 +137,7 @@ void AutoHandledPropertiesCollection::Iterator::ToNextValid()
         // Auto-handling is the default. Custom-handling is opt-in. A property must have the CustomHandledProperty CA in order to be custom-handled.
         ECN::IECInstancePtr ca = prop->GetCustomAttribute(*m_coll.m_customHandledProperty);
 
-        bool isCustom = ca.IsValid() && !IsOrphanCustomHandledProperty(**m_i);
+        bool isCustom = ca.IsValid() && !IsOrphanCustomHandledProperty(**m_i) && !isHardcodedAutoHandledProperty(*prop);
 
         if (isCustom != m_coll.m_wantCustomHandledProps)
             {

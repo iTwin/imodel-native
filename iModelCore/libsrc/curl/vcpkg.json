@@ -1,0 +1,28 @@
+{
+  "name": "imodel-native-curl",
+  "version": "1.0.0",
+  "dependencies": [
+    {
+      "name": "curl",
+      "default-features": false,
+      "features": [
+        "non-http",
+        "ssl"
+      ]
+    },
+    {
+      "name": "curl",
+      "default-features": false,
+      "features": [
+        "c-ares"
+      ],
+      "platform": "osx | linux"
+    }
+  ],
+  "overrides": [
+    { "name": "curl", "version": "8.21.0#1" },
+    { "name": "openssl", "version": "3.6.3" },
+    { "name": "zlib", "version": "1.3.2#1" },
+    { "name": "c-ares", "version": "1.34.8" }
+  ]
+}

@@ -112,7 +112,10 @@ DbResult ECDb::_OnDbOpened(OpenParams const& params)
 //---------------+---------------+---------------+---------------+---------------+------
 DbResult ECDb::_AfterSchemaChangeSetApplied() const
     {
-    auto rc = GetImpl().Schemas().Main().UpdateDbSchema(true);
+    // Applying a changeset replays already accepted timeline changes, so historical inconsistencies written by
+    // older software (orphan ec_CustomAttribute rows) must not fail the apply. The sqlite schema which was just
+    // updated above is still validated. See https://github.com/iTwin/itwinjs-backlog/issues/2331
+    auto rc = GetImpl().Schemas().Main().UpdateDbSchema(true, DbMapValidationMode::ChangesetApply);
     if (rc != SUCCESS)
         return BE_SQLITE_ERROR;
 

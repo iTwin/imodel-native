@@ -199,6 +199,9 @@ GEOMDLLIMPEXP CurveLocationDetailPair
 //! Constructor for two fraction/point pairs on the same curve.
 CurveLocationDetailPair (ICurvePrimitiveCP curve, double fraction0, DPoint3dCR point0, double fraction1, DPoint3dCR point1);
 
+//! Constructor for two fraction/point pairs on different curves.
+CurveLocationDetailPair (ICurvePrimitiveCP curve0, double fraction0, DPoint3dCR point0, ICurvePrimitiveCP curve1, double fraction1, DPoint3dCR point1);
+
 //! Return true if the two details are for (bitwise) identical curve and fraction.
 GEOMDLLIMPEXP bool SameCurveAndFraction ();
 
@@ -227,8 +230,11 @@ static GEOMDLLIMPEXP void DeltaZExtremes (bvector<CurveLocationDetailPair> const
 static GEOMDLLIMPEXP void SplitByDeltaZ (bvector<CurveLocationDetailPair> const &pairs, double splitDistance,
     bvector<CurveLocationDetailPair> *pairA, bvector<CurveLocationDetailPair> *pairB);
 
-//!! Lexical compare:  curve first, then fration from detailA, then fraction from detailB.
+//!! Lexical compare:  curve first, then fraction from detailA, then fraction from detailB.
 static bool cb_compareCurveFraction (CurveLocationDetailPairCR dataA, CurveLocationDetailPairCR dataB);
+
+//! Swap the details
+GEOMDLLIMPEXP void SwapDetails();
 };
 
 #ifndef SmallGeomLib
