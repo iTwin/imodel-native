@@ -7,6 +7,11 @@ This document including important changes to syntax or file format.
 | Profile | `4.0.0.5` |
 | ECSQL   | `2.0.4.1` |
 
+## ## `08/21/2026`: `Relations()` exposes `NavPropertyName`
+* `ECVLib.Relations()` now returns a nullable `NavPropertyName` column.
+* For end-table (foreign-key) relationships the column is the name of the navigation property that stores the relationship. Link-table relationships return `NULL`.
+* Example: `SELECT RelatedECInstanceId, RelationshipECClassId, NavPropertyName FROM ECVLib.Relations(0x1A, 0x38)`
+
 ## ## `08/04/2026`: Added `relations()` virtual table and InstanceGraph API
 * ECSql version change `2.0.4.0` -> `2.0.4.1`.
 * Added the `ECVLib.Relations` table valued function for fast relationship traversal from a seed instance.

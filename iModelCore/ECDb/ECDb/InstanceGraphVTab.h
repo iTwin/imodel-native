@@ -28,10 +28,11 @@ struct RelationsModule : ECDbModule
                 Direction = 2,
                 RelationshipECClassId = 3,
                 RelationshipECInstanceId = 4,
+                NavPropertyName = 5,
                 // Hidden input columns
-                ECInstanceId = 5,
-                ECClassId = 6,
-                TraversalDir = 7
+                ECInstanceId = 6,
+                ECClassId = 7,
+                TraversalDir = 8
                 };
 
             private:
@@ -65,7 +66,7 @@ struct RelationsModule : ECDbModule
         RelationsModule(ECDbR db) : ECDbModule(
             db,
             NAME,
-            "CREATE TABLE x(RelatedECInstanceId, RelatedECClassId, Direction, RelationshipECClassId, RelationshipECInstanceId,"
+            "CREATE TABLE x(RelatedECInstanceId, RelatedECClassId, Direction, RelationshipECClassId, RelationshipECInstanceId, NavPropertyName,"
             " ECInstanceId HIDDEN, ECClassId HIDDEN, TraversalDirection HIDDEN)",
             R"xml(<?xml version="1.0" encoding="utf-8" ?>
             <ECSchema
@@ -86,6 +87,7 @@ struct RelationsModule : ECDbModule
                     <ECProperty propertyName="Direction"            typeName="string"/>
                     <ECProperty propertyName="RelationshipECClassId" typeName="long" extendedTypeName="Id"/>
                     <ECProperty propertyName="RelationshipECInstanceId" typeName="long" extendedTypeName="Id"/>
+                    <ECProperty propertyName="NavPropertyName" typeName="string"/>
                 </ECEntityClass>
             </ECSchema>)xml"
             ) {}

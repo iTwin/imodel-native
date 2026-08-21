@@ -260,6 +260,12 @@ DbResult RelationsModule::RelationsTable::RelationsCursor::GetColumn(int i, Cont
             else
                 ctx.SetResultNull();
             break;
+        case Columns::NavPropertyName:
+            if (!rel.GetNavPropertyName().empty())
+                ctx.SetResultText(rel.GetNavPropertyName().c_str(), -1, Context::CopyData::Yes);
+            else
+                ctx.SetResultNull();
+            break;
         default:
             ctx.SetResultNull();
             break;

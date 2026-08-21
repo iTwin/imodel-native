@@ -2096,6 +2096,7 @@ TEST_F(InstanceGraphTests, RelationshipInstanceId_NavPropIsForeignKeyHolderId)
     ASSERT_NE(nullptr, fromPipeRelated);
     ASSERT_EQ(1u, fromPipeRelated->size());
     EXPECT_EQ(pipeKey.GetInstanceId(), (*fromPipeRelated)[0].GetRelInstanceId());
+    EXPECT_STREQ("Model", (*fromPipeRelated)[0].GetNavPropertyName().c_str());
 
     InstanceGraph fromModel(m_ecdb);
     fromModel.AddSeed(modelKey);
@@ -2104,6 +2105,7 @@ TEST_F(InstanceGraphTests, RelationshipInstanceId_NavPropIsForeignKeyHolderId)
     ASSERT_NE(nullptr, fromModelRelated);
     ASSERT_EQ(1u, fromModelRelated->size());
     EXPECT_EQ(pipeKey.GetInstanceId(), (*fromModelRelated)[0].GetRelInstanceId());
+    EXPECT_STREQ("Model", (*fromModelRelated)[0].GetNavPropertyName().c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -2529,6 +2531,106 @@ TEST_F(InstanceGraphTests, MixedRelationships_AllInvariantCombinations)
     collectVTable(data.spokeA, "backward", fromSpokeA);
     EXPECT_TRUE(vtabHas(fromSpokeA, data.hub, GetClassId("IGMap", "HubHasSpokes")));
     EXPECT_TRUE(vtabHas(fromSpokeA, data.hub, GetClassId("IGMap", "HubOwnsSpokeA")));
+    }
+
+//---------------------------------------------------------------------------------------
+//! End-table relationships expose the navigation property name; link-table relationships do not.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, VTable_NavPropertyName)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_VTableNavProp.ecdb", SchemaItem(s_testSchemaXml)));
+    m_ecdb.GetECSqlConfig().SetExperimentalFeaturesEnabled(true);
+
+    auto modelKey = InsertInstance("INSERT INTO ig.Model(Name) VALUES('M1')");
+    auto pipeKey = InsertInstance(SqlPrintfString("INSERT INTO ig.Pipe(Code, Diameter, Model.Id) VALUES('P1', 1.0, %s)",
+        modelKey.GetInstanceId().ToString().c_str()));
+    auto catKey = InsertInstance("INSERT INTO ig.Category(CatName) VALUES('Cat1')");
+    InsertRelInstance(SqlPrintfString("INSERT INTO ig.ElementInCategory(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
+        pipeKey.GetInstanceId().ToString().c_str(), catKey.GetInstanceId().ToString().c_str()));
+    m_ecdb.SaveChanges();
+
+    ECClassId const modelHasElements = GetClassId("ModelHasElements");
+    ECClassId const elementInCategory = GetClassId("ElementInCategory");
+
+    ECSqlStatement fromPipe;
+    ASSERT_EQ(ECSqlStatus::Success, fromPipe.Prepare(m_ecdb,
+        SqlPrintfString("SELECT RelationshipECClassId, NavPropertyName FROM ECVLib.Relations(%s, %s)",
+            pipeKey.GetInstanceId().ToString().c_str(), pipeKey.GetClassId().ToString().c_str())));
+
+    bool foundModelNav = false;
+    bool foundLinkTable = false;
+    while (fromPipe.Step() == BE_SQLITE_ROW)
+        {
+        ECClassId const relClassId = fromPipe.GetValueId<ECClassId>(0);
+        if (relClassId == modelHasElements)
+            {
+            foundModelNav = true;
+            ASSERT_FALSE(fromPipe.IsValueNull(1));
+            EXPECT_STREQ("Model", fromPipe.GetValueText(1));
+            }
+        else if (relClassId == elementInCategory)
+            {
+            foundLinkTable = true;
+            EXPECT_TRUE(fromPipe.IsValueNull(1)) << "Link-table relationships have no navigation property";
+            }
+        }
+    EXPECT_TRUE(foundModelNav);
+    EXPECT_TRUE(foundLinkTable);
+
+    ECSqlStatement fromModel;
+    ASSERT_EQ(ECSqlStatus::Success, fromModel.Prepare(m_ecdb,
+        SqlPrintfString("SELECT NavPropertyName FROM ECVLib.Relations(%s, %s, 'forward')",
+            modelKey.GetInstanceId().ToString().c_str(), modelKey.GetClassId().ToString().c_str())));
+    ASSERT_EQ(BE_SQLITE_ROW, fromModel.Step());
+    ASSERT_FALSE(fromModel.IsValueNull(0));
+    EXPECT_STREQ("Model", fromModel.GetValueText(0));
+    }
+
+//---------------------------------------------------------------------------------------
+//! Derived end-table relationships still report the navigation property defined on the base.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, VTable_NavPropertyName_DerivedRelationship)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_VTableNavPropDerived.ecdb", SchemaItem(s_mappingInvariantSchemaXml)));
+    m_ecdb.GetECSqlConfig().SetExperimentalFeaturesEnabled(true);
+    auto data = PopulateMappingInvariants();
+
+    ECClassId const hubHasSpokes = GetClassId("IGMap", "HubHasSpokes");
+    ECClassId const hubOwnsSpokeA = GetClassId("IGMap", "HubOwnsSpokeA");
+    ECClassId const alphaToBeta = GetClassId("IGMap", "AlphaToBeta");
+
+    auto expectNavName = [&] (ECInstanceKeyCR seed, Utf8CP direction, ECClassId relClassId, Utf8CP expectedName)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+            SqlPrintfString("SELECT RelationshipECClassId, NavPropertyName FROM ECVLib.Relations(%s, %s, '%s')",
+                seed.GetInstanceId().ToString().c_str(), seed.GetClassId().ToString().c_str(), direction)));
+
+        bool found = false;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            if (stmt.GetValueId<ECClassId>(0) != relClassId)
+                continue;
+
+            found = true;
+            if (expectedName == nullptr)
+                EXPECT_TRUE(stmt.IsValueNull(1));
+            else
+                {
+                ASSERT_FALSE(stmt.IsValueNull(1));
+                EXPECT_STREQ(expectedName, stmt.GetValueText(1));
+                }
+            }
+        EXPECT_TRUE(found);
+        };
+
+    expectNavName(data.hub, "forward", hubHasSpokes, "Container");
+    expectNavName(data.hub, "forward", hubOwnsSpokeA, "Owner");
+    expectNavName(data.spokeA, "backward", hubHasSpokes, "Container");
+    expectNavName(data.spokeA, "backward", hubOwnsSpokeA, "Owner");
+    expectNavName(data.alpha, "forward", alphaToBeta, nullptr);
     }
 
 END_ECDBUNITTESTS_NAMESPACE

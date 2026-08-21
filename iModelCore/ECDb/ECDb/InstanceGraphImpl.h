@@ -84,6 +84,10 @@ struct GraphStatementEntry final
     int             m_seedClassIdParamIdx = -1;
 
     TraversalDirection m_direction = TraversalDirection::Both;
+
+    //! Name of the navigation property that stores this relationship. Empty for link-table
+    //! relationships and for unsupported mappings.
+    Utf8String      m_navPropertyName;
     };
 
 //=======================================================================================

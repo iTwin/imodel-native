@@ -35,6 +35,43 @@ static ECClassId GetDefaultClassId(SystemPropertyMap::PerTableIdPropertyMap cons
     return classIdMap == nullptr ? ECClassId() : classIdMap->GetDefaultECClassId();
     }
 
+//! Returns the name of the navigation property that stores @p relClass, or an empty string
+//! when the relationship is not backed by a navigation property.
+//! @remarks End-table relationships persist the FK on one constraint end. Each such constraint
+//! class defines exactly one navigation property for the relationship (or a base of it). An
+//! exact match is preferred over a property that points at a base relationship class.
+static Utf8String FindNavPropertyName(ECN::ECRelationshipClassCR relClass, ForeignKeyPartitionView const& fkView)
+    {
+    ECN::ECRelationshipConstraintCR fkConstraint = (fkView.GetPersistedEnd() == ForeignKeyPartitionView::PersistedEnd::SourceTable)
+        ? relClass.GetSource() : relClass.GetTarget();
+
+    Utf8String inheritedName;
+    for (ECClassCP constraintClass : fkConstraint.GetConstraintClasses())
+        {
+        if (constraintClass == nullptr)
+            continue;
+
+        for (ECPropertyCP prop : constraintClass->GetProperties())
+            {
+            if (prop == nullptr || !prop->GetIsNavigation())
+                continue;
+
+            NavigationECPropertyCP nav = prop->GetAsNavigationProperty();
+            ECRelationshipClassCP navRel = nav != nullptr ? nav->GetRelationshipClass() : nullptr;
+            if (navRel == nullptr)
+                continue;
+
+            if (navRel->GetId() == relClass.GetId())
+                return Utf8String(prop->GetName());
+
+            if (inheritedName.empty() && relClass.Is(navRel))
+                inheritedName = prop->GetName();
+            }
+        }
+
+    return inheritedName;
+    }
+
 //! Determines the single class a table holds instances of. Only meaningful when the table's
 //! ECClassId column is virtual, which by definition means the table is exclusive to one class.
 //! @remarks Returns an invalid id when the table is not exclusive to a single class. Falling
@@ -627,6 +664,7 @@ BentleyStatus GraphStatementCache::BuildEndTableSql(GraphStatementEntry& entry,
     if (!navRelClassIdCol.IsVirtual())
         AppendClassHierarchyFilter(sql, Utf8PrintfString("et.[%s]", navRelClassIdCol.GetName().c_str()).c_str(), relClass.GetId());
 
+    entry.m_navPropertyName = FindNavPropertyName(relClass, fkView);
     entry.m_sql = sql;
     return SUCCESS;
     }
@@ -959,7 +997,7 @@ BentleyStatus GraphTraversalIterator::MoveNext()
         if (entry.m_relInstanceIdColIdx >= 0)
             relInstanceId = m_stmt->GetValueId<ECInstanceId>(entry.m_relInstanceIdColIdx);
 
-        RelatedInstance candidate(ECInstanceKey(relatedClassId, relatedId), relClassId, relInstanceId, traversalDir);
+        RelatedInstance candidate(ECInstanceKey(relatedClassId, relatedId), relClassId, relInstanceId, traversalDir, entry.m_navPropertyName);
 
         // A relationship class and its base classes can all be applicable to the same seed and
         // all match the very same persisted row, so identical edges must be suppressed.

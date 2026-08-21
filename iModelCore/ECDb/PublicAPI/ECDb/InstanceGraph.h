@@ -30,11 +30,12 @@ struct RelatedInstance final
         ECN::ECClassId      m_relClassId;
         ECInstanceId        m_relInstanceId;
         TraversalDirection  m_direction;
+        Utf8String          m_navPropertyName;
 
     public:
         RelatedInstance() : m_direction(TraversalDirection::Both) {}
-        RelatedInstance(ECInstanceKeyCR key, ECN::ECClassId relClassId, ECInstanceId relInstanceId, TraversalDirection direction)
-            : m_key(key), m_relClassId(relClassId), m_relInstanceId(relInstanceId), m_direction(direction) {}
+        RelatedInstance(ECInstanceKeyCR key, ECN::ECClassId relClassId, ECInstanceId relInstanceId, TraversalDirection direction, Utf8String navPropertyName = Utf8String())
+            : m_key(key), m_relClassId(relClassId), m_relInstanceId(relInstanceId), m_direction(direction), m_navPropertyName(std::move(navPropertyName)) {}
 
         ECInstanceKeyCR GetKey() const { return m_key; }
         ECN::ECClassId GetRelClassId() const { return m_relClassId; }
@@ -44,6 +45,9 @@ struct RelatedInstance final
         //! instances distinguishable.
         ECInstanceId GetRelInstanceId() const { return m_relInstanceId; }
         TraversalDirection GetDirection() const { return m_direction; }
+        //! Name of the navigation property that stores this relationship, or empty when the
+        //! relationship is not backed by a navigation property (e.g. a link table).
+        Utf8StringCR GetNavPropertyName() const { return m_navPropertyName; }
     };
 
 //=======================================================================================
