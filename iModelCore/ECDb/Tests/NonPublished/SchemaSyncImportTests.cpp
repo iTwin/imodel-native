@@ -19,7 +19,16 @@ struct SchemaSyncImportTestFixture : SchemaSyncTestFixture {};
 //! The extended tier of the v2 suite. See SchemaSyncExtendedTests in SchemaSyncTest.cpp - same
 //! split, same reason. This is where the permutation matrices live; the behaviours they permute
 //! each have a representative on SchemaSyncImportTestFixture.
-struct SchemaSyncImportExtendedTests : SchemaSyncImportTestFixture {};
+struct SchemaSyncImportExtendedTests : SchemaSyncImportTestFixture
+    {
+    void SetUp() override
+        {
+        if (!ExtendedTestsEnabled())
+            GTEST_SKIP() << "Extended tier. Set IMODEL_RUN_EXTENDED_TESTS=1 to run it.";
+
+        SchemaSyncImportTestFixture::SetUp();
+        }
+    };
 
 namespace {
 

@@ -150,14 +150,18 @@ The positive counterpart, `Assets/Run`, cannot be combined with `Assets/Ignore` 
 
 ### Test tiers
 
-Some areas are worth testing far more thoroughly than is affordable on every build. Those suites are split in two, selected by fixture name:
+Some areas are worth testing far more thoroughly than is affordable on every build. Those suites are split in two, selected by fixture name and gated on an environment variable:
 
 | Tier | Runs | How |
 |---|---|---|
 | core | every build | a plain run of the executable |
-| extended | on demand | `--gtest_filter=*ExtendedTests.*` |
+| extended | on demand, and on a schedule | set `IMODEL_RUN_EXTENDED_TESTS=1` |
 
-A fixture whose name ends in `ExtendedTests` is named in its suite's `ignore_list.txt`, so a plain run skips it and an explicit filter picks it up. ECDb uses this for schema sync, where the permutations of concurrent schema changes across briefcases are effectively unbounded.
+A fixture whose name ends in `ExtendedTests` calls `GTEST_SKIP()` from its `SetUp` unless the variable is set to `1`, `true` or `yes`. So an ordinary build reports those tests as skipped rather than running them, a developer exports the variable to run everything, and a build machine sets it on the job. Nothing in the build scripts or the pipeline changes either way, and the skipped tests stay visible in the log.
+
+`ECDbTestFixture::ExtendedTestsEnabled()` reads the variable. Narrow a run further with `--gtest_filter=*ExtendedTests.*` if you want the extended tier on its own.
+
+ECDb uses this for schema sync, where the permutations of concurrent schema changes across briefcases are effectively unbounded.
 
 A test belongs in the extended tier when it covers one more permutation of behaviour the core tier already covers. The behaviour itself stays in the core tier, however slow it is.
 

@@ -160,6 +160,14 @@ public:
     void SetUp() override { Initialize(); }
     void TearDown() override { CloseECDb(); }
 
+    //! True when the IMODEL_RUN_EXTENDED_TESTS environment variable asks for the extended tier.
+    //!
+    //! A fixture whose name ends in ExtendedTests holds one more permutation of behaviour the core
+    //! tier already covers. Those fixtures call this from SetUp and GTEST_SKIP when it is false, so
+    //! an ordinary build reports them as skipped rather than running them. Set the variable to 1,
+    //! true or yes to run them; anything else, or unset, keeps them off.
+    static bool ExtendedTestsEnabled();
+
     //! Initializes the test environment by setting up the schema read context and search dirs etc.
     //! Gets implicitly called when calling SetupECDb, too. Tests that don't use
     //! that method can call this method statically.

@@ -13,14 +13,23 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 
 //! The extended tier of the converted v1 suite.
 //!
-//! Behaves exactly like SchemaSyncTestFixture - the split is by name only, because the ignore list
-//! selects on it. What lives here is the bulk of the permutation families: every mixin variant,
-//! every mapping strategy of a delete-and-re-add, every KindOfQuantity and unit and format case.
-//! One representative of each family stays on SchemaSyncTestFixture so an ordinary build still
-//! catches a regression in that area.
+//! Behaves exactly like SchemaSyncTestFixture apart from the skip below. What lives here is the
+//! bulk of the permutation families: every mixin variant, every mapping strategy of a
+//! delete-and-re-add, every KindOfQuantity and unit and format case. One representative of each
+//! family stays on SchemaSyncTestFixture so an ordinary build still catches a regression in that
+//! area.
 //!
-//! Run with: make run-ecdb-extended, or ECDbTest --gtest_filter=*ExtendedTests.*
-struct SchemaSyncExtendedTests : SchemaSyncTestFixture {};
+//! Run with: IMODEL_RUN_EXTENDED_TESTS=1, optionally narrowed by --gtest_filter=*ExtendedTests.*
+struct SchemaSyncExtendedTests : SchemaSyncTestFixture
+    {
+    void SetUp() override
+        {
+        if (!ExtendedTestsEnabled())
+            GTEST_SKIP() << "Extended tier. Set IMODEL_RUN_EXTENDED_TESTS=1 to run it.";
+
+        SchemaSyncTestFixture::SetUp();
+        }
+    };
 /**
  * A IModel that use shared schema channel can only update/import schema via shared schema channel.
  * IModel will not allow schema import unless shared schema channel is setup up.
