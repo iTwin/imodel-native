@@ -8,6 +8,7 @@
 #include <cmath>
 #include <algorithm>
 #include <set>
+#include <thread>
 #include <BeRapidJson/BeRapidJson.h>
 
 #define CLASS_ID(S,C) (int)m_ecdb.Schemas().GetClassId( #S, #C, SchemaLookupMode::AutoDetect).GetValueUnchecked()
@@ -112,6 +113,241 @@ TEST_F(ECSqlStatementTestFixture, CTECrash) {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
         ASSERT_STREQ( stmt.GetNativeSql(), "WITH RECURSIVE F(A) AS (SELECT 1),S(A) AS (SELECT F.A FROM F UNION SELECT 1 FROM S WHERE S.A=1)\nSELECT S.A FROM S");
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* Regression test: a compound (UNION/EXCEPT/INTERSECT) select whose branches have a
+* different number of columns must be rejected with an error instead of crashing.
+* The column count mismatch is only validated during preparation, so type resolution
+* used to index the select clause of the other branches out of bounds.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECSqlStatementTestFixture, CompoundSelectWithMismatchingColumnCount) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("compound_select_column_count_mismatch.ecdb"));
+
+    Utf8CP ecsqls[] = {
+        "SELECT b FROM (SELECT NULL a, NULL b UNION ALL SELECT 1)",
+        "SELECT b FROM (SELECT 1 a, NULL b UNION ALL SELECT 1)",
+        "SELECT b FROM (SELECT ? a, ? b UNION ALL SELECT 1)",
+        "SELECT * FROM (SELECT NULL a, NULL b UNION ALL SELECT 1)",
+        "SELECT x.b FROM (SELECT NULL a, NULL b UNION ALL SELECT 1) x",
+        "SELECT b FROM (SELECT NULL a, NULL b UNION ALL SELECT 1 UNION ALL SELECT 1,2)",
+        "SELECT b FROM (SELECT NULL a, NULL b EXCEPT SELECT 1)",
+        "SELECT b FROM (SELECT NULL a, NULL b INTERSECT SELECT 1)",
+        "SELECT b FROM (SELECT NULL a, NULL b UNION ALL SELECT 1) ORDER BY b",
+        "WITH cte AS (SELECT NULL a, NULL b UNION ALL SELECT 1) SELECT b FROM cte",
+        "WITH cte AS (SELECT NULL a, NULL b UNION ALL SELECT 1) SELECT * FROM cte",
+        "WITH cte(x,y) AS (SELECT NULL, NULL UNION ALL SELECT 1) SELECT * FROM cte",
+        };
+
+    for (Utf8CP ecsql : ecsqls) {
+        ECSqlStatement stmt;
+        // must not crash, and must not succeed
+        ASSERT_NE(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql)) << ecsql;
+    }
+
+    // A select clause item that resolves to no type at all is folded into a NULL literal during
+    // preparation, which discards the subquery before its branches are ever prepared. The compound
+    // arity is therefore validated while parsing, so even these must be rejected.
+    Utf8CP foldedToNullEcsqls[] = {
+        "SELECT (SELECT b FROM (SELECT NULL a, NULL b UNION ALL SELECT 1))",
+        "SELECT (SELECT b FROM (SELECT NULL a, NULL b UNION ALL SELECT 1)) FROM (SELECT 1 z)",
+        };
+
+    for (Utf8CP ecsql : foldedToNullEcsqls) {
+        ECSqlStatement stmt;
+        ASSERT_NE(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql)) << ecsql;
+    }
+
+    // well formed compound selects must keep preparing, including the NULL folding shapes
+    Utf8CP validEcsqls[] = {
+        "SELECT (SELECT b FROM (SELECT NULL a, NULL b))",
+        "SELECT b FROM (SELECT NULL a, NULL b UNION ALL SELECT 1, 2)",
+        "SELECT * FROM (SELECT NULL a, NULL b UNION ALL SELECT 1, 2)",
+        "WITH cte AS (SELECT NULL a, NULL b UNION ALL SELECT 1, 2) SELECT b FROM cte",
+        "SELECT b FROM (SELECT NULL a, NULL b UNION ALL SELECT 1, 2 UNION ALL SELECT 3, 4)",
+        };
+
+    for (Utf8CP ecsql : validEcsqls) {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql)) << ecsql;
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* Regression test: the scanner reads the statement in blocks, so the read position usually
+* already sits at the end of the statement while the lexer is still somewhere in the middle.
+* Lexer errors must still report the offending text, which is taken from the scan position.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECSqlStatementTestFixture, InvalidSymbolReportsOffendingText) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("syntax_error_context.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="Foo" modifier="Sealed">
+                <ECProperty propertyName="I" typeName="int"/>
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    TestIssueListener listener;
+    m_ecdb.AddIssueListener(listener);
+
+    // The reported issue is "Failed to parse ECSQL '<ecsql>': <parser error>" and therefore always
+    // repeats the ECSQL itself. Only the parser error after it carries the scanner diagnostic.
+    auto parserError = [&] (Utf8CP ecsql) -> Utf8String {
+        Utf8String message = listener.GetLastMessage();
+        Utf8String echoedEcsql(ecsql);
+        const size_t ecsqlEnd = message.find(echoedEcsql);
+        return ecsqlEnd == Utf8String::npos ? message : Utf8String(message.substr(ecsqlEnd + echoedEcsql.size()));
+        };
+
+    // '#' is not part of the ECSQL grammar, so the lexer reports it as an invalid symbol and
+    // appends the offending text up to the next space. That text is only appended when the
+    // scanner still sees itself inside the statement, which after a block read is only true
+    // for the scan position and no longer for the read position.
+    {
+    Utf8CP ecsql = "SELECT I FROM ts.Foo WHERE I #ZZQQ 1";
+    ECSqlStatement stmt;
+    ASSERT_NE(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+    Utf8String error = parserError(ecsql);
+    ASSERT_TRUE(error.Contains("Invalid symbol")) << "expected an invalid symbol error, but was: " << listener.GetLastMessage().c_str();
+    ASSERT_TRUE(error.Contains("#ZZQQ")) << "error must name the offending text, but was: " << listener.GetLastMessage().c_str();
+    }
+
+    listener.ClearIssues();
+    {
+    // the offending text sits far from the end of the statement, so the read position and the
+    // scan position differ by a lot
+    Utf8CP ecsql = "SELECT I FROM ts.Foo WHERE I #ZZQQ 1 AND I <> 2 AND I <> 3 AND I <> 4 AND I <> 5";
+    ECSqlStatement stmt;
+    ASSERT_NE(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+    Utf8String error = parserError(ecsql);
+    ASSERT_TRUE(error.Contains("Invalid symbol")) << "expected an invalid symbol error, but was: " << listener.GetLastMessage().c_str();
+    ASSERT_TRUE(error.Contains("#ZZQQ")) << "error must name the offending text, but was: " << listener.GetLastMessage().c_str();
+    }
+
+    listener.ClearIssues();
+    {
+    // The offending text used to be collected into a file static char buffer whose growth path
+    // advanced the static pointer itself, so anything past the initial 256 characters wrote out
+    // of bounds and the buffer was then freed through an interior pointer.
+    Utf8String longToken(300, 'Z');
+    Utf8String ecsqlStr("SELECT I FROM ts.Foo WHERE I #");
+    ecsqlStr.append(longToken).append(" 1");
+    Utf8CP ecsql = ecsqlStr.c_str();
+    ECSqlStatement stmt;
+    ASSERT_NE(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+    Utf8String error = parserError(ecsql);
+    ASSERT_TRUE(error.Contains("Invalid symbol")) << "expected an invalid symbol error, but was: " << listener.GetLastMessage().c_str();
+    ASSERT_TRUE(error.Contains(longToken)) << "error must name the whole offending text, but was: " << listener.GetLastMessage().c_str();
+    }
+
+    m_ecdb.RemoveIssueListener();
+}
+
+/*---------------------------------------------------------------------------------**//**
+* Regression test: the scanner used to keep its reentrancy flag and its error text buffer in
+* file statics, but ECSQL is parsed on many threads at once. Concurrent lexer errors must not
+* clear each other's state or share a buffer.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECSqlStatementTestFixture, ConcurrentInvalidSymbolPrepares) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("concurrent_syntax_error.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="Foo" modifier="Sealed">
+                <ECProperty propertyName="I" typeName="int"/>
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    m_ecdb.SaveChanges();
+    BeFileName ecdbFile(m_ecdb.GetDbFileName());
+
+    const int threadCount = 8;
+    std::vector<std::thread> threads;
+    for (int i = 0; i < threadCount; ++i)
+        {
+        threads.push_back(std::thread([&ecdbFile] ()
+            {
+            ECDb ecdb;
+            ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbFile, Db::OpenParams(Db::OpenMode::Readonly)));
+            // long offending text so every thread drives the error buffer well past its initial size
+            Utf8String ecsql("SELECT I FROM ts.Foo WHERE I #");
+            ecsql.append(Utf8String(300, 'Z')).append(" 1");
+            for (int n = 0; n < 25; ++n)
+                {
+                ECSqlStatement stmt;
+                ASSERT_NE(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str()));
+                }
+            ecdb.CloseDb();
+            }));
+        }
+
+    for (std::thread& thread : threads)
+        thread.join();
+}
+
+/*---------------------------------------------------------------------------------**//**
+* Regression test: the lexer used to be handed a single character per read, which made it
+* shift the pending token back to the start of its buffer for every character. That is
+* quadratic in the length of a single token, so a large identifier or string literal
+* effectively hung the parser. Parsing must stay linear and must stay correct.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECSqlStatementTestFixture, PrepareWithVeryLongTokens) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("long_tokens.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="Foo" modifier="Sealed">
+                <ECProperty propertyName="I" typeName="int"/>
+                <ECProperty propertyName="S" typeName="string"/>
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    const size_t tokenLength = 1000 * 1000;
+
+    StopWatch timer(true);
+    {
+    // an unknown identifier, so preparation fails, but it must fail quickly
+    ECSqlStatement stmt;
+    Utf8String ecsql("SELECT [");
+    ecsql.append(tokenLength, 'A').append("] FROM ts.Foo");
+    ASSERT_NE(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str()));
+    }
+    {
+    ECSqlStatement stmt;
+    Utf8String ecsql("SELECT '");
+    ecsql.append(tokenLength, 'x').append("'");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str()));
+    }
+    timer.Stop();
+
+    // the quadratic behaviour took many minutes at this size, linear is well under a second
+    ASSERT_LT(timer.GetElapsedSeconds(), 30.0) << "parsing " << tokenLength << " character tokens took " << timer.GetElapsedSeconds() << "s";
+
+    // long tokens must also still be scanned correctly
+    Utf8String longValue(100 * 1000, 'y');
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Foo(I,S) VALUES(1,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, longValue.c_str(), IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    {
+    // a long string literal embedded in the ECSql text itself
+    ECSqlStatement stmt;
+    Utf8String ecsql("SELECT I FROM ts.Foo WHERE S='");
+    ecsql.append(longValue).append("'");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(1, stmt.GetValueInt(0));
+    }
+    {
+    // named parameters are located from the scan position, which the block reader changed
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT I FROM ts.Foo WHERE S=:p AND I=:i"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(stmt.GetParameterIndex("p"), longValue.c_str(), IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(stmt.GetParameterIndex("i"), 1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(1, stmt.GetValueInt(0));
     }
 }
 
