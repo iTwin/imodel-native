@@ -603,11 +603,7 @@ BentleyStatus GraphStatementCache::BuildEndTableSql(GraphStatementEntry& entry,
     if (fkHolderIsSeed && entry.m_relatedClassIdColIdx >= 0)
         {
         DbTable const* otherEndTable = partition.GetOtherEndTable();
-        DbColumn const* otherEndECClassIdCol = (dir == TraversalDirection::Forward)
-            ? partition.GetTargetECClassIdColumn()
-            : partition.GetSourceECClassIdColumn();
-
-        BeAssert(otherEndTable != nullptr && otherEndECClassIdCol != nullptr && !otherEndECClassIdCol->IsVirtual());
+        BeAssert(otherEndTable != nullptr);
         bool isSelfRef = (&fkTable == otherEndTable);
         Utf8CP refAlias = isSelfRef ? "_ReferencedEnd" : "ref_tbl";
         DbColumn const* otherEndIdCol = otherEndTable->FindFirst(DbColumn::Kind::ECInstanceId);
