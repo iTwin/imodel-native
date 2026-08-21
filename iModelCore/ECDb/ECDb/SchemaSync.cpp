@@ -9,6 +9,31 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
+// TEMPORARY - tracing for the "upstream" schema sync flow, to be deleted before this ships.
+//
+// Prints one line per phase, never per row, so a whole test run stays readable. Only the upstream
+// flow traces; the pull/push path does not. To remove: set the switch to 0 to silence it, or
+// delete this block and every SS_TRACE( line in the file - they are all one-liners with no other
+// side effects, so nothing else has to change.
+//+===============+===============+===============+===============+===============+======
+#define SCHEMA_SYNC_UPSTREAM_TRACE 1
+#if SCHEMA_SYNC_UPSTREAM_TRACE
+    #define SS_TRACE(...) do { printf("[schemasync] "); printf(__VA_ARGS__); printf("\n"); fflush(stdout); } while (false)
+
+//=======================================================================================
+// TEMPORARY - goes with the block above. An import into the sync db reports its reason through the
+// issue reporter and returns a bare BE_SQLITE_ERROR, so without this a failure says nothing at all.
+//+===============+===============+===============+===============+===============+======
+struct SchemaSyncTraceIssueListener final : ECN::IIssueListener {
+    void _OnIssueReported(ECN::IssueSeverity, ECN::IssueCategory, ECN::IssueType, ECN::IssueId, Utf8CP message) const override {
+        SS_TRACE("  issue: %s", message);
+    }
+};
+#else
+    #define SS_TRACE(...) do { } while (false)
+#endif
+
+//=======================================================================================
 //     JsonNames
 //+===============+===============+===============+===============+===============+======
 //=======================================================================================
@@ -152,55 +177,6 @@ DbResult SchemaSyncHelper::GetMetaTables(DbR conn, StringList& tables, Utf8CP db
         tables.push_back(iuStmt.GetValueText(0));
     }
     return rc == BE_SQLITE_DONE ? BE_SQLITE_OK : rc;
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-DbResult SchemaSyncHelper::DropDataTables(DbR conn) {
-    if (!conn.TableExists("ec_Table")) {
-        return BE_SQLITE_OK;
-    }
-    Statement stmt;
-    StringList tables;
-    auto rc = stmt.Prepare(conn, "SELECT [Name] FROM [ec_Table] WHERE [Type] IN (" SQLVAL_DbTable_Type_Primary "," SQLVAL_DbTable_Type_Joined "," SQLVAL_DbTable_Type_Overflow R"x() AND Name NOT LIKE 'ecdbf\_%' ESCAPE '\' ORDER BY [Type] DESC)x");
-    if (rc != BE_SQLITE_OK) {
-        LOG.errorv("SchemaSyncHelper::DropDataTables(): Failed to prepared statement to query meta tables to be dropped. %s", BeSQLiteLib::GetErrorString(rc));
-        return rc;
-    }
-    while(stmt.Step() == BE_SQLITE_ROW) {
-        tables.push_back(stmt.GetValueText(0));
-    }
-
-    stmt.Finalize();
-    for(auto& table : tables) {
-        rc = conn.ExecuteSql(SqlPrintfString("DROP TABLE IF EXISTS [main].[%s];", table.c_str()).GetUtf8CP());
-        if (rc != BE_SQLITE_OK) {
-            LOG.errorv("SchemaSyncHelper::DropDataTables(): Failed to drop table %s. %s", table.c_str(), BeSQLiteLib::GetErrorString(rc));
-            return rc;
-        }
-    }
-    return BE_SQLITE_OK;
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-DbResult SchemaSyncHelper::DropMetaTables(DbR conn) {
-    StringList tables;
-    auto rc = GetMetaTables(conn, tables, "main");
-    if (rc != BE_SQLITE_OK) {
-        return rc;
-    }
-    std::reverse(tables.begin(), tables.end());
-    for(auto& table: tables) {
-        rc = conn.ExecuteSql(SqlPrintfString("DROP TABLE IF EXISTS [main].[%s];", table.c_str()).GetUtf8CP());
-        if (rc != BE_SQLITE_OK) {
-            LOG.errorv("SchemaSyncHelper::DropMetaTables(): Failed to drop table %s. %s", table.c_str(), BeSQLiteLib::GetErrorString(rc));
-            return rc;
-        }
-    }
-    return BE_SQLITE_OK;
 }
 
 //---------------------------------------------------------------------------------------
@@ -473,9 +449,17 @@ SchemaSync::Status SchemaSync::SetDefaultSyncDbUri(SyncDbUri syncDbUri) {
 }
 
 //---------------------------------------------------------------------------------------
+// Seed the sync db from this briefcase.
+//
+// The sync db is a mirror of the briefcase's metadata, so the whole job is: make its ec_ table
+// definitions match, copy the rows and the profile properties that describe them, and record on
+// both sides which container they now belong to. Whatever the target already held is brought in
+// line rather than emptied first - SchemaDiff adds and drops definitions, MirrorTables adds and
+// drops rows - because rewriting a row that did not change costs every other client a fresh
+// download of a 64 KiB block.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SchemaSync::Status SchemaSync::Init(SyncDbUri const& syncDbUri, Utf8StringCR containerId, bool overrideContainer, TableList additionTables) {
+SchemaSync::Status SchemaSync::InitInternal(SyncDbUri const& syncDbUri, Utf8StringCR containerId, bool overrideContainer) {
     auto const info = syncDbUri.GetInfo();
     if (!info.IsEmpty()) {
         BeJsDocument doc;
@@ -500,95 +484,71 @@ SchemaSync::Status SchemaSync::Init(SyncDbUri const& syncDbUri, Utf8StringCR con
             "ContainerId provided cannot be empty %s.", syncDbUri.GetUri().c_str());
     }
 
-    Db sharedDb;
-    Db::OpenParams openParams(Db::OpenMode::ReadWrite, DefaultTxn::Yes);
-    ParseQueryParams(openParams, syncDbUri);
-    auto rc = sharedDb.OpenBeSQLiteDb(syncDbUri.GetUri().c_str(), openParams);
-    if (rc != BE_SQLITE_OK) {
-        m_conn.GetImpl().Issues().ReportV(
-            IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0617,
-            "Fail to open schema sync db %s. %s", syncDbUri.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
-        return Status::ERROR_SCHEMA_SYNC_DB_ALREADY_INITIALIZED;
+    // Everything from here mirrors this briefcase, so this briefcase has to be what every other one
+    // will see. A briefcase behind the tip seeds a sync db that is missing schemas others already
+    // have, and the next import into it hands out ids they are using for something else.
+    if (!m_conn.IsLevelWithTimeline()) {
+        m_conn.GetImpl().Issues().Report(
+            IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0744,
+            "Schema sync can only be enabled from a briefcase that is level with the timeline. Push or abandon local changes and pull to the tip first.");
+        return Status::ERROR_BRIEFCASE_NOT_LEVEL_WITH_TIMELINE;
     }
 
-    sharedDb.GetStatementCache().Empty();
-
-    rc = SchemaSyncHelper::DropDataTables(sharedDb);
-    if (rc != BE_SQLITE_OK) {
-        m_conn.GetImpl().Issues().ReportV(
-            IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0618,
-            "Fail to drop data table(s) from schema sync db (%s). %s", syncDbUri.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
-        return Status::ERROR_FAIL_TO_INIT_SCHEMA_SYNC_DB;
-    }
-
-    rc = SchemaSyncHelper::DropMetaTables(sharedDb);
-    if (rc != BE_SQLITE_OK) {
-        m_conn.GetImpl().Issues().ReportV(
-            IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0619,
-            "Fail to drop meta table(s) from schema sync db (%s). %s", syncDbUri.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
-        return Status::ERROR_FAIL_TO_INIT_SCHEMA_SYNC_DB;
-    }
-
-    rc = SchemaSyncHelper::SyncProfileTablesSchema(m_conn, sharedDb);
-    if (rc != BE_SQLITE_OK) {
-        m_conn.GetImpl().Issues().ReportV(
-            IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0620,
-            "Fail to re-create meta table(s) in schema sync db (%s). %s", syncDbUri.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
-        return Status::ERROR_FAIL_TO_INIT_SCHEMA_SYNC_DB;
-    }
-
-    SyncDbInfo syncInfo;
-    LocalDbInfo localDbInfo = GetInfo();
-    if (!localDbInfo.IsEmpty() && overrideContainer) {
-        syncInfo.m_dataVer = localDbInfo.GetDataVersion();
-    }
-    localDbInfo.m_syncId = containerId;
-    syncInfo.m_syncId = containerId;
-
-    if (SaveSyncDbInfo(sharedDb,syncInfo) != Status::OK) {
-        m_conn.GetImpl().Issues().ReportV(
-            IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0622,
-            "Fail to save sync db info in (%s). %s", syncDbUri.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
-        return Status::ERROR_FAIL_TO_INIT_SCHEMA_SYNC_DB;
-    }
-
-    const auto sharedInfo = SyncDbInfo::From(sharedDb);
-    rc = sharedDb.SaveChanges();
-    if (rc != BE_SQLITE_OK || sharedInfo.IsEmpty()) {
-        m_conn.GetImpl().Issues().ReportV(
-            IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0623,
-            "Fail to save changes to schema sync db (%s). %s", syncDbUri.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
-        return Status::ERROR_FAIL_TO_INIT_SCHEMA_SYNC_DB;
-    }
-
-    if (SaveLocalDbInfo(m_conn, localDbInfo) != Status::OK) {
-        m_conn.GetImpl().Issues().ReportV(
-            IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0624,
-            "Fail to save sync db info to local db. %s", BeSQLiteLib::GetErrorString(rc));
-        return Status::ERROR;
-    }
-
-    sharedDb.CloseDb();
-    const auto pullResult = PushInternal(syncDbUri, additionTables, true);
-    if (pullResult != Status::OK)
-        return pullResult;
-
-    if (std::find(additionTables.begin(),additionTables.end(), SchemaSyncHelper::TABLE_BE_PROP) != additionTables.end()){
-        // after BE_PROP pull into syncdb it include JLocalDbInfo which
-        // need to be deleted as its confusing as it should only be in the briefcase.
-        rc = sharedDb.OpenBeSQLiteDb(syncDbUri.GetUri().c_str(), openParams);
+    {
+        Db sharedDb;
+        Db::OpenParams openParams(Db::OpenMode::ReadWrite, DefaultTxn::Yes);
+        ParseQueryParams(openParams, syncDbUri);
+        auto rc = sharedDb.OpenBeSQLiteDb(syncDbUri.GetUri().c_str(), openParams);
         if (rc != BE_SQLITE_OK) {
             m_conn.GetImpl().Issues().ReportV(
                 IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0617,
                 "Fail to open schema sync db %s. %s", syncDbUri.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
             return Status::ERROR_SCHEMA_SYNC_DB_ALREADY_INITIALIZED;
         }
-        const auto propSpec = PropertySpec(JsonNames::JLocalDbInfo, JsonNames::JNamespaceEC);
-        sharedDb.DeleteProperty(propSpec);
-        sharedDb.SaveChanges();
-        sharedDb.CloseDb();
+
+        sharedDb.GetStatementCache().Empty();
+
+        rc = SchemaSyncHelper::SyncProfileTablesSchema(m_conn, sharedDb);
+        if (rc != BE_SQLITE_OK) {
+            m_conn.GetImpl().Issues().ReportV(
+                IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0620,
+                "Fail to re-create meta table(s) in schema sync db (%s). %s", syncDbUri.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
+            return Status::ERROR_FAIL_TO_INIT_SCHEMA_SYNC_DB;
+        }
+
+        SyncDbInfo syncInfo;
+        LocalDbInfo localDbInfo = GetInfo();
+        if (!localDbInfo.IsEmpty() && overrideContainer) {
+            syncInfo.m_dataVer = localDbInfo.GetDataVersion();
+        }
+        localDbInfo.m_syncId = containerId;
+        syncInfo.m_syncId = containerId;
+
+        if (SaveSyncDbInfo(sharedDb, syncInfo) != Status::OK) {
+            m_conn.GetImpl().Issues().ReportV(
+                IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0622,
+                "Fail to save sync db info in (%s). %s", syncDbUri.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
+            return Status::ERROR_FAIL_TO_INIT_SCHEMA_SYNC_DB;
+        }
+
+        const auto sharedInfo = SyncDbInfo::From(sharedDb);
+        rc = sharedDb.SaveChanges();
+        if (rc != BE_SQLITE_OK || sharedInfo.IsEmpty()) {
+            m_conn.GetImpl().Issues().ReportV(
+                IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0623,
+                "Fail to save changes to schema sync db (%s). %s", syncDbUri.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
+            return Status::ERROR_FAIL_TO_INIT_SCHEMA_SYNC_DB;
+        }
+
+        if (SaveLocalDbInfo(m_conn, localDbInfo) != Status::OK) {
+            m_conn.GetImpl().Issues().ReportV(
+                IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0624,
+                "Fail to save sync db info to local db. %s", BeSQLiteLib::GetErrorString(rc));
+            return Status::ERROR;
+        }
     }
-    return Status::OK;
+
+    return MirrorToSyncDb(syncDbUri);
 }
 
 //---------------------------------------------------------------------------------------
@@ -636,9 +596,47 @@ Utf8String SchemaSync::GetStatusAsString(Status status) {
             return "ERROR_UNABLE_TO_ATTACH";
         case Status::ERROR_SYNC_SQL_SCHEMA:
             return "ERROR_SYNC_SQL_SCHEMA";
+        case Status::ERROR_DATA_TRANSFORM_REQUIRED:
+            return "ERROR_DATA_TRANSFORM_REQUIRED";
+        case Status::ERROR_DATA_DELETION_REQUIRED:
+            return "ERROR_DATA_DELETION_REQUIRED";
+        case Status::ERROR_SYNC_DB_CHANGED:
+            return "ERROR_SYNC_DB_CHANGED";
+        case Status::ERROR_PROFILE_VERSION_MISMATCH:
+            return "ERROR_PROFILE_VERSION_MISMATCH";
+        case Status::ERROR_BRIEFCASE_NOT_LEVEL_WITH_TIMELINE:
+            return "ERROR_BRIEFCASE_NOT_LEVEL_WITH_TIMELINE";
         default:
             return "SCHEMA_SYNC_FAIL";
     }
+}
+
+//---------------------------------------------------------------------------------------
+// Pull and push each tolerate profile skew in one direction. Deciding the mapping in one file and
+// adopting it in the other cannot: a difference in profile version means the two could map the same
+// schema differently. Nothing may move until they are aligned, which is a maintenance-mode job.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaSync::Status SchemaSync::VerifyProfileVersionsMatch(SyncDbUri const& syncDbUri) const {
+    const auto syncDbVersion = SchemaSyncHelper::QueryProfileVersion(syncDbUri, SchemaSyncHelper::ProfileKind::EC);
+    const auto localVersion = SchemaSyncHelper::QueryProfileVersion(m_conn, SchemaSyncHelper::ProfileKind::EC);
+
+    if (syncDbVersion.IsEmpty() || localVersion.IsEmpty()) {
+        m_conn.GetImpl().Issues().ReportV(
+            IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0681,
+            "Failed to read the EC profile version of the sync db (%s) or of this briefcase.", syncDbUri.GetUri().c_str());
+        return Status::ERROR;
+    }
+
+    if (syncDbVersion != localVersion) {
+        m_conn.GetImpl().Issues().ReportV(
+            IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0683,
+            "Schema sync requires the sync db (%s) and this briefcase (%s) to be on the same EC profile version.",
+            syncDbVersion.ToString().c_str(), localVersion.ToString().c_str());
+        return Status::ERROR_PROFILE_VERSION_MISMATCH;
+    }
+
+    return Status::OK;
 }
 
 //---------------------------------------------------------------------------------------
@@ -823,88 +821,16 @@ SchemaSync::Status SchemaSync::PullInternal(SyncDbUri const& syncDbUri, TableLis
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SchemaSync::Status SchemaSync::PushInternal(SyncDbUri const& syncDbUri, TableList additionTables, bool isInit) {
-    const auto vrc = VerifySyncDb(syncDbUri, false, isInit);
-    if  (vrc != Status::OK) {
-        LOG.error("SchemaSync::PushInternal(): Failed to verify sync db.");
-        return vrc;
-    }
-
-    const auto syncDbInfo = syncDbUri.GetInfo();
-    const auto localDbInfo = GetInfo();
-    if (syncDbInfo.GetDataVersion() != localDbInfo.GetDataVersion()) {
-        LOG.error("SchemaSync::PushInternal(): Sync db data version is not equal to local db data version.");
-        return Status::ERROR;
-    }
-
-    if (SchemaSyncHelper::VerifyAlias(m_conn) != BE_SQLITE_OK) {
-        LOG.error("SchemaSync::PushInternal(): Failed to verify alias.");
-        return Status::ERROR;
-    }
-
-    // patch container with thisDb schema changes if any
-    auto rc = SchemaSyncHelper::SyncProfileTablesSchema(m_conn, syncDbUri, true);
-    if (rc != BE_SQLITE_OK) {
-        LOG.error("SchemaSync::PushInternal(): Failed to sync profile tables schema.");
-        m_conn.AbandonChanges();
-        m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
-        return Status::ERROR;
-    }
-
-    rc = m_conn.AttachDb(syncDbUri.GetDbAttachUri().c_str(), SchemaSyncHelper::ALIAS_SYNC_DB);
-    if (rc != BE_SQLITE_OK) {
-        m_conn.GetImpl().Issues().ReportV(
-            IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0630,
-            "Unable to attach sync db '%s' as '%s' to primary connection: %s",
-            syncDbUri.GetUri().c_str(),
-            SchemaSyncHelper::ALIAS_SYNC_DB,
-            m_conn.GetLastError().c_str());
-        return Status::ERROR_UNABLE_TO_ATTACH;
-    }
-
-    // pull changes ================================================
-    const auto fromAlias = SchemaSyncHelper::ALIAS_MAIN_DB;
-    const auto toAlias = SchemaSyncHelper::ALIAS_SYNC_DB;
-
-    TableList tables;
-    rc = SchemaSyncHelper::GetMetaTables(m_conn, tables, fromAlias);
-    if (rc != BE_SQLITE_OK) {
-        m_conn.AbandonChanges();
-        m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
-        return Status::ERROR;
-    }
-
-    tables.insert(tables.end(), additionTables.begin(), additionTables.end());
-    rc = SchemaSyncHelper::SyncData(m_conn, tables, fromAlias, toAlias);
-    if (rc != BE_SQLITE_OK) {
-        m_conn.AbandonChanges();
-        m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
-        return Status::ERROR;
-    }
-
-    rc = m_conn.SaveChanges();
-    if (rc != BE_SQLITE_OK) {
-        m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
-        return Status::ERROR;
-    }
-
-    rc = m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
-    if (rc != BE_SQLITE_OK) {
-        return Status::ERROR;
-    }
-
-    return Status::OK;
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
 SchemaSync::Status SchemaSync::Init(SyncDbUri const& syncDbUri, Utf8StringCR containerId, bool overrideContainer) {
     ECDB_PERF_LOG_SCOPE("Initializing schema sync db");
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaSync::Init");
     BeMutexHolder holder(m_conn.GetImpl().GetMutex());
+    // SQLite refuses to detach a db while this
+    // connection still holds a cursor open - which the instance reader, the instance writer and the
+    // statement cache all do after ordinary element work.
+    m_conn.ClearECDbCache();
     BeginModifiedRowCount();
-    const auto rc = Init(syncDbUri, containerId, overrideContainer, { SchemaSyncHelper::TABLE_BE_PROP });
+    const auto rc = InitInternal(syncDbUri, containerId, overrideContainer);
     EndModifiedRowCount();
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaSync::Init");
     return rc;
@@ -996,32 +922,1067 @@ SchemaSync::Status SchemaSync::UpdateDataVersion(SyncDbUri const& syncDbUri) {
     return Status::OK;
 }
 
+//SchemaSyncUpstreamHelper======================================================
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SchemaSync::Status SchemaSync::Push(SyncDbUri const& syncDbUri) {
-    ECDB_PERF_LOG_SCOPE("Pushing tp schema sync db");
-    STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaSync::Push");
-    BeMutexHolder holder(m_conn.GetImpl().GetMutex());
-    const auto effectiveSyncDbUri = syncDbUri.IsEmpty() ? GetDefaultSyncDbUri() : syncDbUri;
-    BeginModifiedRowCount();
-    auto rc = PushInternal(effectiveSyncDbUri, {}, false);
-    EndModifiedRowCount();
-    if (rc == Status::OK && GetModifiedRowCount() > 0) {
-        DbResult sqliteStatus = SchemaSyncHelper::UpdateProfileVersion(m_conn, effectiveSyncDbUri, true);
-        if (sqliteStatus != BE_SQLITE_OK) {
-            LOG.error("SchemaSync::Push() Failed to update profile version in schema sync db");
-            return Status::ERROR;
-        }
-
-        rc = UpdateDataVersion(effectiveSyncDbUri);
-        if (rc != Status::OK) {
-            LOG.error("SchemaSync::Push() Failed to update data version in schema sync db");
+DbResult SchemaSyncUpstreamHelper::DropClosure(ECDbR conn) {
+    for (auto tempTable : { TEMP_SCHEMA_IDS, TEMP_CLASS_IDS, TEMP_TABLE_IDS, TEMP_COLUMN_IDS, TEMP_SEED_IDS }) {
+        const auto rc = conn.ExecuteSql(SqlPrintfString("DROP TABLE IF EXISTS %s", tempTable).GetUtf8CP());
+        if (rc != BE_SQLITE_OK) {
+            LOG.errorv("SchemaSyncUpstreamHelper::DropClosure(): Failed to drop %s. %s", tempTable, BeSQLiteLib::GetErrorString(rc));
             return rc;
         }
     }
-    STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaSync::Push");
-    return rc;
+    return BE_SQLITE_OK;
+}
+
+//=======================================================================================
+// Serves an explicit set of schemas by key. Sits ahead of the sync db's locater while schemas are
+// being re-pointed, so that a schema referencing one of its siblings picks up that sibling's copy -
+// which already points at the sync db - rather than the original, which still points at the
+// briefcase.
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct SchemaSetLocater final : ECN::IECSchemaLocater {
+    private:
+        bvector<ECSchemaPtr> m_schemas;
+
+        ECSchemaPtr _LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR) override {
+            for (auto const& schema : m_schemas) {
+                if (schema->GetSchemaKey().Matches(key, matchType))
+                    return schema;
+            }
+            return nullptr;
+        }
+
+    public:
+        void Add(ECSchemaPtr schema) { m_schemas.push_back(schema); }
+        Utf8String GetDescription() const override { return Utf8PrintfString("SchemaSetLocater holding %d schema(s)", (int)m_schemas.size()); }
+};
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaSyncUpstreamHelper::ReloadAgainstSyncDb(bvector<ECN::ECSchemaPtr>& reloaded, bvector<ECN::ECSchemaCP> const& schemas, ECDbR syncConn) {
+    bvector<ECSchemaCP> inDependencyOrder(schemas);
+    ECSchema::SortSchemasInDependencyOrder(inDependencyOrder);
+
+    SchemaSetLocater copies;
+    auto readContext = ECSchemaReadContext::CreateContext();
+    readContext->AddSchemaLocater(copies);
+    readContext->AddSchemaLocater(syncConn.GetSchemaLocater());
+
+    for (auto schema : inDependencyOrder) {
+        // CopySchema reports a missing reference as a bare SchemaNotFound, so resolve them here
+        // first - otherwise a failure cannot say which reference of which schema was the problem.
+        for (auto const& reference : schema->GetReferencedSchemas()) {
+            SchemaKey key(reference.first);
+            if (readContext->LocateSchema(key, SchemaMatchType::Latest).IsNull()) {
+                syncConn.GetImpl().Issues().ReportV(
+                    IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0585,
+                    "Cannot import '%s' through the schema sync db: it references '%s', which the sync db does not have.",
+                    schema->GetFullSchemaName().c_str(), key.GetFullSchemaName().c_str());
+                return ERROR;
+            }
+        }
+
+        ECSchemaPtr copy;
+        const auto status = schema->CopySchema(copy, readContext.get());
+        if (status != ECObjectsStatus::Success || copy.IsNull()) {
+            syncConn.GetImpl().Issues().ReportV(
+                IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0585,
+                "Failed to re-point '%s' at the schema sync db (ECObjectsStatus %d). Context: %s",
+                schema->GetFullSchemaName().c_str(), (int)status, readContext->GetDescription().c_str());
+            return ERROR;
+        }
+
+        // CopySchema deliberately does not carry this over, and SchemaWriter refuses to decrease it.
+        copy->SetOriginalECXmlVersion(schema->GetOriginalECXmlVersionMajor(), schema->GetOriginalECXmlVersionMinor());
+
+        copies.Add(copy);
+        reloaded.push_back(copy);
+    }
+
+    return SUCCESS;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+int64_t SchemaSyncUpstreamHelper::CountClosureRows(ECDbR conn, Utf8CP tempTableName) {
+    Statement stmt;
+    if (stmt.Prepare(conn, SqlPrintfString("SELECT COUNT(*) FROM %s", tempTableName).GetUtf8CP()) != BE_SQLITE_OK)
+        return -1;
+    if (stmt.Step() != BE_SQLITE_ROW)
+        return -1;
+    return stmt.GetValueInt64(0);
+}
+
+//---------------------------------------------------------------------------------------
+// Builds the id sets that define what "belongs to" the requested schemas.
+//
+// The order below matters, because each set is derived from the previous one:
+//   schemas -> classes -> columns (from property maps) -> tables -> remaining structural columns
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult SchemaSyncUpstreamHelper::BuildClosure(ECDbR conn, Utf8CP syncAlias, StringList const& schemaNames) {
+    auto rc = DropClosure(conn);
+    if (rc != BE_SQLITE_OK)
+        return rc;
+
+    for (auto tempTable : { TEMP_SCHEMA_IDS, TEMP_CLASS_IDS, TEMP_TABLE_IDS, TEMP_COLUMN_IDS, TEMP_SEED_IDS }) {
+        rc = conn.ExecuteSql(SqlPrintfString("CREATE TABLE %s(Id INTEGER PRIMARY KEY)", tempTable).GetUtf8CP());
+        if (rc != BE_SQLITE_OK) {
+            LOG.errorv("SchemaSyncUpstreamHelper::BuildClosure(): Failed to create %s. %s", tempTable, BeSQLiteLib::GetErrorString(rc));
+            return rc;
+        }
+    }
+
+    // Seed: the schemas the caller named. A name that does not exist in the sync db is an error
+    // rather than an empty result - silently adopting nothing would look like success.
+    {
+        Statement stmt;
+        rc = stmt.Prepare(conn, SqlPrintfString("INSERT OR IGNORE INTO %s(Id) SELECT Id FROM [%s].ec_Schema WHERE Name=?", TEMP_SEED_IDS, syncAlias).GetUtf8CP());
+        if (rc != BE_SQLITE_OK) {
+            LOG.errorv("SchemaSyncUpstreamHelper::BuildClosure(): Failed to prepare schema seed statement. %s", BeSQLiteLib::GetErrorString(rc));
+            return rc;
+        }
+        for (auto const& name : schemaNames) {
+            stmt.Reset();
+            stmt.ClearBindings();
+            if ((rc = stmt.BindText(1, name.c_str(), Statement::MakeCopy::No)) != BE_SQLITE_OK)
+                return rc;
+            if ((rc = stmt.Step()) != BE_SQLITE_DONE) {
+                LOG.errorv("SchemaSyncUpstreamHelper::BuildClosure(): Failed to seed schema '%s'. %s", name.c_str(), BeSQLiteLib::GetErrorString(rc));
+                return rc;
+            }
+            if (conn.GetModifiedRowCount() == 0) {
+                // Either the schema is missing from the sync db, or a previously named schema already
+                // pulled it in. Only the former is a problem.
+                Statement exists;
+                if (exists.Prepare(conn, SqlPrintfString("SELECT 1 FROM [%s].ec_Schema WHERE Name=?", syncAlias).GetUtf8CP()) != BE_SQLITE_OK)
+                    return BE_SQLITE_ERROR;
+                exists.BindText(1, name.c_str(), Statement::MakeCopy::No);
+                if (exists.Step() != BE_SQLITE_ROW) {
+                    LOG.errorv("SchemaSyncUpstreamHelper::BuildClosure(): Schema '%s' does not exist in the sync db.", name.c_str());
+                    return BE_SQLITE_NOTFOUND;
+                }
+            }
+        }
+    }
+
+    // Expand over references. A schema's classes may derive from, or refer to, anything in a schema
+    // it references, so the referenced schemas have to come along - at the sync db's version, which
+    // is the point of doing this at all.
+    rc = conn.ExecuteSql(SqlPrintfString(
+        "INSERT OR IGNORE INTO %s(Id) "
+        "WITH RECURSIVE closure(Id) AS ("
+        "  SELECT Id FROM %s"
+        "  UNION"
+        "  SELECT r.ReferencedSchemaId FROM [%s].ec_SchemaReference r JOIN closure c ON r.SchemaId = c.Id"
+        "    WHERE r.ReferencedSchemaId IS NOT NULL"
+        ") SELECT Id FROM closure",
+        TEMP_SCHEMA_IDS, TEMP_SEED_IDS, syncAlias).GetUtf8CP());
+    if (rc != BE_SQLITE_OK) {
+        LOG.errorv("SchemaSyncUpstreamHelper::BuildClosure(): Failed to expand schema references. %s", BeSQLiteLib::GetErrorString(rc));
+        return rc;
+    }
+
+    rc = conn.ExecuteSql(SqlPrintfString(
+        "INSERT OR IGNORE INTO %s(Id) SELECT Id FROM [%s].ec_Class WHERE SchemaId IN (SELECT Id FROM %s)",
+        TEMP_CLASS_IDS, syncAlias, TEMP_SCHEMA_IDS).GetUtf8CP());
+    if (rc != BE_SQLITE_OK) {
+        LOG.errorv("SchemaSyncUpstreamHelper::BuildClosure(): Failed to collect class ids. %s", BeSQLiteLib::GetErrorString(rc));
+        return rc;
+    }
+
+    // Columns the closure's classes actually map to. This is the precise notion of "a column that
+    // belongs to us": a shared column allocated by somebody else's un-pushed import is not in here,
+    // and that is exactly the clutter we are keeping out.
+    rc = conn.ExecuteSql(SqlPrintfString(
+        "INSERT OR IGNORE INTO %s(Id) SELECT DISTINCT pm.ColumnId FROM [%s].ec_PropertyMap pm WHERE pm.ClassId IN (SELECT Id FROM %s)",
+        TEMP_COLUMN_IDS, syncAlias, TEMP_CLASS_IDS).GetUtf8CP());
+    if (rc != BE_SQLITE_OK) {
+        LOG.errorv("SchemaSyncUpstreamHelper::BuildClosure(): Failed to collect mapped column ids. %s", BeSQLiteLib::GetErrorString(rc));
+        return rc;
+    }
+
+    // Tables reached through those columns, plus tables the closure owns outright. Collected into
+    // the seed set first, because the parent walk below has to read from a different table than it
+    // writes to.
+    rc = conn.ExecuteSql(SqlPrintfString("DELETE FROM %s", TEMP_SEED_IDS).GetUtf8CP());
+    if (rc != BE_SQLITE_OK)
+        return rc;
+
+    rc = conn.ExecuteSql(SqlPrintfString(
+        "INSERT OR IGNORE INTO %s(Id) SELECT DISTINCT c.TableId FROM [%s].ec_Column c WHERE c.Id IN (SELECT Id FROM %s)",
+        TEMP_SEED_IDS, syncAlias, TEMP_COLUMN_IDS).GetUtf8CP());
+    if (rc != BE_SQLITE_OK)
+        return rc;
+
+    rc = conn.ExecuteSql(SqlPrintfString(
+        "INSERT OR IGNORE INTO %s(Id) SELECT t.Id FROM [%s].ec_Table t WHERE t.ExclusiveRootClassId IN (SELECT Id FROM %s)",
+        TEMP_SEED_IDS, syncAlias, TEMP_CLASS_IDS).GetUtf8CP());
+    if (rc != BE_SQLITE_OK)
+        return rc;
+
+    // Overflow and joined tables point at their parent, and the parent has to exist locally before
+    // the child can be described.
+    rc = conn.ExecuteSql(SqlPrintfString(
+        "INSERT OR IGNORE INTO %s(Id) "
+        "WITH RECURSIVE parents(Id) AS ("
+        "  SELECT Id FROM %s"
+        "  UNION"
+        "  SELECT t.ParentTableId FROM [%s].ec_Table t JOIN parents p ON t.Id = p.Id WHERE t.ParentTableId IS NOT NULL"
+        ") SELECT Id FROM parents",
+        TEMP_TABLE_IDS, TEMP_SEED_IDS, syncAlias).GetUtf8CP());
+    if (rc != BE_SQLITE_OK) {
+        LOG.errorv("SchemaSyncUpstreamHelper::BuildClosure(): Failed to collect parent tables. %s", BeSQLiteLib::GetErrorString(rc));
+        return rc;
+    }
+
+    // Structural columns of those tables that no property maps to at all - anything ECDb needs to
+    // describe the table itself. Shared columns are deliberately excluded here: an unallocated slot
+    // in the pool is not ours until something in the closure maps to it.
+    rc = conn.ExecuteSql(SqlPrintfString(
+        "INSERT OR IGNORE INTO %s(Id) SELECT c.Id FROM [%s].ec_Column c "
+        "WHERE c.TableId IN (SELECT Id FROM %s) AND c.ColumnKind <> %d "
+        "  AND NOT EXISTS (SELECT 1 FROM [%s].ec_PropertyMap pm WHERE pm.ColumnId = c.Id)",
+        TEMP_COLUMN_IDS, syncAlias, TEMP_TABLE_IDS, (int)DbColumn::Kind::SharedData, syncAlias).GetUtf8CP());
+    if (rc != BE_SQLITE_OK) {
+        LOG.errorv("SchemaSyncUpstreamHelper::BuildClosure(): Failed to collect structural column ids. %s", BeSQLiteLib::GetErrorString(rc));
+        return rc;
+    }
+
+    return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult SchemaSyncUpstreamHelper::UpsertFiltered(ECDbR conn, Utf8CP tableName, Utf8CP sourceAlias, Utf8CP targetAlias, Utf8CP whereClause) {
+    SchemaSyncHelper::StringList cols;
+    auto rc = SchemaSyncHelper::GetColumnNames(conn, sourceAlias, tableName, cols);
+    if (rc != BE_SQLITE_OK) {
+        LOG.errorv("SchemaSyncUpstreamHelper::UpsertFiltered(): Failed to get column names for %s. %s", tableName, BeSQLiteLib::GetErrorString(rc));
+        return rc;
+    }
+
+    SchemaSyncHelper::StringList targetCols;
+    rc = SchemaSyncHelper::GetColumnNames(conn, targetAlias, tableName, targetCols);
+    if (rc != BE_SQLITE_OK)
+        return rc;
+
+    if (cols.size() != targetCols.size()) {
+        LOG.errorv("SchemaSyncUpstreamHelper::UpsertFiltered(): Column count mismatch for table %s.", tableName);
+        return BE_SQLITE_SCHEMA;
+    }
+
+    SchemaSyncHelper::StringList setClauseExprs;
+    for (auto const& col : cols)
+        setClauseExprs.push_back(SqlPrintfString("%s=excluded.%s", col.c_str(), col.c_str()).GetUtf8CP());
+
+    const auto colsSql = SchemaSyncHelper::Join(cols);
+    const auto sql = Utf8String{SqlPrintfString(
+        "INSERT INTO [%s].[%s](%s) SELECT %s FROM [%s].[%s] WHERE %s ON CONFLICT DO UPDATE SET %s",
+        targetAlias, tableName, colsSql.c_str(),
+        colsSql.c_str(), sourceAlias, tableName,
+        whereClause,
+        SchemaSyncHelper::Join(setClauseExprs).c_str()).GetUtf8CP()};
+
+    Statement stmt;
+    rc = stmt.Prepare(conn, sql.c_str());
+    if (rc != BE_SQLITE_OK) {
+        LOG.errorv("SchemaSyncUpstreamHelper::UpsertFiltered(): Failed to prepare copy for %s. %s (sql: %s)", tableName, BeSQLiteLib::GetErrorString(rc), sql.c_str());
+        return rc;
+    }
+    rc = stmt.Step();
+    if (rc != BE_SQLITE_DONE) {
+        LOG.errorv("SchemaSyncUpstreamHelper::UpsertFiltered(): Failed to copy %s. %s", tableName, BeSQLiteLib::GetErrorString(rc));
+        return rc;
+    }
+    return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// Make the target's copy of each table match the source's within the plan's scopes, touching as few
+// rows as possible. Both directions of schema sync run through here: the upgrade path mirrors a
+// whole briefcase into the sync db with unscoped plans, and the update path adopts a single
+// reference closure out of it.
+//
+// Three properties are in tension and all three matter.
+//
+// Correctness rules out an upsert - SchemaSyncHelper::SyncData, or an INSERT .. ON CONFLICT DO UPDATE
+// with no conflict target. An incoming row can collide with a surviving target row on one of the ec_
+// tables' other unique indexes rather than on the primary key, and the update then rewrites that
+// surviving row instead of inserting a new one. It is not exotic: ec_Property, ec_Column,
+// ec_ClassHasBaseClasses and ec_CustomAttribute all carry a UNIQUE(parent, Ordinal), and inserting a
+// property into the middle of a class shifts the ordinals of its siblings. Removing every row that
+// has to change before inserting anything is what makes that impossible.
+//
+// Efficiency rules out the blunt fix of emptying every table and refilling it. The sync db lives in a
+// CloudSqlite container with 64 KiB blocks, and every other client caches those blocks; rewriting
+// rows that did not change would give them all a new block id and force a re-download of the whole
+// file. On the briefcase side the same property keeps a schema changeset proportional to the change
+// rather than to the reference closure.
+//
+// Scoping is the third. Adopting a closure must not touch rows outside it - typically schemas another
+// briefcase imported but has not pushed - and the two scopes are not the same set. A row can only be
+// recognised as *stale* by its container, because a row the source deleted is not in the closure's id
+// sets at all; so ec_Column, for one, inserts by column id and sweeps stale rows by table id. Hence:
+//
+//   pass 1a - delete target rows that the source, within m_sourceScope, offers under the same key but
+//             with different values. These are exactly the rows pass 2 will put back.
+//   pass 1b - delete target rows inside m_staleScope that the source has no row for at all.
+//   pass 2  - insert every source row inside m_sourceScope whose key is now absent from the target.
+//
+// Splitting the delete in two is what keeps the wider stale scope safe: a row inside m_staleScope but
+// outside m_sourceScope is only ever removed when the source does not have it, never merely because
+// it differs, so nothing is deleted that pass 2 would not restore.
+//
+// After the deletes, every surviving target row either equals its source row or exists unchanged in
+// the source, so the source holds every row the target does - and the source satisfies the unique
+// indexes. That is why pass 2 cannot conflict, which makes it correct as well as cheap.
+//
+// Foreign key actions are suppressed throughout, and every pass depends on it. Not every ec_ foreign
+// key cascades: ec_Table.ExclusiveRootClassId and ec_RelationshipConstraint.AbstractConstraintClassId
+// are ON DELETE SET NULL, so removing a stale class would null a column in a surviving row that pass 2
+// never revisits, since its key is still there. The cascading ones are worse than wasteful - deleting
+// a KindOfQuantity takes every ec_Property pointing at it, and those properties are restored only if
+// they happen to fall inside m_sourceScope. defer_foreign_keys is still needed on top: it defers the
+// *check* to commit, by which point pass 2 has restored what pass 1 removed.
+//
+// Suppressing them puts the whole burden on the plan: with no cascade, an orphan is cleared only by
+// its own table's statements, so every table that references a deleted row has to be in the plan.
+// This is why the whole-file mirror covers ec_cache_ where the closure does not.
+//
+// The delete sweep repeats until it deletes nothing. With the actions suppressed that is one
+// productive sweep and one clean one, and the clean one only reads. It stays because the suppression
+// is a connection flag read at statement-prepare time: if it ever fails to take, this degrades to
+// slow-but-correct instead of to a silently mangled target.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult SchemaSyncUpstreamHelper::MirrorTables(ECDbR conn, bvector<TablePlan> const& plan, Utf8CP sourceAlias, Utf8CP targetAlias) {
+    auto rc = conn.ExecuteSql("PRAGMA defer_foreign_keys=1");
+    if (rc != BE_SQLITE_OK) {
+        LOG.error("SchemaSyncUpstreamHelper::MirrorTables(): Failed to set defer_foreign_keys=1");
+        return rc;
+    }
+
+    struct TableStatements {
+        Utf8CP m_table;
+        Utf8String m_deleteChanged;
+        Utf8String m_deleteStale;
+        Utf8String m_insertMissing;
+        bool m_removeStaleRows;
+    };
+
+    bvector<TableStatements> statements;
+    for (auto const& entry : plan) {
+        Utf8CP table = entry.m_table;
+        SchemaSyncHelper::StringList cols, pkCols;
+        rc = SchemaSyncHelper::GetColumnNames(conn, targetAlias, table, cols);
+        if (rc != BE_SQLITE_OK) {
+            LOG.errorv("SchemaSyncUpstreamHelper::MirrorTables(): Failed to get column names for %s. %s", table, BeSQLiteLib::GetErrorString(rc));
+            return rc;
+        }
+        rc = SchemaSyncHelper::GetPrimaryKeyColumnNames(conn, targetAlias, table, pkCols);
+        if (rc != BE_SQLITE_OK) {
+            LOG.errorv("SchemaSyncUpstreamHelper::MirrorTables(): Failed to get primary key columns for %s. %s", table, BeSQLiteLib::GetErrorString(rc));
+            return rc;
+        }
+        if (pkCols.empty()) {
+            LOG.errorv("SchemaSyncUpstreamHelper::MirrorTables(): %s has no primary key, so rows cannot be matched up.", table);
+            return BE_SQLITE_SCHEMA;
+        }
+
+        // IS rather than = so that two NULLs count as equal.
+        SchemaSyncHelper::StringList sameRowExprs;
+        for (auto const& col : cols)
+            sameRowExprs.push_back(SqlPrintfString("[S].[%s] IS [T].[%s]", col.c_str(), col.c_str()).GetUtf8CP());
+
+        SchemaSyncHelper::StringList keyMatchExprs;
+        for (auto const& col : pkCols)
+            keyMatchExprs.push_back(SqlPrintfString("[S].[%s] IS [T].[%s]", col.c_str(), col.c_str()).GetUtf8CP());
+
+        const auto sameRow = SchemaSyncHelper::Join(sameRowExprs, " AND ");
+        const auto sameKey = SchemaSyncHelper::Join(keyMatchExprs, " AND ");
+        const auto sourceScope = entry.m_sourceScope.empty() ? Utf8String("1") : entry.m_sourceScope;
+        const auto staleScope = entry.m_staleScope.empty() ? Utf8String("1") : entry.m_staleScope;
+        const auto colsSql = SchemaSyncHelper::Join(cols);
+
+        TableStatements built;
+        built.m_table = table;
+        built.m_removeStaleRows = entry.m_removeStaleRows;
+
+        built.m_deleteChanged = SqlPrintfString(
+            "DELETE FROM [%s].[%s] AS [T] WHERE"
+            " EXISTS (SELECT 1 FROM [%s].[%s] [S] WHERE %s AND (%s))"
+            " AND NOT EXISTS (SELECT 1 FROM [%s].[%s] [S] WHERE %s AND (%s))",
+            targetAlias, table,
+            sourceAlias, table, sameKey.c_str(), sourceScope.c_str(),
+            sourceAlias, table, sameRow.c_str(), sourceScope.c_str()).GetUtf8CP();
+
+        built.m_deleteStale = SqlPrintfString(
+            "DELETE FROM [%s].[%s] AS [T] WHERE (%s) AND NOT EXISTS (SELECT 1 FROM [%s].[%s] [S] WHERE %s)",
+            targetAlias, table, staleScope.c_str(),
+            sourceAlias, table, sameKey.c_str()).GetUtf8CP();
+
+        built.m_insertMissing = SqlPrintfString(
+            "INSERT INTO [%s].[%s](%s) SELECT %s FROM [%s].[%s] [S] WHERE (%s)"
+            " AND NOT EXISTS (SELECT 1 FROM [%s].[%s] [T] WHERE %s)",
+            targetAlias, table, colsSql.c_str(),
+            colsSql.c_str(), sourceAlias, table, sourceScope.c_str(),
+            targetAlias, table, sameKey.c_str()).GetUtf8CP();
+
+        statements.push_back(built);
+    }
+
+    // Everything from here writes rows, so the suppression covers every pass. PRAGMA foreign_keys is
+    // not an option: SQLite ignores it inside a transaction and ECDb opens with DefaultTxn::Yes.
+    SuppressForeignKeyActions noForeignKeyActions(conn);
+
+    // Deep enough for any chain the ec_ foreign key graph can produce, low enough that a mistake here
+    // surfaces as an error rather than a hang.
+    constexpr int maxDeleteSweeps = 16;
+
+    int64_t deleted = 0;
+    Utf8String deletedDetail;
+    int sweeps = 0;
+    for (bool sweepDeletedSomething = true; sweepDeletedSomething; ) {
+        sweepDeletedSomething = false;
+        if (++sweeps > maxDeleteSweeps) {
+            LOG.errorv("SchemaSyncUpstreamHelper::MirrorTables(): The delete pass did not settle after %d sweeps.", maxDeleteSweeps);
+            return BE_SQLITE_ERROR;
+        }
+
+        // Children before parents. Only readability rests on this - the actions are suppressed and the
+        // sweep runs to a fixed point either way - but a plan ordered parents-first reads better.
+        for (auto entry = statements.rbegin(); entry != statements.rend(); ++entry) {
+            const auto runDelete = [&](Utf8StringCR sql) {
+                rc = conn.ExecuteSql(sql.c_str());
+                if (rc != BE_SQLITE_OK) {
+                    LOG.errorv("SchemaSyncUpstreamHelper::MirrorTables(): Failed to drop rows from %s. %s (sql: %s)", entry->m_table, BeSQLiteLib::GetErrorString(rc), sql.c_str());
+                    return false;
+                }
+                const auto affected = conn.GetModifiedRowCount();
+                if (affected > 0) {
+                    sweepDeletedSomething = true;
+                    deleted += affected;
+                    deletedDetail.append(SqlPrintfString(" %s=%d", entry->m_table, affected).GetUtf8CP());
+                }
+                return true;
+            };
+
+            if (!runDelete(entry->m_deleteChanged))
+                return rc;
+
+            if (entry->m_removeStaleRows && !runDelete(entry->m_deleteStale))
+                return rc;
+        }
+    }
+
+    int64_t inserted = 0;
+    Utf8String insertedDetail;
+    for (auto const& entry : statements) {
+        rc = conn.ExecuteSql(entry.m_insertMissing.c_str());
+        if (rc != BE_SQLITE_OK) {
+            LOG.errorv("SchemaSyncUpstreamHelper::MirrorTables(): Failed to insert missing rows into %s. %s (sql: %s)", entry.m_table, BeSQLiteLib::GetErrorString(rc), entry.m_insertMissing.c_str());
+            return rc;
+        }
+        const auto affected = conn.GetModifiedRowCount();
+        if (affected > 0) {
+            inserted += affected;
+            insertedDetail.append(SqlPrintfString(" %s=%d", entry.m_table, affected).GetUtf8CP());
+        }
+    }
+
+    // Counts, not rows: this is what says whether the mirror wrote a handful of rows or churned the
+    // whole file, which is the difference between a cheap upload and every client re-downloading it.
+    SS_TRACE("mirror %s -> %s: deleted %lld in %d sweep(s), inserted %lld (of %d tables)", sourceAlias, targetAlias, (long long)deleted, sweeps, (long long)inserted, (int)plan.size());
+    if (deleted > 0)
+        SS_TRACE("  deleted:%s", deletedDetail.c_str());
+    if (inserted > 0)
+        SS_TRACE("  inserted:%s", insertedDetail.c_str());
+
+    return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult SchemaSyncUpstreamHelper::MirrorTables(ECDbR conn, StringList const& tables, Utf8CP sourceAlias, Utf8CP targetAlias) {
+    bvector<TablePlan> plan;
+    plan.reserve(tables.size());
+    for (auto const& table : tables) {
+        TablePlan entry;
+        entry.m_table = table.c_str();
+        plan.push_back(entry);
+    }
+
+    return MirrorTables(conn, plan, sourceAlias, targetAlias);
+}
+
+//---------------------------------------------------------------------------------------
+// Brings the closure's rows into line with the sync db.
+//
+// This is MirrorTables with a scope per table rather than a second mechanism: the shapes were the
+// same and the sync db direction had already worked out the delete-then-insert rules that make an
+// upsert unnecessary. Everything about how the rows move lives there; this function only says which
+// rows belong to the briefcase.
+//
+// It rests on the sync db being a superset of the briefcase within the closure - every ec_ row a
+// sync-enabled file holds came from there - so a row inside the closure that the sync db lacks was
+// deleted there rather than created here.
+//
+// ec_cache_* is left out. Those are derived, and SchemaSync::UpdateDbSchema rebuilds them afterwards.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult SchemaSyncUpstreamHelper::CopyClosure(ECDbR conn, Utf8CP syncAlias, Utf8CP targetAlias) {
+    const auto inSchemas = Utf8String{SqlPrintfString("(SELECT Id FROM %s)", TEMP_SCHEMA_IDS).GetUtf8CP()};
+    const auto inClasses = Utf8String{SqlPrintfString("(SELECT Id FROM %s)", TEMP_CLASS_IDS).GetUtf8CP()};
+    const auto inTables = Utf8String{SqlPrintfString("(SELECT Id FROM %s)", TEMP_TABLE_IDS).GetUtf8CP()};
+    const auto inColumns = Utf8String{SqlPrintfString("(SELECT Id FROM %s)", TEMP_COLUMN_IDS).GetUtf8CP()};
+
+    // Custom attributes hang off a polymorphic container, so the predicate has to branch on
+    // ContainerType. Note the container of a relationship-constraint CA is the constraint row, not
+    // the relationship class.
+    const auto caFilter = [&](Utf8CP alias) {
+        return Utf8String{SqlPrintfString(
+            "(ContainerType = %d AND ContainerId IN %s) OR "
+            "(ContainerType = %d AND ContainerId IN %s) OR "
+            "(ContainerType = %d AND ContainerId IN (SELECT Id FROM [%s].ec_Property WHERE ClassId IN %s)) OR "
+            "(ContainerType IN (%d,%d) AND ContainerId IN (SELECT Id FROM [%s].ec_RelationshipConstraint WHERE RelationshipClassId IN %s))",
+            (int)SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Schema, inSchemas.c_str(),
+            (int)SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Class, inClasses.c_str(),
+            (int)SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Property, alias, inClasses.c_str(),
+            (int)SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::SourceRelationshipConstraint,
+            (int)SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::TargetRelationshipConstraint,
+            alias, inClasses.c_str()).GetUtf8CP()};
+    };
+    const auto compositeUnitFilter = [&](Utf8CP alias) {
+        return Utf8String{SqlPrintfString("FormatId IN (SELECT Id FROM [%s].ec_Format WHERE SchemaId IN %s)", alias, inSchemas.c_str()).GetUtf8CP()};
+    };
+    const auto propertyPathFilter = [&](Utf8CP alias) {
+        return Utf8String{SqlPrintfString("RootPropertyId IN (SELECT Id FROM [%s].ec_Property WHERE ClassId IN %s)", alias, inClasses.c_str()).GetUtf8CP()};
+    };
+    const auto constraintClassFilter = [&](Utf8CP alias) {
+        return Utf8String{SqlPrintfString("ConstraintId IN (SELECT Id FROM [%s].ec_RelationshipConstraint WHERE RelationshipClassId IN %s)", alias, inClasses.c_str()).GetUtf8CP()};
+    };
+    const auto ownedIndexes = Utf8String{SqlPrintfString("TableId IN %s AND (ClassId IS NULL OR ClassId IN %s)", inTables.c_str(), inClasses.c_str()).GetUtf8CP()};
+    const auto indexColumnFilter = [&](Utf8CP alias) {
+        return Utf8String{SqlPrintfString("IndexId IN (SELECT Id FROM [%s].ec_Index WHERE %s)", alias, ownedIndexes.c_str()).GetUtf8CP()};
+    };
+
+    const auto bySchema = Utf8String{SqlPrintfString("SchemaId IN %s", inSchemas.c_str()).GetUtf8CP()};
+    const auto byClass = Utf8String{SqlPrintfString("ClassId IN %s", inClasses.c_str()).GetUtf8CP()};
+
+    // Ordered so that a row's parents land before it does. MirrorTables reverses it for the deletes.
+    // Where the stale scope is wider than the source scope, it is because a row the sync db deleted is
+    // not in the closure's id sets at all, so only its container can identify it.
+    const bvector<TablePlan> plan {
+        { "ec_Schema",                    Utf8String{SqlPrintfString("Id IN %s", inSchemas.c_str()).GetUtf8CP()}, Utf8String{SqlPrintfString("Id IN %s", inSchemas.c_str()).GetUtf8CP()} },
+        { "ec_SchemaReference",           bySchema, bySchema },
+        { "ec_Class",                     bySchema, bySchema },
+        { "ec_ClassHasBaseClasses",       byClass, byClass },
+        { "ec_Enumeration",               bySchema, bySchema },
+        { "ec_UnitSystem",                bySchema, bySchema },
+        { "ec_Phenomenon",                bySchema, bySchema },
+        { "ec_Unit",                      bySchema, bySchema },
+        { "ec_Format",                    bySchema, bySchema },
+        { "ec_FormatCompositeUnit",       compositeUnitFilter(syncAlias), compositeUnitFilter(targetAlias) },
+        { "ec_KindOfQuantity",            bySchema, bySchema },
+        { "ec_PropertyCategory",          bySchema, bySchema },
+        { "ec_Property",                  byClass, byClass },
+        { "ec_PropertyPath",              propertyPathFilter(syncAlias), propertyPathFilter(targetAlias) },
+        { "ec_RelationshipConstraint",    Utf8String{SqlPrintfString("RelationshipClassId IN %s", inClasses.c_str()).GetUtf8CP()}, Utf8String{SqlPrintfString("RelationshipClassId IN %s", inClasses.c_str()).GetUtf8CP()} },
+        { "ec_RelationshipConstraintClass", constraintClassFilter(syncAlias), constraintClassFilter(targetAlias) },
+        { "ec_CustomAttribute",           caFilter(syncAlias), caFilter(targetAlias) },
+        // A table only disappears when the class that owned it does, which the update path refuses,
+        // and a table the sync db dropped is not in the closure to begin with.
+        { "ec_Table",                     Utf8String{SqlPrintfString("Id IN %s", inTables.c_str()).GetUtf8CP()}, Utf8String{}, false },
+        // Scoped by table rather than by the closure's column ids, because a column the sync db
+        // deleted is not among them. A shared column in one of these tables that no class of ours maps
+        // to belongs to somebody else's schema: it is outside the source scope, so it is only ever
+        // removed when the sync db has dropped it too.
+        { "ec_Column",                    Utf8String{SqlPrintfString("Id IN %s", inColumns.c_str()).GetUtf8CP()}, Utf8String{SqlPrintfString("TableId IN %s", inTables.c_str()).GetUtf8CP()} },
+        { "ec_ClassMap",                  byClass, byClass },
+        { "ec_PropertyMap",               Utf8String{SqlPrintfString("ClassId IN %s AND ColumnId IN %s", inClasses.c_str(), inColumns.c_str()).GetUtf8CP()}, byClass },
+        { "ec_Index",                     ownedIndexes, ownedIndexes },
+        { "ec_IndexColumn",               Utf8String{SqlPrintfString("ColumnId IN %s AND %s", inColumns.c_str(), indexColumnFilter(syncAlias).c_str()).GetUtf8CP()}, indexColumnFilter(targetAlias) },
+    };
+
+    return MirrorTables(conn, plan, syncAlias, targetAlias);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaSync::Status SchemaSync::AdoptSchemas(SyncDbUri const& syncDbUri, bvector<Utf8String> const& schemaNames, DataVer adoptedDataVer) {
+    ECDB_PERF_LOG_SCOPE("Adopting schemas from schema sync db");
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaSync::AdoptSchemas");
+
+    if (schemaNames.empty()) {
+        LOG.error("SchemaSync::AdoptSchemas(): No schema names given.");
+        return Status::ERROR;
+    }
+
+    BeMutexHolder holder(m_conn.GetImpl().GetMutex());
+    const auto effectiveSyncDbUri = syncDbUri.IsEmpty() ? GetDefaultSyncDbUri() : syncDbUri;
+
+    const auto vrc = VerifySyncDb(effectiveSyncDbUri, true, false);
+    if (vrc != Status::OK) {
+        LOG.error("SchemaSync::AdoptSchemas(): Failed to verify sync db.");
+        return vrc;
+    }
+
+    if (SchemaSyncHelper::VerifyAlias(m_conn) != BE_SQLITE_OK) {
+        LOG.error("SchemaSync::AdoptSchemas(): Failed to verify alias.");
+        return Status::ERROR;
+    }
+
+    auto& mainDisp = m_conn.Schemas().Main();
+    mainDisp.OnBeforeSchemaChanges().RaiseEvent(m_conn, SchemaChangeType::SchemaImport);
+    m_conn.ClearECDbCache();
+
+    // Attaching and detaching both commit, so everything this call does has to happen between the
+    // two - otherwise a failure in the second half leaves committed ec_ rows describing tables that
+    // were never built, and AbandonChanges cannot reach them.
+    auto rc = m_conn.AttachDb(effectiveSyncDbUri.GetDbAttachUri().c_str(), SchemaSyncHelper::ALIAS_SYNC_DB);
+    if (rc != BE_SQLITE_OK) {
+        m_conn.GetImpl().Issues().ReportV(
+            IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0630,
+            "Unable to attach sync db '%s' as '%s' to primary connection: %s",
+            effectiveSyncDbUri.GetUri().c_str(), SchemaSyncHelper::ALIAS_SYNC_DB, m_conn.GetLastError().c_str());
+        return Status::ERROR_UNABLE_TO_ATTACH;
+    }
+
+    const auto cleanup = [&](Status status) {
+        SchemaSyncUpstreamHelper::DropClosure(m_conn);
+        m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
+        return status;
+    };
+
+    // The ordinary import path drops these too - they render the old mapping and are never
+    // recreated automatically.
+    if (SUCCESS != ViewGenerator::DropECClassViews(m_conn)) {
+        LOG.error("SchemaSync::AdoptSchemas(): Failed to drop ECClass views.");
+        m_conn.AbandonChanges();
+        return cleanup(Status::ERROR);
+    }
+
+    BeginModifiedRowCount();
+    rc = SchemaSyncUpstreamHelper::BuildClosure(m_conn, SchemaSyncHelper::ALIAS_SYNC_DB, schemaNames);
+    if (rc != BE_SQLITE_OK) {
+        LOG.error("SchemaSync::AdoptSchemas(): Failed to build schema closure.");
+        m_conn.AbandonChanges();
+        return cleanup(Status::ERROR);
+    }
+
+    SS_TRACE("adopt %s: closure is %lld schemas, %lld classes, %lld tables, %lld columns",
+        SchemaSyncHelper::Join(schemaNames, ",").c_str(),
+        (long long)SchemaSyncUpstreamHelper::CountClosureRows(m_conn, SchemaSyncUpstreamHelper::TEMP_SCHEMA_IDS),
+        (long long)SchemaSyncUpstreamHelper::CountClosureRows(m_conn, SchemaSyncUpstreamHelper::TEMP_CLASS_IDS),
+        (long long)SchemaSyncUpstreamHelper::CountClosureRows(m_conn, SchemaSyncUpstreamHelper::TEMP_TABLE_IDS),
+        (long long)SchemaSyncUpstreamHelper::CountClosureRows(m_conn, SchemaSyncUpstreamHelper::TEMP_COLUMN_IDS));
+
+    rc = SchemaSyncUpstreamHelper::CopyClosure(m_conn, SchemaSyncHelper::ALIAS_SYNC_DB, SchemaSyncHelper::ALIAS_MAIN_DB);
+    if (rc != BE_SQLITE_OK) {
+        LOG.error("SchemaSync::AdoptSchemas(): Failed to copy schema closure.");
+        m_conn.AbandonChanges();
+        return cleanup(Status::ERROR);
+    }
+    EndModifiedRowCount();
+
+    // The copied rows carry the sync db's ids, so every id sequence is now behind the file it
+    // describes.
+    if (!m_conn.GetImpl().GetIdFactory().Reset()) {
+        LOG.error("SchemaSync::AdoptSchemas(): Failed to reset the id factory.");
+        m_conn.AbandonChanges();
+        return cleanup(Status::ERROR);
+    }
+
+    // Materialise the physical tables and indexes the adopted rows imply, and track the DDL so it
+    // travels in this briefcase's changeset the way an ordinary import's does. Nothing else on this
+    // path emits DDL - the import itself ran in the sync db, which holds no data tables - so this is
+    // where a schema changeset produced under schema sync gets its table definitions. A briefcase
+    // that already built the same tables ignores the redundant DDL: TxnManager::ApplyDdlChanges is
+    // best effort, and ECDb::_AfterSchemaChangeSetApplied rebuilds from ec_ either way.
+    // Validation runs in ChangesetApply mode for the same reason SchemaSync::Pull does: the strict pass
+    // already ran on the import into the sync db, and this briefcase may carry historical inconsistencies
+    // (orphan ec_CustomAttribute rows) that predate it.
+    const auto kDoNotTrackDdlChanges = false;
+    if (SUCCESS != mainDisp.UpdateDbSchema(kDoNotTrackDdlChanges, DbMapValidationMode::ChangesetApply)) {
+        LOG.error("SchemaSync::AdoptSchemas(): Failed to update db schema.");
+        m_conn.AbandonChanges();
+        return cleanup(Status::ERROR);
+    }
+
+    // Adopting can push a class that already holds data into an overflow table. An ordinary import
+    // ends by giving every existing instance its matching overflow row; here that import ran in the
+    // sync db, which holds no data, so it had nothing to do - and UpdateDbSchema only creates tables
+    // and indexes. Without this, instances that predate the widening have no overflow row and every
+    // write to a property that landed there is silently lost.
+    if (BE_SQLITE_OK != m_conn.Schemas().Main().UpgradeECInstances()) {
+        LOG.error("SchemaSync::AdoptSchemas(): Failed to give existing instances their overflow rows.");
+        m_conn.AbandonChanges();
+        return cleanup(Status::ERROR);
+    }
+
+    if (adoptedDataVer != 0) {
+        auto localDbInfo = GetInfo();
+        localDbInfo.m_dataVer = adoptedDataVer;
+        if (SaveLocalDbInfo(m_conn, localDbInfo) != Status::OK) {
+            LOG.error("SchemaSync::AdoptSchemas(): Failed to stamp the adopted data version.");
+            m_conn.AbandonChanges();
+            return cleanup(Status::ERROR);
+        }
+    }
+
+    const auto detachRc = cleanup(Status::OK);
+    UNUSED_VARIABLE(detachRc);
+
+    SS_TRACE("adopt done: tables and indexes materialised, overflow rows caught up");
+
+    mainDisp.OnAfterSchemaChanges().RaiseEvent(m_conn, SchemaChangeType::SchemaImport);
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaSync::AdoptSchemas");
+    return Status::OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaSync::Status SchemaSync::ImportSchemas(SyncDbUri const& syncDbUri, bvector<ECN::ECSchemaCP> const& schemas, SchemaManager::SchemaImportOptions options) {
+    ECDB_PERF_LOG_SCOPE("Importing schemas through the schema sync db");
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaSync::ImportSchemas");
+
+    if (schemas.empty()) {
+        LOG.error("SchemaSync::ImportSchemas(): No schemas given.");
+        return Status::ERROR;
+    }
+
+    BeMutexHolder holder(m_conn.GetImpl().GetMutex());
+    const auto effectiveSyncDbUri = syncDbUri.IsEmpty() ? GetDefaultSyncDbUri() : syncDbUri;
+
+    const auto vrc = VerifySyncDb(effectiveSyncDbUri, true, false);
+    if (vrc != Status::OK) {
+        LOG.error("SchemaSync::ImportSchemas(): Failed to verify sync db.");
+        return vrc;
+    }
+
+    const auto prc = VerifyProfileVersionsMatch(effectiveSyncDbUri);
+    if (prc != Status::OK)
+        return prc;
+
+    const auto dataVerBeforeImport = SyncDbInfo::From(effectiveSyncDbUri).GetDataVersion();
+    SS_TRACE("import: %d schema(s), sync db dataVer %lld", (int)schemas.size(), (long long)dataVerBeforeImport);
+
+    // Step 1. The import runs in the sync db, which is where ids and physical layout get decided.
+    bvector<Utf8String> importedSchemaNames;
+    auto status = ImportIntoSyncDb(effectiveSyncDbUri, schemas, options, importedSchemaNames, dataVerBeforeImport);
+    if (status != Status::OK)
+        return status;
+
+    // Step 2. Everything the sync db decided is now taken over verbatim; nothing is decided here.
+    // The sync db's version moves first so the briefcase can stamp what it adopted inside the same
+    // txn as the rows: attach and detach both commit, and a rebase replays txn by txn, so a stamp
+    // written afterwards would be in a txn that carries no ec_ rows.
+    auto syncDbInfo = SyncDbInfo::From(effectiveSyncDbUri);
+    syncDbInfo.m_dataVer = dataVerBeforeImport + 1;
+    if (SaveSyncDbInfo(effectiveSyncDbUri, syncDbInfo) != Status::OK) {
+        LOG.error("SchemaSync::ImportSchemas(): Failed to update the sync db data version.");
+        return Status::ERROR;
+    }
+
+    status = AdoptSchemas(effectiveSyncDbUri, importedSchemaNames, syncDbInfo.GetDataVersion());
+    if (status != Status::OK) {
+        LOG.error("SchemaSync::ImportSchemas(): Failed to adopt the imported schemas.");
+        return status;
+    }
+
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaSync::ImportSchemas");
+    return Status::OK;
+}
+
+//---------------------------------------------------------------------------------------
+// Step 1 of SchemaSync::ImportSchemas, split out so the sync db connection is closed before the
+// briefcase attaches the same file to adopt from it.
+//
+// The import is the ordinary one, run with DoNotCreateOrUpdateDataTables so it writes ec_ rows and
+// nothing else. The sync db is the record of what was decided; building the tables that decision
+// implies is the adopting briefcase's job.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaSync::Status SchemaSync::ImportIntoSyncDb(SyncDbUri const& syncDbUri, bvector<ECN::ECSchemaCP> const& schemas, SchemaManager::SchemaImportOptions options, bvector<Utf8String>& importedSchemaNames, DataVer dataVerBeforeImport) {
+    ECDb syncConn;
+    Db::OpenParams openParams(Db::OpenMode::ReadWrite, DefaultTxn::Yes);
+    ParseQueryParams(openParams, syncDbUri);
+    auto rc = syncConn.OpenBeSQLiteDb(syncDbUri.GetUri().c_str(), openParams);
+    if (rc != BE_SQLITE_OK) {
+        LOG.errorv("SchemaSync::ImportSchemas(): Failed to open sync db '%s'. %s", syncDbUri.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
+        return Status::ERROR_OPENING_SCHEMA_SYNC_DB;
+    }
+
+    // Init strips the sync db's local info exactly so that it is not itself a schema sync client.
+    // If that ever stopped holding, the import below would try to sync to a sync db of its own.
+    if (syncConn.Schemas().GetSchemaSync().IsEnabled()) {
+        LOG.error("SchemaSync::ImportSchemas(): The sync db is itself set up to use schema sync, which is not valid.");
+        return Status::ERROR_INVALID_SCHEMA_SYNC_DB;
+    }
+
+#if SCHEMA_SYNC_UPSTREAM_TRACE
+    SchemaSyncTraceIssueListener traceIssues;
+    syncConn.AddIssueListener(traceIssues);
+#endif
+
+    bvector<ECSchemaPtr> reloaded;
+    if (SUCCESS != SchemaSyncUpstreamHelper::ReloadAgainstSyncDb(reloaded, schemas, syncConn)) {
+        LOG.error("SchemaSync::ImportSchemas(): Failed to re-point the schemas at the sync db.");
+        return Status::ERROR;
+    }
+
+    bvector<ECSchemaCP> schemasToImport;
+    for (auto const& schema : reloaded) {
+        schemasToImport.push_back(schema.get());
+        importedSchemaNames.push_back(schema->GetName());
+    }
+
+    // The caller's options come along - DisallowMajorSchemaUpgrade and DoNotFailForDeletionsOrModifications
+    // decide whether the import is legal, and this is the import that decides.
+    const auto syncDbOptions = Enum::Or(options, SchemaManager::SchemaImportOptions::DoNotCreateOrUpdateDataTables);
+    const auto importRc = syncConn.Schemas().ImportSchemas(schemasToImport, syncDbOptions);
+    SS_TRACE("import into sync db: %s -> %d", SchemaSyncHelper::Join(importedSchemaNames, ",").c_str(), (int)(SchemaImportResult::Status)importRc);
+    if (importRc == SchemaImportResult::ERROR_DATA_TRANSFORM_REQUIRED) {
+        LOG.info("SchemaSync::ImportSchemas(): The import would have to move data, which the additive path does not do.");
+        syncConn.AbandonChanges();
+        return Status::ERROR_DATA_TRANSFORM_REQUIRED;
+    }
+
+    if (importRc == SchemaImportResult::ERROR_DATA_DELETION_REQUIRED) {
+        LOG.info("SchemaSync::ImportSchemas(): The import would destroy data, which the additive path does not do.");
+        syncConn.AbandonChanges();
+        return Status::ERROR_DATA_DELETION_REQUIRED;
+    }
+
+    if (!importRc.IsOk()) {
+        LOG.errorv("SchemaSync::ImportSchemas(): The import into the sync db failed. %s", syncConn.GetLastError().c_str());
+        SS_TRACE("  sqlite says: %s", syncConn.GetLastError().c_str());
+        syncConn.AbandonChanges();
+        return Status::ERROR;
+    }
+
+    // The caller holds the container write lock for this whole call, so the data version cannot have
+    // moved. Checking it anyway backstops against somebody writing without the lock.
+    if (SyncDbInfo::From(syncConn).GetDataVersion() != dataVerBeforeImport) {
+        LOG.error("SchemaSync::ImportSchemas(): The sync db was written to during the import, which means it was written to without the lock.");
+        syncConn.AbandonChanges();
+        return Status::ERROR_SYNC_DB_CHANGED;
+    }
+
+    rc = syncConn.SaveChanges();
+    if (rc != BE_SQLITE_OK) {
+        LOG.errorv("SchemaSync::ImportSchemas(): Failed to save the sync db. %s", BeSQLiteLib::GetErrorString(rc));
+        return Status::ERROR;
+    }
+
+    syncConn.CloseDb();
+    return Status::OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaSync::Status SchemaSync::UpgradeSchemas(SyncDbUri const& syncDbUri, bvector<ECN::ECSchemaCP> const& schemas, SchemaManager::SchemaImportOptions options, SchemaImportToken const* token) {
+    ECDB_PERF_LOG_SCOPE("Upgrading schemas and overwriting the schema sync db");
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaSync::UpgradeSchemas");
+
+    if (schemas.empty()) {
+        LOG.error("SchemaSync::UpgradeSchemas(): No schemas given.");
+        return Status::ERROR;
+    }
+
+    BeMutexHolder holder(m_conn.GetImpl().GetMutex());
+    const auto effectiveSyncDbUri = syncDbUri.IsEmpty() ? GetDefaultSyncDbUri() : syncDbUri;
+
+    const auto vrc = VerifySyncDb(effectiveSyncDbUri, false, false);
+    if (vrc != Status::OK) {
+        LOG.error("SchemaSync::UpgradeSchemas(): Failed to verify sync db.");
+        return vrc;
+    }
+
+    const auto prc = VerifyProfileVersionsMatch(effectiveSyncDbUri);
+    if (prc != Status::OK)
+        return prc;
+
+    // No re-pointing here, which is the opposite of ImportSchemas: the schemas arrive resolved
+    // against this briefcase and the briefcase is what decides. Whatever the sync db holds beyond it
+    // is about to be thrown away anyway.
+    //
+    // The ordinary upgrade, run locally and unmodified. Schema sync is switched off for it so that
+    // the pull/push hooks stay out of the way: a pull would drag in exactly the abandoned rows we
+    // are about to delete, and a push would refuse on the data version.
+    SchemaImportResult importRc = SchemaImportResult::ERROR;
+        {
+        DisableSchemaSync();
+        importRc = m_conn.Schemas().ImportSchemas(schemas, Enum::Or(options, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade), token);
+        ReEnableSchemaSync();
+        }
+
+    SS_TRACE("upgrade: local import of %d schema(s) with transforms allowed -> %d", (int)schemas.size(), (int)(SchemaImportResult::Status)importRc);
+
+    if (!importRc.IsOk()) {
+        LOG.error("SchemaSync::UpgradeSchemas(): The local import failed.");
+        m_conn.AbandonChanges();
+        return Status::ERROR;
+    }
+
+    auto status = OverwriteSyncDbInternal(effectiveSyncDbUri);
+    if (status != Status::OK) {
+        LOG.error("SchemaSync::UpgradeSchemas(): Failed to overwrite the sync db from this briefcase.");
+        m_conn.AbandonChanges();
+        return status;
+    }
+
+    SS_TRACE("upgrade done: sync db now at dataVer %lld", (long long)GetInfo().GetDataVersion());
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaSync::UpgradeSchemas");
+    return Status::OK;
+}
+
+//---------------------------------------------------------------------------------------
+// Replace the sync db's ec_ rows with this briefcase's.
+//
+// This is a push without its "am I level with the sync db" precondition, which is the whole
+// point: the sync db may hold rows from an import that was never pushed, and those are what we
+// want gone. The copy itself is a differential mirror rather than an upsert - see MirrorTables.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaSync::Status SchemaSync::MirrorToSyncDb(SyncDbUri const& syncDbUri) {
+    if (SchemaSyncHelper::VerifyAlias(m_conn) != BE_SQLITE_OK) {
+        LOG.error("SchemaSync::MirrorToSyncDb(): Failed to verify alias.");
+        return Status::ERROR;
+    }
+
+    auto rc = m_conn.AttachDb(syncDbUri.GetDbAttachUri().c_str(), SchemaSyncHelper::ALIAS_SYNC_DB);
+    if (rc != BE_SQLITE_OK) {
+        m_conn.GetImpl().Issues().ReportV(
+            IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0630,
+            "Unable to attach sync db '%s' as '%s' to primary connection: %s",
+            syncDbUri.GetUri().c_str(),
+            SchemaSyncHelper::ALIAS_SYNC_DB,
+            m_conn.GetLastError().c_str());
+        return Status::ERROR_UNABLE_TO_ATTACH;
+    }
+
+    TableList tables;
+    rc = SchemaSyncHelper::GetMetaTables(m_conn, tables, SchemaSyncHelper::ALIAS_MAIN_DB);
+    if (rc != BE_SQLITE_OK) {
+        LOG.error("SchemaSync::MirrorToSyncDb(): Failed to read the list of meta tables.");
+        m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
+        return Status::ERROR;
+    }
+
+    // ec_cache_ goes with the rest. It is derived and the briefcase has just regenerated it, so
+    // mirroring it is what leaves the sync db's cache agreeing with the ec_ rows it now holds. The
+    // opposite direction is where it has to be left out: AdoptSchemas copies a closure rather than a
+    // whole file, the sync db's cache covers schemas outside that closure, and its ids are positional
+    // so they only line up when the whole class graph does. UpdateDbSchema regenerates it there.
+    rc = SchemaSyncUpstreamHelper::MirrorTables(m_conn, tables, SchemaSyncHelper::ALIAS_MAIN_DB, SchemaSyncHelper::ALIAS_SYNC_DB);
+    if (rc != BE_SQLITE_OK) {
+        LOG.error("SchemaSync::MirrorToSyncDb(): Failed to bring the sync db's ec_ tables in line with this briefcase.");
+        m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
+        return Status::ERROR;
+    }
+
+    // The profile properties describe the ec_ tables just copied - the EC, BeSQLite and DGN profile
+    // versions, and ec_Db/InitialSchemaVersion, which the mapper still branches on. Upserted rather
+    // than mirrored, because the sync db's own syncDbInfo and its VersionedSqliteDb version have no
+    // counterpart here and a delete pass would take them out. localDbInfo is left behind: it says
+    // "this file is a schema sync client", which the sync db must never claim to be.
+    const auto excludeLocalDbInfo = Utf8String{SqlPrintfString("NOT ([Namespace]='%s' AND [Name]='%s')",
+        JsonNames::JNamespaceEC, JsonNames::JLocalDbInfo).GetUtf8CP()};
+    rc = SchemaSyncUpstreamHelper::UpsertFiltered(m_conn, SchemaSyncHelper::TABLE_BE_PROP,
+            SchemaSyncHelper::ALIAS_MAIN_DB, SchemaSyncHelper::ALIAS_SYNC_DB, excludeLocalDbInfo.c_str());
+    if (rc != BE_SQLITE_OK) {
+        LOG.error("SchemaSync::MirrorToSyncDb(): Failed to copy the profile properties.");
+        m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
+        return Status::ERROR;
+    }
+
+#if SCHEMA_SYNC_UPSTREAM_TRACE
+    {
+    Statement fkStmt;
+    if (fkStmt.Prepare(m_conn, SqlPrintfString("PRAGMA [%s].foreign_key_check", SchemaSyncHelper::ALIAS_SYNC_DB).GetUtf8CP()) == BE_SQLITE_OK) {
+        int violations = 0;
+        while (fkStmt.Step() == BE_SQLITE_ROW) {
+            ++violations;
+            SS_TRACE("  sync db FK violation: table=%s rowid=%lld parent=%s fkid=%d",
+                fkStmt.GetValueText(0), (long long)fkStmt.GetValueInt64(1), fkStmt.GetValueText(2), fkStmt.GetValueInt(3));
+        }
+        if (violations == 0)
+            SS_TRACE("overwrite: sync db has no dangling references");
+    }
+    }
+#endif
+
+    rc = m_conn.SaveChanges();
+    if (rc != BE_SQLITE_OK) {
+        LOG.errorv("SchemaSync::MirrorToSyncDb(): Failed to save. %s", BeSQLiteLib::GetErrorString(rc));
+        m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
+        return Status::ERROR;
+    }
+
+    rc = m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
+    if (rc != BE_SQLITE_OK) {
+        LOG.error("SchemaSync::MirrorToSyncDb(): Failed to detach the sync db.");
+        return Status::ERROR;
+    }
+
+    return Status::OK;
+}
+
+//---------------------------------------------------------------------------------------
+// The whole overwrite: the sync db's ec_ table definitions, its rows, and the profile properties
+// that say what it is. A profile upgrade can add columns to the ec_ tables themselves, so their
+// definitions have to be patched before any row is copied, and the profile version has to follow
+// the briefcase or every later import is refused for skew.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaSync::Status SchemaSync::OverwriteSyncDbInternal(SyncDbUri const& syncDbUri) {
+    auto sqliteRc = SchemaSyncHelper::SyncProfileTablesSchema(m_conn, syncDbUri, true);
+    if (sqliteRc != BE_SQLITE_OK) {
+        LOG.error("SchemaSync::OverwriteSyncDbInternal(): Failed to patch the sync db's profile table definitions.");
+        return Status::ERROR_SYNC_SQL_SCHEMA;
+    }
+
+    auto status = MirrorToSyncDb(syncDbUri);
+    if (status != Status::OK)
+        return status;
+
+    return UpdateDataVersion(syncDbUri);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaSync::Status SchemaSync::OverwriteSyncDb(SyncDbUri const& syncDbUri) {
+    ECDB_PERF_LOG_SCOPE("Overwriting the schema sync db from this briefcase");
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaSync::OverwriteSyncDb");
+    BeMutexHolder holder(m_conn.GetImpl().GetMutex());
+    // Same as SchemaSync::Init: MirrorToSyncDb detaches, and an open cursor makes that fail.
+    m_conn.ClearECDbCache();
+
+    const auto effectiveSyncDbUri = syncDbUri.IsEmpty() ? GetDefaultSyncDbUri() : syncDbUri;
+    const auto vrc = VerifySyncDb(effectiveSyncDbUri, false, false);
+    if (vrc != Status::OK) {
+        LOG.error("SchemaSync::OverwriteSyncDb(): Failed to verify sync db.");
+        return vrc;
+    }
+
+    SS_TRACE("overwrite: rebuilding the sync db from this briefcase");
+    const auto status = OverwriteSyncDbInternal(effectiveSyncDbUri);
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaSync::OverwriteSyncDb");
+    return status;
 }
 
 //---------------------------------------------------------------------------------------
@@ -1080,6 +2041,63 @@ DbResult SchemaSync::ScanForSchemaChanges(ChangeStream& stream, bool& isECMetaDa
     }
     return BE_SQLITE_OK;
 }
+
+// Column ordinals of be_Prop: Namespace,Name,Id,SubId,TxnMode,StrData,RawSize,Data.
+#define BE_PROP_COL_NAMESPACE 0
+#define BE_PROP_COL_NAME 1
+#define BE_PROP_COL_STRDATA 5
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+static Utf8CP GetChangeText(Changes::Change const& change, int col, Changes::Change::Stage stage) {
+    const auto val = change.GetValue(col, stage);
+    if (!val.IsValid() || val.IsNull() || val.GetValueType() != DbValueType::TextVal)
+        return nullptr;
+
+    return val.GetValueText();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+bool SchemaSync::IsLocalDbInfoChange(Changes::Change const& change) {
+    if (!change.GetTableName().EqualsIAscii("be_Prop"))
+        return false;
+
+    // An UPDATE carries the primary key in its old values only, an INSERT in its new values.
+    for (auto stage : {Changes::Change::Stage::Old, Changes::Change::Stage::New}) {
+        const auto ns = GetChangeText(change, BE_PROP_COL_NAMESPACE, stage);
+        const auto name = GetChangeText(change, BE_PROP_COL_NAME, stage);
+        if (nullptr != ns && nullptr != name &&
+            0 == BeStringUtilities::StricmpAscii(ns, JsonNames::JNamespaceEC) &&
+            0 == BeStringUtilities::StricmpAscii(name, JsonNames::JLocalDbInfo))
+            return true;
+    }
+    return false;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+bool SchemaSync::TryGetDataVersion(DataVer& dataVer, Changes::Change const& change) {
+    const auto json = GetChangeText(change, BE_PROP_COL_STRDATA, Changes::Change::Stage::New);
+    if (nullptr == json)
+        return false;
+
+    BeJsDocument jsonDoc;
+    jsonDoc.Parse(json);
+    if (jsonDoc.hasParseError())
+        return false;
+
+    const auto info = LocalDbInfo::From(BeJsConst(jsonDoc));
+    if (info.IsEmpty())
+        return false;
+
+    dataVer = info.GetDataVersion();
+    return true;
+}
+
 //=======================================================================================
 //     SchemaSync::LocalDbInfo
 //+===============+===============+===============+===============+===============+======

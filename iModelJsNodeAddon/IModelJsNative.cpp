@@ -624,19 +624,31 @@ public:
         }
     }
 
-    void SchemaSyncPush(NapiInfoCR info) {
+    void SchemaSyncOverwrite(NapiInfoCR info) {
         OPTIONAL_ARGUMENT_STRING(0, schemaSyncDbUriStr);
         auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
         LastErrorListener lastError(m_ecdb);
-        auto rc = m_ecdb.Schemas().GetSchemaSync().Push(syncDbUri);
+        auto rc = m_ecdb.Schemas().GetSchemaSync().OverwriteSyncDb(syncDbUri);
         if (rc != SchemaSync::Status::OK) {
             if (lastError.HasError()) {
                 THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
             } else {
-                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to push changes from channel: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to overwrite schema sync db: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
             }
         }
     }
+    void SchemaSyncUpdateDbSchema(NapiInfoCR info) {
+        LastErrorListener lastError(m_ecdb);
+        auto rc = m_ecdb.Schemas().GetSchemaSync().UpdateDbSchema();
+        if (rc != SchemaSync::Status::OK) {
+            if (lastError.HasError()) {
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
+            } else {
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), "fail to update the db schema from the ec_ tables", rc);
+            }
+        }
+    }
+
     static Napi::Value EnableSharedCache(NapiInfoCR info) {
         REQUIRE_ARGUMENT_BOOL(0, enabled);
         DbResult r = BeSQLiteLib::EnableSharedCache(enabled);
@@ -665,7 +677,8 @@ public:
             InstanceMethod("schemaSyncSetDefaultUri", &NativeECDb::SchemaSyncSetDefaultUri),
             InstanceMethod("schemaSyncGetDefaultUri", &NativeECDb::SchemaSyncGetDefaultUri),
             InstanceMethod("schemaSyncPull", &NativeECDb::SchemaSyncPull),
-            InstanceMethod("schemaSyncPush", &NativeECDb::SchemaSyncPush),
+            InstanceMethod("schemaSyncOverwrite", &NativeECDb::SchemaSyncOverwrite),
+            InstanceMethod("schemaSyncUpdateDbSchema", &NativeECDb::SchemaSyncUpdateDbSchema),
             InstanceMethod("schemaSyncInit", &NativeECDb::SchemaSyncInit),
             InstanceMethod("schemaSyncEnabled", &NativeECDb::SchemaSyncEnabled),
             InstanceMethod("schemaSyncGetLocalDbInfo", &NativeECDb::SchemaSyncGetLocalDbInfo),
@@ -1616,7 +1629,8 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     }
     Napi::Value CancelTo(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, txnIdHexStr);
-        return Napi::Number::New(Env(), (int) GetOpenedDb(info).Txns().CancelTo(TxnIdFromString(txnIdHexStr)));
+        OPTIONAL_ARGUMENT_BOOL(1, allowCrossSessions, false);
+        return Napi::Number::New(Env(), (int) GetOpenedDb(info).Txns().CancelTo(TxnIdFromString(txnIdHexStr), allowCrossSessions));
     }
     Napi::Value ReverseTxns(NapiInfoCR info) {
         REQUIRE_ARGUMENT_NUMBER(0, numTxns );
@@ -2373,17 +2387,33 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         }
     }
 
-    void SchemaSyncPush(NapiInfoCR info) {
+    void SchemaSyncOverwrite(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
         OPTIONAL_ARGUMENT_STRING(0, schemaSyncDbUriStr);
         auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
         LastErrorListener lastError(GetOpenedDb(info));
-        auto rc = db.Schemas().GetSchemaSync().Push(syncDbUri);
+        auto rc = db.Schemas().GetSchemaSync().OverwriteSyncDb(syncDbUri);
         if (rc != SchemaSync::Status::OK) {
             if (lastError.HasError()) {
                 THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
             } else {
-                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to push changes to schema sync db: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to overwrite schema sync db: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
+            }
+        }
+    }
+
+    // Materialise the physical tables and indexes the ec_ rows imply. A schema-sync-enabled
+    // briefcase that merged somebody else's schema changeset holds the rows but not the columns,
+    // because neither the changeset nor the adopt step carries DDL.
+    void SchemaSyncUpdateDbSchema(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        LastErrorListener lastError(db);
+        auto rc = db.Schemas().GetSchemaSync().UpdateDbSchema();
+        if (rc != SchemaSync::Status::OK) {
+            if (lastError.HasError()) {
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
+            } else {
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), "fail to update the db schema from the ec_ tables", rc);
             }
         }
     }
@@ -3424,7 +3454,8 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("schemaSyncSetDefaultUri", &NativeDgnDb::SchemaSyncSetDefaultUri),
             InstanceMethod("schemaSyncGetDefaultUri", &NativeDgnDb::SchemaSyncGetDefaultUri),
             InstanceMethod("schemaSyncPull", &NativeDgnDb::SchemaSyncPull),
-            InstanceMethod("schemaSyncPush", &NativeDgnDb::SchemaSyncPush),
+            InstanceMethod("schemaSyncOverwrite", &NativeDgnDb::SchemaSyncOverwrite),
+            InstanceMethod("schemaSyncUpdateDbSchema", &NativeDgnDb::SchemaSyncUpdateDbSchema),
             InstanceMethod("schemaSyncInit", &NativeDgnDb::SchemaSyncInit),
             InstanceMethod("schemaSyncEnabled", &NativeDgnDb::SchemaSyncEnabled),
             InstanceMethod("schemaSyncGetLocalDbInfo", &NativeDgnDb::SchemaSyncGetLocalDbInfo),

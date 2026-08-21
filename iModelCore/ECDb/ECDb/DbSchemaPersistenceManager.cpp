@@ -77,7 +77,11 @@ DbSchemaPersistenceManager::CreateOrUpdateTableResult DbSchemaPersistenceManager
         mode = CreateOrUpdateTableResult::Created;
 
     if (mode == CreateOrUpdateTableResult::WasUpToDate)
-        return mode;
+        {
+        // The comparison above only sees columns. A briefcase can hold the table and none of its triggers,
+        // because CREATE TABLE is tracked into the changeset and CREATE TRIGGER is not.
+        return SUCCESS == CreateTriggers(ecdb, table, false) ? mode : CreateOrUpdateTableResult::Error;
+        }
 
     BentleyStatus stat = SUCCESS;
     if (mode == CreateOrUpdateTableResult::Created)

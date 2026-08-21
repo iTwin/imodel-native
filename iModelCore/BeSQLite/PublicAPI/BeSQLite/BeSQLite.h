@@ -608,6 +608,7 @@ enum DbResult
     BE_SQLITE_ERROR_CouldNotAcquireLocksOrCodes = (BE_SQLITE_IOERR | (21<<24)), //!< Error acquiring locks or codes
     BE_SQLITE_ERROR_SchemaUpgradeRecommended    = (BE_SQLITE_IOERR | (22<<24)), //!< Recommended that the schemas found in the database be upgraded
     BE_SQLITE_ERROR_DataTransformRequired       = (BE_SQLITE_IOERR | (23<<24)), //!< Schema update need to update data.
+    BE_SQLITE_ERROR_DataDeletionRequired        = (BE_SQLITE_IOERR | (24<<24)), //!< Schema update needs to remove data (classes/properties)
 
     BE_SQLITE_ERROR_NOTOPEN                     = (BE_SQLITE_ERROR | (1<<24)),  //!< Db not open
     BE_SQLITE_ERROR_PropagateChangesFailed      = (BE_SQLITE_ERROR | (2<<24)),  //!< Error propagating changes during commit
@@ -3353,6 +3354,30 @@ public:
     BE_SQLITE_EXPORT static DbResult Deserialize(DbBuffer& buffer, DbR db, DbDeserializeOptions opts = DbDeserializeOptions::FreeOnClose, const char *zSchema = nullptr, std::function<void(DbR)> beforeDefaultTxnStarts = nullptr);
     BE_SQLITE_EXPORT DbResult SetNoCaseCollation(NoCaseCollation col) { return m_dbFile->SetNoCaseCollation(col); }
     BE_SQLITE_EXPORT NoCaseCollation GetNoCaseCollation() const { return m_dbFile->GetNoCaseCollation(); }
+};
+
+//=======================================================================================
+//! Makes every foreign key ON DELETE and ON UPDATE action on a connection behave as NO ACTION for
+//! as long as this is in scope.
+//!
+//! For a bulk row synchronizing, we do not want cascading deletes to fire.
+//! Pair this with `PRAGMA defer_foreign_keys=1`
+//! so the checks happen at commit, by which point the data should be consistent.
+//!
+//! This is the same connection flag `sqlite3changeset_apply_v2` sets for SQLITE_CHANGESETAPPLY_FKNOACTION.
+//! @note The setting is read when a statement is prepared, not when it runs. The statement cache is
+//! emptied on both entry and exit for that reason; a statement a caller is holding open across this
+//! scope keeps whichever behaviour it was prepared with.
+//! @note SQLite exposes no way to read the flag back, so the destructor always clears it.
+// @bsiclass
+//=======================================================================================
+struct SuppressForeignKeyActions final : NonCopyableClass
+{
+private:
+    DbCR m_db;
+public:
+    BE_SQLITE_EXPORT explicit SuppressForeignKeyActions(DbCR db);
+    BE_SQLITE_EXPORT ~SuppressForeignKeyActions();
 };
 
 //=======================================================================================

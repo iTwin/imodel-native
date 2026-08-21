@@ -305,6 +305,8 @@ DbResult DgnDb::SchemaStatusToDbResult(SchemaStatus status, bool isUpgrade)
             return BE_SQLITE_ERROR_SchemaUpgradeRecommended;
        case SchemaStatus::DataTransformRequired:
            return BE_SQLITE_ERROR_DataTransformRequired;
+        case SchemaStatus::DataDeletionRequired:
+            return BE_SQLITE_ERROR_DataDeletionRequired;
         default:
             return isUpgrade ? BE_SQLITE_ERROR_SchemaUpgradeFailed : BE_SQLITE_ERROR_SchemaImportFailed;
         }
@@ -392,11 +394,20 @@ DbResult DgnDb::_AfterSchemaChangeSetApplied() const {
 }
 
 //--------------------------------------------------------------------------------------
+// Only half of the answer: whether this briefcase sits at the tip is an iModelHub fact, so the
+// caller has to have pulled first.
 // @bsimethod
 //--------------------------------------------------------------------------------------
-DbResult DgnDb::_AfterDataChangeSetApplied(bool schemaChanged)
+bool DgnDb::_IsLevelWithTimeline() {
+    return !IsBriefcase() || !Txns().HasPendingTxns();
+}
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//--------------------------------------------------------------------------------------
+DbResult DgnDb::_AfterDataChangeSetApplied(bool schemaChanged, bool deferInstanceUpgrade)
     {
-    DbResult result = T_Super::_AfterDataChangeSetApplied(schemaChanged);
+    DbResult result = T_Super::_AfterDataChangeSetApplied(schemaChanged, deferInstanceUpgrade);
     if (result != BE_SQLITE_OK)
         return result;
 

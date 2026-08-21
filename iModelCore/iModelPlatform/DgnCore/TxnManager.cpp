@@ -98,11 +98,13 @@ private:
     static constexpr auto JMergeStage = "merge_stage";
     static constexpr auto JKey = "pull_merge_conf";
     static constexpr auto JInProgressRebaseTxnId = "inprogress_rebase_txn_id";
+    static constexpr auto JInstanceUpgradePending = "instance_upgrade_pending";
 
     TxnManager::TxnId _endTxnId;
     TxnManager::TxnId _startTxnId;
     TxnManager::TxnId _inProgressRebaseTxnId;
     TxnManager::PullMergeStage _mergeStage = TxnManager::PullMergeStage::None;
+    bool _instanceUpgradePending = false;
 
 public:
     TxnManager::TxnId GetEndTxnId() const { return _endTxnId; }
@@ -113,6 +115,10 @@ public:
     bool IsMergingRemoteChanges() const { return _mergeStage == TxnManager::PullMergeStage::Merging; }
     bool IsRebasingLocalChanges() const { return _mergeStage == TxnManager::PullMergeStage::Rebasing; }
     bool InProgress() const {return _mergeStage != TxnManager::PullMergeStage::None; }
+    //! An incoming changeset changed the schema, so a class may now need overflow rows that its
+    //! existing instances do not have. The catch-up does not run per changeset: it runs once when the
+    //! incoming changesets are all in, and again once the local txns are back.
+    bool IsInstanceUpgradePending() const { return _instanceUpgradePending; }
     DbResult Save(DbR db) {
         BeJsDocument doc;
         doc.SetEmptyObject();
@@ -120,6 +126,7 @@ public:
         doc[PullMergeConf::JMergeStage] = static_cast<int>(_mergeStage);
         doc[PullMergeConf::JEndTxnId] = static_cast<int64_t>(_endTxnId.GetValue());
         doc[PullMergeConf::JInProgressRebaseTxnId] = static_cast<int64_t>(_inProgressRebaseTxnId.GetValue());
+        doc[PullMergeConf::JInstanceUpgradePending] = _instanceUpgradePending;
         return db.SaveBriefcaseLocalValue(PullMergeConf::JKey, doc.Stringify());
     }
     PullMergeConf& SetInProgressRebaseTxnId(TxnManager::TxnId id) { 
@@ -136,6 +143,7 @@ public:
     PullMergeConf& SetEndTxnId(TxnManager::TxnId id) { _endTxnId = id; return *this; }
     PullMergeConf& SetStartTxnId(TxnManager::TxnId id) { _startTxnId = id; return *this; }
     PullMergeConf& SetMergeStage(TxnManager::PullMergeStage stage) { _mergeStage = stage; return *this; }
+    PullMergeConf& SetInstanceUpgradePending(bool pending) { _instanceUpgradePending = pending; return *this; }
 
     static DbResult Remove(DbR db) { return db.DeleteBriefcaseLocalValue(PullMergeConf::JKey); }
     static PullMergeConf Load(DbCR db) {
@@ -156,6 +164,7 @@ public:
             info._endTxnId  = TxnManager::TxnId(doc[PullMergeConf::JEndTxnId].GetUInt64(0));
             info._startTxnId  = TxnManager::TxnId(doc[PullMergeConf::JStartTxnId].GetUInt64(0));
             info._inProgressRebaseTxnId = TxnManager::TxnId(doc[PullMergeConf::JInProgressRebaseTxnId].GetUInt64(0));
+            info._instanceUpgradePending = doc[PullMergeConf::JInstanceUpgradePending].GetBoolean(false);
         }
         return info;
     }
@@ -2624,7 +2633,15 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
     scope.Stop();
 
     if (action == TxnAction::Merge) {
-        auto result = m_dgndb.AfterDataChangeSetApplied(containsSchemaChanges);
+        // Inside a pull this is an intermediate state - more changesets may follow, and the rows the
+        // local txns bring back are still reversed - so record that a catch-up is owed rather than
+        // running one per changeset. PullMergeRebaseBegin and PullMergeRebaseEnd run it.
+        const bool deferInstanceUpgrade = pmConf.InProgress();
+        if (deferInstanceUpgrade && containsSchemaChanges && !pmConf.IsInstanceUpgradePending()) {
+            pmConf.SetInstanceUpgradePending(true).Save(m_dgndb);
+        }
+
+        auto result = m_dgndb.AfterDataChangeSetApplied(containsSchemaChanges, deferInstanceUpgrade);
         if (result != BE_SQLITE_OK) {
             LOG.errorv("ApplyChanges failed data changes: %s", BeSQLiteLib::GetErrorName(result));
             BeAssert(false);
@@ -2989,7 +3006,7 @@ DgnDbStatus TxnManager::ReverseTxnRange(TxnRange const& txnRange) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TxnManager::ReverseTo(TxnId pos) {
+DgnDbStatus TxnManager::ReverseTo(TxnId pos, bool allowCrossSessions) {
     if (PullMergeConf::Load(m_dgndb).InProgress()) {
         m_dgndb.ThrowException("operation failed: pull merge in progress.", BE_SQLITE_ERROR);
     }
@@ -2998,7 +3015,10 @@ DgnDbStatus TxnManager::ReverseTo(TxnId pos) {
     if (!pos.IsValid() || pos >= lastId)
         return DgnDbStatus::NothingToUndo;
 
-    TxnId firstUndoable = GetSessionStartId();
+    // Saving a schema Txn starts a new session, which is what keeps schema changes out of the user's undo
+    // stack. The changes themselves reverse like any other - PullMergeReverseLocalChanges does it to every
+    // local Txn on every pull - so a caller that knows what it is backing out can reach across the boundary.
+    TxnId firstUndoable = allowCrossSessions ? QueryNextTxnId(TxnId(0)) : GetSessionStartId();
     if (firstUndoable >= lastId || pos < firstUndoable)
         return DgnDbStatus::CannotUndo;
 
@@ -3009,12 +3029,12 @@ DgnDbStatus TxnManager::ReverseTo(TxnId pos) {
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TxnManager::CancelTo(TxnId pos) {
+DgnDbStatus TxnManager::CancelTo(TxnId pos, bool allowCrossSessions) {
     if (PullMergeConf::Load(m_dgndb).InProgress()) {
         m_dgndb.ThrowException("operation failed: pull merge in progress.", BE_SQLITE_ERROR);
     }
 
-    DgnDbStatus status = ReverseTo(pos);
+    DgnDbStatus status = ReverseTo(pos, allowCrossSessions);
     DeleteReversedTxns(); // call this even if we didn't reverse anything - there may have already been reversed changes.
     return status;
 }
@@ -4499,12 +4519,19 @@ void TxnManager::PullMergeRebaseReinstateTxn() {
         PullMergeAbortRebase(txnId, "failed to read data changes", rc);
     }
 
+    changeset.DetermineSchemaSyncPrecedence();
+
     rc = ApplyChanges(changeset, TxnAction::Merge, isSchemaTxn, false);
     if (rc != BE_SQLITE_OK) {
         if (changeset.GetLastErrorMessage().empty())
             PullMergeAbortRebase(txnId, "failed to apply changes", rc);
         else
             PullMergeAbortRebase(txnId, changeset.GetLastErrorMessage(), rc);
+    }
+
+    rc = changeset.ApplySupersedingRows();
+    if (rc != BE_SQLITE_OK) {
+        PullMergeAbortRebase(txnId, "failed to write the rows this txn supersedes", rc);
     }
     TXN_DEBUG(">> PullMergeRebaseReinstateTxn() txnId=%s", BeInt64Id(txnId.GetValue()).ToHexStr().c_str());
 }
@@ -4596,6 +4623,17 @@ std::vector<TxnManager::TxnId> TxnManager::PullMergeRebaseBegin() {
         m_dgndb.ThrowException("PullMergeRebaseBegin(): pull merge not in progress.", BE_SQLITE_ERROR);
     }
 
+    // Still on the merge stage here, so a commit is allowed. Semantic rebase replays a data txn as
+    // ECSql instance patches rather than as raw rows, and an update or delete aimed at an instance
+    // whose class just spilled into overflow cannot see it until the catch-up has run. So the owed
+    // catch-up runs once before the reinstate loop as well as once after it.
+    if (conf.IsInstanceUpgradePending() && !conf.IsRebasingLocalChanges()) {
+        if (SUCCESS != m_dgndb.Schemas().UpgradeECInstances()) {
+            m_dgndb.ThrowException("PullMergeRebaseBegin(): unable to upgrade instances", (int)BE_SQLITE_ERROR);
+        }
+        m_dgndb.SaveChanges();
+    }
+
     if (!conf.IsRebasingLocalChanges()) {
         conf.SetMergeStage(PullMergeStage::Rebasing).Save(m_dgndb);
         m_dgndb.SaveChanges();
@@ -4681,6 +4719,18 @@ void TxnManager::PullMergeRebaseEnd() {
         m_dgndb.ThrowException("Unable to save merge state", static_cast<int>(rc));
     }
     Restart();
+
+    // The stage is None and the tracker has just restarted, so this is the first point after the
+    // reinstate loop where a commit is allowed. Both loops - the changeset replay and the semantic
+    // one - end here, and the caller saves right after, so the rows land in a txn that gets pushed.
+    // A briefcase receiving that changeset sees only data and owes no catch-up of its own.
+    if (conf.IsInstanceUpgradePending()) {
+        if (SUCCESS != m_dgndb.Schemas().UpgradeECInstances()) {
+            m_dgndb.ThrowException("Unable to upgrade instances after rebasing local changes", (int)BE_SQLITE_ERROR);
+        }
+        conf.SetInstanceUpgradePending(false).Save(m_dgndb);
+    }
+
     CallMonitors([&](TxnMonitor& monitor) { monitor._OnPullMergeEnd(*this); });
     TXN_DEBUG(">> PullMergeRebaseEnd()");
 }
