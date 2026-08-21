@@ -5,6 +5,7 @@
 #pragma once
 
 #include "ClassMap.h"
+#include <stack>
 
 struct TableSpaceSchemaManager;
 

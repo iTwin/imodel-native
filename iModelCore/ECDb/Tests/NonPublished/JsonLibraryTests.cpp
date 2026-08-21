@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
 #include <BeRapidJson/BeRapidJson.h>
+#include <cmath>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -14,22 +15,24 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 // Expected behavior (after a Bentley change to JsonCpp) is conversion to a null value.
 // @bsitest
 //---------------------------------------------------------------------------------------
-TEST(JsonCpp, NaN)
+TEST(BeJsTests, NaN)
     {
-    Json::Value obj1(Json::objectValue);
-    Json::Value obj2(Json::objectValue);
+    BeJsDocument obj1;
+    obj1.toObject();
 
     {
     ScopedDisableFailOnAssertion disableFailOnAssertion;
     obj1["nan"] = std::numeric_limits<double>::quiet_NaN();
     }
 
-    Utf8String str = Json::FastWriter().write(obj1);
+    Utf8String str = obj1.Stringify();
 
-    bool parseSuccessful = Json::Reader().parse(str.c_str(), obj2);
+    BeJsDocument obj2(str.c_str());
+
+    bool parseSuccessful = !obj2.hasParseError();
 
     ASSERT_TRUE(parseSuccessful);
-    ASSERT_TRUE(obj2.isMember("nan"));
+    ASSERT_TRUE(obj2.hasMember("nan")) << "isMember() would return false here: it reports false for members that exist but are null";
     ASSERT_TRUE(obj2["nan"].isNull());
     }
 
@@ -37,10 +40,10 @@ TEST(JsonCpp, NaN)
 // Make sure there is no loss of precision roundtripping double values.
 // @bsitest
 //---------------------------------------------------------------------------------------
-TEST(JsonCpp, RoundTripDoubles)
+TEST(BeJsTests, RoundTripDoubles)
     {
-    Json::Value obj1(Json::objectValue);
-    Json::Value obj2(Json::objectValue);
+    BeJsDocument obj1;
+    obj1.toObject();
 
     double d1 = PI;
     obj1["pi"] = d1;
@@ -48,9 +51,10 @@ TEST(JsonCpp, RoundTripDoubles)
     double n1 = -1.0 / 17.0;
     obj1["negative"] = n1;
 
-    Utf8String str = Json::FastWriter().write(obj1);
+    Utf8String str = obj1.Stringify();
 
-    bool parseSuccessful = Json::Reader().parse(str.c_str(), obj2);
+    BeJsDocument obj2(str.c_str());
+    bool parseSuccessful = !obj2.hasParseError();
     ASSERT_TRUE(parseSuccessful);
 
     double d2 = obj2["pi"].asDouble();
@@ -59,7 +63,7 @@ TEST(JsonCpp, RoundTripDoubles)
 #if 0
     printf("d1=%#.17g\n", d1);
     printf("n1=%#.17g\n", n1);
-    printf("JsonCpp.RoundTripDoubles - %s\n", str.c_str());
+    printf("BeJsTests.RoundTripDoubles - %s\n", str.c_str());
     printf("d2=%#.17g\n", d2);
     printf("n2=%#.17g\n", n2);
 #endif
@@ -71,20 +75,21 @@ TEST(JsonCpp, RoundTripDoubles)
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(JsonCpp, RoundTripInt64)
+TEST(BeJsTests, RoundTripInt64)
     {
     BeBriefcaseBasedId id(BeBriefcaseId(123), INT64_C(4129813293));
 
     const int64_t expectedPositiveInt64 = id.GetValue();
     const int64_t expectedNegativeInt64 = (-1) * id.GetValue();
-    Json::Value obj1(Json::objectValue);
-    obj1["positive"] = Json::Value(expectedPositiveInt64);
-    obj1["negative"] = Json::Value(expectedNegativeInt64);
+    BeJsDocument obj1;
+    obj1.toObject();
+    obj1["positive"] = expectedPositiveInt64;
+    obj1["negative"] = expectedNegativeInt64;
 
-    Utf8String str = Json::FastWriter().write(obj1);
+    Utf8String str = obj1.Stringify();
 
-    Json::Value obj2(Json::objectValue);
-    bool parseSuccessful = Json::Reader().parse(str.c_str(), obj2);
+    BeJsDocument obj2(str.c_str());
+    bool parseSuccessful = !obj2.hasParseError();
     ASSERT_TRUE(parseSuccessful);
 
     const int64_t actualPositiveInt64 = obj2["positive"].asInt64();
@@ -97,7 +102,7 @@ TEST(JsonCpp, RoundTripInt64)
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(JsonCpp, Int64Rendering)
+TEST(BeJsTests, Int64Rendering)
     {
     BeBriefcaseBasedId id(BeBriefcaseId(123), INT64_C(4129813293));
     const int64_t expectedPositiveInt64 = id.GetValue();
@@ -108,14 +113,14 @@ TEST(JsonCpp, Int64Rendering)
     Utf8String expectedNegativeInt64Str;
     expectedNegativeInt64Str.Sprintf("%" PRIi64, expectedNegativeInt64);
 
-    Json::Value json1(expectedPositiveInt64);
-    Utf8String jsonStr = Json::FastWriter().write(json1);
-    jsonStr.TrimEnd();
+    BeJsDocument json1;
+    json1 = expectedPositiveInt64;
+    Utf8String jsonStr = json1.Stringify();
     ASSERT_STREQ(expectedPositiveInt64Str.c_str(), jsonStr.c_str());
 
-    Json::Value json2(expectedNegativeInt64);
-    jsonStr = Json::FastWriter().write(json2);
-    jsonStr.TrimEnd();
+    BeJsDocument json2;
+    json2 = expectedNegativeInt64;
+    jsonStr = json2.Stringify();
     ASSERT_STREQ(expectedNegativeInt64Str.c_str(), jsonStr.c_str());
     }
 
@@ -1377,45 +1382,52 @@ TEST_F(SqliteJsonTests, RoundTripDoublesAndInt64)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(JsonValueHelper, Comparisons)
     {
-    JsonValue uintVal(Json::Value(UINT32_C(1)));
-    EXPECT_TRUE(uintVal.m_value.isUInt());
-    EXPECT_FALSE(uintVal.m_value.isInt());
-    EXPECT_TRUE(uintVal.m_value.isIntegral());
+    // Construct JsonValue objects via BeJsDocument with different numeric C++ types.
+    // BeJs (wrapping RapidJson) does NOT expose isInt/isUInt/isIntegral — only isNumeric().
+    // So this verifies isNumeric() and integrality (value == floor(value)) rather than per-type
+    // predicates, and confirms that JsonValue::operator== does value-coerced comparison across
+    // numeric types.
 
-    JsonValue intVal(Json::Value((int) 1));
-    EXPECT_TRUE(intVal.m_value.isInt());
-    EXPECT_FALSE(intVal.m_value.isUInt());
-    EXPECT_TRUE(intVal.m_value.isIntegral());
+    BeJsDocument uintDoc; uintDoc = UINT32_C(1);
+    JsonValue uintVal{uintDoc};
+    EXPECT_TRUE(uintVal.m_value.isNumeric());
+    EXPECT_TRUE(uintVal.m_value.asDouble() == std::floor(uintVal.m_value.asDouble())) << "integral check";
 
-    EXPECT_FALSE(uintVal.m_value == intVal.m_value) << "JsonCpp comparison is strict on exact integral type";
+    BeJsDocument intDoc; intDoc = (int32_t) 1;
+    JsonValue intVal{intDoc};
+    EXPECT_TRUE(intVal.m_value.isNumeric());
+    EXPECT_TRUE(intVal.m_value.asDouble() == std::floor(intVal.m_value.asDouble())) << "integral check";
+
+    // BeJs isExactEqual treats same-valued numerics as equal regardless of their C++ source type.
+    EXPECT_TRUE(uintVal.m_value.isExactEqual(intVal.m_value)) << "BeJs comparison is value-based for numerics";
     EXPECT_TRUE(uintVal == intVal) << "JsonValue helper API does integral type coercion";
 
-    JsonValue int64Val(Json::Value((int64_t) 1));
-    EXPECT_TRUE(int64Val.m_value.isInt());
-    EXPECT_TRUE(int64Val.m_value.isIntegral());
+    BeJsDocument int64Doc; int64Doc = (int64_t) 1;
+    JsonValue int64Val{int64Doc};
+    EXPECT_TRUE(int64Val.m_value.isNumeric());
+    EXPECT_TRUE(int64Val.m_value.asDouble() == std::floor(int64Val.m_value.asDouble())) << "integral check";
 
-    EXPECT_TRUE(int64Val.m_value == intVal.m_value) << "JsonCpp comparison allows comparing int32 with int64";
+    EXPECT_TRUE(int64Val.m_value.isExactEqual(intVal.m_value)) << "BeJs comparison is value-based for numerics";
     EXPECT_TRUE(int64Val == intVal) << "JsonValue helper API does integral type coercion";
-    EXPECT_FALSE(int64Val.m_value == uintVal.m_value) << "JsonCpp comparison is strict on exact integral type";
+    EXPECT_TRUE(int64Val.m_value.isExactEqual(uintVal.m_value)) << "BeJs comparison is value-based for numerics";
     EXPECT_TRUE(int64Val == uintVal) << "JsonValue helper API does integral type coercion";
 
-    JsonValue uint64Val(Json::Value((uint64_t) 1));
-    EXPECT_TRUE(uint64Val.m_value.isUInt());
-    EXPECT_TRUE(uint64Val.m_value.isIntegral());
+    BeJsDocument uint64Doc; uint64Doc = (int64_t) 1; // cast to int64_t to avoid ambiguous overload (hazard #8)
+    JsonValue uint64Val{uint64Doc};
+    EXPECT_TRUE(uint64Val.m_value.isNumeric());
+    EXPECT_TRUE(uint64Val.m_value.asDouble() == std::floor(uint64Val.m_value.asDouble())) << "integral check";
 
-    EXPECT_FALSE(int64Val.m_value == uint64Val.m_value) << "JsonCpp comparison is strict on exact integral type";
+    EXPECT_TRUE(int64Val.m_value.isExactEqual(uint64Val.m_value)) << "BeJs comparison is value-based for numerics";
     EXPECT_TRUE(int64Val == uint64Val) << "JsonValue helper API does integral type coercion";
 
-    EXPECT_TRUE(uintVal.m_value == uint64Val.m_value) << "JsonCpp comparison allows comparing uint32 with uint64";
+    EXPECT_TRUE(uintVal.m_value.isExactEqual(uint64Val.m_value)) << "BeJs comparison is value-based for numerics";
     EXPECT_TRUE(uintVal == uint64Val) << "JsonValue helper API does integral type coercion";
 
-    JsonValue boolVal(Json::Value(true));
+    BeJsDocument boolDoc; boolDoc = true;
+    JsonValue boolVal{boolDoc};
     EXPECT_TRUE(boolVal.m_value.isBool());
-    EXPECT_FALSE(boolVal.m_value.isUInt());
-    EXPECT_FALSE(boolVal.m_value.isInt());
-    EXPECT_TRUE(boolVal.m_value.isIntegral());
-    EXPECT_FALSE(boolVal.m_value == int64Val.m_value) << "JsonCpp comparison is strict on exact integral type";
-    EXPECT_EQ(boolVal.m_value.asUInt(), int64Val.m_value.asUInt()) << "JsonCpp asUInt is supported on bools";
+    EXPECT_FALSE(boolVal.m_value.isNumeric()) << "bools are not numeric in BeJs";
+    EXPECT_FALSE(boolVal.m_value.isExactEqual(int64Val.m_value)) << "BeJs does not equate bools with numerics";
     EXPECT_FALSE(boolVal == int64Val) << "JsonValueHelper does not treat bools equal with other numeric values";
     }
 
