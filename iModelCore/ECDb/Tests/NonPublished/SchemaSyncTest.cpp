@@ -581,8 +581,10 @@ TEST_F(SchemaSyncTestFixture, Verify_SyncInfo_BeProp_Entries)
     );
     syncDb = nullptr;
     ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*b1, schema, SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
-    // v1 mirrored every ec_ table on push; the adopt step copies only the imported schemas' closure.
-    ASSERT_EQ(b1->Schemas().GetSchemaSync().GetModifiedRowCount(), 75);
+    // The adopt copies the imported schemas' closure differentially: TestSchema's 12 rows are inserted,
+    // ECDbMap is already there byte for byte and is left alone. The rest of the count is the temp
+    // closure tables. sqlite3_total_changes64 counts those too.
+    ASSERT_EQ(b1->Schemas().GetSchemaSync().GetModifiedRowCount(), 34);
     b1->SaveChanges("schema import");
     b1->PullMergePush("push change");
 

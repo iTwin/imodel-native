@@ -3006,7 +3006,7 @@ DgnDbStatus TxnManager::ReverseTxnRange(TxnRange const& txnRange) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TxnManager::ReverseTo(TxnId pos) {
+DgnDbStatus TxnManager::ReverseTo(TxnId pos, bool allowCrossSessions) {
     if (PullMergeConf::Load(m_dgndb).InProgress()) {
         m_dgndb.ThrowException("operation failed: pull merge in progress.", BE_SQLITE_ERROR);
     }
@@ -3015,7 +3015,10 @@ DgnDbStatus TxnManager::ReverseTo(TxnId pos) {
     if (!pos.IsValid() || pos >= lastId)
         return DgnDbStatus::NothingToUndo;
 
-    TxnId firstUndoable = GetSessionStartId();
+    // Saving a schema Txn starts a new session, which is what keeps schema changes out of the user's undo
+    // stack. The changes themselves reverse like any other - PullMergeReverseLocalChanges does it to every
+    // local Txn on every pull - so a caller that knows what it is backing out can reach across the boundary.
+    TxnId firstUndoable = allowCrossSessions ? QueryNextTxnId(TxnId(0)) : GetSessionStartId();
     if (firstUndoable >= lastId || pos < firstUndoable)
         return DgnDbStatus::CannotUndo;
 
@@ -3026,12 +3029,12 @@ DgnDbStatus TxnManager::ReverseTo(TxnId pos) {
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TxnManager::CancelTo(TxnId pos) {
+DgnDbStatus TxnManager::CancelTo(TxnId pos, bool allowCrossSessions) {
     if (PullMergeConf::Load(m_dgndb).InProgress()) {
         m_dgndb.ThrowException("operation failed: pull merge in progress.", BE_SQLITE_ERROR);
     }
 
-    DgnDbStatus status = ReverseTo(pos);
+    DgnDbStatus status = ReverseTo(pos, allowCrossSessions);
     DeleteReversedTxns(); // call this even if we didn't reverse anything - there may have already been reversed changes.
     return status;
 }

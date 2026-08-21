@@ -1629,7 +1629,8 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     }
     Napi::Value CancelTo(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, txnIdHexStr);
-        return Napi::Number::New(Env(), (int) GetOpenedDb(info).Txns().CancelTo(TxnIdFromString(txnIdHexStr)));
+        OPTIONAL_ARGUMENT_BOOL(1, allowCrossSessions, false);
+        return Napi::Number::New(Env(), (int) GetOpenedDb(info).Txns().CancelTo(TxnIdFromString(txnIdHexStr), allowCrossSessions));
     }
     Napi::Value ReverseTxns(NapiInfoCR info) {
         REQUIRE_ARGUMENT_NUMBER(0, numTxns );

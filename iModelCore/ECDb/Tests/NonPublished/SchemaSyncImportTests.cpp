@@ -306,9 +306,12 @@ Utf8String ColumnOf(ECDbR db, Utf8CP schemaName, Utf8CP className, Utf8CP access
     return stmt.Step() == BE_SQLITE_ROW ? Utf8String(stmt.GetValueText(0)) : Utf8String("");
 }
 
-// ...and is that column a dedicated one or a slot out of the shared pool? DbColumn::Kind::SharedData
-// is 4; everything else is a column of its own. The two take different routes through
-// SchemaWriter::DeleteProperty, so a test about deletion has to say which one it is exercising.
+// ...and is that column a dedicated one or a slot out of the shared pool? DbColumn::Kind is internal to
+// ECDb, so its persisted values are spelled out here: 0 is a column of its own, 4 is a shared one. The
+// two take different routes through SchemaWriter::DeleteProperty, so a test about deletion has to say
+// which one it is exercising.
+constexpr int COLUMN_KIND_DEFAULT = 0;
+
 int ColumnKindOf(ECDbR db, Utf8CP schemaName, Utf8CP className, Utf8CP accessString) {
     Statement stmt;
     if (stmt.Prepare(db, R"sql(
@@ -6875,7 +6878,7 @@ TEST_F(SchemaSyncImportExtendedTests, DeletingAPropertyInItsOwnColumnReportsData
     // Two different names prove nothing on their own - two slots out of the shared pool are also two
     // names. Only Kind says which branch of SchemaWriter::DeleteProperty this test reaches, and the
     // two branches report different statuses, so pin it.
-    EXPECT_EQ((int)DbColumn::Kind::Default, ColumnKindOf(*b2, "BatchOwnColumnDeleteTest", "Record", "dropMe"))
+    EXPECT_EQ(COLUMN_KIND_DEFAULT, ColumnKindOf(*b2, "BatchOwnColumnDeleteTest", "Record", "dropMe"))
         << "expected a dedicated column for an OwnTable class with no ShareColumns";
 
     {
@@ -7028,18 +7031,18 @@ TEST_F(SchemaSyncImportExtendedTests, TheDataVersionStampSitsInTheTxnHoldingTheR
         auto copy = localChangeset->Clone();
         ASSERT_TRUE(copy != nullptr);
 
-        bool holdsEcRows = false;
+        bool holdsECRows = false;
         bool holdsStamp = false;
         SchemaSync::DataVer stampedVersion = 0;
         for (auto& change : copy->GetChanges())
             {
             if (change.GetTableName().StartsWithIAscii("ec_"))
-                holdsEcRows = true;
+                holdsECRows = true;
             if (SchemaSync::IsLocalDbInfoChange(change) && SchemaSync::TryGetDataVersion(stampedVersion, change))
                 holdsStamp = true;
             }
 
-        if (!holdsEcRows)
+        if (!holdsECRows)
             continue;
 
         ++changesetsCarryingRows;

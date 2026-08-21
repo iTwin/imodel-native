@@ -703,16 +703,17 @@ public:
 
     //! Reverse all changes back to a previously saved TxnId.
     //! @param[in] txnId a TxnId obtained from a previous call to GetCurrentTxnId.
-    //! @param[in] allowCrossSessions if No, don't reverse any Txns older than the beginning of the current session.
+    //! @param[in] allowCrossSessions also reverse Txns older than the beginning of the current session. A schema
+    //! Txn starts a new session, so this is the only way to back one out. Every Txn in the table is local and unpushed.
     //! @return DgnDbStatus::Success if the transactions were reversed, error status otherwise.
     //! @see  GetCurrentTxnId CancelTo
-    DGNPLATFORM_EXPORT DgnDbStatus ReverseTo(TxnId txnId);
+    DGNPLATFORM_EXPORT DgnDbStatus ReverseTo(TxnId txnId, bool allowCrossSessions = false);
 
     //! Reverse and then cancel (make non-reinstatable) all changes back to a previous TxnId.
     //! @param[in] txnId a TxnId obtained from a previous call to GetCurrentTxnId.
-    //! @param[in] allowCrossSessions if No, don't cancel any Txns older than the beginning of the current session.
+    //! @param[in] allowCrossSessions also cancel Txns older than the beginning of the current session.
     //! @return DgnDbStatus::Success if the transactions were reversed and cleared, error status otherwise.
-    DGNPLATFORM_EXPORT DgnDbStatus CancelTo(TxnId txnId);
+    DGNPLATFORM_EXPORT DgnDbStatus CancelTo(TxnId txnId, bool allowCrossSessions = false);
 
     //! Reinstate the most recently reversed transaction. Since at any time multiple transactions can be reversed, it
     //! may take multiple calls to this method to reinstate all reversed operations.

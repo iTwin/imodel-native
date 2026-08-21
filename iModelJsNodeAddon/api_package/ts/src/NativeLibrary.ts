@@ -638,7 +638,11 @@ export declare namespace IModelJsNative {
     public beginPurgeOperation(): IModelStatus;
     public cancelElementGraphicsRequests(requestIds: string[]): void;
     public cancelTileContentRequests(treeId: string, contentIds: string[]): void;
-    public cancelTo(txnId: TxnIdString): IModelStatus;
+    /** Reverse and cancel every txn back to `txnId`.
+     * @param allowCrossSessions also cancel txns from earlier undo sessions. Saving a schema txn starts a new
+     * session, so this is the only way to back one out.
+     */
+    public cancelTo(txnId: TxnIdString, allowCrossSessions?: boolean): IModelStatus;
     public classIdToName(idString: string): string | undefined;
     public classNameToId(className: string): Id64String;
     public closeFile(): void;
