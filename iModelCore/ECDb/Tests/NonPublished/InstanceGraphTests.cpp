@@ -9,6 +9,177 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
+// Schema covering every InstanceGraph class-id mapping invariant:
+//
+// Link table ECClassId / SourceECClassId / TargetECClassId are either a physical column or a
+// static (virtual) class id. Navigation-property RelECClassId is physical only when the
+// relationship is not Sealed (abstract root + derived classes).
+static constexpr Utf8CP s_mappingInvariantSchemaXml =
+    R"xml(<?xml version="1.0" encoding="utf-8"?>
+    <ECSchema schemaName="IGMap" alias="igm" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+
+        <!-- Exclusive entity tables: ECClassId is virtual (static). -->
+        <ECEntityClass typeName="Alpha">
+            <ECProperty propertyName="Name" typeName="string" />
+        </ECEntityClass>
+        <ECEntityClass typeName="Beta">
+            <ECProperty propertyName="Name" typeName="string" />
+        </ECEntityClass>
+        <ECEntityClass typeName="Hub">
+            <ECProperty propertyName="Name" typeName="string" />
+        </ECEntityClass>
+
+        <!-- TPH entity table: ECClassId is physical. -->
+        <ECEntityClass typeName="Node" modifier="Abstract">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Label" typeName="string" />
+        </ECEntityClass>
+        <ECEntityClass typeName="NodeA">
+            <BaseClass>Node</BaseClass>
+        </ECEntityClass>
+        <ECEntityClass typeName="NodeB">
+            <BaseClass>Node</BaseClass>
+        </ECEntityClass>
+
+        <ECEntityClass typeName="Spoke" modifier="Abstract">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Label" typeName="string" />
+            <ECNavigationProperty propertyName="Container" relationshipName="HubHasSpokes" direction="Backward" />
+            <ECNavigationProperty propertyName="Owner" relationshipName="HubOwnsSpokes" direction="Backward" />
+        </ECEntityClass>
+        <ECEntityClass typeName="SpokeA">
+            <BaseClass>Spoke</BaseClass>
+        </ECEntityClass>
+        <ECEntityClass typeName="SpokeB">
+            <BaseClass>Spoke</BaseClass>
+        </ECEntityClass>
+
+        <!-- Link table: sealed, exclusive ends → Rel/Source/Target ECClassId all virtual. -->
+        <ECRelationshipClass typeName="AlphaToBeta" strength="Referencing" modifier="Sealed">
+            <Source multiplicity="(0..*)" polymorphic="False" roleLabel="to beta">
+                <Class class="Alpha" />
+            </Source>
+            <Target multiplicity="(0..*)" polymorphic="False" roleLabel="from alpha">
+                <Class class="Beta" />
+            </Target>
+        </ECRelationshipClass>
+
+        <!-- Link table: sealed, TPH ends → Rel virtual, Source/Target physical. -->
+        <ECRelationshipClass typeName="NodeToNode" strength="Referencing" modifier="Sealed">
+            <Source multiplicity="(0..*)" polymorphic="True" roleLabel="to node">
+                <Class class="Node" />
+            </Source>
+            <Target multiplicity="(0..*)" polymorphic="True" roleLabel="from node">
+                <Class class="Node" />
+            </Target>
+        </ECRelationshipClass>
+
+        <!-- Link table: sealed, mixed ends → Source virtual, Target physical, Rel virtual. -->
+        <ECRelationshipClass typeName="AlphaToNode" strength="Referencing" modifier="Sealed">
+            <Source multiplicity="(0..*)" polymorphic="False" roleLabel="to node">
+                <Class class="Alpha" />
+            </Source>
+            <Target multiplicity="(0..*)" polymorphic="True" roleLabel="from alpha">
+                <Class class="Node" />
+            </Target>
+        </ECRelationshipClass>
+
+        <!-- Link table TPH: physical Rel ECClassId, physical Source/Target (TPH ends). -->
+        <ECRelationshipClass typeName="Connection" strength="Referencing" modifier="None">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+            </ECCustomAttributes>
+            <Source multiplicity="(0..*)" polymorphic="True" roleLabel="connects to">
+                <Class class="Node" />
+            </Source>
+            <Target multiplicity="(0..*)" polymorphic="True" roleLabel="connected from">
+                <Class class="Node" />
+            </Target>
+        </ECRelationshipClass>
+        <ECRelationshipClass typeName="ConnectionA" modifier="Sealed">
+            <BaseClass>Connection</BaseClass>
+            <Source multiplicity="(0..*)" polymorphic="True" roleLabel="A connects to">
+                <Class class="Node" />
+            </Source>
+            <Target multiplicity="(0..*)" polymorphic="True" roleLabel="A connected from">
+                <Class class="Node" />
+            </Target>
+        </ECRelationshipClass>
+
+        <!-- Link table TPH: physical Rel ECClassId, virtual Source/Target (exclusive ends). -->
+        <ECRelationshipClass typeName="StaticLink" strength="Referencing" modifier="None">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+            </ECCustomAttributes>
+            <Source multiplicity="(0..*)" polymorphic="False" roleLabel="to beta">
+                <Class class="Alpha" />
+            </Source>
+            <Target multiplicity="(0..*)" polymorphic="False" roleLabel="from alpha">
+                <Class class="Beta" />
+            </Target>
+        </ECRelationshipClass>
+        <ECRelationshipClass typeName="StaticLinkDerived" modifier="Sealed">
+            <BaseClass>StaticLink</BaseClass>
+            <Source multiplicity="(0..*)" polymorphic="False" roleLabel="derived to beta">
+                <Class class="Alpha" />
+            </Source>
+            <Target multiplicity="(0..*)" polymorphic="False" roleLabel="derived from alpha">
+                <Class class="Beta" />
+            </Target>
+        </ECRelationshipClass>
+
+        <!-- Nav prop: sealed relationship → RelECClassId virtual. -->
+        <ECRelationshipClass typeName="HubHasSpokes" strength="Referencing" modifier="Sealed">
+            <Source multiplicity="(0..1)" polymorphic="False" roleLabel="contains">
+                <Class class="Hub" />
+            </Source>
+            <Target multiplicity="(0..*)" polymorphic="True" roleLabel="contained in">
+                <Class class="Spoke" />
+            </Target>
+        </ECRelationshipClass>
+
+        <!-- Nav prop: abstract relationship + derived classes → RelECClassId physical. -->
+        <ECRelationshipClass typeName="HubOwnsSpokes" strength="Referencing" modifier="Abstract">
+            <Source multiplicity="(0..1)" polymorphic="False" roleLabel="owns">
+                <Class class="Hub" />
+            </Source>
+            <Target multiplicity="(0..*)" polymorphic="True" roleLabel="owned by">
+                <Class class="Spoke" />
+            </Target>
+        </ECRelationshipClass>
+        <ECRelationshipClass typeName="HubOwnsSpokeA" strength="Referencing" modifier="Sealed">
+            <BaseClass>HubOwnsSpokes</BaseClass>
+            <Source multiplicity="(0..1)" polymorphic="False" roleLabel="owns A">
+                <Class class="Hub" />
+            </Source>
+            <Target multiplicity="(0..*)" polymorphic="True" roleLabel="A owned by">
+                <Class class="SpokeA" />
+            </Target>
+        </ECRelationshipClass>
+        <ECRelationshipClass typeName="HubOwnsSpokeB" strength="Referencing" modifier="Sealed">
+            <BaseClass>HubOwnsSpokes</BaseClass>
+            <Source multiplicity="(0..1)" polymorphic="False" roleLabel="owns B">
+                <Class class="Hub" />
+            </Source>
+            <Target multiplicity="(0..*)" polymorphic="True" roleLabel="B owned by">
+                <Class class="SpokeB" />
+            </Target>
+        </ECRelationshipClass>
+    </ECSchema>)xml";
+
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -131,6 +302,71 @@ struct InstanceGraphTests : ECDbTestFixture
         }
 
     ECClassId GetClassId(Utf8CP className) { return m_ecdb.Schemas().GetClassId("IGTest", className); }
+    ECClassId GetClassId(Utf8CP schemaName, Utf8CP className) { return m_ecdb.Schemas().GetClassId(schemaName, className); }
+
+    struct MappingInvariantData
+        {
+        ECInstanceKey alpha, beta, nodeA, nodeB, hub, spokeA, spokeB;
+        };
+
+    void AssertClassIdColumn(Utf8CP schemaName, Utf8CP className, Utf8CP accessString, Virtual expectedVirtual) const
+        {
+        Column const col = GetHelper().GetPropertyMapColumn(AccessString(schemaName, className, accessString));
+        EXPECT_TRUE(col.Exists()) << schemaName << ":" << className << "." << accessString;
+        EXPECT_EQ(expectedVirtual, col.GetVirtual()) << schemaName << ":" << className << "." << accessString
+            << " maps to " << col.GetTableName() << "." << col.GetName();
+        }
+
+    bool HasEdge(InstanceGraph const& graph, ECInstanceKeyCR from, ECInstanceKeyCR to, Utf8CP relClassName, TraversalDirection dir)
+        {
+        auto const* related = graph.GetRelated(from);
+        if (related == nullptr)
+            return false;
+
+        ECClassId const relClassId = GetClassId("IGMap", relClassName);
+        for (auto const& rel : *related)
+            {
+            if (rel.GetKey() == to && rel.GetRelClassId() == relClassId && rel.GetDirection() == dir)
+                return true;
+            }
+        return false;
+        }
+
+    MappingInvariantData PopulateMappingInvariants()
+        {
+        MappingInvariantData data;
+        data.alpha = InsertInstance("INSERT INTO igm.Alpha(Name) VALUES('A1')");
+        data.beta = InsertInstance("INSERT INTO igm.Beta(Name) VALUES('B1')");
+        data.nodeA = InsertInstance("INSERT INTO igm.NodeA(Label) VALUES('NA')");
+        data.nodeB = InsertInstance("INSERT INTO igm.NodeB(Label) VALUES('NB')");
+        data.hub = InsertInstance("INSERT INTO igm.Hub(Name) VALUES('H1')");
+
+        Utf8String const hubId = data.hub.GetInstanceId().ToString();
+        Utf8String const ownsA = GetClassId("IGMap", "HubOwnsSpokeA").ToString();
+        Utf8String const ownsB = GetClassId("IGMap", "HubOwnsSpokeB").ToString();
+        data.spokeA = InsertInstance(SqlPrintfString(
+            "INSERT INTO igm.SpokeA(Label, Container.Id, Owner.Id, Owner.RelECClassId) VALUES('SA', %s, %s, %s)",
+            hubId.c_str(), hubId.c_str(), ownsA.c_str()));
+        data.spokeB = InsertInstance(SqlPrintfString(
+            "INSERT INTO igm.SpokeB(Label, Container.Id, Owner.Id, Owner.RelECClassId) VALUES('SB', %s, %s, %s)",
+            hubId.c_str(), hubId.c_str(), ownsB.c_str()));
+
+        auto insertLink = [&] (Utf8CP className, ECInstanceKeyCR source, ECInstanceKeyCR target)
+            {
+            InsertRelInstance(SqlPrintfString("INSERT INTO igm.%s(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
+                className, source.GetInstanceId().ToString().c_str(), target.GetInstanceId().ToString().c_str()));
+            };
+
+        insertLink("AlphaToBeta", data.alpha, data.beta);
+        insertLink("AlphaToNode", data.alpha, data.nodeA);
+        insertLink("NodeToNode", data.nodeA, data.nodeB);
+        insertLink("Connection", data.nodeA, data.nodeB);
+        insertLink("ConnectionA", data.nodeA, data.nodeB);
+        insertLink("StaticLink", data.alpha, data.beta);
+        insertLink("StaticLinkDerived", data.alpha, data.beta);
+        m_ecdb.SaveChanges();
+        return data;
+        }
     };
 
 //---------------------------------------------------------------------------------------
@@ -1930,6 +2166,369 @@ TEST_F(InstanceGraphTests, ExpandAll_MaxDepthTerminatesOnCyclicGraph)
 
     for (auto const& pipe : pipes)
         EXPECT_TRUE(graph.Contains(pipe));
+    }
+
+//---------------------------------------------------------------------------------------
+//! Self-check that IGMap actually produced the physical vs virtual class-id columns InstanceGraph
+//! branches on. If this fails, the traversal tests below are exercising the wrong mapping.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, MappingInvariants_ColumnShape)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_MapShape.ecdb", SchemaItem(s_mappingInvariantSchemaXml)));
+
+    AssertClassIdColumn("IGMap", "Alpha", "ECClassId", Virtual::Yes);
+    AssertClassIdColumn("IGMap", "Beta", "ECClassId", Virtual::Yes);
+    AssertClassIdColumn("IGMap", "Node", "ECClassId", Virtual::No);
+    AssertClassIdColumn("IGMap", "Spoke", "ECClassId", Virtual::No);
+
+    // Sealed exclusive-exclusive: all three class ids virtual.
+    AssertClassIdColumn("IGMap", "AlphaToBeta", "ECClassId", Virtual::Yes);
+    AssertClassIdColumn("IGMap", "AlphaToBeta", "SourceECClassId", Virtual::Yes);
+    AssertClassIdColumn("IGMap", "AlphaToBeta", "TargetECClassId", Virtual::Yes);
+
+    // Sealed TPH-TPH: rel virtual, constraint class ids physical.
+    AssertClassIdColumn("IGMap", "NodeToNode", "ECClassId", Virtual::Yes);
+    AssertClassIdColumn("IGMap", "NodeToNode", "SourceECClassId", Virtual::No);
+    AssertClassIdColumn("IGMap", "NodeToNode", "TargetECClassId", Virtual::No);
+
+    // Sealed exclusive-TPH: source virtual, target physical, rel virtual.
+    AssertClassIdColumn("IGMap", "AlphaToNode", "ECClassId", Virtual::Yes);
+    AssertClassIdColumn("IGMap", "AlphaToNode", "SourceECClassId", Virtual::Yes);
+    AssertClassIdColumn("IGMap", "AlphaToNode", "TargetECClassId", Virtual::No);
+
+    // TPH link table with TPH ends: all three physical.
+    AssertClassIdColumn("IGMap", "Connection", "ECClassId", Virtual::No);
+    AssertClassIdColumn("IGMap", "Connection", "SourceECClassId", Virtual::No);
+    AssertClassIdColumn("IGMap", "Connection", "TargetECClassId", Virtual::No);
+    AssertClassIdColumn("IGMap", "ConnectionA", "ECClassId", Virtual::No);
+
+    // TPH link table with exclusive ends: rel physical, constraints virtual.
+    AssertClassIdColumn("IGMap", "StaticLink", "ECClassId", Virtual::No);
+    AssertClassIdColumn("IGMap", "StaticLink", "SourceECClassId", Virtual::Yes);
+    AssertClassIdColumn("IGMap", "StaticLink", "TargetECClassId", Virtual::Yes);
+    AssertClassIdColumn("IGMap", "StaticLinkDerived", "ECClassId", Virtual::No);
+
+    // Nav prop RelECClassId: virtual when sealed, physical when the relationship is abstract.
+    AssertClassIdColumn("IGMap", "Spoke", "Container.RelECClassId", Virtual::Yes);
+    AssertClassIdColumn("IGMap", "Spoke", "Owner.RelECClassId", Virtual::No);
+    }
+
+//---------------------------------------------------------------------------------------
+//! Exclusive-exclusive sealed link table: Source/Target/Rel ECClassId are all static numbers.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, LinkTable_VirtualClassId_ExclusiveConstraints)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_LTVirtual.ecdb", SchemaItem(s_mappingInvariantSchemaXml)));
+    auto data = PopulateMappingInvariants();
+
+    InstanceGraph graph(m_ecdb);
+    graph.AddSeed(data.alpha);
+    ASSERT_EQ(SUCCESS, graph.ExpandNode(data.alpha, TraversalDirection::Forward));
+
+    EXPECT_TRUE(HasEdge(graph, data.alpha, data.beta, "AlphaToBeta", TraversalDirection::Forward));
+    auto const* related = graph.GetRelated(data.alpha);
+    ASSERT_NE(nullptr, related);
+    bool found = false;
+    for (auto const& rel : *related)
+        {
+        if (rel.GetRelClassId() == GetClassId("IGMap", "AlphaToBeta") && rel.GetKey() == data.beta)
+            {
+            found = true;
+            EXPECT_EQ(data.beta.GetClassId(), rel.GetKey().GetClassId());
+            }
+        }
+    EXPECT_TRUE(found);
+
+    InstanceGraph back(m_ecdb);
+    back.AddSeed(data.beta);
+    ASSERT_EQ(SUCCESS, back.ExpandNode(data.beta, TraversalDirection::Backward));
+    EXPECT_TRUE(HasEdge(back, data.beta, data.alpha, "AlphaToBeta", TraversalDirection::Backward));
+    }
+
+//---------------------------------------------------------------------------------------
+//! Polymorphic TPH constraint ends store Source/Target ECClassId physically. Traversal must
+//! report the concrete subclass of each related node, not the constraint root.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, LinkTable_PhysicalClassId_PolymorphicConstraint)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_LTPhysicalConstraint.ecdb", SchemaItem(s_mappingInvariantSchemaXml)));
+    auto data = PopulateMappingInvariants();
+
+    InstanceGraph graph(m_ecdb);
+    graph.AddSeed(data.nodeA);
+    ASSERT_EQ(SUCCESS, graph.ExpandNode(data.nodeA, TraversalDirection::Forward));
+
+    EXPECT_TRUE(HasEdge(graph, data.nodeA, data.nodeB, "NodeToNode", TraversalDirection::Forward));
+    auto const* related = graph.GetRelated(data.nodeA);
+    ASSERT_NE(nullptr, related);
+    bool found = false;
+    for (auto const& rel : *related)
+        {
+        if (rel.GetRelClassId() == GetClassId("IGMap", "NodeToNode") && rel.GetKey().GetInstanceId() == data.nodeB.GetInstanceId())
+            {
+            found = true;
+            EXPECT_EQ(data.nodeB.GetClassId(), rel.GetKey().GetClassId()) << "Physical Source/Target ECClassId must yield NodeB, not Node";
+            }
+        }
+    EXPECT_TRUE(found);
+
+    InstanceGraph back(m_ecdb);
+    back.AddSeed(data.nodeB);
+    ASSERT_EQ(SUCCESS, back.ExpandNode(data.nodeB, TraversalDirection::Backward));
+    EXPECT_TRUE(HasEdge(back, data.nodeB, data.nodeA, "NodeToNode", TraversalDirection::Backward));
+    auto const* backRelated = back.GetRelated(data.nodeB);
+    ASSERT_NE(nullptr, backRelated);
+    for (auto const& rel : *backRelated)
+        {
+        if (rel.GetRelClassId() == GetClassId("IGMap", "NodeToNode"))
+            EXPECT_EQ(data.nodeA.GetClassId(), rel.GetKey().GetClassId());
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+//! TPH link table with derived relationship classes: the physical Rel ECClassId column
+//! distinguishes base vs derived rows between the same pair of instances.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, LinkTable_PhysicalClassId_DerivedRelationshipClasses)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_LTPhysicalRel.ecdb", SchemaItem(s_mappingInvariantSchemaXml)));
+    auto data = PopulateMappingInvariants();
+
+    InstanceGraph graph(m_ecdb);
+    graph.AddSeed(data.nodeA);
+    ASSERT_EQ(SUCCESS, graph.ExpandNode(data.nodeA, TraversalDirection::Forward));
+
+    EXPECT_TRUE(HasEdge(graph, data.nodeA, data.nodeB, "Connection", TraversalDirection::Forward));
+    EXPECT_TRUE(HasEdge(graph, data.nodeA, data.nodeB, "ConnectionA", TraversalDirection::Forward));
+
+    auto const* related = graph.GetRelated(data.nodeA);
+    ASSERT_NE(nullptr, related);
+    int connectionEdges = 0;
+    for (auto const& rel : *related)
+        {
+        if (rel.GetKey().GetInstanceId() != data.nodeB.GetInstanceId())
+            continue;
+        if (rel.GetRelClassId() == GetClassId("IGMap", "Connection") || rel.GetRelClassId() == GetClassId("IGMap", "ConnectionA"))
+            {
+            ++connectionEdges;
+            EXPECT_EQ(data.nodeB.GetClassId(), rel.GetKey().GetClassId());
+            EXPECT_TRUE(rel.GetRelInstanceId().IsValid());
+            }
+        }
+    EXPECT_EQ(2, connectionEdges) << "Base and derived relationship rows must both be reported";
+    }
+
+//---------------------------------------------------------------------------------------
+//! Derived relationship classes on exclusive ends: Rel ECClassId is physical (TPH) while
+//! Source/Target ECClassId stay virtual/static. Each derived class must still resolve.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, LinkTable_VirtualClassId_DerivedRelationshipClasses)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_LTVirtualDerived.ecdb", SchemaItem(s_mappingInvariantSchemaXml)));
+    auto data = PopulateMappingInvariants();
+
+    InstanceGraph graph(m_ecdb);
+    graph.AddSeed(data.alpha);
+    ASSERT_EQ(SUCCESS, graph.ExpandNode(data.alpha, TraversalDirection::Forward));
+
+    EXPECT_TRUE(HasEdge(graph, data.alpha, data.beta, "StaticLink", TraversalDirection::Forward));
+    EXPECT_TRUE(HasEdge(graph, data.alpha, data.beta, "StaticLinkDerived", TraversalDirection::Forward));
+
+    auto const* related = graph.GetRelated(data.alpha);
+    ASSERT_NE(nullptr, related);
+    int staticLinkEdges = 0;
+    for (auto const& rel : *related)
+        {
+        if (rel.GetKey() != data.beta)
+            continue;
+        if (rel.GetRelClassId() == GetClassId("IGMap", "StaticLink") || rel.GetRelClassId() == GetClassId("IGMap", "StaticLinkDerived"))
+            {
+            ++staticLinkEdges;
+            EXPECT_EQ(data.beta.GetClassId(), rel.GetKey().GetClassId()) << "Virtual TargetECClassId must still resolve to Beta";
+            }
+        }
+    EXPECT_EQ(2, staticLinkEdges);
+    }
+
+//---------------------------------------------------------------------------------------
+//! Sealed navigation property: RelECClassId is not persisted. InstanceGraph must still
+//! report the sealed relationship class as a static id.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, NavProp_VirtualRelClassId_SealedRelationship)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_NavVirtualRel.ecdb", SchemaItem(s_mappingInvariantSchemaXml)));
+    auto data = PopulateMappingInvariants();
+
+    InstanceGraph fromHub(m_ecdb);
+    fromHub.AddSeed(data.hub);
+    ASSERT_EQ(SUCCESS, fromHub.ExpandNode(data.hub, TraversalDirection::Forward));
+    EXPECT_TRUE(HasEdge(fromHub, data.hub, data.spokeA, "HubHasSpokes", TraversalDirection::Forward));
+    EXPECT_TRUE(HasEdge(fromHub, data.hub, data.spokeB, "HubHasSpokes", TraversalDirection::Forward));
+
+    InstanceGraph fromSpoke(m_ecdb);
+    fromSpoke.AddSeed(data.spokeA);
+    ASSERT_EQ(SUCCESS, fromSpoke.ExpandNode(data.spokeA, TraversalDirection::Backward));
+    EXPECT_TRUE(HasEdge(fromSpoke, data.spokeA, data.hub, "HubHasSpokes", TraversalDirection::Backward));
+    }
+
+//---------------------------------------------------------------------------------------
+//! Abstract navigation-property relationship: RelECClassId is a physical column and must be
+//! read so each derived relationship class is reported correctly.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, NavProp_PhysicalRelClassId_AbstractRelationship)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_NavPhysicalRel.ecdb", SchemaItem(s_mappingInvariantSchemaXml)));
+    auto data = PopulateMappingInvariants();
+
+    InstanceGraph fromHub(m_ecdb);
+    fromHub.AddSeed(data.hub);
+    ASSERT_EQ(SUCCESS, fromHub.ExpandNode(data.hub, TraversalDirection::Forward));
+
+    EXPECT_TRUE(HasEdge(fromHub, data.hub, data.spokeA, "HubOwnsSpokeA", TraversalDirection::Forward));
+    EXPECT_TRUE(HasEdge(fromHub, data.hub, data.spokeB, "HubOwnsSpokeB", TraversalDirection::Forward));
+    EXPECT_FALSE(HasEdge(fromHub, data.hub, data.spokeA, "HubOwnsSpokes", TraversalDirection::Forward))
+        << "The abstract root must not be reported in place of the derived RelECClassId";
+    EXPECT_FALSE(HasEdge(fromHub, data.hub, data.spokeB, "HubOwnsSpokes", TraversalDirection::Forward));
+    }
+
+//---------------------------------------------------------------------------------------
+//! Same abstract nav property, two derived relationship classes, both directions. Related
+//! entity class ids come from the TPH Spoke table and must be the concrete subclasses.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, NavProp_PhysicalRelClassId_DerivedRelationshipClasses)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_NavPhysicalDerived.ecdb", SchemaItem(s_mappingInvariantSchemaXml)));
+    auto data = PopulateMappingInvariants();
+
+    InstanceGraph fromHub(m_ecdb);
+    fromHub.AddSeed(data.hub);
+    ASSERT_EQ(SUCCESS, fromHub.ExpandNode(data.hub, TraversalDirection::Forward));
+
+    auto const* related = fromHub.GetRelated(data.hub);
+    ASSERT_NE(nullptr, related);
+    bool foundA = false, foundB = false;
+    for (auto const& rel : *related)
+        {
+        if (rel.GetRelClassId() == GetClassId("IGMap", "HubOwnsSpokeA"))
+            {
+            foundA = true;
+            EXPECT_EQ(data.spokeA, rel.GetKey());
+            EXPECT_EQ(data.spokeA.GetInstanceId(), rel.GetRelInstanceId());
+            }
+        if (rel.GetRelClassId() == GetClassId("IGMap", "HubOwnsSpokeB"))
+            {
+            foundB = true;
+            EXPECT_EQ(data.spokeB, rel.GetKey());
+            EXPECT_EQ(data.spokeB.GetInstanceId(), rel.GetRelInstanceId());
+            }
+        }
+    EXPECT_TRUE(foundA);
+    EXPECT_TRUE(foundB);
+
+    InstanceGraph fromSpokeA(m_ecdb);
+    fromSpokeA.AddSeed(data.spokeA);
+    ASSERT_EQ(SUCCESS, fromSpokeA.ExpandNode(data.spokeA, TraversalDirection::Backward));
+    EXPECT_TRUE(HasEdge(fromSpokeA, data.spokeA, data.hub, "HubOwnsSpokeA", TraversalDirection::Backward));
+    EXPECT_FALSE(HasEdge(fromSpokeA, data.spokeA, data.hub, "HubOwnsSpokeB", TraversalDirection::Backward));
+    }
+
+//---------------------------------------------------------------------------------------
+//! One graph and one vtab query spanning every mapping invariant: virtual and physical
+//! Source/Target/Rel class ids, derived link-table classes, sealed and abstract nav props.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, MixedRelationships_AllInvariantCombinations)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_MapMixed.ecdb", SchemaItem(s_mappingInvariantSchemaXml)));
+    m_ecdb.GetECSqlConfig().SetExperimentalFeaturesEnabled(true);
+    auto data = PopulateMappingInvariants();
+
+    InstanceGraph graph(m_ecdb);
+    graph.AddSeed(data.alpha);
+    graph.AddSeed(data.hub);
+    ASSERT_EQ(SUCCESS, graph.ExpandAll(2));
+
+    EXPECT_TRUE(graph.Contains(data.alpha));
+    EXPECT_TRUE(graph.Contains(data.beta));
+    EXPECT_TRUE(graph.Contains(data.nodeA));
+    EXPECT_TRUE(graph.Contains(data.nodeB));
+    EXPECT_TRUE(graph.Contains(data.hub));
+    EXPECT_TRUE(graph.Contains(data.spokeA));
+    EXPECT_TRUE(graph.Contains(data.spokeB));
+
+    EXPECT_TRUE(HasEdge(graph, data.alpha, data.beta, "AlphaToBeta", TraversalDirection::Forward));
+    EXPECT_TRUE(HasEdge(graph, data.alpha, data.beta, "StaticLink", TraversalDirection::Forward));
+    EXPECT_TRUE(HasEdge(graph, data.alpha, data.beta, "StaticLinkDerived", TraversalDirection::Forward));
+    EXPECT_TRUE(HasEdge(graph, data.alpha, data.nodeA, "AlphaToNode", TraversalDirection::Forward));
+    EXPECT_TRUE(HasEdge(graph, data.nodeA, data.nodeB, "NodeToNode", TraversalDirection::Forward));
+    EXPECT_TRUE(HasEdge(graph, data.nodeA, data.nodeB, "Connection", TraversalDirection::Forward));
+    EXPECT_TRUE(HasEdge(graph, data.nodeA, data.nodeB, "ConnectionA", TraversalDirection::Forward));
+    EXPECT_TRUE(HasEdge(graph, data.hub, data.spokeA, "HubHasSpokes", TraversalDirection::Forward));
+    EXPECT_TRUE(HasEdge(graph, data.hub, data.spokeB, "HubHasSpokes", TraversalDirection::Forward));
+    EXPECT_TRUE(HasEdge(graph, data.hub, data.spokeA, "HubOwnsSpokeA", TraversalDirection::Forward));
+    EXPECT_TRUE(HasEdge(graph, data.hub, data.spokeB, "HubOwnsSpokeB", TraversalDirection::Forward));
+
+    auto collectVTable = [&] (ECInstanceKeyCR seed, Utf8CP direction, bvector<RelatedInstance>& rows)
+        {
+        rows.clear();
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+            SqlPrintfString("SELECT RelatedECInstanceId, RelatedECClassId, RelationshipECClassId FROM ECVLib.Relations(%s, %s, '%s')",
+                seed.GetInstanceId().ToString().c_str(),
+                seed.GetClassId().ToString().c_str(),
+                direction)));
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            rows.push_back(RelatedInstance(
+                ECInstanceKey(stmt.GetValueId<ECClassId>(1), stmt.GetValueId<ECInstanceId>(0)),
+                stmt.GetValueId<ECClassId>(2),
+                ECInstanceId(),
+                direction[0] == 'f' ? TraversalDirection::Forward : TraversalDirection::Backward));
+            }
+        };
+
+    auto vtabHas = [] (bvector<RelatedInstance> const& rows, ECInstanceKeyCR to, ECClassId relClassId)
+        {
+        for (auto const& rel : rows)
+            {
+            if (rel.GetKey() == to && rel.GetRelClassId() == relClassId)
+                return true;
+            }
+        return false;
+        };
+
+    bvector<RelatedInstance> fromAlpha;
+    collectVTable(data.alpha, "forward", fromAlpha);
+    EXPECT_TRUE(vtabHas(fromAlpha, data.beta, GetClassId("IGMap", "AlphaToBeta")));
+    EXPECT_TRUE(vtabHas(fromAlpha, data.beta, GetClassId("IGMap", "StaticLink")));
+    EXPECT_TRUE(vtabHas(fromAlpha, data.beta, GetClassId("IGMap", "StaticLinkDerived")));
+    EXPECT_TRUE(vtabHas(fromAlpha, data.nodeA, GetClassId("IGMap", "AlphaToNode")));
+
+    bvector<RelatedInstance> fromNodeA;
+    collectVTable(data.nodeA, "forward", fromNodeA);
+    EXPECT_TRUE(vtabHas(fromNodeA, data.nodeB, GetClassId("IGMap", "NodeToNode")));
+    EXPECT_TRUE(vtabHas(fromNodeA, data.nodeB, GetClassId("IGMap", "Connection")));
+    EXPECT_TRUE(vtabHas(fromNodeA, data.nodeB, GetClassId("IGMap", "ConnectionA")));
+
+    bvector<RelatedInstance> fromHub;
+    collectVTable(data.hub, "forward", fromHub);
+    EXPECT_TRUE(vtabHas(fromHub, data.spokeA, GetClassId("IGMap", "HubHasSpokes")));
+    EXPECT_TRUE(vtabHas(fromHub, data.spokeB, GetClassId("IGMap", "HubHasSpokes")));
+    EXPECT_TRUE(vtabHas(fromHub, data.spokeA, GetClassId("IGMap", "HubOwnsSpokeA")));
+    EXPECT_TRUE(vtabHas(fromHub, data.spokeB, GetClassId("IGMap", "HubOwnsSpokeB")));
+
+    bvector<RelatedInstance> fromSpokeA;
+    collectVTable(data.spokeA, "backward", fromSpokeA);
+    EXPECT_TRUE(vtabHas(fromSpokeA, data.hub, GetClassId("IGMap", "HubHasSpokes")));
+    EXPECT_TRUE(vtabHas(fromSpokeA, data.hub, GetClassId("IGMap", "HubOwnsSpokeA")));
     }
 
 END_ECDBUNITTESTS_NAMESPACE
