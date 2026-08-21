@@ -76,7 +76,7 @@ BentleyStatus VirtualSchemaManager::AddAndValidateVirtualSchema(Utf8StringCR sch
     }
     if (validate) {
         Utf8String err;
-        if (IsValidVirtualSchema(*schema, err)) {
+        if (!IsValidVirtualSchema(*schema, err)) {
             // log err
             return ERROR;
         }
@@ -202,7 +202,7 @@ bool VirtualSchemaManager::IsValidVirtualSchema(ECN::ECSchemaR schema, Utf8Strin
             err = "only abstract entity classes are allowed in virtual schema";
             return false;
         }
-        if (schemaClass->IsDefinedLocal("ECDbVirtual", "VirtualType")) {
+        if (!schemaClass->IsDefinedLocal("ECDbVirtual", "VirtualType")) {
             err = "entity classes must have ECDbVirtual::VirtualType customattribute";
             return false;
         }

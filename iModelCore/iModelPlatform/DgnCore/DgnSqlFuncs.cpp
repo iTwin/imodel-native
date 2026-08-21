@@ -3,6 +3,8 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
+#include "GeomStreamVTab.h"
+#include <GeomSerialization/GeomLibsJsonSerialization.h>
 
 BEGIN_UNNAMED_NAMESPACE
 
@@ -759,7 +761,335 @@ struct iModel_point_value : ScalarFunction
 };
 
 //=======================================================================================
+// Helper: decompress a raw GeometryStream blob (header + Snappy data) into opcodes.
+// Returns true and fills 'out' on success; returns false if blob is NULL/corrupt.
+//=======================================================================================
+static bool DecompressGeomStream(void const* blob, int blobBytes, bvector<uint8_t>& out)
+    {
+    if (nullptr == blob || blobBytes < 8)
+        return false;
+
+    SnappyFromMemory& snappy = SnappyFromMemory::GetForThread();
+    snappy.Init(const_cast<void*>(blob), static_cast<uint32_t>(blobBytes));
+
+    struct GeomBlobHeader { uint32_t m_signature; uint32_t m_size; };
+    GeomBlobHeader header;
+    uint32_t nRead = 0;
+    if (ZIP_SUCCESS != snappy._Read(reinterpret_cast<Byte*>(&header), sizeof(header), nRead) || nRead != sizeof(header))
+        return false;
+
+    if (0x0600 != header.m_signature || 0 == header.m_size)
+        return false;
+
+    out.resize(header.m_size);
+    if (ZIP_SUCCESS != snappy._Read(out.data(), header.m_size, nRead) || nRead != header.m_size)
+        {
+        out.clear();
+        return false;
+        }
+    return true;
+    }
+
+//=======================================================================================
+// Helper: walk decompressed opcode bytes, calling visitor for each opcode.
+// Visitor signature: bool (uint32_t opCode, uint8_t const* data, uint32_t dataSize)
+// Return false from visitor to stop early.
+//=======================================================================================
+template<typename TVisitor>
+static void WalkOpcodes(uint8_t const* data, size_t dataSize, TVisitor&& visitor)
+    {
+    size_t offset = 0;
+    while (offset + 8 <= dataSize)
+        {
+        uint32_t opCode   = *reinterpret_cast<uint32_t const*>(data + offset);
+        uint32_t paySize  = *reinterpret_cast<uint32_t const*>(data + offset + sizeof(uint32_t));
+        if (offset + 8 + paySize > dataSize)
+            break;
+        uint8_t const* payload = (0 != paySize) ? (data + offset + 8) : nullptr;
+        if (!visitor(opCode, payload, paySize))
+            break;
+        offset += 8 + paySize;
+        }
+    }
+
+//=======================================================================================
+//! imodel_geom_json(blob) — Decode a GeometryBlob value (from imodel_geom_stream) into
+//! iModel.js-compatible geometry JSON. BRep entries return NULL.
+//! The input blob is [4-byte opcode uint32][flatbuffer payload].
 // @bsiclass
+//=======================================================================================
+struct iModel_geom_json : ScalarFunction
+    {
+    DgnDbP m_db;
+    explicit iModel_geom_json(Utf8CP name, DgnDbP db) : ScalarFunction(name, 1, DbValueType::TextVal), m_db(db) {}
+
+    void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
+        {
+        try
+            {
+            if (args[0].IsNull())
+                { ctx.SetResultNull(); return; }
+
+            int blobSize = args[0].GetValueBytes();
+            if (blobSize <= (int)sizeof(uint32_t))
+                { ctx.SetResultNull(); return; }
+
+            uint8_t const* blobData = reinterpret_cast<uint8_t const*>(args[0].GetValueBlob());
+            uint32_t opCode = *reinterpret_cast<uint32_t const*>(blobData);
+
+            // BRep → NULL
+            if (opCode == static_cast<uint32_t>(GeometryStreamIO::OpCode::ParasolidBRep))
+                { ctx.SetResultNull(); return; }
+
+            uint8_t const* flatData = blobData + sizeof(uint32_t);
+            uint32_t flatSize = static_cast<uint32_t>(blobSize) - static_cast<uint32_t>(sizeof(uint32_t));
+
+            GeometryStreamIO::Operation op(static_cast<GeometryStreamIO::OpCode>(opCode), flatSize, flatData);
+
+            if (nullptr == m_db)
+                { ctx.SetResultNull(); return; }
+
+            GeometryStreamIO::Reader reader(*m_db);
+            GeometricPrimitivePtr geomPrim;
+            if (!reader.Get(op, geomPrim))
+                { ctx.SetResultNull(); return; }
+
+            IGeometryPtr igeom;
+            switch (geomPrim->GetGeometryType())
+                {
+                case GeometricPrimitive::GeometryType::CurvePrimitive:
+                    igeom = IGeometry::Create(geomPrim->GetAsICurvePrimitive());
+                    break;
+                case GeometricPrimitive::GeometryType::CurveVector:
+                    igeom = IGeometry::Create(geomPrim->GetAsCurveVector());
+                    break;
+                case GeometricPrimitive::GeometryType::SolidPrimitive:
+                    igeom = IGeometry::Create(geomPrim->GetAsISolidPrimitive());
+                    break;
+                case GeometricPrimitive::GeometryType::BsplineSurface:
+                    igeom = IGeometry::Create(geomPrim->GetAsMSBsplineSurface());
+                    break;
+                case GeometricPrimitive::GeometryType::Polyface:
+                    igeom = IGeometry::Create(geomPrim->GetAsPolyfaceHeader());
+                    break;
+                default:
+                    break;
+                }
+
+            if (!igeom.IsValid())
+                { ctx.SetResultNull(); return; }
+
+            Utf8String jsonStr;
+            if (!IModelJson::TryGeometryToIModelJsonString(jsonStr, *igeom))
+                { ctx.SetResultNull(); return; }
+
+            ctx.SetResultText(jsonStr.c_str(), (int)jsonStr.size(), Context::CopyData::Yes);
+            }
+        catch (...)
+            {
+            ctx.SetResultNull();
+            }
+        }
+    };
+
+//=======================================================================================
+//! imodel_geom_text(blob) — Extract all TextString content from a raw GeometryStream blob.
+//! Multiple text entries are joined with newline. Returns NULL if none found.
+// @bsiclass
+//=======================================================================================
+struct iModel_geom_text : ScalarFunction
+    {
+    DgnDbP m_db;
+    explicit iModel_geom_text(Utf8CP name, DgnDbP db) : ScalarFunction(name, 1, DbValueType::TextVal), m_db(db) {}
+
+    void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
+        {
+        try
+            {
+            if (args[0].IsNull() || nullptr == m_db)
+                { ctx.SetResultNull(); return; }
+
+            bvector<uint8_t> decompressed;
+            if (!DecompressGeomStream(args[0].GetValueBlob(), args[0].GetValueBytes(), decompressed))
+                { ctx.SetResultNull(); return; }
+
+            Utf8String allText;
+            GeometryStreamIO::Reader reader(*m_db);
+
+            WalkOpcodes(decompressed.data(), decompressed.size(),
+                [&](uint32_t opCode, uint8_t const* payload, uint32_t paySize) -> bool
+                    {
+                    if (opCode != static_cast<uint32_t>(GeometryStreamIO::OpCode::TextString))
+                        return true;
+                    if (nullptr == payload || 0 == paySize)
+                        return true;
+                    GeometryStreamIO::Operation op(GeometryStreamIO::OpCode::TextString, paySize, payload);
+                    TextStringPtr text = TextString::Create(*m_db);
+                    if (reader.Get(op, *text))
+                        {
+                        if (!allText.empty())
+                            allText += '\n';
+                        allText += text->GetText();
+                        }
+                    return true;
+                    });
+
+            if (allText.empty())
+                ctx.SetResultNull();
+            else
+                ctx.SetResultText(allText.c_str(), (int)allText.size(), Context::CopyData::Yes);
+            }
+        catch (...)
+            {
+            ctx.SetResultNull();
+            }
+        }
+    };
+
+//=======================================================================================
+//! imodel_geom_entry_count(blob) — Count geometric entries (IsGeometry=1) in a raw
+//! GeometryStream blob without full geometry deserialization. Returns NULL on failure.
+// @bsiclass
+//=======================================================================================
+struct iModel_geom_entry_count : ScalarFunction
+    {
+    explicit iModel_geom_entry_count(Utf8CP name) : ScalarFunction(name, 1, DbValueType::IntegerVal) {}
+
+    void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
+        {
+        try
+            {
+            if (args[0].IsNull())
+                { ctx.SetResultNull(); return; }
+
+            bvector<uint8_t> decompressed;
+            if (!DecompressGeomStream(args[0].GetValueBlob(), args[0].GetValueBytes(), decompressed))
+                { ctx.SetResultNull(); return; }
+
+            int count = 0;
+            WalkOpcodes(decompressed.data(), decompressed.size(),
+                [&](uint32_t opCode, uint8_t const* /*payload*/, uint32_t /*paySize*/) -> bool
+                    {
+                    GeometryStreamIO::Operation op(static_cast<GeometryStreamIO::OpCode>(opCode), 0, nullptr);
+                    if (op.IsGeometryOp())
+                        ++count;
+                    return true;
+                    });
+
+            ctx.SetResultInt(count);
+            }
+        catch (...)
+            {
+            ctx.SetResultNull();
+            }
+        }
+    };
+
+//=======================================================================================
+//! imodel_geom_part_ids(blob) — Return a JSON array of all GeometryPartId references
+//! (as hex strings) in a raw GeometryStream blob. Returns NULL if none found.
+// @bsiclass
+//=======================================================================================
+struct iModel_geom_part_ids : ScalarFunction
+    {
+    DgnDbP m_db;
+    explicit iModel_geom_part_ids(Utf8CP name, DgnDbP db) : ScalarFunction(name, 1, DbValueType::TextVal), m_db(db) {}
+
+    void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
+        {
+        try
+            {
+            if (args[0].IsNull() || nullptr == m_db)
+                { ctx.SetResultNull(); return; }
+
+            bvector<uint8_t> decompressed;
+            if (!DecompressGeomStream(args[0].GetValueBlob(), args[0].GetValueBytes(), decompressed))
+                { ctx.SetResultNull(); return; }
+
+            GeometryStreamIO::Reader reader(*m_db);
+            bvector<DgnGeometryPartId> partIds;
+
+            WalkOpcodes(decompressed.data(), decompressed.size(),
+                [&](uint32_t opCode, uint8_t const* payload, uint32_t paySize) -> bool
+                    {
+                    if (opCode != static_cast<uint32_t>(GeometryStreamIO::OpCode::GeometryPartInstance))
+                        return true;
+                    if (nullptr == payload || 0 == paySize)
+                        return true;
+                    GeometryStreamIO::Operation op(GeometryStreamIO::OpCode::GeometryPartInstance, paySize, payload);
+                    DgnGeometryPartId partId;
+                    Transform xform;
+                    if (reader.Get(op, partId, xform) && partId.IsValid())
+                        partIds.push_back(partId);
+                    return true;
+                    });
+
+            if (partIds.empty())
+                { ctx.SetResultNull(); return; }
+
+            // Build JSON array: ["0x1a","0x3f",...]
+            Utf8String json = "[";
+            for (size_t i = 0; i < partIds.size(); ++i)
+                {
+                if (i > 0)
+                    json += ",";
+                json += "\"";
+                json += partIds[i].ToHexStr();
+                json += "\"";
+                }
+            json += "]";
+            ctx.SetResultText(json.c_str(), (int)json.size(), Context::CopyData::Yes);
+            }
+        catch (...)
+            {
+            ctx.SetResultNull();
+            }
+        }
+    };
+
+//=======================================================================================
+//! imodel_geom_has_brep(blob) — Return 1 if the GeometryStream contains any BRep
+//! (Parasolid) geometry, 0 otherwise. Returns NULL on failure.
+// @bsiclass
+//=======================================================================================
+struct iModel_geom_has_brep : ScalarFunction
+    {
+    explicit iModel_geom_has_brep(Utf8CP name) : ScalarFunction(name, 1, DbValueType::IntegerVal) {}
+
+    void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
+        {
+        try
+            {
+            if (args[0].IsNull())
+                { ctx.SetResultNull(); return; }
+
+            bvector<uint8_t> decompressed;
+            if (!DecompressGeomStream(args[0].GetValueBlob(), args[0].GetValueBytes(), decompressed))
+                { ctx.SetResultNull(); return; }
+
+            bool hasBrep = false;
+            WalkOpcodes(decompressed.data(), decompressed.size(),
+                [&](uint32_t opCode, uint8_t const* /*payload*/, uint32_t /*paySize*/) -> bool
+                    {
+                    if (opCode == static_cast<uint32_t>(GeometryStreamIO::OpCode::ParasolidBRep))
+                        {
+                        hasBrep = true;
+                        return false; // stop early
+                        }
+                    return true;
+                    });
+
+            ctx.SetResultInt(hasBrep ? 1 : 0);
+            }
+        catch (...)
+            {
+            ctx.SetResultNull();
+            }
+        }
+    };
+
+//=======================================================================================
+//! @bsiclass
 //=======================================================================================
 #ifdef DOCUMENTATION_GENERATOR
 /**
@@ -849,6 +1179,16 @@ void BisCoreDomain::_OnDgnDbOpened(DgnDbR db) const
 
     for (RTreeMatchFunction* func : s_matchFuncs)
         db.AddRTreeMatchFunction(*func);
+
+    // Register imodel_geom_* scalar functions
+    db.AddFunction(*(new iModel_geom_json("imodel_geom_json", &db)));
+    db.AddFunction(*(new iModel_geom_text("imodel_geom_text", &db)));
+    db.AddFunction(*(new iModel_geom_entry_count("imodel_geom_entry_count")));
+    db.AddFunction(*(new iModel_geom_part_ids("imodel_geom_part_ids", &db)));
+    db.AddFunction(*(new iModel_geom_has_brep("imodel_geom_has_brep")));
+
+    // Register GeometryStream virtual table module
+    (new GeomStreamModule(db))->Register();
     }
 
 #ifdef DOCUMENTATION_GENERATOR  // -- NB: This closing @}  closes the @addtogroup iModelSqlFunctions @{  at the top of the file

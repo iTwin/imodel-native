@@ -210,6 +210,10 @@ export declare namespace IModelJsNative {
 
   let logger: NativeLogger;
   function setMaxTileCacheSize(maxBytes: number): void;
+  /** Get the process-wide maximum uncompressed GeometryStream size (bytes) the imodel_geom_stream virtual table will decompose. Default: 50 MB. */
+  function getMaxGeomStreamVTabBytes(): number;
+  /** Set the process-wide maximum uncompressed GeometryStream size (bytes) the imodel_geom_stream virtual table will decompose. Minimum enforced: 4 KB. Blobs exceeding this are silently skipped. */
+  function setMaxGeomStreamVTabBytes(bytes: number): void;
   function getTileVersionInfo(): TileVersionInfo;
   function setCrashReporting(cfg: NativeCrashReportingConfig): void;
   function setCrashReportProperty(name: string, value: string | undefined): void;
