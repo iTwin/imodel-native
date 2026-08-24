@@ -282,6 +282,18 @@ struct SchemaSyncTestFixture : public ECDbTestFixture
     static void ExpectCensusPreserved(InstanceCensus const& before, InstanceCensus const& after, Utf8CP context,
                                       std::vector<Utf8String> const& removedProperties = {});
 
+    //! Whether the running test has already reported a failure, for the checks that only make sense
+    //! against a file nothing else complained about. gtest's failure state does not exist in the
+    //! non-gtest BeTest configuration the mobile builds use, where this always reads false.
+    static bool CurrentTestHasFailed()
+        {
+#if defined (USE_GTEST)
+        return ::testing::Test::HasFailure();
+#else
+        return false;
+#endif
+        }
+
     void TearDown() override;
 
     SchemaSync::SyncDbUri GetSyncDbUri()

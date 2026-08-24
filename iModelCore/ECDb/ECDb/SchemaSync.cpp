@@ -9,31 +9,6 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
-// TEMPORARY - tracing for the "upstream" schema sync flow, to be deleted before this ships.
-//
-// Prints one line per phase, never per row, so a whole test run stays readable. Only the upstream
-// flow traces; the pull/push path does not. To remove: set the switch to 0 to silence it, or
-// delete this block and every SS_TRACE( line in the file - they are all one-liners with no other
-// side effects, so nothing else has to change.
-//+===============+===============+===============+===============+===============+======
-#define SCHEMA_SYNC_UPSTREAM_TRACE 1
-#if SCHEMA_SYNC_UPSTREAM_TRACE
-    #define SS_TRACE(...) do { printf("[schemasync] "); printf(__VA_ARGS__); printf("\n"); fflush(stdout); } while (false)
-
-//=======================================================================================
-// TEMPORARY - goes with the block above. An import into the sync db reports its reason through the
-// issue reporter and returns a bare BE_SQLITE_ERROR, so without this a failure says nothing at all.
-//+===============+===============+===============+===============+===============+======
-struct SchemaSyncTraceIssueListener final : ECN::IIssueListener {
-    void _OnIssueReported(ECN::IssueSeverity, ECN::IssueCategory, ECN::IssueType, ECN::IssueId, Utf8CP message) const override {
-        SS_TRACE("  issue: %s", message);
-    }
-};
-#else
-    #define SS_TRACE(...) do { } while (false)
-#endif
-
-//=======================================================================================
 //     JsonNames
 //+===============+===============+===============+===============+===============+======
 //=======================================================================================
@@ -1008,18 +983,6 @@ BentleyStatus SchemaSyncUpstreamHelper::ReloadAgainstSyncDb(bvector<ECN::ECSchem
 }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-int64_t SchemaSyncUpstreamHelper::CountClosureRows(ECDbR conn, Utf8CP tempTableName) {
-    Statement stmt;
-    if (stmt.Prepare(conn, SqlPrintfString("SELECT COUNT(*) FROM %s", tempTableName).GetUtf8CP()) != BE_SQLITE_OK)
-        return -1;
-    if (stmt.Step() != BE_SQLITE_ROW)
-        return -1;
-    return stmt.GetValueInt64(0);
-}
-
-//---------------------------------------------------------------------------------------
 // Builds the id sets that define what "belongs to" the requested schemas.
 //
 // The order below matters, because each set is derived from the previous one:
@@ -1400,11 +1363,8 @@ DbResult SchemaSyncUpstreamHelper::MirrorTables(ECDbR conn, bvector<TablePlan> c
 
     // Counts, not rows: this is what says whether the mirror wrote a handful of rows or churned the
     // whole file, which is the difference between a cheap upload and every client re-downloading it.
-    SS_TRACE("mirror %s -> %s: deleted %lld in %d sweep(s), inserted %lld (of %d tables)", sourceAlias, targetAlias, (long long)deleted, sweeps, (long long)inserted, (int)plan.size());
-    if (deleted > 0)
-        SS_TRACE("  deleted:%s", deletedDetail.c_str());
-    if (inserted > 0)
-        SS_TRACE("  inserted:%s", insertedDetail.c_str());
+    LOG.debugv("SchemaSyncUpstreamHelper::MirrorTables(): %s -> %s over %d tables: deleted %lld in %d sweep(s) (%s), inserted %lld (%s).",
+        sourceAlias, targetAlias, (int)plan.size(), (long long)deleted, sweeps, deletedDetail.c_str(), (long long)inserted, insertedDetail.c_str());
 
     return BE_SQLITE_OK;
 }
@@ -1580,13 +1540,6 @@ SchemaSync::Status SchemaSync::AdoptSchemas(SyncDbUri const& syncDbUri, bvector<
         return cleanup(Status::ERROR);
     }
 
-    SS_TRACE("adopt %s: closure is %lld schemas, %lld classes, %lld tables, %lld columns",
-        SchemaSyncHelper::Join(schemaNames, ",").c_str(),
-        (long long)SchemaSyncUpstreamHelper::CountClosureRows(m_conn, SchemaSyncUpstreamHelper::TEMP_SCHEMA_IDS),
-        (long long)SchemaSyncUpstreamHelper::CountClosureRows(m_conn, SchemaSyncUpstreamHelper::TEMP_CLASS_IDS),
-        (long long)SchemaSyncUpstreamHelper::CountClosureRows(m_conn, SchemaSyncUpstreamHelper::TEMP_TABLE_IDS),
-        (long long)SchemaSyncUpstreamHelper::CountClosureRows(m_conn, SchemaSyncUpstreamHelper::TEMP_COLUMN_IDS));
-
     rc = SchemaSyncUpstreamHelper::CopyClosure(m_conn, SchemaSyncHelper::ALIAS_SYNC_DB, SchemaSyncHelper::ALIAS_MAIN_DB);
     if (rc != BE_SQLITE_OK) {
         LOG.error("SchemaSync::AdoptSchemas(): Failed to copy schema closure.");
@@ -1643,8 +1596,6 @@ SchemaSync::Status SchemaSync::AdoptSchemas(SyncDbUri const& syncDbUri, bvector<
     const auto detachRc = cleanup(Status::OK);
     UNUSED_VARIABLE(detachRc);
 
-    SS_TRACE("adopt done: tables and indexes materialised, overflow rows caught up");
-
     mainDisp.OnAfterSchemaChanges().RaiseEvent(m_conn, SchemaChangeType::SchemaImport);
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaSync::AdoptSchemas");
     return Status::OK;
@@ -1676,7 +1627,6 @@ SchemaSync::Status SchemaSync::ImportSchemas(SyncDbUri const& syncDbUri, bvector
         return prc;
 
     const auto dataVerBeforeImport = SyncDbInfo::From(effectiveSyncDbUri).GetDataVersion();
-    SS_TRACE("import: %d schema(s), sync db dataVer %lld", (int)schemas.size(), (long long)dataVerBeforeImport);
 
     // Step 1. The import runs in the sync db, which is where ids and physical layout get decided.
     bvector<Utf8String> importedSchemaNames;
@@ -1731,11 +1681,6 @@ SchemaSync::Status SchemaSync::ImportIntoSyncDb(SyncDbUri const& syncDbUri, bvec
         return Status::ERROR_INVALID_SCHEMA_SYNC_DB;
     }
 
-#if SCHEMA_SYNC_UPSTREAM_TRACE
-    SchemaSyncTraceIssueListener traceIssues;
-    syncConn.AddIssueListener(traceIssues);
-#endif
-
     bvector<ECSchemaPtr> reloaded;
     if (SUCCESS != SchemaSyncUpstreamHelper::ReloadAgainstSyncDb(reloaded, schemas, syncConn)) {
         LOG.error("SchemaSync::ImportSchemas(): Failed to re-point the schemas at the sync db.");
@@ -1752,7 +1697,6 @@ SchemaSync::Status SchemaSync::ImportIntoSyncDb(SyncDbUri const& syncDbUri, bvec
     // decide whether the import is legal, and this is the import that decides.
     const auto syncDbOptions = Enum::Or(options, SchemaManager::SchemaImportOptions::DoNotCreateOrUpdateDataTables);
     const auto importRc = syncConn.Schemas().ImportSchemas(schemasToImport, syncDbOptions);
-    SS_TRACE("import into sync db: %s -> %d", SchemaSyncHelper::Join(importedSchemaNames, ",").c_str(), (int)(SchemaImportResult::Status)importRc);
     if (importRc == SchemaImportResult::ERROR_DATA_TRANSFORM_REQUIRED) {
         LOG.info("SchemaSync::ImportSchemas(): The import would have to move data, which the additive path does not do.");
         syncConn.AbandonChanges();
@@ -1767,7 +1711,6 @@ SchemaSync::Status SchemaSync::ImportIntoSyncDb(SyncDbUri const& syncDbUri, bvec
 
     if (!importRc.IsOk()) {
         LOG.errorv("SchemaSync::ImportSchemas(): The import into the sync db failed. %s", syncConn.GetLastError().c_str());
-        SS_TRACE("  sqlite says: %s", syncConn.GetLastError().c_str());
         syncConn.AbandonChanges();
         return Status::ERROR;
     }
@@ -1829,8 +1772,6 @@ SchemaSync::Status SchemaSync::UpgradeSchemas(SyncDbUri const& syncDbUri, bvecto
         ReEnableSchemaSync();
         }
 
-    SS_TRACE("upgrade: local import of %d schema(s) with transforms allowed -> %d", (int)schemas.size(), (int)(SchemaImportResult::Status)importRc);
-
     if (!importRc.IsOk()) {
         LOG.error("SchemaSync::UpgradeSchemas(): The local import failed.");
         m_conn.AbandonChanges();
@@ -1844,7 +1785,6 @@ SchemaSync::Status SchemaSync::UpgradeSchemas(SyncDbUri const& syncDbUri, bvecto
         return status;
     }
 
-    SS_TRACE("upgrade done: sync db now at dataVer %lld", (long long)GetInfo().GetDataVersion());
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaSync::UpgradeSchemas");
     return Status::OK;
 }
@@ -1909,22 +1849,6 @@ SchemaSync::Status SchemaSync::MirrorToSyncDb(SyncDbUri const& syncDbUri) {
         return Status::ERROR;
     }
 
-#if SCHEMA_SYNC_UPSTREAM_TRACE
-    {
-    Statement fkStmt;
-    if (fkStmt.Prepare(m_conn, SqlPrintfString("PRAGMA [%s].foreign_key_check", SchemaSyncHelper::ALIAS_SYNC_DB).GetUtf8CP()) == BE_SQLITE_OK) {
-        int violations = 0;
-        while (fkStmt.Step() == BE_SQLITE_ROW) {
-            ++violations;
-            SS_TRACE("  sync db FK violation: table=%s rowid=%lld parent=%s fkid=%d",
-                fkStmt.GetValueText(0), (long long)fkStmt.GetValueInt64(1), fkStmt.GetValueText(2), fkStmt.GetValueInt(3));
-        }
-        if (violations == 0)
-            SS_TRACE("overwrite: sync db has no dangling references");
-    }
-    }
-#endif
-
     rc = m_conn.SaveChanges();
     if (rc != BE_SQLITE_OK) {
         LOG.errorv("SchemaSync::MirrorToSyncDb(): Failed to save. %s", BeSQLiteLib::GetErrorString(rc));
@@ -1979,7 +1903,6 @@ SchemaSync::Status SchemaSync::OverwriteSyncDb(SyncDbUri const& syncDbUri) {
         return vrc;
     }
 
-    SS_TRACE("overwrite: rebuilding the sync db from this briefcase");
     const auto status = OverwriteSyncDbInternal(effectiveSyncDbUri);
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaSync::OverwriteSyncDb");
     return status;

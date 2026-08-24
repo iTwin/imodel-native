@@ -29,16 +29,6 @@ namespace {
 
 constexpr Utf8CP CHECK_SYNC_ALIAS = "check_sync_db";
 
-// gtest's failure state is not declared in the non-gtest BeTest configuration, where the checks
-// simply always run.
-bool CurrentTestHasFailed() {
-#if defined (USE_GTEST)
-    return ::testing::Test::HasFailure();
-#else
-    return false;
-#endif
-}
-
 // Everything a schema sync db is allowed to contain besides its ec_ tables. The two ecdbf_ tables
 // are the only data tables SchemaSync::Init leaves behind, so they are named rather than
 // prefix-matched: a third one appearing is exactly the kind of leak this check exists to find.
@@ -444,7 +434,7 @@ void SchemaSyncTestFixture::ExpectCensusPreserved(InstanceCensus const& before, 
         Utf8StringCR className = classEntry.first;
         const auto afterClass = after.m_rowsByClass.find(className);
         if (afterClass == after.m_rowsByClass.end()) {
-            ADD_FAILURE() << context << ": every instance of " << className.c_str() << " is gone (" << classEntry.second.size() << " of them)";
+            ADD_FAILURE() << context << ": every instance of " << className.c_str() << " is gone (" << (uint64_t)classEntry.second.size() << " of them)";
             continue;
         }
 

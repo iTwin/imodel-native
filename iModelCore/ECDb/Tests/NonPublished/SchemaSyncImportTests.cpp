@@ -21,13 +21,7 @@ struct SchemaSyncImportTestFixture : SchemaSyncTestFixture {};
 //! each have a representative on SchemaSyncImportTestFixture.
 struct SchemaSyncImportExtendedTests : SchemaSyncImportTestFixture
     {
-    void SetUp() override
-        {
-        if (!ExtendedTestsEnabled())
-            GTEST_SKIP() << "Extended tier. Set IMODEL_RUN_EXTENDED_TESTS=1 to run it.";
-
-        SchemaSyncImportTestFixture::SetUp();
-        }
+    ECDB_EXTENDED_TIER_GATE(SchemaSyncImportTestFixture)
     };
 
 namespace {
@@ -1352,7 +1346,6 @@ TEST_F(SchemaSyncImportTestFixture, ImportSchemasCatchesUpInstancesThatSpillInto
 
     const auto primaryTable = TableOf(*b2, "UpstreamTest", "Derived", "p1");
     const auto overflowTable = TableOf(*b2, "UpstreamTest", "Derived", "p8");
-    printf("[schemasync-test] p1 -> %s, p8 -> %s\n", primaryTable.c_str(), overflowTable.c_str());
     ASSERT_FALSE(overflowTable.empty()) << "p8 was not mapped at all";
     ASSERT_STRNE(primaryTable.c_str(), overflowTable.c_str())
         << "nothing spilled into an overflow table, so this scenario no longer tests what it claims to";
@@ -3211,7 +3204,7 @@ TEST_F(SchemaSyncImportExtendedTests, ConcurrentImportsConvergeAcrossEveryOrderi
 
             // The class the round then widens, on the timeline before the other briefcases exist.
             SeedThroughSyncDb(*seed, syncDb, MatrixBaselineSchema(), context.c_str());
-            if (HasFailure())
+            if (CurrentTestHasFailed())
                 return;
 
             std::vector<std::unique_ptr<TrackedECDb>> briefcases;
@@ -3226,7 +3219,7 @@ TEST_F(SchemaSyncImportExtendedTests, ConcurrentImportsConvergeAcrossEveryOrderi
                 InsertMatrixRow(*briefcases[i], Utf8PrintfString("%s: bc%d", context.c_str(), (int)i).c_str());
                 before.push_back(InstanceCensus::Take(*briefcases[i]));
             }
-            if (HasFailure())
+            if (CurrentTestHasFailed())
                 return;
 
             const auto moves = MatrixMoves(round);
@@ -3265,9 +3258,8 @@ TEST_F(SchemaSyncImportExtendedTests, ConcurrentImportsConvergeAcrossEveryOrderi
             // containment check for any briefcase not level with the sync db - which is where it
             // legitimately does not hold.
             VerifySchemaSyncRules(syncDb, std::vector<ECDb*>(raw.begin(), raw.end()), context.c_str());
-            // One broken ordering is enough to look at; the rest would repeat it. HasFailure() is a
-            // member of ::testing::Test, so it is available directly in a TEST_F body.
-            if (HasFailure())
+            // One broken ordering is enough to look at; the rest would repeat it.
+            if (CurrentTestHasFailed())
                 return;
         }
     } while (std::next_permutation(order.begin(), order.end()));
@@ -7243,7 +7235,7 @@ TEST_F(SchemaSyncImportExtendedTests, FiveBriefcasesConvergeAcrossAFewPushOrderi
         SetupSyncedPair(hub, syncDb, seed, unused);
 
         SeedThroughSyncDb(*seed, syncDb, MatrixBaselineSchema(), context.c_str());
-        if (HasFailure())
+        if (CurrentTestHasFailed())
             return;
 
         std::vector<std::unique_ptr<TrackedECDb>> briefcases;
@@ -7257,7 +7249,7 @@ TEST_F(SchemaSyncImportExtendedTests, FiveBriefcasesConvergeAcrossAFewPushOrderi
             InsertMatrixRow(*briefcases[i], Utf8PrintfString("%s: bc%d", context.c_str(), (int)i).c_str());
             before.push_back(InstanceCensus::Take(*briefcases[i]));
             }
-        if (HasFailure())
+        if (CurrentTestHasFailed())
             return;
 
         const auto moves = MatrixMoves(round);
@@ -7292,7 +7284,7 @@ TEST_F(SchemaSyncImportExtendedTests, FiveBriefcasesConvergeAcrossAFewPushOrderi
         ExpectECTablesIdentical(*latecomer, *briefcases[0], Utf8PrintfString("%s: latecomer", context.c_str()).c_str());
         ExpectPhysicalSchemaIdentical(*latecomer, *briefcases[0], Utf8PrintfString("%s: latecomer", context.c_str()).c_str());
 
-        if (HasFailure())
+        if (CurrentTestHasFailed())
             return;
         }
     }
@@ -7315,7 +7307,7 @@ TEST_F(SchemaSyncImportExtendedTests, EightBriefcasesImportingOneSchemaTogetherC
     // Derived with one property, narrow enough to sit in the shared columns. The eight-way import
     // below takes it to six, past the four-column limit and into overflow.
     SeedThroughSyncDb(*seed, syncDb, SharedColumnSchema("01.00.00", 1), "eight-way identical import");
-    if (HasFailure())
+    if (CurrentTestHasFailed())
         return;
 
     std::vector<std::unique_ptr<TrackedECDb>> briefcases;
@@ -7329,7 +7321,7 @@ TEST_F(SchemaSyncImportExtendedTests, EightBriefcasesImportingOneSchemaTogetherC
         InsertDerivedRow(*briefcases[i], Utf8PrintfString("bc%d", (int)i).c_str());
         before.push_back(InstanceCensus::Take(*briefcases[i]));
         }
-    if (HasFailure())
+    if (CurrentTestHasFailed())
         return;
 
     const auto schema = SharedColumnSchema("01.00.01", 6);

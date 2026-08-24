@@ -110,8 +110,6 @@ struct SchemaSyncUpstreamHelper final {
     //! serve each other, so a schema referencing another schema in @p schemas picks up its copy.
     //! @param[out] reloaded the copies, in dependency order. Import these, not @p schemas.
     static BentleyStatus ReloadAgainstSyncDb(bvector<ECN::ECSchemaPtr>& reloaded, bvector<ECN::ECSchemaCP> const& schemas, ECDbR syncConn);
-    //! Number of rows currently in one of the temp id-set tables. For diagnostics and tests.
-    static int64_t CountClosureRows(ECDbR conn, Utf8CP tempTableName);
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
