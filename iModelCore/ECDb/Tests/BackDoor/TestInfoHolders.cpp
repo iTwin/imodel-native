@@ -4,7 +4,6 @@
 *--------------------------------------------------------------------------------------------*/
 #include "PublicAPI/BackDoor/ECDb/TestInfoHolders.h"
 #include "PublicAPI/BackDoor/ECDb/TestHelper.h"
-#include <cmath>
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
@@ -22,9 +21,9 @@ JsonValue::JsonValue(Utf8CP json)
     }
 
 //---------------------------------------------------------------------------------------
-// Structural deep comparison. Integral values are compared exactly (so ids above 2^53 do not lose
-// precision through a double compare): non-negative values via asUInt64, negative values via
-// asInt64. Only genuinely fractional values use the TestUtilities::Equals tolerance.
+// Structural deep comparison. Values that are stored as integers are compared exactly (so ids above
+// 2^53, and distinct uint64_t values above INT64_MAX, do not collapse onto the same double). Only
+// genuine floating point values use the TestUtilities::Equals tolerance.
 // @bsimethod
 //---------------------------------------------------------------------------------------
 static bool jsonValuesEqual(BeJsConst lhs, BeJsConst rhs)
@@ -62,30 +61,29 @@ static bool jsonValuesEqual(BeJsConst lhs, BeJsConst rhs)
         if (!rhs.isNumeric())
             return false;
 
-        double l = lhs.asDouble();
-        double r = rhs.asDouble();
-        if (l == std::trunc(l) && r == std::trunc(r))
+        // When both sides actually store an integer, compare the integers directly. Going through
+        // asDouble() first is not good enough: UINT64_MAX and UINT64_MAX-1 both round to 0x1p64, so
+        // distinct large ids would compare equal and mask a migration regression.
+        auto const lKind = lhs.GetNumericKind();
+        auto const rKind = rhs.GetNumericKind();
+        if (lKind != JsValueRef::NumericKind::Double && rKind != JsValueRef::NumericKind::Double)
             {
-            if ((l < 0.0) != (r < 0.0))
-                return false;
+            if (lKind == JsValueRef::NumericKind::UInt64 || rKind == JsValueRef::NumericKind::UInt64)
+                {
+                // At least one side only fits in a uint64_t, so a negative value can never match it.
+                if (lKind == JsValueRef::NumericKind::Int64 && lhs.asInt64() < 0)
+                    return false;
+                if (rKind == JsValueRef::NumericKind::Int64 && rhs.asInt64() < 0)
+                    return false;
 
-            // Compare non-negative values through asUInt64. Routing every integral value through
-            // signed asInt64() makes distinct uint64_t values above INT64_MAX compare equal (that
-            // conversion is out of range), which would mask migration regressions.
-            if (l >= 0.0)
-                {
-                if (l < 0x1p64 && r < 0x1p64)
-                    return lhs.asUInt64() == rhs.asUInt64();
+                return lhs.asUInt64() == rhs.asUInt64();
                 }
-            else if (l >= -0x1p63 && r >= -0x1p63)
-                {
-                return lhs.asInt64() == rhs.asInt64();
-                }
-            // Outside the exactly representable integer range, so fall through to the tolerant
-            // double comparison below rather than reporting a bogus match.
+
+            return lhs.asInt64() == rhs.asInt64();
             }
 
-        return TestUtilities::Equals(l, r);
+        // At least one side is a genuine floating point value, so compare with the usual tolerance.
+        return TestUtilities::Equals(lhs.asDouble(), rhs.asDouble());
         }
 
     if (lhs.isString())
