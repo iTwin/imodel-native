@@ -75,6 +75,10 @@ public:
 struct JsValueRef : RefCountedBase {
     static constexpr Utf8CP base64Header = "encoding=base64;";
     static constexpr size_t base64HeaderLen = 16;
+    // How a numeric value is physically stored. Copying (see BeJsValue::FromOther) needs this so it
+    // can preserve 64-bit integers exactly rather than round-tripping them through double, which
+    // silently rounds anything above 2^53.
+    enum class NumericKind { NotNumeric, Int64, UInt64, Double };
 protected:
     typedef unsigned int ArrayIndex;
 
@@ -128,6 +132,9 @@ protected:
     virtual uint32_t GetUInt(uint32_t defVal) const = 0;
     virtual int64_t GetInt64(int64_t defVal) const = 0;
     virtual uint64_t GetUInt64(uint64_t defVal) const = 0;
+    // Not pure virtual: an out-of-tree implementation of this interface would otherwise fail to
+    // compile. Reporting Double for every number reproduces the previous, lossy copy behavior.
+    virtual NumericKind GetNumericKind() const { return isNumeric() ? NumericKind::Double : NumericKind::NotNumeric; }
     Utf8CP GetBase64Data() const {
         if (!isString())
             return nullptr;
@@ -189,6 +196,9 @@ public:
 
     // determine the implementation type for this value. Really for debugging only.
     JsValueRef::ValueRefType GetImplementation() const { return m_val->GetType(); }
+    // Determine how this value's number is physically stored, so that copies can preserve 64-bit
+    // integers exactly. Returns NotNumeric for anything that is not a number.
+    JsValueRef::NumericKind GetNumericKind() const { return m_val->GetNumericKind(); }
     // Get access to the underlying NAPI object. Returns null if this is not based on NAPI object.
     NapiValueRef* AsNapiValueRef() {return m_val->AsNapiValueRef();}
     // get the value of a member of an object. If it doesn't exist, return null.
@@ -298,10 +308,10 @@ public:
             Utf8String::Sscanf_safe(str, fmt, &val);
             return val;
         }
-        if (isNumeric())
-            return int64_t(GetDouble((double)defVal));
-
-        return defVal;
+        // Delegate every other case (including all numeric values) to the implementation, which
+        // clamps before converting. Doing `int64_t(GetDouble(...))` here instead would reintroduce
+        // an undefined floating-to-integer conversion for NaN and out-of-range doubles.
+        return m_val->GetInt64(defVal);
     }
     // get this value as an uint64_t, if possible. Otherwise return defVal.
     uint64_t GetUInt64(uint64_t defVal = 0) const {
@@ -640,6 +650,29 @@ private:
             return;
         }
         if (other.isNumeric()) {
+            // Values outside JavaScript's safe-integer range must be copied through the integer
+            // accessors. Routing them through double rounds them (INT64_MAX, UINT64_MAX and
+            // (1<<53)+1 all change value) and also changes how they are later serialized.
+            switch (other.GetNumericKind()) {
+                case JsValueRef::NumericKind::UInt64: {
+                    uint64_t const u = other.GetUInt64();
+                    if (u > (uint64_t) s_maxSafeInteger) {
+                        *this = u;
+                        return;
+                    }
+                    break;
+                }
+                case JsValueRef::NumericKind::Int64: {
+                    int64_t const i = other.GetInt64();
+                    if (i > s_maxSafeInteger || i < s_minSafeInteger) {
+                        *this = i;
+                        return;
+                    }
+                    break;
+                }
+                default:
+                    break;
+            }
             double val = other.GetDouble();
             if (val > s_minSafeInteger && IsIntegral(val)) {
                 if (val < s_minInt32) {
@@ -751,6 +784,14 @@ private:
     virtual uint32_t GetUInt(uint32_t defVal) const override { return m_value.asUInt(defVal); }
     virtual int64_t GetInt64(int64_t defVal) const override { return m_value.asInt64(defVal); }
     virtual uint64_t GetUInt64(uint64_t defVal) const override { return m_value.asUInt64(defVal); }
+    virtual NumericKind GetNumericKind() const override {
+        switch (m_value.type()) {
+            case Json::intValue: return NumericKind::Int64;
+            case Json::uintValue: return NumericKind::UInt64;
+            case Json::realValue: return NumericKind::Double;
+            default: return NumericKind::NotNumeric;
+        }
+    }
     virtual bool ForEachProperty(std::function<bool(Utf8CP name, BeJsConst)> fn) const override {
         if (m_value.isObject()) {
             auto end = ConstValue().end();
@@ -966,14 +1007,28 @@ private:
         }
         return defVal;
     }
+    virtual NumericKind GetNumericKind() const override {
+        if (!isNumeric())
+            return NumericKind::NotNumeric;
+        // Order matters: rapidjson's IsInt64 is also true for values stored as Int/Uint, and IsUint64
+        // is true for any non-negative integer, so only values above INT64_MAX reach the UInt64 case.
+        if (m_value->IsInt64())
+            return NumericKind::Int64;
+        if (m_value->IsUint64())
+            return NumericKind::UInt64;
+        return NumericKind::Double;
+    }
     bool IsLosslessUint64(double d) const {
-        if (d < 0.0 || d > static_cast<double>(std::numeric_limits<uint64_t>::max())) {
+        // 0x1p64 is exactly 2^64. static_cast<double>(UINT64_MAX) rounds *up* to that same value, so
+        // testing `d > (double)UINT64_MAX` lets d == 2^64 through and the cast below is then undefined.
+        // The bound must therefore be exclusive. !(d >= 0.0) also rejects NaN.
+        if (!(d >= 0.0) || d >= 0x1p64) {
             return false;
         }
         return d == std::floor(d);
     }
     bool IsLosslessUint64(float f) const {
-        if (f < 0.0 || f > static_cast<float>(std::numeric_limits<uint64_t>::max())) {
+        if (!(f >= 0.0f) || f >= 0x1p64f) {
             return false;
         }
         return f == std::floor(f);
@@ -1188,10 +1243,17 @@ inline void BeJsLegacyStringify(Utf8StringR out, BeJsConst in) {
         return;
     }
     if (in.isNumeric()) {
+        // rapidjson's writer refuses to emit NaN/Infinity: Stringify() yields no text at all, which
+        // would splice invalid JSON such as {"x":} into the output. JsonCpp wrote `null` instead.
+        double const d = in.asDouble();
+        if (!std::isfinite(d)) {
+            out.append("null");
+            return;
+        }
         // rapidjson always spells a double with a '.' or an exponent, and an integer with neither.
         Utf8String text = in.Stringify();
         if (Utf8String::npos != text.find_first_of(".eE"))
-            out.append(BeJsLegacyDoubleToString(in.asDouble()));
+            out.append(BeJsLegacyDoubleToString(d));
         else
             out.append(text);
         return;
