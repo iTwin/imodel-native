@@ -38,10 +38,6 @@ using namespace std;
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE
 
-#if !defined (NDEBUG)
-extern "C" int checkNoActiveStatements(SqlDbP db);
-#endif
-
 extern "C" int getStatementState(SqlStatementP pStmt);
 extern "C" int sqlite3_shathree_init(sqlite3 *, char **, const sqlite3_api_routines *);
 
@@ -1786,7 +1782,15 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit, Utf8CP operation) 
 
     // BE_SQLITE_INTERRUPT means the transaction was cancelled. Anything other than BE_SQLITE_OK means the transaction is still open.
     if (rc != BE_SQLITE_OK && rc != BE_SQLITE_INTERRUPT) {
-        BeAssert(BE_SQLITE_OK == checkNoActiveStatements(m_sqlDb)); // a common problem is to try to commit while statements are active. Help find that error.
+#if !defined (NDEBUG)
+        // A common cause of a failed commit is a statement left stepped but not finalized, which still holds a lock.
+        for (sqlite3_stmt* stmt = nullptr; nullptr != (stmt = sqlite3_next_stmt(m_sqlDb, stmt));)
+            {
+            const StatementState state = static_cast<StatementState>(getStatementState(stmt));
+            if (state == StatementState::Run || state == StatementState::Halt)
+                LOG.errorv("Unfinalized statement (%s): %s", BeSQLiteLib::GetStatementStateString(state), sqlite3_sql(stmt));
+            }
+#endif
         return rc;
     }
 
@@ -6022,6 +6026,18 @@ Utf8String BeSQLiteLib::GetLogError(DbResult rc) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP BeSQLiteLib::GetStatementStateString(StatementState state)
+    {
+    switch (state)
+        {
+        case StatementState::Init: return "Init";
+        case StatementState::Ready: return "Ready";
+        case StatementState::Run: return "stepped, more rows to go";
+        case StatementState::Halt: return "stepped to end, not finalized";
+        default: return "Unknown";
+        }
+    }
+
 Utf8CP BeSQLiteLib::GetErrorName(DbResult code) {
     switch (code) {
         case BE_SQLITE_ERROR_DataTransformRequired:       return "BE_SQLITE_ERROR_DataTransformRequired";
