@@ -77,12 +77,16 @@ BentleyStatus DbMapValidator::ValidateCustomAttributeTable() const {
         BeAssert(false);
         return ERROR;
     }
+    // Orphan rows can only originate from history written by older versions of the software. When replaying
+    // already accepted timeline changes we must not fail, but we still report the rows so the condition stays
+    // diagnosable. See https://github.com/iTwin/itwinjs-backlog/issues/2331
+    const auto severity = m_mode == DbMapValidationMode::ChangesetApply ? IssueSeverity::Warning : IssueSeverity::Error;
     int nOrphanRows = 0;
     int remainingIssuesToReport = 3;
     while (caStmt.Step() == BE_SQLITE_ROW) {
         if (remainingIssuesToReport > 0 ) {
             Issues().ReportV(
-                IssueSeverity::Error,
+                severity,
                 IssueCategory::BusinessProperties,
                 IssueType::ECDbIssue,
                 ECDbIssueId::ECDb_0110,
@@ -95,8 +99,8 @@ BentleyStatus DbMapValidator::ValidateCustomAttributeTable() const {
         ++nOrphanRows;
     }
     if (nOrphanRows > 0) {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0111, "Detected %d orphan rows in ec_CustomAttributes.", nOrphanRows);
-        return ERROR;
+        Issues().ReportV(severity, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0111, "Detected %d orphan rows in ec_CustomAttributes.", nOrphanRows);
+        return m_mode == DbMapValidationMode::ChangesetApply ? SUCCESS : ERROR;
     }
     return SUCCESS;
 }

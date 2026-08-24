@@ -962,7 +962,9 @@ SchemaSync::Status SchemaSync::Pull(SyncDbUri const& syncDbUri, SchemaImportToke
 //+---------------+---------------+---------------+---------------+---------------+------
 SchemaSync::Status SchemaSync::UpdateDbSchema() {
     const auto kDoNotTrackDdlChanges = true;
-    const auto rc = m_conn.Schemas().Main().UpdateDbSchema(kDoNotTrackDdlChanges);
+    // SchemaSync::Pull also replays changes which were already accepted by another briefcase, so the same
+    // leniency as for changeset apply applies here. See https://github.com/iTwin/itwinjs-backlog/issues/2331
+    const auto rc = m_conn.Schemas().Main().UpdateDbSchema(kDoNotTrackDdlChanges, DbMapValidationMode::ChangesetApply);
     if (rc != SUCCESS) {
         LOG.error("SchemaSync::UpdateDbSchema(): Failed to update db schema.");
         return Status::ERROR;

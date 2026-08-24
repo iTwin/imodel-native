@@ -704,6 +704,9 @@ public:
     //! Return result code as static string e.g. SQLITE_ROW -> "SQLITE_ROW"
     BE_SQLITE_EXPORT static Utf8CP GetErrorName(DbResult rc);
 
+    //! Convert a SQLite statement state to a descriptive string.
+    BE_SQLITE_EXPORT static Utf8CP GetStatementStateString(StatementState state);
+
     //! Return a log message (ErrorString, GetErrorName) for a DbResult
     BE_SQLITE_EXPORT static Utf8String GetLogError(DbResult rc);
 
