@@ -24,6 +24,9 @@
         <SubPart PartName="RunGtest" PartFile="iModelCore/ECPresentation/ECPresentation" />
         <SubPart PartName="RunGtest" PartFile="iModelCore/GeomLibs/geomlibs" />
         <SubPart PartName="RunGtest" PartFile="iModelCore/Units/Units" />
+        <!-- BeJsonCpp is no longer linked into the product, but its tests are the only coverage of the
+             opt-in USE_JSONCPP BeJsValue <-> Json::Value bridge, so they must keep running. -->
+        <SubPart PartName="RunGtest" PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp.PartFile.xml" />
         <SubPart PartName="RunGtest" PartFile="iModelCore/GeoCoord/GeoCoord" />
         <SubPart PartName="RunGtest" PartFile="iModelCore/BRepCore/BRepCore" Repository="imodel-native-internal" />
         <!--
