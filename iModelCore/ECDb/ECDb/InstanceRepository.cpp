@@ -48,7 +48,10 @@ DbResult InstanceRepository::Update(BeJsValue in, BeJsConst userOptions, JsForma
     m_lastError.clear();
     InstanceWriter::UpdateOptions options;
     options.UseJsNames(inFmt == JsFormat::JsName);
-    options.UseIncrementalUpdate(true);
+    // Defaults to true (properties absent from `in` keep their current value) to preserve existing caller
+    // behavior; a caller doing a full replace of the instance can pass `useIncrementalUpdate: false` so that
+    // absent properties are cleared (bound to null) instead.
+    options.UseIncrementalUpdate(!userOptions.isBoolMember("useIncrementalUpdate") || userOptions["useIncrementalUpdate"].asBool());
     if (userOptions.isObjectMember("expectedOldValues"))
         options.CompareBeforeUpdate(userOptions["expectedOldValues"]);
     ECInstanceKey instKey;
