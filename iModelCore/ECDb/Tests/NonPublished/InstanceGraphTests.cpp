@@ -1621,14 +1621,17 @@ TEST_F(InstanceGraphTests, ExpandNode_ThenExpandAll)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_ExpandNodeThenAll.ecdb", SchemaItem(s_testSchemaXml)));
 
-    // P1 -> P2 -> P3
+    // P1 -> P2 -> P3 -> P4
     auto p1 = InsertInstance("INSERT INTO ig.Pipe(Code, Diameter) VALUES('P1', 1.0)");
     auto p2 = InsertInstance("INSERT INTO ig.Pipe(Code, Diameter) VALUES('P2', 2.0)");
     auto p3 = InsertInstance("INSERT INTO ig.Pipe(Code, Diameter) VALUES('P3', 3.0)");
+    auto p4 = InsertInstance("INSERT INTO ig.Pipe(Code, Diameter) VALUES('P4', 4.0)");
     InsertRelInstance(SqlPrintfString("INSERT INTO ig.ElementConnectsToElement(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
         p1.GetInstanceId().ToString().c_str(), p2.GetInstanceId().ToString().c_str()));
     InsertRelInstance(SqlPrintfString("INSERT INTO ig.ElementConnectsToElement(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
         p2.GetInstanceId().ToString().c_str(), p3.GetInstanceId().ToString().c_str()));
+    InsertRelInstance(SqlPrintfString("INSERT INTO ig.ElementConnectsToElement(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
+        p3.GetInstanceId().ToString().c_str(), p4.GetInstanceId().ToString().c_str()));
     m_ecdb.SaveChanges();
 
     InstanceGraph graph(m_ecdb);
@@ -1638,14 +1641,16 @@ TEST_F(InstanceGraphTests, ExpandNode_ThenExpandAll)
 
     EXPECT_TRUE(graph.Contains(p2));
     EXPECT_TRUE(graph.Contains(p3)) << "ExpandAll must continue past the already expanded seed";
+    EXPECT_TRUE(graph.Contains(p4));
 
     // Deepening an existing graph must work as well.
     InstanceGraph shallow(m_ecdb);
     shallow.AddSeed(p1);
-    ASSERT_EQ(SUCCESS, shallow.ExpandAll(1));
-    EXPECT_FALSE(shallow.Contains(p3));
-    ASSERT_EQ(SUCCESS, shallow.ExpandAll(5));
-    EXPECT_TRUE(shallow.Contains(p3)) << "A second ExpandAll must deepen the graph";
+    ASSERT_EQ(SUCCESS, shallow.ExpandAll(2));
+    EXPECT_TRUE(shallow.Contains(p3));
+    EXPECT_FALSE(shallow.Contains(p4));
+    ASSERT_EQ(SUCCESS, shallow.ExpandAll(3));
+    EXPECT_TRUE(shallow.Contains(p4)) << "A second ExpandAll must traverse cached intermediate nodes";
     }
 
 //---------------------------------------------------------------------------------------
@@ -1667,9 +1672,12 @@ TEST_F(InstanceGraphTests, ExpandAll_ZeroDepthIsSeedOnly)
     ASSERT_EQ(SUCCESS, graph.ExpandAll(0));
 
     EXPECT_EQ(1u, graph.NodeCount());
-    auto const* related = graph.GetRelated(p1);
-    ASSERT_NE(nullptr, related) << "The seed must have an (empty) adjacency entry";
-    EXPECT_TRUE(related->empty());
+    EXPECT_EQ(nullptr, graph.GetRelated(p1)) << "Depth zero must leave the seed unexpanded";
+
+    ASSERT_EQ(SUCCESS, graph.ExpandAll(1));
+    EXPECT_TRUE(graph.Contains(p2)) << "A later expansion must not treat the seed as already expanded";
+    ASSERT_NE(nullptr, graph.GetRelated(p1));
+    EXPECT_EQ(1u, graph.GetRelated(p1)->size());
     }
 
 //---------------------------------------------------------------------------------------

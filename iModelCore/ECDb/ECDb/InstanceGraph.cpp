@@ -1046,27 +1046,21 @@ BentleyStatus InstanceGraph::ExpandNodeInternal(ECInstanceKeyCR key, TraversalDi
 BentleyStatus InstanceGraph::ExpandAll(uint8_t maxDepth)
     {
     if (maxDepth == 0)
-        {
-        // Seed only: the seeds are part of the graph and have no (known) edges.
-        for (auto const& seed : m_seeds)
-            m_adjacency.emplace(seed, bvector<RelatedInstance>());
-
         return SUCCESS;
-        }
 
     // BFS expansion
     bvector<ECInstanceKey> currentLevel = m_seeds;
+    bset<ECInstanceKey> queued;
+    for (auto const& seed : m_seeds)
+        queued.insert(seed);
 
     for (uint8_t depth = 0; depth < maxDepth && !currentLevel.empty(); ++depth)
         {
         bvector<ECInstanceKey> nextLevel;
-        bset<ECInstanceKey> queuedForNextLevel;
 
         for (auto const& key : currentLevel)
             {
-            // Only expand a node once (cycle avoidance), but always look at its edges: a node
-            // may already have been expanded by an earlier ExpandNode/ExpandAll call, and its
-            // neighbours would otherwise never be visited.
+            // Avoid repeating SQL, but traverse cached edges so repeated calls can deepen the graph.
             if (m_adjacency.find(key) == m_adjacency.end())
                 {
                 if (SUCCESS != ExpandNodeInternal(key, TraversalDirection::Both))
@@ -1079,10 +1073,7 @@ BentleyStatus InstanceGraph::ExpandAll(uint8_t maxDepth)
 
             for (auto const& rel : *related)
                 {
-                if (m_adjacency.find(rel.GetKey()) != m_adjacency.end())
-                    continue; // already expanded
-
-                if (queuedForNextLevel.insert(rel.GetKey()).second)
+                if (queued.insert(rel.GetKey()).second)
                     nextLevel.push_back(rel.GetKey());
                 }
             }
