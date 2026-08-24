@@ -882,6 +882,74 @@ TEST_F(SchemaSyncImportTestFixture, AdoptLeavesUnrelatedSchemasBehind)
 // ---------------------------------------------------------------------------------------
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
+// AdoptLeavesUnrelatedSchemasBehind writes both schemas into the sync db by hand, which proves the
+// closure filter over rows that are simply sitting there. This is the case the filter exists for:
+// the extra rows belong to a real briefcase's real import that has not been pushed, so they describe
+// a schema no changeset has ever mentioned. A briefcase that adopted them would build tables for a
+// schema it cannot explain to anyone, and would publish ids the timeline never agreed to.
+TEST_F(SchemaSyncImportTestFixture, AnUnpushedImportStaysOutOfEveryOtherBriefcase)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-unpushed-isolation");
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    auto b3 = hub.CreateBriefcase();
+
+    // b1 imports and keeps it local. The sync db now holds UnrelatedTest; the timeline does not.
+    ASSERT_EQ(SchemaSync::Status::OK,
+              b1->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b1, { UnrelatedSchema() }).Refs(), SchemaManager::SchemaImportOptions::None));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    ASSERT_TRUE(HasSchema(*b1, "UnrelatedTest")) << "the importing briefcase did not get its own schema";
+
+    syncDb.WithReadOnly([&](ECDbR sync) {
+        EXPECT_TRUE(HasSchema(sync, "UnrelatedTest")) << "the sync db did not record the unpushed import";
+    });
+
+    // b2 imports something else through the same sync db, which is where the filtering happens.
+    ASSERT_EQ(SchemaSync::Status::OK,
+              b2->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { SharedColumnSchema() }).Refs(), SchemaManager::SchemaImportOptions::None));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+
+    EXPECT_TRUE(HasSchema(*b2, "UpstreamTest")) << "the schema b2 asked for was not adopted";
+    EXPECT_FALSE(HasSchema(*b2, "UnrelatedTest")) << "b1's unpushed import leaked into b2";
+
+    Statement lonerStmt;
+    ASSERT_EQ(BE_SQLITE_OK, lonerStmt.Prepare(*b2, "SELECT COUNT(*) FROM main.ec_Class WHERE Name='Loner'"));
+    ASSERT_EQ(BE_SQLITE_ROW, lonerStmt.Step());
+    EXPECT_EQ(0, lonerStmt.GetValueInt(0)) << "the class of b1's unpushed import leaked into b2";
+
+    EXPECT_FALSE(HasPhysicalTable(*b2, "unrel_Loner")) << "b2 built a table for a schema it never adopted";
+    EXPECT_TRUE(ForeignkeyCheck(*b2)) << "filtering the unpushed rows out left dangling references";
+
+    // Pushing b2 must not hand it to anybody else either - the changeset carries only what b2 adopted.
+    ASSERT_EQ(BE_SQLITE_OK, b2->PullMergePush("add UpstreamTest while UnrelatedTest is unpushed"));
+    ASSERT_EQ(BE_SQLITE_OK, b3->PullMergePush("pick up UpstreamTest"));
+    EXPECT_TRUE(HasSchema(*b3, "UpstreamTest"));
+    EXPECT_FALSE(HasSchema(*b3, "UnrelatedTest")) << "b1's unpushed import reached a third briefcase through the timeline";
+
+    // b1 still holds it, and pushing is what finally publishes it. The two schemas share the sync db
+    // and neither references the other, so b1's push has to survive b2's having landed first.
+    ASSERT_EQ(BE_SQLITE_OK, b1->PullMergePush("publish the import b1 had been sitting on"));
+    ASSERT_EQ(BE_SQLITE_OK, b2->PullMergePush("catch up"));
+    ASSERT_EQ(BE_SQLITE_OK, b3->PullMergePush("catch up"));
+
+    for (auto* bc : { b1.get(), b2.get(), b3.get() })
+        {
+        EXPECT_TRUE(HasSchema(*bc, "UnrelatedTest")) << "the formerly unpushed schema did not arrive after it was pushed";
+        EXPECT_TRUE(HasSchema(*bc, "UpstreamTest"));
+        VerifyFileIsSound(*bc, "after the unpushed import was finally published");
+        }
+
+    ExpectECTablesIdentical(*b2, *b1, "b2 against b1 once everything is pushed");
+    ExpectECTablesIdentical(*b3, *b1, "b3 against b1 once everything is pushed");
+    ExpectPhysicalSchemaIdentical(*b2, *b1, "b2 against b1 once everything is pushed");
+    ExpectPhysicalSchemaIdentical(*b3, *b1, "b3 against b1 once everything is pushed");
+    }
+
+// ---------------------------------------------------------------------------------------
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaSyncImportTestFixture, AdoptPullsReferencedSchemas)
     {
     ECDbHub hub;
@@ -2993,6 +3061,57 @@ struct MatrixMove {
     SchemaItem m_schema;
 };
 
+// The class every round then widens, at a version below every move. Seeded on the timeline before a
+// round's briefcases exist, so all of them start from it and can hold rows in it. Four shared columns
+// and one property, so round N's fromA1..N / fromB1..N push it into overflow - which is what makes
+// the rows worth counting: an instance that predates the spill needs an overflow row it never had.
+SchemaItem MatrixBaselineSchema() {
+    return SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="MatrixShared" alias="mxs" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Shared">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00.00"><MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow></ShareColumns>
+                </ECCustomAttributes>
+                <ECProperty propertyName="base" typeName="string" />
+            </ECEntityClass>
+        </ECSchema>)xml");
+}
+
+// Put a schema on the timeline through the sync db, so briefcases created afterwards start from it.
+void SeedThroughSyncDb(TrackedECDb& seed, SchemaSyncDb& syncDb, SchemaItem const& schema, Utf8CP context) {
+    const auto loaded = LoadSchemas(seed, { schema });
+    ASSERT_TRUE(loaded.IsValid()) << context << ": could not load the baseline schema";
+    ASSERT_EQ(SchemaSync::Status::OK,
+              seed.Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), loaded.Refs(), SchemaManager::SchemaImportOptions::None))
+        << context << ": the baseline import was refused";
+    ASSERT_EQ(BE_SQLITE_OK, seed.SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, seed.PullMergePush(Utf8PrintfString("%s: baseline", context).c_str()))
+        << context << ": could not push the baseline";
+}
+
+// One row of the baseline class. Left unpushed, so the round's concurrent imports also have to
+// rebase it rather than merely merge alongside it.
+void InsertMatrixRow(ECDbR db, Utf8CP name) {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO mxs.Shared(base) VALUES(?)"));
+    stmt.BindText(1, name, IECSqlBinder::MakeCopy::Yes);
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    ASSERT_EQ(BE_SQLITE_OK, db.SaveChanges());
+}
+
+// The same, for the tests that widen SharedColumnSchema's Derived instead.
+void InsertDerivedRow(ECDbR db, Utf8CP name) {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO ut.Derived(baseProp,p1) VALUES(?,1)"));
+    stmt.BindText(1, name, IECSqlBinder::MakeCopy::Yes);
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    ASSERT_EQ(BE_SQLITE_OK, db.SaveChanges());
+}
+
 // The shapes a briefcase can bring to a round. Deliberately overlapping: two of them touch the same
 // class, so the sync db has to serialise them onto different shared columns.
 //
@@ -3052,8 +3171,13 @@ std::vector<MatrixMove> MatrixMoves(int round) {
 void ExpectAllConverged(std::vector<TrackedECDb*> const& briefcases,
                         std::vector<SchemaSyncTestFixture::InstanceCensus> const& before, Utf8CP context) {
     ASSERT_FALSE(briefcases.empty());
+    ASSERT_EQ(briefcases.size(), before.size());
     for (size_t i = 0; i < briefcases.size(); ++i) {
         const Utf8PrintfString where("%s: briefcase %d", context, (int)i);
+        // A census taken before anything was inserted is preserved by every possible outcome,
+        // including losing the file. Fail here rather than report a pass that means nothing.
+        ASSERT_GT(before[i].GetInstanceCount(), 0u)
+            << where.c_str() << ": the census was empty, so preserving it proves nothing";
         SchemaSyncTestFixture::VerifyFileIsSound(*briefcases[i], where.c_str());
         SchemaSyncTestFixture::ExpectCensusPreserved(before[i], SchemaSyncTestFixture::InstanceCensus::Take(*briefcases[i]), where.c_str());
         if (i == 0)
@@ -3085,15 +3209,25 @@ TEST_F(SchemaSyncImportExtendedTests, ConcurrentImportsConvergeAcrossEveryOrderi
             std::unique_ptr<TrackedECDb> seed, unused;
             SetupSyncedPair(hub, syncDb, seed, unused);
 
+            // The class the round then widens, on the timeline before the other briefcases exist.
+            SeedThroughSyncDb(*seed, syncDb, MatrixBaselineSchema(), context.c_str());
+            if (HasFailure())
+                return;
+
             std::vector<std::unique_ptr<TrackedECDb>> briefcases;
             briefcases.push_back(std::move(seed));
             for (int i = 1; i < briefcaseCount; ++i)
                 briefcases.push_back(hub.CreateBriefcase());
 
-            // Something to lose, before anybody changes the schema.
+            // Something to lose, before anybody changes the schema. Unpushed, so the round's
+            // changesets have to rebase over these rows as well as merge with each other.
             std::vector<InstanceCensus> before;
-            for (auto& bc : briefcases)
-                before.push_back(InstanceCensus::Take(*bc));
+            for (size_t i = 0; i < briefcases.size(); ++i) {
+                InsertMatrixRow(*briefcases[i], Utf8PrintfString("%s: bc%d", context.c_str(), (int)i).c_str());
+                before.push_back(InstanceCensus::Take(*briefcases[i]));
+            }
+            if (HasFailure())
+                return;
 
             const auto moves = MatrixMoves(round);
             for (int i = 0; i < briefcaseCount; ++i) {
@@ -3112,12 +3246,14 @@ TEST_F(SchemaSyncImportExtendedTests, ConcurrentImportsConvergeAcrossEveryOrderi
 
             for (int i = 0; i < briefcaseCount; ++i) {
                 const int idx = reversePush ? briefcaseCount - 1 - i : i;
-                briefcases[idx]->PullMergePush(Utf8PrintfString("%s: briefcase %d", context.c_str(), idx).c_str());
+                ASSERT_EQ(BE_SQLITE_OK, briefcases[idx]->PullMergePush(Utf8PrintfString("%s: briefcase %d", context.c_str(), idx).c_str()))
+                    << context.c_str() << ": briefcase " << idx << " could not push";
             }
 
             // Everyone catches up, then materialises what the changesets described.
-            for (auto& bc : briefcases) {
-                bc->PullMergePush("catch up");
+            for (size_t i = 0; i < briefcases.size(); ++i) {
+                ASSERT_EQ(BE_SQLITE_OK, briefcases[i]->PullMergePush("catch up"))
+                    << context.c_str() << ": briefcase " << (int)i << " could not catch up";
             }
 
             std::vector<TrackedECDb*> raw;
@@ -3125,7 +3261,10 @@ TEST_F(SchemaSyncImportExtendedTests, ConcurrentImportsConvergeAcrossEveryOrderi
                 raw.push_back(bc.get());
             ExpectAllConverged(raw, before, context.c_str());
 
-            syncDb.WithReadOnly([&](ECDbR sync) { VerifyFileIsSound(sync, context.c_str()); });
+            // Bundles the sync db's own invariants with per-briefcase row containment, and skips the
+            // containment check for any briefcase not level with the sync db - which is where it
+            // legitimately does not hold.
+            VerifySchemaSyncRules(syncDb, std::vector<ECDb*>(raw.begin(), raw.end()), context.c_str());
             // One broken ordering is enough to look at; the rest would repeat it. HasFailure() is a
             // member of ::testing::Test, so it is available directly in a TEST_F body.
             if (HasFailure())
@@ -7103,14 +7242,23 @@ TEST_F(SchemaSyncImportExtendedTests, FiveBriefcasesConvergeAcrossAFewPushOrderi
         std::unique_ptr<TrackedECDb> seed, unused;
         SetupSyncedPair(hub, syncDb, seed, unused);
 
+        SeedThroughSyncDb(*seed, syncDb, MatrixBaselineSchema(), context.c_str());
+        if (HasFailure())
+            return;
+
         std::vector<std::unique_ptr<TrackedECDb>> briefcases;
         briefcases.push_back(std::move(seed));
         for (int i = 1; i < briefcaseCount; ++i)
             briefcases.push_back(hub.CreateBriefcase());
 
         std::vector<InstanceCensus> before;
-        for (auto& bc : briefcases)
-            before.push_back(InstanceCensus::Take(*bc));
+        for (size_t i = 0; i < briefcases.size(); ++i)
+            {
+            InsertMatrixRow(*briefcases[i], Utf8PrintfString("%s: bc%d", context.c_str(), (int)i).c_str());
+            before.push_back(InstanceCensus::Take(*briefcases[i]));
+            }
+        if (HasFailure())
+            return;
 
         const auto moves = MatrixMoves(round);
         for (int i = 0; i < briefcaseCount; ++i)
@@ -7126,21 +7274,24 @@ TEST_F(SchemaSyncImportExtendedTests, FiveBriefcasesConvergeAcrossAFewPushOrderi
             }
 
         for (int idx : ordering.m_pushOrder)
-            briefcases[idx]->PullMergePush(Utf8PrintfString("%s: briefcase %d", context.c_str(), idx).c_str());
-        for (auto& bc : briefcases)
-            bc->PullMergePush("catch up");
+            ASSERT_EQ(BE_SQLITE_OK, briefcases[idx]->PullMergePush(Utf8PrintfString("%s: briefcase %d", context.c_str(), idx).c_str()))
+                << context.c_str() << ": briefcase " << idx << " could not push";
+        for (size_t i = 0; i < briefcases.size(); ++i)
+            ASSERT_EQ(BE_SQLITE_OK, briefcases[i]->PullMergePush("catch up"))
+                << context.c_str() << ": briefcase " << (int)i << " could not catch up";
 
         std::vector<TrackedECDb*> raw;
         for (auto& bc : briefcases)
             raw.push_back(bc.get());
         ExpectAllConverged(raw, before, context.c_str());
 
+        VerifySchemaSyncRules(syncDb, std::vector<ECDb*>(raw.begin(), raw.end()), context.c_str());
+
         // A briefcase that saw none of it, built from the finished timeline.
         auto latecomer = hub.CreateBriefcase();
         ExpectECTablesIdentical(*latecomer, *briefcases[0], Utf8PrintfString("%s: latecomer", context.c_str()).c_str());
         ExpectPhysicalSchemaIdentical(*latecomer, *briefcases[0], Utf8PrintfString("%s: latecomer", context.c_str()).c_str());
 
-        syncDb.WithReadOnly([&](ECDbR sync) { VerifyFileIsSound(sync, context.c_str()); });
         if (HasFailure())
             return;
         }
@@ -7161,16 +7312,27 @@ TEST_F(SchemaSyncImportExtendedTests, EightBriefcasesImportingOneSchemaTogetherC
     std::unique_ptr<TrackedECDb> seed, unused;
     SetupSyncedPair(hub, syncDb, seed, unused);
 
+    // Derived with one property, narrow enough to sit in the shared columns. The eight-way import
+    // below takes it to six, past the four-column limit and into overflow.
+    SeedThroughSyncDb(*seed, syncDb, SharedColumnSchema("01.00.00", 1), "eight-way identical import");
+    if (HasFailure())
+        return;
+
     std::vector<std::unique_ptr<TrackedECDb>> briefcases;
     briefcases.push_back(std::move(seed));
     for (int i = 1; i < briefcaseCount; ++i)
         briefcases.push_back(hub.CreateBriefcase());
 
     std::vector<InstanceCensus> before;
-    for (auto& bc : briefcases)
-        before.push_back(InstanceCensus::Take(*bc));
+    for (size_t i = 0; i < briefcases.size(); ++i)
+        {
+        InsertDerivedRow(*briefcases[i], Utf8PrintfString("bc%d", (int)i).c_str());
+        before.push_back(InstanceCensus::Take(*briefcases[i]));
+        }
+    if (HasFailure())
+        return;
 
-    const auto schema = SharedColumnSchema("01.00.00", 6);
+    const auto schema = SharedColumnSchema("01.00.01", 6);
     for (int i = 0; i < briefcaseCount; ++i)
         {
         auto& bc = *briefcases[i];
@@ -7182,15 +7344,25 @@ TEST_F(SchemaSyncImportExtendedTests, EightBriefcasesImportingOneSchemaTogetherC
         ASSERT_EQ(BE_SQLITE_OK, bc.SaveChanges());
         }
 
+    // If this stops holding the census below stops testing the overflow catch-up, so say so here
+    // rather than let the test quietly weaken.
+    ASSERT_STRNE(TableOf(*briefcases[0], "UpstreamTest", "Derived", "p1").c_str(),
+                 TableOf(*briefcases[0], "UpstreamTest", "Derived", "p6").c_str())
+        << "the widened schema did not spill into overflow";
+
     for (int i = briefcaseCount - 1; i >= 0; --i)
-        briefcases[i]->PullMergePush(Utf8PrintfString("eight-way identical import: briefcase %d", i).c_str());
-    for (auto& bc : briefcases)
-        bc->PullMergePush("catch up");
+        ASSERT_EQ(BE_SQLITE_OK, briefcases[i]->PullMergePush(Utf8PrintfString("eight-way identical import: briefcase %d", i).c_str()))
+            << "briefcase " << i << " could not push";
+    for (size_t i = 0; i < briefcases.size(); ++i)
+        ASSERT_EQ(BE_SQLITE_OK, briefcases[i]->PullMergePush("catch up"))
+            << "briefcase " << (int)i << " could not catch up";
 
     std::vector<TrackedECDb*> raw;
     for (auto& bc : briefcases)
         raw.push_back(bc.get());
     ExpectAllConverged(raw, before, "eight briefcases importing one schema together");
+
+    VerifySchemaSyncRules(syncDb, std::vector<ECDb*>(raw.begin(), raw.end()), "eight briefcases importing one schema together");
 
     // One shared-column pool, one decision: every briefcase has to agree on where each property went.
     for (int i = 1; i < briefcaseCount; ++i)
@@ -7203,6 +7375,5 @@ TEST_F(SchemaSyncImportExtendedTests, EightBriefcasesImportingOneSchemaTogetherC
                 << "briefcase " << i << " put " << accessString.c_str() << " in a different column than briefcase 0";
             }
         }
-    syncDb.WithReadOnly([&](ECDbR sync) { VerifyFileIsSound(sync, "eight-way identical import"); });
     }
 END_ECDBUNITTESTS_NAMESPACE
