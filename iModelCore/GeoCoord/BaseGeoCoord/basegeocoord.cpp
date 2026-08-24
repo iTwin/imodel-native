@@ -10172,9 +10172,9 @@ VerticalDatumInfoPtr VerticalDatumInfo::CreateFromJson(BeJsConst jsonVerticalCRS
     }
 
     // get array of transforms transforms for named targets
-    if (verticalCRS.isMember("transforms"))
+    if (jsonVerticalCRS.isMember("transforms"))
     {
-        BeJsConst transforms(verticalCRS["transforms"]);
+        BeJsConst transforms(jsonVerticalCRS["transforms"]);
         for (uint32_t i = 0; i < transforms.size(); i++)
         {
             // transforms paths must have target string
@@ -10201,9 +10201,9 @@ VerticalDatumInfoPtr VerticalDatumInfo::CreateFromJson(BeJsConst jsonVerticalCRS
 
     // get the optional transform paths (preferred and alternative, if there are no paths the code
     //  will try to find a path for non-direct transforms
-    if (verticalCRS.isMember("transformPaths"))
+    if (jsonVerticalCRS.isMember("transformPaths"))
     {
-        BeJsConst transformPaths(verticalCRS["transformPaths"]);
+        BeJsConst transformPaths(jsonVerticalCRS["transformPaths"]);
         for (uint32_t i = 0; i < transformPaths.size(); i++)
         {
             VerticalTransformPathInfoPtr transformPath = VerticalTransformPathInfo::CreateFromJson(transformPaths[i], vdatumInfo->m_crsName);
@@ -26889,6 +26889,9 @@ bool VerticalDatum::IsEquivalentTo(const Utf8String& equivalentName) const
 
     bvector<VerticalTransformPtr> listOfTransforms;
     StatusInt status = VerticalDatumDictionary::Get()->GetVerticalDatumTransforms(listOfTransforms, name, equivalentName, nullptr);
+
+    if (SUCCESS != status)
+        return false;
 
     // check if there is a single VerticalNullTransform between the two
     if (1 == listOfTransforms.size())
