@@ -904,6 +904,24 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassRefExp(NativeSqlBuilder::List& nativeS
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareTableValuedFunctionExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, TableValuedFunctionExp const& exp) {
+    // Gate on the resolved virtual class rather than the raw function name, so that an
+    // application registered function that happens to be called 'Relations' is not affected.
+    ECN::ECClassCP tvfClass = exp.GetClass();
+    if (tvfClass != nullptr && tvfClass->GetName().EqualsIAscii("Relations")
+        && tvfClass->GetSchema().GetName().EqualsIAscii("ECVLib"))
+        {
+        if (!QueryOptionExperimentalFeaturesEnabled(ctx.GetECDb(), exp))
+            {
+            ctx.Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECSQL,
+                ECDbIssueId::ECDb_0744,
+                "ECVLib.Relations() is an experimental feature and is disabled by default. Enable it with: PRAGMA experimental_features_enabled=true or use ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES");
+            return ECSqlStatus::InvalidECSql;
+            }
+        }
+
     NativeSqlBuilder builder;
     builder.Append(exp.GetFunctionExp()->GetFunctionName());
     builder.AppendParenLeft();

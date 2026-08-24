@@ -5,7 +5,24 @@ This document including important changes to syntax or file format.
 | Module  | Version   |
 | ------- | --------- |
 | Profile | `4.0.0.5` |
-| ECSQL   | `2.0.4.0` |
+| ECSQL   | `2.0.4.1` |
+
+## ## `08/21/2026`: `Relations()` exposes `NavPropertyName`
+* `ECVLib.Relations()` now returns a nullable `NavPropertyName` column.
+* For end-table (foreign-key) relationships the column is the name of the navigation property that stores the relationship. Link-table relationships return `NULL`.
+* Example: `SELECT RelatedECInstanceId, RelationshipECClassId, NavPropertyName FROM ECVLib.Relations(0x1A, 0x38)`
+
+## ## `08/04/2026`: Added `relations()` virtual table and InstanceGraph API
+* ECSql version change `2.0.4.0` -> `2.0.4.1`.
+* Added the `ECVLib.Relations` table valued function for fast relationship traversal from a seed instance.
+* **`Relations()` is an experimental feature** and is disabled by default. Enable it with `PRAGMA experimental_features_enabled=true` or per-query with `ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES`.
+* Syntax: `ECVLib.Relations(<ECInstanceId>, <ECClassId>[, <direction>])`. It can also be written unqualified as `Relations(...)`.
+* Example: `SELECT RelatedECInstanceId, RelatedECClassId, Direction, RelationshipECClassId, RelationshipECInstanceId FROM ECVLib.Relations(0x1A, 0x38)`
+* The optional third argument is the traversal direction: `'forward'`, `'backward'` or `'both'` (default). Any other value is rejected with an error.
+* The `ECInstanceId` and `ECClassId` arguments are mandatory - a query that does not supply both is rejected rather than silently returning no rows.
+* Only instances of the primary (`main`) table space are traversed. A seed whose class is not part of the main table space is reported as an error.
+* Added internal `InstanceGraph` C++ API for BFS graph traversal with cycle avoidance and set operations (Overlaps, Intersection, Union).
+* Bypasses ECSql entirely — generates raw SQLite from property maps for faster traversal.
 
 ## ## `06/23/2026`: Added `IS` / `IS NOT` operator between operands
 * ECSql version change `2.0.3.2` -> `2.0.4.0`.
