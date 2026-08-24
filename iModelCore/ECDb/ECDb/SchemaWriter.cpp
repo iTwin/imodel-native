@@ -2316,6 +2316,15 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, PropertyChange& propert
             ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0336, errorMessage.c_str());
             return ERROR;
             }
+
+        if (!ctx.ImportCtx().AllowsDataDestroyingChanges())
+            {
+            ctx.ImportCtx().SetDataDeletionRefused();
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0336,
+                "ECSchema Upgrade failed. ECProperty: '%s.%s'. Changing the type can make existing values unreadable and requires the schema upgrade path.",
+                oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
+            return ERROR;
+            }
         }
 
     if (propertyChange.IsStruct().IsChanged() || propertyChange.IsStructArray().IsChanged() || propertyChange.IsPrimitive().IsChanged() ||
