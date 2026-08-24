@@ -315,6 +315,9 @@ struct Exp
                 template <typename TExp>
                 TExp const* Get(size_t i) const
                     {
+                    if (i >= m_collection.size())
+                        return nullptr;
+
                     Exp const* child = this->operator[] (i);
                     BeAssert(child == nullptr || dynamic_cast<TExp const*> (child) != nullptr);
                     return static_cast<TExp const*> (child);
