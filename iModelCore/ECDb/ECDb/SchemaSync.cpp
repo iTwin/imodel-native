@@ -35,7 +35,7 @@ ProfileVersion SchemaSyncHelper::QueryProfileVersion(SchemaSync::SyncDbUri syncD
     SchemaSync::ParseQueryParams(openParams, syncDbUri);
     const auto rc = conn.OpenBeSQLiteDb(syncDbUri.GetUri().c_str(), openParams);
     if (rc != BE_SQLITE_OK) {
-        ProfileVersion(0, 0, 0, 0);
+        return ProfileVersion(0, 0, 0, 0);
     }
     return QueryProfileVersion(conn, kind);
 }
