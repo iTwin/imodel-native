@@ -1488,10 +1488,49 @@ Utf8CP SelectStatementExp::OperatorToString(CompoundOperator op)
 //+---------------+---------------+---------------+---------------+---------------+------
 Exp::FinalizeParseStatus SelectStatementExp::_FinalizeParsing(ECSqlParseContext& parseContext, FinalizeParseMode parseMode)
     {
-    if (GetRhsStatement() != nullptr && GetFirstStatement().GetOrderBy() != nullptr)
+    if (parseMode == FinalizeParseMode::BeforeFinalizingChildren)
         {
-        parseContext.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0576, "ORDER BY clause must not be followed by UNION clause.");
-        return FinalizeParseStatus::Error;
+        if (GetRhsStatement() != nullptr && GetFirstStatement().GetOrderBy() != nullptr)
+            {
+            parseContext.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0576, "ORDER BY clause must not be followed by UNION clause.");
+            return FinalizeParseStatus::Error;
+            }
+
+        return FinalizeParseStatus::NotCompleted;
+        }
+
+    if (parseContext.GetDeferFinalize())
+        return FinalizeParseStatus::NotCompleted; // children are finalized again, so validate on that pass
+
+    // The select clauses are fully expanded once the children are finalized, so the arity of the compound
+    // branches can be compared here. This must not be left to preparation alone: a select clause item whose
+    // type folds to NULL is turned into a NULL literal, which discards the branch before it is ever prepared
+    // and would let a malformed UNION/EXCEPT/INTERSECT succeed.
+    if (IsCompound())
+        {
+        size_t expectedColumnCount = 0;
+        bool isFirstSelection = true;
+        for (SingleSelectStatementExp const* singleSelectExp : GetFlatListOfStatements())
+            {
+            SelectClauseExp const* selection = singleSelectExp == nullptr ? nullptr : singleSelectExp->GetSelection();
+            if (selection == nullptr)
+                continue;
+
+            const size_t columnCount = selection->GetChildrenCount();
+            if (isFirstSelection)
+                {
+                expectedColumnCount = columnCount;
+                isFirstSelection = false;
+                continue;
+                }
+
+            if (columnCount != expectedColumnCount)
+                {
+                parseContext.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0527,
+                    "Number of properties in all the select clauses of UNION/EXCEPT/INTERSECT must be same in number and type.");
+                return FinalizeParseStatus::Error;
+                }
+            }
         }
 
     return FinalizeParseStatus::Completed;
