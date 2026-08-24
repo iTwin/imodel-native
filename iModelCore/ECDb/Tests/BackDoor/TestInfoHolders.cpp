@@ -22,9 +22,9 @@ JsonValue::JsonValue(Utf8CP json)
     }
 
 //---------------------------------------------------------------------------------------
-// Structural deep comparison. Integral values are compared exactly as int64 (so ids above 2^53
-// do not lose precision through a double compare); only genuinely fractional values use the
-// TestUtilities::Equals tolerance.
+// Structural deep comparison. Integral values are compared exactly (so ids above 2^53 do not lose
+// precision through a double compare): non-negative values via asUInt64, negative values via
+// asInt64. Only genuinely fractional values use the TestUtilities::Equals tolerance.
 // @bsimethod
 //---------------------------------------------------------------------------------------
 static bool jsonValuesEqual(BeJsConst lhs, BeJsConst rhs)
@@ -65,7 +65,25 @@ static bool jsonValuesEqual(BeJsConst lhs, BeJsConst rhs)
         double l = lhs.asDouble();
         double r = rhs.asDouble();
         if (l == std::trunc(l) && r == std::trunc(r))
-            return lhs.asInt64() == rhs.asInt64();
+            {
+            if ((l < 0.0) != (r < 0.0))
+                return false;
+
+            // Compare non-negative values through asUInt64. Routing every integral value through
+            // signed asInt64() makes distinct uint64_t values above INT64_MAX compare equal (that
+            // conversion is out of range), which would mask migration regressions.
+            if (l >= 0.0)
+                {
+                if (l < 0x1p64 && r < 0x1p64)
+                    return lhs.asUInt64() == rhs.asUInt64();
+                }
+            else if (l >= -0x1p63 && r >= -0x1p63)
+                {
+                return lhs.asInt64() == rhs.asInt64();
+                }
+            // Outside the exactly representable integer range, so fall through to the tolerant
+            // double comparison below rather than reporting a bogus match.
+            }
 
         return TestUtilities::Equals(l, r);
         }

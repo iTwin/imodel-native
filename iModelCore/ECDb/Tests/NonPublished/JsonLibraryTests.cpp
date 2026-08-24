@@ -1431,4 +1431,44 @@ TEST(JsonValueHelper, Comparisons)
     EXPECT_FALSE(boolVal == int64Val) << "JsonValueHelper does not treat bools equal with other numeric values";
     }
 
+//---------------------------------------------------------------------------------------
+// Distinct uint64_t values above INT64_MAX must not compare equal. Converting them through
+// signed asInt64() is an out-of-range conversion that can collapse them onto the same result,
+// which would silently mask a regression in anything compared with JsonValue.
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST(JsonValueHelper, LargeUnsignedComparisons)
+    {
+    uint64_t const a = UINT64_C(0xfffffffffffffffe); // UINT64_MAX - 1, well above INT64_MAX
+    uint64_t const b = UINT64_C(0xffffffffffffffff); // UINT64_MAX
+
+    BeJsDocument aDoc; aDoc = a;
+    BeJsDocument bDoc; bDoc = b;
+    JsonValue aVal{aDoc};
+    JsonValue bVal{bDoc};
+
+    EXPECT_EQ(a, aDoc.asUInt64()) << "sanity: the document must hold the value exactly";
+    EXPECT_EQ(b, bDoc.asUInt64()) << "sanity: the document must hold the value exactly";
+
+    EXPECT_FALSE(aVal == bVal) << "distinct values above INT64_MAX must not compare equal";
+    EXPECT_TRUE(aVal == aVal);
+    EXPECT_TRUE(bVal == bVal);
+
+    // The same must hold when they are nested inside a structure.
+    BeJsDocument lhsDoc; lhsDoc["id"] = a;
+    BeJsDocument rhsDoc; rhsDoc["id"] = b;
+    EXPECT_FALSE(JsonValue{lhsDoc} == JsonValue{rhsDoc}) << "nested distinct large ids must not compare equal";
+
+    // Negative values still compare through asInt64.
+    BeJsDocument negDoc; negDoc = (int64_t) -9223372036854775807LL;
+    BeJsDocument negDoc2; negDoc2 = (int64_t) -9223372036854775806LL;
+    EXPECT_FALSE(JsonValue{negDoc} == JsonValue{negDoc2});
+    EXPECT_TRUE(JsonValue{negDoc} == JsonValue{negDoc});
+
+    // A negative and a positive value are never equal.
+    BeJsDocument posDoc; posDoc = (int64_t) 1;
+    BeJsDocument negOneDoc; negOneDoc = (int64_t) -1;
+    EXPECT_FALSE(JsonValue{posDoc} == JsonValue{negOneDoc});
+    }
+
 END_ECDBUNITTESTS_NAMESPACE
