@@ -471,6 +471,23 @@ DbResult IntegrityChecker::CheckProfileTablesAndIndexes4001AndOlder(std::functio
 }
 
 //---------------------------------------------------------------------------------------
+// Existing iModels keep spatial-index triggers that do not watch InSpatialIndex.
+// Newly created files use the updated trigger SQL. Both variants are valid.
+//---------------------------------------------------------------------------------------
+static bool IsAcceptedTriggerSql(std::string const& name, std::string const& actual, std::string const& expected) {
+    if (actual == expected)
+        return true;
+
+    if (name == "dgn_rtree_upd")
+        return actual == "CREATE TRIGGER dgn_rtree_upd AFTER UPDATE OF Origin_X,Origin_Y,Origin_Z,Yaw,Pitch,Roll,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z ON bis_GeometricElement3d WHEN new.Origin_X IS NOT NULL AND 1 = new.InSpatialIndex BEGIN INSERT OR REPLACE INTO dgn_SpatialIndex(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5) FROM (SELECT DGN_placement_aabb(DGN_placement(DGN_point(NEW.Origin_X,NEW.Origin_Y,NEW.Origin_Z),DGN_angles(NEW.Yaw,NEW.Pitch,NEW.Roll),DGN_bbox(NEW.BBoxLow_X,NEW.BBoxLow_Y,NEW.BBoxLow_Z,NEW.BBoxHigh_X,NEW.BBoxHigh_Y,NEW.BBoxHigh_Z))) as bb);END";
+
+    if (name == "dgn_rtree_upd1")
+        return actual == "CREATE TRIGGER dgn_rtree_upd1 AFTER UPDATE OF Origin_X,Origin_Y,Origin_Z,Yaw,Pitch,Roll,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z ON bis_GeometricElement3d WHEN OLD.Origin_X IS NOT NULL AND NEW.Origin_X IS NULL BEGIN DELETE FROM dgn_SpatialIndex WHERE ElementId=OLD.ElementId;END";
+
+    return false;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult IntegrityChecker::CheckEcProfile(std::map<std::string,std::string> const& metaTables, std::map<std::string,std::string> const& metaIndexes, std::map<std::string,std::string> const& metaTriggers, std::function<bool(std::string,std::string,std::string)> callback) {
@@ -600,7 +617,7 @@ DbResult IntegrityChecker::CheckEcProfile(std::map<std::string,std::string> cons
 				}
 			} else {
 				const std::string sql = triggerStmt.GetValueText(0);
-				if (sql != kv.second) {
+				if (!IsAcceptedTriggerSql(kv.first, sql, kv.second)) {
 					//! miss match declaration
 					if(!callback(kTypeTrigger, kv.first, kIssueDDLMismatch)) {
 						return BE_SQLITE_OK;

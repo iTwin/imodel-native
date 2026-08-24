@@ -713,6 +713,27 @@ TEST_F(IntegrityCheckerFixture, check_ec_profile) {
         }
         return out.Stringify(StringifyFormat::Indented);
     };
+    // Verify that check_ec_profile accepts the known legacy spatial-index triggers used by existing iModels.
+    ASSERT_EQ(BE_SQLITE_OK, OpenCopyOfDataFile("test.bim", "legacy-triggers.bim", Db::OpenMode::ReadWrite));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
+    ASSERT_STREQ(ParseJSON("[]").c_str(), runCheck(m_ecdb).c_str());
+
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("DROP TRIGGER dgn_rtree_upd1"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("CREATE TRIGGER dgn_rtree_upd1 AFTER UPDATE ON bis_GeometricElement3d WHEN 1=0 BEGIN DELETE FROM dgn_SpatialIndex WHERE ElementId=OLD.ElementId;END"));
+    auto unexpectedTriggerMismatch = R"json(
+        [
+            {
+                "sno": 1,
+                "type": "trigger",
+                "name": "dgn_rtree_upd1",
+                "issue": "ddl mismatch"
+            }
+        ]
+    )json";
+    ASSERT_STREQ(ParseJSON(unexpectedTriggerMismatch).c_str(), runCheck(m_ecdb).c_str());
+    m_ecdb.AbandonChanges();
+
     auto alreadyMissingTriggers = R"json(
         [
             {

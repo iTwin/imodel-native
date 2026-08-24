@@ -3987,11 +3987,14 @@ void GeometricElement2d::_FromJson(BeJsConst props)
             auto originJson = placementJson[Placement2d::json_origin()];
             if (placementJson.hasMember(Placement2d::json_origin()) && !originJson.isNull())
                 placementDataFlags |= PlacementData_Origin;
-            // The wire format represents a zero angle as null; require a real bbox to distinguish it from a default placement.
+            // The wire format omits a zero angle. A valid bbox means the placement is intentional even when the angle is zero.
             auto angleJson = placementJson[Placement2d::json_angle()];
-            if (placementJson.hasMember(Placement2d::json_angle()) && (!angleJson.isNull() || m_placement.GetElementBox().IsValid()))
+            bool hasAngle = !angleJson.isNull() && BeJsGeomUtils::AngleInDegreesFromJson(angleJson).Degrees() != 0.0;
+            auto bboxJson = placementJson[Placement2d::json_bbox()];
+            bool hasBbox = !bboxJson.empty() && m_placement.IsValid();
+            if (placementJson.hasMember(Placement2d::json_angle()) && (hasAngle || hasBbox))
                 placementDataFlags |= PlacementData_Angles;
-            if (placementJson.hasMember(Placement2d::json_bbox()) && m_placement.GetElementBox().IsValid())
+            if (hasBbox)
                 placementDataFlags |= PlacementData_Bbox;
             SetPlacementDataFlags(placementDataFlags);
             }
@@ -4008,7 +4011,10 @@ void GeometricElement2d::_FromJson(BeJsConst props)
             if (placementJson.hasMember(Placement2d::json_origin()) && !originJson.isNull())
                 placementDataFlags |= PlacementData_Origin;
             auto angleJson = placementJson[Placement2d::json_angle()];
-            if (placementJson.hasMember(Placement2d::json_angle()) && (!angleJson.isNull() || newPlacement.GetElementBox().IsValid()))
+            bool hasAngle = !angleJson.isNull() && BeJsGeomUtils::AngleInDegreesFromJson(angleJson).Degrees() != 0.0;
+            auto bboxJson = placementJson[Placement2d::json_bbox()];
+            bool hasBbox = !bboxJson.empty() && newPlacement.IsValid();
+            if (placementJson.hasMember(Placement2d::json_angle()) && (hasAngle || hasBbox))
                 placementDataFlags |= PlacementData_Angles;
             SetPlacementDataFlags(placementDataFlags);
             }
@@ -4112,11 +4118,14 @@ void GeometricElement3d::_FromJson(BeJsConst props)
             auto originJson = placementJson[Placement3d::json_origin()];
             if (placementJson.hasMember(Placement3d::json_origin()) && !originJson.isNull())
                 placementDataFlags |= PlacementData_Origin;
-            // The wire format represents zero angles as null; require a real bbox to distinguish them from a default placement.
+            // The wire format omits zero angles; core serializes them as an empty object. A valid bbox means the placement is intentional even when all angles are zero.
             auto anglesJson = placementJson[Placement3d::json_angles()];
-            if (placementJson.hasMember(Placement3d::json_angles()) && (!anglesJson.isNull() || m_placement.GetElementBox().IsValid()))
+            bool hasAngles = !anglesJson.empty();
+            auto bboxJson = placementJson[Placement3d::json_bbox()];
+            bool hasBbox = !bboxJson.empty() && m_placement.IsValid();
+            if (placementJson.hasMember(Placement3d::json_angles()) && (hasAngles || hasBbox))
                 placementDataFlags |= PlacementData_Angles;
-            if (placementJson.hasMember(Placement3d::json_bbox()) && m_placement.GetElementBox().IsValid())
+            if (hasBbox)
                 placementDataFlags |= PlacementData_Bbox;
             SetPlacementDataFlags(placementDataFlags);
             }
@@ -4133,7 +4142,10 @@ void GeometricElement3d::_FromJson(BeJsConst props)
             if (placementJson.hasMember(Placement3d::json_origin()) && !originJson.isNull())
                 placementDataFlags |= PlacementData_Origin;
             auto anglesJson = placementJson[Placement3d::json_angles()];
-            if (placementJson.hasMember(Placement3d::json_angles()) && (!anglesJson.isNull() || newPlacement.GetElementBox().IsValid()))
+            bool hasAngles = !anglesJson.empty();
+            auto bboxJson = placementJson[Placement3d::json_bbox()];
+            bool hasBbox = !bboxJson.empty() && newPlacement.IsValid();
+            if (placementJson.hasMember(Placement3d::json_angles()) && (hasAngles || hasBbox))
                 placementDataFlags |= PlacementData_Angles;
             SetPlacementDataFlags(placementDataFlags);
             }
