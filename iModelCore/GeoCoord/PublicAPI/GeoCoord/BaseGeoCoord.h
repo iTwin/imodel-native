@@ -1782,6 +1782,9 @@ BASEGEOCOORD_EXPORTED StatusInt         GetFullVerticalDatumName(Utf8String& nam
 /*---------------------------------------------------------------------------------**//**
 * Writes the current Vertical Datum's definition as a Json string. Does not support
 * legacy datum codes, only returns a Json string if a full Vertical Datum is available.
+* The string contains the initial "verticalCRS" node contrary to ToVerticalJson()
+* and ToVerticalJsonString().
+*
 * @param[out]   jsonString   Vertical Datum definition as a Json string if available.
 * @return       SUCCESS or ERROR
 * @bsimethod
@@ -1793,9 +1796,9 @@ BASEGEOCOORD_EXPORTED StatusInt         GetVerticalDatumAsJsonString(Utf8String&
 * dictionary. Does not write the info to the dictionary but makes the info available
 * in the current session.
 * @param[in]    filepath    path to a file containing the definition of one or more
-vertical datums in the same format as used by the main
-Vertical Datum Dictionary.
-*                           in the Vertical Datum Dictionary
+*                           vertical datums in the same format as used by the main
+*                           vertical datums in the same format as used by the main
+*                           Vertical Datum Dictionary.
 * @return       GEOCOORDERR_NotImplemented
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1917,8 +1920,9 @@ BASEGEOCOORD_EXPORTED StatusInt         SetVerticalDatumCode (VertDatumCode);
 BASEGEOCOORD_EXPORTED StatusInt SetVerticalDatumByKey(Utf8CP verticalDatumLegacyKey);
 
 /*---------------------------------------------------------------------------------**//**
-* Sets the Vertical Datum using a Json definition that is in the same format
-* as used by the Vertical Datum Dictionary.
+* Sets the Vertical Datum using a Json string definition that is in the same format
+* as used by the Vertical Datum Dictionary. The Json must contains the verticalCRS node
+* itself contrary to FromVerticalJson().
 * @param[in]    jsonString
 * @return       SUCCESS
 *               GEOCOORDERR_ParseError           Unable to parse jsonString
@@ -1935,8 +1939,7 @@ BASEGEOCOORD_EXPORTED StatusInt SetVerticalDatumByKey(Utf8CP verticalDatumLegacy
 BASEGEOCOORD_EXPORTED StatusInt SetVerticalDatumFromJson(BeJsConst jsonValue);
 
 /*---------------------------------------------------------------------------------**//**
-* Sets the Vertical Datum using a Json string definition that is in the same format
-* as used by the Vertical Datum Dictionary.
+* See SetVerticalDatumFromJsonString() above
 * @return   SUCCESS or an error code.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3380,7 +3383,6 @@ BASEGEOCOORD_EXPORTED static CSDatumConvert*  CS_dtcsuDefOnly (const CSParameter
 BASEGEOCOORD_EXPORTED static int              CS_gpdefFrom(CSGeodeticPath **array, int numArray, const char *srcDatum);
 BASEGEOCOORD_EXPORTED static int              CS_gxdefFrom(CSGeodeticTransformDef **array, int numArray, const char *srcDatum);
 BASEGEOCOORD_EXPORTED static void             CS_dtclsDefOnly (CSDatumConvert*);
-
 #endif
 
 BASEGEOCOORD_EXPORTED static int              CS_gxdefAll (CSGeodeticTransformDef **pDefArray[]);
@@ -6078,8 +6080,6 @@ class VerticalDatum : public RefCountedBase
 private:
     VerticalDatumInfoPtr            m_verticalDatumInfo;                // contains the dictionary info for this vertical datum
     DatumCP                         m_datum;                            // only used for ELLIPSOID based datums, GEOID datums use Transforms defined in the Vertical Datum dictionary and don't require this
-    Utf8String                      m_initializedTransformsTargetName;
-    mutable bvector<std::pair<VerticalTransformPtr, DatumConverterP>>  m_initializedTransforms;
 
     VerticalDatum();
     ~VerticalDatum();
@@ -6197,15 +6197,17 @@ public:
 * file. Does some basic checking that the Transform is correct, such as validating the type
 * is one of the TransformTypes defined above. Must have a name and a target otherwise the
 * Transform is meaningless.
+* @param[in]    jsonTransform   an object containing the necessary info for creating a 
+*                               VerticalTransform.  
 * @param[in]    name    the name to give to the VerticalTransformPtr
 * @param[in]    target  the target to set in the new VerticalTransformPtr
 * @return   a valid VerticalTransformPtr on success, a VerticalTransformPtr set to
 *           nullptr on failure.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static VerticalTransformPtr CreateFromJson(BeJsConst jsonTransform, const Utf8String& name, const Utf8String& target);
+BASEGEOCOORD_EXPORTED static VerticalTransformPtr CreateFromJson(BeJsConst jsonTransform, const Utf8String& name, const Utf8String& target);
 
-virtual StatusInt ToJson(BeJsValue jsonValue) const;
+BASEGEOCOORD_EXPORTED virtual StatusInt ToJson(BeJsValue jsonValue) const;
 
 /*---------------------------------------------------------------------------------**//**
 * Creates a reverse copy of a VerticalTransform where the name and the target are reversed
@@ -6214,7 +6216,7 @@ virtual StatusInt ToJson(BeJsValue jsonValue) const;
 *           nullptr on failure.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual VerticalTransformPtr CreateReverseCopy();
+BASEGEOCOORD_EXPORTED virtual VerticalTransformPtr CreateReverseCopy();
 
 /*---------------------------------------------------------------------------------**//**
 * Must be defined by all subclasses of VerticalTransform, read the info specific to this
@@ -6225,15 +6227,15 @@ virtual VerticalTransformPtr CreateReverseCopy();
 * @return   SUCCESS, ERROR or GEOCOORDERR_***, will be defined by the subclass.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt FromJson(BeJsConst jsonTransform) = 0;
+BASEGEOCOORD_EXPORTED virtual StatusInt FromJson(BeJsConst jsonTransform) = 0;
 
-TransformType GetTransformType() const; 
+BASEGEOCOORD_EXPORTED TransformType GetTransformType() const; 
 
-const Utf8String& GetName() const;
-void SetName(const Utf8String& name);
+BASEGEOCOORD_EXPORTED const Utf8String& GetName() const;
+BASEGEOCOORD_EXPORTED void SetName(const Utf8String& name);
 
-const Utf8String& GetTarget() const;
-void SetTarget(const Utf8String& target);
+BASEGEOCOORD_EXPORTED const Utf8String& GetTarget() const;
+BASEGEOCOORD_EXPORTED void SetTarget(const Utf8String& target);
 
 /*---------------------------------------------------------------------------------**//**
 * Returns the name of the base geodetic datum for the elevation transformation. This
@@ -6244,9 +6246,22 @@ void SetTarget(const Utf8String& target);
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual Utf8String GetRequiredHorizontalDatumBase() const {return "";}
 
-virtual StatusInt GetElevation(double& elevationOffset, ElevationType& elevationType, GeoPointCR ptIn) = 0;
+/*---------------------------------------------------------------------------------**//**
+* Calculates the elevation offset at the given location. The elevation offset is the value
+* that must be added to the elevation in the source VerticalDatum to obtain the elevation
+* in the target VerticalDatum.
+* @param[out]  elevationOffset The value that must be added to the elevation in the 
+*                              source VerticalDatum to obtain the elevation in the target VerticalDatum.
+* @param[out]  elevationType   The type of elevation change that will be applied, either a fixed value or an offset.
+* @param[in]   ptIn            The location at which to calculate the elevation offset.
+*                              This location must be in the geodetic datum required by 
+*                              this VerticalTransform, see GetRequiredHorizontalDatumBase().
+* @return   SUCCESS if the elevation offset was successfully calculated, or an error code otherwise.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BASEGEOCOORD_EXPORTED virtual StatusInt GetElevation(double& elevationOffset, ElevationType& elevationType, GeoPointCR ptIn) = 0;
 
-virtual bool IsEqualTo(const VerticalTransform& transform);
+BASEGEOCOORD_EXPORTED virtual bool IsEqualTo(const VerticalTransform& transform);
 }; 
 
 class VerticalTransformPathInfo;
@@ -6274,17 +6289,17 @@ private:
     VerticalTransformPathInfo& operator= (const VerticalTransformPathInfo&);
 
 public:
-    static VerticalTransformPathInfoPtr CreateFromJson(BeJsConst jsonVerticalCRS, const Utf8String& name);
+    BASEGEOCOORD_EXPORTED static VerticalTransformPathInfoPtr CreateFromJson(BeJsConst jsonVerticalCRS, const Utf8String& name);
 
-    StatusInt ToJson(BeJsValue jsonValue) const;
+    BASEGEOCOORD_EXPORTED StatusInt ToJson(BeJsValue jsonValue) const;
 
-    ~VerticalTransformPathInfo();
+    BASEGEOCOORD_EXPORTED ~VerticalTransformPathInfo();
 
-    bool operator== (const VerticalTransformPathInfo& other) const;
+    BASEGEOCOORD_EXPORTED bool operator== (const VerticalTransformPathInfo& other) const;
 
-    const Utf8String& GetName() const;
-    const Utf8String& GetTarget() const;
-    void GetPath(bvector<Utf8String>& path) const;
+    BASEGEOCOORD_EXPORTED const Utf8String& GetName() const;
+    BASEGEOCOORD_EXPORTED const Utf8String& GetTarget() const;
+    BASEGEOCOORD_EXPORTED void GetPath(bvector<Utf8String>& path) const;
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -6327,11 +6342,11 @@ private:
 public:
     ~VerticalDatumInfo();
 
-    bool operator== (const VerticalDatumInfo& other) const;
+    BASEGEOCOORD_EXPORTED bool operator== (const VerticalDatumInfo& other) const;
 
-    static VerticalDatumInfoPtr CreateFromJson(BeJsConst jsonVerticalCRS, bool addToDictionary, StatusInt& status);
+    BASEGEOCOORD_EXPORTED static VerticalDatumInfoPtr CreateFromJson(BeJsConst jsonVerticalCRS, bool addToDictionary, StatusInt& status);
 
-    StatusInt ToJson(BeJsValue jsonValue) const;
+    BASEGEOCOORD_EXPORTED StatusInt ToJson(BeJsValue jsonValue) const;
 
     BASEGEOCOORD_EXPORTED void GetCRSName(Utf8String& crsName) const;
     BASEGEOCOORD_EXPORTED void GetDatumName(Utf8String& datumName) const;
@@ -6386,7 +6401,7 @@ public:
 * @return   true if a VerticalDatumDictionary has already been initialized in this session.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool IsInitialized();
+BASEGEOCOORD_EXPORTED static bool IsInitialized();
 
 /*---------------------------------------------------------------------------------**//**
 * Gets the status of the VerticalDatumDictionary.
@@ -6400,7 +6415,7 @@ static bool IsInitialized();
 *           GEOCOORDERR_EmptyDictionary - the dictionary was read but it is empty
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt GetStatus();
+BASEGEOCOORD_EXPORTED StatusInt GetStatus();
 
 /*---------------------------------------------------------------------------------**//**
 * Initialize the VerticalDatumDictionary from a json based dictionary file.
@@ -6408,7 +6423,7 @@ StatusInt GetStatus();
 * @return       see @GetStatus() for the possible return vales
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static StatusInt Initialize(const WString& dictionaryPath, const WString& dataDirectory);
+BASEGEOCOORD_EXPORTED static StatusInt Initialize(const WString& dictionaryPath, const WString& dataDirectory);
 
 /*---------------------------------------------------------------------------------**//**
 * Reinitialize the vertical datum dictionary, remove all definitions and reload from
@@ -6431,9 +6446,9 @@ static StatusInt Uninitialize();
 *               valid VerticalDatumDictionaryPtr set to nullptr.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static VerticalDatumDictionaryPtr Get();
+BASEGEOCOORD_EXPORTED static VerticalDatumDictionaryPtr Get();
 
-StatusInt GetDataDirectory(WString& dataDirectory);
+BASEGEOCOORD_EXPORTED StatusInt GetDataDirectory(WString& dataDirectory);
 
 /*---------------------------------------------------------------------------------**//**
 * Add a Vertical Datum to the list of available Vertical Datums currently in the
@@ -6446,7 +6461,7 @@ StatusInt GetDataDirectory(WString& dataDirectory);
 * @return       GEOCOORDERR_NotImplemented
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt AddVerticalDatumsFromFile(const WString& filepath);
+BASEGEOCOORD_EXPORTED StatusInt AddVerticalDatumsFromFile(const WString& filepath);
 
 /*---------------------------------------------------------------------------------**//**
 * Add a Vertical Datum to the list of available Vertical Datums currently in the
@@ -6458,7 +6473,7 @@ StatusInt AddVerticalDatumsFromFile(const WString& filepath);
 * @return       GEOCOORDERR_NotImplemented
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt AddVerticalDatumsFromJsonString(const Utf8String& jsonString);
+BASEGEOCOORD_EXPORTED StatusInt AddVerticalDatumsFromJsonString(const Utf8String& jsonString);
 
 /*---------------------------------------------------------------------------------**//**
 * Add a valid VerticalDatumInfo to the list of currently stored dictionary items.
@@ -6470,7 +6485,7 @@ StatusInt AddVerticalDatumsFromJsonString(const Utf8String& jsonString);
 *                   already exists in the dictionary
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt AddVerticalDatumInfo(VerticalDatumInfoPtr& info);
+BASEGEOCOORD_EXPORTED StatusInt AddVerticalDatumInfo(VerticalDatumInfoPtr& info);
 
 /*---------------------------------------------------------------------------------**//**
 * Find a named VerticalDatumInfo in the currently stored dictionary items.
@@ -6481,7 +6496,7 @@ StatusInt AddVerticalDatumInfo(VerticalDatumInfoPtr& info);
 *               VerticalDatumInfoPtr set to nullptr otherwise.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-VerticalDatumInfoPtr GetVerticalDatumInfoFromName(const Utf8String& identifier, StatusInt& status);
+BASEGEOCOORD_EXPORTED VerticalDatumInfoPtr GetVerticalDatumInfoFromName(const Utf8String& identifier, StatusInt& status);
 
 /*---------------------------------------------------------------------------------**//**
 * Find a VerticalDatumInfo in the currently stored dictionary items using a EPSG code.
@@ -6492,7 +6507,7 @@ VerticalDatumInfoPtr GetVerticalDatumInfoFromName(const Utf8String& identifier, 
 *               VerticalDatumInfoPtr set to nullptr otherwise.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-VerticalDatumInfoPtr GetVerticalDatumInfoFromEPSGCode(int epsgCode, StatusInt& status);
+BASEGEOCOORD_EXPORTED VerticalDatumInfoPtr GetVerticalDatumInfoFromEPSGCode(int epsgCode, StatusInt& status);
 
 /*---------------------------------------------------------------------------------**//**
 * For use by the VerticalDatumDictionary when storing new VerticalTransforms.
@@ -6502,7 +6517,7 @@ VerticalDatumInfoPtr GetVerticalDatumInfoFromEPSGCode(int epsgCode, StatusInt& s
 *               GEOCOORDERR_DuplicateTransformInDictionary
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt AddVerticalDatumTransform(VerticalTransformPtr& transform);
+BASEGEOCOORD_EXPORTED StatusInt AddVerticalDatumTransform(VerticalTransformPtr& transform);
 
 /*---------------------------------------------------------------------------------**//**
 * Get a list of available VerticalTransforms from a source VerticalDatum to a target 
@@ -6512,7 +6527,7 @@ StatusInt AddVerticalDatumTransform(VerticalTransformPtr& transform);
 * is found then that will be returned as a list of VerticalTransforms. Given this list of 
 * names, VerticalTransforms can be applied in order from start to finish.
 * If no predefined VerticalTransformPath is found, then the dictionary will try to find a
-* path itself given all the VerticalDatums that it know about and their possible targets. If a
+* path itself given all the VerticalDatums that it knows about and their possible targets. If a
 * possible path is found then this will be returned as a list of VerticalTransforms in
 * the same way as for predefined VerticalTransformPaths.
 * @param[out]   transforms  a list of VerticalTransform steps that can be applied when 

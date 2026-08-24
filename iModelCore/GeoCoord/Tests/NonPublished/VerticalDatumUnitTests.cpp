@@ -11,6 +11,291 @@
 
 using namespace ::testing;
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsi
++---------------+---------------+---------------+---------------+---------------+------*/
+class VerticalDatumUnitTests : public ::testing::Test
+    {   
+    public:
+        virtual void SetUp() { GeoCoordTestCommon::Initialize(); };
+        virtual void TearDown() {GeoCoordTestCommon::Shutdown();};
+
+        VerticalDatumUnitTests() {};
+        ~VerticalDatumUnitTests() {};
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* Basic construction and behavior checks for VerticalTransform.
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(VerticalDatumUnitTests, VerticalTransformBasicTest)
+{
+    Json::Value nullJson;
+    nullJson["target"] = "WGS84";
+    nullJson["nullTransform"] = Json::nullValue;
+
+    GeoCoordinates::VerticalTransformPtr nullTransform =
+        GeoCoordinates::VerticalTransform::CreateFromJson(nullJson, L"NullTransformTest", L"WGS84");
+    ASSERT_TRUE(nullTransform.IsValid());
+    EXPECT_EQ(nullTransform->GetTransformType(), GeoCoordinates::VerticalTransform::TransformType::Null);
+    EXPECT_TRUE(0 == nullTransform->GetName().CompareToI(L"NullTransformTest"));
+    EXPECT_TRUE(0 == nullTransform->GetTarget().CompareToI(L"WGS84"));
+
+    GeoPoint point = {0.0, 0.0, 0.0};
+    double elevationOffset = 0.0;
+    GeoCoordinates::VerticalTransform::ElevationType elevationType = GeoCoordinates::VerticalTransform::ElevationType::Fixed;
+    EXPECT_EQ(nullTransform->GetElevation(elevationOffset, elevationType, point), SUCCESS);
+    EXPECT_NEAR(0.0, elevationOffset, 1.0e-12);
+    EXPECT_EQ(elevationType, GeoCoordinates::VerticalTransform::ElevationType::Offset);
+
+    Json::Value offsetJson;
+    offsetJson["target"] = "NAVD88 height";
+    offsetJson["verticalOffset"]["offset"] = 1.5;
+    offsetJson["verticalOffset"]["units"] = "meter";
+
+    GeoCoordinates::VerticalTransformPtr offsetTransform =
+        GeoCoordinates::VerticalTransform::CreateFromJson(offsetJson, L"OffsetTransformTest", L"NAVD88 height");
+    ASSERT_TRUE(offsetTransform.IsValid());
+    EXPECT_EQ(offsetTransform->GetTransformType(), GeoCoordinates::VerticalTransform::TransformType::VerticalOffset);
+    EXPECT_TRUE(0 == offsetTransform->GetName().CompareToI(L"OffsetTransformTest"));
+    EXPECT_TRUE(0 == offsetTransform->GetTarget().CompareToI(L"NAVD88 height"));
+
+    EXPECT_EQ(offsetTransform->GetElevation(elevationOffset, elevationType, point), SUCCESS);
+    EXPECT_NEAR(1.5, elevationOffset, 1.0e-12);
+    EXPECT_EQ(elevationType, GeoCoordinates::VerticalTransform::ElevationType::Offset);
+
+    GeoCoordinates::VerticalTransformPtr reverseOffset = offsetTransform->CreateReverseCopy();
+    ASSERT_TRUE(reverseOffset.IsValid());
+    EXPECT_TRUE(0 == reverseOffset->GetName().CompareToI(L"NAVD88 height"));
+    EXPECT_TRUE(0 == reverseOffset->GetTarget().CompareToI(L"OffsetTransformTest"));
+    EXPECT_EQ(reverseOffset->GetElevation(elevationOffset, elevationType, point), SUCCESS);
+    EXPECT_NEAR(-1.5, elevationOffset, 1.0e-12);
+
+    EXPECT_TRUE(offsetTransform->IsEqualTo(*offsetTransform.get()));
+
+    Json::Value offsetJsonDifferent;
+    offsetJsonDifferent["target"] = "NAVD88 height";
+    offsetJsonDifferent["verticalOffset"]["offset"] = 2.5;
+    offsetJsonDifferent["verticalOffset"]["units"] = "meter";
+
+    GeoCoordinates::VerticalTransformPtr differentOffsetTransform =
+        GeoCoordinates::VerticalTransform::CreateFromJson(offsetJsonDifferent, L"OffsetTransformTest", L"NAVD88 height");
+    ASSERT_TRUE(differentOffsetTransform.IsValid());
+    EXPECT_FALSE(offsetTransform->IsEqualTo(*differentOffsetTransform.get()));
+}
+
+
+/*---------------------------------------------------------------------------------**//**
+* A geoid transform backed by a real geoid grid file should initialize and calculate an offset.
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(VerticalDatumUnitTests, VerticalTransformGeoidGridFileTest)
+{
+    Json::Value geoidJson;
+    geoidJson["target"] = "WGS84";
+    geoidJson["geoidSeparationGrid"]["direction"] = "Direct";
+    geoidJson["geoidSeparationGrid"]["format"] = "GRD";
+    geoidJson["geoidSeparationGrid"]["files"] = Json::arrayValue;
+    geoidJson["geoidSeparationGrid"]["files"].append("./World/WW15MGH.GRD");
+
+    GeoCoordinates::VerticalTransformPtr geoidTransform =
+        GeoCoordinates::VerticalTransform::CreateFromJson(geoidJson, L"EGM96 height2", L"WGS84");
+    ASSERT_TRUE(geoidTransform.IsValid());
+    EXPECT_EQ(geoidTransform->GetTransformType(), GeoCoordinates::VerticalTransform::TransformType::GeoidSeparationGrid);
+    EXPECT_EQ(geoidTransform->GetRequiredHorizontalDatumBase(), L"WGS84");
+
+    GeoPoint point = { 23.700523, 37.944210, 0.0 };
+    double elevationOffset = 0.0;
+    GeoCoordinates::VerticalTransform::ElevationType elevationType = GeoCoordinates::VerticalTransform::ElevationType::Fixed;
+    StatusInt status = geoidTransform->GetElevation(elevationOffset, elevationType, point);
+    EXPECT_EQ(status, SUCCESS);
+    EXPECT_EQ(elevationType, GeoCoordinates::VerticalTransform::ElevationType::Offset);
+    EXPECT_NEAR(elevationOffset, 38.3, 0.5);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* A geoid transform with a missing grid file should fail at GetElevation() time.
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(VerticalDatumUnitTests, VerticalTransformGeoidGridFileMissingTest)
+{
+    Json::Value missingGeoidJson;
+    missingGeoidJson["target"] = "WGS84";
+    missingGeoidJson["geoidSeparationGrid"]["direction"] = "Direct";
+    missingGeoidJson["geoidSeparationGrid"]["format"] = "GRD";
+    missingGeoidJson["geoidSeparationGrid"]["files"] = Json::arrayValue;
+    missingGeoidJson["geoidSeparationGrid"]["files"].append("./World/DefinitelyDoesNotExist.GRD");
+
+    GeoCoordinates::VerticalTransformPtr missingGeoidTransform =
+        GeoCoordinates::VerticalTransform::CreateFromJson(missingGeoidJson, L"MissingGridTransform", L"WGS84");
+    ASSERT_TRUE(missingGeoidTransform.IsValid());
+
+    GeoPoint point = { 0.0, 0.0, 0.0 };
+    double elevationOffset = 0.0;
+    GeoCoordinates::VerticalTransform::ElevationType elevationType = GeoCoordinates::VerticalTransform::ElevationType::Fixed;
+    StatusInt status = missingGeoidTransform->GetElevation(elevationOffset, elevationType, point);
+    EXPECT_NE(status, SUCCESS);
+    EXPECT_EQ(status, GeoCoordinates::GEOCOORDERR_GeoCoordNotInitialized);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* Basic construction and API checks for VerticalTransformPathInfo.
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(VerticalDatumUnitTests, VerticalTransformPathInfoBasicTest)
+{
+    Json::Value pathJson;
+    pathJson["target"] = "WGS84";
+    pathJson["path"] = Json::arrayValue;
+    pathJson["path"].append("NAVD88 height");
+    pathJson["path"].append("EGM96 height");
+    pathJson["path"].append("WGS84");
+
+    GeoCoordinates::VerticalTransformPathInfoPtr pathInfo =
+        GeoCoordinates::VerticalTransformPathInfo::CreateFromJson(pathJson, L"PathInfoTest");
+    ASSERT_TRUE(pathInfo.IsValid());
+    EXPECT_TRUE(0 == pathInfo->GetName().CompareToI(L"PathInfoTest"));
+    EXPECT_TRUE(0 == pathInfo->GetTarget().CompareToI(L"WGS84"));
+
+    bvector<WString> path;
+    pathInfo->GetPath(path);
+    ASSERT_EQ(path.size(), 3U);
+    EXPECT_TRUE(0 == path[0].CompareToI(L"NAVD88 height"));
+    EXPECT_TRUE(0 == path[1].CompareToI(L"EGM96 height"));
+    EXPECT_TRUE(0 == path[2].CompareToI(L"WGS84"));
+
+    Json::Value roundTripJson;
+    EXPECT_EQ(pathInfo->ToJson(roundTripJson), SUCCESS);
+    EXPECT_TRUE(roundTripJson.isMember("target"));
+    EXPECT_TRUE(roundTripJson.isMember("path"));
+    EXPECT_TRUE(roundTripJson["path"].isArray());
+    EXPECT_EQ(roundTripJson["path"].size(), 3U);
+
+    GeoCoordinates::VerticalTransformPathInfoPtr samePathInfo =
+        GeoCoordinates::VerticalTransformPathInfo::CreateFromJson(roundTripJson, L"PathInfoTest");
+    ASSERT_TRUE(samePathInfo.IsValid());
+    EXPECT_TRUE(*pathInfo == *samePathInfo);
+
+    Json::Value differentPathJson = pathJson;
+    differentPathJson["path"][0] = "NAVD88 height";
+    differentPathJson["path"][1] = "NGVD29 height";
+    differentPathJson["path"][2] = "WGS84";
+    GeoCoordinates::VerticalTransformPathInfoPtr differentPathInfo =
+        GeoCoordinates::VerticalTransformPathInfo::CreateFromJson(differentPathJson, L"PathInfoTest");
+    ASSERT_TRUE(differentPathInfo.IsValid());
+    EXPECT_FALSE(*pathInfo == *differentPathInfo);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* Tests that FromVerticalJson and SetVerticalDatumFromJson expect different JSON
+* structures: FromVerticalJson takes the vertical datum content directly (without a
+* "verticalCRS" wrapper), whereas SetVerticalDatumFromJson expects the JSON to have an
+* englobing "verticalCRS" node.
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(VerticalDatumUnitTests, VerticalDatumFromJsonVsSetFromJsonWrapperTest)
+{
+    // Build the raw vertical datum content (no "verticalCRS" wrapper)
+    Json::Value datumContent;
+    datumContent["crsName"]   = "TestGeoid";
+    datumContent["datumName"] = "TestGeoidDatum";
+    datumContent["type"]      = "GEOID";
+    datumContent["units"]     = "Meter";
+    datumContent["extent"]["southWest"]["latitude"]  = -90.0;
+    datumContent["extent"]["southWest"]["longitude"] = -180.0;
+    datumContent["extent"]["northEast"]["latitude"]  =  90.0;
+    datumContent["extent"]["northEast"]["longitude"] =  180.0;
+    datumContent["transforms"][0]["target"]       = "WGS84";
+    datumContent["transforms"][0]["nullTransform"] = Json::nullValue;
+
+    // Build the "verticalCRS"-wrapped version expected by SetVerticalDatumFromJson
+    Json::Value wrappedJson;
+    wrappedJson["verticalCRS"] = datumContent;
+
+    GeoCoordinates::BaseGCSPtr gcs = GeoCoordinates::BaseGCS::CreateGCS("LL84");
+    ASSERT_TRUE(gcs.IsValid());
+
+    // --- FromVerticalJson ---
+    // Succeeds with raw content (no "verticalCRS" outer node)
+    Utf8String errorMessage;
+    EXPECT_EQ(gcs->FromVerticalJson(datumContent, errorMessage), SUCCESS);
+    EXPECT_TRUE(gcs->HasValidVerticalDatum());
+
+    // Fails when given the wrapped JSON: the "verticalCRS" key is not a recognised datum field
+    GeoCoordinates::BaseGCSPtr gcs2 = GeoCoordinates::BaseGCS::CreateGCS("LL84");
+    ASSERT_TRUE(gcs2.IsValid());
+    EXPECT_NE(gcs2->FromVerticalJson(wrappedJson, errorMessage), SUCCESS);
+
+    // --- SetVerticalDatumFromJson ---
+    // Succeeds when given the wrapped JSON (with the "verticalCRS" outer node)
+    GeoCoordinates::BaseGCSPtr gcs3 = GeoCoordinates::BaseGCS::CreateGCS("LL84");
+    ASSERT_TRUE(gcs3.IsValid());
+    EXPECT_EQ(gcs3->SetVerticalDatumFromJson(wrappedJson), SUCCESS);
+    EXPECT_TRUE(gcs3->HasValidVerticalDatum());
+
+    // Fails when given the raw content directly (missing "verticalCRS" wrapper)
+    GeoCoordinates::BaseGCSPtr gcs4 = GeoCoordinates::BaseGCS::CreateGCS("LL84");
+    ASSERT_TRUE(gcs4.IsValid());
+    EXPECT_NE(gcs4->SetVerticalDatumFromJson(datumContent), SUCCESS);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* A vertical datum created from JSON should serialize back to equivalent JSON.
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(VerticalDatumUnitTests, VerticalDatumInfoJsonRoundTripTest)
+{
+    Json::Value inputJson;
+    inputJson["crsName"] = "TestRoundTripDatum";
+    inputJson["datumName"] = "Test Round Trip Datum";
+    inputJson["epsg"] = 12345;
+    inputJson["type"] = "GEOID";
+    inputJson["description"] = "Round trip test datum";
+    inputJson["areaOfUse"] = "Test area";
+    inputJson["remarks"] = "Round trip remarks";
+    inputJson["units"] = "meter";
+    inputJson["deprecated"] = true;
+    inputJson["extent"]["southWest"]["latitude"] = -10.0;
+    inputJson["extent"]["southWest"]["longitude"] = -20.0;
+    inputJson["extent"]["northEast"]["latitude"] = 10.0;
+    inputJson["extent"]["northEast"]["longitude"] = 20.0;
+    inputJson["transforms"][0]["target"] = "WGS84";
+    inputJson["transforms"][0]["nullTransform"] = Json::nullValue;
+    inputJson["transformPaths"][0]["target"] = "WGS84";
+    inputJson["transformPaths"][0]["path"] = Json::arrayValue;
+    inputJson["transformPaths"][0]["path"].append("TestRoundTripDatum");
+    inputJson["transformPaths"][0]["path"].append("WGS84");
+
+    StatusInt status = ERROR;
+    GeoCoordinates::VerticalDatumInfoPtr datumInfo =
+        GeoCoordinates::VerticalDatumInfo::CreateFromJson(inputJson, false, status);
+    ASSERT_TRUE(datumInfo.IsValid());
+    EXPECT_EQ(status, SUCCESS);
+
+    Json::Value serializedJson;
+    EXPECT_EQ(datumInfo->ToJson(serializedJson), SUCCESS);
+
+    EXPECT_EQ(serializedJson["crsName"].asString(), inputJson["crsName"].asString());
+    EXPECT_EQ(serializedJson["datumName"].asString(), inputJson["datumName"].asString());
+    EXPECT_EQ(serializedJson["epsg"].asInt(), inputJson["epsg"].asInt());
+    EXPECT_EQ(serializedJson["type"].asString(), inputJson["type"].asString());
+    EXPECT_EQ(serializedJson["description"].asString(), inputJson["description"].asString());
+    EXPECT_EQ(serializedJson["areaOfUse"].asString(), inputJson["areaOfUse"].asString());
+    EXPECT_EQ(serializedJson["remarks"].asString(), inputJson["remarks"].asString());
+    EXPECT_EQ(serializedJson["units"].asString(), inputJson["units"].asString());
+    EXPECT_EQ(serializedJson["deprecated"].asBool(), inputJson["deprecated"].asBool());
+
+    EXPECT_DOUBLE_EQ(serializedJson["extent"]["southWest"]["latitude"].asDouble(),
+        inputJson["extent"]["southWest"]["latitude"].asDouble());
+    EXPECT_DOUBLE_EQ(serializedJson["extent"]["southWest"]["longitude"].asDouble(),
+        inputJson["extent"]["southWest"]["longitude"].asDouble());
+    EXPECT_DOUBLE_EQ(serializedJson["extent"]["northEast"]["latitude"].asDouble(),
+        inputJson["extent"]["northEast"]["latitude"].asDouble());
+    EXPECT_DOUBLE_EQ(serializedJson["extent"]["northEast"]["longitude"].asDouble(),
+        inputJson["extent"]["northEast"]["longitude"].asDouble());
+
+    EXPECT_EQ(serializedJson["transforms"].size(), inputJson["transforms"].size());
+    EXPECT_EQ(serializedJson["transforms"][0]["target"].asString(), inputJson["transforms"][0]["target"].asString());
+    EXPECT_EQ(serializedJson["transformPaths"][0]["target"].asString(), inputJson["transformPaths"][0]["target"].asString());
+    EXPECT_EQ(serializedJson["transformPaths"][0]["path"][0].asString(), inputJson["transformPaths"][0]["path"][0].asString());
+    EXPECT_EQ(serializedJson["transformPaths"][0]["path"][1].asString(), inputJson["transformPaths"][0]["path"][1].asString());
+}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsi                                                   Sarah.Keenan   09/2024
 +---------------+---------------+---------------+---------------+---------------+------*/

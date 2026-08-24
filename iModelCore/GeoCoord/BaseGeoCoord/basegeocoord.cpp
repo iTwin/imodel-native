@@ -1680,7 +1680,6 @@ BaseGCS::ProjectionCodeValue GetProjectionCodeFromParseName (Utf8StringR name) c
     else if ((upperMethodName == "CASSINI") ||
              (upperMethodName == "CASSINI_SOLDNER") ||
              (upperMethodName == "CT_CASSINISOLDNER") ||
-             (upperMethodName == "HYPERBOLIC CASSINI-SOLDNER") ||
              (upperMethodName == "CASSINI-SOLDNER"))
         ID = BaseGCS::pcvCassini;
     else if ((upperMethodName == "WINKEL_TRIPEL") ||
@@ -2253,10 +2252,13 @@ GeoCoordParseStatus SetParameterToCoordSys(Utf8StringR parameterName, Utf8String
                 if (SUCCESS != coordinateSystem.SetCentralPointLongitude(parameterValue * conversionToDegree))
                     return GeoCoordParse_InvalidParamForMethod;
                 break;
+
             case BaseGCS::pcvCzechKrovak:
             case BaseGCS::pcvCzechKrovakModified:
                 if (SUCCESS != coordinateSystem.SetPoint1Longitude(parameterValue * conversionToDegree))
                     return GeoCoordParse_InvalidParamForMethod;
+                break;
+
             default:
                 if (SUCCESS != coordinateSystem.SetOriginLongitude(parameterValue * conversionToDegree))
                     return GeoCoordParse_InvalidParamForMethod;
@@ -9171,7 +9173,7 @@ public:
         if (!this->VerticalTransform::IsEqualTo(compare)) // base compare
             return false;
 
-        const VerticalNullTransform* compareP = reinterpret_cast<const VerticalNullTransform*>(&compare);
+        const VerticalNullTransform* compareP = dynamic_cast<const VerticalNullTransform*>(&compare);
         if (nullptr == compareP) // if the cast fails we are comparing against a different type of transform than VerticalNullTransform
             return false;
 
@@ -9262,7 +9264,7 @@ public:
         if (!this->VerticalTransform::IsEqualTo(compare)) // base compare
             return false;
 
-        const VerticalGeoidSeparationGridTransform* compareP = reinterpret_cast<const VerticalGeoidSeparationGridTransform*>(&compare);
+        const VerticalGeoidSeparationGridTransform* compareP = dynamic_cast<const VerticalGeoidSeparationGridTransform*>(&compare);
         if (nullptr == compareP)
             return false;
 
@@ -9514,7 +9516,7 @@ public:
         if (!this->VerticalTransform::IsEqualTo(compare)) // base compare
             return false;
 
-        const VerticalOffsetGridTransform* compareP = reinterpret_cast<const VerticalOffsetGridTransform*>(&compare);
+        const VerticalOffsetGridTransform* compareP = dynamic_cast<const VerticalOffsetGridTransform*>(&compare);
         if (nullptr == compareP)
             return false;
 
@@ -9727,7 +9729,7 @@ public:
         if (!this->VerticalTransform::IsEqualTo(compare)) // base compare
             return false;
 
-        const VerticalOffsetTransform* compareP = reinterpret_cast<const VerticalOffsetTransform*>(&compare);
+        const VerticalOffsetTransform* compareP = dynamic_cast<const VerticalOffsetTransform*>(&compare);
         if (nullptr == compareP)
             return false;
 
@@ -9820,7 +9822,7 @@ public:
         if (!this->VerticalTransform::IsEqualTo(compare)) // base compare
             return false;
 
-        const VerticalGeodetic3dTransform* compareP = reinterpret_cast<const VerticalGeodetic3dTransform*>(&compare);
+        const VerticalGeodetic3dTransform* compareP = dynamic_cast<const VerticalGeodetic3dTransform*>(&compare);
         if (nullptr == compareP)
             return false;
 
@@ -10130,88 +10132,83 @@ VerticalDatumInfoPtr VerticalDatumInfo::CreateFromJson(BeJsConst jsonVerticalCRS
         return vdatumInfo;
     }
 
-    if (jsonVerticalCRS.isObject()
-        && jsonVerticalCRS.isMember("verticalCRS"))
+    vdatumInfo = new VerticalDatumInfo;
+    vdatumInfo->m_crsName = VerticalDatumDictionary::DictionaryValueString(jsonVerticalCRS, "crsName");
+    vdatumInfo->m_datumName = VerticalDatumDictionary::DictionaryValueString(jsonVerticalCRS, "datumName");
+    vdatumInfo->m_epsgCode = VerticalDatumDictionary::DictionaryValueInt(jsonVerticalCRS, "epsg");
+    vdatumInfo->m_type = VerticalDatumDictionary::DictionaryValueString(jsonVerticalCRS, "type");
+    if (!((0 == vdatumInfo->m_type.CompareToI("ELLIPSOID"))
+           || (0 == vdatumInfo->m_type.CompareToI("GEOID"))) )
     {
-        BeJsConst verticalCRS(jsonVerticalCRS["verticalCRS"]);
+        status = GEOCOORDERR_UnknownDatumType;
+        vdatumInfo = nullptr;
+        return nullptr;
+    }
 
-        vdatumInfo = new VerticalDatumInfo;
-        vdatumInfo->m_crsName = VerticalDatumDictionary::DictionaryValueString(verticalCRS, "crsName");
-        vdatumInfo->m_datumName = VerticalDatumDictionary::DictionaryValueString(verticalCRS, "datumName");
-        vdatumInfo->m_epsgCode = VerticalDatumDictionary::DictionaryValueInt(verticalCRS, "epsg");
-        vdatumInfo->m_type = VerticalDatumDictionary::DictionaryValueString(verticalCRS, "type");
-        if (!((0 == vdatumInfo->m_type.CompareToI("ELLIPSOID"))
-                || (0 == vdatumInfo->m_type.CompareToI("GEOID"))) )
+    vdatumInfo->m_description = VerticalDatumDictionary::DictionaryValueString(jsonVerticalCRS, "description");
+    vdatumInfo->m_areaOfUse = VerticalDatumDictionary::DictionaryValueString(jsonVerticalCRS, "areaOfUse");
+    vdatumInfo->m_remarks = VerticalDatumDictionary::DictionaryValueString(jsonVerticalCRS, "remarks");
+    vdatumInfo->m_units = VerticalDatumDictionary::DictionaryValueString(jsonVerticalCRS, "units");
+    if (!ValidUnitKey(vdatumInfo->m_units))
         {
-            status = GEOCOORDERR_UnknownDatumType;
-            vdatumInfo = nullptr;
-            return nullptr;
-        }
-        vdatumInfo->m_description = VerticalDatumDictionary::DictionaryValueString(verticalCRS, "description");
-        vdatumInfo->m_areaOfUse = VerticalDatumDictionary::DictionaryValueString(verticalCRS, "areaOfUse");
-        vdatumInfo->m_remarks = VerticalDatumDictionary::DictionaryValueString(verticalCRS, "remarks");
-        vdatumInfo->m_units = VerticalDatumDictionary::DictionaryValueString(verticalCRS, "units");
-        if (!ValidUnitKey(vdatumInfo->m_units))
-            {
-            status = GEOCOORDERR_UnrecognizedLinearUnit;
-            vdatumInfo = nullptr;
-            return nullptr;
-            }
-
-        vdatumInfo->m_deprecated = VerticalDatumDictionary::DictionaryValueBool(verticalCRS, "deprecated", false);
-
-        vdatumInfo->m_extent = VerticalDatumDictionary::DictionaryValueExtentLatLong(verticalCRS);
-        if (vdatumInfo->m_extent.IsNull()
-            || (vdatumInfo->m_extent.low.x < -180.0)
-            || (vdatumInfo->m_extent.high.x > 180.0)
-            || (vdatumInfo->m_extent.low.y < -90.0)
-            || (vdatumInfo->m_extent.high.y > 90.0))
-        {
-            // SK TODO: range can traverse -180.0/180.0
-            status = GEOCOORDERR_CoordinateRange;
-            vdatumInfo = nullptr;
-            return nullptr;
+        status = GEOCOORDERR_UnrecognizedLinearUnit;
+        vdatumInfo = nullptr;
+        return nullptr;
         }
 
-        // get array of transforms transforms for named targets
-        if (verticalCRS.isMember("transforms"))
-        {
-            BeJsConst transforms(verticalCRS["transforms"]);
-            for (uint32_t i = 0; i < transforms.size(); i++)
-            {
-                // transforms paths must have target string
-                if (transforms[i].isObject() && transforms[i].isMember("target"))
-                {
-                    Utf8String target = VerticalDatumDictionary::DictionaryValueString(transforms[i], "target");
-                    VerticalTransformPtr transform = VerticalTransform::CreateFromJson(transforms[i], vdatumInfo->m_crsName, target);
-                    if (transform.IsValid())
-                        VerticalDatumDictionary::Get()->AddVerticalDatumTransform(transform); // Note: even if we are not adding the item to the dictionary we need to save the transform
+    vdatumInfo->m_deprecated = VerticalDatumDictionary::DictionaryValueBool(jsonVerticalCRS, "deprecated", false);
 
-                    // keep a list of the transforms in the VerticalDatumInfo too so we can compare whether two VerticalDatums
-                    // are equal which included if their transforms are equal, transforms are used from the VerticalDatumDictionary
-                    // and not directly from here, ths is only for comparison
-                    vdatumInfo->AddTransform(transform);
-                }
-                else
-                {
-                    status = GEOCOORDERR_NoTransforms;
-                    vdatumInfo = nullptr;
-                    return nullptr;
-                }
+    vdatumInfo->m_extent = VerticalDatumDictionary::DictionaryValueExtentLatLong(jsonVerticalCRS);
+    if (vdatumInfo->m_extent.IsNull()
+        || (vdatumInfo->m_extent.low.x < -180.0)
+        || (vdatumInfo->m_extent.high.x > 180.0)
+        || (vdatumInfo->m_extent.low.y < -90.0)
+        || (vdatumInfo->m_extent.high.y > 90.0))
+    {
+        // SK TODO: range can traverse -180.0/180.0
+        status = GEOCOORDERR_CoordinateRange;
+        vdatumInfo = nullptr;
+        return nullptr;
+    }
+
+    // get array of transforms transforms for named targets
+    if (verticalCRS.isMember("transforms"))
+    {
+        BeJsConst transforms(verticalCRS["transforms"]);
+        for (uint32_t i = 0; i < transforms.size(); i++)
+        {
+            // transforms paths must have target string
+            if (transforms[i].isObject() && transforms[i].isMember("target"))
+            {
+                Utf8String target = VerticalDatumDictionary::DictionaryValueString(transforms[i], "target");
+                VerticalTransformPtr transform = VerticalTransform::CreateFromJson(transforms[i], vdatumInfo->m_crsName, target);
+                if (transform.IsValid())
+                    VerticalDatumDictionary::Get()->AddVerticalDatumTransform(transform); // Note: even if we are not adding the item to the dictionary we need to save the transform
+
+                // keep a list of the transforms in the VerticalDatumInfo too so we can compare whether two VerticalDatums
+                // are equal which included if their transforms are equal, transforms are used from the VerticalDatumDictionary
+                // and not directly from here, ths is only for comparison
+                vdatumInfo->AddTransform(transform);
+            }
+            else
+            {
+                status = GEOCOORDERR_NoTransforms;
+                vdatumInfo = nullptr;
+                return nullptr;
             }
         }
+    }
 
-        // get the optional transform paths (preferred and alternative, if there are no paths the code
-        //  will try to find a path for non-direct transforms
-        if (verticalCRS.isMember("transformPaths"))
+    // get the optional transform paths (preferred and alternative, if there are no paths the code
+    //  will try to find a path for non-direct transforms
+    if (verticalCRS.isMember("transformPaths"))
+    {
+        BeJsConst transformPaths(verticalCRS["transformPaths"]);
+        for (uint32_t i = 0; i < transformPaths.size(); i++)
         {
-            BeJsConst transformPaths(verticalCRS["transformPaths"]);
-            for (uint32_t i = 0; i < transformPaths.size(); i++)
-            {
-                VerticalTransformPathInfoPtr transformPath = VerticalTransformPathInfo::CreateFromJson(transformPaths[i], vdatumInfo->m_crsName);
-                if (transformPath.IsValid())
-                    vdatumInfo->m_transformPaths.push_back(transformPath);
-            }
+            VerticalTransformPathInfoPtr transformPath = VerticalTransformPathInfo::CreateFromJson(transformPaths[i], vdatumInfo->m_crsName);
+            if (transformPath.IsValid())
+                vdatumInfo->m_transformPaths.push_back(transformPath);
         }
     }
 
@@ -10518,7 +10515,7 @@ StatusInt VerticalDatumDictionary::AddVerticalDatumsFromJsonString(const Utf8Str
         if (!verticalCRSArray[i].isMember("verticalCRS"))
             return GeoCoordParse_ParseError;
 
-        VerticalDatumInfoPtr vdatumInfo = VerticalDatumInfo::CreateFromJson(verticalCRSArray[i], true, createStatus);
+        VerticalDatumInfoPtr vdatumInfo = VerticalDatumInfo::CreateFromJson(verticalCRSArray[i]["verticalCRS"], true, createStatus);
         if (!vdatumInfo.IsValid())
             return createStatus;
     }
@@ -10612,7 +10609,7 @@ struct TransformsFrom
 * and tries to find a path from the source specified in transformFrom.m_name to the designated target indicated in 'to'
 * The traversal process is described in the documentation of the companion TransformsFrom class above.
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RecursiveGetTransformsFromTo(bool& foundTarget, TransformsFrom& transformsFrom, const Utf8String& to, bvector<VerticalTransformPtr>& allTransforms, const GeoPoint& latLong)
+void RecursiveGetTransformsFromTo(bool& foundTarget, TransformsFrom& transformsFrom, const Utf8String& to, bvector<VerticalTransformPtr>& allTransforms, const GeoPoint* latLong)
 {
     // Build a list in m_transformsFrom of other objects representing every vertical datum
     // transforms that have as source the name of the present transforsFrom.
@@ -10632,18 +10629,21 @@ void RecursiveGetTransformsFromTo(bool& foundTarget, TransformsFrom& transformsF
 
                 DRange2d extent;
                 info->GetExtent(extent);
-                bool inRange = false;
+                bool inRange = (latLong == nullptr);
 
-                if (extent.low.x > extent.high.x) // extent crosses anti-meridian
+                if (nullptr != latLong)
                 {
-                    DRange2d extentWest = extent;
-                    extentWest.high.x = 180.0;
-                    extent.low.x = -180;
-                    if (extent.Contains(latLong.longitude, latLong.latitude) || (extentWest.Contains(latLong.longitude, latLong.latitude)))
+                    if (extent.low.x > extent.high.x) // extent crosses anti-meridian
+                    {
+                        DRange2d extentWest = extent;
+                        extentWest.high.x = 180.0;
+                        extent.low.x = -180;
+                        if (extent.Contains(latLong->longitude, latLong->latitude) || (extentWest.Contains(latLong->longitude, latLong->latitude)))
+                            inRange = true;
+                    }
+                    else if (extent.Contains(latLong->longitude, latLong->latitude))
                         inRange = true;
                 }
-                else if (extent.Contains(latLong.longitude, latLong.latitude))
-                    inRange = true;
 
                 if (!inRange)
                     continue; // transform not applicable for the given lat long
@@ -10713,7 +10713,7 @@ VerticalTransformPtr VerticalDatumDictionary::GetDirectVerticalDatumTransform(co
     return nullptr;
 }
 
-StatusInt VerticalDatumDictionary::GetVerticalDatumTransforms(bvector<VerticalTransformPtr>& transforms, const Utf8String& from, const Utf8String& to, const GeoPoint& latLong)
+StatusInt VerticalDatumDictionary::GetVerticalDatumTransforms(bvector<VerticalTransformPtr>& transforms, const Utf8String& from, const Utf8String& to, const GeoPoint* latLong)
 {
     if ((0 == from.length()) || (0 == to.length()))
         return GEOCOORDERR_BadArg;
@@ -11571,11 +11571,13 @@ bool   IsEquivalent (VerticalDatumConverter_LegacyCR compareTo) const
     };
 
 /*---------------------------------------------------------------------------------**//**
-* Indicates if a datum elevation change is required in csmap.
-* If either is vdcLocalEllipsoid then the change will be needed.
+* Indicates if a geodetic datum related elevation change is required in csmap.
+* If either vertical datum is vdcLocalEllipsoid then the change will be needed.
+* Normally geodetic datum related elevation change is extremely rare. This is a special
+* case that is almost never used.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool   NeedsDatumElevationChange() const
+bool   NeedsGeodeticDatumRelatedElevationChange() const
     {
     return ((vdcLocalEllipsoid == m_fromVDC) || (vdcLocalEllipsoid == m_toVDC));
     }
@@ -11620,7 +11622,15 @@ public:
     StatusInt   ConvertElevation(GeoPointR outLatLong, GeoPointCR inLatLongDestDatum, GeoPointCR inLatLongSourceDatum);
     bool        IsNullTransform() const;
     bool        IsEquivalent(VerticalDatumConverterCR compareTo) const;
-    bool        NeedsDatumElevationChange() const;
+
+    /*---------------------------------------------------------------------------------**//**
+    * Indicates if a geodetic datum related elevation change is required in csmap.
+    * If either vertical datum (legacy or not) is vdcLocalEllipsoid or LOCAL_ELLIPSOID then
+    * the change will be needed.
+    * Normally geodetic datum related elevation change is extremely rare. This is a special
+    * case that is almost never used.
+    +---------------+---------------+---------------+---------------+---------------+------*/   
+    bool        NeedsGeodeticDatumRelatedElevationChange() const;
 };
 
 VerticalDatumConverter::VerticalDatumConverter() :
@@ -11755,7 +11765,7 @@ StatusInt VerticalDatumConverter::InitializeTransforms(const GeoPoint& latLong)
     Utf8String name;
     m_verticalDatumInfo->GetCRSName(name);
     bvector<VerticalTransformPtr> listOfTransforms;
-    status = VerticalDatumDictionary::Get()->GetVerticalDatumTransforms(listOfTransforms, name, thisTarget, latLong);
+    status = VerticalDatumDictionary::Get()->GetVerticalDatumTransforms(listOfTransforms, name, thisTarget, &latLong);
 
     if (SUCCESS == status)
     {
@@ -11844,12 +11854,13 @@ StatusInt VerticalDatumConverter::ConvertElevationThroughInitializedTransforms(d
     if ((0 == targetName.length()) || (0 == targetName.CompareToI("ELLIPSOID")))
         targetName = "WGS84";
 
-    // if the target vertical name is the same as this vertical datum name, there is nothing to do
-    if (m_fromGCS->GetVerticalDatum()->IsEquivalentTo(targetName))
-        return SUCCESS;
-
     if (!m_initializedTransformsValid)
         status = InitializeTransforms(inLatLong);
+
+    // check if there is a single VerticalNullTransform between the two
+    if ((1 == m_initializedTransforms.size()) && 
+        (VerticalTransform::TransformType::Null == m_initializedTransforms[0].first->GetTransformType()))
+        return SUCCESS;
 
     // apply any elevation offsets using target transform(s) if found
     if (SUCCESS == status) 
@@ -11913,7 +11924,7 @@ StatusInt VerticalDatumConverter::ConvertElevation(GeoPointR outLatLong, GeoPoin
         double elevation = inLatLongDestDatum.elevation;
 
         // Apply ellipsoid to ellipsoid conversion
-        if (NeedsDatumElevationChange()
+        if (NeedsGeodeticDatumRelatedElevationChange()
             && (nullptr != m_fromGCS->GetVerticalDatum()->GetGeodeticDatum())
             && (nullptr != m_toGCS->GetVerticalDatum()->GetGeodeticDatum()))
         {
@@ -11992,7 +12003,7 @@ bool VerticalDatumConverter::IsEquivalent(VerticalDatumConverterCR compareTo) co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool VerticalDatumConverter::NeedsDatumElevationChange() const
+bool VerticalDatumConverter::NeedsGeodeticDatumRelatedElevationChange() const
 {
     if (m_fromGCS.IsValid() && m_toGCS.IsValid())
     {
@@ -12005,7 +12016,7 @@ bool VerticalDatumConverter::NeedsDatumElevationChange() const
                 return true;
         }
         else if (nullptr != m_legacyConverter)
-            return m_legacyConverter->NeedsDatumElevationChange();
+            return m_legacyConverter->NeedsGeodeticDatumRelatedElevationChange();
     }
 
     return false;
@@ -14453,7 +14464,23 @@ StatusInt BaseGCS::FromVerticalJson(BeJsConst jsonValue, Utf8StringR errorMessag
     }
 
     // Create vertical datum from full Json if available, if not try using just the legacy ID
-    StatusInt status = SetVerticalDatumFromJson(jsonValue);
+    StatusInt status = ERROR;
+    VerticalDatumInfoPtr verticalDatumInfo = VerticalDatumInfo::CreateFromJson(jsonValue, false, status); // don't add to dictionary
+
+    if (SUCCESS == status)
+    {
+        VerticalDatumPtr verticalDatum = VerticalDatum::Create(status, verticalDatumInfo);
+        if (SUCCESS == status)
+        {
+            status = SetVerticalDatum(verticalDatum);
+            if (SUCCESS == status)
+            {
+                AlignVerticalDatumLegacyCodeWithCurrentVerticalDatum();
+                SetModified(true);
+            }
+        }
+    }
+    
     if (SUCCESS == status)
         return status;
 
@@ -19283,7 +19310,7 @@ StatusInt BaseGCS::SetVerticalDatumFromJsonString(const Utf8String jsonString)
 StatusInt BaseGCS::SetVerticalDatumFromJson(BeJsConst verticalCRS)
 {
     StatusInt status = ERROR;
-    VerticalDatumInfoPtr verticalDatumInfo = VerticalDatumInfo::CreateFromJson(verticalCRS, false, status); // don't add to dictionary
+    VerticalDatumInfoPtr verticalDatumInfo = VerticalDatumInfo::CreateFromJson(verticalCRS["verticalCRS"], false, status); // don't add to dictionary
 
     if (SUCCESS == status)
     {
@@ -23091,7 +23118,7 @@ VerticalDatumConverter* verticalDatumConverter
     // to make it not so, call SetReprojectElevation (false);
     // TODO determine how we deal with ellipsoids changes.
     m_reprojectElevation        = true;
-    if ((nullptr != m_verticalDatumConverter) && m_verticalDatumConverter->NeedsDatumElevationChange())
+    if ((nullptr != m_verticalDatumConverter) && m_verticalDatumConverter->NeedsGeodeticDatumRelatedElevationChange())
         m_3dDatumConvertFunc = CSMap::CS_dtcvt3D;
     else
         m_3dDatumConvertFunc = CSMap::CS_dtcvt;
@@ -23537,7 +23564,7 @@ bool            reprojectElevation
         {
         // TODO This prevents ellipsoid elevation changes from being applied.
         // Note that there is no vertical datum when ellipsoid to ellipsoid
-        if ((NULL != m_verticalDatumConverter) && m_verticalDatumConverter->NeedsDatumElevationChange())
+        if ((NULL != m_verticalDatumConverter) && m_verticalDatumConverter->NeedsGeodeticDatumRelatedElevationChange())
             m_3dDatumConvertFunc = CSMap::CS_dtcvt3D;
         else
             m_3dDatumConvertFunc = CSMap::CS_dtcvt;
@@ -26101,6 +26128,8 @@ StatusInt              Datum::GetGridFile (GridFileDefinition& gridFileDef, bool
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt Datum::GetGridFileNames (Utf8String& gridFileNames, bool cumulAllTransforms) const
     {
+    gridFileNames.clear();        
+
     if (NULL == m_datumDef)
         return ERROR;
 
@@ -26142,11 +26171,11 @@ StatusInt Datum::GetGridFileNames (Utf8String& gridFileNames, bool cumulAllTrans
                     }
 
                     if (!cumulAllTransforms)
-                        return SUCCESS;
+                        return (firstFile ? ERROR : SUCCESS);
                 }
             }
 
-            return SUCCESS;
+            return (firstFile ? ERROR : SUCCESS);
         }
 
     return ERROR;
@@ -26858,13 +26887,12 @@ bool VerticalDatum::IsEquivalentTo(const Utf8String& equivalentName) const
     if (0 == name.CompareToI(equivalentName))
         return true;
 
+    bvector<VerticalTransformPtr> listOfTransforms;
+    StatusInt status = VerticalDatumDictionary::Get()->GetVerticalDatumTransforms(listOfTransforms, name, equivalentName, nullptr);
+
     // check if there is a single VerticalNullTransform between the two
-    if (m_initializedTransformsTargetName.length()
-        && (0 == m_initializedTransformsTargetName.CompareToI(equivalentName))
-        && (1 == m_initializedTransforms.size()))
-    {
-        return (VerticalTransform::TransformType::Null == m_initializedTransforms[0].first->GetTransformType());
-    }
+    if (1 == listOfTransforms.size())
+        return (VerticalTransform::TransformType::Null == listOfTransforms[0]->GetTransformType());
 
     return false;
 }
