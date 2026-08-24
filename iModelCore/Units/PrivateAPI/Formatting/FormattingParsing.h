@@ -9,6 +9,7 @@
 #include <Units/Units.h>
 #include <BeRapidJson/BeJsValue.h>
 
+#include <cmath>
 #include <cstdlib>
 #include <cstdint>
 
@@ -278,6 +279,10 @@ inline uint32_t JsonToUInt(BeJsConst val, uint32_t defaultVal = 0)
     double coerced;
     if (!TryCoerceJsonStringToDouble(val, coerced))
         return val.asUInt(defaultVal);
+    // strtod accepts "nan"/"inf"/"-infinity"; converting a non-finite double to an integer type is
+    // undefined behavior and the range clamps below would not catch NaN, so reject it up front.
+    if (!std::isfinite(coerced))
+        return defaultVal;
     // Casting an out-of-range double to uint32_t is undefined behavior, so clamp first.
     if (coerced <= 0.0)
         return 0;
@@ -291,6 +296,9 @@ inline int64_t JsonToInt64(BeJsConst val, int64_t defaultVal = 0)
     double coerced;
     if (!TryCoerceJsonStringToDouble(val, coerced))
         return val.asInt64(defaultVal);
+    // See JsonToUInt: non-finite values must not reach the integer conversion below.
+    if (!std::isfinite(coerced))
+        return defaultVal;
     if (coerced <= (double) INT64_MIN)
         return INT64_MIN;
     if (coerced >= (double) INT64_MAX)

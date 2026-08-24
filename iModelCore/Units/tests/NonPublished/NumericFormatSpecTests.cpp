@@ -510,4 +510,54 @@ TEST_F(NumericFormatSpecJsonTest, SerializeRatio)
     }
     }
 
+//---------------------------------------------------------------------------------------
+// The string-coercion helpers exist so that string-encoded numbers ("stationOffsetSize": "3")
+// keep deserializing the way the Bentley JsonCpp fork accepted them. strtod also accepts
+// "nan"/"inf"/"-infinity", and converting a non-finite double to an integer type is undefined
+// behavior, so the integer helpers must fall back to the caller's default instead.
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(NumericFormatSpecJsonTest, JsonStringCoercionRejectsNonFinite)
+    {
+    BeJsDocument json(R"json({
+        "nan": "nan",
+        "negativeNan": "-NaN",
+        "infinity": "inf",
+        "negativeInfinity": "-Infinity",
+        "numeric": "3"
+    })json");
+    ASSERT_FALSE(json.hasParseError());
+
+    for (Utf8CP key : {"nan", "negativeNan", "infinity", "negativeInfinity"})
+        {
+        EXPECT_EQ(7u, JsonToUInt(json[key], 7u)) << "JsonToUInt should return the default for '" << key << "'";
+        EXPECT_EQ(INT64_C(7), JsonToInt64(json[key], INT64_C(7))) << "JsonToInt64 should return the default for '" << key << "'";
+        }
+
+    // Ordinary string-encoded numbers must still coerce, otherwise the compatibility shim is pointless.
+    EXPECT_EQ(3u, JsonToUInt(json["numeric"], 7u));
+    EXPECT_EQ(INT64_C(3), JsonToInt64(json["numeric"], INT64_C(7)));
+    }
+
+//---------------------------------------------------------------------------------------
+// Out-of-range (but finite) string-encoded numbers are clamped rather than converted, since
+// that conversion would also be undefined behavior.
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(NumericFormatSpecJsonTest, JsonStringCoercionClampsOutOfRange)
+    {
+    BeJsDocument json(R"json({
+        "aboveUInt32": "1e30",
+        "belowZero": "-5",
+        "aboveInt64": "1e30",
+        "belowInt64": "-1e30"
+    })json");
+    ASSERT_FALSE(json.hasParseError());
+
+    EXPECT_EQ(UINT32_MAX, JsonToUInt(json["aboveUInt32"], 7u));
+    EXPECT_EQ(0u, JsonToUInt(json["belowZero"], 7u));
+    EXPECT_EQ(INT64_MAX, JsonToInt64(json["aboveInt64"], INT64_C(7)));
+    EXPECT_EQ(INT64_MIN, JsonToInt64(json["belowInt64"], INT64_C(7)));
+    }
+
 END_BENTLEY_FORMATTEST_NAMESPACE
