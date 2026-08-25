@@ -2014,6 +2014,15 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
     if (LoadIndexesSQL(sqliteIndexes) != SUCCESS)
         return ERROR;
 
+    const auto deletePersistedIndex = [this](Utf8StringCR indexName) -> BentleyStatus
+        {
+        CachedStatementPtr stmt = m_ecdb.GetCachedStatement("DELETE FROM main." TABLE_Index " WHERE Name=?");
+        if (stmt == nullptr || BE_SQLITE_OK != stmt->BindText(1, indexName, Statement::MakeCopy::No))
+            return ERROR;
+
+        return BE_SQLITE_DONE == stmt->Step() ? SUCCESS : ERROR;
+        };
+
     bmap<Utf8String, DbIndex const*, CompareIUtf8Ascii> comparableIndexDefs;
     bset<Utf8CP, CompareIUtf8Ascii> usedIndexNames;
     for (DbIndex const* indexCP : indexes)
@@ -2124,7 +2133,7 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
 
                 if (!ctx.IsSemanticRebasing())
                     {
-                    if (BE_SQLITE_OK != m_ecdb.ExecuteSql(SqlPrintfString("DELETE FROM main." TABLE_Index " WHERE Name = '%s'", index.GetName().c_str())))
+                    if (SUCCESS != deletePersistedIndex(index.GetName()))
                         return ERROR;
 
                     if (SUCCESS != m_dbSchema.PersistIndexDef(index))
@@ -2144,7 +2153,7 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
                     if (!ctx.IsSemanticRebasing())
                         {
                         // Delete its entry from ec_index table
-                        if (BE_SQLITE_OK != m_ecdb.ExecuteSql(SqlPrintfString("DELETE FROM main." TABLE_Index " WHERE Name = '%s'", index.GetName().c_str())))
+                        if (SUCCESS != deletePersistedIndex(index.GetName()))
                             return ERROR;
                         }
 
@@ -2179,7 +2188,7 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
                 if (!ctx.IsSemanticRebasing())
                     {
                     // Delete its entry from ec_index table
-                    if (BE_SQLITE_OK != m_ecdb.ExecuteSql(SqlPrintfString("DELETE FROM main." TABLE_Index " WHERE Name = '%s'", index.GetName().c_str())))
+                    if (SUCCESS != deletePersistedIndex(index.GetName()))
                         return ERROR;
 
                     if (SUCCESS != m_dbSchema.PersistIndexDef(index))
@@ -2194,7 +2203,7 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
                 //populates the ec_Index table (even for indexes on virtual tables, as they might be necessary
                 //if further schema imports introduce subclasses of abstract classes (which map to virtual tables))
                                 // Delete its entry from ec_index table
-                if (BE_SQLITE_OK != m_ecdb.ExecuteSql(SqlPrintfString("DELETE FROM main." TABLE_Index " WHERE Name = '%s'", index.GetName().c_str())))
+                if (SUCCESS != deletePersistedIndex(index.GetName()))
                     return ERROR;
 
                 LOG.debugv("Schema Import> Virtual index '%s'. NOP SQLite Index", index.GetName().c_str());
