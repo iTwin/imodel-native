@@ -70,7 +70,7 @@ $(o)JsCloudSqlite$(oext) : $(baseDir)JsCloudSqlite.cpp ${MultiCompileDepends}
 
 $(o)TestUtils$(oext) : $(baseDir)TestUtils.cpp ${MultiCompileDepends}
 
-$(o)JsInterop$(oext) : $(baseDir)JsInterop.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends}
+$(o)JsInterop$(oext) : $(baseDir)JsInterop.cpp $(baseDir)IModelJsNative.h $(baseDir)V8SerializedRowsReader.h ${MultiCompileDepends}
 
 $(o)JsInteropDgnDb$(oext) : $(baseDir)JsInteropDgnDb.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends}
 

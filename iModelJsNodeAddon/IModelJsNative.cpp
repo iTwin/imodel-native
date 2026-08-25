@@ -506,6 +506,11 @@ public:
         BulkWriteScope scope(m_bulkWriteInProgress);
         return JsInterop::BulkInsertInstances(db, info);
     }
+    Napi::Value BulkInsertInstancesSerialized(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        BulkWriteScope scope(m_bulkWriteInProgress);
+        return JsInterop::BulkInsertInstancesSerialized(db, info);
+    }
     Napi::Value BulkUpdateInstances(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
         BulkWriteScope scope(m_bulkWriteInProgress);
@@ -720,6 +725,7 @@ public:
             InstanceMethod("updateInstance", &NativeECDb::UpdateInstance),
             InstanceMethod("deleteInstance", &NativeECDb::DeleteInstance),
             InstanceMethod("bulkInsertInstances", &NativeECDb::BulkInsertInstances),
+            InstanceMethod("bulkInsertInstancesSerialized", &NativeECDb::BulkInsertInstancesSerialized),
             InstanceMethod("bulkUpdateInstances", &NativeECDb::BulkUpdateInstances),
             InstanceMethod("saveChanges", &NativeECDb::SaveChanges),
             InstanceMethod("clearECDbCache", &NativeECDb::ClearECDbCache),

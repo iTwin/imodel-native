@@ -6,6 +6,7 @@
 #include <windows.h>
 #endif
 #include "IModelJsNative.h"
+#include "V8SerializedRowsReader.h"
 #include <Bentley/Base64Utilities.h>
 #include <Bentley/Desktop/FileSystem.h>
 #include <GeomSerialization/GeomSerializationApi.h>
@@ -16,7 +17,10 @@
     #include <Visualization/Visualization.h>
 #endif
 #include <DgnPlatform/EntityIdsChangeGroup.h>
+#include <algorithm>
 #include <chrono>
+#include <limits>
+#include <string>
 #include <tuple>
 
 #if defined (BENTLEYCONFIG_PARASOLID)
@@ -1204,6 +1208,78 @@ ECSqlStatus bindBulkWriteValue(BulkWriteBinding const& binding, Napi::Value valu
             return JsonECSqlBinder::BindValue(*binding.m_binder, BeJsConst(value), *binding.m_property, classLocater);
     }
 }
+
+ECSqlStatus bindBulkWriteSerializedValue(BulkWriteBinding const& binding, V8SerializedRowsReader::Value const& value, Utf8StringR stringBuffer) {
+    using ValueType = V8SerializedRowsReader::ValueType;
+    if (ValueType::Null == value.m_type || ValueType::Undefined == value.m_type)
+        return ECSqlStatus::Success;
+    if (!binding.m_isPrimitive)
+        return ECSqlStatus::Error;
+
+    switch (binding.m_primitiveType) {
+        case PRIMITIVETYPE_Boolean:
+            return ValueType::Boolean == value.m_type ? binding.m_binder->BindBoolean(value.m_boolean) : ECSqlStatus::Error;
+        case PRIMITIVETYPE_Double:
+            if (ValueType::Double == value.m_type)
+                return binding.m_binder->BindDouble(value.m_double);
+            if (ValueType::Int32 == value.m_type)
+                return binding.m_binder->BindDouble(value.m_int32);
+            if (ValueType::Uint32 == value.m_type)
+                return binding.m_binder->BindDouble(value.m_uint32);
+            return ECSqlStatus::Error;
+        case PRIMITIVETYPE_Integer:
+            if (ValueType::Int32 == value.m_type)
+                return binding.m_binder->BindInt(value.m_int32);
+            if (ValueType::Uint32 == value.m_type && value.m_uint32 <= static_cast<uint32_t>(std::numeric_limits<int32_t>::max()))
+                return binding.m_binder->BindInt(static_cast<int32_t>(value.m_uint32));
+            return ECSqlStatus::Error;
+        case PRIMITIVETYPE_String:
+            if (ValueType::Utf8String == value.m_type)
+                return binding.m_binder->BindText(reinterpret_cast<Utf8CP>(value.m_bytes), IECSqlBinder::MakeCopy::No, static_cast<int>(value.m_byteCount));
+            if (ValueType::Latin1String == value.m_type) {
+                const auto end = value.m_bytes + value.m_byteCount;
+                const auto nonAscii = std::find_if(value.m_bytes, end, [](uint8_t byte) { return 0 != (byte & 0x80U); });
+                if (end == nonAscii)
+                    return binding.m_binder->BindText(reinterpret_cast<Utf8CP>(value.m_bytes), IECSqlBinder::MakeCopy::No, static_cast<int>(value.m_byteCount));
+
+                stringBuffer.clear();
+                stringBuffer.reserve(value.m_byteCount * 2);
+                for (auto current = value.m_bytes; current != end; ++current) {
+                    if (*current < 0x80U) {
+                        stringBuffer.push_back(static_cast<char>(*current));
+                    } else {
+                        stringBuffer.push_back(static_cast<char>(0xc0U | (*current >> 6U)));
+                        stringBuffer.push_back(static_cast<char>(0x80U | (*current & 0x3fU)));
+                    }
+                }
+                return binding.m_binder->BindText(stringBuffer.c_str(), IECSqlBinder::MakeCopy::No, static_cast<int>(stringBuffer.size()));
+            }
+            if (ValueType::Utf16String == value.m_type) {
+                std::u16string utf16(value.m_byteCount / sizeof(char16_t), u'\0');
+                std::memcpy(utf16.data(), value.m_bytes, value.m_byteCount);
+                if (SUCCESS != BeStringUtilities::Utf16ToUtf8(stringBuffer, reinterpret_cast<Utf16CP>(utf16.data()), utf16.size()))
+                    return ECSqlStatus::Error;
+                return binding.m_binder->BindText(stringBuffer.c_str(), IECSqlBinder::MakeCopy::No, static_cast<int>(stringBuffer.size()));
+            }
+            return ECSqlStatus::Error;
+        default:
+            return ECSqlStatus::Error;
+    }
+}
+
+bool supportsSerializedBulkBinding(BulkWriteBinding const& binding) {
+    if (!binding.m_isPrimitive)
+        return false;
+    switch (binding.m_primitiveType) {
+        case PRIMITIVETYPE_Boolean:
+        case PRIMITIVETYPE_Double:
+        case PRIMITIVETYPE_Integer:
+        case PRIMITIVETYPE_String:
+            return true;
+        default:
+            return false;
+    }
+}
 }
 
 //---------------------------------------------------------------------------------------
@@ -1295,6 +1371,132 @@ Napi::Value JsInterop::BulkInsertInstances(ECDbR db, NapiInfoCR info) {
 
     if (!returnIds)
         return Napi::Number::New(info.Env(), rows.Length());
+
+    auto out = Napi::Array::New(info.Env(), insertedIds.size());
+    for (uint32_t i = 0; i < static_cast<uint32_t>(insertedIds.size()); ++i) {
+        Napi::HandleScope scope(info.Env());
+        out.Set(i, Napi::String::New(info.Env(), insertedIds[i].ToHexStr()));
+    }
+    return out;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Napi::Value JsInterop::BulkInsertInstancesSerialized(ECDbR db, NapiInfoCR info) {
+    REQUIRE_ARGUMENT_STRING(0, className);
+    REQUIRE_ARGUMENT_ARRAY(1, propertyNames);
+    REQUIRE_ARGUMENT_ANY_OBJ(2, serializedRows);
+    OPTIONAL_ARGUMENT_ANY_OBJ(3, options, Napi::Object::New(info.Env()));
+    const BeJsConst optionsJson(options);
+    const bool returnIds = !optionsJson.isBoolMember("returnIds") || optionsJson["returnIds"].asBool();
+
+    if (!serializedRows.IsTypedArray() || serializedRows.As<Napi::TypedArray>().TypedArrayType() != napi_uint8_array)
+        THROW_JS_TYPE_EXCEPTION("serializedRows must be a Uint8Array")
+    const auto bytes = serializedRows.As<Napi::Uint8Array>();
+
+    const auto ecClass = db.Schemas().FindClass(className.c_str());
+    if (nullptr == ecClass)
+        THROW_JS_TYPE_EXCEPTION("className does not identify an ECClass")
+
+    BulkWritePlan plan;
+    Utf8String planError;
+    if (!createBulkWritePlan(plan, planError, *ecClass, BeJsConst(propertyNames)))
+        THROW_JS_TYPE_EXCEPTION(planError.c_str())
+
+    Utf8String ecsql("INSERT INTO ");
+    ecsql.append(ecClass->GetECSqlName()).append(" (");
+    Utf8String valuesClause(") VALUES (");
+    for (size_t i = 0; i < plan.m_accessStrings.size(); ++i) {
+        if (i > 0) {
+            ecsql.append(",");
+            valuesClause.append(",");
+        }
+        ecsql.append(plan.m_accessStrings[i]);
+        valuesClause.append("?");
+    }
+    ecsql.append(valuesClause).append(")");
+
+    ECSqlStatement statement;
+    const auto prepareStatus = statement.Prepare(db, ecsql.c_str());
+    if (!prepareStatus.IsSuccess()) {
+        const auto rc = prepareStatus.IsSQLiteError() ? prepareStatus.GetSQLiteError() : BE_SQLITE_ERROR;
+        THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to prepare serialized bulk insert ECSQL", rc)
+    }
+
+    auto bindings = createBulkWriteBindings(plan, statement);
+    if (std::any_of(bindings.begin(), bindings.end(), [](BulkWriteBinding const& binding) { return !supportsSerializedBulkBinding(binding); }))
+        THROW_JS_TYPE_EXCEPTION("serialized bulk insert supports only boolean, double, integer, and string properties")
+
+    Savepoint savepoint(db, "bulkInsertInstancesSerialized");
+    if (!savepoint.IsActive())
+        THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to start serialized bulk insert savepoint", BE_SQLITE_ERROR)
+
+    bvector<Utf8String> stringBuffers(plan.m_properties.size());
+    bvector<ECInstanceId> insertedIds;
+    uint32_t failedRow = 0;
+    uint32_t failedColumn = 0;
+    ECSqlStatus bindStatus = ECSqlStatus::Success;
+    DbResult stepStatus = BE_SQLITE_DONE;
+    uint32_t rowCount = 0;
+    try {
+        V8SerializedRowsReader reader(bytes.Data(), bytes.ByteLength());
+        rowCount = reader.Read(static_cast<uint32_t>(plan.m_properties.size()), [&](uint32_t rowIndex, uint32_t propertyIndex, V8SerializedRowsReader::Value const& value) {
+            if (0 == propertyIndex) {
+                statement.Reset();
+                statement.ClearBindings();
+            }
+
+            bindStatus = bindBulkWriteSerializedValue(bindings[propertyIndex], value, stringBuffers[propertyIndex]);
+            if (!bindStatus.IsSuccess()) {
+                failedRow = rowIndex;
+                failedColumn = propertyIndex;
+                return false;
+            }
+
+            if (propertyIndex + 1 == plan.m_properties.size()) {
+                ECInstanceKey key;
+                stepStatus = returnIds ? statement.Step(key) : statement.Step();
+                if (BE_SQLITE_DONE != stepStatus) {
+                    failedRow = rowIndex;
+                    return false;
+                }
+                if (returnIds)
+                    insertedIds.push_back(key.GetInstanceId());
+            }
+            return true;
+        });
+    } catch (V8SerializedRowsError const& error) {
+        const auto rollbackStatus = savepoint.Cancel();
+        if (BE_SQLITE_OK != rollbackStatus)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to roll back serialized bulk insert", rollbackStatus)
+        THROW_JS_TYPE_EXCEPTION(error.what())
+    } catch (...) {
+        const auto rollbackStatus = savepoint.Cancel();
+        if (BE_SQLITE_OK != rollbackStatus)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to roll back serialized bulk insert", rollbackStatus)
+        throw;
+    }
+
+    if (!bindStatus.IsSuccess()) {
+        const auto rollbackStatus = savepoint.Cancel();
+        if (BE_SQLITE_OK != rollbackStatus)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to roll back serialized bulk insert", rollbackStatus)
+        THROW_JS_TYPE_EXCEPTION(Utf8PrintfString("Failed to bind serialized rows[%" PRIu32 "][%" PRIu32 "]", failedRow, failedColumn).c_str())
+    }
+    if (BE_SQLITE_DONE != stepStatus) {
+        const auto rollbackStatus = savepoint.Cancel();
+        if (BE_SQLITE_OK != rollbackStatus)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to roll back serialized bulk insert", rollbackStatus)
+        THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), Utf8PrintfString("Failed to insert serialized rows[%" PRIu32 "]", failedRow).c_str(), stepStatus)
+    }
+
+    const auto commitStatus = savepoint.Commit();
+    if (BE_SQLITE_OK != commitStatus)
+        THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to commit serialized bulk insert", commitStatus)
+
+    if (!returnIds)
+        return Napi::Number::New(info.Env(), rowCount);
 
     auto out = Napi::Array::New(info.Env(), insertedIds.size());
     for (uint32_t i = 0; i < static_cast<uint32_t>(insertedIds.size()); ++i) {

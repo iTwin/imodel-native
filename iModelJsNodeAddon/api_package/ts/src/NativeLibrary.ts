@@ -897,6 +897,8 @@ export declare namespace IModelJsNative {
     public deleteInstance(key: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean;
     /** Insert homogeneous positional rows using one prepared ECSQL statement. */
     public bulkInsertInstances(className: string, propertyNames: string[], rows: any[][], options?: { returnIds?: boolean }): Id64String[] | number;
+    /** Insert V8-serialized homogeneous positional rows using one prepared ECSQL statement. */
+    public bulkInsertInstancesSerialized(className: string, propertyNames: string[], rows: Uint8Array, options?: { returnIds?: boolean }): Id64String[] | number;
     /** Update homogeneous positional rows using one prepared ECSQL statement. */
     public bulkUpdateInstances(className: string, propertyNames: string[], rows: any[][]): number;
     public getSchemaProps(name: string): SchemaProps;
