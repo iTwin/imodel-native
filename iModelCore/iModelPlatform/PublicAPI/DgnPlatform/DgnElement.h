@@ -2308,6 +2308,8 @@ protected:
     DgnCategoryId m_categoryId;
     GeometryStream m_geom;
     mutable bool m_multiChunkGeomStream;
+    // Set while processing an empty geometry-builder update so derived placement readers do not restore stale placement JSON.
+    bool m_geometryWasCleared = false;
     // Placement2d/3d default values don't preserve which properties were actually NULL without this.
     enum PlacementDataFlags : uint8_t
         {

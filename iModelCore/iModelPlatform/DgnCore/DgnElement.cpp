@@ -3726,6 +3726,7 @@ void GeometricElement::_ToJson(BeJsValue val, BeJsConst opts) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricElement::_FromJson(BeJsConst props)
     {
+    m_geometryWasCleared = false;
     T_Super::_FromJson(props);
     auto catJson = props[json_category()];
     if (!catJson.isNull())
@@ -3757,6 +3758,7 @@ void GeometricElement::_FromJson(BeJsConst props)
             // throw std::runtime_error("BuildGeometryStream failed");
             BeNapi::ThrowJsException(m_dgndb.GetJsIModelDb()->Env(), "BuildGeometryStream failed", (int)status, DgnDbStatusHelper::GetITwinError(status));
         }
+        m_geometryWasCleared = 0 == entryArrayObj.As<Napi::Array>().Length();
         return;
     }
 
@@ -3976,7 +3978,7 @@ void GeometricElement2d::_FromJson(BeJsConst props)
     T_Super::_FromJson(props);
 
     auto placementJson = props[json_placement()];
-    if (!placementJson.isNull())
+    if (!m_geometryWasCleared && !placementJson.isNull())
         {
         if (props.isMember(json_geomBinary()) || (props[json_geom()].isNull() && props[json_elementGeometryBuilderParams()].isNull()))
             {
@@ -4107,7 +4109,7 @@ void GeometricElement3d::_FromJson(BeJsConst props)
     T_Super::_FromJson(props);
 
     auto placementJson = props[json_placement()];
-    if (!placementJson.isNull())
+    if (!m_geometryWasCleared && !placementJson.isNull())
         {
         if (props.isMember(json_geomBinary()) || (props[json_geom()].isNull() && props[json_elementGeometryBuilderParams()].isNull()))
             {
