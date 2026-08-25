@@ -511,11 +511,6 @@ public:
         BulkWriteScope scope(m_bulkWriteInProgress);
         return JsInterop::BulkUpdateInstances(db, info);
     }
-    Napi::Value BulkDeleteInstances(NapiInfoCR info) {
-        auto& db = GetOpenedDb(info);
-        BulkWriteScope scope(m_bulkWriteInProgress);
-        return JsInterop::BulkDeleteInstances(db, info);
-    }
     Napi::Value ConcurrentQueryResetConfig(NapiInfoCR info) {
         if (info.Length() > 0 && info[0].IsObject()) {
             Napi::Object inConf = info[0].As<Napi::Object>();
@@ -726,7 +721,6 @@ public:
             InstanceMethod("deleteInstance", &NativeECDb::DeleteInstance),
             InstanceMethod("bulkInsertInstances", &NativeECDb::BulkInsertInstances),
             InstanceMethod("bulkUpdateInstances", &NativeECDb::BulkUpdateInstances),
-            InstanceMethod("bulkDeleteInstances", &NativeECDb::BulkDeleteInstances),
             InstanceMethod("saveChanges", &NativeECDb::SaveChanges),
             InstanceMethod("clearECDbCache", &NativeECDb::ClearECDbCache),
             StaticMethod("enableSharedCache", &NativeECDb::EnableSharedCache),

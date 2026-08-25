@@ -10,7 +10,6 @@
 #include <ECDb/IECSqlValue.h>
 #include <ECDb/SchemaManager.h>
 #include <list>
-#include <vector>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct PropertyBinder final {
@@ -149,19 +148,6 @@ public:
     ECDB_EXPORT DbResult Update(BeJsConst inst, UpdateOptions const& options);
     ECDB_EXPORT DbResult Delete(BeJsConst inst, DeleteOptions const& options);
     ECDB_EXPORT DbResult Delete(ECInstanceKeyCR key, DeleteOptions const& options);
-
-    //! Write a batch of instances in a single call.
-    //! @param[in] instances A JSON array of instances (for delete, of instance keys).
-    //! @param[out] affectedRows For update and delete, the number of supplied instances that matched a row.
-    //! @param[out] failedIndex Index of the row that failed, or -1 if the failure was not row specific.
-    //! @remarks The entire batch is executed inside one savepoint and one lock of the internal
-    //! statement cache. If any row fails, the savepoint is rolled back so no row of the batch is
-    //! applied (all-or-nothing) and the failing row index is reported via @p failedIndex.
-    //! @return BE_SQLITE_DONE on success.
-    ECDB_EXPORT DbResult InsertBatch(BeJsConst instances, InsertOptions const& options, int& failedIndex);
-    ECDB_EXPORT DbResult InsertBatch(BeJsConst instances, InsertOptions const& options, std::vector<ECInstanceKey>& keys, int& failedIndex);
-    ECDB_EXPORT DbResult UpdateBatch(BeJsConst instances, UpdateOptions const& options, uint64_t& affectedRows, int& failedIndex);
-    ECDB_EXPORT DbResult DeleteBatch(BeJsConst instances, DeleteOptions const& options, uint64_t& affectedRows, int& failedIndex);
 
     ECDB_EXPORT void ToJson(BeJsValue out, ECInstanceId instanceId, ECN::ECClassId classId, JsFormat jsFmt = JsFormat::Standard) const;
     ECDB_EXPORT void ToJson(BeJsValue out, ECInstanceKeyCR key, JsFormat jsFmt = JsFormat::Standard) const;

@@ -561,7 +561,6 @@ public:
     static Napi::Value DeleteInstance(ECDbR db, NapiInfoCR info);
     static Napi::Value BulkInsertInstances(ECDbR db, NapiInfoCR info);
     static Napi::Value BulkUpdateInstances(ECDbR db, NapiInfoCR info);
-    static Napi::Value BulkDeleteInstances(ECDbR db, NapiInfoCR info);
     static Napi::Value PatchJsonProperties(NapiInfoCR info);
     static Napi::Value ResolveInstanceKey(DgnDbR db, NapiInfoCR info);
     static Napi::Value ConvertOrUpdateGeometrySource(DgnDbR db, NapiInfoCR info);

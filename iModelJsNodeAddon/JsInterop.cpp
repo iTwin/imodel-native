@@ -10,6 +10,7 @@
 #include <Bentley/Desktop/FileSystem.h>
 #include <GeomSerialization/GeomSerializationApi.h>
 #include <ECDb/ChangedIdsIterator.h>
+#include <ECDb/JsonAdapter.h>
 #include <DgnPlatform/FunctionalDomain.h>
 #if !defined (BENTLEYCONFIG_NO_VISUALIZATION)
     #include <Visualization/Visualization.h>
@@ -1087,53 +1088,218 @@ Napi::Value JsInterop::DeleteInstance(ECDbR db, NapiInfoCR info) {
     return Napi::Value::From(info.Env(), db.GetModifiedRowCount() > 0);;
 }
 
-//---------------------------------------------------------------------------------------
-// Reads the shared "useJsNames" option used by the instance read/write entry points.
-// @bsimethod
-//---------------------------------------------------------------------------------------
-static JsFormat getJsFormat(BeJsConst args) {
-    return (args.isBoolMember("useJsNames") && args["useJsNames"].asBool(false)) ? JsFormat::JsName : JsFormat::Standard;
+namespace {
+struct BulkWriteBinding {
+    ECPropertyCP m_property;
+    IECSqlBinder* m_binder;
+    PrimitiveType m_primitiveType = PRIMITIVETYPE_Binary;
+    bool m_isPrimitive = false;
+};
+
+struct BulkWritePlan {
+    bvector<ECPropertyCP> m_properties;
+    bvector<Utf8String> m_accessStrings;
+};
+
+ECPropertyCP resolveBulkWriteProperty(ECClassCR ecClass, Utf8StringCR accessString, Utf8StringR canonicalAccessString) {
+    ECClassCP currentClass = &ecClass;
+    ECPropertyCP property = nullptr;
+    size_t start = 0;
+    while (start < accessString.size()) {
+        const size_t end = accessString.find('.', start);
+        Utf8String segment = accessString.substr(start, end == Utf8String::npos ? Utf8String::npos : end - start);
+        if (segment.empty())
+            return nullptr;
+
+        property = currentClass->GetPropertyP(segment.c_str(), true);
+        if (nullptr == property)
+            return nullptr;
+
+        if (!canonicalAccessString.empty())
+            canonicalAccessString.append(".");
+        canonicalAccessString.append("[").append(property->GetName()).append("]");
+
+        if (end == Utf8String::npos)
+            return property;
+
+        const auto structProperty = property->GetAsStructProperty();
+        if (nullptr == structProperty)
+            return nullptr;
+
+        currentClass = &structProperty->GetType();
+        start = end + 1;
+    }
+
+    return nullptr;
 }
 
-//---------------------------------------------------------------------------------------
-// Throws a JS exception describing a failed bulk operation, including the offending row index.
-// @bsimethod
-//---------------------------------------------------------------------------------------
-static void throwBulkFailure(Napi::Env env, Utf8CP opName, Utf8StringCR lastError, int failedIndex, DbResult rc) {
-    Utf8String msg;
-    if (failedIndex >= 0) {
-        msg.Sprintf("Failed to bulk %s instance at index %d. No instance in the batch was written.", opName, failedIndex);
-    } else {
-        msg.Sprintf("Failed to bulk %s instances. No instance in the batch was written.", opName);
+bool createBulkWritePlan(BulkWritePlan& plan, Utf8StringR error, ECClassCR ecClass, BeJsConst propertyNames) {
+    if (0 == propertyNames.size()) {
+        error = "propertyNames must not be empty";
+        return false;
     }
-    if (!lastError.empty()) {
-        msg.append(" ").append(lastError);
+
+    bset<Utf8String, CompareIUtf8Ascii> canonicalNames;
+    plan.m_properties.reserve(propertyNames.size());
+    plan.m_accessStrings.reserve(propertyNames.size());
+    for (BeJsConst::ArrayIndex i = 0; i < propertyNames.size(); ++i) {
+        const auto propertyName = propertyNames[i];
+        if (!propertyName.isString()) {
+            error = "propertyNames must contain only strings";
+            return false;
+        }
+
+        Utf8String canonicalName;
+        const auto property = resolveBulkWriteProperty(ecClass, propertyName.asString(), canonicalName);
+        if (nullptr == property) {
+            error = "propertyNames contains an invalid or unsupported property path";
+            return false;
+        }
+        if (!canonicalNames.insert(canonicalName).second) {
+            error = "propertyNames must not contain duplicates";
+            return false;
+        }
+
+        plan.m_properties.push_back(property);
+        plan.m_accessStrings.push_back(std::move(canonicalName));
     }
-    THROW_JS_BE_SQLITE_EXCEPTION(env, msg.c_str(), rc);
+    return true;
+}
+
+bvector<BulkWriteBinding> createBulkWriteBindings(BulkWritePlan const& plan, ECSqlStatement& statement) {
+    bvector<BulkWriteBinding> bindings;
+    bindings.reserve(plan.m_properties.size());
+    for (size_t i = 0; i < plan.m_properties.size(); ++i) {
+        const auto primitiveProperty = plan.m_properties[i]->GetAsPrimitiveProperty();
+        bindings.push_back({
+            plan.m_properties[i],
+            &statement.GetBinder(static_cast<int>(i + 1)),
+            nullptr == primitiveProperty ? PRIMITIVETYPE_Binary : primitiveProperty->GetType(),
+            nullptr != primitiveProperty,
+        });
+    }
+    return bindings;
+}
+
+ECSqlStatus bindBulkWriteValue(BulkWriteBinding const& binding, Napi::Value value, Utf8StringR stringBuffer, IECClassLocater& classLocater) {
+    if (value.IsNull() || value.IsUndefined())
+        return ECSqlStatus::Success;
+
+    if (!binding.m_isPrimitive)
+        return JsonECSqlBinder::BindValue(*binding.m_binder, BeJsConst(value), *binding.m_property, classLocater);
+
+    switch (binding.m_primitiveType) {
+        case PRIMITIVETYPE_Boolean:
+            return value.IsBoolean() ? binding.m_binder->BindBoolean(value.As<Napi::Boolean>().Value()) : ECSqlStatus::Error;
+        case PRIMITIVETYPE_Double:
+            return value.IsNumber() ? binding.m_binder->BindDouble(value.As<Napi::Number>().DoubleValue()) : ECSqlStatus::Error;
+        case PRIMITIVETYPE_Integer:
+            return value.IsNumber() ? binding.m_binder->BindInt(value.As<Napi::Number>().Int32Value()) : ECSqlStatus::Error;
+        case PRIMITIVETYPE_String:
+            if (!value.IsString())
+                return ECSqlStatus::Error;
+            stringBuffer = value.As<Napi::String>().Utf8Value();
+            return binding.m_binder->BindText(stringBuffer.c_str(), IECSqlBinder::MakeCopy::No);
+        default:
+            return JsonECSqlBinder::BindValue(*binding.m_binder, BeJsConst(value), *binding.m_property, classLocater);
+    }
+}
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 Napi::Value JsInterop::BulkInsertInstances(ECDbR db, NapiInfoCR info) {
-    REQUIRE_ARGUMENT_ARRAY(0, instancesArr);
-    REQUIRE_ARGUMENT_ANY_OBJ(1, argsObj);
+    REQUIRE_ARGUMENT_STRING(0, className);
+    REQUIRE_ARGUMENT_ARRAY(1, propertyNames);
+    REQUIRE_ARGUMENT_ARRAY(2, rows);
+    OPTIONAL_ARGUMENT_ANY_OBJ(3, options, Napi::Object::New(info.Env()));
+    const BeJsConst optionsJson(options);
+    const bool returnIds = !optionsJson.isBoolMember("returnIds") || optionsJson["returnIds"].asBool();
 
-    auto& repo = db.GetInstanceRepository();
-    auto instances = BeJsValue(instancesArr);
-    auto args = BeJsValue(argsObj);
+    const auto ecClass = db.Schemas().FindClass(className.c_str());
+    if (nullptr == ecClass)
+        THROW_JS_TYPE_EXCEPTION("className does not identify an ECClass")
 
-    std::vector<ECInstanceKey> keys;
-    int failedIndex = -1;
-    auto rc = repo.BulkInsert(instances, args, getJsFormat(args), keys, failedIndex);
-    if (rc != BE_SQLITE_DONE) {
-        throwBulkFailure(info.Env(), "insert", repo.GetLastError(), failedIndex, rc);
+    BulkWritePlan plan;
+    Utf8String planError;
+    if (!createBulkWritePlan(plan, planError, *ecClass, BeJsConst(propertyNames)))
+        THROW_JS_TYPE_EXCEPTION(planError.c_str())
+
+    Utf8String ecsql("INSERT INTO ");
+    ecsql.append(ecClass->GetECSqlName()).append(" (");
+    Utf8String valuesClause(") VALUES (");
+    for (size_t i = 0; i < plan.m_accessStrings.size(); ++i) {
+        if (i > 0) {
+            ecsql.append(",");
+            valuesClause.append(",");
+        }
+        ecsql.append(plan.m_accessStrings[i]);
+        valuesClause.append("?");
+    }
+    ecsql.append(valuesClause).append(")");
+
+    ECSqlStatement statement;
+    const auto prepareStatus = statement.Prepare(db, ecsql.c_str());
+    if (!prepareStatus.IsSuccess()) {
+        const auto rc = prepareStatus.IsSQLiteError() ? prepareStatus.GetSQLiteError() : BE_SQLITE_ERROR;
+        THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to prepare bulk row insert ECSQL", rc)
     }
 
-    auto out = Napi::Array::New(info.Env(), keys.size());
-    for (uint32_t i = 0; i < (uint32_t)keys.size(); ++i) {
+    Savepoint savepoint(db, "bulkInsertInstances");
+    if (!savepoint.IsActive())
+        THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to start bulk row insert savepoint", BE_SQLITE_ERROR)
+
+    auto bindings = createBulkWriteBindings(plan, statement);
+    bvector<Utf8String> stringBuffers(plan.m_properties.size());
+    bvector<ECInstanceId> insertedIds;
+    if (returnIds)
+        insertedIds.reserve(rows.Length());
+    for (uint32_t rowIndex = 0; rowIndex < rows.Length(); ++rowIndex) {
+        const auto rowValue = rows.Get(rowIndex);
+        if (!rowValue.IsArray() || rowValue.As<Napi::Array>().Length() != plan.m_properties.size()) {
+            const auto rollbackStatus = savepoint.Cancel();
+            if (BE_SQLITE_OK != rollbackStatus)
+                THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to roll back bulk row insert", rollbackStatus)
+            THROW_JS_TYPE_EXCEPTION(Utf8PrintfString("rows[%" PRIu32 "] must contain exactly %" PRIu64 " values", rowIndex, static_cast<uint64_t>(plan.m_properties.size())).c_str())
+        }
+        const auto row = rowValue.As<Napi::Array>();
+
+        statement.Reset();
+        statement.ClearBindings();
+        for (uint32_t propertyIndex = 0; propertyIndex < plan.m_properties.size(); ++propertyIndex) {
+            const auto bindStatus = bindBulkWriteValue(bindings[propertyIndex], row.Get(propertyIndex), stringBuffers[propertyIndex], db.GetClassLocater());
+            if (!bindStatus.IsSuccess()) {
+                const auto rollbackStatus = savepoint.Cancel();
+                if (BE_SQLITE_OK != rollbackStatus)
+                    THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to roll back bulk row insert", rollbackStatus)
+                THROW_JS_TYPE_EXCEPTION(Utf8PrintfString("Failed to bind rows[%" PRIu32 "][%" PRIu32 "]", rowIndex, propertyIndex).c_str())
+            }
+        }
+
+        ECInstanceKey key;
+        const auto rc = returnIds ? statement.Step(key) : statement.Step();
+        if (BE_SQLITE_DONE != rc) {
+            const auto rollbackStatus = savepoint.Cancel();
+            if (BE_SQLITE_OK != rollbackStatus)
+                THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to roll back bulk row insert", rollbackStatus)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), Utf8PrintfString("Failed to insert rows[%" PRIu32 "]", rowIndex).c_str(), rc)
+        }
+        if (returnIds)
+            insertedIds.push_back(key.GetInstanceId());
+    }
+
+    const auto commitStatus = savepoint.Commit();
+    if (BE_SQLITE_OK != commitStatus)
+        THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to commit bulk row insert", commitStatus)
+
+    if (!returnIds)
+        return Napi::Number::New(info.Env(), rows.Length());
+
+    auto out = Napi::Array::New(info.Env(), insertedIds.size());
+    for (uint32_t i = 0; i < static_cast<uint32_t>(insertedIds.size()); ++i) {
         Napi::HandleScope scope(info.Env());
-        out.Set(i, Napi::String::New(info.Env(), keys[i].GetInstanceId().ToHexStr()));
+        out.Set(i, Napi::String::New(info.Env(), insertedIds[i].ToHexStr()));
     }
     return out;
 }
@@ -1142,40 +1308,103 @@ Napi::Value JsInterop::BulkInsertInstances(ECDbR db, NapiInfoCR info) {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 Napi::Value JsInterop::BulkUpdateInstances(ECDbR db, NapiInfoCR info) {
-    REQUIRE_ARGUMENT_ARRAY(0, instancesArr);
-    REQUIRE_ARGUMENT_ANY_OBJ(1, argsObj);
+    REQUIRE_ARGUMENT_STRING(0, className);
+    REQUIRE_ARGUMENT_ARRAY(1, propertyNames);
+    REQUIRE_ARGUMENT_ARRAY(2, rows);
 
-    auto& repo = db.GetInstanceRepository();
-    auto instances = BeJsValue(instancesArr);
-    auto args = BeJsValue(argsObj);
+    const auto ecClass = db.Schemas().FindClass(className.c_str());
+    if (nullptr == ecClass)
+        THROW_JS_TYPE_EXCEPTION("className does not identify an ECClass")
 
-    uint64_t affectedRows = 0;
-    int failedIndex = -1;
-    auto rc = repo.BulkUpdate(instances, args, getJsFormat(args), affectedRows, failedIndex);
-    if (rc != BE_SQLITE_DONE) {
-        throwBulkFailure(info.Env(), "update", repo.GetLastError(), failedIndex, rc);
+    BulkWritePlan plan;
+    Utf8String planError;
+    if (!createBulkWritePlan(plan, planError, *ecClass, BeJsConst(propertyNames)))
+        THROW_JS_TYPE_EXCEPTION(planError.c_str())
+
+    Utf8String ecsql("UPDATE ");
+    ecsql.append(ecClass->GetECSqlName()).append(" SET ");
+    for (size_t i = 0; i < plan.m_accessStrings.size(); ++i) {
+        if (i > 0)
+            ecsql.append(",");
+        ecsql.append(plan.m_accessStrings[i]).append("=?");
     }
-    return Napi::Number::New(info.Env(), static_cast<double>(affectedRows));
-}
+    ecsql.append(" WHERE [ECInstanceId]=?");
 
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-Napi::Value JsInterop::BulkDeleteInstances(ECDbR db, NapiInfoCR info) {
-    REQUIRE_ARGUMENT_ARRAY(0, keysArr);
-    REQUIRE_ARGUMENT_ANY_OBJ(1, argsObj);
-
-    auto& repo = db.GetInstanceRepository();
-    auto keys = BeJsValue(keysArr);
-    auto args = BeJsValue(argsObj);
-
-    uint64_t affectedRows = 0;
-    int failedIndex = -1;
-    auto rc = repo.BulkDelete(keys, args, getJsFormat(args), affectedRows, failedIndex);
-    if (rc != BE_SQLITE_DONE) {
-        throwBulkFailure(info.Env(), "delete", repo.GetLastError(), failedIndex, rc);
+    ECSqlStatement statement;
+    const auto prepareStatus = statement.Prepare(db, ecsql.c_str());
+    if (!prepareStatus.IsSuccess()) {
+        const auto rc = prepareStatus.IsSQLiteError() ? prepareStatus.GetSQLiteError() : BE_SQLITE_ERROR;
+        THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to prepare bulk update ECSQL", rc)
     }
-    return Napi::Number::New(info.Env(), static_cast<double>(affectedRows));
+
+    Savepoint savepoint(db, "bulkUpdateInstances");
+    if (!savepoint.IsActive())
+        THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to start bulk update savepoint", BE_SQLITE_ERROR)
+
+    auto bindings = createBulkWriteBindings(plan, statement);
+    auto& idBinder = statement.GetBinder(static_cast<int>(plan.m_properties.size() + 1));
+    bvector<Utf8String> stringBuffers(plan.m_properties.size());
+    uint32_t affectedRows = 0;
+    for (uint32_t rowIndex = 0; rowIndex < rows.Length(); ++rowIndex) {
+        const auto rowValue = rows.Get(rowIndex);
+        if (!rowValue.IsArray() || rowValue.As<Napi::Array>().Length() != plan.m_properties.size() + 1) {
+            const auto rollbackStatus = savepoint.Cancel();
+            if (BE_SQLITE_OK != rollbackStatus)
+                THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to roll back bulk update", rollbackStatus)
+            THROW_JS_TYPE_EXCEPTION(Utf8PrintfString("rows[%" PRIu32 "] must contain an ECInstanceId followed by exactly %" PRIu64 " property values", rowIndex, static_cast<uint64_t>(plan.m_properties.size())).c_str())
+        }
+        const auto row = rowValue.As<Napi::Array>();
+        const auto idValue = row.Get(static_cast<uint32_t>(0));
+        if (!idValue.IsString()) {
+            const auto rollbackStatus = savepoint.Cancel();
+            if (BE_SQLITE_OK != rollbackStatus)
+                THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to roll back bulk update", rollbackStatus)
+            THROW_JS_TYPE_EXCEPTION(Utf8PrintfString("rows[%" PRIu32 "][0] must be an ECInstanceId string", rowIndex).c_str())
+        }
+
+        Utf8String idString = idValue.As<Napi::String>().Utf8Value();
+        ECInstanceId id;
+        if (SUCCESS != ECInstanceId::FromString(id, idString.c_str())) {
+            const auto rollbackStatus = savepoint.Cancel();
+            if (BE_SQLITE_OK != rollbackStatus)
+                THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to roll back bulk update", rollbackStatus)
+            THROW_JS_TYPE_EXCEPTION(Utf8PrintfString("rows[%" PRIu32 "][0] is not a valid ECInstanceId", rowIndex).c_str())
+        }
+
+        statement.Reset();
+        statement.ClearBindings();
+        for (uint32_t propertyIndex = 0; propertyIndex < plan.m_properties.size(); ++propertyIndex) {
+            const auto bindStatus = bindBulkWriteValue(bindings[propertyIndex], row.Get(propertyIndex + 1), stringBuffers[propertyIndex], db.GetClassLocater());
+            if (!bindStatus.IsSuccess()) {
+                const auto rollbackStatus = savepoint.Cancel();
+                if (BE_SQLITE_OK != rollbackStatus)
+                    THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to roll back bulk update", rollbackStatus)
+                THROW_JS_TYPE_EXCEPTION(Utf8PrintfString("Failed to bind rows[%" PRIu32 "][%" PRIu32 "]", rowIndex, propertyIndex + 1).c_str())
+            }
+        }
+        if (!idBinder.BindId(id).IsSuccess()) {
+            const auto rollbackStatus = savepoint.Cancel();
+            if (BE_SQLITE_OK != rollbackStatus)
+                THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to roll back bulk update", rollbackStatus)
+            THROW_JS_TYPE_EXCEPTION(Utf8PrintfString("Failed to bind rows[%" PRIu32 "][0]", rowIndex).c_str())
+        }
+
+        const auto rc = statement.Step();
+        if (BE_SQLITE_DONE != rc) {
+            const auto rollbackStatus = savepoint.Cancel();
+            if (BE_SQLITE_OK != rollbackStatus)
+                THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to roll back bulk update", rollbackStatus)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), Utf8PrintfString("Failed to update rows[%" PRIu32 "]", rowIndex).c_str(), rc)
+        }
+        if (db.GetModifiedRowCount() > 0)
+            ++affectedRows;
+    }
+
+    const auto commitStatus = savepoint.Commit();
+    if (BE_SQLITE_OK != commitStatus)
+        THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to commit bulk update", commitStatus)
+
+    return Napi::Number::New(info.Env(), affectedRows);
 }
 
 //---------------------------------------------------------------------------------------
