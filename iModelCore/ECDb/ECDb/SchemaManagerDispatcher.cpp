@@ -1463,6 +1463,12 @@ SchemaImportResult MainSchemaManager::MapSchemas(SchemaImportContext& ctx, bvect
         return failedToMap();
     }
 
+    // All property maps are now persisted. Refresh once, after both SaveDbSchema passes, so
+    // relationship derivation and later readers see the final class-to-table associations.
+    if (SUCCESS != DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(m_ecdb)) {
+        return failedToMap();
+    }
+
     if (ctx.MaintainsDataTables()) {
         // Same step UpdateDbSchema runs, and the only implementation of it. Skipped along with the
         // tables themselves: the sync db builds none, and nothing there reads the constraints.
@@ -2553,9 +2559,6 @@ BentleyStatus MainSchemaManager::SaveDbSchema(SchemaImportContext& ctx) const
             return ERROR;
             }
         }
-
-    if (SUCCESS != DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(m_ecdb))
-        return ERROR;
 
     m_lightweightCache.Clear();
     return SUCCESS;

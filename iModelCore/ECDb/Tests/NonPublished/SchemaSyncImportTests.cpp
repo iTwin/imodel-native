@@ -95,6 +95,32 @@ bool HasClass(ECDbR db, Utf8CP schemaName, Utf8CP className) {
     return stmt.Step() == BE_SQLITE_ROW;
 }
 
+int64_t CountClassTableMappings(ECDbR db, Utf8CP schemaName, Utf8CP className) {
+    Statement stmt;
+    if (stmt.Prepare(db, R"sql(
+        SELECT COUNT(*) FROM main.ec_cache_ClassHasTables cht
+        JOIN main.ec_Class c ON c.Id=cht.ClassId
+        JOIN main.ec_Schema s ON s.Id=c.SchemaId
+        WHERE s.Name=? AND c.Name=?)sql") != BE_SQLITE_OK)
+        return -1;
+    stmt.BindText(1, schemaName, Statement::MakeCopy::No);
+    stmt.BindText(2, className, Statement::MakeCopy::No);
+    return stmt.Step() == BE_SQLITE_ROW ? stmt.GetValueInt64(0) : -1;
+}
+
+int64_t CountClassHierarchyEntries(ECDbR db, Utf8CP schemaName, Utf8CP className) {
+    Statement stmt;
+    if (stmt.Prepare(db, R"sql(
+        SELECT COUNT(*) FROM main.ec_cache_ClassHierarchy ch
+        JOIN main.ec_Class c ON c.Id=ch.ClassId
+        JOIN main.ec_Schema s ON s.Id=c.SchemaId
+        WHERE s.Name=? AND c.Name=?)sql") != BE_SQLITE_OK)
+        return -1;
+    stmt.BindText(1, schemaName, Statement::MakeCopy::No);
+    stmt.BindText(2, className, Statement::MakeCopy::No);
+    return stmt.Step() == BE_SQLITE_ROW ? stmt.GetValueInt64(0) : -1;
+}
+
 // Does this file know the named schema?
 bool HasSchema(ECDbR db, Utf8CP schemaName) {
     Statement stmt;
@@ -1724,6 +1750,36 @@ TEST_F(SchemaSyncImportTestFixture, RemapInOneBriefcaseSurvivesInTheOther)
         EXPECT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << "writing through the consolidated column failed";
         ASSERT_EQ(BE_SQLITE_OK, briefcase->SaveChanges());
     }
+    }
+
+// ---------------------------------------------------------------------------------------
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, OrdinaryImportLeavesCacheTablesCurrent)
+    {
+    ECDbHub hub;
+    auto db = hub.CreateBriefcase();
+
+    ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*db, RelationshipSchema()));
+
+    for (Utf8CP className : { "Parent", "Child", "Tag" }) {
+        EXPECT_EQ(1, CountClassHierarchyEntries(*db, "RelTest", className)) << className;
+        EXPECT_EQ(1, CountClassTableMappings(*db, "RelTest", className)) << className;
+    }
+    }
+
+// ---------------------------------------------------------------------------------------
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, OrdinaryImportDerivesRelationshipForeignKeysFromFreshCache)
+    {
+    ECDbHub hub;
+    auto db = hub.CreateBriefcase();
+
+    ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*db, RelationshipSchema()));
+
+    const auto childDdl = DdlOf(*db, "rel_Child");
+    EXPECT_TRUE(childDdl.ContainsI("FOREIGN KEY")) << "the navigation foreign key was not derived: " << childDdl.c_str();
     }
 
 //=======================================================================================
