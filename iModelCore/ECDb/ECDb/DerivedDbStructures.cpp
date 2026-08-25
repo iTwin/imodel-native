@@ -14,12 +14,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //static
 BentleyStatus DerivedDbStructures::Derive(MainSchemaManager const& manager)
     {
-    // The relationship pass reads ec_cache_ClassHasTables through ForeignKeyPartitionView.
-    // SchemaWriter repopulates that cache before mapping, so inside an import it is stale for
-    // the classes just mapped. Repopulating here keeps both call sites on the same footing.
-    if (SUCCESS != manager.RepopulateCacheTables())
-        return ERROR;
-
     if (SUCCESS != AddChildTableForeignKeys(manager))
         return ERROR;
 

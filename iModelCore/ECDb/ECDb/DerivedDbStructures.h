@@ -45,6 +45,8 @@ struct DerivedDbStructures final
 
     public:
         //! @param[in] manager schema manager whose in-memory DbTables get the structures
+        //! @pre The EC cache tables reflect the persisted metadata. Relationship derivation reads
+        //!      ec_cache_ClassHasTables, so callers must refresh the caches after their last metadata change.
         static BentleyStatus Derive(MainSchemaManager const&);
     };
 
