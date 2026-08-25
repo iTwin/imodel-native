@@ -98,8 +98,7 @@ BentleyStatus TestFileCreator::Run()
 //---------------------------------------------------------------------------------------
 JsonValue::JsonValue(Utf8CP json)
     {
-    // BeJsDocument::Parse asserts on nullptr, whereas Json::Reader::Parse silently absorbed it
-    // through its Utf8String parameter.
+    // BeJsDocument::Parse asserts on nullptr, so reject empty input before parsing.
     if (Utf8String::IsNullOrEmpty(json))
         {
         ADD_FAILURE() << "Empty JSON string";
