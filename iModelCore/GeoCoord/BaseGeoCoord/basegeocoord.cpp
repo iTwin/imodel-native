@@ -10246,11 +10246,15 @@ StatusInt VerticalDatumInfo::ToJson(BeJsValue jsonValue) const
         jsonValue["deprecated"] = m_deprecated;
 		
     BeJsValue extent(jsonValue["extent"]);
-    BeJsValue sw(extent["southWest"]);
-    BeJsValue ne(extent["northEast"]);
+    extent.toObject();
 
+    BeJsValue sw(extent["southWest"]);
+    sw.toObject();
     sw["latitude"] = m_extent.low.y;
     sw["longitude"] = m_extent.low.x;
+
+    BeJsValue ne(extent["northEast"]);
+    ne.toObject();
     ne["latitude"] = m_extent.high.y;
     ne["longitude"] = m_extent.high.x;
 
@@ -14507,6 +14511,8 @@ StatusInt BaseGCS::FromVerticalJson(BeJsConst jsonValue, Utf8StringR errorMessag
             return GEOCOORDERR_BadArg;
             }
         }
+    else if (SUCCESS != status)
+        return status; // id property not specified and the rest could not be used ... return error
 
     return SetVerticalDatumCode(vertCode);
 }
