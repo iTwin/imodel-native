@@ -239,6 +239,25 @@ graph performs both. Nothing enforces the claim, since the materialization check
 named in `dependencies` and `overrides`, so re-audit it whenever a manifest or a pinned version
 changes — an upstream bump can add a platform branch without any change on our side.
 
+vcpkg also builds tool ports that are never linked into what we ship — cmake helpers, `gn`, python
+packaging, the `sevenzip` extractor, and so on. `vcpkg_download_mend_sources.ps1` strips each such
+port's `buildtrees/<port>` and `packages/<port>_*` out of the scan tree right after that triplet's
+sources are materialized, so Mend never flags them (e.g. `sevenzip`'s license, which does not apply
+to code we don't distribute). A port is recognized as build-only if its name starts with `vcpkg-`
+(vcpkg's own convention for its helper ports), if it is in the shared `$MendBuiltinBuildOnlyPorts`
+list in `vcpkg_mend_config.ps1`, or if it is listed in that consumer's `vcpkg-mend.json` under an
+optional `excludePorts` array — add a port there when Mend flags a new build-only source that the
+shared list does not already cover.
+
+Host-tool ports also get fully *installed* (not just downloaded) whenever the scanned target
+triplet differs from the Mend agent's own native triplet (e.g. this repo's `x64-linux` scan
+running on a Windows or macOS agent) — vcpkg needs the real native toolchain to run things like
+`vcpkg_cmake_get_vars` against it. That install lands in a sibling directory named for the host
+triplet (e.g. `arm64-osx/share/vcpkg-cmake/copyright`), separate from the port-name-keyed
+`buildtrees`/`packages` pruning above. Since vcpkg only ever creates `buildtrees`, `packages`,
+`vcpkg`, and `generated-triplets` under a triplet's own install root, `vcpkg_download_mend_sources.ps1`
+deletes any other top-level directory there wholesale rather than matching it port-by-port.
+
 ### Cache locations and environment overrides
 
 The wrappers keep vcpkg's downloads/tools tree, registry git cache, and default binary archive cache in a **persistent, per-user** base directory rather than under `VCPKG_ROOT` or `$OutRoot`. This means the default caches survive a clean build (tools, source archives, and the shallow registry repo are downloaded once and reused) and do **not** require `VCPKG_ROOT`/`IMODEL_VCPKG_ROOT` to be writable — the resolved root may be a protected Program Files location (the Visual Studio bundled copy) or a shared, read-only checkout.
