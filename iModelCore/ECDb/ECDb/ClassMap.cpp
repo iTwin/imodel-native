@@ -535,6 +535,15 @@ BentleyStatus ClassMap::CopyModifiedBasePropertyMaps(SchemaImportContext& ctx){
 //---------------------------------------------------------------------------------------
 BentleyStatus ClassMap::Update(SchemaImportContext& ctx)
     {
+    // New class maps apply this in DoMapPart2; updates do not pass through that path.
+    const auto applyCurrentTimeStampColumnConstraints = [&]() {
+        PrimitiveECPropertyCP currentTimeStampProp = nullptr;
+        if (SUCCESS != CoreCustomAttributeHelper::GetCurrentTimeStampProperty(currentTimeStampProp, m_ecClass))
+            return ERROR;
+
+        return currentTimeStampProp == nullptr ? SUCCESS : ApplyCurrentTimeStampColumnConstraints(*currentTimeStampProp);
+    };
+
     if (CopyModifiedBasePropertyMaps(ctx) != SUCCESS){
         BeAssert(false && "Unable to copy modified base properties");
         return ERROR;
@@ -569,7 +578,12 @@ BentleyStatus ClassMap::Update(SchemaImportContext& ctx)
 
     //Follow can change ECInstanceId, ECClassId by optionally adding
     if (m_failedToLoadProperties.empty())
+        {
+        if (SUCCESS != applyCurrentTimeStampColumnConstraints())
+            return ERROR;
+
         return DbMappingManager::Classes::MapIndexes(ctx, *this, true);
+        }
 
     BeAssert(m_state == ObjectState::Persisted);
     m_state = ObjectState::Modified;
@@ -614,6 +628,9 @@ BentleyStatus ClassMap::Update(SchemaImportContext& ctx)
         }
 
     m_failedToLoadProperties.clear();
+    if (SUCCESS != applyCurrentTimeStampColumnConstraints())
+        return ERROR;
+
     return DbMappingManager::Classes::MapIndexes(ctx, *this, true);
     }
 

@@ -2344,9 +2344,16 @@ BentleyStatus MainSchemaManager::PurgeOrphanTables(SchemaImportContext& ctx) con
     if (!ctx.MaintainsDataTables())
         return SUCCESS;
 
+    const bool isDataTransformUpgrade = Enum::Contains(
+        ctx.GetOptions(), SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade);
     for (Utf8StringCR name : tablesToDrop)
         {
-        if (m_ecdb.DropTable(name.c_str()) != BE_SQLITE_OK)
+        // The upgrade path owns the resulting schema changeset, so its DROP has to be tracked just
+        // like CREATE TABLE and ALTER TABLE. Other callers retain the existing arbitrary-DDL refusal.
+        const auto rc = isDataTransformUpgrade
+            ? m_ecdb.GetImpl().ExecuteDDL(SqlPrintfString("DROP TABLE [%s]", name.c_str()).GetUtf8CP())
+            : m_ecdb.DropTable(name.c_str());
+        if (rc != BE_SQLITE_OK)
             {
             BeAssert(false && "failed to drop a table");
             return ERROR;

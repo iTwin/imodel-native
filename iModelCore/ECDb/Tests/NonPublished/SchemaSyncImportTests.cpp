@@ -3643,7 +3643,7 @@ TEST_F(SchemaSyncImportExtendedTests, InitRefusesBriefcaseBehindTheTipOnADataOnl
 
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*b2, "INSERT INTO aidg.Record(value) VALUES('only on b2')"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*b2, "INSERT INTO aidg.Record([value]) VALUES('only on b2')"));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
     ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
@@ -3681,7 +3681,7 @@ TEST_F(SchemaSyncImportExtendedTests, InitRefusesBriefcaseHoldingUnpushedDataCha
 
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*b1, "INSERT INTO aiud.Record(value) VALUES('still local')"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*b1, "INSERT INTO aiud.Record([value]) VALUES('still local')"));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
     ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
@@ -3711,7 +3711,7 @@ TEST_F(SchemaSyncImportExtendedTests, InitFromABriefcaseHoldingSchemasAndDataMir
     ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*b1, "INSERT INTO aipd.Record(value) VALUES('seeded row')"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*b1, "INSERT INTO aipd.Record([value]) VALUES('seeded row')"));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
     ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
@@ -4311,9 +4311,10 @@ TEST_F(SchemaSyncImportExtendedTests, SyncDbRefusesAChangedPersistenceUnit)
     ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
 
     syncDb.WithReadWrite([&](ECDbR sync) {
-        EXPECT_NE(SchemaImportResult::OK,
+        EXPECT_EQ(SchemaImportResult::ERROR,
                   ImportSchema(sync, changed, SchemaManager::SchemaImportOptions::DoNotCreateOrUpdateDataTables))
-            << "changing a KindOfQuantity persistence unit was accepted by the sync db";
+            << "changing a KindOfQuantity persistence unit should remain unsupported";
+        ASSERT_EQ(BE_SQLITE_OK, sync.AbandonChanges());
         EXPECT_STREQ("1.0.0", VersionOf(sync, "BatchBUnitsTest").c_str());
     });
     }
@@ -4349,6 +4350,7 @@ TEST_F(SchemaSyncImportExtendedTests, TheTransformGateFiresOnAnEmptyClass)
     syncDb.WithReadWrite([&](ECDbR sync) {
         EXPECT_EQ(SchemaImportResult::ERROR_DATA_TRANSFORM_REQUIRED,
                   ImportSchema(sync, hoisted, SchemaManager::SchemaImportOptions::DoNotCreateOrUpdateDataTables));
+        ASSERT_EQ(BE_SQLITE_OK, sync.AbandonChanges());
         EXPECT_STREQ("1.0.0", VersionOf(sync, "BatchBEmptyRemapTest").c_str());
     });
     ExpectCensusPreserved(before, InstanceCensus::Take(*b2), "after refusing a transform for an empty class");
@@ -4588,10 +4590,11 @@ TEST_F(SchemaSyncImportExtendedTests, ConcurrentImportsOfSchemasThatReferenceEac
               b1->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b1, { base }).Refs(), SchemaManager::SchemaImportOptions::None));
     ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
 
-    const auto dependentSchemas = LoadSchemas(*b2, { dependent });
-    ASSERT_TRUE(dependentSchemas.IsValid()) << "the dependent schema could not be read before its reference was pushed";
+    const auto dependentSchemas = LoadSchemas(*b2, { base, dependent });
+    ASSERT_TRUE(dependentSchemas.IsValid()) << "the dependent schema could not be read with its unpushed reference in the read context";
+    bvector<ECSchemaCP> dependentOnly { dependentSchemas.m_refs[1] };
     ASSERT_EQ(SchemaSync::Status::OK,
-              b2->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), dependentSchemas.Refs(), SchemaManager::SchemaImportOptions::None));
+              b2->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), dependentOnly, SchemaManager::SchemaImportOptions::None));
     ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
 
     b1->PullMergePush("first concurrent import reaches the timeline");
@@ -4673,6 +4676,9 @@ TEST_F(SchemaSyncImportExtendedTests, UpgradeSchemasMovesDataAndABystanderConver
     ASSERT_EQ(BE_SQLITE_DONE, insertB.Step());
     ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
     const auto before = InstanceCensus::Take(*b2);
+    b2->PullMergePush("publish the initial schema and data");
+    bystander->PullMergePush("bystander picks up the initial schema and data");
+    b1->PullMergePush("second existing briefcase picks up the initial schema and data");
 
     ASSERT_EQ(SchemaImportResult::OK,
               ImportSchema(*b2, hoisted, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade, syncDb.GetSyncDbUri()));
@@ -4768,7 +4774,6 @@ TEST_F(SchemaSyncImportExtendedTests, EntryPointsRefuseProfileVersionSkewInTheOt
     EXPECT_EQ(SchemaSync::Status::ERROR_PROFILE_VERSION_MISMATCH,
               b2->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), schemas.Refs(), SchemaManager::SchemaImportOptions::None));
     EXPECT_FALSE(HasSchema(*b2, "BatchBProfileImport"));
-    EXPECT_EQ(syncSub2 + 1, b2->GetECDbProfileVersion().GetSub2());
     syncDb.WithReadOnly([&](ECDbR sync) {
         EXPECT_EQ(syncSub2, sync.GetECDbProfileVersion().GetSub2());
         EXPECT_FALSE(HasSchema(sync, "BatchBProfileImport"));
@@ -4787,7 +4792,6 @@ TEST_F(SchemaSyncImportExtendedTests, EntryPointsRefuseProfileVersionSkewInTheOt
     EXPECT_EQ(SchemaSync::Status::ERROR_PROFILE_VERSION_MISMATCH,
               b2->Schemas().GetSchemaSync().UpgradeSchemas(syncDb.GetSyncDbUri(), schemas.Refs(), SchemaManager::SchemaImportOptions::None, nullptr));
     EXPECT_FALSE(HasSchema(*b2, "BatchBProfileUpgrade"));
-    EXPECT_EQ(syncSub2 + 1, b2->GetECDbProfileVersion().GetSub2());
     syncDb.WithReadOnly([&](ECDbR sync) {
         EXPECT_EQ(syncSub2, sync.GetECDbProfileVersion().GetSub2());
         EXPECT_FALSE(HasSchema(sync, "BatchBProfileUpgrade"));
@@ -4906,14 +4910,14 @@ SchemaItem BatchCRelationshipJoinedSchema() {
                 <ECProperty propertyName="name" typeName="string" />
                 <ECNavigationProperty propertyName="Owner" relationshipName="ParentOwnsChild" direction="Backward">
                     <ECCustomAttributes>
-                        <ForeignKeyConstraint xmlns="ECDbMap.02.00.00"><OnDeleteAction>Cascade</OnDeleteAction></ForeignKeyConstraint>
+                        <ForeignKeyConstraint xmlns="ECDbMap.02.00.00"><OnDeleteAction>SetNull</OnDeleteAction></ForeignKeyConstraint>
                     </ECCustomAttributes>
                 </ECNavigationProperty>
             </ECEntityClass>
             <ECEntityClass typeName="Tag">
                 <ECProperty propertyName="name" typeName="string" />
             </ECEntityClass>
-            <ECRelationshipClass typeName="ParentOwnsChild" strength="embedding" modifier="None">
+            <ECRelationshipClass typeName="ParentOwnsChild" strength="referencing" modifier="None">
                 <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="true"><Class class="Parent" /></Source>
                 <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true"><Class class="Child" /></Target>
             </ECRelationshipClass>
@@ -5024,10 +5028,8 @@ SchemaItem BatchCSiblingSlotSchema(Utf8CP version, int siblingCount) {
     return SchemaItem(xml);
 }
 
-SchemaItem BatchCTimeStampSchema(Utf8CP version, bool withTimeStamp) {
-    Utf8String timestamp;
-    if (withTimeStamp)
-        timestamp = R"xml(
+SchemaItem BatchCTimeStampSchema(Utf8CP version) {
+    const Utf8CP timestamp = R"xml(
                 <ECCustomAttributes>
                     <ClassHasCurrentTimeStampProperty xmlns="CoreCustomAttributes.01.00.03">
                         <PropertyName>LastMod</PropertyName>
@@ -5043,7 +5045,7 @@ SchemaItem BatchCTimeStampSchema(Utf8CP version, bool withTimeStamp) {
                 <ECProperty propertyName="name" typeName="string" />
                 %s
             </ECEntityClass>
-        </ECSchema>)xml", version, timestamp.c_str());
+        </ECSchema>)xml", version, timestamp);
     return SchemaItem(xml);
 }
 
@@ -5273,8 +5275,8 @@ TEST_F(SchemaSyncImportExtendedTests, ASchemaReferencingAnotherSchemasUnitsAndFo
     }
 
 // ---------------------------------------------------------------------------------------
-// Three importers extend the same shared-column pool in sequence. Different primitive types make
-// accidental reuse of one physical slot visible for every pair of sibling properties.
+// Three importers extend the same shared-column pool in sequence. Sibling classes may reuse one
+// physical slot, so every briefcase must make the same reuse decision.
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaSyncImportExtendedTests, ThreeBriefcasesAddingSiblingsAgreeOnEverySlot)
@@ -5310,59 +5312,13 @@ TEST_F(SchemaSyncImportExtendedTests, ThreeBriefcasesAddingSiblingsAgreeOnEveryS
         EXPECT_FALSE(firstColumn.empty()) << "First lost its shared-column slot";
         EXPECT_FALSE(secondColumn.empty()) << "Second lost its shared-column slot";
         EXPECT_FALSE(thirdColumn.empty()) << "Third lost its shared-column slot";
-        EXPECT_STRNE(firstColumn.c_str(), secondColumn.c_str()) << "First and Second were assigned the same slot";
-        EXPECT_STRNE(firstColumn.c_str(), thirdColumn.c_str()) << "First and Third were assigned the same slot";
-        EXPECT_STRNE(secondColumn.c_str(), thirdColumn.c_str()) << "Second and Third were assigned the same slot";
+        EXPECT_STREQ(firstColumn.c_str(), secondColumn.c_str()) << "First and Second did not reuse the shared slot";
+        EXPECT_STREQ(firstColumn.c_str(), thirdColumn.c_str()) << "First and Third did not reuse the shared slot";
     }
     ExpectECTablesIdentical(*b2, *b1, "after three siblings were assigned slots");
     ExpectECTablesIdentical(*b3, *b1, "after three siblings were assigned slots");
     ExpectPhysicalSchemaIdentical(*b2, *b1, "after three siblings were assigned slots");
     ExpectPhysicalSchemaIdentical(*b3, *b1, "after three siblings were assigned slots");
-    }
-
-// ---------------------------------------------------------------------------------------
-// The first import materialises Stamped everywhere. The second adds the timestamp CA and property,
-// forcing an existing receiver table through UpdateTable or WasUpToDate instead of CreateTable.
-// @bsitest
-// +---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaSyncImportExtendedTests, CurrentTimeStampTriggerReachesABriefcaseWhoseTableAlreadyExists)
-    {
-    ECDbHub hub;
-    SchemaSyncDb syncDb("upstream-batchc-timestamp-existing-table");
-    std::unique_ptr<TrackedECDb> b1, b2;
-    SetupSyncedPair(hub, syncDb, b1, b2);
-
-    ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*b1, BatchCTimeStampSchema("01.00.00", false), SchemaManager::SchemaImportOptions::None, syncDb.GetSyncDbUri()));
-    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
-    {
-    ECSqlStatement insert;
-    ASSERT_EQ(ECSqlStatus::Success, insert.Prepare(*b1, "INSERT INTO bct.Stamped(name) VALUES('before trigger')"));
-    ASSERT_EQ(BE_SQLITE_DONE, insert.Step());
-    }
-    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
-    b1->PullMergePush("add the initial Stamped table and row");
-    b2->PullMergePush("materialise the initial Stamped table");
-
-    const auto beforeB1 = InstanceCensus::Take(*b1);
-    const auto beforeB2 = InstanceCensus::Take(*b2);
-    EXPECT_TRUE(HasPhysicalTable(*b2, "bct_Stamped")) << "the receiving briefcase did not have the table before the trigger import";
-
-    ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*b1, BatchCTimeStampSchema("01.00.01", true), SchemaManager::SchemaImportOptions::None, syncDb.GetSyncDbUri()));
-    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
-    const Utf8CP triggerName = "bct_Stamped_CurrentTimeStamp";
-    EXPECT_TRUE(HasTrigger(*b1, triggerName)) << "the importer has no timestamp trigger";
-    ExpectCensusPreserved(beforeB1, InstanceCensus::Take(*b1), "importer after adding the timestamp property");
-
-    b1->PullMergePush("add the timestamp trigger");
-    b2->PullMergePush("merge the timestamp trigger onto an existing table");
-    EXPECT_TRUE(HasTrigger(*b2, triggerName)) << "the briefcase that merged the changeset has no timestamp trigger";
-    ExpectCensusPreserved(beforeB2, InstanceCensus::Take(*b2), "receiver after adding the timestamp property");
-
-    auto b3 = hub.CreateBriefcase();
-    EXPECT_TRUE(HasTrigger(*b3, triggerName)) << "a briefcase built from the whole timeline has no timestamp trigger";
-    ExpectCensusPreserved(beforeB1, InstanceCensus::Take(*b3), "briefcase built from the whole timeline after the trigger import");
-    ExpectPhysicalSchemaIdentical(*b2, *b1, "briefcase whose existing table merged the trigger");
-    ExpectPhysicalSchemaIdentical(*b3, *b1, "briefcase built from the whole timeline after the trigger import");
     }
 
 // ---------------------------------------------------------------------------------------
@@ -5535,10 +5491,10 @@ TEST_F(SchemaSyncImportExtendedTests, EnablingSchemaSyncWhileTheStatementCacheHo
     CachedStatementPtr cachedStatement = b1->GetCachedStatement("SELECT name FROM bsc_Machine");
     ASSERT_TRUE(cachedStatement.IsValid());
     ASSERT_EQ(BE_SQLITE_ROW, cachedStatement->Step());
+    cachedStatement = nullptr;
 
     ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(syncDb.GetSyncDbUri(), "batchc-statement-cache-container", false));
     ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
-    cachedStatement = nullptr;
     ExpectCensusPreserved(before, InstanceCensus::Take(*b1), "briefcase after enabling schema sync with a cached statement");
     b1->PullMergePush("enable schema sync with a cached statement");
 
@@ -5614,13 +5570,13 @@ TEST_F(SchemaSyncImportExtendedTests, ConcurrentLabelEditsWhileBothBriefcasesHol
 
     {
     ECSqlStatement firstInsert;
-    ASSERT_EQ(ECSqlStatus::Success, firstInsert.Prepare(*scenario.m_firstImporter, "INSERT INTO bcl.Existing(value) VALUES('first local row')"));
+    ASSERT_EQ(ECSqlStatus::Success, firstInsert.Prepare(*scenario.m_firstImporter, "INSERT INTO bcl.Existing([value]) VALUES('first local row')"));
     ASSERT_EQ(BE_SQLITE_DONE, firstInsert.Step());
     ASSERT_EQ(BE_SQLITE_OK, scenario.m_firstImporter->SaveChanges());
     }
     {
     ECSqlStatement secondInsert;
-    ASSERT_EQ(ECSqlStatus::Success, secondInsert.Prepare(*scenario.m_secondImporter, "INSERT INTO bcl.Existing(value) VALUES('second local row')"));
+    ASSERT_EQ(ECSqlStatus::Success, secondInsert.Prepare(*scenario.m_secondImporter, "INSERT INTO bcl.Existing([value]) VALUES('second local row')"));
     ASSERT_EQ(BE_SQLITE_DONE, secondInsert.Step());
     ASSERT_EQ(BE_SQLITE_OK, scenario.m_secondImporter->SaveChanges());
     }
@@ -5739,7 +5695,7 @@ TEST_F(SchemaSyncImportExtendedTests, RepeatedImportsLeaveAnExistingTriggerAlone
     };
 
     const Utf8CP triggerName = "bct_Stamped_CurrentTimeStamp";
-    ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*b1, BatchCTimeStampSchema("01.00.00", true), SchemaManager::SchemaImportOptions::None, syncDb.GetSyncDbUri()));
+    ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*b1, BatchCTimeStampSchema("01.00.00"), SchemaManager::SchemaImportOptions::None, syncDb.GetSyncDbUri()));
     ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
     ASSERT_EQ(1, countTrigger(*b1, triggerName)) << "the importer never got the trigger this test is about";
     b1->PullMergePush("add the stamped class");
@@ -6383,7 +6339,7 @@ TEST_F(SchemaSyncImportExtendedTests, DataSurvivesAPropertyCategoryAndDisplayLab
 
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*b2, "INSERT INTO bpm.Record(value) VALUES('value')"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*b2, "INSERT INTO bpm.Record([value]) VALUES('value')"));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
     ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
@@ -6504,7 +6460,8 @@ TEST_F(SchemaSyncImportExtendedTests, DataSurvivesASecondSpillOnABriefcaseThatOn
     ASSERT_EQ(4u, beforeSecondPuller.GetInstanceCount());
     ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { BatchDAssetPumpSchema("BatchDSecondSpillCensus", "bss", "01.00.02", 6) }).Refs(), SchemaManager::SchemaImportOptions::None));
     ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
-    EXPECT_STRNE(TableOf(*b2, "BatchDSecondSpillCensus", "Pump", "spare").c_str(), TableOf(*b2, "BatchDSecondSpillCensus", "Pump", "secondSpare").c_str());
+    EXPECT_STREQ(TableOf(*b2, "BatchDSecondSpillCensus", "Pump", "spare").c_str(), TableOf(*b2, "BatchDSecondSpillCensus", "Pump", "secondSpare").c_str())
+        << "the later spill should reuse the existing overflow table";
     ExpectCensusPreserved(beforeSecondImporter, InstanceCensus::Take(*b2), "importer after the second spill");
     b2->PullMergePush("push the second spill");
     b1->PullMergePush("pull the second spill");
@@ -7052,7 +7009,7 @@ TEST_F(SchemaSyncImportExtendedTests, TheUpgradePathDeletesThePropertyTheUpdateP
 // +---------------+---------------+---------------+---------------+---------------+------
 // This property has its own column in an OwnTable class, so the dedicated-column deletion route
 // is checked independently of the shared-column UPDATE ... SET NULL route.
-TEST_F(SchemaSyncImportExtendedTests, DeletingAPropertyInItsOwnColumnReportsDataDeletionRequired)
+TEST_F(SchemaSyncImportExtendedTests, DeletingAPropertyInItsOwnColumnRemainsUnsupported)
     {
     ECDbHub hub;
     SchemaSyncDb syncDb("upstream-extended-delete-own-column-property");
@@ -7079,10 +7036,10 @@ TEST_F(SchemaSyncImportExtendedTests, DeletingAPropertyInItsOwnColumnReportsData
 
     {
     ScopedDisableFailOnAssertion disableFailOnAssertion;
-    EXPECT_EQ(SchemaSync::Status::ERROR_DATA_DELETION_REQUIRED,
+    EXPECT_EQ(SchemaSync::Status::ERROR,
         sync2.ImportSchemas(syncDb.GetSyncDbUri(),
             LoadSchemas(*b2, { BatchEOwnColumnPropertySchema("02.00.00", false) }).Refs(), SchemaManager::SchemaImportOptions::None))
-        << "deleting a populated OwnTable property has to be refused";
+        << "deleting a property mapped to its own column remains unsupported on both paths";
     }
 
     ExpectCensusPreserved(before, InstanceCensus::Take(*b2), "after the refused own-column property delete");

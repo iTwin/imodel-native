@@ -1421,6 +1421,31 @@ DbResult SchemaSyncUpstreamHelper::CopyClosure(ECDbR conn, Utf8CP syncAlias, Utf
             (int)SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::TargetRelationshipConstraint,
             alias, inClasses.c_str()).GetUtf8CP()};
     };
+    // Source id sets contain only rows that still exist. Stale target rows need the wider set of
+    // classes currently owned by the schemas in the closure, including classes the source deleted.
+    // The class rows are removed after their children, so this remains available for the whole pass.
+    const auto targetClasses = Utf8String{SqlPrintfString(
+        "(SELECT Id FROM [%s].ec_Class WHERE SchemaId IN %s)", targetAlias, inSchemas.c_str()).GetUtf8CP()};
+    const auto caStaleFilter = [&](Utf8CP alias) {
+        return Utf8String{SqlPrintfString(
+            "(ContainerType = %d AND ContainerId IN %s) OR "
+            "(ContainerType = %d AND ContainerId IN %s) OR "
+            "(ContainerType = %d AND ContainerId IN (SELECT Id FROM [%s].ec_Property WHERE ClassId IN %s)) OR "
+            "(ContainerType IN (%d,%d) AND ContainerId IN (SELECT Id FROM [%s].ec_RelationshipConstraint WHERE RelationshipClassId IN %s)) OR "
+            "ClassId IN %s",
+            (int)SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Schema, inSchemas.c_str(),
+            (int)SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Class, targetClasses.c_str(),
+            (int)SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Property, alias, targetClasses.c_str(),
+            (int)SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::SourceRelationshipConstraint,
+            (int)SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::TargetRelationshipConstraint,
+            alias, targetClasses.c_str(), targetClasses.c_str()).GetUtf8CP()};
+    };
+    const auto propertyPathStaleFilter = [&](Utf8CP alias) {
+        return Utf8String{SqlPrintfString("RootPropertyId IN (SELECT Id FROM [%s].ec_Property WHERE ClassId IN %s)", alias, targetClasses.c_str()).GetUtf8CP()};
+    };
+    const auto constraintClassStaleFilter = [&](Utf8CP alias) {
+        return Utf8String{SqlPrintfString("ConstraintId IN (SELECT Id FROM [%s].ec_RelationshipConstraint WHERE RelationshipClassId IN %s)", alias, targetClasses.c_str()).GetUtf8CP()};
+    };
     const auto compositeUnitFilter = [&](Utf8CP alias) {
         return Utf8String{SqlPrintfString("FormatId IN (SELECT Id FROM [%s].ec_Format WHERE SchemaId IN %s)", alias, inSchemas.c_str()).GetUtf8CP()};
     };
@@ -1437,6 +1462,7 @@ DbResult SchemaSyncUpstreamHelper::CopyClosure(ECDbR conn, Utf8CP syncAlias, Utf
 
     const auto bySchema = Utf8String{SqlPrintfString("SchemaId IN %s", inSchemas.c_str()).GetUtf8CP()};
     const auto byClass = Utf8String{SqlPrintfString("ClassId IN %s", inClasses.c_str()).GetUtf8CP()};
+    const auto byTargetClass = Utf8String{SqlPrintfString("ClassId IN %s", targetClasses.c_str()).GetUtf8CP()};
 
     // Ordered so that a row's parents land before it does. MirrorTables reverses it for the deletes.
     // Where the stale scope is wider than the source scope, it is because a row the sync db deleted is
@@ -1445,7 +1471,7 @@ DbResult SchemaSyncUpstreamHelper::CopyClosure(ECDbR conn, Utf8CP syncAlias, Utf
         { "ec_Schema",                    Utf8String{SqlPrintfString("Id IN %s", inSchemas.c_str()).GetUtf8CP()}, Utf8String{SqlPrintfString("Id IN %s", inSchemas.c_str()).GetUtf8CP()} },
         { "ec_SchemaReference",           bySchema, bySchema },
         { "ec_Class",                     bySchema, bySchema },
-        { "ec_ClassHasBaseClasses",       byClass, byClass },
+        { "ec_ClassHasBaseClasses",       byClass, byTargetClass },
         { "ec_Enumeration",               bySchema, bySchema },
         { "ec_UnitSystem",                bySchema, bySchema },
         { "ec_Phenomenon",                bySchema, bySchema },
@@ -1454,11 +1480,14 @@ DbResult SchemaSyncUpstreamHelper::CopyClosure(ECDbR conn, Utf8CP syncAlias, Utf
         { "ec_FormatCompositeUnit",       compositeUnitFilter(syncAlias), compositeUnitFilter(targetAlias) },
         { "ec_KindOfQuantity",            bySchema, bySchema },
         { "ec_PropertyCategory",          bySchema, bySchema },
-        { "ec_Property",                  byClass, byClass },
-        { "ec_PropertyPath",              propertyPathFilter(syncAlias), propertyPathFilter(targetAlias) },
-        { "ec_RelationshipConstraint",    Utf8String{SqlPrintfString("RelationshipClassId IN %s", inClasses.c_str()).GetUtf8CP()}, Utf8String{SqlPrintfString("RelationshipClassId IN %s", inClasses.c_str()).GetUtf8CP()} },
-        { "ec_RelationshipConstraintClass", constraintClassFilter(syncAlias), constraintClassFilter(targetAlias) },
-        { "ec_CustomAttribute",           caFilter(syncAlias), caFilter(targetAlias) },
+        { "ec_Property",                  byClass, byTargetClass },
+        { "ec_PropertyPath",              propertyPathFilter(syncAlias), propertyPathStaleFilter(targetAlias) },
+        { "ec_RelationshipConstraint",    Utf8String{SqlPrintfString("RelationshipClassId IN %s", inClasses.c_str()).GetUtf8CP()}, Utf8String{SqlPrintfString("RelationshipClassId IN %s", targetClasses.c_str()).GetUtf8CP()} },
+        { "ec_RelationshipConstraintClass", constraintClassFilter(syncAlias), constraintClassStaleFilter(targetAlias) },
+        // A deleted custom attribute class also removes its instances from containers outside the
+        // closure. The target class row still exists during this child-first delete pass, so it can
+        // identify those stale instances even though the class is already gone from the source.
+        { "ec_CustomAttribute",           caFilter(syncAlias), caStaleFilter(targetAlias) },
         // A table only disappears when the class that owned it does, which the update path refuses,
         // and a table the sync db dropped is not in the closure to begin with.
         { "ec_Table",                     Utf8String{SqlPrintfString("Id IN %s", inTables.c_str()).GetUtf8CP()}, Utf8String{}, false },
@@ -1467,8 +1496,8 @@ DbResult SchemaSyncUpstreamHelper::CopyClosure(ECDbR conn, Utf8CP syncAlias, Utf
         // to belongs to somebody else's schema: it is outside the source scope, so it is only ever
         // removed when the sync db has dropped it too.
         { "ec_Column",                    Utf8String{SqlPrintfString("Id IN %s", inColumns.c_str()).GetUtf8CP()}, Utf8String{SqlPrintfString("TableId IN %s", inTables.c_str()).GetUtf8CP()} },
-        { "ec_ClassMap",                  byClass, byClass },
-        { "ec_PropertyMap",               Utf8String{SqlPrintfString("ClassId IN %s AND ColumnId IN %s", inClasses.c_str(), inColumns.c_str()).GetUtf8CP()}, byClass },
+        { "ec_ClassMap",                  byClass, byTargetClass },
+        { "ec_PropertyMap",               Utf8String{SqlPrintfString("ClassId IN %s AND ColumnId IN %s", inClasses.c_str(), inColumns.c_str()).GetUtf8CP()}, byTargetClass },
         { "ec_Index",                     ownedIndexes, ownedIndexes },
         { "ec_IndexColumn",               Utf8String{SqlPrintfString("ColumnId IN %s AND %s", inColumns.c_str(), indexColumnFilter(syncAlias).c_str()).GetUtf8CP()}, indexColumnFilter(targetAlias) },
     };
@@ -1616,15 +1645,15 @@ SchemaSync::Status SchemaSync::ImportSchemas(SyncDbUri const& syncDbUri, bvector
     BeMutexHolder holder(m_conn.GetImpl().GetMutex());
     const auto effectiveSyncDbUri = syncDbUri.IsEmpty() ? GetDefaultSyncDbUri() : syncDbUri;
 
+    const auto prc = VerifyProfileVersionsMatch(effectiveSyncDbUri);
+    if (prc != Status::OK)
+        return prc;
+
     const auto vrc = VerifySyncDb(effectiveSyncDbUri, true, false);
     if (vrc != Status::OK) {
         LOG.error("SchemaSync::ImportSchemas(): Failed to verify sync db.");
         return vrc;
     }
-
-    const auto prc = VerifyProfileVersionsMatch(effectiveSyncDbUri);
-    if (prc != Status::OK)
-        return prc;
 
     const auto dataVerBeforeImport = SyncDbInfo::From(effectiveSyncDbUri).GetDataVersion();
 
@@ -1748,15 +1777,15 @@ SchemaSync::Status SchemaSync::UpgradeSchemas(SyncDbUri const& syncDbUri, bvecto
     BeMutexHolder holder(m_conn.GetImpl().GetMutex());
     const auto effectiveSyncDbUri = syncDbUri.IsEmpty() ? GetDefaultSyncDbUri() : syncDbUri;
 
+    const auto prc = VerifyProfileVersionsMatch(effectiveSyncDbUri);
+    if (prc != Status::OK)
+        return prc;
+
     const auto vrc = VerifySyncDb(effectiveSyncDbUri, false, false);
     if (vrc != Status::OK) {
         LOG.error("SchemaSync::UpgradeSchemas(): Failed to verify sync db.");
         return vrc;
     }
-
-    const auto prc = VerifyProfileVersionsMatch(effectiveSyncDbUri);
-    if (prc != Status::OK)
-        return prc;
 
     // No re-pointing here, which is the opposite of ImportSchemas: the schemas arrive resolved
     // against this briefcase and the briefcase is what decides. Whatever the sync db holds beyond it
