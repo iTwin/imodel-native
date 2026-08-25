@@ -3371,7 +3371,9 @@ public:
 //! @note The setting is read when a statement is prepared, not when it runs. The statement cache is
 //! emptied on both entry and exit for that reason; a statement a caller is holding open across this
 //! scope keeps whichever behaviour it was prepared with.
-//! @note SQLite exposes no way to read the flag back, so the destructor always clears it.
+//! @note This scope must not overlap another instance or a changeset apply using
+//! SQLITE_CHANGESETAPPLY_FKNOACTION on the same connection. SQLite exposes no way to read the
+//! flag back, so the destructor always clears it.
 // @bsiclass
 //=======================================================================================
 struct SuppressForeignKeyActions final : NonCopyableClass
