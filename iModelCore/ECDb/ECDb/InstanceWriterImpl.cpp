@@ -1640,6 +1640,9 @@ DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& optio
             }
         } else if (hasCheck && m_cache.GetECDb().GetModifiedRowCount() == 0) {
             conflictingProperties = FindConflictingProperties(ctx, classId, id, options.GetExpectedOldValues(), checkBindings);
+        } else if (m_cache.GetECDb().GetModifiedRowCount() == 0) {
+            ctx.SetError("No row was updated. This usually indicates the instance does not exist.");
+            return BE_SQLITE_NOTFOUND;
         }
         m_cache.GetECDb().GetInstanceReader().InvalidateSeekPos(ECInstanceKey(classId, id));
         return rc;
