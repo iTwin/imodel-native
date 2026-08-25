@@ -375,8 +375,12 @@ inline bool NapiValueRef::ForEachProperty(std::function<bool(Utf8CP name, BeJsCo
     auto names = obj.GetPropertyNames();
     auto len = names.Length();
     for (uint32_t i = 0; i < len; ++i) {
-        auto name = names.Get(i).As<Napi::String>().Utf8Value();
-        if (fn(name.c_str(), BeJsConst(*new NapiMemberRef(obj, name, obj[name]))))
+        // Look the value up with the key object V8 already handed us. Going through the UTF-8 name
+        // instead (obj[name]) makes V8 re-create a string from those bytes and re-hash it on every
+        // property of every object, which is pure overhead on hot paths such as bulk instance writes.
+        auto key = names.Get(i);
+        auto name = key.As<Napi::String>().Utf8Value();
+        if (fn(name.c_str(), BeJsConst(*new NapiMemberRef(obj, name, obj.Get(key)))))
             return true;
     }
     return false;
@@ -386,7 +390,9 @@ inline bool NapiValueRef::ForEachArrayMember(std::function<bool(ArrayIndex, BeJs
         return false;
     Napi::HandleScope scope(m_napiVal.Env());
     auto array = m_napiVal.As<Napi::Array>();
-    for (uint32_t i = 0; i < array.Length(); ++i) {
+    const auto length = array.Length();
+    for (uint32_t i = 0; i < length; ++i) {
+        Napi::HandleScope itemScope(m_napiVal.Env());
         if (fn(i, BeJsConst(*new NapiArrayRef(array, i, array[i]))))
             return true;
     }

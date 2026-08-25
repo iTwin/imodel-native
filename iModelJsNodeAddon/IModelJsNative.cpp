@@ -77,6 +77,7 @@ struct FileProps {
 
 template<typename T_Db> struct SQLiteOps {
     virtual T_Db* _GetMyDb() = 0;
+    virtual void _ThrowIfReentrantCall(NapiInfoCR) {}
 
     static FileProps getEmbedFileProps(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, optObj);
@@ -106,6 +107,7 @@ template<typename T_Db> struct SQLiteOps {
     }
 
     T_Db& GetOpenedDb(NapiInfoCR info) {
+        _ThrowIfReentrantCall(info);
         auto* db = _GetMyDb();
         if (db == nullptr || !db->IsDbOpen())
            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db not open", DgnDbStatus::NotOpen);
@@ -395,6 +397,21 @@ struct NativeECDb : BeObjectWrap<NativeECDb>, SQLiteOps<ECDb> {
 private:
     DEFINE_CONSTRUCTOR
     ECDb m_ecdb;
+    bool m_bulkWriteInProgress = false;
+
+    struct BulkWriteScope {
+        bool& m_active;
+        explicit BulkWriteScope(bool& active) : m_active(active) {
+            BeAssert(!m_active);
+            m_active = true;
+        }
+        ~BulkWriteScope() { m_active = false; }
+    };
+
+    void _ThrowIfReentrantCall(NapiInfoCR info) override {
+        if (m_bulkWriteInProgress)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Cannot call ECDb while a bulk instance write is in progress", BE_SQLITE_MISUSE);
+    }
 
 public:
     NativeECDb(NapiInfoCR info) : BeObjectWrap<NativeECDb>(info) {}
@@ -412,6 +429,7 @@ public:
     }
 
     Napi::Value CreateDb(NapiInfoCR info) {
+        _ThrowIfReentrantCall(info);
         REQUIRE_ARGUMENT_STRING(0, dbName);
         DbResult status = JsInterop::CreateECDb(m_ecdb, BeFileName(dbName.c_str(), true));
         if (BE_SQLITE_OK == status) {
@@ -423,6 +441,7 @@ public:
     }
 
     Napi::Value OpenDb(NapiInfoCR info) {
+        _ThrowIfReentrantCall(info);
         REQUIRE_ARGUMENT_STRING(0, dbName);
         REQUIRE_ARGUMENT_INTEGER(1, mode);
         OPTIONAL_ARGUMENT_BOOL(2, upgrade, false);
@@ -482,6 +501,21 @@ public:
         auto& db = GetOpenedDb(info);
         return JsInterop::DeleteInstance(db, info);
     }
+    Napi::Value BulkInsertInstances(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        BulkWriteScope scope(m_bulkWriteInProgress);
+        return JsInterop::BulkInsertInstances(db, info);
+    }
+    Napi::Value BulkUpdateInstances(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        BulkWriteScope scope(m_bulkWriteInProgress);
+        return JsInterop::BulkUpdateInstances(db, info);
+    }
+    Napi::Value BulkDeleteInstances(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        BulkWriteScope scope(m_bulkWriteInProgress);
+        return JsInterop::BulkDeleteInstances(db, info);
+    }
     Napi::Value ConcurrentQueryResetConfig(NapiInfoCR info) {
         if (info.Length() > 0 && info[0].IsObject()) {
             Napi::Object inConf = info[0].As<Napi::Object>();
@@ -490,6 +524,7 @@ public:
         return JsInterop::ConcurrentQueryResetConfig(Env());
     }
     void ConcurrentQueryShutdown(NapiInfoCR info) {
+        _ThrowIfReentrantCall(info);
         ConcurrentQueryMgr::Shutdown(m_ecdb);
     }
     void CloseDbIfOpen() {
@@ -502,6 +537,7 @@ public:
     }
 
     Napi::Value CloseDb(NapiInfoCR info) {
+        _ThrowIfReentrantCall(info);
         CloseDbIfOpen();
         return Napi::Number::New(Env(), (int)BE_SQLITE_OK);
     }
@@ -511,18 +547,21 @@ public:
     }
 
     Napi::Value SaveChanges(NapiInfoCR info) {
+        _ThrowIfReentrantCall(info);
         OPTIONAL_ARGUMENT_STRING(0, changeSetName);
         DbResult status = m_ecdb.SaveChanges(changeSetName.empty() ? nullptr : changeSetName.c_str());
         return Napi::Number::New(Env(), (int)status);
     }
 
     Napi::Value AbandonChanges(NapiInfoCR info) {
+        _ThrowIfReentrantCall(info);
         DbResult status = m_ecdb.AbandonChanges();
         return Napi::Number::New(Env(), (int)status);
     }
 
 
     Napi::Value GetSchemaProps(NapiInfoCR info)  {
+        _ThrowIfReentrantCall(info);
         REQUIRE_ARGUMENT_STRING(0, schemaName);
         auto schema = m_ecdb.Schemas().GetSchema(schemaName, true);
         if (nullptr == schema)
@@ -535,12 +574,14 @@ public:
     }
 
     Napi::Value ImportSchema(NapiInfoCR info) {
+        _ThrowIfReentrantCall(info);
         REQUIRE_ARGUMENT_STRING(0, schemaPathName);
         DbResult status = JsInterop::ImportSchema(m_ecdb, BeFileName(schemaPathName.c_str(), true));
         return Napi::Number::New(Env(), (int)status);
     }
     
     void DropSchemas(NapiInfoCR info) {
+        _ThrowIfReentrantCall(info);
         REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaNames);
         DbResult status = JsInterop::DropSchemas(m_ecdb, schemaNames);
         if (status != BE_SQLITE_OK) {
@@ -549,6 +590,7 @@ public:
     }
 
     void SchemaSyncSetDefaultUri(NapiInfoCR info) {
+        _ThrowIfReentrantCall(info);
         REQUIRE_ARGUMENT_STRING(0, schemaSyncDbUriStr);
         LastErrorListener lastError(m_ecdb);
         auto rc = m_ecdb.Schemas().GetSchemaSync().SetDefaultSyncDbUri(schemaSyncDbUriStr.c_str());
@@ -561,6 +603,7 @@ public:
         }
     }
     Napi::Value SchemaSyncGetDefaultUri(NapiInfoCR info) {
+        _ThrowIfReentrantCall(info);
         auto& syncDbUri = m_ecdb.Schemas().GetSchemaSync().GetDefaultSyncDbUri();
         if (syncDbUri.IsEmpty())
             return Env().Undefined();
@@ -568,6 +611,7 @@ public:
         return Napi::String::New(Env(), syncDbUri.GetUri().c_str());
     }
     void SchemaSyncInit(NapiInfoCR info) {
+        _ThrowIfReentrantCall(info);
         REQUIRE_ARGUMENT_STRING(0, schemaSyncDbUriStr);
         REQUIRE_ARGUMENT_STRING(1, containerId);
         REQUIRE_ARGUMENT_BOOL(2, overrideContainer);
@@ -584,11 +628,13 @@ public:
     }
 
     Napi::Value SchemaSyncEnabled(NapiInfoCR info) {
+        _ThrowIfReentrantCall(info);
         const auto isEnabled = !m_ecdb.Schemas().GetSchemaSync().GetInfo().IsEmpty();
         return Napi::Boolean::New(Env(), isEnabled);
     }
 
     Napi::Value SchemaSyncGetLocalDbInfo(NapiInfoCR info) {
+        _ThrowIfReentrantCall(info);
         auto localDbInfo = m_ecdb.Schemas().GetSchemaSync().GetInfo();
         if (localDbInfo.IsEmpty()) {
             return Env().Undefined();
@@ -599,6 +645,7 @@ public:
     }
 
     Napi::Value SchemaSyncGetSyncDbInfo(NapiInfoCR info) {
+        _ThrowIfReentrantCall(info);
         REQUIRE_ARGUMENT_STRING(0, schemaSyncDbUriStr);
          auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
          auto syncDbInfo = syncDbUri.GetInfo();
@@ -611,6 +658,7 @@ public:
     }
 
     void SchemaSyncPull(NapiInfoCR info) {
+        _ThrowIfReentrantCall(info);
         OPTIONAL_ARGUMENT_STRING(0, schemaSyncDbUriStr);
         auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
         LastErrorListener lastError(m_ecdb);
@@ -625,6 +673,7 @@ public:
     }
 
     void SchemaSyncPush(NapiInfoCR info) {
+        _ThrowIfReentrantCall(info);
         OPTIONAL_ARGUMENT_STRING(0, schemaSyncDbUriStr);
         auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
         LastErrorListener lastError(m_ecdb);
@@ -675,6 +724,9 @@ public:
             InstanceMethod("insertInstance", &NativeECDb::InsertInstance),
             InstanceMethod("updateInstance", &NativeECDb::UpdateInstance),
             InstanceMethod("deleteInstance", &NativeECDb::DeleteInstance),
+            InstanceMethod("bulkInsertInstances", &NativeECDb::BulkInsertInstances),
+            InstanceMethod("bulkUpdateInstances", &NativeECDb::BulkUpdateInstances),
+            InstanceMethod("bulkDeleteInstances", &NativeECDb::BulkDeleteInstances),
             InstanceMethod("saveChanges", &NativeECDb::SaveChanges),
             InstanceMethod("clearECDbCache", &NativeECDb::ClearECDbCache),
             StaticMethod("enableSharedCache", &NativeECDb::EnableSharedCache),

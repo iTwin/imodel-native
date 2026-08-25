@@ -1088,6 +1088,97 @@ Napi::Value JsInterop::DeleteInstance(ECDbR db, NapiInfoCR info) {
 }
 
 //---------------------------------------------------------------------------------------
+// Reads the shared "useJsNames" option used by the instance read/write entry points.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+static JsFormat getJsFormat(BeJsConst args) {
+    return (args.isBoolMember("useJsNames") && args["useJsNames"].asBool(false)) ? JsFormat::JsName : JsFormat::Standard;
+}
+
+//---------------------------------------------------------------------------------------
+// Throws a JS exception describing a failed bulk operation, including the offending row index.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+static void throwBulkFailure(Napi::Env env, Utf8CP opName, Utf8StringCR lastError, int failedIndex, DbResult rc) {
+    Utf8String msg;
+    if (failedIndex >= 0) {
+        msg.Sprintf("Failed to bulk %s instance at index %d. No instance in the batch was written.", opName, failedIndex);
+    } else {
+        msg.Sprintf("Failed to bulk %s instances. No instance in the batch was written.", opName);
+    }
+    if (!lastError.empty()) {
+        msg.append(" ").append(lastError);
+    }
+    THROW_JS_BE_SQLITE_EXCEPTION(env, msg.c_str(), rc);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Napi::Value JsInterop::BulkInsertInstances(ECDbR db, NapiInfoCR info) {
+    REQUIRE_ARGUMENT_ARRAY(0, instancesArr);
+    REQUIRE_ARGUMENT_ANY_OBJ(1, argsObj);
+
+    auto& repo = db.GetInstanceRepository();
+    auto instances = BeJsValue(instancesArr);
+    auto args = BeJsValue(argsObj);
+
+    std::vector<ECInstanceKey> keys;
+    int failedIndex = -1;
+    auto rc = repo.BulkInsert(instances, args, getJsFormat(args), keys, failedIndex);
+    if (rc != BE_SQLITE_DONE) {
+        throwBulkFailure(info.Env(), "insert", repo.GetLastError(), failedIndex, rc);
+    }
+
+    auto out = Napi::Array::New(info.Env(), keys.size());
+    for (uint32_t i = 0; i < (uint32_t)keys.size(); ++i) {
+        Napi::HandleScope scope(info.Env());
+        out.Set(i, Napi::String::New(info.Env(), keys[i].GetInstanceId().ToHexStr()));
+    }
+    return out;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Napi::Value JsInterop::BulkUpdateInstances(ECDbR db, NapiInfoCR info) {
+    REQUIRE_ARGUMENT_ARRAY(0, instancesArr);
+    REQUIRE_ARGUMENT_ANY_OBJ(1, argsObj);
+
+    auto& repo = db.GetInstanceRepository();
+    auto instances = BeJsValue(instancesArr);
+    auto args = BeJsValue(argsObj);
+
+    uint64_t affectedRows = 0;
+    int failedIndex = -1;
+    auto rc = repo.BulkUpdate(instances, args, getJsFormat(args), affectedRows, failedIndex);
+    if (rc != BE_SQLITE_DONE) {
+        throwBulkFailure(info.Env(), "update", repo.GetLastError(), failedIndex, rc);
+    }
+    return Napi::Number::New(info.Env(), static_cast<double>(affectedRows));
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Napi::Value JsInterop::BulkDeleteInstances(ECDbR db, NapiInfoCR info) {
+    REQUIRE_ARGUMENT_ARRAY(0, keysArr);
+    REQUIRE_ARGUMENT_ANY_OBJ(1, argsObj);
+
+    auto& repo = db.GetInstanceRepository();
+    auto keys = BeJsValue(keysArr);
+    auto args = BeJsValue(argsObj);
+
+    uint64_t affectedRows = 0;
+    int failedIndex = -1;
+    auto rc = repo.BulkDelete(keys, args, getJsFormat(args), affectedRows, failedIndex);
+    if (rc != BE_SQLITE_DONE) {
+        throwBulkFailure(info.Env(), "delete", repo.GetLastError(), failedIndex, rc);
+    }
+    return Napi::Number::New(info.Env(), static_cast<double>(affectedRows));
+}
+
+//---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 Napi::Value JsInterop::ReadInstance(ECDbR db, NapiInfoCR info) {

@@ -895,6 +895,20 @@ export declare namespace IModelJsNative {
     public insertInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): Id64String;
     public updateInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean;
     public deleteInstance(key: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean;
+    /** Insert a batch of instances in a single native call.
+     * The batch is all-or-nothing: if any instance fails, none of the instances in the batch are written
+     * and an exception is thrown identifying the index of the offending instance.
+     * @returns the ids of the inserted instances, in the same order as the input.
+     */
+    public bulkInsertInstances(insts: NodeJS.Dict<any>[], args: NodeJS.Dict<any>): Id64String[];
+    /** Update a batch of instances in a single native call. All-or-nothing, see [[bulkInsertInstances]].
+     * @returns the number of supplied instances that matched a row.
+     */
+    public bulkUpdateInstances(insts: NodeJS.Dict<any>[], args: NodeJS.Dict<any>): number;
+    /** Delete a batch of instances in a single native call. All-or-nothing, see [[bulkInsertInstances]].
+     * @returns the number of supplied instances that matched a row.
+     */
+    public bulkDeleteInstances(keys: NodeJS.Dict<any>[], args: NodeJS.Dict<any>): number;
     public getSchemaProps(name: string): SchemaProps;
     public importSchema(schemaPathName: string): DbResult;
     public isOpen(): boolean;

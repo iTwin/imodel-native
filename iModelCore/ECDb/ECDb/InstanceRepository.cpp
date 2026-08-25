@@ -84,6 +84,68 @@ DbResult InstanceRepository::Delete(ECInstanceKeyCR key, BeJsConst userOptions, 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+DbResult InstanceRepository::BulkInsert(BeJsConst instances, BeJsConst userOptions, JsFormat inFmt, std::vector<ECInstanceKey>& keys, int& failedIndex) const {
+    BeMutexHolder _(m_mutex);
+    m_lastError.clear();
+    failedIndex = -1;
+    InstanceWriter::InsertOptions options;
+    options.UseJsNames(inFmt == JsFormat::JsName);
+    if (userOptions.isBoolMember("forceUseId") && userOptions["forceUseId"].asBool(false))
+        options.UseInstanceIdFromJs();
+
+    auto rc = m_ecdb.GetInstanceWriter().InsertBatch(instances, options, keys, failedIndex);
+    if (rc != BE_SQLITE_DONE) {
+        m_lastError = m_ecdb.GetInstanceWriter().GetLastError();
+    }
+    return rc;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult InstanceRepository::BulkUpdate(BeJsConst instances, BeJsConst userOptions, JsFormat inFmt, uint64_t& affectedRows, int& failedIndex) const {
+    BeMutexHolder _(m_mutex);
+    m_lastError.clear();
+    failedIndex = -1;
+    affectedRows = 0;
+    InstanceWriter::UpdateOptions options;
+    options.UseJsNames(inFmt == JsFormat::JsName);
+    // Incremental update re-reads each existing instance so that properties missing from the input
+    // keep their current value. That matches the single instance updateInstance() behavior but is
+    // expensive, so a bulk caller that always supplies complete instances can turn it off.
+    const auto useIncrementalUpdate = userOptions.isBoolMember("useIncrementalUpdate")
+        ? userOptions["useIncrementalUpdate"].asBool(true)
+        : true;
+    options.UseIncrementalUpdate(useIncrementalUpdate);
+
+    auto rc = m_ecdb.GetInstanceWriter().UpdateBatch(instances, options, affectedRows, failedIndex);
+    if (rc != BE_SQLITE_DONE) {
+        m_lastError = m_ecdb.GetInstanceWriter().GetLastError();
+    }
+    return rc;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult InstanceRepository::BulkDelete(BeJsConst keys, BeJsConst userOptions, JsFormat inFmt, uint64_t& affectedRows, int& failedIndex) const {
+    BeMutexHolder _(m_mutex);
+    m_lastError.clear();
+    failedIndex = -1;
+    affectedRows = 0;
+    InstanceWriter::DeleteOptions options;
+    options.UseJsNames(inFmt == JsFormat::JsName);
+
+    auto rc = m_ecdb.GetInstanceWriter().DeleteBatch(keys, options, affectedRows, failedIndex);
+    if (rc != BE_SQLITE_DONE) {
+        m_lastError = m_ecdb.GetInstanceWriter().GetLastError();
+    }
+    return rc;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 DbResult InstanceRepository::Read(ECInstanceKeyCR instKey, BeJsValue outInstance, BeJsConst userOptions, JsFormat fmt) const {
     BeMutexHolder _(m_mutex);
     m_lastError.clear();

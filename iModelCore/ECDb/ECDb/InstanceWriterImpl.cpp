@@ -117,9 +117,13 @@ Utf8String CachedWriteStatement::GetCurrentTimeStampProperty() const {
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-const CachedBinder* CachedWriteStatement::FindBinder(Utf8StringCR name) const {
+const CachedBinder* CachedWriteStatement::FindBinder(Utf8CP name) const {
+    if (name == nullptr) {
+        return nullptr;
+    }
     if (!m_propertyIndexMap.empty()) {
-        auto it = m_propertyIndexMap.find(name);
+        // Heterogeneous lookup: no temporary Utf8String is created for `name`.
+        auto it = m_propertyIndexMap.find(std::string_view(name));
         if (it != m_propertyIndexMap.end()) {
             return it->second;
         }
@@ -298,7 +302,10 @@ CachedWriteStatement* MruStatementCache::TryGet(CacheKey key) {
 
         it = m_cache.insert({key, std::move(cachedStmt)}).first;
         m_mru.push_back(key);
-    } else {
+    } else if (m_mru.empty() || !(m_mru.back() == key)) {
+        // Fast path: in a bulk write consecutive rows almost always target the same class, in which
+        // case the key is already the most recently used one and no MRU bookkeeping is needed.
+        // Doing the erase/push_back unconditionally cost an O(cacheSize) scan for every row.
         m_mru.erase(std::remove(m_mru.begin(), m_mru.end(), key), m_mru.end());
         m_mru.push_back(key);
     }
@@ -316,14 +323,21 @@ CachedWriteStatement* MruStatementCache::TryGet(CacheKey key) {
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-DbResult MruStatementCache::WithInsert(ECClassId classId, std::function<DbResult(CachedWriteStatement&)> fn) {
-    BeMutexHolder _(m_mutex);
-    auto cachedStmt = TryGet(CacheKey(classId, WriterOp::Insert));
+DbResult MruStatementCache::WithOp(CacheKey key, std::function<DbResult(CachedWriteStatement&)> const& fn) {
+    auto cachedStmt = TryGet(key);
     if (cachedStmt == nullptr) {
-        LOG.errorv("Failed to prepare insert statement for class: %s", classId.ToHexStr().c_str());
+        LOG.errorv("Failed to prepare write statement for class: %s", key.GetClassId().ToHexStr().c_str());
         return BE_SQLITE_ERROR;
     }
     return fn(*cachedStmt);
+}
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+DbResult MruStatementCache::WithInsert(ECClassId classId, std::function<DbResult(CachedWriteStatement&)> fn) {
+    BeMutexHolder _(m_mutex);
+    return WithOp(CacheKey(classId, WriterOp::Insert), fn);
 }
 
 //----------------------------------------------------------------------------------
@@ -331,12 +345,7 @@ DbResult MruStatementCache::WithInsert(ECClassId classId, std::function<DbResult
 //+---------------+---------------+---------------+---------------+---------------+-
 DbResult MruStatementCache::WithUpdate(ECClassId classId, std::function<DbResult(CachedWriteStatement&)> fn) {
     BeMutexHolder _(m_mutex);
-    auto cachedStmt = TryGet(CacheKey(classId, WriterOp::Update));
-    if (cachedStmt == nullptr) {
-        LOG.errorv("Failed to prepare update statement for class: %s", classId.ToHexStr().c_str());
-        return BE_SQLITE_ERROR;
-    }
-    return fn(*cachedStmt);
+    return WithOp(CacheKey(classId, WriterOp::Update), fn);
 }
 
 //----------------------------------------------------------------------------------
@@ -344,12 +353,7 @@ DbResult MruStatementCache::WithUpdate(ECClassId classId, std::function<DbResult
 //+---------------+---------------+---------------+---------------+---------------+-
 DbResult MruStatementCache::WithDelete(ECClassId classId, std::function<DbResult(CachedWriteStatement&)> fn) {
     BeMutexHolder _(m_mutex);
-    auto cachedStmt = TryGet(CacheKey(classId, WriterOp::Delete));
-    if (cachedStmt == nullptr) {
-        LOG.errorv("Failed to prepare delete statement for class: %s", classId.ToHexStr().c_str());
-        return BE_SQLITE_ERROR;
-    }
-    return fn(*cachedStmt);
+    return WithOp(CacheKey(classId, WriterOp::Delete), fn);
 }
 //----------------------------------------------------------------------------------
 // @bsimethod
@@ -735,12 +739,10 @@ ECSqlStatus Impl::BindNavigationProperty(BindContext& ctx, NavigationECPropertyC
             return ECSqlStatus(BE_SQLITE_ERROR);
         }
         if (ctx.UseJsNames()) {
-            auto classP = ctx.FindClass(relClassId.asCString());
-            if (classP == nullptr) {
+            if (!ctx.TryFindClassId(relClassId.asString(), classId)) {
                 ctx.SetError("Failed to find class with name: %s", relClassId.asCString());
                 return ECSqlStatus(BE_SQLITE_ERROR);
             }
-            classId = classP->GetId();
         } else {
             if (relClassId.isString() && !IsHexadecimalOrDecimal(relClassId.asString())) {
                 ctx.SetError("Value supplied is not a valid decimal or hexadecimal value for the RelECClassId field %s", relClassId.Stringify().c_str());
@@ -765,12 +767,10 @@ bool Impl::TryGetECClassId(BindContext& ctx, BeJsConst inst, ECClassId& classId)
                 return false;
             }
 
-            auto classP = ctx.FindClass(className.asString());
-            if (classP == nullptr) {
+            if (!ctx.TryFindClassId(className.asString(), classId)) {
                 ctx.SetError("Failed to find class with name: %s", className.asCString());
                 return false;
             }
-            classId = classP->GetId();
         }
 
         // classFullName has lower priority
@@ -781,12 +781,10 @@ bool Impl::TryGetECClassId(BindContext& ctx, BeJsConst inst, ECClassId& classId)
                 return false;
             }
 
-            auto classP = ctx.FindClass(classFullName.asString());
-            if (classP == nullptr) {
+            if (!ctx.TryFindClassId(classFullName.asString(), classId)) {
                 ctx.SetError("Failed to find class with name: %s", classFullName.asCString());
                 return false;
             }
-            classId = classP->GetId();
         }
     } else {
         auto idJs = inst[ECDBSYS_PROP_ECClassId];
@@ -944,6 +942,15 @@ void Impl::ToJson(BeJsValue out, ECInstanceKeyCR key, JsFormat jsFmt) const {
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
+DbResult Impl::RejectReentrantWrite(Utf8CP opName) {
+    m_error.Sprintf("Cannot %s an instance while a bulk instance write is in progress", opName);
+    LOG.errorv("InstanceWriter error: %s", m_error.c_str());
+    return BE_SQLITE_MISUSE;
+}
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
 DbResult Impl::Insert(BeJsConst inst, InstanceWriter::InsertOptions const& options) {
     ECInstanceKey key;
     return Insert(inst, options, key);
@@ -953,6 +960,17 @@ DbResult Impl::Insert(BeJsConst inst, InstanceWriter::InsertOptions const& optio
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
 DbResult Impl::Insert(BeJsConst inst, InstanceWriter::InsertOptions const& options, ECInstanceKey& out) {
+    BeMutexHolder _(m_cache.GetMutex());
+    if (m_inBatch)
+        return RejectReentrantWrite("insert");
+
+    return InsertNoLock(inst, options, out);
+}
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+DbResult Impl::InsertNoLock(BeJsConst inst, InstanceWriter::InsertOptions const& options, ECInstanceKey& out) {
     BindContext ctx = BindContext(*this, inst, options);
     if (!inst.isObject()) {
         ctx.SetError("Expected instance to be of type object");
@@ -970,7 +988,7 @@ DbResult Impl::Insert(BeJsConst inst, InstanceWriter::InsertOptions const& optio
         return BE_SQLITE_ERROR;
     }
 
-    auto rc = m_cache.WithInsert(classId, [&](CachedWriteStatement& stmt) {
+    auto rc = m_cache.WithInsertNoLock(classId, [&](CachedWriteStatement& stmt) {
         ECSqlStatus bindStatus = ECSqlStatus::Success;
         inst.ForEachProperty([&](auto prop, auto val) {
             auto binder = stmt.FindBinder(prop);
@@ -1037,6 +1055,17 @@ DbResult Impl::Insert(BeJsConst inst, InstanceWriter::InsertOptions const& optio
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
 DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& options) {
+    BeMutexHolder _(m_cache.GetMutex());
+    if (m_inBatch)
+        return RejectReentrantWrite("update");
+
+    return UpdateNoLock(inst, options);
+}
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+DbResult Impl::UpdateNoLock(BeJsConst inst, InstanceWriter::UpdateOptions const& options) {
     BindContext ctx = BindContext(*this, inst, options);
     if (!inst.isObject()) {
         ctx.SetError("Expected instance to be of type object");
@@ -1060,7 +1089,7 @@ DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& optio
         return BE_SQLITE_ERROR;
     }
 
-    auto rc = m_cache.WithUpdate(classId, [&](CachedWriteStatement& stmt) {
+    auto rc = m_cache.WithUpdateNoLock(classId, [&](CachedWriteStatement& stmt) {
         ECSqlStatus bindStatus = ECSqlStatus::Success;
         // m_cache.GetECDb().GetInstanceRepository().Read(ECInstanceKey(classId, id), )
         if (options.GetUseIncrementalUpdate()) {
@@ -1139,12 +1168,23 @@ DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& optio
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
 DbResult Impl::Delete(ECInstanceKeyCR key, InstanceWriter::DeleteOptions const& options) {
+    BeMutexHolder _(m_cache.GetMutex());
+    if (m_inBatch)
+        return RejectReentrantWrite("delete");
+
+    return DeleteNoLock(key, options);
+}
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+DbResult Impl::DeleteNoLock(ECInstanceKeyCR key, InstanceWriter::DeleteOptions const& options) {
     BindContext ctx = BindContext(*this, BeJsDocument::Null(), options);
     if (m_cache.GetECDb().IsReadonly()) {
         ctx.SetError("Connection is readonly");
         return BE_SQLITE_READONLY;
     }
-    auto rc = m_cache.WithDelete(key.GetClassId(), [&](CachedWriteStatement& stmt) {
+    auto rc = m_cache.WithDeleteNoLock(key.GetClassId(), [&](CachedWriteStatement& stmt) {
         auto& binder = stmt.GetStatement().GetBinder(1);
         binder.BindId(key.GetInstanceId());
         auto rc = stmt.GetStatement().Step();
@@ -1163,6 +1203,17 @@ DbResult Impl::Delete(ECInstanceKeyCR key, InstanceWriter::DeleteOptions const& 
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
 DbResult Impl::Delete(BeJsConst inst, InstanceWriter::DeleteOptions const& options) {
+    BeMutexHolder _(m_cache.GetMutex());
+    if (m_inBatch)
+        return RejectReentrantWrite("delete");
+
+    return DeleteNoLock(inst, options);
+}
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+DbResult Impl::DeleteNoLock(BeJsConst inst, InstanceWriter::DeleteOptions const& options) {
     BindContext ctx = BindContext(*this, inst, options);
     if (!inst.isObject()) {
         ctx.SetError("Expected instance to be of type object");
@@ -1174,19 +1225,196 @@ DbResult Impl::Delete(BeJsConst inst, InstanceWriter::DeleteOptions const& optio
         return BE_SQLITE_READONLY;
     }
 
-    ECInstanceKey key;
-    if (!TryGetInstanceKey(key, inst, ctx.GetOptions().GetUseJsNames() ? JsFormat::JsName : JsFormat::Standard)) {
-        ctx.SetError("Failed to get ECInstanceId/id and ECClassId/className/classFullName.");
+    ECInstanceId instanceId;
+    if (!TryGetECInstanceId(ctx, inst, instanceId)) {
+        ctx.PrependError("Failed to get ECInstanceId/id.");
         return BE_SQLITE_ERROR;
     }
-    return Delete(key, options);
+
+    ECClassId classId;
+    if (!TryGetECClassId(ctx, inst, classId)) {
+        ctx.PrependError("Failed to get ECClassId/className/classFullName.");
+        return BE_SQLITE_ERROR;
+    }
+    return DeleteNoLock(ECInstanceKey(classId, instanceId), options);
+}
+
+//----------------------------------------------------------------------------------
+// Shared driver for the batch APIs. Takes the statement cache mutex once and wraps the whole
+// batch in a single savepoint so the operation is all-or-nothing.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+DbResult Impl::RunBatch(BeJsConst instances, Utf8CP opName, std::function<DbResult(BeJsConst)> const& rowFn, int& failedIndex) {
+    failedIndex = -1;
+
+    // Besides avoiding one lock operation per row, taking the lock before checking m_inBatch
+    // makes the reentrancy guard and its state transitions atomic.
+    BeMutexHolder _(m_cache.GetMutex());
+    if (m_inBatch) {
+        m_error.Sprintf("Cannot start a bulk %s while another bulk instance write is in progress", opName);
+        LOG.errorv("InstanceWriter error: %s", m_error.c_str());
+        return BE_SQLITE_MISUSE;
+    }
+
+    m_error.clear();
+    if (!instances.isArray()) {
+        m_error.Sprintf("Expected an array of instances for bulk %s", opName);
+        LOG.errorv("InstanceWriter error: %s", m_error.c_str());
+        return BE_SQLITE_ERROR;
+    }
+
+    if (m_cache.GetECDb().IsReadonly()) {
+        m_error = "Connection is readonly";
+        LOG.errorv("InstanceWriter error: %s", m_error.c_str());
+        return BE_SQLITE_READONLY;
+    }
+
+    const auto count = (uint32_t)instances.size();
+    if (count == 0) {
+        return BE_SQLITE_DONE;
+    }
+
+    struct BatchScope {
+        Impl& m_impl;
+        explicit BatchScope(Impl& impl) : m_impl(impl) {
+            m_impl.m_batchClassIds.clear();
+            m_impl.m_inBatch = true;
+        }
+        ~BatchScope() {
+            m_impl.m_inBatch = false;
+            m_impl.m_batchClassIds.clear();
+        }
+    } batchScope(*this);
+
+    Savepoint savepoint(const_cast<ECDbR>(m_cache.GetECDb()), "ecdb_instance_writer_batch");
+    if (!savepoint.IsActive()) {
+        m_error.Sprintf("Failed to start savepoint for bulk %s", opName);
+        LOG.errorv("InstanceWriter error: %s", m_error.c_str());
+        return BE_SQLITE_ERROR;
+    }
+
+    const auto rollback = [&](DbResult failureRc) {
+        if (!savepoint.IsActive())
+            return failureRc;
+
+        const auto rollbackRc = savepoint.Cancel();
+        if (rollbackRc == BE_SQLITE_OK)
+            return failureRc;
+
+        const auto originalError = m_error;
+        m_error.Sprintf("Failed to roll back bulk %s: %s", opName, m_cache.GetECDb().GetLastError().c_str());
+        if (!originalError.empty())
+            m_error.append(" Original error: ").append(originalError);
+        LOG.errorv("InstanceWriter error: %s", m_error.c_str());
+        return rollbackRc;
+    };
+
+    auto rc = BE_SQLITE_DONE;
+    failedIndex = 0;
+    try {
+        instances.ForEachArrayMember([&](BeJsConst::ArrayIndex index, BeJsConst instance) {
+            failedIndex = static_cast<int>(index);
+            rc = rowFn(instance);
+            if (rc == BE_SQLITE_DONE)
+                failedIndex = static_cast<int>(index + 1);
+            return rc != BE_SQLITE_DONE;
+        });
+    } catch (std::exception const& ex) {
+        m_error.Sprintf("Exception while attempting to %s instance at index %d: %s", opName, failedIndex, ex.what());
+        LOG.errorv("InstanceWriter error: %s", m_error.c_str());
+        return rollback(BE_SQLITE_ERROR);
+    } catch (...) {
+        m_error.Sprintf("Unknown exception while attempting to %s instance at index %d", opName, failedIndex);
+        LOG.errorv("InstanceWriter error: %s", m_error.c_str());
+        return rollback(BE_SQLITE_ERROR);
+    }
+
+    if (rc != BE_SQLITE_DONE) {
+        if (m_error.empty()) {
+            m_error.Sprintf("Failed to %s instance at index %d", opName, failedIndex);
+        }
+        return rollback(rc);
+    }
+
+    failedIndex = -1;
+    const auto commitRc = savepoint.Commit();
+    if (commitRc != BE_SQLITE_OK) {
+        m_error.Sprintf("Failed to commit bulk %s: %s", opName, m_cache.GetECDb().GetLastError().c_str());
+        LOG.errorv("InstanceWriter error: %s", m_error.c_str());
+        return rollback(commitRc);
+    }
+    return BE_SQLITE_DONE;
+}
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+DbResult Impl::InsertBatch(BeJsConst instances, InstanceWriter::InsertOptions const& options, std::vector<ECInstanceKey>* keys, int& failedIndex) {
+    if (keys != nullptr && instances.isArray()) {
+        keys->clear();
+        keys->reserve(instances.size());
+    }
+
+    // A batch cannot reuse a single caller supplied instance id for every row.
+    if (options.GetInstanceIdMode() == InstanceWriter::InsertOptions::InstanceIdMode::Manual) {
+        m_error = "Bulk insert does not support a fixed instance id. Use auto or instance ids supplied on each row.";
+        LOG.errorv("InstanceWriter error: %s", m_error.c_str());
+        failedIndex = -1;
+        return BE_SQLITE_ERROR;
+    }
+
+    const auto rc = RunBatch(instances, "insert", [&](BeJsConst inst) {
+        ECInstanceKey key;
+        const auto rowRc = InsertNoLock(inst, options, key);
+        if (rowRc == BE_SQLITE_DONE && keys != nullptr) {
+            keys->push_back(key);
+        }
+        return rowRc;
+    }, failedIndex);
+    if (rc != BE_SQLITE_DONE && keys != nullptr)
+        keys->clear();
+    return rc;
+}
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+DbResult Impl::UpdateBatch(BeJsConst instances, InstanceWriter::UpdateOptions const& options, uint64_t& affectedRows, int& failedIndex) {
+    affectedRows = 0;
+    const auto rc = RunBatch(instances, "update", [&](BeJsConst inst) {
+        const auto rowRc = UpdateNoLock(inst, options);
+        if (rowRc == BE_SQLITE_DONE && m_cache.GetECDb().GetModifiedRowCount() > 0)
+            ++affectedRows;
+        return rowRc;
+    }, failedIndex);
+    if (rc != BE_SQLITE_DONE)
+        affectedRows = 0;
+    return rc;
+}
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+DbResult Impl::DeleteBatch(BeJsConst instances, InstanceWriter::DeleteOptions const& options, uint64_t& affectedRows, int& failedIndex) {
+    affectedRows = 0;
+    const auto rc = RunBatch(instances, "delete", [&](BeJsConst inst) {
+        const auto rowRc = DeleteNoLock(inst, options);
+        if (rowRc == BE_SQLITE_DONE && m_cache.GetECDb().GetModifiedRowCount() > 0)
+            ++affectedRows;
+        return rowRc;
+    }, failedIndex);
+    if (rc != BE_SQLITE_DONE)
+        affectedRows = 0;
+    return rc;
 }
 
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
 void Impl::Reset() {
+    BeMutexHolder _(m_cache.GetMutex());
     m_error.clear();
+    m_batchClassIds.clear();
     m_cache.Reset();
 }
 
@@ -1233,6 +1461,33 @@ DbResult InstanceWriter::Delete(BeJsConst inst, DeleteOptions const& options) {
 //+---------------+---------------+---------------+---------------+---------------+-
 DbResult InstanceWriter::Delete(ECInstanceKeyCR key, DeleteOptions const& options) {
     return m_pImpl->Delete(key, options);
+}
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+DbResult InstanceWriter::InsertBatch(BeJsConst instances, InsertOptions const& options, int& failedIndex) {
+    return m_pImpl->InsertBatch(instances, options, nullptr, failedIndex);
+}
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+DbResult InstanceWriter::InsertBatch(BeJsConst instances, InsertOptions const& options, std::vector<ECInstanceKey>& keys, int& failedIndex) {
+    return m_pImpl->InsertBatch(instances, options, &keys, failedIndex);
+}
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+DbResult InstanceWriter::UpdateBatch(BeJsConst instances, UpdateOptions const& options, uint64_t& affectedRows, int& failedIndex) {
+    return m_pImpl->UpdateBatch(instances, options, affectedRows, failedIndex);
+}
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+DbResult InstanceWriter::DeleteBatch(BeJsConst instances, DeleteOptions const& options, uint64_t& affectedRows, int& failedIndex) {
+    return m_pImpl->DeleteBatch(instances, options, affectedRows, failedIndex);
 }
 //----------------------------------------------------------------------------------
 // @bsimethod
