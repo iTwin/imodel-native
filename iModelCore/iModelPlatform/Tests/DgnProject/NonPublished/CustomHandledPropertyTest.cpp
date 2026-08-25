@@ -224,6 +224,11 @@ TEST_F(GetSetCustomHandledProprty, ElementProperties3d)
         ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue1, Orgindex));
         ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(DPoint3d::From(2, 1, 1))));
         checkValue1.Clear();
+        double maxOrigin = 2 * PlacementOnEarth::CircumferenceOfEarth();
+        ASSERT_EQ(DgnDbStatus::BadArg, el.SetPropertyValue(Orgindex, ECN::ECValue(DPoint3d::From(maxOrigin + 1.0, 0, 0))));
+        ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue1, Orgindex));
+        ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(DPoint3d::From(2, 1, 1))));
+        checkValue1.Clear();
         ASSERT_EQ(DgnDbStatus::Success, el.SetPropertyValue(BBlindex, ECN::ECValue(DPoint3d::From(2, 2, 2))));
         ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue1, BBlindex));
         ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(DPoint3d::From(2, 2, 2))));
@@ -374,6 +379,11 @@ TEST_F(GetSetCustomHandledProprty, ElementProperties2d)
         ASSERT_EQ(DgnDbStatus::BadArg, el.SetPropertyValue(Rotindex, ECN::ECValue(true)));
 
         ASSERT_EQ(DgnDbStatus::Success, el.SetPropertyValue(Orgindex, ECN::ECValue(DPoint2d::From(2, 1))));
+        ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue1, Orgindex));
+        ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(DPoint2d::From(2, 1))));
+        checkValue1.Clear();
+        double maxOrigin = 2 * PlacementOnEarth::CircumferenceOfEarth();
+        ASSERT_EQ(DgnDbStatus::BadArg, el.SetPropertyValue(Orgindex, ECN::ECValue(DPoint2d::From(maxOrigin + 1.0, 0))));
         ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue1, Orgindex));
         ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(DPoint2d::From(2, 1))));
         checkValue1.Clear();

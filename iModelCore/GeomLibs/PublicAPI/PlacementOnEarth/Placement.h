@@ -25,6 +25,17 @@ struct PlacementOnEarth {
     static double constexpr OneCentimeter() { return OneMeter() / 100.0; }
     static double constexpr DiameterOfEarth() { return 12742.0 * OneKilometer(); }      // approximate
     static double constexpr CircumferenceOfEarth() { return 40075.0 * OneKilometer(); } // approximate
+
+    //! Determine whether an origin is within the supported placement range.
+    static bool IsValidOrigin(DPoint2dCR origin) {
+        double maxOrigin = 2 * CircumferenceOfEarth();
+        return fabs(origin.x) <= maxOrigin && fabs(origin.y) <= maxOrigin;
+    }
+
+    static bool IsValidOrigin(DPoint3dCR origin) {
+        double maxOrigin = 2 * CircumferenceOfEarth();
+        return fabs(origin.x) <= maxOrigin && fabs(origin.y) <= maxOrigin && fabs(origin.z) <= maxOrigin;
+    }
 };
 
 //=======================================================================================
@@ -213,7 +224,7 @@ public:
         // The new value will satisfy all GCS in the system dictionary. If these still fail
         // clients should be directed to use more appropriate false easting and use
         // a judiciously chosen global origin.
-        if (fabs(m_origin.x) > 2 * circumferenceOfEarth || fabs(m_origin.y) > 2 * circumferenceOfEarth || fabs(m_origin.z) > 2 * circumferenceOfEarth)
+        if (!PlacementOnEarth::IsValidOrigin(m_origin))
             return false;
 
         return true;
@@ -305,7 +316,7 @@ public:
         // The new value will satisfy all GCS in the system dictionary. If these still fail
         // clients should be directed to use more appropriate false easting and use
         // a judiciously chosen global origin.
-        if (fabs(m_origin.x) > 2 * circumferenceOfEarth || fabs(m_origin.y) > 2 * circumferenceOfEarth)
+        if (!PlacementOnEarth::IsValidOrigin(m_origin))
             return false;
 
         return true;

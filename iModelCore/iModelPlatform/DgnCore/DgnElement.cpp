@@ -2979,6 +2979,9 @@ void dgn_ElementHandler::Geometric3d::_RegisterPropertyAccessors(ECSqlClassInfo&
             uint8_t placementDataFlags = el.GetPlacementDataFlags();                     \
             Placement3d plc = el.GetPlacement();                                         \
             EXPR;                                                                        \
+            if (FLAGS == GeometricElement::PlacementData_Origin &&                       \
+                !PlacementOnEarth::IsValidOrigin(plc.GetOrigin()))                       \
+                return DgnDbStatus::BadArg;                                              \
             auto status = el.SetPlacement(plc);                                          \
             if (DgnDbStatus::Success == status)                                          \
                 {                                                                        \
@@ -3101,6 +3104,9 @@ void dgn_ElementHandler::Geometric2d::_RegisterPropertyAccessors(ECSqlClassInfo&
             uint8_t placementDataFlags = el.GetPlacementDataFlags();                     \
             Placement2d plc = el.GetPlacement();                                         \
             EXPR;                                                                        \
+            if (FLAGS == GeometricElement::PlacementData_Origin &&                       \
+                !PlacementOnEarth::IsValidOrigin(plc.GetOrigin()))                       \
+                return DgnDbStatus::BadArg;                                              \
             auto status = el.SetPlacement(plc);                                          \
             if (DgnDbStatus::Success == status)                                          \
                 {                                                                        \
