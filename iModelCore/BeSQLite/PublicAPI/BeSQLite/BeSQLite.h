@@ -266,7 +266,10 @@ public:
     static uint32_t const FirstValidBriefcaseId() {return 2;}
     //! the last valid briefcaseId
     // NOTE: The 10 largest valid BeBriefcaseIds will not be assigned by iModelHub, so are available to identify special kinds of iModels.
-    static uint32_t const LastValidBriefcaseId() {return MaxRepo() - 10;}
+    static uint32_t const LastValidBriefcaseId() {return MaxRepo() - 11;}
+    //! Reserved briefcase id used for Element IDs allocated by SchemaSync.
+    //! Never assigned by iModelHub. Must stay in sync with TypeScript `BriefcaseIdValue.SchemaSyncElementReserved`.
+    static uint32_t const SchemaSyncElementReserved() {return MaxRepo() - 10;}
     //! An illegal value
     static uint32_t const Illegal() {return (uint32_t)0xffffffff;}
 
