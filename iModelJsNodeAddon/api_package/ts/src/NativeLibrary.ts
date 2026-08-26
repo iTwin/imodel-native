@@ -474,7 +474,7 @@ export declare namespace IModelJsNative {
     /** The JS-cased names of the root properties making up the violated unique index. */
     uniqueConstraintProperties: string[];
     /** The pre-existing instance that the write collided with. Absent if it could not be identified. */
-    conflictingRow?: NodeJS.Dict<any>;
+    conflictingInstance?: NodeJS.Dict<any>;
   }
 
   enum FontType { TrueType = 1, Rsc = 2, Shx = 3 }

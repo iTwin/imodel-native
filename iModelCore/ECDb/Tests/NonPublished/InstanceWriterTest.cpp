@@ -1195,11 +1195,11 @@ TEST_F(InstanceWriterFixture, UniqueConstraintConflictDetailOnInsert) {
     EXPECT_STREQ("code", properties[0u].asCString());
     EXPECT_STREQ("owner", properties[1u].asCString());
 
-    ASSERT_TRUE(detail.isMember("conflictingRow"));
-    auto const& conflictingRow = detail["conflictingRow"];
-    EXPECT_STREQ("0x200", conflictingRow["id"].asCString());
-    EXPECT_STREQ("TestSchema.Element", conflictingRow["classFullName"].asCString());
-    EXPECT_STREQ("first", conflictingRow["label"].asCString());
+    ASSERT_TRUE(detail.isMember("conflictingInstance"));
+    auto const& conflictingInstance = detail["conflictingInstance"];
+    EXPECT_STREQ("0x200", conflictingInstance["id"].asCString());
+    EXPECT_STREQ("TestSchema.Element", conflictingInstance["classFullName"].asCString());
+    EXPECT_STREQ("first", conflictingInstance["label"].asCString());
 }
 
 //---------------------------------------------------------------------------------------
@@ -1229,7 +1229,7 @@ TEST_F(InstanceWriterFixture, UniqueConstraintConflictDetailOnUpdate) {
     EXPECT_STREQ("owner", properties[1u].asCString());
 
     // The row being updated is never its own conflicting row.
-    EXPECT_STREQ("0x200", detail["conflictingRow"]["id"].asCString());
+    EXPECT_STREQ("0x200", detail["conflictingInstance"]["id"].asCString());
 }
 
 //---------------------------------------------------------------------------------------

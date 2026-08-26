@@ -1310,7 +1310,7 @@ void Impl::CaptureUniqueConstraintConflict(Options const& options, ClassMapCR cl
         adaptor.GetOptions().SetConvertClassIdsToClassNames(useJsNames);
         adaptor.GetOptions().SetUseJsNames(useJsNames);
         adaptor.GetOptions().SetUseClassFullNameInsteadofClassName(useJsNames);
-        adaptor.RenderRowAsObject(m_conflictDetail["conflictingRow"], row);
+        adaptor.RenderRowAsObject(m_conflictDetail["conflictingInstance"], row);
     }, readOptions);
 }
 

@@ -579,10 +579,10 @@ struct ConflictRow : public IECSqlRow {
                     }
                 }
 
-                // conflictingRow: read the full existing instance that causes this unique constraint violation
+                // conflictingInstance: read the full existing instance that causes this unique constraint violation
                 ecdb.GetInstanceReader().Seek(InstanceReader::Position(conflictingInstanceId, classId),
                     [&](InstanceReader::IRowContext const& row, PropertyReader::Finder) {
-                        adaptor.RenderRowAsObject(violationJson["conflictingRow"], row);
+                        adaptor.RenderRowAsObject(violationJson["conflictingInstance"], row);
                     });
                 }
             }
