@@ -2672,22 +2672,6 @@ void DisableBloomFilter(SqlDbP db) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SuppressForeignKeyActions::SuppressForeignKeyActions(DbCR db) : m_db(db) {
-    m_db.GetStatementCache().Empty();
-    sqlite3_test_control(SQLITE_TESTCTRL_FK_NO_ACTION, m_db.GetSqlDb(), 1);
-}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-SuppressForeignKeyActions::~SuppressForeignKeyActions() {
-    sqlite3_test_control(SQLITE_TESTCTRL_FK_NO_ACTION, m_db.GetSqlDb(), 0);
-    m_db.GetStatementCache().Empty();
-}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Db::CreateNewDb(Utf8CP inName, CreateParams const& params, BeGuid dbGuid) {
     if (IsDbOpen())
         return BE_SQLITE_ERROR_AlreadyOpen;
@@ -6698,6 +6682,34 @@ DbResult Db::SetBusyTimeout(int ms) {
         return SetBusyTimeout(ms);
 
     return BE_SQLITE_ERROR_NOTOPEN;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult Db::QueryForeignKeyEnforcement(bool& enabled) const {
+    if (!m_dbFile)
+        return BE_SQLITE_ERROR_NOTOPEN;
+
+    int currentState = 0;
+    const auto rc = static_cast<DbResult>(sqlite3_db_config(GetSqlDb(), SQLITE_DBCONFIG_ENABLE_FKEY, -1, &currentState));
+    if (rc == BE_SQLITE_OK)
+        enabled = currentState != 0;
+    return rc;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult Db::SetForeignKeyEnforcement(bool enabled) const {
+    if (!m_dbFile)
+        return BE_SQLITE_ERROR_NOTOPEN;
+
+    int currentState = 0;
+    const auto rc = static_cast<DbResult>(sqlite3_db_config(GetSqlDb(), SQLITE_DBCONFIG_ENABLE_FKEY, enabled ? 1 : 0, &currentState));
+    if (rc != BE_SQLITE_OK)
+        return rc;
+    return (currentState != 0) == enabled ? BE_SQLITE_OK : BE_SQLITE_ERROR;
 }
 
 //---------------------------------------------------------------------------------------

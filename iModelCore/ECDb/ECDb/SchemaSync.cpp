@@ -109,13 +109,16 @@ DbResult SchemaSyncHelper::SaveProfileVersion(DbR conn, ProfileKind kind, Profil
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-int SchemaSyncHelper::ForeignKeyCheck(DbCR conn, std::vector<std::string>const& tables, Utf8CP dbAlias) {
-    int fkViolations = 0;
-    for(auto& table : tables) {
+DbResult SchemaSyncHelper::CheckForeignKeys(DbCR conn, StringList const& tables, Utf8CP dbAlias) {
+    bool hasViolations = false;
+    for (auto const& table : tables) {
         Statement stmt;
-        stmt.Prepare(conn, SqlPrintfString("PRAGMA [%s].foreign_key_check(%s)", dbAlias, table.c_str()));
-        while(BE_SQLITE_ROW == stmt.Step()) {
-            ++fkViolations;
+        auto rc = stmt.Prepare(conn, SqlPrintfString("PRAGMA [%s].foreign_key_check([%s])", dbAlias, table.c_str()));
+        if (rc != BE_SQLITE_OK)
+            return rc;
+
+        while ((rc = stmt.Step()) == BE_SQLITE_ROW) {
+            hasViolations = true;
             LOG.errorv("%s\n",
                 SqlPrintfString("[table=%s], [rowid=%lld], [parent=%s], [fkid=%d]",
                                 stmt.GetValueText(0),
@@ -124,8 +127,12 @@ int SchemaSyncHelper::ForeignKeyCheck(DbCR conn, std::vector<std::string>const& 
                                 stmt.GetValueInt(3))
                     .GetUtf8CP());
         }
+
+        if (rc != BE_SQLITE_DONE)
+            return rc;
     }
-    return fkViolations;
+
+    return hasViolations ? BE_SQLITE_CONSTRAINT_FOREIGNKEY : BE_SQLITE_OK;
 }
 
 //---------------------------------------------------------------------------------------
@@ -1168,6 +1175,82 @@ DbResult SchemaSyncUpstreamHelper::UpsertFiltered(ECDbR conn, Utf8CP tableName, 
     return BE_SQLITE_OK;
 }
 
+struct AttachedDbTransaction final : NonCopyableClass {
+private:
+    DbR m_db;
+    Utf8String m_alias;
+    bool m_attached = true;
+
+    DbResult Detach() {
+        auto rc = m_db.DetachDb(m_alias.c_str());
+        if (rc == BE_SQLITE_OK)
+            m_attached = false;
+        return rc;
+    }
+
+public:
+    AttachedDbTransaction(DbR db, Utf8CP alias) : m_db(db), m_alias(alias) {}
+
+    ~AttachedDbTransaction() {
+        if (!m_attached)
+            return;
+
+        const auto rc = AbandonAndDetach();
+        if (rc != BE_SQLITE_OK)
+            LOG.errorv("AttachedDbTransaction: Failed to roll back and detach %s. %s", m_alias.c_str(), BeSQLiteLib::GetErrorString(rc));
+    }
+
+    DbResult AbandonAndDetach() {
+        auto rc = m_db.AbandonChanges();
+        if (rc != BE_SQLITE_OK)
+            return rc;
+        return Detach();
+    }
+
+    DbResult CommitAndDetach() {
+        auto rc = m_db.SaveChanges();
+        if (rc != BE_SQLITE_OK)
+            return rc;
+        return Detach();
+    }
+};
+
+struct ForeignKeyEnforcementDisabler final : NonCopyableClass {
+private:
+    DbCR m_db;
+    DbResult m_status = BE_SQLITE_OK;
+    bool m_restoreEnabled = false;
+
+public:
+    explicit ForeignKeyEnforcementDisabler(DbCR db) : m_db(db) {
+        bool wasEnabled = false;
+        m_status = m_db.QueryForeignKeyEnforcement(wasEnabled);
+        if (m_status != BE_SQLITE_OK || !wasEnabled)
+            return;
+
+        m_status = m_db.SetForeignKeyEnforcement(false);
+        if (m_status == BE_SQLITE_OK)
+            m_restoreEnabled = true;
+    }
+
+    ~ForeignKeyEnforcementDisabler() {
+        if (m_restoreEnabled && Restore() != BE_SQLITE_OK)
+            LOG.error("ForeignKeyEnforcementDisabler: Failed to restore foreign key enforcement.");
+    }
+
+    DbResult GetStatus() const { return m_status; }
+
+    DbResult Restore() {
+        if (!m_restoreEnabled)
+            return m_status;
+
+        auto rc = m_db.SetForeignKeyEnforcement(true);
+        if (rc == BE_SQLITE_OK)
+            m_restoreEnabled = false;
+        return rc;
+    }
+};
+
 //---------------------------------------------------------------------------------------
 // Make the target's copy of each table match the source's within the plan's scopes, touching as few
 // rows as possible. Both directions of schema sync run through here: the upgrade path mirrors a
@@ -1208,30 +1291,25 @@ DbResult SchemaSyncUpstreamHelper::UpsertFiltered(ECDbR conn, Utf8CP tableName, 
 // the source, so the source holds every row the target does - and the source satisfies the unique
 // indexes. That is why pass 2 cannot conflict, which makes it correct as well as cheap.
 //
-// Foreign key actions are suppressed throughout, and every pass depends on it. Not every ec_ foreign
+// Foreign key enforcement is disabled throughout, and every pass depends on it. Not every ec_ foreign
 // key cascades: ec_Table.ExclusiveRootClassId and ec_RelationshipConstraint.AbstractConstraintClassId
 // are ON DELETE SET NULL, so removing a stale class would null a column in a surviving row that pass 2
 // never revisits, since its key is still there. The cascading ones are worse than wasteful - deleting
 // a KindOfQuantity takes every ec_Property pointing at it, and those properties are restored only if
-// they happen to fall inside m_sourceScope. defer_foreign_keys is still needed on top: it defers the
-// *check* to commit, by which point pass 2 has restored what pass 1 removed.
+// they happen to fall inside m_sourceScope.
 //
-// Suppressing them puts the whole burden on the plan: with no cascade, an orphan is cleared only by
-// its own table's statements, so every table that references a deleted row has to be in the plan.
-// This is why the whole-file mirror covers ec_cache_ where the closure does not.
+// Disabling enforcement puts the whole burden on the plan: with no cascade, an orphan is cleared only
+// by its own table's statements, so every table that references a deleted row has to be in the plan.
+// This is why the whole-file mirror covers ec_cache_ where the closure does not. The completed target
+// is checked explicitly before enforcement is restored.
 //
-// The delete sweep repeats until it deletes nothing. With the actions suppressed that is one
-// productive sweep and one clean one, and the clean one only reads. It stays because the suppression
-// is a connection flag read at statement-prepare time: if it ever fails to take, this degrades to
-// slow-but-correct instead of to a silently mangled target.
+// The delete sweep repeats until it deletes nothing. With enforcement disabled that is one productive
+// sweep and one clean read-only sweep. It stays as a guard against a plan whose scopes depend on rows
+// another table's delete removed earlier in the sweep.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult SchemaSyncUpstreamHelper::MirrorTables(ECDbR conn, bvector<TablePlan> const& plan, Utf8CP sourceAlias, Utf8CP targetAlias) {
-    auto rc = conn.ExecuteSql("PRAGMA defer_foreign_keys=1");
-    if (rc != BE_SQLITE_OK) {
-        LOG.error("SchemaSyncUpstreamHelper::MirrorTables(): Failed to set defer_foreign_keys=1");
-        return rc;
-    }
+    auto rc = BE_SQLITE_OK;
 
     struct TableStatements {
         Utf8CP m_table;
@@ -1242,8 +1320,11 @@ DbResult SchemaSyncUpstreamHelper::MirrorTables(ECDbR conn, bvector<TablePlan> c
     };
 
     bvector<TableStatements> statements;
+    StringList targetTables;
+    targetTables.reserve(plan.size());
     for (auto const& entry : plan) {
         Utf8CP table = entry.m_table;
+        targetTables.push_back(table);
         SchemaSyncHelper::StringList cols, pkCols;
         rc = SchemaSyncHelper::GetColumnNames(conn, targetAlias, table, cols);
         if (rc != BE_SQLITE_OK) {
@@ -1302,9 +1383,14 @@ DbResult SchemaSyncUpstreamHelper::MirrorTables(ECDbR conn, bvector<TablePlan> c
         statements.push_back(built);
     }
 
-    // Everything from here writes rows, so the suppression covers every pass. PRAGMA foreign_keys is
-    // not an option: SQLite ignores it inside a transaction and ECDb opens with DefaultTxn::Yes.
-    SuppressForeignKeyActions noForeignKeyActions(conn);
+    // sqlite3_db_config can change this setting inside ECDb's default transaction and restores the
+    // actual prior state, unlike PRAGMA foreign_keys or SQLite's test-only FK_NO_ACTION switch.
+    ForeignKeyEnforcementDisabler foreignKeys(conn);
+    rc = foreignKeys.GetStatus();
+    if (rc != BE_SQLITE_OK) {
+        LOG.error("SchemaSyncUpstreamHelper::MirrorTables(): Failed to disable foreign key enforcement.");
+        return rc;
+    }
 
     // Deep enough for any chain the ec_ foreign key graph can produce, low enough that a mistake here
     // surfaces as an error rather than a hang.
@@ -1320,7 +1406,7 @@ DbResult SchemaSyncUpstreamHelper::MirrorTables(ECDbR conn, bvector<TablePlan> c
             return BE_SQLITE_ERROR;
         }
 
-        // Children before parents. Only readability rests on this - the actions are suppressed and the
+        // Children before parents. Only readability rests on this - enforcement is disabled and the
         // sweep runs to a fixed point either way - but a plan ordered parents-first reads better.
         for (auto entry = statements.rbegin(); entry != statements.rend(); ++entry) {
             const auto runDelete = [&](Utf8StringCR sql) {
@@ -1359,6 +1445,18 @@ DbResult SchemaSyncUpstreamHelper::MirrorTables(ECDbR conn, bvector<TablePlan> c
             inserted += affected;
             insertedDetail.append(SqlPrintfString(" %s=%d", entry.m_table, affected).GetUtf8CP());
         }
+    }
+
+    rc = SchemaSyncHelper::CheckForeignKeys(conn, targetTables, targetAlias);
+    if (rc != BE_SQLITE_OK) {
+        LOG.errorv("SchemaSyncUpstreamHelper::MirrorTables(): Foreign key check failed for %s. %s", targetAlias, BeSQLiteLib::GetErrorString(rc));
+        return rc;
+    }
+
+    rc = foreignKeys.Restore();
+    if (rc != BE_SQLITE_OK) {
+        LOG.error("SchemaSyncUpstreamHelper::MirrorTables(): Failed to restore foreign key enforcement.");
+        return rc;
     }
 
     // Counts, not rows: this is what says whether the mirror wrote a handful of rows or churned the
@@ -1843,12 +1941,19 @@ SchemaSync::Status SchemaSync::MirrorToSyncDb(SyncDbUri const& syncDbUri) {
         return Status::ERROR_UNABLE_TO_ATTACH;
     }
 
+    AttachedDbTransaction attachment(m_conn, SchemaSyncHelper::ALIAS_SYNC_DB);
+    const auto fail = [&](Status status) {
+        const auto cleanupRc = attachment.AbandonAndDetach();
+        if (cleanupRc != BE_SQLITE_OK)
+            LOG.errorv("SchemaSync::MirrorToSyncDb(): Failed to roll back and detach the sync db. %s", BeSQLiteLib::GetErrorString(cleanupRc));
+        return status;
+    };
+
     TableList tables;
     rc = SchemaSyncHelper::GetMetaTables(m_conn, tables, SchemaSyncHelper::ALIAS_MAIN_DB);
     if (rc != BE_SQLITE_OK) {
         LOG.error("SchemaSync::MirrorToSyncDb(): Failed to read the list of meta tables.");
-        m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
-        return Status::ERROR;
+        return fail(Status::ERROR);
     }
 
     // ec_cache_ goes with the rest. It is derived and the briefcase has just regenerated it, so
@@ -1859,8 +1964,7 @@ SchemaSync::Status SchemaSync::MirrorToSyncDb(SyncDbUri const& syncDbUri) {
     rc = SchemaSyncUpstreamHelper::MirrorTables(m_conn, tables, SchemaSyncHelper::ALIAS_MAIN_DB, SchemaSyncHelper::ALIAS_SYNC_DB);
     if (rc != BE_SQLITE_OK) {
         LOG.error("SchemaSync::MirrorToSyncDb(): Failed to bring the sync db's ec_ tables in line with this briefcase.");
-        m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
-        return Status::ERROR;
+        return fail(Status::ERROR);
     }
 
     // The profile properties describe the ec_ tables just copied - the EC, BeSQLite and DGN profile
@@ -1874,20 +1978,12 @@ SchemaSync::Status SchemaSync::MirrorToSyncDb(SyncDbUri const& syncDbUri) {
             SchemaSyncHelper::ALIAS_MAIN_DB, SchemaSyncHelper::ALIAS_SYNC_DB, excludeLocalDbInfo.c_str());
     if (rc != BE_SQLITE_OK) {
         LOG.error("SchemaSync::MirrorToSyncDb(): Failed to copy the profile properties.");
-        m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
-        return Status::ERROR;
+        return fail(Status::ERROR);
     }
 
-    rc = m_conn.SaveChanges();
+    rc = attachment.CommitAndDetach();
     if (rc != BE_SQLITE_OK) {
-        LOG.errorv("SchemaSync::MirrorToSyncDb(): Failed to save. %s", BeSQLiteLib::GetErrorString(rc));
-        m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
-        return Status::ERROR;
-    }
-
-    rc = m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
-    if (rc != BE_SQLITE_OK) {
-        LOG.error("SchemaSync::MirrorToSyncDb(): Failed to detach the sync db.");
+        LOG.errorv("SchemaSync::MirrorToSyncDb(): Failed to save and detach the sync db. %s", BeSQLiteLib::GetErrorString(rc));
         return Status::ERROR;
     }
 
@@ -2104,7 +2200,14 @@ SchemaSync::Status SchemaSync::SaveSyncDbInfo(SyncDbUri syncDbUri, SyncDbInfo co
         conn.AbandonChanges();
         return kc;
     }
-    conn.SaveChanges();
+    rc = conn.SaveChanges();
+    if (rc != BE_SQLITE_OK) {
+        LOG.errorv("SchemaSync::SaveSyncDbInfo(): Failed to commit sync db info. %s", BeSQLiteLib::GetErrorString(rc));
+        const auto abandonRc = conn.AbandonChanges();
+        if (abandonRc != BE_SQLITE_OK)
+            LOG.errorv("SchemaSync::SaveSyncDbInfo(): Failed to abandon the uncommitted sync db info. %s", BeSQLiteLib::GetErrorString(abandonRc));
+        return SchemaSync::Status::ERROR;
+    }
     return SchemaSync::Status::OK;
 }
 

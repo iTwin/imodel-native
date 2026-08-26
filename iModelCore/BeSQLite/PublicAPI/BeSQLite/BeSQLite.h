@@ -3352,37 +3352,15 @@ public:
     //! Opens the specified database, performs a sqlite integrity check, and closes it. Returns BE_SQLITE_OK if the check was successful, otherwise BE_SQLITE_CORRUPT or other chained errors if there was a failure.
     BE_SQLITE_EXPORT static DbResult CheckDbIntegrity(BeFileNameCR dbFileName);
     BE_SQLITE_EXPORT DbResult SetBusyTimeout(int ms);
+    //! Query whether SQLite enforces foreign key constraints on this connection.
+    BE_SQLITE_EXPORT DbResult QueryForeignKeyEnforcement(bool& enabled) const;
+    //! Enable or disable SQLite foreign key enforcement on this connection.
+    BE_SQLITE_EXPORT DbResult SetForeignKeyEnforcement(bool enabled) const;
     BE_SQLITE_EXPORT DbBuffer Serialize(const char *zSchema = nullptr) const;
 
     BE_SQLITE_EXPORT static DbResult Deserialize(DbBuffer& buffer, DbR db, DbDeserializeOptions opts = DbDeserializeOptions::FreeOnClose, const char *zSchema = nullptr, std::function<void(DbR)> beforeDefaultTxnStarts = nullptr);
     BE_SQLITE_EXPORT DbResult SetNoCaseCollation(NoCaseCollation col) { return m_dbFile->SetNoCaseCollation(col); }
     BE_SQLITE_EXPORT NoCaseCollation GetNoCaseCollation() const { return m_dbFile->GetNoCaseCollation(); }
-};
-
-//=======================================================================================
-//! Makes every foreign key ON DELETE and ON UPDATE action on a connection behave as NO ACTION for
-//! as long as this is in scope.
-//!
-//! For a bulk row synchronizing, we do not want cascading deletes to fire.
-//! Pair this with `PRAGMA defer_foreign_keys=1`
-//! so the checks happen at commit, by which point the data should be consistent.
-//!
-//! This is the same connection flag `sqlite3changeset_apply_v2` sets for SQLITE_CHANGESETAPPLY_FKNOACTION.
-//! @note The setting is read when a statement is prepared, not when it runs. The statement cache is
-//! emptied on both entry and exit for that reason; a statement a caller is holding open across this
-//! scope keeps whichever behaviour it was prepared with.
-//! @note This scope must not overlap another instance or a changeset apply using
-//! SQLITE_CHANGESETAPPLY_FKNOACTION on the same connection. SQLite exposes no way to read the
-//! flag back, so the destructor always clears it.
-// @bsiclass
-//=======================================================================================
-struct SuppressForeignKeyActions final : NonCopyableClass
-{
-private:
-    DbCR m_db;
-public:
-    BE_SQLITE_EXPORT explicit SuppressForeignKeyActions(DbCR db);
-    BE_SQLITE_EXPORT ~SuppressForeignKeyActions();
 };
 
 //=======================================================================================

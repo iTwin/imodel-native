@@ -2066,6 +2066,123 @@ TEST_F(SchemaSyncImportTestFixture, OverwriteSyncDbFollowsAChangeMadeOnlyOnTheBr
     ExpectNoForeignKeyViolations(*b2, "b2 importing against the rebuilt sync db");
     }
 
+// ---------------------------------------------------------------------------------------
+// The mirror temporarily disables foreign key enforcement through the BeSQLite wrapper around
+// sqlite3_db_config. It must restore enabled callers and leave disabled callers alone.
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, OverwriteSyncDbRestoresForeignKeyEnforcementState)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-overwrite-fk-state");
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    auto& schemaSync = b1->Schemas().GetSchemaSync();
+    bool foreignKeysEnabled = false;
+    ASSERT_EQ(BE_SQLITE_OK, b1->QueryForeignKeyEnforcement(foreignKeysEnabled));
+    ASSERT_TRUE(foreignKeysEnabled);
+
+    ASSERT_EQ(SchemaSync::Status::OK, schemaSync.OverwriteSyncDb(syncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b1->QueryForeignKeyEnforcement(foreignKeysEnabled));
+    EXPECT_TRUE(foreignKeysEnabled);
+
+    ASSERT_EQ(BE_SQLITE_OK, b1->SetForeignKeyEnforcement(false));
+    ASSERT_EQ(BE_SQLITE_OK, b1->QueryForeignKeyEnforcement(foreignKeysEnabled));
+    ASSERT_FALSE(foreignKeysEnabled);
+
+    ASSERT_EQ(SchemaSync::Status::OK, schemaSync.OverwriteSyncDb(syncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b1->QueryForeignKeyEnforcement(foreignKeysEnabled));
+    EXPECT_FALSE(foreignKeysEnabled);
+
+    ASSERT_EQ(BE_SQLITE_OK, b1->SetForeignKeyEnforcement(true));
+    ASSERT_EQ(BE_SQLITE_OK, b1->QueryForeignKeyEnforcement(foreignKeysEnabled));
+    ASSERT_TRUE(foreignKeysEnabled);
+    }
+
+// ---------------------------------------------------------------------------------------
+// A failed foreign-key check happens after the mirror has written every metadata table. The failure
+// path must roll the attached transaction back before detaching, otherwise DetachDb commits the bad
+// rows it was meant to clean up.
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, OverwriteSyncDbRollsBackRowsThatFailTheForeignKeyCheck)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-overwrite-fk-rollback");
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    constexpr auto orphanReferenceId = 2147483000;
+    bool foreignKeysEnabled = false;
+    ASSERT_EQ(BE_SQLITE_OK, b1->SetForeignKeyEnforcement(false));
+    const auto insertRc = b1->ExecuteSql(SqlPrintfString(
+        "INSERT INTO ec_SchemaReference(Id,SchemaId,ReferencedSchemaId) VALUES(%d,%d,%d)",
+        orphanReferenceId, orphanReferenceId + 1, orphanReferenceId + 2));
+    const auto restoreRc = b1->SetForeignKeyEnforcement(true);
+    ASSERT_EQ(BE_SQLITE_OK, insertRc);
+    ASSERT_EQ(BE_SQLITE_OK, restoreRc);
+    ASSERT_EQ(BE_SQLITE_OK, b1->QueryForeignKeyEnforcement(foreignKeysEnabled));
+    ASSERT_TRUE(foreignKeysEnabled);
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+
+    auto& schemaSync = b1->Schemas().GetSchemaSync();
+    EXPECT_EQ(SchemaSync::Status::ERROR, schemaSync.OverwriteSyncDb(syncDb.GetSyncDbUri()));
+    Statement attachedDb;
+    ASSERT_EQ(BE_SQLITE_OK, attachedDb.Prepare(*b1, "SELECT 1 FROM pragma_database_list WHERE name='schema_sync_db'"));
+    EXPECT_EQ(BE_SQLITE_DONE, attachedDb.Step()) << "the failed mirror left the sync db attached";
+
+    syncDb.WithReadOnly([&](ECDbR syncConn) {
+        ExpectECTablesIdentical(syncConn, *b2, "sync db after a failed mirror");
+        ExpectNoForeignKeyViolations(syncConn, "sync db after a failed mirror");
+    });
+
+    ASSERT_EQ(BE_SQLITE_OK, b1->ExecuteSql(SqlPrintfString("DELETE FROM ec_SchemaReference WHERE Id=%d", orphanReferenceId)));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    ExpectECTablesIdentical(*b1, *b2, "briefcase after removing the deliberately malformed row");
+    }
+
+// ---------------------------------------------------------------------------------------
+// SavePropertyString succeeds before a deferred foreign-key violation is checked at commit. The
+// sync db version must not report success or leave the replacement property row behind.
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, UpdateDataVersionReportsCommitFailure)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-data-version-commit-failure");
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    const auto dataVersionBefore = SchemaSync::SyncDbInfo::From(syncDb.GetSyncDbUri()).GetDataVersion();
+    const auto localDataVersionBefore = b1->Schemas().GetSchemaSync().GetInfo().GetDataVersion();
+    syncDb.WithReadWrite([&](ECDbR syncConn) {
+        ASSERT_EQ(BE_SQLITE_OK, syncConn.ExecuteSql("CREATE TABLE test_CommitParent(Id INTEGER PRIMARY KEY)"));
+        ASSERT_EQ(BE_SQLITE_OK, syncConn.ExecuteSql(
+            "CREATE TABLE test_CommitChild(ParentId INTEGER REFERENCES test_CommitParent(Id) DEFERRABLE INITIALLY DEFERRED)"));
+        ASSERT_EQ(BE_SQLITE_OK, syncConn.ExecuteSql(
+            "CREATE TRIGGER test_FailSyncDbInfoCommit AFTER INSERT ON be_Prop "
+            "WHEN NEW.Namespace='ec_Db' AND NEW.Name='syncDbInfo' "
+            "BEGIN INSERT INTO test_CommitChild VALUES(1); END"));
+        ASSERT_EQ(BE_SQLITE_OK, syncConn.SaveChanges());
+    });
+
+    EXPECT_EQ(SchemaSync::Status::ERROR, b1->Schemas().GetSchemaSync().UpdateDataVersion(syncDb.GetSyncDbUri()));
+    EXPECT_EQ(localDataVersionBefore, b1->Schemas().GetSchemaSync().GetInfo().GetDataVersion());
+
+    syncDb.WithReadOnly([&](ECDbR syncConn) {
+        EXPECT_EQ(dataVersionBefore, SchemaSync::SyncDbInfo::From(syncConn).GetDataVersion());
+        EXPECT_EQ(0, CountRows(syncConn, "test_CommitChild"));
+    });
+
+    syncDb.WithReadWrite([&](ECDbR syncConn) {
+        ASSERT_EQ(BE_SQLITE_OK, syncConn.ExecuteSql("DROP TRIGGER test_FailSyncDbInfoCommit"));
+        ASSERT_EQ(BE_SQLITE_OK, syncConn.ExecuteSql("DROP TABLE test_CommitChild"));
+        ASSERT_EQ(BE_SQLITE_OK, syncConn.ExecuteSql("DROP TABLE test_CommitParent"));
+        ASSERT_EQ(BE_SQLITE_OK, syncConn.SaveChanges());
+    });
+    }
+
 //=======================================================================================
 // Concurrent edits to the same ec_ row.
 //

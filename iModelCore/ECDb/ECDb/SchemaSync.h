@@ -19,7 +19,7 @@ struct SchemaSyncHelper final {
 	static constexpr auto ALIAS_MAIN_DB = "main";
     static constexpr auto TABLE_BE_PROP = "be_Prop";
 
-    static int ForeignKeyCheck(DbCR conn, std::vector<std::string> const& tables, Utf8CP dbAlias);
+    static DbResult CheckForeignKeys(DbCR conn, StringList const& tables, Utf8CP dbAlias);
     static DbResult GetMetaTables(DbR conn, StringList& tables, Utf8CP dbAlias);
     static DbResult TryGetAttachDbs(AliasMap& aliasMap, ECDbR conn);
     static DbResult VerifyAlias(ECDbR conn);
