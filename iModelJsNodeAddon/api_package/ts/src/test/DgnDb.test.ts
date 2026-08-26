@@ -2,7 +2,7 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-import { DbResult, Id64Array, Id64String, IModelStatus, OpenMode } from "@itwin/core-bentley";
+import { DbResult, Id64, Id64Array, Id64String, IModelStatus, OpenMode } from "@itwin/core-bentley";
 import { BlobRange, Code, DbBlobRequest, DbBlobResponse, DbQueryRequest, DbQueryResponse, DbRequestKind, DbResponseStatus, GeometryPartProps, IModel, PhysicalElementProps, ProfileOptions, RelationshipProps } from "@itwin/core-common";
 import { DomainOptions } from "@itwin/core-common/lib/cjs/BriefcaseTypes";
 import { assert, expect } from "chai";
@@ -59,13 +59,13 @@ describe("basic tests", () => {
       partialKey: {
         baseClassName: "BisCore:Element"
       } as any // missing id
-    } as any)).to.throw("missing id");
+    })).to.throw("missing id");
 
     expect(() => dgndb.resolveInstanceKey({
       partialKey: {
         id: "0x1b"
       } as any // missing baseClassName
-    } as any)).to.throw("missing baseClassName");
+    })).to.throw("missing baseClassName");
 
     expect(() => dgndb.resolveInstanceKey({
       partialKey: {
@@ -137,21 +137,21 @@ describe("basic tests", () => {
         scope: "0x1",
         value: "test"
       } as any // missing spec
-    } as any)).to.throw("missing spec");
+    })).to.throw("missing spec");
 
     expect(() => dgndb.resolveInstanceKey({
       code: {
         spec: "0x1",
         value: "test"
       } as any // missing scope
-    } as any)).to.throw("missing type");
+    })).to.throw("missing type");
 
     expect(() => dgndb.resolveInstanceKey({
       code: {
         spec: "0x1",
         scope: "0x1"
-      } as any // missing value
-    } as any)).to.throw("missing value");
+      } // missing value
+    })).to.throw("missing value");
 
     expect(() => dgndb.resolveInstanceKey({
       code: {
@@ -173,7 +173,7 @@ describe("basic tests", () => {
     // any attempt to read properties off them
     expect(() => dgndb.resolveInstanceKey(null as any)).to.throw("must be an object");
 
-    expect(() => dgndb.resolveInstanceKey({} as any)).to.throw("must provide partialKey, federationGuid or");
+    expect(() => dgndb.resolveInstanceKey({})).to.throw("must provide partialKey, federationGuid or");
   });
   it("compress/decompress", () => {
     const assertCompressAndThenDecompress = (sourceData: Uint8Array) => {
@@ -550,6 +550,44 @@ describe("basic tests", () => {
 
     return { elementId, partId };
   }
+
+  it("re-reads forceUseId after JS onInsert", () => {
+    try {
+      const sequenceValue = dgndb.queryLocalValue("bis_elementidsequence");
+      const nextLocalId = Number(BigInt(sequenceValue ?? "0") & 0xFFFFFFFFFFn) + 100;
+      const forcedId = Id64.fromLocalAndBriefcaseIds(nextLocalId, dgndb.getBriefcaseId());
+
+      const mockJsDb: any = {
+        getJsClass: () => ({
+          onInsert(arg: { iModel: any, props: GeometryPartProps & { id?: Id64String }, options: { forceUseId?: boolean } }) {
+            expect(arg.iModel).to.equal(mockJsDb);
+            expect(arg.options).to.deep.equal({});
+            arg.props.id = forcedId;
+            arg.options.forceUseId = true;
+          },
+          onInsertElement(){},
+          onInserted(){},
+          onInsertedElement(){},
+        }),
+      };
+      dgndb.setIModelDb(mockJsDb);
+
+      const geometryPartProps: GeometryPartProps = {
+        classFullName: "BisCore:GeometryPart",
+        model: IModel.dictionaryId,
+        code: Code.createEmpty(),
+        geom: [
+          { box: { origin: [0, 0, 0], baseX: 10, baseY: 10, height: 1 } }
+        ]
+      };
+
+      const partId = dgndb.insertElement(geometryPartProps, {});
+      expect(partId).to.equal(forcedId);
+    } finally {
+      dgndb.setIModelDb(undefined);
+      dgndb.abandonChanges();
+    }
+  });
 
   it("exportGraphicsAsync enumerates parts directly if array is not provided", async () => {
     try {

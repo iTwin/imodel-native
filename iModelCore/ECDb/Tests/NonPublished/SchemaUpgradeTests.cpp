@@ -243,6 +243,77 @@ TEST_F(SchemaUpgradeTestFixture, ValidateMapCheck_CheckForOrphanCustomAttributeI
     ASSERT_TRUE(std::regex_match (issueListener.m_issues[1].message.c_str(), std::regex (expectedMsg2Pattern.c_str ())));
     ASSERT_STREQ(expectedMsg3.c_str(), issueListener.m_issues[2].message.c_str());
 }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, AddPropertyWithPropertyMapCAToSharedColumnHierarchy) {
+    // Adding a new property with a 'PropertyMap' custom attribute (IsNullable/IsUnique) to an
+    // existing class in a shared-column TPH hierarchy: the constraints cannot be enforced on a
+    // shared column and are dropped with a warning. The derived class must still map the
+    // inherited property to the same shared column as the base class. A former bug in
+    // ClassMapColumnFactory::IsCompatible compared the requested constraints against the
+    // (constraint-free) shared column of the base class, refused to reuse it and silently
+    // allocated a different column for the derived class, causing silent data loss.
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("addPropertyWithPropertyMapCA.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+        <ECEntityClass typeName="Parent">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00"/>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Name" typeName="string"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="Sub">
+            <BaseClass>Parent</BaseClass>
+            <ECProperty propertyName="SubProp" typeName="string"/>
+        </ECEntityClass>
+    </ECSchema>)xml")));
+
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+        <ECEntityClass typeName="Parent">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00"/>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Name" typeName="string"/>
+            <ECProperty propertyName="NewProp" typeName="string">
+                <ECCustomAttributes>
+                    <PropertyMap xmlns="ECDbMap.02.00">
+                        <IsNullable>False</IsNullable>
+                        <IsUnique>True</IsUnique>
+                    </PropertyMap>
+                </ECCustomAttributes>
+            </ECProperty>
+        </ECEntityClass>
+        <ECEntityClass typeName="Sub">
+            <BaseClass>Parent</BaseClass>
+            <ECProperty propertyName="SubProp" typeName="string"/>
+        </ECEntityClass>
+    </ECSchema>)xml")));
+
+    // base and derived class must map the new property to the same shared column
+    // (v1.0 layout: Name -> ps1, SubProp -> ps2, so the new property gets ps3)
+    ASSERT_EQ(ExpectedColumn("ts_Parent", "ps3"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Parent", "NewProp")));
+    ASSERT_EQ(ExpectedColumn("ts_Parent", "ps3"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub", "NewProp"))) << "Sub must map the inherited NewProp to the same column as Parent";
+
+    // data written through the derived class must be visible through the base class
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Sub (Name, NewProp, SubProp) VALUES ('name', 'newPropValue', 'subProp')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    EXPECT_EQ(JsonValue(R"json([{"NewProp":"newPropValue"}])json"), GetHelper().ExecuteSelectECSql("SELECT NewProp FROM ts.Parent"));
+    m_ecdb.AbandonChanges();
+}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
