@@ -482,6 +482,14 @@ public:
         auto& db = GetOpenedDb(info);
         return JsInterop::DeleteInstance(db, info);
     }
+    Napi::Value ImportCSVData(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        return JsInterop::ImportCSVData(db, info);
+    }
+    Napi::Value ImportCSVFile(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        return JsInterop::ImportCSVFile(db, info);
+    }
     Napi::Value ConcurrentQueryResetConfig(NapiInfoCR info) {
         if (info.Length() > 0 && info[0].IsObject()) {
             Napi::Object inConf = info[0].As<Napi::Object>();
@@ -675,6 +683,8 @@ public:
             InstanceMethod("insertInstance", &NativeECDb::InsertInstance),
             InstanceMethod("updateInstance", &NativeECDb::UpdateInstance),
             InstanceMethod("deleteInstance", &NativeECDb::DeleteInstance),
+            InstanceMethod("importCSVData", &NativeECDb::ImportCSVData),
+            InstanceMethod("importCSVFile", &NativeECDb::ImportCSVFile),
             InstanceMethod("saveChanges", &NativeECDb::SaveChanges),
             InstanceMethod("clearECDbCache", &NativeECDb::ClearECDbCache),
             StaticMethod("enableSharedCache", &NativeECDb::EnableSharedCache),

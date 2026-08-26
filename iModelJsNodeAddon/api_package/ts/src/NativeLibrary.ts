@@ -895,6 +895,10 @@ export declare namespace IModelJsNative {
     public insertInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): Id64String;
     public updateInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean;
     public deleteInstance(key: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean;
+    /** Import V8-serialized CSV rows using one prepared ECSQL statement. */
+    public importCSVData(className: string, rows: Uint8Array, mapping: ReadonlyArray<{ columnIndex: number, propertyName: string }>, options?: { nullValue?: string }): number;
+    /** Stream a CSV file and import mapped columns using one prepared ECSQL statement. */
+    public importCSVFile(className: string, csvFilePath: string, mapping: ReadonlyArray<{ columnIndex: number, propertyName: string }>, options?: { hasHeader?: boolean, nullValue?: string }): number;
     public getSchemaProps(name: string): SchemaProps;
     public importSchema(schemaPathName: string): DbResult;
     public isOpen(): boolean;
