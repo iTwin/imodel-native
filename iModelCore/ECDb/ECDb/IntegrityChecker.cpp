@@ -471,8 +471,9 @@ DbResult IntegrityChecker::CheckProfileTablesAndIndexes4001AndOlder(std::functio
 }
 
 //---------------------------------------------------------------------------------------
-// Existing iModels keep spatial-index triggers that do not watch InSpatialIndex.
-// Newly created files use the updated trigger SQL. Both variants are valid.
+// Existing iModels keep pre-2.0.0.8 spatial-index triggers that do not watch InSpatialIndex.
+// DgnDb upgrades replace them, but ECDb can inspect an iModel without running that upgrade.
+// Both definitions are therefore valid to the integrity checker.
 //---------------------------------------------------------------------------------------
 static bool IsAcceptedTriggerSql(std::string const& name, std::string const& actual, std::string const& expected) {
     if (actual == expected)

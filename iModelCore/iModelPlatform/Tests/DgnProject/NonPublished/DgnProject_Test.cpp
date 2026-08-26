@@ -91,6 +91,59 @@ TEST_F(DgnDbTest, ProjectProfileVersions)
     ASSERT_EQ(DGNDB_CURRENT_VERSION_Sub2, profileVer.GetSub2()) << "The Schema Sub2 Version is: " << profileVer.GetSub2();
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnDbTest, UpgradeSpatialIndexTriggers)
+{
+    SetupSeedProject();
+    BeFileName fileName = m_db->GetFileName();
+    SaveDb();
+    CloseDb();
+    m_db = nullptr;
+
+    // Make the file look like a pre-2.0.0.8 iModel with the legacy trigger definitions.
+    BeSQLite::Db rawDb;
+    ASSERT_EQ(BE_SQLITE_OK, rawDb.OpenBeSQLiteDb(fileName, Db::OpenParams(Db::OpenMode::ReadWrite)));
+    ASSERT_EQ(BE_SQLITE_OK, rawDb.ExecuteSql("DROP TRIGGER IF EXISTS dgn_rtree_upd"));
+    ASSERT_EQ(BE_SQLITE_OK, rawDb.ExecuteSql("DROP TRIGGER IF EXISTS dgn_rtree_upd1"));
+    ASSERT_EQ(BE_SQLITE_OK, rawDb.ExecuteSql(
+        "CREATE TRIGGER dgn_rtree_upd AFTER UPDATE OF Origin_X,Origin_Y,Origin_Z,Yaw,Pitch,Roll,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z ON bis_GeometricElement3d "
+        "WHEN new.Origin_X IS NOT NULL AND 1 = new.InSpatialIndex BEGIN INSERT OR REPLACE INTO dgn_SpatialIndex(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,"
+        "DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5) "
+        "FROM (SELECT DGN_placement_aabb(DGN_placement(DGN_point(NEW.Origin_X,NEW.Origin_Y,NEW.Origin_Z),DGN_angles(NEW.Yaw,NEW.Pitch,NEW.Roll),DGN_bbox(NEW.BBoxLow_X,NEW.BBoxLow_Y,NEW.BBoxLow_Z,NEW.BBoxHigh_X,NEW.BBoxHigh_Y,NEW.BBoxHigh_Z))) as bb);END"));
+    ASSERT_EQ(BE_SQLITE_OK, rawDb.ExecuteSql(
+        "CREATE TRIGGER dgn_rtree_upd1 AFTER UPDATE OF Origin_X,Origin_Y,Origin_Z,Yaw,Pitch,Roll,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z ON bis_GeometricElement3d "
+        "WHEN OLD.Origin_X IS NOT NULL AND NEW.Origin_X IS NULL BEGIN DELETE FROM dgn_SpatialIndex WHERE ElementId=OLD.ElementId;END"));
+
+    DgnDbProfileVersion const previousVersion(DGNDB_CURRENT_VERSION_Major, DGNDB_CURRENT_VERSION_Minor, DGNDB_CURRENT_VERSION_Sub1, DGNDB_CURRENT_VERSION_Sub2 - 1);
+    ASSERT_EQ(BE_SQLITE_OK, rawDb.SavePropertyString(DgnProjectProperty::ProfileVersion(), previousVersion.ToJson()));
+    ASSERT_EQ(BE_SQLITE_OK, rawDb.SaveChanges());
+    rawDb.CloseDb();
+
+    DbResult openStatus = BE_SQLITE_OK;
+    DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite);
+    openParams.SetProfileUpgradeOptions(Db::ProfileUpgradeOptions::Upgrade);
+    ASSERT_EQ(Db::ProfileUpgradeOptions::Upgrade, openParams.GetProfileUpgradeOptions());
+    m_db = DgnDb::OpenIModelDb(&openStatus, fileName, openParams);
+    ASSERT_EQ(BE_SQLITE_OK, openStatus);
+    ASSERT_TRUE(m_db.IsValid());
+    ASSERT_EQ(DgnDbProfileVersion::GetCurrent(), m_db->GetProfileVersion());
+    ASSERT_EQ(ECDb::CurrentECDbProfileVersion(), m_db->GetECDbProfileVersion());
+
+    auto getTriggerSql = [](BeSQLite::Db const& db, Utf8CP triggerName) {
+        Statement statement(db, "SELECT sql FROM sqlite_master WHERE type='trigger' AND name=?");
+        if (BE_SQLITE_OK != statement.BindText(1, triggerName, Statement::MakeCopy::No) || BE_SQLITE_ROW != statement.Step())
+            return Utf8String();
+        return Utf8String(statement.GetValueText(0));
+    };
+
+    Utf8String updateTriggerSql = getTriggerSql(*m_db, "dgn_rtree_upd");
+    Utf8String deleteTriggerSql = getTriggerSql(*m_db, "dgn_rtree_upd1");
+    ASSERT_TRUE(updateTriggerSql.find("AFTER UPDATE OF InSpatialIndex") != updateTriggerSql.npos);
+    ASSERT_TRUE(deleteTriggerSql.find("NEW.InSpatialIndex = 0") != deleteTriggerSql.npos);
+}
+
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
