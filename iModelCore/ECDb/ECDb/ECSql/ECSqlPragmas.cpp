@@ -618,6 +618,8 @@ DbResult PragmaIntegrityCheck::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, 
 			rc = CheckSchemaLoad(checker, *result, ecdb); break;
 		case IntegrityChecker::Checks::CheckMissingChildRows:
 			rc = CheckMissingChildRows(checker, *result, ecdb); break;
+		case IntegrityChecker::Checks::CheckDivergedPropMaps:
+			rc = CheckDivergedPropMaps(checker, *result, ecdb); break;
 		default:
 			rc = CheckAll(checker, *result, ecdb);
 		};
@@ -853,6 +855,35 @@ DbResult PragmaIntegrityCheck::CheckMissingChildRows(IntegrityChecker& checker, 
 		row.appendValue() = id.ToHexStr();
 		row.appendValue() = classId.ToHexStr();
 		row.appendValue() = type;
+		return true;
+	});
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult PragmaIntegrityCheck::CheckDivergedPropMaps(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb) {
+	result.AppendProperty("sno", PRIMITIVETYPE_Integer);
+	result.AppendProperty("derivedClassId", PRIMITIVETYPE_String);
+	result.AppendProperty("derivedClassName", PRIMITIVETYPE_String);
+	result.AppendProperty("baseClassId", PRIMITIVETYPE_String);
+	result.AppendProperty("baseClassName", PRIMITIVETYPE_String);
+	result.AppendProperty("propertyName", PRIMITIVETYPE_String);
+	result.AppendProperty("baseColumn", PRIMITIVETYPE_String);
+	result.AppendProperty("divergedColumn", PRIMITIVETYPE_String);
+	result.FreezeSchemaChanges();
+
+	int rowCount = 1;
+	return checker.CheckDivergedPropMaps([&](ECN::ECClassId derivedClassId, Utf8CP derivedClassName, ECN::ECClassId baseClassId, Utf8CP baseClassName, Utf8CP propertyName, Utf8CP baseColumn, Utf8CP divergedColumn) {
+		auto row = result.AppendRow();
+		row.appendValue() = rowCount++;
+		row.appendValue() = derivedClassId.ToHexStr();
+		row.appendValue() = derivedClassName;
+		row.appendValue() = baseClassId.ToHexStr();
+		row.appendValue() = baseClassName;
+		row.appendValue() = propertyName;
+		row.appendValue() = baseColumn;
+		row.appendValue() = divergedColumn;
 		return true;
 	});
 }
