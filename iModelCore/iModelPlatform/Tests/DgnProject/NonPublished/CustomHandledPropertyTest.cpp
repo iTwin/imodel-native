@@ -237,6 +237,13 @@ TEST_F(GetSetCustomHandledProprty, ElementProperties3d)
         ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue1, BBHindex));
         ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(DPoint3d::From(2, 4, 8))));
         checkValue1.Clear();
+        double circumferenceOfEarth = PlacementOnEarth::CircumferenceOfEarth();
+        ASSERT_EQ(DgnDbStatus::Success, el.SetPropertyValue(BBHindex, ECN::ECValue(DPoint3d::From(circumferenceOfEarth + 3.0, 4.0, 8.0))));
+        BeJsDocument bboxJson;
+        el.ToJson(bboxJson);
+        ASSERT_FALSE(bboxJson[GeometricElement::json_placement()].hasMember(Placement3d::json_bbox()));
+        ASSERT_EQ(DgnDbStatus::Success, el.SetPropertyValue(BBHindex, ECN::ECValue(DPoint3d::From(2, 4, 8))));
+        checkValue1.Clear();
         ASSERT_EQ(DgnDbStatus::Success, el.SetPropertyValue(Yawindex, ECN::ECValue(4.5)));
         ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue1, Yawindex));
         ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(4.5)));
@@ -394,6 +401,13 @@ TEST_F(GetSetCustomHandledProprty, ElementProperties2d)
         ASSERT_EQ(DgnDbStatus::Success, el.SetPropertyValue(BBHindex, ECN::ECValue(DPoint2d::From(2, 4))));
         ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue1, BBHindex));
         ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(DPoint2d::From(2, 4))));
+        checkValue1.Clear();
+        double circumferenceOfEarth = PlacementOnEarth::CircumferenceOfEarth();
+        ASSERT_EQ(DgnDbStatus::Success, el.SetPropertyValue(BBHindex, ECN::ECValue(DPoint2d::From(circumferenceOfEarth + 3.0, 4.0))));
+        BeJsDocument bboxJson;
+        el.ToJson(bboxJson);
+        ASSERT_FALSE(bboxJson[GeometricElement::json_placement()].hasMember(Placement2d::json_bbox()));
+        ASSERT_EQ(DgnDbStatus::Success, el.SetPropertyValue(BBHindex, ECN::ECValue(DPoint2d::From(2, 4))));
         checkValue1.Clear();
 
         ASSERT_EQ(DgnDbStatus::Success, el.SetPropertyValue(Rotindex, ECN::ECValue(6.5)));

@@ -36,6 +36,24 @@ struct PlacementOnEarth {
         double maxOrigin = 2 * CircumferenceOfEarth();
         return fabs(origin.x) <= maxOrigin && fabs(origin.y) <= maxOrigin && fabs(origin.z) <= maxOrigin;
     }
+
+    //! Determine whether a 2D bounding box is valid for a placement.
+    static bool IsValidBoundingBox(DRange2dCR bbox) {
+        if (bbox.IsEmpty())
+            return false;
+
+        double circumferenceOfEarth = CircumferenceOfEarth();
+        return bbox.XLength() <= circumferenceOfEarth && bbox.YLength() <= circumferenceOfEarth;
+    }
+
+    //! Determine whether a 3D bounding box is valid for a placement.
+    static bool IsValidBoundingBox(DRange3dCR bbox) {
+        if (bbox.IsEmpty())
+            return false;
+
+        double circumferenceOfEarth = CircumferenceOfEarth();
+        return bbox.XLength() <= circumferenceOfEarth && bbox.YLength() <= circumferenceOfEarth && bbox.ZLength() <= circumferenceOfEarth;
+    }
 };
 
 //=======================================================================================
@@ -210,12 +228,7 @@ public:
 
     //! Determine whether this Placement3d is valid.
     bool IsValid() const {
-        if (!m_boundingBox.IsValid())
-            return false;
-
-        double circumferenceOfEarth = PlacementOnEarth::CircumferenceOfEarth();
-
-        if (m_boundingBox.XLength() > circumferenceOfEarth || m_boundingBox.YLength() > circumferenceOfEarth || m_boundingBox.ZLength() > circumferenceOfEarth)
+        if (!PlacementOnEarth::IsValidBoundingBox(m_boundingBox))
             return false;
 
         // We bound location of the placement to twice the circumference of the Earth.
@@ -302,12 +315,7 @@ public:
 
     //! Determine whether this Placement2d is valid
     bool IsValid() const {
-        if (!m_boundingBox.IsValid())
-            return false;
-
-        double circumferenceOfEarth = PlacementOnEarth::CircumferenceOfEarth();
-
-        if (m_boundingBox.XLength() > circumferenceOfEarth || m_boundingBox.YLength() > circumferenceOfEarth)
+        if (!PlacementOnEarth::IsValidBoundingBox(m_boundingBox))
             return false;
 
         // We bound location of the placement to twice the circumference of the Earth.

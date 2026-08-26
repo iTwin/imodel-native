@@ -2986,7 +2986,8 @@ void dgn_ElementHandler::Geometric3d::_RegisterPropertyAccessors(ECSqlClassInfo&
             if (DgnDbStatus::Success == status)                                          \
                 {                                                                        \
                 uint8_t newPlacementDataFlags = placementDataFlags | FLAGS;              \
-                if (FLAGS == GeometricElement::PlacementData_Bbox && !plc.GetElementBox().IsValid()) \
+                if (FLAGS == GeometricElement::PlacementData_Bbox &&                     \
+                    !PlacementOnEarth::IsValidBoundingBox(plc.GetElementBox()))          \
                     newPlacementDataFlags &= ~GeometricElement::PlacementData_Bbox;      \
                 el.SetPlacementDataFlags(newPlacementDataFlags);                         \
                 }                                                                        \
@@ -3111,7 +3112,8 @@ void dgn_ElementHandler::Geometric2d::_RegisterPropertyAccessors(ECSqlClassInfo&
             if (DgnDbStatus::Success == status)                                          \
                 {                                                                        \
                 uint8_t newPlacementDataFlags = placementDataFlags | FLAGS;              \
-                if (FLAGS == GeometricElement::PlacementData_Bbox && !plc.GetElementBox().IsValid()) \
+                if (FLAGS == GeometricElement::PlacementData_Bbox &&                     \
+                    !PlacementOnEarth::IsValidBoundingBox(plc.GetElementBox()))          \
                     newPlacementDataFlags &= ~GeometricElement::PlacementData_Bbox;      \
                 el.SetPlacementDataFlags(newPlacementDataFlags);                         \
                 }                                                                        \

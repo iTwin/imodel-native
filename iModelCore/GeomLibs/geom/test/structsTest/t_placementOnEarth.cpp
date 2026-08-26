@@ -14,6 +14,18 @@ TEST(PlacementOnEarth, IsValidOrigin)
     Check::False(PlacementOnEarth::IsValidOrigin(DPoint3d::From(maxOrigin + 1.0, 0, 0)));
     }
 
+TEST(PlacementOnEarth, IsValidBoundingBox)
+    {
+    double circumferenceOfEarth = PlacementOnEarth::CircumferenceOfEarth();
+
+    Check::True(PlacementOnEarth::IsValidBoundingBox(DRange2d::From(0, 0, circumferenceOfEarth, circumferenceOfEarth)));
+    Check::False(PlacementOnEarth::IsValidBoundingBox(DRange2d::From(0, 0, circumferenceOfEarth + 1.0, circumferenceOfEarth)));
+    Check::True(PlacementOnEarth::IsValidBoundingBox(DRange3d::From(0, 0, 0, circumferenceOfEarth, circumferenceOfEarth, circumferenceOfEarth)));
+    Check::False(PlacementOnEarth::IsValidBoundingBox(DRange3d::From(0, 0, 0, circumferenceOfEarth, circumferenceOfEarth, circumferenceOfEarth + 1.0)));
+    Check::False(PlacementOnEarth::IsValidBoundingBox(DRange2d::NullRange()));
+    Check::False(PlacementOnEarth::IsValidBoundingBox(DRange3d::NullRange()));
+    }
+
 TEST(PlacementOnEarth, Placement3d)
     {
     DRange3d myRange = DRange3d::From (1,2,3,4,5,6);
