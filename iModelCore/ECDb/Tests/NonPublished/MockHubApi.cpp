@@ -330,6 +330,26 @@ void SchemaSyncTestFixture::ExpectPhysicalSchemaIdentical(ECDbR actual, ECDbR ex
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+void SchemaSyncTestFixture::ExpectForeignKeys(ECDbR db, Utf8CP tableName, int expectedCount, Utf8CP expectedOnDelete, Utf8CP expectedOnUpdate, Utf8CP context) {
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(db, SqlPrintfString("PRAGMA main.foreign_key_list([%s])", tableName)));
+
+    int actualCount = 0;
+    while (stmt.Step() == BE_SQLITE_ROW) {
+        ++actualCount;
+        EXPECT_STREQ(expectedOnUpdate, stmt.GetValueText(5)) << context << ": unexpected ON UPDATE action on " << tableName;
+        EXPECT_STREQ(expectedOnDelete, stmt.GetValueText(6)) << context << ": unexpected ON DELETE action on " << tableName;
+        EXPECT_FALSE(Utf8String::IsNullOrEmpty(stmt.GetValueText(2))) << context << ": foreign key on " << tableName << " has no referenced table";
+        EXPECT_FALSE(Utf8String::IsNullOrEmpty(stmt.GetValueText(3))) << context << ": foreign key on " << tableName << " has no local column";
+        EXPECT_FALSE(Utf8String::IsNullOrEmpty(stmt.GetValueText(4))) << context << ": foreign key on " << tableName << " has no referenced column";
+    }
+
+    EXPECT_EQ(expectedCount, actualCount) << context << ": wrong number of foreign keys on " << tableName;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void SchemaSyncTestFixture::ExpectNoForeignKeyViolations(ECDbR db, Utf8CP context) {
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(db, "PRAGMA main.foreign_key_check"));

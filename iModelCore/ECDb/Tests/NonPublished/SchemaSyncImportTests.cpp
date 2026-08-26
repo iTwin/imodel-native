@@ -1778,8 +1778,8 @@ TEST_F(SchemaSyncImportTestFixture, OrdinaryImportDerivesRelationshipForeignKeys
 
     ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*db, RelationshipSchema()));
 
-    const auto childDdl = DdlOf(*db, "rel_Child");
-    EXPECT_TRUE(childDdl.ContainsI("FOREIGN KEY")) << "the navigation foreign key was not derived: " << childDdl.c_str();
+    ExpectForeignKeys(*db, "rel_Child", 1, "CASCADE", "NO ACTION", "ordinary import navigation property");
+    ExpectForeignKeys(*db, "rel_ChildHasTags", 2, "CASCADE", "NO ACTION", "ordinary import link table");
     }
 
 //=======================================================================================
@@ -1798,11 +1798,9 @@ TEST_F(SchemaSyncImportTestFixture, RelationshipsConvergeWithNoDeltaToReplay)
             EXPECT_TRUE(HasPhysicalTable(adopted, "rel_ChildHasTags")) << "the link table was never built";
             EXPECT_FALSE(ColumnOf(adopted, "RelTest", "Child", "Owner.Id").empty()) << "the nav property was not mapped";
 
-            // Two equally broken files compare equal, so assert the constraint is there.
-            const auto childDdl = DdlOf(adopted, "rel_Child");
-            EXPECT_TRUE(childDdl.ContainsI("FOREIGN KEY")) << "the nav property's foreign key was not derived: " << childDdl.c_str();
-            const auto linkDdl = DdlOf(adopted, "rel_ChildHasTags");
-            EXPECT_TRUE(linkDdl.ContainsI("FOREIGN KEY")) << "the link table's foreign keys were not derived: " << linkDdl.c_str();
+            // Two equally broken files compare equal, so pin the expected constraints and actions.
+            ExpectForeignKeys(adopted, "rel_Child", 1, "CASCADE", "NO ACTION", "adopted navigation property");
+            ExpectForeignKeys(adopted, "rel_ChildHasTags", 2, "CASCADE", "NO ACTION", "adopted link table");
         });
     }
 
@@ -1815,8 +1813,7 @@ TEST_F(SchemaSyncImportTestFixture, JoinedTablesConvergeWithNoDeltaToReplay)
         "a joined-table hierarchy adopted from the sync db",
         [](ECDbR adopted) {
             EXPECT_TRUE(HasPhysicalTable(adopted, "jnd_Sub1")) << "the joined table was never built";
-            const auto joinedDdl = DdlOf(adopted, "jnd_Sub1");
-            EXPECT_TRUE(joinedDdl.ContainsI("FOREIGN KEY")) << "the joined table's foreign key was not derived: " << joinedDdl.c_str();
+            ExpectForeignKeys(adopted, "jnd_Sub1", 1, "CASCADE", "NO ACTION", "adopted joined table");
         });
     }
 
@@ -1895,6 +1892,36 @@ TEST_F(SchemaSyncImportTestFixture, CurrentTimeStampTriggerReachesEveryBriefcase
     }
 
 // ---------------------------------------------------------------------------------------
+// An existing trigger name is not enough: the table or timestamp column it writes can change while
+// the generated name stays the same. UpdateDbSchema must replace a stale body with the derived one.
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, UpdateDbSchemaReplacesAStaleTimestampTrigger)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-timestamp-trigger-repair");
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*b1, TimeStampSchema(), SchemaManager::SchemaImportOptions::None, syncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    b1->PullMergePush("add StampTest");
+    b2->PullMergePush("pick up StampTest");
+
+    const Utf8CP triggerName = "stp_Stamped_CurrentTimeStamp";
+    const auto expectedDdl = DdlOf(*b1, triggerName);
+    ASSERT_FALSE(expectedDdl.empty());
+    ASSERT_EQ(BE_SQLITE_OK, b2->ExecuteSql(SqlPrintfString("DROP TRIGGER [%s]", triggerName)));
+    ASSERT_EQ(BE_SQLITE_OK, b2->ExecuteSql(SqlPrintfString(
+        "CREATE TRIGGER [%s] AFTER UPDATE ON [stp_Stamped] WHEN 1 BEGIN SELECT 1; END", triggerName)));
+    ASSERT_NE(expectedDdl, DdlOf(*b2, triggerName));
+
+    ASSERT_EQ(SchemaSync::Status::OK, b2->Schemas().GetSchemaSync().UpdateDbSchema());
+    EXPECT_STREQ(expectedDdl.c_str(), DdlOf(*b2, triggerName).c_str());
+    ExpectPhysicalSchemaIdentical(*b2, *b1, "after repairing a stale timestamp trigger");
+    }
+
+// ---------------------------------------------------------------------------------------
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaSyncImportTestFixture, BriefcaseFromTheTimelineConvergesWithTheImporter)
@@ -1919,6 +1946,10 @@ TEST_F(SchemaSyncImportTestFixture, BriefcaseFromTheTimelineConvergesWithTheImpo
 
     EXPECT_TRUE(HasSchema(*b3, "RelTest"));
     EXPECT_TRUE(HasSchema(*b3, "UnitTest"));
+    for (auto* db : { b1.get(), b2.get(), b3.get() }) {
+        ExpectForeignKeys(*db, "rel_Child", 1, "CASCADE", "NO ACTION", "timeline convergence navigation property");
+        ExpectForeignKeys(*db, "rel_ChildHasTags", 2, "CASCADE", "NO ACTION", "timeline convergence link table");
+    }
     ExpectNoForeignKeyViolations(*b3, "briefcase built from the timeline");
     ExpectECTablesIdentical(*b3, *b1, "briefcase built from the timeline");
     ExpectPhysicalSchemaIdentical(*b3, *b1, "briefcase built from the timeline");

@@ -533,7 +533,14 @@ BentleyStatus DbSchemaPersistenceManager::CreateTriggers(ECDbCR ecdb, DbTable co
     {
     for (DbTrigger const* trigger : table.GetTriggers())
         {
-        if (TriggerExists(ecdb, *trigger))
+        Utf8String expectedDdl;
+        if (SUCCESS != BuildCreateTriggerDdl(expectedDdl, *trigger))
+            return ERROR;
+
+        const Utf8String normalizedExpectedDdl = NormalizeTriggerDdlForComparison(expectedDdl);
+        Utf8String existingDdl;
+        const auto queryRc = QueryTriggerDdl(existingDdl, ecdb, *trigger);
+        if (queryRc == BE_SQLITE_ROW)
             {
             if (failIfExists)
                 {
@@ -542,28 +549,22 @@ BentleyStatus DbSchemaPersistenceManager::CreateTriggers(ECDbCR ecdb, DbTable co
                 return ERROR;
                 }
 
-            continue;
+            if (NormalizeTriggerDdlForComparison(existingDdl) == normalizedExpectedDdl)
+                continue;
+
+            if (ecdb.ExecuteSql(SqlPrintfString("DROP TRIGGER [%s]", trigger->GetName().c_str())) != BE_SQLITE_OK)
+                {
+                ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0230,
+                    "Failed to replace trigger %s on table %s. Error: %s", trigger->GetName().c_str(), trigger->GetTable().GetName().c_str(), ecdb.GetLastError().c_str());
+                return ERROR;
+                }
             }
-
-        Utf8String ddl("CREATE TRIGGER [");
-        ddl.append(trigger->GetName()).append("] ");
-
-        switch (trigger->GetType())
+        else if (queryRc != BE_SQLITE_DONE)
             {
-                case DbTrigger::Type::After:
-                    ddl.append("AFTER");
-                    break;
-                case DbTrigger::Type::Before:
-                    ddl.append("BEFORE");
-
-                default:
-                    break;
+            return ERROR;
             }
 
-        ddl.append(" UPDATE ON [").append(trigger->GetTable().GetName()).append("] WHEN ");
-        ddl.append(trigger->GetCondition()).append(" ").append(trigger->GetBody());
-
-        if (ecdb.ExecuteSql(ddl.c_str()) != BE_SQLITE_OK)
+        if (ecdb.ExecuteSql(expectedDdl.c_str()) != BE_SQLITE_OK)
             {
             ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0230,
                 "Failed to create trigger %s on table %s. Error: %s", trigger->GetName().c_str(), trigger->GetTable().GetName().c_str(), ecdb.GetLastError().c_str());
@@ -578,17 +579,58 @@ BentleyStatus DbSchemaPersistenceManager::CreateTriggers(ECDbCR ecdb, DbTable co
 // @bsimethod
 //---------------------------------------------------------------------------------------
 //static
-bool DbSchemaPersistenceManager::TriggerExists(ECDbCR ecdb, DbTrigger const& trigger)
+BentleyStatus DbSchemaPersistenceManager::BuildCreateTriggerDdl(Utf8StringR ddl, DbTrigger const& trigger)
     {
-    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement("select NULL from main.sqlite_master WHERE type='trigger' and name=?");
-    if (stmt == nullptr)
+    ddl.assign("CREATE TRIGGER [").append(trigger.GetName()).append("] ");
+
+    switch (trigger.GetType())
         {
-        BeAssert(false);
-        return false;
+            case DbTrigger::Type::After:
+                ddl.append("AFTER");
+                break;
+            case DbTrigger::Type::Before:
+                ddl.append("BEFORE");
+                break;
+            default:
+                return ERROR;
         }
 
+    ddl.append(" UPDATE ON [").append(trigger.GetTable().GetName()).append("] WHEN ");
+    ddl.append(trigger.GetCondition()).append(" ").append(trigger.GetBody());
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// Trigger DDL has historically varied in identifier quoting and whitespace. Keep those
+// equivalent forms intact so opening an older file does not rewrite its physical schema.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+//static
+Utf8String DbSchemaPersistenceManager::NormalizeTriggerDdlForComparison(Utf8StringCR ddl)
+    {
+    Utf8String normalizedDdl(ddl);
+    normalizedDdl.ReplaceAll(", ", ",");
+    normalizedDdl.ReplaceAll("  ", " ");
+    normalizedDdl.ReplaceAll("[", "");
+    normalizedDdl.ReplaceAll("]", "");
+    return normalizedDdl;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+//static
+DbResult DbSchemaPersistenceManager::QueryTriggerDdl(Utf8StringR ddl, ECDbCR ecdb, DbTrigger const& trigger)
+    {
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement("SELECT sql FROM main.sqlite_master WHERE type='trigger' AND name=?");
+    if (stmt == nullptr)
+        return BE_SQLITE_ERROR;
+
     stmt->BindText(1, trigger.GetName(), Statement::MakeCopy::No);
-    return BE_SQLITE_ROW == stmt->Step();
+    const auto rc = stmt->Step();
+    if (rc == BE_SQLITE_ROW)
+        ddl.assign(stmt->GetValueText(0));
+    return rc;
     }
 
 //---------------------------------------------------------------------------------------
