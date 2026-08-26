@@ -315,7 +315,7 @@ describe("basic tests", () => {
     b0.importXmlSchemas([schema1], { schemaSyncDbUri: syncDbUri });
 
     const schema2 = `<?xml version="1.0" encoding="UTF-8"?>
-    <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
         <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
         <ECEntityClass typeName="Pipe1">
           <BaseClass>bis:GeometricElement2d</BaseClass>
@@ -343,7 +343,7 @@ describe("basic tests", () => {
     assert.deepEqual(b0Hashes, b2Hashes);
 
     const schema3 = `<?xml version="1.0" encoding="UTF-8"?>
-    <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
         <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
         <ECEntityClass typeName="Pipe1">
           <BaseClass>bis:GeometricElement2d</BaseClass>
