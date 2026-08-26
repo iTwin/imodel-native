@@ -1000,6 +1000,112 @@ TEST_F(SchemaSyncImportTestFixture, AdoptPullsReferencedSchemas)
     }
 
 // ---------------------------------------------------------------------------------------
+// BuildClosure cannot resolve a schema name that the sync db has never seen and returns
+// BE_SQLITE_NOTFOUND. Adopt must surface that as a failure and leave the briefcase alone
+// rather than committing half a closure.
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, AdoptFailsForASchemaTheSyncDbDoesNotHave)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-adopt-unknown-schema");
+
+    auto b1 = hub.CreateBriefcase();
+    ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(syncDb.GetSyncDbUri(), "upstream-container", false));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    b1->PullMergePush("init schema sync");
+
+    auto b2 = hub.CreateBriefcase();
+
+    syncDb.WithReadWrite([&](ECDbR sync) {
+        ASSERT_EQ(SchemaImportResult::OK, ImportSchema(sync, SharedColumnSchema(), SchemaManager::SchemaImportOptions::DoNotCreateOrUpdateDataTables));
+        ASSERT_EQ(BE_SQLITE_OK, sync.SaveChanges());
+    });
+
+    Utf8String beforeSchemaHash, beforeMapHash;
+    syncDb.WithReadOnly([&](ECDbR sync) {
+        beforeSchemaHash = SchemaSyncTestFixture::GetSchemaHash(sync);
+        beforeMapHash = SchemaSyncTestFixture::GetMapHash(sync);
+    });
+
+    {
+    ScopedDisableFailOnAssertion disableFailOnAssertion;
+    EXPECT_EQ(SchemaSync::Status::ERROR, b2->Schemas().GetSchemaSync().AdoptSchemas(syncDb.GetSyncDbUri(), { "NoSuchSchema" })) << "adopting a name that is absent from the sync db must not report success";
+    }
+
+    EXPECT_FALSE(HasSchema(*b2, "NoSuchSchema"));
+    EXPECT_FALSE(HasSchema(*b2, "UpstreamTest"));
+    EXPECT_TRUE(ForeignkeyCheck(*b2));
+    VerifyFileIsSound(*b2, "briefcase after a failed adopt");
+
+    syncDb.WithReadOnly([&](ECDbR sync) {
+        EXPECT_STREQ(beforeSchemaHash.c_str(), SchemaSyncTestFixture::GetSchemaHash(sync).c_str());
+        EXPECT_STREQ(beforeMapHash.c_str(), SchemaSyncTestFixture::GetMapHash(sync).c_str());
+    });
+
+    ASSERT_EQ(SchemaSync::Status::OK, b2->Schemas().GetSchemaSync().AdoptSchemas(syncDb.GetSyncDbUri(), { "UpstreamTest" }));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    EXPECT_TRUE(HasSchema(*b2, "UpstreamTest"));
+    }
+
+// ---------------------------------------------------------------------------------------
+// An import that committed in the sync db but whose changeset never shipped.
+// The sync db is left holding rows and a bumped dataVer that no briefcase and no changeset describes. 
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, ImportAbandonedAfterTheSyncDbCommittedDoesNotBlockTheNextImport)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-abandoned-after-commit");
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    const auto beforeDataVersion = SchemaSync::SyncDbInfo::From(syncDb.GetSyncDbUri()).GetDataVersion();
+
+    // A third briefcase runs the import to completion and then disappears without ever pushing.
+        {
+        auto abandoned = hub.CreateBriefcase();
+        const auto loaded = LoadSchemas(*abandoned, { SharedColumnSchema() });
+        ASSERT_TRUE(loaded.IsValid());
+        ASSERT_EQ(SchemaSync::Status::OK,
+                  abandoned->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), loaded.Refs(), SchemaManager::SchemaImportOptions::None));
+        ASSERT_EQ(BE_SQLITE_OK, abandoned->SaveChanges());
+        ASSERT_TRUE(HasSchema(*abandoned, "UpstreamTest"));
+        // deliberately no PullMergePush - the changeset is dropped and forgotten
+        }
+
+    const auto abandonedDataVersion = SchemaSync::SyncDbInfo::From(syncDb.GetSyncDbUri()).GetDataVersion();
+    EXPECT_GT(abandonedDataVersion, beforeDataVersion) << "the abandoned import should still have bumped the sync db's data version";
+
+    syncDb.WithReadOnly([&](ECDbR sync) { EXPECT_TRUE(HasSchema(sync, "UpstreamTest")); });
+    EXPECT_FALSE(HasSchema(*b1, "UpstreamTest"));
+    EXPECT_FALSE(HasSchema(*b2, "UpstreamTest"));
+
+    // The next import by an unrelated briefcase has to work and must converge.
+    const auto next = LoadSchemas(*b2, { UnrelatedSchema("01.00.00") });
+    ASSERT_TRUE(next.IsValid());
+    ASSERT_EQ(SchemaSync::Status::OK,
+              b2->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), next.Refs(), SchemaManager::SchemaImportOptions::None)) << "an abandoned import must not mess up the sync db for everyone else";
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, b2->PullMergePush("import after someone else abandoned theirs"));
+    ASSERT_EQ(BE_SQLITE_OK, b1->PullMergePush("pick up the import that followed the abandoned one"));
+
+    EXPECT_TRUE(HasSchema(*b2, "UnrelatedTest"));
+    EXPECT_TRUE(HasSchema(*b1, "UnrelatedTest"));
+    
+    // Closure-scoped adoption is what keeps the abandoned schema out of these briefcases. That
+    // mechanism has its own test - AnUnpushedImportStaysOutOfEveryOtherBriefcase; these two lines
+    // only keep this scenario self-contained, so a failure here points at the abandoned-import
+    // recovery, not at the filter.
+    EXPECT_FALSE(HasSchema(*b1, "UpstreamTest")) << "the abandoned schema must not leak into a briefcase that never imported it";
+    EXPECT_FALSE(HasSchema(*b2, "UpstreamTest"));
+    ExpectECTablesIdentical(*b1, *b2, "the pair after an import that followed an abandoned one");
+    ExpectPhysicalSchemaIdentical(*b1, *b2, "the pair after an import that followed an abandoned one");
+    VerifyFileIsSound(*b1, "b1 after an abandoned import");
+    VerifyFileIsSound(*b2, "b2 after an abandoned import");
+    }
+
+// ---------------------------------------------------------------------------------------
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaSyncImportTestFixture, AdoptedSchemaAcceptsData)
@@ -2466,6 +2572,123 @@ SchemaItem EnumerationSchema(Utf8CP version, bool withBlueEnumerator) {
 withBlueEnumerator ? R"xml(<ECEnumerator name="Blue" value="3" displayLabel="Blue" />)xml" : "");
     return SchemaItem(xml);
 }
+
+namespace
+    {
+    bool HasProperty(ECDbR db, Utf8CP schemaName, Utf8CP className, Utf8CP propertyName) {
+        Statement stmt;
+        if (stmt.Prepare(db, R"sql(
+            SELECT 1 FROM main.ec_Property p
+            JOIN main.ec_Class c ON c.Id = p.ClassId
+            JOIN main.ec_Schema s ON s.Id = c.SchemaId
+            WHERE s.Name=? AND c.Name=? AND p.Name=?)sql") != BE_SQLITE_OK)
+            return false;
+        stmt.BindText(1, schemaName, Statement::MakeCopy::No);
+        stmt.BindText(2, className, Statement::MakeCopy::No);
+        stmt.BindText(3, propertyName, Statement::MakeCopy::No);
+        return stmt.Step() == BE_SQLITE_ROW;
+        }
+
+    // Is a metadata item of this kind still present?
+    bool HasMetadataItem(ECDbR db, Utf8CP table, Utf8CP schemaName, Utf8CP itemName) {
+        Utf8String sql;
+        sql.Sprintf("SELECT 1 FROM main.%s i JOIN main.ec_Schema s ON s.Id = i.SchemaId WHERE s.Name=? AND i.Name=?", table);
+        Statement stmt;
+        if (stmt.Prepare(db, sql.c_str()) != BE_SQLITE_OK)
+            return false;
+        stmt.BindText(1, schemaName, Statement::MakeCopy::No);
+        stmt.BindText(2, itemName, Statement::MakeCopy::No);
+        return stmt.Step() == BE_SQLITE_ROW;
+        }
+    }
+
+// ---------------------------------------------------------------------------------------
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, DeletingSharedMetadataDoesNotCascadeIntoAnotherSchemasProperties)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-metadata-cascade");
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    Utf8String baseSchemaXml(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="SharedMetadataTest" alias="smd" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <UnitSystem typeName="SHAREDSYS" displayLabel="Shared system" />
+            <Phenomenon typeName="SHAREDDISTANCE" definition="SHAREDDISTANCE" displayLabel="Shared distance" />
+            <Unit typeName="SHAREDUNIT" definition="SHAREDUNIT" phenomenon="SHAREDDISTANCE" unitSystem="SHAREDSYS" />
+            %s
+            <ECEntityClass typeName="Owner">
+                <ECProperty propertyName="label" typeName="string" />
+            </ECEntityClass>
+        </ECSchema>
+        )xml");
+    Utf8String schemaItemsXML = R"xml(
+        <KindOfQuantity typeName="SharedLength" description="Shared length" persistenceUnit="SHAREDUNIT" relativeError="0.001" />
+        <ECEnumeration typeName="SharedColour" backingTypeName="int" isStrict="true">
+        <ECEnumerator name="Red" value="1" displayLabel="Red" />
+        <ECEnumerator name="Green" value="2" displayLabel="Green" />
+        </ECEnumeration>
+    )xml";
+
+    Utf8String consumerSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="MetadataConsumerTest" alias="mdc" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="SharedMetadataTest" version="1.0.0" alias="smd"/>
+            <ECEntityClass typeName="Consumer">
+                <ECProperty propertyName="label" typeName="string" />
+                <ECProperty propertyName="borrowedLength" typeName="double" kindOfQuantity="smd:SharedLength" />
+                <ECProperty propertyName="borrowedColour" typeName="smd:SharedColour" />
+            </ECEntityClass>
+        </ECSchema>
+    )xml";
+
+    // b1 publishes the schema that owns the shared metadata.
+    ASSERT_EQ(SchemaSync::Status::OK,
+              b1->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b1, { SchemaItem(Utf8PrintfString(baseSchemaXml.c_str(), "1.0.0", schemaItemsXML.c_str())) }).Refs(), SchemaManager::SchemaImportOptions::None));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, b1->PullMergePush("publish the shared metadata schema"));
+    ASSERT_EQ(BE_SQLITE_OK, b2->PullMergePush("pick up the shared metadata schema"));
+
+    // b2 borrows that metadata from its own schema and deliberately does not push.
+    ASSERT_EQ(SchemaSync::Status::OK,
+              b2->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { SchemaItem(Utf8PrintfString(consumerSchemaXml.c_str(), "1.0.0")) }).Refs(), SchemaManager::SchemaImportOptions::None));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    ASSERT_TRUE(HasProperty(*b2, "MetadataConsumerTest", "Consumer", "borrowedLength"));
+    ASSERT_TRUE(HasProperty(*b2, "MetadataConsumerTest", "Consumer", "borrowedColour"));
+    syncDb.WithReadOnly([&](ECDbR sync) {
+        ASSERT_TRUE(HasProperty(sync, "MetadataConsumerTest", "Consumer", "borrowedLength"));
+        ASSERT_TRUE(HasProperty(sync, "MetadataConsumerTest", "Consumer", "borrowedColour"));
+        ASSERT_TRUE(HasMetadataItem(sync, "ec_KindOfQuantity", "SharedMetadataTest", "SharedLength"));
+        ASSERT_TRUE(HasMetadataItem(sync, "ec_Enumeration", "SharedMetadataTest", "SharedColour"));
+    });
+
+    // b1 now removes the shared metadata. b1 has never heard of MetadataConsumerTest schema, only the sync db knows both schemas
+    SchemaSync::Status deleteStatus = b1->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b1, { SchemaItem(Utf8PrintfString(baseSchemaXml.c_str(), "2.0.0")) }).Refs(), SchemaManager::SchemaImportOptions::None);
+    ASSERT_EQ(SchemaSync::Status::OK, deleteStatus);
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+
+    // The assertion that matters, and it holds either way.
+    syncDb.WithReadOnly([&](ECDbR sync) {
+        EXPECT_TRUE(HasProperty(sync, "MetadataConsumerTest", "Consumer", "borrowedLength")) << "deleting the KindOfQuantity cascaded into another schema's property row in the sync db";
+        EXPECT_TRUE(HasProperty(sync, "MetadataConsumerTest", "Consumer", "borrowedColour")) << "deleting the ECEnumeration cascaded into another schema's property row in the sync db";
+        EXPECT_TRUE(HasClass(sync, "MetadataConsumerTest", "Consumer"));
+        ExpectNoForeignKeyViolations(sync, "sync db after a metadata-only deletion");
+
+        EXPECT_FALSE(HasMetadataItem(sync, "ec_KindOfQuantity", "SharedMetadataTest", "SharedLength")) << "the import reported success, so the KindOfQuantity should be gone";
+        EXPECT_FALSE(HasMetadataItem(sync, "ec_Enumeration", "SharedMetadataTest", "SharedColour"));
+    });
+
+    // The unpushed briefcase must be untouched regardless - it never took part in this import.
+    EXPECT_TRUE(HasProperty(*b2, "MetadataConsumerTest", "Consumer", "borrowedLength"));
+    EXPECT_TRUE(HasProperty(*b2, "MetadataConsumerTest", "Consumer", "borrowedColour"));
+    VerifyFileIsSound(*b1, "b1 after a metadata-only deletion");
+    VerifyFileIsSound(*b2, "b2 after someone else deleted shared metadata");
+
+    ASSERT_EQ(BE_SQLITE_OK, b1->PullMergePush("publish the metadata deletion")) << "the import reported success, so its changeset must be pushable";
+
+    // b2 is now stranded
+    EXPECT_EQ(BE_SQLITE_CONSTRAINT, b2->PullMergePush("publish the consumer schema that borrows the metadata"));
+    }
 
 // ---------------------------------------------------------------------------------------
 // @bsitest
@@ -4630,6 +4853,212 @@ TEST_F(SchemaSyncImportExtendedTests, ARefusedTransformLeavesTheSyncDbUntouchedA
     syncDb.WithReadOnly([&](ECDbR sync) {
         ExpectECTablesIdentical(*b2, sync, "after the next additive import");
     });
+    }
+
+// ---------------------------------------------------------------------------------------
+// One ImportSchemas call carries a clean schema and a schema that needs a data transform. The
+// refusal has to be atomic across the whole batch: if the clean schema were committed to the sync
+// db on its own, the next briefcase would adopt a schema set that no briefcase ever imported.
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportExtendedTests, RefusedTransformInAMixedBatchAlsoKeepsTheCleanSchemaOutOfTheSyncDb)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-extended-mixed-batch-rollback");
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    const auto initial = BatchBRemapSchema("BatchBMixedBatch", "bmb", "01.00.00", false);
+    const auto hoisted = BatchBRemapSchema("BatchBMixedBatch", "bmb", "01.00.01", true);
+    ASSERT_EQ(SchemaSync::Status::OK,
+              b2->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { initial }).Refs(), SchemaManager::SchemaImportOptions::None));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+
+    Utf8String beforeSchemaHash, beforeMapHash;
+    const auto beforeDataVersion = SchemaSync::SyncDbInfo::From(syncDb.GetSyncDbUri()).GetDataVersion();
+    syncDb.WithReadOnly([&](ECDbR sync) {
+        beforeSchemaHash = SchemaSyncTestFixture::GetSchemaHash(sync);
+        beforeMapHash = SchemaSyncTestFixture::GetMapHash(sync);
+        ASSERT_FALSE(HasSchema(sync, "BatchBUnrelatedTest"));
+    });
+    const auto before = InstanceCensus::Take(*b2);
+
+    // The clean schema is listed first so that it would be the one a partial commit left behind.
+    const auto loaded = LoadSchemas(*b2, { BatchBUnrelatedSchema(), hoisted });
+    ASSERT_TRUE(loaded.IsValid()) << "could not load the mixed batch";
+
+    {
+    ScopedDisableFailOnAssertion disableFailOnAssertion;
+    EXPECT_EQ(SchemaSync::Status::ERROR_DATA_TRANSFORM_REQUIRED,
+              b2->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), loaded.Refs(), SchemaManager::SchemaImportOptions::None));
+    }
+
+    EXPECT_STREQ("1.0.0", VersionOf(*b2, "BatchBMixedBatch").c_str());
+    EXPECT_FALSE(HasSchema(*b2, "BatchBUnrelatedTest")) << "the clean sibling must roll back with the refused one in the briefcase";
+    EXPECT_EQ(beforeDataVersion, SchemaSync::SyncDbInfo::From(syncDb.GetSyncDbUri()).GetDataVersion());
+    syncDb.WithReadOnly([&](ECDbR sync) {
+        EXPECT_FALSE(HasSchema(sync, "BatchBUnrelatedTest")) << "a partial commit here would be adopted by the next briefcase";
+        EXPECT_STREQ("1.0.0", VersionOf(sync, "BatchBMixedBatch").c_str());
+        EXPECT_STREQ(beforeSchemaHash.c_str(), SchemaSyncTestFixture::GetSchemaHash(sync).c_str());
+        EXPECT_STREQ(beforeMapHash.c_str(), SchemaSyncTestFixture::GetMapHash(sync).c_str());
+        ExpectECTablesIdentical(sync, *b2, "sync db after refusing a mixed batch");
+    });
+    ExpectCensusPreserved(before, InstanceCensus::Take(*b2), "after refusing a mixed batch");
+
+    // Re-importing the clean schema on its own still works, so the refusal did not poison the pair.
+    const auto retried = LoadSchemas(*b2, { BatchBUnrelatedSchema() });
+    ASSERT_TRUE(retried.IsValid());
+    ASSERT_EQ(SchemaSync::Status::OK,
+              b2->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), retried.Refs(), SchemaManager::SchemaImportOptions::None));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    EXPECT_TRUE(HasSchema(*b2, "BatchBUnrelatedTest"));
+    syncDb.WithReadOnly([&](ECDbR sync) {
+        EXPECT_TRUE(HasSchema(sync, "BatchBUnrelatedTest"));
+        ExpectECTablesIdentical(*b2, sync, "after re-importing the clean schema on its own");
+    });
+    VerifyFileIsSound(*b2, "briefcase after a refused mixed batch and a successful retry");
+    }
+
+// ---------------------------------------------------------------------------------------
+// The retry case of an import abandoned after the sync db committed: the same schema is imported
+// again by a different briefcase. The sync db already holds those rows, so the second import has to
+// recognise them as its own answer rather than fail or produce a second, divergent layout.
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportExtendedTests, SchemaAbandonedInTheSyncDbCanBeImportedAgainByAnotherBriefcase)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-extended-abandoned-retry");
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    const auto initial = BatchBSharedColumnSchema("BatchBAbandonedRetry", "bar", "01.00.00", 2);
+    const auto evolved = BatchBSharedColumnSchema("BatchBAbandonedRetry", "bar", "01.00.01", 4);
+
+    Utf8String abandonedSchemaHash, abandonedMapHash;
+        {
+        auto abandoned = hub.CreateBriefcase();
+        const auto loaded = LoadSchemas(*abandoned, { initial });
+        ASSERT_TRUE(loaded.IsValid());
+        ASSERT_EQ(SchemaSync::Status::OK,
+                  abandoned->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), loaded.Refs(), SchemaManager::SchemaImportOptions::None));
+        ASSERT_EQ(BE_SQLITE_OK, abandoned->SaveChanges());
+        // the changeset is dropped: this briefcase goes away without pushing
+        }
+
+    syncDb.WithReadOnly([&](ECDbR sync) {
+        ASSERT_TRUE(HasSchema(sync, "BatchBAbandonedRetry"));
+        abandonedSchemaHash = SchemaSyncTestFixture::GetSchemaHash(sync);
+        abandonedMapHash = SchemaSyncTestFixture::GetMapHash(sync);
+    });
+
+    // b2 imports exactly the same schema. The sync db's copy is already identical, so its ids and
+    // layout are the answer b2 must adopt - not a fresh one.
+    const auto retried = LoadSchemas(*b2, { initial });
+    ASSERT_TRUE(retried.IsValid());
+    ASSERT_EQ(SchemaSync::Status::OK,
+              b2->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), retried.Refs(), SchemaManager::SchemaImportOptions::None));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+
+    EXPECT_TRUE(HasSchema(*b2, "BatchBAbandonedRetry"));
+    EXPECT_STREQ("1.0.0", VersionOf(*b2, "BatchBAbandonedRetry").c_str());
+    syncDb.WithReadOnly([&](ECDbR sync) {
+        EXPECT_STREQ(abandonedSchemaHash.c_str(), SchemaSyncTestFixture::GetSchemaHash(sync).c_str())
+            << "re-importing the identical schema must not rewrite the rows the abandoned import decided";
+        EXPECT_STREQ(abandonedMapHash.c_str(), SchemaSyncTestFixture::GetMapHash(sync).c_str());
+        ExpectECTablesIdentical(*b2, sync, "after re-importing a schema abandoned in the sync db");
+    });
+
+    ASSERT_EQ(BE_SQLITE_OK, b2->PullMergePush("publish the re-imported schema"));
+    ASSERT_EQ(BE_SQLITE_OK, b1->PullMergePush("pick up the re-imported schema"));
+    ExpectECTablesIdentical(*b1, *b2, "the pair after a re-imported schema");
+    ExpectPhysicalSchemaIdentical(*b1, *b2, "the pair after a re-imported schema");
+
+    // And the recovered schema is still upgradable, so the abandoned rows left it in a usable state.
+    const auto next = LoadSchemas(*b2, { evolved });
+    ASSERT_TRUE(next.IsValid());
+    ASSERT_EQ(SchemaSync::Status::OK,
+              b2->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), next.Refs(), SchemaManager::SchemaImportOptions::None));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, b2->PullMergePush("evolve the recovered schema"));
+    ASSERT_EQ(BE_SQLITE_OK, b1->PullMergePush("pick up the evolved recovered schema"));
+    EXPECT_STREQ("1.0.1", VersionOf(*b1, "BatchBAbandonedRetry").c_str());
+    ExpectECTablesIdentical(*b1, *b2, "the pair after evolving a recovered schema");
+    VerifyFileIsSound(*b1, "b1 after recovering an abandoned schema");
+    }
+
+// ---------------------------------------------------------------------------------------
+// UpgradeSchemas overwrote the sync db and then the changeset was never pushed.
+// Nothing detects this at import time today, so this test pins the
+// contract rather than a fix - the sync db is left ahead of every briefcase, and the sanctioned
+// way out is for a briefcase that IS level with the timeline to overwrite the sync db back to the
+// truth. If a guard is ever added, this test is where the expectation changes.
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportExtendedTests, UpgradeWhoseChangesetIsDroppedLeavesTheSyncDbAheadUntilItIsOverwritten)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-extended-dropped-upgrade");
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    const auto initial = BatchBRemapSchema("BatchBDroppedUpgrade", "bdu", "01.00.00", false);
+    const auto hoisted = BatchBRemapSchema("BatchBDroppedUpgrade", "bdu", "01.00.01", true);
+    ASSERT_EQ(SchemaSync::Status::OK,
+              b1->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b1, { initial }).Refs(), SchemaManager::SchemaImportOptions::None));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, b1->PullMergePush("publish the pre-upgrade schema"));
+    ASSERT_EQ(BE_SQLITE_OK, b2->PullMergePush("pick up the pre-upgrade schema"));
+    ASSERT_STREQ("1.0.0", VersionOf(*b2, "BatchBDroppedUpgrade").c_str());
+
+    // Someone takes the exclusive path, transforms locally, overwrites the sync db - and then never
+    // pushes. The sync db now describes a schema state that exists in no briefcase and no changeset.
+        {
+        auto upgrader = hub.CreateBriefcase();
+        const auto loaded = LoadSchemas(*upgrader, { hoisted });
+        ASSERT_TRUE(loaded.IsValid());
+        ASSERT_EQ(SchemaSync::Status::OK,
+                  upgrader->Schemas().GetSchemaSync().UpgradeSchemas(syncDb.GetSyncDbUri(), loaded.Refs(),
+                                                                     SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade, nullptr));
+        ASSERT_EQ(BE_SQLITE_OK, upgrader->SaveChanges());
+        ASSERT_STREQ("1.0.1", VersionOf(*upgrader, "BatchBDroppedUpgrade").c_str());
+        // the changeset is dropped
+        }
+
+    // The corruption this documents: the shared authority is ahead of the timeline, and the only
+    // signal is the data version - nothing refuses to use the sync db in this state.
+    syncDb.WithReadOnly([&](ECDbR sync) {
+        EXPECT_STREQ("1.0.1", VersionOf(sync, "BatchBDroppedUpgrade").c_str()) << "the sync db kept the upgrade";
+    });
+    EXPECT_STREQ("1.0.0", VersionOf(*b1, "BatchBDroppedUpgrade").c_str());
+    EXPECT_STREQ("1.0.0", VersionOf(*b2, "BatchBDroppedUpgrade").c_str());
+    EXPECT_GT(SchemaSync::SyncDbInfo::From(syncDb.GetSyncDbUri()).GetDataVersion(), b2->Schemas().GetSchemaSync().GetInfo().GetDataVersion()) 
+        << "the sync db being ahead of a level briefcase is the only detectable symptom of this state";
+
+    // The sanctioned recovery: a briefcase that is level with the timeline overwrites the sync db,
+    // which discards the upgrade nobody received and puts the two back in agreement.
+    ASSERT_EQ(SchemaSync::Status::OK, b2->Schemas().GetSchemaSync().OverwriteSyncDb(syncDb.GetSyncDbUri()))
+        << "a level briefcase must be able to reset a sync db that ran ahead of the timeline";
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+
+    syncDb.WithReadOnly([&](ECDbR sync) {
+        EXPECT_STREQ("1.0.0", VersionOf(sync, "BatchBDroppedUpgrade").c_str()) << "the overwrite must discard the dropped upgrade";
+        ExpectECTablesIdentical(*b2, sync, "sync db after recovering from a dropped upgrade");
+    });
+
+    // And ordinary imports work again afterwards, for both briefcases.
+    const auto next = LoadSchemas(*b2, { BatchBUnrelatedSchema() });
+    ASSERT_TRUE(next.IsValid());
+    ASSERT_EQ(SchemaSync::Status::OK,
+              b2->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), next.Refs(), SchemaManager::SchemaImportOptions::None));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, b2->PullMergePush("import after recovering from a dropped upgrade"));
+    ASSERT_EQ(BE_SQLITE_OK, b1->PullMergePush("pick up the import that followed the recovery"));
+    EXPECT_TRUE(HasSchema(*b1, "BatchBUnrelatedTest"));
+    ExpectECTablesIdentical(*b1, *b2, "the pair after recovering from a dropped upgrade");
+    ExpectPhysicalSchemaIdentical(*b1, *b2, "the pair after recovering from a dropped upgrade");
+    VerifyFileIsSound(*b1, "b1 after recovering from a dropped upgrade");
+    VerifyFileIsSound(*b2, "b2 after recovering from a dropped upgrade");
     }
 
 // ---------------------------------------------------------------------------------------
