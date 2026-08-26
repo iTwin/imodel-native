@@ -429,6 +429,7 @@ private:
 
 
         ECInstanceKeyHelper m_ecInstanceKeyHelper;
+        ECSqlBinder* m_generatedIdBinder = nullptr;
 
         ECSqlStatus _Prepare(ECSqlPrepareContext&, Exp const&) override;
         ECSqlStatus PrepareLeafStatements(PrepareInfo&);

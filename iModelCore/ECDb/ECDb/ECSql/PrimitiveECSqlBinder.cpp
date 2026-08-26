@@ -11,6 +11,20 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+int PrimitiveECSqlBinder::GetSqlParameterIndex() const
+    {
+    BeAssert(GetMappedSqlParameterNames().size() == 1);
+    BeAssert(!GetMappedSqlParameterNames()[0].empty());
+    if (0 == m_sqlParameterIndex)
+        m_sqlParameterIndex = GetSqliteStatement().GetParameterIndex(GetMappedSqlParameterNames()[0].c_str());
+
+    BeAssert(m_sqlParameterIndex > 0);
+    return m_sqlParameterIndex;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 ECSqlStatus PrimitiveECSqlBinder::_BindNull()
     {
     const DbResult sqliteStat = GetSqliteStatement().BindNull(GetSqlParameterIndex());
