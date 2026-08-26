@@ -441,7 +441,7 @@ SchemaSync::Status SchemaSync::InitInternal(SyncDbUri const& syncDbUri, Utf8Stri
         info.To(BeJsValue(doc));
         m_conn.GetImpl().Issues().ReportV(
             IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0616,
-            "Sync db (%a) already initalized. %s", doc.Stringify().c_str());
+            "Sync db (%p) already initialized. %s", (void *)this, doc.Stringify().c_str());
         return Status::ERROR_SCHEMA_SYNC_DB_ALREADY_INITIALIZED;
     }
 
