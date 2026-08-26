@@ -167,7 +167,7 @@ public:
     void DisableSchemaSync() { m_disabledForProfileUpgrade = true; }
     void ReEnableSchemaSync() { m_disabledForProfileUpgrade = false; }
     bool IsSchemaSyncDisabled() const { return m_disabledForProfileUpgrade; }
-    Status UpdateDataVersion(SyncDbUri const&);
+    ECDB_EXPORT Status UpdateDataVersion(SyncDbUri const&);
     ECDB_EXPORT int64_t GetModifiedRowCount() const { return m_modifiedRowCount; }
     ECDB_EXPORT Status UpdateDbSchema();
     ECDB_EXPORT LocalDbInfo GetInfo() const;
