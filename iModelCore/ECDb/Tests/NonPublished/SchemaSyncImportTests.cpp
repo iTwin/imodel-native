@@ -2721,7 +2721,7 @@ TEST_F(SchemaSyncImportTestFixture, DeletingSharedMetadataDoesNotCascadeIntoAnot
     });
 
     // b1 now removes the shared metadata. b1 has never heard of MetadataConsumerTest schema, only the sync db knows both schemas
-    SchemaSync::Status deleteStatus = b1->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b1, { SchemaItem(Utf8PrintfString(baseSchemaXml.c_str(), "2.0.0")) }).Refs(), SchemaManager::SchemaImportOptions::None);
+    SchemaSync::Status deleteStatus = b1->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b1, { SchemaItem(Utf8PrintfString(baseSchemaXml.c_str(), "2.0.0", "")) }).Refs(), SchemaManager::SchemaImportOptions::None);
     ASSERT_EQ(SchemaSync::Status::OK, deleteStatus);
     ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
 
