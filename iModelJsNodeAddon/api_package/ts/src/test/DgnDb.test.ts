@@ -327,12 +327,13 @@ describe("basic tests", () => {
     </ECSchema>`;
     b1.importXmlSchemas([schema2], { schemaSyncDbUri: syncDbUri });
 
-    b0.schemaSyncPull(syncDbUri);
+    // Importing through the current front door adopts the sync db's existing answer.
+    b0.importXmlSchemas([schema2], { schemaSyncDbUri: syncDbUri });
 
     // test default URI
     b2.schemaSyncSetDefaultUri(syncDbUri);
     assert.equal(b2.schemaSyncGetDefaultUri(), syncDbUri);
-    b2.schemaSyncPull();
+    b2.importXmlSchemas([schema2]);
 
     // b1 = b2 == b0
     const b0Hashes = getSchemaHashes(b0);

@@ -610,20 +610,6 @@ public:
         return obj;
     }
 
-    void SchemaSyncPull(NapiInfoCR info) {
-        OPTIONAL_ARGUMENT_STRING(0, schemaSyncDbUriStr);
-        auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
-        LastErrorListener lastError(m_ecdb);
-        auto rc = m_ecdb.Schemas().GetSchemaSync().Pull(syncDbUri);
-        if (rc != SchemaSync::Status::OK) {
-            if (lastError.HasError()) {
-                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
-            } else {
-                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to pull changes from channel: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
-            }
-        }
-    }
-
     void SchemaSyncOverwrite(NapiInfoCR info) {
         OPTIONAL_ARGUMENT_STRING(0, schemaSyncDbUriStr);
         auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
@@ -676,7 +662,6 @@ public:
             InstanceMethod("isOpen", &NativeECDb::IsOpen),
             InstanceMethod("schemaSyncSetDefaultUri", &NativeECDb::SchemaSyncSetDefaultUri),
             InstanceMethod("schemaSyncGetDefaultUri", &NativeECDb::SchemaSyncGetDefaultUri),
-            InstanceMethod("schemaSyncPull", &NativeECDb::SchemaSyncPull),
             InstanceMethod("schemaSyncOverwrite", &NativeECDb::SchemaSyncOverwrite),
             InstanceMethod("schemaSyncUpdateDbSchema", &NativeECDb::SchemaSyncUpdateDbSchema),
             InstanceMethod("schemaSyncInit", &NativeECDb::SchemaSyncInit),
@@ -2372,21 +2357,6 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         return obj;
     }
 
-    void SchemaSyncPull(NapiInfoCR info) {
-        auto& db = GetOpenedDb(info);
-        OPTIONAL_ARGUMENT_STRING(0, schemaSyncDbUriStr);
-        auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
-        LastErrorListener lastError(GetOpenedDb(info));
-        auto rc = db.PullSchemaChanges(syncDbUri);
-        if (rc != SchemaSync::Status::OK) {
-            if (lastError.HasError()) {
-                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
-            } else {
-                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to pull changes to schema sync db: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
-            }
-        }
-    }
-
     void SchemaSyncOverwrite(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
         OPTIONAL_ARGUMENT_STRING(0, schemaSyncDbUriStr);
@@ -3453,7 +3423,6 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("stopProfiler", &NativeDgnDb::StopProfiler),
             InstanceMethod("schemaSyncSetDefaultUri", &NativeDgnDb::SchemaSyncSetDefaultUri),
             InstanceMethod("schemaSyncGetDefaultUri", &NativeDgnDb::SchemaSyncGetDefaultUri),
-            InstanceMethod("schemaSyncPull", &NativeDgnDb::SchemaSyncPull),
             InstanceMethod("schemaSyncOverwrite", &NativeDgnDb::SchemaSyncOverwrite),
             InstanceMethod("schemaSyncUpdateDbSchema", &NativeDgnDb::SchemaSyncUpdateDbSchema),
             InstanceMethod("schemaSyncInit", &NativeDgnDb::SchemaSyncInit),

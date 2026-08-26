@@ -282,13 +282,6 @@ DbResult DgnDb::InitializeSchemas(Db::OpenParams const& params)
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-DgnDb::PullResult DgnDb::PullSchemaChanges(SyncDbUri uri) {
-    return Schemas().GetSchemaSync().Pull(uri, GetSchemaImportToken());
-}
-
-//--------------------------------------------------------------------------------------
-// @bsimethod
-//--------------------------------------------------------------------------------------
 DbResult DgnDb::SchemaStatusToDbResult(SchemaStatus status, bool isUpgrade)
     {
     switch (status)

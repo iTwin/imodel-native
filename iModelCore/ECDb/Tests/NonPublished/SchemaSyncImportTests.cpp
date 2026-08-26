@@ -1782,6 +1782,33 @@ TEST_F(SchemaSyncImportTestFixture, OrdinaryImportDerivesRelationshipForeignKeys
     ExpectForeignKeys(*db, "rel_ChildHasTags", 2, "CASCADE", "NO ACTION", "ordinary import link table");
     }
 
+// ---------------------------------------------------------------------------------------
+// The ordinary schema-import path tracks table DDL but not trigger DDL. A receiving file must
+// derive the trigger after applying the changeset even though the table already exists.
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, OrdinaryImportChangesetRecreatesCurrentTimestampTrigger)
+    {
+    ECDbHub hub;
+    auto importer = hub.CreateBriefcase();
+    auto receiver = hub.CreateBriefcase();
+    ASSERT_FALSE(importer->Schemas().GetSchemaSync().IsEnabled());
+    ASSERT_FALSE(receiver->Schemas().GetSchemaSync().IsEnabled());
+
+    ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*importer, TimeStampSchema()));
+
+    constexpr Utf8CP triggerName = "stp_Stamped_CurrentTimeStamp";
+    const auto expectedDdl = DdlOf(*importer, triggerName);
+    ASSERT_FALSE(expectedDdl.empty());
+
+    ASSERT_EQ(BE_SQLITE_OK, importer->SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, importer->PullMergePush("ordinary timestamp schema import"));
+    ASSERT_EQ(BE_SQLITE_OK, receiver->PullMergePush("receive ordinary timestamp schema import"));
+
+    EXPECT_STREQ(expectedDdl.c_str(), DdlOf(*receiver, triggerName).c_str());
+    ExpectPhysicalSchemaIdentical(*receiver, *importer, "ordinary schema import changeset");
+    }
+
 //=======================================================================================
 // Scenario coverage carried over from the two earlier v2 prototypes. Both of their questions come
 // down to one here: does an adopting briefcase end up with the same file, physical schema included.
