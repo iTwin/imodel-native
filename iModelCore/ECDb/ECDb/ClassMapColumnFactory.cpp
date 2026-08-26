@@ -726,6 +726,7 @@ bool ClassMapColumnFactory::IsCompatible(DbColumn const& avaliableColumn, DbColu
     if (DbColumn::IsCompatible(avaliableColumn.GetType(), type))
         {
         if (m_primaryOrJoinedTable->GetType() == DbTable::Type::Existing
+            || avaliableColumn.IsShared()   // Shared columns never carry column constraints and must be excluded from the check to avoid creating divergent columns
             || (avaliableColumn.GetConstraints().HasNotNullConstraint() == params.AddNotNullConstraint() &&
                 avaliableColumn.GetConstraints().HasUniqueConstraint() == params.AddUniqueConstraint() &&
                 avaliableColumn.GetConstraints().GetCollation() == params.GetCollation()))

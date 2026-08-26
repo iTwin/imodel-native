@@ -129,6 +129,7 @@ struct PragmaIntegrityCheck : PragmaManager::GlobalHandler {
     DbResult CheckLinkTableFkIds(IntegrityChecker&, StaticPragmaResult&, ECDbCR);
     DbResult CheckClassIds(IntegrityChecker&, StaticPragmaResult&, ECDbCR);
     DbResult CheckMissingChildRows(IntegrityChecker&, StaticPragmaResult&, ECDbCR);
+    DbResult CheckDivergedPropMaps(IntegrityChecker&, StaticPragmaResult&, ECDbCR);
     virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
     static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaIntegrityCheck>(); }
 
