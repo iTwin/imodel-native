@@ -5,6 +5,8 @@
 #pragma once
 
 #include <cstddef>
+#include <iterator>
+#include <memory>
 #include <ECObjects/ECInstance.h>
 #include <ECObjects/ECObjects.h>
 #include <ECObjects/CalculatedProperty.h>
@@ -334,7 +336,7 @@ protected:
     SchemaWriteStatus                   _WriteXml (BePugiXmlWriterR xmlWriter, Utf8CP elementName, ECVersion ecXmlVersion, bvector<bpair<Utf8CP, Utf8CP>>* attributes=nullptr, bool writeType=true);
 
     virtual bool           _ToJson(BeJsValue outValue, bool isInherited) const;
-    bool                   _ToJson(BeJsValue outValue, bool isInherited, bvector<bpair<Utf8String, Json::Value>> attributes) const;
+    bool                   _ToJson(BeJsValue outValue, bool isInherited, BeJsConst additionalAttributes) const;
 
     virtual Utf8String                  _GetTypeNameForXml(ECVersion ecXmlVersion) const { return GetTypeName(); }
     void                                _AdjustMinMaxAfterTypeChange();
@@ -1284,7 +1286,7 @@ public:
     //! @param[out] outValue                Json object containing the schema child Json if successfully written.
     //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
     ECOBJECTS_EXPORT bool ToJson(BeJsValue outValue, bool includeSchemaVersion = true) const { return ToJson(outValue, true, includeSchemaVersion); };
-    ECOBJECTS_EXPORT Json::Value GetPresentationFormatsJson() const; //!< Return Json array of allowable presentation formats.
+    ECOBJECTS_EXPORT void GetPresentationFormatsJson(BeJsValue out) const; //!< Populate @p out with a JSON array of allowable presentation format names.
     //! Given an old EC3.1 persistence FUS descriptor as well as the semi-colon separated string of
     //! presentation FUS descriptors in the format: {unitName}({formatName}), it will extract and convert
     //! the persistence unit to a new unit name. If the persistence FUS has a format, it will be added to the end of the
@@ -1561,7 +1563,7 @@ protected:
     SchemaWriteStatus _WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion, Utf8CP elementName, bmap<Utf8CP, Utf8CP>* additionalAttributes, bool doElementEnd) const;
 
     virtual bool _ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties) const;
-    bool _ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties, bvector<bpair<Utf8String, Json::Value>> attributes) const;
+    bool _ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties, BeJsConst additionalAttributes) const;
 
     virtual bool _Validate() const = 0;
 
@@ -3907,8 +3909,8 @@ public:
     //! @return A status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then the file pointed to by ecSchemaXmlFile will contain the serialized schema.  Otherwise, the file will be unmodified
     ECOBJECTS_EXPORT SchemaWriteStatus WriteToXmlFile(WCharCP ecSchemaXmlFile, ECVersion ecXmlVersion = ECVersion::Latest, bool utf16 = false) const;
 
-    //! Writes a schema to a Json::Value
-    //! @param[out] ecSchemaJsonValue Json::Value the schema is serialized to on success.
+    //! Writes a schema to a JSON value
+    //! @param[out] ecSchemaJsonValue the JSON value the schema is serialized to on success.
     //! @return A status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then the Json value will contain the serialized schema.
     ECOBJECTS_EXPORT bool WriteToJsonValue(BeJsValue ecSchemaJsonValue) const;
 
