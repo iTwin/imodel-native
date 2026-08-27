@@ -3215,10 +3215,10 @@ TEST(CurveVector, FlattenNestedUnionRegions)
         Check::Size(flattened->CountPrimitivesBelow(), numPrimitives, "flatten preserves primitive count");
         Check::False(flattened->HasNestedUnionRegion(), "flatten removed all nested unions");
 
-        auto jsonA = Json::Value();
-        Check::True(IModelJson::TryGeometryToIModelJsonValue(BeJsValue(jsonA), *IGeometry::Create(cv.Clone())), "geometry to imjs");
+        BeJsDocument jsonA;
+        Check::True(IModelJson::TryGeometryToIModelJsonValue(jsonA, *IGeometry::Create(cv.Clone())), "geometry to imjs");
         bvector<IGeometryPtr> geometryB;
-        if (Check::True(IModelJson::TryIModelJsonValueToGeometry(BeJsValue(jsonA), geometryB), "imjs to geometry"))
+        if (Check::True(IModelJson::TryIModelJsonValueToGeometry(jsonA, geometryB), "imjs to geometry"))
             {
             auto curveB = geometryB.front()->GetAsCurveVector();
             Check::True(curveB.IsValid() && curveB->IsSameStructureAndGeometry(*flattened), "round trip through imjs flattens");
