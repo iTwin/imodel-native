@@ -435,7 +435,6 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(libprefix)iTwinSQLiteEC$(lib
                             $(ContextSubPartsStaticLibs)$(libprefix)BePng$(stlibext) \
                             $(ContextSubPartsStaticLibs)$(libprefix)BeLibJpegTurbo$(stlibext) \
                             $(ContextSubpartsLibs)$(libprefix)iTwinJpeg$(stlibext) \
-                            $(ContextSubpartsLibs)$(libprefix)iTwinJsonCpp$(stlibext) \
                             $(ContextSubpartsLibs)$(ECNativeObjectsLib) \
                             $(ContextSubpartsLibs)$(UnitsLib) \
                             $(ContextSubpartsLibs)$(BentleyGeomLib) \
