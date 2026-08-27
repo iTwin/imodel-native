@@ -718,7 +718,7 @@ TEST_F(SchemaXmlSerializationTest, CompositeFormatSpecRoundTripsAllValues)
     format = rtSchema->GetFormatCP("Format3");
     validateFormat(format);
 
-    Json::Value formatJSON;
+    BeJsDocument formatJSON;
     EXPECT_TRUE(format->ToJson(formatJSON, false));
     
     Formatting::Format rtFormat;

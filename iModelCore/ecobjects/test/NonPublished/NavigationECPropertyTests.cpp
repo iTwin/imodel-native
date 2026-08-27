@@ -49,7 +49,7 @@ struct NavigationECPropertyTests : ECTestFixture
 struct NavigationPropertyValueTests : ECTestFixture
 {
     void InstanceWithNavProp();
-    void DeserializeAndVerifyInstanceJson(ECSchemaPtr schema, IECInstanceR sourceInstance, JsonValueCR instanceJson);
+    void DeserializeAndVerifyInstanceJson(ECSchemaPtr schema, IECInstanceR sourceInstance, BeJsConst instanceJson);
     void DeserializeAndVerifyInstanceXml(ECSchemaPtr schema, IECInstanceR sourceInstance, Utf8StringCR instanceXml);
     void VerifyInstance(ECSchemaPtr schema, IECInstanceR sourceInstance, IECInstanceR sourceDeserialized);
     void VerifyInstanceJson(ECSchemaPtr schema, IECInstanceR sourceInstance, IECInstanceR sourceDeserialized);
@@ -1221,7 +1221,7 @@ void NavigationPropertyValueTests::DeserializeAndVerifyInstanceXml(ECSchemaPtr s
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void NavigationPropertyValueTests::DeserializeAndVerifyInstanceJson(ECSchemaPtr schema, IECInstanceR sourceInstance, JsonValueCR instanceJson)
+void NavigationPropertyValueTests::DeserializeAndVerifyInstanceJson(ECSchemaPtr schema, IECInstanceR sourceInstance, BeJsConst instanceJson)
     {
     IECInstancePtr sourceDeserialized = sourceInstance.GetClass().GetDefaultStandaloneEnabler()->CreateInstance(0);
     ASSERT_TRUE(sourceDeserialized.IsValid());
@@ -1324,7 +1324,7 @@ void NavigationPropertyValueTests::InstanceWithNavProp()
     ASSERT_EQ(InstanceWriteStatus::Success, writeStatus) << "Failed to serilaize an instance to xml with a nav property";
     DeserializeAndVerifyInstanceXml(schema, *sourceInstance, xmlString);
 
-    Json::Value jsonValue;
+    BeJsDocument jsonValue;
     ECClassLocater classLocator(*schema.get());
     StatusInt jsonWriteStatus = JsonEcInstanceWriter::WriteInstanceToJson(jsonValue, *sourceInstance, "Source", true, false, &classLocator);
     ASSERT_EQ(0, jsonWriteStatus) << "Failed to serialize an instance to Json with a nav property";
@@ -1484,7 +1484,7 @@ TEST_F(NavigationPropertyValueTests, JsonRelatedInstanceIdSerialization)
     EXPECT_EQ(navId, myTarget.GetNavigationInfo().GetId<BeInt64Id>()) << "Id value of MyTargetNoRel nav property not as expected";
     EXPECT_EQ(nullptr, myTarget.GetNavigationInfo().GetRelationshipClass()) << "Relationship Class of MyTargetNoRel nav property not as expected";
 
-    Json::Value jsonValue;
+    BeJsDocument jsonValue;
     StatusInt jsonWriteStatus = JsonEcInstanceWriter::WriteInstanceToJson(jsonValue, *sourceInstance, "Source", true);
     ASSERT_EQ(0, jsonWriteStatus) << "Failed to serialize an instance to Json with a nav property";
 
@@ -1514,17 +1514,14 @@ TEST_F(NavigationPropertyValueTests, TestRelClassNameJsonNotSerializedForRelatio
         ASSERT_FALSE(navPropValue.IsNull());
         ASSERT_TRUE(navPropValue.IsNavigation());
 
-        Json::Value json;
+        BeJsDocument json;
         ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(json, *instance, "Source", true));
         ASSERT_TRUE(json.isObject());
         ASSERT_TRUE(json[sourceStr].isObject());
         ASSERT_TRUE(json[sourceStr][navPropStr].isObject());
-        auto const& membs = json[sourceStr][navPropStr].getMemberNames();
-        EXPECT_TRUE((membs.end() == std::find_if(
-            membs.begin(),
-            membs.end(),
-            [](Utf8StringCR _) -> bool {return _ == ECJsonSystemNames::Navigation::RelClassName();}
-        )) == !shouldRelClassNameBeSerialized);
+        // hasMember (not isMember): isMember reports false for a member that is present but null.
+        EXPECT_EQ(shouldRelClassNameBeSerialized,
+            json[sourceStr][navPropStr].hasMember(ECJsonSystemNames::Navigation::RelClassName()));
         };
 
     static auto const ValidateShouldRelClassNameSerialized_NonInherited = [&](ECClassModifier modifier, bool shouldRelClassNameBeSerialized) -> void
