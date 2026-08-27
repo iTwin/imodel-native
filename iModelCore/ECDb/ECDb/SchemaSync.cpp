@@ -1657,8 +1657,16 @@ SchemaSync::Status SchemaSync::AdoptSchemas(SyncDbUri const& syncDbUri, bvector<
     }
 
     const auto cleanup = [&](Status status) {
-        SchemaSyncUpstreamHelper::DropClosure(m_conn);
-        m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
+        if (BE_SQLITE_OK != SchemaSyncUpstreamHelper::DropClosure(m_conn)) {
+            LOG.error("SchemaSync::AdoptSchemas(): Failed to drop schema closure.");
+            status = Status::ERROR;
+        }
+
+        if (BE_SQLITE_OK != m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB)) {
+            LOG.error("SchemaSync::AdoptSchemas(): Failed to detach sync db.");
+            status = Status::ERROR;
+        }
+
         return status;
     };
 
@@ -1731,8 +1739,9 @@ SchemaSync::Status SchemaSync::AdoptSchemas(SyncDbUri const& syncDbUri, bvector<
         }
     }
 
-    const auto detachRc = cleanup(Status::OK);
-    UNUSED_VARIABLE(detachRc);
+    const auto cleanupStatus = cleanup(Status::OK);
+    if (cleanupStatus != Status::OK)
+        return cleanupStatus;
 
     mainDisp.OnAfterSchemaChanges().RaiseEvent(m_conn, SchemaChangeType::SchemaImport);
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaSync::AdoptSchemas");
