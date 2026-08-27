@@ -480,6 +480,12 @@ TEST_F(InstanceReaderFixture, OptionsInheritance)
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(InstanceReaderFixture, check_option_USE_JS_PROP_NAMES) {
+    // NOTE: the yaw/pitch/bBoxHigh.z literals below were 1 ULP away from the values actually stored
+    // in test.bim. That went unnoticed because RapidJson's default number parser has its own ~1 ULP
+    // error, which happened to map the stale text onto the stored double. BeJsDocument::Parse now
+    // uses kParseFullPrecisionFlag, so the literals must be exact; they were corrected against the
+    // values the reader produces (which are also what the "Yaw"/"Pitch" literals further down in
+    // this file already used).
     ASSERT_EQ(BE_SQLITE_OK, OpenECDbTestDataFile("test.bim"));
 
     if ("system property name should be ts compilable id/className/sourceId/sourceClassName/targetId/targetClassName") {
@@ -558,8 +564,8 @@ TEST_F(InstanceReaderFixture, check_option_USE_JS_PROP_NAMES) {
                 "y": 19.89784647571006,
                 "z": 8.020100502512559
             },
-            "yaw": 25.94935951207145,
-            "pitch": 4.7708320221952736e-15,
+            "yaw": 25.949359512071446,
+            "pitch": 4.770832022195274e-15,
             "roll": 114.7782627769506,
             "bBoxLow": {
                 "x": -9.735928156263862,
@@ -569,7 +575,7 @@ TEST_F(InstanceReaderFixture, check_option_USE_JS_PROP_NAMES) {
             "bBoxHigh": {
                 "x": 9.735928156263858,
                 "y": 9.73592815626386,
-                "z": 9.735928156263856
+                "z": 9.735928156263855
             },
             "geometryStream": "{\"bytes\":203}"
         })x");
@@ -618,8 +624,8 @@ TEST_F(InstanceReaderFixture, check_option_DO_NOT_TRUNCATE_BLOB) {
                 "y": 19.89784647571006,
                 "z": 8.020100502512559
             },
-            "yaw": 25.94935951207145,
-            "pitch": 4.7708320221952736e-15,
+            "yaw": 25.949359512071446,
+            "pitch": 4.770832022195274e-15,
             "roll": 114.7782627769506,
             "bBoxLow": {
                 "x": -9.735928156263862,
@@ -629,7 +635,7 @@ TEST_F(InstanceReaderFixture, check_option_DO_NOT_TRUNCATE_BLOB) {
             "bBoxHigh": {
                 "x": 9.735928156263858,
                 "y": 9.73592815626386,
-                "z": 9.735928156263856
+                "z": 9.735928156263855
             },
             "geometryStream": "{\"bytes\":203}"
         })x");
@@ -670,8 +676,8 @@ TEST_F(InstanceReaderFixture, check_option_DO_NOT_TRUNCATE_BLOB) {
                 "y": 19.89784647571006,
                 "z": 8.020100502512559
             },
-            "yaw": 25.94935951207145,
-            "pitch": 4.7708320221952736e-15,
+            "yaw": 25.949359512071446,
+            "pitch": 4.770832022195274e-15,
             "roll": 114.7782627769506,
             "bBoxLow": {
                 "x": -9.735928156263862,
@@ -681,7 +687,7 @@ TEST_F(InstanceReaderFixture, check_option_DO_NOT_TRUNCATE_BLOB) {
             "bBoxHigh": {
                 "x": 9.735928156263858,
                 "y": 9.73592815626386,
-                "z": 9.735928156263856
+                "z": 9.735928156263855
             },
             "geometryStream": "encoding=base64;AQAAAAgAAAABAAAAAAAAAAQAAAAwAAAAHAAAABgAFAAMAAgAAAAAAAAAAAAAAAYABwAAABgAAAAAAAEBAPAAABgAAAAAAAAACwAAAKgAAABiZzAwMDFmYhAAAAAAAAoADgAHAAgAAAAKAAAAAAAABwwAAAAAAAYAfAAEAAYAAAC8t0aTy3gjQNTy0dk2l6Q8BOGMD2d0zbxZPdLR+8bSvLS6W8O77KW8vbdGk8t4I0AAAAAAAADYPAAAAAAAANC8kDynkgISnjwAAAAAAADQPLq3RpPLeCNAAAAAAAAA4LwYLURU+yH5vxgtRFT7IQlAAQAAAAAAAAA="
         })x");

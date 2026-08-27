@@ -946,7 +946,8 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
             }
         case PRIMITIVETYPE_Long:
             {
-            int64_t val;
+            // Initialized because MSVC cannot see that JsonToInt64 always assigns on success.
+            int64_t val = 0;
             if (SUCCESS != ECJsonUtilities::JsonToInt64(val, jsonValue))
                 return ERROR;
 
