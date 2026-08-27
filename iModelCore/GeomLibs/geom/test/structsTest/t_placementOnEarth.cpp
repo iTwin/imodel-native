@@ -28,11 +28,11 @@ TEST(PlacementOnEarth, Placement3d)
     auto transformA = placementA.GetTransform ();
     Check::Near(Transform::From (origin), transformA);
 
-    Json::Value jsonA;
-    placementA.ToJson (BeJsValue(jsonA));
+    BeJsDocument jsonA;
+    placementA.ToJson (jsonA);
     Placement3d placementB;
     Check::False (placementB.IsValid ());
-    placementB.FromJson (BeJsValue(jsonA));
+    placementB.FromJson (jsonA);
     Check::True(placementB.IsValid());
 
     auto placementC = placementA;
@@ -84,11 +84,11 @@ TEST(PlacementOnEarth, Placement2d)
     auto transformA = placementA.GetTransform();
     Check::Near(Transform::From(DPoint3d::From (origin)), transformA);
 
-    Json::Value jsonA;
-    placementA.ToJson(BeJsValue(jsonA));
+    BeJsDocument jsonA;
+    placementA.ToJson(jsonA);
     Placement2d placementB;
     Check::False(placementB.IsValid());
-    placementB.FromJson(BeJsValue(jsonA));
+    placementB.FromJson(jsonA);
     Check::True(placementB.IsValid());
     auto placementC = placementA;
     Check::True(placementC.IsValid());

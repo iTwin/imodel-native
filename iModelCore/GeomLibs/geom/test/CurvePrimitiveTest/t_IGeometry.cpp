@@ -15,11 +15,11 @@ END_BENTLEY_GEOMETRY_NAMESPACE
 
 MSBsplineSurfacePtr RoundTripMSBsplineSurfaceIMJS(MSBsplineSurfacePtr surface)
     {
-    auto jsonA = Json::Value();
-    Check::True(IModelJson::TryGeometryToIModelJsonValue(BeJsValue(jsonA),
+    BeJsDocument jsonA;
+    Check::True(IModelJson::TryGeometryToIModelJsonValue(jsonA,
         *IGeometry::Create(surface)), "geometry to json");
     bvector<IGeometryPtr> geometryB;
-    if (Check::True(IModelJson::TryIModelJsonValueToGeometry(BeJsValue(jsonA), geometryB), "json to geometry"))
+    if (Check::True(IModelJson::TryIModelJsonValueToGeometry(jsonA, geometryB), "json to geometry"))
         {
         auto surfaceB = geometryB.front()->GetAsMSBsplineSurface();
         Check::True(surfaceB.IsValid() && surface->IsSameStructureAndGeometry(*surfaceB, 0.0), "RoundTrip");
