@@ -27,7 +27,7 @@ struct JsonNames {
 
 static bool IsSchemaSyncProfileTable(MetaData::TableInfo const& table) {
     return table.schema.EqualsIAscii("main")
-        && (table.name.StartsWithIAscii("ec_") || table.name.StartsWithIAscii("dgn_") || table.name.StartsWithIAscii("be_"))
+        && (table.name.StartsWithIAscii("ec_") || table.name.StartsWithIAscii("be_"))
         && table.type == "table";
 }
 

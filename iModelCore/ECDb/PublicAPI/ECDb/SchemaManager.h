@@ -259,7 +259,7 @@ public:
     //! Only the sync db is written. SchemaMetadata copies every ec_ table, including the derived
     //! cache tables, the profile properties needed to interpret those rows, and the sync identity.
     //! It stamps syncDbInfo.dataVer with this briefcase's existing localDbInfo.dataVer. The
-    //! SchemaMetadataAndProfile scope also reconciles the ec_, be_ and dgn_ profile table definitions.
+    //! SchemaMetadataAndProfile scope also reconciles the ec_ and be_ profile table definitions.
     //! Target-only tables and properties are left untouched.
     //! @note The caller must hold the sync db container write lock and the exclusive schema lock,
     //!       and must verify that this briefcase is at the tip of the timeline.
