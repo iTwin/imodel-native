@@ -46,6 +46,19 @@ struct SchemaSync final {
     using FileUri = Utf8String;
     using DataVer = uint64_t;
     using TableList = bvector<Utf8String>;
+
+    //=======================================================================================
+    //! The portion of a schema sync db that a repair operation replaces.
+    //! @ingroup ECDbGroup
+    // @bsiclass
+    //+===============+===============+===============+===============+===============+======
+    enum class RepairScope {
+        //! Restore the ec_ rows and sync identity. The existing profile-table definitions must match.
+        SchemaMetadata = 0,
+        //! Restore the ec_ rows and sync identity after reconciling profile-table definitions.
+        SchemaMetadataAndProfile = 1,
+    };
+
     struct SyncDbInfo;
     enum class Status {
         OK = BE_SQLITE_OK,
@@ -241,6 +254,16 @@ public:
     //!       lock, work somebody abandoned - and the changeset must be pushed before the lock is
     //!       released, or the sync db describes a layout no briefcase has.
     ECDB_EXPORT Status OverwriteSyncDb(SyncDbUri const&);
+    //! Restore schema-owned state in a sync db from this clean, level briefcase.
+    //!
+    //! Only the sync db is written. SchemaMetadata copies every ec_ table, including the derived
+    //! cache tables, the profile properties needed to interpret those rows, and the sync identity.
+    //! It stamps syncDbInfo.dataVer with this briefcase's existing localDbInfo.dataVer. The
+    //! SchemaMetadataAndProfile scope also reconciles the ec_, be_ and dgn_ profile table definitions.
+    //! Target-only tables and properties are left untouched.
+    //! @note The caller must hold the sync db container write lock and the exclusive schema lock,
+    //!       and must verify that this briefcase is at the tip of the timeline.
+    ECDB_EXPORT Status RepairSyncDb(SyncDbUri const&, RepairScope);
     ECDB_EXPORT static DbResult ScanForSchemaChanges(ChangeStream& stream, bool&, bool&, bool&);
     //! Whether this change is the be_Prop row recording which sync db state a briefcase is on. That
     //! row is tracked, so it travels in the same changeset as the ec_ rows the import it belongs to

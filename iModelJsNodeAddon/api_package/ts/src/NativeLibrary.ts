@@ -556,6 +556,11 @@ export declare namespace IModelJsNative {
     readonly parentChangesetIndex?: string;
   }
 
+  const enum SchemaSyncRepairScope {
+    SchemaMetadata = 0,
+    SchemaMetadataAndProfile = 1,
+  }
+
   /** @see `TxnProps` from `@itwin/core-common` */
   export type TxnProps = CoreTxnProps;
   type GeometryOutputFormat = "BinaryStream" | "GeometryStreamProps";
@@ -607,6 +612,7 @@ export declare namespace IModelJsNative {
     public schemaSyncInit(syncDbUri: string, containerId: string, overrideContainer: boolean): void;
     /** Rebuild the sync db from this file, for a change this file had to make locally - a profile upgrade. */
     public schemaSyncOverwrite(syncDbUri?: string): void;
+    public schemaSyncRepair(syncDbUri: string, scope: SchemaSyncRepairScope): void;
     /** Materialize the tables and indexes the ec_ rows describe. Needed after merging a schema changeset, which carries no DDL. */
     public schemaSyncUpdateDbSchema(): void;
     public schemaSyncEnabled(): boolean;
@@ -883,6 +889,7 @@ export declare namespace IModelJsNative {
     public schemaSyncInit(syncDbUri: string, containerId: string, overrideContainer: boolean): void;
     /** Rebuild the sync db from this briefcase, for a change the briefcase had to make locally - a profile upgrade. */
     public schemaSyncOverwrite(syncDbUri: string | undefined): void;
+    public schemaSyncRepair(syncDbUri: string, scope: SchemaSyncRepairScope): void;
     /** Materialize the tables and indexes the ec_ rows describe. Needed after merging a schema changeset, which carries no DDL. */
     public schemaSyncUpdateDbSchema(): void;
     public schemaSyncEnabled(): boolean;

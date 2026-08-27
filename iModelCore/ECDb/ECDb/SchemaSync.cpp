@@ -25,6 +25,17 @@ struct JsonNames {
     constexpr static char JSchemaVersion[] = "SchemaVersion";
 };
 
+static bool IsSchemaSyncProfileTable(MetaData::TableInfo const& table) {
+    return table.schema.EqualsIAscii("main")
+        && (table.name.StartsWithIAscii("ec_") || table.name.StartsWithIAscii("dgn_") || table.name.StartsWithIAscii("be_"))
+        && table.type == "table";
+}
+
+static DbResult GetSchemaSyncProfileTableDiff(DbCR fromDb, DbCR toDb, std::vector<Utf8String>& patches) {
+    return MetaData::SchemaDiff(fromDb, toDb,
+        [](MetaData::TableInfo const& table) { return !IsSchemaSyncProfileTable(table); }, patches);
+}
+
 //SchemaSyncHelper==============================================================
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -2034,6 +2045,165 @@ SchemaSync::Status SchemaSync::OverwriteSyncDb(SyncDbUri const& syncDbUri) {
 }
 
 //---------------------------------------------------------------------------------------
+// Restore schema-owned state in the sync db from a clean, level briefcase. The target is opened as
+// the primary connection so profile DDL, the differential mirror, syncDbInfo and validation all use
+// one target transaction. The attached local file is used only as a source.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaSync::Status SchemaSync::RepairSyncDb(SyncDbUri const& syncDbUri, RepairScope scope) {
+    ECDB_PERF_LOG_SCOPE("Repairing the schema sync db");
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaSync::RepairSyncDb");
+    BeMutexHolder holder(m_conn.GetImpl().GetMutex());
+
+    if (scope != RepairScope::SchemaMetadata && scope != RepairScope::SchemaMetadataAndProfile) {
+        LOG.error("SchemaSync::RepairSyncDb(): Unknown repair scope.");
+        return Status::ERROR;
+    }
+
+    if (m_conn.IsReadonly()) {
+        LOG.error("SchemaSync::RepairSyncDb(): Primary connection is readonly.");
+        return Status::ERROR_READONLY;
+    }
+
+    // Repair is deliberately limited to a briefcase that cannot describe a state other than the
+    // current timeline tip. The TypeScript caller verifies the Hub tip and schema lock separately.
+    if (!m_conn.IsLevelWithTimeline()) {
+        LOG.error("SchemaSync::RepairSyncDb(): The briefcase is not level with the timeline.");
+        return Status::ERROR_BRIEFCASE_NOT_LEVEL_WITH_TIMELINE;
+    }
+
+    const auto localInfo = GetInfo();
+    if (localInfo.IsEmpty()) {
+        LOG.error("SchemaSync::RepairSyncDb(): Local db is not set to use schema sync.");
+        return Status::ERROR_INVALID_LOCAL_SYNC_DB;
+    }
+
+    const auto effectiveSyncDbUri = syncDbUri.IsEmpty() ? GetDefaultSyncDbUri() : syncDbUri;
+    const auto localDbFileName = m_conn.GetDbFileName();
+    if (nullptr == localDbFileName) {
+        LOG.error("SchemaSync::RepairSyncDb(): The local db has no file name.");
+        return Status::ERROR;
+    }
+
+    ECDb syncDb;
+    Db::OpenParams syncOpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Yes);
+    ParseQueryParams(syncOpenParams, effectiveSyncDbUri);
+    auto rc = syncDb.OpenBeSQLiteDb(effectiveSyncDbUri.GetUri().c_str(), syncOpenParams);
+    if (rc != BE_SQLITE_OK) {
+        LOG.errorv("SchemaSync::RepairSyncDb(): Failed to open sync db '%s'. %s",
+            effectiveSyncDbUri.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
+        return Status::ERROR_OPENING_SCHEMA_SYNC_DB;
+    }
+
+    const auto existingSyncInfo = SyncDbInfo::From(syncDb);
+    if (!existingSyncInfo.IsEmpty() && existingSyncInfo.GetSyncId() != localInfo.GetSyncId()) {
+        LOG.error("SchemaSync::RepairSyncDb(): Sync db belongs to a different container.");
+        return Status::ERROR_SCHEMA_SYNC_INFO_DONOT_MATCH;
+    }
+
+    Db sourceDb;
+    rc = sourceDb.OpenBeSQLiteDb(localDbFileName, Db::OpenParams(Db::OpenMode::Readonly, DefaultTxn::Yes));
+    if (rc != BE_SQLITE_OK) {
+        LOG.errorv("SchemaSync::RepairSyncDb(): Failed to open the local db as a read-only source. %s",
+            BeSQLiteLib::GetErrorString(rc));
+        return Status::ERROR;
+    }
+
+    // AttachDb has to run before the target transaction starts. Every repair statement names the
+    // sync db as its target and uses this alias only as its source.
+    constexpr Utf8CP sourceAlias = "schema_sync_repair_source";
+    syncDb.GetStatementCache().Empty();
+    rc = syncDb.AttachDb(localDbFileName, sourceAlias);
+    if (rc != BE_SQLITE_OK) {
+        LOG.errorv("SchemaSync::RepairSyncDb(): Failed to attach the local db as the repair source. %s",
+            BeSQLiteLib::GetErrorString(rc));
+        return Status::ERROR_UNABLE_TO_ATTACH;
+    }
+
+    AttachedDbTransaction attachment(syncDb, sourceAlias);
+    const auto fail = [&](Status status) {
+        const auto cleanupRc = attachment.AbandonAndDetach();
+        if (cleanupRc != BE_SQLITE_OK)
+            LOG.errorv("SchemaSync::RepairSyncDb(): Failed to roll back and detach the repair source. %s",
+                BeSQLiteLib::GetErrorString(cleanupRc));
+        return status;
+    };
+
+    if (scope == RepairScope::SchemaMetadataAndProfile) {
+        rc = SchemaSyncHelper::SyncProfileTablesSchema(sourceDb, syncDb, false);
+        if (rc != BE_SQLITE_OK) {
+            LOG.error("SchemaSync::RepairSyncDb(): Failed to reconcile profile table definitions.");
+            return fail(Status::ERROR_SYNC_SQL_SCHEMA);
+        }
+    } else {
+        std::vector<Utf8String> patches;
+        rc = GetSchemaSyncProfileTableDiff(sourceDb, syncDb, patches);
+        if (rc != BE_SQLITE_OK) {
+            LOG.error("SchemaSync::RepairSyncDb(): Failed to compare profile table definitions.");
+            return fail(Status::ERROR_SYNC_SQL_SCHEMA);
+        }
+        if (!patches.empty()) {
+            LOG.error("SchemaSync::RepairSyncDb(): Existing profile table definitions are incompatible with metadata-only repair.");
+            return fail(Status::ERROR_SYNC_SQL_SCHEMA);
+        }
+    }
+
+    // This is the same differential mirror used by the upgrade path. It only enumerates ec_ tables,
+    // including ec_cache_ tables. The profile upsert below does not delete rows, so target-only
+    // be_Prop values remain. Tables and properties outside these scopes, including reservations and
+    // versioned-database state, are never selected or reconstructed.
+    TableList tables;
+    rc = SchemaSyncHelper::GetMetaTables(syncDb, tables, sourceAlias);
+    if (rc != BE_SQLITE_OK) {
+        LOG.error("SchemaSync::RepairSyncDb(): Failed to read the local ec_ table list.");
+        return fail(Status::ERROR);
+    }
+
+    rc = SchemaSyncUpstreamHelper::MirrorTables(syncDb, tables, sourceAlias, SchemaSyncHelper::ALIAS_MAIN_DB);
+    if (rc != BE_SQLITE_OK) {
+        LOG.error("SchemaSync::RepairSyncDb(): Failed to restore ec_ rows.");
+        return fail(Status::ERROR);
+    }
+
+    const auto excludeLocalDbInfo = Utf8String{SqlPrintfString("NOT ([Namespace]='%s' AND [Name]='%s')",
+        JsonNames::JNamespaceEC, JsonNames::JLocalDbInfo).GetUtf8CP()};
+    rc = SchemaSyncUpstreamHelper::UpsertFiltered(syncDb, SchemaSyncHelper::TABLE_BE_PROP,
+        sourceAlias, SchemaSyncHelper::ALIAS_MAIN_DB, excludeLocalDbInfo.c_str());
+    if (rc != BE_SQLITE_OK) {
+        LOG.error("SchemaSync::RepairSyncDb(): Failed to restore profile properties.");
+        return fail(Status::ERROR);
+    }
+
+    SyncDbInfo repairedInfo = existingSyncInfo;
+    repairedInfo.m_syncId = localInfo.GetSyncId();
+    repairedInfo.m_dataVer = localInfo.GetDataVersion();
+    if (SaveSyncDbInfo(syncDb, repairedInfo) != Status::OK) {
+        LOG.error("SchemaSync::RepairSyncDb(): Failed to restore sync db identity.");
+        return fail(Status::ERROR);
+    }
+
+    const auto savedInfo = SyncDbInfo::From(syncDb);
+    if (savedInfo.IsEmpty() || savedInfo.GetSyncId() != repairedInfo.GetSyncId()
+        || savedInfo.GetDataVersion() != repairedInfo.GetDataVersion()) {
+        LOG.error("SchemaSync::RepairSyncDb(): Sync db identity validation failed.");
+        return fail(Status::ERROR);
+    }
+
+    rc = attachment.CommitAndDetach();
+    if (rc != BE_SQLITE_OK) {
+        LOG.errorv("SchemaSync::RepairSyncDb(): Failed to commit and detach the repaired sync db. %s",
+            BeSQLiteLib::GetErrorString(rc));
+        return Status::ERROR;
+    }
+
+    LOG.infov("SchemaSync::RepairSyncDb(): Repaired %d ec_ tables from the local briefcase; sync data version is 0x%llx%s.",
+        (int)tables.size(), (unsigned long long)repairedInfo.GetDataVersion(),
+        scope == RepairScope::SchemaMetadataAndProfile ? "; profile definitions reconciled" : "");
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaSync::RepairSyncDb");
+    return Status::OK;
+}
+
+//---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult SchemaSync::ScanForSchemaChanges(ChangeStream& stream, bool& isECMetaDataChanged, bool& isECDbProfileChanged, bool& isSchemaSyncInfoChanged) {
@@ -2381,19 +2551,13 @@ DbResult SchemaSyncHelper::SyncProfileTablesSchema(DbR thisDb, SchemaSync::SyncD
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult SchemaSyncHelper::SyncProfileTablesSchema(DbR fromDb, DbR toDb) {
+DbResult SchemaSyncHelper::SyncProfileTablesSchema(DbR fromDb, DbR toDb, bool saveChanges) {
     std::vector<Utf8String> patches;
     if (toDb.IsReadonly()) {
         LOG.error("SyncProfileTablesSchema() rhsDb is readonly");
         return BE_SQLITE_READONLY;
     }
-    auto rc = MetaData::SchemaDiff(fromDb, toDb,
-        [](MetaData::TableInfo const& tblInfo) -> bool {
-            return !(tblInfo.schema.EqualsIAscii("main")
-                && (tblInfo.name.StartsWithIAscii("ec_") || tblInfo.name.StartsWithIAscii("dgn_") || tblInfo.name.StartsWithIAscii("be_"))
-                && tblInfo.type == "table");
-        }, patches);
-
+    auto rc = GetSchemaSyncProfileTableDiff(fromDb, toDb, patches);
     if (rc != BE_SQLITE_OK) {
         LOG.errorv("SyncProfileTablesSchema() fail to get schema diff: %s", toDb.GetLastError().c_str());
         return rc;
@@ -2406,10 +2570,12 @@ DbResult SchemaSyncHelper::SyncProfileTablesSchema(DbR fromDb, DbR toDb) {
             return rc;
         }
     }
-    if (!patches.empty()) {
-        toDb.SaveChanges();
+    if (saveChanges && !patches.empty()) {
+        rc = toDb.SaveChanges();
+        if (rc != BE_SQLITE_OK)
+            LOG.errorv("SyncProfileTablesSchema() failed to save schema patches: %s", toDb.GetLastError().c_str());
     }
-    return BE_SQLITE_OK;
+    return rc;
 }
 
 //---------------------------------------------------------------------------------------

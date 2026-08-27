@@ -623,6 +623,21 @@ public:
             }
         }
     }
+    void SchemaSyncRepair(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING(0, schemaSyncDbUriStr);
+        REQUIRE_ARGUMENT_INTEGER(1, repairScope);
+        auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
+        const auto scope = static_cast<SchemaSync::RepairScope>(repairScope);
+        LastErrorListener lastError(m_ecdb);
+        auto rc = m_ecdb.Schemas().GetSchemaSync().RepairSyncDb(syncDbUri, scope);
+        if (rc != SchemaSync::Status::OK) {
+            if (lastError.HasError()) {
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
+            } else {
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to repair schema sync db: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
+            }
+        }
+    }
     void SchemaSyncUpdateDbSchema(NapiInfoCR info) {
         LastErrorListener lastError(m_ecdb);
         auto rc = m_ecdb.Schemas().GetSchemaSync().UpdateDbSchema();
@@ -663,6 +678,7 @@ public:
             InstanceMethod("schemaSyncSetDefaultUri", &NativeECDb::SchemaSyncSetDefaultUri),
             InstanceMethod("schemaSyncGetDefaultUri", &NativeECDb::SchemaSyncGetDefaultUri),
             InstanceMethod("schemaSyncOverwrite", &NativeECDb::SchemaSyncOverwrite),
+            InstanceMethod("schemaSyncRepair", &NativeECDb::SchemaSyncRepair),
             InstanceMethod("schemaSyncUpdateDbSchema", &NativeECDb::SchemaSyncUpdateDbSchema),
             InstanceMethod("schemaSyncInit", &NativeECDb::SchemaSyncInit),
             InstanceMethod("schemaSyncEnabled", &NativeECDb::SchemaSyncEnabled),
@@ -2372,6 +2388,23 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         }
     }
 
+    void SchemaSyncRepair(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        REQUIRE_ARGUMENT_STRING(0, schemaSyncDbUriStr);
+        REQUIRE_ARGUMENT_INTEGER(1, repairScope);
+        auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
+        const auto scope = static_cast<SchemaSync::RepairScope>(repairScope);
+        LastErrorListener lastError(db);
+        auto rc = db.Schemas().GetSchemaSync().RepairSyncDb(syncDbUri, scope);
+        if (rc != SchemaSync::Status::OK) {
+            if (lastError.HasError()) {
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
+            } else {
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to repair schema sync db: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
+            }
+        }
+    }
+
     // Materialise the physical tables and indexes the ec_ rows imply. A schema-sync-enabled
     // briefcase that merged somebody else's schema changeset holds the rows but not the columns,
     // because neither the changeset nor the adopt step carries DDL.
@@ -3424,6 +3457,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("schemaSyncSetDefaultUri", &NativeDgnDb::SchemaSyncSetDefaultUri),
             InstanceMethod("schemaSyncGetDefaultUri", &NativeDgnDb::SchemaSyncGetDefaultUri),
             InstanceMethod("schemaSyncOverwrite", &NativeDgnDb::SchemaSyncOverwrite),
+            InstanceMethod("schemaSyncRepair", &NativeDgnDb::SchemaSyncRepair),
             InstanceMethod("schemaSyncUpdateDbSchema", &NativeDgnDb::SchemaSyncUpdateDbSchema),
             InstanceMethod("schemaSyncInit", &NativeDgnDb::SchemaSyncInit),
             InstanceMethod("schemaSyncEnabled", &NativeDgnDb::SchemaSyncEnabled),

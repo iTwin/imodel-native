@@ -2231,6 +2231,117 @@ TEST_F(SchemaSyncImportTestFixture, OverwriteSyncDbFollowsAChangeMadeOnlyOnTheBr
     }
 
 // ---------------------------------------------------------------------------------------
+// Repair copies schema-owned rows from a clean briefcase without changing the briefcase itself.
+// The target-only be_Prop row is outside the source projection and must survive.
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, RepairSyncDbRestoresMetadataAndExactDataVersion)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-repair-metadata");
+    std::unique_ptr<TrackedECDb> source, abandoned;
+    SetupSyncedPair(hub, syncDb, source, abandoned);
+
+    const auto localDbInfoSpec = PropertySpec("localDbInfo", "ec_Db");
+    Utf8String localDbInfoBefore;
+    ASSERT_EQ(BE_SQLITE_ROW, source->QueryProperty(localDbInfoBefore, localDbInfoSpec));
+    const auto localInfoBefore = source->Schemas().GetSchemaSync().GetInfo();
+
+    // Leave the sync db ahead with metadata that belongs to no timeline state.
+    ASSERT_EQ(SchemaImportResult::OK,
+        ImportSchema(*abandoned, SharedColumnSchema(), SchemaManager::SchemaImportOptions::None, syncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, abandoned->SaveChanges());
+    const auto aheadDataVersion = SchemaSync::SyncDbInfo::From(syncDb.GetSyncDbUri()).GetDataVersion();
+    ASSERT_GT(aheadDataVersion, localInfoBefore.GetDataVersion());
+
+    const auto expectedClassTableCacheRows = CountRows(*source, "ec_cache_ClassHasTables");
+    const auto expectedClassHierarchyCacheRows = CountRows(*source, "ec_cache_ClassHierarchy");
+    const auto targetOnlySpec = PropertySpec("repairOnly", "schemaSyncRepairTest");
+    syncDb.WithReadWrite([&](ECDbR sync) {
+        ASSERT_EQ(BE_SQLITE_OK, sync.ExecuteSql("DELETE FROM ec_cache_ClassHasTables"));
+        ASSERT_EQ(BE_SQLITE_OK, sync.ExecuteSql("DELETE FROM ec_cache_ClassHierarchy"));
+        ASSERT_EQ(BE_SQLITE_OK, sync.SavePropertyString(targetOnlySpec, "target-only"));
+        ASSERT_EQ(BE_SQLITE_OK, sync.SaveChanges());
+    });
+
+    ASSERT_EQ(SchemaSync::Status::OK,
+        source->Schemas().GetSchemaSync().RepairSyncDb(syncDb.GetSyncDbUri(), SchemaSync::RepairScope::SchemaMetadata));
+
+    EXPECT_EQ(localInfoBefore.GetDataVersion(), source->Schemas().GetSchemaSync().GetInfo().GetDataVersion());
+    EXPECT_STREQ(localInfoBefore.GetSyncId().c_str(), source->Schemas().GetSchemaSync().GetInfo().GetSyncId().c_str());
+    Utf8String localDbInfoAfter;
+    ASSERT_EQ(BE_SQLITE_ROW, source->QueryProperty(localDbInfoAfter, localDbInfoSpec));
+    EXPECT_STREQ(localDbInfoBefore.c_str(), localDbInfoAfter.c_str());
+
+    syncDb.WithReadOnly([&](ECDbR sync) {
+        EXPECT_EQ(localInfoBefore.GetDataVersion(), SchemaSync::SyncDbInfo::From(sync).GetDataVersion());
+        EXPECT_STREQ(localInfoBefore.GetSyncId().c_str(), SchemaSync::SyncDbInfo::From(sync).GetSyncId().c_str());
+        Utf8String targetOnly;
+        ASSERT_EQ(BE_SQLITE_ROW, sync.QueryProperty(targetOnly, targetOnlySpec));
+        EXPECT_STREQ("target-only", targetOnly.c_str());
+        EXPECT_EQ(expectedClassTableCacheRows, CountRows(sync, "ec_cache_ClassHasTables"));
+        EXPECT_EQ(expectedClassHierarchyCacheRows, CountRows(sync, "ec_cache_ClassHierarchy"));
+        ExpectECTablesIdentical(sync, *source, "metadata repair");
+    });
+    }
+
+// ---------------------------------------------------------------------------------------
+// Profile repair reconciles profile-table DDL before it mirrors the metadata rows.
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, RepairSyncDbWithProfileRepairsProfileTableDdl)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-repair-profile");
+    std::unique_ptr<TrackedECDb> source, other;
+    SetupSyncedPair(hub, syncDb, source, other);
+
+    syncDb.WithReadWrite([&](ECDbR sync) {
+        ASSERT_EQ(BE_SQLITE_OK, sync.ExecuteSql("ALTER TABLE main.ec_Property ADD COLUMN RepairProfileColumn INTEGER"));
+        ASSERT_EQ(BE_SQLITE_OK, sync.SaveChanges());
+    });
+
+    ASSERT_EQ(SchemaSync::Status::OK,
+        source->Schemas().GetSchemaSync().RepairSyncDb(syncDb.GetSyncDbUri(), SchemaSync::RepairScope::SchemaMetadataAndProfile));
+    syncDb.WithReadOnly([&](ECDbR sync) {
+        bvector<Utf8String> sourceColumns, sourcePrimaryKeys, syncColumns, syncPrimaryKeys;
+        ASSERT_TRUE(ReadColumns(*source, "main", "ec_Property", sourceColumns, sourcePrimaryKeys));
+        ASSERT_TRUE(ReadColumns(sync, "main", "ec_Property", syncColumns, syncPrimaryKeys));
+        EXPECT_EQ(sourceColumns, syncColumns);
+        EXPECT_EQ(sourcePrimaryKeys, syncPrimaryKeys);
+    });
+    }
+
+// ---------------------------------------------------------------------------------------
+// Metadata-only repair refuses a profile-table shape it cannot use and leaves the target
+// transaction untouched.
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, RepairSyncDbMetadataOnlyRejectsIncompatibleProfileDdl)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-repair-incompatible-profile");
+    std::unique_ptr<TrackedECDb> source, other;
+    SetupSyncedPair(hub, syncDb, source, other);
+
+    syncDb.WithReadWrite([&](ECDbR sync) {
+        ASSERT_EQ(BE_SQLITE_OK, sync.ExecuteSql("ALTER TABLE main.ec_Property ADD COLUMN RepairProfileColumn INTEGER"));
+        ASSERT_EQ(BE_SQLITE_OK, sync.SaveChanges());
+    });
+    const auto dataVersionBefore = SchemaSync::SyncDbInfo::From(syncDb.GetSyncDbUri()).GetDataVersion();
+
+    EXPECT_EQ(SchemaSync::Status::ERROR_SYNC_SQL_SCHEMA,
+        source->Schemas().GetSchemaSync().RepairSyncDb(syncDb.GetSyncDbUri(), SchemaSync::RepairScope::SchemaMetadata));
+    EXPECT_EQ(dataVersionBefore, SchemaSync::SyncDbInfo::From(syncDb.GetSyncDbUri()).GetDataVersion());
+
+    syncDb.WithReadOnly([&](ECDbR sync) {
+        bvector<Utf8String> columns, primaryKeys;
+        ASSERT_TRUE(ReadColumns(sync, "main", "ec_Property", columns, primaryKeys));
+        EXPECT_NE(columns.end(), std::find(columns.begin(), columns.end(), Utf8String("RepairProfileColumn")));
+    });
+    }
+
+// ---------------------------------------------------------------------------------------
 // The mirror temporarily disables foreign key enforcement through the BeSQLite wrapper around
 // sqlite3_db_config. It must restore enabled callers and leave disabled callers alone.
 // @bsitest
