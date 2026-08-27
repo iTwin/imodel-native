@@ -20,9 +20,10 @@ struct TestChangeSet : BeSQLite::ChangeSet
 
     JsonValue ToJson(Db const& db) const
         {
-        JsonValue json(Json::ValueType::arrayValue);
+        JsonValue json;
+        json.m_value.toArray();
 
-        bmap<Utf8String, Json::Value> changedValuesPerTableMap;
+        bmap<Utf8String, std::shared_ptr<BeJsDocument>> changedValuesPerTableMap;
         std::vector<Utf8String> tablesAsOrderedInChangeset;
 
         for (Changes::Change change : const_cast<TestChangeSet*>(this)->GetChanges())
@@ -42,8 +43,10 @@ struct TestChangeSet : BeSQLite::ChangeSet
             auto valueItor = changedValuesPerTableMap.find(tblName);
             if (valueItor == changedValuesPerTableMap.end())
                 {
-                valueItor = changedValuesPerTableMap.insert(make_bpair(tblName, Json::Value(Json::ValueType::objectValue))).first;
-                valueItor->second["table"] = Json::Value(tblName);
+                auto doc = std::make_shared<BeJsDocument>();
+                doc->toObject();
+                (*doc)["table"] = tblName;
+                valueItor = changedValuesPerTableMap.insert(make_bpair(tblName, doc)).first;
                 tablesAsOrderedInChangeset.push_back(tableName);
 
                 Byte* pkCols;
@@ -51,58 +54,62 @@ struct TestChangeSet : BeSQLite::ChangeSet
                 if (BE_SQLITE_OK != change.GetPrimaryKeyColumns(&pkCols, &pkColCount))
                     return JsonValue();
 
-                Json::Value pkColumns(Json::ValueType::arrayValue);
+                BeJsDocument pkColumns;
+                pkColumns.toArray();
                 for (size_t i = 0; i < pkColCount; i++)
                     {
                     if (pkCols[i] == 1)
                         {
                         Utf8StringCR col = cols.at(i);
-                        pkColumns.append(Json::Value(col.c_str()));
+                        pkColumns.appendValue() = col;
                         }
                     }
 
-                valueItor->second["pk"] = pkColumns;
-                valueItor->second["rows"] = Json::Value(Json::ValueType::arrayValue);
+                (*valueItor->second)["pk"].From(pkColumns);
+                (*valueItor->second)["rows"].toArray();
                 }
 
-            Json::Value rowChange = Json::Value(Json::ValueType::objectValue);
+            BeJsDocument rowChange;
+            rowChange.toObject();
             if (opCode == DbOpcode::Delete)
-                rowChange["op"] = Json::Value("delete");
+                rowChange["op"] = "delete";
             else if (opCode == DbOpcode::Insert)
-                rowChange["op"] = Json::Value("insert");
+                rowChange["op"] = "insert";
             else
-                rowChange["op"] = Json::Value("update");
+                rowChange["op"] = "update";
 
-            rowChange["indirect"] = Json::Value(indirect != 0);
-            rowChange["values"] = Json::Value(Json::ValueType::arrayValue);
+            rowChange["indirect"] = (indirect != 0);
+            rowChange["values"].toArray();
             for (int i = 0; i < nCols; i++)
                 {
                 Utf8StringCR col = cols.at((size_t) i);
-                Json::Value changedColValues(Json::ValueType::objectValue);
-                Json::Value colValueChange(Json::ValueType::objectValue);
+                BeJsDocument changedColValues;
+                changedColValues.toObject();
+                BeJsDocument colValueChange;
+                colValueChange.toObject();
                 if (DbOpcode::Insert == opCode)
-                    colValueChange["after"] = TestUtilities::DbValueToJson(change.GetValue(i, Changes::Change::Stage::New));
+                    TestUtilities::DbValueToJson(colValueChange["after"], change.GetValue(i, Changes::Change::Stage::New));
                 else if (DbOpcode::Delete == opCode)
-                    colValueChange["before"] = TestUtilities::DbValueToJson(change.GetValue(i, Changes::Change::Stage::Old));
+                    TestUtilities::DbValueToJson(colValueChange["before"], change.GetValue(i, Changes::Change::Stage::Old));
                 else
                     {
                     DbValue oldValue = change.GetOldValue(i);
                     DbValue newValue = change.GetNewValue(i);
                     if (oldValue.IsValid())
-                        colValueChange["before"] = TestUtilities::DbValueToJson(oldValue);
+                        TestUtilities::DbValueToJson(colValueChange["before"], oldValue);
 
                     if (newValue.IsValid())
-                        colValueChange["after"] = TestUtilities::DbValueToJson(newValue);
+                        TestUtilities::DbValueToJson(colValueChange["after"], newValue);
                     }
 
                 if (!colValueChange.empty())
                     {
-                    changedColValues[col.c_str()] = colValueChange;
-                    rowChange["values"].append(changedColValues);
+                    changedColValues[col.c_str()].From(colValueChange);
+                    rowChange["values"].appendValue().From(changedColValues);
                     }
                 }
 
-            valueItor->second["rows"].append(rowChange);
+            (*valueItor->second)["rows"].appendValue().From(rowChange);
             }
 
         for (Utf8StringCR tableName : tablesAsOrderedInChangeset)
@@ -111,7 +118,7 @@ struct TestChangeSet : BeSQLite::ChangeSet
             if (it == changedValuesPerTableMap.end())
                 return JsonValue();
 
-            json.m_value.append(it->second);
+            json.m_value.appendValue().From(*it->second);
             }
 
         return json;
@@ -4009,7 +4016,7 @@ TEST_F(ChangeSummaryTestFixture, NoChangeTrackingInAttachedFile)
 
     //Verify
     //----------------------------------------------------------------------------------
-    Json::Value expectedChangeset0Json, expectedChangeset1Json;
+    BeJsDocument expectedChangeset0Json, expectedChangeset1Json;
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedChangeset0Json, R"json(
         [{"pk":["id"],"rows":
             [{"indirect":false,"op":"insert",
@@ -4048,8 +4055,8 @@ TEST_F(ChangeSummaryTestFixture, NoChangeTrackingInAttachedFile)
                      "values": [{"id":{"before":20}}, {"city":{"before":"boston"}}, {"pop":{"before":200000}}]}],
          "table":"Goo"}])json"));
 
-    ASSERT_EQ(JsonValue(expectedChangeset0Json), rev0.ToJson(primaryDb));
-    ASSERT_EQ(JsonValue(expectedChangeset1Json), rev1.ToJson(primaryDb));
+    ASSERT_EQ(JsonValue(BeJsConst(expectedChangeset0Json)), rev0.ToJson(primaryDb));
+    ASSERT_EQ(JsonValue(BeJsConst(expectedChangeset1Json)), rev1.ToJson(primaryDb));
 
     primaryDb.AbandonChanges();
 

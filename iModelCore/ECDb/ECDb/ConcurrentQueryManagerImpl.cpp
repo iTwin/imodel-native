@@ -1661,7 +1661,7 @@ uint32_t ECSqlReader::Read() {
         throw std::runtime_error(response->GetError());
 
     auto& ecsqlResp = response->GetAsRef<ECSqlResponse>();
-    m_rows = Json::Value::From(ecsqlResp.asJsonString());
+    m_rows.Parse(ecsqlResp.asJsonString());
     m_done = ecsqlResp.IsDone();
     if (readMeta) {
         m_columns = std::move(ecsqlResp.GetProperties());
@@ -1673,21 +1673,19 @@ uint32_t ECSqlReader::Read() {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-Json::Value const& ECSqlReader::Row::GetValue(int index) const {
-    static Json::Value kNull;
-    if (index >= (int)m_row.size())
-        return kNull;
-    return m_row[index];
+BeJsConst ECSqlReader::Row::GetValue(int index) const {
+    if (index < 0 || index >= (int)m_row.size())
+        return BeJsDocument::Null();
+    return m_row[(BeJsConst::ArrayIndex)index];
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-Json::Value const& ECSqlReader::Row::GetValue(std::string const& name) const {
-    static Json::Value kNull;
+BeJsConst ECSqlReader::Row::GetValue(std::string const& name) const {
     const auto& col  = m_columns[name];
     if (!col.IsValid())
-        return kNull;
+        return BeJsDocument::Null();
     return GetValue(col.GetIndex());
 }
 
@@ -1695,13 +1693,14 @@ Json::Value const& ECSqlReader::Row::GetValue(std::string const& name) const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-Json::Value ECSqlReader::Row::ToJson(Format fmt) const {
-    Json::Value v(Json::ValueType::objectValue);
+BeJsDocument ECSqlReader::Row::ToJson(Format fmt) const {
+    BeJsDocument v;
+    v.toObject();
     for (auto& col : m_columns ){
         if (fmt== Format::UseJsonName)
-            v[col.GetJsonName()] = GetValue(col.GetIndex());
+            v[col.GetJsonName()].From(GetValue(col.GetIndex()));
         else
-            v[col.GetName()] = GetValue(col.GetIndex());
+            v[col.GetName()].From(GetValue(col.GetIndex()));
     }
     return v;
 }
@@ -1859,10 +1858,7 @@ void ECSqlRequest::FromJs(BeJsConst const& val) {
         m_query = val[JQuery].asCString();
     }
     if (val.isObjectMember(JArgs)) {
-        Json::Value v;
-        BeJsValue val2(v);
-        val2.From(val[JArgs]);
-        m_args.FromJs(v);
+        m_args.FromJs(val[JArgs]);
     }
     if (val.isBoolMember(JSuppressLogErrors)) {
         m_suppressLogErrors = val[JSuppressLogErrors].asBool();
@@ -2034,7 +2030,7 @@ BeIdSet ECSqlParams::ECSqlParam::GetValueIdSet() const {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 ECSqlParams::ECSqlParam::ECSqlParam(std::string const& name, DPoint2d const& val): m_type(Type::Point2d),  m_name(name){
-    m_val = Json::Value(Json::ValueType::objectValue);
+    m_val.toObject();
     m_val[Jx]= val.x;
     m_val[Jy]= val.y;
 }
@@ -2043,7 +2039,7 @@ ECSqlParams::ECSqlParam::ECSqlParam(std::string const& name, DPoint2d const& val
 // @bsimethod
 //---------------------------------------------------------------------------------------
 ECSqlParams::ECSqlParam::ECSqlParam(std::string const& name, DPoint3d const& val): m_type(Type::Point3d), m_name(name){
-    m_val = Json::Value(Json::ValueType::objectValue);
+    m_val.toObject();
     m_val[Jx]= val.x;
     m_val[Jy]= val.y;
     m_val[Jz]= val.z;
@@ -2055,7 +2051,7 @@ ECSqlParams::ECSqlParam::ECSqlParam(std::string const& name, DPoint3d const& val
 ECSqlParams::ECSqlParam::ECSqlParam(std::string const& name, bvector<Byte> const& val): m_type(Type::Blob), m_name(name){
     Utf8String base64;
     Base64Utilities::Encode(base64, &val[0], val.size());
-    m_val = Json::Value(base64);
+    m_val.SetString(base64);
 }
 
 //---------------------------------------------------------------------------------------
@@ -2083,30 +2079,26 @@ std::vector<std::string> ECSqlParams::GetKeys() const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void ECSqlParams::ToJs(Json::Value& val) {
-    val = Json::Value(Json::ValueType::objectValue);
+void ECSqlParams::ToJs(BeJsValue val) {
+    val.toObject();
     for(auto& p : m_params) {
-        auto& param = val[p.first];
-        param = Json::Value(Json::ValueType::objectValue);
+        auto param = val[p.first.c_str()];
         param[JType] = (int)p.second.GetType();
-        param[JValue] = p.second.GetValue();
+        param[JValue].From(p.second.GetValue());
     }
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void ECSqlParams::FromJs(Json::Value const& val) {
+void ECSqlParams::FromJs(BeJsConst val) {
     m_params.clear();
-    for(auto& name : val.getMemberNames()) {
-        const auto& param = val[name];
-        if (!param.hasMember(JType) || !param.hasMember(JValue))
-            continue;
+    val.ForEachProperty([&](Utf8CP name, BeJsConst param) {
+        if (param.isMember(JType) && param.isMember(JValue))
+            m_params[name] = ECSqlParam(name, (ECSqlParam::Type)param[JType].asInt(), param[JValue]);
 
-        const auto type = (ECSqlParam::Type)param[JType].asInt();
-        const auto& paramVal = param[JValue];
-        m_params[name] = ECSqlParam(name, type, paramVal);
-    }
+        return false;
+    });
 }
 
 //---------------------------------------------------------------------------------------
@@ -2213,7 +2205,7 @@ ECSqlParams::ECSqlParam& ECSqlParams::ECSqlParam::operator = (ECSqlParam && rhs)
 //---------------------------------------------------------------------------------------
 ECSqlParams::ECSqlParam& ECSqlParams::ECSqlParam::operator = (const ECSqlParam & rhs) {
     if (this != &rhs) {
-        m_val = rhs.m_val;
+        m_val.From(rhs.m_val);
         m_type = rhs.m_type;
         m_name = rhs.m_name;
     }
@@ -2298,11 +2290,10 @@ ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::From(std::string const& j
         return Config::GetDefault();
     }
     LOG.infov("config from env: %s", json.c_str());
-    Json::Value val = Json::Value::From(json);
+    BeJsDocument val(json);
     if (!val.isObject()) {
         return Config::GetDefault();
     }
-    auto jsVal = BeJsConst(val);
     return From(val);
 }
 

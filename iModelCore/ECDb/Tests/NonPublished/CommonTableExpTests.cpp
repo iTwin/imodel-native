@@ -2858,7 +2858,7 @@ TEST_F(CommonTableExpTestFixture, CTEWithStructBinding)
 
     //**** Test 1 *****
     {
-    Json::Value expectedJson;
+    BeJsDocument expectedJson;
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson,R"json(
          { "b" : true,
          "d" : 3.0,
@@ -2883,7 +2883,7 @@ TEST_F(CommonTableExpTestFixture, CTEWithStructBinding)
         ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
         ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
         JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
-        Json::Value actualJson;
+        BeJsDocument actualJson;
         ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
         ASSERT_TRUE(actualJson.isMember("PStructProp"));
         ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["PStructProp"]));
@@ -2894,7 +2894,7 @@ TEST_F(CommonTableExpTestFixture, CTEWithStructBinding)
         ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
         ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
         JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
-        Json::Value actualJson;
+        BeJsDocument actualJson;
         ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
         ASSERT_TRUE(actualJson.isMember("PStructProp"));
         ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["PStructProp"]));
@@ -2905,7 +2905,7 @@ TEST_F(CommonTableExpTestFixture, CTEWithStructBinding)
         ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
         ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
         JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
-        Json::Value actualJson;
+        BeJsDocument actualJson;
         ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
         ASSERT_TRUE(actualJson.isMember("PStructProp"));
         ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["PStructProp"]));
@@ -2916,7 +2916,7 @@ TEST_F(CommonTableExpTestFixture, CTEWithStructBinding)
         ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
         ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
         JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
-        Json::Value actualJson;
+        BeJsDocument actualJson;
         ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
         ASSERT_TRUE(actualJson.isMember("PStructProp"));
         ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["PStructProp"]));
@@ -2957,7 +2957,7 @@ TEST_F(CommonTableExpTestFixture, CTEWithStructBinding)
         ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
         ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
         JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
-        Json::Value actualJson;
+        BeJsDocument actualJson;
         ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
         ASSERT_TRUE(actualJson.isMember("PStructProp"));
         ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["PStructProp"]));
@@ -2999,7 +2999,7 @@ TEST_F(CommonTableExpTestFixture, CTEWithStructBinding)
 
     //**** Test 2 *****
     {
-    Json::Value expectedJson;
+    BeJsDocument expectedJson;
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, R"json(
         { "PStructProp" :
         { "b" : true,
@@ -3028,7 +3028,7 @@ TEST_F(CommonTableExpTestFixture, CTEWithStructBinding)
         ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
         ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
         JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
-        Json::Value actualJson;
+        BeJsDocument actualJson;
         ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
         ASSERT_TRUE(actualJson.isMember("SAStructProp"));
         ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["SAStructProp"]));
@@ -3039,7 +3039,7 @@ TEST_F(CommonTableExpTestFixture, CTEWithStructBinding)
         ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
         ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
         JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
-        Json::Value actualJson;
+        BeJsDocument actualJson;
         ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
         ASSERT_TRUE(actualJson.isMember("SAStructProp"));
         ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["SAStructProp"]));
@@ -3050,7 +3050,7 @@ TEST_F(CommonTableExpTestFixture, CTEWithStructBinding)
         ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
         ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
         JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
-        Json::Value actualJson;
+        BeJsDocument actualJson;
         ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
         ASSERT_TRUE(actualJson.isMember("SAStructProp"));
         ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["SAStructProp"]));
@@ -3061,7 +3061,7 @@ TEST_F(CommonTableExpTestFixture, CTEWithStructBinding)
         ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
         ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
         JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
-        Json::Value actualJson;
+        BeJsDocument actualJson;
         ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
         ASSERT_TRUE(actualJson.isMember("SAStructProp"));
         ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["SAStructProp"]));

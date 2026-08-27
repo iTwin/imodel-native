@@ -192,7 +192,7 @@ JsonValue TestHelper::ExecuteSelectECSql(Utf8CP ecsql) const
     {
     ECSqlStatement stmt;
     if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, ecsql))
-        return JsonValue(Json::nullValue);
+        return JsonValue();
 
     return ExecutePreparedECSql(stmt);
     }
@@ -216,19 +216,17 @@ DbResult TestHelper::ExecuteInsertECSql(ECInstanceKey& key, Utf8CP ecsql) const
 JsonValue TestHelper::ExecutePreparedECSql(ECSqlStatement& stmt) const
     {
     if (!stmt.IsPrepared())
-        return JsonValue(Json::nullValue);
+        return JsonValue();
 
     LOG.debugv("ECSQL: %s | SQL: %s", stmt.GetECSql(), stmt.GetNativeSql());
 
-    JsonValue resultSet(Json::arrayValue);
+    JsonValue resultSet;
+    resultSet.m_value.toArray();
     JsonECSqlSelectAdapter adapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
     while (BE_SQLITE_ROW == stmt.Step())
         {
-        Json::Value row;
-        if (SUCCESS != adapter.GetRow(row))
-            return JsonValue(Json::nullValue);
-
-        resultSet.m_value.append(row);
+        if (SUCCESS != adapter.GetRow(resultSet.m_value.appendValue()))
+            return JsonValue();
         }
 
     return resultSet;
@@ -580,19 +578,6 @@ int TestHelper::GetFrequencyCount(Utf8StringCR source, Utf8StringCR target) cons
 //**************************************************************************************
 // TestUtilities
 //**************************************************************************************
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-BentleyStatus TestUtilities::ReadFile(Json::Value& json, BeFileNameCR jsonFilePath)
-    {
-    Utf8String jsonFileContent;
-    if (SUCCESS != ReadFile(jsonFileContent, jsonFilePath))
-        return ERROR;
-
-    return ParseJson(json, jsonFileContent);
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
