@@ -826,7 +826,7 @@ TEST_F(SchemaUpgradeTestFixture, DeleteSchema_InstanceFinder) {
         "    </ECEntityClass>"
         "</ECSchema>";
     ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(schemaXml2)));
-   auto jResult0 = Json::Value::From(R"({
+   auto jResult0 = BeJsDocument(R"({
    "entities" : [
       {
          "baseClass" : "TestSchema:A",
@@ -881,7 +881,7 @@ TEST_F(SchemaUpgradeTestFixture, DeleteSchema_InstanceFinder) {
          ]
       }
    ]})");
-    auto jResult1 = Json::Value::From(R"(
+    auto jResult1 = BeJsDocument(R"(
     {
     "entities" : [
         {
@@ -1011,10 +1011,9 @@ TEST_F(SchemaUpgradeTestFixture, DeleteSchema_InstanceFinder) {
         InstanceFinder::SearchResults::JsonFormatOptions opts(m_ecdb);
         opts.SetUseClassNameForBaseClass(true);
         opts.SetUseClassNameForInstanceKey(true);
-        Json::Value jsonValue;
-        BeJsValue jsValue(jsonValue);
-        results.ToJson(jsValue, &opts);
-        return jsonValue.toStyledString();
+        BeJsDocument jsonValue;
+        results.ToJson(jsonValue, &opts);
+        return jsonValue;
     };
 
     auto testSchema = m_ecdb.Schemas().GetSchema("TestSchema");
@@ -1023,8 +1022,8 @@ TEST_F(SchemaUpgradeTestFixture, DeleteSchema_InstanceFinder) {
     ASSERT_NE(testSchema1, nullptr);
     auto result0 = InstanceFinder::FindInstances(m_ecdb, testSchema->GetId(), false);
     auto result1 = InstanceFinder::FindInstances(m_ecdb, testSchema1->GetId(), false);
-    ASSERT_STREQ(toJson(result0).c_str(), jResult0.toStyledString().c_str());
-    ASSERT_STREQ(toJson(result1).c_str(), jResult1.toStyledString().c_str());
+    ASSERT_TRUE(toJson(result0).isExactEqual(jResult0)) << "\n  actual: " << toJson(result0).Stringify();
+    ASSERT_TRUE(toJson(result1).isExactEqual(jResult1)) << "\n  actual: " << toJson(result1).Stringify();
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -13659,7 +13658,7 @@ TEST_F(SchemaUpgradeTestFixture, Formats)
         else
             {
             ASSERT_TRUE(format->HasNumeric()) << assertMessage;
-            Json::Value jval;
+            BeJsDocument jval;
             ASSERT_TRUE(format->GetNumericSpec()->ToJson(jval, false)) << assertMessage;
             ASSERT_EQ(numericSpec, JsonValue(jval)) << assertMessage;
             }
@@ -13668,7 +13667,7 @@ TEST_F(SchemaUpgradeTestFixture, Formats)
             ASSERT_FALSE(format->HasComposite()) << assertMessage;
         else
             {
-            Json::Value jval;
+            BeJsDocument jval;
             ASSERT_TRUE(format->GetCompositeSpec()->ToJson(jval)) << assertMessage;
             ASSERT_TRUE(format->HasComposite()) << assertMessage;
             ASSERT_EQ(compSpec, JsonValue(jval)) << assertMessage;
@@ -16188,8 +16187,8 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_NestedStruct) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("struct_prop.ecdb", v1));
     if ("Verify before schema map for struct property this will change after v2 importe") {
-        Json::Value actual = GetPropertyMap(m_ecdb, "ts.Element");
-        Json::Value expected = R"(
+        BeJsDocument actual = GetPropertyMap(m_ecdb, "ts.Element");
+        BeJsDocument expected = R"(
             [
                 "TestSchema:Element:ECClassId:ts_Element:ECClassId",
                 "TestSchema:Element:ECInstanceId:ts_Element:Id",
@@ -16200,7 +16199,7 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_NestedStruct) {
                 "TestSchema:Element:S.T_ARRAY:ts_Element:ps5"
             ]
         )"_json;
-        ASSERT_STRCASEEQ(expected.toStyledString().c_str(), actual.toStyledString().c_str());
+        ASSERT_TRUE(expected.isExactEqual(actual)) << "\n  expected: " << expected.Stringify() << "\n  actual:   " << actual.Stringify();
     }
     auto inst1 = R"({
         "className": "ts.Element",
@@ -16232,7 +16231,7 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_NestedStruct) {
     auto key1 = InsertInstance(m_ecdb, inst1);
     if ("verify instance was written correctlye") {
         auto out = ReadInstance(m_ecdb, key1, "S");
-        ASSERT_STREQ(inst1["data"].toStyledString().c_str(), out.toStyledString().c_str());
+        ASSERT_TRUE(inst1["data"].isExactEqual(out)) << "\n  expected: " << inst1["data"].Stringify() << "\n  actual:   " << out.Stringify();
     }
 
     auto v2 = R"(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -16265,8 +16264,8 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_NestedStruct) {
     m_ecdb.SaveChanges();
 
     if ("verify property map after schema upgrade") {
-        Json::Value actual = GetPropertyMap(m_ecdb, "ts.Element");
-        Json::Value expected = R"(
+        BeJsDocument actual = GetPropertyMap(m_ecdb, "ts.Element");
+        BeJsDocument expected = R"(
             [
                 "TestSchema:Element:ECClassId:ts_Element:ECClassId",
                 "TestSchema:Element:ECClassId:ts_Element_Overflow:ECClassId",
@@ -16283,7 +16282,7 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_NestedStruct) {
                 "TestSchema:Element:S.T_ARRAY:ts_Element_Overflow:os8"
             ]
         )"_json;
-        ASSERT_STRCASEEQ(expected.toStyledString().c_str(), actual.toStyledString().c_str());
+        ASSERT_TRUE(expected.isExactEqual(actual)) << "\n  expected: " << expected.Stringify() << "\n  actual:   " << actual.Stringify();
     }
 
     auto inst2 = R"({
@@ -16319,11 +16318,11 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_NestedStruct) {
 
     if ("verify instance was transformed correctly after schema import") {
         auto out = ReadInstance(m_ecdb, key1, "S");
-        ASSERT_STREQ(inst1["data"].toStyledString().c_str(), out.toStyledString().c_str());
+        ASSERT_TRUE(inst1["data"].isExactEqual(out)) << "\n  expected: " << inst1["data"].Stringify() << "\n  actual:   " << out.Stringify();
     }
     if ("verify instance inserted after schema upgrade") {
         auto out = ReadInstance(m_ecdb, key2, "L,S");
-        ASSERT_STREQ(inst2["data"].toStyledString().c_str(), out.toStyledString().c_str());
+        ASSERT_TRUE(inst2["data"].isExactEqual(out)) << "\n  expected: " << inst2["data"].Stringify() << "\n  actual:   " << out.Stringify();
     }
     if ("Make sure the column where property used to reside is set to null") {
         auto vs = m_ecdb.GetCachedStatement("SELECT ps1, ps2, ps3, ps4, ps5 FROM ts_element where id = ?");
@@ -16363,8 +16362,8 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_Simple) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("struct_prop.ecdb", v1));
     if ("Verify before schema map for struct property this will change after v2 importe") {
-        Json::Value actual = GetPropertyMap(m_ecdb, "ts.Element");
-        Json::Value expected = R"(
+        BeJsDocument actual = GetPropertyMap(m_ecdb, "ts.Element");
+        BeJsDocument expected = R"(
             [
                 "TestSchema:Element:ECClassId:ts_Element:ECClassId",
                 "TestSchema:Element:ECInstanceId:ts_Element:Id",
@@ -16374,7 +16373,7 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_Simple) {
                 "TestSchema:Element:structProp.P4:ts_Element:ps4"
             ]
         )"_json;
-        ASSERT_STRCASEEQ(expected.toStyledString().c_str(), actual.toStyledString().c_str());
+        ASSERT_TRUE(expected.isExactEqual(actual)) << "\n  expected: " << expected.Stringify() << "\n  actual:   " << actual.Stringify();
     }
 
     auto inst1 = R"({
@@ -16392,7 +16391,7 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_Simple) {
     auto key1 = InsertInstance(m_ecdb, inst1);
     if ("verify instance was written correctlye") {
         auto out = ReadInstance(m_ecdb, key1, "structProp");
-        ASSERT_STREQ(inst1["data"].toStyledString().c_str(), out.toStyledString().c_str());
+        ASSERT_TRUE(inst1["data"].isExactEqual(out)) << "\n  expected: " << inst1["data"].Stringify() << "\n  actual:   " << out.Stringify();
     }
 
     auto v2 = R"(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -16422,8 +16421,8 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_Simple) {
     m_ecdb.SaveChanges();
 
     if ("verify property map after schema upgrade") {
-        Json::Value actual = GetPropertyMap(m_ecdb, "ts.Element");
-        Json::Value expected = R"(
+        BeJsDocument actual = GetPropertyMap(m_ecdb, "ts.Element");
+        BeJsDocument expected = R"(
             [
                 "TestSchema:Element:ECClassId:ts_Element:ECClassId",
                 "TestSchema:Element:ECClassId:ts_Element_Overflow:ECClassId",
@@ -16437,7 +16436,7 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_Simple) {
                 "TestSchema:Element:structProp.P6:ts_Element_Overflow:os2"
             ]
         )"_json;
-        ASSERT_STRCASEEQ(expected.toStyledString().c_str(), actual.toStyledString().c_str());
+        ASSERT_TRUE(expected.isExactEqual(actual)) << "\n  expected: " << expected.Stringify() << "\n  actual:   " << actual.Stringify();
     }
 
     auto inst2 = R"({
@@ -16457,11 +16456,11 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_Simple) {
 
     if ("verify instance was transformed correctly after schema import") {
         auto out = ReadInstance(m_ecdb, key1, "structProp");
-        ASSERT_STREQ(inst1["data"].toStyledString().c_str(), out.toStyledString().c_str());
+        ASSERT_TRUE(inst1["data"].isExactEqual(out)) << "\n  expected: " << inst1["data"].Stringify() << "\n  actual:   " << out.Stringify();
     }
     if ("verify instance inserted after schema upgrade") {
         auto out = ReadInstance(m_ecdb, key2, "structProp");
-        ASSERT_STREQ(inst2["data"].toStyledString().c_str(), out.toStyledString().c_str());
+        ASSERT_TRUE(inst2["data"].isExactEqual(out)) << "\n  expected: " << inst2["data"].Stringify() << "\n  actual:   " << out.Stringify();
     }
     if ("Make sure the column where property used to reside is set to null") {
         auto vs = m_ecdb.GetCachedStatement("SELECT ps1, ps2, ps3, ps4 FROM ts_element where id = ?");
@@ -16506,8 +16505,8 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_OverflowTableDoesNotExist
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("struct_prop.ecdb", v1));
 
     if ("verify element mapping before schema upgrade") {
-        Json::Value actual = GetPropertyMap(m_ecdb, "ts.Element");
-        Json::Value expected = R"(
+        BeJsDocument actual = GetPropertyMap(m_ecdb, "ts.Element");
+        BeJsDocument expected = R"(
             [
                 "TestSchema:Element:ECClassId:ts_Element:ECClassId",
                 "TestSchema:Element:ECInstanceId:ts_Element:Id",
@@ -16517,11 +16516,11 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_OverflowTableDoesNotExist
                 "TestSchema:Element:structProp.P4:ts_Element:ps4"
             ]
         )"_json;
-        ASSERT_STRCASEEQ(expected.toStyledString().c_str(), actual.toStyledString().c_str());
+        ASSERT_TRUE(expected.isExactEqual(actual)) << "\n  expected: " << expected.Stringify() << "\n  actual:   " << actual.Stringify();
     }
     if ("verify geom2d mapping before schema upgrade") {
-        Json::Value actual = GetPropertyMap(m_ecdb, "ts.Geom2d");
-        Json::Value expected = R"(
+        BeJsDocument actual = GetPropertyMap(m_ecdb, "ts.Geom2d");
+        BeJsDocument expected = R"(
             [
                 "TestSchema:Geom2d:ECClassId:ts_Element:ECClassId",
                 "TestSchema:Geom2d:ECInstanceId:ts_Element:Id",
@@ -16532,7 +16531,7 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_OverflowTableDoesNotExist
                 "TestSchema:Geom2d:structProp.P4:ts_Element:ps4"
             ]
         )"_json;
-        ASSERT_STRCASEEQ(expected.toStyledString().c_str(), actual.toStyledString().c_str());
+        ASSERT_TRUE(expected.isExactEqual(actual)) << "\n  expected: " << expected.Stringify() << "\n  actual:   " << actual.Stringify();
     }
 
     auto inst1 = R"({
@@ -16549,7 +16548,7 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_OverflowTableDoesNotExist
     auto key1 = InsertInstance(m_ecdb, inst1);
     if ("verify element instance") {
         auto out = ReadInstance(m_ecdb, key1, "structProp");
-        ASSERT_STREQ(inst1["data"].toStyledString().c_str(), out.toStyledString().c_str());
+        ASSERT_TRUE(inst1["data"].isExactEqual(out)) << "\n  expected: " << inst1["data"].Stringify() << "\n  actual:   " << out.Stringify();
     }
 
     auto inst2 = R"({
@@ -16567,7 +16566,7 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_OverflowTableDoesNotExist
     auto key2 = InsertInstance(m_ecdb, inst2);
     if ("verify geom2d instance") {
         auto out = ReadInstance(m_ecdb, key2, "G1, structProp");
-        ASSERT_STREQ(inst2["data"].toStyledString().c_str(), out.toStyledString().c_str());
+        ASSERT_TRUE(inst2["data"].isExactEqual(out)) << "\n  expected: " << inst2["data"].Stringify() << "\n  actual:   " << out.Stringify();
     }
 
     auto v2 = R"(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -16601,8 +16600,8 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_OverflowTableDoesNotExist
     m_ecdb.SaveChanges();
 
     if ("verify map for element") {
-        Json::Value actual = GetPropertyMap(m_ecdb, "ts.Element");
-        Json::Value expected = R"(
+        BeJsDocument actual = GetPropertyMap(m_ecdb, "ts.Element");
+        BeJsDocument expected = R"(
             [
                 "TestSchema:Element:ECClassId:ts_Element:ECClassId",
                 "TestSchema:Element:ECClassId:ts_Element_Overflow:ECClassId",
@@ -16616,11 +16615,11 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_OverflowTableDoesNotExist
                 "TestSchema:Element:structProp.P6:ts_Element_Overflow:os2"
             ]
         )"_json;
-        ASSERT_STRCASEEQ(expected.toStyledString().c_str(), actual.toStyledString().c_str());
+        ASSERT_TRUE(expected.isExactEqual(actual)) << "\n  expected: " << expected.Stringify() << "\n  actual:   " << actual.Stringify();
     }
     if ("verify map for geom2d") {
-        Json::Value actual = GetPropertyMap(m_ecdb, "ts.Geom2d");
-        Json::Value expected = R"(
+        BeJsDocument actual = GetPropertyMap(m_ecdb, "ts.Geom2d");
+        BeJsDocument expected = R"(
             [
                 "TestSchema:Geom2d:ECClassId:ts_Element:ECClassId",
                 "TestSchema:Geom2d:ECClassId:ts_Element_Overflow:ECClassId",
@@ -16635,7 +16634,7 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_OverflowTableDoesNotExist
                 "TestSchema:Geom2d:structProp.P6:ts_Element_Overflow:os2"
             ]
         )"_json;
-        ASSERT_STRCASEEQ(expected.toStyledString().c_str(), actual.toStyledString().c_str());
+        ASSERT_TRUE(expected.isExactEqual(actual)) << "\n  expected: " << expected.Stringify() << "\n  actual:   " << actual.Stringify();
     }
     // insert a second instance with additional properties
     auto inst3 = R"({
@@ -16671,19 +16670,19 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_OverflowTableDoesNotExist
 
     if ("check element before schema upgrade") {
         auto out = ReadInstance(m_ecdb, key1, "structProp");
-        ASSERT_STREQ(inst1["data"].toStyledString().c_str(), out.toStyledString().c_str());
+        ASSERT_TRUE(inst1["data"].isExactEqual(out)) << "\n  expected: " << inst1["data"].Stringify() << "\n  actual:   " << out.Stringify();
     }
     if ("check geom2d before schema upgrade") {
         auto out = ReadInstance(m_ecdb, key2, "G1, structProp");
-        ASSERT_STREQ(inst2["data"].toStyledString().c_str(), out.toStyledString().c_str());
+        ASSERT_TRUE(inst2["data"].isExactEqual(out)) << "\n  expected: " << inst2["data"].Stringify() << "\n  actual:   " << out.Stringify();
     }
     if ("check element after schema upgrade") {
         auto out = ReadInstance(m_ecdb, key3, "structProp");
-        ASSERT_STREQ(inst3["data"].toStyledString().c_str(), out.toStyledString().c_str());
+        ASSERT_TRUE(inst3["data"].isExactEqual(out)) << "\n  expected: " << inst3["data"].Stringify() << "\n  actual:   " << out.Stringify();
     }
     if ("check geom3d after schema upgrade") {
         auto out = ReadInstance(m_ecdb, key4, "G1, structProp");
-        ASSERT_STREQ(inst4["data"].toStyledString().c_str(), out.toStyledString().c_str());
+        ASSERT_TRUE(inst4["data"].isExactEqual(out)) << "\n  expected: " << inst4["data"].Stringify() << "\n  actual:   " << out.Stringify();
     }
     if ("check data was moved and left behind") {
         auto vs = m_ecdb.GetCachedStatement("SELECT ps1, ps2, ps3, ps4 FROM ts_element where id = ?");
@@ -16739,8 +16738,8 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_OverflowTableAlreadyExist
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("struct_prop.ecdb", v1));
 
     if ("verify element mapping before schema upgrade") {
-        Json::Value actual = GetPropertyMap(m_ecdb, "ts.Element");
-        Json::Value expected = R"(
+        BeJsDocument actual = GetPropertyMap(m_ecdb, "ts.Element");
+        BeJsDocument expected = R"(
             [
                 "TestSchema:Element:ECClassId:ts_Element:ECClassId",
                 "TestSchema:Element:ECInstanceId:ts_Element:Id",
@@ -16750,11 +16749,11 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_OverflowTableAlreadyExist
                 "TestSchema:Element:structProp.P4:ts_Element:ps4"
             ]
         )"_json;
-        ASSERT_STRCASEEQ(expected.toStyledString().c_str(), actual.toStyledString().c_str());
+        ASSERT_TRUE(expected.isExactEqual(actual)) << "\n  expected: " << expected.Stringify() << "\n  actual:   " << actual.Stringify();
     }
     if ("verify geom2d mapping before schema upgrade") {
-        Json::Value actual = GetPropertyMap(m_ecdb, "ts.Geom2d");
-        Json::Value expected = R"(
+        BeJsDocument actual = GetPropertyMap(m_ecdb, "ts.Geom2d");
+        BeJsDocument expected = R"(
             [
                 "TestSchema:Geom2d:ECClassId:ts_Element:ECClassId",
                 "TestSchema:Geom2d:ECClassId:ts_Element_Overflow:ECClassId",
@@ -16767,7 +16766,7 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_OverflowTableAlreadyExist
                 "TestSchema:Geom2d:structProp.P4:ts_Element:ps4"
             ]
         )"_json;
-        ASSERT_STRCASEEQ(expected.toStyledString().c_str(), actual.toStyledString().c_str());
+        ASSERT_TRUE(expected.isExactEqual(actual)) << "\n  expected: " << expected.Stringify() << "\n  actual:   " << actual.Stringify();
     }
 
     auto inst1 = R"({
@@ -16784,7 +16783,7 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_OverflowTableAlreadyExist
     auto key1 = InsertInstance(m_ecdb, inst1);
     if ("verify element instance") {
         auto out = ReadInstance(m_ecdb, key1, "structProp");
-        ASSERT_STREQ(inst1["data"].toStyledString().c_str(), out.toStyledString().c_str());
+        ASSERT_TRUE(inst1["data"].isExactEqual(out)) << "\n  expected: " << inst1["data"].Stringify() << "\n  actual:   " << out.Stringify();
     }
 
     auto inst2 = R"({
@@ -16802,7 +16801,7 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_OverflowTableAlreadyExist
     auto key2 = InsertInstance(m_ecdb, inst2);
     if ("verify geom2d instance") {
         auto out = ReadInstance(m_ecdb, key2, "G1, structProp");
-        ASSERT_STREQ(inst2["data"].toStyledString().c_str(), out.toStyledString().c_str());
+        ASSERT_TRUE(inst2["data"].isExactEqual(out)) << "\n  expected: " << inst2["data"].Stringify() << "\n  actual:   " << out.Stringify();
     }
 
     auto v2 = R"(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -16836,8 +16835,8 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_OverflowTableAlreadyExist
     m_ecdb.SaveChanges();
 
     if ("verify map for element") {
-        Json::Value actual = GetPropertyMap(m_ecdb, "ts.Element");
-        Json::Value expected = R"(
+        BeJsDocument actual = GetPropertyMap(m_ecdb, "ts.Element");
+        BeJsDocument expected = R"(
             [
             "TestSchema:Element:ECClassId:ts_Element:ECClassId",
             "TestSchema:Element:ECClassId:ts_Element_Overflow:ECClassId",
@@ -16851,11 +16850,11 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_OverflowTableAlreadyExist
             "TestSchema:Element:structProp.P6:ts_Element_Overflow:os3"
             ]
         )"_json;
-        ASSERT_STRCASEEQ(expected.toStyledString().c_str(), actual.toStyledString().c_str());
+        ASSERT_TRUE(expected.isExactEqual(actual)) << "\n  expected: " << expected.Stringify() << "\n  actual:   " << actual.Stringify();
     }
     if ("verify map for geom2d") {
-        Json::Value actual = GetPropertyMap(m_ecdb, "ts.Geom2d");
-        Json::Value expected = R"(
+        BeJsDocument actual = GetPropertyMap(m_ecdb, "ts.Geom2d");
+        BeJsDocument expected = R"(
             [
                 "TestSchema:Geom2d:ECClassId:ts_Element:ECClassId",
                 "TestSchema:Geom2d:ECClassId:ts_Element_Overflow:ECClassId",
@@ -16870,7 +16869,7 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_OverflowTableAlreadyExist
                 "TestSchema:Geom2d:structProp.P6:ts_Element_Overflow:os3"
             ]
         )"_json;
-        ASSERT_STRCASEEQ(expected.toStyledString().c_str(), actual.toStyledString().c_str());
+        ASSERT_TRUE(expected.isExactEqual(actual)) << "\n  expected: " << expected.Stringify() << "\n  actual:   " << actual.Stringify();
     }
     // insert a second instance with additional properties
     auto inst3 = R"({
@@ -16906,19 +16905,19 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_OverflowTableAlreadyExist
 
     if ("check element before schema upgrade") {
         auto out = ReadInstance(m_ecdb, key1, "structProp");
-        ASSERT_STREQ(inst1["data"].toStyledString().c_str(), out.toStyledString().c_str());
+        ASSERT_TRUE(inst1["data"].isExactEqual(out)) << "\n  expected: " << inst1["data"].Stringify() << "\n  actual:   " << out.Stringify();
     }
     if ("check geom2d before schema upgrade") {
         auto out = ReadInstance(m_ecdb, key2, "G1, structProp");
-        ASSERT_STREQ(inst2["data"].toStyledString().c_str(), out.toStyledString().c_str());
+        ASSERT_TRUE(inst2["data"].isExactEqual(out)) << "\n  expected: " << inst2["data"].Stringify() << "\n  actual:   " << out.Stringify();
     }
     if ("check element after schema upgrade") {
         auto out = ReadInstance(m_ecdb, key3, "structProp");
-        ASSERT_STREQ(inst3["data"].toStyledString().c_str(), out.toStyledString().c_str());
+        ASSERT_TRUE(inst3["data"].isExactEqual(out)) << "\n  expected: " << inst3["data"].Stringify() << "\n  actual:   " << out.Stringify();
     }
     if ("check geom3d after schema upgrade") {
         auto out = ReadInstance(m_ecdb, key4, "G1, structProp");
-        ASSERT_STREQ(inst4["data"].toStyledString().c_str(), out.toStyledString().c_str());
+        ASSERT_TRUE(inst4["data"].isExactEqual(out)) << "\n  expected: " << inst4["data"].Stringify() << "\n  actual:   " << out.Stringify();
     }
     if ("check data was moved and left behind - element") {
         auto vs = m_ecdb.GetCachedStatement("SELECT ps1, ps2, ps3, ps4 FROM ts_element where id = ?");
@@ -16988,8 +16987,8 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("struct_prop.ecdb", v1));
     if ("verify element mapping before schema upgrade") {
-        Json::Value actual = GetPropertyMap(m_ecdb, "ts.Element");
-        Json::Value expected = R"(
+        BeJsDocument actual = GetPropertyMap(m_ecdb, "ts.Element");
+        BeJsDocument expected = R"(
             [
                 "TestSchema:Element:ECClassId:ts_Element:ECClassId",
                 "TestSchema:Element:ECInstanceId:ts_Element:Id",
@@ -16999,11 +16998,11 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass) {
                 "TestSchema:Element:S.P4:ts_Element:ps4"
             ]
         )"_json;
-        ASSERT_STRCASEEQ(expected.toStyledString().c_str(), actual.toStyledString().c_str());
+        ASSERT_TRUE(expected.isExactEqual(actual)) << "\n  expected: " << expected.Stringify() << "\n  actual:   " << actual.Stringify();
     }
     if ("verify geom2d mapping before schema upgrade") {
-        Json::Value actual = GetPropertyMap(m_ecdb, "ts.Geom2d");
-        Json::Value expected = R"(
+        BeJsDocument actual = GetPropertyMap(m_ecdb, "ts.Geom2d");
+        BeJsDocument expected = R"(
             [
                 "TestSchema:Geom2d:ECClassId:ts_Element:ECClassId",
                 "TestSchema:Geom2d:ECInstanceId:ts_Element:Id",
@@ -17015,11 +17014,11 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass) {
                 "TestSchema:Geom2d:S.P4:ts_Element:ps4"
             ]
         )"_json;
-        ASSERT_STRCASEEQ(expected.toStyledString().c_str(), actual.toStyledString().c_str());
+        ASSERT_TRUE(expected.isExactEqual(actual)) << "\n  expected: " << expected.Stringify() << "\n  actual:   " << actual.Stringify();
     }
     if ("verify geom2da mapping before schema upgrade") {
-        Json::Value actual = GetPropertyMap(m_ecdb, "ts.Geom2da");
-        Json::Value expected = R"(
+        BeJsDocument actual = GetPropertyMap(m_ecdb, "ts.Geom2da");
+        BeJsDocument expected = R"(
             [
                 "TestSchema:Geom2da:ECClassId:ts_Element:ECClassId",
                 "TestSchema:Geom2da:ECInstanceId:ts_Element:Id",
@@ -17032,11 +17031,11 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass) {
                 "TestSchema:Geom2da:S.P4:ts_Element:ps4"
             ]
         )"_json;
-        ASSERT_STRCASEEQ(expected.toStyledString().c_str(), actual.toStyledString().c_str());
+        ASSERT_TRUE(expected.isExactEqual(actual)) << "\n  expected: " << expected.Stringify() << "\n  actual:   " << actual.Stringify();
     }
     if ("verify geom3d mapping before schema upgrade") {
-        Json::Value actual = GetPropertyMap(m_ecdb, "ts.Geom3d");
-        Json::Value expected = R"(
+        BeJsDocument actual = GetPropertyMap(m_ecdb, "ts.Geom3d");
+        BeJsDocument expected = R"(
             [
                 "TestSchema:Geom3d:ECClassId:ts_Element:ECClassId",
                 "TestSchema:Geom3d:ECInstanceId:ts_Element:Id",
@@ -17048,11 +17047,11 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass) {
                 "TestSchema:Geom3d:S.P4:ts_Element:ps4"
             ]
         )"_json;
-        ASSERT_STRCASEEQ(expected.toStyledString().c_str(), actual.toStyledString().c_str());
+        ASSERT_TRUE(expected.isExactEqual(actual)) << "\n  expected: " << expected.Stringify() << "\n  actual:   " << actual.Stringify();
     }
     if ("verify geom3da mapping before schema upgrade") {
-        Json::Value actual = GetPropertyMap(m_ecdb, "ts.Geom3da");
-        Json::Value expected = R"(
+        BeJsDocument actual = GetPropertyMap(m_ecdb, "ts.Geom3da");
+        BeJsDocument expected = R"(
             [
                 "TestSchema:Geom3da:ECClassId:ts_Element:ECClassId",
                 "TestSchema:Geom3da:ECInstanceId:ts_Element:Id",
@@ -17065,7 +17064,7 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass) {
                 "TestSchema:Geom3da:S.P4:ts_Element:ps4"
             ]
         )"_json;
-        ASSERT_STRCASEEQ(expected.toStyledString().c_str(), actual.toStyledString().c_str());
+        ASSERT_TRUE(expected.isExactEqual(actual)) << "\n  expected: " << expected.Stringify() << "\n  actual:   " << actual.Stringify();
     }
 
     auto inst1 = R"({
@@ -17082,7 +17081,7 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass) {
     auto key1 = InsertInstance(m_ecdb, inst1);
     if ("verify element instance") {
         auto out = ReadInstance(m_ecdb, key1, "S");
-        ASSERT_STREQ(inst1["data"].toStyledString().c_str(), out.toStyledString().c_str());
+        ASSERT_TRUE(inst1["data"].isExactEqual(out)) << "\n  expected: " << inst1["data"].Stringify() << "\n  actual:   " << out.Stringify();
     }
 
     auto inst2 = R"({
@@ -17090,7 +17089,7 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass) {
         "data": {
             "S": {
                 "P1": 2241,
-                "P2": 0929,
+                "P2": 929,
                 "P3": 4361,
                 "P4": 9375
             },
@@ -17103,7 +17102,7 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass) {
     auto key2 = InsertInstance(m_ecdb, inst2);
     if ("verify geom2d instance") {
         auto out = ReadInstance(m_ecdb, key2, "S, G");
-        ASSERT_STREQ(inst2["data"].toStyledString().c_str(), out.toStyledString().c_str());
+        ASSERT_TRUE(inst2["data"].isExactEqual(out)) << "\n  expected: " << inst2["data"].Stringify() << "\n  actual:   " << out.Stringify();
     }
 
     auto inst3 = R"({
@@ -17125,7 +17124,7 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass) {
     auto key3 = InsertInstance(m_ecdb, inst3);
     if ("verify geom2da instance") {
         auto out = ReadInstance(m_ecdb, key3, "S, G, I");
-        ASSERT_STREQ(inst3["data"].toStyledString().c_str(), out.toStyledString().c_str());
+        ASSERT_TRUE(inst3["data"].isExactEqual(out)) << "\n  expected: " << inst3["data"].Stringify() << "\n  actual:   " << out.Stringify();
     }
 
     auto inst4 = R"({
@@ -17146,7 +17145,7 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass) {
     auto key4 = InsertInstance(m_ecdb, inst4);
     if ("verify geom3d instance") {
         auto out = ReadInstance(m_ecdb, key4, "S, G");
-        ASSERT_STREQ(inst4["data"].toStyledString().c_str(), out.toStyledString().c_str());
+        ASSERT_TRUE(inst4["data"].isExactEqual(out)) << "\n  expected: " << inst4["data"].Stringify() << "\n  actual:   " << out.Stringify();
     }
 
     auto inst5 = R"({
@@ -17168,7 +17167,7 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass) {
     auto key5 = InsertInstance(m_ecdb, inst5);
     if ("verify geom3da instance") {
         auto out = ReadInstance(m_ecdb, key5, "S, G, I");
-        ASSERT_STREQ(inst5["data"].toStyledString().c_str(), out.toStyledString().c_str());
+        ASSERT_TRUE(inst5["data"].isExactEqual(out)) << "\n  expected: " << inst5["data"].Stringify() << "\n  actual:   " << out.Stringify();
     }
 
     auto v2 = R"(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -17218,8 +17217,8 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass) {
     m_ecdb.SaveChanges();;
 
     if ("verify element mapping before schema upgrade") {
-        Json::Value actual = GetPropertyMap(m_ecdb, "ts.Element");
-        Json::Value expected = R"(
+        BeJsDocument actual = GetPropertyMap(m_ecdb, "ts.Element");
+        BeJsDocument expected = R"(
             [
                 "TestSchema:Element:ECClassId:ts_Element:ECClassId",
                 "TestSchema:Element:ECClassId:ts_Element_Overflow:ECClassId",
@@ -17233,11 +17232,11 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass) {
                 "TestSchema:Element:S.P6:ts_Element_Overflow:os2"
             ]
         )"_json;
-        ASSERT_STRCASEEQ(expected.toStyledString().c_str(), actual.toStyledString().c_str());
+        ASSERT_TRUE(expected.isExactEqual(actual)) << "\n  expected: " << expected.Stringify() << "\n  actual:   " << actual.Stringify();
     }
     if ("verify geom2d mapping before schema upgrade") {
-        Json::Value actual = GetPropertyMap(m_ecdb, "ts.Geom2d");
-        Json::Value expected = R"(
+        BeJsDocument actual = GetPropertyMap(m_ecdb, "ts.Geom2d");
+        BeJsDocument expected = R"(
             [
                 "TestSchema:Geom2d:ECClassId:ts_Element:ECClassId",
                 "TestSchema:Geom2d:ECClassId:ts_Element_Overflow:ECClassId",
@@ -17253,11 +17252,11 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass) {
                 "TestSchema:Geom2d:S.P6:ts_Element_Overflow:os2"
             ]
         )"_json;
-        ASSERT_STRCASEEQ(expected.toStyledString().c_str(), actual.toStyledString().c_str());
+        ASSERT_TRUE(expected.isExactEqual(actual)) << "\n  expected: " << expected.Stringify() << "\n  actual:   " << actual.Stringify();
     }
     if ("verify geom2da mapping before schema upgrade") {
-        Json::Value actual = GetPropertyMap(m_ecdb, "ts.Geom2da");
-        Json::Value expected = R"(
+        BeJsDocument actual = GetPropertyMap(m_ecdb, "ts.Geom2da");
+        BeJsDocument expected = R"(
             [
                 "TestSchema:Geom2da:ECClassId:ts_Element:ECClassId",
                 "TestSchema:Geom2da:ECClassId:ts_Element_Overflow:ECClassId",
@@ -17274,11 +17273,11 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass) {
                 "TestSchema:Geom2da:S.P6:ts_Element_Overflow:os2"
             ]
         )"_json;
-        ASSERT_STRCASEEQ(expected.toStyledString().c_str(), actual.toStyledString().c_str());
+        ASSERT_TRUE(expected.isExactEqual(actual)) << "\n  expected: " << expected.Stringify() << "\n  actual:   " << actual.Stringify();
     }
     if ("verify geom3d mapping before schema upgrade") {
-        Json::Value actual = GetPropertyMap(m_ecdb, "ts.Geom3d");
-        Json::Value expected = R"(
+        BeJsDocument actual = GetPropertyMap(m_ecdb, "ts.Geom3d");
+        BeJsDocument expected = R"(
             [
                 "TestSchema:Geom3d:ECClassId:ts_Element:ECClassId",
                 "TestSchema:Geom3d:ECClassId:ts_Element_Overflow:ECClassId",
@@ -17294,11 +17293,11 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass) {
                 "TestSchema:Geom3d:S.P6:ts_Element_Overflow:os2"
             ]
         )"_json;
-        ASSERT_STRCASEEQ(expected.toStyledString().c_str(), actual.toStyledString().c_str());
+        ASSERT_TRUE(expected.isExactEqual(actual)) << "\n  expected: " << expected.Stringify() << "\n  actual:   " << actual.Stringify();
     }
     if ("verify geom3da mapping before schema upgrade") {
-        Json::Value actual = GetPropertyMap(m_ecdb, "ts.Geom3da");
-        Json::Value expected = R"(
+        BeJsDocument actual = GetPropertyMap(m_ecdb, "ts.Geom3da");
+        BeJsDocument expected = R"(
             [
                 "TestSchema:Geom3da:ECClassId:ts_Element:ECClassId",
                 "TestSchema:Geom3da:ECClassId:ts_Element_Overflow:ECClassId",
@@ -17315,7 +17314,7 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass) {
                 "TestSchema:Geom3da:S.P6:ts_Element_Overflow:os2"
             ]
         )"_json;
-        ASSERT_STRCASEEQ(expected.toStyledString().c_str(), actual.toStyledString().c_str());
+        ASSERT_TRUE(expected.isExactEqual(actual)) << "\n  expected: " << expected.Stringify() << "\n  actual:   " << actual.Stringify();
     }
 
     auto inst6 = R"({
@@ -17334,7 +17333,7 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass) {
     auto key6 = InsertInstance(m_ecdb, inst6);
     if ("verify element instance") {
         auto out = ReadInstance(m_ecdb, key6, "S");
-        ASSERT_STREQ(inst6["data"].toStyledString().c_str(), out.toStyledString().c_str());
+        ASSERT_TRUE(inst6["data"].isExactEqual(out)) << "\n  expected: " << inst6["data"].Stringify() << "\n  actual:   " << out.Stringify();
     }
 
     auto inst7 = R"({
@@ -17357,15 +17356,15 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass) {
     auto key7 = InsertInstance(m_ecdb, inst7);
     if ("verify geom2d instance") {
         auto out = ReadInstance(m_ecdb, key7, "S, G");
-        ASSERT_STREQ(inst7["data"].toStyledString().c_str(), out.toStyledString().c_str());
+        ASSERT_TRUE(inst7["data"].isExactEqual(out)) << "\n  expected: " << inst7["data"].Stringify() << "\n  actual:   " << out.Stringify();
     }
 
     auto inst8 = R"({
         "className": "ts.Geom2da",
         "data": {
             "S": {
-                "P1": 0216,
-                "P2": 0729,
+                "P1": 216,
+                "P2": 729,
                 "P3": 1331,
                 "P4": 8791,
                 "P5": 6558,
@@ -17381,7 +17380,7 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass) {
     auto key8 = InsertInstance(m_ecdb, inst8);
     if ("verify geom2da instance") {
         auto out = ReadInstance(m_ecdb, key8, "S, G, I");
-        ASSERT_STREQ(inst8["data"].toStyledString().c_str(), out.toStyledString().c_str());
+        ASSERT_TRUE(inst8["data"].isExactEqual(out)) << "\n  expected: " << inst8["data"].Stringify() << "\n  actual:   " << out.Stringify();
     }
 
     auto inst9 = R"({
@@ -17393,18 +17392,18 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass) {
                 "P3": 3677,
                 "P4": 4565,
                 "P5": 5576,
-                "P6": 0439
+                "P6": 439
             },
             "G" : {
                 "G1": 5652,
-                "G2": 0269
+                "G2": 269
             }
         }
     })"_json;
     auto key9 = InsertInstance(m_ecdb, inst9);
     if ("verify geom3d instance") {
         auto out = ReadInstance(m_ecdb, key9, "S, G");
-        ASSERT_STREQ(inst9["data"].toStyledString().c_str(), out.toStyledString().c_str());
+        ASSERT_TRUE(inst9["data"].isExactEqual(out)) << "\n  expected: " << inst9["data"].Stringify() << "\n  actual:   " << out.Stringify();
     }
 
     auto inst10 = R"({
@@ -17415,7 +17414,7 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass) {
                 "P2": 9415,
                 "P3": 2146,
                 "P4": 6059,
-                "P5": 0582,
+                "P5": 582,
                 "P6": 8747
             },
             "G" : {
@@ -17428,27 +17427,27 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass) {
     auto key10 = InsertInstance(m_ecdb, inst10);
     if ("verify geom3da instance") {
         auto out = ReadInstance(m_ecdb, key10, "S, G, I");
-        ASSERT_STREQ(inst10["data"].toStyledString().c_str(), out.toStyledString().c_str());
+        ASSERT_TRUE(inst10["data"].isExactEqual(out)) << "\n  expected: " << inst10["data"].Stringify() << "\n  actual:   " << out.Stringify();
     }
     if ("check element before schema upgrade") {
         auto out = ReadInstance(m_ecdb, key1, "S");
-        ASSERT_STREQ(inst1["data"].toStyledString().c_str(), out.toStyledString().c_str());
+        ASSERT_TRUE(inst1["data"].isExactEqual(out)) << "\n  expected: " << inst1["data"].Stringify() << "\n  actual:   " << out.Stringify();
     }
     if ("check geom2d before schema upgrade") {
         auto out = ReadInstance(m_ecdb, key2, "S, G");
-        ASSERT_STREQ(inst2["data"].toStyledString().c_str(), out.toStyledString().c_str());
+        ASSERT_TRUE(inst2["data"].isExactEqual(out)) << "\n  expected: " << inst2["data"].Stringify() << "\n  actual:   " << out.Stringify();
     }
     if ("check geom2da after schema upgrade") {
         auto out = ReadInstance(m_ecdb, key3, "S, G, I");
-        ASSERT_STREQ(inst3["data"].toStyledString().c_str(), out.toStyledString().c_str());
+        ASSERT_TRUE(inst3["data"].isExactEqual(out)) << "\n  expected: " << inst3["data"].Stringify() << "\n  actual:   " << out.Stringify();
     }
     if ("check geom3d after schema upgrade") {
         auto out = ReadInstance(m_ecdb, key4, "S, G");
-        ASSERT_STREQ(inst4["data"].toStyledString().c_str(), out.toStyledString().c_str());
+        ASSERT_TRUE(inst4["data"].isExactEqual(out)) << "\n  expected: " << inst4["data"].Stringify() << "\n  actual:   " << out.Stringify();
     }
     if ("check geom3da after schema upgrade") {
         auto out = ReadInstance(m_ecdb, key5, "S, G, I");
-        ASSERT_STREQ(inst5["data"].toStyledString().c_str(), out.toStyledString().c_str());
+        ASSERT_TRUE(inst5["data"].isExactEqual(out)) << "\n  expected: " << inst5["data"].Stringify() << "\n  actual:   " << out.Stringify();
     }
     if ("check data was moved and left behind - element") {
         auto vs = m_ecdb.GetCachedStatement("SELECT ps1, ps2, ps3, ps4 FROM ts_element where id = ?");

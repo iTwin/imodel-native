@@ -472,13 +472,21 @@ void DgnGeoLocation::SetProjectExtents(AxisAlignedBox3dCR newExtents)
 
     m_extent = newExtents;
 
-    // DO NOT CHANGE TO RAPID JSON.
-    // JsonCpp and RapidJson differ slightly in precision of floating point numbers.
-    // Tile content Ids include a hash of the project extents.
-    // Differing precision => different content Ids => invalidate every cached tile in existence.
-    Json::Value jsonObj;
+    // NOTE: the serialized text is NOT byte-identical to the legacy JsonCpp form. JsonCpp sorted
+    // object keys ("high" before "low") and rendered doubles in its own style (e.g. 28.32308750),
+    // whereas RapidJson preserves insertion order (DRange3dToJson inserts low, then high) and
+    // writes the shortest round-trip form (28.3230875).
+    // This is SAFE for tile content Ids: that hash is computed from the recovered DRange3d, not
+    // from this text, and LoadProjectExtents parses with kParseFullPrecisionFlag, which recovers
+    // bit-identical doubles from either form (verified for both legacy and current output).
+    // If byte-identical output is ever required (e.g. to stop churning this stored property):
+    //   1. Emit the members in sorted key order - write "high" before "low" here instead of using
+    //      BeJsGeomUtils::DRange3dToJson, which inserts "low" first; and
+    //   2. Render each double using JsonCpp's formatting and insert it as pre-formatted text,
+    //      rather than storing a raw double and letting RapidJson's Writer render it.
+    BeJsDocument jsonObj;
     BeJsGeomUtils::DRange3dToJson(jsonObj, m_extent);
-    m_dgndb.SavePropertyString(DgnProjectProperty::Extents(), jsonObj.ToString());
+    m_dgndb.SavePropertyString(DgnProjectProperty::Extents(), jsonObj.Stringify());
 
     if (!m_ecefLocation.m_isValid)
         {
@@ -549,15 +557,21 @@ AxisAlignedBox3d DgnGeoLocation::ComputeProjectExtents(DRange3dP rangeWithOutlie
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnGeoLocation::LoadProjectExtents() const
     {
-    // DO NOT CHANGE TO RAPID JSON.
-    // JsonCpp and RapidJson differ slightly in precision of floating point numbers.
-    // Tile content Ids include a hash of the project extents.
-    // Differing precision => different content Ids => invalidate every cached tile in existence.
-    Json::Value jsonObj;
     Utf8String value;
     AxisAlignedBox3d extentsBeforeReadingFromDb = AxisAlignedBox3d(m_extent);
-    if (BE_SQLITE_ROW == m_dgndb.QueryProperty(value, DgnProjectProperty::Extents()) && Json::Reader::Parse(value, jsonObj))
-        BeJsGeomUtils::DRange3dFromJson(m_extent, jsonObj);
+    if (BE_SQLITE_ROW == m_dgndb.QueryProperty(value, DgnProjectProperty::Extents()))
+        {
+        // Tile content Ids include a hash of the project extents (Visualization
+        // Tree::FormatExtentsHash, via Tree::m_contentIdQualifier). Differing precision =>
+        // different content Ids => invalidate every cached tile in existence.
+        // This is safe because BeJsDocument::Parse uses kParseFullPrecisionFlag, so the recovered
+        // DRange3d is bit-identical both for legacy JsonCpp-written property text and for the
+        // text written by SetProjectExtents above. See the comment on BeJsDocument::Parse -
+        // if that flag is ever dropped, this breaks silently.
+        BeJsDocument jsonObj(value);
+        if (!jsonObj.hasParseError())
+            BeJsGeomUtils::DRange3dFromJson(m_extent, jsonObj);
+        }
 
     if (!extentsBeforeReadingFromDb.IsEqual(m_extent, DoubleOps::SmallMetricDistance()))
         NotifyProjectExtentsChanged(m_extent);

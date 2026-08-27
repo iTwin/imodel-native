@@ -3777,12 +3777,12 @@ bool ECSchema::WriteToJsonValue(BeJsValue ecSchemaJsonValue) const
 //---------------+---------------+---------------+---------------+---------------+-------
 bool ECSchema::WriteToJsonString(Utf8StringR ecSchemaJsonString, bool minify) const
     {
-    Json::Value jsonSchema;
+    BeJsDocument jsonSchema;
 
     if (!WriteToJsonValue(jsonSchema))
         return false;
 
-    ecSchemaJsonString = minify ? jsonSchema.ToString() : jsonSchema.toStyledString();
+    ecSchemaJsonString = jsonSchema.Stringify(minify ? StringifyFormat::Default : StringifyFormat::Indented);
     return true;
     }
 

@@ -6,6 +6,7 @@
 
 #include "ECDbTests.h"
 #include "TestHelper.h"
+#include <BeRapidJson/BeJsValue.h>
 #include <sstream>
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
@@ -185,11 +186,11 @@ public:
     };
 
 SchemaItem operator"" _schema(const char* s, size_t n);
-Json::Value operator"" _json(const char* s, size_t n);
-Json::Value GetPropertyMap(ECDbCR ecdb, Utf8CP className);
-ECInstanceKey InsertInstance(ECDbCR ecdb, Json::Value const& v);
-Json::Value ReadInstance(ECDbCR ecdb, ECInstanceKey ik, Utf8CP prop);
-void UpdateInstance(ECDbCR ecdb, ECInstanceKey key, Json::Value const& v);
+BeJsDocument operator"" _json(const char* s, size_t n);
+BeJsDocument GetPropertyMap(ECDbCR ecdb, Utf8CP className);
+ECInstanceKey InsertInstance(ECDbCR ecdb, BeJsConst v);
+BeJsDocument ReadInstance(ECDbCR ecdb, ECInstanceKey ik, Utf8CP prop);
+void UpdateInstance(ECDbCR ecdb, ECInstanceKey key, BeJsConst v);
 void DeleteInstance(ECDbCR ecdb, ECInstanceKey key);
 
 //! Puts a fixture in the extended tier: its tests only run when ExtendedTestsEnabled().
