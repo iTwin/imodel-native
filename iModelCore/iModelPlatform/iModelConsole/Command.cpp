@@ -9,6 +9,7 @@
 #include "Command.h"
 #include "iModelConsole.h"
 #include <numeric>
+#include <cmath>
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE

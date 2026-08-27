@@ -3041,9 +3041,9 @@ TEST_F(BaseGCSUnitTests, CreateAFullySelfContainedDatumWithCustomEllipsoid_Test)
     GeoCoordinates::DatumP theDatum = const_cast<GeoCoordinates::DatumP>(GeoCoordinates::Datum::CreateDatum());
 
     Utf8String errorMessage;
-    // DO NOT CHANGE TO BeJsDocument — RapidJSON's number parser may produce slightly different doubles than
-    // strtod() for values exceeding double precision, causing exact equality comparisons against C++ literals to fail.
-    ASSERT_TRUE(SUCCESS == theDatum->FromJson(Json::Value::From(customDatum3), errorMessage));
+    BeJsDocument customDatum3Json(customDatum3);
+    ASSERT_FALSE(customDatum3Json.hasParseError());
+    ASSERT_TRUE(SUCCESS == theDatum->FromJson(customDatum3Json, errorMessage));
     Utf8String source;
 
     EXPECT_TRUE(Utf8String(theDatum->GetName()) == "CustomDatum3");
@@ -3132,8 +3132,9 @@ TEST_F(BaseGCSUnitTests, CreateAFullySelfContainedDatumWithCustomEllipsoidButFil
     GeoCoordinates::DatumP theDatum = const_cast<GeoCoordinates::DatumP>(GeoCoordinates::Datum::CreateDatum());
 
     Utf8String errorMessage;
-    // DO NOT CHANGE TO BeJsDocument — see comment in CreateAFullySelfContainedDatumWithCustomEllipsoid_Test
-    ASSERT_TRUE(SUCCESS == theDatum->FromJson(Json::Value::From(customDatum4), errorMessage));
+    BeJsDocument customDatum4Json(customDatum4);
+    ASSERT_FALSE(customDatum4Json.hasParseError());
+    ASSERT_TRUE(SUCCESS == theDatum->FromJson(customDatum4Json, errorMessage));
     Utf8String source;
 
 
@@ -3225,8 +3226,9 @@ TEST_F(BaseGCSUnitTests, CreateAFullySelfContainedDatumWithCustomEllipsoidButFil
     GeoCoordinates::DatumP theDatum = const_cast<GeoCoordinates::DatumP>(GeoCoordinates::Datum::CreateDatum());
 
     Utf8String errorMessage;
-    // DO NOT CHANGE TO BeJsDocument — see comment in CreateAFullySelfContainedDatumWithCustomEllipsoid_Test
-    ASSERT_TRUE(SUCCESS == theDatum->FromJson(Json::Value::From(customDatum4), errorMessage));
+    BeJsDocument customDatum4Json(customDatum4);
+    ASSERT_FALSE(customDatum4Json.hasParseError());
+    ASSERT_TRUE(SUCCESS == theDatum->FromJson(customDatum4Json, errorMessage));
     Utf8String source;
 
 
@@ -3318,8 +3320,9 @@ TEST_F(BaseGCSUnitTests, CreateAFullySelfContainedDatumWithCustomEllipsoidButFil
     GeoCoordinates::DatumP theDatum = const_cast<GeoCoordinates::DatumP>(GeoCoordinates::Datum::CreateDatum());
 
     Utf8String errorMessage;
-    // DO NOT CHANGE TO BeJsDocument — see comment in CreateAFullySelfContainedDatumWithCustomEllipsoid_Test
-    ASSERT_TRUE(SUCCESS == theDatum->FromJson(Json::Value::From(customDatum5), errorMessage));
+    BeJsDocument customDatum5Json(customDatum5);
+    ASSERT_FALSE(customDatum5Json.hasParseError());
+    ASSERT_TRUE(SUCCESS == theDatum->FromJson(customDatum5Json, errorMessage));
     Utf8String source;
 
     EXPECT_TRUE(Utf8String(theDatum->GetName()) == "CustomDatum5");

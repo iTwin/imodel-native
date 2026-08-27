@@ -2189,8 +2189,8 @@ TEST_F(DgnElementTests, ToJson)
   "s": "test string"
 })json");
 
-    Json::Value validJson;
-    EXPECT_TRUE(Json::Reader::Parse(validJsonString, validJson));
+    BeJsDocument validJson(validJsonString);
+    EXPECT_FALSE(validJson.hasParseError());
 
     SetupSeedProject();
 
@@ -2212,23 +2212,21 @@ TEST_F(DgnElementTests, ToJson)
     { // Create Element
     TestElement el(params);
 
-    Json::Value lineSegmentObj(Json::ValueType::objectValue);
-    Json::Value lineSegments(Json::ValueType::arrayValue);
-    Json::Value lineSegment(Json::ValueType::arrayValue);
-    lineSegment[0u] = -21908.999;
-    lineSegment[1u] = 4111.625;
-    lineSegment[2u] = 0.0;
+    BeJsDocument lineSegmentObj;
+    auto lineSegments = lineSegmentObj["lineSegment"];
+    lineSegments.toArray();
 
-    lineSegments[0u] = lineSegment;
+    auto lineSegment = lineSegments.appendValue();
+    lineSegment.toArray();
+    lineSegment.appendValue() = -21908.999;
+    lineSegment.appendValue() = 4111.625;
+    lineSegment.appendValue() = 0.0;
 
-    Json::Value lineSegment2(Json::ValueType::arrayValue);
-    lineSegment2[0u] = -22956.749;
-    lineSegment2[1u] = 4111.625;
-    lineSegment2[2u] = 0.0;
-
-    lineSegments[1u] = lineSegment2;
-
-    lineSegmentObj["lineSegment"] = lineSegments;
+    auto lineSegment2 = lineSegments.appendValue();
+    lineSegment2.toArray();
+    lineSegment2.appendValue() = -22956.749;
+    lineSegment2.appendValue() = 4111.625;
+    lineSegment2.appendValue() = 0.0;
 
     IGeometryPtr geom = ECN::ECJsonUtilities::JsonToIGeometry(lineSegmentObj);
 
@@ -2387,7 +2385,8 @@ TEST_F(DgnElementTests, AutoHandledGeometryJsonRoundTrip)
         auto model = DgnDbTestUtils::InsertPhysicalModel(*db, "ThePhysicalPartition");
         auto categoryId = DgnDbTestUtils::InsertSpatialCategory(*db, "TheSpatialCategory");
 
-        Json::Value inPropsJson{Json::objectValue};
+        BeJsDocument inPropsJson;
+        inPropsJson.toObject();
         inPropsJson["classFullName"] = "TestSchema:GeomHavingClass";
         char modelStringBuf[BeInt64Id::ID_STRINGBUFFER_LENGTH];
         modelStringBuf[BeInt64Id::ID_STRINGBUFFER_LENGTH - 1] = '\0';
@@ -2397,14 +2396,10 @@ TEST_F(DgnElementTests, AutoHandledGeometryJsonRoundTrip)
         categoryId.ToString(categoryStringBuf, BeInt64Id::UseHex::Yes);
         inPropsJson["model"] = modelStringBuf;
         inPropsJson["category"] = categoryStringBuf;
-        Json::Value placementJson;
-        Placement3d().ToJson(BeJsValue{placementJson});
-        inPropsJson["placement"] = placementJson;
+        Placement3d().ToJson(inPropsJson["placement"]);
         inPropsJson["federationGuid"] = "00000000-0000-0000-0000-000000000000";
         DgnCode::CreateEmpty().ToJson(inPropsJson["code"]);
-        Json::Value geomJson;
-        ECN::ECJsonUtilities::IGeometryToJson(geomJson, *inGeom);
-        inPropsJson["geomProp"] = geomJson;
+        ECN::ECJsonUtilities::IGeometryToJson(inPropsJson["geomProp"], *inGeom);
 
         DgnElement::CreateParams params(*db, inPropsJson);
         ASSERT_TRUE(params.m_classId.IsValid());
@@ -2421,7 +2416,7 @@ TEST_F(DgnElementTests, AutoHandledGeometryJsonRoundTrip)
         // we just inserted the element, its auto handled props are in memory/preloaded
         // previously, the code path for producing json from the in-memory IGeometry-type property would output xml
         EXPECT_TRUE(AreAutoHandledPropsLoaded(*el));
-        Json::Value outPropsJson;
+        BeJsDocument outPropsJson;
         el->ToJson(outPropsJson);
 
         IGeometryPtr outGeom = ECN::ECJsonUtilities::JsonToIGeometry(outPropsJson["geomProp"]);
@@ -2443,7 +2438,7 @@ TEST_F(DgnElementTests, AutoHandledGeometryJsonRoundTrip)
 
         // now when we open it without an in-memory element, its auto handled props are not in-memory/preloaded
         EXPECT_FALSE(AreAutoHandledPropsLoaded(*el));
-        Json::Value outPropsJson;
+        BeJsDocument outPropsJson;
         el->ToJson(outPropsJson);
 
         IGeometryPtr outGeom = ECN::ECJsonUtilities::JsonToIGeometry(outPropsJson["geomProp"]);

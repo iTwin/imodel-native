@@ -3,6 +3,7 @@
  * See LICENSE.md in the repository root for full copyright notice.
  *--------------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
+#include <stack>
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
