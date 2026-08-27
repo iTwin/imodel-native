@@ -5,6 +5,7 @@
 #pragma once
 
 #include "TestDb.h"
+#include <BeRapidJson/BeJsValue.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -53,15 +54,15 @@ JsonValue TestDb::ExecuteECSqlSelect(Utf8CP ecsql) const
     if (ECSqlStatus::Success != stmt.Prepare(GetDb(), ecsql))
         return JsonValue();
 
-    JsonValue val(Json::arrayValue);
+    JsonValue val = JsonValue::CreateArray();
     JsonECSqlSelectAdapter adapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
     while (BE_SQLITE_ROW == stmt.Step())
         {
-        Json::Value row;
+        BeJsDocument row;
         if (SUCCESS != adapter.GetRow(row))
             return JsonValue();
 
-        val.m_value.append(row);
+        val.m_value.appendValue().From(row);
         }
 
     return val;
@@ -99,11 +100,11 @@ BeVersion TestDb::GetOriginalECXmlVersion(Utf8CP schemaName) const
         if (!rows.m_value.isArray() || rows.m_value.size() != 1)
             return BeVersion();
 
-        JsonValueCR versionJson = rows.m_value[0];
-        if (!versionJson.isMember("major"))
+        BeJsConst versionJson = rows.m_value[0u];
+        if (!versionJson.hasMember("major"))
             return BeVersion();
 
-        const BeVersion originalXmlVersion = versionJson.isMember("minor") ? BeVersion(versionJson["major"].asInt(), versionJson["minor"].asInt()) : BeVersion(versionJson["major"].asInt(), 0);
+        const BeVersion originalXmlVersion = versionJson.hasMember("minor") ? BeVersion(versionJson["major"].asInt(), versionJson["minor"].asInt()) : BeVersion(versionJson["major"].asInt(), 0);
 
         //verify that version is the same if fetched via ECObjects
         ECSchemaCP schema = GetDb().Schemas().GetSchema(schemaName, false);
@@ -123,10 +124,10 @@ BeVersion TestDb::GetOriginalECXmlVersion(Utf8CP schemaName) const
 int TestDb::GetSchemaCount() const
     {
     JsonValue rows = ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef");
-    if (!rows.m_value.isArray() || rows.m_value.size() != 1 || !rows.m_value[0].isMember("cnt"))
+    if (!rows.m_value.isArray() || rows.m_value.size() != 1 || !rows.m_value[0u].hasMember("cnt"))
         return -1;
 
-    return rows.m_value[0]["cnt"].asInt();
+    return rows.m_value[0u]["cnt"].asInt();
     }
 
 //---------------------------------------------------------------------------------------
@@ -134,12 +135,12 @@ int TestDb::GetSchemaCount() const
 //+---------------+---------------+---------------+---------------+---------------+------
 JsonValue TestDb::GetSchemaItemCounts(Utf8CP schemaName) const
     {
-    JsonValue counts(Json::objectValue);
+    JsonValue counts = JsonValue::CreateObject();
     JsonValue classCount = ExecuteECSqlSelect(Utf8PrintfString("SELECT count(*) cnt FROM meta.ECClassDef i JOIN meta.ECSchemaDef s ON i.Schema.Id=s.ECInstanceId WHERE s.Name='%s'", schemaName).c_str());
     if (classCount.m_value.size() != 1)
         return JsonValue();
 
-    int count = classCount.m_value[0]["cnt"].asInt();
+    int count = classCount.m_value[0u]["cnt"].asInt();
     if (count != 0)
         counts.m_value["classcount"] = count;
 
@@ -147,7 +148,7 @@ JsonValue TestDb::GetSchemaItemCounts(Utf8CP schemaName) const
     if (enumCount.m_value.size() != 1)
         return JsonValue();
 
-    count = enumCount.m_value[0]["cnt"].asInt();
+    count = enumCount.m_value[0u]["cnt"].asInt();
     if (count != 0)
         counts.m_value["enumcount"] = count;
 
@@ -155,7 +156,7 @@ JsonValue TestDb::GetSchemaItemCounts(Utf8CP schemaName) const
     if (koqCount.m_value.size() != 1)
         return JsonValue();
 
-    count = koqCount.m_value[0]["cnt"].asInt();
+    count = koqCount.m_value[0u]["cnt"].asInt();
     if (count != 0)
         counts.m_value["koqcount"] = count;
 
@@ -163,7 +164,7 @@ JsonValue TestDb::GetSchemaItemCounts(Utf8CP schemaName) const
     if (catCount.m_value.size() != 1)
         return JsonValue();
 
-    count = catCount.m_value[0]["cnt"].asInt();
+    count = catCount.m_value[0u]["cnt"].asInt();
     if (count != 0)
         counts.m_value["propertycategorycount"] = count;
 
@@ -173,7 +174,7 @@ JsonValue TestDb::GetSchemaItemCounts(Utf8CP schemaName) const
         if (unitCount.m_value.size() != 1)
             return JsonValue();
 
-        count = unitCount.m_value[0]["cnt"].asInt();
+        count = unitCount.m_value[0u]["cnt"].asInt();
         if (count != 0)
             counts.m_value["unitcount"] = count;
 
@@ -181,7 +182,7 @@ JsonValue TestDb::GetSchemaItemCounts(Utf8CP schemaName) const
         if (formatCount.m_value.size() != 1)
             return JsonValue();
 
-        count = formatCount.m_value[0]["cnt"].asInt();
+        count = formatCount.m_value[0u]["cnt"].asInt();
         if (count != 0)
             counts.m_value["formatcount"] = count;
 
@@ -189,7 +190,7 @@ JsonValue TestDb::GetSchemaItemCounts(Utf8CP schemaName) const
         if (unitSystemCount.m_value.size() != 1)
             return JsonValue();
 
-        count = unitSystemCount.m_value[0]["cnt"].asInt();
+        count = unitSystemCount.m_value[0u]["cnt"].asInt();
         if (count != 0)
             counts.m_value["unitsystemcount"] = count;
 
@@ -197,7 +198,7 @@ JsonValue TestDb::GetSchemaItemCounts(Utf8CP schemaName) const
         if (phenCount.m_value.size() != 1)
             return JsonValue();
 
-        count = phenCount.m_value[0]["cnt"].asInt();
+        count = phenCount.m_value[0u]["cnt"].asInt();
         if (count != 0)
             counts.m_value["phenomenoncount"] = count;
         }
@@ -360,7 +361,7 @@ void TestDb::AssertKindOfQuantity(KindOfQuantityCR koq, Utf8CP expectedSchemaNam
         size_t i = 0;
         for (NamedFormat const& presFormat : koq.GetPresentationFormats())
             {
-            EXPECT_STREQ(expectedPresentationFormats.m_value[(Json::ArrayIndex) i].asCString(), presFormat.GetQualifiedFormatString(koq.GetSchema()).c_str()) << "Presentation Format #" << i << " | " << assertMessage;
+            EXPECT_STREQ(expectedPresentationFormats.m_value[(BeJsConst::ArrayIndex) i].asCString(), presFormat.GetQualifiedFormatString(koq.GetSchema()).c_str()) << "Presentation Format #" << i << " | " << assertMessage;
             i++;
             }
         }
@@ -573,7 +574,7 @@ void TestDb::AssertFormat(Utf8CP schemaName, Utf8CP formatName, Utf8CP expectedD
         EXPECT_FALSE(format->HasNumeric()) << assertMessage;
     else
         {
-        Json::Value actualNumericSpec;
+        BeJsDocument actualNumericSpec;
         ASSERT_TRUE(format->GetNumericSpec()->ToJson(actualNumericSpec, false));
         EXPECT_EQ(expectedNumericSpec, JsonValue(actualNumericSpec)) << assertMessage;
         }
@@ -582,7 +583,7 @@ void TestDb::AssertFormat(Utf8CP schemaName, Utf8CP formatName, Utf8CP expectedD
         EXPECT_FALSE(format->HasComposite()) << assertMessage;
     else
         {
-        Json::Value actualCompSpec;
+        BeJsDocument actualCompSpec;
         ASSERT_TRUE(format->GetCompositeSpec()->ToJson(actualCompSpec, true));
         EXPECT_EQ(expectedCompSpec, JsonValue(actualCompSpec)) << assertMessage;
         }
@@ -619,13 +620,13 @@ void TestDb::AssertFormat(Utf8CP schemaName, Utf8CP formatName, Utf8CP expectedD
         return;
         }
 
-    ASSERT_TRUE(expectedCompSpec.m_value.isMember("units")) << stmt.GetECSql() << " | " << assertMessage;
+    ASSERT_TRUE(expectedCompSpec.m_value.hasMember("units")) << stmt.GetECSql() << " | " << assertMessage;
     JsonValue expectedCompositeWithoutUnitsJson(expectedCompSpec.m_value);
     expectedCompositeWithoutUnitsJson.m_value.removeMember("units");
     EXPECT_EQ(expectedCompositeWithoutUnitsJson, JsonValue(stmt.GetValueText(4))) << assertMessage;
     stmt.Finalize();
 
-    Json::Value const& expectedCompositeUnitsJson = expectedCompSpec.m_value["units"];
+    BeJsConst expectedCompositeUnitsJson = expectedCompSpec.m_value["units"];
     ASSERT_TRUE(expectedCompositeUnitsJson.isArray()) << assertMessage;
     ECSqlStatement unitLookupStmt;
     ASSERT_EQ(ECSqlStatus::Success, unitLookupStmt.Prepare(GetDb(), "SELECT Name FROM meta.UnitDef WHERE ECInstanceId=?")) << assertMessage;
@@ -637,7 +638,7 @@ void TestDb::AssertFormat(Utf8CP schemaName, Utf8CP formatName, Utf8CP expectedD
     while (BE_SQLITE_ROW == compUnitStmt.Step())
         {
         ASSERT_LT(ordinal, (int) expectedCompositeUnitsJson.size()) << assertMessage;
-        Json::Value const& expectedCompositeUnitJson = expectedCompositeUnitsJson[(Json::ArrayIndex) ordinal];
+        BeJsConst expectedCompositeUnitJson = expectedCompositeUnitsJson[(BeJsConst::ArrayIndex) ordinal];
         EXPECT_FALSE(compUnitStmt.IsValueNull(1)) << "Composite unit" << ordinal << " | " << assertMessage;
         BeInt64Id unitId = compUnitStmt.GetValueId<BeInt64Id>(1);
         ASSERT_EQ(ECSqlStatus::Success, unitLookupStmt.BindId(1, unitId)) << "Composite unit" << ordinal << " | " << assertMessage;
@@ -646,7 +647,7 @@ void TestDb::AssertFormat(Utf8CP schemaName, Utf8CP formatName, Utf8CP expectedD
         unitLookupStmt.Reset();
         unitLookupStmt.ClearBindings();
 
-        if (expectedCompositeUnitJson.isMember("label"))
+        if (expectedCompositeUnitJson.hasMember("label"))
             EXPECT_STREQ(expectedCompositeUnitJson["label"].asCString(), compUnitStmt.GetValueText(0)) << "Composite unit" << ordinal << " | " << assertMessage;
         else
             EXPECT_TRUE(compUnitStmt.IsValueNull(0)) << "Composite unit" << ordinal << " | " << assertMessage;

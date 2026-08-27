@@ -58,7 +58,7 @@ TEST_F(ECSqlStatementWindowFunctionTestFixture, RowNumber)
             {"Primary":"F","ROW_NUMBER() OVER(PARTITION BY [Secondary] ORDER BY [Primary])":2,"Secondary":"three"},
             {"Primary":"B","ROW_NUMBER() OVER(PARTITION BY [Secondary] ORDER BY [Primary])":1,"Secondary":"two"},
             {"Primary":"E","ROW_NUMBER() OVER(PARTITION BY [Secondary] ORDER BY [Primary])":2,"Secondary":"two"}
-        ]))json");
+        ])json");
     ASSERT_EQ(expected, GetHelper().ExecuteSelectECSql(ecsql));
     }
 
@@ -273,7 +273,7 @@ TEST_F(ECSqlStatementWindowFunctionTestFixture, AggregateFunctionWithFilter)
             {"MAX([SomeValue]) FILTER(WHERE [Primary] <> 'G' AND [Primary] <> 'F') OVER(PARTITION BY [Secondary])":3,"Primary":"C","Secondary":"three","SomeValue":3},
             {"MAX([SomeValue]) FILTER(WHERE [Primary] <> 'G' AND [Primary] <> 'F') OVER(PARTITION BY [Secondary])":3,"Primary":"F","Secondary":"three","SomeValue":6},
             {"MAX([SomeValue]) FILTER(WHERE [Primary] <> 'G' AND [Primary] <> 'F') OVER(PARTITION BY [Secondary])":5,"Primary":"B","Secondary":"two","SomeValue":2},
-            {"MAX([SomeValue]) FILTER(WHERE [Primary] <> 'G' AND [Primary] <> 'F') OVER(PARTITION BY [Secondary])":5,"Primary":"E","Secondary":"two","SomeValue":5}]
+            {"MAX([SomeValue]) FILTER(WHERE [Primary] <> 'G' AND [Primary] <> 'F') OVER(PARTITION BY [Secondary])":5,"Primary":"E","Secondary":"two","SomeValue":5}
         ])json");
     ASSERT_EQ(expected, GetHelper().ExecuteSelectECSql(ecsql));
     }

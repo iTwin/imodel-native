@@ -10,7 +10,6 @@
 
     <Part Name="GeoCoord" BentleyBuildMakeFile="BaseGeoCoord/GeoCoord.mke">
         <SubPart PartName="csmapStatic"             PartFile="iModelCore/libsrc/csmap/csmap" />
-        <SubPart PartName="BeJsonCpp"               PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" />
         <SubPart PartName="BeRapidJson"             PartFile="iModelCore/Bentley/Bentley" />
         <SubPart PartName="PugiXml"                 PartFile="iModelCore/libsrc/pugixml/pugixml" />
         <SubPart PartName="GeoCoordHeaderFiles" />

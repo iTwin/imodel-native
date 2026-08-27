@@ -25,7 +25,7 @@ DefinitionElementUsageInfoPtr DefinitionElementUsageInfo::Create(DgnDbR db, BeSQ
 static void idSetToJson(BeJsValue array, BeIdSet const& ids)
     {
     array.SetEmptyArray();
-    Json::ArrayIndex i = 0;
+    BeJsValue::ArrayIndex i = 0;
     for (auto const& id : ids)
         array[i++] = id;
     }
