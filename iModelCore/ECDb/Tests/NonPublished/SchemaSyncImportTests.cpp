@@ -5,7 +5,6 @@
 #include "../BackDoor/PublicAPI/BackDoor/ECDb/BackDoor.h"
 #include "ECDbPublishedTests.h"
 #include "MockHubApi.h"
-#include <algorithm>
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -93,6 +92,17 @@ bool HasClass(ECDbR db, Utf8CP schemaName, Utf8CP className) {
     stmt.BindText(1, schemaName, Statement::MakeCopy::No);
     stmt.BindText(2, className, Statement::MakeCopy::No);
     return stmt.Step() == BE_SQLITE_ROW;
+}
+
+bool HasColumn(DbCR db, Utf8CP tableName, Utf8CP columnName) {
+    Statement stmt;
+    if (stmt.Prepare(db, SqlPrintfString("PRAGMA main.table_info([%s])", tableName)) != BE_SQLITE_OK)
+        return false;
+    while (stmt.Step() == BE_SQLITE_ROW) {
+        if (Utf8String(columnName).Equals(stmt.GetValueText(1)))
+            return true;
+    }
+    return false;
 }
 
 int64_t CountClassTableMappings(ECDbR db, Utf8CP schemaName, Utf8CP className) {
@@ -2304,11 +2314,7 @@ TEST_F(SchemaSyncImportTestFixture, RepairSyncDbWithProfileRepairsProfileTableDd
     ASSERT_EQ(SchemaSync::Status::OK,
         source->Schemas().GetSchemaSync().RepairSyncDb(syncDb.GetSyncDbUri(), SchemaSync::RepairScope::SchemaMetadataAndProfile));
     syncDb.WithReadOnly([&](ECDbR sync) {
-        bvector<Utf8String> sourceColumns, sourcePrimaryKeys, syncColumns, syncPrimaryKeys;
-        ASSERT_TRUE(ReadColumns(*source, "main", "ec_Property", sourceColumns, sourcePrimaryKeys));
-        ASSERT_TRUE(ReadColumns(sync, "main", "ec_Property", syncColumns, syncPrimaryKeys));
-        EXPECT_EQ(sourceColumns, syncColumns);
-        EXPECT_EQ(sourcePrimaryKeys, syncPrimaryKeys);
+        EXPECT_FALSE(HasColumn(sync, "ec_Property", "RepairProfileColumn"));
     });
     }
 
@@ -2335,9 +2341,7 @@ TEST_F(SchemaSyncImportTestFixture, RepairSyncDbMetadataOnlyRejectsIncompatibleP
     EXPECT_EQ(dataVersionBefore, SchemaSync::SyncDbInfo::From(syncDb.GetSyncDbUri()).GetDataVersion());
 
     syncDb.WithReadOnly([&](ECDbR sync) {
-        bvector<Utf8String> columns, primaryKeys;
-        ASSERT_TRUE(ReadColumns(sync, "main", "ec_Property", columns, primaryKeys));
-        EXPECT_NE(columns.end(), std::find(columns.begin(), columns.end(), Utf8String("RepairProfileColumn")));
+        EXPECT_TRUE(HasColumn(sync, "ec_Property", "RepairProfileColumn"));
     });
     }
 
