@@ -1945,16 +1945,25 @@ BentleyStatus MainSchemaManager::CreateOrUpdateRequiredTables() const
  //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
- BentleyStatus MainSchemaManager::LoadIndexesSQL(std::map<Utf8String, Utf8String, CompareIUtf8Ascii>& sqliteIndexes) const
+ BentleyStatus MainSchemaManager::LoadPhysicalIndexes(std::map<Utf8String, Utf8String, CompareIUtf8Ascii>& physicalIndexes) const
     {
-     Statement stmt;
-     stmt.Prepare(m_ecdb, "SELECT sqlite_master.name, sqlite_master.sql FROM main.ec_index LEFT JOIN main.sqlite_master ON sqlite_master.name=ec_index.name where sqlite_master.type='index'");
-     while (stmt.Step() == BE_SQLITE_ROW)
-        {
-        sqliteIndexes.insert(std::make_pair(stmt.GetValueText(0), stmt.GetValueText(1)));
-        }
-     return SUCCESS;
-     }
+    // ECDb owns explicit indexes on mapped tables. Existing tables and SQLite's implicit
+    // autoindexes are outside this reconciliation.
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb,
+        "SELECT idx.name,idx.sql FROM main.sqlite_master idx"
+        " JOIN main." TABLE_Table " tbl ON tbl.Name=idx.tbl_name"
+        " WHERE idx.type='index' AND idx.sql IS NOT NULL AND tbl.Type<>?"))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt.BindInt(1, (int) DbTable::Type::Existing))
+        return ERROR;
+
+    while (stmt.Step() == BE_SQLITE_ROW)
+        physicalIndexes.insert(std::make_pair(stmt.GetValueText(0), stmt.GetValueText(1)));
+
+    return SUCCESS;
+    }
 
 //---------------------------------------------------------------------------------------
 // Does ec_Index already describe exactly this index?
@@ -2016,8 +2025,8 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
     if (FindIndexes(indexes) != SUCCESS)
         return ERROR;
 
-    std::map<Utf8String, Utf8String, CompareIUtf8Ascii> sqliteIndexes;
-    if (LoadIndexesSQL(sqliteIndexes) != SUCCESS)
+    std::map<Utf8String, Utf8String, CompareIUtf8Ascii> physicalIndexes;
+    if (LoadPhysicalIndexes(physicalIndexes) != SUCCESS)
         return ERROR;
 
     const auto deletePersistedIndex = [this](Utf8StringCR indexName) -> BentleyStatus
@@ -2150,10 +2159,10 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
                 }
 
             // Here we check if we need to recreate the index.
-            auto sqliteIndexItor = sqliteIndexes.find(index.GetName());
-            if (sqliteIndexItor != sqliteIndexes.end() && !sqliteIndexItor->second.empty())
+            auto physicalIndex = physicalIndexes.find(index.GetName());
+            if (physicalIndex != physicalIndexes.end() && !physicalIndex->second.empty())
                 {
-                if (!sqliteIndexItor->second.EqualsIAscii(ddl))
+                if (!physicalIndex->second.EqualsIAscii(ddl))
                     {
                     LOG.debugv("Schema Import> Recreating index '%s'. The index definition has changed.", index.GetName().c_str());
                     if (!ctx.IsSemanticRebasing())
@@ -2201,6 +2210,8 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
                         return ERROR;
                     }
                 }
+
+            physicalIndexes.erase(index.GetName());
             }
         else
             {
@@ -2216,6 +2227,16 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
                 if (SUCCESS != m_dbSchema.PersistIndexDef(index))
                     return ERROR;
                 }
+            }
+        }
+
+    if (ctx.MaintainsDataTables())
+        {
+        for (auto const& physicalIndex : physicalIndexes)
+            {
+            LOG.debugv("Schema Import> Dropping index '%s'. It is not part of the current mapped schema.", physicalIndex.first.c_str());
+            if (BE_SQLITE_OK != m_ecdb.GetImpl().ExecuteDDL(SqlPrintfString("DROP INDEX IF EXISTS [%s]", physicalIndex.first.c_str())))
+                return ERROR;
             }
         }
 

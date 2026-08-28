@@ -613,7 +613,7 @@ export declare namespace IModelJsNative {
     /** Rebuild the sync db from this file, for a change this file had to make locally - a profile upgrade. */
     public schemaSyncOverwrite(syncDbUri?: string): void;
     public schemaSyncRepair(syncDbUri: string, scope: SchemaSyncRepairScope): void;
-    /** Materialize the tables and indexes the ec_ rows describe. Needed after merging a schema changeset, which carries no DDL. */
+    /** Materialize the tables and indexes described by the ec_ rows after merging a schema changeset. */
     public schemaSyncUpdateDbSchema(): void;
     public schemaSyncEnabled(): boolean;
     /** @not-used-by-itwinjs-core Covered only by this package's own tests. */
@@ -890,7 +890,7 @@ export declare namespace IModelJsNative {
     /** Rebuild the sync db from this briefcase, for a change the briefcase had to make locally - a profile upgrade. */
     public schemaSyncOverwrite(syncDbUri: string | undefined): void;
     public schemaSyncRepair(syncDbUri: string, scope: SchemaSyncRepairScope): void;
-    /** Materialize the tables and indexes the ec_ rows describe. Needed after merging a schema changeset, which carries no DDL. */
+    /** Materialize the tables and indexes described by the ec_ rows after merging a schema changeset. */
     public schemaSyncUpdateDbSchema(): void;
     public schemaSyncEnabled(): boolean;
     /** @not-used-by-itwinjs-core Covered only by this package's own tests. */

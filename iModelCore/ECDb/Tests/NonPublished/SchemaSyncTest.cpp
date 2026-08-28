@@ -218,7 +218,7 @@ TEST_F(SchemaSyncTestFixture, FullSchemaSyncWorkflow)
     auto b2 = hub.CreateBriefcase();
     auto b3 = hub.CreateBriefcase();
 
-    // Stands in for the backend's post-merge hook. A merged schema changeset carries ec_ rows but no DDL.
+    // Stands in for the backend's post-merge hook, which rebuilds the physical schema from ec_.
     auto materializeAfterMerge = [](TrackedECDb& db)
         {
         ASSERT_EQ(SchemaSync::Status::OK, db.Schemas().GetSchemaSync().UpdateDbSchema());
@@ -397,6 +397,40 @@ TEST_F(SchemaSyncTestFixture, FullSchemaSyncWorkflow)
             EXPECT_STREQ(SCHEMA2_HASH_SQLITE_SCHEMA, GetDbSchemaHash(*b3).c_str());
             }
     );
+    }
+
+// ---------------------------------------------------------------------------------------
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncTestFixture, UpdateDbSchemaDropsIndexRemovedFromMetadata)
+    {
+    ECDbHub hub;
+    auto briefcase = hub.CreateBriefcase();
+    auto schema = SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="IndexRemoval" alias="ir" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Item" modifier="Sealed">
+                <ECCustomAttributes>
+                    <DbIndexList xmlns="ECDbMap.02.00.00">
+                        <Indexes>
+                            <DbIndex>
+                                <Name>uix_item_code</Name>
+                                <IsUnique>True</IsUnique>
+                                <Properties><string>Code</string></Properties>
+                            </DbIndex>
+                        </Indexes>
+                    </DbIndexList>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Code" typeName="string"/>
+            </ECEntityClass>
+        </ECSchema>)xml");
+
+    ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*briefcase, schema));
+    ASSERT_FALSE(GetIndexDDL(*briefcase, "uix_item_code").empty());
+
+    ASSERT_EQ(BE_SQLITE_OK, briefcase->ExecuteSql("DELETE FROM ec_Index WHERE Name='uix_item_code'"));
+    ASSERT_EQ(SchemaSync::Status::OK, briefcase->Schemas().GetSchemaSync().UpdateDbSchema());
+    EXPECT_TRUE(GetIndexDDL(*briefcase, "uix_item_code").empty());
     }
 
 // ---------------------------------------------------------------------------------------

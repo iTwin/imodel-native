@@ -693,6 +693,39 @@ describe("basic tests", () => {
     assert.isTrue(bisProps.version >= "01.00.15"); // PR references 01.00.15+, so importing PR will cause it to upgrade.
   });
 
+  it("importXmlSchemas resolves references from ecSchemaXmlContext", () => {
+    const writeDbFileName = copyFile("importXmlSchemasWithContext.bim", dbFileName);
+    const db = openDgnDb(writeDbFileName, { profile: ProfileOptions.Upgrade, schemaLockHeld: true });
+    const schemaDirectory = path.join(getOutputDir(), "importXmlSchemasContext");
+    fs.ensureDirSync(schemaDirectory);
+    const referencedSchemaPath = path.join(schemaDirectory, "ImportXmlSchemasReference.01.00.00.ecschema.xml");
+    fs.writeFileSync(referencedSchemaPath, `<?xml version="1.0" encoding="UTF-8"?>
+      <ECSchema schemaName="ImportXmlSchemasReference" alias="ref" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+        <ECEntityClass typeName="ReferencedClass">
+          <BaseClass>bis:InformationRecordElement</BaseClass>
+        </ECEntityClass>
+      </ECSchema>`);
+
+    const schemaContext = new iModelJsNative.ECSchemaXmlContext();
+    schemaContext.addSchemaPath(schemaDirectory);
+    const schema = `<?xml version="1.0" encoding="UTF-8"?>
+      <ECSchema schemaName="ImportXmlSchemasMain" alias="ims" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ImportXmlSchemasReference" version="01.00.00" alias="ref"/>
+        <ECEntityClass typeName="DerivedClass">
+          <BaseClass>ref:ReferencedClass</BaseClass>
+        </ECEntityClass>
+      </ECSchema>`;
+
+    try {
+      db.importXmlSchemas([schema], { schemaLockHeld: true, ecSchemaXmlContext: schemaContext });
+      assert.equal(db.getSchemaProps("ImportXmlSchemasReference").version, "01.00.00");
+      assert.isTrue(db.isSubClassOf("ImportXmlSchemasMain:DerivedClass", "ImportXmlSchemasReference:ReferencedClass"));
+    } finally {
+      db.closeFile();
+    }
+  });
+
   it("testSchemaImport NoAdditionalRootEntityClasses", () => {
     const writeDbFileName = copyFile("noAdditionalRootEntityClasses.bim", dbFileName);
     // Without ProfileOptions.Upgrade, we get: Error | ECDb | Failed to import schema 'BisCore.01.00.15'. Current ECDb profile version (4.0.0.1) only support schemas with EC version < 3.2. ECDb profile version upgrade is required to import schemas with EC Version >= 3.2.

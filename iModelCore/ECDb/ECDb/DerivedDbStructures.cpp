@@ -143,6 +143,8 @@ BentleyStatus DerivedDbStructures::AddRelationshipForeignKeys(MainSchemaManager 
 //static
 BentleyStatus DerivedDbStructures::AddLinkTableForeignKeys(MainSchemaManager const& manager, RelationshipClassMap const& classMap)
     {
+    // Existing tables are outside ECDb's structural ownership. Do not derive constraints that
+    // depend on their lifecycle, whether the link table or an endpoint table is existing.
     DbTable& linkTable = classMap.GetPrimaryTable();
     if (linkTable.GetType() == DbTable::Type::Existing || linkTable.GetType() == DbTable::Type::Virtual)
         return SUCCESS;
