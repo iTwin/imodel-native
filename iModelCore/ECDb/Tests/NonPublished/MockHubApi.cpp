@@ -1,5 +1,6 @@
 #include "MockHubApi.h"
 #include <ECDb/JsonAdapter.h>
+#include <BeRapidJson/BeJsValue.h>
 #include <numeric>
 #include <iostream>
 
@@ -411,7 +412,7 @@ SchemaSyncTestFixture::InstanceCensus SchemaSyncTestFixture::InstanceCensus::Tak
             JsonECSqlSelectAdapter adapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
             bmap<Utf8String, Utf8String> rows;
             while (stmt.Step() == BE_SQLITE_ROW) {
-                Json::Value row;
+                BeJsDocument row;
                 if (SUCCESS != adapter.GetRow(row))
                     continue;
 
@@ -420,7 +421,7 @@ SchemaSyncTestFixture::InstanceCensus SchemaSyncTestFixture::InstanceCensus::Tak
                 if (id.empty())
                     continue;
 
-                rows[id] = row.ToString();
+                rows[id] = row.Stringify();
             }
 
             if (!rows.empty())
@@ -468,24 +469,29 @@ void SchemaSyncTestFixture::ExpectCensusPreserved(InstanceCensus const& before, 
             if (rowEntry.second.Equals(afterRow->second))
                 continue;
 
-            Json::Value beforeRow, afterRowJson;
-            if (!Json::Reader::Parse(rowEntry.second, beforeRow) || !Json::Reader::Parse(afterRow->second, afterRowJson)) {
+            BeJsDocument beforeRow(rowEntry.second);
+            BeJsDocument afterRowJson(afterRow->second);
+            if (beforeRow.hasParseError() || afterRowJson.hasParseError()) {
                 ADD_FAILURE() << context << ": " << className.c_str() << " instance " << rowEntry.first.c_str() << " changed and could not be parsed for a diff";
                 continue;
             }
 
-            for (auto const& member : beforeRow.getMemberNames()) {
-                if (!afterRowJson.isMember(member)) {
+            beforeRow.ForEachProperty([&](Utf8CP memberName, BeJsConst beforeValue) {
+                const Utf8String member(memberName);
+                if (!afterRowJson.isMember(memberName)) {
                     if (!isRemovalAllowed(className, member))
                         ADD_FAILURE() << context << ": " << className.c_str() << "." << member.c_str() << " is gone from instance " << rowEntry.first.c_str();
-                    continue;
+                    return false;
                 }
-                if (beforeRow[member] != afterRowJson[member]) {
+
+                const auto afterValue = afterRowJson[memberName];
+                if (!beforeValue.isExactEqual(afterValue)) {
                     ADD_FAILURE() << context << ": " << className.c_str() << "." << member.c_str() << " changed on instance " << rowEntry.first.c_str()
-                        << "\n    before: " << beforeRow[member].ToString().c_str()
-                        << "\n     after: " << afterRowJson[member].ToString().c_str();
+                        << "\n    before: " << beforeValue.Stringify().c_str()
+                        << "\n     after: " << afterValue.Stringify().c_str();
                 }
-            }
+                return false;
+            });
         }
     }
 }

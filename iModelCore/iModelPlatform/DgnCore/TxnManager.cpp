@@ -5,6 +5,8 @@
 #include <DgnPlatformInternal.h>
 #include <BeSQLite/Profiler.h>
 #include <Bentley/SHA1.h>
+#include <cctype>
+#include <cstring>
 
 BEGIN_UNNAMED_NAMESPACE
 
@@ -2792,6 +2794,36 @@ BentleyStatus TxnManager::PatchSlowDdlChanges(Utf8StringR patchedDDL, Utf8String
     return patchedDDL == compoundSQL ? ERROR : SUCCESS;
     }
 
+static bool IsIModelProfileDdl(Utf8StringCR ddl) {
+    struct ProfileObjectName {
+        Utf8CP name;
+        bool isPrefix;
+    };
+    static constexpr ProfileObjectName profileObjectNames[] = {
+        {"ec_", true}, {"be_", true},
+        {"dgn_domain", false}, {"dgn_font", false}, {"dgn_handler", false},
+        {"dgn_txns", false}, {"dgn_rebase", false}, {"dgn_spatialindex", false},
+        {"dgn_fts_content", false}, {"dgn_fts_idx", true},
+        {"dgn_rtree_ins", false}, {"dgn_rtree_upd", true}, {"dgn_prjrange_del", false},
+        {"dgn_fts_ai", false}, {"dgn_fts_ad", false}, {"dgn_fts_au", false},
+    };
+
+    Utf8String lowerDdl(ddl);
+    lowerDdl.ToLower();
+    for (auto const& profileObject : profileObjectNames) {
+        const size_t nameLength = strlen(profileObject.name);
+        for (size_t pos = lowerDdl.find(profileObject.name); pos != Utf8String::npos; pos = lowerDdl.find(profileObject.name, pos + 1)) {
+            const bool startsIdentifier = pos == 0 || (!std::isalnum(static_cast<unsigned char>(lowerDdl[pos - 1])) && lowerDdl[pos - 1] != '_');
+            const size_t end = pos + nameLength;
+            const bool endsIdentifier = profileObject.isPrefix || end == lowerDdl.size()
+                || (!std::isalnum(static_cast<unsigned char>(lowerDdl[end])) && lowerDdl[end] != '_');
+            if (startsIdentifier && endsIdentifier)
+                return true;
+        }
+    }
+    return false;
+}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2803,18 +2835,23 @@ DbResult TxnManager::ApplyDdlChanges(DdlChangesCR ddlChanges) {
 
     DbResult result = BE_SQLITE_OK;
     if (!info.IsEmpty()) {
-        // In SchemaSync, we still need to apply schema changes to ec_*, dgn_*, and be_* tables.
-        // We cannot determine which DDL is for profile tables, so we try applying all of them.
-        // If it fails, it's fine because SchemaSync::pull() will patch/update all tables as necessary after applying the changeset.
-        // Not applying the DDL can cause the current changeset to fail if a column in the profile table is missing.
-        // This issue is detected when applying a changeset that upgrades the ECDb profile from version 4.0.0.1 to a newer version.
-        // Version 4.0.0.2 adds new tables and columns to ec_* tables. Since SchemaSync::pull() is called, after pull/merge is complete.
+        // A briefcase may already have mapped data-table DDL after adopting the same schema from the
+        // sync db, so those duplicate-object failures remain harmless: UpdateDbSchema reconstructs
+        // mapped tables from ec_ metadata after the changeset is applied. The receiving iModel's
+        // profile tables have no such reconstruction path, so failed EC, BeSQLite, or intrinsic DgnDb
+        // profile DDL must stop the pull. DgnDb tables travel only in the iModel changeset; they are
+        // not copied to the SchemaSyncDb.
         bvector<Utf8String> individualSQL;
         BeStringUtilities::Split(originalDDL.c_str(), ";", individualSQL);
         for (auto& sql : individualSQL) {
             result = m_dgndb.TryExecuteSql(sql.c_str());
-            if (result != BE_SQLITE_OK) {
-                LOG.warningv("ApplyDdlChanges() with SchemaSync: Failed to apply DDL changes. Error: %s (%s)", BeSQLiteLib::GetErrorName(result), sql.c_str());
+            if (result == BE_SQLITE_OK)
+                continue;
+
+            LOG.warningv("ApplyDdlChanges() with SchemaSync: Failed to apply DDL changes. Error: %s (%s)", BeSQLiteLib::GetErrorName(result), sql.c_str());
+            if (IsIModelProfileDdl(sql)) {
+                EnableTracking(wasTracking);
+                return result;
             }
         }
         EnableTracking(wasTracking);
