@@ -33,6 +33,17 @@ always:
     CMAKE_BUILD_TYPE=Release
 %endif
 
+# bmake links the release CRT even in DEBUG builds, so force cmake's Debug config onto /MD;
+# otherwise proxyres.lib carries a /DEFAULTLIB:MSVCRTD directive that fails links which do not
+# pass -NODEFAULTLIB:msvcrtd.lib (LNK4098 -> LNK1218), such as the gtest executables.
+# CMAKE_MSVC_RUNTIME_LIBRARY is honored only under CMP0091 NEW, and proxyres's vendored
+# CMakeLists pins cmake_minimum_required(3.12), so the policy has to be defaulted explicitly.
+%if $(TARGET_PLATFORM)=="Windows"
+    CMAKE_CRT_OPTIONS=-DCMAKE_POLICY_DEFAULT_CMP0091=NEW -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreadedDLL
+%else
+    CMAKE_CRT_OPTIONS=
+%endif
+
 $(o)$(libprefix)proxyres$(libext) :
     ~chdir $(vendorSrc)
     %if $(TARGET_PLATFORM)=="iOS"
@@ -49,6 +60,7 @@ $(o)$(libprefix)proxyres$(libext) :
             -DPROXYRES_BUILD_CLI=OFF \
             -DPROXYRES_BUILD_TESTS=OFF \
             -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
+            ${CMAKE_CRT_OPTIONS} \
             -B $(o)
         cmake --build $(o) --config ${CMAKE_BUILD_TYPE}
     %endif

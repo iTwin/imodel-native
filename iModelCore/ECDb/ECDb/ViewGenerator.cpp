@@ -6,6 +6,7 @@
 #include <set>
 #include "SqlNames.h"
 #include <signal.h>
+#include <string>
 
 USING_NAMESPACE_BENTLEY_EC
 

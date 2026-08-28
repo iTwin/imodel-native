@@ -20,6 +20,7 @@
 #include <folly/BeFolly.h>
 #include "SchemaUtil.h"
 #include "JsLogger.h"
+#include <cmath>
 
 // cspell:ignore napi strbuf propsize
 
@@ -3247,7 +3248,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         {
         REQUIRE_ARGUMENT_STRING(0, testName);
         REQUIRE_ARGUMENT_STRING(1, params);
-        return toJsString(Env(), JsInterop::ExecuteTest(GetOpenedDb(info), testName, params).ToString());
+        return toJsString(Env(), JsInterop::ExecuteTest(GetOpenedDb(info), testName, params).Stringify());
         }
 
     //  Create projections
@@ -3588,122 +3589,6 @@ DgnDb* extractDgnDbFromNapiValue(Napi::Value value)
     auto nativeDb = Napi::ObjectWrap<NativeDgnDb>::Unwrap(value.As<Napi::Object>());
     return nullptr != nativeDb && nativeDb->IsOpen() ? &nativeDb->GetDgnDb() : nullptr;
     }
-
-//=======================================================================================
-//  RevisionUtility class into JS
-//! @bsiclass
-//=======================================================================================
-struct NativeRevisionUtility : BeObjectWrap<NativeRevisionUtility>
-    {
-    private:
-        DEFINE_CONSTRUCTOR
-
-    public:
-        NativeRevisionUtility(NapiInfoCR info) : BeObjectWrap<NativeRevisionUtility>(info) {}
-        ~NativeRevisionUtility() {SetInDestructor();}
-
-    // Check if val is really a NativeRevisionUtility peer object
-    static bool InstanceOf(Napi::Value val) {
-        if (!val.IsObject())
-            return false;
-
-        Napi::HandleScope scope(val.Env());
-        return val.As<Napi::Object>().InstanceOf(Constructor().Value());
-    }
-
-    static Napi::Value RecompressRevision(NapiInfoCR info)
-        {
-        REQUIRE_ARGUMENT_STRING(0, sourceChangeSetFile);
-        REQUIRE_ARGUMENT_STRING(1, targetChangeSetFile);
-        OPTIONAL_ARGUMENT_STRING(2, lzmaProperties);
-        LzmaEncoder::LzmaParams params;
-        if (!lzmaProperties.empty())
-            params.FromJson(BeJsDocument(lzmaProperties));
-
-        BentleyStatus status = RevisionUtility::RecompressRevision(sourceChangeSetFile.c_str(), targetChangeSetFile.c_str(), params);
-        return Napi::Number::New(info.Env(), (int)status);
-        }
-    static Napi::Value DisassembleRevision(NapiInfoCR info)
-        {
-        REQUIRE_ARGUMENT_STRING(0, sourceFile);
-        REQUIRE_ARGUMENT_STRING(1, targetDir);
-        BentleyStatus status = RevisionUtility::DisassembleRevision(sourceFile.c_str(), targetDir.c_str());
-        return Napi::Number::New(info.Env(), (int)status);
-        }
-    static Napi::Value AssembleRevision(NapiInfoCR info)
-        {
-        REQUIRE_ARGUMENT_STRING(0, outputChangesetFile);
-        REQUIRE_ARGUMENT_STRING(1, rawChangesetFile);
-        OPTIONAL_ARGUMENT_STRING(2, prefixFile);
-        OPTIONAL_ARGUMENT_STRING(3, lzmaProperties);
-        LzmaEncoder::LzmaParams params;
-        if (!lzmaProperties.empty())
-            params.FromJson(BeJsDocument(lzmaProperties));
-
-        BentleyStatus status = RevisionUtility::AssembleRevision(prefixFile.c_str(), rawChangesetFile.c_str(), outputChangesetFile.c_str(), params);
-        return Napi::Number::New(info.Env(), (int)status);
-        }
-    static Napi::Value NormalizeLzmaParams(NapiInfoCR info)
-        {
-        OPTIONAL_ARGUMENT_STRING(0, lzmaProperties);
-        LzmaEncoder::LzmaParams params;
-        if (!lzmaProperties.empty())
-            params.FromJson(BeJsDocument(lzmaProperties));
-
-        BeJsDocument out;
-        params.ToJson(out);
-        return Napi::String::New(info.Env(), out.Stringify().c_str());
-        }
-    static Napi::Value ComputeStatistics(NapiInfoCR info)
-        {
-        REQUIRE_ARGUMENT_STRING(0, changesetFile);
-        REQUIRE_ARGUMENT_BOOL(1, addPrefix);
-        BeJsDocument out;
-        if (SUCCESS != RevisionUtility::ComputeStatistics(changesetFile.c_str(), addPrefix, out))
-            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Failed to compute statistics", IModelJsNativeErrorKey::BadArg);
-
-        return Napi::String::New(info.Env(), out.Stringify().c_str());
-        }
-    static Napi::Value GetUncompressSize(NapiInfoCR info)
-        {
-        REQUIRE_ARGUMENT_STRING(0, changesetFile);
-        uint32_t compressSize, uncompressSize, prefixSize;
-        if (SUCCESS != RevisionUtility::GetUncompressSize(changesetFile.c_str(), compressSize, uncompressSize, prefixSize))
-            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Failed to get uncompress size", IModelJsNativeErrorKey::CompressionError);
-
-        BeJsDocument out;
-        out["compressSize"] = compressSize;
-        out["uncompressSize"] = uncompressSize;
-        out["prefixSize"] = prefixSize;
-        return Napi::String::New(info.Env(), out.Stringify().c_str());
-        }
-    static Napi::Value DumpChangesetToDb(NapiInfoCR info)
-        {
-        REQUIRE_ARGUMENT_STRING(0, changesetFile);
-        REQUIRE_ARGUMENT_STRING(1, sqliteFile);
-        REQUIRE_ARGUMENT_BOOL(2, includeCols);
-
-        BentleyStatus status = RevisionUtility::DumpChangesetToDb(changesetFile.c_str(), sqliteFile.c_str(), includeCols);
-        return Napi::Number::New(info.Env(), (int)status);
-        }
-    static void Init(Napi::Env env, Napi::Object exports)
-        {
-        Napi::HandleScope scope(env);
-        Napi::Function t = DefineClass(env, "RevisionUtility", {
-            StaticMethod("recompressRevision", &NativeRevisionUtility::RecompressRevision),
-            StaticMethod("disassembleRevision", &NativeRevisionUtility::DisassembleRevision),
-            StaticMethod("assembleRevision", &NativeRevisionUtility::AssembleRevision),
-            StaticMethod("normalizeLzmaParams", &NativeRevisionUtility::NormalizeLzmaParams),
-            StaticMethod("computeStatistics", &NativeRevisionUtility::ComputeStatistics),
-            StaticMethod("getUncompressSize", &NativeRevisionUtility::GetUncompressSize),
-            StaticMethod("dumpChangesetToDb", &NativeRevisionUtility::DumpChangesetToDb),
-        });
-
-        exports.Set("RevisionUtility", t);
-
-        SET_CONSTRUCTOR(t)
-        }
-    };
 
 //=======================================================================================
 //  Projects the SchemaUtility class into JS.
@@ -5913,10 +5798,7 @@ public:
         REQUIRE_ARGUMENT_ANY_OBJ(0, argsObj);
         BeJsValue args(argsObj);
 
-        Json::Value jsonArgs;
-        BeJsValue jsArgs(jsonArgs);
-        jsArgs.From(args);
-        ECSqlParams params(jsonArgs);
+        ECSqlParams params(args);
         if(params.IsEmpty())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "no parameters to bind", IModelJsNativeErrorKey::BadArg);
         std::string errMsg;
@@ -6607,7 +6489,7 @@ struct GetTileTreeWorker : TileWorker
 {
 private:
     // Output
-    Json::Value m_result;
+    BeJsDocument m_result;
 
     void Execute() final
         {
@@ -8039,7 +7921,6 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports) {
     NativeBlobIo::Init(env, exports);
     NativeDgnDb::Init(env, exports);
     NativeGeoServices::Init(env, exports);
-    NativeRevisionUtility::Init(env, exports);
     NativeSchemaUtility::Init(env, exports);
     NativeECDb::Init(env, exports);
     NativeSqliteChangesetReader::Init(env, exports);
