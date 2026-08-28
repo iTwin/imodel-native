@@ -1218,11 +1218,13 @@ BASEGEOCOORD_EXPORTED StatusInt ToHorizontalJson(BeJsValue jsonValue, bool expan
 /*---------------------------------------------------------------------------------**//**
 * Sets the BaseGCS vertical datum from the provided Json.
 * An vertical Json only specifies the vertical datum. The horizontal definition is untouched.
-* @param    jsonValue IN      The Vertical JSonValue to obtain the definition from.
-* @param    errorMessage OUT  A developer facing error message (Non internationalizable).
-* @return   SUCCESS if successful. An error code otherwise. Typical error
-*           are GEOCOORDERR_MissingPropertyOrParameter when a required json
-            property is missing.
+* This method will accept incomplete definitions if the definition can be obtained from
+* the dictionary using either the crsName, the epsg or the deprecated id properties.
+* @param[in]  jsonValue The Vertical JSonValue to obtain the definition from.
+* @param[out] errorMessage A developer facing error message (Non internationalizable).
+* @return     SUCCESS if successful. An error code otherwise. Typical error
+*             are GEOCOORDERR_MissingPropertyOrParameter when a required json
+              property is missing.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 BASEGEOCOORD_EXPORTED StatusInt FromVerticalJson(BeJsConst jsonValue, Utf8StringR errorMessage);
@@ -6344,6 +6346,18 @@ public:
 
     BASEGEOCOORD_EXPORTED bool operator== (const VerticalDatumInfo& other) const;
 
+    /*---------------------------------------------------------------------------------**//**
+    * Creates a VerticalDatumInfo object from a JSON representation. 
+    * The method will not auto-complete the definition using the dictionary definitions and
+    * all required properties must be present.
+    * @param[in]    jsonVerticalCRS  the JSON representation of the VerticalDatumInfo.
+    * @param[in]    addToDictionary  if true the new VerticalDatumInfo will be added to the
+    *                                VerticalDatumDictionary, if false it will not be added.
+    * @param[out]   status            SUCCESS if a valid VerticalDatumInfo was created, or an
+    *                                error code otherwise.
+    * @return   a valid VerticalDatumInfoPtr on success, a VerticalDatumInfoPtr set to nullptr on failure.
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/    
     BASEGEOCOORD_EXPORTED static VerticalDatumInfoPtr CreateFromJson(BeJsConst jsonVerticalCRS, bool addToDictionary, StatusInt& status);
 
     BASEGEOCOORD_EXPORTED StatusInt ToJson(BeJsValue jsonValue) const;
@@ -6358,14 +6372,14 @@ public:
     BASEGEOCOORD_EXPORTED void GetRemarks(Utf8String& remarks) const;
     BASEGEOCOORD_EXPORTED void GetUnits(Utf8String& units) const;
     BASEGEOCOORD_EXPORTED void GetExtent(DRange2d& extent) const;
-    BASEGEOCOORD_EXPORTED bool IsDeprecated() const;
+    BASEGEOCOORD_EXPORTED bool IsDeprecated() const {return m_deprecated;}
 
     // Return the scale factor to multiply a value in meter to obtain the value in the vertical datum units
     BASEGEOCOORD_EXPORTED double UnitsFromMeter() const;
 
     StatusInt GetTransformPath(bvector<Utf8String>& path, const Utf8String& target);
 
-    StatusInt GetTransformTargetNames(bvector<Utf8String>& targetNames) const;
+    BASEGEOCOORD_EXPORTED StatusInt GetTransformTargetNames(bvector<Utf8String>& targetNames) const;
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -6455,9 +6469,9 @@ BASEGEOCOORD_EXPORTED StatusInt GetDataDirectory(WString& dataDirectory);
 * dictionary. Does not write the info to the dictionary but makes the info available
 * in the current session.
 * @param[in]    filepath    path to a file containing the definition of one or more
-                            vertical datums in the same format as used by the main
-                            Vertical Datum Dictionary.
-*                           in the Vertical Datum Dictionary
+*                           vertical datums in the same format as used by the main
+*                           Vertical Datum Dictionary.
+*
 * @return       GEOCOORDERR_NotImplemented
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -6468,8 +6482,8 @@ BASEGEOCOORD_EXPORTED StatusInt AddVerticalDatumsFromFile(const WString& filepat
 * dictionary. Does not write the info to the dictionary but makes the info available
 * in the current session.
 * @param[in]    jsonString  a VerticalDatum definition in the same format as used by the
-                            main Vertical Datum Dictionary.
-*                           in the Vertical Datum Dictionary
+*                           main Vertical Datum Dictionary.
+*
 * @return       GEOCOORDERR_NotImplemented
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -6534,7 +6548,10 @@ BASEGEOCOORD_EXPORTED StatusInt AddVerticalDatumTransform(VerticalTransformPtr& 
 *                           transforming from VerticalDatum "from" to VerticalDatum "to".
 * @param[in]    from    look for a VerticalTransform that has been stored from source "from" ...
 * @param[in]    to      ... to target "to";
-* @param[in]    latLong the target range must be applicable for this point latlong
+* @param[in]    latLong Optional pointer to a GeoPoint that is used to determine if a 
+          VerticalTransform is valid for the given location. If null then the location is
+          not used in determination of the VerticalTransform validity. If provided then only 
+          VerticalTransforms that are valid at this location will be returned.
 * @return       SUCCESS - one or more transforms were found
 *               GEOCOORDERR_BadArg - either from or to are not valid
 *               GEOCOORDERR_NoTransforms - no transforms were found
@@ -6592,12 +6609,12 @@ StatusInt QueryAllVerticalDatumsAvailable(bvector<Utf8String>& verticalDatums) c
 * Utility functions used when parsing the Vertical Datum dictionary json file.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String DictionaryValueString(BeJsConst jval, const char* name);
-static void DictionaryValueStringArray(bvector<WString>& stringArrayRet, BeJsConst jval, const char* name);
-static double DictionaryValueDouble(BeJsConst jval, const char* name);
-static int DictionaryValueInt(BeJsConst jval, const char* name);
-static bool DictionaryValueBool(BeJsConst jval, const char* name, bool defaultValue);
-static DRange2d DictionaryValueExtentLatLong(BeJsConst jval);
+static StatusInt DictionaryValueString(Utf8String& stringRet, BeJsConst jval, const char* name);
+static StatusInt DictionaryValueStringArray(bvector<WString>& stringArrayRet, BeJsConst jval, const char* name);
+static StatusInt DictionaryValueDouble(double& doubleRet, BeJsConst jval, const char* name);
+static StatusInt DictionaryValueInt(int& intRet, BeJsConst jval, const char* name);
+static StatusInt DictionaryValueBool(bool& boolRet, BeJsConst jval, const char* name);
+static StatusInt DictionaryValueExtentLatLong(DRange2d& extentRet, BeJsConst jval);
 
 };
 

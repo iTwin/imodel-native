@@ -9311,7 +9311,10 @@ public:
             && jsonTransform.isObject()
             && jsonTransform["geoidSeparationGrid"].isMember("files"))
         {
-            Utf8String direction = VerticalDatumDictionary::DictionaryValueString(jsonTransform["geoidSeparationGrid"], "direction");
+            Utf8String direction;
+            if (SUCCESS != VerticalDatumDictionary::DictionaryValueString(direction, jsonTransform["geoidSeparationGrid"], "direction"))
+                return GEOCOORDERR_InvalidTransform;
+
             if (0 == direction.length())
                 m_direction = GridFileDirection::DIRECTION_NONE;
             else if (0 == direction.CompareToI("Direct"))
@@ -9326,7 +9329,9 @@ public:
             }
 
             // We currently support "geo", "bin", "txt", "byn", "grd" and "gtx"
-            m_format = VerticalDatumDictionary::DictionaryValueString(jsonTransform["geoidSeparationGrid"], "format");
+            if (SUCCESS != VerticalDatumDictionary::DictionaryValueString(m_format, jsonTransform["geoidSeparationGrid"], "format"))
+                return GEOCOORDERR_InvalidTransform;
+
             if ((0 == m_format.length())
                 || ((0 != m_format.CompareToI("GEO"))
                     && (0 != m_format.CompareToI("BIN"))
@@ -9366,7 +9371,9 @@ public:
             else if (0 == m_format.CompareToI("OSTN02/OSGM02"))
                 m_csmapFormat = verticalDatumGridFormatOSGM02;
 
-            VerticalDatumDictionary::DictionaryValueStringArray(m_gridFiles, jsonTransform["geoidSeparationGrid"], "files");
+            if (SUCCESS != VerticalDatumDictionary::DictionaryValueStringArray(m_gridFiles, jsonTransform["geoidSeparationGrid"], "files"))
+                return GEOCOORDERR_InvalidTransform;
+
             if (m_gridFiles.size() > 0)
                 return SUCCESS;
         }
@@ -9563,7 +9570,10 @@ public:
             && jsonTransform.isObject()
             && jsonTransform["vertOffsetGrid"].isMember("files"))
         {
-            Utf8String direction = VerticalDatumDictionary::DictionaryValueString(jsonTransform["vertOffsetGrid"], "direction");
+            Utf8String direction;
+            if (SUCCESS != VerticalDatumDictionary::DictionaryValueString(direction, jsonTransform["vertOffsetGrid"], "direction"))
+                return GEOCOORDERR_InvalidTransform;
+
             if (0 == direction.length())
                 m_direction = GridFileDirection::DIRECTION_NONE;
             else if (0 == direction.CompareToI("Direct"))
@@ -9578,7 +9588,9 @@ public:
             }
 
             // Only VERTCON is supported
-            m_format = VerticalDatumDictionary::DictionaryValueString(jsonTransform["vertOffsetGrid"], "format");
+            if (SUCCESS != VerticalDatumDictionary::DictionaryValueString(m_format, jsonTransform["vertOffsetGrid"], "format"))
+                return GEOCOORDERR_InvalidTransform;
+
             if ((0 == m_format.length()) || (0 != m_format.CompareToI("VERTCON")))
             {
                 BeAssert(false);
@@ -9587,7 +9599,9 @@ public:
 
             m_csmapFormat = verticalDatumGridFormatVERTCON;
 
-            VerticalDatumDictionary::DictionaryValueStringArray(m_gridFiles, jsonTransform["vertOffsetGrid"], "files");
+            if (SUCCESS != VerticalDatumDictionary::DictionaryValueStringArray(m_gridFiles, jsonTransform["vertOffsetGrid"], "files"))
+                return GEOCOORDERR_InvalidTransform;
+
             if (m_gridFiles.size() > 0)
                 return SUCCESS;
         }
@@ -9719,7 +9733,6 @@ public:
 
         offsetJson["offset"] = m_offset;
         offsetJson["units"] = m_units;
-
        
         return SUCCESS;
     }
@@ -9761,8 +9774,12 @@ public:
         if (jsonTransform.isMember("verticalOffset") && jsonTransform.isObject())
         {
             BeJsConst transformObj = jsonTransform["verticalOffset"];
-            m_offset = VerticalDatumDictionary::DictionaryValueDouble(transformObj, "offset");
-            m_units = VerticalDatumDictionary::DictionaryValueString(transformObj, "units");
+            if (SUCCESS != VerticalDatumDictionary::DictionaryValueDouble(m_offset, transformObj, "offset"))
+                return ERROR;
+
+            if (SUCCESS != VerticalDatumDictionary::DictionaryValueString(m_units, transformObj, "units"))
+                return GEOCOORDERR_InvalidTransform;
+
             if (!ValidUnitKey(m_units))
                 {
                 m_units = "meter";    
@@ -9893,7 +9910,10 @@ VerticalTransformPtr VerticalTransform::CreateFromJson(BeJsConst jsonTransform, 
 
     if (transform.IsValid())
     {
-        transform->SetTarget(VerticalDatumDictionary::DictionaryValueString(jsonTransform, "target"));
+        Utf8String transformTarget;
+        if (SUCCESS != VerticalDatumDictionary::DictionaryValueString(transformTarget, jsonTransform, "target"))
+            transform->SetTarget(transformTarget);
+
         // override target if provided
         if (target.length())
             transform->SetTarget(target);
@@ -9966,6 +9986,9 @@ bool VerticalTransformPathInfo::operator== (const VerticalTransformPathInfo& oth
     if (0 != m_target.CompareToI(other.m_target))
         return false;
 
+    if (m_paths.size() != other.m_paths.size())
+        return false;
+
     auto pathIt = m_paths.begin();
     auto otherPathIt = other.m_paths.begin();
     for (; (pathIt != m_paths.end()) && (otherPathIt != other.m_paths.end()); pathIt++, otherPathIt++)
@@ -9992,7 +10015,8 @@ VerticalTransformPathInfoPtr VerticalTransformPathInfo::CreateFromJson(BeJsConst
 
         pathInfo->m_name = name;
 
-        pathInfo->m_target = VerticalDatumDictionary::DictionaryValueString(jsonValue, "target");
+        if (SUCCESS != VerticalDatumDictionary::DictionaryValueString(pathInfo->m_target, jsonValue, "target"))
+            return nullptr;
         
         for (unsigned int index = 0; index < jsonValue["path"].size() && !jsonValue["path"][index].isNull() ; index++)
         {
@@ -10007,6 +10031,14 @@ VerticalTransformPathInfoPtr VerticalTransformPathInfo::CreateFromJson(BeJsConst
             {
                 BeAssert(false);
             }
+        }
+
+        // Sanity check. Validate that the target is the last entry in the path. If not, then the path is invalid.
+        if (pathInfo->m_paths.size() > 0)
+        {
+            Utf8String lastPathEntry = pathInfo->m_paths.back();
+            if (0 != lastPathEntry.CompareToI(pathInfo->m_target))
+                pathInfo = nullptr;
         }
     }
 
@@ -10133,10 +10165,27 @@ VerticalDatumInfoPtr VerticalDatumInfo::CreateFromJson(BeJsConst jsonVerticalCRS
     }
 
     vdatumInfo = new VerticalDatumInfo;
-    vdatumInfo->m_crsName = VerticalDatumDictionary::DictionaryValueString(jsonVerticalCRS, "crsName");
-    vdatumInfo->m_datumName = VerticalDatumDictionary::DictionaryValueString(jsonVerticalCRS, "datumName");
-    vdatumInfo->m_epsgCode = VerticalDatumDictionary::DictionaryValueInt(jsonVerticalCRS, "epsg");
-    vdatumInfo->m_type = VerticalDatumDictionary::DictionaryValueString(jsonVerticalCRS, "type");
+    if (SUCCESS != VerticalDatumDictionary::DictionaryValueString(vdatumInfo->m_crsName, jsonVerticalCRS, "crsName"))
+    {
+        status = GEOCOORDERR_NoCRSName;
+        vdatumInfo = nullptr;
+        return nullptr;
+    }
+
+    // datumName is optional
+    VerticalDatumDictionary::DictionaryValueString(vdatumInfo->m_datumName, jsonVerticalCRS, "datumName");
+
+    // epsg property is optional
+    vdatumInfo->m_epsgCode = 0;
+    VerticalDatumDictionary::DictionaryValueInt(vdatumInfo->m_epsgCode, jsonVerticalCRS, "epsg");
+
+    if (SUCCESS != VerticalDatumDictionary::DictionaryValueString(vdatumInfo->m_type, jsonVerticalCRS, "type"))
+    {
+        status = GEOCOORDERR_UnknownDatumType;
+        vdatumInfo = nullptr;
+        return nullptr;
+    }
+
     if (!((0 == vdatumInfo->m_type.CompareToI("ELLIPSOID"))
            || (0 == vdatumInfo->m_type.CompareToI("GEOID"))) )
     {
@@ -10145,10 +10194,18 @@ VerticalDatumInfoPtr VerticalDatumInfo::CreateFromJson(BeJsConst jsonVerticalCRS
         return nullptr;
     }
 
-    vdatumInfo->m_description = VerticalDatumDictionary::DictionaryValueString(jsonVerticalCRS, "description");
-    vdatumInfo->m_areaOfUse = VerticalDatumDictionary::DictionaryValueString(jsonVerticalCRS, "areaOfUse");
-    vdatumInfo->m_remarks = VerticalDatumDictionary::DictionaryValueString(jsonVerticalCRS, "remarks");
-    vdatumInfo->m_units = VerticalDatumDictionary::DictionaryValueString(jsonVerticalCRS, "units");
+    // Descriptive information is optional.
+    VerticalDatumDictionary::DictionaryValueString(vdatumInfo->m_description, jsonVerticalCRS, "description");
+    VerticalDatumDictionary::DictionaryValueString(vdatumInfo->m_areaOfUse, jsonVerticalCRS, "areaOfUse");
+    VerticalDatumDictionary::DictionaryValueString(vdatumInfo->m_remarks, jsonVerticalCRS, "remarks");
+
+    if (SUCCESS != VerticalDatumDictionary::DictionaryValueString(vdatumInfo->m_units, jsonVerticalCRS, "units"))
+    {
+        status = GEOCOORDERR_NoUnits;
+        vdatumInfo = nullptr;
+        return nullptr;
+    }
+
     if (!ValidUnitKey(vdatumInfo->m_units))
         {
         status = GEOCOORDERR_UnrecognizedLinearUnit;
@@ -10156,9 +10213,17 @@ VerticalDatumInfoPtr VerticalDatumInfo::CreateFromJson(BeJsConst jsonVerticalCRS
         return nullptr;
         }
 
-    vdatumInfo->m_deprecated = VerticalDatumDictionary::DictionaryValueBool(jsonVerticalCRS, "deprecated", false);
+    // deprecated property is optional, default is false.
+    if (SUCCESS != VerticalDatumDictionary::DictionaryValueBool(vdatumInfo->m_deprecated, jsonVerticalCRS, "deprecated"))
+        vdatumInfo->m_deprecated = false;
 
-    vdatumInfo->m_extent = VerticalDatumDictionary::DictionaryValueExtentLatLong(jsonVerticalCRS);
+    if (SUCCESS != VerticalDatumDictionary::DictionaryValueExtentLatLong(vdatumInfo->m_extent,jsonVerticalCRS))
+    {
+        status = GEOCOORDERR_CoordinateRange;
+        vdatumInfo = nullptr;
+        return nullptr;
+    }
+
     if (vdatumInfo->m_extent.IsNull()
         || (vdatumInfo->m_extent.low.x < -180.0)
         || (vdatumInfo->m_extent.high.x > 180.0)
@@ -10180,10 +10245,23 @@ VerticalDatumInfoPtr VerticalDatumInfo::CreateFromJson(BeJsConst jsonVerticalCRS
             // transforms paths must have target string
             if (transforms[i].isObject() && transforms[i].isMember("target"))
             {
-                Utf8String target = VerticalDatumDictionary::DictionaryValueString(transforms[i], "target");
+                Utf8String target;
+                if (SUCCESS != VerticalDatumDictionary::DictionaryValueString(target, transforms[i], "target"))
+                {
+                    status = GEOCOORDERR_InvalidTransform;
+                    vdatumInfo = nullptr;
+                    return nullptr;
+                }
+
                 VerticalTransformPtr transform = VerticalTransform::CreateFromJson(transforms[i], vdatumInfo->m_crsName, target);
-                if (transform.IsValid())
-                    VerticalDatumDictionary::Get()->AddVerticalDatumTransform(transform); // Note: even if we are not adding the item to the dictionary we need to save the transform
+                if (!transform.IsValid())
+                {
+                    status = GEOCOORDERR_InvalidTransform;
+                    vdatumInfo = nullptr;
+                    return nullptr;
+                }                    
+                
+                VerticalDatumDictionary::Get()->AddVerticalDatumTransform(transform); // Note: even if we are not adding the item to the dictionary we need to save the transform
 
                 // keep a list of the transforms in the VerticalDatumInfo too so we can compare whether two VerticalDatums
                 // are equal which included if their transforms are equal, transforms are used from the VerticalDatumDictionary
@@ -10208,7 +10286,26 @@ VerticalDatumInfoPtr VerticalDatumInfo::CreateFromJson(BeJsConst jsonVerticalCRS
         {
             VerticalTransformPathInfoPtr transformPath = VerticalTransformPathInfo::CreateFromJson(transformPaths[i], vdatumInfo->m_crsName);
             if (transformPath.IsValid())
+            {
+                // Sanity check. Validate that the first entry in the path is the same as the name of the vertical datum. 
+                // If not, then the path is invalid.
+                bvector<Utf8String> path;
+                transformPath->GetPath(path);
+                if (path.size() == 0 || 0 != path[0].CompareToI(vdatumInfo->m_crsName))
+                {
+                    status = GEOCOORDERR_InvalidTransformPath;
+                    vdatumInfo = nullptr;
+                    return nullptr;
+                }
+
                 vdatumInfo->m_transformPaths.push_back(transformPath);
+            }
+            else
+            {
+                status = GEOCOORDERR_InvalidTransformPath;
+                vdatumInfo = nullptr;
+                return nullptr;
+            }
         }
     }
 
@@ -10232,6 +10329,8 @@ VerticalDatumInfo::~VerticalDatumInfo()
 
 StatusInt VerticalDatumInfo::ToJson(BeJsValue jsonValue) const
 {
+    StatusInt status = SUCCESS;
+
     jsonValue["crsName"] = Utf8String(m_crsName);
     jsonValue["datumName"] = Utf8String(m_datumName);
     jsonValue["type"] = Utf8String(m_type);
@@ -10264,7 +10363,10 @@ StatusInt VerticalDatumInfo::ToJson(BeJsValue jsonValue) const
         int numEntries = 0;
         for (const auto& transform : m_transforms)
             {
-            transform->ToJson(jsonValue["transforms"][numEntries]);
+            StatusInt statusTransform = transform->ToJson(jsonValue["transforms"][numEntries]);
+            if (status == SUCCESS)
+                status = statusTransform; // Save error if one occurs, but continue to write the rest of the transforms
+
             numEntries++;
             }
     }
@@ -10275,12 +10377,15 @@ StatusInt VerticalDatumInfo::ToJson(BeJsValue jsonValue) const
         int numEntries = 0;
         for (const auto& transformPath : m_transformPaths)
         {
-            transformPath->ToJson(jsonValue["transformPaths"][numEntries]);
+            StatusInt statusPath = transformPath->ToJson(jsonValue["transformPaths"][numEntries]);
+            if (status == SUCCESS)
+                status = statusPath; // Save error if one occurs, but continue to write the rest of the transform paths 
+
             numEntries++;
         }
     }
 
-    return SUCCESS;
+    return status;
 }
 
 void VerticalDatumInfo::AddTransform(VerticalTransformPtr& transform)
@@ -10503,7 +10608,10 @@ StatusInt VerticalDatumDictionary::AddVerticalDatumsFromJsonString(const Utf8Str
     if (!root.isMember("version"))
         return GEOCOORDERR_NoVersion;
 
-    double version = DictionaryValueDouble(root, "version");
+    double version = 0.0;
+    if (SUCCESS != DictionaryValueDouble(version, root, "version"))
+        return GEOCOORDERR_NoVersion;
+
     if (version > 1.0)
         return GEOCOORDERR_UnsupportedVersion;
 
@@ -10934,9 +11042,10 @@ bool VerticalDatumDictionary::VerticalDatumsAreEquivalent(const BaseGCS& gcs1, c
     }
 }
 
-Utf8String VerticalDatumDictionary::DictionaryValueString(BeJsConst jval, const char* name)
+StatusInt VerticalDatumDictionary::DictionaryValueString(Utf8String& resString, BeJsConst jval, const char* name)
 {
-    Utf8String ret = "";
+    resString = "";
+    StatusInt status = ERROR;
 
     if (jval.isObject()
         && (name != nullptr)
@@ -10944,14 +11053,18 @@ Utf8String VerticalDatumDictionary::DictionaryValueString(BeJsConst jval, const 
         && (jval[name].isString())
         && jval[name].asString().length())
     {
-        ret = jval[name].asString();
+        resString = jval[name].asString();
+        status = SUCCESS;
     }
 
-    return ret;
+    return status;
 }
 
-void VerticalDatumDictionary::DictionaryValueStringArray(bvector<WString>& stringArrayRet, BeJsConst jval, const char* name)
+StatusInt VerticalDatumDictionary::DictionaryValueStringArray(bvector<WString>& stringArrayRet, BeJsConst jval, const char* name)
 {
+    StatusInt status = ERROR;
+    stringArrayRet.clear();
+
     if (jval.isObject()
         && (name != nullptr)
         && !jval[name].isNull()
@@ -10964,58 +11077,75 @@ void VerticalDatumDictionary::DictionaryValueStringArray(bvector<WString>& strin
             {
                 WString utf8Str(item.asString().c_str(), true);
                 stringArrayRet.push_back(utf8Str);
+                status = SUCCESS; // At least one string was found, so we can return SUCCESS.
+            }
+            else
+            {
+                // We do not tolerate any non-string or empty string values in the array
+                stringArrayRet.clear();
+                return GEOCOORDERR_BadArg;
             }
         }
     }
+
+    return status;
 }
 
-double VerticalDatumDictionary::DictionaryValueDouble(BeJsConst jval, const char* name)
+StatusInt VerticalDatumDictionary::DictionaryValueDouble(double& value, BeJsConst jval, const char* name)
 {
-    double ret = 0.0;
+    StatusInt status = ERROR;
+    value = 0.0;
 
     if (jval.isObject()
         && (name != nullptr)
         && !jval[name].isNull()
         && jval[name].isNumeric())
     {
-        ret = jval[name].asDouble();
+        value = jval[name].asDouble();
+        status = SUCCESS;
     }
 
-    return ret;
+    return status;
 }
 
-int VerticalDatumDictionary::DictionaryValueInt(BeJsConst jval, const char* name)
+int VerticalDatumDictionary::DictionaryValueInt(int& value,BeJsConst jval, const char* name)
 {
-    int ret = 0;
+    StatusInt status = ERROR;
+    value = 0;
 
     if (jval.isObject()
         && (name != nullptr)
         && !jval[name].isNull()
         && jval[name].isNumeric())
     {
-        ret = jval[name].asInt();
+        value = jval[name].asInt();
+        status = SUCCESS;
     }
 
-    return ret;
+    return status;
 }
 
-bool VerticalDatumDictionary::DictionaryValueBool(BeJsConst jval, const char* name, bool defaultValue)
+StatusInt VerticalDatumDictionary::DictionaryValueBool(bool& boolVal, BeJsConst jval, const char* name)
 {
-    bool ret = defaultValue;
+    StatusInt status = ERROR;
+    boolVal = false;
 
     if (jval.isObject()
         && (name != nullptr)
         && !jval[name].isNull()
         && jval[name].isBool())
     {
-        ret = jval[name].asBool();
+        boolVal = jval[name].asBool();
+        status = SUCCESS;
     }
 
-    return ret;
+    return status;
 }
 
-DRange2d VerticalDatumDictionary::DictionaryValueExtentLatLong(BeJsConst jval)
+StatusInt VerticalDatumDictionary::DictionaryValueExtentLatLong(DRange2d& range, BeJsConst jval)
 {
+    StatusInt status = ERROR;
+
     DRange2d extent = DRange2d::NullRange();
 
     if (jval.isObject()         
@@ -11027,19 +11157,25 @@ DRange2d VerticalDatumDictionary::DictionaryValueExtentLatLong(BeJsConst jval)
             && extentObj.isMember("southWest")
             && extentObj.isMember("northEast"))
         {
-            double latitudeSW = DictionaryValueDouble(extentObj["southWest"], "latitude");
-            double longitudeSW = DictionaryValueDouble(extentObj["southWest"], "longitude");
-            double latitudeNE = DictionaryValueDouble(extentObj["northEast"], "latitude");
-            double longitudeNE = DictionaryValueDouble(extentObj["northEast"], "longitude");
-            
-            extent.low.x = longitudeSW;
-            extent.low.y = latitudeSW;
-            extent.high.x = longitudeNE;
-            extent.high.y = latitudeNE;
+            double latitudeSW = 0.0;
+            double longitudeSW = 0.0;
+            double latitudeNE = 0.0;
+            double longitudeNE = 0.0;
+            if (SUCCESS == DictionaryValueDouble(latitudeSW, extentObj["southWest"], "latitude")
+                && SUCCESS == DictionaryValueDouble(longitudeSW, extentObj["southWest"], "longitude")
+                && SUCCESS == DictionaryValueDouble(latitudeNE, extentObj["northEast"], "latitude")
+                && SUCCESS == DictionaryValueDouble(longitudeNE, extentObj["northEast"], "longitude"))
+            {
+                range.low.x = longitudeSW;
+                range.low.y = latitudeSW;
+                range.high.x = longitudeNE;
+                range.high.y = latitudeNE;
+                status = SUCCESS;
+            }
         }
     }
 
-    return extent;
+    return status;
 }
 
 StatusInt VerticalDatumDictionary::AddVerticalDatumInfo(VerticalDatumInfoPtr& info)
@@ -14471,7 +14607,28 @@ StatusInt BaseGCS::FromVerticalJson(BeJsConst jsonValue, Utf8StringR errorMessag
     StatusInt status = ERROR;
     VerticalDatumInfoPtr verticalDatumInfo = VerticalDatumInfo::CreateFromJson(jsonValue, false, status); // don't add to dictionary
 
-    if (SUCCESS == status)
+    if ((SUCCESS != status || !verticalDatumInfo.IsValid()) && !jsonValue["crsName"].isNull())
+    {
+        VerticalDatumDictionaryPtr verticalDatumDictionary = VerticalDatumDictionary::Get();
+        if (verticalDatumDictionary.IsValid())
+        {
+            Utf8String verticalDatumName = jsonValue["crsName"].asString();
+            verticalDatumInfo = verticalDatumDictionary->GetVerticalDatumInfoFromName(verticalDatumName, status);
+        }
+    }
+
+    if ((SUCCESS != status || !verticalDatumInfo.IsValid()) && !jsonValue["epsg"].isNull())
+    {
+        VerticalDatumDictionaryPtr verticalDatumDictionary = VerticalDatumDictionary::Get();
+        if (verticalDatumDictionary.IsValid())
+        {
+            int epsgCode = jsonValue["epsg"].asInt();
+            if (epsgCode > 0)
+                verticalDatumInfo = verticalDatumDictionary->GetVerticalDatumInfoFromEPSGCode(epsgCode, status);
+        }
+    }
+
+    if (SUCCESS == status && verticalDatumInfo.IsValid())
     {
         VerticalDatumPtr verticalDatum = VerticalDatum::Create(status, verticalDatumInfo);
         if (SUCCESS == status)
@@ -14484,7 +14641,7 @@ StatusInt BaseGCS::FromVerticalJson(BeJsConst jsonValue, Utf8StringR errorMessag
             }
         }
     }
-    
+
     if (SUCCESS == status)
         return status;
 
@@ -14521,6 +14678,8 @@ StatusInt BaseGCS::FromVerticalJson(BeJsConst jsonValue, Utf8StringR errorMessag
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt BaseGCS::ToVerticalJson(BeJsValue jsonValue) const {
+    StatusInt status = SUCCESS;
+
     if (!IsLibraryInitialized())
         return GEOCOORDERR_GeoCoordNotInitialized;
 
@@ -14532,14 +14691,14 @@ StatusInt BaseGCS::ToVerticalJson(BeJsValue jsonValue) const {
         {
         VerticalDatumInfoPtr verticalDatumInfo = verticalDatum->GetVerticalDatumInfo();
         if (verticalDatumInfo.IsValid())
-            verticalDatumInfo->ToJson(jsonValue);
+            status = verticalDatumInfo->ToJson(jsonValue);
         }
 
     // Even if we store the complete newer version of json properties above we still add the previous
     // property. This is absolutely required for iTwinjs support.
     jsonValue["id"] = Utf8String(VerticalDatumKeyFromGCS(*this));
 
-    return SUCCESS;
+    return status;
 }
 
 /*---------------------------------------------------------------------------------**//**
