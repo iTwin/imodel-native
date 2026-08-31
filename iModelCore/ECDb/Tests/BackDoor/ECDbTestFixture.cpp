@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #include "PublicAPI/BackDoor/ECDb/ECDbTestFixture.h"
 #include "PublicAPI/BackDoor/ECDb/TestHelper.h"
+#include <cstdlib>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -475,6 +476,34 @@ BentleyStatus ECDbTestFixture::GetInstances(bvector<ECN::IECInstancePtr>& instan
         }
 
     return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+bool ECDbTestFixture::ExtendedTestsEnabled()
+    {
+    Utf8String setting;
+#if defined(BENTLEY_WIN32)
+    // Plain getenv is deprecated by MSVC; ConcurrentQueryMgr::Config::GetFromEnv splits the same way.
+    char* buffer = nullptr;
+    size_t count = 0;
+    if (_dupenv_s(&buffer, &count, "IMODEL_RUN_EXTENDED_TESTS") != 0 || buffer == nullptr)
+        return false;
+
+    setting.assign(buffer);
+    free(buffer);
+#else
+    char const* value = std::getenv("IMODEL_RUN_EXTENDED_TESTS");
+    if (value == nullptr)
+        return false;
+
+    setting.assign(value);
+#endif
+
+    setting.Trim();
+    return setting.EqualsIAscii("1") || setting.EqualsIAscii("true") || setting.EqualsIAscii("yes");
     }
 
 //---------------------------------------------------------------------------------------

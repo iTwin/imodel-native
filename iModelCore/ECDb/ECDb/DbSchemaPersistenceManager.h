@@ -58,7 +58,9 @@ private:
     static BentleyStatus AlterTable(ECDbCR, DbTable const&, std::vector<DbColumn const*> const& columnsToAdd, std::vector<Utf8String> const& columnsToDelete = {});
 
     static BentleyStatus CreateTriggers(ECDbCR, DbTable const&, bool failIfExists);
-    static bool TriggerExists(ECDbCR, DbTrigger const&);
+    static BentleyStatus BuildCreateTriggerDdl(Utf8StringR, DbTrigger const&);
+    static Utf8String NormalizeTriggerDdlForComparison(Utf8StringCR);
+    static DbResult QueryTriggerDdl(Utf8StringR, ECDbCR, DbTrigger const&);
 
     static BentleyStatus AppendColumnDdl(Utf8StringR ddl, DbColumn const&);
     //!@param[in] singleFkColumn must not be nullptr if @p embedInColumnDdl is true

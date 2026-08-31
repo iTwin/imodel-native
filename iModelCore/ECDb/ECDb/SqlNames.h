@@ -9,6 +9,11 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+//! Default value expression the mapper puts on a column carrying the ClassHasCurrentTimeStampProperty
+//! custom attribute. It reaches ec_Column, which is what lets DerivedDbStructures recognise such a
+//! column without reading the custom attribute back.
+#define CURRENTIMESTAMP_SQLEXP "julianday('now')"
+
 #define TABLE_Class "ec_Class"
 #define TABLE_ClassHasBaseClasses "ec_ClassHasBaseClasses"
 #define TABLE_ClassHasTablesCache "ec_cache_ClassHasTables"
