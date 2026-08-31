@@ -42,7 +42,10 @@ On Windows the native build runs under two toolsets — MSVC (`cl.exe`) and clan
 
 [`vcpkg.mki`](./vcpkg.mki) picks the variant automatically: it computes the base triplet (`x64-windows-static`, `-md`, or `-veracode`) and appends `-clang` when `BUILD_TOOLSET == WINDOWS_CLANG`. So a new Windows library must ship a `-clang` counterpart for **each** base Windows triplet it provides (e.g. if it uses `x64-windows-static-md`, add `x64-windows-static-md-clang`). Non-Windows triplets need no such split — each of those platforms builds with a single toolset.
 
-Versions are pinned per-library: `vcpkg.json` uses an `overrides` entry for the exact version, and `vcpkg-configuration.json` pins the registry baseline commit. Even though all `vcpkg-configuration.json` files should be identical, each manifest directory requires its own copy.
+Versions are pinned per consumer graph: `vcpkg.json` uses `overrides` entries for exact versions,
+and that manifest directory's `vcpkg-configuration.json` pins the registry baseline commit. Each
+consumer requires its own configuration because its dependency graph and required baseline may
+differ.
 
 ## Setup
 
@@ -303,4 +306,22 @@ Versions are locked via two mechanisms in each manifest directory:
 - `vcpkg.json` → `overrides` array pins exact versions
 - `vcpkg-configuration.json` → `baseline` pins the vcpkg registry commit
 
-To update a library version, change the override in `vcpkg.json` and (if needed) update the baseline commit in `vcpkg-configuration.json`. Also update the version in the `iModelCore/libsrc/README.md` library table.
+Each manifest directory is an independent consumer graph. A port may therefore be pinned in more
+than one `vcpkg.json`, including as an `overrides` entry for a transitive dependency. Updating the
+port's own manifest does not update those other graphs, and an explicit override takes precedence
+over the version selected by a newer baseline.
+
+When updating any vcpkg-built library:
+
+1. Search every `iModelCore/libsrc/**/vcpkg.json` for the port name and old version. Inspect both
+   `dependencies` and `overrides`, then update every consumer graph that should use the new version.
+2. For each affected consumer, ensure its `vcpkg-configuration.json` baseline contains the requested
+   version; update that baseline when necessary.
+3. Resolve or install each affected graph with a triplet that activates any platform-conditional
+   dependency, using its `vcpkg-mend.json` triplets as the starting point. Confirm that no relevant
+   manifest still pins the old version.
+4. Update the version in the `iModelCore/libsrc/README.md` library table.
+
+For example, OpenSSL is pinned by its own consumer and by the curl and crashpad graphs, while zlib
+is pinned by several consumers. Apply the same repository-wide check to minizip or any other port
+when it is updated; do not limit the audit to these examples.
