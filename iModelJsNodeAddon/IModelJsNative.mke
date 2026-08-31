@@ -50,6 +50,9 @@ $(o)imodeljs-nodeaddonapi.package.version.h: $(baseDir)/imodeljs-nodeaddonapi.pa
 
 cIncs + -I$(o)
 
+dirToSearch = $(BuildContext)VendorAPI/
+%include cincapnd.mki
+
 # Add this so we don't have to modify vendor code.
 %if defined(BENTLEYCONFIG_CRASHPAD)
     dirToSearch = $(BuildContext)VendorAPI/crashpad
@@ -70,7 +73,7 @@ $(o)JsCloudSqlite$(oext) : $(baseDir)JsCloudSqlite.cpp ${MultiCompileDepends}
 
 $(o)TestUtils$(oext) : $(baseDir)TestUtils.cpp ${MultiCompileDepends}
 
-$(o)JsInterop$(oext) : $(baseDir)JsInterop.cpp $(baseDir)IModelJsNative.h $(baseDir)CsvRowsReader.h $(baseDir)V8SerializedRowsReader.h ${MultiCompileDepends}
+$(o)JsInterop$(oext) : $(baseDir)JsInterop.cpp $(baseDir)IModelJsNative.h $(baseDir)CsvRowsReader.h ${MultiCompileDepends}
 
 $(o)JsInteropDgnDb$(oext) : $(baseDir)JsInteropDgnDb.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends}
 

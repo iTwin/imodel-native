@@ -76,8 +76,8 @@ describe("ImportCsv", () => {
     it("imports V8-serialized string rows and returns the row count", () => {
       db = createECDb("importCsvData.ecdb");
       const rows = [
-        ["Alpha", "3", "1.5", "true"],
-        ["Beta", "4", "2.5", "false"],
+        ["Café", "3", "1.5", "true"],
+        ["Compass 🧭", "4", "2.5", "false"],
       ];
       const bytes = v8.serialize(rows);
 
@@ -86,8 +86,8 @@ describe("ImportCsv", () => {
 
       const result = readAllFooRows(db);
       expect(result.length).eq(2);
-      expect(result[0]).to.deep.include({ name: "Alpha", quantity: 3, value: 1.5, flag: true });
-      expect(result[1]).to.deep.include({ name: "Beta", quantity: 4, value: 2.5, flag: false });
+      expect(result[0]).to.deep.include({ name: "Café", quantity: 3, value: 1.5, flag: true });
+      expect(result[1]).to.deep.include({ name: "Compass 🧭", quantity: 4, value: 2.5, flag: false });
     });
 
     it("binds the configured nullValue option as NULL", () => {

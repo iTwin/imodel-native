@@ -1,0 +1,15 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+%include mdl.mki
+
+VendorApiContextDir = $(BuildContext)VendorAPI/v8serial/
+SourceIncludeDir    = $(_MakeFilePath)include/
+LicenseFile         = $(_MakeFilePath)LICENSE
+
+$(BuildContext)Delivery/v8serial-license.txt : $(LicenseFile)
+    $(LinkFirstDepToFirstTarget)
+
+$(VendorApiContextDir) : $(SourceIncludeDir)v8serial
+    $(LinkFirstDepToFirstTargetAsDirectory)

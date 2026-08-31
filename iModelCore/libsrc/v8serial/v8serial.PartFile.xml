@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../../bentleybuild/PartFile.xsd">
+
+    <Part Name="Headers" BentleyBuildMakeFile="prewire.mke">
+        <Bindings>
+            <VendorAPI Domain="v8serial"/>
+            <VendorNotices>Delivery/v8serial-license.txt</VendorNotices>
+        </Bindings>
+    </Part>
+</BuildContext>

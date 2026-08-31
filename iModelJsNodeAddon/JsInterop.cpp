@@ -7,7 +7,7 @@
 #endif
 #include "IModelJsNative.h"
 #include "CsvRowsReader.h"
-#include "V8SerializedRowsReader.h"
+#include <v8serial/reader.hpp>
 #include <Bentley/Base64Utilities.h>
 #include <Bentley/Desktop/FileSystem.h>
 #include <GeomSerialization/GeomSerializationApi.h>
@@ -1145,38 +1145,10 @@ bvector<CsvImportBinding> createCsvImportBindings(CsvImportPlan const& plan, ECS
     return bindings;
 }
 
-bool decodeSerializedCSVValue(Utf8StringR decoded, V8SerializedRowsReader::Value const& value) {
-    using ValueType = V8SerializedRowsReader::ValueType;
-    if (ValueType::Utf8String == value.m_type) {
-        decoded.assign(reinterpret_cast<Utf8CP>(value.m_bytes), value.m_byteCount);
-        return true;
-    }
-    if (ValueType::Latin1String == value.m_type) {
-        const auto end = value.m_bytes + value.m_byteCount;
-        const auto nonAscii = std::find_if(value.m_bytes, end, [](uint8_t byte) { return 0 != (byte & 0x80U); });
-        if (end == nonAscii) {
-            decoded.assign(reinterpret_cast<Utf8CP>(value.m_bytes), value.m_byteCount);
-            return true;
-        }
-
-        decoded.clear();
-        decoded.reserve(value.m_byteCount * 2);
-        for (auto current = value.m_bytes; current != end; ++current) {
-            if (*current < 0x80U) {
-                decoded.push_back(static_cast<char>(*current));
-            } else {
-                decoded.push_back(static_cast<char>(0xc0U | (*current >> 6U)));
-                decoded.push_back(static_cast<char>(0x80U | (*current & 0x3fU)));
-            }
-        }
-        return true;
-    }
-    if (ValueType::Utf16String == value.m_type) {
-        std::u16string utf16(value.m_byteCount / sizeof(char16_t), u'\0');
-        std::memcpy(utf16.data(), value.m_bytes, value.m_byteCount);
-        return SUCCESS == BeStringUtilities::Utf16ToUtf8(decoded, reinterpret_cast<Utf16CP>(utf16.data()), utf16.size());
-    }
-    return false;
+bool decodeSerializedCSVValue(Utf8StringR decoded, v8serial::DecodedValue const& value) {
+    if (v8serial::DecodedType::String != value.type)
+        return false;
+    return SUCCESS == BeStringUtilities::Utf16ToUtf8(decoded, reinterpret_cast<Utf16CP>(value.string.data()), value.string.size());
 }
 
 ECSqlStatus bindCsvImportValue(CsvImportBinding const& binding, Utf8StringCR value, Utf8CP nullValue) {
@@ -1214,7 +1186,7 @@ ECSqlStatus bindCsvImportValue(CsvImportBinding const& binding, Utf8StringCR val
     }
 }
 
-ECSqlStatus bindSerializedCSVValue(CsvImportBinding const& binding, V8SerializedRowsReader::Value const& value, Utf8StringR decoded, Utf8CP nullValue) {
+ECSqlStatus bindSerializedCSVValue(CsvImportBinding const& binding, v8serial::DecodedValue const& value, Utf8StringR decoded, Utf8CP nullValue) {
     if (!decodeSerializedCSVValue(decoded, value))
         return ECSqlStatus::Error;
     return bindCsvImportValue(binding, decoded, nullValue);
@@ -1341,6 +1313,33 @@ Napi::Value JsInterop::ImportCSVData(ECDbR db, NapiInfoCR info) {
     if (std::any_of(bindings.begin(), bindings.end(), [](CsvImportBinding const& binding) { return !supportsCSVImportBinding(binding); }))
         THROW_JS_TYPE_EXCEPTION("CSV import supports only boolean, double, integer, and string properties")
 
+    v8serial::DecodedValue serializedRowsValue;
+    try {
+        serializedRowsValue = v8serial::Reader(bytes.Data(), bytes.ByteLength()).read();
+    } catch (v8serial::DecodeError const& error) {
+        THROW_JS_TYPE_EXCEPTION(error.what())
+    }
+
+    if (v8serial::DecodedType::Array != serializedRowsValue.type)
+        THROW_JS_TYPE_EXCEPTION("serialized root value must be an array")
+    if (serializedRowsValue.array.size() > std::numeric_limits<uint32_t>::max())
+        THROW_JS_TYPE_EXCEPTION("serialized row count exceeds uint32")
+
+    uint32_t expectedColumnCount = 0;
+    for (uint32_t rowIndex = 0; rowIndex < serializedRowsValue.array.size(); ++rowIndex) {
+        auto const& row = serializedRowsValue.array[rowIndex];
+        if (v8serial::DecodedType::Array != row.type)
+            THROW_JS_TYPE_EXCEPTION("serialized root array must contain only row arrays")
+        if (row.array.size() > std::numeric_limits<uint32_t>::max())
+            THROW_JS_TYPE_EXCEPTION("serialized column count exceeds uint32")
+
+        const uint32_t columnCount = static_cast<uint32_t>(row.array.size());
+        if (columnCount < minimumColumnCount || (0 != expectedColumnCount && columnCount != expectedColumnCount))
+            THROW_JS_TYPE_EXCEPTION("serialized row has an unexpected column count")
+        if (0 == expectedColumnCount)
+            expectedColumnCount = columnCount;
+    }
+
     Savepoint savepoint(db, "importCSVData");
     if (!savepoint.IsActive())
         THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to start CSV data import savepoint", BE_SQLITE_ERROR)
@@ -1354,38 +1353,33 @@ Napi::Value JsInterop::ImportCSVData(ECDbR db, NapiInfoCR info) {
     uint32_t failedColumn = 0;
     ECSqlStatus bindStatus = ECSqlStatus::Success;
     DbResult stepStatus = BE_SQLITE_DONE;
-    uint32_t rowCount = 0;
     try {
-        V8SerializedRowsReader reader(bytes.Data(), bytes.ByteLength());
-        rowCount = reader.Read(minimumColumnCount, [&](uint32_t rowIndex, uint32_t columnIndex, uint32_t columnCount, V8SerializedRowsReader::Value const& value) {
-            if (0 == columnIndex)
-                statement.Reset();
+        for (uint32_t rowIndex = 0; rowIndex < serializedRowsValue.array.size(); ++rowIndex) {
+            auto const& row = serializedRowsValue.array[rowIndex];
+            const uint32_t columnCount = static_cast<uint32_t>(row.array.size());
+            statement.Reset();
+            for (uint32_t columnIndex = 0; columnIndex < columnCount; ++columnIndex) {
+                const auto propertyEntry = propertyIndexesByColumn.find(columnIndex);
+                if (propertyEntry == propertyIndexesByColumn.end())
+                    continue;
 
-            const auto propertyEntry = propertyIndexesByColumn.find(columnIndex);
-            if (propertyEntry != propertyIndexesByColumn.end()) {
                 const uint32_t propertyIndex = propertyEntry->second;
-                bindStatus = bindSerializedCSVValue(bindings[propertyIndex], value, stringBuffers[propertyIndex], nullValuePtr);
+                bindStatus = bindSerializedCSVValue(bindings[propertyIndex], row.array[columnIndex], stringBuffers[propertyIndex], nullValuePtr);
                 if (!bindStatus.IsSuccess()) {
                     failedRow = rowIndex;
                     failedColumn = columnIndex;
-                    return false;
+                    break;
                 }
             }
+            if (!bindStatus.IsSuccess())
+                break;
 
-            if (columnIndex + 1 == columnCount) {
-                stepStatus = statement.Step();
-                if (BE_SQLITE_DONE != stepStatus) {
-                    failedRow = rowIndex;
-                    return false;
-                }
+            stepStatus = statement.Step();
+            if (BE_SQLITE_DONE != stepStatus) {
+                failedRow = rowIndex;
+                break;
             }
-            return true;
-        });
-    } catch (V8SerializedRowsError const& error) {
-        const auto rollbackStatus = savepoint.Cancel();
-        if (BE_SQLITE_OK != rollbackStatus)
-            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to roll back CSV data import", rollbackStatus)
-        THROW_JS_TYPE_EXCEPTION(error.what())
+        }
     } catch (...) {
         const auto rollbackStatus = savepoint.Cancel();
         if (BE_SQLITE_OK != rollbackStatus)
@@ -1414,7 +1408,7 @@ Napi::Value JsInterop::ImportCSVData(ECDbR db, NapiInfoCR info) {
         THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to commit CSV data import", commitStatus)
     }
 
-    return Napi::Number::New(info.Env(), rowCount);
+    return Napi::Number::New(info.Env(), serializedRowsValue.array.size());
 }
 
 //---------------------------------------------------------------------------------------
