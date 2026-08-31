@@ -29,10 +29,112 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
     }\
     int32_t var = info[i].As<Napi::Number>().Int32Value();
 
+/*---------------------------------------------------------------------------------**//**
+* Under schema sync both briefcases get their ec_ rows from the same authority, so a row being
+* re-inserted under an id we already hold should be the row we already hold. Differing values mean
+* the authority handed the same id to two different rows, which it is designed never to do.
+* Returns false when the comparison cannot be made, so an unknown never reads as a divergence.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool ConflictingRowDiffers(DgnDbR db, Changes::Change const& change) {
+    const auto tableName = change.GetTableName();
+    const auto columnCount = change.GetColumnCount();
+
+    bvector<Utf8String> columns;
+    if (!db.GetColumns(columns, tableName.c_str()) || (int) columns.size() != columnCount)
+        return false;
+
+    Utf8String sql("SELECT 1 FROM [");
+    sql.append(tableName).append("] WHERE ");
+    for (int i = 0; i < columnCount; ++i) {
+        if (i > 0)
+            sql.append(" AND ");
+
+        sql.append("[").append(columns[i]).append("] IS ?"); // IS rather than = so that nulls compare
+    }
+
+    auto stmt = db.GetCachedStatement(sql.c_str());
+    if (!stmt.IsValid())
+        return false;
+
+    for (int i = 0; i < columnCount; ++i) {
+        const auto val = change.GetValue(i, Changes::Change::Stage::New);
+        if (!val.IsValid() || BE_SQLITE_OK != stmt->BindDbValue(i + 1, val))
+            return false;
+    }
+    return BE_SQLITE_ROW != stmt->Step();
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void LocalChangeSet::DetermineSchemaSyncPrecedence() {
+    m_ecChangesSupersedeBriefcase = false;
+
+    auto const& schemaSync = m_dgndb.Schemas().GetSchemaSync();
+    if (!schemaSync.IsEnabled())
+        return;
+
+    SchemaSync::DataVer txnDataVer = 0;
+    for (auto& change : GetChanges()) {
+        if (SchemaSync::IsLocalDbInfoChange(change) && SchemaSync::TryGetDataVersion(txnDataVer, change))
+            break;
+    }
+
+    // The incoming changesets are already applied by the time a local txn is replayed, so what the
+    // briefcase holds now is the version they brought.
+    m_ecChangesSupersedeBriefcase = txnDataVer != 0 && txnDataVer > schemaSync.GetInfo().GetDataVersion();
+}
+
+/*---------------------------------------------------------------------------------**//**
+* The rows an insert conflict could not write in place. FKNOACTION covers a whole apply rather than
+* one change, so they go in as an apply of their own: it holds nothing but these rows, so the delete
+* inside Replace has no children to cascade to and the row is back before the deferred check runs.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult LocalChangeSet::ApplySupersedingRows() {
+    if (!m_hasSupersedingRows)
+        return BE_SQLITE_OK;
+
+    ChangeSet rows;
+    auto rc = rows.FromChangeGroup(m_supersedingRows);
+    if (rc != BE_SQLITE_OK)
+        return rc;
+
+    auto args = ApplyChangesArgs::Default()
+        .SetFkNoAction(true)
+        .SetConflictHandler([](ChangeStream::ConflictCause, Changes::Change) { return ChangeStream::ConflictResolution::Replace; });
+    return rows.ApplyChanges(m_dgndb, args);
+}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 ChangeSet::ConflictResolution LocalChangeSet::_OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter) {
+    if (m_dgndb.Schemas().GetSchemaSync().IsEnabled() && (iter.GetTableName().StartsWithIAscii("ec_") || SchemaSync::IsLocalDbInfoChange(iter))) {
+        // Timeline order and sync db order can differ: two briefcases importing off the same schema
+        // are serialized by the sync db, but they can push in the other order. So keep whichever side
+        // was produced against the later sync db state rather than whichever pushed first.
+        if (cause == ChangeSet::ConflictCause::Data && !iter.IsIndirect())
+            return m_ecChangesSupersedeBriefcase ? ChangeSet::ConflictResolution::Replace : ChangeSet::ConflictResolution::Skip;
+
+        // An insert conflict cannot take Replace here: it deletes the existing row first, nearly every
+        // ec_ foreign key is ON DELETE CASCADE, and cascades are deliberately live during rebase, so
+        // the delete would take that row's children and the insert would restore only the parent.
+        // A superseding row is written afterwards instead, by ApplySupersedingRows.
+        if (cause == ChangeSet::ConflictCause::Conflict) {
+            if (iter.GetTableName().StartsWithIAscii("ec_") && ConflictingRowDiffers(m_dgndb, iter)) {
+                if (m_ecChangesSupersedeBriefcase && BE_SQLITE_OK == m_supersedingRows.AddChange(iter))
+                    m_hasSupersedingRows = true;
+                else {
+                    LOG.errorv("Schema sync: replayed local row in %s differs from the one this briefcase holds under the same id. Keeping the existing row.", iter.GetTableName().c_str());
+                    iter.Dump(m_dgndb, false, 1);
+                }
+            }
+            return ChangeSet::ConflictResolution::Skip;
+        }
+    }
+
     const auto jsIModelDb = m_dgndb.GetJsIModelDb();
     if (nullptr == jsIModelDb) {
         return ChangeSet::ConflictResolution::Abort;
@@ -407,6 +509,17 @@ const auto jsIModelDb = m_dgndb->GetJsIModelDb();
         * is passed ApplyChangeset(). The flag will disable CASCADE action and treat
         * them as CASCADE NONE resulting in conflict handler been called.
         */
+
+        // Changesets arrive in timeline order, which is not the order the sync db decided things in,
+        // so the incoming version is not automatically the newer one. Take the higher of the two.
+        if (SchemaSync::IsLocalDbInfoChange(iter)) {
+            SchemaSync::DataVer incomingDataVer = 0;
+            const auto heldDataVer = m_dgndb->Schemas().GetSchemaSync().GetInfo().GetDataVersion();
+            return SchemaSync::TryGetDataVersion(incomingDataVer, iter) && incomingDataVer > heldDataVer
+                ? ChangeSet::ConflictResolution::Replace
+                : ChangeSet::ConflictResolution::Skip;
+        }
+
         if (!m_dgndb->Txns().HasPendingTxns()) {
             // This changeset is bad. However, it is already in the timeline. We must allow services such as
             // checkpoint-creation, change history, and other apps to apply any changeset that is in the timeline.
@@ -415,13 +528,6 @@ const auto jsIModelDb = m_dgndb->GetJsIModelDb();
     } else {
             if (iter.GetTableName().StartsWithIAscii("ec_")) {
                 return ChangeSet::ConflictResolution::Skip;
-            }
-            if (iter.GetTableName().EqualsIAscii ("be_Prop")) {
-                 Utf8String ns = iter.GetValue(0, Changes::Change::Stage::Old).GetValueText();
-                 Utf8String name = iter.GetValue(1, Changes::Change::Stage::Old).GetValueText();
-                if (ns.EqualsIAscii("ec_Db") && name.EqualsIAscii("localDbInfo")) {
-                    return ChangeSet::ConflictResolution::Replace;
-                }
             }
 
             m_lastErrorMessage = "UPDATE/DELETE before value do not match with one in db or CASCADE action was triggered.";
@@ -433,15 +539,31 @@ const auto jsIModelDb = m_dgndb->GetJsIModelDb();
     // Handle some special cases
     if (cause == ChangeSet::ConflictCause::Conflict) {
 // From the SQLite docs: "CHANGESET_CONFLICT is passed as the second argument to the conflict handler while processing an INSERT change if the operation would result in duplicate primary key values."
-        // Duplicate inserts on dgn_Domain are benign (see IsBenignDomainInsertConflict). Any other
-        // primary-key collision is fatal: it can happen only if the app started with a briefcase
-        // that is behind the tip and then uses the same primary key values (e.g., ElementIds)
-        // that have already been used by some other app using the SAME briefcase ID that recently
+        // Duplicate inserts on dgn_Domain are benign (see IsBenignDomainInsertConflict), and so are ec_ rows
+        // under schema sync (below). Any other primary-key collision is fatal: it can happen only if the app
+        // started with a briefcase that is behind the tip and then uses the same primary key values (e.g.,
+        // ElementIds) that have already been used by some other app using the SAME briefcase ID that recently
         // pushed changes. That can happen only if the app makes changes without first pulling and acquiring locks.
         if (IsBenignDomainInsertConflict(iter)) {
             LOG.warning("PRIMARY KEY INSERT CONFLICT on " DGN_TABLE_Domain " - resolved by replacing the existing row with the incoming row");
             iter.Dump(*m_dgndb, false, 1);
             return ChangeSet::ConflictResolution::Replace;
+        }
+
+        // Under schema sync, every briefcase gets its ec_ rows from the same authority, so a changeset
+        // re-inserting rows this briefcase already holds is the ordinary case rather than a sign of
+        // trouble. Replace is the wrong answer for them: here it deletes the existing row before
+        // inserting the incoming one, and every ec_ child table is ON DELETE CASCADE - so with foreign
+        // key actions live it takes that row's children with it and the re-insert restores only the
+        // parent. TxnManager leaves actions live for a purely additive schema changeset, which is what
+        // an import produces. The branch below already skips these when there are local changes; a
+        // briefcase that has already pushed needs the same treatment, and gets it here.
+        if (iter.GetTableName().StartsWithIAscii("ec_") && m_dgndb->Schemas().GetSchemaSync().IsEnabled()) {
+            if (ConflictingRowDiffers(*m_dgndb, iter)) {
+                LOG.errorv("Schema sync: incoming row in %s differs from the one this briefcase holds under the same id. Keeping the existing row.", iter.GetTableName().c_str());
+                iter.Dump(*m_dgndb, false, 1);
+            }
+            return ChangeSet::ConflictResolution::Skip;
         }
 
         if (!m_dgndb->Txns().HasPendingTxns()) {

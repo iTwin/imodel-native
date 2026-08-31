@@ -164,6 +164,9 @@ enum class SchemaStatus
     SchemaUpgradeRecommended,
     SchemaIsDynamic,
     LockCallbackNotSet,
+    //! The import would destroy existing instances or property values. Added at the end so the
+    //! numeric value of every other member stays where it was.
+    DataDeletionRequired,
     };
 
 struct DgnDomains;

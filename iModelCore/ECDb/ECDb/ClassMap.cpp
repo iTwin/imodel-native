@@ -7,7 +7,6 @@
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-#define CURRENTIMESTAMP_SQLEXP "julianday('now')"
 
 //********************* ClassMap ******************************************
 //---------------------------------------------------------------------------------------
@@ -118,58 +117,23 @@ ClassMappingStatus ClassMap::DoMapPart2(ClassMappingContext& ctx)
     PrimitiveECPropertyCP currentTimeStampProp = ctx.GetClassMappingInfo().GetClassHasCurrentTimeStampProperty();
     if (currentTimeStampProp != nullptr)
         {
-        if (SUCCESS != CreateCurrentTimeStampTrigger(*currentTimeStampProp))
+        if (SUCCESS != ApplyCurrentTimeStampColumnConstraints(*currentTimeStampProp))
             return ClassMappingStatus::Error;
         }
 
-    //Add cascade delete for joinedTable;
-    bool isJoinedTable = m_mapStrategyExtInfo.GetTphInfo().IsValid() && m_mapStrategyExtInfo.GetTphInfo().GetJoinedTableInfo() == JoinedTableInfo::JoinedTable;
-    if (!isJoinedTable)
-        return ClassMappingStatus::Success;
-
-    ClassMap const* tphBaseClassMap = ctx.GetClassMappingInfo().GetTphBaseClassMap();
-    if (tphBaseClassMap == nullptr)
-        {
-        BeAssert(false);
-        return ClassMappingStatus::Error;
-        }
-
-    DbTable const& baseClassMapJoinedTable = tphBaseClassMap->GetJoinedOrPrimaryTable();
-    if (&baseClassMapJoinedTable == &GetJoinedOrPrimaryTable())
-        return ClassMappingStatus::Success;
-
-    DbColumn const* primaryKeyColumn = baseClassMapJoinedTable.FindFirst(DbColumn::Kind::ECInstanceId);
-    DbColumn const* foreignKeyColumn = GetJoinedOrPrimaryTable().FindFirst(DbColumn::Kind::ECInstanceId);
-    PRECONDITION(primaryKeyColumn != nullptr, ClassMappingStatus::Error);
-    PRECONDITION(foreignKeyColumn != nullptr, ClassMappingStatus::Error);
-    bool createFKConstraint = true;
-    for (DbConstraint const* constraint : GetJoinedOrPrimaryTable().GetConstraints())
-        {
-        if (constraint->GetType() != DbConstraint::Type::ForeignKey)
-            continue;
-
-        ForeignKeyDbConstraint const* fk = static_cast<ForeignKeyDbConstraint const*>(constraint);
-        if (&fk->GetReferencedTable() == &baseClassMapJoinedTable &&
-            fk->GetFkColumns().front() == foreignKeyColumn && fk->GetReferencedTableColumns().front() == primaryKeyColumn)
-            {
-            createFKConstraint = false;
-            break;
-            }
-        }
-
-    if (createFKConstraint)
-        {
-        if (GetJoinedOrPrimaryTable().AddForeignKeyConstraint(*foreignKeyColumn, *primaryKeyColumn, ForeignKeyDbConstraint::ActionType::Cascade, ForeignKeyDbConstraint::ActionType::NotSpecified) == nullptr)
-            return ClassMappingStatus::Error;
-        }
-
+    // We used to create joined table's cascading foreign key to its TPH base table, and the current timestamp
+    // trigger here, but now they are both worked out again by DerivedDbStructures which is where this code now lives.
+    // That way a briefcase that adopts ec_ rows via schema sync can properly apply them.
     return ClassMappingStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
+// Sets the column constraints implied by the ClassHasCurrentTimeStampProperty custom attribute.
+// These are persisted in ec_Column and so stay a mapping decision. The trigger that goes with
+// them is not persisted anywhere and is derived by DerivedDbStructures instead.
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus ClassMap::CreateCurrentTimeStampTrigger(PrimitiveECPropertyCR currentTimeStampProp)
+BentleyStatus ClassMap::ApplyCurrentTimeStampColumnConstraints(PrimitiveECPropertyCR currentTimeStampProp)
     {
     if (currentTimeStampProp.GetType() != PRIMITIVETYPE_DateTime)
         {
@@ -194,29 +158,7 @@ BentleyStatus ClassMap::CreateCurrentTimeStampTrigger(PrimitiveECPropertyCR curr
     BeAssert(currentTimeStampColumn.GetType() == DbColumn::Type::TimeStamp);
     currentTimeStampColumn.GetConstraintsR().SetDefaultValueExpression(CURRENTIMESTAMP_SQLEXP);
     currentTimeStampColumn.GetConstraintsR().SetNotNullConstraint();
-
-    ECInstanceIdPropertyMap const* idPropMap = GetECInstanceIdPropertyMap();
-    if (idPropMap == nullptr)
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-
-    DbTable& table = currentTimeStampColumn.GetTableR();
-    Utf8CP tableName = table.GetName().c_str();
-    Utf8CP instanceIdColName = idPropMap->FindDataPropertyMap(tableName)->GetColumn().GetName().c_str();
-    Utf8CP currentTimeStampColName = currentTimeStampColumn.GetName().c_str();
-
-    Utf8String triggerName;
-    //triggerName.Sprintf("%s_%s_SetCurrentTimeStamp", tableName, currentTimeStampColName);
-    triggerName.Sprintf("%s_CurrentTimeStamp", tableName);
-    Utf8String body;
-    body.Sprintf("BEGIN UPDATE [%s] SET [%s]=" CURRENTIMESTAMP_SQLEXP " WHERE [%s]=new.[%s]; END", tableName, currentTimeStampColName, instanceIdColName, instanceIdColName);
-
-    Utf8String whenCondition;
-    whenCondition.Sprintf("old.[%s]=new.[%s] AND old.[%s]!=" CURRENTIMESTAMP_SQLEXP, currentTimeStampColName, currentTimeStampColName, currentTimeStampColName);
-
-    return table.AddTrigger(triggerName, DbTrigger::Type::After, whenCondition.c_str(), body.c_str());
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -593,6 +535,15 @@ BentleyStatus ClassMap::CopyModifiedBasePropertyMaps(SchemaImportContext& ctx){
 //---------------------------------------------------------------------------------------
 BentleyStatus ClassMap::Update(SchemaImportContext& ctx)
     {
+    // New class maps apply this in DoMapPart2; updates do not pass through that path.
+    const auto applyCurrentTimeStampColumnConstraints = [&]() {
+        PrimitiveECPropertyCP currentTimeStampProp = nullptr;
+        if (SUCCESS != CoreCustomAttributeHelper::GetCurrentTimeStampProperty(currentTimeStampProp, m_ecClass))
+            return ERROR;
+
+        return currentTimeStampProp == nullptr ? SUCCESS : ApplyCurrentTimeStampColumnConstraints(*currentTimeStampProp);
+    };
+
     if (CopyModifiedBasePropertyMaps(ctx) != SUCCESS){
         BeAssert(false && "Unable to copy modified base properties");
         return ERROR;
@@ -627,7 +578,12 @@ BentleyStatus ClassMap::Update(SchemaImportContext& ctx)
 
     //Follow can change ECInstanceId, ECClassId by optionally adding
     if (m_failedToLoadProperties.empty())
+        {
+        if (SUCCESS != applyCurrentTimeStampColumnConstraints())
+            return ERROR;
+
         return DbMappingManager::Classes::MapIndexes(ctx, *this, true);
+        }
 
     BeAssert(m_state == ObjectState::Persisted);
     m_state = ObjectState::Modified;
@@ -672,6 +628,9 @@ BentleyStatus ClassMap::Update(SchemaImportContext& ctx)
         }
 
     m_failedToLoadProperties.clear();
+    if (SUCCESS != applyCurrentTimeStampColumnConstraints())
+        return ERROR;
+
     return DbMappingManager::Classes::MapIndexes(ctx, *this, true);
     }
 

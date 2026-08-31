@@ -562,6 +562,17 @@ BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Con
     {
     NativeSqlBuilder::List unionList;
     StorageDescription const& storageDesc = classMap.GetStorageDescription();
+    if (storageDesc.GetHorizontalPartitions().empty())
+        {
+        // A mapped entity class always sits in at least one table, even when that table is virtual.
+        // An empty list means ec_cache_ClassHasTables lost the class' row - the file is damaged, and
+        // the caller gets an error rather than an empty result or a walk off the end of the vector.
+        ctx.GetECDb().GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0745,
+                                                 "ECClass '%s' is mapped but has no table. " TABLE_ClassHasTablesCache " is out of step with the class' mapping.",
+                                                 classMap.GetClass().GetFullName());
+        return ERROR;
+        }
+
     bool isVertical = storageDesc.GetVerticalPartitions().size() > 1;
     std::vector<Partition const*> partitionOfInterest;
     if (isVertical)

@@ -2019,7 +2019,11 @@ ECObjectsStatus ECSchema::CopyFormat(ECFormatP& targetFormat, ECFormatCR sourceF
         if (ECObjectsStatus::Success != status)
             return status;
 
-        comp.SetSpacer(sourceComp->GetSpacer().c_str());
+        // SetSpacer marks the spacer as explicitly defined, so calling it unconditionally would give
+        // the copy an explicit default spacer the source never had.
+        if (sourceComp->HasSpacer())
+            comp.SetSpacer(sourceComp->GetSpacer().c_str());
+
         comp.SetIncludeZero(sourceComp->IsIncludeZero());
         if (sourceComp->HasMajorLabel())
             comp.SetMajorLabel(sourceComp->GetMajorLabel());
