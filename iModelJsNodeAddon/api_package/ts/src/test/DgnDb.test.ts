@@ -315,7 +315,7 @@ describe("basic tests", () => {
     b0.importXmlSchemas([schema1], { schemaSyncDbUri: syncDbUri });
 
     const schema2 = `<?xml version="1.0" encoding="UTF-8"?>
-    <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
         <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
         <ECEntityClass typeName="Pipe1">
           <BaseClass>bis:GeometricElement2d</BaseClass>
@@ -327,12 +327,13 @@ describe("basic tests", () => {
     </ECSchema>`;
     b1.importXmlSchemas([schema2], { schemaSyncDbUri: syncDbUri });
 
-    b0.schemaSyncPull(syncDbUri);
+    // Importing through the current front door adopts the sync db's existing answer.
+    b0.importXmlSchemas([schema2], { schemaSyncDbUri: syncDbUri });
 
     // test default URI
     b2.schemaSyncSetDefaultUri(syncDbUri);
     assert.equal(b2.schemaSyncGetDefaultUri(), syncDbUri);
-    b2.schemaSyncPull();
+    b2.importXmlSchemas([schema2]);
 
     // b1 = b2 == b0
     const b0Hashes = getSchemaHashes(b0);
@@ -342,7 +343,7 @@ describe("basic tests", () => {
     assert.deepEqual(b0Hashes, b2Hashes);
 
     const schema3 = `<?xml version="1.0" encoding="UTF-8"?>
-    <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
         <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
         <ECEntityClass typeName="Pipe1">
           <BaseClass>bis:GeometricElement2d</BaseClass>
@@ -690,6 +691,39 @@ describe("basic tests", () => {
     db.getSchemaProps("PresentationRules");
     bisProps = db.getSchemaProps("BisCore");
     assert.isTrue(bisProps.version >= "01.00.15"); // PR references 01.00.15+, so importing PR will cause it to upgrade.
+  });
+
+  it("importXmlSchemas resolves references from ecSchemaXmlContext", () => {
+    const writeDbFileName = copyFile("importXmlSchemasWithContext.bim", dbFileName);
+    const db = openDgnDb(writeDbFileName, { profile: ProfileOptions.Upgrade, schemaLockHeld: true });
+    const schemaDirectory = path.join(getOutputDir(), "importXmlSchemasContext");
+    fs.ensureDirSync(schemaDirectory);
+    const referencedSchemaPath = path.join(schemaDirectory, "ImportXmlSchemasReference.01.00.00.ecschema.xml");
+    fs.writeFileSync(referencedSchemaPath, `<?xml version="1.0" encoding="UTF-8"?>
+      <ECSchema schemaName="ImportXmlSchemasReference" alias="ref" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+        <ECEntityClass typeName="ReferencedClass">
+          <BaseClass>bis:InformationRecordElement</BaseClass>
+        </ECEntityClass>
+      </ECSchema>`);
+
+    const schemaContext = new iModelJsNative.ECSchemaXmlContext();
+    schemaContext.addSchemaPath(schemaDirectory);
+    const schema = `<?xml version="1.0" encoding="UTF-8"?>
+      <ECSchema schemaName="ImportXmlSchemasMain" alias="ims" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ImportXmlSchemasReference" version="01.00.00" alias="ref"/>
+        <ECEntityClass typeName="DerivedClass">
+          <BaseClass>ref:ReferencedClass</BaseClass>
+        </ECEntityClass>
+      </ECSchema>`;
+
+    try {
+      db.importXmlSchemas([schema], { schemaLockHeld: true, ecSchemaXmlContext: schemaContext });
+      assert.equal(db.getSchemaProps("ImportXmlSchemasReference").version, "01.00.00");
+      assert.isTrue(db.isSubClassOf("ImportXmlSchemasMain:DerivedClass", "ImportXmlSchemasReference:ReferencedClass"));
+    } finally {
+      db.closeFile();
+    }
   });
 
   it("testSchemaImport NoAdditionalRootEntityClasses", () => {

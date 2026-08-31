@@ -138,6 +138,7 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/ValueCreationFuncExp.h \
                 $(baseDir)DbSchema.h \
                 $(baseDir)DbSchemaPersistenceManager.h \
+                $(baseDir)DerivedDbStructures.h \
                 $(baseDir)LightweightCache.h \
                 $(baseDir)SqlNames.h \
                 $(baseDir)InstanceWriterImpl.h \
@@ -403,6 +404,8 @@ $(o)ValueCreationFuncExp$(oext):                              $(baseDir)ECSql/Va
 $(o)DbSchema$(oext):                                          $(baseDir)DbSchema.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)DbSchemaPersistenceManager$(oext):                        $(baseDir)DbSchemaPersistenceManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)DerivedDbStructures$(oext):                               $(baseDir)DerivedDbStructures.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECDbExpressionSymbolProvider$(oext):                      $(baseDir)ECDbExpressionSymbolProvider.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
