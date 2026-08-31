@@ -47,6 +47,14 @@ Under `iModelCore/libsrc/<mylib>/`:
 - `vcpkg-mend.json` — list the triplet graph(s) whose union downloads all upstream source used by the consumer; the scan never compiles for the selected target, so triplets need not match the Mend host; prefer one source-superset graph, and add multiple triplets only for platform-specific downloads
 - `triplets/` — platform-specific triplet files if the defaults in `iModelCore/libsrc/` are not sufficient (see `compress/triplets/` for examples)
 
+For every Apple overlay triplet, explicitly set `VCPKG_OSX_DEPLOYMENT_TARGET`. Before creating or
+changing an `arm64-osx.cmake` or `arm64-ios.cmake` triplet, check the effective
+`MACOS_DEPLOYMENT_TARGET` or `IOS_DEPLOYMENT_TARGET` used by BentleyBuild. Their public defaults are
+defined in [`$(SrcRoot)bsicommon/PublicSDK/ApplyToolSet_CLang.mki`](../../../../bsicommon/PublicSDK/ApplyToolSet_CLang.mki),
+but build strategies may override them. Mirror the effective build value, not the product's
+official OS support floor. Omitting this setting lets vcpkg inherit the host SDK's deployment
+target and can produce objects that are too new to link into BentleyBuild outputs.
+
 > **Check whether the library links cleanly into Windows DEBUG builds.** Some libraries fail to
 > link into Windows DEBUG unless their debug artifact is made release-CRT-compatible — either by
 > forcing release-only triplets (`set(VCPKG_BUILD_TYPE release)`) or by fixing up the vcpkg Debug
