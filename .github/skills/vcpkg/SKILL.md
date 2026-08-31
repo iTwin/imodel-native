@@ -277,9 +277,19 @@ may not run at all.
    - Update the matching entry in `overrides`
    - Re-run the [platform coverage audit](#auditing-platform-coverage): a new upstream version can
      add a platform-conditional download that the consumer's `vcpkg-mend.json` triplets miss.
-2. If the new version requires a newer port registry, update `baseline` in
-   `iModelCore/libsrc/<consumer>/vcpkg-configuration.json`.
-3. No changes to `.mke` or `.PartFile.xml` files are needed — the next build will pick
+2. **Audit every vcpkg consumer graph, not only the library's own manifest.** Search all
+   `iModelCore/libsrc/**/vcpkg.json` files for the port name and old version. Inspect both
+   `dependencies` and `overrides`: consumers deliberately use overrides to pin transitive ports,
+   and an explicit override takes precedence over a newer registry baseline. Update every graph
+   that should consume the new version. OpenSSL currently appears in its own, curl, and crashpad
+   graphs; zlib appears in several graphs. Apply the same check to minizip and every other port.
+3. For each affected consumer graph, ensure `vcpkg-configuration.json` uses a registry `baseline`
+   that contains the requested version. Updating one consumer's baseline does not affect any other
+   manifest directory.
+4. Resolve or install every affected graph with a triplet that activates platform-conditional
+   dependencies; use each consumer's `vcpkg-mend.json` triplets as the starting point. Search again
+   for the old version and do not finish while a relevant manifest still pins it.
+5. No changes to `.mke` or `.PartFile.xml` files are needed — the next build will pick
    up the new version via the binary cache or a fresh build.
 
 ---
