@@ -17,7 +17,7 @@ of custom behavior we depend on:
 The model to follow is the existing crashpad vcpkg integration:
 [`../crashpad/client.mke`](../crashpad/client.mke), [`../crashpad/vcpkg.json`](../crashpad/vcpkg.json),
 [`../crashpad/vcpkg-configuration.json`](../crashpad/vcpkg-configuration.json), and the shared
-[`../vcpkg.mki`](../vcpkg.mki) / `vcpkg_run_install.sh` / `vcpkg_run_install.bat` helpers.
+[`../vcpkg.mki`](../vcpkg.mki) / `vcpkg_run_install.sh` / `vcpkg_run_install.ps1` helpers.
 
 ---
 

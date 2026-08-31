@@ -4,12 +4,13 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <json/json.h>
 #include <BeRapidJson/BeRapidJson.h>
 #include <Bentley/DateTime.h>
 #include <Bentley/ByteStream.h>
 #include <Geom/GeomApi.h>
 #include <BeRapidJson/BeJsValue.h>
+#include <limits>
+#include <cmath>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //=================================================================================
@@ -137,38 +138,38 @@ public:
     //don't use BE_JSON_NAME here so that we can maintain a master definition of the reserved words
     //which each JSON API adoption can use
 
-    //! @name Methods for JSON values of the JsonCpp API
+    //! @name Member-name constants, usable anywhere a Utf8CP key is expected
     //! @{
 
-    //! @ref ECN::ECJsonSystemNames::Id "ECJsonSystemNames::Id" as JsonCpp StaticString
-    static constexpr Json::StaticString json_id() { return Json::StaticString(ECJsonSystemNames::Id()); }
-    //! @ref ECN::ECJsonSystemNames::ClassName "ECJsonSystemNames::ClassName" as JsonCpp StaticString
-    static constexpr Json::StaticString json_className() { return Json::StaticString(ECJsonSystemNames::ClassName()); }
-    //! @ref ECN::ECJsonSystemNames::SourceId "ECJsonSystemNames::SourceId" as JsonCpp StaticString
-    static constexpr Json::StaticString json_sourceId() { return Json::StaticString(ECJsonSystemNames::SourceId()); }
-    //! @ref ECN::ECJsonSystemNames::SourceClassName "ECJsonSystemNames::SourceClassName" as JsonCpp StaticString
-    static constexpr Json::StaticString json_sourceClassName() { return Json::StaticString(ECJsonSystemNames::SourceClassName()); }
-    //! @ref ECN::ECJsonSystemNames::TargetId "ECJsonSystemNames::TargetId" as JsonCpp StaticString
-    static constexpr Json::StaticString json_targetId() { return Json::StaticString(ECJsonSystemNames::TargetId()); }
-    //! @ref ECN::ECJsonSystemNames::TargetClassName "ECJsonSystemNames::TargetClassName" as JsonCpp StaticString
-    static constexpr Json::StaticString json_targetClassName() { return Json::StaticString(ECJsonSystemNames::TargetClassName()); }
-    //! @ref ECN::ECJsonSystemNames::Navigation::Id "ECJsonSystemNames::Navigation::Id" as JsonCpp StaticString
-    static constexpr Json::StaticString json_navId() { return Json::StaticString(ECJsonSystemNames::Navigation::Id()); }
-    //! @ref ECN::ECJsonSystemNames::Navigation::RelClassName "ECJsonSystemNames::Navigation::RelClassName" as JsonCpp StaticString
-    static constexpr Json::StaticString json_navRelClassName() { return Json::StaticString(ECJsonSystemNames::Navigation::RelClassName()); }
-    //! @ref ECN::ECJsonSystemNames::Point::X "ECJsonSystemNames::Point::X" as JsonCpp StaticString
-    static constexpr Json::StaticString json_x() { return Json::StaticString(ECJsonSystemNames::Point::X()); }
-    //! @ref ECN::ECJsonSystemNames::Point::Y "ECJsonSystemNames::Point::Y" as JsonCpp StaticString
-    static constexpr Json::StaticString json_y() { return Json::StaticString(ECJsonSystemNames::Point::Y()); }
-    //! @ref ECN::ECJsonSystemNames::Point::Z "ECJsonSystemNames::Point::Z" as JsonCpp StaticString
-    static constexpr Json::StaticString json_z() { return Json::StaticString(ECJsonSystemNames::Point::Z()); }
+    //! @ref ECN::ECJsonSystemNames::Id "ECJsonSystemNames::Id" as a static member name
+    static constexpr BeJsStaticString json_id() { return BeJsStaticString(ECJsonSystemNames::Id()); }
+    //! @ref ECN::ECJsonSystemNames::ClassName "ECJsonSystemNames::ClassName" as a static member name
+    static constexpr BeJsStaticString json_className() { return BeJsStaticString(ECJsonSystemNames::ClassName()); }
+    //! @ref ECN::ECJsonSystemNames::SourceId "ECJsonSystemNames::SourceId" as a static member name
+    static constexpr BeJsStaticString json_sourceId() { return BeJsStaticString(ECJsonSystemNames::SourceId()); }
+    //! @ref ECN::ECJsonSystemNames::SourceClassName "ECJsonSystemNames::SourceClassName" as a static member name
+    static constexpr BeJsStaticString json_sourceClassName() { return BeJsStaticString(ECJsonSystemNames::SourceClassName()); }
+    //! @ref ECN::ECJsonSystemNames::TargetId "ECJsonSystemNames::TargetId" as a static member name
+    static constexpr BeJsStaticString json_targetId() { return BeJsStaticString(ECJsonSystemNames::TargetId()); }
+    //! @ref ECN::ECJsonSystemNames::TargetClassName "ECJsonSystemNames::TargetClassName" as a static member name
+    static constexpr BeJsStaticString json_targetClassName() { return BeJsStaticString(ECJsonSystemNames::TargetClassName()); }
+    //! @ref ECN::ECJsonSystemNames::Navigation::Id "ECJsonSystemNames::Navigation::Id" as a static member name
+    static constexpr BeJsStaticString json_navId() { return BeJsStaticString(ECJsonSystemNames::Navigation::Id()); }
+    //! @ref ECN::ECJsonSystemNames::Navigation::RelClassName "ECJsonSystemNames::Navigation::RelClassName" as a static member name
+    static constexpr BeJsStaticString json_navRelClassName() { return BeJsStaticString(ECJsonSystemNames::Navigation::RelClassName()); }
+    //! @ref ECN::ECJsonSystemNames::Point::X "ECJsonSystemNames::Point::X" as a static member name
+    static constexpr BeJsStaticString json_x() { return BeJsStaticString(ECJsonSystemNames::Point::X()); }
+    //! @ref ECN::ECJsonSystemNames::Point::Y "ECJsonSystemNames::Point::Y" as a static member name
+    static constexpr BeJsStaticString json_y() { return BeJsStaticString(ECJsonSystemNames::Point::Y()); }
+    //! @ref ECN::ECJsonSystemNames::Point::Z "ECJsonSystemNames::Point::Z" as a static member name
+    static constexpr BeJsStaticString json_z() { return BeJsStaticString(ECJsonSystemNames::Point::Z()); }
     //! @}
 
 private:
     ECJsonUtilities() = delete;
     ~ECJsonUtilities() = delete;
 
-    static BentleyStatus PointCoordinateFromJson(double&, BeJsConst, Json::StaticString const& coordinateKey);
+    static BentleyStatus PointCoordinateFromJson(double&, BeJsConst, Utf8CP coordinateKey);
     static BentleyStatus PointCoordinateFromJson(double&, RapidJsonValueCR, Utf8CP coordinateKey);
 
     static bool IsLosslessUint64(double d) {
@@ -214,7 +215,7 @@ public:
     //! @param[in,out] str String to lower its first character
     static void LowerFirstChar(Utf8StringR str) { str[0] = (Utf8Char) tolower(str[0]); }
 
-    //! @name Methods for JSON values of the JsonCpp API
+    //! @name Member-name constants, usable anywhere a Utf8CP key is expected
     //! @{
 
     //! Writes the fully qualified name of an ECClass into a JSON value: &lt;schema name&gt;.&lt;class name&gt;
@@ -309,12 +310,11 @@ public:
     //! @return SUCCESS or ERROR
     ECOBJECTS_EXPORT static BentleyStatus JsonToPoint3d(DPoint3d& pt, BeJsConst json);
 
-    //! Converts the specified IGeometry to a JSON value
-    //! @param[out] json the resulting IGeometry JSON value
-    //! @param[in] geom IGeometry to convert
+    //! Serializes an IGeometry to the common-geometry JSON format.
+    //! @param[out] json the resulting JSON
+    //! @param[in] geom the geometry to serialize
     //! @return SUCCESS or ERROR
-    //! @see BentleyApi::BentleyGeometryJson::TryGeometryToJsonValue
-    ECOBJECTS_EXPORT static BentleyStatus IGeometryToJson(JsonValueR json, IGeometryCR geom);
+    ECOBJECTS_EXPORT static BentleyStatus IGeometryToJson(BeJsValue json, IGeometryCR geom);
 
     //! Converts the specified IGeometry to an iModel JSON value
     //! @param[out] json the resulting IGeometry IModel JSON value
@@ -327,7 +327,7 @@ public:
     //! @param[in] json the JSON value
     //! @return The IGeometry object or nullptr in case of errors
     //! @see BentleyApi::BentleyGeometryJson::TryJsonValueToGeometry
-    ECOBJECTS_EXPORT static IGeometryPtr JsonToIGeometry(JsonValueCR json);
+    ECOBJECTS_EXPORT static IGeometryPtr JsonToIGeometry(BeJsConst json);
 
     //! @}
 

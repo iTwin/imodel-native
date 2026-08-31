@@ -5,6 +5,7 @@
 #pragma once
 #include "ECDbTests.h"
 #include <Bentley/Nullable.h>
+#include <BeRapidJson/BeJsValue.h>
 #include <ostream>
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
@@ -15,18 +16,24 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 struct JsonValue final
     {
     public:
-        Json::Value m_value = Json::Value(Json::nullValue);
+        BeJsDocument m_value;
 
         JsonValue() {}
-        explicit JsonValue(Json::ValueType type) : m_value(type) {}
-        explicit JsonValue(JsonValueCR json) : m_value(json) {}
+        explicit JsonValue(BeJsConst json) { m_value.From(json); }
         explicit JsonValue(Utf8CP json);
         explicit JsonValue(Utf8StringCR json) : JsonValue(json.c_str()) {}
+
+        // BeJsDocument is move-only, but JsonValue is used as a copyable value type
+        // throughout the ECDb tests, so copying is provided explicitly as a deep copy.
+        JsonValue(JsonValue const& rhs) { m_value.From(rhs.m_value); }
+        JsonValue& operator=(JsonValue const& rhs) { if (this != &rhs) m_value.From(rhs.m_value); return *this; }
+        JsonValue(JsonValue&&) = default;
+        JsonValue& operator=(JsonValue&&) = default;
 
         bool operator==(JsonValue const& rhs) const;
         bool operator!=(JsonValue const& rhs) const { return !(*this == rhs); }
 
-        Utf8String ToString() const { return m_value.ToString(); }
+        Utf8String ToString() const { return m_value.Stringify(); }
     };
 
 void PrintTo(JsonValue const&, std::ostream*);

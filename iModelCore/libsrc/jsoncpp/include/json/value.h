@@ -17,7 +17,9 @@
 #include <stack>
 #include <cmath>
 
+#ifndef BE_JSON_NAME
 #define BE_JSON_NAME(__val__) static constexpr Json::StaticString json_##__val__() {return Json::StaticString(#__val__);}
+#endif
 
 BEGIN_BENTLEY_NAMESPACE
 

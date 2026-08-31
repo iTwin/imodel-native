@@ -87,7 +87,7 @@ private:
 private:
     NestedContentProviderPtr GetNestedContentProvider(ContentDescriptor::NestedContentField const&, bool) const;
     void LoadNestedContent(ContentSetItemR, bvector<ContentDescriptor::Field*> const&) const;
-    void LoadNestedContent(ContentSetItemR) const;
+    void LoadNestedContent(bvector<ContentSetItemPtr> const&) const;
     void LoadNestedContentFieldValue(ContentSetItemR, ContentDescriptor::NestedContentField const&, bool) const;
     void LoadCompositePropertiesFieldValue(ContentSetItemR, ContentDescriptor::ECPropertiesField const&) const;
 

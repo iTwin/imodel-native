@@ -13,7 +13,7 @@ Utf8String ECSchemaOwnershipClaimAppData::s_key = "ecdb.owned_by";
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MainSchemaManager::UpdateDbSchema(bool doNotTrackDDLChanges) const{
+BentleyStatus MainSchemaManager::UpdateDbSchema(bool doNotTrackDDLChanges, DbMapValidationMode validationMode) const{
     ECDB_PERF_LOG_SCOPE("Updating sqlite schema");
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin MainSchemaManager::UpdateDbSchema");
 
@@ -33,6 +33,12 @@ BentleyStatus MainSchemaManager::UpdateDbSchema(bool doNotTrackDDLChanges) const
         return ERROR;
     }
 
+    // Foreign keys and triggers are not in ec_, so they have to be worked out again before the
+    // tables are built - SQLite cannot add a constraint to a table that already exists.
+    if (SUCCESS != DerivedDbStructures::Derive(mainDisp)) {
+        return ERROR;
+    }
+
     if (SUCCESS != mainDisp.CreateOrUpdateRequiredTables()) {
         return ERROR;
     }
@@ -45,7 +51,7 @@ BentleyStatus MainSchemaManager::UpdateDbSchema(bool doNotTrackDDLChanges) const
         return ERROR;
     }
 
-    if (SUCCESS != DbMapValidator(ctx).Validate()) {
+    if (SUCCESS != DbMapValidator(ctx, validationMode).Validate()) {
         return ERROR;
     }
 
@@ -1141,7 +1147,7 @@ DropSchemaResult MainSchemaManager::DropSchemas(bvector<Utf8String> schemaNames,
             IssueCategory::BusinessProperties,
             IssueType::ECDbIssue,
             ECDbIssueId::ECDb_0280,
-            "Failed to drop ECSchemas. Cannot drop schemas from a file which was created with a higher version of this softwares. The file's version, however, is %s.",
+            "Failed to drop ECSchemas. Cannot drop schemas from a file which was created with a higher version of this software. The current software version is %s. The file's version, however, is %s.",
             ECDb::CurrentECDbProfileVersion().ToString().c_str(),
             m_ecdb.GetECDbProfileVersion().ToString().c_str());
         return DropSchemaResult(DropSchemaResult::Status::Error);
@@ -1290,6 +1296,29 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
         return SchemaImportResult::ERROR;
         }
 
+    for (auto schema: schemas) {
+        if (ECSchemaOwnershipClaimAppData::HasOwnershipClaim(*schema) && !ECSchemaOwnershipClaimAppData::IsOwnedBy(GetECDb(), *schema)) {
+            m_ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0283, "Failed to import ECSchemas. Cannot import schema owned by another ECDb connection");
+            return SchemaImportResult::ERROR;
+        }
+    }
+    // Import into new files is not supported unless it only differs in version sub2. Import into older files is only supported
+    // if the schemas to import are EC3.1 schemas. This will be checked downstream.
+    const int majorMinorSub1Comp = m_ecdb.GetECDbProfileVersion().CompareTo(ECDb::CurrentECDbProfileVersion(), ProfileVersion::VERSION_MajorMinorSub1);
+    if (majorMinorSub1Comp > 0)
+        {
+        m_ecdb.GetImpl().Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue,
+            ECDbIssueId::ECDb_0284,
+            "Failed to import ECSchemas. Cannot import schemas into a file which was created with a higher version of this software. The current software version is %s. The file's version, however, is %s.",
+            ECDb::CurrentECDbProfileVersion().ToString().c_str(),
+            m_ecdb.GetECDbProfileVersion().ToString().c_str()
+        );
+        return SchemaImportResult::ERROR;
+        }
+
     auto& schemaSync = m_ecdb.Schemas().GetSchemaSync();
     const auto isSchemaSyncDisabled = schemaSync.IsSchemaSyncDisabled();
     auto resolvedSyncDbUri = syncDbUri.IsEmpty() ? schemaSync.GetDefaultSyncDbUri() : syncDbUri;
@@ -1321,44 +1350,34 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
                 return SchemaImportResult::ERROR;
                 }
 
-            if (schemaSync.Pull(resolvedSyncDbUri, schemaImportToken) != SchemaSync::Status::OK)
+            // Everything from here is SchemaSync's, not ours: it runs the import in the sync db and
+            // this briefcase adopts the result. AllowDataTransformDuringSchemaUpgrade is how the
+            // caller says it holds the exclusive schema lock, which is the one case where the
+            // briefcase decides instead and the sync db is rebuilt from it.
+            const auto syncStatus = Enum::Contains(ctx.GetOptions(), SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade)
+                ? schemaSync.UpgradeSchemas(resolvedSyncDbUri, schemas, ctx.GetOptions(), schemaImportToken)
+                : schemaSync.ImportSchemas(resolvedSyncDbUri, schemas, ctx.GetOptions());
+
+            if (syncStatus == SchemaSync::Status::ERROR_DATA_TRANSFORM_REQUIRED)
+                return SchemaImportResult::ERROR_DATA_TRANSFORM_REQUIRED;
+
+            if (syncStatus == SchemaSync::Status::ERROR_DATA_DELETION_REQUIRED)
+                return SchemaImportResult::ERROR_DATA_DELETION_REQUIRED;
+
+            if (syncStatus != SchemaSync::Status::OK)
                 {
                 m_ecdb.GetImpl().Issues().ReportV(
                     IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0587,
-                    "Failed to import ECSchemas. Unable to pull changes from Sync-Id: {%s}, uri: {%s}.",
+                    "Failed to import ECSchemas through the schema sync db. Sync-Id: {%s}, uri: {%s}, status: %s.",
                     localDbInfo.GetSyncId().c_str(),
-                    resolvedSyncDbUri.GetUri().c_str()
+                    resolvedSyncDbUri.GetUri().c_str(),
+                    SchemaSync::GetStatusAsString(syncStatus).c_str()
                 );
                 return SchemaImportResult::ERROR;
                 }
-            if (!GetECDb().GetImpl().GetIdFactory().Reset())
-                {
-                LOG.error("Failed to import ECSchemas: Failed to create id factory.");
-                return SchemaImportResult::ERROR;
-                }
+
+            return SchemaImportResult::OK;
             }
-        }
-    for (auto schema: schemas) {
-        if (ECSchemaOwnershipClaimAppData::HasOwnershipClaim(*schema) && !ECSchemaOwnershipClaimAppData::IsOwnedBy(GetECDb(), *schema)) {
-            m_ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0283, "Failed to import ECSchemas. Cannot import schema owned by another ECDb connection");
-            return SchemaImportResult::ERROR;
-        }
-    }
-    // Import into new files is not supported unless it only differs in version sub2. Import into older files is only supported
-    // if the schemas to import are EC3.1 schemas. This will be checked downstream.
-    const int majorMinorSub1Comp = m_ecdb.GetECDbProfileVersion().CompareTo(ECDb::CurrentECDbProfileVersion(), ProfileVersion::VERSION_MajorMinorSub1);
-    if (majorMinorSub1Comp > 0)
-        {
-        m_ecdb.GetImpl().Issues().ReportV(
-            IssueSeverity::Error,
-            IssueCategory::BusinessProperties,
-            IssueType::ECDbIssue,
-            ECDbIssueId::ECDb_0284,
-            "Failed to import ECSchemas. Cannot import schemas into a file which was created with a higher version of this softwares. The file's version, however, is %s.",
-            ECDb::CurrentECDbProfileVersion().ToString().c_str(),
-            m_ecdb.GetECDbProfileVersion().ToString().c_str()
-        );
-        return SchemaImportResult::ERROR;
         }
 
     BeMutexHolder lock(m_mutex);
@@ -1369,6 +1388,10 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
     if (SchemaImportResult::OK != rc)
         {
         LOG.debug("MainSchemaManager::ImportSchemas - failed in SchemaWriter::ImportSchemas");
+        // The writer reports every refusal as a plain ERROR. A refused data-destroying deletion is the
+        // one the caller can act on, by retrying through the upgrade path.
+        if (rc == SchemaImportResult::ERROR && ctx.WasDataDeletionRefused())
+            return SchemaImportResult::ERROR_DATA_DELETION_REQUIRED;
         return rc;
         }
 
@@ -1394,19 +1417,6 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
         return rc;
         }
 
-    if (!isSchemaSyncDisabled && !localDbInfo.IsEmpty() && rc.IsOk())
-        {
-        if (schemaSync.Push(resolvedSyncDbUri) != SchemaSync::Status::OK)
-            {
-            m_ecdb.GetImpl().Issues().ReportV(
-                IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0587,
-                "Failed to import ECSchemas. Unable to push changes to Sync-Id: {%s}, uri: {%s}.",
-                localDbInfo.GetSyncId().c_str(),
-                resolvedSyncDbUri.GetUri().c_str());
-            return SchemaImportResult::ERROR;
-            }
-        }
-
     return SchemaImportResult::OK;
     }
 
@@ -1419,6 +1429,7 @@ SchemaImportResult MainSchemaManager::MapSchemas(SchemaImportContext& ctx, bvect
     }
 
     auto failedToMap = [&]() {
+        ctx.ReportMappingFailureDiagnostics();
         ClearCache();
         return  SchemaImportResult::ERROR;
     };
@@ -1452,7 +1463,24 @@ SchemaImportResult MainSchemaManager::MapSchemas(SchemaImportContext& ctx, bvect
         return failedToMap();
     }
 
-    if (SUCCESS != CreateOrUpdateRequiredTables()) {
+    // All property maps are now persisted. Refresh once, after both SaveDbSchema passes, so
+    // relationship derivation and later readers see the final class-to-table associations.
+    if (SUCCESS != DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(m_ecdb)) {
+        return failedToMap();
+    }
+
+    if (ctx.MaintainsDataTables()) {
+        // Same step UpdateDbSchema runs, and the only implementation of it. Skipped along with the
+        // tables themselves: the sync db builds none, and nothing there reads the constraints.
+        if (SUCCESS != DerivedDbStructures::Derive(*this)) {
+            return failedToMap();
+        }
+
+        if (SUCCESS != CreateOrUpdateRequiredTables()) {
+            return failedToMap();
+        }
+    } else if (SUCCESS != CanCreateOrUpdateRequiredTables()) {
+        // The limits still apply - this is where layout gets decided, whether or not it gets built.
         return failedToMap();
     }
 
@@ -1468,6 +1496,9 @@ SchemaImportResult MainSchemaManager::MapSchemas(SchemaImportContext& ctx, bvect
         return failedToMap();
     }
 
+    // Despite the name, this is where a remap is DETECTED: it appends the data-moving statements to
+    // ctx.GetDataTransform(), which is what the gate below reads. It executes nothing, so it has to
+    // run even when there are no data tables to move data in.
     if (SUCCESS != ctx.RemapManager().UpgradeExistingECInstancesWithRemappedProperties(ctx)) {
         return failedToMap();
     }
@@ -1495,20 +1526,21 @@ SchemaImportResult MainSchemaManager::MapSchemas(SchemaImportContext& ctx, bvect
 #endif
 
     if (!ctx.GetDataTransform().IsEmpty()) {
-        if (!ctx.GetDataTransform().Validate(m_ecdb)) {
-            return failedToMap();
-        }
-
         if (!ctx.AllowDataTransform()) {
             ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0590, "Import ECSchema failed. Data transform is required which is rejected by default unless explicitly allowed.");
             return SchemaImportResult::ERROR_DATA_TRANSFORM_REQUIRED;
         }
+
+        if (!ctx.GetDataTransform().Validate(m_ecdb)) {
+            return failedToMap();
+        }
+
         if (BE_SQLITE_OK != ctx.GetDataTransform().Execute(m_ecdb)) {
             return failedToMap();
         }
     }
 
-    if (BE_SQLITE_OK != UpgradeExistingECInstancesWithNewPropertiesMapToOverflowTable(m_ecdb, nullptr)){
+    if (ctx.MaintainsDataTables() && BE_SQLITE_OK != UpgradeExistingECInstancesWithNewPropertiesMapToOverflowTable(m_ecdb, nullptr)){
         return failedToMap();
     }
 
@@ -1601,7 +1633,7 @@ DbResult MainSchemaManager::UpgradeExistingECInstancesWithNewPropertiesMapToOver
 //---------------------------------------------------------------------------------------
 BentleyStatus MainSchemaManager::DoMapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchemaCP> const& schemas) const
     {
-    ECDB_PERF_LOG_SCOPE("Schema import> Persist mappings");
+    ECDB_PERF_LOG_SCOPE("Schema import> Map classes");
     // Identify root classes/relationship-classes
     std::set<ECClassCP> doneList;
     std::set<ECClassCP> rootClassSet;
@@ -1618,7 +1650,8 @@ BentleyStatus MainSchemaManager::DoMapSchemas(SchemaImportContext& ctx, bvector<
             GatherRootClasses(*ecClass, doneList, rootClassSet, rootClassList, rootRelationshipList, rootMixins);
         }
 
-    if (GetDbSchemaR().SynchronizeExistingTables() != SUCCESS)
+    // Only a file that holds the data tables can reconcile them; the sync db takes the columns as ec_Column has them.
+    if (ctx.MaintainsDataTables() && GetDbSchemaR().SynchronizeExistingTables() != SUCCESS)
         {
         m_ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0285, "Synchronizing existing table to which classes are mapped failed.");
         return ERROR;
@@ -1677,7 +1710,10 @@ ClassMappingStatus MainSchemaManager::MapClass(SchemaImportContext& ctx, ECClass
         }
 
     if (SUCCESS != existingClassMap->Update(ctx))
+        {
+        LOG.errorv("Schema import failed to update the class map of ECClass '%s'.", ecClass.GetFullName());
         return ClassMappingStatus::Error;
+        }
 
     return MapDerivedClasses(ctx, ecClass);
     }
@@ -1909,16 +1945,72 @@ BentleyStatus MainSchemaManager::CreateOrUpdateRequiredTables() const
  //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
- BentleyStatus MainSchemaManager::LoadIndexesSQL(std::map<Utf8String, Utf8String, CompareIUtf8Ascii>& sqliteIndexes) const
+ BentleyStatus MainSchemaManager::LoadPhysicalIndexes(std::map<Utf8String, Utf8String, CompareIUtf8Ascii>& physicalIndexes) const
     {
-     Statement stmt;
-     stmt.Prepare(m_ecdb, "SELECT sqlite_master.name, sqlite_master.sql FROM main.ec_index LEFT JOIN main.sqlite_master ON sqlite_master.name=ec_index.name where sqlite_master.type='index'");
-     while (stmt.Step() == BE_SQLITE_ROW)
+    // ECDb owns explicit indexes on mapped tables. Existing tables and SQLite's implicit
+    // autoindexes are outside this reconciliation.
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb,
+        "SELECT idx.name,idx.sql FROM main.sqlite_master idx"
+        " JOIN main." TABLE_Table " tbl ON tbl.Name=idx.tbl_name"
+        " WHERE idx.type='index' AND idx.sql IS NOT NULL AND tbl.Type<>?"))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt.BindInt(1, (int) DbTable::Type::Existing))
+        return ERROR;
+
+    while (stmt.Step() == BE_SQLITE_ROW)
+        physicalIndexes.insert(std::make_pair(stmt.GetValueText(0), stmt.GetValueText(1)));
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// Does ec_Index already describe exactly this index?
+//
+// The equivalent of the sqlite_master DDL comparison, for files that carry no physical indexes.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+bool MainSchemaManager::IsIndexPersistedUnchanged(DbIndex const& index) const
+    {
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement(
+        "SELECT Id FROM main." TABLE_Index " WHERE Name=? AND TableId=? AND IsUnique=? AND AddNotNullWhereExp=?"
+        " AND IsAutoGenerated=? AND AppliesToSubclassesIfPartial=? AND ClassId IS ?");
+    if (stmt == nullptr)
+        return false;
+
+    stmt->BindText(1, index.GetName(), Statement::MakeCopy::No);
+    stmt->BindId(2, index.GetTable().GetId());
+    stmt->BindBoolean(3, index.GetIsUnique());
+    stmt->BindBoolean(4, index.IsAddColumnsAreNotNullWhereExp());
+    stmt->BindBoolean(5, index.IsAutoGenerated());
+    stmt->BindBoolean(6, index.AppliesToSubclassesIfPartial());
+    if (index.HasClassId())
+        stmt->BindId(7, index.GetClassId());
+
+    if (stmt->Step() != BE_SQLITE_ROW)
+        return false;
+
+    const BeInt64Id indexId = stmt->GetValueId<BeInt64Id>(0);
+
+    CachedStatementPtr colStmt = m_ecdb.GetCachedStatement(
+        "SELECT ColumnId FROM main." TABLE_IndexColumn " WHERE IndexId=? ORDER BY Ordinal");
+    if (colStmt == nullptr)
+        return false;
+
+    colStmt->BindId(1, indexId);
+    size_t matched = 0;
+    for (; colStmt->Step() == BE_SQLITE_ROW; ++matched)
         {
-        sqliteIndexes.insert(std::make_pair(stmt.GetValueText(0), stmt.GetValueText(1)));
+        if (matched >= index.GetColumns().size())
+            return false;
+
+        if (colStmt->GetValueId<DbColumnId>(0) != index.GetColumns()[matched]->GetId())
+            return false;
         }
-     return SUCCESS;
-     }
+
+    return matched == index.GetColumns().size();
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -1933,9 +2025,18 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
     if (FindIndexes(indexes) != SUCCESS)
         return ERROR;
 
-    std::map<Utf8String, Utf8String, CompareIUtf8Ascii> sqliteIndexes;
-    if (LoadIndexesSQL(sqliteIndexes) != SUCCESS)
+    std::map<Utf8String, Utf8String, CompareIUtf8Ascii> physicalIndexes;
+    if (LoadPhysicalIndexes(physicalIndexes) != SUCCESS)
         return ERROR;
+
+    const auto deletePersistedIndex = [this](Utf8StringCR indexName) -> BentleyStatus
+        {
+        CachedStatementPtr stmt = m_ecdb.GetCachedStatement("DELETE FROM main." TABLE_Index " WHERE Name=?");
+        if (stmt == nullptr || BE_SQLITE_OK != stmt->BindText(1, indexName, Statement::MakeCopy::No))
+            return ERROR;
+
+        return BE_SQLITE_DONE == stmt->Step() ? SUCCESS : ERROR;
+        };
 
     bmap<Utf8String, DbIndex const*, CompareIUtf8Ascii> comparableIndexDefs;
     bset<Utf8CP, CompareIUtf8Ascii> usedIndexNames;
@@ -2035,17 +2136,39 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
                 }
 
             comparableIndexDefs[comparableIndexDef] = &index;
-            // Here we check if we need to recreate the index.
-            auto sqliteIndexItor = sqliteIndexes.find(index.GetName());
-            if (sqliteIndexItor != sqliteIndexes.end() && !sqliteIndexItor->second.empty())
+
+            if (!ctx.MaintainsDataTables())
                 {
-                if (!sqliteIndexItor->second.EqualsIAscii(ddl))
+                // There are no physical indexes to compare against here, so compare with what
+                // ec_Index already holds. Re-persisting an unchanged index would give it a new id on
+                // every import - PersistIndexDef always takes a fresh one - and the file would stop
+                // matching the briefcases that adopt from it.
+                if (IsIndexPersistedUnchanged(index))
+                    continue;
+
+                if (!ctx.IsSemanticRebasing())
+                    {
+                    if (SUCCESS != deletePersistedIndex(index.GetName()))
+                        return ERROR;
+
+                    if (SUCCESS != m_dbSchema.PersistIndexDef(index))
+                        return ERROR;
+                    }
+
+                continue;
+                }
+
+            // Here we check if we need to recreate the index.
+            auto physicalIndex = physicalIndexes.find(index.GetName());
+            if (physicalIndex != physicalIndexes.end() && !physicalIndex->second.empty())
+                {
+                if (!physicalIndex->second.EqualsIAscii(ddl))
                     {
                     LOG.debugv("Schema Import> Recreating index '%s'. The index definition has changed.", index.GetName().c_str());
                     if (!ctx.IsSemanticRebasing())
                         {
                         // Delete its entry from ec_index table
-                        if (BE_SQLITE_OK != m_ecdb.ExecuteSql(SqlPrintfString("DELETE FROM main." TABLE_Index " WHERE Name = '%s'", index.GetName().c_str())))
+                        if (SUCCESS != deletePersistedIndex(index.GetName()))
                             return ERROR;
                         }
 
@@ -2080,13 +2203,15 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
                 if (!ctx.IsSemanticRebasing())
                     {
                     // Delete its entry from ec_index table
-                    if (BE_SQLITE_OK != m_ecdb.ExecuteSql(SqlPrintfString("DELETE FROM main." TABLE_Index " WHERE Name = '%s'", index.GetName().c_str())))
+                    if (SUCCESS != deletePersistedIndex(index.GetName()))
                         return ERROR;
 
                     if (SUCCESS != m_dbSchema.PersistIndexDef(index))
                         return ERROR;
                     }
                 }
+
+            physicalIndexes.erase(index.GetName());
             }
         else
             {
@@ -2095,13 +2220,23 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
                 //populates the ec_Index table (even for indexes on virtual tables, as they might be necessary
                 //if further schema imports introduce subclasses of abstract classes (which map to virtual tables))
                                 // Delete its entry from ec_index table
-                if (BE_SQLITE_OK != m_ecdb.ExecuteSql(SqlPrintfString("DELETE FROM main." TABLE_Index " WHERE Name = '%s'", index.GetName().c_str())))
+                if (SUCCESS != deletePersistedIndex(index.GetName()))
                     return ERROR;
 
                 LOG.debugv("Schema Import> Virtual index '%s'. NOP SQLite Index", index.GetName().c_str());
                 if (SUCCESS != m_dbSchema.PersistIndexDef(index))
                     return ERROR;
                 }
+            }
+        }
+
+    if (ctx.MaintainsDataTables())
+        {
+        for (auto const& physicalIndex : physicalIndexes)
+            {
+            LOG.debugv("Schema Import> Dropping index '%s'. It is not part of the current mapped schema.", physicalIndex.first.c_str());
+            if (BE_SQLITE_OK != m_ecdb.GetImpl().ExecuteDDL(SqlPrintfString("DROP INDEX IF EXISTS [%s]", physicalIndex.first.c_str())))
+                return ERROR;
             }
         }
 
@@ -2226,9 +2361,20 @@ BentleyStatus MainSchemaManager::PurgeOrphanTables(SchemaImportContext& ctx) con
             }
         }
 
+    // The ec_Table rows are already gone; a file with no data tables has nothing left to drop.
+    if (!ctx.MaintainsDataTables())
+        return SUCCESS;
+
+    const bool isDataTransformUpgrade = Enum::Contains(
+        ctx.GetOptions(), SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade);
     for (Utf8StringCR name : tablesToDrop)
         {
-        if (m_ecdb.DropTable(name.c_str()) != BE_SQLITE_OK)
+        // The upgrade path owns the resulting schema changeset, so its DROP has to be tracked just
+        // like CREATE TABLE and ALTER TABLE. Other callers retain the existing arbitrary-DDL refusal.
+        const auto rc = isDataTransformUpgrade
+            ? m_ecdb.GetImpl().ExecuteDDL(SqlPrintfString("DROP TABLE [%s]", name.c_str()).GetUtf8CP())
+            : m_ecdb.DropTable(name.c_str());
+        if (rc != BE_SQLITE_OK)
             {
             BeAssert(false && "failed to drop a table");
             return ERROR;
@@ -2441,9 +2587,6 @@ BentleyStatus MainSchemaManager::SaveDbSchema(SchemaImportContext& ctx) const
             return ERROR;
             }
         }
-
-    if (SUCCESS != DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(m_ecdb))
-        return ERROR;
 
     m_lightweightCache.Clear();
     return SUCCESS;

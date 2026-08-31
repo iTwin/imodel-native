@@ -4,7 +4,7 @@ This directory uses [vcpkg](https://github.com/microsoft/vcpkg) to manage select
 
 A specific version of vcpkg is cloned from its official git URL during `bb pull`. The version used is controlled by the `Guid` setting for the `vcpkg` entry in [bbconfig.json](../../../imodel-native-internal/bbconfig.json). At build time, the vcpkg part runs the appropriate vcpkg install script located in this source tree.
 
-By default, vcpkg-based builds will be cached locally in the `vcpkg` source tree. You can set the `VCPKG_BINARY_SOURCES` environment variable to `clear` if you want to force it to build every time, although this is not recommended. It's possible that in the future this will default to some Bentley shared binary cache, but for now it is always local to the build machine.
+By default, vcpkg-based builds use a persistent, per-user local cache. You can set the `VCPKG_BINARY_SOURCES` environment variable to `clear` if you want to force it to build every time, although this is not recommended. Bentley CI additionally uses an internal, Bentley-only shared binary cache (see [Shared binary cache](#shared-binary-cache) below); it is not needed for local or external builds, which build from source with a local cache. You can also point `VCPKG_BINARY_SOURCES` at your own vcpkg binary cache if you want cross-machine reuse.
 
 > **Note:** On all platforms, use `IMODEL_VCPKG_ROOT` (not `VCPKG_ROOT`) if you need to override the vcpkg location. The build wrappers check `IMODEL_VCPKG_ROOT` first, avoiding conflicts with tooling that may set `VCPKG_ROOT` to an undesired location. Since the build system installs the required version of vcpkg automatically, setting `IMODEL_VCPKG_ROOT` is not recommended.
 
@@ -16,10 +16,12 @@ To add a new library:
 
 1. Update `iModelCore/libsrc/README.md` — add a row to the library table with the directory, library name, initial version, and `Yes` in the vcpkg column.
 2. Create a subdirectory (e.g. `mylib/`) containing `vcpkg.json`, `vcpkg-configuration.json`, and any custom triplet files under `mylib/triplets/`. See `./compress/` for examples.
-3. Add a new `vcpkg_install_mylib.mke` in `libsrc/` (next to the other `vcpkg_install_*.mke` files) that calls `vcpkg_run_install.bat`/`vcpkg_run_install.sh` for that manifest directory.
-4. Add a `vcpkg_install_mylib` part to [vcpkg.PartFile.xml](vcpkg.PartFile.xml), with `<SubPart PartName="vcpkg_install_<previous>" LibType="Static"/>` to preserve sequential ordering. Appending at the end of the chain is the simplest choice, but the only requirement is that the chain stays **linear** — position does not affect correctness, since each consumer depends on its own named part. A more basic/foundational library (e.g. a compression or image codec that other libraries build on) may read more naturally inserted earlier in the chain; if you insert mid-chain, re-parent the following link onto the new part and update the sibling `.mke` "Runs after vcpkg_install_<prev>…" comment on every link whose predecessor changed. The `LibType="Static"` is required — the chain runs static-only, so without it a dynamic build pass could run this chain part concurrently with the static one and collide on `vcpkg-running.lock`.
-5. In your library's PartFile, depend on `vcpkg_install_mylib` (from `iModelCore/libsrc/vcpkg`) instead of the bare `vcpkg` part.
-6. In your library's `.mke`, include [`vcpkg.mki`](./vcpkg.mki) to get the `vcpkgTriplet` variable, then consume the already-installed outputs from `$(OutputRootDir)vcpkg_installed/mylib/`. Do **not** call `vcpkg_run_install` from the `.mke` — the install was already performed by step 3. This path is only correct for **static** builds; for libraries with both static and dynamic deliverables, gate the path with `CREATE_STATIC_LIBRARIES` so dynamic builds read from the static chain's output:
+3. Create `vcpkg-mend.json` beside the manifest with the triplet graph or graphs whose union downloads every upstream source used by that consumer. Every listed triplet must have a matching `triplets/<triplet>.cmake`. These runs use `--only-downloads`, so a triplet does not need to match the host that runs Mend; it selects manifest conditions and platform-specific portfile download branches without compiling for that platform. Prefer one graph when it is a source superset of the others; for example, curl uses only `x64-linux` because that graph includes the common curl/OpenSSL/zlib sources plus conditional c-ares, even though the Mend job runs on Windows. Add multiple triplets when platform-specific portfile branches download different sources.
+4. Add a new `vcpkg_install_mylib.mke` in `libsrc/` (next to the other `vcpkg_install_*.mke` files) that calls `vcpkg_run_install.ps1`/`vcpkg_run_install.sh` for that manifest directory.
+5. Add a `vcpkg_install_mylib` part to [vcpkg.PartFile.xml](vcpkg.PartFile.xml), with `<SubPart PartName="vcpkg_install_<previous>" LibType="Static"/>` to preserve sequential ordering. Appending at the end of the chain is the simplest choice, but the only requirement is that the chain stays **linear** — position does not affect correctness, since each consumer depends on its own named part. A more basic/foundational library (e.g. a compression or image codec that other libraries build on) may read more naturally inserted earlier in the chain; if you insert mid-chain, re-parent the following link onto the new part and update the sibling `.mke` "Runs after vcpkg_install_<prev>…" comment on every link whose predecessor changed. The `LibType="Static"` is required — the chain runs static-only, so without it a dynamic build pass could run this chain part concurrently with the static one and collide on `vcpkg-running.lock`.
+6. Add `vcpkg_install_mylib` to the `vcpkg_install_all` aggregate in that same PartFile so the shared binary-cache warmer includes it. Mend discovers manifests independently and requires the sibling `vcpkg-mend.json` from step 3.
+7. In your library's PartFile, depend on `vcpkg_install_mylib` (from `iModelCore/libsrc/vcpkg`) instead of the bare `vcpkg` part.
+8. In your library's `.mke`, include [`vcpkg.mki`](./vcpkg.mki) to get the `vcpkgTriplet` variable, then consume the already-installed outputs from `$(OutputRootDir)vcpkg_installed/mylib/`. Do **not** call `vcpkg_run_install` from the `.mke` — the install was already performed by step 4. This path is only correct for **static** builds; for libraries with both static and dynamic deliverables, gate the path with `CREATE_STATIC_LIBRARIES` so dynamic builds read from the static chain's output:
 
    ```makefile
    %if defined (CREATE_STATIC_LIBRARIES)
@@ -31,9 +33,20 @@ To add a new library:
 
 > **When migrating an existing (previously vendored) library to vcpkg:** the vendored source deletion belongs in the **same** PR as the vcpkg wiring, but do **not** delete it up front. Keep the vendored source in place (the PR will likely be draft/WIP at this stage) until **after** the PR has passed its Copilot review, then delete the vendored code in a separate standalone commit within that same PR. Deleting the vendored source up front produces too many modified files for Copilot to review, and the review may not run at all.
 
+### Windows triplets: clang vs MSVC
+
+On Windows the native build runs under two toolsets — MSVC (`cl.exe`) and clang-cl (`BUILD_TOOLSET == WINDOWS_CLANG`) — and both produce ABI-compatible output. vcpkg's binary-cache ABI hash is derived from the triplet **and** the detected compiler, so if both toolsets used the same triplet *and* the same compiler they would share one cache entry and whichever built first would win. To keep the two builds' cache entries separate, every Windows triplet comes in a matched pair:
+
+- **`x64-windows-static*.cmake`** — the MSVC variant. Its header comment marks it as the Visual Studio / MSVC toolset (the comment also fixes its content, and therefore its ABI hash).
+- **`x64-windows-static*-clang.cmake`** — the clang variant. It sets `VCPKG_CHAINLOAD_TOOLCHAIN_FILE` to the shared [`windows-clang-cl.toolchain.cmake`](windows-clang-cl.toolchain.cmake) (referenced as `${CMAKE_CURRENT_LIST_DIR}/../../windows-clang-cl.toolchain.cmake`), which makes vcpkg build the package with BentleyBuild's own LLVM clang-cl (from `LLVM_DIR`). To avoid losing vcpkg's Windows setup, that toolchain selects clang-cl and then **includes** vcpkg's stock `windows.cmake` (rather than replacing it), so the system name, CRT, and all compile/link flags — plus vcpkg's own clang-cl handling — are preserved; only the compiler changes. (vcpkg's `windows.cmake` still adds `/RTC1` in debug, which clang-cl harmlessly ignores.) The triplet also sets `VCPKG_LOAD_VCVARS_ENV ON`, because setting `VCPKG_CHAINLOAD_TOOLCHAIN_FILE` otherwise **disables** vcpkg's automatic Visual Studio (vcvars) environment setup — without it clang-cl can't find the MSVC SDK headers / CRT libraries and vcpkg's compiler detection fails.
+
+[`vcpkg.mki`](./vcpkg.mki) picks the variant automatically: it computes the base triplet (`x64-windows-static`, `-md`, or `-veracode`) and appends `-clang` when `BUILD_TOOLSET == WINDOWS_CLANG`. So a new Windows library must ship a `-clang` counterpart for **each** base Windows triplet it provides (e.g. if it uses `x64-windows-static-md`, add `x64-windows-static-md-clang`). Non-Windows triplets need no such split — each of those platforms builds with a single toolset.
+
 Versions are pinned per-library: `vcpkg.json` uses an `overrides` entry for the exact version, and `vcpkg-configuration.json` pins the registry baseline commit. Even though all `vcpkg-configuration.json` files should be identical, each manifest directory requires its own copy.
 
 ## Setup
+
+> **Note**: If you do not have a recent enough version of `cmake`, vcpkg will automatically download and install one the first time it is needed. That download now lands in the **persistent, per-user cache** (see [Cache locations and environment overrides](#cache-locations-and-environment-overrides)), so it happens **once** and survives clean and TMR builds rather than being re-downloaded under `$OutRoot` each time. It is still *strongly* recommended that you install a recent enough `cmake` yourself, both to avoid that one-time download and to control the version. Presently that means version 4.3.2 or later, but that could change in the future. To see the version vcpkg would otherwise use, look under `<base>/downloads/<platform-key>/tools/` for a `cmake-<version>-<vcpkg platform>` directory — e.g. `${XDG_CACHE_HOME:-$HOME/.cache}/Bentley/vcpkg/downloads/arm64-osx/tools/` on macOS/Linux or `%LOCALAPPDATA%\Bentley\vcpkg\downloads\x64-windows\tools\` on Windows. If one is present, you don't have the required version installed and should install one at least as recent as the one there.
 
 ### macOS
 
@@ -145,11 +158,11 @@ Install the following prerequisites **before running vcpkg**:
 
 #### Windows vcpkg selection order used by the wrapper
 
-`vcpkg_run_install.bat` resolves roots in this order:
+`vcpkg_run_install.ps1` resolves roots in this order:
 
-1. `IMODEL_VCPKG_ROOT` (if set and contains `vcpkg.exe`)
-2. `<imodel-native>\iModelCore\libsrc\vcpkg`
-3. `VCPKG_ROOT` (if set, valid, not the Visual Studio bundled root, and something causes the one above to fail to install)
+1. `IMODEL_VCPKG_ROOT` when set; otherwise `${SrcRoot}vcpkg`
+2. `VCPKG_ROOT` (if set, valid, and not the Visual Studio bundled root)
+3. `D:\src\vcpkg`
 4. `%USERPROFILE%\src\vcpkg`
 5. Visual Studio bundled vcpkg (`%VCINSTALLDIR%\vcpkg`)
 
@@ -161,14 +174,127 @@ This avoids accidental use of the bundled root when `vcvars` or Developer Comman
 
 1. `IMODEL_VCPKG_ROOT` (if set, not recommended)
 2. `VCPKG_ROOT` (if already set in the environment, very not recommended)
-3. `<imodel-native>/iModelCore/libsrc/vcpkg` (default)
+3. `${SrcRoot}vcpkg` (default)
 
 ## How It Works
 
 - Each subdirectory with a `vcpkg.json` manifest declares its vcpkg dependencies and version pins.
-- `vcpkg_run_install.sh` (macOS/Linux) and `vcpkg_run_install.bat` (Windows) wrap `vcpkg install`, directing output to `$OutRoot/vcpkg_installed/<consumer>/`.
-- All `vcpkg install` calls are driven by a sequential chain of parts in [vcpkg.PartFile.xml](vcpkg.PartFile.xml) (`vcpkg_install_compress` → `vcpkg_install_png` → `vcpkg_install_openssl` → `vcpkg_install_crashpad`), each blocked on the previous one completing. This prevents concurrent `vcpkg` processes from colliding on shared state.
-- Consumer `.mke` files (e.g. `Zlib.mke`, `BeOpenSSL.mke`, `png.mke`) depend on their corresponding chain part and only consume the already-installed outputs — they do not call `vcpkg_run_install` themselves.
+- `vcpkg_run_install.sh` (macOS/Linux) and `vcpkg_run_install.ps1` (Windows) wrap `vcpkg install`, directing output to `$OutRoot/vcpkg_installed/<consumer>/`.
+- All `vcpkg install` calls are driven by a sequential chain of parts in [vcpkg.PartFile.xml](vcpkg.PartFile.xml) (`vcpkg_install_compress` → `vcpkg_install_png` → `vcpkg_install_pugixml` → `vcpkg_install_openssl` → `vcpkg_install_curl` → `vcpkg_install_crashpad`), each blocked on the previous one completing. This prevents concurrent `vcpkg` processes from colliding on shared state.
+- Consumer `.mke` files (e.g. `Zlib.mke`, `BeOpenSSL.mke`, `png.mke`, `pugixml.mke`, `BeCurl.mke`) depend on their corresponding chain part and only consume the already-installed outputs — they do not call `vcpkg_run_install` themselves.
+- **Binary cache resolution.** The install wrappers honor the `VCPKG_BINARY_SOURCES` environment variable. When it is **unset** (the default), vcpkg falls back to a **local** `files` archive cache under the per-user cache directory (see [Cache locations and environment overrides](#cache-locations-and-environment-overrides)), so a second build on the same machine restores instead of recompiling. When it is **set**, that value takes over completely — e.g. Bentley CI points it at an internal shared binary cache to publish/restore binaries across agents, and you can point it at your own vcpkg-supported backend. Setting it to `clear` disables all caching.
+
+### Mend source scans
+
+The Mend pipeline runs `vcpkg_download_mend_sources.ps1`, which recursively discovers every
+directory under `libsrc/` holding all three of `vcpkg.json`, `vcpkg-configuration.json`, and
+`vcpkg-mend.json`, and treats each one as a consumer. Anything else is skipped, so a vendored
+upstream tree that ships its own `vcpkg.json` cannot break discovery. A `vcpkg-mend.json` that is
+not beside the other two manifests is an error, since it can only be a misplaced copy of ours.
+
+A library that omits `vcpkg-mend.json` entirely would simply be skipped here, so the install
+wrappers refuse to run without one: `vcpkg_run_install.ps1` and `vcpkg_run_install.sh` both fail if
+the manifest directory has no `vcpkg-mend.json` with a non-empty `triplets` array. That check runs
+on every platform's normal build, so forgetting the file breaks the build of that library rather
+than silently dropping it from the scan.
+
+The `vcpkg_validate_mend` part additionally runs `vcpkg_download_mend_sources.ps1 -ValidateOnly` on
+Windows builds. That mode discovers and validates every manifest without downloading anything, and
+it gates the head of the install chain, so cross-consumer mistakes the wrappers cannot see — a
+misplaced `vcpkg-mend.json`, or a triplet with no matching `triplets/<triplet>.cmake` — fail a PR
+build instead of a Mend pipeline run.
+
+The script then invokes the normal vcpkg wrapper sequentially for each configured triplet and
+retains extracted sources under
+`$(SrcRoot)vcpkg_scan_sources/<manifest-relative-path>/<triplet>/buildtrees/<port>/src/`, inside
+Mend's filesystem scan root. Preserving the relative path prevents collisions between nested
+consumers with the same directory name. Binary caching is disabled for these runs.
+
+The Mend script requests this behavior through a single explicit wrapper option: `-MendScan` for
+`vcpkg_run_install.ps1`, or `--mend-scan` for `vcpkg_run_install.sh`. The wrappers translate it to
+vcpkg command line options — download-only, no binary cache, and no compiler tracking — so the
+orchestration script does not modify ambient vcpkg environment variables. The three go together:
+compiler tracking must be off because vcpkg otherwise probes the target triplet's compiler to hash
+it into the package ABI, which fails on a host that cannot compile for that triplet (for example
+the `x64-linux` scan run from the Windows Mend agent). The wrappers implement it by generating a
+triplet that includes the repo triplet and sets `VCPKG_DISABLE_COMPILER_TRACKING`, so the scan
+still uses the repo triplet's settings.
+
+Each consumer owns its platform coverage. Choose the smallest triplet set whose dependency and
+portfile branches cover the union of upstream source downloads used on supported platforms. A
+triplet need not match the Mend host because download-only mode resolves and extracts source without
+compiling for the selected target. A single source-superset graph is preferred; otherwise list
+multiple triplets. The script fails when a manifest lacks metadata, a configured overlay triplet
+does not exist, a download fails, or a port named in the manifest's `dependencies` **or**
+`overrides` has no extracted source in any configured graph. Checking `overrides` is what covers
+the transitively resolved ports — curl declares only `curl`, but its overrides pin `openssl`,
+`zlib`, and `c-ares`, so all four must materialize. The corollary is that the configured triplets
+must reach every pinned override: pinning a Windows-only port while listing only `x64-linux` would
+fail this check.
+
+Every consumer currently lists only `x64-linux`. That is a deliberate source-superset claim, not a
+default: the only platform-conditional downloads in the tree are curl's c-ares feature
+(`"osx | linux"`) and crashpad's `linux-syscall-support` fetch (Linux and Android only), and that
+graph performs both. Nothing enforces the claim, since the materialization check sees only the ports
+named in `dependencies` and `overrides`, so re-audit it whenever a manifest or a pinned version
+changes — an upstream bump can add a platform branch without any change on our side.
+
+vcpkg also builds tool ports that are never linked into what we ship — cmake helpers, `gn`, python
+packaging, the `sevenzip` extractor, and so on. `vcpkg_download_mend_sources.ps1` strips each such
+port's `buildtrees/<port>` and `packages/<port>_*` out of the scan tree right after that triplet's
+sources are materialized, so Mend never flags them (e.g. `sevenzip`'s license, which does not apply
+to code we don't distribute). A port is recognized as build-only if its name starts with `vcpkg-`
+(vcpkg's own convention for its helper ports), if it is in the shared `$MendBuiltinBuildOnlyPorts`
+list in `vcpkg_mend_config.ps1`, or if it is listed in that consumer's `vcpkg-mend.json` under an
+optional `excludePorts` array — add a port there when Mend flags a new build-only source that the
+shared list does not already cover.
+
+Host-tool ports also get fully *installed* (not just downloaded) whenever the scanned target
+triplet differs from the Mend agent's own native triplet (e.g. this repo's `x64-linux` scan
+running on a Windows or macOS agent) — vcpkg needs the real native toolchain to run things like
+`vcpkg_cmake_get_vars` against it. That install lands in a sibling directory named for the host
+triplet (e.g. `arm64-osx/share/vcpkg-cmake/copyright`), separate from the port-name-keyed
+`buildtrees`/`packages` pruning above. Since vcpkg only ever creates `buildtrees`, `packages`,
+`vcpkg`, and `generated-triplets` under a triplet's own install root, `vcpkg_download_mend_sources.ps1`
+deletes any other top-level directory there wholesale rather than matching it port-by-port.
+
+### Cache locations and environment overrides
+
+The wrappers keep vcpkg's downloads/tools tree, registry git cache, and default binary archive cache in a **persistent, per-user** base directory rather than under `VCPKG_ROOT` or `$OutRoot`. This means the default caches survive a clean build (tools, source archives, and the shallow registry repo are downloaded once and reused) and do **not** require `VCPKG_ROOT`/`IMODEL_VCPKG_ROOT` to be writable — the resolved root may be a protected Program Files location (the Visual Studio bundled copy) or a shared, read-only checkout.
+
+Default base directory:
+
+| Platform | Base |
+| --- | --- |
+| Windows | `%LOCALAPPDATA%\Bentley\vcpkg` |
+| macOS / Linux | `${XDG_CACHE_HOME:-$HOME/.cache}/Bentley/vcpkg` |
+
+If the base cannot be created (for example on a locked-down agent, or when `LOCALAPPDATA`/`HOME` is unset), the wrapper falls back to `<install_root>/vcpkg-cache` so the build still works.
+
+Under the base, the wrappers derive:
+
+- `<base>/downloads/<platform-key>` — vcpkg downloads/tools tree and source archives (`--downloads-root`). The `<platform-key>` is the first two triplet tokens (e.g. `x64-windows`, `arm64-android`), so different architectures never share a mutable tools tree.
+- `<base>/downloads/<platform-key>/registries` — the vcpkg registry git cache (`X_VCPKG_REGISTRIES_CACHE`), also per-platform.
+- `<base>/archives` — the default local binary (`files`) cache (`VCPKG_DEFAULT_BINARY_CACHE`), shared across triplets/configs (vcpkg keeps it concurrency-safe).
+
+Because same-platform builds (e.g. static + dynamic, or two pipelines) share the per-platform downloads tree and registry cache, the wrappers hold a **cross-process lock** around the actual `vcpkg install`, so those runs serialize instead of corrupting shared state. The lock is an **auto-releasing advisory lock placed on the mutable directories themselves** — a lock file inside each downloads/registry directory (`flock` on Linux, Perl `flock()` on macOS, an OS file-handle lock on Windows) — so a crash or kill cannot wedge later builds. Because the lock follows the actual directory, runs that share it serialize even across architectures or users, or via a `VCPKG_DOWNLOADS` / `X_VCPKG_REGISTRIES_CACHE` override; runs with disjoint directories still run in parallel.
+
+**Escape hatches.** Each cache location is derived from the base only when its variable is unset. The wrappers honor an existing `VCPKG_DEFAULT_BINARY_CACHE` or derive `<base>/archives` and create it, independently of `VCPKG_BINARY_SOURCES`. They never parse a custom `VCPKG_BINARY_SOURCES` expression to infer or back-fill the default cache path. When `VCPKG_BINARY_SOURCES` is unset, the wrappers construct the default `files` source from `VCPKG_DEFAULT_BINARY_CACHE`; otherwise, they use the custom expression as supplied.
+
+| Variable | Overrides | Notes |
+| --- | --- | --- |
+| `VCPKG_DOWNLOADS` | downloads/tools tree (`--downloads-root`) | The registry cache is derived from this when `X_VCPKG_REGISTRIES_CACHE` is also unset. |
+| `X_VCPKG_REGISTRIES_CACHE` | registry git cache | Standard vcpkg variable. |
+| `VCPKG_DEFAULT_BINARY_CACHE` | local binary (`files`) archive cache | Initialized independently of `VCPKG_BINARY_SOURCES` and used to build its default value when that is unset. |
+| `VCPKG_BINARY_SOURCES` | binary cache backend(s) entirely | Custom expressions are used as supplied and are never parsed to infer `VCPKG_DEFAULT_BINARY_CACHE`. See [Binary cache resolution](#how-it-works) and [Shared binary cache](#shared-binary-cache). |
+
+## Shared binary cache
+
+To avoid recompiling unchanged libraries on every agent (OpenSSL alone is ~1,200 translation units × 6 triplets), **Bentley CI** may restore and publish vcpkg binaries through an **internal, Bentley-only** shared binary cache. That cache lives in a Bentley-owned cloud subscription and requires a Bentley identity to reach, so it is **internal to Bentley** — it is neither accessible to nor needed by external contributors. Its configuration and internal-access workflow are kept in Bentley's private documentation.
+
+External contributors — and any build without cache access — use the fully supported default path with no extra setup: vcpkg builds each library from source and keeps a **local** `files` archive cache under the per-user cache directory (see [Cache locations and environment overrides](#cache-locations-and-environment-overrides)), so a second build on the same machine restores instead of recompiling (see [How It Works](#how-it-works)).
+
+If you want cross-machine reuse of your own, you can point `VCPKG_BINARY_SOURCES` at **any** vcpkg-supported binary cache backend (a local directory, your own cloud storage, a NuGet feed, etc.); see vcpkg's [binary caching documentation](https://learn.microsoft.com/en-us/vcpkg/reference/binarycaching).
 
 ## Version Pinning
 

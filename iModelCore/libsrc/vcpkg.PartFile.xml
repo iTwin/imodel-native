@@ -8,6 +8,13 @@
         <RequiredRepository>vcpkg</RequiredRepository>
     </Part>
 
+    <!-- OnlyPlatforms: this is a PowerShell script, and the Mend scan itself runs on Windows, so
+         validating there is enough; other platforms have no interpreter to run it with.  The
+         install wrappers already reject a consumer whose own vcpkg-mend.json is missing or empty;
+         this adds the cross-consumer checks none of them can make, such as a misplaced
+         vcpkg-mend.json or a triplet with no matching triplets/<triplet>.cmake. -->
+    <Part Name="vcpkg_validate_mend" BentleyBuildMakeFile="vcpkg_validate_mend.mke" OnlyPlatforms="x64"/>
+
     <!-- Sequential vcpkg install chain.  Each part runs vcpkg install for one consumer and
          gates the next consumer behind it, so no two vcpkg processes ever run concurrently.
          Order only matters when packages share vcpkg state (binary cache, running.lock, etc.),
@@ -16,6 +23,7 @@
          Consumers depend on their named part here instead of directly on "vcpkg". -->
     <Part Name="vcpkg_install_compress" BentleyBuildMakeFile="vcpkg_install_compress.mke">
         <SubPart PartName="vcpkg"/>
+        <SubPart PartName="vcpkg_validate_mend"/>
     </Part>
     <Part Name="vcpkg_install_png" BentleyBuildMakeFile="vcpkg_install_png.mke">
         <!-- LibType="Static": the chain always runs static-only.  Dynamic consumers depend on
@@ -23,17 +31,55 @@
              install root; they do not run vcpkg themselves. -->
         <SubPart PartName="vcpkg_install_compress" LibType="Static"/>
     </Part>
-    <Part Name="vcpkg_install_openssl" BentleyBuildMakeFile="vcpkg_install_openssl.mke">
+    <Part Name="vcpkg_install_pugixml" BentleyBuildMakeFile="vcpkg_install_pugixml.mke">
         <!-- LibType="Static": the chain always runs static-only.  Dynamic consumers depend on
              their chain part with LibType="Static" and read the packages from the static
              install root; they do not run vcpkg themselves. -->
         <SubPart PartName="vcpkg_install_png" LibType="Static"/>
     </Part>
-    <Part Name="vcpkg_install_crashpad" BentleyBuildMakeFile="vcpkg_install_crashpad.mke">
+    <Part Name="vcpkg_install_openssl" BentleyBuildMakeFile="vcpkg_install_openssl.mke">
+        <!-- LibType="Static": the chain always runs static-only.  Dynamic consumers depend on
+             their chain part with LibType="Static" and read the packages from the static
+             install root; they do not run vcpkg themselves. -->
+        <SubPart PartName="vcpkg_install_pugixml" LibType="Static"/>
+    </Part>
+    <!-- curl builds on every platform, so it is inserted before crashpad (desktop-only): a chain
+         link must depend on a predecessor that exists on the same platforms, and openssl is built
+         everywhere whereas crashpad is not. -->
+    <Part Name="vcpkg_install_curl" BentleyBuildMakeFile="vcpkg_install_curl.mke">
         <!-- LibType="Static": the chain always runs static-only.  Dynamic consumers depend on
              their chain part with LibType="Static" and read the packages from the static
              install root; they do not run vcpkg themselves. -->
         <SubPart PartName="vcpkg_install_openssl" LibType="Static"/>
+    </Part>
+    <!-- OnlyPlatforms: crashpad is only built on desktop platforms (see crashpad.PartFile.xml
+         OnlyPlatforms="linux*,x*,macos*"), so its vcpkg install must not run on iOS/Android.
+         vcpkg_install_all is built by the cache-warmer on every platform, so gating the install
+         here keeps it out of the iOS/Android warmer runs.  crashpad runs after curl (the previous
+         all-platform link); on iOS/Android crashpad is skipped and curl is the chain tail. -->
+    <Part Name="vcpkg_install_crashpad" BentleyBuildMakeFile="vcpkg_install_crashpad.mke" OnlyPlatforms="linux*,x*,macos*">
+        <!-- LibType="Static": the chain always runs static-only.  Dynamic consumers depend on
+             their chain part with LibType="Static" and read the packages from the static
+             install root; they do not run vcpkg themselves. -->
+        <SubPart PartName="vcpkg_install_curl" LibType="Static"/>
+    </Part>
+
+    <!-- Stable "build every vcpkg-managed library" aggregate.  It exists so the protected
+         cache-warmer pipeline can target a single, unchanging part name
+         (`-p vcpkg_install_all`) instead of the current chain tail, whose name changes whenever a
+         new install step is appended.  When you add a new vcpkg_install_* consumer above, add a
+         matching <SubPart> here so the warmer keeps publishing the full set to the shared binary
+         cache.  Platform-specific consumers (e.g. vcpkg_install_crashpad, which is desktop-only)
+         carry their own OnlyPlatforms/ExcludePlatforms filter, so they are naturally skipped on
+         platforms where they do not apply.  This part is not referenced by the normal product
+         build; it is only a warmer target. -->
+    <Part Name="vcpkg_install_all">
+        <SubPart PartName="vcpkg_install_compress"/>
+        <SubPart PartName="vcpkg_install_png"/>
+        <SubPart PartName="vcpkg_install_pugixml"/>
+        <SubPart PartName="vcpkg_install_openssl"/>
+        <SubPart PartName="vcpkg_install_curl"/>
+        <SubPart PartName="vcpkg_install_crashpad"/>
     </Part>
 
 </BuildContext>

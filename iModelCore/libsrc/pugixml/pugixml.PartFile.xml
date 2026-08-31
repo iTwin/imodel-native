@@ -5,14 +5,16 @@
     >
     
     <Part Name="Prewire" BentleyBuildMakeFile="prewire.mke">
+        <SubPart PartName="vcpkg_install_pugixml" PartFile="iModelCore/libsrc/vcpkg" LibType="Static"/>
         <Bindings>
             <VendorAPI Domain="pugixml"/>
-            <VendorNotices>Delivery/pugixml-license.md</VendorNotices>
+            <VendorNotices>Delivery/pugixml-license.txt</VendorNotices>
         </Bindings>
     </Part>
 
     <Part Name="PugiXml" BentleyBuildMakeFile="pugixml.mke">
         <SubPart PartName="Prewire" />
+        <SubPart PartName="vcpkg_install_pugixml" PartFile="iModelCore/libsrc/vcpkg" LibType="Static"/>
         <SubPart PartName="BentleyDll" PartFile="iModelCore/Bentley/Bentley" />
         <Bindings>
             <Assemblies>Delivery/$(shlibprefix)iTwinPugixml$(shlibext)</Assemblies>

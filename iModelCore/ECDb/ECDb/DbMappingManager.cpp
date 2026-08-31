@@ -81,6 +81,17 @@ PropertyMap* DbMappingManager::Classes::ProcessProperty(Context& ctx, ECProperty
         auto tables = GetPropertyTables(propertyMap->GetAs<DataPropertyMap>());
         if (tables.size() > 1) {
             if(!ctx.m_updateStructProperty || !useColumnReservation) {
+                if (ctx.m_importCtx != nullptr)
+                    {
+                    ctx.m_importCtx->Issues().ReportV(
+                        IssueSeverity::Error,
+                        IssueCategory::BusinessProperties,
+                        IssueType::ECDbIssue,
+                        ECDbIssueId::ECDb_0742,
+                        "Failed to map ECProperty '%s.%s'. Its values were mapped to columns spanning multiple tables, which is not supported.",
+                        ctx.m_classMap.GetClass().GetFullName(),
+                        property.GetName().c_str());
+                    }
                 BeAssert(false && "Failed to map properties");
                 return nullptr;
             } else {
@@ -100,22 +111,24 @@ PropertyMap* DbMappingManager::Classes::ProcessProperty(Context& ctx, ECProperty
 // @bsimethod
 //+===============+===============+===============+===============+===============+======
 BentleyStatus DbMappingManager::Classes::MoveProperty(Context& ctx, ECPropertyCR property, CompoundDataPropertyMapDiff& diff) {
-    LOG.infov("Moving struct property %s to overflow table as it does not fit into current table in which its mapped", property.GetTypeFullName().c_str());
+    LOG.infov("Moving struct property %s to overflow table as it does not fit into current table in which it's mapped", property.GetTypeFullName().c_str());
     // This function is only called if sharedColumn strategy is enabled. So columnType and accessString has no effect.
     if(!Enum::Contains(PropertyMap::Type::Struct, diff.GetPropertyMap().GetType())) {
-        BeAssert("Expecting struct property");
+        LOG.errorv("MoveProperty: expected a struct property, but '%s.%s' is not one.", ctx.m_classMap.GetClass().GetFullName(), property.GetName().c_str());
+        BeAssert(false && "Expecting struct property");
         return ERROR;
     }
     // Make sure property has overflown into next table.
     if (!diff.IsOverflowed()){
-        BeAssert("Expecting property set mapped to two tables");
+        LOG.errorv("MoveProperty: expected property '%s.%s' to be mapped to two tables, but it is not.", ctx.m_classMap.GetClass().GetFullName(), property.GetName().c_str());
+        BeAssert(false && "Expecting property set mapped to two tables");
         return ERROR;
     }
     if (!ctx.m_importCtx)
         return ERROR;
 
     auto& columnFactory = ctx.m_classMap.GetColumnFactory();
-    columnFactory.EvaluateIfPropertyGoesToOverflow(diff.MaxColumnRequired(), *ctx.m_importCtx);
+    columnFactory.EvaluateIfPropertyGoesToOverflow(diff.MaxColumnRequired(), property.GetName(), *ctx.m_importCtx);
     bmap<SingleColumnDataPropertyMap const*, DbColumn*>  newColMap;
     auto sourceTable = diff.GetBaselineTable();
     auto targetTable = diff.GetNewPropTable();
@@ -1380,7 +1393,7 @@ BentleyStatus DbMappingManager::FkRelationships::FinishMapping(SchemaImportConte
         return ERROR;
         }
 
-    return CreateForeignKeyConstraint(ctx, mappingInfo, *primaryTable);
+    return ValidateForeignKeyConstraint(ctx, mappingInfo);
     }
 
 
@@ -1502,7 +1515,7 @@ DbColumn* DbMappingManager::FkRelationships::CreateForeignKeyColumn(FkRelationsh
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus DbMappingManager::FkRelationships::CreateForeignKeyConstraint(SchemaImportContext& ctx, FkRelationshipMappingInfo const& mappingInfo, DbTable const& referencedTable)
+BentleyStatus DbMappingManager::FkRelationships::ValidateForeignKeyConstraint(SchemaImportContext& ctx, FkRelationshipMappingInfo const& mappingInfo)
     {
     if (!mappingInfo.IsPhysicalForeignKey())
         return ERROR; // logical key don't get fk constraints (by definition)
@@ -1528,14 +1541,6 @@ BentleyStatus DbMappingManager::FkRelationships::CreateForeignKeyConstraint(Sche
         return ERROR;
         }
 
-    if (onDeleteAction == ForeignKeyDbConstraint::ActionType::NotSpecified)
-        {
-        if (relClass.GetStrength() == StrengthType::Embedding)
-            onDeleteAction = ForeignKeyDbConstraint::ActionType::Cascade;
-        else
-            onDeleteAction = ForeignKeyDbConstraint::ActionType::SetNull;
-        }
-
     Nullable<Utf8String> onUpdateActionStr;
     if (SUCCESS != mappingInfo.GetFkConstraintCA().TryGetOnUpdateAction(onUpdateActionStr))
         return ERROR;
@@ -1548,44 +1553,40 @@ BentleyStatus DbMappingManager::FkRelationships::CreateForeignKeyConstraint(Sche
         return ERROR;
         }
 
+    // The constraint that these values describe is built by DerivedDbStructures, which reads the same
+    // custom attribute. What is left here is deciding whether the mapping is legal at all.
     for (ForeignKeyPartitionView::Partition const* partition : mappingInfo.GetPartitionView().GetPartitions())
         {
         DbColumn const& fkCol = partition->GetFromECInstanceIdColumn();
-        DbTable& fkTable = const_cast<DbTable&>(fkCol.GetTable());
-        if (fkTable.GetLinkNode().IsChildTable())
-            {
-            if (onDeleteAction == ForeignKeyDbConstraint::ActionType::Cascade ||
-                (onDeleteAction == ForeignKeyDbConstraint::ActionType::NotSpecified && mappingInfo.GetRelationshipClass().GetStrength() == StrengthType::Embedding))
-                {
-                if (onDeleteAction == ForeignKeyDbConstraint::ActionType::Cascade)
-                    ctx.Issues().ReportV(
-                        IssueSeverity::Error,
-                        IssueCategory::BusinessProperties,
-                        IssueType::ECDbIssue,
-                        ECDbIssueId::ECDb_0098,
-                        "Failed to map ECRelationshipClass %s. Its ForeignKeyConstraint custom attribute specifies the OnDelete action 'Cascade'. This is only allowed if the foreign key end of the ECRelationship is not mapped to a joined table.",
-                        relClass.GetFullName()
-                    );
-                else
-                    ctx.Issues().ReportV(
-                        IssueSeverity::Error,
-                        IssueCategory::BusinessProperties,
-                        IssueType::ECDbIssue,
-                        ECDbIssueId::ECDb_0099,
-                        "Failed to map ECRelationshipClass %s. Its strength is 'Embedding' which implies the OnDelete action 'Cascade'. This is only allowed if the foreign key end of the ECRelationship is not mapped to a joined table.",
-                        relClass.GetFullName()
-                    );
-
-                return ERROR;
-                }
-            }
-
-        if (fkTable.GetType() == DbTable::Type::Existing || fkTable.GetType() == DbTable::Type::Virtual ||
-            referencedTable.GetType() == DbTable::Type::Virtual || fkCol.IsShared())
+        DbTable const& fkTable = fkCol.GetTable();
+        if (!fkTable.GetLinkNode().IsChildTable())
             continue;
 
-        DbColumn const* referencedColumnId = referencedTable.FindFirst(DbColumn::Kind::ECInstanceId);
-        fkTable.AddForeignKeyConstraint(fkCol, *referencedColumnId, onDeleteAction, onUpdateAction);
+        if (onDeleteAction == ForeignKeyDbConstraint::ActionType::Cascade)
+            {
+            ctx.Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue,
+                ECDbIssueId::ECDb_0098,
+                "Failed to map ECRelationshipClass %s. Its ForeignKeyConstraint custom attribute specifies the OnDelete action 'Cascade'. This is only allowed if the foreign key end of the ECRelationship is not mapped to a joined table.",
+                relClass.GetFullName()
+            );
+            return ERROR;
+            }
+
+        if (onDeleteAction == ForeignKeyDbConstraint::ActionType::NotSpecified && relClass.GetStrength() == StrengthType::Embedding)
+            {
+            ctx.Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue,
+                ECDbIssueId::ECDb_0099,
+                "Failed to map ECRelationshipClass %s. Its strength is 'Embedding' which implies the OnDelete action 'Cascade'. This is only allowed if the foreign key end of the ECRelationship is not mapped to a joined table.",
+                relClass.GetFullName()
+            );
+            return ERROR;
+            }
         }
 
     return SUCCESS;
@@ -2153,7 +2154,7 @@ DbTable* DbMappingManager::Tables::CreateTableForExistingTableStrategy(SchemaImp
      ncl->GetConstraintsR().SetNotNullConstraint();
 
      overflowTable->AddPrimaryKeyConstraint({npk});
-     overflowTable->AddForeignKeyConstraint(*npk, *pk, ForeignKeyDbConstraint::ActionType::Cascade, ForeignKeyDbConstraint::ActionType::NoAction);
+     // The foreign key to the parent table is added by DerivedDbStructures.
 
      Utf8String indexName("ix_");
      indexName.append(overflowTable->GetName()).append("_ecclassid");

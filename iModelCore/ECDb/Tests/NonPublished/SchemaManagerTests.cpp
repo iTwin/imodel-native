@@ -1690,7 +1690,7 @@ TEST_F(SchemaManagerTests, LoadAllUnitsImplicitly)
     //! the units count includes inverted and constants
     const int standardUnitSystemCount = 12;
     const int standardPhenCount = 81;
-    const int standardUnitCount = 529;
+    const int standardUnitCount = 531;
     const int standardFormatCount = 10;
 
     assertLoadCount(m_ecdb, "TestSchema", 0, 0, 0, 0, 0, "No schema elements are expected to be loaded at this point");
@@ -1926,7 +1926,7 @@ TEST_F(SchemaManagerTests, Formats)
         else
             {
             ASSERT_TRUE(format->HasNumeric()) << format->GetFullName();
-            Json::Value jval;
+            BeJsDocument jval;
             ASSERT_TRUE(format->GetNumericSpec()->ToJson(jval, false)) << format->GetFullName();
             ASSERT_EQ(numericSpec, JsonValue(jval)) << format->GetFullName();
             }
@@ -1935,7 +1935,7 @@ TEST_F(SchemaManagerTests, Formats)
             ASSERT_FALSE(format->HasComposite()) << format->GetFullName();
         else
             {
-            Json::Value jval;
+            BeJsDocument jval;
             ASSERT_TRUE(format->GetCompositeSpec()->ToJson(jval)) << format->GetFullName();
             ASSERT_TRUE(format->HasComposite()) << format->GetFullName();
             ASSERT_EQ(compSpec, JsonValue(jval)) << format->GetFullName();

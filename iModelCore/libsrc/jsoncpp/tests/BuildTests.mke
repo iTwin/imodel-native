@@ -18,6 +18,12 @@ BUILD_WITH_C20=1
 
 baseDir = $(_MakeFilePath)
 
+# These tests are the only in-repository consumer of the opt-in BeJsValue <-> Json::Value bridge in
+# BeRapidJson/BeJsValue.h. Nothing else in the product defines USE_JSONCPP, so without this the bridge
+# would silently stop compiling.
+nameToDefine = USE_JSONCPP
+%include cdefapnd.mki
+
 # Compile and Link the unit tests
 BEGTEST_NAME  = $(TestDir)BeJsonCpp
 BEGTEST_INPUT = $(baseDir)$(TestDir)/

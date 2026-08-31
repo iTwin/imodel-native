@@ -7,6 +7,7 @@
 #include "SchemaXml.h"
 #include "SchemaJson.h"
 #include "StronglyConnectedGraph.h"
+#include <ECObjects/SchemaConflictHelper.h>
 #if defined (_WIN32) // WIP_NONPORT - iostreams not support on Android
 #include <iomanip>
 #endif
@@ -1586,7 +1587,7 @@ ECObjectsStatus ECSchema::GetOrCopyReferencedItemForCopy(const Item & itemWithRe
     return status;
     }
 
-ECObjectsStatus ECSchema::GetOrCopyReferencedClassForCopy(ECClassCR classWithRef, ECClassP& refForCopy, ECClassCP startingRef, bool copyReferences, bool skipValidation)
+ECObjectsStatus ECSchema::GetOrCopyReferencedClassForCopy(ECClassCR classWithRef, ECClassP& refForCopy, ECClassCP startingRef, bool copyReferences, bool skipValidation, bool resolveConflicts)
     {
         bool willCopyRef = copyReferences && areFromSameSchema(&classWithRef, startingRef);
         ECSchemaP refSchema;
@@ -1598,7 +1599,7 @@ ECObjectsStatus ECSchema::GetOrCopyReferencedClassForCopy(ECClassCR classWithRef
         if (nullptr == refForCopy)
             {
             if (willCopyRef)
-                status = CopyClass(refForCopy, *startingRef, copyReferences, nullptr, skipValidation);
+                status = CopyClass(refForCopy, *startingRef, copyReferences, nullptr, skipValidation, resolveConflicts);
             else
                 status = logCopyErrorDueToReferencedItem(&classWithRef, this, startingRef, SchemaParseUtils::SchemaElementTypeToString(ECSchemaElementType::ECClass), refSchema, copyReferences);
             }
@@ -1620,7 +1621,7 @@ ECObjectsStatus ECSchema::GetOrCopyReferencedPropertyCategoryForCopy(ECClassCR c
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass, bool copyReferences, Utf8CP newName, bool skipValidation)
+ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass, bool copyReferences, Utf8CP newName, bool skipValidation, bool resolveConflicts)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
     Utf8String targetClassName((newName == nullptr ? sourceClass.GetName().c_str() : newName));
@@ -1642,9 +1643,9 @@ ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass
                 newRelationshipClass->SetStrength(sourceAsRelationshipClass->GetStrength());
                 newRelationshipClass->SetStrengthDirection(sourceAsRelationshipClass->GetStrengthDirection());
 
-                status = sourceAsRelationshipClass->GetSource().CopyTo(newRelationshipClass->GetSource(), copyReferences);
+                status = sourceAsRelationshipClass->GetSource().CopyTo(newRelationshipClass->GetSource(), copyReferences, resolveConflicts);
                 if (ECObjectsStatus::Success == status)
-                    status = sourceAsRelationshipClass->GetTarget().CopyTo(newRelationshipClass->GetTarget(), copyReferences);
+                    status = sourceAsRelationshipClass->GetTarget().CopyTo(newRelationshipClass->GetTarget(), copyReferences, resolveConflicts);
 
                 if (ECObjectsStatus::Success != status)
                     {
@@ -1692,7 +1693,7 @@ ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass
     for (ECClassP baseClass: sourceClass.GetBaseClasses())
         {
         ECClassP targetBaseClass = nullptr;
-        if (ECObjectsStatus::Success == (status = GetOrCopyReferencedClassForCopy(sourceClass, targetBaseClass, baseClass, copyReferences)))
+        if (ECObjectsStatus::Success == (status = GetOrCopyReferencedClassForCopy(sourceClass, targetBaseClass, baseClass, copyReferences, false, resolveConflicts)))
             {
             // Not validating the class to be added since it should already be valid schema. Also this avoids some of the inheritance rule checking
             // for Mixins and Relationships
@@ -1708,14 +1709,35 @@ ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass
 
     for(ECPropertyCP sourceProperty: sourceClass.GetProperties(false))
         {
+        // The base classes of the copied class are resolved against this schema's references, which may differ in content
+        // from the source schema's references. This can make a property incompatible with a same-named base class property
+        // even though the source class was valid. With resolveConflicts, copy the property under a unique name instead of failing.
+        Utf8String destPropertyName(sourceProperty->GetName());
+        if (resolveConflicts && !SchemaConflictHelper::CanPropertyBeAdded(*targetClass, *sourceProperty))
+            {
+            if (BentleyStatus::SUCCESS != SchemaConflictHelper::FindUniquePropertyName(*targetClass, destPropertyName))
+                {
+                LOG.errorv("Failed to find a unique name for conflicting property '%s' while copying class '%s' into schema '%s'",
+                    sourceProperty->GetName().c_str(), sourceClass.GetFullName(), GetFullSchemaName().c_str());
+                DeleteClass(*targetClass);
+                targetClass = nullptr;
+                return ECObjectsStatus::Error;
+                }
+            LOG.infov("Property '%s' on class '%s' conflicts with a property in the base class hierarchy. Copying it as '%s'.",
+                sourceProperty->GetName().c_str(), targetClass->GetFullName(), destPropertyName.c_str());
+            }
+
         ECPropertyP destProperty;
-        status = targetClass->CopyProperty(destProperty, sourceProperty, sourceProperty->GetName().c_str(), true, true, copyReferences);
+        status = targetClass->CopyProperty(destProperty, sourceProperty, destPropertyName.c_str(), true, true, copyReferences, resolveConflicts);
         if (ECObjectsStatus::Success != status)
             {
             DeleteClass(*targetClass);
             targetClass = nullptr;
             return status;
             }
+
+        if (!destPropertyName.Equals(sourceProperty->GetName()))
+            targetClass->AddPropertyMapping(sourceProperty->GetName().c_str(), destPropertyName.c_str());
         }
 
     return sourceClass.CopyCustomAttributesTo(*targetClass, copyReferences);
@@ -1997,7 +2019,11 @@ ECObjectsStatus ECSchema::CopyFormat(ECFormatP& targetFormat, ECFormatCR sourceF
         if (ECObjectsStatus::Success != status)
             return status;
 
-        comp.SetSpacer(sourceComp->GetSpacer().c_str());
+        // SetSpacer marks the spacer as explicitly defined, so calling it unconditionally would give
+        // the copy an explicit default spacer the source never had.
+        if (sourceComp->HasSpacer())
+            comp.SetSpacer(sourceComp->GetSpacer().c_str());
+
         comp.SetIncludeZero(sourceComp->IsIncludeZero());
         if (sourceComp->HasMajorLabel())
             comp.SetMajorLabel(sourceComp->GetMajorLabel());
@@ -2016,7 +2042,7 @@ ECObjectsStatus ECSchema::CopyFormat(ECFormatP& targetFormat, ECFormatCR sourceF
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::CopySchema(ECSchemaPtr& schemaOut, ECSchemaReadContextP schemaContext, bool skipValidation) const
+ECObjectsStatus ECSchema::CopySchema(ECSchemaPtr& schemaOut, ECSchemaReadContextP schemaContext, bool skipValidation, bool resolveConflicts) const
     {
     ECObjectsStatus status = ECObjectsStatus::Success;
     status = CreateSchema(schemaOut,  GetName().c_str(), GetAlias().c_str(), GetVersionRead(), GetVersionWrite(), GetVersionMinor(), m_ecVersion);
@@ -2111,7 +2137,7 @@ ECObjectsStatus ECSchema::CopySchema(ECSchemaPtr& schemaOut, ECSchemaReadContext
     for (ECClassP ecClass : m_classContainer)
         {
         ECClassP copyClass;
-        status = schemaOut->CopyClass(copyClass, *ecClass, true, nullptr, skipValidation);
+        status = schemaOut->CopyClass(copyClass, *ecClass, true, nullptr, skipValidation, resolveConflicts);
         if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
             return status;
         }
@@ -3751,12 +3777,12 @@ bool ECSchema::WriteToJsonValue(BeJsValue ecSchemaJsonValue) const
 //---------------+---------------+---------------+---------------+---------------+-------
 bool ECSchema::WriteToJsonString(Utf8StringR ecSchemaJsonString, bool minify) const
     {
-    Json::Value jsonSchema;
+    BeJsDocument jsonSchema;
 
     if (!WriteToJsonValue(jsonSchema))
         return false;
 
-    ecSchemaJsonString = minify ? jsonSchema.ToString() : jsonSchema.toStyledString();
+    ecSchemaJsonString = jsonSchema.Stringify(minify ? StringifyFormat::Default : StringifyFormat::Indented);
     return true;
     }
 
