@@ -44,12 +44,21 @@ always:
     CMAKE_CRT_OPTIONS=
 %endif
 
+%if $(TARGET_PLATFORM)=="MacOS"
+    CMAKE_APPLE_OPTIONS=-DCMAKE_OSX_DEPLOYMENT_TARGET=$(MACOS_DEPLOYMENT_TARGET)
+%elif $(TARGET_PLATFORM)=="iOS"
+    CMAKE_APPLE_OPTIONS=-DDEPLOYMENT_TARGET=$(IOS_DEPLOYMENT_TARGET)
+%else
+    CMAKE_APPLE_OPTIONS=
+%endif
+
 $(o)$(libprefix)proxyres$(libext) :
     ~chdir $(vendorSrc)
     %if $(TARGET_PLATFORM)=="iOS"
         cmake -S . -G Xcode \
             -DCMAKE_TOOLCHAIN_FILE=../../ios-cmake/ios.toolchain.cmake \
             -DPLATFORM=OS64 \
+            ${CMAKE_APPLE_OPTIONS} \
             -DPROXYRES_BUILD_CLI=OFF \
             -DPROXYRES_BUILD_TESTS=OFF \
             -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
@@ -61,6 +70,7 @@ $(o)$(libprefix)proxyres$(libext) :
             -DPROXYRES_BUILD_TESTS=OFF \
             -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
             ${CMAKE_CRT_OPTIONS} \
+            ${CMAKE_APPLE_OPTIONS} \
             -B $(o)
         cmake --build $(o) --config ${CMAKE_BUILD_TYPE}
     %endif
