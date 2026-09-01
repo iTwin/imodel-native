@@ -26,7 +26,7 @@ USING_NAMESPACE_BENTLEY_LOGGING
 struct GtestOptions
     {
     bool umdh           = false; // Whether or not to perform Memory Leak analysis.  Windows-only
-    int timeout         = 1800; // in seconds.  The default is 1800 seconds (30 minutes)
+    int timeout         = -1; // in seconds.  The default is 1800 seconds (30 minutes)
     Utf8String gtest_filter;  // String containing the semi-colon separated list of gtest filters.  Can be passed verbatim to gtest.
     Utf8String bsitools_path; // Absolute path of bsitools directory
     };
