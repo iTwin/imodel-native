@@ -33,6 +33,17 @@ To add a new library:
 
 > **When migrating an existing (previously vendored) library to vcpkg:** the vendored source deletion belongs in the **same** PR as the vcpkg wiring, but do **not** delete it up front. Keep the vendored source in place (the PR will likely be draft/WIP at this stage) until **after** the PR has passed its Copilot review, then delete the vendored code in a separate standalone commit within that same PR. Deleting the vendored source up front produces too many modified files for Copilot to review, and the review may not run at all.
 
+### Apple deployment targets
+
+Every `arm64-osx.cmake` and `arm64-ios.cmake` overlay triplet must set
+`VCPKG_OSX_DEPLOYMENT_TARGET`. Keep its value aligned with BentleyBuild's effective
+`MACOS_DEPLOYMENT_TARGET` or `IOS_DEPLOYMENT_TARGET`, respectively. The public defaults are defined
+in [`$(SrcRoot)bsicommon/PublicSDK/ApplyToolSet_CLang.mki`](../../../bsicommon/PublicSDK/ApplyToolSet_CLang.mki);
+build strategies may override them, so check the effective strategy value as well. These are build
+deployment targets and need not equal the product's official OS support floor. Omitting the
+setting lets vcpkg build against the host SDK's deployment target, which can produce objects that
+cannot be linked into BentleyBuild outputs targeting an older OS.
+
 ### Windows triplets: clang vs MSVC
 
 On Windows the native build runs under two toolsets — MSVC (`cl.exe`) and clang-cl (`BUILD_TOOLSET == WINDOWS_CLANG`) — and both produce ABI-compatible output. vcpkg's binary-cache ABI hash is derived from the triplet **and** the detected compiler, so if both toolsets used the same triplet *and* the same compiler they would share one cache entry and whichever built first would win. To keep the two builds' cache entries separate, every Windows triplet comes in a matched pair:
@@ -42,7 +53,10 @@ On Windows the native build runs under two toolsets — MSVC (`cl.exe`) and clan
 
 [`vcpkg.mki`](./vcpkg.mki) picks the variant automatically: it computes the base triplet (`x64-windows-static`, `-md`, or `-veracode`) and appends `-clang` when `BUILD_TOOLSET == WINDOWS_CLANG`. So a new Windows library must ship a `-clang` counterpart for **each** base Windows triplet it provides (e.g. if it uses `x64-windows-static-md`, add `x64-windows-static-md-clang`). Non-Windows triplets need no such split — each of those platforms builds with a single toolset.
 
-Versions are pinned per-library: `vcpkg.json` uses an `overrides` entry for the exact version, and `vcpkg-configuration.json` pins the registry baseline commit. Even though all `vcpkg-configuration.json` files should be identical, each manifest directory requires its own copy.
+Versions are pinned per consumer graph: `vcpkg.json` uses `overrides` entries for exact versions,
+and that manifest directory's `vcpkg-configuration.json` pins the registry baseline commit. Each
+consumer requires its own configuration because its dependency graph and required baseline may
+differ.
 
 ## Setup
 
@@ -303,4 +317,22 @@ Versions are locked via two mechanisms in each manifest directory:
 - `vcpkg.json` → `overrides` array pins exact versions
 - `vcpkg-configuration.json` → `baseline` pins the vcpkg registry commit
 
-To update a library version, change the override in `vcpkg.json` and (if needed) update the baseline commit in `vcpkg-configuration.json`. Also update the version in the `iModelCore/libsrc/README.md` library table.
+Each manifest directory is an independent consumer graph. A port may therefore be pinned in more
+than one `vcpkg.json`, including as an `overrides` entry for a transitive dependency. Updating the
+port's own manifest does not update those other graphs, and an explicit override takes precedence
+over the version selected by a newer baseline.
+
+When updating any vcpkg-built library:
+
+1. Search every `iModelCore/libsrc/**/vcpkg.json` for the port name and old version. Inspect both
+   `dependencies` and `overrides`, then update every consumer graph that should use the new version.
+2. For each affected consumer, ensure its `vcpkg-configuration.json` baseline contains the requested
+   version; update that baseline when necessary.
+3. Resolve or install each affected graph with a triplet that activates any platform-conditional
+   dependency, using its `vcpkg-mend.json` triplets as the starting point. Confirm that no relevant
+   manifest still pins the old version.
+4. Update the version in the `iModelCore/libsrc/README.md` library table.
+
+For example, OpenSSL is pinned by its own consumer and by the curl and crashpad graphs, while zlib
+is pinned by several consumers. Apply the same repository-wide check to minizip or any other port
+when it is updated; do not limit the audit to these examples.
