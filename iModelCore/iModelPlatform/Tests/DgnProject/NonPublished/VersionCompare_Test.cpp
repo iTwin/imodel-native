@@ -1169,7 +1169,7 @@ struct PropertyData
 }; // PropertyData
 
 typedef bmap<DgnElementId, bvector<PropertyData>> ElementInputPropertyMap;
-typedef bmap<DgnElementId, Json::Value> ElementOutputPropertyMap;
+typedef bmap<DgnElementId, std::shared_ptr<BeJsDocument>> ElementOutputPropertyMap;
 
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod
@@ -1186,23 +1186,30 @@ void AddEntry(ElementInputPropertyMap& map, DgnElementId elementId, Utf8String a
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TestEqual(Json::Value & json, ECValue value)
+void TestEqual(BeJsConst json, ECValue value)
     {
-    switch(json.type())
+    // NOTE: BeJs offers only isNumeric() - there is no int/uint/real subtype - so the numeric case
+    // is dispatched on the ECValue's type instead. Also, bools are NOT numeric in BeJs, so
+    // isBool() comes first.
+    if (json.isBool())
         {
-        case Json::ValueType::uintValue:
-        case Json::ValueType::intValue:
-            ASSERT_EQ(json.asInt(), value.GetInteger());
-            return;
-        case Json::ValueType::realValue:
+        ASSERT_EQ(json.asBool(), value.GetBoolean());
+        return;
+        }
+
+    if (json.isNumeric())
+        {
+        if (value.IsDouble())
             ASSERT_EQ(json.asDouble(), value.GetDouble());
-            return;
-        case Json::ValueType::stringValue:
-            ASSERT_EQ(json.asString(), Utf8String(value.GetUtf8CP()));
-            return;
-        case Json::ValueType::booleanValue:
-            ASSERT_EQ(json.asBool(), value.GetBoolean());
-            return;
+        else
+            ASSERT_EQ(json.asInt(), value.GetInteger());
+        return;
+        }
+
+    if (json.isString())
+        {
+        ASSERT_EQ(json.asString(), Utf8String(value.GetUtf8CP()));
+        return;
         }
 
     ASSERT_TRUE(false && "This shouldn't happen");
@@ -1218,15 +1225,17 @@ void CheckPropertyOutput(ElementInputPropertyMap& inputMap, ElementOutputPropert
         DgnElementId elementId = inputEntry.first;
         bvector<PropertyData> propertyDatas = inputEntry.second;
         ASSERT_TRUE(outputMap.find(elementId) != outputMap.end());
-        Json::Value outputContent = outputMap[elementId];
+        auto const& outputDoc = outputMap[elementId];
+        ASSERT_TRUE(outputDoc != nullptr);
+        BeJsConst outputContent = *outputDoc;
 
-        Utf8String jsonString = outputContent.ToString();
+        Utf8String jsonString = outputContent.Stringify();
         if (jsonString.empty()) { }
 
         for (PropertyData const& data : propertyDatas)
             {
-            Json::Value currentValue = outputContent[data.m_accessor]["currentValue"];
-            Json::Value targetValue = outputContent[data.m_accessor]["targetValue"];
+            BeJsConst currentValue = outputContent[data.m_accessor]["currentValue"];
+            BeJsConst targetValue = outputContent[data.m_accessor]["targetValue"];
             ASSERT_TRUE(!currentValue.isNull() && !targetValue.isNull());
             TestEqual(currentValue, data.m_oldValue);
             TestEqual(targetValue, data.m_newValue);

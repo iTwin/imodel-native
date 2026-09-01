@@ -10,8 +10,8 @@ Libraries built in `iModelCore/libsrc/`.
 | `compress/snappy` | Google Snappy | 1.2.2 | No |
 | `crashpad` | Chromium Crashpad | 2024-04-11#13 | Yes |
 | `csmap` | CS-MAP | rev 2778 | No |
-| `curl` | libcurl | 8.19.0 | No |
-| `curl/ares` | c-ares | 1.34.8 | No |
+| `curl` | libcurl | 8.21.0 | Yes |
+| `curl` | c-ares (macOS/Linux only) | 1.34.8 | Yes |
 | `facebook` | Facebook Folly | 57.0 | No |
 | `flatbuffers` | FlatBuffers | 1.12.0 | No |
 | `freetype2` | FreeType | 2.13.3 | No |
@@ -21,9 +21,8 @@ Libraries built in `iModelCore/libsrc/`.
 | `jsoncpp` | JsonCpp | unknown | No |
 | `libjpegturbo` | libjpeg-turbo | 3.1.2 | No |
 | `libxml2` | libxml2 | 2.13.5 | No |
-| `openssl` | OpenSSL | 3.6.3 | Yes |
+| `openssl` | OpenSSL | 3.6.4 | Yes |
 | `png` | libpng | 1.6.58 | Yes |
 | `proxyres` | proxyres | unknown | No |
 | `pugixml` | pugixml | 1.15 | Yes |
 | `rapidjson` | RapidJSON | 1.1.0 | No |
-| `rustls-ffi` | rustls-platform-verifier | 0.6.2 | No |

@@ -266,7 +266,10 @@ public:
     static uint32_t const FirstValidBriefcaseId() {return 2;}
     //! the last valid briefcaseId
     // NOTE: The 10 largest valid BeBriefcaseIds will not be assigned by iModelHub, so are available to identify special kinds of iModels.
-    static uint32_t const LastValidBriefcaseId() {return MaxRepo() - 10;}
+    static uint32_t const LastValidBriefcaseId() {return MaxRepo() - 11;}
+    //! Reserved briefcase id used for Element IDs allocated by SchemaSync.
+    //! Never assigned by iModelHub. Must stay in sync with TypeScript `BriefcaseIdValue.SchemaSyncElementReserved`.
+    static uint32_t const SchemaSyncElementReserved() {return MaxRepo() - 10;}
     //! An illegal value
     static uint32_t const Illegal() {return (uint32_t)0xffffffff;}
 
@@ -608,6 +611,7 @@ enum DbResult
     BE_SQLITE_ERROR_CouldNotAcquireLocksOrCodes = (BE_SQLITE_IOERR | (21<<24)), //!< Error acquiring locks or codes
     BE_SQLITE_ERROR_SchemaUpgradeRecommended    = (BE_SQLITE_IOERR | (22<<24)), //!< Recommended that the schemas found in the database be upgraded
     BE_SQLITE_ERROR_DataTransformRequired       = (BE_SQLITE_IOERR | (23<<24)), //!< Schema update need to update data.
+    BE_SQLITE_ERROR_DataDeletionRequired        = (BE_SQLITE_IOERR | (24<<24)), //!< Schema update needs to remove data (classes/properties)
 
     BE_SQLITE_ERROR_NOTOPEN                     = (BE_SQLITE_ERROR | (1<<24)),  //!< Db not open
     BE_SQLITE_ERROR_PropagateChangesFailed      = (BE_SQLITE_ERROR | (2<<24)),  //!< Error propagating changes during commit
@@ -700,6 +704,9 @@ public:
 
     //! Return result code as static string e.g. SQLITE_ROW -> "SQLITE_ROW"
     BE_SQLITE_EXPORT static Utf8CP GetErrorName(DbResult rc);
+
+    //! Convert a SQLite statement state to a descriptive string.
+    BE_SQLITE_EXPORT static Utf8CP GetStatementStateString(StatementState state);
 
     //! Return a log message (ErrorString, GetErrorName) for a DbResult
     BE_SQLITE_EXPORT static Utf8String GetLogError(DbResult rc);
@@ -3348,6 +3355,10 @@ public:
     //! Opens the specified database, performs a sqlite integrity check, and closes it. Returns BE_SQLITE_OK if the check was successful, otherwise BE_SQLITE_CORRUPT or other chained errors if there was a failure.
     BE_SQLITE_EXPORT static DbResult CheckDbIntegrity(BeFileNameCR dbFileName);
     BE_SQLITE_EXPORT DbResult SetBusyTimeout(int ms);
+    //! Query whether SQLite enforces foreign key constraints on this connection.
+    BE_SQLITE_EXPORT DbResult QueryForeignKeyEnforcement(bool& enabled) const;
+    //! Enable or disable SQLite foreign key enforcement on this connection.
+    BE_SQLITE_EXPORT DbResult SetForeignKeyEnforcement(bool enabled) const;
     BE_SQLITE_EXPORT DbBuffer Serialize(const char *zSchema = nullptr) const;
 
     BE_SQLITE_EXPORT static DbResult Deserialize(DbBuffer& buffer, DbR db, DbDeserializeOptions opts = DbDeserializeOptions::FreeOnClose, const char *zSchema = nullptr, std::function<void(DbR)> beforeDefaultTxnStarts = nullptr);

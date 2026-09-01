@@ -6,6 +6,7 @@
 
 #include "ECDbTests.h"
 #include "TestHelper.h"
+#include <BeRapidJson/BeJsValue.h>
 #include <sstream>
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
@@ -160,6 +161,14 @@ public:
     void SetUp() override { Initialize(); }
     void TearDown() override { CloseECDb(); }
 
+    //! True when the IMODEL_RUN_EXTENDED_TESTS environment variable asks for the extended tier.
+    //!
+    //! A fixture whose name ends in ExtendedTests holds one more permutation of behaviour the core
+    //! tier already covers. Those fixtures gate themselves with ECDB_EXTENDED_TIER_GATE, so an
+    //! ordinary build reports them as skipped rather than running them. Set the variable to 1,
+    //! true or yes to run them; anything else, or unset, keeps them off.
+    static bool ExtendedTestsEnabled();
+
     //! Initializes the test environment by setting up the schema read context and search dirs etc.
     //! Gets implicitly called when calling SetupECDb, too. Tests that don't use
     //! that method can call this method statically.
@@ -177,12 +186,32 @@ public:
     };
 
 SchemaItem operator"" _schema(const char* s, size_t n);
-Json::Value operator"" _json(const char* s, size_t n);
-Json::Value GetPropertyMap(ECDbCR ecdb, Utf8CP className);
-ECInstanceKey InsertInstance(ECDbCR ecdb, Json::Value const& v);
-Json::Value ReadInstance(ECDbCR ecdb, ECInstanceKey ik, Utf8CP prop);
-void UpdateInstance(ECDbCR ecdb, ECInstanceKey key, Json::Value const& v);
+BeJsDocument operator"" _json(const char* s, size_t n);
+BeJsDocument GetPropertyMap(ECDbCR ecdb, Utf8CP className);
+ECInstanceKey InsertInstance(ECDbCR ecdb, BeJsConst v);
+BeJsDocument ReadInstance(ECDbCR ecdb, ECInstanceKey ik, Utf8CP prop);
+void UpdateInstance(ECDbCR ecdb, ECInstanceKey key, BeJsConst v);
 void DeleteInstance(ECDbCR ecdb, ECInstanceKey key);
+
+//! Puts a fixture in the extended tier: its tests only run when ExtendedTestsEnabled().
+//! Place it in the fixture body and pass the base fixture, which SetUp forwards to.
+//!
+//! The mobile builds compile the tests against BeTest's own harness rather than gtest, where
+//! GTEST_SKIP does not exist and returning early from SetUp still leaves the body running - hence
+//! the second override, which BeTest calls to invoke the body.
+#if defined (USE_GTEST)
+    #define ECDB_EXTENDED_TIER_GATE(BASE_FIXTURE) \
+        void SetUp() override \
+            { \
+            if (!ExtendedTestsEnabled()) \
+                GTEST_SKIP() << "Extended tier. Set IMODEL_RUN_EXTENDED_TESTS=1 to run it."; \
+            BASE_FIXTURE::SetUp(); \
+            }
+#else
+    #define ECDB_EXTENDED_TIER_GATE(BASE_FIXTURE) \
+        void SetUp() override { if (ExtendedTestsEnabled()) BASE_FIXTURE::SetUp(); } \
+        void InvokeTestBody() override { if (ExtendedTestsEnabled()) BASE_FIXTURE::InvokeTestBody(); }
+#endif
 
 //=======================================================================================
 //! Used in combination with LogCatcher to capture log messages

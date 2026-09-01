@@ -8,9 +8,9 @@
     }
   ],
   "overrides": [
-    {
-      "name": "crashpad",
-      "version": "2024-04-11#13"
-    }
+    { "name": "crashpad", "version": "2024-04-11#13" },
+    { "name": "curl", "version": "8.21.0#1" },
+    { "name": "openssl", "version": "3.6.4" },
+    { "name": "zlib", "version": "1.3.2#1" }
   ]
 }

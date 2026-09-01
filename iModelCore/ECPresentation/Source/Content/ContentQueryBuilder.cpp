@@ -649,7 +649,14 @@ QuerySet ContentQueryBuilder::CreateQuerySet(ContentDescriptor::NestedContentFie
     ContentDescriptorBuilder::Context descriptorContext(m_params.GetSchemaHelper(), m_params.GetConnections(), m_params.GetConnection(), m_params.GetCancellationToken(), m_params.GetRulesPreprocessor(), m_params.GetRuleset(),
         ContentDisplayType::Undefined, m_params.GetRulesetVariables(), m_params.GetCategorySupplier(), m_params.GetPropertyFormatter(), ECPresentation::UnitSystem::Undefined,
         *NavNodeKeyListContainer::Create(), nullptr, m_params.GetUsedVariablesListener(), nullptr);
-    descriptorContext.SetContentFlagsCalculator([](int flags) { return flags | static_cast<int>(ContentFlags::ShowLabels); });
+    bool includeInputKeys = (0 != (m_params.GetContentFlags() & (int)ContentFlags::IncludeInputKeys));
+    descriptorContext.SetContentFlagsCalculator([&](int flags)
+        {
+        flags |= static_cast<int>(ContentFlags::ShowLabels);
+        if (includeInputKeys)
+            flags |= static_cast<int>(ContentFlags::IncludeInputKeys);
+        return flags;
+        });
     ContentDescriptorPtr descriptor = ContentDescriptorBuilder(descriptorContext).CreateDescriptor(contentField);
     if (!descriptor.IsValid())
         {
@@ -660,6 +667,13 @@ QuerySet ContentQueryBuilder::CreateQuerySet(ContentDescriptor::NestedContentFie
     ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     SelectClassInfo selectClassInfo(contentField.GetContentClass(), contentField.GetContentClassAlias(), true);
     ContentQueryContractPtr contract = CreateContract(*descriptor, selectClassInfo, *query);
+    if (includeInputKeys)
+        {
+        // when input keys are requested (e.g. batch-loading nested content for multiple primary instances at once),
+        // select each row's originating primary instance so results can be distributed back to the right item.
+        ContentDescriptor::RelatedContentField const* relatedField = contentField.AsRelatedContentField();
+        contract->SetInputClassAlias(relatedField ? relatedField->GetSelectClassAlias() : contentField.GetContentClassAlias());
+        }
     if (contentField.AsRelatedContentField() && contentField.AsRelatedContentField()->IsRelationshipField())
         {
         contract->SetRelationshipClass(&contentField.AsRelatedContentField()->GetRelationshipClass());
