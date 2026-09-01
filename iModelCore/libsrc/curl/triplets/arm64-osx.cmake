@@ -9,6 +9,7 @@ set(VCPKG_LIBRARY_LINKAGE static)
 
 set(VCPKG_CMAKE_SYSTEM_NAME Darwin)
 set(VCPKG_OSX_ARCHITECTURES arm64)
+set(VCPKG_OSX_DEPLOYMENT_TARGET 15.0)
 
 # curl's OpenSSL backend verifies the peer certificate chain against the macOS system trust
 # store (Keychain) via Apple SecTrust. vcpkg_cmake_configure forwards this triplet option to
