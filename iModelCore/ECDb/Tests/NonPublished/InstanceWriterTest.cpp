@@ -1128,4 +1128,135 @@ TEST_F(InstanceWriterFixture, DeleteInstanceErrorHandling) {
         m_ecdb.AbandonChanges();    // Make sure successful updates don't affect the next test
     }
 }
+
+//---------------------------------------------------------------------------------------
+// Verifies that the `convertClassIdsToClassNames` option lets the reader emit, and the
+// writer accept, class *names* for class-id columns (ECClassId, nav RelECClassId) while
+// keeping EC property names (i.e. without turning on the full JsName transformation).
+// This is the primitive the semantic-rebase capture/replay relies on.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceWriterFixture, ConvertClassIdsToClassNames) {
+    const auto schemaXml = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECEntityClass typeName="P">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.2.0">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="S" typeName="string" />
+                <ECNavigationProperty propertyName="Parent" relationshipName="POwnsChildPs" direction="Backward"/>
+            </ECEntityClass>
+            <ECRelationshipClass typeName="POwnsChildPs" strength="embedding" modifier="Sealed">
+                <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="true">
+                    <Class class="P"/>
+                </Source>
+                <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+                    <Class class="P"/>
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml";
+
+    ASSERT_EQ(SUCCESS, SetupECDb(BeTest::GetNameOfCurrentTest(), SchemaItem(schemaXml)));
+
+    // Insert a parent and a child (child's nav property points at the parent) using JsName input.
+    ECInstanceKey parentKey;
+    {
+        BeJsDocument doc;
+        doc.Parse(R"json({ "className": "TestSchema.P", "s": "parent" })json");
+        InstanceWriter::InsertOptions opt;
+        opt.UseJsNames(true);
+        ASSERT_EQ(BE_SQLITE_DONE, InsertInstance(m_ecdb, doc, opt, parentKey));
+    }
+
+    ECInstanceKey childKey;
+    {
+        Utf8String json;
+        json.Sprintf(R"json({ "className": "TestSchema.P", "s": "child", "parent": { "id": "%s", "relClassName": "TestSchema.POwnsChildPs" } })json",
+            parentKey.GetInstanceId().ToHexStr().c_str());
+        BeJsDocument doc;
+        doc.Parse(json);
+        InstanceWriter::InsertOptions opt;
+        opt.UseJsNames(true);
+        ASSERT_EQ(BE_SQLITE_DONE, InsertInstance(m_ecdb, doc, opt, childKey));
+    }
+    m_ecdb.SaveChanges();
+
+    // Read the child back with convertClassIdsToClassNames + EC (non-JsName) property names.
+    const auto readWithClassNames = [&](const ECInstanceKey& key, BeJsValue out) {
+        InstanceReader::Position pos(key.GetInstanceId(), key.GetClassId());
+        return m_ecdb.GetInstanceReader().Seek(pos, [&](const InstanceReader::IRowContext& row, auto) {
+            out.From(row.GetJson(JsReadOptions().SetAbbreviateBlobs(false).SetConvertClassIdsToClassNames(true).SetUseJsNames(false)));
+        });
+    };
+
+    BeJsDocument childDoc;
+    ASSERT_TRUE(readWithClassNames(childKey, childDoc));
+
+    // EC property names are preserved, but class-id columns come out as dot-separated class names.
+    EXPECT_STREQ(childKey.GetInstanceId().ToHexStr().c_str(), childDoc["ECInstanceId"].asCString());
+    EXPECT_STREQ("TestSchema.P", childDoc["ECClassId"].asCString());
+    EXPECT_STREQ("child", childDoc["S"].asCString());
+    EXPECT_STREQ(parentKey.GetInstanceId().ToHexStr().c_str(), childDoc["Parent"]["Id"].asCString());
+    EXPECT_STREQ("TestSchema.POwnsChildPs", childDoc["Parent"]["RelECClassId"].asCString());
+
+    // Without the option, the writer must reject a class-name ECClassId in Standard format.
+    {
+        BeJsDocument doc;
+        doc.From(childDoc);
+        doc["ECInstanceId"] = "0x100";
+        InstanceWriter::InsertOptions opt;
+        opt.UseInstanceIdFromJs();
+        m_ecdb.GetInstanceWriter().Reset();
+        ASSERT_EQ(BE_SQLITE_ERROR, InsertInstance(m_ecdb, doc, opt));
+    }
+
+    // With the option, the same class-name-bearing instance round-trips through Insert.
+    const ECInstanceKey copyKey(childKey.GetClassId(), ECInstanceId((uint64_t)0x100));
+    {
+        BeJsDocument doc;
+        doc.From(childDoc);
+        doc["ECInstanceId"] = "0x100";
+        InstanceWriter::InsertOptions opt;
+        opt.UseInstanceIdFromJs();
+        opt.ConvertClassIdsToClassNames(true);
+        m_ecdb.GetInstanceWriter().Reset();
+        ASSERT_EQ(BE_SQLITE_DONE, InsertInstance(m_ecdb, doc, opt)) << m_ecdb.GetInstanceWriter().GetLastError().c_str();
+    }
+
+    // The re-inserted instance preserves the class-name-bearing class-id columns.
+    BeJsDocument copyDoc;
+    ASSERT_TRUE(readWithClassNames(copyKey, copyDoc));
+    EXPECT_STREQ("TestSchema.P", copyDoc["ECClassId"].asCString());
+    EXPECT_STREQ("child", copyDoc["S"].asCString());
+    EXPECT_STREQ("TestSchema.POwnsChildPs", copyDoc["Parent"]["RelECClassId"].asCString());
+
+    // Update round-trips with the option.
+    {
+        BeJsDocument doc;
+        doc.From(copyDoc);
+        doc["S"] = "updated";
+        InstanceWriter::UpdateOptions opt;
+        opt.ConvertClassIdsToClassNames(true);
+        m_ecdb.GetInstanceWriter().Reset();
+        ASSERT_EQ(BE_SQLITE_DONE, UpdateInstance(m_ecdb, doc, opt)) << m_ecdb.GetInstanceWriter().GetLastError().c_str();
+    }
+    BeJsDocument updatedDoc;
+    ASSERT_TRUE(readWithClassNames(copyKey, updatedDoc));
+    EXPECT_STREQ("updated", updatedDoc["S"].asCString());
+
+    // Delete round-trips with the option using a class-name ECClassId key.
+    {
+        BeJsDocument key;
+        key["ECInstanceId"] = "0x100";
+        key["ECClassId"] = "TestSchema.P";
+        InstanceWriter::DeleteOptions opt;
+        opt.ConvertClassIdsToClassNames(true);
+        m_ecdb.GetInstanceWriter().Reset();
+        ASSERT_EQ(BE_SQLITE_DONE, DeleteInstance(m_ecdb, key, opt)) << m_ecdb.GetInstanceWriter().GetLastError().c_str();
+    }
+    BeJsDocument deletedDoc;
+    ASSERT_FALSE(readWithClassNames(copyKey, deletedDoc));
+}
 END_ECDBUNITTESTS_NAMESPACE
