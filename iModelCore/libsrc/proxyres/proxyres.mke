@@ -33,8 +33,6 @@ always:
     CMAKE_BUILD_TYPE=Release
 %endif
 
-<<<<<<< HEAD
-=======
 # bmake links the release CRT even in DEBUG builds, so force cmake's Debug config onto /MD;
 # otherwise proxyres.lib carries a /DEFAULTLIB:MSVCRTD directive that fails links which do not
 # pass -NODEFAULTLIB:msvcrtd.lib (LNK4098 -> LNK1218), such as the gtest executables.
@@ -53,8 +51,6 @@ always:
 %else
     CMAKE_APPLE_OPTIONS=
 %endif
-
->>>>>>> 2ef8158 (Apple: fix deployment target for cmake-built libraries (#1575))
 $(o)$(libprefix)proxyres$(libext) :
     ~chdir $(vendorSrc)
     %if $(TARGET_PLATFORM)=="iOS"
@@ -72,11 +68,8 @@ $(o)$(libprefix)proxyres$(libext) :
             -DPROXYRES_BUILD_CLI=OFF \
             -DPROXYRES_BUILD_TESTS=OFF \
             -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
-<<<<<<< HEAD
-=======
             ${CMAKE_CRT_OPTIONS} \
             ${CMAKE_APPLE_OPTIONS} \
->>>>>>> 2ef8158 (Apple: fix deployment target for cmake-built libraries (#1575))
             -B $(o)
         cmake --build $(o) --config ${CMAKE_BUILD_TYPE}
     %endif
