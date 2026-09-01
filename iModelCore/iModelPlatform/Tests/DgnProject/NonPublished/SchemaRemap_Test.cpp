@@ -102,6 +102,106 @@ TEST_F(SchemaRemapTest, SchemaRemapMovePropertyWithV8LegacyImport)
     ASSERT_TRUE(testClassUpdated->GetPropertyP("MovingProperty", false));
     }
 
+TEST_F(SchemaRemapTest, UpdateCustomAttributesOnOverriddenPropertyWithV8LegacyImport)
+    {
+    SetupSeedProject();
+    ECN::ECSchemaReadContextPtr context = ECN::ECSchemaReadContext::CreateContext();
+    context->AddSchemaLocater(m_db->GetSchemaLocater());
+
+    ECSchemaPtr customAttributes;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(customAttributes, R"schema(<?xml version="1.0" encoding="utf-8" ?>
+      <ECSchema schemaName="TestCustomAttributes" alias="testca" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECCustomAttributeClass typeName="PropertyMetadata" modifier="Sealed" appliesTo="PrimitiveProperty">
+          <ECProperty propertyName="Source" typeName="string"/>
+        </ECCustomAttributeClass>
+      </ECSchema>)schema", *context));
+
+    ECSchemaPtr initialSchema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(initialSchema, R"schema(<?xml version="1.0" encoding="utf-8" ?>
+      <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="BisCore" version="01.00.16" alias="bis"/>
+        <ECSchemaReference name="CoreCustomAttributes" version="01.00.03" alias="CoreCA"/>
+        <ECSchemaReference name="TestCustomAttributes" version="01.00.00" alias="testca"/>
+        <ECCustomAttributes>
+          <DynamicSchema xmlns="CoreCustomAttributes.01.00.03"/>
+        </ECCustomAttributes>
+        <ECEntityClass typeName="Device">
+          <BaseClass>bis:PhysicalElement</BaseClass>
+          <ECProperty propertyName="DryWeight" typeName="double" priority="93"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="Fastener">
+          <BaseClass>Device</BaseClass>
+          <ECProperty propertyName="DryWeight" typeName="double" priority="1009"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="Bolt">
+          <BaseClass>Fastener</BaseClass>
+        </ECEntityClass>
+      </ECSchema>)schema", *context));
+    ASSERT_EQ(SchemaStatus::Success, m_db->ImportV8LegacySchemas({ customAttributes.get(), initialSchema.get() }));
+    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges());
+
+    auto assertSharedOverrideMap = [&]()
+        {
+        Statement stmt;
+        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, R"sql(
+          SELECT COUNT(*), COUNT(DISTINCT pm.PropertyPathId), COUNT(DISTINCT pm.ColumnId)
+          FROM ec_PropertyMap pm
+            JOIN ec_Class c ON c.Id=pm.ClassId
+            JOIN ec_Schema s ON s.Id=c.SchemaId
+            JOIN ec_PropertyPath pp ON pp.Id=pm.PropertyPathId
+          WHERE s.Name='TestSchema'
+            AND c.Name IN ('Device', 'Fastener', 'Bolt')
+            AND pp.AccessString='DryWeight'
+        )sql"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_EQ(3, stmt.GetValueInt(0));
+        EXPECT_EQ(1, stmt.GetValueInt(1));
+        EXPECT_EQ(1, stmt.GetValueInt(2));
+
+        ECSqlStatement ecsql;
+        EXPECT_EQ(ECSqlStatus::Success, ecsql.Prepare(*m_db, "SELECT DryWeight FROM TestSchema.Bolt"));
+        };
+    assertSharedOverrideMap();
+
+    ECSchemaPtr updatedSchema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(updatedSchema, R"schema(<?xml version="1.0" encoding="utf-8" ?>
+      <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="BisCore" version="01.00.16" alias="bis"/>
+        <ECSchemaReference name="CoreCustomAttributes" version="01.00.03" alias="CoreCA"/>
+        <ECSchemaReference name="TestCustomAttributes" version="01.00.00" alias="testca"/>
+        <ECCustomAttributes>
+          <DynamicSchema xmlns="CoreCustomAttributes.01.00.03"/>
+        </ECCustomAttributes>
+        <ECEntityClass typeName="Device">
+          <BaseClass>bis:PhysicalElement</BaseClass>
+          <ECProperty propertyName="DryWeight" typeName="double" priority="1010">
+            <ECCustomAttributes>
+              <PropertyMetadata xmlns="TestCustomAttributes.01.00.00">
+                <Source>base-v2</Source>
+              </PropertyMetadata>
+            </ECCustomAttributes>
+          </ECProperty>
+        </ECEntityClass>
+        <ECEntityClass typeName="Fastener">
+          <BaseClass>Device</BaseClass>
+          <ECProperty propertyName="DryWeight" typeName="double" priority="1009">
+            <ECCustomAttributes>
+              <PropertyMetadata xmlns="TestCustomAttributes.01.00.00">
+                <Source>override-v2</Source>
+              </PropertyMetadata>
+            </ECCustomAttributes>
+          </ECProperty>
+        </ECEntityClass>
+        <ECEntityClass typeName="Bolt">
+          <BaseClass>Fastener</BaseClass>
+        </ECEntityClass>
+      </ECSchema>)schema", *context));
+    ASSERT_EQ(SchemaStatus::Success, m_db->ImportV8LegacySchemas({ updatedSchema.get() }));
+    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges());
+
+    assertSharedOverrideMap();
+    }
+
 TEST_F(SchemaRemapTest, DeletePropertyOverrideAndDerivedClassSimultaneously)
     {
     SetupSeedProject();
