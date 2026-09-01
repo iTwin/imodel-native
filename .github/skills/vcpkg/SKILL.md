@@ -47,6 +47,14 @@ Under `iModelCore/libsrc/<mylib>/`:
 - `vcpkg-mend.json` — list the triplet graph(s) whose union downloads all upstream source used by the consumer; the scan never compiles for the selected target, so triplets need not match the Mend host; prefer one source-superset graph, and add multiple triplets only for platform-specific downloads
 - `triplets/` — platform-specific triplet files if the defaults in `iModelCore/libsrc/` are not sufficient (see `compress/triplets/` for examples)
 
+For every Apple overlay triplet, explicitly set `VCPKG_OSX_DEPLOYMENT_TARGET`. Before creating or
+changing an `arm64-osx.cmake` or `arm64-ios.cmake` triplet, check the effective
+`MACOS_DEPLOYMENT_TARGET` or `IOS_DEPLOYMENT_TARGET` used by BentleyBuild. Their public defaults are
+defined in [`$(SrcRoot)bsicommon/PublicSDK/ApplyToolSet_CLang.mki`](../../../../bsicommon/PublicSDK/ApplyToolSet_CLang.mki),
+but build strategies may override them. Mirror the effective build value, not the product's
+official OS support floor. Omitting this setting lets vcpkg inherit the host SDK's deployment
+target and can produce objects that are too new to link into BentleyBuild outputs.
+
 > **Check whether the library links cleanly into Windows DEBUG builds.** Some libraries fail to
 > link into Windows DEBUG unless their debug artifact is made release-CRT-compatible — either by
 > forcing release-only triplets (`set(VCPKG_BUILD_TYPE release)`) or by fixing up the vcpkg Debug
@@ -277,9 +285,19 @@ may not run at all.
    - Update the matching entry in `overrides`
    - Re-run the [platform coverage audit](#auditing-platform-coverage): a new upstream version can
      add a platform-conditional download that the consumer's `vcpkg-mend.json` triplets miss.
-2. If the new version requires a newer port registry, update `baseline` in
-   `iModelCore/libsrc/<consumer>/vcpkg-configuration.json`.
-3. No changes to `.mke` or `.PartFile.xml` files are needed — the next build will pick
+2. **Audit every vcpkg consumer graph, not only the library's own manifest.** Search all
+   `iModelCore/libsrc/**/vcpkg.json` files for the port name and old version. Inspect both
+   `dependencies` and `overrides`: consumers deliberately use overrides to pin transitive ports,
+   and an explicit override takes precedence over a newer registry baseline. Update every graph
+   that should consume the new version. OpenSSL currently appears in its own, curl, and crashpad
+   graphs; zlib appears in several graphs. Apply the same check to minizip and every other port.
+3. For each affected consumer graph, ensure `vcpkg-configuration.json` uses a registry `baseline`
+   that contains the requested version. Updating one consumer's baseline does not affect any other
+   manifest directory.
+4. Resolve or install every affected graph with a triplet that activates platform-conditional
+   dependencies; use each consumer's `vcpkg-mend.json` triplets as the starting point. Search again
+   for the old version and do not finish while a relevant manifest still pins it.
+5. No changes to `.mke` or `.PartFile.xml` files are needed — the next build will pick
    up the new version via the binary cache or a fresh build.
 
 ---

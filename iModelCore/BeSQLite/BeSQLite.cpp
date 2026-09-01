@@ -6687,6 +6687,34 @@ DbResult Db::SetBusyTimeout(int ms) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+DbResult Db::QueryForeignKeyEnforcement(bool& enabled) const {
+    if (!m_dbFile)
+        return BE_SQLITE_ERROR_NOTOPEN;
+
+    int currentState = 0;
+    const auto rc = static_cast<DbResult>(sqlite3_db_config(GetSqlDb(), SQLITE_DBCONFIG_ENABLE_FKEY, -1, &currentState));
+    if (rc == BE_SQLITE_OK)
+        enabled = currentState != 0;
+    return rc;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult Db::SetForeignKeyEnforcement(bool enabled) const {
+    if (!m_dbFile)
+        return BE_SQLITE_ERROR_NOTOPEN;
+
+    int currentState = 0;
+    const auto rc = static_cast<DbResult>(sqlite3_db_config(GetSqlDb(), SQLITE_DBCONFIG_ENABLE_FKEY, enabled ? 1 : 0, &currentState));
+    if (rc != BE_SQLITE_OK)
+        return rc;
+    return (currentState != 0) == enabled ? BE_SQLITE_OK : BE_SQLITE_ERROR;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 DbResult DbFile::SetBusyTimeout(int ms) {
     // sqlite will clear any existing busy handler as their can be only one per connection.
     if (m_retry.IsValid())

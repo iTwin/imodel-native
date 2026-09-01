@@ -20,13 +20,24 @@
         <SubPart LibType="Static" PartName="Compress" PartFile="iModelCore\libsrc\compress\Zlib"/>
         <SubPart LibType="Static" PartName="proxyres" PartFile="iModelCore\libsrc\proxyres\proxyres"/>
         <SubPart PartName="google_re2"  PartFile="iModelCore/libsrc/google_re2/google_re2" />
-        <SubPart PartName="BeCurl" PartFile="iModelCore\libsrc\curl\BeCurl"/>
-        <SubPart PartName="Library" PartFile="iModelCore\libsrc\openssl\BeOpenSSL"/>
-        <SubPart PartName="napi-lib" PartFile="node-addon-api/node-addon-api" />
+        <SubPart PartName="BeSQLitePlatformDependencies-Default" />
+        <SubPart PartName="BeSQLitePlatformDependencies-Static" />
         <Bindings>
             <Libs>Delivery/$(libprefix)iTwinSQLite$(libext)</Libs>
             <Assemblies>Delivery/$(libprefix)iTwinSQLite$(shlibext)</Assemblies>
         </Bindings>
+    </Part>
+
+    <Part Name="BeSQLitePlatformDependencies-Default" OnlyPlatforms="x86,x64,WinRT*,Android*,iOS*">
+        <SubPart PartName="BeCurl" PartFile="iModelCore\libsrc\curl\BeCurl"/>
+        <SubPart PartName="Library" PartFile="iModelCore\libsrc\openssl\BeOpenSSL"/>
+        <SubPart PartName="napi-lib" PartFile="node-addon-api/node-addon-api" />
+    </Part>
+
+    <Part Name="BeSQLitePlatformDependencies-Static" OnlyPlatforms="Linux*,MacOS*">
+        <SubPart LibType="Static" PartName="BeCurl" PartFile="iModelCore\libsrc\curl\BeCurl"/>
+        <SubPart LibType="Static" PartName="Library" PartFile="iModelCore\libsrc\openssl\BeOpenSSL"/>
+        <SubPart LibType="Static" PartName="napi-lib" PartFile="node-addon-api/node-addon-api" />
     </Part>
 
     <Part Name="ITwinDaemon" BentleyBuildMakeFile="ITwinDaemon.mke">
