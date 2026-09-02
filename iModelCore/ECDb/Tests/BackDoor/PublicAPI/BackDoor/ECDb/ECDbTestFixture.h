@@ -91,7 +91,7 @@ private:
         {
     private:
         bmap<BeFileName, BeFileName> m_seedFilePathsBySchemaFileName;
-        bmap<Utf8String, BeFileName> m_seedFilePathsBySchemaXml;
+        bmap<Utf8String, BeFileName> m_seedFilePathsBySchemaHash;
 
         //not copyable
         SeedECDbManager(SeedECDbManager const&) = delete;
@@ -119,24 +119,30 @@ private:
             return ret.first->second;
             }
 
-        bool TryGetForXml(BeFileName& seedPath, Utf8StringCR schemaXml) const
+        bool HasHash(Utf8StringCR schemaHash) const { return m_seedFilePathsBySchemaHash.find(schemaHash) != m_seedFilePathsBySchemaHash.end(); }
+
+        bool TryGetForHash(BeFileName& seedPath, Utf8StringCR schemaHash) const
             {
-            auto it = m_seedFilePathsBySchemaXml.find(schemaXml);
-            if (it == m_seedFilePathsBySchemaXml.end())
+            auto it = m_seedFilePathsBySchemaHash.find(schemaHash);
+            if (it == m_seedFilePathsBySchemaHash.end() || it->second.IsEmpty())
                 return false;
 
             seedPath = it->second;
             return true;
             }
 
-        BeFileNameCR AddForXml(Utf8StringCR schemaXml, BeFileNameCR seedPath)
+        void AddHash(Utf8StringCR schemaHash)
             {
-            BeAssert(m_seedFilePathsBySchemaXml.find(schemaXml) == m_seedFilePathsBySchemaXml.end());
-            auto ret = m_seedFilePathsBySchemaXml.insert(bpair<Utf8String, BeFileName>(schemaXml, seedPath));
-            return ret.first->second;
+            BeAssert(!HasHash(schemaHash));
+            m_seedFilePathsBySchemaHash.insert(bpair<Utf8String, BeFileName>(schemaHash, BeFileName()));
             }
 
-        size_t GetXmlSeedCount() const { return m_seedFilePathsBySchemaXml.size(); }
+        void SetSeedForHash(Utf8StringCR schemaHash, BeFileNameCR seedPath)
+            {
+            auto it = m_seedFilePathsBySchemaHash.find(schemaHash);
+            BeAssert(it != m_seedFilePathsBySchemaHash.end() && it->second.IsEmpty());
+            it->second = seedPath;
+            }
         };
 
     static bool s_isInitialized;

@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #include "PublicAPI/BackDoor/ECDb/ECDbTestFixture.h"
 #include "PublicAPI/BackDoor/ECDb/TestHelper.h"
+#include <Bentley/md5.h>
 #include <cstdlib>
 
 USING_NAMESPACE_BENTLEY_EC
@@ -117,31 +118,53 @@ BentleyStatus ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, SchemaItem const& 
         }
 
     BeAssert(schema.GetType() == SchemaItem::Type::String);
+    MD5 md5;
+    Utf8String schemaHash = md5(schema.GetXmlString());
     BeFileName seedFilePath;
-    if (!SeedECDbs().TryGetForXml(seedFilePath, schema.GetXmlString()))
+    if (SeedECDbs().TryGetForHash(seedFilePath, schemaHash))
+        return CloneECDb(ecdbFileName, seedFilePath, ecdbParam) == BE_SQLITE_OK ? SUCCESS : ERROR;
+
+    auto createSchemaDb = [&](BeFileName& filePath, Utf8CP fileName) -> BentleyStatus
         {
-        Utf8PrintfString seedFileName("seed_string_schema_%" PRIu64 ".ecdb", static_cast<uint64_t>(SeedECDbs().GetXmlSeedCount()));
-        ECDb seedECDb;
-        if (BE_SQLITE_OK != CreateECDb(seedECDb, seedFileName.c_str()))
+        ECDb ecdb;
+        if (BE_SQLITE_OK != CreateECDb(ecdb, fileName))
             return ERROR;
 
-        if (SUCCESS != TestHelper(seedECDb).ImportSchema(schema, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade))
+        if (SUCCESS != TestHelper(ecdb).ImportSchema(schema, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade))
             {
-            seedECDb.AbandonChanges();
+            ecdb.AbandonChanges();
             return ERROR;
             }
 
-        if (BE_SQLITE_OK != seedECDb.SaveChanges())
+        if (BE_SQLITE_OK != ecdb.SaveChanges())
             {
-            seedECDb.AbandonChanges();
+            ecdb.AbandonChanges();
             return ERROR;
             }
 
-        seedFilePath.AssignUtf8(seedECDb.GetDbFileName());
-        seedECDb.CloseDb();
-        SeedECDbs().AddForXml(schema.GetXmlString(), seedFilePath);
+        filePath.AssignUtf8(ecdb.GetDbFileName());
+        ecdb.CloseDb();
+        return SUCCESS;
+        };
+
+    if (!SeedECDbs().HasHash(schemaHash))
+        {
+        BeFileName ecdbPath;
+        if (SUCCESS != createSchemaDb(ecdbPath, ecdbFileName))
+            return ERROR;
+
+        if (BE_SQLITE_OK != m_ecdb.OpenBeSQLiteDb(ecdbPath, ecdbParam))
+            return ERROR;
+
+        SeedECDbs().AddHash(schemaHash);
+        return SUCCESS;
         }
 
+    Utf8PrintfString seedFileName("seed_string_schema_%s.ecdb", schemaHash.c_str());
+    if (SUCCESS != createSchemaDb(seedFilePath, seedFileName.c_str()))
+        return ERROR;
+
+    SeedECDbs().SetSeedForHash(schemaHash, seedFilePath);
     return CloneECDb(ecdbFileName, seedFilePath, ecdbParam) == BE_SQLITE_OK ? SUCCESS : ERROR;
     }
 
@@ -291,7 +314,8 @@ DbResult ECDbTestFixture::CloneECDb(ECDbR clone, Utf8CP cloneFileName, BeFileNam
 DbResult ECDbTestFixture::CloneECDb(ECDbR clone, BeFileNameCR cloneFilePath, BeFileNameCR seedFilePath, ECDb::OpenParams const& openParams)
     {
     BeFileName::CreateNewDirectory(BeFileName::GetDirectoryName(cloneFilePath).c_str());
-    BeFileName::BeCopyFile(seedFilePath, cloneFilePath);
+    if (BeFileName::BeCopyFile(seedFilePath, cloneFilePath) != BeFileNameStatus::Success)
+        return BE_SQLITE_ERROR;
 
     //clone Change cache file
     BeFileName seedChangeCachePath = ECDb::GetDefaultChangeCachePath(seedFilePath.GetNameUtf8().c_str());
@@ -299,8 +323,8 @@ DbResult ECDbTestFixture::CloneECDb(ECDbR clone, BeFileNameCR cloneFilePath, BeF
     if (cloneChangeCachePath.DoesPathExist() && cloneChangeCachePath.BeDeleteFile() != BeFileNameStatus::Success)
         return BE_SQLITE_ERROR;
 
-    if (seedChangeCachePath.DoesPathExist())
-        BeFileName::BeCopyFile(seedChangeCachePath, cloneChangeCachePath);
+    if (seedChangeCachePath.DoesPathExist() && BeFileName::BeCopyFile(seedChangeCachePath, cloneChangeCachePath) != BeFileNameStatus::Success)
+        return BE_SQLITE_ERROR;
 
     return clone.OpenBeSQLiteDb(cloneFilePath, openParams);
     }
