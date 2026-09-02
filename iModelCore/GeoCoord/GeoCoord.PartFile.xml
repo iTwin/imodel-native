@@ -10,7 +10,6 @@
 
     <Part Name="GeoCoord" BentleyBuildMakeFile="BaseGeoCoord/GeoCoord.mke">
         <SubPart PartName="csmapStatic"             PartFile="iModelCore/libsrc/csmap/csmap" />
-        <SubPart PartName="BeJsonCpp"               PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" />
         <SubPart PartName="BeRapidJson"             PartFile="iModelCore/Bentley/Bentley" />
         <SubPart PartName="PugiXml"                 PartFile="iModelCore/libsrc/pugixml/pugixml" />
         <SubPart PartName="GeoCoordHeaderFiles" />
@@ -59,12 +58,22 @@
 
     <!-- Define a gtest program to run the tests -->
     <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=GeoCoordTests -dTEST_COLLECTION_PRODUCT=GeoCoord-Tests -dGUNITTEST_NTLIBS=Urlmon.lib" OnlyPlatforms="x86,x64,Linux*,MacOS*">
-         <SubProduct ProductName="GeoCoord-Tests"/>
-         <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+         <SubPart PartName="Gtest-Dynamic" />
+         <SubPart PartName="Gtest-Static" />
         <Bindings>
             <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/GeoCoordTests/Assemblies/*</Files>
             <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/GeoCoordTests/Assets" />
         </Bindings>
+    </Part>
+
+    <Part Name="Gtest-Dynamic" OnlyPlatforms="x86,x64">
+        <SubProduct ProductName="GeoCoord-Tests" LibType="Dynamic" />
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest" LibType="Dynamic" />
+    </Part>
+
+    <Part Name="Gtest-Static" OnlyPlatforms="Linux*,MacOS*">
+        <SubProduct ProductName="GeoCoord-Tests" LibType="Static" />
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest" LibType="Static" />
     </Part>
 
     <Product Name="GeoCoord-Gtest">
@@ -73,7 +82,7 @@
         <Directories DirectoryListName="GeoCoordGTestsDir"/>
     </Product>
 
-    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=GeoCoord-GTest -dGTEST_NAME=GeoCoordTests -dGTEST_EXTRA_ARGS=--timeout=-1" OnlyPlatforms="x86,x64,Linux*">
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=GeoCoord-GTest -dGTEST_NAME=GeoCoordTests -dGTEST_EXTRA_ARGS=--timeout=-1" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="GeoCoord-GTest"/>
         <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
         <Bindings>
@@ -116,12 +125,22 @@
 
     <!-- Define a gtest program to run the tests -->
     <Part Name="GtestExtensive" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=GeoCoordExtensiveTests -dTEST_COLLECTION_PRODUCT=GeoCoord-ExtensiveTests -dGUNITTEST_NTLIBS=Urlmon.lib" OnlyPlatforms="x86,x64,Linux*,MacOS*">
-         <SubProduct ProductName="GeoCoord-ExtensiveTests"/>
-         <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+         <SubPart PartName="GtestExtensive-Dynamic" />
+         <SubPart PartName="GtestExtensive-Static" />
         <Bindings>
             <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/GeoCoordExtensiveTests/Assemblies/*</Files>
             <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/GeoCoordExtensiveTests/Assets" />
         </Bindings>
+    </Part>
+
+    <Part Name="GtestExtensive-Dynamic" OnlyPlatforms="x86,x64">
+        <SubProduct ProductName="GeoCoord-ExtensiveTests" LibType="Dynamic" />
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest" LibType="Dynamic" />
+    </Part>
+
+    <Part Name="GtestExtensive-Static" OnlyPlatforms="Linux*,MacOS*">
+        <SubProduct ProductName="GeoCoord-ExtensiveTests" LibType="Static" />
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest" LibType="Static" />
     </Part>
 
     <Product Name="GeoCoord-ExtensiveGTest">

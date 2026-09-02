@@ -4,6 +4,8 @@
 *--------------------------------------------------------------------------------------------*/
 #include "PublicAPI/BackDoor/ECDb/ECDbTestFixture.h"
 #include "PublicAPI/BackDoor/ECDb/TestHelper.h"
+#include <Bentley/md5.h>
+#include <cstdlib>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -23,10 +25,10 @@ SchemaItem operator"" _schema(const char* s, size_t n) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Json::Value operator"" _json(const char* s, size_t n) {
-    Json::Value json;
-    Json::Reader reader;
-    EXPECT_TRUE(reader.Parse(s, json, false));
+BeJsDocument operator"" _json(const char* s, size_t n) {
+    BeJsDocument json;
+    json.Parse(s);
+    EXPECT_FALSE(json.hasParseError());
     return json;
 }
 
@@ -116,28 +118,54 @@ BentleyStatus ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, SchemaItem const& 
         }
 
     BeAssert(schema.GetType() == SchemaItem::Type::String);
-    BeFileName ecdbPath;
-    {
-    ECDb ecdb;
-    if (BE_SQLITE_OK != CreateECDb(ecdb, ecdbFileName))
+    MD5 md5;
+    Utf8String schemaHash = md5(schema.GetXmlString());
+    BeFileName seedFilePath;
+    if (SeedECDbs().TryGetForHash(seedFilePath, schemaHash))
+        return CloneECDb(ecdbFileName, seedFilePath, ecdbParam) == BE_SQLITE_OK ? SUCCESS : ERROR;
+
+    auto createSchemaDb = [&](BeFileName& filePath, Utf8CP fileName) -> BentleyStatus
         {
-        //EXPECT_TRUE(false) << "Creating test ECDb failed (" << ecdbFileName << ")";
-        return ERROR;
+        ECDb ecdb;
+        if (BE_SQLITE_OK != CreateECDb(ecdb, fileName))
+            return ERROR;
+
+        if (SUCCESS != TestHelper(ecdb).ImportSchema(schema, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade))
+            {
+            ecdb.AbandonChanges();
+            return ERROR;
+            }
+
+        if (BE_SQLITE_OK != ecdb.SaveChanges())
+            {
+            ecdb.AbandonChanges();
+            return ERROR;
+            }
+
+        filePath.AssignUtf8(ecdb.GetDbFileName());
+        ecdb.CloseDb();
+        return SUCCESS;
+        };
+
+    if (!SeedECDbs().HasHash(schemaHash))
+        {
+        BeFileName ecdbPath;
+        if (SUCCESS != createSchemaDb(ecdbPath, ecdbFileName))
+            return ERROR;
+
+        if (BE_SQLITE_OK != m_ecdb.OpenBeSQLiteDb(ecdbPath, ecdbParam))
+            return ERROR;
+
+        SeedECDbs().AddHash(schemaHash);
+        return SUCCESS;
         }
 
-    if (SUCCESS != TestHelper(ecdb).ImportSchema(schema, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade))
-        {
-        //EXPECT_TRUE(false) << "Importing schema failed.";
-        ecdb.AbandonChanges();
+    Utf8PrintfString seedFileName("seed_string_schema_%s.ecdb", schemaHash.c_str());
+    if (SUCCESS != createSchemaDb(seedFilePath, seedFileName.c_str()))
         return ERROR;
-        }
 
-    ecdbPath.AssignUtf8(ecdb.GetDbFileName());
-    ecdb.SaveChanges();
-    }
-
-    //reopen the file after creating and importing the schema
-    return BE_SQLITE_OK == m_ecdb.OpenBeSQLiteDb(ecdbPath, ecdbParam) ? SUCCESS : ERROR;
+    SeedECDbs().SetSeedForHash(schemaHash, seedFilePath);
+    return CloneECDb(ecdbFileName, seedFilePath, ecdbParam) == BE_SQLITE_OK ? SUCCESS : ERROR;
     }
 
 //---------------------------------------------------------------------------------------
@@ -286,12 +314,17 @@ DbResult ECDbTestFixture::CloneECDb(ECDbR clone, Utf8CP cloneFileName, BeFileNam
 DbResult ECDbTestFixture::CloneECDb(ECDbR clone, BeFileNameCR cloneFilePath, BeFileNameCR seedFilePath, ECDb::OpenParams const& openParams)
     {
     BeFileName::CreateNewDirectory(BeFileName::GetDirectoryName(cloneFilePath).c_str());
-    BeFileName::BeCopyFile(seedFilePath, cloneFilePath);
+    if (BeFileName::BeCopyFile(seedFilePath, cloneFilePath) != BeFileNameStatus::Success)
+        return BE_SQLITE_ERROR;
 
     //clone Change cache file
     BeFileName seedChangeCachePath = ECDb::GetDefaultChangeCachePath(seedFilePath.GetNameUtf8().c_str());
-    if (seedChangeCachePath.DoesPathExist())
-        BeFileName::BeCopyFile(seedChangeCachePath, ECDb::GetDefaultChangeCachePath(cloneFilePath.GetNameUtf8().c_str()));
+    BeFileName cloneChangeCachePath = ECDb::GetDefaultChangeCachePath(cloneFilePath.GetNameUtf8().c_str());
+    if (cloneChangeCachePath.DoesPathExist() && cloneChangeCachePath.BeDeleteFile() != BeFileNameStatus::Success)
+        return BE_SQLITE_ERROR;
+
+    if (seedChangeCachePath.DoesPathExist() && BeFileName::BeCopyFile(seedChangeCachePath, cloneChangeCachePath) != BeFileNameStatus::Success)
+        return BE_SQLITE_ERROR;
 
     return clone.OpenBeSQLiteDb(cloneFilePath, openParams);
     }
@@ -481,6 +514,34 @@ BentleyStatus ECDbTestFixture::GetInstances(bvector<ECN::IECInstancePtr>& instan
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
+bool ECDbTestFixture::ExtendedTestsEnabled()
+    {
+    Utf8String setting;
+#if defined(BENTLEY_WIN32)
+    // Plain getenv is deprecated by MSVC; ConcurrentQueryMgr::Config::GetFromEnv splits the same way.
+    char* buffer = nullptr;
+    size_t count = 0;
+    if (_dupenv_s(&buffer, &count, "IMODEL_RUN_EXTENDED_TESTS") != 0 || buffer == nullptr)
+        return false;
+
+    setting.assign(buffer);
+    free(buffer);
+#else
+    char const* value = std::getenv("IMODEL_RUN_EXTENDED_TESTS");
+    if (value == nullptr)
+        return false;
+
+    setting.assign(value);
+#endif
+
+    setting.Trim();
+    return setting.EqualsIAscii("1") || setting.EqualsIAscii("true") || setting.EqualsIAscii("yes");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
 void ECDbTestFixture::Initialize()
     {
     if (!s_isInitialized)
@@ -561,7 +622,7 @@ bool ECDbTestFixture::IsECSqlExperimentalFeaturesEnabled(ECDbCR conn){
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Json::Value GetPropertyMap(ECDbCR ecdb, Utf8CP className) {
+BeJsDocument GetPropertyMap(ECDbCR ecdb, Utf8CP className) {
     Utf8CP sql = R"(
         SELECT json_group_array(schemaName||':' || className|| ':' || accessString || ':' || tableName || ':' || columnName)
             FROM (
@@ -580,15 +641,15 @@ Json::Value GetPropertyMap(ECDbCR ecdb, Utf8CP className) {
     auto stmt = ecdb.GetCachedStatement(sql);
     stmt->BindText(1, className, Statement::MakeCopy::No);
     EXPECT_EQ(BE_SQLITE_ROW, stmt->Step());
-    Json::Value json;
-    Json::Reader reader;
-    EXPECT_TRUE(reader.Parse(stmt->GetValueText(0), json, false));
+    BeJsDocument json;
+    json.Parse(stmt->GetValueText(0));
+    EXPECT_FALSE(json.hasParseError());
     return json;
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ECInstanceKey InsertInstance(ECDbCR ecdb, Json::Value const& v) {
+ECInstanceKey InsertInstance(ECDbCR ecdb, BeJsConst v) {
     auto className = v["className"].asString();
     auto data = v["data"];
     bvector<Utf8String> parts;
@@ -603,7 +664,7 @@ ECInstanceKey InsertInstance(ECDbCR ecdb, Json::Value const& v) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void UpdateInstance(ECDbCR ecdb, ECInstanceKey key, Json::Value const& v) {
+void UpdateInstance(ECDbCR ecdb, ECInstanceKey key, BeJsConst v) {
     auto className = v["className"].asString();
     auto data = v["data"];
     bvector<Utf8String> parts;
@@ -616,14 +677,14 @@ void UpdateInstance(ECDbCR ecdb, ECInstanceKey key, Json::Value const& v) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Json::Value ReadInstance(ECDbCR ecdb, ECInstanceKey ik, Utf8CP prop) {
+BeJsDocument ReadInstance(ECDbCR ecdb, ECInstanceKey ik, Utf8CP prop) {
     auto ecClass = ecdb.Schemas().GetClass(ik.GetClassId());
     ECSqlStatement stmt;
     Utf8String sql = SqlPrintfString("SELECT %s FROM %s WHERE ECInstanceId=%s", prop, ecClass->GetFullName(), ik.GetInstanceId().ToString().c_str()).GetUtf8CP();
     EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, sql.c_str())) << "ECSQL:" << sql.c_str();
     EXPECT_EQ(stmt.Step(), BE_SQLITE_ROW) << "ECSQL:" << sql.c_str();
     JsonECSqlSelectAdapter sl(stmt);
-    Json::Value v;
+    BeJsDocument v;
     EXPECT_EQ(SUCCESS, sl.GetRowInstance(v, ecClass->GetId()));
     return v;
 };

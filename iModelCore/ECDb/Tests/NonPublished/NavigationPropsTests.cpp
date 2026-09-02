@@ -26,6 +26,11 @@ struct ECSqlNavigationPropertyTestFixture : ECDbTestFixture
             }
     };
 
+struct ECSqlNavigationPropertyExtendedTests : ECSqlNavigationPropertyTestFixture
+    {
+    ECDB_EXTENDED_TIER_GATE(ECSqlNavigationPropertyTestFixture)
+    };
+
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -2656,7 +2661,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, JsonAdapter)
 
     JsonECSqlSelectAdapter selAdapter(selStmt);
     ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
-    Json::Value json;
+    BeJsDocument json;
     ASSERT_EQ(SUCCESS, selAdapter.GetRow(json));
 
     ECInstanceId id = ECJsonUtilities::JsonToId<ECInstanceId>(json[ECJsonUtilities::json_id()]);
@@ -2666,13 +2671,13 @@ TEST_F(ECSqlNavigationPropertyTestFixture, JsonAdapter)
     //Model1
     ASSERT_EQ(modelKey.GetInstanceId(), selStmt.GetValueNavigation<ECInstanceId>(2)) << "Model1 via plain ECSQL";
 
-    Json::Value const& modelJson = json["Model1"];
+    BeJsConst modelJson = json["Model1"];
     ASSERT_FALSE(modelJson.isNull()) << "Model1 is not expected to be null in the read ECInstance";
-    Json::Value const& modelIdJson = modelJson[ECJsonUtilities::json_navId()];
+    BeJsConst modelIdJson = modelJson[ECJsonUtilities::json_navId()];
     ASSERT_FALSE(modelIdJson.isNull()) << "Model1.Id is not expected to be null in the read ECInstance";
     ASSERT_STRCASEEQ(modelKey.GetInstanceId().ToHexStr().c_str(), modelIdJson.asCString());
 
-    Json::Value const& modelRelClassNameJson = modelJson[ECJsonUtilities::json_navRelClassName()];
+    BeJsConst modelRelClassNameJson = modelJson[ECJsonUtilities::json_navRelClassName()];
     ASSERT_FALSE(modelRelClassNameJson.isNull()) << "Model1.RelECClassId is not expected to be null in the read ECInstance";
     ASSERT_STREQ("np.ParentHasChildren1", modelRelClassNameJson.asCString());
     }
@@ -2683,13 +2688,13 @@ TEST_F(ECSqlNavigationPropertyTestFixture, JsonAdapter)
     ASSERT_EQ(modelKey.GetInstanceId(), selStmt.GetValueNavigation<ECInstanceId>(3, &relClassId)) << "Model2.Id via plain ECSQL";
     ASSERT_EQ(m_ecdb.Schemas().GetClassId("np", "ParentHasChildren2"), relClassId) << "Model2.RelECClassId via plain ECSQL";
 
-    Json::Value const& modelJson = json["Model2"];
+    BeJsConst modelJson = json["Model2"];
     ASSERT_FALSE(modelJson.isNull()) << "Model2 is not expected to be null in the read ECInstance";
-    Json::Value const& modelIdJson = modelJson[ECJsonUtilities::json_navId()];
+    BeJsConst modelIdJson = modelJson[ECJsonUtilities::json_navId()];
     ASSERT_FALSE(modelIdJson.isNull()) << "Model2.Id is not expected to be null in the read ECInstance";
     ASSERT_STRCASEEQ(modelKey.GetInstanceId().ToHexStr().c_str(), modelIdJson.asCString());
 
-    Json::Value const& modelRelClassNameJson = modelJson[ECJsonUtilities::json_navRelClassName()];
+    BeJsConst modelRelClassNameJson = modelJson[ECJsonUtilities::json_navRelClassName()];
     ASSERT_FALSE(modelRelClassNameJson.isNull()) << "Model2.RelECClassId is not expected to be null in the read ECInstance";
     ASSERT_STREQ("np.ParentHasChildren2", modelRelClassNameJson.asCString());
     }
@@ -2920,7 +2925,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, JoinedTable)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlNavigationPropertyTestFixture, MultiplicityPermutations)
+TEST_F(ECSqlNavigationPropertyExtendedTests, MultiplicityPermutations)
     {
     enum class Multiplicity { Zero, One, GreaterThanOne, Many };
     std::array<Multiplicity, 4> multiplicities = { Multiplicity::Zero, Multiplicity::One, Multiplicity::GreaterThanOne, Multiplicity::Many };
