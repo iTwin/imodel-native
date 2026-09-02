@@ -198,9 +198,25 @@ FORWARD_NAPI_EXPORT("get_instance_data")
 FORWARD_NAPI_EXPORT("set_instance_data")
 #endif
 
-#ifdef NAPI_EXPERIMENTAL
+#if NAPI_VERSION >= 7
 FORWARD_NAPI_EXPORT("is_detached_arraybuffer")
 FORWARD_NAPI_EXPORT("detach_arraybuffer")
+#endif
+
+#if NAPI_VERSION >= 8
+FORWARD_NAPI_EXPORT("add_async_cleanup_hook")
+FORWARD_NAPI_EXPORT("check_object_type_tag")
+FORWARD_NAPI_EXPORT("object_freeze")
+FORWARD_NAPI_EXPORT("object_seal")
+FORWARD_NAPI_EXPORT("remove_async_cleanup_hook")
+FORWARD_NAPI_EXPORT("type_tag_object")
+#endif
+
+#if NAPI_VERSION >= 9
+FORWARD_EXPORT("node_api_create_syntax_error")
+FORWARD_EXPORT("node_api_get_module_file_name")
+FORWARD_EXPORT("node_api_symbol_for")
+FORWARD_EXPORT("node_api_throw_syntax_error")
 #endif
 
 #else
@@ -349,6 +365,19 @@ napi_ref_threadsafe_function(napi_env env, napi_threadsafe_function func){ retur
 
 #endif  // NAPI_VERSION >= 4
 
+#if NAPI_VERSION >= 8
+
+NAPI_EXTERN napi_status napi_add_async_cleanup_hook(
+    napi_env env,
+    napi_async_cleanup_hook hook,
+    void* arg,
+    napi_async_cleanup_hook_handle* remove_handle){ return napi_ok; }
+
+NAPI_EXTERN napi_status napi_remove_async_cleanup_hook(
+    napi_async_cleanup_hook_handle remove_handle){ return napi_ok; }
+
+#endif  // NAPI_VERSION >= 8
+
 
 NAPI_EXTERN napi_status
 napi_get_last_error_info(napi_env env,
@@ -395,6 +424,12 @@ NAPI_EXTERN napi_status napi_create_string_utf16(napi_env env,
 NAPI_EXTERN napi_status napi_create_symbol(napi_env env,
                                            napi_value description,
                                            napi_value* result){ return napi_ok; }
+#if NAPI_VERSION >= 9
+NAPI_EXTERN napi_status node_api_symbol_for(napi_env env,
+                                            const char* utf8description,
+                                            size_t length,
+                                            napi_value* result){ return napi_ok; }
+#endif  // NAPI_VERSION >= 9
 NAPI_EXTERN napi_status napi_create_function(napi_env env,
                                              const char* utf8name,
                                              size_t length,
@@ -413,6 +448,13 @@ NAPI_EXTERN napi_status napi_create_range_error(napi_env env,
                                                 napi_value code,
                                                 napi_value msg,
                                                 napi_value* result){ return napi_ok; }
+#if NAPI_VERSION >= 9
+NAPI_EXTERN napi_status node_api_create_syntax_error(
+    napi_env env,
+    napi_value code,
+    napi_value msg,
+    napi_value* result){ return napi_ok; }
+#endif  // NAPI_VERSION >= 9
 
 // Methods to get the native napi_value from Primitive type
 NAPI_EXTERN napi_status napi_typeof(napi_env env,
@@ -672,6 +714,11 @@ NAPI_EXTERN napi_status napi_throw_type_error(napi_env env,
 NAPI_EXTERN napi_status napi_throw_range_error(napi_env env,
                                          const char* code,
                                          const char* msg){ return napi_ok; }
+#if NAPI_VERSION >= 9
+NAPI_EXTERN napi_status node_api_throw_syntax_error(napi_env env,
+                                                    const char* code,
+                                                    const char* msg){ return napi_ok; }
+#endif  // NAPI_VERSION >= 9
 NAPI_EXTERN napi_status napi_is_error(napi_env env,
                                       napi_value value,
                                       bool* result){ return napi_ok; }
@@ -831,7 +878,7 @@ NAPI_EXTERN napi_status napi_get_instance_data(napi_env env,
                                                void** data){ return napi_ok; }
 #endif  // NAPI_VERSION >= 6
 
-#ifdef NAPI_EXPERIMENTAL
+#if NAPI_VERSION >= 7
 // ArrayBuffer detaching
 NAPI_EXTERN napi_status napi_detach_arraybuffer(napi_env env,
                                                 napi_value arraybuffer){ return napi_ok; }
@@ -839,7 +886,31 @@ NAPI_EXTERN napi_status napi_detach_arraybuffer(napi_env env,
 NAPI_EXTERN napi_status napi_is_detached_arraybuffer(napi_env env,
                                                      napi_value value,
                                                      bool* result){ return napi_ok; }
-#endif  // NAPI_EXPERIMENTAL
+#endif  // NAPI_VERSION >= 7
+
+#if NAPI_VERSION >= 8
+// Type tagging
+NAPI_EXTERN napi_status napi_type_tag_object(napi_env env,
+                                             napi_value value,
+                                             const napi_type_tag* type_tag){ return napi_ok; }
+
+NAPI_EXTERN napi_status napi_check_object_type_tag(
+    napi_env env,
+    napi_value value,
+    const napi_type_tag* type_tag,
+    bool* result){ return napi_ok; }
+
+NAPI_EXTERN napi_status napi_object_freeze(napi_env env,
+                                           napi_value object){ return napi_ok; }
+
+NAPI_EXTERN napi_status napi_object_seal(napi_env env,
+                                         napi_value object){ return napi_ok; }
+#endif  // NAPI_VERSION >= 8
+
+#if NAPI_VERSION >= 9
+NAPI_EXTERN napi_status node_api_get_module_file_name(napi_env env,
+                                                      const char** result){ return napi_ok; }
+#endif  // NAPI_VERSION >= 9
 
 EXTERN_C_END
 #endif

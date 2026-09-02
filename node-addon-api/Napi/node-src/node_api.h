@@ -30,6 +30,7 @@ struct uv_loop_s;  // Forward declaration.
 
 typedef napi_value (*napi_addon_register_func)(napi_env env,
                                                napi_value exports);
+typedef int32_t (*node_api_addon_get_api_version_func)();
 
 typedef struct napi_module {
   int nm_version;
@@ -43,69 +44,41 @@ typedef struct napi_module {
 
 #define NAPI_MODULE_VERSION  1
 
-#if defined(_MSC_VER)
-#pragma section(".CRT$XCU", read)
-#define NAPI_C_CTOR(fn)                                                     \
-  static void __cdecl fn(void);                                             \
-  __declspec(dllexport, allocate(".CRT$XCU")) void(__cdecl * fn##_)(void) = \
-      fn;                                                                   \
-  static void __cdecl fn(void)
-#else
-#define NAPI_C_CTOR(fn)                              \
-  static void fn(void) __attribute__((constructor)); \
-  static void fn(void)
-#endif
-
-#define NAPI_MODULE_X(modname, regfunc, priv, flags)                  \
-  EXTERN_C_START                                                      \
-    static napi_module _module =                                      \
-    {                                                                 \
-      NAPI_MODULE_VERSION,                                            \
-      flags,                                                          \
-      __FILE__,                                                       \
-      regfunc,                                                        \
-      #modname,                                                       \
-      priv,                                                           \
-      {0},                                                            \
-    };                                                                \
-    NAPI_C_CTOR(_register_ ## modname) {                              \
-      napi_module_register(&_module);                                 \
-    }                                                                 \
-  EXTERN_C_END
-
 #define NAPI_MODULE_INITIALIZER_X(base, version)                               \
   NAPI_MODULE_INITIALIZER_X_HELPER(base, version)
 #define NAPI_MODULE_INITIALIZER_X_HELPER(base, version) base##version
 
 #ifdef __wasm32__
-#define NAPI_WASM_INITIALIZER                                                  \
-  NAPI_MODULE_INITIALIZER_X(napi_register_wasm_v, NAPI_MODULE_VERSION)
-#define NAPI_MODULE(modname, regfunc)                                          \
-  EXTERN_C_START                                                               \
-  NAPI_MODULE_EXPORT napi_value NAPI_WASM_INITIALIZER(napi_env env,            \
-                                                      napi_value exports) {    \
-    return regfunc(env, exports);                                              \
-  }                                                                            \
-  EXTERN_C_END
+#define NAPI_MODULE_INITIALIZER_BASE napi_register_wasm_v
 #else
-#define NAPI_MODULE(modname, regfunc)                                 \
-  NAPI_MODULE_X(modname, regfunc, NULL, 0)  // NOLINT (readability/null_usage)
+#define NAPI_MODULE_INITIALIZER_BASE napi_register_module_v
 #endif
 
-#define NAPI_MODULE_INITIALIZER_BASE napi_register_module_v
+#define NODE_API_MODULE_GET_API_VERSION_BASE node_api_module_get_api_version_v
 
-#define NAPI_MODULE_INITIALIZER                                       \
-  NAPI_MODULE_INITIALIZER_X(NAPI_MODULE_INITIALIZER_BASE,             \
-      NAPI_MODULE_VERSION)
+#define NAPI_MODULE_INITIALIZER                                                \
+  NAPI_MODULE_INITIALIZER_X(NAPI_MODULE_INITIALIZER_BASE, NAPI_MODULE_VERSION)
 
-#define NAPI_MODULE_INIT()                                            \
-  EXTERN_C_START                                                      \
-  NAPI_MODULE_EXPORT napi_value                                       \
-  NAPI_MODULE_INITIALIZER(napi_env env, napi_value exports);          \
-  EXTERN_C_END                                                        \
-  NAPI_MODULE(NODE_GYP_MODULE_NAME, NAPI_MODULE_INITIALIZER)          \
-  napi_value NAPI_MODULE_INITIALIZER(napi_env env,                    \
-                                     napi_value exports)
+#define NODE_API_MODULE_GET_API_VERSION                                        \
+  NAPI_MODULE_INITIALIZER_X(NODE_API_MODULE_GET_API_VERSION_BASE,              \
+                            NAPI_MODULE_VERSION)
+
+#define NAPI_MODULE_INIT()                                                     \
+  EXTERN_C_START                                                               \
+  NAPI_MODULE_EXPORT int32_t NODE_API_MODULE_GET_API_VERSION() {               \
+    return NAPI_VERSION;                                                       \
+  }                                                                            \
+  NAPI_MODULE_EXPORT napi_value NAPI_MODULE_INITIALIZER(napi_env env,          \
+                                                        napi_value exports);   \
+  EXTERN_C_END                                                                 \
+  napi_value NAPI_MODULE_INITIALIZER(napi_env env, napi_value exports)
+
+#define NAPI_MODULE(modname, regfunc)                                          \
+  NAPI_MODULE_INIT() { return regfunc(env, exports); }
+
+// Deprecated. Use NAPI_MODULE.
+#define NAPI_MODULE_X(modname, regfunc, priv, flags)                           \
+  NAPI_MODULE(modname, regfunc)
 
 EXTERN_C_START
 
@@ -263,12 +236,12 @@ NAPI_EXTERN napi_status napi_remove_async_cleanup_hook(
 
 #endif  // NAPI_VERSION >= 8
 
-#ifdef NAPI_EXPERIMENTAL
+#if NAPI_VERSION >= 9
 
 NAPI_EXTERN napi_status
 node_api_get_module_file_name(napi_env env, const char** result);
 
-#endif  // NAPI_EXPERIMENTAL
+#endif  // NAPI_VERSION >= 9
 
 EXTERN_C_END
 

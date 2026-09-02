@@ -5,6 +5,7 @@
 #pragma once
 
 #include <map>
+#include <memory>
 #include <string>
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/DgnDb.h>
@@ -31,10 +32,57 @@ USING_NAMESPACE_BENTLEY_EC
 #   error napi exceptions are not defined
 #endif
 
-// Per N-API docs: Call this on a reference that is declared as static data, to prevent its destructor
-// from running at program shutdown time, which would attempt to reset the reference when the environment is no longer valid.
-#define SET_CONSTRUCTOR(t) Constructor() = Napi::Persistent(t); Constructor().SuppressDestruct();
-#define DEFINE_CONSTRUCTOR static Napi::FunctionReference& Constructor() { static Napi::FunctionReference s_ctor; return s_ctor; }
+namespace IModelJsNative {
+
+class AddonContext final {
+private:
+    Napi::Env m_env;
+    intptr_t m_mainThreadId;
+    std::map<void const*, Napi::FunctionReference> m_constructors;
+
+    static AddonContext*& CurrentContext() {
+        static thread_local AddonContext* s_context = nullptr;
+        return s_context;
+    }
+
+public:
+    explicit AddonContext(Napi::Env env) : m_env(env), m_mainThreadId(BeThreadUtilities::GetCurrentThreadId()) {}
+    ~AddonContext() {
+        if (CurrentContext() == this)
+            CurrentContext() = nullptr;
+    }
+
+    static void Initialize(Napi::Env env) {
+        auto context = std::make_unique<AddonContext>(env);
+        env.SetInstanceData(context.get());
+        CurrentContext() = context.release();
+    }
+
+    static AddonContext& Get(Napi::Env env) {
+        auto* context = env.GetInstanceData<AddonContext>();
+        if (nullptr == context)
+            throw Napi::Error::New(env, "iModelJsNative addon context is not initialized");
+        return *context;
+    }
+
+    static AddonContext* GetCurrent() { return CurrentContext(); }
+    Napi::Env& Env() { return m_env; }
+    intptr_t GetMainThreadId() const { return m_mainThreadId; }
+    Napi::FunctionReference& GetConstructor(void const* key) { return m_constructors[key]; }
+};
+
+} // namespace IModelJsNative
+
+#define SET_CONSTRUCTOR(t) \
+    do { \
+        auto&& constructorValue = (t); \
+        Constructor(constructorValue.Env()) = Napi::Persistent(constructorValue); \
+    } while (false);
+#define DEFINE_CONSTRUCTOR \
+    static Napi::FunctionReference& Constructor(Napi::Env env) { \
+        static uint8_t s_constructorKey; \
+        return IModelJsNative::AddonContext::Get(env).GetConstructor(&s_constructorKey); \
+    }
 
 #define THROW_JS_TYPE_EXCEPTION(str) BeNapi::ThrowJsTypeException(info.Env(), str);
 #define THROW_JS_IMODEL_NATIVE_EXCEPTION(env, str, status) BeNapi::ThrowJsException(env, str, (int)status, IModelJsNativeErrorKeyHelper::GetITwinError(status));
@@ -590,9 +638,18 @@ public:
     static BeJsDocument ExecuteTest(DgnDbR, Utf8StringCR testName, Utf8StringCR params);
     static NativeLogging::CategoryLogger GetNativeLogger();
 
-    static Napi::Env& Env() { static Napi::Env s_env(nullptr); return s_env; }
-    static intptr_t& MainThreadId() {static intptr_t s_mainThreadId; return s_mainThreadId;}
-    static bool IsMainThread() { return BeThreadUtilities::GetCurrentThreadId() == MainThreadId(); }
+    static Napi::Env& Env() {
+        auto* context = AddonContext::GetCurrent();
+        if (nullptr != context)
+            return context->Env();
+
+        static thread_local Napi::Env s_nullEnv(nullptr);
+        return s_nullEnv;
+    }
+    static bool IsMainThread() {
+        auto* context = AddonContext::GetCurrent();
+        return nullptr != context && BeThreadUtilities::GetCurrentThreadId() == context->GetMainThreadId();
+    }
     static bool IsJsExecutionDisabled();
 
     static void StepAsync(Napi::Function& callback, Statement& stmt);

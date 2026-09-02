@@ -5,7 +5,7 @@
 #pragma once
 
 #define NODE_ADDON_API_DISABLE_DEPRECATED
-#define NAPI_VERSION 5
+#define NAPI_VERSION 9
 
 // the /clr compiler does not support mutex. If we're using managed compile, don't include <mutex>
 #if defined (_WIN32) && defined(_MANAGED)

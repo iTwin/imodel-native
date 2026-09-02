@@ -409,7 +409,7 @@ public:
             return false;
 
         Napi::HandleScope scope(val.Env());
-        return val.As<Napi::Object>().InstanceOf(Constructor().Value());
+        return val.As<Napi::Object>().InstanceOf(Constructor(val.Env()).Value());
     }
 
     Napi::Value CreateDb(NapiInfoCR info) {
@@ -767,7 +767,7 @@ public:
         if (!val.IsObject())
             return false;
         Napi::HandleScope scope(val.Env());
-        return val.As<Napi::Object>().InstanceOf(Constructor().Value());
+        return val.As<Napi::Object>().InstanceOf(Constructor(val.Env()).Value());
     }
 
     void useOpenParams(Db::OpenParams& params, BeJsValue args) {
@@ -987,7 +987,7 @@ struct NativeECSchemaXmlContext : BeObjectWrap<NativeECSchemaXmlContext>
             if (!val.IsObject())
                 return false;
             Napi::Object obj = val.As<Napi::Object>();
-            return obj.InstanceOf(Constructor().Value());
+            return obj.InstanceOf(Constructor(val.Env()).Value());
             }
 
         ECN::ECSchemaReadContextPtr GetContext() { return m_context; }
@@ -1184,7 +1184,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             return false;
 
         Napi::HandleScope scope(val.Env());
-        return val.As<Napi::Object>().InstanceOf(Constructor().Value());
+        return val.As<Napi::Object>().InstanceOf(Constructor(val.Env()).Value());
         }
 
     // Throws a C++ exception if m_dgndb is null.
@@ -3542,7 +3542,7 @@ struct NativeGeoServices : BeObjectWrap<NativeGeoServices>
             return false;
 
         Napi::HandleScope scope(val.Env());
-        return val.As<Napi::Object>().InstanceOf(Constructor().Value());
+        return val.As<Napi::Object>().InstanceOf(Constructor(val.Env()).Value());
         }
 
     static Napi::Value GetGeographicCRSInterpretation(NapiInfoCR info)
@@ -3729,7 +3729,7 @@ struct NativeChangedElementsECDb : BeObjectWrap<NativeChangedElementsECDb>
                 return false;
 
             Napi::HandleScope scope(val.Env());
-            return val.As<Napi::Object>().InstanceOf(Constructor().Value());
+            return val.As<Napi::Object>().InstanceOf(Constructor(val.Env()).Value());
             }
         ECDbR GetECDb() { return m_ecdb; }
 
@@ -3959,7 +3959,7 @@ public:
             return false;
 
         Napi::HandleScope scope(val.Env());
-        return val.As<Napi::Object>().InstanceOf(Constructor().Value());
+        return val.As<Napi::Object>().InstanceOf(Constructor(val.Env()).Value());
         }
 
     //  Create projections
@@ -3995,7 +3995,7 @@ public:
             env,
             new std::shared_ptr<ECSqlBinderLifetime>(lifetime),
             [](Napi::Env, std::shared_ptr<ECSqlBinderLifetime>* value) { delete value; });
-        return Constructor().New({Napi::External<IECSqlBinder>::New(env, &binder), Napi::External<ECDb>::New(env, const_cast<ECDb*>(&ecdb)), Napi::External<ECSqlStatement>::New(env, const_cast<ECSqlStatement*>(ecSqlStatement)), lifetimeArg});
+        return Constructor(env).New({Napi::External<IECSqlBinder>::New(env, &binder), Napi::External<ECDb>::New(env, const_cast<ECDb*>(&ecdb)), Napi::External<ECSqlStatement>::New(env, const_cast<ECSqlStatement*>(ecSqlStatement)), lifetimeArg});
         }
 
     Napi::Value BindNull(NapiInfoCR info)
@@ -4353,7 +4353,7 @@ struct NativeECSqlColumnInfo : BeObjectWrap<NativeECSqlColumnInfo>
                 return false;
 
             Napi::HandleScope scope(val.Env());
-            return val.As<Napi::Object>().InstanceOf(Constructor().Value());
+            return val.As<Napi::Object>().InstanceOf(Constructor(val.Env()).Value());
             }
 
         //  Create projections
@@ -4381,7 +4381,7 @@ struct NativeECSqlColumnInfo : BeObjectWrap<NativeECSqlColumnInfo>
 
         static Napi::Object New(Napi::Env const& env, ECSqlColumnInfo const& colInfo)
             {
-            return Constructor().New({Napi::External<ECSqlColumnInfo>::New(env, const_cast<ECSqlColumnInfo*>(&colInfo))});
+            return Constructor(env).New({Napi::External<ECSqlColumnInfo>::New(env, const_cast<ECSqlColumnInfo*>(&colInfo))});
             }
 
         Napi::Value GetType(NapiInfoCR info)
@@ -4610,7 +4610,7 @@ public:
             return false;
 
         Napi::HandleScope scope(val.Env());
-        return val.As<Napi::Object>().InstanceOf(Constructor().Value());
+        return val.As<Napi::Object>().InstanceOf(Constructor(val.Env()).Value());
         }
 
     //  Create projections
@@ -4646,7 +4646,7 @@ public:
 
     static Napi::Object New(Napi::Env const& env, IECSqlValue const& val, ECDbCR ecdb)
         {
-        return Constructor().New({Napi::External<IECSqlValue>::New(env, const_cast<IECSqlValue*>(&val)), Napi::External<ECDb>::New(env, const_cast<ECDb*>(&ecdb))});
+        return Constructor(env).New({Napi::External<IECSqlValue>::New(env, const_cast<IECSqlValue*>(&val)), Napi::External<ECDb>::New(env, const_cast<ECDb*>(&ecdb))});
         }
 
     Napi::Value GetColumnInfo(NapiInfoCR info)
@@ -4907,7 +4907,7 @@ struct NativeECSqlValueIterator : BeObjectWrap<NativeECSqlValueIterator>
                 return false;
 
             Napi::HandleScope scope(val.Env());
-            return val.As<Napi::Object>().InstanceOf(Constructor().Value());
+            return val.As<Napi::Object>().InstanceOf(Constructor(val.Env()).Value());
             }
 
         //  Create projections
@@ -4925,7 +4925,7 @@ struct NativeECSqlValueIterator : BeObjectWrap<NativeECSqlValueIterator>
 
         static Napi::Object New(Napi::Env const& env, IECSqlValueIterable const& iterable, ECDb const& ecdb)
             {
-            return Constructor().New({Napi::External<IECSqlValueIterable>::New(env, const_cast<IECSqlValueIterable*>(&iterable)), Napi::External<ECDb>::New(env, const_cast<ECDb*>(&ecdb))});
+            return Constructor(env).New({Napi::External<IECSqlValueIterable>::New(env, const_cast<IECSqlValueIterable*>(&iterable)), Napi::External<ECDb>::New(env, const_cast<ECDb*>(&ecdb))});
             }
 
         // A JS iterator expects the initial state of an iterator to be before the first element.
@@ -6718,7 +6718,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             return false;
 
         Napi::HandleScope scope(val.Env());
-        return val.As<Napi::Object>().InstanceOf(Constructor().Value());
+        return val.As<Napi::Object>().InstanceOf(Constructor(val.Env()).Value());
         }
 
     //  Create projections
@@ -7226,7 +7226,7 @@ public:
             return false;
 
         Napi::HandleScope scope(val.Env());
-        return val.As<Napi::Object>().InstanceOf(Constructor().Value());
+        return val.As<Napi::Object>().InstanceOf(Constructor(val.Env()).Value());
         }
 
     void Dispose(NapiInfoCR info)
@@ -7943,6 +7943,7 @@ static Napi::Value imageSourceFromImageBuffer(NapiInfoCR info) {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 static Napi::Object registerModule(Napi::Env env, Napi::Object exports) {
+    AddonContext::Initialize(env);
     Napi::HandleScope scope(env);
 
 #if (defined(BENTLEYCONFIG_OS_WINDOWS) && !defined(BENTLEYCONFIG_OS_WINRT)) || defined(BENTLEYCONFIG_OS_LINUX) || defined(BENTLEYCONFIG_OS_APPLE_MACOS)

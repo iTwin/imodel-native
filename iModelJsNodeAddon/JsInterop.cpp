@@ -400,8 +400,6 @@ using namespace IModelJsNative;
 // @bsimethod
 //---------------------------------------------------------------------------------------
 void JsInterop::Initialize(BeFileNameCR addonDllDir, Napi::Env env, BeFileNameCR tempDir) {
-    Env() = env;
-    MainThreadId() = BeThreadUtilities::GetCurrentThreadId();
     s_addonDllDir = addonDllDir;
     s_tempDir = tempDir;
 

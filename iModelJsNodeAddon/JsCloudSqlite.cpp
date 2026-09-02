@@ -90,7 +90,7 @@ struct JsCloudCache : CloudCache, Napi::ObjectWrap<JsCloudCache> {
         NativeLogging::Logging::LogMessage("CloudSqlite", sev, msg.c_str());
     }
 
-    static bool IsInstance(Napi::Object val) { return val.InstanceOf(Constructor().Value()); }
+    static bool IsInstance(Napi::Object val) { return val.InstanceOf(Constructor(val.Env()).Value()); }
     static void Init(Napi::Env env, Napi::Object exports) {
         static constexpr Utf8CP className = "CloudCache";
         Napi::HandleScope scope(env);
@@ -691,7 +691,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
             THROW_JS_BE_SQLITE_EXCEPTION(Env(), stat.m_error.c_str(), (DbResult)stat.m_status);
     }
 
-    static bool IsInstance(Napi::Object val) { return val.InstanceOf(Constructor().Value()); }
+    static bool IsInstance(Napi::Object val) { return val.InstanceOf(Constructor(val.Env()).Value()); }
     Napi::Value IsConnected(NapiInfoCR info) { return Napi::Boolean::New(Env(), IsContainerConnected()); }
     Napi::Value IsWriteable(NapiInfoCR info) { return Napi::Boolean::New(Env(), m_writeable); }
     Napi::Value IsPublic(NapiInfoCR info) { return Napi::Boolean::New(Env(), m_isPublic); }
