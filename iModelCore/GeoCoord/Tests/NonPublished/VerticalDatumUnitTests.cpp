@@ -30,9 +30,9 @@ class VerticalDatumUnitTests : public ::testing::Test
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(VerticalDatumUnitTests, VerticalTransformBasicTest)
 {
-    Json::Value nullJson;
+    BeJsDocument nullJson;
     nullJson["target"] = "WGS84";
-    nullJson["nullTransform"] = Json::nullValue;
+    nullJson["nullTransform"].SetNull();
 
     GeoCoordinates::VerticalTransformPtr nullTransform =
         GeoCoordinates::VerticalTransform::CreateFromJson(nullJson, "NullTransformTest", "WGS84");
@@ -48,7 +48,7 @@ TEST_F(VerticalDatumUnitTests, VerticalTransformBasicTest)
     EXPECT_NEAR(0.0, elevationOffset, 1.0e-12);
     EXPECT_EQ(elevationType, GeoCoordinates::VerticalTransform::ElevationType::Offset);
 
-    Json::Value offsetJson;
+    BeJsDocument offsetJson;
     offsetJson["target"] = "NAVD88 height";
     offsetJson["verticalOffset"]["offset"] = 1.5;
     offsetJson["verticalOffset"]["units"] = "meter";
@@ -73,7 +73,7 @@ TEST_F(VerticalDatumUnitTests, VerticalTransformBasicTest)
 
     EXPECT_TRUE(offsetTransform->IsEqualTo(*offsetTransform.get()));
 
-    Json::Value offsetJsonDifferent;
+    BeJsDocument offsetJsonDifferent;
     offsetJsonDifferent["target"] = "NAVD88 height";
     offsetJsonDifferent["verticalOffset"]["offset"] = 2.5;
     offsetJsonDifferent["verticalOffset"]["units"] = "meter";
@@ -89,12 +89,11 @@ TEST_F(VerticalDatumUnitTests, VerticalTransformBasicTest)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(VerticalDatumUnitTests, VerticalTransformGeoidGridFileTest)
 {
-    Json::Value geoidJson;
+    BeJsDocument geoidJson;
     geoidJson["target"] = "WGS84";
     geoidJson["geoidSeparationGrid"]["direction"] = "Direct";
     geoidJson["geoidSeparationGrid"]["format"] = "GRD";
-    geoidJson["geoidSeparationGrid"]["files"] = Json::arrayValue;
-    geoidJson["geoidSeparationGrid"]["files"].append("./World/WW15MGH.GRD");
+    geoidJson["geoidSeparationGrid"]["files"].appendValue() = "./World/WW15MGH.GRD";
 
     GeoCoordinates::VerticalTransformPtr geoidTransform =
         GeoCoordinates::VerticalTransform::CreateFromJson(geoidJson, "EGM96 height2", "WGS84");
@@ -116,12 +115,11 @@ TEST_F(VerticalDatumUnitTests, VerticalTransformGeoidGridFileTest)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(VerticalDatumUnitTests, VerticalTransformGeoidGridFileMissingTest)
 {
-    Json::Value missingGeoidJson;
+    BeJsDocument missingGeoidJson;
     missingGeoidJson["target"] = "WGS84";
     missingGeoidJson["geoidSeparationGrid"]["direction"] = "Direct";
     missingGeoidJson["geoidSeparationGrid"]["format"] = "GRD";
-    missingGeoidJson["geoidSeparationGrid"]["files"] = Json::arrayValue;
-    missingGeoidJson["geoidSeparationGrid"]["files"].append("./World/DefinitelyDoesNotExist.GRD");
+    missingGeoidJson["geoidSeparationGrid"]["files"].appendValue() = "./World/DefinitelyDoesNotExist.GRD";
 
     GeoCoordinates::VerticalTransformPtr missingGeoidTransform =
     GeoCoordinates::VerticalTransform::CreateFromJson(missingGeoidJson, "MissingGridTransform", "WGS84");
@@ -140,12 +138,11 @@ TEST_F(VerticalDatumUnitTests, VerticalTransformGeoidGridFileMissingTest)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(VerticalDatumUnitTests, VerticalTransformPathInfoBasicTest)
 {
-    Json::Value pathJson;
+    BeJsDocument pathJson;
     pathJson["target"] = "WGS84";
-    pathJson["path"] = Json::arrayValue;
-    pathJson["path"].append("NAVD88 height");
-    pathJson["path"].append("EGM96 height");
-    pathJson["path"].append("WGS84");
+    pathJson["path"].appendValue() = "NAVD88 height";
+    pathJson["path"].appendValue() = "EGM96 height";
+    pathJson["path"].appendValue() = "WGS84";
 
     GeoCoordinates::VerticalTransformPathInfoPtr pathInfo =
         GeoCoordinates::VerticalTransformPathInfo::CreateFromJson(pathJson, "PathInfoTest");
@@ -160,7 +157,7 @@ TEST_F(VerticalDatumUnitTests, VerticalTransformPathInfoBasicTest)
     EXPECT_TRUE(0 == path[1].CompareToI("EGM96 height"));
     EXPECT_TRUE(0 == path[2].CompareToI("WGS84"));
 
-    Json::Value roundTripJson;
+    BeJsDocument roundTripJson;
     EXPECT_EQ(pathInfo->ToJson(roundTripJson), SUCCESS);
     EXPECT_TRUE(roundTripJson.isMember("target"));
     EXPECT_TRUE(roundTripJson.isMember("path"));
@@ -172,7 +169,8 @@ TEST_F(VerticalDatumUnitTests, VerticalTransformPathInfoBasicTest)
     ASSERT_TRUE(samePathInfo.IsValid());
     EXPECT_TRUE(*pathInfo == *samePathInfo);
 
-    Json::Value differentPathJson = pathJson;
+    BeJsDocument differentPathJson;
+    differentPathJson.From(pathJson);
     differentPathJson["path"][0] = "NAVD88 height";
     differentPathJson["path"][1] = "NGVD29 height";
     differentPathJson["path"][2] = "WGS84";
@@ -191,7 +189,7 @@ TEST_F(VerticalDatumUnitTests, VerticalTransformPathInfoBasicTest)
 TEST_F(VerticalDatumUnitTests, VerticalDatumFromJsonVsSetFromJsonWrapperTest)
 {
     // Build the raw vertical datum content (no "verticalCRS" wrapper)
-    Json::Value datumContent;
+    BeJsDocument datumContent;
     datumContent["crsName"]   = "TestGeoid";
     datumContent["datumName"] = "TestGeoidDatum";
     datumContent["type"]      = "GEOID";
@@ -201,11 +199,11 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumFromJsonVsSetFromJsonWrapperTest)
     datumContent["extent"]["northEast"]["latitude"]  =  90.0;
     datumContent["extent"]["northEast"]["longitude"] =  180.0;
     datumContent["transforms"][0]["target"]       = "WGS84";
-    datumContent["transforms"][0]["nullTransform"] = Json::nullValue;
+    datumContent["transforms"][0]["nullTransform"].SetNull();
 
     // Build the "verticalCRS"-wrapped version expected by SetVerticalDatumFromJson
-    Json::Value wrappedJson;
-    wrappedJson["verticalCRS"] = datumContent;
+    BeJsDocument wrappedJson;
+    wrappedJson["verticalCRS"].From(datumContent);
 
     GeoCoordinates::BaseGCSPtr gcs = GeoCoordinates::BaseGCS::CreateGCS("LL84");
     ASSERT_TRUE(gcs.IsValid());
@@ -247,7 +245,7 @@ TEST_F(VerticalDatumUnitTests, FromVerticalJsonAcceptsIncompleteDefinitionsByIde
     ASSERT_TRUE(seedGcs.IsValid());
     ASSERT_EQ(seedGcs->SetVerticalDatumFromName("WGS84"), SUCCESS);
 
-    Json::Value knownVerticalJson;
+    BeJsDocument knownVerticalJson;
     ASSERT_EQ(seedGcs->ToVerticalJson(knownVerticalJson), SUCCESS);
     ASSERT_TRUE(knownVerticalJson.isMember("crsName"));
     ASSERT_TRUE(knownVerticalJson.isMember("epsg"));
@@ -259,7 +257,7 @@ TEST_F(VerticalDatumUnitTests, FromVerticalJsonAcceptsIncompleteDefinitionsByIde
 
     // Case 1: only crsName
     {
-    Json::Value verticalJson;
+    BeJsDocument verticalJson;
     verticalJson["crsName"] = knownCrsName;
 
     GeoCoordinates::BaseGCSPtr gcs = GeoCoordinates::BaseGCS::CreateGCS("LL84");
@@ -270,7 +268,7 @@ TEST_F(VerticalDatumUnitTests, FromVerticalJsonAcceptsIncompleteDefinitionsByIde
 
     // Case 2: only epsg
     {
-    Json::Value verticalJson;
+    BeJsDocument verticalJson;
     verticalJson["epsg"] = knownEpsg;
 
     GeoCoordinates::BaseGCSPtr gcs = GeoCoordinates::BaseGCS::CreateGCS("LL84");
@@ -281,7 +279,7 @@ TEST_F(VerticalDatumUnitTests, FromVerticalJsonAcceptsIncompleteDefinitionsByIde
 
     // Case 3: only legacy id
     {
-    Json::Value verticalJson;
+    BeJsDocument verticalJson;
     verticalJson["id"] = "ELLIPSOID";
 
     GeoCoordinates::BaseGCSPtr gcs = GeoCoordinates::BaseGCS::CreateGCS("LL84");
@@ -299,7 +297,7 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoCreateFromJsonRejectsIncompleteD
 {
     // Only crsName
     {
-    Json::Value jsonValue;
+    BeJsDocument jsonValue;
     jsonValue["crsName"] = "WGS84";
 
     StatusInt status = SUCCESS;
@@ -312,7 +310,7 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoCreateFromJsonRejectsIncompleteD
 
     // Only epsg
     {
-    Json::Value jsonValue;
+    BeJsDocument jsonValue;
     jsonValue["epsg"] = 4979;
 
     StatusInt status = SUCCESS;
@@ -325,7 +323,7 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoCreateFromJsonRejectsIncompleteD
 
     // Only id (legacy property used by BaseGCS::FromVerticalJson, not by VerticalDatumInfo)
     {
-    Json::Value jsonValue;
+    BeJsDocument jsonValue;
     jsonValue["id"] = "ELLIPSOID";
 
     StatusInt status = SUCCESS;
@@ -342,7 +340,7 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoCreateFromJsonRejectsIncompleteD
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(VerticalDatumUnitTests, VerticalDatumInfoJsonRoundTripTest)
 {
-    Json::Value inputJson;
+    BeJsDocument inputJson;
     inputJson["crsName"] = "TestRoundTripDatum";
     inputJson["datumName"] = "Test Round Trip Datum";
     inputJson["epsg"] = 12345;
@@ -357,11 +355,10 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoJsonRoundTripTest)
     inputJson["extent"]["northEast"]["latitude"] = 10.0;
     inputJson["extent"]["northEast"]["longitude"] = 20.0;
     inputJson["transforms"][0]["target"] = "WGS84";
-    inputJson["transforms"][0]["nullTransform"] = Json::nullValue;
+    inputJson["transforms"][0]["nullTransform"].SetNull();
     inputJson["transformPaths"][0]["target"] = "WGS84";
-    inputJson["transformPaths"][0]["path"] = Json::arrayValue;
-    inputJson["transformPaths"][0]["path"].append("TestRoundTripDatum");
-    inputJson["transformPaths"][0]["path"].append("WGS84");
+    inputJson["transformPaths"][0]["path"].appendValue() = "TestRoundTripDatum";
+    inputJson["transformPaths"][0]["path"].appendValue() = "WGS84";
 
     StatusInt status = ERROR;
     GeoCoordinates::VerticalDatumInfoPtr datumInfo =
@@ -369,7 +366,7 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoJsonRoundTripTest)
     ASSERT_TRUE(datumInfo.IsValid());
     EXPECT_EQ(status, SUCCESS);
 
-    Json::Value serializedJson;
+    BeJsDocument serializedJson;
     EXPECT_EQ(datumInfo->ToJson(serializedJson), SUCCESS);
 
     EXPECT_EQ(serializedJson["crsName"].asString(), inputJson["crsName"].asString());
@@ -404,7 +401,7 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoJsonRoundTripTest)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(VerticalDatumUnitTests, VerticalDatumInfoGettersTest)
 {
-    Json::Value inputJson;
+    BeJsDocument inputJson;
     inputJson["crsName"]    = "GetterTestDatum";
     inputJson["datumName"]  = "Getter Test Datum Name";
     inputJson["epsg"]       = 9999;
@@ -419,7 +416,7 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoGettersTest)
     inputJson["extent"]["northEast"]["latitude"]  =  45.0;
     inputJson["extent"]["northEast"]["longitude"] =  90.0;
     inputJson["transforms"][0]["target"]        = "WGS84";
-    inputJson["transforms"][0]["nullTransform"] = Json::nullValue;
+    inputJson["transforms"][0]["nullTransform"].SetNull();
     inputJson["transforms"][1]["target"]        = "EGM96 height";
     inputJson["transforms"][1]["verticalOffset"]["offset"] = 2.5;
     inputJson["transforms"][1]["verticalOffset"]["units"]  = "Meter";
@@ -493,7 +490,7 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoGettersTest)
 TEST_F(VerticalDatumUnitTests, VerticalDatumInfoInvalidTransformTest)
 {
     // Build the valid outer part of the datum JSON (reused for every sub-case)
-    auto buildBaseDatum = [](Json::Value& json)
+    auto buildBaseDatum = [](BeJsValue json)
         {
         json["crsName"]   = "InvalidTransformDatum";
         json["datumName"] = "Invalid Transform Datum";
@@ -507,9 +504,9 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoInvalidTransformTest)
 
     // --- Case 1: transform object is missing the "target" field ---
     {
-    Json::Value datumJson;
+    BeJsDocument datumJson;
     buildBaseDatum(datumJson);
-    datumJson["transforms"][0]["nullTransform"] = Json::nullValue;
+    datumJson["transforms"][0]["nullTransform"].SetNull();
     // Note: "target" is intentionally absent
 
     StatusInt status = SUCCESS;
@@ -522,9 +519,9 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoInvalidTransformTest)
 
     // --- Case 2: transforms array entry is not an object (a bare string) ---
     {
-    Json::Value datumJson;
+    BeJsDocument datumJson;
     buildBaseDatum(datumJson);
-    datumJson["transforms"].append("this is not a transform object");
+    datumJson["transforms"].appendValue() = "this is not a transform object";
 
     StatusInt status = SUCCESS;
     GeoCoordinates::VerticalDatumInfoPtr datumInfo =
@@ -536,10 +533,10 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoInvalidTransformTest)
 
     // --- Sanity: a valid transform succeeds ---
     {
-    Json::Value datumJson;
+    BeJsDocument datumJson;
     buildBaseDatum(datumJson);
     datumJson["transforms"][0]["target"]        = "WGS84";
-    datumJson["transforms"][0]["nullTransform"] = Json::nullValue;
+    datumJson["transforms"][0]["nullTransform"].SetNull();
 
     StatusInt status = ERROR;
     GeoCoordinates::VerticalDatumInfoPtr datumInfo =
@@ -558,7 +555,7 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoInvalidTransformTest)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(VerticalDatumUnitTests, VerticalDatumInfoInvalidTransformPathTest)
 {
-    auto buildBaseDatum = [](Json::Value& json)
+    auto buildBaseDatum = [](BeJsValue json)
         {
         json["crsName"]   = "PathValidationDatum";
         json["datumName"] = "Path Validation Datum";
@@ -569,17 +566,16 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoInvalidTransformPathTest)
         json["extent"]["northEast"]["latitude"]  =  90.0;
         json["extent"]["northEast"]["longitude"] =  180.0;
         json["transforms"][0]["target"]        = "WGS84";
-        json["transforms"][0]["nullTransform"] = Json::nullValue;
+        json["transforms"][0]["nullTransform"].SetNull();
         };
 
     // Case 1: transformPath target differs from last path entry.
     {
-    Json::Value jsonValue;
+    BeJsDocument jsonValue;
     buildBaseDatum(jsonValue);
     jsonValue["transformPaths"][0]["target"] = "WGS84";
-    jsonValue["transformPaths"][0]["path"] = Json::arrayValue;
-    jsonValue["transformPaths"][0]["path"].append("PathValidationDatum");
-    jsonValue["transformPaths"][0]["path"].append("EGM96 height"); // last entry intentionally mismatches target
+    jsonValue["transformPaths"][0]["path"].appendValue() = "PathValidationDatum";
+    jsonValue["transformPaths"][0]["path"].appendValue() = "EGM96 height"; // last entry intentionally mismatches target
 
     StatusInt status = SUCCESS;
     GeoCoordinates::VerticalDatumInfoPtr datumInfo =
@@ -591,12 +587,11 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoInvalidTransformPathTest)
 
     // Case 2: first path entry differs from owning vertical datum (crsName).
     {
-    Json::Value jsonValue;
+    BeJsDocument jsonValue;
     buildBaseDatum(jsonValue);
     jsonValue["transformPaths"][0]["target"] = "WGS84";
-    jsonValue["transformPaths"][0]["path"] = Json::arrayValue;
-    jsonValue["transformPaths"][0]["path"].append("SomeOtherDatum"); // first entry intentionally invalid
-    jsonValue["transformPaths"][0]["path"].append("WGS84");
+    jsonValue["transformPaths"][0]["path"].appendValue() = "SomeOtherDatum"; // first entry intentionally invalid
+    jsonValue["transformPaths"][0]["path"].appendValue() = "WGS84";
 
     StatusInt status = SUCCESS;
     GeoCoordinates::VerticalDatumInfoPtr datumInfo =
@@ -608,12 +603,11 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoInvalidTransformPathTest)
 
     // Sanity: valid transform path should be accepted.
     {
-    Json::Value jsonValue;
+    BeJsDocument jsonValue;
     buildBaseDatum(jsonValue);
     jsonValue["transformPaths"][0]["target"] = "WGS84";
-    jsonValue["transformPaths"][0]["path"] = Json::arrayValue;
-    jsonValue["transformPaths"][0]["path"].append("PathValidationDatum");
-    jsonValue["transformPaths"][0]["path"].append("WGS84");
+    jsonValue["transformPaths"][0]["path"].appendValue() = "PathValidationDatum";
+    jsonValue["transformPaths"][0]["path"].appendValue() = "WGS84";
 
     StatusInt status = ERROR;
     GeoCoordinates::VerticalDatumInfoPtr datumInfo =

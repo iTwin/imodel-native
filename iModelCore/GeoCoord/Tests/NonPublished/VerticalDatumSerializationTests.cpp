@@ -340,15 +340,15 @@ TEST_P(VerticalDatumSerializationTests, VerticalDatumSerializationTest1)
 
     if (theTestParam.m_equalToDictionaryItem)
         {
-        Json::Value resultJson1;
+        BeJsDocument resultJson1;
         status = testGCS1->ToJson(resultJson1, true);
         ASSERT_TRUE(SUCCESS == status);
 
-        Json::Value resultJson2;
+        BeJsDocument resultJson2;
         status = testGCS2->ToJson(resultJson2, true);
         ASSERT_TRUE(SUCCESS == status);
 
-        EXPECT_TRUE(0 == resultJson1.compare(resultJson2));
+        EXPECT_TRUE(resultJson1.isExactEqual(resultJson2));
         }
 }
 

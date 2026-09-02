@@ -11146,8 +11146,6 @@ StatusInt VerticalDatumDictionary::DictionaryValueExtentLatLong(DRange2d& range,
 {
     StatusInt status = ERROR;
 
-    DRange2d extent = DRange2d::NullRange();
-
     if (jval.isObject()         
         && jval.isMember("extent")
         && jval["extent"].isObject())
