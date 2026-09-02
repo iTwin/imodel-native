@@ -116,7 +116,7 @@ TEST_F(DgnDbTest, UpgradeSpatialIndexTriggers)
         "CREATE TRIGGER dgn_rtree_upd1 AFTER UPDATE OF Origin_X,Origin_Y,Origin_Z,Yaw,Pitch,Roll,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z ON bis_GeometricElement3d "
         "WHEN OLD.Origin_X IS NOT NULL AND NEW.Origin_X IS NULL BEGIN DELETE FROM dgn_SpatialIndex WHERE ElementId=OLD.ElementId;END"));
 
-    DgnDbProfileVersion const previousVersion(DGNDB_CURRENT_VERSION_Major, DGNDB_CURRENT_VERSION_Minor, DGNDB_CURRENT_VERSION_Sub1, DGNDB_CURRENT_VERSION_Sub2 - 1);
+    DgnDbProfileVersion const previousVersion(2, 0, 0, 7);
     ASSERT_EQ(BE_SQLITE_OK, rawDb.SavePropertyString(DgnProjectProperty::ProfileVersion(), previousVersion.ToJson()));
     ASSERT_EQ(BE_SQLITE_OK, rawDb.SaveChanges());
     rawDb.CloseDb();
