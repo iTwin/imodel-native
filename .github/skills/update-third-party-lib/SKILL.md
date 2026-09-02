@@ -50,6 +50,8 @@ When copying vendor source, rename files to match existing conventions (e.g. `.c
 
 ### 1. Prepare: Get the vendor source
 
+Before switching branches, read the library's top-level `README.md` under `iModelCore/libsrc/` if it exists. Its library-specific instructions are mandatory and may modify or supplement this workflow. Read it while still on `main`, because Bentley-maintained instructions do not belong on `libsrc-Vendor`.
+
 Download the exact release archive from the upstream project. Note the exact URL - you'll need it for the commit message.
 
 ### 2. Update libsrc-Vendor
@@ -112,6 +114,8 @@ git commit -m "Update <library> version in libsrc/README.md"
 ```
 
 ### 5. Create PR branch and merge libsrc-Main
+
+Before building, revisit the library's top-level `README.md` and verify that all of its integration and NuGet license metadata instructions have been completed.
 
 ```bash
 git checkout main
