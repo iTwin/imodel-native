@@ -1259,4 +1259,392 @@ TEST_F(InstanceWriterFixture, ConvertClassIdsToClassNames) {
     BeJsDocument deletedDoc;
     ASSERT_FALSE(readWithClassNames(copyKey, deletedDoc));
 }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceWriterFixture, ConvertClassIdsToClassNames_ConstraintClassIds) {
+    const auto schemaXml = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECEntityClass typeName="P">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.2.0">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="S" typeName="string" />
+            </ECEntityClass>
+            <ECRelationshipClass typeName="PRefersToPs" strength="referencing" modifier="None">
+                <ECCustomAttributes>
+                    <LinkTableRelationshipMap xmlns="ECDbMap.2.0">
+                        <CreateForeignKeyConstraints>False</CreateForeignKeyConstraints>
+                    </LinkTableRelationshipMap>
+                    <ClassMap xmlns="ECDbMap.2.0">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <Source multiplicity="(0..*)" roleLabel="1" polymorphic="true">
+                    <Class class="P"/>
+                </Source>
+                <Target multiplicity="(0..*)" roleLabel="2" polymorphic="true">
+                    <Class class="P"/>
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml";
+
+    ASSERT_EQ(SUCCESS, SetupECDb(BeTest::GetNameOfCurrentTest(), SchemaItem(schemaXml)));
+
+    // Insert the two endpoints the relationship will connect.
+    ECInstanceKey sourceKey, targetKey;
+    {
+        BeJsDocument doc;
+        doc.Parse(R"json({ "ECClassId": "TestSchema.P", "S": "source" })json");
+        InstanceWriter::InsertOptions opt;
+        opt.ConvertClassIdsToClassNames(true);
+        ASSERT_EQ(BE_SQLITE_DONE, InsertInstance(m_ecdb, doc, opt, sourceKey)) << m_ecdb.GetInstanceWriter().GetLastError().c_str();
+    }
+    {
+        BeJsDocument doc;
+        doc.Parse(R"json({ "ECClassId": "TestSchema.P", "S": "target" })json");
+        InstanceWriter::InsertOptions opt;
+        opt.ConvertClassIdsToClassNames(true);
+        ASSERT_EQ(BE_SQLITE_DONE, InsertInstance(m_ecdb, doc, opt, targetKey)) << m_ecdb.GetInstanceWriter().GetLastError().c_str();
+    }
+    m_ecdb.SaveChanges();
+
+    // A relationship instance whose ECClassId, SourceECClassId and TargetECClassId are all class *names*.
+    Utf8String relJson;
+    relJson.Sprintf(R"json({
+            "ECClassId": "TestSchema.PRefersToPs",
+            "SourceECInstanceId": "%s",
+            "SourceECClassId": "TestSchema.P",
+            "TargetECInstanceId": "%s",
+            "TargetECClassId": "TestSchema.P"
+        })json", sourceKey.GetInstanceId().ToHexStr().c_str(), targetKey.GetInstanceId().ToHexStr().c_str());
+
+    // Without the option the class-name class-id columns must be rejected in Standard format.
+    {
+        BeJsDocument doc;
+        doc.Parse(relJson);
+        InstanceWriter::InsertOptions opt;
+        m_ecdb.GetInstanceWriter().Reset();
+        ASSERT_EQ(BE_SQLITE_ERROR, InsertInstance(m_ecdb, doc, opt));
+    }
+
+    // With the option, ECClassId + SourceECClassId + TargetECClassId all resolve from class names.
+    ECInstanceKey relKey;
+    {
+        BeJsDocument doc;
+        doc.Parse(relJson);
+        InstanceWriter::InsertOptions opt;
+        opt.ConvertClassIdsToClassNames(true);
+        m_ecdb.GetInstanceWriter().Reset();
+        ASSERT_EQ(BE_SQLITE_DONE, InsertInstance(m_ecdb, doc, opt, relKey)) << m_ecdb.GetInstanceWriter().GetLastError().c_str();
+    }
+    m_ecdb.SaveChanges();
+
+    // Read the relationship back; every class-id column comes out as a dot-separated class name.
+    const auto readRel = [&](const ECInstanceKey& key, BeJsValue out) {
+        InstanceReader::Position pos(key.GetInstanceId(), key.GetClassId());
+        return m_ecdb.GetInstanceReader().Seek(pos, [&](const InstanceReader::IRowContext& row, auto) {
+            out.From(row.GetJson(JsReadOptions().SetAbbreviateBlobs(false).SetConvertClassIdsToClassNames(true).SetUseJsNames(false)));
+        });
+    };
+
+    BeJsDocument relDoc;
+    ASSERT_TRUE(readRel(relKey, relDoc));
+    EXPECT_STREQ("TestSchema.PRefersToPs", relDoc["ECClassId"].asCString());
+    EXPECT_STREQ("TestSchema.P", relDoc["SourceECClassId"].asCString());
+    EXPECT_STREQ("TestSchema.P", relDoc["TargetECClassId"].asCString());
+    EXPECT_STREQ(sourceKey.GetInstanceId().ToHexStr().c_str(), relDoc["SourceECInstanceId"].asCString());
+    EXPECT_STREQ(targetKey.GetInstanceId().ToHexStr().c_str(), relDoc["TargetECInstanceId"].asCString());
+
+    // Delete round-trips using a class-name relationship ECClassId in the key.
+    {
+        BeJsDocument doc;
+        doc.From(relDoc);
+        InstanceWriter::DeleteOptions opt;
+        opt.ConvertClassIdsToClassNames(true);
+        m_ecdb.GetInstanceWriter().Reset();
+        ASSERT_EQ(BE_SQLITE_DONE, DeleteInstance(m_ecdb, doc, opt)) << m_ecdb.GetInstanceWriter().GetLastError().c_str();
+    }
+    BeJsDocument deletedRelDoc;
+    ASSERT_FALSE(readRel(relKey, deletedRelDoc));
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceWriterFixture, JsNameConstraintClassIds) {
+    const auto schemaXml = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECEntityClass typeName="P">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.2.0">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="S" typeName="string" />
+            </ECEntityClass>
+            <ECRelationshipClass typeName="PRefersToPs" strength="referencing" modifier="None">
+                <ECCustomAttributes>
+                    <LinkTableRelationshipMap xmlns="ECDbMap.2.0">
+                        <CreateForeignKeyConstraints>False</CreateForeignKeyConstraints>
+                    </LinkTableRelationshipMap>
+                    <ClassMap xmlns="ECDbMap.2.0">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <Source multiplicity="(0..*)" roleLabel="1" polymorphic="true">
+                    <Class class="P"/>
+                </Source>
+                <Target multiplicity="(0..*)" roleLabel="2" polymorphic="true">
+                    <Class class="P"/>
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml";
+
+    ASSERT_EQ(SUCCESS, SetupECDb(BeTest::GetNameOfCurrentTest(), SchemaItem(schemaXml)));
+
+    // Insert the two endpoints using JsName input.
+    ECInstanceKey sourceKey, targetKey;
+    {
+        BeJsDocument doc;
+        doc.Parse(R"json({ "className": "TestSchema.P", "s": "source" })json");
+        InstanceWriter::InsertOptions opt;
+        opt.UseJsNames(true);
+        ASSERT_EQ(BE_SQLITE_DONE, InsertInstance(m_ecdb, doc, opt, sourceKey)) << m_ecdb.GetInstanceWriter().GetLastError().c_str();
+    }
+    {
+        BeJsDocument doc;
+        doc.Parse(R"json({ "className": "TestSchema.P", "s": "target" })json");
+        InstanceWriter::InsertOptions opt;
+        opt.UseJsNames(true);
+        ASSERT_EQ(BE_SQLITE_DONE, InsertInstance(m_ecdb, doc, opt, targetKey)) << m_ecdb.GetInstanceWriter().GetLastError().c_str();
+    }
+    m_ecdb.SaveChanges();
+
+    // Relationship in JsName format: constraint class ids arrive as class names, only UseJsNames is set.
+    Utf8String relJson;
+    relJson.Sprintf(R"json({
+            "className": "TestSchema.PRefersToPs",
+            "sourceId": "%s",
+            "sourceClassName": "TestSchema.P",
+            "targetId": "%s",
+            "targetClassName": "TestSchema.P"
+        })json", sourceKey.GetInstanceId().ToHexStr().c_str(), targetKey.GetInstanceId().ToHexStr().c_str());
+
+    ECInstanceKey relKey;
+    {
+        BeJsDocument doc;
+        doc.Parse(relJson);
+        InstanceWriter::InsertOptions opt;
+        opt.UseJsNames(true);
+        m_ecdb.GetInstanceWriter().Reset();
+        ASSERT_EQ(BE_SQLITE_DONE, InsertInstance(m_ecdb, doc, opt, relKey)) << m_ecdb.GetInstanceWriter().GetLastError().c_str();
+    }
+    m_ecdb.SaveChanges();
+
+    // Read back in JsName format; constraint class ids come out as class names.
+    const auto readRel = [&](const ECInstanceKey& key, BeJsValue out) {
+        InstanceReader::Position pos(key.GetInstanceId(), key.GetClassId());
+        return m_ecdb.GetInstanceReader().Seek(pos, [&](const InstanceReader::IRowContext& row, auto) {
+            out.From(row.GetJson(JsReadOptions()
+                .SetAbbreviateBlobs(false)
+                .SetUseJsNames(true)
+                .SetUseClassFullNameInsteadofClassName(true)));
+        });
+    };
+
+    BeJsDocument relDoc;
+    ASSERT_TRUE(readRel(relKey, relDoc));
+    EXPECT_STREQ("TestSchema:PRefersToPs", relDoc[ECN::ECJsonSystemNames::ClassFullName()].asCString());
+    EXPECT_STREQ("TestSchema:P", relDoc[ECN::ECJsonSystemNames::SourceClassName()].asCString());
+    EXPECT_STREQ("TestSchema:P", relDoc[ECN::ECJsonSystemNames::TargetClassName()].asCString());
+    EXPECT_STREQ(sourceKey.GetInstanceId().ToHexStr().c_str(), relDoc[ECN::ECJsonSystemNames::SourceId()].asCString());
+    EXPECT_STREQ(targetKey.GetInstanceId().ToHexStr().c_str(), relDoc[ECN::ECJsonSystemNames::TargetId()].asCString());
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceWriterFixture, InstanceRepository_ConvertClassIdsToClassNames) {
+    const auto schemaXml = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECEntityClass typeName="P">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.2.0">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="S" typeName="string" />
+                <ECNavigationProperty propertyName="Parent" relationshipName="POwnsChildPs" direction="Backward"/>
+            </ECEntityClass>
+            <ECRelationshipClass typeName="POwnsChildPs" strength="embedding" modifier="Sealed">
+                <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="true">
+                    <Class class="P"/>
+                </Source>
+                <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+                    <Class class="P"/>
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml";
+
+    ASSERT_EQ(SUCCESS, SetupECDb(BeTest::GetNameOfCurrentTest(), SchemaItem(schemaXml)));
+    auto& repo = m_ecdb.GetInstanceRepository();
+
+    BeJsDocument opts;
+    opts["convertClassIdsToClassNames"] = true;
+
+    // Insert a parent using EC property names and a class-name ECClassId.
+    ECInstanceKey parentKey;
+    {
+        BeJsDocument doc;
+        doc.Parse(R"json({ "ECClassId": "TestSchema.P", "S": "parent" })json");
+        ASSERT_EQ(BE_SQLITE_DONE, repo.Insert(doc, opts, JsFormat::Standard, parentKey)) << repo.GetLastError().c_str();
+    }
+
+    // Insert a child whose navigation property carries a class-name RelECClassId.
+    ECInstanceKey childKey;
+    {
+        Utf8String json;
+        json.Sprintf(R"json({ "ECClassId": "TestSchema.P", "S": "child", "Parent": { "Id": "%s", "RelECClassId": "TestSchema.POwnsChildPs" } })json",
+            parentKey.GetInstanceId().ToHexStr().c_str());
+        BeJsDocument doc;
+        doc.Parse(json);
+        ASSERT_EQ(BE_SQLITE_DONE, repo.Insert(doc, opts, JsFormat::Standard, childKey)) << repo.GetLastError().c_str();
+    }
+    m_ecdb.SaveChanges();
+
+    // Read the child back; class-id columns come out as dot-separated class names.
+    {
+        BeJsDocument childDoc;
+        ASSERT_EQ(BE_SQLITE_ROW, repo.Read(childKey, childDoc, opts, JsFormat::Standard)) << repo.GetLastError().c_str();
+        EXPECT_STREQ(childKey.GetInstanceId().ToHexStr().c_str(), childDoc["ECInstanceId"].asCString());
+        EXPECT_STREQ("TestSchema.P", childDoc["ECClassId"].asCString());
+        EXPECT_STREQ("child", childDoc["S"].asCString());
+        EXPECT_STREQ(parentKey.GetInstanceId().ToHexStr().c_str(), childDoc["Parent"]["Id"].asCString());
+        EXPECT_STREQ("TestSchema.POwnsChildPs", childDoc["Parent"]["RelECClassId"].asCString());
+    }
+
+    // Without the option the repository rejects a class-name ECClassId in Standard format.
+    {
+        BeJsDocument noOpts;
+        BeJsDocument doc;
+        doc.Parse(R"json({ "ECClassId": "TestSchema.P", "S": "orphan" })json");
+        ECInstanceKey orphanKey;
+        ASSERT_EQ(BE_SQLITE_ERROR, repo.Insert(doc, noOpts, JsFormat::Standard, orphanKey));
+    }
+
+    // Update the child through the repository using the option.
+    {
+        BeJsDocument doc;
+        doc["ECInstanceId"] = childKey.GetInstanceId().ToHexStr();
+        doc["ECClassId"] = "TestSchema.P";
+        doc["S"] = "updated";
+        ASSERT_EQ(BE_SQLITE_DONE, repo.Update(doc, opts, JsFormat::Standard)) << repo.GetLastError().c_str();
+
+        BeJsDocument childDoc;
+        ASSERT_EQ(BE_SQLITE_ROW, repo.Read(childKey, childDoc, opts, JsFormat::Standard));
+        EXPECT_STREQ("updated", childDoc["S"].asCString());
+    }
+
+    // Delete the child through the repository using a class-name ECClassId key.
+    {
+        BeJsDocument key;
+        key["ECInstanceId"] = childKey.GetInstanceId().ToHexStr();
+        key["ECClassId"] = "TestSchema.P";
+        ASSERT_EQ(BE_SQLITE_DONE, repo.Delete(key, opts, JsFormat::Standard)) << repo.GetLastError().c_str();
+
+        BeJsDocument childDoc;
+        ASSERT_EQ(BE_SQLITE_DONE, repo.Read(childKey, childDoc, opts, JsFormat::Standard));
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceWriterFixture, InstanceRepository_ConvertClassIdsToClassNames_JsNames) {
+    const auto schemaXml = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECEntityClass typeName="P">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.2.0">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="S" typeName="string" />
+                <ECNavigationProperty propertyName="Parent" relationshipName="POwnsChildPs" direction="Backward"/>
+            </ECEntityClass>
+            <ECRelationshipClass typeName="POwnsChildPs" strength="embedding" modifier="Sealed">
+                <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="true">
+                    <Class class="P"/>
+                </Source>
+                <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+                    <Class class="P"/>
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml";
+
+    ASSERT_EQ(SUCCESS, SetupECDb(BeTest::GetNameOfCurrentTest(), SchemaItem(schemaXml)));
+    auto& repo = m_ecdb.GetInstanceRepository();
+
+    BeJsDocument opts;
+    opts["convertClassIdsToClassNames"] = true;
+
+    // Insert a parent using JsName property names and a class name.
+    ECInstanceKey parentKey;
+    {
+        BeJsDocument doc;
+        doc.Parse(R"json({ "className": "TestSchema:P", "s": "parent" })json");
+        ASSERT_EQ(BE_SQLITE_DONE, repo.Insert(doc, opts, JsFormat::JsName, parentKey)) << repo.GetLastError().c_str();
+    }
+
+    // Insert a child whose navigation property carries a relClassName.
+    ECInstanceKey childKey;
+    {
+        Utf8String json;
+        json.Sprintf(R"json({ "className": "TestSchema:P", "s": "child", "parent": { "id": "%s", "relClassName": "TestSchema:POwnsChildPs" } })json",
+            parentKey.GetInstanceId().ToHexStr().c_str());
+        BeJsDocument doc;
+        doc.Parse(json);
+        ASSERT_EQ(BE_SQLITE_DONE, repo.Insert(doc, opts, JsFormat::JsName, childKey)) << repo.GetLastError().c_str();
+    }
+    m_ecdb.SaveChanges();
+
+    // Read the child back in JsName format; class-id columns surface as class names.
+    {
+        BeJsDocument childDoc;
+        ASSERT_EQ(BE_SQLITE_ROW, repo.Read(childKey, childDoc, opts, JsFormat::JsName)) << repo.GetLastError().c_str();
+        EXPECT_STREQ(childKey.GetInstanceId().ToHexStr().c_str(), childDoc["id"].asCString());
+        EXPECT_STREQ("TestSchema:P", childDoc["classFullName"].asCString());
+        EXPECT_STREQ("child", childDoc["s"].asCString());
+        EXPECT_STREQ(parentKey.GetInstanceId().ToHexStr().c_str(), childDoc["parent"]["id"].asCString());
+        EXPECT_STREQ("TestSchema:POwnsChildPs", childDoc["parent"]["relClassName"].asCString());
+    }
+
+    // Update the child through the repository using JsName names and the option.
+    {
+        BeJsDocument doc;
+        doc["id"] = childKey.GetInstanceId().ToHexStr();
+        doc["className"] = "TestSchema:P";
+        doc["s"] = "updated";
+        ASSERT_EQ(BE_SQLITE_DONE, repo.Update(doc, opts, JsFormat::JsName)) << repo.GetLastError().c_str();
+
+        BeJsDocument childDoc;
+        ASSERT_EQ(BE_SQLITE_ROW, repo.Read(childKey, childDoc, opts, JsFormat::JsName));
+        EXPECT_STREQ("updated", childDoc["s"].asCString());
+    }
+
+    // Delete the child through the repository using a JsName className key.
+    {
+        BeJsDocument key;
+        key["id"] = childKey.GetInstanceId().ToHexStr();
+        key["className"] = "TestSchema:P";
+        ASSERT_EQ(BE_SQLITE_DONE, repo.Delete(key, opts, JsFormat::JsName)) << repo.GetLastError().c_str();
+
+        BeJsDocument childDoc;
+        ASSERT_EQ(BE_SQLITE_DONE, repo.Read(childKey, childDoc, opts, JsFormat::JsName));
+    }
+}
 END_ECDBUNITTESTS_NAMESPACE
