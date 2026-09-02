@@ -6,27 +6,37 @@
     "licenseUrl": "https://connect.bentley.com/Assets/Eula/eula_en.pdf",
     "name": "CompressNuget",
     "SPDX-ID": "",
-    
+
     "sublicenses" : [
         {
         "authors": "",
         "copyright": "Igor Pavlov",
-        "description": "LZMA",
-        "homepage": "http://www.7-zip.org",
-        "licenseUrl": "http://www.7-zip.org/sdk.html",
-        "name": "LZMA",
+        "description": "LZMA SDK",
+        "homepage": "https://www.7-zip.org/",
+        "licenseUrl": "https://www.7-zip.org/sdk.html",
+        "name": "LZMA SDK",
         "SPDX-ID": "",
-        "version": ""
+        "version": "15.x"
+        },
+        {
+        "authors": "",
+        "copyright": "Igor Pavlov",
+        "description": "LZMA SDK",
+        "homepage": "https://www.7-zip.org/",
+        "licenseUrl": "https://www.7-zip.org/sdk.html",
+        "name": "LZMA SDK",
+        "SPDX-ID": "",
+        "version": "19.x"
         },
         {
         "authors": "",
         "copyright": "Google Inc.",
         "description": "Snappy",
         "homepage": "https://github.com/google/snappy",
-        "licenseUrl": "https://github.com/google/snappy/blob/master/COPYING",
+        "licenseUrl": "https://github.com/google/snappy/blob/1.2.2/COPYING",
         "name": "Snappy",
         "SPDX-ID": "SEE LICENSE IN snappy/snappy-notice.txt",
-        "version": ""
+        "version": "1.2.2"
         },
         {
         "authors": "",
@@ -36,7 +46,17 @@
         "licenseUrl": "https://zlib.net/zlib_license.html",
         "name": "Zlib",
         "SPDX-ID": "Zlib",
-        "version": "1.3.1"
+        "version": "1.3.2"
+        },
+        {
+        "authors": "Gilles Vollant and Mathias Svensson",
+        "copyright": "Gilles Vollant and Mathias Svensson",
+        "description": "A zip manipulation library built on zlib.",
+        "homepage": "https://github.com/madler/zlib/tree/v1.3.2/contrib/minizip",
+        "licenseUrl": "https://github.com/madler/zlib/blob/v1.3.2/LICENSE",
+        "name": "minizip",
+        "SPDX-ID": "Zlib",
+        "version": "1.3.2"
         }
     ]
 }
