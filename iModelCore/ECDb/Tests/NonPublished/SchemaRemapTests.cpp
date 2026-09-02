@@ -22,6 +22,11 @@ struct SchemaRemapTestFixture : public ECDbTestFixture
         BentleyStatus ImportSchemaFromFile(BeFileName const& fileName);
     };
 
+struct SchemaRemapExtendedTests : SchemaRemapTestFixture
+    {
+    ECDB_EXTENDED_TIER_GATE(SchemaRemapTestFixture)
+    };
+
 #define ASSERT_ECSQL(ECDB_OBJ, PREPARESTATUS, STEPSTATUS, ECSQL)   {\
                                                                     ECSqlStatement stmt;\
                                                                     ASSERT_EQ(PREPARESTATUS, stmt.Prepare(ECDB_OBJ, ECSQL));\
@@ -537,7 +542,7 @@ TEST_F(SchemaRemapTestFixture, MovePropertyUpInHierarchyUsingOverflowTable)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, MovePropertyUpInHierarchySimplified)
+TEST_F(SchemaRemapExtendedTests, MovePropertyUpInHierarchySimplified)
     {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -609,7 +614,7 @@ TEST_F(SchemaRemapTestFixture, MovePropertyUpInHierarchySimplified)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, MovePropertyUpInHierarchyRemoveOriginal)
+TEST_F(SchemaRemapExtendedTests, MovePropertyUpInHierarchyRemoveOriginal)
     {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -679,7 +684,7 @@ TEST_F(SchemaRemapTestFixture, MovePropertyUpInHierarchyRemoveOriginal)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, MovePropertyUpInHierarchyDeleteBeforeAddInSchema)
+TEST_F(SchemaRemapExtendedTests, MovePropertyUpInHierarchyDeleteBeforeAddInSchema)
     {
     // like previous test, but the base class comes later in the schema, so the change to "delete" the property is detected first
 
@@ -1029,7 +1034,7 @@ TEST_F(SchemaRemapTestFixture, AddNewBaseClassInMiddleMovePropertyUp)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, AddNewBaseClassInMiddleMovePropertyUpRemoveOriginal)
+TEST_F(SchemaRemapExtendedTests, AddNewBaseClassInMiddleMovePropertyUpRemoveOriginal)
     {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -1108,7 +1113,7 @@ TEST_F(SchemaRemapTestFixture, AddNewBaseClassInMiddleMovePropertyUpRemoveOrigin
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, AddNewBaseClassInMiddleMovePropertyUpReversed)
+TEST_F(SchemaRemapExtendedTests, AddNewBaseClassInMiddleMovePropertyUpReversed)
     {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -1182,7 +1187,7 @@ TEST_F(SchemaRemapTestFixture, AddNewBaseClassInMiddleMovePropertyUpReversed)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, AddNewBaseClassInMiddleMovePropertyUpRemoveOriginalReversed)
+TEST_F(SchemaRemapExtendedTests, AddNewBaseClassInMiddleMovePropertyUpRemoveOriginalReversed)
     {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -1323,7 +1328,7 @@ TEST_F(SchemaRemapTestFixture, MovePropertyToNonSharedColumn)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, MoveMultiColumnPropertyUp)
+TEST_F(SchemaRemapExtendedTests, MoveMultiColumnPropertyUp)
     {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -1404,7 +1409,7 @@ TEST_F(SchemaRemapTestFixture, MoveMultiColumnPropertyUp)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, MoveMultiColumnPropertiesUp)
+TEST_F(SchemaRemapExtendedTests, MoveMultiColumnPropertiesUp)
     {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -1603,7 +1608,7 @@ TEST_F(SchemaRemapTestFixture, MovePropertyToMixin)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, MovePropertiesInNonSharedColumns)
+TEST_F(SchemaRemapExtendedTests, MovePropertiesInNonSharedColumns)
     {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -1715,7 +1720,7 @@ TEST_F(SchemaRemapTestFixture, MovePropertiesInNonSharedColumns)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, MovePropertiesInDefaultTables)
+TEST_F(SchemaRemapExtendedTests, MovePropertiesInDefaultTables)
     {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -1896,7 +1901,7 @@ TEST_F(SchemaRemapTestFixture, ModifyAndMoveStruct)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, MovePropertyToMixinAndRemoveOriginal)
+TEST_F(SchemaRemapExtendedTests, MovePropertyToMixinAndRemoveOriginal)
     {
     SchemaItem schemaItem(R"schema(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -2660,7 +2665,7 @@ TEST_F(SchemaRemapTestFixture, InsertBaseClassHierarchyAndMovePropertyUp)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, MovePropertyFromMixin)
+TEST_F(SchemaRemapExtendedTests, MovePropertyFromMixin)
     {
     SchemaItem schemaItem(R"schema(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -2886,7 +2891,7 @@ TEST_F(SchemaRemapTestFixture, InvalidRootPropertyId)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, MoveMultiplePropertiesUp)
+TEST_F(SchemaRemapExtendedTests, MoveMultiplePropertiesUp)
     {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -3286,7 +3291,7 @@ TEST_F(SchemaRemapTestFixture, SwapColumnsWithOverflow)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, MovePropertyFromOverflowDropOverflowTable)
+TEST_F(SchemaRemapExtendedTests, MovePropertyFromOverflowDropOverflowTable)
     {
     //This is currently unsupported. The schema update will return an error and say that there is an overflow table with no data in it.
     //This is a very rare scenario that should be supported with a future update.
@@ -3362,7 +3367,7 @@ TEST_F(SchemaRemapTestFixture, MovePropertyFromOverflowDropOverflowTable)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, SwapColumnsForProperty)
+TEST_F(SchemaRemapExtendedTests, SwapColumnsForProperty)
     {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -3443,7 +3448,7 @@ TEST_F(SchemaRemapTestFixture, SwapColumnsForProperty)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, MoveMultiplePropertiesInCircle)
+TEST_F(SchemaRemapExtendedTests, MoveMultiplePropertiesInCircle)
     {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -3547,7 +3552,7 @@ TEST_F(SchemaRemapTestFixture, MoveMultiplePropertiesInCircle)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, MovePropertyToOverflowUsingDifferentIdColumn)
+TEST_F(SchemaRemapExtendedTests, MovePropertyToOverflowUsingDifferentIdColumn)
     {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -5522,7 +5527,7 @@ TEST_F(SchemaRemapTestFixture, PutSiblingsIntoHierarchy)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, PutMultipleSiblingsIntoHierarchy)
+TEST_F(SchemaRemapExtendedTests, PutMultipleSiblingsIntoHierarchy)
     {
     //Move Building and Facility classes from GeometricElement3d below CompositeElement
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
@@ -5730,7 +5735,7 @@ TEST_F(SchemaRemapTestFixture, PutSiblingsIntoHierarchyWithStruct)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, InsertBaseClassRemapSiblingsWithStruct)
+TEST_F(SchemaRemapExtendedTests, InsertBaseClassRemapSiblingsWithStruct)
     {
     //Insert a new base class "NewBase" into existing Hierarchy
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
@@ -5820,7 +5825,7 @@ TEST_F(SchemaRemapTestFixture, InsertBaseClassRemapSiblingsWithStruct)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, InsertTwoConnectedBaseClassesRemapSiblings)
+TEST_F(SchemaRemapExtendedTests, InsertTwoConnectedBaseClassesRemapSiblings)
     {
     //Insert new classes "NewBase" and "NewBase2" into existing hierarchy
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
@@ -6083,7 +6088,7 @@ TEST_F(SchemaRemapTestFixture, PutTwoClassesIntoHierarchy)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, PutSiblingsIntoHierarchyWithNestedStruct)
+TEST_F(SchemaRemapExtendedTests, PutSiblingsIntoHierarchyWithNestedStruct)
     {
     //move A and B below X, with A using a nested struct
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
@@ -6187,7 +6192,7 @@ TEST_F(SchemaRemapTestFixture, PutSiblingsIntoHierarchyWithNestedStruct)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, PutSiblingsIntoHierarchyWithPropertyOverrides)
+TEST_F(SchemaRemapExtendedTests, PutSiblingsIntoHierarchyWithPropertyOverrides)
     {
     //Siblings X and A are changed so A derives from X. Class B overrides some properties from A
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
@@ -6494,7 +6499,7 @@ TEST_F(SchemaRemapTestFixture, CreateBaseClassTurnPropertiesIntoOverrides)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, PutSiblingsWithSwappedPropertiesIntoHierarchy)
+TEST_F(SchemaRemapExtendedTests, PutSiblingsWithSwappedPropertiesIntoHierarchy)
     {
     //Siblings Duck and Fish both have a name and description but in different order. Making Fish derive from Duck requires its properties to move to the same columns.
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
@@ -6682,7 +6687,7 @@ TEST_F(SchemaRemapTestFixture, InjectBaseClassInBaseSchema)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, InjectBaseClassInBaseSchema2)
+TEST_F(SchemaRemapExtendedTests, InjectBaseClassInBaseSchema2)
     {
     //Similar to V1 but with deeper hierarchy and a new sibling class alongside class D
     //Turn hierarchy from S1:A -> S1:B -> S1:C -> S2:D -> S2:E to S1:A -> S1:B -> S1:B2 -> S1:C -> S2:D -> S2:E
@@ -6785,7 +6790,7 @@ TEST_F(SchemaRemapTestFixture, InjectBaseClassInBaseSchema2)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, InjectBaseClassInBaseSchema3)
+TEST_F(SchemaRemapExtendedTests, InjectBaseClassInBaseSchema3)
     {
     //Similar to "InjectBaseClassInBaseSchema" but different in that class "B" does not exist before the schema update, meaning
     //its properties are mapped during the update, not before it.
@@ -6869,7 +6874,7 @@ TEST_F(SchemaRemapTestFixture, InjectBaseClassInBaseSchema3)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, InjectBaseClassInBaseSchema4)
+TEST_F(SchemaRemapExtendedTests, InjectBaseClassInBaseSchema4)
     {
     //Covers the same scenario as the tests InjectBaseClassInBaseSchema1-3, but is based on classes from real
     //schemas, condensed into fewer schemas but still reflecting the actual class hierarchy encountered

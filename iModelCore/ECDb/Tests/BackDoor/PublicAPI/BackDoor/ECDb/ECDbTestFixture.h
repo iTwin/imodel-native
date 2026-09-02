@@ -91,6 +91,7 @@ private:
         {
     private:
         bmap<BeFileName, BeFileName> m_seedFilePathsBySchemaFileName;
+        bmap<Utf8String, BeFileName> m_seedFilePathsBySchemaXml;
 
         //not copyable
         SeedECDbManager(SeedECDbManager const&) = delete;
@@ -118,6 +119,24 @@ private:
             return ret.first->second;
             }
 
+        bool TryGetForXml(BeFileName& seedPath, Utf8StringCR schemaXml) const
+            {
+            auto it = m_seedFilePathsBySchemaXml.find(schemaXml);
+            if (it == m_seedFilePathsBySchemaXml.end())
+                return false;
+
+            seedPath = it->second;
+            return true;
+            }
+
+        BeFileNameCR AddForXml(Utf8StringCR schemaXml, BeFileNameCR seedPath)
+            {
+            BeAssert(m_seedFilePathsBySchemaXml.find(schemaXml) == m_seedFilePathsBySchemaXml.end());
+            auto ret = m_seedFilePathsBySchemaXml.insert(bpair<Utf8String, BeFileName>(schemaXml, seedPath));
+            return ret.first->second;
+            }
+
+        size_t GetXmlSeedCount() const { return m_seedFilePathsBySchemaXml.size(); }
         };
 
     static bool s_isInitialized;

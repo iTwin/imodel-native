@@ -147,7 +147,7 @@ struct ECDbHub {
         BeBriefcaseId m_briefcaseid;
 
     private:
-        DbResult CreateSeedFile();
+        DbResult FindSeedFile();
         BeFileName BuildECDbPath(Utf8CP name) const;
         BeBriefcaseId GetNextBriefcaseId() { return (m_briefcaseid = m_briefcaseid.GetNextBriefcaseId()); }
 
