@@ -1137,11 +1137,11 @@ TEST_F(InstanceWriterFixture, DeleteInstanceErrorHandling) {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(InstanceWriterFixture, ConvertClassIdsToClassNames) {
-    const auto schemaXml = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+    const auto schemaXml = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.04" alias="ecdbmap" />
             <ECEntityClass typeName="P">
                 <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.2.0">
+                    <ClassMap xmlns="ECDbMap.02.00.04">
                         <MapStrategy>TablePerHierarchy</MapStrategy>
                     </ClassMap>
                 </ECCustomAttributes>
@@ -1264,11 +1264,11 @@ TEST_F(InstanceWriterFixture, ConvertClassIdsToClassNames) {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(InstanceWriterFixture, ConvertClassIdsToClassNames_ConstraintClassIds) {
-    const auto schemaXml = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+    const auto schemaXml = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.04" alias="ecdbmap" />
             <ECEntityClass typeName="P">
                 <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.2.0">
+                    <ClassMap xmlns="ECDbMap.02.00.04">
                         <MapStrategy>TablePerHierarchy</MapStrategy>
                     </ClassMap>
                 </ECCustomAttributes>
@@ -1276,10 +1276,10 @@ TEST_F(InstanceWriterFixture, ConvertClassIdsToClassNames_ConstraintClassIds) {
             </ECEntityClass>
             <ECRelationshipClass typeName="PRefersToPs" strength="referencing" modifier="None">
                 <ECCustomAttributes>
-                    <LinkTableRelationshipMap xmlns="ECDbMap.2.0">
+                    <LinkTableRelationshipMap xmlns="ECDbMap.02.00.04">
                         <CreateForeignKeyConstraints>False</CreateForeignKeyConstraints>
                     </LinkTableRelationshipMap>
-                    <ClassMap xmlns="ECDbMap.2.0">
+                    <ClassMap xmlns="ECDbMap.02.00.04">
                         <MapStrategy>TablePerHierarchy</MapStrategy>
                     </ClassMap>
                 </ECCustomAttributes>
@@ -1376,22 +1376,28 @@ TEST_F(InstanceWriterFixture, ConvertClassIdsToClassNames_ConstraintClassIds) {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(InstanceWriterFixture, JsNameConstraintClassIds) {
-    const auto schemaXml = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
-            <ECEntityClass typeName="P">
+    const auto schemaXml = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.04" alias="ecdbmap" />
+            <ECEntityClass typeName="P" modifier="Abstract">
                 <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.2.0">
+                    <ClassMap xmlns="ECDbMap.02.00.04">
                         <MapStrategy>TablePerHierarchy</MapStrategy>
                     </ClassMap>
                 </ECCustomAttributes>
                 <ECProperty propertyName="S" typeName="string" />
             </ECEntityClass>
+            <ECEntityClass typeName="P1">
+                <BaseClass>P</BaseClass>
+            </ECEntityClass>
+            <ECEntityClass typeName="P2">
+                <BaseClass>P</BaseClass>
+            </ECEntityClass>
             <ECRelationshipClass typeName="PRefersToPs" strength="referencing" modifier="None">
                 <ECCustomAttributes>
-                    <LinkTableRelationshipMap xmlns="ECDbMap.2.0">
+                    <LinkTableRelationshipMap xmlns="ECDbMap.02.00.04">
                         <CreateForeignKeyConstraints>False</CreateForeignKeyConstraints>
                     </LinkTableRelationshipMap>
-                    <ClassMap xmlns="ECDbMap.2.0">
+                    <ClassMap xmlns="ECDbMap.02.00.04">
                         <MapStrategy>TablePerHierarchy</MapStrategy>
                     </ClassMap>
                 </ECCustomAttributes>
@@ -1406,18 +1412,18 @@ TEST_F(InstanceWriterFixture, JsNameConstraintClassIds) {
 
     ASSERT_EQ(SUCCESS, SetupECDb(BeTest::GetNameOfCurrentTest(), SchemaItem(schemaXml)));
 
-    // Insert the two endpoints using JsName input.
+    // Endpoints are of different concrete classes so the constraint class ids genuinely vary.
     ECInstanceKey sourceKey, targetKey;
     {
         BeJsDocument doc;
-        doc.Parse(R"json({ "className": "TestSchema.P", "s": "source" })json");
+        doc.Parse(R"json({ "className": "TestSchema.P1", "s": "source" })json");
         InstanceWriter::InsertOptions opt;
         opt.UseJsNames(true);
         ASSERT_EQ(BE_SQLITE_DONE, InsertInstance(m_ecdb, doc, opt, sourceKey)) << m_ecdb.GetInstanceWriter().GetLastError().c_str();
     }
     {
         BeJsDocument doc;
-        doc.Parse(R"json({ "className": "TestSchema.P", "s": "target" })json");
+        doc.Parse(R"json({ "className": "TestSchema.P2", "s": "target" })json");
         InstanceWriter::InsertOptions opt;
         opt.UseJsNames(true);
         ASSERT_EQ(BE_SQLITE_DONE, InsertInstance(m_ecdb, doc, opt, targetKey)) << m_ecdb.GetInstanceWriter().GetLastError().c_str();
@@ -1429,9 +1435,9 @@ TEST_F(InstanceWriterFixture, JsNameConstraintClassIds) {
     relJson.Sprintf(R"json({
             "className": "TestSchema.PRefersToPs",
             "sourceId": "%s",
-            "sourceClassName": "TestSchema.P",
+            "sourceClassName": "TestSchema.P1",
             "targetId": "%s",
-            "targetClassName": "TestSchema.P"
+            "targetClassName": "TestSchema.P2"
         })json", sourceKey.GetInstanceId().ToHexStr().c_str(), targetKey.GetInstanceId().ToHexStr().c_str());
 
     ECInstanceKey relKey;
@@ -1445,7 +1451,7 @@ TEST_F(InstanceWriterFixture, JsNameConstraintClassIds) {
     }
     m_ecdb.SaveChanges();
 
-    // Read back in JsName format; constraint class ids come out as class names.
+    // Read back in JsName format; the stored constraint class ids come out as their real class names.
     const auto readRel = [&](const ECInstanceKey& key, BeJsValue out) {
         InstanceReader::Position pos(key.GetInstanceId(), key.GetClassId());
         return m_ecdb.GetInstanceReader().Seek(pos, [&](const InstanceReader::IRowContext& row, auto) {
@@ -1459,8 +1465,8 @@ TEST_F(InstanceWriterFixture, JsNameConstraintClassIds) {
     BeJsDocument relDoc;
     ASSERT_TRUE(readRel(relKey, relDoc));
     EXPECT_STREQ("TestSchema:PRefersToPs", relDoc[ECN::ECJsonSystemNames::ClassFullName()].asCString());
-    EXPECT_STREQ("TestSchema:P", relDoc[ECN::ECJsonSystemNames::SourceClassName()].asCString());
-    EXPECT_STREQ("TestSchema:P", relDoc[ECN::ECJsonSystemNames::TargetClassName()].asCString());
+    EXPECT_STREQ("TestSchema:P1", relDoc[ECN::ECJsonSystemNames::SourceClassName()].asCString());
+    EXPECT_STREQ("TestSchema:P2", relDoc[ECN::ECJsonSystemNames::TargetClassName()].asCString());
     EXPECT_STREQ(sourceKey.GetInstanceId().ToHexStr().c_str(), relDoc[ECN::ECJsonSystemNames::SourceId()].asCString());
     EXPECT_STREQ(targetKey.GetInstanceId().ToHexStr().c_str(), relDoc[ECN::ECJsonSystemNames::TargetId()].asCString());
 }
@@ -1469,11 +1475,11 @@ TEST_F(InstanceWriterFixture, JsNameConstraintClassIds) {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(InstanceWriterFixture, InstanceRepository_ConvertClassIdsToClassNames) {
-    const auto schemaXml = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+    const auto schemaXml = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.04" alias="ecdbmap" />
             <ECEntityClass typeName="P">
                 <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.2.0">
+                    <ClassMap xmlns="ECDbMap.02.00.04">
                         <MapStrategy>TablePerHierarchy</MapStrategy>
                     </ClassMap>
                 </ECCustomAttributes>
@@ -1565,11 +1571,11 @@ TEST_F(InstanceWriterFixture, InstanceRepository_ConvertClassIdsToClassNames) {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(InstanceWriterFixture, InstanceRepository_ConvertClassIdsToClassNames_JsNames) {
-    const auto schemaXml = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+    const auto schemaXml = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.04" alias="ecdbmap" />
             <ECEntityClass typeName="P">
                 <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.2.0">
+                    <ClassMap xmlns="ECDbMap.02.00.04">
                         <MapStrategy>TablePerHierarchy</MapStrategy>
                     </ClassMap>
                 </ECCustomAttributes>
