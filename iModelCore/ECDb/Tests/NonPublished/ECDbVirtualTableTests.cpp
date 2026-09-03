@@ -305,7 +305,7 @@ TEST_F(ECDbVirtualTableTests, ExpandedProperties) {
                 </ECCustomAttributes>
                 <ECProperty propertyName="MixinC" typeName="string"/>
                 <ECProperty propertyName="MixinD" typeName="string"/>
-                <ECProperty propertyName="branchshared" typeName="string"/>
+                <ECProperty propertyName="BranchShared" typeName="string"/>
             </ECEntityClass>
             <ECEntityClass typeName="Derived">
                 <BaseClass>Base</BaseClass>
