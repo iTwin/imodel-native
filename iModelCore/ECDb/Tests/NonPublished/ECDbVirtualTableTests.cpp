@@ -322,6 +322,7 @@ TEST_F(ECDbVirtualTableTests, ExpandedProperties) {
             FROM ECVLib.ExpandedProperties(ec_classid('ExpandedPropertiesTest', 'Derived')) ep
             JOIN meta.ECPropertyDef p ON p.ECInstanceId=ep.PropertyId
             JOIN meta.ECClassDef c ON c.ECInstanceId=p.Class.Id
+            ORDER BY ep.ExpandedOrdinal
         )ecsql"));
 
         std::vector<std::string> actual;
