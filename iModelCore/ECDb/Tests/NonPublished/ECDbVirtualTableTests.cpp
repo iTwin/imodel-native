@@ -295,6 +295,7 @@ TEST_F(ECDbVirtualTableTests, ExpandedProperties) {
                 </ECCustomAttributes>
                 <ECProperty propertyName="MixinA" typeName="string"/>
                 <ECProperty propertyName="MixinB" typeName="string"/>
+                <ECProperty propertyName="BranchShared" typeName="string"/>
             </ECEntityClass>
             <ECEntityClass typeName="MixinTwo" modifier="Abstract">
                 <ECCustomAttributes>
@@ -304,6 +305,7 @@ TEST_F(ECDbVirtualTableTests, ExpandedProperties) {
                 </ECCustomAttributes>
                 <ECProperty propertyName="MixinC" typeName="string"/>
                 <ECProperty propertyName="MixinD" typeName="string"/>
+                <ECProperty propertyName="branchshared" typeName="string"/>
             </ECEntityClass>
             <ECEntityClass typeName="Derived">
                 <BaseClass>Base</BaseClass>
@@ -340,10 +342,11 @@ TEST_F(ECDbVirtualTableTests, ExpandedProperties) {
             "2:Base.BaseA",
             "3:MixinOne.MixinA",
             "4:MixinOne.MixinB",
-            "5:MixinTwo.MixinC",
-            "6:MixinTwo.MixinD",
-            "7:Derived.Own",
-            "8:Derived.Shared",
+            "5:MixinOne.BranchShared",
+            "6:MixinTwo.MixinC",
+            "7:MixinTwo.MixinD",
+            "8:Derived.Own",
+            "9:Derived.Shared",
         };
         EXPECT_EQ(expected, actual);
     };
@@ -358,7 +361,7 @@ TEST_F(ECDbVirtualTableTests, ExpandedProperties) {
         FROM ECVLib.ExpandedProperties(ec_classid('ExpandedPropertiesTest', 'Derived'))
         ORDER BY ExpandedOrdinal DESC
     )ecsql"));
-    for (int expected = 8; expected >= 0; --expected) {
+    for (int expected = 9; expected >= 0; --expected) {
         ASSERT_EQ(BE_SQLITE_ROW, descending.Step());
         EXPECT_EQ(expected, descending.GetValueInt(0));
     }
@@ -374,9 +377,9 @@ TEST_F(ECDbVirtualTableTests, ExpandedProperties) {
     )ecsql"));
     std::vector<std::pair<std::string, int>> expectedCounts {
         {"Base", 4},
-        {"Derived", 9},
-        {"MixinOne", 2},
-        {"MixinTwo", 2},
+        {"Derived", 10},
+        {"MixinOne", 3},
+        {"MixinTwo", 3},
         {"Root", 2},
     };
     for (auto const& expected : expectedCounts) {
