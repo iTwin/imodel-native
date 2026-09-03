@@ -586,11 +586,11 @@ TEST_F(ConcurrentQueryFixture, InterruptCheck_Timeout) {
 
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("conn_query.ecdb"));
     auto config = ConcurrentQueryMgr::Config::Get();
-    config.SetQuota(QueryQuota(std::chrono::seconds(2), 1024));
+    config.SetQuota(QueryQuota(std::chrono::seconds(1), 1024));
     config.SetIgnoreDelay(false);
     ConcurrentQueryMgr::Config::Reset(config);
 
-    const auto delay = std::chrono::milliseconds(5000);
+    const auto delay = std::chrono::milliseconds(2000);
     ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
         auto req = ECSqlRequest::MakeRequest("with cnt(x) as (values(0) union select x+1 from cnt where x < ? ) select x from cnt", ECSqlParams().BindInt(1, 1));
         req->SetDelay(delay);
@@ -880,7 +880,7 @@ TEST_F(ConcurrentQueryFixture, DelayRequest) {
 
     ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
         auto req = ECSqlRequest::MakeRequest("with cnt(x) as (values(0) union select x+1 from cnt where x < ? ) select x from cnt", ECSqlParams().BindInt(1, 1));
-        const auto delay = std::chrono::milliseconds(2000);
+        const auto delay = std::chrono::milliseconds(250);
         req->SetDelay(delay);
         auto r = mgr.Enqueue(std::move(req)).Get();
         EXPECT_EQ(r->GetStatus(), QueryResponse::Status::Done);
