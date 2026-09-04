@@ -60,29 +60,57 @@ ShxFont::ShxType ShxFont::GetShxType() {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 void ShxFont::LoadNonUnicodeGlyphFPosCacheAndMetrics() {
+    m_ascender = m_descender = 1;
     Seek(0);
 
-    for (size_t iByte = 0; ((iByte < 40) && (0x1a != GetNextChar())); ++iByte) {
-        // Skip header...
+    bool foundHeaderEnd = false;
+    for (size_t iByte = 0; iByte < 40; ++iByte) {
+        char next;
+        if (sizeof(next) != Read(&next, sizeof(next)))
+            return;
+        if (0x1a == next) {
+            foundHeaderEnd = true;
+            break;
+        }
     }
+    if (!foundHeaderEnd)
+        return;
 
     // Skip FirstCode and LastCode (both UInt16)...
-    Skip(4);
+    uint32_t tableHeader = Tell();
+    if (tableHeader > UINT32_MAX - 4 || SUCCESS != Seek(tableHeader + 4))
+        return;
 
-    uint16_t numGlyphs = GetNextUInt16();
-    uint32_t dataStart = Tell() + (4 * numGlyphs);
-    uint32_t dataOffset = 0;
+    uint16_t numGlyphs;
+    if (sizeof(numGlyphs) != Read(&numGlyphs, sizeof(numGlyphs)))
+        return;
+
+    size_t fileSize = GetReader().m_reader->GetNumBytes();
+    size_t dataStart = static_cast<size_t>(Tell()) + (4 * static_cast<size_t>(numGlyphs));
+    if (dataStart > fileSize)
+        return;
+
+    size_t dataOffset = 0;
+    T_GlyphFPosCache glyphFPosCache;
 
     // Read glyph GlyphFPos data.
     for (size_t iGlyph = 0; iGlyph < numGlyphs; ++iGlyph) {
-        uint16_t glyphId = GetNextUInt16();
-        ShxFont::GlyphFPos glyphFPos;
-        glyphFPos.m_dataOffset = (dataStart + dataOffset);
-        glyphFPos.m_dataSize = GetNextUInt16();
+        uint16_t glyphId;
+        uint16_t dataSize;
+        if (sizeof(glyphId) != Read(&glyphId, sizeof(glyphId)) || sizeof(dataSize) != Read(&dataSize, sizeof(dataSize)))
+            break;
 
-        m_glyphFPosCache[glyphId] = glyphFPos;
+        if (dataOffset > fileSize - dataStart || dataSize > fileSize - dataStart - dataOffset)
+            break;
+
+        ShxFont::GlyphFPos glyphFPos;
+        glyphFPos.m_dataOffset = static_cast<uint32_t>(dataStart + dataOffset);
+        glyphFPos.m_dataSize = dataSize;
+
+        glyphFPosCache[glyphId] = glyphFPos;
         dataOffset += glyphFPos.m_dataSize;
     }
+    m_glyphFPosCache.swap(glyphFPosCache);
 
     // Read metric data. Char 0 is the font specifier...
     T_GlyphFPosCache::const_iterator zeroGlyphFPos = m_glyphFPosCache.find(0);
@@ -96,10 +124,14 @@ void ShxFont::LoadNonUnicodeGlyphFPosCacheAndMetrics() {
         return;
 
     uint32_t pBufSize = zeroGlyphFPos->second.m_dataSize;
+    if (0 == pBufSize)
+        return;
+
     ScopedArray<Byte> pBuf(pBufSize);
 
     // Read code 0 which should be the font specifier.
-    Read(pBuf.GetData(), pBufSize);
+    if (pBufSize != Read(pBuf.GetData(), pBufSize))
+        return;
 
     // Look for a NULL terminator.
     size_t iLen = 0;
@@ -127,27 +159,52 @@ void ShxFont::LoadNonUnicodeGlyphFPosCacheAndMetrics() {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 void ShxFont::LoadUnicodeGlyphFPosCacheAndMetrics() {
+    m_ascender = m_descender = 1;
     Seek(0);
 
     // Skip header.
-    for (size_t iByte = 0; ((iByte < 40) && (0x1a != GetNextChar())); ++iByte)
-        ;
+    bool foundHeaderEnd = false;
+    for (size_t iByte = 0; iByte < 40; ++iByte) {
+        char next;
+        if (sizeof(next) != Read(&next, sizeof(next)))
+            return;
+        if (0x1a == next) {
+            foundHeaderEnd = true;
+            break;
+        }
+    }
+    if (!foundHeaderEnd)
+        return;
 
-    size_t numGlyphs = (size_t)GetNextUInt16();
+    uint16_t numGlyphs;
+    if (sizeof(numGlyphs) != Read(&numGlyphs, sizeof(numGlyphs)) || 0 == numGlyphs)
+        return;
 
     // Not sure why we have to do this, but old code does, and most fonts indeed have less 1 glyph.
     --numGlyphs;
 
     // Skip 2 bytes...
-    Skip(2);
+    uint32_t fontInfoOffset = Tell();
+    if (fontInfoOffset > UINT32_MAX - 2 || SUCCESS != Seek(fontInfoOffset + 2))
+        return;
 
-    uint16_t fontInfoSize = GetNextUInt16();
+    uint16_t fontInfoSize;
+    if (sizeof(fontInfoSize) != Read(&fontInfoSize, sizeof(fontInfoSize)) || 0 == fontInfoSize)
+        return;
+
     ScopedArray<Byte> fontInfo(fontInfoSize);
 
-    Read(fontInfo.GetData(), fontInfoSize);
+    if (fontInfoSize != Read(fontInfo.GetData(), fontInfoSize))
+        return;
 
-    size_t firstNullOffset = strlen(reinterpret_cast<char*>(fontInfo.GetData()));
+    ByteCP firstNull = static_cast<ByteCP>(memchr(fontInfo.GetDataCP(), 0, fontInfoSize));
+    if (nullptr == firstNull)
+        return;
+
+    size_t firstNullOffset = static_cast<size_t>(firstNull - fontInfo.GetDataCP());
     size_t fontInfoDataOffset = (firstNullOffset + 1);
+    if (fontInfoSize - fontInfoDataOffset < 4)
+        return;
 
     // ascender
     m_ascender = fontInfo.GetData()[fontInfoDataOffset++];
@@ -164,21 +221,30 @@ void ShxFont::LoadUnicodeGlyphFPosCacheAndMetrics() {
         m_descender = 1;
     }
 
-    uint32_t nextAddress = Tell();
+    size_t fileSize = GetReader().m_reader->GetNumBytes();
+    size_t nextAddress = Tell();
+    T_GlyphFPosCache glyphFPosCache;
     for (size_t iGlyph = 0; iGlyph < numGlyphs; ++iGlyph) {
-        if (0 != Seek((int64_t)nextAddress))
+        if (nextAddress > UINT32_MAX || nextAddress > fileSize || fileSize - nextAddress < 4 || SUCCESS != Seek(static_cast<uint32_t>(nextAddress)))
             break;
 
-        uint16_t glyphId = GetNextUInt16();
+        uint16_t glyphId;
+        uint16_t dataSize;
+        if (sizeof(glyphId) != Read(&glyphId, sizeof(glyphId)) || sizeof(dataSize) != Read(&dataSize, sizeof(dataSize)))
+            break;
 
         ShxFont::GlyphFPos glyphFPos;
-        glyphFPos.m_dataOffset = (nextAddress + 4);
-        glyphFPos.m_dataSize = GetNextUInt16();
+        glyphFPos.m_dataOffset = static_cast<uint32_t>(nextAddress + 4);
+        glyphFPos.m_dataSize = dataSize;
 
-        nextAddress = (size_t)(glyphFPos.m_dataOffset + glyphFPos.m_dataSize);
+        nextAddress = static_cast<size_t>(glyphFPos.m_dataOffset);
+        if (nextAddress > fileSize || glyphFPos.m_dataSize > fileSize - nextAddress)
+            break;
+        nextAddress += glyphFPos.m_dataSize;
 
-        m_glyphFPosCache[glyphId] = glyphFPos;
+        glyphFPosCache[glyphId] = glyphFPos;
     }
+    m_glyphFPosCache.swap(glyphFPosCache);
 }
 
 //---------------------------------------------------------------------------------------
@@ -324,12 +390,17 @@ static bool codeNameExists(CharCP pBytes, size_t maxNameLength) {
 //=======================================================================================
 struct ShapeConverter {
 private:
+    static constexpr size_t MAX_SUBSHAPE_DEPTH = 64;
+    static constexpr size_t MAX_DECODED_BYTES = 1024 * 1024;
+
     ShxFontR m_font;
+    ShxFont::ShxType m_fontType;
     bool m_isPenDown;
     bool m_vStart;
     bool m_vEnd;
     bool m_processVertical;
     bool m_skipCodes;
+    bool m_skipNextCode;
     bool m_hasData;
     double m_multiplier;
     double m_leftBearing;
@@ -337,11 +408,16 @@ private:
     DPoint2d m_vertStartPt;
     DPoint2d m_vertEndPt;
     DPoint2d m_currentPos;
+    size_t m_decodedBytes = 0;
 
     std::stack<DPoint2d> m_stack;
+    bset<ShxFont::T_Id> m_activeSubShapes;
 
     void AddPoint(DPoint2dCR pt);
     void AddEllipse(DEllipse3dCR el);
+    bool CanDecode(size_t numBytes) const { return m_decodedBytes <= MAX_DECODED_BYTES && numBytes <= MAX_DECODED_BYTES - m_decodedBytes; }
+    bool HasCodeBytes(int currentCode, size_t numBytes, size_t additionalBytes) const;
+    bool ValidateMultiByteSequence(int currentCode, CharCP pCodes, size_t numBytes, size_t stride) const;
 
     bvector<DPoint3d> m_activeLineString;
     CurveVectorPtr m_activeLoop;
@@ -382,7 +458,7 @@ public:
     }
 
 public:
-    ShapeConverter(ShxFontR);
+    ShapeConverter(ShxFontR, ShxFont::T_Id);
     DPoint2dCR GetCurrentPos() const { return m_currentPos; }
     double GetLeftBearing() const { return m_leftBearing; }
     double GetMultiplier() const { return m_multiplier; }
@@ -393,7 +469,7 @@ public:
     bool HasVStart() const { return m_vStart; }
     bool IsPenDown() const { return m_isPenDown; }
     void DecodeBulgeArc(int& currentCode, CharCP pCodes);
-    void DecodeCodes(int& currentCode, CharCP pCodes);
+    bool DecodeCodes(int& currentCode, CharCP pCodes, size_t numBytes);
     void DecodeDivLengths(int& currentCode, CharCP pCodes);
     void DecodeExtenedFontSubShape(int& currentCode, CharCP pCodes);
     void DecodeFractionArc(int& currentCode, CharCP pCodes);
@@ -406,7 +482,7 @@ public:
     void DecodePush();
     void DecodeSubShape(int& currentCode, CharCP pCodes);
     void DecodeVector(Byte iCode, CharCP);
-    void DecodeVertical(int& currentCode, CharCP pCodes);
+    void DecodeVertical();
     void DecodeXYDisp(int& currentCode, CharCP pCodes);
     void DecodeXYMultiDisp(int& currentCode, CharCP pCodes);
     void DoConversion(size_t numBytes, CharCP buff, bool doVerticals, bool hasData);
@@ -415,8 +491,9 @@ public:
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ShapeConverter::ShapeConverter(ShxFontR font) : m_font(font), m_isPenDown(true), m_vStart(false), m_vEnd(false), m_hasData(false), m_processVertical(false), m_skipCodes(false),
+ShapeConverter::ShapeConverter(ShxFontR font, ShxFont::T_Id glyphId) : m_font(font), m_fontType(font.GetShxType()), m_isPenDown(true), m_vStart(false), m_vEnd(false), m_hasData(false), m_processVertical(false), m_skipCodes(false), m_skipNextCode(false),
                                                 m_multiplier(1.0), m_leftBearing(INT_MAX), m_rightBearing(-INT_MAX) {
+    m_activeSubShapes.insert(glyphId);
     m_vertStartPt.Zero();
     m_vertEndPt.Zero();
     m_currentPos.Zero();
@@ -494,16 +571,85 @@ void ShapeConverter::DecodeBulgeArc(int& currentCode, CharCP pCodes) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void ShapeConverter::DecodeCodes(int& currentCode, CharCP pCodes) {
+bool ShapeConverter::HasCodeBytes(int currentCode, size_t numBytes, size_t additionalBytes) const {
+    if (currentCode < 0 || static_cast<size_t>(currentCode) >= numBytes)
+        return false;
+
+    return additionalBytes <= numBytes - static_cast<size_t>(currentCode) - 1;
+}
+
+// Validate the terminated pairs/triples consumed by opcodes 9 and 13.
+bool ShapeConverter::ValidateMultiByteSequence(int currentCode, CharCP pCodes, size_t numBytes, size_t stride) const {
+    size_t offset = static_cast<size_t>(currentCode) + 1;
+    while (offset < numBytes) {
+        if (numBytes - offset < 2)
+            return false;
+
+        if (0 == pCodes[offset] && 0 == pCodes[offset + 1])
+            return true;
+
+        if (numBytes - offset < stride)
+            return false;
+
+        offset += stride;
+    }
+
+    return false;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+bool ShapeConverter::DecodeCodes(int& currentCode, CharCP pCodes, size_t numBytes) {
+    if (!HasCodeBytes(currentCode, numBytes, 0))
+        return false;
+
     Byte iCode = pCodes[currentCode];
     if ((int)(iCode & 0xF0) > 0) {
         DecodeVector(iCode, pCodes);
-        return;
+        return true;
     }
+
+    size_t additionalBytes = 0;
+    switch (iCode) {
+    case SHAPECODE_DIVLENGTHS:
+    case SHAPECODE_MULTLENGTHS:
+        additionalBytes = 1;
+        break;
+    case SHAPECODE_SUBSHAPE:
+        additionalBytes = ShxFont::ShxType::Unicode == m_fontType ? 2 : 1;
+        break;
+    case SHAPECODE_XYDISP:
+    case SHAPECODE_OCTANTARC:
+        additionalBytes = 2;
+        break;
+    case SHAPECODE_FRACTIONARC:
+        additionalBytes = 5;
+        break;
+    case SHAPECODE_BULGEARC:
+        additionalBytes = 3;
+        break;
+    case SHAPECODE_MULTIXYDISP:
+        if (!ValidateMultiByteSequence(currentCode, pCodes, numBytes, 2))
+            return false;
+        break;
+    case SHAPECODE_MULTIBULGEARC:
+        if (!ValidateMultiByteSequence(currentCode, pCodes, numBytes, 3))
+            return false;
+        break;
+    case SHAPECODE_VERTICAL:
+        additionalBytes = 1;
+        break;
+    default:
+        break;
+    }
+
+    if (!HasCodeBytes(currentCode, numBytes, additionalBytes))
+        return false;
 
     switch (iCode) {
     case SHAPECODE_ENDOFSHAPE:
-        return;
+        return true;
     case SHAPECODE_PENDOWN:
         DecodePenDown();
         break;
@@ -544,12 +690,14 @@ void ShapeConverter::DecodeCodes(int& currentCode, CharCP pCodes) {
         DecodeMultiBulgeArc(currentCode, pCodes);
         break;
     case SHAPECODE_VERTICAL:
-        DecodeVertical(currentCode, pCodes);
+        DecodeVertical();
         break;
 
     default:
-        BeAssert(false && L"Unknown/unexpected opcode.");
+        return false;
     }
+
+    return true;
 }
 
 //---------------------------------------------------------------------------------------
@@ -557,7 +705,6 @@ void ShapeConverter::DecodeCodes(int& currentCode, CharCP pCodes) {
 //---------------------------------------------------------------------------------------
 void ShapeConverter::DecodeDivLengths(int& currentCode, CharCP pCodes) {
     Byte iCode = pCodes[++currentCode];
-    BeAssert(0 != iCode);
 
     if (m_skipCodes)
         return;
@@ -744,8 +891,6 @@ void ShapeConverter::DecodeMultLengths(int& currentCode, CharCP pCodes) {
 
     if (m_skipCodes)
         return;
-
-    BeAssert(0 != iCode);
 
     if (0 != iCode)
         m_multiplier *= (double)iCode;
@@ -952,9 +1097,9 @@ void ShapeConverter::DecodePush() {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 void ShapeConverter::DecodeSubShape(int& currentCode, CharCP pCodes) {
-    uint16_t subshapeCode = pCodes[++currentCode];
-    if (ShxFont::ShxType::Unicode == m_font.GetShxType())
-        subshapeCode = ((subshapeCode << 8) + pCodes[++currentCode]);
+    uint16_t subshapeCode = static_cast<Byte>(pCodes[++currentCode]);
+    if (ShxFont::ShxType::Unicode == m_fontType)
+        subshapeCode = ((subshapeCode << 8) + static_cast<Byte>(pCodes[++currentCode]));
 
     if (0 == subshapeCode) {
         DecodeExtenedFontSubShape(currentCode, pCodes);
@@ -962,16 +1107,24 @@ void ShapeConverter::DecodeSubShape(int& currentCode, CharCP pCodes) {
     }
 
     ShxFont::GlyphFPos const* fPos = m_font.GetGlyphFPos(subshapeCode);
-    if (NULL == fPos)
+    if (NULL == fPos || 0 == fPos->m_dataSize || !CanDecode(fPos->m_dataSize))
         return;
 
-    if (0 != m_font.Seek(fPos->m_dataOffset))
+    if (m_activeSubShapes.size() >= MAX_SUBSHAPE_DEPTH)
         return;
 
-    CharP pBuf = reinterpret_cast<CharP>(_alloca(sizeof(char) * fPos->m_dataSize));
-    m_font.Read(pBuf, sizeof(Byte) * fPos->m_dataSize);
+    auto inserted = m_activeSubShapes.insert(subshapeCode);
+    if (!inserted.second)
+        return;
 
-    DoConversion(fPos->m_dataSize, pBuf, m_processVertical, m_hasData);
+    ScopedArray<Byte> pBuf(fPos->m_dataSize);
+    if (SUCCESS != m_font.Seek(fPos->m_dataOffset) || fPos->m_dataSize != m_font.Read(pBuf.GetData(), fPos->m_dataSize)) {
+        m_activeSubShapes.erase(subshapeCode);
+        return;
+    }
+
+    DoConversion(fPos->m_dataSize, reinterpret_cast<CharCP>(pBuf.GetDataCP()), m_processVertical, m_hasData);
+    m_activeSubShapes.erase(subshapeCode);
 }
 
 //---------------------------------------------------------------------------------------
@@ -1085,11 +1238,9 @@ void ShapeConverter::DecodeVector(Byte iCode, CharCP) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void ShapeConverter::DecodeVertical(int& currentCode, CharCP pCodes) {
-    // While we aren't supporting vertical SHX glyphs at this time, we still need to eat the codes.
-    AutoRestore<bool> skipCodes(&m_skipCodes, true);
-    ++currentCode;
-    DecodeCodes(currentCode, pCodes);
+void ShapeConverter::DecodeVertical() {
+    // Vertical SHX glyphs aren't supported, but the following command must still be consumed.
+    m_skipNextCode = true;
 }
 
 //---------------------------------------------------------------------------------------
@@ -1145,6 +1296,10 @@ void ShapeConverter::DecodeXYMultiDisp(int& currentCode, CharCP pCodes) {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 void ShapeConverter::DoConversion(size_t numBytes, CharCP buff, bool doVerticals, bool hasData) {
+    if (0 == numBytes || !CanDecode(numBytes))
+        return;
+
+    m_decodedBytes += numBytes;
     m_isPenDown = true;
     m_hasData = hasData;
     m_processVertical = doVerticals;
@@ -1155,8 +1310,13 @@ void ShapeConverter::DoConversion(size_t numBytes, CharCP buff, bool doVerticals
     numBytes -= iOffset;
     buff += iOffset;
 
-    for (int currentCode = 0; currentCode < (int)numBytes; ++currentCode)
-        DecodeCodes(currentCode, buff);
+    for (int currentCode = 0; currentCode < (int)numBytes; ++currentCode) {
+        bool skipCode = m_skipNextCode;
+        m_skipNextCode = false;
+        AutoRestore<bool> skipCodes(&m_skipCodes, m_skipCodes || skipCode);
+        if (!DecodeCodes(currentCode, buff, numBytes))
+            break;
+    }
 }
 
 //=======================================================================================
@@ -1218,7 +1378,7 @@ void ShxGlyph::EnsureMetrics() const {
     if (SUCCESS != m_font.Seek(m_dataOffset))
         return;
 
-    if (0 == m_font.Read(glyphData.GetData(), m_dataSize))
+    if (m_dataSize != m_font.Read(glyphData.GetData(), m_dataSize))
         return;
     DPoint2d finalXY;
     double rightBearing, leftBearing;
@@ -1274,9 +1434,9 @@ CurveVectorPtr ShxGlyph::GetCurveVectorWithBearings(double& rightBearing, double
     if (SUCCESS != m_font.Seek(m_dataOffset))
         return nullptr;
 
-    if (0 == m_font.Read(glyphData.GetData(), m_dataSize))
+    if (m_dataSize != m_font.Read(glyphData.GetData(), m_dataSize))
         return nullptr;
-    ShapeConverter converter(m_font);
+    ShapeConverter converter(m_font, m_glyphId);
     converter.DoConversion(m_dataSize, (CharCP)glyphData.GetDataCP(), false, false);
     auto curves = converter.GrabCurveVector();
     if (!curves.IsValid())
