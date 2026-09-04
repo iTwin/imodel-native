@@ -269,6 +269,9 @@ enum  BaseGeoCoordErrors
     GEOCOORDERR_ParseError                      = (GeoCoordErrorBase  - 88),
     GEOCOORDERR_InvalidDirection                = (GeoCoordErrorBase  - 89),
     GEOCOORDERR_InvalidTransform                = (GeoCoordErrorBase  - 90),
+    GEOCOORDERR_InvalidTransformPath            = (GeoCoordErrorBase  - 91),
+    GEOCOORDERR_NoCRSName                       = (GeoCoordErrorBase  - 92),
+    GEOCOORDERR_NoUnits                         = (GeoCoordErrorBase  - 93),
 
     // GeoTiff read errors:
     GEOCOORDERR_GeocentricNotSupported          = (GeoCoordErrorTiffBase - 1),

@@ -314,7 +314,6 @@ static bvector<verticalDatumSerializationTest> s_listOfTests =
         }
     };
 
-
 /*---------------------------------------------------------------------------------**//**
 * Create a BaseGCS and set it's vertical datum from a name, create another BaseGCS and
 * set it's vertical datum from a Json def, check to make sure they are equal.
@@ -323,7 +322,6 @@ static bvector<verticalDatumSerializationTest> s_listOfTests =
 * Also tests == operators and IsEqual()
 * @bsimethod                                                    Sarah.Keenan  2024-10
 +---------------+---------------+---------------+---------------+---------------+------*/
-// SK TODO: rewrite this test to be more flexible as small dictionary changes cause it to fail
 TEST_P(VerticalDatumSerializationTests, VerticalDatumSerializationTest1)
 {
     verticalDatumSerializationTest theTestParam = GetParam(); 
@@ -340,20 +338,18 @@ TEST_P(VerticalDatumSerializationTests, VerticalDatumSerializationTest1)
     // (unless we are testing the non equal items in the list of tests)
     ASSERT_TRUE(theTestParam.m_equalToDictionaryItem == testGCS1->IsEqual(*(testGCS2.get())));
 
-    Utf8String gcs1String, gcs2String;
-    BeJsDocument valueOut;
-    status = testGCS1->ToJson(valueOut);
-    ASSERT_TRUE(SUCCESS == status);
-    gcs1String = valueOut.Stringify(StringifyFormat::Indented);
+    if (theTestParam.m_equalToDictionaryItem)
+        {
+        BeJsDocument resultJson1;
+        status = testGCS1->ToJson(resultJson1, true);
+        ASSERT_TRUE(SUCCESS == status);
 
-    BeJsDocument valueOut2;
+        BeJsDocument resultJson2;
+        status = testGCS2->ToJson(resultJson2, true);
+        ASSERT_TRUE(SUCCESS == status);
 
-    status = testGCS1->ToJson(valueOut2);
-    ASSERT_TRUE(SUCCESS == status);
-    gcs2String = valueOut2.Stringify(StringifyFormat::Indented);
-
-    // boths gcs were equal so should serialize exactly the same json string
-    ASSERT_TRUE(0 == gcs1String.CompareTo(gcs2String));
+        EXPECT_TRUE(resultJson1.isExactEqual(resultJson2));
+        }
 }
 
 /*---------------------------------------------------------------------------------**//**
