@@ -607,10 +607,16 @@ TEST_F(ChangeSummaryTestFixture, sqlite_stat1)
     ASSERT_TRUE(m_ecdb.TableExists("sqlite_stat1"));
     ASSERT_FALSE(m_ecdb.TableExists("sqlite_stat2"));
     ASSERT_FALSE(m_ecdb.TableExists("sqlite_stat3"));
-    ASSERT_FALSE(m_ecdb.TableExists("sqlite_stat4"));
+    // sqlite_stat4 exists because SQLite is built with SQLITE_ENABLE_STAT4.
+    ASSERT_TRUE(m_ecdb.TableExists("sqlite_stat4"));
     //and that table is empty by default
     {
     auto stmt = m_ecdb.GetCachedStatement("SELECT COUNT(*) FROM sqlite_stat1");
+    ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+    ASSERT_EQ(0, stmt->GetValueInt(0));
+    }
+    {
+    auto stmt = m_ecdb.GetCachedStatement("SELECT COUNT(*) FROM sqlite_stat4");
     ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
     ASSERT_EQ(0, stmt->GetValueInt(0));
     }
@@ -645,6 +651,11 @@ TEST_F(ChangeSummaryTestFixture, sqlite_stat1)
     ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
     ASSERT_EQ(0, stmt->GetValueInt(0));
     }
+    {
+    auto stmt = m_ecdb.GetCachedStatement("SELECT COUNT(*) FROM sqlite_stat4");
+    ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+    ASSERT_EQ(0, stmt->GetValueInt(0));
+    }
     //printf("\n%s\n", changeset1.ToJson(m_ecdb).ToString().c_str());
 
     //apply the change set to a new db
@@ -654,6 +665,13 @@ TEST_F(ChangeSummaryTestFixture, sqlite_stat1)
     auto stmt = m_ecdb.GetCachedStatement("SELECT COUNT(*) FROM sqlite_stat1");
     ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
     ASSERT_EQ(48, stmt->GetValueInt(0));
+    }
+    // sqlite_stat4 rows written by ANALYZE are NOT captured by change tracking (upstream SQLite
+    // does not fire the preupdate hook for them), so the applied changeset leaves stat4 empty.
+    {
+    auto stmt = m_ecdb.GetCachedStatement("SELECT COUNT(*) FROM sqlite_stat4");
+    ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+    ASSERT_EQ(0, stmt->GetValueInt(0));
     }
 
     //printf("%s", changeset1.ToJson(m_ecdb).ToString().c_str());
