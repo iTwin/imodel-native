@@ -21,6 +21,20 @@ using CachedWriteStatement = MruStatementCache::CachedWriteStatement;
 using BindContext = Impl::BindContext;
 using CachedBinder = MruStatementCache::CachedBinder;
 
+namespace {
+    bool IsHexadecimalOrDecimal(Utf8StringCR str) {
+        if (std::all_of(str.begin(), str.end(), ::isdigit))
+            return true;
+
+        if (str.size() < 3 || str[0] != '0' || (str[1] != 'x' && str[1] != 'X'))
+            return false;
+
+        return std::all_of(str.begin() + 2, str.end(), [](char c) {
+            return std::isxdigit(static_cast<unsigned char>(c));
+        });
+    }
+}
+
 //******************************BindContext**************************************
 //----------------------------------------------------------------------------------
 // @bsimethod
@@ -581,6 +595,14 @@ ECSqlStatus Impl::BindSystemProperty(BindContext& ctx, SystemPropertyMap const& 
             ctx.SetError("Expected id for ECClassId property, got %s", val.Stringify().c_str());
             return ECSqlStatus(BE_SQLITE_ERROR);
         }
+        if (ctx.ConvertClassIdsToClassNames() && val.isString() && !IsHexadecimalOrDecimal(val.asString())) {
+            auto classP = ctx.FindClass(val.asString());
+            if (classP == nullptr) {
+                ctx.SetError("Failed to find class with name: %s", val.asCString());
+                return ECSqlStatus(BE_SQLITE_ERROR);
+            }
+            return binder.BindId(classP->GetId());
+        }
         return binder.BindId(val.GetId64<ECClassId>());
     }
     };
@@ -685,20 +707,6 @@ ECSqlStatus Impl::BindStructArrayProperty(BindContext& ctx, StructArrayECPropert
     return rc;
 }
 
-namespace {
-    bool IsHexadecimalOrDecimal(Utf8StringCR str) {
-        if (std::all_of(str.begin(), str.end(), ::isdigit))
-            return true;
-
-        if (str.size() < 3 || str[0] != '0' || (str[1] != 'x' && str[1] != 'X'))
-            return false;
-
-        return std::all_of(str.begin() + 2, str.end(), [](char c) {
-            return std::isxdigit(static_cast<unsigned char>(c));
-        });
-    }
-}
-
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
@@ -743,10 +751,19 @@ ECSqlStatus Impl::BindNavigationProperty(BindContext& ctx, NavigationECPropertyC
             classId = classP->GetId();
         } else {
             if (relClassId.isString() && !IsHexadecimalOrDecimal(relClassId.asString())) {
-                ctx.SetError("Value supplied is not a valid decimal or hexadecimal value for the RelECClassId field %s", relClassId.Stringify().c_str());
-                return ECSqlStatus(BE_SQLITE_ERROR);
+                if (!ctx.ConvertClassIdsToClassNames()) {
+                    ctx.SetError("Value supplied is not a valid decimal or hexadecimal value for the RelECClassId field %s", relClassId.Stringify().c_str());
+                    return ECSqlStatus(BE_SQLITE_ERROR);
+                }
+                auto classP = ctx.FindClass(relClassId.asCString());
+                if (classP == nullptr) {
+                    ctx.SetError("Failed to find class with name: %s", relClassId.asCString());
+                    return ECSqlStatus(BE_SQLITE_ERROR);
+                }
+                classId = classP->GetId();
+            } else {
+                classId = relClassId.GetId64<ECClassId>();
             }
-            classId = relClassId.GetId64<ECClassId>();
         }
     }
     return binder.BindNavigation(id.GetId64<ECInstanceId>(), classId);
@@ -795,8 +812,17 @@ bool Impl::TryGetECClassId(BindContext& ctx, BeJsConst inst, ECClassId& classId)
             return false;
         }
         if (idJs.isString() && !IsHexadecimalOrDecimal(idJs.asString())) {
-            ctx.SetError("Value supplied is not a valid decimal or hexadecimal value for the ECClassId field %s", idJs.Stringify().c_str());
-            return false;
+            if (!ctx.ConvertClassIdsToClassNames()) {
+                ctx.SetError("Value supplied is not a valid decimal or hexadecimal value for the ECClassId field %s", idJs.Stringify().c_str());
+                return false;
+            }
+            auto classP = ctx.FindClass(idJs.asString());
+            if (classP == nullptr) {
+                ctx.SetError("Failed to find class with name: %s", idJs.asCString());
+                return false;
+            }
+            classId = classP->GetId();
+            return true;
         }
         classId = inst[ECDBSYS_PROP_ECClassId].GetId64<ECClassId>();
     }
@@ -864,13 +890,13 @@ bool Impl::TryGetId(ECInstanceId& instanceId, BeJsConst in, JsFormat jsFmt) cons
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-bool Impl::TryGetInstanceKey(ECInstanceKeyR key, BeJsConst in, JsFormat jsFmt) const {
+bool Impl::TryGetInstanceKey(ECInstanceKeyR key, BeJsConst in, JsFormat jsFmt, bool convertClassIdsToClassNames) const {
     ECInstanceId instanceId;
     ECClassId classId;
     if (!TryGetId(instanceId, in, jsFmt)) {
         return false;
     }
-    if (!TryGetClassId(classId, in, jsFmt)) {
+    if (!TryGetClassId(classId, in, jsFmt, convertClassIdsToClassNames)) {
         return false;
     }
     key = ECInstanceKey(classId, instanceId);
@@ -880,7 +906,7 @@ bool Impl::TryGetInstanceKey(ECInstanceKeyR key, BeJsConst in, JsFormat jsFmt) c
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-bool Impl::TryGetClassId(ECN::ECClassId& classId, BeJsConst in, JsFormat jsFmt) const {
+bool Impl::TryGetClassId(ECN::ECClassId& classId, BeJsConst in, JsFormat jsFmt, bool convertClassIdsToClassNames) const {
     if (jsFmt == JsFormat::JsName) {
         // className has higher priority
         if (in.isStringMember(ECJsonSystemNames::ClassName())) {
@@ -907,8 +933,15 @@ bool Impl::TryGetClassId(ECN::ECClassId& classId, BeJsConst in, JsFormat jsFmt) 
         return false;
     }
     if (idJs.isString() && !IsHexadecimalOrDecimal(idJs.asString())) {
-        LOG.errorv("Value supplied is not a valid decimal or hexadecimal value %s", idJs.Stringify().c_str());
-        return false;
+        if (!convertClassIdsToClassNames) {
+            LOG.errorv("Value supplied is not a valid decimal or hexadecimal value %s", idJs.Stringify().c_str());
+            return false;
+        }
+        auto classP = m_cache.GetECDb().Schemas().FindClass(idJs.asString());
+        if (classP != nullptr) {
+            classId = classP->GetId();
+        }
+        return classId.IsValid();
     }
     classId = in[ECDBSYS_PROP_ECClassId].GetId64<ECClassId>();
 
@@ -1071,7 +1104,7 @@ DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& optio
                 JsReadOptions param;
                 param.SetUseJsNames(options.GetUseJsNames());
                 param.SetAbbreviateBlobs(false);
-                param.SetConvertClassIdsToClassNames(options.GetUseJsNames());
+                param.SetConvertClassIdsToClassNames(options.GetUseJsNames() || options.GetConvertClassIdsToClassNames());
                 param.SetSkipReadOnlyProperties(true);
                 param.SetUseClassFullNameInsteadofClassName(options.GetUseJsNames());
                 row.GetJson(param).ForEachProperty([&](auto prop, auto val) {
@@ -1175,7 +1208,7 @@ DbResult Impl::Delete(BeJsConst inst, InstanceWriter::DeleteOptions const& optio
     }
 
     ECInstanceKey key;
-    if (!TryGetInstanceKey(key, inst, ctx.GetOptions().GetUseJsNames() ? JsFormat::JsName : JsFormat::Standard)) {
+    if (!TryGetInstanceKey(key, inst, ctx.GetOptions().GetUseJsNames() ? JsFormat::JsName : JsFormat::Standard, options.GetConvertClassIdsToClassNames())) {
         ctx.SetError("Failed to get ECInstanceId/id and ECClassId/className/classFullName.");
         return BE_SQLITE_ERROR;
     }
@@ -1285,15 +1318,15 @@ bool InstanceWriter::TryGetId(ECInstanceId& instanceId, BeJsConst in, JsFormat j
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-bool InstanceWriter::TryGetClassId(ECN::ECClassId& classId, BeJsConst in, JsFormat jsFmt) const {
-    return m_pImpl->TryGetClassId(classId, in, jsFmt);
+bool InstanceWriter::TryGetClassId(ECN::ECClassId& classId, BeJsConst in, JsFormat jsFmt, bool convertClassIdsToClassNames) const {
+    return m_pImpl->TryGetClassId(classId, in, jsFmt, convertClassIdsToClassNames);
 }
 
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-bool InstanceWriter::TryGetInstanceKey(ECInstanceKeyR key, BeJsConst in, JsFormat jsFmt) const {
-    return m_pImpl->TryGetInstanceKey(key, in, jsFmt);
+bool InstanceWriter::TryGetInstanceKey(ECInstanceKeyR key, BeJsConst in, JsFormat jsFmt, bool convertClassIdsToClassNames) const {
+    return m_pImpl->TryGetInstanceKey(key, in, jsFmt, convertClassIdsToClassNames);
 }
 
 //----------------------------------------------------------------------------------
