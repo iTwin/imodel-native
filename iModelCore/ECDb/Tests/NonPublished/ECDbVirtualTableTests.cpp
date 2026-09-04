@@ -271,4 +271,127 @@ TEST_F(ECDbVirtualTableTests, TokenizeModuleTestWithMultipleVTabs) {
     }
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbVirtualTableTests, ExpandedProperties) {
+    SchemaItem schema(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="ExpandedPropertiesTest" alias="ept" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
+            <ECEntityClass typeName="Root">
+                <ECProperty propertyName="RootA" typeName="string"/>
+                <ECProperty propertyName="RootB" typeName="string"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="Base">
+                <BaseClass>Root</BaseClass>
+                <ECProperty propertyName="BaseA" typeName="string"/>
+                <ECProperty propertyName="Shared" typeName="string"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="MixinOne" modifier="Abstract">
+                <ECCustomAttributes>
+                    <IsMixin xmlns="CoreCustomAttributes.01.00.00">
+                        <AppliesToEntityClass>Root</AppliesToEntityClass>
+                    </IsMixin>
+                </ECCustomAttributes>
+                <ECProperty propertyName="MixinA" typeName="string"/>
+                <ECProperty propertyName="MixinB" typeName="string"/>
+                <ECProperty propertyName="BranchShared" typeName="string"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="MixinTwo" modifier="Abstract">
+                <ECCustomAttributes>
+                    <IsMixin xmlns="CoreCustomAttributes.01.00.00">
+                        <AppliesToEntityClass>Root</AppliesToEntityClass>
+                    </IsMixin>
+                </ECCustomAttributes>
+                <ECProperty propertyName="MixinC" typeName="string"/>
+                <ECProperty propertyName="MixinD" typeName="string"/>
+                <ECProperty propertyName="BranchShared" typeName="string"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="Derived">
+                <BaseClass>Base</BaseClass>
+                <BaseClass>MixinOne</BaseClass>
+                <BaseClass>MixinTwo</BaseClass>
+                <ECProperty propertyName="Own" typeName="string"/>
+                <ECProperty propertyName="Shared" typeName="string"/>
+            </ECEntityClass>
+        </ECSchema>)xml");
+    ASSERT_EQ(SUCCESS, SetupECDb("expanded-properties.ecdb", schema));
+
+    auto assertExpandedProperties = [this]() {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"ecsql(
+            SELECT ep.ExpandedOrdinal, c.Name DeclaringClass, p.Name Property
+            FROM ECVLib.ExpandedProperties(ec_classid('ExpandedPropertiesTest', 'Derived')) ep
+            JOIN meta.ECPropertyDef p ON p.ECInstanceId=ep.PropertyId
+            JOIN meta.ECClassDef c ON c.ECInstanceId=p.Class.Id
+            ORDER BY ep.ExpandedOrdinal
+        )ecsql"));
+
+        std::vector<std::string> actual;
+        DbResult stepResult;
+        while ((stepResult = stmt.Step()) == BE_SQLITE_ROW) {
+            Utf8String row;
+            row.Sprintf("%d:%s.%s", stmt.GetValueInt(0), stmt.GetValueText(1), stmt.GetValueText(2));
+            actual.push_back(row.c_str());
+        }
+        EXPECT_EQ(BE_SQLITE_DONE, stepResult);
+
+        std::vector<std::string> expected {
+            "0:Root.RootA",
+            "1:Root.RootB",
+            "2:Base.BaseA",
+            "3:MixinOne.MixinA",
+            "4:MixinOne.MixinB",
+            "5:MixinOne.BranchShared",
+            "6:MixinTwo.MixinC",
+            "7:MixinTwo.MixinD",
+            "8:Derived.Own",
+            "9:Derived.Shared",
+        };
+        EXPECT_EQ(expected, actual);
+    };
+
+    assertExpandedProperties();
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    assertExpandedProperties();
+
+    ECSqlStatement descending;
+    ASSERT_EQ(ECSqlStatus::Success, descending.Prepare(m_ecdb, R"ecsql(
+        SELECT ExpandedOrdinal
+        FROM ECVLib.ExpandedProperties(ec_classid('ExpandedPropertiesTest', 'Derived'))
+        ORDER BY ExpandedOrdinal DESC
+    )ecsql"));
+    for (int expected = 9; expected >= 0; --expected) {
+        ASSERT_EQ(BE_SQLITE_ROW, descending.Step());
+        EXPECT_EQ(expected, descending.GetValueInt(0));
+    }
+    EXPECT_EQ(BE_SQLITE_DONE, descending.Step());
+
+    ECSqlStatement correlated;
+    ASSERT_EQ(ECSqlStatus::Success, correlated.Prepare(m_ecdb, R"ecsql(
+        SELECT c.Name, COUNT(*)
+        FROM meta.ECSchemaDef s, meta.ECClassDef c, ECVLib.ExpandedProperties(c.ECInstanceId) ep
+        WHERE c.Schema.Id=s.ECInstanceId AND s.Name='ExpandedPropertiesTest'
+        GROUP BY c.Name
+        ORDER BY c.Name
+    )ecsql"));
+    std::vector<std::pair<std::string, int>> expectedCounts {
+        {"Base", 4},
+        {"Derived", 10},
+        {"MixinOne", 3},
+        {"MixinTwo", 3},
+        {"Root", 2},
+    };
+    for (auto const& expected : expectedCounts) {
+        ASSERT_EQ(BE_SQLITE_ROW, correlated.Step());
+        EXPECT_STREQ(expected.first.c_str(), correlated.GetValueText(0));
+        EXPECT_EQ(expected.second, correlated.GetValueInt(1));
+    }
+    EXPECT_EQ(BE_SQLITE_DONE, correlated.Step());
+
+    ECSqlStatement unknownClass;
+    ASSERT_EQ(ECSqlStatus::Success, unknownClass.Prepare(m_ecdb, "SELECT PropertyId FROM ECVLib.ExpandedProperties(0x7fffffffffffffff)"));
+    EXPECT_EQ(BE_SQLITE_DONE, unknownClass.Step());
+}
+
 END_ECDBUNITTESTS_NAMESPACE
