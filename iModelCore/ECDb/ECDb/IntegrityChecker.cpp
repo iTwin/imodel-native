@@ -349,8 +349,8 @@ DbResult IntegrityChecker::CheckProfileTablesAndIndexes4002AndLater(std::functio
 	const auto metaTriggers = std::map<std::string,std::string> {
 		{"bis_Element_CurrentTimeStamp", "CREATE TRIGGER bis_Element_CurrentTimeStamp AFTER UPDATE ON bis_Element WHEN old.LastMod=new.LastMod AND old.LastMod!=julianday('now') BEGIN UPDATE bis_Element SET LastMod=julianday('now') WHERE Id=new.Id; END"},
 		{"dgn_prjrange_del", "CREATE TRIGGER dgn_prjrange_del AFTER DELETE ON bis_GeometricElement3d BEGIN DELETE FROM dgn_SpatialIndex WHERE ElementId=old.ElementId;END"},
-		{"dgn_rtree_upd", "CREATE TRIGGER dgn_rtree_upd AFTER UPDATE OF Origin_X,Origin_Y,Origin_Z,Yaw,Pitch,Roll,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z ON bis_GeometricElement3d WHEN new.Origin_X IS NOT NULL AND 1 = new.InSpatialIndex BEGIN INSERT OR REPLACE INTO dgn_SpatialIndex(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5) FROM (SELECT DGN_placement_aabb(DGN_placement(DGN_point(NEW.Origin_X,NEW.Origin_Y,NEW.Origin_Z),DGN_angles(NEW.Yaw,NEW.Pitch,NEW.Roll),DGN_bbox(NEW.BBoxLow_X,NEW.BBoxLow_Y,NEW.BBoxLow_Z,NEW.BBoxHigh_X,NEW.BBoxHigh_Y,NEW.BBoxHigh_Z))) as bb);END"},
-		{"dgn_rtree_upd1", "CREATE TRIGGER dgn_rtree_upd1 AFTER UPDATE OF Origin_X,Origin_Y,Origin_Z,Yaw,Pitch,Roll,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z ON bis_GeometricElement3d WHEN OLD.Origin_X IS NOT NULL AND NEW.Origin_X IS NULL BEGIN DELETE FROM dgn_SpatialIndex WHERE ElementId=OLD.ElementId;END"},
+		{"dgn_rtree_upd", "CREATE TRIGGER dgn_rtree_upd AFTER UPDATE OF InSpatialIndex,Origin_X,Origin_Y,Origin_Z,Yaw,Pitch,Roll,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z ON bis_GeometricElement3d WHEN new.Origin_X IS NOT NULL AND 1 = new.InSpatialIndex BEGIN INSERT OR REPLACE INTO dgn_SpatialIndex(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5) FROM (SELECT DGN_placement_aabb(DGN_placement(DGN_point(NEW.Origin_X,NEW.Origin_Y,NEW.Origin_Z),DGN_angles(NEW.Yaw,NEW.Pitch,NEW.Roll),DGN_bbox(NEW.BBoxLow_X,NEW.BBoxLow_Y,NEW.BBoxLow_Z,NEW.BBoxHigh_X,NEW.BBoxHigh_Y,NEW.BBoxHigh_Z))) as bb);END"},
+		{"dgn_rtree_upd1", "CREATE TRIGGER dgn_rtree_upd1 AFTER UPDATE OF InSpatialIndex,Origin_X,Origin_Y,Origin_Z,Yaw,Pitch,Roll,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z ON bis_GeometricElement3d WHEN OLD.Origin_X IS NOT NULL AND (NEW.Origin_X IS NULL OR NEW.InSpatialIndex = 0) BEGIN DELETE FROM dgn_SpatialIndex WHERE ElementId=OLD.ElementId;END"},
 		{"dgn_rtree_ins", "CREATE TRIGGER dgn_rtree_ins AFTER INSERT ON bis_GeometricElement3d WHEN new.Origin_X IS NOT NULL AND 1 = new.InSpatialIndex BEGIN INSERT INTO dgn_SpatialIndex(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5) FROM (SELECT DGN_placement_aabb(DGN_placement(DGN_point(NEW.Origin_X,NEW.Origin_Y,NEW.Origin_Z),DGN_angles(NEW.Yaw,NEW.Pitch,NEW.Roll),DGN_bbox(NEW.BBoxLow_X,NEW.BBoxLow_Y,NEW.BBoxLow_Z,NEW.BBoxHigh_X,NEW.BBoxHigh_Y,NEW.BBoxHigh_Z))) as bb);END"},
 		{"dgn_fts_ai", "CREATE TRIGGER dgn_fts_ai AFTER INSERT ON dgn_fts_content BEGIN INSERT INTO dgn_fts_idx(rowid,Type,Id,Text) VALUES(new.rowid,new.Type,new.Id,new.Text); END"},
 		{"dgn_fts_ad", "CREATE TRIGGER dgn_fts_ad AFTER DELETE ON dgn_fts_content BEGIN INSERT INTO dgn_fts_idx(dgn_fts_idx,rowid,Type,Id,Text) VALUES('delete',old.rowid,old.Type,old.Id,old.Text); END"},
@@ -461,8 +461,8 @@ DbResult IntegrityChecker::CheckProfileTablesAndIndexes4001AndOlder(std::functio
 	const auto metaTriggers = std::map<std::string,std::string> {
 		{"bis_Element_CurrentTimeStamp", "CREATE TRIGGER bis_Element_CurrentTimeStamp AFTER UPDATE ON bis_Element WHEN old.LastMod=new.LastMod AND old.LastMod!=julianday('now') BEGIN UPDATE bis_Element SET LastMod=julianday('now') WHERE Id=new.Id; END"},
 		{"dgn_prjrange_del", "CREATE TRIGGER dgn_prjrange_del AFTER DELETE ON bis_GeometricElement3d BEGIN DELETE FROM dgn_SpatialIndex WHERE ElementId=old.ElementId;END"},
-		{"dgn_rtree_upd", "CREATE TRIGGER dgn_rtree_upd AFTER UPDATE OF Origin_X,Origin_Y,Origin_Z,Yaw,Pitch,Roll,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z ON bis_GeometricElement3d WHEN new.Origin_X IS NOT NULL AND 1 = new.InSpatialIndex BEGIN INSERT OR REPLACE INTO dgn_SpatialIndex(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5) FROM (SELECT DGN_placement_aabb(DGN_placement(DGN_point(NEW.Origin_X,NEW.Origin_Y,NEW.Origin_Z),DGN_angles(NEW.Yaw,NEW.Pitch,NEW.Roll),DGN_bbox(NEW.BBoxLow_X,NEW.BBoxLow_Y,NEW.BBoxLow_Z,NEW.BBoxHigh_X,NEW.BBoxHigh_Y,NEW.BBoxHigh_Z))) as bb);END"},
-		{"dgn_rtree_upd1", "CREATE TRIGGER dgn_rtree_upd1 AFTER UPDATE OF Origin_X,Origin_Y,Origin_Z,Yaw,Pitch,Roll,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z ON bis_GeometricElement3d WHEN OLD.Origin_X IS NOT NULL AND NEW.Origin_X IS NULL BEGIN DELETE FROM dgn_SpatialIndex WHERE ElementId=OLD.ElementId;END"},
+		{"dgn_rtree_upd", "CREATE TRIGGER dgn_rtree_upd AFTER UPDATE OF InSpatialIndex,Origin_X,Origin_Y,Origin_Z,Yaw,Pitch,Roll,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z ON bis_GeometricElement3d WHEN new.Origin_X IS NOT NULL AND 1 = new.InSpatialIndex BEGIN INSERT OR REPLACE INTO dgn_SpatialIndex(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5) FROM (SELECT DGN_placement_aabb(DGN_placement(DGN_point(NEW.Origin_X,NEW.Origin_Y,NEW.Origin_Z),DGN_angles(NEW.Yaw,NEW.Pitch,NEW.Roll),DGN_bbox(NEW.BBoxLow_X,NEW.BBoxLow_Y,NEW.BBoxLow_Z,NEW.BBoxHigh_X,NEW.BBoxHigh_Y,NEW.BBoxHigh_Z))) as bb);END"},
+		{"dgn_rtree_upd1", "CREATE TRIGGER dgn_rtree_upd1 AFTER UPDATE OF InSpatialIndex,Origin_X,Origin_Y,Origin_Z,Yaw,Pitch,Roll,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z ON bis_GeometricElement3d WHEN OLD.Origin_X IS NOT NULL AND (NEW.Origin_X IS NULL OR NEW.InSpatialIndex = 0) BEGIN DELETE FROM dgn_SpatialIndex WHERE ElementId=OLD.ElementId;END"},
 		{"dgn_rtree_ins", "CREATE TRIGGER dgn_rtree_ins AFTER INSERT ON bis_GeometricElement3d WHEN new.Origin_X IS NOT NULL AND 1 = new.InSpatialIndex BEGIN INSERT INTO dgn_SpatialIndex(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5) FROM (SELECT DGN_placement_aabb(DGN_placement(DGN_point(NEW.Origin_X,NEW.Origin_Y,NEW.Origin_Z),DGN_angles(NEW.Yaw,NEW.Pitch,NEW.Roll),DGN_bbox(NEW.BBoxLow_X,NEW.BBoxLow_Y,NEW.BBoxLow_Z,NEW.BBoxHigh_X,NEW.BBoxHigh_Y,NEW.BBoxHigh_Z))) as bb);END"},
 		{"dgn_fts_ai", "CREATE TRIGGER dgn_fts_ai AFTER INSERT ON dgn_fts_content BEGIN INSERT INTO dgn_fts_idx(rowid,Type,Id,Text) VALUES(new.rowid,new.Type,new.Id,new.Text); END"},
 		{"dgn_fts_ad", "CREATE TRIGGER dgn_fts_ad AFTER DELETE ON dgn_fts_content BEGIN INSERT INTO dgn_fts_idx(dgn_fts_idx,rowid,Type,Id,Text) VALUES('delete',old.rowid,old.Type,old.Id,old.Text); END"},
@@ -470,6 +470,24 @@ DbResult IntegrityChecker::CheckProfileTablesAndIndexes4001AndOlder(std::functio
 	};
 	return CheckEcProfile(metaTables, metaIndexes, metaTriggers, callback);
 }
+
+//---------------------------------------------------------------------------------------
+// Existing iModels keep pre-2.0.0.8 spatial-index triggers that do not watch InSpatialIndex.
+// DgnDb upgrades replace them, but ECDb can inspect an iModel without running that upgrade.
+// Both definitions are therefore valid to the integrity checker.
+//---------------------------------------------------------------------------------------
+static bool IsAcceptedTriggerSql(std::string const& name, std::string const& actual, std::string const& expected) {
+    if (actual == expected)
+        return true;
+
+    if (name == "dgn_rtree_upd")
+        return actual == "CREATE TRIGGER dgn_rtree_upd AFTER UPDATE OF Origin_X,Origin_Y,Origin_Z,Yaw,Pitch,Roll,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z ON bis_GeometricElement3d WHEN new.Origin_X IS NOT NULL AND 1 = new.InSpatialIndex BEGIN INSERT OR REPLACE INTO dgn_SpatialIndex(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5) FROM (SELECT DGN_placement_aabb(DGN_placement(DGN_point(NEW.Origin_X,NEW.Origin_Y,NEW.Origin_Z),DGN_angles(NEW.Yaw,NEW.Pitch,NEW.Roll),DGN_bbox(NEW.BBoxLow_X,NEW.BBoxLow_Y,NEW.BBoxLow_Z,NEW.BBoxHigh_X,NEW.BBoxHigh_Y,NEW.BBoxHigh_Z))) as bb);END";
+
+    if (name == "dgn_rtree_upd1")
+        return actual == "CREATE TRIGGER dgn_rtree_upd1 AFTER UPDATE OF Origin_X,Origin_Y,Origin_Z,Yaw,Pitch,Roll,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z ON bis_GeometricElement3d WHEN OLD.Origin_X IS NOT NULL AND NEW.Origin_X IS NULL BEGIN DELETE FROM dgn_SpatialIndex WHERE ElementId=OLD.ElementId;END";
+
+    return false;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -601,7 +619,7 @@ DbResult IntegrityChecker::CheckEcProfile(std::map<std::string,std::string> cons
 				}
 			} else {
 				const std::string sql = triggerStmt.GetValueText(0);
-				if (sql != kv.second) {
+				if (!IsAcceptedTriggerSql(kv.first, sql, kv.second)) {
 					//! miss match declaration
 					if(!callback(kTypeTrigger, kv.first, kIssueDDLMismatch)) {
 						return BE_SQLITE_OK;
