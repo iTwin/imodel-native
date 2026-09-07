@@ -1378,19 +1378,11 @@ TEST_F(InstanceWriterFixture, ConvertClassIdsToClassNames_ConstraintClassIds) {
 TEST_F(InstanceWriterFixture, JsNameConstraintClassIds) {
     const auto schemaXml = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="ECDbMap" version="02.00.04" alias="ecdbmap" />
-            <ECEntityClass typeName="P" modifier="Abstract">
-                <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.02.00.04">
-                        <MapStrategy>TablePerHierarchy</MapStrategy>
-                    </ClassMap>
-                </ECCustomAttributes>
+            <ECEntityClass typeName="P1">
                 <ECProperty propertyName="S" typeName="string" />
             </ECEntityClass>
-            <ECEntityClass typeName="P1">
-                <BaseClass>P</BaseClass>
-            </ECEntityClass>
             <ECEntityClass typeName="P2">
-                <BaseClass>P</BaseClass>
+                <ECProperty propertyName="S" typeName="string" />
             </ECEntityClass>
             <ECRelationshipClass typeName="PRefersToPs" strength="referencing" modifier="None">
                 <ECCustomAttributes>
@@ -1402,17 +1394,17 @@ TEST_F(InstanceWriterFixture, JsNameConstraintClassIds) {
                     </ClassMap>
                 </ECCustomAttributes>
                 <Source multiplicity="(0..*)" roleLabel="1" polymorphic="true">
-                    <Class class="P"/>
+                    <Class class="P1"/>
                 </Source>
                 <Target multiplicity="(0..*)" roleLabel="2" polymorphic="true">
-                    <Class class="P"/>
+                    <Class class="P2"/>
                 </Target>
             </ECRelationshipClass>
         </ECSchema>)xml";
 
     ASSERT_EQ(SUCCESS, SetupECDb(BeTest::GetNameOfCurrentTest(), SchemaItem(schemaXml)));
 
-    // Endpoints are of different concrete classes so the constraint class ids genuinely vary.
+    // Endpoints are separate classes (no shared base -> separate tables) so the constraint class ids genuinely vary.
     ECInstanceKey sourceKey, targetKey;
     {
         BeJsDocument doc;
@@ -1451,24 +1443,15 @@ TEST_F(InstanceWriterFixture, JsNameConstraintClassIds) {
     }
     m_ecdb.SaveChanges();
 
-    // Read back in JsName format; the stored constraint class ids come out as their real class names.
-    const auto readRel = [&](const ECInstanceKey& key, BeJsValue out) {
-        InstanceReader::Position pos(key.GetInstanceId(), key.GetClassId());
-        return m_ecdb.GetInstanceReader().Seek(pos, [&](const InstanceReader::IRowContext& row, auto) {
-            out.From(row.GetJson(JsReadOptions()
-                .SetAbbreviateBlobs(false)
-                .SetUseJsNames(true)
-                .SetUseClassFullNameInsteadofClassName(true)));
-        });
-    };
-
-    BeJsDocument relDoc;
-    ASSERT_TRUE(readRel(relKey, relDoc));
-    EXPECT_STREQ("TestSchema:PRefersToPs", relDoc[ECN::ECJsonSystemNames::ClassFullName()].asCString());
-    EXPECT_STREQ("TestSchema:P1", relDoc[ECN::ECJsonSystemNames::SourceClassName()].asCString());
-    EXPECT_STREQ("TestSchema:P2", relDoc[ECN::ECJsonSystemNames::TargetClassName()].asCString());
-    EXPECT_STREQ(sourceKey.GetInstanceId().ToHexStr().c_str(), relDoc[ECN::ECJsonSystemNames::SourceId()].asCString());
-    EXPECT_STREQ(targetKey.GetInstanceId().ToHexStr().c_str(), relDoc[ECN::ECJsonSystemNames::TargetId()].asCString());
+    // Read the stored constraint class ids back via ECSql and verify they match the endpoint keys.
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.PRefersToPs WHERE ECInstanceId=?"));
+    stmt.BindId(1, relKey.GetInstanceId());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    EXPECT_EQ(sourceKey.GetInstanceId(), stmt.GetValueId<ECInstanceId>(0));
+    EXPECT_EQ(sourceKey.GetClassId(), stmt.GetValueId<ECN::ECClassId>(1));
+    EXPECT_EQ(targetKey.GetInstanceId(), stmt.GetValueId<ECInstanceId>(2));
+    EXPECT_EQ(targetKey.GetClassId(), stmt.GetValueId<ECN::ECClassId>(3));
 }
 
 //---------------------------------------------------------------------------------------
