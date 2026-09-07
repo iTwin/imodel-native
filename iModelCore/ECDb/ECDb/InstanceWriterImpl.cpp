@@ -938,9 +938,9 @@ bool Impl::TryGetClassId(ECN::ECClassId& classId, BeJsConst in, JsFormat jsFmt, 
             return false;
         }
         auto classP = m_cache.GetECDb().Schemas().FindClass(idJs.asString());
-        if (classP != nullptr) {
-            classId = classP->GetId();
-        }
+        if (classP == nullptr)
+            return false;
+        classId = classP->GetId();
         return classId.IsValid();
     }
     classId = in[ECDBSYS_PROP_ECClassId].GetId64<ECClassId>();
