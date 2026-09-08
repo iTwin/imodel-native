@@ -1230,7 +1230,7 @@ TEST_F(SchemaSyncImportTestFixture, ConcurrentImportsDoNotShareAColumn)
 // ---------------------------------------------------------------------------------------
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaSyncImportTestFixture, ConcurrentImportsConvergeAfterExchange)
+TEST_F(SchemaSyncImportExtendedTests, ConcurrentImportsConvergeAfterExchange)
     {
     ECDbHub hub;
     SchemaSyncDb syncDb("upstream-converge-exchange");
@@ -1297,6 +1297,7 @@ TEST_F(SchemaSyncImportTestFixture, SyncDbRefusesConflictingPropertyType)
         EXPECT_NE(SchemaImportResult::OK, ImportSchema(sync, conflicting, SchemaManager::SchemaImportOptions::DoNotCreateOrUpdateDataTables))
             << "the sync db accepted a conflicting property type - the authority is not authoritative";
         ASSERT_EQ(BE_SQLITE_OK, sync.AbandonChanges());
+        EXPECT_STREQ("1.0.1", VersionOf(sync, "Machinery").c_str());
     });
     }
 
@@ -1330,6 +1331,7 @@ TEST_F(SchemaSyncImportTestFixture, SyncDbRefusesImportNeedingDataTransform)
             << "a data-moving change was accepted on the additive path; it must be routed to the "
                "upgrade front door instead";
         ASSERT_EQ(BE_SQLITE_OK, sync.AbandonChanges());
+        EXPECT_STREQ("1.0.0", VersionOf(sync, "RemapTest").c_str());
     });
     }
 
@@ -2492,7 +2494,7 @@ TEST_F(SchemaSyncImportTestFixture, ConcurrentLabelEditsInReversedPushOrder)
 // ---------------------------------------------------------------------------------------
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaSyncImportTestFixture, ConcurrentEditsToANewClassInReversedPushOrder)
+TEST_F(SchemaSyncImportExtendedTests, ConcurrentEditsToANewClassInReversedPushOrder)
     {
     ConcurrentEditScenario scenario("upstream-new-class-reversed");
     scenario.Start({ MetadataOnlySchema("01.00.00", "unchanged throughout") });
@@ -3015,7 +3017,7 @@ TEST_F(SchemaSyncImportTestFixture, DataSurvivesASpillArrivingOnTopOfUnpushedRow
 // +---------------+---------------+---------------+---------------+---------------+------
 // The same spill with the rows spread over three unpushed txns, so the catch-up at the end of the
 // rebase has to cover all of them.
-TEST_F(SchemaSyncImportTestFixture, DataSurvivesASpillArrivingOnTopOfSeveralUnpushedTxns)
+TEST_F(SchemaSyncImportExtendedTests, DataSurvivesASpillArrivingOnTopOfSeveralUnpushedTxns)
     {
     ECDbHub hub;
     SchemaSyncDb syncDb("upstream-census-unpushed-txns");

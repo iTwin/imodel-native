@@ -332,6 +332,14 @@ When updating any vcpkg-built library:
    dependency, using its `vcpkg-mend.json` triplets as the starting point. Confirm that no relevant
    manifest still pins the old version.
 4. Update the version in the `iModelCore/libsrc/README.md` library table.
+5. Update every `iModelCore/libsrc/**/*NugetLicense.json` sublicense entry for the library. The
+   `version` must match the upstream release version being shipped (omit vcpkg's port revision,
+   such as `#1`), and the release-pinned `licenseUrl` and `SPDX-ID` must still describe that release.
+   Some NuGet metadata files describe multiple libraries; for example,
+   `compress/CompressNugetLicense.json` contains separate zlib and minizip entries. Do not assume
+   that the metadata filename matches the vcpkg port name. These files are consumed by the
+   `iTwinNativeThirdParty` build when it publishes the corresponding NuGets, even when the
+   `NuGetProduct` that references the file is defined outside this repository.
 
 For example, OpenSSL is pinned by its own consumer and by the curl and crashpad graphs, while zlib
 is pinned by several consumers. Apply the same repository-wide check to minizip or any other port

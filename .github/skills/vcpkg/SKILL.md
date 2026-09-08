@@ -297,8 +297,15 @@ may not run at all.
 4. Resolve or install every affected graph with a triplet that activates platform-conditional
    dependencies; use each consumer's `vcpkg-mend.json` triplets as the starting point. Search again
    for the old version and do not finish while a relevant manifest still pins it.
-5. No changes to `.mke` or `.PartFile.xml` files are needed — the next build will pick
-   up the new version via the binary cache or a fresh build.
+5. Update every `iModelCore/libsrc/**/*NugetLicense.json` sublicense entry for the library. Use the
+  upstream release version, without a vcpkg port revision such as `#1`, and verify that the
+  release-pinned `licenseUrl` and `SPDX-ID` still apply to the new release. A metadata file can
+  describe multiple ports: `compress/CompressNugetLicense.json`, for example, has separate zlib
+  and minizip entries. Search by sublicense name instead of assuming the filename matches the port.
+  The `iTwinNativeThirdParty` build consumes these files when publishing the corresponding NuGets,
+  including files referenced by `NuGetProduct` definitions outside this repository.
+6. No changes to `.mke` or `.PartFile.xml` files are needed solely for a version bump — the next
+  build will pick up the new version via the binary cache or a fresh build.
 
 ---
 
