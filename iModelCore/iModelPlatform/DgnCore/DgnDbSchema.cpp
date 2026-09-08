@@ -186,7 +186,41 @@ void AutoHandledPropertiesCollection::ForEach(ECN::ECClassCR ecClass, DgnDbR db,
 #define BBOX_FROM_PLACEMENT "DGN_bbox(NEW.BBoxLow_X,NEW.BBoxLow_Y,NEW.BBoxLow_Z,NEW.BBoxHigh_X,NEW.BBoxHigh_Y,NEW.BBoxHigh_Z)"
 #define PLACEMENT_FROM_GEOM "DGN_placement(" ORIGIN_FROM_PLACEMENT "," ANGLES_FROM_PLACEMENT "," BBOX_FROM_PLACEMENT ")"
 #define AABB_FROM_PLACEMENT "DGN_placement_aabb(" PLACEMENT_FROM_GEOM ")"
-#define OF_SPATIAL_DATA "OF Origin_X,Origin_Y,Origin_Z,Yaw,Pitch,Roll,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z"
+#define OF_SPATIAL_DATA "OF InSpatialIndex,Origin_X,Origin_Y,Origin_Z,Yaw,Pitch,Roll,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z"
+
+//---------------------------------------------------------------------------------------
+// Creates the spatial-index update triggers used by new files and by the DgnDb profile
+// upgrade. Keep this SQL in one place so both paths install the same definitions.
+//---------------------------------------------------------------------------------------
+static DbResult CreateSpatialIndexUpdateTriggers(DgnDbR db)
+    {
+    DbResult result = db.ExecuteSql("CREATE TRIGGER dgn_rtree_upd AFTER UPDATE " OF_SPATIAL_DATA " ON " BIS_TABLE(BIS_CLASS_GeometricElement3d) " WHEN new.Origin_X IS NOT NULL AND " GEOM_IN_SPATIAL_INDEX_CLAUSE
+                                                                                                                            "BEGIN INSERT OR REPLACE INTO " DGN_VTABLE_SpatialIndex "(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,"
+                                                                                                                            "DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5)"
+                                                                                                                            " FROM (SELECT " AABB_FROM_PLACEMENT " as bb);END");
+    if (BE_SQLITE_OK != result)
+        return result;
+
+    return db.ExecuteSql("CREATE TRIGGER dgn_rtree_upd1 AFTER UPDATE " OF_SPATIAL_DATA " ON " BIS_TABLE(BIS_CLASS_GeometricElement3d) " WHEN OLD.Origin_X IS NOT NULL AND (NEW.Origin_X IS NULL OR NEW.InSpatialIndex = 0)"
+                                                                                                                            " BEGIN DELETE FROM " DGN_VTABLE_SpatialIndex " WHERE ElementId=OLD.ElementId;END");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Helper function to upgrade the DgnDb profile to 2.0.0.8 by updating spatial-index triggers.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DgnDb::UpgradeToProfile2_0_0_8(DgnDbR db)
+    {
+    DbResult result = db.ExecuteSql("DROP TRIGGER IF EXISTS dgn_rtree_upd");
+    if (BE_SQLITE_OK != result)
+        return result;
+
+    result = db.ExecuteSql("DROP TRIGGER IF EXISTS dgn_rtree_upd1");
+    if (BE_SQLITE_OK != result)
+        return result;
+
+    return CreateSpatialIndexUpdateTriggers(db);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -362,13 +396,9 @@ DbResult DgnDb::CreateDgnDbTables(CreateDgnDbParams const& params) {
 
     ExecuteSql("CREATE TRIGGER dgn_prjrange_del AFTER DELETE ON " BIS_TABLE(BIS_CLASS_GeometricElement3d) " BEGIN DELETE FROM " DGN_VTABLE_SpatialIndex " WHERE ElementId=old.ElementId;END");
 
-    ExecuteSql("CREATE TRIGGER dgn_rtree_upd AFTER UPDATE " OF_SPATIAL_DATA " ON " BIS_TABLE(BIS_CLASS_GeometricElement3d) " WHEN new.Origin_X IS NOT NULL AND " GEOM_IN_SPATIAL_INDEX_CLAUSE
-                                                                                                                            "BEGIN INSERT OR REPLACE INTO " DGN_VTABLE_SpatialIndex "(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,"
-                                                                                                                            "DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5)"
-                                                                                                                            " FROM (SELECT " AABB_FROM_PLACEMENT " as bb);END");
-
-    ExecuteSql("CREATE TRIGGER dgn_rtree_upd1 AFTER UPDATE " OF_SPATIAL_DATA " ON " BIS_TABLE(BIS_CLASS_GeometricElement3d) " WHEN OLD.Origin_X IS NOT NULL AND NEW.Origin_X IS NULL"
-                                                                                                                            " BEGIN DELETE FROM " DGN_VTABLE_SpatialIndex " WHERE ElementId=OLD.ElementId;END");
+    DbResult spatialIndexTriggerResult = CreateSpatialIndexUpdateTriggers(*this);
+    if (BE_SQLITE_OK != spatialIndexTriggerResult)
+        return spatialIndexTriggerResult;
 
     ExecuteSql("CREATE TRIGGER dgn_rtree_ins AFTER INSERT ON " BIS_TABLE(BIS_CLASS_GeometricElement3d) " WHEN new.Origin_X IS NOT NULL AND " GEOM_IN_SPATIAL_INDEX_CLAUSE
                                                                                                         "BEGIN INSERT INTO " DGN_VTABLE_SpatialIndex "(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,"
@@ -494,51 +524,6 @@ DbResult DgnDb::InitializeDgnDb(CreateDgnDbParams const& params) {
     return SaveChanges();
 }
 
-//=======================================================================================
-// @bsiclass
-//=======================================================================================
-struct ProjectSchemaUpgrader
-    {
-    virtual DgnDbProfileVersion _GetVersion() = 0;
-    virtual DbResult _Upgrade(DgnDbR project, DgnDbProfileVersion version) = 0;
-    };
-
-#if defined (WIP_RebaseSupportUpgrader)
-struct RebaseSupportUpgrader : ProjectSchemaUpgrader
-    {
-    DgnDbProfileVersion _GetVersion() override {return DgnDbProfileVersion(2, 1);}
-    DbResult _Upgrade(DgnDbR db, DgnDbProfileVersion version)
-        {
-        // DGN_TABLE_Rebase was introduced in 2.1
-        if ((version.GetMajor() != 2) || (version.GetMinor() >= 1))
-            return BE_SQLITE_OK;
-
-        if (db.TableExists(DGN_TABLE_Rebase))
-            return BE_SQLITE_OK;
-
-        return db.CreateRebaseTable();
-        }
-    };
-
-static RebaseSupportUpgrader s_rebaseSupportUpgrader;
-
-static ProjectSchemaUpgrader* s_upgraders[] =
-    {
-    // NOTE: entries in this list *must* be sorted in ascending version order.
-    // Add a new version here
-    &s_rebaseSupportUpgrader
-    };
-#endif
-
-#if defined (WHEN_FIRST_UPGRADER)
-static ProjectSchemaUpgrader* s_upgraders[] =
-    {
-    // NOTE: entries in this list *must* be sorted in ascending version order.
-    // Add a new version here
-
-    };
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -614,25 +599,21 @@ BeSQLite::DbResult DgnDb::_OnAfterProfileUpgrade()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDb::_UpgradeProfile(Db::OpenParams const& params)
     {
+    DgnDbProfileVersion const versionBeforeUpgrade = m_profileVersion;
     DbResult result = T_Super::_UpgradeProfile(params);
     if (BE_SQLITE_OK != result)
         return result;
 
-#if defined (WHEN_FIRST_UPGRADER)
-    for (auto upgrader : s_upgraders)
+    // DgnDb currently has only one profile upgrader. Keep this flat implementation until
+    // there are enough migrations to justify an ordered upgrader sequence.
+    if (versionBeforeUpgrade < DgnDbProfileVersion(2, 0, 0, 8))
         {
-        if (m_profileVersion < upgrader->_GetVersion())
-            {
-            DbResult stat = upgrader->_Upgrade(project, m_profileVersion);
-            if (BE_SQLITE_OK != stat)
-                return stat;
-
-            m_profileVersion = upgrader->_GetVersion();
-            }
+        result = UpgradeToProfile2_0_0_8(*this);
+        if (BE_SQLITE_OK != result)
+            return result;
         }
-#else
+
     m_profileVersion = DgnDbProfileVersion::GetCurrent();
-#endif
 
     return SaveDgnDbProfileVersion(m_profileVersion);
     }

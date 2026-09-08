@@ -1036,9 +1036,9 @@ TEST_F(ECDbCompatibilityTestFixture, EC31SchemaImport)
 
             ECInstanceKey fooKey;
             ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(fooKey)) << testDb.GetDescription();
-			
-			Utf8String expectedData = JsonValue(Utf8PrintfString(R"json([{"id": "%s", "Code": 1, "Size": 3.0, "Status": 2}])json", fooKey.GetInstanceId().ToHexStr().c_str())).ToString();
-			ASSERT_EQ(expectedData, testDb.ExecuteECSqlSelect("SELECT ECInstanceId, Code, Size, Status FROM ts.Foo").ToString()) << testDb.GetDescription();
+
+            EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id": "%s", "Code": 1, "Size": 3.0, "Status": 2}])json", fooKey.GetInstanceId().ToHexStr().c_str())),
+                      testDb.ExecuteECSqlSelect("SELECT ECInstanceId, Code, Size, Status FROM ts.Foo")) << testDb.GetDescription();
 
             ECClassCP fooClass = testDb.GetDb().Schemas().GetClass("TestSchema", "Foo");
             ASSERT_TRUE(fooClass != nullptr && fooClass->IsEntityClass()) << testDb.GetDescription();
@@ -1156,8 +1156,8 @@ TEST_F(ECDbCompatibilityTestFixture, EC31SchemaImportWithEC32Reference)
             ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(fooKey)) << testDb.GetDescription();
             stmt.Finalize();
 
-			Utf8String expectedData = JsonValue(Utf8PrintfString(R"json([{"id": "%s", "Code": 1, "Size": 3.0, "Status": 2}])json", fooKey.GetInstanceId().ToHexStr().c_str())).ToString();
-			ASSERT_EQ(expectedData, testDb.ExecuteECSqlSelect("SELECT ECInstanceId, Code, Size, Status FROM ts.Foo").ToString()) << testDb.GetDescription();
+            EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id": "%s", "Code": 1, "Size": 3.0, "Status": 2}])json", fooKey.GetInstanceId().ToHexStr().c_str())),
+                testDb.ExecuteECSqlSelect("SELECT ECInstanceId, Code, Size, Status FROM ts.Foo")) << testDb.GetDescription();
 
             ECClassCP fooClass = testDb.GetDb().Schemas().GetClass("TestSchema", "Foo");
             ASSERT_TRUE(fooClass != nullptr && fooClass->IsEntityClass()) << testDb.GetDescription();
@@ -1472,8 +1472,8 @@ TEST_F(ECDbCompatibilityTestFixture, EC32SchemaImport_Koqs)
             ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(testDb.GetDb(), "INSERT INTO ts.Foo(Code,Size) VALUES(1,3.0)")) << testDb.GetDescription();
             ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(fooKey)) << testDb.GetDescription();
 
-			Utf8String expectedData = JsonValue(Utf8PrintfString(R"json([{"id": "%s", "Code": 1, "Size": 3.0}])json", fooKey.GetInstanceId().ToHexStr().c_str())).ToString();
-			ASSERT_EQ(expectedData, testDb.ExecuteECSqlSelect("SELECT ECInstanceId, Code, Size FROM ts.Foo").ToString()) << testDb.GetDescription();
+            EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id": "%s", "Code": 1, "Size": 3.0}])json", fooKey.GetInstanceId().ToHexStr().c_str())), 
+                testDb.ExecuteECSqlSelect("SELECT ECInstanceId, Code, Size FROM ts.Foo")) << testDb.GetDescription();
 
 
             ECClassCP fooClass = testDb.GetDb().Schemas().GetClass("TestSchema", "Foo");
@@ -2343,7 +2343,7 @@ TEST_F(ECDbCompatibilityTestFixture, EC32SchemaUpgrade_Koqs)
 
                 ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << className << " | " << testDb.GetDescription();
                 stmt.Finalize();
-                EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id": "%s", "Code": 1, "Size": 2.2, "Sizes" : [3.3,33.3,333.3]}]])json", key.GetInstanceId().ToHexStr().c_str())),
+                EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id": "%s", "Code": 1, "Size": 2.2, "Sizes" : [3.3,33.3,333.3]}])json", key.GetInstanceId().ToHexStr().c_str())),
                             testDb.ExecuteECSqlSelect(Utf8PrintfString("SELECT ECInstanceId,Code,Size,Sizes FROM ts.%s", className).c_str())) << className << " | " << testDb.GetDescription();
 
                 ECClassCP cl = testDb.GetDb().Schemas().GetClass("TestSchema", className);
