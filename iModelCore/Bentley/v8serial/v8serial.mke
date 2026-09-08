@@ -4,12 +4,5 @@
 #---------------------------------------------------------------------------------------------
 %include mdl.mki
 
-VendorApiContextDir = $(BuildContext)VendorAPI/v8serial/
-SourceIncludeDir    = $(_MakeFilePath)include/
-LicenseFile         = $(_MakeFilePath)LICENSE
-
-$(BuildContext)Delivery/v8serial-license.txt : $(LicenseFile)
-    $(LinkFirstDepToFirstTarget)
-
-$(VendorApiContextDir) : $(SourceIncludeDir)v8serial
-    $(LinkFirstDepToFirstTargetAsDirectory)
+always:
+    ~linkdir "$(BuildContext)PublicAPI/v8serial=$(_MakeFilePath)PublicAPI/v8serial"
