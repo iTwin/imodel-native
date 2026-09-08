@@ -26,4 +26,4 @@ Libraries built in `iModelCore/libsrc/`.
 | `proxyres` | proxyres | unknown | No |
 | `pugixml` | pugixml | 1.15 | Yes |
 | `rapidjson` | RapidJSON | 1.1.0 | No |
-| `v8serial` | v8serial | 2f7c1b9 | No |
+| `v8serial` | v8serial | 1.0.0 | No |

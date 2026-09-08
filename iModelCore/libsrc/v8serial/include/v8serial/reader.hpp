@@ -71,6 +71,34 @@ struct DecodedValue {
   std::vector<uint8_t> binary;
 };
 
+/// Discriminator selecting the active payload in ScalarValue.
+enum class ScalarType {
+  Undefined,
+  Null,
+  Boolean,
+  Int32,
+  Uint32,
+  Double,
+  Latin1String,
+  Utf8String,
+  Utf16String,
+};
+
+/// Borrowed scalar decoded by Reader::readRows().
+///
+/// String bytes point into the serialized input and remain valid only while
+/// that input remains alive and unmodified. UTF-16 strings use the native byte
+/// order stored by V8.
+struct ScalarValue {
+  ScalarType type = ScalarType::Undefined;
+  bool boolean = false;
+  int32_t int32 = 0;
+  uint32_t uint32 = 0;
+  double number = 0;
+  const uint8_t* bytes = nullptr;
+  uint32_t byte_count = 0;
+};
+
 /// Indicates malformed, unsupported, or incomplete serialized input.
 class DecodeError : public std::runtime_error {
  public:
@@ -89,9 +117,10 @@ class DecodeError : public std::runtime_error {
 
 /// Bounds-checked reader for the supported subset of V8 wire format version 15.
 ///
-/// Reader borrows an immutable byte span and produces an owning DecodedValue.
-/// It has no V8 or N-API dependency. Independent instances may run on separate
-/// threads; one instance is not safe for concurrent access.
+/// Reader borrows an immutable byte span and can produce an owning
+/// DecodedValue or stream positional scalar rows without materializing a value
+/// tree. It has no V8 or N-API dependency. Independent instances may run on
+/// separate threads; one instance is not safe for concurrent access.
 class Reader {
  public:
   /// Only this exact wire-format version is accepted.
@@ -122,21 +151,74 @@ class Reader {
   /// @throws DecodeError for an invalid header, wrong version, malformed or
   /// unsupported value, exceeded limit, truncated input, or trailing bytes.
   DecodedValue read() {
-    if (remaining() < 2 || readByte() != 0xff) {
-      fail("version header is required");
-    }
-    const uint32_t version = readVarint();
-    if (version != kFormatVersion) {
-      fail("only V8 wire-format version 15 is supported");
-    }
-
+    readHeader();
     DecodedValue value = readValue(0);
-    skipPadding();
-    if (current_ != end_) fail("trailing bytes after root value");
+    finish();
     return value;
   }
 
+  /// Streams a root array of positional rows without constructing a value tree.
+  ///
+  /// Each row must be an array with a consistent column count. Dense arrays
+  /// and complete sparse-array wire forms are accepted; holes and named
+  /// properties are rejected. Row values are limited to undefined, null,
+  /// Boolean, number, and string scalars.
+  ///
+  /// The consumer is called as
+  /// `consumer(row_index, column_index, column_count, scalar)`. Borrowed string
+  /// bytes remain valid while the serialized input remains alive and
+  /// unmodified. Validation is incremental, so consumers that mutate external
+  /// state must roll back earlier callbacks if a later value is invalid.
+  ///
+  /// @returns The number of rows consumed.
+  /// @throws DecodeError for malformed input, inconsistent row widths,
+  /// unsupported values, or trailing bytes.
+  template <typename Consumer>
+  uint32_t readRows(uint32_t minimum_column_count, Consumer&& consumer) {
+    readHeader();
+    const ArrayHeader root = readArrayHeader();
+    const uint32_t row_count = root.length;
+    uint32_t expected_column_count = 0;
+    bool has_expected_column_count = false;
+
+    for (uint32_t row_index = 0; row_index < row_count; ++row_index) {
+      if (root.sparse && readArrayIndex() != row_index) {
+        fail("serialized root array must not contain holes or named properties");
+      }
+
+      const ArrayHeader row = readArrayHeader();
+      const uint32_t column_count = row.length;
+      if (column_count < minimum_column_count ||
+          (has_expected_column_count &&
+           column_count != expected_column_count)) {
+        fail("serialized row has an unexpected column count");
+      }
+      if (!has_expected_column_count) {
+        expected_column_count = column_count;
+        has_expected_column_count = true;
+      }
+
+      for (uint32_t column_index = 0; column_index < column_count;
+           ++column_index) {
+        if (row.sparse && readArrayIndex() != column_index) {
+          fail("serialized row must not contain holes or named properties");
+        }
+        consumer(row_index, column_index, column_count, readScalar());
+      }
+      finishArray(row, column_count);
+    }
+
+    finishArray(root, row_count);
+    finish();
+    return row_count;
+  }
+
  private:
+  struct ArrayHeader {
+    uint32_t length;
+    bool sparse;
+  };
+
   inline static const uint8_t empty_input_ = 0;
   const uint8_t* begin_;
   const uint8_t* current_;
@@ -154,6 +236,11 @@ class Reader {
 
   [[noreturn]] void fail(const std::string& message) const {
     throw DecodeError(offset(), message);
+  }
+
+  [[noreturn]] void failAt(const uint8_t* location,
+                           const std::string& message) const {
+    throw DecodeError(static_cast<size_t>(location - begin_), message);
   }
 
   uint8_t readByte() {
@@ -187,6 +274,112 @@ class Reader {
       if ((next & 0x80U) == 0) return value;
     }
     fail("unterminated varint");
+  }
+
+  void readHeader() {
+    if (remaining() < 2 || readByte() != 0xff) {
+      fail("version header is required");
+    }
+    if (readVarint() != kFormatVersion) {
+      fail("only V8 wire-format version 15 is supported");
+    }
+  }
+
+  void finish() {
+    skipPadding();
+    if (current_ != end_) fail("trailing bytes after root value");
+  }
+
+  ArrayHeader readArrayHeader() {
+    const uint8_t tag = readTag();
+    if (tag != 'A' && tag != 'a') fail("expected an array");
+    const uint32_t length = readVarint();
+    if (length > remaining()) fail("array length exceeds remaining input");
+    return {length, tag == 'a'};
+  }
+
+  void finishArray(const ArrayHeader& array, uint32_t expected_length) {
+    if (array.sparse) {
+      if (readTag() != '@') {
+        fail("sparse array named properties are unsupported");
+      }
+      if (readVarint() != expected_length) {
+        fail("sparse array property count mismatch");
+      }
+      if (readVarint() != expected_length) fail("array length mismatch");
+      return;
+    }
+
+    if (readTag() != '$') fail("named array properties are unsupported");
+    if (readVarint() != 0) fail("array named-property count must be zero");
+    if (readVarint() != expected_length) fail("array length mismatch");
+  }
+
+  uint32_t readArrayIndex() {
+    const ScalarValue value = readScalar();
+    if (value.type == ScalarType::Uint32) return value.uint32;
+    if (value.type == ScalarType::Int32 && value.int32 >= 0) {
+      return static_cast<uint32_t>(value.int32);
+    }
+    fail("sparse array property key must be a non-negative integer");
+  }
+
+  ScalarValue readStringView(ScalarType type) {
+    const uint32_t byte_count = readVarint();
+    if (byte_count > remaining()) fail("string exceeds input");
+    if (type == ScalarType::Utf16String && (byte_count & 1U) != 0) {
+      fail("UTF-16 string has an odd byte count");
+    }
+    if (type == ScalarType::Utf8String) {
+      consumeUtf8(current_, current_ + byte_count, [](uint32_t) {});
+    }
+
+    ScalarValue value;
+    value.type = type;
+    value.bytes = current_;
+    value.byte_count = byte_count;
+    current_ += byte_count;
+    return value;
+  }
+
+  ScalarValue readScalar() {
+    ScalarValue value;
+    const uint8_t tag = readTag();
+    switch (tag) {
+      case '_':
+        return value;
+      case '0':
+        value.type = ScalarType::Null;
+        return value;
+      case 'T':
+      case 'F':
+        value.type = ScalarType::Boolean;
+        value.boolean = tag == 'T';
+        return value;
+      case 'I': {
+        const uint32_t encoded = readVarint();
+        value.type = ScalarType::Int32;
+        value.int32 = static_cast<int32_t>((encoded >> 1U) ^
+                                           (0U - (encoded & 1U)));
+        return value;
+      }
+      case 'U':
+        value.type = ScalarType::Uint32;
+        value.uint32 = readVarint();
+        return value;
+      case 'N':
+        value.type = ScalarType::Double;
+        value.number = readDouble();
+        return value;
+      case '"':
+        return readStringView(ScalarType::Latin1String);
+      case 'S':
+        return readStringView(ScalarType::Utf8String);
+      case 'c':
+        return readStringView(ScalarType::Utf16String);
+      default:
+        fail("serialized rows may contain only primitive scalar values");
+    }
   }
 
   std::vector<uint8_t> readBytes(uint32_t length) {
@@ -228,14 +421,13 @@ class Reader {
     output.push_back(static_cast<char16_t>(0xdc00U + (code_point & 0x3ffU)));
   }
 
-  std::u16string readUtf8String() {
-    const uint32_t length = readVarint();
-    if (length > remaining()) fail("UTF-8 string exceeds input");
-    const uint8_t* limit = current_ + length;
-    std::u16string output;
-
-    while (current_ != limit) {
-      const uint8_t first = *current_++;
+  template <typename Consumer>
+  void consumeUtf8(const uint8_t* start, const uint8_t* limit,
+                   Consumer&& consumer) const {
+    const uint8_t* cursor = start;
+    while (cursor != limit) {
+      const uint8_t* leading = cursor;
+      const uint8_t first = *cursor++;
       uint32_t code_point;
       unsigned continuation_count;
       uint32_t minimum;
@@ -257,23 +449,37 @@ class Reader {
         continuation_count = 3;
         minimum = 0x10000U;
       } else {
-        fail("invalid UTF-8 leading byte");
+        failAt(leading, "invalid UTF-8 leading byte");
       }
 
-      if (static_cast<size_t>(limit - current_) < continuation_count) {
-        fail("truncated UTF-8 sequence");
+      if (static_cast<size_t>(limit - cursor) < continuation_count) {
+        failAt(cursor, "truncated UTF-8 sequence");
       }
       for (unsigned index = 0; index < continuation_count; ++index) {
-        const uint8_t next = *current_++;
-        if ((next & 0xc0U) != 0x80U) fail("invalid UTF-8 continuation byte");
+        const uint8_t* continuation = cursor;
+        const uint8_t next = *cursor++;
+        if ((next & 0xc0U) != 0x80U) {
+          failAt(continuation, "invalid UTF-8 continuation byte");
+        }
         code_point = (code_point << 6U) | (next & 0x3fU);
       }
       if (code_point < minimum || code_point > 0x10ffffU ||
           (code_point >= 0xd800U && code_point <= 0xdfffU)) {
-        fail("invalid UTF-8 code point");
+        failAt(leading, "invalid UTF-8 code point");
       }
-      appendCodePoint(output, code_point);
+      consumer(code_point);
     }
+  }
+
+  std::u16string readUtf8String() {
+    const uint32_t length = readVarint();
+    if (length > remaining()) fail("UTF-8 string exceeds input");
+    const uint8_t* limit = current_ + length;
+    std::u16string output;
+    consumeUtf8(current_, limit, [&](uint32_t code_point) {
+      appendCodePoint(output, code_point);
+    });
+    current_ = limit;
     return output;
   }
 
@@ -449,7 +655,11 @@ class Reader {
   DecodedValue readArrayBuffer() {
     DecodedValue output;
     output.type = DecodedType::ArrayBuffer;
-    output.binary = readBytes(readVarint());
+    const uint32_t backing_length = readVarint();
+    if (backing_length > remaining()) fail("byte sequence exceeds input");
+    const uint8_t* data = current_;
+    uint32_t length = backing_length;
+    current_ += backing_length;
 
     skipPadding();
     if (current_ != end_ && *current_ == 'V') {
@@ -460,8 +670,8 @@ class Reader {
       const uint32_t byte_length = readVarint();
       const uint32_t flags = readVarint();
       if (flags != 0) fail("resizable or length-tracking views are unsupported");
-      if (byte_offset > output.binary.size() ||
-          byte_length > output.binary.size() - byte_offset) {
+      if (byte_offset > backing_length ||
+          byte_length > backing_length - byte_offset) {
         fail("ArrayBuffer view exceeds its backing buffer");
       }
       const size_t element_size =
@@ -470,12 +680,11 @@ class Reader {
           byte_length % element_size != 0) {
         fail("ArrayBuffer view is not aligned to its element size");
       }
-      std::vector<uint8_t> view(output.binary.begin() + byte_offset,
-                                output.binary.begin() + byte_offset +
-                                    byte_length);
       setArrayBufferViewType(output, view_type);
-      output.binary = std::move(view);
+      data += byte_offset;
+      length = byte_length;
     }
+    output.binary.assign(data, data + length);
     return output;
   }
 
