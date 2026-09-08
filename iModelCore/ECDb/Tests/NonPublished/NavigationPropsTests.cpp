@@ -26,6 +26,11 @@ struct ECSqlNavigationPropertyTestFixture : ECDbTestFixture
             }
     };
 
+struct ECSqlNavigationPropertyExtendedTests : ECSqlNavigationPropertyTestFixture
+    {
+    ECDB_EXTENDED_TIER_GATE(ECSqlNavigationPropertyTestFixture)
+    };
+
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -2920,7 +2925,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, JoinedTable)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlNavigationPropertyTestFixture, MultiplicityPermutations)
+TEST_F(ECSqlNavigationPropertyExtendedTests, MultiplicityPermutations)
     {
     enum class Multiplicity { Zero, One, GreaterThanOne, Many };
     std::array<Multiplicity, 4> multiplicities = { Multiplicity::Zero, Multiplicity::One, Multiplicity::GreaterThanOne, Multiplicity::Many };
