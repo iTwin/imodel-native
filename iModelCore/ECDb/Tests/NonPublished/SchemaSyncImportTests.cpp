@@ -1296,6 +1296,7 @@ TEST_F(SchemaSyncImportTestFixture, SyncDbRefusesConflictingPropertyType)
     syncDb.WithReadWrite([&](ECDbR sync) {
         EXPECT_NE(SchemaImportResult::OK, ImportSchema(sync, conflicting, SchemaManager::SchemaImportOptions::DoNotCreateOrUpdateDataTables))
             << "the sync db accepted a conflicting property type - the authority is not authoritative";
+        ASSERT_EQ(BE_SQLITE_OK, sync.AbandonChanges());
     });
     }
 
@@ -1328,6 +1329,7 @@ TEST_F(SchemaSyncImportTestFixture, SyncDbRefusesImportNeedingDataTransform)
                   ImportSchema(sync, RemapSchema("01.00.01", true), SchemaManager::SchemaImportOptions::DoNotCreateOrUpdateDataTables))
             << "a data-moving change was accepted on the additive path; it must be routed to the "
                "upgrade front door instead";
+        ASSERT_EQ(BE_SQLITE_OK, sync.AbandonChanges());
     });
     }
 

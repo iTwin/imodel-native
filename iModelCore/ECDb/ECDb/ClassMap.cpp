@@ -557,10 +557,14 @@ BentleyStatus ClassMap::Update(SchemaImportContext& ctx)
             if (propMap == nullptr || !propMap->IsData() || propMap->GetType() == PropertyMap::Type::Navigation)
                 continue;
 
+            // A sibling may have freed this shared column without changing this class's mapping.
+            if (!ctx.RemapManager().HasCleanedPropertyMapping(m_ecClass.GetId(), property->GetName()))
+                continue;
+
             GetColumnsPropertyMapVisitor colVisitor;
             propMap->AcceptVisitor(colVisitor);
 
-            // If the property has been mapped to a column that has been freed in this schema import, avoid its reuse and force a re-load to allocate a new column
+            // Reload only mappings tracked for data migration when their old column cannot be reused.
             for (const DbColumn* column : colVisitor.GetColumns())
                 {
                 if (column->IsShared() && ctx.RemapManager().IsColumnFreed(*column))
