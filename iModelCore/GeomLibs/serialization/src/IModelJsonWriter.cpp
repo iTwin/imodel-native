@@ -794,6 +794,9 @@ struct BeCGIModelJsonValueWriter
         auto head = in[name];
         for (auto& cp : *pCurves)
             CurvePrimitiveToJson(head.appendValue(), *cp);
+        
+        if (CurveVector::BOUNDARY_TYPE_Inner == type)
+            in["isInner"] = true;
         }
 
     void SolidPrimitiveToJson (BeJsValue in, ISolidPrimitiveCR solid)
