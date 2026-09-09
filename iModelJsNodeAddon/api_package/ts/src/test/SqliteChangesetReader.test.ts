@@ -3,7 +3,7 @@
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 
-import { DbOpcode, DbResult } from "@itwin/core-bentley";
+import { DbOpcode, DbResult, OpenMode } from "@itwin/core-bentley";
 import * as fs from "fs";
 import * as path from "path";
 import { getAssetsDir, getOutputDir, iModelJsNative } from "./utils";
@@ -31,6 +31,46 @@ interface IChange {
   after: ChangeValueType[] ;
   isIndirect: boolean;
 }
+
+interface TableSchema {
+  columnCount: number;
+  primaryKeyColumns: number[];
+}
+
+function collectTableSchemas(changesetFiles: string[]): Map<string, TableSchema> {
+  const tables = new Map<string, TableSchema>();
+  for (const changesetFile of changesetFiles) {
+    const reader = new iModelJsNative.SqliteChangesetReader();
+    try {
+      reader.openFile(changesetFile, false);
+      while (reader.step()) {
+        const tableName = reader.getTableName();
+        const columnCount = reader.getColumnCount();
+        const current = tables.get(tableName);
+        if (!current || current.columnCount < columnCount)
+          tables.set(tableName, { columnCount, primaryKeyColumns: reader.getPrimaryKeyColumnIndexes() });
+      }
+    } finally {
+      reader.close();
+    }
+  }
+  return tables;
+}
+
+function createSchema(db: IModelJsNative.SQLiteDb, tables: Map<string, TableSchema>): void {
+  for (const [tableName, schema] of tables) {
+    const columns = Array.from({ length: schema.columnCount }, (_, index) => `"c${index}"`);
+    const primaryKey = schema.primaryKeyColumns.map((index) => `"c${index}"`).join(",");
+    const stmt = new iModelJsNative.SqliteStatement();
+    try {
+      stmt.prepare(db, `CREATE TABLE "${tableName}" (${columns.join(",")}, PRIMARY KEY (${primaryKey}))`);
+      expect(stmt.step()).equals(DbResult.BE_SQLITE_DONE);
+    } finally {
+      stmt.dispose();
+    }
+  }
+}
+
 describe("Native sqlite changeset reader", () => {
   it("computeChangesetId", () => {
     const props = {
@@ -76,41 +116,77 @@ describe("Native sqlite changeset reader", () => {
     expect(changes.filter((x) => x.primaryKeys[0] === "0xcd00000002f5").map((x) => x.op)[0]).eq("updated");
   });
   it("opens a changeset group with a SQLiteDb", () => {
-    const testCsFile = path.join(getAssetsDir(), "test.cs");
-    const schemaReader = new iModelJsNative.SqliteChangesetReader();
-    schemaReader.openFile(testCsFile, false);
-    const tables = new Map<string, { columnCount: number, primaryKeyColumns: number[] }>();
-    while (schemaReader.step()) {
-      if (!tables.has(schemaReader.getTableName())) {
-        tables.set(schemaReader.getTableName(), {
-          columnCount: schemaReader.getColumnCount(),
-          primaryKeyColumns: schemaReader.getPrimaryKeyColumnIndexes(),
-        });
-      }
-    }
-    schemaReader.close();
-
+    const changesetFiles = ["f5f7de3.cs", "test.cs"].map((fileName) => path.join(getAssetsDir(), fileName));
+    const tables = collectTableSchemas(changesetFiles);
     const dbFileName = path.join(getOutputDir(), "changeset-reader.db");
     fs.rmSync(dbFileName, { force: true });
     const db = new iModelJsNative.SQLiteDb();
-    db.createDb(dbFileName, undefined, { rawSQLite: true });
-    for (const [tableName, schema] of tables) {
-      const columns = Array.from({ length: schema.columnCount }, (_, index) => `"c${index}"`);
-      const primaryKey = schema.primaryKeyColumns.map((index) => `"c${index}"`).join(",");
-      const stmt = new iModelJsNative.SqliteStatement();
-      stmt.prepare(db, `CREATE TABLE "${tableName}" (${columns.join(",")}, PRIMARY KEY (${primaryKey}))`);
-      expect(stmt.step()).equals(DbResult.BE_SQLITE_DONE);
-      stmt.dispose();
+    try {
+      db.createDb(dbFileName, undefined, { rawSQLite: true });
+      createSchema(db, tables);
+
+      const reader = new iModelJsNative.SqliteChangesetReader();
+      try {
+        reader.openGroup(changesetFiles, db, false);
+        let changeCount = 0;
+        while (reader.step()) {
+          expect(tables.has(reader.getTableName())).is.true;
+          ++changeCount;
+        }
+        expect(changeCount).greaterThan(0);
+      } finally {
+        reader.close();
+      }
+    } finally {
+      db.closeDb();
+      fs.rmSync(dbFileName, { force: true });
+    }
+  });
+
+  it("rejects a changeset group when a SQLiteDb lacks its tables", () => {
+    const dbFileName = path.join(getOutputDir(), "changeset-reader-missing-schema.db");
+    fs.rmSync(dbFileName, { force: true });
+    const db = new iModelJsNative.SQLiteDb();
+    try {
+      db.createDb(dbFileName, undefined, { rawSQLite: true });
+      const reader = new iModelJsNative.SqliteChangesetReader();
+      const testCsFile = path.join(getAssetsDir(), "test.cs");
+      expect(() => reader.openGroup([testCsFile], db, false)).throws("changeset table bis_Element does not exist");
+      reader.close();
+    } finally {
+      db.closeDb();
+      fs.rmSync(dbFileName, { force: true });
+    }
+  });
+
+  it("continues to open changeset groups with DgnDb and ECDb", () => {
+    const dgnDb = new iModelJsNative.DgnDb();
+    try {
+      dgnDb.openIModel(path.join(getAssetsDir(), "test.bim"), OpenMode.Readonly);
+      const reader = new iModelJsNative.SqliteChangesetReader();
+      try {
+        reader.openGroup([], dgnDb, false);
+        expect(reader.step()).is.false;
+      } finally {
+        reader.close();
+      }
+    } finally {
+      dgnDb.closeFile();
     }
 
-    const reader = new iModelJsNative.SqliteChangesetReader();
-    reader.openGroup([testCsFile], db, false);
-
-    expect(reader.step()).is.true;
-    expect(tables.has(reader.getTableName())).is.true;
-
-    reader.close();
-    db.closeDb();
+    const ecDb = new iModelJsNative.ECDb();
+    try {
+      expect(ecDb.openDb(path.join(getAssetsDir(), "test.bim"), OpenMode.Readonly)).equals(DbResult.BE_SQLITE_OK);
+      const reader = new iModelJsNative.SqliteChangesetReader();
+      try {
+        reader.openGroup([], ecDb, false);
+        expect(reader.step()).is.false;
+      } finally {
+        reader.close();
+      }
+    } finally {
+      ecDb.closeDb();
+    }
   });
   it("getColumnValueXXXX() methods", () => {
     const reader = new iModelJsNative.SqliteChangesetReader();

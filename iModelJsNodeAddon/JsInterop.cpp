@@ -1414,6 +1414,7 @@ void SqliteChangesetReader::OpenChangeStream(Napi::Env env, std::unique_ptr<Chan
 void SqliteChangesetReader::OpenGroup(Napi::Env env, T_Utf8StringVector const& changesetFiles, Db const& db, bool invert) {
     m_changeGroup = std::make_unique<ChangeGroup>(db);
     DdlChanges ddlGroup;
+    bset<Utf8String> checkedTables;
     for(auto& changesetFile : changesetFiles) {
         BeFileName inputFile(changesetFile);
         if (!inputFile.DoesPathExist()) {
@@ -1421,6 +1422,19 @@ void SqliteChangesetReader::OpenGroup(Napi::Env env, T_Utf8StringVector const& c
         }
 
         ChangesetFileReader reader(inputFile);
+        Changes changes(reader, false);
+        for (auto change = changes.begin(); change.IsValid(); ++change) {
+            Utf8CP tableName;
+            int columnCount;
+            DbOpcode opcode;
+            int indirect;
+            if (BE_SQLITE_OK != change.GetOperation(&tableName, &columnCount, &opcode, &indirect))
+                THROW_JS_BE_SQLITE_EXCEPTION(env, "openGroup(): unable to read changeset", BE_SQLITE_ERROR);
+
+            if (checkedTables.insert(tableName).second && !db.TableExists(tableName))
+                THROW_JS_BE_SQLITE_EXCEPTION(env, SqlPrintfString("openGroup(): changeset table %s does not exist in the provided db", tableName), BE_SQLITE_SCHEMA);
+        }
+
         bool containsSchemaChanges;
         DdlChanges ddlChanges;
         if (BE_SQLITE_OK != reader.MakeReader()->GetSchemaChanges(containsSchemaChanges, ddlChanges)){
