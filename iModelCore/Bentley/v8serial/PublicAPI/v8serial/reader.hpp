@@ -36,6 +36,8 @@ enum class DecodedType {
   ArrayBufferView,
 };
 
+struct DecodedObjectProperty;
+
 /// Native value tree produced by Reader.
 ///
 /// Read only the payload member selected by `type`. Strings and binary
@@ -66,13 +68,20 @@ struct DecodedValue {
   std::vector<DecodedValue> array;
 
   /// Ordered key/value pairs for DecodedType::Object.
-  std::vector<std::pair<std::u16string, DecodedValue>> object;
+  /// Uses a named struct instead of std::pair so libstdc++ can destroy
+  /// the vector while DecodedValue is still incomplete.
+  std::vector<DecodedObjectProperty> object;
 
   /// Concrete view type for DecodedType::ArrayBufferView.
   ArrayBufferViewType view_type = ArrayBufferViewType::Uint8Array;
 
   /// Bytes for ArrayBuffer and array-view decoded types.
   std::vector<uint8_t> binary;
+};
+
+struct DecodedObjectProperty {
+  std::u16string key;
+  DecodedValue value;
 };
 
 /// Discriminator selecting the active payload in ScalarValue.
@@ -596,7 +605,7 @@ class Reader {
 
     while (peekTag() != '{') {
       std::u16string key = readPropertyKey(depth + 1);
-      output.object.emplace_back(std::move(key), readValue(depth + 1));
+      output.object.push_back({std::move(key), readValue(depth + 1)});
       if (properties == std::numeric_limits<uint32_t>::max()) {
         fail("object property count overflow");
       }
