@@ -162,7 +162,12 @@ ECSqlStatus bindCsvImportValue(CsvImportBinding const& binding, Utf8StringCR val
             char* parsedEnd = nullptr;
             errno = 0;
             const double parsed = std::strtod(begin, &parsedEnd);
-            return 0 == errno && end == parsedEnd && std::isfinite(parsed) ? binding.m_binder->BindDouble(parsed) : ECSqlStatus::Error;
+            if (end != parsedEnd || !std::isfinite(parsed))
+                return ECSqlStatus::Error;
+            // strtod may set ERANGE for representable subnormals such as 1e-310.
+            if (ERANGE == errno && 0.0 == parsed)
+                return ECSqlStatus::Error;
+            return binding.m_binder->BindDouble(parsed);
         }
         case PRIMITIVETYPE_Integer: {
             int32_t parsed = 0;

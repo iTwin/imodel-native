@@ -12,7 +12,7 @@ import { IModelJsNative } from "../NativeLibrary";
 import { getOutputDir, iModelJsNative } from "./utils";
 
 const testSchemaXml =
-  `<ECSchema schemaName="Test" alias="test" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+  `<ECSchema schemaName="Test" alias="test" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
   <ECEntityClass typeName="Foo" modifier="Sealed">
     <ECProperty propertyName="Name" typeName="string"/>
     <ECProperty propertyName="Quantity" typeName="int"/>
@@ -26,6 +26,11 @@ const mapping = [
   { columnIndex: 1, propertyName: "Quantity" },
   { columnIndex: 2, propertyName: "Amount" },
   { columnIndex: 3, propertyName: "Flag" },
+];
+
+const subnormalDoubleCases = [
+  { name: "1e-310", text: "1e-310", expected: 1e-310 },
+  { name: "Number.MIN_VALUE", text: String(Number.MIN_VALUE), expected: Number.MIN_VALUE },
 ];
 
 const embeddedNulCases = [
@@ -98,6 +103,16 @@ describe("ImportCsv", () => {
       expect(result[0]).to.deep.include({ name: "Café", quantity: 3, value: 1.5, flag: true });
       expect(result[1]).to.deep.include({ name: "Compass 🧭", quantity: 4, value: 2.5, flag: false });
     });
+
+    for (const testCase of subnormalDoubleCases) {
+      it(`imports a representable subnormal double (${testCase.name})`, () => {
+        db = createECDb(`importCsvDataSubnormal-${testCase.name}.ecdb`);
+        const bytes = v8.serialize([["Alpha", "3", testCase.text, "true"]]);
+
+        expect(db.importCSVData("Test.Foo", bytes, mapping)).eq(1);
+        expect(readAllFooRows(db)[0].value).eq(testCase.expected);
+      });
+    }
 
     it("binds the configured nullValue option as NULL", () => {
       db = createECDb("importCsvDataNull.ecdb");
@@ -254,6 +269,16 @@ describe("ImportCsv", () => {
       expect(result[0]).to.deep.include({ name: "Alpha", quantity: 3, value: 1.5, flag: true });
       expect(result[1]).to.deep.include({ name: "Beta", quantity: 4, value: 2.5, flag: false });
     });
+
+    for (const testCase of subnormalDoubleCases) {
+      it(`imports a representable subnormal double (${testCase.name})`, () => {
+        db = createECDb(`importCsvFileSubnormal-${testCase.name}.ecdb`);
+        const csvPath = writeCsv(`importCsvFileSubnormal-${testCase.name}.csv`, `Alpha,3,${testCase.text},true\n`);
+
+        expect(db.importCSVFile("Test.Foo", csvPath, mapping)).eq(1);
+        expect(readAllFooRows(db)[0].value).eq(testCase.expected);
+      });
+    }
 
     it("treats every row as data when hasHeader is not set", () => {
       db = createECDb("importCsvFileNoHeader.ecdb");
