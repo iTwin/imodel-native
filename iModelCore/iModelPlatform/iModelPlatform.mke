@@ -231,6 +231,8 @@ $(CoreObjs)DgnDbSchema$(oext) :                     $(DgnCoreDir)DgnDbSchema.cpp
 
 $(CoreObjs)DgnSqlFuncs$(oext) :                     $(DgnCoreDir)DgnSqlFuncs.cpp ${MultiCompileDepends}
 
+$(CoreObjs)GeomStreamVTab$(oext) :                  $(DgnCoreDir)GeomStreamVTab.cpp $(DgnCoreDir)GeomStreamVTab.h ${MultiCompileDepends}
+
 $(CoreObjs)DgnUnits$(oext) :                        $(DgnCoreDir)DgnUnits.cpp $(iModelPlatformAPISrc)DgnDb.h $(iModelPlatformAPISrc)DgnDbTables.h ${MultiCompileDepends}
 
 $(CoreObjs)DgnCategory$(oext) :                     $(DgnCoreDir)DgnCategory.cpp $(iModelPlatformAPISrc)DgnDb.h $(iModelPlatformAPISrc)DgnCategory.h ${MultiCompileDepends}

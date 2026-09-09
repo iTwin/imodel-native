@@ -172,7 +172,8 @@ DgnElementId DgnDbTestFixture::InsertElement2d(DgnModelId modelId, DgnCategoryId
         categoryId = m_defaultCategoryId;
 
     DgnElementPtr el = TestElement2d::Create(*m_db, modelId, categoryId, elementCode, 100);
-    return m_db->Elements().Insert(*el)->GetElementId();
+    DgnElementCPtr inserted = m_db->Elements().Insert(*el);
+    return inserted.IsValid() ? inserted->GetElementId() : DgnElementId();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -202,7 +203,8 @@ DgnElementId DgnDbTestFixture::InsertElementUsingGeometryPart2d(DgnCodeCR gpCode
     if (SUCCESS != builder->Finish(*geomElem))
         return DgnElementId();
 
-    return m_db->Elements().Insert(*el)->GetElementId();
+    DgnElementCPtr inserted2d = m_db->Elements().Insert(*el);
+    return inserted2d.IsValid() ? inserted2d->GetElementId() : DgnElementId();
     }
 
 /*---------------------------------------------------------------------------------**//**
