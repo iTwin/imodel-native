@@ -58,8 +58,8 @@ struct RelatedInstance final
 //! it is not covered by the usual backwards compatibility guarantees.
 //!
 //! @remarks The InstanceGraph lazily discovers applicable relationships, generates
-//! raw SQLite SQL from property maps/class maps, and caches prepared statements at the
-//! ECDb level for reuse across multiple InstanceGraph instances.
+//! raw SQLite SQL from property maps/class maps, and shares discovery metadata and SQL
+//! through an ECDb-level cache. Prepared statements use ECDb's SQLite statement cache.
 //!
 //! @remarks Only the primary (@c main) table space is traversed. Seeds whose class is not
 //! part of the main table space are rejected.
@@ -69,11 +69,14 @@ struct RelatedInstance final
 //! raw pointers into the schema cache.
 //!
 //! Usage:
+//! Within a function returning BentleyStatus, with ecdb, classId and instanceId supplied:
 //! @code
 //!     InstanceGraph graph(ecdb);
-//!     graph.AddSeed(ECInstanceKey(classId, instanceId));
-//!     graph.ExpandAll(3);  // expand up to 3 hops
-//!     auto* related = graph.GetRelated(seedKey);
+//!     ECInstanceKey seedKey(classId, instanceId);
+//!     graph.AddSeed(seedKey);
+//!     if (SUCCESS != graph.ExpandAll(3))
+//!         return ERROR;
+//!     auto const* related = graph.GetRelated(seedKey);
 //! @endcode
 //!
 //! @see ECInstanceFinder for the older ECSql-based traversal
@@ -86,6 +89,7 @@ struct InstanceGraph final
         ECDbCR m_ecdb;
         bset<ECInstanceKey> m_visited;
         bmap<ECInstanceKey, bvector<RelatedInstance>> m_adjacency;
+        bmap<ECInstanceKey, TraversalDirection> m_expandedDirections;
         bvector<ECInstanceKey> m_seeds;
 
         BentleyStatus ExpandNodeInternal(ECInstanceKeyCR key, TraversalDirection dir);
@@ -94,7 +98,7 @@ struct InstanceGraph final
         InstanceGraph(InstanceGraph const&) = delete;
         InstanceGraph& operator=(InstanceGraph const&) = delete;
 
-        // Private ctor for set operations — creates graph without ECDb for pure data containers
+        // Set-operation edges may be incomplete, so they do not establish expansion state.
         InstanceGraph(ECDbCR ecdb, bset<ECInstanceKey>&& visited, bmap<ECInstanceKey, bvector<RelatedInstance>>&& adjacency);
 
     public:
@@ -104,7 +108,7 @@ struct InstanceGraph final
 
         //--- Building the graph ---
 
-        //! Add a seed instance. No SQL is executed until Expand is called.
+        //! Add a seed instance. No SQL is executed until ExpandNode or ExpandAll is called.
         //! @remarks Adding the same seed more than once has no additional effect.
         ECDB_EXPORT void AddSeed(ECInstanceKeyCR seed);
 
@@ -120,11 +124,11 @@ struct InstanceGraph final
 
         //! Expand the full graph via BFS up to maxDepth hops.
         //! @param[in] maxDepth number of hops to traverse. 0 expands no relationship at all and
-        //! only records the seeds, UINT8_MAX (the maximum) traverses up to 255 hops. Because
-        //! already expanded nodes are never expanded again, traversal always terminates.
-        //! @remarks Can be called repeatedly to deepen a graph. Nodes already expanded by a
-        //! previous ExpandAll/ExpandNode call are not expanded again, but their neighbours are
-        //! still traversed.
+        //! only records the seeds, UINT8_MAX (the maximum) traverses up to 255 hops. Each node
+        //! is queued at most once per call, so cycles do not repeat the traversal.
+        //! @remarks Can be called repeatedly to deepen a graph. Nodes successfully expanded
+        //! in both directions reuse their cached edges; nodes last expanded in only one
+        //! direction are re-expanded in both directions. Cached neighbours are still traversed.
         //! @return SUCCESS or ERROR
         ECDB_EXPORT BentleyStatus ExpandAll(uint8_t maxDepth = UINT8_MAX);
 
@@ -136,7 +140,8 @@ struct InstanceGraph final
         //! Number of unique nodes in the graph
         size_t NodeCount() const { return m_visited.size(); }
 
-        //! Get all related instances of a node (after expansion). Returns nullptr if not expanded.
+        //! Get cached related instances of a node. Returns nullptr if no adjacency is stored.
+        //! Edges reflect the last successful expansion direction or the result of a set operation.
         bvector<RelatedInstance> const* GetRelated(ECInstanceKeyCR key) const
             {
             auto it = m_adjacency.find(key);

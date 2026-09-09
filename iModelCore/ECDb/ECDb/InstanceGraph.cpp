@@ -173,7 +173,7 @@ BentleyStatus GraphStatementCache::DiscoverRelationshipsForClass(bvector<Applica
         if (mapType != ClassMap::Type::RelationshipLinkTable && mapType != ClassMap::Type::RelationshipEndTable)
             continue;
 
-        out.push_back(ApplicableRelationship(*relClass, thisEnd, mapType, strategy));
+        out.push_back(ApplicableRelationship(*relClass, thisEnd, mapType));
         }
 
     if (stepStatus != BE_SQLITE_DONE)
@@ -297,8 +297,8 @@ BentleyStatus GraphStatementCache::BuildLinkTableSql(GraphStatementEntry& entry,
     // Resolve the related instance's ECClassId.
     // The constraint ECClassId column can either live in the link table itself, or - when ECDb
     // determined the constraint end resolves to entity tables - in one or more entity tables.
-    // In the latter case join each of those tables and coalesce, so that instances stored in
-    // any of them are found (a single INNER JOIN against an arbitrary table would drop rows).
+    // An entity-table join is only supported when the property map identifies a single table;
+    // multiple tables would make the related class ambiguous for colliding instance ids.
     // ------------------------------------------------------------------------------
     if (relatedClassIdPropMap == nullptr)
         {
@@ -1018,11 +1018,7 @@ BentleyStatus InstanceGraph::ExpandNodeInternal(ECInstanceKeyCR key, TraversalDi
     if (SUCCESS != iter.Reset(key, dir))
         return ERROR;
 
-    // The node is part of the graph and is now considered expanded, even if it has no edges.
-    // Re-expanding a node replaces its edges rather than appending a second copy of each.
-    m_visited.insert(key);
-    bvector<RelatedInstance>& edges = m_adjacency[key];
-    edges.clear();
+    bvector<RelatedInstance> edges;
 
     while (true)
         {
@@ -1032,10 +1028,15 @@ BentleyStatus InstanceGraph::ExpandNodeInternal(ECInstanceKeyCR key, TraversalDi
         if (iter.IsEof())
             break;
 
-        RelatedInstance const& rel = iter.GetCurrent();
-        edges.push_back(rel);
-        m_visited.insert(rel.GetKey());
+        edges.push_back(iter.GetCurrent());
         }
+
+    // Publish edges and their expansion direction only after the traversal succeeds.
+    m_visited.insert(key);
+    for (auto const& rel : edges)
+        m_visited.insert(rel.GetKey());
+    m_expandedDirections[key] = dir;
+    m_adjacency[key] = std::move(edges);
 
     return SUCCESS;
     }
@@ -1060,8 +1061,9 @@ BentleyStatus InstanceGraph::ExpandAll(uint8_t maxDepth)
 
         for (auto const& key : currentLevel)
             {
-            // Avoid repeating SQL, but traverse cached edges so repeated calls can deepen the graph.
-            if (m_adjacency.find(key) == m_adjacency.end())
+            // Only a successful bidirectional expansion supplies complete cached edges.
+            auto expanded = m_expandedDirections.find(key);
+            if (expanded == m_expandedDirections.end() || expanded->second != TraversalDirection::Both)
                 {
                 if (SUCCESS != ExpandNodeInternal(key, TraversalDirection::Both))
                     return ERROR;

@@ -3,6 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
+#include <ECDb/ECInstanceFinder.h>
 #include <ECDb/InstanceGraph.h>
 
 USING_NAMESPACE_BENTLEY_EC
@@ -1451,6 +1452,42 @@ TEST_F(InstanceGraphTests, VTable_FailsWithoutExperimentalFeature)
             pipe1Key.GetClassId().ToString().c_str())));
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, VTable_RecursiveWalkDepthLimit)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("IG_RecursiveWalk.ecdb", SchemaItem(s_mappingInvariantSchemaXml)));
+    m_ecdb.GetECSqlConfig().SetExperimentalFeaturesEnabled(true);
+    auto a = InsertInstance("INSERT INTO igm.NodeA(Label) VALUES('A')");
+    auto b = InsertInstance("INSERT INTO igm.NodeB(Label) VALUES('B')");
+    InsertRelInstance(SqlPrintfString("INSERT INTO igm.NodeToNode(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
+        a.GetInstanceId().ToString().c_str(), b.GetInstanceId().ToString().c_str()));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString(
+        "WITH RECURSIVE graph(ECInstanceId, ECClassId, Depth) AS ("
+        " SELECT %s, %s, 0"
+        " UNION"
+        " SELECT r.RelatedECInstanceId, r.RelatedECClassId, g.Depth + 1"
+        " FROM graph g CROSS JOIN Relations(g.ECInstanceId, g.ECClassId) r"
+        " WHERE g.Depth < 3)"
+        " SELECT ECInstanceId, ECClassId, Depth FROM graph ORDER BY Depth",
+        a.GetInstanceId().ToString().c_str(), a.GetClassId().ToString().c_str())));
+
+    // UNION includes Depth in its identity: walking both directions revisits each node.
+    int depth = 0;
+    for (auto const& expected : {a, b, a, b})
+        {
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_EQ(expected.GetInstanceId().GetValueUnchecked(), (uint64_t) stmt.GetValueInt64(0));
+        EXPECT_EQ(expected.GetClassId().GetValueUnchecked(), (uint64_t) stmt.GetValueInt64(1));
+        EXPECT_EQ(depth++, stmt.GetValueInt(2));
+        }
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
 //=======================================================================================
 // Regression tests for issues found during code review of the InstanceGraph / relations()
 // feature.
@@ -1651,6 +1688,96 @@ TEST_F(InstanceGraphTests, ExpandNode_ThenExpandAll)
     EXPECT_FALSE(shallow.Contains(p4));
     ASSERT_EQ(SUCCESS, shallow.ExpandAll(3));
     EXPECT_TRUE(shallow.Contains(p4)) << "A second ExpandAll must traverse cached intermediate nodes";
+    }
+
+//---------------------------------------------------------------------------------------
+//! A directional expansion, even an empty one, cannot satisfy ExpandAll's Both traversal.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, DirectionalExpandNode_ThenExpandAll)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("IG_DirectionalThenAll.ecdb", SchemaItem(s_mappingInvariantSchemaXml)));
+
+    auto a = InsertInstance("INSERT INTO igm.NodeA(Label) VALUES('A')");
+    auto b = InsertInstance("INSERT INTO igm.NodeB(Label) VALUES('B')");
+    auto c = InsertInstance("INSERT INTO igm.NodeA(Label) VALUES('C')");
+    InsertRelInstance(SqlPrintfString("INSERT INTO igm.NodeToNode(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
+        a.GetInstanceId().ToString().c_str(), b.GetInstanceId().ToString().c_str()));
+    InsertRelInstance(SqlPrintfString("INSERT INTO igm.NodeToNode(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
+        b.GetInstanceId().ToString().c_str(), c.GetInstanceId().ToString().c_str()));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+
+    for (auto direction : {TraversalDirection::Forward, TraversalDirection::Backward})
+        {
+        // B has an edge in either direction; the endpoint has none in the requested direction.
+        for (auto const& seed : {b, direction == TraversalDirection::Forward ? c : a})
+            {
+            for (bool expandBothFirst : {false, true})
+                {
+                InstanceGraph graph(m_ecdb);
+                graph.AddSeed(seed);
+                if (expandBothFirst)
+                    ASSERT_EQ(SUCCESS, graph.ExpandNode(seed, TraversalDirection::Both));
+
+                ASSERT_EQ(SUCCESS, graph.ExpandNode(seed, direction));
+                ASSERT_NE(nullptr, graph.GetRelated(seed));
+                ASSERT_EQ(seed == b ? 1u : 0u, graph.GetRelated(seed)->size())
+                    << "Narrowing an expansion must replace, not merge, its edges";
+                if (seed == b)
+                    EXPECT_TRUE(HasEdge(graph, b, direction == TraversalDirection::Forward ? c : a, "NodeToNode", direction));
+
+                ASSERT_EQ(SUCCESS, graph.ExpandAll(3));
+                EXPECT_EQ(3u, graph.NodeCount());
+                EXPECT_TRUE(graph.Contains(a));
+                EXPECT_TRUE(graph.Contains(b));
+                EXPECT_TRUE(graph.Contains(c));
+                ASSERT_NE(nullptr, graph.GetRelated(b));
+                EXPECT_EQ(2u, graph.GetRelated(b)->size()) << "A previous Both expansion must not survive narrowing";
+                EXPECT_TRUE(HasEdge(graph, b, a, "NodeToNode", TraversalDirection::Backward));
+                EXPECT_TRUE(HasEdge(graph, b, c, "NodeToNode", TraversalDirection::Forward));
+                EXPECT_TRUE(HasEdge(graph, a, b, "NodeToNode", TraversalDirection::Forward));
+                EXPECT_TRUE(HasEdge(graph, c, b, "NodeToNode", TraversalDirection::Backward));
+                }
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+//! Set-operation edges do not imply that their nodes have been completely expanded.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, SetOps_ExpandAllRestoresMissingEdges)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("IG_SetOpsThenAll.ecdb", SchemaItem(s_mappingInvariantSchemaXml)));
+    auto a = InsertInstance("INSERT INTO igm.NodeA(Label) VALUES('A')");
+    auto b = InsertInstance("INSERT INTO igm.NodeB(Label) VALUES('B')");
+    auto c = InsertInstance("INSERT INTO igm.NodeA(Label) VALUES('C')");
+    InsertRelInstance(SqlPrintfString("INSERT INTO igm.NodeToNode(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
+        a.GetInstanceId().ToString().c_str(), b.GetInstanceId().ToString().c_str()));
+    InsertRelInstance(SqlPrintfString("INSERT INTO igm.NodeToNode(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
+        b.GetInstanceId().ToString().c_str(), c.GetInstanceId().ToString().c_str()));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+
+    InstanceGraph full(m_ecdb), partial(m_ecdb);
+    ASSERT_EQ(SUCCESS, full.ExpandNode(b, TraversalDirection::Both));
+    ASSERT_EQ(SUCCESS, partial.ExpandNode(b, TraversalDirection::Forward));
+    auto intersection = InstanceGraph::Intersection(full, partial);
+    auto unionGraph = InstanceGraph::Union(partial, partial);
+    for (auto* graph : {intersection.get(), unionGraph.get()})
+        {
+        ASSERT_NE(nullptr, graph);
+        EXPECT_FALSE(graph->Contains(a));
+        ASSERT_NE(nullptr, graph->GetRelated(b));
+        ASSERT_EQ(1u, graph->GetRelated(b)->size());
+        graph->AddSeed(b);
+        ASSERT_EQ(SUCCESS, graph->ExpandAll(3));
+        EXPECT_EQ(3u, graph->NodeCount());
+        EXPECT_TRUE(graph->Contains(a));
+        ASSERT_NE(nullptr, graph->GetRelated(b));
+        EXPECT_EQ(2u, graph->GetRelated(b)->size());
+        EXPECT_TRUE(HasEdge(*graph, b, a, "NodeToNode", TraversalDirection::Backward));
+        EXPECT_TRUE(HasEdge(*graph, b, c, "NodeToNode", TraversalDirection::Forward));
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -2639,6 +2766,115 @@ TEST_F(InstanceGraphTests, VTable_NavPropertyName_DerivedRelationship)
     expectNavName(data.spokeA, "backward", hubHasSpokes, "Container");
     expectNavName(data.spokeA, "backward", hubOwnsSpokeA, "Owner");
     expectNavName(data.alpha, "forward", alphaToBeta, nullptr);
+    }
+
+//---------------------------------------------------------------------------------------
+//! Opt in with --gtest_also_run_disabled_tests
+//! --gtest_filter=InstanceGraphTests.DISABLED_CompareECInstanceFinder
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, DISABLED_CompareECInstanceFinder)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("IG_FinderBenchmark.ecdb", SchemaItem(s_mappingInvariantSchemaXml)));
+
+    // Two disjoint stars: an exclusive-table link relationship and a navigation property
+    // targeting a concrete TPH class. Setup and persistence are not measured.
+    int const fanout = 128;
+    auto alpha = InsertInstance("INSERT INTO igm.Alpha(Name) VALUES('Link root')");
+    auto hub = InsertInstance("INSERT INTO igm.Hub(Name) VALUES('Nav root')");
+    ASSERT_TRUE(alpha.IsValid());
+    ASSERT_TRUE(hub.IsValid());
+    bset<ECInstanceKey> linkNeighbors, navNeighbors;
+    for (int i = 0; i < fanout; ++i)
+        {
+        auto beta = InsertInstance("INSERT INTO igm.Beta(Name) VALUES('Leaf')");
+        InsertRelInstance(SqlPrintfString("INSERT INTO igm.AlphaToBeta(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
+            alpha.GetInstanceId().ToString().c_str(), beta.GetInstanceId().ToString().c_str()));
+        linkNeighbors.insert(beta);
+        navNeighbors.insert(InsertInstance(SqlPrintfString("INSERT INTO igm.SpokeA(Label, Container.Id) VALUES('Leaf', %s)",
+            hub.GetInstanceId().ToString().c_str())));
+        }
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ASSERT_EQ(static_cast<size_t>(fanout), linkNeighbors.size());
+    ASSERT_EQ(static_cast<size_t>(fanout), navNeighbors.size());
+
+    // Both APIs discover all one-hop related entities: Both matches RelatedDirection_All.
+    // Finder returns entity keys, whereas graph also retains relationship metadata. Compare
+    // deduplicated neighbor keys, not graph.GetVisited(), which additionally includes the seed.
+    // Cold means first traversal after reopening ECDb and reconstructing the traversal object;
+    // opening may itself populate caches. It does NOT mean OS/file-cache cold. Reopen, object
+    // construction, and result validation are excluded from both timings.
+    for (bool navigation : {false, true})
+        {
+        auto const& seed = navigation ? hub : alpha;
+        auto const& expected = navigation ? navNeighbors : linkNeighbors;
+        for (bool cold : {true, false})
+            {
+            for (bool useGraph : {true, false})
+                {
+                int const iterations = cold ? 5 : 200;
+                double seconds = 0.0;
+                std::unique_ptr<InstanceGraph> graph;
+                std::unique_ptr<ECInstanceFinder> finder;
+                ECInstanceKeyMultiMap found;
+                auto traverse = [&]()
+                    {
+                    return useGraph ? graph->ExpandNode(seed, TraversalDirection::Both) :
+                        finder->FindRelatedInstances(&found, nullptr, seed, ECInstanceFinder::RelatedDirection_All);
+                    };
+
+                for (int i = 0; i < iterations; ++i)
+                    {
+                    if (cold || i == 0)
+                        {
+                        // Finder owns prepared statements and schema pointers: destroy it before
+                        // closing ECDb. Reopening also resets InstanceGraph's ECDb-owned caches.
+                        finder.reset();
+                        graph.reset();
+                        ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+                        if (useGraph)
+                            graph = std::make_unique<InstanceGraph>(m_ecdb);
+                        else
+                            finder = std::make_unique<ECInstanceFinder>(m_ecdb);
+
+                        if (!cold)
+                            ASSERT_EQ(SUCCESS, traverse());
+                        }
+
+                    // ExpandNode replaces its results and really executes SQL each time;
+                    // repeated ExpandAll would instead reuse adjacency and skip the workload.
+                    StopWatch timer(true);
+                    BentleyStatus const status = traverse();
+                    timer.Stop();
+                    seconds += timer.GetElapsedSeconds();
+                    ASSERT_EQ(SUCCESS, status);
+
+                    bset<ECInstanceKey> actual;
+                    if (useGraph)
+                        {
+                        auto const* related = graph->GetRelated(seed);
+                        ASSERT_NE(nullptr, related);
+                        ASSERT_EQ(static_cast<size_t>(fanout), related->size());
+                        for (auto const& edge : *related)
+                            actual.insert(edge.GetKey());
+                        }
+                    else
+                        {
+                        for (auto const& entry : found)
+                            actual.insert(ECInstanceKey(entry.first, entry.second));
+                        }
+                    ASSERT_EQ(expected, actual);
+                    }
+
+                printf("InstanceGraph comparison: %s, %s, %s; one seed, one hop, %d edges/unique neighbors, "
+                    "%d operations: %.3f ms total, %.3f ms/op\n",
+                    navigation ? "navigation/TPH" : "link/exclusive",
+                    cold ? "first traversal after ECDb reopen (not OS-cold)" : "warm caches (one untimed priming traversal)",
+                    useGraph ? "InstanceGraph::ExpandNode(Both)" : "ECInstanceFinder::FindRelatedInstances(All)",
+                    fanout, iterations, seconds * 1000.0, seconds * 1000.0 / iterations);
+                }
+            }
+        }
     }
 
 END_ECDBUNITTESTS_NAMESPACE

@@ -10,19 +10,19 @@ This document including important changes to syntax or file format.
 ## `08/21/2026`: `Relations()` exposes `NavPropertyName`
 * `ECVLib.Relations()` now returns a nullable `NavPropertyName` column.
 * For end-table (foreign-key) relationships the column is the name of the navigation property that stores the relationship. Link-table relationships return `NULL`.
-* Example: `SELECT RelatedECInstanceId, RelationshipECClassId, NavPropertyName FROM ECVLib.Relations(0x1A, 0x38)`
+* Example (replace the IDs with a seed from the database): `SELECT RelatedECInstanceId, RelationshipECClassId, NavPropertyName FROM ECVLib.Relations(0x1A, 0x38) ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES`
 
 ## `08/04/2026`: Added `relations()` virtual table and InstanceGraph API
 * ECSql version change `2.0.4.0` -> `2.0.4.1`.
 * Added the `ECVLib.Relations` table valued function for fast relationship traversal from a seed instance.
 * **`Relations()` is an experimental feature** and is disabled by default. Enable it with `PRAGMA experimental_features_enabled=true` or per-query with `ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES`.
 * Syntax: `ECVLib.Relations(<ECInstanceId>, <ECClassId>[, <direction>])`. It can also be written unqualified as `Relations(...)`.
-* Example: `SELECT RelatedECInstanceId, RelatedECClassId, Direction, RelationshipECClassId, RelationshipECInstanceId FROM ECVLib.Relations(0x1A, 0x38)`
-* The optional third argument is the traversal direction: `'forward'`, `'backward'` or `'both'` (default). Any other value is rejected with an error.
+* Example (replace the IDs with a seed from the database): `SELECT RelatedECInstanceId, RelatedECClassId, Direction, RelationshipECClassId, RelationshipECInstanceId FROM ECVLib.Relations(0x1A, 0x38) ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES`
+* The optional third argument is the traversal direction: `'forward'`, `'backward'` or `'both'` (default), matched case-insensitively. `NULL` also selects both directions; other values are rejected with an error.
 * The `ECInstanceId` and `ECClassId` arguments are mandatory - a query that does not supply both is rejected rather than silently returning no rows.
 * Only instances of the primary (`main`) table space are traversed. A seed whose class is not part of the main table space is reported as an error.
-* Added internal `InstanceGraph` C++ API for BFS graph traversal with cycle avoidance and set operations (Overlaps, Intersection, Union).
-* Bypasses ECSql entirely — generates raw SQLite from property maps for faster traversal.
+* Added experimental `InstanceGraph` C++ API for BFS graph traversal with cycle avoidance and set operations (Overlaps, Intersection, Union). The C++ API does not require the ECSql experimental-feature option.
+* Traversal SQL is generated from property maps and executed directly through SQLite; `Relations()` queries still pass through ECSql preparation.
 
 ## `08/19/2026`: Added check `check_diverged_prop_maps` to `PRAGMA integrity_check`
 * ECSql version change `2.0.4.0` -> `2.0.4.1`.

@@ -119,7 +119,7 @@ struct VirtualSchemaManager : ECN::IECSchemaLocater {
         mutable uint64_t m_idSeq;
         ECDbCR m_ecdb;
         mutable ECN::ECSchemaCachePtr m_cache;
-        mutable bmap<Utf8String, ECN::ECSchemaCP> m_schemas;
+        mutable bmap<Utf8String, ECN::ECSchemaCP, CompareIUtf8Ascii> m_schemas;
         virtual ECN::ECSchemaPtr _LocateSchema(ECN::SchemaKeyR key, ECN::SchemaMatchType matchType, ECN::ECSchemaReadContextR schemaContext) override;
         BentleyStatus AddAndValidateVirtualSchema(Utf8StringCR schemaXml, bool validate) const;
         uint64_t GetNextId() const;

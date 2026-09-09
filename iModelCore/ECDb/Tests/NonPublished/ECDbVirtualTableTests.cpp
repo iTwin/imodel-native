@@ -131,13 +131,13 @@ struct TokenizeModule : ECDbModule {
              }
     };
     public:
-        TokenizeModule(ECDbR db): ECDbModule(
+        TokenizeModule(ECDbR db, Utf8CP schemaName = "test", Utf8CP name = "tokenize_text"): ECDbModule(
             db,
-            "tokenize_text",
+            name,
             "CREATE TABLE x(token,buffer hidden,delimiter hidden)",
-            R"xml(<?xml version="1.0" encoding="utf-8" ?>
+            Utf8PrintfString(R"xml(<?xml version="1.0" encoding="utf-8" ?>
             <ECSchema
-                    schemaName="test"
+                    schemaName="%s"
                     alias="test"
                     version="1.0.0"
                     xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -145,13 +145,13 @@ struct TokenizeModule : ECDbModule {
                 <ECCustomAttributes>
                     <VirtualSchema xmlns="ECDbVirtual.01.00.00"/>
                 </ECCustomAttributes>
-                <ECEntityClass typeName="tokenize_text" modifier="Abstract">
+                <ECEntityClass typeName="%s" modifier="Abstract">
                     <ECCustomAttributes>
                         <VirtualType xmlns="ECDbVirtual.01.00.00"/>
                     </ECCustomAttributes>
                     <ECProperty propertyName="token"  typeName="string"/>
                 </ECEntityClass>
-            </ECSchema>)xml") {}
+            </ECSchema>)xml", schemaName, name).c_str()) {}
         DbResult Connect(DbVirtualTable*& out, Config& conf, int argc, const char* const* argv) final {
             out = new TokenizeTable(*this);
             conf.SetTag(Config::Tags::Innocuous);
@@ -195,6 +195,56 @@ TEST_F(ECDbVirtualTableTests, TokenizeModuleTest) {
         }
         ASSERT_EQ(i, 9);
     }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbVirtualTableTests, VirtualSchemaMergeIgnoresNameCase) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("vtab_schema_case.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, (new TokenizeModule(m_ecdb, "test"))->Register());
+
+    ECSchemaCP originalSchema = nullptr;
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT token FROM test.tokenize_text('one two', ' ')"));
+        originalSchema = &stmt.GetColumnInfo(0).GetRootClass().GetClass().GetSchema();
+    }
+
+    ASSERT_EQ(BE_SQLITE_OK, (new TokenizeModule(m_ecdb, "TEST", "tokenize_other"))->Register());
+    for (Utf8CP schemaName : {"test", "TEST", "TeSt"}) {
+        for (Utf8CP className : {"tokenize_text", "tokenize_other"}) {
+            ECSqlStatement stmt;
+            Utf8PrintfString sql("SELECT token FROM %s.%s('one two', ' ')", schemaName, className);
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql.c_str())) << sql;
+            EXPECT_EQ(originalSchema, &stmt.GetColumnInfo(0).GetRootClass().GetClass().GetSchema());
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+            EXPECT_STREQ("one", stmt.GetValueText(0));
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+            EXPECT_STREQ("two", stmt.GetValueText(0));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbVirtualTableTests, VirtualSchemaMergeRejectsDuplicateClassAcrossNameCase) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("vtab_schema_case_duplicate.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, (new TokenizeModule(m_ecdb, "test"))->Register());
+
+    auto duplicate = std::make_unique<TokenizeModule>(m_ecdb, "TEST");
+    DbResult result = duplicate->Register();
+    if (result == BE_SQLITE_OK)
+        duplicate.release();
+    ASSERT_EQ(BE_SQLITE_ERROR, result);
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT token FROM test.tokenize_text('original', ' ')"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    EXPECT_STREQ("original", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 }
 
 //---------------------------------------------------------------------------------------

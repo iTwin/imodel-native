@@ -20,10 +20,9 @@ struct ApplicableRelationship final
     ECN::ECRelationshipClassCP  m_relClass;         //!< Base relationship class
     ECN::ECRelationshipEnd      m_thisEnd;           //!< Which end "our" class sits on (Source or Target)
     ClassMap::Type              m_mapType;            //!< LinkTable or EndTable
-    MapStrategy                 m_mapStrategy;        //!< For EndTable: ForeignKeyRelationshipInSourceTable or TargetTable
 
-    ApplicableRelationship(ECN::ECRelationshipClassCR relClass, ECN::ECRelationshipEnd thisEnd, ClassMap::Type mapType, MapStrategy mapStrategy)
-        : m_relClass(&relClass), m_thisEnd(thisEnd), m_mapType(mapType), m_mapStrategy(mapStrategy) {}
+    ApplicableRelationship(ECN::ECRelationshipClassCR relClass, ECN::ECRelationshipEnd thisEnd, ClassMap::Type mapType)
+        : m_relClass(&relClass), m_thisEnd(thisEnd), m_mapType(mapType) {}
     };
 
 //=======================================================================================
