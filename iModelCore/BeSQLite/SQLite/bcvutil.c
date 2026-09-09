@@ -22,6 +22,8 @@
 
 #include <openssl/md5.h>
 
+#include <zlib/zlib.h>
+
 /*
 ** If SQLITE_BCV_CURL_HANDLE_CONFIG is defined, it must be set to the name
 ** of a function linked against this file with the following signature.
@@ -71,6 +73,8 @@ int SQLITE_BCV_CURL_HANDLE_CONFIG (CURL*, int, const char*);
 
 #define BCV_DEFAULT_FINDORPHANS 1
 
+#define BCV_DEFAULT_COMPRESS 0
+
 #define BCV_MANIFEST_SCHEMA \
   "CREATE TABLE config(                                         \n" \
   "  name TEXT PRIMARY KEY,                                     \n" \
@@ -112,6 +116,7 @@ struct sqlite3_bcv {
 
   int bTestNoKv;                  /* SQLITE_BCVCONFIG_TESTNOKV option */
   int bFindOrphans;               /* SQLITE_BCVCONFIG_FINDORPHANS option */
+  int bCompress;                  /* SQLITE_BCVCONFIG_COMPRESS option */
 
   bcv_log_cb xBcvLog;
   void *pBcvLogCtx;
@@ -390,6 +395,118 @@ u32 bcvGetU32(const u8 *a){
   return ((u32)a[0] << 24) + ((u32)a[1] << 16) 
        + ((u32)a[2] << 8) + ((u32)a[3] << 0);
 }
+
+/*
+** Block compression (deflate) support.
+**
+** Cloud blocks are optionally compressed in transit using zlib/deflate. A
+** compressed block payload is self-describing: it begins with an 8-byte magic
+** value followed by a 4-byte big-endian copy of the uncompressed block size,
+** and then the raw deflate stream. Blocks that do not compress to something
+** smaller than the original (or that pre-date this feature) are stored as-is,
+** without the magic prefix, so that bcvBlockInflate() can transparently
+** handle both compressed and uncompressed payloads.
+*/
+#define BCV_DEFLATE_HDRSIZE 12
+static const u8 BCV_DEFLATE_MAGIC[8] = {
+  0x89, 'B', 'C', 'V', 'Z', 0x0D, 0x0A, 0x01
+};
+
+/*
+** Compress the nIn-byte block in buffer aIn[]. On success, set (*paOut) to
+** point to a buffer obtained from sqlite3_malloc() containing the payload to
+** upload to cloud storage, set (*pnOut) to the size of that buffer in bytes,
+** and return SQLITE_OK. It is the responsibility of the caller to eventually
+** free the returned buffer using sqlite3_free().
+**
+** If compression does not reduce the size of the block, the returned buffer
+** contains an uncompressed copy of aIn[] (with no magic prefix). If an error
+** occurs, an SQLite error code is returned and (*paOut)/(*pnOut) are zeroed.
+*/
+int bcvBlockDeflate(const u8 *aIn, int nIn, u8 **paOut, int *pnOut){
+  int rc = SQLITE_OK;
+  uLongf nDest = compressBound((uLong)nIn);
+  u8 *aOut = (u8*)sqlite3_malloc((int)nDest + BCV_DEFLATE_HDRSIZE);
+
+  *paOut = 0;
+  *pnOut = 0;
+  if( aOut==0 ){
+    return SQLITE_NOMEM;
+  }
+
+  if( Z_OK!=compress2(&aOut[BCV_DEFLATE_HDRSIZE], &nDest, aIn, (uLong)nIn,
+                      Z_DEFAULT_COMPRESSION)
+   || ((int)nDest + BCV_DEFLATE_HDRSIZE)>=nIn
+  ){
+    /* Compression failed or was not beneficial - store the block raw. */
+    sqlite3_free(aOut);
+    aOut = (u8*)sqlite3_malloc(nIn>0 ? nIn : 1);
+    if( aOut==0 ){
+      rc = SQLITE_NOMEM;
+    }else{
+      memcpy(aOut, aIn, nIn);
+      *paOut = aOut;
+      *pnOut = nIn;
+    }
+  }else{
+    memcpy(aOut, BCV_DEFLATE_MAGIC, sizeof(BCV_DEFLATE_MAGIC));
+    bcvPutU32(&aOut[8], (u32)nIn);
+    *paOut = aOut;
+    *pnOut = (int)nDest + BCV_DEFLATE_HDRSIZE;
+  }
+
+  return rc;
+}
+
+/*
+** Reverse the transformation applied by bcvBlockDeflate(). Buffer aIn[]
+** (nIn bytes in size) contains a block payload just downloaded from cloud
+** storage. On success, set (*paOut) to point to a buffer obtained from
+** sqlite3_malloc() containing the decompressed block, set (*pnOut) to its
+** size in bytes, and return SQLITE_OK. It is the responsibility of the caller
+** to eventually free the returned buffer using sqlite3_free().
+**
+** If aIn[] does not carry the compression magic prefix (because the block was
+** stored uncompressed), a verbatim copy of aIn[] is returned. If an error
+** occurs, an SQLite error code is returned and (*paOut)/(*pnOut) are zeroed.
+*/
+int bcvBlockInflate(const u8 *aIn, int nIn, u8 **paOut, int *pnOut){
+  int rc = SQLITE_OK;
+
+  *paOut = 0;
+  *pnOut = 0;
+  if( nIn>=BCV_DEFLATE_HDRSIZE
+   && 0==memcmp(aIn, BCV_DEFLATE_MAGIC, sizeof(BCV_DEFLATE_MAGIC))
+  ){
+    u32 nOrig = bcvGetU32(&aIn[8]);
+    uLongf nDest = nOrig;
+    u8 *aOut = (u8*)sqlite3_malloc(nOrig>0 ? (int)nOrig : 1);
+    if( aOut==0 ){
+      rc = SQLITE_NOMEM;
+    }else if( Z_OK!=uncompress(aOut, &nDest, &aIn[BCV_DEFLATE_HDRSIZE],
+                               (uLong)(nIn - BCV_DEFLATE_HDRSIZE))
+           || nDest!=(uLongf)nOrig
+    ){
+      sqlite3_free(aOut);
+      rc = SQLITE_ERROR;
+    }else{
+      *paOut = aOut;
+      *pnOut = (int)nDest;
+    }
+  }else{
+    u8 *aOut = (u8*)sqlite3_malloc(nIn>0 ? nIn : 1);
+    if( aOut==0 ){
+      rc = SQLITE_NOMEM;
+    }else{
+      memcpy(aOut, aIn, nIn);
+      *paOut = aOut;
+      *pnOut = nIn;
+    }
+  }
+
+  return rc;
+}
+
 void bcvPutU64(u8 *a, u64 iVal){
   a[0] = (iVal>>56) & 0xFF;
   a[1] = (iVal>>48) & 0xFF;
@@ -1196,6 +1313,7 @@ int sqlite3_bcv_open(
     pNew->nRequest = 1;
     pNew->nHttpTimeout = BCV_DEFAULT_HTTPTIMEOUT;
     pNew->bFindOrphans = BCV_DEFAULT_FINDORPHANS;
+    pNew->bCompress = BCV_DEFAULT_COMPRESS;
     pNew->errCode = bcvContainerOpen(
         zMod, zUser, zKey, zCont, &pNew->pCont, &pNew->zErrmsg
     );
@@ -1299,6 +1417,10 @@ int sqlite3_bcv_config(sqlite3_bcv *p, int eOp, ...){
         p->bFindOrphans = va_arg(ap, int);
         break;
       }
+      case SQLITE_BCVCONFIG_COMPRESS: {
+        p->bCompress = va_arg(ap, int);
+        break;
+      }
       default:
         rc = SQLITE_MISUSE;
         break;
@@ -1327,6 +1449,7 @@ struct BcvUpload {
 struct BcvUploadJob {
   BcvUpload *pUpload;             /* Upload context */
   u8 *aSpace;                     /* szBlock bytes of space for this job */
+  u8 *aZip;                       /* Compressed payload being uploaded (owned) */
 };
 
 static void bcvUploadOneBlock(BcvUploadJob *pJob);
@@ -1408,10 +1531,23 @@ static void bcvUploadOneBlockRetry(BcvUploadJob *pJob, int *pbRetry){
     }
 
     bcvBlockidToText(NAMEBYTES(pMan), aBlk, aBuf);
-    rc = bcvDispatchPut(
-        pBcv->pDisp, pBcv->pCont, aBuf, 0, aSpace, pMan->szBlk, 
-        pJob, bcvUploadOneBlockCb
-    );
+    sqlite3_free(pJob->aZip);
+    pJob->aZip = 0;
+    if( pBcv->bCompress ){
+      int nZip = 0;
+      rc = bcvBlockDeflate(aSpace, pMan->szBlk, &pJob->aZip, &nZip);
+      if( rc==SQLITE_OK ){
+        rc = bcvDispatchPut(
+            pBcv->pDisp, pBcv->pCont, aBuf, 0, pJob->aZip, nZip,
+            pJob, bcvUploadOneBlockCb
+        );
+      }
+    }else{
+      rc = bcvDispatchPut(
+          pBcv->pDisp, pBcv->pCont, aBuf, 0, aSpace, pMan->szBlk,
+          pJob, bcvUploadOneBlockCb
+      );
+    }
     if( rc!=SQLITE_OK ){
       pBcv->errCode = rc;
       return;
@@ -1542,6 +1678,11 @@ int sqlite3_bcv_upload(
   }
 
  update_out:
+  if( aJob ){
+    for(i=0; i<nJob; i++){
+      sqlite3_free(aJob[i].aZip);
+    }
+  }
   sqlite3_free(aJob);
   bcvCloseLocal(up.pFd);
   bcvManifestFree(pMan);
@@ -1728,7 +1869,13 @@ static void bcvDownloadOneFileCb(
     }else if( errCode!=SQLITE_OK ){
       bcvApiError(pBcv, errCode, "%s", zETag);
     }else{
-      int rc = bcvWritefile(p->pFd, aData, nData, iOff);
+      u8 *aDecomp = 0;
+      int nDecomp = 0;
+      int rc = bcvBlockInflate(aData, nData, &aDecomp, &nDecomp);
+      if( rc==SQLITE_OK ){
+        rc = bcvWritefile(p->pFd, aDecomp, nDecomp, iOff);
+      }
+      sqlite3_free(aDecomp);
       if( rc!=SQLITE_OK ){
         bcvApiError(pBcv, rc&0xFF, "");
       }else{

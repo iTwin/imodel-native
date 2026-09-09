@@ -174,6 +174,21 @@ int sqlite3_bcv_config(sqlite3_bcv*, int eOp, ...);
 **   for deletion. Orphaned blocks are created when a client abruptly halts,
 **   is disconnected or encounters an error while uploading a change.
 **   
+** SQLITE_BCVCONFIG_COMPRESS:
+**   This option requires a single argument of type int, interpreted as a
+**   Boolean. If set to true, blocks uploaded to cloud storage using this
+**   handle (e.g. by sqlite3_bcv_upload()) are first compressed using the
+**   deflate algorithm. If set to false (the default), blocks are uploaded
+**   uncompressed.
+**
+**   This option only affects how blocks are *written*. Compressed blocks are
+**   self-describing and are always transparently decompressed when read,
+**   regardless of this setting, so a container may contain a mix of
+**   compressed and uncompressed blocks. Note however that older clients
+**   that predate compression support cannot read compressed blocks - only
+**   enable this option once all clients accessing the container are known
+**   to support it.
+**   
 */
 #define SQLITE_BCVCONFIG_VERBOSE     1      /* (int) */
 #define SQLITE_BCVCONFIG_PROGRESS    2      /* (void*,xProgress) */
@@ -183,6 +198,7 @@ int sqlite3_bcv_config(sqlite3_bcv*, int eOp, ...);
 #define SQLITE_BCVCONFIG_TESTNOKV    6      /* (int) */
 #define SQLITE_BCVCONFIG_HTTPTIMEOUT 7      /* (int) */
 #define SQLITE_BCVCONFIG_FINDORPHANS 8      /* (int) */
+#define SQLITE_BCVCONFIG_COMPRESS    9      /* (int) */
 
 /*
 ** Delete an sqlite3_bcv handle obtained via an earlier call to
