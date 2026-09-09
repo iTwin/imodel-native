@@ -206,10 +206,10 @@ static DbResult CreateSpatialIndexUpdateTriggers(DgnDbR db)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Helper function to upgrade the DgnDb profile to 2.0.0.8 by updating spatial-index triggers.
+* Replaces spatial-index update triggers and records the DDL when change tracking is enabled.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::UpgradeToProfile2_0_0_8(DgnDbR db)
+DbResult DgnDb::ReplaceSpatialIndexUpdateTriggers(DgnDbR db)
     {
     DbResult result = db.ExecuteDdl("DROP TRIGGER IF EXISTS dgn_rtree_upd");
     if (BE_SQLITE_OK != result)
@@ -606,9 +606,12 @@ DbResult DgnDb::_UpgradeProfile(Db::OpenParams const& params)
 
     // DgnDb currently has only one profile upgrader. Keep this flat implementation until
     // there are enough migrations to justify an ordered upgrader sequence.
-    if (versionBeforeUpgrade < DgnDbProfileVersion(2, 0, 0, 8))
+    if (versionBeforeUpgrade < DgnDbProfileVersion(2, 0, 0, 9))
         {
-        result = UpgradeToProfile2_0_0_8(*this);
+        // The 2.0.0.8 upgrade changed these triggers without recording them in changesets.
+        // Replace them again so other briefcases receive the corrected definitions,
+        // even if this file already has them.
+        result = ReplaceSpatialIndexUpdateTriggers(*this);
         if (BE_SQLITE_OK != result)
             return result;
         }
