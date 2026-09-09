@@ -291,10 +291,15 @@ ShxFont::GlyphFPos const* ShxFont::GetGlyphFPos(T_Id glyphId) {
 uint32_t ShxFont::Read(void* buffer, uint32_t requestedBytes) {
     auto& reader = *GetReader().m_reader;
     uint32_t pos = Tell();
-    size_t remainingBytes = reader.GetNumBytes() - pos;
-    uint32_t actuallyRead = std::min((uint32_t)remainingBytes, requestedBytes);
-    reader.ReadBytes(buffer, actuallyRead);
-    return actuallyRead;
+    uint32_t numBytes = reader.GetNumBytes();
+    if (pos > numBytes)
+        return 0;
+
+    uint32_t actuallyRead = std::min(numBytes - pos, requestedBytes);
+    if (0 == actuallyRead || reader.ReadBytes(buffer, actuallyRead))
+        return actuallyRead;
+
+    return 0;
 }
 
 /**
