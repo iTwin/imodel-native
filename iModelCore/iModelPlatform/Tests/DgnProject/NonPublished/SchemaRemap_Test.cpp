@@ -155,37 +155,50 @@ TEST_F(SchemaRemapTest, OpmPropertyOverrideAfterSharedColumnRemap)
         m_db->CloseDb();
         DbResult status;
         m_db = DgnDb::OpenIModelDb(&status, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
-        ASSERT_EQ(BE_SQLITE_OK, status);
-        ASSERT_TRUE(m_db.IsValid());
+        return status;
         };
 
     auto assertBolt = [&]()
         {
         Statement mappings;
-        ASSERT_EQ(BE_SQLITE_OK, mappings.Prepare(*m_db, R"sql(
+        DbResult status = mappings.Prepare(*m_db, R"sql(
           SELECT COUNT(*), COUNT(DISTINCT pm.PropertyPathId), COUNT(DISTINCT pm.ColumnId)
           FROM ec_PropertyMap pm JOIN ec_Class c ON c.Id=pm.ClassId
             JOIN ec_Schema s ON s.Id=c.SchemaId JOIN ec_PropertyPath pp ON pp.Id=pm.PropertyPathId
-          WHERE s.Name='OpmRemap' AND c.Name='Bolt' AND pp.AccessString='DRY_WEIGHT')sql"));
-        ASSERT_EQ(BE_SQLITE_ROW, mappings.Step());
+          WHERE s.Name='OpmRemap' AND c.Name='Bolt' AND pp.AccessString='DRY_WEIGHT')sql");
+        EXPECT_EQ(BE_SQLITE_OK, status);
+        if (status != BE_SQLITE_OK)
+            return false;
+        status = mappings.Step();
+        EXPECT_EQ(BE_SQLITE_ROW, status);
+        if (status != BE_SQLITE_ROW)
+            return false;
         EXPECT_EQ(1, mappings.GetValueInt(0));
         EXPECT_EQ(1, mappings.GetValueInt(1));
         EXPECT_EQ(1, mappings.GetValueInt(2));
 
         ECSqlStatement query;
-        ASSERT_EQ(ECSqlStatus::Success, query.Prepare(*m_db, "SELECT DRY_WEIGHT FROM ONLY OpmRemap.Bolt"));
-        ASSERT_EQ(BE_SQLITE_ROW, query.Step());
+        ECSqlStatus prepareStatus = query.Prepare(*m_db, "SELECT DRY_WEIGHT FROM ONLY OpmRemap.Bolt");
+        EXPECT_EQ(ECSqlStatus::Success, prepareStatus);
+        if (prepareStatus != ECSqlStatus::Success)
+            return false;
+        status = query.Step();
+        EXPECT_EQ(BE_SQLITE_ROW, status);
+        if (status != BE_SQLITE_ROW)
+            return false;
         EXPECT_DOUBLE_EQ(12.5, query.GetValueDouble(0));
         EXPECT_EQ(BE_SQLITE_DONE, query.Step());
+        return true;
         };
 
     for (int version = 0; version < 2; ++version)
         {
-        SCOPED_TRACE(Utf8PrintfString("version %d", version).c_str());
+        BeTest::Log("SchemaRemapTest", BeTest::PRIORITY_INFO, Utf8PrintfString("version %d", version).c_str());
         if (version == 1)
             {
-            ASSERT_NO_FATAL_FAILURE(reopenDb());
-            ASSERT_NO_FATAL_FAILURE(assertBolt());
+            ASSERT_EQ(BE_SQLITE_OK, reopenDb());
+            ASSERT_TRUE(m_db.IsValid());
+            ASSERT_TRUE(assertBolt());
             }
 
         auto context = ECSchemaReadContext::CreateContext();
@@ -239,12 +252,13 @@ TEST_F(SchemaRemapTest, OpmPropertyOverrideAfterSharedColumnRemap)
             }
 
         ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges());
-        assertBolt();
+        ASSERT_TRUE(assertBolt());
         }
 
-    SCOPED_TRACE("reopened after upgrade");
-    ASSERT_NO_FATAL_FAILURE(reopenDb());
-    assertBolt();
+    BeTest::Log("SchemaRemapTest", BeTest::PRIORITY_INFO, "reopened after upgrade");
+    ASSERT_EQ(BE_SQLITE_OK, reopenDb());
+    ASSERT_TRUE(m_db.IsValid());
+    ASSERT_TRUE(assertBolt());
     }
 
 TEST_F(SchemaRemapTest, DeletePropertyOverrideAndDerivedClassSimultaneously)
