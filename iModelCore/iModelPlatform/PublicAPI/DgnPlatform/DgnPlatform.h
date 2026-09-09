@@ -24,7 +24,6 @@
 #include <BeSQLite/ChangeSet.h>
 #include <BeSQLite/RTreeMatch.h>
 #include <ECDb/ECDbApi.h>
-#include <GeomJsonWireFormat/JsonUtils.h>
 #include <GeomJsonWireFormat/BeJsGeomUtils.h>
 #include <PlacementOnEarth/Placement.h>
 

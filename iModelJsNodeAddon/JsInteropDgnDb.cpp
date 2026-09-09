@@ -458,9 +458,11 @@ struct SetNapiObjOnElement {
 /*---------------------------------------------------------------------------------**/ /**
 @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void callJsPreHandler(DgnDbR db, DgnClassId classId, Utf8CP methodName, Napi::Object obj)  {
+static void callJsPreHandler(DgnDbR db, DgnClassId classId, Utf8CP methodName, Napi::Object obj, Napi::Value optionsObj) {
     auto arg = Napi::Object::New(obj.Env());
     arg.Set("props", obj);
+    if (!optionsObj.IsUndefined())
+        arg.Set("options", optionsObj);
     db.CallJsHandlerMethod(classId, methodName, arg);
 }
 
@@ -469,10 +471,9 @@ static void callJsPreHandler(DgnDbR db, DgnClassId classId, Utf8CP methodName, N
 +---------------+---------------+---------------+---------------+---------------+------*/
 Napi::String JsInterop::InsertElement(DgnDbR dgndb, Napi::Object obj, Napi::Value optionsObj) {
     BeJsConst inJson(obj);
-    BeJsConst inOptionsJson(optionsObj);
 
     auto classId = ECJsonUtilities::GetClassIdFromClassNameJson(inJson[DgnElement::json_classFullName()], dgndb.GetClassLocater());
-    callJsPreHandler(dgndb, classId, "onInsert", obj);
+    callJsPreHandler(dgndb, classId, "onInsert", obj, optionsObj);
 
     try {
         DgnElement::CreateParams params(dgndb, inJson);
@@ -494,6 +495,7 @@ Napi::String JsInterop::InsertElement(DgnDbR dgndb, Napi::Object obj, Napi::Valu
             el->SetFederationGuid(BeGuid(true));
 
         // if the option "forceUseId" is set, attempt to insert the element preserving that id - used by transformer.
+        BeJsConst inOptionsJson(optionsObj);
         if (inOptionsJson.isObject() && inOptionsJson.Get(json_forceUseId()).asBool()) {
             if (!inJson.isStringMember(json_id())) {
                 THROW_JS_DGN_DB_EXCEPTION(Env(), "invalid argument, the id is required if forcing its usage", DgnDbStatus::BadArg)
@@ -534,7 +536,7 @@ void JsInterop::UpdateElement(DgnDbR dgndb, Napi::Object obj) {
         elProps[DgnElement::json_classFullName()] = el->GetElementClass()->GetFullName();
         elProps[DgnElement::json_model()] = el->GetModelId();
 
-        callJsPreHandler(dgndb, el->GetElementClassId(), "onUpdate", obj);
+        callJsPreHandler(dgndb, el->GetElementClassId(), "onUpdate", obj, obj.Env().Undefined());
         el->FromJson(elProps);
 
         SetNapiObjOnElement _v(*el, &obj);
@@ -1379,12 +1381,7 @@ void JsInterop::GetIModelProps(BeJsValue val, DgnDbCR dgndb, Utf8StringCR when) 
     if (gcs != nullptr && gcs->IsValid())
         {
         // Here is the definition in old style JSON format.
-        Json::Value CRSOld;
-        gcs->ToJson(CRSOld, true);
-
-        // Convert old style Json value to new style
-        BeJsDocument theDoc(CRSOld.toStyledString());
-        val[json_geographicCoordinateSystem()].From(theDoc);
+        gcs->ToJson(val[json_geographicCoordinateSystem()], true);
 
         // Invalidate current EcefLocation in case it exists (this will force to recompute it using the new gcs)
         EcefLocation invalidLocation;
@@ -1447,7 +1444,7 @@ static void populateGeoCoordResult(BeJsValue result, bvector<DPoint3d> const& po
     {
     for (size_t i = 0; i < points.size(); i++)
         {
-        auto outputPointWithStatus = result[static_cast<Json::ArrayIndex>(i)];
+        auto outputPointWithStatus = result[static_cast<BeJsValue::ArrayIndex>(i)];
         auto outputPoint = outputPointWithStatus["p"];
 
         outputPoint[0] = points[i].x;

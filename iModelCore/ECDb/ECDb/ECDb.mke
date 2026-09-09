@@ -141,6 +141,7 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/ValueCreationFuncExp.h \
                 $(baseDir)DbSchema.h \
                 $(baseDir)DbSchemaPersistenceManager.h \
+                $(baseDir)DerivedDbStructures.h \
                 $(baseDir)LightweightCache.h \
                 $(baseDir)SqlNames.h \
                 $(baseDir)InstanceWriterImpl.h \
@@ -407,6 +408,8 @@ $(o)DbSchema$(oext):                                          $(baseDir)DbSchema
 
 $(o)DbSchemaPersistenceManager$(oext):                        $(baseDir)DbSchemaPersistenceManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
+$(o)DerivedDbStructures$(oext):                               $(baseDir)DerivedDbStructures.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
 $(o)ECDbExpressionSymbolProvider$(oext):                      $(baseDir)ECDbExpressionSymbolProvider.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ClassMapColumnFactory$(oext):                             $(baseDir)ClassMapColumnFactory.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
@@ -545,7 +548,6 @@ LINKER_LIBRARIES            = $(ContextSubpartsLibs)$(BeSQLiteLib) \
                               $(ContextSubpartsLibs)$(BentleyGeomLib) \
                               $(ContextSubpartsLibs)$(libprefix)iTwinBentley$(libext) \
                               $(ContextSubpartsLibs)$(libprefix)iTwinPugixml$(libext) \
-                              $(ContextSubpartsLibs)$(libprefix)iTwinJsonCpp$(stlibext) \
                               $(ContextSubpartsLibs)$(libprefix)iTwinGeomSerialization$(libext) \
                               $(ContextSubPartsLibs)$(stlibprefix)iTwin_google_re2$(stlibext)
 

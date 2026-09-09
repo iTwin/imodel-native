@@ -3,6 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
+#include <string>
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -348,8 +349,8 @@ DbResult IntegrityChecker::CheckProfileTablesAndIndexes4002AndLater(std::functio
 	const auto metaTriggers = std::map<std::string,std::string> {
 		{"bis_Element_CurrentTimeStamp", "CREATE TRIGGER bis_Element_CurrentTimeStamp AFTER UPDATE ON bis_Element WHEN old.LastMod=new.LastMod AND old.LastMod!=julianday('now') BEGIN UPDATE bis_Element SET LastMod=julianday('now') WHERE Id=new.Id; END"},
 		{"dgn_prjrange_del", "CREATE TRIGGER dgn_prjrange_del AFTER DELETE ON bis_GeometricElement3d BEGIN DELETE FROM dgn_SpatialIndex WHERE ElementId=old.ElementId;END"},
-		{"dgn_rtree_upd", "CREATE TRIGGER dgn_rtree_upd AFTER UPDATE OF Origin_X,Origin_Y,Origin_Z,Yaw,Pitch,Roll,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z ON bis_GeometricElement3d WHEN new.Origin_X IS NOT NULL AND 1 = new.InSpatialIndex BEGIN INSERT OR REPLACE INTO dgn_SpatialIndex(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5) FROM (SELECT DGN_placement_aabb(DGN_placement(DGN_point(NEW.Origin_X,NEW.Origin_Y,NEW.Origin_Z),DGN_angles(NEW.Yaw,NEW.Pitch,NEW.Roll),DGN_bbox(NEW.BBoxLow_X,NEW.BBoxLow_Y,NEW.BBoxLow_Z,NEW.BBoxHigh_X,NEW.BBoxHigh_Y,NEW.BBoxHigh_Z))) as bb);END"},
-		{"dgn_rtree_upd1", "CREATE TRIGGER dgn_rtree_upd1 AFTER UPDATE OF Origin_X,Origin_Y,Origin_Z,Yaw,Pitch,Roll,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z ON bis_GeometricElement3d WHEN OLD.Origin_X IS NOT NULL AND NEW.Origin_X IS NULL BEGIN DELETE FROM dgn_SpatialIndex WHERE ElementId=OLD.ElementId;END"},
+		{"dgn_rtree_upd", "CREATE TRIGGER dgn_rtree_upd AFTER UPDATE OF InSpatialIndex,Origin_X,Origin_Y,Origin_Z,Yaw,Pitch,Roll,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z ON bis_GeometricElement3d WHEN new.Origin_X IS NOT NULL AND 1 = new.InSpatialIndex BEGIN INSERT OR REPLACE INTO dgn_SpatialIndex(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5) FROM (SELECT DGN_placement_aabb(DGN_placement(DGN_point(NEW.Origin_X,NEW.Origin_Y,NEW.Origin_Z),DGN_angles(NEW.Yaw,NEW.Pitch,NEW.Roll),DGN_bbox(NEW.BBoxLow_X,NEW.BBoxLow_Y,NEW.BBoxLow_Z,NEW.BBoxHigh_X,NEW.BBoxHigh_Y,NEW.BBoxHigh_Z))) as bb);END"},
+		{"dgn_rtree_upd1", "CREATE TRIGGER dgn_rtree_upd1 AFTER UPDATE OF InSpatialIndex,Origin_X,Origin_Y,Origin_Z,Yaw,Pitch,Roll,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z ON bis_GeometricElement3d WHEN OLD.Origin_X IS NOT NULL AND (NEW.Origin_X IS NULL OR NEW.InSpatialIndex = 0) BEGIN DELETE FROM dgn_SpatialIndex WHERE ElementId=OLD.ElementId;END"},
 		{"dgn_rtree_ins", "CREATE TRIGGER dgn_rtree_ins AFTER INSERT ON bis_GeometricElement3d WHEN new.Origin_X IS NOT NULL AND 1 = new.InSpatialIndex BEGIN INSERT INTO dgn_SpatialIndex(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5) FROM (SELECT DGN_placement_aabb(DGN_placement(DGN_point(NEW.Origin_X,NEW.Origin_Y,NEW.Origin_Z),DGN_angles(NEW.Yaw,NEW.Pitch,NEW.Roll),DGN_bbox(NEW.BBoxLow_X,NEW.BBoxLow_Y,NEW.BBoxLow_Z,NEW.BBoxHigh_X,NEW.BBoxHigh_Y,NEW.BBoxHigh_Z))) as bb);END"},
 		{"dgn_fts_ai", "CREATE TRIGGER dgn_fts_ai AFTER INSERT ON dgn_fts_content BEGIN INSERT INTO dgn_fts_idx(rowid,Type,Id,Text) VALUES(new.rowid,new.Type,new.Id,new.Text); END"},
 		{"dgn_fts_ad", "CREATE TRIGGER dgn_fts_ad AFTER DELETE ON dgn_fts_content BEGIN INSERT INTO dgn_fts_idx(dgn_fts_idx,rowid,Type,Id,Text) VALUES('delete',old.rowid,old.Type,old.Id,old.Text); END"},
@@ -460,8 +461,8 @@ DbResult IntegrityChecker::CheckProfileTablesAndIndexes4001AndOlder(std::functio
 	const auto metaTriggers = std::map<std::string,std::string> {
 		{"bis_Element_CurrentTimeStamp", "CREATE TRIGGER bis_Element_CurrentTimeStamp AFTER UPDATE ON bis_Element WHEN old.LastMod=new.LastMod AND old.LastMod!=julianday('now') BEGIN UPDATE bis_Element SET LastMod=julianday('now') WHERE Id=new.Id; END"},
 		{"dgn_prjrange_del", "CREATE TRIGGER dgn_prjrange_del AFTER DELETE ON bis_GeometricElement3d BEGIN DELETE FROM dgn_SpatialIndex WHERE ElementId=old.ElementId;END"},
-		{"dgn_rtree_upd", "CREATE TRIGGER dgn_rtree_upd AFTER UPDATE OF Origin_X,Origin_Y,Origin_Z,Yaw,Pitch,Roll,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z ON bis_GeometricElement3d WHEN new.Origin_X IS NOT NULL AND 1 = new.InSpatialIndex BEGIN INSERT OR REPLACE INTO dgn_SpatialIndex(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5) FROM (SELECT DGN_placement_aabb(DGN_placement(DGN_point(NEW.Origin_X,NEW.Origin_Y,NEW.Origin_Z),DGN_angles(NEW.Yaw,NEW.Pitch,NEW.Roll),DGN_bbox(NEW.BBoxLow_X,NEW.BBoxLow_Y,NEW.BBoxLow_Z,NEW.BBoxHigh_X,NEW.BBoxHigh_Y,NEW.BBoxHigh_Z))) as bb);END"},
-		{"dgn_rtree_upd1", "CREATE TRIGGER dgn_rtree_upd1 AFTER UPDATE OF Origin_X,Origin_Y,Origin_Z,Yaw,Pitch,Roll,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z ON bis_GeometricElement3d WHEN OLD.Origin_X IS NOT NULL AND NEW.Origin_X IS NULL BEGIN DELETE FROM dgn_SpatialIndex WHERE ElementId=OLD.ElementId;END"},
+		{"dgn_rtree_upd", "CREATE TRIGGER dgn_rtree_upd AFTER UPDATE OF InSpatialIndex,Origin_X,Origin_Y,Origin_Z,Yaw,Pitch,Roll,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z ON bis_GeometricElement3d WHEN new.Origin_X IS NOT NULL AND 1 = new.InSpatialIndex BEGIN INSERT OR REPLACE INTO dgn_SpatialIndex(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5) FROM (SELECT DGN_placement_aabb(DGN_placement(DGN_point(NEW.Origin_X,NEW.Origin_Y,NEW.Origin_Z),DGN_angles(NEW.Yaw,NEW.Pitch,NEW.Roll),DGN_bbox(NEW.BBoxLow_X,NEW.BBoxLow_Y,NEW.BBoxLow_Z,NEW.BBoxHigh_X,NEW.BBoxHigh_Y,NEW.BBoxHigh_Z))) as bb);END"},
+		{"dgn_rtree_upd1", "CREATE TRIGGER dgn_rtree_upd1 AFTER UPDATE OF InSpatialIndex,Origin_X,Origin_Y,Origin_Z,Yaw,Pitch,Roll,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z ON bis_GeometricElement3d WHEN OLD.Origin_X IS NOT NULL AND (NEW.Origin_X IS NULL OR NEW.InSpatialIndex = 0) BEGIN DELETE FROM dgn_SpatialIndex WHERE ElementId=OLD.ElementId;END"},
 		{"dgn_rtree_ins", "CREATE TRIGGER dgn_rtree_ins AFTER INSERT ON bis_GeometricElement3d WHEN new.Origin_X IS NOT NULL AND 1 = new.InSpatialIndex BEGIN INSERT INTO dgn_SpatialIndex(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5) FROM (SELECT DGN_placement_aabb(DGN_placement(DGN_point(NEW.Origin_X,NEW.Origin_Y,NEW.Origin_Z),DGN_angles(NEW.Yaw,NEW.Pitch,NEW.Roll),DGN_bbox(NEW.BBoxLow_X,NEW.BBoxLow_Y,NEW.BBoxLow_Z,NEW.BBoxHigh_X,NEW.BBoxHigh_Y,NEW.BBoxHigh_Z))) as bb);END"},
 		{"dgn_fts_ai", "CREATE TRIGGER dgn_fts_ai AFTER INSERT ON dgn_fts_content BEGIN INSERT INTO dgn_fts_idx(rowid,Type,Id,Text) VALUES(new.rowid,new.Type,new.Id,new.Text); END"},
 		{"dgn_fts_ad", "CREATE TRIGGER dgn_fts_ad AFTER DELETE ON dgn_fts_content BEGIN INSERT INTO dgn_fts_idx(dgn_fts_idx,rowid,Type,Id,Text) VALUES('delete',old.rowid,old.Type,old.Id,old.Text); END"},
@@ -469,6 +470,24 @@ DbResult IntegrityChecker::CheckProfileTablesAndIndexes4001AndOlder(std::functio
 	};
 	return CheckEcProfile(metaTables, metaIndexes, metaTriggers, callback);
 }
+
+//---------------------------------------------------------------------------------------
+// Existing iModels keep pre-2.0.0.8 spatial-index triggers that do not watch InSpatialIndex.
+// DgnDb upgrades replace them, but ECDb can inspect an iModel without running that upgrade.
+// Both definitions are therefore valid to the integrity checker.
+//---------------------------------------------------------------------------------------
+static bool IsAcceptedTriggerSql(std::string const& name, std::string const& actual, std::string const& expected) {
+    if (actual == expected)
+        return true;
+
+    if (name == "dgn_rtree_upd")
+        return actual == "CREATE TRIGGER dgn_rtree_upd AFTER UPDATE OF Origin_X,Origin_Y,Origin_Z,Yaw,Pitch,Roll,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z ON bis_GeometricElement3d WHEN new.Origin_X IS NOT NULL AND 1 = new.InSpatialIndex BEGIN INSERT OR REPLACE INTO dgn_SpatialIndex(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5) FROM (SELECT DGN_placement_aabb(DGN_placement(DGN_point(NEW.Origin_X,NEW.Origin_Y,NEW.Origin_Z),DGN_angles(NEW.Yaw,NEW.Pitch,NEW.Roll),DGN_bbox(NEW.BBoxLow_X,NEW.BBoxLow_Y,NEW.BBoxLow_Z,NEW.BBoxHigh_X,NEW.BBoxHigh_Y,NEW.BBoxHigh_Z))) as bb);END";
+
+    if (name == "dgn_rtree_upd1")
+        return actual == "CREATE TRIGGER dgn_rtree_upd1 AFTER UPDATE OF Origin_X,Origin_Y,Origin_Z,Yaw,Pitch,Roll,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z ON bis_GeometricElement3d WHEN OLD.Origin_X IS NOT NULL AND NEW.Origin_X IS NULL BEGIN DELETE FROM dgn_SpatialIndex WHERE ElementId=OLD.ElementId;END";
+
+    return false;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -600,7 +619,7 @@ DbResult IntegrityChecker::CheckEcProfile(std::map<std::string,std::string> cons
 				}
 			} else {
 				const std::string sql = triggerStmt.GetValueText(0);
-				if (sql != kv.second) {
+				if (!IsAcceptedTriggerSql(kv.first, sql, kv.second)) {
 					//! miss match declaration
 					if(!callback(kTypeTrigger, kv.first, kIssueDDLMismatch)) {
 						return BE_SQLITE_OK;
@@ -1121,6 +1140,78 @@ DbResult IntegrityChecker::CheckMissingChildRows(std::function<bool(Utf8CP, ECIn
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+DbResult IntegrityChecker::CheckDivergedPropMaps(std::function<bool(ECN::ECClassId, Utf8CP, ECN::ECClassId, Utf8CP, Utf8CP, Utf8CP, Utf8CP)> callback)
+	{
+	Statement stmt;
+	auto rc = stmt.Prepare(m_conn, R"(
+        WITH RECURSIVE [tableRoot]([id], [rootId]) AS (
+                SELECT [Id], [Id] FROM [ec_Table] WHERE [ParentTableId] IS NULL
+                UNION ALL
+            SELECT [t].[Id], [r].[rootId] FROM [ec_Table] [t] JOIN [tableRoot] [r] ON [t].[ParentTableId] = [r].[id])
+        SELECT DISTINCT [derivedPm].[ClassId], [basePm].[ClassId], [pp].[AccessString],
+                [derivedTable].[Name] || '.' || [derivedCol].[Name],
+                [baseTable].[Name] || '.' || [baseCol].[Name]
+            FROM [ec_PropertyMap] [derivedPm]
+                JOIN [ec_cache_ClassHierarchy] [ch] ON [ch].[ClassId] = [derivedPm].[ClassId] AND [ch].[BaseClassId] <> [derivedPm].[ClassId]
+                JOIN [ec_PropertyMap] [basePm] ON [basePm].[ClassId] = [ch].[BaseClassId] AND [basePm].[PropertyPathId] = [derivedPm].[PropertyPathId] AND [basePm].[ColumnId] <> [derivedPm].[ColumnId]
+                JOIN [ec_PropertyPath] [pp] ON [pp].[Id] = [derivedPm].[PropertyPathId]
+                    JOIN [ec_Property] [rootProp] ON [rootProp].[Id] = [pp].[RootPropertyId]
+                    JOIN [ec_Class] [rootClass] ON [rootClass].[Id] = [rootProp].[ClassId]
+                    JOIN [ec_Schema] [rootSchema] ON [rootSchema].[Id] = [rootClass].[SchemaId]
+                JOIN [ec_Column] [derivedCol] ON [derivedCol].[Id] = [derivedPm].[ColumnId]
+                JOIN [ec_Column] [baseCol] ON [baseCol].[Id] = [basePm].[ColumnId]
+                JOIN [ec_Table] [derivedTable] ON [derivedTable].[Id] = [derivedCol].[TableId]
+                JOIN [ec_Table] [baseTable] ON [baseTable].[Id] = [baseCol].[TableId]
+                JOIN [tableRoot] [derivedRoot] ON [derivedRoot].[id] = [derivedCol].[TableId]
+                JOIN [tableRoot] [baseRoot] ON [baseRoot].[id] = [baseCol].[TableId] AND [baseRoot].[rootId] = [derivedRoot].[rootId]
+            WHERE [rootSchema].[Name] <> 'ECDbSystem'
+            ORDER BY [derivedPm].[ClassId], [basePm].[ClassId], [pp].[AccessString];)");
+
+	if (rc != BE_SQLITE_OK)
+		{
+		m_lastError = m_conn.GetLastError();
+		return rc;
+		}
+
+	while ((rc = stmt.Step()) == BE_SQLITE_ROW)
+		{
+		const ECClassId derivedClassId = stmt.GetValueId<ECClassId>(0);
+		const ECClassId baseClassId = stmt.GetValueId<ECClassId>(1);
+		const Utf8String propertyName = stmt.GetValueText(2);
+		const Utf8String divergedColumn = stmt.GetValueText(3);
+		const Utf8String baseColumn = stmt.GetValueText(4);
+
+		ECClassCP derivedClass = m_conn.Schemas().GetClass(derivedClassId);
+		ECClassCP baseClass = m_conn.Schemas().GetClass(baseClassId);
+
+		if (derivedClass == nullptr)
+			{
+			m_lastError = SqlPrintfString("Failed to find class with id '%s'.", derivedClassId.ToHexStr().c_str());
+			return BE_SQLITE_ERROR;
+			}
+
+		if (baseClass == nullptr)
+			{
+			m_lastError = SqlPrintfString("Failed to find class with id '%s'.", baseClassId.ToHexStr().c_str());
+			return BE_SQLITE_ERROR;
+			}
+
+		if (!callback(derivedClassId, derivedClass->GetFullName(), baseClassId, baseClass->GetFullName(), propertyName.c_str(), baseColumn.c_str(), divergedColumn.c_str()))
+			return BE_SQLITE_OK;
+		}
+
+	if (rc != BE_SQLITE_DONE)
+		{
+		m_lastError = m_conn.GetLastError();
+		return rc;
+		}
+
+	return BE_SQLITE_OK;
+	}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 DbResult IntegrityChecker::CheckDataSchema(std::function<bool(std::string, std::string)> callback) {
     auto rc = CheckDataTableExists([&](std::string table) {
         return callback(table, "table");
@@ -1149,6 +1240,7 @@ Utf8CP IntegrityChecker::GetCheckName(Checks check) {
 		{Checks::CheckClassIds, check_class_ids},
 		{Checks::CheckSchemaLoad, check_schema_load},
 		{Checks::CheckMissingChildRows, check_missing_child_rows},
+		{Checks::CheckDivergedPropMaps, check_diverged_prop_maps},
     };
     const auto it = s_map.find(check);
 	if (it != s_map.end())  {
@@ -1173,6 +1265,7 @@ IntegrityChecker::Checks IntegrityChecker::GetCheckId(Utf8CP checkName) {
 		{check_class_ids, Checks::CheckClassIds},
 		{check_schema_load, Checks::CheckSchemaLoad},
 		{check_missing_child_rows, Checks::CheckMissingChildRows},
+		{check_diverged_prop_maps, Checks::CheckDivergedPropMaps},
     };
     const auto it = s_map.find(checkName);
 	if (it != s_map.end())  {
@@ -1330,6 +1423,18 @@ DbResult IntegrityChecker::QuickCheck(Checks checks, std::function<void(Utf8CP, 
             return rc;
         }
 		callback(GetCheckName(Checks::CheckMissingChildRows), !errorFound, stopWatch.GetCurrent());
+    }
+	if (Enum::Contains<Checks>(checks, Checks::CheckDivergedPropMaps)) {
+		StopWatch stopWatch(true);
+        bool errorFound = false;
+        rc = CheckDivergedPropMaps([&errorFound](ECN::ECClassId, Utf8CP, ECN::ECClassId, Utf8CP, Utf8CP, Utf8CP, Utf8CP) {
+            errorFound = true;
+            return false;
+        });
+		if (rc != BE_SQLITE_OK) {
+            return rc;
+        }
+		callback(GetCheckName(Checks::CheckDivergedPropMaps), !errorFound, stopWatch.GetCurrent());
     }
     return BE_SQLITE_OK;
 }

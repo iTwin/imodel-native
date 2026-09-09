@@ -80,6 +80,7 @@ private:
     bool m_skipCompositePropertyFields;
     bool m_skipXToManyRelatedContentFields;
     bool m_disableOmittingFilteredOutQueries;
+    int m_contentFlags = 0;
 public:
     ContentQueryBuilderParameters(ECSchemaHelper const& schemaHelper, IConnectionManagerCR connections, INavNodeLocaterCR nodesLocater, IConnectionCR connection, ICancelationTokenCP cancellationToken,
         IRulesPreprocessorR rulesPreprocessor, PresentationRuleSetCR ruleset, RulesetVariables const& rulesetVariables, ECExpressionsCache& ecexpressionsCache, IUsedRulesetVariablesListener* variablesListener,
@@ -98,6 +99,8 @@ public:
     bool ShouldSkipXToManyRelatedContentFields() const {return m_skipXToManyRelatedContentFields;}
     bool ShouldOmitFilteredOutQueries() const {return !m_disableOmittingFilteredOutQueries;}
     void SetDisableOmittingFilteredOutQueries(bool value) {m_disableOmittingFilteredOutQueries = value;}
+    int GetContentFlags() const {return m_contentFlags;}
+    void SetContentFlags(int value) {m_contentFlags = value;}
     };
 
 /*=================================================================================**//**

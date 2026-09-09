@@ -91,9 +91,7 @@ ECSqlStatus JsonECSqlBinder::BindPrimitiveValue(IECSqlBinder& binder, BeJsConst 
 
             case ECN::PRIMITIVETYPE_IGeometry:
             {
-            Json::Value tmp;
-            json.SaveTo(tmp);
-            IGeometryPtr geom = ECJsonUtilities::JsonToIGeometry(tmp);
+            IGeometryPtr geom = ECJsonUtilities::JsonToIGeometry(json);
             if (geom == nullptr)
                 return ECSqlStatus::Error;
 
@@ -208,7 +206,7 @@ ECSqlStatus JsonECSqlBinder::BindArrayValue(IECSqlBinder& binder, BeJsConst arra
 
     const bool isPrimitive = primType != nullptr;
     ECSqlStatus stat = ECSqlStatus::Success;
-    arrayJson.ForEachArrayMember([&](Json::ArrayIndex i, BeJsConst arrayElemJson) {
+    arrayJson.ForEachArrayMember([&](BeJsConst::ArrayIndex i, BeJsConst arrayElemJson) {
         stat = isPrimitive ?
             BindPrimitiveValue(binder.AddArrayElement(), arrayElemJson, *primType) :
             BindStructValue(binder.AddArrayElement(), arrayElemJson, *structType);

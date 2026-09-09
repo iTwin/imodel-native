@@ -631,91 +631,44 @@ ChangesetStatus JsInterop::DumpChangeSet(DgnDbR dgndb, BeJsConst changeSet)
 //---------------------------------------------------------------------------------------
 DgnDbStatus JsInterop::ExtractChangedInstanceIdsFromChangeSets(BeJsValue jsonOut, DgnDbR db, const bvector<BeFileName>& changeSetFiles)
     {
-    Json::Value elementJson(Json::ValueType::objectValue);
-    Json::Value elementInsertIds(Json::ValueType::arrayValue);
-    Json::Value elementUpdateIds(Json::ValueType::arrayValue);
-    Json::Value elementDeleteIds(Json::ValueType::arrayValue);
-
-    Json::Value aspectJson(Json::ValueType::objectValue);
-    Json::Value aspectInsertIds(Json::ValueType::arrayValue);
-    Json::Value aspectUpdateIds(Json::ValueType::arrayValue);
-    Json::Value aspectDeleteIds(Json::ValueType::arrayValue);
-
-    Json::Value modelJson(Json::ValueType::objectValue);
-    Json::Value modelInsertIds(Json::ValueType::arrayValue);
-    Json::Value modelUpdateIds(Json::ValueType::arrayValue);
-    Json::Value modelDeleteIds(Json::ValueType::arrayValue);
-
-    Json::Value relationshipJson(Json::ValueType::objectValue);
-    Json::Value relationshipInsertIds(Json::ValueType::arrayValue);
-    Json::Value relationshipUpdateIds(Json::ValueType::arrayValue);
-    Json::Value relationshipDeleteIds(Json::ValueType::arrayValue);
-
-    Json::Value codeSpecJson(Json::ValueType::objectValue);
-    Json::Value codeSpecInsertIds(Json::ValueType::arrayValue);
-    Json::Value codeSpecUpdateIds(Json::ValueType::arrayValue);
-    Json::Value codeSpecDeleteIds(Json::ValueType::arrayValue);
-
-    Json::Value fontJson(Json::ValueType::objectValue);
-    Json::Value fontInsertIds(Json::ValueType::arrayValue);
-    Json::Value fontUpdateIds(Json::ValueType::arrayValue);
-    Json::Value fontDeleteIds(Json::ValueType::arrayValue);
-
     EntityIdsChangeGroup entityIdsChangeGroup;
     entityIdsChangeGroup.ExtractChangedInstanceIdsFromChangeSets(db, changeSetFiles);
-    for (auto& opsAndJsonIds : {
-        std::tie(entityIdsChangeGroup.elementOps, elementInsertIds, elementUpdateIds, elementDeleteIds),
-        std::tie(entityIdsChangeGroup.aspectOps, aspectInsertIds, aspectUpdateIds, aspectDeleteIds),
-        std::tie(entityIdsChangeGroup.modelOps, modelInsertIds, modelUpdateIds, modelDeleteIds),
-        std::tie(entityIdsChangeGroup.relationshipOps, relationshipInsertIds, relationshipUpdateIds, relationshipDeleteIds),
-        std::tie(entityIdsChangeGroup.codeSpecOps, codeSpecInsertIds, codeSpecUpdateIds, codeSpecDeleteIds),
-        std::tie(entityIdsChangeGroup.fontOps, fontInsertIds, fontUpdateIds, fontDeleteIds)
-    })
+
+    auto addCategory = [&](Utf8CP categoryName, auto const& opMap)
         {
-        // can replace this all in C++17 with a destructuring assignment in the loop decl
-        const auto& opMap = std::get<0>(opsAndJsonIds);
-        auto& insertIds = std::get<1>(opsAndJsonIds);
-        auto& updateIds = std::get<2>(opsAndJsonIds);
-        auto& deleteIds = std::get<3>(opsAndJsonIds);
-        for (const auto& entry : opMap)
+        bvector<Utf8String> insertIds, updateIds, deleteIds;
+        for (auto const& entry : opMap)
             {
-            const auto& id = entry.first;
-            const auto& op = entry.second;
-            if (op == DbOpcode::Insert) insertIds.append(id.ToHexStr());
-            if (op == DbOpcode::Update) updateIds.append(id.ToHexStr());
-            if (op == DbOpcode::Delete) deleteIds.append(id.ToHexStr());
+            if (entry.second == DbOpcode::Insert) insertIds.push_back(entry.first.ToHexStr());
+            if (entry.second == DbOpcode::Update) updateIds.push_back(entry.first.ToHexStr());
+            if (entry.second == DbOpcode::Delete) deleteIds.push_back(entry.first.ToHexStr());
             }
-        }
 
-    if (elementInsertIds.size() > 0) elementJson["insert"] = elementInsertIds;
-    if (elementUpdateIds.size() > 0) elementJson["update"] = elementUpdateIds;
-    if (elementDeleteIds.size() > 0) elementJson["delete"] = elementDeleteIds;
-    if (!elementJson.empty()) jsonOut["element"].From(elementJson);
+        if (insertIds.empty() && updateIds.empty() && deleteIds.empty())
+            return;
 
-    if (aspectInsertIds.size() > 0) aspectJson["insert"] = aspectInsertIds;
-    if (aspectUpdateIds.size() > 0) aspectJson["update"] = aspectUpdateIds;
-    if (aspectDeleteIds.size() > 0) aspectJson["delete"] = aspectDeleteIds;
-    if (!aspectJson.empty()) jsonOut["aspect"].From(aspectJson);
+        auto category = jsonOut[categoryName];
+        auto addIds = [&](Utf8CP key, bvector<Utf8String> const& ids)
+            {
+            if (ids.empty())
+                return;
+            auto arr = category[key];
+            arr.toArray();
+            for (auto const& id : ids)
+                arr.appendValue() = id;
+            };
 
-    if (modelInsertIds.size() > 0) modelJson["insert"] = modelInsertIds;
-    if (modelUpdateIds.size() > 0) modelJson["update"] = modelUpdateIds;
-    if (modelDeleteIds.size() > 0) modelJson["delete"] = modelDeleteIds;
-    if (!modelJson.empty()) jsonOut["model"].From(modelJson);
+        addIds("insert", insertIds);
+        addIds("update", updateIds);
+        addIds("delete", deleteIds);
+        };
 
-    if (relationshipInsertIds.size() > 0) relationshipJson["insert"] = relationshipInsertIds;
-    if (relationshipUpdateIds.size() > 0) relationshipJson["update"] = relationshipUpdateIds;
-    if (relationshipDeleteIds.size() > 0) relationshipJson["delete"] = relationshipDeleteIds;
-    if (!relationshipJson.empty()) jsonOut["relationship"].From(relationshipJson);
-
-    if (codeSpecInsertIds.size() > 0) codeSpecJson["insert"] = codeSpecInsertIds;
-    if (codeSpecUpdateIds.size() > 0) codeSpecJson["update"] = codeSpecUpdateIds;
-    if (codeSpecDeleteIds.size() > 0) codeSpecJson["delete"] = codeSpecDeleteIds;
-    if (!codeSpecJson.empty()) jsonOut["codeSpec"].From(codeSpecJson);
-
-    if (fontInsertIds.size() > 0) fontJson["insert"] = fontInsertIds;
-    if (fontUpdateIds.size() > 0) fontJson["update"] = fontUpdateIds;
-    if (fontDeleteIds.size() > 0) fontJson["delete"] = fontDeleteIds;
-    if (!fontJson.empty()) jsonOut["font"].From(fontJson);
+    addCategory("element", entityIdsChangeGroup.elementOps);
+    addCategory("aspect", entityIdsChangeGroup.aspectOps);
+    addCategory("model", entityIdsChangeGroup.modelOps);
+    addCategory("relationship", entityIdsChangeGroup.relationshipOps);
+    addCategory("codeSpec", entityIdsChangeGroup.codeSpecOps);
+    addCategory("font", entityIdsChangeGroup.fontOps);
 
     return DgnDbStatus::Success;
     }

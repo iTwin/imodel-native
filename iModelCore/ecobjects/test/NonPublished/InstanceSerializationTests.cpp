@@ -706,13 +706,14 @@ TEST_F(InstanceSerializationTest, TestInstanceConversionOfPointxdWorksOnStructAn
     {
     DPoint2d const point2d = DPoint2d::From(42, -300);
     DPoint3d const point3d = DPoint3d::From(3, 777, 101);
-    Json::Value json(Json::ValueType::objectValue);
+    BeJsDocument json;
+    json.toObject();
     ECJsonUtilities::Point2dToJson(json["point2dObj"], point2d);
     ECJsonUtilities::Point3dToJson(json["point3dObj"], point3d);
-    json["point2dArr"] = Json::Value(Json::ValueType::arrayValue);
+    json["point2dArr"].toArray();
     json["point2dArr"][0u] = point2d.x;
     json["point2dArr"][1u] = point2d.y;
-    json["point3dArr"] = Json::Value(Json::ValueType::arrayValue);
+    json["point3dArr"].toArray();
     json["point3dArr"][0u] = point3d.x;
     json["point3dArr"][1u] = point3d.y;
     json["point3dArr"][2u] = point3d.z;
@@ -1171,7 +1172,8 @@ TEST_F(InstanceSerializationTest, TestInstanceJsonRoundtrip)
     EXPECT_EQ(InstanceReadStatus::Success, instanceStatus);
     VerifyTestInstance(testInstance.get(), false);
 
-    Json::Value jsonRoot(Json::objectValue);
+    BeJsDocument jsonRoot;
+    jsonRoot.toObject();
     EXPECT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(jsonRoot, *testInstance, "$Instance", false));
 
     StandaloneECEnablerPtr enabler = testInstance->GetClass().GetDefaultStandaloneEnabler();
@@ -1203,12 +1205,12 @@ TEST_F(InstanceSerializationTest, TestInstanceRapidJsonRoundtrip)
     EXPECT_EQ(InstanceReadStatus::Success, instanceStatus);
     VerifyTestInstance(testInstance.get(), false);
 
-    Json::Value jsonRoot(Json::objectValue);
+    BeJsDocument jsonRoot;
+    jsonRoot.toObject();
     EXPECT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(jsonRoot, *testInstance, "$Instance", false));
 
-    Json::FastWriter writer;
     rapidjson::Document rapidJsonRoot;
-    auto jsonStr = writer.ToString(jsonRoot);
+    auto jsonStr = jsonRoot.Stringify();
     rapidjson::ParseResult parseResult = rapidJsonRoot.Parse(jsonStr.c_str());
     EXPECT_FALSE(parseResult.IsError());
 
@@ -1316,11 +1318,10 @@ TEST_F(InstanceSerializationTest, TestSerializeNullValues)
     IECInstancePtr instance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
     ASSERT_TRUE(instance.IsValid());
 
-    Json::Value instanceJson;
+    BeJsDocument instanceJson;
     EXPECT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(instanceJson, *instance, "TestClass", true, true));
 
-    Json::StyledWriter writer = Json::StyledWriter();
-    LOG.error(writer.write(instanceJson).c_str());
+    LOG.error(instanceJson.Stringify(Indented).c_str());
 
     StandaloneECEnablerPtr enabler = instance->GetClass().GetDefaultStandaloneEnabler();
     IECInstancePtr readbackInstance = enabler->CreateInstance();

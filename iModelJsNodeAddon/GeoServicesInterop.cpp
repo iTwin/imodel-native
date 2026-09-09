@@ -56,12 +56,7 @@ BentleyStatus GeoServicesInterop::GetGeographicCRSInterpretation(BeJsValue resul
 
     if (SUCCESS == status)
         {
-        Json::Value CRSVal;
-        newGCS->ToJson(CRSVal, true);
-
-        // Convert old style Json value to new style
-        BeJsDocument theDoc(CRSVal.toStyledString());
-        results[json_geographicCRS()].From(theDoc);
+        newGCS->ToJson(results[json_geographicCRS()], true);
         }
 
     return (BentleyStatus)status;

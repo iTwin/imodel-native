@@ -188,6 +188,86 @@ static bvector<ContentSetItemPtr> GetNestedContentSetItems(NestedContentProvider
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+static bvector<ContentSetItemPtr> FilterNestedContentSetItemsForItem(bvector<ContentSetItemPtr> const& nestedContentSetItems, ContentSetItemCR item)
+   {
+   bvector<ContentSetItemPtr> filteredItems;
+   for (auto const& nestedItem : nestedContentSetItems)
+       {
+       for (ECClassInstanceKeyCR inputKey : nestedItem->GetInputKeys())
+           {
+           if (ContainerHelpers::Contains(item.GetKeys(), inputKey))
+               {
+               filteredItems.push_back(nestedItem);
+               break;
+               }
+           }
+       }
+   return filteredItems;
+   }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static void SetNestedContentArrayValue(ContentSetItemR item, Utf8CP fieldName, rapidjson::Document const& values, rapidjson::Document const& displayValues)
+   {
+   item.GetValues().AddMember(rapidjson::Value(fieldName, item.GetValues().GetAllocator()), rapidjson::Value(values, item.GetValues().GetAllocator()), item.GetValues().GetAllocator());
+   item.GetDisplayValues().AddMember(rapidjson::Value(fieldName, item.GetDisplayValues().GetAllocator()), rapidjson::Value(displayValues, item.GetDisplayValues().GetAllocator()), item.GetDisplayValues().GetAllocator());
+   }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static void SetEmptyNestedContentArray(ContentSetItemR item, Utf8CP fieldName)
+   {
+   item.GetValues().AddMember(rapidjson::Value(fieldName, item.GetValues().GetAllocator()), rapidjson::Value(rapidjson::kArrayType), item.GetValues().GetAllocator());
+   item.GetDisplayValues().AddMember(rapidjson::Value(fieldName, item.GetDisplayValues().GetAllocator()), rapidjson::Value(rapidjson::kArrayType), item.GetDisplayValues().GetAllocator());
+   }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static void CreateNestedContentValues(ContentDescriptor::NestedContentField const& field, bvector<ContentSetItemPtr> const& nestedContentSetItems,
+   rapidjson::Document& values, rapidjson::Document& displayValues)
+   {
+   Utf8CP fieldName = field.GetUniqueName().c_str();
+   bool isRelatedContent = (nullptr != field.AsRelatedContentField());
+
+   values.SetArray();
+   displayValues.SetArray();
+
+   int serializationFlags = GetSerializationFlags(isRelatedContent, false, ContentRequest::Values);
+   for (auto const& nestedItem : nestedContentSetItems)
+       {
+       if (isRelatedContent)
+           {
+           values.PushBack(nestedItem->AsJson(serializationFlags, &values.GetAllocator()), values.GetAllocator());
+           displayValues.PushBack(nestedItem->AsJson((int)ContentSetItem::SERIALIZE_DisplayValues, &displayValues.GetAllocator()), displayValues.GetAllocator());
+           continue;
+           }
+
+       if (!nestedItem->GetValues().HasMember(fieldName))
+           continue;
+
+       values.PushBack(rapidjson::Value(nestedItem->GetValues()[fieldName], values.GetAllocator()), values.GetAllocator());
+       if (nestedItem->GetDisplayValues().HasMember(fieldName))
+           displayValues.PushBack(rapidjson::Value(nestedItem->GetDisplayValues()[fieldName], displayValues.GetAllocator()), displayValues.GetAllocator());
+       }
+   }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static void SetNestedContentValuesForItem(ContentSetItemR item, ContentDescriptor::NestedContentField const& field, bvector<ContentSetItemPtr> const& nestedContentSetItems)
+   {
+   rapidjson::Document values(&item.GetValues().GetAllocator());
+   rapidjson::Document displayValues(&item.GetDisplayValues().GetAllocator());
+   CreateNestedContentValues(field, nestedContentSetItems, values, displayValues);
+   SetNestedContentArrayValue(item, field.GetUniqueName().c_str(), values, displayValues);
+   }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 static void MergePrimaryKeys(bvector<ContentSetItemPtr> const& targetSetItems, bvector<ContentSetItemPtr> const& sourceSetItems)
     {
     DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Content, targetSetItems.size() == sourceSetItems.size(),
@@ -277,6 +357,10 @@ NestedContentProviderPtr ContentProvider::GetNestedContentProvider(ContentDescri
         }
 
     ContentProviderContextPtr context = ContentProviderContext::Create(GetContext());
+    // Request input keys so the nested content query associates each result row with the primary instance it
+    // originated from. This lets a single nested query serve multiple primary instances (batch loading) by
+    // distributing its results back to the right items.
+    context->SetContentFlags(context->GetContentFlags() | (int)ContentFlags::IncludeInputKeys);
     NestedContentProviderPtr provider = NestedContentProvider::Create(*context, field);
     if (cacheable)
         {
@@ -365,16 +449,7 @@ void ContentProvider::LoadNestedContentFieldValue(ContentSetItemR item, ContentD
                 }
             else
                 {
-                int serializationFlags = GetSerializationFlags(isRelatedContent, true, ContentRequest::Values);
-
-                contentValues.SetArray();
-                contentDisplayValues.SetArray();
-                for (size_t i = 0; i < targetSetitems.size(); ++i)
-                    {
-                    contentValues.PushBack(targetSetitems[i]->AsJson(serializationFlags, &contentValues.GetAllocator()), contentValues.GetAllocator());
-                    contentDisplayValues.PushBack(targetSetitems[i]->AsJson((int)ContentSetItem::SERIALIZE_DisplayValues, &contentDisplayValues.GetAllocator()), contentDisplayValues.GetAllocator());
-                    }
-
+                CreateNestedContentValues(field, targetSetitems, contentValues, contentDisplayValues);
                 DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Loaded related content values.");
                 }
             }
@@ -395,22 +470,27 @@ void ContentProvider::LoadNestedContentFieldValue(ContentSetItemR item, ContentD
         else
             {
             DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Nested content is not loaded - just add loaded values");
-            item.GetDisplayValues().AddMember(rapidjson::Value(fieldName, item.GetDisplayValues().GetAllocator()),
-                rapidjson::Value(contentDisplayValues, item.GetDisplayValues().GetAllocator()), item.GetDisplayValues().GetAllocator());
-            item.GetValues().AddMember(rapidjson::Value(fieldName, item.GetValues().GetAllocator()),
-                rapidjson::Value(contentValues, item.GetValues().GetAllocator()), item.GetValues().GetAllocator());
+            SetNestedContentArrayValue(item, fieldName, contentValues, contentDisplayValues);
             }
         }
     else
         {
-        // if not merging, can query nested content without any additional work afterwards
+        // Related content uses the same row serializer as the merged and batched paths. Composite
+        // properties retain their scalar/object representation rather than being wrapped in an array.
         provider->SetPrimaryInstanceKeys(item.GetKeys());
-        item.GetValues().AddMember(rapidjson::Value(fieldName, item.GetValues().GetAllocator()),
-            GetNestedContent(*provider, ContentRequest::Values, false, isRelatedContent, &item.GetValues().GetAllocator()),
-            item.GetValues().GetAllocator());
-        item.GetDisplayValues().AddMember(rapidjson::Value(fieldName, item.GetDisplayValues().GetAllocator()),
-            GetNestedContent(*provider, ContentRequest::DisplayValues, false, isRelatedContent, &item.GetDisplayValues().GetAllocator()),
-            item.GetDisplayValues().GetAllocator());
+        if (isRelatedContent)
+            {
+            SetNestedContentValuesForItem(item, field, GetNestedContentSetItems(*provider));
+            }
+        else
+            {
+            item.GetValues().AddMember(rapidjson::Value(fieldName, item.GetValues().GetAllocator()),
+                GetNestedContent(*provider, ContentRequest::Values, false, isRelatedContent, &item.GetValues().GetAllocator()),
+                item.GetValues().GetAllocator());
+            item.GetDisplayValues().AddMember(rapidjson::Value(fieldName, item.GetDisplayValues().GetAllocator()),
+                GetNestedContent(*provider, ContentRequest::DisplayValues, false, isRelatedContent, &item.GetDisplayValues().GetAllocator()),
+                item.GetDisplayValues().GetAllocator());
+            }
         DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Loaded non-merged nested content for item: %s", DiagnosticsHelpers::CreateContentSetItemStr(item).c_str()));
         }
     }
@@ -516,7 +596,7 @@ static bool ShouldLoadRelatedContent(ECClassCR itemClass, ContentDescriptor::Rel
         return false;
 
     // Note: `field.GetActualSourceClasses()` returns a list of classes that doesn't necessarily point to item's class. For
-    // example, with `A -> B -> C` relationship path, we may be loading content for B instance (item class), in which case `C` field's 
+    // example, with `A -> B -> C` relationship path, we may be loading content for B instance (item class), in which case `C` field's
 	// path is going to be `B -> C` and `field.GetActualSourceClasses()` would point to `A`.
     if (!field.GetParent() && field.GetActualSourceClasses())
         return ContainerHelpers::Contains(*field.GetActualSourceClasses(), &itemClass);
@@ -580,9 +660,9 @@ void ContentProvider::LoadNestedContent(ContentSetItemR item, bvector<ContentDes
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentProvider::LoadNestedContent(ContentSetItemR item) const
+void ContentProvider::LoadNestedContent(bvector<ContentSetItemPtr> const& items) const
     {
-    auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Load nested content for %s", DiagnosticsHelpers::CreateContentSetItemStr(item).c_str()));
+    auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Load nested content for %zu items", items.size()));
 
     ContentDescriptorCP descriptor = GetContentDescriptor();
     if (nullptr == descriptor)
@@ -597,7 +677,69 @@ void ContentProvider::LoadNestedContent(ContentSetItemR item) const
         return;
         }
 
-    LoadNestedContent(item, descriptor->GetAllFields());
+    if (descriptor->MergeResults())
+        {
+        for (auto const& item : items)
+            LoadNestedContent(*item, descriptor->GetAllFields());
+        return;
+        }
+
+    // Batch optimization: for each nested content field, query its content once for the keys of all
+    // items at once (instead of once per item) and distribute the results back to the individual items.
+    // An item is considered already loaded (and skipped) when the field is present either in its flat
+    // values or in its structured nested content - the latter happens when the main content query was
+    // able to read the related content directly. Adding it again here would produce a duplicate value.
+    auto isFieldLoaded = [](ContentSetItemCR item, Utf8CP fieldName)
+        {
+        return item.GetValues().HasMember(fieldName)
+            || item.GetNestedContent().end() != item.GetNestedContent().find(fieldName);
+        };
+    for (auto const& field : descriptor->GetAllFields())
+        {
+        if (!field->IsNestedContentField())
+            continue;
+
+        auto nestedField = field->AsNestedContentField();
+        Utf8CP fieldName = field->GetUniqueName().c_str();
+        bvector<ECClassInstanceKey> allKeys;
+        for (auto const& item : items)
+            {
+            if (isFieldLoaded(*item, fieldName))
+                continue;
+            for (ECClassInstanceKeyCR key : item->GetKeys())
+                {
+                if (ContainerHelpers::Contains(allKeys, key))
+                    continue;
+                allKeys.push_back(key);
+                }
+            }
+        if (allKeys.empty())
+            continue;
+
+        NestedContentProviderPtr provider = GetNestedContentProvider(*nestedField, true);
+        provider->SetIsResultsMerged(false);
+        provider->SetPrimaryInstanceKeys(allKeys);
+        bvector<ContentSetItemPtr> nestedContentSetItems = GetNestedContentSetItems(*provider);
+
+        for (auto const& item : items)
+            {
+            if (isFieldLoaded(*item, fieldName))
+                continue;
+
+            bvector<ContentSetItemPtr> relevantItems = FilterNestedContentSetItemsForItem(nestedContentSetItems, *item);
+            if (relevantItems.empty())
+                SetEmptyNestedContentArray(*item, fieldName);
+            else
+                SetNestedContentValuesForItem(*item, *nestedField, relevantItems);
+            }
+        }
+
+    // The batch loop above only handles top-level nested content fields that weren't already loaded by the
+    // main content query. Delegate to the per-item loader to fill in the remaining field kinds (e.g. composite
+    // array/struct property fields) and to ensure deeply nested content is fully loaded. Fields already
+    // populated above are skipped there, so nothing is queried twice.
+    for (auto const& item : items)
+        LoadNestedContent(*item, descriptor->GetAllFields());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -811,6 +953,7 @@ public:
         ContentQueryBuilderParameters params(context.GetSchemaHelper(), context.GetConnections(), context.GetNodesLocater(), context.GetConnection(), &context.GetCancelationToken(),
             context.GetRulesPreprocessor(), context.GetRuleset(), context.GetRulesetVariables(), context.GetECExpressionsCache(), &context.GetUsedVariablesListener(),
             context.GetCategorySupplier(), !isCompositePropertyValueQuery, !canDirectlyReadXToManyRelatedContent, formatter, context.GetLocalState());
+        params.SetContentFlags(context.GetContentFlags());
         m_queryBuilder = std::make_unique<MultiContentQueryBuilder>(params, descriptor);
         }
 
@@ -1239,10 +1382,11 @@ void ContentProvider::Initialize()
 #endif
 
             DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Read content item: %s", DiagnosticsHelpers::CreateContentSetItemStr(*item).c_str()));
-            LoadNestedContent(*item);
             records.push_back(item);
             }
         }
+    if (!records.empty())
+        LoadNestedContent(records);
     m_records = std::make_unique<bvector<ContentSetItemPtr>>(std::move(records));
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Read content items: %" PRIu64, (uint64_t)m_records->size()));
     }

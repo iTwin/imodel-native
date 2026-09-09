@@ -102,22 +102,26 @@ foreach ($manifestFile in $manifests) {
     }
 
     $manifest = Get-Content -LiteralPath $manifestFile.FullName -Raw | ConvertFrom-Json
+    $excludePorts = Read-MendExcludePorts $mendConfigPath
 
     # 'dependencies' names only the direct ports; 'overrides' pins the whole transitively resolved
     # set, so including it is what catches a transitive port that silently stops being pulled in.
+    # Build-only ports (vcpkg's own helper tools) are excluded here too: they are never expected to
+    # have shipped source, so the missing-source check below must not demand it of them.
     $ports = New-Object 'System.Collections.Generic.SortedSet[string]' ([System.StringComparer]::OrdinalIgnoreCase)
     foreach ($entry in (@($manifest.dependencies) + @($manifest.overrides))) {
         $name = if ($entry -is [string]) { $entry } else { $entry.name }
-        if ($name) {
+        if ($name -and -not (Test-MendBuildOnlyPort $name $excludePorts)) {
             [void]$ports.Add($name)
         }
     }
 
     $plan += [PSCustomObject]@{
-        Consumer    = $consumer
-        ManifestDir = $manifestDir
-        Triplets    = $triplets
-        Ports       = $ports
+        Consumer     = $consumer
+        ManifestDir  = $manifestDir
+        Triplets     = $triplets
+        Ports        = $ports
+        ExcludePorts = $excludePorts
     }
 }
 
@@ -126,17 +130,21 @@ if ($ValidateOnly) {
     return
 }
 
-if ([System.IO.Directory]::Exists($ScanRoot)) {
+# Extracted vcpkg buildtrees paths routinely exceed MAX_PATH, which Remove-Item cannot delete.
+function Remove-DirectoryTree([string] $path) {
     if ($isWindowsHost) {
-        # Extracted vcpkg buildtrees paths routinely exceed MAX_PATH, which Remove-Item cannot delete.
-        & cmd.exe /c rmdir /s /q "$ScanRoot"
-        if ([System.IO.Directory]::Exists($ScanRoot)) {
-            throw "could not remove existing scan root '$ScanRoot'"
+        & cmd.exe /c rmdir /s /q "$path"
+        if ([System.IO.Directory]::Exists($path)) {
+            throw "could not remove directory '$path'"
         }
     }
     else {
-        Remove-Item -LiteralPath $ScanRoot -Force -Recurse
+        Remove-Item -LiteralPath $path -Force -Recurse
     }
+}
+
+if ([System.IO.Directory]::Exists($ScanRoot)) {
+    Remove-DirectoryTree $ScanRoot
 }
 [void][System.IO.Directory]::CreateDirectory($ScanRoot)
 
@@ -156,6 +164,35 @@ foreach ($consumerPlan in $plan) {
         }
         if ($LASTEXITCODE -ne 0) {
             throw "vcpkg source materialization failed for $consumer ($triplet) with exit code $LASTEXITCODE"
+        }
+
+        # Strip build-tool-only ports (vcpkg-cmake, sevenzip, gn, ...) so Mend never scans sources
+        # that get compiled to build other ports but are never linked into what we ship.
+        $buildtreesDir = [System.IO.Path]::Combine($installRoot, 'buildtrees')
+        $packagesDir = [System.IO.Path]::Combine($installRoot, 'packages')
+        foreach ($portDir in @(Get-ChildItem -Path $buildtreesDir -Directory -ErrorAction SilentlyContinue)) {
+            if (-not (Test-MendBuildOnlyPort $portDir.Name $consumerPlan.ExcludePorts)) {
+                continue
+            }
+            Remove-DirectoryTree $portDir.FullName
+            foreach ($packageDir in @(Get-ChildItem -Path $packagesDir -Directory -Filter "$($portDir.Name)_*" -ErrorAction SilentlyContinue)) {
+                Remove-DirectoryTree $packageDir.FullName
+            }
+        }
+
+        # Host-tool ports (needed to run e.g. vcpkg_cmake_get_vars against the real host toolchain)
+        # get fully installed, not just downloaded, under a sibling directory named for the host
+        # triplet whenever it differs from the scanned target triplet (e.g. this scan's x64-linux
+        # target on a Windows/macOS Mend agent). vcpkg only ever creates 'buildtrees', 'packages',
+        # 'vcpkg', and 'generated-triplets' for the target triplet itself, so anything else here is
+        # that host-triplet install tree - share/<port>/copyright, vcpkg.spdx.json, etc. - and none
+        # of it is shipped, so it is removed wholesale rather than matched port-by-port.
+        $reservedInstallRootDirs = @('buildtrees', 'packages', 'vcpkg', 'generated-triplets')
+        foreach ($tripletDir in @(Get-ChildItem -Path $installRoot -Directory -ErrorAction SilentlyContinue)) {
+            if ($reservedInstallRootDirs -contains $tripletDir.Name) {
+                continue
+            }
+            Remove-DirectoryTree $tripletDir.FullName
         }
     }
 }

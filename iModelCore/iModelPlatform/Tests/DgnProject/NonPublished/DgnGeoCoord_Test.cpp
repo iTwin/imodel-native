@@ -1199,7 +1199,11 @@ R"X({"horizontalCRS" : {"id" : "UTM83-10"}, "verticalCRS" : {"id" : "NAVD88"}})X
 R"X({"horizontalCRS" : {"id" : "UTM84-10N"}, "verticalCRS" : {"id" : "GEOID"}})X",
 R"X({"horizontalCRS" : {"epsg" : 27700} , "verticalCRS" : {"id" : "GEOID"}})X",
 R"X({"horizontalCRS" : {"epsg" : 3857}, "verticalCRS" : {"id" : "ELLIPSOID"}})X",
-R"X({"horizontalCRS" : {"id" : "GRMNY-S5"}, "verticalCRS" : {"id" : "LOCAL_ELLIPSOID"}})X"
+R"X({"horizontalCRS" : {"id" : "GRMNY-S5"}, "verticalCRS" : {"id" : "LOCAL_ELLIPSOID"}})X",
+// NOTE: the comma above was missing, so this literal used to be concatenated onto the previous one
+// and this case silently never ran - which is also why the malformed JSON below (a trailing comma
+// after "UTM84-10N" and a missing closing brace) went unnoticed. Both are fixed here; trailing
+// content after the first complete value is rejected with kParseErrorDocumentRootNotSingular.
 R"X({
    "additionalTransform" : {
       "helmert2DWithZOffset" : {
@@ -1211,11 +1215,11 @@ R"X({
       }
    },
    "horizontalCRS" : {
-      "id" : "UTM84-10N",
+      "id" : "UTM84-10N"
    },
    "verticalCRS" : {
       "id" : "GEOID"
-   })X",
+   }})X",
 R"X({ "horizontalCRS": {
     "id": "TESTGCS7",
         "description" : "USES CUSTOM DATUM (TEST-GRID)",
@@ -1322,7 +1326,9 @@ TEST_F(SetAndGetDgnGeoCoord, SetAndGetAndCompare)
 
         ASSERT_TRUE(theNewGCS.IsValid());
 
-        ASSERT_TRUE(SUCCESS == theNewGCS->FromJson(Json::Value::From(theJson), errorMessage));
+        BeJsDocument theJsonDoc;
+        theJsonDoc.Parse(theJson);
+        ASSERT_TRUE(SUCCESS == theNewGCS->FromJson(theJsonDoc, errorMessage));
 
         ASSERT_TRUE(theNewGCS->IsValid());
 

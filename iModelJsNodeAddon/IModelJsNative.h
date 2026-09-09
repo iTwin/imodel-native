@@ -587,7 +587,7 @@ public:
     static void SetMaxTileCacheSize(uint64_t maxBytes);
 
     [[noreturn]] static void ThrowJsException(Utf8CP msg);
-    static Json::Value ExecuteTest(DgnDbR, Utf8StringCR testName, Utf8StringCR params);
+    static BeJsDocument ExecuteTest(DgnDbR, Utf8StringCR testName, Utf8StringCR params);
     static NativeLogging::CategoryLogger GetNativeLogger();
 
     static Napi::Env& Env() { static Napi::Env s_env(nullptr); return s_env; }

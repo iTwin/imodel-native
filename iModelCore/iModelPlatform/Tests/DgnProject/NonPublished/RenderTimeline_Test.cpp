@@ -10,7 +10,7 @@
 //=======================================================================================
 struct RenderTimelineTests : public DgnDbTestFixture
 {
-    Json::Value m_script;
+    BeJsDocument m_script;
 
     void SetUp() final
         {
@@ -18,24 +18,28 @@ struct RenderTimelineTests : public DgnDbTestFixture
         m_script = MakeScript(1);
         }
 
-    static Json::Value MakeScript(int batchId)
+    static BeJsDocument MakeScript(int batchId)
         {
-        Json::Value model;
+        BeJsDocument model;
+        model.toObject();
         model["modelId"] = "0x123";
 
-        Json::Value elem1;
+        BeJsDocument elem1;
+        elem1.toObject();
         elem1["elementIds"] = "+2+3*5+1";
         elem1["batchId"] = batchId;
-        model["elementTimelines"].append(elem1);
+        model["elementTimelines"].appendValue().From(elem1);
 
-        Json::Value elem2;
-        elem2["elementIds"].append("0x456");
-        elem2["elementIds"].append("0xfed");
+        BeJsDocument elem2;
+        elem2.toObject();
+        elem2["elementIds"].appendValue() = "0x456";
+        elem2["elementIds"].appendValue() = "0xfed";
         elem2["batchId"] = 2;
-        model["elementTimelines"].append(elem2);
+        model["elementTimelines"].appendValue().From(elem2);
 
-        Json::Value script;
-        script.append(model);
+        BeJsDocument script;
+        script.toArray();
+        script.appendValue().From(model);
         return script;
         }
 
@@ -64,7 +68,7 @@ struct RenderTimelineTests : public DgnDbTestFixture
         return static_cast<RenderTimelineCP>(persistent.get());
         }
 
-    DgnElementId InsertDisplayStyle(Json::Value script)
+    DgnElementId InsertDisplayStyle(BeJsConst script)
         {
         auto style = CreateDisplayStyle();
         if (!script.isNull())
@@ -93,21 +97,22 @@ struct RenderTimelineTests : public DgnDbTestFixture
         return persistent->GetElementId();
         }
 
-    void ExpectScript(DgnElementId id, Json::Value expected) const
+    void ExpectScript(DgnElementId id, BeJsConst expected) const
         {
         auto host = RenderTimeline::GetScriptHost(id, *m_db);
         EXPECT_EQ(host.GetScript(), expected);
         }
 
-    void ExpectElementIds(RenderTimelineCR timeline, Json::Value opts, bool expectPresent)
+    void ExpectElementIds(RenderTimelineCR timeline, BeJsConst opts, bool expectPresent)
         {
-        Json::Value json;
+        BeJsDocument json;
         timeline.ToJson(json, opts);
 
         auto scriptStr = json["script"];
         EXPECT_TRUE(scriptStr.isString());
 
-        auto script = Json::Reader::DoParse(scriptStr.asString());
+        BeJsDocument script;
+        script.Parse(scriptStr.asString().c_str());
         EXPECT_FALSE(script.isNull());
 
         if (expectPresent)
@@ -116,13 +121,13 @@ struct RenderTimelineTests : public DgnDbTestFixture
             }
         else
             {
-            auto model = script[0];
+            auto model = script[0u];
             EXPECT_EQ(model["modelId"].asString(), "0x123");
 
             auto elems = model["elementTimelines"];
             EXPECT_EQ(elems.size(), 2);
-            EXPECT_EQ(elems[0]["batchId"].asInt(), 1);
-            EXPECT_EQ(elems[0]["elementIds"].asString(), "");
+            EXPECT_EQ(elems[0u]["batchId"].asInt(), 1);
+            EXPECT_EQ(elems[0u]["elementIds"].asString(), "");
             EXPECT_EQ(elems[1]["batchId"].asInt(), 2);
             EXPECT_EQ(elems[1]["elementIds"].asString(), "");
             }
@@ -151,10 +156,10 @@ TEST_F(RenderTimelineTests, Create)
     auto timeline = db.Elements().Get<RenderTimeline>(elemId);
     ASSERT_TRUE(timeline.IsValid());
     EXPECT_TRUE(timeline->GetDescription().Equals("my timeline"));
-    Json::Value script;
+    BeJsDocument script;
     timeline->GetScript(script);
     EXPECT_FALSE(script.isNull());
-    EXPECT_EQ(script, m_script);
+    EXPECT_EQ(BeJsConst(script), BeJsConst(m_script));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -166,16 +171,17 @@ TEST_F(RenderTimelineTests, ObtainScriptFromSourceId)
     ExpectScript(timeline->GetElementId(), m_script);
 
     auto noScript = InsertDisplayStyle(DgnElementId());
-    ExpectScript(noScript, Json::nullValue);
+    BeJsDocument nullScript;
+    ExpectScript(noScript, nullScript);
 
     auto embedded = InsertDisplayStyle(m_script);
     ExpectScript(embedded, m_script);
 
     // We expect the caller to supply the Id of the element that hosts the script - we do not check for pointers to other elements.
     auto separate = InsertDisplayStyle(timeline->GetElementId());
-    ExpectScript(separate, Json::nullValue);
+    ExpectScript(separate, nullScript);
 
-    ExpectScript(DgnElementId((uint64_t)0xbaadf00d), Json::nullValue);
+    ExpectScript(DgnElementId((uint64_t)0xbaadf00d), nullScript);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -184,10 +190,12 @@ TEST_F(RenderTimelineTests, ObtainScriptFromSourceId)
 TEST_F(RenderTimelineTests, OmitElementIds)
     {
     auto timeline = InsertTimeline();
-    ExpectElementIds(*timeline, Json::nullValue, true);
+    BeJsDocument nullOpts;
+    ExpectElementIds(*timeline, nullOpts, true);
 
-    Json::Value opts;
-    opts["renderTimeline"] = Json::nullValue;
+    BeJsDocument opts;
+    opts.toObject();
+    opts["renderTimeline"].SetNull();
     ExpectElementIds(*timeline, opts, true);
 
     opts["renderTimeline"]["omitScriptElementIds"] = false;
@@ -212,12 +220,12 @@ TEST_F(RenderTimelineTests, CachedScript)
     EXPECT_TRUE(isSameObject(script1, script2));
 
     auto edit = timeline->MakeCopy<RenderTimeline>();
-    Json::Value newScript = MakeScript(42);
+    BeJsDocument newScript = MakeScript(42);
     edit->SetScript(newScript);
     auto script3 = edit->GetScript();
     EXPECT_FALSE(isSameObject(script3, script2));
     EXPECT_EQ(BeJsConst(newScript), script3);
-    EXPECT_FALSE(isSameObject(script3, newScript));
+    EXPECT_FALSE(isSameObject(script3, BeJsConst(newScript)));
     EXPECT_TRUE(isSameObject(script3, edit->GetScript()));
 
     EXPECT_EQ(DgnDbStatus::Success, edit->Update());

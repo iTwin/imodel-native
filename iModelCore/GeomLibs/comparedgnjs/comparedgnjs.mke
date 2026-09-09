@@ -20,7 +20,7 @@ always:
 # Compile comparedgnjs.cpp. It contains "main"
 # -----------------------------------------------------
 
-$(o)comparedgnjs$(oext) : $(baseDir)comparedgnjs.cpp $(baseDir)compareJson.h $(baseDir)compareGeometry.h
+$(o)comparedgnjs$(oext) : $(baseDir)comparedgnjs.cpp $(baseDir)compareGeometry.h
 
 # -----------------------------------------------------
 # Create comparedgnjs.exe
@@ -31,7 +31,6 @@ EXE_OBJS            = $(o)comparedgnjs$(oext)
 LINKER_LIBRARIES    + $(ContextSubpartsLibs)iTwinBentley.lib
 LINKER_LIBRARIES    + $(ContextSubpartsLibs)iTwinGeom.lib
 LINKER_LIBRARIES    + $(ContextSubpartsLibs)iTwinGeomSerialization.lib
-LINKER_LIBRARIES    + $(ContextSubpartsLibs)$(stlibprefix)iTwinJsonCpp$(stlibext)
 %include $(sharedMki)linktool.mki
 
 always:

@@ -298,7 +298,9 @@ TEST_F(ConcurrentQueryFixture, Blob_Metadata) {
         EXPECT_STREQ(metadataJson["accessString"].asCString(), "bin");
         EXPECT_STREQ(metadataJson["typeName"].asCString(), "binary");
         EXPECT_STREQ(metadataJson["extendedType"].asCString(), "");
-        EXPECT_STREQ(metadataJson.Stringify(StringifyFormat::Indented).c_str(), expectedMetadataDoc.Stringify(StringifyFormat::Indented).c_str());
+        EXPECT_TRUE(metadataJson.isExactEqual(expectedMetadataDoc))
+            << "\n  actual:   " << metadataJson.Stringify(StringifyFormat::Indented)
+            << "\n  expected: " << expectedMetadataDoc.Stringify(StringifyFormat::Indented);
     });
 }
 
@@ -584,11 +586,11 @@ TEST_F(ConcurrentQueryFixture, InterruptCheck_Timeout) {
 
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("conn_query.ecdb"));
     auto config = ConcurrentQueryMgr::Config::Get();
-    config.SetQuota(QueryQuota(std::chrono::seconds(2), 1024));
+    config.SetQuota(QueryQuota(std::chrono::seconds(1), 1024));
     config.SetIgnoreDelay(false);
     ConcurrentQueryMgr::Config::Reset(config);
 
-    const auto delay = std::chrono::milliseconds(5000);
+    const auto delay = std::chrono::milliseconds(2000);
     ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
         auto req = ECSqlRequest::MakeRequest("with cnt(x) as (values(0) union select x+1 from cnt where x < ? ) select x from cnt", ECSqlParams().BindInt(1, 1));
         req->SetDelay(delay);
@@ -769,7 +771,7 @@ TEST_F(ConcurrentQueryFixture, ECSqlParams) {
         }
     })";
 
-    auto expectedJson = Json::Value::From(expectedStr);
+    auto expectedJson = BeJsDocument(expectedStr);
 
     ECSqlParams params;
     params.BindBool(1, b);
@@ -796,15 +798,15 @@ TEST_F(ConcurrentQueryFixture, ECSqlParams) {
     params.BindPoint3d("p3d", p3d);
     params.BindString("str", str);
 
-    Json::Value v;
+    BeJsDocument v;
     params.ToJs(v);
-    EXPECT_STREQ(v.toStyledString().c_str(), expectedJson.toStyledString().c_str());
+    EXPECT_TRUE(v.isExactEqual(expectedJson)) << "\n  expected: " << v.Stringify() << "\n  actual:   " << expectedJson.Stringify();
 
     ECSqlParams params1;
     params1.FromJs(v);
-    Json::Value v2;
+    BeJsDocument v2;
     params1.ToJs(v2);
-    EXPECT_STREQ(v2.toStyledString().c_str(), expectedJson.toStyledString().c_str());
+    EXPECT_TRUE(v2.isExactEqual(expectedJson)) << "\n  expected: " << v2.Stringify() << "\n  actual:   " << expectedJson.Stringify();
 
     ASSERT_EQ( params1.GetParam(1).GetType(), ECSqlParams::ECSqlParam::Type::Boolean);
     ASSERT_EQ( params1.GetParam(2).GetType(), ECSqlParams::ECSqlParam::Type::Blob);
@@ -878,7 +880,7 @@ TEST_F(ConcurrentQueryFixture, DelayRequest) {
 
     ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
         auto req = ECSqlRequest::MakeRequest("with cnt(x) as (values(0) union select x+1 from cnt where x < ? ) select x from cnt", ECSqlParams().BindInt(1, 1));
-        const auto delay = std::chrono::milliseconds(2000);
+        const auto delay = std::chrono::milliseconds(250);
         req->SetDelay(delay);
         auto r = mgr.Enqueue(std::move(req)).Get();
         EXPECT_EQ(r->GetStatus(), QueryResponse::Status::Done);
@@ -1037,7 +1039,10 @@ TEST_F(ConcurrentQueryFixture, ReaderSchema) {
         }])");
         reader.Next();
         ++rowCount;
-        EXPECT_STREQ(reader.GetColumns().Stringify().c_str(), expectedMeta.Stringify().c_str());
+        BeJsDocument actualMeta;
+        reader.GetColumns().ToJs(actualMeta);
+        EXPECT_TRUE(actualMeta.isExactEqual(expectedMeta))
+            << "\n  actual:   " << actualMeta.Stringify() << "\n  expected: " << expectedMeta.Stringify();
         while (reader.Next()) {
             ++rowCount;
         }
@@ -1055,11 +1060,14 @@ TEST_F(ConcurrentQueryFixture, ReaderSchema) {
             "extendedType" : "",
             "typeName" : "long"
         }])json");
-        EXPECT_STREQ(reader1.GetColumns().Stringify().c_str(), expectedMeta2.Stringify().c_str());
-        auto cntJson0 = Json::Value::From(R"j({"cOUNT(*)" : 100.0})j");
-        auto cntJson1 = Json::Value::From(R"j({"COUNT(*)" : 100.0})j");
-        EXPECT_STREQ(reader1.GetRow().ToJson(ECSqlReader::Row::Format::UseJsonName).toStyledString().c_str(), cntJson0.toStyledString().c_str());
-        EXPECT_STREQ(reader1.GetRow().ToJson(ECSqlReader::Row::Format::UseName).toStyledString().c_str(), cntJson1.toStyledString().c_str());
+        BeJsDocument actualMeta2;
+        reader1.GetColumns().ToJs(actualMeta2);
+        EXPECT_TRUE(actualMeta2.isExactEqual(expectedMeta2))
+            << "\n  actual:   " << actualMeta2.Stringify() << "\n  expected: " << expectedMeta2.Stringify();
+        auto cntJson0 = BeJsDocument(R"j({"cOUNT(*)" : 100.0})j");
+        auto cntJson1 = BeJsDocument(R"j({"COUNT(*)" : 100.0})j");
+        EXPECT_TRUE(reader1.GetRow().ToJson(ECSqlReader::Row::Format::UseJsonName).isExactEqual(cntJson0)) << "\n  expected: " << reader1.GetRow().ToJson(ECSqlReader::Row::Format::UseJsonName).Stringify() << "\n  actual:   " << cntJson0.Stringify();
+        EXPECT_TRUE(reader1.GetRow().ToJson(ECSqlReader::Row::Format::UseName).isExactEqual(cntJson1)) << "\n  expected: " << reader1.GetRow().ToJson(ECSqlReader::Row::Format::UseName).Stringify() << "\n  actual:   " << cntJson1.Stringify();
         EXPECT_EQ(reader1.GetRow()[0].asInt(), 100);
         EXPECT_EQ(reader1.GetRow()["cOUNT(*)"].asInt(), 100);
     });
@@ -1094,12 +1102,12 @@ TEST_F(ConcurrentQueryFixture, ReaderBinding) {
             for (int i = 0; i < classReader.GetColumns().size(); ++i, ++cols) {
                 auto& col = classReader.GetColumns()[i];
 
-                auto& v0 = classRow[i];
-                auto& v1 = classRow[col];
-                auto& v2 = classRow[col.GetJsonName()];
-                EXPECT_STREQ(v0.ToString().c_str(), v1.ToString().c_str());
-                EXPECT_STREQ(v1.ToString().c_str(), v2.ToString().c_str());
-                EXPECT_STREQ(v2.ToString().c_str(), v0.ToString().c_str());
+                auto v0 = classRow[i];
+                auto v1 = classRow[col];
+                auto v2 = classRow[col.GetJsonName()];
+                EXPECT_STREQ(v0.Stringify().c_str(), v1.Stringify().c_str());
+                EXPECT_STREQ(v1.Stringify().c_str(), v2.Stringify().c_str());
+                EXPECT_STREQ(v2.Stringify().c_str(), v0.Stringify().c_str());
             }
         }
 

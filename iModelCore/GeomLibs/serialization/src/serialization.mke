@@ -97,7 +97,6 @@ DLM_OBJECT_FILES = $(MultiCompileObjectList)
 DLM_NO_BENTLEY_LIB = 1
 
 LINKER_LIBRARIES = $(BuildContext)SubParts/Libs/$(libprefix)iTwinGeom$(libext)
-LINKER_LIBRARIES + $(BuildContext)SubParts/Libs/$(stlibprefix)iTwinJsonCpp$(stlibext)
 LINKER_LIBRARIES + $(BuildContext)SubParts/Libs/$(libprefix)iTwinBentley$(stlibext)
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
