@@ -33,6 +33,17 @@ To add a new library:
 
 > **When migrating an existing (previously vendored) library to vcpkg:** the vendored source deletion belongs in the **same** PR as the vcpkg wiring, but do **not** delete it up front. Keep the vendored source in place (the PR will likely be draft/WIP at this stage) until **after** the PR has passed its Copilot review, then delete the vendored code in a separate standalone commit within that same PR. Deleting the vendored source up front produces too many modified files for Copilot to review, and the review may not run at all.
 
+### Apple deployment targets
+
+Every `arm64-osx.cmake` and `arm64-ios.cmake` overlay triplet must set
+`VCPKG_OSX_DEPLOYMENT_TARGET`. Keep its value aligned with BentleyBuild's effective
+`MACOS_DEPLOYMENT_TARGET` or `IOS_DEPLOYMENT_TARGET`, respectively. The public defaults are defined
+in [`$(SrcRoot)bsicommon/PublicSDK/ApplyToolSet_CLang.mki`](../../../bsicommon/PublicSDK/ApplyToolSet_CLang.mki);
+build strategies may override them, so check the effective strategy value as well. These are build
+deployment targets and need not equal the product's official OS support floor. Omitting the
+setting lets vcpkg build against the host SDK's deployment target, which can produce objects that
+cannot be linked into BentleyBuild outputs targeting an older OS.
+
 ### Windows triplets: clang vs MSVC
 
 On Windows the native build runs under two toolsets — MSVC (`cl.exe`) and clang-cl (`BUILD_TOOLSET == WINDOWS_CLANG`) — and both produce ABI-compatible output. vcpkg's binary-cache ABI hash is derived from the triplet **and** the detected compiler, so if both toolsets used the same triplet *and* the same compiler they would share one cache entry and whichever built first would win. To keep the two builds' cache entries separate, every Windows triplet comes in a matched pair:
@@ -321,6 +332,14 @@ When updating any vcpkg-built library:
    dependency, using its `vcpkg-mend.json` triplets as the starting point. Confirm that no relevant
    manifest still pins the old version.
 4. Update the version in the `iModelCore/libsrc/README.md` library table.
+5. Update every `iModelCore/libsrc/**/*NugetLicense.json` sublicense entry for the library. The
+   `version` must match the upstream release version being shipped (omit vcpkg's port revision,
+   such as `#1`), and the release-pinned `licenseUrl` and `SPDX-ID` must still describe that release.
+   Some NuGet metadata files describe multiple libraries; for example,
+   `compress/CompressNugetLicense.json` contains separate zlib and minizip entries. Do not assume
+   that the metadata filename matches the vcpkg port name. These files are consumed by the
+   `iTwinNativeThirdParty` build when it publishes the corresponding NuGets, even when the
+   `NuGetProduct` that references the file is defined outside this repository.
 
 For example, OpenSSL is pinned by its own consumer and by the curl and crashpad graphs, while zlib
 is pinned by several consumers. Apply the same repository-wide check to minizip or any other port

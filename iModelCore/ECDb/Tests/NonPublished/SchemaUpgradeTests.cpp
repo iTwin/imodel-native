@@ -102,6 +102,10 @@ struct SchemaUpgradeTestFixture : public ECDbTestFixture
             }
     };
 
+struct SchemaUpgradeExtendedTests : SchemaUpgradeTestFixture
+    {
+    ECDB_EXTENDED_TIER_GATE(SchemaUpgradeTestFixture)
+    };
 
 void AssertECProperties(ECDbCR ecdb, Utf8CP assertExpression, bool strict = true)
     {
@@ -4805,7 +4809,7 @@ TEST_F(SchemaUpgradeTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TP
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpgradeTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TPH_JoinedTable_SharedCols)
+TEST_F(SchemaUpgradeExtendedTests, AddPropertyToSubclassThenPropertyToBaseClass_TPH_JoinedTable_SharedCols)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("AddPropertyToSubclassThenPropertyToBaseClass_TPH_JoinedTable_SharedCols.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
@@ -5235,7 +5239,7 @@ TEST_F(SchemaUpgradeTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TP
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpgradeTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TPH_JoinedTable_SharedCols_AddedBasePropToOverflow)
+TEST_F(SchemaUpgradeExtendedTests, AddPropertyToSubclassThenPropertyToBaseClass_TPH_JoinedTable_SharedCols_AddedBasePropToOverflow)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("AddPropertyToSubclassThenPropertyToBaseClass_TPH_JoinedTable_SharedCols_AddedBasePropToOverflow.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
@@ -6205,7 +6209,7 @@ TEST_F(SchemaUpgradeTestFixture, Delete_ECEntityClass_OwnTable)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH)
+TEST_F(SchemaUpgradeExtendedTests, Delete_Add_ECEntityClass_TPH)
     {
     //Setup Db ===================================================================================================
     SchemaItem schemaItem(
@@ -6364,7 +6368,7 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
+TEST_F(SchemaUpgradeExtendedTests, Delete_Add_ECEntityClass_TPH_ShareColumns)
     {
     //Setup Db ===================================================================================================
     SchemaItem schemaItem(
@@ -6733,7 +6737,7 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH_MaxSharedColumnsBe
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable)
+TEST_F(SchemaUpgradeExtendedTests, Delete_Add_ECEntityClass_JoinedTable)
     {
     //Setup Db ===================================================================================================
     SchemaItem schemaItem(
@@ -6979,7 +6983,7 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColumns)
+TEST_F(SchemaUpgradeExtendedTests, Delete_Add_ECEntityClass_JoinedTable_ShareColumns)
     {
     //Setup Db ===================================================================================================
     SchemaItem schemaItem(
@@ -17776,7 +17780,7 @@ TEST_F(SchemaUpgradeTestFixture, MajorSchemaUpgradePropertyTypeChangeFromPrim)
         }
     }
 
-TEST_F(SchemaUpgradeTestFixture, MajorSchemaUpgradePropertyTypeChangeFromEnum)
+TEST_F(SchemaUpgradeExtendedTests, MajorSchemaUpgradePropertyTypeChangeFromEnum)
     {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("schemaupgrade_MajorSchemaUpgradePropertyTypeChangeFromEnum.ecdb"));
 
@@ -18722,7 +18726,7 @@ TEST_F(SchemaUpgradeTestFixture, TooManyColumnsInResultSet)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpgradeTestFixture, TooManyColumnsInResultSetHierarchical)
+TEST_F(SchemaUpgradeExtendedTests, TooManyColumnsInResultSetHierarchical)
     {
     // Performance note: The update schema import is the bottleneck (~14s per 1099 new props per subclass).
     // We front-load most Foo/Goo properties in the initial setup so the update only adds ~100 new properties each.
@@ -18931,7 +18935,7 @@ TEST_F(SchemaUpgradeTestFixture, TooManyColumnsInResultSetHierarchical)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpgradeTestFixture, TooManyColumnsInResultSetAbstractClass)
+TEST_F(SchemaUpgradeExtendedTests, TooManyColumnsInResultSetAbstractClass)
     {
     // Performance note: The update schema import is the bottleneck (~14s for 1099 new props).
     // We front-load most Foo properties in the initial setup so the update only adds ~100 new properties.

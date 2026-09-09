@@ -47,6 +47,14 @@ Under `iModelCore/libsrc/<mylib>/`:
 - `vcpkg-mend.json` — list the triplet graph(s) whose union downloads all upstream source used by the consumer; the scan never compiles for the selected target, so triplets need not match the Mend host; prefer one source-superset graph, and add multiple triplets only for platform-specific downloads
 - `triplets/` — platform-specific triplet files if the defaults in `iModelCore/libsrc/` are not sufficient (see `compress/triplets/` for examples)
 
+For every Apple overlay triplet, explicitly set `VCPKG_OSX_DEPLOYMENT_TARGET`. Before creating or
+changing an `arm64-osx.cmake` or `arm64-ios.cmake` triplet, check the effective
+`MACOS_DEPLOYMENT_TARGET` or `IOS_DEPLOYMENT_TARGET` used by BentleyBuild. Their public defaults are
+defined in [`$(SrcRoot)bsicommon/PublicSDK/ApplyToolSet_CLang.mki`](../../../../bsicommon/PublicSDK/ApplyToolSet_CLang.mki),
+but build strategies may override them. Mirror the effective build value, not the product's
+official OS support floor. Omitting this setting lets vcpkg inherit the host SDK's deployment
+target and can produce objects that are too new to link into BentleyBuild outputs.
+
 > **Check whether the library links cleanly into Windows DEBUG builds.** Some libraries fail to
 > link into Windows DEBUG unless their debug artifact is made release-CRT-compatible — either by
 > forcing release-only triplets (`set(VCPKG_BUILD_TYPE release)`) or by fixing up the vcpkg Debug
@@ -289,8 +297,15 @@ may not run at all.
 4. Resolve or install every affected graph with a triplet that activates platform-conditional
    dependencies; use each consumer's `vcpkg-mend.json` triplets as the starting point. Search again
    for the old version and do not finish while a relevant manifest still pins it.
-5. No changes to `.mke` or `.PartFile.xml` files are needed — the next build will pick
-   up the new version via the binary cache or a fresh build.
+5. Update every `iModelCore/libsrc/**/*NugetLicense.json` sublicense entry for the library. Use the
+  upstream release version, without a vcpkg port revision such as `#1`, and verify that the
+  release-pinned `licenseUrl` and `SPDX-ID` still apply to the new release. A metadata file can
+  describe multiple ports: `compress/CompressNugetLicense.json`, for example, has separate zlib
+  and minizip entries. Search by sublicense name instead of assuming the filename matches the port.
+  The `iTwinNativeThirdParty` build consumes these files when publishing the corresponding NuGets,
+  including files referenced by `NuGetProduct` definitions outside this repository.
+6. No changes to `.mke` or `.PartFile.xml` files are needed solely for a version bump — the next
+  build will pick up the new version via the binary cache or a fresh build.
 
 ---
 

@@ -174,7 +174,7 @@ static bvector<dictionaryJsonTest> s_listOfDictionaryJsonTests =
                         }
                     ]
                 } )X",
-            GeoCoordinates::GEOCOORDERR_UnknownDatumType,
+            GeoCoordinates::GEOCOORDERR_NoCRSName,
         },
     };
 
