@@ -96,8 +96,9 @@ TEST_F(DgnDbTest, ProjectProfileVersions)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnDbTest, UpgradeSpatialIndexTriggers)
 {
-    SetupSeedProject();
+    SetupSeedProject(Db::OpenMode::ReadWrite, true);
     BeFileName fileName = m_db->GetFileName();
+    m_db->Txns().DeleteAllTxns();
     SaveDb();
     CloseDb();
     m_db = nullptr;
@@ -121,6 +122,9 @@ TEST_F(DgnDbTest, UpgradeSpatialIndexTriggers)
     ASSERT_EQ(BE_SQLITE_OK, rawDb.SaveChanges());
     rawDb.CloseDb();
 
+    BeFileName replayFileName = DgnDbTestDgnManager::GetOutputFilePath(L"UpgradeSpatialIndexTriggersReplay.bim");
+    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(fileName, replayFileName));
+
     DbResult openStatus = BE_SQLITE_OK;
     DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite);
     openParams.SetProfileUpgradeOptions(Db::ProfileUpgradeOptions::Upgrade);
@@ -142,6 +146,34 @@ TEST_F(DgnDbTest, UpgradeSpatialIndexTriggers)
     Utf8String deleteTriggerSql = getTriggerSql(*m_db, "dgn_rtree_upd1");
     ASSERT_TRUE(updateTriggerSql.find("AFTER UPDATE OF InSpatialIndex") != updateTriggerSql.npos);
     ASSERT_TRUE(deleteTriggerSql.find("NEW.InSpatialIndex = 0") != deleteTriggerSql.npos);
+
+    ChangesetPropsPtr changeset = m_db->Txns().StartCreateChangeset("-profile-upgrade");
+    ASSERT_TRUE(changeset.IsValid());
+    m_db->Txns().FinishCreateChangeset(-1, true);
+
+    ChangesetFileReader reader(changeset->GetFileName(), m_db.get());
+    bool containsSchemaChanges = false;
+    DdlChanges ddlChanges;
+    ASSERT_EQ(BE_SQLITE_OK, reader.MakeReader()->GetSchemaChanges(containsSchemaChanges, ddlChanges));
+    ASSERT_TRUE(containsSchemaChanges);
+    Utf8String ddl = ddlChanges.ToString();
+    for (Utf8CP triggerName : {"dgn_rtree_upd", "dgn_rtree_upd1"})
+        {
+        ASSERT_NE(Utf8String::npos, ddl.find(Utf8String("DROP TRIGGER IF EXISTS ") + triggerName + ";"));
+        ASSERT_NE(Utf8String::npos, ddl.find(Utf8String("CREATE TRIGGER ") + triggerName + " "));
+        }
+
+    DgnDbPtr replayDb = DgnDb::OpenIModelDb(&openStatus, replayFileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+    ASSERT_EQ(BE_SQLITE_OK, openStatus);
+    ASSERT_TRUE(replayDb.IsValid());
+    ASSERT_EQ(previousVersion, replayDb->GetProfileVersion());
+    ASSERT_NE(updateTriggerSql, getTriggerSql(*replayDb, "dgn_rtree_upd"));
+    ASSERT_NE(deleteTriggerSql, getTriggerSql(*replayDb, "dgn_rtree_upd1"));
+
+    ASSERT_EQ(ChangesetStatus::Success, replayDb->Txns().PullMergeApply(*changeset));
+    EXPECT_EQ(m_db->GetProfileVersion(), replayDb->GetProfileVersion());
+    EXPECT_EQ(updateTriggerSql, getTriggerSql(*replayDb, "dgn_rtree_upd"));
+    EXPECT_EQ(deleteTriggerSql, getTriggerSql(*replayDb, "dgn_rtree_upd1"));
 }
 
 //=======================================================================================

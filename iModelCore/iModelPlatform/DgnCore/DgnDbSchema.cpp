@@ -194,14 +194,14 @@ void AutoHandledPropertiesCollection::ForEach(ECN::ECClassCR ecClass, DgnDbR db,
 //---------------------------------------------------------------------------------------
 static DbResult CreateSpatialIndexUpdateTriggers(DgnDbR db)
     {
-    DbResult result = db.ExecuteSql("CREATE TRIGGER dgn_rtree_upd AFTER UPDATE " OF_SPATIAL_DATA " ON " BIS_TABLE(BIS_CLASS_GeometricElement3d) " WHEN new.Origin_X IS NOT NULL AND " GEOM_IN_SPATIAL_INDEX_CLAUSE
+    DbResult result = db.ExecuteDdl("CREATE TRIGGER dgn_rtree_upd AFTER UPDATE " OF_SPATIAL_DATA " ON " BIS_TABLE(BIS_CLASS_GeometricElement3d) " WHEN new.Origin_X IS NOT NULL AND " GEOM_IN_SPATIAL_INDEX_CLAUSE
                                                                                                                             "BEGIN INSERT OR REPLACE INTO " DGN_VTABLE_SpatialIndex "(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,"
                                                                                                                             "DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5)"
                                                                                                                             " FROM (SELECT " AABB_FROM_PLACEMENT " as bb);END");
     if (BE_SQLITE_OK != result)
         return result;
 
-    return db.ExecuteSql("CREATE TRIGGER dgn_rtree_upd1 AFTER UPDATE " OF_SPATIAL_DATA " ON " BIS_TABLE(BIS_CLASS_GeometricElement3d) " WHEN OLD.Origin_X IS NOT NULL AND (NEW.Origin_X IS NULL OR NEW.InSpatialIndex = 0)"
+    return db.ExecuteDdl("CREATE TRIGGER dgn_rtree_upd1 AFTER UPDATE " OF_SPATIAL_DATA " ON " BIS_TABLE(BIS_CLASS_GeometricElement3d) " WHEN OLD.Origin_X IS NOT NULL AND (NEW.Origin_X IS NULL OR NEW.InSpatialIndex = 0)"
                                                                                                                             " BEGIN DELETE FROM " DGN_VTABLE_SpatialIndex " WHERE ElementId=OLD.ElementId;END");
     }
 
@@ -211,11 +211,11 @@ static DbResult CreateSpatialIndexUpdateTriggers(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDb::UpgradeToProfile2_0_0_8(DgnDbR db)
     {
-    DbResult result = db.ExecuteSql("DROP TRIGGER IF EXISTS dgn_rtree_upd");
+    DbResult result = db.ExecuteDdl("DROP TRIGGER IF EXISTS dgn_rtree_upd");
     if (BE_SQLITE_OK != result)
         return result;
 
-    result = db.ExecuteSql("DROP TRIGGER IF EXISTS dgn_rtree_upd1");
+    result = db.ExecuteDdl("DROP TRIGGER IF EXISTS dgn_rtree_upd1");
     if (BE_SQLITE_OK != result)
         return result;
 
