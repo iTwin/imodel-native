@@ -334,7 +334,7 @@ int CScalcEgm2008(struct cs_Egm2008_* __This, double* geoidHgt, const double ll[
             }
             /* We do our own buffering, turn stream buffering off. */
 #if !defined(GEOCOORD_ENHANCEMENT)
-			setvbuf (__This->strm,NULL,_IONBF,0);
+            setvbuf(__This->strm, NULL, _IONBF, 0);
 #else
 			CS_setvbuf (__This->strm,NULL,_IONBF,0);
 #endif
