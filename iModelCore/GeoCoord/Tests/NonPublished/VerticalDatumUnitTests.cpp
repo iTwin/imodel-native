@@ -5,6 +5,7 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 #include <Bentley/BeTest.h>
+#include <BeSQLite/BeSQLite.h>
 
 #include <GeoCoord/BaseGeoCoord.h>
 #include "GeoCoordTestCommon.h"
@@ -108,6 +109,116 @@ TEST_F(VerticalDatumUnitTests, VerticalTransformGeoidGridFileTest)
     EXPECT_EQ(status, SUCCESS);
     EXPECT_EQ(elevationType, GeoCoordinates::VerticalTransform::ElevationType::Offset);
     EXPECT_NEAR(elevationOffset, 38.3, 0.5);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* A relative vertical grid path should resolve through a registered workspace without
+* requiring the corresponding local grid file.
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(VerticalDatumUnitTests, VerticalTransformGeoidGridFileFromWorkspaceTest)
+{
+    BeFileName gridPath(GeoCoordTestCommon::InitializedLibraryPath().c_str(), BentleyCharEncoding::Utf8);
+    gridPath.AppendToPath(L"WW15MGH._96");
+    BeFile gridFile;
+    ASSERT_EQ(gridFile.Open(gridPath.GetName(), BeFileAccess::Read), BeFileStatus::Success);
+    bvector<Byte> gridData;
+    ASSERT_EQ(gridFile.ReadEntireFile(gridData), BeFileStatus::Success);
+
+    BeFileName workspacePath;
+    BeTest::GetHost().GetTempDir(workspacePath);
+    workspacePath.AppendToPath(L"VerticalGridFromWorkspace.itwin-workspace");
+    if (BeFileName::DoesPathExist(workspacePath))
+        ASSERT_EQ(BeFileName::BeDeleteFile(workspacePath), BeFileNameStatus::Success);
+
+    BeSQLite::Db workspaceDb;
+    ASSERT_EQ(workspaceDb.CreateNewDb(workspacePath.GetNameUtf8().c_str()), BeSQLite::BE_SQLITE_OK);
+    ASSERT_EQ(workspaceDb.ExecuteSql("CREATE TABLE blobs(id TEXT PRIMARY KEY NOT NULL, value BLOB)"), BeSQLite::BE_SQLITE_OK);
+    {
+    BeSQLite::Statement insert;
+    ASSERT_EQ(insert.Prepare(workspaceDb, "INSERT INTO blobs(id,value) VALUES(?,?)"), BeSQLite::BE_SQLITE_OK);
+    ASSERT_EQ(insert.BindText(1, "WW15MGH._96", BeSQLite::Statement::MakeCopy::Yes), BeSQLite::BE_SQLITE_OK);
+    ASSERT_EQ(insert.BindBlob(2, gridData.data(), (int)gridData.size(), BeSQLite::Statement::MakeCopy::Yes), BeSQLite::BE_SQLITE_OK);
+    ASSERT_EQ(insert.Step(), BeSQLite::BE_SQLITE_DONE);
+    }
+    ASSERT_EQ(workspaceDb.SaveChanges(), BeSQLite::BE_SQLITE_OK);
+    workspaceDb.CloseDb();
+    ASSERT_TRUE(GeoCoordinates::BaseGCS::AddWorkspaceDb(workspacePath.GetNameUtf8(), nullptr, 10000));
+
+    BeJsDocument geoidJson;
+    geoidJson["target"] = "WGS84";
+    geoidJson["geoidSeparationGrid"]["direction"] = "Direct";
+    geoidJson["geoidSeparationGrid"]["format"] = "GRD";
+    geoidJson["geoidSeparationGrid"]["files"].appendValue() = "./WW15MGH.GRD";
+
+    GeoCoordinates::VerticalTransformPtr geoidTransform =
+        GeoCoordinates::VerticalTransform::CreateFromJson(geoidJson, "EGM96 workspace height", "WGS84");
+    ASSERT_TRUE(geoidTransform.IsValid());
+
+    GeoPoint point = { 23.700523, 37.944210, 0.0 };
+    double elevationOffset = 0.0;
+    GeoCoordinates::VerticalTransform::ElevationType elevationType = GeoCoordinates::VerticalTransform::ElevationType::Fixed;
+
+    GeoCoordinates::BaseGCS::EnableLocalGcsFiles(false);
+    StatusInt status = geoidTransform->GetElevation(elevationOffset, elevationType, point);
+    GeoCoordinates::BaseGCS::EnableLocalGcsFiles(true);
+
+    EXPECT_EQ(status, SUCCESS);
+    EXPECT_EQ(elevationType, GeoCoordinates::VerticalTransform::ElevationType::Offset);
+    EXPECT_NEAR(elevationOffset, 38.3, 0.5);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* Registering a workspace that contains the vertical dictionary should reload the
+* dictionary from that workspace without requiring a local JSON file.
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(VerticalDatumUnitTests, VerticalDatumDictionaryFromWorkspaceTest)
+{
+    Utf8String dictionaryJson = R"json({
+        "version": 1,
+        "definitions": [{
+            "verticalCRS": {
+                "crsName": "Workspace test height",
+                "datumName": "Workspace test datum",
+                "type": "GEOID",
+                "units": "meter",
+                "extent": {
+                    "southWest": { "latitude": -90.0, "longitude": -180.0 },
+                    "northEast": { "latitude": 90.0, "longitude": 180.0 }
+                },
+                "transforms": [{ "target": "WGS84", "nullTransform": null }]
+            }
+        }]
+    })json";
+
+    BeFileName workspacePath;
+    BeTest::GetHost().GetTempDir(workspacePath);
+    workspacePath.AppendToPath(L"VerticalDatumDictionaryFromWorkspace.itwin-workspace");
+    if (BeFileName::DoesPathExist(workspacePath))
+        ASSERT_EQ(BeFileName::BeDeleteFile(workspacePath), BeFileNameStatus::Success);
+
+    BeSQLite::Db workspaceDb;
+    ASSERT_EQ(workspaceDb.CreateNewDb(workspacePath.GetNameUtf8().c_str()), BeSQLite::BE_SQLITE_OK);
+    ASSERT_EQ(workspaceDb.ExecuteSql("CREATE TABLE blobs(id TEXT PRIMARY KEY NOT NULL, value BLOB)"), BeSQLite::BE_SQLITE_OK);
+
+    {
+    BeSQLite::Statement insert;
+    ASSERT_EQ(insert.Prepare(workspaceDb, "INSERT INTO blobs(id,value) VALUES(?,?)"), BeSQLite::BE_SQLITE_OK);
+    ASSERT_EQ(insert.BindText(1, "VerticalDatumDefinitions.json", BeSQLite::Statement::MakeCopy::Yes), BeSQLite::BE_SQLITE_OK);
+    ASSERT_EQ(insert.BindBlob(2, dictionaryJson.data(), (int)dictionaryJson.size(), BeSQLite::Statement::MakeCopy::Yes), BeSQLite::BE_SQLITE_OK);
+    ASSERT_EQ(insert.Step(), BeSQLite::BE_SQLITE_DONE);
+    }
+    ASSERT_EQ(workspaceDb.SaveChanges(), BeSQLite::BE_SQLITE_OK);
+    workspaceDb.CloseDb();
+
+    GeoCoordinates::BaseGCS::EnableLocalGcsFiles(false);
+    bool added = GeoCoordinates::BaseGCS::AddWorkspaceDb(workspacePath.GetNameUtf8(), nullptr, 10001);
+    GeoCoordinates::BaseGCS::EnableLocalGcsFiles(true);
+    ASSERT_TRUE(added);
+
+    StatusInt status = ERROR;
+    GeoCoordinates::VerticalDatumInfoPtr datumInfo = GeoCoordinates::VerticalDatumDictionary::Get()->GetVerticalDatumInfoFromName("Workspace test height", status);
+    EXPECT_EQ(status, SUCCESS);
+    EXPECT_TRUE(datumInfo.IsValid());
 }
 
 /*---------------------------------------------------------------------------------**//**

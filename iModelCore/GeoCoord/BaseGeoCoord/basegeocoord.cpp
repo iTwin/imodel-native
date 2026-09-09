@@ -9207,6 +9207,23 @@ public:
     }
 };
 
+static Utf8String GetVerticalGridFilePath(WStringCR gridFile, WStringCR dataDirectory)
+{
+    BeFileName fileName(gridFile);
+    if (!fileName.IsAbsolutePath())
+    {
+        BeFileName resourcePath(L"assets");
+        resourcePath.AppendToPath(gridFile.c_str());
+        return resourcePath.GetNameUtf8();
+    }
+
+    WString resolvedGridFilePath;
+    if (SUCCESS != BeFileName::ResolveRelativePath(resolvedGridFilePath, gridFile.c_str(), dataDirectory.c_str()))
+        return "";
+
+    return Utf8String(resolvedGridFilePath.c_str());
+}
+
 class VerticalGeoidSeparationGridTransform : public VerticalTransform
 {
     friend class VerticalTransform;
@@ -9407,11 +9424,9 @@ public:
         {
             if (0 != gridFile.length())
             {
-                WString resolvedGridFilePath;
-                
-                if (SUCCESS == BeFileName::ResolveRelativePath(resolvedGridFilePath, gridFile.c_str(), dataDirectory.c_str()))
+                Utf8String resolved = GetVerticalGridFilePath(gridFile, dataDirectory);
+                if (!resolved.empty())
                 {
-                    Utf8String resolved(resolvedGridFilePath.c_str());
                     csDatumCatalogEntry_* entry = CSnewDatumCatalogEntry2 (resolved.c_str(), // fullpath
                                                                         0,      // path is not relative
                                                                         0,      // buffer size used when streaming, will be overloaded by size of record entry if available and that is larger
@@ -9638,11 +9653,9 @@ public:
         {
             if (0 != gridFile.length())
             {
-                WString resolvedGridFilePath;
-                if (SUCCESS == BeFileName::ResolveRelativePath(resolvedGridFilePath, gridFile.c_str(), dataDirectory.c_str()))
+                Utf8String resolved = GetVerticalGridFilePath(gridFile, dataDirectory);
+                if (!resolved.empty())
                 {
-                    Utf8String resolved(resolvedGridFilePath.c_str());
-
                     csDatumCatalogEntry_* entry = CSnewDatumCatalogEntry2 (resolved.c_str(), // fullpath
                                                                         0,      // path is not relative
                                                                         0,      // buffer size used when streaming, will be overloaded by size of record entry if available and that is larger
@@ -10574,21 +10587,33 @@ StatusInt VerticalDatumDictionary::AddVerticalDatumsFromFile(const WString& file
     if (0 == filepath.length())
         return GEOCOORDERR_BadArg;
 
-    BeFile dictionaryFile;
-    if (BeFileStatus::Success != dictionaryFile.Open(filepath.c_str(), BeFileAccess::Read))
+    Utf8String filePathUtf8(filepath.c_str());
+    csFILE* dictionaryFile = CS_fopen(filePathUtf8.c_str(), "rb");
+    if (nullptr == dictionaryFile)
         return GeoCoordParse_MissingFile;
 
     s_verticalDatumDictionary->m_dictionaryPath = filepath;
 
-    bvector<Byte> dictionary;
-    if (BeFileStatus::Success != dictionaryFile.ReadEntireFile(dictionary) 
-        || (0 == dictionary.size())
-        || (nullptr == dictionary.data()))
+    if (0 != CS_fseek(dictionaryFile, 0, SEEK_END))
+    {
+        CS_fclose(dictionaryFile);
+        return GeoCoordParse_ReadError;
+    }
+
+    long dictionarySize = CS_ftell(dictionaryFile);
+    if (dictionarySize <= 0 || 0 != CS_fseek(dictionaryFile, 0, SEEK_SET))
+    {
+        CS_fclose(dictionaryFile);
+        return GeoCoordParse_ReadError;
+    }
+
+    bvector<Byte> dictionary((size_t)dictionarySize + 1);
+    size_t bytesRead = CS_fread(dictionary.data(), 1, (size_t)dictionarySize, dictionaryFile);
+    CS_fclose(dictionaryFile);
+    if (bytesRead != (size_t)dictionarySize)
         return GeoCoordParse_ReadError;
 
-    // Ensure dictionary is null terminated
-    dictionary.resize(dictionary.size() + 1);
-    dictionary[dictionary.size() - 1] = '\0';
+    dictionary[(size_t)dictionarySize] = '\0';
 
     return AddVerticalDatumsFromJsonString(reinterpret_cast<char*>(dictionary.data()));
 }
@@ -12252,6 +12277,16 @@ struct WorkspaceDb : RefCountedBase, NonCopyableClass {
         }
         return m_db->IsDbOpen() ? m_db : nullptr;
     }
+    bool ContainsResource(Utf8CP resourceName) {
+        auto db = GetDb();
+        if (nullptr == db)
+            return false;
+
+        Statement stmt;
+        stmt.Prepare(*db, "SELECT 1 FROM blobs WHERE id=? COLLATE NOCASE");
+        stmt.BindText(1, resourceName, Statement::MakeCopy::No);
+        return BE_SQLITE_ROW == stmt.Step();
+    }
     WorkspaceDb(int priority, Utf8StringCR dbName, CloudContainerP container) : m_priority(priority), m_dbName(dbName), m_container(container) {
         if (m_container) {
             // set up a listener for the container being disconnected and remove this entry (closes Db)
@@ -12403,10 +12438,14 @@ bool BaseGCS::AddWorkspaceDb(Utf8String dbName, CloudContainerP container, int p
     for (auto it=s_workspaceDbs.begin(); it != s_workspaceDbs.end(); ++it) {
         if (priority > (*it)->m_priority) {
             s_workspaceDbs.emplace(it, newDb);
+            if (VerticalDatumDictionary::Get().IsValid() && newDb->ContainsResource("VerticalDatumDefinitions.json"))
+                VerticalDatumDictionary::ClearAndReinitialize();
             return true;
         }
     }
     s_workspaceDbs.emplace_back(newDb);
+    if (VerticalDatumDictionary::Get().IsValid() && newDb->ContainsResource("VerticalDatumDefinitions.json"))
+        VerticalDatumDictionary::ClearAndReinitialize();
     return true;
 }
 
@@ -12427,14 +12466,6 @@ StatusInt BaseGCS::Initialize(Utf8CP dataDirectory) {
     ::CS_altdr(s_assetsDirPrefix.c_str());
     s_assetsDir = dataDirectory;
 
-    // Initialize vertical datum dictionary
-    if (!VerticalDatumDictionary::Get().IsValid())
-        {
-        BeFileName vdatumFileName(dataDirectory);
-        vdatumFileName.AppendToPath(L"VerticalDatumDefinitions.json");
-        VerticalDatumDictionary::Initialize(vdatumFileName, WString(dataDirectory, true));
-        }
-
 #if defined (BENTLEY_WIN32)||defined (BENTLEY_WINRT)
     if (s_assetsDir.StartsWith("\\\\?\\")) // fopen doesn't work correctly with long path prefix on Windows
         s_assetsDir = s_assetsDir.substr(4);
@@ -12443,6 +12474,10 @@ StatusInt BaseGCS::Initialize(Utf8CP dataDirectory) {
     BeFileName baseDbName(s_assetsDir);
     baseDbName.AppendToPath(L"base.itwin-workspace");
     AddWorkspaceDb(baseDbName.GetNameUtf8(), nullptr, 0);
+
+    // Initialize vertical datum dictionary
+    if (!VerticalDatumDictionary::Get().IsValid())
+        VerticalDatumDictionary::Initialize(L"assets/VerticalDatumDefinitions.json", WString(dataDirectory, true));
 
     s_geoCoordInitialized = true;
     return SUCCESS;
