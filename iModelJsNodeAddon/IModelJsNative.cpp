@@ -5113,23 +5113,26 @@ public:
         REQUIRE_ARGUMENT_ANY_OBJ(1, dbObj);
         REQUIRE_ARGUMENT_BOOL(2, invert);
 
-        ECDb* ecdb = nullptr;
+        Db* db = nullptr;
         if (NativeDgnDb::InstanceOf(dbObj)) {
             NativeDgnDb* addonDgndb = NativeDgnDb::Unwrap(dbObj);
-            ecdb = &addonDgndb->GetDgnDb();
+            db = &addonDgndb->GetDgnDb();
 
         } else if (NativeECDb::InstanceOf(dbObj)) {
             NativeECDb* addonECDb = NativeECDb::Unwrap(dbObj);
-            ecdb = &addonECDb->GetECDb();
+            db = &addonECDb->GetECDb();
 
+        } else if (SQLiteDb::InstanceOf(dbObj)) {
+            SQLiteDb* sqliteDb = SQLiteDb::Unwrap(dbObj);
+            db = &sqliteDb->GetDb();
         } else {
-            THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb or NativeECDb object");
+            THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb, NativeECDb, or SQLiteDb object");
         }
 
-        if (!ecdb || !ecdb->IsDbOpen())
+        if (!db || !db->IsDbOpen())
             THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db not open", DgnDbStatus::NotOpen);
 
-        m_changeset.OpenGroup(Env(), fileNames, *ecdb, invert);
+        m_changeset.OpenGroup(Env(), fileNames, *db, invert);
         }
     void WriteToFile(NapiInfoCR info)
         {
