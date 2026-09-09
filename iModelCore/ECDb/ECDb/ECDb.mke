@@ -17,6 +17,7 @@ ECDbPublicHeaders =  \
                 $(publicApiDir)ECDbApi.h \
                 $(publicApiDir)ECDbTypes.h \
                 $(publicApiDir)ECDb.h \
+                $(publicApiDir)Optimizer.h \
                 $(publicApiDir)ECInstanceId.h \
                 $(publicApiDir)SchemaManager.h \
                 $(publicApiDir)ECInstanceFinder.h \
@@ -184,6 +185,8 @@ MultiCompileDepends=$(_MakeFileSpec)
 $(o)ECDbLogger$(oext):                                        $(baseDir)ECDbLogger.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)DbUtilities$(oext):                                       $(baseDir)DbUtilities.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)Optimizer$(oext):                                       $(baseDir)Optimizer.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)JsonPersistenceHelper$(oext):                             $(baseDir)JsonPersistenceHelper.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 

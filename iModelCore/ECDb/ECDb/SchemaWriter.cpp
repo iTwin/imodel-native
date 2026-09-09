@@ -3555,7 +3555,7 @@ BentleyStatus SchemaWriter::DeleteCustomAttributeClass(Context& ctx, ECCustomAtt
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaWriter::DeleteClass(Context& ctx, ClassChange& classChange, ECClassCR deletedClass, bool isDynamicSchema)
+BentleyStatus SchemaWriter::DeleteClass(Context& ctx, ClassChange& classChange, ECClassCR deletedClass, bool isDynamicSchema, bset<ECClassId> const* classesBeingDeleted)
     {
     // Allow Major schema upgrade for dynamic schemas if AllowMajorSchemaUpgradeForDynamicSchemas import option is set irrespective of the DisallowMajorSchemaUpgrade import option
     // For more information about major schema upgrade rules and examples, see https://dev.azure.com/bentleycs/iModelTechnologies/_wiki/wikis/iModelTechnologies.wiki/36117/Major-Schema-Upgrades
@@ -3592,7 +3592,10 @@ BentleyStatus SchemaWriter::DeleteClass(Context& ctx, ClassChange& classChange, 
         return ERROR;
         }
 
-    if (!subClasses->empty())
+    if (std::any_of(subClasses->begin(), subClasses->end(), [classesBeingDeleted](ECClassCP subClass)
+        {
+        return classesBeingDeleted == nullptr || classesBeingDeleted->find(subClass->GetId()) == classesBeingDeleted->end();
+        }))
         {
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0378,
             "ECSchema Upgrade failed. ECSchema %s: Deleting ECClass '%s' is not supported because it has subclasses.",
@@ -3888,6 +3891,24 @@ BentleyStatus SchemaWriter::DeleteProperty(Context& ctx, PropertyChange& propert
         }
 
     return DeleteCustomAttributes(ctx, deletedProperty.GetId(), SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Property);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::DeleteClassForOptimizer(Context& ctx, ECClassCR ecClass, bset<ECClassId> const& classesBeingDeleted)
+    {
+    ClassChange change(ECChange::OpCode::Deleted, ECChange::Type::Class, nullptr, ecClass.GetName().c_str());
+    return DeleteClass(ctx, change, ecClass, true, &classesBeingDeleted);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::DeletePropertyForOptimizer(Context& ctx, ECPropertyCR property)
+    {
+    PropertyChange change(ECChange::OpCode::Deleted, ECChange::Type::Property, nullptr, property.GetName().c_str());
+    return DeleteProperty(ctx, change, property, nullptr, true);
     }
 
 //---------------------------------------------------------------------------------------

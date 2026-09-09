@@ -249,6 +249,11 @@ public:
     DbResult UpgradeECInstances() const { return UpgradeExistingECInstancesWithNewPropertiesMapToOverflowTable(GetECDb()); }
     BentleyStatus CreateClassViews() const;
     BentleyStatus CreateClassViews(bvector<ECN::ECClassId> const& ecclassids) const;
+    BentleyStatus DeleteClassesForOptimizer(bvector<ECN::ECClassId> const&, uint64_t& changed, SchemaImportToken const*) const;
+    BentleyStatus DeletePropertiesForOptimizer(bvector<ECN::ECPropertyCP> const&, uint64_t& changed, SchemaImportToken const*) const;
+    //! Authoritative predicate identifying schemas the Optimizer must never modify: BisCore, ECDb-owned
+    //! schemas (ProfileManager::GetECDbSchemaNames), and all system/standard schemas.
+    static bool IsProtectedFromOptimizer(ECN::ECSchemaCR);
     SchemaChangeEvent& OnBeforeSchemaChanges() const { return m_onBeforeSchemaChanged;}
     SchemaChangeEvent& OnAfterSchemaChanges() const { return m_onAfterSchemaCHanged;};
     ECDbSystemSchemaHelper const& GetSystemSchemaHelper() const { return m_systemSchemaHelper; }

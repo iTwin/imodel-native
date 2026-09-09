@@ -1056,4 +1056,191 @@ Utf8String RemapManager::GetInstanceIdColumnName(Utf8StringCR tableName)
     return stmt->GetValueText(0);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult RemapManager::ApplyColumnRemaps(ECDbR ecdb, bvector<ColumnRemap> const& remaps, bool isDryRun, Utf8StringR error)
+    {
+    ECDB_PERF_LOG_SCOPE("Optimizer> Compact shared columns> Stage and move data");
+    auto cleanup = [&ecdb, &error](DbResult originalStatus)
+        {
+        DbResult cleanupStatus = ecdb.TryExecuteSql("DROP TABLE IF EXISTS [temp].[ecdbopt_shared_column_values]");
+        Utf8String cleanupError = cleanupStatus == BE_SQLITE_OK ? Utf8String() : ecdb.GetLastError();
+        DbResult planCleanupStatus = ecdb.TryExecuteSql("DROP TABLE IF EXISTS [temp].[ecdbopt_shared_column_plan]");
+        if (cleanupStatus == BE_SQLITE_OK && planCleanupStatus != BE_SQLITE_OK)
+            {
+            cleanupStatus = planCleanupStatus;
+            cleanupError = ecdb.GetLastError();
+            }
+        if (originalStatus != BE_SQLITE_OK)
+            return originalStatus;
+        if (cleanupStatus != BE_SQLITE_OK)
+            error = cleanupError;
+        return cleanupStatus;
+        };
+
+    auto rc = cleanup(BE_SQLITE_OK);
+    if (rc != BE_SQLITE_OK)
+        return rc;
+
+    rc = ecdb.TryExecuteSql("CREATE TEMP TABLE [ecdbopt_shared_column_plan]("
+                            "MoveId INTEGER PRIMARY KEY,SourceTable TEXT NOT NULL,SourceColumn TEXT NOT NULL,"
+                            "DestinationTable TEXT NOT NULL,DestinationColumn TEXT NOT NULL,ClassIds TEXT NOT NULL)");
+    if (rc != BE_SQLITE_OK)
+        {
+        error = ecdb.GetLastError();
+        return cleanup(rc);
+        }
+
+    Statement planStmt;
+    if ((rc = planStmt.Prepare(ecdb, "INSERT INTO [temp].[ecdbopt_shared_column_plan] VALUES(?,?,?,?,?,?)")) != BE_SQLITE_OK)
+        {
+        error = ecdb.GetLastError();
+        return cleanup(rc);
+        }
+    for (ColumnRemap const& remap : remaps)
+        {
+        planStmt.Reset();
+        planStmt.ClearBindings();
+        if ((rc = planStmt.BindUInt64(1, remap.m_id)) != BE_SQLITE_OK ||
+            (rc = planStmt.BindText(2, remap.m_sourceTable, Statement::MakeCopy::No)) != BE_SQLITE_OK ||
+            (rc = planStmt.BindText(3, remap.m_sourceColumn, Statement::MakeCopy::No)) != BE_SQLITE_OK ||
+            (rc = planStmt.BindText(4, remap.m_destinationTable, Statement::MakeCopy::No)) != BE_SQLITE_OK ||
+            (rc = planStmt.BindText(5, remap.m_destinationColumn, Statement::MakeCopy::No)) != BE_SQLITE_OK ||
+            (rc = planStmt.BindText(6, remap.m_planClassIds, Statement::MakeCopy::No)) != BE_SQLITE_OK ||
+            (rc = planStmt.Step()) != BE_SQLITE_DONE)
+            {
+            error = ecdb.GetLastError();
+            planStmt.Finalize();
+            return cleanup(rc);
+            }
+        }
+    planStmt.Finalize();
+
+    if (isDryRun)
+        return cleanup(BE_SQLITE_OK);
+
+    constexpr Utf8CP tableName = "ecdbopt_shared_column_values";
+    rc = ecdb.TryExecuteSql("CREATE TEMP TABLE [ecdbopt_shared_column_values]("
+                            "MoveId INTEGER NOT NULL,InstanceId INTEGER NOT NULL,Value,"
+                            "PRIMARY KEY(MoveId,InstanceId)) WITHOUT ROWID");
+    if (rc != BE_SQLITE_OK)
+        {
+        error = ecdb.GetLastError();
+        return cleanup(rc);
+        }
+
+    for (ColumnRemap const& remap : remaps)
+        {
+        NativeSqlBuilder sql("INSERT INTO [temp].");
+        sql.AppendEscaped(tableName).Append("(MoveId,InstanceId,Value) SELECT ")
+            .Append(Utf8PrintfString("%" PRIu64, remap.m_id).c_str()).Append(",").AppendEscaped(remap.m_sourceIdColumn)
+            .Append(",").AppendEscaped(remap.m_sourceColumn).Append(" FROM [main].")
+            .AppendEscaped(remap.m_sourceTable).Append(" WHERE ").Append(remap.m_rowPredicate);
+        rc = ecdb.TryExecuteSql(sql.GetSql().c_str());
+        if (rc != BE_SQLITE_OK)
+            {
+            error = ecdb.GetLastError();
+            return cleanup(rc);
+            }
+        }
+
+    bset<Utf8String, CompareIUtf8Ascii> preparedOverflowClasses;
+    for (ColumnRemap const& remap : remaps)
+        {
+        Utf8String overflowClassKey = Utf8PrintfString("%s:%s", remap.m_destinationTable.c_str(), remap.m_planClassIds.c_str());
+        if (remap.m_destinationParentTable.empty() ||
+            !preparedOverflowClasses.insert(overflowClassKey).second)
+            continue;
+        if (remap.m_destinationClassIdColumn.empty() || remap.m_destinationParentClassIdColumn.empty())
+            {
+            error.Sprintf("Missing ECClassId column while preparing overflow table '%s'.", remap.m_destinationTable.c_str());
+            return cleanup(BE_SQLITE_ERROR);
+            }
+
+        NativeSqlBuilder sql("INSERT INTO [main].");
+        sql.AppendEscaped(remap.m_destinationTable).Append("(")
+            .AppendEscaped(remap.m_destinationIdColumn).Append(",")
+            .AppendEscaped(remap.m_destinationClassIdColumn)
+            .Append(") SELECT p.").AppendEscaped(remap.m_destinationParentIdColumn)
+            .Append(",p.").AppendEscaped(remap.m_destinationParentClassIdColumn);
+        sql.Append(" FROM [main].").AppendEscaped(remap.m_destinationParentTable)
+            .Append(" p LEFT JOIN [main].").AppendEscaped(remap.m_destinationTable)
+            .Append(" o ON o.").AppendEscaped(remap.m_destinationIdColumn)
+            .Append("=p.").AppendEscaped(remap.m_destinationParentIdColumn)
+            .Append(" WHERE o.").AppendEscaped(remap.m_destinationIdColumn)
+            .Append(" IS NULL AND ").Append(remap.m_destinationParentPredicate);
+        rc = ecdb.TryExecuteSql(sql.GetSql().c_str());
+        if (rc != BE_SQLITE_OK)
+            {
+            error = ecdb.GetLastError();
+            return cleanup(rc);
+            }
+        }
+
+    for (ColumnRemap const& remap : remaps)
+        {
+        NativeSqlBuilder missing("SELECT 1 FROM [temp].");
+        missing.AppendEscaped(tableName).Append(" v WHERE v.MoveId=")
+            .Append(Utf8PrintfString("%" PRIu64, remap.m_id).c_str())
+            .Append(" AND NOT EXISTS(SELECT 1 FROM [main].").AppendEscaped(remap.m_destinationTable)
+            .Append(" d WHERE d.").AppendEscaped(remap.m_destinationIdColumn)
+            .Append("=v.InstanceId) LIMIT 1");
+        Statement missingStmt;
+        if ((rc = missingStmt.Prepare(ecdb, missing.GetSql().c_str())) != BE_SQLITE_OK)
+            {
+            error = ecdb.GetLastError();
+            return cleanup(rc);
+            }
+        if ((rc = missingStmt.Step()) == BE_SQLITE_ROW)
+            {
+            error.Sprintf("Missing destination row in table '%s' while remapping shared column data.", remap.m_destinationTable.c_str());
+            missingStmt.Finalize();
+            return cleanup(BE_SQLITE_ERROR);
+            }
+        if (rc != BE_SQLITE_DONE)
+            {
+            error = ecdb.GetLastError();
+            missingStmt.Finalize();
+            return cleanup(rc);
+            }
+        missingStmt.Finalize();
+
+        NativeSqlBuilder sql("UPDATE [main].");
+        sql.AppendEscaped(remap.m_destinationTable).Append(" AS d SET ")
+            .AppendEscaped(remap.m_destinationColumn).Append("=(SELECT v.Value FROM [temp].")
+            .AppendEscaped(tableName).Append(" v WHERE v.MoveId=")
+            .Append(Utf8PrintfString("%" PRIu64, remap.m_id).c_str())
+            .Append(" AND v.InstanceId=d.").AppendEscaped(remap.m_destinationIdColumn)
+            .Append(") WHERE d.").AppendEscaped(remap.m_destinationIdColumn)
+            .Append(" IN (SELECT InstanceId FROM [temp].").AppendEscaped(tableName)
+            .Append(" WHERE MoveId=").Append(Utf8PrintfString("%" PRIu64, remap.m_id).c_str()).Append(")");
+        rc = ecdb.TryExecuteSql(sql.GetSql().c_str());
+        if (rc != BE_SQLITE_OK)
+            {
+            error = ecdb.GetLastError();
+            return cleanup(rc);
+            }
+        }
+
+    for (ColumnRemap const& remap : remaps)
+        {
+        if (!remap.m_clearSource)
+            continue;
+
+        NativeSqlBuilder sql("UPDATE [main].");
+        sql.AppendEscaped(remap.m_sourceTable).Append(" SET ")
+            .AppendEscaped(remap.m_sourceColumn).Append("=NULL WHERE ")
+            .Append(remap.m_rowPredicate);
+        rc = ecdb.TryExecuteSql(sql.GetSql().c_str());
+        if (rc != BE_SQLITE_OK)
+            {
+            error = ecdb.GetLastError();
+            return cleanup(rc);
+            }
+        }
+
+    return cleanup(BE_SQLITE_OK);
+    }
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

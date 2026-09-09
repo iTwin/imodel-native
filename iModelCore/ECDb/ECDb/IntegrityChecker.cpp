@@ -60,6 +60,7 @@ DbResult IntegrityChecker::GetRootLinkTableRelationships (std::vector<ECClassId>
 		m_lastError = m_conn.GetLastError();
 		return rc;
 	}
+
 	while((rc = stmt.Step()) == BE_SQLITE_ROW) {
         rootRels.push_back(stmt.GetValueId<ECClassId>(0));
     }
@@ -69,6 +70,225 @@ DbResult IntegrityChecker::GetRootLinkTableRelationships (std::vector<ECClassId>
 	}
 	return BE_SQLITE_OK;
 }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult IntegrityChecker::PurgeOrphanRelationships(uint64_t& count, bool isDryRun, ECCrudWriteToken const* token, bool purgeInvalidEndpointClassIds)
+    {
+    count = 0;
+    std::vector<ECClassId> rootRels;
+    if (const auto rc = GetRootLinkTableRelationships(rootRels); rc != BE_SQLITE_OK)
+        return rc;
+
+    for (ECClassId relId : rootRels)
+        {
+        ECClassCP classCP = m_conn.Schemas().GetClass(relId);
+        if (classCP == nullptr || !classCP->IsRelationshipClass())
+            {
+            m_lastError.Sprintf("Failed to find relationship class with id '%s'.", relId.ToHexStr().c_str());
+            return BE_SQLITE_ERROR;
+            }
+
+        ECRelationshipClassCP relCP = classCP->GetRelationshipClassCP();
+        if (relCP->GetSource().GetConstraintClasses().empty() || relCP->GetTarget().GetConstraintClasses().empty())
+            {
+            m_lastError.Sprintf("Relationship class '%s' has an empty constraint.", relCP->GetFullName());
+            return BE_SQLITE_ERROR;
+            }
+
+        auto buildEndpointExists = [](ECRelationshipConstraintCR constraint, Utf8CP alias, Utf8CP idExpression)
+            {
+            Utf8String exists("(");
+            if (ECClassCP abstractConstraint = constraint.GetAbstractConstraint())
+                exists.append(SqlPrintfString("EXISTS (SELECT 1 FROM %s %s WHERE %s.ECInstanceId=%s)",
+                    abstractConstraint->GetECSqlName().c_str(), alias, alias, idExpression));
+            else
+                {
+                bool isFirst = true;
+                for (ECClassCP constraintClass : constraint.GetConstraintClasses())
+                    {
+                    if (!isFirst)
+                        exists.append(" OR ");
+                    exists.append(SqlPrintfString("EXISTS (SELECT 1 FROM %s %s WHERE %s.ECInstanceId=%s)",
+                        constraintClass->GetECSqlName().c_str(), alias, alias, idExpression));
+                    isFirst = false;
+                    }
+                }
+            return exists.append(")");
+            };
+        Utf8CP relName = relCP->GetECSqlName().c_str();
+        Utf8String sourceExists = buildEndpointExists(relCP->GetSource(), "s", "r.SourceECInstanceId");
+        Utf8String targetExists = buildEndpointExists(relCP->GetTarget(), "t", "r.TargetECInstanceId");
+        Utf8String predicate = SqlPrintfString(
+            "NOT %s OR NOT %s", sourceExists.c_str(), targetExists.c_str());
+        if (purgeInvalidEndpointClassIds)
+            predicate.append(
+                " OR r.SourceECClassId NOT IN (SELECT ECInstanceId FROM meta.ECClassDef) "
+                "OR r.TargetECClassId NOT IN (SELECT ECInstanceId FROM meta.ECClassDef)");
+
+        ECSqlStatement stmt;
+        if (isDryRun)
+            {
+            Utf8String ecsql = SqlPrintfString("SELECT COUNT(*) FROM %s r WHERE %s", relName, predicate.c_str());
+            if (stmt.Prepare(m_conn, ecsql.c_str()) != ECSqlStatus::Success)
+                {
+                m_lastError = "Failed to prepare orphan relationship count.";
+                return BE_SQLITE_ERROR;
+                }
+            if (const auto rc = stmt.Step(); rc != BE_SQLITE_ROW)
+                {
+                m_lastError = m_conn.GetLastError();
+                return rc;
+                }
+            count += stmt.GetValueUInt64(0);
+            continue;
+            }
+
+        Utf8String ecsql = SqlPrintfString(
+            "DELETE FROM %s WHERE ECInstanceId IN (SELECT r.ECInstanceId FROM %s r WHERE %s)",
+            relName, relName, predicate.c_str());
+        if (stmt.Prepare(m_conn, ecsql.c_str(), token) != ECSqlStatus::Success)
+            {
+            m_lastError = "Failed to prepare orphan relationship purge.";
+            return BE_SQLITE_ERROR;
+            }
+        if (const auto rc = stmt.Step(); rc != BE_SQLITE_DONE)
+            {
+            m_lastError = m_conn.GetLastError();
+            return rc;
+            }
+        count += static_cast<uint64_t>(m_conn.GetModifiedRowCount());
+        }
+
+    return BE_SQLITE_OK;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult IntegrityChecker::RepairNavIds(uint64_t& count, bool isDryRun, ECCrudWriteToken const* token)
+    {
+    count = 0;
+    std::map<ECClassId, std::vector<std::string>> navProps;
+    if (const auto rc = GetNavigationProperties(navProps); rc != BE_SQLITE_OK)
+        return rc;
+
+    for (auto const& [classId, propertyNames] : navProps)
+        {
+        ECClassCP classCP = m_conn.Schemas().GetClass(classId);
+        if (classCP == nullptr)
+            {
+            m_lastError.Sprintf("Failed to find class with id '%s'.", classId.ToHexStr().c_str());
+            return BE_SQLITE_ERROR;
+            }
+
+        for (std::string const& propertyName : propertyNames)
+            {
+            ECPropertyCP property = classCP->GetPropertyP(propertyName.c_str(), false);
+            NavigationECPropertyCP navProp = property == nullptr ? nullptr : property->GetAsNavigationProperty();
+            if (navProp == nullptr)
+                {
+                m_lastError.Sprintf("Failed to find navigation property '%s.%s'.", classCP->GetFullName(), propertyName.c_str());
+                return BE_SQLITE_ERROR;
+                }
+            ClassMap const* classMap = m_conn.Schemas().Main().GetClassMap(*classCP);
+            PropertyMap const* propertyMap = classMap == nullptr ? nullptr : classMap->GetPropertyMaps().Find(propertyName.c_str());
+            if (propertyMap == nullptr || !propertyMap->Is<NavigationPropertyMap>())
+                {
+                m_lastError.Sprintf("Failed to find navigation property map '%s.%s'.", classCP->GetFullName(), propertyName.c_str());
+                return BE_SQLITE_ERROR;
+                }
+            const bool hasPhysicalRelClassId =
+                !propertyMap->GetAs<NavigationPropertyMap>().GetRelECClassIdPropertyMap().GetColumn().IsVirtual();
+
+            ECRelationshipConstraintCR otherConstraint = navProp->GetDirection() == ECRelatedInstanceDirection::Backward
+                ? navProp->GetRelationshipClass()->GetSource()
+                : navProp->GetRelationshipClass()->GetTarget();
+            if (otherConstraint.GetConstraintClasses().empty())
+                {
+                m_lastError.Sprintf("Navigation property '%s.%s' has an empty target constraint.", classCP->GetFullName(), propertyName.c_str());
+                return BE_SQLITE_ERROR;
+                }
+            ECClassCP otherClass = otherConstraint.GetAbstractConstraint();
+            if (otherClass == nullptr)
+                otherClass = otherConstraint.GetConstraintClasses().front();
+
+            Utf8String targetExists("(");
+            if (otherConstraint.GetAbstractConstraint() != nullptr)
+                targetExists.append(SqlPrintfString("EXISTS (SELECT 1 FROM %s n WHERE n.ECInstanceId=%s.Id)",
+                    otherClass->GetECSqlName().c_str(), navProp->GetName().c_str()));
+            else
+                {
+                bool isFirst = true;
+                for (ECClassCP constraintClass : otherConstraint.GetConstraintClasses())
+                    {
+                    if (!isFirst)
+                        targetExists.append(" OR ");
+                    targetExists.append(SqlPrintfString("EXISTS (SELECT 1 FROM %s n WHERE n.ECInstanceId=%s.Id)",
+                        constraintClass->GetECSqlName().c_str(), navProp->GetName().c_str()));
+                    isFirst = false;
+                    }
+                }
+            targetExists.append(")");
+
+            Utf8String predicate = SqlPrintfString(
+                "%s.Id IS NOT NULL AND ("
+                "NOT %s OR "
+                "(%s.RelECClassId IS NOT NULL AND %s.RelECClassId NOT IN (SELECT ECInstanceId FROM meta.ECClassDef)))",
+                navProp->GetName().c_str(),
+                targetExists.c_str(),
+                navProp->GetName().c_str(), navProp->GetName().c_str());
+            // Root iModel exception: the root model (ECInstanceId==1) legitimately references the root
+            // Subject through its ModeledElement navigation. Identify this case by stable schema identity
+            // (a BisCore:Model whose ModeledElement navigation is backed by BisCore:ModelModelsElement)
+            // rather than the resolved fallback constraint class name, which can vary by mapping.
+            if (navProp->GetName().EqualsIAscii("ModeledElement") &&
+                classCP->Is("BisCore", "Model") &&
+                navProp->GetRelationshipClass() != nullptr &&
+                navProp->GetRelationshipClass()->Is("BisCore", "ModelModelsElement"))
+                predicate.append(" AND ECInstanceId<>1");
+
+            ECSqlStatement stmt;
+            if (isDryRun)
+                {
+                Utf8String ecsql = SqlPrintfString("SELECT COUNT(*) FROM %s WHERE %s", classCP->GetECSqlName().c_str(), predicate.c_str());
+                if (stmt.Prepare(m_conn, ecsql.c_str()) != ECSqlStatus::Success)
+                    {
+                    m_lastError = "Failed to prepare orphan navigation property count.";
+                    return BE_SQLITE_ERROR;
+                    }
+                if (const auto rc = stmt.Step(); rc != BE_SQLITE_ROW)
+                    {
+                    m_lastError = m_conn.GetLastError();
+                    return rc;
+                    }
+                count += stmt.GetValueUInt64(0);
+                continue;
+                }
+
+            Utf8String assignments = SqlPrintfString("%s.Id=NULL", navProp->GetName().c_str());
+            if (hasPhysicalRelClassId)
+                assignments.append(SqlPrintfString(",%s.RelECClassId=NULL", navProp->GetName().c_str()));
+            Utf8String ecsql = SqlPrintfString(
+                "UPDATE %s SET %s WHERE %s",
+                classCP->GetECSqlName().c_str(), assignments.c_str(), predicate.c_str());
+            if (stmt.Prepare(m_conn, ecsql.c_str(), token) != ECSqlStatus::Success)
+                {
+                m_lastError = "Failed to prepare orphan navigation property repair.";
+                return BE_SQLITE_ERROR;
+                }
+            if (const auto rc = stmt.Step(); rc != BE_SQLITE_DONE)
+                {
+                m_lastError = m_conn.GetLastError();
+                return rc;
+                }
+            count += static_cast<uint64_t>(m_conn.GetModifiedRowCount());
+            }
+        }
+
+    return BE_SQLITE_OK;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------

@@ -138,6 +138,7 @@ struct ClassMapColumnFactory final
     public:
         explicit ClassMapColumnFactory(ClassMap const&);
         ~ClassMapColumnFactory() {};
+        static bool AreSharedColumnsCompatible(DbColumn const& source, DbColumn const& destination);
         bool UsesSharedColumnStrategy() const { return m_useSharedColumnStrategy; }
         bool IsColumnInUse(DbColumn const& column) const;
         bool MarkNavPropertyMapColumnUsed(NavigationPropertyMap const& map) const

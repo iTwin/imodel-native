@@ -239,7 +239,7 @@ struct SchemaWriter final
         static BentleyStatus UpdateFormatCompositeUnitLabel(Context&, ECN::FormatId, ECN::StringChange& unitLabelChange, int ordinal);
 
         static BentleyStatus UpdateProperties(Context&, ECN::PropertyChanges&, ECN::ECClassCR oldClass, ECN::ECClassCR newClass);
-        static BentleyStatus DeleteClass(Context&, ECN::ClassChange&, ECN::ECClassCR, bool);
+        static BentleyStatus DeleteClass(Context&, ECN::ClassChange&, ECN::ECClassCR, bool, bset<ECN::ECClassId> const* classesBeingDeleted = nullptr);
         static BentleyStatus DeleteProperty(Context&, ECN::PropertyChange&, ECN::ECPropertyCR, ECN::ECPropertyCP, bool);
         static BentleyStatus DeleteCustomAttributes(Context&, ECContainerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType);
         static BentleyStatus DeleteInstances(Context&, ECN::ECClassCR);
@@ -262,6 +262,8 @@ struct SchemaWriter final
     public:
         static SchemaImportResult ImportSchemas(bvector<ECN::ECSchemaCP>& schemasToMap, SchemaImportContext&, bvector<ECN::ECSchemaCP> const& primarySchemasOrderedByDependencies);
         static DropSchemaResult DropSchemas(bvector<Utf8String> schemaNames, SchemaImportContext& schemaImportCtx, bool logIssue);
+        static BentleyStatus DeleteClassForOptimizer(Context&, ECN::ECClassCR, bset<ECN::ECClassId> const&);
+        static BentleyStatus DeletePropertyForOptimizer(Context&, ECN::ECPropertyCR);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

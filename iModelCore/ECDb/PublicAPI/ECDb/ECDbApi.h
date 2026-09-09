@@ -21,4 +21,5 @@
 #include <ECDb/InstanceWriter.h>
 #include <ECDb/InstanceRepository.h>
 #include <ECDb/ChangesetReader.h>
+#include <ECDb/Optimizer.h>
 #include <ECDb/ECDbVirtualTab.h>

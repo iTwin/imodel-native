@@ -1185,6 +1185,152 @@ DropSchemaResult MainSchemaManager::DropSchemas(bvector<Utf8String> schemaNames,
     return DropSchemaResult::Success;
     }
 
+namespace
+{
+BentleyStatus FinishOptimizerSchemaCleanup(MainSchemaManager const& manager, SchemaImportContext& ctx)
+    {
+    ECDbCR ecdb = manager.GetECDb();
+    if (SUCCESS != ViewGenerator::DropECClassViews(ecdb) ||
+        SUCCESS != manager.CreateOrUpdateIndexesInDb(ctx) ||
+        SUCCESS != manager.PurgeOrphanTables(ctx))
+        {
+        ecdb.ClearECDbCache();
+        return ERROR;
+        }
+
+    ecdb.ClearECDbCache();
+    if (SUCCESS != DbMapValidator(ctx).Validate())
+        {
+        ecdb.ClearECDbCache();
+        return ERROR;
+        }
+
+    ecdb.ClearECDbCache();
+    return SUCCESS;
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+bool MainSchemaManager::IsProtectedFromOptimizer(ECSchemaCR schema)
+    {
+    if (schema.GetName().EqualsIAscii("BisCore") || schema.IsSystemSchema() || schema.IsStandardSchema())
+        return true;
+
+    // ECDb-owned schemas (virtual and persisted) are authoritative and must never be optimized away.
+    for (Utf8CP ecdbSchemaName : ProfileManager::GetECDbSchemaNames())
+        {
+        if (schema.GetName().EqualsIAscii(ecdbSchemaName))
+            return true;
+        }
+    return false;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus MainSchemaManager::DeleteClassesForOptimizer(bvector<ECClassId> const& classIds, uint64_t& changed, SchemaImportToken const* token) const
+    {
+    changed = 0;
+    if (classIds.empty())
+        return SUCCESS;
+    if (!PolicyManager::GetPolicy(SchemaImportPermissionPolicyAssertion(m_ecdb, token)).IsSupported())
+        return ERROR;
+
+    BeMutexHolder lock(m_mutex);
+    SchemaImportContext importCtx(m_ecdb, SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas);
+    OnBeforeSchemaChanges().RaiseEvent(m_ecdb, SchemaChangeType::SchemaImport);
+    auto finish = [&](BentleyStatus status)
+        {
+        OnAfterSchemaChanges().RaiseEvent(m_ecdb, SchemaChangeType::SchemaImport);
+        return status;
+        };
+
+    bset<ECClassId> classesBeingDeleted(classIds.begin(), classIds.end());
+    bvector<ECClassCP> classes;
+    classes.reserve(classIds.size());
+    for (ECClassId classId : classIds)
+        {
+        ECClassCP ecClass = GetClass(classId);
+        if (ecClass == nullptr || !ecClass->GetSchema().IsDynamicSchema() || MainSchemaManager::IsProtectedFromOptimizer(ecClass->GetSchema()))
+            return finish(ERROR);
+        classes.push_back(ecClass);
+        }
+
+    BentleyStatus status = SUCCESS;
+    {
+        SchemaWriter::Context writerCtx(importCtx);
+        for (ECClassCP ecClass : classes)
+            {
+            if (SUCCESS != SchemaWriter::DeleteClassForOptimizer(writerCtx, *ecClass, classesBeingDeleted))
+                {
+                status = ERROR;
+                break;
+                }
+            ++changed;
+            }
+    }
+
+    if (status == SUCCESS)
+        status = FinishOptimizerSchemaCleanup(*this, importCtx);
+    else if (changed != 0)
+        m_ecdb.ClearECDbCache();
+
+    return finish(status);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus MainSchemaManager::DeletePropertiesForOptimizer(bvector<ECPropertyCP> const& properties, uint64_t& changed, SchemaImportToken const* token) const
+    {
+    changed = 0;
+    if (properties.empty())
+        return SUCCESS;
+    if (!PolicyManager::GetPolicy(SchemaImportPermissionPolicyAssertion(m_ecdb, token)).IsSupported())
+        return ERROR;
+
+    BeMutexHolder lock(m_mutex);
+    SchemaImportContext importCtx(m_ecdb, SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas);
+    OnBeforeSchemaChanges().RaiseEvent(m_ecdb, SchemaChangeType::SchemaImport);
+    auto finish = [&](BentleyStatus status)
+        {
+        OnAfterSchemaChanges().RaiseEvent(m_ecdb, SchemaChangeType::SchemaImport);
+        return status;
+        };
+
+    BentleyStatus status = SUCCESS;
+    {
+        SchemaWriter::Context writerCtx(importCtx);
+        for (ECPropertyCP property : properties)
+            {
+            if (property == nullptr || !property->GetClass().GetSchema().IsDynamicSchema() ||
+                MainSchemaManager::IsProtectedFromOptimizer(property->GetClass().GetSchema()) ||
+                property != property->GetClass().GetPropertyP(property->GetName(), false))
+                {
+                status = ERROR;
+                break;
+                }
+
+            if (SUCCESS != SchemaWriter::DeletePropertyForOptimizer(writerCtx, *property))
+                {
+                status = ERROR;
+                break;
+                }
+            ++changed;
+            }
+    }
+
+    if (status == SUCCESS)
+        status = FinishOptimizerSchemaCleanup(*this, importCtx);
+    else if (changed != 0)
+        m_ecdb.ClearECDbCache();
+
+    return finish(status);
+    }
+
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------

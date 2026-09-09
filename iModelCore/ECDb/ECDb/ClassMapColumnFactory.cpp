@@ -199,6 +199,23 @@ ClassMapColumnFactory::ClassMapColumnFactory(ClassMap const& classMap) : m_class
 //------------------------------------------------------------------------------------------
 //@bsimethod
 //-----------------------------------------------------------------------------------------
+bool ClassMapColumnFactory::AreSharedColumnsCompatible(DbColumn const& source, DbColumn const& destination)
+    {
+    if (!source.IsShared() || !destination.IsShared() || !DbColumn::IsCompatible(source.GetType(), destination.GetType()))
+        return false;
+
+    DbColumn::Constraints const& sourceConstraints = source.GetConstraints();
+    DbColumn::Constraints const& destinationConstraints = destination.GetConstraints();
+    return sourceConstraints.HasNotNullConstraint() == destinationConstraints.HasNotNullConstraint() &&
+        sourceConstraints.HasUniqueConstraint() == destinationConstraints.HasUniqueConstraint() &&
+        sourceConstraints.GetCollation() == destinationConstraints.GetCollation() &&
+        sourceConstraints.GetCheckConstraint().EqualsI(destinationConstraints.GetCheckConstraint()) &&
+        sourceConstraints.GetDefaultValueConstraint().EqualsI(destinationConstraints.GetDefaultValueConstraint());
+    }
+
+//------------------------------------------------------------------------------------------
+//@bsimethod
+//-----------------------------------------------------------------------------------------
 //static
 uint32_t ClassMapColumnFactory::MaxColumnsRequiredToPersistProperty(ECN::ECPropertyCR ecProperty)
     {

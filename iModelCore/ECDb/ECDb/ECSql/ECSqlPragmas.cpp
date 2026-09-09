@@ -913,41 +913,13 @@ DbResult PragmaPurgeOrphanRelationships::Read(PragmaManager::RowSet& rowSet, ECD
 	rowSet = std::make_unique<StaticPragmaResult>(ecdb);
 	rowSet->FreezeSchemaChanges();
 
-	std::vector<ECClassId> rootRels;
-	if (const auto rc = IntegrityChecker(ecdb).GetRootLinkTableRelationships(rootRels); rc != BE_SQLITE_OK)
-		return rc;
-
-	for (const auto& relId : rootRels)
-		{
-		const auto classCP = ecdb.Schemas().GetClass(relId);
-		if (classCP == nullptr)
-			{
-			ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0730, "Failed to find class with id '%s'.", relId.ToHexStr().c_str());
-			return BE_SQLITE_ERROR;
-			}
-
-        const auto relCP = classCP->GetRelationshipClassCP();
-		const auto relName = relCP->GetECSqlName().c_str();
-		const auto sourceClassName = relCP->GetSource().GetConstraintClasses().front()->GetECSqlName().c_str();
-		const auto targetClassName = relCP->GetTarget().GetConstraintClasses().front()->GetECSqlName().c_str();
-
-		const auto ecSqlQuery = R"sql(
-			delete from %s where ECInstanceId in
-				(select r.ECInstanceId from %s r left join %s s on r.SourceECInstanceId = s.ECInstanceId where s.ECInstanceId is null
-					union
-				select r.ECInstanceId from %s r left join %s t on r.TargetECInstanceId = t.ECInstanceId where t.ECInstanceId is null)
-			)sql";
-
-		ECSqlStatement stmt;
-		if (ECSqlStatus::Success != stmt.Prepare(ecdb, SqlPrintfString(ecSqlQuery, relName, relName, sourceClassName, relName, targetClassName).GetUtf8CP()))
-			{
-			ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0731, "failed to prepared ecsql for nav prop integrity check");
-			return BE_SQLITE_ERROR;
-			}
-		if (stmt.Step() == BE_SQLITE_ERROR)
-			return BE_SQLITE_ERROR;
-		}
-	return BE_SQLITE_OK;
+	uint64_t count = 0;
+	IntegrityChecker checker(ecdb);
+	const auto rc = checker.PurgeOrphanRelationships(count, false);
+	if (rc != BE_SQLITE_OK)
+		ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0731,
+			"Failed to purge orphan relationships. %s", checker.GetLastError().c_str());
+	return rc;
 	}
 
 //---------------------------------------------------------------------------------------
@@ -1234,4 +1206,3 @@ DbResult PragmaSchemaViewFragment::Write(PragmaManager::RowSet& rowSet, ECDbCR e
 
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
-

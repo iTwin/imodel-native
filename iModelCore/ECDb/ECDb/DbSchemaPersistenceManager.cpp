@@ -305,6 +305,28 @@ BentleyStatus DbSchemaPersistenceManager::AlterTable(ECDbCR ecdb, DbTable const&
 // @bsimethod
 //---------------------------------------------------------------------------------------
 //static
+BentleyStatus DbSchemaPersistenceManager::DropColumns(ECDbCR ecdb, DbTable const& table, std::vector<Utf8String> const& columns)
+    {
+    // Isolated strict drop for the Optimizer: fail fast on the first error rather than best-effort.
+    for (auto const& colName : columns)
+        {
+        Utf8String dropDdl;
+        dropDdl.Sprintf("ALTER TABLE [%s] DROP COLUMN [%s]", table.GetName().c_str(), colName.c_str());
+        if (BE_SQLITE_OK != ecdb.GetImpl().ExecuteDDL(dropDdl.c_str()))
+            {
+            ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0228,
+                "Failed to drop column %s from table %s. Error message: %s", colName.c_str(), table.GetName().c_str(), ecdb.GetLastError().c_str());
+            return ERROR;
+            }
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+//static
 bool DbSchemaPersistenceManager::IsTableChanged(ECDbCR ecdb, DbTable const& table)
     {
     bvector<Utf8String> namesOfExistingColumns;

@@ -169,6 +169,31 @@ private:
 public:
     BentleyStatus UpgradeExistingECInstancesWithRemappedProperties(SchemaImportContext& ctx);
 
+    struct ColumnRemap final
+        {
+        uint64_t m_id = 0;
+        Utf8String m_sourceTable;
+        Utf8String m_sourceIdColumn;
+        Utf8String m_sourceColumn;
+        Utf8String m_destinationTable;
+        Utf8String m_destinationIdColumn;
+        Utf8String m_destinationColumn;
+        Utf8String m_destinationParentTable;
+        Utf8String m_destinationParentIdColumn;
+        Utf8String m_destinationClassIdColumn;
+        Utf8String m_destinationParentClassIdColumn;
+        Utf8String m_rowPredicate;
+        Utf8String m_destinationParentPredicate;
+        Utf8String m_planClassIds;
+        bset<ECN::ECClassId> m_rowClassIds;
+        DbColumnId m_sourceColumnId;
+        bool m_clearSource = false;
+        };
+
+    // Stages all source values before applying any update, so cycles spanning linked
+    // primary/joined and overflow tables cannot overwrite values still needed by a move.
+    static DbResult ApplyColumnRemaps(ECDbR, bvector<ColumnRemap> const&, bool isDryRun, Utf8StringR error);
+
     // Returns a full column identifier in the format "<tablename>:<columnname>"
     static Utf8String GetFullColumnIdentifier(Utf8StringCR tableName, Utf8StringCR columnName)
         {

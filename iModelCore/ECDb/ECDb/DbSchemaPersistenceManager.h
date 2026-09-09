@@ -76,6 +76,10 @@ public:
     static BentleyStatus RunPragmaTableInfo(std::vector<SqliteColumnInfo>& colInfos, ECDbCR, Utf8StringCR tableName, Utf8CP tableSpace = nullptr);
 
     static BentleyStatus CreateIndex(ECDbCR, DbIndex const&, Utf8StringCR ddl);
+    //! Strict, isolated column-drop path used by the Optimizer only. Unlike AlterTable's best-effort
+    //! import path, this fails fast on the first DROP COLUMN error so a failed optimization does not
+    //! silently leave stale physical columns. Kept separate so schema-import semantics are unaffected.
+    static BentleyStatus DropColumns(ECDbCR ecdb, DbTable const& table, std::vector<Utf8String> const& columns);
 
     static BentleyStatus BuildCreateIndexDdl(Utf8StringR ddl, Utf8StringR comparableIndexDef, ECDbCR, DbIndex const&);
 

@@ -93,6 +93,8 @@ public:
 	// Callback(check-name, status)
     DbResult QuickCheck(Checks, std::function<void(Utf8CP, bool, BeDuration)>);
     DbResult GetRootLinkTableRelationships(std::vector<ECClassId>&);
+    DbResult PurgeOrphanRelationships(uint64_t& count, bool isDryRun, ECCrudWriteToken const* = nullptr, bool purgeInvalidEndpointClassIds = false);
+    DbResult RepairNavIds(uint64_t& count, bool isDryRun, ECCrudWriteToken const* = nullptr);
 	// Callback(derivedClassId, derivedClassName, baseClassId, baseClassName, propertyName, baseColumn, divergedColumn)
 	DbResult CheckDivergedPropMaps(std::function<bool(ECN::ECClassId, Utf8CP, ECN::ECClassId, Utf8CP, Utf8CP, Utf8CP, Utf8CP)>);
 };
