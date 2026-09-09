@@ -73,7 +73,9 @@ $(o)JsCloudSqlite$(oext) : $(baseDir)JsCloudSqlite.cpp ${MultiCompileDepends}
 
 $(o)TestUtils$(oext) : $(baseDir)TestUtils.cpp ${MultiCompileDepends}
 
-$(o)JsInterop$(oext) : $(baseDir)JsInterop.cpp $(baseDir)IModelJsNative.h $(baseDir)CsvRowsReader.h ${MultiCompileDepends}
+$(o)JsInterop$(oext) : $(baseDir)JsInterop.cpp $(baseDir)IModelJsNative.h $(baseDir)CsvImporter.h ${MultiCompileDepends}
+
+$(o)CsvImporter$(oext) : $(baseDir)CsvImporter.cpp $(baseDir)CsvImporter.h $(baseDir)CsvRowsReader.h ${MultiCompileDepends}
 
 $(o)JsInteropDgnDb$(oext) : $(baseDir)JsInteropDgnDb.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends}
 

@@ -429,6 +429,7 @@ private:
 
 
         ECInstanceKeyHelper m_ecInstanceKeyHelper;
+        // Non-owning: the primary table statement's parameter map owns this binder.
         ECSqlBinder* m_generatedIdBinder = nullptr;
 
         ECSqlStatus _Prepare(ECSqlPrepareContext&, Exp const&) override;

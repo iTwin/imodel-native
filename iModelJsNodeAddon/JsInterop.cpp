@@ -6,8 +6,7 @@
 #include <windows.h>
 #endif
 #include "IModelJsNative.h"
-#include "CsvRowsReader.h"
-#include <v8serial/reader.hpp>
+#include "CsvImporter.h"
 #include <Bentley/Base64Utilities.h>
 #include <Bentley/Desktop/FileSystem.h>
 #include <GeomSerialization/GeomSerializationApi.h>
@@ -18,11 +17,8 @@
 #endif
 #include <DgnPlatform/EntityIdsChangeGroup.h>
 #include <algorithm>
-#include <cerrno>
-#include <charconv>
 #include <chrono>
 #include <cmath>
-#include <cstdlib>
 #include <limits>
 #include <string>
 #include <tuple>
@@ -1050,171 +1046,14 @@ Napi::Value JsInterop::DeleteInstance(ECDbR db, NapiInfoCR info) {
 }
 
 namespace {
-// Support code shared by ImportCSVData (V8-serialized rows from JS) and ImportCSVFile (rows streamed
-// from disk). Both build one prepared INSERT statement from a column-index-to-property-name mapping
-// and bind each mapped column's decoded text into it, row by row, inside a single savepoint.
-struct CsvImportBinding {
-    ECPropertyCP m_property;
-    IECSqlBinder* m_binder;
-    PrimitiveType m_primitiveType = PRIMITIVETYPE_Binary;
-    bool m_isPrimitive = false;
-};
-
-struct CsvImportPlan {
-    bvector<ECPropertyCP> m_properties;
-    bvector<Utf8String> m_accessStrings;
-};
-
-ECPropertyCP resolveCsvImportProperty(ECClassCR ecClass, Utf8StringCR accessString, Utf8StringR canonicalAccessString) {
-    ECClassCP currentClass = &ecClass;
-    ECPropertyCP property = nullptr;
-    size_t start = 0;
-    while (start < accessString.size()) {
-        const size_t end = accessString.find('.', start);
-        Utf8String segment = accessString.substr(start, end == Utf8String::npos ? Utf8String::npos : end - start);
-        if (segment.empty())
-            return nullptr;
-
-        property = currentClass->GetPropertyP(segment.c_str(), true);
-        if (nullptr == property)
-            return nullptr;
-
-        if (!canonicalAccessString.empty())
-            canonicalAccessString.append(".");
-        canonicalAccessString.append("[").append(property->GetName()).append("]");
-
-        if (end == Utf8String::npos)
-            return property;
-
-        const auto structProperty = property->GetAsStructProperty();
-        if (nullptr == structProperty)
-            return nullptr;
-
-        currentClass = &structProperty->GetType();
-        start = end + 1;
-    }
-
-    return nullptr;
-}
-
-bool createCsvImportPlan(CsvImportPlan& plan, Utf8StringR error, ECClassCR ecClass, BeJsConst propertyNames) {
-    if (0 == propertyNames.size()) {
-        error = "propertyNames must not be empty";
-        return false;
-    }
-
-    bset<Utf8String, CompareIUtf8Ascii> canonicalNames;
-    plan.m_properties.reserve(propertyNames.size());
-    plan.m_accessStrings.reserve(propertyNames.size());
-    for (BeJsConst::ArrayIndex i = 0; i < propertyNames.size(); ++i) {
-        const auto propertyName = propertyNames[i];
-        if (!propertyName.isString()) {
-            error = "propertyNames must contain only strings";
-            return false;
-        }
-
-        Utf8String canonicalName;
-        const auto property = resolveCsvImportProperty(ecClass, propertyName.asString(), canonicalName);
-        if (nullptr == property) {
-            error = "propertyNames contains an invalid or unsupported property path";
-            return false;
-        }
-        if (!canonicalNames.insert(canonicalName).second) {
-            error = "propertyNames must not contain duplicates";
-            return false;
-        }
-
-        plan.m_properties.push_back(property);
-        plan.m_accessStrings.push_back(std::move(canonicalName));
-    }
-    return true;
-}
-
-bvector<CsvImportBinding> createCsvImportBindings(CsvImportPlan const& plan, ECSqlStatement& statement) {
-    bvector<CsvImportBinding> bindings;
-    bindings.reserve(plan.m_properties.size());
-    for (size_t i = 0; i < plan.m_properties.size(); ++i) {
-        const auto primitiveProperty = plan.m_properties[i]->GetAsPrimitiveProperty();
-        bindings.push_back({
-            plan.m_properties[i],
-            &statement.GetBinder(static_cast<int>(i + 1)),
-            nullptr == primitiveProperty ? PRIMITIVETYPE_Binary : primitiveProperty->GetType(),
-            nullptr != primitiveProperty,
-        });
-    }
-    return bindings;
-}
-
-bool decodeSerializedCSVValue(Utf8StringR decoded, v8serial::DecodedValue const& value) {
-    if (v8serial::DecodedType::String != value.type)
-        return false;
-    return SUCCESS == BeStringUtilities::Utf16ToUtf8(decoded, reinterpret_cast<Utf16CP>(value.string.data()), value.string.size());
-}
-
-ECSqlStatus bindCsvImportValue(CsvImportBinding const& binding, Utf8StringCR value, Utf8CP nullValue) {
-    if (nullptr != nullValue && value.Equals(nullValue))
-        return binding.m_binder->BindNull();
-    if (!binding.m_isPrimitive)
-        return ECSqlStatus::Error;
-
-    const auto begin = value.data();
-    const auto end = begin + value.size();
-    switch (binding.m_primitiveType) {
-        case PRIMITIVETYPE_Boolean:
-            if (value.Equals("true") || value.Equals("1"))
-                return binding.m_binder->BindBoolean(true);
-            if (value.Equals("false") || value.Equals("0"))
-                return binding.m_binder->BindBoolean(false);
-            return ECSqlStatus::Error;
-        case PRIMITIVETYPE_Double: {
-            if (value.empty())
-                return ECSqlStatus::Error;
-            char* parsedEnd = nullptr;
-            errno = 0;
-            const double parsed = std::strtod(begin, &parsedEnd);
-            return 0 == errno && end == parsedEnd && std::isfinite(parsed) ? binding.m_binder->BindDouble(parsed) : ECSqlStatus::Error;
-        }
-        case PRIMITIVETYPE_Integer: {
-            int32_t parsed = 0;
-            const auto result = std::from_chars(begin, end, parsed);
-            return std::errc() == result.ec && end == result.ptr ? binding.m_binder->BindInt(parsed) : ECSqlStatus::Error;
-        }
-        case PRIMITIVETYPE_String:
-            return binding.m_binder->BindText(value.c_str(), IECSqlBinder::MakeCopy::No, static_cast<int>(value.size()));
-        default:
-            return ECSqlStatus::Error;
-    }
-}
-
-ECSqlStatus bindSerializedCSVValue(CsvImportBinding const& binding, v8serial::DecodedValue const& value, Utf8StringR decoded, Utf8CP nullValue) {
-    if (!decodeSerializedCSVValue(decoded, value))
-        return ECSqlStatus::Error;
-    return bindCsvImportValue(binding, decoded, nullValue);
-}
-
-bool supportsCSVImportBinding(CsvImportBinding const& binding) {
-    if (!binding.m_isPrimitive)
-        return false;
-    switch (binding.m_primitiveType) {
-        case PRIMITIVETYPE_Boolean:
-        case PRIMITIVETYPE_Double:
-        case PRIMITIVETYPE_Integer:
-        case PRIMITIVETYPE_String:
-            return true;
-        default:
-            return false;
-    }
-}
-
-bool parseCSVImportMapping(Napi::Array const& mapping, Napi::Array& propertyNames, bvector<uint32_t>& columnIndexes, uint32_t& minimumColumnCount, Utf8StringR error) {
+bool parseCSVImportMapping(Napi::Array const& mapping, bvector<CsvImportMapping>& nativeMapping, Utf8StringR error) {
     if (0 == mapping.Length()) {
         error = "mapping must not be empty";
         return false;
     }
 
     bset<uint32_t> seenColumnIndexes;
-    columnIndexes.reserve(mapping.Length());
-    minimumColumnCount = 0;
+    nativeMapping.reserve(mapping.Length());
     for (uint32_t mappingIndex = 0; mappingIndex < mapping.Length(); ++mappingIndex) {
         const auto value = mapping.Get(mappingIndex);
         if (!value.IsObject()) {
@@ -1242,9 +1081,7 @@ bool parseCSVImportMapping(Napi::Array const& mapping, Napi::Array& propertyName
             return false;
         }
 
-        propertyNames.Set(mappingIndex, propertyName);
-        columnIndexes.push_back(columnIndex);
-        minimumColumnCount = std::max(minimumColumnCount, columnIndex + 1);
+        nativeMapping.push_back({columnIndex, propertyName.As<Napi::String>().Utf8Value()});
     }
     return true;
 }
@@ -1263,152 +1100,29 @@ Napi::Value JsInterop::ImportCSVData(ECDbR db, NapiInfoCR info) {
         THROW_JS_TYPE_EXCEPTION("serializedRows must be a Uint8Array")
     const auto bytes = serializedRows.As<Napi::Uint8Array>();
 
-    Utf8String nullValue;
-    Utf8CP nullValuePtr = nullptr;
+    CsvImportOptions nativeOptions;
     const auto nullValueOption = options.Get("nullValue");
     if (!nullValueOption.IsUndefined()) {
         if (!nullValueOption.IsString())
             THROW_JS_TYPE_EXCEPTION("options.nullValue must be a string")
-        nullValue = nullValueOption.As<Napi::String>().Utf8Value();
-        nullValuePtr = nullValue.c_str();
+        nativeOptions.m_nullValue = nullValueOption.As<Napi::String>().Utf8Value();
+        if (nativeOptions.m_nullValue->find('\0') != Utf8String::npos)
+            THROW_JS_TYPE_EXCEPTION("options.nullValue must not contain NUL")
     }
 
-    auto propertyNames = Napi::Array::New(info.Env(), mapping.Length());
-    bvector<uint32_t> csvColumnIndexes;
-    uint32_t minimumColumnCount = 0;
+    bvector<CsvImportMapping> nativeMapping;
     Utf8String mappingError;
-    if (!parseCSVImportMapping(mapping, propertyNames, csvColumnIndexes, minimumColumnCount, mappingError))
+    if (!parseCSVImportMapping(mapping, nativeMapping, mappingError))
         THROW_JS_TYPE_EXCEPTION(mappingError.c_str())
 
-    const auto ecClass = db.Schemas().FindClass(className.c_str());
-    if (nullptr == ecClass)
-        THROW_JS_TYPE_EXCEPTION("className does not identify an ECClass")
-
-    CsvImportPlan plan;
-    Utf8String planError;
-    if (!createCsvImportPlan(plan, planError, *ecClass, BeJsConst(propertyNames)))
-        THROW_JS_TYPE_EXCEPTION(planError.c_str())
-
-    Utf8String ecsql("INSERT INTO ");
-    ecsql.append(ecClass->GetECSqlName()).append(" (");
-    Utf8String valuesClause(") VALUES (");
-    for (size_t i = 0; i < plan.m_accessStrings.size(); ++i) {
-        if (i > 0) {
-            ecsql.append(",");
-            valuesClause.append(",");
-        }
-        ecsql.append(plan.m_accessStrings[i]);
-        valuesClause.append("?");
-    }
-    ecsql.append(valuesClause).append(")");
-
-    ECSqlStatement statement;
-    const auto prepareStatus = statement.Prepare(db, ecsql.c_str());
-    if (!prepareStatus.IsSuccess()) {
-        const auto rc = prepareStatus.IsSQLiteError() ? prepareStatus.GetSQLiteError() : BE_SQLITE_ERROR;
-        THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to prepare CSV data import ECSQL", rc)
-    }
-
-    auto bindings = createCsvImportBindings(plan, statement);
-    if (std::any_of(bindings.begin(), bindings.end(), [](CsvImportBinding const& binding) { return !supportsCSVImportBinding(binding); }))
-        THROW_JS_TYPE_EXCEPTION("CSV import supports only boolean, double, integer, and string properties")
-
-    v8serial::DecodedValue serializedRowsValue;
     try {
-        serializedRowsValue = v8serial::Reader(bytes.Data(), bytes.ByteLength()).read();
-    } catch (v8serial::DecodeError const& error) {
+        const auto rowCount = CsvImporter::ImportData(db, className, bytes.Data(), bytes.ByteLength(), nativeMapping, nativeOptions);
+        return Napi::Number::New(info.Env(), static_cast<double>(rowCount));
+    } catch (CsvImportError const& error) {
+        if (BE_SQLITE_OK != error.GetSQLiteError())
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), error.what(), error.GetSQLiteError())
         THROW_JS_TYPE_EXCEPTION(error.what())
     }
-
-    if (v8serial::DecodedType::Array != serializedRowsValue.type)
-        THROW_JS_TYPE_EXCEPTION("serialized root value must be an array")
-    if (serializedRowsValue.array.size() > std::numeric_limits<uint32_t>::max())
-        THROW_JS_TYPE_EXCEPTION("serialized row count exceeds uint32")
-
-    uint32_t expectedColumnCount = 0;
-    for (uint32_t rowIndex = 0; rowIndex < serializedRowsValue.array.size(); ++rowIndex) {
-        auto const& row = serializedRowsValue.array[rowIndex];
-        if (v8serial::DecodedType::Array != row.type)
-            THROW_JS_TYPE_EXCEPTION("serialized root array must contain only row arrays")
-        if (row.array.size() > std::numeric_limits<uint32_t>::max())
-            THROW_JS_TYPE_EXCEPTION("serialized column count exceeds uint32")
-
-        const uint32_t columnCount = static_cast<uint32_t>(row.array.size());
-        if (columnCount < minimumColumnCount || (0 != expectedColumnCount && columnCount != expectedColumnCount))
-            THROW_JS_TYPE_EXCEPTION("serialized row has an unexpected column count")
-        if (0 == expectedColumnCount)
-            expectedColumnCount = columnCount;
-    }
-
-    Savepoint savepoint(db, "importCSVData");
-    if (!savepoint.IsActive())
-        THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to start CSV data import savepoint", BE_SQLITE_ERROR)
-
-    bvector<Utf8String> stringBuffers(plan.m_properties.size());
-    bmap<uint32_t, uint32_t> propertyIndexesByColumn;
-    for (uint32_t propertyIndex = 0; propertyIndex < csvColumnIndexes.size(); ++propertyIndex)
-        propertyIndexesByColumn[csvColumnIndexes[propertyIndex]] = propertyIndex;
-
-    uint32_t failedRow = 0;
-    uint32_t failedColumn = 0;
-    ECSqlStatus bindStatus = ECSqlStatus::Success;
-    DbResult stepStatus = BE_SQLITE_DONE;
-    try {
-        for (uint32_t rowIndex = 0; rowIndex < serializedRowsValue.array.size(); ++rowIndex) {
-            auto const& row = serializedRowsValue.array[rowIndex];
-            const uint32_t columnCount = static_cast<uint32_t>(row.array.size());
-            statement.Reset();
-            for (uint32_t columnIndex = 0; columnIndex < columnCount; ++columnIndex) {
-                const auto propertyEntry = propertyIndexesByColumn.find(columnIndex);
-                if (propertyEntry == propertyIndexesByColumn.end())
-                    continue;
-
-                const uint32_t propertyIndex = propertyEntry->second;
-                bindStatus = bindSerializedCSVValue(bindings[propertyIndex], row.array[columnIndex], stringBuffers[propertyIndex], nullValuePtr);
-                if (!bindStatus.IsSuccess()) {
-                    failedRow = rowIndex;
-                    failedColumn = columnIndex;
-                    break;
-                }
-            }
-            if (!bindStatus.IsSuccess())
-                break;
-
-            stepStatus = statement.Step();
-            if (BE_SQLITE_DONE != stepStatus) {
-                failedRow = rowIndex;
-                break;
-            }
-        }
-    } catch (...) {
-        const auto rollbackStatus = savepoint.Cancel();
-        if (BE_SQLITE_OK != rollbackStatus)
-            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to roll back CSV data import", rollbackStatus)
-        throw;
-    }
-
-    if (!bindStatus.IsSuccess()) {
-        const auto rollbackStatus = savepoint.Cancel();
-        if (BE_SQLITE_OK != rollbackStatus)
-            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to roll back CSV data import", rollbackStatus)
-        THROW_JS_TYPE_EXCEPTION(Utf8PrintfString("Failed to bind CSV data row %" PRIu32 " column %" PRIu32, failedRow + 1, failedColumn).c_str())
-    }
-    if (BE_SQLITE_DONE != stepStatus) {
-        const auto rollbackStatus = savepoint.Cancel();
-        if (BE_SQLITE_OK != rollbackStatus)
-            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to roll back CSV data import", rollbackStatus)
-        THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), Utf8PrintfString("Failed to insert CSV data row %" PRIu32, failedRow + 1).c_str(), stepStatus)
-    }
-
-    const auto commitStatus = savepoint.Commit();
-    if (BE_SQLITE_OK != commitStatus) {
-        const auto rollbackStatus = savepoint.Cancel();
-        if (BE_SQLITE_OK != rollbackStatus)
-            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to commit or roll back CSV data import", rollbackStatus)
-        THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to commit CSV data import", commitStatus)
-    }
-
-    return Napi::Number::New(info.Env(), serializedRowsValue.array.size());
 }
 
 //---------------------------------------------------------------------------------------
@@ -1423,122 +1137,31 @@ Napi::Value JsInterop::ImportCSVFile(ECDbR db, NapiInfoCR info) {
     const auto hasHeaderValue = options.Get("hasHeader");
     if (!hasHeaderValue.IsUndefined() && !hasHeaderValue.IsBoolean())
         THROW_JS_TYPE_EXCEPTION("options.hasHeader must be a boolean")
-    const bool hasHeader = !hasHeaderValue.IsUndefined() && hasHeaderValue.As<Napi::Boolean>().Value();
+    CsvImportOptions nativeOptions;
+    nativeOptions.m_hasHeader = !hasHeaderValue.IsUndefined() && hasHeaderValue.As<Napi::Boolean>().Value();
 
-    Utf8String nullValue;
-    Utf8CP nullValuePtr = nullptr;
     const auto nullValueOption = options.Get("nullValue");
     if (!nullValueOption.IsUndefined()) {
         if (!nullValueOption.IsString())
             THROW_JS_TYPE_EXCEPTION("options.nullValue must be a string")
-        nullValue = nullValueOption.As<Napi::String>().Utf8Value();
-        nullValuePtr = nullValue.c_str();
+        nativeOptions.m_nullValue = nullValueOption.As<Napi::String>().Utf8Value();
+        if (nativeOptions.m_nullValue->find('\0') != Utf8String::npos)
+            THROW_JS_TYPE_EXCEPTION("options.nullValue must not contain NUL")
     }
 
-    auto propertyNames = Napi::Array::New(info.Env(), mapping.Length());
-    bvector<uint32_t> csvColumnIndexes;
-    uint32_t minimumColumnCount = 0;
+    bvector<CsvImportMapping> nativeMapping;
     Utf8String mappingError;
-    if (!parseCSVImportMapping(mapping, propertyNames, csvColumnIndexes, minimumColumnCount, mappingError))
+    if (!parseCSVImportMapping(mapping, nativeMapping, mappingError))
         THROW_JS_TYPE_EXCEPTION(mappingError.c_str())
 
-    const auto ecClass = db.Schemas().FindClass(className.c_str());
-    if (nullptr == ecClass)
-        THROW_JS_TYPE_EXCEPTION("className does not identify an ECClass")
-
-    CsvImportPlan plan;
-    Utf8String planError;
-    if (!createCsvImportPlan(plan, planError, *ecClass, BeJsConst(propertyNames)))
-        THROW_JS_TYPE_EXCEPTION(planError.c_str())
-
-    Utf8String ecsql("INSERT INTO ");
-    ecsql.append(ecClass->GetECSqlName()).append(" (");
-    Utf8String valuesClause(") VALUES (");
-    for (size_t i = 0; i < plan.m_accessStrings.size(); ++i) {
-        if (i > 0) {
-            ecsql.append(",");
-            valuesClause.append(",");
-        }
-        ecsql.append(plan.m_accessStrings[i]);
-        valuesClause.append("?");
-    }
-    ecsql.append(valuesClause).append(")");
-
-    ECSqlStatement statement;
-    const auto prepareStatus = statement.Prepare(db, ecsql.c_str());
-    if (!prepareStatus.IsSuccess()) {
-        const auto rc = prepareStatus.IsSQLiteError() ? prepareStatus.GetSQLiteError() : BE_SQLITE_ERROR;
-        THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to prepare CSV file import ECSQL", rc)
-    }
-
-    auto bindings = createCsvImportBindings(plan, statement);
-    if (std::any_of(bindings.begin(), bindings.end(), [](CsvImportBinding const& binding) { return !supportsCSVImportBinding(binding); }))
-        THROW_JS_TYPE_EXCEPTION("CSV import supports only boolean, double, integer, and string properties")
-
-    Savepoint savepoint(db, "importCSVFile");
-    if (!savepoint.IsActive())
-        THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to start CSV file import savepoint", BE_SQLITE_ERROR)
-
-    uint64_t failedRow = 0;
-    uint32_t failedColumn = 0;
-    ECSqlStatus bindStatus = ECSqlStatus::Success;
-    DbResult stepStatus = BE_SQLITE_DONE;
-    uint64_t rowCount = 0;
     try {
-        CsvRowsReader reader(csvFilePath);
-        rowCount = reader.Read(minimumColumnCount, hasHeader, [&](uint64_t recordIndex, CsvRowsReader::Row const& fields) {
-            statement.Reset();
-            for (uint32_t propertyIndex = 0; propertyIndex < bindings.size(); ++propertyIndex) {
-                const uint32_t csvColumnIndex = csvColumnIndexes[propertyIndex];
-                bindStatus = bindCsvImportValue(bindings[propertyIndex], fields[csvColumnIndex], nullValuePtr);
-                if (!bindStatus.IsSuccess()) {
-                    failedRow = recordIndex;
-                    failedColumn = csvColumnIndex;
-                    return false;
-                }
-            }
-
-            stepStatus = statement.Step();
-            if (BE_SQLITE_DONE != stepStatus) {
-                failedRow = recordIndex;
-                return false;
-            }
-            return true;
-        });
-    } catch (CsvRowsError const& error) {
-        const auto rollbackStatus = savepoint.Cancel();
-        if (BE_SQLITE_OK != rollbackStatus)
-            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to roll back CSV file import", rollbackStatus)
+        const auto rowCount = CsvImporter::ImportFile(db, className, csvFilePath, nativeMapping, nativeOptions);
+        return Napi::Number::New(info.Env(), static_cast<double>(rowCount));
+    } catch (CsvImportError const& error) {
+        if (BE_SQLITE_OK != error.GetSQLiteError())
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), error.what(), error.GetSQLiteError())
         THROW_JS_TYPE_EXCEPTION(error.what())
-    } catch (...) {
-        const auto rollbackStatus = savepoint.Cancel();
-        if (BE_SQLITE_OK != rollbackStatus)
-            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to roll back CSV file import", rollbackStatus)
-        throw;
     }
-
-    if (!bindStatus.IsSuccess()) {
-        const auto rollbackStatus = savepoint.Cancel();
-        if (BE_SQLITE_OK != rollbackStatus)
-            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to roll back CSV file import", rollbackStatus)
-        THROW_JS_TYPE_EXCEPTION(Utf8PrintfString("Failed to bind CSV record %" PRIu64 " column %" PRIu32, failedRow + 1, failedColumn).c_str())
-    }
-    if (BE_SQLITE_DONE != stepStatus) {
-        const auto rollbackStatus = savepoint.Cancel();
-        if (BE_SQLITE_OK != rollbackStatus)
-            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to roll back CSV file import", rollbackStatus)
-        THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), Utf8PrintfString("Failed to insert CSV record %" PRIu64, failedRow + 1).c_str(), stepStatus)
-    }
-
-    const auto commitStatus = savepoint.Commit();
-    if (BE_SQLITE_OK != commitStatus) {
-        const auto rollbackStatus = savepoint.Cancel();
-        if (BE_SQLITE_OK != rollbackStatus)
-            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to commit or roll back CSV file import", rollbackStatus)
-        THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to commit CSV file import", commitStatus)
-    }
-
-    return Napi::Number::New(info.Env(), static_cast<double>(rowCount));
 }
 
 //---------------------------------------------------------------------------------------

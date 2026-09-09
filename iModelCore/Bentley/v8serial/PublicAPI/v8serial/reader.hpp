@@ -151,6 +151,8 @@ class Reader {
   /// Decodes exactly one complete version-15 value.
   ///
   /// The result owns all decoded strings, containers, and binary bytes.
+  /// References to completed arrays of primitive scalar values are copied
+  /// into the value tree. Other reference targets and cycles are unsupported.
   ///
   /// @throws DecodeError for an invalid header, wrong version, malformed or
   /// unsupported value, exceeded limit, truncated input, or trailing bytes.
@@ -223,10 +225,17 @@ class Reader {
     bool sparse;
   };
 
+  struct ObjectReference {
+    const uint8_t* start;
+    bool complete;
+  };
+
   inline static const uint8_t empty_input_ = 0;
   const uint8_t* begin_;
   const uint8_t* current_;
   const uint8_t* end_;
+  std::vector<ObjectReference> references_;
+  bool replaying_reference_ = false;
 
   static const uint8_t* normalizeInput(const uint8_t* data, size_t size) {
     if (size != 0 && data == nullptr) {
@@ -667,6 +676,7 @@ class Reader {
 
     skipPadding();
     if (current_ != end_ && *current_ == 'V') {
+      if (!replaying_reference_) references_.push_back({nullptr, true});
       readTag();
       const ArrayBufferViewType view_type =
           readArrayBufferViewType(readVarint());
@@ -708,6 +718,26 @@ class Reader {
     return output;
   }
 
+  DecodedValue readObjectReference(size_t depth) {
+    const uint32_t id = readVarint();
+    if (id >= references_.size()) fail("invalid object reference ID");
+    const ObjectReference reference = references_[id];
+    if (!reference.complete) fail("cyclic object references are unsupported");
+    if (reference.start == nullptr) {
+      fail("only primitive scalar array references are supported");
+    }
+
+    // Replay immutable wire data instead of retaining a second owning value tree.
+    const uint8_t* resume = current_;
+    const bool was_replaying = replaying_reference_;
+    current_ = reference.start;
+    replaying_reference_ = true;
+    DecodedValue output = readValue(depth);
+    current_ = resume;
+    replaying_reference_ = was_replaying;
+    return output;
+  }
+
   DecodedValue readValue(size_t depth) {
     if (depth > kMaxNestingDepth) fail("maximum nesting depth exceeded");
 
@@ -744,6 +774,7 @@ class Reader {
         output.number = readDouble();
         return output;
       case 'D':
+        if (!replaying_reference_) references_.push_back({nullptr, true});
         output.type = DecodedType::Date;
         output.date_milliseconds = readDouble();
         return output;
@@ -760,14 +791,49 @@ class Reader {
         output.string = readTwoByteString();
         return output;
       case 'o':
-        return readObject(depth);
       case 'A':
-        return readDenseArray(depth);
-      case 'a':
-        return readSparseArray(depth);
+      case 'a': {
+        const size_t id = references_.size();
+        if (!replaying_reference_) {
+          references_.push_back({current_ - 1, false});
+        }
+        if (tag == 'o') {
+          output = readObject(depth);
+        } else if (tag == 'A') {
+          output = readDenseArray(depth);
+        } else {
+          output = readSparseArray(depth);
+        }
+        if (!replaying_reference_) {
+          ObjectReference& reference = references_[id];
+          reference.complete = true;
+          if (output.type != DecodedType::Array) reference.start = nullptr;
+          for (const DecodedValue& element : output.array) {
+            switch (element.type) {
+              case DecodedType::Undefined:
+              case DecodedType::Null:
+              case DecodedType::Boolean:
+              case DecodedType::Int32:
+              case DecodedType::Uint32:
+              case DecodedType::Double:
+              case DecodedType::String:
+                continue;
+              default:
+                reference.start = nullptr;
+                break;
+            }
+            break;
+          }
+        }
+        return output;
+      }
+      case '^':
+        return readObjectReference(depth);
       case 'B':
+        if (!replaying_reference_) references_.push_back({nullptr, true});
         return readArrayBuffer();
       case '\\':
+        if (!replaying_reference_) references_.push_back({nullptr, true});
         return readHostObject();
       default:
         fail("unsupported or invalid serialization tag");

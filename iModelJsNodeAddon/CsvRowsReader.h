@@ -41,18 +41,26 @@ public:
         bool afterQuote = false;
         bool fieldStarted = false;
         bool rowStarted = false;
+        if (0 == m_byteOffset) {
+            // Consume the signature before interpreting quotes, including across short reads.
+            constexpr std::array<uint8_t, 3> utf8Bom = {0xef, 0xbb, 0xbf};
+            for (auto byte : utf8Bom) {
+                if (!ensureData() || m_buffer[m_position] != byte)
+                    break;
+                fields[0].push_back(consumeByte());
+            }
+            if (fields[0].size() == utf8Bom.size())
+                fields[0].clear();
+            fieldStarted = !fields[0].empty();
+            rowStarted = fieldStarted;
+        }
+
         const auto finishRow = [&]() {
             const uint32_t columnCount = columnIndex + 1;
             if (columnCount < minimumColumnCount || (0 != expectedColumnCount && columnCount != expectedColumnCount))
                 fail(physicalRowIndex, "unexpected column count");
             if (0 == expectedColumnCount)
                 expectedColumnCount = columnCount;
-
-            if (0 == physicalRowIndex && fields[0].size() >= 3
-                && static_cast<uint8_t>(fields[0][0]) == 0xef
-                && static_cast<uint8_t>(fields[0][1]) == 0xbb
-                && static_cast<uint8_t>(fields[0][2]) == 0xbf)
-                fields[0].erase(0, 3);
 
             if (!(hasHeader && 0 == physicalRowIndex)) {
                 if (!consume(physicalRowIndex, fields))
