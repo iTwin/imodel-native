@@ -10551,6 +10551,7 @@ StatusInt VerticalDatumDictionary::Initialize(const WString& dictionaryPath, con
     if (!s_verticalDatumDictionary.IsValid())
         return ERROR;
 
+    s_verticalDatumDictionary->m_dictionaryPath = dictionaryPath;
     StatusInt status = s_verticalDatumDictionary->AddVerticalDatumsFromFile(dictionaryPath);
     s_verticalDatumDictionary->SetStatus(status);
 

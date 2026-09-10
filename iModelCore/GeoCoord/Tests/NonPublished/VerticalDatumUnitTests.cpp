@@ -168,10 +168,10 @@ TEST_F(VerticalDatumUnitTests, VerticalTransformGeoidGridFileFromWorkspaceTest)
 }
 
 /*---------------------------------------------------------------------------------**//**
-* Registering a workspace that contains the vertical dictionary should reload the
-* dictionary from that workspace without requiring a local JSON file.
+* Registering a workspace after initialization should retry loading a vertical
+* dictionary that was unavailable during initialization.
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(VerticalDatumUnitTests, VerticalDatumDictionaryFromWorkspaceTest)
+TEST_F(VerticalDatumUnitTests, VerticalDatumDictionaryFromLateWorkspaceTest)
 {
     Utf8String dictionaryJson = R"json({
         "version": 1,
@@ -210,9 +210,16 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumDictionaryFromWorkspaceTest)
     ASSERT_EQ(workspaceDb.SaveChanges(), BeSQLite::BE_SQLITE_OK);
     workspaceDb.CloseDb();
 
+    GeoCoordTestCommon::Shutdown();
     GeoCoordinates::BaseGCS::EnableLocalGcsFiles(false);
+    BeFileName dataDirectory = workspacePath.GetDirectoryName();
+    StatusInt initializeStatus = GeoCoordinates::BaseGCS::Initialize(dataDirectory.GetNameUtf8().c_str());
+    StatusInt initialDictionaryStatus = GeoCoordinates::VerticalDatumDictionary::Get()->GetStatus();
     bool added = GeoCoordinates::BaseGCS::AddWorkspaceDb(workspacePath.GetNameUtf8(), nullptr, 10001);
     GeoCoordinates::BaseGCS::EnableLocalGcsFiles(true);
+
+    EXPECT_EQ(initializeStatus, SUCCESS);
+    EXPECT_EQ(initialDictionaryStatus, GeoCoordinates::GeoCoordParse_MissingFile);
     ASSERT_TRUE(added);
 
     StatusInt status = ERROR;
