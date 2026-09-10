@@ -825,19 +825,25 @@ BentleyStatus DbMapValidator::ValidateClassMap(ClassMap const& classMap) const
             const int propCount = (int) classMap.GetClass().GetPropertyCount(true);
             if (dataPropertyMapCount != propCount)
                 {
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0160,
+                // Changeset apply loads classes beyond those changed by the changeset. Tolerate incomplete
+                // data maps in existing files while keeping schema import and the loaded maps' validation strict.
+                const bool tolerateMissingDataPropertyMaps = m_mode == DbMapValidationMode::ChangesetApply && dataPropertyMapCount < propCount;
+                Issues().ReportV(tolerateMissingDataPropertyMaps ? IssueSeverity::Warning : IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0160,
                     "The number of property maps for ECClass '%s' does not match the number of properties. Property maps: %d, properties: %d.", classMap.GetClass().GetFullName(), dataPropertyMapCount, propCount);
-                return ERROR;
-                }
-
-            // check all properties are mapped. We already know that the count of mapped and actual properties matches, so we only need to compare the names in one direction
-            for (auto& prop : classMap.GetClass().GetProperties(true))
-                {
-                if (mappedDataPropertyNames.find(prop->GetName()) == mappedDataPropertyNames.end())
-                    {
-                    Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0161,
-                        "Mismatch of mapped properties for ECClass '%s'. The count of mapped properties is correct, but property %s is not mapped.", classMap.GetClass().GetFullName(), prop->GetName().c_str());
+                if (!tolerateMissingDataPropertyMaps)
                     return ERROR;
+                }
+            else
+                {
+                // With matching counts, comparing names in one direction establishes that every property is mapped.
+                for (auto& prop : classMap.GetClass().GetProperties(true))
+                    {
+                    if (mappedDataPropertyNames.find(prop->GetName()) == mappedDataPropertyNames.end())
+                        {
+                        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0161,
+                            "Mismatch of mapped properties for ECClass '%s'. The count of mapped properties is correct, but property %s is not mapped.", classMap.GetClass().GetFullName(), prop->GetName().c_str());
+                        return ERROR;
+                        }
                     }
                 }
 
