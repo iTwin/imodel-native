@@ -836,6 +836,11 @@ TEST_F(RevisionTestFixture, ReverseSchemaChangeset)
 
     // Parent changeset correctly points back to cs0.
     ASSERT_STREQ(m_db->Txns().GetParentChangesetId().c_str(), cs0->GetChangesetId().c_str());
+
+    // Reapply restores the mapping even though reverse retained the physical table.
+    ASSERT_EQ(ChangesetStatus::Success, m_db->Txns().PullMergeApply(*cs1));
+    ASSERT_TRUE(m_db->Schemas().GetClass("ReverseSchemaTest", "TestWidget") != nullptr);
+    ASSERT_STREQ(m_db->Txns().GetParentChangesetId().c_str(), cs1->GetChangesetId().c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -866,6 +871,93 @@ TEST_F(RevisionTestFixture, InvalidSchemaChanges)
     m_db->Txns().EnableTracking(false);
     ASSERT_TRUE(BE_SQLITE_OK == m_db->DropTable("TestTableWillHappen"));
     m_db->Txns().EnableTracking(true);
+
+    RestoreTestFile();
+    ASSERT_EQ(BE_SQLITE_OK, m_db->CreateIndex("idx_rollback", "TestTable", false, "Column1"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges());
+    ASSERT_TRUE(CreateRevision("-index").IsValid());
+    BackupTestFile();
+    Utf8String const parentId = m_db->Txns().GetParentChangesetId();
+    auto const profileVersion = m_db->GetProfileVersion();
+
+    // The recipient lacks this untracked table, so index creation fails after the DROP succeeds.
+    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteSql("CREATE TABLE SourceOnly(Id INTEGER PRIMARY KEY)"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteDdl("ALTER TABLE TestTable ADD COLUMN Column2 INTEGER"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteDdl("DROP INDEX IF EXISTS idx_rollback"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteDdl("CREATE INDEX idx_rollback ON SourceOnly(Id)"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges());
+    auto invalidRevision = CreateRevision("-invalid-ddl");
+    ASSERT_TRUE(invalidRevision.IsValid());
+    RestoreTestFile();
+    // As after reverse, the recipient already has the added column but must still apply the rest.
+    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteSql("ALTER TABLE TestTable ADD COLUMN Column2 INTEGER"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges());
+
+    // BriefcaseManager abandons the transaction when native changeset application reports failure.
+    m_db->Txns().PullMergeBegin();
+    EXPECT_EQ(ChangesetStatus::ApplyError, m_db->Txns().MergeChangeset(*invalidRevision, false));
+    {
+    Statement dropped(*m_db, "SELECT 1 FROM sqlite_master WHERE name='idx_rollback'");
+    EXPECT_EQ(BE_SQLITE_DONE, dropped.Step()); // replay continued past the tolerated duplicate column
+    }
+    ASSERT_EQ(BE_SQLITE_OK, m_db->AbandonChanges());
+    BeFileName fileName(m_db->GetDbFileName(), true);
+    CloseDgnDb();
+    OpenIModelDb(fileName);
+    EXPECT_EQ(parentId, m_db->Txns().GetParentChangesetId());
+    EXPECT_EQ(profileVersion, m_db->GetProfileVersion());
+    Statement index(*m_db, "SELECT tbl_name FROM sqlite_master WHERE type='index' AND name='idx_rollback'");
+    ASSERT_EQ(BE_SQLITE_ROW, index.Step());
+    EXPECT_STREQ("TestTable", index.GetValueText(0));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, SchemaSyncDdlConstraintFailure)
+    {
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"SchemaSyncDdlConstraintFailure.bim");
+    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges());
+    m_db->Txns().DeleteAllTxns();
+    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges());
+
+    BeFileName syncFile(m_db->GetDbFileName(), true);
+    syncFile.AppendString(L".sync");
+    if (syncFile.DoesPathExist())
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeDeleteFile(syncFile));
+    ECDb syncDb;
+    ASSERT_EQ(BE_SQLITE_OK, syncDb.CreateNewDb(syncFile));
+    ASSERT_EQ(BE_SQLITE_OK, syncDb.SaveChanges());
+    syncDb.CloseDb();
+    ASSERT_EQ(SchemaSync::Status::OK, m_db->Schemas().GetSchemaSync().Init(SchemaSync::SyncDbUri(syncFile.GetNameUtf8().c_str()), "ddl-constraint", false));
+
+    ASSERT_EQ(BE_SQLITE_OK, m_db->CreateTable("ReplayValues", "Id INTEGER PRIMARY KEY, Value INTEGER"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db->CreateIndex("idx_replay_values", "ReplayValues", false, "Value"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteSql("INSERT INTO ReplayValues VALUES (1, 0), (2, 0)"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges());
+    ASSERT_TRUE(CreateRevision("-baseline").IsValid());
+    BackupTestFile();
+    Utf8String const parentId = m_db->Txns().GetParentChangesetId();
+
+    // Unique values exist only on the source; the recipient will reject the unique index.
+    m_db->Txns().EnableTracking(false);
+    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteSql("UPDATE ReplayValues SET Value=Id"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges());
+    m_db->Txns().EnableTracking(true);
+    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteDdl("DROP INDEX IF EXISTS idx_replay_values"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db->CreateIndex("idx_replay_values", "ReplayValues", true, "Value"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges());
+    auto revision = CreateRevision("-unique-index");
+    ASSERT_TRUE(revision.IsValid());
+    RestoreTestFile();
+
+    m_db->Txns().PullMergeBegin();
+    EXPECT_EQ(ChangesetStatus::ApplyError, m_db->Txns().MergeChangeset(*revision, false));
+    ASSERT_EQ(BE_SQLITE_OK, m_db->AbandonChanges());
+    EXPECT_EQ(parentId, m_db->Txns().GetParentChangesetId());
+    Statement index(*m_db, "SELECT \"unique\" FROM pragma_index_list('ReplayValues') WHERE name='idx_replay_values'");
+    ASSERT_EQ(BE_SQLITE_ROW, index.Step());
+    EXPECT_EQ(0, index.GetValueInt(0));
     }
 
 //---------------------------------------------------------------------------------------
