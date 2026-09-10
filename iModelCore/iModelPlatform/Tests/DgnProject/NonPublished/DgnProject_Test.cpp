@@ -98,7 +98,6 @@ TEST_F(DgnDbTest, ProjectProfileVersions)
 // healthySource keeps the source's triggers current while the replay recipient retains legacy triggers.
 void DgnDbTest::CheckSpatialIndexTriggerUpgrade(DgnDbProfileVersion const& previousVersion, bool healthySource, bool schemaSync)
 {
-    SCOPED_TRACE(schemaSync ? "Schema sync enabled" : "Schema sync disabled");
     auto getTriggerSql = [](BeSQLite::Db const& db, Utf8CP triggerName) {
         Statement statement(db, "SELECT sql FROM sqlite_master WHERE type='trigger' AND name=?");
         if (BE_SQLITE_OK != statement.BindText(1, triggerName, Statement::MakeCopy::No) || BE_SQLITE_ROW != statement.Step())
@@ -215,20 +214,32 @@ void DgnDbTest::CheckSpatialIndexTriggerUpgrade(DgnDbProfileVersion const& previ
 
 TEST_F(DgnDbTest, UpgradeSpatialIndexTriggers)
 {
-    for (bool schemaSync : {false, true})
-        ASSERT_NO_FATAL_FAILURE(CheckSpatialIndexTriggerUpgrade(DgnDbProfileVersion(2, 0, 0, 7), false, schemaSync));
+    CheckSpatialIndexTriggerUpgrade(DgnDbProfileVersion(2, 0, 0, 7), false, false);
+}
+
+TEST_F(DgnDbTest, UpgradeSpatialIndexTriggersWithSchemaSync)
+{
+    CheckSpatialIndexTriggerUpgrade(DgnDbProfileVersion(2, 0, 0, 7), false, true);
 }
 
 TEST_F(DgnDbTest, RepairSpatialIndexTriggersFromStaleProfile008)
 {
-    for (bool schemaSync : {false, true})
-        ASSERT_NO_FATAL_FAILURE(CheckSpatialIndexTriggerUpgrade(DgnDbProfileVersion(2, 0, 0, 8), false, schemaSync));
+    CheckSpatialIndexTriggerUpgrade(DgnDbProfileVersion(2, 0, 0, 8), false, false);
+}
+
+TEST_F(DgnDbTest, RepairSpatialIndexTriggersFromStaleProfile008WithSchemaSync)
+{
+    CheckSpatialIndexTriggerUpgrade(DgnDbProfileVersion(2, 0, 0, 8), false, true);
 }
 
 TEST_F(DgnDbTest, RepairSpatialIndexTriggersFromHealthyProfile008)
 {
-    for (bool schemaSync : {false, true})
-        ASSERT_NO_FATAL_FAILURE(CheckSpatialIndexTriggerUpgrade(DgnDbProfileVersion(2, 0, 0, 8), true, schemaSync));
+    CheckSpatialIndexTriggerUpgrade(DgnDbProfileVersion(2, 0, 0, 8), true, false);
+}
+
+TEST_F(DgnDbTest, RepairSpatialIndexTriggersFromHealthyProfile008WithSchemaSync)
+{
+    CheckSpatialIndexTriggerUpgrade(DgnDbProfileVersion(2, 0, 0, 8), true, true);
 }
 
 //=======================================================================================
