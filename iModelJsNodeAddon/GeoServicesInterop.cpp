@@ -13,6 +13,11 @@ BE_JSON_NAME(geographicCRSDef)
 BE_JSON_NAME(geographicCRS)
 BE_JSON_NAME(format)
 BE_JSON_NAME(status)
+BE_JSON_NAME(point)
+BE_JSON_NAME(extent)
+BE_JSON_NAME(longitude)
+BE_JSON_NAME(latitude)
+BE_JSON_NAME(includeIntersecting)
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -119,4 +124,105 @@ bvector<CRSListResponseProps> GeoServicesInterop::GetListOfCRS(DRange2dCP extent
         }
     
     return listOfCRS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+StatusInt GeoServicesInterop::GetListOfVerticalCRS(bvector<VerticalCRSListResponseProps>& results, BeJsConst props, Utf8StringR errorMessage)
+    {
+    results.clear();
+    errorMessage.clear();
+
+    auto pointJson = props[json_point()];
+    auto extentJson = props[json_extent()];
+    if (!pointJson.isNull() && !extentJson.isNull())
+        {
+        errorMessage = "point and extent are mutually exclusive";
+        return GeoCoordinates::GEOCOORDERR_BadArg;
+        }
+
+    GeoPoint2d point;
+    GeoPoint2dCP pointFilter = nullptr;
+    if (!pointJson.isNull())
+        {
+        if (!pointJson.isObject())
+            {
+            errorMessage = "point must be an object";
+            return GeoCoordinates::GEOCOORDERR_BadArg;
+            }
+        if (!pointJson.isNumericMember(json_longitude()) || !pointJson.isNumericMember(json_latitude()))
+            {
+            errorMessage = "point must contain numeric longitude and latitude";
+            return GeoCoordinates::GEOCOORDERR_BadArg;
+            }
+
+        point.longitude = pointJson[json_longitude()].asDouble();
+        point.latitude = pointJson[json_latitude()].asDouble();
+        pointFilter = &point;
+        }
+
+    DRange2d extent;
+    DRange2dCP extentFilter = nullptr;
+    if (!extentJson.isNull())
+        {
+        if (!extentJson.isObject())
+            {
+            errorMessage = "extent must be an object";
+            return GeoCoordinates::GEOCOORDERR_BadArg;
+            }
+
+        BeJsGeomUtils::DRange2dFromJson(extent, extentJson);
+        extentFilter = &extent;
+        }
+
+    bool includeIntersecting = false;
+    auto includeIntersectingJson = props[json_includeIntersecting()];
+    if (!includeIntersectingJson.isNull())
+        {
+        if (!includeIntersectingJson.isBool())
+            {
+            errorMessage = "includeIntersecting must be a boolean";
+            return GeoCoordinates::GEOCOORDERR_BadArg;
+            }
+        includeIntersecting = includeIntersectingJson.asBool();
+        }
+
+    GeoCoordinates::VerticalDatumDictionaryPtr dictionary = GeoCoordinates::VerticalDatumDictionary::Get();
+    if (!dictionary.IsValid())
+        return GeoCoordinates::GEOCOORDERR_NoDictionary;
+    if (SUCCESS != dictionary->GetStatus())
+        return dictionary->GetStatus();
+
+    bvector<Utf8String> names;
+    StatusInt status = pointFilter
+        ? dictionary->QueryVerticalDatumsAvailableAtPoint(names, *pointFilter)
+        : extentFilter
+            ? dictionary->QueryVerticalDatumsAvailableForRange(names, *extentFilter, includeIntersecting)
+            : dictionary->QueryAllVerticalDatumsAvailable(names);
+
+    if (GeoCoordinates::GEOCOORDERR_NotFound == status)
+        return SUCCESS;
+
+    if (SUCCESS != status)
+        return status;
+
+    for (Utf8StringCR name : names)
+        {
+        GeoCoordinates::VerticalDatumInfoPtr info = dictionary->GetVerticalDatumInfoFromName(name, status);
+        if (SUCCESS != status || !info.IsValid())
+            return status;
+
+        VerticalCRSListResponseProps verticalCrs;
+        verticalCrs.m_crsName = name;
+        info->GetDescription(verticalCrs.m_description);
+        verticalCrs.m_deprecated = info->IsDeprecated();
+        info->GetType(verticalCrs.m_type);
+        info->GetUnits(verticalCrs.m_unit);
+        info->GetExtent(verticalCrs.m_extent);
+        verticalCrs.m_id = verticalCrs.m_type;
+        results.push_back(verticalCrs);
+        }
+
+    return SUCCESS;
     }
