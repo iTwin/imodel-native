@@ -6,6 +6,7 @@
 #include <ECObjects/ECJsonUtilities.h>
 #include <GeomSerialization/GeomSerializationApi.h>
 #include <Bentley/Base64Utilities.h>
+#include <cmath>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -170,7 +171,7 @@ BentleyStatus AdapterHelper::GetRow(BeJsValue rowJson, bvector<bpair<Utf8String,
         auto const& member = uniqueMemberNames[(size_t) columnIndex];
         Utf8CP memberName = member.first.c_str();
         ECSqlSystemPropertyInfo const& sysPropInfo = member.second;
-        if (SUCCESS != SelectClauseItemToJson(copyMemberNames ? rowJson[memberName] : rowJson[Json::StaticString(memberName)], ecsqlValue, sysPropInfo, schemaManager, formatOptions, abbreviateBlobs))
+        if (SUCCESS != SelectClauseItemToJson(copyMemberNames ? rowJson[memberName] : rowJson[BeJsStaticString(memberName)], ecsqlValue, sysPropInfo, schemaManager, formatOptions, abbreviateBlobs))
             return ERROR;
         }
 
@@ -548,13 +549,13 @@ BentleyStatus AdapterHelper::NavigationToJson(BeJsValue jsonValue, IECSqlValue c
         }
 
     jsonValue.SetEmptyObject();
-    if (SUCCESS !=  ECJsonUtilities::IdToJson(jsonValue[Json::StaticString(ECJsonSystemNames::Navigation::Id())], navId))
+    if (SUCCESS !=  ECJsonUtilities::IdToJson(jsonValue[BeJsStaticString(ECJsonSystemNames::Navigation::Id())], navId))
         return ERROR;
 
     if (relClass == nullptr)
         return SUCCESS;
 
-    ECJsonUtilities::ClassNameToJson(jsonValue[Json::StaticString(ECJsonSystemNames::Navigation::RelClassName())], *relClass);
+    ECJsonUtilities::ClassNameToJson(jsonValue[BeJsStaticString(ECJsonSystemNames::Navigation::RelClassName())], *relClass);
     return SUCCESS;
     }
 
@@ -622,7 +623,7 @@ BentleyStatus AdapterHelper::PrimitiveToJson(BeJsValue jsonValue, IECSqlValue co
 
             // render as int[]
             jsonValue.SetEmptyArray();
-            for (Json::ArrayIndex i = 0; i < (Json::ArrayIndex)size; i++)
+            for (BeJsValue::ArrayIndex i = 0; i < (BeJsValue::ArrayIndex)size; i++)
                 jsonValue[i] = data[i];
             return BentleyStatus::SUCCESS;
             }
@@ -701,10 +702,7 @@ BentleyStatus AdapterHelper::PrimitiveToJson(BeJsValue jsonValue, IECSqlValue co
                 }
             else
                 {
-                Json::Value tmp;
-                auto stat =  ECJsonUtilities::IGeometryToJson(tmp, *geom);
-                jsonValue.From(tmp);
-                return stat;
+                return ECJsonUtilities::IGeometryToJson(jsonValue, *geom);
                 }
             }
             default:

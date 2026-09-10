@@ -6,6 +6,7 @@
 #include <DgnPlatform/PlatformLib.h>
 #include "DgnDbWorker.h"
 #include "IModelJsNative.h"
+#include <cmath>
 
 using namespace IModelJsNative;
 USING_NAMESPACE_BENTLEY_RENDER;

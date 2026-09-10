@@ -1271,8 +1271,8 @@ BentleyStatus SchemaReader::ReadFormats(Context& ctx) const
         Formatting::NumericFormatSpec numSpec;
         if (hasNumericSpec)
             {
-            Json::Value numericSpecJson;
-            if (!Json::Reader::Parse(numericSpecJsonStr, numericSpecJson))
+            BeJsDocument numericSpecJson(numericSpecJsonStr);
+            if (numericSpecJson.hasParseError())
                 return ERROR;
 
             if (!Formatting::NumericFormatSpec::FromJson(numSpec, numericSpecJson))
@@ -1353,8 +1353,8 @@ BentleyStatus SchemaReader::ReadFormatComposite(Context& ctx, ECFormat& format, 
 
     if (!Utf8String::IsNullOrEmpty(compositeSpecJsonWithoutUnits))
         {
-        Json::Value compSpecJson;
-        if (!Json::Reader::Parse(compositeSpecJsonWithoutUnits, compSpecJson))
+        BeJsDocument compSpecJson(compositeSpecJsonWithoutUnits);
+        if (compSpecJson.hasParseError())
             return ERROR;
 
         if (!Formatting::CompositeValueSpec::FromJson(spec, compSpecJson, units, labels))

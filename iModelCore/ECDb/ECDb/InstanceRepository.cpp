@@ -15,11 +15,13 @@ DbResult InstanceRepository::Insert(BeJsValue in, BeJsConst userOptions, JsForma
     BeMutexHolder _(m_mutex);
     m_lastError.clear();
     InstanceWriter::InsertOptions options;
+    const bool convertClassIdsToClassNames = userOptions["convertClassIdsToClassNames"].asBool(false);
     options.UseJsNames(inFmt == JsFormat::JsName);
+    options.ConvertClassIdsToClassNames(convertClassIdsToClassNames);
     if(userOptions.isBoolMember("forceUseId") && userOptions["forceUseId"].asBool(false))
         options.UseInstanceIdFromJs();
     ECN::ECClassId classId;
-    if (!m_ecdb.GetInstanceWriter().TryGetClassId(classId, in, inFmt)) {
+    if (!m_ecdb.GetInstanceWriter().TryGetClassId(classId, in, inFmt, convertClassIdsToClassNames)) {
         m_lastError.Sprintf("Failed to get ECClassId/className/classFullName");
         return BE_SQLITE_ERROR;
     }
@@ -47,15 +49,17 @@ DbResult InstanceRepository::Update(BeJsValue in, BeJsConst userOptions, JsForma
     BeMutexHolder _(m_mutex);
     m_lastError.clear();
     InstanceWriter::UpdateOptions options;
+    const bool convertClassIdsToClassNames = userOptions["convertClassIdsToClassNames"].asBool(false);
     options.UseJsNames(inFmt == JsFormat::JsName);
     // Defaults to true (properties absent from `in` keep their current value) to preserve existing caller
     // behavior; a caller doing a full replace of the instance can pass `useIncrementalUpdate: false` so that
     // absent properties are cleared (bound to null) instead.
     options.UseIncrementalUpdate(!userOptions.isBoolMember("useIncrementalUpdate") || userOptions["useIncrementalUpdate"].asBool());
+    options.ConvertClassIdsToClassNames(convertClassIdsToClassNames);
     if (userOptions.isObjectMember("expectedOldValues"))
         options.CompareBeforeUpdate(userOptions["expectedOldValues"]);
     ECInstanceKey instKey;
-    if (!m_ecdb.GetInstanceWriter().TryGetInstanceKey(instKey, in, inFmt)) {
+    if (!m_ecdb.GetInstanceWriter().TryGetInstanceKey(instKey, in, inFmt, convertClassIdsToClassNames)) {
         m_lastError.Sprintf("Failed to get ECInstanceId/id and ECClassId/className/classFullName");
         return BE_SQLITE_ERROR;
     }
@@ -83,6 +87,7 @@ DbResult InstanceRepository::Delete(BeJsConst in, BeJsConst userOptions, JsForma
     m_lastError.clear();
     InstanceWriter::DeleteOptions options;
     options.UseJsNames(inFmt == JsFormat::JsName);
+    options.ConvertClassIdsToClassNames(userOptions["convertClassIdsToClassNames"].asBool(false));    
     if (userOptions.isObjectMember("expectedOldValues"))
         options.CompareBeforeDelete(userOptions["expectedOldValues"]);
     auto rc = m_ecdb.GetInstanceWriter().Delete(in, options, conflictingProperties);
@@ -107,6 +112,7 @@ DbResult InstanceRepository::Delete(ECInstanceKeyCR key, BeJsConst userOptions, 
     m_lastError.clear();
     InstanceWriter::DeleteOptions options;
     options.UseJsNames(inFmt == JsFormat::JsName);
+    options.ConvertClassIdsToClassNames(userOptions["convertClassIdsToClassNames"].asBool(false));
     if (userOptions.isObjectMember("expectedOldValues"))
         options.CompareBeforeDelete(userOptions["expectedOldValues"]);
     auto rc = m_ecdb.GetInstanceWriter().Delete(key, options, conflictingProperties);
@@ -137,8 +143,9 @@ DbResult InstanceRepository::Read(ECInstanceKeyCR instKey, BeJsValue outInstance
     if (!m_ecdb.GetInstanceReader().Seek(pos, [&](const InstanceReader::IRowContext& row, PropertyReader::Finder finder) {
             ECSqlRowAdaptor adaptor(m_ecdb);
             bool wantGeometry = userOptions["wantGeometry"].asBool(false);
+            bool convertClassIdsToClassNames = userOptions["convertClassIdsToClassNames"].asBool(false);
             adaptor.GetOptions().SetAbbreviateBlobs(false);
-            adaptor.GetOptions().SetConvertClassIdsToClassNames(fmt == JsFormat::JsName);
+            adaptor.GetOptions().SetConvertClassIdsToClassNames(convertClassIdsToClassNames || fmt == JsFormat::JsName);
             adaptor.GetOptions().SetUseJsNames(fmt == JsFormat::JsName);
             adaptor.GetOptions().SetUseClassFullNameInsteadofClassName(fmt == JsFormat::JsName);
             adaptor.GetOptions().SetIncludeNulls(userOptions["includeNulls"].asBool(false));
@@ -164,7 +171,8 @@ DbResult InstanceRepository::Read(ECInstanceKeyCR instKey, BeJsValue outInstance
 //---------------------------------------------------------------------------------------
 DbResult InstanceRepository::Read(BeJsConst in, BeJsValue outInstance, BeJsConst userOptions, JsFormat fmt) const {
     ECInstanceKey instKey;
-    if (!m_ecdb.GetInstanceWriter().TryGetInstanceKey(instKey, in, fmt)) {
+    const bool convertClassIdsToClassNames = userOptions["convertClassIdsToClassNames"].asBool(false);
+    if (!m_ecdb.GetInstanceWriter().TryGetInstanceKey(instKey, in, fmt, convertClassIdsToClassNames)) {
         return BE_SQLITE_ERROR;
     }
     return Read(instKey, outInstance, userOptions, fmt);

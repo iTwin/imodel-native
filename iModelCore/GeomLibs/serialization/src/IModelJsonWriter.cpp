@@ -22,7 +22,7 @@ static double CurvatureToRadius(double curvature)
 // <ul>
 // <li> appendXXX (data, jsonArray) -- create XXX as json value, append it to jsonArray
 
-// <li> createXXX (data, jsonObj) -- return (!!) Json::Value ()
+// <li> createXXX (data, jsonObj) -- populate jsonObj with XXX
 // </ul>
 // @bsiclass
 //=======================================================================================
@@ -794,6 +794,9 @@ struct BeCGIModelJsonValueWriter
         auto head = in[name];
         for (auto& cp : *pCurves)
             CurvePrimitiveToJson(head.appendValue(), *cp);
+        
+        if (CurveVector::BOUNDARY_TYPE_Inner == type)
+            in["isInner"] = true;
         }
 
     void SolidPrimitiveToJson (BeJsValue in, ISolidPrimitiveCR solid)

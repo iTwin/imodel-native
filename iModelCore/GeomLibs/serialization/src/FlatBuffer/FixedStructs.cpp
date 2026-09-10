@@ -6,6 +6,7 @@
 #include "serializationPCH.h"
 #include <GeomSerialization/GeomLibsFlatBufferApi.h>
 #include "allcg_generated.h"
+#include <cmath>
 #define  BGFB Bentley::Geometry::FB
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE

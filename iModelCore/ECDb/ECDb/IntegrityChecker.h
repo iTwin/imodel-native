@@ -20,6 +20,7 @@ struct IntegrityChecker final {
 	constexpr static auto check_class_ids = "check_class_ids";
 	constexpr static auto check_schema_load = "check_schema_load";
 	constexpr static auto check_missing_child_rows = "check_missing_child_rows";
+	constexpr static auto check_diverged_prop_maps = "check_diverged_prop_maps";
 
 
 
@@ -35,7 +36,8 @@ struct IntegrityChecker final {
 		CheckClassIds = 0x80,
 		CheckSchemaLoad = 0x100,
 		CheckMissingChildRows = 0x200,
-		OnlyMetaChecks = CheckEcProfile | CheckDataSchema | CheckDataColumns | CheckSchemaLoad,
+		CheckDivergedPropMaps = 0x400,
+		OnlyMetaChecks = CheckEcProfile | CheckDataSchema | CheckDataColumns | CheckSchemaLoad | CheckDivergedPropMaps,
 		OnlyDataChecks =CheckNavClassIds | CheckNavIds | CheckLinkTableFkClassIds | CheckLinkTableFkIds | CheckClassIds,
 		All = OnlyMetaChecks | OnlyDataChecks,
 	};
@@ -91,6 +93,8 @@ public:
 	// Callback(check-name, status)
     DbResult QuickCheck(Checks, std::function<void(Utf8CP, bool, BeDuration)>);
     DbResult GetRootLinkTableRelationships(std::vector<ECClassId>&);
+	// Callback(derivedClassId, derivedClassName, baseClassId, baseClassName, propertyName, baseColumn, divergedColumn)
+	DbResult CheckDivergedPropMaps(std::function<bool(ECN::ECClassId, Utf8CP, ECN::ECClassId, Utf8CP, Utf8CP, Utf8CP, Utf8CP)>);
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

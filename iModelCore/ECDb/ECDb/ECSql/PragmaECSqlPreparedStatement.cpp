@@ -3,6 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
+#include <string>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //================================================================================

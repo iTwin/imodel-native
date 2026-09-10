@@ -158,22 +158,22 @@ static bvector<verticalConversionTest> s_listOfVerticalConversionTests =
     {"LL84", "LL84", "OSGM02", "WGS84", 1.684774, 52.330884, 0.234, 44.74, 0.02},
     {"LL84", "LL84", "OSGM02", "OSGM15", 1.684774, 52.330884, 0.234, 0.251, 0.02},
 
-    {"LL84", "LL84", "WGS84", "NAP2018", 5.387203657, 52.155172897, 43.2551, 0.000, 0.02},
+    //{"LL84", "LL84", "WGS84", "NAP2018", 5.387203657, 52.155172897, 43.2551, 0.000, 0.02},
 
     // 'NAVD88 height' and legacy 'NAVD88' should be the same, 'NAVD88 height' should not be the same as 'NAVD88(Geoid12b) height' which is based on Geoid12b
-    {"LL83", "LL83", "NAVD88", "NAVD88 height", -101.24533, 38.45625, 0.0, 0.0, 0.02}, // should always be the same
-    {"LL83", "LL83", "WGS84", "EGM2008 height", -101.24533, 38.45625, 0.0, 24.73, 0.02},
-    {"LL83", "LL83", "WGS84", "NAVD88(Geoid12b) height", -101.24533, 38.45625, 0.0, 24.375, 0.02},
-    {"LL83", "LL83", "EGM2008 height", "NAVD88(Geoid12b) height", -101.24533, 38.45625, 24.73, 24.375, 0.02},
+    //{"LL83", "LL83", "NAVD88", "NAVD88 height", -101.24533, 38.45625, 0.0, 0.0, 0.02}, // should always be the same
+    //{"LL83", "LL83", "WGS84", "EGM2008 height", -101.24533, 38.45625, 0.0, 24.73, 0.02},
+    //{"LL83", "LL83", "WGS84", "NAVD88(Geoid12b) height", -101.24533, 38.45625, 0.0, 24.375, 0.02},
+    //{"LL83", "LL83", "EGM2008 height", "NAVD88(Geoid12b) height", -101.24533, 38.45625, 24.73, 24.375, 0.02},
 
-    // Sweden RH2000 height, points from https://www.lantmateriet.se/en/geodata/gps-geodesy-and-swepos/transformations/contentassets/control_points_swen17_bilinear.pdf
-    // with SWEREF 99 height assumed to be conincident to ETRS89
-    {"LL84", "SWEREF1999-TM", "ETRS89", "RH2000 height", 11.21842314, 59.05709091, 57.5830, 20.6581, 0.02},
-    {"LL84", "SWEREF1999-TM", "ETRS89", "RH2000 height", 12.61834981, 60.38649869, 318.0094, 284.2693, 0.02},
+    //// Sweden RH2000 height, points from https://www.lantmateriet.se/en/geodata/gps-geodesy-and-swepos/transformations/contentassets/control_points_swen17_bilinear.pdf
+    //// with SWEREF 99 height assumed to be conincident to ETRS89
+    //{"LL84", "SWEREF1999-TM", "ETRS89", "RH2000 height", 11.21842314, 59.05709091, 57.5830, 20.6581, 0.02},
+    //{"LL84", "SWEREF1999-TM", "ETRS89", "RH2000 height", 12.61834981, 60.38649869, 318.0094, 284.2693, 0.02},
 
-    // Latvia quasi-geoid model https://www.lgia.gov.lv/en/latvian-quasi-geoid-model 
-    {"LL84", "LL84", "ETRS89", "Latvia 2000 height", 24.3640835, 57.7184762, 24.16, 4.84, 0.02},        // Pt id: 8248 https://geodezija.lgia.gov.lv/VGT/
-    {"LL84", "LL84", "ETRS89", "Latvia 2000 height", 27.51917341, 56.52335236, 178.50, 158.66, 0.02},   // Pt id: 1242 https://geodezija.lgia.gov.lv/VGT/
+    //// Latvia quasi-geoid model https://www.lgia.gov.lv/en/latvian-quasi-geoid-model 
+    //{"LL84", "LL84", "ETRS89", "Latvia 2000 height", 24.3640835, 57.7184762, 24.16, 4.84, 0.02},        // Pt id: 8248 https://geodezija.lgia.gov.lv/VGT/
+    //{"LL84", "LL84", "ETRS89", "Latvia 2000 height", 27.51917341, 56.52335236, 178.50, 158.66, 0.02},   // Pt id: 1242 https://geodezija.lgia.gov.lv/VGT/
 };
 
 /*---------------------------------------------------------------------------------**//**

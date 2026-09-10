@@ -63,7 +63,7 @@ enum DgnDbProfileValues : int32_t
     DGNDB_CURRENT_VERSION_Major = 2,
     DGNDB_CURRENT_VERSION_Minor = 0,
     DGNDB_CURRENT_VERSION_Sub1  = 0,
-    DGNDB_CURRENT_VERSION_Sub2  = 7,
+    DGNDB_CURRENT_VERSION_Sub2  = 8, // 2.0.0.8: update spatial-index triggers to handle InSpatialIndex changes.
 
     DGNDB_SUPPORTED_VERSION_Major = 2,  // oldest version of the profile supported by the current api
     DGNDB_SUPPORTED_VERSION_Minor = 0,
@@ -216,6 +216,7 @@ private:
     void OnBisCoreSchemaImported(CreateDgnDbParams const& params);
     BeSQLite::DbResult InitializeElementIdSequence();
     void ClearECSqlCache() const { m_ecsqlCache.Empty(); }
+    static BeSQLite::DbResult UpgradeToProfile2_0_0_8(DgnDbR db);
 
     BeSQLite::DbResult InitializeSchemas(BeSQLite::Db::OpenParams const& params);
     BeSQLite::DbResult ProcessRevisions(BeSQLite::Db::OpenParams const& params);
@@ -252,7 +253,8 @@ protected:
     DGNPLATFORM_EXPORT void _OnAfterSetBriefcaseId() override;
 
     DGNPLATFORM_EXPORT BeSQLite::DbResult _AfterSchemaChangeSetApplied() const override;
-    DGNPLATFORM_EXPORT BeSQLite::DbResult _AfterDataChangeSetApplied(bool schemaChanged) override;
+    DGNPLATFORM_EXPORT BeSQLite::DbResult _AfterDataChangeSetApplied(bool schemaChanged, bool deferInstanceUpgrade) override;
+    DGNPLATFORM_EXPORT bool _IsLevelWithTimeline() override;
 
     // *** WIP_SCHEMA_IMPORT - temporary work-around needed because ECClass objects are deleted when a schema is imported
     void _OnBeforeClearECDbCache() override;
@@ -380,7 +382,6 @@ public:
     //! compatible version number.
     //! </ul>
     DGNPLATFORM_EXPORT SchemaStatus ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, bool schemaLockHeld = false, SyncDbUri uri = SyncDbUri());
-    DGNPLATFORM_EXPORT PullResult PullSchemaChanges(SyncDbUri uri);
 
     //! Drop a unreferenced schema with no instances
     //! @param[in] name schema that need to be dropped.

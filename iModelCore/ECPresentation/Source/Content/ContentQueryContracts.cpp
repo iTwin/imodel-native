@@ -124,7 +124,8 @@ static Utf8String GetPropertySelectClauseFromAccessString(Utf8StringCR accessStr
         {
         if (!clause.empty())
             clause.append(".");
-        clause.append(QueryHelpers::Wrap(token));
+        // access string tokens are always identifiers, so escape them even if they look like a keyword/literal (e.g. a property named "Null")
+        clause.append("[").append(token).append("]");
         }
     return clause;
     }
@@ -294,8 +295,8 @@ ECClassCR ContentQueryContract::GetSelectClass(ContentDescriptor::RelatedContent
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ContentQueryContract::CreateContractFields(
-    bvector<PresentationQueryContractFieldCPtr>& contractFields, 
-    bvector<ContentDescriptor::Field*> const& fields, 
+    bvector<PresentationQueryContractFieldCPtr>& contractFields,
+    bvector<ContentDescriptor::Field*> const& fields,
     ContentDescriptor::RelatedContentField const* parentField,
     bool skipFields
 ) const

@@ -8,7 +8,7 @@
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 //**************************************************************************************
-// ComparableJsonCppValue
+// JsonValue
 //**************************************************************************************
 
 //---------------------------------------------------------------------------------------
@@ -17,73 +17,86 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 JsonValue::JsonValue(Utf8CP json)
     {
     if (SUCCESS != TestUtilities::ParseJson(m_value, json))
-        m_value = Json::Value(Json::nullValue);
+        m_value.SetNull();
+    }
+
+//---------------------------------------------------------------------------------------
+// Structural deep comparison. Values that are stored as integers are compared exactly (so ids above
+// 2^53, and distinct uint64_t values above INT64_MAX, do not collapse onto the same double). Only
+// genuine floating point values use the TestUtilities::Equals tolerance.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+static bool jsonValuesEqual(BeJsConst lhs, BeJsConst rhs)
+    {
+    if (lhs.isNull())
+        return rhs.isNull();
+
+    if (lhs.isArray())
+        {
+        if (!rhs.isArray() || lhs.size() != rhs.size())
+            return false;
+
+        return false == lhs.ForEachArrayMember([&](BeJsConst::ArrayIndex i, BeJsConst member)
+            {
+            return !jsonValuesEqual(member, rhs[i]);
+            });
+        }
+
+    if (lhs.isObject())
+        {
+        if (!rhs.isObject() || lhs.size() != rhs.size())
+            return false;
+
+        return false == lhs.ForEachProperty([&](Utf8CP memberName, BeJsConst member)
+            {
+            return !rhs.isMember(memberName) || !jsonValuesEqual(member, rhs[memberName]);
+            });
+        }
+
+    if (lhs.isBool())
+        return rhs.isBool() && lhs.asBool() == rhs.asBool();
+
+    if (lhs.isNumeric())
+        {
+        if (!rhs.isNumeric())
+            return false;
+
+        // When both sides actually store an integer, compare the integers directly. Going through
+        // asDouble() first is not good enough: UINT64_MAX and UINT64_MAX-1 both round to 0x1p64, so
+        // distinct large ids would compare equal and mask a migration regression.
+        auto const lKind = lhs.GetNumericKind();
+        auto const rKind = rhs.GetNumericKind();
+        if (lKind != JsValueRef::NumericKind::Double && rKind != JsValueRef::NumericKind::Double)
+            {
+            if (lKind == JsValueRef::NumericKind::UInt64 || rKind == JsValueRef::NumericKind::UInt64)
+                {
+                // At least one side only fits in a uint64_t, so a negative value can never match it.
+                if (lKind == JsValueRef::NumericKind::Int64 && lhs.asInt64() < 0)
+                    return false;
+                if (rKind == JsValueRef::NumericKind::Int64 && rhs.asInt64() < 0)
+                    return false;
+
+                return lhs.asUInt64() == rhs.asUInt64();
+                }
+
+            return lhs.asInt64() == rhs.asInt64();
+            }
+
+        // At least one side is a genuine floating point value, so compare with the usual tolerance.
+        return TestUtilities::Equals(lhs.asDouble(), rhs.asDouble());
+        }
+
+    if (lhs.isString())
+        return rhs.isString() && strcmp(lhs.asCString(), rhs.asCString()) == 0;
+
+    BeAssert(false && "Unhandled JSON value type. This method needs to be adjusted");
+    return false;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-bool JsonValue::operator==(JsonValue const& rhs) const
-    {
-    if (m_value.isNull())
-        return rhs.m_value.isNull();
-
-    if (m_value.isArray())
-        {
-        if (!rhs.m_value.isArray() || m_value.size() != rhs.m_value.size())
-            return false;
-
-        for (Json::ArrayIndex i = 0; i < m_value.size(); i++)
-            {
-            if (JsonValue(m_value[i]) != JsonValue(rhs.m_value[i]))
-                return false;
-            }
-
-        return true;
-        }
-
-    if (m_value.isObject())
-        {
-        if (!rhs.m_value.isObject())
-            return false;
-
-        bvector<Utf8String> lhsMemberNames = m_value.getMemberNames();
-        if (lhsMemberNames.size() != rhs.m_value.size())
-            return false;
-
-        for (Utf8StringCR memberName : lhsMemberNames)
-            {
-            if (!rhs.m_value.isMember(memberName))
-                return false;
-
-            if (JsonValue(m_value[memberName]) != JsonValue(rhs.m_value[memberName]))
-                return false;
-            }
-
-        return true;
-        }
-
-    if (m_value.isIntegral() && !rhs.m_value.isIntegral())
-        return false;
-
-    if (m_value.isBool())
-        return rhs.m_value.isBool() && m_value.asBool() == rhs.m_value.asBool();
-
-    if (m_value.isInt())
-        return rhs.m_value.isConvertibleTo(Json::intValue) && m_value.asInt64() == rhs.m_value.asInt64();
-
-    if (m_value.isUInt())
-        return rhs.m_value.isConvertibleTo(Json::uintValue) && m_value.asUInt64() == rhs.m_value.asUInt64();
-
-    if (m_value.isDouble())
-        return rhs.m_value.isDouble() && TestUtilities::Equals(m_value.asDouble(), rhs.m_value.asDouble());
-
-    if (m_value.isString())
-        return rhs.m_value.isString() && strcmp(m_value.asCString(), rhs.m_value.asCString()) == 0;
-
-    BeAssert(false && "Unhandled JsonCPP value type. This method needs to be adjusted");
-    return false;
-    }
+bool JsonValue::operator==(JsonValue const& rhs) const { return jsonValuesEqual(m_value, rhs.m_value); }
 
 
 //---------------------------------------------------------------------------------------

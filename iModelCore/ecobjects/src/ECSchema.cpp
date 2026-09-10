@@ -2019,7 +2019,11 @@ ECObjectsStatus ECSchema::CopyFormat(ECFormatP& targetFormat, ECFormatCR sourceF
         if (ECObjectsStatus::Success != status)
             return status;
 
-        comp.SetSpacer(sourceComp->GetSpacer().c_str());
+        // SetSpacer marks the spacer as explicitly defined, so calling it unconditionally would give
+        // the copy an explicit default spacer the source never had.
+        if (sourceComp->HasSpacer())
+            comp.SetSpacer(sourceComp->GetSpacer().c_str());
+
         comp.SetIncludeZero(sourceComp->IsIncludeZero());
         if (sourceComp->HasMajorLabel())
             comp.SetMajorLabel(sourceComp->GetMajorLabel());
@@ -3773,12 +3777,12 @@ bool ECSchema::WriteToJsonValue(BeJsValue ecSchemaJsonValue) const
 //---------------+---------------+---------------+---------------+---------------+-------
 bool ECSchema::WriteToJsonString(Utf8StringR ecSchemaJsonString, bool minify) const
     {
-    Json::Value jsonSchema;
+    BeJsDocument jsonSchema;
 
     if (!WriteToJsonValue(jsonSchema))
         return false;
 
-    ecSchemaJsonString = minify ? jsonSchema.ToString() : jsonSchema.toStyledString();
+    ecSchemaJsonString = jsonSchema.Stringify(minify ? StringifyFormat::Default : StringifyFormat::Indented);
     return true;
     }
 

@@ -321,9 +321,9 @@ virtual bool _ProcessCurveVector(CurveVectorCR curve, bool filled, SimplifyGraph
         DgnGeometryClass                geometryClass;
         bool                            isTwoSided;
         RenderMaterialId                materialId;
-        // Usually no pattern map, but empty Json::Value constructor shows up in profile if instantiated
+        // Usually no pattern map, but empty BeJsDocument constructor shows up in profile if instantiated
         // for display props lookup. Hide behind unique_ptr to only construct if needed.
-        std::unique_ptr<Json::Value>    patternMap;
+        std::unique_ptr<BeJsDocument>   patternMap;
         DgnSubCategoryId                subCategoryId;
     };
 
@@ -364,9 +364,9 @@ void ResolveMeshDisplayProps(SimplifyGraphic& sg, PolyfaceQueryCR pf, MeshDispla
     auto patternMap = asset.GetPatternMap();
     if (patternMap.IsValid())
         {
-        auto val = new Json::Value();
+        auto val = new BeJsDocument();
         patternMap.m_value.SaveTo(*val);
-        result.patternMap = std::unique_ptr<Json::Value>(val);
+        result.patternMap = std::unique_ptr<BeJsDocument>(val);
         }
     }
 

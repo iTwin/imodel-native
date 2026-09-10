@@ -489,75 +489,93 @@ Napi::Object JsInterop::ConcurrentQueryResetConfig(Napi::Env env, Napi::Object c
 // @bsimethod
 //---------------------------------------------------------------------------------------
 void JsInterop::ConcurrentQueryExecute(ECDbCR ecdb, Napi::Object requestObj, Napi::Function callback) {
-    ConcurrentQueryMgr::WithInstance(ecdb, [&](ConcurrentQueryMgr& mgr) -> void {
-        BeJsValue beJsReq(requestObj);
-        auto request = QueryRequest::Deserialize(beJsReq);
-        if (request->UsePrimaryConnection()) {
-            mgr.Enqueue(std::move(request), [&](QueryResponse::Ptr value) {
-                auto jsResp = Napi::Object::New(Env());
-                auto beJsResp = BeJsValue(jsResp);
-                if (value->GetKind() == QueryResponse::Kind::NoResult) {
-                    value->ToJs(beJsResp, false);
-                }
-                else if (value->GetKind() == QueryResponse::Kind::ECSql) {
-                    auto& resp = value->GetAsConst<ECSqlResponse>();
-                    resp.ToJs(beJsResp, false);
-                    if (!resp.asJsonString().empty()) {
-                        auto parse = Env().Global().Get("JSON").As<Napi::Object>().Get("parse").As<Napi::Function>();
-                        auto rows = Napi::String::New(Env(), resp.asJsonString());
-                        jsResp[ECSqlResponse::JData] = parse({ rows });
-                    }
-                }
-                else if (value->GetKind() == QueryResponse::Kind::BlobIO) {
-                    auto& resp = value->GetAsConst<BlobIOResponse>();
-                    if (resp.GetLength() > 0) {
-                        resp.ToJs(beJsResp, false);
-                        auto blob = Napi::Uint8Array::New(Env(), resp.GetLength());
-                        memcpy(blob.Data(), resp.GetData(), resp.GetLength());
-                        jsResp[BlobIOResponse::JData] = blob;
-                    }
-                }
-                else {
-                    THROW_JS_IMODEL_NATIVE_EXCEPTION(Env(), "concurrent query: unsupported response type", IModelJsNativeErrorKey::BadArg);
-                }
-                callback.Call({ jsResp });
-            });
-            return;
-        }
-        auto threadSafeFunc = Napi::ThreadSafeFunction::New(requestObj.Env(), callback, "concurrent_query", 0, 1);
-        mgr.Enqueue(std::move(request), [=](QueryResponse::Ptr value) {
-            if(threadSafeFunc.BlockingCall (
-                [=]( Napi::Env env, Napi::Function jsCallback) {
-                    auto jsResp = Napi::Object::New(env);
+    // The whole native operation is guarded: WithInstance throws for a closed db and Deserialize throws
+    // for malformed/unsupported requests. Letting either escape into the N-API layer would call
+    // std::terminate and take down the process.
+    try {
+        ConcurrentQueryMgr::WithInstance(ecdb, [&](ConcurrentQueryMgr& mgr) -> void {
+            BeJsValue beJsReq(requestObj);
+            QueryRequest::Ptr request = QueryRequest::Deserialize(beJsReq);
+            if (request->UsePrimaryConnection()) {
+                mgr.Enqueue(std::move(request), [&](QueryResponse::Ptr value) {
+                    auto jsResp = Napi::Object::New(Env());
                     auto beJsResp = BeJsValue(jsResp);
-                    if (value->GetKind() ==  QueryResponse::Kind::NoResult) {
+                    if (value->GetKind() == QueryResponse::Kind::NoResult) {
                         value->ToJs(beJsResp, false);
-                    } else if (value->GetKind() ==  QueryResponse::Kind::ECSql) {
+                    }
+                    else if (value->GetKind() == QueryResponse::Kind::ECSql) {
                         auto& resp = value->GetAsConst<ECSqlResponse>();
                         resp.ToJs(beJsResp, false);
                         if (!resp.asJsonString().empty()) {
-                            auto parse = env.Global().Get("JSON").As<Napi::Object>().Get("parse").As<Napi::Function>();
-                            auto rows = Napi::String::New(env, resp.asJsonString());
-                            jsResp[ECSqlResponse::JData] = parse({rows});
+                            auto parse = Env().Global().Get("JSON").As<Napi::Object>().Get("parse").As<Napi::Function>();
+                            auto rows = Napi::String::New(Env(), resp.asJsonString());
+                            jsResp[ECSqlResponse::JData] = parse({ rows });
                         }
-                    } else if (value->GetKind() ==  QueryResponse::Kind::BlobIO) {
+                    }
+                    else if (value->GetKind() == QueryResponse::Kind::BlobIO) {
                         auto& resp = value->GetAsConst<BlobIOResponse>();
                         if (resp.GetLength() > 0) {
                             resp.ToJs(beJsResp, false);
-                            auto blob = Napi::Uint8Array::New(env, resp.GetLength());
+                            auto blob = Napi::Uint8Array::New(Env(), resp.GetLength());
                             memcpy(blob.Data(), resp.GetData(), resp.GetLength());
                             jsResp[BlobIOResponse::JData] = blob;
                         }
-                    } else {
-                        THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "concurrent query: unsupported response type", IModelJsNativeErrorKey::BadArg);
                     }
-                    jsCallback.Call({jsResp});
-            }) != napi_ok) {
-                // do nothing
+                    else {
+                        THROW_JS_IMODEL_NATIVE_EXCEPTION(Env(), "concurrent query: unsupported response type", IModelJsNativeErrorKey::BadArg);
+                    }
+                    callback.Call({ jsResp });
+                });
+                return;
             }
-            const_cast<Napi::ThreadSafeFunction&>(threadSafeFunc).Release();
+            auto threadSafeFunc = Napi::ThreadSafeFunction::New(requestObj.Env(), callback, "concurrent_query", 0, 1);
+            mgr.Enqueue(std::move(request), [=](QueryResponse::Ptr value) {
+                if(threadSafeFunc.BlockingCall (
+                    [=]( Napi::Env env, Napi::Function jsCallback) {
+                        // this runs from the thread safe function, which N-API invokes through a plain
+                        // C callback, so nothing may be thrown out of here. Turn any failure into a
+                        // pending JS exception instead of letting it reach std::terminate.
+                        try {
+                            auto jsResp = Napi::Object::New(env);
+                            auto beJsResp = BeJsValue(jsResp);
+                            if (value->GetKind() ==  QueryResponse::Kind::NoResult) {
+                                value->ToJs(beJsResp, false);
+                            } else if (value->GetKind() ==  QueryResponse::Kind::ECSql) {
+                                auto& resp = value->GetAsConst<ECSqlResponse>();
+                                resp.ToJs(beJsResp, false);
+                                if (!resp.asJsonString().empty()) {
+                                    auto parse = env.Global().Get("JSON").As<Napi::Object>().Get("parse").As<Napi::Function>();
+                                    auto rows = Napi::String::New(env, resp.asJsonString());
+                                    jsResp[ECSqlResponse::JData] = parse({rows});
+                                }
+                            } else if (value->GetKind() ==  QueryResponse::Kind::BlobIO) {
+                                auto& resp = value->GetAsConst<BlobIOResponse>();
+                                if (resp.GetLength() > 0) {
+                                    resp.ToJs(beJsResp, false);
+                                    auto blob = Napi::Uint8Array::New(env, resp.GetLength());
+                                    memcpy(blob.Data(), resp.GetData(), resp.GetLength());
+                                    jsResp[BlobIOResponse::JData] = blob;
+                                }
+                            } else {
+                                THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "concurrent query: unsupported response type", IModelJsNativeErrorKey::BadArg);
+                            }
+                            jsCallback.Call({jsResp});
+                        } catch (Napi::Error const& err) {
+                            err.ThrowAsJavaScriptException();
+                        } catch (std::exception const& ex) {
+                            Napi::Error::New(env, ex.what()).ThrowAsJavaScriptException();
+                        }
+                }) != napi_ok) {
+                    // do nothing
+                }
+                const_cast<Napi::ThreadSafeFunction&>(threadSafeFunc).Release();
+            });
         });
-    });
+    } catch (Napi::Error const&) {
+        throw; // a JS exception must keep propagating so N-API can turn it back into a JS throw
+    } catch (std::exception const& ex) {
+        THROW_JS_IMODEL_NATIVE_EXCEPTION(Env(), ex.what(), IModelJsNativeErrorKey::BadArg);
+    }
 }
 
 //---------------------------------------------------------------------------------------
@@ -613,91 +631,44 @@ ChangesetStatus JsInterop::DumpChangeSet(DgnDbR dgndb, BeJsConst changeSet)
 //---------------------------------------------------------------------------------------
 DgnDbStatus JsInterop::ExtractChangedInstanceIdsFromChangeSets(BeJsValue jsonOut, DgnDbR db, const bvector<BeFileName>& changeSetFiles)
     {
-    Json::Value elementJson(Json::ValueType::objectValue);
-    Json::Value elementInsertIds(Json::ValueType::arrayValue);
-    Json::Value elementUpdateIds(Json::ValueType::arrayValue);
-    Json::Value elementDeleteIds(Json::ValueType::arrayValue);
-
-    Json::Value aspectJson(Json::ValueType::objectValue);
-    Json::Value aspectInsertIds(Json::ValueType::arrayValue);
-    Json::Value aspectUpdateIds(Json::ValueType::arrayValue);
-    Json::Value aspectDeleteIds(Json::ValueType::arrayValue);
-
-    Json::Value modelJson(Json::ValueType::objectValue);
-    Json::Value modelInsertIds(Json::ValueType::arrayValue);
-    Json::Value modelUpdateIds(Json::ValueType::arrayValue);
-    Json::Value modelDeleteIds(Json::ValueType::arrayValue);
-
-    Json::Value relationshipJson(Json::ValueType::objectValue);
-    Json::Value relationshipInsertIds(Json::ValueType::arrayValue);
-    Json::Value relationshipUpdateIds(Json::ValueType::arrayValue);
-    Json::Value relationshipDeleteIds(Json::ValueType::arrayValue);
-
-    Json::Value codeSpecJson(Json::ValueType::objectValue);
-    Json::Value codeSpecInsertIds(Json::ValueType::arrayValue);
-    Json::Value codeSpecUpdateIds(Json::ValueType::arrayValue);
-    Json::Value codeSpecDeleteIds(Json::ValueType::arrayValue);
-
-    Json::Value fontJson(Json::ValueType::objectValue);
-    Json::Value fontInsertIds(Json::ValueType::arrayValue);
-    Json::Value fontUpdateIds(Json::ValueType::arrayValue);
-    Json::Value fontDeleteIds(Json::ValueType::arrayValue);
-
     EntityIdsChangeGroup entityIdsChangeGroup;
     entityIdsChangeGroup.ExtractChangedInstanceIdsFromChangeSets(db, changeSetFiles);
-    for (auto& opsAndJsonIds : {
-        std::tie(entityIdsChangeGroup.elementOps, elementInsertIds, elementUpdateIds, elementDeleteIds),
-        std::tie(entityIdsChangeGroup.aspectOps, aspectInsertIds, aspectUpdateIds, aspectDeleteIds),
-        std::tie(entityIdsChangeGroup.modelOps, modelInsertIds, modelUpdateIds, modelDeleteIds),
-        std::tie(entityIdsChangeGroup.relationshipOps, relationshipInsertIds, relationshipUpdateIds, relationshipDeleteIds),
-        std::tie(entityIdsChangeGroup.codeSpecOps, codeSpecInsertIds, codeSpecUpdateIds, codeSpecDeleteIds),
-        std::tie(entityIdsChangeGroup.fontOps, fontInsertIds, fontUpdateIds, fontDeleteIds)
-    })
+
+    auto addCategory = [&](Utf8CP categoryName, auto const& opMap)
         {
-        // can replace this all in C++17 with a destructuring assignment in the loop decl
-        const auto& opMap = std::get<0>(opsAndJsonIds);
-        auto& insertIds = std::get<1>(opsAndJsonIds);
-        auto& updateIds = std::get<2>(opsAndJsonIds);
-        auto& deleteIds = std::get<3>(opsAndJsonIds);
-        for (const auto& entry : opMap)
+        bvector<Utf8String> insertIds, updateIds, deleteIds;
+        for (auto const& entry : opMap)
             {
-            const auto& id = entry.first;
-            const auto& op = entry.second;
-            if (op == DbOpcode::Insert) insertIds.append(id.ToHexStr());
-            if (op == DbOpcode::Update) updateIds.append(id.ToHexStr());
-            if (op == DbOpcode::Delete) deleteIds.append(id.ToHexStr());
+            if (entry.second == DbOpcode::Insert) insertIds.push_back(entry.first.ToHexStr());
+            if (entry.second == DbOpcode::Update) updateIds.push_back(entry.first.ToHexStr());
+            if (entry.second == DbOpcode::Delete) deleteIds.push_back(entry.first.ToHexStr());
             }
-        }
 
-    if (elementInsertIds.size() > 0) elementJson["insert"] = elementInsertIds;
-    if (elementUpdateIds.size() > 0) elementJson["update"] = elementUpdateIds;
-    if (elementDeleteIds.size() > 0) elementJson["delete"] = elementDeleteIds;
-    if (!elementJson.empty()) jsonOut["element"].From(elementJson);
+        if (insertIds.empty() && updateIds.empty() && deleteIds.empty())
+            return;
 
-    if (aspectInsertIds.size() > 0) aspectJson["insert"] = aspectInsertIds;
-    if (aspectUpdateIds.size() > 0) aspectJson["update"] = aspectUpdateIds;
-    if (aspectDeleteIds.size() > 0) aspectJson["delete"] = aspectDeleteIds;
-    if (!aspectJson.empty()) jsonOut["aspect"].From(aspectJson);
+        auto category = jsonOut[categoryName];
+        auto addIds = [&](Utf8CP key, bvector<Utf8String> const& ids)
+            {
+            if (ids.empty())
+                return;
+            auto arr = category[key];
+            arr.toArray();
+            for (auto const& id : ids)
+                arr.appendValue() = id;
+            };
 
-    if (modelInsertIds.size() > 0) modelJson["insert"] = modelInsertIds;
-    if (modelUpdateIds.size() > 0) modelJson["update"] = modelUpdateIds;
-    if (modelDeleteIds.size() > 0) modelJson["delete"] = modelDeleteIds;
-    if (!modelJson.empty()) jsonOut["model"].From(modelJson);
+        addIds("insert", insertIds);
+        addIds("update", updateIds);
+        addIds("delete", deleteIds);
+        };
 
-    if (relationshipInsertIds.size() > 0) relationshipJson["insert"] = relationshipInsertIds;
-    if (relationshipUpdateIds.size() > 0) relationshipJson["update"] = relationshipUpdateIds;
-    if (relationshipDeleteIds.size() > 0) relationshipJson["delete"] = relationshipDeleteIds;
-    if (!relationshipJson.empty()) jsonOut["relationship"].From(relationshipJson);
-
-    if (codeSpecInsertIds.size() > 0) codeSpecJson["insert"] = codeSpecInsertIds;
-    if (codeSpecUpdateIds.size() > 0) codeSpecJson["update"] = codeSpecUpdateIds;
-    if (codeSpecDeleteIds.size() > 0) codeSpecJson["delete"] = codeSpecDeleteIds;
-    if (!codeSpecJson.empty()) jsonOut["codeSpec"].From(codeSpecJson);
-
-    if (fontInsertIds.size() > 0) fontJson["insert"] = fontInsertIds;
-    if (fontUpdateIds.size() > 0) fontJson["update"] = fontUpdateIds;
-    if (fontDeleteIds.size() > 0) fontJson["delete"] = fontDeleteIds;
-    if (!fontJson.empty()) jsonOut["font"].From(fontJson);
+    addCategory("element", entityIdsChangeGroup.elementOps);
+    addCategory("aspect", entityIdsChangeGroup.aspectOps);
+    addCategory("model", entityIdsChangeGroup.modelOps);
+    addCategory("relationship", entityIdsChangeGroup.relationshipOps);
+    addCategory("codeSpec", entityIdsChangeGroup.codeSpecOps);
+    addCategory("font", entityIdsChangeGroup.fontOps);
 
     return DgnDbStatus::Success;
     }

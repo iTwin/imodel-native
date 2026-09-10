@@ -5,6 +5,7 @@
 #include "ECDbPch.h"
 #include <GeomSerialization/GeomLibsSerialization.h>
 #include <GeomSerialization/GeomLibsJsonSerialization.h>
+#include <cmath>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 

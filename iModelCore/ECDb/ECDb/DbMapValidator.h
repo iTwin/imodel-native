@@ -14,6 +14,7 @@ struct DbMapValidator final
     {
     private:
         SchemaImportContext& m_schemaImportContext;
+        DbMapValidationMode m_mode;
 
         mutable bmap<DbColumnId, bset<DbIndex const*>> m_indexesByColumnCache;
 
@@ -44,12 +45,13 @@ struct DbMapValidator final
         BentleyStatus ValidateOverflowPropertyMaps(ClassMap const& classMap) const;
         BentleyStatus CheckDuplicateDataPropertyMap() const;
         ECDbCR GetECDb() const { return m_schemaImportContext.GetECDb(); }
+        bool MaintainsDataTables() const { return m_schemaImportContext.MaintainsDataTables(); }
         MainSchemaManager const& GetSchemaManager() const { return m_schemaImportContext.GetSchemaManager(); }
         DbSchema const& GetDbSchema() const { return GetSchemaManager().GetDbSchema(); }
         IssueDataSource const& Issues() const { return GetSchemaManager().Issues(); }
 
     public:
-        explicit DbMapValidator(SchemaImportContext& ctx) : m_schemaImportContext(ctx) {}
+        explicit DbMapValidator(SchemaImportContext& ctx, DbMapValidationMode mode = DbMapValidationMode::SchemaImport) : m_schemaImportContext(ctx), m_mode(mode) {}
         ~DbMapValidator() {}
 
         BentleyStatus Validate() const;

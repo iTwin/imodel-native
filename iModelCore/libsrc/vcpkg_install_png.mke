@@ -9,14 +9,14 @@
 
 %include mdl.mki
 
-pngDir      = $(_MakeFilePath)png/
-installRoot = $(OutputRootDir)vcpkg_installed/png/
+pngDir      = $(_MakeFilePath)png
+installRoot = $(OutputRootDir)vcpkg_installed/png
 
 %include $(_MakeFilePath)vcpkg.mki
 
 always:
 %if defined (winNT)
-    $(_MakeFilePath)vcpkg_run_install.bat $(pngDir) $(installRoot) $(vcpkgTriplet)
+    powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$(_MakeFilePath)vcpkg_run_install.ps1" "$(pngDir)" "$(installRoot)" "$(vcpkgTriplet)"
 %else
     $(_MakeFilePath)vcpkg_run_install.sh $(pngDir) $(installRoot) $(vcpkgTriplet)
 %endif

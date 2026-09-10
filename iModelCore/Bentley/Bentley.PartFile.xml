@@ -47,6 +47,7 @@
 
     <Part Name="UnitTests-NonPublished" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
         <SubPart PartName="PrewireForUnitTests" />
+        <SubPart PartName="BeRapidJson" />
 	<SubPart PartName="folly" PartFile="iModelCore/libsrc/facebook/facebook" />
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="Bentley/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
@@ -195,7 +196,6 @@
 
     <Part Name="BeRapidJson" BentleyBuildMakeFile="BeRapidJson/BeRapidJson.mke">
         <SubPart PartName="rapidjsonapi" PartFile="iModelCore/libsrc/rapidjson/rapidjson"/>
-        <SubPart PartName="BeJsonCpp" PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" />
         <Bindings>
             <PublicAPI Domain="BeRapidJson"/>
         </Bindings>

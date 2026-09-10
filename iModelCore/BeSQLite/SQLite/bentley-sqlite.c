@@ -70,33 +70,6 @@
 #include "test_sqllog.c"
 #endif
 
-#if !defined (NDEBUG)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-int checkNoActiveStatements(sqlite3* db)
-    {
-    Vdbe* stmt;
-    if (0 == db->nVdbeActive)
-        return SQLITE_OK;
-
-    // A prepared statement is internally a Vdbe; sqlite3_stmt is just its opaque public handle.
-    // The casts cross that public/private boundary and mirror what SQLite does internally.
-    for (stmt = db->pVdbe; stmt != NULL; stmt = (Vdbe*)sqlite3_next_stmt(db, (sqlite3_stmt*)stmt))
-        {
-        if (stmt->eVdbeState == VDBE_RUN_STATE)
-            {
-            sqlite3_log(SQLITE_BUSY, "Active statement: %s", stmt->zSql);
-            //assert(0);
-            return SQLITE_ERROR;
-            }
-        }
-
-    sqlite3_log(SQLITE_BUSY, "nVdbeActive=%d but no active statements detected?!)", db->nVdbeActive);
-    return SQLITE_ERROR;
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/

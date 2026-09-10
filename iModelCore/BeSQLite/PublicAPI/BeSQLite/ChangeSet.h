@@ -231,6 +231,12 @@ struct ChangeStream : NonCopyableClass {
 
     enum class SetType : bool { Full = 0, Patch = 1 };
     enum class FilterChangeAction : bool { Accept = 1, Skip = 0 };
+    //! Data and Conflict are the two that mean "this row is already different here".
+    //!   Data     - an UPDATE or DELETE whose before-values do not match the row now in the db.
+    //!   Conflict - an INSERT whose primary key is already taken.
+    //! This makes ConflictResolution::Replace mean two different things. For Data, SQLite re-runs
+    //! the statement ignoring the mismatch. For Conflict, it DELETEs the existing row and then
+    //! inserts, and that delete fires ON DELETE CASCADE unless the apply set FkNoAction.
     enum class ConflictCause : int { Data = 1, NotFound = 2, Conflict = 3, Constraint = 4, ForeignKey = 5 };
     enum class ConflictResolution : int { Skip = 0, Replace = 1, Abort = 2 };
 

@@ -20,6 +20,7 @@
 #include <folly/BeFolly.h>
 #include "SchemaUtil.h"
 #include "JsLogger.h"
+#include <cmath>
 
 // cspell:ignore napi strbuf propsize
 
@@ -457,7 +458,7 @@ public:
     void ConcurrentQueryExecute(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, requestObj);
         REQUIRE_ARGUMENT_FUNCTION(1, callback);
-        JsInterop::ConcurrentQueryExecute(m_ecdb, requestObj, callback);
+        JsInterop::ConcurrentQueryExecute(GetOpenedDb(info), requestObj, callback);
     }
     void ClearECDbCache(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
@@ -610,33 +611,46 @@ public:
         return obj;
     }
 
-    void SchemaSyncPull(NapiInfoCR info) {
+    void SchemaSyncOverwrite(NapiInfoCR info) {
         OPTIONAL_ARGUMENT_STRING(0, schemaSyncDbUriStr);
         auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
         LastErrorListener lastError(m_ecdb);
-        auto rc = m_ecdb.Schemas().GetSchemaSync().Pull(syncDbUri);
+        auto rc = m_ecdb.Schemas().GetSchemaSync().OverwriteSyncDb(syncDbUri);
         if (rc != SchemaSync::Status::OK) {
             if (lastError.HasError()) {
                 THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
             } else {
-                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to pull changes from channel: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to overwrite schema sync db: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
+            }
+        }
+    }
+    void SchemaSyncRepair(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING(0, schemaSyncDbUriStr);
+        REQUIRE_ARGUMENT_INTEGER(1, repairScope);
+        auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
+        const auto scope = static_cast<SchemaSync::RepairScope>(repairScope);
+        LastErrorListener lastError(m_ecdb);
+        auto rc = m_ecdb.Schemas().GetSchemaSync().RepairSyncDb(syncDbUri, scope);
+        if (rc != SchemaSync::Status::OK) {
+            if (lastError.HasError()) {
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
+            } else {
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to repair schema sync db: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
+            }
+        }
+    }
+    void SchemaSyncUpdateDbSchema(NapiInfoCR info) {
+        LastErrorListener lastError(m_ecdb);
+        auto rc = m_ecdb.Schemas().GetSchemaSync().UpdateDbSchema();
+        if (rc != SchemaSync::Status::OK) {
+            if (lastError.HasError()) {
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
+            } else {
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), "fail to update the db schema from the ec_ tables", rc);
             }
         }
     }
 
-    void SchemaSyncPush(NapiInfoCR info) {
-        OPTIONAL_ARGUMENT_STRING(0, schemaSyncDbUriStr);
-        auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
-        LastErrorListener lastError(m_ecdb);
-        auto rc = m_ecdb.Schemas().GetSchemaSync().Push(syncDbUri);
-        if (rc != SchemaSync::Status::OK) {
-            if (lastError.HasError()) {
-                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
-            } else {
-                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to push changes from channel: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
-            }
-        }
-    }
     static Napi::Value EnableSharedCache(NapiInfoCR info) {
         REQUIRE_ARGUMENT_BOOL(0, enabled);
         DbResult r = BeSQLiteLib::EnableSharedCache(enabled);
@@ -664,8 +678,9 @@ public:
             InstanceMethod("isOpen", &NativeECDb::IsOpen),
             InstanceMethod("schemaSyncSetDefaultUri", &NativeECDb::SchemaSyncSetDefaultUri),
             InstanceMethod("schemaSyncGetDefaultUri", &NativeECDb::SchemaSyncGetDefaultUri),
-            InstanceMethod("schemaSyncPull", &NativeECDb::SchemaSyncPull),
-            InstanceMethod("schemaSyncPush", &NativeECDb::SchemaSyncPush),
+            InstanceMethod("schemaSyncOverwrite", &NativeECDb::SchemaSyncOverwrite),
+            InstanceMethod("schemaSyncRepair", &NativeECDb::SchemaSyncRepair),
+            InstanceMethod("schemaSyncUpdateDbSchema", &NativeECDb::SchemaSyncUpdateDbSchema),
             InstanceMethod("schemaSyncInit", &NativeECDb::SchemaSyncInit),
             InstanceMethod("schemaSyncEnabled", &NativeECDb::SchemaSyncEnabled),
             InstanceMethod("schemaSyncGetLocalDbInfo", &NativeECDb::SchemaSyncGetLocalDbInfo),
@@ -1616,7 +1631,8 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     }
     Napi::Value CancelTo(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, txnIdHexStr);
-        return Napi::Number::New(Env(), (int) GetOpenedDb(info).Txns().CancelTo(TxnIdFromString(txnIdHexStr)));
+        OPTIONAL_ARGUMENT_BOOL(1, allowCrossSessions, false);
+        return Napi::Number::New(Env(), (int) GetOpenedDb(info).Txns().CancelTo(TxnIdFromString(txnIdHexStr), allowCrossSessions));
     }
     Napi::Value ReverseTxns(NapiInfoCR info) {
         REQUIRE_ARGUMENT_NUMBER(0, numTxns );
@@ -2358,32 +2374,49 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         return obj;
     }
 
-    void SchemaSyncPull(NapiInfoCR info) {
+    void SchemaSyncOverwrite(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
         OPTIONAL_ARGUMENT_STRING(0, schemaSyncDbUriStr);
         auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
         LastErrorListener lastError(GetOpenedDb(info));
-        auto rc = db.PullSchemaChanges(syncDbUri);
+        auto rc = db.Schemas().GetSchemaSync().OverwriteSyncDb(syncDbUri);
         if (rc != SchemaSync::Status::OK) {
             if (lastError.HasError()) {
                 THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
             } else {
-                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to pull changes to schema sync db: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to overwrite schema sync db: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
             }
         }
     }
 
-    void SchemaSyncPush(NapiInfoCR info) {
+    void SchemaSyncRepair(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
-        OPTIONAL_ARGUMENT_STRING(0, schemaSyncDbUriStr);
+        REQUIRE_ARGUMENT_STRING(0, schemaSyncDbUriStr);
+        REQUIRE_ARGUMENT_INTEGER(1, repairScope);
         auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
-        LastErrorListener lastError(GetOpenedDb(info));
-        auto rc = db.Schemas().GetSchemaSync().Push(syncDbUri);
+        const auto scope = static_cast<SchemaSync::RepairScope>(repairScope);
+        LastErrorListener lastError(db);
+        auto rc = db.Schemas().GetSchemaSync().RepairSyncDb(syncDbUri, scope);
         if (rc != SchemaSync::Status::OK) {
             if (lastError.HasError()) {
                 THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
             } else {
-                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to push changes to schema sync db: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to repair schema sync db: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
+            }
+        }
+    }
+
+    // Materialize the physical tables and indexes the ec_ rows imply after a merge. Applying the
+    // tracked DDL is best effort because another briefcase may already have created those objects.
+    void SchemaSyncUpdateDbSchema(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        LastErrorListener lastError(db);
+        auto rc = db.Schemas().GetSchemaSync().UpdateDbSchema();
+        if (rc != SchemaSync::Status::OK) {
+            if (lastError.HasError()) {
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
+            } else {
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), "fail to update the db schema from the ec_ tables", rc);
             }
         }
     }
@@ -2443,7 +2476,6 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaFileNames);
         OPTIONAL_ARGUMENT_ANY_OBJ(1, jsOpts, Napi::Object::New(Env()));
-        ECSchemaReadContextPtr customContext = nullptr;
 
         JsInterop::SchemaImportOptions options;
         const auto maybeEcSchemaContextVal = jsOpts.Get(JsInterop::json_ecSchemaXmlContext());
@@ -2476,10 +2508,17 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaFileNames);
         OPTIONAL_ARGUMENT_ANY_OBJ(1, jsOpts, Napi::Object::New(Env()));
         JsInterop::SchemaImportOptions options;
+        const auto maybeEcSchemaContextVal = jsOpts.Get(JsInterop::json_ecSchemaXmlContext());
         options.m_schemaLockHeld = jsOpts.Get(JsInterop::json_schemaLockHeld()).ToBoolean();
         auto jsSyncDbUri = jsOpts.Get(JsInterop::json_schemaSyncDbUri());
         if (jsSyncDbUri.IsString())
             options.m_schemaSyncDbUri = jsSyncDbUri.ToString().Utf8Value();
+        if (!maybeEcSchemaContextVal.IsUndefined())
+            {
+            if (!NativeECSchemaXmlContext::HasInstance(maybeEcSchemaContextVal))
+                THROW_JS_TYPE_EXCEPTION("if SchemaImportOptions.ecSchemaXmlContext is defined, it must be an object of type NativeECSchemaXmlContext")
+            options.m_customSchemaContext = NativeECSchemaXmlContext::Unwrap(maybeEcSchemaContextVal.As<Napi::Object>())->GetContext();
+            }
 
         LastErrorListener lastError(db);
         DbResult result = JsInterop::ImportSchemas(db, schemaFileNames, SchemaSourceType::XmlString, options);
@@ -3247,7 +3286,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         {
         REQUIRE_ARGUMENT_STRING(0, testName);
         REQUIRE_ARGUMENT_STRING(1, params);
-        return toJsString(Env(), JsInterop::ExecuteTest(GetOpenedDb(info), testName, params).ToString());
+        return toJsString(Env(), JsInterop::ExecuteTest(GetOpenedDb(info), testName, params).Stringify());
         }
 
     //  Create projections
@@ -3423,8 +3462,9 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("stopProfiler", &NativeDgnDb::StopProfiler),
             InstanceMethod("schemaSyncSetDefaultUri", &NativeDgnDb::SchemaSyncSetDefaultUri),
             InstanceMethod("schemaSyncGetDefaultUri", &NativeDgnDb::SchemaSyncGetDefaultUri),
-            InstanceMethod("schemaSyncPull", &NativeDgnDb::SchemaSyncPull),
-            InstanceMethod("schemaSyncPush", &NativeDgnDb::SchemaSyncPush),
+            InstanceMethod("schemaSyncOverwrite", &NativeDgnDb::SchemaSyncOverwrite),
+            InstanceMethod("schemaSyncRepair", &NativeDgnDb::SchemaSyncRepair),
+            InstanceMethod("schemaSyncUpdateDbSchema", &NativeDgnDb::SchemaSyncUpdateDbSchema),
             InstanceMethod("schemaSyncInit", &NativeDgnDb::SchemaSyncInit),
             InstanceMethod("schemaSyncEnabled", &NativeDgnDb::SchemaSyncEnabled),
             InstanceMethod("schemaSyncGetLocalDbInfo", &NativeDgnDb::SchemaSyncGetLocalDbInfo),
@@ -3588,122 +3628,6 @@ DgnDb* extractDgnDbFromNapiValue(Napi::Value value)
     auto nativeDb = Napi::ObjectWrap<NativeDgnDb>::Unwrap(value.As<Napi::Object>());
     return nullptr != nativeDb && nativeDb->IsOpen() ? &nativeDb->GetDgnDb() : nullptr;
     }
-
-//=======================================================================================
-//  RevisionUtility class into JS
-//! @bsiclass
-//=======================================================================================
-struct NativeRevisionUtility : BeObjectWrap<NativeRevisionUtility>
-    {
-    private:
-        DEFINE_CONSTRUCTOR
-
-    public:
-        NativeRevisionUtility(NapiInfoCR info) : BeObjectWrap<NativeRevisionUtility>(info) {}
-        ~NativeRevisionUtility() {SetInDestructor();}
-
-    // Check if val is really a NativeRevisionUtility peer object
-    static bool InstanceOf(Napi::Value val) {
-        if (!val.IsObject())
-            return false;
-
-        Napi::HandleScope scope(val.Env());
-        return val.As<Napi::Object>().InstanceOf(Constructor().Value());
-    }
-
-    static Napi::Value RecompressRevision(NapiInfoCR info)
-        {
-        REQUIRE_ARGUMENT_STRING(0, sourceChangeSetFile);
-        REQUIRE_ARGUMENT_STRING(1, targetChangeSetFile);
-        OPTIONAL_ARGUMENT_STRING(2, lzmaProperties);
-        LzmaEncoder::LzmaParams params;
-        if (!lzmaProperties.empty())
-            params.FromJson(BeJsDocument(lzmaProperties));
-
-        BentleyStatus status = RevisionUtility::RecompressRevision(sourceChangeSetFile.c_str(), targetChangeSetFile.c_str(), params);
-        return Napi::Number::New(info.Env(), (int)status);
-        }
-    static Napi::Value DisassembleRevision(NapiInfoCR info)
-        {
-        REQUIRE_ARGUMENT_STRING(0, sourceFile);
-        REQUIRE_ARGUMENT_STRING(1, targetDir);
-        BentleyStatus status = RevisionUtility::DisassembleRevision(sourceFile.c_str(), targetDir.c_str());
-        return Napi::Number::New(info.Env(), (int)status);
-        }
-    static Napi::Value AssembleRevision(NapiInfoCR info)
-        {
-        REQUIRE_ARGUMENT_STRING(0, outputChangesetFile);
-        REQUIRE_ARGUMENT_STRING(1, rawChangesetFile);
-        OPTIONAL_ARGUMENT_STRING(2, prefixFile);
-        OPTIONAL_ARGUMENT_STRING(3, lzmaProperties);
-        LzmaEncoder::LzmaParams params;
-        if (!lzmaProperties.empty())
-            params.FromJson(BeJsDocument(lzmaProperties));
-
-        BentleyStatus status = RevisionUtility::AssembleRevision(prefixFile.c_str(), rawChangesetFile.c_str(), outputChangesetFile.c_str(), params);
-        return Napi::Number::New(info.Env(), (int)status);
-        }
-    static Napi::Value NormalizeLzmaParams(NapiInfoCR info)
-        {
-        OPTIONAL_ARGUMENT_STRING(0, lzmaProperties);
-        LzmaEncoder::LzmaParams params;
-        if (!lzmaProperties.empty())
-            params.FromJson(BeJsDocument(lzmaProperties));
-
-        BeJsDocument out;
-        params.ToJson(out);
-        return Napi::String::New(info.Env(), out.Stringify().c_str());
-        }
-    static Napi::Value ComputeStatistics(NapiInfoCR info)
-        {
-        REQUIRE_ARGUMENT_STRING(0, changesetFile);
-        REQUIRE_ARGUMENT_BOOL(1, addPrefix);
-        BeJsDocument out;
-        if (SUCCESS != RevisionUtility::ComputeStatistics(changesetFile.c_str(), addPrefix, out))
-            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Failed to compute statistics", IModelJsNativeErrorKey::BadArg);
-
-        return Napi::String::New(info.Env(), out.Stringify().c_str());
-        }
-    static Napi::Value GetUncompressSize(NapiInfoCR info)
-        {
-        REQUIRE_ARGUMENT_STRING(0, changesetFile);
-        uint32_t compressSize, uncompressSize, prefixSize;
-        if (SUCCESS != RevisionUtility::GetUncompressSize(changesetFile.c_str(), compressSize, uncompressSize, prefixSize))
-            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Failed to get uncompress size", IModelJsNativeErrorKey::CompressionError);
-
-        BeJsDocument out;
-        out["compressSize"] = compressSize;
-        out["uncompressSize"] = uncompressSize;
-        out["prefixSize"] = prefixSize;
-        return Napi::String::New(info.Env(), out.Stringify().c_str());
-        }
-    static Napi::Value DumpChangesetToDb(NapiInfoCR info)
-        {
-        REQUIRE_ARGUMENT_STRING(0, changesetFile);
-        REQUIRE_ARGUMENT_STRING(1, sqliteFile);
-        REQUIRE_ARGUMENT_BOOL(2, includeCols);
-
-        BentleyStatus status = RevisionUtility::DumpChangesetToDb(changesetFile.c_str(), sqliteFile.c_str(), includeCols);
-        return Napi::Number::New(info.Env(), (int)status);
-        }
-    static void Init(Napi::Env env, Napi::Object exports)
-        {
-        Napi::HandleScope scope(env);
-        Napi::Function t = DefineClass(env, "RevisionUtility", {
-            StaticMethod("recompressRevision", &NativeRevisionUtility::RecompressRevision),
-            StaticMethod("disassembleRevision", &NativeRevisionUtility::DisassembleRevision),
-            StaticMethod("assembleRevision", &NativeRevisionUtility::AssembleRevision),
-            StaticMethod("normalizeLzmaParams", &NativeRevisionUtility::NormalizeLzmaParams),
-            StaticMethod("computeStatistics", &NativeRevisionUtility::ComputeStatistics),
-            StaticMethod("getUncompressSize", &NativeRevisionUtility::GetUncompressSize),
-            StaticMethod("dumpChangesetToDb", &NativeRevisionUtility::DumpChangesetToDb),
-        });
-
-        exports.Set("RevisionUtility", t);
-
-        SET_CONSTRUCTOR(t)
-        }
-    };
 
 //=======================================================================================
 //  Projects the SchemaUtility class into JS.
@@ -3976,6 +3900,10 @@ struct NativeChangedElementsECDb : BeObjectWrap<NativeChangedElementsECDb>
 // Projects the IECSqlBinder interface into JS.
 //! @bsiclass
 //=======================================================================================
+struct ECSqlBinderLifetime {
+    bool m_isValid = true;
+};
+
 struct NativeECSqlBinder : BeObjectWrap<NativeECSqlBinder>
     {
 private:
@@ -3983,6 +3911,7 @@ private:
     IECSqlBinder* m_binder = nullptr;
     ECDb const* m_ecdb = nullptr;
     ECSqlStatement* m_ecSqlStatement = nullptr;
+    std::shared_ptr<ECSqlBinderLifetime> m_lifetime;
 
     static DbResult ToDbResult(ECSqlStatus status)
         {
@@ -3995,11 +3924,16 @@ private:
         return BE_SQLITE_ERROR;
         }
 
+    bool IsBinderValid() const
+        {
+        return m_binder != nullptr && m_lifetime != nullptr && m_lifetime->m_isValid;
+        }
+
 public:
     NativeECSqlBinder(NapiInfoCR info) : BeObjectWrap<NativeECSqlBinder>(info)
         {
-        if (info.Length() < 2 || info.Length() > 3)
-            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder constructor expects either two or three arguments.", IModelJsNativeErrorKey::BadArg);
+        if (info.Length() != 4)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder constructor expects four arguments.", IModelJsNativeErrorKey::BadArg);
 
         m_binder = info[0].As<Napi::External<IECSqlBinder>>().Data();
         if (m_binder == nullptr)
@@ -4010,6 +3944,11 @@ public:
             THROW_JS_TYPE_EXCEPTION("Invalid second arg for NativeECSqlBinder constructor. ECDb must not be nullptr");
 
         m_ecSqlStatement = info[2].As<Napi::External<ECSqlStatement>>().Data();
+        auto lifetime = info[3].As<Napi::External<std::shared_ptr<ECSqlBinderLifetime>>>().Data();
+        if (lifetime == nullptr || *lifetime == nullptr)
+            THROW_JS_TYPE_EXCEPTION("Invalid fourth arg for NativeECSqlBinder constructor. Binder lifetime must not be nullptr");
+
+        m_lifetime = *lifetime;
         }
 
     ~NativeECSqlBinder() {SetInDestructor();}
@@ -4050,14 +3989,18 @@ public:
         SET_CONSTRUCTOR(t);
         }
 
-    static Napi::Object New(Napi::Env const& env, IECSqlBinder& binder, ECDbCR ecdb, const ECSqlStatement* ecSqlStatement = nullptr)
+    static Napi::Object New(Napi::Env const& env, IECSqlBinder& binder, ECDbCR ecdb, ECSqlStatement const* ecSqlStatement, std::shared_ptr<ECSqlBinderLifetime> const& lifetime)
         {
-        return Constructor().New({Napi::External<IECSqlBinder>::New(env, &binder), Napi::External<ECDb>::New(env, const_cast<ECDb*>(&ecdb)), Napi::External<ECSqlStatement>::New(env, const_cast<ECSqlStatement*>(ecSqlStatement))});
+        auto lifetimeArg = Napi::External<std::shared_ptr<ECSqlBinderLifetime>>::New(
+            env,
+            new std::shared_ptr<ECSqlBinderLifetime>(lifetime),
+            [](Napi::Env, std::shared_ptr<ECSqlBinderLifetime>* value) { delete value; });
+        return Constructor().New({Napi::External<IECSqlBinder>::New(env, &binder), Napi::External<ECDb>::New(env, const_cast<ECDb*>(&ecdb)), Napi::External<ECSqlStatement>::New(env, const_cast<ECSqlStatement*>(ecSqlStatement)), lifetimeArg});
         }
 
     Napi::Value BindNull(NapiInfoCR info)
         {
-        if (m_binder == nullptr)
+        if (!IsBinderValid())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         ECSqlStatus stat = m_binder->BindNull();
@@ -4066,7 +4009,7 @@ public:
 
     Napi::Value BindBlob(NapiInfoCR info)
         {
-        if (m_binder == nullptr)
+        if (!IsBinderValid())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         if (info.Length() == 0)
@@ -4106,7 +4049,7 @@ public:
 
     Napi::Value BindBoolean(NapiInfoCR info)
         {
-        if (m_binder == nullptr)
+        if (!IsBinderValid())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         Napi::Value boolVal;
@@ -4119,7 +4062,7 @@ public:
 
     Napi::Value BindDateTime(NapiInfoCR info)
         {
-        if (m_binder == nullptr)
+        if (!IsBinderValid())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         REQUIRE_ARGUMENT_STRING(0, isoString);
@@ -4134,7 +4077,7 @@ public:
 
     Napi::Value BindDouble(NapiInfoCR info)
         {
-        if (m_binder == nullptr)
+        if (!IsBinderValid())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         REQUIRE_ARGUMENT_NUMBER(0, val);
@@ -4144,7 +4087,7 @@ public:
 
     Napi::Value BindGuid(NapiInfoCR info)
         {
-        if (m_binder == nullptr)
+        if (!IsBinderValid())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         REQUIRE_ARGUMENT_STRING(0, guidString);
@@ -4158,7 +4101,7 @@ public:
 
     Napi::Value BindId(NapiInfoCR info)
         {
-        if (m_binder == nullptr)
+        if (!IsBinderValid())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         REQUIRE_ARGUMENT_STRING(0, hexString);
@@ -4172,7 +4115,7 @@ public:
 
     Napi::Value BindIdSet(NapiInfoCR info)
         {
-        if (m_binder == nullptr)
+        if (!IsBinderValid())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
         if (info.Length() == 0)
             THROW_JS_TYPE_EXCEPTION("BindVirtualSet requires an argument");
@@ -4219,7 +4162,7 @@ public:
 
     Napi::Value BindInteger(NapiInfoCR info)
         {
-        if (m_binder == nullptr)
+        if (!IsBinderValid())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         if (info.Length() == 0)
@@ -4266,7 +4209,7 @@ public:
 
     Napi::Value BindPoint2d(NapiInfoCR info)
         {
-        if (m_binder == nullptr)
+        if (!IsBinderValid())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         REQUIRE_ARGUMENT_NUMBER(0, x);
@@ -4277,7 +4220,7 @@ public:
 
     Napi::Value BindPoint3d(NapiInfoCR info)
         {
-        if (m_binder == nullptr)
+        if (!IsBinderValid())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         REQUIRE_ARGUMENT_NUMBER(0, x);
@@ -4289,7 +4232,7 @@ public:
 
     Napi::Value BindString(NapiInfoCR info)
         {
-        if (m_binder == nullptr)
+        if (!IsBinderValid())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         REQUIRE_ARGUMENT_STRING(0, val);
@@ -4299,7 +4242,7 @@ public:
 
     Napi::Value BindNavigation(NapiInfoCR info)
         {
-        if (m_binder == nullptr || m_ecdb == nullptr)
+        if (!IsBinderValid() || m_ecdb == nullptr)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         REQUIRE_ARGUMENT_STRING(0, navIdHexStr);
@@ -4342,21 +4285,21 @@ public:
 
     Napi::Value BindMember(NapiInfoCR info)
         {
-        if (m_binder == nullptr || m_ecdb == nullptr)
+        if (!IsBinderValid() || m_ecdb == nullptr)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         REQUIRE_ARGUMENT_STRING(0, memberName);
         IECSqlBinder& memberBinder = m_binder->operator[](memberName.c_str());
-        return New(info.Env(), memberBinder, *m_ecdb);
+        return New(info.Env(), memberBinder, *m_ecdb, m_ecSqlStatement, m_lifetime);
         }
 
     Napi::Value AddArrayElement(NapiInfoCR info)
         {
-        if (m_binder == nullptr || m_ecdb == nullptr)
+        if (!IsBinderValid() || m_ecdb == nullptr)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         IECSqlBinder& elementBinder = m_binder->AddArrayElement();
-        return New(info.Env(), elementBinder, *m_ecdb);
+        return New(info.Env(), elementBinder, *m_ecdb, m_ecSqlStatement, m_lifetime);
         }
     };
 
@@ -5607,6 +5550,7 @@ struct NativeECSqlStatement : BeObjectWrap<NativeECSqlStatement> {
 private:
     DEFINE_CONSTRUCTOR;
     ECSqlStatement m_stmt;
+    std::shared_ptr<ECSqlBinderLifetime> m_binderLifetime;
 
     struct IssueListener : BentleyApi::ECN::IIssueListener {
         mutable Utf8String m_lastIssue;
@@ -5621,9 +5565,65 @@ private:
         }
     };
 
+    // Tracks the NativeECSqlStatements prepared against an ECDb so that they can be finalized
+    // *before* the db is closed. Otherwise Db::CloseDb force-finalizes the underlying
+    // sqlite3_stmt, leaving this statement holding a dangling pointer that crashes on any
+    // subsequent use or on finalization.
+    struct StatementRegistry : ECDb::AppData {
+        static ECDb::AppData::Key& GetKey() { static ECDb::AppData::Key s_key; return s_key; }
+
+        bset<NativeECSqlStatement*> m_statements;
+
+        ~StatementRegistry() {
+            auto statements = m_statements; // OnDbClose unregisters, mutating m_statements
+            for (auto statement : statements)
+                statement->OnDbClose();
+        }
+
+        static StatementRegistry* Get(ECDbCR db) {
+            auto appData = db.FindOrAddAppData(GetKey(), []() { return new StatementRegistry(); });
+            return static_cast<StatementRegistry*>(appData.get());
+        }
+    };
+
+    ECDb const* m_ecdb = nullptr;
+
+    void Register(ECDbCR ecdb) {
+        Unregister();
+        if (auto registry = StatementRegistry::Get(ecdb); nullptr != registry) {
+            registry->m_statements.insert(this);
+            m_ecdb = &ecdb;
+        }
+    }
+
+    void Unregister() {
+        if (nullptr == m_ecdb)
+            return;
+
+        // the db is still open here, so its appdata (and therefore the registry) is still alive
+        if (auto appData = m_ecdb->FindAppData(StatementRegistry::GetKey()); appData.IsValid())
+            static_cast<StatementRegistry*>(appData.get())->m_statements.erase(this);
+
+        m_ecdb = nullptr;
+    }
+
+    void InvalidateBinders() {
+        if (m_binderLifetime != nullptr)
+            m_binderLifetime->m_isValid = false;
+
+        m_binderLifetime.reset();
+    }
+
 public:
     NativeECSqlStatement(NapiInfoCR info) : BeObjectWrap<NativeECSqlStatement>(info) {}
-    ~NativeECSqlStatement() { SetInDestructor(); }
+    ~NativeECSqlStatement() { SetInDestructor(); InvalidateBinders(); Unregister(); m_stmt.Finalize(); }
+
+    // called while the db is still open, so finalizing here is safe
+    void OnDbClose() {
+        m_ecdb = nullptr;
+        InvalidateBinders();
+        m_stmt.Finalize();
+    }
 
     //  Create projections
     static void Init(Napi::Env& env, Napi::Object exports) {
@@ -5674,7 +5674,24 @@ public:
         OPTIONAL_ARGUMENT_BOOL(2,logErrors, true);
         IssueListener listener(*ecdb);
 
+        if (m_stmt.IsPrepared()) {
+            // The native statement rejects a second Prepare and stays prepared and usable, so its
+            // registration and binder lifetime must survive the failure. Tearing them down here
+            // would leave a live statement that the db no longer finalizes on close, and binders
+            // without a lifetime.
+            ECSqlStatus status = m_stmt.Prepare(*ecdb, ecsql.c_str(), logErrors);
+            BeAssert(!status.IsSuccess() && "Preparing an already prepared ECSqlStatement is expected to fail");
+            return CreateErrorObject0(ToDbResult(status), !status.IsSuccess() ? listener.m_lastIssue.c_str() : nullptr, Env());
+        }
+
+        InvalidateBinders();
+        Unregister();
         ECSqlStatus status = m_stmt.Prepare(*ecdb, ecsql.c_str(), logErrors);
+        if (status.IsSuccess()) {
+            m_binderLifetime = std::make_shared<ECSqlBinderLifetime>();
+            Register(*ecdb);
+        }
+
         return CreateErrorObject0(ToDbResult(status), !status.IsSuccess() ? listener.m_lastIssue.c_str() : nullptr, Env());
     }
 
@@ -5687,6 +5704,8 @@ public:
     }
 
     void Dispose(NapiInfoCR info) {
+        InvalidateBinders();
+        Unregister();
         m_stmt.Finalize();
     }
 
@@ -5716,7 +5735,7 @@ public:
             paramIndex = m_stmt.GetParameterIndex(paramArg.ToString().Utf8Value().c_str());
 
         IECSqlBinder& binder = m_stmt.GetBinder(paramIndex);
-        return NativeECSqlBinder::New(info.Env(), binder, *m_stmt.GetECDb(), &m_stmt);
+        return NativeECSqlBinder::New(info.Env(), binder, *m_stmt.GetECDb(), &m_stmt, m_binderLifetime);
     }
 
     Napi::Value Step(NapiInfoCR info) {
@@ -5818,10 +5837,7 @@ public:
         REQUIRE_ARGUMENT_ANY_OBJ(0, argsObj);
         BeJsValue args(argsObj);
 
-        Json::Value jsonArgs;
-        BeJsValue jsArgs(jsonArgs);
-        jsArgs.From(args);
-        ECSqlParams params(jsonArgs);
+        ECSqlParams params(args);
         if(params.IsEmpty())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "no parameters to bind", IModelJsNativeErrorKey::BadArg);
         std::string errMsg;
@@ -6512,7 +6528,7 @@ struct GetTileTreeWorker : TileWorker
 {
 private:
     // Output
-    Json::Value m_result;
+    BeJsDocument m_result;
 
     void Execute() final
         {
@@ -7944,7 +7960,6 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports) {
     NativeBlobIo::Init(env, exports);
     NativeDgnDb::Init(env, exports);
     NativeGeoServices::Init(env, exports);
-    NativeRevisionUtility::Init(env, exports);
     NativeSchemaUtility::Init(env, exports);
     NativeECDb::Init(env, exports);
     NativeSqliteChangesetReader::Init(env, exports);

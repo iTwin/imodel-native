@@ -2674,8 +2674,7 @@ static sal_Int32    parseString(yyscan_t yyscanner);
 #define YY_EXTRA_TYPE OSQLScanner*
 #define YY_INPUT(buf,result,max_size) \
 { \
-    int c = yyget_extra(yyscanner)->SQLyygetc(); \
-    result = (c == EOF) ? YY_NULL : (buf[0] = c, 1); \
+    result = (int) yyget_extra(yyscanner)->SQLyyread((buf), (max_size)); \
 }
 #define YY_FATAL_ERROR(msg) \
 { \
@@ -5394,8 +5393,8 @@ sal_Int32 gatherNamePre(yyscan_t yyscanner, const sal_Char* text)
             {
             Utf8String sStmt = yyget_extra(yyscanner)->getStatement();
             size_t nLength = strlen(text);
-            size_t nPos = yyget_extra(yyscanner)->GetCurrentPos() - nLength - 2;
-            if (sStmt[nPos] == ':')
+            const sal_Int32 nPos = yyget_extra(yyscanner)->GetScanPos() - (sal_Int32) nLength - 1;
+            if (nPos >= 0 && static_cast<size_t>(nPos) < sStmt.size() && sStmt[nPos] == ':')
             {
                 SQL_NEW_NODE(Utf8String(text), SQL_NODE_NAME);
                 nToken = SQL_TOKEN_NAME;
@@ -5411,13 +5410,11 @@ sal_Int32 gatherNamePre(yyscan_t yyscanner, const sal_Char* text)
 }
 
 using namespace connectivity;
-static bool IN_SQLyyerror;
 
 //------------------------------------------------------------------------------
 OSQLScanner::OSQLScanner(Utf8CP rNewStatement, const IParseContext* pContext, sal_Bool bInternational)
-    : m_nCurrentPos(0), m_bInternational(bInternational), m_pContext(pContext), yyscanner(nullptr), m_nRule(GetSQLRule()), m_sStatement(rNewStatement)
+    : m_nCurrentPos(0), m_bInternational(bInternational), m_pContext(pContext), yyscanner(nullptr), m_nRule(GetSQLRule()), m_sStatement(rNewStatement), m_inSQLyyerror(false)
     {
-    IN_SQLyyerror = false;
     yylex_init(&yyscanner);
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     YY_FLUSH_BUFFER;
@@ -5432,36 +5429,57 @@ OSQLScanner::~OSQLScanner()
     }
 
  //------------------------------------------------------------------------
-sal_Int32 OSQLScanner::SQLyygetc(void)
+// Hands the lexer a block of characters at a time. Feeding flex a single character
+// per YY_INPUT call makes it shift the pending token back to the start of its buffer
+// on every character, which is O(n^2) in the length of a single token (a long
+// identifier or string literal would effectively hang the parser).
+size_t OSQLScanner::SQLyyread(sal_Char* buf, size_t maxSize)
     {
-    sal_Int32 nPos = (static_cast<size_t>(m_nCurrentPos) >= m_sStatement.size()) ? -1 : m_sStatement[m_nCurrentPos];
-    m_nCurrentPos++;
-    return nPos;
+    const size_t statementSize = m_sStatement.size();
+    const size_t currentPos = static_cast<size_t>(m_nCurrentPos);
+    if (0 == maxSize || currentPos >= statementSize)
+        return 0;
+
+    const size_t count = std::min(maxSize, statementSize - currentPos);
+    memcpy(buf, m_sStatement.data() + currentPos, count);
+    m_nCurrentPos += (sal_Int32) count;
+    return count;
     }
 
+//------------------------------------------------------------------------
+sal_Int32 OSQLScanner::GetScanPos() const
+    {
+    struct yyguts_t* yyg = (struct yyguts_t*) yyscanner;
+    if (nullptr == yyg || nullptr == yyg->yy_buffer_stack || nullptr == YY_CURRENT_BUFFER_LVALUE)
+        return m_nCurrentPos;
+
+    // characters delivered to flex that it has not scanned past yet
+    const sal_Int32 unscanned = (sal_Int32) ((YY_CURRENT_BUFFER_LVALUE->yy_ch_buf + yyg->yy_n_chars) - yyg->yy_c_buf_p);
+    return m_nCurrentPos - unscanned;
+    }
 //------------------------------------------------------------------------------
 void OSQLScanner::SQLyyerror(const char *fmt)
     {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
-    if(IN_SQLyyerror)
+    if(m_inSQLyyerror)
         return;
 
-    IN_SQLyyerror = true;
+    m_inSQLyyerror = true;
     OSL_ENSURE(m_pContext, "OSQLScanner::SQLyyerror: No Context set");
     m_sErrorMessage = fmt;
-    if (m_nCurrentPos < (sal_Int32)m_sStatement.size())
+    // m_nCurrentPos is the end of the block last handed to flex, which is typically already the end
+    // of the statement. The offending text is only available where the scanner actually stands.
+    if (GetScanPos() < (sal_Int32)m_sStatement.size())
     {
         m_sErrorMessage.append(": ");
         Utf8String aError;
-        static sal_Int32 BUFFERSIZE = 256;
-        static sal_Char* Buffer = 0;
-        if(!Buffer)
-            Buffer = new sal_Char[BUFFERSIZE];
-
-        sal_Char *s = Buffer;
-        sal_Int32 nPos = 1;
+        // A growing Utf8String replaces the former file static char buffer. That buffer was shared
+        // by every thread parsing ECSQL and its growth path advanced the static pointer itself,
+        // which corrupted the heap once the offending text reached the initial capacity.
+        Utf8String offendingText;
+        offendingText.reserve(256);
         sal_Int32 ch = yytext ? (yytext[0] == 0 ? ' ' : yytext[0]): ' ';
-        *s++ = ch;
+        offendingText.push_back((sal_Char) ch);
         while (!checkeof(ch = yyinput(yyscanner)))
         {
             if (ch == ' ')
@@ -5471,31 +5489,18 @@ void OSQLScanner::SQLyyerror(const char *fmt)
                     if (!checkeof(ch))
                         unput(ch);
                 }
-                *s = '\0';
-                aError.assign(Buffer);
+                aError = offendingText;
                 break;
             }
             else
             {
-                *s++ = ch;
-                if (++nPos == BUFFERSIZE)
-                {
-                    Utf8String aBuf(Buffer);
-                    delete[] Buffer;
-                    BUFFERSIZE *=2;
-                    Buffer = new sal_Char[BUFFERSIZE];
-            for(sal_Int32 i=0;i< (sal_Int32)aBuf.size();++i,++Buffer)
-                        *Buffer = aBuf[i];
-                    s = &Buffer[nPos];
-                }
+                offendingText.push_back((sal_Char) ch);
             }
         }
 
         m_sErrorMessage += aError;
-        delete[] Buffer;
-        Buffer = NULL;
     }
-    IN_SQLyyerror = false;
+    m_inSQLyyerror = false;
     YY_FLUSH_BUFFER;
     }
 

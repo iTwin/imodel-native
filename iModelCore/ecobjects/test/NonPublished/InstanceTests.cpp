@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
+#include <cmath>
 
 USING_NAMESPACE_BENTLEY_EC
 

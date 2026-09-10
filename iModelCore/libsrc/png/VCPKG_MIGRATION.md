@@ -131,7 +131,7 @@ our overlay).
 > **Done.** Created [`../vcpkg_install_png.mke`](../vcpkg_install_png.mke), mirroring
 > [`../vcpkg_install_compress.mke`](../vcpkg_install_compress.mke) but **without**
 > `vcpkgUseVeracodeTriplet` (the png triplets set no `-RTC` flags). It installs the png manifest
-> into `$(OutputRootDir)vcpkg_installed/png/`; `vcpkg_run_install.{bat,sh}` auto-passes
+> into `$(OutputRootDir)vcpkg_installed/png/`; `vcpkg_run_install.ps1`/`.sh` auto-passes
 > `--overlay-triplets=$(pngDir)triplets` because that directory exists.
 
 Create `iModelCore/libsrc/vcpkg_install_png.mke` next to the other `vcpkg_install_*.mke`
@@ -141,20 +141,20 @@ files, mirroring [`../vcpkg_install_compress.mke`](../vcpkg_install_compress.mke
 ```makefile
 %include mdl.mki
 
-pngDir      = $(_MakeFilePath)png/
-installRoot = $(OutputRootDir)vcpkg_installed/png/
+pngDir      = $(_MakeFilePath)png
+installRoot = $(OutputRootDir)vcpkg_installed/png
 
 %include $(_MakeFilePath)vcpkg.mki
 
 always:
 %if defined (winNT)
-    $(_MakeFilePath)vcpkg_run_install.bat $(pngDir) $(installRoot) $(vcpkgTriplet)
+    powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$(_MakeFilePath)vcpkg_run_install.ps1" "$(pngDir)" "$(installRoot)" "$(vcpkgTriplet)"
 %else
     $(_MakeFilePath)vcpkg_run_install.sh $(pngDir) $(installRoot) $(vcpkgTriplet)
 %endif
 ```
 
-`vcpkg_run_install.{bat,sh}` automatically pass `--overlay-triplets=$pngDir/triplets` because
+`vcpkg_run_install.ps1`/`.sh` automatically pass `--overlay-triplets=$pngDir/triplets` because
 that directory exists.
 
 ---

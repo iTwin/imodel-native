@@ -3,6 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
+#include <string>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -753,6 +754,9 @@ void ECSqlExpPreparer::RemovePropertyRefs(ECSqlPrepareContext& ctx, ClassRefExp 
             continue;
 
         const auto propMap = propertyNameExp->GetPropertyMap();
+        if (propMap == nullptr)
+            continue; //nothing to add to the selection options if the exp has no backing property map
+
         if (propMap->GetType() == PropertyMap::Type::Navigation && propertyNameExp->FindParent(Exp::Type::Selection) == nullptr)
             {
             // Only omit RelECClassId from the view if it is not actually needed anywhere in the query

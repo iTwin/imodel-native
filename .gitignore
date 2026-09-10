@@ -54,3 +54,6 @@ obj/
 # LastCoverageResults.log(opencppcoverage.exe)
 # LastCoverageResults.log can be generated when we run opencppcoverage.exe so gitignoring them
 LastCoverageResults.log
+
+# graphify output directory
+graphify-out/

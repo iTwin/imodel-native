@@ -14,15 +14,15 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 struct BentleyGeometryJson
 {
 private: BentleyGeometryJson ();
-public: static GEOMLIBS_SERIALIZATION_EXPORT bool TryJsonValueToGeometry (JsonValueCR value, bvector<IGeometryPtr> &geometry);
+public: static GEOMLIBS_SERIALIZATION_EXPORT bool TryJsonValueToGeometry (BeJsConst value, bvector<IGeometryPtr> &geometry);
 
 public: static GEOMLIBS_SERIALIZATION_EXPORT bool TryJsonStringToGeometry (Utf8StringCR string, bvector<IGeometryPtr> &geometry);
 
 //! Write to a json value.
-public: static GEOMLIBS_SERIALIZATION_EXPORT bool TryGeometryToJsonValue (JsonValueR value, IGeometryCR data, bool preferNativeDgnTYpes = true);
+public: static GEOMLIBS_SERIALIZATION_EXPORT bool TryGeometryToJsonValue (BeJsValue value, IGeometryCR data, bool preferNativeDgnTYpes = true);
 
 //! Write to a json value.
-public: static GEOMLIBS_SERIALIZATION_EXPORT bool TryGeometryToJsonValue(JsonValueR value, bvector<IGeometryPtr> const &data, bool preferNativeDgnTYpes = true);
+public: static GEOMLIBS_SERIALIZATION_EXPORT bool TryGeometryToJsonValue(BeJsValue value, bvector<IGeometryPtr> const &data, bool preferNativeDgnTYpes = true);
 
 //! Write to a json string.
 public: static GEOMLIBS_SERIALIZATION_EXPORT bool TryGeometryToJsonString (Utf8StringR string, IGeometryCR data, bool preferNativeDgnTYpes = true);
