@@ -168,7 +168,7 @@ BentleyStatus DbMapValidator::CheckDuplicateDataPropertyMap() const {
                 JOIN [ec_Column] [c] ON [c].[Id] = [pp].[ColumnId]
                 JOIN [ec_Table] [t] ON [t].[Id] = [c].[TableId]
             WHERE  [p].[AccessString] != 'ECClassId' AND [p].[AccessString] != 'ECInstanceId'
-            GROUP BY [pp].[ClassId], [pp].[PropertyPathId] HAVING COUNT (*) > 1;)");
+            GROUP BY [pp].[ClassId], [p].[AccessString] HAVING COUNT (*) > 1;)");
 
     if (rc != BE_SQLITE_OK) {
         Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0114, "Failed to run duplicate data property check");
@@ -1855,4 +1855,3 @@ BentleyStatus DbMapValidator::ValidateNavigationPropertyMapUniqueness(Navigation
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
-
