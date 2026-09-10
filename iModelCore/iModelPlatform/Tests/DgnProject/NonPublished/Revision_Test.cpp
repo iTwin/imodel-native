@@ -640,7 +640,7 @@ TEST_F(RevisionTestFixture, DdlChanges)
     BackupTestFile();
 
     // Create Revision 1 (Schema changes - creating two tables)
-    m_db->CreateTable("TestTable1", "Id INTEGER PRIMARY KEY, Column1 INTEGER");
+    m_db->CreateTable("TestTable1", "Id INTEGER PRIMARY KEY, Column1 INTEGER, Label TEXT DEFAULT 'a; b'");
     m_db->CreateTable("TestTable2", "Id INTEGER PRIMARY KEY, Column1 INTEGER");
 
     ASSERT_FALSE(m_db->Txns().HasDataChanges());
@@ -718,6 +718,11 @@ TEST_F(RevisionTestFixture, DdlChanges)
 
     ASSERT_TRUE(m_db->TableExists("TestTable1"));
     ASSERT_TRUE(m_db->TableExists("TestTable2"));
+    {
+    Statement statement(*m_db, "SELECT sql FROM sqlite_master WHERE name='TestTable1'");
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+    EXPECT_TRUE(Utf8String(statement.GetValueText(0)).Contains("DEFAULT 'a; b'"));
+    }
 
     ASSERT_TRUE(m_db->ColumnExists("TestTable1", "Id"));
     ASSERT_TRUE(m_db->ColumnExists("TestTable1", "Column1"));

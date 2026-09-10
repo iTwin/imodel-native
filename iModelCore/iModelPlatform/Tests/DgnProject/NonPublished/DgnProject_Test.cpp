@@ -41,7 +41,7 @@ struct StepTimer
 //=======================================================================================
 struct DgnDbTest : public DgnDbTestFixture
 {
-    void CheckSpatialIndexTriggerUpgrade(DgnDbProfileVersion const& previousVersion, bool healthySource = false);
+    void CheckSpatialIndexTriggerUpgrade(DgnDbProfileVersion const& previousVersion, bool healthySource, bool schemaSync);
 };
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -96,8 +96,9 @@ TEST_F(DgnDbTest, ProjectProfileVersions)
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 // healthySource keeps the source's triggers current while the replay recipient retains legacy triggers.
-void DgnDbTest::CheckSpatialIndexTriggerUpgrade(DgnDbProfileVersion const& previousVersion, bool healthySource)
+void DgnDbTest::CheckSpatialIndexTriggerUpgrade(DgnDbProfileVersion const& previousVersion, bool healthySource, bool schemaSync)
 {
+    SCOPED_TRACE(schemaSync ? "Schema sync enabled" : "Schema sync disabled");
     auto getTriggerSql = [](BeSQLite::Db const& db, Utf8CP triggerName) {
         Statement statement(db, "SELECT sql FROM sqlite_master WHERE type='trigger' AND name=?");
         if (BE_SQLITE_OK != statement.BindText(1, triggerName, Statement::MakeCopy::No) || BE_SQLITE_ROW != statement.Step())
@@ -111,6 +112,21 @@ void DgnDbTest::CheckSpatialIndexTriggerUpgrade(DgnDbProfileVersion const& previ
     BeFileName fileName = m_db->GetFileName();
     m_db->Txns().DeleteAllTxns();
     SaveDb();
+    BeFileName syncFileName(fileName);
+    syncFileName.AppendString(L".sync");
+    if (schemaSync)
+        {
+        if (syncFileName.DoesPathExist())
+            ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeDeleteFile(syncFileName));
+        ECDb syncDb;
+        ASSERT_EQ(BE_SQLITE_OK, syncDb.CreateNewDb(syncFileName));
+        ASSERT_EQ(BE_SQLITE_OK, syncDb.SaveChanges());
+        syncDb.CloseDb();
+        ASSERT_EQ(SchemaSync::Status::OK, m_db->Schemas().GetSchemaSync().Init(SchemaSync::SyncDbUri(syncFileName.GetNameUtf8().c_str()), "trigger-upgrade", false));
+        SaveDb();
+        m_db->Txns().DeleteAllTxns();
+        SaveDb();
+        }
     CloseDb();
     m_db = nullptr;
 
@@ -183,6 +199,8 @@ void DgnDbTest::CheckSpatialIndexTriggerUpgrade(DgnDbProfileVersion const& previ
     DgnDbPtr replayDb = DgnDb::OpenIModelDb(&openStatus, replayFileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
     ASSERT_EQ(BE_SQLITE_OK, openStatus);
     ASSERT_TRUE(replayDb.IsValid());
+    if (schemaSync)
+        ASSERT_EQ(SchemaSync::Status::OK, replayDb->Schemas().GetSchemaSync().SetDefaultSyncDbUri(syncFileName.GetNameUtf8().c_str()));
     ASSERT_EQ(previousVersion, replayDb->GetProfileVersion());
     ASSERT_NE(updateTriggerSql, getTriggerSql(*replayDb, "dgn_rtree_upd"));
     ASSERT_NE(deleteTriggerSql, getTriggerSql(*replayDb, "dgn_rtree_upd1"));
@@ -191,21 +209,26 @@ void DgnDbTest::CheckSpatialIndexTriggerUpgrade(DgnDbProfileVersion const& previ
     EXPECT_EQ(m_db->GetProfileVersion(), replayDb->GetProfileVersion());
     EXPECT_EQ(updateTriggerSql, getTriggerSql(*replayDb, "dgn_rtree_upd"));
     EXPECT_EQ(deleteTriggerSql, getTriggerSql(*replayDb, "dgn_rtree_upd1"));
+    CloseDb();
+    m_db = nullptr;
 }
 
 TEST_F(DgnDbTest, UpgradeSpatialIndexTriggers)
 {
-    CheckSpatialIndexTriggerUpgrade(DgnDbProfileVersion(2, 0, 0, 7));
+    for (bool schemaSync : {false, true})
+        ASSERT_NO_FATAL_FAILURE(CheckSpatialIndexTriggerUpgrade(DgnDbProfileVersion(2, 0, 0, 7), false, schemaSync));
 }
 
 TEST_F(DgnDbTest, RepairSpatialIndexTriggersFromStaleProfile008)
 {
-    CheckSpatialIndexTriggerUpgrade(DgnDbProfileVersion(2, 0, 0, 8));
+    for (bool schemaSync : {false, true})
+        ASSERT_NO_FATAL_FAILURE(CheckSpatialIndexTriggerUpgrade(DgnDbProfileVersion(2, 0, 0, 8), false, schemaSync));
 }
 
 TEST_F(DgnDbTest, RepairSpatialIndexTriggersFromHealthyProfile008)
 {
-    CheckSpatialIndexTriggerUpgrade(DgnDbProfileVersion(2, 0, 0, 8), true);
+    for (bool schemaSync : {false, true})
+        ASSERT_NO_FATAL_FAILURE(CheckSpatialIndexTriggerUpgrade(DgnDbProfileVersion(2, 0, 0, 8), true, schemaSync));
 }
 
 //=======================================================================================
