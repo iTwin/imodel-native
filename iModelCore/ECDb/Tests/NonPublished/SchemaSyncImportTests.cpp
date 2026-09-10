@@ -782,7 +782,7 @@ TEST_F(SchemaSyncImportTestFixture, InitProfilelessSyncDbWithoutAttachErrors)
 
     {
     ECDb initializedSyncDb;
-    ASSERT_EQ(BE_SQLITE_OK, initializedSyncDb.OpenDb(syncPath, ECDb::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(BE_SQLITE_OK, initializedSyncDb.OpenBeSQLiteDb(syncPath, ECDb::OpenParams(Db::OpenMode::Readonly)));
     EXPECT_EQ(briefcase->GetECDbProfileVersion(), initializedSyncDb.GetECDbProfileVersion());
     ExpectECTablesIdentical(*briefcase, initializedSyncDb, "initialized profileless sync db");
     }
