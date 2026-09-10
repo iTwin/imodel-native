@@ -37,11 +37,12 @@ struct Optimizer final
         DropUnmappedTables = 1 << 7,
         DropUnmappedSharedColumns = 1 << 8,
         RunAnalyze = 1 << 9,
+        CleanOrphanCustomAttributes = 1 << 10,
 
-        SchemaCleanup = 0x007,
+        SchemaCleanup = 0x407,
         DataCleanup = 0x070,
         StorageCleanup = 0x188,
-        All = 0x3ff,
+        All = 0x7ff,
         };
 
     struct Result final

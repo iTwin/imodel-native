@@ -26,6 +26,7 @@ constexpr OptionEntry s_optionEntries[] = {
     {Optimizer::Options::PurgeInvalidClassIds, "purge_invalid_class_ids"},
     {Optimizer::Options::DeleteOrphanRelationships, "delete_orphan_relationships"},
     {Optimizer::Options::NullifyOrphanNavProps, "nullify_orphan_navigation_properties"},
+    {Optimizer::Options::CleanOrphanCustomAttributes, "clean_orphan_custom_attributes"},
     {Optimizer::Options::DropUnusedSchemas, "drop_unused_schemas"},
     {Optimizer::Options::DropEmptyDynamicClasses, "drop_empty_dynamic_classes"},
     {Optimizer::Options::DropEmptyDynamicProperties, "drop_empty_dynamic_properties"},
@@ -47,7 +48,8 @@ bool Contains(Optimizer::Options options, Optimizer::Options option)
 
 bool ChangesMetadata(Optimizer::Options option)
     {
-    return option == Optimizer::Options::DropUnusedSchemas ||
+    return option == Optimizer::Options::CleanOrphanCustomAttributes ||
+        option == Optimizer::Options::DropUnusedSchemas ||
         option == Optimizer::Options::DropEmptyDynamicClasses ||
         option == Optimizer::Options::DropEmptyDynamicProperties ||
         option == Optimizer::Options::CompactSharedColumns ||
@@ -128,6 +130,73 @@ DbResult PurgeInvalidClassIds(ECDbR ecdb, bool isDryRun, uint64_t& candidates, u
         }
 
     return rc == BE_SQLITE_DONE ? BE_SQLITE_OK : rc;
+    }
+
+constexpr Utf8CP s_orphanCustomAttributeCte = R"sql(
+    WITH orphan(Id) AS (
+        SELECT ca.Id
+        FROM [main].[ec_CustomAttribute] ca
+        WHERE ca.ContainerType=1
+          AND NOT EXISTS (SELECT 1 FROM [main].[ec_Schema] container WHERE container.Id=ca.ContainerId)
+        UNION ALL
+        SELECT ca.Id
+        FROM [main].[ec_CustomAttribute] ca
+        WHERE ca.ContainerType=30
+          AND NOT EXISTS (SELECT 1 FROM [main].[ec_Class] container WHERE container.Id=ca.ContainerId)
+        UNION ALL
+        SELECT ca.Id
+        FROM [main].[ec_CustomAttribute] ca
+        WHERE ca.ContainerType=992
+          AND NOT EXISTS (SELECT 1 FROM [main].[ec_Property] container WHERE container.Id=ca.ContainerId)
+        UNION ALL
+        SELECT ca.Id
+        FROM [main].[ec_CustomAttribute] ca
+        WHERE ca.ContainerType=1024
+          AND NOT EXISTS (
+              SELECT 1
+              FROM [main].[ec_RelationshipConstraint] container
+              WHERE container.Id=ca.ContainerId AND container.RelationshipEnd=0)
+        UNION ALL
+        SELECT ca.Id
+        FROM [main].[ec_CustomAttribute] ca
+        WHERE ca.ContainerType=2048
+          AND NOT EXISTS (
+              SELECT 1
+              FROM [main].[ec_RelationshipConstraint] container
+              WHERE container.Id=ca.ContainerId AND container.RelationshipEnd=1)
+    )
+)sql";
+
+DbResult CleanOrphanCustomAttributes(ECDbR ecdb, bool isDryRun, uint64_t& candidates, uint64_t& changed)
+    {
+    ECDB_PERF_LOG_SCOPE("Optimizer> Clean orphan custom attributes");
+    candidates = 0;
+    changed = 0;
+
+    Statement countStmt;
+    Utf8String countSql(s_orphanCustomAttributeCte);
+    countSql.append("SELECT COUNT(*) FROM orphan");
+    auto rc = countStmt.Prepare(ecdb, countSql.c_str());
+    if (rc != BE_SQLITE_OK)
+        return rc;
+    if ((rc = countStmt.Step()) != BE_SQLITE_ROW)
+        return rc;
+    candidates = countStmt.GetValueUInt64(0);
+    countStmt.Finalize();
+
+    if (isDryRun || candidates == 0)
+        return BE_SQLITE_OK;
+
+    Statement deleteStmt;
+    Utf8String deleteSql(s_orphanCustomAttributeCte);
+    deleteSql.append("DELETE FROM [main].[ec_CustomAttribute] WHERE Id IN (SELECT Id FROM orphan)");
+    if ((rc = deleteStmt.Prepare(ecdb, deleteSql.c_str())) != BE_SQLITE_OK)
+        return rc;
+    if ((rc = deleteStmt.Step()) != BE_SQLITE_DONE)
+        return rc;
+
+    changed = static_cast<uint64_t>(ecdb.GetModifiedRowCount());
+    return BE_SQLITE_OK;
     }
 
 bool IsProtectedSchema(ECSchemaCR schema)
@@ -1842,6 +1911,13 @@ DbResult ExecuteOption(ECDbR ecdb, Optimizer::Options option, bool isDryRun, Sch
             changed = isDryRun ? 0 : candidates;
             if (rc != BE_SQLITE_OK)
                 error = checker.GetLastError();
+            return rc;
+            }
+        case Optimizer::Options::CleanOrphanCustomAttributes:
+            {
+            const auto rc = CleanOrphanCustomAttributes(ecdb, isDryRun, candidates, changed);
+            if (rc != BE_SQLITE_OK)
+                error = ecdb.GetLastError();
             return rc;
             }
         case Optimizer::Options::DropUnmappedTables:

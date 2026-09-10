@@ -112,7 +112,7 @@ TEST_F(OptimizerTestFixture, AllOptionsExecuteWithoutOwningCallerTransaction)
     Optimizer::Result result;
     ASSERT_EQ(BE_SQLITE_OK, Optimizer(m_ecdb).Optimize(Optimizer::Options::All, result));
     EXPECT_TRUE(result.IsSuccess());
-    EXPECT_EQ(10, result.GetPhases().size());
+    EXPECT_EQ(11, result.GetPhases().size());
     EXPECT_EQ(transactionDepth, m_ecdb.GetCurrentSavepointDepth());
     }
 
@@ -126,7 +126,7 @@ TEST_F(OptimizerTestFixture, DryRunAllWorksOnReadonlyECDb)
     ASSERT_EQ(BE_SQLITE_OK, Optimizer(m_ecdb).DryRun(Optimizer::Options::All, result));
     EXPECT_TRUE(result.IsSuccess());
     EXPECT_TRUE(result.IsDryRun());
-    EXPECT_EQ(10, result.GetPhases().size());
+    EXPECT_EQ(11, result.GetPhases().size());
     }
 
 TEST_F(OptimizerTestFixture, PurgeInvalidClassIdsDryRunAndExecute)
@@ -178,6 +178,75 @@ TEST_F(OptimizerTestFixture, PurgeInvalidClassIdsDryRunAndExecute)
     ASSERT_EQ(BE_SQLITE_OK, count.Prepare(m_ecdb, "SELECT COUNT(*) FROM ts_Base"));
     ASSERT_EQ(BE_SQLITE_ROW, count.Step());
     EXPECT_EQ(0, count.GetValueInt(0));
+    }
+
+TEST_F(OptimizerTestFixture, CleanOrphanCustomAttributesDryRunAndExecute)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDbForCurrentTest());
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(
+        <ECSchema schemaName="OptimizerCA" alias="oca" version="1.0.0"
+            xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECCustomAttributeClass typeName="Marker" modifier="Sealed" appliesTo="Any"/>
+        </ECSchema>)xml")));
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(
+        <ECSchema schemaName="CustomAttributeTarget" alias="cat" version="1.0.0"
+            xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="OptimizerCA" version="01.00.00" alias="oca"/>
+            <ECEntityClass typeName="Item" modifier="Sealed">
+                <ECCustomAttributes><Marker xmlns="OptimizerCA.01.00.00"/></ECCustomAttributes>
+                <ECProperty propertyName="Value" typeName="string">
+                    <ECCustomAttributes><Marker xmlns="OptimizerCA.01.00.00"/></ECCustomAttributes>
+                </ECProperty>
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    ECClassCP markerClass = m_ecdb.Schemas().GetClass("OptimizerCA", "Marker");
+    ASSERT_NE(nullptr, markerClass);
+    ECClassId const markerClassId = markerClass->GetId();
+
+    auto countMarkerAttributes = [&]()
+        {
+        Statement count;
+        EXPECT_EQ(BE_SQLITE_OK, count.Prepare(m_ecdb, "SELECT COUNT(*) FROM ec_CustomAttribute WHERE ClassId=?"));
+        EXPECT_EQ(BE_SQLITE_OK, count.BindId(1, markerClassId));
+        EXPECT_EQ(BE_SQLITE_ROW, count.Step());
+        return count.GetValueInt(0);
+        };
+    int const validAttributeCount = countMarkerAttributes();
+    ASSERT_EQ(2, validAttributeCount);
+
+    Statement insert;
+    ASSERT_EQ(BE_SQLITE_OK, insert.Prepare(m_ecdb,
+        "INSERT INTO ec_CustomAttribute(ClassId,ContainerId,ContainerType,Ordinal,Instance) VALUES(?,?,?,?,?)"));
+    int64_t containerId = INT64_C(0x7ffffff0);
+    for (int containerType : {1, 30, 992, 1024, 2048})
+        {
+        insert.Reset();
+        insert.ClearBindings();
+        ASSERT_EQ(BE_SQLITE_OK, insert.BindId(1, markerClassId));
+        ASSERT_EQ(BE_SQLITE_OK, insert.BindInt64(2, containerId++));
+        ASSERT_EQ(BE_SQLITE_OK, insert.BindInt(3, containerType));
+        ASSERT_EQ(BE_SQLITE_OK, insert.BindInt(4, 0));
+        ASSERT_EQ(BE_SQLITE_OK, insert.BindText(5, "<Marker xmlns=\"OptimizerCA.01.00.00\"/>", Statement::MakeCopy::No));
+        ASSERT_EQ(BE_SQLITE_DONE, insert.Step());
+        }
+    insert.Finalize();
+    ASSERT_EQ(validAttributeCount + 5, countMarkerAttributes());
+
+    Optimizer optimizer(m_ecdb);
+    Optimizer::Result dryRun;
+    ASSERT_EQ(BE_SQLITE_OK, optimizer.DryRun(Optimizer::Options::CleanOrphanCustomAttributes, dryRun));
+    ASSERT_EQ(1, dryRun.GetPhases().size());
+    EXPECT_EQ(5, dryRun.GetPhases()[0].m_candidates);
+    EXPECT_EQ(0, dryRun.GetPhases()[0].m_changed);
+    EXPECT_EQ(validAttributeCount + 5, countMarkerAttributes());
+
+    Optimizer::Result optimized;
+    ASSERT_EQ(BE_SQLITE_OK, optimizer.Optimize(Optimizer::Options::CleanOrphanCustomAttributes, optimized));
+    ASSERT_EQ(1, optimized.GetPhases().size());
+    EXPECT_EQ(5, optimized.GetPhases()[0].m_candidates);
+    EXPECT_EQ(5, optimized.GetPhases()[0].m_changed);
+    EXPECT_EQ(validAttributeCount, countMarkerAttributes());
     }
 
 TEST_F(OptimizerTestFixture, DropUnusedSchemasPreservesSystemSchemas)

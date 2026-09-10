@@ -58,13 +58,14 @@ Selected phases run in a fixed order so later phases can benefit from earlier cl
 1. Purge invalid class identifiers.
 2. Delete orphan link-table relationships.
 3. Nullify orphan navigation properties.
-4. Drop unused schemas.
-5. Drop empty dynamic classes.
-6. Drop empty dynamic properties.
-7. Compact shared columns and clean overflow rows.
-8. Drop unmapped tables.
-9. Drop unmapped shared columns.
-10. Analyze the database.
+4. Clean orphan custom attributes.
+5. Drop unused schemas.
+6. Drop empty dynamic classes.
+7. Drop empty dynamic properties.
+8. Compact shared columns and clean overflow rows.
+9. Drop unmapped tables.
+10. Drop unmapped shared columns.
+11. Analyze the database.
 
 For example, removing an empty dynamic property may leave a shared column unmapped. A later
 storage-cleanup phase can then remove that column. Likewise, compacting mappings can make an
@@ -119,6 +120,23 @@ The established BisCore root Model and ModeledElement exception is preserved bec
 reference has special iModel semantics.
 
 This repair retains useful entities while removing references that cannot be resolved.
+
+### Clean orphan custom attributes
+
+Custom attributes are stored separately from the schema objects to which they are applied. Their
+container identifier is polymorphic and can identify a schema, class, property, source
+relationship constraint, or target relationship constraint. Because that container identifier
+does not have a single foreign-key relationship, historical schema changes can leave a custom
+attribute row after its container has been removed.
+
+This phase checks each supported container type against its authoritative metadata table. A
+relationship-constraint custom attribute is valid only when the referenced constraint exists and
+represents the expected source or target end. Rows whose containers are missing or have the wrong
+relationship end are deleted. The custom attribute class definition itself is not changed.
+
+Removing these rows prevents stale container identifiers from colliding with identifiers reused
+by later schema imports. It also allows subsequent dynamic-class and unused-schema cleanup to
+evaluate only custom attributes that are still applied to valid schema objects.
 
 ### Drop unused schemas
 
@@ -267,8 +285,8 @@ after substantial relationship deletion, table removal, or data movement.
 
 ## Option groups
 
-The schema-cleanup group runs unused-schema cleanup, empty dynamic-class cleanup, and empty
-dynamic-property cleanup.
+The schema-cleanup group removes orphan custom attributes, then runs unused-schema cleanup, empty
+dynamic-class cleanup, and empty dynamic-property cleanup.
 
 The data-cleanup group removes orphan relationships, clears orphan navigation properties, and
 purges rows with invalid class identifiers.
