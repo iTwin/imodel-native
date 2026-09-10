@@ -274,7 +274,24 @@ void ECDb::Impl::RegisterECSqlPragmas() const
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDb::Impl::AttachDbAsSQLite(Utf8CP dbFileName, Utf8CP tableSpaceName) const {
+    struct RestoreAttachmentAlias {
+        Utf8CP& m_alias;
+        Utf8CP m_previousAlias;
+        ~RestoreAttachmentAlias() { m_alias = m_previousAlias; }
+    } restoreAlias { m_sqliteOnlyAttachmentAlias, m_sqliteOnlyAttachmentAlias };
+
+    m_sqliteOnlyAttachmentAlias = tableSpaceName;
+    return m_ecdb.AttachDb(dbFileName, tableSpaceName);
+}
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
 DbResult ECDb::Impl::OnDbAttached(Utf8CP dbFileName, Utf8CP tableSpaceName) const {
+    if (m_sqliteOnlyAttachmentAlias != nullptr && BeStringUtilities::StricmpAscii(m_sqliteOnlyAttachmentAlias, tableSpaceName) == 0)
+        return BE_SQLITE_OK;
+
     auto tryGetProfileVersion = [&](ProfileVersion& ver) {
         Statement stmt;
         auto rc = stmt.Prepare(m_ecdb, SqlPrintfString("SELECT [StrData] FROM [%s].[be_Prop] WHERE [Namespace]='ec_Db' AND [Name] ='SchemaVersion'", tableSpaceName).GetUtf8CP());
