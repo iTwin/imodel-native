@@ -213,6 +213,7 @@ private:
     ClassMappingStatus MapClass(SchemaImportContext&, ClassMappingInfo const&) const;
     ClassMappingStatus MapDerivedClasses(SchemaImportContext&, ECN::ECClassCR baseClass) const;
     BentleyStatus SaveDbSchema(SchemaImportContext&) const;
+    BentleyStatus ValidatePersistedMappings(SchemaManager::SchemaImportOptions) const;
     BentleyStatus CheckForPerTableColumnLimit() const;
     BentleyStatus CheckForSelectWildCardLimit() const;
     BentleyStatus CanCreateOrUpdateRequiredTables() const;
