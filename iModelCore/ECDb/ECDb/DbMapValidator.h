@@ -15,6 +15,7 @@ struct DbMapValidator final
     private:
         SchemaImportContext& m_schemaImportContext;
         DbMapValidationMode m_mode;
+        bool m_continueAfterError;
 
         mutable bmap<DbColumnId, bset<DbIndex const*>> m_indexesByColumnCache;
 
@@ -51,7 +52,8 @@ struct DbMapValidator final
         IssueDataSource const& Issues() const { return GetSchemaManager().Issues(); }
 
     public:
-        explicit DbMapValidator(SchemaImportContext& ctx, DbMapValidationMode mode = DbMapValidationMode::SchemaImport) : m_schemaImportContext(ctx), m_mode(mode) {}
+        explicit DbMapValidator(SchemaImportContext& ctx, DbMapValidationMode mode = DbMapValidationMode::SchemaImport, bool continueAfterError = false)
+            : m_schemaImportContext(ctx), m_mode(mode), m_continueAfterError(continueAfterError) {}
         ~DbMapValidator() {}
 
         BentleyStatus Validate() const;

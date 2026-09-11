@@ -765,6 +765,7 @@ struct ECDB_EXPORT ECDbIssueId
     static ECN::IssueId ECDb_0743;
     static ECN::IssueId ECDb_0744;
     static ECN::IssueId ECDb_0745;
+    static ECN::IssueId ECDb_0746;
     };
 
 //---------------------------------------------------------------------------------------
@@ -789,6 +790,7 @@ struct IssueDataSource final {
 
     private:
         mutable listener_t m_issueEvent;
+        mutable listener_t m_issueObserverEvent;
         mutable filter_callback_t m_filterCallback;
         mutable cancel_callback_type m_sourceCancel;
         mutable cancel_callback_type m_issueListenerCancel;
@@ -805,6 +807,8 @@ struct IssueDataSource final {
         void ClearIn() const;
         // Allow to subscribe to events
         listener_t& OnIssueReported() const { return m_issueEvent;}
+        // Observe issues before filtering without changing normal listener behavior.
+        listener_t& OnIssueObserved() const { return m_issueObserverEvent;}
         // Set filter that would can prevent message from getting propagated
         void SetFilter(filter_callback_t filterCallback) const;
         // Clear filter callback

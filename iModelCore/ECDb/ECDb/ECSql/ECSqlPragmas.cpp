@@ -895,6 +895,89 @@ DbResult PragmaIntegrityCheck::Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb,
 	return BE_SQLITE_READONLY;
 }
 
+//=======================================================================================
+// PragmaValidatePersistedMappings
+//=======================================================================================
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult PragmaValidatePersistedMappings::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&, PragmaManager::OptionsMap const& options) {
+    if (!isExperimentalFeatureAllowed(ecdb, options)) {
+        ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0746,
+            "'PRAGMA validate_persisted_mappings' is experimental feature and disabled by default.");
+        return BE_SQLITE_ERROR;
+    }
+
+    struct CapturedIssue final {
+        IssueSeverity m_severity;
+        Utf8String m_category;
+        Utf8String m_type;
+        Utf8String m_id;
+        Utf8String m_message;
+    };
+
+    bvector<CapturedIssue> issues;
+    BeMutexHolder lock(ecdb.GetImpl().GetMutex());
+    BeEventScope issueScope;
+    intptr_t const validationThreadId = BeThreadUtilities::GetCurrentThreadId();
+    ecdb.GetImpl().Issues().OnIssueObserved().AddListener(issueScope,
+        [&issues, validationThreadId](IssueSeverity severity, IssueCategory category, ECN::IssueType type, IssueId id, Utf8CP message) {
+            if (validationThreadId != BeThreadUtilities::GetCurrentThreadId())
+                return;
+            issues.push_back({severity, category.m_stringId, type.m_stringId, id.m_issueId, message});
+        });
+
+    BentleyStatus status = ecdb.Schemas().Main().ValidatePersistedMappings(SchemaManager::SchemaImportOptions::None, true);
+    issueScope.CancelAll();
+    lock.unlock();
+
+    auto result = std::make_unique<StaticPragmaResult>(ecdb);
+    result->AppendProperty("severity", PRIMITIVETYPE_String);
+    result->AppendProperty("category", PRIMITIVETYPE_String);
+    result->AppendProperty("type", PRIMITIVETYPE_String);
+    result->AppendProperty("id", PRIMITIVETYPE_String);
+    result->AppendProperty("message", PRIMITIVETYPE_String);
+    result->FreezeSchemaChanges();
+
+    auto severityToString = [](IssueSeverity severity) {
+        switch (severity) {
+            case IssueSeverity::Fatal:
+                return "Fatal";
+            case IssueSeverity::Error:
+                return "Error";
+            case IssueSeverity::Warning:
+                return "Warning";
+            case IssueSeverity::Info:
+                return "Info";
+            case IssueSeverity::CriticalWarning:
+                return "CriticalWarning";
+            default:
+                return "Unknown";
+        }
+    };
+
+    for (CapturedIssue const& issue : issues) {
+        auto row = result->AppendRow();
+        row.appendValue() = severityToString(issue.m_severity);
+        row.appendValue() = issue.m_category;
+        row.appendValue() = issue.m_type;
+        row.appendValue() = issue.m_id;
+        row.appendValue() = issue.m_message;
+    }
+
+    rowSet = std::move(result);
+    return (status == SUCCESS || !issues.empty()) ? BE_SQLITE_OK : BE_SQLITE_ERROR;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult PragmaValidatePersistedMappings::Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&, PragmaManager::OptionsMap const&) {
+    ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0552, "PRAGMA %s is readonly.", GetName().c_str());
+    rowSet = std::make_unique<StaticPragmaResult>(ecdb);
+    rowSet->FreezeSchemaChanges();
+    return BE_SQLITE_READONLY;
+}
 
 //=======================================================================================
 // PurgeOrphanedRelationships
@@ -1234,4 +1317,3 @@ DbResult PragmaSchemaViewFragment::Write(PragmaManager::RowSet& rowSet, ECDbCR e
 
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
-
