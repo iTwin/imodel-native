@@ -112,11 +112,43 @@ TEST_F(VerticalDatumUnitTests, VerticalTransformGeoidGridFileTest)
 }
 
 /*---------------------------------------------------------------------------------**//**
-* A relative vertical grid path should resolve through a registered workspace without
-* requiring the corresponding local grid file.
+* An absolute grid path in a custom definition should remain a local file path.
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(VerticalDatumUnitTests, VerticalTransformGeoidGridAbsoluteFileTest)
+{
+    BeFileName gridPath(GeoCoordTestCommon::InitializedLibraryPath().c_str(), BentleyCharEncoding::Utf8);
+    gridPath.AppendToPath(L"WW15MGH.GRD");
+
+    BeJsDocument geoidJson;
+    geoidJson["target"] = "WGS84";
+    geoidJson["geoidSeparationGrid"]["direction"] = "Direct";
+    geoidJson["geoidSeparationGrid"]["format"] = "GRD";
+    geoidJson["geoidSeparationGrid"]["files"].appendValue() = gridPath.GetNameUtf8();
+
+    GeoCoordinates::VerticalTransformPtr geoidTransform =
+        GeoCoordinates::VerticalTransform::CreateFromJson(geoidJson, "Custom absolute grid height", "WGS84");
+    ASSERT_TRUE(geoidTransform.IsValid());
+
+    GeoPoint point = { 23.700523, 37.944210, 0.0 };
+    double elevationOffset = 0.0;
+    GeoCoordinates::VerticalTransform::ElevationType elevationType = GeoCoordinates::VerticalTransform::ElevationType::Fixed;
+    EXPECT_EQ(geoidTransform->GetElevation(elevationOffset, elevationType, point), SUCCESS);
+    EXPECT_EQ(elevationType, GeoCoordinates::VerticalTransform::ElevationType::Offset);
+    EXPECT_NEAR(elevationOffset, 38.3, 0.5);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* EGM96 and its relative grid should load from base.itwin-workspace without local files.
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(VerticalDatumUnitTests, VerticalTransformGeoidGridFileFromWorkspaceTest)
 {
+    BeFileName dictionaryPath(GeoCoordTestCommon::InitializedLibraryPath().c_str(), BentleyCharEncoding::Utf8);
+    dictionaryPath.AppendToPath(L"VerticalDatumDefinitions.json");
+    BeFile dictionaryFile;
+    ASSERT_EQ(dictionaryFile.Open(dictionaryPath.GetName(), BeFileAccess::Read), BeFileStatus::Success);
+    bvector<Byte> dictionaryData;
+    ASSERT_EQ(dictionaryFile.ReadEntireFile(dictionaryData), BeFileStatus::Success);
+
     BeFileName gridPath(GeoCoordTestCommon::InitializedLibraryPath().c_str(), BentleyCharEncoding::Utf8);
     gridPath.AppendToPath(L"WW15MGH._96");
     BeFile gridFile;
@@ -126,7 +158,7 @@ TEST_F(VerticalDatumUnitTests, VerticalTransformGeoidGridFileFromWorkspaceTest)
 
     BeFileName workspacePath;
     BeTest::GetHost().GetTempDir(workspacePath);
-    workspacePath.AppendToPath(L"VerticalGridFromWorkspace.itwin-workspace");
+    workspacePath.AppendToPath(L"base.itwin-workspace");
     if (BeFileName::DoesPathExist(workspacePath))
         ASSERT_EQ(BeFileName::BeDeleteFile(workspacePath), BeFileNameStatus::Success);
 
@@ -136,33 +168,36 @@ TEST_F(VerticalDatumUnitTests, VerticalTransformGeoidGridFileFromWorkspaceTest)
     {
     BeSQLite::Statement insert;
     ASSERT_EQ(insert.Prepare(workspaceDb, "INSERT INTO blobs(id,value) VALUES(?,?)"), BeSQLite::BE_SQLITE_OK);
-    ASSERT_EQ(insert.BindText(1, "WW15MGH._96", BeSQLite::Statement::MakeCopy::Yes), BeSQLite::BE_SQLITE_OK);
+    ASSERT_EQ(insert.BindText(1, "VerticalDatumDefinitions.json", BeSQLite::Statement::MakeCopy::Yes), BeSQLite::BE_SQLITE_OK);
+    ASSERT_EQ(insert.BindBlob(2, dictionaryData.data(), (int)dictionaryData.size(), BeSQLite::Statement::MakeCopy::Yes), BeSQLite::BE_SQLITE_OK);
+    ASSERT_EQ(insert.Step(), BeSQLite::BE_SQLITE_DONE);
+
+    insert.Reset();
+    insert.ClearBindings();
+    ASSERT_EQ(insert.BindText(1, "World/WW15MGH._96", BeSQLite::Statement::MakeCopy::Yes), BeSQLite::BE_SQLITE_OK);
     ASSERT_EQ(insert.BindBlob(2, gridData.data(), (int)gridData.size(), BeSQLite::Statement::MakeCopy::Yes), BeSQLite::BE_SQLITE_OK);
     ASSERT_EQ(insert.Step(), BeSQLite::BE_SQLITE_DONE);
     }
     ASSERT_EQ(workspaceDb.SaveChanges(), BeSQLite::BE_SQLITE_OK);
     workspaceDb.CloseDb();
-    ASSERT_TRUE(GeoCoordinates::BaseGCS::AddWorkspaceDb(workspacePath.GetNameUtf8(), nullptr, 10000));
 
-    BeJsDocument geoidJson;
-    geoidJson["target"] = "WGS84";
-    geoidJson["geoidSeparationGrid"]["direction"] = "Direct";
-    geoidJson["geoidSeparationGrid"]["format"] = "GRD";
-    geoidJson["geoidSeparationGrid"]["files"].appendValue() = "./WW15MGH.GRD";
-
-    GeoCoordinates::VerticalTransformPtr geoidTransform =
-        GeoCoordinates::VerticalTransform::CreateFromJson(geoidJson, "EGM96 workspace height", "WGS84");
-    ASSERT_TRUE(geoidTransform.IsValid());
-
+    GeoCoordTestCommon::Shutdown();
+    GeoCoordinates::BaseGCS::EnableLocalGcsFiles(false);
+    BeFileName dataDirectory = workspacePath.GetDirectoryName();
+    StatusInt initializeStatus = GeoCoordinates::BaseGCS::Initialize(dataDirectory.GetNameUtf8().c_str());
     GeoPoint point = { 23.700523, 37.944210, 0.0 };
+    bvector<GeoCoordinates::VerticalTransformPtr> transforms;
+    StatusInt transformStatus = GeoCoordinates::VerticalDatumDictionary::Get()->GetVerticalDatumTransforms(transforms, "EGM96 height", "WGS84", &point);
     double elevationOffset = 0.0;
     GeoCoordinates::VerticalTransform::ElevationType elevationType = GeoCoordinates::VerticalTransform::ElevationType::Fixed;
-
-    GeoCoordinates::BaseGCS::EnableLocalGcsFiles(false);
-    StatusInt status = geoidTransform->GetElevation(elevationOffset, elevationType, point);
+    StatusInt elevationStatus = transforms.size() == 1 ? transforms[0]->GetElevation(elevationOffset, elevationType, point) : ERROR;
     GeoCoordinates::BaseGCS::EnableLocalGcsFiles(true);
 
-    EXPECT_EQ(status, SUCCESS);
+    EXPECT_EQ(initializeStatus, SUCCESS);
+    EXPECT_EQ(GeoCoordinates::VerticalDatumDictionary::Get()->GetStatus(), SUCCESS);
+    EXPECT_EQ(transformStatus, SUCCESS);
+    ASSERT_EQ(transforms.size(), 1);
+    EXPECT_EQ(elevationStatus, SUCCESS);
     EXPECT_EQ(elevationType, GeoCoordinates::VerticalTransform::ElevationType::Offset);
     EXPECT_NEAR(elevationOffset, 38.3, 0.5);
 }
