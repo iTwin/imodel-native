@@ -144,10 +144,11 @@ DbResult InstanceRepository::Read(ECInstanceKeyCR instKey, BeJsValue outInstance
             ECSqlRowAdaptor adaptor(m_ecdb);
             bool wantGeometry = userOptions["wantGeometry"].asBool(false);
             bool convertClassIdsToClassNames = userOptions["convertClassIdsToClassNames"].asBool(false);
+            bool useClassFullNameInsteadofClassName = userOptions["useClassFullNameInsteadofClassName"].asBool(false);
             adaptor.GetOptions().SetAbbreviateBlobs(false);
             adaptor.GetOptions().SetConvertClassIdsToClassNames(convertClassIdsToClassNames || fmt == JsFormat::JsName);
             adaptor.GetOptions().SetUseJsNames(fmt == JsFormat::JsName);
-            adaptor.GetOptions().SetUseClassFullNameInsteadofClassName(fmt == JsFormat::JsName);
+            adaptor.GetOptions().SetUseClassFullNameInsteadofClassName(useClassFullNameInsteadofClassName || fmt == JsFormat::JsName);
             adaptor.GetOptions().SetIncludeNulls(userOptions["includeNulls"].asBool(false));
             if(!wantGeometry){
                 adaptor.SetSkipPropertyHandler([&](ECN::ECPropertyCR prop) {

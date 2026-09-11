@@ -422,7 +422,7 @@ export declare namespace IModelJsNative {
   interface ECSqlRowAdaptorOptions {
     abbreviateBlobs?: boolean;
     classIdsToClassNames?: boolean;
-    useJsName?: boolean;
+    useJsNames?: boolean;
     doNotConvertClassIdsToClassNamesWhenAliased?: boolean; // backward compatibility
     includeNulls?: boolean;
     useClassFullNameInsteadofClassName?: boolean;

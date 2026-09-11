@@ -208,8 +208,8 @@ BentleyStatus ECJsonUtilities::JsonToPoint2d(DPoint2d& pt, BeJsConst json) {
             SUCCESS != PointCoordinateFromJson(y, json, json_y());
         if (lowercaseFailed) {
             // Try uppercase keys
-            if (SUCCESS != PointCoordinateFromJson(x, json, Json::StaticString("X")) ||
-                SUCCESS != PointCoordinateFromJson(y, json, Json::StaticString("Y")))
+            if (SUCCESS != PointCoordinateFromJson(x, json, BeJsStaticString("X")) ||
+                SUCCESS != PointCoordinateFromJson(y, json, BeJsStaticString("Y")))
                 return ERROR;
         }
     } else if (json.isArray()) {

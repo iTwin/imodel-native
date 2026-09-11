@@ -516,8 +516,8 @@ void JsReadOptions::FromJson(BeJsValue opts) {
     if (opts.isBoolMember(JClassIdsToClassNames))
         m_classIdToClassNames = opts[JClassIdsToClassNames].asBool();
 
-    if (opts.isBoolMember(JUseJsName))
-        m_useJsName = opts[JUseJsName].asBool();
+    if (opts.isBoolMember(JUseJsNames))
+        m_useJsNames = opts[JUseJsNames].asBool();
 
     if (opts.isBoolMember(JDoNotConvertClassIdsToClassNamesWhenAliased))
         m_doNotConvertClassIdsToClassNamesWhenAliased = opts[JDoNotConvertClassIdsToClassNamesWhenAliased].asBool();
@@ -539,7 +539,7 @@ void JsReadOptions::ToJson(BeJsValue opts) const {
     opts.SetEmptyObject();
     opts[JAbbreviateBlobs] = m_abbreviateBlobs;
     opts[JClassIdsToClassNames] = m_classIdToClassNames;
-    opts[JUseJsName] = m_useJsName;
+    opts[JUseJsNames] = m_useJsNames;
     opts[JDoNotConvertClassIdsToClassNamesWhenAliased] = m_doNotConvertClassIdsToClassNamesWhenAliased;
     opts[JSkipReadOnlyProperties] = m_skipReadOnlyProperties;
     opts[JUseClassFullNameInsteadofClassName] = m_useClassFullNameInsteadofClassName;
