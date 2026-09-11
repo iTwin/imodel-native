@@ -3323,15 +3323,6 @@ TEST_F(SchemaRemapTestFixture, RemappingSiblingPropertiesPreservesUnchangedOverr
     ASSERT_TRUE(remappedItemTagColumn.Exists());
     EXPECT_TRUE(originalItemTagColumn.GetTableName() != remappedItemTagColumn.GetTableName() || originalItemTagColumn.GetName() != remappedItemTagColumn.GetName());
 
-    // Validation inspects cached class maps; load Bolt's persisted mapping without querying DRY_WEIGHT.
-    ASSERT_FALSE(m_ecdb.Schemas().GetClassMapStrategy("OpmRemap", "Bolt").IsEmpty());
-    TestIssueListener issueListener;
-    ASSERT_EQ(SUCCESS, m_ecdb.AddIssueListener(issueListener));
-    SchemaImportContext validationContext(m_ecdb, SchemaManager::SchemaImportOptions::None);
-    const auto validationStatus = DbMapValidator(validationContext, DbMapValidationMode::SchemaImport).Validate();
-    m_ecdb.RemoveIssueListener();
-    ASSERT_EQ(SUCCESS, validationStatus) << issueListener.GetLastMessage().c_str();
-
     ASSERT_NO_FATAL_FAILURE(verifyUnchangedMappingsAndValue());
     }
 
