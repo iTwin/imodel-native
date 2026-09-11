@@ -175,7 +175,9 @@ BentleyStatus DbMapValidator::CheckDuplicateDataPropertyMap() const {
         return ERROR;
     }
 
-    int errors = 0;
+    const bool tolerateDuplicateDataPropertyMaps = m_mode == DbMapValidationMode::ChangesetApply;
+    const auto severity = tolerateDuplicateDataPropertyMaps ? IssueSeverity::Warning : IssueSeverity::Error;
+    int duplicateCount = 0;
     while(stmt.Step() == BE_SQLITE_ROW) {
         const ECClassId classId = stmt.GetValueId<ECClassId>(0);
         const Utf8String accessString = stmt.GetValueText(1);
@@ -185,12 +187,12 @@ BentleyStatus DbMapValidator::CheckDuplicateDataPropertyMap() const {
             Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0115, "Could not load ECClass for ECClassId %s from the file.", classId.ToString().c_str());
             return ERROR;
         }
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0116,
+        Issues().ReportV(severity, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0116,
             "Detected duplicate mapping for ECClass: %s. AccessString '%s' is mapped to '%s'.", ecClass->GetFullName(), accessString.c_str(), duplicateCols.c_str());
-        ++errors;
+        ++duplicateCount;
     }
 
-    return errors > 0? ERROR : SUCCESS;
+    return duplicateCount > 0 && !tolerateDuplicateDataPropertyMaps ? ERROR : SUCCESS;
 }
 
 //---------------------------------------------------------------------------------------
