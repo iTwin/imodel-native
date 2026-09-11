@@ -6,6 +6,7 @@
 import { DbOpcode, DbResult, OpenMode } from "@itwin/core-bentley";
 import * as fs from "fs";
 import * as path from "path";
+import { IModelJsNative } from "../NativeLibrary";
 import { getAssetsDir, getOutputDir, iModelJsNative } from "./utils";
 import { expect } from "chai";
 
