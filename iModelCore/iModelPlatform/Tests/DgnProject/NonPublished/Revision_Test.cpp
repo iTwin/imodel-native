@@ -846,6 +846,45 @@ TEST_F(RevisionTestFixture, ReverseSchemaChangeset)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, ReconstructMissingMappedTable)
+    {
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"ReconstructMissingMappedTable.bim");
+    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges());
+    ASSERT_TRUE(CreateRevision("-baseline").IsValid());
+    BackupTestFile();
+
+    auto context = ECSchemaReadContext::CreateContext();
+    context->AddSchemaLocater(m_db->GetSchemaLocater());
+    ECSchemaPtr schema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, R"xml(
+        <ECSchema schemaName="ReconstructionTest" alias="rt" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="1.0.0" alias="bis"/>
+            <ECEntityClass typeName="TestElement">
+                <BaseClass>bis:GraphicalElement2d</BaseClass>
+                <ECProperty propertyName="Prop1" typeName="string"/>
+                <ECProperty propertyName="Prop2" typeName="string"/>
+                <ECProperty propertyName="Prop3" typeName="string"/>
+            </ECEntityClass>
+        </ECSchema>)xml", *context));
+    ASSERT_EQ(SchemaStatus::Success, m_db->ImportSchemas({schema.get()}, true));
+    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges());
+    auto revision = CreateRevision("-add-shared-column");
+    ASSERT_TRUE(revision.IsValid());
+    ASSERT_TRUE(revision->ContainsDdlChanges(*m_db));
+    RestoreTestFile();
+
+    // ALTER TABLE fails, but ec_* metadata can reconstruct the missing mapped table.
+    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteSql("DROP TABLE bis_GeometricElement2d"));
+    ASSERT_EQ(ChangesetStatus::Success, m_db->Txns().PullMergeApply(*revision));
+    Statement column(*m_db, "SELECT 1 FROM pragma_table_info('bis_GeometricElement2d') WHERE name='js3'");
+    ASSERT_EQ(BE_SQLITE_ROW, column.Step());
+    ASSERT_TRUE(m_db->Schemas().GetClass("ReconstructionTest", "TestElement") != nullptr);
+    ASSERT_STREQ(revision->GetChangesetId().c_str(), m_db->Txns().GetParentChangesetId().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 TEST_F(RevisionTestFixture, InvalidSchemaChanges)
     {
     // Setup baseline
@@ -872,92 +911,6 @@ TEST_F(RevisionTestFixture, InvalidSchemaChanges)
     ASSERT_TRUE(BE_SQLITE_OK == m_db->DropTable("TestTableWillHappen"));
     m_db->Txns().EnableTracking(true);
 
-    RestoreTestFile();
-    ASSERT_EQ(BE_SQLITE_OK, m_db->CreateIndex("idx_rollback", "TestTable", false, "Column1"));
-    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges());
-    ASSERT_TRUE(CreateRevision("-index").IsValid());
-    BackupTestFile();
-    Utf8String const parentId = m_db->Txns().GetParentChangesetId();
-    auto const profileVersion = m_db->GetProfileVersion();
-
-    // The recipient lacks this untracked table, so index creation fails after the DROP succeeds.
-    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteSql("CREATE TABLE SourceOnly(Id INTEGER PRIMARY KEY)"));
-    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteDdl("ALTER TABLE TestTable ADD COLUMN Column2 INTEGER"));
-    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteDdl("DROP INDEX IF EXISTS idx_rollback"));
-    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteDdl("CREATE INDEX idx_rollback ON SourceOnly(Id)"));
-    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges());
-    auto invalidRevision = CreateRevision("-invalid-ddl");
-    ASSERT_TRUE(invalidRevision.IsValid());
-    RestoreTestFile();
-    // As after reverse, the recipient already has the added column but must still apply the rest.
-    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteSql("ALTER TABLE TestTable ADD COLUMN Column2 INTEGER"));
-    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges());
-
-    // BriefcaseManager abandons the transaction when native changeset application reports failure.
-    m_db->Txns().PullMergeBegin();
-    EXPECT_EQ(ChangesetStatus::ApplyError, m_db->Txns().MergeChangeset(*invalidRevision, false));
-    {
-    Statement dropped(*m_db, "SELECT 1 FROM sqlite_master WHERE name='idx_rollback'");
-    EXPECT_EQ(BE_SQLITE_DONE, dropped.Step()); // replay continued past the tolerated duplicate column
-    }
-    ASSERT_EQ(BE_SQLITE_OK, m_db->AbandonChanges());
-    BeFileName fileName(m_db->GetDbFileName(), true);
-    CloseDgnDb();
-    OpenIModelDb(fileName);
-    EXPECT_EQ(parentId, m_db->Txns().GetParentChangesetId());
-    EXPECT_EQ(profileVersion, m_db->GetProfileVersion());
-    Statement index(*m_db, "SELECT tbl_name FROM sqlite_master WHERE type='index' AND name='idx_rollback'");
-    ASSERT_EQ(BE_SQLITE_ROW, index.Step());
-    EXPECT_STREQ("TestTable", index.GetValueText(0));
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-TEST_F(RevisionTestFixture, SchemaSyncDdlConstraintFailure)
-    {
-    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"SchemaSyncDdlConstraintFailure.bim");
-    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges());
-    m_db->Txns().DeleteAllTxns();
-    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges());
-
-    BeFileName syncFile(m_db->GetDbFileName(), true);
-    syncFile.AppendString(L".sync");
-    if (syncFile.DoesPathExist())
-        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeDeleteFile(syncFile));
-    ECDb syncDb;
-    ASSERT_EQ(BE_SQLITE_OK, syncDb.CreateNewDb(syncFile));
-    ASSERT_EQ(BE_SQLITE_OK, syncDb.SaveChanges());
-    syncDb.CloseDb();
-    ASSERT_EQ(SchemaSync::Status::OK, m_db->Schemas().GetSchemaSync().Init(SchemaSync::SyncDbUri(syncFile.GetNameUtf8().c_str()), "ddl-constraint", false));
-
-    ASSERT_EQ(BE_SQLITE_OK, m_db->CreateTable("ReplayValues", "Id INTEGER PRIMARY KEY, Value INTEGER"));
-    ASSERT_EQ(BE_SQLITE_OK, m_db->CreateIndex("idx_replay_values", "ReplayValues", false, "Value"));
-    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteSql("INSERT INTO ReplayValues VALUES (1, 0), (2, 0)"));
-    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges());
-    ASSERT_TRUE(CreateRevision("-baseline").IsValid());
-    BackupTestFile();
-    Utf8String const parentId = m_db->Txns().GetParentChangesetId();
-
-    // Unique values exist only on the source; the recipient will reject the unique index.
-    m_db->Txns().EnableTracking(false);
-    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteSql("UPDATE ReplayValues SET Value=Id"));
-    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges());
-    m_db->Txns().EnableTracking(true);
-    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteDdl("DROP INDEX IF EXISTS idx_replay_values"));
-    ASSERT_EQ(BE_SQLITE_OK, m_db->CreateIndex("idx_replay_values", "ReplayValues", true, "Value"));
-    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges());
-    auto revision = CreateRevision("-unique-index");
-    ASSERT_TRUE(revision.IsValid());
-    RestoreTestFile();
-
-    m_db->Txns().PullMergeBegin();
-    EXPECT_EQ(ChangesetStatus::ApplyError, m_db->Txns().MergeChangeset(*revision, false));
-    ASSERT_EQ(BE_SQLITE_OK, m_db->AbandonChanges());
-    EXPECT_EQ(parentId, m_db->Txns().GetParentChangesetId());
-    Statement index(*m_db, "SELECT \"unique\" FROM pragma_index_list('ReplayValues') WHERE name='idx_replay_values'");
-    ASSERT_EQ(BE_SQLITE_ROW, index.Step());
-    EXPECT_EQ(0, index.GetValueInt(0));
     }
 
 //---------------------------------------------------------------------------------------

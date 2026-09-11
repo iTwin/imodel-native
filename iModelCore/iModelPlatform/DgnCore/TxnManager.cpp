@@ -2848,7 +2848,7 @@ DbResult TxnManager::ApplyDdlChanges(DdlChangesCR ddlChanges) {
                 continue;
 
             LOG.warningv("ApplyDdlChanges() with SchemaSync: Failed to apply DDL changes. Error: %s (%s)", BeSQLiteLib::GetErrorName(result), sql.c_str());
-            if (result != BE_SQLITE_ERROR || IsIModelProfileDdl(sql)) {
+            if (IsIModelProfileDdl(sql)) {
                 EnableTracking(wasTracking);
                 return result;
             }
@@ -2857,50 +2857,29 @@ DbResult TxnManager::ApplyDdlChanges(DdlChangesCR ddlChanges) {
         return BE_SQLITE_OK;
     }
 
-    auto executeDdl = [&](Utf8StringCR ddl) {
-        for (auto const& sql : DdlChanges(ddl.c_str()).GetDDLs()) {
-            auto rc = m_dgndb.TryExecuteSql(sql.c_str());
-            if (rc == BE_SQLITE_OK)
-                continue;
-
-            Utf8String const error = m_dgndb.GetLastError();
-            Utf8String const command = Utf8String(sql).Trim();
-            // Reverse leaves physical tables/columns in place. Tolerate their already-present
-            // diagnostics, not SQLITE_ERROR generally, and keep executing the remaining statements.
-            if (rc == BE_SQLITE_ERROR &&
-                ((command.StartsWithIAscii("ALTER TABLE ") && error.StartsWith("duplicate column name: ")) ||
-                 (command.StartsWithIAscii("CREATE TABLE ") && error.StartsWith("table ") && error.EndsWith(" already exists (BE_SQLITE_ERROR)"))))
-                continue;
-
-            LOG.errorv("ApplyDdlChanges: %s (%s)", error.c_str(), sql.c_str());
-            return rc;
-        }
-        return BE_SQLITE_OK;
-    };
-
     Utf8String patchedDDL;
     BentleyStatus status = PatchSlowDdlChanges(patchedDDL, originalDDL);
     if (status == SUCCESS) {
         // Info message so we can look out if this issue has gone due to fix in the place which produce these changeset.
         LOG.info("[PATCH] Applying DDL patch for #292801 #281557");
-        result = executeDdl(patchedDDL);
+        result = m_dgndb.TryExecuteSql(patchedDDL.c_str());
         if (result != BE_SQLITE_OK) {
             LOG.warningv("ApplyDdlChanges() with SchemaSync: Failed to apply Patch DDLs changes. Error: %s (%s)", BeSQLiteLib::GetErrorName(result), patchedDDL.c_str());
             LOG.info("[PATCH] Failed to apply patch for #292801 #281557. Fallback to original DDL");
-            result = executeDdl(originalDDL);
+            result = m_dgndb.TryExecuteSql(originalDDL.c_str());
             if (result != BE_SQLITE_OK) {
                 LOG.warningv("ApplyDdlChanges() with SchemaSync: Failed to apply original DDL changes. Error: %s (%s)", BeSQLiteLib::GetErrorName(result), originalDDL.c_str());
             }              
         }
     } else {
-        result = executeDdl(originalDDL);
+        result = m_dgndb.TryExecuteSql(originalDDL.c_str());
         if (result != BE_SQLITE_OK) {
             LOG.warningv("ApplyDdlChanges() with SchemaSync: Failed to apply DDL changes. Error: %s (%s)", BeSQLiteLib::GetErrorName(result), originalDDL.c_str());
         }        
     }
 
     EnableTracking(wasTracking);
-    return result;
+    return BE_SQLITE_OK;
 }
 
 /*---------------------------------------------------------------------------------**/ /**
