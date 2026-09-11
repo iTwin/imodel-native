@@ -192,11 +192,6 @@ DbResult DgnDb::_OnDbOpened(Db::OpenParams const& params)
     }
 
     m_geoLocation.Load();
-
-
-    if (DisqualifyTypeIndexForBisCoreExternalSourceAspect() != BE_SQLITE_OK)
-        return BE_SQLITE_ERROR;
-
     return BE_SQLITE_OK;
     }
 

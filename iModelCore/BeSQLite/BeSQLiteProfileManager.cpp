@@ -147,7 +147,14 @@ DbResult ProfileUpgrader_3102::_Upgrade(DbR db) const
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
-    LOG.debug("BeSqlite profile upgrade: Added sqlite_stat1 table using analyze command and truncated it so the table is empty.");
+    // Same for sqlite_stat4 (only present when SQLite is built with SQLITE_ENABLE_STAT4).
+    if (db.TableExists("sqlite_stat4") && BE_SQLITE_OK != db.ExecuteSql("delete from sqlite_stat4"))
+        {
+        LOG.errorv("BeSqlite profile upgrade failed: deleting rows from sqlite_stat4 table failed. failed: %s.", db.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    LOG.debug("BeSqlite profile upgrade: Added sqlite_stat1/sqlite_stat4 tables using analyze command and truncated them so the tables are empty.");
     return BE_SQLITE_OK;
     }
 END_BENTLEY_SQLITE_NAMESPACE

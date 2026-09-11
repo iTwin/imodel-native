@@ -1388,7 +1388,7 @@ TEST_F(BeSQLiteDbTests, Serialize)
     EXPECT_EQ(2, rowId);
 
     DbBuffer buffer = m_db.Serialize();
-    EXPECT_EQ(buffer.Size(), 36864);
+    EXPECT_EQ(buffer.Size(), 40960);
 
     Db db2;
     EXPECT_EQ(BE_SQLITE_OK, Db::Deserialize(buffer, db2));
