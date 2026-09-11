@@ -33,6 +33,13 @@ const subnormalDoubleCases = [
   { name: "Number.MIN_VALUE", text: String(Number.MIN_VALUE), expected: Number.MIN_VALUE },
 ];
 
+const booleanCases = [
+  { text: "TRUE", expected: true },
+  { text: "True", expected: true },
+  { text: "FALSE", expected: false },
+  { text: "False", expected: false },
+];
+
 const embeddedNulCases = [
   { name: "string", columnIndex: 0, value: "prefix\0suffix" },
   { name: "unicode-string", columnIndex: 0, value: "\u7528\u6237\0suffix" },
@@ -102,6 +109,14 @@ describe("ImportCsv", () => {
       expect(result.length).eq(2);
       expect(result[0]).to.deep.include({ name: "Café", quantity: 3, value: 1.5, flag: true });
       expect(result[1]).to.deep.include({ name: "Compass 🧭", quantity: 4, value: 2.5, flag: false });
+    });
+
+    it("imports boolean values case-insensitively", () => {
+      db = createECDb("importCsvDataBooleanCase.ecdb");
+      const rows = booleanCases.map(({ text }, index) => [`Row ${index}`, `${index}`, "1.5", text]);
+
+      expect(db.importCSVData("Test.Foo", v8.serialize(rows), mapping)).eq(booleanCases.length);
+      expect(readAllFooRows(db).map(({ flag }) => flag)).to.deep.equal(booleanCases.map(({ expected }) => expected));
     });
 
     for (const testCase of subnormalDoubleCases) {
@@ -181,7 +196,7 @@ describe("ImportCsv", () => {
         rows = [rows, rows];
 
       expect(() => db.importCSVData("Test.Foo", v8.serialize(rows), mapping))
-        .to.throw(/only primitive scalar array references are supported/);
+        .to.throw(/only primitive scalar values/);
       expect(readAllFooRows(db)).to.deep.equal([]);
     });
 
@@ -268,6 +283,15 @@ describe("ImportCsv", () => {
       expect(result.length).eq(2);
       expect(result[0]).to.deep.include({ name: "Alpha", quantity: 3, value: 1.5, flag: true });
       expect(result[1]).to.deep.include({ name: "Beta", quantity: 4, value: 2.5, flag: false });
+    });
+
+    it("imports boolean values case-insensitively", () => {
+      db = createECDb("importCsvFileBooleanCase.ecdb");
+      const content = booleanCases.map(({ text }, index) => `Row ${index},${index},1.5,${text}`).join("\n");
+      const csvPath = writeCsv("importCsvFileBooleanCase.csv", content);
+
+      expect(db.importCSVFile("Test.Foo", csvPath, mapping)).eq(booleanCases.length);
+      expect(readAllFooRows(db).map(({ flag }) => flag)).to.deep.equal(booleanCases.map(({ expected }) => expected));
     });
 
     for (const testCase of subnormalDoubleCases) {

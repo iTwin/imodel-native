@@ -190,7 +190,12 @@ class Reader {
   /// unsupported values, or trailing bytes.
   template <typename Consumer>
   uint32_t readRows(uint32_t minimum_column_count, Consumer&& consumer) {
+    if (minimum_column_count == 0) {
+      fail("minimum column count must not be zero");
+    }
     readHeader();
+    const size_t root_reference = references_.size();
+    references_.push_back({current_, false});
     const ArrayHeader root = readArrayHeader();
     const uint32_t row_count = root.length;
     uint32_t expected_column_count = 0;
@@ -201,29 +206,12 @@ class Reader {
         fail("serialized root array must not contain holes or named properties");
       }
 
-      const ArrayHeader row = readArrayHeader();
-      const uint32_t column_count = row.length;
-      if (column_count < minimum_column_count ||
-          (has_expected_column_count &&
-           column_count != expected_column_count)) {
-        fail("serialized row has an unexpected column count");
-      }
-      if (!has_expected_column_count) {
-        expected_column_count = column_count;
-        has_expected_column_count = true;
-      }
-
-      for (uint32_t column_index = 0; column_index < column_count;
-           ++column_index) {
-        if (row.sparse && readArrayIndex() != column_index) {
-          fail("serialized row must not contain holes or named properties");
-        }
-        consumer(row_index, column_index, column_count, readScalar());
-      }
-      finishArray(row, column_count);
+      readRow(row_index, minimum_column_count, expected_column_count,
+              has_expected_column_count, consumer);
     }
 
     finishArray(root, row_count);
+    references_[root_reference].complete = true;
     finish();
     return row_count;
   }
@@ -346,6 +334,74 @@ class Reader {
     fail("sparse array property key must be a non-negative integer");
   }
 
+  ObjectReference readObjectReferenceTarget() {
+    const uint32_t id = readVarint();
+    if (id >= references_.size()) fail("invalid object reference ID");
+    const ObjectReference reference = references_[id];
+    if (!reference.complete) fail("cyclic object references are unsupported");
+    if (reference.start == nullptr) {
+      fail("only primitive scalar array references are supported");
+    }
+    return reference;
+  }
+
+  template <typename Consumer>
+  void readInlineRow(uint32_t row_index, uint32_t minimum_column_count,
+                     uint32_t& expected_column_count,
+                     bool& has_expected_column_count, Consumer& consumer) {
+    const size_t reference_id = references_.size();
+    if (!replaying_reference_) {
+      references_.push_back({current_, false});
+    }
+
+    const ArrayHeader row = readArrayHeader();
+    const uint32_t column_count = row.length;
+    if (column_count < minimum_column_count ||
+        (has_expected_column_count &&
+         column_count != expected_column_count)) {
+      fail("serialized row has an unexpected column count");
+    }
+    if (!has_expected_column_count) {
+      expected_column_count = column_count;
+      has_expected_column_count = true;
+    }
+
+    for (uint32_t column_index = 0; column_index < column_count;
+         ++column_index) {
+      if (row.sparse && readArrayIndex() != column_index) {
+        fail("serialized row must not contain holes or named properties");
+      }
+      consumer(row_index, column_index, column_count, readScalar());
+    }
+    finishArray(row, column_count);
+
+    if (!replaying_reference_) {
+      references_[reference_id].complete = true;
+    }
+  }
+
+  template <typename Consumer>
+  void readRow(uint32_t row_index, uint32_t minimum_column_count,
+               uint32_t& expected_column_count,
+               bool& has_expected_column_count, Consumer& consumer) {
+    if (peekTag() != '^') {
+      readInlineRow(row_index, minimum_column_count, expected_column_count,
+                    has_expected_column_count, consumer);
+      return;
+    }
+
+    readTag();
+    const ObjectReference reference = readObjectReferenceTarget();
+    const uint8_t* resume = current_;
+    const bool was_replaying = replaying_reference_;
+    current_ = reference.start;
+    replaying_reference_ = true;
+    readInlineRow(row_index, minimum_column_count, expected_column_count,
+                  has_expected_column_count, consumer);
+    current_ = resume;
+    replaying_reference_ = was_replaying;
+  }
+
   ScalarValue readStringView(ScalarType type) {
     const uint32_t byte_count = readVarint();
     if (byte_count > remaining()) fail("string exceeds input");
@@ -399,6 +455,9 @@ class Reader {
         return readStringView(ScalarType::Utf8String);
       case 'c':
         return readStringView(ScalarType::Utf16String);
+      case '^':
+        readObjectReferenceTarget();
+        fail("serialized rows may contain only primitive scalar values");
       default:
         fail("serialized rows may contain only primitive scalar values");
     }
@@ -728,13 +787,7 @@ class Reader {
   }
 
   DecodedValue readObjectReference(size_t depth) {
-    const uint32_t id = readVarint();
-    if (id >= references_.size()) fail("invalid object reference ID");
-    const ObjectReference reference = references_[id];
-    if (!reference.complete) fail("cyclic object references are unsupported");
-    if (reference.start == nullptr) {
-      fail("only primitive scalar array references are supported");
-    }
+    const ObjectReference reference = readObjectReferenceTarget();
 
     // Replay immutable wire data instead of retaining a second owning value tree.
     const uint8_t* resume = current_;

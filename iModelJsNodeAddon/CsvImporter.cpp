@@ -11,6 +11,7 @@
 #include <cerrno>
 #include <charconv>
 #include <cmath>
+#include <cstring>
 #include <cstdlib>
 #include <limits>
 
@@ -135,10 +136,32 @@ bvector<CsvImportBinding> createCsvImportBindings(CsvImportPlan const& plan, ECS
     return bindings;
 }
 
-bool decodeSerializedCSVValue(Utf8StringR decoded, v8serial::DecodedValue const& value) {
-    if (v8serial::DecodedType::String != value.type || value.string.find(u'\0') != std::u16string::npos)
-        return false;
-    return SUCCESS == BeStringUtilities::Utf16ToUtf8(decoded, reinterpret_cast<Utf16CP>(value.string.data()), value.string.size());
+bool decodeSerializedCSVValue(Utf8StringR decoded, v8serial::ScalarValue const& value) {
+    decoded.clear();
+    switch (value.type) {
+        case v8serial::ScalarType::Latin1String:
+            decoded.reserve(static_cast<size_t>(value.byte_count) * 2);
+            for (uint32_t i = 0; i < value.byte_count; ++i) {
+                const uint8_t ch = value.bytes[i];
+                if (ch < 0x80) {
+                    decoded.push_back(static_cast<char>(ch));
+                } else {
+                    decoded.push_back(static_cast<char>(0xc0 | (ch >> 6)));
+                    decoded.push_back(static_cast<char>(0x80 | (ch & 0x3f)));
+                }
+            }
+            return true;
+        case v8serial::ScalarType::Utf8String:
+            decoded.assign(reinterpret_cast<Utf8CP>(value.bytes), value.byte_count);
+            return true;
+        case v8serial::ScalarType::Utf16String: {
+            std::u16string utf16(value.byte_count / sizeof(char16_t), u'\0');
+            std::memcpy(utf16.data(), value.bytes, value.byte_count);
+            return SUCCESS == BeStringUtilities::Utf16ToUtf8(decoded, reinterpret_cast<Utf16CP>(utf16.data()), utf16.size());
+        }
+        default:
+            return false;
+    }
 }
 
 ECSqlStatus bindCsvImportValue(CsvImportBinding const& binding, Utf8StringCR value, Utf8CP nullValue) {
@@ -151,9 +174,9 @@ ECSqlStatus bindCsvImportValue(CsvImportBinding const& binding, Utf8StringCR val
     const auto end = begin + value.size();
     switch (binding.m_primitiveType) {
         case PRIMITIVETYPE_Boolean:
-            if (value.Equals("true") || value.Equals("1"))
+            if (value.EqualsI("true") || value.Equals("1"))
                 return binding.m_binder->BindBoolean(true);
-            if (value.Equals("false") || value.Equals("0"))
+            if (value.EqualsI("false") || value.Equals("0"))
                 return binding.m_binder->BindBoolean(false);
             return ECSqlStatus::Error;
         case PRIMITIVETYPE_Double: {
@@ -189,32 +212,6 @@ uint64_t CsvImporter::ImportData(ECDbR db, Utf8StringCR className, uint8_t const
     const auto bindings = createCsvImportBindings(plan, statement);
     const Utf8CP nullValue = options.m_nullValue ? options.m_nullValue->c_str() : nullptr;
 
-    v8serial::DecodedValue serializedRowsValue;
-    try {
-        serializedRowsValue = v8serial::Reader(bytes, byteCount).read();
-    } catch (v8serial::DecodeError const& error) {
-        throw CsvImportError(error.what());
-    }
-
-    if (v8serial::DecodedType::Array != serializedRowsValue.type)
-        throw CsvImportError("serialized root value must be an array");
-    if (serializedRowsValue.array.size() > std::numeric_limits<uint32_t>::max())
-        throw CsvImportError("serialized row count exceeds uint32");
-
-    uint32_t expectedColumnCount = 0;
-    for (auto const& row : serializedRowsValue.array) {
-        if (v8serial::DecodedType::Array != row.type)
-            throw CsvImportError("serialized root array must contain only row arrays");
-        if (row.array.size() > std::numeric_limits<uint32_t>::max())
-            throw CsvImportError("serialized column count exceeds uint32");
-
-        const uint32_t columnCount = static_cast<uint32_t>(row.array.size());
-        if (columnCount < plan.m_minimumColumnCount || (0 != expectedColumnCount && columnCount != expectedColumnCount))
-            throw CsvImportError("serialized row has an unexpected column count");
-        if (0 == expectedColumnCount)
-            expectedColumnCount = columnCount;
-    }
-
     bvector<Utf8String> stringBuffers(mapping.size());
     bmap<uint32_t, uint32_t> propertyIndexesByColumn;
     for (uint32_t propertyIndex = 0; propertyIndex < mapping.size(); ++propertyIndex)
@@ -224,22 +221,32 @@ uint64_t CsvImporter::ImportData(ECDbR db, Utf8StringCR className, uint8_t const
     if (!savepoint.IsActive())
         throw CsvImportError("Failed to start CSV data import savepoint", BE_SQLITE_ERROR);
 
+    uint32_t rowCount = 0;
     try {
-        for (uint32_t rowIndex = 0; rowIndex < serializedRowsValue.array.size(); ++rowIndex) {
-            auto const& row = serializedRowsValue.array[rowIndex];
-            statement.Reset();
-            for (auto const& entry : propertyIndexesByColumn) {
-                const auto columnIndex = entry.first;
-                const auto propertyIndex = entry.second;
+        rowCount = v8serial::Reader(bytes, byteCount).readRows(plan.m_minimumColumnCount,
+            [&](uint32_t rowIndex, uint32_t columnIndex, uint32_t columnCount, v8serial::ScalarValue const& value) {
+            if (0 == columnIndex)
+                statement.Reset();
+
+            const auto propertyEntry = propertyIndexesByColumn.find(columnIndex);
+            if (propertyEntry != propertyIndexesByColumn.end()) {
+                const uint32_t propertyIndex = propertyEntry->second;
                 auto& decoded = stringBuffers[propertyIndex];
-                if (!decodeSerializedCSVValue(decoded, row.array[columnIndex]) || !bindCsvImportValue(bindings[propertyIndex], decoded, nullValue).IsSuccess())
+                if (!decodeSerializedCSVValue(decoded, value) || !bindCsvImportValue(bindings[propertyIndex], decoded, nullValue).IsSuccess())
                     throw CsvImportError(Utf8PrintfString("Failed to bind CSV data row %" PRIu32 " column %" PRIu32, rowIndex + 1, columnIndex).c_str());
             }
 
+            if (columnIndex + 1 != columnCount)
+                return;
             const auto stepStatus = statement.Step();
             if (BE_SQLITE_DONE != stepStatus)
                 throw CsvImportError(Utf8PrintfString("Failed to insert CSV data row %" PRIu32, rowIndex + 1).c_str(), stepStatus);
-        }
+        });
+    } catch (v8serial::DecodeError const& error) {
+        const auto rollbackStatus = savepoint.Cancel();
+        if (BE_SQLITE_OK != rollbackStatus)
+            throw CsvImportError("Failed to roll back CSV data import", rollbackStatus);
+        throw CsvImportError(error.what());
     } catch (...) {
         const auto rollbackStatus = savepoint.Cancel();
         if (BE_SQLITE_OK != rollbackStatus)
@@ -255,7 +262,7 @@ uint64_t CsvImporter::ImportData(ECDbR db, Utf8StringCR className, uint8_t const
         throw CsvImportError("Failed to commit CSV data import", commitStatus);
     }
 
-    return serializedRowsValue.array.size();
+    return rowCount;
 }
 
 uint64_t CsvImporter::ImportFile(ECDbR db, Utf8StringCR className, Utf8StringCR filePath,
