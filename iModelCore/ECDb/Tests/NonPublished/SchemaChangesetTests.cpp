@@ -478,6 +478,12 @@ TEST_F(SchemaChangesetTestFixture, ApplyChangesetWithDuplicateDerivedClassMaps)
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO DuplicateMapProbe.Child (P1,P2) VALUES ('one','two')");
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
 
+    const auto p1Column = GetHelper().GetPropertyMapColumn(AccessString("DuplicateMapProbe", "Child", "P1"));
+    const auto p2Column = GetHelper().GetPropertyMapColumn(AccessString("DuplicateMapProbe", "Child", "P2"));
+    ASSERT_TRUE(p1Column.Exists());
+    ASSERT_TRUE(p2Column.Exists());
+    ASSERT_STREQ(p1Column.GetTableName().c_str(), p2Column.GetTableName().c_str());
+
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(R"sql(
         INSERT INTO ec_PropertyMap(ClassId,PropertyPathId,ColumnId)
         SELECT p1.ClassId,p1.PropertyPathId,p2.ColumnId
@@ -520,7 +526,15 @@ TEST_F(SchemaChangesetTestFixture, ApplyChangesetWithDuplicateDerivedClassMaps)
         }
     ASSERT_TRUE(duplicateMapWarning);
     ASSERT_STREQ("unrelated description", m_ecdb.Schemas().GetSchema("DuplicateMapProbe")->GetDescription().c_str());
-    ASSERT_EQ(JsonValue(R"json([{"P1":"one","P2":"two"}])json"), GetHelper().ExecuteSelectECSql("SELECT P1,P2 FROM DuplicateMapProbe.Child"));
+
+    Statement persistedData;
+    ASSERT_EQ(BE_SQLITE_OK, persistedData.Prepare(m_ecdb, SqlPrintfString(
+        "SELECT [%s], [%s] FROM [%s]", p1Column.GetName().c_str(), p2Column.GetName().c_str(), p1Column.GetTableName().c_str())));
+    ASSERT_EQ(BE_SQLITE_ROW, persistedData.Step());
+    ASSERT_STREQ("one", persistedData.GetValueText(0));
+    ASSERT_STREQ("two", persistedData.GetValueText(1));
+    ASSERT_EQ(BE_SQLITE_DONE, persistedData.Step());
+    persistedData.Finalize();
 
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
     issueListener.ClearIssues();
@@ -531,16 +545,17 @@ TEST_F(SchemaChangesetTestFixture, ApplyChangesetWithDuplicateDerivedClassMaps)
 )xml");
     ASSERT_EQ(BentleyStatus::ERROR, ImportSchema(unrelatedSchema));
 
-    bool duplicateMapImportError = false;
+    bool invalidMapImportError = false;
     for (ReportedIssue const& issue : issueListener.m_issues)
         {
-        if (Utf8String(issue.id.m_issueId).CompareToIAscii("ECDb_0116") == 0)
+        if (Utf8String(issue.id.m_issueId).CompareToIAscii("ECDb_0160") == 0)
             {
             ASSERT_EQ(ECN::IssueSeverity::Error, issue.severity);
-            duplicateMapImportError = true;
+            ASSERT_TRUE(issue.message.Contains("Property maps: 1, properties: 2."));
+            invalidMapImportError = true;
             }
         }
-    ASSERT_TRUE(duplicateMapImportError);
+    ASSERT_TRUE(invalidMapImportError);
     m_ecdb.RemoveIssueListener();
     }
 END_ECDBUNITTESTS_NAMESPACE
