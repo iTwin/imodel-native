@@ -3252,25 +3252,40 @@ TEST_F(SchemaRemapTestFixture, RemappingSiblingPropertiesPreservesUnchangedOverr
         {
         for (Utf8CP className : {"Device", "Fastener", "Bolt"})
             {
-            SCOPED_TRACE(className);
             Statement mappings;
-            ASSERT_EQ(BE_SQLITE_OK, mappings.Prepare(m_ecdb, R"sql(
+            DbResult status = mappings.Prepare(m_ecdb, R"sql(
               SELECT COUNT(*), COUNT(DISTINCT pm.PropertyPathId), COUNT(DISTINCT pm.ColumnId)
               FROM ec_PropertyMap pm JOIN ec_Class c ON c.Id=pm.ClassId
                 JOIN ec_Schema s ON s.Id=c.SchemaId JOIN ec_PropertyPath pp ON pp.Id=pm.PropertyPathId
-              WHERE s.Name='OpmRemap' AND c.Name=? AND pp.AccessString='DRY_WEIGHT')sql"));
-            ASSERT_EQ(BE_SQLITE_OK, mappings.BindText(1, className, Statement::MakeCopy::No));
-            ASSERT_EQ(BE_SQLITE_ROW, mappings.Step());
-            EXPECT_EQ(1, mappings.GetValueInt(0));
-            EXPECT_EQ(1, mappings.GetValueInt(1));
-            EXPECT_EQ(1, mappings.GetValueInt(2));
+              WHERE s.Name='OpmRemap' AND c.Name=? AND pp.AccessString='DRY_WEIGHT')sql");
+            EXPECT_EQ(BE_SQLITE_OK, status) << className;
+            if (status != BE_SQLITE_OK)
+                return false;
+            status = mappings.BindText(1, className, Statement::MakeCopy::No);
+            EXPECT_EQ(BE_SQLITE_OK, status) << className;
+            if (status != BE_SQLITE_OK)
+                return false;
+            status = mappings.Step();
+            EXPECT_EQ(BE_SQLITE_ROW, status) << className;
+            if (status != BE_SQLITE_ROW)
+                return false;
+            EXPECT_EQ(1, mappings.GetValueInt(0)) << className;
+            EXPECT_EQ(1, mappings.GetValueInt(1)) << className;
+            EXPECT_EQ(1, mappings.GetValueInt(2)) << className;
             }
 
         ECSqlStatement query;
-        ASSERT_EQ(ECSqlStatus::Success, query.Prepare(m_ecdb, "SELECT DRY_WEIGHT FROM ONLY OpmRemap.Bolt"));
-        ASSERT_EQ(BE_SQLITE_ROW, query.Step());
+        ECSqlStatus prepareStatus = query.Prepare(m_ecdb, "SELECT DRY_WEIGHT FROM ONLY OpmRemap.Bolt");
+        EXPECT_EQ(ECSqlStatus::Success, prepareStatus);
+        if (prepareStatus != ECSqlStatus::Success)
+            return false;
+        DbResult status = query.Step();
+        EXPECT_EQ(BE_SQLITE_ROW, status);
+        if (status != BE_SQLITE_ROW)
+            return false;
         EXPECT_DOUBLE_EQ(12.5, query.GetValueDouble(0));
         EXPECT_EQ(BE_SQLITE_DONE, query.Step());
+        return true;
         };
 
     ASSERT_EQ(SUCCESS, SetupECDb("remappingSiblingPropertiesPreservesUnchangedOverrides.ecdb", SchemaItem(Utf8PrintfString(schemaXml, 0, ""))));
@@ -3306,7 +3321,7 @@ TEST_F(SchemaRemapTestFixture, RemappingSiblingPropertiesPreservesUnchangedOverr
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO OpmRemap.Bolt (DRY_WEIGHT) VALUES (12.5)");
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
-    ASSERT_NO_FATAL_FAILURE(verifyUnchangedMappingsAndValue());
+    ASSERT_TRUE(verifyUnchangedMappingsAndValue());
 
     // Both linked tables must free columns in this import to exercise circular-remap column blocking.
     const Utf8CP newOverrides = R"xml(
@@ -3323,7 +3338,7 @@ TEST_F(SchemaRemapTestFixture, RemappingSiblingPropertiesPreservesUnchangedOverr
     ASSERT_TRUE(remappedItemTagColumn.Exists());
     EXPECT_TRUE(originalItemTagColumn.GetTableName() != remappedItemTagColumn.GetTableName() || originalItemTagColumn.GetName() != remappedItemTagColumn.GetName());
 
-    ASSERT_NO_FATAL_FAILURE(verifyUnchangedMappingsAndValue());
+    ASSERT_TRUE(verifyUnchangedMappingsAndValue());
     }
 
 //---------------------------------------------------------------------------------------
