@@ -9210,18 +9210,12 @@ public:
 static Utf8String GetVerticalGridFilePath(WStringCR gridFile, WStringCR dataDirectory)
 {
     BeFileName fileName(gridFile);
-    if (!fileName.IsAbsolutePath())
-    {
-        BeFileName resourcePath(L"assets");
-        resourcePath.AppendToPath(gridFile.c_str());
-        return resourcePath.GetNameUtf8();
-    }
+    if (fileName.IsAbsolutePath())
+        return fileName.GetNameUtf8();
 
-    WString resolvedGridFilePath;
-    if (SUCCESS != BeFileName::ResolveRelativePath(resolvedGridFilePath, gridFile.c_str(), dataDirectory.c_str()))
-        return "";
-
-    return Utf8String(resolvedGridFilePath.c_str());
+    BeFileName resourcePath(L"assets");
+    resourcePath.AppendToPath(gridFile.c_str());
+    return resourcePath.GetNameUtf8();
 }
 
 class VerticalGeoidSeparationGridTransform : public VerticalTransform
