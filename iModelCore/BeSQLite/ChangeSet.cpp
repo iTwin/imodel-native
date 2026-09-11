@@ -97,18 +97,27 @@ void DdlChanges::AddDDL(Utf8CP ddl)
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<Utf8String>  DdlChanges::GetDDLs() const {
-    const auto kStmtDelimiter = ";";
-    bvector<Utf8String> individualSQLs;
-    BeStringUtilities::Split(ToString().c_str(), kStmtDelimiter, individualSQLs);
+    Utf8String const ddl = ToString();
+    bvector<Utf8String> statements;
+    size_t start = 0;
+    for (size_t end = ddl.find(';'); end != Utf8String::npos; end = ddl.find(';', end + 1)) {
+        Utf8String statement = ddl.substr(start, end - start + 1);
+        // A semicolon inside a trigger, quoted value, or comment does not end the statement.
+        if (!sqlite3_complete(statement.c_str()))
+            continue;
 
-    auto it = individualSQLs.begin();
-    while(it != individualSQLs.end()) {
-        if (it->Trim().empty())
-            it = individualSQLs.erase(it);
-        else
-            ++it;
+        statement.pop_back(); // AddDDL supplies the separator when statements are regrouped.
+        // Preserve whitespace: a newline may terminate a SQL line comment.
+        if (!Utf8String(statement).Trim().empty())
+            statements.push_back(std::move(statement));
+        start = end + 1;
     }
-    return individualSQLs;
+
+    // Existing changesets may omit the final semicolon. Keep incomplete SQL too, so execution reports it.
+    Utf8String remainder = ddl.substr(start);
+    if (!Utf8String(remainder).Trim().empty())
+        statements.push_back(std::move(remainder));
+    return statements;
 }
 
 /*---------------------------------------------------------------------------------**//**
