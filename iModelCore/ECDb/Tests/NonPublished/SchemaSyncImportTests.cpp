@@ -738,6 +738,65 @@ TEST_F(SchemaSyncImportTestFixture, InitMirrorsProfilePropertiesWithoutLocalSync
 // ---------------------------------------------------------------------------------------
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, InitProfilelessSyncDbWithoutAttachErrors)
+    {
+    TestIssueListener issues;
+    ECDbHub hub;
+    auto briefcase = hub.CreateBriefcase();
+    ASSERT_EQ(SUCCESS, briefcase->AddIssueListener(issues));
+
+    const auto syncPath = BuildECDbPath("schemasync-init-profileless.db");
+    const auto ordinaryPath = BuildECDbPath("schemasync-ordinary-profileless.db");
+    for (auto const& filePath : {syncPath, ordinaryPath})
+        {
+        if (filePath.DoesPathExist())
+            ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeDeleteFile(filePath));
+
+        Db db;
+        ASSERT_EQ(BE_SQLITE_OK, db.CreateNewDb(filePath));
+        ASSERT_FALSE(db.TableExists("ec_Schema"));
+        ASSERT_EQ(BE_SQLITE_OK, db.SaveChanges());
+        db.CloseDb();
+        }
+
+    const auto hasIssue = [&](Utf8CP issueId)
+        {
+        return std::any_of(issues.m_issues.begin(), issues.m_issues.end(), [&](ReportedIssue const& issue)
+            {
+            return Utf8String(issue.id.m_issueId).Equals(issueId);
+            });
+        };
+
+    {
+    TestLogger logger;
+    LogCatcher logCatcher(logger);
+    const SchemaSync::SyncDbUri syncUri(syncPath.GetNameUtf8().c_str());
+    ASSERT_EQ(SchemaSync::Status::OK, briefcase->Schemas().GetSchemaSync().Init(syncUri, "upstream-container", false));
+    for (auto const& [severity, message] : logger.m_messages)
+        EXPECT_NE(NativeLogging::LOG_ERROR, severity) << message;
+    }
+    EXPECT_FALSE(hasIssue("ECDb_0735"));
+    EXPECT_FALSE(hasIssue("ECDb_0736"));
+    ASSERT_EQ(BE_SQLITE_OK, briefcase->SaveChanges());
+    EXPECT_TRUE(briefcase->Schemas().GetSchemaSync().IsEnabled());
+
+    {
+    ECDb initializedSyncDb;
+    ASSERT_EQ(BE_SQLITE_OK, initializedSyncDb.OpenBeSQLiteDb(syncPath, ECDb::OpenParams(Db::OpenMode::Readonly)));
+    EXPECT_EQ(briefcase->GetECDbProfileVersion(), initializedSyncDb.GetECDbProfileVersion());
+    ExpectECTablesIdentical(*briefcase, initializedSyncDb, "initialized profileless sync db");
+    }
+
+    issues.ClearIssues();
+    ASSERT_EQ(BE_SQLITE_OK, briefcase->AttachDb(ordinaryPath.GetNameUtf8().c_str(), "schema_sync_db"));
+    EXPECT_TRUE(hasIssue("ECDb_0735"));
+    EXPECT_TRUE(hasIssue("ECDb_0736"));
+    ASSERT_EQ(BE_SQLITE_OK, briefcase->DetachDb("schema_sync_db"));
+    }
+
+// ---------------------------------------------------------------------------------------
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaSyncImportTestFixture, SyncDbMappingMatchesBriefcaseMapping)
     {
     ECDbHub hub;

@@ -744,6 +744,7 @@ IssueId ECDbIssueId::ECDb_0742 = IssueId("ECDb_0742");
 IssueId ECDbIssueId::ECDb_0743 = IssueId("ECDb_0743");
 IssueId ECDbIssueId::ECDb_0744 = IssueId("ECDb_0744");
 IssueId ECDbIssueId::ECDb_0745 = IssueId("ECDb_0745");
+IssueId ECDbIssueId::ECDb_0746 = IssueId("ECDb_0746");
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -805,6 +806,7 @@ void IssueDataSource::ClearFilter() const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 void IssueDataSource::Report(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message)  const {
+    m_issueObserverEvent.RaiseEvent(severity, category, type, id, message);
     BeMutexHolder lock(m_issueEvent.GetMutex());
     if (m_filterCallback != nullptr) {
         if (m_filterCallback(severity, category, type, id, message) == FilterAction::Ignore) {

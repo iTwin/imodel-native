@@ -172,6 +172,7 @@ private:
     mutable std::unique_ptr<SupportInstanceQueryFunc> m_supportInstanceQueryFunc;
     mutable EC::ECSqlConfig m_ecSqlConfig;
     mutable bool m_disableDDLTracking;
+    mutable Utf8CP m_sqliteOnlyAttachmentAlias = nullptr;
     mutable std::unique_ptr<PragmaManager> m_pragmaProcessor;
     mutable SnappyFromMemory m_snappyReader;
     mutable SnappyToBlob m_snappyWriter;
@@ -238,6 +239,7 @@ public:
     BeGuid GetId() const  {return m_id; }
     IdFactory& GetIdFactory() const;
     DbResult ExecuteDDL(Utf8CP) const;
+    DbResult AttachDbAsSQLite(Utf8CP dbFileName, Utf8CP tableSpaceName) const;
     PragmaManager& GetPragmaManager() const;
 
     template<typename T>

@@ -102,6 +102,165 @@ TEST_F(SchemaRemapTest, SchemaRemapMovePropertyWithV8LegacyImport)
     ASSERT_TRUE(testClassUpdated->GetPropertyP("MovingProperty", false));
     }
 
+// Reduced from the OPM 68030 -> 68031 import: the hierarchy and DRY_WEIGHT declarations stay in place.
+// Adding overrides elsewhere frees shared columns used by the unchanged override chain.
+TEST_F(SchemaRemapTest, OpmPropertyOverrideAfterSharedColumnRemap)
+    {
+    SetupSeedProject();
+
+    // GUID occupies a joined-table column; padding forces the sibling properties into overflow.
+    Utf8String padding;
+    for (int i = 0; i < 31; ++i)
+        padding.append(Utf8PrintfString("<ECProperty propertyName=\"Padding%d\" typeName=\"string\"/>", i));
+    const auto schemaXml = R"xml(
+      <ECSchema schemaName="OpmRemap" alias="opm" version="01.00.%02d" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="BisCore" version="01.00.16" alias="bis"/>
+        <ECSchemaReference name="CoreCustomAttributes" version="01.00.03" alias="CoreCA"/>
+        <ECCustomAttributes><DynamicSchema xmlns="CoreCustomAttributes.01.00.03"/></ECCustomAttributes>
+        <ECEntityClass typeName="PlantBase">
+          <BaseClass>bis:PhysicalElement</BaseClass>
+          <ECProperty propertyName="GUID" typeName="string"/>
+          %s
+        </ECEntityClass>
+        <ECEntityClass typeName="NamedItem">
+          <BaseClass>PlantBase</BaseClass>
+          %s
+        </ECEntityClass>
+        <ECEntityClass typeName="Device">
+          <BaseClass>NamedItem</BaseClass>
+          <ECProperty propertyName="DRY_WEIGHT" typeName="double"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="Fastener">
+          <BaseClass>Device</BaseClass>
+          <ECProperty propertyName="DRY_WEIGHT" typeName="double"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="Bolt">
+          <BaseClass>Fastener</BaseClass>
+        </ECEntityClass>
+        <ECEntityClass typeName="Valve">
+          <BaseClass>NamedItem</BaseClass>
+          <ECProperty propertyName="ItemTag" typeName="string"/>
+        </ECEntityClass>
+      </ECSchema>)xml";
+
+    BeFileName directory;
+    BeTest::GetHost().GetOutputRoot(directory);
+    directory.AppendToPath(L"OpmPropertyOverrideAfterSharedColumnRemap-schemas");
+    if (!directory.DoesPathExist())
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(directory));
+
+    auto reopenDb = [&]()
+        {
+        BeFileName dbPath(m_db->GetDbFileName(), BentleyCharEncoding::Utf8);
+        m_db->CloseDb();
+        DbResult status;
+        m_db = DgnDb::OpenIModelDb(&status, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+        return status;
+        };
+
+    auto assertBolt = [&]()
+        {
+        Statement mappings;
+        DbResult status = mappings.Prepare(*m_db, R"sql(
+          SELECT COUNT(*), COUNT(DISTINCT pm.PropertyPathId), COUNT(DISTINCT pm.ColumnId)
+          FROM ec_PropertyMap pm JOIN ec_Class c ON c.Id=pm.ClassId
+            JOIN ec_Schema s ON s.Id=c.SchemaId JOIN ec_PropertyPath pp ON pp.Id=pm.PropertyPathId
+          WHERE s.Name='OpmRemap' AND c.Name='Bolt' AND pp.AccessString='DRY_WEIGHT')sql");
+        EXPECT_EQ(BE_SQLITE_OK, status);
+        if (status != BE_SQLITE_OK)
+            return false;
+        status = mappings.Step();
+        EXPECT_EQ(BE_SQLITE_ROW, status);
+        if (status != BE_SQLITE_ROW)
+            return false;
+        EXPECT_EQ(1, mappings.GetValueInt(0));
+        EXPECT_EQ(1, mappings.GetValueInt(1));
+        EXPECT_EQ(1, mappings.GetValueInt(2));
+
+        ECSqlStatement query;
+        ECSqlStatus prepareStatus = query.Prepare(*m_db, "SELECT DRY_WEIGHT FROM ONLY OpmRemap.Bolt");
+        EXPECT_EQ(ECSqlStatus::Success, prepareStatus);
+        if (prepareStatus != ECSqlStatus::Success)
+            return false;
+        status = query.Step();
+        EXPECT_EQ(BE_SQLITE_ROW, status);
+        if (status != BE_SQLITE_ROW)
+            return false;
+        EXPECT_DOUBLE_EQ(12.5, query.GetValueDouble(0));
+        EXPECT_EQ(BE_SQLITE_DONE, query.Step());
+        return true;
+        };
+
+    for (int version = 0; version < 2; ++version)
+        {
+        BeTest::Log("SchemaRemapTest", BeTest::PRIORITY_INFO, Utf8PrintfString("version %d", version).c_str());
+        if (version == 1)
+            {
+            ASSERT_EQ(BE_SQLITE_OK, reopenDb());
+            ASSERT_TRUE(m_db.IsValid());
+            ASSERT_TRUE(assertBolt());
+            }
+
+        auto context = ECSchemaReadContext::CreateContext();
+        context->AddSchemaLocater(m_db->GetSchemaLocater());
+        ECSchemaPtr schema;
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema,
+            Utf8PrintfString(schemaXml, version, padding.c_str(),
+                version == 0 ? "" : R"xml(<ECProperty propertyName="GUID" typeName="string"/><ECProperty propertyName="ItemTag" typeName="string"/>)xml").c_str(), *context));
+        BeFileName schemaPath(directory);
+        schemaPath.AppendToPath(BeFileName(Utf8PrintfString("OpmRemap.01.00.%02d.ecschema.xml", version).c_str(), BentleyCharEncoding::Utf8));
+        if (schemaPath.DoesPathExist())
+            ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeDeleteFile(schemaPath));
+        ASSERT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlFile(schemaPath.GetName(), schema->GetECVersion()));
+
+        auto importContext = ECSchemaReadContext::CreateContext();
+        importContext->AddSchemaPath(directory.GetName());
+        importContext->AddSchemaLocater(m_db->GetSchemaLocater());
+        ECSchemaPtr importedSchema;
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlFile(importedSchema, schemaPath.GetName(), *importContext));
+        ASSERT_EQ(SchemaStatus::Success, m_db->ImportV8LegacySchemas({ importedSchema.get() }));
+
+        if (version == 0)
+            {
+            Statement sharedColumn;
+            ASSERT_EQ(BE_SQLITE_OK, sharedColumn.Prepare(*m_db, R"sql(
+              SELECT COUNT(*), COUNT(DISTINCT pm.ColumnId), MIN(t.Name)
+              FROM ec_PropertyMap pm JOIN ec_Class c ON c.Id=pm.ClassId
+                JOIN ec_Schema s ON s.Id=c.SchemaId JOIN ec_PropertyPath pp ON pp.Id=pm.PropertyPathId
+                JOIN ec_Column col ON col.Id=pm.ColumnId JOIN ec_Table t ON t.Id=col.TableId
+              WHERE s.Name='OpmRemap' AND
+                ((c.Name IN ('Device','Fastener','Bolt') AND pp.AccessString='DRY_WEIGHT') OR
+                 (c.Name='Valve' AND pp.AccessString='ItemTag')))sql"));
+            ASSERT_EQ(BE_SQLITE_ROW, sharedColumn.Step());
+            ASSERT_EQ(4, sharedColumn.GetValueInt(0));
+            ASSERT_EQ(1, sharedColumn.GetValueInt(1));
+            ASSERT_STREQ("bis_GeometricElement3d_Overflow", sharedColumn.GetValueText(2));
+
+            DgnClassId classId = m_db->Schemas().GetClassId("OpmRemap", "Bolt");
+            auto handler = dgn_ElementHandler::Element::FindHandler(*m_db, classId);
+            ASSERT_NE(nullptr, handler);
+            auto bolt = handler->Create(DgnElement::CreateParams(*m_db, m_defaultModelId, classId));
+            ASSERT_TRUE(bolt.IsValid());
+            auto geometry = bolt->ToGeometrySource3dP();
+            ASSERT_NE(nullptr, geometry);
+            ASSERT_EQ(DgnDbStatus::Success, geometry->SetCategoryId(m_defaultCategoryId));
+            ASSERT_EQ(DgnDbStatus::Success, bolt->SetPropertyValue("DRY_WEIGHT", 12.5));
+            DgnDbStatus status;
+            auto inserted = bolt->Insert(&status);
+            ASSERT_EQ(DgnDbStatus::Success, status);
+            ASSERT_TRUE(inserted.IsValid());
+            }
+
+        ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges());
+        ASSERT_TRUE(assertBolt());
+        }
+
+    BeTest::Log("SchemaRemapTest", BeTest::PRIORITY_INFO, "reopened after upgrade");
+    ASSERT_EQ(BE_SQLITE_OK, reopenDb());
+    ASSERT_TRUE(m_db.IsValid());
+    ASSERT_TRUE(assertBolt());
+    }
+
 TEST_F(SchemaRemapTest, DeletePropertyOverrideAndDerivedClassSimultaneously)
     {
     SetupSeedProject();
