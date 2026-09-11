@@ -204,19 +204,23 @@ BentleyStatus DbMapValidator::Validate() const
     if (SUCCESS != Initialize())
         return ERROR;
 
-    if (SUCCESS != ValidateDbSchema())
-        return ERROR;
+    BentleyStatus result = SUCCESS;
+    for (auto validation : {
+        &DbMapValidator::ValidateDbSchema,
+        &DbMapValidator::ValidateDbMap,
+        &DbMapValidator::CheckDuplicateDataPropertyMap,
+        &DbMapValidator::ValidateCustomAttributeTable,
+        &DbMapValidator::ValidateClassViews})
+        {
+        if (SUCCESS == (this->*validation)())
+            continue;
 
-    if (SUCCESS != ValidateDbMap())
-        return ERROR;
+        result = ERROR;
+        if (!m_continueAfterError)
+            return result;
+        }
 
-    if (SUCCESS != CheckDuplicateDataPropertyMap())
-        return ERROR;
-
-    if (SUCCESS != ValidateCustomAttributeTable())
-        return ERROR;
-
-    return ValidateClassViews();
+    return result;
     }
 
 //---------------------------------------------------------------------------------------
@@ -224,19 +228,29 @@ BentleyStatus DbMapValidator::Validate() const
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus DbMapValidator::ValidateDbSchema() const
     {
+    BentleyStatus result = SUCCESS;
     for (DbTable const* table : GetDbSchema().Tables())
         {
         if (SUCCESS != ValidateDbTable(*table))
-            return ERROR;
+            {
+            result = ERROR;
+            if (!m_continueAfterError)
+                return result;
+            continue;
+            }
 
         for (std::unique_ptr<DbIndex> const& index : table->GetIndexes())
             {
             if (SUCCESS != ValidateDbIndex(*index))
-                return ERROR;
+                {
+                result = ERROR;
+                if (!m_continueAfterError)
+                    return result;
+                }
             }
         }
 
-    return SUCCESS;
+    return result;
     }
 
 //---------------------------------------------------------------------------------------
@@ -725,6 +739,7 @@ BentleyStatus DbMapValidator::ValidateDbIndex(DbIndex const& index) const
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus DbMapValidator::ValidateDbMap() const
     {
+    BentleyStatus result = SUCCESS;
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(GetECDb(), "SELECT count(*) FROM main." TABLE_Class))
         {
@@ -755,7 +770,9 @@ BentleyStatus DbMapValidator::ValidateDbMap() const
         {
         Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0157,
             "The system tables " TABLE_Class " and " TABLE_ClassMap " must have the same number of rows, but they don't: " TABLE_Class ": %d rows, " TABLE_ClassMap ": %d rows.", classCount, classMapCount);
-        return ERROR;
+        result = ERROR;
+        if (!m_continueAfterError)
+            return result;
         }
 
     //store class maps from cache in local vector as validation might load more classes into the cache and
@@ -769,10 +786,14 @@ BentleyStatus DbMapValidator::ValidateDbMap() const
     for (ClassMap const* classMap : classMaps)
         {
         if (SUCCESS != ValidateClassMap(*classMap))
-            return ERROR;
+            {
+            result = ERROR;
+            if (!m_continueAfterError)
+                return result;
+            }
         }
 
-    return SUCCESS;
+    return result;
     }
 
 //---------------------------------------------------------------------------------------

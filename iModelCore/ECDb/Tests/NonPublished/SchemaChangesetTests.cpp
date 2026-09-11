@@ -450,11 +450,11 @@ TEST_F(SchemaChangesetTestFixture, ApplyChangesetWithIncompleteDerivedClassMaps)
     }
 
 //---------------------------------------------------------------------------------------
-// A changeset may load an existing class whose persisted data maps contain duplicate
-// access strings. Keep that historical state intact while still rejecting it during import.
+// A changeset may load an existing class whose distinct property paths have the same
+// access string. Keep that historical state intact while still rejecting it during import.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaChangesetTestFixture, ApplyChangesetWithDuplicateDerivedClassMaps)
+TEST_F(SchemaChangesetTestFixture, ApplyChangesetWithDuplicatePropertyMapAccessStrings)
     {
     SchemaItem schema(R"xml(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="DuplicateMapProbe" alias="dmp" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -485,19 +485,32 @@ TEST_F(SchemaChangesetTestFixture, ApplyChangesetWithDuplicateDerivedClassMaps)
     ASSERT_STREQ(p1Column.GetTableName().c_str(), p2Column.GetTableName().c_str());
 
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(R"sql(
-        INSERT INTO ec_PropertyMap(ClassId,PropertyPathId,ColumnId)
-        SELECT p1.ClassId,p1.PropertyPathId,p2.ColumnId
-        FROM ec_PropertyMap p1
-          JOIN ec_PropertyPath pp1 ON pp1.Id=p1.PropertyPathId
-          JOIN ec_Class c ON c.Id=p1.ClassId
-          JOIN ec_Schema s ON s.Id=c.SchemaId
-          JOIN ec_PropertyMap p2 ON p2.ClassId=p1.ClassId
-          JOIN ec_PropertyPath pp2 ON pp2.Id=p2.PropertyPathId
-        WHERE s.Name='DuplicateMapProbe' AND c.Name='Child'
-          AND pp1.AccessString='P1' AND pp2.AccessString='P2'
+        UPDATE ec_PropertyPath SET AccessString='P1'
+        WHERE Id = (
+          SELECT pp.Id
+          FROM ec_PropertyPath pp
+            JOIN ec_Property p ON p.Id=pp.RootPropertyId
+            JOIN ec_Class c ON c.Id=p.ClassId
+            JOIN ec_Schema s ON s.Id=c.SchemaId
+          WHERE s.Name='DuplicateMapProbe' AND c.Name='Child'
+            AND p.Name='P2' AND pp.AccessString='P2')
 )sql"));
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
     m_ecdb.ClearECDbCache();
+
+    Statement duplicatePaths;
+    ASSERT_EQ(BE_SQLITE_OK, duplicatePaths.Prepare(m_ecdb, R"sql(
+        SELECT COUNT(*), COUNT(DISTINCT pm.PropertyPathId), COUNT(DISTINCT pp.AccessString)
+        FROM ec_PropertyMap pm
+          JOIN ec_PropertyPath pp ON pp.Id=pm.PropertyPathId
+          JOIN ec_Class c ON c.Id=pm.ClassId
+          JOIN ec_Schema s ON s.Id=c.SchemaId
+        WHERE s.Name='DuplicateMapProbe' AND c.Name='Child' AND pp.AccessString='P1'
+)sql"));
+    ASSERT_EQ(BE_SQLITE_ROW, duplicatePaths.Step());
+    ASSERT_EQ(2, duplicatePaths.GetValueInt(0));
+    ASSERT_EQ(2, duplicatePaths.GetValueInt(1));
+    ASSERT_EQ(1, duplicatePaths.GetValueInt(2));
 
     SchemaChangesetTestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
@@ -521,6 +534,8 @@ TEST_F(SchemaChangesetTestFixture, ApplyChangesetWithDuplicateDerivedClassMaps)
             ASSERT_EQ(ECN::IssueSeverity::Warning, issue.severity);
             ASSERT_TRUE(issue.message.Contains("DuplicateMapProbe:Child"));
             ASSERT_TRUE(issue.message.Contains("AccessString 'P1'"));
+            ASSERT_TRUE(issue.message.Contains(p1Column.GetName()));
+            ASSERT_TRUE(issue.message.Contains(p2Column.GetName()));
             duplicateMapWarning = true;
             }
         }
@@ -551,7 +566,7 @@ TEST_F(SchemaChangesetTestFixture, ApplyChangesetWithDuplicateDerivedClassMaps)
         if (Utf8String(issue.id.m_issueId).CompareToIAscii("ECDb_0160") == 0)
             {
             ASSERT_EQ(ECN::IssueSeverity::Error, issue.severity);
-            ASSERT_TRUE(issue.message.Contains("Property maps: 1, properties: 2."));
+            ASSERT_TRUE(issue.message.Contains("Property maps: 0, properties: 2."));
             invalidMapImportError = true;
             }
         }

@@ -260,6 +260,7 @@ void ECDb::Impl::RegisterECSqlPragmas() const
     GetPragmaManager().Register(PragmaECDbVersion::Create());
     GetPragmaManager().Register(PragmaChecksum::Create());
     GetPragmaManager().Register(PragmaIntegrityCheck::Create());
+    GetPragmaManager().Register(PragmaValidatePersistedMappings::Create());
     GetPragmaManager().Register(PragmaExperimentalFeatures::Create());
     GetPragmaManager().Register(PragmaParseTree::Create());
     GetPragmaManager().Register(PragmaPurgeOrphanRelationships::Create());

@@ -138,6 +138,16 @@ struct PragmaIntegrityCheck : PragmaManager::GlobalHandler {
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
+struct PragmaValidatePersistedMappings : PragmaManager::GlobalHandler {
+    PragmaValidatePersistedMappings():GlobalHandler("validate_persisted_mappings", "validates persisted ECDb mappings and returns reported issues"){}
+    virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
+    virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
+    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaValidatePersistedMappings>(); }
+};
+
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
 struct PragmaPurgeOrphanRelationships : PragmaManager::GlobalHandler {
     PragmaPurgeOrphanRelationships():GlobalHandler("purge_orphan_relationships","removes orphaned link-table relationships from ECDb"){}
     ~PragmaPurgeOrphanRelationships(){}

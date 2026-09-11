@@ -1540,6 +1540,8 @@ SchemaImportResult MainSchemaManager::MapSchemas(SchemaImportContext& ctx, bvect
         return failedToMap();
     }
 
+    // Persisted mappings must be reloaded after mapping and data transforms complete.
+    m_ecdb.ClearECDbCache();
     if (SUCCESS != ValidatePersistedMappings(ctx.GetOptions())) {
         return failedToMap();
     }
@@ -1551,10 +1553,8 @@ SchemaImportResult MainSchemaManager::MapSchemas(SchemaImportContext& ctx, bvect
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus MainSchemaManager::ValidatePersistedMappings(SchemaManager::SchemaImportOptions options) const
+BentleyStatus MainSchemaManager::ValidatePersistedMappings(SchemaManager::SchemaImportOptions options, bool continueAfterError) const
     {
-    // Mapping and data transforms must be complete before invalidating the import's cached objects.
-    m_ecdb.ClearECDbCache();
     SchemaImportContext validationContext(m_ecdb, options);
 
     if (SUCCESS != GetDbSchema().ForceReloadTableAndIndexesFromDisk())
@@ -1564,6 +1564,7 @@ BentleyStatus MainSchemaManager::ValidatePersistedMappings(SchemaManager::Schema
     if (SUCCESS != GetSchemas(schemas, true))
         return ERROR;
 
+    bool failedToLoadClassMap = false;
     for (ECSchemaCP schema : schemas)
         {
         for (ECClassCP ecClass : schema->GetClasses())
@@ -1572,16 +1573,21 @@ BentleyStatus MainSchemaManager::ValidatePersistedMappings(SchemaManager::Schema
                 {
                 Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0113,
                     "Could not load class map for ECClass %s from the file.", ecClass->GetFullName());
-                return ERROR;
+                failedToLoadClassMap = true;
+                if (!continueAfterError)
+                    return ERROR;
                 }
             }
         }
+
+    if (failedToLoadClassMap)
+        return ERROR;
 
     // Foreign keys and triggers are derived from persisted mappings rather than stored in ec_ tables.
     if (validationContext.MaintainsDataTables() && SUCCESS != DerivedDbStructures::Derive(*this))
         return ERROR;
 
-    return DbMapValidator(validationContext).Validate();
+    return DbMapValidator(validationContext, DbMapValidationMode::SchemaImport, continueAfterError).Validate();
     }
 
 //---------------------------------------------------------------------------------------
