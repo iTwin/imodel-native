@@ -10,6 +10,48 @@
 struct FontTests : public DgnDbTestFixture {
 };
 
+using TestShxGlyph = std::pair<uint16_t, bvector<Byte>>;
+
+static void appendUInt16(ByteStreamR data, uint16_t value) {
+    data.Append(static_cast<Byte>(value & 0xff));
+    data.Append(static_cast<Byte>(value >> 8));
+}
+
+static ByteStream createLocaleShx(bvector<TestShxGlyph> const& glyphs, uint16_t finalDeclaredSize = 0) {
+    static Utf8CP header = "AutoCAD-86 shapes 1.0\r\n\x1a";
+    ByteStream data;
+    data.Append(reinterpret_cast<ByteCP>(header), static_cast<uint32_t>(strlen(header)));
+
+    appendUInt16(data, 0);
+    appendUInt16(data, UINT16_MAX);
+    appendUInt16(data, static_cast<uint16_t>(glyphs.size()));
+
+    for (size_t i = 0; i < glyphs.size(); ++i) {
+        appendUInt16(data, glyphs[i].first);
+        uint16_t dataSize = static_cast<uint16_t>(glyphs[i].second.size());
+        if (finalDeclaredSize != 0 && i == glyphs.size() - 1)
+            dataSize = finalDeclaredSize;
+        appendUInt16(data, dataSize);
+    }
+
+    for (auto const& glyph : glyphs)
+        data.Append(glyph.second.data(), static_cast<uint32_t>(glyph.second.size()));
+
+    while (data.size() < 40)
+        data.Append(static_cast<Byte>(0));
+
+    return data;
+}
+
+static DbFontP embedTestShx(FontDbR fontDb, Utf8CP name, ByteStreamCR data) {
+    bvector<FontFace> faces;
+    faces.emplace_back(FontFace(FontType::Shx, name));
+    if (SUCCESS != fontDb.EmbedFont(faces, data, false))
+        return nullptr;
+
+    return fontDb.FindFont(FontType::Shx, name);
+}
+
 void testFont(DbFont& font) {
     auto glyphA = font.FindGlyphCP('A', FaceStyle::Regular);
     auto glyphb = font.FindGlyphCP('b', FaceStyle::Regular);
@@ -194,6 +236,126 @@ TEST_F(FontTests, EmbedSHxFont) {
     auto font = dbFonts.m_fontDb.FindFont(FontType::Shx, "Cdm");
     EXPECT_TRUE(nullptr != font);
     testFont(*font);
+}
+
+TEST_F(FontTests, RejectMalformedShxSubShapes) {
+    SetupSeedProject();
+    FontDbR fontDb = m_db->Fonts().m_fontDb;
+
+    {
+        ByteStream data = createLocaleShx({{'A', {0, 7, 'A', 0}}});
+        DbFontP font = embedTestShx(fontDb, "SelfCycle", data);
+        ASSERT_NE(nullptr, font);
+        DbGlyphCP glyph = font->FindGlyphCP('A', FaceStyle::Regular);
+        ASSERT_NE(nullptr, glyph);
+        EXPECT_TRUE(glyph->GetCurveVector().IsValid());
+    }
+
+    {
+        ByteStream data = createLocaleShx({
+            {'A', {0, 7, 'B', 0}},
+            {'B', {0, 7, 'A', 0}},
+        });
+        DbFontP font = embedTestShx(fontDb, "MutualCycle", data);
+        ASSERT_NE(nullptr, font);
+        DbGlyphCP glyph = font->FindGlyphCP('A', FaceStyle::Regular);
+        ASSERT_NE(nullptr, glyph);
+        EXPECT_TRUE(glyph->GetCurveVector().IsValid());
+    }
+
+    {
+        bvector<TestShxGlyph> glyphs;
+        bvector<uint16_t> chainIds;
+        for (uint16_t id = 1; id <= 64; ++id)
+            chainIds.push_back(id);
+        for (uint16_t id = 66; id <= 71; ++id)
+            chainIds.push_back(id);
+
+        glyphs.emplace_back('A', bvector<Byte>{0, 0x10, 7, static_cast<Byte>(chainIds[0]), 2, 0});
+        for (size_t i = 0; i < chainIds.size(); ++i) {
+            if (i + 1 == chainIds.size())
+                glyphs.emplace_back(chainIds[i], bvector<Byte>{0, 0x10, 2, 0});
+            else
+                glyphs.emplace_back(chainIds[i], bvector<Byte>{0, 0x10, 7, static_cast<Byte>(chainIds[i + 1]), 2, 0});
+        }
+
+        ByteStream data = createLocaleShx(glyphs);
+        DbFontP font = embedTestShx(fontDb, "ExcessiveDepth", data);
+        ASSERT_NE(nullptr, font);
+        DbGlyphCP glyph = font->FindGlyphCP('A', FaceStyle::Regular);
+        ASSERT_NE(nullptr, glyph);
+        CurveVectorPtr curves = glyph->GetCurveVector();
+        ASSERT_TRUE(curves.IsValid());
+        DRange3d range;
+        ASSERT_TRUE(curves->GetRange(range));
+        EXPECT_DOUBLE_EQ(64.0, range.high.x);
+    }
+
+    {
+        ByteStream data = createLocaleShx({
+            {'A', {0, 7, 'B', 7, 'B', 0}},
+            {'B', {0, 0x10, 2, 0}},
+        });
+        DbFontP font = embedTestShx(fontDb, "RepeatedSubShape", data);
+        ASSERT_NE(nullptr, font);
+        DbGlyphCP glyph = font->FindGlyphCP('A', FaceStyle::Regular);
+        ASSERT_NE(nullptr, glyph);
+        CurveVectorPtr curves = glyph->GetCurveVector();
+        ASSERT_TRUE(curves.IsValid());
+        DRange3d range;
+        ASSERT_TRUE(curves->GetRange(range));
+        EXPECT_DOUBLE_EQ(2.0, range.high.x);
+    }
+
+    {
+        ByteStream data = createLocaleShx({{'A', {0, 0}}}, UINT16_MAX);
+        DbFontP font = embedTestShx(fontDb, "TruncatedRecord", data);
+        ASSERT_NE(nullptr, font);
+        EXPECT_EQ(nullptr, font->FindGlyphCP('A', FaceStyle::Regular));
+    }
+
+    {
+        ByteStream data = createLocaleShx({{'A', {0, 0x10, 2, 8, 1}}});
+        DbFontP font = embedTestShx(fontDb, "TruncatedOpcode", data);
+        ASSERT_NE(nullptr, font);
+        DbGlyphCP glyph = font->FindGlyphCP('A', FaceStyle::Regular);
+        ASSERT_NE(nullptr, glyph);
+        CurveVectorPtr curves = glyph->GetCurveVector();
+        ASSERT_TRUE(curves.IsValid());
+        DRange3d range;
+        ASSERT_TRUE(curves->GetRange(range));
+        EXPECT_DOUBLE_EQ(1.0, range.high.x);
+    }
+
+    {
+        bvector<Byte> glyphData = {0};
+        glyphData.insert(glyphData.end(), 4096, 14);
+        glyphData.push_back(0x10);
+        glyphData.push_back(2);
+        glyphData.push_back(0);
+
+        ByteStream data = createLocaleShx({{'A', std::move(glyphData)}});
+        DbFontP font = embedTestShx(fontDb, "VerticalChain", data);
+        ASSERT_NE(nullptr, font);
+        DbGlyphCP glyph = font->FindGlyphCP('A', FaceStyle::Regular);
+        ASSERT_NE(nullptr, glyph);
+        EXPECT_TRUE(glyph->GetCurveVector().IsValid());
+    }
+
+    {
+        ByteStream data = createLocaleShx({
+            {'A', {0, 9, 1}},
+            {'B', {0, 13, 1, 1}},
+        });
+        DbFontP font = embedTestShx(fontDb, "TruncatedSequences", data);
+        ASSERT_NE(nullptr, font);
+        DbGlyphCP glyphA = font->FindGlyphCP('A', FaceStyle::Regular);
+        DbGlyphCP glyphB = font->FindGlyphCP('B', FaceStyle::Regular);
+        ASSERT_NE(nullptr, glyphA);
+        ASSERT_NE(nullptr, glyphB);
+        EXPECT_TRUE(glyphA->GetCurveVector().IsValid());
+        EXPECT_TRUE(glyphB->GetCurveVector().IsValid());
+    }
 }
 
 /** tests for FontManager */
