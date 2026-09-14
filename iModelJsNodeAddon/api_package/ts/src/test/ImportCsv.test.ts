@@ -191,10 +191,11 @@ describe("ImportCsv", () => {
 
     it("rejects nested shared arrays instead of expanding them into a value tree", () => {
       db = createECDb("importCsvDataNestedReferences.ecdb");
-      let rows: unknown[] = ["Alpha"];
+      let nestedValue: unknown[] = ["Alpha"];
       for (let depth = 0; depth < 24; ++depth)
-        rows = [rows, rows];
+        nestedValue = [nestedValue, nestedValue];
 
+      const rows = [[nestedValue, "3", "1.5", "true"]];
       expect(() => db.importCSVData("Test.Foo", v8.serialize(rows), mapping))
         .to.throw(/primitive scalar/);
       expect(readAllFooRows(db)).to.deep.equal([]);
