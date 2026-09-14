@@ -71,6 +71,12 @@ USING_NAMESPACE_BENTLEY_EC
     }\
     Napi::Object var = info[i].As<Napi::Object>();
 
+#define REQUIRE_ARGUMENT_ANY_VALUE(i, var)\
+    if (ARGUMENT_IS_NOT_PRESENT(i)) {\
+        THROW_JS_TYPE_EXCEPTION("Argument " #i " must be defined")\
+    }\
+    Napi::Value var = info[i];
+
 #define REQUIRE_ARGUMENT_OBJ(i, T, var)\
     if (ARGUMENT_IS_NOT_PRESENT(i) || !T::InstanceOf(info[i])) {\
         THROW_JS_TYPE_EXCEPTION("Argument " #i " must be an object of type " #T)\
@@ -643,7 +649,7 @@ struct CRSListResponseProps
     Utf8String m_description;
     bool m_deprecated;
     DRange2d m_crsExtent;
-    Utf8String m_unit;    
+    Utf8String m_unit;
     };
 
 struct GeoServicesInterop
