@@ -2705,7 +2705,6 @@ TEST_F (BeSQLiteDbTests, Limits)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-#if 0 // Require ICU
 TEST_F (BeSQLiteDbTests, icu_upper_lower_func) {
 
     SetupDb (L"icu_case.db");
@@ -2732,7 +2731,6 @@ TEST_F (BeSQLiteDbTests, icu_upper_lower_func) {
     ASSERT_STREQ(expectedLower.c_str(), actualLower.c_str());
     ASSERT_STREQ("SS", toUpper("ß").c_str());
 }
-#endif
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
