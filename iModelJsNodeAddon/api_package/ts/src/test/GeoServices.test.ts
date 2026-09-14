@@ -37,6 +37,20 @@ const verticalDatumDictionary = JSON.stringify({
       },
       transforms: [{ target: "WGS84", nullTransform: null }],
     },
+  }, {
+    verticalCRS: {
+      crsName: "WGS84",
+      datumName: "WGS_1984",
+      epsg: 4326,
+      type: "ELLIPSOID",
+      units: "meter",
+      description: "WGS84 ellipsoid",
+      deprecated: false,
+      extent: {
+        southWest: { latitude: -90, longitude: -180 },
+        northEast: { latitude: 90, longitude: 180 },
+      },
+    },
   }],
 });
 
@@ -74,6 +88,22 @@ describe("GeoServices", () => {
     expect(egm96.unit).to.equal("meter");
     expect(egm96.extent).to.deep.equal({ low: [-180, -90], high: [180, 90] });
     expect(verticalSystems.some((entry) => entry.crsName === "Regional test height")).to.be.true;
+  });
+
+  it("interprets a named vertical coordinate reference system with its fallback id", () => {
+    const response = iModelJsNative.GeoServices.getGeographicCRSInterpretation({
+      format: "JSON",
+      geographicCRSDef: JSON.stringify({
+        horizontalCRS: { id: "LL84" },
+        verticalCRS: { crsName: "EGM96 height", id: "GEOID" },
+      }),
+    });
+
+    expect(response.status).to.equal(0);
+    const verticalCRS = (response.geographicCRS as { verticalCRS?: { crsName?: string, id?: string } } | undefined)?.verticalCRS;
+    assert.isDefined(verticalCRS);
+    expect(verticalCRS.crsName).to.equal("EGM96 height");
+    expect(verticalCRS.id).to.equal("GEOID");
   });
 
   it("filters vertical coordinate reference systems by point", () => {
