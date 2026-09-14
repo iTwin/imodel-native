@@ -157,6 +157,8 @@ bool decodeSerializedCSVValue(Utf8StringR decoded, v8serial::ScalarValue const& 
         case v8serial::ScalarType::Utf16String: {
             std::u16string utf16(value.byte_count / sizeof(char16_t), u'\0');
             std::memcpy(utf16.data(), value.bytes, value.byte_count);
+            if (utf16.find(u'\0') != std::u16string::npos)
+                return false;
             return SUCCESS == BeStringUtilities::Utf16ToUtf8(decoded, reinterpret_cast<Utf16CP>(utf16.data()), utf16.size());
         }
         default:

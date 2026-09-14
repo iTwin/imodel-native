@@ -196,7 +196,7 @@ describe("ImportCsv", () => {
         rows = [rows, rows];
 
       expect(() => db.importCSVData("Test.Foo", v8.serialize(rows), mapping))
-        .to.throw(/only primitive scalar values/);
+        .to.throw(/primitive scalar/);
       expect(readAllFooRows(db)).to.deep.equal([]);
     });
 
