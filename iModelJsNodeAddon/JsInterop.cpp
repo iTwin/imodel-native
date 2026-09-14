@@ -1432,11 +1432,11 @@ void SqliteChangesetReader::OpenGroup(Napi::Env env, T_Utf8StringVector const& c
                 THROW_JS_BE_SQLITE_EXCEPTION(env, "openGroup(): unable to read changeset", BE_SQLITE_ERROR);
 
             if (checkedTables.insert(tableName).second) {
-                if (!db.TableExists(tableName))
+                bvector<Utf8String> columns;
+                if (!db.GetColumns(columns, tableName) || columns.empty())
                     THROW_JS_BE_SQLITE_EXCEPTION(env, SqlPrintfString("openGroup(): changeset table %s does not exist in the provided db", tableName), BE_SQLITE_SCHEMA);
 
-                bvector<Utf8String> columns;
-                if (!db.GetColumns(columns, tableName) || columns.size() < static_cast<size_t>(columnCount))
+                if (columns.size() < static_cast<size_t>(columnCount))
                     THROW_JS_BE_SQLITE_EXCEPTION(env, SqlPrintfString("openGroup(): changeset table %s has fewer columns than the changeset", tableName), BE_SQLITE_SCHEMA);
             }
         }

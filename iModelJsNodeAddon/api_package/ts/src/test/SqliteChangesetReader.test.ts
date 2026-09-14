@@ -60,14 +60,14 @@ function collectTableSchemas(changesetFiles: string[]): { tables: Map<string, Ta
   return { tables, changeCount };
 }
 
-function createSchema(db: IModelJsNative.SQLiteDb, tables: Map<string, TableSchema>): void {
+function createSchema(db: IModelJsNative.SQLiteDb, tables: Map<string, TableSchema>, transformTableName = (name: string) => name): void {
   for (const [tableName, schema] of tables) {
     const columns = Array.from({ length: schema.columnCount }, (_, index) => `"c${index}"`);
     const primaryKey = schema.primaryKeyColumns.map((index) => `"c${index}"`).join(",");
     expect(primaryKey, `${tableName} must declare a primary key`).not.empty;
     const stmt = new iModelJsNative.SqliteStatement();
     try {
-      stmt.prepare(db, `CREATE TABLE "${tableName}" (${columns.join(",")}, PRIMARY KEY (${primaryKey}))`);
+      stmt.prepare(db, `CREATE TABLE "${transformTableName(tableName)}" (${columns.join(",")}, PRIMARY KEY (${primaryKey}))`);
       expect(stmt.step()).equals(DbResult.BE_SQLITE_DONE);
     } finally {
       stmt.dispose();
@@ -139,6 +139,32 @@ describe("Native sqlite changeset reader", () => {
         }
         expect(changeCount).equals(342);
         expect(changeCount).equals(ungroupedChangeCount);
+      } finally {
+        reader.close();
+      }
+    } finally {
+      db.closeDb();
+      fs.rmSync(dbFileName, { force: true });
+    }
+  });
+
+  it("matches changeset table names case-insensitively", () => {
+    const changesetFiles = [path.join(getAssetsDir(), "test.cs")];
+    const { tables, changeCount: expectedChangeCount } = collectTableSchemas(changesetFiles);
+    const dbFileName = path.join(getOutputDir(), "changeset-reader-table-name-case.db");
+    fs.rmSync(dbFileName, { force: true });
+    const db = new iModelJsNative.SQLiteDb();
+    try {
+      db.createDb(dbFileName, undefined, { rawSQLite: true });
+      createSchema(db, tables, (tableName) => tableName.toUpperCase());
+
+      const reader = new iModelJsNative.SqliteChangesetReader();
+      try {
+        reader.openGroup(changesetFiles, db, false);
+        let changeCount = 0;
+        while (reader.step())
+          ++changeCount;
+        expect(changeCount).equals(expectedChangeCount);
       } finally {
         reader.close();
       }
