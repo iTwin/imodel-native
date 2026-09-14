@@ -59,6 +59,12 @@ describe("GeoServices", () => {
     const workspacePath = path.join(getOutputDir(), "GeoServices.itwin-workspace");
     fs.rmSync(workspacePath, { force: true });
 
+    assert.isDefined(process.env.OutRoot);
+    const upackDir = path.resolve(process.env.OutRoot, "../../src/upack");
+    const csMapDataPackage = fs.readdirSync(upackDir).find((entry) => entry.startsWith("csmap_data."));
+    assert.isDefined(csMapDataPackage);
+    const csMapDataDir = path.join(upackDir, csMapDataPackage, "Dictionaries");
+
     const workspaceDb = new iModelJsNative.SQLiteDb();
     workspaceDb.createDb(workspacePath);
 
@@ -68,9 +74,17 @@ describe("GeoServices", () => {
     statement.dispose();
 
     statement.prepare(workspaceDb, "INSERT INTO blobs(id,value) VALUES(?,?)");
-    statement.bindString(1, "VerticalDatumDefinitions.json");
-    statement.bindBlob(2, Buffer.from(verticalDatumDictionary));
-    statement.step();
+    const resources = new Map<string, Buffer>([
+      ["VerticalDatumDefinitions.json", Buffer.from(verticalDatumDictionary)],
+      ...["coordsys.dty", "datum.dty", "ellipsoid.dty", "GeodeticTransform.dty", "GeodeticPath.dty"]
+        .map((fileName): [string, Buffer] => [fileName, fs.readFileSync(path.join(csMapDataDir, fileName))]),
+    ]);
+    for (const [fileName, contents] of resources) {
+      statement.reset();
+      statement.bindString(1, fileName);
+      statement.bindBlob(2, contents);
+      statement.step();
+    }
     statement.dispose();
     workspaceDb.saveChanges();
     workspaceDb.closeDb();
