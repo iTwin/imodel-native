@@ -2054,7 +2054,13 @@ static void bdBlockDownloadCb(
       daemon_event_log(p, "writing %s to cache slot %d", zName, pEntry->iPos);
     }
     i64 iOff = (pEntry->iPos * p->c.szBlk);
-    rc = bdWriteFile(p->pCacheFile, pDLCtx->pKey, aData, nData, iOff);
+    u8 *aDecomp = 0;
+    int nDecomp = 0;
+    rc = bcvBlockInflate(aData, nData, &aDecomp, &nDecomp);
+    if( rc==SQLITE_OK ){
+      rc = bdWriteFile(p->pCacheFile, pDLCtx->pKey, aDecomp, nDecomp, iOff);
+    }
+    sqlite3_free(aDecomp);
   }
 
   if( rc==SQLITE_OK ){
