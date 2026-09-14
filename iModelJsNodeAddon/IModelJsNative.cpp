@@ -7093,7 +7093,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         REQUIRE_ARGUMENT_STRING(0, ruleSetId);
         REQUIRE_ARGUMENT_STRING(1, variableId);
         REQUIRE_ARGUMENT_STRING(2, variableType);
-        REQUIRE_ARGUMENT_ANY_OBJ(3, value);
+        REQUIRE_ARGUMENT_ANY_VALUE(3, value);
         ECPresentationResult result = ECPresentationUtils::SetRulesetVariableValue(*m_presentationManager, ruleSetId, variableId, variableType, value);
         return CreateReturnValue(std::move(result));
         }
