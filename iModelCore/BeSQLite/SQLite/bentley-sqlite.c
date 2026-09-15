@@ -23,7 +23,6 @@
 #define SQLITE_MAX_LENGTH               2147483647
 #define SQLITE_MAX_VARIABLE_NUMBER      20000
 #define SQLITE_OMIT_AUTOINIT            1
-#define SQLITE_OMIT_COMPLETE            1
 #define SQLITE_OMIT_DEPRECATED          1
 #define SQLITE_USE_URI                  1
 

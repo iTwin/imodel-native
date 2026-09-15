@@ -185,6 +185,33 @@ TEST_F(BeIdSetTests, ChunkedArray) {
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
+TEST_F(BeIdSetTests, DdlStatementBoundaries)
+    {
+    bvector<Utf8String> statements = {
+        "CREATE TABLE test(value TEXT DEFAULT 'a; b')",
+        "CREATE TABLE [semi; colon](value TEXT)",
+        "/* a; comment */ CREATE INDEX idx ON test(value)",
+        "-- a; comment\nCREATE INDEX idx2 ON test(value)",
+        "CREATE TABLE trailing_comment(value TEXT) -- keep this newline\n",
+        "CREATE TRIGGER update_values_after_insert AFTER INSERT ON test BEGIN UPDATE test SET value='x; y'; UPDATE test SET value='z'; END",
+    };
+    DdlChanges ddl;
+    for (auto const& statement : statements)
+        ddl.AddDDL(statement.c_str());
+
+    EXPECT_EQ(statements, ddl.GetDDLs());
+    DdlChanges regrouped;
+    for (auto const& statement : ddl.GetDDLs())
+        regrouped.AddDDL(statement.c_str());
+    EXPECT_EQ(ddl.ToString(), regrouped.ToString());
+    DdlChanges terminated((ddl.ToString() + ";  \n").c_str());
+    EXPECT_EQ(statements, terminated.GetDDLs());
+    EXPECT_TRUE(DdlChanges(" ; \n ; ").GetDDLs().empty());
+    }
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
 struct TestChangeSet : BeSQLite::ChangeSet
     {
     ConflictResolution _OnConflict(ConflictCause cause, BeSQLite::Changes::Change iter) override { BeAssert(false && "Unexpected conflict"); return ConflictResolution::Skip; }

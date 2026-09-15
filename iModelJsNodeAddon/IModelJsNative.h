@@ -71,6 +71,18 @@ USING_NAMESPACE_BENTLEY_EC
     }\
     Napi::Object var = info[i].As<Napi::Object>();
 
+#define REQUIRE_ARGUMENT_ARRAY(i, var)\
+    if (ARGUMENT_IS_NOT_PRESENT(i) || !info[i].IsArray()) {\
+        THROW_JS_TYPE_EXCEPTION("Argument " #i " must be an array")\
+    }\
+    Napi::Array var = info[i].As<Napi::Array>();
+
+#define REQUIRE_ARGUMENT_ANY_VALUE(i, var)\
+    if (ARGUMENT_IS_NOT_PRESENT(i)) {\
+        THROW_JS_TYPE_EXCEPTION("Argument " #i " must be defined")\
+    }\
+    Napi::Value var = info[i];
+
 #define REQUIRE_ARGUMENT_OBJ(i, T, var)\
     if (ARGUMENT_IS_NOT_PRESENT(i) || !T::InstanceOf(info[i])) {\
         THROW_JS_TYPE_EXCEPTION("Argument " #i " must be an object of type " #T)\
@@ -553,6 +565,8 @@ public:
     static Napi::Value InsertInstance(ECDbR db, NapiInfoCR info);
     static Napi::Value UpdateInstance(ECDbR db, NapiInfoCR info);
     static Napi::Value DeleteInstance(ECDbR db, NapiInfoCR info);
+    static Napi::Value ImportCSVData(ECDbR db, NapiInfoCR info);
+    static Napi::Value ImportCSVFile(ECDbR db, NapiInfoCR info);
     static Napi::Value PatchJsonProperties(NapiInfoCR info);
     static Napi::Value ResolveInstanceKey(DgnDbR db, NapiInfoCR info);
     static Napi::Value ConvertOrUpdateGeometrySource(DgnDbR db, NapiInfoCR info);
@@ -643,7 +657,7 @@ struct CRSListResponseProps
     Utf8String m_description;
     bool m_deprecated;
     DRange2d m_crsExtent;
-    Utf8String m_unit;    
+    Utf8String m_unit;
     };
 
 struct GeoServicesInterop

@@ -498,7 +498,8 @@ TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
                         Assert_BuiltinSchemaVersions_2_0_0_5(testDb);
                     else if (testDb.GetDgnDbProfileVersion() == ProfileVersion(2, 0, 0, 6))
                         Assert_BuiltinSchemaVersions_2_0_0_6(testDb);
-                    else if (testDb.GetDgnDbProfileVersion() == ProfileVersion(2, 0, 0, 7))
+                    else if (testDb.GetDgnDbProfileVersion() == ProfileVersion(2, 0, 0, 7) ||
+                            testDb.GetDgnDbProfileVersion() == ProfileVersion(2, 0, 0, 8))
                         Assert_BuiltinSchemaVersions_2_0_0_7(testDb);
                     else
                         FAIL() << "*ERROR* case not handled | " << testDb.GetDescription();
@@ -506,7 +507,7 @@ TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
                     }
                 case ProfileState::Age::UpToDate:
                     {
-                    if (testDb.GetDgnDbProfileVersion() == ProfileVersion(2, 0, 0, 8))
+                    if (testDb.GetDgnDbProfileVersion() == ProfileVersion(2, 0, 0, 9))
                         Assert_BuiltinSchemaVersions_2_0_0_7(testDb);
                     else 
                         FAIL() << "*ERROR* case not handled | " << testDb.GetDescription();
