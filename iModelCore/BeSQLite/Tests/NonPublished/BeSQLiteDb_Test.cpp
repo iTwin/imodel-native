@@ -2631,6 +2631,48 @@ TEST_F(BeSQLiteDbTests, ApplyChangeSetAfterSchemaChanges)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+TEST_F(BeSQLiteDbTests, ApplyChangeSetWithOverlappingUniqueSwaps)
+    {
+    SetupDb(L"overlapping_unique_swaps.db");
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("CREATE TABLE bis_Element(Id INTEGER PRIMARY KEY, FederationGuid INTEGER UNIQUE, CodeValue INTEGER UNIQUE)"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("INSERT INTO bis_Element VALUES(1, 1, 1), (2, 2, 2), (3, 3, 3)"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db.SaveChanges());
+
+    BeFileName targetPath = getDbFilePath(L"overlapping_unique_swaps_target.db");
+    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(BeFileName(m_db.GetDbFileName(), true), targetPath));
+    Db targetDb;
+    ASSERT_EQ(BE_SQLITE_OK, targetDb.OpenBeSQLiteDb(targetPath, Db::OpenParams(Db::OpenMode::ReadWrite)));
+
+    MyChangeTracker changeTracker(m_db);
+    changeTracker.EnableTracking(true);
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("UPDATE bis_Element SET FederationGuid=NULL"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("UPDATE bis_Element SET FederationGuid=CASE Id WHEN 1 THEN 2 WHEN 2 THEN 1 ELSE 3 END"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("UPDATE bis_Element SET CodeValue=NULL"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("UPDATE bis_Element SET CodeValue=CASE Id WHEN 2 THEN 3 WHEN 3 THEN 2 ELSE 1 END"));
+
+    MyChangeSet changeSet;
+    ASSERT_EQ(BE_SQLITE_OK, changeSet.FromChangeTrack(changeTracker));
+    ASSERT_EQ(BE_SQLITE_OK, m_db.SaveChanges());
+    changeTracker.EndTracking();
+
+    ASSERT_EQ(BE_SQLITE_OK, changeSet.ApplyChanges(targetDb));
+    ASSERT_EQ(BE_SQLITE_OK, targetDb.SaveChanges());
+
+    Statement statement;
+    ASSERT_EQ(BE_SQLITE_OK, statement.Prepare(targetDb, "SELECT Id, FederationGuid, CodeValue FROM bis_Element ORDER BY Id"));
+    for (int id = 1; id <= 3; ++id)
+        {
+        ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+        ASSERT_EQ(id, statement.GetValueInt(0));
+        ASSERT_EQ(id == 1 ? 2 : id == 2 ? 1 : 3, statement.GetValueInt(1));
+        ASSERT_EQ(id == 2 ? 3 : id == 3 ? 2 : 1, statement.GetValueInt(2));
+        }
+    ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 TEST_F (BeSQLiteDbTests, SaveQueryDelBreifCaselocalValue)
 {
     SetupDb (L"testb.db");
