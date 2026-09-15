@@ -9623,9 +9623,6 @@ public:
         if (nullptr != m_vertconUS)
             return SUCCESS;
 
-        if (0 != CSvrtconInit())
-            return REPROJECT_CSMAPERR_VerticalDatumConversionError;
-
         // create csGeoidHeight_ object containing a list of all the files needed for the transform
         csDatumCatalog_* catalog = (struct csDatumCatalog_*)CS_malc(sizeof (struct csDatumCatalog_));
         if (nullptr == catalog)
