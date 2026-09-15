@@ -2700,9 +2700,7 @@ BentleyStatus TxnManager::PatchSlowDdlChanges(Utf8StringR patchedDDL, Utf8String
     bmap<Utf8String, Utf8String> dropIndexes;
     bmap<Utf8String, Utf8String> createIndexes;
     bmap<Utf8String, Utf8String> currentIndexes;
-    // Split DDL on ; this would give use individual SQL. This is safe as we do not string literal ';' for any other use.
-    bvector<Utf8String> individualSQL;
-    BeStringUtilities::Split(compoundSQL.c_str(), kStmtDelimiter, individualSQL);
+    auto individualSQL = DdlChanges(compoundSQL.c_str()).GetDDLs();
 
     // Read all the index from sqlite_master
     Statement indexStmt;
@@ -2720,6 +2718,9 @@ BentleyStatus TxnManager::PatchSlowDdlChanges(Utf8StringR patchedDDL, Utf8String
 
     for (auto && sql : individualSQL)
         {
+        // Db::CreateIndex emits two spaces for non-unique indexes; sqlite_master stores one.
+        if (sql.StartsWith("CREATE  INDEX "))
+            sql.erase(7, 1);
         if (sql.StartsWith("DROP INDEX IF EXISTS") || sql.StartsWith("CREATE INDEX") || sql.StartsWith("CREATE UNIQUE INDEX"))
             {
             bvector<Utf8String> sqlTokens;
@@ -2841,9 +2842,7 @@ DbResult TxnManager::ApplyDdlChanges(DdlChangesCR ddlChanges) {
         // profile tables have no such reconstruction path, so failed EC, BeSQLite, or intrinsic DgnDb
         // profile DDL must stop the pull. DgnDb tables travel only in the iModel changeset; they are
         // not copied to the SchemaSyncDb.
-        bvector<Utf8String> individualSQL;
-        BeStringUtilities::Split(originalDDL.c_str(), ";", individualSQL);
-        for (auto& sql : individualSQL) {
+        for (auto const& sql : ddlChanges.GetDDLs()) {
             result = m_dgndb.TryExecuteSql(sql.c_str());
             if (result == BE_SQLITE_OK)
                 continue;

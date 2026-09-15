@@ -6,6 +6,7 @@
 #include <windows.h>
 #endif
 #include "IModelJsNative.h"
+#include "CsvImporter.h"
 #include <Bentley/Base64Utilities.h>
 #include <Bentley/Desktop/FileSystem.h>
 #include <GeomSerialization/GeomSerializationApi.h>
@@ -15,7 +16,11 @@
     #include <Visualization/Visualization.h>
 #endif
 #include <DgnPlatform/EntityIdsChangeGroup.h>
+#include <algorithm>
 #include <chrono>
+#include <cmath>
+#include <limits>
+#include <string>
 #include <tuple>
 
 #if defined (BENTLEYCONFIG_PARASOLID)
@@ -1040,6 +1045,125 @@ Napi::Value JsInterop::DeleteInstance(ECDbR db, NapiInfoCR info) {
     return Napi::Value::From(info.Env(), db.GetModifiedRowCount() > 0);;
 }
 
+namespace {
+bool parseCSVImportMapping(Napi::Array const& mapping, bvector<CsvImportMapping>& nativeMapping, Utf8StringR error) {
+    if (0 == mapping.Length()) {
+        error = "mapping must not be empty";
+        return false;
+    }
+
+    bset<uint32_t> seenColumnIndexes;
+    nativeMapping.reserve(mapping.Length());
+    for (uint32_t mappingIndex = 0; mappingIndex < mapping.Length(); ++mappingIndex) {
+        const auto value = mapping.Get(mappingIndex);
+        if (!value.IsObject()) {
+            error = "mapping must contain only objects";
+            return false;
+        }
+
+        const auto entry = value.As<Napi::Object>();
+        const auto columnIndexValue = entry.Get("columnIndex");
+        const auto propertyName = entry.Get("propertyName");
+        if (!columnIndexValue.IsNumber() || !propertyName.IsString()) {
+            error = "each mapping entry must contain a numeric columnIndex and string propertyName";
+            return false;
+        }
+
+        const double columnIndexNumber = columnIndexValue.As<Napi::Number>().DoubleValue();
+        if (columnIndexNumber < 0 || columnIndexNumber >= std::numeric_limits<uint32_t>::max() || std::floor(columnIndexNumber) != columnIndexNumber) {
+            error = "mapping columnIndex values must be non-negative integers";
+            return false;
+        }
+
+        const uint32_t columnIndex = static_cast<uint32_t>(columnIndexNumber);
+        if (!seenColumnIndexes.insert(columnIndex).second) {
+            error = "mapping must not contain duplicate columnIndex values";
+            return false;
+        }
+
+        nativeMapping.push_back({columnIndex, propertyName.As<Napi::String>().Utf8Value()});
+    }
+    return true;
+}
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Napi::Value JsInterop::ImportCSVData(ECDbR db, NapiInfoCR info) {
+    REQUIRE_ARGUMENT_STRING(0, className);
+    REQUIRE_ARGUMENT_ANY_OBJ(1, serializedRows);
+    REQUIRE_ARGUMENT_ARRAY(2, mapping);
+    OPTIONAL_ARGUMENT_ANY_OBJ(3, options, Napi::Object::New(info.Env()));
+
+    if (!serializedRows.IsTypedArray() || serializedRows.As<Napi::TypedArray>().TypedArrayType() != napi_uint8_array)
+        THROW_JS_TYPE_EXCEPTION("serializedRows must be a Uint8Array")
+    const auto bytes = serializedRows.As<Napi::Uint8Array>();
+
+    CsvImportOptions nativeOptions;
+    const auto nullValueOption = options.Get("nullValue");
+    if (!nullValueOption.IsUndefined()) {
+        if (!nullValueOption.IsString())
+            THROW_JS_TYPE_EXCEPTION("options.nullValue must be a string")
+        nativeOptions.m_nullValue = nullValueOption.As<Napi::String>().Utf8Value();
+        if (nativeOptions.m_nullValue->find('\0') != Utf8String::npos)
+            THROW_JS_TYPE_EXCEPTION("options.nullValue must not contain NUL")
+    }
+
+    bvector<CsvImportMapping> nativeMapping;
+    Utf8String mappingError;
+    if (!parseCSVImportMapping(mapping, nativeMapping, mappingError))
+        THROW_JS_TYPE_EXCEPTION(mappingError.c_str())
+
+    try {
+        const auto rowCount = CsvImporter::ImportData(db, className, bytes.Data(), bytes.ByteLength(), nativeMapping, nativeOptions);
+        return Napi::Number::New(info.Env(), static_cast<double>(rowCount));
+    } catch (CsvImportError const& error) {
+        if (BE_SQLITE_OK != error.GetSQLiteError())
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), error.what(), error.GetSQLiteError())
+        THROW_JS_TYPE_EXCEPTION(error.what())
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Napi::Value JsInterop::ImportCSVFile(ECDbR db, NapiInfoCR info) {
+    REQUIRE_ARGUMENT_STRING(0, className);
+    REQUIRE_ARGUMENT_STRING(1, csvFilePath);
+    REQUIRE_ARGUMENT_ARRAY(2, mapping);
+    OPTIONAL_ARGUMENT_ANY_OBJ(3, options, Napi::Object::New(info.Env()));
+
+    const auto hasHeaderValue = options.Get("hasHeader");
+    if (!hasHeaderValue.IsUndefined() && !hasHeaderValue.IsBoolean())
+        THROW_JS_TYPE_EXCEPTION("options.hasHeader must be a boolean")
+    CsvImportOptions nativeOptions;
+    nativeOptions.m_hasHeader = !hasHeaderValue.IsUndefined() && hasHeaderValue.As<Napi::Boolean>().Value();
+
+    const auto nullValueOption = options.Get("nullValue");
+    if (!nullValueOption.IsUndefined()) {
+        if (!nullValueOption.IsString())
+            THROW_JS_TYPE_EXCEPTION("options.nullValue must be a string")
+        nativeOptions.m_nullValue = nullValueOption.As<Napi::String>().Utf8Value();
+        if (nativeOptions.m_nullValue->find('\0') != Utf8String::npos)
+            THROW_JS_TYPE_EXCEPTION("options.nullValue must not contain NUL")
+    }
+
+    bvector<CsvImportMapping> nativeMapping;
+    Utf8String mappingError;
+    if (!parseCSVImportMapping(mapping, nativeMapping, mappingError))
+        THROW_JS_TYPE_EXCEPTION(mappingError.c_str())
+
+    try {
+        const auto rowCount = CsvImporter::ImportFile(db, className, csvFilePath, nativeMapping, nativeOptions);
+        return Napi::Number::New(info.Env(), static_cast<double>(rowCount));
+    } catch (CsvImportError const& error) {
+        if (BE_SQLITE_OK != error.GetSQLiteError())
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), error.what(), error.GetSQLiteError())
+        THROW_JS_TYPE_EXCEPTION(error.what())
+    }
+}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -1414,6 +1538,7 @@ void SqliteChangesetReader::OpenChangeStream(Napi::Env env, std::unique_ptr<Chan
 void SqliteChangesetReader::OpenGroup(Napi::Env env, T_Utf8StringVector const& changesetFiles, Db const& db, bool invert) {
     m_changeGroup = std::make_unique<ChangeGroup>(db);
     DdlChanges ddlGroup;
+    bset<Utf8String> checkedTables;
     for(auto& changesetFile : changesetFiles) {
         BeFileName inputFile(changesetFile);
         if (!inputFile.DoesPathExist()) {
@@ -1421,6 +1546,25 @@ void SqliteChangesetReader::OpenGroup(Napi::Env env, T_Utf8StringVector const& c
         }
 
         ChangesetFileReader reader(inputFile);
+        Changes changes(reader, false);
+        for (auto change = changes.begin(); change.IsValid(); ++change) {
+            Utf8CP tableName;
+            int columnCount;
+            DbOpcode opcode;
+            int indirect;
+            if (BE_SQLITE_OK != change.GetOperation(&tableName, &columnCount, &opcode, &indirect))
+                THROW_JS_BE_SQLITE_EXCEPTION(env, "openGroup(): unable to read changeset", BE_SQLITE_ERROR);
+
+            if (checkedTables.insert(tableName).second) {
+                bvector<Utf8String> columns;
+                if (!db.GetColumns(columns, tableName) || columns.empty())
+                    THROW_JS_BE_SQLITE_EXCEPTION(env, SqlPrintfString("openGroup(): changeset table %s does not exist in the provided db", tableName), BE_SQLITE_SCHEMA);
+
+                if (columns.size() < static_cast<size_t>(columnCount))
+                    THROW_JS_BE_SQLITE_EXCEPTION(env, SqlPrintfString("openGroup(): changeset table %s has fewer columns than the changeset", tableName), BE_SQLITE_SCHEMA);
+            }
+        }
+
         bool containsSchemaChanges;
         DdlChanges ddlChanges;
         if (BE_SQLITE_OK != reader.MakeReader()->GetSchemaChanges(containsSchemaChanges, ddlChanges)){

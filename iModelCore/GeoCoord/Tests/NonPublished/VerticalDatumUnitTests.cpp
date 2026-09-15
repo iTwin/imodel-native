@@ -203,6 +203,90 @@ TEST_F(VerticalDatumUnitTests, VerticalTransformGeoidGridFileFromWorkspaceTest)
 }
 
 /*---------------------------------------------------------------------------------**//**
+* Relative vertical grid paths should resolve through a registered workspace without
+* requiring the corresponding local grid files.
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(VerticalDatumUnitTests, VerticalTransformVertconGridFilesFromWorkspaceTest)
+{
+    bvector<Utf8String> gridFileNames = {
+        "VERTCONC.94",
+        "VERTCONE.94",
+        "VERTCONW.94",
+    };
+    BeJsDocument vertconJson;
+    vertconJson["target"] = "NGVD29 height";
+    vertconJson["vertOffsetGrid"]["direction"] = "Inverse";
+    vertconJson["vertOffsetGrid"]["format"] = "VERTCON";
+
+    BeFileName dataDirectory(GeoCoordTestCommon::InitializedLibraryPath().c_str(), BentleyCharEncoding::Utf8);
+    bvector<bvector<Byte>> gridData;
+    for (Utf8StringCR gridFileName : gridFileNames)
+        {
+        BeFileName gridPath(L"./Usa/Vertcon");
+        gridPath.AppendToPath(WString(gridFileName.c_str(), true).c_str());
+        vertconJson["vertOffsetGrid"]["files"].appendValue() = gridPath.GetNameUtf8();
+
+        BeFileName localGridPath(dataDirectory);
+        localGridPath.AppendToPath(gridPath);
+        BeFile gridFile;
+        ASSERT_EQ(gridFile.Open(localGridPath.GetName(), BeFileAccess::Read), BeFileStatus::Success);
+        gridData.emplace_back();
+        ASSERT_EQ(gridFile.ReadEntireFile(gridData.back()), BeFileStatus::Success);
+        }
+
+    GeoCoordinates::VerticalTransformPtr localVertconTransform =
+        GeoCoordinates::VerticalTransform::CreateFromJson(vertconJson, "NAVD88 workspace height", "NGVD29 height");
+    ASSERT_TRUE(localVertconTransform.IsValid());
+
+    GeoPoint point = { -100.0, 38.0, 0.0 };
+    double expectedElevationOffset = 0.0;
+    GeoCoordinates::VerticalTransform::ElevationType expectedElevationType = GeoCoordinates::VerticalTransform::ElevationType::Fixed;
+    ASSERT_EQ(localVertconTransform->GetElevation(expectedElevationOffset, expectedElevationType, point), SUCCESS);
+    ASSERT_EQ(expectedElevationType, GeoCoordinates::VerticalTransform::ElevationType::Offset);
+    EXPECT_NEAR(expectedElevationOffset, -0.2763817, 1.0e-7);
+
+    BeFileName workspacePath;
+    BeTest::GetHost().GetTempDir(workspacePath);
+    workspacePath.AppendToPath(L"VerticalVertconGridFromWorkspace.itwin-workspace");
+    if (BeFileName::DoesPathExist(workspacePath))
+        ASSERT_EQ(BeFileName::BeDeleteFile(workspacePath), BeFileNameStatus::Success);
+
+    BeSQLite::Db workspaceDb;
+    ASSERT_EQ(workspaceDb.CreateNewDb(workspacePath.GetNameUtf8().c_str()), BeSQLite::BE_SQLITE_OK);
+    ASSERT_EQ(workspaceDb.ExecuteSql("CREATE TABLE blobs(id TEXT PRIMARY KEY NOT NULL, value BLOB)"), BeSQLite::BE_SQLITE_OK);
+    {
+    BeSQLite::Statement insert;
+    ASSERT_EQ(insert.Prepare(workspaceDb, "INSERT INTO blobs(id,value) VALUES(?,?)"), BeSQLite::BE_SQLITE_OK);
+    for (size_t index = 0; index < gridFileNames.size(); ++index)
+        {
+        Utf8String resourceName = Utf8String("Usa/Vertcon/").append(gridFileNames[index]);
+        ASSERT_EQ(insert.BindText(1, resourceName, BeSQLite::Statement::MakeCopy::Yes), BeSQLite::BE_SQLITE_OK);
+        ASSERT_EQ(insert.BindBlob(2, gridData[index].data(), (int)gridData[index].size(), BeSQLite::Statement::MakeCopy::Yes), BeSQLite::BE_SQLITE_OK);
+        ASSERT_EQ(insert.Step(), BeSQLite::BE_SQLITE_DONE);
+        insert.Reset();
+        insert.ClearBindings();
+        }
+    }
+    ASSERT_EQ(workspaceDb.SaveChanges(), BeSQLite::BE_SQLITE_OK);
+    workspaceDb.CloseDb();
+    ASSERT_TRUE(GeoCoordinates::BaseGCS::AddWorkspaceDb(workspacePath.GetNameUtf8(), nullptr, 10000));
+
+    double elevationOffset = 0.0;
+    GeoCoordinates::VerticalTransform::ElevationType elevationType = GeoCoordinates::VerticalTransform::ElevationType::Fixed;
+    GeoCoordinates::VerticalTransformPtr workspaceVertconTransform =
+        GeoCoordinates::VerticalTransform::CreateFromJson(vertconJson, "NAVD88 workspace height", "NGVD29 height");
+    ASSERT_TRUE(workspaceVertconTransform.IsValid());
+
+    GeoCoordinates::BaseGCS::EnableLocalGcsFiles(false);
+    StatusInt status = workspaceVertconTransform->GetElevation(elevationOffset, elevationType, point);
+    GeoCoordinates::BaseGCS::EnableLocalGcsFiles(true);
+
+    EXPECT_EQ(status, SUCCESS);
+    EXPECT_EQ(elevationType, GeoCoordinates::VerticalTransform::ElevationType::Offset);
+    EXPECT_NEAR(elevationOffset, expectedElevationOffset, 1.0e-10);
+}
+
+/*---------------------------------------------------------------------------------**//**
 * Registering a workspace after initialization should retry loading a vertical
 * dictionary that was unavailable during initialization.
 +---------------+---------------+---------------+---------------+---------------+------*/

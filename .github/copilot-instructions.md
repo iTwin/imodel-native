@@ -17,6 +17,7 @@ This is a **multi-layered C++ codebase** exposed to TypeScript via N-API:
 - Mapping is a process that happens during schema import, we use shared columns, overflow tables etc. to optimize storage and performance
 
 ## Coding Conventions
+- Execute schema-changing SQL (`CREATE`, `ALTER`, `DROP`, including trigger definitions) through `Db::ExecuteDdl`, not `ExecuteSql`, so changes are recorded when change tracking is active and included in changesets. `ExecuteSql` executes DDL locally without recording it for replay.
 - Follow existing code style and patterns in each layer
 - We have many typedefs that should be preferred, for example for strings:
     - `Utf8String` for UTF-8 encoded strings (uses std::string under the hood)

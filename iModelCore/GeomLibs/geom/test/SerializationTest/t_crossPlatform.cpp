@@ -83,7 +83,7 @@ static void serialize(IGeometryCR geom, WCharCP fileName)
         GTestFileOps::WriteToFile(json, L"tmp\\native", nullptr, fileName, L"imjs");
     };
 
-TEST(CrossPlatform, EquivalentFormats)
+TEST(CrossPlatform, IndexedMesh)
     {
     bvector<TestCase> testCases;
 
@@ -118,8 +118,6 @@ TEST(CrossPlatform, EquivalentFormats)
     fixedSizeMesh.m_fileNames.at(TestCase::TypeScript).at(TestCase::FlatBuffer).push_back(TestCase::TypeScriptRoot().AppendToPath(testName).AppendExtension(L"fb"));
     fixedSizeMesh.m_fileNames.at(TestCase::TypeScript).at(TestCase::JSON).push_back(TestCase::TypeScriptRoot().AppendToPath(testName).AppendExtension(L"imjs"));
     testCases.push_back(fixedSizeMesh);
-
-    // TODO: add future testcases where all formats deserialize to the same geometry
 
     for (size_t iTestCase = 0; iTestCase < testCases.size(); ++iTestCase)
         {
@@ -396,6 +394,166 @@ TEST(CrossPlatform, MeshColor)
                             Check::True(baselineGeom->IsSameStructureAndGeometry(*geomsFromJson[0]), "roundtrip through json");
                     }
                 }
+            }
+        }
+    }
+
+TEST(CrossPlatform, IsInner)
+    {
+    static auto circle = DEllipse3d::FromCenterRadiusXY(DPoint3d::FromZero(), 1.0); // arc is same in each loop to minimize differences
+    static bool generateFiles = false; // set to `true` to generate test files
+    bvector<TestCase> testCases;
+    // NOTE: the only old code that could write inner loops was native FB
+
+    if (WCharCP testName = L"isInner-loop-true")
+        {
+        TestCase testCase;
+        testCase.m_fileNames.at(TestCase::Native).at(TestCase::FlatBuffer).push_back(TestCase::NativeRoot().AppendToPath(testName).AppendExtension(L"fb"));
+        testCase.m_fileNames.at(TestCase::Native).at(TestCase::FlatBuffer).push_back(TestCase::NativeRoot().AppendToPath(testName).AppendString(L"-old").AppendExtension(L"fb"));
+        testCase.m_fileNames.at(TestCase::Native).at(TestCase::JSON).push_back(TestCase::NativeRoot().AppendToPath(testName).AppendExtension(L"imjs"));
+        testCase.m_fileNames.at(TestCase::TypeScript).at(TestCase::FlatBuffer).push_back(TestCase::TypeScriptRoot().AppendToPath(testName).AppendExtension(L"fb"));
+        testCase.m_fileNames.at(TestCase::TypeScript).at(TestCase::JSON).push_back(TestCase::TypeScriptRoot().AppendToPath(testName).AppendExtension(L"imjs"));
+        testCases.push_back(testCase);
+        if (generateFiles)
+            {
+            auto loopTrue = CurveVector::CreateDisk(circle, CurveVector::BOUNDARY_TYPE_Inner);
+            serialize(*IGeometry::Create(loopTrue), testName);
+            }
+        }
+    if (WCharCP testName = L"isInner-loop-false")
+        {
+        TestCase testCase;
+        testCase.m_fileNames.at(TestCase::Native).at(TestCase::FlatBuffer).push_back(TestCase::NativeRoot().AppendToPath(testName).AppendExtension(L"fb"));
+        testCase.m_fileNames.at(TestCase::Native).at(TestCase::FlatBuffer).push_back(TestCase::NativeRoot().AppendToPath(testName).AppendString(L"-old").AppendExtension(L"fb"));
+        testCase.m_fileNames.at(TestCase::Native).at(TestCase::JSON).push_back(TestCase::NativeRoot().AppendToPath(testName).AppendExtension(L"imjs"));
+        testCase.m_fileNames.at(TestCase::Native).at(TestCase::JSON).push_back(TestCase::NativeRoot().AppendToPath(testName).AppendString(L"-old").AppendExtension(L"imjs"));
+        testCase.m_fileNames.at(TestCase::TypeScript).at(TestCase::FlatBuffer).push_back(TestCase::TypeScriptRoot().AppendToPath(testName).AppendExtension(L"fb"));
+        testCase.m_fileNames.at(TestCase::TypeScript).at(TestCase::FlatBuffer).push_back(TestCase::TypeScriptRoot().AppendToPath(testName).AppendString(L"-old").AppendExtension(L"fb"));
+        testCase.m_fileNames.at(TestCase::TypeScript).at(TestCase::JSON).push_back(TestCase::TypeScriptRoot().AppendToPath(testName).AppendExtension(L"imjs"));
+        testCase.m_fileNames.at(TestCase::TypeScript).at(TestCase::JSON).push_back(TestCase::TypeScriptRoot().AppendToPath(testName).AppendString(L"-old").AppendExtension(L"imjs"));
+        testCases.push_back(testCase);
+        if (generateFiles)
+            {
+            auto loopFalse = CurveVector::CreateDisk(circle, CurveVector::BOUNDARY_TYPE_Outer);
+            serialize(*IGeometry::Create(loopFalse), testName);
+            }
+        }
+    if (WCharCP testName = L"isInner-parityRegion-true0") // has inner loop first child
+        {
+        TestCase testCase;
+        testCase.m_fileNames.at(TestCase::Native).at(TestCase::FlatBuffer).push_back(TestCase::NativeRoot().AppendToPath(testName).AppendExtension(L"fb"));
+        testCase.m_fileNames.at(TestCase::Native).at(TestCase::FlatBuffer).push_back(TestCase::NativeRoot().AppendToPath(testName).AppendString(L"-old").AppendExtension(L"fb"));
+        testCase.m_fileNames.at(TestCase::Native).at(TestCase::JSON).push_back(TestCase::NativeRoot().AppendToPath(testName).AppendExtension(L"imjs"));
+        testCase.m_fileNames.at(TestCase::TypeScript).at(TestCase::FlatBuffer).push_back(TestCase::TypeScriptRoot().AppendToPath(testName).AppendExtension(L"fb"));
+        testCase.m_fileNames.at(TestCase::TypeScript).at(TestCase::JSON).push_back(TestCase::TypeScriptRoot().AppendToPath(testName).AppendExtension(L"imjs"));
+        testCases.push_back(testCase);
+        if (generateFiles)
+            {
+            bvector<ICurvePrimitivePtr> children;
+            children.push_back(ICurvePrimitive::CreateChildCurveVector_SwapFromSource(*CurveVector::CreateDisk(circle, CurveVector::BOUNDARY_TYPE_Inner)));
+            children.push_back(ICurvePrimitive::CreateChildCurveVector_SwapFromSource(*CurveVector::CreateDisk(circle, CurveVector::BOUNDARY_TYPE_Outer)));
+            auto parityRegionTrue0 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_ParityRegion, children);
+            serialize(*IGeometry::Create(parityRegionTrue0), testName);
+            }
+        }
+    if (WCharCP testName = L"isInner-parityRegion-true1") // has inner loop second child
+        {
+        TestCase testCase;
+        testCase.m_fileNames.at(TestCase::Native).at(TestCase::FlatBuffer).push_back(TestCase::NativeRoot().AppendToPath(testName).AppendExtension(L"fb"));
+        testCase.m_fileNames.at(TestCase::Native).at(TestCase::FlatBuffer).push_back(TestCase::NativeRoot().AppendToPath(testName).AppendString(L"-old").AppendExtension(L"fb"));
+        testCase.m_fileNames.at(TestCase::Native).at(TestCase::JSON).push_back(TestCase::NativeRoot().AppendToPath(testName).AppendExtension(L"imjs"));
+        testCase.m_fileNames.at(TestCase::TypeScript).at(TestCase::FlatBuffer).push_back(TestCase::TypeScriptRoot().AppendToPath(testName).AppendExtension(L"fb"));
+        testCase.m_fileNames.at(TestCase::TypeScript).at(TestCase::JSON).push_back(TestCase::TypeScriptRoot().AppendToPath(testName).AppendExtension(L"imjs"));
+        testCases.push_back(testCase);
+        if (generateFiles)
+            {
+            bvector<ICurvePrimitivePtr> children;
+            children.push_back(ICurvePrimitive::CreateChildCurveVector_SwapFromSource(*CurveVector::CreateDisk(circle, CurveVector::BOUNDARY_TYPE_Outer)));
+            children.push_back(ICurvePrimitive::CreateChildCurveVector_SwapFromSource(*CurveVector::CreateDisk(circle, CurveVector::BOUNDARY_TYPE_Inner)));
+            auto parityRegionTrue1 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_ParityRegion, children);
+            serialize(*IGeometry::Create(parityRegionTrue1), testName);
+            }
+        }
+    if (WCharCP testName = L"isInner-parityRegion-false") // no inner loops
+        {
+        TestCase testCase;
+        testCase.m_fileNames.at(TestCase::Native).at(TestCase::FlatBuffer).push_back(TestCase::NativeRoot().AppendToPath(testName).AppendExtension(L"fb"));
+        testCase.m_fileNames.at(TestCase::Native).at(TestCase::FlatBuffer).push_back(TestCase::NativeRoot().AppendToPath(testName).AppendString(L"-old").AppendExtension(L"fb"));
+        testCase.m_fileNames.at(TestCase::Native).at(TestCase::JSON).push_back(TestCase::NativeRoot().AppendToPath(testName).AppendExtension(L"imjs"));
+        testCase.m_fileNames.at(TestCase::Native).at(TestCase::JSON).push_back(TestCase::NativeRoot().AppendToPath(testName).AppendString(L"-old").AppendExtension(L"imjs"));
+        testCase.m_fileNames.at(TestCase::TypeScript).at(TestCase::FlatBuffer).push_back(TestCase::TypeScriptRoot().AppendToPath(testName).AppendExtension(L"fb"));
+        testCase.m_fileNames.at(TestCase::TypeScript).at(TestCase::FlatBuffer).push_back(TestCase::TypeScriptRoot().AppendToPath(testName).AppendString(L"-old").AppendExtension(L"fb"));
+        testCase.m_fileNames.at(TestCase::TypeScript).at(TestCase::JSON).push_back(TestCase::TypeScriptRoot().AppendToPath(testName).AppendExtension(L"imjs"));
+        testCase.m_fileNames.at(TestCase::TypeScript).at(TestCase::JSON).push_back(TestCase::TypeScriptRoot().AppendToPath(testName).AppendString(L"-old").AppendExtension(L"imjs"));
+        testCases.push_back(testCase);
+        if (generateFiles)
+            {
+            auto child = ICurvePrimitive::CreateChildCurveVector_SwapFromSource(*CurveVector::CreateDisk(circle, CurveVector::BOUNDARY_TYPE_Outer));
+            auto parityRegionFalse = CurveVector::Create(CurveVector::BOUNDARY_TYPE_ParityRegion, child);
+            serialize(*IGeometry::Create(parityRegionFalse), testName);
+            }
+        }
+    if (WCharCP testName = L"isInner-unionRegion-true") // has inner loop grandchild
+        {
+        TestCase testCase;
+        testCase.m_fileNames.at(TestCase::Native).at(TestCase::FlatBuffer).push_back(TestCase::NativeRoot().AppendToPath(testName).AppendExtension(L"fb"));
+        testCase.m_fileNames.at(TestCase::Native).at(TestCase::FlatBuffer).push_back(TestCase::NativeRoot().AppendToPath(testName).AppendString(L"-old").AppendExtension(L"fb"));
+        testCase.m_fileNames.at(TestCase::Native).at(TestCase::JSON).push_back(TestCase::NativeRoot().AppendToPath(testName).AppendExtension(L"imjs"));
+        testCase.m_fileNames.at(TestCase::TypeScript).at(TestCase::FlatBuffer).push_back(TestCase::TypeScriptRoot().AppendToPath(testName).AppendExtension(L"fb"));
+        testCase.m_fileNames.at(TestCase::TypeScript).at(TestCase::JSON).push_back(TestCase::TypeScriptRoot().AppendToPath(testName).AppendExtension(L"imjs"));
+        testCases.push_back(testCase);
+        if (generateFiles)
+            {
+            bvector<ICurvePrimitivePtr> parityChildren;
+            parityChildren.push_back(ICurvePrimitive::CreateChildCurveVector_SwapFromSource(*CurveVector::CreateDisk(circle, CurveVector::BOUNDARY_TYPE_Outer)));
+            parityChildren.push_back(ICurvePrimitive::CreateChildCurveVector_SwapFromSource(*CurveVector::CreateDisk(circle, CurveVector::BOUNDARY_TYPE_Inner)));
+            auto parityRegionTrue = ICurvePrimitive::CreateChildCurveVector_SwapFromSource(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_ParityRegion, parityChildren));
+            auto unionRegionTrue = CurveVector::Create(CurveVector::BOUNDARY_TYPE_UnionRegion, parityRegionTrue);
+            serialize(*IGeometry::Create(unionRegionTrue), testName);
+            }
+        }
+    if (WCharCP testName = L"isInner-unionRegion-false") // no inner loops
+        {
+        TestCase testCase;
+        testCase.m_fileNames.at(TestCase::Native).at(TestCase::FlatBuffer).push_back(TestCase::NativeRoot().AppendToPath(testName).AppendExtension(L"fb"));
+        testCase.m_fileNames.at(TestCase::Native).at(TestCase::FlatBuffer).push_back(TestCase::NativeRoot().AppendToPath(testName).AppendString(L"-old").AppendExtension(L"fb"));
+        testCase.m_fileNames.at(TestCase::Native).at(TestCase::JSON).push_back(TestCase::NativeRoot().AppendToPath(testName).AppendExtension(L"imjs"));
+        testCase.m_fileNames.at(TestCase::Native).at(TestCase::JSON).push_back(TestCase::NativeRoot().AppendToPath(testName).AppendString(L"-old").AppendExtension(L"imjs"));
+        testCase.m_fileNames.at(TestCase::TypeScript).at(TestCase::FlatBuffer).push_back(TestCase::TypeScriptRoot().AppendToPath(testName).AppendExtension(L"fb"));
+        testCase.m_fileNames.at(TestCase::TypeScript).at(TestCase::FlatBuffer).push_back(TestCase::TypeScriptRoot().AppendToPath(testName).AppendString(L"-old").AppendExtension(L"fb"));
+        testCase.m_fileNames.at(TestCase::TypeScript).at(TestCase::JSON).push_back(TestCase::TypeScriptRoot().AppendToPath(testName).AppendExtension(L"imjs"));
+        testCase.m_fileNames.at(TestCase::TypeScript).at(TestCase::JSON).push_back(TestCase::TypeScriptRoot().AppendToPath(testName).AppendString(L"-old").AppendExtension(L"imjs"));
+        testCases.push_back(testCase);
+        if (generateFiles)
+            {
+            auto child = ICurvePrimitive::CreateChildCurveVector_SwapFromSource(*CurveVector::CreateDisk(circle, CurveVector::BOUNDARY_TYPE_Outer));
+            auto parityRegion = ICurvePrimitive::CreateChildCurveVector_SwapFromSource(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_ParityRegion, child));
+            auto unionRegionFalse = CurveVector::Create(CurveVector::BOUNDARY_TYPE_UnionRegion, parityRegion);
+            serialize(*IGeometry::Create(unionRegionFalse), testName);
+            }
+        }
+
+    // all geometries in a given test case should be equivalent
+    for (size_t iTestCase = 0; iTestCase < testCases.size(); ++iTestCase)
+        {
+        bvector<IGeometryPtr> geometry;
+        for (auto platform : { TestCase::Native, TestCase::TypeScript })
+            {
+            for (auto fileType : { TestCase::FlatBuffer, TestCase::JSON })
+                {
+                for (auto& fileName : testCases[iTestCase].m_fileNames.at(platform).at(fileType))
+                    {
+                    IGeometryPtr geom = deserializeFirstGeom(fileName, fileType);
+                    fileName.GetNameA(buf);
+                    if (Check::True(geom.IsValid(), std::string("deserialized at least one geometry from ").append(buf).c_str()))
+                        geometry.push_back(geom);
+                    }
+                }
+            }
+        for (size_t i = 1; i < geometry.size(); ++i)
+            {
+            snprintf(buf, sizeof buf, "testCase[%zu]: geom0 compares to geom%zu", iTestCase, i);
+            Check::True(geometry[0]->IsSameStructureAndGeometry(*geometry[i]), buf);
             }
         }
     }
