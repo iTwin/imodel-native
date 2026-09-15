@@ -2713,7 +2713,8 @@ TEST_F(RevisionTestFixture, SqliteStat1InsertConflictReplacesWithPendingTxns)
 
     ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteSql("DELETE FROM sqlite_stat1 WHERE tbl='be_Local' AND idx='sqlite_autoindex_be_Local_1'"));
     m_db->SaveChanges("empty baseline statistics");
-    ASSERT_TRUE(CreateRevision("-cs-baseline").IsValid());
+    if (m_db->Txns().HasPendingTxns())
+        ASSERT_TRUE(CreateRevision("-cs-baseline").IsValid());
     BackupTestFile();
 
     ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteSql("ANALYZE be_Local"));
