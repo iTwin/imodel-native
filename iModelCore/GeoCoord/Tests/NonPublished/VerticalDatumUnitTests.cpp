@@ -138,9 +138,10 @@ TEST_F(VerticalDatumUnitTests, VerticalTransformGeoidGridAbsoluteFileTest)
 }
 
 /*---------------------------------------------------------------------------------**//**
-* EGM96 and its relative grid should load from base.itwin-workspace without local files.
+* The vertical datum dictionary and its relative VERTCON grids should load from
+* base.itwin-workspace without local files.
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(VerticalDatumUnitTests, VerticalTransformGeoidGridFileFromWorkspaceTest)
+TEST_F(VerticalDatumUnitTests, VerticalDatumDictionaryAndVertconGridFilesFromBaseWorkspaceTest)
 {
     BeFileName dictionaryPath(GeoCoordTestCommon::InitializedLibraryPath().c_str(), BentleyCharEncoding::Utf8);
     dictionaryPath.AppendToPath(L"VerticalDatumDefinitions.json");
@@ -149,12 +150,25 @@ TEST_F(VerticalDatumUnitTests, VerticalTransformGeoidGridFileFromWorkspaceTest)
     bvector<Byte> dictionaryData;
     ASSERT_EQ(dictionaryFile.ReadEntireFile(dictionaryData), BeFileStatus::Success);
 
-    BeFileName gridPath(GeoCoordTestCommon::InitializedLibraryPath().c_str(), BentleyCharEncoding::Utf8);
-    gridPath.AppendToPath(L"WW15MGH._96");
-    BeFile gridFile;
-    ASSERT_EQ(gridFile.Open(gridPath.GetName(), BeFileAccess::Read), BeFileStatus::Success);
-    bvector<Byte> gridData;
-    ASSERT_EQ(gridFile.ReadEntireFile(gridData), BeFileStatus::Success);
+    bvector<Utf8String> gridFileNames = {
+        "VERTCONC.94",
+        "VERTCONE.94",
+        "VERTCONW.94",
+    };
+    BeFileName dataDirectory(GeoCoordTestCommon::InitializedLibraryPath().c_str(), BentleyCharEncoding::Utf8);
+    bvector<bvector<Byte>> gridData;
+    for (Utf8StringCR gridFileName : gridFileNames)
+        {
+        BeFileName gridPath(L"./Usa/Vertcon");
+        gridPath.AppendToPath(WString(gridFileName.c_str(), true).c_str());
+
+        BeFileName localGridPath(dataDirectory);
+        localGridPath.AppendToPath(gridPath);
+        BeFile gridFile;
+        ASSERT_EQ(gridFile.Open(localGridPath.GetName(), BeFileAccess::Read), BeFileStatus::Success);
+        gridData.emplace_back();
+        ASSERT_EQ(gridFile.ReadEntireFile(gridData.back()), BeFileStatus::Success);
+        }
 
     BeFileName workspacePath;
     BeTest::GetHost().GetTempDir(workspacePath);
@@ -172,22 +186,26 @@ TEST_F(VerticalDatumUnitTests, VerticalTransformGeoidGridFileFromWorkspaceTest)
     ASSERT_EQ(insert.BindBlob(2, dictionaryData.data(), (int)dictionaryData.size(), BeSQLite::Statement::MakeCopy::Yes), BeSQLite::BE_SQLITE_OK);
     ASSERT_EQ(insert.Step(), BeSQLite::BE_SQLITE_DONE);
 
-    insert.Reset();
-    insert.ClearBindings();
-    ASSERT_EQ(insert.BindText(1, "World/WW15MGH._96", BeSQLite::Statement::MakeCopy::Yes), BeSQLite::BE_SQLITE_OK);
-    ASSERT_EQ(insert.BindBlob(2, gridData.data(), (int)gridData.size(), BeSQLite::Statement::MakeCopy::Yes), BeSQLite::BE_SQLITE_OK);
-    ASSERT_EQ(insert.Step(), BeSQLite::BE_SQLITE_DONE);
+    for (size_t index = 0; index < gridFileNames.size(); ++index)
+        {
+        insert.Reset();
+        insert.ClearBindings();
+        Utf8String resourceName = Utf8String("Usa/Vertcon/").append(gridFileNames[index]);
+        ASSERT_EQ(insert.BindText(1, resourceName, BeSQLite::Statement::MakeCopy::Yes), BeSQLite::BE_SQLITE_OK);
+        ASSERT_EQ(insert.BindBlob(2, gridData[index].data(), (int)gridData[index].size(), BeSQLite::Statement::MakeCopy::Yes), BeSQLite::BE_SQLITE_OK);
+        ASSERT_EQ(insert.Step(), BeSQLite::BE_SQLITE_DONE);
+        }
     }
     ASSERT_EQ(workspaceDb.SaveChanges(), BeSQLite::BE_SQLITE_OK);
     workspaceDb.CloseDb();
 
     GeoCoordTestCommon::Shutdown();
     GeoCoordinates::BaseGCS::EnableLocalGcsFiles(false);
-    BeFileName dataDirectory = workspacePath.GetDirectoryName();
-    StatusInt initializeStatus = GeoCoordinates::BaseGCS::Initialize(dataDirectory.GetNameUtf8().c_str());
-    GeoPoint point = { 23.700523, 37.944210, 0.0 };
+    BeFileName workspaceDirectory = workspacePath.GetDirectoryName();
+    StatusInt initializeStatus = GeoCoordinates::BaseGCS::Initialize(workspaceDirectory.GetNameUtf8().c_str());
+    GeoPoint point = { -100.0, 38.0, 0.0 };
     bvector<GeoCoordinates::VerticalTransformPtr> transforms;
-    StatusInt transformStatus = GeoCoordinates::VerticalDatumDictionary::Get()->GetVerticalDatumTransforms(transforms, "EGM96 height", "WGS84", &point);
+    StatusInt transformStatus = GeoCoordinates::VerticalDatumDictionary::Get()->GetVerticalDatumTransforms(transforms, "NAVD88 height", "NGVD29 height", &point);
     double elevationOffset = 0.0;
     GeoCoordinates::VerticalTransform::ElevationType elevationType = GeoCoordinates::VerticalTransform::ElevationType::Fixed;
     StatusInt elevationStatus = transforms.size() == 1 ? transforms[0]->GetElevation(elevationOffset, elevationType, point) : ERROR;
@@ -199,7 +217,7 @@ TEST_F(VerticalDatumUnitTests, VerticalTransformGeoidGridFileFromWorkspaceTest)
     ASSERT_EQ(transforms.size(), 1);
     EXPECT_EQ(elevationStatus, SUCCESS);
     EXPECT_EQ(elevationType, GeoCoordinates::VerticalTransform::ElevationType::Offset);
-    EXPECT_NEAR(elevationOffset, 38.3, 0.5);
+    EXPECT_NEAR(elevationOffset, -0.2763817, 1.0e-7);
 }
 
 /*---------------------------------------------------------------------------------**//**
