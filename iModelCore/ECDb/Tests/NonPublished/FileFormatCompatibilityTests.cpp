@@ -1268,7 +1268,10 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_NewFile)
     ASSERT_EQ(BeFileStatus::Success, stat) << "Creating file " << benchmarkDdlDumpFilePath.GetNameUtf8();
 
     Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(benchmarkFile, "SELECT sql FROM sqlite_master ORDER BY name"));
+    // sqlite_stat1/sqlite_stat4 are SQLite's own statistics tables. Whether they exist depends on
+    // how SQLite was built (SQLITE_ENABLE_STAT4), not on the ECDb file format this test compares,
+    // and the benchmark files are frozen historical artefacts, so exclude them from both sides.
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(benchmarkFile, "SELECT sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_stat%' ORDER BY name"));
     while (BE_SQLITE_ROW == stmt.Step())
         {
         benchmarkMasterTableRowCount++;
@@ -1283,7 +1286,7 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_NewFile)
     ASSERT_EQ(BeFileStatus::Success, stat) << "Creating file " << actualDdlDumpFilePath.GetNameUtf8();
 
     Statement actualDdlStmt;
-    ASSERT_EQ(BE_SQLITE_OK, actualDdlStmt.Prepare(m_ecdb, "SELECT sql FROM sqlite_master ORDER BY name"));
+    ASSERT_EQ(BE_SQLITE_OK, actualDdlStmt.Prepare(m_ecdb, "SELECT sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_stat%' ORDER BY name"));
     int actualMasterTableRowCount = 0;
     while (BE_SQLITE_ROW == actualDdlStmt.Step())
         {
