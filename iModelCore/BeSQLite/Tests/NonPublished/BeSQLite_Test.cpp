@@ -484,9 +484,9 @@ TEST_F(BeSQliteTestFixture, sqlite_stat1)
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
-// Tests that the SQLite session extension's deferred constraint retry mechanism
-// (sessionRetryConstraints) correctly handles swapping unique index values between
-// two rows. The changeset tracker records net per-row changes:
+// Regression test for SQLite check-in 8b3da5d6cea2e3b3. Verify that the session
+// extension's deferred constraint retry handles extended constraint result codes
+// while swapping unique index values between two rows:
 //   UPDATE row 1: name 'foo' -> 'goo'
 //   UPDATE row 2: name 'goo' -> 'foo'
 // When applied, both UPDATEs initially hit SQLITE_CONSTRAINT (unique violation) and
@@ -494,7 +494,7 @@ TEST_F(BeSQliteTestFixture, sqlite_stat1)
 // sessionRetryConstraints step 2 resolves this by temporarily deleting one row,
 // applying the other update, then reinserting with the correct value.
 //---------------------------------------------------------------------------------------
-TEST_F(BeSQliteTestFixture, apply_changeset_swap_unique_index_values)
+TEST_F(BeSQliteTestFixture, apply_changeset_swap_unique_index_values_with_extended_result_codes)
     {
     auto db1 = Create("first.db");
     ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("CREATE TABLE test_swap(id INTEGER PRIMARY KEY, name TEXT)"));
@@ -510,6 +510,12 @@ TEST_F(BeSQliteTestFixture, apply_changeset_swap_unique_index_values)
     auto db2 = OpenReadWrite("second.db");
     ASSERT_TRUE(db1 != nullptr);
     ASSERT_TRUE(db2 != nullptr);
+
+    // BeSQLite enables extended result codes when opening a database. Confirm
+    // that a unique violation is reported as the extended code that triggered
+    // the session extension regression.
+    ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE,
+        db2->TryExecuteSql("INSERT INTO test_swap(id, name) VALUES(3, 'foo')"));
 
     // Capture changeset: the session tracker records net per-row changes despite
     // the intermediate temp value used to avoid constraint violations during mutation.
