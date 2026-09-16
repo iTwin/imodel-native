@@ -3,9 +3,10 @@
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 import { assert, expect } from "chai";
+import { spawnSync } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
-import { getOutputDir, iModelJsNative } from "./utils";
+import { getLocalBuildOfAddonPath, getOutputDir, iModelJsNative } from "./utils";
 
 const verticalDatumDictionary = JSON.stringify({
   version: 1,
@@ -90,6 +91,22 @@ describe("GeoServices", () => {
     workspaceDb.closeDb();
 
     expect(iModelJsNative.addGcsWorkspaceDb(workspacePath, undefined, 10000)).to.be.true;
+  });
+
+  it("reports a missing vertical datum dictionary", () => {
+    const script = `
+      const addon = require(process.argv[1]);
+      try {
+        addon.GeoServices.getListOfVerticalCRS();
+        process.exitCode = 2;
+      } catch (error) {
+        process.stdout.write(error.message);
+      }
+    `;
+    const result = spawnSync(process.execPath, ["-e", script, getLocalBuildOfAddonPath()], { encoding: "utf8" });
+
+    expect(result.status, result.stderr).to.equal(0);
+    expect(result.stdout).to.equal("unable to query vertical coordinate reference systems (status 16427)");
   });
 
   it("enumerates vertical coordinate reference systems", () => {
