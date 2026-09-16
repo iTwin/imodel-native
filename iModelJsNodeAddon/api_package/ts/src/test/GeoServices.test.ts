@@ -98,6 +98,8 @@ describe("GeoServices", () => {
 
     assert.isDefined(egm96);
     expect(egm96.id).to.equal("GEOID");
+    expect(egm96.description).to.equal("EGM96 height");
+    expect(egm96.deprecated).to.be.false;
     expect(egm96.type).to.equal("GEOID");
     expect(egm96.unit).to.equal("meter");
     expect(egm96.extent).to.deep.equal({ low: [-180, -90], high: [180, 90] });
@@ -118,6 +120,38 @@ describe("GeoServices", () => {
     assert.isDefined(verticalCRS);
     expect(verticalCRS.crsName).to.equal("EGM96 height");
     expect(verticalCRS.id).to.equal("GEOID");
+  });
+
+  it("round-trips a complete named vertical coordinate reference system", () => {
+    const firstResponse = iModelJsNative.GeoServices.getGeographicCRSInterpretation({
+      format: "JSON",
+      geographicCRSDef: JSON.stringify({
+        horizontalCRS: { id: "LL84" },
+        verticalCRS: { crsName: "EGM96 height", id: "GEOID" },
+      }),
+    });
+    assert.isDefined(firstResponse.geographicCRS);
+
+    const secondResponse = iModelJsNative.GeoServices.getGeographicCRSInterpretation({
+      format: "JSON",
+      geographicCRSDef: JSON.stringify(firstResponse.geographicCRS),
+    });
+
+    expect(secondResponse.status).to.equal(0);
+    expect(secondResponse.geographicCRS).to.deep.equal(firstResponse.geographicCRS);
+  });
+
+  it("rejects an unknown named vertical coordinate reference system", () => {
+    const response = iModelJsNative.GeoServices.getGeographicCRSInterpretation({
+      format: "JSON",
+      geographicCRSDef: JSON.stringify({
+        horizontalCRS: { id: "LL84" },
+        verticalCRS: { crsName: "Unknown test height" },
+      }),
+    });
+
+    expect(response.status).not.to.equal(0);
+    expect(response.geographicCRS).to.be.undefined;
   });
 
   it("filters vertical coordinate reference systems by point", () => {
@@ -148,6 +182,16 @@ describe("GeoServices", () => {
     expect(verticalSystems.some((entry) => entry.crsName === "Regional test height")).to.be.false;
   });
 
+  it("includes vertical coordinate reference systems that intersect an extent", () => {
+    const verticalSystems = iModelJsNative.GeoServices.getListOfVerticalCRS({
+      extent: { low: { x: -130, y: 39 }, high: { x: -120, y: 41 } },
+      includeIntersecting: true,
+    });
+
+    expect(verticalSystems.some((entry) => entry.crsName === "EGM96 height")).to.be.true;
+    expect(verticalSystems.some((entry) => entry.crsName === "Regional test height")).to.be.true;
+  });
+
   it("finds all vertical coordinate reference systems containing an extent", () => {
     const verticalSystems = iModelJsNative.GeoServices.getListOfVerticalCRS({
       extent: { low: { x: -101, y: 39 }, high: { x: -99, y: 41 } },
@@ -162,5 +206,20 @@ describe("GeoServices", () => {
       point: { longitude: 0, latitude: 0 },
       extent: { low: { x: -1, y: -1 }, high: { x: 1, y: 1 } },
     })).to.throw("point and extent are mutually exclusive");
+  });
+
+  it("rejects malformed vertical coordinate reference system filters", () => {
+    const getListOfVerticalCRS = (props?: unknown) =>
+      (iModelJsNative.GeoServices.getListOfVerticalCRS as (value?: unknown) => unknown)(props);
+
+    expect(() => getListOfVerticalCRS({ point: "invalid" })).to.throw("point must be an object");
+    expect(() => getListOfVerticalCRS({ point: { longitude: 0 } })).to.throw("point must contain numeric longitude and latitude");
+    expect(() => getListOfVerticalCRS({ point: { longitude: Number.NaN, latitude: 0 } })).to.throw("point longitude and latitude must be finite");
+    expect(() => getListOfVerticalCRS({ extent: "invalid" })).to.throw("extent must be an object");
+    expect(() => getListOfVerticalCRS({ extent: { low: { x: 0 }, high: { x: 1, y: 1 } } })).to.throw("extent must contain numeric low and high points");
+    expect(() => getListOfVerticalCRS({ extent: { low: { x: 0, y: 0 }, high: { x: Number.POSITIVE_INFINITY, y: 1 } } })).to.throw("extent coordinates must be finite");
+    expect(() => getListOfVerticalCRS({ extent: { low: { x: 0, y: 2 }, high: { x: 1, y: 1 } } })).to.throw("extent low latitude must not exceed high latitude");
+    expect(() => getListOfVerticalCRS({ extent: { low: { x: -181, y: 0 }, high: { x: 1, y: 1 } } })).to.throw();
+    expect(() => getListOfVerticalCRS({ includeIntersecting: "yes" })).to.throw("includeIntersecting must be a boolean");
   });
 });
