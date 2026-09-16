@@ -494,6 +494,15 @@ const auto jsIModelDb = m_dgndb->GetJsIModelDb();
         }
     }
 
+    // sqlite_stat1 contains query-planner statistics, not iModel state. Its values can
+    // legitimately differ between briefcases and are safe to replace with the incoming values.
+    if (iter.GetTableName().EqualsIAscii("sqlite_stat1")
+        && (cause == ChangeSet::ConflictCause::Conflict || cause == ChangeSet::ConflictCause::Data)) {
+        LOG.warning("sqlite_stat1 conflict - resolved by replacing the existing row with the incoming row");
+        iter.Dump(*m_dgndb, false, 1);
+        return ChangeSet::ConflictResolution::Replace;
+    }
+
     if (cause == ChangeSet::ConflictCause::Data && !iter.IsIndirect()) {
 /*
         * From SQLite Docs CHANGESET_DATA as the second argument
