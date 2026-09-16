@@ -4453,6 +4453,14 @@ struct MakeQueryOnly {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::vector<TxnManager::TxnId> TxnManager::PullMergeReverseLocalChanges(bool captureInstanceChanges) {
+    return PullMergeReverseLocalChangesImpl(captureInstanceChanges, nullptr);
+}
+
+std::vector<TxnManager::TxnId> TxnManager::PullMergeReverseLocalChanges(std::function<void(TxnId)> onBeforeReverseLocalTxn) {
+    return PullMergeReverseLocalChangesImpl(false, onBeforeReverseLocalTxn);
+}
+
+std::vector<TxnManager::TxnId> TxnManager::PullMergeReverseLocalChangesImpl(bool captureInstanceChanges, std::function<void(TxnId)> onBeforeReverseLocalTxn) {
     TXN_DEBUG("<< PullMergeReverseLocalChanges()");
     auto conf = PullMergeConf::Load(m_dgndb);
     if (conf.InProgress()) {
@@ -4481,7 +4489,9 @@ std::vector<TxnManager::TxnId> TxnManager::PullMergeReverseLocalChanges(bool cap
             if (IsTxnReversed(curr))
                 continue;
                 
-            if (captureInstanceChanges) {
+            if (onBeforeReverseLocalTxn) {
+                onBeforeReverseLocalTxn(curr);
+            } else if (captureInstanceChanges) {
                 CaptureInstanceChanges(curr);
             }
 

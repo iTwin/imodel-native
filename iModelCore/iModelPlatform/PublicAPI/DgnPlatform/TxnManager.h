@@ -447,6 +447,7 @@ private:
     void OnUndoRedo(TxnAction action);
     void OnRollback(BeSQLite::ChangeStreamCR);
     void CaptureInstanceChanges(TxnId txnId);
+    std::vector<TxnId> PullMergeReverseLocalChangesImpl(bool captureInstanceChanges, std::function<void(TxnId)> onBeforeReverseLocalTxn);
 
     void OnValidateChanges(BeSQLite::ChangeStreamCR);
     BeSQLite::DbResult SaveTxn(BeSQLite::ChangeSetCR changeset, Utf8CP operation, TxnType);
@@ -539,6 +540,7 @@ public:
     DGNPLATFORM_EXPORT void PullMergeRebaseReinstateTxn();
     DGNPLATFORM_EXPORT void PullMergeRebaseEnd();
     DGNPLATFORM_EXPORT std::vector<TxnManager::TxnId> PullMergeReverseLocalChanges(bool captureInstanceChanges = false);
+    DGNPLATFORM_EXPORT std::vector<TxnManager::TxnId> PullMergeReverseLocalChanges(std::function<void(TxnId)> onBeforeReverseLocalTxn);
     DGNPLATFORM_EXPORT std::vector<TxnManager::TxnId> PullMergeRebaseBegin();
     DGNPLATFORM_EXPORT PullMergeStage PullMergeGetStage() const;
     DGNPLATFORM_EXPORT void Stash(BeFileNameCR pathname, Utf8StringCR description, Utf8StringCR iModelId, BeJsValue out);

@@ -853,7 +853,7 @@ export declare namespace IModelJsNative {
     public pullMergeRebaseAbortTxn(): void
     public pullMergeRebaseBegin(): TxnIdString[];
     public pullMergeRebaseEnd(): void;
-    public pullMergeReverseLocalChanges(captureInstanceChanges?: boolean): TxnIdString[];
+    public pullMergeReverseLocalChanges(captureInstanceChangesOrHandler?: boolean | { onBeforeReverseLocalTxn(txnId: TxnIdString): void }): TxnIdString[];
     public stashChanges(args: { stashRootDir: string, description: string, iModelId: string, resetBriefcase?: true}): any;
     public stashRestore(stashFile: string): void;
     /** @not-used-by-itwinjs-core */

@@ -3122,10 +3122,25 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     }
 
     Napi::Value PullMergeReverseLocalChanges(NapiInfoCR info) {
-        OPTIONAL_ARGUMENT_BOOL(0, captureInstanceChanges, false);
+        bool captureInstanceChanges = false;
+        std::function<void(TxnManager::TxnId)> onBeforeReverseLocalTxn;
+        if (!ARGUMENT_IS_EMPTY(0)) {
+            if (ARGUMENT_IS_BOOL(0)) {
+                captureInstanceChanges = info[0].As<Napi::Boolean>().Value();
+            } else if (ARGUMENT_IS_ANY_OBJ(0)) {
+                auto handler = info[0].As<Napi::Object>();
+                onBeforeReverseLocalTxn = [handler](TxnManager::TxnId txnId) {
+                    DgnDb::CallJsFunction(handler, "onBeforeReverseLocalTxn", {Napi::String::New(handler.Env(), BeInt64Id(txnId.GetValue()).ToHexStr().c_str())});
+                };
+            } else {
+                THROW_JS_TYPE_EXCEPTION("Argument 0 must be a boolean or an object")
+            }
+        }
         auto& db = GetWritableDb(info);
         
-        auto txns = db.Txns().PullMergeReverseLocalChanges(captureInstanceChanges);
+        auto txns = onBeforeReverseLocalTxn
+            ? db.Txns().PullMergeReverseLocalChanges(onBeforeReverseLocalTxn)
+            : db.Txns().PullMergeReverseLocalChanges(captureInstanceChanges);
         auto array = Napi::Array::New(Env(), txns.size());
         for (size_t i = 0; i < txns.size(); ++i) {
             array[i] = Napi::String::New(Env(), BeInt64Id(txns[i].GetValue()).ToHexStr().c_str());
