@@ -6,6 +6,7 @@
 #include <Bentley/BeDirectoryIterator.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <ECObjects/ECJsonUtilities.h>
+#include <cmath>
 
 using namespace IModelJsNative;
 
@@ -18,6 +19,14 @@ BE_JSON_NAME(extent)
 BE_JSON_NAME(longitude)
 BE_JSON_NAME(latitude)
 BE_JSON_NAME(includeIntersecting)
+
+static bool IsNumericPoint2d(BeJsConst value)
+    {
+    if (value.isArray())
+        return value.size() == 2 && value[0].isNumeric() && value[1].isNumeric();
+
+    return value.isObject() && value.isNumericMember("x") && value.isNumericMember("y");
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -159,6 +168,11 @@ StatusInt GeoServicesInterop::GetListOfVerticalCRS(bvector<VerticalCRSListRespon
 
         point.longitude = pointJson[json_longitude()].asDouble();
         point.latitude = pointJson[json_latitude()].asDouble();
+        if (!std::isfinite(point.longitude) || !std::isfinite(point.latitude))
+            {
+            errorMessage = "point longitude and latitude must be finite";
+            return GeoCoordinates::GEOCOORDERR_BadArg;
+            }
         pointFilter = &point;
         }
 
@@ -171,8 +185,24 @@ StatusInt GeoServicesInterop::GetListOfVerticalCRS(bvector<VerticalCRSListRespon
             errorMessage = "extent must be an object";
             return GeoCoordinates::GEOCOORDERR_BadArg;
             }
+        if (!IsNumericPoint2d(extentJson["low"]) || !IsNumericPoint2d(extentJson["high"]))
+            {
+            errorMessage = "extent must contain numeric low and high points";
+            return GeoCoordinates::GEOCOORDERR_BadArg;
+            }
 
         BeJsGeomUtils::DRange2dFromJson(extent, extentJson);
+        if (!std::isfinite(extent.low.x) || !std::isfinite(extent.low.y)
+            || !std::isfinite(extent.high.x) || !std::isfinite(extent.high.y))
+            {
+            errorMessage = "extent coordinates must be finite";
+            return GeoCoordinates::GEOCOORDERR_BadArg;
+            }
+        if (extent.low.y > extent.high.y)
+            {
+            errorMessage = "extent low latitude must not exceed high latitude";
+            return GeoCoordinates::GEOCOORDERR_BadArg;
+            }
         extentFilter = &extent;
         }
 
