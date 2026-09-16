@@ -5,7 +5,13 @@ This document including important changes to syntax or file format.
 | Module  | Version   |
 | ------- | --------- |
 | Profile | `4.0.0.5` |
-| ECSQL   | `2.0.4.1` |
+| ECSQL   | `2.0.4.2` |
+
+## `09/03/2026`: Added `ExpandedProperties` table-valued function
+* ECSql version change `2.0.4.1` -> `2.0.4.2`.
+* `ECVLib.ExpandedProperties(classId)` returns the IDs and zero-based expanded ordinals of all properties available on an ECClass, including inherited properties.
+* Properties follow ECClass expansion order: base classes and mixins in declaration order, followed by locally declared properties. An overridden property appears once at the overriding class's local position.
+* Example: `SELECT PropertyId, ExpandedOrdinal FROM ECVLib.ExpandedProperties(ec_classid('BisCore', 'Element'))`.
 
 ## `08/19/2026`: Added check `check_diverged_prop_maps` to `PRAGMA integrity_check`
 * ECSql version change `2.0.4.0` -> `2.0.4.1`.

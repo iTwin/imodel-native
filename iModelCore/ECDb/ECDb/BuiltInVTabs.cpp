@@ -434,6 +434,183 @@ DbResult IdSetModule::Connect(DbVirtualTable*& out, Config& conf, int argc, cons
     return BE_SQLITE_OK;
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult ExpandedPropertiesModule::ExpandedPropertiesTable::ExpandedPropertiesCursor::Next() {
+    ++m_index;
+    return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult ExpandedPropertiesModule::ExpandedPropertiesTable::ExpandedPropertiesCursor::GetRowId(int64_t& rowId) {
+    rowId = (int64_t)m_index + 1;
+    return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult ExpandedPropertiesModule::ExpandedPropertiesTable::ExpandedPropertiesCursor::GetColumn(int i, Context& ctx) {
+    switch ((Columns)i) {
+        case Columns::PropertyId:
+            ctx.SetResultInt64((int64_t)m_properties->at(m_index).m_id.GetValueUnchecked());
+            break;
+        case Columns::ExpandedOrdinal:
+            ctx.SetResultInt((int)m_index);
+            break;
+        case Columns::ClassId:
+            ctx.SetResultInt64((int64_t)m_classId.GetValueUnchecked());
+            break;
+    }
+    return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult ExpandedPropertiesModule::ExpandedPropertiesTable::ExpandedPropertiesCursor::ExpandProperties(
+    ExpandedPropertyList const*& properties, ECClassId classId) {
+    auto cachedEntry = m_expansionMemo.find(classId);
+    if (cachedEntry != m_expansionMemo.end()) {
+        properties = cachedEntry->second.m_isExpanding ? nullptr : &cachedEntry->second.m_properties;
+        return BE_SQLITE_OK;
+    }
+
+    auto insertResult = m_expansionMemo.emplace(classId, ExpandedClassProperties());
+    ExpandedClassProperties& expandedClass = insertResult.first->second;
+    ExpandedPropertyList ownProperties;
+    bset<Utf8String, CompareIUtf8Ascii> seenNames;
+    auto& module = static_cast<ExpandedPropertiesModule&>(GetTable().GetModule());
+
+    {
+        auto stmt = module.GetECDb().GetCachedStatement(
+            "SELECT Id,Name FROM main.ec_Property WHERE ClassId=? ORDER BY Ordinal");
+        if (stmt == nullptr || BE_SQLITE_OK != stmt->BindId(1, classId)) {
+            GetTable().SetError("ExpandedProperties: unable to read local properties");
+            m_expansionMemo.erase(classId);
+            return BE_SQLITE_ERROR;
+        }
+
+        DbResult stepResult;
+        while ((stepResult = stmt->Step()) == BE_SQLITE_ROW) {
+            ownProperties.emplace_back(stmt->GetValueId<ECPropertyId>(0), stmt->GetValueText(1));
+            seenNames.insert(ownProperties.back().m_name);
+        }
+        if (stepResult != BE_SQLITE_DONE) {
+            GetTable().SetError("ExpandedProperties: unable to read local properties");
+            m_expansionMemo.erase(classId);
+            return stepResult;
+        }
+    }
+
+    bvector<ECClassId> baseClassIds;
+    {
+        auto stmt = module.GetECDb().GetCachedStatement(
+            "SELECT BaseClassId FROM main.ec_ClassHasBaseClasses WHERE ClassId=? ORDER BY Ordinal");
+        if (stmt == nullptr || BE_SQLITE_OK != stmt->BindId(1, classId)) {
+            GetTable().SetError("ExpandedProperties: unable to read base classes");
+            m_expansionMemo.erase(classId);
+            return BE_SQLITE_ERROR;
+        }
+
+        DbResult stepResult;
+        while ((stepResult = stmt->Step()) == BE_SQLITE_ROW)
+            baseClassIds.push_back(stmt->GetValueId<ECClassId>(0));
+        if (stepResult != BE_SQLITE_DONE) {
+            GetTable().SetError("ExpandedProperties: unable to read base classes");
+            m_expansionMemo.erase(classId);
+            return stepResult;
+        }
+    }
+
+    for (ECClassId baseClassId : baseClassIds) {
+        ExpandedPropertyList const* baseProperties = nullptr;
+        DbResult result = ExpandProperties(baseProperties, baseClassId);
+        if (result != BE_SQLITE_OK) {
+            m_expansionMemo.erase(classId);
+            return result;
+        }
+        if (baseProperties == nullptr)
+            continue;
+
+        for (ExpandedProperty const& property : *baseProperties) {
+            if (seenNames.insert(property.m_name).second)
+                expandedClass.m_properties.push_back(property);
+        }
+    }
+
+    expandedClass.m_properties.insert(expandedClass.m_properties.end(), ownProperties.begin(), ownProperties.end());
+    expandedClass.m_isExpanding = false;
+    properties = &expandedClass.m_properties;
+    return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult ExpandedPropertiesModule::ExpandedPropertiesTable::ExpandedPropertiesCursor::Filter(
+    int idxNum, const char* idxStr, int argc, DbValue* argv) {
+    m_properties = nullptr;
+    m_expansionMemo.clear();
+    m_classId = ECClassId();
+    m_index = 0;
+    if ((idxNum & 1) == 0 || argc < 1 || argv[0].IsNull())
+        return BE_SQLITE_OK;
+
+    uint64_t classId = argv[0].GetValueUInt64();
+    if (classId == 0)
+        return BE_SQLITE_OK;
+
+    m_classId = ECClassId(classId);
+    return ExpandProperties(m_properties, m_classId);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult ExpandedPropertiesModule::ExpandedPropertiesTable::BestIndex(IndexInfo& indexInfo) {
+    int classIdConstraint = -1;
+    for (int i = 0; i < indexInfo.GetConstraintCount(); ++i) {
+        auto constraint = indexInfo.GetConstraint(i);
+        if (constraint->GetColumn() != (int)ExpandedPropertiesCursor::Columns::ClassId ||
+            constraint->GetOp() != IndexInfo::Operator::EQ)
+            continue;
+
+        if (!constraint->IsUsable())
+            return BE_SQLITE_CONSTRAINT;
+        classIdConstraint = i;
+        break;
+    }
+
+    if (classIdConstraint < 0)
+        return BE_SQLITE_CONSTRAINT;
+
+    indexInfo.GetConstraintUsage(classIdConstraint)->SetArgvIndex(1);
+    indexInfo.GetConstraintUsage(classIdConstraint)->SetOmit(true);
+    indexInfo.SetIdxNum(1);
+    indexInfo.SetEstimatedCost(10.0);
+    indexInfo.SetEstimatedRows(100);
+
+    if (indexInfo.GetIndexOrderByCount() == 1) {
+        auto orderBy = indexInfo.GetOrderBy(0);
+        if (orderBy->GetColumn() == (int)ExpandedPropertiesCursor::Columns::ExpandedOrdinal && !orderBy->GetDesc())
+            indexInfo.SetOrderByConsumed(true);
+    }
+    return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult ExpandedPropertiesModule::Connect(DbVirtualTable*& out, Config& conf, int argc, const char* const* argv) {
+    out = new ExpandedPropertiesTable(*this);
+    conf.SetTag(Config::Tags::Innocuous);
+    return BE_SQLITE_OK;
+}
+
 DbResult RegisterBuildInVTabs(ECDbR ecdb) {
     DbResult rc = (new ClassPropsModule(ecdb))->Register();
     if(rc != BE_SQLITE_OK)
@@ -441,6 +618,6 @@ DbResult RegisterBuildInVTabs(ECDbR ecdb) {
     DbResult rcIdSet = (new IdSetModule(ecdb))->Register();
     if(rcIdSet != BE_SQLITE_OK)
         return rcIdSet;
-    return BE_SQLITE_OK;
+    return (new ExpandedPropertiesModule(ecdb))->Register();
 }
 END_BENTLEY_SQLITE_EC_NAMESPACE

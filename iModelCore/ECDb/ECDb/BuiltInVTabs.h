@@ -107,11 +107,73 @@ struct IdSetModule : ECDbModule {
                     </ECCustomAttributes>
                     <ECProperty propertyName="id"  typeName="long" extendedTypeName="Id"/>
                 </ECEntityClass>
+                <ECEntityClass typeName="ExpandedProperties" modifier="Abstract">
+                    <ECCustomAttributes>
+                        <VirtualType xmlns="ECDbVirtual.01.00.00"/>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="PropertyId" typeName="long" extendedTypeName="Id"/>
+                    <ECProperty propertyName="ExpandedOrdinal" typeName="int"/>
+                </ECEntityClass>
             </ECSchema>)xml"
             ) {}
         DbResult Connect(DbVirtualTable*& out, Config& conf, int argc, const char* const* argv) final;
 };
 
+struct ExpandedPropertiesModule : BeSQLite::DbModule {
+    constexpr static auto NAME = "ExpandedProperties";
+
+    struct ExpandedProperty {
+        ECN::ECPropertyId m_id;
+        Utf8String m_name;
+
+        ExpandedProperty(ECN::ECPropertyId id, Utf8CP name) : m_id(id), m_name(name) {}
+    };
+
+    using ExpandedPropertyList = bvector<ExpandedProperty>;
+
+    struct ExpandedClassProperties {
+        bool m_isExpanding = true;
+        ExpandedPropertyList m_properties;
+    };
+
+    using ExpansionMemo = std::map<ECN::ECClassId, ExpandedClassProperties>;
+
+    struct ExpandedPropertiesTable : DbVirtualTable {
+        struct ExpandedPropertiesCursor : DbCursor {
+            enum class Columns {
+                PropertyId = 0,
+                ExpandedOrdinal = 1,
+                ClassId = 2,
+            };
+
+        private:
+            ExpansionMemo m_expansionMemo;
+            ExpandedPropertyList const* m_properties = nullptr;
+            ECN::ECClassId m_classId;
+            size_t m_index = 0;
+
+            DbResult ExpandProperties(ExpandedPropertyList const*&, ECN::ECClassId);
+
+        public:
+            explicit ExpandedPropertiesCursor(ExpandedPropertiesTable& table) : DbCursor(table) {}
+            bool Eof() final { return m_properties == nullptr || m_index >= m_properties->size(); }
+            DbResult Next() final;
+            DbResult GetColumn(int i, Context& ctx) final;
+            DbResult GetRowId(int64_t& rowId) final;
+            DbResult Filter(int idxNum, const char* idxStr, int argc, DbValue* argv) final;
+        };
+
+        explicit ExpandedPropertiesTable(ExpandedPropertiesModule& module) : DbVirtualTable(module) {}
+        DbResult Open(DbCursor*& cursor) final { cursor = new ExpandedPropertiesCursor(*this); return BE_SQLITE_OK; }
+        DbResult BestIndex(IndexInfo& indexInfo) final;
+    };
+
+    explicit ExpandedPropertiesModule(ECDbR db)
+        : DbModule(db, NAME, "CREATE TABLE x(PropertyId,ExpandedOrdinal,ClassId hidden)") {}
+
+    ECDbR GetECDb() { return reinterpret_cast<ECDbR>(GetDb()); }
+    DbResult Connect(DbVirtualTable*& out, Config& conf, int argc, const char* const* argv) final;
+};
 
 DbResult RegisterBuildInVTabs(ECDbR);
 
