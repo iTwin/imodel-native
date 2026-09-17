@@ -12,6 +12,15 @@
 
 using namespace ::testing;
 
+namespace
+{
+struct ScopedDisableLocalGcsFiles
+    {
+    ScopedDisableLocalGcsFiles() { GeoCoordinates::BaseGCS::EnableLocalGcsFiles(false); }
+    ~ScopedDisableLocalGcsFiles() { GeoCoordinates::BaseGCS::EnableLocalGcsFiles(true); }
+    };
+}
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsi
@@ -200,24 +209,22 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumDictionaryAndVertconGridFilesFromBas
     workspaceDb.CloseDb();
 
     GeoCoordTestCommon::Shutdown();
-    GeoCoordinates::BaseGCS::EnableLocalGcsFiles(false);
+    {
+    ScopedDisableLocalGcsFiles disableLocalGcsFiles;
     BeFileName workspaceDirectory = workspacePath.GetDirectoryName();
-    StatusInt initializeStatus = GeoCoordinates::BaseGCS::Initialize(workspaceDirectory.GetNameUtf8().c_str());
-    GeoPoint point = { -100.0, 38.0, 0.0 };
-    bvector<GeoCoordinates::VerticalTransformPtr> transforms;
-    StatusInt transformStatus = GeoCoordinates::VerticalDatumDictionary::Get()->GetVerticalDatumTransforms(transforms, "NAVD88 height", "NGVD29 height", &point);
-    double elevationOffset = 0.0;
-    GeoCoordinates::VerticalTransform::ElevationType elevationType = GeoCoordinates::VerticalTransform::ElevationType::Fixed;
-    StatusInt elevationStatus = transforms.size() == 1 ? transforms[0]->GetElevation(elevationOffset, elevationType, point) : ERROR;
-    GeoCoordinates::BaseGCS::EnableLocalGcsFiles(true);
-
-    EXPECT_EQ(initializeStatus, SUCCESS);
-    EXPECT_EQ(GeoCoordinates::VerticalDatumDictionary::Get()->GetStatus(), SUCCESS);
-    EXPECT_EQ(transformStatus, SUCCESS);
-    ASSERT_EQ(transforms.size(), 1);
-    EXPECT_EQ(elevationStatus, SUCCESS);
-    EXPECT_EQ(elevationType, GeoCoordinates::VerticalTransform::ElevationType::Offset);
-    EXPECT_NEAR(elevationOffset, -0.2763817, 1.0e-7);
+    ASSERT_EQ(GeoCoordinates::BaseGCS::Initialize(workspaceDirectory.GetNameUtf8().c_str()), SUCCESS);
+    ASSERT_EQ(GeoCoordinates::VerticalDatumDictionary::Get()->GetStatus(), SUCCESS);
+    GeoCoordinates::BaseGCSPtr sourceGCS = GeoCoordinates::BaseGCS::CreateGCS("LL83");
+    GeoCoordinates::BaseGCSPtr targetGCS = GeoCoordinates::BaseGCS::CreateGCS("LL83");
+    ASSERT_TRUE(sourceGCS.IsValid() && sourceGCS->IsValid());
+    ASSERT_TRUE(targetGCS.IsValid() && targetGCS->IsValid());
+    ASSERT_EQ(sourceGCS->SetVerticalDatumFromName("NAVD88 height"), SUCCESS);
+    ASSERT_EQ(targetGCS->SetVerticalDatumFromName("NGVD29 height"), SUCCESS);
+    DPoint3d inputPoint = { -100.0, 38.0, 0.0 };
+    DPoint3d resultPoint = DPoint3d::FromZero();
+    ASSERT_EQ(sourceGCS->CartesianFromCartesian(resultPoint, inputPoint, *targetGCS), REPROJECT_Success);
+    EXPECT_NEAR(resultPoint.z, -0.2763817, 1.0e-7);
+    }
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -295,13 +302,12 @@ TEST_F(VerticalDatumUnitTests, VerticalTransformVertconGridFilesFromWorkspaceTes
         GeoCoordinates::VerticalTransform::CreateFromJson(vertconJson, "NAVD88 workspace height", "NGVD29 height");
     ASSERT_TRUE(workspaceVertconTransform.IsValid());
 
-    GeoCoordinates::BaseGCS::EnableLocalGcsFiles(false);
-    StatusInt status = workspaceVertconTransform->GetElevation(elevationOffset, elevationType, point);
-    GeoCoordinates::BaseGCS::EnableLocalGcsFiles(true);
-
-    EXPECT_EQ(status, SUCCESS);
+    {
+    ScopedDisableLocalGcsFiles disableLocalGcsFiles;
+    ASSERT_EQ(workspaceVertconTransform->GetElevation(elevationOffset, elevationType, point), SUCCESS);
     EXPECT_EQ(elevationType, GeoCoordinates::VerticalTransform::ElevationType::Offset);
     EXPECT_NEAR(elevationOffset, expectedElevationOffset, 1.0e-10);
+    }
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -348,16 +354,13 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumDictionaryFromLateWorkspaceTest)
     workspaceDb.CloseDb();
 
     GeoCoordTestCommon::Shutdown();
-    GeoCoordinates::BaseGCS::EnableLocalGcsFiles(false);
+    {
+    ScopedDisableLocalGcsFiles disableLocalGcsFiles;
     BeFileName dataDirectory = workspacePath.GetDirectoryName();
-    StatusInt initializeStatus = GeoCoordinates::BaseGCS::Initialize(dataDirectory.GetNameUtf8().c_str());
-    StatusInt initialDictionaryStatus = GeoCoordinates::VerticalDatumDictionary::Get()->GetStatus();
-    bool added = GeoCoordinates::BaseGCS::AddWorkspaceDb(workspacePath.GetNameUtf8(), nullptr, 10001);
-    GeoCoordinates::BaseGCS::EnableLocalGcsFiles(true);
-
-    EXPECT_EQ(initializeStatus, SUCCESS);
-    EXPECT_EQ(initialDictionaryStatus, GeoCoordinates::GeoCoordParse_MissingFile);
-    ASSERT_TRUE(added);
+    ASSERT_EQ(GeoCoordinates::BaseGCS::Initialize(dataDirectory.GetNameUtf8().c_str()), SUCCESS);
+    ASSERT_EQ(GeoCoordinates::VerticalDatumDictionary::Get()->GetStatus(), GeoCoordinates::GeoCoordParse_MissingFile);
+    ASSERT_TRUE(GeoCoordinates::BaseGCS::AddWorkspaceDb(workspacePath.GetNameUtf8(), nullptr, 10001));
+    }
 
     StatusInt status = ERROR;
     GeoCoordinates::VerticalDatumInfoPtr datumInfo = GeoCoordinates::VerticalDatumDictionary::Get()->GetVerticalDatumInfoFromName("Workspace test height", status);
