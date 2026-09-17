@@ -70,8 +70,8 @@ describe("GeoServices", () => {
     const workspacePath = path.join(getOutputDir(), "GeoServices.itwin-workspace");
     fs.rmSync(workspacePath, { force: true });
 
-    assert.isDefined(process.env.OutRoot);
-    const upackDir = path.resolve(process.env.OutRoot, "../../src/upack");
+    assert.isDefined(process.env.SrcRoot);
+    const upackDir = path.join(process.env.SrcRoot, "upack");
     const csMapDataPackage = fs.readdirSync(upackDir).find((entry) => entry.startsWith("csmap_data."));
     assert.isDefined(csMapDataPackage);
     const csMapDataDir = path.join(upackDir, csMapDataPackage, "Dictionaries");
