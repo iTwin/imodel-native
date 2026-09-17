@@ -179,6 +179,21 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumDictionaryAndVertconGridFilesFromBas
         ASSERT_EQ(gridFile.ReadEntireFile(gridData.back()), BeFileStatus::Success);
         }
 
+    bvector<Utf8String> dictionaryFileNames = {
+        "datum.dty",
+        "ellipsoid.dty",
+    };
+    bvector<bvector<Byte>> dictionaryFileData;
+    for (Utf8StringCR dictionaryFileName : dictionaryFileNames)
+        {
+        BeFileName localDictionaryPath(dataDirectory);
+        localDictionaryPath.AppendToPath(WString(dictionaryFileName.c_str(), true).c_str());
+        BeFile dictionaryResourceFile;
+        ASSERT_EQ(dictionaryResourceFile.Open(localDictionaryPath.GetName(), BeFileAccess::Read), BeFileStatus::Success);
+        dictionaryFileData.emplace_back();
+        ASSERT_EQ(dictionaryResourceFile.ReadEntireFile(dictionaryFileData.back()), BeFileStatus::Success);
+        }
+
     BeFileName workspacePath;
     BeTest::GetHost().GetTempDir(workspacePath);
     workspacePath.AppendToPath(L"base.itwin-workspace");
@@ -195,6 +210,15 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumDictionaryAndVertconGridFilesFromBas
     ASSERT_EQ(insert.BindBlob(2, dictionaryData.data(), (int)dictionaryData.size(), BeSQLite::Statement::MakeCopy::Yes), BeSQLite::BE_SQLITE_OK);
     ASSERT_EQ(insert.Step(), BeSQLite::BE_SQLITE_DONE);
 
+    for (size_t index = 0; index < dictionaryFileNames.size(); ++index)
+        {
+        insert.Reset();
+        insert.ClearBindings();
+        ASSERT_EQ(insert.BindText(1, dictionaryFileNames[index], BeSQLite::Statement::MakeCopy::Yes), BeSQLite::BE_SQLITE_OK);
+        ASSERT_EQ(insert.BindBlob(2, dictionaryFileData[index].data(), (int)dictionaryFileData[index].size(), BeSQLite::Statement::MakeCopy::Yes), BeSQLite::BE_SQLITE_OK);
+        ASSERT_EQ(insert.Step(), BeSQLite::BE_SQLITE_DONE);
+        }
+
     for (size_t index = 0; index < gridFileNames.size(); ++index)
         {
         insert.Reset();
@@ -208,16 +232,17 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumDictionaryAndVertconGridFilesFromBas
     ASSERT_EQ(workspaceDb.SaveChanges(), BeSQLite::BE_SQLITE_OK);
     workspaceDb.CloseDb();
 
+    GeoCoordinates::BaseGCSPtr sourceGCS = GeoCoordinates::BaseGCS::CreateGCS("LL83");
+    GeoCoordinates::BaseGCSPtr targetGCS = GeoCoordinates::BaseGCS::CreateGCS("LL83");
+    ASSERT_TRUE(sourceGCS.IsValid() && sourceGCS->IsValid());
+    ASSERT_TRUE(targetGCS.IsValid() && targetGCS->IsValid());
+
     GeoCoordTestCommon::Shutdown();
     {
     ScopedDisableLocalGcsFiles disableLocalGcsFiles;
     BeFileName workspaceDirectory = workspacePath.GetDirectoryName();
     ASSERT_EQ(GeoCoordinates::BaseGCS::Initialize(workspaceDirectory.GetNameUtf8().c_str()), SUCCESS);
     ASSERT_EQ(GeoCoordinates::VerticalDatumDictionary::Get()->GetStatus(), SUCCESS);
-    GeoCoordinates::BaseGCSPtr sourceGCS = GeoCoordinates::BaseGCS::CreateGCS("LL83");
-    GeoCoordinates::BaseGCSPtr targetGCS = GeoCoordinates::BaseGCS::CreateGCS("LL83");
-    ASSERT_TRUE(sourceGCS.IsValid() && sourceGCS->IsValid());
-    ASSERT_TRUE(targetGCS.IsValid() && targetGCS->IsValid());
     ASSERT_EQ(sourceGCS->SetVerticalDatumFromName("NAVD88 height"), SUCCESS);
     ASSERT_EQ(targetGCS->SetVerticalDatumFromName("NGVD29 height"), SUCCESS);
     DPoint3d inputPoint = { -100.0, 38.0, 0.0 };
