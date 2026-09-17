@@ -6,6 +6,9 @@ import { assert, expect } from "chai";
 import { spawnSync } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
+import { OpenMode } from "@itwin/core-bentley";
+import { GeoCoordStatus } from "@itwin/core-common";
+import { Point3d } from "@itwin/core-geometry";
 import { getLocalBuildOfAddonPath, getOutputDir, iModelJsNative } from "./utils";
 
 const verticalDatumDictionary = JSON.stringify({
@@ -22,7 +25,14 @@ const verticalDatumDictionary = JSON.stringify({
         southWest: { latitude: -90, longitude: -180 },
         northEast: { latitude: 90, longitude: 180 },
       },
-      transforms: [{ target: "WGS84", nullTransform: null }],
+      transforms: [{
+        target: "WGS84",
+        geoidSeparationGrid: {
+          direction: "Direct",
+          format: "GRD",
+          files: ["./World/WW15MGH.GRD"],
+        },
+      }],
     },
   }, {
     verticalCRS: {
@@ -75,8 +85,11 @@ describe("GeoServices", () => {
     statement.dispose();
 
     statement.prepare(workspaceDb, "INSERT INTO blobs(id,value) VALUES(?,?)");
+    const egm96Grid = fs.readFileSync(path.join(csMapDataDir, "WW15MGH._96"));
     const resources = new Map<string, Buffer>([
       ["VerticalDatumDefinitions.json", Buffer.from(verticalDatumDictionary)],
+      ["World/WW15MGH.GRD", egm96Grid],
+      ["World/WW15MGH._96", egm96Grid],
       ...["coordsys.dty", "datum.dty", "ellipsoid.dty", "GeodeticTransform.dty", "GeodeticPath.dty"]
         .map((fileName): [string, Buffer] => [fileName, fs.readFileSync(path.join(csMapDataDir, fileName))]),
     ]);
@@ -156,6 +169,95 @@ describe("GeoServices", () => {
 
     expect(secondResponse.status).to.equal(0);
     expect(secondResponse.geographicCRS).to.deep.equal(firstResponse.geographicCRS);
+  });
+
+  it("converts a named vertical coordinate reference system with a meaningful elevation", () => {
+    const iModelPath = path.join(getOutputDir(), "NamedVerticalCrsConversion.bim");
+    fs.rmSync(iModelPath, { force: true });
+
+    const iModelDb = new iModelJsNative.DgnDb();
+    try {
+      iModelDb.createIModel(iModelPath, { rootSubject: { name: "Named Vertical CRS conversion" } });
+      const geographicCoordinateSystem = {
+        horizontalCRS: { id: "LL84" },
+        verticalCRS: { id: "GEOID" as const, crsName: "EGM96 height" },
+      };
+      iModelDb.updateIModelProps({
+        rootSubject: { name: "Named Vertical CRS conversion: IGNORED BY updateIModelProps" },
+        geographicCoordinateSystem,
+      });
+      iModelDb.saveChanges();
+      iModelDb.closeFile();
+      iModelDb.openIModel(iModelPath, OpenMode.ReadWrite);
+
+      const storedVerticalCRS = (iModelDb.getIModelProps().geographicCoordinateSystem?.verticalCRS as { crsName?: string } | undefined);
+      expect(storedVerticalCRS?.crsName).to.equal("EGM96 height");
+
+      const response = iModelDb.getGeoCoordinatesFromIModelCoordinates({
+        target: JSON.stringify({
+          horizontalCRS: { id: "LL84" },
+          verticalCRS: { id: "ELLIPSOID", crsName: "WGS84" },
+        }),
+        iModelCoords: [{ x: 23.700523, y: 37.944210, z: 0 }],
+      });
+
+      expect(response.geoCoords).to.have.lengthOf(1);
+      expect(response.geoCoords[0].s).to.equal(GeoCoordStatus.Success);
+      const convertedPoint = Point3d.fromJSON(response.geoCoords[0].p);
+      expect(convertedPoint.x).to.be.closeTo(23.700523, 1.0e-8);
+      expect(convertedPoint.y).to.be.closeTo(37.944210, 1.0e-8);
+      expect(convertedPoint.z).to.be.closeTo(38.3, 0.5);
+    } finally {
+      iModelDb.closeFile();
+      fs.rmSync(iModelPath, { force: true });
+    }
+  });
+
+  it("ignores named vertical coordinate reference system metadata after Type 66 changes", () => {
+    const iModelPath = path.join(getOutputDir(), "StaleNamedVerticalCrs.bim");
+    fs.rmSync(iModelPath, { force: true });
+
+    const iModelDb = new iModelJsNative.DgnDb();
+    try {
+      iModelDb.createIModel(iModelPath, { rootSubject: { name: "Stale named Vertical CRS" } });
+      const geographicCoordinateSystem = {
+        horizontalCRS: { id: "LL84" },
+        verticalCRS: { id: "GEOID" as const, crsName: "EGM96 height" },
+      };
+      iModelDb.updateIModelProps({
+        rootSubject: { name: "Stale named Vertical CRS: IGNORED BY updateIModelProps" },
+        geographicCoordinateSystem,
+      });
+      const verticalCrsProperty = iModelDb.queryFileProperty(
+        { namespace: "dgn_Db", name: "DgnGCSVerticalCRS" },
+        true,
+      );
+      if (typeof verticalCrsProperty !== "string")
+        assert.fail("Expected the named vertical CRS file property to exist as a string");
+
+      iModelDb.updateIModelProps({
+        rootSubject: { name: "Stale named Vertical CRS: IGNORED BY updateIModelProps" },
+        geographicCoordinateSystem: {
+          horizontalCRS: { id: "LL84" },
+          verticalCRS: { id: "ELLIPSOID" },
+        },
+      });
+      iModelDb.saveFileProperty(
+        { namespace: "dgn_Db", name: "DgnGCSVerticalCRS" },
+        verticalCrsProperty,
+        undefined,
+      );
+      iModelDb.saveChanges();
+      iModelDb.closeFile();
+      iModelDb.openIModel(iModelPath, OpenMode.ReadWrite);
+
+      const legacyVerticalCRS = (iModelDb.getIModelProps().geographicCoordinateSystem?.verticalCRS as { crsName?: string, id?: string } | undefined);
+      expect(legacyVerticalCRS?.crsName).to.equal("WGS84");
+      expect(legacyVerticalCRS?.id).to.equal("ELLIPSOID");
+    } finally {
+      iModelDb.closeFile();
+      fs.rmSync(iModelPath, { force: true });
+    }
   });
 
   it("rejects an unknown named vertical coordinate reference system", () => {

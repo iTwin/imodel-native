@@ -12386,21 +12386,23 @@ struct GeoCoordWorkspaces {
         return nullptr;
     }
 
-    // get the row for a resource for csmap by pathname. Path will include the "assets" prefix.
+    // get the row for a resource for csmap by virtual or expanded assets pathname.
     static WorkspaceRow GetRow(Utf8CP path) {
         WorkspaceRow blank = {0, nullptr};
-        if (0 != strncmp(path, s_assetsDirPrefix.c_str(), s_assetsDirPrefix.length()))
-            return blank;
+        Utf8String resourceName = ToUnixName(path);
+        Utf8String assetsPrefix = s_assetsDirPrefix + "/"; // "assets/"
+        if (resourceName.StartsWith(assetsPrefix.c_str()))
+            resourceName.erase(0, assetsPrefix.length());
+        else
+            {
+            Utf8String assetsMarker("/");
+            assetsMarker.append(assetsPrefix); // "/assets/"
+            size_t assetsPos = resourceName.find(assetsMarker);
+            if (Utf8String::npos == assetsPos)
+                return blank;
 
-        // strip leading "assets" and leading "/", "\", or "."s
-        path += s_assetsDirPrefix.length();
-        if (*path == 0)
-            return blank;
-
-        while (*path == '.' || *path == '/' || *path == '\\')
-            ++path;
-
-        auto resourceName = ToUnixName(path);
+            resourceName.erase(0, assetsPos + assetsMarker.length());
+            }
         for (auto& entry : s_workspaceDbs) {
             auto db = entry->GetDb();
             if (nullptr == db)
