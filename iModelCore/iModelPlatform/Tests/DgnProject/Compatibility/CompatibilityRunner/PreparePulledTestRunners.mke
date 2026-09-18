@@ -10,8 +10,17 @@
 
 %include $(SrcRoot)imodel-native/iModelCore/iModelPlatform/Tests/DgnProject/Compatibility/CompatibilityRunner/common.mki
 
+# By default pulled runners only run against the files created by the current runner.
+# The "pulled runner x pulled files" quadrant is immutable and was validated when those artefacts were published.
+# Pass -dIMODELEVOLUTION_FULL_MATRIX=1 (or set the environment variable) to stage the pulled test files as well.
+%if defined (IMODELEVOLUTION_FULL_MATRIX) && $(IMODELEVOLUTION_FULL_MATRIX) == 1
+    PREPARE_OPTIONS = --full
+%else
+    PREPARE_OPTIONS =
+%endif
+
 always:
     ~mkdir $(TESTRUNNERS_NUGET_DIR)
     ~mkdir $(TESTFILES_DIR)
     ~mkdir $(NEWFILES_DIR)
-    $(BBPYTHONCMD) Tests/DgnProject/Compatibility/CompatibilityRunner/PreparePulledTestRunners.py $(TESTRUNNERS_NUGET_DIR) $(TESTRUNNERS_SANDBOXDIR) $(TESTFILES_DIR) $(NEWFILES_DIR)
+    $(BBPYTHONCMD) Tests/DgnProject/Compatibility/CompatibilityRunner/PreparePulledTestRunners.py $(TESTRUNNERS_NUGET_DIR) $(TESTRUNNERS_SANDBOXDIR) $(TESTFILES_DIR) $(NEWFILES_DIR) $(PREPARE_OPTIONS)

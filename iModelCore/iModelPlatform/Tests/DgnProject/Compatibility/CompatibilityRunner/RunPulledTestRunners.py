@@ -6,7 +6,12 @@ from __future__ import print_function
 import sys
 import os
 import subprocess
-from shutil import rmtree
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+# Runs every pulled (older) test runner found in the sandbox folder against the test files staged in its own run/TestFiles folder.
+TESTRUNNER_EXE = "iModelEvolutionTests.exe"
+JOBS_ENV_VAR = "IMODELEVOLUTION_RUNNER_JOBS"
 
 #------------------------------------------------------------------------
 # bsimethod
@@ -63,9 +68,8 @@ def getIgnoreList(currentTestRunnerKey):
 # bsimethod
 #------------------------------------------------------------------------
 def createGTestFilter(exeDir, currentTestRunner):
-    exePath = os.path.join(exeDir, "iModelEvolutionTests.exe")
-    sys.stdout.flush();
-    output = subprocess.Popen([exePath, "--gtest_list_tests"], stdout=subprocess.PIPE).communicate()[0].decode()
+    exePath = os.path.join(exeDir, TESTRUNNER_EXE)
+    output = subprocess.Popen([exePath, "--gtest_list_tests"], stdout=subprocess.PIPE, cwd=exeDir).communicate()[0].decode()
 
     subStr = "BEGTEST_LOGGING_CONFIG in environment."
     if subStr in output:
@@ -94,36 +98,95 @@ def createGTestFilter(exeDir, currentTestRunner):
 #------------------------------------------------------------------------
 # bsimethod
 #------------------------------------------------------------------------
+def getJobCount(args):
+    """Number of pulled test runners to execute concurrently."""
+    for arg in args:
+        if arg.startswith("--jobs="):
+            return max(1, int(arg[len("--jobs="):]))
+    envValue = os.environ.get(JOBS_ENV_VAR, "").strip()
+    if envValue:
+        return max(1, int(envValue))
+    return max(1, (os.cpu_count() or 2) // 2)
+
+#------------------------------------------------------------------------
+# bsimethod
+#------------------------------------------------------------------------
+def runTestRunner(sandboxFolder, runnerKey):
+    """Runs a single pulled test runner. Its output goes to a log file in its sandbox so that
+    concurrently running runners do not interleave. Returns (runnerKey, succeeded, logPath, elapsedSeconds)."""
+    exePath = os.path.join(sandboxFolder, TESTRUNNER_EXE)
+    logPath = os.path.join(sandboxFolder, "iModelEvolutionTests.log")
+    start = time.time()
+    if not os.path.exists(exePath):
+        with open(logPath, "w") as log:
+            log.write("Compatibility test runner '{0}' does not exist.\n".format(exePath))
+        return (runnerKey, False, logPath, 0.0)
+
+    gtestFilter = "--gtest_filter=" + createGTestFilter(sandboxFolder, runnerKey)
+    with open(logPath, "w") as log:
+        log.write("Test runner: {0}\n{1}\n\n".format(exePath, gtestFilter))
+        log.flush()
+        returnCode = subprocess.call([exePath, gtestFilter], stdout=log, stderr=subprocess.STDOUT, cwd=sandboxFolder)
+        log.write("\nExit code: {0}\n".format(returnCode))
+
+    return (runnerKey, returnCode == 0, logPath, time.time() - start)
+
+#------------------------------------------------------------------------
+# bsimethod
+#------------------------------------------------------------------------
+def printLog(logPath):
+    try:
+        with open(logPath, "r", errors="replace") as log:
+            sys.stdout.write(log.read())
+    except IOError as err:
+        print ("Could not read log '{0}': {1}".format(logPath, err), file=sys.stderr)
+    sys.stdout.flush()
+
+#------------------------------------------------------------------------
+# bsimethod
+#------------------------------------------------------------------------
 def main():
-    if len(sys.argv) < 1:
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    if len(args) < 1:
         print ("Arg 1: Test runners sandbox folder")
+        print ("Optional: --jobs=N (or env {0}=N) number of runners to execute in parallel".format(JOBS_ENV_VAR))
         return sys.exit(1)
-        
-    testRunnersSandboxFolder = sys.argv[1]
+
+    testRunnersSandboxFolder = args[0]
     if not os.path.exists(testRunnersSandboxFolder):
-        return sys.exit(0)
-
-    hasError = False
-    for subdir in os.listdir(testRunnersSandboxFolder):
-        fullPath = os.path.join(testRunnersSandboxFolder, subdir);
-        if (os.path.isdir(fullPath)):
-            exePath = os.path.join(fullPath, "iModelEvolutionTests.exe")
-            if not os.path.exists(exePath):
-                print ("Compatibility test runner '{0}' does not exist.".format(exePath), file=sys.stderr)
-                hasError = True
-            try:
-                gtestCommandArg = createGTestFilter(fullPath, subdir)
-                gtestFilter = "--gtest_filter=" + gtestCommandArg;
-                print ("Test runner '" + exePath + "' started...")
-                print(gtestFilter)
-                subprocess.check_call([exePath, gtestFilter])
-                print ("Test runner '" + exePath + "' succeeded.")
-            except subprocess.CalledProcessError as err:
-                print ("Test runner '{0}' failed: {1}".format(subdir, err), file=sys.stderr)
-                hasError = True
-
-    if hasError:
+        print ("Test runners sandbox folder '{0}' does not exist. No pulled test runners were prepared.".format(testRunnersSandboxFolder), file=sys.stderr)
         return sys.exit(1)
-        
+
+    runners = sorted(d for d in os.listdir(testRunnersSandboxFolder) if os.path.isdir(os.path.join(testRunnersSandboxFolder, d)))
+    if not runners:
+        print ("No pulled test runners found in '{0}'.".format(testRunnersSandboxFolder), file=sys.stderr)
+        return sys.exit(1)
+
+    jobs = min(getJobCount(sys.argv[1:]), len(runners))
+    print ("Executing {0} pulled test runner(s) with {1} parallel job(s)...".format(len(runners), jobs))
+    for runner in runners:
+        print ("  " + runner)
+    sys.stdout.flush()
+
+    results = []
+    with ThreadPoolExecutor(max_workers=jobs) as executor:
+        futures = {executor.submit(runTestRunner, os.path.join(testRunnersSandboxFolder, runner), runner): runner for runner in runners}
+        for future in as_completed(futures):
+            runnerKey, succeeded, logPath, elapsed = future.result()
+            results.append((runnerKey, succeeded, elapsed))
+            print ("\n" + "=" * 100)
+            print ("Test runner '{0}' {1} after {2:.0f}s. Log: {3}".format(runnerKey, "succeeded" if succeeded else "FAILED", elapsed, logPath))
+            print ("=" * 100)
+            printLog(logPath)
+
+    print ("\nSummary:")
+    for runnerKey, succeeded, elapsed in sorted(results):
+        print ("  {0:<9} {1:>7.0f}s  {2}".format("OK" if succeeded else "FAILED", elapsed, runnerKey))
+
+    failed = [r for r in results if not r[1]]
+    if failed:
+        print ("{0} of {1} pulled test runner(s) failed.".format(len(failed), len(results)), file=sys.stderr)
+        return sys.exit(1)
+
 if __name__ == "__main__":
     main()

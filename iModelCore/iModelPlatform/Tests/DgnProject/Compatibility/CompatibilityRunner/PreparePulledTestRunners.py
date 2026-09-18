@@ -6,8 +6,12 @@ import sys
 import os
 from shutil import copytree, copyfile, rmtree
 
-# Copies all pulled test runners into the test out folder and copies all pulled test files and all files created by
-# the current software's runner into its folder, so that every pulled test runner runs against all available test files.
+# Copies all pulled test runners into the test out folder and stages the test files each pulled runner should run against.
+# By default only the *created* files are staged into the pulled runners. The combination
+# "pulled runner x pulled files" consists of two immutable, already published artefacts and was validated when they were published.
+# Set the environment variable IMODELEVOLUTION_FULL_MATRIX=1 (or pass --full) to restore the full matrix.
+
+FULL_MATRIX_ENV_VAR = "IMODELEVOLUTION_FULL_MATRIX"
 
 def mergeFolder(sourceFolder, targetFolder):
     for subdir in os.listdir(sourceFolder):
@@ -21,38 +25,56 @@ def mergeFolder(sourceFolder, targetFolder):
             copyfile(sourceFullPath,targetFullPath)
 
 
-def mergeFolders(sourceFolder1, sourceFolder2, targetFolder):
-    if os.path.exists(sourceFolder1):
-        copytree(sourceFolder1, targetFolder)
-    if os.path.exists(sourceFolder2):
-        mergeFolder(sourceFolder2, targetFolder)
-    
+def mergeFolders(sourceFolders, targetFolder):
+    for sourceFolder in sourceFolders:
+        if os.path.exists(sourceFolder):
+            mergeFolder(sourceFolder, targetFolder)
+
+
+def isFullMatrixRequested(args):
+    if "--full" in args:
+        return True
+    return os.environ.get(FULL_MATRIX_ENV_VAR, "").strip().lower() in ("1", "true", "yes", "on")
 
 #------------------------------------------------------------------------
 # bsimethod
 #------------------------------------------------------------------------
 def main():
-    if len(sys.argv) < 4:
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    if len(args) < 4:
         print ("Arg 1: Test runners nuget folder")
         print ("Arg 2: Sandbox folder where test runners are run from. The test runners are copied into this folder from the nuget folder.")
         print ("Arg 3: Central test files folder to which test files from all nugets were copied")
         print ("Arg 4: Created files folder (test files created by the current runner)")
-        return
+        print ("Optional: --full (or env {0}=1) to also stage the pulled test files into the pulled runners".format(FULL_MATRIX_ENV_VAR))
+        return sys.exit(1)
 
-    testRunnersNugetPath = sys.argv[1]
-    testRunnersSandboxFolder = sys.argv[2]
-    testFilesPath = sys.argv[3]
-    createdFilesPath = sys.argv[4]
+    testRunnersNugetPath = args[0]
+    testRunnersSandboxFolder = args[1]
+    testFilesPath = args[2]
+    createdFilesPath = args[3]
 
-    for subdir in os.listdir(testRunnersNugetPath):
+    fullMatrix = isFullMatrixRequested(sys.argv[1:])
+    testFileSources = [testFilesPath, createdFilesPath] if fullMatrix else [createdFilesPath]
+    print ("Staging test files for pulled runners: {0}".format("full matrix (pulled + created files)" if fullMatrix else "created files only (set {0}=1 for the full matrix)".format(FULL_MATRIX_ENV_VAR)))
+
+    if not os.path.exists(createdFilesPath) or not os.listdir(createdFilesPath):
+        print ("Created files folder '{0}' is empty. The current test runner did not produce any test files.".format(createdFilesPath), file=sys.stderr)
+        return sys.exit(1)
+
+    runnerFolders = [d for d in os.listdir(testRunnersNugetPath) if os.path.isdir(os.path.join(testRunnersNugetPath, d))] if os.path.exists(testRunnersNugetPath) else []
+    if not runnerFolders:
+        print("No pulled test runners found in '{0}'.".format(testRunnersNugetPath), file=sys.stderr)
+        return sys.exit(1)
+
+    for subdir in runnerFolders:
         fullPath = os.path.join(testRunnersNugetPath, subdir)
-        if os.path.isdir(fullPath):
-            targetTestRunnerFolder = os.path.join(testRunnersSandboxFolder,subdir)
-            if os.path.exists(targetTestRunnerFolder):
-                rmtree(targetTestRunnerFolder)
-            copytree(fullPath, targetTestRunnerFolder)
-            mergeFolders(testFilesPath, createdFilesPath, os.path.join(targetTestRunnerFolder, "run", "TestFiles"))
-            print ("Copied pulled test runner and pulled and created test files into sandbox folder (" + fullPath + " -> " + targetTestRunnerFolder + ")")
+        targetTestRunnerFolder = os.path.join(testRunnersSandboxFolder, subdir)
+        if os.path.exists(targetTestRunnerFolder):
+            rmtree(targetTestRunnerFolder)
+        copytree(fullPath, targetTestRunnerFolder)
+        mergeFolders(testFileSources, os.path.join(targetTestRunnerFolder, "run", "TestFiles"))
+        print ("Copied pulled test runner and staged test files into sandbox folder (" + fullPath + " -> " + targetTestRunnerFolder + ")")
 
 
 if __name__ == "__main__":

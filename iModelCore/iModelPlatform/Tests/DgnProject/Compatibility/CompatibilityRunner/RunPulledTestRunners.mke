@@ -9,5 +9,13 @@
 %include mdl.mki
 %include $(SrcRoot)imodel-native/iModelCore/iModelPlatform/Tests/DgnProject/Compatibility/CompatibilityRunner/common.mki
 
+# Pulled runners execute in parallel. Pass -dIMODELEVOLUTION_RUNNER_JOBS=N (or set the environment variable)
+# to control the concurrency; the default is half of the available CPUs.
+%if defined (IMODELEVOLUTION_RUNNER_JOBS)
+    RUN_OPTIONS = --jobs=$(IMODELEVOLUTION_RUNNER_JOBS)
+%else
+    RUN_OPTIONS =
+%endif
+
 always:
-    $(BBPYTHONCMD) $(SrcRoot)/imodel-native/iModelCore/iModelPlatform/Tests/DgnProject/Compatibility/CompatibilityRunner/RunPulledTestRunners.py $(TESTRUNNERS_SANDBOXDIR)
+    $(BBPYTHONCMD) $(SrcRoot)/imodel-native/iModelCore/iModelPlatform/Tests/DgnProject/Compatibility/CompatibilityRunner/RunPulledTestRunners.py $(TESTRUNNERS_SANDBOXDIR) $(RUN_OPTIONS)
