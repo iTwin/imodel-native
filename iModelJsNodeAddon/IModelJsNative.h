@@ -660,10 +660,22 @@ struct CRSListResponseProps
     Utf8String m_unit;
     };
 
+struct VerticalCRSListResponseProps
+    {
+    Utf8String m_crsName;
+    Utf8String m_id;
+    Utf8String m_description;
+    bool m_deprecated;
+    Utf8String m_type;
+    Utf8String m_unit;
+    DRange2d m_extent;
+    };
+
 struct GeoServicesInterop
 {
     static BentleyStatus GetGeographicCRSInterpretation(BeJsValue, BeJsConst);
     static bvector<CRSListResponseProps> GetListOfCRS(DRange2dCP extent, bool includeWorld, Utf8CP unitFilter = nullptr);
+    static StatusInt GetListOfVerticalCRS(bvector<VerticalCRSListResponseProps>& results, BeJsConst props, Utf8StringR errorMessage);
 };
 
 //=======================================================================================

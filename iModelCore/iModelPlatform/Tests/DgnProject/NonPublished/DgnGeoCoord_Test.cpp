@@ -1333,10 +1333,12 @@ TEST_F(SetAndGetDgnGeoCoord, SetAndGetAndCompare)
         ASSERT_TRUE(theNewGCS->IsValid());
 
         auto& geolocation = dgnProj->GeoLocation();
+        ASSERT_EQ(nullptr, geolocation.GetDgnGCS());
 
         geolocation.SetGCS(theNewGCS.get());
 
         geolocation.Save();
+        ASSERT_NE(nullptr, geolocation.GetDgnGCS());
 
         dgnProj->SaveChanges();
         dgnProj->CloseDb();

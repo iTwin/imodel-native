@@ -6578,7 +6578,7 @@ bool VerticalDatumsAreEquivalent(const BaseGCS& gcs1, const BaseGCS& gcs2);
 *               GEOCOORDERR_CoordinateRange if the the input latLong is not valid
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt QueryVerticalDatumsAvailableAtPoint(bvector<Utf8String>& verticalDatums, const GeoPoint2d& latLong) const;
+BASEGEOCOORD_EXPORTED StatusInt QueryVerticalDatumsAvailableAtPoint(bvector<Utf8String>& verticalDatums, const GeoPoint2d& latLong) const;
 
 /*---------------------------------------------------------------------------------**//**
 * Given a region defined in WGS84, find all the Vertical Datums in the Vertical Datum
@@ -6593,7 +6593,7 @@ StatusInt QueryVerticalDatumsAvailableAtPoint(bvector<Utf8String>& verticalDatum
 *               GEOCOORDERR_CoordinateRange if the the input latLong is not valid
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt QueryVerticalDatumsAvailableForRange(bvector<Utf8String>& verticalDatums, const DRange2d& range, bool includeIntersecting) const;
+BASEGEOCOORD_EXPORTED StatusInt QueryVerticalDatumsAvailableForRange(bvector<Utf8String>& verticalDatums, const DRange2d& range, bool includeIntersecting) const;
 
 /*---------------------------------------------------------------------------------**//**
 * Get the names of  all the Vertical Datums in the Vertical Datum Dictionary.
@@ -6603,7 +6603,7 @@ StatusInt QueryVerticalDatumsAvailableForRange(bvector<Utf8String>& verticalDatu
 *               GEOCOORDERR_NoDictionary is no Vertical Datum Dictionary is available
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt QueryAllVerticalDatumsAvailable(bvector<Utf8String>& verticalDatums) const;
+BASEGEOCOORD_EXPORTED StatusInt QueryAllVerticalDatumsAvailable(bvector<Utf8String>& verticalDatums) const;
 
 /*---------------------------------------------------------------------------------**//**
 * Utility functions used when parsing the Vertical Datum dictionary json file.
