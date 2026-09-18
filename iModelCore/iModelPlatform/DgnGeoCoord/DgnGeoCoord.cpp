@@ -5471,7 +5471,7 @@ StatusInt       DgnGCS::Store(DgnDbR project)
             }
         else
             {
-            status = project.DeleteProperty(DgnProjectProperty::DgnGCSVerticalCRS()) == BeSQLite::BE_SQLITE_OK ? SUCCESS : ERROR;
+            status = project.DeleteProperty(DgnProjectProperty::DgnGCSVerticalCRS()) == BeSQLite::BE_SQLITE_DONE ? SUCCESS : ERROR;
             }
         }
 

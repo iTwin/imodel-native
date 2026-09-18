@@ -12403,6 +12403,8 @@ struct GeoCoordWorkspaces {
 
             resourceName.erase(0, assetsPos + assetsMarker.length());
             }
+        if (resourceName.StartsWith("./"))
+            resourceName.erase(0, 2);
         for (auto& entry : s_workspaceDbs) {
             auto db = entry->GetDb();
             if (nullptr == db)
