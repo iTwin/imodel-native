@@ -37,6 +37,7 @@ always:
 #--------------------------------------------------------------------------------------
 DGNCLIENT_APP_ProjectRoot = ${outputDir}/prj/
 GRADLE_TASKS = build assembleAndroidTest
+GRADLE_OPTIONS + --info --full-stacktrace
 
 %message BuildContext = $(BuildContext)
 %include $(BuildContext)SubParts/AndroidTools/gradleBuild.mki

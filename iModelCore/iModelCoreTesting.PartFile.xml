@@ -35,33 +35,11 @@
         <SubPart PartName="BuildIModelEvolutionGTest" PartFile="iModelCore/iModelPlatform/iModelPlatform" />
     </Part>
 
-    <Part Name="BuildUnitJUnit" OnlyPlatforms="android*" Sequential="true" DeferType="BuildUnitTests">
-        <SubPart PartName="AndroidJUnit" PartFile="iModelCore/Bentley/Bentley" LibType="Static" />
-        <SubProduct ProductName="Bentley-AndroidJUnit" PartFile="iModelCore/Bentley/Bentley" LibType="Static" />
-        <SubPart PartName="AndroidJUnit" PartFile="iModelCore/Units/Units" LibType="Static" />
-        <SubProduct ProductName="Units-AndroidJUnit" PartFile="iModelCore/Units/Units" LibType="Static" />
-        <SubPart PartName="AndroidJUnit" PartFile="iModelCore/BeSQLite/BeSQLite" LibType="Static" />
-        <SubProduct ProductName="BeSQLite-AndroidJUnit" PartFile="iModelCore/BeSQLite/BeSQLite" LibType="Static" />
-        <SubPart PartName="AndroidJUnit" PartFile="iModelCore/ecobjects/ECObjects" LibType="Static" />
-        <SubProduct ProductName="ECObjects-AndroidJUnit" PartFile="iModelCore/ecobjects/ECObjects" LibType="Static" />
-        <SubPart PartName="AndroidJUnit" PartFile="iModelCore/GeomLibs/geomlibs" LibType="Static" />
-        <SubProduct ProductName="GeomLibs-AndroidJUnit" PartFile="iModelCore/GeomLibs/geomlibs" LibType="Static" />
-        <SubPart PartName="AndroidJUnit" PartFile="iModelCore/ECDb/ECDb" LibType="Static" />
-        <SubProduct ProductName="ECDb-AndroidJUnit" PartFile="iModelCore/ECDb/ECDb" LibType="Static" />
-        <SubPart PartName="AndroidJUnit" PartFile="iModelCore/iModelPlatform/iModelPlatform" LibType="Static" />
-        <SubProduct ProductName="iModelPlatform-AndroidJUnit" PartFile="iModelCore/iModelPlatform/iModelPlatform" LibType="Static" />
-        <SubPart PartName="AndroidJUnit" PartFile="iModelCore/Visualization/Visualization" Repository="imodel-native-internal" LibType="Static" />
-        <SubProduct ProductName="Visualization-AndroidJUnit" PartFile="iModelCore/Visualization/Visualization" Repository="imodel-native-internal" LibType="Static" />
-        <SubPart PartName="AndroidJUnit" PartFile="iModelCore/ECPresentation/ECPresentation" LibType="Static" />
-        <SubProduct ProductName="ECPresentation-AndroidJUnit" PartFile="iModelCore/ECPresentation/ECPresentation" LibType="Static" />
-    </Part>
-
     <Part Name="RunUnitJUnit" OnlyPlatforms="android*" Sequential="true" DeferType="RunUnitTests"
             BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android/CheckLogfilesForFailures.mke"
             BentleyBuildMakeOptions="-dLogFilesDir=$(BuildContext)SubParts/ANJU/Logs"
             >
         <SubPart PartName="Base" PartFile="iModelCore/BeGTest/BeGTest" />
-        <SubPart PartName="BuildUnitJUnit" />
 
         <SubPart PartName="RunAndroidJUnitTest" PartFile="iModelCore/Bentley/Bentley" />
         <SubPart PartName="RunAndroidJUnitTest" PartFile="iModelCore/BeSQLite/BeSQLite" />
