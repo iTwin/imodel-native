@@ -1402,6 +1402,9 @@ TEST_F(SetAndGetDgnGeoCoord, PersistsCompleteCustomVerticalCrs)
     ASSERT_TRUE(storedVerticalCrs["verticalCRS"]["transforms"].isArray());
     EXPECT_EQ(1, storedVerticalCrs["verticalCRS"]["transforms"].size());
 
+    storedVerticalCrs["verticalCRS"]["id"] = "ELLIPSOID";
+    ASSERT_EQ(BeSQLite::BE_SQLITE_OK, project->SavePropertyString(DgnProjectProperty::DgnGCSVerticalCRS(), storedVerticalCrs.Stringify()));
+
     project->SaveChanges();
     project->CloseDb();
 

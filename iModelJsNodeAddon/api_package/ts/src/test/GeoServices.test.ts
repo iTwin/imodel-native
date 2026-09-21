@@ -227,6 +227,49 @@ describe("GeoServices", () => {
     expect(secondResponse.geographicCRS).to.deep.equal(firstResponse.geographicCRS);
   });
 
+  it("restores a named vertical coordinate reference system when its fallback id conflicts", () => {
+    const iModelPath = path.join(getOutputDir(), "ConflictingVerticalCrsId.bim");
+    fs.rmSync(iModelPath, { force: true });
+
+    const iModelDb = new iModelJsNative.DgnDb();
+    try {
+      iModelDb.createIModel(iModelPath, { rootSubject: { name: "Conflicting Vertical CRS id" } });
+      const geographicCoordinateSystem = {
+        horizontalCRS: { id: "LL84" },
+        verticalCRS: { id: "GEOID" as const, crsName: "EGM96 height" },
+      };
+      iModelDb.updateIModelProps({
+        rootSubject: { name: "Conflicting Vertical CRS id: IGNORED BY updateIModelProps" },
+        geographicCoordinateSystem,
+      });
+
+      const storedProperty = iModelDb.queryFileProperty(
+        { namespace: "dgn_Db", name: "DgnGCSVerticalCRS" },
+        true,
+      );
+      if (typeof storedProperty !== "string")
+        assert.fail("Expected the named vertical CRS file property to exist as a string");
+
+      const storedVerticalCrs = JSON.parse(storedProperty);
+      storedVerticalCrs.verticalCRS.id = "ELLIPSOID";
+      iModelDb.saveFileProperty(
+        { namespace: "dgn_Db", name: "DgnGCSVerticalCRS" },
+        JSON.stringify(storedVerticalCrs),
+        undefined,
+      );
+      iModelDb.saveChanges();
+      iModelDb.closeFile();
+      iModelDb.openIModel(iModelPath, OpenMode.ReadWrite);
+
+      const verticalCRS = iModelDb.getIModelProps().geographicCoordinateSystem?.verticalCRS as { crsName?: string, id?: string } | undefined;
+      expect(verticalCRS?.crsName).to.equal("EGM96 height");
+      expect(verticalCRS?.id).to.equal("GEOID");
+    } finally {
+      iModelDb.closeFile();
+      fs.rmSync(iModelPath, { force: true });
+    }
+  });
+
   it("converts a named vertical coordinate reference system with a meaningful elevation", () => {
     const iModelPath = path.join(getOutputDir(), "NamedVerticalCrsConversion.bim");
     fs.rmSync(iModelPath, { force: true });

@@ -5355,13 +5355,10 @@ DgnGCSP         DgnGCS::FromProject(DgnDbR project)
             project.ThrowException("Invalid DgnGCSVerticalCRS property", (int)DgnDbStatus::ReadError);
 
         BeJsConst verticalCrs = storedVerticalCrs["verticalCRS"];
-        Utf8String type66VerticalDatum;
-        gcs->GetVerticalDatumName(type66VerticalDatum);
         MD5 type66Hasher;
         Utf8String type66Hash = type66Hasher(buffer.GetData(), propSize);
         // An older writer can update Type 66 without updating this property, so only use named metadata written with the current Type 66 payload.
-        if (verticalCrs["id"].isString() && 0 == type66VerticalDatum.CompareToI(verticalCrs["id"].asString()) &&
-            type66Hash.Equals(storedVerticalCrs["type66Hash"].asString()))
+        if (type66Hash.Equals(storedVerticalCrs["type66Hash"].asString()))
             {
             Utf8String errorMessage;
             if (SUCCESS != gcs->FromVerticalJson(verticalCrs, errorMessage))
