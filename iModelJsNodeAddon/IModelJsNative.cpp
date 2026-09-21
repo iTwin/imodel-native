@@ -1865,7 +1865,14 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         auto& db = GetOpenedDb(info);
         OPTIONAL_ARGUMENT_STRING(0, when);
         BeJsNapiObject props(Env());
-        JsInterop::GetIModelProps(props, db, when);
+        try
+            {
+            JsInterop::GetIModelProps(props, db, when);
+            }
+        catch (std::exception const& e)
+            {
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), e.what(), DgnDbStatus::ReadError);
+            }
         return props;
     }
 

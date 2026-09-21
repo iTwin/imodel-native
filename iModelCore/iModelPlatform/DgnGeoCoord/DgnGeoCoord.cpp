@@ -5350,18 +5350,22 @@ DgnGCSP         DgnGCS::FromProject(DgnDbR project)
     Utf8String verticalCrsJson;
     if (BeSQLite::BE_SQLITE_ROW == project.QueryProperty(verticalCrsJson, DgnProjectProperty::DgnGCSVerticalCRS()))
         {
-        BeJsDocument verticalCrs(verticalCrsJson);
+        BeJsDocument storedVerticalCrs(verticalCrsJson);
+        if (storedVerticalCrs.hasParseError() || !storedVerticalCrs.isObject() || !storedVerticalCrs["verticalCRS"].isObject() || !storedVerticalCrs["type66Hash"].isString())
+            project.ThrowException("Invalid DgnGCSVerticalCRS property", (int)DgnDbStatus::ReadError);
+
+        BeJsConst verticalCrs = storedVerticalCrs["verticalCRS"];
         Utf8String type66VerticalDatum;
         gcs->GetVerticalDatumName(type66VerticalDatum);
         MD5 type66Hasher;
         Utf8String type66Hash = type66Hasher(buffer.GetData(), propSize);
         // An older writer can update Type 66 without updating this property, so only use named metadata written with the current Type 66 payload.
         if (verticalCrs["id"].isString() && 0 == type66VerticalDatum.CompareToI(verticalCrs["id"].asString()) &&
-            verticalCrs["type66Hash"].isString() && type66Hash.Equals(verticalCrs["type66Hash"].asString()))
+            type66Hash.Equals(storedVerticalCrs["type66Hash"].asString()))
             {
             Utf8String errorMessage;
             if (SUCCESS != gcs->FromVerticalJson(verticalCrs, errorMessage))
-                Logging::LogMessageV("GeoCoord", LOG_WARNING, "Unable to restore named Vertical CRS; using the Type 66 fallback: %s", errorMessage.c_str());
+                project.ThrowException(Utf8PrintfString("Invalid Vertical CRS definition in DgnGCSVerticalCRS property: %s", errorMessage.c_str()).c_str(), (int)DgnDbStatus::ReadError);
             }
         else
             {
@@ -5457,17 +5461,15 @@ StatusInt       DgnGCS::Store(DgnDbR project)
         {
         if (HasValidVerticalDatum())
             {
-            BeJsDocument verticalCrs;
-            Utf8String crsName;
-            Utf8String id;
-            GetFullVerticalDatumName(crsName);
-            GetVerticalDatumName(id);
-            verticalCrs["crsName"] = crsName;
-            verticalCrs["id"] = id;
+            BeJsDocument storedVerticalCrs;
+            status = ToVerticalJson(storedVerticalCrs["verticalCRS"]);
             // Correlate this named metadata with the Type 66 payload saved above so readers can detect an independent Type 66 update.
-            MD5 type66Hasher;
-            verticalCrs["type66Hash"] = type66Hasher(type66AppData, type66AppDataBytes);
-            status = project.SavePropertyString(DgnProjectProperty::DgnGCSVerticalCRS(), verticalCrs.Stringify()) == BeSQLite::BE_SQLITE_OK ? SUCCESS : ERROR;
+            if (SUCCESS == status)
+                {
+                MD5 type66Hasher;
+                storedVerticalCrs["type66Hash"] = type66Hasher(type66AppData, type66AppDataBytes);
+                status = project.SavePropertyString(DgnProjectProperty::DgnGCSVerticalCRS(), storedVerticalCrs.Stringify()) == BeSQLite::BE_SQLITE_OK ? SUCCESS : ERROR;
+                }
             }
         else
             {
