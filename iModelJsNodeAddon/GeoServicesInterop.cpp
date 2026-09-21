@@ -20,6 +20,22 @@ BE_JSON_NAME(longitude)
 BE_JSON_NAME(latitude)
 BE_JSON_NAME(includeIntersecting)
 
+static Utf8String GetLegacyVerticalCrsId(GeoCoordinates::VerticalDatumInfo const& info)
+    {
+    Utf8String crsName;
+    info.GetCRSName(crsName);
+    if (0 == crsName.CompareToI("NGVD29 height"))
+        return "NGVD29";
+    if (0 == crsName.CompareToI("NAVD88 height"))
+        return "NAVD88";
+    if (0 == crsName.CompareToI("WGS84"))
+        return "ELLIPSOID";
+
+    Utf8String type;
+    info.GetType(type);
+    return type;
+    }
+
 static bool IsNumericPoint2d(BeJsConst value)
     {
     if (value.isArray())
@@ -250,7 +266,7 @@ StatusInt GeoServicesInterop::GetListOfVerticalCRS(bvector<VerticalCRSListRespon
         info->GetType(verticalCrs.m_type);
         info->GetUnits(verticalCrs.m_unit);
         info->GetExtent(verticalCrs.m_extent);
-        verticalCrs.m_id = verticalCrs.m_type;
+        verticalCrs.m_id = GetLegacyVerticalCrsId(*info);
         results.push_back(verticalCrs);
         }
 

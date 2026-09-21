@@ -50,12 +50,54 @@ const verticalDatumDictionary = JSON.stringify({
     },
   }, {
     verticalCRS: {
+      crsName: "NAVD88 height",
+      datumName: "North American Vertical Datum 1988",
+      type: "GEOID",
+      units: "meter",
+      description: "NAVD88 height",
+      deprecated: false,
+      extent: {
+        southWest: { latitude: 14, longitude: -170 },
+        northEast: { latitude: 72, longitude: -60 },
+      },
+      transforms: [{ target: "WGS84", nullTransform: null }],
+    },
+  }, {
+    verticalCRS: {
+      crsName: "NGVD29 height",
+      datumName: "National Geodetic Vertical Datum 1929",
+      type: "GEOID",
+      units: "meter",
+      description: "NGVD29 height",
+      deprecated: false,
+      extent: {
+        southWest: { latitude: 14, longitude: -170 },
+        northEast: { latitude: 72, longitude: -60 },
+      },
+      transforms: [{ target: "NAVD88 height", nullTransform: null }],
+    },
+  }, {
+    verticalCRS: {
       crsName: "WGS84",
       datumName: "WGS_1984",
       epsg: 4326,
       type: "ELLIPSOID",
       units: "meter",
       description: "WGS84 ellipsoid",
+      deprecated: false,
+      extent: {
+        southWest: { latitude: -90, longitude: -180 },
+        northEast: { latitude: 90, longitude: 180 },
+      },
+    },
+  }, {
+    verticalCRS: {
+      crsName: "ITRF2008",
+      datumName: "International Terrestrial Reference Frame 2008",
+      epsg: 5332,
+      type: "ELLIPSOID",
+      units: "meter",
+      description: "ITRF2008 ellipsoid",
       deprecated: false,
       extent: {
         southWest: { latitude: -90, longitude: -180 },
@@ -134,6 +176,19 @@ describe("GeoServices", () => {
     expect(egm96.unit).to.equal("meter");
     expect(egm96.extent).to.deep.equal({ low: [-180, -90], high: [180, 90] });
     expect(verticalSystems.some((entry) => entry.crsName === "Regional test height")).to.be.true;
+
+    for (const expected of [
+      { crsName: "EGM96 height", id: "GEOID", type: "GEOID" },
+      { crsName: "NAVD88 height", id: "NAVD88", type: "GEOID" },
+      { crsName: "NGVD29 height", id: "NGVD29", type: "GEOID" },
+      { crsName: "WGS84", id: "ELLIPSOID", type: "ELLIPSOID" },
+      { crsName: "ITRF2008", id: "ELLIPSOID", type: "ELLIPSOID" },
+    ]) {
+      const entry = verticalSystems.find((candidate) => candidate.crsName === expected.crsName);
+      assert.isDefined(entry);
+      expect(entry.id).to.equal(expected.id);
+      expect(entry.type).to.equal(expected.type);
+    }
   });
 
   it("interprets a named vertical coordinate reference system with its fallback id", () => {
