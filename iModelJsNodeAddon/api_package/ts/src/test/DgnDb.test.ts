@@ -3,14 +3,14 @@
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 import { DbResult, Id64, Id64Array, Id64String, IModelStatus, OpenMode } from "@itwin/core-bentley";
-import { BlobRange, Code, DbBlobRequest, DbBlobResponse, DbQueryRequest, DbQueryResponse, DbRequestKind, DbResponseStatus, GeometryPartProps, IModel, PhysicalElementProps, ProfileOptions, RelationshipProps } from "@itwin/core-common";
+import { BlobRange, Code, DbBlobRequest, DbBlobResponse, DbQueryRequest, DbQueryResponse, DbRequestKind, DbResponseStatus, ElementAspectProps, GeometryPartProps, IModel, PhysicalElementProps, ProfileOptions, RelationshipProps } from "@itwin/core-common";
 import { DomainOptions } from "@itwin/core-common/lib/cjs/BriefcaseTypes";
 import { assert, expect } from "chai";
 import * as fs from "fs-extra";
 import * as os from "os";
 import * as path from "path";
 import { openDgnDb } from ".";
-import { IModelJsNative, SchemaWriteStatus } from "../NativeLibrary";
+import { ElementAspectMutation, IModelJsNative, SchemaWriteStatus } from "../NativeLibrary";
 import { copyFile, dbFileName, getAssetsDir, getOutputDir, iModelJsNative } from "./utils";
 
 // Crash reporting is gated by this env variable on supported platforms.
@@ -44,6 +44,144 @@ describe("basic tests", () => {
     assert.isFalse(iModelDb.isSubClassOf("BisCore:GeometricModel", "BisCore:GeometricModel2d"));
     assert.isFalse(iModelDb.isSubClassOf("BisCore:GeometricModel", "BisCore:GeometricModel3d"));
   });
+
+  it("applies ordered element aspect mutations with one atomic owner update", () => {
+    const fileName = path.join(getOutputDir(), "element-aspect-batch.bim");
+    fs.removeSync(fileName);
+    const db = new iModelJsNative.DgnDb();
+    db.createIModel(fileName, { rootSubject: { name: "element aspect batch" } });
+
+    const ownerId = IModel.rootSubjectId;
+    const schemaPath = path.join(getAssetsDir(), "ElementAspectBatch.01.00.00.ecschema.xml");
+    db.importSchemas([schemaPath], { schemaLockHeld: true });
+
+    const querySecondOwner = new iModelJsNative.ECSqlStatement();
+    querySecondOwner.prepare(db, "SELECT ECInstanceId FROM BisCore.Element WHERE ECInstanceId<>? LIMIT 1");
+    querySecondOwner.getBinder(1).bindId(ownerId);
+    assert.equal(querySecondOwner.step(), DbResult.BE_SQLITE_ROW);
+    const secondOwnerId = querySecondOwner.getValue(0).getId();
+    querySecondOwner.dispose();
+
+    const makeMultiProps = (owner: Id64String, value: string, id?: Id64String): ElementAspectProps => ({
+      classFullName: "ElementAspectBatch:TestMultiAspect",
+      id,
+      element: { id: owner },
+      value,
+    } as ElementAspectProps);
+    const makeUniqueProps = (owner: Id64String, value: string, id?: Id64String): ElementAspectProps => ({
+      classFullName: "ElementAspectBatch:TestUniqueAspect",
+      id,
+      element: { id: owner },
+      value,
+    } as ElementAspectProps);
+    const queryAspectValue = (className: string, id: Id64String): string | undefined => {
+      const statement = new iModelJsNative.ECSqlStatement();
+      statement.prepare(db, `SELECT Value FROM ${className} WHERE ECInstanceId=?`);
+      statement.getBinder(1).bindId(id);
+      const value = statement.step() === DbResult.BE_SQLITE_ROW ? statement.getValue(0).getString() : undefined;
+      statement.dispose();
+      return value;
+    };
+    const countAspects = (className: string, owner: Id64String): number => {
+      const statement = new iModelJsNative.ECSqlStatement();
+      statement.prepare(db, `SELECT count(*) FROM ${className} WHERE Element.Id=?`);
+      statement.getBinder(1).bindId(owner);
+      assert.equal(statement.step(), DbResult.BE_SQLITE_ROW);
+      const count = statement.getValue(0).getDouble();
+      statement.dispose();
+      return count;
+    };
+
+    const updateId = db.insertElementAspect(makeMultiProps(ownerId, "before update"));
+    const deleteId = db.insertElementAspect(makeMultiProps(ownerId, "delete me"));
+    db.saveChanges("seed aspect batch");
+
+    const insertReservation = db.reserveElementAspectInsert(ownerId, "elementaspectbatch.testmultiaspect");
+    assert.isTrue(insertReservation.isMulti);
+    assert.equal(insertReservation.classFullName, "ElementAspectBatch:TestMultiAspect");
+    const uniqueReservation = db.reserveElementAspectInsert(ownerId, "ElementAspectBatch:TestUniqueAspect");
+    assert.isFalse(uniqueReservation.isMulti);
+
+    const lifecycle: string[] = [];
+    const mockJsDb: any = {
+      getJsClass: (classFullName: string) => new Proxy({}, {
+        get: (_target, methodName) => (..._args: any[]) => lifecycle.push(`${classFullName}.${String(methodName)}`),
+      }),
+    };
+    db.setIModelDb(mockJsDb);
+    try {
+      const operations: ElementAspectMutation[] = [
+        { type: "insert", props: makeMultiProps(ownerId, "inserted", insertReservation.id) },
+        { type: "update", props: makeMultiProps(ownerId, "updated", updateId) },
+        { type: "delete", id: deleteId },
+        { type: "insert", props: makeUniqueProps(ownerId, "unique first", uniqueReservation.id) },
+        { type: "insert", props: makeUniqueProps(ownerId, "unique last", uniqueReservation.id) },
+      ];
+      assert.deepEqual(db.applyElementAspectMutations(ownerId, operations), [
+        insertReservation.id,
+        uniqueReservation.id,
+        uniqueReservation.id,
+      ]);
+
+      assert.equal(queryAspectValue("ElementAspectBatch.TestMultiAspect", insertReservation.id), "inserted");
+      assert.equal(queryAspectValue("ElementAspectBatch.TestMultiAspect", updateId), "updated");
+      assert.isUndefined(queryAspectValue("ElementAspectBatch.TestMultiAspect", deleteId));
+      assert.equal(queryAspectValue("ElementAspectBatch.TestUniqueAspect", uniqueReservation.id), "unique last");
+      assert.equal(countAspects("ElementAspectBatch.TestUniqueAspect", ownerId), 1);
+      assert.equal(
+        db.reserveElementAspectInsert(ownerId, "ElementAspectBatch:TestUniqueAspect").id,
+        uniqueReservation.id,
+      );
+
+      const aspectCallbacks = lifecycle.filter((entry) => entry.startsWith("ElementAspectBatch:"));
+      assert.deepEqual(aspectCallbacks.slice(0, 5).map((entry) => entry.split(".").at(-1)), [
+        "onInsert", "onUpdate", "onDelete", "onInsert", "onInsert",
+      ]);
+      assert.deepEqual(aspectCallbacks.slice(-5).map((entry) => entry.split(".").at(-1)), [
+        "onInserted", "onUpdated", "onDeleted", "onInserted", "onInserted",
+      ]);
+      assert.lengthOf(lifecycle, 10);
+
+      expect(() => db.applyElementAspectMutations(ownerId, [
+        { type: "insert", props: makeMultiProps(secondOwnerId, "wrong owner", db.reserveElementAspectInsert(secondOwnerId, "ElementAspectBatch:TestMultiAspect").id) },
+      ])).to.throw("different owner");
+
+      const rollbackReservation = db.reserveElementAspectInsert(ownerId, "ElementAspectBatch:TestMultiAspect");
+      mockJsDb.getJsClass = (classFullName: string) => new Proxy({}, {
+        get: (_target, methodName) => () => {
+          if (classFullName === "ElementAspectBatch:TestMultiAspect" && methodName === "onInserted")
+            throw new Error("post callback failure");
+        },
+      });
+      expect(() => db.applyElementAspectMutations(ownerId, [
+        { type: "insert", props: makeMultiProps(ownerId, "must roll back", rollbackReservation.id) },
+        { type: "update", props: makeMultiProps(ownerId, "must also roll back", updateId) },
+      ])).to.throw("post callback failure");
+      assert.isUndefined(queryAspectValue("ElementAspectBatch.TestMultiAspect", rollbackReservation.id));
+      assert.equal(queryAspectValue("ElementAspectBatch.TestMultiAspect", updateId), "updated");
+
+      mockJsDb.getJsClass = () => new Proxy({}, { get: () => () => {} });
+      const duplicateReservation = db.reserveElementAspectInsert(ownerId, "ElementAspectBatch:TestMultiAspect");
+      expect(() => db.applyElementAspectMutations(ownerId, [
+        { type: "insert", props: makeMultiProps(ownerId, "duplicate first", duplicateReservation.id) },
+        { type: "insert", props: makeMultiProps(ownerId, "duplicate second", duplicateReservation.id) },
+      ])).to.throw();
+      assert.isUndefined(queryAspectValue("ElementAspectBatch.TestMultiAspect", duplicateReservation.id));
+    } finally {
+      db.setIModelDb(undefined);
+    }
+
+    const directInsertId = db.insertElementAspect(makeMultiProps(secondOwnerId, "direct before"));
+    db.updateElementAspect(makeMultiProps(secondOwnerId, "direct after", directInsertId));
+    const directDeleteId = db.insertElementAspect(makeMultiProps(secondOwnerId, "direct delete"));
+    db.deleteElementAspect(directDeleteId);
+    assert.equal(queryAspectValue("ElementAspectBatch.TestMultiAspect", directInsertId), "direct after");
+    assert.isUndefined(queryAspectValue("ElementAspectBatch.TestMultiAspect", directDeleteId));
+
+    db.abandonChanges();
+    db.closeFile();
+  });
+
   it("resolveInstanceKey", () => {
     // Test resolving by partialKey
     const r0 = dgndb.resolveInstanceKey({

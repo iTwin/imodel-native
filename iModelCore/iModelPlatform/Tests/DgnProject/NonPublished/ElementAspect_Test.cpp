@@ -487,6 +487,86 @@ TEST_F(ElementAspectTests, GenericAspect_CRUD)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementAspectTests, GenericAspectsWithPreassignedIds)
+    {
+    SetupSeedProject();
+
+    ECClassCP multiClass = m_db->Schemas().GetClass(DPTEST_SCHEMA_NAME, "TestMultiAspectNoHandler");
+    ECClassCP uniqueClass = m_db->Schemas().GetClass(DPTEST_SCHEMA_NAME, "TestUniqueAspectNoHandler");
+    ASSERT_NE(nullptr, multiClass);
+    ASSERT_NE(nullptr, uniqueClass);
+
+    TestElementPtr newElement = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "PreassignedAspectIds");
+    DgnElementCPtr persistentElement = newElement->Insert();
+    ASSERT_TRUE(persistentElement.IsValid());
+
+    ECInstanceId multiId;
+    ECInstanceId uniqueId;
+    ASSERT_EQ(BE_SQLITE_OK, m_db->GetNextECInstanceId(multiId));
+    ASSERT_EQ(BE_SQLITE_OK, m_db->GetNextECInstanceId(uniqueId));
+
+    DgnElementPtr editElement = persistentElement->CopyForEdit();
+    auto multiProperties = multiClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    multiProperties->SetValue("TestMultiAspectProperty", ECValue("multi"));
+    DgnDbStatus status;
+    RefCountedPtr<DgnElement::MultiAspect> multiAspect = DgnElement::GenericMultiAspect::AddAspect(*editElement, *multiProperties, multiId, &status);
+    ASSERT_EQ(DgnDbStatus::Success, status);
+    ASSERT_EQ(multiId, multiAspect->GetAspectInstanceId());
+
+    auto uniqueProperties = uniqueClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    uniqueProperties->SetValue("TestUniqueAspectProperty", ECValue("unique"));
+    RefCountedPtr<DgnElement::UniqueAspect> uniqueAspect = DgnElement::GenericUniqueAspect::SetAspect(*editElement, *uniqueProperties, uniqueId, nullptr, &status);
+    ASSERT_EQ(DgnDbStatus::Success, status);
+    ASSERT_EQ(uniqueId, uniqueAspect->GetAspectInstanceId());
+
+    {
+    DgnElement::Aspect::WriteStatusScope writeStatus;
+    ASSERT_EQ(DgnDbStatus::Success, editElement->Update());
+    ASSERT_EQ(DgnDbStatus::Success, writeStatus.GetStatus());
+    }
+
+    {
+    CachedECSqlStatementPtr multiQuery = m_db->GetPreparedECSqlStatement(
+        "SELECT TestMultiAspectProperty FROM DgnPlatformTest.TestMultiAspectNoHandler WHERE ECInstanceId=?");
+    multiQuery->BindId(1, multiId);
+    ASSERT_EQ(BE_SQLITE_ROW, multiQuery->Step());
+    ASSERT_STREQ("multi", multiQuery->GetValueText(0));
+    }
+    {
+    CachedECSqlStatementPtr uniqueQuery = m_db->GetPreparedECSqlStatement(
+        "SELECT TestUniqueAspectProperty FROM DgnPlatformTest.TestUniqueAspectNoHandler WHERE ECInstanceId=?");
+    uniqueQuery->BindId(1, uniqueId);
+    ASSERT_EQ(BE_SQLITE_ROW, uniqueQuery->Step());
+    ASSERT_STREQ("unique", uniqueQuery->GetValueText(0));
+    }
+
+    ECInstanceId duplicateId;
+    ASSERT_EQ(BE_SQLITE_OK, m_db->GetNextECInstanceId(duplicateId));
+    DgnElementPtr duplicateEdit = m_db->Elements().GetElement(persistentElement->GetElementId())->CopyForEdit();
+    auto duplicateProperties1 = multiClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    duplicateProperties1->SetValue("TestMultiAspectProperty", ECValue("duplicate one"));
+    auto duplicateProperties2 = multiClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    duplicateProperties2->SetValue("TestMultiAspectProperty", ECValue("duplicate two"));
+    ASSERT_TRUE(DgnElement::GenericMultiAspect::AddAspect(*duplicateEdit, *duplicateProperties1, duplicateId, &status).IsValid());
+    ASSERT_TRUE(DgnElement::GenericMultiAspect::AddAspect(*duplicateEdit, *duplicateProperties2, duplicateId, &status).IsValid());
+
+    Savepoint savepoint(*m_db, "preassignedAspectFailure");
+    {
+    DgnElement::Aspect::WriteStatusScope duplicateWriteStatus;
+    ASSERT_EQ(DgnDbStatus::Success, duplicateEdit->Update());
+    ASSERT_EQ(DgnDbStatus::WriteError, duplicateWriteStatus.GetStatus());
+    }
+    ASSERT_EQ(BE_SQLITE_OK, savepoint.Cancel());
+
+    CachedECSqlStatementPtr duplicateQuery = m_db->GetPreparedECSqlStatement(
+        "SELECT NULL FROM DgnPlatformTest.TestMultiAspectNoHandler WHERE ECInstanceId=?");
+    duplicateQuery->BindId(1, duplicateId);
+    ASSERT_EQ(BE_SQLITE_DONE, duplicateQuery->Step());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementAspectTests, PolymorphicUniqueAspects)
     {
     SetupSeedProject();

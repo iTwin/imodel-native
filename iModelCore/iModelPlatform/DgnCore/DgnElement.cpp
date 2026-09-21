@@ -2211,6 +2211,25 @@ DgnElement::Aspect::Aspect()
     m_changeType = ChangeType::None;
     }
 
+static thread_local DgnDbStatus* s_aspectWriteStatus = nullptr;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::Aspect::WriteStatusScope::WriteStatusScope()
+    {
+    m_previousStatus = s_aspectWriteStatus;
+    s_aspectWriteStatus = &m_status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::Aspect::WriteStatusScope::~WriteStatusScope()
+    {
+    s_aspectWriteStatus = m_previousStatus;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2265,6 +2284,8 @@ DgnElement::AppData::DropMe DgnElement::Aspect::_OnInserted(DgnElementCR el)
         auto status = InsertThis(el);
         if (DgnDbStatus::Success != status)
             {
+            if (nullptr != s_aspectWriteStatus && DgnDbStatus::Success == *s_aspectWriteStatus)
+                *s_aspectWriteStatus = status;
             LOG.errorv("Attempt to insert aspect %llu:%llu failed with status=%x", el.GetElementId().GetValueUnchecked(), GetAspectInstanceId().GetValueUnchecked(), status);
             }
         }
@@ -2282,9 +2303,10 @@ DgnElement::AppData::DropMe DgnElement::Aspect::_OnUpdated(DgnElementCR modified
     if (ChangeType::None == m_changeType)
         return DropMe::Yes;     // Was just a cached instance? Drop it now, so that it does not become stale.
 
+    DgnDbStatus status = DgnDbStatus::Success;
     if (ChangeType::Delete == m_changeType)
         {
-        _DeleteInstance(modified, original.GetDgnDb().GetECCrudWriteToken());
+        status = _DeleteInstance(modified, original.GetDgnDb().GetECCrudWriteToken());
         }
     else
         {
@@ -2292,15 +2314,19 @@ DgnElement::AppData::DropMe DgnElement::Aspect::_OnUpdated(DgnElementCR modified
         ECInstanceKey existing = _QueryExistingInstanceKey(modified);
         if (existing.IsValid() && (existing.GetClassId() != GetECClassId(db)))
             {
-            _DeleteInstance(modified, original.GetDgnDb().GetECCrudWriteToken());
+            status = _DeleteInstance(modified, original.GetDgnDb().GetECCrudWriteToken());
             existing = ECInstanceKey();  //  trigger an insert below
             }
 
-        if (!existing.IsValid())
-            InsertThis(modified);
-        else
-            _UpdateProperties(modified, original.GetDgnDb().GetECCrudWriteToken());
+        DgnDbStatus writeStatus = !existing.IsValid()
+            ? InsertThis(modified)
+            : _UpdateProperties(modified, original.GetDgnDb().GetECCrudWriteToken());
+        if (DgnDbStatus::Success == status)
+            status = writeStatus;
         }
+
+    if (DgnDbStatus::Success != status && nullptr != s_aspectWriteStatus && DgnDbStatus::Success == *s_aspectWriteStatus)
+        *s_aspectWriteStatus = status;
 
     m_changeType = ChangeType::None; // (Just in case)
 
@@ -2483,7 +2509,11 @@ DgnDbStatus DgnElement::MultiAspect::_DeleteInstance(DgnElementCR el, BeSQLite::
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::MultiAspect::_InsertInstance(DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const* writeToken)
     {
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetNonSelectPreparedECSqlStatement(Utf8PrintfString("INSERT INTO %s (Element.Id,Element.RelECClassId) VALUES (?,?)", GetFullEcSqlClassName().c_str()).c_str(), writeToken);
+    bool const hasPreassignedId = m_instanceId.IsValid();
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetNonSelectPreparedECSqlStatement(
+        Utf8PrintfString(hasPreassignedId
+            ? "INSERT INTO %s (ECInstanceId,Element.Id,Element.RelECClassId) VALUES (?,?,?)"
+            : "INSERT INTO %s (Element.Id,Element.RelECClassId) VALUES (?,?)", GetFullEcSqlClassName().c_str()).c_str(), writeToken);
     if (stmt == nullptr)
         {
         BeAssert(false);
@@ -2498,8 +2528,12 @@ DgnDbStatus DgnElement::MultiAspect::_InsertInstance(DgnElementCR el, BeSQLite::
     if (!relClassId.IsValid())
         relClassId = el.GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsMultiAspects);
 
-    if ((ECSqlStatus::Success != stmt->BindId(1, el.GetElementId())) ||
-        (ECSqlStatus::Success != stmt->BindId(2, relClassId)))
+    int parameterIndex = 1;
+    if (hasPreassignedId && ECSqlStatus::Success != stmt->BindId(parameterIndex++, m_instanceId))
+        return DgnDbStatus::WriteError;
+
+    if ((ECSqlStatus::Success != stmt->BindId(parameterIndex++, el.GetElementId())) ||
+        (ECSqlStatus::Success != stmt->BindId(parameterIndex, relClassId)))
         return DgnDbStatus::WriteError;
 
     ECInstanceKey key;
@@ -2594,7 +2628,7 @@ void DgnElement::MultiAspect::AddAspect(DgnElementR el, MultiAspect& aspect)
         return;
         }
     MultiAspectMux::Get(el,*cls).m_instances.push_back(&aspect);
-    aspect.m_changeType = ChangeType::Write;
+    aspect.m_changeType = ChangeType::Insert;
     }
 
 //---------------------------------------------------------------------------------------
@@ -2602,7 +2636,9 @@ void DgnElement::MultiAspect::AddAspect(DgnElementR el, MultiAspect& aspect)
 //---------------------------------------------------------------------------------------
 ECInstanceKey DgnElement::MultiAspect::_QueryExistingInstanceKey(DgnElementCR el)
     {
-    // My m_instanceId field is valid if and only if I was just inserted or was loaded from an existing instance.
+    if (ChangeType::Insert == m_changeType)
+        return ECInstanceKey();
+
     return ECInstanceKey(GetECClassId(el.GetDgnDb()), m_instanceId);
     }
 
@@ -2740,7 +2776,11 @@ DgnElement::UniqueAspect* DgnElement::UniqueAspect::Load(DgnElementCR el, DgnCla
 DgnDbStatus DgnElement::UniqueAspect::_InsertInstance(DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const* writeToken)
     {
     // Note that we use the exact class of this when we insert, not the key class, so that the relationship identifies the aspect accurately.
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetNonSelectPreparedECSqlStatement(Utf8PrintfString("INSERT INTO %s (Element.Id,Element.RelECClassId) VALUES (?,?)", GetFullEcSqlClassName().c_str()).c_str(), writeToken);
+    bool const hasPreassignedId = m_instanceId.IsValid();
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetNonSelectPreparedECSqlStatement(
+        Utf8PrintfString(hasPreassignedId
+            ? "INSERT INTO %s (ECInstanceId,Element.Id,Element.RelECClassId) VALUES (?,?,?)"
+            : "INSERT INTO %s (Element.Id,Element.RelECClassId) VALUES (?,?)", GetFullEcSqlClassName().c_str()).c_str(), writeToken);
     if (!stmt.IsValid())
         return DgnDbStatus::WriteError;
 
@@ -2752,8 +2792,12 @@ DgnDbStatus DgnElement::UniqueAspect::_InsertInstance(DgnElementCR el, BeSQLite:
     if (!relClassId.IsValid())
         relClassId = el.GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsUniqueAspect);
 
-    if ((ECSqlStatus::Success != stmt->BindId(1, el.GetElementId())) ||
-        (ECSqlStatus::Success != stmt->BindId(2, relClassId)))
+    int parameterIndex = 1;
+    if (hasPreassignedId && ECSqlStatus::Success != stmt->BindId(parameterIndex++, m_instanceId))
+        return DgnDbStatus::WriteError;
+
+    if ((ECSqlStatus::Success != stmt->BindId(parameterIndex++, el.GetElementId())) ||
+        (ECSqlStatus::Success != stmt->BindId(parameterIndex, relClassId)))
         return DgnDbStatus::WriteError;
 
     ECInstanceKey key;
@@ -4413,6 +4457,18 @@ RefCountedPtr<DgnElement::UniqueAspect> DgnElement::GenericUniqueAspect::SetAspe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+RefCountedPtr<DgnElement::UniqueAspect> DgnElement::GenericUniqueAspect::SetAspect(DgnElementR el, ECN::IECInstanceR instance, ECInstanceId preassignedId, ECClassCP keyClass, DgnDbStatus* outStatus)
+    {
+    RefCountedPtr<UniqueAspect> aspect = SetAspect(el, instance, keyClass, outStatus);
+    GenericUniqueAspect* genericAspect = dynamic_cast<GenericUniqueAspect*>(aspect.get());
+    if (nullptr != genericAspect && !genericAspect->m_instanceId.IsValid())
+        genericAspect->m_instanceId = preassignedId;
+    return aspect;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::UniqueAspect::_BindTo(DgnElementCR el)
     {
     auto existing = _QueryExistingInstanceKey(el);
@@ -4686,6 +4742,18 @@ RefCountedPtr<DgnElement::MultiAspect> DgnElement::GenericMultiAspect::AddAspect
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(status, outStatus);
     RefCountedPtr<DgnElement::MultiAspect> aspect = new GenericMultiAspect(properties, BeSQLite::EC::ECInstanceId());
+    T_Super::AddAspect(el, *aspect);
+    status = DgnDbStatus::Success;
+    return aspect;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+RefCountedPtr<DgnElement::MultiAspect> DgnElement::GenericMultiAspect::AddAspect(DgnElementR el, ECN::IECInstanceR properties, ECInstanceId preassignedId, DgnDbStatus* outStatus)
+    {
+    DgnDbStatus ALLOW_NULL_OUTPUT(status, outStatus);
+    RefCountedPtr<DgnElement::MultiAspect> aspect = new GenericMultiAspect(properties, preassignedId);
     T_Super::AddAspect(el, *aspect);
     status = DgnDbStatus::Success;
     return aspect;

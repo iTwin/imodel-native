@@ -304,6 +304,11 @@ public:
     //! SUCCESS or ERROR
     ECDB_EXPORT BentleyStatus ResetInstanceIdSequence(BeBriefcaseId briefcaseId, IdSet<ECN::ECClassId> const* ecClassIgnoreList = nullptr);
 
+    //! Reserves and returns the next ECInstanceId for this file.
+    //! @note A reserved id may remain unused if the caller abandons the operation.
+    //! @private
+    ECDB_EXPORT DbResult GetNextECInstanceId(ECInstanceId& id) const;
+
     //! Check if the ECDb::Initialize() method was successfully called for current process or not.
     //! @return return true if ECDb::Initialize() method was successfully called.
     ECDB_EXPORT static bool IsInitialized();

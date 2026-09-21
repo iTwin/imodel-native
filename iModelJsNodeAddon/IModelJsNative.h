@@ -533,6 +533,8 @@ public:
     static Napi::String InsertElementAspect(DgnDbR db, Napi::Object aspectProps);
     static void UpdateElementAspect(DgnDbR db, Napi::Object aspectProps);
     static void DeleteElementAspect(DgnDbR db, Utf8StringCR aspectIdStr);
+    static Napi::Object ReserveElementAspectInsert(DgnDbR db, Utf8StringCR ownerIdStr, Utf8StringCR classFullName);
+    static Napi::Array ApplyElementAspectMutations(DgnDbR db, Utf8StringCR ownerIdStr, Napi::Array operations);
 
     // Used by ExportGraphics, ExportPartGraphics, and GenerateElementMeshes.
     // Checks for common "bad" polyfaces, fixing them up if possible.

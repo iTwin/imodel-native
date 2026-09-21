@@ -919,7 +919,7 @@ public:
     protected:
         BeSQLite::EC::ECInstanceId m_instanceId;
 
-        enum class ChangeType{None, Write, Delete};
+        enum class ChangeType{None, Write, Delete, Insert};
         ChangeType m_changeType;
 
         DgnDbStatus InsertThis(DgnElementCR el);
@@ -977,6 +977,18 @@ public:
         virtual void _BindTo(DgnElementCR) {}
 
     public:
+        //! Captures persistence failures reported while staged aspects are flushed by an element update.
+        //! @private
+        struct WriteStatusScope : NonCopyableClass {
+        private:
+            DgnDbStatus m_status = DgnDbStatus::Success;
+            DgnDbStatus* m_previousStatus = nullptr;
+        public:
+            DGNPLATFORM_EXPORT WriteStatusScope();
+            DGNPLATFORM_EXPORT ~WriteStatusScope();
+            DgnDbStatus GetStatus() const { return m_status; }
+        };
+
         //! Get the Id of this aspect
         BeSQLite::EC::ECInstanceId GetAspectInstanceId() const {return m_instanceId;}
 
@@ -1096,6 +1108,10 @@ public:
         //! @param outStatus An optional return status, can ignore the argument to ignore the status
         //! @return non-zero error status if the specified aspect cannot be added
         DGNPLATFORM_EXPORT static RefCountedPtr<MultiAspect> AddAspect(DgnElementR el, ECN::IECInstanceR properties, DgnDbStatus* outStatus = nullptr);
+
+        //! Schedule a generic multi aspect with a preassigned ECInstanceId.
+        //! @private
+        DGNPLATFORM_EXPORT static RefCountedPtr<MultiAspect> AddAspect(DgnElementR el, ECN::IECInstanceR properties, BeSQLite::EC::ECInstanceId preassignedId, DgnDbStatus* outStatus = nullptr);
 
         //! Prepare to update an aspect for the specified element
         //! @param el The host element
@@ -1227,6 +1243,10 @@ public:
         //! @param outStatus An optional return status, can ignore the argument to ignore the status
         //! @return non-zero error status if the specified aspect cannot be set
         DGNPLATFORM_EXPORT static RefCountedPtr<UniqueAspect> SetAspect(DgnElementR el, ECN::IECInstanceR instance, ECN::ECClassCP keyClass = nullptr, DgnDbStatus* outStatus = nullptr);
+
+        //! Schedule a generic unique aspect with a preassigned ECInstanceId when a new instance is required.
+        //! @private
+        DGNPLATFORM_EXPORT static RefCountedPtr<UniqueAspect> SetAspect(DgnElementR el, ECN::IECInstanceR instance, BeSQLite::EC::ECInstanceId preassignedId, ECN::ECClassCP keyClass = nullptr, DgnDbStatus* outStatus = nullptr);
 
         //! Get the specified type of generic unique aspect, if any, from an element.
         //! @param el   The host element

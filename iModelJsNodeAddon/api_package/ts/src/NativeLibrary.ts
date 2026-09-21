@@ -55,6 +55,19 @@ export interface BulkDeleteElementsResult {
   failedIds: Id64Array;
 }
 
+/** @internal */
+export interface ElementAspectInsertReservation {
+  id: Id64String;
+  isMulti: boolean;
+  classFullName: string;
+}
+
+/** @internal */
+export type ElementAspectMutation =
+  | { type: "insert"; props: ElementAspectProps }
+  | { type: "update"; props: ElementAspectProps }
+  | { type: "delete"; id: Id64String };
+
 /** Logger categories used by the native addon
  * @internal
  */
@@ -649,6 +662,7 @@ export declare namespace IModelJsNative {
     public createChangeCache(changeCacheFile: ECDb, changeCachePath: string): DbResult;
     public createClassViewsInDb(): BentleyStatus;
     public createIModel(fileName: string, props: CreateEmptyStandaloneIModelProps): void;
+    public applyElementAspectMutations(ownerId: Id64String, operations: ReadonlyArray<ElementAspectMutation>): Id64String[];
     public deleteAllTxns(): void;
     public deleteElement(elemIdJson: string): void;
     public deleteElements(elementIds: Id64Array, deleteOptions?: { skipFKConstraintValidations?: boolean }): BulkDeleteElementsResult;
@@ -766,6 +780,7 @@ export declare namespace IModelJsNative {
     public queryFileProperty(props: FilePropertyProps, wantString: boolean): string | Uint8Array | undefined;
     public queryFirstTxnId(): TxnIdString;
     public queryLocalValue(name: string): string | undefined;
+    public reserveElementAspectInsert(ownerId: Id64String, classFullName: string): ElementAspectInsertReservation;
     // ###TODO mark deprecated use queryModelExtentsAsync
     public queryModelExtents(options: { id: Id64String }): { modelExtents: Range3dProps };
     public queryModelExtentsAsync(modelIds: Id64String[]): Promise<ModelExtentsResponseProps[]>;

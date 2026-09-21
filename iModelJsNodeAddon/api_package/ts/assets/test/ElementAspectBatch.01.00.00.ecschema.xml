@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="ElementAspectBatch" alias="eab" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+  <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+  <ECEntityClass typeName="TestUniqueAspect">
+    <BaseClass>bis:ElementUniqueAspect</BaseClass>
+    <ECProperty propertyName="Value" typeName="string"/>
+  </ECEntityClass>
+  <ECEntityClass typeName="TestMultiAspect">
+    <BaseClass>bis:ElementMultiAspect</BaseClass>
+    <ECProperty propertyName="Value" typeName="string"/>
+  </ECEntityClass>
+</ECSchema>

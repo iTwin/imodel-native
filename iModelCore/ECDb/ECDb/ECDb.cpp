@@ -250,6 +250,11 @@ BentleyStatus ECDb::ResetInstanceIdSequence(BeBriefcaseId briefcaseId, IdSet<ECN
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDb::GetNextECInstanceId(ECInstanceId& id) const { return m_pimpl->GetInstanceIdSequence().GetNextValue(id); }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
 SchemaManager const& ECDb::Schemas() const { return m_pimpl->Schemas(); }
 
 //--------------------------------------------------------------------------------------

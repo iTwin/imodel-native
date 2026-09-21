@@ -1987,6 +1987,18 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         JsInterop::DeleteElementAspect(GetOpenedDb(info), aspectIdStr);
     }
 
+    Napi::Value ReserveElementAspectInsert(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING(0, ownerId);
+        REQUIRE_ARGUMENT_STRING(1, classFullName);
+        return JsInterop::ReserveElementAspectInsert(GetOpenedDb(info), ownerId, classFullName);
+    }
+
+    Napi::Value ApplyElementAspectMutations(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING(0, ownerId);
+        REQUIRE_ARGUMENT_ARRAY(1, operations);
+        return JsInterop::ApplyElementAspectMutations(GetOpenedDb(info), ownerId, operations);
+    }
+
     Napi::Value ExportGraphics(NapiInfoCR info)
         {
         auto& db = GetOpenedDb(info);
@@ -3331,6 +3343,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("createChangeCache", &NativeDgnDb::CreateChangeCache),
             InstanceMethod("createClassViewsInDb", &NativeDgnDb::CreateClassViewsInDb),
             InstanceMethod("createIModel", &NativeDgnDb::CreateIModel),
+            InstanceMethod("applyElementAspectMutations", &NativeDgnDb::ApplyElementAspectMutations),
             InstanceMethod("deleteAllTxns", &NativeDgnDb::DeleteAllTxns),
             InstanceMethod("deleteElement", &NativeDgnDb::DeleteElement),
             InstanceMethod("deleteElements", &NativeDgnDb::DeleteElements),
@@ -3438,6 +3451,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("queryFirstTxnId", &NativeDgnDb::QueryFirstTxnId),
             InstanceMethod("queryLocalValue", &NativeDgnDb::QueryLocalValue),
             InstanceMethod("queryModelExtents", &NativeDgnDb::QueryModelExtents),
+            InstanceMethod("reserveElementAspectInsert", &NativeDgnDb::ReserveElementAspectInsert),
             InstanceMethod("queryModelExtentsAsync", &NativeDgnDb::QueryModelExtentsAsync),
             InstanceMethod("queryNextAvailableFileProperty", &NativeDgnDb::QueryNextAvailableFileProperty),
             InstanceMethod("queryNextTxnId", &NativeDgnDb::QueryNextTxnId),
