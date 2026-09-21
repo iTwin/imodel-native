@@ -131,7 +131,6 @@ describe("GeoServices", () => {
     const egm96Grid = fs.readFileSync(path.join(csMapDataDir, "WW15MGH._96"));
     const resources = new Map<string, Buffer>([
       ["VerticalDatumDefinitions.json", Buffer.from(verticalDatumDictionary)],
-      ["World/WW15MGH.GRD", egm96Grid],
       ["World/WW15MGH._96", egm96Grid],
       ...["coordsys.dty", "datum.dty", "ellipsoid.dty", "GeodeticTransform.dty", "GeodeticPath.dty"]
         .map((fileName): [string, Buffer] => [fileName, fs.readFileSync(path.join(csMapDataDir, fileName))]),
