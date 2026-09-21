@@ -7,6 +7,7 @@
 #include "../TestFixture/DgnDbTestFixtures.h"
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <Bentley/Desktop/FileSystem.h>
+#include <stdexcept>
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
