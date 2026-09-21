@@ -66,6 +66,7 @@ const verticalDatumDictionary = JSON.stringify({
     verticalCRS: {
       crsName: "NGVD29 height",
       datumName: "National Geodetic Vertical Datum 1929",
+      epsg: 7968,
       type: "GEOID",
       units: "meter",
       description: "NGVD29 height",
@@ -178,16 +179,17 @@ describe("GeoServices", () => {
     expect(verticalSystems.some((entry) => entry.crsName === "Regional test height")).to.be.true;
 
     for (const expected of [
-      { crsName: "EGM96 height", id: "GEOID", type: "GEOID" },
-      { crsName: "NAVD88 height", id: "NAVD88", type: "GEOID" },
-      { crsName: "NGVD29 height", id: "NGVD29", type: "GEOID" },
-      { crsName: "WGS84", id: "ELLIPSOID", type: "ELLIPSOID" },
-      { crsName: "ITRF2008", id: "ELLIPSOID", type: "ELLIPSOID" },
+      { crsName: "EGM96 height", id: "GEOID", type: "GEOID", epsg: undefined },
+      { crsName: "NAVD88 height", id: "NAVD88", type: "GEOID", epsg: undefined },
+      { crsName: "NGVD29 height", id: "NGVD29", type: "GEOID", epsg: 7968 },
+      { crsName: "WGS84", id: "ELLIPSOID", type: "ELLIPSOID", epsg: 4326 },
+      { crsName: "ITRF2008", id: "ELLIPSOID", type: "ELLIPSOID", epsg: 5332 },
     ]) {
       const entry = verticalSystems.find((candidate) => candidate.crsName === expected.crsName);
       assert.isDefined(entry);
       expect(entry.id).to.equal(expected.id);
       expect(entry.type).to.equal(expected.type);
+      expect(entry.epsg).to.equal(expected.epsg);
     }
   });
 

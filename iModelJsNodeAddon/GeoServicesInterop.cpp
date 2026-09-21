@@ -261,6 +261,7 @@ StatusInt GeoServicesInterop::GetListOfVerticalCRS(bvector<VerticalCRSListRespon
 
         VerticalCRSListResponseProps verticalCrs;
         verticalCrs.m_crsName = name;
+        verticalCrs.m_epsg = info->GetEPSGCode();
         info->GetDescription(verticalCrs.m_description);
         verticalCrs.m_deprecated = info->IsDeprecated();
         info->GetType(verticalCrs.m_type);

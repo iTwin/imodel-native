@@ -3643,6 +3643,8 @@ struct NativeGeoServices : BeObjectWrap<NativeGeoServices>
             auto definition = Napi::Object::New(info.Env());
             definition.Set("crsName", verticalCrs.m_crsName.c_str());
             definition.Set("id", verticalCrs.m_id.c_str());
+            if (verticalCrs.m_epsg > 0)
+                definition.Set("epsg", verticalCrs.m_epsg);
             definition.Set("description", verticalCrs.m_description.c_str());
             definition.Set("deprecated", verticalCrs.m_deprecated);
             definition.Set("type", verticalCrs.m_type.c_str());

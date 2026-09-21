@@ -664,6 +664,7 @@ struct VerticalCRSListResponseProps
     {
     Utf8String m_crsName;
     Utf8String m_id;
+    int m_epsg = 0;
     Utf8String m_description;
     bool m_deprecated;
     Utf8String m_type;

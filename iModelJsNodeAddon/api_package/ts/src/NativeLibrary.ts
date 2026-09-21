@@ -867,6 +867,7 @@ export declare namespace IModelJsNative {
   interface VerticalCRSListEntry {
     crsName: string;
     id: "GEOID" | "ELLIPSOID" | "NGVD29" | "NAVD88" | "LOCAL_ELLIPSOID";
+    epsg?: number;
     description: string;
     deprecated: boolean;
     type: string;
