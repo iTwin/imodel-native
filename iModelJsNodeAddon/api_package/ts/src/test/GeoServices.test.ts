@@ -192,12 +192,12 @@ describe("GeoServices", () => {
     }
   });
 
-  it("interprets a named vertical coordinate reference system with its fallback id", () => {
+  it("prefers a named vertical coordinate reference system over a conflicting fallback id", () => {
     const response = iModelJsNative.GeoServices.getGeographicCRSInterpretation({
       format: "JSON",
       geographicCRSDef: JSON.stringify({
         horizontalCRS: { id: "LL84" },
-        verticalCRS: { crsName: "EGM96 height", id: "GEOID" },
+        verticalCRS: { crsName: "EGM96 height", id: "ELLIPSOID" },
       }),
     });
 
@@ -359,17 +359,19 @@ describe("GeoServices", () => {
     }
   });
 
-  it("rejects an unknown named vertical coordinate reference system", () => {
+  it("uses the fallback id when the named vertical coordinate reference system is unknown", () => {
     const response = iModelJsNative.GeoServices.getGeographicCRSInterpretation({
       format: "JSON",
       geographicCRSDef: JSON.stringify({
         horizontalCRS: { id: "LL84" },
-        verticalCRS: { crsName: "Unknown test height" },
+        verticalCRS: { crsName: "Unknown test height", id: "GEOID" },
       }),
     });
 
-    expect(response.status).not.to.equal(0);
-    expect(response.geographicCRS).to.be.undefined;
+    expect(response.status).to.equal(0);
+    const verticalCRS = (response.geographicCRS as { verticalCRS?: { id?: string } } | undefined)?.verticalCRS;
+    assert.isDefined(verticalCRS);
+    expect(verticalCRS.id).to.equal("GEOID");
   });
 
   it("filters vertical coordinate reference systems by point", () => {
