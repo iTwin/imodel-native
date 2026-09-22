@@ -535,6 +535,7 @@ public:
     DGNPLATFORM_EXPORT void PullMergeEnd();
     DGNPLATFORM_EXPORT void PullMergeResume();
     DGNPLATFORM_EXPORT TxnId PullMergeRebaseNext();
+    DGNPLATFORM_EXPORT TxnId PullMergeRebasePrevious();
     DGNPLATFORM_EXPORT void PullMergeRebaseAbortTxn();
     DGNPLATFORM_EXPORT void PullMergeRebaseUpdateTxn();
     DGNPLATFORM_EXPORT void PullMergeRebaseReinstateTxn();

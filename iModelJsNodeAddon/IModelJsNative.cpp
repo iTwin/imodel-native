@@ -3172,6 +3172,15 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         return info.Env().Undefined();
     }
 
+    Napi::Value PullMergeRebasePrevious(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        auto txnId = db.Txns().PullMergeRebasePrevious();
+        if (txnId.IsValid()){
+            return Napi::String::New(Env(), BeInt64Id(txnId.GetValue()).ToHexStr().c_str());
+        }
+        return info.Env().Undefined();
+    }
+
     void PullMergeRebaseAbortTxn(NapiInfoCR info) {
         auto& db = GetWritableDb(info);
         db.Txns().PullMergeRebaseAbortTxn();
@@ -3514,6 +3523,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("pullMergeRebaseBegin", &NativeDgnDb::PullMergeRebaseBegin),
             InstanceMethod("pullMergeRebaseEnd", &NativeDgnDb::PullMergeRebaseEnd),
             InstanceMethod("pullMergeRebaseNext", &NativeDgnDb::PullMergeRebaseNext),
+            InstanceMethod("pullMergeRebasePrevious", &NativeDgnDb::PullMergeRebasePrevious),
             InstanceMethod("pullMergeRebaseAbortTxn", &NativeDgnDb::PullMergeRebaseAbortTxn),
             InstanceMethod("pullMergeReverseLocalChanges", &NativeDgnDb::PullMergeReverseLocalChanges),
             InstanceMethod("getTxnProps", &NativeDgnDb::GetTxnProps),

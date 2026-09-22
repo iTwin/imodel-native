@@ -850,6 +850,7 @@ export declare namespace IModelJsNative {
     public pullMergeRebaseReinstateTxn(): void;
     public pullMergeRebaseUpdateTxn(): void;
     public pullMergeRebaseNext(): TxnIdString | undefined;
+    public pullMergeRebasePrevious(): TxnIdString | undefined;
     public pullMergeRebaseAbortTxn(): void
     public pullMergeRebaseBegin(): TxnIdString[];
     public pullMergeRebaseEnd(): void;

@@ -4791,6 +4791,52 @@ TxnManager::TxnId TxnManager::PullMergeRebaseNext() {
 }
 
 /*---------------------------------------------------------------------------------**//**
+* Reverses the previously-rebased Txn's already-committed content (restoring the rows it touched to
+* their state from just before that Txn was ever replayed) and moves the in-progress rebase pointer
+* back onto it, so interactive rebase can redo its replay. Unlike the general-purpose undo/redo API
+* (ReverseTxns/ReverseTo/etc., which unconditionally refuse to run while any pull-merge is in progress),
+* this is scoped specifically to stepping backward through an interactive rebase already underway.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TxnManager::TxnId TxnManager::PullMergeRebasePrevious() {
+    auto conf = PullMergeConf::Load(m_dgndb);
+    if (!conf.IsRebasingLocalChanges()) {
+        m_dgndb.ThrowException("PullMergeRebasePrevious(): not rebasing local changes", BE_SQLITE_ERROR);
+    }
+
+    if (HasChanges()) {
+        m_dgndb.ThrowException("PullMergeRebasePrevious(): expect no unsaved changes", BE_SQLITE_ERROR);
+    }
+
+    auto currId = conf.GetInProgressRebaseTxnId();
+    auto prevId = currId.IsValid() ? QueryPreviousTxnId(currId) : TxnId();
+    if (!prevId.IsValid()) {
+        m_dgndb.ThrowException("PullMergeRebasePrevious(): no previously-rebased txn to reverse", BE_SQLITE_ERROR);
+    }
+
+    TXN_DEBUG("<< PullMergeRebasePrevious(): %s", BeInt64Id(prevId.GetValue()).ToHexStr().c_str());
+
+    // ApplyChanges leaves tracking on (and its writes pending in the tracker) whenever
+    // IsRebasingLocalChanges() is true - by design, for PullMergeRebaseReinstateTxn's own callers, which
+    // go on to capture those tracked changes via FromChangeTrack(). We just want the reversed content
+    // applied directly, like an ordinary (non-rebase) undo, so disable tracking for this one call.
+    DbResult rc;
+    {
+        DisableTracking _v(*this);
+        rc = ApplyTxnChanges(prevId, TxnAction::Reverse);
+    }
+    if (BE_SQLITE_OK != rc) {
+        m_dgndb.ThrowException(SqlPrintfString("PullMergeRebasePrevious(): failed to reverse txn (id: %s)", BeInt64Id(prevId.GetValue()).ToHexStr().c_str()).GetUtf8CP(), rc);
+    }
+
+    m_curr = prevId; // this Txn is being reused - a subsequent redo/commit of it must overwrite, not append.
+    conf.SetInProgressRebaseTxnId(prevId).Save(m_dgndb);
+    m_dgndb.SaveChanges();
+    TXN_DEBUG(">> PullMergeRebasePrevious(): %s", BeInt64Id(prevId.GetValue()).ToHexStr().c_str());
+    return prevId;
+}
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::PullMergeRebaseAbortTxn() {
