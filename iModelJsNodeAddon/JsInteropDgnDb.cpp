@@ -1114,6 +1114,10 @@ Napi::Array JsInterop::ApplyElementAspectMutations(DgnDbR db, Utf8StringCR owner
 
                 DgnDbStatus status;
                 bool const isMulti = aspectClass->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementMultiAspect);
+                auto const expectedState = expectedAspectStates.find(aspectId);
+                if (isMulti && expectedState != expectedAspectStates.end() && expectedState->second)
+                    THROW_JS_DGN_DB_EXCEPTION(Env(), "preassigned element aspect id occurs more than once", DgnDbStatus::DuplicateName);
+
                 AspectInstanceInfo existingInfo;
                 if (queryAspectInstance(existingInfo, db, aspectId) &&
                     (isMulti || existingInfo.m_ownerId != ownerId || existingInfo.m_classId != aspectClass->GetId()))
