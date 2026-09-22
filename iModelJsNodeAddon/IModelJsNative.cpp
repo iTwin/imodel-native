@@ -1865,7 +1865,14 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         auto& db = GetOpenedDb(info);
         OPTIONAL_ARGUMENT_STRING(0, when);
         BeJsNapiObject props(Env());
-        JsInterop::GetIModelProps(props, db, when);
+        try
+            {
+            JsInterop::GetIModelProps(props, db, when);
+            }
+        catch (std::exception const& e)
+            {
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), e.what(), DgnDbStatus::ReadError);
+            }
         return props;
     }
 
@@ -3615,6 +3622,42 @@ struct NativeGeoServices : BeObjectWrap<NativeGeoServices>
         return ret;
         }
 
+    static Napi::Value GetListOfVerticalCRS(NapiInfoCR info)
+        {
+        OPTIONAL_ARGUMENT_ANY_OBJ(0, props, Napi::Object::New(info.Env()));
+
+        bvector<VerticalCRSListResponseProps> list;
+        Utf8String errorMessage;
+        StatusInt status = GeoServicesInterop::GetListOfVerticalCRS(list, props, errorMessage);
+        if (SUCCESS != status)
+            {
+            if (errorMessage.empty())
+                errorMessage.Sprintf("unable to query vertical coordinate reference systems (status %d)", status);
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), errorMessage.c_str(), IModelJsNativeErrorKey::BadArg);
+            }
+
+        auto ret = Napi::Array::New(info.Env(), list.size());
+        uint32_t index = 0;
+        for (auto const& verticalCrs : list)
+            {
+            auto definition = Napi::Object::New(info.Env());
+            definition.Set("crsName", verticalCrs.m_crsName.c_str());
+            definition.Set("id", verticalCrs.m_id.c_str());
+            if (verticalCrs.m_epsg > 0)
+                definition.Set("epsg", verticalCrs.m_epsg);
+            definition.Set("description", verticalCrs.m_description.c_str());
+            definition.Set("deprecated", verticalCrs.m_deprecated);
+            definition.Set("type", verticalCrs.m_type.c_str());
+            definition.Set("unit", verticalCrs.m_unit.c_str());
+            Napi::Object verticalExtent = Napi::Object::New(info.Env());
+            BeJsGeomUtils::DRange2dToJson(verticalExtent, verticalCrs.m_extent);
+            definition.Set("extent", verticalExtent);
+            ret.Set(index++, definition);
+            }
+
+        return ret;
+        }
+
     //  Create projections
     static void Init(Napi::Env& env, Napi::Object exports)
         {
@@ -3622,6 +3665,7 @@ struct NativeGeoServices : BeObjectWrap<NativeGeoServices>
         Napi::Function t = DefineClass(env, "GeoServices", {
             StaticMethod("getGeographicCRSInterpretation", &NativeGeoServices::GetGeographicCRSInterpretation),
             StaticMethod("getListOfCRS", &NativeGeoServices::GetListOfCRS),
+            StaticMethod("getListOfVerticalCRS", &NativeGeoServices::GetListOfVerticalCRS),
             StaticMethod("getAvailableUnitNames", &NativeGeoServices::GetAvailableCRSUnitNames)
         });
 
