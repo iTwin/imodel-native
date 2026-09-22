@@ -76,7 +76,7 @@ describe("basic tests", () => {
     } as ElementAspectProps);
     const queryAspectValue = (className: string, id: Id64String): string | undefined => {
       const statement = new iModelJsNative.ECSqlStatement();
-      statement.prepare(db, `SELECT Value FROM ${className} WHERE ECInstanceId=?`);
+      statement.prepare(db, `SELECT [Value] FROM ${className} WHERE ECInstanceId=?`);
       statement.getBinder(1).bindId(id);
       const value = statement.step() === DbResult.BE_SQLITE_ROW ? statement.getValue(0).getString() : undefined;
       statement.dispose();
