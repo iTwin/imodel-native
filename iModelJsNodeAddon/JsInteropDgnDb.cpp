@@ -750,7 +750,7 @@ Napi::String JsInterop::InsertElementAspect(DgnDbR db, Napi::Object obj) {
     BeJsConst aspectProps(obj);
 
     DgnElement::RelatedElement relatedElement;
-    relatedElement.FromJson(db, aspectProps[DgnElement::json_element()]);
+    relatedElement.FromJson(db, aspectProps[json_element()]);
     if (!relatedElement.IsValid())
         throwInvalidId();
 
@@ -983,7 +983,7 @@ static ECClassCP getAspectClass(DgnDbR db, BeJsConst aspectProps) {
 
 static DgnElementId getAspectOwnerId(DgnDbR db, BeJsConst aspectProps) {
     DgnElement::RelatedElement relatedElement;
-    relatedElement.FromJson(db, aspectProps[json_element()]);
+    relatedElement.FromJson(db, aspectProps[JsInterop::json_element()]);
     if (!relatedElement.IsValid())
         JsInterop::throwInvalidId();
     return relatedElement.m_id;
@@ -997,7 +997,7 @@ static StandaloneECInstancePtr createAspectProperties(DgnDbR db, ECClassCR aspec
     std::function<bool(Utf8CP)> shouldConvertProperty = [&aspectClass, isUpdate](Utf8CP propName) {
         if (0 == strcmp(propName, DgnElement::json_classFullName()))
             return false;
-        if (isUpdate && 0 == strcmp(propName, DgnElement::json_element()))
+        if (isUpdate && 0 == strcmp(propName, JsInterop::json_element()))
             return false;
         return nullptr != aspectClass.GetPropertyP(propName);
     };
