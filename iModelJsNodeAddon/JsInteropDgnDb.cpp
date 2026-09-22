@@ -1080,7 +1080,7 @@ Napi::Array JsInterop::ApplyElementAspectMutations(DgnDbR db, Utf8StringCR owner
 
         bvector<AspectPostCallback> postCallbacks;
         bvector<RefCountedCPtr<DgnElement::Aspect>> insertedAspects;
-        bvector<ECInstanceId> deletedAspectIds;
+        bmap<ECInstanceId, bool> expectedAspectStates;
 
         for (uint32_t index = 0; index < operations.Length(); ++index) {
             Napi::Value operationValue = operations[index];
@@ -1128,6 +1128,7 @@ Napi::Array JsInterop::ApplyElementAspectMutations(DgnDbR db, Utf8StringCR owner
                     THROW_JS_DGN_DB_EXCEPTION(Env(), "preassigned element aspect id does not match the existing unique aspect", DgnDbStatus::BadArg);
 
                 insertedAspects.push_back(createdAspect);
+                expectedAspectStates[aspectId] = true;
                 postCallbacks.push_back({DgnClassId(aspectClass->GetId()), "onInserted", (Napi::Object)arg});
                 continue;
             }
@@ -1202,7 +1203,7 @@ Napi::Array JsInterop::ApplyElementAspectMutations(DgnDbR db, Utf8StringCR owner
                     throwNotFound();
 
                 aspect->Delete();
-                deletedAspectIds.push_back(aspectId);
+                expectedAspectStates[aspectId] = false;
                 postCallbacks.push_back({info.m_classId, "onDeleted", (Napi::Object)arg});
                 continue;
             }
@@ -1219,14 +1220,10 @@ Napi::Array JsInterop::ApplyElementAspectMutations(DgnDbR db, Utf8StringCR owner
             throwDgnDbStatus(aspectWriteStatus.GetStatus());
         }
 
-        for (RefCountedCPtr<DgnElement::Aspect> const& aspect : insertedAspects) {
+        for (auto const& expectedState : expectedAspectStates) {
             AspectInstanceInfo info;
-            if (!queryAspectInstance(info, db, aspect->GetAspectInstanceId()) || info.m_ownerId != ownerId)
-                throwWriteError();
-        }
-        for (ECInstanceId deletedId : deletedAspectIds) {
-            AspectInstanceInfo info;
-            if (queryAspectInstance(info, db, deletedId))
+            bool const exists = queryAspectInstance(info, db, expectedState.first);
+            if (expectedState.second ? (!exists || info.m_ownerId != ownerId) : exists)
                 throwWriteError();
         }
 

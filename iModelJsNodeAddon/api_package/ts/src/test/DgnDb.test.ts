@@ -143,6 +143,17 @@ describe("basic tests", () => {
       ]);
       assert.lengthOf(aspectCallbacks, 12);
 
+      lifecycle.length = 0;
+      assert.deepEqual(db.applyElementAspectMutations(ownerId, [
+        { type: "delete", id: uniqueReservation.id },
+        { type: "insert", props: makeUniqueProps(ownerId, "unique replaced", uniqueReservation.id) },
+      ]), [uniqueReservation.id]);
+      assert.equal(queryAspectValue("ElementAspectBatch.TestUniqueAspect", uniqueReservation.id), "unique replaced");
+      assert.deepEqual(
+        lifecycle.filter((entry) => entry.startsWith("ElementAspectBatch:")).map((entry) => entry.split(".").at(-1)),
+        ["onDelete", "onInsert", "onDeleted", "onInserted"],
+      );
+
       expect(() => db.applyElementAspectMutations(ownerId, [
         { type: "insert", props: makeMultiProps(secondOwnerId, "wrong owner", db.reserveElementAspectInsert(secondOwnerId, "ElementAspectBatch:TestMultiAspect").id) },
       ])).to.throw("different owner");
