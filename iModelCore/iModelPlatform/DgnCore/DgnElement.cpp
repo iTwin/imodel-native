@@ -2612,7 +2612,8 @@ DgnElement::MultiAspect* DgnElement::MultiAspect::GetAspectP(DgnElementR el, ECC
     auto* aspect = const_cast<MultiAspect*>(GetAspect(el,cls,id));
     if (nullptr == aspect)
         return aspect;
-    aspect->m_changeType = ChangeType::Write;
+    if (ChangeType::Insert != aspect->m_changeType)
+        aspect->m_changeType = ChangeType::Write;
     return aspect;
     }
 

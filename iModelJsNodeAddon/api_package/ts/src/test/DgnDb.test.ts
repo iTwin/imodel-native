@@ -112,6 +112,7 @@ describe("basic tests", () => {
     try {
       const operations: ElementAspectMutation[] = [
         { type: "insert", props: makeMultiProps(ownerId, "inserted", insertReservation.id) },
+        { type: "update", props: makeMultiProps(ownerId, "inserted then updated", insertReservation.id) },
         { type: "update", props: makeMultiProps(ownerId, "updated", updateId) },
         { type: "delete", id: deleteId },
         { type: "insert", props: makeUniqueProps(ownerId, "unique first", uniqueReservation.id) },
@@ -123,7 +124,7 @@ describe("basic tests", () => {
         uniqueReservation.id,
       ]);
 
-      assert.equal(queryAspectValue("ElementAspectBatch.TestMultiAspect", insertReservation.id), "inserted");
+      assert.equal(queryAspectValue("ElementAspectBatch.TestMultiAspect", insertReservation.id), "inserted then updated");
       assert.equal(queryAspectValue("ElementAspectBatch.TestMultiAspect", updateId), "updated");
       assert.isUndefined(queryAspectValue("ElementAspectBatch.TestMultiAspect", deleteId));
       assert.equal(queryAspectValue("ElementAspectBatch.TestUniqueAspect", uniqueReservation.id), "unique last");
@@ -134,13 +135,13 @@ describe("basic tests", () => {
       );
 
       const aspectCallbacks = lifecycle.filter((entry) => entry.startsWith("ElementAspectBatch:"));
-      assert.deepEqual(aspectCallbacks.slice(0, 5).map((entry) => entry.split(".").at(-1)), [
-        "onInsert", "onUpdate", "onDelete", "onInsert", "onInsert",
+      assert.deepEqual(aspectCallbacks.slice(0, 6).map((entry) => entry.split(".").at(-1)), [
+        "onInsert", "onUpdate", "onUpdate", "onDelete", "onInsert", "onInsert",
       ]);
-      assert.deepEqual(aspectCallbacks.slice(-5).map((entry) => entry.split(".").at(-1)), [
-        "onInserted", "onUpdated", "onDeleted", "onInserted", "onInserted",
+      assert.deepEqual(aspectCallbacks.slice(-6).map((entry) => entry.split(".").at(-1)), [
+        "onInserted", "onUpdated", "onUpdated", "onDeleted", "onInserted", "onInserted",
       ]);
-      assert.lengthOf(aspectCallbacks, 10);
+      assert.lengthOf(aspectCallbacks, 12);
 
       expect(() => db.applyElementAspectMutations(ownerId, [
         { type: "insert", props: makeMultiProps(secondOwnerId, "wrong owner", db.reserveElementAspectInsert(secondOwnerId, "ElementAspectBatch:TestMultiAspect").id) },
