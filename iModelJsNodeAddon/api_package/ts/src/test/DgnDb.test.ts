@@ -183,6 +183,7 @@ describe("basic tests", () => {
       db.setIModelDb(undefined);
     }
 
+    db.setIModelDb(mockJsDb);
     const directInsertId = db.insertElementAspect(makeMultiProps(secondOwnerId, "direct before"));
     db.updateElementAspect(makeMultiProps(secondOwnerId, "direct after", directInsertId));
     const directDeleteId = db.insertElementAspect(makeMultiProps(secondOwnerId, "direct delete"));
@@ -190,6 +191,7 @@ describe("basic tests", () => {
     assert.equal(queryAspectValue("ElementAspectBatch.TestMultiAspect", directInsertId), "direct after");
     assert.isUndefined(queryAspectValue("ElementAspectBatch.TestMultiAspect", directDeleteId));
 
+    db.setIModelDb(undefined);
     db.abandonChanges();
     db.closeFile();
   });
