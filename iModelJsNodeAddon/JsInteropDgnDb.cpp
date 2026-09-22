@@ -1244,8 +1244,7 @@ Napi::Array JsInterop::ApplyElementAspectMutations(DgnDbR db, Utf8StringCR owner
         DbResult rollbackStatus = mutationChanges.FromChangeTrack(mutationTracker);
         mutationTracker.EndTracking();
         if (BE_SQLITE_OK == rollbackStatus && mutationChanges.IsValid())
-            rollbackStatus = mutationChanges.ApplyChanges(db, true);
-        db.Elements().DropFromPool(*owner);
+            rollbackStatus = db.Txns().RollbackInMemoryChanges(mutationChanges);
         if (BE_SQLITE_OK != rollbackStatus)
             THROW_JS_BE_SQLITE_EXCEPTION(Env(), "failed to roll back element aspect mutations", rollbackStatus);
         throw;

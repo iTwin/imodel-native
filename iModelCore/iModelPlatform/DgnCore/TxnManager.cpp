@@ -1208,6 +1208,16 @@ void TxnManager::OnRollback(ChangeStreamCR changeSet) {
 }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult TxnManager::RollbackInMemoryChanges(ChangeStreamCR changes) {
+    DbResult status = changes.ApplyChanges(m_dgndb, true);
+    if (BE_SQLITE_OK == status)
+        OnRollback(changes);
+    return status;
+}
+
+/*---------------------------------------------------------------------------------**//**
 * Called from Db::SaveChanges or Db::AbandonChanges when the TxnManager change tracker has changes.
 * This method creates a changeset from the change tracker.
 * If this is a "cancel", it rolls back the current Txn, and calls _OnAppliedxxx methods on all affected TxnTables.
