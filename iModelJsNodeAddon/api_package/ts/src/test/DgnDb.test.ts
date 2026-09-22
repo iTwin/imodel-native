@@ -140,7 +140,7 @@ describe("basic tests", () => {
       assert.deepEqual(aspectCallbacks.slice(-5).map((entry) => entry.split(".").at(-1)), [
         "onInserted", "onUpdated", "onDeleted", "onInserted", "onInserted",
       ]);
-      assert.lengthOf(lifecycle, 10);
+      assert.lengthOf(aspectCallbacks, 10);
 
       expect(() => db.applyElementAspectMutations(ownerId, [
         { type: "insert", props: makeMultiProps(secondOwnerId, "wrong owner", db.reserveElementAspectInsert(secondOwnerId, "ElementAspectBatch:TestMultiAspect").id) },
