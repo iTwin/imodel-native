@@ -948,6 +948,11 @@ struct AspectPostCallback {
     Napi::Object m_arg;
 };
 
+struct AspectMutationChangeTracker : BeSQLite::ChangeTracker {
+    AspectMutationChangeTracker(DgnDbR db) : ChangeTracker("applyElementAspectMutations") { SetDb(&db); }
+    OnCommitStatus _OnCommit(bool, Utf8CP) override { return OnCommitStatus::Commit; }
+};
+
 static bool queryAspectInstance(AspectInstanceInfo& info, DgnDbR db, ECInstanceId aspectId) {
     CachedECSqlStatementPtr statement = db.GetPreparedECSqlStatement(
         "SELECT ECClassId,Element.Id FROM " BIS_SCHEMA(BIS_CLASS_ElementUniqueAspect) " WHERE ECInstanceId=? UNION "
@@ -1065,9 +1070,8 @@ Napi::Array JsInterop::ApplyElementAspectMutations(DgnDbR db, Utf8StringCR owner
     if (!owner.IsValid())
         throwMissingId();
 
-    Savepoint savepoint(db, "applyElementAspectMutations");
-    if (!savepoint.IsActive())
-        THROW_JS_BE_SQLITE_EXCEPTION(Env(), "failed to start element aspect mutation savepoint", BE_SQLITE_ERROR);
+    AspectMutationChangeTracker mutationTracker(db);
+    mutationTracker.EnableTracking(true);
 
     try {
         DgnElementPtr ownerEdit = owner->CopyForEdit();
@@ -1229,16 +1233,18 @@ Napi::Array JsInterop::ApplyElementAspectMutations(DgnDbR db, Utf8StringCR owner
         for (AspectPostCallback const& callback : postCallbacks)
             db.CallJsHandlerMethod(callback.m_classId, callback.m_methodName, callback.m_arg);
 
-        DbResult commitStatus = savepoint.Commit();
-        if (BE_SQLITE_OK != commitStatus)
-            THROW_JS_BE_SQLITE_EXCEPTION(Env(), "failed to commit element aspect mutations", commitStatus);
-
         Napi::Array insertedIds = Napi::Array::New(Env(), insertedAspects.size());
         for (uint32_t index = 0; index < insertedAspects.size(); ++index)
             insertedIds.Set(index, Napi::String::New(Env(), insertedAspects[index]->GetAspectInstanceId().ToHexStr()));
+        mutationTracker.EndTracking();
         return insertedIds;
     } catch (...) {
-        DbResult rollbackStatus = savepoint.Cancel();
+        BeSQLite::ChangeSet mutationChanges;
+        DbResult rollbackStatus = mutationChanges.FromChangeTrack(mutationTracker);
+        mutationTracker.EndTracking();
+        if (BE_SQLITE_OK == rollbackStatus && mutationChanges.IsValid())
+            rollbackStatus = mutationChanges.ApplyChanges(db, true);
+        db.Elements().DropFromPool(*owner);
         if (BE_SQLITE_OK != rollbackStatus)
             THROW_JS_BE_SQLITE_EXCEPTION(Env(), "failed to roll back element aspect mutations", rollbackStatus);
         throw;
