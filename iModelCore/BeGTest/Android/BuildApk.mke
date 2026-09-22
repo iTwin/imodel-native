@@ -37,6 +37,12 @@ always:
 #--------------------------------------------------------------------------------------
 DGNCLIENT_APP_ProjectRoot = ${outputDir}/prj/
 GRADLE_TASKS = build assembleAndroidTest
+%if defined (BENTLEY_ANDROID_GRADLE_DIAGNOSTICS)
+    %if $(BENTLEY_ANDROID_GRADLE_DIAGNOSTICS) == "1"
+        GRADLE_OPTIONS + --info --full-stacktrace
+    %endif
+%endif
+GRADLE_PROPERTIES + org.gradle.jvmargs=-Xmx2g
 
 %message BuildContext = $(BuildContext)
 %include $(BuildContext)SubParts/AndroidTools/gradleBuild.mki
