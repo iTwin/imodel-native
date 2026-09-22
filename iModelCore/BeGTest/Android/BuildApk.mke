@@ -38,6 +38,7 @@ always:
 DGNCLIENT_APP_ProjectRoot = ${outputDir}/prj/
 GRADLE_TASKS = build assembleAndroidTest
 GRADLE_OPTIONS + --info --full-stacktrace
+GRADLE_PROPERTIES + org.gradle.jvmargs=-Xmx2g
 
 %message BuildContext = $(BuildContext)
 %include $(BuildContext)SubParts/AndroidTools/gradleBuild.mki
