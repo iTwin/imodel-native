@@ -44,6 +44,21 @@ deployment targets and need not equal the product's official OS support floor. O
 setting lets vcpkg build against the host SDK's deployment target, which can produce objects that
 cannot be linked into BentleyBuild outputs targeting an older OS.
 
+### Symbol visibility in static libraries
+
+Static libraries that are rolled into `imodeljs.node` must not expose third-party symbols that can
+collide with libraries already loaded by Node or an operating-system framework. When migrating a
+file-by-file build, preserve its effective symbol visibility in the vcpkg build. Adding
+`-fvisibility=hidden` to a triplet is not sufficient by itself: upstream build systems may annotate
+their public APIs with default visibility and override that flag.
+
+Audit each upstream library's visibility options and verify the resulting archive and final add-on
+with the platform symbol tools. On macOS, for example, `nm -m` should report embedded third-party
+definitions as `private external` in the archive and as non-external in `imodeljs.node`. Curl's
+`CURL_HIDDEN_SYMBOLS=ON` hides its private implementation but deliberately leaves its public API
+default-visible, so a fully private static curl build must disable that option while compiling with
+hidden visibility. Without this, macOS can bind the add-on's curl calls to Apple system libcurl.
+
 ### Windows triplets: clang vs MSVC
 
 On Windows the native build runs under two toolsets — MSVC (`cl.exe`) and clang-cl (`BUILD_TOOLSET == WINDOWS_CLANG`) — and both produce ABI-compatible output. vcpkg's binary-cache ABI hash is derived from the triplet **and** the detected compiler, so if both toolsets used the same triplet *and* the same compiler they would share one cache entry and whichever built first would win. To keep the two builds' cache entries separate, every Windows triplet comes in a matched pair:
