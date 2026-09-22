@@ -1432,7 +1432,20 @@ TEST_F(SetAndGetDgnGeoCoord, PersistsCompleteCustomVerticalCrs)
 
     project = DgnDb::OpenIModelDb(&dbStatus, fileName, DgnDb::OpenParams(Db::OpenMode::Readonly));
     ASSERT_TRUE(project.IsValid());
-    EXPECT_THROW(project->GeoLocation().GetDgnGCS(), std::runtime_error);
+    bool threw = false;
+    try
+        {
+        project->GeoLocation().GetDgnGCS();
+        }
+    catch (std::runtime_error const&)
+        {
+        threw = true;
+        }
+    catch (...)
+        {
+        FAIL() << "Expected std::runtime_error";
+        }
+    EXPECT_TRUE(threw);
     project->CloseDb();
 
     BeFileName::BeDeleteFile(fileName);
