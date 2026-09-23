@@ -270,6 +270,8 @@ $(o)IECSqlValueHelper$(oext):                                 $(baseDir)IECSqlVa
 
 $(o)ChangesetValueFactory$(oext):                             $(baseDir)ChangesetValueFactory.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
+$(o)ChangesetValueFactoryRow$(oext):                          $(baseDir)ChangesetValueFactoryRow.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
 $(o)ChangeSummaryImpl$(oext):                                 $(baseDir)ChangeSummaryImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECSqlStatus$(oext):                                       $(baseDir)ECSql/ECSqlStatus.cpp $(ECDbAllHeaders) ${MultiCompileDepends}

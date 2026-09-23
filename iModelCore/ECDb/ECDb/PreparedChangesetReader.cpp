@@ -453,7 +453,7 @@ PreparedChangesetReader::StageProcessResult PreparedChangesetReader::ProcessStag
     if (m_filters.CheckColumnCount(m_iterator.GetCurrentChange().GetColumnCount(), dbColumnCount, tableName) != SUCCESS)
         return StageProcessResult::Error;
 
-    if (ChangesetValueFactory::Create(*m_ecdb, dbTable, m_columnValues, classId, isClassIdFromChangeset, (stage == Stage::New) ? m_newFields : m_oldFields, m_filters.m_propertyFilter, changedPropNames) != SUCCESS)
+    if (ChangesetValueFactory::Create(*m_ecdb, dbTable, m_columnValues, classId, isClassIdFromChangeset, (stage == Stage::New) ? m_newFields : m_oldFields, m_filters.m_propertyFilter, m_iterator.GetCurrentChange().GetOpcode(), changedPropNames) != SUCCESS)
         return StageProcessResult::Error;
     return StageProcessResult::Success;
 }
