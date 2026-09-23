@@ -1020,7 +1020,7 @@ Napi::Value JsInterop::UpdateInstance(ECDbR db, NapiInfoCR info) {
 
     std::vector<Utf8String> conflictingProperties;
     auto rc = repo.Update(inst, args, fmt, conflictingProperties);
-    if (rc != BE_SQLITE_DONE) {
+    if (rc != BE_SQLITE_DONE && rc != BE_SQLITE_NOTFOUND) {
         ThrowInstanceWriteException(info.Env(), repo, "Failed to update instance", rc);
     }
     bool updated = db.GetModifiedRowCount() > 0;
