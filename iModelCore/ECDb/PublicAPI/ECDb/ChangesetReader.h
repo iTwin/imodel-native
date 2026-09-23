@@ -22,7 +22,7 @@ public:
         All = 0, //!< Emit ECInstanceId, ECClassId, and all user/domain properties.
         BisCoreElement = 1, //!< Emit ECInstanceId, ECClassId, and all BisCore Element properties if the class is derived from BisCore::Element, For classes not derived from BisCore::Element, all properties are returned.
         InstanceKey = 2,   //!< Emit ECInstanceId and ECClassId only (cheapest).
-        InstanceKeyAndIdentifiers = 3, //!< Experimental: instance keys plus identifiers read only from the changeset: ElementAspect Element.Id; on delete, Element FederationGuid, link-table Source/TargetECInstanceId, and ExternalSourceAspect Scope.Id, Kind, Identifier.
+        InstanceKeyAndIdentifiers = 3, //!< Emit ECInstanceId, ECClassId, and identifiers read only from the changeset: ElementAspect Element.Id; on delete, Element FederationGuid, link-table Source/TargetECInstanceId, and ExternalSourceAspect Scope.Id, Kind, Identifier.
     };
 
 private:
