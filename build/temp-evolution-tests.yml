@@ -1,0 +1,97 @@
+name: iModelEvolutionTests-profiling-$(Date:yyyy.MM.dd)$(Rev:.r)
+
+# Temporary pipeline to test-run the optimized iModelEvolution (compatibility) tests.
+# Builds only the RunIModelEvolutionTests product (which runs the tests as part of the build) via BentleyBuild.
+
+trigger: none
+pr: none
+
+parameters:
+  - name: nativeInternalBranch
+    displayName: imodel-native-internal branch
+    type: string
+    default: main
+  - name: optimized
+    displayName: RUN_EVOLUTION_TESTS_OPTIMIZED (1 = sharded/cached run, 0 = original behavior)
+    type: string
+    default: '1'
+    values: ['0', '1']
+  - name: shards
+    displayName: Number of concurrent shards (empty = cpu_count/2)
+    type: string
+    default: ''
+  - name: tmrbuild
+    displayName: Wipe the output tree before building (--tmrbuild)
+    type: boolean
+    default: true
+
+resources:
+  repositories:
+    - repository: imodel-native-internal
+      type: github
+      endpoint: imodel-native-internal
+      name: iTwin/imodel-native-internal
+      ref: ${{ parameters.nativeInternalBranch }}
+    - repository: BentleyBuild
+      type: github
+      endpoint: imodel-native-internal
+      name: iTwin/BentleyBuild
+
+variables:
+  SrcRoot: $(Build.SourcesDirectory)\
+  OutRoot: $(Build.BinariesDirectory)\
+  BuildStrategy: iModelEvolutionTests;buildall
+  BuildArchitecture: Winx64
+  BB_PRIMARY_REPO: imodel-native-internal
+  RUN_EVOLUTION_TESTS_OPTIMIZED: ${{ parameters.optimized }}
+  IMODELEVOLUTION_SHARDS: ${{ parameters.shards }}
+  ${{ if eq(parameters.tmrbuild, true) }}:
+    BB_BUILD_ARGS: --tmrbuild
+  ${{ else }}:
+    BB_BUILD_ARGS: ''
+
+stages:
+- stage: iModelEvolutionTests
+  displayName: iModelEvolutionTests
+  jobs:
+    - job: iModelEvolutionTests
+      displayName: Build & run iModelEvolutionTests (Winx64)
+      timeoutInMinutes: 360
+      pool:
+        vmImage: windows-latest
+
+      steps:
+        - checkout: self
+          clean: true
+          persistCredentials: true
+          path: s/imodel-native
+
+        - checkout: imodel-native-internal
+          clean: true
+          persistCredentials: true
+          path: s/imodel-native-internal
+
+        - checkout: BentleyBuild
+          clean: true
+          path: s/BentleyBuild
+
+        - task: UsePythonVersion@0
+          displayName: Use Python 3.x
+          inputs:
+            versionSpec: '3.x'
+            addToPath: true
+
+        - script: |
+            python -m pip install --upgrade pip
+            pip install uv
+          displayName: Install uv
+
+        - script: |
+            echo SrcRoot=%SrcRoot%
+            echo OutRoot=%OutRoot%
+            echo BuildStrategy=%BuildStrategy%
+            echo RUN_EVOLUTION_TESTS_OPTIMIZED=%RUN_EVOLUTION_TESTS_OPTIMIZED%
+            echo IMODELEVOLUTION_SHARDS=%IMODELEVOLUTION_SHARDS%
+            uv run --directory "%SrcRoot%BentleyBuild" BentleyBuild.py -p RunIModelEvolutionTests -s "%BuildStrategy%" -f iModelCore/iModelPlatform/iModelPlatform b --noprompt %BB_BUILD_ARGS%
+          displayName: Build & run RunIModelEvolutionTests
+          workingDirectory: $(Build.SourcesDirectory)
