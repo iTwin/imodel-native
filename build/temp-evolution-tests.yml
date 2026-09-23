@@ -20,10 +20,6 @@ parameters:
     displayName: Number of concurrent shards (empty = cpu_count/2)
     type: string
     default: ''
-  - name: tmrbuild
-    displayName: Wipe the output tree before building (--tmrbuild)
-    type: boolean
-    default: true
 
 resources:
   repositories:
@@ -32,66 +28,138 @@ resources:
       endpoint: imodel-native-internal
       name: iTwin/imodel-native-internal
       ref: ${{ parameters.nativeInternalBranch }}
-    - repository: BentleyBuild
-      type: github
-      endpoint: imodel-native-internal
-      name: iTwin/BentleyBuild
-
-variables:
-  SrcRoot: $(Build.SourcesDirectory)\
-  OutRoot: $(Build.BinariesDirectory)\
-  BuildStrategy: iModelEvolutionTests;buildall
-  BuildArchitecture: Winx64
-  BB_PRIMARY_REPO: imodel-native-internal
-  RUN_EVOLUTION_TESTS_OPTIMIZED: ${{ parameters.optimized }}
-  IMODELEVOLUTION_SHARDS: ${{ parameters.shards }}
-  ${{ if eq(parameters.tmrbuild, true) }}:
-    BB_BUILD_ARGS: --tmrbuild
-  ${{ else }}:
-    BB_BUILD_ARGS: ''
 
 stages:
 - stage: iModelEvolutionTests
   displayName: iModelEvolutionTests
   jobs:
-    - job: iModelEvolutionTests
+    - job: RunIModelEvolutionTests
       displayName: Build & run iModelEvolutionTests (Winx64)
-      timeoutInMinutes: 360
+      timeoutInMinutes: 240
+      workspace:
+        clean: all
       pool:
-        vmImage: windows-latest
+        name: imodelNative-Win11-VS2022
+        demands:
+          - Agent.OS -equals Windows_NT
+      variables:
+        - name: BB_V
+          value: 4
+        - name: BB_ARCH
+          value: x64
+        - name: BB_SRC_ROOT
+          value: $(Agent.BuildDirectory)/bbsrc
+        - name: bb
+          value: $(BB_SRC_ROOT)/BentleyBuild
+        - name: strategy
+          value: 'iModelEvolutionTests;SkipPull_imodel-native-internal'
 
       steps:
-        - checkout: self
-          clean: true
-          persistCredentials: true
-          path: s/imodel-native
-
         - checkout: imodel-native-internal
-          clean: true
+
+        - checkout: self
           persistCredentials: true
-          path: s/imodel-native-internal
+          fetchDepth: 0
 
-        - checkout: BentleyBuild
-          clean: true
-          path: s/BentleyBuild
-
-        - task: UsePythonVersion@0
-          displayName: Use Python 3.x
+        - task: PowerShell@2
+          displayName: Purge bbcache/*.cache
           inputs:
-            versionSpec: '3.x'
-            addToPath: true
+            targetType: inline
+            script: |
+              if (Test-Path $(BB_SRC_ROOT)/bbcache) {
+                del $(BB_SRC_ROOT)/bbcache/*.cache
+                echo "bbcache directory purged"
+              } else {
+                echo "No bbcache directory to purge"
+              }
 
-        - script: |
-            python -m pip install --upgrade pip
-            pip install uv
-          displayName: Install uv
+        - task: setenv@0
+          displayName: Windows Environment
+          inputs:
+            envVars: |
+              IS_WINDOWS=1
 
-        - script: |
-            echo SrcRoot=%SrcRoot%
-            echo OutRoot=%OutRoot%
-            echo BuildStrategy=%BuildStrategy%
-            echo RUN_EVOLUTION_TESTS_OPTIMIZED=%RUN_EVOLUTION_TESTS_OPTIMIZED%
-            echo IMODELEVOLUTION_SHARDS=%IMODELEVOLUTION_SHARDS%
-            uv run --directory "%SrcRoot%BentleyBuild" BentleyBuild.py -p RunIModelEvolutionTests -s "%BuildStrategy%" -f iModelCore/iModelPlatform/iModelPlatform b --noprompt %BB_BUILD_ARGS%
-          displayName: Build & run RunIModelEvolutionTests
-          workingDirectory: $(Build.SourcesDirectory)
+              # Make PY scripts like BB flush output for immediate feedback in build logs.
+              PYTHONUNBUFFERED=1
+
+              # Shared shell config
+              SrcRoot=$(BB_SRC_ROOT)/
+              OutRoot=$(Build.BinariesDirectory)/
+
+              # Use a unique mspdbsrv.exe per-job to alleviate PDB write issues when an existing instance is killed based on uptime.
+              _MSPDBSRV_ENDPOINT_=$(Build.BuildId)
+
+              BSI=1
+              NDEBUG=1
+              FORCE_EMBED_PDB_SOURCE=1
+
+              # Static Analysis
+              ENABLE_COMPILER_ANALYZE=1
+              ANALYZE_WARNINGS_TO_ERRORS=1
+
+              # iModelEvolution test optimizations (master switch + shard count), read by the .mke files, the python launchers and the test runner
+              RUN_EVOLUTION_TESTS_OPTIMIZED=${{ parameters.optimized }}
+              IMODELEVOLUTION_SHARDS=${{ parameters.shards }}
+
+        - task: bentleybootstrap3@0
+          displayName: BentleyBootstrap3
+          inputs:
+            srcroot: bbsrc
+            localRepoName: 'imodel-native-internal'
+            primarySourceDir: imodel-native-internal
+          env:
+            AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
+
+        - task: createsymlink@0
+          displayName: Link imodel-native-internal Repository
+          inputs:
+            linkPath: $(BB_SRC_ROOT)/imodel-native-internal
+            linkTarget: $(Build.SourcesDirectory)/imodel-native-internal
+
+        - task: createsymlink@0
+          displayName: Link imodel-native Repository
+          inputs:
+            linkPath: $(BB_SRC_ROOT)/imodel-native
+            linkTarget: $(Build.SourcesDirectory)/imodel-native
+
+        - task: UseNode@1
+          displayName: Use Node 22.x
+          inputs:
+            version: 22.x
+            checkLatest: false
+
+        - task: CmdLine@2
+          displayName: Pull
+          env:
+            AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
+          inputs:
+            script: uv run --directory $(bb) BentleyBuild.py -v $(BB_V) -a $(BB_ARCH) -s $(strategy) pull
+
+        - task: CmdLine@2
+          displayName: Show optimization settings
+          inputs:
+            script: |
+              echo RUN_EVOLUTION_TESTS_OPTIMIZED=%RUN_EVOLUTION_TESTS_OPTIMIZED%
+              echo IMODELEVOLUTION_SHARDS=%IMODELEVOLUTION_SHARDS%
+              echo NUMBER_OF_PROCESSORS=%NUMBER_OF_PROCESSORS%
+              git -C $(Build.SourcesDirectory)/imodel-native log -1 --oneline
+
+        - task: CmdLine@2
+          displayName: Build & run iModelEvolutionTests
+          env:
+            NuGetFeed_Address: $(NUGETFEED_ADDRESS)
+            AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
+          inputs:
+            script: uv run --directory $(bb) BentleyBuild.py -v $(BB_V) -a $(BB_ARCH) -s $(strategy) build
+
+        # Dump the per-process gtest logs into the job log
+        - task: CmdLine@2
+          displayName: Show test logs
+          condition: always()
+          inputs:
+            script: |
+              for %%f in ("$(Build.BinariesDirectory)\Winx64\build\IModelEvolutionTests\run\logs\*.log") do (
+                echo ==================== %%~nxf ====================
+                type "%%f"
+              )
+              dir /s /b "$(Build.BinariesDirectory)\Winx64\Product\iModelEvolutionGTest\run\Output\*.csv" 2>nul
