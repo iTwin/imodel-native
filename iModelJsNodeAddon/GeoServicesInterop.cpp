@@ -234,6 +234,18 @@ StatusInt GeoServicesInterop::GetListOfVerticalCRS(bvector<VerticalCRSListRespon
         includeIntersecting = includeIntersectingJson.asBool();
         }
 
+    Utf8String unitFilter;
+    auto unitJson = props["unit"];
+    if (!unitJson.isNull())
+        {
+        if (!unitJson.isString())
+            {
+            errorMessage = "unit must be a string";
+            return GeoCoordinates::GEOCOORDERR_BadArg;
+            }
+        unitFilter = unitJson.asString();
+        }
+
     GeoCoordinates::VerticalDatumDictionaryPtr dictionary = GeoCoordinates::VerticalDatumDictionary::Get();
     if (!dictionary.IsValid())
         return GeoCoordinates::GEOCOORDERR_NoDictionary;
@@ -253,6 +265,7 @@ StatusInt GeoServicesInterop::GetListOfVerticalCRS(bvector<VerticalCRSListRespon
     if (SUCCESS != status)
         return status;
 
+    auto canonicalUnitNames = GeoCoordinates::BaseGCS::GetSupportedJsonUnitNames();
     for (Utf8StringCR name : names)
         {
         GeoCoordinates::VerticalDatumInfoPtr info = dictionary->GetVerticalDatumInfoFromName(name, status);
@@ -265,7 +278,18 @@ StatusInt GeoServicesInterop::GetListOfVerticalCRS(bvector<VerticalCRSListRespon
         info->GetDescription(verticalCrs.m_description);
         verticalCrs.m_deprecated = info->IsDeprecated();
         info->GetType(verticalCrs.m_type);
-        info->GetUnits(verticalCrs.m_unit);
+        Utf8String rawUnit;
+        info->GetUnits(rawUnit);
+        for (Utf8StringCR canonicalUnitName : canonicalUnitNames)
+            {
+            if (canonicalUnitName.EqualsIAscii(rawUnit))
+                {
+                verticalCrs.m_unit = canonicalUnitName;
+                break;
+                }
+            }
+        if (!unitFilter.empty() && !verticalCrs.m_unit.EqualsIAscii(unitFilter))
+            continue;
         info->GetExtent(verticalCrs.m_extent);
         verticalCrs.m_id = GetLegacyVerticalCrsId(*info);
         results.push_back(verticalCrs);

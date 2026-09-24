@@ -861,6 +861,7 @@ export declare namespace IModelJsNative {
     point?: { longitude: number, latitude: number };
     extent?: Range2dProps;
     includeIntersecting?: boolean;
+    unit?: string;
   }
 
   /** Expected to migrate to `@itwin/core-common` with `VerticalCRSListProps`. */
