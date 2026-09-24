@@ -162,4 +162,3 @@ stages:
                 echo ==================== %%~nxf ====================
                 type "%%f"
               )
-              dir /s /b "$(Build.BinariesDirectory)\Winx64\Product\iModelEvolutionGTest\run\Output\*.csv" 2>nul
