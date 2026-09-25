@@ -3916,6 +3916,44 @@ DgnDbStatus GeometricElement::_OnUpdate(DgnElementCR el)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Reads json_placement() into placement and sets the placement data flags, which decide which
+* placement columns are stored and which stay NULL. Origin and angles are stored when their JSON
+* member is non-null, so an explicit zero rotation (0 or {}) is stored as zero. A valid JSON bounding
+* box is used only when the geometry is binary or absent.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+template<class T_Placement> void GeometricElement::PlacementFromJson(T_Placement& placement, BeJsConst props, Utf8CP anglesMember)
+    {
+    auto placementJson = props[json_placement()];
+    if (m_geometryWasCleared || placementJson.isNull())
+        return;
+
+    uint8_t placementDataFlags = PlacementData_None;
+    if (!placementJson[T_Placement::json_origin()].isNull())
+        placementDataFlags |= PlacementData_Origin;
+    if (!placementJson[anglesMember].isNull())
+        placementDataFlags |= PlacementData_Angles;
+
+    T_Placement newPlacement;
+    newPlacement.FromJson(placementJson);
+    if (props.isMember(json_geomBinary()) || (props[json_geom()].isNull() && props[json_elementGeometryBuilderParams()].isNull()))
+        {
+        // Uses the JSON bounding box, because binary geometry is copied without parsing and absent geometry gives nothing to compute from.
+        if (!placementJson[T_Placement::json_bbox()].empty() && newPlacement.IsValid())
+            placementDataFlags |= PlacementData_Bbox;
+        }
+    else
+        {
+        // Keeps the bounding box already on the element. GeometricElement::_FromJson has just built the supplied geometry and set this box from it if the build succeeded.
+        newPlacement.GetElementBoxR() = placement.GetElementBox();
+        placementDataFlags |= GetPlacementDataFlags() & PlacementData_Bbox;
+        }
+
+    placement = newPlacement;
+    SetPlacementDataFlags(placementDataFlags);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometricElement2d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
@@ -3984,51 +4022,7 @@ void GeometricElement2d::_ToJson(BeJsValue val, BeJsConst opts) const
 void GeometricElement2d::_FromJson(BeJsConst props)
     {
     T_Super::_FromJson(props);
-
-    auto placementJson = props[json_placement()];
-    if (!m_geometryWasCleared && !placementJson.isNull())
-        {
-        if (props.isMember(json_geomBinary()) || (props[json_geom()].isNull() && props[json_elementGeometryBuilderParams()].isNull()))
-            {
-            // NOTE: Use the existing bounding box when the GeometryStream is cloned as binary or no geometry exists to calculate from
-            m_placement.FromJson(placementJson);
-
-            uint8_t placementDataFlags = PlacementData_None;
-            auto originJson = placementJson[Placement2d::json_origin()];
-            if (placementJson.hasMember(Placement2d::json_origin()) && !originJson.isNull())
-                placementDataFlags |= PlacementData_Origin;
-            // The wire format omits a zero angle. A valid bbox means the placement is intentional even when the angle is zero.
-            auto angleJson = placementJson[Placement2d::json_angle()];
-            bool hasAngle = !angleJson.isNull() && BeJsGeomUtils::AngleInDegreesFromJson(angleJson).Degrees() != 0.0;
-            auto bboxJson = placementJson[Placement2d::json_bbox()];
-            bool hasBbox = !bboxJson.empty() && m_placement.IsValid();
-            if (placementJson.hasMember(Placement2d::json_angle()) && (hasAngle || hasBbox))
-                placementDataFlags |= PlacementData_Angles;
-            if (hasBbox)
-                placementDataFlags |= PlacementData_Bbox;
-            SetPlacementDataFlags(placementDataFlags);
-            }
-        else
-            {
-            // NOTE: Bounding box will be updated from the supplied geometry
-            Placement2d newPlacement;
-            newPlacement.FromJson(placementJson);
-            m_placement.GetOriginR() = newPlacement.GetOrigin();
-            m_placement.GetAngleR()  = newPlacement.GetAngle();
-
-            uint8_t placementDataFlags = GetPlacementDataFlags() & PlacementData_Bbox;
-            auto originJson = placementJson[Placement2d::json_origin()];
-            if (placementJson.hasMember(Placement2d::json_origin()) && !originJson.isNull())
-                placementDataFlags |= PlacementData_Origin;
-            auto angleJson = placementJson[Placement2d::json_angle()];
-            bool hasAngle = !angleJson.isNull() && BeJsGeomUtils::AngleInDegreesFromJson(angleJson).Degrees() != 0.0;
-            auto bboxJson = placementJson[Placement2d::json_bbox()];
-            bool hasBbox = !bboxJson.empty() && newPlacement.IsValid();
-            if (placementJson.hasMember(Placement2d::json_angle()) && (hasAngle || hasBbox))
-                placementDataFlags |= PlacementData_Angles;
-            SetPlacementDataFlags(placementDataFlags);
-            }
-        }
+    PlacementFromJson(m_placement, props, Placement2d::json_angle());
 
     if (props.hasMember(json_typeDefinition())) // support partial update, only update m_typeDefinition if props has member
         {
@@ -4059,8 +4053,11 @@ DgnDbStatus GeometricElement3d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlCla
     auto yawIndex = params.GetSelectIndex(prop_Yaw());
     auto pitchIndex = params.GetSelectIndex(prop_Pitch());
     auto rollIndex = params.GetSelectIndex(prop_Roll());
-    bool hasAngles = !stmt.IsValueNull(yawIndex) && !stmt.IsValueNull(pitchIndex) && !stmt.IsValueNull(rollIndex);
-    if (hasAngles)
+    bool hasYaw = !stmt.IsValueNull(yawIndex);
+    bool hasPitch = !stmt.IsValueNull(pitchIndex);
+    bool hasRoll = !stmt.IsValueNull(rollIndex);
+    // Angles are NULL only when all three columns are NULL; a partially NULL row keeps its non-NULL angles and reads the rest as zero.
+    if (hasYaw || hasPitch || hasRoll)
         placementDataFlags |= PlacementData_Angles;
 
     auto bboxLowIndex = params.GetSelectIndex(prop_BBoxLow());
@@ -4069,9 +4066,9 @@ DgnDbStatus GeometricElement3d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlCla
     if (hasBBox)
         placementDataFlags |= PlacementData_Bbox;
 
-    double yaw = hasAngles ? stmt.GetValueDouble(yawIndex) : 0.0;
-    double pitch = hasAngles ? stmt.GetValueDouble(pitchIndex) : 0.0;
-    double roll = hasAngles ? stmt.GetValueDouble(rollIndex) : 0.0;
+    double yaw = hasYaw ? stmt.GetValueDouble(yawIndex) : 0.0;
+    double pitch = hasPitch ? stmt.GetValueDouble(pitchIndex) : 0.0;
+    double roll = hasRoll ? stmt.GetValueDouble(rollIndex) : 0.0;
     ElementAlignedBox3d bbox;
     if (hasBBox)
         {
@@ -4115,51 +4112,7 @@ void GeometricElement3d::_ToJson(BeJsValue val, BeJsConst opts) const
 void GeometricElement3d::_FromJson(BeJsConst props)
     {
     T_Super::_FromJson(props);
-
-    auto placementJson = props[json_placement()];
-    if (!m_geometryWasCleared && !placementJson.isNull())
-        {
-        if (props.isMember(json_geomBinary()) || (props[json_geom()].isNull() && props[json_elementGeometryBuilderParams()].isNull()))
-            {
-            // NOTE: Use the existing bounding box when the GeometryStream is cloned as binary or no geometry exists to calculate from
-            m_placement.FromJson(placementJson);
-
-            uint8_t placementDataFlags = PlacementData_None;
-            auto originJson = placementJson[Placement3d::json_origin()];
-            if (placementJson.hasMember(Placement3d::json_origin()) && !originJson.isNull())
-                placementDataFlags |= PlacementData_Origin;
-            // The wire format omits zero angles; core serializes them as an empty object. A valid bbox means the placement is intentional even when all angles are zero.
-            auto anglesJson = placementJson[Placement3d::json_angles()];
-            bool hasAngles = !anglesJson.empty();
-            auto bboxJson = placementJson[Placement3d::json_bbox()];
-            bool hasBbox = !bboxJson.empty() && m_placement.IsValid();
-            if (placementJson.hasMember(Placement3d::json_angles()) && (hasAngles || hasBbox))
-                placementDataFlags |= PlacementData_Angles;
-            if (hasBbox)
-                placementDataFlags |= PlacementData_Bbox;
-            SetPlacementDataFlags(placementDataFlags);
-            }
-        else
-            {
-            // NOTE: Bounding box will be updated from the supplied geometry
-            Placement3d newPlacement;
-            newPlacement.FromJson(placementJson);
-            m_placement.GetOriginR() = newPlacement.GetOrigin();
-            m_placement.GetAnglesR() = newPlacement.GetAngles();
-
-            uint8_t placementDataFlags = GetPlacementDataFlags() & PlacementData_Bbox;
-            auto originJson = placementJson[Placement3d::json_origin()];
-            if (placementJson.hasMember(Placement3d::json_origin()) && !originJson.isNull())
-                placementDataFlags |= PlacementData_Origin;
-            auto anglesJson = placementJson[Placement3d::json_angles()];
-            bool hasAngles = !anglesJson.empty();
-            auto bboxJson = placementJson[Placement3d::json_bbox()];
-            bool hasBbox = !bboxJson.empty() && newPlacement.IsValid();
-            if (placementJson.hasMember(Placement3d::json_angles()) && (hasAngles || hasBbox))
-                placementDataFlags |= PlacementData_Angles;
-            SetPlacementDataFlags(placementDataFlags);
-            }
-        }
+    PlacementFromJson(m_placement, props, Placement3d::json_angles());
 
     if (props.hasMember(json_typeDefinition())) // support partial update, only update m_typeDefinition if props has member
         {
