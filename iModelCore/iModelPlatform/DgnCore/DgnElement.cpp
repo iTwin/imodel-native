@@ -952,6 +952,12 @@ DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
     if (parentId.IsValid() && parentId != original.GetParentId() && parentCycleExists(parentId, GetElementId(), GetDgnDb()))
         return DgnDbStatus::InvalidParent;
 
+    if (m_code.GetValueUtf8().length() > (size_t)IModelHubConstants::MaxCodeValueLength) {
+        BeAssert(false);
+        LOG.errorv("Element update rejected because code value [%s] is too long. ECClass=%s", m_code.GetValueUtf8CP(), GetHandlerECClassName());
+        return DgnDbStatus::InvalidCode;
+    }
+
     auto existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
     if ((existingElemWithCode.IsValid() && existingElemWithCode != GetElementId()))
         return DgnDbStatus::DuplicateCode;
