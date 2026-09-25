@@ -600,7 +600,16 @@ TEST_F(SchemaChangesetTestFixture, ApplyChangesetWithPropertyMapWarningsCappedAn
             <ECProperty propertyName="P2" typeName="string"/>
           </ECEntityClass>
 )xml", classIndex));
-    schemaXml.append(R"xml(        </ECSchema>
+    // Polymorphic relationship constraints load the child class maps before validation.
+    schemaXml.append(R"xml(          <ECRelationshipClass typeName="RootReferencesRoot" modifier="Sealed" strength="referencing">
+            <Source multiplicity="(0..*)" roleLabel="references" polymorphic="true">
+              <Class class="Root"/>
+            </Source>
+            <Target multiplicity="(0..*)" roleLabel="is referenced by" polymorphic="true">
+              <Class class="Root"/>
+            </Target>
+          </ECRelationshipClass>
+        </ECSchema>
 )xml");
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("duplicateMapWarningProbe.ecdb", SchemaItem(schemaXml)));
