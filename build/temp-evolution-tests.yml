@@ -17,9 +17,9 @@ parameters:
     default: '1'
     values: ['0', '1']
   - name: shards
-    displayName: Number of concurrent shards (empty = cpu_count/2)
+    displayName: Number of concurrent shards ('auto' = cpu_count/2)
     type: string
-    default: ''
+    default: 'auto'
 
 resources:
   repositories:

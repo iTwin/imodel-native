@@ -21,7 +21,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 # Every process writes its own gtest log into the log folder.
 
 TESTRUNNER_EXE = "iModelEvolutionTests.exe"
-SHARDS_ENV_VAR = "IMODELEVOLUTION_SHARDS"
 OPTIMIZED_ENV_VAR = "RUN_EVOLUTION_TESTS_OPTIMIZED"
 SETUP_TEST_FILTER = "*CreateTestFiles"
 
@@ -45,10 +44,10 @@ def isOptimized():
 # bsimethod
 #------------------------------------------------------------------------
 def getShardCount(args):
-    """Number of concurrent test runner processes. Anything non-numeric (empty, 'auto') means cpu_count/2."""
+    """Number of concurrent test runner processes. Anything non-numeric (missing, empty, 'auto') means cpu_count/2."""
     if not isOptimized():
         return 1
-    value = os.environ.get(SHARDS_ENV_VAR, "")
+    value = ""
     for arg in args:
         if arg.startswith("--shards="):
             value = arg[len("--shards="):]
@@ -126,7 +125,7 @@ def main():
         print ("Arg 2: Log folder (one gtest log per process is written there)")
         print ("Arg 3: Path of the combined log (all per-process logs concatenated)")
         print ("Optional: --optimized=0|1 (or env {0}) master switch for the optimizations, defaults to 1".format(OPTIMIZED_ENV_VAR))
-        print ("Optional: --shards=N (or env {0}=N) number of concurrent test runner processes".format(SHARDS_ENV_VAR))
+        print ("Optional: --shards=N number of concurrent test runner processes, defaults to cpu_count/2")
         print ("Optional: --setup-only  only wipe the upgrade cache and create the test files (for debugging a shard afterwards)")
         print ("Optional: --keep-output  do not delete the shards' output (cloned/upgraded test files) after a successful run")
         print ("Any other --option is passed through to the test runner (e.g. --timeout=-1)")

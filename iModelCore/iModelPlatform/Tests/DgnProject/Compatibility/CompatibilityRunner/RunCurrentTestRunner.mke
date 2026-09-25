@@ -12,7 +12,7 @@
 # Runs the current test runner. By default (RUN_EVOLUTION_TESTS_OPTIMIZED=1) the test files are created once and the
 # remaining tests are then executed by several concurrent gtest shards (see RunCurrentTestRunner.py).
 # Pass -dRUN_EVOLUTION_TESTS_OPTIMIZED=0 (or set the environment variable) to run everything in a single process as before.
-# Pass -dIMODELEVOLUTION_SHARDS=N (or set the environment variable) to control the number of shards.
+# Pass -dIMODELEVOLUTION_SHARDS=N to override the number of shards (defaults to cpu_count/2).
 %if !defined (RUN_EVOLUTION_TESTS_OPTIMIZED)
     RUN_EVOLUTION_TESTS_OPTIMIZED = 1
 %endif
