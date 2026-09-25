@@ -171,6 +171,13 @@ DLM_NO_CONTEXT_LINK = 1
 
         # This is a hack, Mac is not set up with the various context definitions like linux
         BENTLEY_TOOLCONTEXT_LINK_OUT_NAME = $(DLM_OUT_NAME)
+
+        # N-API symbols are provided by the host process at runtime. CLANG_ALLOW_UNDEFINED would link
+        # with -flat_namespace, which lets same-named symbols exported by node (its bundled OpenSSL
+        # assembly, c-ares, zlib) replace the addon's own copies. dynamic_lookup keeps the two-level
+        # namespace, so only the addon's undefined symbols are resolved at runtime.
+        %undef CLANG_ALLOW_UNDEFINED
+        LinkOptions + -undefined dynamic_lookup
     %endif
 
     # Always produce a .SO (even though this is a static build)
