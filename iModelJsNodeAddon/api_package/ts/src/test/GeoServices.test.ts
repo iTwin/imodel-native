@@ -39,7 +39,7 @@ const verticalDatumDictionary = JSON.stringify({
       crsName: "Regional test height",
       datumName: "Regional test datum",
       type: "GEOID",
-      units: "meter",
+      units: "ussurveyfoot",
       description: "Regional test height",
       deprecated: false,
       extent: {
@@ -173,7 +173,7 @@ describe("GeoServices", () => {
     expect(egm96.description).to.equal("EGM96 height");
     expect(egm96.deprecated).to.be.false;
     expect(egm96.type).to.equal("GEOID");
-    expect(egm96.unit).to.equal("meter");
+    expect(egm96.unit).to.equal("Meter");
     expect(egm96.extent).to.deep.equal({ low: [-180, -90], high: [180, 90] });
     expect(verticalSystems.some((entry) => entry.crsName === "Regional test height")).to.be.true;
 
@@ -376,7 +376,7 @@ describe("GeoServices", () => {
 
   it("filters vertical coordinate reference systems by point", () => {
     const verticalSystems = iModelJsNative.GeoServices.getListOfVerticalCRS({
-      point: { longitude: 23.7, latitude: 37.9 },
+      point: { x: 23.7, y: 37.9 },
     });
 
     expect(verticalSystems.some((entry) => entry.crsName === "EGM96 height")).to.be.true;
@@ -385,7 +385,7 @@ describe("GeoServices", () => {
 
   it("finds all vertical coordinate reference systems containing a point", () => {
     const verticalSystems = iModelJsNative.GeoServices.getListOfVerticalCRS({
-      point: { longitude: -100, latitude: 40 },
+      point: { x: -100, y: 40 },
     });
 
     expect(verticalSystems.some((entry) => entry.crsName === "EGM96 height")).to.be.true;
@@ -421,9 +421,21 @@ describe("GeoServices", () => {
     expect(verticalSystems.some((entry) => entry.crsName === "Regional test height")).to.be.true;
   });
 
+  it("filters vertical coordinate reference systems by canonical unit name case-insensitively", () => {
+    const matchingSystems = iModelJsNative.GeoServices.getListOfVerticalCRS({ unit: "mEtEr" });
+    expect(matchingSystems).not.to.be.empty;
+    expect(matchingSystems.every((entry) => entry.unit === "Meter")).to.be.true;
+
+    const surveyFootSystems = iModelJsNative.GeoServices.getListOfVerticalCRS({ unit: "ussurveyfoot" });
+    expect(surveyFootSystems.map((entry) => entry.crsName)).to.deep.equal(["Regional test height"]);
+    expect(surveyFootSystems[0].unit).to.equal("USSurveyFoot");
+
+    expect(iModelJsNative.GeoServices.getListOfVerticalCRS({ unit: "Degree" })).to.be.empty;
+  });
+
   it("rejects conflicting vertical coordinate reference system filters", () => {
     expect(() => iModelJsNative.GeoServices.getListOfVerticalCRS({
-      point: { longitude: 0, latitude: 0 },
+      point: { x: 0, y: 0 },
       extent: { low: { x: -1, y: -1 }, high: { x: 1, y: 1 } },
     })).to.throw("point and extent are mutually exclusive");
   });
@@ -433,13 +445,14 @@ describe("GeoServices", () => {
       (iModelJsNative.GeoServices.getListOfVerticalCRS as (value?: unknown) => unknown)(props);
 
     expect(() => getListOfVerticalCRS({ point: "invalid" })).to.throw("point must be an object");
-    expect(() => getListOfVerticalCRS({ point: { longitude: 0 } })).to.throw("point must contain numeric longitude and latitude");
-    expect(() => getListOfVerticalCRS({ point: { longitude: Number.NaN, latitude: 0 } })).to.throw("point longitude and latitude must be finite");
+    expect(() => getListOfVerticalCRS({ point: { x: 0 } })).to.throw("point must contain numeric x and y coordinates");
+    expect(() => getListOfVerticalCRS({ point: { x: Number.NaN, y: 0 } })).to.throw("point coordinates must be finite");
     expect(() => getListOfVerticalCRS({ extent: "invalid" })).to.throw("extent must be an object");
     expect(() => getListOfVerticalCRS({ extent: { low: { x: 0 }, high: { x: 1, y: 1 } } })).to.throw("extent must contain numeric low and high points");
     expect(() => getListOfVerticalCRS({ extent: { low: { x: 0, y: 0 }, high: { x: Number.POSITIVE_INFINITY, y: 1 } } })).to.throw("extent coordinates must be finite");
     expect(() => getListOfVerticalCRS({ extent: { low: { x: 0, y: 2 }, high: { x: 1, y: 1 } } })).to.throw("extent low latitude must not exceed high latitude");
     expect(() => getListOfVerticalCRS({ extent: { low: { x: -181, y: 0 }, high: { x: 1, y: 1 } } })).to.throw();
     expect(() => getListOfVerticalCRS({ includeIntersecting: "yes" })).to.throw("includeIntersecting must be a boolean");
+    expect(() => getListOfVerticalCRS({ unit: 1 })).to.throw("unit must be a string");
   });
 });

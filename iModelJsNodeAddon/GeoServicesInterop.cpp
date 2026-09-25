@@ -16,8 +16,6 @@ BE_JSON_NAME(format)
 BE_JSON_NAME(status)
 BE_JSON_NAME(point)
 BE_JSON_NAME(extent)
-BE_JSON_NAME(longitude)
-BE_JSON_NAME(latitude)
 BE_JSON_NAME(includeIntersecting)
 
 static Utf8String GetLegacyVerticalCrsId(GeoCoordinates::VerticalDatumInfo const& info)
@@ -176,17 +174,17 @@ StatusInt GeoServicesInterop::GetListOfVerticalCRS(bvector<VerticalCRSListRespon
             errorMessage = "point must be an object";
             return GeoCoordinates::GEOCOORDERR_BadArg;
             }
-        if (!pointJson.isNumericMember(json_longitude()) || !pointJson.isNumericMember(json_latitude()))
+        if (!IsNumericPoint2d(pointJson))
             {
-            errorMessage = "point must contain numeric longitude and latitude";
+            errorMessage = "point must contain numeric x and y coordinates";
             return GeoCoordinates::GEOCOORDERR_BadArg;
             }
 
-        point.longitude = pointJson[json_longitude()].asDouble();
-        point.latitude = pointJson[json_latitude()].asDouble();
+        point.longitude = pointJson["x"].asDouble();
+        point.latitude = pointJson["y"].asDouble();
         if (!std::isfinite(point.longitude) || !std::isfinite(point.latitude))
             {
-            errorMessage = "point longitude and latitude must be finite";
+            errorMessage = "point coordinates must be finite";
             return GeoCoordinates::GEOCOORDERR_BadArg;
             }
         pointFilter = &point;
@@ -234,6 +232,18 @@ StatusInt GeoServicesInterop::GetListOfVerticalCRS(bvector<VerticalCRSListRespon
         includeIntersecting = includeIntersectingJson.asBool();
         }
 
+    Utf8String unitFilter;
+    auto unitJson = props["unit"];
+    if (!unitJson.isNull())
+        {
+        if (!unitJson.isString())
+            {
+            errorMessage = "unit must be a string";
+            return GeoCoordinates::GEOCOORDERR_BadArg;
+            }
+        unitFilter = unitJson.asString();
+        }
+
     GeoCoordinates::VerticalDatumDictionaryPtr dictionary = GeoCoordinates::VerticalDatumDictionary::Get();
     if (!dictionary.IsValid())
         return GeoCoordinates::GEOCOORDERR_NoDictionary;
@@ -253,6 +263,7 @@ StatusInt GeoServicesInterop::GetListOfVerticalCRS(bvector<VerticalCRSListRespon
     if (SUCCESS != status)
         return status;
 
+    auto canonicalUnitNames = GeoCoordinates::BaseGCS::GetSupportedJsonUnitNames();
     for (Utf8StringCR name : names)
         {
         GeoCoordinates::VerticalDatumInfoPtr info = dictionary->GetVerticalDatumInfoFromName(name, status);
@@ -265,7 +276,18 @@ StatusInt GeoServicesInterop::GetListOfVerticalCRS(bvector<VerticalCRSListRespon
         info->GetDescription(verticalCrs.m_description);
         verticalCrs.m_deprecated = info->IsDeprecated();
         info->GetType(verticalCrs.m_type);
-        info->GetUnits(verticalCrs.m_unit);
+        Utf8String rawUnit;
+        info->GetUnits(rawUnit);
+        for (Utf8StringCR canonicalUnitName : canonicalUnitNames)
+            {
+            if (canonicalUnitName.EqualsIAscii(rawUnit))
+                {
+                verticalCrs.m_unit = canonicalUnitName;
+                break;
+                }
+            }
+        if (!unitFilter.empty() && !verticalCrs.m_unit.EqualsIAscii(unitFilter))
+            continue;
         info->GetExtent(verticalCrs.m_extent);
         verticalCrs.m_id = GetLegacyVerticalCrsId(*info);
         results.push_back(verticalCrs);

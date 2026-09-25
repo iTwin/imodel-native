@@ -150,6 +150,7 @@
 
   <Part Name="RunUnitTests" DeferType="RunUnitTests" BentleyBuildMakeFile="api_package/ts/runTests.mke">
     <SubPart PartName="iModelJsMakePackages"/>
+    <SubPart PartName="GeoCoordDictionaryData" PartFile="iModelCore/libsrc/csmap/csmap"/>
   </Part>
 
 </BuildContext>
