@@ -376,7 +376,7 @@ describe("GeoServices", () => {
 
   it("filters vertical coordinate reference systems by point", () => {
     const verticalSystems = iModelJsNative.GeoServices.getListOfVerticalCRS({
-      point: { longitude: 23.7, latitude: 37.9 },
+      point: { x: 23.7, y: 37.9 },
     });
 
     expect(verticalSystems.some((entry) => entry.crsName === "EGM96 height")).to.be.true;
@@ -385,7 +385,7 @@ describe("GeoServices", () => {
 
   it("finds all vertical coordinate reference systems containing a point", () => {
     const verticalSystems = iModelJsNative.GeoServices.getListOfVerticalCRS({
-      point: { longitude: -100, latitude: 40 },
+      point: { x: -100, y: 40 },
     });
 
     expect(verticalSystems.some((entry) => entry.crsName === "EGM96 height")).to.be.true;
@@ -435,7 +435,7 @@ describe("GeoServices", () => {
 
   it("rejects conflicting vertical coordinate reference system filters", () => {
     expect(() => iModelJsNative.GeoServices.getListOfVerticalCRS({
-      point: { longitude: 0, latitude: 0 },
+      point: { x: 0, y: 0 },
       extent: { low: { x: -1, y: -1 }, high: { x: 1, y: 1 } },
     })).to.throw("point and extent are mutually exclusive");
   });
@@ -445,8 +445,8 @@ describe("GeoServices", () => {
       (iModelJsNative.GeoServices.getListOfVerticalCRS as (value?: unknown) => unknown)(props);
 
     expect(() => getListOfVerticalCRS({ point: "invalid" })).to.throw("point must be an object");
-    expect(() => getListOfVerticalCRS({ point: { longitude: 0 } })).to.throw("point must contain numeric longitude and latitude");
-    expect(() => getListOfVerticalCRS({ point: { longitude: Number.NaN, latitude: 0 } })).to.throw("point longitude and latitude must be finite");
+    expect(() => getListOfVerticalCRS({ point: { x: 0 } })).to.throw("point must contain numeric x and y coordinates");
+    expect(() => getListOfVerticalCRS({ point: { x: Number.NaN, y: 0 } })).to.throw("point coordinates must be finite");
     expect(() => getListOfVerticalCRS({ extent: "invalid" })).to.throw("extent must be an object");
     expect(() => getListOfVerticalCRS({ extent: { low: { x: 0 }, high: { x: 1, y: 1 } } })).to.throw("extent must contain numeric low and high points");
     expect(() => getListOfVerticalCRS({ extent: { low: { x: 0, y: 0 }, high: { x: Number.POSITIVE_INFINITY, y: 1 } } })).to.throw("extent coordinates must be finite");

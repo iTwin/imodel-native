@@ -27,7 +27,7 @@ import type {
   IModelCoordinatesResponseProps, IModelProps, LocalDirName, LocalFileName, MassPropertiesResponseProps, ModelExtentsProps, ModelLoadProps,
   ModelProps, PlacementProps, QueryQuota, RelationshipProps, RscFontEncodingProps, SnapRequestProps, SnapResponseProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, UpgradeOptions
 } from "@itwin/core-common";
-import type { LowAndHighXYZProps, Range2dProps, Range3dProps } from "@itwin/core-geometry";
+import type { LowAndHighXYZProps, Range2dProps, Range3dProps, XAndY } from "@itwin/core-geometry";
 
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable no-restricted-syntax */
@@ -858,7 +858,7 @@ export declare namespace IModelJsNative {
 
   /** Expected to migrate to `@itwin/core-common` when vertical CRS enumeration is exposed there. */
   interface VerticalCRSListProps {
-    point?: { longitude: number, latitude: number };
+    point?: XAndY;
     extent?: Range2dProps;
     includeIntersecting?: boolean;
     unit?: string;

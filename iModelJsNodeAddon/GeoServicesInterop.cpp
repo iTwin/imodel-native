@@ -176,17 +176,17 @@ StatusInt GeoServicesInterop::GetListOfVerticalCRS(bvector<VerticalCRSListRespon
             errorMessage = "point must be an object";
             return GeoCoordinates::GEOCOORDERR_BadArg;
             }
-        if (!pointJson.isNumericMember(json_longitude()) || !pointJson.isNumericMember(json_latitude()))
+        if (!IsNumericPoint2d(pointJson))
             {
-            errorMessage = "point must contain numeric longitude and latitude";
+            errorMessage = "point must contain numeric x and y coordinates";
             return GeoCoordinates::GEOCOORDERR_BadArg;
             }
 
-        point.longitude = pointJson[json_longitude()].asDouble();
-        point.latitude = pointJson[json_latitude()].asDouble();
+        point.longitude = pointJson["x"].asDouble();
+        point.latitude = pointJson["y"].asDouble();
         if (!std::isfinite(point.longitude) || !std::isfinite(point.latitude))
             {
-            errorMessage = "point longitude and latitude must be finite";
+            errorMessage = "point coordinates must be finite";
             return GeoCoordinates::GEOCOORDERR_BadArg;
             }
         pointFilter = &point;
