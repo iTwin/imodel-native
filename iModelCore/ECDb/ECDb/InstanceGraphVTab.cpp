@@ -31,6 +31,7 @@ DbResult RelationsModule::Connect(DbVirtualTable*& out, Config& conf, int argc, 
 //! bit 0 (1) = ECInstanceId EQ constraint
 //! bit 1 (2) = ECClassId EQ constraint
 //! bit 2 (4) = TraversalDirection EQ constraint (optional)
+//! bit 3 (8) = internal options EQ constraint (optional)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -44,6 +45,7 @@ DbResult RelationsModule::RelationsTable::BestIndex(IndexInfo& indexInfo)
     int instIdIdx = -1;
     int classIdIdx = -1;
     int dirIdx = -1;
+    int optionsIdx = -1;
 
     for (int i = 0; i < indexInfo.GetConstraintCount(); i++)
         {
@@ -51,7 +53,8 @@ DbResult RelationsModule::RelationsTable::BestIndex(IndexInfo& indexInfo)
         int col = pConstraint->GetColumn();
         if (col != (int) RelationsCursor::Columns::ECInstanceId &&
             col != (int) RelationsCursor::Columns::ECClassId &&
-            col != (int) RelationsCursor::Columns::TraversalDir)
+            col != (int) RelationsCursor::Columns::TraversalDir &&
+            col != (int) RelationsCursor::Columns::Options)
             continue;
 
         if (!pConstraint->IsUsable() || pConstraint->GetOp() != IndexInfo::Operator::EQ)
@@ -69,11 +72,13 @@ DbResult RelationsModule::RelationsTable::BestIndex(IndexInfo& indexInfo)
             if (classIdIdx < 0)
                 classIdIdx = i;
             }
-        else
+        else if (col == (int) RelationsCursor::Columns::TraversalDir)
             {
             if (dirIdx < 0)
                 dirIdx = i;
             }
+        else if (optionsIdx < 0)
+            optionsIdx = i;
         }
 
     // ECInstanceId and ECClassId are mandatory. Reject the plan so that SQLite either
@@ -95,6 +100,13 @@ DbResult RelationsModule::RelationsTable::BestIndex(IndexInfo& indexInfo)
         idxNum |= 4;
         indexInfo.GetConstraintUsage(dirIdx)->SetArgvIndex(++nArg);
         indexInfo.GetConstraintUsage(dirIdx)->SetOmit(true);
+        }
+
+    if (optionsIdx >= 0)
+        {
+        idxNum |= 8;
+        indexInfo.GetConstraintUsage(optionsIdx)->SetArgvIndex(++nArg);
+        indexInfo.GetConstraintUsage(optionsIdx)->SetOmit(true);
         }
 
     indexInfo.SetEstimatedCost(10);
@@ -128,6 +140,7 @@ DbResult RelationsModule::RelationsTable::RelationsCursor::Filter(int idxNum, co
     m_seedInstanceId = ECInstanceId();
     m_seedClassId = ECClassId();
     m_dir = TraversalDirection::Both;
+    m_navRelClassIdFallback = false;
 
     // BestIndex rejects any plan without both required arguments, so this is defensive only.
     if ((idxNum & 3) != 3 || argc < 2)
@@ -136,7 +149,8 @@ DbResult RelationsModule::RelationsTable::RelationsCursor::Filter(int idxNum, co
         return BE_SQLITE_ERROR;
         }
 
-    // BestIndex assigns argv indices in a fixed column order: ECInstanceId, ECClassId, TraversalDirection.
+    // BestIndex assigns argv indices in a fixed column order:
+    // ECInstanceId, ECClassId, TraversalDirection, Options.
     int argIdx = 0;
     m_seedInstanceId = ECInstanceId((uint64_t) argv[argIdx++].GetValueInt64());
     m_seedClassId = ECClassId((uint64_t) argv[argIdx++].GetValueInt64());
@@ -173,6 +187,17 @@ DbResult RelationsModule::RelationsTable::RelationsCursor::Filter(int idxNum, co
             }
         }
 
+    if ((idxNum & 8) != 0)
+        {
+        if (argIdx >= argc)
+            {
+            GetTable().SetError("Relations(): missing internal options argument.");
+            return BE_SQLITE_ERROR;
+            }
+        DbValue& optionsValue = argv[argIdx++];
+        m_navRelClassIdFallback = !optionsValue.IsNull() && optionsValue.GetValueInt64() != 0;
+        }
+
     // An invalid (zero/NULL) seed simply has no relationships. This is not an error, so that
     // Relations() can be joined against columns that are legitimately NULL.
     if (!m_seedInstanceId.IsValid() || !m_seedClassId.IsValid())
@@ -180,7 +205,7 @@ DbResult RelationsModule::RelationsTable::RelationsCursor::Filter(int idxNum, co
 
     // Rows are streamed: the related instances are never materialized as a whole, so a seed with
     // a very high fan-out does not have to be fully read before the first row is produced.
-    if (SUCCESS != m_iter.Reset(ECInstanceKey(m_seedClassId, m_seedInstanceId), m_dir))
+    if (SUCCESS != m_iter.Reset(ECInstanceKey(m_seedClassId, m_seedInstanceId), m_dir, m_navRelClassIdFallback))
         {
         GetTable().SetError("Relations(): failed to traverse relationships for the given seed instance.");
         return BE_SQLITE_ERROR;
@@ -230,6 +255,9 @@ DbResult RelationsModule::RelationsTable::RelationsCursor::GetColumn(int i, Cont
         case Columns::TraversalDir:
             ctx.SetResultText(m_dir == TraversalDirection::Forward ? "forward"
                               : m_dir == TraversalDirection::Backward ? "backward" : "both", -1, Context::CopyData::Yes);
+            return BE_SQLITE_OK;
+        case Columns::Options:
+            ctx.SetResultInt(m_navRelClassIdFallback ? 1 : 0);
             return BE_SQLITE_OK;
         default:
             break;

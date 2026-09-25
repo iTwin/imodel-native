@@ -35,11 +35,13 @@ struct GraphStatementKey final
     ECN::ECRelationshipEnd  m_thisEnd;
     TraversalDirection      m_direction;
     size_t                  m_partitionIdx;
+    bool                    m_navRelClassIdFallback;
 
     bool operator==(GraphStatementKey const& rhs) const
         {
         return m_relClassId == rhs.m_relClassId && m_thisEnd == rhs.m_thisEnd
-            && m_direction == rhs.m_direction && m_partitionIdx == rhs.m_partitionIdx;
+            && m_direction == rhs.m_direction && m_partitionIdx == rhs.m_partitionIdx
+            && m_navRelClassIdFallback == rhs.m_navRelClassIdFallback;
         }
     };
 
@@ -51,6 +53,7 @@ struct GraphStatementKeyHash final
         h ^= std::hash<int>{}((int)k.m_thisEnd) << 1;
         h ^= std::hash<int>{}((int)k.m_direction) << 2;
         h ^= std::hash<size_t>{}(k.m_partitionIdx) << 3;
+        h ^= std::hash<bool>{}(k.m_navRelClassIdFallback) << 4;
         return h;
         }
     };
@@ -121,12 +124,13 @@ struct GraphStatementCache final
         BentleyStatus BuildLinkTableSql(GraphStatementEntry& entry, RelationshipClassMap const& relMap, TraversalDirection dir);
         BentleyStatus BuildEndTableSql(GraphStatementEntry& entry, ForeignKeyPartitionView::Partition const& partition,
                                        ForeignKeyPartitionView const& fkView, ECN::ECRelationshipClassCR relClass,
-                                       TraversalDirection dir);
+                                       TraversalDirection dir, bool navRelClassIdFallback);
 
         BentleyStatus DiscoverRelationshipsForClass(bvector<ApplicableRelationship>& out, ECN::ECClassId entityClassId);
 
         //! Caller must hold m_mutex.
-        BentleyStatus GetOrBuildEntryUnsafe(GraphStatementEntry const*& out, ApplicableRelationship const& rel, TraversalDirection dir, size_t partitionIdx);
+        BentleyStatus GetOrBuildEntryUnsafe(GraphStatementEntry const*& out, ApplicableRelationship const& rel, TraversalDirection dir,
+                                            size_t partitionIdx, bool navRelClassIdFallback);
 
     public:
         explicit GraphStatementCache(ECDbCR ecdb) : m_ecdb(ecdb) {}
@@ -145,10 +149,12 @@ struct GraphStatementCache final
         //! that the caller can keep using it after the cache was cleared.
         //! @remarks Relationship mappings for which no SQL can be generated yield an entry with
         //! GraphStatementEntry::m_unsupported set rather than an error.
-        BentleyStatus GetOrBuildEntry(GraphStatementEntry& out, ApplicableRelationship const& rel, TraversalDirection dir, size_t partitionIdx = 0);
+        BentleyStatus GetOrBuildEntry(GraphStatementEntry& out, ApplicableRelationship const& rel, TraversalDirection dir,
+                                      size_t partitionIdx = 0, bool navRelClassIdFallback = false);
 
         //! Get all partition entries for an end-table relationship. The entries are copied out.
-        BentleyStatus GetEndTableEntries(bvector<GraphStatementEntry>& out, ApplicableRelationship const& rel, TraversalDirection dir);
+        BentleyStatus GetEndTableEntries(bvector<GraphStatementEntry>& out, ApplicableRelationship const& rel, TraversalDirection dir,
+                                         bool navRelClassIdFallback = false);
     };
 
 //=======================================================================================
@@ -206,7 +212,7 @@ struct GraphTraversalIterator final
 
         //! Prepares the iterator for a new seed. The iterator is positioned before the first row;
         //! call MoveNext() to advance to it.
-        BentleyStatus Reset(ECInstanceKeyCR seed, TraversalDirection dir);
+        BentleyStatus Reset(ECInstanceKeyCR seed, TraversalDirection dir, bool navRelClassIdFallback = false);
 
         //! Advances to the next distinct edge. Sets EOF when there is none left.
         BentleyStatus MoveNext();

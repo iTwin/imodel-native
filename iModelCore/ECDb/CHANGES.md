@@ -5,7 +5,16 @@ This document including important changes to syntax or file format.
 | Module  | Version   |
 | ------- | --------- |
 | Profile | `4.0.0.5` |
-| ECSQL   | `2.0.4.1` |
+| ECSQL   | `2.0.4.2` |
+
+## `09/25/2026`: Opt-in fallback for NULL navigation relationship class ids
+* ECSql version change `2.0.4.1` -> `2.0.4.2`.
+* `ECSQLOPTIONS NAV_REL_CLASSID_FALLBACK` makes end-table relationship queries treat a non-NULL navigation id with a NULL `RelECClassId` as the relationship declared by the navigation property.
+* The option applies to relationship class queries and `ECVLib.Relations()`. Existing behavior is unchanged when the option is omitted.
+* Directly selecting the navigation property's `RelECClassId` still returns its stored NULL value, and persisted ECClassViews are unchanged.
+* The fallback relationship can be abstract when the navigation property declares an abstract relationship.
+* The fallback adds an `OR ... IS NULL` predicate and an `IFNULL` projection, which can produce less efficient query plans than the default behavior. Enable it only for queries that must read legacy NULL relationship class ids.
+* `ECVLib.Relations()` remains experimental, so both options are required when experimental features are not enabled globally: `SELECT * FROM ECVLib.Relations(0x1A, 0x38) ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES NAV_REL_CLASSID_FALLBACK`.
 
 ## `08/21/2026`: `Relations()` exposes `NavPropertyName`
 * `ECVLib.Relations()` now returns a nullable `NavPropertyName` column.

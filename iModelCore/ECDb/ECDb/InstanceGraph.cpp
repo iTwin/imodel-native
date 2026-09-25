@@ -83,6 +83,34 @@ static ECClassId GetExclusiveClassIdForTable(ECDbCR ecdb, DbTable const& table)
     return classIds.size() == 1 ? classIds[0] : ECClassId();
     }
 
+static bool IsClassInAnyHierarchy(TableSpaceSchemaManager const& schemaManager, ECClassId classId, bvector<ECClassId> const& baseClassIds)
+    {
+    ECClassCP ecClass = schemaManager.GetClass(classId);
+    if (ecClass == nullptr)
+        return false;
+
+    for (ECClassId baseClassId : baseClassIds)
+        {
+        ECClassCP baseClass = schemaManager.GetClass(baseClassId);
+        if (baseClass != nullptr && ecClass->Is(baseClass))
+            return true;
+        }
+
+    return false;
+    }
+
+static void AppendClassHierarchyPredicate(Utf8StringR sql, Utf8CP columnExpr, bvector<ECClassId> const& baseClassIds)
+    {
+    sql += Utf8PrintfString("%s IN (SELECT ClassId FROM [" TABLESPACE_Main "].[" TABLE_ClassHierarchyCache "] WHERE BaseClassId IN (", columnExpr);
+    for (size_t i = 0; i < baseClassIds.size(); ++i)
+        {
+        if (i > 0)
+            sql += ",";
+        sql += baseClassIds[i].ToString();
+        }
+    sql += "))";
+    }
+
 // =====================================================================================
 // GraphStatementCache — Relationship Discovery
 // =====================================================================================
@@ -464,7 +492,8 @@ BentleyStatus GraphStatementCache::BuildEndTableSql(GraphStatementEntry& entry,
     ForeignKeyPartitionView::Partition const& partition,
     ForeignKeyPartitionView const& fkView,
     ECN::ECRelationshipClassCR relClass,
-    TraversalDirection dir)
+    TraversalDirection dir,
+    bool navRelClassIdFallback)
     {
     entry.m_direction = dir;
     entry.m_relatedInstanceIdColIdx = -1;
@@ -501,6 +530,25 @@ BentleyStatus GraphStatementCache::BuildEndTableSql(GraphStatementEntry& entry,
     DbColumn const* fkEntityClassIdCol = (persistedEnd == ForeignKeyPartitionView::PersistedEnd::SourceTable)
         ? partition.GetSourceECClassIdColumn()
         : partition.GetTargetECClassIdColumn();
+
+    ECClassId fallbackRelClassId;
+    bvector<ECClassId> fallbackDeclaringClassIds;
+    bool useNavRelClassIdFallback = navRelClassIdFallback &&
+        !navRelClassIdCol.IsVirtual() &&
+        !navRelClassIdCol.DoNotAllowDbNull() &&
+        partition.TryGetNavigationFallback(fallbackRelClassId, fallbackDeclaringClassIds, relClass, true);
+
+    if (useNavRelClassIdFallback)
+        {
+        if (fkEntityClassIdCol == nullptr)
+            useNavRelClassIdFallback = false;
+        else if (fkEntityClassIdCol->IsVirtual())
+            {
+            ECClassId const holderClassId = GetExclusiveClassIdForTable(m_ecdb, fkEntityClassIdCol->GetTable());
+            useNavRelClassIdFallback = holderClassId.IsValid() &&
+                IsClassInAnyHierarchy(m_ecdb.Schemas().Main(), holderClassId, fallbackDeclaringClassIds);
+            }
+        }
 
     Utf8String sql("SELECT ");
     int colIdx = 0;
@@ -581,7 +629,10 @@ BentleyStatus GraphStatementCache::BuildEndTableSql(GraphStatementEntry& entry,
     if (!navRelClassIdCol.IsVirtual())
         {
         entry.m_relClassIdColIdx = colIdx++;
-        sql += Utf8PrintfString(",et.[%s]", navRelClassIdCol.GetName().c_str());
+        if (useNavRelClassIdFallback)
+            sql += Utf8PrintfString(",IFNULL(et.[%s],%s)", navRelClassIdCol.GetName().c_str(), fallbackRelClassId.ToString().c_str());
+        else
+            sql += Utf8PrintfString(",et.[%s]", navRelClassIdCol.GetName().c_str());
         }
     else
         {
@@ -658,7 +709,23 @@ BentleyStatus GraphStatementCache::BuildEndTableSql(GraphStatementEntry& entry,
 
     // Relationship class filter (for TPH: multiple rel hierarchies in same table)
     if (!navRelClassIdCol.IsVirtual())
-        AppendClassHierarchyFilter(sql, Utf8PrintfString("et.[%s]", navRelClassIdCol.GetName().c_str()).c_str(), relClass.GetId());
+        {
+        Utf8PrintfString const relClassIdExpr("et.[%s]", navRelClassIdCol.GetName().c_str());
+        if (!useNavRelClassIdFallback)
+            AppendClassHierarchyFilter(sql, relClassIdExpr.c_str(), relClass.GetId());
+        else
+            {
+            sql += " AND (";
+            AppendClassHierarchyPredicate(sql, relClassIdExpr.c_str(), {relClass.GetId()});
+            sql += Utf8PrintfString(" OR (%s IS NULL", relClassIdExpr.c_str());
+            if (!fkEntityClassIdCol->IsVirtual())
+                {
+                sql += " AND ";
+                AppendClassHierarchyPredicate(sql, Utf8PrintfString("et.[%s]", fkEntityClassIdCol->GetName().c_str()).c_str(), fallbackDeclaringClassIds);
+                }
+            sql += "))";
+            }
+        }
 
     entry.m_navPropertyName = FindNavPropertyName(relClass, fkView);
     entry.m_sql = sql;
@@ -672,10 +739,11 @@ BentleyStatus GraphStatementCache::BuildEndTableSql(GraphStatementEntry& entry,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus GraphStatementCache::GetOrBuildEntryUnsafe(GraphStatementEntry const*& out, ApplicableRelationship const& rel, TraversalDirection dir, size_t partitionIdx)
+BentleyStatus GraphStatementCache::GetOrBuildEntryUnsafe(GraphStatementEntry const*& out, ApplicableRelationship const& rel, TraversalDirection dir,
+                                                         size_t partitionIdx, bool navRelClassIdFallback)
     {
     out = nullptr;
-    GraphStatementKey key{rel.m_relClass->GetId(), rel.m_thisEnd, dir, partitionIdx};
+    GraphStatementKey key{rel.m_relClass->GetId(), rel.m_thisEnd, dir, partitionIdx, navRelClassIdFallback};
     auto it = m_entries.find(key);
     if (it != m_entries.end())
         {
@@ -711,7 +779,7 @@ BentleyStatus GraphStatementCache::GetOrBuildEntryUnsafe(GraphStatementEntry con
                 return ERROR;
                 }
 
-            status = BuildEndTableSql(entry, *partitions[partitionIdx], *fkView, *rel.m_relClass, dir);
+            status = BuildEndTableSql(entry, *partitions[partitionIdx], *fkView, *rel.m_relClass, dir, navRelClassIdFallback);
             }
         }
     else
@@ -739,12 +807,13 @@ BentleyStatus GraphStatementCache::GetOrBuildEntryUnsafe(GraphStatementEntry con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus GraphStatementCache::GetOrBuildEntry(GraphStatementEntry& out, ApplicableRelationship const& rel, TraversalDirection dir, size_t partitionIdx)
+BentleyStatus GraphStatementCache::GetOrBuildEntry(GraphStatementEntry& out, ApplicableRelationship const& rel, TraversalDirection dir,
+                                                   size_t partitionIdx, bool navRelClassIdFallback)
     {
     BeMutexHolder holder(m_mutex);
 
     GraphStatementEntry const* entry = nullptr;
-    if (SUCCESS != GetOrBuildEntryUnsafe(entry, rel, dir, partitionIdx))
+    if (SUCCESS != GetOrBuildEntryUnsafe(entry, rel, dir, partitionIdx, navRelClassIdFallback))
         return ERROR;
 
     out = *entry; // copy out: the cache may be cleared while the caller steps the statement
@@ -753,7 +822,8 @@ BentleyStatus GraphStatementCache::GetOrBuildEntry(GraphStatementEntry& out, App
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus GraphStatementCache::GetEndTableEntries(bvector<GraphStatementEntry>& out, ApplicableRelationship const& rel, TraversalDirection dir)
+BentleyStatus GraphStatementCache::GetEndTableEntries(bvector<GraphStatementEntry>& out, ApplicableRelationship const& rel, TraversalDirection dir,
+                                                      bool navRelClassIdFallback)
     {
     out.clear();
 
@@ -780,7 +850,7 @@ BentleyStatus GraphStatementCache::GetEndTableEntries(bvector<GraphStatementEntr
     for (size_t i = 0; i < partitionCount; ++i)
         {
         GraphStatementEntry const* entry = nullptr;
-        if (SUCCESS != GetOrBuildEntryUnsafe(entry, rel, dir, i))
+        if (SUCCESS != GetOrBuildEntryUnsafe(entry, rel, dir, i, navRelClassIdFallback))
             return ERROR;
 
         out.push_back(*entry);
@@ -840,7 +910,7 @@ BentleyStatus InstanceGraph::ExpandNode(ECInstanceKeyCR key, TraversalDirection 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus GraphTraversalIterator::Reset(ECInstanceKeyCR seed, TraversalDirection dir)
+BentleyStatus GraphTraversalIterator::Reset(ECInstanceKeyCR seed, TraversalDirection dir, bool navRelClassIdFallback)
     {
     m_seed = seed;
     m_plan.clear();
@@ -887,7 +957,7 @@ BentleyStatus GraphTraversalIterator::Reset(ECInstanceKeyCR seed, TraversalDirec
             if (rel.m_mapType == ClassMap::Type::RelationshipLinkTable)
                 {
                 GraphStatementEntry entry;
-                if (SUCCESS != cache.GetOrBuildEntry(entry, rel, traversalDir))
+                if (SUCCESS != cache.GetOrBuildEntry(entry, rel, traversalDir, 0, navRelClassIdFallback))
                     return ERROR;
 
                 if (!entry.m_unsupported)
@@ -896,7 +966,7 @@ BentleyStatus GraphTraversalIterator::Reset(ECInstanceKeyCR seed, TraversalDirec
             else if (rel.m_mapType == ClassMap::Type::RelationshipEndTable)
                 {
                 bvector<GraphStatementEntry> entries;
-                if (SUCCESS != cache.GetEndTableEntries(entries, rel, traversalDir))
+                if (SUCCESS != cache.GetEndTableEntries(entries, rel, traversalDir, navRelClassIdFallback))
                     return ERROR;
 
                 for (auto& entry : entries)

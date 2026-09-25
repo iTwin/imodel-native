@@ -52,6 +52,9 @@ static constexpr Utf8CP s_mappingInvariantSchemaXml =
                 <ClassMap xmlns="ECDbMap.02.00.00">
                     <MapStrategy>TablePerHierarchy</MapStrategy>
                 </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00.00">
+                    <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
+                </ShareColumns>
             </ECCustomAttributes>
             <ECProperty propertyName="Label" typeName="string" />
             <ECNavigationProperty propertyName="Container" relationshipName="HubHasSpokes" direction="Backward" />
@@ -59,9 +62,11 @@ static constexpr Utf8CP s_mappingInvariantSchemaXml =
         </ECEntityClass>
         <ECEntityClass typeName="SpokeA">
             <BaseClass>Spoke</BaseClass>
+            <ECNavigationProperty propertyName="AuxOwnerA" relationshipName="HubOwnsOnlySpokeA" direction="Backward" />
         </ECEntityClass>
         <ECEntityClass typeName="SpokeB">
             <BaseClass>Spoke</BaseClass>
+            <ECNavigationProperty propertyName="AuxOwnerB" relationshipName="HubOwnsOnlySpokeB" direction="Backward" />
         </ECEntityClass>
 
         <!-- Link table: sealed, exclusive ends → Rel/Source/Target ECClassId all virtual. -->
@@ -176,6 +181,24 @@ static constexpr Utf8CP s_mappingInvariantSchemaXml =
                 <Class class="Hub" />
             </Source>
             <Target multiplicity="(0..*)" polymorphic="True" roleLabel="B owned by">
+                <Class class="SpokeB" />
+            </Target>
+        </ECRelationshipClass>
+
+        <!-- Distinct nav relationships on sibling TPH classes may reuse shared columns. -->
+        <ECRelationshipClass typeName="HubOwnsOnlySpokeA" strength="Referencing" modifier="Abstract">
+            <Source multiplicity="(0..1)" polymorphic="False" roleLabel="owns only A">
+                <Class class="Hub" />
+            </Source>
+            <Target multiplicity="(0..*)" polymorphic="False" roleLabel="owned only as A">
+                <Class class="SpokeA" />
+            </Target>
+        </ECRelationshipClass>
+        <ECRelationshipClass typeName="HubOwnsOnlySpokeB" strength="Referencing" modifier="Abstract">
+            <Source multiplicity="(0..1)" polymorphic="False" roleLabel="owns only B">
+                <Class class="Hub" />
+            </Source>
+            <Target multiplicity="(0..*)" polymorphic="False" roleLabel="owned only as B">
                 <Class class="SpokeB" />
             </Target>
         </ECRelationshipClass>
@@ -2074,9 +2097,10 @@ TEST_F(InstanceGraphTests, VTable_MissingRequiredArgumentsAreRejected)
         SqlPrintfString("SELECT RelatedECInstanceId FROM relations WHERE ECInstanceId=%" PRIu64, pipe1Key.GetInstanceId().GetValueUnchecked())))
         << "relations without an ECClassId must be rejected";
 
-    // Too many arguments is diagnosed by SQLite itself.
+    // The fourth hidden argument is reserved for options injected by the ECSQL preparer.
+    // More than four arguments is diagnosed by SQLite itself.
     Statement tooManyArgs;
-    EXPECT_NE(BE_SQLITE_OK, tooManyArgs.TryPrepare(m_ecdb, "SELECT RelatedECInstanceId FROM relations(1,2,'forward',4)"))
+    EXPECT_NE(BE_SQLITE_OK, tooManyArgs.TryPrepare(m_ecdb, "SELECT RelatedECInstanceId FROM relations(1,2,'forward',4,5)"))
         << "relations with too many arguments must be rejected";
     }
 
@@ -2666,6 +2690,111 @@ TEST_F(InstanceGraphTests, MixedRelationships_AllInvariantCombinations)
     collectVTable(data.spokeA, "backward", fromSpokeA);
     EXPECT_TRUE(vtabHas(fromSpokeA, data.hub, GetClassId("IGMap", "HubHasSpokes")));
     EXPECT_TRUE(vtabHas(fromSpokeA, data.hub, GetClassId("IGMap", "HubOwnsSpokeA")));
+    }
+
+//---------------------------------------------------------------------------------------
+//! NULL RelECClassId fallback is opt-in and resolves to the relationship declared by the
+//! navigation property, not to one of its derived relationships.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, NullNavRelClassIdFallback)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_NullNavRelClassId.ecdb", SchemaItem(s_mappingInvariantSchemaXml)));
+    m_ecdb.GetECSqlConfig().SetExperimentalFeaturesEnabled(true);
+
+    auto hub = InsertInstance("INSERT INTO igm.Hub(Name) VALUES('H1')");
+    auto spoke = InsertInstance(SqlPrintfString(
+        "INSERT INTO igm.SpokeA(Label, Owner.Id, Owner.RelECClassId, AuxOwnerA.Id, AuxOwnerA.RelECClassId) VALUES('SA', %s, NULL, %s, NULL)",
+        hub.GetInstanceId().ToString().c_str(), hub.GetInstanceId().ToString().c_str()));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+
+    ECClassId const baseRelClassId = GetClassId("IGMap", "HubOwnsSpokes");
+    ECClassId const auxRelClassId = GetClassId("IGMap", "HubOwnsOnlySpokeA");
+
+    Column const auxAIdCol = GetHelper().GetPropertyMapColumn(AccessString("IGMap", "SpokeA", "AuxOwnerA.Id"));
+    Column const auxBIdCol = GetHelper().GetPropertyMapColumn(AccessString("IGMap", "SpokeB", "AuxOwnerB.Id"));
+    Column const auxARelCol = GetHelper().GetPropertyMapColumn(AccessString("IGMap", "SpokeA", "AuxOwnerA.RelECClassId"));
+    Column const auxBRelCol = GetHelper().GetPropertyMapColumn(AccessString("IGMap", "SpokeB", "AuxOwnerB.RelECClassId"));
+    ASSERT_TRUE(auxAIdCol.Exists());
+    ASSERT_TRUE(auxBIdCol.Exists());
+    ASSERT_TRUE(auxARelCol.Exists());
+    ASSERT_TRUE(auxBRelCol.Exists());
+    EXPECT_STREQ(auxAIdCol.GetName().c_str(), auxBIdCol.GetName().c_str());
+    EXPECT_STREQ(auxARelCol.GetName().c_str(), auxBRelCol.GetName().c_str());
+
+    ECSqlStatement storedValue;
+    ASSERT_EQ(ECSqlStatus::Success, storedValue.Prepare(m_ecdb, SqlPrintfString(
+        "SELECT Owner.RelECClassId FROM igm.SpokeA WHERE ECInstanceId=%s ECSQLOPTIONS NAV_REL_CLASSID_FALLBACK",
+        spoke.GetInstanceId().ToString().c_str())));
+    ASSERT_EQ(BE_SQLITE_ROW, storedValue.Step());
+    EXPECT_TRUE(storedValue.IsValueNull(0));
+
+    auto countRelationshipRows = [&] (Utf8CP relationshipClass, ECClassId expectedRelClassId, bool only, bool fallback)
+        {
+        ECSqlStatement stmt;
+        Utf8String ecsql(SqlPrintfString(
+            "SELECT ECClassId FROM %s%s WHERE TargetECInstanceId=%s",
+            only ? "ONLY " : "", relationshipClass, spoke.GetInstanceId().ToString().c_str()).GetUtf8CP());
+        if (fallback)
+            ecsql.append(" ECSQLOPTIONS NAV_REL_CLASSID_FALLBACK");
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str()));
+        int count = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            EXPECT_EQ(expectedRelClassId, stmt.GetValueId<ECClassId>(0));
+            ++count;
+            }
+        return count;
+        };
+
+    EXPECT_EQ(0, countRelationshipRows("igm.HubOwnsSpokes", baseRelClassId, false, false));
+    EXPECT_EQ(1, countRelationshipRows("igm.HubOwnsSpokes", baseRelClassId, false, true));
+    EXPECT_EQ(1, countRelationshipRows("igm.HubOwnsSpokes", baseRelClassId, true, true));
+    EXPECT_EQ(0, countRelationshipRows("igm.HubOwnsSpokeA", baseRelClassId, false, true));
+    EXPECT_EQ(1, countRelationshipRows("igm.HubOwnsOnlySpokeA", auxRelClassId, false, true));
+    EXPECT_EQ(0, countRelationshipRows("igm.HubOwnsOnlySpokeB", GetClassId("IGMap", "HubOwnsOnlySpokeB"), false, true));
+
+    auto countRelations = [&] (ECInstanceKeyCR seed, Utf8CP direction, ECClassId expectedRelClassId, bool fallback)
+        {
+        ECSqlStatement stmt;
+        Utf8String ecsql(SqlPrintfString(
+            "SELECT RelationshipECClassId FROM ECVLib.Relations(%s, %s, '%s') WHERE RelationshipECClassId=%s",
+            seed.GetInstanceId().ToString().c_str(), seed.GetClassId().ToString().c_str(), direction,
+            expectedRelClassId.ToString().c_str()).GetUtf8CP());
+        if (fallback)
+            ecsql.append(" ECSQLOPTIONS NAV_REL_CLASSID_FALLBACK");
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str()));
+
+        int count = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            EXPECT_EQ(expectedRelClassId, stmt.GetValueId<ECClassId>(0));
+            ++count;
+            }
+        return count;
+        };
+
+    EXPECT_EQ(0, countRelations(hub, "forward", baseRelClassId, false));
+    EXPECT_EQ(1, countRelations(hub, "forward", baseRelClassId, true));
+    EXPECT_EQ(1, countRelations(hub, "forward", auxRelClassId, true));
+    EXPECT_EQ(0, countRelations(spoke, "backward", baseRelClassId, false));
+    EXPECT_EQ(1, countRelations(spoke, "backward", baseRelClassId, true));
+    EXPECT_EQ(1, countRelations(spoke, "backward", auxRelClassId, true));
+
+    ECSqlStatement twoArg;
+    ASSERT_EQ(ECSqlStatus::Success, twoArg.Prepare(m_ecdb, SqlPrintfString(
+        "SELECT RelationshipECClassId FROM ECVLib.Relations(%s, %s) ECSQLOPTIONS NAV_REL_CLASSID_FALLBACK",
+        hub.GetInstanceId().ToString().c_str(), hub.GetClassId().ToString().c_str())));
+    EXPECT_TRUE(Utf8String(twoArg.GetNativeSql()).ContainsI("'both',1"));
+
+    ECSqlStatement threeArg;
+    ASSERT_EQ(ECSqlStatus::Success, threeArg.Prepare(m_ecdb,
+        "SELECT RelationshipECClassId FROM ECVLib.Relations(?, ?, ?) ECSQLOPTIONS NAV_REL_CLASSID_FALLBACK"));
+    EXPECT_TRUE(Utf8String(threeArg.GetNativeSql()).ContainsI(",1)"));
+
+    ECSqlStatement fourArg;
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, fourArg.Prepare(m_ecdb,
+        "SELECT RelationshipECClassId FROM ECVLib.Relations(?, ?, ?, ?) ECSQLOPTIONS NAV_REL_CLASSID_FALLBACK"));
     }
 
 //---------------------------------------------------------------------------------------
