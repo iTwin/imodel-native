@@ -175,7 +175,6 @@ BentleyStatus DbMapValidator::CheckDuplicateDataPropertyMap() const {
         return ERROR;
     }
 
-    constexpr int maxDetailedWarnings = 3;
     int duplicateCount = 0;
     while(stmt.Step() == BE_SQLITE_ROW) {
         const ECClassId classId = stmt.GetValueId<ECClassId>(0);
@@ -185,7 +184,7 @@ BentleyStatus DbMapValidator::CheckDuplicateDataPropertyMap() const {
             return ERROR;
         }
         ++duplicateCount;
-        if (m_mode == DbMapValidationMode::ChangesetApply && duplicateCount > maxDetailedWarnings)
+        if (m_mode == DbMapValidationMode::ChangesetApply && duplicateCount > MAX_DETAILED_WARNINGS)
             continue;
 
         Issues().ReportV(m_mode == DbMapValidationMode::ChangesetApply ? IssueSeverity::Warning : IssueSeverity::Error,
@@ -196,9 +195,9 @@ BentleyStatus DbMapValidator::CheckDuplicateDataPropertyMap() const {
     if (m_mode != DbMapValidationMode::ChangesetApply)
         return duplicateCount > 0 ? ERROR : SUCCESS;
 
-    if (duplicateCount > maxDetailedWarnings) {
+    if (duplicateCount > MAX_DETAILED_WARNINGS) {
         Issues().ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0747,
-            "Detected %d duplicate mappings. Suppressed %d additional duplicate mapping warnings.", duplicateCount, duplicateCount - maxDetailedWarnings);
+            "Detected %d duplicate mappings. Suppressed %d additional duplicate mapping warnings.", duplicateCount, duplicateCount - MAX_DETAILED_WARNINGS);
     }
 
     return SUCCESS;
@@ -792,14 +791,21 @@ BentleyStatus DbMapValidator::ValidateDbMap() const
         classMaps.push_back(entry.second.get());
         }
 
+    int incompleteClassMapCount = 0;
     for (ClassMap const* classMap : classMaps)
         {
-        if (SUCCESS != ValidateClassMap(*classMap))
+        if (SUCCESS != ValidateClassMap(*classMap, incompleteClassMapCount))
             {
             result = ERROR;
             if (!m_continueAfterError)
-                return result;
+                break;
             }
+        }
+
+    if (incompleteClassMapCount > MAX_DETAILED_WARNINGS)
+        {
+        Issues().ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0748,
+            "Detected %d classes with incomplete property maps. Suppressed %d additional property map count warnings.", incompleteClassMapCount, incompleteClassMapCount - MAX_DETAILED_WARNINGS);
         }
 
     return result;
@@ -808,7 +814,7 @@ BentleyStatus DbMapValidator::ValidateDbMap() const
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus DbMapValidator::ValidateClassMap(ClassMap const& classMap) const
+BentleyStatus DbMapValidator::ValidateClassMap(ClassMap const& classMap, int& incompleteClassMapCount) const
     {
     if (SUCCESS != ValidateMapStrategy(classMap))
         return ERROR;
@@ -859,11 +865,21 @@ BentleyStatus DbMapValidator::ValidateClassMap(ClassMap const& classMap) const
                 {
                 // Changeset apply loads classes beyond those changed by the changeset. Tolerate incomplete
                 // data maps in existing files while keeping schema import and the loaded maps' validation strict.
-                const bool tolerateMissingDataPropertyMaps = m_mode == DbMapValidationMode::ChangesetApply && dataPropertyMapCount < propCount;
-                Issues().ReportV(tolerateMissingDataPropertyMaps ? IssueSeverity::Warning : IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0160,
-                    "The number of property maps for ECClass '%s' does not match the number of properties. Property maps: %d, properties: %d.", classMap.GetClass().GetFullName(), dataPropertyMapCount, propCount);
-                if (!tolerateMissingDataPropertyMaps)
+                if (m_mode == DbMapValidationMode::ChangesetApply && dataPropertyMapCount < propCount)
+                    {
+                    ++incompleteClassMapCount;
+                    if (incompleteClassMapCount <= MAX_DETAILED_WARNINGS)
+                        {
+                        Issues().ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0160,
+                            "The number of property maps for ECClass '%s' does not match the number of properties. Property maps: %d, properties: %d.", classMap.GetClass().GetFullName(), dataPropertyMapCount, propCount);
+                        }
+                    }
+                else
+                    {
+                    Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0160,
+                        "The number of property maps for ECClass '%s' does not match the number of properties. Property maps: %d, properties: %d.", classMap.GetClass().GetFullName(), dataPropertyMapCount, propCount);
                     return ERROR;
+                    }
                 }
             else
                 {
