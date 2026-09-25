@@ -175,24 +175,33 @@ BentleyStatus DbMapValidator::CheckDuplicateDataPropertyMap() const {
         return ERROR;
     }
 
-    const bool tolerateDuplicateDataPropertyMaps = m_mode == DbMapValidationMode::ChangesetApply;
-    const auto severity = tolerateDuplicateDataPropertyMaps ? IssueSeverity::Warning : IssueSeverity::Error;
+    constexpr int maxDetailedWarnings = 3;
     int duplicateCount = 0;
     while(stmt.Step() == BE_SQLITE_ROW) {
         const ECClassId classId = stmt.GetValueId<ECClassId>(0);
-        const Utf8String accessString = stmt.GetValueText(1);
-        const Utf8String duplicateCols = stmt.GetValueText(2);
         ECClassCP ecClass = GetECDb().Schemas().GetClass(classId);
         if (ecClass == nullptr) {
             Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0115, "Could not load ECClass for ECClassId %s from the file.", classId.ToString().c_str());
             return ERROR;
         }
-        Issues().ReportV(severity, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0116,
-            "Detected duplicate mapping for ECClass: %s. AccessString '%s' is mapped to '%s'.", ecClass->GetFullName(), accessString.c_str(), duplicateCols.c_str());
         ++duplicateCount;
+        if (m_mode == DbMapValidationMode::ChangesetApply && duplicateCount > maxDetailedWarnings)
+            continue;
+
+        Issues().ReportV(m_mode == DbMapValidationMode::ChangesetApply ? IssueSeverity::Warning : IssueSeverity::Error,
+            IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0116,
+            "Detected duplicate mapping for ECClass: %s. AccessString '%s' is mapped to '%s'.", ecClass->GetFullName(), stmt.GetValueText(1), stmt.GetValueText(2));
     }
 
-    return duplicateCount > 0 && !tolerateDuplicateDataPropertyMaps ? ERROR : SUCCESS;
+    if (m_mode != DbMapValidationMode::ChangesetApply)
+        return duplicateCount > 0 ? ERROR : SUCCESS;
+
+    if (duplicateCount > maxDetailedWarnings) {
+        Issues().ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0747,
+            "Detected %d duplicate mappings. Suppressed %d additional duplicate mapping warnings.", duplicateCount, duplicateCount - maxDetailedWarnings);
+    }
+
+    return SUCCESS;
 }
 
 //---------------------------------------------------------------------------------------

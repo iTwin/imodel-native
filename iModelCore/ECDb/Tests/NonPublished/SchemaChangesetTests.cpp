@@ -573,4 +573,133 @@ TEST_F(SchemaChangesetTestFixture, ApplyChangesetWithDuplicatePropertyMapAccessS
     ASSERT_TRUE(invalidMapImportError);
     m_ecdb.RemoveIssueListener();
     }
+
+//---------------------------------------------------------------------------------------
+// Changeset validation reports every duplicate mapping up to the detailed-report limit and
+// summarizes the rest. The persisted-mapping pragma keeps reporting every duplicate as an error.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaChangesetTestFixture, ApplyChangesetWithDuplicatePropertyMapWarningsCappedAndReset)
+    {
+    constexpr int classCount = 5;
+    Utf8String schemaXml(R"xml(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="DuplicateMapWarningProbe" alias="dmwp" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="Root">
+            <ECCustomAttributes>
+              <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+              </ClassMap>
+            </ECCustomAttributes>
+          </ECEntityClass>
+)xml");
+    for (int classIndex = 1; classIndex <= classCount; ++classIndex)
+        schemaXml.append(Utf8PrintfString(R"xml(          <ECEntityClass typeName="Child%d" modifier="Sealed">
+            <BaseClass>Root</BaseClass>
+            <ECProperty propertyName="P1" typeName="string"/>
+            <ECProperty propertyName="P2" typeName="string"/>
+          </ECEntityClass>
+)xml", classIndex));
+    schemaXml.append(R"xml(        </ECSchema>
+)xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("duplicateMapWarningProbe.ecdb", SchemaItem(schemaXml)));
+
+    auto corruptPropertyPath = [this](int classIndex)
+        {
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(SqlPrintfString(R"sql(
+            UPDATE ec_PropertyPath SET AccessString='P1'
+            WHERE Id = (
+              SELECT pp.Id
+              FROM ec_PropertyPath pp
+                JOIN ec_Property p ON p.Id=pp.RootPropertyId
+                JOIN ec_Class c ON c.Id=p.ClassId
+                JOIN ec_Schema s ON s.Id=c.SchemaId
+              WHERE s.Name='DuplicateMapWarningProbe' AND c.Name='Child%d'
+                AND p.Name='P2' AND pp.AccessString='P2')
+)sql", classIndex)));
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+        m_ecdb.ClearECDbCache();
+        };
+
+    TestIssueListener issueListener;
+    ASSERT_EQ(SUCCESS, m_ecdb.AddIssueListener(issueListener));
+    auto applyChangesetAndCheck = [this, &issueListener](int changeNumber, int expectedDuplicateCount)
+        {
+        SCOPED_TRACE(changeNumber);
+        SchemaChangesetTestChangeTracker tracker(m_ecdb);
+        tracker.EnableTracking(true);
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(SqlPrintfString(
+            "UPDATE ec_Schema SET Description='change %d' WHERE Name='DuplicateMapWarningProbe'", changeNumber)));
+        SchemaChangesetTestChangeSet changeset;
+        ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
+        tracker.EndTracking();
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AbandonChanges());
+
+        issueListener.ClearIssues();
+        ASSERT_EQ(BE_SQLITE_OK, changeset.ApplyChanges(m_ecdb));
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AfterSchemaChangeSetApplied());
+
+        int duplicateWarnings = 0;
+        int summaryWarnings = 0;
+        for (ReportedIssue const& issue : issueListener.m_issues)
+            {
+            const auto issueId = Utf8String(issue.id.m_issueId);
+            if (issueId.Equals("ECDb_0116"))
+                {
+                ASSERT_EQ(ECN::IssueSeverity::Warning, issue.severity);
+                ++duplicateWarnings;
+                }
+            else if (issueId.Equals("ECDb_0747"))
+                {
+                ASSERT_EQ(ECN::IssueSeverity::Warning, issue.severity);
+                ++summaryWarnings;
+                ASSERT_STREQ(Utf8PrintfString(
+                    "Detected %d duplicate mappings. Suppressed %d additional duplicate mapping warnings.",
+                    expectedDuplicateCount, expectedDuplicateCount - 3).c_str(), issue.message.c_str());
+                }
+            else
+                ASSERT_NE(ECN::IssueSeverity::Error, issue.severity) << issue.message.c_str();
+            }
+        ASSERT_EQ(expectedDuplicateCount < 3 ? expectedDuplicateCount : 3, duplicateWarnings);
+        ASSERT_EQ(expectedDuplicateCount > 3 ? 1 : 0, summaryWarnings);
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+        };
+
+    ASSERT_NO_FATAL_FAILURE(applyChangesetAndCheck(0, 0));
+    ASSERT_NO_FATAL_FAILURE(corruptPropertyPath(1));
+    ASSERT_NO_FATAL_FAILURE(applyChangesetAndCheck(1, 1));
+    ASSERT_NO_FATAL_FAILURE(corruptPropertyPath(2));
+    ASSERT_NO_FATAL_FAILURE(corruptPropertyPath(3));
+    ASSERT_NO_FATAL_FAILURE(applyChangesetAndCheck(2, 3));
+    ASSERT_NO_FATAL_FAILURE(corruptPropertyPath(4));
+    ASSERT_NO_FATAL_FAILURE(applyChangesetAndCheck(3, 4));
+    ASSERT_NO_FATAL_FAILURE(corruptPropertyPath(5));
+    ASSERT_NO_FATAL_FAILURE(applyChangesetAndCheck(4, 5));
+    ASSERT_NO_FATAL_FAILURE(applyChangesetAndCheck(5, 5));
+
+    issueListener.ClearIssues();
+    ECSqlStatement validation;
+    ASSERT_EQ(ECSqlStatus::Success, validation.Prepare(m_ecdb,
+        "PRAGMA validate_persisted_mappings OPTIONS enable_experimental_features"));
+    int pragmaDuplicateErrors = 0;
+    int pragmaSummaryWarnings = 0;
+    while (BE_SQLITE_ROW == validation.Step())
+        {
+        const auto issueId = Utf8String(validation.GetValueText(3));
+        if (issueId.Equals("ECDb_0116"))
+            {
+            ASSERT_STREQ("Error", validation.GetValueText(0));
+            ++pragmaDuplicateErrors;
+            }
+        else if (issueId.Equals("ECDb_0747"))
+            ++pragmaSummaryWarnings;
+        }
+    ASSERT_EQ(classCount, pragmaDuplicateErrors);
+    ASSERT_EQ(0, pragmaSummaryWarnings);
+    for (ReportedIssue const& issue : issueListener.m_issues)
+        ASSERT_FALSE(Utf8String(issue.id.m_issueId).Equals("ECDb_0747"));
+    validation.Finalize();
+    m_ecdb.RemoveIssueListener();
+    }
 END_ECDBUNITTESTS_NAMESPACE
