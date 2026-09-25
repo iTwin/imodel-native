@@ -16,8 +16,6 @@ BE_JSON_NAME(format)
 BE_JSON_NAME(status)
 BE_JSON_NAME(point)
 BE_JSON_NAME(extent)
-BE_JSON_NAME(longitude)
-BE_JSON_NAME(latitude)
 BE_JSON_NAME(includeIntersecting)
 
 static Utf8String GetLegacyVerticalCrsId(GeoCoordinates::VerticalDatumInfo const& info)
