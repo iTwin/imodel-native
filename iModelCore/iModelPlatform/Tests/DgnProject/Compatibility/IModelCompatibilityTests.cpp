@@ -37,52 +37,47 @@ struct IModelCompatibilityTestFixture : CompatibilityTestFixture
                 return (TestIModelCreator::RegisterDomainsForTest() == SUCCESS);
             return (TestIModelCreator::UnregisterDomainsForTest() == SUCCESS);
             }
+
+        static void RunBasicTestsOnAllFiles(size_t bucket, size_t bucketCount);
     };
 
 //---------------------------------------------------------------------------------------
-// Runs basic tests on all available test files. This is a basic test to cover tests and test files
-// which are added in the future, and to which existing test runners cannot be adjusted to.
+// Creates the test files of the current runner. Running this test alone before
+// launching several shards ensures that the NewFiles folder is populated exactly once.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(IModelCompatibilityTestFixture, BasicTestsOnAllPulledFiles)
+TEST_F(IModelCompatibilityTestFixture, CreateTestFiles)
     {
-    for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfAllPulledTestFiles())
+    ASSERT_EQ(SUCCESS, TestIModelCreation::Run());
+    }
+
+//---------------------------------------------------------------------------------------
+// Runs basic tests on all available test files (created by this runner and pulled from other runners).
+// This is a basic test to cover tests and test files which are added in the future, and to which
+// existing test runners cannot be adjusted to.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void IModelCompatibilityTestFixture::RunBasicTestsOnAllFiles(size_t bucket, size_t bucketCount)
+    {
+    // The test domains (Functional, PhysicalMaterial) are only imported into some of the created files.
+    // Registering them as required for a file that does not contain them makes a read-only open fail with SchemaUpgradeRequired,
+    // so the basic tests run without them.
+    // Tests that need the domains register them for their specific test files.
+    ASSERT_EQ(SUCCESS, TestIModelCreator::UnregisterDomainsForTest());
+    for (TestFile const& testFile : DgnDbProfile::Get().GetTestFilesBucket(bucket, bucketCount))
         {
-        ASSERT_TRUE(SetupDomainsInCurrentTestFile(testFile));
-        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
+        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile, TestIModel::Permutations::ReadonlyAndUpgrades))
             {
             TestIModel& testDb = *testDbPtr;
             ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
-            testDb.AssertProfileVersion();
-            testDb.AssertLoadSchemas();
-
-            // Run SELECT statements against all classes
-            for (ECSchemaCP schema : testDb.GetDb().Schemas().GetSchemas())
-                {
-                if (schema->GetName().Equals("ECDbSystem"))
-                    continue; //doesn't have mapped classes
-
-                for (ECClassCP cl : schema->GetClasses())
-                    {
-                    if (!cl->IsEntityClass() && !cl->IsRelationshipClass())
-                        continue;
-                    
-                    Utf8String ecsql("SELECT ECInstanceId,ECClassId");
-                    for (ECPropertyCP prop : cl->GetProperties())
-                        {
-                        ecsql.append(",[").append(prop->GetName()).append("]");
-                        }
-                    ecsql.append(" FROM ").append(cl->GetECSqlName());
-
-                    ECSqlStatement stmt;
-                    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(testDb.GetDb(), ecsql.c_str())) << ecsql << " | " << testDb.GetDescription();
-                    const DbResult stepStat = stmt.Step();
-                    ASSERT_TRUE(BE_SQLITE_DONE == stepStat || BE_SQLITE_ROW == stepStat) << ecsql << " | " << testDb.GetDescription();
-                    }
-                }
+            testDb.AssertBasicTests();
+            if (HasFatalFailure())
+                return;
             }
         }
     }
+
+DEFINE_BASICTESTS_ON_ALL_FILES(IModelCompatibilityTestFixture)
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -480,7 +475,6 @@ TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
             TestIModel& testDb = *testDbPtr;
             ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
             testDb.AssertProfileVersion();
-            testDb.AssertLoadSchemas();
 
             switch (testDb.GetAge())
                {
@@ -608,7 +602,6 @@ TEST_F(IModelCompatibilityTestFixture, EC31Enums)
             TestIModel& testDb = *testDbPtr;
             ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
             testDb.AssertProfileVersion();
-            testDb.AssertLoadSchemas();
             if (!testDb.SupportsFeature(ECDbFeature::NamedEnumerators))
                 {
                 testDb.AssertEnum("CoreCustomAttributes", "DateTimeKind", nullptr, nullptr, PRIMITIVETYPE_String, true,
@@ -668,7 +661,6 @@ TEST_F(IModelCompatibilityTestFixture, UpgradingEC31EnumsToEC32AfterProfileUpgra
             TestIModel& testDb = *testDbPtr;
             ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
             testDb.AssertProfileVersion();
-            testDb.AssertLoadSchemas();
 
             // older files for which the schema upgrade wasn't run must have the auto-generated enumerator names
             if (testDb.GetOriginalECXmlVersion("TestSchema") <= BeVersion(3, 1))
@@ -711,7 +703,6 @@ TEST_F(IModelCompatibilityTestFixture, EC32Enums)
             TestIModel& testDb = *testDbPtr;
             ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
             testDb.AssertProfileVersion();
-            testDb.AssertLoadSchemas();
 
             if (testDb.VersionSupportsFeature(testDb.GetECDbInitialVersion(), ECDbFeature::NamedEnumerators))
                 {
@@ -804,7 +795,6 @@ TEST_F(IModelCompatibilityTestFixture, EC31KindOfQuantities)
             TestIModel& testDb = *testDbPtr;
             ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
             testDb.AssertProfileVersion();
-            testDb.AssertLoadSchemas();
 
             testDb.AssertKindOfQuantity("TestSchema", "ANGLE", "Angle", nullptr, "u:RAD", JsonValue(R"json(["f:DefaultRealU(2)[u:ARC_DEG]", "f:AngleDMS"])json"), 0.0001);
             testDb.AssertKindOfQuantity("TestSchema", "POWER", "Power", nullptr, "u:W", JsonValue(R"json(["f:DefaultRealU(4)[u:W]", "f:DefaultRealU(4)[u:KW]", "f:DefaultRealU(4)[u:MEGAW]", "f:DefaultRealU(4)[u:BTU_PER_HR]", "f:DefaultRealU(4)[u:KILOBTU_PER_HR]", "f:DefaultRealU(4)[u:HP]"])json"), 0.001);
@@ -877,7 +867,6 @@ TEST_F(IModelCompatibilityTestFixture, EC31ThreadPitchKindOfQuantities)
             TestIModel& testDb = *testDbPtr;
             ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
             testDb.AssertProfileVersion();
-            testDb.AssertLoadSchemas();
 
             testDb.AssertKindOfQuantity("TestSchema", "TestKoq_IN_DEGREE", nullptr, nullptr, "u:IN_PER_DEGREE", JsonValue(), 1.0);
             testDb.AssertKindOfQuantity("TestSchema", "TestKoq_IN_DEGREE_DEFAULTREALU", nullptr, nullptr, "u:IN_PER_DEGREE", JsonValue(R"json(["f:DefaultRealU[u:IN_PER_DEGREE]"])json"), 1.1);
@@ -921,7 +910,6 @@ TEST_F(IModelCompatibilityTestFixture, SchemaManager_EC31KindOfQuantities)
             TestIModel& testDb = *testDbPtr;
             ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
             testDb.AssertProfileVersion();
-            testDb.AssertLoadSchemas();
             testDb.GetDb().ClearECDbCache();
 
             //load KOQs with empty cache
@@ -1038,7 +1026,6 @@ TEST_F(IModelCompatibilityTestFixture, EC32KindOfQuantities)
             TestIModel& testDb = *testDbPtr;
             ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
             testDb.AssertProfileVersion();
-            testDb.AssertLoadSchemas();
             ASSERT_TRUE(testDb.SupportsFeature(ECDbFeature::UnitsAndFormats)) << testDb.GetDescription();
 
             testDb.AssertKindOfQuantity("TestSchema", "TestKoq_PresFormatWithMandatoryComposite", "My first test KOQ", nullptr, "u:CM", JsonValue(R"js(["f:DefaultRealU(4)[u:M]"])js"), 0.1);
@@ -1065,7 +1052,6 @@ TEST_F(IModelCompatibilityTestFixture, EC31Units)
                 continue;
 
             testDb.AssertProfileVersion();
-            testDb.AssertLoadSchemas();
 
             testDb.GetDb().ClearECDbCache();
 
@@ -1126,8 +1112,6 @@ TEST_F(IModelCompatibilityTestFixture, EC31Units)
                 continue;
 
             testDb.AssertProfileVersion();
-            testDb.AssertLoadSchemas();
-
             testDb.GetDb().ClearECDbCache();
 
             EXPECT_EQ(11, testDb.GetDb().Schemas().GetSchemas(false).size()) << testDb.GetDescription();
@@ -1189,7 +1173,6 @@ TEST_F(IModelCompatibilityTestFixture, EC32Units)
             TestIModel& testDb = *testDbPtr;
             ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
             testDb.AssertProfileVersion();
-            testDb.AssertLoadSchemas();
             ASSERT_TRUE(testDb.SupportsFeature(ECDbFeature::UnitsAndFormats)) << testDb.GetDescription();
 
             testDb.AssertKindOfQuantity("TestSchema", "KoqWithCustomFormat", nullptr, nullptr, "u:M", JsonValue(R"js(["MyFormat[u:M]"])js"), 0.1);
@@ -1231,15 +1214,12 @@ TEST_F(IModelCompatibilityTestFixture, EC31SchemaImport)
     {
     for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EMPTY))
         {
-        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
+        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile, TestIModel::Permutations::WritableOnly))
             {
             TestIModel& testDb = *testDbPtr;
-            if (testDb.GetOpenParams().IsReadonly())
-                continue;
 
             ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
             testDb.AssertProfileVersion();
-            testDb.AssertLoadSchemas();
 
             ECSchemaReadContextPtr deserializationCtx = TestFileCreator::DeserializeSchema(testDb.GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                     <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
@@ -1326,15 +1306,12 @@ TEST_F(IModelCompatibilityTestFixture, EC32SchemaImport_Enums)
     {
     for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EMPTY))
         {
-        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
+        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile, TestIModel::Permutations::WritableOnly))
             {
             TestIModel& testDb = *testDbPtr;
-            if (testDb.GetOpenParams().IsReadonly())
-                continue;
 
             ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
             testDb.AssertProfileVersion();
-            testDb.AssertLoadSchemas();
 
             ECSchemaReadContextPtr deserializationCtx = TestFileCreator::DeserializeSchema(testDb.GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                     <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -1389,15 +1366,12 @@ TEST_F(IModelCompatibilityTestFixture, EC32SchemaImport_Koqs)
     {
     for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EMPTY))
         {
-        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
+        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile, TestIModel::Permutations::WritableOnly))
             {
             TestIModel& testDb = *testDbPtr;
-            if (testDb.GetOpenParams().IsReadonly())
-                continue;
 
             ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
             testDb.AssertProfileVersion();
-            testDb.AssertLoadSchemas();
 
             ECSchemaReadContextPtr deserializationCtx = TestFileCreator::DeserializeSchema(testDb.GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                     <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -1450,15 +1424,12 @@ TEST_F(IModelCompatibilityTestFixture, EC31SchemaImport_Formats_API)
     {
     for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EMPTY))
         {
-        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
+        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile, TestIModel::Permutations::WritableOnly))
             {
             TestIModel& testDb = *testDbPtr;
-            if (testDb.GetOpenParams().IsReadonly())
-                continue;
 
             ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
             testDb.AssertProfileVersion();
-            testDb.AssertLoadSchemas();
 
             ECSchemaPtr schema;
             ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0)) << testDb.GetDescription();
@@ -1484,15 +1455,12 @@ TEST_F(IModelCompatibilityTestFixture, EC31SchemaUpgrade_Formats_API)
     {
     for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EMPTY))
         {
-        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
+        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile, TestIModel::Permutations::WritableOnly))
             {
             TestIModel& testDb = *testDbPtr;
-            if (testDb.GetOpenParams().IsReadonly())
-                continue;
 
             ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
             testDb.AssertProfileVersion();
-            testDb.AssertLoadSchemas();
 
             // Import base line of a schema, which is then upgraded in the next step
             ECSchemaReadContextPtr deserializationCtx = TestFileCreator::DeserializeSchema(testDb.GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
@@ -1547,15 +1515,12 @@ TEST_F(IModelCompatibilityTestFixture, EC31Enum_SchemaUpgrade)
     for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EC31ENUMS_SCHEMAUPGRADE))
         {
         ASSERT_TRUE(SetupDomainsInCurrentTestFile(testFile));
-        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
+        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile, TestIModel::Permutations::WritableOnly))
             {
             TestIModel& testDb = *testDbPtr;
-            if (testDb.GetOpenParams().IsReadonly())
-                continue;
 
             ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
             testDb.AssertProfileVersion();
-            testDb.AssertLoadSchemas();
 
             //Schema changes:
             //- bumped up version to 1.0.1
@@ -1641,15 +1606,12 @@ TEST_F(IModelCompatibilityTestFixture, EC31Koqs_SchemaUpgrade)
     for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EC31KOQS_SCHEMAUPGRADE))
         {
         ASSERT_TRUE(SetupDomainsInCurrentTestFile(testFile));
-        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
+        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile, TestIModel::Permutations::WritableOnly))
             {
             TestIModel& testDb = *testDbPtr;
-            if (testDb.GetOpenParams().IsReadonly())
-                continue;
 
             ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
             testDb.AssertProfileVersion();
-            testDb.AssertLoadSchemas();
 
             //Schema changes:
             //- bumped up version to 1.0.1
@@ -1728,15 +1690,12 @@ TEST_F(IModelCompatibilityTestFixture, EC31ToEC32SchemaUpgrade_Enums)
     for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EC31ENUMS_SCHEMAUPGRADE))
         {
         ASSERT_TRUE(SetupDomainsInCurrentTestFile(testFile));
-        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
+        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile, TestIModel::Permutations::WritableOnly))
             {
             TestIModel& testDb = *testDbPtr;
-            if (testDb.GetOpenParams().IsReadonly())
-                continue;
 
             ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
             testDb.AssertProfileVersion();
-            testDb.AssertLoadSchemas();
 
             //Schema changes:
             //- bumped up version to 1.0.1
@@ -1819,15 +1778,12 @@ TEST_F(IModelCompatibilityTestFixture, EC31ToEC32SchemaUpgrade_Koqs)
     for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EC31KOQS_SCHEMAUPGRADE))
         {
         ASSERT_TRUE(SetupDomainsInCurrentTestFile(testFile));
-        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
+        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile, TestIModel::Permutations::WritableOnly))
             {
             TestIModel& testDb = *testDbPtr;
-            if (testDb.GetOpenParams().IsReadonly())
-                continue;
 
             ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
             testDb.AssertProfileVersion();
-            testDb.AssertLoadSchemas();
 
             //Schema changes:
             //- bumped up version to 1.0.1
@@ -1895,15 +1851,12 @@ TEST_F(IModelCompatibilityTestFixture, EC32SchemaUpgrade_Enums)
     for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EC32ENUMS_SCHEMAUPGRADE))
         {
         ASSERT_TRUE(SetupDomainsInCurrentTestFile(testFile));
-        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
+        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile, TestIModel::Permutations::WritableOnly))
             {
             TestIModel& testDb = *testDbPtr;
-            if (testDb.GetOpenParams().IsReadonly())
-                continue;
 
             ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
             testDb.AssertProfileVersion();
-            testDb.AssertLoadSchemas();
 
             //Schema changes:
             //- bumped up version to 1.0.1
@@ -1983,15 +1936,12 @@ TEST_F(IModelCompatibilityTestFixture, EC32SchemaUpgrade_Koqs)
     for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EC32KOQS_SCHEMAUPGRADE))
         {
         ASSERT_TRUE(SetupDomainsInCurrentTestFile(testFile));
-        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
+        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile, TestIModel::Permutations::WritableOnly))
             {
             TestIModel& testDb = *testDbPtr;
-            if (testDb.GetOpenParams().IsReadonly())
-                continue;
 
             ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
             testDb.AssertProfileVersion();
-            testDb.AssertLoadSchemas();
 
             //Schema changes:
             //- bumped up version to 1.0.1
@@ -2078,7 +2028,6 @@ TEST_F(IModelCompatibilityTestFixture, AddDomain)
 
             ASSERT_EQ(BE_SQLITE_OK, openStat) << testDb.GetDescription();
             testDb.AssertProfileVersion();
-            testDb.AssertLoadSchemas();
             EXPECT_TRUE(testDb.GetDb().Schemas().ContainsSchema("Functional")) << testDb.GetDescription();
             SchemaVersion expectedSchemaVersion(1, 0, 0);
             SchemaVersion testDbSchemaVersion = testDb.GetSchemaVersion("Functional");
@@ -2103,7 +2052,6 @@ TEST_F(IModelCompatibilityTestFixture, OpenDomainIModel)
             TestIModel& testDb = *testDbPtr;
             ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
             testDb.AssertProfileVersion();
-            testDb.AssertLoadSchemas();
             EXPECT_TRUE(testDb.GetDb().Schemas().ContainsSchema(TESTDOMAIN_NAME)) << testDb.GetDescription();
             EXPECT_EQ(SchemaVersion(1, 0, 0), testDb.GetSchemaVersion(TESTDOMAIN_NAME)) << testDb.GetDescription();
             ECSqlStatement stmt;
@@ -2139,7 +2087,6 @@ TEST_F(IModelCompatibilityTestFixture, UpgradeDomainIModel)
                 //opens but schema is not upgraded
                 ASSERT_EQ(BE_SQLITE_OK, openStat) << testDb.GetDescription();
                 testDb.AssertProfileVersion();
-                testDb.AssertLoadSchemas();
 
                 EXPECT_TRUE(testDb.GetDb().Schemas().ContainsSchema(TESTDOMAIN_NAME)) << testDb.GetDescription();
                 EXPECT_EQ(SchemaVersion(1, 0, 0), testDb.GetSchemaVersion(TESTDOMAIN_NAME)) << testDb.GetDescription();
@@ -2164,7 +2111,6 @@ TEST_F(IModelCompatibilityTestFixture, UpgradeDomainIModel)
             // opened and upgraded the schema
             ASSERT_EQ(BE_SQLITE_OK, openStat) << testDb.GetDescription();
             testDb.AssertProfileVersion();
-            testDb.AssertLoadSchemas();
 
             // As the schema was upgraded, it should have set the original ECXML version, even if it originally
             // was a 4.0.0.1 file.
@@ -2206,7 +2152,6 @@ TEST_F(IModelCompatibilityTestFixture, UpgradeDomainIModelToEC32)
                 {
                 ASSERT_EQ(BE_SQLITE_OK, openStat) << testDb.GetDescription();
                 testDb.AssertProfileVersion();
-                testDb.AssertLoadSchemas();
 
                 EXPECT_EQ(SchemaVersion(1, 0, 0), testDb.GetSchemaVersion(TESTDOMAIN_NAME)) << testDb.GetDescription();
                 ECSqlStatement stmt;
@@ -2221,7 +2166,6 @@ TEST_F(IModelCompatibilityTestFixture, UpgradeDomainIModelToEC32)
             //schema import is possible to newer ECDb profile files or files that don't support EC3.2 as the profile version is automatically upgraded
             ASSERT_EQ(BE_SQLITE_OK, openStat) << testDb.GetDescription();
             testDb.AssertProfileVersion();
-            testDb.AssertLoadSchemas();
 
             EXPECT_TRUE(testDb.GetDb().Schemas().ContainsSchema(TESTDOMAIN_NAME)) << testDb.GetDescription();
             EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion(TESTDOMAIN_NAME)) << testDb.GetDescription();
@@ -2245,14 +2189,10 @@ TEST_F(IModelCompatibilityTestFixture, MajorSchemaUpgradeDeleteClassPropertyAndE
     {
     for (const auto& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EMPTY))
         {
-        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
+        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile, TestIModel::Permutations::WritableOnly))
             {
             TestIModel& testDb = *testDbPtr;
             const auto openStat = testDb.Open();
-            const auto& params = static_cast<DgnDb::OpenParams const&> (testDb.GetOpenParams());
-
-            if (params.IsReadonly())
-                continue;
 
             //schema import is possible to newer ECDb profile files or files that don't support EC3.2 as the profile version is automatically upgraded
             ASSERT_EQ(BE_SQLITE_OK, openStat) << testDb.GetDescription();
@@ -2416,14 +2356,10 @@ TEST_F(IModelCompatibilityTestFixture, MajorSchemaUpgradeDeleteKoQsDynamicSchema
     {
     for (const auto& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EMPTY))
         {
-        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
+        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile, TestIModel::Permutations::WritableOnly))
             {
             TestIModel& testDb = *testDbPtr;
             const auto openStat = testDb.Open();
-            const auto& params = static_cast<DgnDb::OpenParams const&> (testDb.GetOpenParams());
-
-            if (params.IsReadonly())
-                continue;
 
             //schema import is possible to newer ECDb profile files or files that don't support EC3.2 as the profile version is automatically upgraded
             ASSERT_EQ(BE_SQLITE_OK, openStat) << testDb.GetDescription();
@@ -2557,14 +2493,10 @@ TEST_F(IModelCompatibilityTestFixture, MajorSchemaUpgradePropertyTypeChange)
     {
     for (const auto& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EMPTY))
         {
-        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
+        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile, TestIModel::Permutations::WritableOnly))
             {
             TestIModel& testDb = *testDbPtr;
             const auto openStat = testDb.Open();
-            const auto& params = static_cast<DgnDb::OpenParams const&> (testDb.GetOpenParams());
-
-            if (params.IsReadonly())
-                continue;
 
             //schema import is possible to newer ECDb profile files or files that don't support EC3.2 as the profile version is automatically upgraded
             ASSERT_EQ(BE_SQLITE_OK, openStat) << testDb.GetDescription();
@@ -2677,15 +2609,11 @@ TEST_F(IModelCompatibilityTestFixture, TestBisCoreWithMemberPriorityChange)
     {
     for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EMPTY))
         {
-        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
+        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile, TestIModel::Permutations::WritableOnly))
             {
             auto& testDb = *testDbPtr;
             const auto openStat = testDb.Open();
             const auto& params = static_cast<const DgnDb::OpenParams&>(testDb.GetOpenParams());
-
-            if (params.IsReadonly())
-                continue;
-
             ASSERT_EQ(BE_SQLITE_OK, openStat) << testDb.GetDescription();
 
             DgnDbR dgnDb = testDb.GetDgnDb();

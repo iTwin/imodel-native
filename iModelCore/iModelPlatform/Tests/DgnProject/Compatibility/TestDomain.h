@@ -26,6 +26,7 @@ struct IModelEvolutionTestsDomain final : DgnDomain
 
         void ClearHandlers() { m_handlers.clear(); }
         void SetVersion(SchemaVersion const&);
+        BeFileNameCR GetSchemaRelativePath() const { return m_relativePath; }
         static BentleyStatus Register(SchemaVersion const& version, DgnDomain::Required isRequired, DgnDomain::Readonly isReadonly);
     };
 

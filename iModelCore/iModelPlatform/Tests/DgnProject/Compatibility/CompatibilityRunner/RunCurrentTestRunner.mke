@@ -1,0 +1,44 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------
+# Set up all the standard stuff.
+#----------------------------------------------------------
+%include mdl.mki
+%include $(SrcRoot)imodel-native/iModelCore/iModelPlatform/Tests/DgnProject/Compatibility/CompatibilityRunner/common.mki
+
+# Runs the current test runner. By default (RUN_EVOLUTION_TESTS_OPTIMIZED=1) the test files are created once and the
+# remaining tests are then executed by several concurrent gtest shards (see RunCurrentTestRunner.py).
+# Pass -dRUN_EVOLUTION_TESTS_OPTIMIZED=0 (or set the environment variable) to run everything in a single process as before.
+# Pass -dIMODELEVOLUTION_SHARDS=N to override the number of shards (defaults to cpu_count/2).
+%if !defined (RUN_EVOLUTION_TESTS_OPTIMIZED)
+    RUN_EVOLUTION_TESTS_OPTIMIZED = 1
+%endif
+
+%if defined (IMODELEVOLUTION_SHARDS)
+    SHARD_OPTIONS = --shards=$(IMODELEVOLUTION_SHARDS)
+%else
+    SHARD_OPTIONS =
+%endif
+
+GTEST_OUTPUT_DIR = $(OutputRootDir)build/IModelEvolutionTests
+RunDir = $(GTEST_OUTPUT_DIR)/run/
+LogDir = $(RunDir)logs/
+GTEST_LOGFILE_NAME = IModelEvolutionTests.log
+# All per-process logs concatenated. It is kept outside of LogDir so that CheckLogfilesForFailures.py does not count it twice.
+CombinedLog = $(RunDir)$(GTEST_LOGFILE_NAME)
+
+BreakOnFailure = 1
+%if defined (BEGTEST_IGNORE_FAILURE)
+    BreakOnFailure = 0
+%endif
+
+always:
+    !~@mkdir $(GTEST_OUTPUT_DIR)
+    !~@mkdir $(RunDir)
+    !~@mkdir $(LogDir)
+    $(BBPYTHONCMD) Tests/DgnProject/Compatibility/CompatibilityRunner/RunCurrentTestRunner.py $(CURRENTTESTRUNNER_DIR) $(LogDir) $(CombinedLog) --optimized=$(RUN_EVOLUTION_TESTS_OPTIMIZED) --timeout=-1 $(SHARD_OPTIONS)
+    $(BBPYTHONCMD) $(BuildContext)/SubParts/BeGTest/gtest/CheckLogfilesForFailures.py $(LogDir) $(BreakOnFailure)
+    ~linkfile "$(BuildContext)Delivery/Gtest/Logs/$(GTEST_LOGFILE_NAME)=$(CombinedLog)"

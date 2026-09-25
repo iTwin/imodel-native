@@ -34,7 +34,7 @@
             "environment": [],
         },
         {
-            "name": "Debug a specific iModelEvolution test",
+            "name": "Debug a specific iModelEvolution test without optimizations",
             "presentation": {
                 "group": "0_Windows",
             },
@@ -42,12 +42,37 @@
             "request": "launch",
             "program": "${env:OutRoot}Winx64/Product/IModelEvolutionGTest/IModelEvolutionTests.exe",
             "args": [
-                "--gtest_break_on_failure",
                 "--gtest_filter=ECDbCompatibilityTestFixture.*:IModelCompatibilityTestFixture.*"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
-            "environment": [],
+            "environment": [
+                { "name": "RUN_EVOLUTION_TESTS_OPTIMIZED", "value": "0" }
+            ],
+        },
+        {
+            // Runs the full optimized pipeline (wipe UpgradeCache -> CreateTestFiles -> N concurrent shards) via the Python launcher.
+            // Set --optimized=0 to run the suite the original (single process, full matrix) way.
+            "name": "Run optimized iModelEvolution tests",
+            "presentation": {
+                "group": "0_Windows",
+            },
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/iModelCore/iModelPlatform/Tests/DgnProject/Compatibility/CompatibilityRunner/RunCurrentTestRunner.py",
+            "args": [
+                "${env:OutRoot}Winx64/Product/IModelEvolutionGTest",
+                "${env:OutRoot}Winx64/build/IModelEvolutionTests/run/logs",
+                "${env:OutRoot}Winx64/build/IModelEvolutionTests/run/IModelEvolutionTests.log",
+                "--optimized=1",
+                "--shards=4",
+                "--timeout=-1"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "RUN_EVOLUTION_TESTS_OPTIMIZED": "1"
+            },
         },
         {
             "name": "Debug a specific BentleyDll test",

@@ -33,10 +33,17 @@ protected:
 
 private:
     virtual ECDbR _GetDb() const = 0;
-    virtual DbResult _Open() = 0;
+    virtual DbResult _Open(BeFileNameCR path, bool immutable) = 0;
     virtual void _Close() = 0;
     virtual ECDb::OpenParams const& _GetOpenParams() const = 0;
     virtual Utf8String _OpenParamsToString() const = 0;
+    virtual bool _RequiresUpgrade() const = 0;
+    virtual Utf8String _GetUpgradeCacheKeySuffix() const { return Utf8String(); }
+
+    BeFileName GetUpgradeCachePath() const;
+    static BeFileName GetUpgradeCacheFolder();
+    static void PublishToUpgradeCache(BeFileNameCR upgradedFile, BeFileNameCR cachedFile);
+    static BeFileNameStatus CopyFile(BeFileNameCR source, BeFileNameCR target);
 
 protected:
     explicit TestDb(TestFile const& testFile) : m_testFile(testFile) {}
@@ -82,6 +89,19 @@ protected:
     void AssertPhenomenon(Utf8CP schemaName, Utf8CP phenName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, Utf8CP definition) const;
 
     void AssertLoadSchemas() const;
+    virtual void AssertProfileVersion() const = 0;
+    void AssertBasicTests() const;
+
+    enum class Permutations
+        {
+        //! read-only, read-write, read-write + domain upgrade, and for older files also read-write + profile upgrade (with/without domain upgrade)
+        All,
+        //! Same as All, but without the read-only permutation. For tests that modify the file (e.g. import schemas) and
+        //! therefore skip the read-only permutation anyway.
+        WritableOnly,
+        //! Only read-only, read-write + domain upgrade, and for older files also read-write + profile upgrade (with/without domain upgrade)
+        ReadonlyAndUpgrades
+        };
     };
 
 //=======================================================================================
@@ -128,7 +148,7 @@ private:
     ECDb::OpenParams m_openParams;
 
     ECDbR _GetDb() const override { return const_cast<ECDbR> (m_ecdb); }
-    DbResult _Open() override;
+    DbResult _Open(BeFileNameCR path, bool immutable) override;
     void _Close() override
         {
         if (m_ecdb.IsDbOpen())
@@ -140,14 +160,15 @@ private:
 
     ECDb::OpenParams const& _GetOpenParams() const override { return m_openParams; }
     Utf8String _OpenParamsToString() const override;
+    bool _RequiresUpgrade() const override { return m_openParams.m_profileUpgradeOptions == Db::ProfileUpgradeOptions::Upgrade; }
 
 public:
     TestECDb(TestFile const& testFile, ECDb::OpenParams const& openParams = ECDb::OpenParams(ECDb::OpenMode::Readonly)): TestDb(testFile), m_openParams(openParams) {}
     ~TestECDb() { _Close(); }
 
-    static Iterable GetPermutationsFor(TestFile const&);
+    static Iterable GetPermutationsFor(TestFile const&, Permutations permutations = Permutations::All);
     ProfileVersion const& GetECDbProfileVersion() const { return m_ecdb.GetECDbProfileVersion(); }
-    void AssertProfileVersion() const;
+    void AssertProfileVersion() const override;
     };
 
 //=======================================================================================
@@ -194,7 +215,7 @@ struct TestIModel final : TestDb
         DgnDb::OpenParams m_openParams;
 
         ECDbR _GetDb() const override { return GetDgnDb(); }
-        DbResult _Open() override;
+        DbResult _Open(BeFileNameCR path, bool immutable) override;
         void _Close() override
             {
             if (m_dgndb != nullptr && m_dgndb->IsDbOpen())
@@ -205,6 +226,8 @@ struct TestIModel final : TestDb
 
         ECDb::OpenParams const& _GetOpenParams() const override { return m_openParams; }
         Utf8String _OpenParamsToString() const override;
+        bool _RequiresUpgrade() const override;
+        Utf8String _GetUpgradeCacheKeySuffix() const override;
 
     public:
         TestIModel(TestFile const& testFile, DgnDb::OpenParams const& openParams = DgnDb::OpenParams(DgnDb::OpenMode::Readonly)) : TestDb(testFile), m_openParams(openParams) {}
@@ -213,7 +236,7 @@ struct TestIModel final : TestDb
         SchemaUpgradeOptions const& GetSchemaUpgradeOptions() { return m_openParams.GetSchemaUpgradeOptions(); }
 
         DgnDbR GetDgnDb() const { BeAssert(m_dgndb != nullptr); return *m_dgndb; }
-        static Iterable GetPermutationsFor(TestFile const&);
+        static Iterable GetPermutationsFor(TestFile const&, Permutations permutations = Permutations::All);
         DgnDbProfileVersion  GetDgnDbProfileVersion() const { return m_dgndb->GetProfileVersion(); }
-        void AssertProfileVersion() const;
+        void AssertProfileVersion() const override;
     };
