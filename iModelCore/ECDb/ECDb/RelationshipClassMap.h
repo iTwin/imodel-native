@@ -132,6 +132,7 @@ struct ForeignKeyPartitionView final
             uint64_t m_hashCode = 0;
             DbColumn const* m_cols[6];
             bool m_persisted = false;
+            bvector<std::pair<ECN::ECClassId, ECN::ECClassId>> m_navigationProperties;
 
             explicit Partition(ForeignKeyPartitionView const&);
             //not copyable
@@ -163,6 +164,9 @@ struct ForeignKeyPartitionView final
             DbColumn const& GetToECInstanceIdColumn() const { return m_fkInfo.GetPersistedEnd() == PersistedEnd::SourceTable ? GetSourceECInstanceIdColumn() : GetTargetECInstanceIdColumn(); }
             DbColumn const& GetToECClassIdColumn() const { return m_fkInfo.GetPersistedEnd() == PersistedEnd::SourceTable ? *GetSourceECClassIdColumn() : *GetTargetECClassIdColumn(); }
             NavigationInfo GetNavigationColumns() const { return NavigationInfo(GetFromECInstanceIdColumn(), GetECClassIdColumn()); }
+            void AddNavigationProperty(ECN::ECClassId relationshipClassId, ECN::ECClassId declaringClassId);
+            bool TryGetNavigationFallback(ECN::ECClassId& relationshipClassId, bvector<ECN::ECClassId>& declaringClassIds,
+                                          ECN::ECRelationshipClassCR queriedRelationship, bool polymorphic) const;
             bool IsConcrete() const;
             bool IsPhysical() const;
             bool IsPersisted() const { return m_persisted; }

@@ -44,6 +44,7 @@ public:
     static Utf8CP constexpr NOECCLASSIDFILTER_OPTION="NoECClassIdFilter";
     static Utf8CP constexpr READONLYPROPERTIESAREUPDATABLE_OPTION="ReadonlyPropertiesAreUpdatable";
     static Utf8CP constexpr ENABLE_EXPERIMENTAL_FEATURES = "ENABLE_EXPERIMENTAL_FEATURES";
+    static Utf8CP constexpr NAV_REL_CLASSID_FALLBACK = "NAV_REL_CLASSID_FALLBACK";
     static Utf8CP constexpr USE_JS_PROP_NAMES = "USE_JS_PROP_NAMES";
     static Utf8CP constexpr DO_NOT_TRUNCATE_BLOB = "DO_NOT_TRUNCATE_BLOB";
 

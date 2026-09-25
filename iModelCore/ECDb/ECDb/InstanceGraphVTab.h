@@ -32,7 +32,8 @@ struct RelationsModule : ECDbModule
                 // Hidden input columns
                 ECInstanceId = 6,
                 ECClassId = 7,
-                TraversalDir = 8
+                TraversalDir = 8,
+                Options = 9
                 };
 
             private:
@@ -46,6 +47,7 @@ struct RelationsModule : ECDbModule
                 ECInstanceId m_seedInstanceId;
                 ECN::ECClassId m_seedClassId;
                 TraversalDirection m_dir = TraversalDirection::Both;
+                bool m_navRelClassIdFallback = false;
 
             public:
                 RelationsCursor(RelationsTable& vt);
@@ -67,7 +69,7 @@ struct RelationsModule : ECDbModule
             db,
             NAME,
             "CREATE TABLE x(RelatedECInstanceId, RelatedECClassId, Direction, RelationshipECClassId, RelationshipECInstanceId, NavPropertyName,"
-            " ECInstanceId HIDDEN, ECClassId HIDDEN, TraversalDirection HIDDEN)",
+            " ECInstanceId HIDDEN, ECClassId HIDDEN, TraversalDirection HIDDEN, Options HIDDEN)",
             R"xml(<?xml version="1.0" encoding="utf-8" ?>
             <ECSchema
                     schemaName="ECVLib"
