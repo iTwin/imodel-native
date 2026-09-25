@@ -7,11 +7,11 @@ import os
 from shutil import copytree, copyfile, rmtree
 
 # Copies all pulled test runners into the test out folder and stages the test files each pulled runner should run against.
-# By default only the *created* files are staged into the pulled runners. The combination
+# By default (RUN_EVOLUTION_TESTS_OPTIMIZED=1) only the *created* files are staged into the pulled runners. The combination
 # "pulled runner x pulled files" consists of two immutable, already published artefacts and was validated when they were published.
-# Set the environment variable IMODELEVOLUTION_FULL_MATRIX=1 (or pass --full) to restore the full matrix.
+# If the optimizations are disabled (--optimized=0 or RUN_EVOLUTION_TESTS_OPTIMIZED=0), the full matrix (pulled + created files) is staged as before.
 
-FULL_MATRIX_ENV_VAR = "IMODELEVOLUTION_FULL_MATRIX"
+OPTIMIZED_ENV_VAR = "RUN_EVOLUTION_TESTS_OPTIMIZED"
 
 def mergeFolder(sourceFolder, targetFolder):
     for subdir in os.listdir(sourceFolder):
@@ -31,10 +31,12 @@ def mergeFolders(sourceFolders, targetFolder):
             mergeFolder(sourceFolder, targetFolder)
 
 
-def isFullMatrixRequested(args):
-    if "--full" in args:
-        return True
-    return os.environ.get(FULL_MATRIX_ENV_VAR, "").strip().lower() in ("1", "true", "yes", "on")
+def isOptimized(args):
+    value = os.environ.get(OPTIMIZED_ENV_VAR, "1")
+    for arg in args:
+        if arg.startswith("--optimized="):
+            value = arg[len("--optimized="):]
+    return value.strip().lower() not in ("0", "false", "")
 
 #------------------------------------------------------------------------
 # bsimethod
@@ -46,7 +48,7 @@ def main():
         print ("Arg 2: Sandbox folder where test runners are run from. The test runners are copied into this folder from the nuget folder.")
         print ("Arg 3: Central test files folder to which test files from all nugets were copied")
         print ("Arg 4: Created files folder (test files created by the current runner)")
-        print ("Optional: --full (or env {0}=1) to also stage the pulled test files into the pulled runners".format(FULL_MATRIX_ENV_VAR))
+        print ("Optional: --optimized=0|1 (or env {0}) master switch for the optimizations, defaults to 1. If 0, the pulled test files are staged as well (legacy full matrix).".format(OPTIMIZED_ENV_VAR))
         return sys.exit(1)
 
     testRunnersNugetPath = args[0]
@@ -54,9 +56,9 @@ def main():
     testFilesPath = args[2]
     createdFilesPath = args[3]
 
-    fullMatrix = isFullMatrixRequested(sys.argv[1:])
+    fullMatrix = not isOptimized(sys.argv[1:])
     testFileSources = [testFilesPath, createdFilesPath] if fullMatrix else [createdFilesPath]
-    print ("Staging test files for pulled runners: {0}".format("full matrix (pulled + created files)" if fullMatrix else "created files only (set {0}=1 for the full matrix)".format(FULL_MATRIX_ENV_VAR)))
+    print ("Staging test files for pulled runners: {0}".format("full matrix (pulled + created files)" if fullMatrix else "created files only (set {0}=0 for the full matrix)".format(OPTIMIZED_ENV_VAR)))
 
     if not os.path.exists(createdFilesPath) or not os.listdir(createdFilesPath):
         print ("Created files folder '{0}' is empty. The current test runner did not produce any test files.".format(createdFilesPath), file=sys.stderr)

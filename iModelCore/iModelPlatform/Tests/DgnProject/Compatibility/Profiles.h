@@ -49,6 +49,7 @@ struct TestFile final
         TestFile& operator=(TestFile const&) = default;
         TestFile(TestFile&&) = default;
         TestFile& operator=(TestFile&&) = default;
+        bool operator<(TestFile const& other) const;
 
         BeFileNameStatus CloneSeedToOutput() const { return CloneSeed(m_path); }
         BeFileNameStatus CloneSeed(BeFileNameCR targetFolder) const;
@@ -113,10 +114,16 @@ struct Profile : NonCopyableClass
         BeFileNameCR GetOutFolder() const { return m_profileOutFolder; }
 
         std::vector<TestFile> GetAllVersionsOfTestFile(Utf8CP testFileName, bool logFoundFiles = true) const;
-        std::vector<TestFile> GetAllVersionsOfAllPulledTestFiles(bool logFoundFiles = true) const { return GetAllVersionsOfTestFile(m_profilePulledTestDataFolder, L"*.*", logFoundFiles); }
+        //! Returns all test files (created by this runner and pulled from other runners)
+        std::vector<TestFile> GetAllVersionsOfAllTestFiles(bool logFoundFiles = true) const;
+        //! Returns a deterministic subset (bucket) of all test files (created and pulled), so that a test over all files can be split
+        //! into several smaller gtests, which can then be distributed across shards.
+        //! If the optimizations are disabled, bucket 0 returns all files and every other bucket is empty.
+        std::vector<TestFile> GetTestFilesBucket(size_t bucket, size_t bucketCount) const;
         std::vector<TestFile> GetAllVersionsOfTestFile(BeFileNameCR rootFolder, Utf8CP testFileName, bool logFoundFiles) const;
         BeFileName GetPathForNewTestFile(Utf8StringCR testFileName) const { return GetFolderForNewTestFile().AppendToPath(BeFileName(testFileName)); }
         BeFileName GetPathForNewUpgradedTestFile(TestFile const& oldSeedFile) const;
+        std::vector<TestFile> GetOldTestFilesToUpgrade(Utf8CP testFileName) const;
 
         //! Checks if the supplied test file is created for the current test run and not pulled.
         //! @param[in]  testFile  Test file to check

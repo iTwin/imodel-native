@@ -131,6 +131,48 @@ CharCP WinGetEnv(const char * name)
 #endif  // BENTLEY_WIN32
 
 /*---------------------------------------------------------------------------------**//**
+* Returns the gtest shard index if this process is one of several concurrently running gtest shards
+* (GTEST_TOTAL_SHARDS > 1, see gtest docs on "Distributing Test Functions to Multiple Machines"), -1 otherwise.
+* Shards share the run directory, so they must neither wipe the shared output root nor share a temp dir.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static int getGtestShardIndex()
+    {
+    auto readIntEnvVar = [](CharCP name, int defaultValue) -> int
+        {
+        Utf8String setting;
+#if defined(BENTLEY_WIN32)
+        // Plain getenv is deprecated by MSVC
+        char* buffer = nullptr;
+        size_t count = 0;
+        if (_dupenv_s(&buffer, &count, name) != 0 || buffer == nullptr)
+            return defaultValue;
+
+        setting.assign(buffer);
+        free(buffer);
+#else
+        char const* value = std::getenv(name);
+        if (value == nullptr)
+            return defaultValue;
+
+        setting.assign(value);
+#endif
+
+        setting.Trim();
+
+        if (Utf8String::IsNullOrEmpty(setting.c_str()))
+            return defaultValue;
+
+        return std::atoi(setting.c_str());
+        };
+
+    if (readIntEnvVar("GTEST_TOTAL_SHARDS", 1) <= 1)
+        return -1;
+
+    return readIntEnvVar("GTEST_SHARD_INDEX", 0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * This class knows how data files are linked into the Product/BeGTest directory structure.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -186,6 +228,11 @@ struct BeGTestHost : RefCounted<BeTest::Host>
         {
         GetRunRoot (path);
         path.AppendToPath (L"Temp");
+        // concurrently running gtest shards each get their own temp dir
+        const int shardIndex = getGtestShardIndex();
+        if (shardIndex >= 0)
+            path.AppendToPath (WPrintfString(L"shard%d", shardIndex).c_str());
+
         path.AppendSeparator ();
         }
 
@@ -416,7 +463,15 @@ int main(int argc, char **argv)
     //  Make sure output directies exist (and remove any results hanging around from a previous run)
     BeFileName dirName;
     hostPtr->GetOutputRoot(dirName);
-    recreateDir(dirName);
+    if (getGtestShardIndex() >= 0)
+        {
+        // The output root is shared by all concurrently running gtest shards. Wiping it here would destroy what other shards
+        // already produced (or are producing). Whoever launches the shards is responsible for wiping it once before they start.
+        BeFileName::CreateNewDirectory(dirName.c_str());
+        }
+    else
+        recreateDir(dirName);
+
     hostPtr->GetTempDir(dirName);
     recreateDir(dirName);
 

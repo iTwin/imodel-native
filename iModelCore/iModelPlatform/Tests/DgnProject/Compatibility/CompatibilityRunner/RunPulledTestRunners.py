@@ -12,6 +12,19 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 # Runs every pulled (older) test runner found in the sandbox folder against the test files staged in its own run/TestFiles folder.
 TESTRUNNER_EXE = "iModelEvolutionTests.exe"
 JOBS_ENV_VAR = "IMODELEVOLUTION_RUNNER_JOBS"
+# Master switch for all optimizations of the evolution tests (defaults to enabled). If disabled, the pulled runners are executed one after another as before.
+OPTIMIZED_ENV_VAR = "RUN_EVOLUTION_TESTS_OPTIMIZED"
+
+#------------------------------------------------------------------------
+# bsimethod
+#------------------------------------------------------------------------
+def isOptimized(args=()):
+    """--optimized=0|1 overrides the environment variable. Defaults to optimized."""
+    value = os.environ.get(OPTIMIZED_ENV_VAR, "1")
+    for arg in args:
+        if arg.startswith("--optimized="):
+            value = arg[len("--optimized="):]
+    return value.strip().lower() not in ("0", "false", "")
 
 #------------------------------------------------------------------------
 # bsimethod
@@ -100,6 +113,8 @@ def createGTestFilter(exeDir, currentTestRunner):
 #------------------------------------------------------------------------
 def getJobCount(args):
     """Number of pulled test runners to execute concurrently."""
+    if not isOptimized(args):
+        return 1
     for arg in args:
         if arg.startswith("--jobs="):
             return max(1, int(arg[len("--jobs="):]))

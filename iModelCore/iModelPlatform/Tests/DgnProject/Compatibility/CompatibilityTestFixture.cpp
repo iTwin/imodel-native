@@ -6,9 +6,76 @@
 
 #include "CompatibilityTestFixture.h"
 #include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <algorithm>
 #include <Bentley/BeNumerical.h>
+#include <Bentley/BeFile.h>
 
 USING_NAMESPACE_BENTLEY_EC
+
+//**************************************************************************************
+// TestOptimizations / TestSharding
+//**************************************************************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+static int ReadEnvVar(Utf8CP name, int defaultValue)
+    {
+    Utf8String setting;
+#if defined(BENTLEY_WIN32)
+    // Plain getenv is deprecated by MSVC
+    char* buffer = nullptr;
+    size_t count = 0;
+    if (_dupenv_s(&buffer, &count, name) != 0 || buffer == nullptr)
+        return defaultValue;
+
+    setting.assign(buffer);
+    free(buffer);
+#else
+    char const* value = std::getenv(name);
+    if (value == nullptr)
+        return defaultValue;
+
+    setting.assign(value);
+#endif
+
+    setting.Trim();
+
+    if (Utf8String::IsNullOrEmpty(setting.c_str()))
+        return defaultValue;
+
+    if (setting.EqualsIAscii("true"))
+        return 1;
+
+    if (setting.EqualsIAscii("false"))
+        return 0;
+
+    return std::atoi(setting.c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+bool TestOptimizations::IsEnabled()
+    {
+    static const bool s_enabled = ReadEnvVar(TESTOPTIMIZATIONS_ENV_VAR, 1) != 0;
+    return s_enabled;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+bool TestSharding::IsSharded() { return TestOptimizations::IsEnabled() && ReadEnvVar("GTEST_TOTAL_SHARDS", 1) > 1; }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+int TestSharding::GetShardIndex() { return IsSharded() ? ReadEnvVar("GTEST_SHARD_INDEX", 0) : -1; }
 
 //**************************************************************************************
 // CompatibilityTestFixture
