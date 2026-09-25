@@ -13,6 +13,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct DbMapValidator final
     {
     private:
+        static constexpr int MAX_DETAILED_WARNINGS = 3;
+
         SchemaImportContext& m_schemaImportContext;
         DbMapValidationMode m_mode;
         bool m_continueAfterError;
@@ -35,7 +37,7 @@ struct DbMapValidator final
         BentleyStatus ValidateDbTrigger(DbTrigger const&) const { return SUCCESS; }
         BentleyStatus ValidateCustomAttributeTable() const;
         BentleyStatus ValidateDbMap() const;
-        BentleyStatus ValidateClassMap(ClassMap const&) const;
+        BentleyStatus ValidateClassMap(ClassMap const&, int& incompleteClassMapCount) const;
         BentleyStatus ValidateMapStrategy(ClassMap const&) const;
         BentleyStatus ValidateRelationshipClassEndTableMap(RelationshipClassEndTableMap const&) const;
         BentleyStatus ValidateRelationshipClassLinkTableMap(RelationshipClassLinkTableMap const&) const;
