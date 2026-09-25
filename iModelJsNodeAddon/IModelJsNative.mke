@@ -150,6 +150,10 @@ DLM_NO_CONTEXT_LINK = 1
 
     DLM_OBJECT_FILES + $(THIN_ARCHIVE_PATH)
 
+    %if $(TARGET_PLATFORM) == "Linux"
+        BENTLEY_LINUX_LINK_Options + -Wl,-Bsymbolic-functions
+    %endif
+
     %ifdef __apple
         # OSX Specific library
         LINKER_LIBRARIES  + -framework CoreFoundation
