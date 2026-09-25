@@ -5,6 +5,7 @@
 #pragma once
 #include "ChangesetValueFactory.h"
 #include <list>
+#include <optional>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -103,6 +104,8 @@ private:
     std::vector<std::unique_ptr<IECSqlValue>> m_newFields;
     std::unordered_map<Utf8String, DbValue>   m_columnValues;
     std::vector<Utf8String>                   m_changedPropNames;
+    //! IsECTable result for the current row, computed once in ReFetchValues and reused by IsECTable().
+    std::optional<bool>                       m_currentRowIsECTable;
 
     //! Path to the temporary merged changeset file created by OpenChangeGroup, empty otherwise.
     //! Deleted in Close().

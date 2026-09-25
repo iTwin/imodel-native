@@ -340,6 +340,7 @@ void PreparedChangesetReader::ClearFields() {
     m_newFields.clear();
     m_columnValues.clear();
     m_changedPropNames.clear();
+    m_currentRowIsECTable.reset();
 }
 
 //---------------------------------------------------------------------------------------
@@ -494,6 +495,7 @@ BentleyStatus PreparedChangesetReader::ReFetchValues(bool& isCurrentRowFilteredO
     bool isECTable = false;
     if(IsECTable(isECTable) != SUCCESS)
         return ERROR;
+    m_currentRowIsECTable = isECTable;
     if(!isECTable) {
         LOG.infov("Table '%s' is not an EC table. Skipping creating fields", tableName.c_str());
         return SUCCESS;
@@ -671,6 +673,10 @@ BentleyStatus PreparedChangesetReader::IsECTable(bool& isECTable) const {
     if(!IsStepped()) {
         LOG.errorv("Attempting to check IsECTable on a ChangesetReader that is either not open or not stepped or has finished stepping and has reached the end.");
         return ERROR;
+    }
+    if (m_currentRowIsECTable.has_value()) {
+        isECTable = m_currentRowIsECTable.value();
+        return SUCCESS;
     }
     Utf8String tableName;
     if(GetTableName(tableName) != SUCCESS)
