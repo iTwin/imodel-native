@@ -9210,18 +9210,12 @@ public:
 static Utf8String GetVerticalGridFilePath(WStringCR gridFile, WStringCR dataDirectory)
 {
     BeFileName fileName(gridFile);
-    if (!fileName.IsAbsolutePath())
-    {
-        BeFileName resourcePath(L"assets");
-        resourcePath.AppendToPath(gridFile.c_str());
-        return resourcePath.GetNameUtf8();
-    }
+    if (fileName.IsAbsolutePath())
+        return fileName.GetNameUtf8();
 
-    WString resolvedGridFilePath;
-    if (SUCCESS != BeFileName::ResolveRelativePath(resolvedGridFilePath, gridFile.c_str(), dataDirectory.c_str()))
-        return "";
-
-    return Utf8String(resolvedGridFilePath.c_str());
+    BeFileName resourcePath(L"assets");
+    resourcePath.AppendToPath(gridFile.c_str());
+    return resourcePath.GetNameUtf8();
 }
 
 class VerticalGeoidSeparationGridTransform : public VerticalTransform
@@ -9628,9 +9622,6 @@ public:
     {
         if (nullptr != m_vertconUS)
             return SUCCESS;
-
-        if (0 != CSvrtconInit())
-            return REPROJECT_CSMAPERR_VerticalDatumConversionError;
 
         // create csGeoidHeight_ object containing a list of all the files needed for the transform
         csDatumCatalog_* catalog = (struct csDatumCatalog_*)CS_malc(sizeof (struct csDatumCatalog_));
@@ -12395,21 +12386,25 @@ struct GeoCoordWorkspaces {
         return nullptr;
     }
 
-    // get the row for a resource for csmap by pathname. Path will include the "assets" prefix.
+    // get the row for a resource for csmap by virtual or expanded assets pathname.
     static WorkspaceRow GetRow(Utf8CP path) {
         WorkspaceRow blank = {0, nullptr};
-        if (0 != strncmp(path, s_assetsDirPrefix.c_str(), s_assetsDirPrefix.length()))
-            return blank;
+        Utf8String resourceName = ToUnixName(path);
+        Utf8String assetsPrefix = s_assetsDirPrefix + "/"; // "assets/"
+        if (resourceName.StartsWith(assetsPrefix.c_str()))
+            resourceName.erase(0, assetsPrefix.length());
+        else
+            {
+            Utf8String assetsMarker("/");
+            assetsMarker.append(assetsPrefix); // "/assets/"
+            size_t assetsPos = resourceName.find(assetsMarker);
+            if (Utf8String::npos == assetsPos)
+                return blank;
 
-        // strip leading "assets" and leading "/", "\", or "."s
-        path += s_assetsDirPrefix.length();
-        if (*path == 0)
-            return blank;
-
-        while (*path == '.' || *path == '/' || *path == '\\')
-            ++path;
-
-        auto resourceName = ToUnixName(path);
+            resourceName.erase(0, assetsPos + assetsMarker.length());
+            }
+        if (resourceName.StartsWith("./"))
+            resourceName.erase(0, 2);
         for (auto& entry : s_workspaceDbs) {
             auto db = entry->GetDb();
             if (nullptr == db)

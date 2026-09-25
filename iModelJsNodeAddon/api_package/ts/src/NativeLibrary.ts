@@ -856,11 +856,31 @@ export declare namespace IModelJsNative {
     public static computeChangesetId(args: Partial<ChangesetFileProps> & Required<Pick<ChangesetFileProps, "parentId" | "pathname">>): string;
   }
 
+  /** Expected to migrate to `@itwin/core-common` when vertical CRS enumeration is exposed there. */
+  interface VerticalCRSListProps {
+    point?: { longitude: number, latitude: number };
+    extent?: Range2dProps;
+    includeIntersecting?: boolean;
+  }
+
+  /** Expected to migrate to `@itwin/core-common` with `VerticalCRSListProps`. */
+  interface VerticalCRSListEntry {
+    crsName: string;
+    id: "GEOID" | "ELLIPSOID" | "NGVD29" | "NAVD88" | "LOCAL_ELLIPSOID";
+    epsg?: number;
+    description: string;
+    deprecated: boolean;
+    type: string;
+    unit: string;
+    extent: Range2dProps;
+  }
+
   /** The native object for GeoServices. */
   class GeoServices {
     constructor();
     public static getGeographicCRSInterpretation(props: GeographicCRSInterpretRequestProps): GeographicCRSInterpretResponseProps;
     public static getListOfCRS(extent?: Range2dProps, includeWorld?: boolean, unit?: string): Array<{ name: string, description: string, deprecated: boolean, crsExtent: Range2dProps, unit: string }>;
+    public static getListOfVerticalCRS(props?: VerticalCRSListProps): VerticalCRSListEntry[];
     public static getAvailableUnitNames(): string[];
   }
 
