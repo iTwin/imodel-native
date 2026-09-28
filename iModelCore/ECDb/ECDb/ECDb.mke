@@ -37,7 +37,8 @@ ECDbPublicHeaders =  \
                 $(publicApiDir)InstanceWriter.h \
                 $(publicApiDir)ECDbExpressionSymbolContext.h \
                 $(publicApiDir)InstanceRepository.h \
-                $(publicApiDir)ChangesetReader.h
+                $(publicApiDir)ChangesetReader.h \
+                $(publicApiDir)ChangeUnifier.h
 
 ECDbAllHeaders = \
                 $(ECDbPublicHeaders) \
@@ -263,6 +264,8 @@ $(o)ChangeIteratorImpl$(oext):                                $(baseDir)ChangeIt
 $(o)ChangesetReader$(oext):                                 $(baseDir)ChangesetReader.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)PreparedChangesetReader$(oext):                         $(baseDir)PreparedChangesetReader.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)ChangeUnifier$(oext):                                   $(baseDir)ChangeUnifier.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ChangesetValue$(oext):                                    $(baseDir)ChangesetValue.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
