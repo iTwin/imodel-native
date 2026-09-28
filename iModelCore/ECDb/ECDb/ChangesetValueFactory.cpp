@@ -585,6 +585,26 @@ BentleyStatus ChangesetValueFactory::CreateNav(
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+void ChangesetValueFactory::CreateNavIdOnly(
+    ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues, DbTable const& dbTable,
+    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>* changedProps) {
+
+    const auto& idPropMap = propertyMap.GetAs<NavigationPropertyMap>().GetIdPropertyMap();
+    const DbColumn& idCol = idPropMap.GetAs<SingleColumnDataPropertyMap>().GetColumn();
+    if (idCol.GetTable() != dbTable || !IsInMap(idCol.GetName(), columnValues))
+        return;
+
+    std::unique_ptr<IECSqlValue> idVal;
+    CreateFixedId(conn, idPropMap, CheckNullAndGetBeInt64IdValueFromDbValue(GetFromMap(idCol.GetName(), columnValues)), idVal);
+    fieldsOut.emplace_back(std::make_unique<ChangesetNavValue>(MakeNavColumnInfo(propertyMap), std::move(idVal), nullptr));
+
+    Utf8String s; s.Sprintf("%s.%s", propertyMap.GetProperty().GetName().c_str(), idPropMap.GetProperty().GetName().c_str());
+    FillChangedPropIfApplicable(changedProps, s);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ChangesetValueFactory::CreateArray(
     ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues, DbTable const& dbTable,
     std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>* changedProps) {
@@ -914,7 +934,7 @@ BentleyStatus ChangesetValueFactory::ResolveClassId(
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ChangesetValueFactory::Create(
     ECDbCR conn, DbTable const& tbl, ColumnValueMap const& columnValues, ECN::ECClassId resolvedClassId, bool classIdFromChangeset,
-    std::vector<std::unique_ptr<IECSqlValue>>& fields, ChangesetReader::PropertyFilter propertyFilter, std::vector<Utf8String>* changedProps) {
+    std::vector<std::unique_ptr<IECSqlValue>>& fields, ChangesetReader::PropertyFilter propertyFilter, DbOpcode opcode, std::vector<Utf8String>* changedProps) {
 
     const ECClass* cls = conn.Schemas().Main().GetClass(resolvedClassId);
     if (cls == nullptr) {
@@ -959,6 +979,33 @@ BentleyStatus ChangesetValueFactory::Create(
 
     if (propertyFilter == ChangesetReader::PropertyFilter::InstanceKey)
         return SUCCESS; // caller only needs the instance key — skip user properties
+
+    if (propertyFilter == ChangesetReader::PropertyFilter::InstanceKeyAndIdentifiers) {
+        // Whitelist of identifiers read only from the changeset; values absent from the current table and changeset are omitted.
+        auto isBisCore = [&](Utf8CP className) {
+            const ECClass* bisClass = conn.Schemas().Main().GetClass("BisCore", className, SchemaLookupMode::AutoDetect);
+            return bisClass != nullptr && cls->Is(bisClass);
+        };
+        const bool isDelete = opcode == DbOpcode::Delete;
+        const bool isAspect = isBisCore("ElementAspect");
+        const bool isDeletedExternalSourceAspect = isDelete && isBisCore("ExternalSourceAspect");
+        const bool isDeletedElement = isDelete && isBisCore("Element");
+        const bool isDeletedLinkTableRelationship = isDelete && classMap->GetType() == ClassMap::Type::RelationshipLinkTable;
+        for (auto const& propertyMap : classMap->GetPropertyMaps()) {
+            ECPropertyCR prop = propertyMap->GetProperty();
+            Utf8StringCR name = prop.GetName();
+            if (prop.GetIsNavigation() && ((isAspect && name.EqualsIAscii("Element")) || (isDeletedExternalSourceAspect && name.EqualsIAscii("Scope"))))
+                CreateNavIdOnly(conn, *propertyMap, columnValues, tbl, fields, changedProps);
+            else if (!propertyMap->IsSystem() && prop.GetIsPrimitive() && ((isDeletedElement && name.EqualsIAscii("FederationGuid")) || (isDeletedExternalSourceAspect && (name.EqualsIAscii("Kind") || name.EqualsIAscii("Identifier"))))) {
+                if (CreatePrimitive(conn, *propertyMap, columnValues, tbl, fields, changedProps) != SUCCESS)
+                    return ERROR;
+            } else if (propertyMap->IsSystem() && isDeletedLinkTableRelationship && (name.EqualsIAscii(ECDBSYS_PROP_SourceECInstanceId) || name.EqualsIAscii(ECDBSYS_PROP_TargetECInstanceId))) {
+                if (CreateSystem(conn, *propertyMap, columnValues, tbl, fields, changedProps) != SUCCESS)
+                    return ERROR;
+            }
+        }
+        return SUCCESS;
+    }
 
     if(propertyFilter == ChangesetReader::PropertyFilter::BisCoreElement && IsDerivedFromBisElement(resolvedClassId, conn) && !tbl.GetName().EqualsIAscii("bis_Element"))
         return SUCCESS; // caller only needs bis_element properties — skip rest   
