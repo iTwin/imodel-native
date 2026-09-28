@@ -5302,8 +5302,8 @@ private:
 
     ChangesetReader::PropertyFilter GetPropertyFilter(NapiInfoCR info, int modeInt)
         {
-        if (modeInt < 0 || modeInt > 2)
-            THROW_JS_TYPE_EXCEPTION("Invalid mode. Expected 0 (All_Properties), 1 (Bis_Element_Properties), or 2 (Instance_Key)");
+        if (modeInt < 0 || modeInt > 3)
+            THROW_JS_TYPE_EXCEPTION("Invalid mode. Expected 0 (All_Properties), 1 (Bis_Element_Properties), 2 (Instance_Key), or 3 (Instance_Key_And_Identifiers)");
         return static_cast<ChangesetReader::PropertyFilter>(modeInt);
         }
 

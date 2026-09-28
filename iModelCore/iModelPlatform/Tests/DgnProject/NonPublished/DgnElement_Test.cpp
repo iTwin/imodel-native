@@ -2196,6 +2196,45 @@ TEST_F(DgnElementTests, CreateSubjectChildElemet)
     ASSERT_EQ(info->GetDescription(), "Child2");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnElementTests, CodeValueMaxLength)
+    {
+    SetupSeedProject();
+    SubjectCPtr rootSubject = m_db->Elements().GetRootSubject();
+    ASSERT_TRUE(rootSubject.IsValid());
+
+    Utf8String maxValue((size_t)IModelHubConstants::MaxCodeValueLength, 'a');
+    Utf8String tooLongValue((size_t)IModelHubConstants::MaxCodeValueLength + 1, 'b');
+
+    // insert
+    SubjectPtr tooLongSubject = Subject::Create(*rootSubject, tooLongValue.c_str());
+    ASSERT_TRUE(tooLongSubject.IsValid());
+    DgnDbStatus status;
+    BeTest::SetFailOnAssert(false);
+    EXPECT_FALSE(tooLongSubject->Insert(&status).IsValid());
+    BeTest::SetFailOnAssert(true);
+    EXPECT_EQ(DgnDbStatus::InvalidCode, status);
+
+    SubjectCPtr subject = Subject::CreateAndInsert(*rootSubject, maxValue.c_str());
+    ASSERT_TRUE(subject.IsValid());
+    ASSERT_STREQ(maxValue.c_str(), subject->GetCode().GetValueUtf8CP());
+
+    // update
+    SubjectPtr subjectEdit = m_db->Elements().GetForEdit<Subject>(subject->GetElementId());
+    ASSERT_TRUE(subjectEdit.IsValid());
+    ASSERT_EQ(DgnDbStatus::Success, subjectEdit->SetCode(Subject::CreateCode(*rootSubject, tooLongValue.c_str())));
+    BeTest::SetFailOnAssert(false);
+    EXPECT_EQ(DgnDbStatus::InvalidCode, subjectEdit->Update());
+    BeTest::SetFailOnAssert(true);
+
+    m_db->Elements().ClearCache();
+    SubjectCPtr persisted = m_db->Elements().Get<Subject>(subject->GetElementId());
+    ASSERT_TRUE(persisted.IsValid());
+    EXPECT_STREQ(maxValue.c_str(), persisted->GetCode().GetValueUtf8CP());
+    }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+--------
