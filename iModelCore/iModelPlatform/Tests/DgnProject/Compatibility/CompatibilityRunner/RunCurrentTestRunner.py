@@ -20,7 +20,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 #
 # Every process writes its own gtest log into the log folder.
 
-TESTRUNNER_EXE = "iModelEvolutionTests.exe"
 OPTIMIZED_ENV_VAR = "RUN_EVOLUTION_TESTS_OPTIMIZED"
 SETUP_TEST_FILTER = "*CreateTestFiles"
 
@@ -121,7 +120,7 @@ def main():
     setupOnly = "--setup-only" in sys.argv[1:]
     keepOutput = "--keep-output" in sys.argv[1:]
     if len(args) < 3:
-        print ("Arg 1: Folder of the current test runner (contains {0} and the run folder)".format(TESTRUNNER_EXE))
+        print ("Arg 1: Path of the current test runner executable")
         print ("Arg 2: Log folder (one gtest log per process is written there)")
         print ("Arg 3: Path of the combined log (all per-process logs concatenated)")
         print ("Optional: --optimized=0|1 (or env {0}) master switch for the optimizations, defaults to 1".format(OPTIMIZED_ENV_VAR))
@@ -132,11 +131,11 @@ def main():
         return sys.exit(1)
 
     applyOptimizedOption(sys.argv[1:])
-    testRunnerDir = args[0]
+    exePath = args[0]
     logDir = args[1]
     combinedLogPath = args[2]
-    exePath = os.path.join(testRunnerDir, TESTRUNNER_EXE)
-    if not os.path.exists(exePath):
+    testRunnerDir = os.path.dirname(exePath)
+    if not os.path.isfile(exePath):
         print ("Current test runner '{0}' does not exist.".format(exePath), file=sys.stderr)
         return sys.exit(1)
 
