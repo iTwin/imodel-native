@@ -14,6 +14,8 @@ USING_NAMESPACE_BENTLEY_DPTEST
 struct DgnElementTests : public DgnDbTestFixture
     {
     TestElementCPtr AddChild(DgnElementCR parent);
+    Utf8String QueryYawPitchRoll(DgnElementId); //!< "yaw,pitch,roll" for a GeometricElement3d row, with NULL for NULL columns
+    DgnElementId InsertFromPlacementJson(BeJsConst placementJson); //!< Inserts a TestElement without geometry from placement JSON
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -373,35 +375,6 @@ TEST_F(DgnElementTests, PlacementJsonPreservesNulls)
     EXPECT_FALSE(json[GeometricElement::json_placement()].hasMember(Placement3d::json_angles()));
     EXPECT_FALSE(json[GeometricElement::json_placement()].hasMember(Placement3d::json_bbox()));
 
-    // A core element read from this row has zero angles in memory and serializes them as an empty object.
-    auto elementForCoreUpdate = m_db->Elements().GetForEdit<TestElement>(persistentElement->GetElementId());
-    ASSERT_TRUE(elementForCoreUpdate.IsValid());
-    BeJsDocument coreRoundTripJson;
-    elementForCoreUpdate->ToJson(coreRoundTripJson);
-    coreRoundTripJson[GeometricElement::json_placement()][Placement3d::json_angles()].SetEmptyObject();
-    auto coreRoundTripBbox = coreRoundTripJson[GeometricElement::json_placement()][Placement3d::json_bbox()];
-    coreRoundTripBbox["low"][0] = 1.0e200;
-    coreRoundTripBbox["low"][1] = 1.0e200;
-    coreRoundTripBbox["low"][2] = 1.0e200;
-    coreRoundTripBbox["high"][0] = -1.0e200;
-    coreRoundTripBbox["high"][1] = -1.0e200;
-    coreRoundTripBbox["high"][2] = -1.0e200;
-    elementForCoreUpdate->FromJson(coreRoundTripJson);
-    ASSERT_EQ(DgnDbStatus::Success, elementForCoreUpdate->Update());
-
-    ECSqlStatement roundTripStmt;
-    ASSERT_EQ(ECSqlStatus::Success, roundTripStmt.Prepare(*m_db, "SELECT Origin,Yaw,Pitch,Roll,BBoxLow,BBoxHigh,InSpatialIndex FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " WHERE ECInstanceId=?"));
-    roundTripStmt.BindId(1, persistentElement->GetElementId());
-    ASSERT_EQ(BE_SQLITE_ROW, roundTripStmt.Step());
-    EXPECT_FALSE(roundTripStmt.IsValueNull(0));
-    EXPECT_EQ(DPoint3d::From(1.0, 2.0, 3.0), roundTripStmt.GetValuePoint3d(0));
-    EXPECT_TRUE(roundTripStmt.IsValueNull(1));
-    EXPECT_TRUE(roundTripStmt.IsValueNull(2));
-    EXPECT_TRUE(roundTripStmt.IsValueNull(3));
-    EXPECT_TRUE(roundTripStmt.IsValueNull(4));
-    EXPECT_TRUE(roundTripStmt.IsValueNull(5));
-    EXPECT_EQ(0, roundTripStmt.GetValueInt(6));
-
     // GeometricElement2d uses the same nullable placement representation.
     DgnCategoryId drawingCategoryId = DgnDbTestUtils::InsertDrawingCategory(*m_db, "PlacementJsonDrawingCategory");
     DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(*m_db, "PlacementJsonDrawingListModel");
@@ -413,8 +386,7 @@ TEST_F(DgnElementTests, PlacementJsonPreservesNulls)
     BeJsDocument placementProps2d;
     placementProps2d[GeometricElement::json_placement()][Placement2d::json_origin()][0] = 4.0;
     placementProps2d[GeometricElement::json_placement()][Placement2d::json_origin()][1] = 5.0;
-    // core serializes a default Angle as zero and a null Range2d as an empty array.
-    placementProps2d[GeometricElement::json_placement()][Placement2d::json_angle()] = 0.0;
+    // An origin without an angle member keeps a NULL Rotation; core serializes a null Range2d as an empty array.
     placementProps2d[GeometricElement::json_placement()][Placement2d::json_bbox()].SetEmptyArray();
     element2d->FromJson(placementProps2d);
 
@@ -448,6 +420,155 @@ TEST_F(DgnElementTests, PlacementJsonPreservesNulls)
     ASSERT_TRUE(json2d.hasMember(GeometricElement::json_placement()));
     EXPECT_FALSE(json2d[GeometricElement::json_placement()].hasMember(Placement2d::json_angle()));
     EXPECT_FALSE(json2d[GeometricElement::json_placement()].hasMember(Placement2d::json_bbox()));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Utf8String DgnElementTests::QueryYawPitchRoll(DgnElementId id)
+    {
+    ECSqlStatement stmt;
+    EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_db, "SELECT Yaw,Pitch,Roll FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " WHERE ECInstanceId=?"));
+    stmt.BindId(1, id);
+    EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+    Utf8String values;
+    for (int i = 0; i < 3; ++i)
+        values.append(0 == i ? "" : ",").append(stmt.IsValueNull(i) ? Utf8String("NULL") : Utf8PrintfString("%g", stmt.GetValueDouble(i)));
+    return values;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DgnElementId DgnElementTests::InsertFromPlacementJson(BeJsConst placementJson)
+    {
+    TestElementPtr element = TestElement::CreateWithoutGeometry(*m_db, m_defaultModelId, m_defaultCategoryId);
+    BeJsDocument props;
+    props[GeometricElement::json_placement()].From(placementJson);
+    element->FromJson(props);
+    DgnDbStatus status;
+    DgnElementCPtr inserted = element->Insert(&status);
+    EXPECT_EQ(DgnDbStatus::Success, status);
+    return inserted.IsValid() ? inserted->GetElementId() : DgnElementId();
+    }
+
+//---------------------------------------------------------------------------------------
+// Explicit zero angles are rotations, not NULLs. Only an absent or null angles member
+// represents NULL angles through JSON.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(DgnElementTests, PlacementJsonExplicitAnglesArePersisted)
+    {
+    SetupSeedProject();
+
+    // Core serializes an unrotated placement's angles as an empty object.
+    BeJsDocument emptyAngles;
+    BeJsGeomUtils::DPoint3dToJson(emptyAngles[Placement3d::json_origin()], DPoint3d::From(1.0, 2.0, 3.0));
+    emptyAngles[Placement3d::json_angles()].SetEmptyObject();
+    EXPECT_STREQ("0,0,0", QueryYawPitchRoll(InsertFromPlacementJson(emptyAngles)).c_str());
+
+    // A native JSON round trip (the clone/transform path) of an unrotated element keeps zero angles.
+    TestElementPtr unrotated = TestElement::CreateWithoutGeometry(*m_db, m_defaultModelId, m_defaultCategoryId);
+    ASSERT_EQ(DgnDbStatus::Success, unrotated->SetPlacement(Placement3d(DPoint3d::From(1.0, 2.0, 3.0), YawPitchRollAngles(), ElementAlignedBox3d(0.0, 0.0, 0.0, 1.0, 1.0, 1.0))));
+    DgnElementCPtr persistentUnrotated = unrotated->Insert();
+    ASSERT_TRUE(persistentUnrotated.IsValid());
+    EXPECT_STREQ("0,0,0", QueryYawPitchRoll(persistentUnrotated->GetElementId()).c_str());
+    BeJsDocument unrotatedJson;
+    persistentUnrotated->ToJson(unrotatedJson);
+    ASSERT_TRUE(unrotatedJson[GeometricElement::json_placement()][Placement3d::json_angles()].isObject());
+    EXPECT_STREQ("0,0,0", QueryYawPitchRoll(InsertFromPlacementJson(unrotatedJson[GeometricElement::json_placement()])).c_str());
+
+    // NULL angles survive the same native JSON round trip.
+    BeJsDocument originOnly;
+    BeJsGeomUtils::DPoint3dToJson(originOnly[Placement3d::json_origin()], DPoint3d::From(1.0, 2.0, 3.0));
+    DgnElementId originOnlyId = InsertFromPlacementJson(originOnly);
+    EXPECT_STREQ("NULL,NULL,NULL", QueryYawPitchRoll(originOnlyId).c_str());
+    m_db->Elements().ClearCache();
+    BeJsDocument originOnlyJson;
+    m_db->Elements().GetElement(originOnlyId)->ToJson(originOnlyJson);
+    EXPECT_FALSE(originOnlyJson[GeometricElement::json_placement()].hasMember(Placement3d::json_angles()));
+    EXPECT_STREQ("NULL,NULL,NULL", QueryYawPitchRoll(InsertFromPlacementJson(originOnlyJson[GeometricElement::json_placement()])).c_str());
+
+    // iTwin.js core reads that row as zero angles and a null-range bbox and sends both back on update.
+    // The explicit angles member persists as a zero rotation; the null-range bbox stays NULL and unindexed.
+    auto elementForCoreUpdate = m_db->Elements().GetForEdit<TestElement>(originOnlyId);
+    ASSERT_TRUE(elementForCoreUpdate.IsValid());
+    BeJsDocument coreRoundTripJson;
+    elementForCoreUpdate->ToJson(coreRoundTripJson);
+    coreRoundTripJson[GeometricElement::json_placement()][Placement3d::json_angles()].SetEmptyObject();
+    auto coreRoundTripBbox = coreRoundTripJson[GeometricElement::json_placement()][Placement3d::json_bbox()];
+    coreRoundTripBbox["low"][0] = 1.0e200;
+    coreRoundTripBbox["low"][1] = 1.0e200;
+    coreRoundTripBbox["low"][2] = 1.0e200;
+    coreRoundTripBbox["high"][0] = -1.0e200;
+    coreRoundTripBbox["high"][1] = -1.0e200;
+    coreRoundTripBbox["high"][2] = -1.0e200;
+    elementForCoreUpdate->FromJson(coreRoundTripJson);
+    ASSERT_EQ(DgnDbStatus::Success, elementForCoreUpdate->Update());
+    EXPECT_STREQ("0,0,0", QueryYawPitchRoll(originOnlyId).c_str());
+
+    ECSqlStatement roundTripStmt;
+    ASSERT_EQ(ECSqlStatus::Success, roundTripStmt.Prepare(*m_db, "SELECT Origin,BBoxLow,BBoxHigh,InSpatialIndex FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " WHERE ECInstanceId=?"));
+    roundTripStmt.BindId(1, originOnlyId);
+    ASSERT_EQ(BE_SQLITE_ROW, roundTripStmt.Step());
+    EXPECT_EQ(DPoint3d::From(1.0, 2.0, 3.0), roundTripStmt.GetValuePoint3d(0));
+    EXPECT_TRUE(roundTripStmt.IsValueNull(1));
+    EXPECT_TRUE(roundTripStmt.IsValueNull(2));
+    EXPECT_EQ(0, roundTripStmt.GetValueInt(3));
+
+    // GeometricElement2d: core sends a zero angle and a null Range2d as an empty array. The angle persists as 0; the bbox stays NULL.
+    DgnCategoryId drawingCategoryId = DgnDbTestUtils::InsertDrawingCategory(*m_db, "ExplicitAngleDrawingCategory");
+    DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(*m_db, "ExplicitAngleDrawingListModel");
+    DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*drawingListModel, "ExplicitAngleDrawing");
+    DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing);
+    TestElement2d::CreateParams params(*m_db, drawingModel->GetModelId(), TestElement2d::QueryClassId(*m_db), drawingCategoryId, Placement2d(), DgnCode());
+    TestElement2dPtr element2d = new TestElement2d(params);
+    BeJsDocument props2d;
+    BeJsGeomUtils::DPoint2dToJson(props2d[GeometricElement::json_placement()][Placement2d::json_origin()], DPoint2d::From(4.0, 5.0));
+    props2d[GeometricElement::json_placement()][Placement2d::json_angle()] = 0.0;
+    props2d[GeometricElement::json_placement()][Placement2d::json_bbox()].SetEmptyArray();
+    element2d->FromJson(props2d);
+    DgnElementCPtr persistent2d = element2d->Insert();
+    ASSERT_TRUE(persistent2d.IsValid());
+
+    ECSqlStatement stmt2d;
+    ASSERT_EQ(ECSqlStatus::Success, stmt2d.Prepare(*m_db, "SELECT Rotation,BBoxLow,BBoxHigh FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement2d) " WHERE ECInstanceId=?"));
+    stmt2d.BindId(1, persistent2d->GetElementId());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt2d.Step());
+    EXPECT_FALSE(stmt2d.IsValueNull(0));
+    EXPECT_EQ(0.0, stmt2d.GetValueDouble(0));
+    EXPECT_TRUE(stmt2d.IsValueNull(1));
+    EXPECT_TRUE(stmt2d.IsValueNull(2));
+
+    m_db->Elements().ClearCache();
+    BeJsDocument json2d;
+    m_db->Elements().GetElement(persistent2d->GetElementId())->ToJson(json2d);
+    ASSERT_TRUE(json2d[GeometricElement::json_placement()].hasMember(Placement2d::json_angle()));
+    EXPECT_EQ(0.0, json2d[GeometricElement::json_placement()][Placement2d::json_angle()].asDouble());
+    }
+
+//---------------------------------------------------------------------------------------
+// A row with only some angle columns NULL keeps its non-NULL angles; the NULL ones read as zero.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(DgnElementTests, PlacementPartiallyNullAnglesKeepNonNullValues)
+    {
+    SetupSeedProject();
+
+    TestElementPtr rotated = TestElement::CreateWithoutGeometry(*m_db, m_defaultModelId, m_defaultCategoryId);
+    ASSERT_EQ(DgnDbStatus::Success, rotated->SetPlacement(Placement3d(DPoint3d::From(1.0, 2.0, 3.0), YawPitchRollAngles::FromDegrees(10.0, 20.0, 30.0), ElementAlignedBox3d(0.0, 0.0, 0.0, 1.0, 1.0, 1.0))));
+    DgnElementCPtr persistentRotated = rotated->Insert();
+    ASSERT_TRUE(persistentRotated.IsValid());
+    DgnElementId rotatedId = persistentRotated->GetElementId();
+    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteSql(Utf8PrintfString("UPDATE bis_GeometricElement3d SET Pitch=NULL,Roll=NULL WHERE ElementId=%" PRIu64, rotatedId.GetValue()).c_str()));
+    m_db->Elements().ClearCache();
+    EXPECT_STREQ("10,NULL,NULL", QueryYawPitchRoll(rotatedId).c_str());
+
+    // The read keeps yaw, and a native JSON round trip (the clone/transform path) stores the NULL angles as zero.
+    BeJsDocument partialJson;
+    m_db->Elements().GetElement(rotatedId)->ToJson(partialJson);
+    EXPECT_EQ(10.0, partialJson[GeometricElement::json_placement()][Placement3d::json_angles()]["yaw"].asDouble());
+    EXPECT_STREQ("10,0,0", QueryYawPitchRoll(InsertFromPlacementJson(partialJson[GeometricElement::json_placement()])).c_str());
     }
 
 //---------------------------------------------------------------------------------------
