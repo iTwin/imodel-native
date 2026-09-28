@@ -5376,6 +5376,17 @@ private:
 public:
     NativeChangesetReader(NapiInfoCR info) : BeObjectWrap<NativeChangesetReader>(info) {}
     ~NativeChangesetReader() { SetInDestructor(); }
+    ChangesetReader& GetReader() { return m_reader; }
+
+    // Check if val is really a NativeChangesetReader peer object
+    static bool InstanceOf(Napi::Value val)
+        {
+        if (!val.IsObject())
+            return false;
+
+        Napi::HandleScope scope(val.Env());
+        return val.As<Napi::Object>().InstanceOf(Constructor().Value());
+        }
 
     static void Init(Napi::Env& env, Napi::Object exports)
         {
@@ -5596,6 +5607,132 @@ public:
         BentleyStatus rc = m_reader.DisableStrictMode();
         if (rc != SUCCESS)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "disableStrictMode() failed, possible reason can be that no change stream is open", IModelJsNativeErrorKey::NotOpen);
+        }
+};
+
+//=======================================================================================
+// Projects the ChangeUnifier class into JS. Merges the rows of one or more ChangesetReaders
+// into one instance per (root ECClassId, ECInstanceId, stage) entirely in native code.
+//! @bsiclass
+//=======================================================================================
+struct NativeChangeUnifier : BeObjectWrap<NativeChangeUnifier>
+{
+private:
+    DEFINE_CONSTRUCTOR;
+    std::unique_ptr<ChangeUnifier> m_unifier;
+    bool m_stepped = false;
+
+    static ChangeUnifier::Options ParseOptions(NapiInfoCR info)
+        {
+        ChangeUnifier::Options options;
+        if (ARGUMENT_IS_NOT_PRESENT(0) || info[0].IsUndefined() || info[0].IsNull())
+            return options;
+        if (!info[0].IsObject())
+            THROW_JS_TYPE_EXCEPTION("ChangeUnifier: options must be an object");
+        Napi::Object optObj = info[0].As<Napi::Object>();
+
+        Napi::Value propNames = optObj.Get("propNames");
+        if (!propNames.IsUndefined())
+            {
+            if (!propNames.IsArray())
+                THROW_JS_TYPE_EXCEPTION("ChangeUnifier: propNames must be an array of strings");
+            Napi::Array arr = propNames.As<Napi::Array>();
+            for (uint32_t i = 0; i < arr.Length(); ++i)
+                {
+                Napi::Value name = arr.Get(i);
+                if (!name.IsString())
+                    THROW_JS_TYPE_EXCEPTION("ChangeUnifier: propNames must be an array of strings");
+                options.m_propNames.push_back(Utf8String(name.As<Napi::String>().Utf8Value().c_str()));
+                }
+            }
+
+        Napi::Value budget = optObj.Get("memoryBudgetBytes");
+        if (!budget.IsUndefined())
+            {
+            if (!budget.IsNumber())
+                THROW_JS_TYPE_EXCEPTION("ChangeUnifier: memoryBudgetBytes must be a number");
+            double val = budget.As<Napi::Number>().DoubleValue();
+            if (std::isnan(val) || std::isinf(val) || val < 0 || val != std::floor(val))
+                THROW_JS_TYPE_EXCEPTION("ChangeUnifier: memoryBudgetBytes must be a non-negative integer");
+            if (val > 9007199254740991.0) // Number.MAX_SAFE_INTEGER
+                THROW_JS_TYPE_EXCEPTION("ChangeUnifier: memoryBudgetBytes exceeds the maximum allowed value");
+            options.m_memoryBudgetBytes = static_cast<uint64_t>(val);
+            }
+        return options;
+        }
+
+    void ThrowOnFailure(Napi::Env env, Utf8CP operation, DbResult rc)
+        {
+        Utf8String msg(operation);
+        Utf8StringCR lastError = m_unifier->GetLastError();
+        if (!lastError.empty())
+            msg.append(": ").append(lastError);
+        THROW_JS_BE_SQLITE_EXCEPTION(env, msg.c_str(), rc);
+        }
+
+public:
+    NativeChangeUnifier(NapiInfoCR info) : BeObjectWrap<NativeChangeUnifier>(info)
+        {
+        m_unifier = std::make_unique<ChangeUnifier>(ParseOptions(info));
+        }
+    ~NativeChangeUnifier() { SetInDestructor(); }
+
+    static void Init(Napi::Env& env, Napi::Object exports)
+        {
+        Napi::HandleScope scope(env);
+        Napi::Function t = DefineClass(env, "ChangeUnifier", {
+            InstanceMethod("appendFrom", &NativeChangeUnifier::AppendFrom),
+            InstanceMethod("step",       &NativeChangeUnifier::Step),
+            InstanceMethod("close",      &NativeChangeUnifier::Close),
+        });
+        exports.Set("ChangeUnifier", t);
+        SET_CONSTRUCTOR(t);
+        }
+
+    void AppendFrom(NapiInfoCR info)
+        {
+        if (m_stepped)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ChangeUnifier: appendFrom() cannot be called after step()", IModelJsNativeErrorKey::BadArg);
+        REQUIRE_ARGUMENT_ANY_OBJ(0, readerObj);
+        if (!NativeChangesetReader::InstanceOf(readerObj))
+            THROW_JS_TYPE_EXCEPTION("ChangeUnifier: reader must be a native ChangesetReader object");
+        REQUIRE_ARGUMENT_ANY_OBJ(1, optObj);
+        NativeChangesetReader* nativeReader = NativeChangesetReader::Unwrap(readerObj);
+        if (nativeReader == nullptr)
+            THROW_JS_TYPE_EXCEPTION("ChangeUnifier: invalid ChangesetReader object");
+
+        JsReadOptions rowOptions;
+        rowOptions.FromJson(BeJsValue(optObj));
+        DbResult rc = m_unifier->AppendFrom(nativeReader->GetReader(), rowOptions);
+        if (rc != BE_SQLITE_OK)
+            ThrowOnFailure(info.Env(), "ChangeUnifier: appendFrom() failed", rc);
+        }
+
+    Napi::Value Step(NapiInfoCR info)
+        {
+        REQUIRE_ARGUMENT_INTEGER(0, maxInstances);
+        if (maxInstances <= 0)
+            THROW_JS_TYPE_EXCEPTION("ChangeUnifier: maxInstances must be a positive integer");
+
+        m_stepped = true;
+        Napi::Array result = Napi::Array::New(Env());
+        uint32_t count = 0;
+        for (int32_t i = 0; i < maxInstances; ++i)
+            {
+            BeJsNapiObject instance(Env());
+            DbResult rc = m_unifier->Step(instance);
+            if (rc == BE_SQLITE_DONE)
+                break;
+            if (rc != BE_SQLITE_ROW)
+                ThrowOnFailure(info.Env(), "ChangeUnifier: step() failed", rc);
+            result[count++] = static_cast<Napi::Object>(instance);
+            }
+        return result;
+        }
+
+    void Close(NapiInfoCR info)
+        {
+        m_unifier->Close();
         }
 };
 
@@ -8021,6 +8158,7 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports) {
     NativeECDb::Init(env, exports);
     NativeSqliteChangesetReader::Init(env, exports);
     NativeChangesetReader::Init(env, exports);
+    NativeChangeUnifier::Init(env, exports);
     NativeChangedElementsECDb::Init(env, exports);
     NativeECSqlStatement::Init(env, exports);
     NativeECSqlBinder::Init(env, exports);
