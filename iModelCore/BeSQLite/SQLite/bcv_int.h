@@ -347,6 +347,9 @@ u32 bcvGetU32(const u8 *a);
 void bcvPutU64(u8 *a, u64 iVal);
 u64 bcvGetU64(const u8 *a);
 
+int bcvBlockDeflate(const u8 *aIn, int nIn, u8 **paOut, int *pnOut);
+int bcvBlockInflate(const u8 *aIn, int nIn, u8 **paOut, int *pnOut);
+
 int bcvManifestParse(u8 *a, int n, char *zETag, Manifest **ppOut, char **pz);
 int bcvManifestParseCopy(
   const u8 *a, int n, 
