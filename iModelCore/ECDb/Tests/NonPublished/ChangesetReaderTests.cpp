@@ -65,6 +65,72 @@ struct ChangesetReaderTests : ECDbTestFixture {
                         </ECSchema>)xml"; 
         }
 
+        //! Minimal stand-in for the BisCore classes that PropertyFilter::InstanceKeyAndIdentifiers
+        //! matches by derivation. The real BisCore schema is not available to ECDb tests; this mirrors
+        //! its mapping for these classes (TablePerHierarchy + ShareColumns, non-sealed owner relationship
+        //! so Element.RelECClassId is a physical column).
+        Utf8CP GetMiniBisCoreSchema() const {
+            return R"xml(<?xml version="1.0" encoding="utf-8"?>
+                            <ECSchema schemaName="BisCore" alias="bis" version="01.00.00"
+                                    xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+                            <ECEntityClass typeName="Element" modifier="Abstract">
+                                <ECCustomAttributes>
+                                    <ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap>
+                                    <ShareColumns xmlns="ECDbMap.02.00.00">
+                                        <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+                                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                                    </ShareColumns>
+                                </ECCustomAttributes>
+                                <ECProperty propertyName="FederationGuid" typeName="binary" extendedTypeName="BeGuid"/>
+                                <ECProperty propertyName="UserLabel" typeName="string"/>
+                            </ECEntityClass>
+                            <ECEntityClass typeName="TestElement">
+                                <BaseClass>Element</BaseClass>
+                                <ECProperty propertyName="Description" typeName="string"/>
+                            </ECEntityClass>
+                            <ECEntityClass typeName="ElementAspect" modifier="Abstract"/>
+                            <ECEntityClass typeName="ElementMultiAspect" modifier="Abstract">
+                                <BaseClass>ElementAspect</BaseClass>
+                                <ECCustomAttributes>
+                                    <ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap>
+                                    <ShareColumns xmlns="ECDbMap.02.00.00">
+                                        <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+                                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                                    </ShareColumns>
+                                </ECCustomAttributes>
+                                <ECNavigationProperty propertyName="Element" relationshipName="ElementOwnsMultiAspects" direction="Backward"/>
+                            </ECEntityClass>
+                            <ECEntityClass typeName="TestMultiAspect">
+                                <BaseClass>ElementMultiAspect</BaseClass>
+                                <ECProperty propertyName="Note" typeName="string"/>
+                            </ECEntityClass>
+                            <ECEntityClass typeName="ExternalSourceAspect">
+                                <BaseClass>ElementMultiAspect</BaseClass>
+                                <ECNavigationProperty propertyName="Scope" relationshipName="ElementScopesExternalSourceIdentifier" direction="Backward"/>
+                                <ECProperty propertyName="Identifier" typeName="string"/>
+                                <ECProperty propertyName="Kind" typeName="string"/>
+                                <ECProperty propertyName="Version" typeName="string"/>
+                            </ECEntityClass>
+                            <ECRelationshipClass typeName="ElementOwnsMultiAspects" strength="embedding" modifier="None">
+                                <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+                                    <Class class="Element"/>
+                                </Source>
+                                <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+                                    <Class class="ElementMultiAspect"/>
+                                </Target>
+                            </ECRelationshipClass>
+                            <ECRelationshipClass typeName="ElementScopesExternalSourceIdentifier" strength="referencing" modifier="None">
+                                <Source multiplicity="(0..1)" roleLabel="scopes" polymorphic="true">
+                                    <Class class="Element"/>
+                                </Source>
+                                <Target multiplicity="(0..*)" roleLabel="is scoped by" polymorphic="true">
+                                    <Class class="ExternalSourceAspect"/>
+                                </Target>
+                            </ECRelationshipClass>
+                            </ECSchema>)xml";
+        }
+
         //! Schema with a many-to-many (link table) relationship where source and target
         //! constraints are non-polymorphic → SourceECClassId and TargetECClassId are virtual.
         Utf8CP GetRelSchema() const {
@@ -132,6 +198,54 @@ struct ChangesetReaderTests : ECDbTestFixture {
         return path;
         }
     
+    //! Returns the sorted property names of the reader fields for @p stage.
+    static std::vector<Utf8String> GetSortedFieldNames(ChangesetReader const& reader, Changes::Change::Stage stage)
+        {
+        std::vector<Utf8String> names;
+        for (int i = 0; i < reader.GetColumnCount(stage); ++i)
+            names.push_back(reader.GetValue(stage, i).GetColumnInfo().GetProperty()->GetName());
+        std::sort(names.begin(), names.end());
+        return names;
+        }
+
+    //! Returns the sorted member names of a rendered JSON object.
+    static std::vector<Utf8String> GetSortedMemberNames(BeJsConst obj)
+        {
+        std::vector<Utf8String> names;
+        obj.ForEachProperty([&](Utf8CP name, BeJsConst) { names.push_back(name); return false; });
+        std::sort(names.begin(), names.end());
+        return names;
+        }
+
+    static std::vector<Utf8String> Sorted(std::vector<Utf8String> names)
+        {
+        std::sort(names.begin(), names.end());
+        return names;
+        }
+
+    //! Returns the reader field named @p name for @p stage, or nullptr if the stage has no such field.
+    static IECSqlValue const* FindValue(ChangesetReader const& reader, Changes::Change::Stage stage, Utf8CP name)
+        {
+        for (int i = 0; i < reader.GetColumnCount(stage); ++i)
+            {
+            IECSqlValue const& value = reader.GetValue(stage, i);
+            if (value.GetColumnInfo().GetProperty()->GetName().Equals(name))
+                return &value;
+            }
+        return nullptr;
+        }
+
+    //! Renders @p stage through ECSqlRowAdaptor + ChangesetRow, the path IModelJsNative uses for JavaScript rows.
+    void RenderStage(BeJsDocument& rowDoc, ChangesetReader& reader, Changes::Change::Stage stage)
+        {
+        BeJsValue rowJson(rowDoc);
+        ECSqlRowAdaptor adaptor(m_ecdb);
+        adaptor.GetOptions().SetConvertClassIdsToClassNames(true);
+        adaptor.GetOptions().SetUseJsNames(true);
+        adaptor.GetOptions().SetUseClassFullNameInsteadofClassName(true);
+        ASSERT_EQ(SUCCESS, adaptor.RenderRowAsObject(rowJson, ChangesetRow(reader, stage)));
+        }
+
     size_t GetDefaultSpillThresholdBytes() const { return 50ull * 1024 * 1024; /* 50 MB */ }
 
     //! V1 schema: Item with Name (string) and Value (int).
@@ -501,6 +615,278 @@ TEST_F(ChangesetReaderTests, Update_PartialFields_ChangesetAndDBFallback)
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
 
     ASSERT_EQ(SUCCESS, reader.Close());
+    }
+
+//---------------------------------------------------------------------------------------
+// Reproduces itwinjs-core#9738 on an aspect: its owner changes (Element.Id is in the changeset, the
+// unchanged physical Element.RelECClassId is not), and the aspect is deleted before the changeset is
+// read. All and BisCoreElement fail looking up RelECClassId in the database. InstanceKey returns only
+// the key, and InstanceKeyAndIdentifiers also returns Element with Id only, read from the changeset.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetReaderTests, InstanceKeyAndIdentifiers_AspectOwnerChange_ReadAfterAspectDeleted)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_ids_aspect_owner.ecdb", SchemaItem(GetMiniBisCoreSchema())));
+    ASSERT_TRUE(m_ecdb.ColumnExists("bis_ElementMultiAspect", "ElementRelECClassId"));
+
+    ECInstanceKey ownerAKey, ownerBKey, aspectKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(ownerAKey, "INSERT INTO bis.TestElement(UserLabel) VALUES('A')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(ownerBKey, "INSERT INTO bis.TestElement(UserLabel) VALUES('B')"));
+    const ECClassId ownsRelClassId = m_ecdb.Schemas().GetClassId("BisCore", "ElementOwnsMultiAspects");
+    ASSERT_TRUE(ownsRelClassId.IsValid());
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO bis.TestMultiAspect(Element.Id, Element.RelECClassId, Note) VALUES(?,?,'v')"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, ownerAKey.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, ownsRelClassId));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(aspectKey));
+    }
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE bis.TestMultiAspect SET Element.Id=? WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, ownerBKey.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, aspectKey.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    auto changeset = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, changeset->FromChangeTrack(tracker));
+    const BeFileName changesetFile = WriteChangesetToFile(m_ecdb, *changeset, "csreader_ids_aspect_owner.changeset");
+
+    tracker.EnableTracking(false);
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql(Utf8PrintfString("DELETE FROM bis.TestMultiAspect WHERE ECInstanceId=%s", aspectKey.GetInstanceId().ToString().c_str()).c_str()));
+
+    // Both filters that complete navigation values look up the missing RelECClassId in the database and fail.
+    for (auto filter : {ChangesetReader::PropertyFilter::All, ChangesetReader::PropertyFilter::BisCoreElement})
+        {
+        ChangesetReader reader;
+        ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangesetFile(m_ecdb, changesetFile.GetNameUtf8(), false, filter));
+        EXPECT_EQ(BE_SQLITE_ERROR, reader.Step());
+        }
+
+    // InstanceKey reads no navigation values, so it drains the changeset.
+    {
+    ChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangesetFile(m_ecdb, changesetFile.GetNameUtf8(), false, ChangesetReader::PropertyFilter::InstanceKey));
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+    for (auto stage : {Changes::Change::Stage::New, Changes::Change::Stage::Old})
+        {
+        ASSERT_EQ(Sorted({"ECInstanceId", "ECClassId"}), GetSortedFieldNames(reader, stage));
+        EXPECT_EQ(aspectKey.GetInstanceId(), FindValue(reader, stage, "ECInstanceId")->GetId<ECInstanceId>());
+        }
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    }
+
+    ChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangesetFile(m_ecdb, changesetFile.GetNameUtf8(), false, ChangesetReader::PropertyFilter::InstanceKeyAndIdentifiers));
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+    DbOpcode opcode;
+    ASSERT_EQ(SUCCESS, reader.GetOpcode(opcode));
+    ASSERT_EQ(DbOpcode::Update, opcode);
+
+    for (auto stage : {Changes::Change::Stage::New, Changes::Change::Stage::Old})
+        {
+        ASSERT_EQ(Sorted({"ECInstanceId", "ECClassId", "Element"}), GetSortedFieldNames(reader, stage));
+        IECSqlValue const& element = *FindValue(reader, stage, "Element");
+        EXPECT_EQ(stage == Changes::Change::Stage::New ? ownerBKey.GetInstanceId() : ownerAKey.GetInstanceId(), element["Id"].GetId<ECInstanceId>());
+        EXPECT_TRUE(element["RelECClassId"].IsNull());
+
+        BeJsDocument rowDoc;
+        RenderStage(rowDoc, reader, stage);
+        EXPECT_EQ(Sorted({"id", "classFullName", "element"}), GetSortedMemberNames(rowDoc));
+        EXPECT_EQ(Sorted({"id"}), GetSortedMemberNames(rowDoc["element"]));
+        }
+
+    const auto* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
+    EXPECT_EQ(Sorted({"ECInstanceId", "Element.Id"}), Sorted(*changedProps));
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// A deleted element row carries the full old row; InstanceKeyAndIdentifiers keeps only the key
+// and FederationGuid.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetReaderTests, InstanceKeyAndIdentifiers_DeletedElement)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_ids_deleted_element.ecdb", SchemaItem(GetMiniBisCoreSchema())));
+
+    BeGuid federationGuid(true);
+    ECInstanceKey elementKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO bis.TestElement(FederationGuid, UserLabel, Description) VALUES(?,'label','description')"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindGuid(1, federationGuid, IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(elementKey));
+    }
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql(Utf8PrintfString("DELETE FROM bis.TestElement WHERE ECInstanceId=%s", elementKey.GetInstanceId().ToString().c_str()).c_str()));
+    auto changeset = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, changeset->FromChangeTrack(tracker));
+    tracker.EnableTracking(false);
+
+    ChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb, std::move(changeset), false, ChangesetReader::PropertyFilter::InstanceKeyAndIdentifiers, GetDefaultSpillThresholdBytes()));
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+    DbOpcode opcode;
+    ASSERT_EQ(SUCCESS, reader.GetOpcode(opcode));
+    ASSERT_EQ(DbOpcode::Delete, opcode);
+
+    EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::New));
+    ASSERT_EQ(Sorted({"ECInstanceId", "ECClassId", "FederationGuid"}), GetSortedFieldNames(reader, Changes::Change::Stage::Old));
+    EXPECT_EQ(elementKey.GetInstanceId(), FindValue(reader, Changes::Change::Stage::Old, "ECInstanceId")->GetId<ECInstanceId>());
+    EXPECT_EQ(elementKey.GetClassId(), FindValue(reader, Changes::Change::Stage::Old, "ECClassId")->GetId<ECClassId>());
+    EXPECT_EQ(federationGuid, FindValue(reader, Changes::Change::Stage::Old, "FederationGuid")->GetGuid());
+
+    BeJsDocument rowDoc;
+    RenderStage(rowDoc, reader, Changes::Change::Stage::Old);
+    EXPECT_EQ(Sorted({"id", "classFullName", "federationGuid"}), GetSortedMemberNames(rowDoc));
+
+    const auto* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
+    EXPECT_EQ(Sorted({"ECInstanceId", "ECClassId", "FederationGuid"}), Sorted(*changedProps));
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// A deleted link-table relationship keeps the key and both endpoint ids.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetReaderTests, InstanceKeyAndIdentifiers_DeletedLinkTableRelationship)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_ids_deleted_rel.ecdb", SchemaItem(GetRelSchema())));
+
+    ECInstanceKey personKey, projectKey, relKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(personKey, "INSERT INTO tr.Person(Name) VALUES('Alice')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(projectKey, "INSERT INTO tr.Project(Title) VALUES('Proj1')"));
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO tr.PersonWorksOnProject(SourceECInstanceId, TargetECInstanceId) VALUES(?, ?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, personKey.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, projectKey.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(relKey));
+    }
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql(Utf8PrintfString("DELETE FROM tr.PersonWorksOnProject WHERE ECInstanceId=%s", relKey.GetInstanceId().ToString().c_str()).c_str()));
+    auto changeset = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, changeset->FromChangeTrack(tracker));
+    tracker.EnableTracking(false);
+
+    ChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb, std::move(changeset), false, ChangesetReader::PropertyFilter::InstanceKeyAndIdentifiers, GetDefaultSpillThresholdBytes()));
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+    DbOpcode opcode;
+    ASSERT_EQ(SUCCESS, reader.GetOpcode(opcode));
+    ASSERT_EQ(DbOpcode::Delete, opcode);
+
+    EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::New));
+    ASSERT_EQ(Sorted({"ECInstanceId", "ECClassId", "SourceECInstanceId", "TargetECInstanceId"}), GetSortedFieldNames(reader, Changes::Change::Stage::Old));
+    EXPECT_EQ(personKey.GetInstanceId(), FindValue(reader, Changes::Change::Stage::Old, "SourceECInstanceId")->GetId<ECInstanceId>());
+    EXPECT_EQ(projectKey.GetInstanceId(), FindValue(reader, Changes::Change::Stage::Old, "TargetECInstanceId")->GetId<ECInstanceId>());
+
+    BeJsDocument rowDoc;
+    RenderStage(rowDoc, reader, Changes::Change::Stage::Old);
+    EXPECT_EQ(Sorted({"id", "classFullName", "sourceId", "targetId"}), GetSortedMemberNames(rowDoc));
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// Deleted ExternalSourceAspects keep the key, Element.Id, Scope.Id, Kind and Identifier. An aspect
+// without a Scope yields a null Scope, not a made-up id. Both rows come from one changeset, so this
+// also checks that one row's identifiers do not leak into the next.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetReaderTests, InstanceKeyAndIdentifiers_DeletedExternalSourceAspect)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_ids_deleted_esa.ecdb", SchemaItem(GetMiniBisCoreSchema())));
+
+    ECInstanceKey ownerKey, scopeKey, scopedKey, unscopedKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(ownerKey, "INSERT INTO bis.TestElement(UserLabel) VALUES('owner')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(scopeKey, "INSERT INTO bis.TestElement(UserLabel) VALUES('scope')"));
+    const ECClassId ownsRelClassId = m_ecdb.Schemas().GetClassId("BisCore", "ElementOwnsMultiAspects");
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO bis.ExternalSourceAspect(Element.Id, Element.RelECClassId, Scope.Id, Scope.RelECClassId, Identifier, Kind, Version) VALUES(?,?,?,?,'scoped','Element','1.0')"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, ownerKey.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, ownsRelClassId));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, scopeKey.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, m_ecdb.Schemas().GetClassId("BisCore", "ElementScopesExternalSourceIdentifier")));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(scopedKey));
+    }
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO bis.ExternalSourceAspect(Element.Id, Element.RelECClassId, Identifier, Kind) VALUES(?,?,'unscoped','Element')"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, ownerKey.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, ownsRelClassId));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(unscopedKey));
+    }
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM bis.ExternalSourceAspect"));
+    auto changeset = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, changeset->FromChangeTrack(tracker));
+    tracker.EnableTracking(false);
+
+    ChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb, std::move(changeset), false, ChangesetReader::PropertyFilter::InstanceKeyAndIdentifiers, GetDefaultSpillThresholdBytes()));
+    bool sawScoped = false, sawUnscoped = false;
+    for (int row = 0; row < 2; ++row)
+        {
+        ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+        DbOpcode opcode;
+        ASSERT_EQ(SUCCESS, reader.GetOpcode(opcode));
+        ASSERT_EQ(DbOpcode::Delete, opcode);
+        EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::New));
+        ASSERT_EQ(Sorted({"ECInstanceId", "ECClassId", "Element", "Scope", "Kind", "Identifier"}), GetSortedFieldNames(reader, Changes::Change::Stage::Old));
+
+        // Changeset row order is not guaranteed; identify the row by its id.
+        const ECInstanceId id = FindValue(reader, Changes::Change::Stage::Old, "ECInstanceId")->GetId<ECInstanceId>();
+        const bool scoped = id == scopedKey.GetInstanceId();
+        ASSERT_TRUE(scoped || id == unscopedKey.GetInstanceId());
+        (scoped ? sawScoped : sawUnscoped) = true;
+
+        EXPECT_EQ(scopedKey.GetClassId(), FindValue(reader, Changes::Change::Stage::Old, "ECClassId")->GetId<ECClassId>());
+        IECSqlValue const& element = *FindValue(reader, Changes::Change::Stage::Old, "Element");
+        EXPECT_EQ(ownerKey.GetInstanceId(), element["Id"].GetId<ECInstanceId>());
+        EXPECT_TRUE(element["RelECClassId"].IsNull());
+        IECSqlValue const& scope = *FindValue(reader, Changes::Change::Stage::Old, "Scope");
+        if (scoped)
+            {
+            EXPECT_EQ(scopeKey.GetInstanceId(), scope["Id"].GetId<ECInstanceId>());
+            EXPECT_TRUE(scope["RelECClassId"].IsNull());
+            }
+        else
+            EXPECT_TRUE(scope.IsNull());
+        EXPECT_STREQ("Element", FindValue(reader, Changes::Change::Stage::Old, "Kind")->GetText());
+        EXPECT_STREQ(scoped ? "scoped" : "unscoped", FindValue(reader, Changes::Change::Stage::Old, "Identifier")->GetText());
+
+        BeJsDocument rowDoc;
+        RenderStage(rowDoc, reader, Changes::Change::Stage::Old);
+        if (scoped)
+            {
+            EXPECT_EQ(Sorted({"id", "classFullName", "element", "scope", "kind", "identifier"}), GetSortedMemberNames(rowDoc));
+            EXPECT_EQ(Sorted({"id"}), GetSortedMemberNames(rowDoc["scope"]));
+            }
+        else
+            EXPECT_EQ(Sorted({"id", "classFullName", "element", "kind", "identifier"}), GetSortedMemberNames(rowDoc));
+        EXPECT_EQ(Sorted({"id"}), GetSortedMemberNames(rowDoc["element"]));
+
+        // The deleted row carries the Scope column even when it is null.
+        const auto* changedProps = reader.GetChangeFetchedPropertyNames();
+        ASSERT_NE(nullptr, changedProps);
+        EXPECT_EQ(Sorted({"ECInstanceId", "ECClassId", "Element.Id", "Scope.Id", "Kind", "Identifier"}), Sorted(*changedProps));
+        }
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    EXPECT_TRUE(sawScoped);
+    EXPECT_TRUE(sawUnscoped);
     }
 
 //---------------------------------------------------------------------------------------

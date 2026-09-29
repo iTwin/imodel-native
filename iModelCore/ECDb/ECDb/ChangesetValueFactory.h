@@ -154,6 +154,13 @@ private:
                                       std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
                                       std::vector<Utf8String>* changedProps);
 
+    //! Emits a navigation value with only its Id member, read from @p columnValues.
+    //! Skips when the Id column is not in @p dbTable or not in the changeset. Never queries the DB.
+    static void CreateNavIdOnly(ECDbCR conn, PropertyMap const&,
+                                ColumnValueMap const&, DbTable const&,
+                                std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
+                                std::vector<Utf8String>* changedProps);
+
     //! Creates a fixed-value IECSqlValue from a statically known id.  Always succeeds.
     static void CreateFixedId(ECDbCR conn, PropertyMap const&, BeInt64Id,
                               std::unique_ptr<IECSqlValue>& out);
@@ -228,6 +235,7 @@ public:
                                 ECClassId resolvedClassId, bool classIdFromChangeset,
                                 std::vector<std::unique_ptr<IECSqlValue>>& fields,
                                 ChangesetReader::PropertyFilter propertyFilter,
+                                DbOpcode opcode,
                                 std::vector<Utf8String>* changedProps);
 };
 
