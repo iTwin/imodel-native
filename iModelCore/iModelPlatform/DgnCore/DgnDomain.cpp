@@ -699,7 +699,6 @@ BeSQLite::EC::DropSchemaResult DgnDomains::DoDropSchema(Utf8StringCR name, bool 
         LOG.debugv("Schema to be dropped: %s", name.c_str());
     }
 
-    dgndb.Txns().SetHasEcSchemaChanges(true);
     return dgndb.Schemas().DropSchema(name, dgndb.GetSchemaImportToken(), logIssue);
 }
 
@@ -729,7 +728,6 @@ BeSQLite::EC::DropSchemaResult DgnDomains::DoDropSchemas(bvector<Utf8String> sch
         LOG.debugv("Schemas to be dropped: %s", BeStringUtilities::Join(schemaNames, ",").c_str());
     }
 
-    dgndb.Txns().SetHasEcSchemaChanges(true);
     return dgndb.Schemas().DropSchemas(schemaNames, dgndb.GetSchemaImportToken(), logIssue);
 }
 /*---------------------------------------------------------------------------------**//**
@@ -762,8 +760,6 @@ SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaCP> const &importSchema
             LOG.debug("ImportSchemas called while there are local changes and/or txns in the briefcase.");
     }
 
-    dgndb.Txns().SetHasEcSchemaChanges(true);
-
     auto const rc =  dgndb.Schemas().ImportSchemas(importSchemas, importOptions, dgndb.GetSchemaImportToken(), uri);
     if (!rc.IsOk()) {
         if ((importOptions & SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues) == SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues) {
@@ -775,6 +771,9 @@ SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaCP> const &importSchema
         }
         if (rc == SchemaImportResult::ERROR_DATA_TRANSFORM_REQUIRED)
             return SchemaStatus::DataTransformRequired;
+
+        if (rc == SchemaImportResult::ERROR_DATA_DELETION_REQUIRED)
+            return SchemaStatus::DataDeletionRequired;
 
         return SchemaStatus::SchemaImportFailed;
     }

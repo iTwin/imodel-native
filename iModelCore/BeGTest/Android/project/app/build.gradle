@@ -1,16 +1,16 @@
 apply plugin: 'com.android.application'
 
 android {
-
-    compileSdkVersion 31
+    namespace 'com.bentley.test'
+    compileSdkVersion 34
     
     defaultConfig {
         applicationId "com.bentley.test"
         testApplicationId "com.bentley.unittest"
         testInstrumentationRunner "com.bentley.unittest.BeInstrumentationTestRunner"
         project.archivesBaseName = "Test"
-        minSdkVersion 21
-        targetSdkVersion 28
+        minSdkVersion 31
+        targetSdkVersion 34
         versionCode 1
         versionName "1.0"
     }

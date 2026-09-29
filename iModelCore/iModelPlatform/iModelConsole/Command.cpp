@@ -9,6 +9,7 @@
 #include "Command.h"
 #include "iModelConsole.h"
 #include <numeric>
+#include <cmath>
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -269,119 +270,6 @@ void CloseCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         IModelConsole::WriteLine("Closed '%s'.", path.c_str());
         }
     }
-//******************************* SyncCommand ******************
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-Utf8String SyncCommand::_GetUsage() const
-    {
-    return  " .sync [schema] [pull|push|init] <file path>\r\n"
-        COMMAND_USAGE_IDENT "Sync schema by pushing or pulling changes to and from sync-db.\r\n";
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-void SyncCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
-    {
-    std::vector<Utf8String> args = TokenizeArgs(argsUnparsed);
-
-    if (args.empty())
-        {
-        IModelConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
-        return;
-        }
-
-    if (!session.IsFileLoaded())
-        {
-        IModelConsole::WriteErrorLine("There is should a file already loaded .");
-        return;
-        }
-    if (session.GetFile().GetECDbHandle()->IsReadonly())
-        {
-        IModelConsole::WriteErrorLine("The loaded file should be open in read/write mode.");
-        return;
-        }
-
-    if (!args[0].EqualsIAscii("schema"))
-        {
-        IModelConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
-        return;
-        }
-
-
-    if (args.size() < 2 ||  (!args[1].EqualsIAscii("pull") && !args[1].EqualsIAscii("push") && !args[1].EqualsIAscii("init")))
-        {
-        IModelConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
-        return;
-        }
-
-    if (args[1].EqualsIAscii("init"))
-        {
-        if (SchemaSync::Status::OK != session.GetFile().GetECDbHandle()->Schemas().GetSchemaSync().Init(SchemaSync::SyncDbUri(args[2].c_str()),"xxxx", false))
-            {
-            IModelConsole::WriteErrorLine("Failed to init : %s",args[2].c_str());
-            }
-        return;
-        }
-
-        bool isPull = args[1].EqualsIAscii("pull") ? true : false;
-        if (args.size() < 3) {
-        IModelConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
-        return;
-        }
-
-    BeFileName syncDbFileName;
-    syncDbFileName.AssignUtf8(args[2].c_str());
-    if(!syncDbFileName.DoesPathExist())
-        {
-        ECDb temp;
-        if (BE_SQLITE_OK == temp.CreateNewDb(syncDbFileName))
-            {
-            temp.SaveChanges();
-            temp.CloseDb();
-            }
-        else
-            {
-            IModelConsole::WriteErrorLine("unable to create or open sync db: %s", syncDbFileName.GetNameUtf8().c_str());
-            return;
-            }
-        }
-
-    auto uri = SchemaSync::SyncDbUri(syncDbFileName.GetNameUtf8().c_str());
-    if (session.GetFile().GetType() == SessionFile::Type::IModel)
-        {
-        Dgn::DgnDbCR iModelFile = session.GetFile().GetAs<IModelFile>().GetDgnDbHandle();
-        auto rc =  isPull ?
-            iModelFile.Schemas().GetSchemaSync().Pull(uri):
-            iModelFile.Schemas().GetSchemaSync().Push(uri);
-        if (rc != SchemaSync::Status::OK)
-            {
-            session.GetFileR().GetHandleR().AbandonChanges();
-            IModelConsole::WriteErrorLine("fail to %s changes %s %s", isPull ? "pull" : "push", isPull ? "from" : "to", syncDbFileName.GetNameUtf8().c_str());
-            }
-        else
-            {
-            IModelConsole::WriteLine("successfully %s changes %s %s.", isPull ? "pull" : "push", isPull ? "from" : "to", syncDbFileName.GetNameUtf8().c_str());
-            }
-        }
-    else
-        {
-         auto rc =  isPull ?
-            session.GetFile().GetECDbHandle()->Schemas().GetSchemaSync().Pull(uri):
-            session.GetFile().GetECDbHandle()->Schemas().GetSchemaSync().Push(uri);
-        if ( rc != SchemaSync::Status::OK)
-            {
-            session.GetFileR().GetHandleR().AbandonChanges();
-            IModelConsole::WriteErrorLine("fail to %s changes %s %s", isPull ? "pull" : "push", isPull ? "from" : "to", syncDbFileName.GetNameUtf8().c_str());
-            }
-        else
-            {
-            IModelConsole::WriteLine("successfully %s changes %s %s.", isPull ? "pull" : "push", isPull ? "from" : "to", syncDbFileName.GetNameUtf8().c_str());
-            }
-        }
-    }
-
 //******************************* CreateCommand ******************
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -598,7 +486,7 @@ void FileInfoCommand::_Run(Session& session, Utf8StringCR args) const
     if (it != profileInfos.end())
         IModelConsole::WriteLine("    %s: %s", it->second.m_name.c_str(), it->second.m_version.ToString().c_str());
 
-    for (bpair<SessionFile::ProfileInfo::Type, SessionFile::ProfileInfo> const& profileInfo : profileInfos)
+    for (const auto& profileInfo : profileInfos)
         {
         if (profileInfo.first == SessionFile::ProfileInfo::Type::Unknown)
             IModelConsole::WriteLine("    %s: %s", profileInfo.second.m_name.c_str(), profileInfo.second.m_version.ToString().c_str());
@@ -1548,7 +1436,7 @@ void ExportCommand::RunExportChangeSummary(Session& session, ECInstanceId change
         ECInstanceId changedInstanceId = stmt.GetValueId<ECInstanceId>(changedInstanceIdIx);
         Utf8PrintfString changedInstanceClassName("[%s].[%s]", stmt.GetValueText(changedInstanceSchemaNameIx), stmt.GetValueText(changedInstanceClassNameIx));
 
-        Json::Value& instanceChangeJson = ctx.m_outputJson.append(Json::ValueType::objectValue);
+        auto instanceChangeJson = ctx.m_outputJson.appendObject();
         instanceChangeJson["id"] = icId.ToHexStr();
         instanceChangeJson["summaryId"] = ctx.m_summaryIdString;
 
@@ -1559,7 +1447,7 @@ void ExportCommand::RunExportChangeSummary(Session& session, ECInstanceId change
         instanceChangeJson["opCode"] = (int) opCode;
         instanceChangeJson["isIndirect"] = stmt.GetValueBoolean(isIndirectIx);
 
-        Json::Value& changedPropsJson = instanceChangeJson["changedProperties"];
+        auto changedPropsJson = instanceChangeJson["changedProperties"];
         switch (opCode)
             {
                 case ChangeOpCode::Insert:
@@ -1597,7 +1485,7 @@ void ExportCommand::RunExportChangeSummary(Session& session, ECInstanceId change
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus ExportCommand::PropertyValueChangesToJson(Json::Value& propValJson, ChangeSummaryExportContext& ctx, BeSQLite::EC::ECInstanceId instanceChangeId, BeSQLite::EC::ECInstanceId changedInstanceId, Utf8StringCR changedInstanceClassName, BeSQLite::EC::ChangedValueState changedValueState) const
+BentleyStatus ExportCommand::PropertyValueChangesToJson(BeJsValue propValJson, ChangeSummaryExportContext& ctx, BeSQLite::EC::ECInstanceId instanceChangeId, BeSQLite::EC::ECInstanceId changedInstanceId, Utf8StringCR changedInstanceClassName, BeSQLite::EC::ChangedValueState changedValueState) const
     {
     Utf8String changedInstanceLabel;
     changedInstanceLabel.Sprintf("%s:%s (%s)", changedInstanceClassName.c_str(), changedInstanceId.ToHexStr().c_str(), ToString(changedValueState));
@@ -1690,14 +1578,15 @@ void ExportCommand::RunExportTables(Session& session, Utf8StringCR jsonFile) con
 
     Statement stmt;
     stmt.Prepare(session.GetFile().GetHandle(), "SELECT name FROM sqlite_master WHERE type ='table'");
-    Json::Value tableData(Json::ValueType::arrayValue);
+    BeJsDocument tableData;
+    tableData.SetEmptyArray();
 
     while (stmt.Step() == BE_SQLITE_ROW)
         {
         ExportTable(session, tableData, stmt.GetValueText(0));
         }
 
-    Utf8String jsonString = tableData.ToString();
+    Utf8String jsonString = tableData.Stringify();
     if (file.Write(nullptr, jsonString.c_str(), static_cast<uint32_t>(jsonString.size())) != BeFileStatus::Success)
         {
         IModelConsole::WriteErrorLine("Failed to write to JSON file %s", jsonFile.c_str());
@@ -1711,19 +1600,17 @@ void ExportCommand::RunExportTables(Session& session, Utf8StringCR jsonFile) con
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void ExportCommand::ExportTable(Session& session, Json::Value& out, Utf8CP tableName) const
+void ExportCommand::ExportTable(Session& session, BeJsValue out, Utf8CP tableName) const
     {
-    Json::Value& tableObj = out.append(Json::ValueType::objectValue);
+    auto tableObj = out.appendObject();
     tableObj["Name"] = tableName;
-    tableObj["Rows"] = Json::Value(Json::ValueType::arrayValue);
-    Json::Value& rows = tableObj["Rows"];
-    rows.clear();
+    auto rows = tableObj["Rows"];
+    rows.SetEmptyArray();
     Statement stmt;
     stmt.Prepare(session.GetFile().GetHandle(), SqlPrintfString("SELECT * FROM %s", tableName));
     while (stmt.Step() == BE_SQLITE_ROW)
         {
-        auto& row = rows.append(Json::ValueType::objectValue);
-        row.clear();
+        auto row = rows.appendObject();
         for (auto i = 0; i < stmt.GetColumnCount(); i++)
             {
             switch (stmt.GetColumnType(i))
@@ -1736,13 +1623,13 @@ void ExportCommand::ExportTable(Session& session, Json::Value& out, Utf8CP table
                     break;
                     }
                     case DbValueType::FloatVal:
-                        row[stmt.GetColumnName(i)] = Json::Value(stmt.GetValueDouble(i)); break;
+                        row[stmt.GetColumnName(i)] = stmt.GetValueDouble(i); break;
                     case DbValueType::IntegerVal:
-                        row[stmt.GetColumnName(i)] = Json::Value(stmt.GetValueInt64(i)); break;
+                        row[stmt.GetColumnName(i)] = stmt.GetValueInt64(i); break;
                     case DbValueType::NullVal:
-                        row[stmt.GetColumnName(i)] = Json::Value(Json::nullValue); break;
+                        row[stmt.GetColumnName(i)].SetNull(); break;
                     case DbValueType::TextVal:
-                        row[stmt.GetColumnName(i)] = Json::Value(stmt.GetValueText(i)); break;
+                        row[stmt.GetColumnName(i)] = stmt.GetValueText(i); break;
                 }
             }
         }
@@ -1779,7 +1666,7 @@ BentleyStatus ExportCommand::ChangeSummaryExportContext::InitializeOutput(Utf8St
 //---------------------------------------------------------------------------------------
 BentleyStatus ExportCommand::ChangeSummaryExportContext::WriteOutput()
     {
-    Utf8String jsonString = m_outputJson.ToString();
+    Utf8String jsonString = m_outputJson.Stringify();
     if (m_outputFile.Write(nullptr, jsonString.c_str(), (uint32_t) jsonString.size()) != BeFileStatus::Success ||
         BeFileStatus::Success != m_outputFile.Flush())
         {
@@ -2204,7 +2091,7 @@ void ParseCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
             case ParseMode::Exp:
             {
             Utf8String ecsqlFromExpTree;
-            Json::Value expTree;
+            BeJsDocument expTree;
             if (SUCCESS != ECSqlParseTreeFormatter::ParseAndFormatECSqlExpTree(expTree, ecsqlFromExpTree, *session.GetFile().GetECDbHandle(), ecsql.c_str()))
                 {
                 if (session.GetIssues().HasIssue())
@@ -2262,21 +2149,22 @@ void ParseCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 // @bsimethod
 //---------------------------------------------------------------------------------------
 //static
-void ParseCommand::ExpTreeToString(Utf8StringR expTreeStr, JsonValueCR expTree, int indentLevel)
+void ParseCommand::ExpTreeToString(Utf8StringR expTreeStr, BeJsConst expTree, int indentLevel)
     {
     for (int i = 0; i < indentLevel; i++)
         expTreeStr.append("   ");
 
     expTreeStr.append(expTree["Exp"].asCString()).append("\r\n");
 
-    if (!expTree.isMember("Children"))
+    if (!expTree.hasMember("Children"))
         return;
 
     indentLevel++;
-    for (JsonValueCR child : expTree["Children"])
+    expTree["Children"].ForEachArrayMember([&](BeJsConst::ArrayIndex, BeJsConst child)
         {
         ExpTreeToString(expTreeStr, child, indentLevel);
-        }
+        return false;
+        });
     }
 
 //******************************* ExitCommand ******************
@@ -2292,6 +2180,47 @@ Utf8String ExitCommand::_GetUsage() const
 // @bsimethod
 //---------------------------------------------------------------------------------------
 void ExitCommand::_Run(Session& session, Utf8StringCR args) const { exit(0); }
+
+//******************************* SqliteCommand ******************
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Utf8String DbSchemaDiffCommand::_GetUsage() const {
+    return ".db_schema_diff <target-sqlite>";
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void DbSchemaDiffCommand::_Run(Session& session, Utf8StringCR args) const {
+    if (args.empty())
+        {
+        IModelConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        return;
+        }
+
+    if (!session.IsFileLoaded(true))
+        return;
+
+    auto& lhs = session.GetFile().GetHandle();
+    Db rhs;
+    auto rc = rhs.OpenBeSQLiteDb(args.c_str(), Db::OpenParams(BeSQLite::Db::OpenMode::Readonly));
+    if (rc != BE_SQLITE_OK)
+        {
+        IModelConsole::WriteErrorLine("Failed to open SQLite file %s: %s", args.c_str(), rhs.GetLastError().c_str());
+        return;
+        }
+
+    std::vector<BentleyM0200::Utf8String> patches;
+    rc = MetaData::SchemaDiff(lhs, rhs, patches);
+    if (rc != BE_SQLITE_OK)
+        {
+        IModelConsole::WriteErrorLine("Failed to compute schema diff: %s", lhs.GetLastError().c_str());
+        return;
+        }
+    for(auto& patch : patches)
+        IModelConsole::WriteLine(patch.c_str());
+}
 
 //******************************* SqliteCommand ******************
 
@@ -2422,14 +2351,14 @@ void JsonCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
     while (BE_SQLITE_ROW == stmt.Step())
         {
         rowCount++;
-        Json::Value json;
+        BeJsDocument json;
         if (SUCCESS != adapter.GetRow(json))
             {
             IModelConsole::WriteErrorLine("Failed to retrieve the result of the ECSQL as JSON.");
             return;
             }
 
-        IModelConsole::WriteLine("%d | %s", rowCount, json.ToString().c_str());
+        IModelConsole::WriteLine("%d | %s", rowCount, json.Stringify().c_str());
         }
 
     }

@@ -117,7 +117,7 @@ bool PropertyExists::Exists(ECN::ECClassId classId, Utf8CP accessString) const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BeJsValue SeekPos::GetJson(InstanceReader::JsonParams const& param) const {
+BeJsValue SeekPos::GetJson(JsReadOptions const& param) const {
     if (m_prop == nullptr) {
         return m_rowRender.GetInstanceJsonObject(ECInstanceKey(m_class->GetClassId(), m_rowId),*this, param);
     }
@@ -163,27 +163,33 @@ InstanceReader::Impl::~Impl() {}
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 RowRender::Document& RowRender::ClearAndGetCachedJsonDocument() const {
-    m_allocator.Clear();
-    m_cachedJsonDoc.RemoveAllMembers();
+    // SetObject() must run before the pool is released: it destroys the existing members, which live
+    // in that pool. Clearing first would leave it walking freed memory.
     m_cachedJsonDoc.SetObject();
-
-
+    m_allocator.Clear();
     return m_cachedJsonDoc;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BeJsValue RowRender::GetInstanceJsonObject(ECInstanceKeyCR instanceKey, IECSqlRow const& ecsqlRow, InstanceReader::JsonParams const& param ) const  {
+void RowRender::Reset() {
+    m_cachedJsonDoc.SetObject();
+    m_allocator.Clear();
+    m_instanceKey = ECInstanceKey();
+    m_accessString.clear();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BeJsValue RowRender::GetInstanceJsonObject(ECInstanceKeyCR instanceKey, IECSqlRow const& ecsqlRow, JsReadOptions const& param ) const  {
     if (instanceKey == m_instanceKey && param == m_jsonParam && m_accessString.empty() && !(m_conn.IsDbOpen() && m_conn.IsWriteable())) {
         return BeJsValue(m_cachedJsonDoc);
     }
     auto& rowsDoc = ClearAndGetCachedJsonDocument();
     BeJsValue row(rowsDoc);
-    ECSqlRowAdaptor adaptor(m_conn);
-    adaptor.GetOptions().UseJsNames(param.GetUseJsName());
-    adaptor.GetOptions().SetAbbreviateBlobs(param.GetAbbreviateBlobs());
-    adaptor.GetOptions().SetConvertClassIdsToClassNames(param.GetClassIdToClassNames());
+    ECSqlRowAdaptor adaptor(m_conn, param);
     adaptor.RenderRowAsObject(row, ecsqlRow);
     m_instanceKey = instanceKey;
     m_jsonParam = param;
@@ -194,17 +200,14 @@ BeJsValue RowRender::GetInstanceJsonObject(ECInstanceKeyCR instanceKey, IECSqlRo
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BeJsValue RowRender::GetPropertyJsonValue(ECInstanceKeyCR instanceKey, Utf8StringCR  accessString, IECSqlValue const& ecsqlValue, InstanceReader::JsonParams const& param) const  {
+BeJsValue RowRender::GetPropertyJsonValue(ECInstanceKeyCR instanceKey, Utf8StringCR  accessString, IECSqlValue const& ecsqlValue, JsReadOptions const& param) const  {
     if (instanceKey == m_instanceKey && param == m_jsonParam && m_accessString.Equals(accessString)) {
         return BeJsValue(m_cachedJsonDoc)["$"];
     }
     auto& rowsDoc = ClearAndGetCachedJsonDocument();
     BeJsValue row(rowsDoc);
     auto out = row["$"];
-    ECSqlRowAdaptor adaptor(m_conn);
-    adaptor.GetOptions().UseJsNames(param.GetUseJsName());
-    adaptor.GetOptions().SetAbbreviateBlobs(param.GetAbbreviateBlobs());
-    adaptor.GetOptions().SetConvertClassIdsToClassNames(param.GetClassIdToClassNames());
+    ECSqlRowAdaptor adaptor(m_conn, param);
     adaptor.RenderValue(out, ecsqlValue);
     m_instanceKey = instanceKey;
     m_jsonParam = param;
@@ -221,6 +224,23 @@ void Reader::Clear() const {
     m_queryClassMap.clear();
     m_seekPos.Reset();
     m_propExists.Clear();
+    m_lastClassResolved = LastClassResolved();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void Reader::InvalidateSeekPos(ECInstanceKey const& key){
+    // Mutates m_seekPos (and its row render cache) exactly like Seek()/Clear(), so it needs the same
+    // lock. Callers never hold m_mutex, and the lock is released before any sqlite step, so this
+    // cannot reintroduce the primary-sqlite/ECDb lock cycle.
+    BeMutexHolder holder(m_mutex);
+    if (!key.IsValid()) {
+        m_seekPos.Reset();
+    }
+    if (m_seekPos.GetRowId() == key.GetInstanceId() && m_seekPos.GetClass() != nullptr && m_seekPos.GetClass()->GetClassId() == key.GetClassId()) {
+        m_seekPos.Reset();
+    }
 }
 
 //---------------------------------------------------------------------------------------
@@ -261,7 +281,14 @@ bool Reader::Seek(InstanceReader::Position const& pos, InstanceReader::RowCallba
         hasRow = m_seekPos.Seek(rsPos.GetInstanceId());
     }
     if (hasRow) {
-        callback(m_seekPos);
+
+        callback(m_seekPos, [&](Utf8CP propName) -> std::optional<PropertyReader> {
+            auto prop = m_seekPos.GetClass()->FindProperty(propName);
+            if (prop == nullptr) {
+                return std::nullopt;
+            }
+            return PropertyReader(prop->GetValue());
+        });
     }
     return hasRow;
 }
@@ -367,6 +394,7 @@ void SeekPos::Reset() const {
     m_prop = nullptr;
     m_rowId=ECInstanceId();
     m_rowClassId = ECN::ECClassId();
+    m_rowRender.Reset();
 }
 
 //---------------------------------------------------------------------------------------
@@ -407,7 +435,10 @@ bool Class::Seek(ECInstanceId rowId, ECN::ECClassId& rowClassId) const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 bool Property::Seek(ECInstanceId rowId, ECN::ECClassId& rowClassId) const {
-    return m_table->Seek(rowId, &rowClassId);
+    OnAfterReset();
+    bool result = m_table->Seek(rowId, &rowClassId);
+    OnAfterStep();
+    return result;
 }
 
 //---------------------------------------------------------------------------------------
@@ -549,7 +580,7 @@ std::unique_ptr<ECSqlField> Class::Factory::CreatePrimitiveField(ECSqlSelectPrep
     const auto prim = propertyMap.GetProperty().GetAsPrimitiveProperty();
     ECSqlColumnInfo columnInfo(
         ECN::ECTypeDescriptor(prim->GetType()),
-        DateTime::Info(),
+        GetDateTimeInfo(propertyMap),
         nullptr,
         &propertyMap.GetProperty(),
         &propertyMap.GetProperty(),
@@ -676,7 +707,7 @@ std::unique_ptr<ECSqlField>  Class::Factory::CreateNavigationField(ECSqlSelectPr
     const auto prim = propertyMap.GetProperty().GetAsNavigationProperty();
     ECSqlColumnInfo columnInfo(
         ECN::ECTypeDescriptor::CreateNavigationTypeDescriptor(prim->GetType(), prim->IsMultiple()),
-        DateTime::Info(),
+        GetDateTimeInfo(propertyMap),
         nullptr,
         &propertyMap.GetProperty(),
         &propertyMap.GetProperty(),
@@ -703,7 +734,35 @@ std::unique_ptr<ECSqlField>  Class::Factory::CreateNavigationField(ECSqlSelectPr
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+DateTime::Info Class::Factory::GetDateTimeInfo(PropertyMap const& propertyMap) {
+    DateTime::Info info = DateTime::Info::CreateForDateTime(DateTime::Kind::Unspecified);
+    if (propertyMap.GetType() != PropertyMap::Type::PrimitiveArray && propertyMap.GetType() != PropertyMap::Type::Primitive) {
+        return info;
+    }
+
+    if (auto property = propertyMap.GetProperty().GetAsPrimitiveArrayProperty()){
+        if (property->GetType() == PRIMITIVETYPE_DateTime) {
+            if (CoreCustomAttributeHelper::GetDateTimeInfo(info, *property) == ECObjectsStatus::Success) {
+                return info;
+            }
+        }
+    }
+    if (auto property = propertyMap.GetProperty().GetAsPrimitiveProperty()){
+        if (property->GetType() == PRIMITIVETYPE_DateTime) {
+            if (CoreCustomAttributeHelper::GetDateTimeInfo(info, *property) == ECObjectsStatus::Success) {
+                return info;
+            }
+        }
+    }
+
+    return info;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 std::unique_ptr<ECSqlField>   Class::Factory::CreateArrayField(ECSqlSelectPreparedStatement& stmt, PropertyMap const& propertyMap, TableView const& tbl) {
+
     ECN::ECTypeDescriptor desc;
     const auto& prop = propertyMap.GetProperty();
     if (prop.GetIsStructArray()) {
@@ -714,7 +773,7 @@ std::unique_ptr<ECSqlField>   Class::Factory::CreateArrayField(ECSqlSelectPrepar
     }
     ECSqlColumnInfo columnInfo(
         desc,
-        DateTime::Info(),
+        GetDateTimeInfo(propertyMap),
         prop.GetIsStructArray()? &prop.GetAsStructArrayProperty()->GetStructElementType(): nullptr,
         &propertyMap.GetProperty(),
         &propertyMap.GetProperty(),
@@ -916,28 +975,32 @@ TableView::Ptr TableView::CreateLinkTableView(ECDbCR conn, DbTable const& tbl, R
                 builder.Append(rootMap.GetClass().GetId().ToHexStr())
                     .AppendSpace()
                     .AppendEscaped(col->GetName());
+                tableView->m_ecClassIdCol = appendCount;
             } else if (col == &sourceClassIdProp->GetColumn()) {
                 builder.Append(rootMap.GetRelationshipClass().GetSource().GetConstraintClasses().front()->GetId().ToHexStr())
                     .AppendSpace()
                     .AppendEscaped(col->GetName());
+                tableView->m_ecSourceClassIdCol = appendCount;
             } else if (col == &targetClassIdProp->GetColumn()) {
                 builder.Append(rootMap.GetRelationshipClass().GetTarget().GetConstraintClasses().front()->GetId().ToHexStr())
                     .AppendSpace()
                     .AppendEscaped(col->GetName());
+                tableView->m_ecTargetClassIdCol = appendCount;
             } else {
                 continue;
             }
+            tableView->m_colIndexMap.insert(std::make_pair(col->GetId(), appendCount));
+            ++appendCount;
+            continue;
         }
 
         builder.AppendFullyQualified(tbl.GetName(), col->GetName());
         tableView->m_colIndexMap.insert(std::make_pair(col->GetId(), appendCount));
         if (col == &tbl.GetECClassIdColumn()) {
             tableView->m_ecClassIdCol = appendCount;
-        }
-        if (col == &tbl.GetECClassIdColumn()) {
+        } else if (col == &sourceClassIdProp->GetColumn()) {
             tableView->m_ecSourceClassIdCol = appendCount;
-        }
-        if (col == &tbl.GetECClassIdColumn()) {
+        } else if (col == &targetClassIdProp->GetColumn()) {
             tableView->m_ecTargetClassIdCol = appendCount;
         }
         ++appendCount;
@@ -957,7 +1020,7 @@ TableView::Ptr TableView::CreateLinkTableView(ECDbCR conn, DbTable const& tbl, R
 
         auto& classIdTable = sourceClassIdProp->GetTable();
         sourceJoinBuilder.AppendFormatted(
-            "JOIN [%s] [%s] ON [%s].[%s] = [%s].[%s]",
+            " JOIN [%s] [%s] ON [%s].[%s] = [%s].[%s]",
             classIdTable.GetName().c_str(),
             kSourceTableAlias,
             kSourceTableAlias,
@@ -975,8 +1038,8 @@ TableView::Ptr TableView::CreateLinkTableView(ECDbCR conn, DbTable const& tbl, R
         tableView->m_ecTargetClassIdCol = ++appendCount;
 
         auto& classIdTable = targetClassIdProp->GetTable();
-        sourceJoinBuilder.AppendFormatted(
-            "JOIN [%s] [%s] ON [%s].[%s] = [%s].[%s]",
+        targetJoinBuilder.AppendFormatted(
+            " JOIN [%s] [%s] ON [%s].[%s] = [%s].[%s]",
             classIdTable.GetName().c_str(),
             kTargetTableAlias,
             kTargetTableAlias,
@@ -1000,7 +1063,9 @@ TableView::Ptr TableView::CreateLinkTableView(ECDbCR conn, DbTable const& tbl, R
     tableView->m_id = tbl.GetId();
     const auto rc = tableView->GetSqliteStmt().Prepare(conn, builder.GetSql().c_str());
     if (rc != BE_SQLITE_OK) {
-         BeAssert(false && "Failed to prepare statement");
+        ECDbLogger::Get().errorv("InstanceReader: Failed to prepare link table SQL for class '%s': %s",
+            rootMap.GetClass().GetFullName(), builder.GetSql().c_str());
+        BeAssert(false && "Failed to prepare statement");
         return nullptr;
     }
     return tableView;
@@ -1050,7 +1115,9 @@ TableView::Ptr TableView::CreateEntityTableView(ECDbCR conn, DbTable const& tbl,
     tableView->m_id = tbl.GetId();
     const auto rc = tableView->GetSqliteStmt().Prepare(conn, builder.GetSql().c_str());
     if (rc != BE_SQLITE_OK) {
-         BeAssert(false && "Failed to prepare statement");
+        ECDbLogger::Get().errorv("InstanceReader: Failed to prepare entity table SQL for class '%s': %s",
+            rootMap.GetClass().GetFullName(), builder.GetSql().c_str());
+        BeAssert(false && "Failed to prepare statement");
         return nullptr;
     }
     return tableView;
@@ -1082,6 +1149,9 @@ TableView::Ptr TableView::Create(ECDbCR conn, DbTable const& tbl) {
     const auto rootClassMap = getRootClassMap();
     if(rootClassMap->GetClass().IsMixin() || rootClassMap->GetType() == ClassMap::Type::RelationshipEndTable) {
         //! NOT SUPPORTED
+        ECDbLogger::Get().debugv("InstanceReader: Class '%s' is not supported for instance queries (%s).",
+            rootClassMap->GetClass().GetFullName(),
+            rootClassMap->GetClass().IsMixin() ? "mixin classes are not queryable" : "RelationshipEndTable map strategy is not queryable");
         return nullptr;
     }
 
@@ -1090,6 +1160,8 @@ TableView::Ptr TableView::Create(ECDbCR conn, DbTable const& tbl) {
     }
 
     if (rootClassMap->GetType() == ClassMap::Type::NotMapped) {
+        ECDbLogger::Get().debugv("InstanceReader: Class '%s' is not supported for instance queries (class is not mapped).",
+            rootClassMap->GetClass().GetFullName());
         return nullptr;
     }
 
@@ -1100,6 +1172,8 @@ TableView::Ptr TableView::Create(ECDbCR conn, DbTable const& tbl) {
     if (rootClassMap->GetType() == ClassMap::Type::RelationshipLinkTable) {
         return CreateLinkTableView(conn, tbl, rootClassMap->GetAs<RelationshipClassLinkTableMap>());
     }
+    ECDbLogger::Get().debugv("InstanceReader: Class '%s' has unsupported ClassMap type %d for instance queries.",
+        rootClassMap->GetClass().GetFullName(), Enum::ToInt(rootClassMap->GetType()));
     return nullptr;
 }
 
@@ -1125,10 +1199,19 @@ bool InstanceReader::Seek(Position const& pos, RowCallback callback, Options con
     return m_pImpl->Seek(pos, callback, opt);
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 void InstanceReader::Reset() {
     return m_pImpl->Reset();
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void InstanceReader::InvalidateSeekPos(ECInstanceKey const& key){
+    return m_pImpl->InvalidateSeekPos(key);
+}
 //////////////////////////////////////////////////////////////////////////
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -1180,5 +1263,6 @@ bool InMemoryPropertyExistMap::Exist(ECN::ECClassId classId, Utf8CP propertyName
     const auto &classIdSet = it->second;
     return classIdSet.find(classId.GetValueUnchecked()) != classIdSet.end();
 }
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

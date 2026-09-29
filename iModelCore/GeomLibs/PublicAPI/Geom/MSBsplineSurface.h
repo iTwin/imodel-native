@@ -37,6 +37,8 @@ struct BSurfPatch
     //! flag set to true if this is a null interval (high multiplicity knot) in the v direction
     bool  isNullV;
 
+    GEOMDLLIMPEXP BSurfPatch();
+
     GEOMDLLIMPEXP bool Evaluate (DPoint2dCR uv, DPoint3dR xyz) const;
     GEOMDLLIMPEXP bool Evaluate (DPoint2dCR uv, DPoint3dR xyz, DVec3dR dXdu, DVec3dR dXdv) const;
     GEOMDLLIMPEXP DPoint2d PatchUVToKnotUV (DPoint2dCR patchUV) const;
@@ -44,7 +46,6 @@ struct BSurfPatch
 
     // return estimates of how far interior control points are from midpoints of chords.
     // for each grid edge and diagonal, the deviation is point distance from chord midpoint, divided by shorter edge length, capped at 10.
-    //
     GEOMDLLIMPEXP bool MidpointDeviations (double &uFraction, double &vFraction, double &twistFraction) const;
     };
 

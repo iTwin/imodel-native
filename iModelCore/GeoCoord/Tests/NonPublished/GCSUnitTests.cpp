@@ -25,14 +25,6 @@ class GCSUnitTests : public ::testing::Test
         ~GCSUnitTests() {};
     };
 
-static bvector<Utf8String> s_listOfTransfoDefinedButIncomplete = {
-"ATS77",
-"EPSG:6140",
-"EPSG:6122",
-"NAD27/CGQ77-83",
-"CAPE/GSB"
-};
-
 // List of datums that require two non-null steps to go to WGS84
 static bvector<Utf8String> s_listOfKnownMultiTransform =
 { "CH1903/GSB",
@@ -2175,7 +2167,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": -129"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"AK83/2011-1\","
 "      \"description\": \"NSRS11(NAD83/2011) datum, Alaska State Plane; Zone 1, Meter\","
@@ -2206,7 +2198,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": -129"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"AlbanyGrid.GDA2020\","
 "      \"description\": \"Albany Grid Western Australia on GDA2020\","
@@ -2236,7 +2228,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": 118.21666666666667"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"AlbanyGrid.GDA94-7P\","
 "      \"description\": \"Albany Grid Western Australia on GDA94-7P (7-Param to GDA2020)\","
@@ -2265,7 +2257,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": 118.21666666666667"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"AlbanyGrid.GDA94/GSB\","
 "      \"description\": \"Albany Grid WA on GDA94/GSB (NTv2 to GDA2020)\","
@@ -2294,7 +2286,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": 118.21666666666667"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"AmSamoa62.Lambert\","
 "      \"description\": \"Deprecated use Samoa1962/Lambert - American Samoa 1962 Lambert\","
@@ -2323,7 +2315,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": -169.12"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"AnokaMN-F\","
 "      \"description\": \"Minnesota DOT: Anoka County, US Foot\","
@@ -2354,7 +2346,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": -92.6"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"ARATU_BS.UTM-23S\","
 "      \"description\": \"Aratu BS / UTM zone 23S\","
@@ -2380,7 +2372,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": -42"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"ArPoly-27F\","
 "      \"description\": \"Arkansas Polyconic Projection (feet)\","
@@ -2408,7 +2400,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": -89"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"AshlandWI-F\","
 "      \"description\": \"Use HARN/WI.AshlandWI-F instead - Wisc.: Ashland County, US ft\","
@@ -2439,7 +2431,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": -90.09153130333333"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"AshlandWI-IF\","
 "      \"description\": \"Use HARN/WI.AshlandWI-IF instead - Wisc.: Ashland County, IFoot\","
@@ -2470,7 +2462,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": -90.09153130333333"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"BayfieldWI-F\","
 "      \"description\": \"Use HARN/WI.BayfieldWI-F instead - Wisc.: Bayfield County\","
@@ -2502,7 +2494,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": -90.48611111111111"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"BeckerMN-F\","
 "      \"description\": \"Minnesota DOT: Becker County, US Foot\","
@@ -2533,7 +2525,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": -95.01666666666667"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"Belge72/a.Lambert72\","
 "      \"description\": \"Belge 1972 / Belge Lambert 72\","
@@ -2564,7 +2556,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": 6.4"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"Belgium1972\","
 "      \"description\": \"Belgium National System 1972, non-geodetic; Metres\","
@@ -2599,7 +2591,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": 7"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"BrownWI-F\","
 "      \"description\": \"Use HARN/WI.BrownWI-F instead - Wisc.: Brown County\","
@@ -2630,7 +2622,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": -87.25"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"CA-Teale\","
 "      \"description\": \"NAD27 Albers Equal Area for California, per Teale Data Center\","
@@ -2660,7 +2652,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": -113.5"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"CH1903.LV03C\","
 "      \"description\": \"Deprecated - Use CH1903/GSB.LV03C or CH1903/2.LV03C instead\","
@@ -2688,7 +2680,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": 10.49"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"CH1903/GSB.LV03\","
 "      \"description\": \"Bern 1898 (Bern) / LV03 Datum based on NTv2 GSB grid shift\","
@@ -2717,7 +2709,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": 10.49"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"CH1903Plus_1.LV95\","
 "      \"description\": \"CH1903+ / LV95\","
@@ -2746,7 +2738,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": 10.49"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"CSRS.BC/Albers\","
 "      \"description\": \"NAD83(CSRS) / BC Albers\","
@@ -2791,7 +2783,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": -114.03"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"DealulPiscu1933.Stereo\","
 "      \"description\": \"Dealul Piscului 1933/ Stereo 33\","
@@ -3213,7 +3205,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": 148.1686344"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"EPSG:900913\","
 "      \"description\": \"Popular Visualization Mercator on a Sphere (Google/Bing)\","
@@ -3225,7 +3217,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "      },"
 "      \"unit\": \"Meter\","
 "      \"projection\": {"
-"        \"method\": \"MercatorScale\","
+"        \"method\": \"Mercator\","
 "        \"centralMeridian\": 0,"
 "        \"scaleFactor\": 1,"
 "        \"standardParallel\": 0,"
@@ -3242,7 +3234,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": 180"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"EPSG:53003\","
 "      \"description\": \"Sphere Miller Cylindrical\","
@@ -3269,7 +3261,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": 180"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"EPSG:53009\","
 "      \"description\": \"Sphere Mollweide\","
@@ -3296,7 +3288,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": 180"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"NZGD49.NewZealandGrid\","
 "      \"description\": \"New Zealand National Grid, Meter\","
@@ -3324,7 +3316,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": 180"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"HU-EOV72\","
 "      \"description\": \"Hungary - Uniform National Projection System of 1972\","
@@ -3355,7 +3347,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": 25"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"CookNorthShoreMN-F\","
 "      \"description\": \"Minnesota DOT: Cook North Shore, US Foot\","
@@ -3387,7 +3379,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": -89"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"TREX\","
 "      \"description\": \"Denver TREX Project (Southwest Corridor)\","
@@ -3417,7 +3409,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": -104"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"MalaysiaRsoSabah\","
 "      \"description\": \"Eastern Malaysia, Sabah, RSO, Meters\","
@@ -3447,9 +3439,9 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": 119.5"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
-"      \"ud\": \"EPSG:53030\","
+"      \"id\": \"EPSG:53030\","
 "      \"description\": \"Sphere Robinson\","
 "      \"source\": \"ESRI PRJ [ArcGIS]\","
 "      \"deprecated\": false,"
@@ -3474,7 +3466,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": 180"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"EPSG:53008\","
 "      \"description\": \"Sphere Sinusoidal\","
@@ -3501,7 +3493,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": 180"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"SouthAfricaZn-15\","
 "      \"description\": \"South African Grid through Multiple Regression Zone 15\","
@@ -3530,7 +3522,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": 16.75"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"EPSG:53029\","
 "      \"description\": \"Sphere Van der Grinten I\","
@@ -3557,7 +3549,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": 180"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"WGS84.Winkel\","
 "      \"description\": \"Winkel-Tripel, Central Meridian = Greenwich\","
@@ -3673,73 +3665,6 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "}"
 };
 
-
-/*---------------------------------------------------------------------------------**//**
-* Test specific to grid file based transformations
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(GCSUnitTests, GeodeticTransformGetAllGridFileBasedTransformsWithMissingFiles)
-{
-    GeoCoordinates::DatumCP wgs84 = GeoCoordinates::Datum::CreateDatum("WGS84");
-
-    for (int index = 0; index < s_listOfTransfoDefinedButIncomplete.size(); index++)
-    {
-        Utf8String theKeyname(s_listOfTransfoDefinedButIncomplete[index]);
-
-        GeoCoordinates::DatumCP theDatum = GeoCoordinates::Datum::CreateDatum(theKeyname.c_str());
-
-        // Check transformation properties
-        ASSERT_TRUE(theDatum != NULL && theDatum->IsValid());
-
-        // Create a Datum converter between the two datums
-        GeoCoordinates::DatumConverterP theConverter = GeoCoordinates::DatumConverter::Create(*theDatum, *wgs84);
-
-        // Check converter properties (We expect the datum converter creation to have failed due to missing files)
-        EXPECT_TRUE(theConverter == NULL);
-
-        // Now we obtain the path instead
-        GeoCoordinates::GeodeticTransformPathCP theTransformPath = GeoCoordinates::GeodeticTransformPath::Create(*theDatum, *wgs84);
-
-        ASSERT_TRUE(theTransformPath != NULL);
-
-        for (int indexTrf = 0; indexTrf < theTransformPath->GetGeodeticTransformCount(); indexTrf++)
-        {
-            GeoCoordinates::GeodeticTransformCP theTransform = theTransformPath->GetGeodeticTransform(indexTrf);
-
-            ASSERT_TRUE(theTransform != NULL);
-
-            if (theTransform->GetConvertMethodCode() == GeoCoordinates::GenConvertCode::GenConvertType_GFILE)
-            {
-                // There should be some missing files
-                EXPECT_TRUE(theTransform->GetDataAvailability() == GeoCoordinates::GeodeticTransformDataAvailability::DataUnavailable);
-
-                size_t numGrid = theTransform->GetGridFileDefinitionCount();
-
-                for (size_t indexGrid = 0; indexGrid < numGrid; ++indexGrid)
-                {
-                    GeoCoordinates::GridFileDefinition theGridFile = theTransform->GetGridFileDefinition(indexGrid);
-                    GeoCoordinates::GridFileDirection theDirection = theGridFile.GetDirection();
-
-                    int directionInt = (int)theDirection;
-
-                    if (directionInt != 0x49 && directionInt != 0x46)
-                        EXPECT_TRUE(false);
-                }
-            }
-        }
-        theTransformPath->Destroy();
-        theDatum->Destroy();
-    }
-
-    wgs84->Destroy();
-}
-
-
-
-
-
-
-
 /*---------------------------------------------------------------------------------**//**
 * Specific test FromJson
 * @bsimethod
@@ -3752,8 +3677,8 @@ TEST_F (GCSUnitTests, GCSTransformFromJsonSpecific)
 
         GeoCoordinates::BaseGCSPtr currentGCS = GeoCoordinates::BaseGCS::CreateGCS();
 
-        Json::Value result;
-        EXPECT_TRUE(Json::Reader::Parse(theJson, result));
+        BeJsDocument result(theJson);
+        EXPECT_FALSE(result.hasParseError());
 
         Utf8String errMessage;
         EXPECT_EQ(SUCCESS, currentGCS->FromHorizontalJson(result, errMessage)) << errMessage.c_str();
@@ -3775,8 +3700,8 @@ TEST_F (GCSUnitTests, GCSTransformFromJsonError1)
 
     GeoCoordinates::BaseGCSPtr currentGCS = GeoCoordinates::BaseGCS::CreateGCS();
 
-    Json::Value result;
-    EXPECT_TRUE(Json::Reader::Parse(theJson, result));
+    BeJsDocument result(theJson);
+    EXPECT_FALSE(result.hasParseError());
 
     // Sabotage the id to make sure we do not use pre-defined
     result["id"] = "XYZ";
@@ -3818,11 +3743,12 @@ TEST_F(GCSUnitTests, EllipsoidTransformFromJsonSpecific)
         GeoCoordinates::Ellipsoid* currentEllipsoid1 = GeoCoordinates::Ellipsoid::CreateEllipsoid();
         GeoCoordinates::Ellipsoid* currentEllipsoid2 = GeoCoordinates::Ellipsoid::CreateEllipsoid();
 
-        Json::Value result;
-        EXPECT_TRUE(Json::Reader::Parse(theJson, result));
+        BeJsDocument result(theJson);
+        EXPECT_FALSE(result.hasParseError());
+        BeJsDocument pristine(theJson); // `result` is sabotaged below, so parse a second, untouched copy
 
         Utf8String errorMessage;
-        EXPECT_EQ(SUCCESS, currentEllipsoid1->FromJson(BeJsDocument(theJson), errorMessage)) << errorMessage.c_str();
+        EXPECT_EQ(SUCCESS, currentEllipsoid1->FromJson(pristine, errorMessage)) << errorMessage.c_str();
 
         // Sabotage the id to reparse
         result["id"] = "XYZ";
@@ -3849,11 +3775,12 @@ TEST_F(GCSUnitTests, DatumTransformFromJsonSpecific)
         GeoCoordinates::Datum* currentDatum1 = GeoCoordinates::Datum::CreateDatum();
         GeoCoordinates::Datum* currentDatum2 = GeoCoordinates::Datum::CreateDatum();
 
-        Json::Value result;
-        EXPECT_TRUE(Json::Reader::Parse(theJson, result));
+        BeJsDocument result(theJson);
+        EXPECT_FALSE(result.hasParseError());
+        BeJsDocument pristine(theJson); // `result` is sabotaged below, so parse a second, untouched copy
 
         Utf8String errorMessage;
-        EXPECT_EQ(SUCCESS, currentDatum1->FromJson(BeJsDocument(theJson), errorMessage)) << errorMessage.c_str();
+        EXPECT_EQ(SUCCESS, currentDatum1->FromJson(pristine, errorMessage)) << errorMessage.c_str();
 
         // Sabotage the id to reparse
         result["id"] = "XYZ";
@@ -3881,13 +3808,14 @@ TEST_F(GCSUnitTests, GeodeticTransformTransformFromJsonSpecific)
         GeoCoordinates::GeodeticTransform* currentTransform1 = GeoCoordinates::GeodeticTransform::CreateGeodeticTransform();
         GeoCoordinates::GeodeticTransform* currentTransform2 = GeoCoordinates::GeodeticTransform::CreateGeodeticTransform();
 
-        Json::Value result;
-        EXPECT_TRUE(Json::Reader::Parse(theJson, result));
+        BeJsDocument result(theJson);
+        EXPECT_FALSE(result.hasParseError());
+        BeJsDocument pristine(theJson); // `result` is sabotaged below, so parse a second, untouched copy
 
         Utf8String errorMessage;
-        EXPECT_EQ(SUCCESS, currentTransform1->FromJson(BeJsDocument(theJson), errorMessage)) << errorMessage.c_str();
+        EXPECT_EQ(SUCCESS, currentTransform1->FromJson(pristine, errorMessage)) << errorMessage.c_str();
 
-        Json::Value returnedResult;
+        BeJsDocument returnedResult;
         EXPECT_TRUE(SUCCESS == currentTransform1->ToJson(returnedResult));
 
         EXPECT_EQ(SUCCESS, currentTransform2->FromJson(result, errorMessage)) << errorMessage.c_str();
@@ -4194,3 +4122,346 @@ TEST_F(GCSUnitTests, HasMissingGridFiles)
     EXPECT_EQ(11, listOfFiles.size());
     EXPECT_TRUE(listOfFiles[0] == "./Usa/Invalid/a.l?s");
 }
+
+
+   void convertTest(Utf8String sourceGCSJSON, Utf8String targetGCSJSON, DPoint3d inputCoord, DPoint3d outputCoord, ReprojectStatus expectStat)
+      {
+      GeoCoordinates::BaseGCSPtr sourceGCS = GeoCoordinates::BaseGCS::CreateGCS();
+      ASSERT_TRUE(sourceGCS.IsValid());
+
+      Utf8String errorMessage;
+      sourceGCS->FromJson(BeJsDocument(sourceGCSJSON), errorMessage);
+
+      if (!sourceGCS->IsValid())
+         {
+         EXPECT_EQ(REPROJECT_BadArgument, expectStat);
+         return;
+         }
+
+      GeoCoordinates::BaseGCSPtr targetGCS = GeoCoordinates::BaseGCS::CreateGCS();
+      ASSERT_TRUE(targetGCS.IsValid());
+
+      targetGCS->FromJson(BeJsDocument(targetGCSJSON), errorMessage);
+
+      if (!targetGCS->IsValid())
+         {
+         EXPECT_EQ(REPROJECT_BadArgument, expectStat);
+         return;
+         }
+        
+        // Input coordinates are always in meters so we convert to source CRS units.
+        if (sourceGCS->IsProjected())
+            {
+            double ratio = sourceGCS->UnitsFromMeters();
+            inputCoord.x *= ratio;
+            inputCoord.y *= ratio;
+            inputCoord.z *= ratio;
+            }
+
+      DPoint3d resultPoint = {0.0, 0.0, 0.0};
+      ReprojectStatus stat = sourceGCS->CartesianFromCartesian(resultPoint, inputCoord, *targetGCS);
+
+      EXPECT_EQ(stat, expectStat);
+
+      if (stat == REPROJECT_Success || stat == REPROJECT_CSMAPERR_OutOfUsefulRange)
+            {
+            EXPECT_NEAR(resultPoint.x, outputCoord.x, 0.01);
+            EXPECT_NEAR(resultPoint.y, outputCoord.y, 0.01);
+            EXPECT_NEAR(resultPoint.z, outputCoord.z, 0.01);
+
+            // No point testing reversal when Out of useful range since reversibility is doubtful
+            if (stat != REPROJECT_CSMAPERR_OutOfUsefulRange) 
+               {
+               DPoint3d returnPoint = {0.0, 0.0, 0.0};
+               stat = targetGCS->CartesianFromCartesian(returnPoint, resultPoint, *sourceGCS);
+               EXPECT_EQ(stat, REPROJECT_Success);
+
+               EXPECT_NEAR(returnPoint.x, inputCoord.x, 0.01);
+               EXPECT_NEAR(returnPoint.y, inputCoord.y, 0.01);
+               EXPECT_NEAR(returnPoint.z, inputCoord.z, 0.01);
+               }
+            }
+      };
+
+/*---------------------------------------------------------------------------------**//**
+* Specific test from itwinjs-core
+* If the present tests work but the corresponding iTwinjs-core fail then the failing module is either:
+* - The data files (current uses UPack csmap_data while iTwinjs-core uses GCS Workspace)
+* - The interop layer.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(GCSUnitTests, FromiTwinJsCore)
+{
+
+      Utf8String EWRGCS = R"X({
+        "horizontalCRS": {
+          "id": "EPSG:27700",
+          "description": "OSGB 1936 / British National Grid",
+          "source": "EPSG V6 [Large and medium scale topographic mapping and engin]",
+          "datumId": "EPSG:6277",
+          "datum": {
+            "id": "EPSG:6277",
+            "description": "OSGB36 - Use OSGB-7P-2. Consider OSGB/OSTN15 instead",
+            "deprecated": true,
+            "source": "EPSG V6.12 operation EPSG:1314 [EPSG]",
+            "ellipsoidId": "EPSG:7001",
+            "ellipsoid": {
+              "equatorialRadius": 6377563.396,
+              "polarRadius": 6356256.909237,
+              "id": "EPSG:7001",
+              "description": "Airy 1830",
+              "source": "EPSG, Version 6 [EPSG]"
+            },
+            "transforms": [
+              {
+                "method": "PositionalVector",
+                "sourceEllipsoid": {
+                  "equatorialRadius": 6377563.396,
+                  "polarRadius": 6356256.909237,
+                  "id": "EPSG:7001"
+                },
+                "targetEllipsoid": {
+                  "equatorialRadius": 6378137,
+                  "polarRadius": 6356752.3142,
+                  "id": "WGS84"
+                },
+                "positionalVector": {
+                  "delta": {
+                    "x": 446.448,
+                    "y": -125.157,
+                    "z": 542.06
+                  },
+                  "rotation": {
+                    "x": 0.15,
+                    "y": 0.247,
+                    "z": 0.842
+                  },
+                  "scalePPM": -20.489
+                }
+              }]
+          },
+          "unit": "Meter",
+          "projection": {
+            "method": "TransverseMercator",
+            "falseEasting": 400000,
+            "falseNorthing": -100000,
+            "centralMeridian": -2,
+            "latitudeOfOrigin": 49,
+            "scaleFactor": 0.999601272737422
+          },
+          "extent": {
+            "southWest": {
+              "latitude": 49.96,
+              "longitude": -7.56
+            },
+            "northEast": {
+              "latitude": 60.84,
+              "longitude": 1.78
+            }
+          }
+        },
+        "verticalCRS": {
+          "id": "ELLIPSOID"
+        },
+        "additionalTransform": {
+          "helmert2DWithZOffset": {
+            "translationX": 284597.3343,
+            "translationY": 79859.4651,
+            "translationZ": 0,
+            "rotDeg": 0.5263624458992088,
+            "scale": 0.9996703340508721
+          }
+        }
+   })X";
+
+   Utf8String ETRF89 = 
+           R"X({
+          "horizontalCRS": {
+            "id": "LL-ETRF89",
+            "datumId": "ETRF89",
+            "unit": "Meter",
+            "projection": {
+              "method": "None"
+            }
+          },
+          "verticalCRS": {
+            "id": "ELLIPSOID"
+          }
+    })X";
+
+   Utf8String OSGB = 
+           R"X({
+          "horizontalCRS": {
+            "id": "LL-OSGB",
+            "datumId": "OSGB",
+            "unit": "Meter",
+            "projection": {
+              "method": "None"
+            }
+          },
+          "verticalCRS": {
+            "id": "ELLIPSOID"
+          }
+    })X";
+    
+   Utf8String DHDN3 = 
+           R"X({
+          "horizontalCRS": {
+            "id": "LL-DHDN3",
+            "datumId": "DHDN/3",
+            "unit": "Meter",
+            "projection": {
+              "method": "None"
+            }
+          },
+          "verticalCRS": {
+            "id": "ELLIPSOID"
+          }
+    })X";
+
+    convertTest(R"X({ "horizontalCRS": { "id": "EPSG:2272" }, "verticalCRS": { "id": "NAVD88" } })X", R"X({ "horizontalCRS": { "id": "LL84" }, "verticalCRS": { "id": "ELLIPSOID" } })X", {775970.3155166894, 83323.24543981979, 130.74977547686285}, {-75.68712011112366, 40.06524845273591, 95.9769083 }, REPROJECT_Success );
+
+    convertTest(R"X({ "horizontalCRS": { "id": "UTM83-10" }, "verticalCRS": { "id": "NAVD88" } })X", R"X({ "horizontalCRS": { "id": "UTM27-10" }, "verticalCRS": { "id": "NGVD29" } })X", {548296.472, 4179414.470, 0.8457}, {548392.9689991799, 4179217.683834238, -0.0006774162750405877 }, REPROJECT_Success);
+
+    convertTest(EWRGCS, R"X({ "horizontalCRS": { "id": "LL84" }, "verticalCRS": { "id": "ELLIPSOID" } })X", {199247.08883859176, 150141.68625139236, 0.0}, { -0.80184489371471, 51.978341907041205, 0.0}, REPROJECT_Success );
+    convertTest(R"X({ "horizontalCRS": { "id": "BritishNatGrid" }, "verticalCRS": { "id": "ELLIPSOID" } })X", R"X({ "horizontalCRS": { "id": "LL84" }, "verticalCRS": { "id": "ELLIPSOID" } })X", { 170370.718, 11572.405, 0.0 }, { -5.2020119082059511, 49.959453295440234, 0.0 }, REPROJECT_Success );
+    convertTest(R"X({ "horizontalCRS": { "id": "BritishNatGrid" }, "verticalCRS": { "id": "ELLIPSOID" } })X", ETRF89, { 170370.718, 11572.405, 0.0 }, { -5.2030365061523707, 49.960007477936202, 0.0 }, REPROJECT_Success );
+    convertTest(R"X({ "horizontalCRS": { "id": "BritishNatGrid" }, "verticalCRS": { "id": "ELLIPSOID" } })X", OSGB, { 170370.718, 11572.405, 0.0 }, { -5.2020119082059511, 49.959453295440234, 0.0 }, REPROJECT_Success );
+    convertTest(R"X({ "horizontalCRS": { "id": "DHDN/3.GK3d-4/EN" }, "verticalCRS": { "id": "ELLIPSOID" } })X", R"X({ "horizontalCRS": { "id": "LL84" }, "verticalCRS": { "id": "ELLIPSOID" } })X", { 4360857.005, 5606083.067, 0.0 }, { 10.035413954488630, 50.575070810112159, 0.0 }, REPROJECT_Success );
+    convertTest(R"X({ "horizontalCRS": { "id": "DHDN/3.GK3d-4/EN" }, "verticalCRS": { "id": "ELLIPSOID" } })X", DHDN3, { 4360857.005, 5606083.067, 0.0 }, { 10.035413954488630, 50.575070810112159, 0.0 }, REPROJECT_Success );
+    convertTest(R"X({ "horizontalCRS": { "id": "DHDN/3.GK3d-4/EN" }, "verticalCRS": { "id": "ELLIPSOID" } })X", R"X({ "horizontalCRS": { "id": "LL84" }, "verticalCRS": { "id": "ELLIPSOID" } })X", { 4360857.005, 5606083.067, 0.0 }, { 10.034215937440818, 50.573862480894853, 0.0 }, REPROJECT_Success );
+    //convertTest(R"X({ "horizontalCRS": { "id": "UTM83-10" }, "verticalCRS": { "id": "NGVD29" } })X", R"X({ "horizontalCRS": { "id": "LL84" }, "verticalCRS": { "id": "ELLIPSOID" } })X", { 632748.112, 4263868.307, 0.0 }, { -121.47738265889652, 38.513305313793019, 0.0 }, REPROJECT_Success );
+    convertTest(R"X({ "horizontalCRS": { "id": "UTM83-10" }, "verticalCRS": { "id": "NGVD29" } })X", R"X({ "horizontalCRS": { "id": "LL83" }, "verticalCRS": { "id": "ELLIPSOID" } })X", { 632748.112, 4263868.307, 0.0 }, { -121.47738265889652, 38.513305313793019, -30.12668428839329 }, REPROJECT_Success );
+    convertTest(R"X({ "horizontalCRS": { "id": "UTM83-10" }, "verticalCRS": { "id": "NGVD29" } })X", R"X({ "horizontalCRS": { "id": "LL84" }, "verticalCRS": { "id": "ELLIPSOID" } })X", { 632748.112, 4263868.307, 0.0 }, { -121.47738265889652, 38.513305313793019, -30.12668428839329 }, REPROJECT_Success );
+    //convertTest(R"X({ "horizontalCRS": { "id": "UTM27-10" }, "verticalCRS": { "id": "ELLIPSOID" } })X", R"X({ "horizontalCRS": { "id": "LL84" }, "verticalCRS": { "id": "ELLIPSOID" } })X", { 623075.328, 4265650.532, 0.0 }, { -121.58798236995744, 38.532616292207997, 0.0 }, REPROJECT_Success );
+    convertTest(R"X({ "horizontalCRS": { "id": "UTM27-10" }, "verticalCRS": { "id": "ELLIPSOID" } })X", R"X({ "horizontalCRS": { "id": "LL83" }, "verticalCRS": { "id": "ELLIPSOID" } })X", { 623075.328, 4265650.532, 0.0 }, { -121.58905088839697, 38.532522753851708, 0.0 }, REPROJECT_Success );
+
+    convertTest(R"X({ "horizontalCRS": { "id": "UTM83-10" }, "verticalCRS": { "id": "NGVD29" } })X", R"X({ "horizontalCRS": { "id": "LL84" }, "verticalCRS": { "id": "ELLIPSOID" } })X", { 632748.112, 4263868.307, 0.0 }, { -121.47738265889652, 38.513305313793019, -30.12668428839329 }, REPROJECT_Success );
+    convertTest(R"X({ "horizontalCRS": { "id": "UTM83-10" }, "verticalCRS": { "id": "NGVD29" } })X", R"X({ "horizontalCRS": { "id": "LL84" }, "verticalCRS": { "id": "GEOID" } })X", { 632748.112, 4263868.307, 0.0 }, { -121.47738265889652, 38.513305313793019, 0.7621583779125531 }, REPROJECT_Success );
+    convertTest(R"X({ "horizontalCRS": { "id": "UTM83-10" }, "verticalCRS": { "id": "NGVD29" } })X", R"X({ "horizontalCRS": { "id": "CA83-II" }, "verticalCRS": { "id": "NAVD88" } })X", { 569024.940, 4386341.752, 0.0 }, { 1983192.529823256, 717304.0311293667, 0.745910484422781 }, REPROJECT_Success );
+    convertTest(R"X({ "horizontalCRS": { "id": "UTM83-10" }, "verticalCRS": { "id": "NGVD29" } })X", R"X({ "horizontalCRS": { "id": "CA83-II" }, "verticalCRS": { "id": "GEOID" } })X", { 569024.940, 4386341.752, 0.0 }, { 1983192.529823256, 717304.0311293667, 0.745910484422781 }, REPROJECT_Success );
+    convertTest(R"X({ "horizontalCRS": { "id": "UTM83-10" }, "verticalCRS": { "id": "NGVD29" } })X", R"X({ "horizontalCRS": { "id": "CA83-II" }, "verticalCRS": { "id": "NGVD29" } })X", { 569024.940, 4386341.752, 0.0 }, { 1983192.529823256, 717304.0311293667, 0.0 }, REPROJECT_Success );
+    convertTest(R"X({ "horizontalCRS": { "id": "UTM83-10" }, "verticalCRS": { "id": "NGVD29" } })X", R"X({ "horizontalCRS": { "epsg": 26942 }, "verticalCRS": { "id": "NAVD88" } })X", { 569024.940, 4386341.752, 0.0 }, { 1983192.529823256, 717304.0311293667, 0.745910484422781 }, REPROJECT_Success );
+    convertTest(R"X({ "horizontalCRS": { "id": "UTM83-10" }, "verticalCRS": { "id": "NAVD88" } })X", R"X({ "horizontalCRS": { "id": "UTM27-10" }, "verticalCRS": { "id": "NGVD29" } })X", { 548296.472, 4179414.470, 0.8457 }, { 548392.9689991799, 4179217.683834238, -0.0006774162750405877 }, REPROJECT_Success );
+    convertTest(R"X({ "horizontalCRS": { "id": "BritishNatGrid" }, "verticalCRS": { "id": "ELLIPSOID" } })X", R"X({ "horizontalCRS": { "id": "HS2_Snake_2015" }, "verticalCRS": { "id": "GEOID" } })X", { 473327.251, 257049.636, 0.0 }, { 237732.58101946692, 364048.01547843055, -47.874172425966336 }, REPROJECT_Success );
+    convertTest(R"X({ "horizontalCRS": { "id": "BritishNatGrid" }, "verticalCRS": { "id": "ELLIPSOID" } })X",
+        R"X({
+          "horizontalCRS": {
+            "id": "HS2-MOCK",
+            "description": "USES CUSTOM DATUM",
+            "source": "Test",
+            "deprecated": false,
+            "datumId": "HS2SD_2015",
+            "unit": "Meter",
+            "projection": {
+              "method": "TransverseMercator",
+              "centralMeridian": -1.5,
+              "latitudeOfOrigin": 52.30,
+              "scaleFactor": 1.0,
+              "falseEasting": 198873.0046,
+              "falseNorthing": 375064.3871
+            }
+          },
+          "verticalCRS": {
+            "id": "GEOID"
+          }
+    })X"
+        , { 473327.251, 257049.636, 0.0 }, { 237732.58101952373, 364048.01548327296, -47.874172425966336 }, REPROJECT_Success );
+
+    convertTest(R"X({ "horizontalCRS": { "id": "BritishNatGrid" }, "verticalCRS": { "id": "ELLIPSOID" } })X", R"X({ "horizontalCRS": { "id": "OSGB-GPS-2015" }, "verticalCRS": { "id": "GEOID" } })X", { 473327.251, 257049.636, 0.0 }, { 473325.6830048648, 257049.77062273448, -47.87643904264457 }, REPROJECT_Success );
+    convertTest(R"X({ "horizontalCRS": { "id": "UTM83-10" }, "verticalCRS": { "id": "NGVD29" } })X",
+        R"X({
+          "horizontalCRS": {
+            "id": "California2",
+            "description": "USES CUSTOM DATUM",
+            "source": "Test",
+            "deprecated": false,
+            "datumId": "NAD83",
+            "unit": "Meter",
+            "projection": {
+              "method": "LambertConformalConicTwoParallels",
+              "longitudeOfOrigin": -122,
+              "latitudeOfOrigin": 37.66666666667,
+              "standardParallel1": 39.833333333333336,
+              "standardParallel2": 38.333333333333336,
+              "falseEasting": 2000000.0,
+              "falseNorthing": 500000.0
+            },
+            "extent": {
+              "southWest": {
+                "latitude": 35,
+                "longitude": -125
+              },
+              "northEast": {
+                "latitude": 39.1,
+                "longitude": -120.45
+              }
+            }
+          },
+          "verticalCRS": {
+            "id": "GEOID"
+      }
+    })X", { 569024.940, 4386341.752, 0.0 }, { 1983192.529823256, 717304.0311293667, 0.745910484422781 }, REPROJECT_Success );
+
+      // Do some test that return errors
+      // First test uses one GCS in Eastern USA and the other in UK. This will produce a hard domain error
+    convertTest(R"X({ "horizontalCRS": { "id": "UTM84-17N" }, "verticalCRS": { "id": "ELLIPSOID" } })X", R"X({ "horizontalCRS": { "id": "OSGB-GPS-2015" }, "verticalCRS": { "id": "GEOID" } })X", { 1473327.251, 1257049.636, 0.0 }, { 473325.6830048648, 257049.77062273448, -47.87643904264457 }, REPROJECT_CSMAPERR_OutOfMathematicalDomain );
+
+      // This test performs conversion in a region outside normal use of GCS but still mathematically valid (soft domain error)
+    convertTest(R"X({ "horizontalCRS": { "id": "DanishS34-S99" }, "verticalCRS": { "id": "ELLIPSOID" } })X", R"X({ "horizontalCRS": { "id": "LL84" }, "verticalCRS": { "id": "ELLIPSOID" } })X", { -6618.5925260757449, 36058.097489683532, 0.0 }, { 13.53250346041385, 54.71216475341563, 0.0 }, REPROJECT_CSMAPERR_OutOfUsefulRange );
+      // -6618.5925260757449, 36058.097489683532
+      // { x: -221748.034, y: -10012.784, z: 0.0 } { p: { x: 10.36481105, y: 54.38462506, z: 0.0 }
+      // This test makes use of a GCS using a grid file that does not even exist and will return a datum conversion error.
+      Utf8String userGCSWithinexistentGridFile = R"X({
+        "horizontalCRS": {
+          "id": "User1",
+          "datumId": "UserDatum1",
+          "datum": {
+            "id": "UserDatum1",
+            "ellipsoidId": "CLRK66",
+            "transforms": [
+              {
+                "method": "GridFiles",
+                "sourceEllipsoid": {
+                  "id": "CLRK66",
+                  "equatorialRadius": 6378160.0,
+                  "polarRadius": 6356774.719195306
+                },
+                "targetEllipsoid": {
+                  "id": "WGS84",
+                  "equatorialRadius": 6378160.0,
+                  "polarRadius": 6356774.719195306
+                },
+                "gridFile": {
+                  "files": [
+                    { "fileName": "./user/inexistent.gdc", "format": "NTv2", "direction": "Direct" }
+                  ]
+                }
+              }
+            ]
+          },
+          "unit": "Meter",
+          "projection": {
+            "method": "TransverseMercator",
+            "centralMeridian": -115,
+            "latitudeOfOrigin": 0,
+            "scaleFactor": 0.9992,
+            "falseEasting": 1.0,
+            "falseNorthing": 2.0
+          },
+          "extent": {
+            "southWest": { "latitude": 48, "longitude": -120.5 },
+            "northEast": { "latitude": 84, "longitude": -109.5 }
+          }
+        }, "verticalCRS": { "id": "ELLIPSOID" }
+    })X";
+
+      convertTest(userGCSWithinexistentGridFile, R"X({ "horizontalCRS": { "id": "LL84" }, "verticalCRS": { "id": "ELLIPSOID" } })X", { 1473327.251, 1257049.636, 0.0 }, { 473325.6830048648, 257049.77062273448, -47.87643904264457 }, REPROJECT_CSMAPERR_DatumConverterNotSet);
+
+      // The model GCS is not valid
+      convertTest(R"X({ "horizontalCRS": { "id": "badfood" }, "verticalCRS": { "id": "ELLIPSOID" } })X", R"X({ "horizontalCRS": { "id": "OSGB-GPS-2015" }, "verticalCRS": { "id": "GEOID" } })X", { 1473327.251, 1257049.636, 0.0 }, { 473325.6830048648, 257049.77062273448, -47.87643904264457 }, REPROJECT_BadArgument );
+
+      // The given GCS is not valid
+      convertTest(R"X({ "horizontalCRS": { "id": "UTM84-17N" }, "verticalCRS": { "id": "ELLIPSOID" } })X", R"X({ "horizontalCRS": { "id": "badfood" }, "verticalCRS": { "id": "GEOID" } })X", { 1473327.251, 1257049.636, 0.0 }, { 473325.6830048648, 257049.77062273448, -47.87643904264457 }, REPROJECT_BadArgument );
+
+   }

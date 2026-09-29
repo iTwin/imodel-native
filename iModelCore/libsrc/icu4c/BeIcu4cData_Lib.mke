@@ -4,6 +4,7 @@
 #---------------------------------------------------------------------------------------------
 
 IS_THIRD_PARTY_LIBRARY = 1
+BUILD_WITH_C20=1
 %include mdl.mki
 
 %include BeIcu4cCommon.mki

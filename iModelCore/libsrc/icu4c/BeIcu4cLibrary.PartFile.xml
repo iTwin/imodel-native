@@ -21,7 +21,7 @@
 
     <Part Name="__StaticDataFiles" BentleyBuildMakeFile="StaticDataFiles.mke" ExcludeLibType="Dynamic">
         <Bindings> 
-            <Files ProductDirectoryName="Assets">Delivery/icudt73l.dat</Files>
+            <Files ProductDirectoryName="Assets">Delivery/icudt78l.dat</Files>
         </Bindings>
     </Part>
 

@@ -28,6 +28,7 @@
 #include "sqlite3.h"
 
 #include <assert.h>
+#include <stdint.h>
 #include <string.h>
 #include <openssl/evp.h>
 
@@ -507,9 +508,9 @@ static void bcvRijndaelEncrypt128(const u32 *rk, const u8 pt[16], u8 ct[16]) {
 */
 static void bcvXorBuffers(u8 *out, u8 *a, u8 *b, int nByte){
   if( sizeof(a)==8
-   && (out - (u8*)0)%8==0 
-   && (a - (u8*)0)%8==0
-   && (b - (u8*)0)%8==0
+   && ((uintptr_t)out)%8==0 
+   && ((uintptr_t)a)%8==0
+   && ((uintptr_t)b)%8==0
   ){
     sqlite3_uint64 *x = (sqlite3_uint64*)out;
     sqlite3_uint64 *y = (sqlite3_uint64*)a;
@@ -522,8 +523,8 @@ static void bcvXorBuffers(u8 *out, u8 *a, u8 *b, int nByte){
     a = (u8*)y;
     b = (u8*)z;
   }
-  if( (a - (unsigned char*)0)%4==0
-   && (b - (unsigned char*)0)%4==0
+  if( ((uintptr_t)a)%4==0
+   && ((uintptr_t)b)%4==0
   ){
     u32 *x = (u32*)out;
     u32 *y = (u32*)a;
@@ -578,7 +579,7 @@ int bcvEncrypt(
   unsigned char *aData, int nData /* Buffer to encrypt */
 ){
   assert( (nData % 16)==0 );
-  assert( ((aNonce - (u8*)0) % 4)==0 );
+  assert( ((uintptr_t)aNonce % 4)==0 );
 
   int outlen = 0;
 

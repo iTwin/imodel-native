@@ -104,10 +104,7 @@ private:
             {
             return task.GetDependencies().Has(TaskDependencyOnConnection(connection.GetId()));
             };
-        TasksCancelationResult cancelation =
-            (CANCEL == action) ? m_tasksManager.Cancel(tasksPredicate) :
-            (RESTART == action) ? m_tasksManager.Restart(tasksPredicate) :
-            TasksCancelationResult(bset<IECPresentationTaskCPtr>());
+        TasksCancelationResult cancelation = m_tasksManager.Cancel(tasksPredicate, RESTART == action);
         auto blocker = m_tasksManager.Block([connectionId = connection.GetId(), tasks = cancelation.GetTasks()](IECPresentationTaskCR task)
             {
             return task.GetDependencies().Has(TaskDependencyOnConnection(connectionId));

@@ -449,7 +449,6 @@ void DefaultECPresentationSerializer::_AsJson(ContextR ctx, FieldEditorSliderPar
     paramsBaseJson.AddMember("Minimum", sliderParams.GetParameters().GetMinimumValue(), paramsBaseJson.GetAllocator());
     paramsBaseJson.AddMember("Maximum", sliderParams.GetParameters().GetMaximumValue(), paramsBaseJson.GetAllocator());
     paramsBaseJson.AddMember("IntervalsCount", sliderParams.GetParameters().GetIntervalsCount(), paramsBaseJson.GetAllocator());
-    paramsBaseJson.AddMember("ValueFactor", sliderParams.GetParameters().GetValueFactor(), paramsBaseJson.GetAllocator());
     paramsBaseJson.AddMember("IsVertical", sliderParams.GetParameters().IsVertical(), paramsBaseJson.GetAllocator());
     }
 
@@ -1219,6 +1218,8 @@ rapidjson::Value DefaultECPresentationSerializer::_AsJson(ContextR ctx, RelatedC
         json.AddMember("IsTargetPolymorphic", relatedClass.GetTargetClass().IsSelectPolymorphic(), allocator);
     if (relatedClass.IsTargetOptional())
         json.AddMember("IsTargetOptional", relatedClass.IsTargetOptional(), allocator);
+    if (!relatedClass.GetTargetInstanceFilter().empty())
+        json.AddMember("TargetInstanceFilter", rapidjson::Value(relatedClass.GetTargetInstanceFilter().c_str(), allocator), allocator);
 
     json.AddMember("RelationshipInfo", _AsJson(ctx, relatedClass.GetRelationship().GetClass(), &allocator), allocator);
     if (!relatedClass.GetRelationship().GetAlias().empty())

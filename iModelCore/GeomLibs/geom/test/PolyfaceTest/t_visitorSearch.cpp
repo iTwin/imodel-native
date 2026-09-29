@@ -682,7 +682,6 @@ TEST(PolyfaceVisitor,TryParamToDetail)
 
     auto visitor = PolyfaceVisitor::Attach (*polyfaceA);
     size_t numHit = 0;
-    size_t numBracket = 0;
     FacetLocationDetailPair horizontalBracket, verticalBracket;
     for (visitor->Reset (); visitor->AdvanceToNextFace ();)
         {
@@ -699,7 +698,6 @@ TEST(PolyfaceVisitor,TryParamToDetail)
         DPoint2d uvBracket = DPoint2d::From (1.3, 2.4);
         if (visitor->TryParamToScanBrackets (uvBracket, &horizontalBracket, &verticalBracket))
             {
-            numBracket++;
             Check::SaveTransformed (DSegment3d::From (
                         horizontalBracket.detailA.point, horizontalBracket.detailB.point));
             Check::SaveTransformed (DSegment3d::From (

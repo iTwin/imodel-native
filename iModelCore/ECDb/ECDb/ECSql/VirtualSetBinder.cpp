@@ -12,7 +12,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod
 //---------------------------------------------------------------------------------------
 VirtualSetBinder::VirtualSetBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, SqlParamNameGenerator& paramNameGen)
-    : ECSqlBinder(ctx, typeInfo, paramNameGen, 1, false, false)
+    : ECSqlBinder(ctx, typeInfo, paramNameGen, 1, false, false), m_binderInfo(BinderInfo::BinderType::VirtualSet)
     {}
 
 //---------------------------------------------------------------------------------------
@@ -154,6 +154,14 @@ IECSqlBinder& VirtualSetBinder::_AddArrayElement()
     {
     LOG.error("Type mismatch. Cannot bind ECStruct to IdSet parameter.");
     return NoopECSqlBinder::Get();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BinderInfo const& VirtualSetBinder::_GetBinderInfo()
+    {
+    return m_binderInfo;
     }
 
 // --------------------------------------------------------------------------------------

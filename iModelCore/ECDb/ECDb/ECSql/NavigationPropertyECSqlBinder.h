@@ -18,6 +18,7 @@ struct NavigationPropertyECSqlBinder final : public ECSqlBinder
     private:
         std::unique_ptr<IdECSqlBinder> m_idBinder = nullptr;
         std::unique_ptr<IdECSqlBinder> m_relECClassIdBinder = nullptr;
+        BinderInfo m_binderInfo;
 
         NavigationPropertyECSqlBinder(ECSqlPrepareContext&, ECSqlTypeInfo const&, SqlParamNameGenerator&);
         BentleyStatus Initialize(ECSqlPrepareContext&, SqlParamNameGenerator&);
@@ -40,6 +41,8 @@ struct NavigationPropertyECSqlBinder final : public ECSqlBinder
         IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) override;
 
         IECSqlBinder& _AddArrayElement() override;
+
+        BinderInfo const& _GetBinderInfo() override;
 
     public:
         ~NavigationPropertyECSqlBinder() {}

@@ -3,13 +3,13 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include <map>
+#include <memory>
+#include <optional>
 #include <Geom\GeomApi.h>
 #include <Bentley\BeFileName.h>
 #include <Bentley\BeFile.h>
 #include <GeomSerialization\GeomSerializationApi.h>
 #include <Bentley\BeDirectoryIterator.h>
-#include <json/writer.h>
-#include "compareJson.h"
 #include "compareGeometry.h"
 
 static const char * s_messagePrefix = "comparedgnjs";
@@ -17,17 +17,18 @@ static double compareTol = 1.0e-12;
 static int s_echoErrorGeometry = 0;
 void messagePrefix (const char* content = nullptr)
     {
-    printf ("comparedgnjs: ");
-	if (content)
-		printf(content);
+    printf_s("%s: ", s_messagePrefix);
+	  if (content)
+        printf_s("%s", content);
     }
 struct JsonData {
 Utf8String m_filename;
 bvector<IGeometryPtr> m_geometry;
-Json::Value m_value;
+// Held by shared_ptr because BeJsDocument is move-only but JsonData is copied by value (bvector<JsonData> is passed by value).
+std::shared_ptr<BeJsDocument> m_value;
 
 JsonData (Utf8String filename)
-    : m_filename (filename)
+    : m_filename (filename), m_value (std::make_shared<BeJsDocument> ())
     {
     }
 bool Load(bool &canUseGeometry, int &type, int verbose = 0)
@@ -38,30 +39,30 @@ bool Load(bool &canUseGeometry, int &type, int verbose = 0)
 	// file.Create(path.c_str(), false);
 	if (!(BeFileName::DoesPathExist(path.c_str())))
 	{
-		messagePrefix(); printf("file not found (%ls)\n", path.c_str());
+		messagePrefix(); printf_s("file not found (%ls)\n", path.c_str());
 		return false;
 	}
 
 	ByteStream entireFile;
 	if (BeFileStatus::Success != file.Open(path.c_str(), BeFileAccess::Read))
 	{
-		messagePrefix(); printf("file.Open failed (%ls)\n", path.c_str());
+		messagePrefix(); printf_s("file.Open failed (%ls)\n", path.c_str());
 		return false;
 	}
 
 	if (BeFileStatus::Success != file.ReadEntireFile(entireFile))
 	{
-		messagePrefix(); printf("file.ReadEntireFile failed (%ls)\n", path.c_str());
+		messagePrefix(); printf_s("file.ReadEntireFile failed (%ls)\n", path.c_str());
 		return false;
 	}
 	Utf8String str((Utf8P)entireFile.GetDataP());
 	if (verbose > 9)
 	{
-		messagePrefix(); printf("file %s\n%s", m_filename.c_str(), str.c_str());
+		messagePrefix(); printf_s("file %s\n%s", m_filename.c_str(), str.c_str());
 	}
-	Json::Reader::Parse(str, m_value, false);
+	m_value->Parse(str);
 	if (type == 1)
-		if (!BentleyGeometryJson::TryJsonValueToGeometry(m_value, m_geometry))
+		if (!BentleyGeometryJson::TryJsonValueToGeometry(*m_value, m_geometry))
 		{
 			type = 2;
 			canUseGeometry = false;
@@ -88,22 +89,24 @@ struct map_cmp {
 // Type-specific compare methods and handler prototypes
 bool compareItems(const double a, const double b);
 bool compareItems(const Utf8String, const Utf8String);
-bool compareHandler(Json::Value const &a, Json::Value const &b, struct TypeCounts &typeCounts, std::map<Utf8String, int, map_cmp> &propertyCounts, bvector<Utf8String> &errorTracker, int &dif);
-bool compareObjects(Json::Value const &a, Json::Value const &b, struct TypeCounts &typeCounts, std::map<Utf8String, int, map_cmp> &propertyCounts, bvector<Utf8String> &errorTracker, int &dif);
-bool compareArrays(Json::Value const &a, Json::Value const &b, struct TypeCounts &typeCounts, std::map<Utf8String, int, map_cmp> &propertyCounts, bvector<Utf8String> &errorTracker, int &dif);
+bool compareHandler(BeJsConst a, BeJsConst b, struct TypeCounts &typeCounts, std::map<Utf8String, int, map_cmp> &propertyCounts, bvector<Utf8String> &errorTracker, int &dif);
+bool compareObjects(BeJsConst a, BeJsConst b, struct TypeCounts &typeCounts, std::map<Utf8String, int, map_cmp> &propertyCounts, bvector<Utf8String> &errorTracker, int &dif);
+bool compareArrays(BeJsConst a, BeJsConst b, struct TypeCounts &typeCounts, std::map<Utf8String, int, map_cmp> &propertyCounts, bvector<Utf8String> &errorTracker, int &dif);
 
-bool findProperty(Json::Value const &source, CharCP targetName, Json::Value &value)
+// Case insensitive property lookup. Returns the value if found (which may itself be null), or nullopt.
+std::optional<BeJsConst> findProperty(BeJsConst source, CharCP targetName)
 {
-	for (Json::Value::iterator iter = source.begin(); iter != source.end(); iter++)
+	std::optional<BeJsConst> found;
+	source.ForEachProperty([&](Utf8CP childName, BeJsConst child)
 	{
-		Utf8CP childName = iter.memberName();
 		if (0 == BeStringUtilities::Stricmp(targetName, childName))
 		{
-			value = *iter;
-			return true;
+			found.emplace(child);
+			return true;	// stop
 		}
-	}
-	return false;
+		return false;
+	});
+	return found;
 }
 
 //
@@ -170,7 +173,7 @@ bvector<JsonData> &data
                 }
             else
                 {
-                messagePrefix (); printf ("Unrecognized arg (%s)\n", argv[i]);
+                messagePrefix (); printf_s ("Unrecognized arg (%s)\n", argv[i]);
                 errors++;
                 }
             }
@@ -182,10 +185,10 @@ bvector<JsonData> &data
 
     if (verbose == 2 || errors > 0)
         {
-        messagePrefix (); printf ("The command line has %d filenames.\n", (int)data.size ());
+        messagePrefix (); printf_s ("The command line has %d filenames.\n", (int)data.size ());
         for (size_t i = 0; i < data.size (); i++)
             {
-            messagePrefix (); printf("  input file %d: (%s)\n", (int)i, data[i].m_filename.c_str ());
+            messagePrefix (); printf_s("  input file %d: (%s)\n", (int)i, data[i].m_filename.c_str ());
             }
         }
     return errors == 0;
@@ -200,11 +203,11 @@ bool compareGeometry(bvector<JsonData> allData, int verbose)
 	size_t n1 = allData[1].m_geometry.size();
 	if (verbose > 1)
 	{
-		messagePrefix(); printf("Top level geometry arrays sizes: (%d) and (%d)\n", (int)n0, (int)n1);
+		messagePrefix(); printf_s("Top level geometry arrays sizes: (%d) and (%d)\n", (int)n0, (int)n1);
 	}
 	if (n0 != n1)
 	{
-		messagePrefix(); printf("     GEOMETRY COMPARE FAIL: Mismatched geometry counts %d != %d\n", (int)n0, (int)n1);
+		messagePrefix(); printf_s("     GEOMETRY COMPARE FAIL: Mismatched geometry counts %d != %d\n", (int)n0, (int)n1);
 		return 1;
 	}
 
@@ -215,7 +218,7 @@ bool compareGeometry(bvector<JsonData> allData, int verbose)
 		    {
 			    if (!allData[k].m_geometry[i].IsValid())
 			    {
-				    messagePrefix(); printf("geometry[%d] in file %d is null\n", (int)i, (int)k);
+				    messagePrefix(); printf_s("geometry[%d] in file %d is null\n", (int)i, (int)k);
 				    numNull++;
 			    }
 		    }
@@ -237,7 +240,7 @@ bool compareGeometry(bvector<JsonData> allData, int verbose)
                 }
             else
                 {
-			    messagePrefix(); printf("     GEOMETRY COMPARE FAIL: Mismatched geometry at index %d\n", (int)i);
+			    messagePrefix(); printf_s("     GEOMETRY COMPARE FAIL: Mismatched geometry at index %d\n", (int)i);
                 if (s_echoErrorGeometry)
                     {
                     Utf8String s0, s1;
@@ -255,70 +258,80 @@ bool compareGeometry(bvector<JsonData> allData, int verbose)
     if (stats.numMatchedMoments > 0)
         {
         messagePrefix ();
-        printf ("     GEOMETRY COMPARE WARNING: %d geoemtry objects have some difference but matched moments\n",
+        printf_s ("     GEOMETRY COMPARE WARNING: %d geoemtry objects have some difference but matched moments\n",
                 (int)stats.numMatchedMoments);
         }
     if (stats.numMatchingFirstTranslate > 0)
         {
         auto vector = stats.firstTranslate.Value ();
-        messagePrefix (); printf ("     GEOMETRY COMPARE SUCCESS: Files are equal except for translation (%g,%g,%g)\n",
+        messagePrefix (); printf_s ("     GEOMETRY COMPARE SUCCESS: Files are equal except for translation (%g,%g,%g)\n",
                 vector.x, vector.y, vector.z
                 );
         }
     else
         {
-    	messagePrefix(); printf("     GEOMETRY COMPARE SUCCESS: Files are equal!\n");
+    	messagePrefix(); printf_s("     GEOMETRY COMPARE SUCCESS: Files are equal!\n");
         }
 	return true;
 	}
 // Function that iterates through an ARRAY and appends to errorTracker
-void appendArrayToErrorTracker(Json::Value const &item, bvector<Utf8String> &errorTracker) {
-	int n = item.size();
+void appendArrayToErrorTracker(BeJsConst item, bvector<Utf8String> &errorTracker) {
+	int n = (int) item.size();
 	int counter = 1;
 	Utf8String lastName;
 	for (int i = 0; i < n; i++)
 	{
-		if (item[i].isObject())
+		BeJsConst entry = item[(BeJsConst::ArrayIndex) i];
+		if (entry.isObject())
 		{
 			unsigned int index = 0;
-			for (Json::Value::iterator iter = item[i].begin(); iter != item[i].end(); iter++)
+			unsigned int entrySize = entry.size();
+			bool isFirstProperty = true;
+			entry.ForEachProperty([&](Utf8CP propName, BeJsConst)
 			{
-				Utf8String currName = iter.memberName();
+				Utf8String currName = propName;
+				bool skip = false;
 				if (strcmp(currName.c_str(), lastName.c_str()) == 0)	// Compare to last property name found
 				{
 					counter++;
 
-					if (!(i == n - 1 && index < item[i].size()))	// If very last item of array and inner object, must continue on to printing step
-						continue;
+					if (!(i == n - 1 && index < entrySize))	// If very last item of array and inner object, must continue on to printing step
+						skip = true;
 				}
 
-				// Add property
-				if (counter > 1)	// Print with number value
+				if (!skip)
 				{
-					char toInsert[100];
-					snprintf(toInsert, sizeof(toInsert), "%s(x%d)", lastName.c_str(), counter);
-					errorTracker.insert(errorTracker.begin(), toInsert);
+					// Add property
+					if (counter > 1)	// Print with number value
+					{
+						char toInsert[100];
+						snprintf(toInsert, sizeof(toInsert), "%s(x%d)", lastName.c_str(), counter);
+						errorTracker.insert(errorTracker.begin(), toInsert);
+					}
+					else
+					{
+						if (!(i == 0 && isFirstProperty))	// If lastName has not yet been set, force insertion
+							errorTracker.insert(errorTracker.begin(), lastName);
+						if (i == n - 1 && index == entrySize)	// If very last item for entire array, force insertion
+							errorTracker.insert(errorTracker.begin(), currName);
+					}
+					counter = 1;
+					index++;
+					lastName = propName;
 				}
-				else
-				{
-					if (!(i == 0 && iter == item[i].begin()))	// If lastName has not yet been set, force insertion
-						errorTracker.insert(errorTracker.begin(), lastName);
-					if (i == n - 1 && index == item[i].size())	// If very last item for entire array, force insertion
-						errorTracker.insert(errorTracker.begin(), currName);
-				}
-				counter = 1;
-				index++;
-				lastName = iter.memberName();
-			}
+				isFirstProperty = false;
+				return false;
+			});
 		}
 	}
 }
 // Function that iterates through an OBJECT and appends to errorTracker
-void appendPropertiesToErrorTracker(Json::Value const &item, bvector<Utf8String> &errorTracker) {
-	for (Json::Value::iterator iter = item.begin(); iter != item.end(); iter++)
+void appendPropertiesToErrorTracker(BeJsConst item, bvector<Utf8String> &errorTracker) {
+	item.ForEachProperty([&](Utf8CP propName, BeJsConst)
 	{
-		errorTracker.insert(errorTracker.begin(), iter.memberName());
-	}
+		errorTracker.insert(errorTracker.begin(), propName);
+		return false;
+	});
 }
 bool compareItems(double a, double b, int &dif)
 {
@@ -339,7 +352,7 @@ bool compareItems(double a, double b, int &dif)
 		}
 		else
 		{
-			messagePrefix(); printf("     JSON COMPARE FAIL: Mismatched number values [%.12f and %.12f]\n", a, b);
+			messagePrefix(); printf_s("     JSON COMPARE FAIL: Mismatched number values [%.12f and %.12f]\n", a, b);
 			return false;
 		}
 	}
@@ -356,7 +369,7 @@ bool compareItems(const char* a, const char* b)		// Does not take into account c
 		return false;
 	}
 }
-bool compareArrays(Json::Value const &a, Json::Value const &b, struct TypeCounts &typeCounts, std::map<Utf8String, int, map_cmp> &propertyCounts, bvector<Utf8String> &errorTracker, int &dif)
+bool compareArrays(BeJsConst a, BeJsConst b, struct TypeCounts &typeCounts, std::map<Utf8String, int, map_cmp> &propertyCounts, bvector<Utf8String> &errorTracker, int &dif)
 	{
 	if (a.size() != b.size())	// If not equal... must trace down to the root of the problem in order to provide some form of tracking
 	{
@@ -369,16 +382,16 @@ bool compareArrays(Json::Value const &a, Json::Value const &b, struct TypeCounts
 		appendArrayToErrorTracker(a, errorTracker);
 		errorTracker.insert(errorTracker.begin(), "[");
 
-		messagePrefix(); printf("     JSON COMPARE FAIL: Mismatched array lengths file 1: [%u] file 2: [%u]\n", a.size(), b.size());
+		messagePrefix(); printf_s("     JSON COMPARE FAIL: Mismatched array lengths file 1: [%u] file 2: [%u]\n", a.size(), b.size());
 		return false;
 	}
 
 	// Keep track of result for each element of array
 	bool toReturn = true;
-	int n = a.size();
+	int n = (int) a.size();
 	for (int i = 0; i < n; i++)
 	{
-		toReturn = toReturn && compareHandler(a[i], b[i], typeCounts, propertyCounts, errorTracker, dif);
+		toReturn = toReturn && compareHandler(a[(BeJsConst::ArrayIndex) i], b[(BeJsConst::ArrayIndex) i], typeCounts, propertyCounts, errorTracker, dif);
 		// If false, break loop and return immediately
 		if (!toReturn)
 		{
@@ -390,7 +403,7 @@ bool compareArrays(Json::Value const &a, Json::Value const &b, struct TypeCounts
 	}
 	return toReturn;
 	}
-bool compareObjects(Json::Value const &a, Json::Value const &b, struct TypeCounts &typeCounts, std::map<Utf8String, int, map_cmp> &propertyCounts, bvector<Utf8String> &errorTracker, int &dif)
+bool compareObjects(BeJsConst a, BeJsConst b, struct TypeCounts &typeCounts, std::map<Utf8String, int, map_cmp> &propertyCounts, bvector<Utf8String> &errorTracker, int &dif)
 	{
 	if (a.size() != b.size())
 	{
@@ -403,23 +416,23 @@ bool compareObjects(Json::Value const &a, Json::Value const &b, struct TypeCount
 		appendPropertiesToErrorTracker(a, errorTracker);
 		errorTracker.insert(errorTracker.begin(), "{");
 
-		messagePrefix(); printf("     JSON COMPARE FAIL: Mismatched property list lengths file 1: [%u] file 2: [%u]\n", a.size(), b.size());
+		messagePrefix(); printf_s("     JSON COMPARE FAIL: Mismatched property list lengths file 1: [%u] file 2: [%u]\n", a.size(), b.size());
 		return false;
 	}
 
 	// Keep track of result for each property in object
 	bool toReturn = true;
-	for (Json::Value::iterator iter = a.begin(); iter != a.end(); iter++)
+	a.ForEachProperty([&](Utf8CP propName, BeJsConst aProp)
 	{
 
 		// Add each property found to the propertyCounts
-		if (propertyCounts.count(iter.memberName()) == 0)
-			propertyCounts[iter.memberName()] = 1;
+		if (propertyCounts.count(propName) == 0)
+			propertyCounts[propName] = 1;
 		else
-			propertyCounts[iter.memberName()]++;
+			propertyCounts[propName]++;
 
-		Json::Value bProp;
-		if (!findProperty(b, iter.memberName(), bProp)) {
+		std::optional<BeJsConst> bProp = findProperty(b, propName);
+		if (!bProp) {
 			// Add object contents to errorTracker
 			errorTracker.insert(errorTracker.begin(), "}");
 			appendPropertiesToErrorTracker(b, errorTracker);
@@ -429,68 +442,78 @@ bool compareObjects(Json::Value const &a, Json::Value const &b, struct TypeCount
 			appendPropertiesToErrorTracker(a, errorTracker);
 			errorTracker.insert(errorTracker.begin(), "{");
 
-			messagePrefix(); printf("     JSON COMPARE FAIL: Property %s of file 1 not in file 2\n", iter.memberName());
-			return false;
+			messagePrefix(); printf_s("     JSON COMPARE FAIL: Property %s of file 1 not in file 2\n", propName);
+			toReturn = false;
+			return true;	// stop
 		}
 
-		toReturn = toReturn && compareHandler(*iter, bProp, typeCounts, propertyCounts, errorTracker, dif);
+		toReturn = toReturn && compareHandler(aProp, *bProp, typeCounts, propertyCounts, errorTracker, dif);
 		// If toReturn becomes false at any point, push the property and break (will cause a chain reaction up the stack)
 		if (!toReturn)
 		{
-			errorTracker.insert(errorTracker.begin(), iter.memberName());
-			return false;
+			errorTracker.insert(errorTracker.begin(), propName);
+			return true;	// stop
 		}
-	}
+		return false;
+	});
 	return toReturn;
 	}
-bool compareHandler(Json::Value const &a, Json::Value const &b, struct TypeCounts &typeCounts, std::map<Utf8String, int, map_cmp> &propertyCounts, bvector<Utf8String> &errorTracker, int &dif)
+// BeJsConst exposes no single type() accessor; classify into the categories this tool distinguishes.
+// NOTE: all JSON numbers are a single kind here, so an integer and a real that are numerically equal
+// are not reported as a type mismatch.
+enum class JsonKind { Null, Bool, Number, String, Array, Object, Other };
+static JsonKind kindOf(BeJsConst v)
 	{
-	if (a.type() != b.type())
+	if (v.isNull())    return JsonKind::Null;
+	if (v.isBool())    return JsonKind::Bool;
+	if (v.isNumeric()) return JsonKind::Number;
+	if (v.isString())  return JsonKind::String;
+	if (v.isArray())   return JsonKind::Array;	// array must be tested before object
+	if (v.isObject())  return JsonKind::Object;
+	return JsonKind::Other;
+	}
+bool compareHandler(BeJsConst a, BeJsConst b, struct TypeCounts &typeCounts, std::map<Utf8String, int, map_cmp> &propertyCounts, bvector<Utf8String> &errorTracker, int &dif)
 	{
-		messagePrefix(); printf("     JSON COMPARE FAIL: Type mismatch (%d != %d)\n", (int) a.type(), (int) b.type());
+	JsonKind aKind = kindOf(a);
+	JsonKind bKind = kindOf(b);
+	if (aKind != bKind)
+	{
+		messagePrefix(); printf_s("     JSON COMPARE FAIL: Type mismatch (%d != %d)\n", (int) aKind, (int) bKind);
 		return false;
 	}
 
 	// handle various cases and increment corresponding counters
-	if (a.isDouble() || a.isInt())
+	switch (aKind)
 	{
-		typeCounts.numbers++;
-		return compareItems(a.asDouble(), b.asDouble(), dif);
-	}
-	else if (a.isArray()) {		// Array and object compare function calls must take the typeCounts propertyCounts, errorTracker, & tol with them...they may call back on the handler
-		typeCounts.arrays++;
-		return compareArrays(a, b, typeCounts, propertyCounts, errorTracker, dif);
-	}
-	else if (a.isObject()) {
-		typeCounts.objects++;
-		return compareObjects(a, b, typeCounts, propertyCounts, errorTracker, dif);
-	}
-	else if (a.isString())
-	{
-		typeCounts.strings++;
-		return compareItems(a.asCString(), b.asCString());
-	}
-	else if (a.isBool())
-	{
-		typeCounts.booleans++;
-		return a.asBool() == b.asBool();
-	}
-	else if (a.isNull())
-	{
-		typeCounts.nulls++;
-		// as long as both are null/undefined, is okay
-		return true;
-	}
-	else
-	{
-		// unsupported type
-		return false;
+		case JsonKind::Number:
+			typeCounts.numbers++;
+			return compareItems(a.asDouble(), b.asDouble(), dif);
+		// Array and object compare function calls must take the typeCounts propertyCounts, errorTracker, & tol with them...they may call back on the handler
+		case JsonKind::Array:
+			typeCounts.arrays++;
+			return compareArrays(a, b, typeCounts, propertyCounts, errorTracker, dif);
+		case JsonKind::Object:
+			typeCounts.objects++;
+			return compareObjects(a, b, typeCounts, propertyCounts, errorTracker, dif);
+		case JsonKind::String:
+			typeCounts.strings++;
+			return compareItems(a.asCString(), b.asCString());
+		case JsonKind::Bool:
+			typeCounts.booleans++;
+			return a.asBool() == b.asBool();
+		case JsonKind::Null:
+			typeCounts.nulls++;
+			// as long as both are null/undefined, is okay
+			return true;
+		default:
+			// unsupported type
+			return false;
 	}
 	}
 bool compareJSON(bvector<JsonData> const &allData, int verbose, int &dif) // initial call for entire json objects
 	{
-	Json::Value a = allData[0].m_value;
-	Json::Value b = allData[1].m_value;
+	BeJsConst a = *allData[0].m_value;
+	BeJsConst b = *allData[1].m_value;
 	struct TypeCounts typeCounts = { 0, 0, 0, 0, 0, 0 };
 	std::map<Utf8String, int, map_cmp> propertyCounts;
 	bvector<Utf8String> errorTracker;
@@ -509,12 +532,12 @@ bool compareJSON(bvector<JsonData> const &allData, int verbose, int &dif) // ini
 					messagePrefix();
 				if (i < vectorSize - 1 && errorTracker[i + 1].c_str()[0] == '[')	// Is an array that failed at a specific index; include index on same line
 				{
-					printf("%s", errorTracker[i].c_str());
+					printf_s("%s", errorTracker[i].c_str());
 					needMessagePrefix = false;
 				}
 				else
 				{
-					printf("%s\n", errorTracker[i].c_str());
+					printf_s("%s\n", errorTracker[i].c_str());
 					needMessagePrefix = true;
 				}
 			}
@@ -522,23 +545,23 @@ bool compareJSON(bvector<JsonData> const &allData, int verbose, int &dif) // ini
 	}
 	else
 	{
-		messagePrefix(); printf("     JSON COMPARE SUCCESS: Files are equal!\n");
+		messagePrefix(); printf_s("     JSON COMPARE SUCCESS: Files are equal!\n");
 	}
 	if (verbose == 3)
 	{
 		// Print out counts of each type
 		messagePrefix("-------------------- Type Counts (up to failure/completion) --------------------\n");
-		messagePrefix(); printf("Numbers: %d\n", typeCounts.numbers);
-		messagePrefix(); printf("Arrays: %d\n", typeCounts.arrays);
-		messagePrefix(); printf("Objects: %d\n", typeCounts.objects);
-		messagePrefix(); printf("Strings: %d\n", typeCounts.strings);
-		messagePrefix(); printf("Booleans: %d\n", typeCounts.booleans);
-		messagePrefix(); printf("Nulls: %d\n", typeCounts.nulls);
+		messagePrefix(); printf_s("Numbers: %d\n", typeCounts.numbers);
+		messagePrefix(); printf_s("Arrays: %d\n", typeCounts.arrays);
+		messagePrefix(); printf_s("Objects: %d\n", typeCounts.objects);
+		messagePrefix(); printf_s("Strings: %d\n", typeCounts.strings);
+		messagePrefix(); printf_s("Booleans: %d\n", typeCounts.booleans);
+		messagePrefix(); printf_s("Nulls: %d\n", typeCounts.nulls);
 		// Print out counts of each property
 		messagePrefix("-------------------- Property Counts (up to failure/completion) --------------------\n");
 		for (auto& x : propertyCounts)
 		{
-			messagePrefix(); printf("%s: %d\n", x.first.c_str(), x.second);
+			messagePrefix(); printf_s("%s: %d\n", x.first.c_str(), x.second);
 		}
 	}
 	return retVal;
@@ -550,12 +573,12 @@ int launchCompare(bvector<JsonData> allData, bool &canUseGeometry, int &type, in
 	{
 		if (!allData[i].Load(canUseGeometry, type, verbose))
 		{
-			messagePrefix(); printf("	Unable to read from (%s)\n", allData[i].m_filename.c_str());
+			messagePrefix(); printf_s("	Unable to read from (%s)\n", allData[i].m_filename.c_str());
 			return 1;
 		}
 		if (userType == 1 && !canUseGeometry)
 		{
-			messagePrefix(); printf("	Unable to parse json into geometry from (%s)\n", allData[i].m_filename.c_str());
+			messagePrefix(); printf_s("	Unable to parse json into geometry from (%s)\n", allData[i].m_filename.c_str());
 			return 1;
 		}
 	}
@@ -594,7 +617,7 @@ int main(int argc, char **argv)
 	bool canUseGeometry = true;
     if (!parseCommandLine (argc, argv, verbose, userType, dif, s_echoErrorGeometry, allData) || allData.size () != 2)
         {
-        messagePrefix (); printf ("exe name:   %s\n", argv[0]);
+        messagePrefix (); printf_s ("exe name:   %s\n", argv[0]);
         messagePrefix ("	Usage:  comparedgnjs [-g || -j] [-vNN] [-nNN] [-tNN] <fileA || directoryA> <fileB || directoryB>\n");
 		messagePrefix("		If given two files, compares them with one of two compare methods...\n");
 		messagePrefix("		If given two directories, compares the contents of the directories individually...\n");
@@ -619,7 +642,7 @@ int main(int argc, char **argv)
 	if (BeFileName::IsDirectory(folderPath1) && BeFileName::IsDirectory(folderPath2))	// Comparing two directories
 		{
 		verbose = 0;	// Ignore verbosity for every file (just print out success or fail, so user may do specific comparison after)
-		messagePrefix(); printf("*** Verbosity has been turned off for directory comparison\n");
+		messagePrefix(); printf_s("*** Verbosity has been turned off for directory comparison\n");
 
 		// grab all files from each directory
 		bvector<WString> files1;
@@ -657,21 +680,21 @@ int main(int argc, char **argv)
 
 		if (onlyFolder1.size() > 0)
 		{
-			messagePrefix(); printf("-------------------- Files in (%s) not in (%s) --------------------\n", allData[0].m_filename.c_str(), allData[1].m_filename.c_str());
+			messagePrefix(); printf_s("-------------------- Files in (%s) not in (%s) --------------------\n", allData[0].m_filename.c_str(), allData[1].m_filename.c_str());
 			for (size_t i = 0; i < onlyFolder1.size(); i++)
 			{
-				messagePrefix(); printf("%s\n", Utf8String(onlyFolder1[i]).c_str());
+				messagePrefix(); printf_s("%s\n", Utf8String(onlyFolder1[i]).c_str());
 			}
-			printf("\n");
+			printf_s("\n");
 		}
 		if (onlyFolder2.size() > 0)
 		{
-			messagePrefix(); printf("-------------------- Files in (%s) not in (%s) --------------------\n", allData[1].m_filename.c_str(), allData[0].m_filename.c_str());
+			messagePrefix(); printf_s("-------------------- Files in (%s) not in (%s) --------------------\n", allData[1].m_filename.c_str(), allData[0].m_filename.c_str());
 			for (size_t i = 0; i < onlyFolder2.size(); i++)
 			{
-				messagePrefix(); printf("%s\n", Utf8String(onlyFolder2[i]).c_str());
+				messagePrefix(); printf_s("%s\n", Utf8String(onlyFolder2[i]).c_str());
 			}
-			printf("\n");
+			printf_s("\n");
 		}
 
 
@@ -689,7 +712,7 @@ int main(int argc, char **argv)
 			// set up vector and pass to comparison functions
 			fileData.push_back(JsonData(Utf8String(filePath1.c_str())));
 			fileData.push_back(JsonData(Utf8String(filePath2.c_str())));
-			messagePrefix(); printf("%ws:\n", files1[i].c_str());
+			messagePrefix(); printf_s("%ws:\n", files1[i].c_str());
 			retVal += launchCompare(fileData, canUseGeometry, type, verbose, userType, dif);
 			}
 
@@ -721,12 +744,12 @@ int main(int argc, char **argv)
 
 		if (!(BeFileName::DoesPathExist(fullPath.c_str())))
 		{
-			messagePrefix(); printf("file not found (%ls)\n", fullPath.c_str());
+			messagePrefix(); printf_s("file not found (%ls)\n", fullPath.c_str());
 			return 1;
 		}
 		else
 		{
-			messagePrefix(); printf("successfully found file at location (%ls)\n", fullPath.c_str());
+			messagePrefix(); printf_s("successfully found file at location (%ls)\n", fullPath.c_str());
 			return 0;
 		}
 		}

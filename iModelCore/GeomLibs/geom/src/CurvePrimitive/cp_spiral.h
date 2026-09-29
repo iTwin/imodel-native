@@ -96,8 +96,7 @@ void UpdateIntegratedCurve(double maxStrokeLength)
     RotMatrix matrix;
     m_placement.frame.GetTranslation (origin);
     m_placement.frame.GetMatrix (matrix);
-    if (SUCCESS == bspcurv_curveFromDSpiral2dBaseInterval (&curve, m_placement.spiral,
-                m_placement.fractionA, m_placement.fractionB, &origin, &matrix, maxStrokeLength))
+    if (SUCCESS == bspcurv_curveFromDSpiral2dBaseInterval (&curve, m_placement.spiral, m_placement.fractionA, m_placement.fractionB, &origin, &matrix, maxStrokeLength))
         {
         ReplaceCurve (curve.CreateCapture ());
         }
@@ -601,8 +600,14 @@ bool extend1
 +--------------------------------------------------------------------------------------*/
 bool _SignedDistanceBetweenFractions (RotMatrixCP worldToLocal, double startFraction, double endFraction, double &signedDistance) const override
     {
-    // NEEDS WORK -- scaled or skewed world to local !!!
-    signedDistance = (endFraction - startFraction) * m_placement.SpiralLengthActiveInterval ();
+    if (!worldToLocal || worldToLocal->IsIdentity())
+        return _SignedDistanceBetweenFractions(startFraction, endFraction, signedDistance);
+    if (!m_curve.IsValid())
+        return false;
+    // TODO: for now, delegate to proxy
+    signedDistance = fabs(m_curve->LengthBetweenFractions(worldToLocal, startFraction, endFraction));
+    if (endFraction < startFraction)
+        signedDistance = -signedDistance;
     return true;
     }
 
@@ -619,6 +624,26 @@ bool _PointAtSignedDistanceFromFraction (double startFraction, double signedLeng
     bool stat = FractionToPoint (fraction, location);
     location.a = (fraction - startFraction) * totalLength;
     return stat;
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+bool _PointAtSignedDistanceFromFraction(RotMatrixCP worldToLocal, double startFraction, double signedLength, bool allowExtension, CurveLocationDetailR location) const override
+    {
+    if (!worldToLocal || worldToLocal->IsIdentity())
+        return _PointAtSignedDistanceFromFraction(startFraction, signedLength, allowExtension, location);
+    if (!m_curve.IsValid())
+        return false;
+    // TODO: for now, delegate to proxy
+    double endFraction = 0.0;
+    double actualDistance = 0.0;
+    if (!m_curve->FractionAtSignedDistance(worldToLocal, startFraction, signedLength, endFraction, actualDistance))
+        return false;
+    location = CurveLocationDetail(this, 1);
+    location.SetSingleComponentFractionAndA(endFraction, actualDistance);
+    m_curve->FractionToPoint(location.point, endFraction);
+    return true;
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -655,10 +680,8 @@ bool _AddStrokes (bvector <PathLocationDetail> &points, IFacetOptionsCR options,
         }
     return true;
     }
-// TODO??
-// _AnnounceKeyPoints?
-// _PointAtSignedDistanceFromFraction (RotMatrix
-//
+// virtual _AnnounceKeyPoints
+
 void  _AppendCurvePlaneIntersections (DPlane3dCR plane, bvector<CurveLocationDetailPair> &intersections, double tolerance) const override
     {
     size_t i0 = intersections.size ();
@@ -683,8 +706,8 @@ size_t _GetStrokeCount (IFacetOptionsCR options, double startFraction, double en
 
 }; // CurvePrimitiveSpiralCurve
 
-
-#ifdef CreatePseudoSpiral_nearDuplicates_in_cp_spiral_h_and_CurvePrimitiveBsplineCurve_cpp
+// Live versions are in CurvePrimitiveBsplineCurve.cpp
+#ifdef CreatePseudoSpiral_nearDuplicates
 // Carry out spiral construction (see main method) with confirmed good curvatures
 ICurvePrimitivePtr CreatePseudoSpiralCurvatureLengthCurvature_go
 (
@@ -922,6 +945,5 @@ double offsetDistance
     return nullptr;
     }
 #endif
-
 
 //END_BENTLEY_GEOMETRY_NAMESPACE

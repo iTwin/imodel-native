@@ -3,7 +3,9 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "testHarness.h"
+#include <Bentley/BeStringUtilities.h>
 #include <Bentley/BeNumerical.h>
+#include <random>
 
 void TestFunc (double a, double b)
     {
@@ -829,21 +831,22 @@ UsageSums m_fractionSums;
 UsageSums m_angleSums;
 #define NUM_BIT_CHECK 5
 uint64_t m_bits[NUM_BIT_CHECK];
-DoubleGenerator (double a = 0.0, double b = 1.0)
-  : m_a (a), m_b (b), m_fractionSums(), m_angleSums ()
-  {
-  m_xmin = SIZE_MAX;
-  m_xmax = 0;
-  for (int i = 0; i < NUM_BIT_CHECK; i++)
-      m_bits[i] = 0;
-  }
+std::random_device m_rd;
+std::uniform_int_distribution<uint64_t> m_distr;
+
+DoubleGenerator(double a = 0.0, double b = 1.0) : m_a(a), m_b(b), m_fractionSums(), m_angleSums(), m_distr(0, 0x7FFF) // same as range of rand(), what we used previously
+    {
+    m_xmin = SIZE_MAX;
+    m_xmax = 0;
+    for (int i = 0; i < NUM_BIT_CHECK; i++)
+        m_bits[i] = 0;
+    }
 
 double Next ()
     {
-    // we know that rand () only gives 15 bit values ....
-    uint64_t u0 = rand ();
-    uint64_t u1 = rand ();
-    uint64_t u2 = rand ();
+    uint64_t u0 = m_distr(m_rd);
+    uint64_t u1 = m_distr(m_rd);
+    uint64_t u2 = m_distr(m_rd);
     u1 = u1 << 15;
     u2 = u2 << 30;
     m_bits[0] |= u0;
@@ -1022,10 +1025,7 @@ double TestTrigRoundTrips (double radians0, size_t n,
     {
     static double s_trigRoundTripTol = 1.0e-16;
     static size_t s_hardTrigTrigger = 20;
-    static size_t s_numCall = 0;
-    static size_t s_numDelta = 0;
     double radians = radians0;
-    s_numCall++;
     for (size_t i = 0; i < n; i++)
         {
         double c = cos (radians);
@@ -1044,7 +1044,6 @@ double TestTrigRoundTrips (double radians0, size_t n,
             }
         }
 
-    s_numDelta++;
     double d = fabs (radians - radians0);
     failureDeltas.Accumulate (d);
     hardTrig.push_back (DPoint3d::From
@@ -1706,7 +1705,6 @@ TEST(Angle,OverlappableIntervalsFixedFractions)
     bvector<double> sweeps  {90, 180, 290, -80, -190};
     bvector<double> starts  {0, 90, 152, -31, 401};
     bvector<double> fractions {0, 0.25, 0.50, 0.75, 1.0};
-    size_t numTest = 0;
     for (double startA : sweeps)
         {
         for (double sweepA : sweeps)
@@ -1769,7 +1767,6 @@ TEST(Angle,OverlappableIntervalsFixedFractions)
                                         1.0);
                             }
                         }
-                    numTest++;
                     }
                 }
             }

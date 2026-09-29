@@ -27,7 +27,7 @@ for (size_t i = 0; i < data.size (); i++)
     Check::True (PathLocationDetail::IsLessThan_ByPathDistance (data[i], data[j]));
 }
 
-void ExerciseSearcher (CurveVectorWithDistanceIndex &searcher, int numTest = 5, bool isInViewPlane = true)
+void ExerciseSearcher (CurveVectorWithDistanceIndex &searcher, int numTest = 5, double refValue = 0.0)
     {
     PathLocationDetail location0 = searcher.AtStart ();
     PathLocationDetail location1 = searcher.AtEnd ();
@@ -41,9 +41,9 @@ void ExerciseSearcher (CurveVectorWithDistanceIndex &searcher, int numTest = 5, 
         double f = i / (double)numTest;
         double targetDistance = DoubleOps::Interpolate (location0.DistanceFromPathStart (), f, location1.DistanceFromPathStart ());
         PathLocationDetail locationA;
-        Check::True (searcher.SearchByDistanceFromPathStart (targetDistance, locationA));
+        Check::True (searcher.SearchByDistanceFromPathStart (targetDistance, locationA), "search by distance succeeded");
         PathLocationDetail locationB = searcher.SearchClosestPointBounded (locationA.Point (), true);
-        Check::Near (targetDistance, locationB.DistanceFromPathStart ());
+        Check::Near (targetDistance, locationB.DistanceFromPathStart (), "search by distance results in point at expected distance");
 
         // If we are clearly away from the end (by more than circleRadius)
         // compute intersection (in respective directions) with circle . .
@@ -53,11 +53,9 @@ void ExerciseSearcher (CurveVectorWithDistanceIndex &searcher, int numTest = 5, 
             if (Check::True (searcher.SearchFirstIntersectionWithCircleXY (locationA, -circleRadius, circleIntersection)))
                 {
                 Check::True (PathLocationDetail::IsLessThan_ByPathDistance (circleIntersection, locationA));
-                Check::Near (circleRadius, searcher.DistanceBetweenPointsXY (circleIntersection.Point (), locationA.Point ()));
+                Check::Near (circleRadius, searcher.DistanceBetweenPointsXY (circleIntersection.Point (), locationA.Point ()), "circleXY intersection toward start", refValue);
                 CurveVectorPtr extract = searcher.CloneBetweenDistances(locationA.DistanceFromPathStart(), circleIntersection.DistanceFromPathStart());
-                if (Check::True (extract.IsValid ()))
-                    {
-                    }
+                Check::True (extract.IsValid());
                 }
             }
         if (locationA.DistanceToPoint (location1) > circleRadius)
@@ -66,14 +64,10 @@ void ExerciseSearcher (CurveVectorWithDistanceIndex &searcher, int numTest = 5, 
             if (Check::True (searcher.SearchFirstIntersectionWithCircleXY (locationA, circleRadius, circleIntersection)))
                 {
                 Check::True (PathLocationDetail::IsLessThan_ByPathDistance (locationA, circleIntersection));
-                Check::Near (circleRadius, searcher.DistanceBetweenPointsXY (circleIntersection.Point (), locationA.Point ()));
-
-                CurveVectorPtr extract = searcher.CloneBetweenDistances(locationA.DistanceFromPathStart (), circleIntersection.DistanceFromPathStart ());
-                if (Check::True(extract.IsValid()))
-                    {
-                    }
+                Check::Near (circleRadius, searcher.DistanceBetweenPointsXY (circleIntersection.Point (), locationA.Point ()), "circleXY intersection toward end", refValue);
+                CurveVectorPtr extract = searcher.CloneBetweenDistances(locationA.DistanceFromPathStart(), circleIntersection.DistanceFromPathStart());
+                Check::True(extract.IsValid());
                 }
-
             }
         }
 
@@ -91,7 +85,6 @@ void ExerciseSearcher (CurveVectorWithDistanceIndex &searcher, int numTest = 5, 
     options->SetMaxEdgeLength (maxEdgeLength);
     bvector<PathLocationDetail> strokes;
     searcher.Stroke (strokes, *options);
-
     }
 
 void PathTestLines (DVec3dCR upVector)
@@ -312,6 +305,8 @@ TEST(PathSearch,ExtendedPath)
     ICurvePrimitivePtr line = ICurvePrimitive::CreateLine (DSegment3d::From (DPoint3d::From (0,0,0), xyzA));
     CurveVectorPtr path = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
     path->push_back (line);
+
+    // we will be searching distances in view plane != path plane
     RotMatrix worldToView, viewToWorld;
     DVec3d upVector = DVec3d::From (1,1,4);
     DVec3d xVec, yVec, zVec;
@@ -327,7 +322,7 @@ TEST(PathSearch,ExtendedPath)
               boundedStart, boundedEnd,
               true,
               5.0);
-    ExerciseSearcher (*searcher, 4, false);
+    ExerciseSearcher (*searcher, 4);
     bvector<DPoint3d> lsAxyz;
     lsAxyz.push_back (xyzA);
     lsAxyz.push_back (DPoint3d::FromSumOf (xyzA, DVec3d::From (3,5,0)));
@@ -339,12 +334,11 @@ TEST(PathSearch,ExtendedPath)
               boundedStart, boundedEnd,
               true,
               5.0);
-    ExerciseSearcher (*searcher, 4, false);
-
+    ExerciseSearcher (*searcher, 4);
     }
 
 
-void ExerciseSearcherProjections (CurveVectorCR curves, DVec3dCR upVector, int numTest = 5)
+void ExerciseSearcherProjections (CurveVectorCR curves, DVec3dCR upVector, int numTest = 5, double refValue = 0.0)
     {
     RotMatrix planeToWorld = RotMatrix::From1Vector (upVector, 2, true);
     RotMatrix worldToPlane = RotMatrix::FromTransposeOf (planeToWorld);
@@ -379,13 +373,14 @@ void ExerciseSearcherProjections (CurveVectorCR curves, DVec3dCR upVector, int n
         double targetDistance = DoubleOps::Interpolate (location0.DistanceFromPathStart (), f, location1.DistanceFromPathStart ());
         PathLocationDetail locationA;
         Check::True (searcher->SearchByDistanceFromPathStart (targetDistance, locationA));
-        /*PathLocationDetail locationB = */searcher->SearchClosestPointBounded (locationA.Point (), true);
+        PathLocationDetail locationB = searcher->SearchClosestPointBounded (locationA.Point (), true);
+        Check::Near (locationA.Point(), locationB.Point (), "search by the distance of pointA yields the same point");
         double projectedDistance;
         Check::True (searcher->DistanceXYFromPathStart (locationA, projectedDistance));
         PathLocationDetail locationC;
         Check::True (searcher->SearchByDistanceFromPathStartXY (projectedDistance, locationC));
         Check::Near (locationC.DistanceFromPathStart (), targetDistance);
-        Check::Near (locationA.Point (), locationC.Point ());
+        Check::Near (locationA.Point (), locationC.Point (), "search by the xy distance of pointA yields the same point", refValue);
         }
     }
 
@@ -412,6 +407,44 @@ TEST(PathSearch,Projection)
     path->push_back (lsA);
 
     ExerciseSearcherProjections (*path, DVec3d::From (0.1, 0.1, 1.0), 4);
+    }
+
+TEST(PathSearch, PathWithSpirals)
+    {
+    BeFileName dataFullPathName;
+    BeTest::GetHost().GetDocumentsRoot(dataFullPathName);
+    dataFullPathName.AppendToPath(L"GeomLibsTestData").AppendToPath(L"CurveVector").AppendToPath(L"path-with-spirals.imjs");
+
+    // old implementation results in horrendous error (167 m!) in ExerciseSearcherProjections
+    // ICurvePrimitive::SelectSpiralImplementation(1);
+
+    CurveVectorPtr path;
+    bvector<IGeometryPtr> geometry;
+    if (Check::True(GTestFileOps::JsonFileToGeometry(dataFullPathName, geometry), "Parse inputs") &&
+        Check::False(geometry.empty(), "Have at least one input") &&
+        Check::True((path = geometry.front()->GetAsCurveVector()).IsValid(), "Have a curve vector"))
+        {
+        Transform l2w, w2l;
+        DRange3d lRange;
+        Check::True(path->IsPlanar(l2w, w2l, lRange), "path is planar");
+        Check::Parallel(l2w.ColumnZ(), DVec3d::UnitZ(), "path is horizontal");
+
+        DVec3d normals[] = { DVec3d::UnitZ(), DVec3d::From(1, 2, 3) };
+        for (DVec3dCR upVector : normals)
+            {
+            RotMatrix planeToWorld = RotMatrix::From1Vector(upVector, 2, true);
+            RotMatrix worldToPlane = RotMatrix::FromTransposeOf(planeToWorld);
+            path->TransformInPlace(Transform::From(planeToWorld));
+
+            // increase tol to allow for spiral B-spline approximation error (3.1e-5 m)
+            ExerciseSearcherProjections(*path, upVector, 50, 5000 * path->Length());
+
+            auto searcher = CurveVectorWithDistanceIndex::Create(worldToPlane);
+            searcher->SetPath(path);
+
+            ExerciseSearcher(*searcher, 20);
+            }
+        }
     }
 
 void TestTrimA (char const *name, bvector<DPoint2d> const &points, double d0, double d1, int  noisy = 0)

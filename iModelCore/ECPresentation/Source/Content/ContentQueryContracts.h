@@ -41,8 +41,8 @@ private:
         RelatedInstanceDisplayLabelFieldFactory, PresentationQueryContractFieldPtr, bvector<RelatedClassPath>, bool, bool);
     PresentationQueryContractFieldCPtr GetCalculatedPropertyField(Utf8StringCR, Utf8StringCR, Utf8StringCR, PrimitiveType) const;
     PresentationQueryContractFieldCPtr CreateInputKeysField(Utf8CP selectAlias) const;
-    bool CreateContractFields(bvector<PresentationQueryContractFieldCPtr>&, bvector<ContentDescriptor::Field*> const&, ContentDescriptor::RelatedContentField const*) const;
-    ECClassCP GetPropertyClass(ContentDescriptor::RelatedContentField const* parentField) const;
+    bool CreateContractFields(bvector<PresentationQueryContractFieldCPtr>&, bvector<ContentDescriptor::Field*> const&, ContentDescriptor::RelatedContentField const*, bool) const;
+    ECClassCR GetSelectClass(ContentDescriptor::RelatedContentField const* parentField) const;
 
 protected:
     ContentQueryContract const* _AsContentQueryContract() const override {return this;}

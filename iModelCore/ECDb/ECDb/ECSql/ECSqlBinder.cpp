@@ -70,7 +70,8 @@ std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlPrepareContex
         PropertyNameExp const& propNameExp = targetExp->GetAs<PropertyNameExp>();
         ECSqlSystemPropertyInfo const& sysPropInfo = propNameExp.GetSystemPropertyInfo();
         if (sysPropInfo.IsId() || propNameExp.GetTypeInfo().IsId())
-            if (propNameExp.GetClassRefExp()->GetType() == Exp::Type::CommonTableBlockName)
+            {
+            if (propNameExp.IsPropertyFromCommonTableBlockWithColumns())
                 {
                 CommonTableBlockNameExp const& commonTableBlockNameExp = propNameExp.GetClassRefExp()->GetAs<CommonTableBlockNameExp>();
                 CommonTableBlockExp const* blockExp = commonTableBlockNameExp.GetBlock();
@@ -78,8 +79,15 @@ std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlPrepareContex
                 ECSqlTypeInfo typeInfo = blockExp->FindType(propNameExp.GetPropertyName());
                 return CreateIdBinderForQuery(ctx, typeInfo, paramNameGen);
                 }
-            else
-                return CreateIdBinder(ctx, *propNameExp.GetPropertyMap(), sysPropInfo, paramNameGen);
+
+            //PropertyNameExp::GetPropertyMap can legitimately return nullptr, e.g. when the parameter is compared against an
+            //alias of a subquery or CTE whose underlying expression is not a property name exp (like a NULL literal in one of
+            //the branches of a compound select). In that case fall back to the type info based Id binder.
+            if (PropertyMap const* propMap = propNameExp.GetPropertyMap())
+                return CreateIdBinder(ctx, *propMap, sysPropInfo, paramNameGen);
+
+            return CreateIdBinderForQuery(ctx, propNameExp.GetTypeInfo(), paramNameGen);
+            }
         }
 
     if (const Exp* exp = parameterExp.FindParent(Exp::Type::FunctionCall))
@@ -87,6 +95,16 @@ std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlPrepareContex
         if (FunctionCallExp const* parentExp = exp->GetAsCP<FunctionCallExp>()) {
             if (parentExp->GetFunctionName().EqualsI("InVirtualSet") && parentExp->GetChildren()[0] == &parameterExp)
                 return CreateVirtualSetBinder(ctx, parameterExp.GetTypeInfo(), paramNameGen);
+            }
+        }
+
+    if (const Exp* exp = parameterExp.FindParent(Exp::Type::MemberFunctionCall))
+        {
+        if (MemberFunctionCallExp const* parentExp = exp->GetAsCP<MemberFunctionCallExp>()) {
+            if (parentExp->IsTableValuedFunc() && parentExp->GetFunctionName().EqualsI(IdSetModule::NAME) && parentExp->GetChildren()[0] == &parameterExp)
+                {
+                return CreateArrayECSqlBinder(ctx, parameterExp.GetTypeInfo(), paramNameGen, true);
+                }
             }
         }
 
@@ -138,7 +156,7 @@ std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlPrepareContex
 
             case ECSqlTypeInfo::Kind::PrimitiveArray:
             case ECSqlTypeInfo::Kind::StructArray:
-                return std::unique_ptr<ECSqlBinder>(new ArrayECSqlBinder(ctx, typeInfo, nameGen));
+                return std::unique_ptr<ECSqlBinder>(new ArrayECSqlBinder(ctx, typeInfo, nameGen, false));
             case ECSqlTypeInfo::Kind::Navigation:
                 return std::unique_ptr<ECSqlBinder>(new NavigationPropertyECSqlBinder(ctx, typeInfo, nameGen));
 
@@ -177,6 +195,14 @@ std::unique_ptr<IdECSqlBinder> ECSqlBinderFactory::CreateIdBinderForQuery(ECSqlP
 std::unique_ptr<VirtualSetBinder> ECSqlBinderFactory::CreateVirtualSetBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, ECSqlBinder::SqlParamNameGenerator& paramNameGen)
     {
     return std::unique_ptr<VirtualSetBinder>(new VirtualSetBinder(ctx, typeInfo, paramNameGen));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+std::unique_ptr<ArrayECSqlBinder> ECSqlBinderFactory::CreateArrayECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, ECSqlBinder::SqlParamNameGenerator& paramNameGen, bool isForIdSet)
+    {
+    return std::unique_ptr<ArrayECSqlBinder>(new ArrayECSqlBinder(ctx, typeInfo, paramNameGen, isForIdSet));
     }
 
 //---------------------------------------------------------------------------------------
@@ -317,11 +343,11 @@ ECSqlBinder* ECSqlParameterMap::AddBinder(ECSqlPrepareContext& ctx, ParameterExp
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlParameterMap::OnBeforeStep()
+ECSqlStatus ECSqlParameterMap::OnBeforeFirstStep()
     {
     for (ECSqlBinder* binder : m_bindersToCallOnStep)
         {
-        ECSqlStatus stat = binder->OnBeforeStep();
+        ECSqlStatus stat = binder->OnBeforeFirstStep();
         if (!stat.IsSuccess())
             return stat;
         }

@@ -9,7 +9,6 @@
 #include <algorithm>
 #include <set>
 #include <BeRapidJson/BeRapidJson.h>
-#include "iostream"
 
 #define CLASS_ID(S,C) (int)m_ecdb.Schemas().GetClassId( #S, #C, SchemaLookupMode::AutoDetect).GetValueUnchecked()
 
@@ -1351,7 +1350,22 @@ TEST_F(CommonTableExpTestFixture, alias_to_cte_within_subquery) {
         ))";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
-        ASSERT_STREQ(stmt.GetNativeSql(), "SELECT [a] FROM (WITH RECURSIVE cte0(a,b) AS (SELECT 100,200)\nSELECT [K2] [a],[K3] FROM (SELECT c0.a K2,c0.b K3 FROM cte0 c0 WHERE c0.a=100 AND c0.b=200))");
+        ASSERT_STREQ(stmt.GetNativeSql(), "SELECT [K4] FROM (WITH RECURSIVE cte0(a,b) AS (SELECT 100,200)\nSELECT [K2] [K4],[K3] FROM (SELECT c0.a K2,c0.b K3 FROM cte0 c0 WHERE c0.a=100 AND c0.b=200))");
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        ASSERT_STREQ("a", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("100", stmt.GetValueText(0));
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
+    }
+    if ("simple_wild_nested_with_unmatched_values") {
+        auto query = R"(select a from(
+            with recursive
+                cte0 (a,b) as ( select 100,200)
+            select * from (select * from cte0 c0 where c0.a=300 and c0.b=400)
+        ))";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
+        ASSERT_STREQ(stmt.GetNativeSql(), "SELECT [K4] FROM (WITH RECURSIVE cte0(a,b) AS (SELECT 100,200)\nSELECT [K2] [K4],[K3] FROM (SELECT c0.a K2,c0.b K3 FROM cte0 c0 WHERE c0.a=300 AND c0.b=400))");
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
     }
 
     if ("simple_wild") {
@@ -1770,8 +1784,198 @@ TEST_F(CommonTableExpTestFixture, CTE_Without_SubColumns) {
         ASSERT_STREQ("Doc1", stmt.GetValueText(0));
         ASSERT_EQ(2, stmt.GetValueInt(1));
     }
+    if ("simple_select_cte_wit_defined_columns_outside") {
+        auto ecsql = R"(with cte as (select Parent from ts.Element) select Parent.Id PiD from cte)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("PiD", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(true, stmt.IsValueNull(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(1, stmt.GetValueInt(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(2, stmt.GetValueInt(0));
+    }
+    if ("simple_select_cte_wit_defined_columns_outside_within_subquery") {
+        auto ecsql = R"(with cte as (select Parent from ts.Element) select * from (select Parent.Id PiD from cte))";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("PiD", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(true, stmt.IsValueNull(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(1, stmt.GetValueInt(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(2, stmt.GetValueInt(0));
+    }
+    if ("simple_select_cte_wit_defined_columns_outside_within_subquery_with_lias") {
+        auto ecsql = R"(with cte as (select Parent from ts.Element) select * from (select Parent.Id PiD from cte) X)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("PiD", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(true, stmt.IsValueNull(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(1, stmt.GetValueInt(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(2, stmt.GetValueInt(0));
+    }
+    if ("simple_select_cte_wit_defined_columns_outside_within_multiple_subquery") {
+        auto ecsql = R"(with cte as (select Parent from ts.Element) select * from (select * from (select Parent.Id PiD from cte)))";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("PiD", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(true, stmt.IsValueNull(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(1, stmt.GetValueInt(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(2, stmt.GetValueInt(0));
+    }
+    if ("simple_select_cte_wit_defined_columns_outside_within_multiple_subquery_with_first_asterisk") {
+        auto ecsql = R"(with cte as (select Parent from ts.Element) select * from (select PiD from (select Parent.Id PiD from cte)))";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("PiD", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(true, stmt.IsValueNull(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(1, stmt.GetValueInt(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(2, stmt.GetValueInt(0));
+    }
+    if ("simple_select_cte_wit_defined_columns_outside_within_multiple_subquery_with_middle_asterisk") {
+        auto ecsql = R"(with cte as (select Parent from ts.Element) select PiD from (select * from (select Parent.Id PiD from cte)))";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("PiD", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(true, stmt.IsValueNull(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(1, stmt.GetValueInt(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(2, stmt.GetValueInt(0));
+    }
+    if ("simple_select_cte_wit_defined_columns_outside_without alias") {
+        auto ecsql = R"(with cte as (select Parent from ts.Element) select Parent.Id from cte)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("Id", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(true, stmt.IsValueNull(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(1, stmt.GetValueInt(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(2, stmt.GetValueInt(0));
+    }
+    if ("simple_select_cte_wit_defined_columns_outside_within_subquery_without_alias") {
+        auto ecsql = R"(with cte as (select Parent from ts.Element) select * from (select Parent.Id from cte))";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("Id", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(true, stmt.IsValueNull(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(1, stmt.GetValueInt(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(2, stmt.GetValueInt(0));
+    }
+    if ("simple_select_cte_wit_defined_columns_outside_within_subquery_with_table_alias_without_column_alias") {
+        auto ecsql = R"(with cte as (select Parent from ts.Element) select * from (select Parent.Id from cte) X)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("Id", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(true, stmt.IsValueNull(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(1, stmt.GetValueInt(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(2, stmt.GetValueInt(0));
+    }
+    if ("simple_select_cte_wit_defined_columns_outside_within_multiple_subquery_without_alias") {
+        auto ecsql = R"(with cte as (select Parent from ts.Element) select * from (select * from (select Parent.Id from cte)))";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("Id", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(true, stmt.IsValueNull(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(1, stmt.GetValueInt(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(2, stmt.GetValueInt(0));
+    }
+    if ("simple_select_cte_wit_defined_columns_outside_within_multiple_subquery_with_first_asterisk_without_alias") {
+        auto ecsql = R"(with cte as (select Parent from ts.Element) select * from (select Parent.Id from (select Parent.Id from cte)))";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("Id", stmt.GetColumnInfo(0).GetProperty()->GetDisplayLabel().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(true, stmt.IsValueNull(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(1, stmt.GetValueInt(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(2, stmt.GetValueInt(0));
+    }
+    if ("simple_select_cte_wit_defined_columns_outside_within_multiple_subquery_with_middle_asterisk_without_alias") {
+        auto ecsql = R"(with cte as (select Parent from ts.Element) select Parent.Id from (select * from (select Parent.Id from cte)))";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("Id", stmt.GetColumnInfo(0).GetProperty()->GetDisplayLabel().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(true, stmt.IsValueNull(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(1, stmt.GetValueInt(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(2, stmt.GetValueInt(0));
+    }
     if ("selecting_*_inside_with_sepcified_columns_outside") {
         auto ecsql = R"(with cte as (select * from ts.Element) select Subject, Parent.Id pId from cte)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(2, stmt.GetColumnCount());
+        ASSERT_STREQ("Subject", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("pId", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("Drive", stmt.GetValueText(0));
+        ASSERT_EQ(true, stmt.IsValueNull(1));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("Document", stmt.GetValueText(0));
+        ASSERT_EQ(1, stmt.GetValueInt(1));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("Doc1", stmt.GetValueText(0));
+        ASSERT_EQ(2, stmt.GetValueInt(1));
+    }
+    if ("selecting_*_inside_with_sepcified_columns_outside_within_subquery") {
+        auto ecsql = R"(with cte as (select * from ts.Element) select * from (select Subject, Parent.Id pId from cte))";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(2, stmt.GetColumnCount());
+        ASSERT_STREQ("Subject", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("pId", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("Drive", stmt.GetValueText(0));
+        ASSERT_EQ(true, stmt.IsValueNull(1));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("Document", stmt.GetValueText(0));
+        ASSERT_EQ(1, stmt.GetValueInt(1));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("Doc1", stmt.GetValueText(0));
+        ASSERT_EQ(2, stmt.GetValueInt(1));
+    }
+    if ("selecting_*_inside_with_sepcified_columns_outside_within_subquery_with alias") {
+        auto ecsql = R"(with cte as (select * from ts.Element) select * from (select Subject, Parent.Id pId from cte) X)";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
         ASSERT_EQ(2, stmt.GetColumnCount());
@@ -1884,6 +2088,196 @@ TEST_F(CommonTableExpTestFixture, CTE_Without_SubColumns) {
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, FindingProperty_For_CTE_Without_SubColumns) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("CTEWithoutSubColumns.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    <ECSchema schemaName='TestSchema' alias='ts' version='10.10.10' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECEntityClass typeName='Element' >
+            <ECProperty propertyName="Subject" typeName="string" description="" />
+            <ECNavigationProperty propertyName="Parent" description="" relationshipName="ElementOwnsChildElements" direction="backward">
+                <ECCustomAttributes>
+                   <HiddenProperty xmlns="CoreCustomAttributes.01.00.03"/>
+                   <ForeignKeyConstraint xmlns="ECDbMap.02.00.00">
+                        <OnDeleteAction>NoAction</OnDeleteAction>
+                   </ForeignKeyConstraint>
+                </ECCustomAttributes>
+            </ECNavigationProperty>
+        </ECEntityClass>
+        <ECRelationshipClass typeName="ElementOwnsChildElements" description="" modifier="None" strength="embedding">
+            <Source multiplicity="(0..1)" roleLabel="owns child" polymorphic="true">
+                <Class class="Element"/>
+            </Source>
+            <Target multiplicity="(0..*)" roleLabel="is owned by parent" polymorphic="true">
+                <Class class="Element"/>
+            </Target>
+        </ECRelationshipClass>
+    </ECSchema>)xml")));
+
+    ECSqlStatementCache cache(20);
+    auto relClassId = m_ecdb.Schemas().GetClassId("TestSchema", "ElementOwnsChildElements");
+
+    auto findElementBySubject = [&](BeInt64Id parentId, Utf8CP subject) {
+        auto stmt = parentId.IsValid() ? cache.GetPreparedStatement(m_ecdb, "SELECT  ECInstanceId FROM ts.Element WHERE Parent.Id = ? AND Subject = ?") : cache.GetPreparedStatement(m_ecdb, "SELECT  ECInstanceId FROM ts.Element WHERE Parent.Id IS NULL AND Subject = ?");
+        if (parentId.IsValid()) {
+            stmt->BindId(1, BeInt64Id(parentId));
+            stmt->BindText(2, subject, IECSqlBinder::MakeCopy::No);
+        } else {
+            stmt->BindText(1, subject, IECSqlBinder::MakeCopy::No);
+        }
+
+        if (BE_SQLITE_ROW == stmt->Step()) {
+            return stmt->GetValueId<BeInt64Id>(0);
+        }
+        return BeInt64Id(0);
+    };
+
+    auto addElement = [&](Utf8CP subject, BeInt64Id parentId) {
+        auto subjectId = findElementBySubject(parentId, subject);
+        if (subjectId.IsValid()) {
+            return subjectId;
+        }
+
+        auto stmt = cache.GetPreparedStatement(m_ecdb, "INSERT INTO ts.Element(Parent, Subject) VALUES(?, ?)");
+        if (parentId.IsValid()) {
+            stmt->BindNavigationValue(1, parentId, relClassId);
+        }
+
+        stmt->BindText(2, subject, IECSqlBinder::MakeCopy::No);
+        ECInstanceKey key;
+        if (stmt->Step(key) != BE_SQLITE_DONE) {
+            return BeInt64Id(0);
+        }
+
+        return (BeInt64Id)key.GetInstanceId();
+    };
+
+    auto addElementPath = [&](Utf8CP path, Utf8CP delimiter = "/") {
+        bvector<Utf8String> subjects;
+        BeStringUtilities::Split(path, delimiter, subjects);
+        BeInt64Id parentId(0);
+        for(auto& subject : subjects) {
+            parentId = addElement(subject.c_str(), parentId);
+        }
+        return parentId;
+    };
+
+    addElementPath("Drive/Document/Doc1");
+    addElementPath("Drive/Document/Doc2");
+    addElementPath("Drive/Document/Doc3");
+    addElementPath("Drive/Pictures/Pic1");
+    addElementPath("Drive/Pictures/Pic2");
+    addElementPath("Book/SciFi/Book1");
+
+    /*
+    Id Subject  ParentId Depth
+    -- -------- -------- ------
+     1 Drive      (null)  0
+     2 Document        1  1
+     3 Doc1            2  2
+     4 Doc2            2  2
+     5 Doc3            2  2
+     6 Pictures        1  1
+     7 Pic1            6  2
+     8 Pic2            6  2
+     9 Book       (null)  0
+    10 SciFi           9  1
+    11 Book1          10  2
+*/
+
+    if ("simple_select_cte") {
+        auto ecsql = R"(with cte as (select * from ts.Element) select * from cte)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(4, stmt.GetColumnCount());
+        ASSERT_STREQ("ECInstanceId", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("ECClassId", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("Subject", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("Parent", stmt.GetColumnInfo(3).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(1, stmt.GetValueInt(0));
+        ASSERT_STREQ("Drive", stmt.GetValueText(2));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(2, stmt.GetValueInt(0));
+        ASSERT_STREQ("Document", stmt.GetValueText(2));
+    }
+    if ("simple_select_cte_wit_defined_columns_inside") {
+        auto ecsql = R"(with cte as (select Subject from ts.Element) select * from cte)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("Subject", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("Drive", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("Document", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("Doc1", stmt.GetValueText(0));
+    }
+    if ("selecting_*_inside_with_sepcified_columns_outside") {
+        auto ecsql = R"(select Subject from ts.Element where ECInstanceId = (with cte as (select * from ts.Element) select Parent.Id from cte))";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("Subject", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    if ("selecting_*_outside_with_sepcified_columns_inside") {
+        auto ecsql = R"(select Subject from ts.Element where ECInstanceId = (with cte as (select Parent.Id from ts.Element) select * from cte))";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("Subject", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    if ("cte_without_subColumns_with WHERE") {
+        auto ecsql = R"(with cte as (select * from ts.Element) select Subject from cte where Parent.Id = (select ECInstanceId from ts.Element))";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("Subject", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("Document", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("Pictures", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    if ("cte_without_subColumns_with WHERE_using_alias") {
+        auto ecsql = R"(with cte as (select * from ts.Element) select Subject from cte c where c.Parent.Id = (select ECInstanceId from ts.Element))";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("Subject", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("Document", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("Pictures", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    if ("cte_without_subColumns_with WHERE_using_cte_name_as_alias") {
+        auto ecsql = R"(with cte as (select * from ts.Element) select Subject from cte where cte.Parent.Id = (select ECInstanceId from ts.Element))";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("Subject", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("Document", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("Pictures", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    if ("cte_without_subColumns_in_subquery_ref_with alias") {
+        auto ecsql = R"(select a.x from (with tmp(x) as (SELECT e.Subject FROM ts.Element e order by e.Subject LIMIT 1) select x from tmp) a)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("x", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("Book", stmt.GetValueText(0));
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(CommonTableExpTestFixture, Invalid_SQL_Tests) {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("InvalidCTETestsDb.ecdb"));
 
@@ -1904,6 +2298,2128 @@ TEST_F(CommonTableExpTestFixture, Invalid_SQL_Tests) {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, ecsql));
     }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, asterisk_resolution_in_cte) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, OpenECDbTestDataFile("test.bim"));
+
+    if("using table alias while asterisk resolution for cte with sub columns"){
+        auto ecsql = R"(WITH e(a,b) AS (SELECT f.* FROM (select 100, 200) f) SELECT a, b FROM e)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(2, stmt.GetColumnCount());
+        ASSERT_STREQ("a", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("b", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("100", stmt.GetValueText(0));
+        ASSERT_STREQ("200", stmt.GetValueText(1));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    if("using table alias while asterisk resolution for cte without sub columns"){
+        auto ecsql = R"(WITH e AS (SELECT f.* FROM (select 100, 200) f) SELECT * FROM e)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(2, stmt.GetColumnCount());
+        ASSERT_STREQ("100", stmt.GetColumnInfo(0).GetProperty()->GetDisplayLabel().c_str());
+        ASSERT_STREQ("200", stmt.GetColumnInfo(1).GetProperty()->GetDisplayLabel().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("100", stmt.GetValueText(0));
+        ASSERT_STREQ("200", stmt.GetValueText(1));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    if("using table alias while asterisk resolution and selecting SELECT statements"){
+        auto ecsql = R"(WITH e AS (SELECT f.* FROM Bis.Element f) SELECT (SELECT ECInstanceId FROM Bis.Model m WHERE m.ECInstanceId = e.Model.Id LIMIT 3) FROM e)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("1", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("1", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("1", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    }
+    if("using table alias while asterisk resolution for cte without sub columns and selecting compound prop with limit outside"){
+        auto ecsql = R"( WITH e AS (SELECT f.* FROM Bis.Element f) SELECT Model.Id FROM e limit 1)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("1", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    if("using table alias while asterisk resolution for cte without sub columns subquery and selecting compound prop"){
+        auto ecsql = R"( select * from (WITH e AS (SELECT f.* FROM Bis.Element f) SELECT Model.Id FROM e limit 1))";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("1", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    if("using table alias while asterisk resolution for cte without sub columns subquery and selecting compound prop with limit inside"){
+        auto ecsql = R"( WITH e AS (SELECT f.* FROM Bis.Element f limit 1) SELECT Model.Id FROM e)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("1", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    if("using table alias while asterisk resolution for cte without sub columns aliased subquery"){
+        auto ecsql = R"( select a.* from (WITH e AS (SELECT f.* FROM Bis.Element f limit 1) SELECT Model.Id FROM e)a)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("1", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    if("using table alias while asterisk resolution for cte without sub columns subquery and selecting SELECT value exps for aliased ctes"){
+        auto ecsql = R"(WITH e AS (SELECT f.* FROM Bis.Element f) SELECT (SELECT ECInstanceId FROM (SELECT C.ECInstanceId FROM Meta.ECClassDef C WHERE C.ECInstanceId = E.ECClassId limit 1)) a FROM e)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("a", stmt.GetColumnInfo(0).GetProperty()->GetDisplayLabel().c_str());
+        ASSERT_STREQ("a", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("76", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    }
+    if("using table alias while asterisk resolution for cte without sub columns subquery and selecting SELECT value exps for aliased ctes with limit inside"){
+        auto ecsql = R"(select g.* from (WITH e AS (SELECT f.* FROM Bis.Element f) SELECT (SELECT ECInstanceId FROM (SELECT C.ECInstanceId FROM Meta.ECClassDef C WHERE C.ECInstanceId = E.ECClassId limit 1)) a FROM e) g)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("a", stmt.GetColumnInfo(0).GetProperty()->GetDisplayLabel().c_str());
+        ASSERT_STREQ("a", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("76", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    }
+    if("using table alias while asterisk resolution for cte without sub columns selecting SELECT value exps for aliased ctes with limit outside"){
+        auto ecsql = R"(WITH e AS (SELECT f.* FROM Bis.Element f) SELECT (SELECT ECInstanceId FROM (SELECT C.ECInstanceId FROM Meta.ECClassDef C WHERE C.ECInstanceId = E.ECClassId) limit 1) a FROM e)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("a", stmt.GetColumnInfo(0).GetProperty()->GetDisplayLabel().c_str());
+        ASSERT_STREQ("a", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("76", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    }
+    if("using table alias while asterisk resolution for cte without sub columns subquery and selecting SELECT value exps for aliased ctes with limit aliased"){
+        auto ecsql = R"(select a from (WITH e AS (SELECT f.* FROM Bis.Element f) SELECT (SELECT ECInstanceId FROM (SELECT C.ECInstanceId FROM Meta.ECClassDef C WHERE C.ECInstanceId = E.ECClassId) limit 1) a FROM e))";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("a", stmt.GetColumnInfo(0).GetProperty()->GetDisplayLabel().c_str());
+        ASSERT_STREQ("a", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("76", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    }
+    if("using table alias while asterisk resolution for cte without sub columns subquery and aliasing the subquery and also the CTE select query"){
+        auto ecsql = R"(select y.a from (WITH e AS (SELECT f.* FROM Bis.Element f) SELECT (SELECT ECInstanceId FROM (SELECT C.ECInstanceId FROM Meta.ECClassDef C WHERE C.ECInstanceId = E.ECClassId) limit 1) a FROM e) y)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("a", stmt.GetColumnInfo(0).GetProperty()->GetDisplayLabel().c_str());
+        ASSERT_STREQ("a", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("76", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    }
+    if("using table alias while asterisk resolution for cte without sub columns subquery and aliasing the subquery and also the CTE select query and selecting asterisk with alias outside"){
+        auto ecsql = R"(select y.* from (WITH e AS (SELECT f.* FROM Bis.Element f) SELECT (SELECT ECInstanceId FROM (SELECT C.ECInstanceId FROM Meta.ECClassDef C WHERE C.ECInstanceId = E.ECClassId) limit 1) a FROM e) y)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("a", stmt.GetColumnInfo(0).GetProperty()->GetDisplayLabel().c_str());
+        ASSERT_STREQ("a", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("76", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    }
+    if("using asterisk with nav props should fail"){
+        auto ecsql = R"(WITH e AS (SELECT Model.* FROM Bis.Element f) SELECT Model FROM e)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, ecsql));
+    }
+    if("using asterisk with nav props should fail"){
+        auto ecsql = R"(WITH e AS (SELECT Model.* FROM Bis.Element f) SELECT * FROM e)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, ecsql));
+    }
+    if("using asterisk with nav props and aliased class should fail"){
+        auto ecsql = R"(WITH e AS (SELECT f.Model.* FROM Bis.Element f) SELECT * FROM e)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, ecsql));
+    }
+    if("using nav props with cte with sub columns should fail"){
+        auto ecsql = R"(WITH e(m) AS (SELECT f.Model FROM Bis.Element f) SELECT * FROM e)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, ecsql));
+    }
+    if("using nav props with cte with one sub column should fail"){
+        auto ecsql = R"(WITH e(m) AS (SELECT f.Model FROM Bis.Element f) SELECT m.Id FROM e)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, ecsql));
+    }
+    if("using nav props with cte with two sub columns should fail"){
+        auto ecsql = R"(WITH e(m, n) AS (SELECT f.Model FROM Bis.Element f) SELECT * FROM e)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, ecsql));
+    }
+}
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, SubQueryBlock_With_cte_with_no_columns) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("SubQueryBlock.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECEntityClass typeName="Parent">
+                    <ECProperty propertyName="Name" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Child">
+                    <ECProperty propertyName="Name" typeName="string" />
+                </ECEntityClass>
+                <ECRelationshipClass typeName="Rel" modifier="None">
+                    <Source multiplicity="(0..*)" polymorphic="True" roleLabel="is parent of">
+                        <Class class="Parent" />
+                    </Source>
+                    <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is child of">
+                        <Class class="Child"/>
+                    </Target>
+                </ECRelationshipClass>
+                <ECEntityClass typeName="Foo">
+                    <ECProperty propertyName="Code" typeName="int" />
+                </ECEntityClass>
+            </ECSchema>)xml")));
+
+    ECClassId fooClassId = m_ecdb.Schemas().GetClassId("TestSchema", "Foo");
+    ASSERT_TRUE(fooClassId.IsValid());
+    ECClassId parentClassId = m_ecdb.Schemas().GetClassId("TestSchema", "Parent");
+    ASSERT_TRUE(parentClassId.IsValid());
+    ECClassId childClassId = m_ecdb.Schemas().GetClassId("TestSchema", "Child");
+    ASSERT_TRUE(childClassId.IsValid());
+    if ("simple_select_query") {
+        auto ecsql = R"(
+            WITH models AS (
+                SELECT foo.ECInstanceId i FROM ts.Foo foo)
+            SELECT i FROM models WHERE models.i = 1
+        )";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_STREQ(SqlPrintfString("WITH models AS (SELECT [foo].[ECInstanceId] [K0] FROM (SELECT [Id] ECInstanceId,89 ECClassId FROM [main].[ts_Foo]) [foo])\nSELECT [K0] FROM models WHERE [K0]=1", fooClassId.ToString().c_str()), stmt.GetNativeSql());
+    }
+    if ("select_property_in_cte_block") {
+        auto ecsql = R"(
+            WITH models AS (
+                SELECT foo.Code i FROM ts.Foo foo)
+            SELECT i FROM models WHERE models.i IN (?)
+        )";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_STREQ(SqlPrintfString("WITH models AS (SELECT [foo].[Code] [K0] FROM (SELECT [Id] ECInstanceId,89 ECClassId,[Code] FROM [main].[ts_Foo]) [foo])\nSELECT [K0] FROM models WHERE [K0] IN (:_ecdb_sqlparam_ix1_col1)", fooClassId.ToString().c_str()), stmt.GetNativeSql());
+    }
+    if ("select_id_in_cte_block") {
+        auto ecsql = R"(
+            WITH models AS (
+                SELECT foo.ECInstanceId i FROM ts.Foo foo)
+            SELECT i FROM models WHERE models.i IN (?)
+        )";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_STREQ(SqlPrintfString("WITH models AS (SELECT [foo].[ECInstanceId] [K0] FROM (SELECT [Id] ECInstanceId,89 ECClassId FROM [main].[ts_Foo]) [foo])\nSELECT [K0] FROM models WHERE [K0] IN (:_ecdb_sqlparam_ix1_col1)", fooClassId.ToString().c_str()), stmt.GetNativeSql());
+    }
+    if ("nested_select_id_in_cte_block") {
+        auto ecsql = R"(
+            WITH models AS (
+                SELECT (SELECT foo.ECInstanceId i FROM ts.Foo foo) AS ecId)
+            SELECT i FROM models WHERE models.i IN (?)
+        )";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, ecsql));
+    }
+    if ("select_link_table_in_cte_block") {
+        auto ecsql = R"(
+            WITH models AS (
+                SELECT
+                    r.ECInstanceId i,
+                    r.ECClassId c,
+                    r.SourceECInstanceId si,
+                    r.SourceECClassId sc,
+                    r.TargetECInstanceId ti,
+                    r.TargetECClassId tc
+                FROM ts.Rel r)
+            SELECT
+                *
+            FROM
+                models m
+            WHERE
+                m.i = ? AND m.c = ? AND m.si = ? AND m.sc = ? AND m.ti = ? AND m.tc = ?
+                AND m.i IN (?) AND m.c IN (?) AND m.si IN (?) AND m.sc IN (?) AND m.ti IN (?) AND m.tc IN (?)
+        )";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_STREQ(SqlPrintfString("WITH models AS (SELECT [r].[ECInstanceId] [K0],[r].[ECClassId] [K1],[r].[SourceECInstanceId] [K2],[r].[SourceECClassId] [K3],[r].[TargetECInstanceId] [K4],[r].[TargetECClassId] [K5] FROM (SELECT [ts_Rel].[Id] [ECInstanceId],[ts_Rel].[ECClassId],[ts_Rel].[SourceId] [SourceECInstanceId],90 [SourceECClassId],[ts_Rel].[TargetId] [TargetECInstanceId],88 [TargetECClassId] FROM [main].[ts_Rel]) [r])\nSELECT [K0],[K1],[K2],[K3],[K4],[K5] FROM models m WHERE [K0]=:_ecdb_sqlparam_ix1_col1 AND [K1]=:_ecdb_sqlparam_ix2_col1 AND [K2]=:_ecdb_sqlparam_ix3_col1 AND [K3]=:_ecdb_sqlparam_ix4_col1 AND [K4]=:_ecdb_sqlparam_ix5_col1 AND [K5]=:_ecdb_sqlparam_ix6_col1 AND [K0] IN (:_ecdb_sqlparam_ix7_col1) AND [K1] IN (:_ecdb_sqlparam_ix8_col1) AND [K2] IN (:_ecdb_sqlparam_ix9_col1) AND [K3] IN (:_ecdb_sqlparam_ix10_col1) AND [K4] IN (:_ecdb_sqlparam_ix11_col1) AND [K5] IN (:_ecdb_sqlparam_ix12_col1)",
+                    parentClassId.ToString().c_str(), childClassId.ToString().c_str()), stmt.GetNativeSql());
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, FindingCompoundDataProperty_For_CTE_Without_SubColumns) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("FindingCompoundDataProperty_For_CTE_Without_SubColumns.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    <ECSchema schemaName='TestSchema' alias='ts' version='10.10.10' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECEntityClass typeName='Element' >
+            <ECProperty propertyName="p2d" typeName="point2d"/>
+            <ECProperty propertyName="p3d" typeName="point3d"/>
+        </ECEntityClass>
+    </ECSchema>)xml")));
+    ECSqlStatementCache cache(5);
+    std::vector<std::vector<double>> pointList = {{200.0,-440.0,345.6}, {300.0,-240.0,120.0}, {220.0,-180.0,330.6}, {270.0,-450.0,340.7}, {200.0,-230.0,220.5} };
+
+    auto addElement = [&](DPoint2d point2d, DPoint3d point3d) {
+        auto stmt = cache.GetPreparedStatement(m_ecdb, "INSERT INTO ts.Element(p2d, p3d) VALUES(?, ?)");
+        stmt->BindPoint2d(1, point2d);
+
+        stmt->BindPoint3d(2, point3d);
+        ECInstanceKey key;
+        if (stmt->Step(key) != BE_SQLITE_DONE) {
+            return BeInt64Id(0);
+        }
+
+        return (BeInt64Id)key.GetInstanceId();
+    };
+    for(std::vector<double> vec: pointList)
+    {
+        addElement(DPoint2d::From(vec[0], vec[1]), DPoint3d::From(vec[0], vec[1], vec[2]));
+    }
+    if("selecting point2d from inside cte"){
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p2d FROM ts.Element) SELECT * FROM cte"));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("p2d", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(DPoint2d::From(pointList[0][0], pointList[0][1]), stmt.GetValuePoint2d(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(DPoint2d::From(pointList[1][0], pointList[1][1]), stmt.GetValuePoint2d(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(DPoint2d::From(pointList[2][0], pointList[2][1]), stmt.GetValuePoint2d(0));
+    }
+    if("selecting point2d from inside cte and aliasing it outside"){
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p2d FROM ts.Element) SELECT cte.p2d FROM cte"));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("p2d", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(DPoint2d::From(pointList[0][0], pointList[0][1]), stmt.GetValuePoint2d(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(DPoint2d::From(pointList[1][0], pointList[1][1]), stmt.GetValuePoint2d(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(DPoint2d::From(pointList[2][0], pointList[2][1]), stmt.GetValuePoint2d(0));
+    }
+    if("selecting point2d from inside cte and aliasing it outside with class aliased"){
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p2d FROM ts.Element) SELECT c.p2d FROM cte c"));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("p2d", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(DPoint2d::From(pointList[0][0], pointList[0][1]), stmt.GetValuePoint2d(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(DPoint2d::From(pointList[1][0], pointList[1][1]), stmt.GetValuePoint2d(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(DPoint2d::From(pointList[2][0], pointList[2][1]), stmt.GetValuePoint2d(0));
+    }
+    if("selecting point2d from inside cte and selecting point2d X prop outside"){
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p2d FROM ts.Element) SELECT p2d.X FROM cte"));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("X", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("200.0", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("300.0", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("220.0", stmt.GetValueText(0));
+    }
+    if("selecting point2d from inside cte and selecting point2d X prop outside with class"){
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p2d FROM ts.Element) SELECT cte.p2d.X FROM cte"));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("X", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("200.0", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("300.0", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("220.0", stmt.GetValueText(0));
+    }
+    if("selecting point2d X prop from inside cte and selecting same outside"){
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p2d.X FROM ts.Element) SELECT cte.p2d.X FROM cte"));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("X", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("200.0", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("300.0", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("220.0", stmt.GetValueText(0));
+    }
+    if("selecting point2d from inside cte and selecting point2d X prop outside with aliased class"){
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p2d FROM ts.Element) SELECT c.p2d.X FROM cte c"));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("X", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("200.0", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("300.0", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("220.0", stmt.GetValueText(0));
+    }
+    if("selecting point2d from inside cte and selecting point2d Y prop outside"){
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p2d FROM ts.Element) SELECT p2d.Y FROM cte"));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("Y", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("-440.0", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("-240.0", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("-180.0", stmt.GetValueText(0));
+    }
+    if("selecting point2d from inside cte and selecting point2d Y prop outside with class"){
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p2d FROM ts.Element) SELECT cte.p2d.Y FROM cte"));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("Y", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("-440.0", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("-240.0", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("-180.0", stmt.GetValueText(0));
+    }
+    if("selecting point2d from inside cte and selecting point2d Y prop outside with aliased class"){
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p2d FROM ts.Element) SELECT c.p2d.Y FROM cte c"));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("Y", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("-440.0", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("-240.0", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("-180.0", stmt.GetValueText(0));
+    }
+    if("selecting point3d from inside cte and selecting point3d all prop outside"){
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p3d FROM ts.Element) SELECT p3d.X, p3d.Y, p3d.Z FROM cte"));
+        ASSERT_EQ(3, stmt.GetColumnCount());
+        ASSERT_STREQ("X", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("Y", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("Z", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("200.0", stmt.GetValueText(0));
+        ASSERT_STREQ("-440.0", stmt.GetValueText(1));
+        ASSERT_STREQ("345.6", stmt.GetValueText(2));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("300.0", stmt.GetValueText(0));
+        ASSERT_STREQ("-240.0", stmt.GetValueText(1));
+        ASSERT_STREQ("120.0", stmt.GetValueText(2));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("220.0", stmt.GetValueText(0));
+        ASSERT_STREQ("-180.0", stmt.GetValueText(1));
+        ASSERT_STREQ("330.6", stmt.GetValueText(2));
+    }
+    if("selecting point3d from inside cte and selecting point3d all prop outside with class"){
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p3d FROM ts.Element) SELECT cte.p3d.X, cte.p3d.Y, cte.p3d.Z FROM cte"));
+        ASSERT_EQ(3, stmt.GetColumnCount());
+        ASSERT_STREQ("X", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("Y", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("Z", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("200.0", stmt.GetValueText(0));
+        ASSERT_STREQ("-440.0", stmt.GetValueText(1));
+        ASSERT_STREQ("345.6", stmt.GetValueText(2));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("300.0", stmt.GetValueText(0));
+        ASSERT_STREQ("-240.0", stmt.GetValueText(1));
+        ASSERT_STREQ("120.0", stmt.GetValueText(2));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("220.0", stmt.GetValueText(0));
+        ASSERT_STREQ("-180.0", stmt.GetValueText(1));
+        ASSERT_STREQ("330.6", stmt.GetValueText(2));
+    }
+    if("selecting point3d from inside cte and selecting point3d all prop outside with aliased class"){
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p3d FROM ts.Element) SELECT c.p3d.X, c.p3d.Y, c.p3d.Z FROM cte c"));
+        ASSERT_EQ(3, stmt.GetColumnCount());
+        ASSERT_STREQ("X", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("Y", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("Z", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("200.0", stmt.GetValueText(0));
+        ASSERT_STREQ("-440.0", stmt.GetValueText(1));
+        ASSERT_STREQ("345.6", stmt.GetValueText(2));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("300.0", stmt.GetValueText(0));
+        ASSERT_STREQ("-240.0", stmt.GetValueText(1));
+        ASSERT_STREQ("120.0", stmt.GetValueText(2));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("220.0", stmt.GetValueText(0));
+        ASSERT_STREQ("-180.0", stmt.GetValueText(1));
+        ASSERT_STREQ("330.6", stmt.GetValueText(2));
+    }
+    if("selecting point3d all props from inside cte and selecting same outside"){
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p3d.X, p3d.Y, p3d.Z FROM ts.Element) SELECT p3d.X, p3d.Y, p3d.Z FROM cte"));
+        ASSERT_EQ(3, stmt.GetColumnCount());
+        ASSERT_STREQ("X", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("Y", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("Z", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("200.0", stmt.GetValueText(0));
+        ASSERT_STREQ("-440.0", stmt.GetValueText(1));
+        ASSERT_STREQ("345.6", stmt.GetValueText(2));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("300.0", stmt.GetValueText(0));
+        ASSERT_STREQ("-240.0", stmt.GetValueText(1));
+        ASSERT_STREQ("120.0", stmt.GetValueText(2));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("220.0", stmt.GetValueText(0));
+        ASSERT_STREQ("-180.0", stmt.GetValueText(1));
+        ASSERT_STREQ("330.6", stmt.GetValueText(2));
+    }
+    if("selecting point3d all props from inside cte and selecting same outside with class"){
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p3d.X, p3d.Y, p3d.Z FROM ts.Element) SELECT cte.p3d.X, cte.p3d.Y, cte.p3d.Z FROM cte"));
+        ASSERT_EQ(3, stmt.GetColumnCount());
+        ASSERT_STREQ("X", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("Y", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("Z", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("200.0", stmt.GetValueText(0));
+        ASSERT_STREQ("-440.0", stmt.GetValueText(1));
+        ASSERT_STREQ("345.6", stmt.GetValueText(2));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("300.0", stmt.GetValueText(0));
+        ASSERT_STREQ("-240.0", stmt.GetValueText(1));
+        ASSERT_STREQ("120.0", stmt.GetValueText(2));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("220.0", stmt.GetValueText(0));
+        ASSERT_STREQ("-180.0", stmt.GetValueText(1));
+        ASSERT_STREQ("330.6", stmt.GetValueText(2));
+    }
+    if("selecting point3d all props from inside cte and selecting same outside with aliased class"){
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p3d.X, p3d.Y, p3d.Z FROM ts.Element) SELECT c.p3d.X, c.p3d.Y, c.p3d.Z FROM cte c"));
+        ASSERT_EQ(3, stmt.GetColumnCount());
+        ASSERT_STREQ("X", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("Y", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("Z", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("200.0", stmt.GetValueText(0));
+        ASSERT_STREQ("-440.0", stmt.GetValueText(1));
+        ASSERT_STREQ("345.6", stmt.GetValueText(2));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("300.0", stmt.GetValueText(0));
+        ASSERT_STREQ("-240.0", stmt.GetValueText(1));
+        ASSERT_STREQ("120.0", stmt.GetValueText(2));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("220.0", stmt.GetValueText(0));
+        ASSERT_STREQ("-180.0", stmt.GetValueText(1));
+        ASSERT_STREQ("330.6", stmt.GetValueText(2));
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, CTEWithStructBinding)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("InsertWithStructBinding.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, PopulateECDb(10));
+
+    ECClassCP pStructClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PStruct");
+    ASSERT_TRUE(pStructClass != nullptr && pStructClass->IsStructClass());
+
+    //**** Test 1 *****
+    {
+    BeJsDocument expectedJson;
+    ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson,R"json(
+         { "b" : true,
+         "d" : 3.0,
+         "dt" : "2014-03-27T12:00:00.000",
+         "dtUtc" : "2014-03-27T12:00:00.000Z",
+         "i" : 44444,
+         "l" : 444444444,
+         "s" : "Hello, world",
+         "p2d" : { "x" : 3.0, "y" : 5.0 },
+        "p3d" : { "x" : 3.0, "y" : 5.0, "z" : -6.0}
+        })json"));
+
+    ECSqlStatement insertStmt;
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(m_ecdb, "INSERT INTO ecsql.PSA (I, PStructProp) VALUES (?, ?)"));
+    ASSERT_EQ(ECSqlStatus::Success, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(2), expectedJson, *pStructClass->GetStructClassCP())) << insertStmt.GetECSql();
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step(key)) << insertStmt.GetECSql();
+    insertStmt.Finalize();
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "WITH cte AS(SELECT PStructProp FROM ecsql.PSA WHERE ECInstanceId=?) SELECT * FROM cte"));
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
+        ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
+        JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
+        BeJsDocument actualJson;
+        ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
+        ASSERT_TRUE(actualJson.isMember("PStructProp"));
+        ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["PStructProp"]));
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "WITH cte AS(SELECT PStructProp FROM ecsql.PSA WHERE ECInstanceId=?) SELECT PStructProp FROM cte"));
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
+        ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
+        JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
+        BeJsDocument actualJson;
+        ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
+        ASSERT_TRUE(actualJson.isMember("PStructProp"));
+        ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["PStructProp"]));
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "WITH cte AS(SELECT PStructProp FROM ecsql.PSA WHERE ECInstanceId=?) SELECT cte.PStructProp FROM cte"));
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
+        ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
+        JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
+        BeJsDocument actualJson;
+        ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
+        ASSERT_TRUE(actualJson.isMember("PStructProp"));
+        ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["PStructProp"]));
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "WITH cte AS(SELECT PStructProp FROM ecsql.PSA WHERE ECInstanceId=?) SELECT c.PStructProp FROM cte c"));
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
+        ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
+        JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
+        BeJsDocument actualJson;
+        ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
+        ASSERT_TRUE(actualJson.isMember("PStructProp"));
+        ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["PStructProp"]));
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "SELECT PStructProp.p2d FROM (SELECT PStructProp.p2d FROM ecsql.PSA WHERE ECInstanceId=?)"));
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
+        ASSERT_EQ(1, selStmt.GetColumnCount());
+        ASSERT_STREQ("p2d", selStmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
+        ASSERT_EQ(DPoint2d::From(3.0, 5.0), selStmt.GetValuePoint2d(0));
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "WITH cte AS(SELECT PStructProp.p2d FROM ecsql.PSA WHERE ECInstanceId=?) SELECT PStructProp.p2d FROM cte"));
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
+        ASSERT_EQ(1, selStmt.GetColumnCount());
+        ASSERT_STREQ("p2d", selStmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
+        ASSERT_EQ(DPoint2d::From(3.0, 5.0), selStmt.GetValuePoint2d(0));
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, selStmt.Prepare(m_ecdb, "SELECT PStructProp.p2d.X FROM (SELECT PStructProp.p2d FROM ecsql.PSA WHERE ECInstanceId=?)")); // TODO: Should be supported
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, selStmt.Prepare(m_ecdb, "WITH cte AS(SELECT PStructProp.p2d FROM ecsql.PSA WHERE ECInstanceId=?) SELECT PStructProp.p2d.X FROM cte")); // TODO: Should be supported
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, selStmt.Prepare(m_ecdb, "WITH cte AS(SELECT PStructProp.p3d FROM ecsql.PSA WHERE ECInstanceId=?) SELECT PStructProp.p3d.X, PStructProp.p3d.Y, PStructProp.p3d.Z FROM cte")); // TODO: Should be supported
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "WITH cte AS(SELECT PStructProp FROM ecsql.PSA WHERE ECInstanceId=?) SELECT PStructProp FROM cte"));
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
+        ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
+        JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
+        BeJsDocument actualJson;
+        ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
+        ASSERT_TRUE(actualJson.isMember("PStructProp"));
+        ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["PStructProp"]));
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, selStmt.Prepare(m_ecdb, "WITH cte(str) AS(SELECT PStructProp FROM ecsql.PSA WHERE ECInstanceId=?) SELECT * FROM cte"));
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, selStmt.Prepare(m_ecdb, "WITH cte(str) AS(SELECT PStructProp FROM ecsql.PSA WHERE ECInstanceId=?) SELECT str FROM cte"));
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, selStmt.Prepare(m_ecdb, "WITH cte(str) AS(SELECT PStructProp FROM ecsql.PSA WHERE ECInstanceId=?) SELECT cte.str FROM cte"));
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, selStmt.Prepare(m_ecdb, "WITH cte(str) AS(SELECT PStructProp FROM ecsql.PSA WHERE ECInstanceId=?) SELECT c.str FROM cte c"));
+    }
+    if("binder_change_test_with_columns"){
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "WITH cte(Id) AS(SELECT ECInstanceId FROM ecsql.PSA) SELECT * FROM cte c WHERE Id = ?"));
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
+        ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
+        ASSERT_STREQ("281", selStmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_DONE, selStmt.Step());
+    }
+    if("binder_change_test_without_columns"){
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "WITH cte AS(SELECT ECInstanceId FROM ecsql.PSA) SELECT * FROM cte c WHERE ECInstanceId = ?"));
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
+        ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
+        ASSERT_STREQ("281", selStmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_DONE, selStmt.Step());
+    }
+    
+    }
+
+    //**** Test 2 *****
+    {
+    BeJsDocument expectedJson;
+    ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, R"json(
+        { "PStructProp" :
+        { "b" : true,
+         "d" : 3.0,
+         "dt" : "2014-03-27T12:00:00.000",
+         "dtUtc" : "2014-03-27T12:00:00.000Z",
+         "i" : 44444,
+         "l" : 444444444,
+         "s" : "Hello, world",
+         "p2d" : { "x" : 3.0, "y" : 5.0 },
+        "p3d" : { "x" : 3.0, "y" : 5.0, "z" : -6.0}
+        }})json"));
+    ECClassCP saStructClass = m_ecdb.Schemas().GetClass("ECSqlTest", "SAStruct");
+    ASSERT_TRUE(saStructClass != nullptr && saStructClass->IsStructClass());
+
+    ECSqlStatement insertStmt;
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(m_ecdb, "INSERT INTO ecsql.SA(SAStructProp) VALUES(?)"));
+    ASSERT_EQ(ECSqlStatus::Success, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *saStructClass->GetStructClassCP())) << insertStmt.GetECSql();
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step(key)) << insertStmt.GetECSql();
+    insertStmt.Finalize();
+    
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "WITH cte AS(SELECT SAStructProp FROM ecsql.SA WHERE ECInstanceId=?) SELECT * FROM cte"));
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
+        ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
+        JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
+        BeJsDocument actualJson;
+        ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
+        ASSERT_TRUE(actualJson.isMember("SAStructProp"));
+        ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["SAStructProp"]));
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "WITH cte AS(SELECT SAStructProp FROM ecsql.SA WHERE ECInstanceId=?) SELECT SAStructProp FROM cte"));
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
+        ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
+        JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
+        BeJsDocument actualJson;
+        ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
+        ASSERT_TRUE(actualJson.isMember("SAStructProp"));
+        ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["SAStructProp"]));
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "WITH cte AS(SELECT SAStructProp FROM ecsql.SA WHERE ECInstanceId=?) SELECT cte.SAStructProp FROM cte"));
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
+        ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
+        JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
+        BeJsDocument actualJson;
+        ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
+        ASSERT_TRUE(actualJson.isMember("SAStructProp"));
+        ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["SAStructProp"]));
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "WITH cte AS(SELECT SAStructProp FROM ecsql.SA WHERE ECInstanceId=?) SELECT c.SAStructProp FROM cte c"));
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
+        ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
+        JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
+        BeJsDocument actualJson;
+        ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
+        ASSERT_TRUE(actualJson.isMember("SAStructProp"));
+        ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["SAStructProp"]));
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, selStmt.Prepare(m_ecdb, "SELECT SAStructProp.p2d FROM (SELECT SAStructProp.p2d FROM ecsql.SA WHERE ECInstanceId=?)")); // TODO: Should be supported
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, selStmt.Prepare(m_ecdb, "WITH cte AS(SELECT SAStructProp.p2d FROM ecsql.SA WHERE ECInstanceId=?) SELECT SAStructProp.p2d FROM cte")); // TODO: Should be supported
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, selStmt.Prepare(m_ecdb, "SELECT SAStructProp.p2d.X FROM (SELECT SAStructProp.p2d FROM ecsql.SA WHERE ECInstanceId=?)")); // TODO: Should be supported
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, selStmt.Prepare(m_ecdb, "WITH cte AS(SELECT SAStructProp.p2d FROM ecsql.SA WHERE ECInstanceId=?) SELECT SAStructProp.p2d.X FROM cte")); // TODO: Should be supported
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, selStmt.Prepare(m_ecdb, "WITH cte AS(SELECT SAStructProp.p3d FROM ecsql.PSA WHERE ECInstanceId=?) SELECT SAStructProp.p3d.X, SAStructProp.p3d.Y, SAStructProp.p3d.Z FROM cte")); // TODO: Should be supported
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, selStmt.Prepare(m_ecdb, "WITH cte(str) AS(SELECT SAStructProp FROM ecsql.SA WHERE ECInstanceId=?) SELECT * FROM cte"));
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, selStmt.Prepare(m_ecdb, "WITH cte(str) AS(SELECT SAStructProp FROM ecsql.SA WHERE ECInstanceId=?) SELECT str FROM cte"));
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, selStmt.Prepare(m_ecdb, "WITH cte(str) AS(SELECT SAStructProp FROM ecsql.SA WHERE ECInstanceId=?) SELECT cte.str FROM cte"));
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, selStmt.Prepare(m_ecdb, "WITH cte(str) AS(SELECT SAStructProp FROM ecsql.SA WHERE ECInstanceId=?) SELECT c.str FROM cte c"));
+    }
+    if("binder_change_test_with_columns"){
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "WITH cte(Id) AS(SELECT ECInstanceId FROM ecsql.SA) SELECT * FROM cte c WHERE Id = ?"));
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
+        ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
+        ASSERT_STREQ("282", selStmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_DONE, selStmt.Step());
+    }
+    if("binder_change_test_without_columns"){
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "WITH cte AS(SELECT ECInstanceId FROM ecsql.SA) SELECT * FROM cte c WHERE ECInstanceId = ?"));
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
+        ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
+        ASSERT_STREQ("282", selStmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_DONE, selStmt.Step());
+    }
+    
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, multiple_ctes_without_subcolumns)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("multiple_ctes_without_subcolumns.ecdb"));
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "WITH [cte1] AS ( SELECT 1 AS KEYID, 'BeepBoo' AS Noise ), [cte2] AS ( SELECT 1 AS KEYID, 'Robot' AS Name ) SELECT * FROM cte1 [c1] JOIN cte2 [c2] ON c1.KEYID = c2.KEYID"));
+    ASSERT_STREQ(stmt.GetNativeSql(), "WITH cte1 AS (SELECT 1 [K0],'BeepBoo' [K2]),cte2 AS (SELECT 1 [K1],'Robot' [K3])\nSELECT [K0],[K2],[K1],[K3] FROM cte1 c1 INNER JOIN cte2 c2 ON [K0]=[K1] ");
+    ASSERT_EQ(4, stmt.GetColumnCount());
+    ASSERT_STREQ("KEYID", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+    ASSERT_STREQ("Noise", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+    ASSERT_STREQ("KEYID_1", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
+    ASSERT_STREQ("Name", stmt.GetColumnInfo(3).GetProperty()->GetName().c_str());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STREQ("1", stmt.GetValueText(0));
+    ASSERT_STREQ("BeepBoo", stmt.GetValueText(1));
+    ASSERT_STREQ("1", stmt.GetValueText(2));
+    ASSERT_STREQ("Robot", stmt.GetValueText(3));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, multiple_ctes_without_subcolumns_without_asterisk)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("multiple_ctes_without_subcolumns_without_asterisk.ecdb"));
+   ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "WITH [cte1] AS ( SELECT 1 AS KEYID, 'BeepBoo' AS Noise ), [cte2] AS ( SELECT 1 AS KEYID, 'Robot' AS Name ) SELECT c1.KEYID, c1.Noise ,c2.KEYID, c2.Name FROM cte1 [c1] JOIN cte2 [c2] ON c1.KEYID = c2.KEYID"));
+    ASSERT_STREQ(stmt.GetNativeSql(), "WITH cte1 AS (SELECT 1 [K0],'BeepBoo' [K2]),cte2 AS (SELECT 1 [K1],'Robot' [K3])\nSELECT [K0],[K2],[K1],[K3] FROM cte1 c1 INNER JOIN cte2 c2 ON [K0]=[K1] ");
+    ASSERT_EQ(4, stmt.GetColumnCount());
+    ASSERT_STREQ("KEYID", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+    ASSERT_STREQ("Noise", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+    ASSERT_STREQ("KEYID_1", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
+    ASSERT_STREQ("Name", stmt.GetColumnInfo(3).GetProperty()->GetName().c_str());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STREQ("1", stmt.GetValueText(0));
+    ASSERT_STREQ("BeepBoo", stmt.GetValueText(1));
+    ASSERT_STREQ("1", stmt.GetValueText(2));
+    ASSERT_STREQ("Robot", stmt.GetValueText(3));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, multiple_ctes_without_subcolumns_with_asterisk)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("multiple_ctes_without_subcolumns_without_asterisk.ecdb"));
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "WITH [cte1] AS ( SELECT 1 AS KEYID, 'BeepBoo' AS Noise ), cte2(KEYID, Name) AS ( SELECT 1, 'Robot' ) SELECT * FROM cte1 [c1] JOIN cte2 [c2] ON c1.KEYID = c2.KEYID"));
+    ASSERT_STREQ(stmt.GetNativeSql(), "WITH cte1 AS (SELECT 1 [K0],'BeepBoo' [K2]),cte2(KEYID,Name) AS (SELECT 1,'Robot')\nSELECT [K0],[K2],c2.KEYID,c2.Name FROM cte1 c1 INNER JOIN cte2 c2 ON [K0]=c2.KEYID ");
+    ASSERT_EQ(4, stmt.GetColumnCount());
+    ASSERT_STREQ("KEYID", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+    ASSERT_STREQ("Noise", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+    ASSERT_STREQ("KEYID_1", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
+    ASSERT_STREQ("Name", stmt.GetColumnInfo(3).GetProperty()->GetName().c_str());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STREQ("1", stmt.GetValueText(0));
+    ASSERT_STREQ("BeepBoo", stmt.GetValueText(1));
+    ASSERT_STREQ("1", stmt.GetValueText(2));
+    ASSERT_STREQ("Robot", stmt.GetValueText(3));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, mixing_ctes_with_columns_and_without_columns)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("multiple_ctes_without_subcolumns_without_asterisk.ecdb"));
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "WITH [cte1] AS ( SELECT 1 AS KEYID, 'BeepBoo' AS Noise ), cte2(KEYID, Name) AS ( SELECT 1, 'Robot' ) SELECT c1.KEYID, Noise, c2.KEYID, Name FROM cte1 [c1] JOIN cte2 [c2] ON c1.KEYID = c2.KEYID"));
+    ASSERT_STREQ(stmt.GetNativeSql(), "WITH cte1 AS (SELECT 1 [K0],'BeepBoo' [K2]),cte2(KEYID,Name) AS (SELECT 1,'Robot')\nSELECT [K0],[K2],c2.KEYID,c2.Name FROM cte1 c1 INNER JOIN cte2 c2 ON [K0]=c2.KEYID ");
+    ASSERT_EQ(4, stmt.GetColumnCount());
+    ASSERT_STREQ("KEYID", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+    ASSERT_STREQ("Noise", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+    ASSERT_STREQ("c2__x002E__KEYID", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
+    EXPECT_STREQ("c2.KEYID", stmt.GetColumnInfo(2).GetProperty()->GetDisplayLabel().c_str());
+    ASSERT_STREQ("Name", stmt.GetColumnInfo(3).GetProperty()->GetName().c_str());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STREQ("1", stmt.GetValueText(0));
+    ASSERT_STREQ("BeepBoo", stmt.GetValueText(1));
+    ASSERT_STREQ("1", stmt.GetValueText(2));
+    ASSERT_STREQ("Robot", stmt.GetValueText(3));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, mixing_ctes_with_columns_and_without_columns_and_selecting_in_random_order)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("mixing_ctes_with_columns_and_without_columns_and_selecting_in_random_order.ecdb"));
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "WITH [cte1] AS ( SELECT 1 AS KEYID, 'BeepBoo' AS Noise ), cte2(KEYID, Name) AS ( SELECT 1, 'Robot' ) SELECT c2.KEYID, Noise, c1.KEYID, Name FROM cte1 [c1] JOIN cte2 [c2] ON c1.KEYID = c2.KEYID"));
+    ASSERT_STREQ(stmt.GetNativeSql(), "WITH cte1 AS (SELECT 1 [K0],'BeepBoo' [K2]),cte2(KEYID,Name) AS (SELECT 1,'Robot')\nSELECT c2.KEYID,[K2],[K0],c2.Name FROM cte1 c1 INNER JOIN cte2 c2 ON [K0]=c2.KEYID ");
+    ASSERT_EQ(4, stmt.GetColumnCount());
+    ASSERT_STREQ("KEYID", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
+    ASSERT_STREQ("Noise", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+    ASSERT_STREQ("c2__x002E__KEYID", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+    EXPECT_STREQ("c2.KEYID", stmt.GetColumnInfo(0).GetProperty()->GetDisplayLabel().c_str());
+    ASSERT_STREQ("Name", stmt.GetColumnInfo(3).GetProperty()->GetName().c_str());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STREQ("1", stmt.GetValueText(0));
+    ASSERT_STREQ("BeepBoo", stmt.GetValueText(1));
+    ASSERT_STREQ("1", stmt.GetValueText(2));
+    ASSERT_STREQ("Robot", stmt.GetValueText(3));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, unions_inside_select_inside_cte_and_selecting_1_column_after_left_join)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("unions_inside_select_inside_cte_and_selecting_1_column_after_left_join.ecdb"));
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, " WITH edges AS ( SELECT 1 AS [Id], 2 AS [ParentId], 'Hi' UNION ALL SELECT 3 AS [Id], 4 AS [ParentId], 'Hello'), nodes AS ( SELECT 3 AS [Id], 2 AS [ParentId], 'A'), joinToParent AS (SELECT p.Id FROM nodes [p] LEFT JOIN edges [c] ON [p].Id = [c].ParentId) SELECT * FROM joinToParent"));
+    ASSERT_STREQ(stmt.GetNativeSql(), "WITH edges AS (SELECT 1,2 [K1],'Hi' UNION ALL SELECT 3,4,'Hello'),nodes AS (SELECT 3 [K0],2,'A'),joinToParent AS (SELECT [K0] [K2] FROM nodes p LEFT OUTER JOIN edges c ON [K0]=[K1] )\nSELECT [K2] FROM joinToParent");
+    ASSERT_EQ(1, stmt.GetColumnCount());
+    ASSERT_STREQ("Id", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STREQ("3", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, unions_inside_select_inside_cte_and_selecting_multiple_columns_after_left_join)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("unions_inside_select_inside_cte_and_selecting_multiple_columns_after_left_join.ecdb"));
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, " WITH edges AS ( SELECT 1 AS [Id], 2 AS [ParentId], 'Hi' UNION ALL SELECT 3 AS [Id], 4 AS [ParentId], 'Hello'), nodes AS ( SELECT 3 AS [Id], 2 AS [ParentId], 'A'), joinToParent AS (SELECT * FROM nodes [p] LEFT JOIN edges [c] ON [p].Id = [c].ParentId) SELECT * FROM joinToParent"));
+    ASSERT_STREQ(stmt.GetNativeSql(), "WITH edges AS (SELECT 1 [K4],2 [K1],'Hi' [K5] UNION ALL SELECT 3,4,'Hello'),nodes AS (SELECT 3 [K0],2 [K2],'A' [K3]),joinToParent AS (SELECT [K0] [K6],[K2] [K7],[K3] [K8],[K4] [K9],[K1] [K10],[K5] [K11] FROM nodes p LEFT OUTER JOIN edges c ON [K0]=[K1] )\nSELECT [K6],[K7],[K8],[K9],[K10],[K11] FROM joinToParent");
+    ASSERT_EQ(6, stmt.GetColumnCount());
+    ASSERT_STREQ("Id", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+    ASSERT_STREQ("ParentId", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+    ASSERT_STREQ("'A'", stmt.GetColumnInfo(2).GetProperty()->GetDisplayLabel().c_str());
+    ASSERT_STREQ("Id_1", stmt.GetColumnInfo(3).GetProperty()->GetDisplayLabel().c_str());
+    ASSERT_STREQ("ParentId_1", stmt.GetColumnInfo(4).GetProperty()->GetDisplayLabel().c_str());
+    ASSERT_STREQ("'Hi'", stmt.GetColumnInfo(5).GetProperty()->GetDisplayLabel().c_str());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STREQ("3", stmt.GetValueText(0));
+    ASSERT_STREQ("2", stmt.GetValueText(1));
+    ASSERT_STREQ("A", stmt.GetValueText(2));
+    ASSERT_EQ(true, stmt.IsValueNull(3));
+    ASSERT_EQ(true, stmt.IsValueNull(4));
+    ASSERT_EQ(true, stmt.IsValueNull(5));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, multiple_ctes_with_aliased_asterisk_resolution_inside)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("multiple_ctes_with_aliased_asterisk_resolution_inside.ecdb"));
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, " WITH edges AS ( SELECT 1 AS [Id], 2 AS [ParentId], 'Hi' UNION ALL SELECT 3 AS [Id], 4 AS [ParentId], 'Hello'), nodes AS ( SELECT 3 AS [Id], 2 AS [ParentId], 'A'), joinToParent AS (SELECT p.* FROM nodes [p] LEFT JOIN edges [c] ON [p].Id = [c].ParentId) SELECT * FROM joinToParent"));
+    ASSERT_STREQ(stmt.GetNativeSql(), "WITH edges AS (SELECT 1,2 [K1],'Hi' UNION ALL SELECT 3,4,'Hello'),nodes AS (SELECT 3 [K0],2 [K2],'A' [K3]),joinToParent AS (SELECT [K0] [K4],[K2] [K5],[K3] [K6] FROM nodes p LEFT OUTER JOIN edges c ON [K0]=[K1] )\nSELECT [K4],[K5],[K6] FROM joinToParent");
+    ASSERT_EQ(3, stmt.GetColumnCount());
+    ASSERT_STREQ("Id", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+    ASSERT_STREQ("ParentId", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+    ASSERT_STREQ("'A'", stmt.GetColumnInfo(2).GetProperty()->GetDisplayLabel().c_str());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STREQ("3", stmt.GetValueText(0));
+    ASSERT_STREQ("2", stmt.GetValueText(1));
+    ASSERT_STREQ("A", stmt.GetValueText(2));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, multiple_ctes_with_aliased_asterisk_resolution_inside_and_outside)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("multiple_ctes_with_aliased_asterisk_resolution_inside_and_outside.ecdb"));
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, " WITH edges AS ( SELECT 1 AS [Id], 2 AS [ParentId], 'Hi' UNION ALL SELECT 3 AS [Id], 4 AS [ParentId], 'Hello'), nodes AS ( SELECT 3 AS [Id], 2 AS [ParentId], 'A'), joinToParent AS (SELECT * FROM edges [c] LEFT JOIN nodes [p] ON [c].ParentId = [p].Id) SELECT * FROM joinToParent"));
+    ASSERT_STREQ(stmt.GetNativeSql(), "WITH edges AS (SELECT 1 [K2],2 [K0],'Hi' [K3] UNION ALL SELECT 3,4,'Hello'),nodes AS (SELECT 3 [K1],2 [K4],'A' [K5]),joinToParent AS (SELECT [K2] [K6],[K0] [K7],[K3] [K8],[K1] [K9],[K4] [K10],[K5] [K11] FROM edges c LEFT OUTER JOIN nodes p ON [K0]=[K1] )\nSELECT [K6],[K7],[K8],[K9],[K10],[K11] FROM joinToParent");
+    ASSERT_EQ(6, stmt.GetColumnCount());
+    ASSERT_STREQ("Id", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+    ASSERT_STREQ("ParentId", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+    ASSERT_STREQ("'Hi'", stmt.GetColumnInfo(2).GetProperty()->GetDisplayLabel().c_str());
+    ASSERT_STREQ("Id_1", stmt.GetColumnInfo(3).GetProperty()->GetDisplayLabel().c_str());
+    ASSERT_STREQ("ParentId_1", stmt.GetColumnInfo(4).GetProperty()->GetDisplayLabel().c_str());
+    ASSERT_STREQ("'A'", stmt.GetColumnInfo(5).GetProperty()->GetDisplayLabel().c_str());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STREQ("1", stmt.GetValueText(0));
+    ASSERT_STREQ("2", stmt.GetValueText(1));
+    ASSERT_STREQ("Hi", stmt.GetValueText(2));
+    ASSERT_EQ(true, stmt.IsValueNull(3));
+    ASSERT_EQ(true, stmt.IsValueNull(4));
+    ASSERT_EQ(true, stmt.IsValueNull(5));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STREQ("3", stmt.GetValueText(0));
+    ASSERT_STREQ("4", stmt.GetValueText(1));
+    ASSERT_STREQ("Hello", stmt.GetValueText(2));
+    ASSERT_EQ(true, stmt.IsValueNull(3));
+    ASSERT_EQ(true, stmt.IsValueNull(4));
+    ASSERT_EQ(true, stmt.IsValueNull(5));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, multiple_ctes_with_aliased_asterisk_resolution_inside_and_outside_with_values_matching_for_on_clause)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("multiple_ctes_with_aliased_asterisk_resolution_inside_and_outside_with_values_matching_for_on_clause.ecdb"));
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, " WITH edges AS ( SELECT 1 AS [Id], 2 AS [ParentId], 'Hi' UNION ALL SELECT 3 AS [Id], 4 AS [ParentId], 'Hello'), nodes AS ( SELECT 4 AS [Id], 2 AS [ParentId], 'A'), joinToParent AS (SELECT * FROM edges [c] LEFT JOIN nodes [p] ON [c].ParentId = [p].Id) SELECT * FROM joinToParent"));
+    ASSERT_STREQ(stmt.GetNativeSql(), "WITH edges AS (SELECT 1 [K2],2 [K0],'Hi' [K3] UNION ALL SELECT 3,4,'Hello'),nodes AS (SELECT 4 [K1],2 [K4],'A' [K5]),joinToParent AS (SELECT [K2] [K6],[K0] [K7],[K3] [K8],[K1] [K9],[K4] [K10],[K5] [K11] FROM edges c LEFT OUTER JOIN nodes p ON [K0]=[K1] )\nSELECT [K6],[K7],[K8],[K9],[K10],[K11] FROM joinToParent");
+    ASSERT_EQ(6, stmt.GetColumnCount());
+    ASSERT_STREQ("Id", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+    ASSERT_STREQ("ParentId", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+    ASSERT_STREQ("'Hi'", stmt.GetColumnInfo(2).GetProperty()->GetDisplayLabel().c_str());
+    ASSERT_STREQ("Id_1", stmt.GetColumnInfo(3).GetProperty()->GetDisplayLabel().c_str());
+    ASSERT_STREQ("ParentId_1", stmt.GetColumnInfo(4).GetProperty()->GetDisplayLabel().c_str());
+    ASSERT_STREQ("'A'", stmt.GetColumnInfo(5).GetProperty()->GetDisplayLabel().c_str());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STREQ("1", stmt.GetValueText(0));
+    ASSERT_STREQ("2", stmt.GetValueText(1));
+    ASSERT_STREQ("Hi", stmt.GetValueText(2));
+    ASSERT_EQ(true, stmt.IsValueNull(3));
+    ASSERT_EQ(true, stmt.IsValueNull(4));
+    ASSERT_EQ(true, stmt.IsValueNull(5));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STREQ("3", stmt.GetValueText(0));
+    ASSERT_STREQ("4", stmt.GetValueText(1));
+    ASSERT_STREQ("Hello", stmt.GetValueText(2));
+    ASSERT_STREQ("4", stmt.GetValueText(3));
+    ASSERT_STREQ("2", stmt.GetValueText(4));
+    ASSERT_STREQ("A", stmt.GetValueText(5));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, ambiguous_column_for_multiple_CTEs)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ambiguous_column_for_multiple_CTEs.ecdb"));
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "WITH [cte1] AS ( SELECT 1 AS KEYID, 'BeepBoo' AS Noise ), cte2(KEYID, Name) AS ( SELECT 1, 'Robot' ) SELECT KEYID, Noise, Name FROM cte1 [c1] JOIN cte2 [c2] ON c1.KEYID = c2.KEYID"));
+    }
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, values_support_in_cte)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_support_in_cte.ecdb"));
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "WITH cte AS (VALUES('a'),('b')) SELECT * FROM cte"));
+    ASSERT_EQ(1, stmt.GetColumnCount());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STREQ("a", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STREQ("b", stmt.GetValueText(0));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, ValuesMultiRowMultiColumn)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_multi_row_multi_col.ecdb"));
+    // Multiple rows with integer, text, and double columns inside a CTE
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "WITH data(a,b,c) AS (VALUES (1,'hello',3.14),(2,'world',2.71),(3,'foo',1.41)) SELECT a,b,c FROM data"));
+    ASSERT_EQ(3, stmt.GetColumnCount());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(1, stmt.GetValueInt(0));
+    ASSERT_STREQ("hello", stmt.GetValueText(1));
+    ASSERT_EQ(3.14, stmt.GetValueDouble(2));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(2, stmt.GetValueInt(0));
+    ASSERT_STREQ("world", stmt.GetValueText(1));
+    ASSERT_EQ(2.71, stmt.GetValueDouble(2));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(3, stmt.GetValueInt(0));
+    ASSERT_STREQ("foo", stmt.GetValueText(1));
+    ASSERT_EQ(1.41, stmt.GetValueDouble(2));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, ValuesMismatchedColumnCountFewerColumns)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_mismatched_fewer_cols.ecdb"));
+    // VALUES inside a CTE where second row has one fewer column; must be rejected
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "WITH cte(a,b) AS (VALUES (1,2),(3)) SELECT a,b FROM cte"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, ValuesMismatchedColumnCountExtraColumns)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_mismatched_extra_cols.ecdb"));
+    // VALUES inside a CTE where second row has one extra column; must be rejected
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "WITH cte(a,b) AS (VALUES (1,2),(3,4,5)) SELECT a,b FROM cte"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, ValuesWithNullLiterals)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_with_nulls.ecdb"));
+    // NULL literals in various positions across rows, accessed through a CTE
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "WITH data(a,b,c) AS (VALUES (1,NULL,'a'),(NULL,2,NULL)) SELECT a,b,c FROM data"));
+    ASSERT_EQ(3, stmt.GetColumnCount());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(1, stmt.GetValueInt(0));
+    ASSERT_EQ(true, stmt.IsValueNull(1));
+    ASSERT_STREQ("a", stmt.GetValueText(2));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(true, stmt.IsValueNull(0));
+    ASSERT_EQ(2, stmt.GetValueInt(1));
+    ASSERT_EQ(true, stmt.IsValueNull(2));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, ValuesAllNullRow)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_all_null_row.ecdb"));
+    // First row entirely NULL, second row concrete values, accessed through a CTE
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "WITH data(a,b,c) AS (VALUES (NULL,NULL,NULL),(1,2,3)) SELECT a,b,c FROM data"));
+    ASSERT_EQ(3, stmt.GetColumnCount());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(true, stmt.IsValueNull(0));
+    ASSERT_EQ(true, stmt.IsValueNull(1));
+    ASSERT_EQ(true, stmt.IsValueNull(2));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(1, stmt.GetValueInt(0));
+    ASSERT_EQ(2, stmt.GetValueInt(1));
+    ASSERT_EQ(3, stmt.GetValueInt(2));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, ValuesSingleColumnMultiRow)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_single_col_multi_row.ecdb"));
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "WITH data(v) AS (VALUES (10),(20),(30),(40),(50)) SELECT v FROM data"));
+    ASSERT_EQ(1, stmt.GetColumnCount());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(10, stmt.GetValueInt(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(20, stmt.GetValueInt(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(30, stmt.GetValueInt(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(40, stmt.GetValueInt(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(50, stmt.GetValueInt(0));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, ValuesWithArithmeticExpressions)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_with_expressions.ecdb"));
+    // Arithmetic expressions inside VALUES are evaluated when accessed via a CTE
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "WITH data(a,b) AS (VALUES (1+2, 3*4),(10-1, 8/4)) SELECT a,b FROM data"));
+    ASSERT_EQ(2, stmt.GetColumnCount());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(3,  stmt.GetValueInt(0));
+    ASSERT_EQ(12, stmt.GetValueInt(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(9, stmt.GetValueInt(0));
+    ASSERT_EQ(2, stmt.GetValueInt(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, ValuesWithStringConcatExpression)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_string_concat.ecdb"));
+    // String concatenation inside VALUES accessed through a CTE
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "WITH data(s,n) AS (VALUES ('hello' || ' ' || 'world', 42),('foo' || 'bar', 99)) SELECT s,n FROM data"));
+    ASSERT_EQ(2, stmt.GetColumnCount());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STREQ("hello world", stmt.GetValueText(0));
+    ASSERT_EQ(42, stmt.GetValueInt(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STREQ("foobar", stmt.GetValueText(0));
+    ASSERT_EQ(99, stmt.GetValueInt(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, ValuesInCteWithColumnAliases)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_cte_col_aliases.ecdb"));
+    // Column aliases declared in the CTE header are accessible in the outer SELECT
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "WITH data(x,y,z) AS (VALUES(1,'a',10),(2,'b',20),(3,'c',30)) SELECT x,y,z FROM data"));
+    ASSERT_EQ(3, stmt.GetColumnCount());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(1, stmt.GetValueInt(0));  ASSERT_STREQ("a", stmt.GetValueText(1)); ASSERT_EQ(10, stmt.GetValueInt(2));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(2, stmt.GetValueInt(0));  ASSERT_STREQ("b", stmt.GetValueText(1)); ASSERT_EQ(20, stmt.GetValueInt(2));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(3, stmt.GetValueInt(0));  ASSERT_STREQ("c", stmt.GetValueText(1)); ASSERT_EQ(30, stmt.GetValueInt(2));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, ValuesUnionAll)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_union_all.ecdb"));
+    // UNION ALL inside a CTE preserves duplicate rows
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "WITH data(a,b) AS (VALUES (1,2) UNION ALL VALUES (1,2) UNION ALL VALUES (3,4)) SELECT a,b FROM data"));
+    ASSERT_EQ(2, stmt.GetColumnCount());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_EQ(1, stmt.GetValueInt(0)); 
+    ASSERT_EQ(2, stmt.GetValueInt(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_EQ(1, stmt.GetValueInt(0)); 
+    ASSERT_EQ(2, stmt.GetValueInt(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_EQ(3, stmt.GetValueInt(0)); 
+    ASSERT_EQ(4, stmt.GetValueInt(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, ValuesUnionDeduplicates)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_union_dedup.ecdb"));
+    // UNION inside a CTE removes identical rows
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "WITH data(a,b) AS (VALUES (1,2) UNION VALUES (1,2) UNION VALUES (3,4)) SELECT a,b FROM data"));
+    ASSERT_EQ(2, stmt.GetColumnCount());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_EQ(1, stmt.GetValueInt(0)); 
+    ASSERT_EQ(2, stmt.GetValueInt(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_EQ(3, stmt.GetValueInt(0)); 
+    ASSERT_EQ(4, stmt.GetValueInt(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, ValuesWithBoundParameters)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_bound_params.ecdb"));
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "WITH data(a,b) AS (VALUES (?,?),(?,?)) SELECT a,b FROM data"));
+    stmt.BindInt(1, 10);
+    stmt.BindText(2, "alpha", IECSqlBinder::MakeCopy::No);
+    stmt.BindInt(3, 20);
+    stmt.BindText(4, "beta", IECSqlBinder::MakeCopy::No);
+    ASSERT_EQ(2, stmt.GetColumnCount());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_EQ(10, stmt.GetValueInt(0)); 
+    ASSERT_STREQ("alpha", stmt.GetValueText(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_EQ(20, stmt.GetValueInt(0)); 
+    ASSERT_STREQ("beta",  stmt.GetValueText(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, SelectingAsteriskWithBoundParameters)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("SelectingAsteriskWithBoundParameters.ecdb"));
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "WITH data(a,b) AS (VALUES (?,?),(?,?)) SELECT * FROM data"));
+    stmt.BindInt(1, 10);
+    stmt.BindText(2, "alpha", IECSqlBinder::MakeCopy::No);
+    stmt.BindInt(3, 20);
+    stmt.BindText(4, "beta", IECSqlBinder::MakeCopy::No);
+    ASSERT_EQ(2, stmt.GetColumnCount());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_EQ(10, stmt.GetValueInt(0)); 
+    ASSERT_STREQ("alpha", stmt.GetValueText(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_EQ(20, stmt.GetValueInt(0)); 
+    ASSERT_STREQ("beta",  stmt.GetValueText(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, ValuesWithSubColumns_NullFirstRow)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_with_subcols_null_first_row.ecdb"));
+    // First row all-NULL, second row concrete
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "WITH cte(a,b) AS (VALUES (NULL,NULL),(10,20)) SELECT * FROM cte"));
+    ASSERT_EQ(2, stmt.GetColumnCount());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(true, stmt.IsValueNull(0));
+    ASSERT_EQ(true, stmt.IsValueNull(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(10, stmt.GetValueInt(0));
+    ASSERT_EQ(20, stmt.GetValueInt(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, Values_BoundNullParameter)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_bound_null.ecdb"));
+    // BindNull with VALUES inside a no-sub-column CTE
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "WITH cte(a, b) AS (VALUES (?,?),(?,?)) SELECT a, b FROM cte"));
+    stmt.BindInt(1, 7);
+    stmt.BindNull(2);
+    stmt.BindNull(3);
+    stmt.BindInt(4, 42);
+    ASSERT_EQ(2, stmt.GetColumnCount());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(7,    stmt.GetValueInt(0));
+    ASSERT_EQ(true, stmt.IsValueNull(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(true, stmt.IsValueNull(0));
+    ASSERT_EQ(42,   stmt.GetValueInt(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, ValuesWithWhereFilterViaCte)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_where_filter.ecdb"));
+    // WHERE clause applied to VALUES data surfaced through a named CTE
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "WITH data(id,val) AS (VALUES (1,10),(2,20),(3,30),(4,40)) SELECT id,val FROM data WHERE id > 2"));
+    ASSERT_EQ(2, stmt.GetColumnCount());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_EQ(3, stmt.GetValueInt(0)); 
+    ASSERT_EQ(30, stmt.GetValueInt(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_EQ(4, stmt.GetValueInt(0)); 
+    ASSERT_EQ(40, stmt.GetValueInt(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, ValuesOrderByViaCte)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_order_by.ecdb"));
+    // ORDER BY on VALUES data accessed through a named CTE
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "WITH sorted(id,name) AS (VALUES (3,'c'),(1,'a'),(2,'b')) SELECT id,name FROM sorted ORDER BY id"));
+    ASSERT_EQ(2, stmt.GetColumnCount());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_EQ(1, stmt.GetValueInt(0)); 
+    ASSERT_STREQ("a", stmt.GetValueText(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_EQ(2, stmt.GetValueInt(0)); 
+    ASSERT_STREQ("b", stmt.GetValueText(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_EQ(3, stmt.GetValueInt(0)); 
+    ASSERT_STREQ("c", stmt.GetValueText(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, ValuesTwoCtesJoined)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_two_ctes_joined.ecdb"));
+    // Two independent VALUES-based CTEs joined together
+    auto query = R"(
+        WITH
+            ids(id)         AS (VALUES(1),(2),(3)),
+            names(id, name) AS (VALUES(1,'Alice'),(2,'Bob'),(3,'Charlie'))
+        SELECT i.id, n.name FROM ids i JOIN names n ON i.id = n.id ORDER BY i.id
+    )";
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_EQ(1, stmt.GetValueInt(0)); 
+    ASSERT_STREQ("Alice",   stmt.GetValueText(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_EQ(2, stmt.GetValueInt(0)); 
+    ASSERT_STREQ("Bob",     stmt.GetValueText(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_EQ(3, stmt.GetValueInt(0)); 
+    ASSERT_STREQ("Charlie", stmt.GetValueText(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, ValuesInSubqueryCteWrap)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_subquery_cte_wrap.ecdb"));
+    // SELECT * over VALUES accessed through a CTE, confirming row and column counts
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "WITH cte(a,b) AS (VALUES (1,'hello'),(2,'world'),(3,'foo')) SELECT a,b FROM cte"));
+    ASSERT_EQ(2, stmt.GetColumnCount());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_EQ(1, stmt.GetValueInt(0)); 
+    ASSERT_STREQ("hello", stmt.GetValueText(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_EQ(2, stmt.GetValueInt(0)); 
+    ASSERT_STREQ("world", stmt.GetValueText(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_EQ(3, stmt.GetValueInt(0)); 
+    ASSERT_STREQ("foo",   stmt.GetValueText(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, ValuesAggregationViaCte)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_aggregation.ecdb"));
+    // Aggregate functions applied to VALUES data via a CTE
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "WITH nums(v) AS (VALUES (5),(3),(8),(1),(7)) SELECT COUNT(v), SUM(v), MIN(v), MAX(v) FROM nums"));
+    ASSERT_EQ(4, stmt.GetColumnCount());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(5,  stmt.GetValueInt(0)); // COUNT
+    ASSERT_EQ(24, stmt.GetValueInt(1)); // SUM
+    ASSERT_EQ(1,  stmt.GetValueInt(2)); // MIN
+    ASSERT_EQ(8,  stmt.GetValueInt(3)); // MAX
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, ValuesUnionWithSelect)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_union_with_select.ecdb"));
+    // VALUES rows interleaved with SELECT rows inside a CTE via UNION ALL
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "WITH data(a,b) AS (VALUES (10,20) UNION ALL SELECT 30, 40 UNION ALL VALUES (50, 60)) SELECT a,b FROM data"));
+    ASSERT_EQ(2, stmt.GetColumnCount());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_EQ(10, stmt.GetValueInt(0)); ASSERT_EQ(20, stmt.GetValueInt(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_EQ(30, stmt.GetValueInt(0)); ASSERT_EQ(40, stmt.GetValueInt(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_EQ(50, stmt.GetValueInt(0)); ASSERT_EQ(60, stmt.GetValueInt(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture,MismatchedColsInCte)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_mismatch_cols_cte.ecdb"));
+    // mismatch in num of columns of cte; must be rejected
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb,
+        "WITH cte(a) AS (VALUES (1,2),(3, 4)) SELECT * FROM cte"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, ValuesNoSubColumns_BasicSelectStar)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_no_subcols_basic.ecdb"));
+    // CTE with no sub-column declarations: column names come from the VALUES body aliases
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "WITH cte AS (VALUES (1,'hello'),(2,'world'),(3,'foo')) SELECT * FROM cte"));
+    ASSERT_EQ(2, stmt.GetColumnCount());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_EQ(1, stmt.GetValueInt(0)); 
+    ASSERT_STREQ("hello", stmt.GetValueText(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_EQ(2, stmt.GetValueInt(0)); 
+    ASSERT_STREQ("world", stmt.GetValueText(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_EQ(3, stmt.GetValueInt(0)); 
+    ASSERT_STREQ("foo",   stmt.GetValueText(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, ValuesNoSubColumns_NullLiterals)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_no_subcols_nulls.ecdb"));
+    // NULL literals at varying positions, CTE has no sub-column declarations
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "WITH cte AS (VALUES (1,NULL,'a'),(NULL,2,NULL)) SELECT * FROM cte"));
+    ASSERT_EQ(3, stmt.GetColumnCount());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(1,    stmt.GetValueInt(0));
+    ASSERT_EQ(true, stmt.IsValueNull(1));
+    ASSERT_STREQ("a", stmt.GetValueText(2));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(true, stmt.IsValueNull(0));
+    ASSERT_EQ(2, stmt.GetValueInt(1));
+    ASSERT_EQ(true, stmt.IsValueNull(2));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, ValuesNoSubColumns_AllNullRow)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_no_subcols_all_null_row.ecdb"));
+    // First row all-NULL, second row concrete, no sub-column declarations
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "WITH cte AS (VALUES (NULL,NULL),(10,20)) SELECT * FROM cte"));
+    ASSERT_EQ(2, stmt.GetColumnCount());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(true, stmt.IsValueNull(0));
+    ASSERT_EQ(true, stmt.IsValueNull(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(10, stmt.GetValueInt(0));
+    ASSERT_EQ(20, stmt.GetValueInt(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, ValuesNoSubColumns_AllNullRow_NonNullFirst)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_no_subcols_all_null_row.ecdb"));
+    // First row all-NULL, second row concrete, no sub-column declarations
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "WITH cte AS (VALUES (10,20), (NULL,NULL)) SELECT * FROM cte"));
+    ASSERT_EQ(2, stmt.GetColumnCount());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(10, stmt.GetValueInt(0));
+    ASSERT_EQ(20, stmt.GetValueInt(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(true, stmt.IsValueNull(0));
+    ASSERT_EQ(true, stmt.IsValueNull(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, ValuesNoSubColumns_UnionAll)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_no_subcols_union_all.ecdb"));
+    // UNION ALL inside a no-sub-column CTE preserves duplicates
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "WITH cte AS (VALUES (1,2) UNION ALL VALUES (1,2) UNION ALL VALUES (3,4)) SELECT * FROM cte"));
+    ASSERT_EQ(2, stmt.GetColumnCount());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_EQ(1, stmt.GetValueInt(0)); 
+    ASSERT_EQ(2, stmt.GetValueInt(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_EQ(1, stmt.GetValueInt(0)); 
+    ASSERT_EQ(2, stmt.GetValueInt(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_EQ(3, stmt.GetValueInt(0)); 
+    ASSERT_EQ(4, stmt.GetValueInt(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, ValuesNoSubColumns_Union)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_no_subcols_union.ecdb"));
+    // UNION inside a no-sub-column CTE deduplicates rows
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "WITH cte AS (VALUES (1,2) UNION VALUES (1,2) UNION VALUES (3,4)) SELECT * FROM cte"));
+    ASSERT_EQ(2, stmt.GetColumnCount());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(1, stmt.GetValueInt(0)); ASSERT_EQ(2, stmt.GetValueInt(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(3, stmt.GetValueInt(0)); ASSERT_EQ(4, stmt.GetValueInt(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, ValuesNoSubColumns_ArithmeticExpressions)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_no_subcols_arith.ecdb"));
+    // Arithmetic expressions in VALUES, no sub-column declarations on the CTE
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "WITH cte AS (VALUES (2+3, 4*5),(10-4, 9/3)) SELECT * FROM cte"));
+    ASSERT_EQ(2, stmt.GetColumnCount());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_EQ(5,  stmt.GetValueInt(0)); 
+    ASSERT_EQ(20, stmt.GetValueInt(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_EQ(6,  stmt.GetValueInt(0)); 
+    ASSERT_EQ(3,  stmt.GetValueInt(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, ValuesNoSubColumns_StringConcat)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_no_subcols_strcat.ecdb"));
+    // String concat expressions in VALUES, CTE has no sub-column declarations
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "WITH cte AS (VALUES ('foo' || 'bar', 1),('hello' || ' ' || 'world', 2)) SELECT * FROM cte"));
+    ASSERT_EQ(2, stmt.GetColumnCount());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_STREQ("foobar", stmt.GetValueText(0)); 
+    ASSERT_EQ(1, stmt.GetValueInt(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_STREQ("hello world", stmt.GetValueText(0)); 
+    ASSERT_EQ(2, stmt.GetValueInt(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, ValuesNoSubColumns_BoundParameters)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_no_subcols_bound.ecdb"));
+    // Bound parameters in VALUES, CTE has no sub-column declarations
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "WITH cte AS (VALUES (?,?),(?,?)) SELECT * FROM cte"));
+    stmt.BindInt(1, 10);
+    stmt.BindText(2, "alpha", IECSqlBinder::MakeCopy::No);
+    stmt.BindInt(3, 20);
+    stmt.BindText(4, "beta", IECSqlBinder::MakeCopy::No);
+    ASSERT_EQ(2, stmt.GetColumnCount());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_EQ(10, stmt.GetValueInt(0)); 
+    ASSERT_STREQ("alpha", stmt.GetValueText(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_EQ(20, stmt.GetValueInt(0)); 
+    ASSERT_STREQ("beta",  stmt.GetValueText(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, ValuesNoSubColumns_BoundNullParameter)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_no_subcols_bound_null.ecdb"));
+    // BindNull with VALUES inside a no-sub-column CTE
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "WITH cte AS (VALUES (?,?),(?,?)) SELECT * FROM cte"));
+    stmt.BindInt(1, 7);
+    stmt.BindNull(2);
+    stmt.BindNull(3);
+    stmt.BindInt(4, 42);
+    ASSERT_EQ(2, stmt.GetColumnCount());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(7,    stmt.GetValueInt(0));
+    ASSERT_EQ(true, stmt.IsValueNull(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(true, stmt.IsValueNull(0));
+    ASSERT_EQ(42,   stmt.GetValueInt(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, ValuesNoSubColumns_Aggregation)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_no_subcols_agg.ecdb"));
+    // Wrap a no-sub-column VALUES CTE inside a named-column CTE to enable aggregate functions
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "WITH raw AS (VALUES (5),(3),(8),(1),(7)), nums(v) AS (SELECT * FROM raw) SELECT COUNT(v), SUM(v), MIN(v), MAX(v) FROM nums"));
+    ASSERT_EQ(4, stmt.GetColumnCount());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(5,  stmt.GetValueInt(0)); // COUNT
+    ASSERT_EQ(24, stmt.GetValueInt(1)); // SUM
+    ASSERT_EQ(1,  stmt.GetValueInt(2)); // MIN
+    ASSERT_EQ(8,  stmt.GetValueInt(3)); // MAX
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, ValuesNoSubColumns_TwoCtesSelectSequential)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_no_subcols_two_ctes.ecdb"));
+    // Two independent no-sub-column VALUES CTEs, each selected in turn via UNION ALL
+    auto query = R"(
+        WITH ab AS (VALUES (1,'A'),(2,'B')), cd AS (VALUES (3,'C'),(4,'D')) SELECT * FROM ab UNION ALL SELECT * FROM cd
+    )";
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
+    ASSERT_EQ(2, stmt.GetColumnCount());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_EQ(1, stmt.GetValueInt(0)); 
+    ASSERT_STREQ("A", stmt.GetValueText(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_EQ(2, stmt.GetValueInt(0)); 
+    ASSERT_STREQ("B", stmt.GetValueText(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_EQ(3, stmt.GetValueInt(0)); 
+    ASSERT_STREQ("C", stmt.GetValueText(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_EQ(4, stmt.GetValueInt(0)); 
+    ASSERT_STREQ("D", stmt.GetValueText(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, ValuesNoSubColumns_UnionWithSelect)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_no_subcols_union_select.ecdb"));
+    // VALUES interleaved with SELECT inside a no-sub-column CTE via UNION ALL
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "WITH cte AS (VALUES (10,20) UNION ALL SELECT 30,40 UNION ALL VALUES (50,60)) SELECT * FROM cte"));
+    ASSERT_EQ(2, stmt.GetColumnCount());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_EQ(10, stmt.GetValueInt(0)); 
+    ASSERT_EQ(20, stmt.GetValueInt(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_EQ(30, stmt.GetValueInt(0)); 
+    ASSERT_EQ(40, stmt.GetValueInt(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_EQ(50, stmt.GetValueInt(0)); 
+    ASSERT_EQ(60, stmt.GetValueInt(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, ValuesNoSubColumns_MismatchedRowWidthFewerCols)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_no_subcols_mismatch_fewer.ecdb"));
+    // Second row has fewer columns than the first inside a no-sub-column CTE; must be rejected
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb,
+        "WITH cte AS (VALUES (1,2),(3)) SELECT * FROM cte"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, ValuesNoSubColumns_MismatchedRowWidthExtraCols)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_no_subcols_mismatch_extra.ecdb"));
+    // Second row has more columns than the first inside a no-sub-column CTE; must be rejected
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb,
+        "WITH cte AS (VALUES (1,2),(3,4,5)) SELECT * FROM cte"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, ValuesNoSubColumns_NullVariation)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_no_subcols_all_null_row.ecdb"));
+    // First row all-NULL, second row concrete, no sub-column declarations
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "WITH cte AS (VALUES (NULL,NULL),(10,20)) SELECT * FROM cte"));
+    ASSERT_EQ(2, stmt.GetColumnCount());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(true, stmt.IsValueNull(0));
+    ASSERT_EQ(true, stmt.IsValueNull(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(10, stmt.GetValueInt(0));
+    ASSERT_EQ(20, stmt.GetValueInt(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, ValuesNoSubColumns_BindString)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ValuesNoSubColumns_BindString.ecdb"));
+    // First row all-NULL, second row concrete, no sub-column declarations
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "WITH cte AS (VALUES (?,?),(?,?)) SELECT * FROM cte"));
+    stmt.BindText(1, "test", IECSqlBinder::MakeCopy::No);
+    stmt.BindText(2, "Hi", IECSqlBinder::MakeCopy::No); 
+    stmt.BindText(3, "foo", IECSqlBinder::MakeCopy::No);
+    stmt.BindText(4, "bar", IECSqlBinder::MakeCopy::No);
+    
+    ASSERT_EQ(2, stmt.GetColumnCount());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ("test", stmt.GetValueText(0));
+    ASSERT_EQ("Hi", stmt.GetValueText(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ("foo", stmt.GetValueText(0));
+    ASSERT_EQ("bar", stmt.GetValueText(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    ASSERT_STREQ("double", stmt.GetColumnInfo(0).GetProperty()->GetTypeFullName().c_str());
+    ASSERT_STREQ("double", stmt.GetColumnInfo(1).GetProperty()->GetTypeFullName().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, Values_BindString)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("Values_BindString.ecdb"));
+    // First row all-NULL, second row concrete, no sub-column declarations
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "WITH cte(a,b) AS (VALUES (?,?),(?,?)) SELECT * FROM cte"));
+    stmt.BindText(1, "test", IECSqlBinder::MakeCopy::No);
+    stmt.BindText(2, "Hi", IECSqlBinder::MakeCopy::No); 
+    stmt.BindText(3, "foo", IECSqlBinder::MakeCopy::No);
+    stmt.BindText(4, "bar", IECSqlBinder::MakeCopy::No);
+
+    ASSERT_EQ(2, stmt.GetColumnCount());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ("test", stmt.GetValueText(0));
+    ASSERT_EQ("Hi", stmt.GetValueText(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ("foo", stmt.GetValueText(0));
+    ASSERT_EQ("bar", stmt.GetValueText(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    ASSERT_STREQ("double", stmt.GetColumnInfo(0).GetProperty()->GetTypeFullName().c_str());
+    ASSERT_STREQ("double", stmt.GetColumnInfo(1).GetProperty()->GetTypeFullName().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, Values_OnlyNull)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("Values_OnlyNull.ecdb"));
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+            "WITH cte(a,b) AS (VALUES (NULL,NULL)) SELECT * FROM cte"));
+        ASSERT_STREQ("WITH cte(a,b) AS (SELECT NULL,NULL)\nSELECT NULL,NULL FROM cte", stmt.GetNativeSql());
+        ASSERT_EQ(2, stmt.GetColumnCount());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(true, stmt.IsValueNull(0));
+        ASSERT_EQ(true, stmt.IsValueNull(1));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+        {
+         ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+            "WITH cte(a,b) AS (VALUES (NULL,NULL)) SELECT a, b FROM cte"));
+        ASSERT_STREQ("WITH cte(a,b) AS (SELECT NULL,NULL)\nSELECT NULL,NULL FROM cte", stmt.GetNativeSql());
+        ASSERT_EQ(2, stmt.GetColumnCount());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(true, stmt.IsValueNull(0));
+        ASSERT_EQ(true, stmt.IsValueNull(1));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());   
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+            "WITH cte AS (VALUES (NULL,NULL)) SELECT * FROM cte"));
+        ASSERT_STREQ("WITH cte AS (SELECT NULL [K0],NULL [K1])\nSELECT NULL,NULL FROM cte", stmt.GetNativeSql());
+        ASSERT_EQ(2, stmt.GetColumnCount());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(true, stmt.IsValueNull(0));
+        ASSERT_EQ(true, stmt.IsValueNull(1));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb,
+            "WITH cte(a,b) AS (VALUES (NULL,NULL),(NULL, NULL)) SELECT * FROM cte"));
+        }
+        {
+         ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb,
+            "WITH cte(a,b) AS (VALUES (NULL,NULL),(NULL, NULL)) SELECT a, b FROM cte"));  
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb,
+            "WITH cte AS (VALUES (NULL,NULL),(null, null)) SELECT * FROM cte"));
+        }
+    }
+
+//=======================================================================================
+// Regression coverage for iTwin/itwinjs-backlog#2311.
+//
+// ECSqlBinderFactory::CreateBinder (ECSqlBinder.cpp:82) does:
+//     return CreateIdBinder(ctx, *propNameExp.GetPropertyMap(), sysPropInfo, paramNameGen);
+// without checking GetPropertyMap() for nullptr. PropertyNameExp::GetPropertyMap() can
+// legitimately return nullptr (PropertyNameExp.cpp:539) and the guards there are BeAsserts,
+// which compile out under NDEBUG.
+//
+// To reach it, an alias must at the same time
+//   a) have an inferred Id type - ECSqlTypeInfo::IsId() requires exact-numeric plus the
+//      "Id" extended type name. GetTypeInfoFromPropertyRef() (PropertyNameExp.cpp:176)
+//      supplies it for a compound (UNION) select by borrowing the type from a sibling
+//      branch when the linked branch's own type is Null/Unset; and
+//   b) have no backing PropertyMap - PropertyRef::TryGetPropertyMap()
+//      (PropertyNameExp.cpp:724) returns nullptr when the linked DerivedPropertyExp's
+//      expression is not a PropertyNameExp / NavValueCreationFuncExp.
+//
+// A NULL literal in one UNION branch satisfies both at once. The expected crash is
+// EXCEPTION_ACCESS_VIOLATION_READ at 0x20 - the offset of PropertyMap::m_ecProperty, read
+// by the inlined ECSqlTypeInfo(PropertyMap const&) ctor off a null `this`.
+//
+// Each query lives in its own TEST_F so that a crash identifies the exact failing shape
+// instead of taking the whole suite down at the first one.
+//=======================================================================================
+struct CommonTableExpNullPropertyMapTestFixture : ECDbTestFixture {};
+
+//---------------------------------------------------------------------------------------
+// Query 1: subquery + UNION. Primary candidate.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpNullPropertyMapTestFixture, BindIdParam_SubqueryUnionNullAlias) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("issue2311_subquery_union.ecdb"));
+
+    auto query = R"(
+        SELECT * FROM (
+            SELECT NULL AS eid FROM meta.ECClassDef
+            UNION ALL
+            SELECT ECInstanceId AS eid FROM meta.ECClassDef
+        ) WHERE eid = ?
+    )";
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query)) << query;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, ECInstanceId((uint64_t) 1))) << query;
+    ASSERT_NE(BE_SQLITE_ERROR, stmt.Step()) << query;
+}
+
+//---------------------------------------------------------------------------------------
+// Query 2: CTE without a column list. Matches the CommonTableExp frame in the minidump.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpNullPropertyMapTestFixture, BindIdParam_CteWithoutColumnList) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("issue2311_cte_no_columns.ecdb"));
+
+    auto query = R"(
+        WITH cte AS (
+            SELECT NULL AS eid FROM meta.ECClassDef
+            UNION ALL
+            SELECT ECInstanceId AS eid FROM meta.ECClassDef
+        )
+        SELECT * FROM cte WHERE eid = ?
+    )";
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query)) << query;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, ECInstanceId((uint64_t) 1))) << query;
+    ASSERT_NE(BE_SQLITE_ERROR, stmt.Step()) << query;
+}
+
+//---------------------------------------------------------------------------------------
+// Query 3: control case. A CTE *with* a column list takes the guarded
+// IsPropertyFromCommonTableBlockWithColumns() -> CreateIdBinderForQuery path, so this one
+// is expected to pass both before and after the fix. The contrast with Query 2 confirms
+// the diagnosis.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpNullPropertyMapTestFixture, BindIdParam_CteWithColumnList_Control) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("issue2311_cte_with_columns.ecdb"));
+
+    auto query = R"(
+        WITH cte(eid) AS (
+            SELECT NULL AS eid FROM meta.ECClassDef
+            UNION ALL
+            SELECT ECInstanceId AS eid FROM meta.ECClassDef
+        )
+        SELECT * FROM cte WHERE eid = ?
+    )";
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query)) << query;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, ECInstanceId((uint64_t) 1))) << query;
+    ASSERT_NE(BE_SQLITE_ERROR, stmt.Step()) << query;
+}
+
+//---------------------------------------------------------------------------------------
+// Query 4: reversed UNION branch order. Exercises the type resolution loop rather than
+// relying on the NULL branch coming first.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpNullPropertyMapTestFixture, BindIdParam_SubqueryUnionReversedBranchOrder) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("issue2311_subquery_union_reversed.ecdb"));
+
+    auto query = R"(
+        SELECT * FROM (
+            SELECT ECInstanceId AS eid FROM meta.ECClassDef
+            UNION ALL
+            SELECT NULL AS eid FROM meta.ECClassDef
+        ) WHERE eid = ?
+    )";
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query)) << query;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, ECInstanceId((uint64_t) 1))) << query;
+    ASSERT_NE(BE_SQLITE_ERROR, stmt.Step()) << query;
+}
+
+//---------------------------------------------------------------------------------------
+// Query 5: navigation / relationship end Id variant.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpNullPropertyMapTestFixture, BindIdParam_SubqueryUnionRelationshipEndId) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("issue2311_rel_end_id.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+            <ECEntityClass typeName='Model'>
+                <ECProperty propertyName="Name" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName='Element'>
+                <ECProperty propertyName="Code" typeName="string" />
+            </ECEntityClass>
+            <ECRelationshipClass typeName='ModelHasElements' strength='embedding' modifier='Sealed'>
+                <Source multiplicity='(0..1)' roleLabel='has' polymorphic='false'>
+                    <Class class='Model' />
+                </Source>
+                <Target multiplicity='(0..*)' roleLabel='is owned by' polymorphic='false'>
+                    <Class class='Element' />
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml")));
+
+    auto query = R"(
+        SELECT * FROM (
+            SELECT NULL AS tid FROM meta.ECClassDef
+            UNION ALL
+            SELECT TargetECInstanceId AS tid FROM ts.ModelHasElements
+        ) WHERE tid = ?
+    )";
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query)) << query;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, ECInstanceId((uint64_t) 1))) << query;
+    ASSERT_NE(BE_SQLITE_ERROR, stmt.Step()) << query;
 }
 
 END_ECDBUNITTESTS_NAMESPACE

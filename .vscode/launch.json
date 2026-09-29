@@ -5,6 +5,19 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Debug iModelConsole",
+            "presentation": {
+                "group": "0_Windows",
+            },
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}Winx64/Product/iModelConsoleNuGet/iModelConsole.exe",
+            "stopAtEntry": false,
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+        },
+        {
             "name": "Debug a specific iModelPlatform test",
             "presentation": {
                 "group": "0_Windows",
@@ -78,7 +91,7 @@
             "program": "${env:OutRoot}Winx64/Product/ECDb-Gtest/ECDbTest.exe",
             "args": [
                 "--gtest_break_on_failure",
-                "--gtest_filter=SchemaSyncTestFixture.Test"
+                "--gtest_filter=InstanceRepositoryFixture.basic"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -488,7 +501,7 @@
             "stopAtEntry": false,
             "cwd": "/workspace/src/imodel02/iModelJsNodeAddon/api_package/ts/lib/test",
             "environment": [
-                { "name": "LINUX_MINIDUMP_ENABLED", "value": "1" }
+                { "name": "IMODEL_ADDON_MINIDUMP_ENABLED", "value": "1" }
             ],
             "externalConsole": false,
             "MIMode": "gdb",
@@ -512,7 +525,7 @@
             "args": [
             ],
             "env": {
-                "LINUX_MINIDUMP_ENABLED": "1"
+                "IMODEL_ADDON_MINIDUMP_ENABLED": "1"
             },
             "port": 9229,
             "protocol": "inspector",
@@ -572,7 +585,7 @@
             },
             "type": "cppdbg",
             "request": "launch",
-            "program": "${env:OutRoot}MacOSX64/Product/iModelPlatform-Gtest/iModelPlatformTest",
+            "program": "${env:OutRoot}MacOSARM64/static/ProductCopy/iModelPlatform-Gtest/iModelPlatformTest",
             "cwd": "${workspaceFolder}",
             "externalConsole": false,
             "MIMode": "lldb",
@@ -585,7 +598,7 @@
             ],
             "args": [
                 "--gtest_break_on_failure",
-                "--gtest_filter=SchemaVersionTestFixture.*"
+                "--gtest_filter=RevisionTestFixture.MoreDataAndSchemaChanges"
             ]
         },
         {
@@ -639,6 +652,16 @@
                 "--gtest_filter=FormattingTestFixture.StdFormatting"
             ]
         },
+        {
+            "name": "MacOS Attach",
+            "presentation": {
+                "group": "2_MacOS",
+            },
+            "type": "lldb",
+            "request": "attach",
+            "program": "/Users/affan.khan/.nvm/versions/node/v22.15.1/bin/node",
+            "pid": "${command:pickProcess}",
+        },    
         {
             "name": "ECDb Performance Test",
             "presentation": {

@@ -59,7 +59,7 @@ namespace EnvironmentJson
         BE_JSON_NAME(right);
         BE_JSON_NAME(left);
 
-        static Json::StaticString textureNamesByCubeFace[6] =
+        static Utf8CP textureNamesByCubeFace[6] =
             {
             json_front(),
             json_back(),

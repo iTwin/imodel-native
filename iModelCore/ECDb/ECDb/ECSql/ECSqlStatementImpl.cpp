@@ -181,6 +181,25 @@ ECSqlStatus ECSqlStatement::Impl::ClearBindings()
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+bool ECSqlStatement::Impl::IsWriteStatement() const
+    {
+    if (FailIfNotPrepared("Cannot call IsWriteStatement on an unprepared ECSqlStatement.") == ECSqlStatus::Error)
+        return false;
+
+    switch (GetPreparedStatementP()->GetType())
+        {
+        case ECSqlType::Insert:
+        case ECSqlType::Update:
+        case ECSqlType::Delete:
+            return true;
+        default:
+            return false;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 DbResult ECSqlStatement::Impl::Step()
     {
     if (!FailIfNotPrepared("Cannot call Step on an unprepared ECSQL statement.").IsSuccess())

@@ -1,6 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
 // License & terms of use: http://www.unicode.org/copyright.html
-// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
+// Generated using tools/cldr/cldr-to-icu/
 bs{
     Countries{
         001{"Svijet"}
@@ -85,6 +85,7 @@ bs{
         CN{"Kina"}
         CO{"Kolumbija"}
         CP{"Ostrvo Clipperton"}
+        CQ{"Sark"}
         CR{"Kostarika"}
         CU{"Kuba"}
         CV{"Zelenortska Ostrva"}
@@ -186,7 +187,7 @@ bs{
         MH{"Maršalova ostrva"}
         MK{"Sjeverna Makedonija"}
         ML{"Mali"}
-        MM{"Mjanmar"}
+        MM{"Mijanmar"}
         MN{"Mongolija"}
         MO{"Makao (SAR Kina)"}
         MP{"Sjeverna Marijanska ostrva"}
@@ -206,7 +207,7 @@ bs{
         NF{"Ostrvo Norfolk"}
         NG{"Nigerija"}
         NI{"Nikaragva"}
-        NL{"Holandija"}
+        NL{"Nizozemska"}
         NO{"Norveška"}
         NP{"Nepal"}
         NR{"Nauru"}
@@ -242,7 +243,7 @@ bs{
         SG{"Singapur"}
         SH{"Sveta Helena"}
         SI{"Slovenija"}
-        SJ{"Svalbard i Jan Majen"}
+        SJ{"Svalbard i Jan Mayen"}
         SK{"Slovačka"}
         SL{"Sijera Leone"}
         SM{"San Marino"}
@@ -297,6 +298,9 @@ bs{
         ZM{"Zambija"}
         ZW{"Zimbabve"}
         ZZ{"Nepoznata oblast"}
+    }
+    Countries%chagos{
+        IO{"arhipelag Chagos"}
     }
     Countries%short{
         GB{"UK"}

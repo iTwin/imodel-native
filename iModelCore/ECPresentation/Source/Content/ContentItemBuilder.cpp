@@ -250,8 +250,9 @@ ECClassCP ContentItemBuilder::GetRecordClass() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ContentItemBuilder::OnFieldHandled(Utf8CP name)
     {
-    if (m_handledFields.end() == m_handledFields.find(name))    
-        m_handledFields.Insert(name, { false });
+    auto iter = m_handledFields.find(name);
+    if (m_handledFields.end() == iter)
+        m_handledFields.insert(iter, make_bpair(name, HandledFieldAttributes()));
     }
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
@@ -295,7 +296,6 @@ void ContentItemBuilder::AddCalculatedPropertyValue(Utf8CP name, PrimitiveType t
         ValueHelpers::GetJsonFromPrimitiveValue(type, nullptr, value, &m_values.second->GetAllocator()),
         m_formatter.GetFallbackPrimitiveValue(type, "", value, &m_displayValues.second->GetAllocator()),
         nullptr);
-        
     }
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod

@@ -5,6 +5,7 @@
 #include "checkers.h"
 #include <GeomSerialization/GeomSerializationApi.h>
 #include <Bentley/BeTest.h>
+#include <Bentley/BeStringUtilities.h>
 static double s_simpleZeroTol = 1.0e-12;
 
 bool Check::s_enableLongTests = false;
@@ -26,11 +27,12 @@ PUSH_DISABLE_DEPRECATION_WARNINGS
     if (s == nullptr)
         return 0;
     printf (" string form: (%s)\n", s);
-    int value;
-    if (1 == sscanf (s, "%d", &value))
+    char* unparsed;
+    errno = 0;
+    if (long parsed = std::strtol(s, &unparsed, 10) && errno == 0 && unparsed != s)
         {
-        printf ("GTEST_GEOMLIBS_VERBSOSE=%d\n", value);
-        return value;
+        printf ("GTEST_GEOMLIBS_VERBOSE=%ld\n", parsed);
+        return parsed;
         }
     // not recognized format  . . . call it noisy
     return 100;
@@ -425,7 +427,7 @@ void Check::Near (DConic4dCR a, DConic4dCR b, char const*pString, double refValu
     Check::Near (a.start, b.start, pString, refValue);
     }
 
-bool Check::NearPeriodic (double thetaA, double thetaB, char const*pString)
+bool Check::NearPeriodicRadians (double thetaA, double thetaB, char const*pString)
     {
 
     if (Angle::NearlyEqualAllowPeriodShift (thetaA, thetaB))
@@ -436,7 +438,7 @@ bool Check::NearPeriodic (double thetaA, double thetaB, char const*pString)
 
 bool Check::NearPeriodic (Angle thetaA, Angle thetaB, char const*pString)
     {
-    return Check::NearPeriodic (thetaA.Radians (), thetaB.Radians (), pString);
+    return Check::NearPeriodicRadians (thetaA.Radians (), thetaB.Radians (), pString);
     }
 
 bool Check::Near (Angle thetaA, Angle thetaB, char const*pString)
@@ -1472,6 +1474,11 @@ void Check::SaveTransformed(ICurvePrimitiveCR data)
     {
     SaveTransformed(IGeometry::Create (data.Clone ()));
     }
+void Check::SaveTransformed(ICurvePrimitivePtr &data)
+    {
+    if (data.IsValid())
+        SaveTransformed(IGeometry::Create(data->Clone()));
+    }
 void Check::SaveTransformed(PolyfaceHeaderCR data)
     {
     SaveTransformed(IGeometry::Create (data.Clone ()));
@@ -1630,6 +1637,15 @@ void Check::SaveTransformed (MSBsplineCurveCR data)
     auto cv = ICurvePrimitive::CreateBsplineCurve (data);
     SaveTransformed (IGeometry::Create (cv));
     }
+void Check::SaveTransformed(DPlane3dCR plane, double scale)
+    {
+    auto cell = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
+    auto planeDisk = DEllipse3d::FromCenterNormalRadius(plane.origin, plane.normal, scale / 2);
+    auto planeNormal = DSegment3d::From(plane.origin, plane.origin + (plane.normal * scale));
+    cell->push_back(ICurvePrimitive::CreateArc(planeDisk));
+    cell->push_back(ICurvePrimitive::CreateLine(planeNormal));
+    Check::SaveTransformed(cell);
+    }
 
 DPoint3d Check::TransformPoint(DPoint3dCR xyz)
     {
@@ -1772,11 +1788,11 @@ void Check::ClearGeometry (char const *name)
                 }
             }
         if (s_checkIModelJsonRoundTrip){
-            Json::Value value;
-            if (IModelJson::TryGeometryToIModelJsonValue (BeJsValue(value), s_cache))
+            BeJsDocument value;
+            if (IModelJson::TryGeometryToIModelJsonValue (value, s_cache))
                 {
                 bvector<IGeometryPtr> geometryB;
-                IModelJson::TryIModelJsonValueToGeometry (BeJsValue(value), geometryB);
+                IModelJson::TryIModelJsonValueToGeometry (value, geometryB);
                 if (s_cache.size () == geometryB.size ())
                     {
                     uint32_t errors = 0;
@@ -1794,8 +1810,7 @@ void Check::ClearGeometry (char const *name)
                     }
                 else
                     {
-                    Json::FastWriter fastWriter;
-                    auto string = fastWriter.write(value);
+                    auto string = value.Stringify();
                     printf ("\n IMJS size mismatch in %ls (%d) (%d)\n", path.c_str (), (int)s_cache.size (), (int)geometryB.size ());
                     }
                 }

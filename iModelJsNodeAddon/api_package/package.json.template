@@ -9,8 +9,9 @@
     "iModel"
   ],
   "repository": {
-    "type" : "git",
-    "url" : "https://github.com/imodeljs/imodeljs"
+    "type": "git",
+    "url": "https://github.com/iTwin/imodel-native.git",
+    "directory": "iModelJsNodeAddon/api_package/ts"
   },
   "description": "iModel.js native module",
   "author": {

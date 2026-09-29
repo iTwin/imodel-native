@@ -496,7 +496,7 @@ CGWriter (FILE *pFile)
 void emitXYZ (char *pName, double x, double y, double z)
     {
     emitIndent ();
-    fprintf (mpFile, "<%s>%.15g,%.15g,%.15g</%s>", pName, x, y, z, pName);
+    fprintf_s (mpFile, "<%s>%.15g,%.15g,%.15g</%s>", pName, x, y, z, pName);
     }
 
 void emit (char *pName, DPoint3dCR point)
@@ -512,21 +512,21 @@ void emit (char *pName, DVec3dCR vector)
 void emitDouble (char *pName, double x)
     {
     emitIndent ();
-    fprintf (mpFile, "<%s>%.15g</%s>", pName, x, pName);
+    fprintf_s (mpFile, "<%s>%.15g</%s>", pName, x, pName);
     }
 
 void emitInt (char *pName, int x)
     {
     emitIndent ();
-    fprintf (mpFile, "<%s>%d</%s>", pName, x, pName);
+    fprintf_s (mpFile, "<%s>%d</%s>", pName, x, pName);
     }
 
 
 void emitIndent ()
     {
-    fprintf (mpFile, "\n");
+    fprintf_s (mpFile, "\n");
     for (int i = 0; i < mIndent; i++)
-        fprintf (mpFile, " ");
+        fprintf_s (mpFile, " ");
     }
 
 void emitStart (char *pName, bool newLine = true)
@@ -534,9 +534,9 @@ void emitStart (char *pName, bool newLine = true)
     if (newLine)
         emitIndent ();
     if (mIndent == 0)
-        fprintf (mpFile, "<%s %s>", pName, sNamespace);
+        fprintf_s (mpFile, "<%s %s>", pName, sNamespace);
     else
-        fprintf (mpFile, "<%s>", pName);
+        fprintf_s (mpFile, "<%s>", pName);
     mIndent++;
     }
 
@@ -545,9 +545,9 @@ void emitEnd (char *pName, bool newLine = true)
     mIndent--;
     if (newLine)
         emitIndent ();
-    fprintf (mpFile, "</%s>", pName);
+    fprintf_s (mpFile, "</%s>", pName);
     if (mIndent == 0)
-        fprintf (mpFile, "\n");
+        fprintf_s (mpFile, "\n");
     }
 
 void listOfPoint (char *pName, char *pListName, char *pXYZName, DPoint3dCP pXYZ, int n)
@@ -667,7 +667,7 @@ Tag (char const *pTagName)
     {
     countTag (pTagName);
     strcpy (mTagName, pTagName);
-    fprintf (s_outfile, "<%s", mTagName);
+    fprintf_s (s_outfile, "<%s", mTagName);
     mState = 0;
     mFormat = 0;
     mpParent = NULL;
@@ -677,7 +677,7 @@ Tag (char const *pTagName, char const *pNameAttr)
     {
     countTag (pTagName);
     strcpy (mTagName, pTagName);
-    fprintf (s_outfile, "<%s", mTagName);
+    fprintf_s (s_outfile, "<%s", mTagName);
     Attr ("name", pNameAttr);
     mState = 0;
     mFormat = 0;
@@ -698,7 +698,7 @@ Tag (Tag *pParent, char const *pTagName, char const *pNameAttr)
     if (pTagName)
         {
         mState = 0;
-        fprintf (s_outfile, "<%s", mTagName);
+        fprintf_s (s_outfile, "<%s", mTagName);
         }
     else
         mState = 1;
@@ -714,14 +714,14 @@ Tag (Tag *pParent, char const *pTagName, char const *pNameAttr)
 
     if (strlen (mTagName) <= 1)
         {
-        //fprintf (s_outfile, "\n");
+        //fprintf_s (s_outfile, "\n");
         }
     else if (mState == 0)
-        fprintf (s_outfile, "/>");
+        fprintf_s (s_outfile, "/>");
     else
-        fprintf (s_outfile, "</%s>", mTagName);
+        fprintf_s (s_outfile, "</%s>", mTagName);
     if (GetDepth () <= 1)
-        fprintf (s_outfile, "\n");
+        fprintf_s (s_outfile, "\n");
     }
 
 
@@ -740,14 +740,14 @@ void SetParent (Tag *pParent = NULL)
 void Attr (char const *pName, char const *pValue)
     {
     if (pName && pValue)
-        fprintf (s_outfile, " %s=\"%s\"", pName, pValue);
+        fprintf_s (s_outfile, " %s=\"%s\"", pName, pValue);
     }
 
 void EndHeader ()
     {
     if (mState == 0)
         {
-        fprintf (s_outfile, ">");
+        fprintf_s (s_outfile, ">");
         mState = 1;
         }
     }
@@ -757,9 +757,9 @@ void Advance ()
     if (mFormat > 0)
         {
         int depth = GetDepth ();
-        fprintf (s_outfile, "\n");
+        fprintf_s (s_outfile, "\n");
         while (depth-- > 0)
-            fprintf(s_outfile, "  ");
+            fprintf_s(s_outfile, "  ");
         }
     }
 void StartContentItem ()
@@ -781,13 +781,13 @@ void SetFormat (int format)
 void EmitCompleteTag (char const * pTagName, char const *pNameString, char const *pContentString)
     {
     StartContentItem ();
-    fprintf (s_outfile, "<%s", pTagName);
+    fprintf_s (s_outfile, "<%s", pTagName);
     if (pNameString)
-        fprintf (s_outfile, " name=\"%s\"", pNameString);
+        fprintf_s (s_outfile, " name=\"%s\"", pNameString);
     if (pContentString)
-        fprintf (s_outfile, ">%s</%s>", pContentString, pTagName);
+        fprintf_s (s_outfile, ">%s</%s>", pContentString, pTagName);
     else
-        fprintf (s_outfile, "/>");
+        fprintf_s (s_outfile, "/>");
     }
 
 
@@ -921,9 +921,9 @@ void Content (bool a)
 struct DGNKeyins
 {
 
-void EmitColor (int value){printf ("ACTIVE COLOR %d\n", value);}
-void EmitStyle (int value){printf ("ACTIVE STYLE %d\n", value);}
-void EmitWeight (int value){printf ("ACTIVE WEIGHT %d\n", value);}
+void EmitColor (int value){printf_s ("ACTIVE COLOR %d\n", value);}
+void EmitStyle (int value){printf_s ("ACTIVE STYLE %d\n", value);}
+void EmitWeight (int value){printf_s ("ACTIVE WEIGHT %d\n", value);}
 
 void EmitText (char *pString, double x, double y)
     {
@@ -931,12 +931,12 @@ void EmitText (char *pString, double x, double y)
 
 void EmitXY (double x, double y)
     {
-    printf ("xy=%g,%g\n", x, y);
+    printf_s ("xy=%g,%g\n", x, y);
     }
 
 void EmitXY (DPoint3dCR xyz)
     {
-    printf ("xy=%g,%g\n", xyz.x, xyz.y);
+    printf_s ("xy=%g,%g\n", xyz.x, xyz.y);
     }
 
 void EmitLine (DPoint3dCR xyz0, DPoint3dCR xyz1)
@@ -948,8 +948,8 @@ void EmitLine (DPoint3dCR xyz0, DPoint3dCR xyz1)
     }
 
 
-void StartPolyline (){printf ("PLACE SMARTLINE\n");}
-void EndPolyline   (){printf ("PLACE SMARTLINE\n");}
+void StartPolyline (){printf_s ("PLACE SMARTLINE\n");}
+void EndPolyline   (){printf_s ("PLACE SMARTLINE\n");}
 
 void Emit (double x0, double y0, double a, double b)
     {
@@ -977,7 +977,7 @@ void EmitIndent (int change)
     if (change < 0)
         mDepth--;
     for (int i = 0; i < mDepth; i++)
-        printf ("  ");
+        printf_s ("  ");
     if (change > 0)
         mDepth++;
     }
@@ -992,32 +992,32 @@ void EmitText (char *pString, double x, double y)
 
 void EmitXY (double x, double y)
     {
-    printf ("  <xyz>%g,%g</xyz>\n", x, y);
+    printf_s ("  <xyz>%g,%g</xyz>\n", x, y);
     }
 
 void EmitXY (DPoint3dCR xyz)
     {
-    printf ("  <xyz>%g,%g,%g</xyz>\n", xyz.x, xyz.y, xyz.z);
+    printf_s ("  <xyz>%g,%g,%g</xyz>\n", xyz.x, xyz.y, xyz.z);
     }
 
 void EmitDPoint3d (char *pName, DPoint3dCR xyz)
     {
-    printf ("  <%s>%g,%g,%g</%s>\n", pName, xyz.x, xyz.y, xyz.z, pName);
+    printf_s ("  <%s>%g,%g,%g</%s>\n", pName, xyz.x, xyz.y, xyz.z, pName);
     }
 
 void EmitDVec3d(char *pName, DVec3d xyz)
     {
-    printf ("  <%s>%g,%g,%g</%s>\n", pName, xyz.x, xyz.y, xyz.z, pName);
+    printf_s ("  <%s>%g,%g,%g</%s>\n", pName, xyz.x, xyz.y, xyz.z, pName);
     }
 
 void EmitDouble (char *pName, double a)
     {
-    printf ("  <%s>%g</%s>\n", pName, a, pName);
+    printf_s ("  <%s>%g</%s>\n", pName, a, pName);
     }
 
 void EmitRadians (char *pName, double a)
     {
-    printf ("  <%s>%g</%s>\n", pName, a * 45.0 / atan (1.0), pName);
+    printf_s ("  <%s>%g</%s>\n", pName, a * 45.0 / atan (1.0), pName);
     }
 
 
@@ -1025,16 +1025,16 @@ void EmitRadians (char *pName, double a)
 void StartTag (char * pName, bool includeNamespace = false)
     {
     EmitIndent (1);
-    printf ("<%s", pName);
+    printf_s ("<%s", pName);
     if (includeNamespace)
-        printf(" xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"");
-    printf (">\n");
+        printf_s(" xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"");
+    printf_s (">\n");
     }
 
 void EndTag (char * pName, bool includeNamespace = false)
     {
     EmitIndent (-1);
-    printf ("</%s>\n", pName);
+    printf_s ("</%s>\n", pName);
     }
 
 void EmitLine (DPoint3dCR xyz0, DPoint3dCR xyz1)

@@ -62,9 +62,9 @@ public:
         return *this;
         }
 
-    bool operator==(BoolOrString const& rhs) const 
-        { 
-        return m_isBool == rhs.m_isBool && m_isString == rhs.m_isString && 
+    bool operator==(BoolOrString const& rhs) const
+        {
+        return m_isBool == rhs.m_isBool && m_isString == rhs.m_isString &&
                (!m_isBool || m_boolValue == rhs.m_boolValue) &&
                (!m_isString || m_stringValue == rhs.m_stringValue);
         }
@@ -83,9 +83,9 @@ public:
 * Specification for a property and optional overrides.
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct PropertySpecification : NoXmlSupport<PresentationKey>
+struct PropertySpecification : PresentationKey
 {
-    DEFINE_T_SUPER(NoXmlSupport<PresentationKey>)
+    DEFINE_T_SUPER(PresentationKey)
 
 private:
     Utf8String m_propertyName;

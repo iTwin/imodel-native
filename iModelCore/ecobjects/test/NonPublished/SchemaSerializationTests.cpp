@@ -4,7 +4,6 @@
 *--------------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
-#include "BeXml/BeXml.h"
 #include <regex>
 
 USING_NAMESPACE_BENTLEY_EC
@@ -719,7 +718,7 @@ TEST_F(SchemaXmlSerializationTest, CompositeFormatSpecRoundTripsAllValues)
     format = rtSchema->GetFormatCP("Format3");
     validateFormat(format);
 
-    Json::Value formatJSON;
+    BeJsDocument formatJSON;
     EXPECT_TRUE(format->ToJson(formatJSON, false));
     
     Formatting::Format rtFormat;

@@ -6,7 +6,6 @@
 #include "BeSQLite/ChangeSet.h"
 #include <map>
 #include <vector>
-
 //---------------------------------------------------------------------------------------
 // Creating a new Db for the test
 // @bsimethod
@@ -29,9 +28,730 @@ DbResult SetupDb(Db& db, WCharCP dbName)
     if (result == BE_SQLITE_OK)
         db.SaveChanges();
 
+
     return result;
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(BeSQLiteDb, SchemaDiff) {
+    Db lhsDb;
+    auto rc = SetupDb(lhsDb, L"lhs.db");
+    ASSERT_EQ(BE_SQLITE_OK, rc) << "Creation of test BeSQLite DB failed.";
+    lhsDb.SaveChanges();
 
+    Db rhsDb;
+    rc = SetupDb(rhsDb, L"rhs.db");
+    ASSERT_EQ(BE_SQLITE_OK, rc) << "Creation of test BeSQLite DB failed.";
+    rhsDb.SaveChanges();
+
+    auto getTableSchemaAsJson = [](Db& db, Utf8CP tableName, Utf8CP schemaName = "main") {
+        BeJsDocument schema;
+        MetaData::CompleteTableInfo tbl;
+        auto rc = MetaData::QueryTable(db, schemaName, tableName, tbl);
+        EXPECT_EQ(BE_SQLITE_OK, rc) << "Getting schema for table failed";
+        MetaData::ToJson(tbl, schema);
+        return schema.Stringify(StringifyFormat::Indented);
+    };
+    auto performSchemaDiff = [](Db& lhsDb, Db& rhsDb) {
+        std::vector<Utf8String> patches;
+        auto rc = MetaData::SchemaDiff(lhsDb, rhsDb, patches);
+        EXPECT_EQ(BE_SQLITE_OK, rc) << "SchemaDiff failed";
+        return patches;
+    };
+    auto parseJson = [](Utf8CP json) {
+        BeJsDocument doc(json);
+        return doc.Stringify(StringifyFormat::Indented);
+    };
+    auto applyPatches = [](Db& db, std::vector<Utf8String> const& patches) {
+        for (auto const& patch : patches) {
+            auto rc = db.ExecuteDdl(patch.c_str());
+            EXPECT_EQ(BE_SQLITE_OK, rc) << "Applying patch failed";
+        }
+        db.SaveChanges();
+    };
+    if ("add table") {
+        rc = lhsDb.ExecuteDdl("CREATE TABLE t(a)");
+        ASSERT_EQ(BE_SQLITE_OK, rc) << "Creation of table table t failed.";
+        lhsDb.SaveChanges();
+
+        ASSERT_STREQ(
+            parseJson(R"json({
+                "name": "t",
+                "schema": "main",
+                "type": "table",
+                "nColumns": 1,
+                "hasRowId": false,
+                "isStrict": false,
+                "sql": "CREATE TABLE t(a)",
+                "columns": [
+                    {
+                        "cid": 0,
+                        "name": "a",
+                        "dataType": "",
+                        "notNull": false,
+                        "defaultValue": "",
+                        "primaryKey": false,
+                        "collSeq": "BINARY",
+                        "autoIncrement": false
+                    }
+                ],
+                "indexes": [],
+                "triggers": [],
+                "foreignKeys": []
+                })json").c_str(),
+            getTableSchemaAsJson(lhsDb, "t").c_str());
+
+
+        auto patch = performSchemaDiff(lhsDb, rhsDb);
+        ASSERT_EQ(1, patch.size());
+        ASSERT_STREQ("CREATE TABLE t(a)", patch[0].c_str());
+        applyPatches(rhsDb, patch);
+    }
+    if ("add column with not null and default constraint") {
+        rc = lhsDb.ExecuteDdl("ALTER TABLE t ADD COLUMN b TEXT NOT NULL DEFAULT ('abc')");
+        ASSERT_EQ(BE_SQLITE_OK, rc) << "Creation of table table t failed.";
+        lhsDb.SaveChanges();
+        ASSERT_STREQ(
+            parseJson(R"json({
+                "name": "t",
+                "schema": "main",
+                "type": "table",
+                "nColumns": 2,
+                "hasRowId": false,
+                "isStrict": false,
+                "sql": "CREATE TABLE t(a, b TEXT NOT NULL DEFAULT ('abc'))",
+                "columns": [
+                    {
+                        "cid": 0,
+                        "name": "a",
+                        "dataType": "",
+                        "notNull": false,
+                        "defaultValue": "",
+                        "primaryKey": false,
+                        "collSeq": "BINARY",
+                        "autoIncrement": false
+                    },
+                    {
+                        "cid": 1,
+                        "name": "b",
+                        "dataType": "TEXT",
+                        "notNull": true,
+                        "defaultValue": "'abc'",
+                        "primaryKey": false,
+                        "collSeq": "BINARY",
+                        "autoIncrement": false
+                    }
+                ],
+                "indexes": [],
+                "triggers": [],
+                "foreignKeys": []
+                })json").c_str(),
+            getTableSchemaAsJson(lhsDb, "t").c_str());
+
+
+        auto patches = performSchemaDiff(lhsDb, rhsDb);
+        ASSERT_EQ(1, patches.size());
+        ASSERT_STREQ("ALTER TABLE [main].[t] ADD COLUMN [b] TEXT NOT NULL DEFAULT ('abc');", patches[0].c_str());
+        applyPatches(rhsDb, patches);
+    }
+
+    if ("add primary key column should fail") {
+        rc = lhsDb.TryExecuteSql("ALTER TABLE t ADD COLUMN id INTEGER PRIMARY KEY ASC AUTOINCREMENT");
+        ASSERT_EQ(BE_SQLITE_ERROR, rc) <<  "Adding primary key column is expected to fail.";
+        lhsDb.SaveChanges();
+    }
+
+    if ("create trigger") {
+        rc = lhsDb.ExecuteDdl("CREATE TRIGGER t_default AFTER INSERT ON t BEGIN UPDATE t SET b = 'xyz' WHERE rowid = new.rowid; END");
+        ASSERT_EQ(BE_SQLITE_OK, rc) <<  "Creation of trigger t_default failed.";
+        lhsDb.SaveChanges();
+
+        ASSERT_STREQ(
+            parseJson(R"json({
+                "name": "t",
+                "schema": "main",
+                "type": "table",
+                "nColumns": 2,
+                "hasRowId": false,
+                "isStrict": false,
+                "sql": "CREATE TABLE t(a, b TEXT NOT NULL DEFAULT ('abc'))",
+                "columns": [
+                    {
+                        "cid": 0,
+                        "name": "a",
+                        "dataType": "",
+                        "notNull": false,
+                        "defaultValue": "",
+                        "primaryKey": false,
+                        "collSeq": "BINARY",
+                        "autoIncrement": false
+                    },
+                    {
+                        "cid": 1,
+                        "name": "b",
+                        "dataType": "TEXT",
+                        "notNull": true,
+                        "defaultValue": "'abc'",
+                        "primaryKey": false,
+                        "collSeq": "BINARY",
+                        "autoIncrement": false
+                    }
+                ],
+                "indexes": [],
+                "triggers": [
+                    {
+                        "name": "t_default",
+                        "sql": "CREATE TRIGGER t_default AFTER INSERT ON t BEGIN UPDATE t SET b = 'xyz' WHERE rowid = new.rowid; END"
+                    }
+                ],
+                "foreignKeys": []
+                })json").c_str(),
+            getTableSchemaAsJson(lhsDb, "t").c_str());
+
+        auto patches = performSchemaDiff(lhsDb, rhsDb);
+        ASSERT_EQ(1, patches.size());
+        ASSERT_STREQ("CREATE TRIGGER t_default AFTER INSERT ON t BEGIN UPDATE t SET b = 'xyz' WHERE rowid = new.rowid; END", patches[0].c_str());
+        applyPatches(rhsDb, patches);
+    }
+    if ("update trigger") {
+        rc = lhsDb.ExecuteDdl("DROP TRIGGER IF EXISTS [main].[t_default];");
+        ASSERT_EQ(BE_SQLITE_OK, rc) <<  "Dropping trigger t_default failed.";
+
+        rc = lhsDb.ExecuteDdl("CREATE TRIGGER t_default AFTER INSERT ON t BEGIN UPDATE t SET b = 'abc' WHERE rowid = new.rowid; END");
+        ASSERT_EQ(BE_SQLITE_OK, rc) <<  "Dropping trigger t_default failed.";
+
+        lhsDb.SaveChanges();
+        ASSERT_STREQ(
+            parseJson(R"json({
+                "name": "t",
+                "schema": "main",
+                "type": "table",
+                "nColumns": 2,
+                "hasRowId": false,
+                "isStrict": false,
+                "sql": "CREATE TABLE t(a, b TEXT NOT NULL DEFAULT ('abc'))",
+                "columns": [
+                    {
+                        "cid": 0,
+                        "name": "a",
+                        "dataType": "",
+                        "notNull": false,
+                        "defaultValue": "",
+                        "primaryKey": false,
+                        "collSeq": "BINARY",
+                        "autoIncrement": false
+                    },
+                    {
+                        "cid": 1,
+                        "name": "b",
+                        "dataType": "TEXT",
+                        "notNull": true,
+                        "defaultValue": "'abc'",
+                        "primaryKey": false,
+                        "collSeq": "BINARY",
+                        "autoIncrement": false
+                    }
+                ],
+                "indexes": [],
+                "triggers": [
+                    {
+                        "name": "t_default",
+                        "sql": "CREATE TRIGGER t_default AFTER INSERT ON t BEGIN UPDATE t SET b = 'abc' WHERE rowid = new.rowid; END"
+                    }
+                ],
+                "foreignKeys": []
+                })json").c_str(),
+            getTableSchemaAsJson(lhsDb, "t").c_str());
+
+        auto patches = performSchemaDiff(lhsDb, rhsDb);
+        ASSERT_EQ(2, patches.size());
+        ASSERT_STREQ("DROP TRIGGER IF EXISTS [main].[t_default];", patches[0].c_str());
+        ASSERT_STREQ("CREATE TRIGGER t_default AFTER INSERT ON t BEGIN UPDATE t SET b = 'abc' WHERE rowid = new.rowid; END", patches[1].c_str());
+        applyPatches(rhsDb, patches);
+    }
+    if ("create index") {
+        rc = lhsDb.ExecuteDdl("CREATE INDEX idx1 ON t(b)");
+        ASSERT_EQ(BE_SQLITE_OK, rc) <<  "Creation of index idx1 failed.";
+        lhsDb.SaveChanges();
+
+        ASSERT_STREQ(
+            parseJson(R"json({
+                "name": "t",
+                "schema": "main",
+                "type": "table",
+                "nColumns": 2,
+                "hasRowId": false,
+                "isStrict": false,
+                "sql": "CREATE TABLE t(a, b TEXT NOT NULL DEFAULT ('abc'))",
+                "columns": [
+                    {
+                        "cid": 0,
+                        "name": "a",
+                        "dataType": "",
+                        "notNull": false,
+                        "defaultValue": "",
+                        "primaryKey": false,
+                        "collSeq": "BINARY",
+                        "autoIncrement": false
+                    },
+                    {
+                        "cid": 1,
+                        "name": "b",
+                        "dataType": "TEXT",
+                        "notNull": true,
+                        "defaultValue": "'abc'",
+                        "primaryKey": false,
+                        "collSeq": "BINARY",
+                        "autoIncrement": false
+                    }
+                ],
+                "indexes": [
+                    {
+                        "name": "idx1",
+                        "unique": false,
+                        "origin": "c",
+                        "partial": false,
+                        "sql": "CREATE INDEX idx1 ON t(b)",
+                        "columns": [
+                            {
+                            "cid": 1,
+                            "name": "b",
+                            "desc": false,
+                            "collSeq": "BINARY",
+                            "key": true
+                            }
+                        ]
+                    }
+                ],
+                "triggers": [
+                    {
+                        "name": "t_default",
+                        "sql": "CREATE TRIGGER t_default AFTER INSERT ON t BEGIN UPDATE t SET b = 'abc' WHERE rowid = new.rowid; END"
+                    }
+                ],
+                "foreignKeys": []
+                })json").c_str(),
+            getTableSchemaAsJson(lhsDb, "t").c_str());
+
+        auto patches = performSchemaDiff(lhsDb, rhsDb);
+        ASSERT_EQ(1, patches.size());
+        ASSERT_STREQ("CREATE INDEX idx1 ON t(b)", patches[0].c_str());
+        applyPatches(rhsDb, patches);
+    }
+    if ("update index") {
+        rc = lhsDb.ExecuteDdl("DROP INDEX IF EXISTS [main].[idx1];");
+        ASSERT_EQ(BE_SQLITE_OK, rc) <<  "Dropping index idx1 failed.";
+
+        rc = lhsDb.ExecuteDdl("CREATE UNIQUE INDEX idx1 ON t(a,b)");
+        ASSERT_EQ(BE_SQLITE_OK, rc) <<  "Creation of index idx1 failed.";
+        lhsDb.SaveChanges();
+
+        ASSERT_STREQ(
+            parseJson(R"json({
+                "name": "t",
+                "schema": "main",
+                "type": "table",
+                "nColumns": 2,
+                "hasRowId": false,
+                "isStrict": false,
+                "sql": "CREATE TABLE t(a, b TEXT NOT NULL DEFAULT ('abc'))",
+                "columns": [
+                    {
+                        "cid": 0,
+                        "name": "a",
+                        "dataType": "",
+                        "notNull": false,
+                        "defaultValue": "",
+                        "primaryKey": false,
+                        "collSeq": "BINARY",
+                        "autoIncrement": false
+                    },
+                    {
+                        "cid": 1,
+                        "name": "b",
+                        "dataType": "TEXT",
+                        "notNull": true,
+                        "defaultValue": "'abc'",
+                        "primaryKey": false,
+                        "collSeq": "BINARY",
+                        "autoIncrement": false
+                    }
+                ],
+                "indexes": [
+                    {
+                        "name": "idx1",
+                        "unique": true,
+                        "origin": "c",
+                        "partial": false,
+                        "sql": "CREATE UNIQUE INDEX idx1 ON t(a,b)",
+                        "columns": [
+                            {
+                            "cid": 0,
+                            "name": "a",
+                            "desc": false,
+                            "collSeq": "BINARY",
+                            "key": true
+                            },
+                            {
+                            "cid": 1,
+                            "name": "b",
+                            "desc": false,
+                            "collSeq": "BINARY",
+                            "key": true
+                            }
+                        ]
+                    }
+                ],
+                "triggers": [
+                    {
+                        "name": "t_default",
+                        "sql": "CREATE TRIGGER t_default AFTER INSERT ON t BEGIN UPDATE t SET b = 'abc' WHERE rowid = new.rowid; END"
+                    }
+                ],
+                "foreignKeys": []
+                })json").c_str(),
+            getTableSchemaAsJson(lhsDb, "t").c_str());
+
+        auto patches = performSchemaDiff(lhsDb, rhsDb);
+        ASSERT_EQ(2, patches.size());
+        ASSERT_STREQ("DROP INDEX IF EXISTS [main].[idx1];", patches[0].c_str());
+        ASSERT_STREQ("CREATE UNIQUE INDEX idx1 ON t(a,b)", patches[1].c_str());
+        applyPatches(rhsDb, patches);
+    }
+  if ("add fk") {
+        rc = lhsDb.ExecuteDdl("ALTER TABLE t ADD COLUMN p INTEGER REFERENCES t(a) ON DELETE CASCADE");
+        ASSERT_EQ(BE_SQLITE_OK, rc) <<  "Creation of fk failed.";
+        lhsDb.SaveChanges();
+
+        ASSERT_STREQ(
+            parseJson(R"json({
+                "name": "t",
+                "schema": "main",
+                "type": "table",
+                "nColumns": 3,
+                "hasRowId": false,
+                "isStrict": false,
+                "sql": "CREATE TABLE t(a, b TEXT NOT NULL DEFAULT ('abc'), p INTEGER REFERENCES t(a) ON DELETE CASCADE)",
+                "columns": [
+                    {
+                        "cid": 0,
+                        "name": "a",
+                        "dataType": "",
+                        "notNull": false,
+                        "defaultValue": "",
+                        "primaryKey": false,
+                        "collSeq": "BINARY",
+                        "autoIncrement": false
+                    },
+                    {
+                        "cid": 1,
+                        "name": "b",
+                        "dataType": "TEXT",
+                        "notNull": true,
+                        "defaultValue": "'abc'",
+                        "primaryKey": false,
+                        "collSeq": "BINARY",
+                        "autoIncrement": false
+                    },
+                    {
+                        "cid": 2,
+                        "name": "p",
+                        "dataType": "INTEGER",
+                        "notNull": false,
+                        "defaultValue": "",
+                        "primaryKey": false,
+                        "collSeq": "BINARY",
+                        "autoIncrement": false
+                    }
+                ],
+                "indexes": [
+                    {
+                        "name": "idx1",
+                        "unique": true,
+                        "origin": "c",
+                        "partial": false,
+                        "sql": "CREATE UNIQUE INDEX idx1 ON t(a,b)",
+                        "columns": [
+                            {
+                            "cid": 0,
+                            "name": "a",
+                            "desc": false,
+                            "collSeq": "BINARY",
+                            "key": true
+                            },
+                            {
+                            "cid": 1,
+                            "name": "b",
+                            "desc": false,
+                            "collSeq": "BINARY",
+                            "key": true
+                            }
+                        ]
+                    }
+                ],
+                "triggers": [
+                    {
+                        "name": "t_default",
+                        "sql": "CREATE TRIGGER t_default AFTER INSERT ON t BEGIN UPDATE t SET b = 'abc' WHERE rowid = new.rowid; END"
+                    }
+                ],
+                "foreignKeys": [
+                    {
+                        "table": "t",
+                        "fromColumns": [
+                            "p"
+                        ],
+                        "toColumns": [
+                            "p"
+                        ],
+                        "onUpdate": "NO ACTION",
+                        "onDelete": "CASCADE",
+                        "match": "NONE"
+                    }
+                ]
+                })json").c_str(),
+            getTableSchemaAsJson(lhsDb, "t").c_str());
+
+        auto patches = performSchemaDiff(lhsDb, rhsDb);
+        ASSERT_EQ(1, patches.size());
+        ASSERT_STREQ("ALTER TABLE [main].[t] ADD COLUMN [p] INTEGER REFERENCES [t]([a]) ON DELETE CASCADE;", patches[0].c_str());
+        applyPatches(rhsDb, patches);
+    }
+
+  if ("drop column p") {
+        rc = lhsDb.ExecuteDdl("ALTER TABLE t DROP COLUMN p");
+        ASSERT_EQ(BE_SQLITE_OK, rc) <<  "Creation of fk failed.";
+
+        lhsDb.SaveChanges();
+
+        ASSERT_STREQ(
+            parseJson(R"json({
+                "name": "t",
+                "schema": "main",
+                "type": "table",
+                "nColumns": 2,
+                "hasRowId": false,
+                "isStrict": false,
+                "sql": "CREATE TABLE t(a, b TEXT NOT NULL DEFAULT ('abc'))",
+                "columns": [
+                    {
+                        "cid": 0,
+                        "name": "a",
+                        "dataType": "",
+                        "notNull": false,
+                        "defaultValue": "",
+                        "primaryKey": false,
+                        "collSeq": "BINARY",
+                        "autoIncrement": false
+                    },
+                    {
+                        "cid": 1,
+                        "name": "b",
+                        "dataType": "TEXT",
+                        "notNull": true,
+                        "defaultValue": "'abc'",
+                        "primaryKey": false,
+                        "collSeq": "BINARY",
+                        "autoIncrement": false
+                    }
+                ],
+                "indexes": [
+                    {
+                        "name": "idx1",
+                        "unique": true,
+                        "origin": "c",
+                        "partial": false,
+                        "sql": "CREATE UNIQUE INDEX idx1 ON t(a,b)",
+                        "columns": [
+                            {
+                            "cid": 0,
+                            "name": "a",
+                            "desc": false,
+                            "collSeq": "BINARY",
+                            "key": true
+                            },
+                            {
+                            "cid": 1,
+                            "name": "b",
+                            "desc": false,
+                            "collSeq": "BINARY",
+                            "key": true
+                            }
+                        ]
+                    }
+                ],
+                "triggers": [
+                    {
+                        "name": "t_default",
+                        "sql": "CREATE TRIGGER t_default AFTER INSERT ON t BEGIN UPDATE t SET b = 'abc' WHERE rowid = new.rowid; END"
+                    }
+                ],
+                "foreignKeys": []
+                })json").c_str(),
+            getTableSchemaAsJson(lhsDb, "t").c_str());
+
+        auto patches = performSchemaDiff(lhsDb, rhsDb);
+        ASSERT_EQ(3, patches.size());
+
+        ASSERT_STREQ("ALTER TABLE [main].[t] DROP COLUMN [p];", patches[0].c_str());
+        // SQLite reformat the SQL in sqlite master and replace double quoted string to single quoted string.
+        ASSERT_STREQ("DROP TRIGGER IF EXISTS [main].[delete_embeddedFiles];", patches[1].c_str());
+        ASSERT_STREQ("CREATE TRIGGER delete_embeddedFiles AFTER DELETE ON be_EmbedFile BEGIN DELETE FROM be_Prop WHERE Namespace='be_Db' AND NAME='EmbdBlob' AND Id=OLD.Id; END", patches[2].c_str());
+        applyPatches(rhsDb, patches);
+    }
+  if ("drop column b") {
+        rc = lhsDb.ExecuteDdl("DROP INDEX [main].[idx1];");
+        ASSERT_EQ(BE_SQLITE_OK, rc) <<  "Creation of fk failed.";
+        rc = lhsDb.ExecuteDdl("ALTER TABLE t DROP COLUMN b");
+        ASSERT_EQ(BE_SQLITE_OK, rc) <<  "Creation of fk failed.";
+        lhsDb.SaveChanges();
+
+        ASSERT_STREQ(
+            parseJson(R"json({
+                    "name": "t",
+                    "schema": "main",
+                    "type": "table",
+                    "nColumns": 1,
+                    "hasRowId": false,
+                    "isStrict": false,
+                    "sql": "CREATE TABLE t(a)",
+                    "columns": [
+                        {
+                            "cid": 0,
+                            "name": "a",
+                            "dataType": "",
+                            "notNull": false,
+                            "defaultValue": "",
+                            "primaryKey": false,
+                            "collSeq": "BINARY",
+                            "autoIncrement": false
+                        }
+                    ],
+                    "indexes": [],
+                    "triggers": [
+                        {
+                            "name": "t_default",
+                            "sql": "CREATE TRIGGER t_default AFTER INSERT ON t BEGIN UPDATE t SET b = 'abc' WHERE rowid = new.rowid; END"
+                        }
+                    ],
+                    "foreignKeys": []
+                })json").c_str(),
+            getTableSchemaAsJson(lhsDb, "t").c_str());
+
+        auto patches = performSchemaDiff(lhsDb, rhsDb);
+        ASSERT_EQ(2, patches.size());
+
+        ASSERT_STREQ("DROP INDEX IF EXISTS [main].[idx1];", patches[0].c_str());
+        ASSERT_STREQ("ALTER TABLE [main].[t] DROP COLUMN [b];", patches[1].c_str());
+        applyPatches(rhsDb, patches);
+    }
+    // rhsDb should be same as lhsDb
+    ASSERT_STREQ(
+        parseJson(R"json({
+                "name": "t",
+                "schema": "main",
+                "type": "table",
+                "nColumns": 1,
+                "hasRowId": false,
+                "isStrict": false,
+                "sql": "CREATE TABLE t(a)",
+                "columns": [
+                    {
+                        "cid": 0,
+                        "name": "a",
+                        "dataType": "",
+                        "notNull": false,
+                        "defaultValue": "",
+                        "primaryKey": false,
+                        "collSeq": "BINARY",
+                        "autoIncrement": false
+                    }
+                ],
+                "indexes": [],
+                "triggers": [
+                    {
+                        "name": "t_default",
+                        "sql": "CREATE TRIGGER t_default AFTER INSERT ON t BEGIN UPDATE t SET b = 'abc' WHERE rowid = new.rowid; END"
+                    }
+                ],
+                "foreignKeys": []
+            })json").c_str(),
+        getTableSchemaAsJson(rhsDb, "t").c_str());
+
+    auto patches = performSchemaDiff(lhsDb, rhsDb);
+    ASSERT_EQ(0, patches.size());
+}
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(BeSQLiteDb, MetaData) {
+    Db lhsDb;
+    auto rc = SetupDb(lhsDb, L"lhs.db");
+    ASSERT_EQ(BE_SQLITE_OK, rc) << "Creation of test BeSQLite DB failed.";
+
+    Db rhsDb;
+    rc = SetupDb(rhsDb, L"rhs.db");
+    ASSERT_EQ(BE_SQLITE_OK, rc) << "Creation of test BeSQLite DB failed.";
+
+    rc = lhsDb.ExecuteDdl(R"sql(
+        CREATE TABLE [t1](
+        [a] INTEGER PRIMARY KEY ASC ON CONFLICT ABORT AUTOINCREMENT,
+        [b] TEXT NOT NULL ON CONFLICT ABORT,
+        [e] TEXT DEFAULT ('s' || 'k'),
+        [f] INTEGER DEFAULT (100),
+        [g] INTEGER DEFAULT (-1.2),
+        [h] TEXT COLLATE NOCASE,
+        [p] INTEGER REFERENCES [t1]([a]) ON DELETE CASCADE,
+        [i] TEXT GENERATED ALWAYS AS ([p] || ',') STORED);
+    )sql");
+    ASSERT_EQ(BE_SQLITE_OK, rc) << "Creation of table table t1 failed.";
+
+    rc = lhsDb.ExecuteDdl(R"sql(
+        CREATE TABLE [t2](
+        [a] INTEGER PRIMARY KEY,
+        [b] TEXT NOT NULL,
+        FOREIGN KEY (a,b) REFERENCES t1(a,b));
+    )sql");
+    ASSERT_EQ(BE_SQLITE_OK, rc) << "Creation of table table t1 failed.";
+
+    rc = lhsDb.ExecuteDdl(R"sql(
+        CREATE TRIGGER [tr1] AFTER INSERT ON [t1] BEGIN
+        INSERT INTO [t2] VALUES (new.a, new.b);
+        END;
+    )sql");
+    ASSERT_EQ(BE_SQLITE_OK, rc) << "Creation of trigger tr1 failed.";
+
+    rc = lhsDb.ExecuteDdl(R"sql(
+        CREATE INDEX [idx1] ON [t1]([b]);
+    )sql");
+    ASSERT_EQ(BE_SQLITE_OK, rc) << "Creation of index idx1 failed.";
+
+    lhsDb.SaveChanges();
+    rhsDb.SaveChanges();
+
+    MetaData::CompleteTableInfo t1;
+    rc = MetaData::QueryTable(lhsDb, "main", "t1", t1);
+    ASSERT_EQ(BE_SQLITE_OK, rc) << "Querying table t1 failed.";
+
+    MetaData::CompleteTableInfo t2;
+    rc = MetaData::QueryTable(lhsDb, "main", "t1", t2);
+    ASSERT_EQ(BE_SQLITE_OK, rc) << "Querying table t1 failed.";
+
+    ASSERT_STREQ("main", t1.schema.c_str());
+    ASSERT_STREQ("t1", t1.name.c_str());
+    ASSERT_EQ(7, t1.columns.size()); // GENERATED column is not counted.
+    ASSERT_EQ(1, t1.triggers.size());
+    ASSERT_EQ(1, t1.indexes.size());
+
+    std::vector<Utf8String> patches;
+    MetaData::SchemaDiff(lhsDb, rhsDb, patches);
+    for (auto const& patch : patches) {
+        rc = rhsDb.ExecuteDdl(patch.c_str());
+        ASSERT_EQ(BE_SQLITE_OK, rc) << "Applying patch failed.";
+    }
+    rhsDb.SaveChanges();
+}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -967,6 +1687,93 @@ TEST_F(BeSQLiteDbTests, BriefcaseLocalValues)
 
 
 /*---------------------------------------------------------------------------------**//**
+* Test QueryStandaloneEditFlags and SaveStandaloneEditFlags
+* Tests backward compatibility with legacy boolean values and new JSON object format
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BeSQLiteDbTests, StandaloneEditFlags)
+    {
+    SetupDb(L"standalone.db");
+
+    // Test 1: Query when no value is set - should return null/empty
+    BeJsDocument result1;
+    m_db.QueryStandaloneEditFlags(result1);
+    EXPECT_TRUE(result1.isNull()) << "Should be null when no value is set";
+
+    // Test 2: Save and query JSON object format (current format)
+    BeJsDocument objVal;
+    objVal.SetEmptyObject();
+    objVal["txns"] = true;
+    objVal["otherFlag"] = false;
+    EXPECT_EQ(BE_SQLITE_DONE, m_db.SaveStandaloneEditFlags(objVal));
+    m_db.SaveChanges();
+
+    BeJsDocument result2;
+    m_db.QueryStandaloneEditFlags(result2);
+    EXPECT_TRUE(result2.isObject()) << "Should return an object";
+    EXPECT_TRUE(result2["txns"].asBool()) << "txns should be true";
+    EXPECT_FALSE(result2["otherFlag"].asBool()) << "otherFlag should be false";
+
+    // Test 3: Test backward compatibility - simulate legacy boolean value stored directly
+    // This tests the fix where we previously tried to parse a boolean as JSON improperly
+    EXPECT_EQ(BE_SQLITE_DONE, m_db.SaveBriefcaseLocalValue("StandaloneEdit", "true"));
+    m_db.SaveChanges();
+
+    BeJsDocument result3;
+    m_db.QueryStandaloneEditFlags(result3);
+    EXPECT_TRUE(result3.isObject()) << "Should convert boolean to object format";
+    EXPECT_TRUE(result3["txns"].asBool()) << "txns should be true for legacy boolean true";
+
+    // Test 4: Test backward compatibility with false boolean
+    EXPECT_EQ(BE_SQLITE_DONE, m_db.SaveBriefcaseLocalValue("StandaloneEdit", "false"));
+    m_db.SaveChanges();
+
+    BeJsDocument result4;
+    m_db.QueryStandaloneEditFlags(result4);
+    EXPECT_TRUE(result4.isObject()) << "Should convert boolean to object format";
+    EXPECT_FALSE(result4["txns"].asBool()) << "txns should be false for legacy boolean false";
+
+    // Test 5: Test invalid/unsupported value (should log warning but not crash)
+    EXPECT_EQ(BE_SQLITE_DONE, m_db.SaveBriefcaseLocalValue("StandaloneEdit", "invalid_json_string"));
+    m_db.SaveChanges();
+
+    BeJsDocument result5;
+    m_db.QueryStandaloneEditFlags(result5);
+    EXPECT_TRUE(result5.isNull()) << "Should return null for invalid value";
+
+    // Test 6: Delete/clear the flags (pass null to SaveStandaloneEditFlags)
+    BeJsDocument nullVal;
+    EXPECT_EQ(BE_SQLITE_DONE, m_db.SaveStandaloneEditFlags(nullVal));
+    m_db.SaveChanges();
+
+    BeJsDocument result6;
+    m_db.QueryStandaloneEditFlags(result6);
+    EXPECT_TRUE(result6.isNull()) << "Should be null after deletion";
+
+    // Test 7: Save complex JSON object with multiple properties
+    BeJsDocument complexObj;
+    complexObj.SetEmptyObject();
+    complexObj["txns"] = true;
+    complexObj["prop1"] = "value1";
+    complexObj["prop2"] = 42;
+    complexObj["prop3"] = true;
+    EXPECT_EQ(BE_SQLITE_DONE, m_db.SaveStandaloneEditFlags(complexObj));
+    m_db.SaveChanges();
+
+    BeJsDocument result7;
+    m_db.QueryStandaloneEditFlags(result7);
+    EXPECT_TRUE(result7.isObject()) << "Should return an object";
+    EXPECT_TRUE(result7["txns"].asBool());
+    EXPECT_STREQ("value1", result7["prop1"].asCString());
+    EXPECT_EQ(42, result7["prop2"].asInt());
+    EXPECT_TRUE(result7["prop3"].asBool());
+
+    m_db.SaveChanges();
+    m_db.CloseDb();
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
 * Simulate a LineStyle bim case
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1506,6 +2313,17 @@ TEST_F(BeSQLiteDbTests, InsertMismatchedColumns)
     EXPECT_TRUE(result == BE_SQLITE_OK); // SQLite should ideally fail here - we have reported this to them 8/31/2017
     m_db.SaveChanges();
     }
+
+namespace {
+    void CloneDb(Utf8StringCR seedFileName, DbR from, DbR out, Utf8StringCR name) {
+        ASSERT_EQ (BE_SQLITE_OK, from.SaveChanges());
+        Utf8String fileName = from.GetDbFileName();
+        fileName.ReplaceAll(seedFileName.c_str(), name.c_str());
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(BeFileName(from.GetDbFileName(), true), BeFileName(fileName.c_str(), true)));
+        ASSERT_EQ(BE_SQLITE_OK, out.OpenBeSQLiteDb(fileName.c_str(), Db::OpenParams(Db::OpenMode::ReadWrite)));
+    };
+}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -1515,19 +2333,11 @@ TEST_F (BeSQLiteDbTests, ChangeSetApply_IgnoreNoop)
     SetupDb (WString(kMainFile, true).c_str());
     EXPECT_TRUE (m_db.IsDbOpen ());
 
-    auto cloneDb = [&](DbR from, DbR out, Utf8CP name) {
-        ASSERT_EQ (BE_SQLITE_OK, from.SaveChanges());
-        Utf8String fileName = from.GetDbFileName();
-        fileName.ReplaceAll(kMainFile, name);
-        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(BeFileName(m_db.GetDbFileName(), true), BeFileName(fileName.c_str(), true)));
-        ASSERT_EQ(BE_SQLITE_OK, out.OpenBeSQLiteDb(fileName.c_str(), Db::OpenParams(Db::OpenMode::ReadWrite)));
-    };
-
     ASSERT_EQ (BE_SQLITE_OK, m_db.CreateTable ("t1", "id integer primary key")) << "Creating table T1 failed.";
     ASSERT_EQ (BE_SQLITE_OK, m_db.CreateTable ("t2", "id integer primary key, t1_id integer not null references t1(id) on delete cascade")) << "Creating table T2 failed.";
 
     Db beforeDb;
-    cloneDb(m_db, beforeDb, "before.db");
+    CloneDb(kMainFile, m_db, beforeDb, "before.db");
 
     // Make a changeset
     MyChangeTracker changeTracker(m_db);
@@ -1542,7 +2352,7 @@ TEST_F (BeSQLiteDbTests, ChangeSetApply_IgnoreNoop)
     changeTracker.EndTracking();
 
     Db afterDb;
-    cloneDb(m_db, afterDb, "after.db");
+    CloneDb(kMainFile, m_db, afterDb, "after.db");
 
     BeTest::SetFailOnAssert(false);
     // Apply changeset to db that not have the data and should not cause conflicts
@@ -1555,12 +2365,71 @@ TEST_F (BeSQLiteDbTests, ChangeSetApply_IgnoreNoop)
     BeTest::SetFailOnAssert(true);
 
     // Apply to a db that already have data but with ignoreNoop flag
-    ASSERT_EQ(BE_SQLITE_OK, changeSet.ApplyChanges(afterDb, nullptr, false, /* ignoreNoop = */true)) << "with ignore noop flag this should succeed";
+    ASSERT_EQ(BE_SQLITE_OK, changeSet.ApplyChanges(afterDb, false, /* ignoreNoop = */true)) << "with ignore noop flag this should succeed";
 
     beforeDb.SaveChanges();
     afterDb.SaveChanges();
 }
 
+TEST_F(BeSQLiteDbTests, ChangeSetApply_IgnoreNoopShouldNotSupressConflict)
+{
+    const auto kMainFile = "test1.db";
+    SetupDb(WString(kMainFile, true).c_str());
+    ASSERT_TRUE(m_db.IsDbOpen());
+
+    // Data setup with a table and some data
+    ASSERT_EQ(BE_SQLITE_OK, m_db.CreateTable("t1", "id integer primary key, val int"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("insert into t1 values(1, 10)"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("insert into t1 values(2, 20)"));
+    m_db.SaveChanges();
+
+    Db firstBriefcaseDb, secondBriefcaseDb;
+    CloneDb(kMainFile, m_db, firstBriefcaseDb, "firstBriefcase.db");
+    CloneDb(kMainFile, m_db, secondBriefcaseDb, "secondBriefcase.db");
+    m_db.CloseDb();
+
+    // Delete a row from the first briefcase and create a changeset
+    MyChangeTracker changeTracker(firstBriefcaseDb);
+    changeTracker.EnableTracking(true);
+    ASSERT_EQ(BE_SQLITE_OK, firstBriefcaseDb.ExecuteSql("delete from t1 where id=2"));
+
+    MyChangeSet changeSet;
+    changeSet.FromChangeTrack(changeTracker);
+    ASSERT_GT(changeSet.GetSize(), 0);
+    changeTracker.EndTracking();
+    firstBriefcaseDb.SaveChanges();
+
+    // Update the value in the second briefcase
+    ASSERT_EQ(BE_SQLITE_OK, secondBriefcaseDb.ExecuteSql("update t1 set val=500 where id=2"));
+    secondBriefcaseDb.SaveChanges();
+
+    {
+        // Make sure the row is deleted from the first briefcase
+        Statement stmt;
+        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(firstBriefcaseDb, "SELECT val from t1 where id=2"));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        stmt.Finalize();
+    }
+    {
+        // Make sure the row is updated in the second briefcase
+        Statement stmt;
+        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(secondBriefcaseDb, "SELECT val from t1 where id=2"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(500, stmt.GetValueDouble(0));
+        stmt.Finalize();
+    }
+
+    BeTest::SetFailOnAssert(false);
+    // This is not a no-op and should trigger a conflict: Trying to delete a row that was updated in secondBriefcaseDb.
+    ASSERT_EQ(BE_SQLITE_ABORT, changeSet.ApplyChanges(secondBriefcaseDb, false, /*ignoreNoop=*/true));
+    BeTest::SetFailOnAssert(true);
+
+    firstBriefcaseDb.SaveChanges();
+    secondBriefcaseDb.SaveChanges();
+
+    firstBriefcaseDb.CloseDb();
+    secondBriefcaseDb.CloseDb();
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -1762,6 +2631,48 @@ TEST_F(BeSQLiteDbTests, ApplyChangeSetAfterSchemaChanges)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+TEST_F(BeSQLiteDbTests, ApplyChangeSetWithOverlappingUniqueSwaps)
+    {
+    SetupDb(L"overlapping_unique_swaps.db");
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("CREATE TABLE bis_Element(Id INTEGER PRIMARY KEY, FederationGuid INTEGER UNIQUE, CodeValue INTEGER UNIQUE)"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("INSERT INTO bis_Element VALUES(1, 1, 1), (2, 2, 2), (3, 3, 3)"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db.SaveChanges());
+
+    BeFileName targetPath = getDbFilePath(L"overlapping_unique_swaps_target.db");
+    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(BeFileName(m_db.GetDbFileName(), true), targetPath));
+    Db targetDb;
+    ASSERT_EQ(BE_SQLITE_OK, targetDb.OpenBeSQLiteDb(targetPath, Db::OpenParams(Db::OpenMode::ReadWrite)));
+
+    MyChangeTracker changeTracker(m_db);
+    changeTracker.EnableTracking(true);
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("UPDATE bis_Element SET FederationGuid=NULL"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("UPDATE bis_Element SET FederationGuid=CASE Id WHEN 1 THEN 2 WHEN 2 THEN 1 ELSE 3 END"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("UPDATE bis_Element SET CodeValue=NULL"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("UPDATE bis_Element SET CodeValue=CASE Id WHEN 2 THEN 3 WHEN 3 THEN 2 ELSE 1 END"));
+
+    MyChangeSet changeSet;
+    ASSERT_EQ(BE_SQLITE_OK, changeSet.FromChangeTrack(changeTracker));
+    ASSERT_EQ(BE_SQLITE_OK, m_db.SaveChanges());
+    changeTracker.EndTracking();
+
+    ASSERT_EQ(BE_SQLITE_OK, changeSet.ApplyChanges(targetDb));
+    ASSERT_EQ(BE_SQLITE_OK, targetDb.SaveChanges());
+
+    Statement statement;
+    ASSERT_EQ(BE_SQLITE_OK, statement.Prepare(targetDb, "SELECT Id, FederationGuid, CodeValue FROM bis_Element ORDER BY Id"));
+    for (int id = 1; id <= 3; ++id)
+        {
+        ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+        ASSERT_EQ(id, statement.GetValueInt(0));
+        ASSERT_EQ(id == 1 ? 2 : id == 2 ? 1 : 3, statement.GetValueInt(1));
+        ASSERT_EQ(id == 2 ? 3 : id == 3 ? 2 : 1, statement.GetValueInt(2));
+        }
+    ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 TEST_F (BeSQLiteDbTests, SaveQueryDelBreifCaselocalValue)
 {
     SetupDb (L"testb.db");
@@ -1822,8 +2733,8 @@ TEST_F (BeSQLiteDbTests, Limits)
     ASSERT_EQ(10, m_db.GetLimit(DbLimits::Attached));
     ASSERT_EQ(2200, m_db.GetLimit(DbLimits::Column));
     ASSERT_EQ(500, m_db.GetLimit(DbLimits::CompoundSelect));
-    ASSERT_EQ(2000, m_db.GetLimit(DbLimits::ExprDepth));
-    ASSERT_EQ(127, m_db.GetLimit(DbLimits::FunctionArg));
+    ASSERT_EQ(3000, m_db.GetLimit(DbLimits::ExprDepth));
+    ASSERT_EQ(1000, m_db.GetLimit(DbLimits::FunctionArg));
     ASSERT_EQ(2147483647, m_db.GetLimit(DbLimits::Length));
     ASSERT_EQ(50000, m_db.GetLimit(DbLimits::LikePatternLength));
     ASSERT_EQ(1000000000, m_db.GetLimit(DbLimits::SqlLength));

@@ -18,7 +18,16 @@ ECDb::ECDb() : Db(), m_pimpl(new Impl(*this)) {}
 //---------------+---------------+---------------+---------------+---------------+------
 InstanceReader& ECDb::GetInstanceReader() const { return m_pimpl->GetInstanceReader(); }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
+InstanceWriter& ECDb::GetInstanceWriter()  const { return m_pimpl->GetInstanceWriter(); }
 
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
+InstanceRepository& ECDb::GetInstanceRepository() const { return m_pimpl->GetInstanceRepository(); }
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
@@ -103,27 +112,30 @@ DbResult ECDb::_OnDbOpened(OpenParams const& params)
 //---------------+---------------+---------------+---------------+---------------+------
 DbResult ECDb::_AfterSchemaChangeSetApplied() const
     {
-    ClearECDbCache();
-    Schemas().RepopulateCacheTables();
-    if (!Schemas().GetSchemaSync().GetInfo().IsEmpty()) {
-        /**
-         * NOTE: We disable DDL tracking to avoid generating new changes after
-         * changeset is applied. These DDL does not need to be tracked as its already
-         * part of changeset and when SchemaSync is on we do not execute DDL from
-         * changeset instead we use ec_* schema data to recreate DDL and execute them.
-        */
-        ECDb::Impl::DisableDDLTracking _(*this);
-        if (Schemas().GetSchemaSync().UpdateDbSchema() != SchemaSync::Status::OK){
-            return BE_SQLITE_ERROR;
-        }
-    }
+    // Applying a changeset replays already accepted timeline changes, so historical inconsistencies written by
+    // older software (orphan ec_CustomAttribute rows) must not fail the apply. The sqlite schema which was just
+    // updated above is still validated. See https://github.com/iTwin/itwinjs-backlog/issues/2331
+    auto rc = GetImpl().Schemas().Main().UpdateDbSchema(true, DbMapValidationMode::ChangesetApply);
+    if (rc != SUCCESS)
+        return BE_SQLITE_ERROR;
+
     return BE_SQLITE_OK;
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::_AfterDataChangeSetApplied(bool schemaChanged)
+bool ECDb::_IsLevelWithTimeline() { return true; }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
+bool ECDb::IsLevelWithTimeline() { return _IsLevelWithTimeline(); }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDb::_AfterDataChangeSetApplied(bool schemaChanged, bool deferInstanceUpgrade)
     {
     BentleyStatus status = m_pimpl->GetProfileManager().RefreshProfileVersion();
     if (status != SUCCESS)
@@ -133,7 +145,7 @@ DbResult ECDb::_AfterDataChangeSetApplied(bool schemaChanged)
     if (status != SUCCESS)
         return BE_SQLITE_ERROR;
 
-    if (schemaChanged) {
+    if (schemaChanged && !deferInstanceUpgrade) {
         status = Schemas().UpgradeECInstances();
         if (status != SUCCESS)
             return BE_SQLITE_ERROR;
@@ -433,5 +445,18 @@ ECDb::Settings::Settings() {}
 //---------------------------------------------------------------------------------------
 ECDb::Settings::Settings(bool requiresECCrudWriteToken, bool requiresECSchemaImportToken) : m_requiresECCrudWriteToken(requiresECCrudWriteToken), m_requiresECSchemaImportToken(requiresECSchemaImportToken) {}
 
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
+bool AsciiCaseInsensitiveCompare::operator()(Utf8StringCR lhs, Utf8StringCR rhs) const{
+    return BeStringUtilities::StricmpAscii(lhs.c_str(), rhs.c_str()) < 0;
+}
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
+bool AsciiCaseInsensitiveCompare::operator()(Utf8CP lhs, Utf8CP rhs) const{
+    return BeStringUtilities::StricmpAscii(lhs, rhs) < 0;
+}
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

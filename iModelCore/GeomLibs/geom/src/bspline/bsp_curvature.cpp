@@ -475,7 +475,7 @@ public:
                             &mTangentA, fA0,
                             &mpPrimaryXYZ[1], fA1);
 
-        memcpy (&pExpandedXYZ[2], &mpPrimaryXYZ[1], (mNumPrimaryXYZ - 2) * sizeof (DPoint3d));
+        BeStringUtilities::Memcpy (&pExpandedXYZ[2], (mNumPrimaryXYZ - 2) * sizeof(DPoint3d), &mpPrimaryXYZ[1], (mNumPrimaryXYZ - 2) * sizeof (DPoint3d));
 
         boolB = bsiDPoint3d_interpolatePVPRightTriangle
                             (

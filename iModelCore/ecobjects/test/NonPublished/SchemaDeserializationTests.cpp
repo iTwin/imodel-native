@@ -4,7 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
-#include "BeXml/BeXml.h"
+#include <pugixml/src/BePugiXml.h>
 #include <ECObjects/SchemaComparer.h>
 
 #include <iostream>
@@ -1044,9 +1044,9 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenBaseClassNotFound)
 
 
 
-void ValidateElementOrder(bvector<Utf8String> expectedTypeNames, BeXmlNodeP root)
+void ValidateElementOrder(bvector<Utf8String> expectedTypeNames, BePugiXmlNode root)
     {
-    BeXmlNodeP currentNode = root->GetFirstChild();
+    BePugiXmlNode currentNode = root->GetFirstChild();
     for(auto expectedTypeName : expectedTypeNames)
         {
         if(currentNode == nullptr)
@@ -1055,7 +1055,7 @@ void ValidateElementOrder(bvector<Utf8String> expectedTypeNames, BeXmlNodeP root
             }
 
         Utf8String nodeTypeName;
-        EXPECT_EQ(BeXmlStatus::BEXML_Success, currentNode->GetAttributeStringValue(nodeTypeName, "typeName"));
+        EXPECT_EQ(BEPUGIXML_Success, currentNode->GetAttributeStringValue(nodeTypeName, "typeName"));
         EXPECT_EQ(expectedTypeName, nodeTypeName);
 
         currentNode = currentNode->GetNextSibling();
@@ -1084,10 +1084,10 @@ TEST_F(SchemaDeserializationTest, TestPreservingElementOrder)
     SchemaWriteStatus schemaWritingStatus = schema->WriteToXmlString(ecSchemaXmlString, ECVersion::V3_0);
     EXPECT_EQ(SchemaWriteStatus::Success, schemaWritingStatus);
 
-    size_t stringByteCount = ecSchemaXmlString.length() * sizeof(Utf8Char);
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, ecSchemaXmlString.c_str(), stringByteCount);
-    EXPECT_EQ(BEXML_Success, xmlStatus);
+    size_t stringByteCount = ecSchemaXmlString.length();
+    BePugiXmlStatus xmlStatus;
+    BePugiXmlDomPtr xmlDom = BePugiXmlDom::CreateAndReadFromString(xmlStatus, ecSchemaXmlString.c_str(), stringByteCount);
+    EXPECT_EQ(BEPUGIXML_Success, xmlStatus);
 
     bvector<Utf8String> typeNames = {"GHI", "ABC", "DEF"};
     ValidateElementOrder(typeNames, xmlDom.get()->GetRootElement());
@@ -1108,13 +1108,13 @@ TEST_F(SchemaDeserializationTest, TestDefaultElementOrder)
     ECSchemaPtr schema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext));
 
-    WString ecSchemaXmlString;
+    Utf8String ecSchemaXmlString;
     ASSERT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(ecSchemaXmlString, ECVersion::V3_0));
 
-    size_t stringByteCount = ecSchemaXmlString.length() * sizeof(Utf8Char);
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, ecSchemaXmlString.c_str(), stringByteCount);
-    ASSERT_EQ(BEXML_Success, xmlStatus);
+    size_t stringByteCount = ecSchemaXmlString.length();
+    BePugiXmlStatus xmlStatus;
+    BePugiXmlDomPtr xmlDom = BePugiXmlDom::CreateAndReadFromString(xmlStatus, ecSchemaXmlString.c_str(), stringByteCount);
+    ASSERT_EQ(BEPUGIXML_Success, xmlStatus);
 
     // Enumerations(DEF) are serialized first, then classes(ABC, GHI)
     bvector<Utf8String> typeNames = {"DEF", "ABC", "GHI"};
@@ -1158,13 +1158,13 @@ TEST_F(SchemaDeserializationTest, TestPreserveElementOrderWithBaseClassAndRelati
     ECSchemaPtr schema;
     EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext));
 
-    WString ecSchemaXmlString;
+    Utf8String ecSchemaXmlString;
     EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(ecSchemaXmlString, ECVersion::V3_0));
 
-    size_t stringByteCount = ecSchemaXmlString.length() * sizeof(Utf8Char);
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, ecSchemaXmlString.c_str(), stringByteCount);
-    EXPECT_EQ(BEXML_Success, xmlStatus);
+    size_t stringByteCount = ecSchemaXmlString.length();
+    BePugiXmlStatus xmlStatus;
+    BePugiXmlDomPtr xmlDom = BePugiXmlDom::CreateAndReadFromString(xmlStatus, ecSchemaXmlString.c_str(), stringByteCount);
+    EXPECT_EQ(BEPUGIXML_Success, xmlStatus);
 
     // Expecting the same order as specified in the SchemaXML Document.
     bvector<Utf8String> typeNames = {"GHI","ABC","PQR", "MNO", "JKL", "DEF",};
@@ -1206,13 +1206,13 @@ TEST_F(SchemaDeserializationTest, TestDefaultElementOrderWithBaseClassAndRelatio
     ECSchemaPtr schema;
     EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext));
 
-    WString ecSchemaXmlString;
+    Utf8String ecSchemaXmlString;
     EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(ecSchemaXmlString, ECVersion::V3_0));
 
-    size_t stringByteCount = ecSchemaXmlString.length() * sizeof(Utf8Char);
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, ecSchemaXmlString.c_str(), stringByteCount);
-    EXPECT_EQ(BEXML_Success, xmlStatus);
+    size_t stringByteCount = ecSchemaXmlString.length();
+    BePugiXmlStatus xmlStatus;
+    BePugiXmlDomPtr xmlDom = BePugiXmlDom::CreateAndReadFromString(xmlStatus, ecSchemaXmlString.c_str(), stringByteCount);
+    EXPECT_EQ(BEPUGIXML_Success, xmlStatus);
 
     // First Enumeration(PQR), then classes alphabetically(ABC, DEF, GHI). As MNO is the base class of ABC and
     // JKL has a constraint in DEF, those two classes are written before the class they depend in.
@@ -1453,7 +1453,7 @@ TEST_F(SchemaDeserializationTest, ChecksumIsCalculatedFromContext)
     DeserializeSchema(testSchema, *context, SchemaItem(schemaXml));
 
     ASSERT_TRUE(testSchema.IsValid());
-    EXPECT_FALSE(testSchema->GetSchemaKey().m_checksum.empty()) << "Expect the checksum of the schema to be valid when the calculate checksum flag is set to true on the ECSchemaReadContext.";
+    EXPECT_FALSE(testSchema->GetSchemaKey().GetChecksum().empty()) << "Expect the checksum of the schema to be valid when the calculate checksum flag is set to true on the ECSchemaReadContext.";
     }
     {
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
@@ -1461,7 +1461,7 @@ TEST_F(SchemaDeserializationTest, ChecksumIsCalculatedFromContext)
     ECSchemaPtr testSchema;
     DeserializeSchema(testSchema, *context, SchemaItem(schemaXml));
     ASSERT_TRUE(testSchema.IsValid());
-    EXPECT_TRUE(testSchema->GetSchemaKey().m_checksum.empty()) << "Expect the checksum of the schema to be empty when the calculate checksum flag is false on the ECSchemaReadContext.";
+    EXPECT_TRUE(testSchema->GetSchemaKey().GetChecksum().empty()) << "Expect the checksum of the schema to be empty when the calculate checksum flag is false on the ECSchemaReadContext.";
     }
     {
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
@@ -1472,7 +1472,7 @@ TEST_F(SchemaDeserializationTest, ChecksumIsCalculatedFromContext)
     DeserializeSchema(testSchema, *context, SchemaItem(schemaXml));
 
     ASSERT_TRUE(testSchema.IsValid());
-    EXPECT_FALSE(testSchema->GetSchemaKey().m_checksum.empty()) << "Expect the checksum of the schema to be valid when the calculate checksum and skip validation flags are set to true on the ECSchemaReadContext.";
+    EXPECT_FALSE(testSchema->GetSchemaKey().GetChecksum().empty()) << "Expect the checksum of the schema to be valid when the calculate checksum and skip validation flags are set to true on the ECSchemaReadContext.";
     }
     }
 

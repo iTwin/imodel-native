@@ -5,7 +5,6 @@
 #include <ECPresentationPch.h>
 
 #include "PresentationRuleJsonConstants.h"
-#include "PresentationRuleXmlConstants.h"
 #include "CommonToolsInternal.h"
 #include <ECPresentation/Rules/PresentationRules.h>
 
@@ -100,31 +99,6 @@ void ContentModifiersList::ClearPropertyCategories()
     {
     InvalidateHash();
     CommonToolsInternal::FreePresentationRules(m_propertyCategories);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ContentModifiersList::ReadXml(BeXmlNodeP xmlNode)
-    {
-    CommonToolsInternal::LoadSpecificationsFromXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList>(xmlNode, m_relatedProperties, RELATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME, this);
-    BeXmlNodeP xmlPropertyNode = xmlNode->SelectSingleNode(CALCULATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
-    if (xmlPropertyNode)
-        CommonToolsInternal::LoadSpecificationsFromXmlNode<CalculatedPropertiesSpecification, CalculatedPropertiesSpecificationList>(xmlPropertyNode, m_calculatedProperties, CALCULATED_PROPERTIES_SPECIFICATION_XML_CHILD_NAME, this);
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ContentModifiersList::WriteXml(BeXmlNodeP xmlNode) const
-    {
-    CommonToolsInternal::WriteRulesToXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList>(xmlNode, m_relatedProperties);
-    if (!m_calculatedProperties.empty())
-        {
-        BeXmlNodeP calculatedPropertiesNode = xmlNode->AddEmptyElement(CALCULATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
-        CommonToolsInternal::WriteRulesToXmlNode<CalculatedPropertiesSpecification, CalculatedPropertiesSpecificationList>(calculatedPropertiesNode, m_calculatedProperties);
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -269,39 +243,6 @@ ContentModifier::~ContentModifier()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP ContentModifier::_GetXmlElementName() const {return CONTENTMODIFIER_XML_NODE_NAME;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ContentModifier::_ReadXml(BeXmlNodeP xmlNode)
-    {
-    if (!PrioritizedPresentationKey::_ReadXml(xmlNode))
-        return false;
-
-    if (BEXML_Success != xmlNode->GetAttributeStringValue(m_schemaName, CONTENTMODIFIER_XML_ATTRIBUTE_SCHEMANAME))
-        m_schemaName = "";
-
-    if (BEXML_Success != xmlNode->GetAttributeStringValue(m_className, CONTENTMODIFIER_XML_ATTRIBUTE_CLASSNAME))
-        m_className = "";
-
-    return m_modifiers.ReadXml(xmlNode);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ContentModifier::_WriteXml(BeXmlNodeP xmlNode) const
-    {
-    PrioritizedPresentationKey::_WriteXml(xmlNode);
-    xmlNode->AddAttributeStringValue(CONTENTMODIFIER_XML_ATTRIBUTE_CLASSNAME, m_className.c_str());
-    xmlNode->AddAttributeStringValue(CONTENTMODIFIER_XML_ATTRIBUTE_SCHEMANAME, m_schemaName.c_str());
-    m_modifiers.WriteXml(xmlNode);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP ContentModifier::_GetJsonElementTypeAttributeName() const {return COMMON_JSON_ATTRIBUTE_RULETYPE;}
 
 /*---------------------------------------------------------------------------------**//**
@@ -356,9 +297,9 @@ MD5 ContentModifier::_ComputeHash() const
     {
     MD5 md5 = T_Super::_ComputeHash();
     if (!m_schemaName.empty())
-        ADD_STR_VALUE_TO_HASH(md5, CONTENTMODIFIER_XML_ATTRIBUTE_SCHEMANAME, m_schemaName);
+        ADD_STR_VALUE_TO_HASH(md5, SCHEMA_CLASS_SPECIFICATION_SCHEMANAME, m_schemaName);
     if (!m_className.empty())
-        ADD_STR_VALUE_TO_HASH(md5, CONTENTMODIFIER_XML_ATTRIBUTE_CLASSNAME, m_className);
+        ADD_STR_VALUE_TO_HASH(md5, SINGLE_SCHEMA_CLASS_SPECIFICATION_CLASSNAME, m_className);
     ADD_RULES_TO_HASH(md5, COMMON_JSON_ATTRIBUTE_REQUIREDSCHEMAS, m_requiredSchemas);
 
     Utf8StringCR modifiersHash = m_modifiers.GetHash();

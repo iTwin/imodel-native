@@ -15,11 +15,10 @@ import { iModelJsNative } from "./utils";
 import type { UpgradeOptions } from "@itwin/core-common";
 // Run mocha tests on all *.test.ts files
 function runMochaTests() {
-  const mocha = new Mocha();
-  mocha.options = {
-    useColors: true,
+  const mocha = new Mocha({
+    color: true,
     // timeout: 0, For some reason mocha does not care what timeout you pass here.
-  };
+  });
   mocha.suite.timeout(0);
 
   // Gather up all *.test.js files

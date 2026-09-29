@@ -287,7 +287,7 @@ BentleyStatus RenderingAsset::Relocate(DgnImportContext& context)
 DgnTextureId RenderingAsset::TextureMap::Relocate(DgnImportContext& context)
     {
     DgnTextureId thisId = GetTextureId();
-    return thisId.IsValid() ? DgnTexture::ImportTexture(context, thisId) : thisId;
+    return thisId.IsValid() ? context.RemapTextureId(thisId) : thisId;
     }
 
 //---------------------------------------------------------------------------------------
@@ -421,6 +421,16 @@ BentleyStatus RenderingAsset::TextureMap::ComputeUVParams (bvector<DPoint2d>& pa
     Render::TextureMapping::Params mapParams = GetTextureMapParams();
     return mapParams.ComputeUVParams(params, visitor, drapeParams);
     }
+
+std::optional<double> RenderingAsset::GetTransparency() const {
+    if (!GetValue(RENDER_MATERIAL_FlagHasTransmit).isBool()) {
+        // If HasTransmit is not defined, the material does not override transparency.
+        return std::optional<double>();
+    }
+
+    // If HasTransmit is false, the material overrides transparency to zero.
+    return GetBool(RENDER_MATERIAL_FlagHasTransmit, false) ? GetDouble(RENDER_MATERIAL_Transmit, 0.0) : 0.0;
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod

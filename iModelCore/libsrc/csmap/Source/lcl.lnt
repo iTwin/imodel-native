@@ -44,6 +44,7 @@
 -esym(534,CS_trim)					// ignoring return value
 -esym(534,CS_trimWc)				// ignoring return value
 -esym(534,CS_atof)					// ignoring return value
+-esym(534,setvbuf)					// ignoring return value
 -esym(534,CS_adjll)					// ignoring return value
 -esym(534,CS_bswap)					// ignoring return value
 -esym(534,CS_bswap)					// ignoring return value

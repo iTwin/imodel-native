@@ -47,7 +47,6 @@
 #include <DgnPlatform/GenericDomain.h>
 #include <DgnPlatform/FontManager.h>
 #include <DgnPlatform/IGeoCoordServices.h>
-#include <GeomJsonWireFormat/JsonUtils.h>
 #include <DgnPlatform/FenceContext.h>
 #include <DgnPlatform/MeasureGeom.h>
 #include <DgnPlatform/NullContext.h>

@@ -82,7 +82,40 @@ public:
     DgnElementId InsertElementUsingGeometryPart(DgnGeometryPartId gpId, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnCode elementCode = DgnCode());
     DgnElementId InsertElementUsingGeometryPart2d(DgnCodeCR gpCode, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnCode elementCode = DgnCode());
     bool JsonDeepEqual(BeJsDocument const& a, BeJsDocument const& b) const;
-    bool JsonDeepEqual(Json::Value const& a, Json::Value const& b) const;
+
+    struct ReportedIssue
+        {
+        ECN::IssueSeverity severity;
+        ECN::IssueCategory category;
+        ECN::IssueType type;
+        ECN::IssueId id;
+        Utf8String message;
+        };
+
+    struct TestIssueListener : ECN::IIssueListener
+        {
+        mutable std::vector<ReportedIssue> m_issues;
+        void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message) const override
+            {
+            m_issues.emplace_back(ReportedIssue{severity, category, type, id, message});
+            }
+
+        int GetReportedIssueCount() const { return static_cast<int>(m_issues.size()); }
+
+        std::vector<ReportedIssue>& GetAllReportedIssues() const { return m_issues; }
+
+        std::vector<ReportedIssue> GetFilteredIssuesBySeverity(const ECN::IssueSeverity severity) const
+            {
+            std::vector<ReportedIssue> filteredIssues;
+            for (const auto& issue : m_issues)
+                {
+                if (issue.severity == severity)
+                    filteredIssues.push_back(issue);
+                }
+
+            return filteredIssues;
+            }
+        };
 };
 
 
@@ -140,3 +173,61 @@ struct PerfTestFixture : ::testing::Test
         DgnCategoryId GetDefaultCategoryId() { return m_defaultCategoryId; }
 
     };
+
+//=======================================================================================
+//! Used in combination with LogCatcher to capture log messages
+// @bsiclass
+//=======================================================================================
+struct TestLogger : NativeLogging::Logger {
+    std::vector<std::pair<NativeLogging::SEVERITY, Utf8String>> m_messages;
+        void LogMessage(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg) override {
+            m_messages.emplace_back(sev, msg);
+    }
+
+    bool IsSeverityEnabled(Utf8CP category, NativeLogging::SEVERITY sev) override{
+        return true;
+    }
+
+    void Clear() { m_messages.clear(); }
+
+    bool ValidateMessageAtIndex(size_t index, NativeLogging::SEVERITY expectedSeverity, const Utf8String& expectedMessage) const {
+        if (index < m_messages.size()) {
+            const auto& [severity, message] = m_messages[index];
+            return severity == expectedSeverity && message.Equals(expectedMessage);
+        }
+        return false; // Return false if the index is out of bounds
+    }
+    
+    const std::pair<NativeLogging::SEVERITY, Utf8String>* GetLastMessage() const {
+        if (!m_messages.empty()) {
+            return &m_messages.back();
+        }
+        return nullptr; // Return nullptr if there are no messages
+    }
+
+    const std::pair<NativeLogging::SEVERITY, Utf8String>* GetLastMessage(NativeLogging::SEVERITY severity) const {
+        for (auto it = m_messages.rbegin(); it != m_messages.rend(); ++it) {
+            if (it->first == severity) {
+                return &(*it);
+            }
+        }
+        return nullptr; // Return nullptr if no messages with the specified severity are found
+    }
+};
+
+//=======================================================================================
+//! Until destruction, captures log messages and redirects them to the TestLogger
+// @bsiclass
+//=======================================================================================
+struct LogCatcher {
+    NativeLogging::Logger& m_previousLogger;
+    TestLogger& m_testLogger;
+
+    LogCatcher(TestLogger& testLogger) : m_testLogger(testLogger), m_previousLogger(NativeLogging::Logging::GetLogger()) {
+        NativeLogging::Logging::SetLogger(&m_testLogger);
+    }
+
+    ~LogCatcher() {
+        NativeLogging::Logging::SetLogger(&m_previousLogger);
+    }
+};

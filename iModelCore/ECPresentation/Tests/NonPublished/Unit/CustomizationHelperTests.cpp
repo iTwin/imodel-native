@@ -48,7 +48,7 @@ struct CustomizationHelperTests : ECPresentationTest
         m_customFunctions = new CustomFunctionsInjector(m_connections, *m_connection);
         m_ruleset = PresentationRuleSet::CreateInstance("CustomizationHelperTests");
         m_nodesFactory = std::make_unique<TestNodesFactory>(*m_connection, "specificationIdentifier", m_ruleset->GetRuleSetId());
-        m_context = NavNodesProviderContext::Create(*m_ruleset, TargetTree_Both, nullptr,
+        m_context = NavNodesProviderContext::Create(*m_ruleset, nullptr,
             std::make_unique<RulesetVariables>(), m_expressionsCache, m_relatedPathsCache,
             *m_nodesFactory, m_nodesCache, m_providerFactory, nullptr);
         m_context->SetQueryContext(m_connections, *m_connection, nullptr);
@@ -247,8 +247,8 @@ TEST_F (CustomizationHelperTests, CustomizationExpressionContextHasParentNodeSym
     NavNodePtr thisNode = CreateNode("This", "description", "imageId", "ThisType");
     RulesEngineTestHelpers::CacheNode(*m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *thisNode, parentNode->GetNodeId());
 
-    ChildNodeRule rule("", 1, false, RuleTargetTree::TargetTree_Both);
-    NavNodesProviderContextPtr childContext = NavNodesProviderContext::Create(*m_ruleset, TargetTree_Both, parentNode.get(),
+    ChildNodeRule rule("", 1, false);
+    NavNodesProviderContextPtr childContext = NavNodesProviderContext::Create(*m_ruleset, parentNode.get(),
         std::make_unique<RulesetVariables>(), m_expressionsCache, m_relatedPathsCache,
         *m_nodesFactory, m_nodesCache, m_providerFactory, nullptr);
     childContext->SetQueryContext(*m_context);

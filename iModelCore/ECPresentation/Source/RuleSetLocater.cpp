@@ -8,7 +8,6 @@
 #include "Shared/ECSchemaHelper.h"
 #include "Shared/Queries/QueryExecutor.h"
 
-#define PRESENTATION_RULESET_EXTENSION_Xml   L".PresentationRuleSet.xml"
 #define PRESENTATION_RULESET_EXTENSION_Json  L".PresentationRuleSet.json"
 
 //=======================================================================================
@@ -376,10 +375,6 @@ bvector<BeFileName> DirectoryRuleSetLocater::_GetRuleSetFileNames() const
             }
 
         bvector<BeFileName> matches;
-        BeDirectoryIterator::WalkDirsAndMatch(matches, directory, L"*" PRESENTATION_RULESET_EXTENSION_Xml, true);
-        files.insert(files.end(), matches.begin(), matches.end());
-
-        matches.clear();
         BeDirectoryIterator::WalkDirsAndMatch(matches, directory, L"*" PRESENTATION_RULESET_EXTENSION_Json, true);
         files.insert(files.end(), matches.begin(), matches.end());
         }
@@ -409,9 +404,7 @@ bvector<PresentationRuleSetPtr> DirectoryRuleSetLocater::_LocateRuleSets(Utf8CP 
             }
         else
             {
-            if (file.EndsWithI(PRESENTATION_RULESET_EXTENSION_Xml))
-                ruleset = PresentationRuleSet::ReadFromXmlFile(file);
-            else if (file.EndsWithI(PRESENTATION_RULESET_EXTENSION_Json))
+            if (file.EndsWithI(PRESENTATION_RULESET_EXTENSION_Json))
                 ruleset = PresentationRuleSet::ReadFromJsonFile(file);
             else
                 {
@@ -466,86 +459,6 @@ void DirectoryRuleSetLocater::_InvalidateCache(Utf8CP rulesetId)
         }
     for (BeFileNameCR filename : filenamesToRemove)
         m_cache.erase(filename);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void FileRuleSetLocater::SetPath(BeFileNameCR path)
-    {
-    BeMutexHolder lock(GetMutex());
-
-    if (path.Equals(m_path))
-        return;
-
-    m_path = path;
-    m_cached = nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<PresentationRuleSetPtr> FileRuleSetLocater::_LocateRuleSets(Utf8CP rulesetId) const
-    {
-    bvector<PresentationRuleSetPtr> rulesets;
-
-    time_t lastModifiedTime;
-    if (m_cached.IsValid())
-        {
-        if ((nullptr == rulesetId || m_cached->GetRuleSetId().Equals(rulesetId))
-            && (!m_path.DoesPathExist() || BeFileNameStatus::Success == m_path.GetFileTime(nullptr, nullptr, &lastModifiedTime) && lastModifiedTime <= m_cachedLastModifiedTime))
-            {
-            rulesets.push_back(m_cached);
-            return rulesets;
-            }
-        else
-            {
-            OnRulesetDisposed(*m_cached);
-            m_cached = nullptr;
-            }
-        }
-
-    if (m_path.IsEmpty() || !m_path.DoesPathExist())
-        return rulesets;
-
-    PresentationRuleSetPtr ruleset = PresentationRuleSet::ReadFromXmlFile(m_path);
-    if (ruleset.IsValid() && (nullptr == rulesetId || ruleset->GetRuleSetId().Equals(rulesetId)))
-        {
-        m_path.GetFileTime(nullptr, nullptr, &m_cachedLastModifiedTime);
-        m_cached = ruleset;
-        OnRulesetCreated(*ruleset);
-        rulesets.push_back(ruleset);
-        }
-
-    return rulesets;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<Utf8String> FileRuleSetLocater::_GetRuleSetIds() const
-    {
-    bvector<Utf8String> rulesetIds;
-    bvector<PresentationRuleSetPtr> rulesets = LocateRuleSets();
-    for (PresentationRuleSetPtr& ruleset : rulesets)
-        rulesetIds.push_back(Utf8String(ruleset->GetRuleSetId().c_str()));
-    return rulesetIds;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void FileRuleSetLocater::_InvalidateCache(Utf8CP rulesetId)
-    {
-    if (m_cached.IsNull())
-        return;
-
-    if (nullptr == rulesetId || m_cached->GetRuleSetId().Equals(rulesetId))
-        {
-        OnRulesetDisposed(*m_cached);
-        m_cached = nullptr;
-        m_cachedLastModifiedTime = 0;
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**

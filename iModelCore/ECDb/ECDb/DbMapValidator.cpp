@@ -13,6 +13,9 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus DbMapValidator::ValidateClassViews() const {
+    if (!MaintainsDataTables())
+        return SUCCESS; // a view's query needs data tables, which do not exist on a sync db.
+
     return ClassViews::CheckViews(m_schemaImportContext.GetECDb()) ? SUCCESS : ERROR;
 }
 
@@ -77,12 +80,16 @@ BentleyStatus DbMapValidator::ValidateCustomAttributeTable() const {
         BeAssert(false);
         return ERROR;
     }
+    // Orphan rows can only originate from history written by older versions of the software. When replaying
+    // already accepted timeline changes we must not fail, but we still report the rows so the condition stays
+    // diagnosable. See https://github.com/iTwin/itwinjs-backlog/issues/2331
+    const auto severity = m_mode == DbMapValidationMode::ChangesetApply ? IssueSeverity::Warning : IssueSeverity::Error;
     int nOrphanRows = 0;
     int remainingIssuesToReport = 3;
     while (caStmt.Step() == BE_SQLITE_ROW) {
         if (remainingIssuesToReport > 0 ) {
             Issues().ReportV(
-                IssueSeverity::Error,
+                severity,
                 IssueCategory::BusinessProperties,
                 IssueType::ECDbIssue,
                 ECDbIssueId::ECDb_0110,
@@ -95,8 +102,8 @@ BentleyStatus DbMapValidator::ValidateCustomAttributeTable() const {
         ++nOrphanRows;
     }
     if (nOrphanRows > 0) {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0111, "Detected %d orphan rows in ec_CustomAttributes.", nOrphanRows);
-        return ERROR;
+        Issues().ReportV(severity, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0111, "Detected %d orphan rows in ec_CustomAttributes.", nOrphanRows);
+        return m_mode == DbMapValidationMode::ChangesetApply ? SUCCESS : ERROR;
     }
     return SUCCESS;
 }
@@ -161,29 +168,39 @@ BentleyStatus DbMapValidator::CheckDuplicateDataPropertyMap() const {
                 JOIN [ec_Column] [c] ON [c].[Id] = [pp].[ColumnId]
                 JOIN [ec_Table] [t] ON [t].[Id] = [c].[TableId]
             WHERE  [p].[AccessString] != 'ECClassId' AND [p].[AccessString] != 'ECInstanceId'
-            GROUP BY [pp].[ClassId], [pp].[PropertyPathId] HAVING COUNT (*) > 1;)");
+            GROUP BY [pp].[ClassId], [p].[AccessString] HAVING COUNT (*) > 1;)");
 
     if (rc != BE_SQLITE_OK) {
         Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0114, "Failed to run duplicate data property check");
         return ERROR;
     }
 
-    int errors = 0;
+    int duplicateCount = 0;
     while(stmt.Step() == BE_SQLITE_ROW) {
         const ECClassId classId = stmt.GetValueId<ECClassId>(0);
-        const Utf8String accessString = stmt.GetValueText(1);
-        const Utf8String duplicateCols = stmt.GetValueText(2);
         ECClassCP ecClass = GetECDb().Schemas().GetClass(classId);
         if (ecClass == nullptr) {
             Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0115, "Could not load ECClass for ECClassId %s from the file.", classId.ToString().c_str());
             return ERROR;
         }
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0116,
-            "Detected duplicate mapping for ECClass: %s. AccessString '%s' is mapped to '%s'.", ecClass->GetFullName(), accessString.c_str(), duplicateCols.c_str());
-        ++errors;
+        ++duplicateCount;
+        if (m_mode == DbMapValidationMode::ChangesetApply && duplicateCount > MAX_DETAILED_WARNINGS)
+            continue;
+
+        Issues().ReportV(m_mode == DbMapValidationMode::ChangesetApply ? IssueSeverity::Warning : IssueSeverity::Error,
+            IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0116,
+            "Detected duplicate mapping for ECClass: %s. AccessString '%s' is mapped to '%s'.", ecClass->GetFullName(), stmt.GetValueText(1), stmt.GetValueText(2));
     }
 
-    return errors > 0? ERROR : SUCCESS;
+    if (m_mode != DbMapValidationMode::ChangesetApply)
+        return duplicateCount > 0 ? ERROR : SUCCESS;
+
+    if (duplicateCount > MAX_DETAILED_WARNINGS) {
+        Issues().ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0747,
+            "Detected %d duplicate mappings. Suppressed %d additional duplicate mapping warnings.", duplicateCount, duplicateCount - MAX_DETAILED_WARNINGS);
+    }
+
+    return SUCCESS;
 }
 
 //---------------------------------------------------------------------------------------
@@ -195,19 +212,23 @@ BentleyStatus DbMapValidator::Validate() const
     if (SUCCESS != Initialize())
         return ERROR;
 
-    if (SUCCESS != ValidateDbSchema())
-        return ERROR;
+    BentleyStatus result = SUCCESS;
+    for (auto validation : {
+        &DbMapValidator::ValidateDbSchema,
+        &DbMapValidator::ValidateDbMap,
+        &DbMapValidator::CheckDuplicateDataPropertyMap,
+        &DbMapValidator::ValidateCustomAttributeTable,
+        &DbMapValidator::ValidateClassViews})
+        {
+        if (SUCCESS == (this->*validation)())
+            continue;
 
-    if (SUCCESS != ValidateDbMap())
-        return ERROR;
+        result = ERROR;
+        if (!m_continueAfterError)
+            return result;
+        }
 
-    if (SUCCESS != CheckDuplicateDataPropertyMap())
-        return ERROR;
-
-    if (SUCCESS != ValidateCustomAttributeTable())
-        return ERROR;
-
-    return ValidateClassViews();
+    return result;
     }
 
 //---------------------------------------------------------------------------------------
@@ -215,19 +236,29 @@ BentleyStatus DbMapValidator::Validate() const
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus DbMapValidator::ValidateDbSchema() const
     {
+    BentleyStatus result = SUCCESS;
     for (DbTable const* table : GetDbSchema().Tables())
         {
         if (SUCCESS != ValidateDbTable(*table))
-            return ERROR;
+            {
+            result = ERROR;
+            if (!m_continueAfterError)
+                return result;
+            continue;
+            }
 
         for (std::unique_ptr<DbIndex> const& index : table->GetIndexes())
             {
             if (SUCCESS != ValidateDbIndex(*index))
-                return ERROR;
+                {
+                result = ERROR;
+                if (!m_continueAfterError)
+                    return result;
+                }
             }
         }
 
-    return SUCCESS;
+    return result;
     }
 
 //---------------------------------------------------------------------------------------
@@ -282,7 +313,7 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
         {
             case DbTable::Type::Existing:
             {
-            if (!DbUtilities::TableExists(GetECDb(), table.GetName().c_str(), TABLESPACE_Main))
+            if (MaintainsDataTables() && !DbUtilities::TableExists(GetECDb(), table.GetName().c_str(), TABLESPACE_Main))
                 {
                 Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0121,
                     "DbTable '%s' is of type 'Existing' and therefore must exist in the file.", table.GetName().c_str());
@@ -301,7 +332,7 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
 
             case DbTable::Type::Joined:
             {
-            if (!DbUtilities::TableExists(GetECDb(), table.GetName().c_str(), TABLESPACE_Main))
+            if (MaintainsDataTables() && !DbUtilities::TableExists(GetECDb(), table.GetName().c_str(), TABLESPACE_Main))
                 {
                 Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0123,
                     "DbTable '%s' is if type 'Joined' and therefore must exist in the file.", table.GetName().c_str());
@@ -322,7 +353,16 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
                 return ERROR;
                 }
 
-            if (nonVirtualColumnCount != (int) physicalColumns.size())
+            if (MaintainsDataTables() && m_schemaImportContext.IsSemanticRebasing())
+                {
+                if (nonVirtualColumnCount > (int) physicalColumns.size())
+                    {
+                    Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0126,
+                        "DbTable '%s' has %d non-virtual columns, but the physical table has only %d columns.", table.GetName().c_str(), nonVirtualColumnCount, (int) physicalColumns.size());
+                    return ERROR;
+                    }
+                }
+            else if (MaintainsDataTables() && nonVirtualColumnCount != (int) physicalColumns.size())
                 {
                 Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0126,
                     "DbTable '%s' has %d non-virtual columns, but the physical table has %d columns.", table.GetName().c_str(), nonVirtualColumnCount, (int) physicalColumns.size());
@@ -334,7 +374,7 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
 
             case DbTable::Type::Overflow:
             {
-            if (!DbUtilities::TableExists(GetECDb(), table.GetName().c_str(), TABLESPACE_Main))
+            if (MaintainsDataTables() && !DbUtilities::TableExists(GetECDb(), table.GetName().c_str(), TABLESPACE_Main))
                 {
                 Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0127, 
                     "DbTable '%s' is if type 'Overflow' and therefore must exist in the file.", table.GetName().c_str());
@@ -356,7 +396,16 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
                 return ERROR;
                 }
 
-            if (nonVirtualColumnCount != (int) physicalColumns.size())
+            if (MaintainsDataTables() && m_schemaImportContext.IsSemanticRebasing())
+                {
+                if (nonVirtualColumnCount > (int) physicalColumns.size())
+                    {
+                    Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0130,
+                        "DbTable '%s' has %d non-virtual columns, but the physical table has only %d columns.", table.GetName().c_str(), nonVirtualColumnCount, (int) physicalColumns.size());
+                    return ERROR;
+                    }
+                }
+            else if (MaintainsDataTables() && nonVirtualColumnCount != (int) physicalColumns.size())
                 {
                 Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0130,
                     "DbTable '%s' has %d non-virtual columns, but the physical table has %d columns.", table.GetName().c_str(), nonVirtualColumnCount, (int) physicalColumns.size());
@@ -368,7 +417,7 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
 
             case DbTable::Type::Primary:
             {
-            if (!DbUtilities::TableExists(GetECDb(), table.GetName().c_str(), TABLESPACE_Main))
+            if (MaintainsDataTables() && !DbUtilities::TableExists(GetECDb(), table.GetName().c_str(), TABLESPACE_Main))
                 {
                 Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0131,
                     "DbTable '%s' is if type 'Primary' and therefore must exist in the file.", table.GetName().c_str());
@@ -382,7 +431,16 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
                 return ERROR;
                 }
 
-            if (nonVirtualColumnCount != (int) physicalColumns.size())
+            if (MaintainsDataTables() && m_schemaImportContext.IsSemanticRebasing())
+                {
+                if (nonVirtualColumnCount > (int) physicalColumns.size())
+                    {
+                    Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0133,
+                        "DbTable '%s' has %d non-virtual columns, but the physical table has only %d columns.", table.GetName().c_str(), nonVirtualColumnCount, (int) physicalColumns.size());
+                    return ERROR;
+                    }
+                }
+            else if (MaintainsDataTables() && nonVirtualColumnCount != (int) physicalColumns.size())
                 {
                 Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0133,
                     "DbTable '%s' has %d non-virtual columns, but the physical table has %d columns.", table.GetName().c_str(), nonVirtualColumnCount, (int) physicalColumns.size());
@@ -446,7 +504,7 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
 BentleyStatus DbMapValidator::ValidateDbColumn(DbColumn const& column, bset<Utf8String, CompareIUtf8Ascii> const& physicalColumns) const
     {
     DbTable::Type tableType = column.GetTable().GetType();
-    if (!column.IsVirtual() && tableType != DbTable::Type::Virtual)
+    if (MaintainsDataTables() && !column.IsVirtual() && tableType != DbTable::Type::Virtual)
         {
         if (physicalColumns.find(column.GetName()) == physicalColumns.end())
             {
@@ -689,6 +747,7 @@ BentleyStatus DbMapValidator::ValidateDbIndex(DbIndex const& index) const
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus DbMapValidator::ValidateDbMap() const
     {
+    BentleyStatus result = SUCCESS;
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(GetECDb(), "SELECT count(*) FROM main." TABLE_Class))
         {
@@ -719,7 +778,9 @@ BentleyStatus DbMapValidator::ValidateDbMap() const
         {
         Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0157,
             "The system tables " TABLE_Class " and " TABLE_ClassMap " must have the same number of rows, but they don't: " TABLE_Class ": %d rows, " TABLE_ClassMap ": %d rows.", classCount, classMapCount);
-        return ERROR;
+        result = ERROR;
+        if (!m_continueAfterError)
+            return result;
         }
 
     //store class maps from cache in local vector as validation might load more classes into the cache and
@@ -730,19 +791,30 @@ BentleyStatus DbMapValidator::ValidateDbMap() const
         classMaps.push_back(entry.second.get());
         }
 
+    int incompleteClassMapCount = 0;
     for (ClassMap const* classMap : classMaps)
         {
-        if (SUCCESS != ValidateClassMap(*classMap))
-            return ERROR;
+        if (SUCCESS != ValidateClassMap(*classMap, incompleteClassMapCount))
+            {
+            result = ERROR;
+            if (!m_continueAfterError)
+                break;
+            }
         }
 
-    return SUCCESS;
+    if (incompleteClassMapCount > MAX_DETAILED_WARNINGS)
+        {
+        Issues().ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0748,
+            "Detected %d classes with incomplete property maps. Suppressed %d additional property map count warnings.", incompleteClassMapCount, incompleteClassMapCount - MAX_DETAILED_WARNINGS);
+        }
+
+    return result;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus DbMapValidator::ValidateClassMap(ClassMap const& classMap) const
+BentleyStatus DbMapValidator::ValidateClassMap(ClassMap const& classMap, int& incompleteClassMapCount) const
     {
     if (SUCCESS != ValidateMapStrategy(classMap))
         return ERROR;
@@ -791,19 +863,35 @@ BentleyStatus DbMapValidator::ValidateClassMap(ClassMap const& classMap) const
             const int propCount = (int) classMap.GetClass().GetPropertyCount(true);
             if (dataPropertyMapCount != propCount)
                 {
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0160,
-                    "The number of property maps for ECClass '%s' does not match the number of properties. Property maps: %d, properties: %d.", classMap.GetClass().GetFullName(), dataPropertyMapCount, propCount);
-                return ERROR;
-                }
-
-            // check all properties are mapped. We already know that the count of mapped and actual properties matches, so we only need to compare the names in one direction
-            for (auto& prop : classMap.GetClass().GetProperties(true))
-                {
-                if (mappedDataPropertyNames.find(prop->GetName()) == mappedDataPropertyNames.end())
+                // Changeset apply loads classes beyond those changed by the changeset. Tolerate incomplete
+                // data maps in existing files while keeping schema import and the loaded maps' validation strict.
+                if (m_mode == DbMapValidationMode::ChangesetApply && dataPropertyMapCount < propCount)
                     {
-                    Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0161,
-                        "Mismatch of mapped properties for ECClass '%s'. The count of mapped properties is correct, but property %s is not mapped.", classMap.GetClass().GetFullName(), prop->GetName().c_str());
+                    ++incompleteClassMapCount;
+                    if (incompleteClassMapCount <= MAX_DETAILED_WARNINGS)
+                        {
+                        Issues().ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0160,
+                            "The number of property maps for ECClass '%s' does not match the number of properties. Property maps: %d, properties: %d.", classMap.GetClass().GetFullName(), dataPropertyMapCount, propCount);
+                        }
+                    }
+                else
+                    {
+                    Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0160,
+                        "The number of property maps for ECClass '%s' does not match the number of properties. Property maps: %d, properties: %d.", classMap.GetClass().GetFullName(), dataPropertyMapCount, propCount);
                     return ERROR;
+                    }
+                }
+            else
+                {
+                // With matching counts, comparing names in one direction establishes that every property is mapped.
+                for (auto& prop : classMap.GetClass().GetProperties(true))
+                    {
+                    if (mappedDataPropertyNames.find(prop->GetName()) == mappedDataPropertyNames.end())
+                        {
+                        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0161,
+                            "Mismatch of mapped properties for ECClass '%s'. The count of mapped properties is correct, but property %s is not mapped.", classMap.GetClass().GetFullName(), prop->GetName().c_str());
+                        return ERROR;
+                        }
                     }
                 }
 
@@ -918,10 +1006,10 @@ BentleyStatus DbMapValidator::ValidateOverflowPropertyMaps(ClassMap const& class
         {
         if (propertyMap->IsSystem())
             {
-            if (propertyMap->GetAccessString().EqualsIAscii(ECDBSYS_PROP_ECInstanceId))
+            if (!hasECInstanceIdInOverflowTable && propertyMap->GetAccessString().EqualsIAscii(ECDBSYS_PROP_ECInstanceId))
                 hasECInstanceIdInOverflowTable = containOverflow(propertyMap->GetAs<SystemPropertyMap>().GetTables());
 
-            if (propertyMap->GetAccessString().EqualsIAscii(ECDBSYS_PROP_ECClassId))
+            if (!hasECClassIdInOverflowTable && propertyMap->GetAccessString().EqualsIAscii(ECDBSYS_PROP_ECClassId))
                 hasECClassIdInOverflowTable = containOverflow(propertyMap->GetAs<SystemPropertyMap>().GetTables());
             }
         else
@@ -965,9 +1053,12 @@ BentleyStatus DbMapValidator::ValidateOverflowPropertyMaps(ClassMap const& class
         const bool hasSystemPropertyMap = hasECInstanceIdInOverflowTable || hasECClassIdInOverflowTable;
         if (hasSystemPropertyMap && nDataPropertyInOverflowTable == 0)
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0173,
+            // TODO: It might happen that a major schema upgrade deletes all the data properties in the overflow table.
+            // This still leaves behind a state where the overflow table still has the system properties mapped to it, but no data properties.
+            // Refer test case SchemaRemapTest:MajorVersionUpgradeRemovesDataPropertiesFromOverflowTable
+            // It would be worthwhile to look into clearing up those empty data rows and their mappings.
+            Issues().ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0173,
                 "The class '%s' ECInstanceId and ECClassId property map point to overflow table but there is no data property that is stored in overflow table.", classMap.GetClass().GetFullName());
-            return ERROR;
             }
 
         if (!hasSystemPropertyMap && nDataPropertyInOverflowTable > 0)
@@ -1812,4 +1903,3 @@ BentleyStatus DbMapValidator::ValidateNavigationPropertyMapUniqueness(Navigation
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
-

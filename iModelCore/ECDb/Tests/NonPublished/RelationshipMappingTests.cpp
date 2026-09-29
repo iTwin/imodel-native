@@ -917,14 +917,14 @@ TEST_F(RelationshipMappingTestFixture, FKRelsWithSameNameButDifferentNotNullCons
     ECSqlStatement stmt;
     ECClassId relClassId = m_ecdb.Schemas().GetClassId("TestSchema", "MaterialOwnsSealedEntity1");
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.SealedEntity1(PropSealedEntity1,PropElement,PropBaseTPH,NavProp) VALUES('1PropSealedEntity1','1PropElement','1PropBaseTPH',?)"));
-    stmt.BindNavigationValue(1, materialKey.GetInstanceId(), relClassId);
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(1, materialKey.GetInstanceId(), relClassId));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
     {
     ECSqlStatement stmt;
     ECClassId relClassId = m_ecdb.Schemas().GetClassId("TestSchema", "SealedEntity2RefersToMaterial");
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.SealedEntity2(PropSealedEntity2,PropElement,PropBaseTPH,NavProp) VALUES('1PropSealedEntity2','2PropElement','2PropBaseTPH',?)"));
-    stmt.BindNavigationValue(1, materialKey.GetInstanceId(), relClassId);
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(1, materialKey.GetInstanceId(), relClassId));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
     {

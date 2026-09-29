@@ -2,15 +2,38 @@
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #  See LICENSE.md in the repository root for full copyright notice.
 #---------------------------------------------------------------------------------------------
+# BeCurl.prewire.mke - Stage curl public headers and license notices from the vcpkg build so the
+# PublicAPI part's VendorAPI/VendorNotices bindings are satisfied at the PublicAPI stage.
+#
+# Headers no longer come from a checked-in vendor/ tree; vcpkg owns the curl source. The vcpkg
+# install is performed by the vcpkg_install_curl part (vcpkg.PartFile.xml) before this mke runs,
+# so include/curl/*.h and the license are already present.
+#---------------------------------------------------------------------------------------------
 %include mdl.mki
 
-SourceDir = $(_MakeFilePath)vendor/
+curlDir   = $(_MakeFilePath)
+libsrcDir = $(curlDir)../
 
-$(BuildContext)VendorAPI/curl : $(SourceDir)include/curl
-    $(LinkFirstDepToFirstTargetAsDirectory)
+o = $(OutputRootDir)build/iTwinCurl-prewire/
 
-$(BuildContext)Delivery/curl-license.txt : $(SourceDir)COPYING
-    $(LinkFirstDepToFirstTarget)
+# Mirror the triplet override from BeCurl.mke so the prewire reads the same vcpkg_installed tree.
+%if $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
+    vcpkgWindowsMDCRT = 1
+%endif
+%include $(libsrcDir)vcpkg.mki
 
-$(BuildContext)Delivery/c-ares-license.md : $(_MakeFilePath)ares/LICENSE.md
-    $(LinkFirstDepToFirstTarget)
+vcpkgInstallRoot = $(OutputRootDir)vcpkg_installed/curl/
+vcpkgTripletDir  = $(vcpkgInstallRoot)$(vcpkgTriplet)/
+vcpkgIncludeDir  = $(vcpkgTripletDir)include/
+
+always:
+    !~@mkdir $(o)
+
+#--------------------------------------------------------------------------------------
+#   Deliver headers (VendorAPI/curl -> vcpkg include/curl) and curl's license notice, both from
+#   the vcpkg tree.  The c-ares notice is staged separately by BeCares.prewire.mke because it is
+#   only installed on macOS/Linux.
+#--------------------------------------------------------------------------------------
+always:
+    ~linkdir "$(BuildContext)VendorAPI/curl=$(vcpkgIncludeDir)curl/"
+    ~linkfile "$(BuildContext)Delivery/curl-license.txt=$(vcpkgTripletDir)share/curl/copyright"

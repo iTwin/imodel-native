@@ -6,6 +6,7 @@
 #include <set>
 #include "SqlNames.h"
 #include <signal.h>
+#include <string>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -561,6 +562,17 @@ BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Con
     {
     NativeSqlBuilder::List unionList;
     StorageDescription const& storageDesc = classMap.GetStorageDescription();
+    if (storageDesc.GetHorizontalPartitions().empty())
+        {
+        // A mapped entity class always sits in at least one table, even when that table is virtual.
+        // An empty list means ec_cache_ClassHasTables lost the class' row - the file is damaged, and
+        // the caller gets an error rather than an empty result or a walk off the end of the vector.
+        ctx.GetECDb().GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0745,
+                                                 "ECClass '%s' is mapped but has no table. " TABLE_ClassHasTablesCache " is out of step with the class' mapping.",
+                                                 classMap.GetClass().GetFullName());
+        return ERROR;
+        }
+
     bool isVertical = storageDesc.GetVerticalPartitions().size() > 1;
     std::vector<Partition const*> partitionOfInterest;
     if (isVertical)
@@ -616,23 +628,26 @@ BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Con
         if (ctx.GetViewType() == ViewType::ECClassView)
             ctx.GetAs<ECClassViewContext>().StopCaptureViewColumnNames();
 
-        if (SystemPropertyMap::PerTableIdPropertyMap const* classIdPropertyMap = tableRootClassMap->GetECClassIdPropertyMap()->FindDataPropertyMap(partition->GetTable()))
+        if (const auto ecClassIdPropertyMap = tableRootClassMap->GetECClassIdPropertyMap())
             {
-            const bool isSelectFromView = ctx.GetViewType() == ViewType::SelectFromView;
-            if (classIdPropertyMap->GetColumn().GetPersistenceType() == PersistenceType::Physical &&
-                (!isSelectFromView || ctx.GetAs<SelectFromViewContext>().IsECClassIdFilterEnabled()))
+            if (SystemPropertyMap::PerTableIdPropertyMap const* classIdPropertyMap = ecClassIdPropertyMap->FindDataPropertyMap(partition->GetTable()))
                 {
-                const auto polymorphicInfo = isSelectFromView ? ctx.GetAs<SelectFromViewContext>().GetPolymorphicInfo() : PolymorphicInfo::All();
-                Utf8String filterSQL;
-                if (SUCCESS != GenerateECClassIdFilter(filterSQL, classMap, partition->GetTable(), classIdPropertyMap->GetColumn(), polymorphicInfo))
-                    return ERROR;
-
-                if (!filterSQL.empty())
+                const bool isSelectFromView = ctx.GetViewType() == ViewType::SelectFromView;
+                if (classIdPropertyMap->GetColumn().GetPersistenceType() == PersistenceType::Physical &&
+                    (!isSelectFromView || ctx.GetAs<SelectFromViewContext>().IsECClassIdFilterEnabled()))
                     {
-                    if (polymorphicInfo.IsOnly())
-                        view.Append(" WHERE ").Append(filterSQL.c_str());
-                    else
-                        view.Append(" ").Append(filterSQL.c_str());
+                    const auto polymorphicInfo = isSelectFromView ? ctx.GetAs<SelectFromViewContext>().GetPolymorphicInfo() : PolymorphicInfo::All();
+                    Utf8String filterSQL;
+                    if (SUCCESS != GenerateECClassIdFilter(filterSQL, classMap, partition->GetTable(), classIdPropertyMap->GetColumn(), polymorphicInfo))
+                        return ERROR;
+
+                    if (!filterSQL.empty())
+                        {
+                        if (polymorphicInfo.IsOnly())
+                            view.Append(" WHERE ").Append(filterSQL.c_str());
+                        else
+                            view.Append(" ").Append(filterSQL.c_str());
+                        }
                     }
                 }
             }
@@ -640,7 +655,7 @@ BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Con
         unionList.push_back(view);
         }
 
-    if (unionList.empty())
+    if (unionList.empty() || classMap.GetMapStrategy().GetStrategy() == MapStrategy::UnsupportedByECVersion)
         {
         if (RenderNullView(viewSql, ctx, classMap) != SUCCESS)
             return ERROR;
@@ -817,7 +832,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassLinkTableMap(NativeSqlBuilde
         unionList.push_back(view);
         }
 
-    if (unionList.empty())
+    if (unionList.empty() || relationMap.GetMapStrategy().GetStrategy() == MapStrategy::UnsupportedByECVersion)
         {
         if (RenderNullView(viewSql, ctx, relationMap) != SUCCESS)
             return ERROR;
@@ -1014,6 +1029,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
         unionQuerySql.Append(" FROM ").AppendEscaped(partition->GetECInstanceIdColumn().GetTable().GetTableSpace().GetName()).AppendDot().AppendEscaped(partition->GetECInstanceIdColumn().GetTable().GetName());
         DbColumn const& refClassIdCol = relationMap.GetReferencedEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? *partition->GetSourceECClassIdColumn() : *partition->GetTargetECClassIdColumn();
         DbColumn const& referenceIdColumn = relationMap.GetReferencedEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? partition->GetSourceECInstanceIdColumn() : partition->GetTargetECInstanceIdColumn();
+        DbColumn const& foreignClassIdColumn = relationMap.GetForeignEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? *partition->GetSourceECClassIdColumn() : *partition->GetTargetECClassIdColumn();
         if (refClassIdCol.GetPersistenceType() == PersistenceType::Physical)
             {
             DbColumn const* idColumn = refClassIdCol.GetTable().FindFirst(DbColumn::Kind::ECInstanceId);
@@ -1046,11 +1062,26 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
             else
                 unionQuerySql.Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo)).Append(relationMap.GetClass().GetId());
             }
+        if (foreignClassIdColumn.GetPersistenceType() == PersistenceType::Physical && referenceIdColumn.IsShared())
+            {
+            unionQuerySql.Append(" AND ");
+            toSql(unionQuerySql, foreignClassIdColumn);
+            
+            ECRelationshipConstraintCR constraint = relationMap.GetConstraintMap(relationMap.GetForeignEnd()).GetRelationshipConstraint();
+            ECClassCP abstractConstraint = constraint.GetAbstractConstraint();
+            if (abstractConstraint == nullptr)
+                {
+                BeAssert(false && "Expected an abstract constraint class to be defined");
+                return ERROR;
+                }
+
+            unionQuerySql.AppendFormatted(" IN (SELECT ClassId FROM [%s]." TABLE_ClassHierarchyCache " WHERE BaseClassId=%s)", ctx.GetSchemaManager().GetTableSpace().GetName().c_str(), abstractConstraint->GetId().ToString().c_str());
+            }
 
         unionList.push_back(unionQuerySql);
         }
 
-    if (unionList.empty())
+    if (unionList.empty() || relationMap.GetMapStrategy().GetStrategy() == MapStrategy::UnsupportedByECVersion)
         {
         if (RenderNullView(viewSql, ctx, relationMap) != SUCCESS)
             return ERROR;

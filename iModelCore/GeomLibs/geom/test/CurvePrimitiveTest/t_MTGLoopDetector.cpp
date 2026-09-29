@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #include "testHarness.h"
 #include <stdio.h>
+#include <Bentley/BeFile.h>
 #include <Mtg/MtgApi.h>
 
 #include "MTGLoopDetector.h"
@@ -316,7 +317,6 @@ bool noisy = false
     size_t numExteriorFaces = 0;
     size_t numInteriorFaces = 0;
     size_t numExteriorVertices = 0;
-    size_t numInteriorVertices = 0;
     bmap<size_t, size_t> vertexCounters;
     for (MTGNodeId node : vertexSeed)
         {
@@ -325,8 +325,6 @@ bool noisy = false
             numExteriorVertices++;
             exteriorVertexCounts.Report (graph.CountNodesAroundVertex (node));
             }
-        else
-            numInteriorVertices++;
         }
 
     for (MTGNodeId node : faceSeed)
@@ -447,44 +445,3 @@ TEST(MTG,TetrahedralAssembler)
     Check::True (IsTriangulated (graph), "Triangulated graph");
     Check::True (IsTrivalentInterior (graph), "Trivalent interior");
     }
-#if defined (_WIN32) && !defined(BENTLEY_WINRT)
-#define TestTetrahedralFiles
-#ifdef TestTetrahedralFiles
-void TestTetrahedralFile (char const *filename)
-    {
-    MTGMultiCellularTetrahedralTopology graph;
-    FILE* m_fp;
-    if (0 == BeFile::Fopen(&m_fp, filename, "r"))
-        {
-        printf ("\n\n Tetrahedral solid from file %s\n", filename);
-        int vertexIndexA, vertexIndexB, vertexIndexC, vertexIndexD;
-        size_t numTet = 0;
-        for (;4 == fscanf_s (m_fp, "%d %d %d %d", &vertexIndexA, &vertexIndexB, &vertexIndexC, &vertexIndexD);)
-            {
-            numTet++;
-            graph.AddTetrahedron (vertexIndexA, vertexIndexB, vertexIndexC, vertexIndexD);
-            }
-        printf ("  (numTetrahedra %d)\n", (int)numTet);
-        Check::True (graph.WrapExteriorGraphAroundCompleteInteriorGraph (), "Assemble exterior");
-        CheckCompleteMulticellularGraph (graph, numTet, 0); // we know how many tets, not how many exterior.
-        Check::True (IsTriangulated (graph), "Triangulated graph");
-
-        fclose (m_fp);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST(MTG,TetrahedralAssemblerByFile)
-    {
-    static bool s_doTest0 = false;
-    static bool s_doTest1 = false;
-    if (s_doTest0)
-        TestTetrahedralFile ("d:/tmp/tetFile0.tet");
-    if (s_doTest1)
-        TestTetrahedralFile ("d:/mskfiles/mesh/2015/03B Bois Tetrahedra/march10/Tetrahedrons.index");
-    }
-#endif
-
-#endif

@@ -15,18 +15,18 @@ USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_DPTEST
-extern bool WriteJsonToFile (WCharCP path, const Json::Value& jsonValue);
-extern bool ReadJsonFromFile (Json::Value& jsonValue, WCharCP path);
+extern bool WriteJsonToFile (WCharCP path, BeJsConst jsonValue);
+extern bool ReadJsonFromFile (BeJsDocument& jsonValue, WCharCP path);
 
 //=======================================================================================
 //! @bsiclass
 //=======================================================================================
 struct DgnECNavigatorTest :public DgnDbTestFixture
 {
-    static void ValidateElementInfo(JsonValueR actualElementInfo, WCharCP expectedFileName)
+    static void ValidateElementInfo(BeJsValue actualElementInfo, WCharCP expectedFileName)
         {
         BeFileName expectedFile(expectedFileName);
-        Json::Value expectedElementInfo;
+        BeJsDocument expectedElementInfo;
         bool readFileStatus = ReadJsonFromFile(expectedElementInfo, expectedFile.GetName());
         ASSERT_TRUE(readFileStatus);
 
@@ -42,18 +42,19 @@ struct DgnECNavigatorTest :public DgnDbTestFixture
         // Ignore some properties in comparison - they too volatile.
         for (int ii = 0; ii < (int) actualElementInfo["ecInstances"].size(); ii++)
             {
-            JsonValueR actualInstance = actualElementInfo["ecInstances"][ii];
-            JsonValueR expectedInstance = expectedElementInfo["ecInstances"][ii];
+            BeJsValue actualInstance = actualElementInfo["ecInstances"][ii];
+            BeJsValue expectedInstance = expectedElementInfo["ecInstances"][ii];
 
             for (const char* prop : volatileProperties)
                 {
-                if (actualInstance.isMember(prop)) actualInstance[prop] = "*";
-                if (expectedInstance.isMember(prop)) expectedInstance[prop] = "*";
+                // hasMember (not isMember): isMember reports false for a member that is
+                // present but null.
+                if (actualInstance.hasMember(prop)) actualInstance[prop] = "*";
+                if (expectedInstance.hasMember(prop)) expectedInstance[prop] = "*";
                 }
             }
 
-        int compare = expectedElementInfo.compare(actualElementInfo);
-        if (0 != compare)
+        if (!expectedElementInfo.isExactEqual(actualElementInfo))
             {
             // For convenient android debugging
             //LOG.debugv ("Expected ElementInfo:");

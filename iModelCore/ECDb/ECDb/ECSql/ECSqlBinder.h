@@ -59,7 +59,7 @@ struct ECSqlBinder : IECSqlBinder
         bool m_hasToCallOnBeforeStep = false;
         bool m_hasToCallOnClearBindings = false;
 
-        virtual ECSqlStatus _OnBeforeStep() { return ECSqlStatus::Success; }
+        virtual ECSqlStatus _OnBeforeFirstStep() { return ECSqlStatus::Success; }
         virtual void _OnClearBindings() {}
 
     protected:
@@ -89,12 +89,13 @@ struct ECSqlBinder : IECSqlBinder
 
         ECSqlTypeInfo const& GetTypeInfo() const { return m_typeInfo; }
 
-        ECSqlStatus OnBeforeStep() { return _OnBeforeStep(); }
+        ECSqlStatus OnBeforeFirstStep() { return _OnBeforeFirstStep(); }
         void OnClearBindings() { return _OnClearBindings(); }
     };
 
 struct IdECSqlBinder;
 struct VirtualSetBinder;
+struct ArrayECSqlBinder;
 
 //=======================================================================================
 //! @bsiclass
@@ -114,7 +115,7 @@ struct ECSqlBinderFactory final
         static std::unique_ptr<IdECSqlBinder> CreateIdBinder(ECSqlPrepareContext&, PropertyMap const&, ECSqlSystemPropertyInfo const&, ECSqlBinder::SqlParamNameGenerator&);
         static std::unique_ptr<IdECSqlBinder> CreateIdBinderForQuery(ECSqlPrepareContext&, ECSqlTypeInfo const&, ECSqlBinder::SqlParamNameGenerator&);
         static std::unique_ptr<VirtualSetBinder> CreateVirtualSetBinder(ECSqlPrepareContext&, ECSqlTypeInfo const&, ECSqlBinder::SqlParamNameGenerator&);
-
+        static std::unique_ptr<ArrayECSqlBinder> CreateArrayECSqlBinder(ECSqlPrepareContext&, ECSqlTypeInfo const&, ECSqlBinder::SqlParamNameGenerator&, bool);
     };
 
 //=======================================================================================
@@ -149,7 +150,11 @@ struct ECSqlParameterMap final
         int GetIndexForName(Utf8StringCR ecsqlParameterName) const;
 
         ECSqlBinder* AddBinder(ECSqlPrepareContext&, ParameterExp const&);
-        ECSqlStatus OnBeforeStep();
+        ECSqlStatus OnBeforeFirstStep();
+
+        //! @return true if any binder needs OnBeforeFirstStep to be called. Lets the step path skip the
+        //! per-step statement-state probe entirely when no binder requires the first-step callback.
+        bool HasBindersToCallOnBeforeStep() const { return !m_bindersToCallOnStep.empty(); }
 
         //Bindings in SQLite have already been cleared at this point. The method
         //allows subclasses to clean-up additional resources tied to binding parameters

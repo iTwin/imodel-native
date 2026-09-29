@@ -23,9 +23,7 @@ struct EXPORT_VTABLE_ATTRIBUTE RelatedInstanceNodesSpecification : ChildNodeSpec
 
 private:
     bool                       m_groupByClass;
-    bool                       m_groupByRelationship;
     bool                       m_groupByLabel;
-    bool                       m_showEmptyGroups;
     int                        m_skipRelatedLevel;
     Utf8String                 m_instanceFilter;
     RequiredRelationDirection  m_requiredDirection;
@@ -37,10 +35,6 @@ private:
 protected:
     //! Allows the visitor to visit this specification.
     ECPRESENTATION_EXPORT void _Accept(PresentationRuleSpecificationVisitor& visitor) const override;
-
-    ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName () const override;
-    ECPRESENTATION_EXPORT bool _ReadXml (BeXmlNodeP xmlNode) override;
-    ECPRESENTATION_EXPORT void _WriteXml (BeXmlNodeP xmlNode) const override;
 
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
@@ -67,8 +61,8 @@ public:
     RelatedInstanceNodesSpecification(int priority, ChildrenHint hasChildren, bool hideNodesInHierarchy, bool hideIfNoChildren,
         bool groupByClass, bool groupByLabel, Utf8String instanceFilter, bvector<RepeatableRelationshipPathSpecification*> relationshipPaths)
         : ChildNodeSpecification(priority, hasChildren, hideNodesInHierarchy, hideIfNoChildren), m_groupByClass(groupByClass),
-        m_groupByRelationship(false), m_groupByLabel(groupByLabel), m_relationshipPaths(relationshipPaths), m_instanceFilter(instanceFilter),
-        m_skipRelatedLevel(0), m_showEmptyGroups(false), m_requiredDirection(RequiredRelationDirection_Both)
+        m_groupByLabel(groupByLabel), m_relationshipPaths(relationshipPaths), m_instanceFilter(instanceFilter),
+        m_skipRelatedLevel(0), m_requiredDirection(RequiredRelationDirection_Both)
         {}
     ECPRESENTATION_EXPORT ~RelatedInstanceNodesSpecification();
 
@@ -76,20 +70,9 @@ public:
     bool GetGroupByClass() const {return m_groupByClass;}
     void SetGroupByClass(bool value) {m_groupByClass = value; InvalidateHash();}
 
-    //! Returns true if grouping by relationship should be applied.
-    //! @deprecated
-    bool GetGroupByRelationship() const {return m_groupByRelationship;}
-    void SetGroupByRelationship(bool value) {m_groupByRelationship = value; InvalidateHash();}
-
     //! Returns true if grouping by label should be applied.
     bool GetGroupByLabel() const {return m_groupByLabel;}
     void SetGroupByLabel(bool value) {m_groupByLabel = value; InvalidateHash();}
-
-    //! Returns true if class grouping nodes should be shown even if there are no
-    //! ECInstances of those classes. Grouping nodes will be generated for all listed classes.
-    //! @deprecated
-    bool GetShowEmptyGroups() const {return m_showEmptyGroups;}
-    void SetShowEmptyGroups(bool value) {m_showEmptyGroups = value; InvalidateHash();}
 
     //! InstanceFiler is specially formated string that represents WhereCriteria in
     //! ECQuery that is used to filter query results (ChildNodes).

@@ -152,6 +152,48 @@ int EXP_LVL3 CS_wcsicmp (Const wchar_t* cp1,Const wchar_t *cp2)
 	}
 	return (result);
 }
+
+#ifdef GEOCOORD_ENHANCEMENT
+
+long32_t CS_convertEndianInteger(long32_t oneEndianValue) 
+{
+	long32_t otherEndianValue;
+	unsigned char* oneEndianBytes = (unsigned char*)(&oneEndianValue);
+	unsigned char* otherEndianBytes = (unsigned char*)(&otherEndianValue);
+
+	otherEndianBytes[0] = oneEndianBytes[3];
+	otherEndianBytes[1] = oneEndianBytes[2];
+	otherEndianBytes[2] = oneEndianBytes[1];
+	otherEndianBytes[3] = oneEndianBytes[0];
+
+	return otherEndianValue;
+}	
+
+float CS_convertEndianFloat(float oneEndianValue) 
+{
+	float otherEndianValue;
+	unsigned char* oneEndianBytes = (unsigned char*)(&oneEndianValue);
+	unsigned char* otherEndianBytes = (unsigned char*)(&otherEndianValue);
+
+	for (int i = 0; i < sizeof(float); ++i) 
+		otherEndianBytes[i] = oneEndianBytes[sizeof(float) - 1 - i];
+
+	return otherEndianValue;
+}	
+
+double CS_convertEndianDouble(double oneEndianValue)
+{
+	double otherEndianValue;
+	unsigned char* oneEndianBytes = (unsigned char*)(&oneEndianValue);
+	unsigned char* otherEndianBytes = (unsigned char*)(&otherEndianValue);
+
+	for (int i = 0; i < sizeof(double); ++i)
+		otherEndianBytes[i] = oneEndianBytes[sizeof(double) - 1 - i];
+
+	return otherEndianValue;
+}	
+#endif
+
 // The following functions are not to be used by Bentley since the whole file access functions have been overridden
 #if !defined(GEOCOORD_ENHANCEMENT)
 int EXP_LVL9 CS_access (Const char *path,int mode)

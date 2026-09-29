@@ -48,6 +48,8 @@
     <Part Name="UnitTests-NonPublished" DeferType="BuildUnitTests" BentleyBuildMakeFile="tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="PublicAPI" />
+        <!-- The bridge tests build with USE_JSONCPP, so they need both sides of the bridge on the include path. -->
+        <SubPart PartName="BeRapidJson" PartFile="iModelCore/Bentley/Bentley" />
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="BeJsonCpp/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
         </Bindings>

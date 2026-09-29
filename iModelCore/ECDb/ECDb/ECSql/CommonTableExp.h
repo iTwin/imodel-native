@@ -49,11 +49,10 @@ struct CommonTableBlockExp: RangeClassRefExp {
         void _OnAliasChanged() override {}
         // RangeClass
         Utf8StringCR _GetId() const override;
-        void _ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const override;
+        void _ExpandSelectAsterisk(std::vector<std::unique_ptr<Exp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const override;
         PropertyMatchResult _FindProperty(ECSqlParseContext& ctx, PropertyPath const &propertyPath, const PropertyMatchOptions &options) const override;
 
-        bool ExpandDerivedProperties(ECSqlParseContext&) const;
-        bool ExpandDerivedPropertiesForEmptyColumnList(ECSqlParseContext&) const;
+        bool ExpandDerivedProperties() const;
 
     public:
         CommonTableBlockExp(Utf8CP name, std::vector<Utf8String> colList, std::unique_ptr<SelectStatementExp> stmt);
@@ -102,7 +101,7 @@ struct CommonTableBlockNameExp final : RangeClassRefExp {
         // RangeClass
         Utf8StringCR _GetId() const override;
         PropertyMatchResult _FindProperty(ECSqlParseContext& ctx, PropertyPath const &propertyPath, const PropertyMatchOptions &options) const override;
-        void _ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const override;
+        void _ExpandSelectAsterisk(std::vector<std::unique_ptr<Exp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const override;
         CommonTableBlockExp const* ResolveBlock(ECSqlParseContext const&,bool) const;
     public:
         explicit CommonTableBlockNameExp(Utf8CP blockName): RangeClassRefExp(Exp::Type::CommonTableBlockName, PolymorphicInfo::Only()), m_name(blockName), m_blockExp(nullptr){}

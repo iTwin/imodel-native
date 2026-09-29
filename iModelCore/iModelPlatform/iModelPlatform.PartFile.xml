@@ -21,11 +21,10 @@
         <SubPart PartName="BentleyDll"          PartFile="iModelCore/Bentley/Bentley" />
         <SubPart PartName="ECDbLibrary"         PartFile="iModelCore/ECDb/ECDb" />
         <SubPart PartName="GeomDlls"            PartFile="iModelCore/GeomLibs/geomlibs" />
-        <SubPart PartName="BeXml" PartFile="iModelCore/Bentley/Bentley" />
         <SubPart PartName="ECObjects"     PartFile="iModelCore/ecobjects/ECObjects" />
         <SubPart PartName="Freetype2Library" PartFile="iModelCore/libsrc/freetype2/freetype2"/>
-        <SubPart PartName="BeJsonCpp"           PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" />
         <SubPart PartName="BeRapidJson" PartFile="iModelCore/Bentley/Bentley" />
+        <SubPart LibType="Static" PartName="proxyres" PartFile="iModelCore/libsrc/proxyres/proxyres"/>
         <SubPart LibType="Static" PartName="pnglib" PartFile="iModelCore/libsrc/png/png"/>
         <SubPart PartName="BeJpeg" PartFile="iModelCore/Bentley/Bentley" />
         <SubPart PartName="Headers" PartFile="iModelCore/libsrc/flatbuffers/flatbuffers"/>
@@ -33,6 +32,7 @@
         <SubPart PartName="PublicApi"           PartFile="iModelCore/libsrc/csmap/csmap" />
         <SubPart LibType="Static" PartName="Compress" PartFile="iModelCore/libsrc/compress/Zlib"/>
         <SubPart PartName="ECPresentation" PartFile="iModelCore/ECPresentation/ECPresentation" />
+        <SubPart PartName="PugiXml"        PartFile="iModelCore/libsrc/pugixml/pugixml" />
         <SubPart PartName="napi-lib" PartFile="node-addon-api/node-addon-api" />
         <Bindings>
             <Libs>Delivery/$(libprefix)iTwinPlatform$(libext)</Libs>
@@ -82,7 +82,7 @@
     <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/prewire.mke">
         <RequiredRepository>iModelUnitTestData</RequiredRepository>
         <SubPart PartName="iModelPlatformDLL"/>
-        <SubPart PartName="GeoCoordWorkspaceData" PartFile="iModelCore/libsrc/csmap/csmap"/>
+        <SubPart PartName="GeoCoordDictionaryData" PartFile="iModelCore/libsrc/csmap/csmap"/>
         <SubPart PartName="iModelPlatformUnitTestHelpers"/>
         <Bindings>
             <Files     ProductDirectoryName="UnitTests-IgnoreList"   ProductSubDirectory="DgnPlatform" SubPartDirectory="UnitTests/DgnPlatform">Delivery/UnitTests/ignore_list.txt</Files>
@@ -475,24 +475,35 @@
     <!-- // iModelConsole                                                           // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
 
-    <Product Name="iModelConsole">
+    <Part Name="iModelConsole" PrgOutputDir="iModelConsole">
+        <SubNuGetProduct NuGetProductName="iModelConsoleNuGet"/>
+        <SubUPackProduct UPackProductName="iModelConsoleUPack"/>
+    </Part>
+
+    <NuGetProduct Name="iModelConsoleNuGet" Description="iModelConsole NuGet" OnlyPlatforms="x64,linuxx64">
         <SubPart PartName="iModelConsoleExe-Windows"/>
         <SubPart PartName="iModelConsoleExe-Linux"/>
-        <SubPart PartName="iModelConsoleExe-MacOS"/>
-        <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
         <Directories DirectoryListName="iModelConsoleDirList" />
-    </Product>
+    </NuGetProduct>
+
+    <UPackProduct Name="iModelConsoleUPack" Description="iModelConsole UPack" OnlyPlatforms="macosarm64">
+        <SubPart PartName="iModelConsoleExe-MacOS"/>
+        <Directories DirectoryListName="iModelConsoleDirList" />
+    </UPackProduct>
 
     <Part Name="iModelConsoleExe-Windows" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubPart PartName="iModelConsoleExe" LibType="Dynamic"/>
+        <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
     </Part>
 
-    <Part Name="iModelConsoleExe-Linux" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic" >
+    <Part Name="iModelConsoleExe-Linux" OnlyPlatforms="Linux*" >
         <SubPart PartName="iModelConsoleExe" LibType="Static"/>
+        <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api" LibType="Static"/>
     </Part>
 
-    <Part Name="iModelConsoleExe-MacOS" OnlyPlatforms="MacOS*" ExcludeLibType="Dynamic" >
+    <Part Name="iModelConsoleExe-MacOS" OnlyPlatforms="MacOS*">
         <SubPart PartName="iModelConsoleExe" LibType="Static"/>
+        <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api" LibType="Static"/>
     </Part>
 
     <Part Name="iModelConsoleExe" DeferType="BuildSamples" BentleyBuildMakeFile="iModelConsole/iModelConsole.mke" >
@@ -506,7 +517,7 @@
     </Part>
 
     <ProductDirectoryList ListName="iModelConsoleDirList" >
-        <ProductDirectory Name="ApplicationRoot"                Path=""/>
+       <ProductDirectory Name="ApplicationRoot"                Path=""/>
         <ProductDirectory Name="ApplicationRoot"                Path="" LibType="Static" />
         <ProductDirectory Name="Assemblies"                     RelativeTo="ApplicationRoot"/>
         <ProductDirectory Name="Assemblies"                     RelativeTo="ApplicationRoot" LibType="Static"/>

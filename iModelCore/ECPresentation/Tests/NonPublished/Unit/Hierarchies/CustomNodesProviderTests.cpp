@@ -119,7 +119,7 @@ TEST_F(CustomNodesProviderTests, OverridesLabelAndDescription)
     LabelOverrideP labelOverride = new LabelOverride("ThisNode.Type=\"MyCustomNode\"", 1, "\"overriden_label\"", "\"overriden_description\"");
     m_ruleset->AddPresentationRule(*labelOverride);
 
-    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, false);
     m_ruleset->AddPresentationRule(*rule);
 
     CustomNodeSpecification* spec = new CustomNodeSpecification(1, false, "MyCustomNode", "label", "descr", "imageId");
@@ -145,7 +145,7 @@ TEST_F(CustomNodesProviderTests, OverridesStyle)
         "IIf(True, \"FontStyle1\", \"FontStyle2\")");
     m_ruleset->AddPresentationRule(*styleOverride);
 
-    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, false);
     m_ruleset->AddPresentationRule(*rule);
 
     CustomNodeSpecification* spec = new CustomNodeSpecification(1, false, "MyCustomNode", "label", "", "imageId");
@@ -169,7 +169,7 @@ TEST_F(CustomNodesProviderTests, OverridesImageId)
     ImageIdOverrideP imageOverride = new ImageIdOverride("ThisNode.Type=\"MyCustomNode\"", 1, "\"MyImageId\"");
     m_ruleset->AddPresentationRule(*imageOverride);
 
-    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, false);
     m_ruleset->AddPresentationRule(*rule);
 
     CustomNodeSpecification* spec = new CustomNodeSpecification(1, false, "MyCustomNode", "label", "", "imageId");
@@ -220,7 +220,7 @@ TEST_F(CustomNodesProviderTests, SetsChildNodeArtifactsExtendedData)
     // note: children artifacts are evaluated only if used in hide expression (for performance reasons)
     rootSpec.SetHideExpression("ThisNode.ChildrenArtifacts");
 
-    auto childrenRule = new ChildNodeRule("ParentNode.Type = \"t_parent\"", 1, false, TargetTree_Both);
+    auto childrenRule = new ChildNodeRule("ParentNode.Type = \"t_parent\"", 1, false);
     childrenRule->AddSpecification(*new CustomNodeSpecification(1, false, "t_child", "label", "description", "imageId"));
     m_ruleset->AddPresentationRule(*childrenRule);
 

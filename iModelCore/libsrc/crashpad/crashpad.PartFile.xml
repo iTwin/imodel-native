@@ -18,7 +18,8 @@
     </Part>        
 
     <!-- N.B. Crashpad only builds as a static library. -->
-    <Part Name="__CrashpadStaticClient" BentleyBuildMakeFile="client.mke" OnlyPlatforms="linux*,x*" ExcludeLibType="Dynamic">
+    <Part Name="__CrashpadStaticClient" BentleyBuildMakeFile="client.mke" OnlyPlatforms="linux*,x*,macos*" ExcludeLibType="Dynamic">
+        <SubPart PartName="vcpkg_install_crashpad" PartFile="iModelCore/libsrc/vcpkg"/>
         <SubPart PartName="__OpenSslShim"/>
         <SubPart LibType="Static" PartName="Compress" PartFile="iModelCore\libsrc\compress\Zlib"/>
         <Bindings>
@@ -29,8 +30,11 @@
         </Bindings>
     </Part>
 
-    <Part Name="CrashpadHandler" BentleyBuildMakeFile="handler.mke" OnlyPlatforms="linux*,x*">
+    <Part Name="CrashpadHandler" BentleyBuildMakeFile="handler.mke" OnlyPlatforms="linux*,x*,macos*">
         <SubPart LibType="Static" PartName="__CrashpadStaticClient"/>
+        <!-- LibType="Static": chain is static-only; dynamic builds read from the static install root via
+            the static/ OutputRootDir prefix. -->
+        <SubPart PartName="vcpkg_install_crashpad" PartFile="iModelCore/libsrc/vcpkg" LibType="Static"/>
         <Bindings>
             <Files ProductDirectoryName="CrashpadHandler" Required="false">Delivery/CrashpadHandler$(exeext)</Files>
         </Bindings>

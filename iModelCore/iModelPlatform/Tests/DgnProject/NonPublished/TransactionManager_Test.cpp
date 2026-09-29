@@ -1000,3 +1000,126 @@ TEST_F (TransactionManagerTests, ForEachLocalChange) {
         EXPECT_EQ(changeList.size(), 0);
     }
 }
+
+/*---------------------------------------------------------------------------------**//**
+* Test file-based txn storage: save with flag enabled and read back
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(TransactionManagerTests, FileBasedTxnSaveAndRead)
+{
+    SetupSeedProject(BeSQLite::Db::OpenMode::ReadWrite, true /*=needBriefcase*/);
+    auto& txns = m_db->Txns();
+
+    // Enable file-based txn storage
+    ASSERT_EQ(BE_SQLITE_DONE, m_db->SaveBriefcaseLocalValue("fileBasedTxns", "1"));
+    m_db->SaveChanges();
+
+    // Insert an element — this should save txn to file
+    auto el1 = InsertElement("FBT1");
+    ASSERT_TRUE(el1.IsValid());
+    m_db->SaveChanges("file-based change 1");
+
+    // Verify the .txn file was created
+    BeFileName dbFile(m_db->GetDbFileName(), true);
+    BeFileName txnDir = dbFile.GetDirectoryName();
+    txnDir.AppendToPath(L"txns");
+    EXPECT_TRUE(txnDir.DoesPathExist());
+
+    // Verify undo works (reads back from file)
+    auto stat = txns.ReverseSingleTxn();
+    EXPECT_EQ(DgnDbStatus::Success, stat);
+
+    // The element should be gone after undo
+    DgnElementCPtr afterUndo = m_db->Elements().GetElement(el1->GetElementId());
+    EXPECT_FALSE(afterUndo.IsValid());
+
+    // Redo should also work
+    stat = txns.ReinstateTxn();
+    EXPECT_EQ(DgnDbStatus::Success, stat);
+    DgnElementCPtr afterRedo = m_db->Elements().GetElement(el1->GetElementId());
+    EXPECT_TRUE(afterRedo.IsValid());
+}
+
+/*---------------------------------------------------------------------------------**//**
+* Test file-based txn: checksum validation failure
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(TransactionManagerTests, FileBasedTxnChecksumFailure)
+{
+    SetupSeedProject(BeSQLite::Db::OpenMode::ReadWrite, true /*=needBriefcase*/);
+    auto& txns = m_db->Txns();
+
+    // Enable file-based txn storage
+    ASSERT_EQ(BE_SQLITE_DONE, m_db->SaveBriefcaseLocalValue("fileBasedTxns", "1"));
+    m_db->SaveChanges();
+
+    // Insert an element
+    auto el1 = InsertElement("FBT_Corrupt");
+    ASSERT_TRUE(el1.IsValid());
+    m_db->SaveChanges("corrupted change");
+
+    // Find the .txn file in the txns directory
+    BeFileName dbFile(m_db->GetDbFileName(), true);
+    BeFileName txnDir = dbFile.GetDirectoryName();
+    txnDir.AppendToPath(L"txns");
+    ASSERT_TRUE(txnDir.DoesPathExist());
+
+    // Get the specific txn file for the last saved transaction
+    auto lastTxnId = txns.GetLastTxnId();
+    BeFileName txnFile = txns.GetTxnFilePath(lastTxnId);
+    ASSERT_TRUE(txnFile.DoesPathExist());
+
+    // Corrupt the file by overwriting first bytes
+    BeFile file;
+    ASSERT_EQ(BeFileStatus::Success, file.Open(txnFile, BeFileAccess::ReadWrite));
+    Byte garbage[] = {0xFF, 0xFF, 0xFF, 0xFF};
+    file.Write(nullptr, garbage, sizeof(garbage));
+    file.Close();
+
+    // Attempt to undo — should fail because checksum won't match
+    auto stat = txns.ReverseSingleTxn();
+    EXPECT_NE(DgnDbStatus::Success, stat);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* Test mixed mode: legacy blobs and file-based txns coexist
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(TransactionManagerTests, FileBasedTxnMixedMode)
+{
+    SetupSeedProject(BeSQLite::Db::OpenMode::ReadWrite, true /*=needBriefcase*/);
+    auto& txns = m_db->Txns();
+
+    // First insert WITHOUT file-based flag (legacy blob)
+    auto el1 = InsertElement("Legacy1");
+    ASSERT_TRUE(el1.IsValid());
+    m_db->SaveChanges("legacy change");
+
+    // Now enable file-based txn storage
+    ASSERT_EQ(BE_SQLITE_DONE, m_db->SaveBriefcaseLocalValue("fileBasedTxns", "1"));
+    m_db->SaveChanges();
+
+    // Insert another element (file-based)
+    auto el2 = InsertElement("FileBased1");
+    ASSERT_TRUE(el2.IsValid());
+    m_db->SaveChanges("file-based change");
+
+    // Undo file-based txn — should work
+    auto stat = txns.ReverseSingleTxn();
+    EXPECT_EQ(DgnDbStatus::Success, stat);
+    EXPECT_FALSE(m_db->Elements().GetElement(el2->GetElementId()).IsValid());
+
+    // Undo legacy txn — should also work (reads from blob)
+    stat = txns.ReverseSingleTxn();
+    EXPECT_EQ(DgnDbStatus::Success, stat);
+    EXPECT_FALSE(m_db->Elements().GetElement(el1->GetElementId()).IsValid());
+
+    // Redo both
+    stat = txns.ReinstateTxn();
+    EXPECT_EQ(DgnDbStatus::Success, stat);
+    EXPECT_TRUE(m_db->Elements().GetElement(el1->GetElementId()).IsValid());
+
+    stat = txns.ReinstateTxn();
+    EXPECT_EQ(DgnDbStatus::Success, stat);
+    EXPECT_TRUE(m_db->Elements().GetElement(el2->GetElementId()).IsValid());
+}

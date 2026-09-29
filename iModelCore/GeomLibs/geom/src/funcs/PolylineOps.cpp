@@ -55,14 +55,14 @@ bool &isExtrapolated
         {
         segmentIndex = 0;
         segmentFraction = fraction * numSegment;
-        isExtrapolated = true;
+        isExtrapolated = fraction < 0.0;
         return true;
         }
     else if (fraction >= 1.0 - df)
         {
         segmentIndex = numVertex - 2;
         segmentFraction = (fraction - (1.0 - df)) / df;
-        isExtrapolated = false;
+        isExtrapolated = fraction > 1.0;
         return true;
         }
     segmentIndex = (int)(fraction * numSegment);
@@ -73,7 +73,6 @@ bool &isExtrapolated
         segmentIndex++;
         segmentFraction -= 1.0;
         }
-    isExtrapolated = false;
     return true;
     }
 

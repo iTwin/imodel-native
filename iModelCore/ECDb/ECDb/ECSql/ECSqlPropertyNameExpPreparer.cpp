@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 #include "ECSqlPropertyNameExpPreparer.h"
+#include "ECSqlPreparer.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -34,6 +35,12 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
         return ECSqlStatus::Success;
     }
     PropertyMap const* propMap = exp.GetPropertyMap();
+    if (propMap == nullptr)
+        {
+        BeAssert(propMap != nullptr && "PropertyNameExp is expected to have a property map at this point");
+        return ECSqlStatus::Error;
+        }
+
     ECSqlPrepareContext::ExpScope const& currentScope = ctx.GetCurrentScope();
 
     if (!NeedsPreparation(ctx, currentScope, *propMap))
@@ -148,6 +155,24 @@ void ECSqlPropertyNameExpPreparer::PrepareDefault(NativeSqlBuilder::List& native
         //INSERT INTO Foo(MyProp) VALUES(ECClassId + 1000) -> never ignore. If virtual, the ECClassId from the respective ECClass is used
         if (sqlVisitor.IsForAssignmentExpression() && r.GetColumn().GetPersistenceType() == PersistenceType::Virtual)
             continue;
+
+        // If the property is a nav prop RelECClassId outside the SELECT clause, only emit it if it is actually needed
+        if (ecsqlType == ECSqlType::Select &&
+            exp.FindParent(Exp::Type::Selection) == nullptr &&
+            r.GetPropertyMap().GetType() == PropertyMap::Type::NavigationRelECClassId)
+            {
+            const auto singleSelectNode = exp.FindParent(Exp::Type::SingleSelect);
+            const auto classRefExp = exp.GetClassRefExp();
+            if (singleSelectNode != nullptr && classRefExp != nullptr)
+                {
+                // Extract just the navigation property name
+                if (const auto navPropMap = r.GetPropertyMap().GetParent(); navPropMap != nullptr)
+                    {
+                    if (!ECSqlExpPreparer::IsNavPropRelECClassIdNeeded(singleSelectNode->GetAs<SingleSelectStatementExp>(), *classRefExp, navPropMap->GetAccessString()))
+                        continue;
+                    }
+                }
+            }
 
         nativeSqlSnippets.push_back(r.GetSqlBuilder());
         }
@@ -389,7 +414,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef(NativeSqlBuilder:
                 break;
                 }
             default: {
-                if (exp.IsPropertyFromCommonTableBlock()) {
+                if (exp.IsPropertyFromCommonTableBlockWithColumns()) {
                     NativeSqlBuilder sqlSnippet;
                     auto& ctb = exp.GetClassRefExp()->GetAs<CommonTableBlockNameExp>();
                     if (!ctb.GetAlias().empty()) {
@@ -403,7 +428,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef(NativeSqlBuilder:
                 } else {
                     //Here we presume any primitive value expression which must have a alias.
                     Utf8String alias = referencedDerivedPropertyExp.GetColumnAlias();
-                    if (alias.empty() || referencedDerivedPropertyExp.OriginateInASubQuery())
+                    if (alias.empty() || referencedDerivedPropertyExp.OriginateInASubQuery() || referencedDerivedPropertyExp.OriginateInACommonTableBlockWithNoColumns())
                         alias = referencedDerivedPropertyExp.GetNestedAlias();
 
                     if (alias.empty())

@@ -103,9 +103,3 @@ PresentationRulesObjs =
 
 # Restore the $(o) macro
 o =% $(_o)
-
-#----------------------------------------------------------------------
-#   Link presentation rules xsd
-#----------------------------------------------------------------------
-$(BuildContext)Delivery/PresentationRuleSetSchema.xsd : $(PresentationRulesSourceDirectory)xsd/PresentationRuleSetSchema.xsd
-    ~linkfile $@ = $<

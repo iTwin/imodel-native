@@ -127,6 +127,8 @@ public:
 //Clear Modified Mappings
 private:
     std::map<ECN::ECClassId, std::vector<CleanedMappingInfo>> m_cleanedMappingInfo;
+    std::set<Utf8String> m_allFreedColumnIdentifiers;
+
     std::vector<CleanedMappingInfo>& GetOrAddCleanedMappingInfo(ECN::ECClassId id)
         {
         auto [ insertedIt, success ] = m_cleanedMappingInfo.try_emplace(id);
@@ -140,6 +142,11 @@ public:
     BentleyStatus CleanModifiedMappings();
     BentleyStatus EnsureInvolvedSchemasAreLoaded(bvector<ECN::ECSchemaCP> const& schemasToMap);
     BentleyStatus RestoreAndProcessCleanedPropertyMaps(SchemaImportContext& ctx);
+    void DiscardCleanedMappingInfoForClass(ECN::ECClassId classId)
+        { 
+        if (m_cleanedMappingInfo.find(classId) != m_cleanedMappingInfo.end()) 
+            m_cleanedMappingInfo.erase(classId);
+        }
 
 //move data
 private:
@@ -148,11 +155,6 @@ private:
         {
         auto [ insertedIt, success ] = m_remappedColumns.try_emplace(id);
         return insertedIt->second;
-        };
-    static Utf8String GetFullColumnIdentifier(Utf8StringCR tableName, Utf8StringCR columnName)
-        {
-        Utf8PrintfString idStr("%s:%s", tableName.c_str(), columnName.c_str());
-        return idStr;
         };
 
     bool CheckIfSortingIsNeeded(std::map<Utf8String, RemappedColumnInfo*>& unsortedInfos);
@@ -166,6 +168,60 @@ private:
 
 public:
     BentleyStatus UpgradeExistingECInstancesWithRemappedProperties(SchemaImportContext& ctx);
+
+    // Returns a full column identifier in the format "<tablename>:<columnname>"
+    static Utf8String GetFullColumnIdentifier(Utf8StringCR tableName, Utf8StringCR columnName)
+        {
+        Utf8PrintfString idStr("%s:%s", tableName.c_str(), columnName.c_str());
+        return idStr;
+        }
+
+    // Returns true if any columns were freed during CleanModifiedMappings on a table whose linked primary/overflow table also freed columns.
+    // Only such columns are tracked because they carry a risk of cross-table circular remaps.
+    // Columns freed on tables without a linked freed table are safe to reuse immediately and are NOT reflected here.
+    bool HasFreedColumns() const
+        {
+        return !m_allFreedColumnIdentifiers.empty();
+        }
+
+    bool HasCleanedPropertyMapping(ECN::ECClassId classId, Utf8StringCR propertyName) const
+        {
+        auto it = m_cleanedMappingInfo.find(classId);
+        if (it == m_cleanedMappingInfo.end())
+            return false;
+
+        for (auto const& mapping : it->second)
+            if (mapping.m_propertyName.EqualsI(propertyName))
+                return true;
+
+        return false;
+        }
+
+    // Returns true if the given column was freed during CleanModifiedMappings AND its table's linked primary/overflow table also freed columns in the same import.
+    // Such a column cannot be immediately reused due to the risk of a cross-table circular remap.
+    bool IsColumnFreed(const DbColumn& column) const
+        {
+        return m_allFreedColumnIdentifiers.count(RemapManager::GetFullColumnIdentifier(column.GetTable().GetName(), column.GetName())) > 0;
+        }
+
+    // Returns a short aggregate description of the remapping work in this import. Used for failure diagnostics.
+    Utf8String BuildDiagnosticsSummary() const
+        {
+        size_t addedPropertyCount = 0;
+        size_t addedBaseClassCount = 0;
+        for (auto const& [classId, remapInfo] : m_remapInfos)
+            {
+            addedPropertyCount += remapInfo.m_addedProperties.size();
+            addedBaseClassCount += remapInfo.m_addedBaseClasses.size();
+            }
+
+        size_t cleanedMappingCount = 0;
+        for (auto const& [classId, cleanedInfos] : m_cleanedMappingInfo)
+            cleanedMappingCount += cleanedInfos.size();
+
+        return Utf8PrintfString("Remapping summary: %zu modified classes (%zu added properties, %zu added base classes), %zu cleaned property mappings across %zu classes, %zu freed columns blocked from immediate reuse.",
+            m_remapInfos.size(), addedPropertyCount, addedBaseClassCount, cleanedMappingCount, m_cleanedMappingInfo.size(), m_allFreedColumnIdentifiers.size());
+        }
     };
 
 

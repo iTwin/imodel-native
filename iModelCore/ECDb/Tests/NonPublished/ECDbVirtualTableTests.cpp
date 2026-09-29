@@ -131,13 +131,13 @@ struct TokenizeModule : ECDbModule {
              }
     };
     public:
-        TokenizeModule(ECDbR db): ECDbModule(
+        TokenizeModule(ECDbR db, Utf8CP schemaName = "test", Utf8CP name = "tokenize_text"): ECDbModule(
             db,
-            "tokenize_text",
+            name,
             "CREATE TABLE x(token,buffer hidden,delimiter hidden)",
-            R"xml(<?xml version="1.0" encoding="utf-8" ?>
+            Utf8PrintfString(R"xml(<?xml version="1.0" encoding="utf-8" ?>
             <ECSchema
-                    schemaName="test"
+                    schemaName="%s"
                     alias="test"
                     version="1.0.0"
                     xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -145,13 +145,13 @@ struct TokenizeModule : ECDbModule {
                 <ECCustomAttributes>
                     <VirtualSchema xmlns="ECDbVirtual.01.00.00"/>
                 </ECCustomAttributes>
-                <ECEntityClass typeName="tokenize_text" modifier="Abstract">
+                <ECEntityClass typeName="%s" modifier="Abstract">
                     <ECCustomAttributes>
                         <VirtualType xmlns="ECDbVirtual.01.00.00"/>
                     </ECCustomAttributes>
                     <ECProperty propertyName="token"  typeName="string"/>
                 </ECEntityClass>
-            </ECSchema>)xml") {}
+            </ECSchema>)xml", schemaName, name).c_str()) {}
         DbResult Connect(DbVirtualTable*& out, Config& conf, int argc, const char* const* argv) final {
             out = new TokenizeTable(*this);
             conf.SetTag(Config::Tags::Innocuous);
@@ -194,6 +194,130 @@ TEST_F(ECDbVirtualTableTests, TokenizeModuleTest) {
             ASSERT_STREQ(expected[i++].c_str(), stmt.GetValueText(0));
         }
         ASSERT_EQ(i, 9);
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbVirtualTableTests, VirtualSchemaMergeIgnoresNameCase) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("vtab_schema_case.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, (new TokenizeModule(m_ecdb, "test"))->Register());
+
+    ECSchemaCP originalSchema = nullptr;
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT token FROM test.tokenize_text('one two', ' ')"));
+        originalSchema = &stmt.GetColumnInfo(0).GetRootClass().GetClass().GetSchema();
+    }
+
+    ASSERT_EQ(BE_SQLITE_OK, (new TokenizeModule(m_ecdb, "TEST", "tokenize_other"))->Register());
+    for (Utf8CP schemaName : {"test", "TEST", "TeSt"}) {
+        for (Utf8CP className : {"tokenize_text", "tokenize_other"}) {
+            ECSqlStatement stmt;
+            Utf8PrintfString sql("SELECT token FROM %s.%s('one two', ' ')", schemaName, className);
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql.c_str())) << sql;
+            EXPECT_EQ(originalSchema, &stmt.GetColumnInfo(0).GetRootClass().GetClass().GetSchema());
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+            EXPECT_STREQ("one", stmt.GetValueText(0));
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+            EXPECT_STREQ("two", stmt.GetValueText(0));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbVirtualTableTests, VirtualSchemaMergeRejectsDuplicateClassAcrossNameCase) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("vtab_schema_case_duplicate.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, (new TokenizeModule(m_ecdb, "test"))->Register());
+
+    auto duplicate = std::make_unique<TokenizeModule>(m_ecdb, "TEST");
+    DbResult result = duplicate->Register();
+    if (result == BE_SQLITE_OK)
+        duplicate.release();
+    ASSERT_EQ(BE_SQLITE_ERROR, result);
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT token FROM test.tokenize_text('original', ' ')"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    EXPECT_STREQ("original", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbVirtualTableTests, TokenizeModuleTestWithMultipleVTabs) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("vtab.ecdb"));
+    (new TokenizeModule(m_ecdb))->Register();
+    if ("multiple vtabs should work") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT a.token, b.token FROM test.tokenize_text('The quick brown fox jumps over the lazy dog', ' ') a, test.tokenize_text('The quick brown fox jumps over the lazy dog', ' ') b"));
+        auto expected = std::vector<std::string>{"The", "quick", "brown", "fox", "jumps", "over", "the", "lazy", "dog"};
+        int i = -1;
+        int j = 0;
+        int rowCnt = 0;
+        while(stmt.Step() == BE_SQLITE_ROW) {
+            if(j % 9 == 0) 
+            {
+                i++; j=0;
+            } 
+            std::string expectedFirstValue = expected[i];
+            std::string expectedSecondValue = expected[j++];
+            ASSERT_STREQ(expectedFirstValue.c_str(), stmt.GetValueText(0));
+            ASSERT_STREQ(expectedSecondValue.c_str(), stmt.GetValueText(1));
+            rowCnt++;
+        }
+        ASSERT_EQ(rowCnt, 81);
+
+    }
+    if ("multiple vtabs with column alias should work") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT a.token x, b.token y FROM test.tokenize_text('The quick brown fox jumps over the lazy dog', ' ') a, test.tokenize_text('The quick brown fox jumps over the lazy dog', ' ') b"));
+        auto expected = std::vector<std::string>{"The", "quick", "brown", "fox", "jumps", "over", "the", "lazy", "dog"};
+        int i = -1;
+        int j = 0;
+        int rowCnt = 0;
+        while(stmt.Step() == BE_SQLITE_ROW) {
+            if(j % 9 == 0) 
+            {
+                i++; j=0;
+            } 
+            std::string expectedFirstValue = expected[i];
+            std::string expectedSecondValue = expected[j++];
+            ASSERT_STREQ(expectedFirstValue.c_str(), stmt.GetValueText(0));
+            ASSERT_STREQ(expectedSecondValue.c_str(), stmt.GetValueText(1));
+            rowCnt++;
+        }
+        ASSERT_EQ(rowCnt, 81);
+
+        ASSERT_EQ(stmt.GetColumnCount(), 2);
+        ASSERT_STREQ("x", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("y", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+    }
+    if ("multiple json_each vtabs should work") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM json_each('[1,2,3,4,5]') a, json_each('[1,2,3,4,5]') b"));
+        auto expected = std::vector<std::string>{"1", "2", "3", "4", "5"};
+        int i = -1;
+        int j = 0;
+        int rowCnt = 0;
+        while(stmt.Step() == BE_SQLITE_ROW) {
+            if(j % 5 == 0) 
+            {
+                i++; j=0;
+            } 
+            std::string expectedFirstValue = expected[i];
+            std::string expectedSecondValue = expected[j++];
+            ASSERT_STREQ(expectedFirstValue.c_str(), stmt.GetValueText(1)); // value column
+            ASSERT_STREQ(expectedSecondValue.c_str(), stmt.GetValueText(8)); // value column
+            rowCnt++;
+        }
+        ASSERT_EQ(rowCnt, 25);
+        
     }
 }
 

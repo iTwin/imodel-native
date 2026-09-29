@@ -7,15 +7,20 @@
 #include <BeSQLite/BeSQLite.h>
 #include <BeSQLite/ChangeSet.h>
 #include <ECObjects/ECObjectsAPI.h>
-#include <json/json.h>
 #include <unordered_map>
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 struct SchemaManager;
 struct InstanceReader;
+struct InstanceWriter;
 struct ECCrudWriteToken;
 struct SchemaImportToken;
+struct InstanceRepository;
 
+enum class PropertyHandlerResult {
+    Continue,
+    Handled,
+};
 //=======================================================================================
 //! Enum which mirrors the ECEnumeration OpCode in the ECDbChange ECSchema.
 //! The enum can be used when programmatically binding values to the OpCode in an ECSQL
@@ -118,10 +123,12 @@ struct ECSqlConfig {
     private:
         DisableSqlFunctions m_disabledFunctions;
         bool m_experimentalFeaturesEnabled;
+        bool m_validateWriteValues;
+        bool m_purgeUnusedColumns;
         mutable std::unordered_map<OptimizationOptions, bool> m_optimisationOptionsMap;
 
     public:
-        ECSqlConfig(): m_experimentalFeaturesEnabled(false) {
+        ECSqlConfig(): m_experimentalFeaturesEnabled(false), m_validateWriteValues(false), m_purgeUnusedColumns(false) {
             m_optimisationOptionsMap[OptimizationOptions::OptimizeJoinForClassIds] = true;
             m_optimisationOptionsMap[OptimizationOptions::OptimizeJoinForNestedSelectQuery] = true;
         }
@@ -132,8 +139,20 @@ struct ECSqlConfig {
         void SetOptimizationOption(OptimizationOptions option, bool flag) {m_optimisationOptionsMap[option] = flag;}
         bool GetExperimentalFeaturesEnabled() const { return m_experimentalFeaturesEnabled; }
         void SetExperimentalFeaturesEnabled(bool v)  { m_experimentalFeaturesEnabled = v; }
+
+        bool IsWriteValueValidationEnabled() const { return m_validateWriteValues; }
+        void SetWriteValueValidation(const bool v) { m_validateWriteValues = v; }
+        bool GetPurgeUnusedColumns() const { return m_purgeUnusedColumns; }
+        void SetPurgeUnusedColumns(bool v) { m_purgeUnusedColumns = v; }
 };
 
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct AsciiCaseInsensitiveCompare {
+    ECDB_EXPORT bool operator()(Utf8StringCR lhs, Utf8StringCR rhs) const;
+    ECDB_EXPORT bool operator()(Utf8CP lhs, Utf8CP rhs) const;
+};
 
 //=======================================================================================
 //! ECDb is the %EC API used to access %EC data in an @ref ECDbFile "ECDb file".
@@ -249,14 +268,8 @@ protected:
     ECDB_EXPORT int _OnAddFunction(DbFunction&) const override;
     ECDB_EXPORT void _OnRemoveFunction(DbFunction&) const override;
     ECDB_EXPORT virtual DbResult _AfterSchemaChangeSetApplied() const;
-    ECDB_EXPORT virtual DbResult _AfterDataChangeSetApplied(bool schemaChanged);
-    //! Resets ECDb's ECInstanceId sequence to the current maximum ECInstanceId for the specified BriefcaseId.
-    //! @param[in] briefcaseId BriefcaseId to which the sequence will be reset
-    //! @param[in] ecClassIgnoreList List of ids of ECClasses whose ECInstanceIds should be ignored when
-    //!            computing the maximum ECInstanceId. Subclasses of the specified classes will be ignored as well.
-    //!            If nullptr, no ECClass will be ignored.
-    //! SUCCESS or ERROR
-    ECDB_EXPORT BentleyStatus ResetInstanceIdSequence(BeBriefcaseId briefcaseId, IdSet<ECN::ECClassId> const* ecClassIgnoreList = nullptr);
+    ECDB_EXPORT virtual DbResult _AfterDataChangeSetApplied(bool schemaChanged, bool deferInstanceUpgrade);
+    ECDB_EXPORT virtual bool _IsLevelWithTimeline();
 
     //! Returns the settings manager to subclasses which gives access to the various access tokens
     ECDB_EXPORT SettingsManager const& GetECDbSettingsManager() const;
@@ -283,6 +296,14 @@ public:
     //! @return ::BE_SQLITE_OK in case of success, error code otherwise, e.g. if @p ecdbTempDir does not exist
     ECDB_EXPORT static DbResult Initialize(BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir = nullptr, BeSQLiteLib::LogErrors logSqliteErrors=BeSQLiteLib::LogErrors::No);
 
+    //! Resets ECDb's ECInstanceId sequence to the current maximum ECInstanceId for the specified BriefcaseId.
+    //! @param[in] briefcaseId BriefcaseId to which the sequence will be reset
+    //! @param[in] ecClassIgnoreList List of ids of ECClasses whose ECInstanceIds should be ignored when
+    //!            computing the maximum ECInstanceId. Subclasses of the specified classes will be ignored as well.
+    //!            If nullptr, no ECClass will be ignored.
+    //! SUCCESS or ERROR
+    ECDB_EXPORT BentleyStatus ResetInstanceIdSequence(BeBriefcaseId briefcaseId, IdSet<ECN::ECClassId> const* ecClassIgnoreList = nullptr);
+
     //! Check if the ECDb::Initialize() method was successfully called for current process or not.
     //! @return return true if ECDb::Initialize() method was successfully called.
     ECDB_EXPORT static bool IsInitialized();
@@ -294,6 +315,13 @@ public:
     //! Gets the version of the ECDb profile of this file.
     ECDB_EXPORT ProfileVersion const& GetECDbProfileVersion() const;
 
+    //! Whether this file's state is shared by everyone editing the same iModel: it holds nothing
+    //! that has not been pushed, and nothing pushed by others is missing from it.
+    //! @note A file with no timeline - standalone, snapshot, the schema sync db itself - is always level.
+    //!       Subclasses answer as far as they can see; only the client that talks to iModelHub knows
+    //!       where the tip is.
+    ECDB_EXPORT bool IsLevelWithTimeline();
+
     //! Gets ECSQL version
     //.@remarks ECSql version description for left to right digit in version string i.e. "Major.Minor.Sub1.Sub2"
     //  Major: Any breaking change to 'Syntax'. This will cause a 'Prepare()' to fail with InvalidECSql which in previous version prepared successfully.
@@ -303,7 +331,7 @@ public:
     //         e.g. Remove a sql function or change required argument or format of its return value.
     //  Sub1:  Backward compatible change to 'Syntax'. For example adding new syntax/functions but not breaking any existing.
     //  Sub2:  Backward compatible change to 'Runtime'. For example adding a new sql function.
-    static BeVersion GetECSqlVersion() { return BeVersion(2, 0, 0, 0); }
+    static BeVersion GetECSqlVersion() { return BeVersion(2, 0, 4, 1); }
 
     //! Gets the current version of the ECDb profile
     static ProfileVersion CurrentECDbProfileVersion() { return ProfileVersion(4, 0, 0, 5); }
@@ -511,6 +539,11 @@ public:
     //! Instance reader is bare metal to access full instance without requiring to prepare ECSqlStatement
     ECDB_EXPORT InstanceReader& GetInstanceReader() const;
 
+    //! Allow insert, update & delete a instance in ECDb
+    ECDB_EXPORT InstanceWriter& GetInstanceWriter() const;
+
+    ECDB_EXPORT InstanceRepository& GetInstanceRepository() const;
+
     //! When ECDb::ClearECDbCache is called, these listeners get notified before the actual caches are cleared.
     //! This gives users of ECDb the opportunity to free anything that relies on its caches, e.g.
     //! ECSqlStatements or ECObjects entities.
@@ -518,7 +551,10 @@ public:
     ECDB_EXPORT void RemoveECDbCacheClearListener(IECDbCacheClearListener&);
 
     BeSQLite::DbResult AfterSchemaChangeSetApplied() const { return _AfterSchemaChangeSetApplied(); }
-    BeSQLite::DbResult AfterDataChangeSetApplied(bool schemaChanged) { return _AfterDataChangeSetApplied(schemaChanged); }
+    //! @param[in] deferInstanceUpgrade the caller will run UpgradeECInstances itself once it is done. A pull
+    //! applies several changesets and then replays the local txns, and only the caller knows when the file
+    //! holds every row that may need an overflow row.
+    BeSQLite::DbResult AfterDataChangeSetApplied(bool schemaChanged, bool deferInstanceUpgrade = false) { return _AfterDataChangeSetApplied(schemaChanged, deferInstanceUpgrade); }
 
 #if !defined (DOCUMENTATION_GENERATOR)
     Impl& GetImpl() const;

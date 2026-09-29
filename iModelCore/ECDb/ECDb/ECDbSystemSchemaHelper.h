@@ -178,6 +178,9 @@ struct ExtendedTypeHelper final {
         TargetClassId = 0x20,
         NavId =0x40,
         NavRelClassId=0x80,
+        BeGuid = 0x100,
+        GeometryStream= 0x200,
+        Json = 0x400,
         // group for filtering
         ClassIds = ClassId | SourceClassId | TargetClassId | NavRelClassId,
         Ids = Id | SourceId | TargetId | NavId,

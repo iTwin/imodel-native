@@ -716,6 +716,8 @@ struct ECDB_EXPORT ECDbIssueId
     static ECN::IssueId ECDb_0684;
     static ECN::IssueId ECDb_0685;
     static ECN::IssueId ECDb_0686;
+    static ECN::IssueId ECDb_0687;
+    static ECN::IssueId ECDb_0688;
 
     static ECN::IssueId ECDb_0700;
     static ECN::IssueId ECDb_0701;
@@ -752,6 +754,20 @@ struct ECDB_EXPORT ECDbIssueId
     static ECN::IssueId ECDb_0732;
     static ECN::IssueId ECDb_0733;
     static ECN::IssueId ECDb_0734;
+    static ECN::IssueId ECDb_0735;
+    static ECN::IssueId ECDb_0736;
+    static ECN::IssueId ECDb_0737;
+    static ECN::IssueId ECDb_0738;
+    static ECN::IssueId ECDb_0739;  // this issue id is being used to report instance query related ambiguity
+    static ECN::IssueId ECDb_0740;
+    static ECN::IssueId ECDb_0741;
+    static ECN::IssueId ECDb_0742;
+    static ECN::IssueId ECDb_0743;
+    static ECN::IssueId ECDb_0744;
+    static ECN::IssueId ECDb_0745;
+    static ECN::IssueId ECDb_0746;
+    static ECN::IssueId ECDb_0747;
+    static ECN::IssueId ECDb_0748;
     };
 
 //---------------------------------------------------------------------------------------
@@ -776,6 +792,7 @@ struct IssueDataSource final {
 
     private:
         mutable listener_t m_issueEvent;
+        mutable listener_t m_issueObserverEvent;
         mutable filter_callback_t m_filterCallback;
         mutable cancel_callback_type m_sourceCancel;
         mutable cancel_callback_type m_issueListenerCancel;
@@ -792,6 +809,8 @@ struct IssueDataSource final {
         void ClearIn() const;
         // Allow to subscribe to events
         listener_t& OnIssueReported() const { return m_issueEvent;}
+        // Observe issues before filtering without changing normal listener behavior.
+        listener_t& OnIssueObserved() const { return m_issueObserverEvent;}
         // Set filter that would can prevent message from getting propagated
         void SetFilter(filter_callback_t filterCallback) const;
         // Clear filter callback

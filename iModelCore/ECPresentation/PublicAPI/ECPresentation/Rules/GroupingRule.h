@@ -45,16 +45,10 @@ struct GroupingRule : ConditionalCustomizationRule
 private:
     Utf8String m_schemaName;
     Utf8String m_className;
-    Utf8String m_contextMenuCondition;
-    Utf8String m_contextMenuLabel;
     Utf8String m_settingsId;
     GroupList m_groups;
 
 protected:
-    ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName () const override;
-    ECPRESENTATION_EXPORT bool _ReadXml (BeXmlNodeP xmlNode) override;
-    ECPRESENTATION_EXPORT void _WriteXml (BeXmlNodeP xmlNode) const override;
-
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
@@ -73,7 +67,7 @@ public:
     ECPRESENTATION_EXPORT GroupingRule();
 
     //! Constructor.
-    ECPRESENTATION_EXPORT GroupingRule(Utf8StringCR condition, int priority, bool onlyIfNotHandled, Utf8StringCR schemaName, Utf8StringCR className, Utf8StringCR contextMenuCondition, Utf8StringCR contextMenuLabel, Utf8StringCR settingsId);
+    ECPRESENTATION_EXPORT GroupingRule(Utf8StringCR condition, int priority, bool onlyIfNotHandled, Utf8StringCR schemaName, Utf8StringCR className, Utf8StringCR settingsId);
 
     //! Constructor.
     ECPRESENTATION_EXPORT GroupingRule(GroupingRuleCR);
@@ -86,19 +80,6 @@ public:
 
     //! Acceptable class name of ECInstances on which this grouping rule will be applied.
     ECPRESENTATION_EXPORT Utf8StringCR        GetClassName (void) const;
-
-    //! ECExpression condition that is used in order to define the node on which "Group By" context menu will be shown.
-    //! Menu will be shown only if there are more than 2 PropertyGroups defined in the rule.
-    ECPRESENTATION_EXPORT Utf8StringCR        GetContextMenuCondition (void) const;
-
-    //! Sets the ECExpression condition that is used in order to define the node on which "Group By" context menu will be shown.
-    //! Menu will be shown only if there are more than 2 PropertyGroups defined in the rule.
-    ECPRESENTATION_EXPORT void                SetContextMenuCondition (Utf8String value);
-
-    //! Label of the parent context menu for choosing one of the predefined ProeprtyGroups.
-    //! If this parameters is not set, the default name will be used - "Group By".
-    //! Menu will be shown only if there are more than 2 PropertyGroups defined in the rule.
-    ECPRESENTATION_EXPORT Utf8StringCR        GetContextMenuLabel (void) const;
 
     //! Id that is used to store current active group. This is used only if there are more than one Group available.
     ECPRESENTATION_EXPORT Utf8StringCR        GetSettingsId (void) const;
@@ -119,15 +100,11 @@ struct GroupSpecification : PresentationKey
     DEFINE_T_SUPER(PresentationKey)
 
 private:
-    Utf8String  m_contextMenuLabel;
     Utf8String  m_defaultLabel;
 
 protected:
-    //! Constructor. It is used to initialize the rule with default settings.
-    ECPRESENTATION_EXPORT GroupSpecification ();
-
     //! Constructor.
-    ECPRESENTATION_EXPORT GroupSpecification (Utf8StringCR contextMenuLabel, Utf8CP defaultLabel = NULL);
+    ECPRESENTATION_EXPORT GroupSpecification (Utf8CP defaultLabel = NULL);
 
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementTypeAttributeName() const override;
 
@@ -136,9 +113,6 @@ protected:
 
     //! Clones this specification.
     virtual GroupSpecification* _Clone() const = 0;
-
-    ECPRESENTATION_EXPORT virtual bool _ReadXml(BeXmlNodeP xmlNode) override;
-    ECPRESENTATION_EXPORT virtual void _WriteXml(BeXmlNodeP xmlNode) const override;
 
     ECPRESENTATION_EXPORT virtual bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT virtual void _WriteJson(BeJsValue json) const override;
@@ -158,9 +132,6 @@ public:
 
     //! Allows the visitor to visit this group specification.
     ECPRESENTATION_EXPORT void Accept(GroupingRuleSpecificationVisitor& visitor) const;
-
-    //! ContextMenu label of this particular grouping option. If not set ECClass or ECProperty DisplayLabel will be used.
-    ECPRESENTATION_EXPORT Utf8StringCR             GetContextMenuLabel (void) const;
 
     //! Default group label to use when the grouping property is null or empty. Optional - overrides the default.
     ECPRESENTATION_EXPORT Utf8StringCR             GetDefaultLabel (void) const;
@@ -188,7 +159,6 @@ private:
     SameLabelInstanceGroupApplicationStage m_applicationStage;
 
 protected:
-    ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName() const override;
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
@@ -205,9 +175,6 @@ protected:
 public:
     SameLabelInstanceGroup(SameLabelInstanceGroupApplicationStage applicationStage = SameLabelInstanceGroupApplicationStage::Query)
         : GroupSpecification(), m_applicationStage(applicationStage)
-        {}
-    SameLabelInstanceGroup(Utf8StringCR contextMenuLabel)
-        : GroupSpecification(contextMenuLabel), m_applicationStage(SameLabelInstanceGroupApplicationStage::Query)
         {}
     SameLabelInstanceGroupApplicationStage GetApplicationStage() const {return m_applicationStage;}
     void SetApplicationStage(SameLabelInstanceGroupApplicationStage value) {m_applicationStage = value;}
@@ -227,10 +194,6 @@ private:
     Utf8String   m_baseClassName;
 
 protected:
-    ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName () const override;
-    ECPRESENTATION_EXPORT bool _ReadXml (BeXmlNodeP xmlNode) override;
-    ECPRESENTATION_EXPORT void _WriteXml (BeXmlNodeP xmlNode) const override;
-
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
@@ -249,7 +212,7 @@ public:
     ECPRESENTATION_EXPORT ClassGroup ();
 
     //! Constructor.
-    ECPRESENTATION_EXPORT ClassGroup (Utf8StringCR contextMenuLabel, bool createGroupForSingleItem, Utf8StringCR schemaName, Utf8StringCR baseClassName);
+    ECPRESENTATION_EXPORT ClassGroup (bool createGroupForSingleItem, Utf8StringCR schemaName, Utf8StringCR baseClassName);
 
     //! Idendifies whether a group should be created even if there is only single of particular group.
     ECPRESENTATION_EXPORT bool                     GetCreateGroupForSingleItem (void) const;
@@ -290,10 +253,6 @@ private:
     PropertyRangeGroupList  m_ranges;
 
 protected:
-    ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName () const override;
-    ECPRESENTATION_EXPORT bool _ReadXml (BeXmlNodeP xmlNode) override;
-    ECPRESENTATION_EXPORT void _WriteXml (BeXmlNodeP xmlNode) const override;
-
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
@@ -312,7 +271,7 @@ public:
     ECPRESENTATION_EXPORT PropertyGroup ();
 
     //! Constructor.
-    ECPRESENTATION_EXPORT PropertyGroup (Utf8StringCR contextMenuLabel, Utf8StringCR imageId, bool createGroupForSingleItem, Utf8StringCR propertyName, Utf8CP defaultLabel = NULL);
+    ECPRESENTATION_EXPORT PropertyGroup (Utf8StringCR imageId, bool createGroupForSingleItem, Utf8StringCR propertyName, Utf8CP defaultLabel = NULL);
 
     //! Constructor.
     ECPRESENTATION_EXPORT PropertyGroup(PropertyGroupCR);
@@ -370,10 +329,6 @@ private:
 
 protected:
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
-
-    ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName() const override;
-    ECPRESENTATION_EXPORT bool _ReadXml(BeXmlNodeP xmlNode) override;
-    ECPRESENTATION_EXPORT void _WriteXml(BeXmlNodeP xmlNode) const override;
 
     Utf8CP _GetJsonElementTypeAttributeName() const override {return nullptr;}
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;

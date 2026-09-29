@@ -29,9 +29,6 @@ protected:
     ECPRESENTATION_EXPORT ContentSpecification(ContentSpecificationCR);
     ECPRESENTATION_EXPORT ContentSpecification(ContentSpecification&&);
 
-    ECPRESENTATION_EXPORT virtual bool _ReadXml(BeXmlNodeP xmlNode) override;
-    ECPRESENTATION_EXPORT virtual void _WriteXml(BeXmlNodeP xmlNode) const override;
-
     ECPRESENTATION_EXPORT virtual bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT virtual void _WriteJson(BeJsValue json) const override;
 

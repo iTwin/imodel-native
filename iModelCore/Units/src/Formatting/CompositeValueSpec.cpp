@@ -477,7 +477,7 @@ bool CompositeValueSpec::ToJson(BeJsValue out, bool verbose, bool excludeUnits) 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-bool CompositeValueSpec::FromJson(CompositeValueSpecR out, JsonValueCR jval, BEU::IUnitsContextCP context)
+bool CompositeValueSpec::FromJson(CompositeValueSpecR out, BeJsConst jval, BEU::IUnitsContextCP context)
     {
     if (jval.empty())
         return false;
@@ -486,15 +486,17 @@ bool CompositeValueSpec::FromJson(CompositeValueSpecR out, JsonValueCR jval, BEU
     bvector<Nullable<Utf8String>> labels;
     if (jval.isMember(json_units()))
         {
-        JsonValueCR unitsJson = jval[json_units()];
-        for (Json::ValueIterator iter = unitsJson.begin(); iter != unitsJson.end(); iter++)
+        bool failed = jval[json_units()].ForEachArrayMember([&](BeJsConst::ArrayIndex, BeJsConst entry)
             {
             UnitProxy upp;
-            if (!upp.FromJson(*iter, context))
-                return false;
+            if (!upp.FromJson(entry, context))
+                return true;
             units.push_back(upp.GetUnit());
             labels.push_back(upp.HasLabel() ? Nullable<Utf8String>(upp.GetLabel()) : nullptr);
-            }
+            return false;
+            });
+        if (failed)
+            return false;
         }
 
     return FromJson(out, jval, units, labels);
@@ -503,22 +505,21 @@ bool CompositeValueSpec::FromJson(CompositeValueSpecR out, JsonValueCR jval, BEU
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-bool CompositeValueSpec::FromJson(CompositeValueSpecR out, JsonValueCR jval, bvector<Units::UnitCP> const& units, bvector<Nullable<Utf8String>> const& unitLabels)
+bool CompositeValueSpec::FromJson(CompositeValueSpecR out, BeJsConst jval, bvector<Units::UnitCP> const& units, bvector<Nullable<Utf8String>> const& unitLabels)
     {
     if (jval.empty())
         return false;
 
     out = CompositeValueSpec(units);
 
-    for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
+    jval.ForEachProperty([&](Utf8CP paramName, BeJsConst val)
         {
-        Utf8CP paramName = iter.memberName();
-        JsonValueCR val = *iter;
         if (BeStringUtilities::StricmpAscii(paramName, json_includeZero()) == 0)
             out.SetIncludeZero(val.asBool());
         else if (BeStringUtilities::StricmpAscii(paramName, json_spacer()) == 0)
             out.SetSpacer(val.asCString());
-        }
+        return false;
+        });
     // Fallthrough intentional
     switch (unitLabels.size())
         {
@@ -562,7 +563,7 @@ bool CompositeValueSpec::UnitProxy::ToJson(BeJsValue jUP, bool verbose) const
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //----------------------------------------------------------------------------------------
-bool CompositeValueSpec::UnitProxy::FromJson(Json::Value const& jval, BEU::IUnitsContextCP context)
+bool CompositeValueSpec::UnitProxy::FromJson(BeJsConst jval, BEU::IUnitsContextCP context)
     {
     m_unitLabel.clear();
     m_unit = nullptr;
@@ -572,11 +573,8 @@ bool CompositeValueSpec::UnitProxy::FromJson(Json::Value const& jval, BEU::IUnit
     if(context == nullptr)
         return false;
 
-    Utf8CP paramName;
-    for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
+    bool failed = jval.ForEachProperty([&](Utf8CP paramName, BeJsConst val)
         {
-        paramName = iter.memberName();
-        JsonValueCR val = *iter;
         if (BeStringUtilities::StricmpAscii(paramName, json_name()) == 0)
             {
             Utf8String str = val.asString();
@@ -586,12 +584,13 @@ bool CompositeValueSpec::UnitProxy::FromJson(Json::Value const& jval, BEU::IUnit
                 m_unit = context->LookupUnit(str.c_str(), true);
                 }
             if (nullptr == m_unit)
-                return false;
+                return true;
             }
         else if (BeStringUtilities::StricmpAscii(paramName, json_label()) == 0)
             SetLabel(val.asString().c_str());
-        }
-    return true;
+        return false;
+        });
+    return !failed;
     }
 
 //===================================================

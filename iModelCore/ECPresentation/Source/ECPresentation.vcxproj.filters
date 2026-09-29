@@ -327,9 +327,6 @@
     <ClInclude Include="Rules\PresentationRuleJsonConstants.h">
       <Filter>Source Files\Rules</Filter>
     </ClInclude>
-    <ClInclude Include="Rules\PresentationRuleXmlConstants.h">
-      <Filter>Source Files\Rules</Filter>
-    </ClInclude>
     <ClInclude Include="Shared\CustomizationHelper.h">
       <Filter>Source Files\Shared</Filter>
     </ClInclude>

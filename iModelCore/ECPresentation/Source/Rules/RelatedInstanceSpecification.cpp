@@ -5,72 +5,10 @@
 #include <ECPresentationPch.h>
 
 #include "PresentationRuleJsonConstants.h"
-#include "PresentationRuleXmlConstants.h"
 #include "CommonToolsInternal.h"
 #include <ECPresentation/Rules/PresentationRules.h>
 
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP RelatedInstanceSpecification::_GetXmlElementName() const {return RELATED_INSTANCE_SPECIFICATION_XML_NODE_NAME;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool RelatedInstanceSpecification::_ReadXml(BeXmlNodeP xmlNode)
-    {
-    if (!PresentationKey::_ReadXml(xmlNode))
-        return false;
-
-    Utf8String relationshipName;
-    if (BEXML_Success != xmlNode->GetAttributeStringValue(relationshipName, RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_RELATIONSHIPNAME))
-        {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_TRACE, LOG_ERROR, Utf8PrintfString(INVALID_XML, RELATED_INSTANCE_SPECIFICATION_XML_NODE_NAME, RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_RELATIONSHIPNAME));
-        return false;
-        }
-
-    Utf8String className;
-    if (BEXML_Success != xmlNode->GetAttributeStringValue(className, RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_CLASSNAME))
-        {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_TRACE, LOG_ERROR, Utf8PrintfString(INVALID_XML, RELATED_INSTANCE_SPECIFICATION_XML_NODE_NAME, RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_CLASSNAME));
-        return false;
-        }
-
-    Utf8String requiredDirectionString;
-    if (BEXML_Success != xmlNode->GetAttributeStringValue(requiredDirectionString, RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_RELATIONSHIPDIRECTION))
-        requiredDirectionString = "";
-    RequiredRelationDirection direction = CommonToolsInternal::ParseRequiredDirectionString(requiredDirectionString.c_str(), _GetXmlElementName());
-    m_relationshipPath.AddStep(*new RelationshipStepSpecification(relationshipName, direction, className));
-
-    if (BEXML_Success != xmlNode->GetAttributeStringValue(m_alias, RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_ALIAS))
-        {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_TRACE, LOG_ERROR, Utf8PrintfString(INVALID_XML, RELATED_INSTANCE_SPECIFICATION_XML_NODE_NAME, RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_ALIAS));
-        return false;
-        }
-
-    if (BEXML_Success != xmlNode->GetAttributeBooleanValue(m_isRequired, RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_ISREQUIRED))
-        m_isRequired = false;
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RelatedInstanceSpecification::_WriteXml(BeXmlNodeP xmlNode) const
-    {
-    PresentationKey::_WriteXml(xmlNode);
-    if (!m_relationshipPath.GetSteps().empty())
-        {
-        xmlNode->AddAttributeStringValue(RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_CLASSNAME, m_relationshipPath.GetSteps().front()->GetTargetClassName().c_str());
-        xmlNode->AddAttributeStringValue(RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_RELATIONSHIPNAME, m_relationshipPath.GetSteps().front()->GetRelationshipClassName().c_str());
-        xmlNode->AddAttributeStringValue(RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_RELATIONSHIPDIRECTION, CommonToolsInternal::FormatRequiredDirectionString(m_relationshipPath.GetSteps().front()->GetRelationDirection()));
-        }
-    xmlNode->AddAttributeStringValue(RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_ALIAS, m_alias.c_str());
-    xmlNode->AddAttributeBooleanValue(RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_ISREQUIRED, m_isRequired);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

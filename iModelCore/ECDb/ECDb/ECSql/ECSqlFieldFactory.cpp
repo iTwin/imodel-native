@@ -255,7 +255,10 @@ ECSqlColumnInfo ECSqlFieldFactory::CreateColumnInfoForProperty(ECSqlPrepareConte
             return CreateTopLevelColumnInfo(ctx.Issues(), isSystem, true, std::move(propertyPath), ECSqlColumnInfo::RootClass(*rootClass, nullptr), nullptr, isDynamic);
             }
         }
-
+    if (resolvedPropertyName == nullptr)
+        {
+        throw std::runtime_error("Error in program logic. Resolved property name must not be null.");
+        }
     PropertyPath const& internalPropPath = resolvedPropertyName->GetResolvedPropertyPath();
     size_t entryCount = internalPropPath.Size();
     ECSqlPropertyPath ecsqlPropPath;
@@ -266,6 +269,10 @@ ECSqlColumnInfo ECSqlFieldFactory::CreateColumnInfoForProperty(ECSqlPrepareConte
         }
 
     BeAssert(ecsqlPropPath.Size() > 0 && "Error in program logic. Property path must not be empty.");
+    if (propertyNameExp == nullptr) 
+        {
+        throw std::runtime_error("Error in program logic. Property path must not be empty.");
+        }
     const auto isVirtualProperty = propertyNameExp->IsVirtualProperty();
     if (isVirtualProperty)
         {

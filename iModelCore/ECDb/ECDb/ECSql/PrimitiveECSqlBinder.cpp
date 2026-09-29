@@ -3,10 +3,25 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
+#include <cmath>
 
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+int PrimitiveECSqlBinder::GetSqlParameterIndex() const
+    {
+    BeAssert(GetMappedSqlParameterNames().size() == 1);
+    BeAssert(!GetMappedSqlParameterNames()[0].empty());
+    if (0 == m_sqlParameterIndex)
+        m_sqlParameterIndex = GetSqliteStatement().GetParameterIndex(GetMappedSqlParameterNames()[0].c_str());
+
+    BeAssert(m_sqlParameterIndex > 0);
+    return m_sqlParameterIndex;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -262,6 +277,14 @@ IECSqlBinder& PrimitiveECSqlBinder::_AddArrayElement()
     {
     LOG.error("Type mismatch. Cannot bind array to primitive parameter.");
     return NoopECSqlBinder::Get();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BinderInfo const& PrimitiveECSqlBinder::_GetBinderInfo()
+    {
+    return m_binderInfo;
     }
 
 //---------------------------------------------------------------------------------------

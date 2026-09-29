@@ -10,6 +10,10 @@
 
 // cspell:ignore bcvfs itwindb nrequest isdaemon ncleanup ifnot bcvconfig blockno npin
 
+extern "C" {
+int besqlite_bcv_custom_init();
+}
+
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE
 
@@ -256,7 +260,7 @@ CloudResult CloudContainer::Connect(CloudCache& cache) {
 
     cache.m_containers.push_back(this); // needed for authorization from attach.
     auto attachFlags = SQLITE_BCV_ATTACH_IFNOT;
-    if (m_secure) 
+    if (m_secure)
         attachFlags |= SQLITE_BCV_ATTACH_SECURE;
     if (!cache.IsAttached(*this)) {
         auto result = cache.CallSqliteFn([&](Utf8P* msg) { return sqlite3_bcvfs_attach(cache.m_vfs, GetOpenParams().c_str(), m_baseUri.c_str(), m_containerId.c_str(), m_alias.c_str(), attachFlags, msg); }, "attach");
@@ -283,7 +287,13 @@ CloudResult CloudContainer::Disconnect(bool isDetach, bool fromCacheDtor) {
     if (nullptr == m_cache)
         return CloudResult();
 
+#ifdef __APPLE__
+    // On macOS (and probably iOS), OnDisconnect() crashes when called from the cache destructor.
+    if (!fromCacheDtor)
+        OnDisconnect(isDetach);
+#else // __APPLE__
     OnDisconnect(isDetach);
+#endif // __APPLE__
     m_onDisconnect.RaiseEvent(this);
 
     CloseDbIfOpen();
@@ -297,7 +307,13 @@ CloudResult CloudContainer::Disconnect(bool isDetach, bool fromCacheDtor) {
         if (entry != containers.end())
             containers.erase(entry);
     }
+#ifdef __APPLE__
+    // On macOS (and probably iOS), OnDisconnected() crashes when called from the cache destructor.
+    if (!fromCacheDtor)
+        OnDisconnected(isDetach);
+#else // __APPLE__
     OnDisconnected(isDetach);
+#endif // __APPLE__
 
     return isDetach ? thisCache->CallSqliteFn([&](Utf8P* msg) { return sqlite3_bcvfs_detach(thisCache->m_vfs, m_alias.c_str(), msg); }, "detach") :  CloudResult();
 }
@@ -351,6 +367,10 @@ CloudResult CloudContainer::DeleteDatabase(Utf8StringCR dbName) {
  */
 CloudResult CloudContainer::PollManifest() {
     return CallSqliteFn([&](Utf8P* msg) { return sqlite3_bcvfs_poll(m_cache->m_vfs, m_alias.c_str(), msg); }, "poll");
+}
+
+void CloudUtil::Initialize(BeFileNameCR assetDir) {
+    besqlite_bcv_custom_init();
 }
 
 /** close the bcv handle, if open */

@@ -100,12 +100,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Limiting_ThrowsWhenThere
     m_locater->AddRuleSet(*rules);
 
     auto rootRule = new RootNodeRule();
-    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "", 
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "",
         bvector<MultiSchemaClass*>
             {
             new MultiSchemaClass(classA->GetSchema().GetName(), true, bvector<Utf8String>{ classA->GetName() }),
             new MultiSchemaClass(classB->GetSchema().GetName(), true, bvector<Utf8String>{ classB->GetName() })
-            }, 
+            },
         {}));
     rules->AddPresentationRule(*rootRule);
 
@@ -320,7 +320,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Limiting_ThrowsWhenSameL
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, false, classA->GetFullName(), { new InstanceLabelOverridePropertyValueSpecification("Prop") }));
 
-    auto groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "", "", "");
+    auto groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "");
     groupingRule->AddGroup(*new SameLabelInstanceGroup());
     rules->AddPresentationRule(*groupingRule);
 
@@ -374,8 +374,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Limiting_ThrowsWhenPrope
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    auto groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "", "", "");
-    groupingRule->AddGroup(*new PropertyGroup("", "", true, "Prop"));
+    auto groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "");
+    groupingRule->AddGroup(*new PropertyGroup("", true, "Prop"));
     rules->AddPresentationRule(*groupingRule);
 
     auto rootRule = new RootNodeRule();
@@ -437,7 +437,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Limiting_ThrowsWhenBaseC
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    auto groupingRule = new GroupingRule("", 1, false, classB->GetSchema().GetName(), classB->GetName(), "", "", "");
+    auto groupingRule = new GroupingRule("", 1, false, classB->GetSchema().GetName(), classB->GetName(), "");
     groupingRule->AddGroup(*new ClassGroup());
     rules->AddPresentationRule(*groupingRule);
 
@@ -504,7 +504,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Limiting_DoesntThrowWhen
     // verify
     auto params = AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables());
     params.SetLimit(1);
-    ValidateHierarchy(params, 
+    ValidateHierarchy(params,
         {
         CreateInstanceNodeValidator({ a1 }),
         CreateInstanceNodeValidator({ a2 }),
@@ -605,7 +605,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Limiting_ThrowsWhenThere
     auto b2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance){instance.SetValue("Prop", ECValue("2"));});
     auto b3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance){instance.SetValue("Prop", ECValue("x"));});
     auto b4 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance){instance.SetValue("Prop", ECValue("4"));});
-    
+
     // ruleset
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
@@ -622,7 +622,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Limiting_ThrowsWhenThere
         }, {}));
     rules->AddPresentationRule(*rootRule);
 
-    auto groupingRule = new GroupingRule("", 1, false, classB->GetSchema().GetName(), classB->GetName(), "", "", "");
+    auto groupingRule = new GroupingRule("", 1, false, classB->GetSchema().GetName(), classB->GetName(), "");
     groupingRule->AddGroup(*new SameLabelInstanceGroup(SameLabelInstanceGroupApplicationStage::PostProcess));
     rules->AddPresentationRule(*groupingRule);
 
@@ -696,7 +696,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Limiting_ThrowsWhenThere
         new InstanceLabelOverridePropertyValueSpecification("Prop"),
         }));
 
-    auto groupingRule = new GroupingRule("", 1, false, classB->GetSchema().GetName(), classB->GetName(), "", "", "");
+    auto groupingRule = new GroupingRule("", 1, false, classB->GetSchema().GetName(), classB->GetName(), "");
     groupingRule->AddGroup(*new SameLabelInstanceGroup(SameLabelInstanceGroupApplicationStage::PostProcess));
     rules->AddPresentationRule(*groupingRule);
 

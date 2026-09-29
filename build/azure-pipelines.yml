@@ -16,7 +16,7 @@ pr:
 
 parameters:
 - name: defaultNativeBranch
-  displayName: Default Native Branch Used for PR Validation
+  displayName: Default imodel-native-internal Branch Used for PR Validation
   type: string
   default: 'main' # Change to appropriate branch name when creating new release branch
 - name: defaultCoreBranch

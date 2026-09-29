@@ -11,6 +11,11 @@ IS_THIRD_PARTY_LIBRARY = 1
 VendorApi_snappy = $(baseDir)../VendorAPI/snappy
 
 cIncs + -I$(VendorApi_snappy)
+cIncs + -I$(_MakeFilePath)
+
+# config.h lives next to the source files; snappy-stubs-internal.h includes it via HAVE_CONFIG_H
+nameToDefine = HAVE_CONFIG_H
+%include cdefapnd.mki
 
 %include mdl.mki
 
@@ -31,7 +36,11 @@ always:
 MultiCompileDepends     = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(o)snappy$(oext)       : $(baseDir)snappy.cpp ${MultiCompileDepends}
+$(o)snappy$(oext) : $(baseDir)snappy.cpp ${MultiCompileDepends}
+
+$(o)snappy-sinksource$(oext) : $(baseDir)snappy-sinksource.cpp ${MultiCompileDepends}
+
+$(o)snappy-stubs-internal$(oext) : $(baseDir)snappy-stubs-internal.cpp ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 

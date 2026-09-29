@@ -122,8 +122,12 @@ always:
     ~linkmultifiles "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assemblies=$(o)/*.pdb"
 %endif
 %if !defined (CREATE_STATIC_LIBRARIES)
-    ~linkmultifiles "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assemblies=$(collectionProduct)Assemblies/*$(shlibext)"
-    ~linkmultifiles "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assemblies=$(BuildContext)SubParts/Assemblies/*$(shlibext)"
+    %if $[@wildcard $(collectionProduct)Assemblies/*$(shlibext)] != " "
+        ~linkmultifiles "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assemblies=$(collectionProduct)Assemblies/*$(shlibext)"
+    %endif
+    %if $[@wildcard $(BuildContext)SubParts/Assemblies/*$(shlibext)] != " "
+        ~linkmultifiles "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assemblies=$(BuildContext)SubParts/Assemblies/*$(shlibext)"
+    %endif
 %endif
     ~linkfile "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assemblies/logging.config.xml=$(baseDir)logging.config.xml"
     ~linkdir "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assets=$(collectionProduct)Assets"

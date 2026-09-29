@@ -63,7 +63,7 @@ enum DgnDbProfileValues : int32_t
     DGNDB_CURRENT_VERSION_Major = 2,
     DGNDB_CURRENT_VERSION_Minor = 0,
     DGNDB_CURRENT_VERSION_Sub1  = 0,
-    DGNDB_CURRENT_VERSION_Sub2  = 7,
+    DGNDB_CURRENT_VERSION_Sub2  = 9, // 2.0.0.9: replay spatial-index trigger replacements for already-stamped 2.0.0.8 files.
 
     DGNDB_SUPPORTED_VERSION_Major = 2,  // oldest version of the profile supported by the current api
     DGNDB_SUPPORTED_VERSION_Minor = 0,
@@ -216,6 +216,7 @@ private:
     void OnBisCoreSchemaImported(CreateDgnDbParams const& params);
     BeSQLite::DbResult InitializeElementIdSequence();
     void ClearECSqlCache() const { m_ecsqlCache.Empty(); }
+    static BeSQLite::DbResult ReplaceSpatialIndexUpdateTriggers(DgnDbR db);
 
     BeSQLite::DbResult InitializeSchemas(BeSQLite::Db::OpenParams const& params);
     BeSQLite::DbResult ProcessRevisions(BeSQLite::Db::OpenParams const& params);
@@ -252,7 +253,8 @@ protected:
     DGNPLATFORM_EXPORT void _OnAfterSetBriefcaseId() override;
 
     DGNPLATFORM_EXPORT BeSQLite::DbResult _AfterSchemaChangeSetApplied() const override;
-    DGNPLATFORM_EXPORT BeSQLite::DbResult _AfterDataChangeSetApplied(bool schemaChanged) override;
+    DGNPLATFORM_EXPORT BeSQLite::DbResult _AfterDataChangeSetApplied(bool schemaChanged, bool deferInstanceUpgrade) override;
+    DGNPLATFORM_EXPORT bool _IsLevelWithTimeline() override;
 
     // *** WIP_SCHEMA_IMPORT - temporary work-around needed because ECClass objects are deleted when a schema is imported
     void _OnBeforeClearECDbCache() override;
@@ -380,7 +382,6 @@ public:
     //! compatible version number.
     //! </ul>
     DGNPLATFORM_EXPORT SchemaStatus ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, bool schemaLockHeld = false, SyncDbUri uri = SyncDbUri());
-    DGNPLATFORM_EXPORT PullResult PullSchemaChanges(SyncDbUri uri);
 
     //! Drop a unreferenced schema with no instances
     //! @param[in] name schema that need to be dropped.
@@ -455,6 +456,12 @@ public:
     //! @param key Identifies the ECRelationship instance
     //! @return BE_SQLITE_OK in case of success. Error codes otherwise
     DGNPLATFORM_EXPORT BeSQLite::DbResult DeleteLinkTableRelationship(BeSQLite::EC::ECInstanceKeyCR key);
+
+    //! Deletes multiple link table ECRelationships
+    //! @note This function is only for ECRelationships that are stored in a link table. To "delete" an ECRelationship that is implemented as a Navigation property, you must set the appropriate element property to NULL, if that is allowed.
+    //! @param keys Set of ECInstanceKeys identifying the ECRelationship instances to delete
+    //! @return BE_SQLITE_OK in case of success. Error codes otherwise
+    DGNPLATFORM_EXPORT BeSQLite::DbResult DeleteLinkTableRelationships(Utf8StringCR relClassECSqlName, const DgnElementIdSet& relationshipInstanceIds);
 
     //! Gets a cached and prepared ECSqlStatement that can be used only for select.
     DGNPLATFORM_EXPORT BeSQLite::EC::CachedECSqlStatementPtr GetPreparedECSqlStatement(Utf8CP ecsql, bool logPrepareErrors = true) const;

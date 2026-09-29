@@ -53,8 +53,11 @@ bool GTestFileOps::JsonFileToGeometry (BeFileNameCR filename, bvector<IGeometryP
     {
     geometry.clear ();
     Utf8String string;
-    return ReadAsString (filename, string)
-        && BentleyGeometryJson::TryJsonStringToGeometry (string, geometry);
+    if (!ReadAsString (filename, string))
+        return false;
+    if (!BentleyGeometryJson::TryJsonStringToGeometry (string, geometry))
+        return false;
+    return !geometry.empty();
     }
 
 bool GTestFileOps::JsonFileToGeometry (char const *filenameChar, bvector<IGeometryPtr> &geometry)

@@ -1857,10 +1857,6 @@ bool DVec3d::TryNormalize (DVec3dCR other, double &magnitude)
 
 
 /*-----------------------------------------------------------------*//**
-* @description Tests if two vectors are parallel.
-*
-* @param [in] vector2 The second vector
-* @return true if the vectors are parallel within tolerance
 * @bsimethod
 +----------------------------------------------------------------------*/
 bool DVec3d::IsParallelTo
@@ -1868,32 +1864,16 @@ bool DVec3d::IsParallelTo
 DVec3dCR vector2
 ) const
     {
-    DVec3d      vecC;
-    double      a2 = this->DotProduct (*this);
-    double      b2 = vector2.DotProduct (vector2);
-    double      cross;
-    double      eps = Angle::SmallAngle(); /* small angle tolerance (in radians) */
-    vecC.CrossProduct (*this, vector2);
-    cross = vecC.MagnitudeSquared ();
-
-    /* a2,b2,c2 are squared lengths of respective vectors */
-    /* c2 = sin^2(theta) * a2 * b2 */
-    /* For small theta, sin^2(theta)~~theta^2 */
-    /* Zero-length vector case falls through as equality */
-
-    return  cross <= eps * eps * a2 * b2;
+    return IsParallelTo(vector2, Angle::SmallAngle());
     }
+
 /*-----------------------------------------------------------------*//**
-* @description Tests if two vectors are parallel.
-*
-* @param [in] vector2 The second vector
-* @return true if the vectors are parallel within tolerance
 * @bsimethod
 +----------------------------------------------------------------------*/
 bool DVec3d::IsParallelTo
 (
 DVec3dCR vector2,
-double radians
+double tolerance
 ) const
     {
     DVec3d      vecC;
@@ -1903,12 +1883,11 @@ double radians
     vecC.CrossProduct (*this, vector2);
     cross = vecC.MagnitudeSquared ();
 
-    /* a2,b2,c2 are squared lengths of respective vectors */
-    /* c2 = sin^2(theta) * a2 * b2 */
-    /* For small theta, sin^2(theta)~~theta^2 */
-    /* Zero-length vector case falls through as equality */
-
-    return  cross <= radians * radians * a2 * b2;
+    // a2,b2,c2 are squared lengths of respective vectors
+    // c2 = sin^2(theta) * a2 * b2
+    // For small theta, sin^2(theta)~~theta^2
+    // Zero-length vector case falls through as equality
+    return  cross <= tolerance * tolerance * a2 * b2;
     }
 
 /*-----------------------------------------------------------------*//**

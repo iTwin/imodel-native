@@ -1114,7 +1114,6 @@ TEST_F(DefaultECPresentationSerializerTests, FieldEditorSliderParamsSerializatio
         "Minimum": 123.33,
         "Maximum": 456.66,
         "IntervalsCount": 5,
-        "ValueFactor": 100,
         "IsVertical": true
         })");
 
@@ -1928,7 +1927,7 @@ TEST_F(DefaultECPresentationSerializerTests, ContentSetSerializationItemWithClas
     ContentSetItem::FieldPropertyInstanceKeyMap fieldPropertyInstanceKeys;
     fieldPropertyInstanceKeys.Insert(ContentSetItem::FieldPropertyIdentifier(ecPropertiesField, 0), keys);
     fieldPropertyInstanceKeys.Insert(ContentSetItem::FieldPropertyIdentifier(ecPropertiesField1, 1), keys);
-    ContentSetItemPtr contentSetItem = ContentSetItem::Create({}, keys, *LabelDefinition::Create("DisplayLabelText"), "ImageIdText", bmap<Utf8String, bvector<ContentSetItemPtr>>(), 
+    ContentSetItemPtr contentSetItem = ContentSetItem::Create({}, keys, *LabelDefinition::Create("DisplayLabelText"), "ImageIdText", bmap<Utf8String, bvector<ContentSetItemPtr>>(),
         std::make_pair(std::move(valuesAllocator), std::move(values)), std::make_pair(std::move(displayValuesAllocator), std::move(displayValues)),
         mergedFieldNames, std::move(fieldPropertyInstanceKeys));
     contentSetItem->SetClass(testClass);
@@ -2008,7 +2007,7 @@ TEST_F(DefaultECPresentationSerializerTests, ContentSetItemSerializationNoClassS
     auto displayValuesAllocator = std::make_unique<rapidjson::Document::AllocatorType>();
     auto displayValues = std::make_unique<rapidjson::Document>(rapidjson::kObjectType, valuesAllocator.get());
 
-    ContentSetItemPtr contentSetItem = ContentSetItem::Create({}, { ECClassInstanceKey() }, *LabelDefinition::Create(), "", bmap<Utf8String, bvector<ContentSetItemPtr>>(), 
+    ContentSetItemPtr contentSetItem = ContentSetItem::Create({}, { ECClassInstanceKey() }, *LabelDefinition::Create(), "", bmap<Utf8String, bvector<ContentSetItemPtr>>(),
         std::make_pair(std::move(valuesAllocator), std::move(values)), std::make_pair(std::move(displayValuesAllocator), std::move(displayValues)),
         bvector<Utf8String>(), bmap<ContentSetItem::FieldPropertyIdentifier, bvector<ECClassInstanceKey>>());
 

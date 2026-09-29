@@ -41,6 +41,7 @@ namespace ElementDependency { struct Graph; struct Edge;};
 struct ElementAutoHandledPropertiesECInstanceAdapter;
 struct LsComponent;
 struct ExternalSourceAttachment;
+class BulkElementDeletion;
 
 //=======================================================================================
 //! Holds Id remapping tables
@@ -278,6 +279,7 @@ private:
     BeSQLite::IdSet<DgnTextureId> m_textureIds;
     BeSQLite::IdSet<DgnElementId> m_otherDefinitionElementIds;
     BeSQLite::IdSet<DgnElementId> m_usedIds;
+    std::shared_ptr<BeSQLite::IdSet<BeInt64Id>> m_excludeIds;
 
     BE_JSON_NAME(spatialCategoryIds)
     BE_JSON_NAME(drawingCategoryIds)
@@ -316,8 +318,9 @@ private:
 
 public:
     //! Generate usage information for the specified set of DefinitionElementIds
-    DGNPLATFORM_EXPORT static DefinitionElementUsageInfoPtr Create(DgnDbR db, BeSQLite::IdSet<DgnElementId> const& definitionElementIds);
+    DGNPLATFORM_EXPORT static DefinitionElementUsageInfoPtr Create(DgnDbR db, BeSQLite::IdSet<DgnElementId> const& definitionElementIds, std::shared_ptr<BeSQLite::IdSet<BeInt64Id>> excludeIds = nullptr);
     DGNPLATFORM_EXPORT void ToJson(BeJsValue) const;
+    DGNPLATFORM_EXPORT DgnElementIdSet const& GetUsedIds() const { return m_usedIds; }
 };
 
 //=======================================================================================
@@ -544,6 +547,69 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus GetPropertyValue(ECN::ECValueR value, PropertyArrayIndex const& arrayIndex) const;
 };
 
+#define TEMP_ELEMENT_DELETION "ElementsToDelete"
+
+//=======================================================================================
+//! Indicates the status of the bulk-delete operation.
+//! On Success the operation completed normally and all elements were deleted successfully.
+//! On PartialSuccess the operation completed normally, but deletion of one or more elements
+//!     was skipped due to constraint violations; those elements are reported separately in
+//!     [[BulkDeleteElementsResult]].
+//! On DeletionFailed the operation failed internally and no elements were deleted.
+// @bsiclass
+//=======================================================================================
+enum class BulkDeleteElementsStatus : int
+    {
+    Success          = 0, //!< Operation completed successfully.
+    PartialSuccess   = 1, //!< Some elements were not deleted due to constraints violations.
+    DeletionFailed   = 2, //!< The underlying SQL DELETE or link-table cleanup failed.
+    };
+
+//=======================================================================================
+//! Result of the bulk element deletion operation.
+// @bsiclass
+//=======================================================================================
+struct BulkDeleteElementsResult
+    {
+    BulkDeleteElementsStatus status = BulkDeleteElementsStatus::Success;
+    BeSQLite::DbResult sqlDeleteStatus = BeSQLite::DbResult::BE_SQLITE_OK;
+    DgnElementIdSet  failedIds;
+    };
+
+class BulkElementDeletion
+    {
+    DgnDbR m_dgndb;
+    DgnElementIdSet m_originalElementIds;
+    DgnElementIdSet m_failedToDelete;
+
+    bool m_geometricElementsExist = false;
+    bool m_subModelRootExists = false;
+    
+    bool m_skipFKConstraintValidations = false;
+
+    // Create temporary tables for bulk deletion
+    BeSQLite::DbResult CreateTempTables() const;
+    BeSQLite::DbResult ExpandElementIdList();
+    int GetTempTableRowCount() const;
+
+    // Find and prune constraint violators
+    BeSQLite::DbResult FindAndPruneConstraintViolators();
+    BeSQLite::DbResult FindAndPruneInUseDefinitionElements();
+    BeSQLite::DbResult PruneViolators();
+
+    bool FireAllCallbacks();
+    BeSQLite::DbResult DeleteLinkTableRelationships() const;
+    BeSQLite::DbResult ExecuteDeletion();
+
+public:
+    BulkElementDeletion(DgnDbR dgndb, const DgnElementIdSet& originalElementIds, bool skipFKConstraintValidations) 
+        :   m_dgndb(dgndb), 
+            m_originalElementIds(originalElementIds), 
+            m_skipFKConstraintValidations(skipFKConstraintValidations) {}
+
+    BulkDeleteElementsResult Execute();
+    };
+
 #define DGNELEMENT_DECLARE_MEMBERS(__ECClassName__,__superclass__) \
     private: typedef __superclass__ T_Super;\
     public: static Utf8CP MyHandlerECClassName() {return __ECClassName__;}\
@@ -710,6 +776,7 @@ public:
     friend struct GeometrySource;
     friend struct ElementECPropertyAccessor;
     friend struct ElementAutoHandledPropertiesECInstanceAdapter;
+    friend class BulkElementDeletion;
 
     enum class ColumnNumbers : int32_t {
         ElementId = 0,
@@ -1203,6 +1270,7 @@ protected:
     struct Flags {
         uint32_t m_preassignedId:1;
         uint32_t m_propState:2; // See PropState
+        uint32_t m_placementData:3;
         Flags() {memset(this, 0, sizeof(*this));}
     };
 
@@ -1415,7 +1483,7 @@ protected:
 
     //! Called after an element, with this element as its parent, was successfully deleted.
     //! @note If you override this method, you @em must call T_Super::_OnChildDeleted.
-    virtual void _OnChildDeleted(DgnElementCR child) const {CallJsChildPostHandler(child, "onChildDeleted");}
+    DGNPLATFORM_EXPORT virtual void _OnChildDeleted(DgnElementCR child) const;
 
     //! Called after an existing element was successfully added to this parent.
     //! @note If you override this method, you @em must call T_Super::_OnChildAdded.
@@ -1455,11 +1523,11 @@ protected:
     //! @param[in] model the DgnModel being deleted
     //! @return DgnDbStatus::Success to allow the DgnModel deletion, otherwise it will fail with the returned status.
     //! @note If you override this method, you @em must call T_Super::_OnSubModelDelete, forwarding its status.
-    virtual DgnDbStatus _OnSubModelDelete(DgnModelCR model) const { CallJsSubModelHandler(model, "onSubModelDelete"); return DgnDbStatus::Success; }
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnSubModelDelete(DgnModelCR model) const;
 
     //! Called after a delete of a DgnModel modeling this element has completed.
     //! @note If you override this method, you @em must call T_Super::_OnSubModelDeleted.
-    virtual void _OnSubModelDeleted(DgnModelCR model) const { CallJsSubModelHandler(model, "onSubModelDeleted"); }
+    DGNPLATFORM_EXPORT virtual void _OnSubModelDeleted(DgnModelCR model) const;
 
 public:
     virtual void _OnBeforeOutputsHandled(ElementDependency::Graph const& graph, ElementDependency::Edge const& edge) const {}
@@ -2071,10 +2139,12 @@ public:
 struct GeometryStream : ByteStream {
 public:
     bool HasGeometry() const {return HasData();}  //!< return false if this GeometryStream is empty.
-    DGNPLATFORM_EXPORT DgnDbStatus ReadGeometryStream(BeSQLite::SnappyFromMemory& snappy, DgnDbR dgnDb, void const* blob, int blobSize); //!< @private
+    DGNPLATFORM_EXPORT DgnDbStatus ReadGeometryStream(BeSQLite::SnappyFromMemory& snappy, DgnDbR, void const* blob, int blobSize); //!< @private
     static DgnDbStatus WriteGeometryStream(BeSQLite::SnappyToBlob&, DgnDbR, DgnElementId, Utf8CP className, Utf8CP propertyName); //!< @private
     DgnDbStatus BindGeometryStream(bool& multiChunkGeometryStream, BeSQLite::SnappyToBlob&, BeSQLite::EC::ECSqlStatement&, Utf8CP parameterName) const; //!< @private
     DGNPLATFORM_EXPORT bool IsViewIndependent() const;
+    BeSQLite::EC::ECSqlStatus Write(BeSQLite::SnappyToBlob&, BeSQLite::EC::IECSqlBinder& binder) const;
+    BeSQLite::EC::ECSqlStatus Read(BeSQLite::SnappyFromMemory&, DgnDbR,const BeSQLite::EC::IECSqlValue& valueReader);
 };
 
 //=======================================================================================
@@ -2150,6 +2220,37 @@ public:
     DgnDbStatus SetPlacement(Placement2dCR placement) {return _SetPlacement(placement);} //!< Change the Placement2d for this element
 };
 
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE GeometryPartSource {
+    friend struct GeometryBuilder;
+
+private:
+    virtual ElementAlignedBox3dCR _GetPlacement() const = 0;
+    virtual void _SetPlacement(ElementAlignedBox3dCR bbox) = 0;
+    virtual GeometryStreamCR _GetGeometryStream() const = 0;
+    virtual GeometryStreamR _GetGeometryStreamR() = 0;
+    virtual DgnDbR _GetSourceDgnDb() const = 0;
+protected:
+
+    GeometryStreamR GetGeometryStreamR() {return _GetGeometryStreamR();}
+    void SetBoundingBox(ElementAlignedBox3dCR bbox) {_SetPlacement(bbox);}
+
+public:
+    virtual ~GeometryPartSource() {}
+
+    //! Get the geometry for this part (part local coordinates)
+    GeometryStreamCR GetGeometryStream() const {return _GetGeometryStream();}
+
+    //! Get the bounding box for this part (part local coordinates)
+    ElementAlignedBox3dCR GetBoundingBox() const {return _GetPlacement();}
+
+    //! Get the DgnDb of this part
+    DgnDbR GetSourceDgnDb() const {return _GetSourceDgnDb();}
+};
+
 //=======================================================================================
 //! Base class for elements with geometry.
 //! @ingroup GROUP_DgnElement
@@ -2207,6 +2308,36 @@ protected:
     DgnCategoryId m_categoryId;
     GeometryStream m_geom;
     mutable bool m_multiChunkGeomStream;
+    // Set while processing an empty geometry-builder update so derived placement readers do not restore stale placement JSON.
+    bool m_geometryWasCleared = false;
+    // Placement2d/3d default values don't preserve which properties were actually NULL without this.
+    enum PlacementDataFlags : uint8_t
+        {
+        PlacementData_None = 0,
+        PlacementData_Origin = 1 << 0,
+        PlacementData_Angles = 1 << 1,
+        PlacementData_Bbox = 1 << 2,
+        PlacementData_All = PlacementData_Origin | PlacementData_Angles | PlacementData_Bbox,
+        };
+
+    bool HasPlacementData(uint8_t flags) const
+        {
+        return (m_flags.m_placementData & flags) == flags;
+        }
+
+    uint8_t GetPlacementDataFlags() const
+        {
+        return static_cast<uint8_t>(m_flags.m_placementData);
+        }
+
+    void SetPlacementDataFlags(uint8_t flags)
+        {
+        BeAssert((flags & ~PlacementData_All) == 0); // Accept only flags defined in PlacementDataFlags
+        m_flags.m_placementData = flags;
+        }
+
+    // Reads json_placement() into a Placement2d or Placement3d and records which nullable placement properties it supplies. Defined in DgnElement.cpp.
+    template<class T_Placement> void PlacementFromJson(T_Placement& placement, BeJsConst props, Utf8CP anglesMember);
 
     explicit GeometricElement(CreateParams const& params) : T_Super(params), m_categoryId(params.m_category), m_multiChunkGeomStream(false) {}
 
@@ -2277,7 +2408,10 @@ protected:
     Placement3d m_placement;
     RelatedElement m_typeDefinition;
 
-    explicit GeometricElement3d(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) {}
+    explicit GeometricElement3d(CreateParams const& params) : T_Super(params), m_placement(params.m_placement)
+        {
+        SetPlacementDataFlags(m_placement.IsValid() ? PlacementData_All : PlacementData_None);
+        }
     bool _IsPlacementValid() const override final {return m_placement.IsValid();}
     DgnDbR _GetSourceDgnDb() const override final {return GetDgnDb();}
     DgnElementCP _ToElement() const override final {return this;}
@@ -2361,7 +2495,10 @@ protected:
     Placement2d m_placement;
     RelatedElement m_typeDefinition;
 
-    explicit GeometricElement2d(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) {}
+    explicit GeometricElement2d(CreateParams const& params) : T_Super(params), m_placement(params.m_placement)
+        {
+        SetPlacementDataFlags(m_placement.IsValid() ? PlacementData_All : PlacementData_None);
+        }
     bool _IsPlacementValid() const override final {return m_placement.IsValid();}
     DgnDbR _GetSourceDgnDb() const override final {return GetDgnDb();}
     DgnElementCP _ToElement() const override final {return this;}
@@ -3490,7 +3627,7 @@ struct JobSubjectUtils
     //! @param[in] bridgeRegSubKey the registry subkey identifier used by the bridge.
     //! @param[in] comments Optional comments
     //! @param[in] properties Optional bridge-specific properties
-    DGNPLATFORM_EXPORT static void InitializeProperties(SubjectR jobSubject, Utf8StringCR bridgeRegSubKey, Utf8CP comments = nullptr, JsonValueCP properties = nullptr);
+    DGNPLATFORM_EXPORT static void InitializeProperties(SubjectR jobSubject, Utf8StringCR bridgeRegSubKey, Utf8CP comments = nullptr, BeJsConst const* properties = nullptr);
 
     //! Get the job's Bridge property. This is the registry subkey value used by the bridge.
     //! @param[in] jobSubject The job subject
@@ -3574,7 +3711,7 @@ public:
     //! * DgnDbStatus::InvalidCode if `props` does not contain a valid, non-empty code.
     //! @param[in] jsonProperties Optional. If specified, these properties will be stored in the "ExternalSource" namespace of the element's JsonProperties.
     //! @return a non-persistent ExternalSource if successful or nullptr if not
-    DGNPLATFORM_EXPORT static ExternalSourcePtr Create(DgnDbStatus* status, Properties const& props, RepositoryLinkCR rlink, DgnModelCP model = nullptr, BeJsConst jsonProperties = BeJsConst(Json::Value()));
+    DGNPLATFORM_EXPORT static ExternalSourcePtr Create(DgnDbStatus* status, Properties const& props, RepositoryLinkCR rlink, DgnModelCP model = nullptr, BeJsConst jsonProperties = BeJsDocument());
 
     //! @name Source
     //! @{
@@ -3661,7 +3798,7 @@ public:
     //! * DgnDbStatus::InvalidCode if `props` does not contain a valid, non-empty code.
     //! @param[in] jsonProperties Optional. If specified, these properties will be stored in the "ExternalSource" namespace of the element's JsonProperties.
     //! @return a non-persistent ExternalSourceGroup if successful or nullptr if not
-    DGNPLATFORM_EXPORT static ExternalSourceGroupPtr Create(DgnDbStatus* status, DgnDbR db, Properties const& props, RepositoryLinkCP rlink = nullptr, DgnModelCP model = nullptr, BeJsConst jsonProperties = BeJsConst(Json::Value()));
+    DGNPLATFORM_EXPORT static ExternalSourceGroupPtr Create(DgnDbStatus* status, DgnDbR db, Properties const& props, RepositoryLinkCP rlink = nullptr, DgnModelCP model = nullptr, BeJsConst jsonProperties = BeJsDocument());
 
     DGNPLATFORM_EXPORT DgnDbStatus Add(ExternalSourceCR, int memberPriority = 0) const;
     DGNPLATFORM_EXPORT DgnDbStatus Remove(ExternalSourceCR) const;
@@ -3822,6 +3959,7 @@ struct DgnElements : DgnDbTable
     friend struct dgn_TxnTable::Element;
     friend struct GeometricElement;
     friend struct ElementAutoHandledPropertiesECInstanceAdapter;
+    friend class BulkElementDeletion;
 
 private:
     // THIS MUST NOT BE EXPORTED, AS IT BYPASSES THE ECCRUDWRITETOKEN
@@ -3849,6 +3987,7 @@ private:
     mutable T_ClassParamsMap m_classParams; // information about custom-handled properties
     mutable AutoHandledPropertyUpdaterCache m_updaterCache;
     mutable std::map<uint64_t, std::unique_ptr<BeSQLite::EC::JsonECSqlSelectAdapter>> m_jsonSelectAdapterCache;
+    bool m_isBulkOperation = false;
 
     void Destroy();
     void AddToPool(DgnElementCR) const;
@@ -3856,6 +3995,12 @@ private:
     DgnElementCPtr LoadElement(DgnElementId elementId, bool makePersistent) const;
     DgnElementCPtr PerformInsert(DgnElementR element, DgnDbStatus&);
     DgnDbStatus PerformDelete(DgnElementCR);
+    //! Recursively validate that every element in the subtree rooted at elementId can be moved into newModel.
+    //! Performs no mutation, so a rejected model change leaves the iModel untouched. Used by ChangeElementModel.
+    DgnDbStatus ValidateSubtreeForModelChange(DgnElementId elementId, DgnModelR newModel, bool isRoot);
+    //! Relocate the subtree rooted at elementId into newModelId, preserving the parent-child hierarchy.
+    //! Used by ChangeElementModel after ValidateSubtreeForModelChange has approved the whole subtree.
+    DgnDbStatus MoveSubtreeToNewModel(DgnElementId elementId, DgnModelId newModelId, DgnModelR newModel);
     explicit DgnElements(DgnDbR db);
     ~DgnElements();
 
@@ -3872,6 +4017,9 @@ private:
 
     // *** WIP_SCHEMA_IMPORT - temporary work-around needed because ECClass objects are deleted when a schema is imported
     void ClearECCaches();
+
+    void SetBulkOperation(const bool isBulk) { m_isBulkOperation = isBulk; }
+    bool IsBulkOperation() const { return m_isBulkOperation; }
 public:
     DGNPLATFORM_EXPORT BeSQLite::SnappyFromMemory& GetSnappyFrom() {return m_snappyFrom;} // NB: Not to be used during loading of a GeometricElement or GeometryPart!
 
@@ -3891,6 +4039,7 @@ public:
 
     DGNPLATFORM_EXPORT BeSQLite::CachedStatementPtr GetStatement(Utf8CP sql) const; //!< Get a statement from the element-specific statement cache for this DgnDb @private
     DGNPLATFORM_EXPORT void DropFromPool(DgnElementCR) const; //!< @private
+    DGNPLATFORM_EXPORT void DropFromPool(DgnElementIdSet) const; //!< @private
     DGNPLATFORM_EXPORT DgnDbStatus LoadGeometryStream(GeometryStreamR geom, void const* blob, int blobSize); //!< @private
 
     DGNPLATFORM_EXPORT bool ElementExists(DgnElementId);
@@ -3989,12 +4138,53 @@ public:
         return (DgnDbStatus::Success != *stat) ? nullptr : Get<T>(modifiedElement.GetElementId());
     }
 
+    //! Change the parent of an element. The new parent must be in the same model as the element;
+    //! cross-model reparenting is not allowed.
+    //! @param[in] elementId The element to reparent
+    //! @param[in] newParentId The new parent element. Must be in the same model as the element.
+    //! @return DgnDbStatus::Success if the element was reparented, error status otherwise.
+    //! @note If the new parent is in a different model, this will fail with WrongModel.
+    //! @note If the element has a parent-element-scoped code, this will fail with InvalidCode. Use delete+insert instead.
+    DGNPLATFORM_EXPORT DgnDbStatus ChangeElementParent(DgnElementId elementId, DgnElementId newParentId);
+
+    //! Change the model of a root element, making it a root element in the new model.
+    //! The element must not have a parent.
+    //! BIS requires a parent and all of its children to reside in the same model, so the element's entire
+    //! subtree is relocated into the new model as well; the parent-child hierarchy is preserved. The whole
+    //! subtree is validated before anything is moved, so a rejected change leaves the iModel untouched.
+    //! @param[in] elementId The root element to move
+    //! @param[in] newModelId The target model
+    //! @return DgnDbStatus::Success if the element (and its subtree) was moved, error status otherwise.
+    //! @note If the element has a parent, this will fail with InvalidParent.
+    //! @note If any element in the subtree has a model-scoped code, this will fail with InvalidCode. Use delete+insert instead.
+    DGNPLATFORM_EXPORT DgnDbStatus ChangeElementModel(DgnElementId elementId, DgnModelId newModelId);
+
 
     //! Delete a DgnElement from this DgnDb.
     //! @param[in] element The element to delete.
     //! @return DgnDbStatus::Success if the element was deleted, error status otherwise.
     //! @note This function can only be safely invoked from the client thread.
     DGNPLATFORM_EXPORT DgnDbStatus Delete(DgnElementCR element);
+    
+    
+    //! Bulk-delete a set of elements from this DgnDb.
+    //!
+    //! This method resolves intra-set dependencies (parent-child hierarchies, code-scope relationships) before
+    //! attempting deletion, so callers may pass an entire sub-tree or a group of mutually-scoped elements
+    //! and expect them all to be removed in one call.
+    //!
+    //! @param[in] elementIds The set of element IDs to delete.  May contain IDs of any element type.
+    //!   Invalid IDs are ignored.  The set may include parent elements whose children are not
+    //!   explicitly listed; those children will be pulled in automatically.
+    //! @param[in] skipFKConstraintValidations If true, skips the ON DELETE NO ACTION foreign-key safety checks
+    //!   (i.e. the API does not verify that deleted elements are not still referenced as a CodeScope or Category by
+    //!   elements outside the delete set, and does not check whether deleted DefinitionElements are still in use).
+    //!   ON DELETE CASCADE and ON DELETE SET NULL actions are handled automatically regardless of this flag.
+    //!   Only set this to true when you can guarantee that none of the elements being deleted are referenced by
+    //!   elements outside the delete set via NO ACTION constraints.
+    //! @return A result object containing the status of the bulk delete operation and any element IDs that could not be deleted.
+    //! @note This function can only be safely invoked from the client thread.
+    DGNPLATFORM_EXPORT BulkDeleteElementsResult DeleteElements(const DgnElementIdSet& elementIds, bool skipFKConstraintValidations = false);
 
     //! Delete a DgnElement from this DgnDb by DgnElementId.
     //! @return DgnDbStatus::Success if the element was deleted, error status otherwise.

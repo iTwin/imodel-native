@@ -15,6 +15,8 @@ struct IdECSqlBinder final : public ECSqlBinder
     {
 private:
     bool m_isNoop;
+    mutable int m_sqlParameterIndex = 0;
+    BinderInfo m_binderInfo;
 
     int GetSqlParamIndex() const 
         { 
@@ -22,7 +24,11 @@ private:
             return -1; 
         
         BeAssert(GetMappedSqlParameterNames().size() == 1 && !GetMappedSqlParameterNames()[0].empty());
-        return GetSqliteStatement().GetParameterIndex(GetMappedSqlParameterNames()[0].c_str());
+        if (0 == m_sqlParameterIndex)
+            m_sqlParameterIndex = GetSqliteStatement().GetParameterIndex(GetMappedSqlParameterNames()[0].c_str());
+
+        BeAssert(m_sqlParameterIndex > 0);
+        return m_sqlParameterIndex;
         }
 
 public:
@@ -44,6 +50,8 @@ public:
     IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) override;
 
     IECSqlBinder& _AddArrayElement() override;
+
+    BinderInfo const& _GetBinderInfo() override;
 
     public:
         IdECSqlBinder(ECSqlPrepareContext&, ECSqlTypeInfo const&, bool isNoop, SqlParamNameGenerator&);

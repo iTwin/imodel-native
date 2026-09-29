@@ -87,6 +87,66 @@ TEST_F(IModelCompatibilityTestFixture, BasicTestsOnAllPulledFiles)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(IModelCompatibilityTestFixture, DgnDbProfileUpgradeUpdatesSpatialIndexTriggers)
+    {
+    int testedPermutations = 0;
+    for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EMPTY))
+        {
+        if (testFile.GetDgnDbVersion() != DgnDbProfileVersion(2, 0, 0, 7))
+            continue;
+
+        ASSERT_TRUE(SetupDomainsInCurrentTestFile(testFile));
+        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
+            {
+            TestIModel& testDb = *testDbPtr;
+            if (!testDb.IsUpgraded() || testDb.GetSchemaUpgradeOptions().AreDomainUpgradesAllowed())
+                continue;
+
+            ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
+            testDb.AssertProfileVersion();
+
+            DgnDbR dgnDb = testDb.GetDgnDb();
+            PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(dgnDb, "SpatialIndexProfileUpgrade");
+            ASSERT_TRUE(model.IsValid()) << testDb.GetDescription();
+            DgnCategoryId categoryId = DgnDbTestUtils::InsertSpatialCategory(dgnDb, "SpatialIndexProfileUpgrade");
+            ASSERT_TRUE(categoryId.IsValid()) << testDb.GetDescription();
+
+            GenericPhysicalObjectPtr element = GenericPhysicalObject::Create(*model, categoryId);
+            ASSERT_TRUE(element.IsValid()) << testDb.GetDescription();
+            const DPoint3d origin = DPoint3d::From(10.0, 20.0, 30.0);
+            ASSERT_EQ(DgnDbStatus::Success, element->SetPlacement(Placement3d(
+                origin,
+                YawPitchRollAngles(),
+                ElementAlignedBox3d(0.0, 0.0, 0.0, 10.0, 10.0, 10.0)))) << testDb.GetDescription();
+
+            DgnElementCPtr persistentElement = element->Insert();
+            ASSERT_TRUE(persistentElement.IsValid()) << testDb.GetDescription();
+
+            auto countSpatialIndexRows = [&dgnDb](DgnElementId elementId) -> int32_t
+                {
+                CachedStatementPtr stmt = dgnDb.Elements().GetStatement("SELECT count(*) FROM " DGN_VTABLE_SpatialIndex " WHERE ElementId=?");
+                stmt->BindId(1, elementId);
+                return BE_SQLITE_ROW == stmt->Step() ? stmt->GetValueInt(0) : -1;
+                };
+            ASSERT_EQ(1, countSpatialIndexRows(persistentElement->GetElementId())) << testDb.GetDescription();
+
+            GenericPhysicalObjectPtr elementForEdit = dgnDb.Elements().GetForEdit<GenericPhysicalObject>(persistentElement->GetElementId());
+            ASSERT_TRUE(elementForEdit.IsValid()) << testDb.GetDescription();
+            BeJsDocument partialPlacement;
+            BeJsGeomUtils::DPoint3dToJson(partialPlacement[GeometricElement::json_placement()][Placement3d::json_origin()], origin);
+            elementForEdit->FromJson(partialPlacement);
+            ASSERT_EQ(DgnDbStatus::Success, elementForEdit->Update()) << testDb.GetDescription();
+            EXPECT_EQ(0, countSpatialIndexRows(persistentElement->GetElementId())) << testDb.GetDescription();
+            testedPermutations++;
+            }
+        }
+
+    EXPECT_GT(testedPermutations, 0) << "No DgnDb 2.0.0.7 compatibility file was tested";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 void Assert_BuiltinSchemaVersions_2_0_0_0 (TestIModel& testDb)
     {
     EXPECT_EQ(8, testDb.GetSchemaCount()) << testDb.GetDescription();
@@ -438,13 +498,16 @@ TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
                         Assert_BuiltinSchemaVersions_2_0_0_5(testDb);
                     else if (testDb.GetDgnDbProfileVersion() == ProfileVersion(2, 0, 0, 6))
                         Assert_BuiltinSchemaVersions_2_0_0_6(testDb);
+                    else if (testDb.GetDgnDbProfileVersion() == ProfileVersion(2, 0, 0, 7) ||
+                            testDb.GetDgnDbProfileVersion() == ProfileVersion(2, 0, 0, 8))
+                        Assert_BuiltinSchemaVersions_2_0_0_7(testDb);
                     else
                         FAIL() << "*ERROR* case not handled | " << testDb.GetDescription();
                     break;
                     }
                 case ProfileState::Age::UpToDate:
                     {
-                    if (testDb.GetDgnDbProfileVersion() == ProfileVersion(2, 0, 0, 7))
+                    if (testDb.GetDgnDbProfileVersion() == ProfileVersion(2, 0, 0, 9))
                         Assert_BuiltinSchemaVersions_2_0_0_7(testDb);
                     else 
                         FAIL() << "*ERROR* case not handled | " << testDb.GetDescription();
@@ -2178,7 +2241,7 @@ TEST_F(IModelCompatibilityTestFixture, UpgradeDomainIModelToEC32)
     IModelEvolutionTestsDomain::GetDomain().SetRequired(DgnDomain::Required::No);
     }
 
-TEST_F(IModelCompatibilityTestFixture, MajorSchemaUpgradeDeleteClassPropertyAndEnums)
+TEST_F(IModelCompatibilityTestFixture, MajorSchemaUpgradeDeleteClassPropertyAndEnumsDynamicSchema)
     {
     for (const auto& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EMPTY))
         {
@@ -2280,9 +2343,9 @@ TEST_F(IModelCompatibilityTestFixture, MajorSchemaUpgradeDeleteClassPropertyAndE
             EXPECT_NE(schema->GetClassCP("TestClassToDelete"), nullptr);
             EXPECT_NE(schema->GetClassCP("SubClassToDelete"), nullptr);
 
-            // Perform major schema change by deleting property and class
+            // Perform major change by deleting property and class without changing the schema major version
             auto deserializationCtxUpdate = TestFileCreator::DeserializeSchema(testDbPtr->GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                            <ECSchema schemaName="TestSchema" alias="ts" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                            <ECSchema schemaName="TestSchema" alias="ts" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                 <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
                                 <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
                                 <ECSchemaReference name="BisCore" version="01.00" alias="bis"/>
@@ -2349,7 +2412,7 @@ TEST_F(IModelCompatibilityTestFixture, MajorSchemaUpgradeDeleteClassPropertyAndE
         }
     }
 
-TEST_F(IModelCompatibilityTestFixture, MajorSchemaUpgradeDeleteKoQs)
+TEST_F(IModelCompatibilityTestFixture, MajorSchemaUpgradeDeleteKoQsDynamicSchema)
     {
     for (const auto& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EMPTY))
         {
@@ -2426,9 +2489,9 @@ TEST_F(IModelCompatibilityTestFixture, MajorSchemaUpgradeDeleteKoQs)
             EXPECT_NE(schema->GetClassCP("TestClassToDelete"), nullptr);
             EXPECT_NE(schema->GetClassCP("SubClassToDelete"), nullptr);
 
-            // Perform major schema change by deleting property and class
+            // Perform major change by deleting property and class without changing the schema major version
             auto deserializationCtxUpdate = TestFileCreator::DeserializeSchema(testDbPtr->GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                            <ECSchema schemaName="TestSchema" alias="ts" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                            <ECSchema schemaName="TestSchema" alias="ts" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                 <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
                                 <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
                                 <ECSchemaReference name="BisCore" version="01.00" alias="bis"/>
@@ -2542,9 +2605,9 @@ TEST_F(IModelCompatibilityTestFixture, MajorSchemaUpgradePropertyTypeChange)
             ASSERT_NE(deserializationCtx, nullptr) << testDbPtr->GetDescription();
             ASSERT_EQ(SchemaStatus::Success, dgnDb.ImportSchemas(deserializationCtx->GetCache().GetSchemas())) << testDbPtr->GetDescription();
 
-            // Perform major schema change by deleting property and class
+            // Perform major change by deleting property and class without changing the schema major version
             auto deserializationCtxUpdate = TestFileCreator::DeserializeSchema(testDbPtr->GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                            <ECSchema schemaName="TestSchema" alias="ts" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                            <ECSchema schemaName="TestSchema" alias="ts" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                 <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
                                 <ECSchemaReference name="BisCore" version="01.00" alias="bis"/>
                                 

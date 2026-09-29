@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../bentleybuild/PartFile.xsd">
+    
+  <ToolPart Name="OpenCppCoverage">
+      <Upack>OpenCppCoverage</Upack>
+  </ToolPart>
+
+  <!-- Tests in iModelCore build strategy -->
+  <Part Name="iModelCore-CodeCoverage" OnlyPlatforms="x64" PrgOutputDir="iModelCoreCoverage">
+      <SubToolPart Name="OpenCppCoverage"/> 
+      <SubPart PartName="Bentley-CodeCoverage"/>
+      <SubPart PartName="BeSQLite-CodeCoverage"/>
+      <SubPart PartName="iModelPlatform-CodeCoverage"/> 
+      <SubPart PartName="ECDb-CodeCoverage"/> 
+      <SubPart PartName="ECObjects-CodeCoverage"/> 
+      <SubPart PartName="ECPresentation-CodeCoverage"/>
+      <SubPart PartName="GeomLibs-CodeCoverage"/> 
+      <SubPart PartName="GeoCoord-CodeCoverage"/> 
+      <SubPart PartName="Units-CodeCoverage"/>
+  </Part>
+
+  <Part Name="Bentley-CodeCoverage" BentleyBuildMakeFile="RunCodeCoverage.mke" BentleyBuildMakeOptions="-dCOMP_Name=Bentley -dType=xml" OnlyPlatforms="x64">
+    <SubToolPart Name="OpenCppCoverage"/> 
+    <SubProduct PartFile="iModelCore/Bentley/Bentley" ProductName="Bentley-Gtest"    />
+  </Part>
+
+  <Part Name="BeSQLite-CodeCoverage" BentleyBuildMakeFile="RunCodeCoverage.mke" BentleyBuildMakeOptions="-dCOMP_Name=BeSQLite" OnlyPlatforms="x64">
+    <SubToolPart Name="OpenCppCoverage"/> 
+    <SubProduct PartFile="iModelCore/BeSQLite/BeSQLite" ProductName="BeSQLite-GTest"/>
+  </Part>
+
+  <Part Name="iModelPlatform-CodeCoverage" BentleyBuildMakeFile="RunCodeCoverage.mke" BentleyBuildMakeOptions="-dCOMP_Name=iModelPlatform" OnlyPlatforms="x64">
+    <SubToolPart Name="OpenCppCoverage"/> 
+    <SubProduct PartFile="iModelCore/iModelPlatform/iModelPlatform" ProductName="iModelPlatform-GTest"/>
+  </Part>
+
+  <Part Name="ECDb-CodeCoverage" BentleyBuildMakeFile="RunCodeCoverage.mke" BentleyBuildMakeOptions="-dCOMP_Name=ECDb" OnlyPlatforms="x64">
+    <SubToolPart Name="OpenCppCoverage"/> 
+    <SubProduct PartFile="iModelCore/ECDb/ECDb" ProductName="ECDb-GTest"/>
+  </Part>
+
+  <Part Name="ECObjects-CodeCoverage" BentleyBuildMakeFile="RunCodeCoverage.mke" BentleyBuildMakeOptions="-dCOMP_Name=ecobjects" OnlyPlatforms="x64">
+    <SubToolPart Name="OpenCppCoverage"/> 
+    <SubProduct PartFile="iModelCore/ECObjects/ECObjects" ProductName="ECObjects-GTest"/>
+  </Part>
+
+  <Part Name="ECPresentation-CodeCoverage" BentleyBuildMakeFile="RunCodeCoverage.mke" BentleyBuildMakeOptions="-dCOMP_Name=ECPresentation" OnlyPlatforms="x64">
+    <SubToolPart Name="OpenCppCoverage"/> 
+    <SubProduct PartFile="iModelCore/ECPresentation/ECPresentation" ProductName="ECPresentation-GTest"/>
+  </Part>
+
+  <Part Name="GeomLibs-CodeCoverage" BentleyBuildMakeFile="RunCodeCoverage.mke" BentleyBuildMakeOptions="-dCOMP_Name=GeomLibs" OnlyPlatforms="x64">
+    <SubToolPart Name="OpenCppCoverage"/> 
+    <SubProduct PartFile="iModelCore/GeomLibs/GeomLibs" ProductName="GeomLibs-GTest"/>
+  </Part>
+
+  <Part Name="GeoCoord-CodeCoverage" BentleyBuildMakeFile="RunCodeCoverage.mke" BentleyBuildMakeOptions="-dCOMP_Name=GeoCoord" OnlyPlatforms="x64">
+    <SubToolPart Name="OpenCppCoverage"/> 
+    <SubProduct PartFile="iModelCore/GeoCoord/GeoCoord" ProductName="GeoCoord-Gtest"/>
+  </Part>
+
+  <Part Name="Units-CodeCoverage" BentleyBuildMakeFile="RunCodeCoverage.mke" BentleyBuildMakeOptions="-dCOMP_Name=Units" OnlyPlatforms="x64">
+    <SubToolPart Name="OpenCppCoverage"/> 
+    <SubProduct PartFile="iModelCore/Units/Units" ProductName="Units-GTest"/>
+  </Part>
+</BuildContext>

@@ -1,5 +1,5 @@
 /*
- * Copyright (C)2021 D. R. Commander.  All Rights Reserved.
+ * Copyright (C)2021, 2024 D. R. Commander.  All Rights Reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -32,7 +32,7 @@
 #define main  cjpeg_main
 #define CJPEG_FUZZER
 extern "C" {
-#include "../cjpeg.c"
+#include "../src/cjpeg.c"
 }
 #undef main
 #undef CJPEG_FUZZER
@@ -57,13 +57,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     (char *)"-targa", NULL
   };
   int fd = -1;
-#if defined(__has_feature) && __has_feature(memory_sanitizer)
-  char env[18] = "JSIMD_FORCENONE=1";
-
-  /* The libjpeg-turbo SIMD extensions produce false positives with
-     MemorySanitizer. */
-  putenv(env);
-#endif
 
   snprintf(filename, FILENAME_MAX, "/tmp/libjpeg-turbo_cjpeg_fuzz.XXXXXX");
   if ((fd = mkstemp(filename)) < 0 || write(fd, data, size) < 0)

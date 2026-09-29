@@ -5,7 +5,6 @@
 #include <ECPresentationPch.h>
 
 #include "PresentationRuleJsonConstants.h"
-#include "PresentationRuleXmlConstants.h"
 #include "CommonToolsInternal.h"
 #include <ECPresentation/Rules/PresentationRules.h>
 
@@ -104,52 +103,6 @@ static Utf8CP ChildrenHintToString(ChildrenHint hint)
         case ChildrenHint::Never: return "Never";
         default: return "Unknown";
         }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ChildNodeSpecification::_ReadXml(BeXmlNodeP xmlNode)
-    {
-    if (!PresentationRuleSpecification::_ReadXml(xmlNode))
-        return false;
-
-    // optional:
-    bool alwaysReturnsChildrenValue;
-    Utf8String childrenHintValue;
-    if (BEXML_Success == xmlNode->GetAttributeStringValue(childrenHintValue, CHILD_NODE_SPECIFICATION_XML_ATTRIBUTE_HASCHILDREN))
-        m_hasChildren = ParseChildrenHint(childrenHintValue.c_str(), CHILD_NODE_SPECIFICATION_XML_ATTRIBUTE_HASCHILDREN);
-    else if (BEXML_Success == xmlNode->GetAttributeBooleanValue(alwaysReturnsChildrenValue, CHILD_NODE_SPECIFICATION_XML_ATTRIBUTE_ALWAYSRETURNSCHILDREN) && alwaysReturnsChildrenValue)
-        m_hasChildren = ChildrenHint::Always;
-    else
-        m_hasChildren = ChildrenHint::Unknown;
-
-    if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_hideNodesInHierarchy, CHILD_NODE_SPECIFICATION_XML_ATTRIBUTE_HIDENODESINHIERARCHY))
-        m_hideNodesInHierarchy = false;
-
-    if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_hideIfNoChildren, CHILD_NODE_SPECIFICATION_XML_ATTRIBUTE_HIDEIFNOCHILDREN))
-        m_hideIfNoChildren = false;
-
-    if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_doNotSort, SORTING_RULE_XML_ATTRIBUTE_DONOTSORT))
-        m_doNotSort = false;
-
-    CommonToolsInternal::LoadSpecificationsFromXmlNode<RelatedInstanceSpecification, RelatedInstanceSpecificationList> (xmlNode, m_relatedInstances, RELATED_INSTANCE_SPECIFICATION_XML_NODE_NAME, this);
-    CommonToolsInternal::LoadRulesFromXmlNode<ChildNodeRule, ChildNodeRuleList>(xmlNode, m_nestedRules, CHILD_NODE_RULE_XML_NODE_NAME, this);
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ChildNodeSpecification::_WriteXml(BeXmlNodeP specificationNode) const
-    {
-    PresentationRuleSpecification::_WriteXml(specificationNode);
-    specificationNode->AddAttributeStringValue(CHILD_NODE_SPECIFICATION_XML_ATTRIBUTE_HASCHILDREN, ChildrenHintToString(m_hasChildren));
-    specificationNode->AddAttributeBooleanValue (CHILD_NODE_SPECIFICATION_XML_ATTRIBUTE_HIDENODESINHIERARCHY, m_hideNodesInHierarchy);
-    specificationNode->AddAttributeBooleanValue (CHILD_NODE_SPECIFICATION_XML_ATTRIBUTE_HIDEIFNOCHILDREN, m_hideIfNoChildren);
-    specificationNode->AddAttributeBooleanValue (SORTING_RULE_XML_ATTRIBUTE_DONOTSORT, m_doNotSort);
-    CommonToolsInternal::WriteRulesToXmlNode<RelatedInstanceSpecification, RelatedInstanceSpecificationList>(specificationNode, m_relatedInstances);
-    CommonToolsInternal::WriteRulesToXmlNode<ChildNodeRule, ChildNodeRuleList>(specificationNode, m_nestedRules);
     }
 
 /*---------------------------------------------------------------------------------**//**

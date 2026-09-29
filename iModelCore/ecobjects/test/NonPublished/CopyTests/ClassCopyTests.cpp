@@ -5,7 +5,6 @@
 
 #include "../../ECObjectsTestPCH.h"
 #include "../../TestFixture/TestFixture.h"
-#include "BeXml/BeXml.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -283,6 +282,47 @@ TEST_F(ClassCopyTest, CopyRelationshipClassWithConstraintClassesInRefSchemaAndOr
     ASSERT_EQ(ecCopiedRel->GetTarget().GetConstraintClasses().size(), 1);
     ASSERT_EQ(ecCopiedRel->GetTarget().GetConstraintClasses().at(0), copySchemaFrom->GetClassP("Room"));
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ClassCopyTest, RelationshipClassesWithNoBaseClass)
+{
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TestSchema" nameSpacePrefix="ts" version="01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECClass typeName="apple" isDomainClass="True">
+                </ECClass>
+                <ECClass typeName="banana" isDomainClass="True">
+                </ECClass>
+                <ECRelationshipClass typeName="foo" isDomainClass="True" strength="referencing" strengthDirection="forward">
+                    <Source cardinality="(0,N)" polymorphic="false">
+                        <Class class="apple" />
+                        <Class class="banana" />
+                    </Source>
+                    <Target cardinality="(0,1)" polymorphic="false">
+                        <Class class="apple" />
+                    </Target>
+                </ECRelationshipClass>
+            </ECSchema>)xml";
+
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *context);
+    ASSERT_EQ(SchemaReadStatus::Success, status) << "Failed to load schema";
+
+    ECSchemaPtr copySchema;
+    ECObjectsStatus copyStatus = ECSchema::CreateSchema(copySchema, "CopySchema", "cs", 1, 0, 0);
+    ASSERT_EQ(ECObjectsStatus::Success, copyStatus) << "Failed to create copy schema";
+    ECClassP ecClass = schema->GetClassP("foo");
+    ASSERT_NE(ecClass, nullptr);
+    ASSERT_TRUE(ecClass->IsRelationshipClass());
+
+    ECClassP copiedClassTrue, copiedClassFalse;
+    copyStatus = copySchema->CopyClass(copiedClassFalse, *ecClass, true);
+    ASSERT_NE(ECObjectsStatus::Success, copyStatus) << "Failed to copy class";
+    copyStatus = copySchema->CopyClass(copiedClassTrue, *ecClass, true, nullptr, true);
+    ASSERT_EQ(ECObjectsStatus::Success, copyStatus) << "Failed to copy class";
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod

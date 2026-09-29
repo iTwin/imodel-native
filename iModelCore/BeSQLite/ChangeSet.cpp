@@ -97,18 +97,27 @@ void DdlChanges::AddDDL(Utf8CP ddl)
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<Utf8String>  DdlChanges::GetDDLs() const {
-    const auto kStmtDelimiter = ";";
-    bvector<Utf8String> individualSQLs;
-    BeStringUtilities::Split(ToString().c_str(), kStmtDelimiter, individualSQLs);
+    Utf8String const ddl = ToString();
+    bvector<Utf8String> statements;
+    size_t start = 0;
+    for (size_t end = ddl.find(';'); end != Utf8String::npos; end = ddl.find(';', end + 1)) {
+        Utf8String statement = ddl.substr(start, end - start + 1);
+        // A semicolon inside a trigger, quoted value, or comment does not end the statement.
+        if (!sqlite3_complete(statement.c_str()))
+            continue;
 
-    auto it = individualSQLs.begin();
-    while(it != individualSQLs.end()) {
-        if (it->Trim().empty())
-            it = individualSQLs.erase(it);
-        else
-            ++it;
+        statement.pop_back(); // AddDDL supplies the separator when statements are regrouped.
+        // Preserve whitespace: a newline may terminate a SQL line comment.
+        if (!Utf8String(statement).Trim().empty())
+            statements.push_back(std::move(statement));
+        start = end + 1;
     }
-    return individualSQLs;
+
+    // Existing changesets may omit the final semicolon. Keep incomplete SQL too, so execution reports it.
+    Utf8String remainder = ddl.substr(start);
+    if (!Utf8String(remainder).Trim().empty())
+        statements.push_back(std::move(remainder));
+    return statements;
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -335,6 +344,85 @@ DbResult ChangeTracker::DifferenceToDb(Utf8StringP errMsgOut, BeFileNameCR baseF
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangeSet::Write(Utf8StringCR pathname) const {
+    BeFile file;
+    if (BeFileStatus::Success != file.Create(pathname))
+        return BE_SQLITE_ERROR;
+
+    for(auto& chunk : m_data.m_chunks) {
+        if (BeFileStatus::Success != file.Write(nullptr, (const void *)chunk.data(), (uint32_t)chunk.size())){
+            file.Close();
+            return BE_SQLITE_ERROR;
+        }
+    }
+    file.Flush();
+    file.Close();
+    return BE_SQLITE_OK;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t ChangesetFile::GetSize() const {
+    uint64_t size = 0;
+    m_file.GetSize(size);
+    return (size_t)size;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangesetFile::_Append(Byte const* data, int size) {
+    m_file.Write(nullptr, data, size);
+    m_file.Flush();
+    return BE_SQLITE_OK;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ChangesetFile::ChangesetFile(Utf8String name) : m_fileName(name) {
+    m_file.Create(m_fileName);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ChangesetFile::~ChangesetFile() {
+    m_file.Flush();
+    m_file.Close();
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangeSet::Read(Utf8StringCR pathname) {
+    BeFile file;
+    if (BeFileStatus::Success != file.Open(pathname, BeFileAccess::Read ))
+        return BE_SQLITE_ERROR;
+
+    m_data.Clear();
+    uint8_t buffer[64 * 1024];
+    uint32_t bytesRead = 0;
+
+    if (BeFileStatus::Success != file.Read(buffer, & bytesRead, sizeof(buffer))) {
+        m_data.Clear();
+        return BE_SQLITE_ERROR;
+    }
+
+    while (bytesRead > 0) {
+        m_data.Append(buffer, bytesRead);
+        if (BeFileStatus::Success != file.Read(buffer, & bytesRead, sizeof(buffer))){
+            m_data.Clear();
+            return BE_SQLITE_ERROR;
+        }
+    }
+    return BE_SQLITE_OK;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 DbResult ChangeSet::Invert() {
     if (!IsValid()) {
         BeAssert(false);
@@ -410,9 +498,53 @@ DbValue  Changes::Change::GetNewValue(int colNum) const {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+Changes::Change::Change(SqlChangesetIterP iter, bool isValid) {
+    m_iter = iter;
+    m_isValid = isValid;
+    LoadOperation();
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void Changes::Change::LoadOperation() const {
+    Utf8CP tableName = nullptr;
+    auto rc = m_iter != nullptr ? GetOperation(&tableName, &m_nCols, &m_opcode, &m_indirect) : BE_SQLITE_ERROR;
+    if (rc != BE_SQLITE_OK) {
+        m_tableName.clear();
+        m_nCols = 0;
+        m_indirect = 0;
+        m_opcode = (DbOpcode)0;
+    }
+    m_tableName.AssignOrClear(tableName);
+    rc = m_iter != nullptr ? GetPrimaryKeyColumns(&m_primaryKeyColumns, &m_primaryKeyColumnsCount) : BE_SQLITE_ERROR;
+    if (rc != BE_SQLITE_OK) {
+        m_primaryKeyColumns = nullptr;
+        m_primaryKeyColumnsCount = 0;
+    }
+    rc = m_iter != nullptr && m_tableName.empty() ? GetFKeyConflicts(&m_foreignKeyConflicts) : BE_SQLITE_ERROR;
+    if (rc != BE_SQLITE_OK) {
+        m_foreignKeyConflicts = 0;
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Changes::Change::IsPrimaryKeyColumn(int colNum) const {
+    if (m_primaryKeyColumns == nullptr || colNum < 0 || colNum >= m_primaryKeyColumnsCount) {
+        return false;
+    }
+    return m_primaryKeyColumns[colNum] != 0;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 Changes::Change& Changes::Change::operator++()
     {
     m_isValid = (BE_SQLITE_ROW == (DbResult) sqlite3changeset_next(m_iter));
+    LoadOperation();
     return  *this;
     }
 
@@ -706,8 +838,9 @@ int ChangeStream::ConflictCallback(void* pCtx, int cause, SqlChangesetIterP iter
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-int ChangeStream::FilterTableCallback(void* pCtx, Utf8CP tableName) {
-    return (int)((ChangeStream*)pCtx)->_FilterTable(tableName);
+int ChangeStream::FilterChangeCallback(void* pCtx, SqlChangesetIterP iter) {
+    Changes::Change change(iter, true);
+    return (int)((ChangeStream*)pCtx)->_FilterChange(change);
 }
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -765,7 +898,7 @@ DbResult ChangeStream::ToChangeSet(ChangeSet& changeSet, bool invert) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ChangeStream::ApplyChanges(DbR db, Rebase* rebase, bool invert, bool ignoreNoop, bool fkNoAction) const
+DbResult ChangeStream::ApplyChanges(DbR db, bool invert, bool ignoreNoop, bool fkNoAction) const
     {
     int flags = SQLITE_CHANGESETAPPLY_NOSAVEPOINT;
     if (invert)
@@ -775,8 +908,8 @@ DbResult ChangeStream::ApplyChanges(DbR db, Rebase* rebase, bool invert, bool ig
     if(fkNoAction)
         flags |= SQLITE_CHANGESETAPPLY_FKNOACTION;
     auto reader = _GetReader();
-    DbResult result = (DbResult) sqlite3changeset_apply_v2_strm(db.GetSqlDb(), Changes::Reader::ReadCallback, (void*) reader.get(), FilterTableCallback, ConflictCallback, (void*) this,
-        rebase ? &rebase->m_data : nullptr, rebase ? &rebase->m_size : nullptr, flags);
+    DbResult result = (DbResult) sqlite3changeset_apply_v3_strm(db.GetSqlDb(), Changes::Reader::ReadCallback, (void*) reader.get(), FilterChangeCallback, ConflictCallback, (void*) this,
+        nullptr,  nullptr, flags);
     return result;
     }
 
@@ -792,17 +925,19 @@ DbResult ChangeStream::ApplyChanges(DbR db, ApplyChangesArgs const& args) const
         flags |= SQLITE_CHANGESETAPPLY_IGNORENOOP;
     if(args.GetFkNoAction())
         flags |= SQLITE_CHANGESETAPPLY_FKNOACTION;
+    if(args.GetNoUpdateLoop())
+        flags |= SQLITE_CHANGESETAPPLY_NOUPDATELOOP;
     auto reader = _GetReader();
     m_args = &args;
 
-    DbResult result = (DbResult) sqlite3changeset_apply_v2_strm(
+    DbResult result = (DbResult) sqlite3changeset_apply_v3_strm(
         db.GetSqlDb(),
         Changes::Reader::ReadCallback,
         (void*) reader.get(),
-        ApplyChangesArgs::FilterTableCallback,
+        ApplyChangesArgs::FilterChangeCallback,
         ApplyChangesArgs::ConflictCallback,
         (void*) this,
-        args.GetRebase() ? &(args.GetRebase()->m_data) : nullptr, args.GetRebase() ? &(args.GetRebase()->m_size) : nullptr,
+        nullptr, nullptr,
         flags);
 
     m_args = nullptr;
@@ -857,28 +992,19 @@ DbResult ChangeSet::ConcatenateWith(ChangeSet const& second)
     return FromConcatenatedChangeStreams(saved, second);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Rebaser::Rebaser() { sqlite3rebaser_create(&m_rebaser); }
-Rebaser::~Rebaser() { sqlite3rebaser_delete(m_rebaser); }
-DbResult Rebaser::AddRebase(Rebase const& rebase) { return (DbResult)sqlite3rebaser_configure(m_rebaser, rebase.GetSize(), rebase.GetData()); }
-DbResult Rebaser::AddRebase(void const* data, int count) { return (DbResult)sqlite3rebaser_configure(m_rebaser, count, data); }
-DbResult Rebaser::DoRebase(ChangeStream const& in, ChangeStream& out) {
-    auto reader = in._GetReader();
-    return (DbResult)sqlite3rebaser_rebase_strm(m_rebaser, Changes::Reader::ReadCallback, reader.get(), out.AppendCallback, &out);
-}
-Rebase::~Rebase() {
-    if (m_data) BeSQLiteLib::FreeMem(m_data);
-}
-
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 int ApplyChangesArgs::ConflictCallback(void* pCtx, int cause, SqlChangesetIterP iter) {
     const auto changeStream = (ChangeStream*)pCtx;
-    if (changeStream->m_args && changeStream->m_args->HasConflictHandler()){
-        return (int)(((ChangeStream*)pCtx)->m_args)->OnConflict((ChangeSet::ConflictCause)cause, Changes::Change(iter, true));
+    auto thisArgs = changeStream->m_args;
+    if (thisArgs) {
+        if (thisArgs->m_abortOnAnyConflict) {
+            return (int)ChangeStream::ConflictResolution::Abort;
+        }
+        if (thisArgs->HasConflictHandler()){
+            return (int)(((ChangeStream*)pCtx)->m_args)->OnConflict((ChangeSet::ConflictCause)cause, Changes::Change(iter, true));
+        }
     }
     return (int)changeStream->_OnConflict((ChangeSet::ConflictCause)cause, Changes::Change(iter, true));
 }
@@ -886,20 +1012,45 @@ int ApplyChangesArgs::ConflictCallback(void* pCtx, int cause, SqlChangesetIterP 
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-int ApplyChangesArgs::FilterTableCallback(void* pCtx, Utf8CP tableName) {
+int ApplyChangesArgs::FilterChangeCallback(void* pCtx, SqlChangesetIterP iter) {
     const auto changeStream = (ChangeStream*)pCtx;
-    if (changeStream->m_args && changeStream->m_args->HasFilterTable()){
-        return (int)(((ChangeStream*)pCtx)->m_args)->FilterTable(tableName);
+    Changes::Change change(iter, true);
+    if (changeStream->m_args && changeStream->m_args->HasFilterChange()){
+        return (int)(((ChangeStream*)pCtx)->m_args)->FilterChange(change)  ;
     }
-    return (int)changeStream->_FilterTable(tableName);
+    return (int)changeStream->_FilterChange(change);
 }
 
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ApplyChangesArgs::IsSchemaTable(Utf8CP tableName) {
-    if (!tableName) {
-        return false;
+bool ApplyChangesArgs::IsSchemaChange(Changes::Change const& change) {
+    const auto kBePropTableName = "be_Prop";
+    const auto kDgnDbNamespace = "dgndb_Db";
+    const auto kBeDbNamespace = "be_Db";
+    const auto kEcDbNamespace = "ec_Db";
+    const auto kSchemaVersion = "SchemaVersion";
+    const auto kLocalDbInfo = "localDbInfo";
+    const auto& tableName = change.GetTableName();
+
+    if (tableName.EqualsIAscii(kBePropTableName)) {
+        auto namespaceVal = change.GetOpcode() != DbOpcode::Insert ? change.GetOldValue(0) : change.GetNewValue(0);
+        auto nameVal = change.GetOpcode() != DbOpcode::Insert ? change.GetOldValue(1) : change.GetNewValue(1);
+        const auto ns = namespaceVal.IsValid() && namespaceVal.GetValueType() == DbValueType::TextVal ? namespaceVal.GetValueText() : nullptr;
+        const auto name = nameVal.IsValid() && nameVal.GetValueType() == DbValueType::TextVal ? nameVal.GetValueText() : nullptr;
+        if (ns && name){
+            if (0 == BeStringUtilities::StricmpAscii(ns, kDgnDbNamespace) && 0 == BeStringUtilities::StricmpAscii(name, kSchemaVersion) ) {
+                return true;
+            }
+            if (0 == BeStringUtilities::StricmpAscii(ns, kBeDbNamespace) && 0 == BeStringUtilities::StricmpAscii(name, kSchemaVersion) ) {
+                return true;
+            }
+            if (0 == BeStringUtilities::StricmpAscii(ns, kEcDbNamespace)) {
+                if (0 == BeStringUtilities::StricmpAscii(name, kSchemaVersion) || 0 == BeStringUtilities::StricmpAscii(name, kLocalDbInfo)) {
+                    return true;
+                }
+            }
+        }
     }
 
     if (!tableName[0] || (tableName[0] != 'e' && tableName[0] != 'E'))  {
@@ -920,9 +1071,38 @@ bool ApplyChangesArgs::IsSchemaTable(Utf8CP tableName) {
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ChangeStream::ApplyChangesForTable ApplyChangesArgs::FilterTable(Utf8CP tableName) const {
-    auto rc = m_filterTable ? m_filterTable(tableName) : ChangeStream::ApplyChangesForTable::Yes;
-    if (rc == ChangeStream::ApplyChangesForTable::Yes ){
+bool ApplyChangesArgs::IsSchemaTable(Utf8CP tableName) {
+    if (!tableName) {
+        return false;
+    }
+    // Be_Prop contain ECD/DGN/BE profile version information and should be treated as schema table
+    // After schema changes is applied we need updated profile version information or else it will cause issues
+    // while validating ECDb mapping.
+    if (BeStringUtilities::StricmpAscii(tableName, "be_Prop") == 0) {
+        return true;
+    }
+
+    if (!tableName[0] || (tableName[0] != 'e' && tableName[0] != 'E'))  {
+        return false;
+    }
+
+    if (!tableName[1] || (tableName[1] != 'c' && tableName[1] != 'C')) {
+        return false;
+    }
+
+    if (!tableName[2] || tableName[2] != '_' ) {
+        return false;
+    }
+
+    return true;
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ChangeStream::FilterChangeAction ApplyChangesArgs::FilterChange(Changes::Change const& change) const {
+    auto rc = m_filterChange ? m_filterChange(change) : ChangeStream::FilterChangeAction::Accept;
+    if (rc == ChangeStream::FilterChangeAction::Accept){
         ++m_filterRowCount;
     }
     return rc;
@@ -936,5 +1116,21 @@ ChangeStream::ConflictResolution ApplyChangesArgs::OnConflict(ChangeStream::Conf
     ++m_conflictRowCount;
     return rc;
 }
-ApplyChangesArgs& ApplyChangesArgs::ApplyOnlySchemaChanges() { m_filterTable = [](Utf8CP tableName) { return ApplyChangesArgs::IsSchemaTable(tableName) ? ChangeStream::ApplyChangesForTable::Yes : ChangeStream::ApplyChangesForTable::No; }; return *this; }
-ApplyChangesArgs& ApplyChangesArgs::ApplyOnlyDataChanges() { m_filterTable = [](Utf8CP tableName) { return ApplyChangesArgs::IsSchemaTable(tableName) ? ChangeStream::ApplyChangesForTable::No : ChangeStream::ApplyChangesForTable::Yes; }; return *this; }
+
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ApplyChangesArgs& ApplyChangesArgs::ApplyOnlySchemaChanges() {
+    m_filterChange = [](Changes::Change const& change) {
+        return ApplyChangesArgs::IsSchemaChange(change) ? ChangeStream::FilterChangeAction::Accept : ChangeStream::FilterChangeAction::Skip;
+    }; return *this;
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ApplyChangesArgs& ApplyChangesArgs::ApplyOnlyDataChanges() {
+    m_filterChange = [](Changes::Change const& change) {
+        return ApplyChangesArgs::IsSchemaChange(change) ? ChangeStream::FilterChangeAction::Skip : ChangeStream::FilterChangeAction::Accept;
+    }; return *this;
+}

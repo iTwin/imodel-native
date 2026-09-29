@@ -10,6 +10,9 @@ using namespace IModelJsNative;
 /** call the JavaScript logger */
 void JsLogger::logToJs(Utf8CP category, SEVERITY sev, Utf8CP msg)
     {
+    if (m_loggerObj.IsEmpty())
+        return;
+
     Utf8CP fname = (sev == LOG_TRACE) ?   "logTrace" :
                    (sev == LOG_INFO) ?    "logInfo" :
                    (sev == LOG_WARNING) ? "logWarning" :
@@ -52,7 +55,7 @@ void JsLogger::SyncLogLevels()
     // in the TypeScript class, but that doesn't stop us from accessing it in JavaScript.
     auto jsCategoryFilter = m_loggerObj.Get("categoryFilter").As<Napi::Object>();
     if (jsCategoryFilter == undefined)
-        BeNapi::ThrowJsException(JsInterop::Env(), "Invalid Logger");
+        THROW_JS_IMODEL_NATIVE_EXCEPTION(JsInterop::Env(), "Invalid Logger", IModelJsNativeErrorKey::BadArg);
 
     m_categoryFilter.clear();
 
@@ -99,7 +102,10 @@ void JsLogger::Cleanup()
     BeMutexHolder lock(m_mutex);
     m_loggerObj.Reset();
     if (m_processLogsOnMainThread)
+        {
         m_processLogsOnMainThread.Release();
+        m_processLogsOnMainThread = Napi::ThreadSafeFunction();
+        }
     }
 
 void JsLogger::LogMessage(Utf8CP category, SEVERITY sev, Utf8CP msg)

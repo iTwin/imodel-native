@@ -41,7 +41,18 @@ SchemaImportResult SchemaManager::ImportSchemas(bvector<ECSchemaCP> const& schem
     {
     return Main().ImportSchemas(schemas, options, token, syncDbUri);
     }
-
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+bool SchemaManager::IsSubClassOf(Utf8StringCR subClassECSqlName, Utf8StringCR parentClassECSqlName, Utf8CP tableSpace) const {
+      return m_dispatcher->IsSubClassOf(subClassECSqlName, parentClassECSqlName, tableSpace);
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+bool SchemaManager::IsSubClassOf(ECN::ECClassId subClassId, ECN::ECClassId parentClassId, Utf8CP tableSpace) const {
+      return m_dispatcher->IsSubClassOf(subClassId, parentClassId, tableSpace);
+}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------

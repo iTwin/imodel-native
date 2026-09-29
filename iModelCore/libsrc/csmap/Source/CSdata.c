@@ -428,6 +428,11 @@ Const double cs_SPTest = (-PI_OVR_2 + 4.85E-08);	/* South Pole TEST value. */
 Const double cs_EETest = ( PI_OVR_2 - 4.85E-08);	/* East Extent TEST value. */
 Const double cs_WETest = (-PI_OVR_2 + 4.85E-08);	/* West Extent TEST value. */
 
+#ifdef GEOCOORD_ENHANCEMENT
+Const double cs_EEUSRTest = ( PI_OVR_2 * 2.0 / 3.0); /* East extent where it is unreasonably out of central meridian to perform trustworthy conversion */
+Const double cs_WEUSRTest = (-PI_OVR_2 * 2.0 / 3.0); /* West extent where it is unreasonably out of central meridian to perform trustworthy conversion */
+#endif
+
 /*
 	The following are used where appropriate to filter out noise
 	in the low order bits of double precision latitude and

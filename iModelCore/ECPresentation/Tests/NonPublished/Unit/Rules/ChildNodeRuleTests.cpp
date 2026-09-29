@@ -124,75 +124,6 @@ TEST_F(SubConditionTests, WriteToJson)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SubConditionTests, LoadsFromXml)
-    {
-    static Utf8CP xmlString = R"(
-        <SubCondition Condition="condition">
-            <SubCondition Condition="nestedSubCondition"/>
-            <AllInstances/>
-            <AllRelatedInstances/>
-            <CustomNode Type="some type" Label="some label" />
-            <InstancesOfSpecificClasses ClassNames="TestSchema:TestClass"/>
-            <RelatedInstances/>
-            <SearchResultInstances/>
-        </SubCondition>
-        )";
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
-    ASSERT_EQ(BEXML_Success, xmlStatus);
-
-    SubCondition rule;
-    EXPECT_TRUE(rule.ReadXml(xml->GetRootElement()));
-    EXPECT_STREQ("condition", rule.GetCondition().c_str());
-    EXPECT_EQ(6, rule.GetSpecifications().size());
-    EXPECT_EQ(1, rule.GetSubConditions().size());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SubConditionTests, LoadsFromXmlWithDefaultValues)
-    {
-    static Utf8CP xmlString = "<SubCondition/>";
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
-    ASSERT_EQ(BEXML_Success, xmlStatus);
-
-    SubCondition rule;
-    EXPECT_TRUE(rule.ReadXml(xml->GetRootElement()));
-    EXPECT_STREQ("", rule.GetCondition().c_str());
-    EXPECT_EQ(0, rule.GetSpecifications().size());
-    EXPECT_EQ(0, rule.GetSubConditions().size());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SubConditionTests, WriteToXml)
-    {
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xml = BeXmlDom::CreateEmpty();
-    xml->AddNewElement("Root", nullptr, nullptr);
-
-    SubCondition rule("condition");
-    rule.AddSubCondition(*new SubCondition("nestedCondition"));
-    rule.AddSpecification(*new AllInstanceNodesSpecification(1000, true, true, true, true, true, "SupportedSchema"));
-    rule.WriteXml(xml->GetRootElement());
-
-    static Utf8CP expected = ""
-        "<Root>"
-        R"(<SubCondition Condition="condition">)"
-        R"(<SubCondition Condition="nestedCondition"/>)"
-        R"(<AllInstances Priority="1000" HasChildren="Always" HideNodesInHierarchy="true" HideIfNoChildren="true" DoNotSort="false" GroupByClass="true" GroupByLabel="true" SupportedSchemas="SupportedSchema"/>)"
-        R"(</SubCondition>)"
-        "</Root>";
-
-    EXPECT_STREQ(ToPrettyString(*BeXmlDom::CreateAndReadFromString(xmlStatus, expected)).c_str(), ToPrettyString(*xml).c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SubConditionTests, ComputesCorrectHashes)
@@ -228,7 +159,7 @@ struct ChildNodeRuleTests : PresentationRulesTests
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChildNodeRuleTests, CopyConstructorWorksCorrectly)
     {
-    ChildNodeRule rule1("condition", 1000, true, RuleTargetTree::TargetTree_Both);
+    ChildNodeRule rule1("condition", 1000, true);
     rule1.AddSubCondition(*new SubCondition("subCondition"));
     rule1.AddSpecification(*new AllInstanceNodesSpecification());
     rule1.AddCustomizationRule(*new CheckBoxRule());
@@ -246,57 +177,6 @@ TEST_F(ChildNodeRuleTests, CopyConstructorWorksCorrectly)
     // Validate CustomizationRules
     EXPECT_EQ(rule1.GetCustomizationRules().size(), rule2.GetCustomizationRules().size());
     EXPECT_NE(rule1.GetCustomizationRules()[0], rule2.GetCustomizationRules()[0]);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ChildNodeRuleTests, TargetTreeParsedCorrectlyAsMainTree)
-    {
-    static Utf8CP xmlString = R"(
-        <ChildNodeRule TargetTree="MainTree"/>
-        )";
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
-    ASSERT_EQ(BEXML_Success, xmlStatus);
-
-    ChildNodeRule rule;
-    EXPECT_TRUE(rule.ReadXml(xml->GetRootElement()));
-    EXPECT_EQ(RuleTargetTree::TargetTree_MainTree, rule.GetTargetTree());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ChildNodeRuleTests, TargetTreeParsedCorrectlyAsBoth)
-    {
-    static Utf8CP xmlString = R"(
-        <ChildNodeRule TargetTree="Both"/>
-        )";
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
-    ASSERT_EQ(BEXML_Success, xmlStatus);
-
-    ChildNodeRule rule;
-    EXPECT_TRUE(rule.ReadXml(xml->GetRootElement()));
-    EXPECT_EQ(RuleTargetTree::TargetTree_Both, rule.GetTargetTree());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ChildNodeRuleTests, TargetTreeParsesByDefaultAsMainTree)
-    {
-    static Utf8CP xmlString = R"(
-        <ChildNodeRule TargetTree=""/>
-        )";
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
-    ASSERT_EQ(BEXML_Success, xmlStatus);
-
-    ChildNodeRule rule;
-    EXPECT_TRUE(rule.ReadXml(xml->GetRootElement()));
-    EXPECT_EQ(RuleTargetTree::TargetTree_MainTree, rule.GetTargetTree());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -391,7 +271,7 @@ TEST_F(ChildNodeRuleTests, LoadsFromJsonWithDefaultValues)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChildNodeRuleTests, WriteToJson)
     {
-    ChildNodeRule rule("cond", 123, true, TargetTree_MainTree);
+    ChildNodeRule rule("cond", 123, true);
     rule.AddRequiredSchemaSpecification(*new RequiredSchemaSpecification("TestSchema"));
     BeJsDocument json = rule.WriteJson();
     BeJsDocument expected(R"({
@@ -402,87 +282,6 @@ TEST_F(ChildNodeRuleTests, WriteToJson)
         "priority": 123
     })");
     EXPECT_TRUE(expected.isExactEqual(json));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ChildNodeRuleTests, LoadsFromXml)
-    {
-    static Utf8CP xmlString = R"(
-        <ChildNodeRule TargetTree="SelectionTree" StopFurtherProcessing="true">
-            <SubCondition Condition="conditionOfSubCondition"/>
-            <AllInstances/>
-            <AllRelatedInstances/>
-            <CustomNode Type="some type" Label="some label" />
-            <InstancesOfSpecificClasses ClassNames="TestSchema:TestClass"/>
-            <RelatedInstances/>
-            <SearchResultInstances/>
-            <GroupingRule SchemaName="TestSchema" ClassName="TestClass"/>
-            <CheckBoxRule/>
-            <StyleOverride/>
-            <LabelOverride/>
-            <InstanceLabelOverride ClassName="Schema:Class" PropertyNames="TestProp" />
-            <SortingRule/>
-            <ImageIdOverride/>
-        </ChildNodeRule>
-        )";
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
-    ASSERT_EQ(BEXML_Success, xmlStatus);
-
-    ChildNodeRule rule;
-    EXPECT_TRUE(rule.ReadXml(xml->GetRootElement()));
-    EXPECT_EQ(RuleTargetTree::TargetTree_SelectionTree, rule.GetTargetTree());
-    EXPECT_TRUE(rule.GetStopFurtherProcessing());
-    EXPECT_EQ(6, rule.GetSpecifications().size());
-    EXPECT_EQ(1, rule.GetSubConditions().size());
-    EXPECT_EQ(6, rule.GetCustomizationRules().size());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ChildNodeRuleTests, LoadsFromXmlWithDefaultValues)
-    {
-    static Utf8CP xmlString = "<ChildNodeRule/>";
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
-    ASSERT_EQ(BEXML_Success, xmlStatus);
-
-    ChildNodeRule rule;
-    EXPECT_TRUE(rule.ReadXml(xml->GetRootElement()));
-    EXPECT_EQ(RuleTargetTree::TargetTree_MainTree, rule.GetTargetTree());
-    EXPECT_FALSE(rule.GetStopFurtherProcessing());
-    EXPECT_EQ(0, rule.GetSpecifications().size());
-    EXPECT_EQ(0, rule.GetSubConditions().size());
-    EXPECT_EQ(0, rule.GetCustomizationRules().size());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ChildNodeRuleTests, WriteToXml)
-    {
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xml = BeXmlDom::CreateEmpty();
-    xml->AddNewElement("Root", nullptr, nullptr);
-
-    ChildNodeRule rule("condition", 1000, true, RuleTargetTree::TargetTree_Both);
-    rule.AddSubCondition(*new SubCondition("nestedCondition"));
-    rule.AddSpecification(*new AllInstanceNodesSpecification(1000, true, true, true, true, true, "SupportedSchema"));
-    rule.AddCustomizationRule(*new LabelOverride());
-    rule.WriteXml(xml->GetRootElement());
-
-    static Utf8CP expected = ""
-        "<Root>"
-        R"(<ChildNodeRule Priority="1000" OnlyIfNotHandled="true" Condition="condition" TargetTree="Both" StopFurtherProcessing="false">)"
-        R"(<SubCondition Condition="nestedCondition"/>)"
-        R"(<AllInstances Priority="1000" HasChildren="Always" HideNodesInHierarchy="true" HideIfNoChildren="true" DoNotSort="false" GroupByClass="true" GroupByLabel="true" SupportedSchemas="SupportedSchema"/>)"
-        R"(<LabelOverride Priority="1000" OnlyIfNotHandled="false" Condition="" Label="" Description=""/>)"
-        R"(</ChildNodeRule>)"
-        "</Root>";
-    EXPECT_STREQ(ToPrettyString(*BeXmlDom::CreateAndReadFromString(xmlStatus, expected)).c_str(), ToPrettyString(*xml).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -521,7 +320,7 @@ struct RootNodeRuleTests : PresentationRulesTests
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RootNodeRuleTests, WriteToJson)
     {
-    RootNodeRule rule("cond", 123, true, TargetTree_MainTree, true);
+    RootNodeRule rule("cond", 123, true, true);
     BeJsDocument json = rule.WriteJson();
     BeJsDocument expected(R"({
         "ruleType": "RootNodes",
@@ -531,25 +330,6 @@ TEST_F(RootNodeRuleTests, WriteToJson)
         "autoExpand": true
     })");
     EXPECT_TRUE(expected.isExactEqual(json));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RootNodeRuleTests, WriteToXml)
-    {
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xml = BeXmlDom::CreateEmpty();
-    xml->AddNewElement("Root", nullptr, nullptr);
-
-    RootNodeRule rule;
-    rule.WriteXml(xml->GetRootElement());
-
-    static Utf8CP expected = ""
-        "<Root>"
-        R"(<RootNodeRule Priority="1000" OnlyIfNotHandled="false" Condition="" TargetTree="MainTree" StopFurtherProcessing="false" AutoExpand="false"/>)"
-        "</Root>";
-    EXPECT_STREQ(ToPrettyString(*BeXmlDom::CreateAndReadFromString(xmlStatus, expected)).c_str(), ToPrettyString(*xml).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

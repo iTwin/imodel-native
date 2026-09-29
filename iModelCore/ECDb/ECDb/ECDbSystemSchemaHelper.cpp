@@ -221,6 +221,9 @@ ExtendedTypeHelper::ExtendedType ExtendedTypeHelper::GetExtendedType(Utf8StringC
         { EXTENDEDTYPENAME_TargetClassId, ExtendedType::TargetClassId },
         { EXTENDEDTYPENAME_NavId, ExtendedType::NavId },
         { EXTENDEDTYPENAME_NavRelClassId, ExtendedType::NavRelClassId },
+        { EXTENDEDTYPENAME_BeGuid, ExtendedType::BeGuid },
+        { EXTENDEDTYPENAME_Json, ExtendedType::Json },
+        { EXTENDEDTYPENAME_GeometryStream, ExtendedType::GeometryStream },
     };
     auto it  = map.find(extendedType);
     if (it == map.end())

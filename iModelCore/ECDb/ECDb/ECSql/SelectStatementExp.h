@@ -81,6 +81,7 @@ struct DerivedPropertyExp final : Exp
         }
         bool IsComputed() const;
         bool OriginateInASubQuery() const { return nullptr != this->FindParent(Exp::Type::Subquery); }
+        bool OriginateInACommonTableBlockWithNoColumns() const;
         bool IsWildCard() const;
         ExtractPropertyValueExp const* TryGetExtractPropExp() const;
     };
@@ -378,13 +379,15 @@ struct SingleSelectStatementExp final : QueryExp
             }
 
 
-        bool IsCoreSelect() const { return m_limitOffsetClauseIndex == UNSET_CHILDINDEX && m_optionsClauseIndex == UNSET_CHILDINDEX; }
+        bool IsCoreSelect() const { return m_orderByClauseIndex == UNSET_CHILDINDEX && m_limitOffsetClauseIndex == UNSET_CHILDINDEX; }
     };
+
 
 //********* QueryExp subclasses ***************************
 //=======================================================================================
 //! @bsiclass
 //+===============+===============+===============+===============+===============+======
+struct CommonTableExp; // Forward Declared for SubqueryExp constructor
 struct SelectStatementExp;
 struct SubqueryExp final : QueryExp
     {
@@ -397,7 +400,8 @@ struct SubqueryExp final : QueryExp
         PropertyMatchResult _FindProperty(ECSqlParseContext& ctx, PropertyPath const &propertyPath, const PropertyMatchOptions &options) const override;
         SelectClauseExp const* _GetSelection() const override;
     public:
-        explicit SubqueryExp(std::unique_ptr<Exp>);
+        explicit SubqueryExp(std::unique_ptr<SelectStatementExp>);
+        explicit SubqueryExp(std::unique_ptr<CommonTableExp>);
         template<typename T>
         T const* GetQuery() const;
     };
@@ -421,6 +425,7 @@ struct SelectStatementExp final : QueryExp
         int m_rhsSelectStatementExpIndex;
         CompoundOperator m_operator;
         bool m_isAll;
+        std::vector<SingleSelectStatementExp const *> m_flatListOfStatements;
 
         void _ToECSql(ECSqlRenderContext&) const override;
         void _ToJson(BeJsValue, JsonFormat const&) const override;
@@ -440,14 +445,8 @@ struct SelectStatementExp final : QueryExp
         SelectStatementExp const* GetRhsStatement() const;
         bool IsAll()const { return m_isAll; }
         CompoundOperator GetOperator() const { return m_operator; }
-        std::vector<SingleSelectStatementExp const*> GetFlatListOfStatements() const {
-            std::vector<SingleSelectStatementExp const *> list;
-            auto cur = this;
-            do {
-                list.push_back(&cur->GetFirstStatement());
-                cur = cur->GetRhsStatement();
-            } while(cur != nullptr);
-            return list;
+        std::vector<SingleSelectStatementExp const*> const& GetFlatListOfStatements() const {
+            return m_flatListOfStatements;
         }
 
     };
@@ -469,7 +468,7 @@ struct SubqueryRefExp final : RangeClassRefExp
                 view->SetAlias(GetAlias());
             }
         }
-        void _ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const override;
+        void _ExpandSelectAsterisk(std::vector<std::unique_ptr<Exp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const override;
         void _ToECSql(ECSqlRenderContext&) const override;
         void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override;

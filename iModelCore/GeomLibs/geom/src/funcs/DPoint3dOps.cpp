@@ -49,7 +49,7 @@ T *VectorOps<T>::MallocAndCopy (bvector<T> &source)
         return NULL;
     size_t byteCount = n * sizeof (T);
     T * dest = (T*)BSIBaseGeom::Malloc (byteCount);
-    memcpy (dest, &source[0], byteCount);
+    BeStringUtilities::Memcpy(dest, byteCount, &source[0], byteCount);
     return dest;
     }
 
@@ -1084,6 +1084,13 @@ double DPoint3dOps::ToleranceXY (bvector<DPoint3d> const& data, double absTol, d
     if (relTol > 0.0)
         tol += relTol * DPoint3dOps::LargestXYCoordinate(data.data(), data.size());
     return tol;
+    }
+
+double DPoint3dOps::AreaToleranceXY(DRange3dCR range, double distanceTolerance)
+    {
+    // if A = bh and e is distance tolerance, then A' := (b+e/2)(h+e/2) = A + e/2(b+h+e/2), so A'-A = e/2(b+h+e/2).
+    double halfDistTol = 0.5 * distanceTolerance;
+    return halfDistTol * (range.XLength() + range.YLength() + halfDistTol);
     }
 
 //! Query object used by cluster analysis.

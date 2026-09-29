@@ -19,21 +19,6 @@ BEGIN_BENTLEY_NAMESPACE
 constexpr double JS_MAX_SAFE_INTEGER = 9007199254740991.0;
 constexpr double JS_MIN_SAFE_INTEGER = -9007199254740991.0;
 
-struct BeNapi {
-public:
-    [[noreturn]] static void ThrowJsException(Napi::Env env, Utf8CP str, int errorNumber) {
-        auto err = Napi::Error::New(env, str);
-        err.Value()["errorNumber"] = errorNumber;
-        throw err;
-    }
-    [[noreturn]] static void ThrowJsException(Napi::Env env, Utf8CP str) {
-        throw Napi::Error::New(env, str);
-    }
-    [[noreturn]] static void ThrowJsTypeException(Napi::Env env, Utf8CP str) {
-        throw Napi::TypeError::New(env, str);
-    }
-};
-
 struct NapiRootRef;
 struct NapiMemberRef;
 struct NapiArrayRef;
@@ -325,6 +310,47 @@ struct BeJsNapiObject : BeJsValue {
     BeJsNapiObject(Napi::Env env, std::string const& jsonString) : BeJsNapiObject(env, jsonString.c_str()) {}
     operator napi_value() const { return ((NapiRootRef&)*m_val).m_napiVal; }
     operator Napi::Object() const { return ((NapiRootRef&)*m_val).m_napiVal.As<Napi::Object>(); }
+};
+
+struct iTwinErrorId {
+    void setITwinErrorId(Napi::Error err) const {
+        BeJsNapiObject errObj(err.Env());
+        errObj["scope"] = scope.c_str();
+        errObj["key"] = key;
+        err.Value()["iTwinErrorId"] = errObj;
+    }
+    Utf8String scope;
+    Utf8String key;
+};
+
+struct BeNapi {
+public:
+    [[noreturn]] static void ThrowJsException(Napi::Env env, Utf8CP str, iTwinErrorId id ) {
+        auto err = Napi::Error::New(env, str);
+        id.setITwinErrorId(err);
+        throw err;
+    }
+    [[noreturn]] static void ThrowJsException(Napi::Env env, Utf8CP str, int errorNumber) {
+        auto err = Napi::Error::New(env, str);
+        err.Value()["errorNumber"] = errorNumber;
+        Utf8String errNum;
+        errNum.Sprintf("%d", errorNumber);
+        iTwinErrorId id = { "imodel-native", errNum };
+        id.setITwinErrorId(err);
+        throw err;
+    }
+    [[noreturn]] static void ThrowJsException(Napi::Env env, Utf8CP str, int errorNumber, iTwinErrorId id ) {
+        auto err = Napi::Error::New(env, str);
+        err.Value()["errorNumber"] = errorNumber;
+        id.setITwinErrorId(err);
+        throw err;
+    }
+    [[noreturn]] static void ThrowJsTypeException(Napi::Env env, Utf8CP str) {
+        auto err = Napi::TypeError::New(env, str);
+        iTwinErrorId id = { "imodel-native", "TypeError" };
+        id.setITwinErrorId(err);
+        throw err;
+    }
 };
 
 inline NapiValueRef& NapiValueRef::GetObjectMember(Utf8CP member, bool constVal) const {

@@ -10,6 +10,74 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct BinderInfo final
+    {
+    public:
+        enum class BinderType
+        {
+            Array,
+            Id,
+            VirtualSet,
+            NavigationProperty,
+            Point,
+            Primitive,
+            Struct,
+            JsonValue,
+            Noop,
+            ProxyECInstanceId,
+            Proxy, 
+        };
+        
+    private:
+        BinderType m_binderType ;
+        bool m_binderIsForIdSet = false;
+        std::vector<ECN::ECClassId> m_relECClassIdsForNavigationProperties; // used for navigation properties to validate the relationship class Ids
+
+        bool IsForNavigationProperty() const { return m_binderType == BinderType::NavigationProperty || m_binderType == BinderType::Proxy; }
+    public:
+        explicit BinderInfo(BinderType binderType) : m_binderType(binderType), m_binderIsForIdSet(false){}
+        BinderInfo(BinderType binderType, bool binderIsForInVirtualSetOrIdSetVirtualTable) : m_binderType(binderType), m_binderIsForIdSet(binderIsForInVirtualSetOrIdSetVirtualTable){}
+        BinderType GetType() const { return m_binderType; }
+        bool IsForIdSet() const { return m_binderIsForIdSet; }
+
+        // Caches the relationship class IDs for navigation property validation.
+        // Only performs the operation if this binder is for a navigation property.
+        // Appends the provided class IDs to the internal list.
+        void CacheRelClassIdsForPropertyMap(std::vector<ECN::ECClassId> const& classIds)
+            {
+            if (!IsForNavigationProperty())
+                return;
+
+            m_relECClassIdsForNavigationProperties.insert(m_relECClassIdsForNavigationProperties.end(), classIds.begin(), classIds.end());
+            }
+
+        // Checks if the provided relationship class ID is valid for this navigation property.
+        // Returns true if this binder is not for a navigation property, or if no class IDs are cached.
+        // Otherwise, returns true if the class ID is found in the cached list.
+        bool IsClassIdValidForNavigationProperty(ECN::ECClassId const& relationshipECClassId) const
+            {
+            if (!IsForNavigationProperty())
+                return true;
+
+            if (m_relECClassIdsForNavigationProperties.empty())
+                return true;
+
+            return std::find(m_relECClassIdsForNavigationProperties.begin(), m_relECClassIdsForNavigationProperties.end(), relationshipECClassId) != m_relECClassIdsForNavigationProperties.end();
+            }
+
+        // Retrieves the cached relationship class IDs for navigation properties.
+        // Only copies the IDs if this binder is for a navigation property.
+        void GetRelClassIdsForNavigationProperties(std::vector<ECN::ECClassId>& classIds) const
+            {
+            if (IsForNavigationProperty())
+                classIds = m_relECClassIdsForNavigationProperties;
+            }
+    };
+
+
 
 //=======================================================================================
 //! IECSqlBinder is used to bind a value to a binding parameter in an ECSqlStatement.
@@ -55,6 +123,9 @@ private:
     virtual IECSqlBinder& _BindStructMember(Utf8CP structMemberPropertyName) = 0;
     virtual IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) = 0;
     virtual IECSqlBinder& _AddArrayElement() = 0;
+
+    virtual BinderInfo const& _GetBinderInfo() = 0;
+
 
 protected:
 #if !defined (DOCUMENTATION_GENERATOR)
@@ -197,6 +268,9 @@ public:
     //! Adds a new array element to the array to be bound to the parameter.
     //! @return The binder for the new array element
     ECDB_EXPORT IECSqlBinder& AddArrayElement();
+
+    //! @return Gets the BinderInfo for the specific binder
+    ECDB_EXPORT BinderInfo const& GetBinderInfo();
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -3,7 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include <json/json.h>
+#include <BeRapidJson/BeJsValue.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -119,16 +119,19 @@ DbResult ProfileUpgrader_4002::UpgradeECEnums(ECDbCR ecdb)
         {
         int64_t enumId = stmt.GetValueInt64(0);
         Utf8CP enumName = stmt.GetValueText(1);
-        Json::Value enumValuesJson;
-        if (!Json::Reader::Parse(stmt.GetValueText(2), enumValuesJson))
+        Utf8CP enumValuesText = stmt.GetValueText(2);
+        BeJsDocument enumValuesJson;
+        if (!Utf8String::IsNullOrEmpty(enumValuesText))
+            enumValuesJson.Parse(enumValuesText);
+
+        if (Utf8String::IsNullOrEmpty(enumValuesText) || enumValuesJson.hasParseError())
             {
             LOG.errorv("ECDb profile upgrade failed: Could not parse ECEnumeration values JSON: %s.", enumName);
             return BE_SQLITE_ERROR_ProfileUpgradeFailed;
             }
 
-
         // now upgrade the enum values json
-        for (Json::Value& enumValueJson : enumValuesJson)
+        bool enumValueFailed = enumValuesJson.ForEachArrayMemberValue([&] (BeJsValue::ArrayIndex, BeJsValue enumValueJson)
             {
             Utf8CP strVal = nullptr;
             Nullable<int32_t> intVal;
@@ -139,13 +142,20 @@ DbResult ProfileUpgrader_4002::UpgradeECEnums(ECDbCR ecdb)
             else
                 {
                 BeAssert(false);
-                return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+                return true;
                 }
 
-            enumValueJson[ECDBMETA_PROP_ECEnumerator_Name] = ECEnumerator::DetermineName(enumName, strVal, intVal.IsValid() ? &intVal.Value() : nullptr);
-            }
+            enumValueJson[ECDBMETA_PROP_ECEnumerator_Name] = ECEnumerator::DetermineName(enumName, strVal, intVal.IsValid() ? &intVal.Value() : nullptr).c_str();
+            return false;
+            });
 
-        enumValues[enumId] = enumValuesJson.ToString();
+        if (enumValueFailed)
+            return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+
+        // StringifyLegacy, not Stringify: this text is PERSISTED in ec_Enumeration.EnumValues and
+        // is covered by PRAGMA checksum(ecdb_schema), so it must stay byte-identical to what
+        // JsonCpp wrote. See BeJsConst::StringifyLegacy and SchemaPersistenceHelper.
+        enumValues[enumId] = enumValuesJson.StringifyLegacy();
         }
 
     stmt.Finalize();
@@ -260,20 +270,25 @@ BentleyStatus ProfileUpgrader_4002::ConvertKoqFuses(KoqConversionContext& ctx)
         BeAssert(ctx.AreStandardSchemasDeserialized());
         UpgradedUnitFormatStrings& unitFormatStrings = koqs[stmt.GetValueId<KindOfQuantityId>(0)];
         ECSchemaId schemaId = stmt.GetValueId<ECSchemaId>(1);
-        Json::Value oldPresFusesJson;
-        bvector<Utf8CP> oldPresFuses; //can use Utf8CP as the string is owned by the Json::Value (-> Json::Value must not be moved into the if statement)
+        BeJsDocument oldPresFusesJson;
+        bvector<Utf8CP> oldPresFuses; //can use Utf8CP as the string is owned by oldPresFusesJson (-> the document must not be moved into the if statement)
         if (!stmt.IsColumnNull(3))
             {
-            if (!Json::Reader::Parse(stmt.GetValueText(3), oldPresFusesJson))
+            Utf8CP oldPresFusesText = stmt.GetValueText(3);
+            if (!Utf8String::IsNullOrEmpty(oldPresFusesText))
+                oldPresFusesJson.Parse(oldPresFusesText);
+
+            if (Utf8String::IsNullOrEmpty(oldPresFusesText) || oldPresFusesJson.hasParseError())
                 {
                 LOG.error("ECDb profile upgrade failed: Upgrading persistence unit and presentation formats in ec_KindOfQuantity to EC3.2 format failed. Could not parse the old presentation units.");
                 return ERROR;
                 }
 
-            for (Json::Value const& presFus : oldPresFusesJson)
+            oldPresFusesJson.ForEachArrayMember([&] (BeJsConst::ArrayIndex, BeJsConst presFus)
                 {
                 oldPresFuses.push_back(presFus.asCString());
-                }
+                return false;
+                });
             }
 
         BeAssert(ctx.m_formatsSchema != nullptr);

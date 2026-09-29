@@ -250,7 +250,7 @@ struct SchemaWriter final
 
         static bool IsSpecifiedInRelationshipConstraint(Context&, ECN::ECClassCR);
 
-        static bool IsPropertyTypeChangeSupported(Utf8StringR error, ECN::StringChange& typeChange, ECN::ECPropertyCR oldProperty, ECN::ECPropertyCR newProperty, bool isPrimitiveTypeChangeAllowed);
+        static bool IsPropertyTypeChangeSupported(Utf8StringR error, ECN::StringChange& typeChange, ECN::ECPropertyCR oldProperty, ECN::ECPropertyCR newProperty, bool isSchemaVersionValid);
         static bool UnitChangeAllowed (Context& ctx, ECN::ECPropertyCR oldProperty, ECN::ECPropertyCR newProperty);
 
         static BentleyStatus UpdateBaseClasses(Context&, ECN::BaseClassChanges&, ECN::ECClassCR, ECN::ECClassCR);

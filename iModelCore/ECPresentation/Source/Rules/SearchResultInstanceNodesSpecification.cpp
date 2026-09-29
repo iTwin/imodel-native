@@ -5,7 +5,6 @@
 #include <ECPresentationPch.h>
 
 #include "PresentationRuleJsonConstants.h"
-#include "PresentationRuleXmlConstants.h"
 #include "CommonToolsInternal.h"
 #include <ECPresentation/Rules/PresentationRules.h>
 #include <ECPresentation/Rules/SpecificationVisitor.h>
@@ -57,44 +56,6 @@ SearchResultInstanceNodesSpecification::~SearchResultInstanceNodesSpecification(
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SearchResultInstanceNodesSpecification::_Accept(PresentationRuleSpecificationVisitor& visitor) const {visitor._Visit(*this);}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP SearchResultInstanceNodesSpecification::_GetXmlElementName () const
-    {
-    return SEARCH_RESULT_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SearchResultInstanceNodesSpecification::_ReadXml (BeXmlNodeP xmlNode)
-    {
-    if (!ChildNodeSpecification::_ReadXml(xmlNode))
-        return false;
-
-    if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_groupByClass, COMMON_XML_ATTRIBUTE_GROUPBYCLASS))
-        m_groupByClass = true;
-
-    if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_groupByLabel, COMMON_XML_ATTRIBUTE_GROUPBYLABEL))
-        m_groupByLabel = true;
-
-    CommonToolsInternal::LoadSpecificationsFromXmlNode<StringQuerySpecification, QuerySpecificationList>(xmlNode, m_querySpecifications, STRING_QUERY_SPECIFICATION_XML_NODE_NAME, this);
-    CommonToolsInternal::LoadSpecificationsFromXmlNode<ECPropertyValueQuerySpecification, QuerySpecificationList>(xmlNode, m_querySpecifications, ECPROPERTY_VALUE_QUERY_SPECIFICATION_XML_NODE_NAME, this);
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SearchResultInstanceNodesSpecification::_WriteXml (BeXmlNodeP xmlNode) const
-    {
-    ChildNodeSpecification::_WriteXml(xmlNode);
-    xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYCLASS, m_groupByClass);
-    xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYLABEL, m_groupByLabel);
-    CommonToolsInternal::WriteRulesToXmlNode<QuerySpecification, QuerySpecificationList>(xmlNode, m_querySpecifications);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -208,39 +169,6 @@ QuerySpecification* QuerySpecification::Create(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool QuerySpecification::_ReadXml(BeXmlNodeP xmlNode)
-    {
-    if (!PresentationKey::_ReadXml(xmlNode))
-        return false;
-
-    if (BEXML_Success != xmlNode->GetAttributeStringValue(m_schemaName, SEARCH_QUERY_SPECIFICATION_XML_ATTRIBUTE_SCHEMA_NAME))
-        {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_TRACE, LOG_ERROR, Utf8PrintfString(INVALID_XML, _GetXmlElementName(), SEARCH_QUERY_SPECIFICATION_XML_ATTRIBUTE_SCHEMA_NAME));
-        return false;
-        }
-
-    if (BEXML_Success != xmlNode->GetAttributeStringValue(m_className, SEARCH_QUERY_SPECIFICATION_XML_ATTRIBUTE_CLASS_NAME))
-        {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_TRACE, LOG_ERROR, Utf8PrintfString(INVALID_XML, _GetXmlElementName(), SEARCH_QUERY_SPECIFICATION_XML_ATTRIBUTE_CLASS_NAME));
-        return false;
-        }
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void QuerySpecification::_WriteXml(BeXmlNodeP xmlNode) const
-    {
-    PresentationKey::_WriteXml(xmlNode);
-    xmlNode->AddAttributeStringValue(SEARCH_QUERY_SPECIFICATION_XML_ATTRIBUTE_SCHEMA_NAME, m_schemaName.c_str());
-    xmlNode->AddAttributeStringValue(SEARCH_QUERY_SPECIFICATION_XML_ATTRIBUTE_CLASS_NAME, m_className.c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP QuerySpecification::_GetJsonElementTypeAttributeName() const {return COMMON_JSON_ATTRIBUTE_SPECTYPE;}
 
 /*---------------------------------------------------------------------------------**//**
@@ -275,40 +203,10 @@ MD5 QuerySpecification::_ComputeHash() const
     {
     MD5 md5 = T_Super::_ComputeHash();
     if (!m_schemaName.empty())
-        ADD_STR_VALUE_TO_HASH(md5, SEARCH_QUERY_SPECIFICATION_XML_ATTRIBUTE_SCHEMA_NAME, m_schemaName);
+        ADD_STR_VALUE_TO_HASH(md5, SCHEMA_CLASS_SPECIFICATION_SCHEMANAME, m_schemaName);
     if (!m_className.empty())
-        ADD_STR_VALUE_TO_HASH(md5, SEARCH_QUERY_SPECIFICATION_XML_ATTRIBUTE_CLASS_NAME, m_className);
+        ADD_STR_VALUE_TO_HASH(md5, SINGLE_SCHEMA_CLASS_SPECIFICATION_CLASSNAME, m_className);
     return md5;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP StringQuerySpecification::_GetXmlElementName() const {return STRING_QUERY_SPECIFICATION_XML_NODE_NAME;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool StringQuerySpecification::_ReadXml(BeXmlNodeP xmlNode)
-    {
-    if (!QuerySpecification::_ReadXml(xmlNode))
-        return false;
-
-    if (BEXML_Success != xmlNode->GetContent(m_query) || m_query.empty())
-        {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_TRACE, LOG_ERROR, Utf8PrintfString(INVALID_XML, _GetXmlElementName(), "Query"));
-        return false;
-        }
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void StringQuerySpecification::_WriteXml(BeXmlNodeP xmlNode) const
-    {
-    QuerySpecification::_WriteXml(xmlNode);
-    xmlNode->SetContent(WString(m_query.c_str(), true).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -350,36 +248,6 @@ MD5 StringQuerySpecification::_ComputeHash() const
     if (!m_query.empty())
         ADD_STR_VALUE_TO_HASH(md5, STRING_QUERY_SPECIFICATION_JSON_ATTRIBUTE_QUERY, m_query);
     return md5;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP ECPropertyValueQuerySpecification::_GetXmlElementName() const {return ECPROPERTY_VALUE_QUERY_SPECIFICATION_XML_NODE_NAME;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECPropertyValueQuerySpecification::_ReadXml(BeXmlNodeP xmlNode)
-    {
-    if (!QuerySpecification::_ReadXml(xmlNode))
-        return false;
-
-    if (BEXML_Success != xmlNode->GetAttributeStringValue(m_parentPropertyName, ECPROPERTY_VALUE_QUERY_SPECIFICATION_XML_ATTRIBUTE_PARENT_PROPERTY_NAME))
-        {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_TRACE, LOG_ERROR, Utf8PrintfString(INVALID_XML, ECPROPERTY_VALUE_QUERY_SPECIFICATION_XML_NODE_NAME, ECPROPERTY_VALUE_QUERY_SPECIFICATION_XML_ATTRIBUTE_PARENT_PROPERTY_NAME));
-        return false;
-        }
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECPropertyValueQuerySpecification::_WriteXml(BeXmlNodeP xmlNode) const
-    {
-    QuerySpecification::_WriteXml(xmlNode);
-    xmlNode->AddAttributeStringValue(ECPROPERTY_VALUE_QUERY_SPECIFICATION_XML_ATTRIBUTE_PARENT_PROPERTY_NAME, m_parentPropertyName.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

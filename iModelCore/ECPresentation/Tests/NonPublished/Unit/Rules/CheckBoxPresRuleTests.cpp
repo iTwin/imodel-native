@@ -79,7 +79,7 @@ TEST_F(CheckBoxPresRuleTests, WriteToJson)
 /*---------------------------------------------------------------------------------**//**
 * @betest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CheckBoxPresRuleTests, LoadsFromXmlJsonDefaultValues)
+TEST_F(CheckBoxPresRuleTests, LoadsFromJsonWithDefaultValues)
     {
     static Utf8CP jsonString = R"({
         "ruleType": "CheckBox"
@@ -93,65 +93,6 @@ TEST_F(CheckBoxPresRuleTests, LoadsFromXmlJsonDefaultValues)
     EXPECT_FALSE(rule.GetUseInversedPropertyValue());
     EXPECT_FALSE(rule.GetDefaultValue());
     EXPECT_STREQ("", rule.GetIsEnabled().c_str());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(CheckBoxPresRuleTests, LoadsFromXml)
-    {
-   static Utf8CP xmlString = R"(
-        <CheckBoxRule PropertyName="checkBoxProperty" UseInversedPropertyValue="false"
-         DefaultValue="true" IsEnabled="isEnabledExpression"/>
-        )";
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
-    ASSERT_EQ(BEXML_Success, xmlStatus);
-
-    CheckBoxRule rule;
-    EXPECT_TRUE(rule.ReadXml(xml->GetRootElement()));
-    EXPECT_STREQ("checkBoxProperty", rule.GetPropertyName().c_str());
-    EXPECT_FALSE(rule.GetUseInversedPropertyValue());
-    EXPECT_TRUE(rule.GetDefaultValue());
-    EXPECT_STREQ("isEnabledExpression", rule.GetIsEnabled().c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsiclass
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CheckBoxPresRuleTests, LoadsFromXmlWithDefaultValues)
-    {
-   static Utf8CP xmlString = "<CheckBoxRule/>";
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
-    ASSERT_EQ(BEXML_Success, xmlStatus);
-
-    CheckBoxRule rule;
-    EXPECT_TRUE(rule.ReadXml(xml->GetRootElement()));
-    EXPECT_STREQ("", rule.GetPropertyName().c_str());
-    EXPECT_FALSE(rule.GetUseInversedPropertyValue());
-    EXPECT_FALSE(rule.GetDefaultValue());
-    EXPECT_STREQ("", rule.GetIsEnabled().c_str());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(CheckBoxPresRuleTests, WriteToXml)
-    {
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xml = BeXmlDom::CreateEmpty();
-    xml->AddNewElement("Root", nullptr, nullptr);
-
-    CheckBoxRule rule("conditionexpresion", 9, true, "checkBoxProperty", false, true, "isEnabledExpression");
-    rule.WriteXml(xml->GetRootElement());
-
-    static Utf8CP expected = ""
-        "<Root>"
-            R"(<CheckBoxRule Priority="9" OnlyIfNotHandled="true" Condition="conditionexpresion" PropertyName="checkBoxProperty" UseInversedPropertyValue="false"
-                DefaultValue="true" IsEnabled="isEnabledExpression"/>)"
-        "</Root>";
-    EXPECT_STREQ(ToPrettyString(*BeXmlDom::CreateAndReadFromString(xmlStatus, expected)).c_str(), ToPrettyString(*xml).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

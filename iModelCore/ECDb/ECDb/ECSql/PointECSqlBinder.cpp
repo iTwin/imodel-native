@@ -3,6 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
+#include <cmath>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -187,6 +188,14 @@ IECSqlBinder& PointECSqlBinder::_AddArrayElement()
     {
     LOG.error("Type mismatch. Cannot bind array to Point2d / Point3d parameter.");
     return NoopECSqlBinder::Get();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BinderInfo const& PointECSqlBinder::_GetBinderInfo()
+    {
+    return m_binderInfo;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

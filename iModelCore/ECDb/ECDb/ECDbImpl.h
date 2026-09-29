@@ -9,6 +9,7 @@
 #include "ChangeManager.h"
 #include "ProfileManager.h"
 #include "IssueReporter.h"
+#include "InstanceGraphImpl.h"
 #include <atomic>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -153,6 +154,8 @@ private:
     SettingsManager m_settingsManager;
     StatementCache m_sqliteStatementCache;
     mutable std::unique_ptr<InstanceReader> m_instanceReader;
+    mutable std::unique_ptr<InstanceWriter> m_instanceWriter;
+    mutable std::unique_ptr<InstanceRepository> m_instanceRepo;
     BeBriefcaseBasedIdSequenceManager m_idSequenceManager;
     static const uint32_t s_instanceIdSequenceKey = 0;
     mutable bmap<DbFunctionKey, DbFunction*, DbFunctionKey::Comparer> m_sqlFunctions;
@@ -167,9 +170,14 @@ private:
     mutable std::unique_ptr<IdFactory> m_idFactory;
     mutable std::unique_ptr<ExtractInstFunc> m_extractInstFunc;
     mutable std::unique_ptr<ExtractPropFunc> m_extractPropFunc;
+    mutable std::unique_ptr<SupportInstanceQueryFunc> m_supportInstanceQueryFunc;
     mutable EC::ECSqlConfig m_ecSqlConfig;
     mutable bool m_disableDDLTracking;
+    mutable Utf8CP m_sqliteOnlyAttachmentAlias = nullptr;
     mutable std::unique_ptr<PragmaManager> m_pragmaProcessor;
+    mutable SnappyFromMemory m_snappyReader;
+    mutable SnappyToBlob m_snappyWriter;
+    mutable std::unique_ptr<GraphStatementCache> m_graphStatementCache;
     //Mirrored ECDb methods are only called by ECDb (friend), therefore private
     explicit Impl(ECDbR ecdb);
 
@@ -233,7 +241,20 @@ public:
     BeGuid GetId() const  {return m_id; }
     IdFactory& GetIdFactory() const;
     DbResult ExecuteDDL(Utf8CP) const;
+    DbResult AttachDbAsSQLite(Utf8CP dbFileName, Utf8CP tableSpaceName) const;
     PragmaManager& GetPragmaManager() const;
+
+    template<typename T>
+    T WithSnappyReader(std::function<T(SnappyFromMemory&)> func) const {
+        BeMutexHolder holder(m_mutex);
+        return func(m_snappyReader);
+    }
+    template<typename T>
+    T WithSnappyWriter(std::function<T(SnappyToBlob&)> func) const {
+        BeMutexHolder holder(m_mutex);
+        m_snappyWriter.Init();
+        return func(m_snappyWriter);
+    }
     //! The clear cache counter is incremented with every call to ClearECDbCache. This is used
     //! by code that refers to objects held in the cache to invalidate itself.
     //! E.g. Any existing ECSqlStatement would be invalid after ClearECDbCache and would return
@@ -248,7 +269,32 @@ public:
         }
         return *m_instanceReader;
     }
+    InstanceWriter& GetInstanceWriter() const {
+        if (m_instanceWriter == nullptr) {
+            BeMutexHolder holder(m_mutex);
+            if (m_instanceWriter == nullptr) {
+                m_instanceWriter = std::make_unique<InstanceWriter>(m_ecdb);
+            }
+        }
+        return *m_instanceWriter;
+    }
+    InstanceRepository& GetInstanceRepository() const {
+        if (m_instanceRepo == nullptr) {
+            BeMutexHolder holder(m_mutex);
+            if (m_instanceRepo == nullptr) {
+                m_instanceRepo = std::make_unique<InstanceRepository>(m_ecdb);
+            }
+        }
+        return *m_instanceRepo;
+    }
     IssueDataSource const& Issues() const { return m_issueReporter; }
+    GraphStatementCache& GetGraphStatementCache() const {
+        BeMutexHolder holder(m_mutex);
+        if (m_graphStatementCache == nullptr) {
+            m_graphStatementCache = std::make_unique<GraphStatementCache>(m_ecdb);
+        }
+        return *m_graphStatementCache;
+    }
     ProfileVersion const& RefreshProfileVersion() const {
         m_profileManager.RefreshProfileVersion();
         return m_profileManager.GetProfileVersion();

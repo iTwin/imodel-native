@@ -447,7 +447,7 @@ void main()
     double D2;
     int n;
     double c1,s1,c2,s2;
-    while ( 3 == scanf( "%lf %lf %lf",&alpha,&beta,&gamma) )
+    while ( 3 == BeFile::Scanf( "%lf %lf %lf",&alpha,&beta,&gamma) )
         {
         n = bsiMath_solveUnitQuadratic( &c1,&s1, &c2,&s2, &D2,
                                 alpha,beta,gamma );

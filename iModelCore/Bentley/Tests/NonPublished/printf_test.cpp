@@ -91,11 +91,16 @@ static int
 strisnan (const char *string, size_t start_index, size_t end_index, int uppercase)
 {
 #if defined (_WIN32)
-#if _MSC_VER >= 1900
-	return strstr(string, "nan(ind)") != NULL;
-#else
-	return strstr (string, "#IND") != NULL;
-#endif
+  #if defined(__clang__)
+    // Clang on Windows consistently outputs "nan" (lowercase)
+    return strstr(string, "nan") != NULL;
+  #elif _MSC_VER >= 1900
+    // Modern MSVC outputs "nan(ind)" or "1.#QNAN"
+    return strstr(string, "nan(ind)") != NULL;
+  #else
+    // Older MSVC outputs "#IND"
+    return strstr (string, "#IND") != NULL;
+  #endif
 #else
   return strstr (string, "NAN") != NULL || strstr (string, "nan") != NULL || strstr (string, "NaN") != NULL;
 #endif

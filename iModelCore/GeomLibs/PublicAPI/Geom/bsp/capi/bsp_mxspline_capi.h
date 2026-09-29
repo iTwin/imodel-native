@@ -160,7 +160,7 @@ double *pExtraParams
 @param pSpiral IN spiral computational object
 @param pOrigin IN curve start point.
 @param pAxes IN coordinate directions for placement in space.
-@param maxStrokeLength IN max length of stroke interval.   Recommended 10 (in meter world)
+@param maxStrokeLength IN max length of stroke interval. Recommended 10 meters.
 ------------------------------------------------------------------------*/
 Public StatusInt GEOMDLLIMPEXP bspcurv_curveFromDSpiral2dBase
 (
@@ -183,7 +183,7 @@ double maxStrokeLength = 10.0
 @param pSpiral IN spiral computational object
 @param pOrigin IN curve start point.
 @param pAxes IN coordinate directions for placement in space.
-@param maxStrokeLength IN max length of stroke interval.   Recommended 10 (in meter world)
+@param maxStrokeLength IN max length of stroke interval. Recommended 10 meters.
 ------------------------------------------------------------------------*/
 Public StatusInt GEOMDLLIMPEXP bspcurv_curveFromDSpiral2dBaseInterval
 (

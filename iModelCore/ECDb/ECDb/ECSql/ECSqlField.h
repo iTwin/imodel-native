@@ -24,7 +24,7 @@ private:
 
     ECSqlColumnInfoCR _GetColumnInfo() const override { return m_ecsqlDynamicColumnInfo.IsValid() ? m_ecsqlDynamicColumnInfo : m_ecsqlColumnInfo; }
 
-    virtual ECSqlStatus _OnAfterReset() { return ECSqlStatus::Success; }
+    virtual ECSqlStatus _OnAfterReset() { SetDynamicColumnInfo(ECSqlColumnInfo()); return ECSqlStatus::Success; }
     virtual ECSqlStatus _OnAfterStep() { return ECSqlStatus::Success; }
     virtual void _OnDynamicPropertyUpdated() {}
 protected:
@@ -38,7 +38,7 @@ public:
     virtual ~ECSqlField() {}
     bool RequiresOnAfterStep() const { return m_requiresOnAfterStep; }
     ECSqlStatus OnAfterStep() { return _OnAfterStep(); }
-    bool RequiresOnAfterReset() const { return m_requiresOnAfterReset; }
+    bool RequiresOnAfterReset() const { return m_requiresOnAfterReset || _GetColumnInfo().IsDynamic(); }
     ECSqlStatus OnAfterReset() { return _OnAfterReset(); }
     void SetDynamicColumnInfo(ECSqlColumnInfoCR info);
     };

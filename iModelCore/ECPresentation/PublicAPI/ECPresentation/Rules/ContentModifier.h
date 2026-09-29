@@ -20,9 +20,6 @@ private:
     PropertySpecificationsList              m_propertyOverrides;
 
 public:
-    ECPRESENTATION_EXPORT bool ReadXml(BeXmlNodeP xmlNode);
-    ECPRESENTATION_EXPORT void WriteXml(BeXmlNodeP xmlNode) const;
-
     ECPRESENTATION_EXPORT bool ReadJson(BeJsConst json);
     ECPRESENTATION_EXPORT void WriteJson(BeJsValue json) const;
 
@@ -74,10 +71,6 @@ private:
     bool m_applyOnNestedContent;
 
 protected:
-    ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName () const override;
-    ECPRESENTATION_EXPORT bool _ReadXml (BeXmlNodeP xmlNode) override;
-    ECPRESENTATION_EXPORT void _WriteXml (BeXmlNodeP xmlNode) const override;
-
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementTypeAttributeName() const override;
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;

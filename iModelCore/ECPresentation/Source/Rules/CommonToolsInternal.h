@@ -9,7 +9,6 @@
 #include <ECPresentation/Rules/CommonTools.h>
 #include <ECPresentation/Rules/MultiSchemaClass.h>
 #include <ECPresentation/Diagnostics.h>
-#include <BeXml/BeXml.h>
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
@@ -22,12 +21,6 @@ private:
     CommonToolsInternal() {}
 
 public:
-    //! Parses TargetTree string value
-    static RuleTargetTree ParseTargetTreeString(Utf8CP targetTreeString, Utf8CP attributeIdentifier);
-
-    //! Formats TargetTree string value
-    static Utf8CP FormatTargetTreeString(RuleTargetTree targetTree);
-
     //! Parses RequiredDirection string value
     static RequiredRelationDirection ParseRequiredDirectionString(Utf8CP value, Utf8CP attributeIdentifier);
 
@@ -101,64 +94,6 @@ public:
         for (typename T::const_iterator iter = set.begin (); iter != set.end (); ++iter)
             delete *iter;
         set.clear ();
-        }
-
-    //! Load rule from XmlNode and adds to collection
-    template<typename RuleType, typename RuleCollectionType>
-    static void LoadRuleFromXmlNode(BeXmlNodeP ruleNode, RuleCollectionType& rulesCollection, HashableBase* parentHashable)
-        {
-        RuleType* rule = new RuleType ();
-        if (rule->ReadXml(ruleNode))
-            {
-            rule->SetParent(parentHashable);
-            CommonTools::AddToListByPriority(rulesCollection, *rule);
-            }
-        else
-            delete rule;
-        }
-
-    //! Load rules from parent XmlNode and adds to collection
-    template<typename RuleType, typename RuleCollectionType>
-    static void LoadRulesFromXmlNode(BeXmlNodeP xmlNode, RuleCollectionType& rulesCollection, char const* ruleXmlElementName, HashableBase* parentHashable)
-        {
-        BeXmlDom::IterableNodeSet ruleNodes;
-        xmlNode->SelectChildNodes (ruleNodes, ruleXmlElementName);
-
-        for (BeXmlNodeP& ruleNode: ruleNodes)
-            LoadRuleFromXmlNode<RuleType, RuleCollectionType> (ruleNode, rulesCollection, parentHashable);
-        }
-
-    //! Load specification from XmlNode and adds to collection
-    template<typename SpecificationType, typename SpecificationsCollectionType>
-    static void LoadSpecificationFromXmlNode (BeXmlNodeP specificationNode, SpecificationsCollectionType& specificationsCollection, HashableBase* parentHashable)
-        {
-        SpecificationType* specification = new SpecificationType();
-        if (specification->ReadXml(specificationNode))
-            {
-            specification->SetParent(parentHashable);
-            specificationsCollection.push_back(specification);
-            }
-        else
-            delete specification;
-        }
-
-    //! Load specifications from parent XmlNode and adds to collection
-    template<typename SpecificationType, typename SpecificationsCollectionType>
-    static void LoadSpecificationsFromXmlNode (BeXmlNodeP xmlNode, SpecificationsCollectionType& specificationsCollection, char const* specificationXmlElementName, HashableBase* parentHashable)
-        {
-        BeXmlDom::IterableNodeSet specificationNodes;
-        xmlNode->SelectChildNodes (specificationNodes, specificationXmlElementName);
-
-        for (BeXmlNodeP& specificationNode: specificationNodes)
-            LoadSpecificationFromXmlNode<SpecificationType, SpecificationsCollectionType> (specificationNode, specificationsCollection, parentHashable);
-        }
-
-    //! Write rules to XmlNode
-    template<typename RuleType, typename RuleCollectionType>
-    static void WriteRulesToXmlNode (BeXmlNodeP parentXmlNode, RuleCollectionType const& rulesCollection)
-        {
-        for (RuleType const* rule: rulesCollection)
-            rule->WriteXml (parentXmlNode);
         }
 
     template<typename TRule, typename TCollection>

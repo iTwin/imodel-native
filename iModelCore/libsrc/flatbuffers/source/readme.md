@@ -1,30 +1,58 @@
-FlatBuffers Version 1.0
+![logo](http://google.github.io/flatbuffers/fpl_logo_small.png) FlatBuffers
+===========
 
-# Welcome to FlatBuffers!
+[![Build Status](https://travis-ci.org/google/flatbuffers.svg?branch=master)](https://travis-ci.org/google/flatbuffers)
+[![Build status](https://ci.appveyor.com/api/projects/status/yg5idd2fnusv1n10?svg=true)](https://ci.appveyor.com/project/gwvo/flatbuffers)
+[![Join the chat at https://gitter.im/google/flatbuffers](https://badges.gitter.im/google/flatbuffers.svg)](https://gitter.im/google/flatbuffers?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Discord Chat](https://img.shields.io/discord/656202785926152206.svg)](https:///discord.gg/6qgKs3R)
+[![Twitter Follow](https://img.shields.io/twitter/follow/wvo.svg?style=social)](https://twitter.com/wvo)
 
-FlatBuffers is a serialization library for games and other memory constrained
-apps. Go to our [landing page][] to browse our documentation.
 
-FlatBuffers allows you to directly access serialized data without
-unpacking/parsing it first, while still having great forwards/backwards
-compatibility. FlatBuffers can be built for many different systems (Android,
-Windows, OS X, Linux), see `docs/html/index.html`
+**FlatBuffers** is a cross platform serialization library architected for
+maximum memory efficiency. It allows you to directly access serialized data without parsing/unpacking it first, while still having great forwards/backwards compatibility.
 
-Discuss FlatBuffers with other developers and users on the
-[FlatBuffers Google Group][]. File issues on the [FlatBuffers Issues Tracker][]
-or post your questions to [stackoverflow.com][] with a mention of
-**flatbuffers**.
+**Go to our [landing page][] to browse our documentation.**
 
-For applications on Google Play that integrate this tool, usage is tracked.
-This tracking is done automatically using the embedded version string
-(flatbuffer_version_string), and helps us continue to optimize it. Aside from
-consuming a few extra bytes in your application binary, it shouldn't affect
-your application at all.  We use this information to let us know if FlatBuffers
-is useful and if we should continue to invest in it. Since this is open
-source, you are free to remove the version string but we would appreciate if
-you would leave it in.
+## Supported operating systems
+* Windows
+* MacOS X
+* Linux
+* Android
+* And any others with a recent C++ compiler.
 
-  [FlatBuffers Google Group]: http://group.google.com/group/flatbuffers
-  [FlatBuffers Issues Tracker]: http://github.com/google/flatbuffers/issues
-  [stackoverflow.com]: http://www.stackoverflow.com
-  [landing page]: http://google.github.io/flatbuffers
+## Supported programming languages
+* C++
+* C#
+* C
+* Dart
+* Go
+* Java
+* JavaScript
+* Lobster
+* Lua
+* PHP
+* Python
+* Rust
+* TypeScript
+
+*and more in progress...*
+
+## Contribution
+* [FlatBuffers Google Group][] to discuss FlatBuffers with other developers and users.
+* [FlatBuffers Issues Tracker][] to submit an issue.
+* [stackoverflow.com][] with [`flatbuffers` tag][] for any questions regarding FlatBuffers.
+
+*To contribute to this project,* see [CONTRIBUTING][].
+
+## Licensing
+*Flatbuffers* is licensed under the Apache License, Version 2.0. See [LICENSE][] for the full license text.
+
+<br>
+
+   [CONTRIBUTING]: http://github.com/google/flatbuffers/blob/master/CONTRIBUTING.md
+   [`flatbuffers` tag]: https://stackoverflow.com/questions/tagged/flatbuffers
+   [FlatBuffers Google Group]: https://groups.google.com/forum/#!forum/flatbuffers
+   [FlatBuffers Issues Tracker]: http://github.com/google/flatbuffers/issues
+   [stackoverflow.com]: http://stackoverflow.com/search?q=flatbuffers
+   [landing page]: https://google.github.io/flatbuffers
+   [LICENSE]: https://github.com/google/flatbuffers/blob/master/LICENSE.txt

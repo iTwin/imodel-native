@@ -26,9 +26,9 @@ struct SchemaPropertyCategoryIdentifier;
 * Specification for identifying a category.
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct PropertyCategoryIdentifier : NoXmlSupport<PresentationKey>
+struct PropertyCategoryIdentifier : PresentationKey
 {
-    DEFINE_T_SUPER(NoXmlSupport<PresentationKey>)
+    DEFINE_T_SUPER(PresentationKey)
 
 private:
     PropertyCategoryIdentifierType m_type;
@@ -125,9 +125,9 @@ public:
 * Specification for a custom property category
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct PropertyCategorySpecification : NoXmlSupport<PrioritizedPresentationKey>
+struct PropertyCategorySpecification : PrioritizedPresentationKey
 {
-    DEFINE_T_SUPER(NoXmlSupport<PrioritizedPresentationKey>)
+    DEFINE_T_SUPER(PrioritizedPresentationKey)
 
 private:
     Utf8String m_id;

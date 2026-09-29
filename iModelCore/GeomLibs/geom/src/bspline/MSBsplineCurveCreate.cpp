@@ -273,7 +273,7 @@ MSBsplineStatus MSBsplineCurve::AllocatePoles (int count, DPoint3dCP data)
     if (NULL == (poles = static_cast<DPoint3d *>(BSIBaseGeom::Malloc (allocSize))))
         return MDLERR_INSFMEMORY;
     if (NULL != data)
-        memcpy (poles, data, allocSize);
+        BeStringUtilities::Memcpy (poles, allocSize, data, allocSize);
     return SUCCESS;
     }
 
@@ -286,7 +286,7 @@ MSBsplineStatus MSBsplineCurve::AllocateWeights (int count, double const *data)
     if (NULL == (weights = static_cast<double *>(BSIBaseGeom::Malloc (allocSize))))
         return MDLERR_INSFMEMORY;
     if (NULL != data)
-        memcpy (weights, data, allocSize);
+        BeStringUtilities::Memcpy (weights, allocSize, data, allocSize);
     rational = true;
     return SUCCESS;
     }
@@ -300,14 +300,9 @@ MSBsplineStatus MSBsplineCurve::AllocateKnots (int count, double const * data)
     if (NULL == (knots = static_cast<double *>(BSIBaseGeom::Malloc (allocSize))))
         return MDLERR_INSFMEMORY;
     if (NULL != data)
-        memcpy (knots, data, allocSize);
+        BeStringUtilities::Memcpy (knots, allocSize, data, allocSize);
     return SUCCESS;
     }
-
-
-
-
-
 
 
 /**
@@ -443,7 +438,7 @@ MSBsplineStatus MSBsplineCurve::CreateFromPointsAndOrder (DPoint3dCP pPoints, in
 
         if (SUCCESS == (status = Allocate ()))
             {
-            memcpy (poles, pPoints, numPoints*sizeof(DPoint3d));
+            BeStringUtilities::Memcpy (poles, numPoints * sizeof(DPoint3d), pPoints, numPoints*sizeof(DPoint3d));
             status = bspknot_computeKnotVector (knots, &params, NULL);
             }
         }
@@ -550,93 +545,81 @@ bool inputPointsHaveWeightsAppliedAlready
 
 MSBsplineCurvePtr MSBsplineCurve::CreateCapture ()
     {
-    MSBsplineCurvePtr result = MSBsplineCurve::CreatePtr ();
-    if (!result.IsValid ())
-        return result;
-    result->SwapContents (*this);
+    MSBsplineCurvePtr result = MSBsplineCurve::CreatePtr();
+    result->SwapContents(*this);
     return result;
     }
 
 MSBsplineSurfacePtr MSBsplineSurface::CreateCapture ()
     {
-    MSBsplineSurfacePtr result = MSBsplineSurface::CreatePtr ();
-    if (!result.IsValid ())
-        return result;
-    this->ExtractTo (*result);
+    MSBsplineSurfacePtr result = MSBsplineSurface::CreatePtr();
+    this->ExtractTo(*result);
     return result;
     }
 
 
 MSBsplineCurvePtr MSBsplineCurve::CreateCopy () const
     {
-    MSBsplineCurvePtr result = MSBsplineCurve::CreatePtr ();
-    if (!result.IsValid ())
+    MSBsplineCurvePtr result = MSBsplineCurve::CreatePtr();
+    if (SUCCESS == bspcurv_copyCurve(result.get(), this))
         return result;
-    bspcurv_copyCurve (result.get(), const_cast <MSBsplineCurveP>(this));
-    return result;
+    return nullptr;
     }
 
 MSBsplineCurvePtr MSBsplineCurve::CreateCopyOpenAtFraction (double fraction) const
     {
-    MSBsplineCurvePtr result = MSBsplineCurve::CreatePtr ();
-    if (!result.IsValid ())
+    MSBsplineCurvePtr result = MSBsplineCurve::CreatePtr();
+    if (SUCCESS == bspcurv_openCurve(result.get(), this, fraction))
         return result;
-    bspcurv_openCurve (result.get(), const_cast <MSBsplineCurveP>(this), fraction);
-    return result;
+    return nullptr;
     }
 
 MSBsplineCurvePtr MSBsplineCurve::CreateCopyOpenAtKnot (double knot) const
     {
-    MSBsplineCurvePtr result = MSBsplineCurve::CreatePtr ();
-    if (!result.IsValid ())
+    MSBsplineCurvePtr result = MSBsplineCurve::CreatePtr();
+    if (SUCCESS == bspcurv_openCurve(result.get(), this, this->KnotToFraction(knot)))
         return result;
-    bspcurv_openCurve (result.get(), const_cast <MSBsplineCurveP>(this), this->KnotToFraction (knot));
-    return result;
+    return nullptr;
     }
 
 MSBsplineCurvePtr MSBsplineCurve::CreateCopyClosed () const
     {
-    MSBsplineCurvePtr result = MSBsplineCurve::CreatePtr ();
-    if (!result.IsValid ())
+    MSBsplineCurvePtr result = MSBsplineCurve::CreatePtr();
+    if (SUCCESS == bspcurv_closeCurve(result.get(), this))
         return result;
-    bspcurv_closeCurve (result.get(), const_cast <MSBsplineCurveP>(this));
-    return result;
+    return nullptr;
     }
 
 MSBsplineCurvePtr MSBsplineCurve::CreateCopyBetweenFractions (double fraction0, double fraction1) const
     {
-    MSBsplineCurvePtr result = MSBsplineCurve::CreatePtr ();
-    if (!result.IsValid ())
+    MSBsplineCurvePtr result = MSBsplineCurve::CreatePtr();
+    if (SUCCESS == bspcurv_segmentCurve(result.get(), this, fraction0, fraction1))
         return result;
-    bspcurv_segmentCurve (result.get(), const_cast <MSBsplineCurveP>(this), fraction0, fraction1);
-    return result;
+    return nullptr;
     }
 
 MSBsplineCurvePtr MSBsplineCurve::CreateCopyBetweenKnots (double knot0, double knot1) const
     {
-    MSBsplineCurvePtr result = MSBsplineCurve::CreatePtr ();
-    if (!result.IsValid ())
+    MSBsplineCurvePtr result = MSBsplineCurve::CreatePtr();
+    if (SUCCESS == bspcurv_segmentCurve(result.get(), this, this->KnotToFraction(knot0), this->KnotToFraction(knot1)))
         return result;
-    bspcurv_segmentCurve (result.get(), const_cast <MSBsplineCurveP>(this), this->KnotToFraction (knot0), this->KnotToFraction (knot1));
-    return result;
+    return nullptr;
     }
 
 MSBsplineCurvePtr MSBsplineCurve::CreateCopyReversed () const
     {
-    MSBsplineCurvePtr result = MSBsplineCurve::CreatePtr ();
-    if (!result.IsValid ())
+    MSBsplineCurvePtr result = MSBsplineCurve::CreatePtr();
+    if (SUCCESS == bspcurv_reverseCurve(this, result.get()))
         return result;
-    bspcurv_reverseCurve (const_cast <MSBsplineCurveP>(this), result.get());
-    return result;
+    return nullptr;
     }
 
 MSBsplineCurvePtr MSBsplineCurve::CreateCopyTransformed (TransformCR transform) const
     {
-    MSBsplineCurvePtr result = MSBsplineCurve::CreatePtr ();
-    if (!result.IsValid ())
+    MSBsplineCurvePtr result = MSBsplineCurve::CreatePtr();
+    if (SUCCESS == bspcurv_transformCurve(result.get(), this, &transform))
         return result;
-    bspcurv_transformCurve (result.get (), this, &transform);
-    return result;
+    return nullptr;
     }
 
 bool MSBsplineCurve::AreCompatible
@@ -682,16 +665,13 @@ MSBsplineCurveCR curveB
     return result;
     }
 
-
-
 MSBsplineCurvePtr MSBsplineCurve::CreateCopyBezier () const
     {
-    MSBsplineCurvePtr result = MSBsplineCurve::CreatePtr ();
-    bspcurv_makeBezier (result.get (), this);
-    return result;
+    MSBsplineCurvePtr result = MSBsplineCurve::CreatePtr();
+    if (SUCCESS == bspcurv_makeBezier (result.get (), this))
+        return result;
+    return nullptr;
     }
-
-
 
 MSBsplineCurvePtr MSBsplineCurve::CreateFromPolesAndOrder
 (
@@ -703,14 +683,10 @@ bool closed,
 bool inputPolesAlreadyWeighted
 )
     {
-    // Indent to force destructor of result after failure.
-        {
-        MSBsplineCurvePtr result = MSBsplineCurve::CreatePtr ();
-        if (SUCCESS == result.get ()->Populate (poles, weights, knots, order, closed, inputPolesAlreadyWeighted))
-            return result;
-        }
-    MSBsplineCurvePtr nullPtr;
-    return nullPtr;
+    MSBsplineCurvePtr result = MSBsplineCurve::CreatePtr();
+    if (SUCCESS == result->Populate(poles, weights, knots, order, closed, inputPolesAlreadyWeighted))
+        return result;
+    return nullptr;
     }
 
 MSBsplineCurvePtr MSBsplineCurve::CreateFromPolesAndOrder
@@ -721,14 +697,10 @@ int order,
 bool closed
 )
     {
-    // Indent to force destructor of result after failure.
-        {
-        MSBsplineCurvePtr result = MSBsplineCurve::CreatePtr ();
-        if (SUCCESS == result.get ()->Populate (poles, NULL, numPoles, NULL, 0, order, closed, true))
-            return result;
-        }
-    MSBsplineCurvePtr nullPtr;
-    return nullPtr;
+    MSBsplineCurvePtr result = MSBsplineCurve::CreatePtr();
+    if (SUCCESS == result->Populate(poles, NULL, numPoles, NULL, 0, order, closed, true))
+        return result;
+    return nullptr;
     }
 
 MSBsplineCurvePtr MSBsplineCurve::CreateFromPolesAndOrder
@@ -739,17 +711,13 @@ int order,
 bool closed
 )
     {
-    // Indent to force destructor of result after failure.
-        {
-        bvector <DPoint3d> xyzPoles;
-        for (size_t i = 0; i < (size_t)numPoles; i++)
-            xyzPoles.push_back (DPoint3d::From (xyPoles[i].x, xyPoles[i].y, 0.0));
-        MSBsplineCurvePtr result = MSBsplineCurve::CreatePtr ();
-        if (SUCCESS == result.get ()->Populate (&xyzPoles[0], NULL, numPoles, NULL, 0, order, closed, true))
-            return result;
-        }
-    MSBsplineCurvePtr nullPtr;
-    return nullPtr;
+    bvector <DPoint3d> xyzPoles;
+    for (size_t i = 0; i < (size_t)numPoles; i++)
+        xyzPoles.push_back (DPoint3d::From (xyPoles[i].x, xyPoles[i].y, 0.0));
+    MSBsplineCurvePtr result = MSBsplineCurve::CreatePtr();
+    if (SUCCESS == result->Populate(&xyzPoles[0], NULL, numPoles, NULL, 0, order, closed, true))
+        return result;
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -833,7 +801,7 @@ RotMatrixCP axes
     curve.display.curveDisplay = true;
     curve.display.polygonDisplay = false;
     transform.Multiply (curve.poles, tmpPoles, numPoles);
-    memcpy (curve.weights, tmpWeights, numPoles * sizeof (double));
+    BeStringUtilities::Memcpy (curve.weights, numPoles * sizeof (double), tmpWeights, numPoles * sizeof (double));
     bspknot_computeKnotVector (curve.knots, &curve.params, tmpKnots);
     DPoint3d::MultiplyArrayByScales (curve.poles, curve.poles, curve.weights, curve.params.numPoles);
     return MSB_SUCCESS;
@@ -997,7 +965,7 @@ MSBsplineStatus MSBsplineCurve::InitFromPoints (DPoint3dCP points, int nPoints)
     poles = static_cast <DPoint3d *> (BSIBaseGeom::Malloc (pointAllocSize));
     knots = static_cast <double *> (BSIBaseGeom::Malloc (knotsAllocSize));
 
-    memcpy (poles, points, pointAllocSize);
+    BeStringUtilities::Memcpy (poles, pointAllocSize, points, pointAllocSize);
 
     if (SUCCESS != bspknot_computeKnotVector (knots, &params, NULL))
         return ERROR;

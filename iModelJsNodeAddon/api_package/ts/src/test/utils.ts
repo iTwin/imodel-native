@@ -36,14 +36,14 @@ export function loadInstalledAddon(): typeof IModelJsNative {
   return NativeLibrary.load();
 }
 
-export function loadLocalBuildOfAddon(): any {
+export function getLocalBuildOfAddonPath(): string {
   if (process.env.OutRoot === undefined) {
     throw new Error("You must define 'OutRoot' in your environment");
   }
 
   const platformSubDirs = {
     win32: "Winx64",
-    linux: "LinuxX64",
+    linux: `Linux${process.arch.toUpperCase()}`,
     darwin: `MacOS${process.arch.toUpperCase()}`,
   };
 
@@ -62,6 +62,13 @@ export function loadLocalBuildOfAddon(): any {
   const addonFile = path.join(generatedPkgsDir, NativeLibrary.archName, NativeLibrary.nodeAddonName);
   assert(fs.existsSync(addonFile), `${addonFile} - local build of imodeljs.node not found`);
 
+  return addonFile;
+}
+
+export function loadLocalBuildOfAddon(): any {
+  const addonFile = getLocalBuildOfAddonPath();
+
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   return require(addonFile);
 }
 
@@ -81,8 +88,7 @@ export function copyFile(newName: string, pathToCopy: string): string {
   const newPath = path.join(outDir, newName);
   try {
     fs.unlinkSync(newPath);
-  } catch (_err) {
-  }
+  } catch {}
   if (!fs.existsSync(outDir))
     fs.mkdirSync(outDir);
   fs.copyFileSync(pathToCopy, newPath);

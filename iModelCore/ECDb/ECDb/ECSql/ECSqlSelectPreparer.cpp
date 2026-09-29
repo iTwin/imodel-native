@@ -336,7 +336,7 @@ ECSqlStatus ECSqlSelectPreparer::PrepareDerivedPropertyExp(NativeSqlBuilder::Lis
 
     std::vector<Utf8String> & resultSet = const_cast<DerivedPropertyExp&>(exp).SqlResultSetR();
     Utf8String alias = exp.GetColumnAlias();
-    if (alias.empty() || exp.FindParent(Exp::Type::Subquery) != nullptr)
+    if (alias.empty() || exp.OriginateInASubQuery() || exp.OriginateInACommonTableBlockWithNoColumns())
         alias = exp.GetNestedAlias();
     if (innerExp->GetType() == Exp::Type::CommonTablePropertyName)
         resultSet.push_back(alias);
@@ -443,7 +443,9 @@ void ECSqlSelectPreparer::ExtractPropertyRefs(ECSqlPrepareContext& ctx, Exp cons
         if (propertyName->IsVirtualProperty())
             return;
 
-        ctx.GetSelectionOptionsR().AddProperty(*propertyName->GetPropertyMap());
+        //may be nullptr, e.g. for a reference to a CTE or subquery alias which isn't backed by a mapped property
+        if (PropertyMap const* propertyMap = propertyName->GetPropertyMap())
+            ctx.GetSelectionOptionsR().AddProperty(*propertyMap);
         }
 
     for (Exp const* child : exp->GetChildren())

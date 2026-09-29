@@ -47,6 +47,7 @@
 
     <Part Name="UnitTests-NonPublished" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
         <SubPart PartName="PrewireForUnitTests" />
+        <SubPart PartName="BeRapidJson" />
 	<SubPart PartName="folly" PartFile="iModelCore/libsrc/facebook/facebook" />
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="Bentley/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
@@ -193,21 +194,16 @@
         </Bindings>
     </Part>
 
-    <Part Name="BeXml" BentleyBuildMakeFile="BeXml/bexml.mke">
-        <SubPart PartName="BentleyDll"/>
-        <SubPart PartName="LibXml2" PartFile="iModelCore\libsrc\libxml2\BeLibxml2"/>
+    <Part Name="BeRapidJson" BentleyBuildMakeFile="BeRapidJson/BeRapidJson.mke">
+        <SubPart PartName="rapidjsonapi" PartFile="iModelCore/libsrc/rapidjson/rapidjson"/>
         <Bindings>
-            <PublicAPI Domain="BeXml"/>
-            <Assemblies>Delivery/$(shlibprefix)iTwinXml$(shlibext)</Assemblies>
-            <Libs>Delivery/$(libprefix)iTwinXml$(libext)</Libs>
+            <PublicAPI Domain="BeRapidJson"/>
         </Bindings>
     </Part>
 
-    <Part Name="BeRapidJson" BentleyBuildMakeFile="BeRapidJson/BeRapidJson.mke">
-        <SubPart PartName="rapidjsonapi" PartFile="iModelCore/libsrc/rapidjson/rapidjson"/>
-        <SubPart PartName="BeJsonCpp" PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" />
+    <Part Name="v8serial" BentleyBuildMakeFile="v8serial/v8serial.mke">
         <Bindings>
-            <PublicAPI Domain="BeRapidJson"/>
+            <PublicAPI Domain="v8serial"/>
         </Bindings>
     </Part>
 

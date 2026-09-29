@@ -38,5 +38,7 @@ ECHO Compiling Lexical Analyzer ...
 %flex_tool% -i -8 -PSQLyy -L -o%parse_dir%\SqlFlex.cpp %parse_dir%\SQLflex.l
 
 ECHO Compiling Parser ...
-%bison_tool% -k -l -pSQLyy -bSql -o %parse_dir%\SqlBison.cpp --defines=%parse_dir%\SqlBison.h %parse_dir%\SQlbison.y
+REM The inherited SQL grammar has many expected shift/reduce and reduce/reduce conflicts
+REM that are resolved by bison defaults; -Wno-conflicts-sr/-rr silence those warnings.
+%bison_tool% -k -l -pSQLyy -bSql -Wno-conflicts-sr -Wno-conflicts-rr -o %parse_dir%\SqlBison.cpp --defines=%parse_dir%\SqlBison.h %parse_dir%\SQlbison.y
 

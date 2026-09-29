@@ -68,7 +68,7 @@ void ExtractPropFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
     if (field) field->SetDynamicColumnInfo(ECSqlColumnInfo());
     m_ecdb.GetInstanceReader().Seek(
         InstanceReader::Position(instanceId, classId, accessStringVal.GetValueText()),
-        [&](InstanceReader::IRowContext const& row){
+        [&](InstanceReader::IRowContext const& row, auto _){
         auto& val = row.GetValue(0);
         if (val.IsNull()) {
             return;
@@ -111,8 +111,8 @@ void ExtractPropFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
             }
         }
 
-        InstanceReader::JsonParams params;
-        params.SetUseJsName(jsonFlags & InstanceReader::FLAGS_UseJsPropertyNames);
+        JsReadOptions params;
+        params.SetUseJsNames(jsonFlags & InstanceReader::FLAGS_UseJsPropertyNames);
         params.SetAbbreviateBlobs(!(jsonFlags & InstanceReader::FLAGS_DoNotTruncateBlobs));
 
         const auto json = row.GetJson(params).Stringify();
@@ -155,11 +155,11 @@ void ExtractInstFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
         }
     }
 
-    InstanceReader::JsonParams params;
-    params.SetUseJsName(jsonFlags & InstanceReader::FLAGS_UseJsPropertyNames);
+    JsReadOptions params;
+    params.SetUseJsNames(jsonFlags & InstanceReader::FLAGS_UseJsPropertyNames);
     params.SetAbbreviateBlobs(!(jsonFlags & InstanceReader::FLAGS_DoNotTruncateBlobs));
 
-    auto setResult = [&](InstanceReader::IRowContext const& row){
+    auto setResult = [&](InstanceReader::IRowContext const& row, auto _) {
         const auto json = row.GetJson(params).Stringify();
         ctx.SetResultText(json.c_str(), static_cast<int>(json.length()), Context::CopyData::Yes);
     };
@@ -735,7 +735,7 @@ void XmlCAToJson::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
         }
 
     DbValue const& idValue = args[0];
-    if (idValue.IsNull() || idValue.GetValueType() != DbValueType::IntegerVal) 
+    if (idValue.IsNull() || idValue.GetValueType() != DbValueType::IntegerVal)
         {
         ctx.SetResultNull();
         return;
@@ -750,7 +750,7 @@ void XmlCAToJson::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
         }
 
     DbValue const& xmlValue = args[1];
-    if (xmlValue.IsNull() || xmlValue.GetValueType() != DbValueType::TextVal) 
+    if (xmlValue.IsNull() || xmlValue.GetValueType() != DbValueType::TextVal)
         {
         ctx.SetResultNull();
         return;
@@ -766,16 +766,105 @@ void XmlCAToJson::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
         return;
         }
 
-    Json::Value caJson;
+    BeJsDocument caJson;
     if (SUCCESS != JsonEcInstanceWriter::WriteInstanceToJson(caJson, *deserializedCa, nullptr, false))
         {
         ctx.SetResultError("SQL function " SQLFUNC_XmlCAToJson " failed: unable to serialize instance to json.");
         return;
         }
 
-    Utf8String strVal = caJson.ToString();
+    Utf8String strVal = caJson.Stringify();
     const int len = (int) strlen(strVal.c_str());
     ctx.SetResultText(strVal.c_str(), len, Context::CopyData::Yes);
     }
+
+//=================================[SupportInstanceQueryFunc]=======================================
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+std::unique_ptr<SupportInstanceQueryFunc> SupportInstanceQueryFunc::Create(ECDbCR ecdb) {
+    return std::make_unique<SupportInstanceQueryFunc>(ecdb);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void SupportInstanceQueryFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
+    if (nArgs != 1) {
+        ctx.SetResultError("supports_instance_query(S|I) expects exactly one argument: class name (e.g. 'BisCore.Element') or class id.");
+        return;
+    }
+
+    DbValue const& arg = args[0];
+    if (arg.IsNull()) {
+        ctx.SetResultInt(0);
+        return;
+    }
+
+    ECN::ECClassCP ecClass = nullptr;
+    if (arg.GetValueType() == DbValueType::TextVal) {
+        Utf8String name = arg.GetValueText();
+        const auto delimiterPos = name.find_first_of(".:");
+        if (delimiterPos == std::string::npos) {
+            ctx.SetResultError("supports_instance_query() expects class name in format 'SchemaNameOrAlias.ClassName' or 'SchemaNameOrAlias:ClassName'.");
+            return;
+        }
+        Utf8String schemaNameOrAlias = name.substr(0, delimiterPos);
+        Utf8String className = name.substr(delimiterPos + 1U, name.length());
+        if (Utf8String::IsNullOrEmpty(schemaNameOrAlias.c_str()) || Utf8String::IsNullOrEmpty(className.c_str())) {
+            ctx.SetResultError("supports_instance_query() expects class name in format 'SchemaNameOrAlias.ClassName' or 'SchemaNameOrAlias:ClassName'.");
+            return;
+        }
+        // Look up class by schema name/alias + class name
+        auto stmt = m_ecdb.GetCachedStatement("SELECT c.Id FROM ec_Class c JOIN ec_Schema s ON c.SchemaId = s.Id WHERE c.Name = ?1 AND (s.Name = ?2 OR s.Alias = ?2)");
+        if (stmt == nullptr) {
+            ctx.SetResultError("supports_instance_query() db is closed.");
+            return;
+        }
+        stmt->BindText(1, className, Statement::MakeCopy::No);
+        stmt->BindText(2, schemaNameOrAlias, Statement::MakeCopy::No);
+        if (stmt->Step() != BE_SQLITE_ROW) {
+            ctx.SetResultInt(0);
+            return;
+        }
+        auto classId = stmt->GetValueId<ECN::ECClassId>(0);
+        ecClass = m_ecdb.Schemas().GetClass(classId);
+    } else if (arg.GetValueType() == DbValueType::IntegerVal) {
+        ECN::ECClassId classId(arg.GetValueUInt64());
+        ecClass = m_ecdb.Schemas().GetClass(classId);
+    } else {
+        ctx.SetResultError("supports_instance_query() expects a text class name or integer class id.");
+        return;
+    }
+
+    if (ecClass == nullptr) {
+        ctx.SetResultInt(0);
+        return;
+    }
+
+    if (ecClass->IsMixin()) {
+        ctx.SetResultInt(0);
+        return;
+    }
+
+    auto const* classMap = m_ecdb.Schemas().Main().GetClassMap(*ecClass);
+    if (classMap == nullptr) {
+        ctx.SetResultInt(0);
+        return;
+    }
+
+    auto mapType = classMap->GetType();
+    if (mapType == ClassMap::Type::NotMapped || mapType == ClassMap::Type::RelationshipEndTable) {
+        ctx.SetResultInt(0);
+        return;
+    }
+
+    if (mapType == ClassMap::Type::Class || mapType == ClassMap::Type::RelationshipLinkTable) {
+        ctx.SetResultInt(1);
+        return;
+    }
+
+    ctx.SetResultInt(0);
+}
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

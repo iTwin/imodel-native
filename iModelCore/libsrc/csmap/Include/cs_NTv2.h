@@ -274,7 +274,7 @@ struct csNTv2SubHdr_
    to compute the AA, BB, CC, and DD bilinear coefficients is the southeast
    corner of the grid cell.  In most other grid cell environments, the
    reference corner is the south west corner of the grid cell.
-   
+
    Note that this cell structure is sufficient for the calculation of
    either the longitude or latitude but not both.  Two such structures
    are required to perform a complete datum shift.  The NTv2 file format

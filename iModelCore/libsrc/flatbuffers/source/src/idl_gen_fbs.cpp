@@ -16,85 +16,139 @@
 
 // independent from idl_parser, since this code is not needed for most clients
 
+#include "flatbuffers/code_generators.h"
 #include "flatbuffers/flatbuffers.h"
 #include "flatbuffers/idl.h"
 #include "flatbuffers/util.h"
 
 namespace flatbuffers {
 
-static std::string GenType(const Type &type) {
+static std::string GenType(const Type &type, bool underlying = false) {
   switch (type.base_type) {
-    case BASE_TYPE_STRUCT: return type.struct_def->name;
-    case BASE_TYPE_UNION:  return type.enum_def->name;
+    case BASE_TYPE_STRUCT:
+      return type.struct_def->defined_namespace->GetFullyQualifiedName(
+          type.struct_def->name);
     case BASE_TYPE_VECTOR: return "[" + GenType(type.VectorType()) + "]";
-    default: return kTypeNames[type.base_type];
+    default:
+      if (type.enum_def && !underlying) {
+        return type.enum_def->defined_namespace->GetFullyQualifiedName(
+            type.enum_def->name);
+      } else {
+        return kTypeNames[type.base_type];
+      }
   }
 }
 
-// Generate a flatbuffer schema from the Parser's internal representation.
-std::string GenerateFBS(const Parser &parser, const std::string &file_name,
-                        const GeneratorOptions &opts) {
-  std::string schema;
-  schema += "// Generated from " + file_name + ".proto\n\n";
-  if (opts.include_dependence_headers) {
-    int num_includes = 0;
-    for (auto it = parser.included_files_.begin();
-         it != parser.included_files_.end(); ++it) {
-      auto basename = flatbuffers::StripPath(
-                        flatbuffers::StripExtension(it->first));
-      if (basename != file_name) {
-        schema += "include \"" + basename + ".fbs\";\n";
-        num_includes++;
-      }
-    }
-    if (num_includes) schema += "\n";
-  }
+static void GenNameSpace(const Namespace &name_space, std::string *_schema,
+                         const Namespace **last_namespace) {
+  if (*last_namespace == &name_space) return;
+  *last_namespace = &name_space;
+  auto &schema = *_schema;
   schema += "namespace ";
-  auto name_space = parser.namespaces_.back();
-  for (auto it = name_space->components.begin();
-           it != name_space->components.end(); ++it) {
-    if (it != name_space->components.begin()) schema += ".";
+  for (auto it = name_space.components.begin();
+       it != name_space.components.end(); ++it) {
+    if (it != name_space.components.begin()) schema += ".";
     schema += *it;
   }
   schema += ";\n\n";
+}
+
+// Generate a flatbuffer schema from the Parser's internal representation.
+std::string GenerateFBS(const Parser &parser, const std::string &file_name) {
+  // Proto namespaces may clash with table names, escape the ones that were
+  // generated from a table:
+  for (auto it = parser.namespaces_.begin(); it != parser.namespaces_.end();
+       ++it) {
+    auto &ns = **it;
+    for (size_t i = 0; i < ns.from_table; i++) {
+      ns.components[ns.components.size() - 1 - i] += "_";
+    }
+
+    if (parser.opts.proto_mode && !parser.opts.proto_namespace_suffix.empty()) {
+      // Since we know that all these namespaces come from a .proto, and all are
+      // being converted, we can simply apply this suffix to all of them.
+      ns.components.insert(ns.components.end() - ns.from_table,
+                           parser.opts.proto_namespace_suffix);
+    }
+  }
+
+  std::string schema;
+  schema += "// Generated from " + file_name + ".proto\n\n";
+  if (parser.opts.include_dependence_headers) {
+    // clang-format off
+    int num_includes = 0;
+    for (auto it = parser.included_files_.begin();
+         it != parser.included_files_.end(); ++it) {
+      if (it->second.empty())
+        continue;
+      std::string basename;
+      if(parser.opts.keep_include_path) {
+        basename = flatbuffers::StripExtension(it->second);
+      } else {
+        basename = flatbuffers::StripPath(
+                flatbuffers::StripExtension(it->second));
+      }
+      schema += "include \"" + basename + ".fbs\";\n";
+      num_includes++;
+    }
+    if (num_includes) schema += "\n";
+    // clang-format on
+  }
   // Generate code for all the enum declarations.
-  for (auto it = parser.enums_.vec.begin();
-           it != parser.enums_.vec.end(); ++it) {
-    EnumDef &enum_def = **it;
-    schema += "enum " + enum_def.name + " : ";
-    schema += GenType(enum_def.underlying_type) + " {\n";
-    for (auto it = enum_def.vals.vec.begin();
-         it != enum_def.vals.vec.end(); ++it) {
+  const Namespace *last_namespace = nullptr;
+  for (auto enum_def_it = parser.enums_.vec.begin();
+       enum_def_it != parser.enums_.vec.end(); ++enum_def_it) {
+    EnumDef &enum_def = **enum_def_it;
+    if (parser.opts.include_dependence_headers && enum_def.generated) {
+      continue;
+    }
+    GenNameSpace(*enum_def.defined_namespace, &schema, &last_namespace);
+    GenComment(enum_def.doc_comment, &schema, nullptr);
+    if (enum_def.is_union)
+      schema += "union " + enum_def.name;
+    else
+      schema += "enum " + enum_def.name + " : ";
+    schema += GenType(enum_def.underlying_type, true) + " {\n";
+    for (auto it = enum_def.Vals().begin(); it != enum_def.Vals().end(); ++it) {
       auto &ev = **it;
-      schema += "  " + ev.name + " = " + NumToString(ev.value) + ",\n";
+      GenComment(ev.doc_comment, &schema, nullptr, "  ");
+      if (enum_def.is_union)
+        schema += "  " + GenType(ev.union_type) + ",\n";
+      else
+        schema += "  " + ev.name + " = " + enum_def.ToString(ev) + ",\n";
     }
     schema += "}\n\n";
   }
   // Generate code for all structs/tables.
-  for (auto it = parser.structs_.vec.begin();
-           it != parser.structs_.vec.end(); ++it) {
+  for (auto it = parser.structs_.vec.begin(); it != parser.structs_.vec.end();
+       ++it) {
     StructDef &struct_def = **it;
+    if (parser.opts.include_dependence_headers && struct_def.generated) {
+      continue;
+    }
+    GenNameSpace(*struct_def.defined_namespace, &schema, &last_namespace);
+    GenComment(struct_def.doc_comment, &schema, nullptr);
     schema += "table " + struct_def.name + " {\n";
-    for (auto it = struct_def.fields.vec.begin();
-             it != struct_def.fields.vec.end(); ++it) {
-      auto &field = **it;
-      schema += "  " + field.name + ":" + GenType(field.value.type);
-      if (field.value.constant != "0") schema += " = " + field.value.constant;
-      if (field.required) schema += " (required)";
-      schema += ";\n";
+    for (auto field_it = struct_def.fields.vec.begin();
+         field_it != struct_def.fields.vec.end(); ++field_it) {
+      auto &field = **field_it;
+      if (field.value.type.base_type != BASE_TYPE_UTYPE) {
+        GenComment(field.doc_comment, &schema, nullptr, "  ");
+        schema += "  " + field.name + ":" + GenType(field.value.type);
+        if (field.value.constant != "0") schema += " = " + field.value.constant;
+        if (field.required) schema += " (required)";
+        schema += ";\n";
+      }
     }
     schema += "}\n\n";
   }
   return schema;
 }
 
-bool GenerateFBS(const Parser &parser,
-                 const std::string &path,
-                 const std::string &file_name,
-                 const GeneratorOptions &opts) {
+bool GenerateFBS(const Parser &parser, const std::string &path,
+                 const std::string &file_name) {
   return SaveFile((path + file_name + ".fbs").c_str(),
-                  GenerateFBS(parser, file_name, opts), false);
+                  GenerateFBS(parser, file_name), false);
 }
 
 }  // namespace flatbuffers
-

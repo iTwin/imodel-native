@@ -695,6 +695,8 @@ IssueId ECDbIssueId::ECDb_0683 = IssueId("ECDb_0683");
 IssueId ECDbIssueId::ECDb_0684 = IssueId("ECDb_0684");
 IssueId ECDbIssueId::ECDb_0685 = IssueId("ECDb_0685");
 IssueId ECDbIssueId::ECDb_0686 = IssueId("ECDb_0686");
+IssueId ECDbIssueId::ECDb_0687 = IssueId("ECDb_0687");
+IssueId ECDbIssueId::ECDb_0688 = IssueId("ECDb_0688");
 
 IssueId ECDbIssueId::ECDb_0700 = IssueId("ECDb_0700");
 IssueId ECDbIssueId::ECDb_0701 = IssueId("ECDb_0701");
@@ -731,6 +733,20 @@ IssueId ECDbIssueId::ECDb_0731 = IssueId("ECDb_0731");
 IssueId ECDbIssueId::ECDb_0732 = IssueId("ECDb_0732");
 IssueId ECDbIssueId::ECDb_0733 = IssueId("ECDb_0733");
 IssueId ECDbIssueId::ECDb_0734 = IssueId("ECDb_0734");
+IssueId ECDbIssueId::ECDb_0735 = IssueId("ECDb_0735");
+IssueId ECDbIssueId::ECDb_0736 = IssueId("ECDb_0736");
+IssueId ECDbIssueId::ECDb_0737 = IssueId("ECDb_0737");
+IssueId ECDbIssueId::ECDb_0738 = IssueId("ECDb_0738");
+IssueId ECDbIssueId::ECDb_0739 = IssueId("ECDb_0739");
+IssueId ECDbIssueId::ECDb_0740 = IssueId("ECDb_0740");
+IssueId ECDbIssueId::ECDb_0741 = IssueId("ECDb_0741");
+IssueId ECDbIssueId::ECDb_0742 = IssueId("ECDb_0742");
+IssueId ECDbIssueId::ECDb_0743 = IssueId("ECDb_0743");
+IssueId ECDbIssueId::ECDb_0744 = IssueId("ECDb_0744");
+IssueId ECDbIssueId::ECDb_0745 = IssueId("ECDb_0745");
+IssueId ECDbIssueId::ECDb_0746 = IssueId("ECDb_0746");
+IssueId ECDbIssueId::ECDb_0747 = IssueId("ECDb_0747");
+IssueId ECDbIssueId::ECDb_0748 = IssueId("ECDb_0748");
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -792,6 +808,7 @@ void IssueDataSource::ClearFilter() const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 void IssueDataSource::Report(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message)  const {
+    m_issueObserverEvent.RaiseEvent(severity, category, type, id, message);
     BeMutexHolder lock(m_issueEvent.GetMutex());
     if (m_filterCallback != nullptr) {
         if (m_filterCallback(severity, category, type, id, message) == FilterAction::Ignore) {

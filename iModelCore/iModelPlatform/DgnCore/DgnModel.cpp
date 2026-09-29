@@ -564,6 +564,56 @@ DgnDbStatus InformationModel::_OnInsertElement(DgnElementR element)
     return element.IsInformationContentElement() ? T_Super::_OnInsertElement(element) : DgnDbStatus::WrongModel;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometricModel3d::_ValidateElementForModel(DgnElementCR element) const
+    {
+    auto geom = element.ToGeometrySource();
+    return (geom && !geom->Is3d()) ? DgnDbStatus::Mismatch2d3d : DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometricModel2d::_ValidateElementForModel(DgnElementCR element) const
+    {
+    auto geom = element.ToGeometrySource();
+    return (geom && !geom->Is2d()) ? DgnDbStatus::Mismatch2d3d : DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus SpatialLocationModel::_ValidateElementForModel(DgnElementCR element) const
+    {
+    return dynamic_cast<PhysicalElement const*>(&element) ? DgnDbStatus::WrongModel : DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus InformationModel::_ValidateElementForModel(DgnElementCR element) const
+    {
+    return element.IsInformationContentElement() ? DgnDbStatus::Success : DgnDbStatus::WrongModel;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GroupInformationModel::_ValidateElementForModel(DgnElementCR element) const
+    {
+    return (nullptr != dynamic_cast<GroupInformationElement const*>(&element)) ? DgnDbStatus::Success : DgnDbStatus::WrongModel;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus InformationRecordModel::_ValidateElementForModel(DgnElementCR element) const
+    {
+    return (nullptr != dynamic_cast<InformationRecordElement const*>(&element)) ? DgnDbStatus::Success : DgnDbStatus::WrongModel;
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -1038,23 +1088,26 @@ DgnDbStatus GeometricModel3d::_FillRangeIndex() {
         // this is only for models that are not in the spatial index (e.g. plan projection models). This is a rare case.
         auto stmt = m_dgndb.GetPreparedECSqlStatement("SELECT ECInstanceId,Origin,Yaw,Pitch,Roll,BBoxLow,BBoxHigh FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " WHERE Model.Id=?");
         stmt->BindId(1, GetModelId());
+        enum Column : int { ElementId, Origin, Yaw, Pitch, Roll, BBoxLow, BBoxHigh };
         while (BE_SQLITE_ROW == stmt->Step()) {
-            if (stmt->IsValueNull(2)) // has no placement
+            // Angles are nullable, but a range requires an origin and a complete bounding box.
+            if (stmt->IsValueNull(Origin) || stmt->IsValueNull(BBoxLow) || stmt->IsValueNull(BBoxHigh))
                 continue;
 
-            double yaw = stmt->GetValueDouble(2);
-            double pitch = stmt->GetValueDouble(3);
-            double roll = stmt->GetValueDouble(4);
+            bool hasAngles = !stmt->IsValueNull(Yaw) && !stmt->IsValueNull(Pitch) && !stmt->IsValueNull(Roll);
+            double yaw = hasAngles ? stmt->GetValueDouble(Yaw) : 0.0;
+            double pitch = hasAngles ? stmt->GetValueDouble(Pitch) : 0.0;
+            double roll = hasAngles ? stmt->GetValueDouble(Roll) : 0.0;
 
-            DPoint3d low = stmt->GetValuePoint3d(5);
-            DPoint3d high = stmt->GetValuePoint3d(6);
+            DPoint3d low = stmt->GetValuePoint3d(BBoxLow);
+            DPoint3d high = stmt->GetValuePoint3d(BBoxHigh);
 
-            Placement3d placement(stmt->GetValuePoint3d(1),
+            Placement3d placement(stmt->GetValuePoint3d(Origin),
                                     YawPitchRollAngles(Angle::FromDegrees(yaw), Angle::FromDegrees(pitch), Angle::FromDegrees(roll)),
                                     ElementAlignedBox3d(low.x, low.y, low.z, high.x, high.y, high.z));
 
             RangeIndex::FBox fBox(placement.CalculateRange(), false);
-            m_rangeIndex->AddEntry(RangeIndex::Entry(fBox, stmt->GetValueId<DgnElementId>(0)));
+            m_rangeIndex->AddEntry(RangeIndex::Entry(fBox, stmt->GetValueId<DgnElementId>(ElementId)));
         }
     }
 
@@ -1069,15 +1122,17 @@ AxisAlignedBox3d GeometricModel3d::_GetElementRange(DgnElementId id) const {
     stmt->BindId(1, id);
     stmt->BindId(2, GetModelId());
 
-    if (BE_SQLITE_ROW != stmt->Step() || stmt->IsValueNull(1))
+    enum Column : int { Origin, Yaw, Pitch, Roll, BBoxLow, BBoxHigh };
+    if (BE_SQLITE_ROW != stmt->Step() || stmt->IsValueNull(Origin) || stmt->IsValueNull(BBoxLow) || stmt->IsValueNull(BBoxHigh))
         return AxisAlignedBox3d();
 
-    double yaw = stmt->GetValueDouble(1);
-    double pitch = stmt->GetValueDouble(2);
-    double roll = stmt->GetValueDouble(3);
-    DPoint3d low = stmt->GetValuePoint3d(4);
-    DPoint3d high = stmt->GetValuePoint3d(5);
-    Placement3d placement(stmt->GetValuePoint3d(0),
+    bool hasAngles = !stmt->IsValueNull(Yaw) && !stmt->IsValueNull(Pitch) && !stmt->IsValueNull(Roll);
+    double yaw = hasAngles ? stmt->GetValueDouble(Yaw) : 0.0;
+    double pitch = hasAngles ? stmt->GetValueDouble(Pitch) : 0.0;
+    double roll = hasAngles ? stmt->GetValueDouble(Roll) : 0.0;
+    DPoint3d low = stmt->GetValuePoint3d(BBoxLow);
+    DPoint3d high = stmt->GetValuePoint3d(BBoxHigh);
+    Placement3d placement(stmt->GetValuePoint3d(Origin),
                           YawPitchRollAngles(Angle::FromDegrees(yaw), Angle::FromDegrees(pitch), Angle::FromDegrees(roll)),
                           ElementAlignedBox3d(low.x, low.y, low.z, high.x, high.y, high.z));
 
@@ -1096,20 +1151,23 @@ DgnDbStatus GeometricModel2d::_FillRangeIndex() {
 
     auto stmt = m_dgndb.GetPreparedECSqlStatement("SELECT ECInstanceId,Origin,Rotation,BBoxLow,BBoxHigh FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement2d) " WHERE Model.Id=?");
     stmt->BindId(1, GetModelId());
+    enum Column : int { ElementId, Origin, Rotation, BBoxLow, BBoxHigh };
 
     while (BE_SQLITE_ROW == stmt->Step()) {
-        if (stmt->IsValueNull(2)) // has no placement
+        // Rotation is nullable, but a range requires an origin and a complete bounding box.
+        if (stmt->IsValueNull(Origin) || stmt->IsValueNull(BBoxLow) || stmt->IsValueNull(BBoxHigh))
             continue;
 
-        DPoint2d low = stmt->GetValuePoint2d(3);
-        DPoint2d high = stmt->GetValuePoint2d(4);
+        DPoint2d low = stmt->GetValuePoint2d(BBoxLow);
+        DPoint2d high = stmt->GetValuePoint2d(BBoxHigh);
+        double rotation = stmt->IsValueNull(Rotation) ? 0.0 : stmt->GetValueDouble(Rotation);
 
-        Placement2d placement(stmt->GetValuePoint2d(1),
-                              AngleInDegrees::FromDegrees(stmt->GetValueDouble(2)),
+        Placement2d placement(stmt->GetValuePoint2d(Origin),
+                              AngleInDegrees::FromDegrees(rotation),
                               ElementAlignedBox2d(low.x, low.y, high.x, high.y));
 
         RangeIndex::FBox fbox(placement.CalculateRange(), true);
-        m_rangeIndex->AddEntry(RangeIndex::Entry(fbox, stmt->GetValueId<DgnElementId>(0)));
+        m_rangeIndex->AddEntry(RangeIndex::Entry(fbox, stmt->GetValueId<DgnElementId>(ElementId)));
     }
 
     return DgnDbStatus::Success;
@@ -1123,13 +1181,15 @@ AxisAlignedBox3d GeometricModel2d::_GetElementRange(DgnElementId id) const {
     stmt->BindId(1, id);
     stmt->BindId(2, GetModelId());
 
-    if (BE_SQLITE_ROW != stmt->Step() || stmt->IsValueNull(1))
+    enum Column : int { Origin, Rotation, BBoxLow, BBoxHigh };
+    if (BE_SQLITE_ROW != stmt->Step() || stmt->IsValueNull(Origin) || stmt->IsValueNull(BBoxLow) || stmt->IsValueNull(BBoxHigh))
         return AxisAlignedBox3d();
 
-    DPoint2d low = stmt->GetValuePoint2d(2);
-    DPoint2d high = stmt->GetValuePoint2d(3);
-    Placement2d placement(stmt->GetValuePoint2d(0),
-                          AngleInDegrees::FromDegrees(stmt->GetValueDouble(1)),
+    DPoint2d low = stmt->GetValuePoint2d(BBoxLow);
+    DPoint2d high = stmt->GetValuePoint2d(BBoxHigh);
+    double rotation = stmt->IsValueNull(Rotation) ? 0.0 : stmt->GetValueDouble(Rotation);
+    Placement2d placement(stmt->GetValuePoint2d(Origin),
+                          AngleInDegrees::FromDegrees(rotation),
                           ElementAlignedBox2d(low.x, low.y, high.x, high.y));
 
     return placement.CalculateRange();
@@ -1217,7 +1277,8 @@ DgnDbStatus DgnModel::_OnDeleteElement(DgnElementCR element) {
     if (m_dgndb.IsReadonly())
         return DgnDbStatus::ReadOnly;
 
-    CallJsElementPostHandler(element.m_elementId, "onDeleteElement"); // javascript `model.onDeleteElement`
+    if (!GetDgnDb().Elements().IsBulkOperation())
+        CallJsElementPostHandler(element.m_elementId, "onDeleteElement"); // javascript `model.onDeleteElement`
     return DgnDbStatus::Success;
 }
 
@@ -1235,13 +1296,24 @@ DgnDbStatus DgnModel::_OnUpdateElement(DgnElementCR modified, DgnElementCR origi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel::_OnDelete() {
+DgnDbStatus DgnModel::_OnDeleteNotify() {
     ModelHandlerR modelHandler = GetModelHandler();
     if (modelHandler.GetDomain().IsReadonly())
         return DgnDbStatus::ReadOnlyDomain;
 
-    CallJsPostHandler("onDelete");
+    if (!GetDgnDb().Elements().IsBulkOperation())
+        CallJsPostHandler("onDelete");
     NotifyAppData([](AppData& handler, DgnModelR model) { handler._OnDelete(model); });
+    return DgnDbStatus::Success;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnModel::_OnDelete() {
+    DgnDbStatus stat = _OnDeleteNotify();
+    if (DgnDbStatus::Success != stat)
+        return stat;
 
     // before we can delete a model, we must delete all of its elements. If that fails, we cannot continue.
     Statement stmt(m_dgndb, "SELECT Id FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE ModelId=?");
@@ -1256,13 +1328,11 @@ DgnDbStatus DgnModel::_OnDelete() {
         }
 
         // Note: this may look dangerous (deleting an element in the model we're iterating), but is is actually safe in SQLite.
-        auto stat = el->Delete();
+        stat = el->Delete();
         if (DgnDbStatus::Success != stat)
             return stat;
     }
 
-    BeAssert(GetRefCount() > 1);
-    m_dgndb.Models().DropLoadedModel(*this);
     return DgnDbStatus::Success;
 }
 
@@ -1274,9 +1344,25 @@ struct DeletedCaller {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModel::_OnDeleted() {
-    CallJsPostHandler("onDeleted");
+    const auto isBulkOp = GetDgnDb().Elements().IsBulkOperation();
+    if (!isBulkOp)
+        CallJsPostHandler("onDeleted");
+
     CallAppData(DeletedCaller());
-    GetDgnDb().DeleteLinkTableRelationships(BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels), DgnElementId() /* all ModelSelectors */, GetModeledElementId()); // replicate former foreign key behavior
+
+    if (!isBulkOp)
+        GetDgnDb().DeleteLinkTableRelationships(BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels), DgnElementId() /* all ModelSelectors */, GetModeledElementId()); // replicate former foreign key behavior
+
+    BeAssert(GetRefCount() > 1);
+    m_dgndb.Models().DropLoadedModel(*this);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnModel::_OnDeletedElement(DgnElementId id) {
+    if (!GetDgnDb().Elements().IsBulkOperation())
+        CallJsElementPostHandler(id, "onDeletedElement");
 }
 
 /*---------------------------------------------------------------------------------**//**

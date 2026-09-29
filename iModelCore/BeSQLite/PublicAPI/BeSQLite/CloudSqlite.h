@@ -94,7 +94,7 @@ struct CloudContainer {
     bool m_isPublic = false;
 
     CloudContainer() {}
-    ~CloudContainer() { Disconnect(false, false); }
+    virtual ~CloudContainer() { Disconnect(false, false); }
     CloudContainer(Utf8StringCR storageType, Utf8StringCR baseUri, Utf8StringCR containerId, Utf8StringCR alias, Utf8StringCR accessToken) :
         m_storageType(storageType), m_baseUri(baseUri), m_containerId(containerId), m_alias(alias), m_accessToken(accessToken) {}
 
@@ -147,6 +147,7 @@ private:
     BCVHandle m_handle = nullptr;
 
 public:
+    BE_SQLITE_EXPORT static void Initialize(BeFileNameCR assetDir);
     static int ProgressCallback(void* util, uint64_t nDone, uint64_t nTotal) { return (int)((CloudUtil*)util)->_OnProgress(nDone, nTotal); }
     static void LogCallback(void* util, Utf8CP msg) { ((CloudUtil*)util)->_Log(msg); }
     virtual int _OnProgress(uint64_t nDone, uint64_t nTotal) { return 0; }

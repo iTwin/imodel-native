@@ -41,6 +41,14 @@ libsDir             = $(outputDir)prj/app/libs/
 mainDir             = $(outputDir)prj/app/src/main/
 androidTestDir      = $(outputDir)prj/app/src/androidTest/
 
+%if $(TARGET_PROCESSOR_ARCHITECTURE) == "AndroidARM64"
+    androidAbi = arm64-v8a
+%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "AndroidX64"
+    androidAbi = x86_64
+%else
+    %error Unsupported Android architecture: $(TARGET_PROCESSOR_ARCHITECTURE)
+%endif
+
 collectionProduct = $(OutputRootDir)../Product/${TEST_COLLECTION_PRODUCT}/
 unitTestsDir = $(collectionProduct)Objects/
 inputSoDir = $(collectionProduct)Libs/
@@ -94,11 +102,10 @@ $(mainDir)assets : $(collectionProduct)Assets
     $(msg)
     $(LinkFirstDepToFirstTargetAsDirectory)
 
-# Generate the assets' manifest
+# Generate the assets' manifest after the assets directory has been materialized.
 # WARNING: This manifest name is hard-wired in BeTestAndroidproject\app\src\main\java\com\bentley\testTestActivity.java
-_assets = $[@wildcard $(mainDir)assets/*.*]
-%if $(_assets) != " "
-    $(mainDir)assets/BeTestAndroid.manifest : $(_assets)
+%if $[@wildcard $(collectionProduct)Assets/*] != " "
+    $(mainDir)assets/BeTestAndroid.manifest : $(mainDir)assets
         $(BBPYTHONCMD) $(baseDir)CreateAssetsManifest.py $@ $(mainDir)assets
 %else
     always:
@@ -138,21 +145,21 @@ cIncs + -I$(baseDir)
 #    !-$(deleteCmd) $(outputDir)JUnitTestFiles.mki
 
 #--------------------------------------------------------------------------------------
-# obj/local/arm64-v8a/libAndroidTestJni.so
+# obj/local/$(androidAbi)/libAndroidTestJni.so
 #       The shared object containing the JNI wappers and the pre-built native-code unit test code.
 #       It links with the supporting libraries.
 #--------------------------------------------------------------------------------------
 # Build libAndroidTestJni.so. This is the library that implements the jni methods and is put into the APK file.
 always:
-    ~mkdir $(outputDir)prj/obj/local/arm64-v8a
-    ~mkdir $(libsDir)/arm64-v8a
+    ~mkdir $(outputDir)prj/obj/local/$(androidAbi)
+    ~mkdir $(libsDir)/$(androidAbi)
 
 cIncs + -I$(outputDir)
 
 $(outputDir)betest_static_initialize$(oext) : $(baseDir)betest_static_initialize.cpp
 
 DLM_NAME           = AndroidTestJni
-DLM_DEST           = $(outputDir)prj/obj/local/arm64-v8a/
+DLM_DEST           = $(outputDir)prj/obj/local/$(androidAbi)/
 DLM_OBJECT_DEST    = $(outputDir)
 DLM_NOINITFUNC     = 1
 DLM_NOENTRY        = 1
@@ -175,46 +182,46 @@ DLM_OBJECT_FILES   + $[@wildcard $(unitTestsDir)/*$(oext)]
 # Copy supporting libraries
 #--------------------------------------------------------------------------------------
 always:
-    @$(BBPYTHONCMD) $(_MakeFilePath)CopyAllTo.py $(LINKER_LIBRARIES) $(outputDir)prj/obj/local/arm64-v8a
+    @$(BBPYTHONCMD) $(_MakeFilePath)CopyAllTo.py $(LINKER_LIBRARIES) $(outputDir)prj/obj/local/$(androidAbi)
 
-$(outputDir)prj/obj/local/arm64-v8a/$(BENTLEY_ANDROID_libcpp_shared) : $(BENTLEY_ANDROID_libcpp_shared_fullpath)
+$(outputDir)prj/obj/local/$(androidAbi)/$(BENTLEY_ANDROID_libcpp_shared) : $(BENTLEY_ANDROID_libcpp_shared_fullpath)
     $(copyCmd) "$<" $@
 
 #--------------------------------------------------------------------------------------
-# libs/arm64-v8a
+# libs/$(androidAbi)
 #--------------------------------------------------------------------------------------
 
-$(libsDir)arm64-v8a/$(shlibprefix)AndroidTestJni$(shlibext) : $(outputDir)prj/obj/local/arm64-v8a/$(shlibprefix)AndroidTestJni$(shlibext)
+$(libsDir)$(androidAbi)/$(shlibprefix)AndroidTestJni$(shlibext) : $(outputDir)prj/obj/local/$(androidAbi)/$(shlibprefix)AndroidTestJni$(shlibext)
     $(msg)
     $(copyCmd) $< $@
     ~time
 
-$(libsDir)arm64-v8a/$(BENTLEY_ANDROID_libcpp_shared) : $(outputDir)prj/obj/local/arm64-v8a/$(BENTLEY_ANDROID_libcpp_shared)
+$(libsDir)$(androidAbi)/$(BENTLEY_ANDROID_libcpp_shared) : $(outputDir)prj/obj/local/$(androidAbi)/$(BENTLEY_ANDROID_libcpp_shared)
     $(msg)
     $(copyCmd) $< $@
     ~time
 
 always:
-    @$(BBPYTHONCMD) $(_MakeFilePath)CopyAllTo.py   $(LINKER_LIBRARIES) $(libsDir)arm64-v8a
+    @$(BBPYTHONCMD) $(_MakeFilePath)CopyAllTo.py   $(LINKER_LIBRARIES) $(libsDir)$(androidAbi)
 
 # Don't strip the SOs in libs if we plan to debug. VisualStudio needs to find the symbols in the SOs that are in the APK.
 %if !defined (GCC_DEBUG)
 always:
-    -$(BENTLEY_ANDROID_TOOLCHAIN_strip) $(BENTLEY_ANDROID_TOOLCHAIN_strip_options) $[@wildcard $(libsDir)arm64-v8a/*$(shlibext)]
+    -$(BENTLEY_ANDROID_TOOLCHAIN_strip) $(BENTLEY_ANDROID_TOOLCHAIN_strip_options) $[@wildcard $(libsDir)$(androidAbi)/*$(shlibext)]
 %endif
 
 #--------------------------------------------------------------------------------------
 # Generate some files needed for debugging (see ndk-gdb)
 #--------------------------------------------------------------------------------------
-$(libsDir)arm64-v8a/gdbserver : $(BENTLEY_ANDROID_Gdbserver)
+$(libsDir)$(androidAbi)/gdbserver : $(BENTLEY_ANDROID_Gdbserver)
     $(msg)
     $(copyCmd) $< $@
     ~time
 
-$(libsDir)arm64-v8a/gdb.setup : $(libsDir)arm64-v8a/$(shlibprefix)AndroidTestJni$(shlibext)
+$(libsDir)$(androidAbi)/gdb.setup : $(libsDir)$(androidAbi)/$(shlibprefix)AndroidTestJni$(shlibext)
     $(msg)
     > $@
-        set solib-search-path .\/prj\/obj\/local\/arm64-v8a
+        set solib-search-path .\/prj\/obj\/local\/$(androidAbi)
         directory $[@subst \, \/, $(BENTLEY_ANDROID_GdbUsrInclude)] jni
     <
     ~time

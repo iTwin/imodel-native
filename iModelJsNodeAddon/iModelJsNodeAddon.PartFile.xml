@@ -7,10 +7,9 @@
     <SubPart PartName="iModelJsNodeAddonPRG"/>
   </Part>
 
-  <Part Name="iModelJsNodeAddonPRG" PrgOutputDir="iModelJsNodeAddon" OnlyPlatforms="x64,linuxx64,macosx64,macosarm64">
+  <Part Name="iModelJsNodeAddonPRG" PrgOutputDir="iModelJsNodeAddon" OnlyPlatforms="x64,linuxx64,linuxarm64,macosx64,macosarm64">
     <SubPart PartName="iModelJsMakePackages"/>
     <SubPart PartName="RunUnitTests"/>
-    <SubPart PartName="RunUnitTestsMacOSARM64"/>
   </Part>
 
   <Part Name="iModelJsApiDeclarations" BentleyBuildMakeFile="api_package/ts/makeTs.mke">
@@ -33,7 +32,7 @@
     </Bindings>
   </Part>
 
-  <Part Name="iModelJsMakePackages" BentleyBuildMakeFile="makePackages.mke" OnlyPlatforms="x64,LinuxX64,MacOSx64,MacOSARM64">
+  <Part Name="iModelJsMakePackages" BentleyBuildMakeFile="makePackages.mke" OnlyPlatforms="x64,LinuxX64,LinuxARM64,MacOSx64,MacOSARM64">
     <SubProduct ProductName="iModelJsNodeAddon"/>
     <SubPart PartName="iModelJsApiDeclarations"/>
   </Part>
@@ -42,7 +41,7 @@
     <SubPart PartName="iModelJsMakePackagesOpen"/>
   </Part>
 
-  <Part Name="iModelJsMakePackagesOpen" BentleyBuildMakeFile="makePackages.mke" OnlyPlatforms="x64,LinuxX64,MacOSx64,MacOSARM64">
+  <Part Name="iModelJsMakePackagesOpen" BentleyBuildMakeFile="makePackages.mke" OnlyPlatforms="x64,LinuxX64,LinuxARM64,MacOSx64,MacOSARM64">
     <SubProduct ProductName="iModelJsNodeAddonOpen"/>
     <SubPart PartName="iModelJsApiDeclarations"/>
   </Part>
@@ -99,10 +98,11 @@
     <ProductDirectory Name="Assets" Path="Assets" RelativeTo="AddonRoot" LibType="Static"/>
     <ProductDirectory Name="VendorNotices"  RelativeTo="AddonRoot" Path="Notices"/>
     <ProductDirectory Name="VendorNotices"  RelativeTo="AddonRoot" Path="Notices" LibType="static"/>
+    <ProductDirectory Name="CrashpadHandler" RelativeTo="AddonRoot"/>
     <ProductDirectory Name="CrashpadHandler" RelativeTo="AddonRoot" LibType="Static"/>
   </ProductDirectoryList>
 
-  <Part Name="iModelJsNative-Mobile" OnlyPlatforms="iOSX64,iOSARM64,AndroidARM64,AndroidX64" BentleyBuildMakeFile="IModelJsNative.mke" BentleyBuildMakeOptions="-dBUILD_FOR_IMODELJS_MOBILE=1" >
+  <Part Name="iModelJsNative-Mobile" OnlyPlatforms="iOSARM64,AndroidARM64,AndroidX64" BentleyBuildMakeFile="IModelJsNative.mke" BentleyBuildMakeOptions="-dBUILD_FOR_IMODELJS_MOBILE=1" >
     <SubPart PartName="napi-lib" PartFile="node-addon-api/node-addon-api"/>
     <SubPart PartName="iModelJsNativeLibCommon"/>
     <Bindings>
@@ -113,26 +113,14 @@
     </Bindings>
   </Part>
 
-  <Part Name="breakpad" OnlyPlatforms="x64" >
-    <SubPackage PkgType="UPack" Name="breakpad_54fa71efbe50" />
-    <Bindings>
-      <VendorNotices IfNotPresent="Continue">
-        Delivery/breakpad_notice.txt
-      </VendorNotices>
-    </Bindings>
-  </Part>
-
   <Part Name="iModelJsNative-Dynamic" OnlyPlatforms="x64" ExcludeLibType="Static" BentleyBuildMakeFile="IModelJsNative.mke">
-    <SubPart PartName="breakpad" />
+    <SubPart PartName="CrashpadShim"/>
     <SubPart PartName="napi-lib" PartFile="node-addon-api/node-addon-api"/>
     <SubPart PartName="iModelJsNativeLibCommon"/>
     <SubPart PartName="BeRapidJson" PartFile="iModelCore/Bentley/Bentley"/>
     <SubPart PartName="ITwinDaemon-exe" PartFile="iModelCore/BeSQLite/BeSQLite" />
     <Bindings>
       <Files ProductDirectoryName="Assemblies">Delivery/imodeljs.node</Files>
-      <VendorNotices IfNotPresent="Continue">
-        Delivery/libdisasm_notice.txt
-      </VendorNotices>
     </Bindings>
   </Part>
 
@@ -156,16 +144,13 @@
 
   </Part>
 
-  <Part Name="CrashpadShim" OnlyPlatforms="Linux*">
+  <Part Name="CrashpadShim" OnlyPlatforms="Linux*,MacOS*,x*">
     <SubPart PartName="CrashpadHandler" PartFile="iModelCore/libsrc/crashpad/crashpad"/>
   </Part>
 
-  <Part Name="RunUnitTests" DeferType="RunUnitTests" BentleyBuildMakeFile="api_package/ts/runTests.mke" ExcludePlatforms="MacOSARM64">
+  <Part Name="RunUnitTests" DeferType="RunUnitTests" BentleyBuildMakeFile="api_package/ts/runTests.mke">
     <SubPart PartName="iModelJsMakePackages"/>
-  </Part>
-
-  <Part Name="RunUnitTestsMacOSARM64" DeferType="RunUnitTests" BentleyBuildMakeFile="api_package/ts/runTests.mke" OnlyPlatforms="MacOSARM64">
-    <SubPart PartName="iModelJsMakePackages"/>
+    <SubPart PartName="GeoCoordDictionaryData" PartFile="iModelCore/libsrc/csmap/csmap"/>
   </Part>
 
 </BuildContext>

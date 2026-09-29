@@ -282,8 +282,10 @@ DPoint3dCP    pTriangleXYZ
 //! @param pRay           IN      ray with which to intersect triangle
 //! @param pXYZ           OUT     point of intersection
 //! @param pTriangleXYZ   IN      array of 3 triangle vertex coords
-//! @param distanceTol    IN      distance tolerance. If negative or not given, defaults to 1.0e-5.
-//! @param parameterTol   IN      parameter tolerance. If negative or not given, defaults to 1.0e-15.
+//! @param distanceTol    IN      distance tolerance used to check if ray is parallel to the triangle or if we have
+//! line intersection but not ray intersection. If negative or not given, defaults to 1.0e-6.
+//! @param parameterTol   IN      parameter tolerance used to allow intersections just beyond an edge/vertex in
+//! barycentric coordinate space. If negative or not given, defaults to 1.0e-15.
 //! @return true if intersection computed. false if ray does not intersect the triangle or intersects behind ray origin.
 //!
 Public GEOMDLLIMPEXP bool bsiDRay3d_intersectTriangleFast

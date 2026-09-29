@@ -251,7 +251,7 @@ public:
 
 };
 
-// Detail consructor with complete field list as parameters ...
+// Detail constructor with complete field list as parameters ...
 DgnTorusPipeDetail::DgnTorusPipeDetail
 (
 DPoint3dCR  center,
@@ -286,7 +286,7 @@ bool DgnTorusPipeDetail::IsValidGeometry(GeometryValidatorPtr &validator) const
         ;
     }
 
-// Detail consructor with complete field list as parameters ...
+// Detail constructor with complete field list as parameters ...
 DgnTorusPipeDetail::DgnTorusPipeDetail
 (
 DEllipse3dCR arc,
@@ -310,7 +310,7 @@ bool    capped
 
 
 
-// Detail consructor with complete field list as parameters ...
+// Detail constructor with complete field list as parameters ...
 DgnTorusPipeDetail::DgnTorusPipeDetail ()
     {
     m_center = DPoint3d::From (0,0,0);
@@ -319,6 +319,7 @@ DgnTorusPipeDetail::DgnTorusPipeDetail ()
     m_majorRadius = 1;
     m_minorRadius = 0;
     m_sweepAngle = Angle::PiOver2 ();
+    m_capped = false;
     }
 
 
@@ -642,7 +643,6 @@ DgnConeDetail::DgnConeDetail ()
     m_radiusB = 1;
     m_capped = false;
     }
-
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -1279,7 +1279,7 @@ public:
 
 };
 
-// Detail consructor with complete field list as parameters ...
+// Detail constructor with complete field list as parameters ...
 DgnSphereDetail::DgnSphereDetail
 (
 DPoint3dCR  center,
@@ -1361,7 +1361,6 @@ DgnSphereDetail::DgnSphereDetail()
     m_capped = false;
     }
 
-
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
@@ -1424,7 +1423,7 @@ bool DgnSphereDetail::TryGetRotationAxis (DPoint3dR center, DVec3dR axis, double
 bool DgnSphereDetail::GetTransforms (TransformR localToWorld, TransformR worldToLocal) const
     {
     QVNormalizedTransforms (m_localToWorld, localToWorld, worldToLocal);
-    return worldToLocal.InverseOf (m_localToWorld);
+    return worldToLocal.InverseOf (m_localToWorld); // this makes no sense but without it SolidPrimitive.ArcIntersection test fails
     }
 
 
@@ -1592,7 +1591,7 @@ public:
     {}
 };
 
-// Detail consructor with complete field list as parameters ...
+// Detail constructor with complete field list as parameters ...
 DgnExtrusionDetail::DgnExtrusionDetail
 (
 CurveVectorPtr  const &baseCurve,
@@ -1603,6 +1602,7 @@ bool  capped)
     m_extrusionVector = extrusionVector;
     m_capped = capped;
     }
+
 bool DgnExtrusionDetail::IsValidGeometry(GeometryValidatorPtr &validator) const
     {
     if (!validator.IsValid())
@@ -1614,7 +1614,7 @@ bool DgnExtrusionDetail::IsValidGeometry(GeometryValidatorPtr &validator) const
         ;
     }
 
-// Detail consructor with complete field list as parameters ...
+// Detail constructor with complete field list as parameters ...
 DgnExtrusionDetail::DgnExtrusionDetail ()
     {
     m_baseCurve = NULL;
@@ -1709,7 +1709,7 @@ public:
 
 };
 
-// Detail consructor with complete field list as parameters ...
+// Detail constructor with complete field list as parameters ...
 DgnRotationalSweepDetail::DgnRotationalSweepDetail
 (
 CurveVectorPtr  const &baseCurve,
@@ -1738,7 +1738,7 @@ bool DgnRotationalSweepDetail::IsValidGeometry(GeometryValidatorPtr &validator) 
         ;
     }
 
-// Detail consructor with complete field list as parameters ...
+// Detail constructor with complete field list as parameters ...
 DgnRotationalSweepDetail::DgnRotationalSweepDetail ()
     {
     m_baseCurve = NULL;
@@ -2022,7 +2022,7 @@ public:
 
 };
 
-// Detail consructor with complete field list as parameters ...
+// Detail constructor with complete field list as parameters ...
 DgnRuledSweepDetail::DgnRuledSweepDetail
 (
 bvector<CurveVectorPtr> const &  sectionCurves,
@@ -2044,14 +2044,14 @@ bool DgnRuledSweepDetail::IsValidGeometry(GeometryValidatorPtr &validator) const
   // bool is always valid . . . . && validator->IsValidGeometry(m_capped)
     return true;
     }
-// Detail consructor with complete field list as parameters ...
+// Detail constructor with complete field list as parameters ...
 void DgnRuledSweepDetail::AddSection (CurveVectorP section)
     {
     m_sectionCurves.push_back (CurveVectorPtr (section));
     }
 
 
-// Detail consructor with complete field list as parameters ...
+// Detail constructor with complete field list as parameters ...
 DgnRuledSweepDetail::DgnRuledSweepDetail
 (
 CurveVectorPtr const & sectionA,
@@ -2064,7 +2064,7 @@ bool  capped)
     }
 
 
-// Detail consructor with complete field list as parameters ...
+// Detail constructor with complete field list as parameters ...
 DgnRuledSweepDetail::DgnRuledSweepDetail ()
     {
     m_sectionCurves = bvector<CurveVectorPtr>();

@@ -227,6 +227,8 @@ TEST_F(StringifyTests, DoubleFormatting)
     EXPECT_EQ(str, Utf8String("1736345970855116.8\n")) << str.c_str();
     }
 
+#ifdef USE_JSONCPP
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -262,3 +264,5 @@ TEST(GetConstArrayMember, OnlyModifiesNonConstValue)
     EXPECT_TRUE(nc[1].isNull());
     EXPECT_EQ(nc.size(), 2);
     }
+
+#endif // USE_JSONCPP

@@ -136,38 +136,6 @@ Utf8CP const TaskManagerStressTestChainedTaskAction::s_type = "ChainedTask";
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct TaskManagerStressTestRestartAction : TaskManagerStressTestAction
-    {
-    static Utf8CP const s_type;
-    template<typename TRandomizer>
-    static std::unique_ptr<TaskManagerStressTestAction> CreateRandom(TRandomizer&)
-        {
-        auto action = std::make_unique<TaskManagerStressTestRestartAction>();
-        return action;
-        }
-    static std::unique_ptr<TaskManagerStressTestAction> FromJson(RapidJsonValueCR json)
-        {
-        auto action = std::make_unique<TaskManagerStressTestRestartAction>();
-        return action;
-        }
-    rapidjson::Document _ToJson(rapidjson::Document::AllocatorType* allocator) const override
-        {
-        rapidjson::Document json(allocator);
-        json.SetObject();
-        json.AddMember("Type", rapidjson::StringRef(s_type), json.GetAllocator());
-        return json;
-        }
-    TestActionExecuteResult _Execute(TestActionExecuteParams const& actionParams) const override
-        {
-        auto result = actionParams.getManager().Restart([](IECPresentationTaskCR){ return true; });
-        return { result.GetCompletion().then(), false };
-        }
-    };
-Utf8CP const TaskManagerStressTestRestartAction::s_type = "Restart";
-
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
 struct TaskManagerStressTestCancelPreviousAction : TaskManagerStressTestAction
     {
     static Utf8CP const s_type;

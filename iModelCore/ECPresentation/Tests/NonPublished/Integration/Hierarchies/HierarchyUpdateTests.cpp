@@ -33,7 +33,7 @@ TEST_F(HierarchyUpdateTests, DetectsRootNodeAdded)
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rootRule = new RootNodeRule("", 1, false, false);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "",
         {
         new MultiSchemaClass(classA->GetSchema().GetName(), true, bvector<Utf8String>{ classA->GetName() })
@@ -79,7 +79,7 @@ TEST_F(HierarchyUpdateTests, DetectsRootNodeRemoved)
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rootRule = new RootNodeRule("", 1, false, false);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "",
         {
         new MultiSchemaClass(classA->GetSchema().GetName(), true, bvector<Utf8String>{ classA->GetName() })
@@ -125,7 +125,7 @@ TEST_F(HierarchyUpdateTests, GroupByClass_DetectsGroupedNodeRemoved)
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rootRule = new RootNodeRule("", 1, false, false);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, true, false, "",
         {
         new MultiSchemaClass(classA->GetSchema().GetName(), true, bvector<Utf8String>{ classA->GetName() })
@@ -176,7 +176,7 @@ TEST_F(HierarchyUpdateTests, GroupByClass_DetectsLastGroupedNodeRemoved)
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rootRule = new RootNodeRule("", 1, false, false);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, true, false, "",
         {
         new MultiSchemaClass(classA->GetSchema().GetName(), true, bvector<Utf8String>{ classA->GetName() })
@@ -219,7 +219,7 @@ TEST_F(HierarchyUpdateTests, GroupByClass_DetectsFirstGroupedNodeInserted)
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rootRule = new RootNodeRule("", 1, false, false);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, true, false, "",
         {
         new MultiSchemaClass(classA->GetSchema().GetName(), true, bvector<Utf8String>{ classA->GetName() })
@@ -263,7 +263,7 @@ TEST_F(HierarchyUpdateTests, GroupByClass_DetectsGroupedNodeInserted)
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rootRule = new RootNodeRule("", 1, false, false);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, true, false, "",
         {
         new MultiSchemaClass(classA->GetSchema().GetName(), true, bvector<Utf8String>{ classA->GetName() })
@@ -318,7 +318,7 @@ TEST_F(HierarchyUpdateTests, GroupByLabel_DetectsGroupedNodeRemoved)
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false); 
+    RootNodeRule* rootRule = new RootNodeRule("", 1, false, false);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, true, "",
         {
         new MultiSchemaClass(classA->GetSchema().GetName(), true, bvector<Utf8String>{ classA->GetName() })
@@ -374,7 +374,7 @@ TEST_F(HierarchyUpdateTests, GroupByLabel_DetectsSiblingNodeRemoved)
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rootRule = new RootNodeRule("", 1, false, false);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, true, "",
         {
         new MultiSchemaClass(classA->GetSchema().GetName(), true, bvector<Utf8String>{ classA->GetName() })
@@ -429,7 +429,7 @@ TEST_F(HierarchyUpdateTests, GroupByLabel_DetectsGroupedNodeInserted)
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rootRule = new RootNodeRule("", 1, false, false);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, true, "",
         {
         new MultiSchemaClass(classA->GetSchema().GetName(), true, bvector<Utf8String>{ classA->GetName() })
@@ -484,7 +484,7 @@ TEST_F(HierarchyUpdateTests, GroupByLabel_DetectsGroupedNodeLabelChanged)
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rootRule = new RootNodeRule("", 1, false, false);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, true, "",
         {
         new MultiSchemaClass(classA->GetSchema().GetName(), true, bvector<Utf8String>{ classA->GetName() })
@@ -552,7 +552,7 @@ TEST_F(HierarchyUpdateTests, RelatedInstances_DetectsRelatedNodeInserted)
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rootRule = new RootNodeRule("", 1, false, false);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "",
         {
         new MultiSchemaClass(classA->GetSchema().GetName(), true, bvector<Utf8String>{ classA->GetName() })
@@ -626,7 +626,7 @@ TEST_F(HierarchyUpdateTests, RelatedInstances_DetectsRelatedNodeRemoved)
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rootRule = new RootNodeRule("", 1, false, false);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "",
         {
         new MultiSchemaClass(classA->GetSchema().GetName(), true, bvector<Utf8String>{ classA->GetName() })
@@ -698,7 +698,7 @@ TEST_F(HierarchyUpdateTests, RelatedInstances_DetectsRelatedNodeParentChange)
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rootRule = new RootNodeRule("", 1, false, false);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "",
         {
         new MultiSchemaClass(classA->GetSchema().GetName(), true, bvector<Utf8String>{ classA->GetName() })
@@ -774,7 +774,7 @@ TEST_F(HierarchyUpdateTests, RelatedInstances_HideIfNoChildren_DetectsChildNodeR
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rootRule = new RootNodeRule("", 1, false, false);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, true, false, false, "",
         {
         new MultiSchemaClass(classA->GetSchema().GetName(), true, bvector<Utf8String>{ classA->GetName() })
@@ -849,7 +849,7 @@ TEST_F(HierarchyUpdateTests, RelatedInstances_HideIfNoChildren_DetectsChildNodeI
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rootRule = new RootNodeRule("", 1, false, false);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, true, false, false, "",
         {
         new MultiSchemaClass(classA->GetSchema().GetName(), true, bvector<Utf8String>{ classA->GetName() })
@@ -927,7 +927,7 @@ TEST_F(HierarchyUpdateTests, RelatedInstances_GroupByClass_DetectsRelatedNodeIns
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rootRule = new RootNodeRule("", 1, false, false);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "",
         {
         new MultiSchemaClass(classA->GetSchema().GetName(), true, bvector<Utf8String>{ classA->GetName() })
@@ -1024,7 +1024,7 @@ TEST_F(HierarchyUpdateTests, RelatedInstances_GroupByClass_DetectsRelatedNodeRem
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rootRule = new RootNodeRule("", 1, false, false);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "",
         {
         new MultiSchemaClass(classA->GetSchema().GetName(), true, bvector<Utf8String>{ classA->GetName() })
@@ -1129,7 +1129,7 @@ TEST_F(HierarchyUpdateTests, RelatedInstances_HideNodesInHierarchy_DetectsRelate
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rootRule = new RootNodeRule("", 1, false, false);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "",
         {
         new MultiSchemaClass(classA->GetSchema().GetName(), true, bvector<Utf8String>{ classA->GetName() })
@@ -1226,7 +1226,7 @@ TEST_F(HierarchyUpdateTests, RelatedInstances_HideNodesInHierarchy_DetectsRelate
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rootRule = new RootNodeRule("", 1, false, false);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "",
         {
         new MultiSchemaClass(classA->GetSchema().GetName(), true, bvector<Utf8String>{ classA->GetName() })
@@ -1324,7 +1324,7 @@ TEST_F(HierarchyUpdateTests, RelatedInstances_HideNodesInHierarchy_DetectsNodeRe
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rootRule = new RootNodeRule("", 1, false, false);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "",
         {
         new MultiSchemaClass(classA->GetSchema().GetName(), true, bvector<Utf8String>{ classA->GetName() })
@@ -1348,7 +1348,7 @@ TEST_F(HierarchyUpdateTests, RelatedInstances_HideNodesInHierarchy_DetectsNodeRe
     // validate hierarchy pre-update
     auto params = AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables());
     ValidateHierarchy(params,
-        { 
+        {
         ExpectedHierarchyDef(CreateInstanceNodeValidator({ a1 }),
             {
             CreateInstanceNodeValidator({ c1 }),
@@ -1421,7 +1421,7 @@ TEST_F(HierarchyUpdateTests, RelatedInstances_HideNodesInHierarchy_DetectsNodeIn
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rootRule = new RootNodeRule("", 1, false, false);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "",
         {
         new MultiSchemaClass(classA->GetSchema().GetName(), true, bvector<Utf8String>{ classA->GetName() })
@@ -1521,7 +1521,7 @@ TEST_F(HierarchyUpdateTests, RelatedInstances_HideNodesInHierarchy_UnderHideIfNo
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rootRule = new RootNodeRule("", 1, false, false);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, true, false, false, "",
         {
         new MultiSchemaClass(classA->GetSchema().GetName(), true, bvector<Utf8String>{ classA->GetName() })
@@ -1621,7 +1621,7 @@ TEST_F(HierarchyUpdateTests, RelatedInstances_HideNodesInHierarchy_UnderHideIfNo
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rootRule = new RootNodeRule("", 1, false, false);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, true, false, false, "",
         {
         new MultiSchemaClass(classA->GetSchema().GetName(), true, bvector<Utf8String>{ classA->GetName() })
@@ -1695,11 +1695,11 @@ TEST_F(HierarchyUpdateTests, UpdatesParentWhenNotFinalizedChildDatasourceBecomes
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rootRule = new RootNodeRule("", 1, false, false);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "", classA->GetFullName(), false));
-    ChildNodeRule* childRule1 = new ChildNodeRule("ParentNode.ClassName = \"A\"", 1, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRule* childRule1 = new ChildNodeRule("ParentNode.ClassName = \"A\"", 1, false);
     childRule1->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, true, false, false, false, "", classB->GetFullName(), false));
-    ChildNodeRule* childRule2 = new ChildNodeRule("ParentNode.ClassName = \"B\"", 1, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRule* childRule2 = new ChildNodeRule("ParentNode.ClassName = \"B\"", 1, false);
     childRule2->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "", classC->GetFullName(), false));
     rules->AddPresentationRule(*rootRule);
     rules->AddPresentationRule(*childRule1);
@@ -1747,9 +1747,9 @@ TEST_F(HierarchyUpdateTests, UpdateParentNodeWhenChildInstanceIsInserted_WithRul
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rootRule = new RootNodeRule("", 1, false, false);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "GetVariableBoolValue(\"show_nodes\")", classA->GetFullName(), false));
-    ChildNodeRule* childRule = new ChildNodeRule("ParentNode.ClassName = \"A\"", 1, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRule* childRule = new ChildNodeRule("ParentNode.ClassName = \"A\"", 1, false);
     childRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "GetVariableBoolValue(\"show_nodes\")", classB->GetFullName(), false));
     rules->AddPresentationRule(*rootRule);
     rules->AddPresentationRule(*childRule);
@@ -1800,11 +1800,11 @@ TEST_F(HierarchyUpdateTests, UpdatesRootNodeWhenChildrenCountIsAffectedByChangeI
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rootRule = new RootNodeRule("", 1, false, false);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "", classA->GetFullName(), false));
-    ChildNodeRule* childRule = new ChildNodeRule("ParentNode.ClassName = \"A\"", 1, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRule* childRule = new ChildNodeRule("ParentNode.ClassName = \"A\"", 1, false);
     childRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, true, false, false, "", classB->GetFullName(), false));
-    ChildNodeRule* grandChildRule = new ChildNodeRule("ParentNode.ClassName = \"B\"", 1, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRule* grandChildRule = new ChildNodeRule("ParentNode.ClassName = \"B\"", 1, false);
     grandChildRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "", classC->GetFullName(), false));
     rules->AddPresentationRule(*rootRule);
     rules->AddPresentationRule(*childRule);
@@ -2241,8 +2241,8 @@ TEST_F(HierarchyUpdateTests, UpdatesFilteredHierarchyLevelWhenNodesUnderVirtualP
         }));
     rules->AddPresentationRule(*childRule);
 
-    auto groupingRule = new GroupingRule("", 1, false, GetSchema()->GetName(), classB->GetName(), "", "", "");
-    groupingRule->AddGroup(*new PropertyGroup("", "", false, "Prop"));
+    auto groupingRule = new GroupingRule("", 1, false, GetSchema()->GetName(), classB->GetName(), "");
+    groupingRule->AddGroup(*new PropertyGroup("", false, "Prop"));
     rules->AddPresentationRule(*groupingRule);
 
     // set up hierarchy level instance filter
