@@ -6,6 +6,9 @@
 
 USING_NAMESPACE_BENTLEY_EC
 #include <ECDb/ConcurrentQueryManager.h>
+#if defined(CREATE_STATIC_LIBRARIES)
+#include "../../ECDb/ConcurrentQueryManagerImpl.h"
+#endif
 #include <future>
 #include <chrono>
 #include <queue>
@@ -24,6 +27,29 @@ struct ConcurrentQueryFixture : ECDbTestFixture {
         ConcurrentQueryMgr::Config::Reset(std::nullopt);
     }
 };
+
+// Regression: memoryMapFileSize used to be applied to the never-opened sync connection, which crashed
+// primary-connection requests. It must now only affect opened worker connections.
+TEST_F(ConcurrentQueryFixture, MemoryMapFileSizeWithWorkerAndPrimaryRequests) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("conn_query_mmap.ecdb"));
+    auto config = ConcurrentQueryMgr::Config::Get();
+    config.SetMemoryMapFileSize(1024 * 1024);
+    ConcurrentQueryMgr::Config::Reset(config);
+
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
+        for (bool usePrimary : {false, true}) {
+            auto req = ECSqlRequest::MakeRequest("SELECT COUNT(*) FROM meta.ECClassDef");
+            req->SetUsePrimaryConnection(usePrimary);
+            auto response = mgr.Enqueue(std::move(req)).Get();
+            ASSERT_TRUE(response->IsSuccess()) << "usePrimary=" << usePrimary << ": " << response->GetError();
+            BeJsDocument rows;
+            rows.Parse(response->GetAsConst<ECSqlResponse>().asJsonString());
+            ASSERT_EQ(1, rows.size());
+            EXPECT_GT(rows[(BeJsConst::ArrayIndex)0][(BeJsConst::ArrayIndex)0].asInt(), 0);
+        }
+    });
+}
+
 struct SleepFunc : BeSQLite::ScalarFunction {
     SleepFunc() : ScalarFunction("imodel_sleep", -1){}
     void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override {
@@ -619,6 +645,56 @@ TEST_F(ConcurrentQueryFixture, InterruptCheck_MemoryLimitExceeded) {
     });
 
 }
+
+TEST_F(ConcurrentQueryFixture, ResumeCursorPagesAndFallBackOnInvalidOffset) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("conn_query_cursor.ecdb"));
+    // Cursors are only retained in WAL mode; otherwise the held read lock would block writers.
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.EnableWalMode(true));
+    auto config = ConcurrentQueryMgr::Config::Get();
+    config.SetQuota(QueryQuota(std::chrono::seconds(10), 1000));
+    ConcurrentQueryMgr::Config::Reset(config);
+
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
+        const std::string query = "with cnt(x) as (values(0) union select x+1 from cnt where x < ? ) "
+                                  "select x, CAST(randomblob(1000) AS BINARY) from cnt";
+        std::string cursorId;
+        int64_t offset = 0;
+        bool sawCursor = false;
+        for (int i = 0; i < 9; ++i) {
+            auto req = ECSqlRequest::MakeRequest(query, ECSqlParams().BindInt(1, 8));
+            req->SetUseCursor(true).SetCursorId(cursorId).SetLimit(QueryLimit(-1, offset));
+            auto response = mgr.Enqueue(std::move(req)).Get();
+            ASSERT_TRUE(response->IsSuccess()) << response->GetError();
+            auto const& page = response->GetAsConst<ECSqlResponse>();
+            BeJsDocument rows;
+            rows.Parse(page.asJsonString());
+            ASSERT_GT(rows.size(), 0);
+            for (BeJsConst::ArrayIndex j = 0; j < rows.size(); ++j)
+                EXPECT_EQ(offset + j, rows[j][(BeJsConst::ArrayIndex)0].asInt());
+            offset += page.GetRowCount();
+            cursorId = page.GetCursorId();
+            sawCursor |= !cursorId.empty();
+            if (response->IsDone())
+                break;
+        }
+        EXPECT_TRUE(sawCursor);
+        EXPECT_EQ(9, offset);
+
+        auto firstReq = ECSqlRequest::MakeRequest(query, ECSqlParams().BindInt(1, 8));
+        firstReq->SetUseCursor(true).SetLimit(QueryLimit(-1, 0));
+        auto first = mgr.Enqueue(std::move(firstReq)).Get();
+        ASSERT_TRUE(first->IsSuccess());
+        auto const& firstPage = first->GetAsConst<ECSqlResponse>();
+        ASSERT_FALSE(firstPage.GetCursorId().empty());
+        auto req = ECSqlRequest::MakeRequest(query, ECSqlParams().BindInt(1, 8));
+        req->SetUseCursor(true).SetCursorId(firstPage.GetCursorId()).SetLimit(QueryLimit(-1, 3));
+        auto response = mgr.Enqueue(std::move(req)).Get();
+        ASSERT_TRUE(response->IsSuccess()) << response->GetError();
+        BeJsDocument rows;
+        rows.Parse(response->GetAsConst<ECSqlResponse>().asJsonString());
+        EXPECT_EQ(3, rows[(BeJsConst::ArrayIndex)0][(BeJsConst::ArrayIndex)0].asInt());
+    });
+}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -915,6 +991,34 @@ TEST_F(ConcurrentQueryFixture, RestartToken) {
         EXPECT_EQ(f1->GetStatus(), QueryResponse::Status::Done);
     });
 }
+
+#if defined(CREATE_STATIC_LIBRARIES)
+// RunnableRequestBase is internal and is not exported by the shared library.
+TEST_F(ConcurrentQueryFixture, CompletionIsVisibleBeforeResponsePublication) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("conn_query_completion.ecdb"));
+    RunnableRequestQueue queue(m_ecdb);
+    std::promise<bool> published;
+    std::promise<void> releaseCallback;
+    auto released = releaseCallback.get_future();
+    RunnableRequestWithCallback* runningRequest = nullptr;
+    ConcurrentQueryMgr::OnCompletion callback = [&](QueryResponse::Ptr) {
+        published.set_value(runningRequest->IsCompleted());
+        released.wait();
+    };
+    RunnableRequestWithCallback request(queue, ECSqlRequest::MakeRequest("SELECT 1"),
+        ConcurrentQueryMgr::Config::Get().GetQuota(), 1, callback);
+    runningRequest = &request;
+    EXPECT_FALSE(request.IsCompleted());
+    std::thread worker([&]() { request.SetResponse(RunnableRequestBase::CreateQueueFullResponse()); });
+
+    // Keep publication in progress while another thread inspects and tries to complete the request.
+    EXPECT_TRUE(published.get_future().get());
+    EXPECT_TRUE(request.IsCompleted());
+    EXPECT_THROW(request.SetResponse(RunnableRequestBase::CreateQueueFullResponse()), std::runtime_error);
+    releaseCallback.set_value();
+    worker.join();
+}
+#endif
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1599,12 +1703,34 @@ TEST_F(ConcurrentQueryFixture, SharedSchemaSource_ConcurrentPrepareCorrectness) 
         // Concurrency: many distinct queries forcing fresh prepares across the worker pool must all
         // succeed and must not deadlock.
         std::vector<QueryResponse::Future> futures;
-        for (int i = 0; i < 50; ++i)
-            futures.push_back(mgr.Enqueue(ECSqlRequest::MakeRequest(SqlPrintfString("SELECT S FROM ts.Foo WHERE I = %d", i).GetUtf8CP())));
+        for (int i = 0; i < 50; ++i) {
+            auto request = ECSqlRequest::MakeRequest(SqlPrintfString("SELECT ECClassId, S FROM ts.Foo WHERE I = %d", i).GetUtf8CP());
+            request->SetConvertClassIdsToClassNames(true);
+            futures.push_back(mgr.Enqueue(std::move(request)));
+        }
         for (auto& f : futures) {
             auto response = f.Get();
-            EXPECT_TRUE(response->IsSuccess())
+            ASSERT_TRUE(response->IsSuccess())
                 << "status: " << (int)response->GetStatus() << " error: " << response->GetError();
+            BeJsDocument rows;
+            rows.Parse(response->GetAsConst<ECSqlResponse>().asJsonString());
+            ASSERT_EQ(1, rows.size());
+            EXPECT_STREQ("TestSchema.Foo", rows[0][0].asCString());
+        }
+
+        // Reused worker adaptors and synchronous primary adaptors must both resolve class names.
+        for (bool usePrimary : {false, true}) {
+            for (int repeat = 0; repeat < 2; ++repeat) {
+                auto request = ECSqlRequest::MakeRequest("SELECT ECClassId FROM ts.Foo WHERE I = 0");
+                request->SetUsePrimaryConnection(usePrimary);
+                request->SetConvertClassIdsToClassNames(true);
+                auto response = mgr.Enqueue(std::move(request)).Get();
+                ASSERT_TRUE(response->IsSuccess()) << response->GetError();
+                BeJsDocument rows;
+                rows.Parse(response->GetAsConst<ECSqlResponse>().asJsonString());
+                ASSERT_EQ(1, rows.size());
+                EXPECT_STREQ("TestSchema.Foo", rows[0][0].asCString());
+            }
         }
 
         // Fallback error path: a genuinely invalid ECSQL fails to prepare against the shared
