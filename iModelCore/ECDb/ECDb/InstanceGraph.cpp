@@ -6,6 +6,7 @@
 #include "SqlNames.h"
 #include "InstanceGraphImpl.h"
 #include "SystemPropertyMap.h"
+#include <algorithm>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -272,6 +273,7 @@ BentleyStatus GraphStatementCache::BuildLinkTableSql(GraphStatementEntry& entry,
     {
     entry.m_direction = dir;
     entry.m_relatedInstanceIdColIdx = -1;
+    entry.m_relatedInstanceIdExpr.clear();
     entry.m_relatedClassIdColIdx = -1;
     entry.m_relClassIdColIdx = -1;
     entry.m_relInstanceIdColIdx = -1;
@@ -410,7 +412,8 @@ BentleyStatus GraphStatementCache::BuildLinkTableSql(GraphStatementEntry& entry,
     int colIdx = 0;
     Utf8String sql("SELECT ");
     entry.m_relatedInstanceIdColIdx = colIdx++;
-    sql += Utf8PrintfString("lt.[%s]", relatedIdCol->GetName().c_str());
+    entry.m_relatedInstanceIdExpr = Utf8PrintfString("lt.[%s]", relatedIdCol->GetName().c_str());
+    sql += entry.m_relatedInstanceIdExpr;
 
     if (!relatedClassIdExpr.empty())
         {
@@ -497,6 +500,7 @@ BentleyStatus GraphStatementCache::BuildEndTableSql(GraphStatementEntry& entry,
     {
     entry.m_direction = dir;
     entry.m_relatedInstanceIdColIdx = -1;
+    entry.m_relatedInstanceIdExpr.clear();
     entry.m_relatedClassIdColIdx = -1;
     entry.m_relClassIdColIdx = -1;
     entry.m_relInstanceIdColIdx = -1;
@@ -558,7 +562,8 @@ BentleyStatus GraphStatementCache::BuildEndTableSql(GraphStatementEntry& entry,
         // Seed is on FK-holder table, related entity is on the referenced end
         // SELECT the nav prop target ID (= related instance ID)
         entry.m_relatedInstanceIdColIdx = colIdx++;
-        sql += Utf8PrintfString("et.[%s]", navIdCol.GetName().c_str());
+        entry.m_relatedInstanceIdExpr = Utf8PrintfString("et.[%s]", navIdCol.GetName().c_str());
+        sql += entry.m_relatedInstanceIdExpr;
 
         // Related class ID: lives on the OTHER table (referenced end) — may need JOIN
         DbTable const* otherEndTable = partition.GetOtherEndTable();
@@ -604,7 +609,8 @@ BentleyStatus GraphStatementCache::BuildEndTableSql(GraphStatementEntry& entry,
         // Seed is on referenced end, related entity is on FK-holder table
         // SELECT FK-holder ECInstanceId (= related instance ID)
         entry.m_relatedInstanceIdColIdx = colIdx++;
-        sql += Utf8PrintfString("et.[%s]", fkTableECInstanceIdCol.GetName().c_str());
+        entry.m_relatedInstanceIdExpr = Utf8PrintfString("et.[%s]", fkTableECInstanceIdCol.GetName().c_str());
+        sql += entry.m_relatedInstanceIdExpr;
 
         // Related class ID is the FK-holder entity's ECClassId (not the relationship class ID!)
         if (fkEntityClassIdCol != nullptr && !fkEntityClassIdCol->IsVirtual())
@@ -910,18 +916,99 @@ BentleyStatus InstanceGraph::ExpandNode(ECInstanceKeyCR key, TraversalDirection 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus GraphTraversalIterator::Reset(ECInstanceKeyCR seed, TraversalDirection dir, bool navRelClassIdFallback)
+void GraphTraversalIterator::Clear()
     {
-    m_seed = seed;
+    m_stmt = nullptr;
+    m_groupStreams.clear();
+    m_groupHeap.clear();
+    m_groupByRelClassId = false;
+    m_seenRelClassId = ECClassId();
+    m_mergeGroups = false;
+    m_groupsInitialized = false;
+    m_filterRelClassIds = false;
+    m_relClassIds.clear();
+    m_relatedIdsJson.clear();
     m_plan.clear();
     m_planIdx = 0;
-    m_stmt = nullptr;
     m_seen.clear();
     m_current = RelatedInstance();
     m_eof = true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus GraphTraversalIterator::Reset(ECInstanceKeyCR seed, TraversalDirection dir, bool navRelClassIdFallback, bool groupByRelClassId,
+                                            GraphTraversalFilter const* filter)
+    {
+    Clear();
+    m_seed = seed;
 
     if (!seed.IsValid())
         return ERROR;
+
+    bvector<ECClassCP> requestedRelClasses;
+    if (filter != nullptr && filter->m_filterRelClassIds)
+        {
+        m_filterRelClassIds = true;
+        m_relClassIds = filter->m_relClassIds;
+        if (m_relClassIds.empty())
+            return SUCCESS;
+
+        for (ECClassId relClassId : m_relClassIds)
+            {
+            ECClassCP relClass = m_ecdb.Schemas().GetClass(relClassId);
+            if (relClass != nullptr)
+                requestedRelClasses.push_back(relClass);
+            }
+        }
+
+    if (filter != nullptr && filter->m_filterRelatedIds)
+        {
+        if (filter->m_relatedIds.empty())
+            return SUCCESS;
+
+        m_relatedIdsJson = "[";
+        for (ECInstanceId relatedId : filter->m_relatedIds)
+            {
+            if (m_relatedIdsJson.size() > 1)
+                m_relatedIdsJson.append(",");
+            m_relatedIdsJson.append(relatedId.ToString());
+            }
+        m_relatedIdsJson.append("]");
+        }
+
+    // A plan whose relationship class comes from a column only yields classes of the traversed
+    // relationship hierarchy (the effective navigation fallback class included), so it can be
+    // skipped when no requested class derives from it. Constant-class plans are matched exactly.
+    auto includePlan = [&](GraphStatementEntry& entry, ApplicableRelationship const& rel)
+        {
+        if (entry.m_unsupported)
+            return false;
+
+        if (m_filterRelClassIds)
+            {
+            if (entry.m_relClassIdColIdx < 0)
+                {
+                if (!std::binary_search(m_relClassIds.begin(), m_relClassIds.end(), entry.m_staticRelClassId))
+                    return false;
+                }
+            else if (std::none_of(requestedRelClasses.begin(), requestedRelClasses.end(), [&](ECClassCP relClass)
+                    { return relClass->Is(rel.m_relClass); }))
+                return false;
+            }
+
+        if (!m_relatedIdsJson.empty())
+            {
+            if (entry.m_relatedInstanceIdExpr.empty())
+                {
+                BeAssert(false && "Related instance id expression missing");
+                return true;
+                }
+            entry.m_sql += Utf8PrintfString(" AND %s IN (SELECT value FROM json_each(?3))", entry.m_relatedInstanceIdExpr.c_str());
+            }
+        return true;
+        };
 
     // Get the ECDb-level shared cache (cleared on ClearECDbCache)
     GraphStatementCache& cache = m_ecdb.GetImpl().GetGraphStatementCache();
@@ -960,7 +1047,7 @@ BentleyStatus GraphTraversalIterator::Reset(ECInstanceKeyCR seed, TraversalDirec
                 if (SUCCESS != cache.GetOrBuildEntry(entry, rel, traversalDir, 0, navRelClassIdFallback))
                     return ERROR;
 
-                if (!entry.m_unsupported)
+                if (includePlan(entry, rel))
                     m_plan.push_back(make_bpair(std::move(entry), traversalDir));
                 }
             else if (rel.m_mapType == ClassMap::Type::RelationshipEndTable)
@@ -971,10 +1058,36 @@ BentleyStatus GraphTraversalIterator::Reset(ECInstanceKeyCR seed, TraversalDirec
 
                 for (auto& entry : entries)
                     {
-                    if (!entry.m_unsupported)
+                    if (includePlan(entry, rel))
                         m_plan.push_back(make_bpair(std::move(entry), traversalDir));
                     }
                 }
+            }
+        }
+
+    if (groupByRelClassId)
+        {
+        m_groupByRelClassId = true;
+        m_mergeGroups = std::any_of(m_plan.begin(), m_plan.end(), [](auto const& plan)
+            { return plan.first.m_relClassIdColIdx >= 0; });
+        if (!m_mergeGroups)
+            {
+            // Keep the original plan precedence within a class so duplicate edges retain
+            // the same representative (including NavPropertyName).
+            std::stable_sort(m_plan.begin(), m_plan.end(), [](auto const& lhs, auto const& rhs)
+                { return lhs.first.m_staticRelClassId < rhs.first.m_staticRelClassId; });
+            }
+        else
+            {
+            for (auto& plan : m_plan)
+                {
+                auto& entry = plan.first;
+                if (entry.m_relClassIdColIdx >= 0)
+                    // Sort the effective SELECT value, including navigation fallback. The
+                    // hierarchy predicates exclude unresolved physical relationship IDs.
+                    entry.m_sql += Utf8PrintfString(" ORDER BY %d", entry.m_relClassIdColIdx + 1);
+                }
+            m_groupStreams.resize(m_plan.size());
             }
         }
 
@@ -984,59 +1097,53 @@ BentleyStatus GraphTraversalIterator::Reset(ECInstanceKeyCR seed, TraversalDirec
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus GraphTraversalIterator::MoveNext()
+DbResult GraphTraversalIterator::ReadNext(size_t planIdx, CachedStatementPtr& stmt, RelatedInstance& current)
     {
-    m_eof = true;
+    GraphStatementEntry const& entry = m_plan[planIdx].first;
+    TraversalDirection traversalDir = m_plan[planIdx].second;
+
+    if (stmt == nullptr)
+        {
+        stmt = m_ecdb.GetImpl().GetCachedSqliteStatement(entry.m_sql.c_str());
+        if (stmt == nullptr)
+            {
+            LOG.errorv("InstanceGraph: Failed to prepare SQL for class %s: %s",
+                       m_seed.GetClassId().ToString().c_str(), entry.m_sql.c_str());
+            return BE_SQLITE_ERROR;
+            }
+
+        stmt->BindId(1, m_seed.GetInstanceId());
+        if (entry.m_seedClassIdParamIdx > 0)
+            stmt->BindId(entry.m_seedClassIdParamIdx, m_seed.GetClassId());
+        if (!m_relatedIdsJson.empty())
+            stmt->BindText(3, m_relatedIdsJson, Statement::MakeCopy::No);
+        }
 
     while (true)
         {
-        if (m_planIdx >= m_plan.size())
-            return SUCCESS;
-
-        GraphStatementEntry const& entry = m_plan[m_planIdx].first;
-        TraversalDirection traversalDir = m_plan[m_planIdx].second;
-
-        if (m_stmt == nullptr)
-            {
-            m_stmt = m_ecdb.GetImpl().GetCachedSqliteStatement(entry.m_sql.c_str());
-            if (m_stmt == nullptr)
-                {
-                LOG.errorv("InstanceGraph: Failed to prepare SQL for class %s: %s",
-                           m_seed.GetClassId().ToString().c_str(), entry.m_sql.c_str());
-                m_planIdx = m_plan.size();
-                return ERROR;
-                }
-
-            m_stmt->BindId(1, m_seed.GetInstanceId());
-            if (entry.m_seedClassIdParamIdx > 0)
-                m_stmt->BindId(entry.m_seedClassIdParamIdx, m_seed.GetClassId());
-            }
-
-        DbResult stepStatus = m_stmt->Step();
+        DbResult stepStatus = stmt->Step();
         if (stepStatus == BE_SQLITE_DONE)
             {
-            m_stmt = nullptr;
-            ++m_planIdx;
-            continue;
+            stmt = nullptr;
+            return BE_SQLITE_DONE;
             }
 
         if (stepStatus != BE_SQLITE_ROW)
             {
             LOG.errorv("InstanceGraph: traversal failed (%s). SQL: %s", BeSQLiteLib::GetErrorName(stepStatus), entry.m_sql.c_str());
-            m_stmt = nullptr;
-            m_planIdx = m_plan.size();
-            return ERROR;
+            stmt = nullptr;
+            return stepStatus;
             }
 
         // Read related instance ID
-        ECInstanceId relatedId = m_stmt->GetValueId<ECInstanceId>(entry.m_relatedInstanceIdColIdx);
+        ECInstanceId relatedId = stmt->GetValueId<ECInstanceId>(entry.m_relatedInstanceIdColIdx);
         if (!relatedId.IsValid())
             continue;
 
         // Read related class ID (physical or virtual/static)
         ECClassId relatedClassId;
         if (entry.m_relatedClassIdColIdx >= 0)
-            relatedClassId = m_stmt->GetValueId<ECClassId>(entry.m_relatedClassIdColIdx);
+            relatedClassId = stmt->GetValueId<ECClassId>(entry.m_relatedClassIdColIdx);
         else
             relatedClassId = entry.m_staticRelatedClassId;
 
@@ -1053,7 +1160,11 @@ BentleyStatus GraphTraversalIterator::MoveNext()
         // Read relationship class ID (physical or virtual/static)
         ECClassId relClassId;
         if (entry.m_relClassIdColIdx >= 0)
-            relClassId = m_stmt->GetValueId<ECClassId>(entry.m_relClassIdColIdx);
+            {
+            relClassId = stmt->GetValueId<ECClassId>(entry.m_relClassIdColIdx);
+            if (m_filterRelClassIds && !std::binary_search(m_relClassIds.begin(), m_relClassIds.end(), relClassId))
+                continue;
+            }
         else
             relClassId = entry.m_staticRelClassId;
 
@@ -1061,19 +1172,120 @@ BentleyStatus GraphTraversalIterator::MoveNext()
         // distinct relationship rows between the same pair of instances are not collapsed.
         ECInstanceId relInstanceId;
         if (entry.m_relInstanceIdColIdx >= 0)
-            relInstanceId = m_stmt->GetValueId<ECInstanceId>(entry.m_relInstanceIdColIdx);
+            relInstanceId = stmt->GetValueId<ECInstanceId>(entry.m_relInstanceIdColIdx);
 
-        RelatedInstance candidate(ECInstanceKey(relatedClassId, relatedId), relClassId, relInstanceId, traversalDir, entry.m_navPropertyName);
+        current = RelatedInstance(ECInstanceKey(relatedClassId, relatedId), relClassId, relInstanceId, traversalDir, entry.m_navPropertyName);
+        return BE_SQLITE_ROW;
+        }
+    }
 
-        // A relationship class and its base classes can all be applicable to the same seed and
-        // all match the very same persisted row, so identical edges must be suppressed.
-        if (!m_seen.insert(GraphEdgeKey(candidate)).second)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GraphTraversalIterator::AcceptEdge(RelatedInstance const& candidate)
+    {
+    if (m_groupByRelClassId && m_seenRelClassId != candidate.GetRelClassId())
+        {
+        // Relationship class is part of edge identity. Once its group has ended,
+        // none of these keys can be encountered again.
+        m_seen.clear();
+        m_seenRelClassId = candidate.GetRelClassId();
+        }
+    return m_seen.insert(GraphEdgeKey(candidate)).second;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus GraphTraversalIterator::MoveNextGrouped()
+    {
+    auto later = [this](size_t lhs, size_t rhs)
+        {
+        // Match SQLite's signed INTEGER ordering. Plan index breaks ties to preserve
+        // the representative chosen by the ordinary traversal's deduplication.
+        auto a = (int64_t) m_groupStreams[lhs].m_current.GetRelClassId().GetValueUnchecked();
+        auto b = (int64_t) m_groupStreams[rhs].m_current.GetRelClassId().GetValueUnchecked();
+        return a != b ? a > b : lhs > rhs;
+        };
+
+    if (!m_groupsInitialized)
+        {
+        for (size_t i = 0; i < m_plan.size(); ++i)
+            {
+            auto& stream = m_groupStreams[i];
+            DbResult rc = ReadNext(i, stream.m_stmt, stream.m_current);
+            if (rc == BE_SQLITE_ROW)
+                m_groupHeap.push_back(i);
+            else if (rc != BE_SQLITE_DONE)
+                {
+                Clear();
+                return ERROR;
+                }
+            }
+        std::make_heap(m_groupHeap.begin(), m_groupHeap.end(), later);
+        m_groupsInitialized = true;
+        }
+
+    while (!m_groupHeap.empty())
+        {
+        std::pop_heap(m_groupHeap.begin(), m_groupHeap.end(), later);
+        size_t i = m_groupHeap.back();
+        m_groupHeap.pop_back();
+        auto& stream = m_groupStreams[i];
+        RelatedInstance candidate = std::move(stream.m_current);
+        DbResult rc = ReadNext(i, stream.m_stmt, stream.m_current);
+        if (rc == BE_SQLITE_ROW)
+            {
+            m_groupHeap.push_back(i);
+            std::push_heap(m_groupHeap.begin(), m_groupHeap.end(), later);
+            }
+        else if (rc != BE_SQLITE_DONE)
+            {
+            Clear();
+            return ERROR;
+            }
+
+        if (!AcceptEdge(candidate))
             continue;
 
-        m_current = candidate;
+        m_current = std::move(candidate);
         m_eof = false;
         return SUCCESS;
         }
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus GraphTraversalIterator::MoveNext()
+    {
+    m_eof = true;
+    if (m_mergeGroups)
+        return MoveNextGrouped();
+
+    while (m_planIdx < m_plan.size())
+        {
+        DbResult rc = ReadNext(m_planIdx, m_stmt, m_current);
+        if (rc == BE_SQLITE_DONE)
+            {
+            ++m_planIdx;
+            continue;
+            }
+        if (rc != BE_SQLITE_ROW)
+            {
+            Clear();
+            return ERROR;
+            }
+        if (!AcceptEdge(m_current))
+            continue;
+
+        m_eof = false;
+        return SUCCESS;
+        }
+
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**

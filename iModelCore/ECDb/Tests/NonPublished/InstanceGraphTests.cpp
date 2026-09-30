@@ -391,7 +391,369 @@ struct InstanceGraphTests : ECDbTestFixture
         m_ecdb.SaveChanges();
         return data;
         }
+
+    void AssertGroupedRelations(bvector<ECInstanceKey> const& seeds, bool fallback = false)
+        {
+        Utf8String const options = fallback ? " ECSQLOPTIONS NAV_REL_CLASSID_FALLBACK" : "";
+        ECSqlStatement scan, grouped;
+        ASSERT_EQ(ECSqlStatus::Success, scan.Prepare(m_ecdb,
+            ("SELECT RelationshipECClassId FROM ECVLib.Relations(?, ?, ?)" + options).c_str()));
+        ASSERT_EQ(ECSqlStatus::Success, grouped.Prepare(m_ecdb,
+            ("SELECT RelationshipECClassId, COUNT(*) FROM ECVLib.Relations(?, ?, ?) GROUP BY RelationshipECClassId" + options).c_str()));
+
+        Statement plan;
+        ASSERT_EQ(BE_SQLITE_OK, plan.Prepare(m_ecdb, SqlPrintfString("EXPLAIN QUERY PLAN %s", grouped.GetNativeSql())));
+        DbResult rc;
+        while ((rc = plan.Step()) == BE_SQLITE_ROW)
+            EXPECT_FALSE(Utf8String(plan.GetValueText(3)).ContainsI("TEMP B-TREE FOR GROUP BY"));
+        ASSERT_EQ(BE_SQLITE_DONE, rc);
+
+        // Reuse the same prepared statements across classes and directions. The grouping
+        // guarantee must not depend on values known only during the first execution.
+        for (auto const& seed : seeds)
+            {
+            for (Utf8CP direction : {"both", "forward", "backward"})
+                {
+                ASSERT_EQ(ECSqlStatus::Success, scan.Reset());
+                ASSERT_EQ(ECSqlStatus::Success, grouped.Reset());
+                for (auto* stmt : {&scan, &grouped})
+                    {
+                    ASSERT_EQ(ECSqlStatus::Success, stmt->BindId(1, seed.GetInstanceId()));
+                    ASSERT_EQ(ECSqlStatus::Success, stmt->BindId(2, seed.GetClassId()));
+                    ASSERT_EQ(ECSqlStatus::Success, stmt->BindText(3, direction, IECSqlBinder::MakeCopy::No));
+                    }
+                bmap<int64_t, int64_t> expected, actual;
+                while ((rc = scan.Step()) == BE_SQLITE_ROW)
+                    ++expected[scan.GetValueInt64(0)];
+                ASSERT_EQ(BE_SQLITE_DONE, rc);
+                while ((rc = grouped.Step()) == BE_SQLITE_ROW)
+                    {
+                    int64_t classId = grouped.GetValueInt64(0);
+                    ASSERT_TRUE(actual.find(classId) == actual.end()) << "Class emitted in nonadjacent groups";
+                    actual[classId] = grouped.GetValueInt64(1);
+                    }
+                ASSERT_EQ(BE_SQLITE_DONE, rc);
+                EXPECT_EQ(expected, actual) << direction;
+                }
+            }
+
+        ASSERT_FALSE(seeds.empty());
+        ASSERT_EQ(ECSqlStatus::Success, grouped.Reset());
+        ASSERT_EQ(ECSqlStatus::Success, grouped.BindId(1, seeds.front().GetInstanceId()));
+        ASSERT_EQ(ECSqlStatus::Success, grouped.BindId(2, seeds.front().GetClassId()));
+        ASSERT_EQ(ECSqlStatus::Success, grouped.BindText(3, "both", IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(BE_SQLITE_ROW, grouped.Step());
+        ASSERT_EQ(ECSqlStatus::Success, grouped.Reset());
+        ASSERT_EQ(ECSqlStatus::Success, grouped.BindNull(1));
+        EXPECT_EQ(BE_SQLITE_DONE, grouped.Step());
+        }
     };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, VTable_GroupByRelationshipClass_StaticPlans)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("IG_GroupStatic.ecdb", SchemaItem(R"xml(
+        <ECSchema schemaName="IGStatic" alias="igs" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="Node"><ECProperty propertyName="Name" typeName="string"/></ECEntityClass>
+            <ECRelationshipClass typeName="RelOne" strength="Referencing" modifier="Sealed">
+                <Source multiplicity="(0..*)" polymorphic="False" roleLabel="from"><Class class="Node"/></Source>
+                <Target multiplicity="(0..*)" polymorphic="False" roleLabel="to"><Class class="Node"/></Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="RelTwo" strength="Referencing" modifier="Sealed">
+                <Source multiplicity="(0..*)" polymorphic="False" roleLabel="from"><Class class="Node"/></Source>
+                <Target multiplicity="(0..*)" polymorphic="False" roleLabel="to"><Class class="Node"/></Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml")));
+    m_ecdb.GetECSqlConfig().SetExperimentalFeaturesEnabled(true);
+    auto seed = InsertInstance("INSERT INTO igs.Node(Name) VALUES('Seed')");
+    auto empty = InsertInstance("INSERT INTO igs.Node(Name) VALUES('Empty')");
+    for (int i = 0; i < 256; ++i)
+        {
+        auto target = i == 0 ? seed : InsertInstance("INSERT INTO igs.Node(Name) VALUES('Target')");
+        for (Utf8CP rel : {"RelOne", "RelTwo"})
+            InsertRelInstance(SqlPrintfString("INSERT INTO igs.%s(SourceECInstanceId,TargetECInstanceId) VALUES(%s,%s)",
+                rel, seed.GetInstanceId().ToString().c_str(), target.GetInstanceId().ToString().c_str()));
+        }
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    AssertGroupedRelations({seed, empty, ECInstanceKey(), seed});
+    ECSqlStatement counts;
+    ASSERT_EQ(ECSqlStatus::Success, counts.Prepare(m_ecdb, SqlPrintfString(
+        "SELECT RelationshipECClassId,COUNT(*) FROM ECVLib.Relations(%s,%s) GROUP BY RelationshipECClassId",
+        seed.GetInstanceId().ToString().c_str(), seed.GetClassId().ToString().c_str())));
+    for (int i = 0; i < 2; ++i)
+        {
+        ASSERT_EQ(BE_SQLITE_ROW, counts.Step());
+        EXPECT_EQ(257, counts.GetValueInt64(1));
+        }
+    EXPECT_EQ(BE_SQLITE_DONE, counts.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, VTable_GroupByRelationshipClass_MixedPlans)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("IG_GroupMixed.ecdb", SchemaItem(s_mappingInvariantSchemaXml)));
+    m_ecdb.GetECSqlConfig().SetExperimentalFeaturesEnabled(true);
+    auto data = PopulateMappingInvariants();
+    // Self loops count once per direction, and base/derived plans must not count the same
+    // persisted edge twice. Reverse class insertion order exercises sorting within a plan.
+    InsertRelInstance(SqlPrintfString("INSERT INTO igm.ConnectionA(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
+        data.nodeA.GetInstanceId().ToString().c_str(), data.nodeA.GetInstanceId().ToString().c_str()));
+    InsertRelInstance(SqlPrintfString("INSERT INTO igm.Connection(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
+        data.nodeB.GetInstanceId().ToString().c_str(), data.nodeA.GetInstanceId().ToString().c_str()));
+    for (int i = 0; i < 128; ++i)
+        {
+        auto target = InsertInstance("INSERT INTO igm.NodeB(Label) VALUES('Fanout')");
+        InsertRelInstance(SqlPrintfString("INSERT INTO igm.%s(SourceECInstanceId,TargetECInstanceId) VALUES(%s,%s)",
+            i % 2 == 0 ? "ConnectionA" : "Connection",
+            data.nodeA.GetInstanceId().ToString().c_str(), target.GetInstanceId().ToString().c_str()));
+        }
+    auto fallbackSpoke = InsertInstance(SqlPrintfString(
+        "INSERT INTO igm.SpokeA(Label, Owner.Id, Owner.RelECClassId, AuxOwnerA.Id, AuxOwnerA.RelECClassId) VALUES('Fallback', %s, NULL, %s, NULL)",
+        data.hub.GetInstanceId().ToString().c_str(), data.hub.GetInstanceId().ToString().c_str()));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    bvector<ECInstanceKey> seeds{data.nodeA, data.alpha, data.hub, data.nodeB, data.spokeA, data.spokeB, fallbackSpoke, ECInstanceKey()};
+    AssertGroupedRelations(seeds);
+    AssertGroupedRelations(seeds, true);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, VTable_GroupByRelationshipClass_ClausesAndJoins)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("IG_GroupClauses.ecdb", SchemaItem(s_mappingInvariantSchemaXml)));
+    m_ecdb.GetECSqlConfig().SetExperimentalFeaturesEnabled(true);
+    auto data = PopulateMappingInvariants();
+
+    // Materialization forces the reference to group ordinary, unoptimized traversal rows.
+    Utf8String const source = SqlPrintfString("relations(%s,%s)",
+        data.nodeA.GetInstanceId().ToString().c_str(), data.nodeA.GetClassId().ToString().c_str()).GetUtf8CP();
+    for (Utf8CP clauses : {
+        " WHERE Direction='forward' GROUP BY RelationshipECClassId HAVING COUNT(*)>0 ORDER BY RelationshipECClassId DESC",
+        " GROUP BY RelationshipECClassId ORDER BY COUNT(*) DESC, RelationshipECClassId LIMIT 2",
+        " GROUP BY RelationshipECClassId, Direction ORDER BY RelationshipECClassId, Direction",
+        " GROUP BY RelatedECClassId ORDER BY RelatedECClassId",
+        " GROUP BY RelationshipECClassId+0 ORDER BY RelationshipECClassId",
+        " WHERE NavPropertyName IS NULL GROUP BY RelationshipECClassId ORDER BY RelationshipECClassId",
+        })
+        {
+        Utf8String const projection = "SELECT MIN(RelationshipECClassId), COUNT(*) FROM ";
+        Statement actual, reference;
+        ASSERT_EQ(BE_SQLITE_OK, actual.Prepare(m_ecdb, (projection + source + clauses).c_str()));
+        ASSERT_EQ(BE_SQLITE_OK, reference.Prepare(m_ecdb,
+            ("WITH rows AS MATERIALIZED (SELECT * FROM " + source + ") " + projection + "rows" + clauses).c_str()));
+        DbResult rc;
+        while ((rc = reference.Step()) == BE_SQLITE_ROW)
+            {
+            ASSERT_EQ(BE_SQLITE_ROW, actual.Step());
+            EXPECT_EQ(reference.GetValueInt64(0), actual.GetValueInt64(0));
+            EXPECT_EQ(reference.GetValueInt64(1), actual.GetValueInt64(1));
+            }
+        ASSERT_EQ(BE_SQLITE_DONE, rc);
+        EXPECT_EQ(BE_SQLITE_DONE, actual.Step());
+        }
+
+    Utf8String const joined = SqlPrintfString(
+        "SELECT r.* FROM (SELECT %s id,%s classId UNION ALL SELECT %s,%s) seed,"
+        " relations(seed.id,seed.classId) r",
+        data.nodeA.GetInstanceId().ToString().c_str(), data.nodeA.GetClassId().ToString().c_str(),
+        data.nodeB.GetInstanceId().ToString().c_str(), data.nodeB.GetClassId().ToString().c_str()).GetUtf8CP();
+    Statement actual, reference;
+    Utf8CP group = " SELECT RelationshipECClassId,COUNT(*) FROM rows GROUP BY RelationshipECClassId ORDER BY RelationshipECClassId";
+    ASSERT_EQ(BE_SQLITE_OK, actual.Prepare(m_ecdb, ("WITH rows AS (" + joined + ")" + group).c_str()));
+    ASSERT_EQ(BE_SQLITE_OK, reference.Prepare(m_ecdb, ("WITH rows AS MATERIALIZED (" + joined + ")" + group).c_str()));
+    DbResult rc;
+    while ((rc = reference.Step()) == BE_SQLITE_ROW)
+        {
+        ASSERT_EQ(BE_SQLITE_ROW, actual.Step());
+        EXPECT_EQ(reference.GetValueInt64(0), actual.GetValueInt64(0));
+        EXPECT_EQ(reference.GetValueInt64(1), actual.GetValueInt64(1));
+        }
+    ASSERT_EQ(BE_SQLITE_DONE, rc);
+    EXPECT_EQ(BE_SQLITE_DONE, actual.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, VTable_FilterPushdown_MatchesUnfilteredScan)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("IG_FilterPushdown.ecdb", SchemaItem(s_mappingInvariantSchemaXml)));
+    m_ecdb.GetECSqlConfig().SetExperimentalFeaturesEnabled(true);
+    auto data = PopulateMappingInvariants();
+    InsertRelInstance(SqlPrintfString("INSERT INTO igm.ConnectionA(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
+        data.nodeA.GetInstanceId().ToString().c_str(), data.nodeA.GetInstanceId().ToString().c_str()));
+    for (int i = 0; i < 16; ++i)
+        {
+        auto target = InsertInstance("INSERT INTO igm.NodeB(Label) VALUES('Fanout')");
+        InsertRelInstance(SqlPrintfString("INSERT INTO igm.%s(SourceECInstanceId,TargetECInstanceId) VALUES(%s,%s)",
+            i % 2 == 0 ? "ConnectionA" : "Connection",
+            data.nodeA.GetInstanceId().ToString().c_str(), target.GetInstanceId().ToString().c_str()));
+        }
+    auto fallbackSpoke = InsertInstance(SqlPrintfString(
+        "INSERT INTO igm.SpokeA(Label, Owner.Id, Owner.RelECClassId, AuxOwnerA.Id, AuxOwnerA.RelECClassId) VALUES('Fallback', %s, NULL, %s, NULL)",
+        data.hub.GetInstanceId().ToString().c_str(), data.hub.GetInstanceId().ToString().c_str()));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+
+    auto readRows = [] (Statement& stmt)
+        {
+        bvector<Utf8String> rows;
+        DbResult rc;
+        while ((rc = stmt.Step()) == BE_SQLITE_ROW)
+            {
+            Utf8String row;
+            for (int i = 0; i < stmt.GetColumnCount(); ++i)
+                row.append(stmt.IsColumnNull(i) ? "<null>" : stmt.GetValueText(i)).append("|");
+            rows.push_back(row);
+            }
+        EXPECT_EQ(BE_SQLITE_DONE, rc);
+        std::sort(rows.begin(), rows.end());
+        return rows;
+        };
+
+    Utf8CP const columns = "SELECT RelatedECInstanceId, RelatedECClassId, Direction, RelationshipECClassId, RelationshipECInstanceId, NavPropertyName FROM ";
+    ECClassId const connectionId = GetClassId("IGMap", "Connection");
+    ECClassId const connectionAId = GetClassId("IGMap", "ConnectionA");
+    for (auto const& seed : {data.nodeA, data.nodeB, data.alpha, data.beta, data.hub, data.spokeA, fallbackSpoke})
+        {
+        for (Utf8CP args : {",'both',0", ",'both',1", ",'forward',1", ",'backward',0"})
+            {
+            Utf8String const source = SqlPrintfString("relations(%s,%s%s)",
+                seed.GetInstanceId().ToString().c_str(), seed.GetClassId().ToString().c_str(), args).GetUtf8CP();
+
+            // Derive filter values from the unfiltered result so that each filter matches something.
+            Statement all;
+            ASSERT_EQ(BE_SQLITE_OK, all.Prepare(m_ecdb, (Utf8String(columns) + source).c_str()));
+            bset<Utf8String> relClassIds, relatedIds;
+            while (all.Step() == BE_SQLITE_ROW)
+                {
+                relatedIds.insert(all.GetValueText(0));
+                relClassIds.insert(all.GetValueText(3));
+                }
+            Utf8String const firstRelClass = relClassIds.empty() ? "1" : *relClassIds.begin();
+            Utf8String const lastRelClass = relClassIds.empty() ? "1" : *relClassIds.rbegin();
+            Utf8String const firstRelated = relatedIds.empty() ? "1" : *relatedIds.begin();
+            Utf8String const lastRelated = relatedIds.empty() ? "1" : *relatedIds.rbegin();
+
+            bvector<Utf8String> filters {
+                "RelationshipECClassId=" + firstRelClass,
+                "RelationshipECClassId IN (" + firstRelClass + "," + lastRelClass + ",999999)",
+                "RelationshipECClassId=" + connectionId.ToString(),   // exact: excludes ConnectionA rows
+                "RelationshipECClassId IN (" + connectionId.ToString() + "," + connectionAId.ToString() + ")",
+                "RelationshipECClassId=999999",
+                "RelationshipECClassId=NULL",
+                "RelationshipECClassId IN (NULL)",
+                "RelationshipECClassId='" + firstRelClass + "'",       // TEXT is left to SQLite
+                "RelationshipECClassId=" + firstRelClass + ".0",       // REAL is left to SQLite
+                "RelatedECInstanceId=" + firstRelated,
+                "RelatedECInstanceId IN (" + firstRelated + "," + lastRelated + ",999999)",
+                "RelatedECInstanceId IN (SELECT " + lastRelated + ")",
+                "RelatedECInstanceId=999999",
+                "Direction='forward'",
+                "Direction='backward'",
+                "Direction='FORWARD'",
+                "Direction='forward' COLLATE NOCASE",
+                "Direction='sideways'",
+                "Direction=NULL",
+                "RelationshipECClassId IN (" + firstRelClass + "," + lastRelClass + ") AND RelatedECInstanceId=" + lastRelated + " AND Direction='backward'",
+                "RelationshipECClassId=" + firstRelClass + " AND NavPropertyName IS NOT NULL",
+                };
+
+            for (auto const& filter : filters)
+                {
+                for (Utf8CP tail : {"", " GROUP BY RelationshipECClassId, RelatedECInstanceId, Direction, RelationshipECInstanceId"})
+                    {
+                    Utf8String const where = " WHERE " + filter + tail;
+                    Statement actual, reference;
+                    ASSERT_EQ(BE_SQLITE_OK, actual.Prepare(m_ecdb, (Utf8String(columns) + source + where).c_str())) << where;
+                    ASSERT_EQ(BE_SQLITE_OK, reference.Prepare(m_ecdb,
+                        ("WITH rows AS MATERIALIZED (SELECT * FROM " + source + ") " + columns + "rows" + where).c_str())) << where;
+                    EXPECT_EQ(readRows(reference), readRows(actual)) << source << where;
+                    }
+                }
+
+            // Known ids supplied by another table: pushdown per outer row or a single traversal.
+            Utf8String const known = "WITH known(id) AS (VALUES(" + firstRelated + "),(" + lastRelated + "),(999999)) ";
+            Statement actual, reference;
+            ASSERT_EQ(BE_SQLITE_OK, actual.Prepare(m_ecdb,
+                (known + "SELECT r.RelatedECInstanceId, r.RelationshipECClassId FROM known k JOIN " + source + " r ON r.RelatedECInstanceId=k.id").c_str()));
+            ASSERT_EQ(BE_SQLITE_OK, reference.Prepare(m_ecdb,
+                (known + ", rows AS MATERIALIZED (SELECT * FROM " + source + ") SELECT r.RelatedECInstanceId, r.RelationshipECClassId FROM known k JOIN rows r ON r.RelatedECInstanceId=k.id").c_str()));
+            EXPECT_EQ(readRows(reference), readRows(actual)) << source;
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, VTable_FilterPushdown_PlanAndECSql)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("IG_FilterPushdownPlan.ecdb", SchemaItem(s_mappingInvariantSchemaXml)));
+    m_ecdb.GetECSqlConfig().SetExperimentalFeaturesEnabled(true);
+    auto data = PopulateMappingInvariants();
+
+    // The filters are consumed by the virtual table (bits 32/64/128, IN lists all-at-once).
+    Statement plan;
+    ASSERT_EQ(BE_SQLITE_OK, plan.Prepare(m_ecdb, "EXPLAIN QUERY PLAN SELECT * FROM relations(?1,?2)"
+        " WHERE RelationshipECClassId IN (?3,?4) AND RelatedECInstanceId IN (?5,?6) AND Direction=?7"));
+    int idxNum = -1;
+    DbResult rc;
+    while ((rc = plan.Step()) == BE_SQLITE_ROW)
+        {
+        Utf8String detail = plan.GetValueText(3);
+        size_t pos = detail.find("INDEX ");
+        if (pos != Utf8String::npos)
+            idxNum = atoi(detail.c_str() + pos + 6);
+        }
+    ASSERT_EQ(BE_SQLITE_DONE, rc);
+    EXPECT_EQ(1 | 2 | 32 | 64 | 128 | 256 | 512, idxNum);
+
+    // Unfiltered queries keep their previous plan.
+    plan.Finalize();
+    ASSERT_EQ(BE_SQLITE_OK, plan.Prepare(m_ecdb, "EXPLAIN QUERY PLAN SELECT * FROM relations(?1,?2)"));
+    idxNum = -1;
+    while ((rc = plan.Step()) == BE_SQLITE_ROW)
+        {
+        Utf8String detail = plan.GetValueText(3);
+        size_t pos = detail.find("INDEX ");
+        if (pos != Utf8String::npos)
+            idxNum = atoi(detail.c_str() + pos + 6);
+        }
+    EXPECT_EQ(1 | 2, idxNum);
+
+    // ECSQL with bound ids; the prepared statement is reused with different filter values.
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "SELECT RelatedECInstanceId FROM ECVLib.Relations(?, ?) r WHERE r.RelationshipECClassId IN (?, ?) AND r.Direction = ?"));
+    auto count = [&] (ECInstanceKeyCR seed, ECClassId a, ECClassId b, Utf8CP dir)
+        {
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Reset());
+        EXPECT_EQ(ECSqlStatus::Success, stmt.ClearBindings());
+        stmt.BindId(1, seed.GetInstanceId());
+        stmt.BindId(2, seed.GetClassId());
+        stmt.BindId(3, a);
+        stmt.BindId(4, b);
+        stmt.BindText(5, dir, IECSqlBinder::MakeCopy::No);
+        int n = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            ++n;
+        return n;
+        };
+    ECClassId const alphaToBeta = GetClassId("IGMap", "AlphaToBeta");
+    ECClassId const staticLink = GetClassId("IGMap", "StaticLink");
+    ECClassId const connection = GetClassId("IGMap", "Connection");
+    ECClassId const connectionA = GetClassId("IGMap", "ConnectionA");
+    EXPECT_EQ(2, count(data.alpha, alphaToBeta, staticLink, "forward"));
+    EXPECT_EQ(0, count(data.alpha, alphaToBeta, staticLink, "backward"));
+    EXPECT_EQ(1, count(data.beta, alphaToBeta, alphaToBeta, "backward"));
+    EXPECT_EQ(1, count(data.nodeA, connection, connection, "forward"));
+    EXPECT_EQ(2, count(data.nodeA, connection, connectionA, "forward"));
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod

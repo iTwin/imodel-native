@@ -73,6 +73,7 @@ struct GraphStatementEntry final
 
     // Column index mapping: -1 means virtual (use static value)
     int             m_relatedInstanceIdColIdx = -1;
+    Utf8String      m_relatedInstanceIdExpr;      //!< SQL expression of the related instance id, used to push down id filters
     int             m_relatedClassIdColIdx = -1;  //!< -1 if virtual
     ECN::ECClassId  m_staticRelatedClassId;       //!< used when relatedClassIdColIdx == -1
 
@@ -186,6 +187,22 @@ struct GraphEdgeKey final
     };
 
 //=======================================================================================
+//! Optional restrictions applied while traversing. Only edges matching every enabled
+//! restriction are returned. Each restricted value is part of GraphEdgeKey, so filtering
+//! does not change which duplicate edge is kept.
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct GraphTraversalFilter final
+    {
+    bool m_filterRelClassIds = false;
+    bvector<ECN::ECClassId> m_relClassIds;      //!< exact RelationshipECClassId values; sorted and unique
+    bool m_filterRelatedIds = false;
+    bvector<ECInstanceId> m_relatedIds;         //!< RelatedECInstanceId values; sorted and unique
+
+    bool IsEmpty() const { return !m_filterRelClassIds && !m_filterRelatedIds; }
+    };
+
+//=======================================================================================
 //! Streams the related instances of a single seed instance one row at a time, without
 //! materializing the whole result set.
 //! @remarks Duplicate edges are suppressed, so a (comparatively small) set of already
@@ -204,6 +221,26 @@ struct GraphTraversalIterator final
         RelatedInstance     m_current;
         bool                m_eof = true;
 
+        struct GroupStream
+            {
+            CachedStatementPtr m_stmt;
+            RelatedInstance m_current;
+            };
+        bvector<GroupStream> m_groupStreams;
+        bvector<size_t> m_groupHeap;
+        bool m_groupByRelClassId = false;
+        ECN::ECClassId m_seenRelClassId;
+        bool m_mergeGroups = false;
+        bool m_groupsInitialized = false;
+
+        bool m_filterRelClassIds = false;
+        bvector<ECN::ECClassId> m_relClassIds;
+        Utf8String m_relatedIdsJson;  //!< bound to ?3 when related ids are pushed into the SQL
+
+        DbResult ReadNext(size_t planIdx, CachedStatementPtr& stmt, RelatedInstance& current);
+        bool AcceptEdge(RelatedInstance const& candidate);
+        BentleyStatus MoveNextGrouped();
+
         GraphTraversalIterator(GraphTraversalIterator const&) = delete;
         GraphTraversalIterator& operator=(GraphTraversalIterator const&) = delete;
 
@@ -212,7 +249,15 @@ struct GraphTraversalIterator final
 
         //! Prepares the iterator for a new seed. The iterator is positioned before the first row;
         //! call MoveNext() to advance to it.
-        BentleyStatus Reset(ECInstanceKeyCR seed, TraversalDirection dir, bool navRelClassIdFallback = false);
+        //! Grouping retains ordinary edge identity and plan precedence, with one buffered row
+        //! per SQL stream when relationship class IDs are physical.
+        //! When a filter is given, plans that cannot produce a requested relationship class are
+        //! skipped, and related instance ids are pushed into the per-plan SQL.
+        BentleyStatus Reset(ECInstanceKeyCR seed, TraversalDirection dir, bool navRelClassIdFallback = false,
+                            bool groupByRelClassId = false, GraphTraversalFilter const* filter = nullptr);
+
+        //! Releases active statements, including when a virtual-table cursor is rebound to NULL.
+        void Clear();
 
         //! Advances to the next distinct edge. Sets EOF when there is none left.
         BentleyStatus MoveNext();

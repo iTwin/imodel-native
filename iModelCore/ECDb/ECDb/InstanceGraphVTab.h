@@ -11,6 +11,14 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
 //! Virtual table module exposing relationship traversal as ECVLib.Relations()
+//! GROUP BY RelationshipECClassId streams adjacent groups without an outer grouping sort.
+//! Constant-class plans are reordered; physical-class plans use ordered SQL and a heap merge.
+//! Counts retain all distinct edges. Other grouping keys and ordinary scans use SQLite's
+//! normal planning. Physical-class streams may still require inner SQLite sorts.
+//! Equality and IN filters on RelationshipECClassId (exact class, not polymorphic) and
+//! RelatedECInstanceId, and equality filters on Direction narrow the traversal itself:
+//! relationship plans that cannot match are skipped and related ids are pushed into the SQL.
+//! SQLite still re-evaluates these filters, so results are identical to an unfiltered scan.
 // @bsiclass
 //=======================================================================================
 struct RelationsModule : ECDbModule
