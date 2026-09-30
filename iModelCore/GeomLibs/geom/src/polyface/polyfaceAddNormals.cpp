@@ -568,6 +568,7 @@ bvector<SectorData> &offsetVectors
 
             // verify that updates happend in all sectors around this vertex
             size_t numUntouched = 0;
+            UNUSED_VARIABLE(numUntouched);
             for (auto &sector : sectors)
                 {
                 size_t node = sector.m_node;

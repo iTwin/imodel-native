@@ -186,7 +186,7 @@ void PerformanceTestFixture::LogResultsToFile(bmap<Utf8String, double> results)
 
     bool existingFile = dir.DoesPathExist();
 
-    logFile = fopen(dir.GetNameUtf8().c_str(), "a+"); 
+    fopen_s(&logFile, dir.GetNameUtf8().c_str(), "a+"); 
     PERFORMANCELOG.infov (L"CSV Results filename: %ls\n", dir.GetName());
 
     if (!existingFile)

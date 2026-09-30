@@ -475,10 +475,10 @@ BentleyStatus AnnotationTextBlockPersistence::DecodeFromFlatBuf(AnnotationTextBl
         {
         for (auto const& propSetter : *fbDocument.properties())
             {
-            switch (propSetter.key())
+            switch (propSetter->key())
                 {
-                case FB::AnnotationTextBlockProperty_DocumentWidth: document.SetDocumentWidth(propSetter.realValue()); break;
-                case FB::AnnotationTextBlockProperty_Justification: document.SetJustification((AnnotationTextBlock::HorizontalJustification)propSetter.integerValue()); break;
+                case FB::AnnotationTextBlockProperty_DocumentWidth: document.SetDocumentWidth(propSetter->realValue()); break;
+                case FB::AnnotationTextBlockProperty_Justification: document.SetJustification((AnnotationTextBlock::HorizontalJustification)propSetter->integerValue()); break;
                 }
             }
         }
@@ -494,28 +494,28 @@ BentleyStatus AnnotationTextBlockPersistence::DecodeFromFlatBuf(AnnotationTextBl
         for (auto const& fbParagraph : *fbDocument.paragraphs())
             {
             AnnotationParagraphPtr paragraph = AnnotationParagraph::Create(document.GetDbR());
-            PRECONDITION(fbParagraph.has_styleId(), ERROR);
-            paragraph->SetStyleId(AnnotationTextStyleId((uint64_t)fbParagraph.styleId()), SetAnnotationTextStyleOptions::Direct);
+            PRECONDITION(fbParagraph->has_styleId(), ERROR);
+            paragraph->SetStyleId(AnnotationTextStyleId((uint64_t)fbParagraph->styleId()), SetAnnotationTextStyleOptions::Direct);
 
-            if (fbParagraph.has_runs())
+            if (fbParagraph->has_runs())
                 {
-                for (auto const& fbRun : *fbParagraph.runs())
+                for (auto const& fbRun : *fbParagraph->runs())
                     {
                     AnnotationRunBasePtr run;
-                    PRECONDITION(fbRun.has_type(), ERROR);
-                    switch (fbRun.type())
+                    PRECONDITION(fbRun->has_type(), ERROR);
+                    switch (fbRun->type())
                         {
                         case FB::AnnotationTextBlockRunType_Text:
                             {
                             AnnotationTextRunPtr textRun = AnnotationTextRun::Create(document.GetDbR());
                             run = textRun;
                             
-                            PRECONDITION(fbRun.has_text_content(), ERROR);
-                            textRun->SetContent(fbRun.text_content()->c_str());
+                            PRECONDITION(fbRun->has_text_content(), ERROR);
+                            textRun->SetContent(fbRun->text_content()->c_str());
                             
-                            if (fbRun.has_text_subsuperscript())
+                            if (fbRun->has_text_subsuperscript())
                                 {
-                                switch (fbRun.text_subsuperscript())
+                                switch (fbRun->text_subsuperscript())
                                     {
                                     case FB::AnnotationTextRunSubSuperScript_SubScript: textRun->SetIsSubScript(true); break;
                                     case FB::AnnotationTextRunSubSuperScript_SuperScript: textRun->SetIsSuperScript(true); break;
@@ -531,11 +531,11 @@ BentleyStatus AnnotationTextBlockPersistence::DecodeFromFlatBuf(AnnotationTextBl
                             AnnotationFractionRunPtr fractionRun = AnnotationFractionRun::Create(document.GetDbR());
                             run = fractionRun;
                             
-                            PRECONDITION(fbRun.has_fraction_denominatorContent(), ERROR);
-                            fractionRun->SetDenominatorContent(fbRun.fraction_denominatorContent()->c_str());
+                            PRECONDITION(fbRun->has_fraction_denominatorContent(), ERROR);
+                            fractionRun->SetDenominatorContent(fbRun->fraction_denominatorContent()->c_str());
                             
-                            PRECONDITION(fbRun.has_fraction_numeratorContent(), ERROR);
-                            fractionRun->SetNumeratorContent(fbRun.fraction_numeratorContent()->c_str());
+                            PRECONDITION(fbRun->has_fraction_numeratorContent(), ERROR);
+                            fractionRun->SetNumeratorContent(fbRun->fraction_numeratorContent()->c_str());
 
                             break;
                             }
@@ -552,11 +552,11 @@ BentleyStatus AnnotationTextBlockPersistence::DecodeFromFlatBuf(AnnotationTextBl
                     if (!run.IsValid())
                         continue;
 
-                    PRECONDITION(fbRun.has_styleId(), ERROR);
-                    run->SetStyleId(AnnotationTextStyleId((uint64_t)fbRun.styleId()), SetAnnotationTextStyleOptions::Direct);
+                    PRECONDITION(fbRun->has_styleId(), ERROR);
+                    run->SetStyleId(AnnotationTextStyleId((uint64_t)fbRun->styleId()), SetAnnotationTextStyleOptions::Direct);
                     
-                    if (fbRun.has_styleOverrides())
-                        POSTCONDITION(SUCCESS == AnnotationTextStylePersistence::DecodeFromFlatBuf(run->m_styleOverrides, *fbRun.styleOverrides()), ERROR);
+                    if (fbRun->has_styleOverrides())
+                        POSTCONDITION(SUCCESS == AnnotationTextStylePersistence::DecodeFromFlatBuf(run->m_styleOverrides, *fbRun->styleOverrides()), ERROR);
 
                     paragraph->GetRunsR().push_back(run);
                     }

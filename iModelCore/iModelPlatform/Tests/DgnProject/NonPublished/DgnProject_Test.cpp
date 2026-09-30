@@ -41,6 +41,7 @@ struct StepTimer
 //=======================================================================================
 struct DgnDbTest : public DgnDbTestFixture
 {
+    void CheckSpatialIndexTriggerUpgrade(DgnDbProfileVersion const& previousVersion, bool healthySource, bool schemaSync);
 };
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -51,7 +52,7 @@ TEST_F(DgnDbTest, CheckStandardProperties)
     SetupSeedProject();
 
     DgnDbP project = m_db.get();
-    ASSERT_TRUE(project != NULL);
+    ASSERT_TRUE(project != nullptr);
     Utf8String val;
 
     // Check that std properties are in the be_Props table. We can only check the value of a few using this API.
@@ -81,7 +82,7 @@ TEST_F(DgnDbTest, ProjectProfileVersions)
 {
     SetupSeedProject();
     DgnDbP project = m_db.get();
-    ASSERT_TRUE(project != NULL);
+    ASSERT_TRUE(project != nullptr);
 
     // Get Schema version details
     DgnDbProfileVersion profileVer = project->GetProfileVersion();
@@ -89,6 +90,156 @@ TEST_F(DgnDbTest, ProjectProfileVersions)
     ASSERT_EQ(DGNDB_CURRENT_VERSION_Minor, profileVer.GetMinor()) << "The Schema Minor Version is: " << profileVer.GetMinor();
     ASSERT_EQ(DGNDB_CURRENT_VERSION_Sub1, profileVer.GetSub1()) << "The Schema Sub1 Version is: " << profileVer.GetSub1();
     ASSERT_EQ(DGNDB_CURRENT_VERSION_Sub2, profileVer.GetSub2()) << "The Schema Sub2 Version is: " << profileVer.GetSub2();
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+// healthySource keeps the source's triggers current while the replay recipient retains legacy triggers.
+void DgnDbTest::CheckSpatialIndexTriggerUpgrade(DgnDbProfileVersion const& previousVersion, bool healthySource, bool schemaSync)
+{
+    auto getTriggerSql = [](BeSQLite::Db const& db, Utf8CP triggerName) {
+        Statement statement(db, "SELECT sql FROM sqlite_master WHERE type='trigger' AND name=?");
+        if (BE_SQLITE_OK != statement.BindText(1, triggerName, Statement::MakeCopy::No) || BE_SQLITE_ROW != statement.Step())
+            return Utf8String();
+        return Utf8String(statement.GetValueText(0));
+    };
+
+    SetupSeedProject(Db::OpenMode::ReadWrite, true);
+    Utf8String currentUpdateTriggerSql = getTriggerSql(*m_db, "dgn_rtree_upd");
+    Utf8String currentDeleteTriggerSql = getTriggerSql(*m_db, "dgn_rtree_upd1");
+    BeFileName fileName = m_db->GetFileName();
+    m_db->Txns().DeleteAllTxns();
+    SaveDb();
+    BeFileName syncFileName(fileName);
+    syncFileName.AppendString(L".sync");
+    if (schemaSync)
+        {
+        if (syncFileName.DoesPathExist())
+            ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeDeleteFile(syncFileName));
+        ECDb syncDb;
+        ASSERT_EQ(BE_SQLITE_OK, syncDb.CreateNewDb(syncFileName));
+        ASSERT_EQ(BE_SQLITE_OK, syncDb.SaveChanges());
+        syncDb.CloseDb();
+        ASSERT_EQ(SchemaSync::Status::OK, m_db->Schemas().GetSchemaSync().Init(SchemaSync::SyncDbUri(syncFileName.GetNameUtf8().c_str()), "trigger-upgrade", false));
+        SaveDb();
+        m_db->Txns().DeleteAllTxns();
+        SaveDb();
+        }
+    CloseDb();
+    m_db = nullptr;
+
+    // Legacy triggers can also remain in a 2.0.0.8 recipient after replaying an incomplete upgrade.
+    BeSQLite::Db rawDb;
+    ASSERT_EQ(BE_SQLITE_OK, rawDb.OpenBeSQLiteDb(fileName, Db::OpenParams(Db::OpenMode::ReadWrite)));
+    ASSERT_EQ(BE_SQLITE_OK, rawDb.ExecuteSql("DROP TRIGGER IF EXISTS dgn_rtree_upd"));
+    ASSERT_EQ(BE_SQLITE_OK, rawDb.ExecuteSql("DROP TRIGGER IF EXISTS dgn_rtree_upd1"));
+    ASSERT_EQ(BE_SQLITE_OK, rawDb.ExecuteSql(
+        "CREATE TRIGGER dgn_rtree_upd AFTER UPDATE OF Origin_X,Origin_Y,Origin_Z,Yaw,Pitch,Roll,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z ON bis_GeometricElement3d "
+        "WHEN new.Origin_X IS NOT NULL AND 1 = new.InSpatialIndex BEGIN INSERT OR REPLACE INTO dgn_SpatialIndex(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,"
+        "DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5) "
+        "FROM (SELECT DGN_placement_aabb(DGN_placement(DGN_point(NEW.Origin_X,NEW.Origin_Y,NEW.Origin_Z),DGN_angles(NEW.Yaw,NEW.Pitch,NEW.Roll),DGN_bbox(NEW.BBoxLow_X,NEW.BBoxLow_Y,NEW.BBoxLow_Z,NEW.BBoxHigh_X,NEW.BBoxHigh_Y,NEW.BBoxHigh_Z))) as bb);END"));
+    ASSERT_EQ(BE_SQLITE_OK, rawDb.ExecuteSql(
+        "CREATE TRIGGER dgn_rtree_upd1 AFTER UPDATE OF Origin_X,Origin_Y,Origin_Z,Yaw,Pitch,Roll,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z ON bis_GeometricElement3d "
+        "WHEN OLD.Origin_X IS NOT NULL AND NEW.Origin_X IS NULL BEGIN DELETE FROM dgn_SpatialIndex WHERE ElementId=OLD.ElementId;END"));
+
+    ASSERT_EQ(BE_SQLITE_OK, rawDb.SavePropertyString(DgnProjectProperty::ProfileVersion(), previousVersion.ToJson()));
+    ASSERT_EQ(BE_SQLITE_OK, rawDb.SaveChanges());
+    rawDb.CloseDb();
+
+    BeFileName replayFileName = DgnDbTestDgnManager::GetOutputFilePath(L"UpgradeSpatialIndexTriggersReplay.bim");
+    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(fileName, replayFileName));
+
+    if (healthySource)
+        {
+        // A healthy source must still publish the repair for its stale recipient.
+        ASSERT_EQ(BE_SQLITE_OK, rawDb.OpenBeSQLiteDb(fileName, Db::OpenParams(Db::OpenMode::ReadWrite)));
+        ASSERT_EQ(BE_SQLITE_OK, rawDb.ExecuteSql("DROP TRIGGER dgn_rtree_upd"));
+        ASSERT_EQ(BE_SQLITE_OK, rawDb.ExecuteSql("DROP TRIGGER dgn_rtree_upd1"));
+        ASSERT_EQ(BE_SQLITE_OK, rawDb.ExecuteSql(currentUpdateTriggerSql.c_str()));
+        ASSERT_EQ(BE_SQLITE_OK, rawDb.ExecuteSql(currentDeleteTriggerSql.c_str()));
+        ASSERT_EQ(BE_SQLITE_OK, rawDb.SaveChanges());
+        rawDb.CloseDb();
+        }
+
+    DbResult openStatus = BE_SQLITE_OK;
+    DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite);
+    openParams.SetProfileUpgradeOptions(Db::ProfileUpgradeOptions::Upgrade);
+    ASSERT_EQ(Db::ProfileUpgradeOptions::Upgrade, openParams.GetProfileUpgradeOptions());
+    m_db = DgnDb::OpenIModelDb(&openStatus, fileName, openParams);
+    ASSERT_EQ(BE_SQLITE_OK, openStatus);
+    ASSERT_TRUE(m_db.IsValid());
+    ASSERT_EQ(DgnDbProfileVersion::GetCurrent(), m_db->GetProfileVersion());
+    ASSERT_EQ(ECDb::CurrentECDbProfileVersion(), m_db->GetECDbProfileVersion());
+
+    ASSERT_EQ(DgnDbProfileVersion(2, 0, 0, 9), m_db->GetProfileVersion());
+
+    Utf8String updateTriggerSql = getTriggerSql(*m_db, "dgn_rtree_upd");
+    Utf8String deleteTriggerSql = getTriggerSql(*m_db, "dgn_rtree_upd1");
+    ASSERT_TRUE(updateTriggerSql.find("AFTER UPDATE OF InSpatialIndex") != updateTriggerSql.npos);
+    ASSERT_TRUE(deleteTriggerSql.find("NEW.InSpatialIndex = 0") != deleteTriggerSql.npos);
+
+    ChangesetPropsPtr changeset = m_db->Txns().StartCreateChangeset("-profile-upgrade");
+    ASSERT_TRUE(changeset.IsValid());
+    m_db->Txns().FinishCreateChangeset(-1, true);
+
+    ChangesetFileReader reader(changeset->GetFileName(), m_db.get());
+    bool containsSchemaChanges = false;
+    DdlChanges ddlChanges;
+    ASSERT_EQ(BE_SQLITE_OK, reader.MakeReader()->GetSchemaChanges(containsSchemaChanges, ddlChanges));
+    ASSERT_TRUE(containsSchemaChanges);
+    Utf8String ddl = ddlChanges.ToString();
+    for (Utf8CP triggerName : {"dgn_rtree_upd", "dgn_rtree_upd1"})
+        {
+        ASSERT_NE(Utf8String::npos, ddl.find(Utf8String("DROP TRIGGER IF EXISTS ") + triggerName + ";"));
+        ASSERT_NE(Utf8String::npos, ddl.find(Utf8String("CREATE TRIGGER ") + triggerName + " "));
+        }
+
+    DgnDbPtr replayDb = DgnDb::OpenIModelDb(&openStatus, replayFileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+    ASSERT_EQ(BE_SQLITE_OK, openStatus);
+    ASSERT_TRUE(replayDb.IsValid());
+    if (schemaSync)
+        ASSERT_EQ(SchemaSync::Status::OK, replayDb->Schemas().GetSchemaSync().SetDefaultSyncDbUri(syncFileName.GetNameUtf8().c_str()));
+    ASSERT_EQ(previousVersion, replayDb->GetProfileVersion());
+    ASSERT_NE(updateTriggerSql, getTriggerSql(*replayDb, "dgn_rtree_upd"));
+    ASSERT_NE(deleteTriggerSql, getTriggerSql(*replayDb, "dgn_rtree_upd1"));
+
+    ASSERT_EQ(ChangesetStatus::Success, replayDb->Txns().PullMergeApply(*changeset));
+    EXPECT_EQ(m_db->GetProfileVersion(), replayDb->GetProfileVersion());
+    EXPECT_EQ(updateTriggerSql, getTriggerSql(*replayDb, "dgn_rtree_upd"));
+    EXPECT_EQ(deleteTriggerSql, getTriggerSql(*replayDb, "dgn_rtree_upd1"));
+    CloseDb();
+    m_db = nullptr;
+}
+
+TEST_F(DgnDbTest, UpgradeSpatialIndexTriggers)
+{
+    CheckSpatialIndexTriggerUpgrade(DgnDbProfileVersion(2, 0, 0, 7), false, false);
+}
+
+TEST_F(DgnDbTest, UpgradeSpatialIndexTriggersWithSchemaSync)
+{
+    CheckSpatialIndexTriggerUpgrade(DgnDbProfileVersion(2, 0, 0, 7), false, true);
+}
+
+TEST_F(DgnDbTest, RepairSpatialIndexTriggersFromStaleProfile008)
+{
+    CheckSpatialIndexTriggerUpgrade(DgnDbProfileVersion(2, 0, 0, 8), false, false);
+}
+
+TEST_F(DgnDbTest, RepairSpatialIndexTriggersFromStaleProfile008WithSchemaSync)
+{
+    CheckSpatialIndexTriggerUpgrade(DgnDbProfileVersion(2, 0, 0, 8), false, true);
+}
+
+TEST_F(DgnDbTest, RepairSpatialIndexTriggersFromHealthyProfile008)
+{
+    CheckSpatialIndexTriggerUpgrade(DgnDbProfileVersion(2, 0, 0, 8), true, false);
+}
+
+TEST_F(DgnDbTest, RepairSpatialIndexTriggersFromHealthyProfile008WithSchemaSync)
+{
+    CheckSpatialIndexTriggerUpgrade(DgnDbProfileVersion(2, 0, 0, 8), true, true);
 }
 
 //=======================================================================================
@@ -119,7 +270,7 @@ TEST_F(DgnDbTest, ProjectWithDuplicateName)
 
     //Create and Verify that project was created
     project = DgnDb::CreateIModel(&status, DgnDbTestDgnManager::GetOutputFilePath(L"dup.ibim"), params);
-    ASSERT_TRUE(project != NULL);
+    ASSERT_TRUE(project != nullptr);
     ASSERT_EQ(BE_SQLITE_OK, status) << "Status returned is:" << status;
 
     // Close the original project (otherwise, we'll get a sharing violation, rather than a dup name error).
@@ -147,13 +298,13 @@ TEST_F(DgnDbTest, MultipleReadWrite)
     DgnDbPtr dgnProj1;
     dgnProj1 = DgnDb::OpenIModelDb(&status1, testFile, DgnDb::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Exclusive));
     EXPECT_EQ(BE_SQLITE_OK, status1) << status1;
-    ASSERT_TRUE(dgnProj1 != NULL);
+    ASSERT_TRUE(dgnProj1 != nullptr);
 
     DbResult status2;
     DgnDbPtr dgnProj2;
     dgnProj2 = DgnDb::OpenIModelDb(&status2, testFile, DgnDb::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Exclusive));
     EXPECT_NE(BE_SQLITE_OK, status2) << status2;
-    ASSERT_TRUE(dgnProj2 == NULL);
+    ASSERT_TRUE(dgnProj2 == nullptr);
 }
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -169,7 +320,7 @@ TEST_F(DgnDbTest, InvalidFileFormat)
     DbResult status;
     dgnProj = DgnDb::OpenIModelDb(&status, path, DgnDb::OpenParams(Db::OpenMode::Readonly));
     EXPECT_EQ(BE_SQLITE_NOTADB, status) << status;
-    ASSERT_TRUE(dgnProj == NULL);
+    ASSERT_TRUE(dgnProj == nullptr);
 }
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -189,7 +340,7 @@ TEST_F(DgnDbTest, CreateIModel)
     CreateDgnDbParams params(TEST_NAME);
     dgnProj = DgnDb::CreateIModel(&status, BeFileName(dgndbFileName.GetNameUtf8().c_str()), params);
     EXPECT_EQ(BE_SQLITE_OK, status) << status;
-    ASSERT_TRUE(dgnProj != NULL);
+    ASSERT_TRUE(dgnProj != nullptr);
 }
 
 
@@ -271,6 +422,64 @@ TEST_F(DgnDbTest, ImportSchemaWithLocalChanges)
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnDbTest, DropSchemas)
+    {
+    auto result = BE_SQLITE_ERROR;
+    CreateDgnDbParams params(TEST_NAME);
+    auto dgndb = DgnDb::CreateIModel(&result, DgnDbTestDgnManager::GetOutputFilePath(L"DropSchemas.bim"), params);
+    ASSERT_TRUE(dgndb.IsValid());
+
+    auto schemaContext = ECN::ECSchemaReadContext::CreateContext();
+    schemaContext->AddSchemaLocater(dgndb->GetSchemaLocater());
+
+    BeFileName searchDir;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(searchDir);
+    searchDir.AppendToPath(L"ECSchemas").AppendToPath(L"Dgn");
+    schemaContext->AddSchemaLocater(dgndb->GetSchemaLocater());
+    schemaContext->AddSchemaPath(searchDir.GetName());
+
+    ECSchemaPtr schema = nullptr;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, R"xml(
+        <ECSchema schemaName="TestSchema1" alias="ts1" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="1.0.0" alias="bis"/>
+            <ECEntityClass typeName="TestClass1">
+                <ECCustomAttributes>
+                    <ClassHasHandler xmlns="BisCore.1.0.0" />
+                </ECCustomAttributes>
+                <BaseClass>bis:PhysicalElement</BaseClass>
+                <ECProperty propertyName="Prop1" typeName="string" />
+            </ECEntityClass>
+        </ECSchema>)xml", *schemaContext));
+    ASSERT_TRUE(schema.IsValid());
+
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, R"xml(
+        <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="1.0.0" alias="bis"/>
+            <ECSchemaReference name="TestSchema1" version="1.0.0" alias="ts1"/>
+            <ECEntityClass typeName="TestClass2">
+                <ECCustomAttributes>
+                    <ClassHasHandler xmlns="BisCore.1.0.0" />
+                </ECCustomAttributes>
+                <BaseClass>bis:PhysicalElement</BaseClass>
+                <ECProperty propertyName="Prop2" typeName="string" />
+            </ECEntityClass>
+        </ECSchema>)xml", *schemaContext));
+    ASSERT_TRUE(schema.IsValid());
+
+    ASSERT_EQ(SchemaStatus::Success, dgndb->ImportSchemas(schemaContext->GetCache().GetSchemas(), true));
+    dgndb->SaveChanges();
+
+    ASSERT_TRUE(dgndb->Schemas().ContainsSchema("TestSchema1"));
+    ASSERT_TRUE(dgndb->Schemas().ContainsSchema("TestSchema2"));
+
+    EXPECT_TRUE(dgndb->DropSchemas({"TestSchema1", "TestSchema2"}).IsSuccess());
+    EXPECT_FALSE(dgndb->Schemas().ContainsSchema("TestSchema1"));
+    EXPECT_FALSE(dgndb->Schemas().ContainsSchema("TestSchema2"));
+    }
+
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnDbTest, CreateWithInvalidName)
 {
     DgnDbPtr dgnProj;
@@ -285,7 +494,7 @@ TEST_F(DgnDbTest, CreateWithInvalidName)
     CreateDgnDbParams params(TEST_NAME);
     dgnProj = DgnDb::CreateIModel(&status, BeFileName(dgndbFileName.GetNameUtf8().c_str()), params);
     EXPECT_EQ(BE_SQLITE_OK, status) << status;
-    ASSERT_TRUE(dgnProj != NULL);
+    ASSERT_TRUE(dgnProj != nullptr);
     /////////It creates a DgnDbfile with .txt extension having success status needs to figure out is this right behavior
 }
 
@@ -304,7 +513,7 @@ TEST_F(DgnDbTest, FileNotFoundToOpen)
 
     dgnProj = DgnDb::OpenIModelDb(&status, BeFileName(dgndbFileNotExist.GetNameUtf8().c_str()), DgnDb::OpenParams(Db::OpenMode::Readonly));
     EXPECT_EQ(BE_SQLITE_ERROR_FileNotFound, status) << status;
-    ASSERT_TRUE(dgnProj == NULL);
+    ASSERT_TRUE(dgnProj == nullptr);
 }
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -318,12 +527,12 @@ TEST_F(DgnDbTest, OpenAlreadyOpen)
     DbResult status;
     DgnDbPtr dgnProj = DgnDb::OpenIModelDb(&status, dgndbFileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Exclusive));
     EXPECT_EQ(BE_SQLITE_OK, status) << status;
-    ASSERT_TRUE(dgnProj != NULL);
+    ASSERT_TRUE(dgnProj != nullptr);
 
     // once a Db is opened for ReadWrite with exclusive access, it can't be opened, even for read.
     DgnDbPtr dgnProj1 = DgnDb::OpenIModelDb(&status, dgndbFileName, DgnDb::OpenParams(Db::OpenMode::Readonly));
     EXPECT_EQ(BE_SQLITE_BUSY, status) << status;
-    ASSERT_TRUE(dgnProj1 == NULL);
+    ASSERT_TRUE(dgnProj1 == nullptr);
 }
 
 //---------------------------------------------------------------------------------------
@@ -359,6 +568,30 @@ TEST_F(DgnDbTest, IsPurgeOperationActive)
     }
     ASSERT_FALSE(db->IsPurgeOperationActive());
     }
+    
+TEST_F(DgnDbTest, CreateImodel_ShouldLogLessWarnings)
+    {
+    // Log to console
+    // NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
+    // NativeLogging::ConsoleLogger::GetLogger().SetSeverity("SQLite", BentleyApi::NativeLogging::LOG_TRACE);
+    
+    TestLogger testLogger;
+    LogCatcher logCatcher(testLogger);
+
+    CreateDgnDbParams params("EmptyModelTest");
+    DgnDbPtr db = DgnDb::CreateIModel(nullptr, DgnDbTestDgnManager::GetOutputFilePath(L"EmptyModelTest.bim"), params);
+    ASSERT_TRUE(db.IsValid());
+
+    int warningCount = 0;
+    for (const auto& message : testLogger.m_messages) {
+        if (message.first == NativeLogging::SEVERITY::LOG_WARNING) {
+            ++warningCount;
+        }
+    }
+    ASSERT_LT(warningCount, 50);
+    }
+
+
 
 //----------------------------------------------------------------------------------------
 // @bsiclass

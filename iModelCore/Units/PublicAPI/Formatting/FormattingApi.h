@@ -31,6 +31,11 @@ BE_JSON_NAME(uomSeparator)
 BE_JSON_NAME(stationSeparator)
 BE_JSON_NAME(stationOffsetSize)
 BE_JSON_NAME(minWidth)
+BE_JSON_NAME(ratioType)
+BE_JSON_NAME(azimuthBase)
+BE_JSON_NAME(azimuthBaseUnit)
+BE_JSON_NAME(azimuthCounterClockwise)
+BE_JSON_NAME(revolutionUnit)
 
 // Format Traits
 BE_JSON_NAME(trailZeroes)
@@ -85,9 +90,17 @@ private:
     uint8_t m_explicitlyDefinedThousandsSeparator:1;
     uint8_t m_explicitlyDefinedUOMSeparator:1;
     uint8_t m_explicitlyDefinedStatSeparator:1;
+    uint8_t m_explicitlyDefinedAzimuthBase:1;
+
     double              m_roundFactor;
     PresentationType    m_presentationType;      // Decimal, Fractional, Scientific, Station
+    RatioType           m_ratioType;        // OneToN, NToOne, ValueBased, UseGreatestCommonDivisor
     ScientificType      m_scientificType;
+    double              m_azimuthBase;     // The base offset for azimuths in radians from north clockwise
+    BEU::UnitCP         m_azimuthBaseUnit; // The unit of the azimuth base
+    bool                m_azimuthCounterClockwise; // The orientation of a formatted azimuth
+    BEU::UnitCP         m_revolutionUnit; // Required for bearing and azimuth. Unit which represents a full revolution.
+
     SignOption          m_signOption;            // NoSign, OnlyNegative, SignAlways, NegativeParentheses
     FormatTraits        m_formatTraits;          // NoZeroes, TrailingZeroes, BothZeroes
     DecimalPrecision    m_decPrecision;          // Precision0...12
@@ -102,6 +115,10 @@ private:
                                                  // a number of or integer part of a real is shorter and needs to be augmented by
                                                  // insignificant zeroes. Blanks are not considered because aligning text
                                                  // with the boundaries of a virtual box is the responsibility of annotation layer.
+    Utf8String          m_northLabel;            //Used to represent north
+    Utf8String          m_southLabel;            //Used to represent south
+    Utf8String          m_eastLabel;             //Used to represent east
+    Utf8String          m_westLabel;             //Used to represent west
 
     double EffectiveRoundFactor(double rnd) const { return FormatConstant::IsIgnored(rnd) ? m_roundFactor : rnd; }
 
@@ -136,7 +153,7 @@ public:
 
     //! Update this with the values from the provided JSON.
     //! @return Success if this NumericFormatSpec is successfully updated. Otherwise, false.
-    UNITS_EXPORT static bool FromJson(NumericFormatSpecR out, JsonValueCR jval);
+    UNITS_EXPORT static bool FromJson(NumericFormatSpecR out, BeJsConst jval, BEU::IUnitsContextCP context = nullptr);
     //! Serializes this to JSON. The JSON will only contain values which differ from their initial state, or have been explicitly set
     //! to the current state.
     //!
@@ -176,7 +193,7 @@ public:
     UNITS_EXPORT Utf8String GetFormatTraitsString() const;
     void SetFormatTraits(FormatTraits traits) { m_formatTraits = traits; }
     UNITS_EXPORT bool SetFormatTraits(Utf8CP input);
-    UNITS_EXPORT bool SetFormatTraits(JsonValueCR jval);
+    UNITS_EXPORT bool SetFormatTraits(BeJsConst jval);
     UNITS_EXPORT void FormatTraitsToJson(BeJsValue) const;
 
     FormatTraits GetFormatTraits() const { return m_formatTraits; }
@@ -187,6 +204,17 @@ public:
 
     void SetScientificType(ScientificType type) {m_scientificType = type;}
     ScientificType GetScientificType() const {return m_scientificType;}
+
+    //Sets the azimuth base in radians from north clockwise
+    void SetAzimuthBase(double base) {m_explicitlyDefinedAzimuthBase = true; m_azimuthBase = base;}
+    bool HasAzimuthBase() const {return m_explicitlyDefinedAzimuthBase;}
+    double GetAzimuthBase() const {return m_azimuthBase;}
+
+    void SetAzimuthBaseUnit(BEU::UnitCP unit){m_azimuthBaseUnit = unit;}
+    BEU::UnitCP GetAzimuthBaseUnit() const {return m_azimuthBaseUnit;}
+
+    void SetRevolutionUnit(BEU::UnitCP unit){m_revolutionUnit = unit;}
+    BEU::UnitCP GetRevolutionUnit() const {return m_revolutionUnit;}
 
     void SetPrecision(FractionalPrecision precision) {m_explicitlyDefinedPrecision = true; m_fractPrecision = precision; }
     void SetPrecision(DecimalPrecision precision) {m_explicitlyDefinedPrecision = true; m_decPrecision = precision;}
@@ -215,6 +243,18 @@ public:
     Utf8Char GetStationSeparator() const {return m_statSeparator;}
     bool HasStationSeparator() const {return m_explicitlyDefinedStatSeparator;}
 
+    void SetNorthLabel(Utf8StringCR label) {m_northLabel = label;}
+    Utf8String GetNorthLabel() const {return m_northLabel;}
+    void SetSouthLabel(Utf8StringCR label) {m_southLabel = label;}
+    Utf8String GetSouthLabel() const {return m_southLabel;}
+    void SetEastLabel(Utf8StringCR label) {m_eastLabel = label;}
+    Utf8String GetEastLabel() const {return m_eastLabel;}
+    void SetWestLabel(Utf8StringCR label) {m_westLabel = label;}
+    Utf8String GetWestLabel() const {return m_westLabel;}
+
+    void SetRatioType(RatioType ratioType) {m_ratioType = ratioType;}
+    RatioType GetRatioType() const {return m_ratioType;}
+    
     //======================================
     // Format Traits Bit Setters/Getters
     //======================================
@@ -271,6 +311,12 @@ public:
     void SetPrependUnitLabel(bool setTo) { SetTraitsBit(FormatTraits::PrependUnitLabel, setTo); }
     bool IsPrependUnitLabel() const { return GetTraitBit(FormatTraits::PrependUnitLabel); }
 
+    // Indicates whether azimuth values should be formatted counter-clockwise from their base
+    void SetAzimuthCounterClockwise(bool setTo) { m_azimuthCounterClockwise = setTo;}
+    bool GetAzimuthCounterClockwise() const {return m_azimuthCounterClockwise;}
+
+    Utf8String FormatToRatio(double value) const;
+
     //======================================
     // Formatting Methods
     //======================================
@@ -326,7 +372,7 @@ private:
             m_unitLabel = other.m_unitLabel.c_str();
             }
 
-        bool FromJson(Json::Value const& jval, BEU::IUnitsContextCP context);
+        bool FromJson(BeJsConst jval, BEU::IUnitsContextCP context);
         bool SetUnit(BEU::UnitCP unit) {m_unit = unit; return true;}
         Utf8StringCR GetLabel() const { return m_unitLabel; }
         bool HasLabel() const {return m_explicitlyDefinedLabel;}
@@ -370,6 +416,7 @@ private:
 
         bool UpdateProblemCode(FormatProblemCode code) { return m_problem.UpdateProblemCode(code); }
         bool IsProblem() const {return m_problem.IsProblem();}
+        FormatProblemCode GetProblemCode() const {return m_problem.GetProblemCode();}
     };
 
     static size_t const indxMajor  = 0;
@@ -380,9 +427,11 @@ private:
     double m_ratio[indxSub] = {0};
     bool m_includeZero = true; // TODO: Not currently used in the formatting code, needs to be fixed.
     bool m_explicitlyDefinedSpacer = false;
-    Utf8String m_spacer = FormatConstant::DefaultSpacer();
+    Utf8String m_spacer = FormatConstant::DefaultSpacer(); //this is used between value and UOM if a label is shown
     FormatProblemDetail m_problem;
     bvector<UnitProxy> mutable m_proxys;
+    Utf8String m_separator = FormatConstant::DefaultSeparator();
+    bool m_explicitlyDefinedSeparator = false;
 
     //! Returns the unit ratio of upper/lower.
     //! Lower may be set to nullptr, indicating the lower unit is not set on the CVS.
@@ -421,8 +470,8 @@ public:
     UNITS_EXPORT CompositeValueSpec(BEU::UnitCR majorUnit, BEU::UnitCR middleUnit, BEU::UnitCR minorUnit, BEU::UnitCR subUnit);
     UNITS_EXPORT CompositeValueSpec(CompositeValueSpecCR other);
     UNITS_EXPORT bool ToJson(BeJsValue out, bool verbose = false, bool excludeUnits = false) const;
-    UNITS_EXPORT static bool FromJson(CompositeValueSpecR out, JsonValueCR jval, BEU::IUnitsContextCP context);
-    UNITS_EXPORT static bool FromJson(CompositeValueSpecR out, JsonValueCR jsonWithoutUnits, bvector<BEU::UnitCP> const& units, bvector<Nullable<Utf8String>> const& unitLabels);
+    UNITS_EXPORT static bool FromJson(CompositeValueSpecR out, BeJsConst jval, BEU::IUnitsContextCP context);
+    UNITS_EXPORT static bool FromJson(CompositeValueSpecR out, BeJsConst jsonWithoutUnits, bvector<BEU::UnitCP> const& units, bvector<Nullable<Utf8String>> const& unitLabels);
 
     UNITS_EXPORT bool IsIdentical(CompositeValueSpecCR other) const;
 
@@ -468,6 +517,11 @@ public:
     Utf8String GetSpacer() const {return m_spacer;} //!< Get the spacer used in between each segment value and its uom label of a composite value string.
     bool HasSpacer() const {return m_explicitlyDefinedSpacer;} //!< Returns whether a spacer has been explicitly set.
 
+    //! Set the string that will be used to separate the composite values
+    Utf8String SetSeparator(Utf8CP separator) {m_explicitlyDefinedSeparator = true; return m_separator = separator;}
+    Utf8String GetSeparator() const {return m_separator;} //!< Get the separator used to separate the composite values
+    bool HasSeparator() const {return m_explicitlyDefinedSeparator;} //!< Returns whether a separator has been explicitly set.
+
     //! Sets whether a segment of the composite value will be serialized to the resulting string if it evaluates to zero.
     bool SetIncludeZero(bool incl) {return m_includeZero = incl;}
     //! Determine whether a segment of the composite value will be serialized to the resulting string if it evaluates to zero.
@@ -479,7 +533,6 @@ public:
     //! @return true on success false on error (too many units, null units, etc).
     UNITS_EXPORT static bool CreateCompositeSpec(CompositeValueSpecR out, bvector<BEU::UnitCP> const& units);
 };
-
 
 //=======================================================================================
 //! Container for keeping together numeric and composite spec types.
@@ -524,8 +577,8 @@ public:
     //! @param[in]  jval        Json objects representing a format
     //! @param[in]  context     Context to resolve units in the composite spec of the format if there is one
     //! @return                 False if jval is empty or there are issues looking up units or the json is not valid.
-    UNITS_EXPORT static bool FromJson(FormatR out, Json::Value jval, BEU::IUnitsContextCP context = nullptr);
-    //! Creates a Json::Value representing this.
+    UNITS_EXPORT static bool FromJson(FormatR out, BeJsConst jval, BEU::IUnitsContextCP context = nullptr);
+    //! Creates a JSON representation of this.
     virtual bool ToJson(BeJsValue out, bool verbose) const {return _ToJson(out, verbose);}
 
     FormatSpecType GetSpecType() const { return m_specType; }
@@ -613,6 +666,13 @@ public:
 
     // Legacy Descriptor string
     UNITS_EXPORT static void ParseUnitFormatDescriptor(Utf8StringR unitName, Utf8StringR formatString, Utf8CP description);
+
+    BentleyStatus FormatBearingAndAzimuth(BEU::Quantity& quantity, std::string& prefix, std::string& suffix) const;
+
+    //! Normalizes the angle to be within the range of 0 to 2*PI
+    BentleyStatus static NormalizeAngle(BEU::Quantity& quantity, Utf8CP operationName, double revolution);
+    //! Attempts to convert the specified revolution into the provided unit
+    BentleyStatus TryGetRevolution(BEU::UnitCR unit, double& revolution) const;
 };
 
 //=======================================================================================
@@ -622,7 +682,11 @@ struct QuantityFormatting
 {
     typedef std::function<BEU::UnitCP(Utf8CP, BEU::PhenomenonCP)> UnitResolver;
     UNITS_EXPORT static BEU::Quantity CreateQuantity(Utf8CP input, double* persist, BEU::UnitCP outputUnit, FormatCR inputFUS, FormatProblemCode* problemCode, UnitResolver* resolver = nullptr);
-    UNITS_EXPORT static BEU::Quantity CreateQuantity(Utf8CP input, FormatCR inputFUS, FormatProblemCode* problemCode, UnitResolver* resolver = nullptr);
+    
+    static BEU::Quantity CreateQuantity(Utf8CP input, FormatCR inputFUS, FormatProblemCode* problemCode, UnitResolver* resolver = nullptr)
+        { return QuantityFormatting::CreateQuantity(input, inputFUS, inputFUS.GetCompositeMajorUnit(), problemCode, resolver); }
+
+    UNITS_EXPORT static BEU::Quantity CreateQuantity(Utf8CP input, FormatCR inputFUS, BEU::UnitCP targetUnit, FormatProblemCode* problemCode, UnitResolver* resolver = nullptr);
 };
 
 END_BENTLEY_FORMATTING_NAMESPACE

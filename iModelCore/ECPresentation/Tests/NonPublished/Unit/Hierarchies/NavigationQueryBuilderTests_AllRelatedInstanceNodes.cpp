@@ -15,7 +15,7 @@ DEFINE_SCHEMA(AllRelatedInstanceNodes_NullParentNode_ReturnsNoQuery, R"*(
 )*");
 TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_NullParentNode_ReturnsNoQuery)
     {
-    AllRelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, 0, GetECSchema()->GetName());
+    AllRelatedInstanceNodesSpecification spec(1, ChildrenHint::Unknown, false, false, false, false, 0, GetECSchema()->GetName());
 
     auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_TRUE(queries.empty());
@@ -32,7 +32,7 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_NonInstanceParentNo
     auto parentNode = TestNodesHelper::CreateCustomNode(GetConnection(), "TestType", "label", "");
     RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
-    AllRelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, 0, GetECSchema()->GetName());
+    AllRelatedInstanceNodesSpecification spec(1, ChildrenHint::Unknown, false, false, false, false, 0, GetECSchema()->GetName());
 
     auto queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
     ASSERT_TRUE(queries.empty());
@@ -46,7 +46,7 @@ TEST_F(NavigationQueryBuilderTests, AllRelatedInstanceNodes_AllowsStandardSchema
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *GetECClass("ECDbMeta", "ECSchemaDef"));
     RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
-    AllRelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, 0, "ECDbMeta");
+    AllRelatedInstanceNodesSpecification spec(1, ChildrenHint::Unknown, false, false, false, false, 0, "ECDbMeta");
 
     auto queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
     ASSERT_TRUE(queries.size() > 0);
@@ -63,7 +63,7 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_SupportedSchemas_Di
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *GetECClass("ECDbMeta", "ECClassDef"));
     RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
-    AllRelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, 0, GetECSchema()->GetName());
+    AllRelatedInstanceNodesSpecification spec(1, ChildrenHint::Unknown, false, false, false, false, 0, GetECSchema()->GetName());
 
     auto queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
     ASSERT_TRUE(queries.empty());
@@ -93,7 +93,7 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_NoGrouping_ForwardR
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classA);
     RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
-    AllRelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, 0, GetECSchema()->GetName());
+    AllRelatedInstanceNodesSpecification spec(1, ChildrenHint::Unknown, false, false, false, false, 0, GetECSchema()->GetName());
     spec.SetRequiredRelationDirection(RequiredRelationDirection_Forward);
 
     auto queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
@@ -139,7 +139,7 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_NoGrouping_Backward
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classB);
     RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
-    AllRelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, 0, GetECSchema()->GetName());
+    AllRelatedInstanceNodesSpecification spec(1, ChildrenHint::Unknown, false, false, false, false, 0, GetECSchema()->GetName());
     spec.SetRequiredRelationDirection(RequiredRelationDirection_Backward);
 
     auto queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
@@ -201,7 +201,7 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_NoGrouping_BothDire
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classB);
     RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
-    AllRelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, 0, GetECSchema()->GetName());
+    AllRelatedInstanceNodesSpecification spec(1, ChildrenHint::Unknown, false, false, false, false, 0, GetECSchema()->GetName());
     spec.SetRequiredRelationDirection(RequiredRelationDirection_Both);
 
     auto queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
@@ -272,7 +272,7 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_GroupByClass)
     auto rootInstanceNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classB);
 
     RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *rootInstanceNode);
-    AllRelatedInstanceNodesSpecification spec(1, false, false, false, true, false, false, 0, GetECSchema()->GetName());
+    AllRelatedInstanceNodesSpecification spec(1, ChildrenHint::Unknown, false, false, true, false, 0, GetECSchema()->GetName());
 
     auto queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *rootInstanceNode);
     ASSERT_EQ(1, queries.size());
@@ -357,7 +357,7 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_GroupByClass_Childr
     auto rootInstanceNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classB);
     RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *rootInstanceNode);
 
-    AllRelatedInstanceNodesSpecification spec(1, false, false, false, true, false, false, 0, GetECSchema()->GetName());
+    AllRelatedInstanceNodesSpecification spec(1, ChildrenHint::Unknown, false, false, true, false, 0, GetECSchema()->GetName());
 
     auto groupingNode = TestNodesFactory(GetConnection(), spec.GetHash(), "").CreateECClassGroupingNode(rootInstanceNode->GetKey().get(), *classC, false, "MyLabel", {});
     RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *groupingNode, rootInstanceNode->GetNodeId());
@@ -425,7 +425,7 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_GroupByLabel)
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classB);
     RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
-    AllRelatedInstanceNodesSpecification spec(1, false, false, false, false, false, true, 0, GetECSchema()->GetName());
+    AllRelatedInstanceNodesSpecification spec(1, ChildrenHint::Unknown, false, false, false, true, 0, GetECSchema()->GetName());
 
     auto queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
     ASSERT_EQ(1, queries.size());
@@ -504,7 +504,7 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_GroupByLabel_Childr
     auto rootInstanceNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classB);
     RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *rootInstanceNode);
 
-    AllRelatedInstanceNodesSpecification spec(1, false, false, false, false, false, true, 0, GetECSchema()->GetName());
+    AllRelatedInstanceNodesSpecification spec(1, ChildrenHint::Unknown, false, false, false, true, 0, GetECSchema()->GetName());
 
     auto groupingNode = TestNodesFactory(GetConnection(), spec.GetHash(), "").CreateDisplayLabelGroupingNode(rootInstanceNode->GetKey().get(), "MyLabel", 1);
     groupingNode->GetKey()->SetInstanceKeysSelectQuery(std::make_unique<PresentationQuery>(CHILD_INSTANCE_KEYS_QUERY));
@@ -582,7 +582,7 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_GroupByClassAndLabe
     auto rootInstanceNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classB);
     RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *rootInstanceNode);
 
-    AllRelatedInstanceNodesSpecification spec(1, false, false, false, true, false, true, 0, GetECSchema()->GetName());
+    AllRelatedInstanceNodesSpecification spec(1, ChildrenHint::Unknown, false, false, true, true, 0, GetECSchema()->GetName());
 
     auto groupingNode = TestNodesFactory(GetConnection(), spec.GetHash(), "").CreateECClassGroupingNode(rootInstanceNode->GetKey().get(), *classC, false, "MyLabel", {});
     RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *groupingNode, rootInstanceNode->GetNodeId());
@@ -648,7 +648,7 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_GroupByClassAndLabe
     auto rootInstanceNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classB);
     RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *rootInstanceNode);
 
-    AllRelatedInstanceNodesSpecification spec(1, false, false, false, true, false, true, 0, GetECSchema()->GetName());
+    AllRelatedInstanceNodesSpecification spec(1, ChildrenHint::Unknown, false, false, true, true, 0, GetECSchema()->GetName());
 
     auto classGroupingNode = TestNodesFactory(GetConnection(), spec.GetHash(), "").CreateECClassGroupingNode(rootInstanceNode->GetKey().get(), *classC, false, "Class Grouping Node", {});
     RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *classGroupingNode, rootInstanceNode->GetNodeId());
@@ -705,7 +705,7 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_InstanceLabelOverri
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classA);
     RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
-    AllRelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, 0, GetECSchema()->GetName());
+    AllRelatedInstanceNodesSpecification spec(1, ChildrenHint::Unknown, false, false, false, false, 0, GetECSchema()->GetName());
     spec.SetRequiredRelationDirection(RequiredRelationDirection_Forward);
     m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, false, classB->GetFullName(), "Prop1"));
     m_ruleset->AddPresentationRule(*new InstanceLabelOverride(2, false, classB->GetFullName(), "Prop2"));
@@ -773,7 +773,7 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_InstanceLabelOverri
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classA);
     RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
-    AllRelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, 0, GetECSchema()->GetName());
+    AllRelatedInstanceNodesSpecification spec(1, ChildrenHint::Unknown, false, false, false, false, 0, GetECSchema()->GetName());
     spec.SetRequiredRelationDirection(RequiredRelationDirection_Forward);
     m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, classC->GetFullName(), "PropC"));
 

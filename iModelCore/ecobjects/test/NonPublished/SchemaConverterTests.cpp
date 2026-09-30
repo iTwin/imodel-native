@@ -175,8 +175,8 @@ TEST_F(SchemaConverterTests, EmptyStructPropertyRemoval)
                 <ECStructArrayProperty propertyName="EmptyStructArrProperty" typeName="EmptyStruct"/>
             </ECEntityClass>
             <ECStructClass typeName="FullStruct">
-                <ECProperty propertyName="FullProp1" typeName="Type1"/>
-                <ECProperty propertyName="FullProp2" typeName="Type2"/>
+                <ECProperty propertyName="FullProp1" typeName="int"/>
+                <ECProperty propertyName="FullProp2" typeName="int"/>
             </ECStructClass>
             <ECEntityClass typeName="FullEntity">
                 <ECStructProperty propertyName="FullStructProperty" typeName="FullStruct"/>

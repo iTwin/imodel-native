@@ -191,8 +191,213 @@ TEST_F(ECSqlToSqlGenerationTests, NavPropSharedColumnCasting)
     EXPECT_STREQ("SELECT [Child].[ps1],[Child].[ps2],[Child].[ps3],[Child].[ps4] FROM (SELECT [Id] ECInstanceId,[ECClassId],[ps1],[ps2],[ps3],(CASE WHEN [ps3] IS NULL THEN NULL ELSE [ps4] END) [ps4] FROM [main].[ts_Child]) [Child]",
                  GetHelper().ECSqlToSql("SELECT D,S,Parent.Id,Parent.RelECClassId FROM ts.Child").c_str());
 
-    EXPECT_STREQ(Utf8PrintfString("SELECT [Rel].[SourceECInstanceId],[Rel].[SourceECClassId],[Rel].[TargetECInstanceId],[Rel].[TargetECClassId] FROM (SELECT [ts_Child].[Id] ECInstanceId,[ts_Child].[ps4] ECClassId,[ts_Child].[ps3] SourceECInstanceId,%s SourceECClassId,[ts_Child].[Id] TargetECInstanceId,[ts_Child].[ECClassId] TargetECClassId FROM [main].[ts_Child] WHERE [ts_Child].[ps3] IS NOT NULL AND [ts_Child].[ps4]=%s) [Rel]", parentClassId.ToString().c_str(), relClassId.ToString().c_str()).c_str(),
+    EXPECT_STREQ(Utf8PrintfString("SELECT [Rel].[SourceECInstanceId],[Rel].[SourceECClassId],[Rel].[TargetECInstanceId],[Rel].[TargetECClassId] "
+        "FROM (SELECT [ts_Child].[Id] ECInstanceId,[ts_Child].[ps4] ECClassId,[ts_Child].[ps3] SourceECInstanceId,%s SourceECClassId,[ts_Child].[Id] TargetECInstanceId,[ts_Child].[ECClassId] TargetECClassId "
+        "FROM [main].[ts_Child] WHERE [ts_Child].[ps3] IS NOT NULL AND [ts_Child].[ps4]=%s AND [ts_Child].[ECClassId] IN "
+        "(SELECT ClassId FROM [main].ec_cache_ClassHierarchy WHERE BaseClassId=%s)) [Rel]", parentClassId.ToString().c_str(), relClassId.ToString().c_str(), childClassId.ToString().c_str()).c_str(),
                  GetHelper().ECSqlToSql("SELECT SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId FROM ts.Rel").c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlToSqlGenerationTests, NavPropSharedColumnConstraintsNormalRelationships)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("NavPropSharedColumnConstraints.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+        <ECEntityClass typeName="Base" modifier="none">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00">
+                    <MaxSharedColumnsBeforeOverflow>20</MaxSharedColumnsBeforeOverflow>
+                </ShareColumns>
+            </ECCustomAttributes>
+        </ECEntityClass>
+        <ECEntityClass typeName="Dog" modifier="none">
+            <BaseClass>Base</BaseClass>
+            <ECNavigationProperty propertyName="Bone" relationshipName="DogHasBone" direction="Forward"/>
+            <ECNavigationProperty propertyName="Ball" relationshipName="DogHasBall" direction="Forward"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="Cat" modifier="Sealed">
+            <BaseClass>Base</BaseClass>
+            <ECNavigationProperty propertyName="Mouse" relationshipName="CatHasMouse" direction="Forward"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="Bone" modifier="Sealed"></ECEntityClass>
+        <ECEntityClass typeName="Ball" modifier="none">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+            </ECCustomAttributes>
+        </ECEntityClass>
+        <ECEntityClass typeName="Mouse" modifier="none">
+            <BaseClass>Base</BaseClass>
+        </ECEntityClass>
+        <ECRelationshipClass typeName="DogHasBone" strength="referencing" strengthDirection="Forward" modifier="None">
+            <Source multiplicity="(0..*)" polymorphic="True" roleLabel="references">
+                <Class class="Dog" />
+            </Source>
+            <Target multiplicity="(0..1)" polymorphic="True" roleLabel="referenced by">
+                <Class class="Bone" />
+            </Target>
+        </ECRelationshipClass>
+        <ECRelationshipClass typeName="DogHasBall" strength="referencing" strengthDirection="Forward" modifier="None">
+            <Source multiplicity="(0..*)" polymorphic="True" roleLabel="references">
+                <Class class="Dog" />
+            </Source>
+            <Target multiplicity="(0..1)" polymorphic="True" roleLabel="referenced by">
+                <Class class="Ball" />
+            </Target>
+        </ECRelationshipClass>
+        <ECRelationshipClass typeName="CatHasMouse" strength="referencing" strengthDirection="Forward" modifier="None">
+            <Source multiplicity="(0..*)" polymorphic="True" roleLabel="references">
+                <Class class="Cat" />
+            </Source>
+            <Target multiplicity="(0..1)" polymorphic="True" roleLabel="referenced by">
+                <Class class="Mouse" />
+            </Target>s
+        </ECRelationshipClass>
+        </ECSchema>)xml")));
+
+    ECClassId dogClassId = m_ecdb.Schemas().GetClassId("TestSchema", "Dog");
+    ASSERT_TRUE(dogClassId.IsValid());
+
+    ECClassId catClassId = m_ecdb.Schemas().GetClassId("TestSchema", "Cat");
+    ASSERT_TRUE(catClassId.IsValid());
+
+    ECClassId boneClassId = m_ecdb.Schemas().GetClassId("TestSchema", "Bone");
+    ASSERT_TRUE(boneClassId.IsValid());
+
+    ECClassId dogHasBoneClassId = m_ecdb.Schemas().GetClassId("TestSchema", "DogHasBone");
+    ASSERT_TRUE(dogHasBoneClassId.IsValid());
+
+    ECClassId dogHasBallClassId = m_ecdb.Schemas().GetClassId("TestSchema", "DogHasBall");
+    ASSERT_TRUE(dogHasBallClassId.IsValid());
+
+    ECClassId catHasMouseClassId = m_ecdb.Schemas().GetClassId("TestSchema", "CatHasMouse");
+    ASSERT_TRUE(catHasMouseClassId.IsValid());
+
+    EXPECT_STREQ(Utf8PrintfString("SELECT [DogHasBone].[TargetECInstanceId],[DogHasBone].[TargetECClassId] FROM "
+        "(SELECT [ts_Base].[Id] ECInstanceId,[ts_Base].[ps2] ECClassId,[ts_Base].[Id] SourceECInstanceId,[ts_Base].[ECClassId] SourceECClassId,[ts_Base].[ps1] TargetECInstanceId,%s TargetECClassId "
+        "FROM [main].[ts_Base] WHERE [ts_Base].[ps1] IS NOT NULL AND [ts_Base].[ps2]=%s AND [ts_Base].[ECClassId] IN "
+        "(SELECT ClassId FROM [main].ec_cache_ClassHierarchy WHERE BaseClassId=%s)) [DogHasBone]", boneClassId.ToString().c_str(), dogHasBoneClassId.ToString().c_str(), dogClassId.ToString().c_str()).c_str(),
+                 GetHelper().ECSqlToSql("SELECT TargetECInstanceId, TargetECClassId FROM ts.DogHasBone").c_str());
+
+    EXPECT_STREQ(Utf8PrintfString("SELECT [DogHasBall].[TargetECInstanceId],[DogHasBall].[TargetECClassId] FROM "
+        "(SELECT [ts_Base].[Id] ECInstanceId,[ts_Base].[ps4] ECClassId,[ts_Base].[Id] SourceECInstanceId,[ts_Base].[ECClassId] SourceECClassId,[ts_Base].[ps3] TargetECInstanceId,[ts_Ball].[ECClassId] TargetECClassId "
+        "FROM [main].[ts_Base] INNER JOIN [main].[ts_Ball] ON [ts_Ball].[Id]=[ts_Base].[ps3] WHERE [ts_Base].[ps3] IS NOT NULL AND [ts_Base].[ps4]=%s AND [ts_Base].[ECClassId] IN "
+        "(SELECT ClassId FROM [main].ec_cache_ClassHierarchy WHERE BaseClassId=%s)) [DogHasBall]", dogHasBallClassId.ToString().c_str(), dogClassId.ToString().c_str()).c_str(),
+                 GetHelper().ECSqlToSql("SELECT TargetECInstanceId, TargetECClassId FROM ts.DogHasBall").c_str());
+
+    EXPECT_STREQ(Utf8PrintfString("SELECT [CatHasMouse].[TargetECInstanceId],[CatHasMouse].[TargetECClassId] FROM "
+        "(SELECT [ts_Base].[Id] ECInstanceId,[ts_Base].[ps2] ECClassId,[ts_Base].[Id] SourceECInstanceId,[ts_Base].[ECClassId] SourceECClassId,[ts_Base].[ps1] TargetECInstanceId,[_ReferencedEnd].[ECClassId] TargetECClassId "
+        "FROM [main].[ts_Base] INNER JOIN [main].[ts_Base] _ReferencedEnd ON [_ReferencedEnd].[Id]=[ts_Base].[ps1] WHERE [ts_Base].[ps1] IS NOT NULL AND [ts_Base].[ps2]=%s AND [ts_Base].[ECClassId] IN "
+        "(SELECT ClassId FROM [main].ec_cache_ClassHierarchy WHERE BaseClassId=%s)) [CatHasMouse]", catHasMouseClassId.ToString().c_str(), catClassId.ToString().c_str()).c_str(),
+                 GetHelper().ECSqlToSql("SELECT TargetECInstanceId, TargetECClassId FROM ts.CatHasMouse").c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlToSqlGenerationTests, NavPropSharedColumnConstraintsSealedRelationships)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("NavPropSharedColumnConstraintsSealedRelationships.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+            <ECEntityClass typeName="Base" modifier="none">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00">
+                        <MaxSharedColumnsBeforeOverflow>20</MaxSharedColumnsBeforeOverflow>
+                    </ShareColumns>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="Dog" modifier="none">
+                <BaseClass>Base</BaseClass>
+                <ECNavigationProperty propertyName="Bone" relationshipName="DogHasBone" direction="Forward"/>
+                <ECNavigationProperty propertyName="Ball" relationshipName="DogHasBall" direction="Forward"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="Cat" modifier="Sealed">
+                <BaseClass>Base</BaseClass>
+                <ECNavigationProperty propertyName="Mouse" relationshipName="CatHasMouse" direction="Forward"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="Bone" modifier="Sealed"></ECEntityClass>
+            <ECEntityClass typeName="Ball" modifier="none">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="Mouse" modifier="none">
+                <BaseClass>Base</BaseClass>
+            </ECEntityClass>
+            <ECRelationshipClass typeName="DogHasBone" strength="referencing" strengthDirection="Forward" modifier="Sealed">
+                <Source multiplicity="(0..*)" polymorphic="True" roleLabel="references">
+                    <Class class="Dog" />
+                </Source>
+                <Target multiplicity="(0..1)" polymorphic="True" roleLabel="referenced by">
+                <Class class="Bone" />
+                </Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="DogHasBall" strength="referencing" strengthDirection="Forward" modifier="Sealed">
+                <Source multiplicity="(0..*)" polymorphic="True" roleLabel="references">
+                    <Class class="Dog" />
+                </Source>
+                <Target multiplicity="(0..1)" polymorphic="True" roleLabel="referenced by">
+                    <Class class="Ball" />
+                </Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="CatHasMouse" strength="referencing" strengthDirection="Forward" modifier="Sealed">
+                <Source multiplicity="(0..*)" polymorphic="True" roleLabel="references">
+                    <Class class="Cat" />
+                </Source>
+                <Target multiplicity="(0..1)" polymorphic="True" roleLabel="referenced by">
+                    <Class class="Mouse" />
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml")));
+
+        ECClassId dogClassId = m_ecdb.Schemas().GetClassId("TestSchema", "Dog");
+        ASSERT_TRUE(dogClassId.IsValid());
+    
+        ECClassId catClassId = m_ecdb.Schemas().GetClassId("TestSchema", "Cat");
+        ASSERT_TRUE(catClassId.IsValid());
+    
+        ECClassId boneClassId = m_ecdb.Schemas().GetClassId("TestSchema", "Bone");
+        ASSERT_TRUE(boneClassId.IsValid());
+    
+        ECClassId dogHasBoneClassId = m_ecdb.Schemas().GetClassId("TestSchema", "DogHasBone");
+        ASSERT_TRUE(dogHasBoneClassId.IsValid());
+    
+        ECClassId dogHasBallClassId = m_ecdb.Schemas().GetClassId("TestSchema", "DogHasBall");
+        ASSERT_TRUE(dogHasBallClassId.IsValid());
+    
+        ECClassId catHasMouseClassId = m_ecdb.Schemas().GetClassId("TestSchema", "CatHasMouse");
+        ASSERT_TRUE(catHasMouseClassId.IsValid());
+    
+        EXPECT_STREQ(Utf8PrintfString("SELECT [DogHasBone].[TargetECInstanceId],[DogHasBone].[TargetECClassId] FROM "
+            "(SELECT [ts_Base].[Id] ECInstanceId,%s ECClassId,[ts_Base].[Id] SourceECInstanceId,[ts_Base].[ECClassId] SourceECClassId,[ts_Base].[ps1] TargetECInstanceId,%s TargetECClassId "
+            "FROM [main].[ts_Base] WHERE [ts_Base].[ps1] IS NOT NULL AND [ts_Base].[ECClassId] IN "
+            "(SELECT ClassId FROM [main].ec_cache_ClassHierarchy WHERE BaseClassId=%s)) [DogHasBone]", dogHasBoneClassId.ToString().c_str(), boneClassId.ToString().c_str(), dogClassId.ToString().c_str()).c_str(),
+                     GetHelper().ECSqlToSql("SELECT TargetECInstanceId, TargetECClassId FROM ts.DogHasBone").c_str());
+    
+        EXPECT_STREQ(Utf8PrintfString("SELECT [DogHasBall].[TargetECInstanceId],[DogHasBall].[TargetECClassId] FROM "
+            "(SELECT [ts_Base].[Id] ECInstanceId,%s ECClassId,[ts_Base].[Id] SourceECInstanceId,[ts_Base].[ECClassId] SourceECClassId,[ts_Base].[ps2] TargetECInstanceId,[ts_Ball].[ECClassId] TargetECClassId "
+            "FROM [main].[ts_Base] INNER JOIN [main].[ts_Ball] ON [ts_Ball].[Id]=[ts_Base].[ps2] WHERE [ts_Base].[ps2] IS NOT NULL AND [ts_Base].[ECClassId] IN "
+            "(SELECT ClassId FROM [main].ec_cache_ClassHierarchy WHERE BaseClassId=%s)) [DogHasBall]", dogHasBallClassId.ToString().c_str(), dogClassId.ToString().c_str()).c_str(),
+                     GetHelper().ECSqlToSql("SELECT TargetECInstanceId, TargetECClassId FROM ts.DogHasBall").c_str());
+    
+        EXPECT_STREQ(Utf8PrintfString("SELECT [CatHasMouse].[TargetECInstanceId],[CatHasMouse].[TargetECClassId] FROM "
+            "(SELECT [ts_Base].[Id] ECInstanceId,%s ECClassId,[ts_Base].[Id] SourceECInstanceId,[ts_Base].[ECClassId] SourceECClassId,[ts_Base].[ps1] TargetECInstanceId,[_ReferencedEnd].[ECClassId] TargetECClassId "
+            "FROM [main].[ts_Base] INNER JOIN [main].[ts_Base] _ReferencedEnd ON [_ReferencedEnd].[Id]=[ts_Base].[ps1] WHERE [ts_Base].[ps1] IS NOT NULL AND [ts_Base].[ECClassId] IN "
+            "(SELECT ClassId FROM [main].ec_cache_ClassHierarchy WHERE BaseClassId=%s)) [CatHasMouse]", catHasMouseClassId.ToString().c_str(), catClassId.ToString().c_str()).c_str(),
+                     GetHelper().ECSqlToSql("SELECT TargetECInstanceId, TargetECClassId FROM ts.CatHasMouse").c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1068,5 +1273,102 @@ TEST_F(ECSqlToSqlGenerationTests, SelectOnlyRequiredPropertiesOnSelfJoin)
     ASSERT_EQ(BE_SQLITE_OK, sqlStmt.Prepare(m_ecdb, SqlPrintfString("EXPLAIN QUERY PLAN %s", ecsqlStmt.GetNativeSql())));
     ASSERT_EQ(BE_SQLITE_ROW, sqlStmt.Step());    
     }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlToSqlGenerationTests, IsAndIsNotOperatorBetweenOperands)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IsAndIsNotOperator.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+              <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+              <ECEntityClass typeName="Foo" modifier="None">
+                <ECProperty propertyName="S1" typeName="string" />
+                <ECProperty propertyName="S2" typeName="string" />
+                <ECProperty propertyName="P1" typeName="point3d" />
+                <ECProperty propertyName="P2" typeName="point3d" />
+                <ECNavigationProperty propertyName="ParentA" relationshipName="FooOwnsFoos" direction="Backward" />
+                <ECNavigationProperty propertyName="ParentB" relationshipName="FooRefFoos" direction="Backward" />
+              </ECEntityClass>
+              <ECEntityClass typeName="Bar" modifier="None">
+                <ECProperty propertyName="B1" typeName="string" />
+              </ECEntityClass>
+              <ECRelationshipClass typeName="FooOwnsFoos" strength="embedding" modifier="None">
+                <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="true"><Class class="Foo" /></Source>
+                <Target multiplicity="(0..*)" roleLabel="owned by" polymorphic="true"><Class class="Foo" /></Target>
+              </ECRelationshipClass>
+              <ECRelationshipClass typeName="FooRefFoos" strength="referencing" modifier="None">
+                <Source multiplicity="(0..1)" roleLabel="refs" polymorphic="true"><Class class="Foo" /></Source>
+                <Target multiplicity="(0..*)" roleLabel="ref by" polymorphic="true"><Class class="Foo" /></Target>
+              </ECRelationshipClass>
+            </ECSchema>)xml")));
+
+    auto assertWhere = [this](Utf8CP ecsql, Utf8CP expectedWhereClause)
+        {
+        Utf8String sql = GetHelper().ECSqlToSql(ecsql);
+        EXPECT_TRUE(sql.Contains(expectedWhereClause)) << "ECSql: " << ecsql << "\nSql:   " << sql.c_str()
+            << "\nExpected to contain: " << expectedWhereClause;
+        };
+
+    // single primitive column operands: IS -> "IS", IS NOT -> "IS NOT" (space wrapped)
+    assertWhere("SELECT 1 FROM ts.Foo WHERE S1 IS S2", "WHERE [Foo].[S1] IS [Foo].[S2]");
+    assertWhere("SELECT 1 FROM ts.Foo WHERE S1 IS NOT S2", "WHERE [Foo].[S1] IS NOT [Foo].[S2]");
+
+    // NULL literal on either side (the new general path and the existing test_for_null path)
+    assertWhere("SELECT 1 FROM ts.Foo WHERE S1 IS NULL", "WHERE [Foo].[S1] IS NULL");
+    assertWhere("SELECT 1 FROM ts.Foo WHERE S1 IS NOT NULL", "WHERE [Foo].[S1] IS NOT NULL");
+    assertWhere("SELECT 1 FROM ts.Foo WHERE NULL IS S1", "WHERE NULL IS [Foo].[S1]");
+
+    // multi-column point operands: IS expands column-wise with AND, IS NOT with OR
+    assertWhere("SELECT 1 FROM ts.Foo WHERE P1 IS P2",
+                "WHERE ([Foo].[P1_X] IS [Foo].[P2_X] AND [Foo].[P1_Y] IS [Foo].[P2_Y] AND [Foo].[P1_Z] IS [Foo].[P2_Z])");
+    assertWhere("SELECT 1 FROM ts.Foo WHERE P1 IS NOT P2",
+                "WHERE ([Foo].[P1_X] IS NOT [Foo].[P2_X] OR [Foo].[P1_Y] IS NOT [Foo].[P2_Y] OR [Foo].[P1_Z] IS NOT [Foo].[P2_Z])");
+
+    // multi-column navigation operands: IS expands column-wise with AND, IS NOT with OR
+    assertWhere("SELECT 1 FROM ts.Foo WHERE ParentA IS ParentB",
+                "WHERE ([Foo].[ParentAId] IS [Foo].[ParentBId] AND [Foo].[ParentARelECClassId] IS [Foo].[ParentBRelECClassId])");
+    assertWhere("SELECT 1 FROM ts.Foo WHERE ParentA IS NOT ParentB",
+                "WHERE ([Foo].[ParentAId] IS NOT [Foo].[ParentBId] OR [Foo].[ParentARelECClassId] IS NOT [Foo].[ParentBRelECClassId])");
+
+    // the operands may be any value expression, not just a column or NULL literal
+    assertWhere("SELECT 1 FROM ts.Foo WHERE S1 IS 'abc'", "WHERE [Foo].[S1] IS 'abc'");
+    assertWhere("SELECT 1 FROM ts.Foo WHERE S1 IS NOT 'abc'", "WHERE [Foo].[S1] IS NOT 'abc'");
+    assertWhere("SELECT 1 FROM ts.Foo WHERE 'abc' IS S1", "WHERE 'abc' IS [Foo].[S1]");
+
+    // regression: the existing IS (ClassName) type predicate is unaffected
+    EXPECT_TRUE(GetHelper().ECSqlToSql("SELECT 1 FROM ts.Foo WHERE ECClassId IS (ts.Foo)").Contains("ec_cache_ClassHierarchy"));
+
+    // a parenthesized qualified property reference '(alias.prop)' is a value expression (null-safe
+    // comparison), not the (ClassName) type predicate, because the name does not resolve to a class
+    assertWhere("SELECT 1 FROM ts.Foo WHERE S1 IS (Foo.S2)", "WHERE [Foo].[S1] IS [Foo].[S2]");
+    assertWhere("SELECT 1 FROM ts.Foo WHERE S1 IS NOT (Foo.S2)", "WHERE [Foo].[S1] IS NOT [Foo].[S2]");
+    // multi-column point operand still expands column-wise through the parenthesized property reference
+    assertWhere("SELECT 1 FROM ts.Foo WHERE P1 IS (Foo.P2)",
+                "WHERE ([Foo].[P1_X] IS [Foo].[P2_X] AND [Foo].[P1_Y] IS [Foo].[P2_Y] AND [Foo].[P1_Z] IS [Foo].[P2_Z])");
+
+    // regression: the type_list_item grammar refactor (opt_only is now inlined into three explicit
+    // alternatives) must keep the ONLY / ALL and comma-separated type-list forms routing through the
+    // type-predicate path - not TryParseParenthesizedNameAsValueExp, which would reinterpret the
+    // parenthesized name as a value expression. An ONLY (non-polymorphic) list is optimized to an
+    // exact 'IN (<classId>)' filter and does not use ec_cache_ClassHierarchy; a polymorphic
+    // comma-separated list resolves through ec_cache_ClassHierarchy.
+    {
+    Utf8String onlySql = GetHelper().ECSqlToSql("SELECT 1 FROM ts.Foo WHERE ECClassId IS (ONLY ts.Foo)");
+    EXPECT_FALSE(onlySql.empty()) << "IS (ONLY ts.Foo) must prepare as a type predicate";
+    EXPECT_FALSE(onlySql.Contains("ec_cache_ClassHierarchy")) << "ONLY is a non-polymorphic exact match: " << onlySql;
+
+    Utf8String onlyListSql = GetHelper().ECSqlToSql("SELECT 1 FROM ts.Foo WHERE ECClassId IS (ONLY ts.Foo, ONLY ts.Bar)");
+    EXPECT_FALSE(onlyListSql.empty()) << "IS (ONLY ts.Foo, ONLY ts.Bar) must prepare as a type predicate";
+    EXPECT_FALSE(onlyListSql.Contains("ec_cache_ClassHierarchy")) << "an all-exact type list is optimized: " << onlyListSql;
+    }
+    EXPECT_TRUE(GetHelper().ECSqlToSql("SELECT 1 FROM ts.Foo WHERE ECClassId IS (ts.Foo, ts.Bar)").Contains("ec_cache_ClassHierarchy"));
+    EXPECT_TRUE(GetHelper().ECSqlToSql("SELECT 1 FROM ts.Foo WHERE ECClassId IS NOT (ts.Foo, ts.Bar)").Contains("ec_cache_ClassHierarchy"));
+    // the distinct 'SQL_TOKEN_ALL table_node' grammar alternative: ALL is explicitly polymorphic, so it
+    // stays on the type-predicate path and resolves through ec_cache_ClassHierarchy
+    EXPECT_TRUE(GetHelper().ECSqlToSql("SELECT 1 FROM ts.Foo WHERE ECClassId IS (ALL ts.Foo)").Contains("ec_cache_ClassHierarchy"));
+    EXPECT_TRUE(GetHelper().ECSqlToSql("SELECT 1 FROM ts.Foo WHERE ECClassId IS NOT (ALL ts.Foo)").Contains("ec_cache_ClassHierarchy"));
+    EXPECT_TRUE(GetHelper().ECSqlToSql("SELECT 1 FROM ts.Foo WHERE ECClassId IS (ALL ts.Foo, ALL ts.Bar)").Contains("ec_cache_ClassHierarchy"));
     }
 END_ECDBUNITTESTS_NAMESPACE

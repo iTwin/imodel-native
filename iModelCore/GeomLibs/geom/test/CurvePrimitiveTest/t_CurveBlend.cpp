@@ -1022,7 +1022,6 @@ TEST(CurveCurve,MatchXYLineSegments_AlmostParallel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveCurve,MatchXYArc0)
     {
-    size_t numTest = 0;
     CurveVectorPtr cvA = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
     CurveVectorPtr cvB = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
     int numPerQuadrant = 2;
@@ -1061,7 +1060,6 @@ TEST(CurveCurve,MatchXYArc0)
                 if (s_noisy)
                     printf (" (numSwept %d i0 %d  numA %d)\n", numSweptSector, i0, sectorsInA);
                 TestPathMatch (cvA, cvB, ValidatedDouble (expectedOverlap));
-                numTest ++;
                }
            }
         }

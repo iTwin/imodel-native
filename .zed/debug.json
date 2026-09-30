@@ -1,0 +1,34 @@
+[
+  {
+    "label": "ECObjects GTest",
+    "adapter": "CodeLLDB",
+    "request": "launch",
+    "program": "$ZED_WORKTREE_ROOT/../../out/LinuxX64/Product/ECObjects-Gtest/ECObjectsTest",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "args": ["--gtest_break_on_failure"]
+  },
+  {
+    "label": "ECObjects GTest (filtered)",
+    "adapter": "CodeLLDB",
+    "request": "launch",
+    "program": "$ZED_WORKTREE_ROOT/../../out/LinuxX64/Product/ECObjects-Gtest/ECObjectsTest",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "args": ["--gtest_break_on_failure", "--gtest_filter=*"]
+  },
+  {
+    "label": "ECDb GTest",
+    "adapter": "CodeLLDB",
+    "request": "launch",
+    "program": "$ZED_WORKTREE_ROOT/../../out/LinuxX64/Product/ECDb-Gtest/ECDbTest",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "args": ["--gtest_break_on_failure"]
+  },
+  {
+    "label": "ECDb GTest (filtered)",
+    "adapter": "CodeLLDB",
+    "request": "launch",
+    "program": "$ZED_WORKTREE_ROOT/../../out/LinuxX64/Product/ECDb-Gtest/ECDbTest",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "args": ["--gtest_break_on_failure", "--gtest_filter=*"]
+  }
+]

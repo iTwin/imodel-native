@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #include "testHarness.h"
 #include <stdio.h>
+#include <GeomSerialization/GeomSerializationApi.h>
 
 static bool s_printHullSteps = false;
 static int s_noisy = false;
@@ -382,7 +383,6 @@ TEST(Polyface, TriangulateDegenerate)
 void CheckPartition (char const* descr, size_t componentTarget, size_t faceTarget, PolyfaceHeaderPtr mesh, bvector<ptrdiff_t> indices)
     {
     size_t totalFaces = mesh->GetNumFacet ();
-    //varunused size_t numThisBlock = 0;
     size_t blockStart = 0;
     BlockedVectorInt blockSize;
     for (size_t i = 0; i < indices.size (); i++)
@@ -460,16 +460,9 @@ TEST (Polyface, Compress)
     int nx = 3;
     int ny = 8;
     PolyfaceHeaderPtr mesh = CreateGridMesh (nx, ny);
-    //varunused size_t numPointA  = mesh.get()->GetPointCount ();
-    //varunused size_t numNormalA = mesh.get()->GetNormalCount ();
-    //varunused size_t numParamA  = mesh.get()->GetParamCount ();
     mesh.get()->Compress ();
-    //varunused size_t numPointB  = mesh.get()->GetPointCount ();
-    //varunused size_t numNormalB = mesh.get()->GetNormalCount ();
-    //varunused size_t numParamB  = mesh.get()->GetParamCount ();
     CHECK_EQ (Size, mesh.get()->GetPointCount (), (nx + 1) * (ny + 1));
     CHECK_EQ (Size, mesh.get()->GetNormalCount (), 1);
-    //CHECK_EQ (Size, mesh.get()->GetParamCount (), (nx + 1) * (ny + 1));
     }
 
 void PrintGraph (MTGGraph *pGraph, int vertexLabelOffset)
@@ -583,7 +576,6 @@ void VerifyFaceData (PolyfaceHeader  &mesh, char const*  name)
     if (mesh.FaceIndex ().Active ()
         && Check::Size (mesh.PointIndex ().size (), mesh.FaceIndex ().size (), "FaceIndex present and same size as PointIndex"))
         {
-        //varunused bvector<FacetFaceData> &faceDataVector = mesh.FaceData ();
         BlockedVectorIntR paramIndexVector = mesh.ParamIndex ();
         BlockedVectorIntR normalIndexVector = mesh.NormalIndex ();
         BlockedVectorIntR pointIndexVector = mesh.PointIndex ();
@@ -592,7 +584,6 @@ void VerifyFaceData (PolyfaceHeader  &mesh, char const*  name)
             Check::Size (paramIndexVector.size (), pointIndexVector.size (), "point, param index counts match");
         if (normalIndexVector.size () > 0)
             Check::Size (normalIndexVector.size (), pointIndexVector.size (), "point, normal index counts match");
-        //varunused int currFaceIndex1 = 0;
         FacetFaceData faceData;
         size_t errors = 0;
         // Verify face data is present at all non-zero indices..
@@ -646,10 +637,7 @@ void VerifyPolyface (PolyfaceHeader  &meshVectors, PolyfaceQueryR meshQuery, cha
     int outerFaceCount = 0;
     DPoint3d zero;
     zero.Zero ();
-    //varunused double tolerance = meshVectors.GetMediumTolerance ();
     double s_relTol = 0.01;
-    //varunused int failures = 0;
-    int numEdges = 0;
     bvector<int>failureIndices;
     bvector<int>edgeFailureIndices;
     size_t numFacet = meshVectors.GetNumFacet ();
@@ -687,11 +675,11 @@ void VerifyPolyface (PolyfaceHeader  &meshVectors, PolyfaceQueryR meshQuery, cha
                 }
             if (innerCount == 1)
                 {
-                // expected interior case.
+                // strictly inside a face (expected)
                 }
             else if (innerCount == 2)
                 {
-                numEdges++;
+                // hit an interior edge (unexpected)
                 }
             else
                 failureIndices.push_back (outerFaceCount);
@@ -704,13 +692,11 @@ void VerifyPolyface (PolyfaceHeader  &meshVectors, PolyfaceQueryR meshQuery, cha
                 edgeTestPoint.Interpolate (point0, f0, point1);
                 ptrdiff_t edgeIndex;
                 double edgeFraction;
-                int numFacetHit = 0;
                 int numEdgeHit = 0;
                 double edgeFractionTol = 1.0e-10;
                 bool foundPrimaryTarget = false;
                 for (pointVisitor->Reset (); pointVisitor->AdvanceToFacetBySearchPoint (edgeTestPoint, tolerance1, edgePoint, edgeIndex, edgeFraction);)
                     {
-                    numFacetHit++;
                     if (edgeIndex >= 0)
                         numEdgeHit++;
                     if (vectorVisitor->IndexPosition()[0] == pointVisitor->IndexPosition()[0]
@@ -757,8 +743,6 @@ double MaxNormalDeviation (PolyfaceHeaderR meshWithNormals)
 
     visitor->Reset ();
     visitor->SetNumWrap (2);
-    //varunused bvector <int> &pointIndex = visitor->PointIndex ();
-    //varunused bvector <size_t> &readIndex = visitor->IndexPosition ();
     bvector <DPoint3d> &points = visitor->Point ();
 
     double thetaMax = 0.0;
@@ -876,7 +860,9 @@ void ExaminePolyface (PolyfaceHeaderR mesh, char const* title)
         VerifyMTG(mesh, title);
         PolyfaceHeaderPtr compactee = PolyfaceHeader::CreateFixedBlockIndexed (4);
         mesh.CopyTo (*compactee);
-        compactee->CompactIndexArrays ();
+        size_t savings = compactee->CompactArrays(true);
+        if (s_print && savings > 0)
+            printf ("Mesh compacted by %zu bytes\n", savings);
         VerifyPolyface (*compactee, *compactee, "compacted");
 
         PolyfaceHeaderPtr meshWithNormals = PolyfaceHeader::CreateVariableSizeIndexed ();
@@ -1031,14 +1017,10 @@ TEST(Polyface, StitchCube)
 TEST (Polyface, ClipCube_TwoPlanesCut)
     {
     int64_t allocationCounter = BSIBaseGeom::GetAllocationDifference ();
-    //static int s_printGraph = 0;
 
     IFacetOptionsPtr options = CreateFacetOptions ();
     options->SetMaxPerFace (4);
     IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
-    //varunused double mySize = SetTransformToNewGridSpot (*builder, true);
-
-
 
     builder->AddSweptNGon (4, 2.0, 0.0, 1.0, true, true);
 
@@ -1075,16 +1057,12 @@ TEST (Polyface, ClipCube_TwoPlanesCut)
 TEST(Polyface, ClipSphere)
     {
     int64_t allocationCounter = BSIBaseGeom::GetAllocationDifference ();
-    //static int s_printGraph = 0;
 
     IFacetOptionsPtr options = CreateFacetOptions ();
     IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
     double mySize = SetTransformToNewGridSpot (*builder, true);
 
-    //varunused size_t numPerQuadrant = 1;
     PolyfaceHeader &header0 = builder->GetClientMeshR ();
-    //varunused double radius = mySize;
-    //varunused double zStep = 3.0 * mySize;
 
     for (size_t numPerQuadrant = 1; numPerQuadrant < 10; numPerQuadrant *= 4 )
         {
@@ -1109,8 +1087,6 @@ TEST(Polyface, ClipSphere)
     Check::Shift (10,0, 0);
     Check::SaveTransformed (*outsideClip);
     Check::ClearGeometry ("Polyface.ClipSphere");
-
-
 
     Check::Size ((size_t)allocationCounter, (size_t)BSIBaseGeom::GetAllocationDifference ());
     }
@@ -1264,7 +1240,6 @@ TEST(PolyfaceConstruction, BsplineSurface1)
     {
     IFacetOptionsPtr options = CreateFacetOptions ();
     IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
-    //varunused double mySize = SetTransformToNewGridSpot (*builder);
 
     bvector<DPoint3d> points;
 
@@ -1337,7 +1312,6 @@ TEST(PolyfaceConstruction, BsplineSurface2)
     {
     IFacetOptionsPtr options = CreateFacetOptions ();
     IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
-    //varunused double mySize = SetTransformToNewGridSpot (*builder);
 
     bvector<DPoint3d> points;
 
@@ -1381,8 +1355,6 @@ TEST(PolyfaceConstruction, BsplineSurface2)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolyfaceConstruction, BsplineSurface3)
     {
-    //varunused double mySize = SetTransformToNewGridSpot (*builder);
-
     bvector<DPoint3d> points;
 
     double ax = 6.0;
@@ -1563,7 +1535,6 @@ void testSweptLinestrings (size_t numContour, double z0, double zStep, bool capp
     options->SetMaxPerFace (numPerFace);
 
     IPolyfaceConstructionPtr builder =  IPolyfaceConstruction::Create (*options);
-    //varunused double mySize = SetTransformToNewGridSpot (*builder);
 
     bvector<DPoint3d> points;
     double a0 = 0;
@@ -1772,13 +1743,11 @@ TEST (PolyfaceConstruction, Stack)
                 a,0,0,0,
                 0,a,0,0,
                 0,0,a,0);
-    //varunused double b = 5.0;
-    //varunused Transform skew = Transform::FromRowValues (
-    //varunused             a,a,0,0,
-    //varunused             0,a,0,0,
-    //varunused             0,0,b,0);
-
-
+    // double b = 5.0;
+    // Transform skew = Transform::FromRowValues (
+    //            a,a,0,0,
+    //            0,a,0,0,
+    //            0,0,b,0);
 
     IFacetOptionsPtr options = IFacetOptions::Create ();
     IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
@@ -2030,8 +1999,6 @@ TEST(PolyfaceConstruction, DimpleNormals)
     PolyfaceHeaderPtr mesh = PolyfaceHeader::CreateVariableSizeIndexed ();
     bvector<DPoint3d> &points = mesh->Point ();
     bvector<int> &indices = mesh->PointIndex ();
-    //varunused bvector<DVec3d> &normals = mesh->Normal ();
-    //varunused bvector<int> &normalIndices = mesh->NormalIndex ();
 
     double dz = 0.01;
     points.push_back (DPoint3d::From (1,1,dz)); // raised off plane, but smooth enough for normal averaging.
@@ -2240,12 +2207,9 @@ TEST (PolyfaceVisitor, ParamToDetail)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Polyface, NGonFaces)
     {
-    //varunused Int64 allocationCounter = BSIBaseGeom::GetAllocationDifference ();
-    //static int s_printGraph = 0;
     IFacetOptionsPtr options = CreateFacetOptions ();
     options->SetMaxPerFace (4);
     IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
-    //varunused double mySize = SetTransformToNewGridSpot (*builder, true);
 
     builder->AddSweptNGon (4, 2.0, 0.0, 1.0, true, true);
     ExaminePolyface (builder->GetClientMeshR (), "DiamondFrustum");
@@ -4602,4 +4566,213 @@ TEST (PolyfaceQuery, FacetOrientation)
         Check::Shift(3, 0, 0);
         }
     Check::ClearGeometry("PolyfaceQuery.FacetOrientation");
+    }
+
+// A "less" operator for 3D points, with coordinate tolerance
+struct ComparePoints
+    {
+    double m_tol;
+
+    ComparePoints(double tolerance = DoubleOps::SmallMetricDistance()) : m_tol(tolerance) {}
+
+    // lexicographical order, with slop for equality
+    bool lexicalXYZLessThanTol(double x0, double y0, double z0, double x1, double y1, double z1, double tol) const
+        {
+        bool xEqual = DoubleOps::WithinTolerance(x0, x1, tol);
+        bool yEqual = DoubleOps::WithinTolerance(y0, y1, tol);
+        bool zEqual = DoubleOps::WithinTolerance(z0, z1, tol);
+        if (xEqual && yEqual && zEqual)
+            return false;
+        if (!xEqual)
+            {
+            if (x0 < x1)
+                return true;
+            if (x0 > x1)
+                return false;
+            }
+        if (!yEqual)
+            {
+            if (y0 < y1)
+                return true;
+            if (y0 > y1)
+                return false;
+            }
+        return z0 < z1;
+        }
+
+    bool operator() (DPoint3dCR v0, DPoint3dCR v1) const
+        {
+        return lexicalXYZLessThanTol(v0.x, v0.y, v0.z, v1.x, v1.y, v1.z, m_tol);
+        }
+    };
+
+TEST(Polyface, SphereMeshSanity)
+    {
+    auto center = DPoint3d::FromZero();
+    auto mesh = SphereMesh(center, 10);
+    Check::SaveTransformed(mesh);
+
+    // verify outward facing normals and unique facet centroids
+    bset<DPoint3d, ComparePoints> centroids;
+    auto visitor = PolyfaceVisitor::Attach(*mesh);
+    for (; visitor->AdvanceToNextFace(); )
+        {
+        DPoint3d centroid;
+        DVec3d normal;
+        double area;
+        if (Check::True(PolygonOps::CentroidNormalAndArea(visitor->Point(), centroid, normal, area)))
+            {
+            if (Check::False(centroids.end() != centroids.find(centroid), "facet centroid is unique"))
+                centroids.insert(centroid);
+            Check::True(center.DotDifference(centroid, normal) < 0.0, "facet computed normal points outward");
+            }
+        }
+
+    Check::ClearGeometry("Polyface.SphereMeshSanity");
+    }
+
+TEST(Polyface,AuxData)
+    {
+    BeFileName dataFullPathName;
+    BeTest::GetHost().GetDocumentsRoot(dataFullPathName);
+    dataFullPathName.AppendToPath(L"GeomLibsTestData").AppendToPath(L"IModelJson").AppendToPath(L"indexedMesh2.imjs");
+
+    bvector<IGeometryPtr> geometry;
+    if (GTestFileOps::JsonFileToGeometry(dataFullPathName, geometry))
+        {
+        auto mesh = geometry.front()->GetAsPolyfaceHeader();
+        if (mesh.IsValid())
+            {
+            PolyfaceAuxData::Channels channels;
+
+            bvector<double> latitude;
+            for (auto& pt : mesh->Point())
+                latitude.push_back(pt.z);
+            bvector<PolyfaceAuxChannel::DataPtr> latitudeData{ new PolyfaceAuxChannel::Data(0, std::move(latitude)) };
+            channels.push_back(new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType::Distance, "Latitude", "Time", std::move(latitudeData)));
+
+            bvector<double> octant;
+            for (auto& pt : mesh->Point())
+                {
+                octant.push_back(pt.x > 0 ? 1 : (pt.x < 0 ? -1 : 0));
+                octant.push_back(pt.y > 0 ? 1 : (pt.y < 0 ? -1 : 0));
+                octant.push_back(pt.z > 0 ? 1 : (pt.z < 0 ? -1 : 0));
+                }
+            bvector<PolyfaceAuxChannel::DataPtr> octantData{ new PolyfaceAuxChannel::Data(0, std::move(octant)) };
+            channels.push_back(new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType::Vector, "Octant", "Time", std::move(octantData)));
+
+            bvector<int32_t> auxIndex = mesh->PointIndex();
+            PolyfaceAuxDataPtr auxData(new PolyfaceAuxData(std::move(auxIndex), std::move(channels)));
+            mesh->SetAuxData(auxData);
+            mesh->Compress();
+
+            // sanity check flatbuffer file write
+            bvector<Byte> bytes, bytes2;
+            BentleyGeometryFlatBuffer::GeometryToBytes(*mesh, bytes);
+            if (Check::True(GTestFileOps::WriteToFile(bytes, nullptr, nullptr, L"indexedMesh2", L"fb"), "write fb file"))
+                {
+                BeFileName fbFileName;
+                BeTest::GetHost().GetOutputRoot(fbFileName);
+                fbFileName.AppendToPath(L"indexedMesh2");
+                fbFileName.AppendExtension(L"fb");
+                if (Check::True(GTestFileOps::ReadAsBytes(fbFileName, bytes2), "read fb file"))
+                    {
+                    Check::True(bytes == bytes2, "flatbuffer file roundtrip");
+                    auto geom = BentleyGeometryFlatBuffer::BytesToGeometry(bytes2);
+                    Check::True(geom.IsValid(), "deserialized mesh");
+                    auto mesh2 = geom->GetAsPolyfaceHeader();
+                    Check::True(mesh2.IsValid(), "mesh is valid");
+                    Check::True(mesh->IsSameStructureAndGeometry(*mesh2, 0.0), "roundtrip to same geometry");
+                    }
+                }
+            }
+        }
+    }
+
+TEST(Polyface, DegenerateTriangulation)
+    {
+    auto oldVolume = Check::SetMaxVolume(PRIMITIVE_PRINT_VOLUME);
+    char buf[100];
+
+    BeFileName dataPath;
+    BeTest::GetHost().GetDocumentsRoot(dataPath);
+    dataPath.AppendToPath(L"GeomLibsTestData");
+    dataPath.AppendToPath(L"Polyface");
+    dataPath.AppendToPath(L"DegenerateTriangles");
+
+    bvector<BeFileName> testCases;
+    testCases.push_back(BeFileName(dataPath).AppendToPath(L"meshTriangulation.imjs"));  // facets sized 3-5
+    testCases.push_back(BeFileName(dataPath).AppendToPath(L"meshTriangulation2.imjs")); // facets sized 3-6
+    testCases.push_back(BeFileName(dataPath).AppendToPath(L"meshTriangulation3.imjs")); // facets sized 3-32
+
+    auto printFacetSizes = [&](PolyfaceHeaderCR mesh, size_t& numNonDegen, size_t& numDegen) -> void
+        {
+        numNonDegen = numDegen = 0;
+
+        DPoint3d centroid;
+        DVec3d normal;
+        double area;
+        for (auto visitor = PolyfaceVisitor::Attach(mesh); visitor->AdvanceToNextFace(); )
+            {
+            if (!visitor->TryGetFacetCentroidNormalAndArea(centroid, normal, area) || fabs(area) < 1.0e-10)
+                ++numDegen;
+            else
+                ++numNonDegen;
+            }
+        };
+
+    struct RejectAllFilter : IPolyfaceVisitorFilter { bool TestFacet(PolyfaceVisitorCR visitor) override { return false; } };
+    RejectAllFilter myFilter;
+
+    size_t meshCounter = 0;
+    for (auto& testCase : testCases)
+        {
+        bvector<IGeometryPtr> geometry;
+        if (Check::True(GTestFileOps::JsonFileToGeometry(testCase, geometry), "Import geometry from JSON"))
+            {
+            for (auto const& g : geometry)
+                {
+                PolyfaceHeaderPtr origMesh = g->GetAsPolyfaceHeader();
+                if (Check::True(origMesh.IsValid(), "Geometry is a polyface"))
+                    {
+                    Check::SaveTransformed(origMesh);
+
+                    size_t numNonDegen, numDegen;
+                    printFacetSizes(*origMesh, numNonDegen, numDegen);
+
+                    for (size_t maxEdges = 3; maxEdges < 6; ++maxEdges)
+                        {
+                        Check::Shift(0, 0, 50);
+                        auto mesh = origMesh->Clone();
+
+                        bool hadErrors = !mesh->Triangulate(maxEdges);
+                        Check::SaveTransformed(mesh);
+
+                        // Triangulator can fail on some facets, resulting in them being skipped.
+                        // Verify that only facets of size <= maxEdges, regardless of return value.
+                        Check::Bool(hadErrors, numDegen > 0, "PolyfaceHeader::Triangulate should report degenerate facets");
+                        size_t facetCounter = 0;
+                        for (auto visitor = PolyfaceVisitor::Attach(*mesh); visitor->AdvanceToNextFace(); facetCounter++)
+                            {
+                            uint32_t numEdgesThisFace = visitor->NumEdgesThisFace();
+                            snprintf(buf, sizeof buf, "facet #%zu should have at most %zu edges, but has %d edges", facetCounter, maxEdges, numEdgesThisFace);
+                            Check::True(numEdgesThisFace <= maxEdges, buf);
+                            }
+
+                        snprintf(buf, sizeof buf, "triangulated mesh #%zu should not reduce non-degenerate facet count", meshCounter);
+                        Check::True(numNonDegen <= mesh->GetNumFacet(), buf);
+
+                        mesh = origMesh->Clone();
+                        mesh->Triangulate(maxEdges, true, &myFilter);
+                        Check::Size(origMesh->GetNumFacet(), mesh->GetNumFacet(), "reject-all filter preserves facet count");
+                        }
+
+                    Check::Shift(100, -140, 0);
+                    }
+                }
+            }
+        ++meshCounter;
+        }
+    Check::SetMaxVolume(oldVolume);
+    Check::ClearGeometry("Polyface.DegenerateTriangulation");
     }

@@ -11,6 +11,7 @@
 #include <Bentley/CatchNonPortable.h>
 #include <Bentley/Nullable.h>
 #include <BeSQLite/BeSQLite.h>
+#include <BeSQLite/ChangesetFile.h>
 #include <ECObjects/ECObjectsAPI.h>
 #include <ECObjects/SchemaComparer.h>
 #include <ECDb/ECDbApi.h>
@@ -43,6 +44,7 @@
 #include "DbSchema.h"
 #include "SqlNames.h"
 #include "DbSchemaPersistenceManager.h"
+#include "DerivedDbStructures.h"
 #include "ClassMap.h"
 #include "PropertyMap.h"
 #include "SystemPropertyMap.h"
@@ -64,11 +66,11 @@
 #include "ChangeIteratorImpl.h"
 #include "ChangeSummaryExtractor.h"
 #include "ConcurrentQueryManagerImpl.h"
-#include "QueryJsonAdaptor.h"
 #include "InstanceReaderImpl.h"
 #include "IntegrityChecker.h"
 #include "BuiltInVTabs.h"
 #include "ClassViews.h"
+#include "InstanceWriterImpl.h"
 #include "ECSql/NativeSqlBuilder.h"
 #include "ECSql/Parser/SqlScan.h"
 #include "ECSql/Parser/SqlNode.h"
@@ -111,8 +113,13 @@
 #include "ECSql/PrimitiveECSqlField.h"
 #include "ECSql/PointECSqlField.h"
 #include "ECSql/StructECSqlField.h"
+#include "ECSql/JsonECSqlValue.h"
 #include "ECSql/ArrayECSqlField.h"
 #include "ECSql/NavigationPropertyECSqlField.h"
+#include "IECSqlValueHelper.h"
+#include "ChangesetValue.h"
+#include "ChangesetValueFactory.h"
+#include "PreparedChangesetReader.h"
 
 #include "ECSql/ECSqlBinder.h"
 #include "ECSql/IdECSqlBinder.h"

@@ -8,7 +8,7 @@ ProductDir = $(OutputRootDir)Product/
 o = $(OutputRootDir)imodeljsnodeaddon_pkgs/
 baseDir = $(_MakeFilePath)
 
-%if $(TARGET_PROCESSOR_ARCHITECTURE) != "x64" && $(TARGET_PROCESSOR_ARCHITECTURE) != "LinuxX64" && $(TARGET_PROCESSOR_ARCHITECTURE) != "MacOSX64" && $(TARGET_PROCESSOR_ARCHITECTURE) != "MacOSARM64"
+%if $(TARGET_PROCESSOR_ARCHITECTURE) != "x64" && $(TARGET_PROCESSOR_ARCHITECTURE) != "LinuxX64" && $(TARGET_PROCESSOR_ARCHITECTURE) != "LinuxARM64" && $(TARGET_PROCESSOR_ARCHITECTURE) != "MacOSX64" && $(TARGET_PROCESSOR_ARCHITECTURE) != "MacOSARM64"
     %error iModelJsNodeAddon is not available for this platform ($(TARGET_PROCESSOR_ARCHITECTURE))
 %endif
 
@@ -27,15 +27,10 @@ always:
 
 %if defined (IS_VERACODE_BUILD)
     veracodeDir = ${OutputRootDir}/Veracode/bin/
-    pdbDir = ${OutputRootDir}/PDBs/
     dllDir = ${OutputRootDir}/imodeljsnodeaddon_pkgs/imodeljs-win32-x64/
 
-    %mkdir $(veracodeDir)
-
     always:
-        ~linkfile $(pdbDir)iTwinDaemon_exe.pdb=${OutputRootDir}/static/build/BeSQLite/ITwinDaemon/iTwinDaemon_exe.pdb
-        ~linkmultifiles $(veracodeDir)=$(dllDir)
-        ~linkmultifiles $(veracodeDir)=$(pdbDir)
-        $(BuildToolCache)bsitools/zip.exe ${OutputRootDir}/Veracode/Veracode.zip $(veracodeDir)/*
+        ~mkdir $(veracodeDir)
+        $(BuildToolCache)bsitools/zip.exe ${OutputRootDir}/Veracode/Veracode.zip $(dllDir)/*
 
 %endif

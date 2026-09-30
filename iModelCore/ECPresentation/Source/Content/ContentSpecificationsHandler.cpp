@@ -145,28 +145,43 @@ static RelationshipPathSpecification* CreateCombinedRelationshipPathSpecificatio
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ECRelationshipConstraintClassList const* GetClassFromRelationship(ECSchemaHelper const& helper, RelatedPropertiesSpecificationCR spec)
+static bvector<ECClassCP> GetClassFromRelationship(ECSchemaHelper const& helper, RelatedPropertiesSpecificationCR spec)
     {
+    bvector<ECClassCP> result;
     RelationshipPathSpecification const* pathSpec = spec.GetPropertiesSource();
     if (nullptr == pathSpec)
         {
         DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Related properties specification does not contain relationship path specification."));
-        return nullptr;
-        }
-    RelationshipStepSpecification const* relationshipStep = pathSpec->GetSteps().back();
-    auto direction = relationshipStep->GetRelationDirection();
-    ECRelationshipClassCP relationshipClass = helper.GetECClass(relationshipStep->GetRelationshipClassName().c_str())->GetRelationshipClassCP();
-    switch (direction)
-        {
-        case RequiredRelationDirection_Backward:
-            return &relationshipClass->GetSource().GetConstraintClasses();
-        case RequiredRelationDirection_Forward:
-            return &relationshipClass->GetTarget().GetConstraintClasses();
+        return result;
         }
 
-    DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Failed to get relationship constraints from relationship step specification: %s. Direction: %s.",
-        relationshipStep->GetRelationshipClassName().c_str(), CommonToolsInternal::FormatRequiredDirectionString(direction)));
-    return nullptr;
+    RelationshipStepSpecification const* relationshipStep = pathSpec->GetSteps().back();
+    auto direction = relationshipStep->GetRelationDirection();
+    auto relationshipClasses = helper.GetECClassesFromClassList(relationshipStep->GetRelationshipClassName().c_str(), false);
+
+    for (auto const& relationshipClassInfo : relationshipClasses)
+        {
+        if (!relationshipClassInfo.GetClass().IsRelationshipClass())
+            continue;
+
+        auto const* relationshipClass = relationshipClassInfo.GetClass().GetRelationshipClassCP();
+        switch (direction)
+            {
+            case RequiredRelationDirection_Backward:
+                ContainerHelpers::Push(result, relationshipClass->GetSource().GetConstraintClasses());
+                break;
+            case RequiredRelationDirection_Forward:
+                ContainerHelpers::Push(result, relationshipClass->GetTarget().GetConstraintClasses());
+                break;
+            }
+        }
+
+    if (result.empty())
+        {
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Failed to get relationship constraints from relationship step specification: %s. Direction: %s.",
+            relationshipStep->GetRelationshipClassName().c_str(), CommonToolsInternal::FormatRequiredDirectionString(direction)));
+        }
+    return result;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -261,7 +276,7 @@ static ECSchemaHelper::RelationshipPathsResponse FindRelatedPropertyPaths(Conten
 
     // find all paths that match each spec (associated by index)
     auto countTargets = !(context.GetContentFlagsCalculator()(0) & (int)ContentFlags::DescriptorOnly);
-    ECSchemaHelper::RelationshipPathsRequestParams params(sourceClass, pathSpecs, &contentInstanceFilteringParams, relatedInstancePaths, context.GetRelationshipUseCounts(), countTargets);
+    ECSchemaHelper::RelationshipPathsRequestParams params(sourceClass, pathSpecs, &contentInstanceFilteringParams, relatedInstancePaths, context.GetRelationshipUseCounts(), countTargets, context.GetCancellationToken());
     return context.GetSchemaHelper().GetRelationshipPaths(params);
     }
 
@@ -307,49 +322,45 @@ static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> CreateF
     if (!flatSpec.GetFlattened().AllPropertiesIncluded())
         return specs;
 
-    int handledModifiersInPrevIteration = -1;
-    while (handledModifiersInPrevIteration != 0)
+    auto specClasses = GetClassFromRelationship(helper, flatSpec.GetFlattened());
+    if (specClasses.empty())
+        return specs;
+
+    for (auto modifier : modifiers)
         {
-        handledModifiersInPrevIteration = 0;
-        for (auto& modifier : modifiers)
+        if (nullptr == modifier || !modifier->ShouldApplyOnNestedContent())
+            continue;
+
+        if (!modifier->HasClassSpecified())
             {
-            if (nullptr == modifier || !modifier->ShouldApplyOnNestedContent())
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("ECClass was not specified in %s.",
+                DiagnosticsHelpers::CreateRuleIdentifier(*modifier).c_str()));
+            continue;
+            }
+
+        ECClassCP modifierClass = helper.GetECClass(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str());
+        if (nullptr == modifierClass)
+            {
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Content modifier specifies non-existing class: %s.%s.",
+                modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str()));
+            continue;
+            }
+
+        for (ECClassCP specClass : specClasses)
+            {
+            if (!specClass->Is(modifierClass) && !modifierClass->Is(specClass))
                 continue;
 
-            if (!modifier->HasClassSpecified())
-                {
-                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("ECClass was not specified in %s.",
-                    DiagnosticsHelpers::CreateRuleIdentifier(*modifier).c_str()));
-                continue;
-                }
-
-            ECClassCP modifierClass = helper.GetECClass(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str());
-            if (nullptr == modifierClass)
-                {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Content modifier specifies non-existing class: %s.%s.",
-                    modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str()));
-                continue;
-                }
-
-            ECRelationshipConstraintClassList const* classes = GetClassFromRelationship(helper, flatSpec.GetFlattened());
-            if (nullptr == classes)
+            DiagnosticsHelpers::ReportRule(*modifier);
+            bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> createdSpecs = FlattenedRelatedPropertiesSpecification::Create(modifier->GetRelatedProperties(), RelatedPropertiesSpecificationScopeInfo(modifier->GetPropertyCategories()));
+            if (createdSpecs.empty())
                 continue;
 
-            for (ECClassCP ecClass : *classes)
-                {
-                if (!ecClass->Is(modifierClass) && !modifierClass->Is(ecClass))
-                    continue;
+            bvector<ContentModifierCP> currModifiers = modifiers;
+            ContainerHelpers::RemoveIf(currModifiers, [&modifier](auto curr){ return curr == modifier; });
 
-                DiagnosticsHelpers::ReportRule(*modifier);
-                bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> createdSpecs = FlattenedRelatedPropertiesSpecification::Create(modifier->GetRelatedProperties(), RelatedPropertiesSpecificationScopeInfo(modifier->GetPropertyCategories()));
-                if (createdSpecs.empty())
-                    continue;
-
-                modifier = nullptr;
-                ++handledModifiersInPrevIteration;
-                FlattenedRelatedPropertiesSpecification::MoveNestedSpecification(specs, std::move(createdSpecs), flatSpec.GetFlattened(), flatSpec.GetSource());
-                ContainerHelpers::MovePush(specs, FlattenedRelatedPropertiesSpecification::CreateForNestedPropertiesFromModifiers(specs, modifiers, helper));
-                }
+            FlattenedRelatedPropertiesSpecification::MoveNestedSpecification(specs, std::move(createdSpecs), flatSpec.GetFlattened(), flatSpec.GetSource());
+            ContainerHelpers::MovePush(specs, FlattenedRelatedPropertiesSpecification::CreateForNestedPropertiesFromModifiers(specs, currModifiers, helper));
             }
         }
     return specs;
@@ -1073,7 +1084,7 @@ static bvector<ContentSource> CreateContentSourcesWithRelatedInstancePaths(Conte
     {
     bvector<ContentSource> sources = {source};
     bmap<Utf8String, bvector<RelatedClassPath>> relatedInstancePaths = context.GetSchemaHelper().GetRelatedInstancePaths(
-        source.GetSelectClass().GetClass(), relatedInstanceSpecs, context.GetRelationshipUseCounts());
+        source.GetSelectClass().GetClass(), relatedInstanceSpecs, context.GetRelationshipUseCounts(), context.GetCancellationToken());
     for (auto const& relatedInstancePathEntry : relatedInstancePaths)
         {
         // note: if a single related instance specification results in more than one path, we have to

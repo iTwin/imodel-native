@@ -18,4 +18,7 @@
 #include <ECDb/ConcurrentQueryManager.h>
 
 #include <ECDb/InstanceReader.h>
+#include <ECDb/InstanceWriter.h>
+#include <ECDb/InstanceRepository.h>
+#include <ECDb/ChangesetReader.h>
 #include <ECDb/ECDbVirtualTab.h>

@@ -64,6 +64,10 @@
 	As a protection against this issue, the "constructor" (i.e. CSnewEgm96)
 	will perform a basic test on the resulting binary form of the data
 	obtained before returning a valid object pointer.
+
+	GEOCOORD_ENHANCEMENT: EGM96 uses GRD file format, this file has been
+	generalized to support GRD files other than EGM96 and also .gri files
+	that can have null entries specified as 9999.0.
 */
 
 struct cs_Egm96_ *CSnewEgm96 (const char *filePath,long32_t bufferSize,ulong32_t flags,double density)
@@ -78,7 +82,9 @@ struct cs_Egm96_ *CSnewEgm96 (const char *filePath,long32_t bufferSize,ulong32_t
 	char *cp;
 	struct cs_Egm96_ *__This = NULL;
 
+#ifndef GEOCOORD_ENHANCEMENT
 	double testValue;
+#endif
 
 	/* Allocate and initialize the object. */
 	__This = CS_malc (sizeof (struct cs_Egm96_));
@@ -135,6 +141,8 @@ struct cs_Egm96_ *CSnewEgm96 (const char *filePath,long32_t bufferSize,ulong32_t
 		__This->searchDensity = density;
 	}
 
+	// We allow files that are not EGM96 so we can't presume the range or expected height
+#ifndef GEOCOORD_ENHANCEMENT
 	/* Defensive programming here to insure that we have a proper
 	   binary representation, regardless of the source. */
 	testValue = CSdebugEgm96 (__This);
@@ -144,6 +152,7 @@ struct cs_Egm96_ *CSnewEgm96 (const char *filePath,long32_t bufferSize,ulong32_t
 		CS_erpt (cs_SELF_TEST);
 		goto error;
 	}
+#endif
 
 	/* That's that. */
 	return __This;
@@ -449,6 +458,12 @@ int CScalcEgm96 (struct cs_Egm96_ *__This,double *geoidHgt,const double wgs84 [2
 	southWest = *fltPtr;
 	southEast = *(fltPtr + 1);
 
+#ifdef GEOCOORD_ENHANCEMENT
+	const float nullEntry = 9999.0;
+	if ((fabs(northWest - nullEntry) < 1e-6) || (fabs(northEast - nullEntry) < 1e-6) || (fabs(southWest - nullEntry) < 1e-6) || (fabs(southEast - nullEntry) < 1e-6))
+		goto error; // Out of range
+#endif
+
 	/* Perform the bi-linear calculation. */
 	tt = (lclLng - cellNW [LNG]) / __This->density [LNG];
 	uu = (cellNW [LAT] - lclLat) / __This->density [LAT];
@@ -529,12 +544,14 @@ int CSmkBinaryEgm96 (struct cs_Egm96_ *__This)
 	double deltaLng = cs_Zero;
 
 	st = CS_rwDictDir (__This->binaryPath,sizeof (__This->binaryPath),__This->filePath);
+#if !defined(GEOCOORD_ENHANCEMENT)	/* Even if writable dir cannot be resolved, the binary file might already exist. */
 	if (st != 0)
 	{
 		CS_stncp (csErrnam,__This->filePath,MAXPATH);
 		CS_erpt (cs_DTC_FILE);
 		goto error;
 	}
+#endif
 	cp = strrchr (__This->binaryPath,cs_ExtsepC);
 	if (cp == NULL)
 	{

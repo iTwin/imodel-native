@@ -209,8 +209,8 @@ double          outsideEpsilon
 //! @param pSinArray OUT     y coordinates of intersections
 //! @param pAngleArray OUT     angular positions of intersections
 //! @param pNumInt OUT     number of intersections
-//! @param pCoff0 OUT     array of bezier coefficients for upper half circle.
-//! @param pCoff1 OUT     array of bezier coefficients for lower half circle.
+//! @param pCoff0 OUT     array of 5 bezier coefficients for upper half circle.
+//! @param pCoff1 OUT     array of 5 bezier coefficients for lower half circle.
 //! @param pA IN      matrix defining implicit conic
 //! @return -1 if matrix pA is (exactly) a unit circle,
 //!               else number of intersections.

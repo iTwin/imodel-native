@@ -107,11 +107,6 @@ Every BeSQLite database has a table named "be_EmbedFile" that holds copies of fi
 These files are stored as blobs, and are not directly accessible by external applications. Instead, BeSQLite provides
 methods to extract them into temporary locations.
 
-@section OVRBeSQLiteLanguageSupport 7. Support for language-specific collation and case-folding
-
-By default, BeSQLite does not support language-specific collation, and performs case-folding only for the ASCII
-character set. However, applications can extend BeSQLite by implementing the #BeSQLiteLib::ILanguageSupport interface.
-
 */
 
 #ifdef __BE_SQLITE_HOST_DLL__
@@ -271,7 +266,10 @@ public:
     static uint32_t const FirstValidBriefcaseId() {return 2;}
     //! the last valid briefcaseId
     // NOTE: The 10 largest valid BeBriefcaseIds will not be assigned by iModelHub, so are available to identify special kinds of iModels.
-    static uint32_t const LastValidBriefcaseId() {return MaxRepo() - 10;}
+    static uint32_t const LastValidBriefcaseId() {return MaxRepo() - 11;}
+    //! Reserved briefcase id used for Element IDs allocated by SchemaSync.
+    //! Never assigned by iModelHub. Must stay in sync with TypeScript `BriefcaseIdValue.SchemaSyncElementReserved`.
+    static uint32_t const SchemaSyncElementReserved() {return MaxRepo() - 10;}
     //! An illegal value
     static uint32_t const Illegal() {return (uint32_t)0xffffffff;}
 
@@ -347,6 +345,13 @@ struct BeServerIssuedId : BeInt64Id
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
+enum class NoCaseCollation {
+    ASCII,
+    Latin1 //! Latin-1 (ISO-8859-1: Western European) https://www.charset.org/charsets/iso-8859-1
+};
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
 enum DbConstants
 {
     DbUserVersion           = 10,  //!< the "user" version of SQLite databases created by this version of the BeSQLite library
@@ -391,6 +396,21 @@ enum class WalCheckpointMode {
     Truncate=3, /* Like RESTART but also truncate WAL */
 };
 
+enum class AttachFileType {
+    Unknown,
+    Main,
+    Temp,
+    SchemaSync,
+    ECChangeCache
+};
+
+struct AttachFileInfo final {
+public:
+    Utf8String m_fileName;
+    Utf8String m_alias;
+    AttachFileType m_type;
+};
+
 //=======================================================================================
 //! A 4-digit number that specifies the version of the "profile" (schema) of a Db
 // @bsiclass
@@ -431,6 +451,18 @@ enum class DbDeserializeOptions {
     Readonly = 3
 };
 ENUM_IS_FLAGS(DbDeserializeOptions)
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+enum class StatementState
+{
+    // The first four values are in accordance with sqlite3.c
+    Init          = 0,   //!< Prepared statement under construction
+    Ready         = 1,   //!< Ready to run but not yet started
+    Run           = 2,   //!< Run in progress
+    Halt          = 3,   //!< Finished.  Need reset() or finalize()
+};
 
 //=======================================================================================
 // @bsiclass
@@ -579,8 +611,10 @@ enum DbResult
     BE_SQLITE_ERROR_CouldNotAcquireLocksOrCodes = (BE_SQLITE_IOERR | (21<<24)), //!< Error acquiring locks or codes
     BE_SQLITE_ERROR_SchemaUpgradeRecommended    = (BE_SQLITE_IOERR | (22<<24)), //!< Recommended that the schemas found in the database be upgraded
     BE_SQLITE_ERROR_DataTransformRequired       = (BE_SQLITE_IOERR | (23<<24)), //!< Schema update need to update data.
+    BE_SQLITE_ERROR_DataDeletionRequired        = (BE_SQLITE_IOERR | (24<<24)), //!< Schema update needs to remove data (classes/properties)
 
     BE_SQLITE_ERROR_NOTOPEN                     = (BE_SQLITE_ERROR | (1<<24)),  //!< Db not open
+    BE_SQLITE_ERROR_PropagateChangesFailed      = (BE_SQLITE_ERROR | (2<<24)),  //!< Error propagating changes during commit
 };
 
 //=======================================================================================
@@ -631,44 +665,6 @@ enum class DbValueType : int
 struct BeSQLiteLib
 {
 public:
-    //=======================================================================================
-    //! This is an interface class that allows applications to provide custom language processing for SQL case and collation operations.
-    //! While a single static instance of this class is registered, collations are registered on a per-database basis. They are <i>not</i> expected to vary per database.
-    // @bsiclass
-    //=======================================================================================
-    struct ILanguageSupport
-    {
-        //! Signature of the callback method used to free collator objects provided by _InitCollation. Objects will be freed as each database is closed (since they are created for each database).
-        typedef void(*CollationUserDataFreeFunc)(void*);
-
-        //! Describes a custom collator to register.
-        //! @see _InitCollation.
-        struct CollationEntry
-        {
-            AString m_name;     //!< Name that query strings will use to use this collation.
-            void* m_collator;   //!< User data object provided in the collation callback. @see _Collate. @see CollationUserDataFreeFunc.
-        };
-
-        //! Converts source to lower-case into result according to localeName. result cannot be reallocated, and is typically over-allocated based on source.
-        //! This is called when the SQL scalar function LOWER is processed.
-        virtual void _Lower(Utf16CP source, int sourceLen, Utf16P result, int resultLen) = 0;
-
-        //! Converts source to upper-case into result according to localeName. result cannot be reallocated, and is typically over-allocated based on source.
-        //! This is called when the SQL scalar function UPPER is processed.
-        virtual void _Upper(Utf16CP source, int sourceLen, Utf16P result, int resultLen) = 0;
-
-        //! Registers a collection of collations with the database.
-        //! This is called when every database is opened, and collatorFreeFunc is called when the database is closed for each collator provided.
-        virtual void _InitCollation(bvector<CollationEntry>& collations, CollationUserDataFreeFunc& collatorFreeFunc) = 0;
-
-        //! Compares two strings for sorting purposes. collator is the m_collator object provided in the corresponding CollationEntry.
-        //! This is called when a custom collation is processed in a SQL query (e.g. in an ORDER BY clause).
-        virtual int _Collate(Utf16CP lhs, int lhsLen, Utf16CP rhs, int rhsLen, void* collator) = 0;
-
-        //! Maps the given UTF-32 character to its case folding equivalent (i.e. a normalized form used for comparison). This is primarily used in the LIKE operator.
-        //! If the character has no case folding equivalent, the character itself is returned.
-        virtual uint32_t _FoldCase(uint32_t) = 0;
-    };
 
     enum class LogErrors : bool {Yes=1, No=0};
 
@@ -697,13 +693,6 @@ public:
 
     BE_SQLITE_EXPORT static int CloseSqlDb(void* p);
 
-    //! Sets the static ILanguageSupport object for handling custom language processing.
-    //! This should be called once per session before opening any databases and applies to all future opened databases.
-    BE_SQLITE_EXPORT static void SetLanguageSupport(ILanguageSupport*);
-
-    //! Gets the current ILanguageSupport. Can return nullptr.
-    BE_SQLITE_EXPORT static ILanguageSupport* GetLanguageSupport();
-
     //! Get memory used by SQLite for current process
     BE_SQLITE_EXPORT static DbResult GetMemoryUsed(int64_t& current, int64_t& high, bool reset = false);
 
@@ -716,16 +705,29 @@ public:
     //! Return result code as static string e.g. SQLITE_ROW -> "SQLITE_ROW"
     BE_SQLITE_EXPORT static Utf8CP GetErrorName(DbResult rc);
 
+    //! Convert a SQLite statement state to a descriptive string.
+    BE_SQLITE_EXPORT static Utf8CP GetStatementStateString(StatementState state);
+
     //! Return a log message (ErrorString, GetErrorName) for a DbResult
     BE_SQLITE_EXPORT static Utf8String GetLogError(DbResult rc);
 
     static int GetBaseDbResult(DbResult val) {return 0xff & val;}
     static bool TestBaseDbResult(DbResult val1, DbResult val2) {return GetBaseDbResult(val1) == GetBaseDbResult(val2);}
     static bool IsConstraintDbResult(DbResult val1) {return GetBaseDbResult(val1) == BE_SQLITE_CONSTRAINT;}
-    BE_SQLITE_EXPORT static bool s_throwExceptionOnUnexpectedAutoCommit;
 
     BE_SQLITE_EXPORT static bool ZlibCompress(bvector<Byte>& compressedBuffer, const bvector<Byte>& sourceBuffer);
     BE_SQLITE_EXPORT static bool ZlibDecompress(bvector<Byte>& uncompressedBuffer, const bvector<Byte>& compressedBuffer, unsigned long uncompressSize);
+
+    //! Enable or disable the monotone-clock VFS shim.
+    //! When enabled, a VFS shim named "besqlite_monotone" is registered as the default
+    //! SQLite VFS. It overrides xCurrentTime and xCurrentTimeInt64 to guarantee that
+    //! every call returns a strictly increasing value: if the system clock has not
+    //! advanced since the previous call the returned time is incremented by 1 ms.
+    //! This is useful in tests where SQLite's millisecond-resolution clock would
+    //! otherwise return identical timestamps for rapid successive operations.
+    //! Call with enable=false to unregister the shim and restore the previous default VFS.
+    //! @note Must be called after BeSQLiteLib::Initialize().
+    BE_SQLITE_EXPORT static void EnableMonotoneClock(bool enable);
 };
 
 //=======================================================================================
@@ -909,6 +911,10 @@ public:
     BE_SQLITE_EXPORT DbResult BindDbValue(int paramNum, struct DbValue const& dbVal);
 
     //! @private internal use only
+    //! Bind a DbValue from a BeSQLite function (1-based)
+    BE_SQLITE_EXPORT DbResult BindValueFrom(int col, Statement& fromStmt, int fromCol);
+    
+    //! @private internal use only
     //! Set value to NULL but also Bind a pointer. This is used by sql function ro virtual tables.
     BE_SQLITE_EXPORT DbResult BindPointer(int col, void* ptr, const char* name, void (*destroy)(void*));
 
@@ -1027,6 +1033,10 @@ public:
 
     //! Dump query results to stdout, for debugging purposes
     BE_SQLITE_EXPORT void DumpResults();
+
+    //! Tries to get the state in which a particular statement is. Returns true if it is successful in getting the state of the statement otherwise returns false
+    //! If the returned value is true, the state value is stored in the passed reference argument.
+    BE_SQLITE_EXPORT bool TryGetStatementState(StatementState&);
 
     SqlStatementP GetSqlStatementP() const {return m_stmt;}  // for direct use of sqlite3 api
     operator SqlStatementP(){return m_stmt;}                 // for direct use of sqlite3 api
@@ -2386,6 +2396,14 @@ struct ProfileState final
     };
 
 //=======================================================================================
+// @bsiclass
+//=======================================================================================
+enum class DbProgressAction {
+    Continue = 0,
+    Interrupt = 1,
+};
+
+//=======================================================================================
 //! A physical Db file.
 // @bsiclass
 //=======================================================================================
@@ -2424,6 +2442,8 @@ protected:
     Savepoint m_defaultTxn;
     BeBriefcaseId m_briefcaseId;
     StatementCache m_statements;
+    NoCaseCollation m_noCaseCollation;
+    mutable std::function<DbProgressAction()> m_progressHandler;
     DbTxns m_txns;
     std::unique_ptr<ScalarFunction> m_regexFunc, m_regexExtractFunc, m_base36Func;
     explicit DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode, std::optional<int> busyTimeout);
@@ -2445,6 +2465,10 @@ protected:
     void SaveCachedProperties(bool isCommit);
     Utf8String GetLastError(DbResult* lastResult) const;
     void SaveCachedBlvs(bool isCommit);
+    DbResult SetNoCaseCollation(NoCaseCollation col);
+    NoCaseCollation GetNoCaseCollation() const { return m_noCaseCollation; }
+    BE_SQLITE_EXPORT DbResult GetFileDataVersion(uint32_t& version) const;
+    BE_SQLITE_EXPORT void SetProgressHandler(std::function<DbProgressAction()>, int) const;
     BE_SQLITE_EXPORT DbResult SaveProperty(PropertySpecCR spec, Utf8CP strData, void const* value, uint32_t propsize, uint64_t majorId=0, uint64_t subId=0);
     BE_SQLITE_EXPORT bool HasProperty(PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0) const;
     BE_SQLITE_EXPORT DbResult QueryPropertySize(uint32_t& propsize, PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0) const;
@@ -2792,9 +2816,9 @@ private:
 public:
     BE_SQLITE_EXPORT Db();
     BE_SQLITE_EXPORT virtual ~Db();
-
     DbFile* GetDbFile() {return m_dbFile;}
 
+    
     //! SQLite supports the concept of an "implicit" transaction. That is, if no explicit transaction is active when you execute an SQL statement,
     //! SQLite will create an implicit transaction whose scope is the execution of the statement. However, it is rarely a good idea to rely on that behavior,
     //! since the overhead of starting/stopping a transaction can be very large, often much larger than the execution of the statement itself.
@@ -2805,7 +2829,7 @@ public:
 
     //! Get the StatementCache for this Db.
     StatementCache& GetStatementCache() const {return const_cast<StatementCache&>(m_statements);}
-
+    void SetProgressHandler(std::function<DbProgressAction()> cb, int n = 500) const { m_dbFile->SetProgressHandler(cb, n); }
     //! Get a CachedStatement for this Db. If the SQL string has already been prepared and a CachedStatement exists for it in the cache, it will
     //! be Reset (see Statement::Reset) and returned without the need to re-Prepare it. If, however, the SQL string has not been used before (or maybe just
     //! not recently) then a new CachedStatement will be created and Prepared.
@@ -2843,6 +2867,8 @@ public:
     BE_SQLITE_EXPORT TraceProfileEvent& GetTraceProfileEvent() const;
     BE_SQLITE_EXPORT TraceCloseEvent& GetTraceCloseEvent() const;
 
+    DbResult GetFileDataVersion(uint32_t& version) const { return m_dbFile->GetFileDataVersion(version); }
+    BE_SQLITE_EXPORT void ClearDbCache();
     //! Determine whether there is an active transaction against this Db.
     bool IsTransactionActive() const {return 0 < GetCurrentSavepointDepth();}
 
@@ -2960,6 +2986,7 @@ public:
     //! Detach a previously attached database. This method is necessary for the same reason AttachDb is necessary.
     //! @param[in] alias The alias by which the database was attached.
     BE_SQLITE_EXPORT DbResult DetachDb(Utf8CP alias) const;
+    BE_SQLITE_EXPORT std::vector<AttachFileInfo> GetAttachedDbs() const;
 
     //! Execute a single SQL statement on this Db.
     //! This merely binds, steps, and finalizes the statement. It is no more efficient than performing those steps individually,
@@ -3150,6 +3177,10 @@ public:
     //! @see sqlite3_total_changes
     BE_SQLITE_EXPORT int GetTotalModifiedRowCount() const;
 
+    //! @return the total number of rows modified since the database connection was opened.
+    //! @see sqlite3_total_changes
+    BE_SQLITE_EXPORT int64_t GetTotalModifiedRowCount64() const;
+
     //! @return The last error message for this Db.
     //! @param[out] lastResult The last error code for this Db.
     //! @see sqlite3_errmsg, sqlite3_errcode
@@ -3315,15 +3346,24 @@ public:
     //! @param newPageSizeInBytes Must be size in bytes for a page as described by sqlite.
     BE_SQLITE_EXPORT DbResult Vacuum(int newPageSizeInBytes = 0);
 
+    //! Run ANALYZE command to gather statistics about tables and indices.
+    BE_SQLITE_EXPORT DbResult Analyze();
+
     BE_SQLITE_EXPORT DbResult RestartDefaultTxn();
 
     //! DO NOT call this under normal circumstances. It is for obscure cases where you are opening an untrusted file (i.e. NOT from the hub).
     //! Opens the specified database, performs a sqlite integrity check, and closes it. Returns BE_SQLITE_OK if the check was successful, otherwise BE_SQLITE_CORRUPT or other chained errors if there was a failure.
     BE_SQLITE_EXPORT static DbResult CheckDbIntegrity(BeFileNameCR dbFileName);
     BE_SQLITE_EXPORT DbResult SetBusyTimeout(int ms);
+    //! Query whether SQLite enforces foreign key constraints on this connection.
+    BE_SQLITE_EXPORT DbResult QueryForeignKeyEnforcement(bool& enabled) const;
+    //! Enable or disable SQLite foreign key enforcement on this connection.
+    BE_SQLITE_EXPORT DbResult SetForeignKeyEnforcement(bool enabled) const;
     BE_SQLITE_EXPORT DbBuffer Serialize(const char *zSchema = nullptr) const;
 
     BE_SQLITE_EXPORT static DbResult Deserialize(DbBuffer& buffer, DbR db, DbDeserializeOptions opts = DbDeserializeOptions::FreeOnClose, const char *zSchema = nullptr, std::function<void(DbR)> beforeDefaultTxnStarts = nullptr);
+    BE_SQLITE_EXPORT DbResult SetNoCaseCollation(NoCaseCollation col) { return m_dbFile->SetNoCaseCollation(col); }
+    BE_SQLITE_EXPORT NoCaseCollation GetNoCaseCollation() const { return m_dbFile->GetNoCaseCollation(); }
 };
 
 //=======================================================================================
@@ -3429,6 +3469,7 @@ public:
     //! change the size of a blob.
     //! @see sqlite3_blob_open, sqlite3_blob_write, sqlite3_blob_close
     BE_SQLITE_EXPORT DbResult SaveToRow(BlobIO& blobIO);
+    BE_SQLITE_EXPORT void SaveTo(ByteStream& buffer);
 
     //! Obtain a thread-local SnappyToBlob. The returned object is deleted when the calling thread exits and should never be shared between threads.
     BE_SQLITE_EXPORT static SnappyToBlob& GetForThread();
@@ -3451,22 +3492,24 @@ struct SnappyReader
 //! Utility to read Snappy-compressed data from memory, typically from an image of a blob.
 // @bsiclass
 //=======================================================================================
-struct SnappyFromMemory : SnappyReader
+struct SnappyFromMemory final: SnappyReader
 {
 private:
-    Byte*   m_uncompressed;
-    Byte*   m_uncompressCurr;
+    Byte*    m_uncompressed;
+    Byte*    m_uncompressCurr;
     uint16_t m_uncompressAvail;
     uint16_t m_uncompressSize;
-    Byte*   m_blobData;
+    Byte*    m_blobData;
     uint32_t m_blobOffset;
     uint32_t m_blobBytesLeft;
-
+    bool     m_ownsUncompressedBuffer;
     ZipErrors ReadNextChunk();
     ZipErrors TransferFromBlob(void* data, uint32_t numBytes, int offset);
 
 public:
     BE_SQLITE_EXPORT SnappyFromMemory(void* uncompressedBuffer, uint32_t uncompressedBufferSize);
+    BE_SQLITE_EXPORT SnappyFromMemory();
+    BE_SQLITE_EXPORT ~SnappyFromMemory();
     BE_SQLITE_EXPORT void Init(void* blobBuffer, uint32_t blobBufferSize);
     BE_SQLITE_EXPORT virtual ZipErrors _Read(Byte* data, uint32_t size, uint32_t& actuallyRead) override;
 
@@ -3478,13 +3521,13 @@ public:
 //! Utility to read Snappy-compressed data from a blob in a database.
 // @bsiclass
 //=======================================================================================
-struct SnappyFromBlob : SnappyReader
+struct SnappyFromBlob final: SnappyReader
 {
 private:
-    Byte*   m_uncompressed;
-    Byte*   m_uncompressCurr;
-    Byte*   m_blobData;
-    BlobIO  m_blobIO;
+    Byte*    m_uncompressed;
+    Byte*    m_uncompressCurr;
+    Byte*    m_blobData;
+    BlobIO   m_blobIO;
     uint32_t m_blobBufferSize;
     uint32_t m_blobOffset;
     uint32_t m_blobBytesLeft;
@@ -3553,4 +3596,77 @@ struct LzmaUtility
     static ZipErrors DecompressEmbeddedBlob(bvector<Byte>&out, uint32_t expectedSize, void const*inputBuffer, uint32_t inputSize, Byte*header, uint32_t headerSize); //!< @private
 };
 
+// Allow query sqlite meta data & diff schema to create patch that will upgrade schema on another db
+// Rule of thumb is to use this only for schema upgrade, not for data migration. If a db file schema was
+// was evolved using ALTER TABLE ... commands, then the schema diff will be able to generate patch.
+// If the schema was evolved using other means, then the patch will not be generated or fails.
+// Other mean include dropping table and recreating it, or using PRAGMA writable_schema to modify schema.
+namespace MetaData {
+    struct ColumnInfo {
+        Utf8String name;
+        Utf8String dataType;
+        Utf8String collSeq;
+        bool notNull;
+        bool primaryKey;
+        bool autoIncrement;
+        bool hidden;
+        std::optional<Utf8String> defaultValue;
+        int cid;
+    };
+    struct TriggerInfo {
+        Utf8String name;
+        Utf8String sql;
+    };
+    struct IndexColumnInfo {
+        Utf8String name;
+        Utf8String collSeq;
+        int cid;
+        bool desc;
+        bool key;
+    };
+    struct IndexInfo {
+        Utf8String name;
+        Utf8String sql;
+        bool partial;
+        bool unique;
+        Utf8String origin; // "c" if the index was created by a CREATE INDEX statement, "u" if the index was created by a UNIQUE constraint, or "pk" if the index was created by a PRIMARY KEY constraint.
+        std::vector<IndexColumnInfo> columns;
+    };
+    struct ForeignKeyInfo {
+        Utf8String table;
+        std::vector<Utf8String> fromColumns;
+        std::vector<Utf8String> toColumns;
+        Utf8String onUpdate;
+        Utf8String onDelete;
+        Utf8String match;
+    };
+    struct TableInfo {
+        Utf8String schema;
+        Utf8String name;
+        Utf8String type; // "shadow" or "table" or "virtual"
+        int nColumns;
+        bool hasRowId;
+        bool isStrict;
+        bool operator==(TableInfo const& other) const {return schema == other.schema && name == other.name;}
+        bool operator<(TableInfo const& other) const {
+            return schema.CompareToI(other.schema) < 0 || (schema == other.schema && name.CompareToI(other.name) < 0);
+        }
+    };
+    struct CompleteTableInfo : public TableInfo{
+        Utf8String sql;
+        std::vector<ColumnInfo> columns;
+        std::vector<ForeignKeyInfo> foreignKeys;
+        std::vector<IndexInfo> indexes;
+        std::vector<TriggerInfo> triggers;
+        bool operator==(CompleteTableInfo const& other) const {return TableInfo::operator==(other);}
+    };
+
+    BE_SQLITE_EXPORT void ToJson(CompleteTableInfo const&, BeJsValue);
+    BE_SQLITE_EXPORT DbResult QueryTable(DbCR&, Utf8StringCR dbName, Utf8StringCR tableName, CompleteTableInfo&);
+    BE_SQLITE_EXPORT DbResult QueryTable(DbCR&, TableInfo const&, CompleteTableInfo&);
+    BE_SQLITE_EXPORT std::vector<TableInfo> QueryTableNames(DbCR& db, std::optional<Utf8String> dbName, DbResult& rc);
+    BE_SQLITE_EXPORT std::vector<TableInfo> QueryTableNames(DbCR& db, std::optional<Utf8String> dbName);
+    BE_SQLITE_EXPORT DbResult SchemaDiff(DbCR lhsDb, DbCR rhsDb, std::vector<Utf8String>& patches, bool allowDrop = true);
+    BE_SQLITE_EXPORT DbResult SchemaDiff(DbCR lhsDb, DbCR rhsDb, std::function<bool(MetaData::TableInfo const&)> excludeFilter, std::vector<Utf8String>& patches, bool allowDrop = true);
+}
 END_BENTLEY_SQLITE_NAMESPACE

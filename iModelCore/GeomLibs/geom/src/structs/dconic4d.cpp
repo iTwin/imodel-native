@@ -2456,7 +2456,7 @@ bool          clipZ
     if (numSaved > maxOut)
         numSaved = maxOut;
     if (pAngleArray)
-        memcpy (pAngleArray, thetaArray, numSaved * sizeof(double));
+        BeStringUtilities::Memcpy (pAngleArray, maxOut * sizeof(double), thetaArray, numSaved * sizeof(double));
     if (pInOutArray)
         {
         for (i = 1; i < numSaved; i++)
@@ -4334,7 +4334,7 @@ DPoint3dP pCirclePoleArray
 
     if (pCirclePoleArray)
         {
-        memcpy (pCirclePoleArray, circlePoleArray, 5 * sizeof (DPoint3d));
+        BeStringUtilities::Memcpy (pCirclePoleArray, 5 * sizeof (DPoint3d), circlePoleArray, 5 * sizeof (DPoint3d));
         }
     }
 
@@ -4380,26 +4380,6 @@ DPoint3dP pTrigPoint
         }
 
     return numRoot;
-    }
-
-/*-----------------------------------------------------------------*//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+------*/
-static int compareZ
-
-(
-const void *vpPoint0,
-const void *vpPoint1
-)
-    {
-    const DPoint3d *pPoint0 = (const DPoint3d*)vpPoint0;
-    const DPoint3d *pPoint1 = (const DPoint3d*)vpPoint1;
-
-    if (pPoint0->z < pPoint1->z)
-        return -1;
-    if (pPoint0->z > pPoint1->z)
-        return 1;
-    return 0;
     }
 
 /*-----------------------------------------------------------------*//**
@@ -4512,7 +4492,7 @@ int        clipType
                                 cos (theta0), sin(theta0), theta0);
             pCriticalAngleArray[numCritical++].Init (
                                 cos (theta1), sin(theta1), theta1);
-            qsort (pCriticalAngleArray, numCritical, sizeof (pCriticalAngleArray[0]), compareZ);
+            std::sort(pCriticalAngleArray, pCriticalAngleArray + numCritical, [](const DPoint3d& a, const DPoint3d& b) { return a.z < b.z; });
 
             for (i = 1; i < numCritical; i++)
                 {

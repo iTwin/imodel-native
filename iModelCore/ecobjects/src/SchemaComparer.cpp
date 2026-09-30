@@ -122,7 +122,7 @@ struct RelationshipConstraintProxy final
         Nullable<Utf8String> RoleLabel() const { return m_constraint != nullptr ? m_constraint->GetRoleLabel() : Nullable<Utf8String>(); }
         Nullable<bool> IsPolymorphic() const { return m_constraint != nullptr ? m_constraint->GetIsPolymorphic() : Nullable<bool>(); }
         Nullable<Utf8String> Multiplicity() const { return m_constraint != nullptr ? m_constraint->GetMultiplicity().ToString() : Nullable<Utf8String>(); }
-        Nullable<Utf8String> AbstractConstraint() const { return (m_constraint != nullptr && m_constraint->GetAbstractConstraint() != nullptr) ? Nullable<Utf8String>(m_constraint->GetAbstractConstraint()->GetFullName()) : Nullable<Utf8String>(); }
+        Nullable<Utf8String> AbstractConstraint() const { return (m_constraint != nullptr && m_constraint->GetAbstractConstraint(false) != nullptr) ? Nullable<Utf8String>(m_constraint->GetAbstractConstraint(false)->GetFullName()) : Nullable<Utf8String>(); }
 
         ECN::ECRelationshipConstraintClassList const* ConstraintClasses() const { return m_constraint != nullptr ? &m_constraint->GetConstraintClasses() : nullptr; }
         bvector<ECN::IECInstancePtr> CustomAttributes() const
@@ -459,24 +459,25 @@ BentleyStatus SchemaComparer::Compare(SchemaDiff& diff, bvector<ECN::ECSchemaCP>
     {
     m_options = options;
     bmap<Utf8CP, ECSchemaCP, CompareIUtf8Ascii> oldSchemaMap, newSchemaMap;
-    bset<Utf8CP, CompareIUtf8Ascii> allSchemas;
+    bvector<Utf8CP> allSchemaNames;
 
     for (ECSchemaCP schema : oldSchemas)
         {
         Utf8CP schemaName = schema->GetName().c_str();
         oldSchemaMap[schemaName] = schema;
-        allSchemas.insert(schemaName);
+        if (allSchemaNames.end() == std::find_if(allSchemaNames.begin(), allSchemaNames.end(), [schemaName] (Utf8CP asName) ->bool { return BeStringUtilities::StricmpAscii(schemaName, asName) == 0; }))
+        allSchemaNames.push_back(schemaName);
         }
 
     for (ECSchemaCP schema : newSchemas)
         {
         Utf8CP schemaName = schema->GetName().c_str();
         newSchemaMap[schemaName] = schema;
-        allSchemas.insert(schemaName);
+        if (allSchemaNames.end() == std::find_if(allSchemaNames.begin(), allSchemaNames.end(), [schemaName] (Utf8CP asName) ->bool { return BeStringUtilities::StricmpAscii(schemaName, asName) == 0; }))
+        allSchemaNames.push_back(schemaName);
         }
 
-
-    for (Utf8CP schemaName : allSchemas)
+    for (Utf8CP schemaName : allSchemaNames)
         {
         auto oldIt = oldSchemaMap.find(schemaName);
         auto newIt = newSchemaMap.find(schemaName);

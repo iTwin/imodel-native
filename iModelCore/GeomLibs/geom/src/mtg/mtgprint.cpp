@@ -18,6 +18,9 @@ Public GEOMDLLIMPEXP void    jmdlMTGGraph_fillMaskString
 MTGMask     mask
 )
     {
+    // 'u' = RG_MTGMASK_NULL_FACE = MTG_VSEAM_MASK
+    // 'v' = RG_MTGMASK_GAP_MASK = MTG_USEAM_MASK
+    // 'U' = RG_MTGMASK_IS_NEGATIVE_AREA_FACE = MTG_CONSTU_MASK
     static char mnemonic[] =
             "xxxxxxxxxxxxxxxxxxxxSHEDPVuvVUBX";
         /*  "84218421842184218421842184218421";     */

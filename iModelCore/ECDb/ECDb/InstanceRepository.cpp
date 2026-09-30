@@ -1,0 +1,139 @@
+/*---------------------------------------------------------------------------------------------
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
+#include "ECDbPch.h"
+
+USING_NAMESPACE_BENTLEY_EC
+
+BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult InstanceRepository::Insert(BeJsValue in, BeJsConst userOptions, JsFormat inFmt, ECInstanceKeyR key) const {
+    BeMutexHolder _(m_mutex);
+    m_lastError.clear();
+    InstanceWriter::InsertOptions options;
+    const bool convertClassIdsToClassNames = userOptions["convertClassIdsToClassNames"].asBool(false);
+    options.UseJsNames(inFmt == JsFormat::JsName);
+    options.ConvertClassIdsToClassNames(convertClassIdsToClassNames);
+    if(userOptions.isBoolMember("forceUseId") && userOptions["forceUseId"].asBool(false))
+        options.UseInstanceIdFromJs();
+    ECN::ECClassId classId;
+    if (!m_ecdb.GetInstanceWriter().TryGetClassId(classId, in, inFmt, convertClassIdsToClassNames)) {
+        m_lastError.Sprintf("Failed to get ECClassId/className/classFullName");
+        return BE_SQLITE_ERROR;
+    }
+    auto rc = m_ecdb.GetInstanceWriter().Insert(in, options, key);
+    if (rc != BE_SQLITE_OK) {
+        m_lastError = m_ecdb.GetInstanceWriter().GetLastError();
+    }
+    return rc;
+}
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult InstanceRepository::Update(BeJsValue in, BeJsConst userOptions, JsFormat inFmt) const {
+    BeMutexHolder _(m_mutex);
+    m_lastError.clear();
+    InstanceWriter::UpdateOptions options;
+    const bool convertClassIdsToClassNames = userOptions["convertClassIdsToClassNames"].asBool(false);
+    options.UseJsNames(inFmt == JsFormat::JsName);
+    options.ConvertClassIdsToClassNames(convertClassIdsToClassNames);
+    options.UseIncrementalUpdate(true);
+    ECInstanceKey instKey;
+    if (!m_ecdb.GetInstanceWriter().TryGetInstanceKey(instKey, in, inFmt, convertClassIdsToClassNames)) {
+        m_lastError.Sprintf("Failed to get ECInstanceId/id and ECClassId/className/classFullName");
+        return BE_SQLITE_ERROR;
+    }
+
+    auto rc = m_ecdb.GetInstanceWriter().Update(in, options);
+    if (rc != BE_SQLITE_OK) {
+        m_lastError = m_ecdb.GetInstanceWriter().GetLastError();
+    }
+    return rc;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult InstanceRepository::Delete(BeJsConst in, BeJsConst userOptions, JsFormat inFmt) const {
+    BeMutexHolder _(m_mutex);
+    m_lastError.clear();
+    InstanceWriter::DeleteOptions options;
+    options.UseJsNames(inFmt == JsFormat::JsName);
+    options.ConvertClassIdsToClassNames(userOptions["convertClassIdsToClassNames"].asBool(false));
+    auto rc = m_ecdb.GetInstanceWriter().Delete(in, options);
+    if (rc != BE_SQLITE_OK) {
+        m_lastError = m_ecdb.GetInstanceWriter().GetLastError();
+    }
+    return rc;
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult InstanceRepository::Delete(ECInstanceKeyCR key, BeJsConst userOptions, JsFormat inFmt) const {
+    BeMutexHolder _(m_mutex);
+    m_lastError.clear();
+    InstanceWriter::DeleteOptions options;
+    options.UseJsNames(inFmt == JsFormat::JsName);
+    options.ConvertClassIdsToClassNames(userOptions["convertClassIdsToClassNames"].asBool(false));
+    auto rc = m_ecdb.GetInstanceWriter().Delete(key, options);
+    if (rc != BE_SQLITE_OK) {
+        m_lastError = m_ecdb.GetInstanceWriter().GetLastError();
+    }
+    return rc;
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult InstanceRepository::Read(ECInstanceKeyCR instKey, BeJsValue outInstance, BeJsConst userOptions, JsFormat fmt) const {
+    BeMutexHolder _(m_mutex);
+    m_lastError.clear();
+    auto nullValue = BeJsDocument::Null();
+    InstanceReader::Position pos(instKey.GetInstanceId(), instKey.GetClassId());
+    InstanceReader::Options options;
+    options.SetForceSeek(true);
+    auto rc = BE_SQLITE_ROW;
+    if (!m_ecdb.GetInstanceReader().Seek(pos, [&](const InstanceReader::IRowContext& row, PropertyReader::Finder finder) {
+            ECSqlRowAdaptor adaptor(m_ecdb);
+            bool wantGeometry = userOptions["wantGeometry"].asBool(false);
+            bool convertClassIdsToClassNames = userOptions["convertClassIdsToClassNames"].asBool(false);
+            adaptor.GetOptions().SetAbbreviateBlobs(false);
+            adaptor.GetOptions().SetConvertClassIdsToClassNames(convertClassIdsToClassNames || fmt == JsFormat::JsName);
+            adaptor.GetOptions().SetUseJsNames(fmt == JsFormat::JsName);
+            adaptor.GetOptions().SetUseClassFullNameInsteadofClassName(fmt == JsFormat::JsName);
+            if(!wantGeometry){
+                adaptor.SetSkipPropertyHandler([&](ECN::ECPropertyCR prop) {
+                    if(ExtendedTypeHelper::FromProperty(prop) == ExtendedTypeHelper::ExtendedType::GeometryStream)
+                        return true;
+                    return false;
+                });
+            }
+            if (ERROR == adaptor.RenderRowAsObject(outInstance, row)) {
+                rc = BE_SQLITE_ERROR;
+            }
+
+        }, options)) {
+        rc = BE_SQLITE_DONE;
+    }
+    return rc;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult InstanceRepository::Read(BeJsConst in, BeJsValue outInstance, BeJsConst userOptions, JsFormat fmt) const {
+    ECInstanceKey instKey;
+    const bool convertClassIdsToClassNames = userOptions["convertClassIdsToClassNames"].asBool(false);
+    if (!m_ecdb.GetInstanceWriter().TryGetInstanceKey(instKey, in, fmt, convertClassIdsToClassNames)) {
+        return BE_SQLITE_ERROR;
+    }
+    return Read(instKey, outInstance, userOptions, fmt);
+}
+
+
+END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -20,7 +20,7 @@ protected:
     ECSchemaReadContextR m_schemaContext;
     ECSchemaPtr m_conversionSchema;
 
-    bool IsOpenPlantPidCircularReferenceSpecialCase(Utf8String& referencedECSchemaName, Utf8String& referencingECSchemaFullName);
+    bool IsOpenPlantPidCircularReferenceSpecialCase(Utf8StringCR referencedECSchemaName, Utf8StringCR referencingECSchemaFullName);
 
     virtual bool ReadClassNode(ECClassP &ecClass, pugi::xml_node classNode, ECSchemaPtr& schemaOut) = 0;
     virtual SchemaReadStatus _ReadClassContentsFromXml(ECSchemaPtr& schemaOut, ClassDeserializationVector& classes);
@@ -77,7 +77,7 @@ private:
 
 public:
     SchemaXmlReader(ECSchemaReadContextR context, pugi::xml_document& xmlDoc) : m_schemaContext(context), m_xmlDoc(xmlDoc) {}
-    SchemaReadStatus Deserialize(ECSchemaPtr& ecSchema, Utf8CP checksum = nullptr);
+    SchemaReadStatus Deserialize(ECSchemaPtr& ecSchema, SchemaKey& schemaKey, Utf8CP checksum = nullptr);
 
     static void SetErrorHandling(bool doAssert);
 
@@ -134,7 +134,7 @@ private:
             bset<Utf8CP> m_alreadyWrittenClasses;
         };
 
-    BeXmlWriterR m_xmlWriter;
+    BePugiXmlWriterR m_xmlWriter;
     ECSchemaCR m_ecSchema;
     ECSchemaWriteContext m_context;
     ECVersion m_ecXmlVersion;
@@ -161,7 +161,7 @@ protected:
         }
 
 public:
-    SchemaXmlWriter(BeXmlWriterR xmlWriter, ECSchemaCR ecSchema, ECVersion ecXmlVersion = ECVersion::V2_0) : m_xmlWriter(xmlWriter), m_ecSchema(ecSchema), m_ecXmlVersion(ecXmlVersion) {}
+    SchemaXmlWriter(BePugiXmlWriterR xmlWriter, ECSchemaCR ecSchema, ECVersion ecXmlVersion = ECVersion::V2_0) : m_xmlWriter(xmlWriter), m_ecSchema(ecSchema), m_ecXmlVersion(ecXmlVersion) {}
     virtual SchemaWriteStatus Serialize(bool utf16 = false);
 };
 

@@ -11,6 +11,6 @@
 // This supposedly originated in a 'VersionSegment.h' file, but I don't see it...
 #pragma const_seg("BSIVer")
 #pragma const_seg()
-static __declspec (allocate("BSIVer")) char szSourceFileVersionString[] = "#@!~BeOpenSSL 3.1.5; OpenSSL 3.1.5, 3.1.5~!@#";
+static __declspec (allocate("BSIVer")) char szSourceFileVersionString[] = "#@!~BeOpenSSL 3.1.8; OpenSSL 3.1.8, 3.1.8~!@#";
 
 #endif

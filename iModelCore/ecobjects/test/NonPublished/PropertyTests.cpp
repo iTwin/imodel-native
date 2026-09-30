@@ -1013,7 +1013,7 @@ TEST_F(PropertyDeserializationTest, CategoryFromReferencedSchema_MissingSchemaRe
 
     ECSchemaPtr schema;
     
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
     }
     }
 

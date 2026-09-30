@@ -80,7 +80,8 @@ int                    stitchSelect
 
     size_t numPrimary = 0;
     size_t numEdge = 0;
-
+    UNUSED_VARIABLE(numPrimary);
+    UNUSED_VARIABLE(numEdge);
 
     if (pNodeIdFromMeshVertex)
         {
@@ -222,6 +223,9 @@ MTGMask                     visibleEdgeMask
     MTGMask skipMask = visitMask | exclusionMask;
     size_t numPointIndex = 0;
     size_t numVisible = 0;
+    UNUSED_VARIABLE(numPointIndex);
+    UNUSED_VARIABLE(numVisible);
+
     MTGARRAY_SET_LOOP (seedNodeId, pGraph)
         {
         if (!jmdlMTGGraph_getMask (pGraph, seedNodeId, skipMask))
@@ -301,6 +305,8 @@ bvector<MTGNodeId> const &  nodes
     int maxMTGVertexIndex = -1;
     MTGMask skipMask = visitMask | exclusionMask;
     size_t numVisible = 0;
+    UNUSED_VARIABLE(facetCount);
+    UNUSED_VARIABLE(numVisible);
 
     for (size_t i = 0; i < pFacets->vertexArrayHdr.size (); i++)
         oldPointIndexToNewPointIndex.push_back (SIZE_MAX);

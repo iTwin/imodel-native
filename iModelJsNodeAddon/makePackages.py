@@ -25,10 +25,10 @@ SUPPORTED_PLATFORMS = {
         'NodeOS': 'linux',
         'NodeCPU': 'x64'
     },
-    'macosx64' : {
-        'Platform': 'Darwin',
-        'NodeOS': 'darwin',
-        'NodeCPU': 'x64'
+    'linuxarm64' : {
+        'Platform': 'Linux',
+        'NodeOS': 'linux',
+        'NodeCPU': 'arm64'
     },
     'macosarm64' : {
         'Platform': 'Darwin',

@@ -147,6 +147,11 @@ struct BeGTestHost : RefCounted<BeTest::Host>
             m_programPath.AppendSeparator();
             }
         m_programPath.BeGetFullPathName ();
+
+        // initialize ICU
+        BeFileName assets;
+        GetDgnPlatformAssetsDirectory(assets);
+        BeStringUtilities::Initialize(assets);
         }
 
     void GetRunRoot (BeFileName& path)

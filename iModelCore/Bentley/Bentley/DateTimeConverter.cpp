@@ -372,28 +372,149 @@ std::regex* DateTimeStringConverter::s_todRegex = nullptr;
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+static Utf8String ToIsoDateTimeString(DateTimeCR dateTime, bool useSubSec, bool appendUtcTimeZone) {
+    char zBuf[32];
+    int Y = dateTime.GetYear();
+    int M = dateTime.GetMonth();
+    int D = dateTime.GetDay();
+    int h = dateTime.GetHour();
+    int m = dateTime.GetMinute();
+    int s = dateTime.GetSecond();
+    int ms = dateTime.GetMillisecond();
+    int n;
+    if (Y < 0) Y = -Y;
+    zBuf[1] = '0' + (Y / 1000) % 10;
+    zBuf[2] = '0' + (Y / 100) % 10;
+    zBuf[3] = '0' + (Y / 10) % 10;
+    zBuf[4] = '0' + (Y) % 10;
+    zBuf[5] = '-';
+    zBuf[6] = '0' + (M / 10) % 10;
+    zBuf[7] = '0' + (M) % 10;
+    zBuf[8] = '-';
+    zBuf[9] = '0' + (D / 10) % 10;
+    zBuf[10] = '0' + (D) % 10;
+    zBuf[11] = 'T';
+    zBuf[12] = '0' + (h / 10) % 10;
+    zBuf[13] = '0' + (h) % 10;
+    zBuf[14] = ':';
+    zBuf[15] = '0' + (m / 10) % 10;
+    zBuf[16] = '0' + (m) % 10;
+    zBuf[17] = ':';
+    if (useSubSec) {
+        s = (int)(1000.0 * s + ms + 0.5);
+        zBuf[18] = '0' + (s / 10000) % 10;
+        zBuf[19] = '0' + (s / 1000) % 10;
+        zBuf[20] = '.';
+        zBuf[21] = '0' + (s / 100) % 10;
+        zBuf[22] = '0' + (s / 10) % 10;
+        zBuf[23] = '0' + (s) % 10;
+        if (appendUtcTimeZone && dateTime.GetInfo().GetKind() == DateTime::Kind::Utc){
+            zBuf[24] = 'Z';
+            zBuf[25] = 0;
+            n = 25;
+        } else {
+            zBuf[24] = 0;
+            n = 24;
+        }
+    } else {
+        zBuf[18] = '0' + (s / 10) % 10;
+        zBuf[19] = '0' + (s) % 10;
+        if (appendUtcTimeZone && dateTime.GetInfo().GetKind() == DateTime::Kind::Utc){
+            zBuf[20] = 'Z';
+            zBuf[21] = 0;
+            n = 21;
+        } else {
+            zBuf[20] = 0;
+            n = 20;
+        }
+    }
+    if (dateTime.GetYear() < 0) {
+        zBuf[0] = '-';
+        return Utf8String(zBuf, n);
+    }
+    return Utf8String(&zBuf[1], n - 1);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+static Utf8String ToIsoDateString(DateTimeCR dateTime) {
+    char zBuf[16];
+    int Y = dateTime.GetYear();
+    int M = dateTime.GetMonth();
+    int D = dateTime.GetDay();
+
+    if (Y < 0) Y = -Y;
+    zBuf[1] = '0' + (Y / 1000) % 10;
+    zBuf[2] = '0' + (Y / 100) % 10;
+    zBuf[3] = '0' + (Y / 10) % 10;
+    zBuf[4] = '0' + (Y) % 10;
+    zBuf[5] = '-';
+    zBuf[6] = '0' + (M / 10) % 10;
+    zBuf[7] = '0' + (M) % 10;
+    zBuf[8] = '-';
+    zBuf[9] = '0' + (D / 10) % 10;
+    zBuf[10] = '0' + (D) % 10;
+    zBuf[11] = 0;
+
+    if (dateTime.GetYear() < 0) {
+        zBuf[0] = '-';
+        return Utf8String(zBuf, 11);
+    }
+    return Utf8String(&zBuf[1], 10);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+static Utf8String ToIsoTimeString(DateTimeCR dateTime, bool useSubSec) {
+    char zBuf[16];
+    int h = dateTime.GetHour();
+    int m = dateTime.GetMinute();
+    int s = dateTime.GetSecond();
+    int ms = dateTime.GetMillisecond();
+    int n;
+    zBuf[0] = '0' + (h / 10) % 10;
+    zBuf[1] = '0' + (h) % 10;
+    zBuf[2] = ':';
+    zBuf[3] = '0' + (m / 10) % 10;
+    zBuf[4] = '0' + (m) % 10;
+    zBuf[5] = ':';
+    if (useSubSec) {
+        s = (int)(1000.0 * s + ms + 0.5);
+        zBuf[6] = '0' + (s / 10000) % 10;
+        zBuf[7] = '0' + (s / 1000) % 10;
+        zBuf[8] = '.';
+        zBuf[9] = '0' + (s / 100) % 10;
+        zBuf[10] = '0' + (s / 10) % 10;
+        zBuf[11] = '0' + (s) % 10;
+        zBuf[12] = 0;
+        n = 12;
+    } else {
+        zBuf[6] = '0' + (s / 10) % 10;
+        zBuf[7] = '0' + (s) % 10;
+        zBuf[8] = 0;
+        n = 8;
+    }
+    return Utf8String(zBuf, n);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 Utf8String DateTimeStringConverter::ToIso8601(DateTimeCR dateTime)
     {
     if (!dateTime.IsValid())
         return Utf8String();
 
     if (dateTime.GetInfo().GetComponent() == DateTime::Component::Date)
-        return Utf8PrintfString(ISO8601_DATE_FORMAT, dateTime.GetYear(), dateTime.GetMonth(), dateTime.GetDay());
-
-
-    double effectiveSeconds = dateTime.GetSecond() + dateTime.GetMillisecond() / 1000.0;
-    BeAssert(effectiveSeconds < (dateTime.GetSecond() + 1.0));
+        return ToIsoDateString(dateTime);
 
     if (dateTime.IsTimeOfDay())
-        return Utf8PrintfString(ISO8601_TIME_FORMAT, dateTime.GetHour(), dateTime.GetMinute(), effectiveSeconds);
+        return ToIsoTimeString(dateTime, true);
 
     BeAssert(dateTime.GetInfo().GetComponent() == DateTime::Component::DateAndTime);
-
-    //if date is in UTC suffix the string with Z according to ISO
-    //for local and unspecified dates don't suffix anything (compliant with ISO, too)
-    Utf8CP timeZoneIndicator = dateTime.GetInfo().GetKind() == DateTime::Kind::Utc ? ISO8601_TIMEZONE_UTC : "";
-    return Utf8PrintfString(ISO8601_DATE_FORMAT "T" ISO8601_TIME_FORMAT "%s", dateTime.GetYear(), dateTime.GetMonth(), dateTime.GetDay(),
-                dateTime.GetHour(), dateTime.GetMinute(), effectiveSeconds, timeZoneIndicator);
+    return ToIsoDateTimeString(dateTime, true, true);
 }
 
 //---------------------------------------------------------------------------------------

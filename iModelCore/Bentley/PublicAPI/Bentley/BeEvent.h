@@ -79,24 +79,24 @@ public:
         m_listeners.push_back(std::make_unique<EventContext>(listener, false, ++m_listenerIds));
         uint32_t id = m_listeners.back()->Id();
         if (eventId) *eventId = id;
-        return [=]() { RemoveListener(id); };
+        return [=, this]() { RemoveListener(id); };
     }
     void AddListener(BeEventScope& scope, listener_type listener) {
         uint32_t id;
         auto cancel = AddListener(listener, &id);
-        scope.Add([=]() { RemoveListener(id); });
+        scope.Add([=, this]() { RemoveListener(id); });
     }
     cancel_callback_type AddOnce(listener_type listener, uint32_t* eventId = nullptr) {
         BeMutexHolder lock(m_mutex);
         m_listeners.push_back(std::make_unique<EventContext>(listener, true,  ++m_listenerIds));
         uint32_t id = m_listeners.back()->Id();
         if (eventId) *eventId = id;
-        return [=]() { RemoveListener(id); };
+        return [=, this]() { RemoveListener(id); };
     }
     void AddOnce(BeEventScope& scope, listener_type listener) {
         uint32_t id;
         auto cancel = AddOnce(listener, &id);
-        scope.Add([=]() { RemoveListener(id); });
+        scope.Add([=, this]() { RemoveListener(id); });
     }
     void RemoveListener(uint32_t eventId) {
         BeMutexHolder lock(m_mutex);

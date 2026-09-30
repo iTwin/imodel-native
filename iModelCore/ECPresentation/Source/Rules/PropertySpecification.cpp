@@ -5,7 +5,6 @@
 #include <ECPresentationPch.h>
 
 #include "PresentationRuleJsonConstants.h"
-#include "PresentationRuleXmlConstants.h"
 #include "CommonToolsInternal.h"
 #include <ECPresentation/Rules/CommonTools.h>
 #include <ECPresentation/Rules/PresentationRules.h>
@@ -104,7 +103,7 @@ bool PropertySpecification::_ReadJson(BeJsConst json)
         {
         if (json[PROPERTY_SPECIFICATION_JSON_ATTRIBUTE_ISDISPLAYED].isBool())
             m_isDisplayed = json[PROPERTY_SPECIFICATION_JSON_ATTRIBUTE_ISDISPLAYED].asBool();
-        else 
+        else
             m_isDisplayed = json[PROPERTY_SPECIFICATION_JSON_ATTRIBUTE_ISDISPLAYED].asCString();
         }
     else

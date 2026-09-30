@@ -77,15 +77,23 @@ TEST_F(ExecutionPlanTests, CompareSnapshots)
     jsonPath.AppendToPath(L"dataset.json");
 
     // Read queries to run from json file
-    Json::Value jsonInput;
+    BeJsDocument jsonInput;
     ASSERT_EQ(SUCCESS, TestUtilities::ReadFile(jsonInput, jsonPath));
-    Json::Value queries = jsonInput.get("queries", "");
-    for (size_t i = 0; i < queries.size(); i++) {
-      Json::Value query = queries.get(Json::ArrayIndex(i), "");
-      for (auto const& queryName : query.getMemberNames()) {
-        Json::Value ecSqlVal = query.get(queryName, "");
+    BeJsConst queries = jsonInput["queries"];
+    for (BeJsConst::ArrayIndex i = 0; i < queries.size(); i++) {
+      // Collect the (name, ECSQL) pairs up front. The loop body below uses gtest ASSERT_*
+      // macros, which expand to a bare `return;` and therefore cannot appear inside the
+      // ForEachProperty callback (that callback must return bool).
+      bvector<bpair<Utf8String, Utf8String>> queryList;
+      queries[i].ForEachProperty([&](Utf8CP queryName, BeJsConst ecSqlVal) {
+        queryList.push_back(bpair<Utf8String, Utf8String>(queryName, ecSqlVal.asCString()));
+        return false;
+      });
+
+      for (auto const& queryEntry : queryList) {
+        Utf8CP queryName = queryEntry.first.c_str();
         Utf8String testDbName;
-        testDbName.Sprintf("%ls_%s.ecdb", dbName, queryName.c_str());
+        testDbName.Sprintf("%ls_%s.ecdb", dbName, queryName);
         EXPECT_EQ(BE_SQLITE_OK, CloneECDb(m_ecdb, testDbName.c_str(), dbFullPath, ECDb::OpenParams(Db::OpenMode::Readonly)));
 
         EXPECT_EQ(BE_SQLITE_OK, Profiler::InitScope(m_ecdb, "plan scope", "plan", Profiler::Params()));
@@ -94,7 +102,7 @@ TEST_F(ExecutionPlanTests, CompareSnapshots)
 
         ECSqlStatement stmt;
         // run query to get Execution plan
-        stmt.Prepare(m_ecdb, ecSqlVal.asCString());
+        stmt.Prepare(m_ecdb, queryEntry.second.c_str());
         while (BE_SQLITE_ROW == stmt.Step()) 
           {
           stmt.Step();
@@ -113,7 +121,6 @@ TEST_F(ExecutionPlanTests, CompareSnapshots)
 
         // compare if base and current snapshot text is same
         EXPECT_TRUE(CompareSnapshots(baseSnapshotPath, currSnapshotPath)) << "Snapshot files are not matching for: " << snapshotName.GetName();
-
       }
     }
   }

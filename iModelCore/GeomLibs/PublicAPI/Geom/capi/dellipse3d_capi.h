@@ -161,24 +161,6 @@ double          sweep
 );
 
 //!
-//! @description Initialize an elliptical arc from 3 points.
-//!
-//! @param pEllipse OUT     initialized ellipse
-//! @param pStart IN      start point
-//! @param pMiddle IN      mid point
-//! @param pEnd IN      end point
-//! @return true if the three points are valid, false if colinear.
-//! @group "DEllipse3d Initialization"
-//!
-Public GEOMDLLIMPEXP bool    bsiDEllipse3d_initFrom3DPoint3dOnArc
-(
-DEllipse3dP pEllipse,
-DPoint3dCP pStart,
-DPoint3dCP pMiddle,
-DPoint3dCP pEnd
-);
-
-//!
 //! @description Initialize a circlular arc from start point, end point, another vector which
 //!  determines the plane, and the arc length.
 //!

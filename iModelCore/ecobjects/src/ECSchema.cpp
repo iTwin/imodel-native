@@ -7,6 +7,7 @@
 #include "SchemaXml.h"
 #include "SchemaJson.h"
 #include "StronglyConnectedGraph.h"
+#include <ECObjects/SchemaConflictHelper.h>
 #if defined (_WIN32) // WIP_NONPORT - iostreams not support on Android
 #include <iomanip>
 #endif
@@ -365,10 +366,10 @@ ECObjectsStatus ECSchema::SetName (Utf8StringCR name)
     else if (!ECNameValidation::IsValidName (name.c_str()))
         return ECObjectsStatus::InvalidName;
 
-    m_key.m_schemaName = name;
+    m_key.SetName(name);
 
     if (OriginalECXmlVersionLessThan(ECVersion::V3_1))
-        m_hasExplicitDisplayLabel = ECNameValidation::DecodeFromValidName(m_displayLabel, m_key.m_schemaName);
+        m_hasExplicitDisplayLabel = ECNameValidation::DecodeFromValidName(m_displayLabel, m_key.GetName());
 
     return ECObjectsStatus::Success;
     }
@@ -468,7 +469,7 @@ bool ECSchema::IsStandardSchema(Utf8StringCR schemaName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECSchema::IsStandardSchema () const
     {
-    return IsStandardSchema(m_key.m_schemaName);
+    return IsStandardSchema(m_key.GetName());
     }
 
 static Utf8CP s_originalStandardSchemaFullNames[] =
@@ -521,7 +522,7 @@ bool ECSchema::ShouldNotBeStored (SchemaKeyCR key)
             return true;
 
     // We don't want to import any version of the Units_Schema
-    if (BeStringUtilities::StricmpAscii("Units_Schema", key.m_schemaName.c_str()) == 0)
+    if (BeStringUtilities::StricmpAscii("Units_Schema", key.GetName().c_str()) == 0)
         return true;
 
     return false;
@@ -537,7 +538,7 @@ ECObjectsStatus ECSchema::SetVersionRead (const uint32_t versionRead)
     if (versionRead > 999 || versionRead < 0)
         return ECObjectsStatus::InvalidECVersion;
     
-    m_key.m_versionRead = versionRead;
+    m_key.SetVersionRead(versionRead);
     return ECObjectsStatus::Success;
     }
 
@@ -551,7 +552,7 @@ ECObjectsStatus ECSchema::SetVersionWrite (const uint32_t value)
     if (value > 999 || value < 0)
         return ECObjectsStatus::InvalidECVersion;
 
-    m_key.m_versionWrite = value;
+    m_key.SetVersionWrite(value);
     return ECObjectsStatus::Success;
     }
 
@@ -565,7 +566,7 @@ ECObjectsStatus ECSchema::SetVersionMinor (const uint32_t versionMinor)
     if (versionMinor > 9999999 || versionMinor < 0)
         return ECObjectsStatus::InvalidECVersion;
 
-    m_key.m_versionMinor = versionMinor;
+    m_key.SetVersionMinor(versionMinor);
     return ECObjectsStatus::Success;
     }
 
@@ -1586,9 +1587,23 @@ ECObjectsStatus ECSchema::GetOrCopyReferencedItemForCopy(const Item & itemWithRe
     return status;
     }
 
-ECObjectsStatus ECSchema::GetOrCopyReferencedClassForCopy(ECClassCR classWithRef, ECClassP& refForCopy, ECClassCP startingRef, bool copyReferences)
+ECObjectsStatus ECSchema::GetOrCopyReferencedClassForCopy(ECClassCR classWithRef, ECClassP& refForCopy, ECClassCP startingRef, bool copyReferences, bool skipValidation, bool resolveConflicts)
     {
-    return GetOrCopyReferencedItemForCopy(classWithRef, refForCopy, startingRef, copyReferences, ECSchemaElementType::ECClass, &ECSchema::GetClassP, &ECSchema::CopyClass);
+        bool willCopyRef = copyReferences && areFromSameSchema(&classWithRef, startingRef);
+        ECSchemaP refSchema;
+        ECObjectsStatus status = getOrAddReferencedSchema(this, startingRef->GetSchema(), refSchema, willCopyRef);
+        if (ECObjectsStatus::Success != status)
+            return status;
+    
+        refForCopy = (refSchema->ECSchema::GetClassP)(startingRef->GetName().c_str());
+        if (nullptr == refForCopy)
+            {
+            if (willCopyRef)
+                status = CopyClass(refForCopy, *startingRef, copyReferences, nullptr, skipValidation, resolveConflicts);
+            else
+                status = logCopyErrorDueToReferencedItem(&classWithRef, this, startingRef, SchemaParseUtils::SchemaElementTypeToString(ECSchemaElementType::ECClass), refSchema, copyReferences);
+            }
+        return status;
     }
 ECObjectsStatus ECSchema::GetOrCopyReferencedEnumerationForCopy(ECClassCR classWithRef, ECEnumerationP& refForCopy, ECEnumerationCP startingRef, bool copyReferences)
     {
@@ -1606,7 +1621,7 @@ ECObjectsStatus ECSchema::GetOrCopyReferencedPropertyCategoryForCopy(ECClassCR c
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass, bool copyReferences, Utf8CP newName)
+ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass, bool copyReferences, Utf8CP newName, bool skipValidation, bool resolveConflicts)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
     Utf8String targetClassName((newName == nullptr ? sourceClass.GetName().c_str() : newName));
@@ -1622,18 +1637,19 @@ ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass
             // since the variable lives through the entire switch/case statement. Need to put in a scope block to make it explicit.
             ECRelationshipClassCP sourceAsRelationshipClass = sourceClass.GetRelationshipClassCP();
             ECRelationshipClassP newRelationshipClass;
-            status = this->CreateRelationshipClass(newRelationshipClass, targetClassName);
+            status = this->CreateRelationshipClass(newRelationshipClass, targetClassName, !skipValidation);
             if (ECObjectsStatus::Success == status)
                 {
                 newRelationshipClass->SetStrength(sourceAsRelationshipClass->GetStrength());
                 newRelationshipClass->SetStrengthDirection(sourceAsRelationshipClass->GetStrengthDirection());
 
-                status = sourceAsRelationshipClass->GetSource().CopyTo(newRelationshipClass->GetSource(), copyReferences);
+                status = sourceAsRelationshipClass->GetSource().CopyTo(newRelationshipClass->GetSource(), copyReferences, resolveConflicts);
                 if (ECObjectsStatus::Success == status)
-                    status = sourceAsRelationshipClass->GetTarget().CopyTo(newRelationshipClass->GetTarget(), copyReferences);
+                    status = sourceAsRelationshipClass->GetTarget().CopyTo(newRelationshipClass->GetTarget(), copyReferences, resolveConflicts);
 
                 if (ECObjectsStatus::Success != status)
                     {
+                    LOG.errorv("Failed to copy class %s to schema %s", sourceClass.GetFullName(), GetFullSchemaName().c_str());
                     DeleteClass(*newRelationshipClass);
                     newRelationshipClass = nullptr;
                     }
@@ -1677,7 +1693,7 @@ ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass
     for (ECClassP baseClass: sourceClass.GetBaseClasses())
         {
         ECClassP targetBaseClass = nullptr;
-        if (ECObjectsStatus::Success == (status = GetOrCopyReferencedClassForCopy(sourceClass, targetBaseClass, baseClass, copyReferences)))
+        if (ECObjectsStatus::Success == (status = GetOrCopyReferencedClassForCopy(sourceClass, targetBaseClass, baseClass, copyReferences, false, resolveConflicts)))
             {
             // Not validating the class to be added since it should already be valid schema. Also this avoids some of the inheritance rule checking
             // for Mixins and Relationships
@@ -1693,14 +1709,35 @@ ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass
 
     for(ECPropertyCP sourceProperty: sourceClass.GetProperties(false))
         {
+        // The base classes of the copied class are resolved against this schema's references, which may differ in content
+        // from the source schema's references. This can make a property incompatible with a same-named base class property
+        // even though the source class was valid. With resolveConflicts, copy the property under a unique name instead of failing.
+        Utf8String destPropertyName(sourceProperty->GetName());
+        if (resolveConflicts && !SchemaConflictHelper::CanPropertyBeAdded(*targetClass, *sourceProperty))
+            {
+            if (BentleyStatus::SUCCESS != SchemaConflictHelper::FindUniquePropertyName(*targetClass, destPropertyName))
+                {
+                LOG.errorv("Failed to find a unique name for conflicting property '%s' while copying class '%s' into schema '%s'",
+                    sourceProperty->GetName().c_str(), sourceClass.GetFullName(), GetFullSchemaName().c_str());
+                DeleteClass(*targetClass);
+                targetClass = nullptr;
+                return ECObjectsStatus::Error;
+                }
+            LOG.infov("Property '%s' on class '%s' conflicts with a property in the base class hierarchy. Copying it as '%s'.",
+                sourceProperty->GetName().c_str(), targetClass->GetFullName(), destPropertyName.c_str());
+            }
+
         ECPropertyP destProperty;
-        status = targetClass->CopyProperty(destProperty, sourceProperty, sourceProperty->GetName().c_str(), true, true, copyReferences);
+        status = targetClass->CopyProperty(destProperty, sourceProperty, destPropertyName.c_str(), true, true, copyReferences, resolveConflicts);
         if (ECObjectsStatus::Success != status)
             {
             DeleteClass(*targetClass);
             targetClass = nullptr;
             return status;
             }
+
+        if (!destPropertyName.Equals(sourceProperty->GetName()))
+            targetClass->AddPropertyMapping(sourceProperty->GetName().c_str(), destPropertyName.c_str());
         }
 
     return sourceClass.CopyCustomAttributesTo(*targetClass, copyReferences);
@@ -1982,7 +2019,11 @@ ECObjectsStatus ECSchema::CopyFormat(ECFormatP& targetFormat, ECFormatCR sourceF
         if (ECObjectsStatus::Success != status)
             return status;
 
-        comp.SetSpacer(sourceComp->GetSpacer().c_str());
+        // SetSpacer marks the spacer as explicitly defined, so calling it unconditionally would give
+        // the copy an explicit default spacer the source never had.
+        if (sourceComp->HasSpacer())
+            comp.SetSpacer(sourceComp->GetSpacer().c_str());
+
         comp.SetIncludeZero(sourceComp->IsIncludeZero());
         if (sourceComp->HasMajorLabel())
             comp.SetMajorLabel(sourceComp->GetMajorLabel());
@@ -2001,7 +2042,7 @@ ECObjectsStatus ECSchema::CopyFormat(ECFormatP& targetFormat, ECFormatCR sourceF
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::CopySchema(ECSchemaPtr& schemaOut, IECSchemaLocaterP schemaLocater) const
+ECObjectsStatus ECSchema::CopySchema(ECSchemaPtr& schemaOut, ECSchemaReadContextP schemaContext, bool skipValidation, bool resolveConflicts) const
     {
     ECObjectsStatus status = ECObjectsStatus::Success;
     status = CreateSchema(schemaOut,  GetName().c_str(), GetAlias().c_str(), GetVersionRead(), GetVersionWrite(), GetVersionMinor(), m_ecVersion);
@@ -2015,19 +2056,21 @@ ECObjectsStatus ECSchema::CopySchema(ECSchemaPtr& schemaOut, IECSchemaLocaterP s
     if (GetIsDisplayLabelDefined())
         schemaOut->SetDisplayLabel(GetInvariantDisplayLabel().c_str());
 
+    Utf8PrintfString origin("Copy of %s", this->GetOrigin().c_str());
+    schemaOut->SetOrigin(origin);
+
     ECSchemaReferenceListCR referencedSchemas = GetReferencedSchemas();
-    if(schemaLocater == nullptr)
+    if(schemaContext == nullptr)
         {
         for (ECSchemaReferenceList::const_iterator iter = referencedSchemas.begin(); iter != referencedSchemas.end(); ++iter)
             schemaOut->AddReferencedSchema(*iter->second.get());
         }
     else
         {
-        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(false, true);
         for (auto& ref : GetReferencedSchemas())
             {
             SchemaKey desiredKey(ref.first);
-            ECSchemaPtr referencedSchema = schemaLocater->LocateSchema(desiredKey, SchemaMatchType::Latest, *schemaContext);
+            ECSchemaPtr referencedSchema = schemaContext->LocateSchema(desiredKey, SchemaMatchType::Latest);
             if(referencedSchema == nullptr)
                 return ECObjectsStatus::SchemaNotFound;
 
@@ -2094,7 +2137,7 @@ ECObjectsStatus ECSchema::CopySchema(ECSchemaPtr& schemaOut, IECSchemaLocaterP s
     for (ECClassP ecClass : m_classContainer)
         {
         ECClassP copyClass;
-        status = schemaOut->CopyClass(copyClass, *ecClass, true);
+        status = schemaOut->CopyClass(copyClass, *ecClass, true, nullptr, skipValidation, resolveConflicts);
         if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
             return status;
         }
@@ -2480,6 +2523,7 @@ ECObjectsStatus ECSchema::AddReferencedSchema(ECSchemaR refSchema, Utf8StringCR 
         {
         LOG.warningv("Schema %s is adding a reference to %s while it already references %s. For compatibility this is currently permitted but probably indicates a problem.",
             this->GetFullSchemaName().c_str(), refSchema.GetFullSchemaName().c_str(), iter->second->GetFullSchemaName().c_str());
+        BeAssert(false && "Schema is adding a reference to a schema it already references under a different version. This is probably a problem.");
         }
 
     m_refSchemaList[refSchemaKey] = &refSchema;
@@ -2926,8 +2970,8 @@ ECSchemaPtr ECSchema::LocateSchema(SchemaKeyR key, ECSchemaReadContextR schemaCo
 //---------------+---------------+---------------+---------------+---------------+-------
 static void AddFilePathToSchemaPaths(ECSchemaReadContextR schemaContext, WCharCP ecSchemaXmlFile)
     {
-    BeFileName pathToThisSchema (BeFileName::DevAndDir, ecSchemaXmlFile);
-    schemaContext.AddSchemaPath(pathToThisSchema);
+    BeFileName schemaDirectory (BeFileName::DevAndDir, ecSchemaXmlFile);
+    schemaContext.AddSchemaPath(schemaDirectory, true); // We always add the last path we used to the top in the priority list, if it does not exist yet
     }
 
 //---------------------------------------------------------------------------------------
@@ -2941,21 +2985,28 @@ static ECSchemaPtr ParseHeaderAndLocateSchema(WCharCP schemaXmlFile, ECSchemaRea
     {
         BeAssert(s_noAssert);
         LOG.errorv ("Error loading XML file %ls: %s (error at char %d)", schemaXmlFile, result.description(), result.offset);
+        if (outStatus != nullptr)
+            *outStatus = SchemaReadStatus::FailedToParseXml;
         return nullptr;
     }
 
     SchemaKey searchKey;
     uint32_t ecXmlMajorVersion, ecXmlMinorVersion;
     pugi::xml_node schemaNode;
-    if (SchemaReadStatus::Success != SchemaXmlReader::ReadSchemaStub(searchKey, ecXmlMajorVersion, ecXmlMinorVersion, schemaNode, xmlDoc))
+    auto status = SchemaXmlReader::ReadSchemaStub(searchKey, ecXmlMajorVersion, ecXmlMinorVersion, schemaNode, xmlDoc);
+    if (SchemaReadStatus::Success != status)
+        {
+        if (outStatus != nullptr)
+            *outStatus = status;
         return nullptr;
+        }
 
     ECSchemaPtr schema = schemaContext.LocateSchema(searchKey, matchType);
     if (!schema.IsValid())
         {
-        const auto status = ECSchema::ReadFromXmlFile(schema, schemaXmlFile, schemaContext);
+        const auto stat = ECSchema::ReadFromXmlFile(schema, schemaXmlFile, schemaContext);
         if (outStatus != nullptr)
-            *outStatus = status;
+            *outStatus = stat;
         }
     else {
         if (outStatus != nullptr)
@@ -3058,7 +3109,7 @@ void SearchPathSchemaFileLocater::AddCandidateSchemas(bvector<CandidateSchema>& 
         SchemaKey key;
         if (SchemaKey::ParseSchemaFullName(key, fileName.c_str()) != ECObjectsStatus::Success)
             {
-            LOG.warningv(L"Failed to parse schema file name %s. Skipping that file.", fileName.c_str());
+            LOG.warningv("Failed to parse schema file name %s. Skipping that file.", fileName.c_str());
             continue;
             }
 
@@ -3067,7 +3118,7 @@ void SearchPathSchemaFileLocater::AddCandidateSchemas(bvector<CandidateSchema>& 
         //If key matches, OR the legacy compatible match evaluates true
         if (ciKey.Matches(ciDesiredSchemaKey, matchType) ||
             (schemaContext.m_acceptLegacyImperfectLatestCompatibleMatch && (matchType == SchemaMatchType::LatestWriteCompatible || matchType == SchemaMatchType::LatestReadCompatible) &&
-             0 == ciKey.m_schemaName.CompareTo(ciDesiredSchemaKey.m_schemaName) && key.m_versionRead == desiredSchemaKey.m_versionRead))
+             0 == ciKey.GetName().CompareTo(ciDesiredSchemaKey.GetName()) && key.GetVersionRead() == desiredSchemaKey.GetVersionRead()))
             {
             foundFiles.push_back(CandidateSchema());
             auto& candidate = foundFiles.back();
@@ -3094,11 +3145,11 @@ void SearchPathSchemaFileLocater::AddCandidateNoExtensionSchema(bvector<Candidat
         return;
 
     pugi::xml_document xmlDoc;
-    pugi::xml_parse_result result = xmlDoc.load_file(schemaPathname.GetNameUtf8().c_str());
+    pugi::xml_parse_result result = xmlDoc.load_file(schemaPathname.GetWCharCP());
     if(!result)
     {
         BeAssert(s_noAssert);
-        LOG.warningv(L"Failed to read schema from %ls: %s", schemaPathname.c_str(), result.description());
+        LOG.warningv("Failed to read schema from %ls: %s", schemaPathname.c_str(), result.description());
         return;
     }
 
@@ -3107,7 +3158,7 @@ void SearchPathSchemaFileLocater::AddCandidateNoExtensionSchema(bvector<Candidat
     pugi::xml_node schemaNode;
     if (SchemaReadStatus::Success != SchemaXmlReader::ReadSchemaStub(key, ecXmlMajorVersion, ecXmlMinorVersion, schemaNode, xmlDoc))
         {
-        LOG.warningv(L"Failed to read schema version from %ls", schemaPathname.c_str());
+        LOG.warningv("Failed to read schema version from %ls", schemaPathname.c_str());
         return;
         }
 
@@ -3116,7 +3167,7 @@ void SearchPathSchemaFileLocater::AddCandidateNoExtensionSchema(bvector<Candidat
     //If key matches, OR the legacy compatible match evaluates true
     if (ciKey.Matches(ciDesiredSchemaKey, matchType) ||
         (schemaContext.m_acceptLegacyImperfectLatestCompatibleMatch && matchType == SchemaMatchType::LatestWriteCompatible &&
-        0 == ciKey.m_schemaName.CompareTo(ciDesiredSchemaKey.m_schemaName) && key.m_versionRead == desiredSchemaKey.m_versionRead))
+        0 == ciKey.GetName().CompareTo(ciDesiredSchemaKey.GetName()) && key.GetVersionRead() == desiredSchemaKey.GetVersionRead()))
         {
         foundFiles.push_back(CandidateSchema());
         auto& candidate = foundFiles.back();
@@ -3128,7 +3179,7 @@ void SearchPathSchemaFileLocater::AddCandidateNoExtensionSchema(bvector<Candidat
 
 void SearchPathSchemaFileLocater::FindEligibleSchemaFiles(bvector<CandidateSchema>& foundFiles, SchemaKeyR desiredSchemaKey, SchemaMatchType matchType, ECSchemaReadContextCR schemaContext)
     {
-    Utf8CP schemaName = desiredSchemaKey.m_schemaName.c_str();
+    Utf8CP schemaName = desiredSchemaKey.GetName().c_str();
     WString twoVersionExpression;
     WString threeVersionExpression;
     twoVersionExpression.AssignUtf8(schemaName);
@@ -3144,19 +3195,19 @@ void SearchPathSchemaFileLocater::FindEligibleSchemaFiles(bvector<CandidateSchem
         }
     else if (matchType == SchemaMatchType::LatestWriteCompatible)
         {
-        twoVersionSuffix.Sprintf(".%02" PRIu32 ".*.ecschema.xml", desiredSchemaKey.m_versionRead);
-        threeVersionSuffix.Sprintf(".%02" PRIu32 ".%02" PRIu32 ".*.ecschema.xml", desiredSchemaKey.m_versionRead, desiredSchemaKey.m_versionWrite);
+        twoVersionSuffix.Sprintf(".%02" PRIu32 ".*.ecschema.xml", desiredSchemaKey.GetVersionRead());
+        threeVersionSuffix.Sprintf(".%02" PRIu32 ".%02" PRIu32 ".*.ecschema.xml", desiredSchemaKey.GetVersionRead(), desiredSchemaKey.GetVersionWrite());
         }
     else if (matchType == SchemaMatchType::LatestReadCompatible)
         {
-        twoVersionSuffix.Sprintf(".%02" PRIu32 ".*.ecschema.xml", desiredSchemaKey.m_versionRead);
-        threeVersionSuffix.Sprintf(".%02" PRIu32 ".*.*.ecschema.xml", desiredSchemaKey.m_versionRead);
+        twoVersionSuffix.Sprintf(".%02" PRIu32 ".*.ecschema.xml", desiredSchemaKey.GetVersionRead());
+        threeVersionSuffix.Sprintf(".%02" PRIu32 ".*.*.ecschema.xml", desiredSchemaKey.GetVersionRead());
         }
     else //MatchType_Exact
         {
-        twoVersionSuffix.Sprintf(".%02" PRIu32 ".%02" PRIu32 ".ecschema.xml", desiredSchemaKey.m_versionRead, desiredSchemaKey.m_versionMinor);
+        twoVersionSuffix.Sprintf(".%02" PRIu32 ".%02" PRIu32 ".ecschema.xml", desiredSchemaKey.GetVersionRead(), desiredSchemaKey.GetVersionMinor());
         threeVersionSuffix.Sprintf(".%02" PRIu32 ".%02" PRIu32 ".%02" PRIu32 ".ecschema.xml",
-                                   desiredSchemaKey.m_versionRead, desiredSchemaKey.m_versionWrite, desiredSchemaKey.m_versionMinor);
+                                   desiredSchemaKey.GetVersionRead(), desiredSchemaKey.GetVersionWrite(), desiredSchemaKey.GetVersionMinor());
         }
 
     twoVersionExpression.AppendUtf8(twoVersionSuffix.c_str());
@@ -3214,7 +3265,7 @@ ECSchemaPtr SearchPathSchemaFileLocater::_LocateSchema(SchemaKeyR key, SchemaMat
 
     // Now check this same path for supplemental schemas
     bvector<ECSchemaP> supplementalSchemas;
-    TryLoadingSupplementalSchemas(schemaToLoad.Key.m_schemaName.c_str(), schemaToLoad.SearchPath, schemaContext, supplementalSchemas);
+    TryLoadingSupplementalSchemas(schemaToLoad.Key.GetName().c_str(), schemaToLoad.SearchPath, schemaContext, supplementalSchemas);
 
     if (supplementalSchemas.size() > 0)
         {
@@ -3245,6 +3296,48 @@ ECSchemaPtr StringSchemaLocater::_LocateSchema(SchemaKeyR key, SchemaMatchType m
         }
 
     return schemaOut;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaPtr SanitizingSchemaLocater::_LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext)
+    {
+    ECSchemaReadContextPtr internalContext = ECSchemaReadContext::CreateContext(true, true);
+    internalContext->AddSchemaLocater(GetInnerLocater());
+    //We may want to expose the schemas available in schemaContext to the internalContext. For ECDb that's not necessary, so we don't do it for now.
+    auto innerSchema = internalContext->LocateSchema(key, matchType);
+    if(!innerSchema.IsValid())
+        return nullptr;
+
+    ECSchemaPtr sanitizedSchema;
+    LOG.infov("Creating copy of returned schema %s to clean schema graph", innerSchema->GetName().c_str());
+    auto status = innerSchema->CopySchema(sanitizedSchema, &schemaContext, false);
+    
+    if(status != ECObjectsStatus::Success)
+        {
+        LOG.errorv("Failed to copy schema %s for sanitization. Status: %d", innerSchema->GetName().c_str(), (int)status);
+        return nullptr;
+        }
+    
+    if(!sanitizedSchema.IsValid())
+        {
+        LOG.errorv("Sanitized schema copy is invalid for schema %s", innerSchema->GetName().c_str());
+        return nullptr;
+        }
+    
+    if(schemaContext.AddSchema(*sanitizedSchema) == ECObjectsStatus::DuplicateSchema)
+        {
+        LOG.debugv("Duplicate schema detected when adding sanitized copy of %s to schema context", innerSchema->GetName().c_str());
+        return nullptr;
+        }
+
+    Utf8PrintfString origin("Sanitized copy of %s", innerSchema->GetOrigin().c_str());
+    sanitizedSchema->SetOrigin(origin);
+
+    // For unknown reasons, CopySchema does not preserve this. But there is a comment suggesting it does that on purpose. So we do it here outside.
+    sanitizedSchema->SetOriginalECXmlVersion(innerSchema->GetOriginalECXmlVersionMajor(), innerSchema->GetOriginalECXmlVersionMinor());
+    return sanitizedSchema;
     }
 
 struct ChecksumHelper
@@ -3304,8 +3397,22 @@ Utf8String ECSchema::ComputeCheckSum()
         return "";
 
     SHA1 sha1;
-    m_key.m_checksum = sha1((Byte const*)xmlStr.c_str(), sizeof(Utf8Char) * xmlStr.length());
-    return m_key.m_checksum;
+    m_key.SetChecksum(sha1((Byte const*)xmlStr.c_str(), sizeof(Utf8Char) * xmlStr.length()));
+    return m_key.GetChecksum();
+    }
+
+void ReportFailedSchema(SchemaKeyCR key, Utf8StringCR additionalInfo, SchemaReadStatus status, ECSchemaReadContextR schemaContext)
+    {
+    Utf8String keyStr = key.GetFullSchemaName();
+    if (SchemaReadStatus::DuplicateSchema == status)
+        schemaContext.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::InvalidInputData, ECIssueId::EC_0008,
+            "Failed to read schema '%s'.\nSchema already loaded.  Use ECSchemaReadContext::LocateSchema to load schema.", keyStr.c_str());
+    else if(SchemaReadStatus::HasReferenceCycle == status)
+        schemaContext.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::InvalidInputData, ECIssueId::EC_0062,
+            "Failed to read schema '%s'. The attempt to load from XML ended up in a circular reference.", keyStr.c_str());
+    else
+        schemaContext.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::InvalidInputData, ECIssueId::EC_0009,
+            "Failed to read schema '%s'.\n%s", keyStr.c_str(), additionalInfo.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3328,17 +3435,21 @@ SchemaReadStatus ECSchema::ReadFromXmlFile(ECSchemaPtr& schemaOut, WCharCP ecSch
         AddFilePathToSchemaPaths(schemaContext, ecSchemaXmlFile);
 
     SchemaXmlReader reader(schemaContext, doc);
-    auto status = reader.Deserialize(schemaOut, schemaContext.GetCalculateChecksum() ? ChecksumHelper::ComputeCheckSumForFile(ecSchemaXmlFile).c_str() : nullptr);
+    SchemaKey resolvedKey;
+    SchemaReadStatus status = reader.Deserialize(schemaOut, resolvedKey, schemaContext.GetCalculateChecksum() ? ChecksumHelper::ComputeCheckSumForFile(ecSchemaXmlFile).c_str() : nullptr);
 
     if (SchemaReadStatus::Success != status)
         {
-        if (SchemaReadStatus::DuplicateSchema == status)
-            LOG.errorv(L"Failed to read XML file: %ls.  \nSchema already loaded.  Use ECSchemaReadContext::LocateSchema to load schema", ecSchemaXmlFile);
-        else
-            LOG.errorv(L"Failed to read XML file: %ls", ecSchemaXmlFile);
+        Utf8String fileName(ecSchemaXmlFile);
+        ReportFailedSchema(resolvedKey, fileName, status, schemaContext);
 
         schemaContext.RemoveSchema(*schemaOut);
         schemaOut = nullptr;
+        }
+    else
+        {
+        Utf8PrintfString origin("Loaded from file %ls", ecSchemaXmlFile);
+        schemaOut->SetOrigin(origin);
         }
 
     return status;
@@ -3365,22 +3476,22 @@ SchemaReadStatus ECSchema::ReadFromXmlString(ECSchemaPtr& schemaOut, Utf8CP ecSc
         }
 
     SchemaXmlReader reader(schemaContext, xmldoc);
-    status = reader.Deserialize(schemaOut, schemaContext.GetCalculateChecksum() ? ChecksumHelper::ComputeCheckSumForString(ecSchemaXml, stringByteCount).c_str() : nullptr);
+    SchemaKey resolvedKey;
+    status = reader.Deserialize(schemaOut, resolvedKey, schemaContext.GetCalculateChecksum() ? ChecksumHelper::ComputeCheckSumForString(ecSchemaXml, stringByteCount).c_str() : nullptr);
 
     if (SchemaReadStatus::Success != status)
         {
         Utf8Char first200Bytes[201];
         BeStringUtilities::Strncpy(first200Bytes, ecSchemaXml, 200);
         first200Bytes[200] = '\0';
-        if (SchemaReadStatus::DuplicateSchema == status)
-            schemaContext.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::InvalidInputData, ECIssueId::EC_0008,
-                "Failed to read XML from string(1st 200 characters approx.): %s.  \nSchema already loaded.  Use ECSchemaReadContext::LocateSchema to load schema", first200Bytes);
-        else
-            schemaContext.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::InvalidInputData, ECIssueId::EC_0009,
-                "Failed to read XML from string (1st 200 characters approx.): %s", first200Bytes);
+        ReportFailedSchema(resolvedKey, first200Bytes, status, schemaContext);
 
         schemaContext.RemoveSchema(*schemaOut);
         schemaOut = nullptr;
+        }
+    else
+        {
+        schemaOut->SetOrigin("Loaded from string");
         }
 
     return status;
@@ -3415,7 +3526,8 @@ SchemaReadStatus ECSchema::ReadFromXmlString(ECSchemaPtr& schemaOut, WCharCP ecS
         }
 
     SchemaXmlReader reader(schemaContext, xmldoc);
-    status = reader.Deserialize(schemaOut, schemaContext.GetCalculateChecksum() ? ChecksumHelper::ComputeCheckSumForString(ecSchemaXml, stringSize / sizeof(WChar)).c_str() : nullptr);
+    SchemaKey resolvedKey;
+    status = reader.Deserialize(schemaOut, resolvedKey, schemaContext.GetCalculateChecksum() ? ChecksumHelper::ComputeCheckSumForString(ecSchemaXml, stringSize / sizeof(WChar)).c_str() : nullptr);
 
     if (SchemaReadStatus::Success != status)
         {
@@ -3424,14 +3536,15 @@ PUSH_DISABLE_DEPRECATION_WARNINGS
         wcsncpy(first200Characters, ecSchemaXml, 200);
 POP_DISABLE_DEPRECATION_WARNINGS
         first200Characters[200] = L'\0';
-        if (SchemaReadStatus::DuplicateSchema == status)
-            LOG.errorv(L"Failed to read XML from string(1st 200 characters approx.): %s.  \nSchema already loaded.  Use ECSchemaReadContext::LocateSchema to load schema", first200Characters);
-        else
-            {
-            LOG.errorv(L"Failed to read XML from string (1st 200 characters): %ls", first200Characters);
-            }
+        Utf8String additionalInfo(first200Characters);
+        ReportFailedSchema(resolvedKey, additionalInfo, status, schemaContext);
+
         schemaContext.RemoveSchema(*schemaOut);
         schemaOut = nullptr;
+        }
+    else
+        {
+        schemaOut->SetOrigin("Loaded from string (wchar)");
         }
 
     return status;
@@ -3526,6 +3639,19 @@ void ECSchema::SortSchemasInDependencyOrder(bvector<ECSchemaCP>& schemas, bool i
     schemas = temp;
     }
 
+namespace
+    {
+    bool CheckECVersionGreaterThanLatest(ECSchemaCR schema)
+        {
+        if (schema.OriginalECXmlVersionGreaterThan(ECVersion::Latest))
+            {
+            LOG.errorv("The schema '%s' has ECVersion %s which is greater than the latest version %s and cannot be serialized.", schema.GetName().c_str(),
+                schema.GetOriginalECXmlVersionAsString().c_str(), schema.GetECVersionString(ECVersion::Latest));
+            return false;
+            }
+        return true;
+        }
+    }
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3533,7 +3659,10 @@ SchemaWriteStatus ECSchema::WriteToXmlString(WStringR ecSchemaXml, ECVersion ecX
     {
     ecSchemaXml.clear();
 
-    BeXmlWriterPtr xmlWriter = BeXmlWriter::Create();
+    if (!CheckECVersionGreaterThanLatest(*this))
+        return SchemaWriteStatus::FailedToSaveXml;
+
+    BePugiXmlWriterPtr xmlWriter = BePugiXmlWriter::Create();
 
     SchemaXmlWriter schemaWriter(*xmlWriter.get(), *this, ecXmlVersion);
 
@@ -3559,7 +3688,10 @@ SchemaWriteStatus ECSchema::WriteToXmlString(Utf8StringR ecSchemaXml, ECVersion 
     {
     ecSchemaXml.clear();
 
-    BeXmlWriterPtr xmlWriter = BeXmlWriter::Create();
+    if (!CheckECVersionGreaterThanLatest(*this))
+        return SchemaWriteStatus::FailedToSaveXml;
+
+    BePugiXmlWriterPtr xmlWriter = BePugiXmlWriter::Create();
     xmlWriter->SetIndentation(4);
 
     SchemaXmlWriter schemaWriter(*xmlWriter.get(), *this, ecXmlVersion);
@@ -3599,8 +3731,11 @@ SchemaWriteStatus ECSchema::WriteToEC2XmlString(Utf8StringR ec2SchemaXml, ECSche
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaWriteStatus ECSchema::WriteToXmlFile(WCharCP ecSchemaXmlFile, ECVersion ecXmlVersion, bool utf16) const
     {
+    if (!CheckECVersionGreaterThanLatest(*this))
+        return SchemaWriteStatus::FailedToSaveXml;
+
     auto serializeToFile = [&ecSchemaXmlFile, &utf16] (ECSchemaCR schema, ECVersion ecXmlVersion) {
-        BeXmlWriterPtr xmlWriter = BeXmlWriter::CreateFileWriter(ecSchemaXmlFile);
+        BePugiXmlWriterPtr xmlWriter = BePugiXmlWriter::CreateFileWriter(ecSchemaXmlFile);
 
         if (xmlWriter.IsNull())
             return SchemaWriteStatus::FailedToCreateXml;
@@ -3625,6 +3760,9 @@ SchemaWriteStatus ECSchema::WriteToXmlFile(WCharCP ecSchemaXmlFile, ECVersion ec
 //---------------+---------------+---------------+---------------+---------------+-------
 bool ECSchema::WriteToJsonValue(BeJsValue ecSchemaJsonValue) const
     {
+    if (!CheckECVersionGreaterThanLatest(*this))
+        return false;
+
     ecSchemaJsonValue.SetNull();
     SchemaJsonWriter schemaWriter(ecSchemaJsonValue, *this);
 
@@ -3639,12 +3777,12 @@ bool ECSchema::WriteToJsonValue(BeJsValue ecSchemaJsonValue) const
 //---------------+---------------+---------------+---------------+---------------+-------
 bool ECSchema::WriteToJsonString(Utf8StringR ecSchemaJsonString, bool minify) const
     {
-    Json::Value jsonSchema;
+    BeJsDocument jsonSchema;
 
     if (!WriteToJsonValue(jsonSchema))
         return false;
 
-    ecSchemaJsonString = minify ? jsonSchema.ToString() : jsonSchema.toStyledString();
+    ecSchemaJsonString = jsonSchema.Stringify(minify ? StringifyFormat::Default : StringifyFormat::Indented);
     return true;
     }
 
@@ -3858,16 +3996,55 @@ ECObjectsStatus ECSchemaCache::AddSchema(ECSchemaR ecSchema)
         return ECObjectsStatus::DuplicateSchema;
 
     bvector<ECSchemaP> schemas;
-    ecSchema.FindAllSchemasInGraph(schemas, true);
+    ecSchema.FindAllSchemasInGraph(schemas, false);
     bool inserted = false;
 
+    // referenced schemas
     for (bvector<ECSchemaP>::const_iterator iter = schemas.begin(); iter != schemas.end(); ++iter)
         {
-        bpair<SchemaMap::iterator, bool> result = m_schemas.insert(SchemaMap::value_type((*iter)->GetSchemaKey(), *iter));
+        ECSchemaP referencedSchema = *iter;
+        bpair<SchemaMap::iterator, bool> result = m_schemas.insert(SchemaMap::value_type(referencedSchema->GetSchemaKey(), referencedSchema));
         inserted |= result.second;
+        if(result.second)
+            {
+            // we did insert a referenced schema into the cache, make sure the tree is clean.
+            CheckCleanSchemaGraph(referencedSchema);
+            }
+        else
+            {
+            // the referenced schema was not inserted because it already exists in the cache. Now we want to verify that the existing one matches the one used by the root schema
+            ECSchemaP existingSchema = result.first->second.get();
+            if(existingSchema != referencedSchema)
+                {
+                LOG.warningv("ECSchemaCache: Adding schema '%s' which references schema '%s'. However, a different in-memory instance of this referenced schema already exists in the cache. This may indicate an issue with the schema graph.",
+                     ecSchema.GetSchemaKey().GetFullSchemaName().c_str(), existingSchema->GetSchemaKey().GetFullSchemaName().c_str());
+                }
+            }
+        }
+
+    // root schema
+    bpair<SchemaMap::iterator, bool> result = m_schemas.insert(SchemaMap::value_type(ecSchema.GetSchemaKey(), &ecSchema));
+    inserted |= result.second;
+    if(result.second)
+        {
+        // we did insert the root schema into the cache, make sure the tree is clean.
+        CheckCleanSchemaGraph(&ecSchema);
         }
 
     return inserted ? ECObjectsStatus::Success : ECObjectsStatus::DuplicateSchema;
+    }
+
+void ECSchemaCache::CheckCleanSchemaGraph(ECSchemaP schema) const
+    {
+    Utf8StringCR name = schema->GetName().c_str();
+    for (auto const& kvPair : m_schemas)
+        {
+        if(kvPair.first.CompareByName(name) == 0 && !schema->GetSchemaKey().Matches(kvPair.first, SchemaMatchType::Exact))
+            {
+            LOG.warningv("ECSchemaCache: Adding schema '%s' to the cache while schema '%s' already exists. Typically, only one version of a schema with the same name is expected. This may indicate an issue with the schema graph.",
+                    schema->GetSchemaKey().GetFullSchemaName().c_str(), kvPair.first.GetFullSchemaName().c_str());
+            }
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3952,6 +4129,17 @@ ECSchemaP ECSchemaCache::FindSchema(const SchemaKeyMatchCallback& predicate) con
         return nullptr;
 
     return iter->second.get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECSchemaCache::WalkSchemas(const SchemaCallback& callback) const
+    {
+    for (auto const& kvPair : m_schemas)
+        {
+        callback(kvPair.second.get());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

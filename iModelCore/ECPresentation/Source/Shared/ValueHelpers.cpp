@@ -66,6 +66,42 @@ BentleyStatus ValueHelpers::GetEnumPropertyDisplayValue(Utf8StringR displayValue
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ValueHelpers::ParsePrimitiveType(PrimitiveType& primitiveType, Utf8StringCR typeName)
+    {
+    if (typeName.empty())
+        return ERROR;
+
+    if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_STRING))
+        primitiveType = PRIMITIVETYPE_String;
+    else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_INTEGER))
+        primitiveType = PRIMITIVETYPE_Integer;
+    else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_LONG))
+        primitiveType = PRIMITIVETYPE_Long;
+    else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_BOOLEAN))
+        primitiveType = PRIMITIVETYPE_Boolean;
+    else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_BOOL))
+        primitiveType = PRIMITIVETYPE_Boolean;
+    else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_DOUBLE))
+        primitiveType = PRIMITIVETYPE_Double;
+    else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_DATETIME))
+        primitiveType = PRIMITIVETYPE_DateTime;
+    else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_POINT2D))
+        primitiveType = PRIMITIVETYPE_Point2d;
+    else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_POINT3D))
+        primitiveType = PRIMITIVETYPE_Point3d;
+    else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_BINARY))
+        primitiveType = PRIMITIVETYPE_Binary;
+    else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_IGEOMETRY))
+        primitiveType = PRIMITIVETYPE_IGeometry;
+    else
+        return ERROR;
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ValueHelpers::GetEnumPropertyDisplayValue(Utf8StringR displayValue, ECPropertyCR prop, ECValueCR ecValue)
     {
     if (ecValue.IsNull())
@@ -282,8 +318,17 @@ rapidjson::Document ValueHelpers::GetJsonFromPrimitiveValue(PrimitiveType primit
             doc.SetBool(value.GetBoolean());
             return doc;
         case PRIMITIVETYPE_DateTime:
-            doc.SetString(value.GetDateTime().ToString().c_str(), doc.GetAllocator());
+            {
+            double julianDay;
+            if (PRIMITIVETYPE_String == value.GetColumnInfo().GetDataType().GetPrimitiveType())
+                julianDay = std::stod(value.GetText());
+            else
+                julianDay = value.GetDouble();
+            DateTime dt;
+            DateTime::FromJulianDay(dt, julianDay, DateTime::Info::CreateForDateTime(DateTime::Kind::Utc));
+            doc.SetString(dt.ToString().c_str(), doc.GetAllocator());
             return doc;
+            }
         case PRIMITIVETYPE_Double:
             doc.SetDouble(value.GetDouble());
             return doc;
@@ -880,23 +925,23 @@ Utf8CP ValueHelpers::PrimitiveTypeAsString(PrimitiveType type)
     switch (type)
         {
         case PRIMITIVETYPE_Binary:
-            return "binary";
+            return EC_PRIMITIVE_TYPENAME_BINARY;
         case PRIMITIVETYPE_Boolean:
-            return "boolean";
+            return EC_PRIMITIVE_TYPENAME_BOOLEAN;
         case PRIMITIVETYPE_DateTime:
-            return "dateTime";
+            return EC_PRIMITIVE_TYPENAME_DATETIME;
         case PRIMITIVETYPE_Double:
-            return "double";
+            return EC_PRIMITIVE_TYPENAME_DOUBLE;
         case PRIMITIVETYPE_Integer:
-            return "int";
+            return EC_PRIMITIVE_TYPENAME_INTEGER;
         case PRIMITIVETYPE_Long:
-            return "long";
+            return EC_PRIMITIVE_TYPENAME_LONG;
         case PRIMITIVETYPE_Point2d:
-            return "point2d";
+            return EC_PRIMITIVE_TYPENAME_POINT2D;
         case PRIMITIVETYPE_Point3d:
-            return "point3d";
+            return EC_PRIMITIVE_TYPENAME_POINT3D;
         case PRIMITIVETYPE_String:
-            return "string";
+            return EC_PRIMITIVE_TYPENAME_STRING;
         default:
             return "";
         }

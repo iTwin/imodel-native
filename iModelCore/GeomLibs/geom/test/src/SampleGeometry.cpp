@@ -240,7 +240,13 @@ PolyfaceHeaderPtr SphereMesh(DPoint3dCR origin, double radius, double radianAngl
     auto sphere = DgnSphereDetail(origin, radius);
     auto options = IFacetOptions::CreateForSurfaces(0.0, radianAngle);
     auto builder = PolyfaceConstruction::Create(*options);
-    return builder->Add(sphere) ? builder->GetClientMeshPtr() : nullptr;    // NOTE: the mesh has degenerate facets!
+    if (builder->Add(sphere))
+        {
+        auto mesh = builder->GetClientMeshPtr();
+        if (mesh.IsValid())
+            return mesh->CloneWithDegenerateFacetsRemoved();    // sphere mesh has degenerate triangles at poles!!
+        }
+    return nullptr;
     }
 
 /**

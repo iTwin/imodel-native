@@ -3518,4 +3518,94 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_InvalidInECSql)
     }
 
     }
+
+TEST_F(SchemaRulesTestFixture, ImportSchemaWithNewerECXmlVersions)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ImportSchemaWithNewerECXmlVersions.ecdb"));
+
+    const auto xmlSchema = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.%d.%d"/>)xml";
+
+    unsigned int ecXmlMajorVersion;
+    unsigned int ecXmlMinorVersion;
+    EXPECT_EQ(ECObjectsStatus::Success, ECSchema::ParseECVersion(ecXmlMajorVersion, ecXmlMinorVersion, ECVersion::Latest));
+
+    // Test current and possible future ECXML versions
+    for (const auto& [testCaseNumber, majorVersion, minorVersion, deserializationStatus, importStatus] : std::vector<std::tuple<unsigned int, unsigned int, unsigned int, bool, bool>>
+        {
+        { 1, ecXmlMajorVersion, ecXmlMinorVersion, true, true },
+        { 2, ecXmlMajorVersion, ecXmlMinorVersion + 1U, true, false },  // Should be able to deserialize and fail to import
+        { 3, ecXmlMajorVersion + 1U, ecXmlMinorVersion, false, false },  // Major version change not supported. Should fail to deserialze and import
+        { 4, ecXmlMajorVersion + 1U, ecXmlMinorVersion + 1U, false, false },  // Major version change not supported. Should fail to deserialze and import
+        })
+        {
+        ECSchemaPtr schema;
+        const auto context = ECSchemaReadContext::CreateContext();
+
+        // Schema should always be deserialized successfully irrespective of the ECXml version
+        EXPECT_EQ(deserializationStatus, SchemaReadStatus::Success == ECSchema::ReadFromXmlString(schema, Utf8PrintfString(xmlSchema, majorVersion, minorVersion).c_str(), *context)) << "Test case number " << testCaseNumber << " failed.";
+        EXPECT_EQ(deserializationStatus, schema.IsValid()) << "Test case number: " << testCaseNumber << " failed.";
+
+        // Schema import should fail when ECXml version of the schema is greater than the current version that the ECDb supports
+        EXPECT_EQ(importStatus, m_ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas()) == SchemaImportResult::OK) << "Test case number " << testCaseNumber << " failed.";
+        if (importStatus)
+            EXPECT_NE(nullptr, m_ecdb.Schemas().GetSchema("TestSchema")) << "Test case number " << testCaseNumber << " failed.";
+        m_ecdb.AbandonChanges();
+
+        // Serialization should not be allowed for schemas with ecxml versions greater than the current version that the ECDb supports
+        if (schema.IsValid())
+            {
+            Utf8String serializedXml;
+            schema->WriteToXmlString(serializedXml);
+            EXPECT_EQ(importStatus, !Utf8String::IsNullOrEmpty(serializedXml.c_str())) << "Test case number " << testCaseNumber << " failed.";
+            }
+        }
+
+        // Try importing 2 schemas where one has a greater ECXml version
+        // We expect the import to fail for both schemas
+        {
+        ECSchemaPtr schemaPtr;
+        ECSchemaPtr anotherSchemaPtr;
+        const auto context = ECSchemaReadContext::CreateContext();
+
+        // Schema should always be deserialized successfully irrespective of the ECXml version
+        EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schemaPtr, Utf8PrintfString(xmlSchema, ecXmlMajorVersion, ecXmlMinorVersion).c_str(), *context));
+        EXPECT_TRUE(schemaPtr.IsValid());
+
+        EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(anotherSchemaPtr, Utf8PrintfString(R"xml(
+            <ECSchema schemaName="AnotherTestSchema" alias="another_ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.%d.%d"/>)xml", ecXmlMajorVersion, ecXmlMinorVersion + 1U).c_str(), *context));
+        EXPECT_TRUE(anotherSchemaPtr.IsValid());
+
+        EXPECT_EQ(SchemaImportResult::ERROR, m_ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas()));
+        EXPECT_EQ(nullptr, m_ecdb.Schemas().GetSchema("TestSchema"));
+        EXPECT_EQ(nullptr, m_ecdb.Schemas().GetSchema("AnotherTestSchema"));
+        }
+
+        // Do a schema upgrade for "TestSchema" using a greater ECXml version
+        {
+        const auto xmlSchema = Utf8PrintfString(R"xml(<ECSchema schemaName="TestSchema" alias="another_ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.%d.%d"/>)xml", ecXmlMajorVersion, ecXmlMinorVersion);
+        const auto updatedXmlSchema = Utf8PrintfString(R"xml(
+            <ECSchema schemaName="TestSchema" alias="another_ts" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.%d.%d">
+                <ECEntityClass typeName="NewClass" >
+                    <NewFeature propertyName="NotYet" unknownAttribute="TooSoon" />
+                </ECEntityClass>
+            </ECSchema>)xml", ecXmlMajorVersion, ecXmlMinorVersion + 1U);
+
+        ECSchemaPtr schemaPtr;
+        const auto context = ECSchemaReadContext::CreateContext();
+        EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schemaPtr, xmlSchema.c_str(), *context));
+        EXPECT_TRUE(schemaPtr.IsValid());
+
+        EXPECT_EQ(SchemaImportResult::OK, m_ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas()));
+        EXPECT_NE(nullptr, m_ecdb.Schemas().GetSchema("TestSchema"));
+
+        EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schemaPtr, updatedXmlSchema.c_str(), *context));
+        EXPECT_TRUE(schemaPtr.IsValid());
+
+        EXPECT_EQ(SchemaImportResult::ERROR, m_ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas()));
+        const auto schema = m_ecdb.Schemas().GetSchema("TestSchema");
+        EXPECT_NE(nullptr, schema);
+        EXPECT_STREQ("1.0.0", Utf8PrintfString("%d.%d.%d", schema->GetVersionRead(), schema->GetVersionWrite(), schema->GetVersionMinor()).c_str());
+        }
+    }
+
 END_ECDBUNITTESTS_NAMESPACE

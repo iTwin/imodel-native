@@ -306,6 +306,7 @@ double      tol               /* tolerance for ON case detection */
     double crossing;
     double s;
     int numLeft = 0, numRight = 0;
+    UNUSED_VARIABLE(numRight);
 
     int i, i0;
     if (fabs (h0) <= tol)
@@ -366,6 +367,7 @@ double      tol               /* tolerance for ON case detection */
     double crossing;
     double s;
     int numLeft = 0, numRight = 0;
+    UNUSED_VARIABLE(numRight);
 
     int i, i0;
     if (fabs (h0) <= tol)
@@ -436,6 +438,7 @@ double      tol               /* tolerance for ON case detection */
     double u;
     double s;
     int numLeft = 0, numRight = 0;
+    UNUSED_VARIABLE(numRight);
 
     int i, i0;
 
@@ -704,6 +707,8 @@ double      tol
     int i0 = 0;
     int numIn = 0;
     int numOut = 0;
+    UNUSED_VARIABLE(numOut);
+    
     for (int i1 = 0; i1 <= numPoint;)
         {
         if (i1 >= numPoint || pPointArray[i1].IsDisconnect ())
@@ -812,7 +817,7 @@ double          reltol
 
     /* copy full ints */
     if (bInts2)
-        memmove (pIntOut2, pIntIn, numIn * sizeof (*pIntOut2));
+        BeStringUtilities::Memmove(pIntOut2, numIn * sizeof(*pIntOut2), pIntIn, numIn * sizeof(*pIntOut2));
 
     /* Eliminate trailing points which duplicate first point */
     while (1 < numIn && pXYZIn->IsEqual (pXYZIn[ numIn - 1], tol))
@@ -1770,25 +1775,6 @@ DRay3dCP pParameterizationRay
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static int qsort_compareDPoint4dw
-
-(
-void const *vpA,
-void const *vpB
-)
-    {
-    DPoint4d const*pA = (DPoint4d const*)vpA;
-    DPoint4d const*pB = (DPoint4d const*)vpB;
-    if (pA->w < pB->w)
-        return -1;
-    if (pA->w > pB->w)
-        return 1;
-    return 0;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 double      tolerancedDotDiff (DPoint3dCP point, DPoint3dCP origin, DVec3dCP direction, double *tolerance)
     {
     double  dot = point->DotDifference(*origin, *direction);
@@ -1922,7 +1908,7 @@ double*     onTolerance
 
     if (ok && numCrossing > 0)
         {
-    qsort (pCrossing, numCrossing, sizeof (DPoint4d), qsort_compareDPoint4dw);
+        std::sort(pCrossing, pCrossing + numCrossing, [](const DPoint4d& a, const DPoint4d& b) { return a.w < b.w; });
         ok = numCrossing <= maxClipPoints;
         if (numCrossing > maxClipPoints)
             numCrossing = maxClipPoints;
@@ -2680,27 +2666,6 @@ int count
 
     };
 
-
-int cb_compareCrossings
-(
-const void *vpCrossing0,
-const void *vpCrossing1
-)
-    {
-    const ClipCrossing *pCrossing0 = (const ClipCrossing*)vpCrossing0;
-    const ClipCrossing *pCrossing1 = (const ClipCrossing*)vpCrossing1;
-    double a = pCrossing0->sortKey - pCrossing1->sortKey;
-    if (a < 0.0)
-        return -1;
-    else if (a > 0.0)
-        return 1;
-    else
-        {
-        // hm.  Not sure what should happen here.
-        return 0;
-        }
-    }
-
 #define MAX_CLIP_CROSSING 1000
 struct ClipCrossingSorter
 {
@@ -2930,7 +2895,7 @@ bool SortCrossings ()
         {
         mCrossing[i].sortKey = mCrossing[i].xyz.GetComponent (iMax);
         }
-    qsort (mCrossing, mNumCrossing, sizeof (ClipCrossing), cb_compareCrossings);
+    std::sort(mCrossing, mCrossing + mNumCrossing, [](const ClipCrossing& a, const ClipCrossing& b) { return a.sortKey < b.sortKey; });
     // Let id be a pre-sort position.
     // Make mCrossingIndex[id] = sorted position of that mCrossing.
     for (int i = 0; i < mNumCrossing; i++)

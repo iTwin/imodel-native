@@ -151,65 +151,6 @@ TEST_F(InstanceLabelOverrideTests, WriteToJson)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(InstanceLabelOverrideTests, LoadsFromXml)
-    {
-    static Utf8CP xmlString = R"(
-        <InstanceLabelOverride ClassName="TestClass" PropertyNames="prop1,   prop2"/>
-        )";
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
-    ASSERT_EQ(BEXML_Success, xmlStatus);
-
-    InstanceLabelOverride rule;
-    EXPECT_TRUE(rule.ReadXml(xml->GetRootElement()));
-
-    EXPECT_STREQ("TestClass", rule.GetClassName().c_str());
-
-    ASSERT_EQ(2, rule.GetValueSpecifications().size());
-
-    InstanceLabelOverridePropertyValueSpecification* s1 = dynamic_cast<InstanceLabelOverridePropertyValueSpecification*>(rule.GetValueSpecifications()[0]);
-    ASSERT_TRUE(nullptr != s1);
-    EXPECT_STREQ("prop1", s1->GetPropertyName().c_str());
-
-    InstanceLabelOverridePropertyValueSpecification* s2 = dynamic_cast<InstanceLabelOverridePropertyValueSpecification*>(rule.GetValueSpecifications()[1]);
-    ASSERT_TRUE(nullptr != s2);
-    EXPECT_STREQ("prop2", s2->GetPropertyName().c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(InstanceLabelOverrideTests, WriteToXml)
-    {
-    bvector<InstanceLabelOverrideValueSpecification*> specs;
-    specs.push_back(new InstanceLabelOverrideCompositeValueSpecification(
-        {
-        new InstanceLabelOverrideCompositeValueSpecification::Part(*new InstanceLabelOverridePropertyValueSpecification("prop1")),
-        new InstanceLabelOverrideCompositeValueSpecification::Part(*new InstanceLabelOverrideLocalIdValueSpecification(), true),
-        }, ","));
-    specs.push_back(new InstanceLabelOverridePropertyValueSpecification(" prop2   "));
-    specs.push_back(new InstanceLabelOverrideClassNameValueSpecification(true));
-    specs.push_back(new InstanceLabelOverrideClassLabelValueSpecification());
-    specs.push_back(new InstanceLabelOverrideBriefcaseIdValueSpecification());
-    specs.push_back(new InstanceLabelOverrideLocalIdValueSpecification());
-    specs.push_back(new InstanceLabelOverrideStringValueSpecification(" test "));
-    InstanceLabelOverride rule(123, true, "s:c", specs);
-
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xml = BeXmlDom::CreateEmpty();
-    xml->AddNewElement("Root", nullptr, nullptr);
-    rule.WriteXml(xml->GetRootElement());
-
-    static Utf8CP expected = ""
-        "<Root>"
-            R"(<InstanceLabelOverride Priority="123" OnlyIfNotHandled="true" ClassName="s:c" PropertyNames="prop2"/>)"
-        "</Root>";
-    EXPECT_STREQ(ToPrettyString(*BeXmlDom::CreateAndReadFromString(xmlStatus, expected)).c_str(), ToPrettyString(*xml).c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(InstanceLabelOverrideTests, ComputesCorrectHashes)

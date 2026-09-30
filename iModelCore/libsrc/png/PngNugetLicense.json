@@ -10,13 +10,13 @@
     "sublicenses" : [
         {
         "authors": "Simon-Pierre Cadieux, Eric S. Raymond, Mans Rullgard, Cosmin Truta, Gilles Vollant, James Yu, Mandar Sahastrabuddhe, Google Inc., Vadim Barkov",
-        "copyright": "Glenn Randers-Pehrson",
+        "copyright": "PNG Reference Library Authors",
         "description": "The official PNG reference library.",
         "homepage": "http://www.libpng.org/pub/png/libpng.html",
         "licenseUrl": "http://www.libpng.org/pub/png/src/libpng-LICENSE.txt",
         "name": "libpng",
-        "SPDX-ID": "Libpng",
-        "version": "1.6.37"
+        "SPDX-ID": "libpng-2.0",
+        "version": "1.6.58"
         }
     ]
 }

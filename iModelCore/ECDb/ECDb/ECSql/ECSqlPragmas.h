@@ -26,6 +26,17 @@ struct PragmaExplainQuery : PragmaManager::GlobalHandler {
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
+struct PragmaDbList : PragmaManager::GlobalHandler {
+    PragmaDbList():GlobalHandler("db_list","List all attach dbs"){}
+    ~PragmaDbList(){}
+    virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, PragmaVal const&,  PragmaManager::OptionsMap const&) override;
+    virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
+    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaDbList>(); }
+};
+
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
 struct DisqualifyTypeIndex : PragmaManager::ClassHandler {
     std::set<ECClassId> m_disqualifiedClassSet;
     DisqualifyTypeIndex():ClassHandler("disqualify_type_index","set/get disqualify_type_index flag for a given ECClass"){}
@@ -47,10 +58,32 @@ struct PragmaECDbVersion : PragmaManager::GlobalHandler {
 };
 
 //=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct PragmaECSqlVersion : PragmaManager::GlobalHandler {
+    PragmaECSqlVersion() : GlobalHandler("ecsql_ver", "return current ECSQL version") {}
+    ~PragmaECSqlVersion() {}
+    virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, const PragmaVal&, const PragmaManager::OptionsMap&) override;
+    virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, const PragmaVal&, const PragmaManager::OptionsMap&) override;
+    static std::unique_ptr<PragmaManager::Handler> Create() { return std::make_unique<PragmaECSqlVersion>(); }
+};
+
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct PragmaSqliteSql : PragmaManager::GlobalHandler {
+    PragmaSqliteSql() : GlobalHandler("sqlite_sql", "return underlying SQLite SQL") {}
+    ~PragmaSqliteSql() {}
+    virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, const PragmaVal&, const PragmaManager::OptionsMap&) override;
+    virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, const PragmaVal&, const PragmaManager::OptionsMap&) override;
+    static std::unique_ptr<PragmaManager::Handler> Create() { return std::make_unique<PragmaSqliteSql>(); }
+};
+
+//=======================================================================================
 // @bsiclass PragmaChecksum
 //+===============+===============+===============+===============+===============+======
 struct PragmaChecksum : PragmaManager::GlobalHandler {
-    PragmaChecksum():GlobalHandler("checksum", "checksum([ec_schema|ec_map|db_schema]) return sha1 checksum for data."){}
+    PragmaChecksum():GlobalHandler("checksum", "checksum([ecdb_schema|ecdb_map|sqlite_schema|schema_token]) return sha3 checksum for data. 'schema_token' is a cheap schema-identity hash (names+versions only) for SchemaView cache invalidation."){}
     ~PragmaChecksum(){}
     virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
     virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
@@ -95,10 +128,82 @@ struct PragmaIntegrityCheck : PragmaManager::GlobalHandler {
     DbResult CheckLinkTableFkClassIds(IntegrityChecker&, StaticPragmaResult&, ECDbCR);
     DbResult CheckLinkTableFkIds(IntegrityChecker&, StaticPragmaResult&, ECDbCR);
     DbResult CheckClassIds(IntegrityChecker&, StaticPragmaResult&, ECDbCR);
+    DbResult CheckMissingChildRows(IntegrityChecker&, StaticPragmaResult&, ECDbCR);
+    DbResult CheckDivergedPropMaps(IntegrityChecker&, StaticPragmaResult&, ECDbCR);
     virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
     static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaIntegrityCheck>(); }
 
 };
+
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct PragmaValidatePersistedMappings : PragmaManager::GlobalHandler {
+    PragmaValidatePersistedMappings():GlobalHandler("validate_persisted_mappings", "validates persisted ECDb mappings and returns reported issues"){}
+    virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
+    virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
+    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaValidatePersistedMappings>(); }
+};
+
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct PragmaPurgeOrphanRelationships : PragmaManager::GlobalHandler {
+    PragmaPurgeOrphanRelationships():GlobalHandler("purge_orphan_relationships","removes orphaned link-table relationships from ECDb"){}
+    ~PragmaPurgeOrphanRelationships(){}
+    virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
+    virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
+    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaPurgeOrphanRelationships>(); }
+};
+
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct PragmaCheckECSqlWriteValues : PragmaManager::GlobalHandler {
+    PragmaCheckECSqlWriteValues():GlobalHandler("validate_ecsql_writes", "validate values in ECSql insert statements."){}
+    ~PragmaCheckECSqlWriteValues(){}
+    virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
+    virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
+    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaCheckECSqlWriteValues>(); }
+};
+
+//=======================================================================================
+// @bsiclass PragmaSchemaView
+// Returns all EC schema metadata as a single binary blob, exposed as base64 text.
+// Usage: PRAGMA schema_view           -- returns current format version (v1)
+//        PRAGMA schema_view(1)        -- explicitly request format version 1
+// Result: single row with columns: format (string), formatVersion (int), data (base64-encoded string), schemaToken (string)
+//+===============+===============+===============+===============+===============+======
+struct PragmaSchemaView : PragmaManager::GlobalHandler {
+    static constexpr uint8_t CURRENT_FORMAT_VERSION = 1;
+    PragmaSchemaView():GlobalHandler("schema_view", "schema_view [(version)] - returns all schema metadata as a base64-encoded binary blob string. Optional integer argument selects format version (default: latest)."){}
+    ~PragmaSchemaView(){}
+    virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
+    virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
+    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaSchemaView>(); }
+};
+
+//=======================================================================================
+// @bsiclass PragmaSchemaViewFragment
+// Returns a chosen subset of schemas as a single binary blob, in the same format as
+// schema_view, for incremental SchemaView loading.
+// The single string argument is a comma-separated list of schema names, optionally
+// prefixed with a 'v<N>;' format-version token. Names are ECNames, so ',' and ';' can never
+// occur in one. The name list must be dependency-closed (the caller computes and includes
+// the references; the pragma does not expand references).
+// Usage: PRAGMA schema_view_fragment('BisCore,Generic')      -- latest format version
+//        PRAGMA schema_view_fragment('v1;BisCore,Generic')   -- explicit format version 1
+// Result: single row, same columns as schema_view: format, formatVersion, data, schemaToken.
+//+===============+===============+===============+===============+===============+======
+struct PragmaSchemaViewFragment : PragmaManager::GlobalHandler {
+    static constexpr uint8_t CURRENT_FORMAT_VERSION = 1;
+    PragmaSchemaViewFragment():GlobalHandler("schema_view_fragment", "schema_view_fragment('[v<N>;]name,name,...') - returns the given subset of schemas as a base64-encoded binary blob string for incremental loading. Optional leading 'v<N>;' selects the format version (default: latest)."){}
+    ~PragmaSchemaViewFragment(){}
+    virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
+    virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
+    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaSchemaViewFragment>(); }
+};
+
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
@@ -113,6 +218,7 @@ struct SHA3Helper final {
         ECDB_SCHEMA,
         ECDB_MAP,
         SQLITE_SCHEMA,
+        ECDB_SCHEMA_TOKEN, // schema identity only (ec_Schema name + version), cheap
     };
 
 
@@ -120,6 +226,7 @@ private:
     static bool TableExists(DbCR, Utf8CP, Utf8CP);
     static DbResult ComputeHash(Utf8String&, DbCR, std::vector<std::string> const &, Utf8CP, HashSize, bool);
     static DbResult ComputeSQLiteSchemaHash(Utf8String&, DbCR, Utf8CP, HashSize);
+    static DbResult ComputeSchemaTokenHash(Utf8String&, DbCR, Utf8CP, HashSize);
 public:
     static DbResult ComputeHash(Utf8StringR, DbCR, SourceType, Utf8CP dbAlias = "main", HashSize hashSize = HashSize::SHA3_256);
 };

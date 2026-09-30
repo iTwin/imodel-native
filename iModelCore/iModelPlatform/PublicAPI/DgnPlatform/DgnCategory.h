@@ -78,7 +78,9 @@ public:
         BE_JSON_NAME(transp)
         BE_JSON_NAME(transpFill)
 
-        void Init() {memset(this, 0, sizeof(*this)); m_material.Invalidate(); m_color = ColorDef::White();} // white on white reversal makes this a better default color than black.
+        // TODO: Appearance has members or properties (e.g., constructors, destructors, or assignment operators) that make it unsafe to overwrite its memory directly with memset.
+        // Casting to void* to ignore this for now. But we should revisit this in the future.
+        void Init() {memset((void*)this, 0, sizeof(*this)); m_material.Invalidate(); m_color = ColorDef::White();} // white on white reversal makes this a better default color than black.
         Appearance() {Init();}
         explicit Appearance(BeJsConst val) { FromJson(val); }
 

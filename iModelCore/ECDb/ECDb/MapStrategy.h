@@ -18,7 +18,8 @@ enum class MapStrategy
     TablePerHierarchy = 2,
     ExistingTable = 3,
     ForeignKeyRelationshipInTargetTable = 10,
-    ForeignKeyRelationshipInSourceTable = 11
+    ForeignKeyRelationshipInSourceTable = 11,
+    UnsupportedByECVersion = 99     //!< Class uses a map strategy that is used by newer ECDb and not supported by the current ECVersion.
     };
 
 //======================================================================================

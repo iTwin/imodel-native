@@ -59,6 +59,7 @@ template<typename TRegistry> struct RegisterSchemaHelper
         } \
     void registry::RegisterSchemaXml(Utf8String name, Utf8String schemaXml) \
         { \
+        schemaXml.ReplaceAll("{SCHEMA_NAME}", name.c_str()); \
         GetRegisteredSchemaXmls().push_back(bpair<Utf8String, Utf8String>(name, CreateValidSchemaString(name, schemaXml))); \
         } \
     void registry::RegisterMultipleSchemasXml(Utf8StringCR name, bvector<Utf8String> const& schemasXml) \
@@ -109,8 +110,8 @@ struct RulesEngineTestHelpers
 
     static IECInstancePtr InsertInstance(ECDbR, ECClassCR ecClass, std::function<void(IECInstanceR)> const& instancePreparer = nullptr, bool commit = false);
     static IECInstancePtr InsertInstance(ECDbR, ECInstanceInserter& inserter, ECClassCR ecClass, std::function<void(IECInstanceR)> const& instancePreparer = nullptr, bool commit = false);
-    static ECInstanceKey InsertRelationship(ECDbR db, ECRelationshipClassCR relationship, IECInstanceCR source, IECInstanceR target, std::function<void(IECInstanceR)> const& instancePreparer = nullptr, bool commit = false);
-    static ECInstanceKey InsertRelationship(ECDbTestProject& project, ECRelationshipClassCR relationship, IECInstanceCR source, IECInstanceR target, std::function<void(IECInstanceR)> const& instancePreparer = nullptr, bool commit = false);
+    static ECInstanceKey InsertRelationship(ECDbR db, ECRelationshipClassCR relationship, IECInstanceR source, IECInstanceR target, std::function<void(IECInstanceR)> const& instancePreparer = nullptr, bool commit = false);
+    static ECInstanceKey InsertRelationship(ECDbTestProject& project, ECRelationshipClassCR relationship, IECInstanceR source, IECInstanceR target, std::function<void(IECInstanceR)> const& instancePreparer = nullptr, bool commit = false);
     static void DeleteInstances(ECDbR db, ECClassCR ecClass, bool polymorphic = false, bool commit = false);
     static void DeleteInstance(ECDbR db, ECInstanceKeyCR key, bool commit = false);
     static void DeleteInstance(ECDbR db, IECInstanceCR instance, bool commit = false);
@@ -129,9 +130,9 @@ struct RulesEngineTestHelpers
     static PresentationQueryBuilderPtr CreateQuery(PresentationQueryContract const&, bset<ECN::ECClassCP>, bool polymorphic, Utf8CP alias, ComplexQueryHandler handler = nullptr);
     static PresentationQueryBuilderPtr CreateQuery(PresentationQueryContract const&, bvector<ECN::ECClassCP>, bool polymorphic, Utf8CP alias, ComplexQueryHandler handler = nullptr);
 
-    static void ValidateContentSetItem(ECN::IECInstanceCR instance, ContentSetItemCR item, ContentDescriptorCR descriptor, Utf8CP expectedLabel = nullptr, Utf8CP expectedImageId = nullptr);
-    static void ValidateContentSet(bvector<ECN::IECInstanceCP> instances, Content const& content, bool validateOrder = false);
-    static void ValidateContentSet(bvector<InstanceInputAndResult> instances, Content const& content, bool validateOrder = false);
+    static void ValidateContentSetItem(ECN::IECInstanceCR instance, ContentSetItemCR item, ContentDescriptorCR descriptor, std::function<Utf8CP(rapidjson::Document const&)> expectedDisplayLabelFactory = {}, Utf8CP expectedImageId = nullptr);
+    static void ValidateContentSet(bvector<ECN::IECInstanceCP> instances, Content const& content, bool validateOrder = false, std::function<Utf8CP(rapidjson::Document const&)> expectedDisplayLabelFactory = {});
+    static void ValidateContentSet(bvector<InstanceInputAndResult> instances, Content const& content, bool validateOrder = false, std::function<Utf8CP(rapidjson::Document const&)> expectedDisplayLabelFactory = {});
     static void ValidateNodesPagination(std::function<NodesResponse(PageOptionsCR)> getter, bvector<NavNodeCPtr> const& expectedNodes);
     static void ValidateNodeInstances(ECDbCR, NavNodeCR node, bvector<RefCountedPtr<IECInstance const>> const& instances);
     static void ValidateNodeInstances(INodeInstanceKeysProvider const&, NavNodeCR node, bvector<RefCountedPtr<IECInstance const>> const& instances);
@@ -288,6 +289,7 @@ struct TestCategorySupplier : IPropertyCategorySupplier
         {}
     virtual std::unique_ptr<ContentDescriptor::Category> _CreateDefaultCategory() const override { return std::make_unique<ContentDescriptor::Category>(*m_category); }
     virtual std::unique_ptr<ContentDescriptor::Category> _CreateECClassCategory(ECClassCR) const override { return std::make_unique<ContentDescriptor::Category>(*m_category); }
+    virtual std::unique_ptr<ContentDescriptor::Category> _CreatePropertyCategory(PropertyCategoryCR) const override { return std::make_unique<ContentDescriptor::Category>(*m_category); }
     virtual std::unique_ptr<ContentDescriptor::Category> _CreatePropertyCategory(ECPropertyCR) const override { return std::make_unique<ContentDescriptor::Category>(*m_category); }
     ContentDescriptor::Category const& GetUsedCategory() const {return *m_category;}
     void SetUsedCategory(std::unique_ptr<ContentDescriptor::Category>&& category)

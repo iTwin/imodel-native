@@ -1,6 +1,6 @@
 #---------------------------------------------------------------------------------------------
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-#  See COPYRIGHT.md in the repository root for full copyright notice.
+#  See LICENSE.md in the repository root for full copyright notice.
 #---------------------------------------------------------------------------------------------
 import os
 import sys
@@ -15,7 +15,7 @@ def ParseTestList(exeName):
     path, file = os.path.split(exeName)
     listFile = os.path.join(path, "TestList.txt")
     os.chdir(path)
-    
+
     if not os.path.exists(listFile):
         filename = open(listFile, 'w')
         filename.close()
@@ -25,7 +25,7 @@ def ParseTestList(exeName):
     os.system(cmd)
     filename = open(listFile, 'r')
     fileList = filename.readlines()
-    
+
     #getting list into usable format in an array
     testNameList=[]
     mostRecentTestHeader=""
@@ -44,7 +44,7 @@ def ParseTestList(exeName):
             #deals with the normal case
             elif ("# GetParam()" not in fileList[i]):
                 testNameList.append(mostRecentTestHeader + fileList[i].strip())
-            
+
     filename.close()
     os.remove(listFile)
 
@@ -57,7 +57,7 @@ def RunTest(exeName, gtestFilter, runPath, gflagsPath):
     #running test with specific gtest and umdh
     testCmd = exeFileName + " --gtest_filter=" + gtestFilter + " --umdh" + " --bsitools_path=" + gflagsPath
     result = subprocess.call(testCmd)
-    
+
     #Saving log files in gflags folder temporarily because umdh.exe is in the same folder and is needed for comparison
     firstSnap = os.path.join(runPath, "FirstSnapshot.log")
     secondSnap = os.path.join(runPath, "SecondSnapshot.log")
@@ -84,7 +84,7 @@ def RunTest(exeName, gtestFilter, runPath, gflagsPath):
     os.chdir(gflagsPath)
     logCmd = "umdh FirstSnapshot.log SecondSnapshot.log -f:" + gtestFilter + ".Comparison.log -d"
     result = subprocess.call(logCmd)
-    
+
     return compLog, newFirstSnap, newSecondSnap
 
 def AnalyzeLog(logPath, totIncrease, testWithSuiteName):
@@ -94,8 +94,8 @@ def AnalyzeLog(logPath, totIncrease, testWithSuiteName):
 
     filename = open(logPath,'r')
     fileLines = filename.readlines()
-    
-    #If the log shows an increase of at least 4000 bytes or at least 10 call stacks, the log file will be moved to the folder 
+
+    #If the log shows an increase of at least 4000 bytes or at least 10 call stacks, the log file will be moved to the folder
     #which will be published as an artifact in the pipeline as well as the two snapshot files used to create it
     #Otherwise, they will be removed
     lastLine = fileLines[-1]
@@ -125,7 +125,7 @@ def ArchiveLogs(compLog, firstSnap, secondSnap, resultsFolder):
     #Moving logs into results file
     if not os.path.exists(resultsFolder):
         os.mkdir(resultsFolder)
-    
+
     compPath = os.path.join(resultsFolder, "Comparison.log")
     firstPath = os.path.join(resultsFolder, "FirstSnapshot.log")
     secondPath = os.path.join(resultsFolder, "SecondSnapshot.log")
@@ -136,7 +136,7 @@ def ArchiveLogs(compLog, firstSnap, secondSnap, resultsFolder):
         os.remove(firstPath)
     if os.path.exists(secondPath):
         os.remove(secondPath)
-        
+
     shutil.move(compLog, os.path.join(resultsFolder, "Comparison.log"))
     shutil.move(firstSnap, os.path.join(resultsFolder, "FirstSnapshot.log"))
     shutil.move(secondSnap, os.path.join(resultsFolder, "SecondSnapshot.log"))
@@ -166,7 +166,7 @@ if __name__ == '__main__':
     os.rename(exeName, newExeName)
 
     testNameList = ParseTestList(newExeName)
-    
+
     #setting gflags
     os.chdir(gflagsContainerPath)
     gflagsCmd = "gflags /i " + fileNameAppended + " +ust"
@@ -174,7 +174,7 @@ if __name__ == '__main__':
     result = os.system(gflagsCmd)
     os.chdir(scriptsDir)
 
-    #set symbol path 
+    #set symbol path
     symbolName = exeFileName.replace(".exe", "_exe.pdb", 1)
     symbolCmd = "set _NT_SYMBOL_PATH=" + symbolName
     print(symbolCmd)

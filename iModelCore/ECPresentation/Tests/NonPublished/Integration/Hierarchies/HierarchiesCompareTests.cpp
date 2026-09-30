@@ -71,7 +71,7 @@ TEST_F(HierarchiesCompareTests, DetectsNoCustomNodeChangesWhenRulesetsAndVariabl
     PresentationRuleSetPtr lhs = PresentationRuleSet::CreateInstance(CreateRulesetName(LHS));
     m_locater->AddRuleSet(*lhs);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rootRule = new RootNodeRule("", 1, false, false);
     rootRule->AddSpecification(*CreateCustomNodeSpec("T_NODE"));
     lhs->AddPresentationRule(*rootRule);
 
@@ -106,7 +106,7 @@ TEST_F(HierarchiesCompareTests, DetectsNoECInstanceNodeChangesWhenRulesetsAndVar
     PresentationRuleSetPtr lhs = PresentationRuleSet::CreateInstance(CreateRulesetName(LHS));
     m_locater->AddRuleSet(*lhs);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rootRule = new RootNodeRule("", 1, false, false);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
         "", elementClass->GetFullName(), false));
     lhs->AddPresentationRule(*rootRule);
@@ -145,7 +145,7 @@ TEST_F(HierarchiesCompareTests, ByRuleset_DetectsRootNodeChangesWhenInstanceFilt
     // create lhs ruleset
     PresentationRuleSetPtr lhs = PresentationRuleSet::CreateInstance(CreateRulesetName(LHS));
     m_locater->AddRuleSet(*lhs);
-    RootNodeRule* lhsRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* lhsRule = new RootNodeRule("", 1, false, false);
     lhsRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
         "this.Prop = 1 OR this.Prop = 3", elementClass->GetFullName(), false));
     lhs->AddPresentationRule(*lhsRule);
@@ -153,7 +153,7 @@ TEST_F(HierarchiesCompareTests, ByRuleset_DetectsRootNodeChangesWhenInstanceFilt
     // create rhs ruleset
     PresentationRuleSetPtr rhs = PresentationRuleSet::CreateInstance(CreateRulesetName(RHS));
     m_locater->AddRuleSet(*rhs);
-    RootNodeRule* rhsRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rhsRule = new RootNodeRule("", 1, false, false);
     rhsRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
         "this.Prop = 2 OR this.Prop = 3", elementClass->GetFullName(), false));
     rhs->AddPresentationRule(*rhsRule);
@@ -199,7 +199,7 @@ TEST_F(HierarchiesCompareTests, ByRuleset_DetectsChildNodeChangesWhenInstanceFil
     // create lhs ruleset
     PresentationRuleSetPtr lhs = PresentationRuleSet::CreateInstance(CreateRulesetName(LHS));
     m_locater->AddRuleSet(*lhs);
-    RootNodeRule* lhsRootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* lhsRootRule = new RootNodeRule("", 1, false, false);
     lhsRootRule->AddSpecification(*CreateCustomNodeSpec("T_NODE"));
     lhs->AddPresentationRule(*lhsRootRule);
     ChildNodeRule* lhsChildRule = new ChildNodeRule("ParentNode.Type = \"T_NODE\"", 1, false);
@@ -210,7 +210,7 @@ TEST_F(HierarchiesCompareTests, ByRuleset_DetectsChildNodeChangesWhenInstanceFil
     // create rhs ruleset
     PresentationRuleSetPtr rhs = PresentationRuleSet::CreateInstance(CreateRulesetName(RHS));
     m_locater->AddRuleSet(*rhs);
-    RootNodeRule* rhsRootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rhsRootRule = new RootNodeRule("", 1, false, false);
     rhsRootRule->AddSpecification(*CreateCustomNodeSpec("T_NODE"));
     rhs->AddPresentationRule(*rhsRootRule);
     ChildNodeRule* rhsChildRule = new ChildNodeRule("ParentNode.Type = \"T_NODE\"", 1, false);
@@ -258,7 +258,7 @@ TEST_F(HierarchiesCompareTests, ByRuleset_DetectsClassGroupingNodeChangesWhenThe
     // create lhs ruleset
     PresentationRuleSetPtr lhs = PresentationRuleSet::CreateInstance(CreateRulesetName(LHS));
     m_locater->AddRuleSet(*lhs);
-    RootNodeRule* lhsRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* lhsRule = new RootNodeRule("", 1, false, false);
     lhsRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, true, false,
         "this.Prop = 1", elementClass->GetFullName(), false));
     lhs->AddPresentationRule(*lhsRule);
@@ -266,7 +266,7 @@ TEST_F(HierarchiesCompareTests, ByRuleset_DetectsClassGroupingNodeChangesWhenThe
     // create rhs ruleset
     PresentationRuleSetPtr rhs = PresentationRuleSet::CreateInstance(CreateRulesetName(RHS));
     m_locater->AddRuleSet(*rhs);
-    RootNodeRule* rhsRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rhsRule = new RootNodeRule("", 1, false, false);
     rhsRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, true, false,
         "this.Prop = 2", elementClass->GetFullName(), false));
     rhs->AddPresentationRule(*rhsRule);
@@ -330,7 +330,7 @@ TEST_F(HierarchiesCompareTests, ByRuleset_DetectsLabelGroupingNodeChangesWhenThe
     // create lhs ruleset
     PresentationRuleSetPtr lhs = PresentationRuleSet::CreateInstance(CreateRulesetName(LHS));
     m_locater->AddRuleSet(*lhs);
-    RootNodeRule* lhsRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* lhsRule = new RootNodeRule("", 1, false, false);
     lhsRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, true,
         "", elementClass->GetFullName(), false));
     lhs->AddPresentationRule(*lhsRule);
@@ -339,7 +339,7 @@ TEST_F(HierarchiesCompareTests, ByRuleset_DetectsLabelGroupingNodeChangesWhenThe
     // create rhs ruleset
     PresentationRuleSetPtr rhs = PresentationRuleSet::CreateInstance(CreateRulesetName(RHS));
     m_locater->AddRuleSet(*rhs);
-    RootNodeRule* rhsRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rhsRule = new RootNodeRule("", 1, false, false);
     rhsRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, true,
         "", elementClass->GetFullName(), false));
     rhs->AddPresentationRule(*rhsRule);
@@ -392,23 +392,23 @@ TEST_F(HierarchiesCompareTests, ByRuleset_DetectsPropertyGroupingNodeChangesWhen
     // create lhs ruleset
     PresentationRuleSetPtr lhs = PresentationRuleSet::CreateInstance(CreateRulesetName(LHS));
     m_locater->AddRuleSet(*lhs);
-    RootNodeRule* lhsRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* lhsRule = new RootNodeRule("", 1, false, false);
     lhsRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, true,
         "", elementClass->GetFullName(), false));
     lhs->AddPresentationRule(*lhsRule);
-    GroupingRule* lhsGroupingRule = new GroupingRule("", 1, false, elementClass->GetSchema().GetName(), elementClass->GetName(), "", "", "");
-    lhsGroupingRule->AddGroup(*new PropertyGroup("", "", true, "PropA"));
+    GroupingRule* lhsGroupingRule = new GroupingRule("", 1, false, elementClass->GetSchema().GetName(), elementClass->GetName(), "");
+    lhsGroupingRule->AddGroup(*new PropertyGroup("", true, "PropA"));
     lhs->AddPresentationRule(*lhsGroupingRule);
 
     // create rhs ruleset
     PresentationRuleSetPtr rhs = PresentationRuleSet::CreateInstance(CreateRulesetName(RHS));
     m_locater->AddRuleSet(*rhs);
-    RootNodeRule* rhsRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rhsRule = new RootNodeRule("", 1, false, false);
     rhsRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, true,
         "", elementClass->GetFullName(), false));
     rhs->AddPresentationRule(*rhsRule);
-    GroupingRule* rhsGroupingRule = new GroupingRule("", 1, false, elementClass->GetSchema().GetName(), elementClass->GetName(), "", "", "");
-    rhsGroupingRule->AddGroup(*new PropertyGroup("", "", true, "PropB"));
+    GroupingRule* rhsGroupingRule = new GroupingRule("", 1, false, elementClass->GetSchema().GetName(), elementClass->GetName(), "");
+    rhsGroupingRule->AddGroup(*new PropertyGroup("", true, "PropB"));
     rhs->AddPresentationRule(*rhsGroupingRule);
 
     // compare
@@ -448,15 +448,15 @@ TEST_F(HierarchiesCompareTests, ByRuleset_DetectsNoChangesOnCollapsedNodeWhenGra
     PresentationRuleSetPtr lhs = PresentationRuleSet::CreateInstance(CreateRulesetName(LHS));
     m_locater->AddRuleSet(*lhs);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rootRule = new RootNodeRule("", 1, false, false);
     rootRule->AddSpecification(*CreateCustomNodeSpec("T_ROOT"));
     lhs->AddPresentationRule(*rootRule);
 
-    ChildNodeRule* childRule1 = new ChildNodeRule("ParentNode.Type = \"T_ROOT\"", 1, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRule* childRule1 = new ChildNodeRule("ParentNode.Type = \"T_ROOT\"", 1, false);
     childRule1->AddSpecification(*CreateCustomNodeSpec("T_CHILD_1"));
     lhs->AddPresentationRule(*childRule1);
 
-    ChildNodeRule* childRule2 = new ChildNodeRule("ParentNode.Type = \"T_ROOT\"", 1, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRule* childRule2 = new ChildNodeRule("ParentNode.Type = \"T_ROOT\"", 1, false);
     childRule2->AddSpecification(*CreateCustomNodeSpec("T_CHILD_2"));
     lhs->AddPresentationRule(*childRule2);
 
@@ -468,12 +468,12 @@ TEST_F(HierarchiesCompareTests, ByRuleset_DetectsNoChangesOnCollapsedNodeWhenGra
     rhs->AddPresentationRule(*new ChildNodeRule(*childRule1));
     rhs->AddPresentationRule(*new ChildNodeRule(*childRule2));
 
-    ChildNodeRule* grandChildRule1 = new ChildNodeRule("ParentNode.Type = \"T_CHILD_1\"", 1, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRule* grandChildRule1 = new ChildNodeRule("ParentNode.Type = \"T_CHILD_1\"", 1, false);
     grandChildRule1->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
         "", classElement->GetFullName(), false));
     rhs->AddPresentationRule(*grandChildRule1);
 
-    ChildNodeRule* grandChildRule2 = new ChildNodeRule("ParentNode.Type = \"T_CHILD_2\"", 1, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRule* grandChildRule2 = new ChildNodeRule("ParentNode.Type = \"T_CHILD_2\"", 1, false);
     grandChildRule2->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
         "", classElement->GetFullName(), false));
     rhs->AddPresentationRule(*grandChildRule2);
@@ -502,15 +502,15 @@ TEST_F(HierarchiesCompareTests, ByRuleset_DetectsChildNodeUpdatesOnExpandedNodeW
     PresentationRuleSetPtr lhs = PresentationRuleSet::CreateInstance(CreateRulesetName(LHS));
     m_locater->AddRuleSet(*lhs);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rootRule = new RootNodeRule("", 1, false, false);
     rootRule->AddSpecification(*CreateCustomNodeSpec("T_ROOT"));
     lhs->AddPresentationRule(*rootRule);
 
-    ChildNodeRule* childRule1 = new ChildNodeRule("ParentNode.Type = \"T_ROOT\"", 1, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRule* childRule1 = new ChildNodeRule("ParentNode.Type = \"T_ROOT\"", 1, false);
     childRule1->AddSpecification(*CreateCustomNodeSpec("T_CHILD_1"));
     lhs->AddPresentationRule(*childRule1);
 
-    ChildNodeRule* childRule2 = new ChildNodeRule("ParentNode.Type = \"T_ROOT\"", 1, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRule* childRule2 = new ChildNodeRule("ParentNode.Type = \"T_ROOT\"", 1, false);
     childRule2->AddSpecification(*CreateCustomNodeSpec("T_CHILD_2"));
     lhs->AddPresentationRule(*childRule2);
 
@@ -522,12 +522,12 @@ TEST_F(HierarchiesCompareTests, ByRuleset_DetectsChildNodeUpdatesOnExpandedNodeW
     rhs->AddPresentationRule(*new ChildNodeRule(*childRule1));
     rhs->AddPresentationRule(*new ChildNodeRule(*childRule2));
 
-    ChildNodeRule* grandChildRule1 = new ChildNodeRule("ParentNode.Type = \"T_CHILD_1\"", 1, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRule* grandChildRule1 = new ChildNodeRule("ParentNode.Type = \"T_CHILD_1\"", 1, false);
     grandChildRule1->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
         "", classElement->GetFullName(), false));
     rhs->AddPresentationRule(*grandChildRule1);
 
-    ChildNodeRule* grandChildRule2 = new ChildNodeRule("ParentNode.Type = \"T_CHILD_2\"", 1, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRule* grandChildRule2 = new ChildNodeRule("ParentNode.Type = \"T_CHILD_2\"", 1, false);
     grandChildRule2->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
         "", classElement->GetFullName(), false));
     rhs->AddPresentationRule(*grandChildRule2);
@@ -568,15 +568,15 @@ TEST_F(HierarchiesCompareTests, ByRuleset_DetectsChildNodeUpdatesAndGrandchildre
     PresentationRuleSetPtr lhs = PresentationRuleSet::CreateInstance(CreateRulesetName(LHS));
     m_locater->AddRuleSet(*lhs);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rootRule = new RootNodeRule("", 1, false, false);
     rootRule->AddSpecification(*CreateCustomNodeSpec("T_ROOT"));
     lhs->AddPresentationRule(*rootRule);
 
-    ChildNodeRule* childRule1 = new ChildNodeRule("ParentNode.Type = \"T_ROOT\"", 1, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRule* childRule1 = new ChildNodeRule("ParentNode.Type = \"T_ROOT\"", 1, false);
     childRule1->AddSpecification(*CreateCustomNodeSpec("T_CHILD_1"));
     lhs->AddPresentationRule(*childRule1);
 
-    ChildNodeRule* childRule2 = new ChildNodeRule("ParentNode.Type = \"T_ROOT\"", 1, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRule* childRule2 = new ChildNodeRule("ParentNode.Type = \"T_ROOT\"", 1, false);
     childRule2->AddSpecification(*CreateCustomNodeSpec("T_CHILD_2"));
     lhs->AddPresentationRule(*childRule2);
 
@@ -588,12 +588,12 @@ TEST_F(HierarchiesCompareTests, ByRuleset_DetectsChildNodeUpdatesAndGrandchildre
     rhs->AddPresentationRule(*new ChildNodeRule(*childRule1));
     rhs->AddPresentationRule(*new ChildNodeRule(*childRule2));
 
-    ChildNodeRule* grandChildRule1 = new ChildNodeRule("ParentNode.Type = \"T_CHILD_1\"", 1, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRule* grandChildRule1 = new ChildNodeRule("ParentNode.Type = \"T_CHILD_1\"", 1, false);
     grandChildRule1->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
         "", classElement->GetFullName(), false));
     rhs->AddPresentationRule(*grandChildRule1);
 
-    ChildNodeRule* grandChildRule2 = new ChildNodeRule("ParentNode.Type = \"T_CHILD_2\"", 1, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRule* grandChildRule2 = new ChildNodeRule("ParentNode.Type = \"T_CHILD_2\"", 1, false);
     grandChildRule2->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
         "", classElement->GetFullName(), false));
     rhs->AddPresentationRule(*grandChildRule2);
@@ -632,10 +632,10 @@ TEST_F(HierarchiesCompareTests, ByRulesetVariables_DetectsRootNodeChangesWhenVar
     // create the ruleset
     PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*ruleset);
-    RootNodeRule* rule1 = new RootNodeRule("GetVariableBoolValue(\"use_first\")", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rule1 = new RootNodeRule("GetVariableBoolValue(\"use_first\")", 1, false, false);
     rule1->AddSpecification(*CreateCustomNodeSpec("first"));
     ruleset->AddPresentationRule(*rule1);
-    RootNodeRule* rule2 = new RootNodeRule("GetVariableBoolValue(\"use_second\")", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rule2 = new RootNodeRule("GetVariableBoolValue(\"use_second\")", 1, false, false);
     rule2->AddSpecification(*CreateCustomNodeSpec("second"));
     ruleset->AddPresentationRule(*rule2);
 
@@ -724,7 +724,7 @@ TEST_F(HierarchiesCompareTests, ByRulesetVariables_DetectsRootNodeChangesWhenVar
     // create the ruleset
     PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*ruleset);
-    RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rule = new RootNodeRule("", 1, false, false);
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
         "this.Prop = GetVariableIntValue(\"test\")", classElement->GetFullName(), false));
     ruleset->AddPresentationRule(*rule);
@@ -795,7 +795,7 @@ TEST_F(HierarchiesCompareTests, ByRulesetVariables_DetectsRootNodeChangesWhenVar
     // create the ruleset
     PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*ruleset);
-    RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rule = new RootNodeRule("", 1, false, false);
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
         "", classElement->GetFullName(), false));
     ruleset->AddPresentationRule(*rule);
@@ -849,7 +849,7 @@ TEST_F(HierarchiesCompareTests, ByRulesetVariables_DetectsRootNodeChangesWhenVar
     // create the ruleset
     PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*ruleset);
-    RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rule = new RootNodeRule("", 1, false, false);
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
         "", classElement->GetFullName(), false));
     ruleset->AddPresentationRule(*rule);
@@ -904,24 +904,24 @@ TEST_F(HierarchiesCompareTests, ByRulesetVariables_DetectsChangesOnlyForChildNod
     PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*ruleset);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rootRule = new RootNodeRule("", 1, false, false);
     rootRule->AddSpecification(*CreateCustomNodeSpec("T_ROOT"));
     ruleset->AddPresentationRule(*rootRule);
 
-    ChildNodeRule* childRule1 = new ChildNodeRule("ParentNode.Type = \"T_ROOT\"", 1, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRule* childRule1 = new ChildNodeRule("ParentNode.Type = \"T_ROOT\"", 1, false);
     childRule1->AddSpecification(*CreateCustomNodeSpec("T_CHILD_1"));
     ruleset->AddPresentationRule(*childRule1);
 
-    ChildNodeRule* childRule2 = new ChildNodeRule("ParentNode.Type = \"T_ROOT\"", 1, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRule* childRule2 = new ChildNodeRule("ParentNode.Type = \"T_ROOT\"", 1, false);
     childRule2->AddSpecification(*CreateCustomNodeSpec("T_CHILD_2"));
     ruleset->AddPresentationRule(*childRule2);
 
-    ChildNodeRule* grandChildRule1 = new ChildNodeRule("ParentNode.Type = \"T_CHILD_1\"", 1, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRule* grandChildRule1 = new ChildNodeRule("ParentNode.Type = \"T_CHILD_1\"", 1, false);
     grandChildRule1->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
         "GetVariableBoolValue(\"show\")", classElement->GetFullName(), false));
     ruleset->AddPresentationRule(*grandChildRule1);
 
-    ChildNodeRule* grandChildRule2 = new ChildNodeRule("ParentNode.Type = \"T_CHILD_2\"", 1, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRule* grandChildRule2 = new ChildNodeRule("ParentNode.Type = \"T_CHILD_2\"", 1, false);
     grandChildRule2->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
         "GetVariableBoolValue(\"show\")", classElement->GetFullName(), false));
     ruleset->AddPresentationRule(*grandChildRule2);
@@ -991,16 +991,16 @@ TEST_F(HierarchiesCompareTests, ByRulesetVariables_DetectsChangesOnlyForChildNod
     PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*ruleset);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rootRule = new RootNodeRule("", 1, false, false);
     rootRule->AddSpecification(*CreateCustomNodeSpec("T_ROOT_1"));
     rootRule->AddSpecification(*CreateCustomNodeSpec("T_ROOT_2"));
     ruleset->AddPresentationRule(*rootRule);
 
-    ChildNodeRule* childRule1 = new ChildNodeRule("ParentNode.Type = \"T_ROOT_1\" ANDALSO GetVariableBoolValue(\"show\")", 1, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRule* childRule1 = new ChildNodeRule("ParentNode.Type = \"T_ROOT_1\" ANDALSO GetVariableBoolValue(\"show\")", 1, false);
     childRule1->AddSpecification(*CreateCustomNodeSpec("T_CHILD_1"));
     ruleset->AddPresentationRule(*childRule1);
 
-    ChildNodeRule* childRule2 = new ChildNodeRule("ParentNode.Type = \"T_ROOT_2\" ANDALSO GetVariableBoolValue(\"show\")", 1, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRule* childRule2 = new ChildNodeRule("ParentNode.Type = \"T_ROOT_2\" ANDALSO GetVariableBoolValue(\"show\")", 1, false);
     childRule2->AddSpecification(*CreateCustomNodeSpec("T_CHILD_2"));
     ruleset->AddPresentationRule(*childRule2);
 
@@ -1053,7 +1053,7 @@ TEST_F(HierarchiesCompareTests, GetsHierarchyUpdatesInMultipleRequests_AddedNode
     PresentationRuleSetPtr lhs = PresentationRuleSet::CreateInstance(CreateRulesetName(LHS));
     m_locater->AddRuleSet(*lhs);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rootRule = new RootNodeRule("", 1, false, false);
     rootRule->AddSpecification(*CreateCustomNodeSpec("T_ROOT"));
     lhs->AddPresentationRule(*rootRule);
 
@@ -1063,11 +1063,11 @@ TEST_F(HierarchiesCompareTests, GetsHierarchyUpdatesInMultipleRequests_AddedNode
 
     rhs->AddPresentationRule(*new RootNodeRule(*rootRule));
 
-    ChildNodeRule* childRule1 = new ChildNodeRule("ParentNode.Type = \"T_ROOT\"", 1, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRule* childRule1 = new ChildNodeRule("ParentNode.Type = \"T_ROOT\"", 1, false);
     childRule1->AddSpecification(*CreateCustomNodeSpec("T_CHILD_1"));
     rhs->AddPresentationRule(*childRule1);
 
-    ChildNodeRule* childRule2 = new ChildNodeRule("ParentNode.Type = \"T_ROOT\"", 1, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRule* childRule2 = new ChildNodeRule("ParentNode.Type = \"T_ROOT\"", 1, false);
     childRule2->AddSpecification(*CreateCustomNodeSpec("T_CHILD_2"));
     rhs->AddPresentationRule(*childRule2);
 
@@ -1122,15 +1122,15 @@ TEST_F(HierarchiesCompareTests, GetsHierarchyUpdatesInMultipleRequests_AddedNode
     PresentationRuleSetPtr lhs = PresentationRuleSet::CreateInstance(CreateRulesetName(LHS));
     m_locater->AddRuleSet(*lhs);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    RootNodeRule* rootRule = new RootNodeRule("", 1, false, false);
     rootRule->AddSpecification(*CreateCustomNodeSpec("T_ROOT"));
     lhs->AddPresentationRule(*rootRule);
 
-    ChildNodeRule* childRule1 = new ChildNodeRule("ParentNode.Type = \"T_ROOT\"", 1, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRule* childRule1 = new ChildNodeRule("ParentNode.Type = \"T_ROOT\"", 1, false);
     childRule1->AddSpecification(*CreateCustomNodeSpec("T_CHILD_1"));
     lhs->AddPresentationRule(*childRule1);
 
-    ChildNodeRule* childRule2 = new ChildNodeRule("ParentNode.Type = \"T_ROOT\"", 1, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRule* childRule2 = new ChildNodeRule("ParentNode.Type = \"T_ROOT\"", 1, false);
     childRule2->AddSpecification(*CreateCustomNodeSpec("T_CHILD_2"));
     lhs->AddPresentationRule(*childRule2);
 
@@ -1140,13 +1140,13 @@ TEST_F(HierarchiesCompareTests, GetsHierarchyUpdatesInMultipleRequests_AddedNode
 
     rhs->AddPresentationRule(*new RootNodeRule(*rootRule));
 
-    ChildNodeRule* childRule3 = new ChildNodeRule("ParentNode.Type = \"T_ROOT\"", 1, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRule* childRule3 = new ChildNodeRule("ParentNode.Type = \"T_ROOT\"", 1, false);
     childRule3->AddSpecification(*CreateCustomNodeSpec("T_CHILD_3"));
     rhs->AddPresentationRule(*childRule3);
 
     rhs->AddPresentationRule(*new ChildNodeRule(*childRule1));
 
-    ChildNodeRule* childRule4 = new ChildNodeRule("ParentNode.Type = \"T_ROOT\"", 1, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRule* childRule4 = new ChildNodeRule("ParentNode.Type = \"T_ROOT\"", 1, false);
     childRule4->AddSpecification(*CreateCustomNodeSpec("T_CHILD_4"));
     rhs->AddPresentationRule(*childRule4);
 

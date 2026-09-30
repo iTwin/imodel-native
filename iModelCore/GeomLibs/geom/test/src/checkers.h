@@ -94,12 +94,15 @@ enum class FailureMode
     Count
     };
 
-private: static const bool s_enableLongTests = false;
 private: static int s_failureCount;
 private: static FailureMode s_failureMode;
+private: static bool s_enableLongTests;
+
 public:
 static int GetMaxVolume (){return s_maxVolume;}
-static bool GetEnableLongTests() {return s_enableLongTests;}
+static bool GetEnableLongTests() { return s_enableLongTests; }
+static void SetEnableLongTests(bool enable);
+
 // Large numbers make more output
 // bvector output goes on at 10
 // restricted output of large structure (vu, mesh) goes on at 20
@@ -216,7 +219,7 @@ static void PrintPtrDiff (bvector<ptrdiff_t> const &data, char const *name);
 static void Print (bvector<size_t> const &data, char const *name);
 static void Print (bvector<DPoint2d> const &data, const char *callerName = NULL);
 static void Print (bvector<DPoint3d> const &data, const char *callerName = NULL);
-
+static void Print (DRay3d const& data, const char* name = NULL);
 static void Print (bvector<bvector<DPoint3d>> const &data, const char *callerName = NULL);
 static void Print (bvector<bvector<bvector<DPoint3d>>> const &data, const char *callerName = NULL);
 
@@ -337,7 +340,7 @@ static bool Near (DEllipse3dCR a, DEllipse3dCR b, char const*pString = NULL, dou
 //! Check all components of a two DConic4d.
 static void Near (DConic4dCR a, DConic4dCR b, char const*pName = NULL, double refValue = 0.0);
 //! compare angles, allow shift by multiple of 2pi
-static bool NearPeriodic (double thetaA, double thetaB, char const*pString);
+static bool NearPeriodicRadians (double thetaA, double thetaB, char const*pString = NULL);
 
 //! compare strongly typed angles, allow shift by multiple of 2pi
 static bool NearPeriodic (Angle thetaA, Angle thetaB, char const*pString = NULL);
@@ -369,6 +372,7 @@ static bool ValidIndex (size_t index, bvector<T> const &data, char const*pString
     }
 
 static bool LessThanOrEqual (double a, double b, char const*pString = nullptr);
+static bool LessThanOrEqual(size_t a, size_t b, char const* pString = nullptr);
 
 // Test if distances increase
 static bool ValidateDistances
@@ -424,14 +428,18 @@ static void SaveTransformed(IGeometryPtr const &data);
 static void SaveTransformed(CurveVectorCR data);
 static void SaveTransformed(CurveVectorPtr &data);
 static void SaveTransformed(ICurvePrimitiveCR data);
+static void SaveTransformed(ICurvePrimitivePtr &data);
 static void SaveTransformed(PolyfaceHeaderCR data);
 static void SaveTransformed(PolyfaceHeaderPtr &data);
+static void SaveTransformed(ISolidPrimitivePtr& data);
 static void SaveTransformed(ISolidPrimitiveCR data);
+static void SaveTransformed (bvector<DPoint2d> const &data, bool addClosure = false);
 static void SaveTransformed (bvector<DPoint3d> const &data, bool addClosure = false);
 static void SaveTransformed (bvector<DPoint4d> const &data);
 static void SaveTransformedMarkers (bvector<DPoint3d> const &data, double markerSize);
 static void SaveTransformedMarker (DPoint3dCR data, double markerSize = 0.1);
 static void SaveTransformed (DPoint3dCP pData, size_t n);
+static void SaveTransformed (bvector<bvector<DPoint2d>> const &data);
 static void SaveTransformed (bvector<bvector<DPoint3d>> const &data);
 static void SaveTransformed (bvector<DTriangle3d> const &data, bool closed = true);
 static void SaveTransformed (bvector<DSegment3d> const &data);
@@ -441,6 +449,7 @@ static void SaveTransformed(MSBsplineSurfacePtr const &data);
 static void SaveTransformed(MSBsplineSurface const &data);
 static void SaveTransformed (MSBsplineCurveCR data);
 static void SaveTransformed(MSBsplineCurvePtr const &data, bool savePolygon = false);
+static void SaveTransformed(DPlane3dCR plane, double scale = 1.0);
 static void SaveTransformedEdges (DRange3dCR range);
 static void SaveTransformedEdges(DPoint3d corners[8]);
 static void Shift (double dx, double dy, double dz = 0.0);

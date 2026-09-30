@@ -6,6 +6,7 @@
     <Part Name="PublicAPI" BentleyBuildMakeFile="BeSQLite.prewire.mke">
         <SubPart PartName="BeRapidJson" PartFile="iModelCore/Bentley/Bentley" />
         <SubPart PartName="PublicAPI"  PartFile="iModelCore/libsrc/google_re2/google_re2" />
+        <SubPart PartName="v8serial" PartFile="iModelCore/Bentley/Bentley" />
         <Bindings>
             <PublicAPI Domain="BeSQLite" />
             <VendorNotices>
@@ -18,18 +19,32 @@
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BentleyDll" PartFile="iModelCore/Bentley/Bentley" />
         <SubPart LibType="Static" PartName="Compress" PartFile="iModelCore\libsrc\compress\Zlib"/>
+        <SubPart LibType="Static" PartName="proxyres" PartFile="iModelCore\libsrc\proxyres\proxyres"/>
         <SubPart PartName="google_re2"  PartFile="iModelCore/libsrc/google_re2/google_re2" />
-        <SubPart PartName="BeCurl" PartFile="iModelCore\libsrc\curl\BeCurl"/>
-        <SubPart PartName="Library" PartFile="iModelCore\libsrc\openssl\BeOpenSSL"/>
+        <SubPart PartName="BeSQLitePlatformDependencies-Default" />
+        <SubPart PartName="BeSQLitePlatformDependencies-Static" />
         <Bindings>
             <Libs>Delivery/$(libprefix)iTwinSQLite$(libext)</Libs>
             <Assemblies>Delivery/$(libprefix)iTwinSQLite$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
+    <Part Name="BeSQLitePlatformDependencies-Default" OnlyPlatforms="x86,x64,WinRT*,Android*,iOS*">
+        <SubPart PartName="BeCurl" PartFile="iModelCore\libsrc\curl\BeCurl"/>
+        <SubPart PartName="Library" PartFile="iModelCore\libsrc\openssl\BeOpenSSL"/>
+        <SubPart PartName="napi-lib" PartFile="node-addon-api/node-addon-api" />
+    </Part>
+
+    <Part Name="BeSQLitePlatformDependencies-Static" OnlyPlatforms="Linux*,MacOS*">
+        <SubPart LibType="Static" PartName="BeCurl" PartFile="iModelCore\libsrc\curl\BeCurl"/>
+        <SubPart LibType="Static" PartName="Library" PartFile="iModelCore\libsrc\openssl\BeOpenSSL"/>
+        <SubPart LibType="Static" PartName="napi-lib" PartFile="node-addon-api/node-addon-api" />
+    </Part>
+
     <Part Name="ITwinDaemon" BentleyBuildMakeFile="ITwinDaemon.mke">
         <SubPart LibType="Static" PartName="BeCurl" PartFile="iModelCore\libsrc\curl\BeCurl"/>
         <SubPart LibType="Static" PartName="Compress" PartFile="iModelCore\libsrc\compress\Zlib"/>
+        <SubPart LibType="Static" PartName="proxyres" PartFile="iModelCore\libsrc\proxyres\proxyres"/>
         <SubPart LibType="Static" PartName="Library" PartFile="iModelCore\libsrc\openssl\BeOpenSSL"/>
         <Bindings>
             <Files ProductDirectoryName="StaticAssemblies">
@@ -64,9 +79,10 @@
         <Directories DirectoryListName="SqliteShellDir"/>
     </Product>
 
-    <Part Name="SqliteShell-exe" BentleyBuildMakeFile="SqliteShell.mke">
+    <Part Name="SqliteShell-exe" BentleyBuildMakeFile="SqliteShell.mke" >
         <SubPart LibType="Static" PartName="BeCurl" PartFile="iModelCore\libsrc\curl\BeCurl"/>
         <SubPart LibType="Static" PartName="Compress" PartFile="iModelCore\libsrc\compress\Zlib"/>
+        <SubPart LibType="Static" PartName="proxyres" PartFile="iModelCore\libsrc\proxyres\proxyres"/>
         <SubPart LibType="Static" PartName="Library" PartFile="iModelCore\libsrc\openssl\BeOpenSSL"/>
         <Bindings>
             <Files ProductDirectoryName="ApplicationRoot">
@@ -83,13 +99,14 @@
         <SubPart PartName="SqliteShell-exe" LibType="Static"/>
     </Part>
 
-    <Part Name="SqliteShellExe-MacOS" OnlyPlatforms="MacOS*" ExcludeLibType="Dynamic" >
+    <Part Name="SqliteShellExe-MacOS" OnlyPlatforms="MacOS*" ExcludeLibType="Dynamic">
         <SubPart PartName="SqliteShell-exe" LibType="Static"/>
     </Part>
 
     <ProductDirectoryList ListName="SqliteShellDir" >
         <ProductDirectory Name="ApplicationRoot"                Path = ""/>
         <ProductDirectory Name="ApplicationRoot"                Path = "" LibType = "Static" />
+        <ProductDirectory Name="Assets"                         RelativeTo = "ApplicationRoot" LibType = "Static" />
         <ProductDirectory Name="Assemblies"                     RelativeTo = "ApplicationRoot"/>
         <ProductDirectory Name="Assemblies"                     RelativeTo = "ApplicationRoot" LibType = "Static"  Deliver="false"/>
         <ProductDirectory Name="VendorNotices"                  RelativeTo = "ApplicationRoot" Path="notices"  Deliver="false"/>
@@ -107,6 +124,7 @@
     <Part Name="SqliteLib-lib" BentleyBuildMakeFile="SqliteLib.mke">
         <SubPart LibType="Static" PartName="BeCurl" PartFile="iModelCore\libsrc\curl\BeCurl"/>
         <SubPart LibType="Static" PartName="Compress" PartFile="iModelCore\libsrc\compress\Zlib"/>
+        <SubPart LibType="Static" PartName="proxyres" PartFile="iModelCore\libsrc\proxyres\proxyres"/>
         <SubPart LibType="Static" PartName="Library" PartFile="iModelCore\libsrc\openssl\BeOpenSSL"/>
         <Bindings>
             <Files ProductDirectoryName="ApplicationRoot">
@@ -168,6 +186,7 @@
     <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=BeSQLiteTest -dTEST_COLLECTION_PRODUCT=BeSQLite-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
         <SubProduct ProductName="BeSQLite-Tests"/>
         <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
         <Bindings>
             <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/BeSQLiteTest/Assemblies/*</Files>
             <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/BeSQLiteTest/Assets" />

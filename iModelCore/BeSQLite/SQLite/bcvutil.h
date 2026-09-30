@@ -118,6 +118,23 @@ int sqlite3_bcv_config(sqlite3_bcv*, int eOp, ...);
 **   returns a non-zero value, the operation is abandoned and error code
 **   SQLITE_ABORT returned to the caller.
 **
+**   The progress callback is also called during sqlite3_bcv_cleanup()
+**   operations. In this case, it is called once for each HTTPS request
+**   made while searching for orphaned blocks (see SQLITE_BCVCONFIG_FINDORPHANS
+**   below), and once for each time a block is deleted. During the first
+**   phase, when searching for orphaned blocks, the nDone parameter is always
+**   passed 0, and the nTotal parameter is always passed 1. During the second
+**   phrase, when actually deleting blocks, nDone is set to the number of
+**   blocks deleted, and nTotal to the total number that will be deleted by
+**   the sqlite3_bcv_cleanup() call.
+**
+**   From within an sqlite3_bcv_cleanup() call, if the progress callback 
+**   returns other than SQLITE_OK, then the operation is halted immediately.
+**   If the return value is SQLITE_DONE and one or more blocks have already
+**   been deleted, then a new manifest file is uploaded and SQLITE_OK returned.
+**   If the progress callback returns any other value, then no new manifest
+**   is uploaded and SQLITE_ABORT is returned to the caller.
+**
 ** SQLITE_BCVCONFIG_LOG:
 **   Configure a callback to be invoked each time an HTTP(S) request is
 **   sent, and each time a reply is received. The trailing arguments for
@@ -148,6 +165,15 @@ int sqlite3_bcv_config(sqlite3_bcv*, int eOp, ...);
 ** SQLITE_BCVCONFIG_HTTPTIMEOUT:
 **   Sets the number of seconds before an HTTPS request is deemed
 **   to have timed out. Default is 600.
+**
+** SQLITE_BCVCONFIG_FINDORPHANS:
+**   This option requires a single argument of type int, interpreted
+**   as a Boolean. If set to true (the default), then any call to
+**   sqlite3_bcv_cleanup() using the handle will search the cloud storage
+**   container for orphaned blocks before deleting blocks already scheduled 
+**   for deletion. Orphaned blocks are created when a client abruptly halts,
+**   is disconnected or encounters an error while uploading a change.
+**   
 */
 #define SQLITE_BCVCONFIG_VERBOSE     1      /* (int) */
 #define SQLITE_BCVCONFIG_PROGRESS    2      /* (void*,xProgress) */
@@ -156,6 +182,7 @@ int sqlite3_bcv_config(sqlite3_bcv*, int eOp, ...);
 #define SQLITE_BCVCONFIG_LOGLEVEL    5      /* (int) */
 #define SQLITE_BCVCONFIG_TESTNOKV    6      /* (int) */
 #define SQLITE_BCVCONFIG_HTTPTIMEOUT 7      /* (int) */
+#define SQLITE_BCVCONFIG_FINDORPHANS 8      /* (int) */
 
 /*
 ** Delete an sqlite3_bcv handle obtained via an earlier call to

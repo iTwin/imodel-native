@@ -2191,9 +2191,9 @@ static BeGuid QueryExistingNode(Db& db, StatementCache& statements, BeGuidCR hie
     DbResult result = stmt->Step();
     if (BE_SQLITE_ROW == result)
         {
-        BeGuid result = NodesCacheHelpers::GetGuid(*stmt, 0);
+        auto guid = NodesCacheHelpers::GetGuid(*stmt, 0);
         DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::HierarchiesCache, stmt->Step() == BE_SQLITE_DONE, "Found more than one matching node in cached hierarchy level. Returning the first one.");
-        return result;
+        return guid;
         }
 
     return BeGuid();
@@ -2336,7 +2336,8 @@ void NodesCache::_Update(DataSourceInfo const& info, int partsToUpdate)
             stmt->BindText(++bindingIndex, info.GetCustomJson().Stringify(), Statement::MakeCopy::Yes);
         NodesCacheHelpers::BindGuid(*stmt, ++bindingIndex, info.GetIdentifier().GetId());
 
-        stmt->Step();
+        DbResult result = stmt->Step();
+        DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::HierarchiesCache, BE_SQLITE_DONE == result, Utf8PrintfString("Unexpected update step result: %d", (int)result));
         }
 
     if (0 != (DataSourceInfo::PART_RelatedClasses & partsToUpdate))
@@ -3089,15 +3090,12 @@ std::shared_ptr<IHierarchyLevelLocker> INavNodesCache::CreateHierarchyLevelLocke
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-NodesCacheHierarchyLevelLocker::LockResult NodesCacheHierarchyLevelLocker::TryLockHierarchyLevel(int options)
+NodesCacheHierarchyLevelLocker::LockResult NodesCacheHierarchyLevelLocker::TryLockHierarchyLevel()
     {
     // start transaction in order to prevent other connections writing to cache while trying to aquire hierarchy lock
     IHierarchyCache::SavepointPtr savepoint = m_cache.CreateSavepoint();
 
-    if (m_cache.IsHierarchyLevelLocked(m_hierarchyLevelIdentifier))
-        return LockResult::LockNotAquired;
-
-    if (0 != (LockOptions::CheckLockedChildLevels & options) && m_cache.IsAnyChildHierarchyLevelLocked(m_hierarchyLevelIdentifier))
+    if (m_cache.IsHierarchyLevelLocked(m_hierarchyLevelIdentifier) || m_cache.IsAnyChildHierarchyLevelLocked(m_hierarchyLevelIdentifier))
         return LockResult::LockNotAquired;
 
     m_hierarchyLevelId = m_cache.CacheOrGetPhysicalHierarchyLevel(m_hierarchyLevelIdentifier);
@@ -3127,7 +3125,7 @@ bool NodesCacheHierarchyLevelLocker::_Lock(int options)
         }
 
     LockResult result = LockResult::LockNotAquired;
-    while ((result = TryLockHierarchyLevel(options)) == LockResult::LockNotAquired)
+    while ((result = TryLockHierarchyLevel()) == LockResult::LockNotAquired)
         {
         if (result == LockResult::LockFailed)
             DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::HierarchiesCache, "Failed to lock hierarchy level.");

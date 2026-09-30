@@ -7,6 +7,7 @@
 #include <Bentley/BeDirectoryIterator.h>
 #include <BeSQLite/Profiler.h>
 #include <BeSQLite/VirtualTab.h>
+#include <thread>
 using namespace MemorySize;
 
 #define MEM_THRESHOLD (100 * MEG)
@@ -184,6 +185,33 @@ TEST_F(BeIdSetTests, ChunkedArray) {
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
+TEST_F(BeIdSetTests, DdlStatementBoundaries)
+    {
+    bvector<Utf8String> statements = {
+        "CREATE TABLE test(value TEXT DEFAULT 'a; b')",
+        "CREATE TABLE [semi; colon](value TEXT)",
+        "/* a; comment */ CREATE INDEX idx ON test(value)",
+        "-- a; comment\nCREATE INDEX idx2 ON test(value)",
+        "CREATE TABLE trailing_comment(value TEXT) -- keep this newline\n",
+        "CREATE TRIGGER update_values_after_insert AFTER INSERT ON test BEGIN UPDATE test SET value='x; y'; UPDATE test SET value='z'; END",
+    };
+    DdlChanges ddl;
+    for (auto const& statement : statements)
+        ddl.AddDDL(statement.c_str());
+
+    EXPECT_EQ(statements, ddl.GetDDLs());
+    DdlChanges regrouped;
+    for (auto const& statement : ddl.GetDDLs())
+        regrouped.AddDDL(statement.c_str());
+    EXPECT_EQ(ddl.ToString(), regrouped.ToString());
+    DdlChanges terminated((ddl.ToString() + ";  \n").c_str());
+    EXPECT_EQ(statements, terminated.GetDDLs());
+    EXPECT_TRUE(DdlChanges(" ; \n ; ").GetDDLs().empty());
+    }
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
 struct TestChangeSet : BeSQLite::ChangeSet
     {
     ConflictResolution _OnConflict(ConflictCause cause, BeSQLite::Changes::Change iter) override { BeAssert(false && "Unexpected conflict"); return ConflictResolution::Skip; }
@@ -297,6 +325,32 @@ struct DisableAsserts {
     DisableAsserts() { BeTest::SetFailOnAssert(false); }
     ~DisableAsserts() { BeTest::SetFailOnAssert(true); }
 };
+
+TEST_F(BeSQliteTestFixture, sqlite_stmt) {
+    auto db1 = Create("first.db");
+    ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("create table test(i)"));
+    ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("insert into test values (zeroblob(10))"));
+    ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("insert into test values (zeroblob(10))"));
+    db1->SaveChanges();
+
+    auto stmt = db1->GetCachedStatement("select * from test");
+    ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+
+    Statement stmt2;
+    ASSERT_EQ(BE_SQLITE_OK, stmt2.Prepare(*db1, "SELECT [sql] FROM [sqlite_stmt]"));
+
+
+    ASSERT_EQ(BE_SQLITE_ROW, stmt2.Step());
+
+    ASSERT_STREQ(stmt2.GetValueText(0), "SELECT [sql] FROM [sqlite_stmt]");
+    ASSERT_EQ(BE_SQLITE_ROW, stmt2.Step());
+    ASSERT_STREQ(stmt2.GetValueText(0), "select * from test");
+    ASSERT_EQ(BE_SQLITE_ROW, stmt2.Step());
+    ASSERT_STREQ(stmt2.GetValueText(0), "SELECT 1 FROM sqlite_master where type='table' AND name=?");
+    ASSERT_EQ(BE_SQLITE_ROW, stmt2.Step());
+    ASSERT_STREQ(stmt2.GetValueText(0), "INSERT OR REPLACE INTO be_Prop (Namespace,Name,Id,SubId,TxnMode,RawSize,Data,StrData) VALUES(?,?,?,?,?,?,?,?)");
+    ASSERT_EQ(BE_SQLITE_DONE, stmt2.Step());
+}
 
 TEST_F(BeSQliteTestFixture, WAL_basic_test) {
     DisableAsserts _notused;
@@ -426,6 +480,109 @@ TEST_F(BeSQliteTestFixture, sqlite_stat1)
     ASSERT_EQ(BE_SQLITE_OK, cs->ApplyChanges(*db2));
     db2->SaveChanges();
     ASSERT_EQ(expectedRowCount, GetRowCount(*db2, "sqlite_stat1"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+// Regression test for SQLite check-in 8b3da5d6cea2e3b3. Verify that the session
+// extension's deferred constraint retry handles extended constraint result codes
+// while swapping unique index values between two rows:
+//   UPDATE row 1: name 'foo' -> 'goo'
+//   UPDATE row 2: name 'goo' -> 'foo'
+// When applied, both UPDATEs initially hit SQLITE_CONSTRAINT (unique violation) and
+// are deferred to the constraints buffer (bDeferConstraints=1). The retry logic in
+// sessionRetryConstraints step 2 resolves this by temporarily deleting one row,
+// applying the other update, then reinserting with the correct value.
+//---------------------------------------------------------------------------------------
+TEST_F(BeSQliteTestFixture, apply_changeset_swap_unique_index_values_with_extended_result_codes)
+    {
+    auto db1 = Create("first.db");
+    ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("CREATE TABLE test_swap(id INTEGER PRIMARY KEY, name TEXT)"));
+    ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("CREATE UNIQUE INDEX uidx_test_swap_name ON test_swap(name)"));
+    ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("INSERT INTO test_swap(id, name) VALUES(1, 'foo')"));
+    ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("INSERT INTO test_swap(id, name) VALUES(2, 'goo')"));
+    db1->SaveChanges();
+    db1->CloseDb();
+
+    ASSERT_EQ(BeFileNameStatus::Success, Clone("first.db", "second.db"));
+
+    db1 = OpenReadWrite("first.db");
+    auto db2 = OpenReadWrite("second.db");
+    ASSERT_TRUE(db1 != nullptr);
+    ASSERT_TRUE(db2 != nullptr);
+
+    // BeSQLite enables extended result codes when opening a database. Confirm
+    // that a unique violation is reported as the extended code that triggered
+    // the session extension regression.
+    ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE,
+        db2->TryExecuteSql("INSERT INTO test_swap(id, name) VALUES(3, 'foo')"));
+
+    // Capture changeset: the session tracker records net per-row changes despite
+    // the intermediate temp value used to avoid constraint violations during mutation.
+    std::unique_ptr<BeSQLite::ChangeSet> cs = Capture(*db1, [](DbR db, void*) {
+        if (BE_SQLITE_OK != db.ExecuteSql("UPDATE test_swap SET name='__temp__' WHERE id=1"))
+            return false;
+        if (BE_SQLITE_OK != db.ExecuteSql("UPDATE test_swap SET name='foo' WHERE id=2"))
+            return false;
+        if (BE_SQLITE_OK != db.ExecuteSql("UPDATE test_swap SET name='goo' WHERE id=1"))
+            return false;
+        return true;
+        }, nullptr);
+
+    ASSERT_TRUE(cs != nullptr);
+    db1->SaveChanges();
+
+    // Verify the changeset contains exactly 2 UPDATE operations with the net swap values.
+    // The session extension collapses the 3 intermediate UPDATEs into 2 net changes, one per row.
+    {
+    int updateCount = 0;
+    for (auto const& change : cs->GetChanges())
+        {
+        ASSERT_STREQ("test_swap", change.GetTableName().c_str());
+        ASSERT_TRUE(change.IsUpdate());
+        DbValue oldVal = change.GetOldValue(1); // column 1 = name
+        DbValue newVal = change.GetNewValue(1);
+        ASSERT_TRUE(oldVal.IsValid());
+        ASSERT_TRUE(newVal.IsValid());
+
+        Utf8CP oldName = oldVal.GetValueText();
+        Utf8CP newName = newVal.GetValueText();
+        // Each row's net change should be foo->goo or goo->foo
+        bool isFooToGoo = (strcmp(oldName, "foo") == 0 && strcmp(newName, "goo") == 0);
+        bool isGooToFoo = (strcmp(oldName, "goo") == 0 && strcmp(newName, "foo") == 0);
+        ASSERT_TRUE(isFooToGoo || isGooToFoo) << "old=" << oldName << " new=" << newName;
+        updateCount++;
+        }
+    ASSERT_EQ(2, updateCount);
+    }
+
+    // Apply changeset to db2 using ApplyChangesArgs with a conflict handler that counts
+    // invocations. The session extension's deferred constraint retry (sessionRetryConstraints)
+    // should resolve the circular unique constraint dependency without invoking the handler.
+    int conflictCount = 0;
+    BeSQLite::ApplyChangesArgs args;
+    args.SetConflictHandler([&conflictCount](BeSQLite::ChangeStream::ConflictCause cause, BeSQLite::Changes::Change change) {
+        conflictCount++;
+        return BeSQLite::ChangeStream::ConflictResolution::Abort;
+        });
+
+    ASSERT_EQ(BE_SQLITE_OK, cs->ApplyChanges(*db2, args));
+    db2->SaveChanges();
+
+    // The deferred constraint mechanism resolved the swap internally - no conflicts reported
+    ASSERT_EQ(0, conflictCount);
+
+    // Verify the swap was applied correctly to db2
+    {
+    auto stmt = db2->GetCachedStatement("SELECT name FROM test_swap WHERE id=1");
+    ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+    ASSERT_STREQ("goo", stmt->GetValueText(0));
+    }
+    {
+    auto stmt = db2->GetCachedStatement("SELECT name FROM test_swap WHERE id=2");
+    ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+    ASSERT_STREQ("foo", stmt->GetValueText(0));
+    }
     }
 
 //---------------------------------------------------------------------------------------
@@ -1445,3 +1602,124 @@ TEST_F(BeSQliteTestFixture, SQLiteMemCheck_UseInDiskJournal_UseNestedTransaction
     SqliteMemoryTest(false, true, MEM_THRESHOLD, true);
     }
 #endif
+
+/*---------------------------------------------------------------------------------**//**
+* RAII helper that disables the monotone-clock shim when it goes out of scope.
+* Using this in test functions prevents the global shim from remaining enabled if a
+* fatal ASSERT fires before the explicit EnableMonotoneClock(false) call.
++---------------+---------------+---------------+---------------+---------------+------*/
+struct MonotoneClockGuard { ~MonotoneClockGuard() { BeSQLiteLib::EnableMonotoneClock(false); } };
+
+/*---------------------------------------------------------------------------------**//**
+* Verify that the monotone-clock VFS shim always returns a strictly increasing time:
+* two consecutive calls to SQLite's time function must never return the same value.
+* The test exercises both the direct VFS API path (by evaluating `julianday('now')`
+* through an in-memory Db) and the enable/disable lifecycle.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BeSQliteTestFixture, MonotoneClock_StrictlyIncreasing)
+    {
+    // --- Enable the shim ---
+    BeSQLiteLib::EnableMonotoneClock(true);
+
+    // Scope guard ensures the shim is always disabled on test exit, even if a fatal
+    // ASSERT fires before the explicit disable calls below.
+    MonotoneClockGuard clockGuard;
+
+    auto db = Create("monotone_clock_test.db");
+    ASSERT_NE(nullptr, db);
+
+    // Collect N consecutive timestamps from SQLite. julianday('now') calls the VFS
+    // xCurrentTimeInt64, which our shim intercepts.
+    constexpr int N = 50;
+    bvector<double> times;
+    times.reserve(N);
+
+    for (int i = 0; i < N; ++i)
+        {
+        auto stmt = db->GetCachedStatement("SELECT julianday('now')");
+        ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+        times.push_back(stmt->GetValueDouble(0));
+        }
+
+    // Every value must be strictly greater than the previous one.
+    for (int i = 1; i < N; ++i)
+        {
+        EXPECT_GT(times[i], times[i - 1])
+            << "monotone-clock VFS returned duplicate or decreasing time at index " << i
+            << ": times[" << i - 1 << "]=" << times[i - 1]
+            << " times[" << i << "]=" << times[i];
+        }
+
+    // --- Disable the shim and verify the original default VFS is restored ---
+    BeSQLiteLib::EnableMonotoneClock(false);
+
+    // Re-enabling and disabling a second time must be idempotent (no crash).
+    BeSQLiteLib::EnableMonotoneClock(true);
+    BeSQLiteLib::EnableMonotoneClock(true);  // double-enable is a no-op
+    BeSQLiteLib::EnableMonotoneClock(false);
+    BeSQLiteLib::EnableMonotoneClock(false); // double-disable is a no-op
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Verify that the monotone-clock shim is thread-safe: multiple threads calling the
+* time function concurrently must all receive unique, strictly increasing values in
+* their own call sequence (no duplicates within a single thread's observed values).
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BeSQliteTestFixture, MonotoneClock_ThreadSafe)
+    {
+    BeSQLiteLib::EnableMonotoneClock(true);
+
+    // Scope guard ensures the shim is always disabled on test exit.
+    MonotoneClockGuard clockGuard;
+
+    constexpr int kThreads = 4;
+    constexpr int kIterationsPerThread = 25;
+
+    // Each thread stores its own sequence of timestamps.
+    bvector<bvector<double>> perThreadTimes(kThreads);
+
+    // Threads signal failure via this flag so the main thread can assert it.
+    std::atomic<bool> anyWorkerFailed{false};
+
+    bvector<std::thread> threads;
+    for (int t = 0; t < kThreads; ++t)
+        {
+        threads.emplace_back([t, &perThreadTimes, &anyWorkerFailed]()
+            {
+            auto db = Create(Utf8PrintfString("monotone_clock_mt_%d.db", t).c_str());
+            if (!db) { anyWorkerFailed.store(true, std::memory_order_relaxed); return; }
+            auto& times = perThreadTimes[t];
+            times.reserve(kIterationsPerThread);
+            for (int i = 0; i < kIterationsPerThread; ++i)
+                {
+                auto stmt = db->GetCachedStatement("SELECT julianday('now')");
+                if (stmt->Step() != BE_SQLITE_ROW)
+                    { anyWorkerFailed.store(true, std::memory_order_relaxed); return; }
+                times.push_back(stmt->GetValueDouble(0));
+                }
+            });
+        }
+
+    for (auto& th : threads)
+        th.join();
+
+    ASSERT_FALSE(anyWorkerFailed.load()) << "One or more worker threads failed to create a DB or execute a query";
+
+    // Within each thread's own sequence the timestamps must be strictly increasing,
+    // and each thread must have collected exactly kIterationsPerThread values.
+    for (int t = 0; t < kThreads; ++t)
+        {
+        ASSERT_EQ((size_t) kIterationsPerThread, perThreadTimes[t].size())
+            << "Thread " << t << " collected " << perThreadTimes[t].size()
+            << " timestamps instead of " << kIterationsPerThread;
+
+        auto const& times = perThreadTimes[t];
+        for (size_t i = 1; i < times.size(); ++i)
+            {
+            EXPECT_GT(times[i], times[i - 1])
+                << "Thread " << t << ": non-monotone at index " << i;
+            }
+        }
+    }

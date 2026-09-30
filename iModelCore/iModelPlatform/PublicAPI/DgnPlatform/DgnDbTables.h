@@ -580,6 +580,12 @@ struct EcefLocation
     }
     // Constructor to compute ECEF location from an cartographic origin
     DGNPLATFORM_EXPORT EcefLocation(GeoPointCR originLL, DPoint3dCR originIn, GeoCoordinates::BaseGCSCP GCS);
+    DGNPLATFORM_EXPORT Transform ComputeTransform();
+    //! Convert a geographic point to an ECEF (Earth-Centered, Earth-Fixed) location.
+    //! @param[in] origin The origin geographic point, specified using lat/long coordinates in radians.
+    //! @param[in] point An offset point (optional).
+    //! @return The ECEF location corresponding to the geographic point; returned object will have been marked invalid in case of failure.
+    DGNPLATFORM_EXPORT static EcefLocation FromGeographic(GeoPointCR origin, DPoint3dCP point);
 };
 
 //! Source of DgnGeoLocation.GetProjectExtents
@@ -663,6 +669,9 @@ public:
     //! Update the project extents for this BIM
     DGNPLATFORM_EXPORT void SetProjectExtents(AxisAlignedBox3dCR newExtents);
 
+    //! Calls OnProjectExtentsChanged on all loaded spatialModels within the dgndb 
+    DGNPLATFORM_EXPORT void NotifyProjectExtentsChanged(AxisAlignedBox3dCR newExtents) const;
+
     //! Reset the in-memory project extents to a null range. Strictly for tests.
     void ResetProjectExtents() {
       m_extent.low.x = 100;
@@ -678,6 +687,7 @@ public:
     //! include space occupied by elements or other artifacts of interest), they may disappear under some operations since they're not considered
     //! "of interest". Likewise, if this volume is too large, some operations may work poorly due to the large volume of "wasted space".
     DGNPLATFORM_EXPORT AxisAlignedBox3d GetProjectExtents() const;
+    DGNPLATFORM_EXPORT AxisAlignedBox3d GetProjectExtents(Utf8StringCR when) const;
 
     //! Get the EcefLocation for this iModel. May not be valid if iModel is not geolocated.
     DGNPLATFORM_EXPORT EcefLocation GetEcefLocation() const;

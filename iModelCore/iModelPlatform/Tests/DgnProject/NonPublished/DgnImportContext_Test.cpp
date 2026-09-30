@@ -27,15 +27,9 @@ struct ImportTest : DgnDbTestFixture
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static RenderMaterialId createTexturedMaterial(DgnDbR dgnDb, Utf8CP materialName, WCharCP pngFileName, RenderingAsset::TextureMap::Units unitMode)
+static DgnTextureId insertTexture(DgnDbR dgnDb, Utf8CP textureName, WCharCP pngFileName)
     {
-    RgbFactor red = {1.0, 0.0, 0.0};
     uint32_t width, height;
-
-    BeJsDocument val;
-    RenderingAsset renderMaterialAsset(val);
-    renderMaterialAsset.SetColor(RENDER_MATERIAL_Color, red);
-    renderMaterialAsset.SetBool(RENDER_MATERIAL_FlagHasBaseColor, true);
 
     Image image;
     ImageSource imageSource;
@@ -65,11 +59,28 @@ static RenderMaterialId createTexturedMaterial(DgnDbR dgnDb, Utf8CP materialName
     EXPECT_TRUE(image.IsValid());
 
     DefinitionModelR dictionary = dgnDb.GetDictionaryModel();
-    DgnTexture texture(DgnTexture::CreateParams(dictionary, materialName/*###TODO unnamed textures*/, imageSource, image.GetWidth(), image.GetHeight()));
+    DgnTexture texture(DgnTexture::CreateParams(dictionary, textureName/*###TODO unnamed textures*/, imageSource, image.GetWidth(), image.GetHeight()));
     texture.Insert();
     DgnTextureId textureId = texture.GetTextureId();
     EXPECT_TRUE(textureId.IsValid());
+    return textureId;
+    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static RenderMaterialId createTexturedMaterial(DgnDbR dgnDb, Utf8CP materialName, WCharCP pngFileName, RenderingAsset::TextureMap::Units unitMode)
+    {
+    RgbFactor red = {1.0, 0.0, 0.0};
+
+    BeJsDocument val;
+    RenderingAsset renderMaterialAsset(val);
+    renderMaterialAsset.SetColor(RENDER_MATERIAL_Color, red);
+    renderMaterialAsset.SetBool(RENDER_MATERIAL_FlagHasBaseColor, true);
+
+    DgnTextureId textureId = insertTexture(dgnDb, materialName, pngFileName);
+
+    DefinitionModelR dictionary = dgnDb.GetDictionaryModel();
     BeJsDocument mapsMap;
     auto patternMap = mapsMap[RENDER_MATERIAL_MAP_Pattern];
     patternMap[RENDER_MATERIAL_TextureId]        = textureId.ToHexStr();
@@ -83,6 +94,27 @@ static RenderMaterialId createTexturedMaterial(DgnDbR dgnDb, Utf8CP materialName
     auto createdMaterial = material.Insert();
     EXPECT_TRUE(createdMaterial.IsValid());
     return createdMaterial.IsValid() ? createdMaterial->GetMaterialId() : RenderMaterialId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static int countTextures(DgnDbR dgnDb)
+    {
+    BeSQLite::Statement stmt(dgnDb, "SELECT count(*) FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE ECClassId=?");
+    stmt.BindId(1, DgnTexture::QueryDgnClassId(dgnDb));
+    EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+    return stmt.GetValueInt(0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnTextureId getPatternMapTextureId(DgnElementCR material)
+    {
+    RenderMaterialCP renderMaterial = dynamic_cast<RenderMaterialCP>(&material);
+    EXPECT_TRUE(nullptr != renderMaterial);
+    return (nullptr != renderMaterial) ? renderMaterial->GetRenderingAsset().GetPatternMap().GetTextureId() : DgnTextureId();
     }
 
 //---------------------------------------------------------------------------------------
@@ -571,5 +603,90 @@ TEST_F(ImportTest, OpenStatementsProblem)
     //  Copy the contents of the first model to the second
     PhysicalModelPtr model2 = dynamic_cast<PhysicalModel*>(DgnModel::CopyModel(*model1, partition2->GetElementId()).get());
     ASSERT_TRUE(model2.IsValid());
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ImportTest, ImportMaterialUsesSeededTextureRemapping)
+{
+    SetupSeedProject();
+    DgnDbP sourceDb = m_db.get();
+
+    RenderMaterialId sourceMaterialId = createTexturedMaterial(*sourceDb, "MaterialWithPatternMap", L"", RenderingAsset::TextureMap::Units::Relative);
+    ASSERT_TRUE(sourceMaterialId.IsValid());
+    DgnTextureId sourceTextureId = DgnTexture::QueryTextureId(sourceDb->GetDictionaryModel(), "MaterialWithPatternMap");
+    ASSERT_TRUE(sourceTextureId.IsValid());
+    RenderMaterialCPtr sourceMaterial = RenderMaterial::Get(*sourceDb, sourceMaterialId);
+    ASSERT_TRUE(sourceMaterial.IsValid());
+    ASSERT_EQ(sourceTextureId, sourceMaterial->GetRenderingAsset().GetPatternMap().GetTextureId());
+    sourceDb->SaveChanges();
+
+    //  Create the destination Db with an existing texture.
+    //  Texture has a different name to ensure the only way it's found is via the id remapping added to the import context. 
+    DgnDbPtr destDb = openCopyOfDb(L"3dMetricGeneralcc.bim");
+    ASSERT_TRUE(destDb.IsValid());
+    DgnTextureId dummyTextureId = insertTexture(*destDb, "Inserted to ensure seeded texture id is different than source texture id", L"");
+    ASSERT_TRUE(dummyTextureId.IsValid());
+    DgnTextureId seededTextureId = insertTexture(*destDb, "PreExistingTexture", L"");
+    ASSERT_TRUE(seededTextureId.IsValid());
+    ASSERT_NE(sourceTextureId, seededTextureId) << "The source and destination texture Ids should be different";
+
+    int destTextureCountBefore = countTextures(*destDb);
+
+    DgnImportContext importContext(*sourceDb, *destDb);
+    importContext.AddTextureId(sourceTextureId, seededTextureId);
+    ASSERT_EQ(seededTextureId, importContext.FindTextureId(sourceTextureId));
+
+    DgnDbStatus istatus;
+    DgnElementCPtr destMaterial = sourceMaterial->Import(&istatus, destDb->GetDictionaryModel(), importContext);
+    ASSERT_EQ(DgnDbStatus::Success, istatus);
+    ASSERT_TRUE(destMaterial.IsValid());
+
+    ASSERT_EQ(seededTextureId, getPatternMapTextureId(*destMaterial)) << "The materials pattern map should point to the seeded Texture";
+    ASSERT_EQ(destTextureCountBefore, countTextures(*destDb)) << "No additional Textures should have been inserted into the destination";
+    ASSERT_EQ(seededTextureId, importContext.FindTextureId(sourceTextureId)) << "Added mapping should not have been overwritten";
+
+    destDb->SaveChanges();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ImportTest, ImportMaterialCopiesTextureWhenNoTextureRemappingIsSeeded)
+{
+    SetupSeedProject();
+    DgnDbP sourceDb = m_db.get();
+
+    RenderMaterialId sourceMaterialId = createTexturedMaterial(*sourceDb, "MaterialWithPatternMap", L"", RenderingAsset::TextureMap::Units::Relative);
+    ASSERT_TRUE(sourceMaterialId.IsValid());
+    DgnTextureId sourceTextureId = DgnTexture::QueryTextureId(sourceDb->GetDictionaryModel(), "MaterialWithPatternMap");
+    ASSERT_TRUE(sourceTextureId.IsValid());
+    RenderMaterialCPtr sourceMaterial = RenderMaterial::Get(*sourceDb, sourceMaterialId);
+    ASSERT_TRUE(sourceMaterial.IsValid());
+    sourceDb->SaveChanges();
+
+    DgnDbPtr destDb = openCopyOfDb(L"3dMetricGeneralcc.bim");
+    ASSERT_TRUE(destDb.IsValid());
+
+    // Insert an unrelated Texture, just to make sure that the Ids in the two Dbs don't line up
+    ASSERT_TRUE(insertTexture(*destDb, "PreExistingTexture", L"").IsValid());
+    int destTextureCountBefore = countTextures(*destDb);
+
+    DgnImportContext importContext(*sourceDb, *destDb);
+    ASSERT_FALSE(importContext.FindTextureId(sourceTextureId).IsValid()) << "nothing was seeded for this test";
+
+    DgnDbStatus istatus;
+    DgnElementCPtr destMaterial = sourceMaterial->Import(&istatus, destDb->GetDictionaryModel(), importContext);
+    ASSERT_EQ(DgnDbStatus::Success, istatus);
+    ASSERT_TRUE(destMaterial.IsValid());
+
+    DgnTextureId destTextureId = getPatternMapTextureId(*destMaterial);
+    ASSERT_TRUE(destTextureId.IsValid());
+    ASSERT_EQ(destTextureCountBefore + 1, countTextures(*destDb)) << "the source Texture should have been automatically copied to the destination Db";
+    ASSERT_EQ(DgnTexture::QueryTextureId(destDb->GetDictionaryModel(), "MaterialWithPatternMap"), destTextureId) << "The materials pattern map should point to the copied texture.";
+    ASSERT_TRUE(DgnTexture::Get(*destDb, destTextureId).IsValid());
+
+    destDb->SaveChanges();
 }
 

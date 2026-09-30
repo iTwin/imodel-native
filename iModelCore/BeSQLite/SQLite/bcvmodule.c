@@ -29,6 +29,10 @@
 #define AZURE_BLOBTYPE_HDR        "x-ms-blob-type:BlockBlob"
 #define AZURE_EXPECT_HDR          "Expect:"
 
+#define AZURE_MAX_RESULTS         5000
+#define GOOGLE_MAX_RESULTS        5000
+
+
 
 /*
 ** Type cast to (sqlite3_bcv_container*) for "azure" cloud modules.
@@ -410,7 +414,7 @@ static int bcvAzureOpen(
   const char *zEmulator = 0;      /* Value of emulator= option, if any */
   int i;
   int rc = SQLITE_OK;
-  int nMaxResults = 200;
+  int nMaxResults = AZURE_MAX_RESULTS;
 
   /* Search the azParam[] array for recognized parameter names (currently
   ** "emulator" and "sas"). Set stack variables bSas and zEmulator as
@@ -1125,7 +1129,7 @@ static void bcvGoogleListFiles(
   sqlite3_bcv_job *pCtx, 
   const char *zMarker
 ){
-  const int nMax = 200;
+  const int nMax = GOOGLE_MAX_RESULTS;
   BcvGoogle *p = (BcvGoogle*)pCont;
   sqlite3_bcv_request *pReq = 0;
 

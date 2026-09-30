@@ -501,7 +501,7 @@ int areaSignPreference = 0
 //! @param [in] frame placement frame
 //! @param [in] fractionA start fraction for active portion of curve
 //! @param [in] fractionB end fraction for active portion of curve
-//! @param [in] maxStrokeLength reasonable estimate of small stroke length.  10 meters recommended.
+//! @param [in] maxStrokeLength maximum stroke length. Recommended 10 meters.
 GEOMDLLIMPEXP static ICurvePrimitivePtr CreateSpiral
 (
 DSpiral2dBaseCR spiral,
@@ -996,6 +996,7 @@ GEOMDLLIMPEXP bool GetBreakFraction (size_t breakFractioniIndex, double &fractio
 //! Move a fraction to the nearest break fraction.
 GEOMDLLIMPEXP bool AdjustFractionToBreakFraction (double fraction, Rounding::RoundingMode mode, size_t &breakIndex, double &adjustedFraction) const;
 //! Initialize an MSBsplineCurve form of the curve.
+//! Caller is responsible for calling curve.ReleaseMem() if and only if this method returns true.
 GEOMDLLIMPEXP bool GetMSBsplineCurve (MSBsplineCurveR curve, double fraction0 = 0.0, double fraction1 = 1.0) const;
 //! Clone as bspline.  Return nullptr if unable to clone as curve.
 GEOMDLLIMPEXP ICurvePrimitivePtr CloneAsBspline (double fraction0 = 0.0, double fraction1 = 1.0) const;
@@ -1024,7 +1025,7 @@ GEOMDLLIMPEXP bool SignedDistanceBetweenFractions (RotMatrixCP worldToLocal, dou
 //! Attempt to move a specified distance from given fraction.
 //! @param [in] startFraction starting position.
 //! @param [in] signedDistance distance for attempted move.
-//! @param [in] allowExtension controls extended behaior of line, arc, and linestring.
+//! @param [in] allowExtension controls extended behavior of line, arc, and linestring.
 //! @param [out] location fraction and point after move.  {a} field indicates actual signed distance moved (which may be less than request!!)
 //! @remark If extension is not allowed, there are fussy rules for both the input and output.
 //! (1) The startFraction is clamped to {0..1}
@@ -1036,7 +1037,7 @@ GEOMDLLIMPEXP bool PointAtSignedDistanceFromFraction (double startFraction, doub
 //! @param [in] worldToView optional transformation.  To get "in XY Plane" behavior, the matrix must flatten.
 //! @param [in] startFraction starting position.
 //! @param [in] signedDistance distance for attempted move.
-//! @param [in] allowExtension controls extended behaior of line, arc, and linestring.
+//! @param [in] allowExtension controls extended behavior of line, arc, and linestring.
 //! @param [out] location fraction and point after move.  {a} field indicates actual signed distance moved (which may be less than request!!)
 //! @remark If extension is not allowed, there are fussy rules for both the input and output.
 //! (1) The startFraction is clamped to {0..1}

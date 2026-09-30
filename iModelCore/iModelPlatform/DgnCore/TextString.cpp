@@ -542,9 +542,9 @@ BentleyStatus TextStringPersistence::DecodeFromFlatBuf(TextStringR text, FB::Tex
     TextStringStyle& style = text.m_style;
 
     style.SetFont(FontId((uint64_t)fbStyle.fontId()));
-    if (fbStyle.has_isBold()) style.SetIsBold(0 != fbStyle.isBold());
-    if (fbStyle.has_isItalic()) style.SetIsItalic(0 != fbStyle.isItalic());
-    if (fbStyle.has_isUnderlined()) style.SetIsUnderlined(0 != fbStyle.isUnderlined());
+    if (fbStyle.has_isBold()) style.SetIsBold(fbStyle.isBold());
+    if (fbStyle.has_isItalic()) style.SetIsItalic(fbStyle.isItalic());
+    if (fbStyle.has_isUnderlined()) style.SetIsUnderlined(fbStyle.isUnderlined());
     style.m_size.y = fbStyle.height();
 
     if (fbStyle.has_widthFactor())

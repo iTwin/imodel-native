@@ -453,7 +453,7 @@ CustomAttributeReadStatus IECCustomAttributeContainer::ReadCustomAttributes (pug
             if (CustomAttributeDeserializerP)
                 thisStatus = CustomAttributeDeserializerP->LoadCustomAttributeFromString (customAttributeInstance, customAttributeClassNode, *context, schemaContext, *this);
             else
-                thisStatus = IECInstance::ReadFromBeXmlNode (customAttributeInstance, customAttributeClassNode, *context);
+                thisStatus = IECInstance::ReadFromXmlNode (customAttributeInstance, customAttributeClassNode, *context);
             if (InstanceReadStatus::Success != thisStatus && InstanceReadStatus::CommentOnly != thisStatus)
                 {
                 // In EC3 we will fail to load the schema if any invalid custom attributes are found, for EC2 schemas we will skip the invalid attributes and continue to load the schema
@@ -463,7 +463,7 @@ CustomAttributeReadStatus IECCustomAttributeContainer::ReadCustomAttributes (pug
                     if (ECObjectsStatus::Success != SchemaKey::ParseSchemaFullName(caSchemaKey, ns.c_str()))
                         return CustomAttributeReadStatus::InvalidCustomAttributes;
                     // In EC3, skip the custom attribute if it belongs to a pruned schema
-                    if (schemaContext.GetSchemasToPrune().end() != std::find(schemaContext.GetSchemasToPrune().begin(), schemaContext.GetSchemasToPrune().end(), caSchemaKey.GetName().c_str()))
+                    if (InstanceReadStatus::ECSchemaPruned == thisStatus)
                         status = CustomAttributeReadStatus::SkippedCustomAttributes;
                     else
                         status = CustomAttributeReadStatus::InvalidCustomAttributes;
@@ -500,7 +500,7 @@ CustomAttributeReadStatus IECCustomAttributeContainer::ReadCustomAttributes (pug
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaWriteStatus IECCustomAttributeContainer::WriteCustomAttributes
 (
-BeXmlWriterR xmlWriter,
+BePugiXmlWriterR xmlWriter,
 ECVersion ecXmlVersion
 ) const
     {
@@ -523,9 +523,9 @@ ECVersion ecXmlVersion
             className = "DisplayUnitSpecification";
 
         if (ecXmlVersion == ECVersion::V2_0)
-            (*iter)->WriteToBeXmlNode(xmlWriter, className);
+            (*iter)->WriteToXmlNode(xmlWriter, className);
         else
-            (*iter)->WriteToBeXmlNodeLatestVersion(xmlWriter, className);
+            (*iter)->WriteToXmlNodeLatestVersion(xmlWriter, className);
         }
     xmlWriter.WriteElementEnd();
 
@@ -627,7 +627,7 @@ bool copyReferences
                     }
                 }
             }
-        else if (!ECSchema::IsSchemaReferenced(*destContainer.GetContainerSchema(), sourceCustomAttributeSchema))
+        else if (!ECSchema::IsSchemaReferenced(*destContainer.GetContainerSchema(), sourceCustomAttributeSchema, SchemaMatchType::Latest)) // latest, or we would add multiple references to the same schema
             {
             status = destContainer.GetContainerSchema()->AddReferencedSchema(const_cast<ECSchemaR>(sourceCustomAttributeSchema));
             if (ECObjectsStatus::Success != status)

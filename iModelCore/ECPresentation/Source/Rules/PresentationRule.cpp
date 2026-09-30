@@ -5,7 +5,6 @@
 #include <ECPresentationPch.h>
 
 #include "PresentationRuleJsonConstants.h"
-#include "PresentationRuleXmlConstants.h"
 #include "CommonToolsInternal.h"
 #include <ECPresentation/Rules/PresentationRules.h>
 
@@ -44,20 +43,6 @@ void HashableBase::ComputeHash()
     {
     BeMutexHolder lock(m_mutex);
     m_hash = _ComputeHash().GetHashString();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PresentationKey::ReadXml (BeXmlNodeP xmlNode) {return _ReadXml(xmlNode);}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PresentationKey::WriteXml(BeXmlNodeP parentXmlNode) const
-    {
-    BeXmlNodeP ruleNode = parentXmlNode->AddEmptyElement(_GetXmlElementName());
-    _WriteXml(ruleNode);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -114,25 +99,6 @@ MD5 PresentationKey::_ComputeHash() const
     if (m_index.IsValid())
         ADD_PRIMITIVE_VALUE_TO_HASH(md5, "index", m_index.Value());
     return md5;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PrioritizedPresentationKey::_ReadXml(BeXmlNodeP xmlNode)
-    {
-    if (BEXML_Success != xmlNode->GetAttributeInt32Value(m_priority, COMMON_XML_ATTRIBUTE_PRIORITY))
-        m_priority = 1000;
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PrioritizedPresentationKey::_WriteXml(BeXmlNodeP xmlNode) const
-    {
-    xmlNode->AddAttributeInt32Value(COMMON_XML_ATTRIBUTE_PRIORITY, m_priority);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -203,29 +169,6 @@ PresentationRule::PresentationRule(int priority, bool onlyIfNotHandled)
 PresentationRule::~PresentationRule()
     {
     CommonToolsInternal::FreePresentationRules(m_requiredSchemas);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PresentationRule::_ReadXml (BeXmlNodeP xmlNode)
-    {
-    if (!PrioritizedPresentationKey::_ReadXml(xmlNode))
-        return false;
-
-    if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_onlyIfNotHandled, COMMON_XML_ATTRIBUTE_ONLYIFNOTHANDLED))
-        m_onlyIfNotHandled = false;
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PresentationRule::_WriteXml (BeXmlNodeP xmlNode) const
-    {
-    PrioritizedPresentationKey::_WriteXml(xmlNode);
-    xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_ONLYIFNOTHANDLED, m_onlyIfNotHandled);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -306,26 +249,6 @@ Utf8StringCR ConditionalPresentationRule::GetCondition() const { return m_condit
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConditionalPresentationRule::SetCondition(Utf8String value) { m_condition = value; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ConditionalPresentationRule::_ReadXml(BeXmlNodeP xmlNode)
-    {
-    if (BEXML_Success != xmlNode->GetAttributeStringValue(m_condition, PRESENTATION_RULE_XML_ATTRIBUTE_CONDITION))
-        m_condition = "";
-
-    return PresentationRule::_ReadXml(xmlNode);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ConditionalPresentationRule::_WriteXml(BeXmlNodeP xmlNode) const
-    {
-    PresentationRule::_WriteXml(xmlNode);
-    xmlNode->AddAttributeStringValue(PRESENTATION_RULE_XML_ATTRIBUTE_CONDITION, m_condition.c_str());
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

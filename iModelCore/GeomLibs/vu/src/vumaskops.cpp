@@ -586,6 +586,9 @@ void vu_exchangeNullFacesToBringMaskInside (VuSetP pGraph, VuMask mask)
     {
     size_t numNull = 0;
     size_t numReversed = 0;
+    UNUSED_VARIABLE(numNull);
+    UNUSED_VARIABLE(numReversed);
+    
     // When two input faces "butt against each other along an edge,
     // the angular sort logic (in vu_merge) has no way of knowing which
     // of the geometrically identical edges is logicaly "first" in the sort order.

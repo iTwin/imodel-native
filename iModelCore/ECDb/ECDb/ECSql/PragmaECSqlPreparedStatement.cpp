@@ -3,6 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
+#include <string>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //================================================================================
@@ -76,7 +77,7 @@ Utf8CP PragmaManager::Handler::GetTypeString() const {
 BeJsValue StaticPragmaResult::AppendRow() {
     BeMutexHolder lock(GetMutex());
     if (GetColumnCount() ==0) {
-        throw std::runtime_error("now columns added");
+        throw std::runtime_error("no columns added");
     }
     return m_doc.appendArray();
 }
@@ -289,7 +290,7 @@ DbResult PragmaManager::PrepareClass(RowSet& rowSet, Utf8StringCR name, PragmaVa
 DbResult PragmaManager::Prepare(RowSet& rowset,PragmaStatementExp const& exp) const {
     OptionsMap optionsMap;
     if (auto opts = exp.GetOptions()) {
-        optionsMap = exp.GetOptions()->GetOptionMap();
+        optionsMap = opts->GetOptionMap();
     }
     return Prepare(rowset, exp.GetName(), exp.GetValue(), exp.IsReadValue() ? Operation::Read : Operation::Write, exp.GetPathTokens(), optionsMap);
 }
@@ -346,11 +347,11 @@ DbResult  PragmaManager::Prepare(RowSet& rowset, Utf8StringCR name, PragmaVal co
         if (classP == nullptr) {
             return PrepareAny(rowset,name, val, op, path, options);
         }
-    }
-    if (path.size() >= 3) {
-        propertyP = classP->GetPropertyP(path[2]);
-        if (propertyP == nullptr) {
-            return PrepareAny(rowset,name, val, op, path, options);
+        if (path.size() >= 3) {
+            propertyP = classP->GetPropertyP(path[2]);
+            if (propertyP == nullptr) {
+                return PrepareAny(rowset,name, val, op, path, options);
+            }
         }
     }
     if (propertyP && classP && schemaP) {
@@ -448,6 +449,11 @@ ECN::ECPropertyCP PragmaResult::AppendProperty(Utf8StringCR name, ECN::Primitive
         return nullptr;
     }
     ECN::PrimitiveECPropertyP property = nullptr;
+    // Note: Binary is intentionally NOT supported here. StaticPragmaResult stores rows in a
+    // BeJsDocument (JSON), so "binary" values get base64-encoded on write (SetBinary) and must be
+    // decoded on read (_GetBlob), only to be re-encoded when ConcurrentQuery serializes the response.
+    // Use PRIMITIVETYPE_String with BeJsValue::SetBinary() instead - the base64 string passes through
+    // as-is and the TS ECSqlReader auto-detects the "encoding=base64;" prefix, decoding it to Uint8Array.
     if (type == ECN::PRIMITIVETYPE_Boolean ||
         type == ECN::PRIMITIVETYPE_Double ||
         type == ECN::PRIMITIVETYPE_Integer||
@@ -605,6 +611,8 @@ ECSqlStatus PragmaECSqlPreparedStatement::_Reset() {
     if (rc != BE_SQLITE_OK)
         return ECSqlStatus(rc);
 
+    if(!m_isFirstStep)
+        m_isFirstStep = true; // Will reset the flag when actually everything will be reset successfully if flag is false
     return ECSqlStatus::Success;
 }
 //---------------------------------------------------------------------------------------
@@ -612,7 +620,24 @@ ECSqlStatus PragmaECSqlPreparedStatement::_Reset() {
 //---------------------------------------------------------------------------------------
 ECSqlStatus PragmaECSqlPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp const& exp) {
     auto& pragmaExp = exp.GetAs<PragmaStatementExp>();
-    const auto rc = ctx.GetECDb().GetImpl().GetPragmaManager().Prepare(m_resultSet, pragmaExp);
+
+    // A pragma runs its underlying logic (schema/class lookups, SQLite reads, attached-table-space
+    // access, SQL functions, etc.) at prepare time against the connection whose PragmaManager handles
+    // it. For multi-threaded prepares (e.g. concurrent query) ctx.GetECDb() is a separate, read-only
+    // schema-source connection used only to parse/resolve schemas; it is shared across worker threads
+    // and does not carry the executing connection's synced attached databases or SQL functions. Mirror
+    // regular ECSQL -- which prepares and steps against ctx.GetDataSourceConnection() -- and run the
+    // pragma against the data-source connection so it observes the same attached table spaces and
+    // functions as the executing (worker) connection, and so concurrent workers never share a single
+    // pragma-execution connection. When no separate data-source connection was provided (the common
+    // single-connection case) ctx.GetDataSourceConnection() is the same object as ctx.GetECDb().
+    ECDb const* pragmaConn = &ctx.GetECDb();
+    if (&ctx.GetDataSourceConnection() != &ctx.GetECDb()) {
+        if (ECDb const* dataSourceECDb = dynamic_cast<ECDb const*>(&ctx.GetDataSourceConnection()))
+            pragmaConn = dataSourceECDb;
+    }
+
+    const auto rc = pragmaConn->GetImpl().GetPragmaManager().Prepare(m_resultSet, pragmaExp);
     if (rc != BE_SQLITE_OK)
         return ECSqlStatus(rc);
 
@@ -620,6 +645,8 @@ ECSqlStatus PragmaECSqlPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
         BeAssert(m_resultSet != nullptr && "Must be never nullptr for successful prepare");
         return ECSqlStatus::Error;
     }
+
+    SetDataSourceDb(*pragmaConn);
     return ECSqlStatus::Success;
 }
 
@@ -634,10 +661,17 @@ DbResult PragmaECSqlPreparedStatement::DoStep() {
     if (SUCCESS != AssertIsValid())
         return BE_SQLITE_ERROR;
 
-    if (!m_parameterMap.OnBeforeStep().IsSuccess())
-        return BE_SQLITE_ERROR;
-
-    return m_resultSet->Step();
+    if(m_isFirstStep)
+        {
+        if (!m_parameterMap.OnBeforeFirstStep().IsSuccess())
+            return BE_SQLITE_ERROR;
+        }
+    
+    DbResult res = m_resultSet->Step();
+    // if step actually succeeded and returned BE_SQLITE_DONE or BE_SQLITE_ROW on the sqlite side then we set this flag to false if flag is true, if the returned value is something else like BE_SQLITE_SCHEMA or anything else we don't set the flag to false
+    if((res == BE_SQLITE_DONE || res == BE_SQLITE_ROW) && m_isFirstStep)
+        m_isFirstStep = false; 
+    return res;
 }
 
 //---------------------------------------------------------------------------------------

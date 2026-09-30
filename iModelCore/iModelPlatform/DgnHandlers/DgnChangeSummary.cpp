@@ -320,7 +320,7 @@ static StatusInt GetAppliableChangesets(DgnDbR currentDb, bvector<ChangesetProps
     // Get a collection of changesets that can be put together into a change summary
     for (ChangesetPropsPtr changeset : changesets)
         {
-        if (changeset->ContainsSchemaChanges(currentDb))
+        if (changeset->ContainsDdlChanges(currentDb))
             {
             // Set the current appliable changesets we have
             appliableChangesets.push_back(currentAppliableChangesets);
@@ -492,7 +492,7 @@ StatusInt    DgnChangeSummary::GetChangedElements(DgnDbR currentDb, DgnDbPtr tar
         for (auto changeset : changesetList)
             {
             BeFileNameCR changesetChangesFile = changeset->GetFileName();
-            ChangesetFileReader changeStream(changesetChangesFile, currentDb);
+            ChangesetFileReader changeStream(changesetChangesFile, &currentDb);
             changeStream.AddToChangeGroup(group);
             }
 

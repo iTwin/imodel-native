@@ -8,7 +8,6 @@
 #include <GeomSerialization/GeomSerializationApi.h>
 #include <GeomSerialization/GeomLibsSerialization.h>
 #include <GeomSerialization/GeomLibsJsonSerialization.h>
-#include <json/value.h>
 
 BEGIN_UNNAMED_NAMESPACE
     BE_JSON_NAME(rawValue)
@@ -136,8 +135,8 @@ void ECJsonUtilities::Int64ToJson(BeJsValue json, int64_t int64Val, ECJsonInt64F
     switch (int64Format)
         {
         case ECJsonInt64Format::AsNumber:
-            if (int64Val < Json::Value::maxInt())
-                json = (Json::Int) int64Val;
+            if (int64Val < std::numeric_limits<int32_t>::max())
+                json = (int32_t) int64Val;
             else
                 json = (double) int64Val;
             return;
@@ -267,7 +266,7 @@ BentleyStatus ECJsonUtilities::JsonToPoint3d(DPoint3d& pt, BeJsConst json) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus ECJsonUtilities::PointCoordinateFromJson(double& coordinate, BeJsConst json, Json::StaticString const& coordinateKey) {
+BentleyStatus ECJsonUtilities::PointCoordinateFromJson(double& coordinate, BeJsConst json, Utf8CP coordinateKey) {
     if (!json.isObject())
         return ERROR;
 
@@ -282,14 +281,6 @@ BentleyStatus ECJsonUtilities::PointCoordinateFromJson(double& coordinate, BeJsC
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus ECJsonUtilities::IGeometryToJson(JsonValueR json, IGeometryCR geom)
-    {
-    return BentleyGeometryJson::TryGeometryToJsonValue(json, geom, false) ? SUCCESS : ERROR;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
 BentleyStatus ECJsonUtilities::IGeometryToIModelJson(BeJsValue json, IGeometryCR geom)
     {
     return IModelJson::TryGeometryToIModelJsonValue(json, geom) ? SUCCESS : ERROR;
@@ -298,7 +289,15 @@ BentleyStatus ECJsonUtilities::IGeometryToIModelJson(BeJsValue json, IGeometryCR
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-IGeometryPtr ECJsonUtilities::JsonToIGeometry(JsonValueCR json)
+BentleyStatus ECJsonUtilities::IGeometryToJson(BeJsValue json, IGeometryCR geom)
+    {
+    return BentleyGeometryJson::TryGeometryToJsonValue(json, geom, false) ? SUCCESS : ERROR;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+IGeometryPtr ECJsonUtilities::JsonToIGeometry(BeJsConst json)
     {
     bvector<IGeometryPtr> geometry;
     if (!BentleyGeometryJson::TryJsonValueToGeometry(json, geometry) || geometry.empty())
@@ -706,13 +705,66 @@ BentleyStatus JsonECInstanceConverter::JsonToECInstance(ECN::IECInstanceR instan
 // @bsimethod
 //---------------------------------------------------------------------------------------
 BentleyStatus JsonECInstanceConverter::JsonToECInstance(IECInstanceR instance, BeJsConst jsonValue, ECClassCR currentClass, Utf8StringCR currentAccessString,
-    IECClassLocaterR classLocater, bool ignoreUnknownProperties, IECSchemaRemapperCP remapper, std::function<bool(Utf8CP)> shouldSerializeProperty)
+    IECClassLocaterR classLocater, bool ignoreUnknownProperties, IECSchemaRemapperCP remapper, std::function<bool(Utf8CP)> shouldSerializeProperty, bool isDeepNull)
     {
-    if (!jsonValue.isObject())
+    if (!jsonValue.isObject() && !isDeepNull)
         return ERROR;
 
     bool checkShouldSerializeProperty = shouldSerializeProperty != nullptr;
     BentleyStatus stat = SUCCESS;
+
+    if (isDeepNull) 
+        {
+        ClassLayoutR classLayout = currentClass.GetDefaultStandaloneEnabler()->GetClassLayout();
+        uint32_t propIndex = 0;
+        if (ECObjectsStatus::Success != classLayout.GetPropertyIndex(propIndex, "")) // we need to select the root of the currentClass
+            return ERROR;
+
+        uint32_t childIndex = classLayout.GetFirstChildPropertyIndex(propIndex);
+        while (0 != childIndex)
+            {
+            Utf8CP innerMemberName;
+            if (ECObjectsStatus::Success != classLayout.GetAccessStringByIndex(innerMemberName, childIndex))
+                return ERROR;
+
+            ECPropertyP ecProperty = currentClass.GetPropertyP(innerMemberName);
+            Utf8String childAccessString = currentAccessString.empty() ? Utf8String(innerMemberName) : currentAccessString + "." + Utf8String(innerMemberName);
+            if (ecProperty->GetIsPrimitive())
+                {
+                ECValue ecValue;
+                ecValue.SetToNull();
+                ECObjectsStatus ecStatus = instance.SetInternalValue(childAccessString.c_str(), ecValue);
+                if (ecStatus != ECObjectsStatus::Success && ecStatus != ECObjectsStatus::PropertyValueMatchesNoChange)
+                    {
+                    stat = ERROR;
+                    BeAssert(ecStatus == ECObjectsStatus::Success || ecStatus == ECObjectsStatus::PropertyValueMatchesNoChange);
+                    }
+                }
+            else if (ecProperty->GetIsStruct())
+                {
+                BentleyStatus status = JsonToECInstance(instance, jsonValue, ecProperty->GetAsStructProperty()->GetType(), childAccessString, classLocater, ignoreUnknownProperties, remapper, nullptr, true);
+                if (status != SUCCESS)
+                    {
+                    stat = ERROR;
+                    BeAssert(SUCCESS == status);
+                    }
+                }
+            else if (ecProperty->GetIsArray())
+                {
+                ECObjectsStatus ecStatus = instance.ClearArray(childAccessString.c_str());
+                if (ECObjectsStatus::Success != ecStatus)
+                    {
+                    stat = ERROR;
+                    BeAssert(ECObjectsStatus::Success == ecStatus);
+                    }
+                }
+            
+            childIndex = classLayout.GetNextChildPropertyIndex(propIndex, childIndex);
+            }
+
+            return stat;
+        }
+
     jsonValue.ForEachProperty([&](Utf8CP memberName, BeJsConst childJsonValue) {
 
         auto convertOne = [&]() {
@@ -747,19 +799,13 @@ BentleyStatus JsonECInstanceConverter::JsonToECInstance(IECInstanceR instance, B
             }
         else if (ecProperty->GetIsStruct())
             {
-            if (childJsonValue.isNull())
-                return false;
-
-            if (SUCCESS != JsonToECInstance(instance, childJsonValue, ecProperty->GetAsStructProperty()->GetType(), accessString, classLocater, ignoreUnknownProperties, remapper))
+            if (SUCCESS != JsonToECInstance(instance, childJsonValue, ecProperty->GetAsStructProperty()->GetType(), accessString, classLocater, ignoreUnknownProperties, remapper, nullptr, childJsonValue.isNull()))
                 return true;
 
             return false;
             }
         else if (ecProperty->GetIsArray())
             {
-            if (childJsonValue.isNull())
-                return false;
-
             if (SUCCESS != JsonToArrayECValue(instance, childJsonValue, *ecProperty->GetAsArrayProperty(), accessString, classLocater))
                 return true;
             }
@@ -899,7 +945,8 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
             }
         case PRIMITIVETYPE_Long:
             {
-            int64_t val;
+            // Initialized because MSVC cannot see that JsonToInt64 always assigns on success.
+            int64_t val = 0;
             if (SUCCESS != ECJsonUtilities::JsonToInt64(val, jsonValue))
                 return ERROR;
 
@@ -956,9 +1003,7 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
             {
             if (jsonValue.isObject())
                 {
-                Json::Value tmp;
-                jsonValue.SaveTo(tmp);
-                IGeometryPtr geom = ECJsonUtilities::JsonToIGeometry(tmp);
+                IGeometryPtr geom = ECJsonUtilities::JsonToIGeometry(jsonValue);
                 if (geom == nullptr)
                     return ERROR;
 
@@ -995,28 +1040,21 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
 //---------------------------------------------------------------------------------------
 BentleyStatus JsonECInstanceConverter::JsonToArrayECValue(IECInstanceR instance, BeJsConst jsonValue, ArrayECPropertyCR property, Utf8StringCR accessString, IECClassLocaterR classLocater)
 {
-    if (!jsonValue.isArray())
+    if (!jsonValue.isArray() && !jsonValue.isNull())
         return ERROR;
-
-    const uint32_t length = jsonValue.size();
 
     ECValue arrayValue;
     instance.GetValue(arrayValue, accessString.c_str());
-    uint32_t currentLength = arrayValue.IsNull()? 0: arrayValue.GetArrayInfo().GetCount();
-    if (length < currentLength)
-        {
-        // We need to shorten the array. Start by emptying it out.
-        if (ECObjectsStatus::Success != instance.ClearArray(accessString.c_str()))
-            return ERROR;
-        currentLength = 0;
-        // Now make the array the size we need
-        }
-    if (length > currentLength)
-        {
-        uint32_t xlength = length - currentLength;
-        if (ECObjectsStatus::Success != instance.AddArrayElements(accessString.c_str(), xlength))
-            return ERROR;
-        }
+    uint32_t currentLength = arrayValue.IsNull() ? 0 : arrayValue.GetArrayInfo().GetCount();
+    if (currentLength != 0 && ECObjectsStatus::Success != instance.ClearArray(accessString.c_str()))
+        return ERROR;
+
+    if (jsonValue.isNull())
+        return SUCCESS;
+
+    const uint32_t length = jsonValue.size();
+    if (length > 0 && ECObjectsStatus::Success != instance.AddArrayElements(accessString.c_str(), length))
+        return ERROR;
 
     if (property.GetIsStructArray())
         {
@@ -1117,7 +1155,7 @@ StatusInt JsonEcInstanceWriter::WritePrimitiveValue(BeJsValue valueToPopulate, U
             if (koq)
                 BeAssert(false && "KOQ not yet support for this type");
 
-            Json::Value tmp;
+            BeJsDocument tmp;
             auto status =  ECJsonUtilities::IGeometryToIModelJson(tmp, *ecValue.GetIGeometry());
             if (status != SUCCESS)
                 return status;
@@ -1325,8 +1363,8 @@ StatusInt JsonEcInstanceWriter::WriteArrayPropertyValue(BeJsValue valueToPopulat
                 break;
 
             // write the primitive value
-            Json::Value val; // tricky - we have to use Json::Value because WritePrimitive creates an object but we only want one member
-            if (BSISUCCESS != (ixwStatus = WritePrimitiveValue(BeJsValue(val), typeString, ecValue, memberType, koq, casing)))
+            BeJsDocument val; // tricky - WritePrimitiveValue creates an object but we only want one member
+            if (BSISUCCESS != (ixwStatus = WritePrimitiveValue(val, typeString, ecValue, memberType, koq, casing)))
                 {
                 BeAssert(false);
                 return ixwStatus;

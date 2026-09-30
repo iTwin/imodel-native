@@ -600,65 +600,162 @@ ECObjectsStatus ECClass::OnBaseClassPropertyAdded (ECPropertyCR baseProperty, bo
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConflicts)
+ECObjectsStatus ECClass::AddPropertyInternal(ECPropertyP& pProperty, bool resolveConflicts)
     {
-    ECPropertyP baseProperty = nullptr;
-    Utf8String newName, errorMessage;
-    ECObjectsStatus status = FindPropertyConflicts(pProperty, baseProperty, newName, errorMessage, resolveConflicts);
-    switch (status)
-        {
-        case ECObjectsStatus::Success :
-            break;
-        case ECObjectsStatus::NamedItemAlreadyExists :
-            LOG.errorv("Cannot add property '%s' because it already exists in this ECClass (%s:%s)", 
-                pProperty->GetName().c_str(), GetSchema().GetFullSchemaName().c_str(), GetName().c_str());
-            return ECObjectsStatus::NamedItemAlreadyExists;
-        case ECObjectsStatus::DataTypeMismatch :
-        case ECObjectsStatus::InvalidPrimitiveOverrride :
-            if (!Utf8String::IsNullOrEmpty(errorMessage.c_str()))
-                LOG.error(errorMessage.c_str());
-            else
-                {
-                Utf8String propTypeName = pProperty->GetTypeName();
-                LOG.errorv("Could not add property '%s' of type '%s' to '%s:%s' due to a data type mismatch",
-                    pProperty->GetName().c_str(), propTypeName.c_str(), GetSchema().GetFullSchemaName().c_str(), GetName().c_str());
-                }
-            return status;
-        case ECObjectsStatus::CaseCollision :
-            LOG.errorv("Could not add property '%s' to '%s' due to case-collision with %s:%s", 
-                pProperty->GetName().c_str(), GetFullName(), baseProperty->GetClass().GetFullName(), baseProperty->GetName().c_str());
-            return ECObjectsStatus::CaseCollision;
-        default :
-            LOG.errorv("Could not add property '%s' to '%s' due to unknown error", pProperty->GetName().c_str(), GetFullName());
-            return ECObjectsStatus::Error;
-        }
-
-    if (!newName.Equals(pProperty->GetName()))
-        {
-        if (!newName.EqualsIAscii(pProperty->GetName()))
-            AddPropertyMapping(pProperty->GetName().c_str(), newName.c_str());
-        pProperty->SetDisplayLabel(pProperty->GetName());
-        pProperty->SetName(newName);
-        }
-    if (nullptr != baseProperty)
-        pProperty->SetBaseProperty(baseProperty);
-
-
     m_propertyMap.insert (bpair<Utf8CP, ECPropertyP> (pProperty->GetName().c_str(), pProperty));
     m_propertyList.push_back(pProperty);
-
     InvalidateDefaultStandaloneEnabler();
-
     for (ECClassP derivedClass : m_derivedClasses)
-        status = derivedClass->OnBaseClassPropertyAdded (*pProperty, resolveConflicts);
-    
-    if (ECObjectsStatus::Success != status)
         {
-        RemoveProperty(*pProperty);
-        return status;
+        ECObjectsStatus status = derivedClass->OnBaseClassPropertyAdded (*pProperty, resolveConflicts);
+        if (ECObjectsStatus::Success != status)
+            {
+            RemoveProperty(*pProperty);
+            return status;
+            }
         }
 
     return ECObjectsStatus::Success;
+    }
+
+Utf8String ECClass::FindAvailablePropertyName(ECPropertyCP property, ECPropertyP& existingProperty) const
+    {
+    Utf8PrintfString newName("%s_%s_", GetSchema().GetAlias().c_str(), property->GetName().c_str());
+    existingProperty = nullptr;
+    while(true) // TODO: This has been an infinite loop in the old impl as well, but we may want to limit the number of loops
+        {
+        ECPropertyP preExistingProperty = GetPropertyP(newName.c_str(), true);
+        if (preExistingProperty == nullptr)
+            return newName;
+
+        Utf8String errorMsg;
+        if (ECObjectsStatus::Success == CanPropertyBeOverridden(*preExistingProperty, *property, errorMsg))
+            {
+            ECPropertyP localProperty = GetPropertyP(newName.c_str(), false);
+            if(nullptr != localProperty)
+                {
+                // found a local property which is compatible
+                existingProperty = localProperty;
+                return existingProperty->GetName();
+                }
+
+            return newName;
+            }
+
+
+        newName.append("_");
+        }
+    }
+
+// Ownership contract: This method deletes the incoming property ONLY when returning Success
+// with a replacement. On error paths, the caller is responsible for cleanup.
+// This invariant is relied upon by CreatePropertyInternal, _ReadPropertyFromXmlAndAddToClass,
+// CopyProperty, and RenameConflictProperty.
+ECObjectsStatus ECClass::AddPropertyResolveConflicts(ECPropertyP& property)
+    {
+    ECPropertyP existingProperty;
+    Utf8String name = FindAvailablePropertyName(property, existingProperty);
+
+    if(nullptr != existingProperty)
+        {
+        delete property; // Caller's pointer is updated via reference - no leak, no double-free
+        property = existingProperty;
+        return ECObjectsStatus::Success;
+        }
+
+    ECPropertyP baseProperty = GetBaseClassPropertyP(name.c_str());
+    if(nullptr != baseProperty)
+        {
+        if(!baseProperty->GetName().Equals(property->GetName()))
+            {
+            name = baseProperty->GetName();
+            }
+
+        property->SetBaseProperty(baseProperty);
+        }
+
+    if (!name.Equals(property->GetName()))
+        {
+        if (!name.EqualsIAscii(property->GetName()))
+            AddPropertyMapping(property->GetName().c_str(), name.c_str());
+        property->SetDisplayLabel(property->GetName());
+        property->SetName(name);
+        }
+
+    return AddPropertyInternal(property, true);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConflicts)
+    {
+    // Step 1: If property does not exist, we can just add it
+    // There is no base property, no potential renaming, no compatibility check
+    if (nullptr == GetPropertyP (pProperty->GetName().c_str(), true))
+        {
+        return AddPropertyInternal(pProperty, resolveConflicts);
+        }
+
+    ECPropertyP localProperty = GetPropertyP(pProperty->GetName().c_str(), false);
+    if(nullptr != localProperty)
+        {
+        if(!resolveConflicts)
+            { // Even though we may be able to return the found property, if resolveConflicts is false we need to return an error due to contract.
+            LOG.errorv("Cannot add property '%s' because it already exists in this ECClass (%s:%s)", 
+                pProperty->GetName().c_str(), GetSchema().GetFullSchemaName().c_str(), GetName().c_str());
+            return ECObjectsStatus::NamedItemAlreadyExists;
+            }
+
+        Utf8String errorMsg;
+        ECObjectsStatus status = CanPropertyBeOverridden(*localProperty, *pProperty, errorMsg);
+        if(ECObjectsStatus::Success == status) // existing local property is compatible with the incoming one
+            {
+            delete pProperty; // Caller's pointer is updated via reference - see ownership contract on AddPropertyResolveConflicts
+            pProperty = localProperty;
+            return ECObjectsStatus::Success;
+            }
+
+
+        return AddPropertyResolveConflicts(pProperty);
+        }
+
+    ECPropertyP baseProperty = GetBaseClassPropertyP(pProperty->GetName().c_str());
+    if(nullptr == baseProperty)
+        {
+        LOG.errorv("Unexpected error: This code path should not be reached. Cannot add property '%s' to ECClass (%s:%s). GetBaseClassPropertyP has to return a value at this point.", 
+            pProperty->GetName().c_str(), GetSchema().GetFullSchemaName().c_str(), GetName().c_str());
+        return ECObjectsStatus::Error;
+        }
+    
+    bool isBasePropNameExactlySame = baseProperty->GetName().Equals(pProperty->GetName());
+    if (!resolveConflicts && !isBasePropNameExactlySame)
+        {
+        LOG.errorv("Could not add property '%s' to '%s' due to case-collision with %s:%s", 
+            pProperty->GetName().c_str(), GetFullName(), baseProperty->GetClass().GetFullName(), baseProperty->GetName().c_str());
+        return ECObjectsStatus::CaseCollision;
+        }
+
+    Utf8String errorMsg;
+    ECObjectsStatus status = CanPropertyBeOverridden(*baseProperty, *pProperty, errorMsg);
+    if(ECObjectsStatus::Success == status) // existing base property is compatible with the incoming one
+        {
+        if(resolveConflicts && !isBasePropNameExactlySame) // Preserving old behavior. In case resolveConflicts is true and the base prop name and this prop name is not same, we just update this prop name
+            {
+            Utf8StringCR name = baseProperty->GetName().c_str();
+            if (!name.EqualsIAscii(pProperty->GetName()))
+                AddPropertyMapping(pProperty->GetName().c_str(), name.c_str());
+            pProperty->SetDisplayLabel(pProperty->GetName());
+            pProperty->SetName(name);
+            }
+        pProperty->SetBaseProperty(baseProperty);
+        return AddPropertyInternal(pProperty, resolveConflicts);
+        }
+
+    if(!resolveConflicts)
+        return status;
+
+    return AddPropertyResolveConflicts(pProperty);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -728,7 +825,7 @@ ECObjectsStatus setPrimitivePropertyAttributes(ECClassP destClass, PrimitiveProp
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP sourceProperty, Utf8CP destPropertyName, bool copyCustomAttributes, bool andAddProperty, bool copyReferences)
+ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP sourceProperty, Utf8CP destPropertyName, bool copyCustomAttributes, bool andAddProperty, bool copyReferences, bool resolveConflicts)
     {
     if (nullptr == sourceProperty)
         return ECObjectsStatus::NullPointerValue;
@@ -752,7 +849,7 @@ ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP so
         StructArrayECPropertyCP sourceStructArray = sourceProperty->GetAsStructArrayProperty();
         ECStructClassCP structClass = &sourceStructArray->GetStructElementType();
         ECClassP target;
-        if (ECObjectsStatus::Success != (status = GetSchemaR().GetOrCopyReferencedClassForCopy(sourceProperty->GetClass(), target, structClass, copyReferences)))
+        if (ECObjectsStatus::Success != (status = GetSchemaR().GetOrCopyReferencedClassForCopy(sourceProperty->GetClass(), target, structClass, copyReferences, false, resolveConflicts)))
             {
             delete(destStructArray);
             return status;
@@ -800,7 +897,7 @@ ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP so
         ECStructClassCP structClass = &sourceStruct->GetType();
 
         ECClassP target;
-        if (ECObjectsStatus::Success != (status = GetSchemaR().GetOrCopyReferencedClassForCopy(sourceProperty->GetClass(), target, structClass, copyReferences)))
+        if (ECObjectsStatus::Success != (status = GetSchemaR().GetOrCopyReferencedClassForCopy(sourceProperty->GetClass(), target, structClass, copyReferences, false, resolveConflicts)))
             {
             delete(destStruct);
             return status;
@@ -831,7 +928,7 @@ ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP so
         ECRelationshipClassCP relationshipClass = sourceNav->GetRelationshipClass();
 
         ECClassP target;
-        if (ECObjectsStatus::Success != (status = GetSchemaR().GetOrCopyReferencedClassForCopy(sourceProperty->GetClass(), target, relationshipClass, copyReferences)))
+        if (ECObjectsStatus::Success != (status = GetSchemaR().GetOrCopyReferencedClassForCopy(sourceProperty->GetClass(), target, relationshipClass, copyReferences, false, resolveConflicts)))
             {
             delete(destNav);
             return status;
@@ -1197,7 +1294,7 @@ ECObjectsStatus ECClass::RemoveProperty (Utf8StringCR name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECClass::AddProperty (ECPropertyP ecProperty, Utf8StringCR name, bool resolveConflicts)
+ECObjectsStatus ECClass::AddProperty (ECPropertyP& ecProperty, Utf8StringCR name, bool resolveConflicts)
     {
     ECObjectsStatus status = ecProperty->SetName (name);
     if (ECObjectsStatus::Success != status)
@@ -1206,124 +1303,141 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP ecProperty, Utf8StringCR name,
     return AddProperty (ecProperty, resolveConflicts);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
+template<typename TProperty>
+ECObjectsStatus ECClass::CreatePropertyInternal(TProperty*& ecProperty, Utf8StringCR name, bool resolveConflicts)
+    {
+    ECPropertyP outProperty = ecProperty;
+    ECObjectsStatus status = AddProperty(outProperty, name, resolveConflicts);
+    if (status != ECObjectsStatus::Success)
+        {
+        delete ecProperty;
+        ecProperty = nullptr;
+        return status;
+        }
+
+    if (outProperty != ecProperty)
+        {
+        // AddProperty already freed the original property when it found a compatible existing one
+        ecProperty = dynamic_cast<TProperty*>(outProperty);
+        if (ecProperty == nullptr)
+            {
+            // This should never happen if AddProperty correctly validates compatibility
+            BeAssert(false && "AddProperty returned incompatible property type");
+            return ECObjectsStatus::Error;
+            }
+        }
+    return ECObjectsStatus::Success;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::CreatePrimitiveProperty (PrimitiveECPropertyP &ecProperty, Utf8StringCR name, PrimitiveType primitiveType, bool resolveConflicts)
     {
     ecProperty = new PrimitiveECProperty(*this);
-    ecProperty->SetType(primitiveType);
-    ECObjectsStatus status = AddProperty(ecProperty, name, resolveConflicts);
-    if (status != ECObjectsStatus::Success)
-        {
-        delete ecProperty;
-        ecProperty = NULL;
-        return status;
-        }
-    return ECObjectsStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECClass::CreateEnumerationProperty(PrimitiveECPropertyP & ecProperty, Utf8StringCR name, ECEnumerationCR enumerationType)
-    {
-    ecProperty = new PrimitiveECProperty(*this);
-    ecProperty->SetType(enumerationType);
-    ECObjectsStatus status = AddProperty(ecProperty, name);
-    if (status != ECObjectsStatus::Success)
-        {
-        delete ecProperty;
-        ecProperty = NULL;
-        return status;
-        }
-    return ECObjectsStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECClass::CreateStructProperty (StructECPropertyP &ecProperty, Utf8StringCR name, ECStructClassCR structType)
-    {
-    ecProperty = new StructECProperty(*this);
-    ECObjectsStatus status = ecProperty->SetType(structType);
-    if (ECObjectsStatus::Success == status)
-        status = AddProperty(ecProperty, name);
+    ECObjectsStatus status = ecProperty->SetType(primitiveType);
     if (ECObjectsStatus::Success != status)
         {
         delete ecProperty;
         ecProperty = NULL;
         return status;
         }
-    return ECObjectsStatus::Success;
+
+    return CreatePropertyInternal(ecProperty, name, resolveConflicts);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECClass::CreatePrimitiveArrayProperty (PrimitiveArrayECPropertyP &ecProperty, Utf8StringCR name)
+ECObjectsStatus ECClass::CreateEnumerationProperty(PrimitiveECPropertyP & ecProperty, Utf8StringCR name, ECEnumerationCR enumerationType, bool resolveConflicts)
     {
-    ecProperty = new PrimitiveArrayECProperty(*this);
-    ECObjectsStatus status = AddProperty(ecProperty, name);
-    if (status != ECObjectsStatus::Success)
+    ecProperty = new PrimitiveECProperty(*this);
+    ECObjectsStatus status = ecProperty->SetType(enumerationType);
+    if (ECObjectsStatus::Success != status)
         {
         delete ecProperty;
         ecProperty = NULL;
         return status;
         }
-    return ECObjectsStatus::Success;
+    return CreatePropertyInternal(ecProperty, name, resolveConflicts);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECClass::CreatePrimitiveArrayProperty (PrimitiveArrayECPropertyP &ecProperty, Utf8StringCR name, PrimitiveType primitiveType)
+ECObjectsStatus ECClass::CreateStructProperty (StructECPropertyP &ecProperty, Utf8StringCR name, ECStructClassCR structType, bool resolveConflicts)
     {
-    ecProperty = new PrimitiveArrayECProperty(*this);
-    ecProperty->SetPrimitiveElementType (primitiveType);
-    ECObjectsStatus status = AddProperty(ecProperty, name);
-    if (status != ECObjectsStatus::Success)
+    ecProperty = new StructECProperty(*this);
+    ECObjectsStatus status = ecProperty->SetType(structType);
+    if (ECObjectsStatus::Success != status)
         {
         delete ecProperty;
         ecProperty = NULL;
         return status;
         }
-    return ECObjectsStatus::Success;
+
+    return CreatePropertyInternal(ecProperty, name, resolveConflicts);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECClass::CreatePrimitiveArrayProperty (PrimitiveArrayECPropertyP &ecProperty, Utf8StringCR name, bool resolveConflicts)
+    {
+    ecProperty = new PrimitiveArrayECProperty(*this);
+    return CreatePropertyInternal(ecProperty, name, resolveConflicts);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECClass::CreatePrimitiveArrayProperty (PrimitiveArrayECPropertyP &ecProperty, Utf8StringCR name, PrimitiveType primitiveType, bool resolveConflicts)
+    {
+    ecProperty = new PrimitiveArrayECProperty(*this);
+    ECObjectsStatus status = ecProperty->SetPrimitiveElementType (primitiveType);
+    if (ECObjectsStatus::Success != status)
+        {
+        delete ecProperty;
+        ecProperty = NULL;
+        return status;
+        }
+    return CreatePropertyInternal(ecProperty, name, resolveConflicts);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECClass::CreatePrimitiveArrayProperty(PrimitiveArrayECPropertyP& ecProperty, Utf8StringCR name, ECEnumerationCR enumerationType)
+ECObjectsStatus ECClass::CreatePrimitiveArrayProperty(PrimitiveArrayECPropertyP& ecProperty, Utf8StringCR name, ECEnumerationCR enumerationType, bool resolveConflicts)
     {
     ecProperty = new PrimitiveArrayECProperty(*this);
-    ecProperty->SetType(enumerationType);
-    ECObjectsStatus status = AddProperty(ecProperty, name);
-    if (status != ECObjectsStatus::Success)
-        {
-        delete ecProperty;
-        ecProperty = NULL;
-        return status;
-        }
-    return ECObjectsStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECClass::CreateStructArrayProperty (StructArrayECPropertyP &ecProperty, Utf8StringCR name, ECStructClassCR structType)
-    {
-    ecProperty = new StructArrayECProperty(*this);
-    ECObjectsStatus status = ecProperty->SetStructElementType(structType);
-    if (ECObjectsStatus::Success == status)
-        status = AddProperty(ecProperty, name);
+    ECObjectsStatus status = ecProperty->SetType(enumerationType);
     if (ECObjectsStatus::Success != status)
         {
         delete ecProperty;
         ecProperty = NULL;
         return status;
         }
-    return ECObjectsStatus::Success;
+    return CreatePropertyInternal(ecProperty, name, resolveConflicts);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECClass::CreateStructArrayProperty (StructArrayECPropertyP &ecProperty, Utf8StringCR name, ECStructClassCR structType, bool resolveConflicts)
+    {
+    ecProperty = new StructArrayECProperty(*this);
+    ECObjectsStatus status = ecProperty->SetStructElementType(structType);
+    if (ECObjectsStatus::Success != status)
+        {
+        delete ecProperty;
+        ecProperty = NULL;
+        return status;
+        }
+
+    return CreatePropertyInternal(ecProperty, name, resolveConflicts);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2024,7 +2138,7 @@ SchemaReadStatus ECClass::_ReadPropertyFromXmlAndAddToClass( ECPropertyP ecPrope
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion, Utf8CP elementName, bmap<Utf8CP, Utf8CP>* additionalAttributes, bool doElementEnd) const
+SchemaWriteStatus ECClass::_WriteXml (BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion, Utf8CP elementName, bmap<Utf8CP, Utf8CP>* additionalAttributes, bool doElementEnd) const
     {
     SchemaWriteStatus status = SchemaWriteStatus::Success;
 
@@ -2075,13 +2189,13 @@ SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVer
 //---------------+---------------+---------------+---------------+---------------+-------
 bool ECClass::_ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties) const
     {
-    return _ToJson(outValue, standalone, includeSchemaVersion, includeInheritedProperties, bvector<bpair<Utf8String, Json::Value>>());
+    return _ToJson(outValue, standalone, includeSchemaVersion, includeInheritedProperties, BeJsDocument::Null());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-bool ECClass::_ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties, bvector<bpair<Utf8String, Json::Value>> additionalAttributes) const
+bool ECClass::_ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties, BeJsConst additionalAttributes) const
     {
     // Common properties to all Schema items
     if (standalone)
@@ -2152,8 +2266,11 @@ bool ECClass::_ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVer
     else
         WriteCustomAttributes(outValue);
 
-    for (auto const& attribute : additionalAttributes)
-        outValue[attribute.first].From(attribute.second);
+    additionalAttributes.ForEachProperty([&](Utf8CP name, BeJsConst value)
+        {
+        outValue[name].From(value);
+        return false;
+        });
 
     return true;
     }
@@ -2161,7 +2278,7 @@ bool ECClass::_ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVer
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
+SchemaWriteStatus ECClass::_WriteXml (BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
     {
     return _WriteXml (xmlWriter, ecXmlVersion, EC_CLASS_ELEMENT, nullptr, true);
     }
@@ -2259,7 +2376,7 @@ ECPropertyP ECClass::GetInstanceLabelProperty() const
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus ECEntityClass::_WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
+SchemaWriteStatus ECEntityClass::_WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
     {
     if (ECVersion::V2_0 == ecXmlVersion)
         return T_Super::_WriteXml(xmlWriter, ecXmlVersion);
@@ -2272,39 +2389,34 @@ SchemaWriteStatus ECEntityClass::_WriteXml(BeXmlWriterR xmlWriter, ECVersion ecX
 //---------------+---------------+---------------+---------------+---------------+-------
 bool ECEntityClass::_ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties) const
     {
-    bvector<bpair<Utf8String, Json::Value>> attributes;
+    BeJsDocument attributes;
 
     if (IsMixin())
         {
         ECEntityClassCP appliesTo = GetAppliesToClass();
         BeAssert(nullptr != appliesTo);
-        attributes.push_back(bpair<Utf8String, Json::Value>(MIXIN_APPLIES_TO_ATTRIBUTE, ECJsonUtilities::FormatClassName(*appliesTo)));
+        attributes[MIXIN_APPLIES_TO_ATTRIBUTE] = ECJsonUtilities::FormatClassName(*appliesTo);
         if (HasBaseClasses())
-            attributes.push_back(bpair<Utf8String, Json::Value>(ECJSON_BASE_CLASS_ELEMENT, ECJsonUtilities::FormatClassName(*(GetBaseClasses()[0]))));
+            attributes[ECJSON_BASE_CLASS_ELEMENT] = ECJsonUtilities::FormatClassName(*(GetBaseClasses()[0]));
         }
     else
         {
         if (HasBaseClasses())
             {
-            Json::Value mixinArr(Json::ValueType::arrayValue);
+            BeJsDocument mixinArr;
+            mixinArr.toArray();
             for (auto const& baseClass : GetBaseClasses())
                 {
                 if (baseClass->GetEntityClassCP()->IsMixin())
-                    mixinArr.append(ECJsonUtilities::FormatClassName(*baseClass));
+                    mixinArr.appendValue() = ECJsonUtilities::FormatClassName(*baseClass);
                 else
                     {
-                    BeAssert([](auto const& attr) // Assert base element hasn't already been added.
-                        {
-                        for (auto const& elem : attr)
-                            if (elem.first == ECJSON_BASE_CLASS_ELEMENT)
-                                return false;
-                        return true;
-                        }(attributes));
-                    attributes.push_back(bpair<Utf8String, Json::Value>(ECJSON_BASE_CLASS_ELEMENT, ECJsonUtilities::FormatClassName(*baseClass)));
+                    BeAssert(!attributes.isMember(ECJSON_BASE_CLASS_ELEMENT)); // Assert base element hasn't already been added.
+                    attributes[ECJSON_BASE_CLASS_ELEMENT] = ECJsonUtilities::FormatClassName(*baseClass);
                     }
                 }
             if (0 != mixinArr.size())
-                attributes.push_back(bpair<Utf8String, Json::Value>(ECJSON_MIXIN_REFERENCES_ATTRIBUTE, mixinArr));
+                attributes[ECJSON_MIXIN_REFERENCES_ATTRIBUTE].From(mixinArr);
             }
         }
 
@@ -2421,19 +2533,18 @@ ECObjectsStatus ECEntityClass::_AddBaseClass(ECClassCR baseClass, bool insertAtB
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECEntityClass::CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, bool verify)
+ECObjectsStatus ECEntityClass::CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, bool verify, bool resolveConflicts)
     {
     ecProperty = new NavigationECProperty(*this);
     ECObjectsStatus status = ecProperty->SetRelationshipClass(relationshipClass, direction, verify);
-    if (ECObjectsStatus::Success == status)
-        status = AddProperty(ecProperty, name);
-
     if (ECObjectsStatus::Success != status)
         {
         delete ecProperty;
-        ecProperty = nullptr;
+        ecProperty = NULL;
+        return status;
         }
-    return status;
+
+    return CreatePropertyInternal(ecProperty, name, resolveConflicts);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2550,7 +2661,7 @@ bool ECEntityClass::IsOrAppliesTo(ECEntityClassCP entityClass) const
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus ECCustomAttributeClass::_WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
+SchemaWriteStatus ECCustomAttributeClass::_WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
     {
     if (ECVersion::V2_0 == ecXmlVersion)
         return T_Super::_WriteXml(xmlWriter, ecXmlVersion);
@@ -2568,8 +2679,8 @@ SchemaWriteStatus ECCustomAttributeClass::_WriteXml(BeXmlWriterR xmlWriter, ECVe
 //---------------+---------------+---------------+---------------+---------------+-------
 bool ECCustomAttributeClass::_ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties) const
     {
-    bvector<bpair<Utf8String, Json::Value>> attributes;
-    attributes.push_back(bpair<Utf8String, Json::Value>(CUSTOM_ATTRIBUTE_APPLIES_TO_ATTRIBUTE, SchemaParseUtils::ContainerTypeToString(m_containerType)));
+    BeJsDocument attributes;
+    attributes[CUSTOM_ATTRIBUTE_APPLIES_TO_ATTRIBUTE] = SchemaParseUtils::ContainerTypeToString(m_containerType);
     return T_Super::_ToJson(outValue, standalone, includeSchemaVersion, includeInheritedProperties, attributes);
     }
 
@@ -2602,7 +2713,7 @@ SchemaReadStatus ECCustomAttributeClass::_ReadXmlAttributes(pugi::xml_node class
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus ECStructClass::_WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
+SchemaWriteStatus ECStructClass::_WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
     {
     if (ECVersion::V2_0 == ecXmlVersion)
         return T_Super::_WriteXml(xmlWriter, ecXmlVersion);
@@ -2807,29 +2918,39 @@ bool ECRelationshipConstraint::IsValid(bool resolveIssues)
     {
     bool valid = true;
 
+    // Issues on legacy (originally EC2) schemas are tolerated by the callers that pass resolveIssues, so they are logged
+    // with reduced severity. Converted legacy schemas are re-validated on every copy/merge pass, which otherwise floods
+    // the log with the same errors many times over.
+    const bool toleratedLegacyIssues = resolveIssues && m_relClass->GetSchema().OriginalECXmlVersionLessThan(ECVersion::V3_1);
+
     if (GetConstraintClasses().size() == 0)
         {
-        LOG.errorv("Relationship Class Constraint Violation: The %s-Constraint of '%s' does not contain any constraint classes.",
+        LOG.messagev(toleratedLegacyIssues ? NativeLogging::SEVERITY::LOG_WARNING : NativeLogging::SEVERITY::LOG_ERROR,
+                "Relationship Class Constraint Violation: The %s-Constraint of '%s' does not contain any constraint classes.",
                 (m_isSource) ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
 
         valid = false;
         }
 
+    // The validators called below already log details about the problems they find. The messages here only summarize the
+    // outcome, so for tolerated legacy issues they are logged as DEBUG to avoid duplicating the details at ERROR severity.
+    const auto summarySeverity = toleratedLegacyIssues ? NativeLogging::SEVERITY::LOG_DEBUG : NativeLogging::SEVERITY::LOG_ERROR;
+
     if (ECObjectsStatus::Success != ValidateRoleLabel(resolveIssues))
         {
-        LOG.errorv("Relationship Class Constraint Violation: Role Label validation failed for the '%s' constraint of relationship '%s'",
+        LOG.messagev(summarySeverity, "Relationship Class Constraint Violation: Role Label validation failed for the '%s' constraint of relationship '%s'",
             m_isSource ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
         valid = false;
         }
     if (ECObjectsStatus::Success != ValidateMultiplicityConstraint(resolveIssues))
         {
-        LOG.errorv("Relationship Class Constraint Violation: Multiplicity validation failed for the '%s' constraint of relationship '%s'",
+        LOG.messagev(summarySeverity, "Relationship Class Constraint Violation: Multiplicity validation failed for the '%s' constraint of relationship '%s'",
                    m_isSource ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
         valid = false;
         }
     if (ECObjectsStatus::Success != ValidateAbstractConstraint(resolveIssues))
         {
-        LOG.errorv("Relationship Class Constraint Violation: Abstract Class Constraint validation failed for the '%s' constraint of relationship '%s'",
+        LOG.messagev(summarySeverity, "Relationship Class Constraint Violation: Abstract Class Constraint validation failed for the '%s' constraint of relationship '%s'",
                    m_isSource ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
         // Need to stop validation if abstract constraint fails, since it will change the error messages from the class constraint validation.
         m_verified = false;
@@ -2837,7 +2958,7 @@ bool ECRelationshipConstraint::IsValid(bool resolveIssues)
         }
     if (ECObjectsStatus::Success != ValidateClassConstraint())
         {
-        LOG.errorv("Relationship Class Constraint Violation: Class Constraint validation failed for the '%s' constraint of relationship '%s'",
+        LOG.messagev(summarySeverity, "Relationship Class Constraint Violation: Class Constraint validation failed for the '%s' constraint of relationship '%s'",
                    m_isSource ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
         valid = false;
         }
@@ -2929,15 +3050,15 @@ ECObjectsStatus ECRelationshipConstraint::ValidateAbstractConstraint(ECClassCP a
         if (m_constraintClasses.size() == 0)
             return ECObjectsStatus::Success;
 
-        LOG.messagev(resolveIssues? NativeLogging::SEVERITY::LOG_INFO : NativeLogging::SEVERITY::LOG_ERROR,
-            "Abstract Constraint Violation: The %s-Constraint of '%s' does not contain or inherit an %s attribute. It is a required attribute if there is more than one constraint class for EC3.1 or higher.",
-                (m_isSource) ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(), ABSTRACTCONSTRAINT_ATTRIBUTE);
-
-        if (resolveIssues)
+        if (m_constraintClasses.size() > 1)
             {
-            // Attempt to resolve the issue by finding a common base class between all constraint classes
-            if (m_constraintClasses.size() > 1)
+            LOG.messagev(resolveIssues ? NativeLogging::SEVERITY::LOG_INFO : NativeLogging::SEVERITY::LOG_ERROR,
+                "Abstract Constraint Violation (ResolveIssues: %s): The %s-Constraint of '%s' does not contain or inherit an %s attribute. It is a required attribute if there is more than one constraint class.",
+                resolveIssues ? "Yes" : "No" ,(m_isSource) ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(), ABSTRACTCONSTRAINT_ATTRIBUTE);
+
+            if (resolveIssues)
                 {
+                // Attempt to resolve the issue by finding a common base class between all constraint classes
                 ECEntityClassCP commonClass = nullptr;
                 ECClass::FindCommonBaseClass(commonClass, m_constraintClasses[0]->GetEntityClassCP(), GetConstraintClasses());
 
@@ -2946,14 +3067,14 @@ ECObjectsStatus ECRelationshipConstraint::ValidateAbstractConstraint(ECClassCP a
                     if (ECObjectsStatus::Success == SetAbstractConstraint(*commonClass))
                         {
                         LOG.infov("The %s attribute of %s-Constraint on class '%s' has been set to the class '%s' since it is a common base class of all shared constraint classes.",
-                                     ABSTRACTCONSTRAINT_ATTRIBUTE, (m_isSource) ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT,
-                                     m_relClass->GetFullName(), m_abstractConstraint->GetFullName());
+                            ABSTRACTCONSTRAINT_ATTRIBUTE, (m_isSource) ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT,
+                            m_relClass->GetFullName(), m_abstractConstraint->GetFullName());
                         return ECObjectsStatus::Success;
                         }
                     }
                 else
                     LOG.errorv("Failed to find a common base class between the constraint classes of %s-Constraint on class '%s'",
-                                (m_isSource) ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
+                        (m_isSource) ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
                 }
             }
 
@@ -3387,7 +3508,7 @@ bool ECRelationshipConstraint::ToJson(BeJsValue outValue)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECRelationshipConstraint::WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, ECVersion ecXmlVersion) const
+SchemaWriteStatus ECRelationshipConstraint::WriteXml (BePugiXmlWriterR xmlWriter, Utf8CP elementName, ECVersion ecXmlVersion) const
     {
     SchemaWriteStatus status = SchemaWriteStatus::Success;
 
@@ -3502,12 +3623,12 @@ ECObjectsStatus ECRelationshipConstraint::SetAbstractConstraint(ECRelationshipCl
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-ECClassCP const ECRelationshipConstraint::GetAbstractConstraint() const
+ECClassCP const ECRelationshipConstraint::GetAbstractConstraint(bool autoDetermine) const
     {
     if (nullptr != m_abstractConstraint)
         return m_abstractConstraint;
 
-    if (1 == m_constraintClasses.size())
+    if (autoDetermine && 1 == m_constraintClasses.size())
         return m_constraintClasses[0];
 
     return nullptr;
@@ -3527,7 +3648,11 @@ ECObjectsStatus ECRelationshipConstraint::AddClass(ECClassCR classConstraint)
     if (m_verify)
         {
         if (m_constraintClasses.size() == 1 && !IsAbstractConstraintDefined())
+            {
+            LOG.errorv("Cannot add class %s to %s-constraint on %s. There is no abstract constraint defined, so adding this class would render the schema invalid.",
+                classConstraint.GetFullName(), m_isSource ? "source" : "target", m_relClass->GetFullName());
             return ECObjectsStatus::RelationshipConstraintsNotCompatible;
+            }
 
         ECObjectsStatus validationStatus = ValidateClassConstraint(classConstraint);
         if (validationStatus != ECObjectsStatus::Success)
@@ -3760,7 +3885,7 @@ ECObjectsStatus ECRelationshipConstraint::SetRoleLabel (Utf8StringCR value)
   /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECRelationshipConstraint::CopyTo(ECRelationshipConstraintR toRelationshipConstraint, bool copyReferences)
+ECObjectsStatus ECRelationshipConstraint::CopyTo(ECRelationshipConstraintR toRelationshipConstraint, bool copyReferences, bool resolveConflicts)
     {
     ECObjectsStatus status = ECObjectsStatus::Success;
 
@@ -3776,7 +3901,7 @@ ECObjectsStatus ECRelationshipConstraint::CopyTo(ECRelationshipConstraintR toRel
     if (IsAbstractConstraintDefined())
         {
         ECClassP targetAbstractConstraint;
-        if (ECObjectsStatus::Success == (status = destSchema->GetOrCopyReferencedClassForCopy(GetRelationshipClass(), targetAbstractConstraint, GetAbstractConstraint(), copyReferences)))
+        if (ECObjectsStatus::Success == (status = destSchema->GetOrCopyReferencedClassForCopy(GetRelationshipClass(), targetAbstractConstraint, GetAbstractConstraint(), copyReferences, false, resolveConflicts)))
             status = toRelationshipConstraint.SetAbstractConstraint(*targetAbstractConstraint);
 
         if (ECObjectsStatus::Success != status)
@@ -3786,7 +3911,7 @@ ECObjectsStatus ECRelationshipConstraint::CopyTo(ECRelationshipConstraintR toRel
     for (auto constraintClass : GetConstraintClasses())
         {
         ECClassP targetConstraintClass;
-        if (ECObjectsStatus::Success == (status = destSchema->GetOrCopyReferencedClassForCopy(GetRelationshipClass(), targetConstraintClass, constraintClass, copyReferences)))
+        if (ECObjectsStatus::Success == (status = destSchema->GetOrCopyReferencedClassForCopy(GetRelationshipClass(), targetConstraintClass, constraintClass, copyReferences, false, resolveConflicts)))
             if (ECObjectsStatus::Success != (status = toRelationshipConstraint.AddClass(*targetConstraintClass)))
                 break;
         }
@@ -3950,7 +4075,7 @@ ECObjectsStatus ECRelationshipClass::GetOrderedRelationshipPropertyName (Utf8Str
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECRelationshipClass::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
+SchemaWriteStatus ECRelationshipClass::_WriteXml (BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
     {
     SchemaWriteStatus   status;
     bmap<Utf8CP, Utf8CP> additionalAttributes;
@@ -3982,20 +4107,16 @@ SchemaWriteStatus ECRelationshipClass::_WriteXml (BeXmlWriterR xmlWriter, ECVers
 //---------------+---------------+---------------+---------------+---------------+-------
 bool ECRelationshipClass::_ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties) const
     {
-    bvector<bpair<Utf8String, Json::Value>> attributes;
+    BeJsDocument attributes;
 
-    attributes.push_back(bpair<Utf8String, Json::Value>(STRENGTH_ATTRIBUTE, SchemaParseUtils::StrengthToJsonString(GetStrength())));
-    attributes.push_back(bpair<Utf8String, Json::Value>(STRENGTHDIRECTION_ATTRIBUTE, SchemaParseUtils::DirectionToJsonString(GetStrengthDirection())));
+    attributes[STRENGTH_ATTRIBUTE] = SchemaParseUtils::StrengthToJsonString(GetStrength());
+    attributes[STRENGTHDIRECTION_ATTRIBUTE] = SchemaParseUtils::DirectionToJsonString(GetStrengthDirection());
 
-    Json::Value sourceJson;
-    if (!GetSource().ToJson(BeJsValue(sourceJson)))
+    if (!GetSource().ToJson(attributes[ECJSON_SOURCECONSTRAINT_ELEMENT]))
         return false;
-    attributes.push_back(bpair<Utf8String, Json::Value>(ECJSON_SOURCECONSTRAINT_ELEMENT, sourceJson));
 
-    Json::Value targetJson;
-    if (!GetTarget().ToJson(BeJsValue(targetJson)))
+    if (!GetTarget().ToJson(attributes[ECJSON_TARGETCONSTRAINT_ELEMENT]))
         return false;
-    attributes.push_back(bpair<Utf8String, Json::Value>(ECJSON_TARGETCONSTRAINT_ELEMENT, targetJson));
 
     return T_Super::_ToJson(outValue, standalone, includeSchemaVersion, includeInheritedProperties, attributes);
     }
@@ -4190,19 +4311,18 @@ bool ECRelationshipClass::ValidateStrengthDirectionConstraint(ECRelatedInstanceD
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECRelationshipClass::CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, bool verify)
+ECObjectsStatus ECRelationshipClass::CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, bool verify, bool resolveConflicts)
     {
     ecProperty = new NavigationECProperty(*this);
     ECObjectsStatus status = ecProperty->SetRelationshipClass(relationshipClass, direction, verify);
-    if (ECObjectsStatus::Success == status)
-        status = AddProperty(ecProperty, name);
-
     if (ECObjectsStatus::Success != status)
         {
         delete ecProperty;
-        ecProperty = nullptr;
+        ecProperty = NULL;
+        return status;
         }
-    return status;
+
+    return CreatePropertyInternal(ecProperty, name, resolveConflicts);
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

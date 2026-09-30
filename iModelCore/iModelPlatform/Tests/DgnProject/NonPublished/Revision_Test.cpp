@@ -2,6 +2,7 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
+#include <BeSQLite/Profiler.h>
 #include "ChangeTestFixture.h"
 #include <DgnPlatform/DgnChangeSummary.h>
 #include <DgnPlatform/GenericDomain.h>
@@ -40,6 +41,58 @@ void expectToThrow(std::function<void()> fn, Utf8CP msg) {
     BeTest::SetFailOnAssert(true);
 }
 
+void expectToNotThrow(std::function<void()> fn, Utf8CP msg)
+    {
+    BeTest::SetFailOnAssert(false);
+    try {
+        fn();
+    } catch (std::exception const& e) {
+        EXPECT_STREQ(e.what(), msg);
+        ASSERT_TRUE(false) << "Expected no exception, but got one.";
+    }
+    BeTest::SetFailOnAssert(true);
+    }
+
+namespace {
+Utf8CP const kTestDomainName = "TestMergeDomain";
+
+DbResult InsertTestDomain(DgnDbR db, Utf8CP description, int version)
+    {
+    return db.ExecuteSql(Utf8PrintfString("INSERT INTO " DGN_TABLE_Domain " (Name,Description,Version) VALUES('%s','%s',%d)",
+        kTestDomainName, description, version).c_str());
+    }
+
+DbResult UpdateTestDomainDescription(DgnDbR db, Utf8CP description)
+    {
+    return db.ExecuteSql(Utf8PrintfString("UPDATE " DGN_TABLE_Domain " SET Description='%s' WHERE Name='%s'",
+        description, kTestDomainName).c_str());
+    }
+
+bool QueryTestDomain(DgnDbR db, Utf8StringR description, int& version)
+    {
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(db, "SELECT Description, Version FROM " DGN_TABLE_Domain " WHERE Name=?"))
+        return false;
+    stmt.BindText(1, kTestDomainName, Statement::MakeCopy::No);
+    if (stmt.Step() != BE_SQLITE_ROW)
+        return false;
+    description = stmt.GetValueText(0);
+    version = stmt.GetValueInt(1);
+    return true;
+    }
+
+bool QueryBeLocalStat(DgnDbR db, Utf8StringR stat)
+    {
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(db, "SELECT stat FROM sqlite_stat1 WHERE tbl='be_Local' AND idx='sqlite_autoindex_be_Local_1'"))
+        return false;
+    if (stmt.Step() != BE_SQLITE_ROW)
+        return false;
+    stat = stmt.GetValueText(0);
+    return true;
+    }
+}
+
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
@@ -62,7 +115,7 @@ protected:
     void ExtractCodesFromRevision(DgnCodeSet& assigned, DgnCodeSet& discarded);
     void ProcessSchemaRevision(ChangesetPropsCR revision, RevisionProcessOption revisionProcessOption);
     void MergeSchemaRevision(ChangesetPropsCR revision) {
-        EXPECT_EQ(ChangesetStatus::Success, m_db->Txns().MergeChangeset(revision));
+        EXPECT_EQ(ChangesetStatus::Success, m_db->Txns().PullMergeApply(revision));
     }
 
     static Utf8String CodeToString(DgnCodeCR code) { return Utf8PrintfString("%s:%s\n", code.GetScopeString().c_str(), code.GetValueUtf8CP()); }
@@ -303,7 +356,7 @@ TEST_F(RevisionTestFixture, Workflow)
 
         ChangesetPropsPtr revision = CreateRevision(Utf8PrintfString("-cst%d", revNum).c_str());
         ASSERT_TRUE(revision.IsValid());
-        ASSERT_FALSE(revision->ContainsSchemaChanges(*m_db));
+        ASSERT_FALSE(revision->ContainsDdlChanges(*m_db));
 
         revisions.push_back(revision);
         }
@@ -316,7 +369,7 @@ TEST_F(RevisionTestFixture, Workflow)
     // Merge all the saved revisions
     for (ChangesetPropsPtr const& rev : revisions)
         {
-        ChangesetStatus status = m_db->Txns().MergeChangeset(*rev);
+        ChangesetStatus status = m_db->Txns().PullMergeApply(*rev);
         ASSERT_TRUE(status == ChangesetStatus::Success);
         }
 
@@ -350,7 +403,7 @@ TEST_F(RevisionTestFixture, MoreWorkflow)
 
     ChangesetPropsPtr revision1 = CreateRevision("-cs2");
     ASSERT_TRUE(revision1.IsValid());
-    ASSERT_FALSE(revision1->ContainsSchemaChanges(*m_db));
+    ASSERT_FALSE(revision1->ContainsDdlChanges(*m_db));
 
     // Create Revision 2 after deleting the same element
     DgnElementCPtr el = m_db->Elements().Get<DgnElement>(elementId);
@@ -362,7 +415,7 @@ TEST_F(RevisionTestFixture, MoreWorkflow)
 
     ChangesetPropsPtr revision2 = CreateRevision("-cs3");
     ASSERT_TRUE(revision2.IsValid());
-    ASSERT_FALSE(revision2->ContainsSchemaChanges(*m_db));
+    ASSERT_FALSE(revision2->ContainsDdlChanges(*m_db));
 
     // Create Revision 3 deleting the test model (the API causes Elements to get deleted)
     RestoreTestFile();
@@ -374,27 +427,27 @@ TEST_F(RevisionTestFixture, MoreWorkflow)
 
     ChangesetPropsPtr revision3 = CreateRevision("-cs4");
     ASSERT_TRUE(revision3.IsValid());
-    ASSERT_FALSE(revision3->ContainsSchemaChanges(*m_db));
+    ASSERT_FALSE(revision3->ContainsDdlChanges(*m_db));
 
     ChangesetStatus revStatus;
 
     // Merge Rev1 first
     RestoreTestFile();
     ASSERT_TRUE(m_defaultModel.IsValid());
-    revStatus = m_db->Txns().MergeChangeset(*revision1);
+    revStatus = m_db->Txns().PullMergeApply(*revision1);
     ASSERT_TRUE(revStatus == ChangesetStatus::Success);
 
     // Merge Rev2 next
-    revStatus = m_db->Txns().MergeChangeset(*revision2);
+    revStatus = m_db->Txns().PullMergeApply(*revision2);
     ASSERT_TRUE(revStatus == ChangesetStatus::Success);
 
     // Merge Rev3 next - should fail since the parent does not match
-    expectToThrow([&]() { m_db->Txns().MergeChangeset(*revision3); }, "changeset out of order");
+    expectToThrow([&]() { m_db->Txns().PullMergeApply(*revision3); }, "changeset out of order");
 
     // Merge Rev3 first
     RestoreTestFile();
     ASSERT_TRUE(m_defaultModel.IsValid());
-    revStatus = m_db->Txns().MergeChangeset(*revision3);
+    revStatus = m_db->Txns().PullMergeApply(*revision3);
     ASSERT_TRUE(revStatus == ChangesetStatus::Success);
 
     // Delete model and Merge Rev1 - should fail since the model does not exist
@@ -402,9 +455,10 @@ TEST_F(RevisionTestFixture, MoreWorkflow)
     status = m_defaultModel->Delete();
     ASSERT_TRUE(status == DgnDbStatus::Success);
     m_defaultModel = nullptr;
-    m_db->SaveChanges("Deleted model and contained elements");
+     m_db->SaveChanges("Deleted model and contained elements");
 
-    expectToThrow([&]() { m_db->Txns().MergeChangeset(*revision1); }, "Detected 1 foreign key conflicts in ChangeSet. Aborting merge.");
+    // In rebase following error would not happen
+    // expectToThrow([&]() { m_db->Txns().PullMergeApply(*revision1); }, "Detected 1 foreign key conflicts in ChangeSet. Aborting merge.");
     }
 
 //---------------------------------------------------------------------------------------
@@ -429,7 +483,7 @@ TEST_F(RevisionTestFixture, MergeToReadonlyBriefcase)
     RestoreTestFile(Db::OpenMode::Readonly);
 
     // Merge revision that was previously created to create a checkpoint file
-    expectToThrow([&]() { m_db->Txns().MergeChangeset(*revision1); }, "file is readonly");
+    expectToThrow([&]() { m_db->Txns().PullMergeApply(*revision1); }, "file is readonly");
     }
 
 //---------------------------------------------------------------------------------------
@@ -466,7 +520,7 @@ TEST_F(RevisionTestFixture, ResetIdSequencesAfterApply)
     // Restore baseline file, apply the change sets with the same element inserts, and validate the last sequence id
     RestoreTestFile();
 
-    ChangesetStatus status = m_db->Txns().MergeChangeset(*revision);
+    ChangesetStatus status = m_db->Txns().PullMergeApply(*revision);
     ASSERT_TRUE(status == ChangesetStatus::Success);
 
     DgnElementId idAfterMerge;
@@ -597,7 +651,7 @@ TEST_F(RevisionTestFixture, DdlChanges)
     BackupTestFile();
 
     // Create Revision 1 (Schema changes - creating two tables)
-    m_db->CreateTable("TestTable1", "Id INTEGER PRIMARY KEY, Column1 INTEGER");
+    m_db->CreateTable("TestTable1", "Id INTEGER PRIMARY KEY, Column1 INTEGER, Label TEXT DEFAULT 'a; b'");
     m_db->CreateTable("TestTable2", "Id INTEGER PRIMARY KEY, Column1 INTEGER");
 
     ASSERT_FALSE(m_db->Txns().HasDataChanges());
@@ -675,6 +729,11 @@ TEST_F(RevisionTestFixture, DdlChanges)
 
     ASSERT_TRUE(m_db->TableExists("TestTable1"));
     ASSERT_TRUE(m_db->TableExists("TestTable2"));
+    {
+    Statement statement(*m_db, "SELECT sql FROM sqlite_master WHERE name='TestTable1'");
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+    EXPECT_TRUE(Utf8String(statement.GetValueText(0)).Contains("DEFAULT 'a; b'"));
+    }
 
     ASSERT_TRUE(m_db->ColumnExists("TestTable1", "Id"));
     ASSERT_TRUE(m_db->ColumnExists("TestTable1", "Column1"));
@@ -686,7 +745,7 @@ TEST_F(RevisionTestFixture, DdlChanges)
 
     // Merge revision 2 (Data changes - inserts to both tables)
     LOG.infov("Merging Revision 2");
-    EXPECT_EQ(ChangesetStatus::Success, m_db->Txns().MergeChangeset(*revision2));
+    EXPECT_EQ(ChangesetStatus::Success, m_db->Txns().PullMergeApply(*revision2));
 
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column1 FROM TestTable1 WHERE Id=1", 1));
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column1 FROM TestTable2 WHERE Id=1", 1));
@@ -711,14 +770,127 @@ TEST_F(RevisionTestFixture, DdlChanges)
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable2 WHERE Id=1", 0)); // i.e., null value
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable2 WHERE Id=2", 0)); // i.e., null value
 
-    // Reverse revision 4 (Note that all data or schema changes are entirely skipped in this apply)
-    expectToThrow([&]() { m_db->Txns().ReverseChangeset(*revision4); }, "Cannot reverse a changeset containing schema changes");
+    // Reverse revision 4: data changes are reversed, schema (DDL) changes are skipped.
+    expectToNotThrow([&]() { m_db->Txns().ReverseChangeset(*revision4); }, "unexpected exception reversing schema changeset");
+
+    // Data changes from revision 4 should be reversed: Id=2 deleted, Column2 of Id=1 back to null.
+    ASSERT_TRUE(ValidateValue(*m_db, "SELECT COUNT(*) FROM TestTable1 WHERE Id=2", 0));
+    ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable1 WHERE Id=1", 0)); // null (i.e., 0)
+
+    // Schema changes from revision 4 must be preserved (DDL is skipped when reversing).
+    ASSERT_TRUE(m_db->ColumnExists("TestTable2", "Column2"));
+
+    // Parent changeset should now point to revision 3.
+    ASSERT_STREQ(m_db->Txns().GetParentChangesetId().c_str(), revision3->GetChangesetId().c_str());
 
     BeFileName fileName = BeFileName(m_db->GetDbFileName(), true);
     CloseDgnDb();
+
+    // Re-open and re-apply revision 4, then reverse via SchemaUpgradeOptions.
     DbResult openStatus;
-    DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(*revision4, RevisionProcessOption::Reverse));
-    expectToThrow([&]() { m_db = DgnDb::OpenIModelDb(&openStatus, fileName, openParams); }, "Cannot reverse a changeset containing schema changes");
+    DgnDb::OpenParams mergeParams(Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(*revision4, RevisionProcessOption::Merge));
+    m_db = DgnDb::OpenIModelDb(&openStatus, fileName, mergeParams);
+    ASSERT_TRUE(m_db.IsValid());
+
+    m_db->CloseDb();
+    DgnDb::OpenParams reverseParams(Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(*revision4, RevisionProcessOption::Reverse));
+    expectToNotThrow([&]() { m_db = DgnDb::OpenIModelDb(&openStatus, fileName, reverseParams); }, "unexpected exception reversing schema changeset via OpenParams");
+    ASSERT_TRUE(m_db.IsValid());
+    ASSERT_STREQ(m_db->Txns().GetParentChangesetId().c_str(), revision3->GetChangesetId().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, ReverseSchemaChangeset)
+    {
+    // Setup a baseline db.
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"ReverseSchemaChanges.bim");
+    m_db->SaveChanges("Created Initial Model");
+    ChangesetPropsPtr cs0 = CreateRevision("-cs0");
+    ASSERT_TRUE(cs0.IsValid());
+
+    // Import an EC schema introducing a new class with a property.
+    ECSchemaCP bisCoreSchema = m_db->Schemas().GetSchema(Utf8String("BisCore"));
+    ASSERT_TRUE(bisCoreSchema != nullptr);
+    ECClassCP definitionElement = m_db->Schemas().GetClass(Utf8String("BisCore"), Utf8String("DefinitionElement"));
+    ASSERT_TRUE(definitionElement != nullptr);
+
+    ECSchemaPtr testSchema;
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(testSchema, "ReverseSchemaTest", "rst", 1, 0, 0));
+    ASSERT_EQ(ECObjectsStatus::Success, testSchema->AddReferencedSchema(*const_cast<ECSchemaP>(bisCoreSchema)));
+
+    ECEntityClassP testClass = nullptr;
+    ASSERT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(testClass, "TestWidget"));
+    ASSERT_EQ(ECObjectsStatus::Success, testClass->AddBaseClass(*definitionElement));
+
+    PrimitiveECPropertyP prop = nullptr;
+    ASSERT_EQ(ECObjectsStatus::Success, testClass->CreatePrimitiveProperty(prop, "WidgetCode", PRIMITIVETYPE_String));
+
+    ASSERT_EQ(SchemaStatus::Success, m_db->ImportSchemas({testSchema.get()}, true));
+    m_db->SaveChanges("Imported ReverseSchemaTest schema");
+
+    ChangesetPropsPtr cs1 = CreateRevision("-cs1");
+    ASSERT_TRUE(cs1.IsValid());
+    ASSERT_TRUE(cs1->ContainsDdlChanges(*m_db));
+
+    // Schema and class are available after import.
+    ASSERT_TRUE(m_db->Schemas().ContainsSchema("ReverseSchemaTest"));
+    ASSERT_TRUE(m_db->Schemas().GetClass("ReverseSchemaTest", "TestWidget") != nullptr);
+
+    // Reversing a schema changeset must succeed without throwing.
+    expectToNotThrow([&]() { m_db->Txns().ReverseChangeset(*cs1); }, "unexpected exception reversing schema changeset");
+
+    // EC mapping is reversed: the schema and its class are no longer available.
+    ASSERT_FALSE(m_db->Schemas().ContainsSchema("ReverseSchemaTest"));
+    ASSERT_TRUE(m_db->Schemas().GetClass("ReverseSchemaTest", "TestWidget") == nullptr);
+
+    // Parent changeset correctly points back to cs0.
+    ASSERT_STREQ(m_db->Txns().GetParentChangesetId().c_str(), cs0->GetChangesetId().c_str());
+
+    // Reapply restores the mapping even though reverse retained the physical table.
+    ASSERT_EQ(ChangesetStatus::Success, m_db->Txns().PullMergeApply(*cs1));
+    ASSERT_TRUE(m_db->Schemas().GetClass("ReverseSchemaTest", "TestWidget") != nullptr);
+    ASSERT_STREQ(m_db->Txns().GetParentChangesetId().c_str(), cs1->GetChangesetId().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, ReconstructMissingMappedTable)
+    {
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"ReconstructMissingMappedTable.bim");
+    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges());
+    ASSERT_TRUE(CreateRevision("-baseline").IsValid());
+    BackupTestFile();
+
+    auto context = ECSchemaReadContext::CreateContext();
+    context->AddSchemaLocater(m_db->GetSchemaLocater());
+    ECSchemaPtr schema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, R"xml(
+        <ECSchema schemaName="ReconstructionTest" alias="rt" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="1.0.0" alias="bis"/>
+            <ECEntityClass typeName="TestElement">
+                <BaseClass>bis:GraphicalElement2d</BaseClass>
+                <ECProperty propertyName="Prop1" typeName="string"/>
+                <ECProperty propertyName="Prop2" typeName="string"/>
+                <ECProperty propertyName="Prop3" typeName="string"/>
+            </ECEntityClass>
+        </ECSchema>)xml", *context));
+    ASSERT_EQ(SchemaStatus::Success, m_db->ImportSchemas({schema.get()}, true));
+    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges());
+    auto revision = CreateRevision("-add-shared-column");
+    ASSERT_TRUE(revision.IsValid());
+    ASSERT_TRUE(revision->ContainsDdlChanges(*m_db));
+    RestoreTestFile();
+
+    // ALTER TABLE fails, but ec_* metadata can reconstruct the missing mapped table.
+    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteSql("DROP TABLE bis_GeometricElement2d"));
+    ASSERT_EQ(ChangesetStatus::Success, m_db->Txns().PullMergeApply(*revision));
+    Statement column(*m_db, "SELECT 1 FROM pragma_table_info('bis_GeometricElement2d') WHERE name='js3'");
+    ASSERT_EQ(BE_SQLITE_ROW, column.Step());
+    ASSERT_TRUE(m_db->Schemas().GetClass("ReconstructionTest", "TestElement") != nullptr);
+    ASSERT_STREQ(revision->GetChangesetId().c_str(), m_db->Txns().GetParentChangesetId().c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -749,6 +921,7 @@ TEST_F(RevisionTestFixture, InvalidSchemaChanges)
     m_db->Txns().EnableTracking(false);
     ASSERT_TRUE(BE_SQLITE_OK == m_db->DropTable("TestTableWillHappen"));
     m_db->Txns().EnableTracking(true);
+
     }
 
 //---------------------------------------------------------------------------------------
@@ -852,17 +1025,73 @@ TEST_F(RevisionTestFixture, MergeSchemaChanges)
 
     ASSERT_TRUE(m_db->ColumnExists("TestTable", "Column2"));
 
-    ChangesetStatus status = m_db->Txns().MergeChangeset(*dataChangesRevision);
+    ChangesetStatus status = m_db->Txns().PullMergeApply(*dataChangesRevision);
     ASSERT_TRUE(status == ChangesetStatus::Success);
 
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column1 FROM TestTable WHERE Id=1", 1));
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable WHERE Id=1", 0)); // i.e., null value
 
-    status = m_db->Txns().MergeChangeset(*moreDataChangesRevision);
+    status = m_db->Txns().PullMergeApply(*moreDataChangesRevision);
     ASSERT_TRUE(status == ChangesetStatus::Success);
 
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable WHERE Id=1", 1));
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable WHERE Id=2", 2));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, SchemaChangesAfterDataChanges)
+    {
+    // Setup baseline
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"SchemaChangesAfterDataChanges.bim");
+    m_db->CreateTable("TestTable", "Id INTEGER PRIMARY KEY, Column1 INTEGER");
+    m_db->SaveChanges("Created Initial Model");
+    ChangesetPropsPtr initialRevision = CreateRevision("-cs1");
+    ASSERT_TRUE(initialRevision.IsValid());
+
+    /* Create revision with schema changes */
+    ASSERT_EQ(m_db->AddColumnToTable("TestTable", "Column2", "INTEGER"), BE_SQLITE_OK);
+    ASSERT_EQ(m_db->CreateIndex("idx_TestTable_Column1", "TestTable", false, "Column1"), BE_SQLITE_OK);
+
+    ASSERT_FALSE(m_db->Txns().HasDataChanges());
+    ASSERT_TRUE(m_db->Txns().HasDdlChanges());
+
+    m_db->SaveChanges("Schema changes");
+    ChangesetPropsPtr schemaChangesRevision = CreateRevision("-cs2");
+    ASSERT_TRUE(schemaChangesRevision.IsValid());
+
+    ASSERT_EQ(m_db->ExecuteSql("INSERT INTO TestTable(Id,Column1,Column2) VALUES(1,1,1)"), BE_SQLITE_OK);
+    ASSERT_EQ(m_db->ExecuteSql("INSERT INTO TestTable(Id,Column1,Column2) VALUES(2,2,2)"), BE_SQLITE_OK);
+
+    ASSERT_TRUE(m_db->Txns().HasDataChanges());
+    ASSERT_FALSE(m_db->Txns().HasDdlChanges());
+
+    m_db->SaveChanges("Data changes");
+
+    ChangesetPropsPtr dataChangesRevision = CreateRevision("-cs3");
+    ASSERT_TRUE(dataChangesRevision.IsValid());
+    
+    BackupTestFile();
+    
+    ASSERT_EQ(m_db->ExecuteDdl("DROP INDEX idx_TestTable_Column1"), BE_SQLITE_OK);
+    ASSERT_EQ(m_db->CreateIndex("idx_TestTable_Column2", "TestTable", false, "Column2"), BE_SQLITE_OK);
+
+    ASSERT_FALSE(m_db->Txns().HasDataChanges());
+    ASSERT_TRUE(m_db->Txns().HasDdlChanges());
+
+    m_db->SaveChanges("Schema changes again");
+
+    ChangesetPropsPtr secondSchemaChangesRevision = CreateRevision("-cs4");
+    ASSERT_TRUE(secondSchemaChangesRevision.IsValid());
+
+    /* Restore baseline, make data changes, and merge revision with schema changes */
+    RestoreTestFile();
+
+    MergeSchemaRevision(*secondSchemaChangesRevision);
+
+    CloseDgnDb();
+    
     }
 
 //---------------------------------------------------------------------------------------
@@ -1349,7 +1578,7 @@ TEST_F(RevisionTestFixture, DISABLED_CreateAndMergePerformance)
     timer.Start();
     for (ChangesetPropsPtr const& rev : revisions)
         {
-        RevisionStatus status = m_db->Txns().MergeChangeset(*rev);
+        RevisionStatus status = m_db->Txns().PullMergeApply(*rev);
         ASSERT_TRUE(status == RevisionStatus::Success);
         }
     timer.Stop();
@@ -1405,7 +1634,7 @@ TEST_F(RevisionTestFixture, DISABLED_MergeFolderWithRevisions)
         fileStatus = BeFileName::BeCopyFile(revPathname.c_str(), rev->GetChangeStreamFile().c_str());
         ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
 
-        RevisionStatus status = m_db->Txns().MergeChangeset(*rev);
+        RevisionStatus status = m_db->Txns().PullMergeApply(*rev);
 
         if (status != RevisionStatus::Success)
             LOG.infov("Failed to merge revision: %s", revId.c_str());
@@ -1437,7 +1666,7 @@ TEST_F(RevisionTestFixture, DISABLED_MergeSpecificRevision)
     fileStatus = BeFileName::BeCopyFile(revPathname.c_str(), rev->GetChangeStreamFile().c_str());
     ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
 
-    RevisionStatus status = m_db->Txns().MergeChangeset(*rev);
+    RevisionStatus status = m_db->Txns().PullMergeApply(*rev);
 
     if (status != RevisionStatus::Success)
         LOG.infov("Failed to merge revision: %s", revId.c_str());
@@ -1552,10 +1781,10 @@ TEST_F(RevisionTestFixture, IterateOverRedundantSchemaChange)
 
     // ignore the initial revision since it will have a bunch of inserted stuff for setup purposes that we're not trying to iterate over
     //RevisionChangesFileReader reader1(revisionPtrs[0]->GetRevisionChangesFile(), *m_db);
-    ChangesetFileReader reader2(revisionPtrs[1]->GetFileName(), *m_db);
-    ChangesetFileReader reader3(revisionPtrs[2]->GetFileName(), *m_db);
-    ChangesetFileReader reader4(revisionPtrs[3]->GetFileName(), *m_db);
-    ChangesetFileReader reader5(revisionPtrs[4]->GetFileName(), *m_db);
+    ChangesetFileReader reader2(revisionPtrs[1]->GetFileName(), m_db.get());
+    ChangesetFileReader reader3(revisionPtrs[2]->GetFileName(), m_db.get());
+    ChangesetFileReader reader4(revisionPtrs[3]->GetFileName(), m_db.get());
+    ChangesetFileReader reader5(revisionPtrs[4]->GetFileName(), m_db.get());
     // this pointer array compensates for a lack of copy or move constructors which make this type difficult to put in STL containers
     std::array<ChangesetFileReader*, revisionPtrs.size() - 1> revisionReaders { &reader2, &reader3, &reader4, &reader5  };
 
@@ -1663,7 +1892,7 @@ TEST_F(RevisionTestFixture, CheckProfileVersionUpdateAfterMerge)
     EXPECT_EQ(0, ecDbVersion.CompareTo(initialECDbVersion));
     }
 
-    EXPECT_EQ(ChangesetStatus::Success, m_db->Txns().MergeChangeset(*revision));
+    EXPECT_EQ(ChangesetStatus::Success, m_db->Txns().PullMergeApply(*revision));
 
     {
     auto dgnDbVersion = m_db->GetProfileVersion();
@@ -1705,7 +1934,7 @@ TEST_F(RevisionTestFixture, BrokenECDbProfileInRevision)
 
     RestoreTestFile();
 
-    expectToThrow([&]() { m_db->Txns().MergeChangeset(*revision); }, "failed to apply changes");
+    expectToThrow([&]() { m_db->Txns().PullMergeApply(*revision); }, "failed to apply changes");
     }
 
 //---------------------------------------------------------------------------------------
@@ -1734,5 +1963,829 @@ TEST_F(RevisionTestFixture, BrokenDgnDbProfileInRevision)
 
     RestoreTestFile();
 
-    expectToThrow([&]() { m_db->Txns().MergeChangeset(*revision); }, "failed to apply changes");
+    expectToThrow([&]() { m_db->Txns().PullMergeApply(*revision); }, "failed to apply changes");
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, DeleteClassConstraintViolationInCacheTable)
+    {
+    auto checkTestClassExists = [&](const bool shouldExist)
+        {
+        // Check class existence in schema and cache table in one place
+        ASSERT_EQ(shouldExist, nullptr != m_db->Schemas().GetClass("TestSchema", "TestClass"));
+
+        Statement stmt;
+        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db,
+            "SELECT 1 FROM ec_cache_ClassHierarchy ch "
+            "JOIN ec_Class c ON ch.classId = c.Id WHERE c.Name = 'TestClass'"));
+        ASSERT_EQ(shouldExist, stmt.Step() == BE_SQLITE_ROW);
+        stmt.Finalize();
+        };
+
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"DeleteClassConstraintViolationInCacheTable.bim");
+    EXPECT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Initialized db"));
+
+    auto context = ECN::ECSchemaReadContext::CreateContext();
+    context->AddSchemaLocater(m_db->GetSchemaLocater());
+
+    BeFileName searchDirs[2];
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(searchDirs[0]);
+    searchDirs[0].AppendToPath(L"ECSchemas");
+    searchDirs[1] = searchDirs[0];
+
+    context->AddFirstSchemaPaths({ searchDirs[0].AppendToPath(L"Dgn"), searchDirs[1].AppendToPath(L"Standard") });
+
+    // Set up a base dynamic schema with a class
+    const auto schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="1.0.0" alias="bis"/>
+            <ECSchemaReference name="CoreCustomAttributes" version="1.0.0" alias="CoreCA" />
+
+            <ECCustomAttributes>
+                <DynamicSchema xmlns = 'CoreCustomAttributes.1.0.0' />
+            </ECCustomAttributes>
+
+            <ECEntityClass typeName="TestClass">
+                <BaseClass>bis:PhysicalElement</BaseClass>
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ECSchemaPtr initialSchema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(initialSchema, schemaXml, *context));
+    m_db->ImportSchemas({ initialSchema.get() }, true);
+    m_db->SaveChanges("Created Test Schema");
+
+    // Create a revision and a backup point
+    const auto initialRevision = CreateRevision("-initialize");
+    ASSERT_TRUE(initialRevision.IsValid());
+    BackupTestFile();
+
+    // Check if class exists
+    checkTestClassExists(true);
+
+    // Create a changeset to delete the class
+    // Perform a major schema update that deletes the class
+    const auto updatedSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="CoreCustomAttributes" version="1.0.0" alias="CoreCA" />
+
+            <ECCustomAttributes>
+                <DynamicSchema xmlns = 'CoreCustomAttributes.1.0.0' />
+            </ECCustomAttributes>
+        </ECSchema>)xml";
+
+    ECSchemaPtr updatedSchema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(updatedSchema, updatedSchemaXml, *context));
+    m_db->ImportSchemas({ updatedSchema.get() }, true);
+    m_db->SaveChanges("Updated Test Schema");
+
+    const auto updatedRevision = CreateRevision("-schemaMajorUpdate");
+    ASSERT_TRUE(updatedRevision.IsValid());
+
+    // Class should be deleted
+    checkTestClassExists(false);
+
+    // Now that we have a changeset with a major schema update that deletes the class, restore the imodel to the backup state
+    RestoreTestFile();
+
+    // Make sure class still exists
+    checkTestClassExists(true);
+
+    // Apply the changeset with the major schema update that deletes the class
+    // This should not throw an exception, but rather apply the changes successfully
+    // and the class should be deleted from the cache table
+    expectToNotThrow([&]() { EXPECT_EQ(m_db->Txns().PullMergeApply(*updatedRevision), ChangesetStatus::Success); }, "Detected 1 foreign key conflicts in ChangeSet. Aborting merge.");
+
+    // Class should be deleted
+    checkTestClassExists(false);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, UpdatingClassAfterDataEntry)
+    {
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"UpdatingClassAfterDataEntry.bim");
+    EXPECT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Initialized db"));
+
+    auto context = ECN::ECSchemaReadContext::CreateContext();
+    context->AddSchemaLocater(m_db->GetSchemaLocater());
+
+    BeFileName searchDirs[2];
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(searchDirs[0]);
+    searchDirs[0].AppendToPath(L"ECSchemas");
+    searchDirs[1] = searchDirs[0];
+
+    context->AddFirstSchemaPaths({ searchDirs[0].AppendToPath(L"Dgn"), searchDirs[1].AppendToPath(L"Standard") });
+
+    // Set up a base dynamic schema with a class
+    const auto schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="1.0.0" alias="bis"/>
+            <ECSchemaReference name="CoreCustomAttributes" version="1.0.0" alias="CoreCA" />
+
+            <ECCustomAttributes>
+                <DynamicSchema xmlns = 'CoreCustomAttributes.1.0.0' />
+            </ECCustomAttributes>
+
+            <ECEntityClass typeName="TestClass">
+                <BaseClass>bis:PhysicalElement</BaseClass>
+                <ECProperty propertyName="TestProperty1" typeName="string" />
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ECSchemaPtr initialSchema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(initialSchema, schemaXml, *context));
+    m_db->ImportSchemas({ initialSchema.get() }, true);
+    m_db->SaveChanges("Created Test Schema");
+
+    // Create a revision and a backup point
+    const auto initialRevision = CreateRevision("-initialize");
+    ASSERT_TRUE(initialRevision.IsValid());
+
+    DgnElementId testElementId;
+    ChangesetPropsCPtr revision;
+    {
+        // Insert element
+        PhysicalModelPtr model = m_db->Models().Get<PhysicalModel>(m_defaultModelId);
+        ASSERT_TRUE(model.IsValid());
+        GeometryBuilderPtr builder = GeometryBuilder::Create(*model, m_defaultCategoryId, DPoint3d::From(0.0, 0.0, 0.0));
+        builder->Append(*ICurvePrimitive::CreateArc(DEllipse3d::From(1, 2, 3, 0, 0, 2, 0, 3, 0, 0.0, Angle::TwoPi())));
+
+        GenericPhysicalObjectPtr testElement = GenericPhysicalObject::Create(*model, m_defaultCategoryId);
+        ASSERT_EQ(SUCCESS, builder->Finish(*testElement));
+
+        testElement->SetPropertyValue("TestProperty1", ECValue("InitialValue"));
+        DgnDbStatus statusInsert;
+        testElement->Insert(&statusInsert);
+        ASSERT_EQ(DgnDbStatus::Success, statusInsert);
+
+        testElementId = testElement->GetElementId();
+        ASSERT_TRUE(testElementId.IsValid());
+        ASSERT_TRUE(m_db->Elements().GetElement(testElementId).IsValid());
+        m_db->SaveChanges("Inserted Element");
+
+        revision = CreateRevision("-insertElement");
+        ASSERT_TRUE(revision.IsValid());
+    }
+
+    BackupTestFile();
+
+    // Create a changeset to delete the class
+    // Perform a major schema update that adds a class property
+    const auto updatedSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="1.0.0" alias="bis"/>
+            <ECSchemaReference name="CoreCustomAttributes" version="1.0.0" alias="CoreCA" />
+
+            <ECCustomAttributes>
+                <DynamicSchema xmlns = 'CoreCustomAttributes.1.0.0' />
+            </ECCustomAttributes>
+            <ECEntityClass typeName="TestClass">
+                <BaseClass>bis:PhysicalElement</BaseClass>
+                <ECProperty propertyName="TestProperty1" typeName="string" />
+                <ECProperty propertyName="TestProperty2" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ECSchemaPtr updatedSchema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(updatedSchema, updatedSchemaXml, *context));
+    m_db->ImportSchemas({ updatedSchema.get() }, true);
+    m_db->SaveChanges("Updated Test Schema");
+
+    const auto updatedRevision = CreateRevision("-schemaUpdate");
+    ASSERT_TRUE(updatedRevision.IsValid());
+
+    // Now that we have a changeset with a major schema update that deletes the class, restore the imodel to the backup state
+    RestoreTestFile();
+
+    // Apply the changeset with the major schema update that deletes the class
+    EXPECT_EQ(m_db->Txns().PullMergeApply(*updatedRevision), ChangesetStatus::Success);
+
+    CloseDgnDb();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, Revert_DeleteClassConstraintViolationInCacheTable)
+    {
+    auto checkTestClassExists = [&](const bool shouldExist, Utf8StringCR className)
+        {
+        // Check class existence in schema and cache table in one place
+        ASSERT_EQ(shouldExist, nullptr != m_db->Schemas().GetClass("TestSchema", className));
+
+        Statement stmt;
+        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db,
+            "SELECT 1 FROM ec_cache_ClassHierarchy ch "
+            "JOIN ec_Class c ON ch.classId = c.Id WHERE c.Name = ?"));
+        stmt.BindText(1, className.c_str(), Statement::MakeCopy::No);
+        ASSERT_EQ(shouldExist, stmt.Step() == BE_SQLITE_ROW);
+        stmt.Finalize();
+        };
+
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"DeleteClassConstraintViolationInCacheTable.bim");
+    EXPECT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Initialized db"));
+
+    auto context = ECN::ECSchemaReadContext::CreateContext();
+    context->AddSchemaLocater(m_db->GetSchemaLocater());
+
+    BeFileName searchDirs[2];
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(searchDirs[0]);
+    searchDirs[0].AppendToPath(L"ECSchemas");
+    searchDirs[1] = searchDirs[0];
+
+    context->AddFirstSchemaPaths({ searchDirs[0].AppendToPath(L"Dgn"), searchDirs[1].AppendToPath(L"Standard") });
+
+    // Set up a base dynamic schema with a class
+    const auto schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="1.0.0" alias="bis"/>
+            <ECSchemaReference name="CoreCustomAttributes" version="1.0.0" alias="CoreCA" />
+
+            <ECCustomAttributes>
+                <DynamicSchema xmlns = 'CoreCustomAttributes.1.0.0' />
+            </ECCustomAttributes>
+
+            <ECEntityClass typeName="TestClass">
+                <BaseClass>bis:PhysicalElement</BaseClass>
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ECSchemaPtr initialSchema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(initialSchema, schemaXml, *context));
+    m_db->ImportSchemas({ initialSchema.get() }, true);
+    m_db->SaveChanges("Created Test Schema");
+
+    // Create a revision and a backup point
+    const auto initialRevision = CreateRevision("-initialize");
+    ASSERT_TRUE(initialRevision.IsValid());
+    BackupTestFile();
+
+    // Check if class exists
+    checkTestClassExists(true, "TestClass");
+
+    // Create a changeset to delete the class
+    // Perform a major schema update that deletes the class
+    const auto updatedSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="1.0.0" alias="bis"/>
+            <ECSchemaReference name="CoreCustomAttributes" version="1.0.0" alias="CoreCA" />
+
+            <ECCustomAttributes>
+                <DynamicSchema xmlns = 'CoreCustomAttributes.1.0.0' />
+            </ECCustomAttributes>
+
+            <ECEntityClass typeName="TestClass">
+                <BaseClass>bis:PhysicalElement</BaseClass>
+            </ECEntityClass>
+
+            <ECEntityClass typeName="AnotherTestClass">
+                <BaseClass>bis:PhysicalElement</BaseClass>
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ECSchemaPtr updatedSchema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(updatedSchema, updatedSchemaXml, *context));
+    m_db->ImportSchemas({ updatedSchema.get() }, true);
+    m_db->SaveChanges("Updated Test Schema");
+
+    const auto updatedRevision = CreateRevision("-schemaClassAdd");
+    ASSERT_TRUE(updatedRevision.IsValid());
+
+    // Classes should be inserted
+    checkTestClassExists(true, "TestClass");
+    checkTestClassExists(true, "AnotherTestClass");
+
+    m_db->Txns().RevertTimelineChanges({ updatedRevision }, false);
+
+    // "AnotherTestClass" should be deleted
+    checkTestClassExists(true, "TestClass");
+    checkTestClassExists(false, "AnotherTestClass");
+    }
+
+TEST_F(RevisionTestFixture, CheckHealthStatsWithSchemaChanges) {
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"CheckHealthStatsWithSchemaChanges.bim");
+    EXPECT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Initialized db"));
+    ASSERT_TRUE(CreateRevision("-initialize").IsValid());
+    BackupTestFile();
+
+    auto context = ECN::ECSchemaReadContext::CreateContext();
+    context->AddSchemaLocater(m_db->GetSchemaLocater());
+    BeFileName searchDirs[2];
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(searchDirs[0]);
+    searchDirs[0].AppendToPath(L"ECSchemas");
+    searchDirs[1] = searchDirs[0];
+    context->AddFirstSchemaPaths({ searchDirs[0].AppendToPath(L"Dgn"), searchDirs[1].AppendToPath(L"Standard") });
+
+    auto importSchemaAndCreateRevision = [&](const std::pair<Utf8String, Utf8String>& importSchemaInfo, ECN::ECSchemaReadContext& ctx) -> ChangesetPropsPtr {
+        ECSchemaPtr schema;
+        if (SchemaReadStatus::Success != ECSchema::ReadFromXmlString(schema, importSchemaInfo.first.c_str(), ctx)) {
+            ADD_FAILURE() << "Failed to read schema from XML: " << importSchemaInfo.first.c_str();
+            return nullptr;
+        }
+        if (!schema.IsValid()) {
+            ADD_FAILURE() << "Schema is not valid: " << importSchemaInfo.first.c_str();
+            return nullptr;
+        }
+        m_db->ImportSchemas({ schema.get() }, true);
+        m_db->SaveChanges(importSchemaInfo.second.c_str());
+        const auto revision = CreateRevision(importSchemaInfo.second.c_str());
+        if (!revision.IsValid()) {
+            ADD_FAILURE() << "Failed to create revision: " << importSchemaInfo.second.c_str();
+            return nullptr;
+        }
+        return revision;
+    };
+
+    std::vector<std::pair<Utf8String, Utf8String>> importSchemaInfo = { std::make_pair(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="1.0.0" alias="bis"/>
+
+            <ECEntityClass typeName="TestClass">
+                <BaseClass>bis:PhysicalElement</BaseClass>
+                <ECProperty propertyName="TestProperty" typeName="string" />
+            </ECEntityClass>
+        </ECSchema>)xml", "-importSchema"),
+
+        std::make_pair(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="1.0.0" alias="bis"/>
+            <ECSchemaReference name="CoreCustomAttributes" version="1.0.0" alias="CoreCA" />
+
+            <ECCustomAttributes>
+                <DynamicSchema xmlns = 'CoreCustomAttributes.1.0.0' />
+            </ECCustomAttributes>
+
+            <ECEntityClass typeName="TestClass">
+                <BaseClass>bis:PhysicalElement</BaseClass>
+                <ECProperty propertyName="TestProperty" typeName="int" />
+                <ECProperty propertyName="AnotherTestProperty" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml", "-firstUpdate"),
+
+        std::make_pair(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.2" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="1.0.0" alias="bis"/>
+            <ECSchemaReference name="CoreCustomAttributes" version="1.0.0" alias="CoreCA" />
+            <ECCustomAttributes>
+                <DynamicSchema xmlns = 'CoreCustomAttributes.1.0.0' />
+            </ECCustomAttributes>
+
+            <ECEntityClass typeName="TestClass">
+                <BaseClass>bis:PhysicalElement</BaseClass>
+                <ECProperty propertyName="TestProperty" typeName="int" />
+            </ECEntityClass>
+
+            <ECEnumeration typeName="EnumVal" backingTypeName="string" isStrict="true" description="Defines the layers in the BIS schema hierarchy.">
+                <ECEnumerator name="First" displayLabel="First" value="First" description="" />
+                <ECEnumerator name="Second" displayLabel="Second" value="Second" description="" />
+            </ECEnumeration>
+        </ECSchema>)xml", "-secondUpdate"),
+
+        std::make_pair(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="2.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="1.0.0" alias="bis"/>
+            <ECSchemaReference name="CoreCustomAttributes" version="1.0.0" alias="CoreCA" />
+            <ECCustomAttributes>
+                <DynamicSchema xmlns = 'CoreCustomAttributes.1.0.0' />
+            </ECCustomAttributes>
+
+            <ECEnumeration typeName="EnumVal" backingTypeName="string" isStrict="true" description="Defines the layers in the BIS schema hierarchy.">
+                <ECEnumerator name="First" displayLabel="First" value="First" description="" />
+                <ECEnumerator name="Second" displayLabel="Second" value="Second" description="" />
+            </ECEnumeration>
+        </ECSchema>)xml", "-majorUpdate") };
+
+    // Import initial schema (not tracked in revisions vector)
+    importSchemaAndCreateRevision(importSchemaInfo[0], *context);
+
+    BackupTestFile();
+    std::vector<ChangesetPropsPtr> revisions;
+    for (int i = 1; i < 4; ++i)
+        revisions.push_back(importSchemaAndCreateRevision(importSchemaInfo[i], *context));
+
+    RestoreTestFile();
+    m_db->Txns().EnableChangesetHealthStatsTracking();
+    for (const auto& revision : revisions)
+        MergeSchemaRevision(*revision);
+
+    struct TestCase {
+        unsigned int insertedRows;
+        unsigned int updatedRows;
+        unsigned int deletedRows;
+        unsigned int scanCount;
+        unsigned int sqlStatementCount;
+    };
+
+    std::unordered_map<Utf8String, TestCase> revisionsData = {
+        { revisions[0]->GetChangesetId(), { 5, 2, 0, 0, 7 } },
+        { revisions[1]->GetChangesetId(), { 1, 1, 3, 0, 5 } },
+        { revisions[2]->GetChangesetId(), { 0, 1097, 51, 0, 11 } },
+    };
+
+    auto changesets = m_db->Txns().GetAllChangesetHealthStatistics()["changesets"];
+    ASSERT_TRUE(changesets.isArray());
+    ASSERT_EQ(revisions.size(), changesets.size());
+
+    // Validate health stats for each revision
+    changesets.ForEachArrayMember([&](BeJsValue::ArrayIndex, BeJsConst changeset) {
+        Utf8String id = changeset["changeset_id"].asString();
+        auto it = revisionsData.find(id);
+        if (it == revisionsData.end()) {
+            EXPECT_FALSE(true) << "Changeset " << id << " not found in expected data.";
+            return false; // Continue to next iteration
+        }
+        EXPECT_GT(changeset["uncompressed_size_bytes"].asUInt(), 1U) << "Uncompressed size mismatch for changeset: " << id;
+        const auto& expected = it->second;
+
+        if (expected.insertedRows == 0)
+            EXPECT_EQ(changeset["inserted_rows"].asUInt(), expected.insertedRows) << "Inserted rows mismatch for changeset: " << id;
+        else
+            EXPECT_GE(changeset["inserted_rows"].asUInt(), expected.insertedRows) << "Inserted rows mismatch for changeset: " << id;
+
+        EXPECT_GE(changeset["updated_rows"].asUInt(), expected.updatedRows) << "Updated rows mismatch for changeset: " << id;
+
+        if (expected.deletedRows == 0)
+            EXPECT_EQ(changeset["deleted_rows"].asUInt(), expected.deletedRows) << "Deleted rows mismatch for changeset: " << id;
+        else
+            EXPECT_GE(changeset["deleted_rows"].asUInt(), expected.deletedRows) << "Deleted rows mismatch for changeset: " << id;
+
+        EXPECT_EQ(changeset["scan_count"].asUInt(), expected.scanCount) << "Scan count mismatch for changeset: " << id;
+        EXPECT_EQ(changeset["health_stats"].size(), expected.sqlStatementCount) << "SQL statement count mismatch for changeset: " << id;
+
+        return false;
+    });
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, CheckHealthStatsWithElementCRUD) {
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"CheckHealthStatsWithElementCRUD.bim");
+    EXPECT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Initialized db"));
+
+    auto context = ECN::ECSchemaReadContext::CreateContext();
+    context->AddSchemaLocater(m_db->GetSchemaLocater());
+
+    BeFileName searchDirs[2];
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(searchDirs[0]);
+    searchDirs[0].AppendToPath(L"ECSchemas");
+    searchDirs[1] = searchDirs[0];
+
+    context->AddFirstSchemaPaths({ searchDirs[0].AppendToPath(L"Dgn"), searchDirs[1].AppendToPath(L"Standard") });
+
+    // Set up a base schema with a class
+    const auto baseSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="1.0.0" alias="bis"/>
+            <ECEntityClass typeName="TestClass">
+                <BaseClass>bis:PhysicalElement</BaseClass>
+                <ECProperty propertyName="TestProperty" typeName="string" />
+                <ECProperty propertyName="AnotherTestProperty" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ECSchemaPtr initialSchema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(initialSchema, baseSchemaXml, *context));
+    m_db->ImportSchemas({ initialSchema.get() }, true);
+    m_db->SaveChanges("Created Test Schema");
+
+    ASSERT_TRUE(CreateRevision("-initialRevision").IsValid());
+
+    BackupTestFile();
+
+    ChangesetPropsPtr revision;
+    DgnElementId testElementId;
+    // Insert element
+    {
+        PhysicalModelPtr model = m_db->Models().Get<PhysicalModel>(m_defaultModelId);
+        ASSERT_TRUE(model.IsValid());
+        GeometryBuilderPtr builder = GeometryBuilder::Create(*model, m_defaultCategoryId, DPoint3d::From(0.0, 0.0, 0.0));
+        builder->Append(*ICurvePrimitive::CreateArc(DEllipse3d::From(1, 2, 3, 0, 0, 2, 0, 3, 0, 0.0, Angle::TwoPi())));
+
+        GenericPhysicalObjectPtr testElement = GenericPhysicalObject::Create(*model, m_defaultCategoryId);
+        ASSERT_EQ(SUCCESS, builder->Finish(*testElement));
+
+        DgnDbStatus statusInsert;
+        testElement->Insert(&statusInsert);
+        ASSERT_EQ(DgnDbStatus::Success, statusInsert);
+
+        testElementId = testElement->GetElementId();
+        ASSERT_TRUE(testElementId.IsValid());
+        ASSERT_TRUE(m_db->Elements().GetElement(testElementId).IsValid());
+        m_db->SaveChanges("Inserted Element");
+
+        revision = CreateRevision("-insertElement");
+        ASSERT_TRUE(revision.IsValid());
+    }
+
+    RestoreTestFile();
+    m_db->Txns().EnableChangesetHealthStatsTracking();
+    EXPECT_TRUE(m_db->Elements().GetElement(testElementId).IsNull());
+    MergeSchemaRevision(*revision);
+
+    const auto insertChangeset = m_db->Txns().GetAllChangesetHealthStatistics()["changesets"];
+    EXPECT_EQ(insertChangeset.size(), 1);
+    insertChangeset.ForEachArrayMember([&](BeJsValue::ArrayIndex, BeJsConst changeset) {
+        EXPECT_STREQ(changeset["changeset_id"].asString().c_str(), revision->GetChangesetId().c_str());
+        EXPECT_GT(changeset["uncompressed_size_bytes"].asUInt(), 1U);
+        EXPECT_EQ(changeset["inserted_rows"].asUInt(), 4);
+        EXPECT_EQ(changeset["updated_rows"].asUInt(), 2);
+        EXPECT_EQ(changeset["deleted_rows"].asUInt(), 0);
+        EXPECT_EQ(changeset["scan_count"].asUInt(), 0);
+        EXPECT_EQ(changeset["health_stats"].size(), 6);
+        return false;
+    });
+
+    BackupTestFile();
+
+    // Update element
+    {
+        auto testElement = m_db->Elements().GetForEdit<PhysicalElement>(testElementId);
+        ASSERT_TRUE(testElement.IsValid());
+
+        testElement->SetPropertyValue("TestProperty", ECValue("UpdatedValue"));
+        testElement->SetPropertyValue("AnotherTestProperty", ECValue(20));
+        testElement->Update();
+        m_db->SaveChanges("Updated Element");
+
+        revision = CreateRevision("-updateElement");
+        ASSERT_TRUE(revision.IsValid());
+    }
+
+    RestoreTestFile();
+    m_db->Txns().EnableChangesetHealthStatsTracking();
+    EXPECT_TRUE(m_db->Elements().GetElement(testElementId).IsValid());
+    MergeSchemaRevision(*revision);
+    
+    const auto updateChangeset = m_db->Txns().GetAllChangesetHealthStatistics()["changesets"];
+    EXPECT_EQ(updateChangeset.size(), 1);
+    updateChangeset.ForEachArrayMember([&](BeJsValue::ArrayIndex, BeJsConst changeset) {
+        EXPECT_STREQ(changeset["changeset_id"].asString().c_str(), revision->GetChangesetId().c_str());
+        EXPECT_GT(changeset["uncompressed_size_bytes"].asUInt(), 1U);
+        EXPECT_EQ(changeset["inserted_rows"].asUInt(), 0);
+        EXPECT_EQ(changeset["updated_rows"].asUInt(), 4);
+        EXPECT_EQ(changeset["deleted_rows"].asUInt(), 0);
+        EXPECT_EQ(changeset["scan_count"].asUInt(), 0);
+        EXPECT_EQ(changeset["health_stats"].size(), 4);
+        return false;
+    });
+
+    BackupTestFile();
+
+    // Delete element
+    {
+        auto testElement = m_db->Elements().GetForEdit<PhysicalElement>(testElementId);
+        ASSERT_TRUE(testElement.IsValid());
+        testElement->Delete();
+        m_db->SaveChanges("Deleted Element");
+
+        revision = CreateRevision("-deleteElement");
+        ASSERT_TRUE(revision.IsValid());
+    }
+
+    RestoreTestFile();
+    m_db->Txns().EnableChangesetHealthStatsTracking();
+    EXPECT_TRUE(m_db->Elements().GetElement(testElementId).IsValid());
+    MergeSchemaRevision(*revision);
+    
+    const auto deleteChangeset = m_db->Txns().GetAllChangesetHealthStatistics()["changesets"];
+    EXPECT_EQ(deleteChangeset.size(), 1);
+    deleteChangeset.ForEachArrayMember([&](BeJsValue::ArrayIndex, BeJsConst changeset) {
+        EXPECT_STREQ(changeset["changeset_id"].asString().c_str(), revision->GetChangesetId().c_str());
+        EXPECT_GT(changeset["uncompressed_size_bytes"].asUInt(), 1U);
+        EXPECT_EQ(changeset["inserted_rows"].asUInt(), 1);
+        EXPECT_EQ(changeset["updated_rows"].asUInt(), 2);
+        EXPECT_EQ(changeset["deleted_rows"].asUInt(), 3);
+        EXPECT_EQ(changeset["scan_count"].asUInt(), 0);
+        EXPECT_EQ(changeset["health_stats"].size(), 6);
+        return false;
+    });
+}
+
+//---------------------------------------------------------------------------------------
+// A dgn_Domain INSERT that collides with a locally created row is benign. The native
+// handler must Replace even when earlier changesets in the same merge left pending txns
+// (the production multi-changeset pull path). Call MergeChangeset rather than
+// PullMergeApply so local in-flight rows are not reversed first.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, DgnDomainDuplicateInsertResolvedWithPendingTxns)
+    {
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"DgnDomainDupInsertPending.bim");
+    m_db->SaveChanges("Created Initial Model");
+    ASSERT_TRUE(CreateRevision("-cs0").IsValid());
+    BackupTestFile();
+
+    DgnElementId cs1ElementId = InsertPhysicalElement(*m_db, *m_defaultModel, m_defaultCategoryId, 5, 5, 5);
+    ASSERT_TRUE(cs1ElementId.IsValid());
+    m_db->SaveChanges("cs1 data");
+    ChangesetPropsPtr cs1 = CreateRevision("-cs1");
+    ASSERT_TRUE(cs1.IsValid());
+
+    ASSERT_EQ(BE_SQLITE_OK, InsertTestDomain(*m_db, "incoming", 2));
+    m_db->SaveChanges("cs2 domain insert");
+    ChangesetPropsPtr cs2 = CreateRevision("-cs2");
+    ASSERT_TRUE(cs2.IsValid());
+
+    RestoreTestFile();
+    EXPECT_EQ(ChangesetStatus::Success, m_db->Txns().MergeChangeset(*cs1, false));
+
+    // Simulate SyncWithSchemas() creating the same domain row after the earlier changeset.
+    ASSERT_EQ(BE_SQLITE_OK, InsertTestDomain(*m_db, "local", 1));
+    m_db->SaveChanges("auto-created domain row");
+    ASSERT_TRUE(m_db->Txns().HasPendingTxns());
+
+    EXPECT_EQ(ChangesetStatus::Success, m_db->Txns().MergeChangeset(*cs2, false));
+
+    Utf8String description;
+    int version = 0;
+    ASSERT_TRUE(QueryTestDomain(*m_db, description, version));
+    EXPECT_STREQ("incoming", description.c_str());
+    EXPECT_EQ(2, version);
+    }
+
+//---------------------------------------------------------------------------------------
+// A dgn_Domain UPDATE/DELETE whose before-values do not match is a Data conflict, not
+// the benign duplicate-insert case, and must still abort when local work is pending.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, DgnDomainDataConflictAbortsWithPendingTxns)
+    {
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"DgnDomainDataConflict.bim");
+    m_db->SaveChanges("Created Initial Model");
+    ASSERT_TRUE(CreateRevision("-cs0").IsValid());
+
+    ASSERT_EQ(BE_SQLITE_OK, InsertTestDomain(*m_db, "baseline", 1));
+    m_db->SaveChanges("baseline domain");
+    ASSERT_TRUE(CreateRevision("-cs-domain").IsValid());
+    BackupTestFile();
+
+    ASSERT_EQ(BE_SQLITE_OK, UpdateTestDomainDescription(*m_db, "incoming"));
+    m_db->SaveChanges("update domain");
+    ChangesetPropsPtr csUpdate = CreateRevision("-cs-update");
+    ASSERT_TRUE(csUpdate.IsValid());
+
+    RestoreTestFile();
+    ASSERT_EQ(BE_SQLITE_OK, UpdateTestDomainDescription(*m_db, "divergent"));
+    DgnElementId elementId = InsertPhysicalElement(*m_db, *m_defaultModel, m_defaultCategoryId, 6, 6, 6);
+    ASSERT_TRUE(elementId.IsValid());
+    m_db->SaveChanges("divergent domain + pending work");
+    ASSERT_TRUE(m_db->Txns().HasPendingTxns());
+
+    expectToThrow([&]() { m_db->Txns().MergeChangeset(*csUpdate, false); },
+        "UPDATE/DELETE before value do not match with one in db or CASCADE action was triggered.");
+    }
+
+//---------------------------------------------------------------------------------------
+// A dgn_Domain DELETE whose before-values do not match is also a Data conflict and
+// must abort when local work is pending.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, DgnDomainDeleteDataConflictAbortsWithPendingTxns)
+    {
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"DgnDomainDeleteConflict.bim");
+    m_db->SaveChanges("Created Initial Model");
+    ASSERT_TRUE(CreateRevision("-cs0").IsValid());
+
+    ASSERT_EQ(BE_SQLITE_OK, InsertTestDomain(*m_db, "baseline", 1));
+    m_db->SaveChanges("baseline domain");
+    ASSERT_TRUE(CreateRevision("-cs-domain").IsValid());
+    BackupTestFile();
+
+    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteSql(Utf8PrintfString("DELETE FROM " DGN_TABLE_Domain " WHERE Name='%s'", kTestDomainName).c_str()));
+    m_db->SaveChanges("delete domain");
+    ChangesetPropsPtr csDelete = CreateRevision("-cs-delete");
+    ASSERT_TRUE(csDelete.IsValid());
+
+    RestoreTestFile();
+    ASSERT_EQ(BE_SQLITE_OK, UpdateTestDomainDescription(*m_db, "divergent"));
+    m_db->SaveChanges("divergent domain");
+    ASSERT_TRUE(m_db->Txns().HasPendingTxns());
+
+    expectToThrow([&]() { m_db->Txns().MergeChangeset(*csDelete, false); },
+        "UPDATE/DELETE before value do not match with one in db or CASCADE action was triggered.");
+    }
+
+//---------------------------------------------------------------------------------------
+// Duplicate INSERT on a non-domain table with pending txns must still abort.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, NonDomainDuplicateInsertAbortsWithPendingTxns)
+    {
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"NonDomainDupInsert.bim");
+    m_db->SaveChanges("Created Initial Model");
+    ASSERT_TRUE(CreateRevision("-cs0").IsValid());
+    BackupTestFile();
+
+    DgnElementId incomingId = InsertPhysicalElement(*m_db, *m_defaultModel, m_defaultCategoryId, 7, 7, 7);
+    ASSERT_TRUE(incomingId.IsValid());
+    m_db->SaveChanges("incoming element");
+    ChangesetPropsPtr csInsert = CreateRevision("-cs-elem");
+    ASSERT_TRUE(csInsert.IsValid());
+
+    RestoreTestFile();
+    DgnElementId localId = InsertPhysicalElement(*m_db, *m_defaultModel, m_defaultCategoryId, 7, 7, 7);
+    ASSERT_TRUE(localId.IsValid());
+    ASSERT_EQ(incomingId, localId);
+    m_db->SaveChanges("local element");
+    ASSERT_TRUE(m_db->Txns().HasPendingTxns());
+
+    expectToThrow([&]() { m_db->Txns().MergeChangeset(*csInsert, false); },
+        "PRIMARY KEY INSERT CONFLICT - rejecting this changeset");
+    }
+
+//---------------------------------------------------------------------------------------
+// sqlite_stat1 contains query-planner statistics that may legitimately differ between
+// briefcases. A conflicting statistics row must not abort a pull merely because unrelated
+// local work is pending.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, SqliteStat1InsertConflictReplacesWithPendingTxns)
+    {
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"SqliteStat1Conflict.bim");
+    m_db->SaveChanges("Created Initial Model");
+    ASSERT_TRUE(CreateRevision("-cs0").IsValid());
+
+    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteSql("DELETE FROM sqlite_stat1 WHERE tbl='be_Local' AND idx='sqlite_autoindex_be_Local_1'"));
+    m_db->SaveChanges("empty baseline statistics");
+    if (m_db->Txns().HasPendingTxns())
+        ASSERT_TRUE(CreateRevision("-cs-baseline").IsValid());
+    BackupTestFile();
+
+    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteSql("ANALYZE be_Local"));
+    Utf8String incomingStat;
+    ASSERT_TRUE(QueryBeLocalStat(*m_db, incomingStat));
+    m_db->SaveChanges("incoming statistics");
+    ChangesetPropsPtr csStat = CreateRevision("-cs-stat");
+    ASSERT_TRUE(csStat.IsValid());
+
+    RestoreTestFile();
+    ASSERT_EQ(BE_SQLITE_DONE, m_db->SaveBriefcaseLocalValue("sqlite-stat1-conflict-test", "local"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteSql("ANALYZE be_Local"));
+    DgnElementId elementId = InsertPhysicalElement(*m_db, *m_defaultModel, m_defaultCategoryId, 8, 8, 8);
+    ASSERT_TRUE(elementId.IsValid());
+    m_db->SaveChanges("local statistics and pending work");
+    ASSERT_TRUE(m_db->Txns().HasPendingTxns());
+
+    Utf8String localStat;
+    ASSERT_TRUE(QueryBeLocalStat(*m_db, localStat));
+    ASSERT_STRNE(incomingStat.c_str(), localStat.c_str());
+
+    EXPECT_EQ(ChangesetStatus::Success, m_db->Txns().MergeChangeset(*csStat, false));
+
+    Utf8String mergedStat;
+    ASSERT_TRUE(QueryBeLocalStat(*m_db, mergedStat));
+    EXPECT_STREQ(incomingStat.c_str(), mergedStat.c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// A sqlite_stat1 UPDATE whose before value differs from locally computed statistics must
+// also be replaced while unrelated local work is pending.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, SqliteStat1DataConflictReplacesWithPendingTxns)
+    {
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"SqliteStat1DataConflict.bim");
+    m_db->SaveChanges("Created Initial Model");
+    ASSERT_TRUE(CreateRevision("-cs0").IsValid());
+
+    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteSql("ANALYZE be_Local"));
+    Utf8String baselineStat;
+    ASSERT_TRUE(QueryBeLocalStat(*m_db, baselineStat));
+    m_db->SaveChanges("baseline statistics");
+    ASSERT_TRUE(CreateRevision("-cs-baseline").IsValid());
+    BackupTestFile();
+
+    ASSERT_EQ(BE_SQLITE_DONE, m_db->SaveBriefcaseLocalValue("sqlite-stat1-incoming", "incoming"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteSql("ANALYZE be_Local"));
+    Utf8String incomingStat;
+    ASSERT_TRUE(QueryBeLocalStat(*m_db, incomingStat));
+    ASSERT_STRNE(baselineStat.c_str(), incomingStat.c_str());
+    m_db->SaveChanges("incoming statistics");
+    ChangesetPropsPtr csStat = CreateRevision("-cs-stat");
+    ASSERT_TRUE(csStat.IsValid());
+
+    RestoreTestFile();
+    ASSERT_EQ(BE_SQLITE_DONE, m_db->SaveBriefcaseLocalValue("sqlite-stat1-local-1", "local"));
+    ASSERT_EQ(BE_SQLITE_DONE, m_db->SaveBriefcaseLocalValue("sqlite-stat1-local-2", "local"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteSql("ANALYZE be_Local"));
+    DgnElementId elementId = InsertPhysicalElement(*m_db, *m_defaultModel, m_defaultCategoryId, 9, 9, 9);
+    ASSERT_TRUE(elementId.IsValid());
+    m_db->SaveChanges("local statistics and pending work");
+    ASSERT_TRUE(m_db->Txns().HasPendingTxns());
+
+    Utf8String localStat;
+    ASSERT_TRUE(QueryBeLocalStat(*m_db, localStat));
+    ASSERT_STRNE(incomingStat.c_str(), localStat.c_str());
+
+    EXPECT_EQ(ChangesetStatus::Success, m_db->Txns().MergeChangeset(*csStat, false));
+
+    Utf8String mergedStat;
+    ASSERT_TRUE(QueryBeLocalStat(*m_db, mergedStat));
+    EXPECT_STREQ(incomingStat.c_str(), mergedStat.c_str());
     }

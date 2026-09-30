@@ -6,6 +6,8 @@ package flatbuffers
 // A Builder constructs byte buffers in a last-first manner for simplicity and
 // performance.
 type Builder struct {
+	// `Bytes` gives raw access to the buffer. Most users will want to use
+	// FinishedBytes() instead.
 	Bytes []byte
 
 	minalign  int
@@ -13,7 +15,13 @@ type Builder struct {
 	objectEnd UOffsetT
 	vtables   []UOffsetT
 	head      UOffsetT
+	nested    bool
+	finished  bool
+
+	sharedStrings map[string]UOffsetT
 }
+
+const fileIdentifierLength = 4
 
 // NewBuilder initializes a Builder of size `initial_size`.
 // The internal buffer is grown as needed.
@@ -27,17 +35,54 @@ func NewBuilder(initialSize int) *Builder {
 	b.head = UOffsetT(initialSize)
 	b.minalign = 1
 	b.vtables = make([]UOffsetT, 0, 16) // sensible default capacity
-
 	return b
+}
+
+// Reset truncates the underlying Builder buffer, facilitating alloc-free
+// reuse of a Builder. It also resets bookkeeping data.
+func (b *Builder) Reset() {
+	if b.Bytes != nil {
+		b.Bytes = b.Bytes[:cap(b.Bytes)]
+	}
+
+	if b.vtables != nil {
+		b.vtables = b.vtables[:0]
+	}
+
+	if b.vtable != nil {
+		b.vtable = b.vtable[:0]
+	}
+
+	b.head = UOffsetT(len(b.Bytes))
+	b.minalign = 1
+	b.nested = false
+	b.finished = false
+}
+
+// FinishedBytes returns a pointer to the written data in the byte buffer.
+// Panics if the builder is not in a finished state (which is caused by calling
+// `Finish()`).
+func (b *Builder) FinishedBytes() []byte {
+	b.assertFinished()
+	return b.Bytes[b.Head():]
 }
 
 // StartObject initializes bookkeeping for writing a new object.
 func (b *Builder) StartObject(numfields int) {
-	b.notNested()
+	b.assertNotNested()
+	b.nested = true
+
 	// use 32-bit offsets so that arithmetic doesn't overflow.
-	b.vtable = make([]UOffsetT, numfields)
+	if cap(b.vtable) < numfields || b.vtable == nil {
+		b.vtable = make([]UOffsetT, numfields)
+	} else {
+		b.vtable = b.vtable[:numfields]
+		for i := 0; i < len(b.vtable); i++ {
+			b.vtable[i] = 0
+		}
+	}
+
 	b.objectEnd = b.Offset()
-	b.minalign = 1
 }
 
 // WriteVtable serializes the vtable for the current object, if applicable.
@@ -66,6 +111,12 @@ func (b *Builder) WriteVtable() (n UOffsetT) {
 
 	objectOffset := b.Offset()
 	existingVtable := UOffsetT(0)
+
+	// Trim vtable of trailing zeroes.
+	i := len(b.vtable) - 1
+	for ; i >= 0 && b.vtable[i] == 0; i-- {
+	}
+	b.vtable = b.vtable[:i+1]
 
 	// Search backwards through existing vtables, because similar vtables
 	// are likely to have been recently appended. See
@@ -99,7 +150,7 @@ func (b *Builder) WriteVtable() (n UOffsetT) {
 			var off UOffsetT
 			if b.vtable[i] != 0 {
 				// Forward reference to field;
-				// use 32bit number to ensure no overflow:
+				// use 32bit number to assert no overflow:
 				off = objectOffset - b.vtable[i]
 			}
 
@@ -137,16 +188,16 @@ func (b *Builder) WriteVtable() (n UOffsetT) {
 			SOffsetT(existingVtable)-SOffsetT(objectOffset))
 	}
 
-	b.vtable = nil
+	b.vtable = b.vtable[:0]
 	return objectOffset
 }
 
 // EndObject writes data necessary to finish object construction.
 func (b *Builder) EndObject() UOffsetT {
-	if b.vtable == nil {
-		panic("not in object")
-	}
-	return b.WriteVtable()
+	b.assertNested()
+	n := b.WriteVtable()
+	b.nested = false
+	return n
 }
 
 // Doubles the size of the byteslice, and copies the old data towards the
@@ -155,13 +206,20 @@ func (b *Builder) growByteBuffer() {
 	if (int64(len(b.Bytes)) & int64(0xC0000000)) != 0 {
 		panic("cannot grow buffer beyond 2 gigabytes")
 	}
-	newSize := len(b.Bytes) * 2
-	if newSize == 0 {
-		newSize = 1
+	newLen := len(b.Bytes) * 2
+	if newLen == 0 {
+		newLen = 1
 	}
-	bytes2 := make([]byte, newSize)
-	copy(bytes2[newSize-len(b.Bytes):], b.Bytes)
-	b.Bytes = bytes2
+
+	if cap(b.Bytes) >= newLen {
+		b.Bytes = b.Bytes[:newLen]
+	} else {
+		extension := make([]byte, newLen-len(b.Bytes))
+		b.Bytes = append(b.Bytes, extension...)
+	}
+
+	middle := newLen / 2
+	copy(b.Bytes[middle:], b.Bytes[:middle])
 }
 
 // Head gives the start of useful data in the underlying byte buffer.
@@ -198,7 +256,7 @@ func (b *Builder) Prep(size, additionalBytes int) {
 	alignSize &= (size - 1)
 
 	// Reallocate the buffer if needed:
-	for int(b.head) < alignSize+size+additionalBytes {
+	for int(b.head) <= alignSize+size+additionalBytes {
 		oldBufSize := len(b.Bytes)
 		b.growByteBuffer()
 		b.head += UOffsetT(len(b.Bytes) - oldBufSize)
@@ -232,7 +290,8 @@ func (b *Builder) PrependUOffsetT(off UOffsetT) {
 //   <UOffsetT: number of elements in this vector>
 //   <T: data>+, where T is the type of elements of this vector.
 func (b *Builder) StartVector(elemSize, numElems, alignment int) UOffsetT {
-	b.notNested()
+	b.assertNotNested()
+	b.nested = true
 	b.Prep(SizeUint32, elemSize*numElems)
 	b.Prep(alignment, elemSize*numElems) // Just in case alignment > int.
 	return b.Offset()
@@ -240,39 +299,108 @@ func (b *Builder) StartVector(elemSize, numElems, alignment int) UOffsetT {
 
 // EndVector writes data necessary to finish vector construction.
 func (b *Builder) EndVector(vectorNumElems int) UOffsetT {
+	b.assertNested()
+
 	// we already made space for this, so write without PrependUint32
 	b.PlaceUOffsetT(UOffsetT(vectorNumElems))
+
+	b.nested = false
 	return b.Offset()
+}
+
+// CreateSharedString Checks if the string is already written
+// to the buffer before calling CreateString
+func (b *Builder) CreateSharedString(s string) UOffsetT {
+	if b.sharedStrings == nil {
+		b.sharedStrings = make(map[string]UOffsetT)
+	}
+	if v, ok := b.sharedStrings[s]; ok {
+		return v
+	}
+	off := b.CreateString(s)
+	b.sharedStrings[s] = off
+	return off
 }
 
 // CreateString writes a null-terminated string as a vector.
 func (b *Builder) CreateString(s string) UOffsetT {
+	b.assertNotNested()
+	b.nested = true
+
 	b.Prep(int(SizeUOffsetT), (len(s)+1)*SizeByte)
 	b.PlaceByte(0)
 
-	x := []byte(s)
-	l := UOffsetT(len(x))
+	l := UOffsetT(len(s))
 
 	b.head -= l
-	copy(b.Bytes[b.head:b.head+l], x)
+	copy(b.Bytes[b.head:b.head+l], s)
 
-	return b.EndVector(len(x))
+	return b.EndVector(len(s))
 }
 
-func (b *Builder) notNested() {
-	// Check that no other objects are being built while making this
-	// object. If not, panic:
-	if b.vtable != nil {
-		panic("non-inline data write inside of object")
+// CreateByteString writes a byte slice as a string (null-terminated).
+func (b *Builder) CreateByteString(s []byte) UOffsetT {
+	b.assertNotNested()
+	b.nested = true
+
+	b.Prep(int(SizeUOffsetT), (len(s)+1)*SizeByte)
+	b.PlaceByte(0)
+
+	l := UOffsetT(len(s))
+
+	b.head -= l
+	copy(b.Bytes[b.head:b.head+l], s)
+
+	return b.EndVector(len(s))
+}
+
+// CreateByteVector writes a ubyte vector
+func (b *Builder) CreateByteVector(v []byte) UOffsetT {
+	b.assertNotNested()
+	b.nested = true
+
+	b.Prep(int(SizeUOffsetT), len(v)*SizeByte)
+
+	l := UOffsetT(len(v))
+
+	b.head -= l
+	copy(b.Bytes[b.head:b.head+l], v)
+
+	return b.EndVector(len(v))
+}
+
+func (b *Builder) assertNested() {
+	// If you get this assert, you're in an object while trying to write
+	// data that belongs outside of an object.
+	// To fix this, write non-inline data (like vectors) before creating
+	// objects.
+	if !b.nested {
+		panic("Incorrect creation order: must be inside object.")
 	}
 }
 
-func (b *Builder) nested(obj UOffsetT) {
-	// Structs are always stored inline, so need to be created right
-	// where they are used. You'll get this panic if you created it
-	// elsewhere:
-	if obj != b.Offset() {
-		panic("inline data write outside of object")
+func (b *Builder) assertNotNested() {
+	// If you hit this, you're trying to construct a Table/Vector/String
+	// during the construction of its parent table (between the MyTableBuilder
+	// and builder.Finish()).
+	// Move the creation of these sub-objects to above the MyTableBuilder to
+	// not get this assert.
+	// Ignoring this assert may appear to work in simple cases, but the reason
+	// it is here is that storing objects in-line may cause vtable offsets
+	// to not fit anymore. It also leads to vtable duplication.
+	if b.nested {
+		panic("Incorrect creation order: object must not be nested.")
+	}
+}
+
+func (b *Builder) assertFinished() {
+	// If you get this assert, you're attempting to get access a buffer
+	// which hasn't been finished yet. Be sure to call builder.Finish()
+	// with your root table.
+	// If you really need to access an unfinished buffer, use the Bytes
+	// buffer directly.
+	if !b.finished {
+		panic("Incorrect use of FinishedBytes(): must call 'Finish' first.")
 	}
 }
 
@@ -416,7 +544,10 @@ func (b *Builder) PrependUOffsetTSlot(o int, x, d UOffsetT) {
 // In generated code, `d` is always 0.
 func (b *Builder) PrependStructSlot(voffset int, x, d UOffsetT) {
 	if x != d {
-		b.nested(x)
+		b.assertNested()
+		if x != b.Offset() {
+			panic("inline data write outside of object")
+		}
 		b.Slot(voffset)
 	}
 }
@@ -426,10 +557,29 @@ func (b *Builder) Slot(slotnum int) {
 	b.vtable[slotnum] = UOffsetT(b.Offset())
 }
 
+// FinishWithFileIdentifier finalizes a buffer, pointing to the given `rootTable`.
+// as well as applys a file identifier
+func (b *Builder) FinishWithFileIdentifier(rootTable UOffsetT, fid []byte) {
+	if fid == nil || len(fid) != fileIdentifierLength {
+		panic("incorrect file identifier length")
+	}
+	// In order to add a file identifier to the flatbuffer message, we need
+	// to prepare an alignment and file identifier length
+	b.Prep(b.minalign, SizeInt32+fileIdentifierLength)
+	for i := fileIdentifierLength - 1; i >= 0; i-- {
+		// place the file identifier
+		b.PlaceByte(fid[i])
+	}
+	// finish
+	b.Finish(rootTable)
+}
+
 // Finish finalizes a buffer, pointing to the given `rootTable`.
 func (b *Builder) Finish(rootTable UOffsetT) {
+	b.assertNotNested()
 	b.Prep(b.minalign, SizeUOffsetT)
 	b.PrependUOffsetT(rootTable)
+	b.finished = true
 }
 
 // vtableEqual compares an unwritten vtable to a written vtable.

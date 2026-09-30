@@ -3,8 +3,8 @@
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 
-import * as os from "os";
-import * as path from "path";
+import * as os from "node:os";
+import * as path from "node:path";
 
 import type { NativeCloudSqlite } from "./NativeCloudSqlite";
 
@@ -14,26 +14,46 @@ import type { NativeCloudSqlite } from "./NativeCloudSqlite";
  */
 
 import type {
-  BentleyStatus, DbOpcode, DbResult, GuidString, Id64Array, Id64String, IDisposable, IModelStatus, LogLevel, OpenMode,
-  StatusCodeWithMessage,
+  BentleyStatus, DbOpcode, DbResult, GuidString, Id64Array, Id64String, IModelStatus, LogLevel, OpenMode
 } from "@itwin/core-bentley";
 import type {
-  ChangesetIndexAndId, CodeSpecProperties, CreateEmptyStandaloneIModelProps, DbRequest, DbResponse, ElementAspectProps, ElementGraphicsRequestProps, ElementLoadProps, ElementProps,
-  FilePropertyProps, FontId, FontMapProps, GeoCoordinatesRequestProps, GeoCoordinatesResponseProps, GeographicCRSInterpretRequestProps,
-  GeographicCRSInterpretResponseProps, GeometryContainmentResponseProps, IModelCoordinatesRequestProps,
-  IModelCoordinatesResponseProps, IModelProps, LocalDirName, LocalFileName, MassPropertiesResponseProps, ModelLoadProps,
-  ModelProps, QueryQuota, RelationshipProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, UpgradeOptions,
+  BRepGeometryCreate, ChangesetIndexAndId, CodeProps, CodeSpecProperties, FontType as CoreFontType, PerStatementHealthStats as CorePerStatementHealthStats, TxnProps as CoreTxnProps, CreateEmptyStandaloneIModelProps, DbRequest, DbResponse, ElementAspectProps,
+  ElementGeometryBuilderParams,
+  ElementGeometryBuilderParamsForPart,
+  ElementGeometryCacheOperationRequestProps, ElementGeometryCacheRequestProps, ElementGeometryCacheResponseProps, ElementGeometryRequest,
+  ElementGraphicsRequestProps, ElementLoadOptions, ElementLoadProps, ElementMeshRequestProps, ElementProps,
+  FilePropertyProps, FontId, FontProps, GeoCoordinatesRequestProps, GeoCoordinatesResponseProps, GeographicCRSInterpretRequestProps,
+  GeographicCRSInterpretResponseProps, GeometryContainmentResponseProps, GeometryStreamProps, ImageBuffer, ImageBufferFormat, ImageSourceFormat, IModelCoordinatesRequestProps,
+  IModelCoordinatesResponseProps, IModelProps, LocalDirName, LocalFileName, MassPropertiesResponseProps, ModelExtentsProps, ModelLoadProps,
+  ModelProps, PlacementProps, QueryQuota, RelationshipProps, RscFontEncodingProps, SnapRequestProps, SnapResponseProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, UpgradeOptions
 } from "@itwin/core-common";
-import type { Range2dProps, Range3dProps } from "@itwin/core-geometry";
+import type { LowAndHighXYZProps, Range2dProps, Range3dProps, XAndY } from "@itwin/core-geometry";
 
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable @itwin/prefer-get */
 
-// ###TODO import from core-common after merge with master
-export type ElementMeshRequestProps = any;
-
 // cspell:ignore  blocksize cachesize polltime bentleyjs imodeljs ecsql pollable polyface txns lzma uncompress changesets ruleset ulas oidc keychain libsecret rulesets struct
+
+/**
+ * Status codes returned by the native bulk-delete operation.
+ * @internal
+ */
+export enum BulkDeleteElementsStatus {
+  Success = 0,
+  PartialSuccess = 1,
+  DeletionFailed = 2,
+}
+
+/**
+ * Result of the bulk element deletion operation.
+ * @internal
+ */
+export interface BulkDeleteElementsResult {
+  status: BulkDeleteElementsStatus;
+  sqlDeleteStatus: DbResult;
+  failedIds: Id64Array;
+}
 
 /** Logger categories used by the native addon
  * @internal
@@ -53,7 +73,7 @@ export const NativeLoggerCategory = {
 /** @internal */
 export interface NativeLogger {
   readonly minLevel: LogLevel | undefined;
-  readonly categoryFilter: { [categoryName: string]: LogLevel };
+  readonly categoryFilter: Readonly<{ [categoryName: string]: LogLevel | undefined }>;
   logTrace: (category: string, message: string) => void;
   logInfo: (category: string, message: string) => void;
   logWarning: (category: string, message: string) => void;
@@ -89,9 +109,9 @@ export class NativeLibrary {
   // This returns true if you used `linkNativePlatform.bat` to install your local addon build.
   public static get isDevBuild(): boolean {
     try {
-      require("./devbuild.json");
+      require.resolve("./devbuild.json");
       return true;
-    } catch (_e) {
+    } catch {
       return false;
     }
   }
@@ -106,7 +126,8 @@ export class NativeLibrary {
         if (platform === "ios" || platform === "android") {
           this._nativeLib = (process as any)._linkedBinding("iModelJsNative") as typeof IModelJsNative;
         } else {
-          this._nativeLib = require(`./${NativeLibrary.archName}/${NativeLibrary.nodeAddonName}`) as typeof IModelJsNative; // eslint-disable-line @typescript-eslint/no-var-requires
+          this._nativeLib =
+            require(`./${NativeLibrary.archName}/${NativeLibrary.nodeAddonName}`) as typeof IModelJsNative; // eslint-disable-line @typescript-eslint/no-require-imports
         }
       } catch (err: any) {
         err.message += "\nThis error may occur when trying to run an iTwin.js backend without"
@@ -188,7 +209,6 @@ export declare namespace IModelJsNative {
     params?: NameValuePair[];
   }
 
-  const version: string;
   let logger: NativeLogger;
   function setMaxTileCacheSize(maxBytes: number): void;
   function getTileVersionInfo(): TileVersionInfo;
@@ -199,7 +219,39 @@ export declare namespace IModelJsNative {
   function addFontWorkspace(fileName: LocalFileName, container?: CloudContainer): boolean;
   function addGcsWorkspaceDb(dbNames: string, container?: CloudContainer, priority?: number): boolean;
   function enableLocalGcsFiles(yesNo: boolean): void;
+  /** Enable or disable the monotone-clock SQLite VFS shim. When enabled, every call
+   * to SQLite's time functions returns a strictly increasing value, preventing test
+   * failures caused by the millisecond-resolution system clock returning identical
+   * timestamps for rapid successive operations. Call with `false` to restore the
+   * original default VFS. Must be called after the native library is initialized.
+   */
+  function enableMonotoneClock(enable: boolean): void;
   function queryConcurrency(pool: "io" | "cpu"): number;
+
+  interface TrueTypeFontMetadata {
+    faces: FontFaceProps[];
+    embeddable: boolean;
+  }
+
+  function getTrueTypeFontMetadata(fileName: LocalFileName): TrueTypeFontMetadata;
+  function isRscFontData(blob: Uint8Array): boolean;
+
+  function imageBufferFromImageSource(
+    sourceFormat: ImageSourceFormat.Png | ImageSourceFormat.Jpeg,
+    sourceData: Uint8Array,
+    targetFormat: ImageBufferFormat.Rgb | ImageBufferFormat.Rgba | 255,
+    flipVertically: boolean
+  ): Pick<ImageBuffer, "data" | "format" | "width"> | undefined;
+
+  function imageSourceFromImageBuffer(
+    imageFormat: ImageBufferFormat.Rgb | ImageBufferFormat.Rgba,
+    imageData: Uint8Array,
+    imageWidth: number,
+    imageHeight: number,
+    targetFormat: ImageSourceFormat.Png | ImageSourceFormat.Jpeg | 255,
+    flipVertically: boolean,
+    jpegQuality: number
+  ): { format: ImageSourceFormat.Jpeg | ImageSourceFormat.Png, data: Uint8Array } | undefined;
 
   /** Get the SHA1 hash of a Schema XML file, possibly including its referenced Schemas */
   function computeSchemaChecksum(arg: {
@@ -210,6 +262,12 @@ export declare namespace IModelJsNative {
     /** If true, the returned SHA1 includes the hash of all referenced schemas */
     exactMatch?: boolean;
   }): string;
+
+  /** When you want to associate an explanatory message with an error status value. */
+  interface StatusCodeWithMessage<ErrorCodeType> {
+    status: ErrorCodeType;
+    message: string;
+  }
 
   /** The return type of synchronous functions that may return an error or a successful result. */
   type ErrorStatusOrResult<ErrorCodeType, ResultType> = {
@@ -342,7 +400,30 @@ export declare namespace IModelJsNative {
     pushDate: string;
     userCreated: string;
     size?: number;
+    uncompressedSize?: number;
     pathname: string;
+  }
+
+  /** @see `PerStatementHealthStats` from `@itwin/core-common` */
+  type PerStatementHealthStats = CorePerStatementHealthStats;
+
+  interface ChangesetHealthStats {
+    changesetId: string;
+    changesetIndex: number;
+    uncompressedSizeBytes: number;
+    sha1ValidationTimeMs: number;
+    insertedRows: number;
+    updatedRows: number;
+    deletedRows: number;
+    totalElapsedMs: number;
+    totalFullTableScans: number;
+    perStatementStats: PerStatementHealthStats[];
+  }
+  interface ECSqlRowAdaptorOptions {
+    abbreviateBlobs?: boolean;
+    classIdsToClassNames?: boolean;
+    useJsName?: boolean;
+    doNotConvertClassIdsToClassNamesWhenAliased?: boolean; // backward compatibility
   }
 
   interface EmbeddedFileProps {
@@ -362,14 +443,22 @@ export declare namespace IModelJsNative {
     fileExt: string;
   }
 
-  interface FontEncodingProps {
-    codePage?: number;
-    degree?: number;
-    plusMinus?: number;
-    diameter?: number;
+  /** @see `RscFontEncodingProps` from `@itwin/core-common` */
+  type FontEncodingProps = RscFontEncodingProps;
+
+  interface ResolveInstanceKeyArgs {
+    partialKey?: { id: Id64String, baseClassName: string };
+    federationGuid?: GuidString;
+    code?: CodeProps;
   }
 
-  enum FontType { TrueType = 1, Rsc = 2, Shx = 3 }
+  interface ResolveInstanceKeyResult {
+    id: Id64String;
+    classFullName: string;
+  }
+
+  /** @see `FontType` from `@itwin/core-common` */
+  type FontType = CoreFontType;
 
   interface FontFaceProps {
     faceName: "regular" | "italic" | "bold" | "bolditalic";
@@ -379,24 +468,9 @@ export declare namespace IModelJsNative {
     encoding?: FontEncodingProps;
   }
 
-  interface EmbedFontDataProps {
-    face: FontFaceProps;
-    data: Uint8Array;
-  }
-
-  interface EmbedFontFileProps {
-    fileName: LocalFileName;
-  }
-
-  interface EmbedSystemFontProps {
-    systemFont: string;
-  }
-
-  type EmbedFontArg = EmbedFontDataProps | EmbedFontFileProps | EmbedSystemFontProps & { compress?: true };
-
   interface SQLiteOps {
     embedFile(arg: EmbedFileArg): void;
-    embedFont(arg: EmbedFontArg): void;
+    embedFontFile(id: number, faces: FontFaceProps[], data: Uint8Array, compress: boolean): void;
     extractEmbeddedFile(arg: EmbeddedFileProps): void;
     getFilePath(): string;
     getLastInsertRowId(): number;
@@ -412,6 +486,7 @@ export declare namespace IModelJsNative {
     saveChanges(): void;
     saveFileProperty(props: FilePropertyProps, strValue: string | undefined, blobVal: Uint8Array | undefined): void;
     vacuum(arg?: { pageSize?: number, into?: LocalFileName }): void;
+    analyze(): void;
     enableWalMode(yesNo?: boolean): void;
     /** perform a checkpoint if this db is in WAL mode. Otherwise this function does nothing.
      * @param mode the checkpoint mode. Default is `Truncate`.
@@ -464,6 +539,7 @@ export declare namespace IModelJsNative {
 
   interface SchemaImportOptions {
     readonly schemaLockHeld?: boolean;
+    readonly skipSaveChanges?: boolean;
     readonly schemaSyncDbUri?: string;
     readonly ecSchemaXmlContext?: ECSchemaXmlContext;
   }
@@ -480,41 +556,87 @@ export declare namespace IModelJsNative {
     readonly parentChangesetIndex?: string;
   }
 
-  // ###TODO import from core-common
-  interface ModelExtentsResponseProps {
-    id: Id64String;
-    extents: Range3dProps;
-    status: IModelStatus;
+  const enum SchemaSyncRepairScope {
+    SchemaMetadata = 0,
+    SchemaMetadataAndProfile = 1,
   }
+
+  /** @see `TxnProps` from `@itwin/core-common` */
+  export type TxnProps = CoreTxnProps;
+  type GeometryOutputFormat = "BinaryStream" | "GeometryStreamProps";
+  interface IGeometrySource {
+    geom?: Uint8Array | GeometryStreamProps;
+    builder?: ElementGeometryBuilderParams;
+    placement?: PlacementProps;
+    categoryId?: Id64String;
+    is2d: boolean;
+  }
+
+
+  interface IGeometryPart {
+    geom?: Uint8Array | GeometryStreamProps;
+    builder?: ElementGeometryBuilderParamsForPart;
+    is2d: boolean;
+    bbox?: LowAndHighXYZProps;
+  }
+
+
+
+
+  /** @see `ModelExtentsProps` from `@itwin/core-common` */
+  type ModelExtentsResponseProps = ModelExtentsProps;
 
   interface TextLayoutRangesProps {
     layout: Range2dProps;
     justification: Range2dProps;
   }
 
+  enum TextEmphasis { None = 0, Bold = 1, Italic = 2, BoldItalic = Bold | Italic }
+
+  type NoCaseCollation = "ASCII" | "Latin1";
+
   /** The native object for a Briefcase. */
   class DgnDb implements IConcurrentQueryManager, SQLiteOps {
     constructor();
     public readonly cloudContainer?: CloudContainer;
+    public attachDb(filename: string, alias: string): void;
+    public detachDb(alias: string): void;
+    /** @not-used-by-itwinjs-core Covered only by this package's own tests. */
+    public getNoCaseCollation(): NoCaseCollation;
+    /** @not-used-by-itwinjs-core Covered only by this package's own tests. */
+    public setNoCaseCollation(collation: NoCaseCollation): void;
+    /** @not-used-by-itwinjs-core Covered only by this package's own tests. */
     public schemaSyncSetDefaultUri(syncDbUri: string): void;
+    /** @not-used-by-itwinjs-core Covered only by this package's own tests. */
     public schemaSyncGetDefaultUri(): string;
-    public schemaSyncInit(syncDbUri: string): void;
-    public schemaSyncPull(syncDbUri?: string): void;
+    public schemaSyncInit(syncDbUri: string, containerId: string, overrideContainer: boolean): void;
+    /** Rebuild the sync db from this file, for a change this file had to make locally - a profile upgrade. */
+    public schemaSyncOverwrite(syncDbUri?: string): void;
+    public schemaSyncRepair(syncDbUri: string, scope: SchemaSyncRepairScope): void;
+    /** Materialize the tables and indexes described by the ec_ rows after merging a schema changeset. */
+    public schemaSyncUpdateDbSchema(): void;
     public schemaSyncEnabled(): boolean;
+    /** @not-used-by-itwinjs-core Covered only by this package's own tests. */
     public schemaSyncGetLocalDbInfo(): SchemaLocalDbInfo | undefined;
+    /** @not-used-by-itwinjs-core Covered only by this package's own tests. */
     public schemaSyncGetSyncDbInfo(syncDbUri: string): SchemaSyncDbInfo | undefined;
     public abandonChanges(): DbResult;
     public abandonCreateChangeset(): void;
     public addChildPropagatesChangesToParentRelationship(schemaName: string, relClassName: string): BentleyStatus;
-    public addNewFont(arg: { type: FontType, name: string }): number;
-    public applyChangeset(changeSet: ChangesetFileProps): void;
+    public invalidateFontMap(): void;
+    public applyChangeset(changeSet: ChangesetFileProps, fastForward: boolean, noUpdateLoop?: boolean): void;
+    public revertTimelineChanges(changeSet: ChangesetFileProps[], skipSchemaChanges: boolean): void;
     public attachChangeCache(changeCachePath: string): DbResult;
     public beginMultiTxnOperation(): DbResult;
     public beginPurgeOperation(): IModelStatus;
     public cancelElementGraphicsRequests(requestIds: string[]): void;
     public cancelTileContentRequests(treeId: string, contentIds: string[]): void;
-    public cancelTo(txnId: TxnIdString): IModelStatus;
-    public classIdToName(idString: string): string;
+    /** Reverse and cancel every txn back to `txnId`.
+     * @param allowCrossSessions also cancel txns from earlier undo sessions. Saving a schema txn starts a new
+     * session, so this is the only way to back one out.
+     */
+    public cancelTo(txnId: TxnIdString, allowCrossSessions?: boolean): IModelStatus;
+    public classIdToName(idString: string): string | undefined;
     public classNameToId(className: string): Id64String;
     public closeFile(): void;
     public completeCreateChangeset(arg: { index: number }): void;
@@ -523,31 +645,37 @@ export declare namespace IModelJsNative {
     public concurrentQueryExecute(request: DbRequest, onResponse: ConcurrentQuery.OnResponse): void;
     public concurrentQueryResetConfig(config?: QueryConfig): QueryConfig;
     public concurrentQueryShutdown(): void;
-    public createBRepGeometry(createProps: any/* BRepGeometryCreate */): IModelStatus;
+    public createBRepGeometry(createProps: BRepGeometryCreate): IModelStatus;
     public createChangeCache(changeCacheFile: ECDb, changeCachePath: string): DbResult;
     public createClassViewsInDb(): BentleyStatus;
     public createIModel(fileName: string, props: CreateEmptyStandaloneIModelProps): void;
     public deleteAllTxns(): void;
     public deleteElement(elemIdJson: string): void;
+    public deleteElements(elementIds: Id64Array, deleteOptions?: { skipFKConstraintValidations?: boolean }): BulkDeleteElementsResult;
     public deleteElementAspect(aspectIdJson: string): void;
     public deleteLinkTableRelationship(props: RelationshipProps): DbResult;
+    public deleteLinkTableRelationships(props: ReadonlyArray<RelationshipProps>): DbResult;
     public deleteLocalValue(name: string): void;
     public deleteModel(modelIdJson: string): void;
     public detachChangeCache(): number;
-    public dropSchema(schemaName: string): void;
+    public dropSchemas(schemaNames: ReadonlyArray<string>): void;
+    /** @not-used-by-itwinjs-core */
     public dumpChangeset(changeSet: ChangesetFileProps): void;
-    public elementGeometryCacheOperation(requestProps: any/* ElementGeometryCacheOperationRequestProps */): BentleyStatus;
+    public elementGeometryCacheOperation(requestProps: ElementGeometryCacheOperationRequestProps): BentleyStatus;
     public embedFile(arg: EmbedFileArg): void;
-    public embedFont(arg: EmbedFontArg): void;
+    public embedFontFile(id: number, faces: FontFaceProps[], data: Uint8Array, compress: boolean): void;
     public enableChangesetSizeStats(enabled: boolean): DbResult;
     public enableTxnTesting(): void;
     public endMultiTxnOperation(): DbResult;
     public endPurgeOperation(): IModelStatus;
     public executeTest(testName: string, params: string): string;
-    public exportGraphics(exportProps: any/* ExportGraphicsProps */): DbResult;
-    public exportPartGraphics(exportProps: any/* ExportPartGraphicsProps */): DbResult;
+    public exportGraphics(exportProps: any/* ExportGraphicsOptions from @itwin/core-backend */): DbResult;
+    public exportPartGraphics(exportProps: any/* ExportPartGraphicsOptions from @itwin/core-backend */): DbResult;
+    public exportGraphicsAsync(exportProps: any/* ExportGraphicsOptions from @itwin/core-backend */): Promise<void>;
+    public exportPartGraphicsAsync(exportProps: any/* ExportPartGraphicsOptions from @itwin/core-backend */): Promise<void>;
     public exportSchema(schemaName: string, exportDirectory: string, outFileName?: string): SchemaWriteStatus;
     public exportSchemas(exportDirectory: string): SchemaWriteStatus;
+    /** @not-used-by-itwinjs-core */
     public extractChangedInstanceIdsFromChangeSets(changeSetFileNames: string[]): ErrorStatusOrResult<IModelStatus, ChangedInstanceIdsProps>;
     public extractChangeSummary(changeCacheFile: ECDb, changesetFilePath: string): ErrorStatusOrResult<DbResult, string>;
     public extractEmbeddedFile(arg: EmbeddedFileProps): void;
@@ -562,12 +690,27 @@ export declare namespace IModelJsNative {
     public getCurrentTxnId(): TxnIdString;
     public getECClassMetaData(schema: string, className: string): ErrorStatusOrResult<IModelStatus, string>;
     public getElement(opts: ElementLoadProps): ElementProps;
+    public executeSql(sql: string): DbResult;
     public getFilePath(): string; // full path of the DgnDb file
     public getGeoCoordinatesFromIModelCoordinates(points: GeoCoordinatesRequestProps): GeoCoordinatesResponseProps;
     public getGeometryContainment(props: object): Promise<GeometryContainmentResponseProps>;
     public getIModelCoordinatesFromGeoCoordinates(points: IModelCoordinatesRequestProps): IModelCoordinatesResponseProps;
     public getIModelId(): GuidString;
-    public getIModelProps(): IModelProps;
+    public getIModelProps(when?: "pullMerge"): IModelProps;
+    public resolveInstanceKey(args: ResolveInstanceKeyArgs): ResolveInstanceKeyResult;
+    public readInstance(key: NodeJS.Dict<any>, args: NodeJS.Dict<any>): NodeJS.Dict<any>;
+    public insertInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): Id64String;
+    public updateInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean;
+    public deleteInstance(key: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean;
+    public patchJsonProperties(jsonProps: string): string;
+    public newBeGuid(): GuidString;
+
+    public clearECDbCache(): void;
+
+    public convertOrUpdateGeometrySource(arg: IGeometrySource, outFmt: GeometryOutputFormat, opts: ElementLoadOptions): IGeometrySource;
+    public convertOrUpdateGeometryPart(arg: IGeometryPart, outFmt: GeometryOutputFormat, opts: ElementLoadOptions): IGeometryPart;
+
+    // when lets getIModelProps know that the extents may have been updated as the result of a pullChanges and should be read directly from the iModel as opposed to the cached extents.
     public getITwinId(): GuidString;
     public getLastError(): string;
     public getLastInsertRowId(): number;
@@ -588,31 +731,35 @@ export declare namespace IModelJsNative {
     public hasPendingTxns(): boolean;
     public hasUnsavedChanges(): boolean;
     public importFunctionalSchema(): DbResult;
+    public importSchemasDuringSemanticRebase(schemaFileNames: string[], options?: SchemaImportOptions): void;
     public importSchemas(schemaFileNames: string[], options?: SchemaImportOptions): DbResult;
     public importXmlSchemas(serializedXmlSchemas: string[], options?: SchemaImportOptions): DbResult;
-    public inBulkOperation(): boolean;
     public inlineGeometryPartReferences(): InlineGeometryPartsResult;
     public insertCodeSpec(name: string, jsonProperties: CodeSpecProperties): Id64String;
-    public insertElement(elemProps: ElementProps, options?: { forceUseId: boolean }): Id64String;
+    public insertElement(elemProps: ElementProps, options?: { forceUseId?: boolean }): Id64String;
     public insertElementAspect(aspectProps: ElementAspectProps): Id64String;
     public insertLinkTableRelationship(props: RelationshipProps): Id64String;
     public insertModel(modelProps: ModelProps): Id64String;
     public isChangeCacheAttached(): boolean;
     public isGeometricModelTrackingSupported(): boolean;
-    public isIndirectChanges(): boolean;
     public isLinkTableRelationship(classFullName: string): boolean | undefined;
     public isOpen(): boolean;
+    /** @not-used-by-itwinjs-core Part of the SQLite profiler API, which iTwin.js does not surface. */
     public isProfilerPaused(): boolean;
+    /** @not-used-by-itwinjs-core Part of the SQLite profiler API, which iTwin.js does not surface. */
     public isProfilerRunning(): boolean;
     public isReadonly(): boolean;
     public isRedoPossible(): boolean;
+    /** @not-used-by-itwinjs-core Covered only by this package's own tests. */
+    public isSubClassOf(childClassFullName: string, parentClassFullName: string): boolean;
     public isTxnIdValid(txnId: TxnIdString): boolean;
     public isUndoPossible(): boolean;
     public logTxnError(fatal: boolean): void;
     public openIModel(dbName: string, mode: OpenMode, upgradeOptions?: UpgradeOptions & SchemaImportOptions, props?: SnapshotOpenOptions, container?: CloudContainer, sqliteOptions?: { busyTimeout?: number }): void;
+    /** @not-used-by-itwinjs-core Part of the SQLite profiler API, which iTwin.js does not surface. */
     public pauseProfiler(): DbResult;
     public pollTileContent(treeId: string, tileId: string): ErrorStatusOrResult<IModelStatus, TileContentState | TileContent>;
-    public processGeometryStream(requestProps: any/* ElementGeometryOptions */): IModelStatus;
+    public processGeometryStream(requestProps: ElementGeometryRequest): IModelStatus;
     public purgeTileTrees(modelIds: Id64Array | undefined): void;
     public queryDefinitionElementUsage(definitionElementIds: Id64Array): DefinitionElementUsageInfo | undefined;
     public queryEmbeddedFile(name: string): EmbedFileQuery | undefined;
@@ -626,13 +773,16 @@ export declare namespace IModelJsNative {
     public queryNextTxnId(txnId: TxnIdString): TxnIdString;
     public queryPreviousTxnId(txnId: TxnIdString): TxnIdString;
     public queryTextureData(opts: TextureLoadProps): Promise<TextureData | undefined>;
-    public readFontMap(): FontMapProps;
+    public readFontMap(): { fonts: FontProps[] };
     public reinstateTxn(): IModelStatus;
+    public getNextReinstateTxnRange(): { firstTxnId: TxnIdString, lastTxnId: TxnIdString };
     public removeEmbeddedFile(name: string): void;
     public replaceEmbeddedFile(arg: EmbedFileArg): void;
     public resetBriefcaseId(idValue: number): void;
     public restartDefaultTxn(): void;
     public restartTxnSession(): void;
+    public currentTxnSessionId(): number;
+    /** @not-used-by-itwinjs-core Part of the SQLite profiler API, which iTwin.js does not surface. */
     public resumeProfiler(): DbResult;
     public reverseAll(): IModelStatus;
     public reverseTo(txnId: TxnIdString): IModelStatus;
@@ -642,55 +792,97 @@ export declare namespace IModelJsNative {
     public saveLocalValue(name: string, value: string | undefined): void;
     public schemaToXmlString(schemaName: string, version?: ECVersion): string | undefined;
     public setGeometricModelTrackingEnabled(enabled: boolean): ErrorStatusOrResult<IModelStatus, boolean>;
-    public setIModelDb(iModelDb?: any/* IModelDb */): void;
+    public setIModelDb(iModelDb?: any/* IModelDb from @itwin/core-backend */): void;
     public setIModelId(guid: GuidString): DbResult;
     public setITwinId(guid: GuidString): DbResult;
+    /** @not-used-by-itwinjs-core */
     public setBusyTimeout(ms: number): void;
     public setCodeValueBehavior(newBehavior: "exact" | "trim-unicode-whitespace"): void;
-    public simplifyElementGeometry(simplifyArgs: any): DbResult;
+    public simplifyElementGeometry(simplifyArgs: any/* SimplifyElementGeometryArgs from @itwin/core-backend */): IModelStatus;
     public startCreateChangeset(): ChangesetFileProps;
+    /** @not-used-by-itwinjs-core Part of the SQLite profiler API, which iTwin.js does not surface. */
     public startProfiler(scopeName?: string, scenarioName?: string, overrideFile?: boolean, computeExecutionPlan?: boolean): DbResult;
+    /** @not-used-by-itwinjs-core Part of the SQLite profiler API, which iTwin.js does not surface. */
     public stopProfiler(): { rc: DbResult, elapsedTime?: number, scopeId?: number, fileName?: string };
+    public enableChangesetStatsTracking(): void;
+    public disableChangesetStatsTracking(): void;
+    /** @not-used-by-itwinjs-core Core calls `getAllChangesetHealthData` instead. */
+    public getChangesetHealthData(changesetId: string): ChangesetHealthStats;
+    public getAllChangesetHealthData(): ChangesetHealthStats[];
     public updateElement(elemProps: Partial<ElementProps>): void;
+    public changeElementParent(props: { id: Id64String, parentId: Id64String }): void;
+    public changeElementModel(props: { id: Id64String, modelId: Id64String }): void;
     public updateElementAspect(aspectProps: ElementAspectProps): void;
-    public updateElementGeometryCache(props: object): Promise<any>;
+    public updateElementGeometryCache(props: ElementGeometryCacheRequestProps): Promise<ElementGeometryCacheResponseProps>;
     public updateIModelProps(props: IModelProps): void;
     public updateLinkTableRelationship(props: RelationshipProps): DbResult;
     public updateModel(modelProps: ModelProps): void;
     public updateModelGeometryGuid(modelId: Id64String): IModelStatus;
     public updateProjectExtents(newExtentsJson: string): void;
+    /** @not-used-by-itwinjs-core Covered only by this package's own tests. */
     public writeAffectedElementDependencyGraphToFile(dotFileName: string, changedElems: Id64Array): BentleyStatus;
     public writeFullElementDependencyGraphToFile(dotFileName: string): BentleyStatus;
     public vacuum(arg?: { pageSize?: number, into?: LocalFileName }): void;
+    public analyze(): void;
     public enableWalMode(yesNo?: boolean): void;
     public performCheckpoint(mode?: WalCheckpointMode): void;
+    /** @not-used-by-itwinjs-core Covered only by this package's own tests. */
     public setAutoCheckpointThreshold(frames: number): void;
+
+    public pullMergeGetStage(): "None" | "Merging" | "Rebasing";
+    public pullMergeRebaseReinstateTxn(): void;
+    public pullMergeRebaseUpdateTxn(): void;
+    public pullMergeRebaseNext(): TxnIdString | undefined;
+    public pullMergeRebaseAbortTxn(): void
+    public pullMergeRebaseBegin(): TxnIdString[];
+    public pullMergeRebaseEnd(): void;
+    public pullMergeReverseLocalChanges(captureInstanceChanges?: boolean): TxnIdString[];
+    public stashChanges(args: { stashRootDir: string, description: string, iModelId: string, resetBriefcase?: true}): any;
+    public stashRestore(stashFile: string): void;
+    /** @not-used-by-itwinjs-core */
+    public getPendingTxnsHash(includeReversedTxns: boolean): string;
+    public hasPendingSchemaChanges(): boolean;
+    public discardLocalChanges(): void;
+    public getTxnProps(id: TxnIdString): TxnProps | undefined;
+    public setTxnMode(mode: "direct" | "indirect"): void;
+    public getTxnMode(): "direct" | "indirect";
+    /** @not-used-by-itwinjs-core */
     public static enableSharedCache(enable: boolean): DbResult;
     public static getAssetsDir(): string;
+    /** @not-used-by-itwinjs-core Covered only by this package's own tests. */
     public static zlibCompress(data: Uint8Array): Uint8Array;
+    /** @not-used-by-itwinjs-core Covered only by this package's own tests. */
     public static zlibDecompress(data: Uint8Array, actualSize: number): Uint8Array;
+    public static computeChangesetId(args: Partial<ChangesetFileProps> & Required<Pick<ChangesetFileProps, "parentId" | "pathname">>): string;
+  }
+
+  /** Expected to migrate to `@itwin/core-common` when vertical CRS enumeration is exposed there. */
+  interface VerticalCRSListProps {
+    point?: XAndY;
+    extent?: Range2dProps;
+    includeIntersecting?: boolean;
+    unit?: string;
+  }
+
+  /** Expected to migrate to `@itwin/core-common` with `VerticalCRSListProps`. */
+  interface VerticalCRSListEntry {
+    crsName: string;
+    id: "GEOID" | "ELLIPSOID" | "NGVD29" | "NAVD88" | "LOCAL_ELLIPSOID";
+    epsg?: number;
+    description: string;
+    deprecated: boolean;
+    type: string;
+    unit: string;
+    extent: Range2dProps;
   }
 
   /** The native object for GeoServices. */
   class GeoServices {
     constructor();
     public static getGeographicCRSInterpretation(props: GeographicCRSInterpretRequestProps): GeographicCRSInterpretResponseProps;
-
-  }
-
-  /**
-   * RevisionUtility help with debugging and testing
-   * @internal
-   */
-  class RevisionUtility {
-    constructor();
-    public static assembleRevision(targetFile: string, rawChangesetFile: string, prefixFile?: string, lzmaPropsJson?: string): BentleyStatus;
-    public static computeStatistics(sourceFile: string, addPrefix: boolean): string;
-    public static disassembleRevision(sourceFile: string, targetDir: string): BentleyStatus;
-    public static dumpChangesetToDb(sourceFile: string, dbFile: string, includeCols: boolean): BentleyStatus;
-    public static getUncompressSize(sourceFile: string): string;
-    public static normalizeLzmaParams(lzmaPropsJson?: string): string;
-    public static recompressRevision(sourceFile: string, targetFile: string, lzmaPropsJson?: string): BentleyStatus;
+    public static getListOfCRS(extent?: Range2dProps, includeWorld?: boolean, unit?: string): Array<{ name: string, description: string, deprecated: boolean, crsExtent: Range2dProps, unit: string }>;
+    public static getListOfVerticalCRS(props?: VerticalCRSListProps): VerticalCRSListEntry[];
+    public static getAvailableUnitNames(): string[];
   }
 
   /**
@@ -704,21 +896,42 @@ export declare namespace IModelJsNative {
     public static convertEC2XmlSchemas(ec2XmlSchemas: string[], schemaContext?: ECSchemaXmlContext): string[];
   }
 
-  class ECDb implements IDisposable, IConcurrentQueryManager {
+  class ECDb implements IConcurrentQueryManager {
     constructor();
     public abandonChanges(): DbResult;
     public closeDb(): void;
     public createDb(dbName: string): DbResult;
     public dispose(): void;
-    public dropSchema(schemaName: string): void;
+    public dropSchemas(schemaNames: ReadonlyArray<string>): void;
+    /** @not-used-by-itwinjs-core Covered only by this package's own tests. */
     public schemaSyncSetDefaultUri(syncDbUri: string): void;
+    /** @not-used-by-itwinjs-core Covered only by this package's own tests. */
     public schemaSyncGetDefaultUri(): string;
-    public schemaSyncInit(syncDbUri: string): void;
-    public schemaSyncPull(syncDbUri: string | undefined): void;
+    public schemaSyncInit(syncDbUri: string, containerId: string, overrideContainer: boolean): void;
+    /** Rebuild the sync db from this briefcase, for a change the briefcase had to make locally - a profile upgrade. */
+    public schemaSyncOverwrite(syncDbUri: string | undefined): void;
+    public schemaSyncRepair(syncDbUri: string, scope: SchemaSyncRepairScope): void;
+    /** Materialize the tables and indexes described by the ec_ rows after merging a schema changeset. */
+    public schemaSyncUpdateDbSchema(): void;
     public schemaSyncEnabled(): boolean;
+    /** @not-used-by-itwinjs-core Covered only by this package's own tests. */
     public schemaSyncGetLocalDbInfo(): SchemaLocalDbInfo | undefined;
+    /** @not-used-by-itwinjs-core Covered only by this package's own tests. */
     public schemaSyncGetSyncDbInfo(): SchemaSyncDbInfo | undefined;
     public getFilePath(): string;
+    public resolveInstanceKey(args: ResolveInstanceKeyArgs): ResolveInstanceKeyResult;
+    public readInstance(key: NodeJS.Dict<any>, args: NodeJS.Dict<any>): NodeJS.Dict<any>;
+    public insertInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): Id64String;
+    public updateInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean;
+    public deleteInstance(key: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean;
+    /** Import V8-serialized CSV rows using one prepared ECSQL statement.
+     * Mapped values and `nullValue` must not contain embedded NUL characters.
+     */
+    public importCSVData(className: string, rows: Uint8Array, mapping: ReadonlyArray<{ columnIndex: number, propertyName: string }>, options?: { nullValue?: string }): number;
+    /** Stream a CSV file and import mapped columns using one prepared ECSQL statement.
+     * Mapped values and `nullValue` must not contain embedded NUL characters.
+     */
+    public importCSVFile(className: string, csvFilePath: string, mapping: ReadonlyArray<{ columnIndex: number, propertyName: string }>, options?: { hasHeader?: boolean, nullValue?: string }): number;
     public getSchemaProps(name: string): SchemaProps;
     public importSchema(schemaPathName: string): DbResult;
     public isOpen(): boolean;
@@ -726,13 +939,17 @@ export declare namespace IModelJsNative {
     public saveChanges(changesetName?: string): DbResult;
     public getLastError(): string;
     public getLastInsertRowId(): number;
+    /** @not-used-by-itwinjs-core */
     public static enableSharedCache(enable: boolean): DbResult;
     public concurrentQueryExecute(request: DbRequest, onResponse: ConcurrentQuery.OnResponse): void;
     public concurrentQueryResetConfig(config?: QueryConfig): QueryConfig;
     public concurrentQueryShutdown(): void;
+    public attachDb(filename: string, alias: string): void;
+    public detachDb(alias: string): void;
+    public clearECDbCache(): void;
   }
 
-  class ChangedElementsECDb implements IDisposable {
+  class ChangedElementsECDb {
     constructor();
     public dispose(): void;
     public createDb(db: DgnDb, dbName: string): DbResult;
@@ -740,13 +957,13 @@ export declare namespace IModelJsNative {
     public isOpen(): boolean;
     public closeDb(): void;
     public processChangesets(db: DgnDb, changesets: ChangesetFileProps[], rulesetId: string, filterSpatial?: boolean, wantParents?: boolean, wantPropertyChecksums?: boolean, rulesetDir?: string, tempDir?: string, wantChunkTraversal?: boolean): DbResult;
-    public processChangesetsAndRoll(dbFilename: string, dbGuid: string, changesets: ChangesetFileProps[], rulesetId: string, filterSpatial?: boolean, wantParents?: boolean, wantPropertyChecksums?: boolean, rulesetDir?: string, tempDir?: string, wantRelationshipCaching?: boolean, relationshipCacheSize?: number, wantChunkTraversal?: boolean): DbResult;
+    public processChangesetsAndRoll(dbFilename: string, dbGuid: string, changesets: ChangesetFileProps[], rulesetId: string, filterSpatial?: boolean, wantParents?: boolean, wantPropertyChecksums?: boolean, rulesetDir?: string, tempDir?: string, wantRelationshipCaching?: boolean, relationshipCacheSize?: number, wantChunkTraversal?: boolean, wantBoundingBoxes?: boolean): DbResult;
     public getChangedElements(startChangesetId: string, endChangesetId: string): ErrorStatusOrResult<IModelStatus, any>;
     public isProcessed(changesetId: string): boolean;
     public cleanCaches(): void;
   }
 
-  class ECSqlStatement implements IDisposable {
+  class ECSqlStatement {
     constructor();
     public clearBindings(): DbResult;
     public dispose(): void;
@@ -758,8 +975,12 @@ export declare namespace IModelJsNative {
     public step(): DbResult;
     public stepAsync(callback: (result: DbResult) => void): void;
     public stepForInsert(): { status: DbResult, id: string };
+    /** @not-used-by-itwinjs-core */
     public stepForInsertAsync(callback: (result: { status: DbResult, id: string }) => void): void;
     public getNativeSql(): string;
+    public toRow(arg: ECSqlRowAdaptorOptions): any;
+    public getMetadata(arg?: ECSqlRowAdaptorOptions): any;
+    public bindParams(args: object): StatusCodeWithMessage<boolean>;
   }
 
   class ECSqlBinder {
@@ -786,8 +1007,11 @@ export declare namespace IModelJsNative {
     public getAccessString(): string;
     public getPropertyName(): string;
     public getOriginPropertyName(): string | undefined;
+    /** @not-used-by-itwinjs-core Re-declared in @itwin/core-backend's public API, but never called there. */
     public getRootClassAlias(): string;
+    /** @not-used-by-itwinjs-core Re-declared in @itwin/core-backend's public API, but never called there. */
     public getRootClassName(): string;
+    /** @not-used-by-itwinjs-core Re-declared in @itwin/core-backend's public API, but never called there. */
     public getRootClassTableSpace(): string;
     public getType(): number;
     public isEnum(): boolean;
@@ -870,15 +1094,34 @@ export declare namespace IModelJsNative {
   /** Parameters for creating a new SQLiteDb */
   type SQLiteDbCreateParams = SQLiteDbOpenOrCreateParams & PageSize;
 
-  class SQLiteDb implements SQLiteOps, IDisposable {
+  class SQLiteDb implements SQLiteOps {
     constructor();
     public readonly cloudContainer?: CloudContainer;
     public abandonChanges(): void;
+    /**
+     * Apply a raw sqlite changeset file - the plain, uncompressed byte stream produced by the sqlite
+     * session extension - to this SQLiteDb. This is *not* the same on-disk format used for iModel
+     * changesets. Unlike DgnDb.applyChangeset, this does *not* validate any changeset header
+     * (parentId/changesetId) against the current state of the db, and it does *not* support DDL/schema
+     * changes (raw sqlite changesets cannot represent them) - it simply applies the row-level changes.
+     * Any conflict encountered while applying causes the entire apply to fail and throw.
+     */
+    public applyChangeset(changesetFile: LocalFileName): void;
     public closeDb(): void;
+    /**
+     * Write out the changes captured since startChangeTracking() was called, to a changeset file holding
+     * the raw sqlite changeset (the plain, uncompressed byte stream produced by the sqlite session
+     * extension) - this is *not* the same on-disk format used for iModel changesets. Raw sqlite changesets
+     * cannot represent DDL/schema changes, so this throws if any DDL was captured since
+     * startChangeTracking() was called. Used only for testing.
+     */
+    public createChangeset(changesetFile: LocalFileName): void;
     public createDb(dbName: string, container?: CloudContainer, params?: SQLiteDbCreateParams): void;
     public dispose(): void;
     public embedFile(arg: EmbedFileArg): void;
-    public embedFont(arg: EmbedFontArg): void;
+    public embedFontFile(id: number, faces: FontFaceProps[], data: Uint8Array, compress: boolean): void;
+    /** Execute a DDL statement so it will be captured by change tracking, if active. */
+    public executeDdl(ddl: string): void;
     public extractEmbeddedFile(arg: EmbeddedFileProps): void;
     public getFilePath(): string;
     public getLastError(): string;
@@ -894,13 +1137,17 @@ export declare namespace IModelJsNative {
     public restartDefaultTxn(): void;
     public saveChanges(): void;
     public saveFileProperty(props: FilePropertyProps, strValue: string | undefined, blobVal?: Uint8Array): void;
+    /** Begin capturing DDL/data changes made to this SQLiteDb. Used only to produce test changeset files. */
+    public startChangeTracking(): void;
     public vacuum(arg?: { pageSize?: number, into?: LocalFileName }): void;
+    public analyze(): void;
     public enableWalMode(yesNo?: boolean): void;
     public performCheckpoint(mode?: WalCheckpointMode): void;
+    /** @not-used-by-itwinjs-core Covered only by this package's own tests. */
     public setAutoCheckpointThreshold(frames: number): void;
   }
 
-  class SqliteStatement implements IDisposable {
+  class SqliteStatement {
     constructor();
     public bindBlob(param: number | string, val: Uint8Array | ArrayBuffer | SharedArrayBuffer): DbResult;
     public bindDouble(param: number | string, val: number): DbResult;
@@ -936,7 +1183,9 @@ export declare namespace IModelJsNative {
      * @note this BlobIO *may* be reused after this call by calling `open` again.
     */
     public close(): void;
-    /** get the total number of bytes in the blob */
+    /** get the total number of bytes in the blob
+     * @not-used-by-itwinjs-core Re-declared in @itwin/core-backend's public API, but never called there.
+     */
     public getNumBytes(): number;
     /** @return true if this BlobIO was successfully opened and may be use to read or write the blob */
     public isValid(): boolean;
@@ -967,6 +1216,7 @@ export declare namespace IModelJsNative {
     }): Uint8Array;
     /** Reposition this BlobIO to a new rowId
      * @note this BlobIO must be valid when this methods is called.
+     * @not-used-by-itwinjs-core Re-declared in @itwin/core-backend's public API, but never called there.
      */
     public changeRow(row: number): void;
     /** Write to a blob */
@@ -1020,9 +1270,11 @@ export declare namespace IModelJsNative {
 
   /** A CloudSqlite container that may be connected to a CloudCache. */
   class CloudContainer {
+    /** @not-used-by-itwinjs-core Re-declared in @itwin/core-backend's public API, but never called there. */
     public onConnect?: (container: CloudContainer, cache: CloudCache) => void;
     public onConnected?: (container: CloudContainer) => void;
     public onDisconnect?: (container: CloudContainer, detach: boolean) => void;
+    /** @not-used-by-itwinjs-core Re-declared in @itwin/core-backend's public API, but never called there. */
     public onDisconnected?: (container: CloudContainer, detach: boolean) => void;
 
     public readonly cache?: CloudCache;
@@ -1137,17 +1389,6 @@ export declare namespace IModelJsNative {
     public uploadChanges(): Promise<void>;
 
     /**
-     * Clean any unused deleted blocks from cloud storage. When a database is written, a subset of its blocks are replaced
-     * by new versions, sometimes leaving the originals unused. In this case, they are not deleted immediately.
-     * Instead, they are scheduled for deletion at some later time. Calling this method deletes all blocks in the cloud container
-     * for which the scheduled deletion time has passed.
-     * @param nSeconds Any block that was marked as unused before this number of seconds ago will be deleted. Specifying a non-zero
-     * value gives a period of time for other clients to refresh their manifests and stop using the now-garbage blocks. Otherwise they may get
-     * a 404 error. Default is 1 hour.
-     */
-    public cleanDeletedBlocks(nSeconds?: number): Promise<void>;
-
-    /**
      * Create a copy of an existing database within this CloudContainer with a new name.
      * @note CloudSqlite uses copy-on-write semantics for this operation. That is, this method merely makes a
      * new entry in the manifest with the new name that *shares* all of its blocks with the original database.
@@ -1155,8 +1396,8 @@ export declare namespace IModelJsNative {
      */
     public copyDatabase(dbName: string, toAlias: string): Promise<void>;
 
-    /** Remove a database from this CloudContainer.
-     * @see cleanDeletedBlocks
+    /** Remove a database from this CloudContainer, moving all of its no longer used blocks to the delete list in the manifest.
+     * @see [[CloudSqlite.CleanDeletedBlocksJob]] to actually delete the blocks from the delete list.
      */
     public deleteDatabase(dbName: string): Promise<void>;
 
@@ -1188,6 +1429,7 @@ export declare namespace IModelJsNative {
      * Get the SHA1 hash of the content of a database.
      * @param dbName the name of the database of interest
      * @note the hash will be empty if the database does not exist
+     * @not-used-by-itwinjs-core Re-declared in @itwin/core-backend's public API, but never called there.
      */
     public queryDatabaseHash(dbName: string): string;
   }
@@ -1197,13 +1439,13 @@ export declare namespace IModelJsNative {
    * @note The transfer begins when the object is constructed, and the object remains alive during the upload/download operation.
    * It provides the Promise that is resolved when the operation completes or fails, and has methods to provide feedback for progress and to cancel the operation prematurely.
    */
-  class CloudDbTransfer {
+  class CancellableCloudSqliteJob {
     /** create an instance of a transfer. The operation begins immediately when the object is created.
      * @param direction either "upload" or "download"
      * @param container the container holding the database. Does *not* require that the container be connected to a CloudCache.
      * @param args The properties for the source and target of the transfer.
      */
-    constructor(direction: NativeCloudSqlite.TransferDirection, container: CloudContainer, args: NativeCloudSqlite.TransferDbProps);
+    constructor(direction: NativeCloudSqlite.TransferDirection | "cleanup", container: CloudContainer, args: NativeCloudSqlite.TransferDbProps | NativeCloudSqlite.CleanDeletedBlocksOptions);
 
     /** Cancel a currently pending transfer and cause the promise to be rejected with a Cancelled status.
      * @throws exception if the operation has already completed.
@@ -1213,6 +1455,12 @@ export declare namespace IModelJsNative {
      * @throws exception if the operation has already completed.
      */
     public getProgress(): { loaded: number, total: number };
+
+    /**
+     * Only applicable to cleanup jobs. Calling this in a download or upload job will also stop the job but without saving progress.
+     * During a cleanup job, if any blocks have been deleted, the job will stop and upload the manifest reflecting which blocks have been deleted.
+     */
+    public stopAndSaveProgress(): void;
 
     /** Promise that is resolved when the transfer completes, or is rejected if the transfer fails (or is cancelled.) */
     public promise: Promise<void>;
@@ -1288,7 +1536,7 @@ export declare namespace IModelJsNative {
     useMmap?: boolean | number;
   }
 
-  class ECPresentationManager implements IDisposable {
+  class ECPresentationManager {
     constructor(props: ECPresentationManagerProps);
     public forceLoadSchemas(db: DgnDb): Promise<ECPresentationManagerResponse<void>>;
     public setupRulesetDirectories(directories: string[]): ECPresentationManagerResponse<void>;
@@ -1326,7 +1574,7 @@ export declare namespace IModelJsNative {
 
   class ECSchemaXmlContext {
     constructor();
-    public addSchemaPath(path: string): void;
+    public addSchemaPath(schemaPath: string): void;
     public setSchemaLocater(locater: ECSchemaXmlContext.SchemaLocaterCallback): void;
     public setFirstSchemaLocater(locater: ECSchemaXmlContext.SchemaLocaterCallback): void;
     public readSchemaFromXmlFile(filePath: string): ErrorStatusOrResult<BentleyStatus, string>;
@@ -1334,7 +1582,7 @@ export declare namespace IModelJsNative {
 
   class SnapRequest {
     constructor();
-    public doSnap(db: DgnDb, request: any): Promise<any>;
+    public doSnap(db: DgnDb, request: SnapRequestProps): Promise<SnapResponseProps>;
     public cancelSnap(): void;
   }
 
@@ -1352,7 +1600,7 @@ export declare namespace IModelJsNative {
     featureUserData?: FeatureUserDataKeyValuePair[];
   }
 
-  class ChangesetReader {
+  class SqliteChangesetReader {
     public close(): void;
     public getColumnCount(): number;
     public getColumnValue(col: number, stage: number): Uint8Array | number | string | null | undefined;
@@ -1372,17 +1620,58 @@ export declare namespace IModelJsNative {
     public isIndirectChange(): boolean;
     public getPrimaryKeyColumnIndexes(): number[];
     public openFile(fileName: string, invert: boolean): void;
+    public openGroup(fileName: string[], db: AnyDb, invert: boolean): void;
     public openLocalChanges(db: DgnDb, includeInMemoryChanges: boolean, invert: boolean): void;
+    public openInMemoryChanges(db: DgnDb, invert: boolean): void;
+    public openTxn(db: DgnDb, txnId: Id64String, invert: boolean): void;
     public reset(): void;
     public step(): boolean;
+    public writeToFile(fileName: string, containsSchemaChanges: boolean, overrideFile: boolean): void;
   }
 
-  class DisableNativeAssertions implements IDisposable {
+  interface ChangesetRowValue {
+    data: any;
+    key: string;
+    changeFetchedPropNames: string[]
+  }
+
+  interface ChangesetRowMetadata {
+    tableName: string;
+    opCode: DbOpcode;
+    isIndirectChange: boolean;
+    isECTable: boolean;
+  }
+  interface ChangesetRowData {
+    metadata: ChangesetRowMetadata;
+    oldValues: ChangesetRowValue | undefined;
+    newValues: ChangesetRowValue | undefined;
+  }
+
+  class ChangesetReader {
+    constructor();
+    public openFile(db: AnyECDb, fileName: string, invert: boolean, propFilter: number): void;
+    public openGroup(db: AnyECDb, fileNames: string[], invert: boolean, propFilter: number, spillThresholdBytes: number): void;
+    public openLocalChanges(db: DgnDb, includeInMemoryChanges: boolean, invert: boolean, propFilter: number, spillThresholdBytes: number): void;
+    public openInMemoryChanges(db: DgnDb, invert: boolean, propFilter: number, spillThresholdBytes: number): void;
+    public openTxn(db: DgnDb, txnId: Id64String, invert: boolean, propFilter: number, spillThresholdBytes: number): void;
+    public close(): void;
+    public step(numOfRows: number, rowOptions: ECSqlRowAdaptorOptions): ChangesetRowData[];
+    public setTableNameFilters(tableNames: string[]): void;
+    public setOpCodeFilters(ops: string[]): void;
+    public setClassNameFilters(classNames: string[]): void;
+    public clearTableNameFilters(): void;
+    public clearOpCodeFilters(): void;
+    public clearClassNameFilters(): void;
+    public enableStrictMode(): void;
+    public disableStrictMode(): void;
+  }
+
+  class DisableNativeAssertions {
     constructor();
     public dispose(): void;
   }
 
-  class ImportContext implements IDisposable {
+  class ImportContext {
     constructor(sourceDb: DgnDb, targetDb: DgnDb);
     public dispose(): void;
     public dump(outputFileName: string): BentleyStatus;
@@ -1428,6 +1717,7 @@ export declare namespace IModelJsNative {
    */
   class NativeDevTools {
     public static signal(signalType: number): boolean;
+    /** @not-used-by-itwinjs-core Covered only by this package's own tests. */
     public static emitLogs(count: number, category: string, severity: LogLevel, thread: "main" | "worker", onDone: () => void): void;
   }
 
@@ -1440,6 +1730,7 @@ export declare namespace IModelJsNative {
      * @param name Name to be encoded
      * @returns Encoded name
      * @param name
+     * @not-used-by-itwinjs-core
      */
     public static encodeToValidName(name: string): string;
 
@@ -1447,6 +1738,7 @@ export declare namespace IModelJsNative {
     * Decodes names that were encoded to comply with EC naming rules
     * @param encodedName Encoded name
     * @returns Decoded name
+     * @not-used-by-itwinjs-core
     */
     public static decodeFromValidName(encodedName: string): string;
   }

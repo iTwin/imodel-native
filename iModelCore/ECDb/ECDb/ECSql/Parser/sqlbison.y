@@ -36,6 +36,10 @@
 #include "SqlScan.h"
 #endif
 
+#if defined(__clang__) || defined(__GNUC__)
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#endif
+
 #if defined __GNUC__
 //    #pragma GCC system_header
 #elif defined __SUNPRO_CC
@@ -186,7 +190,7 @@ using namespace connectivity;
 %type <pParseNode> insert_statement values_or_query_spec values_commalist
 %type <pParseNode> opt_all_distinct
 %type <pParseNode> assignment_commalist assignment
-%type <pParseNode> update_statement_searched opt_where_clause
+%type <pParseNode> update_statement_searched opt_only_all opt_where_clause
 %type <pParseNode> single_select_statement selection table_exp from_clause table_ref_commalist table_ref
 %type <pParseNode> where_clause opt_group_by_clause opt_having_clause
 %type <pParseNode> search_condition predicate comparison_predicate comparison_predicate_part_2 between_predicate between_predicate_part_2
@@ -228,7 +232,7 @@ using namespace connectivity;
 /* non-standard */
 %type <pParseNode> rtreematch_predicate rtreematch_predicate_part_2
 %type <pParseNode> opt_ecsqloptions_clause ecsqloptions_clause ecsqloptions_list ecsqloption ecsqloptionvalue
-%type <pParseNode> cte opt_cte_recursive cte_column_list cte_table_name cte_block_list
+%type <pParseNode> cte opt_cte_recursive cte_column_list cte_block_body cte_table_name cte_block_list
 %type <pParseNode> pragma opt_pragma_set opt_pragma_set_val opt_pragma_func pragma_value pragma_path opt_pragma_for
 %type <pParseNode> value_creation_fct
 %%
@@ -349,8 +353,22 @@ cte_column_list:
         }
     ;
 
+cte_block_body:
+        select_statement
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+        }
+    |   SQL_TOKEN_VALUES values_commalist
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2);
+        }
+    ;
+
 cte_table_name:
-    SQL_TOKEN_NAME  '(' cte_column_list ')' SQL_TOKEN_AS '(' select_statement ')'
+    SQL_TOKEN_NAME  '(' cte_column_list ')' SQL_TOKEN_AS '(' cte_block_body ')'
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
@@ -361,6 +379,15 @@ cte_table_name:
             $$->append($6 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             $$->append($7);
             $$->append($8 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
+        }
+    |   SQL_TOKEN_NAME SQL_TOKEN_AS '(' cte_block_body ')'
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2);
+            $$->append($3 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
+            $$->append($4);
+            $$->append($5 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
 
 cte_block_list:
@@ -541,13 +568,14 @@ union_op:
 
 
 delete_statement_searched:
-        SQL_TOKEN_DELETE SQL_TOKEN_FROM table_ref opt_where_clause opt_ecsqloptions_clause
+        SQL_TOKEN_DELETE SQL_TOKEN_FROM opt_only_all table_node opt_where_clause opt_ecsqloptions_clause
             {$$ = SQL_NEW_RULE;
             $$->append($1);
             $$->append($2);
             $$->append($3);
             $$->append($4);
             $$->append($5);
+            $$->append($6);
             }
     ;
 
@@ -560,6 +588,14 @@ insert_statement:
             $$->append($3);
             $$->append($4);
             $$->append($5);}
+        |   SQL_TOKEN_INSERT SQL_TOKEN_INTO SQL_TOKEN_ONLY table_node opt_column_ref_commalist values_or_query_spec
+            {$$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2);
+            $$->append($3);
+            $$->append($4);
+            $$->append($5);
+            $$->append($6);}
     ;
 
 values_commalist:
@@ -635,7 +671,7 @@ update_source:
         value_exp
     ;
 update_statement_searched:
-        SQL_TOKEN_UPDATE table_ref SQL_TOKEN_SET assignment_commalist opt_where_clause opt_ecsqloptions_clause
+        SQL_TOKEN_UPDATE opt_only_all table_node SQL_TOKEN_SET assignment_commalist opt_where_clause opt_ecsqloptions_clause
             {$$ = SQL_NEW_RULE;
             $$->append($1);
             $$->append($2);
@@ -643,6 +679,7 @@ update_statement_searched:
             $$->append($4);
             $$->append($5);
             $$->append($6);
+            $$->append($7);
             }
     ;
 
@@ -749,6 +786,19 @@ table_primary_as_range_column:
             $$->append($3);
         }
     ;
+
+opt_only_all:
+        /* empty */ {$$ = SQL_NEW_RULE;}
+    |    SQL_TOKEN_ONLY
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1 = CREATE_NODE("ONLY", SQL_NODE_NAME));
+        }
+    |    SQL_TOKEN_ALL
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1 = CREATE_NODE("ALL", SQL_NODE_NAME));
+        }
 
 opt_disqualify_polymorphic_constraint:
         /* empty */ {$$ = SQL_NEW_RULE;}
@@ -862,7 +912,20 @@ boolean_primary:
 
 boolean_test:
         boolean_primary
+        /* X IS [NOT] NULL|TRUE|FALSE|UNKNOWN, and the X IS [NOT] (ClassName) type predicate. */
     |   boolean_primary SQL_TOKEN_IS sql_not truth_value
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2);
+            $$->append($3);
+            $$->append($4);
+        }
+        /* X IS [NOT] <value_exp>: SQLite null-safe comparison between two operands.
+           Any value expression is allowed on the right-hand side. A right-hand operand
+           that is exactly NULL/TRUE/FALSE/UNKNOWN or the parenthesized (ClassName) form
+           reduces via 'truth_value' above (it has the lower rule number). */
+    |   boolean_primary SQL_TOKEN_IS sql_not value_exp
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
@@ -923,12 +986,42 @@ type_list:
         }
     ;
 
+/* 'opt_only' is inlined here (rather than 'opt_only table_node') so that the type predicate
+   stays reachable: without it, the empty 'opt_only' reduction loses a shift/reduce race
+   against value_exp's property_path in the 'X IS (...)' context.
+   A type predicate is reached only for a *qualified* class name (schema.Class), an ONLY/ALL
+   prefix, or a comma-separated list. A single *unqualified* name in parentheses - e.g.
+   'X IS (S2)' - still reduces as a parenthesized value_exp (null-safe comparison), not a
+   type predicate; so if an identifier is both a class and a property name, the value-
+   expression (property) reading wins.
+   A *qualified* name in parentheses - e.g. 'X IS (alias.prop)' - does reduce here as a type
+   predicate, but the semantic layer (ECSqlParser::TryParseParenthesizedNameAsValueExp)
+   reinterprets it as a property reference (null-safe comparison) when the name does not resolve
+   to a class. See ECSqlStatementTests IsAndIsNotOperatorNullSafeSemantics. */
 type_list_item:
-    opt_only table_node
+    table_node
     {
     $$ = SQL_NEW_RULE;
+    $$->append(CREATE_NODE("", SQL_NODE_RULE, OSQLParser::RuleID(OSQLParseNode::opt_only)));
     $$->append($1);
-    $$->append($2);
+    }
+    |   opt_disqualify_polymorphic_constraint SQL_TOKEN_ONLY table_node
+    {
+    $$ = SQL_NEW_RULE;
+    OSQLParseNode* pOptOnly = CREATE_NODE("", SQL_NODE_RULE, OSQLParser::RuleID(OSQLParseNode::opt_only));
+    pOptOnly->append($1);
+    pOptOnly->append($2 = CREATE_NODE("ONLY", SQL_NODE_NAME));
+    $$->append(pOptOnly);
+    $$->append($3);
+    }
+    |   opt_disqualify_polymorphic_constraint SQL_TOKEN_ALL table_node
+    {
+    $$ = SQL_NEW_RULE;
+    OSQLParseNode* pOptOnly = CREATE_NODE("", SQL_NODE_RULE, OSQLParser::RuleID(OSQLParseNode::opt_only));
+    pOptOnly->append($1);
+    pOptOnly->append($2 = CREATE_NODE("ALL", SQL_NODE_NAME));
+    $$->append(pOptOnly);
+    $$->append($3);
     }
     ;
 
@@ -1251,6 +1344,13 @@ subquery:
             $$->append($2);
             $$->append($3 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
+    |   '(' cte ')'
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
+            $$->append($2);
+            $$->append($3 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
+        }
     ;
 
     /* scalar expressions */
@@ -1557,6 +1657,15 @@ cross_union:
             $$->append($2);
             $$->append($3);
             $$->append($4);
+        }
+    |   table_ref SQL_TOKEN_CROSS SQL_TOKEN_JOIN table_ref join_condition
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2);
+            $$->append($3);
+            $$->append($4);
+            $$->append($5);
         }
     ;
 
@@ -2992,69 +3101,149 @@ void OSQLParser::setParseTree(OSQLParseNode * pNewParseTree)
     }
 //-----------------------------------------------------------------------------
 
-/** Delete all comments in a query.
-
-    See also getComment()/concatComment() implementation for
-    OQueryController::translateStatement().
+/** Preprocess SQL query: remove comments and invisible Unicode characters.
+ *  
+ *  See also getComment()/concatComment() implementation for
+ *  OQueryController::translateStatement().
  */
-static Utf8String delComment(Utf8String const& rQuery)
+static Utf8String preprocessSqlQuery(const Utf8String& rQuery)
 {
-    // First a quick search if there is any "--" or "//" or "/*", if not then the whole
-    // copying loop is pointless.
-      if (rQuery.find("--") == Utf8String::npos < 0 && rQuery.find( "//") == Utf8String::npos  &&
-          rQuery.find( "/*") == Utf8String::npos)
-        return rQuery;
+    // Invisible Unicode character patterns
+    struct InvisibleUnicodeCharacters
+    {
+        const char* bytes;
+        int length;
+    };
+    
+    static const InvisibleUnicodeCharacters invisibleChars[] = {
+        {"\xE2\x80\x8B", 3},  // U+200B Zero Width Space
+        {"\xEF\xBB\xBF", 3},  // U+FEFF Zero Width No-Break Space
+        {"\xC2\xA0", 2},      // U+00A0 No-Break Space
+        {"\xE2\x80\x8C", 3},  // U+200C Zero Width Non-Joiner
+        {"\xE2\x80\x8D", 3},  // U+200D Zero Width Joiner
+        {"\xE2\x80\x8E", 3},  // U+200E Left-to-Right Mark
+        {"\xE2\x80\x8F", 3},  // U+200F Right-to-Left Mark
+        {"\xE2\x81\xA0", 3},  // U+2060 Word Joiner
+        {"\xE2\x80\xAF", 3},  // U+202F Narrow No-Break Space
+        {"\xE2\x80\x82", 3},  // U+2002 En Space
+        {"\xE2\x80\x83", 3},  // U+2003 Em Space
+        {"\xE2\x80\x84", 3},  // U+2004 Three-per-Em Space
+        {"\xE2\x80\x85", 3},  // U+2005 Four-per-Em Space
+        {"\xE2\x80\x86", 3},  // U+2006 Six-per-Em Space
+        {"\xE2\x80\x87", 3},  // U+2007 Figure Space
+        {"\xE2\x80\x88", 3},  // U+2008 Punctuation Space
+        {"\xE2\x80\x89", 3},  // U+2009 Thin Space
+        {"\xE2\x80\x8A", 3},  // U+200A Hair Space
+    };
+    static const int invisibleCharsCount = sizeof(invisibleChars) / sizeof(invisibleChars[0]);
 
     const sal_Char* pCopy = rQuery.c_str();
-    size_t nQueryLen = rQuery.size();
-    bool bIsText1  = false;     // "text"
-    bool bIsText2  = false;     // 'text'
-    bool bComment2 = false;     // /* comment */
-    bool bComment  = false;     // -- or // comment
+    const size_t nQueryLen = rQuery.size();
+
+    bool bInDoubleQuoteString = false;  // "text"
+    bool bInSingleQuoteString = false;  // 'text'
+    bool bInMultiLineComment = false;   // /* comment */
+    bool bInSingleLineComment = false;  // -- or // comment
+
+    // Check if comments exist
+    const bool bHasComments = (rQuery.find("--") != Utf8String::npos || rQuery.find("//") != Utf8String::npos || rQuery.find("/*") != Utf8String::npos);
+    
     Utf8String aBuf;
     aBuf.reserve(nQueryLen);
-    for (sal_Int32 i=0; i < nQueryLen; ++i)
+    
+    for (sal_Int32 i = 0; i < nQueryLen; ++i)
     {
-        if (bComment2)
+        const sal_Char currentChar = pCopy[i];
+        const sal_Char nextChar = (i + 1 < nQueryLen) ? pCopy[i + 1] : '\0';
+
+        const bool bInStringLiteral = bInDoubleQuoteString || bInSingleQuoteString;
+        const bool bInComment = bInMultiLineComment || bInSingleLineComment;
+
+        if (!bInComment)
         {
-            if ((i+1) < nQueryLen)
+            if (currentChar == '\"' && !bInSingleQuoteString)
+                bInDoubleQuoteString = !bInDoubleQuoteString;
+            else if (currentChar == '\'' && !bInDoubleQuoteString)
+                bInSingleQuoteString = !bInSingleQuoteString;
+        }
+
+        if (bHasComments)
+        {
+            if (bInMultiLineComment)
             {
-                if (pCopy[i]=='*' && pCopy[i+1]=='/')
+                if (currentChar == '*' && nextChar == '/')
                 {
-                    bComment2 = false;
+                    bInMultiLineComment = false;
                     ++i;
                 }
+                continue;  // Skip all characters inside multi-line comments
             }
-            else
+            
+            // Handle single-line comment closure: newline
+            if (bInSingleLineComment)
             {
-                // comment can't close anymore, actually an error, but..
+                if (currentChar == '\n')
+                    bInSingleLineComment = false;
+                continue;  // Skip all characters inside single-line comments
             }
-            continue;
+
+            if (!bInStringLiteral)
+            {
+                if (currentChar == '-' && nextChar == '-')
+                {
+                    bInSingleLineComment = true;
+                    continue;
+                }
+                if (currentChar == '/' && nextChar == '/')
+                {
+                    bInSingleLineComment = true;
+                    continue;
+                }
+                if (currentChar == '/' && nextChar == '*')
+                {
+                    bInMultiLineComment = true;
+                    ++i;  // Skip the '*'
+                    continue;
+                }
+            }
         }
-        if (pCopy[i] == '\n')
-            bComment = false;
-        else if (!bComment)
+        
+        if (!bInComment)
         {
-            if (pCopy[i] == '\"' && !bIsText2)
-                bIsText1 = !bIsText1;
-            else if (pCopy[i] == '\'' && !bIsText1)
-                bIsText2 = !bIsText2;
-            if (!bIsText1 && !bIsText2 && (i+1) < nQueryLen)
+            // Check for invisible Unicode characters
+            if (!bInStringLiteral)
             {
-                if ((pCopy[i]=='-' && pCopy[i+1]=='-') || (pCopy[i]=='/' && pCopy[i+1]=='/'))
-                    bComment = true;
-                else if ((pCopy[i]=='/' && pCopy[i+1]=='*'))
-                    bComment2 = true;
+                bool isInvisible = false;
+                int invisibleLen = 0;
+                
+                for (int j = 0; j < invisibleCharsCount; ++j)
+                {
+                    const int len = invisibleChars[j].length;
+                    if (i + len <= nQueryLen && memcmp(&pCopy[i], invisibleChars[j].bytes, len) == 0)
+                    {
+                        isInvisible  = true;
+                        invisibleLen = len;
+                        break;
+                    }
+                }
+                
+                if (isInvisible)
+                {
+                    // Replace invisible character with a regular whitespace
+                    aBuf.append(" ", 1);
+                    i += invisibleLen - 1;  // -1 because the loop will increment as well
+                    continue;
+                }
             }
+            aBuf.append(&currentChar, 1);
         }
-        if (!bComment && !bComment2)
-            aBuf.append(&pCopy[i], 1);
     }
+    
     return aBuf;
 }
 //-----------------------------------------------------------------------------
 OSQLParseNode* OSQLParser::parseTree (Utf8String& rErrorMessage, Utf8String const& rStatement, sal_Bool bInternational) {
-    Utf8String sTemp = delComment(rStatement);
+    Utf8String sTemp = preprocessSqlQuery(rStatement);
     m_scanner = std::unique_ptr<OSQLScanner>(new OSQLScanner(sTemp.c_str(), m_pContext, sal_True));
     m_pParseTree = nullptr;
     m_sErrorMessage.clear();

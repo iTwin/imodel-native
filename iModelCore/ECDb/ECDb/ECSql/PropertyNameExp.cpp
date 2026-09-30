@@ -97,10 +97,11 @@ ECN::ECPropertyCP PropertyNameExp::GetVirtualProperty() const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 bool PropertyNameExp::IsWildCard() const {
-    if (m_resolvedPropertyPath.Size() == 1)  {
-        return Exp::IsAsteriskToken(m_resolvedPropertyPath[0].GetName());
-    }
-    return false;
+    // checks if the last part of the property path is asterisk or not. If asterisk that means replacement is yet to be done. 
+    
+    // Used only in CommonTableBlockExp while expanding derived properties. if wild card that means replacement is yet to be done, 
+    // and all the links between the derived props of the internal select statement of a CommonTableBlockExp and the derived properties of the CommonTableBlockExp should be done after replacement
+    return Exp::IsAsteriskToken(m_resolvedPropertyPath.Last().GetName());  
 }
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -149,7 +150,12 @@ Exp::FinalizeParseStatus PropertyNameExp::_FinalizeParsing(ECSqlParseContext& ct
         } else if (PropertyMap const *resolvedMap = GetPropertyRef()->TryGetPropertyMap()) {
             SetTypeInfo(ECSqlTypeInfo(*resolvedMap));
         } else {
-            SetTypeInfo(derivedProperty.GetExpression()->GetTypeInfo());
+            ECSqlTypeInfo const& typeInfo = GetTypeInfoFromPropertyRef();
+            if(typeInfo.GetKind() == ECSqlTypeInfo::Kind::Unset) {
+                ctx.SetDeferFinalize(true);
+                return FinalizeParseStatus::NotCompleted;
+            }
+            SetTypeInfo(typeInfo);
         }
     } else {
         SetTypeInfo(ECSqlTypeInfo(*GetPropertyMap()));
@@ -165,6 +171,55 @@ Exp::FinalizeParseStatus PropertyNameExp::_FinalizeParsing(ECSqlParseContext& ct
         m_sysPropInfo = &ctx.Schemas().Main().GetSystemSchemaHelper().GetSystemPropertyInfo(GetPropertyMap()->GetProperty());
 
     return FinalizeParseStatus::Completed;
+}
+
+ECSqlTypeInfo PropertyNameExp::GetTypeInfoFromPropertyRef() const {
+    if(!IsPropertyRef()) {
+        BeAssert(false && "Error: GetTypeInfoFromPropertyRef is expected to be called only when this exp is a property ref");
+        ECSqlTypeInfo defaultTypeInfo; // unset is sent back
+        return defaultTypeInfo;
+    }
+    DerivedPropertyExp const& derivedProperty = GetPropertyRef()->LinkedTo();
+    ECSqlTypeInfo const& typeInfo = derivedProperty.GetExpression()->GetTypeInfo();
+    if(!typeInfo.IsUnset() && !typeInfo.IsNull()) {
+        return typeInfo; // return if its not unset and also not null.
+    }
+    Exp const* parentSelectExp = derivedProperty.FindParent(Exp::Type::Select);
+    Exp const* parentSelectClauseExp = derivedProperty.FindParent(Exp::Type::Selection);
+    if(parentSelectExp == nullptr || parentSelectClauseExp == nullptr) {
+        return typeInfo; // return if there is no select parent.
+    }
+    SelectStatementExp const& selectExp = parentSelectExp->GetAs<SelectStatementExp>();
+    std::vector<SingleSelectStatementExp const*> const& flatList = selectExp.GetFlatListOfStatements();
+    if(flatList.size() == 1) {
+        return typeInfo; // return if there is a single select statement.
+    }
+    SelectClauseExp const& selectClause = parentSelectClauseExp->GetAs<SelectClauseExp>();
+
+    int colIdx = -1;
+    for(Exp const* childExp : selectClause.GetChildren()) {
+        colIdx++;
+        if(childExp == &derivedProperty)
+            break;
+    }
+    if (colIdx < 0)
+        return typeInfo;
+
+    ECSqlTypeInfo resolvedTypeInfo;
+    for (auto stmtIdx = 0; stmtIdx < flatList.size(); ++stmtIdx) {
+        // The select clauses of a compound statement may have a different number of columns. This is an error which is
+        // only reported later during preparation, so the column index must not be assumed to be valid here.
+        auto const* derivedProp = flatList[stmtIdx]->GetSelection()->GetChildren().Get<DerivedPropertyExp>((size_t) colIdx);
+        if (derivedProp == nullptr || derivedProp->GetExpression() == nullptr)
+            continue;
+
+        auto stmtTypeInfo = derivedProp->GetExpression()->GetTypeInfo();
+        // try to find non-null type info
+        if (resolvedTypeInfo.IsUnset() || resolvedTypeInfo.IsNull() && !stmtTypeInfo.IsNull()) {
+            resolvedTypeInfo = stmtTypeInfo;
+        }
+    }
+    return resolvedTypeInfo;
 }
 
 //-----------------------------------------------------------------------------------------
@@ -379,9 +434,22 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
                     break;
             }
         }
-     }
+    }
 
     if (matchProps.empty()) {
+        // Check if a column alias is being used within the select
+        if (auto parentSelect = FindParent(Exp::Type::SingleSelect); parentSelect != nullptr)
+            {
+            for (const auto dpExp : parentSelect->GetAsCP<SingleSelectStatementExp>()->GetSelection()->GetChildren())
+                {
+                const auto& derivedPropertyExp = dpExp->GetAs<DerivedPropertyExp>();
+                if (derivedPropertyExp.GetColumnAlias().EqualsI(GetPropertyName()))
+                    {
+                    SetPropertyRef(derivedPropertyExp);
+                    return SUCCESS;
+                    }
+                }
+            }
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0565,
             "No property or enumeration found for expression '%s'.", m_resolvedPropertyPath.ToString().c_str());
         return ERROR;
@@ -389,7 +457,16 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
 
     const auto local = countLocalRefs(matchProps);
     const auto inherited = matchProps.size() - local;
+
     if (!(local == 1 || inherited == 1)) {
+        auto parent = this->GetParent();
+        if (parent != nullptr && parent->GetType() == Exp::Type::ExtractProperty){
+            Utf8String targetPath = parent->GetAs<ExtractPropertyValueExp>().GetTargetPath().ToString();
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0739,
+                "In expression '$->%s', $ is ambiguous", targetPath.c_str());
+            return ERROR;
+        }
+
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0566,
             "Expression '%s' in ECSQL statement is ambiguous.", m_resolvedPropertyPath.ToString().c_str());
         return ERROR;
@@ -408,7 +485,7 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
         m_resolvedPropertyPath = match.ResolvedPath();
         if (!GetPropertyRef()->IsComputedExp() && GetPropertyRef()->TryGetVirtualProperty() == nullptr) {
             if ( !GetPropertyRef()->TryResolvePath(m_resolvedPropertyPath)) {
-                BeAssert(false && "Programmer Error: Unable to resolve path");
+                return ERROR;
             }
         }
     } else {
@@ -465,6 +542,10 @@ void PropertyNameExp::SetPropertyRef(DerivedPropertyExp const& derivedPropertyEx
     }
 
 //------------------------------------------------------------------------------------------
+// Returns the property map backing this exp, or nullptr if there is none.
+// A nullptr result is legitimate and must be handled by callers: an exp referring to an alias
+// of a subquery or of a CTE can be backed by an arbitrary expression (e.g. a literal or a
+// computed value) rather than by a mapped property, in which case no property map exists.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+---------
 PropertyMap const* PropertyNameExp::GetPropertyMap() const
@@ -480,29 +561,40 @@ PropertyMap const* PropertyNameExp::GetPropertyMap() const
             {
             ClassNameExp const& classNameExp = classRefExp->GetAs<ClassNameExp>();
             propertyMap = classNameExp.GetInfo().GetMap().GetPropertyMaps().Find(GetResolvedPropertyPath().ToString(false).c_str());
+            //a property of an actual class is always expected to be mapped
+            BeAssert(propertyMap != nullptr && "PropertyNameExp's PropertyMap should never be nullptr for a class name exp.");
             break;
             }
 
         case Exp::Type::SubqueryRef:
-            {
+            {  
             PropertyNameExp::PropertyRef const* propertyRef = GetPropertyRef();
             BeAssert(propertyRef != nullptr);
+            //may be nullptr if the referenced derived property exp is not a property name exp (e.g. a literal or computed value)
             propertyMap = propertyRef->TryGetPropertyMap(GetResolvedPropertyPath());
-            if (propertyMap == nullptr) {
-                BeAssert(propertyMap != nullptr && "Exp of a derived prop exp referenced from a sub query ref is expected to always be a prop name exp");
-            }
             break;
             }
         case Exp::Type::CommonTableBlockName :
             {
-            return nullptr;
+            /*// This block is added because if the cte block has no columns we treat the select statement inside cte block just as a subquery of 
+            outer cte select statement and we pass the classref as CommonTableBlockNameExp*/ 
+            CommonTableBlockNameExp const& cteBlockNameExp = classRefExp->GetAs<CommonTableBlockNameExp>();
+            CommonTableBlockExp const* cteBlock = cteBlockNameExp.GetBlock();
+            if(cteBlock != nullptr && cteBlock->GetColumns().size() == 0)
+                {
+                PropertyNameExp::PropertyRef const* propertyRef = GetPropertyRef();
+                BeAssert(propertyRef != nullptr);
+                //may be nullptr if the referenced derived property exp is not a property name exp (e.g. a literal or computed value)
+                propertyMap = propertyRef->TryGetPropertyMap(GetResolvedPropertyPath());
+                break;
+                }
+            return nullptr; // This block returns nullptr for proper alias referencing if the cte block has columns
             }
         default:
                 BeAssert(false && "Unhandled ClassRefExp subtype. This code needs to be adjusted.");
                 break;
         }
 
-    BeAssert(propertyMap != nullptr && "PropertyNameExp's PropertyMap should never be nullptr.");
     return propertyMap;
     }
 
@@ -518,6 +610,25 @@ bool PropertyNameExp::IsLhsAssignmentOperandExpression() const
         return GetParent()->GetType() == Exp::Type::Assignment;
 
     return false;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+bool PropertyNameExp::IsPropertyFromCommonTableBlockWithColumns() const
+    {
+    if (m_classRefExp == nullptr) {
+        return false;
+    }
+    bool isFromCommonTableBlockName = GetClassRefExp()->GetType() == Exp::Type::CommonTableBlockName;
+    if(!isFromCommonTableBlockName)
+        return false;
+    
+    CommonTableBlockExp const* commonTableBlockExp = GetClassRefExp()->GetAs<CommonTableBlockNameExp>().GetBlock();
+    if(commonTableBlockExp == nullptr)
+        return false;
+    
+    return commonTableBlockExp->GetColumns().size() != 0;  // check if the block has columns or not...if it has columns then no issues otherwise if it is a cte without columns we should then treat it as a subquery so the whole flow changes
     }
 
 //-----------------------------------------------------------------------------------------
@@ -584,8 +695,11 @@ bool PropertyNameExp::PropertyRef::TryResolvePath(PropertyPath &path) const
     PropertyMap const *propertyMap = TryGetPropertyMap(path);
     if (propertyMap == nullptr)
         return false;
-
     PropertyMap::Path resolvePath = propertyMap->GetPath();
+    if (resolvePath.size() < path.Size())
+        {
+        return false;
+        }
     int n = static_cast<int>(std::min(resolvePath.size(), path.Size()));
     if (n == 0)
         {
@@ -710,7 +824,7 @@ BentleyStatus PropertyNameExp::PropertyRef::ToNativeSql(NativeSqlBuilder::List c
 
     m_nativeSqlSnippets.clear();
     Utf8String alias = m_linkedTo.GetColumnAlias();
-    if (alias.empty() || m_linkedTo.OriginateInASubQuery())
+    if (alias.empty() || m_linkedTo.OriginateInASubQuery() || m_linkedTo.OriginateInACommonTableBlockWithNoColumns())
         alias = m_linkedTo.GetNestedAlias();
 
     if (!alias.empty())

@@ -274,62 +274,9 @@ BentleyStatus ECTestUtility::ReadJsonInputFromFile(BeJsDocument& jsonInput, BeFi
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECTestUtility::ReadJsonInputFromFile(Json::Value& jsonInput, BeFileName& jsonFilePath)
-    {
-    const Byte utf8BOM[] = {0xef, 0xbb, 0xbf};
-
-    Utf8String fileContent;
-
-    BeFile file;
-    if (BeFileStatus::Success != file.Open(jsonFilePath, BeFileAccess::Read))
-        return ERROR;
-
-    uint64_t rawSize;
-    if (BeFileStatus::Success != file.GetSize(rawSize) || rawSize > UINT32_MAX)
-        return ERROR;
-
-    uint32_t sizeToRead = (uint32_t) rawSize;
-
-    uint32_t sizeRead;
-    ScopedArray<Byte> scopedBuffer(sizeToRead);
-    Byte* buffer = scopedBuffer.GetData();
-    if (BeFileStatus::Success != file.Read(buffer, &sizeRead, sizeToRead) || sizeRead != sizeToRead)
-        return ERROR;
-
-    if (buffer[0] != utf8BOM[0] || buffer[1] != utf8BOM[1] || buffer[2] != utf8BOM[2])
-        {
-        LOG.error("Json file is expected to be encoded in UTF-8");
-        return ERROR;
-        }
-
-    for (uint32_t ii = 3; ii < sizeRead; ii++)
-        {
-        if (buffer[ii] == '\n' || buffer[ii] == '\r')
-            continue;
-        fileContent.append(1, buffer[ii]);
-        }
-
-    file.Close();
-
-    return Json::Reader::Parse(fileContent, jsonInput) ? SUCCESS : ERROR;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
 bool ECTestUtility::JsonDeepEqual(BeJsDocument const& a, BeJsDocument const& b)
     {
     return a.isExactEqual(b);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-bool ECTestUtility::JsonDeepEqual(Json::Value const& a, Json::Value const& b)
-    {
-    auto astr = a.ToString();
-    auto bstr = b.ToString();
-    return astr == bstr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -343,16 +290,6 @@ Utf8String ECTestUtility::JsonSchemasComparisonString(BeJsDocument const& create
            "Test Data Schema (pretty):\n"  + testDataSchema.Stringify(Indented);
     }
     
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-Utf8String ECTestUtility::JsonSchemasComparisonString(Json::Value const& createdSchema, Json::Value const& testDataSchema)
-    {
-    return "Created Schema   (minified): " + createdSchema.ToString() + '\n' +
-           "Test Data Schema (minified): " + testDataSchema.ToString() + '\n' +
-           "Created Schema   (pretty):\n"  + createdSchema.toStyledString() + '\n' +
-           "Test Data Schema (pretty):\n"  + testDataSchema.toStyledString();
-    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -463,6 +400,101 @@ bool ECTestUtility::CompareECInstances(ECN::IECInstanceCR expected, ECN::IECInst
         return false;
 
     return CompareProperties(actual, *propertyValuesExpected);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void TestIssueListener::CompareIssues(bvector<Utf8String> const& expectedIssues)
+    {
+    bvector<Utf8String> loggedMessages;
+    for (const auto& issue : m_issues) {
+        loggedMessages.push_back(issue.message);
+        }
+
+    bool issuesAreTheSame = (expectedIssues == loggedMessages);
+    if(!issuesAreTheSame)
+        {
+        LOG.error("==================================================================================");
+        LOG.error("=Reported issues did not match expected result. Differences will be listed below.=");
+        LOG.error("==================================================================================");
+        LOG.error("EXPECTED:");
+        for(auto expected : expectedIssues)
+            {
+            LOG.errorv("    %s", expected.c_str());
+            }
+        LOG.error("ACTUAL:");
+        for(auto actual : loggedMessages)
+            {
+            LOG.errorv("    %s", actual.c_str());
+            }
+        }
+
+    ASSERT_TRUE(issuesAreTheSame) << "Logged issues did not match expected result";
+    }
+
+Utf8CP severityToString(IssueSeverity severity)
+    {
+    switch (severity)
+        {
+        case IssueSeverity::Info:
+            return "Info";
+        case IssueSeverity::Warning:
+            return "Warning";
+        case IssueSeverity::CriticalWarning:
+            return "CriticalWarning";
+        case IssueSeverity::Error:
+            return "Error";
+        case IssueSeverity::Fatal:
+            return "Fatal";
+        default:
+            return "Unknown";
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void TestIssueListener::CompareIssues(const std::vector<ReportedIssue>& expectedIssues)
+    {
+    std::vector<std::string> loggedIssueDetails;
+    for (const auto& issue : m_issues) {
+        std::stringstream ss;
+        ss << "Severity: " << severityToString(issue.severity) << ", "
+           << "Category: " << issue.category.m_stringId << ", "
+           << "Type: " << issue.type.m_stringId << ", "
+           << "ID: " << issue.id.m_issueId << ", "
+           << "Message: " << issue.message;
+        loggedIssueDetails.push_back(ss.str());
+        }
+
+    std::vector<std::string> expectedIssueDetails;
+    for (const auto& expected : expectedIssues) {
+        std::stringstream ss;
+        ss << "Severity: " << severityToString(expected.severity) << ", "
+           << "Category: " << expected.category.m_stringId << ", "
+           << "Type: " << expected.type.m_stringId << ", "
+           << "ID: " << expected.id.m_issueId << ", "
+           << "Message: " << expected.message;
+        expectedIssueDetails.push_back(ss.str());
+        }
+
+    bool issuesAreTheSame = (expectedIssueDetails == loggedIssueDetails);
+    if (!issuesAreTheSame) {
+        LOG.error("==================================================================================");
+        LOG.error("= Detailed reported issues did not match expected result. Differences listed below. =");
+        LOG.error("==================================================================================");
+        LOG.error("EXPECTED:");
+        for (const auto& expected : expectedIssueDetails) {
+            LOG.errorv("    %s", expected.c_str());
+            }
+        LOG.error("ACTUAL:");
+        for (const auto& actual : loggedIssueDetails) {
+            LOG.errorv("    %s", actual.c_str());
+            }
+        }
+
+    ASSERT_TRUE(issuesAreTheSame) << "Detailed logged issues did not match expected result";
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

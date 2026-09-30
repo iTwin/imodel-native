@@ -930,20 +930,6 @@ ClassMappingStatus RelationshipClassLinkTableMap::_Map(ClassMappingContext& ctx)
         return ClassMappingStatus::Error;
         }
 
-    DbTable const* sourceTable = *sourceTables.begin();
-    DbTable const* targetTable = *targetTables.begin();
-
-    bool createFkConstraints = true; // default
-    if (ca.IsValid())
-        {
-        Nullable<bool> createFkConstraintsVal;
-        if (SUCCESS != ca.TryGetCreateForeignKeyConstraints(createFkConstraintsVal))
-            return ClassMappingStatus::Error;
-
-        if (!createFkConstraintsVal.IsNull())
-            createFkConstraints = createFkConstraintsVal.Value();
-        }
-
     //**** Constraint columns and prop maps
     bool addSourceECClassIdColumnToTable = false;
     DetermineConstraintClassIdColumnHandling(addSourceECClassIdColumnToTable, sourceConstraint);
@@ -958,20 +944,8 @@ ClassMappingStatus RelationshipClassLinkTableMap::_Map(ClassMappingContext& ctx)
     if (stat != ClassMappingStatus::Success)
         return stat;
 
-
-    //only create constraints on TPH root or if not TPH and not existing table
-    if (createFkConstraints && GetPrimaryTable().GetType() != DbTable::Type::Existing && (!GetMapStrategy().IsTablePerHierarchy() || GetTphHelper()->DetermineTphRootClassId() == GetClass().GetId()))
-        {
-        //Create FK from Source-Primary to LinkTable
-        DbColumn const* fkColumn = &GetSourceECInstanceIdPropMap()->FindDataPropertyMap(GetPrimaryTable())->GetColumn();
-        DbColumn const* referencedColumn = sourceTable->FindFirst(DbColumn::Kind::ECInstanceId);
-        GetPrimaryTable().AddForeignKeyConstraint(*fkColumn, *referencedColumn, ForeignKeyDbConstraint::ActionType::Cascade, ForeignKeyDbConstraint::ActionType::NotSpecified);
-
-        //Create FK from Target-Primary to LinkTable
-        fkColumn = &GetTargetECInstanceIdPropMap()->FindDataPropertyMap(GetPrimaryTable())->GetColumn();
-        referencedColumn = targetTable->FindFirst(DbColumn::Kind::ECInstanceId);
-        GetPrimaryTable().AddForeignKeyConstraint(*fkColumn, *referencedColumn, ForeignKeyDbConstraint::ActionType::Cascade, ForeignKeyDbConstraint::ActionType::NotSpecified);
-        }
+    // The link table's foreign keys to the source and target tables are added by
+    // DerivedDbStructures, which reads the same LinkTableRelationshipMap custom attribute.
 
     Nullable<bool> allowDuplicateRelationships;
     if (ca.IsValid())

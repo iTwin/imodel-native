@@ -226,11 +226,7 @@ TcsNameMapper* cmGetNameMapperPtr (bool release)
         if (NULL != pNameMapperFile)
         {
             // Create new name mapper instance
-#ifdef GEOCOORD_ENHANCEMENT
             std::unique_ptr<TcsNameMapper> nameMapperPtr(new TcsNameMapper());
-#else
-            std::auto_ptr<TcsNameMapper> nameMapperPtr(new TcsNameMapper());
-#endif
             if (0 == CS_fseek(pNameMapperFile, 0, SEEK_END))
             {
                 // Get name mapper file size

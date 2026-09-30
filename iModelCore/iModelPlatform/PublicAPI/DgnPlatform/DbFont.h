@@ -221,6 +221,8 @@ public:
         LoadGlyphs();
         return m_descenderRatio;
     }
+
+    DGNPLATFORM_EXPORT static bool IsRscFontData(uint8_t const* data);
 };
 
 /** An SHX DbFont. */
@@ -286,6 +288,7 @@ struct TrueTypeFile {
     TrueTypeFile(Utf8CP fileName, bool compress) : m_fileName(fileName), m_compress(compress) {}
     DGNPLATFORM_EXPORT bool HasFamily(Utf8CP familyName);
     DGNPLATFORM_EXPORT bool Embed(FontDbR);
+    DGNPLATFORM_EXPORT void ExtractMetadata(BeJsValue& output);
 };
 
 /**

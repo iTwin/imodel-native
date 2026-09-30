@@ -20,9 +20,6 @@ struct ContentSpecificationsTests : PresentationRulesTests
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct TestContentSpecification : ContentSpecification
     {
-    CharCP _GetXmlElementName() const override {return "TestSpecification";}
-    bool _ReadXml(BeXmlNodeP xmlNode) override {return ContentSpecification::_ReadXml(xmlNode);}
-    void _WriteXml(BeXmlNodeP xmlNode) const override {ContentSpecification::_WriteXml(xmlNode);}
     Utf8CP _GetJsonElementType() const override {return "testSpecification";}
     bool _ReadJson(BeJsConst json) override {return ContentSpecification::_ReadJson(json);}
     void _WriteJson(BeJsValue json) const override {ContentSpecification::_WriteJson(json);}
@@ -152,134 +149,6 @@ TEST_F(ContentSpecificationsTests, WriteToJson)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ContentSpecificationsTests, LoadsFromXml)
-    {
-    static Utf8CP xmlString = R"(
-        <TestSpecification Priority="123" ShowImages="true" OnlyIfNotHandled="true">
-            <RelatedProperties />
-            <CalculatedProperties>
-                <Property Label="Label1">Expression1</Property>
-                <Property Label="Label2">Expression2</Property>
-            </CalculatedProperties>
-            <RelatedInstance RelationshipName="TestRelName" ClassName="TestClassName" Alias="TestAlias" />
-        </TestSpecification>
-        )";
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
-    ASSERT_EQ(BEXML_Success, xmlStatus);
-
-    TestContentSpecification spec;
-    EXPECT_TRUE(spec.ReadXml(xml->GetRootElement()));
-    EXPECT_EQ(123, spec.GetPriority());
-    EXPECT_TRUE(spec.GetShowImages());
-    EXPECT_TRUE(spec.GetOnlyIfNotHandled());
-    EXPECT_EQ(2, spec.GetCalculatedProperties().size());
-    EXPECT_EQ(1, spec.GetRelatedProperties().size());
-    EXPECT_EQ(1, spec.GetRelatedInstances().size());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsiclass
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ContentSpecificationsTests, LoadFromXmlWithDefaultValues)
-    {
-    static Utf8CP xmlString = "<TestSpecification/>";
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
-    ASSERT_EQ(BEXML_Success, xmlStatus);
-
-    TestContentSpecification spec;
-    EXPECT_TRUE(spec.ReadXml(xml->GetRootElement()));
-
-    EXPECT_FALSE(spec.GetShowImages());
-    EXPECT_TRUE(spec.GetCalculatedProperties().empty());
-    EXPECT_TRUE(spec.GetPropertyOverrides().empty());
-    EXPECT_TRUE(spec.GetRelatedProperties().empty());
-    EXPECT_TRUE(spec.GetRelatedInstances().empty());
-    EXPECT_TRUE(spec.GetPropertyCategories().empty());
-    EXPECT_FALSE(spec.GetOnlyIfNotHandled());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ContentSpecificationsTests, LoadFromXml_NoCalculatedPropertiesLoadedWhenLabelForCalculatedPropertyIsNotSpecified)
-    {
-    static Utf8CP xmlString = R"(
-        <TestSpecification Priority="123" ShowImages="true">
-            <CalculatedProperties>
-                <Property>Expression1</Property>
-            </CalculatedProperties>
-        </TestSpecification>
-        )";
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
-    ASSERT_EQ(BEXML_Success, xmlStatus);
-
-    TestContentSpecification spec;
-    EXPECT_TRUE(spec.ReadXml(xml->GetRootElement()));
-    EXPECT_EQ(0, spec.GetCalculatedProperties().size());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ContentSpecificationsTests, LoadFromXml_NoCalculatedPropertiesLoadedWhenValueForCalculatedPropertyIsNotSpecified)
-    {
-    static Utf8CP xmlString = R"(
-        <TestSpecification Priority="123" ShowImages="true">
-            <CalculatedProperties>
-                <Property Label="Label1"/>
-            </CalculatedProperties>
-        </TestSpecification>
-        )";
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
-    ASSERT_EQ(BEXML_Success, xmlStatus);
-
-    TestContentSpecification spec;
-    EXPECT_TRUE(spec.ReadXml(xml->GetRootElement()));
-    EXPECT_EQ(0, spec.GetCalculatedProperties().size());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ContentSpecificationsTests, WritesToXml)
-    {
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xml = BeXmlDom::CreateEmpty();
-    xml->AddNewElement("Root", nullptr, nullptr);
-
-    TestContentSpecification spec;
-    spec.SetPriority(123);
-    spec.SetShowImages(true);
-    spec.SetOnlyIfNotHandled(true);
-    spec.AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, "RelationshipClassName",
-        "RelatedClassNames", "Properties", RelationshipMeaning::SameInstance));
-    spec.AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label1", 123, "Expression1"));
-    spec.AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label2", 456, "Expression2"));
-    spec.AddRelatedInstance(*new RelatedInstanceSpecification(RequiredRelationDirection_Both, "TestRelName", "TestClassName", "TestAlias"));
-    spec.WriteXml(xml->GetRootElement());
-
-    static Utf8CP expected = ""
-        "<Root>"
-            R"(<TestSpecification Priority="123" ShowImages="true" OnlyIfNotHandled="true">)"
-                R"(<RelatedInstance ClassName="TestClassName" RelationshipName="TestRelName" RelationshipDirection="Both" Alias="TestAlias" IsRequired="false" />)"
-                R"(<RelatedProperties RelationshipClassNames="RelationshipClassName" RelatedClassNames="RelatedClassNames" )"
-                    R"(PropertyNames="Properties" RequiredDirection="Forward" RelationshipMeaning="SameInstance" IsPolymorphic="false" AutoExpand="false"/>)"
-                R"(<CalculatedProperties>)"
-                    R"(<Property Priority="123" Label="Label1">Expression1</Property>)"
-                    R"(<Property Priority="456" Label="Label2">Expression2</Property>)"
-                R"(</CalculatedProperties>)"
-            R"(</TestSpecification>)"
-        "</Root>";
-    EXPECT_STREQ(ToPrettyString(*BeXmlDom::CreateAndReadFromString(xmlStatus, expected)).c_str(), ToPrettyString(*xml).c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ContentSpecificationsTests, CopiedSpecificationHasSameNestedSpecifications)
     {
     // Create spec1
@@ -300,7 +169,7 @@ TEST_F(ContentSpecificationsTests, CopiedSpecificationHasSameNestedSpecification
     EXPECT_EQ(1, spec1.GetPropertyOverrides().size());
     EXPECT_EQ(1, spec1.GetPropertyCategories().size());
 
-    // Create spec2 via copy consstructor
+    // Create spec2 via copy constructor
     TestContentSpecification spec2(spec1);
 
     // Validate spec2

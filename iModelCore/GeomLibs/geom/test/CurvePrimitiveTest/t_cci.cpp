@@ -4,7 +4,6 @@
 *--------------------------------------------------------------------------------------------*/
 #include "testHarness.h"
 #include <Geom/BinaryRangeHeap.h>
-#include <GeomSerialization/GeomLibsSerialization.h>
 #include <GeomSerialization/GeomLibsJsonSerialization.h>
 
 USING_NAMESPACE_BENTLEY_GEOMETRY_INTERNAL
@@ -846,19 +845,13 @@ TEST(CCI,RangeCheck)
                     }
                 Check::True(numMatch > 0, "Expected intersection point found by closest approach");
                 }
-/*
-auto pointsOnAXY = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
-            auto pointsOnBXY = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
-
-            CurveCurve::IntersectionsXY (*pointsOnAXY, *pointsOnBXY, line.get (), arc.get (), nullptr, false);
-            printf("\n     CurveCurve::IntersectionsXY counts %d %d \n", (int)pointsOnAXY->size(), (int)pointsOnBXY->size());
-*/
             Check::EndScope ();
             }
         Check::EndScope ();
         }
     Check::SetMaxVolume (v);
     }
+
 #ifdef CompileCCADebugTracking
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 GEOMDLLIMPEXP void SetCCADebug(int value);

@@ -63,17 +63,17 @@ TEST_F (ExtendedGCSUnitTests, WisconsinToJson)
     GeoCoordinates::BaseGCSPtr currentGCS1 = GeoCoordinates::BaseGCS::CreateGCS("AdamsWI-F");
     GeoCoordinates::BaseGCSPtr currentGCS2 = GeoCoordinates::BaseGCS::CreateGCS("BayfieldWI-F");
 
-    Json::Value result1;
+    BeJsDocument result1;
     EXPECT_TRUE(SUCCESS == currentGCS1->ToJson(result1, true));
 
-    Utf8String resultString1 = result1.toStyledString();
+    Utf8String resultString1 = result1.Stringify(StringifyFormat::Indented);
 
     EXPECT_NEAR(result1["horizontalCRS"]["projection"]["geoidSeparation"].asDouble(), -35.05 / 0.3048006096, 0.001);
 
-    Json::Value result2;
+    BeJsDocument result2;
     EXPECT_TRUE(SUCCESS == currentGCS2->ToJson(result2, true));
 
-    Utf8String resultString2 = result2.toStyledString();
+    Utf8String resultString2 = result2.Stringify(StringifyFormat::Indented);
 
     EXPECT_NEAR(result2["horizontalCRS"]["projection"]["geoidSeparation"].asDouble(), -30.45 / 0.3048006096, 0.001);
     }
@@ -312,7 +312,7 @@ TEST_F (ExtendedGCSUnitTests, WKGenerateToWGS84Config)
     toWGS84.Trim();
     toWGS84 = toWGS84.substr(1);
 
-    double  deltaX, deltaY, deltaZ, rotationX, rotationY, rotationZ, scalePPM;
+    double  deltaX = 0.0, deltaY = 0.0, deltaZ = 0.0, rotationX = 0.0, rotationY = 0.0, rotationZ = 0.0, scalePPM = 0.0;
     
     EXPECT_TRUE(7 == Utf8String::Sscanf_safe(toWGS84.c_str(), "%lf,%lf,%lf,%lf,%lf,%lf,%lf", &deltaX, &deltaY, &deltaZ, &rotationX, &rotationY, &rotationZ, &scalePPM));
     

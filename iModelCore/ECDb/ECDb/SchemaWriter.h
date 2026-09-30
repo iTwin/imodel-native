@@ -250,7 +250,7 @@ struct SchemaWriter final
 
         static bool IsSpecifiedInRelationshipConstraint(Context&, ECN::ECClassCR);
 
-        static bool IsPropertyTypeChangeSupported(Utf8StringR error, ECN::StringChange& typeChange, ECN::ECPropertyCR oldProperty, ECN::ECPropertyCR newProperty, bool isPrimitiveTypeChangeAllowed);
+        static bool IsPropertyTypeChangeSupported(Utf8StringR error, ECN::StringChange& typeChange, ECN::ECPropertyCR oldProperty, ECN::ECPropertyCR newProperty, bool isSchemaVersionValid);
         static bool UnitChangeAllowed (Context& ctx, ECN::ECPropertyCR oldProperty, ECN::ECPropertyCR newProperty);
 
         static BentleyStatus UpdateBaseClasses(Context&, ECN::BaseClassChanges&, ECN::ECClassCR, ECN::ECClassCR);
@@ -261,7 +261,7 @@ struct SchemaWriter final
 
     public:
         static SchemaImportResult ImportSchemas(bvector<ECN::ECSchemaCP>& schemasToMap, SchemaImportContext&, bvector<ECN::ECSchemaCP> const& primarySchemasOrderedByDependencies);
-        static DropSchemaResult DropSchema(Utf8StringCR name, SchemaImportContext& schemaImportCtx, bool logIssue);
+        static DropSchemaResult DropSchemas(bvector<Utf8String> schemaNames, SchemaImportContext& schemaImportCtx, bool logIssue);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

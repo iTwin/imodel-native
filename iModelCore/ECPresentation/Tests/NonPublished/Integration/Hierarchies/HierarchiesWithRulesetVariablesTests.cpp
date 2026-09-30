@@ -20,7 +20,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RulesetVariables_Returns
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, TargetTree_Both, true);
+    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, true);
     rules->AddPresentationRule(*rootRule);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
         "GetVariableIntValue(\"instance_id\") = this.ECInstanceId", classA->GetFullName(), false));
@@ -64,7 +64,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RulesetVariables_Returns
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, TargetTree_Both, true);
+    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, true);
     rules->AddPresentationRule(*rootRule);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
         "GetVariableBoolValue(\"show_instances\")", classA->GetFullName(), false));
@@ -99,7 +99,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RulesetVariables_Returns
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, TargetTree_Both, true);
+    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, true);
     rules->AddPresentationRule(*rootRule);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
         "NOT GetVariableBoolValue(\"hide_instances\")", classA->GetFullName(), false));
@@ -137,7 +137,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RulesetVariables_Returns
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, TargetTree_Both, true);
+    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, true);
     rules->AddPresentationRule(*rootRule);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
         "NOT GetVariableBoolValue(\"hide_instances\")", classA->GetFullName(), false));
@@ -182,7 +182,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RulesetVariables_Returns
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, TargetTree_Both, true);
+    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, true);
     rules->AddPresentationRule(*rootRule);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
         "NOT GetVariableBoolValue(\"hide_a\")", classA->GetFullName(), false));
@@ -225,7 +225,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RulesetVariables_Returns
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, TargetTree_Both, true);
+    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, true);
     rules->AddPresentationRule(*rootRule);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
         "GetVariableBoolValue(\"show_a\")", classA->GetFullName(), false));
@@ -282,7 +282,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RulesetVariables_Returns
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, TargetTree_Both, true);
+    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, true);
     rules->AddPresentationRule(*rootRule);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
         "", classA->GetFullName(), false));
@@ -343,7 +343,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RulesetVariables_Returns
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, TargetTree_Both, true);
+    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, true);
     rules->AddPresentationRule(*rootRule);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
         "", classA->GetFullName(), false));
@@ -396,7 +396,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RulesetVariables_Returns
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, TargetTree_Both, true);
+    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, true);
     rules->AddPresentationRule(*rootRule);
 
     SubCondition* aCondition = new SubCondition("GetVariableStringValue(\"ViewType\") = \"A\"");
@@ -436,11 +436,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RulesetVariables_Returns
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, TargetTree_Both, true);
+    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, true);
     rules->AddPresentationRule(*rootRule);
     rootRule->AddSpecification(*CreateCustomNodeSpecification("root"));
 
-    ChildNodeRule* childRule = new ChildNodeRule("ParentNode.Type = \"root\" ANDALSO GetVariableBoolValue(\"show_child\")", 1000, false, TargetTree_Both);
+    ChildNodeRule* childRule = new ChildNodeRule("ParentNode.Type = \"root\" ANDALSO GetVariableBoolValue(\"show_child\")", 1000, false);
     rules->AddPresentationRule(*childRule);
     childRule->AddSpecification(*CreateCustomNodeSpecification("child"));
 
@@ -471,7 +471,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RulesetVariables_Returns
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, TargetTree_Both, true);
+    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, true);
     rules->AddPresentationRule(*rootRule);
     rootRule->AddSpecification(*CreateCustomNodeSpecification("root", [](auto& spec)
         {
@@ -505,14 +505,14 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RulesetVariables_Returns
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, TargetTree_Both, true);
+    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, true);
     rules->AddPresentationRule(*rootRule);
     rootRule->AddSpecification(*CreateCustomNodeSpecification("root", [](auto& spec)
         {
         spec.SetHideIfNoChildren(true);
         }));
 
-    ChildNodeRule* childRule = new ChildNodeRule("ParentNode.Type = \"root\" ANDALSO NOT GetVariableBoolValue(\"hide_child\")", 1000, false, TargetTree_Both);
+    ChildNodeRule* childRule = new ChildNodeRule("ParentNode.Type = \"root\" ANDALSO NOT GetVariableBoolValue(\"hide_child\")", 1000, false);
     rules->AddPresentationRule(*childRule);
     childRule->AddSpecification(*CreateCustomNodeSpecification("child"));
 

@@ -32,6 +32,28 @@ struct DgnModelTests : public DgnDbTestFixture
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+static void SetPartialPlacement(BeJsValue props, DPoint3dCR origin, DPoint3dCR low, DPoint3dCR high)
+    {
+    auto placement = props[GeometricElement::json_placement()];
+    BeJsGeomUtils::DPoint3dToJson(placement[Placement3d::json_origin()], origin);
+    BeJsGeomUtils::DPoint3dToJson(placement[Placement3d::json_bbox()]["low"], low);
+    BeJsGeomUtils::DPoint3dToJson(placement[Placement3d::json_bbox()]["high"], high);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+static void SetPartialPlacement(BeJsValue props, DPoint2dCR origin, DPoint2dCR low, DPoint2dCR high)
+    {
+    auto placement = props[GeometricElement::json_placement()];
+    BeJsGeomUtils::DPoint2dToJson(placement[Placement2d::json_origin()], origin);
+    BeJsGeomUtils::DPoint2dToJson(placement[Placement2d::json_bbox()]["low"], low);
+    BeJsGeomUtils::DPoint2dToJson(placement[Placement2d::json_bbox()]["high"], high);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 DgnElementId DgnModelTests::InsertElement3d(DgnModelId mid, Placement3dCR placement, DPoint3dCR pt1, DPoint3dCR pt2)
     {
     DgnCategoryId cat = DgnDbTestUtils::GetFirstSpatialCategoryId(*m_db);
@@ -142,6 +164,43 @@ void DgnModelTests::TestRangeIndex3d()
     EXPECT_TRUE(nullptr == rangeIndex->FindElement(id1));
     indexbox = AxisAlignedBox3d(rangeIndex->GetExtents().ToRange3d()); // and the new extent of the model should be back to what it was before we added the large element
     EXPECT_TRUE(indexbox.IsEqual(queryRange, .00001));
+
+    // A placement with a valid origin and bounding box may legitimately have NULL angles.
+    // Range queries must treat the missing angles as zero rather than treating the placement as absent.
+    auto nonSpatialModel = DgnDbTestUtils::InsertPhysicalModel(*m_db, "NonSpatialRangeTest");
+    nonSpatialModel->SetNotSpatiallyLocated();
+    const DPoint3d partialOrigin = DPoint3d::From(100.0, 200.0, 300.0);
+    const DPoint3d partialLow = DPoint3d::From(-1.0, -2.0, -3.0);
+    const DPoint3d partialHigh = DPoint3d::From(4.0, 5.0, 6.0);
+    auto partialElement = GenericPhysicalObject::Create(*nonSpatialModel, DgnDbTestUtils::GetFirstSpatialCategoryId(*m_db));
+    ASSERT_TRUE(partialElement.IsValid());
+    BeJsDocument partialPlacement;
+    SetPartialPlacement(partialPlacement, partialOrigin, partialLow, partialHigh);
+    partialElement->FromJson(partialPlacement);
+    ASSERT_TRUE(partialElement->GetPlacement().IsValid());
+
+    auto insertedPartial = m_db->Elements().Insert(*partialElement);
+    ASSERT_TRUE(insertedPartial.IsValid());
+
+    ECSqlStatement partialStmt;
+    ASSERT_EQ(ECSqlStatus::Success, partialStmt.Prepare(*m_db, "SELECT Origin,Yaw,Pitch,Roll,BBoxLow,BBoxHigh FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " WHERE ECInstanceId=?"));
+    partialStmt.BindId(1, insertedPartial->GetElementId());
+    ASSERT_EQ(BE_SQLITE_ROW, partialStmt.Step());
+    EXPECT_FALSE(partialStmt.IsValueNull(0));
+    EXPECT_TRUE(partialStmt.IsValueNull(1));
+    EXPECT_TRUE(partialStmt.IsValueNull(2));
+    EXPECT_TRUE(partialStmt.IsValueNull(3));
+    EXPECT_FALSE(partialStmt.IsValueNull(4));
+    EXPECT_FALSE(partialStmt.IsValueNull(5));
+
+    const Placement3d expectedPartialPlacement(partialOrigin, YawPitchRollAngles(), ElementAlignedBox3d(partialLow.x, partialLow.y, partialLow.z, partialHigh.x, partialHigh.y, partialHigh.z));
+    const AxisAlignedBox3d expectedPartialRange = expectedPartialPlacement.CalculateRange();
+    EXPECT_TRUE(expectedPartialRange.IsEqual(nonSpatialModel->GetElementRange(insertedPartial->GetElementId()), .00001));
+
+    ASSERT_EQ(DgnDbStatus::Success, nonSpatialModel->FillRangeIndex());
+    ASSERT_TRUE(nonSpatialModel->GetRangeIndex() != nullptr);
+    EXPECT_EQ(1, nonSpatialModel->GetRangeIndex()->GetCount());
+    EXPECT_NE(nullptr, nonSpatialModel->GetRangeIndex()->FindElement(insertedPartial->GetElementId()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -209,6 +268,38 @@ void DgnModelTests::TestRangeIndex2d()
     EXPECT_TRUE(box.IsEqual(range2d2, .00000001));
     EXPECT_TRUE(indexbox2d.IsEqual(range2d2, .00001)); // float vs. double
     EXPECT_TRUE(indexbox2d.IsEqual(range2d));  // should be identical, they both come from range index
+
+    // A placement with a valid origin and bounding box may legitimately have a NULL rotation.
+    const DPoint2d partialOrigin = DPoint2d::From(100.0, 200.0);
+    const DPoint2d partialLow = DPoint2d::From(-1.0, -2.0);
+    const DPoint2d partialHigh = DPoint2d::From(4.0, 5.0);
+    TestElement2d::CreateParams partialParams(*m_db, drawingModel->GetModelId(), TestElement2d::QueryClassId(*m_db), DgnDbTestUtils::GetFirstDrawingCategoryId(*m_db), Placement2d(), DgnCode());
+    TestElement2dPtr partialElement = new TestElement2d(partialParams);
+    BeJsDocument partialPlacement;
+    SetPartialPlacement(partialPlacement, partialOrigin, partialLow, partialHigh);
+    partialElement->FromJson(partialPlacement);
+    ASSERT_TRUE(partialElement->GetPlacement().IsValid());
+
+    auto insertedPartial = m_db->Elements().Insert(*partialElement);
+    ASSERT_TRUE(insertedPartial.IsValid());
+
+    ECSqlStatement partialStmt;
+    ASSERT_EQ(ECSqlStatus::Success, partialStmt.Prepare(*m_db, "SELECT Origin,Rotation,BBoxLow,BBoxHigh FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement2d) " WHERE ECInstanceId=?"));
+    partialStmt.BindId(1, insertedPartial->GetElementId());
+    ASSERT_EQ(BE_SQLITE_ROW, partialStmt.Step());
+    EXPECT_FALSE(partialStmt.IsValueNull(0));
+    EXPECT_TRUE(partialStmt.IsValueNull(1));
+    EXPECT_FALSE(partialStmt.IsValueNull(2));
+    EXPECT_FALSE(partialStmt.IsValueNull(3));
+
+    const Placement2d expectedPartialPlacement(partialOrigin, AngleInDegrees(), ElementAlignedBox2d(partialLow.x, partialLow.y, partialHigh.x, partialHigh.y));
+    const AxisAlignedBox3d expectedPartialRange = expectedPartialPlacement.CalculateRange();
+    EXPECT_TRUE(expectedPartialRange.IsEqual(drawingModel->GetElementRange(insertedPartial->GetElementId()), .00001));
+
+    ASSERT_EQ(DgnDbStatus::Success, drawingModel->FillRangeIndex());
+    ASSERT_TRUE(drawingModel->GetRangeIndex() != nullptr);
+    EXPECT_EQ(5, drawingModel->GetRangeIndex()->GetCount());
+    EXPECT_NE(nullptr, drawingModel->GetRangeIndex()->FindElement(insertedPartial->GetElementId()));
     }
 
 /*---------------------------------------------------------------------------------**//**

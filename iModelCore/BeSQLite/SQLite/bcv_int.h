@@ -354,6 +354,7 @@ int bcvManifestParseCopy(
   Manifest **ppOut, 
   char **pz
 );
+i64 bcvManifestSize(Manifest*);
 
 u8 *bcvManifestCompose(Manifest *p, int *pnOut);
 void bcvManifestFree(Manifest *p);
@@ -421,10 +422,24 @@ int bcvInstallBuiltinModules(void);
 
 /************************************************************************/
 
+/*
+** bRevokeBestEffort:
+**   This is set, based on the value of the CLOUDSQLITE_REVOKE_BEST_EFFORT
+**   environment variable, when the container is created.
+**
+** zCainfo:
+**   This is set, based on the value of the CLOUDSQLITE_CAINFO environment 
+**   variable, when the container is created. If it is not NULL, it must
+**   be freed using sqlite3_free() when the BcvContainer object is freed.
+*/
 struct BcvContainer {
   sqlite3_bcv_container *pCont;
   sqlite3_bcv_module *pMod;
   int nContRef;
+  int nMaxResults;                /* Value of maxresults= parameter */
+
+  int bRevokeBestEffort;       
+  char *zCainfo;
 };
 
 int bcvDispatchNew(BcvDispatch**);
@@ -484,7 +499,7 @@ int bcvDispatchList(
   BcvContainer *pCont,
   const char *zPrefix,
   void *pApp,
-  void (*x)(void*, int rc, char *zError)
+  int (*x)(void*, int rc, char *zError)
 );
 
 int bcvDispatchLogmsg(BcvDispatch *p, const char *zFmt, ...);
@@ -722,3 +737,4 @@ int bcvLogGetData(BcvLog *pLog, BcvBuffer *pBuf);
 void bcvTimeToString(i64 iTime, char *zBuf);
 void bcvLogConfig(BcvLog *pLog, int op, i64 iVal);
 
+int bcvDeleteBlocks(Manifest *pMan, int iDb);

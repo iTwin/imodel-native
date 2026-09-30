@@ -315,37 +315,12 @@ struct Exp
                 template <typename TExp>
                 TExp const* Get(size_t i) const
                     {
+                    if (i >= m_collection.size())
+                        return nullptr;
+
                     Exp const* child = this->operator[] (i);
                     BeAssert(child == nullptr || dynamic_cast<TExp const*> (child) != nullptr);
                     return static_cast<TExp const*> (child);
-                    }
-
-
-                template <typename TExp>
-                bool Replace(Exp const& replacee, std::vector<std::unique_ptr<TExp>>& replaceWith)
-                    {
-                    std::vector<std::unique_ptr<Exp>> copiedCollection = std::move(m_collection);
-                    BeAssert(m_collection.empty());
-
-                    bool found = false;
-                    for (std::unique_ptr<Exp>& exp : copiedCollection)
-                        {
-                        if (exp.get() != &replacee)
-                            {
-                            m_collection.push_back(std::move(exp));
-                            continue;
-                            }
-
-                        // found a matching expr to be replaced
-                        for (std::unique_ptr<TExp>& replacementExp : replaceWith)
-                            {
-                            m_collection.push_back(std::move(replacementExp));
-                            }
-
-                        found = true;
-                        }
-
-                    return found;
                     }
 
                 const_iterator<Exp const*> begin() const { return const_iterator<Exp const*>(m_collection.begin()); }
@@ -452,6 +427,8 @@ struct Exp
             }
 
         size_t AddChild(std::unique_ptr<Exp> child);
+
+        bool ReplaceChild(Exp const& replacee, std::vector<std::unique_ptr<Exp>>& replaceWith); 
 
     public:
         virtual ~Exp() {}

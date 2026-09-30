@@ -6,6 +6,7 @@
 #include <Geom/GeomApi.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <DgnPlatform/GeoCoordErrors.h>
+#include <Bentley/md5.h>
 #include <csmap/cs_map.h>
 #include "GeoCoordElement.h"
 
@@ -4886,15 +4887,14 @@ ReprojectStatus       DgnGCS::GetLinearTransformToBaseGCS
         return REPROJECT_Success;
     }
 
-    const double linearTolerance = 0.01;
-    double tolerance = linearTolerance;
+    double tolerance = 0.01;
 
     if (!IsProjected())
         tolerance = 0.0000001; // Tolerance for longitude/latitude GCS in degrees
 
     // Extent must be large enough so we can effectively compute coordinate differences
     // since the geocoord engine will stop calculations when 0.001 per iteration is reached.
-    if (extent.XLength() < tolerance || extent.YLength() < tolerance || extent.ZLength() < linearTolerance) // Z allways uses linear tolerance
+    if (extent.XLength() < tolerance || extent.YLength() < tolerance)
         return REPROJECT_BadArgument;
 
     Transform   frameA, frameB, frameAInverse;
@@ -5347,6 +5347,29 @@ DgnGCSP         DgnGCS::FromProject(DgnDbR project)
         return NULL;
         }
 
+    Utf8String verticalCrsJson;
+    if (BeSQLite::BE_SQLITE_ROW == project.QueryProperty(verticalCrsJson, DgnProjectProperty::DgnGCSVerticalCRS()))
+        {
+        BeJsDocument storedVerticalCrs(verticalCrsJson);
+        if (storedVerticalCrs.hasParseError() || !storedVerticalCrs.isObject() || !storedVerticalCrs["verticalCRS"].isObject() || !storedVerticalCrs["type66Hash"].isString())
+            project.ThrowException("Invalid DgnGCSVerticalCRS property", (int)DgnDbStatus::ReadError);
+
+        BeJsConst verticalCrs = storedVerticalCrs["verticalCRS"];
+        MD5 type66Hasher;
+        Utf8String type66Hash = type66Hasher(buffer.GetData(), propSize);
+        // An older writer can update Type 66 without updating this property, so only use named metadata written with the current Type 66 payload.
+        if (type66Hash.Equals(storedVerticalCrs["type66Hash"].asString()))
+            {
+            Utf8String errorMessage;
+            if (SUCCESS != gcs->FromVerticalJson(verticalCrs, errorMessage))
+                project.ThrowException(Utf8PrintfString("Invalid Vertical CRS definition in DgnGCSVerticalCRS property: %s", errorMessage.c_str()).c_str(), (int)DgnDbStatus::ReadError);
+            }
+        else
+            {
+            Logging::LogMessageV("GeoCoord", LOG_WARNING, "Ignoring named Vertical CRS because it does not match Type 66; using the Type 66 fallback");
+            }
+        }
+
         // *** NEEDS WORK: Global origin is not saved, right? I have to get it from the project, don't I?
     gcs->m_globalOrigin = project.GeoLocation().GetGlobalOrigin();
 
@@ -5365,9 +5388,12 @@ DgnDbR              cache,
 bool                primary
 ) const
     {
+    if (!IsValid())
+        return ERROR;
+
     CoordinateSystemDgnFormatter*   csf = CoordinateSystemDgnFormatter::GetInstance();
 
-    VertDatumCode storedVerticalDatum = m_verticalDatum;
+    VertDatumCode storedVerticalDatum = m_verticalDatumLegacyCode;
 
     // For historical reason and backward compatibility we store Ellipsoid vertical datum for non-NAD27 and non-NAD83 GCS
     // as value 0 (vdcFromDatum) even though the value is ambiguous for NAD27 and NAD83.
@@ -5427,6 +5453,26 @@ StatusInt       DgnGCS::Store(DgnDbR project)
         return status;
 
     status = project.SaveProperty(DgnProjectProperty::DgnGCS(), type66AppData, type66AppDataBytes) == BeSQLite::BE_SQLITE_OK? SUCCESS: ERROR;
+
+    if (SUCCESS == status)
+        {
+        if (HasValidVerticalDatum())
+            {
+            BeJsDocument storedVerticalCrs;
+            status = ToVerticalJson(storedVerticalCrs["verticalCRS"]);
+            // Correlate this named metadata with the Type 66 payload saved above so readers can detect an independent Type 66 update.
+            if (SUCCESS == status)
+                {
+                MD5 type66Hasher;
+                storedVerticalCrs["type66Hash"] = type66Hasher(type66AppData, type66AppDataBytes);
+                status = project.SavePropertyString(DgnProjectProperty::DgnGCSVerticalCRS(), storedVerticalCrs.Stringify()) == BeSQLite::BE_SQLITE_OK ? SUCCESS : ERROR;
+                }
+            }
+        else
+            {
+            status = project.DeleteProperty(DgnProjectProperty::DgnGCSVerticalCRS()) == BeSQLite::BE_SQLITE_DONE ? SUCCESS : ERROR;
+            }
+        }
 
     // we have stored a new GCS to the BIM file. Make sure the next time we try to read it, we don't get the GCS that is stored in the DgnAppData.
     if (SUCCESS == status)

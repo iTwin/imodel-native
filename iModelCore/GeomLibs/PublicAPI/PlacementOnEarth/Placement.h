@@ -25,6 +25,35 @@ struct PlacementOnEarth {
     static double constexpr OneCentimeter() { return OneMeter() / 100.0; }
     static double constexpr DiameterOfEarth() { return 12742.0 * OneKilometer(); }      // approximate
     static double constexpr CircumferenceOfEarth() { return 40075.0 * OneKilometer(); } // approximate
+
+    //! Determine whether an origin is within the supported placement range.
+    static bool IsValidOrigin(DPoint2dCR origin) {
+        double maxOrigin = 2 * CircumferenceOfEarth();
+        return fabs(origin.x) <= maxOrigin && fabs(origin.y) <= maxOrigin;
+    }
+
+    static bool IsValidOrigin(DPoint3dCR origin) {
+        double maxOrigin = 2 * CircumferenceOfEarth();
+        return fabs(origin.x) <= maxOrigin && fabs(origin.y) <= maxOrigin && fabs(origin.z) <= maxOrigin;
+    }
+
+    //! Determine whether a 2D bounding box is valid for a placement.
+    static bool IsValidBoundingBox(DRange2dCR bbox) {
+        if (bbox.IsEmpty())
+            return false;
+
+        double circumferenceOfEarth = CircumferenceOfEarth();
+        return bbox.XLength() <= circumferenceOfEarth && bbox.YLength() <= circumferenceOfEarth;
+    }
+
+    //! Determine whether a 3D bounding box is valid for a placement.
+    static bool IsValidBoundingBox(DRange3dCR bbox) {
+        if (bbox.IsEmpty())
+            return false;
+
+        double circumferenceOfEarth = CircumferenceOfEarth();
+        return bbox.XLength() <= circumferenceOfEarth && bbox.YLength() <= circumferenceOfEarth && bbox.ZLength() <= circumferenceOfEarth;
+    }
 };
 
 //=======================================================================================
@@ -199,12 +228,7 @@ public:
 
     //! Determine whether this Placement3d is valid.
     bool IsValid() const {
-        if (!m_boundingBox.IsValid())
-            return false;
-
-        double circumferenceOfEarth = PlacementOnEarth::CircumferenceOfEarth();
-
-        if (m_boundingBox.XLength() > circumferenceOfEarth || m_boundingBox.YLength() > circumferenceOfEarth || m_boundingBox.ZLength() > circumferenceOfEarth)
+        if (!PlacementOnEarth::IsValidBoundingBox(m_boundingBox))
             return false;
 
         // We bound location of the placement to twice the circumference of the Earth.
@@ -213,7 +237,7 @@ public:
         // The new value will satisfy all GCS in the system dictionary. If these still fail
         // clients should be directed to use more appropriate false easting and use
         // a judiciously chosen global origin.
-        if (fabs(m_origin.x) > 2 * circumferenceOfEarth || fabs(m_origin.y) > 2 * circumferenceOfEarth || fabs(m_origin.z) > 2 * circumferenceOfEarth)
+        if (!PlacementOnEarth::IsValidOrigin(m_origin))
             return false;
 
         return true;
@@ -291,12 +315,7 @@ public:
 
     //! Determine whether this Placement2d is valid
     bool IsValid() const {
-        if (!m_boundingBox.IsValid())
-            return false;
-
-        double circumferenceOfEarth = PlacementOnEarth::CircumferenceOfEarth();
-
-        if (m_boundingBox.XLength() > circumferenceOfEarth || m_boundingBox.YLength() > circumferenceOfEarth)
+        if (!PlacementOnEarth::IsValidBoundingBox(m_boundingBox))
             return false;
 
         // We bound location of the placement to twice the circumference of the Earth.
@@ -305,7 +324,7 @@ public:
         // The new value will satisfy all GCS in the system dictionary. If these still fail
         // clients should be directed to use more appropriate false easting and use
         // a judiciously chosen global origin.
-        if (fabs(m_origin.x) > 2 * circumferenceOfEarth || fabs(m_origin.y) > 2 * circumferenceOfEarth)
+        if (!PlacementOnEarth::IsValidOrigin(m_origin))
             return false;
 
         return true;

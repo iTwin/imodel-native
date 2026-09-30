@@ -19,6 +19,7 @@ CompositeValueSpec::CompositeValueSpec(BEU::UnitCP majorUnit, BEU::UnitCP middle
     : m_includeZero(true)
     , m_explicitlyDefinedSpacer(false)
     , m_spacer(FormatConstant::DefaultSpacer())
+    , m_separator(FormatConstant::DefaultSeparator())
     , m_ratio {0}
     {
     size_t unitCount = (nullptr != majorUnit)
@@ -126,6 +127,8 @@ CompositeValueSpec::CompositeValueSpec(CompositeValueSpecCR other)
     , m_spacer(other.m_spacer)
     , m_problem(other.m_problem)
     , m_proxys(other.m_proxys)
+    , m_separator(other.m_separator)
+    , m_explicitlyDefinedSeparator(other.m_explicitlyDefinedSeparator)
     {
     memcpy(m_ratio, other.m_ratio, sizeof(m_ratio));
     }
@@ -297,64 +300,74 @@ CompositeValueSpec::CompositeValue CompositeValueSpec::DecomposeValue(double dva
     double majorSub = 0.0;
     double middleSub = 0.0;
 
-    if (!IsProblem())  // don't try to decompose if the spec is not valid
+    if (IsProblem())  // don't try to decompose if the spec is not valid
         {
-        if (!BEU::Unit::AreCompatible(uom, smallest))
-            {
-            cv.UpdateProblemCode(FormatProblemCode::CVS_UncomparableUnits);
-            }
-        else
-            {
-            BEU::Quantity smallQ;
-            if (nullptr != uom) // we need to convert the given value to the smallest units
-                {
-                BEU::Quantity qty = BEU::Quantity(dval, *uom);
-                smallQ = qty.ConvertTo(smallest);
-                }
-            else
-                smallQ = BEU::Quantity(dval, *smallest);
-
-            if (smallQ.GetMagnitude() < 0.0)
-                {
-                cv.SetNegative();
-                }
-            double absSmallQ = abs(smallQ.GetMagnitude());
-
-            switch (GetUnitCount())
-                {
-                case 1: // smallQ already has the converted value
-                    cv.SetMajor(absSmallQ);
-                    break;
-                case 2:
-                    cv.SetMajor(floor(absSmallQ/ (double)m_ratio[indxMajor]));
-                    cv.SetMiddle(absSmallQ - cv.GetMajor() * (double)m_ratio[indxMajor]);
-                    break;
-                case 3:
-                    majorMinor = (double)(m_ratio[indxMajor] * m_ratio[indxMiddle]);
-                    cv.SetMajor(floor((absSmallQ + FormatConstant::FPV_RoundFactor()) / majorMinor));
-                    rem = absSmallQ - cv.GetMajor() * majorMinor;
-                    cv.SetMiddle(floor((rem + FormatConstant::FPV_RoundFactor()) / (double)m_ratio[indxMiddle]));
-                    cv.SetMinor(rem - cv.GetMiddle() * (double)m_ratio[indxMiddle]);
-                    break;
-                case 4:
-                    majorSub = (double)(m_ratio[indxMajor] * m_ratio[indxMiddle] * m_ratio[indxMinor]);
-                    middleSub = (double)(m_ratio[indxMiddle] * m_ratio[indxMinor]);
-                    cv.SetMajor(floor((absSmallQ + FormatConstant::FPV_RoundFactor()) / majorSub));
-                    rem = absSmallQ - cv.GetMajor() * majorSub;
-                    cv.SetMiddle(floor((rem + FormatConstant::FPV_RoundFactor()) / middleSub));
-                    rem -= cv.GetMiddle() * middleSub;
-                    cv.SetMinor(floor((rem + FormatConstant::FPV_RoundFactor()) /(double)m_ratio[indxMinor]));
-                    cv.SetSub(rem - cv.GetMinor() * (double)m_ratio[indxMinor]);
-                    break;
-                default:
-                    break;
-                }
-            if (cv.GetIsNegative())
-                {
-                cv.SetMajor(cv.GetMajor() * -1);
-                }
-            }
+        return cv;
         }
+    if (!BEU::Unit::AreCompatible(uom, smallest))
+        {
+        cv.UpdateProblemCode(FormatProblemCode::CVS_UncomparableUnits);
+        return cv;
+        }
+
+    BEU::Quantity smallQ;
+    if (nullptr != uom) // we need to convert the given value to the smallest units
+        {
+        BEU::Quantity qty = BEU::Quantity(dval, *uom);
+        smallQ = qty.ConvertTo(smallest);
+        }
+    else
+        smallQ = BEU::Quantity(dval, *smallest);
+
+    if (!smallQ.IsValid())
+        {
+        if (smallQ.GetProblemCode() == BEU::UnitsProblemCode::InvertingZero)
+            cv.UpdateProblemCode(FormatProblemCode::QT_InvertingZero);
+        else
+            cv.UpdateProblemCode(FormatProblemCode::QT_ConversionFailed);
+        return cv;
+        }
+
+    if (smallQ.GetMagnitude() < 0.0)
+        {
+        cv.SetNegative();
+        }
+    double absSmallQ = abs(smallQ.GetMagnitude());
+
+    switch (GetUnitCount())
+        {
+        case 1: // smallQ already has the converted value
+            cv.SetMajor(absSmallQ);
+            break;
+        case 2:
+            cv.SetMajor(floor(absSmallQ/ (double)m_ratio[indxMajor]));
+            cv.SetMiddle(absSmallQ - cv.GetMajor() * (double)m_ratio[indxMajor]);
+            break;
+        case 3:
+            majorMinor = (double)(m_ratio[indxMajor] * m_ratio[indxMiddle]);
+            cv.SetMajor(floor((absSmallQ + FormatConstant::FPV_RoundFactor()) / majorMinor));
+            rem = absSmallQ - cv.GetMajor() * majorMinor;
+            cv.SetMiddle(floor((rem + FormatConstant::FPV_RoundFactor()) / (double)m_ratio[indxMiddle]));
+            cv.SetMinor(rem - cv.GetMiddle() * (double)m_ratio[indxMiddle]);
+            break;
+        case 4:
+            majorSub = (double)(m_ratio[indxMajor] * m_ratio[indxMiddle] * m_ratio[indxMinor]);
+            middleSub = (double)(m_ratio[indxMiddle] * m_ratio[indxMinor]);
+            cv.SetMajor(floor((absSmallQ + FormatConstant::FPV_RoundFactor()) / majorSub));
+            rem = absSmallQ - cv.GetMajor() * majorSub;
+            cv.SetMiddle(floor((rem + FormatConstant::FPV_RoundFactor()) / middleSub));
+            rem -= cv.GetMiddle() * middleSub;
+            cv.SetMinor(floor((rem + FormatConstant::FPV_RoundFactor()) /(double)m_ratio[indxMinor]));
+            cv.SetSub(rem - cv.GetMinor() * (double)m_ratio[indxMinor]);
+            break;
+        default:
+            break;
+        }
+    if (cv.GetIsNegative())
+        {
+        cv.SetMajor(cv.GetMajor() * -1);
+        }
+
     return cv;
     }
 
@@ -464,7 +477,7 @@ bool CompositeValueSpec::ToJson(BeJsValue out, bool verbose, bool excludeUnits) 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-bool CompositeValueSpec::FromJson(CompositeValueSpecR out, JsonValueCR jval, BEU::IUnitsContextCP context)
+bool CompositeValueSpec::FromJson(CompositeValueSpecR out, BeJsConst jval, BEU::IUnitsContextCP context)
     {
     if (jval.empty())
         return false;
@@ -473,15 +486,17 @@ bool CompositeValueSpec::FromJson(CompositeValueSpecR out, JsonValueCR jval, BEU
     bvector<Nullable<Utf8String>> labels;
     if (jval.isMember(json_units()))
         {
-        JsonValueCR unitsJson = jval[json_units()];
-        for (Json::ValueIterator iter = unitsJson.begin(); iter != unitsJson.end(); iter++)
+        bool failed = jval[json_units()].ForEachArrayMember([&](BeJsConst::ArrayIndex, BeJsConst entry)
             {
             UnitProxy upp;
-            if (!upp.FromJson(*iter, context))
-                return false;
+            if (!upp.FromJson(entry, context))
+                return true;
             units.push_back(upp.GetUnit());
             labels.push_back(upp.HasLabel() ? Nullable<Utf8String>(upp.GetLabel()) : nullptr);
-            }
+            return false;
+            });
+        if (failed)
+            return false;
         }
 
     return FromJson(out, jval, units, labels);
@@ -490,22 +505,21 @@ bool CompositeValueSpec::FromJson(CompositeValueSpecR out, JsonValueCR jval, BEU
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-bool CompositeValueSpec::FromJson(CompositeValueSpecR out, JsonValueCR jval, bvector<Units::UnitCP> const& units, bvector<Nullable<Utf8String>> const& unitLabels)
+bool CompositeValueSpec::FromJson(CompositeValueSpecR out, BeJsConst jval, bvector<Units::UnitCP> const& units, bvector<Nullable<Utf8String>> const& unitLabels)
     {
     if (jval.empty())
         return false;
 
     out = CompositeValueSpec(units);
 
-    for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
+    jval.ForEachProperty([&](Utf8CP paramName, BeJsConst val)
         {
-        Utf8CP paramName = iter.memberName();
-        JsonValueCR val = *iter;
         if (BeStringUtilities::StricmpAscii(paramName, json_includeZero()) == 0)
             out.SetIncludeZero(val.asBool());
         else if (BeStringUtilities::StricmpAscii(paramName, json_spacer()) == 0)
             out.SetSpacer(val.asCString());
-        }
+        return false;
+        });
     // Fallthrough intentional
     switch (unitLabels.size())
         {
@@ -549,18 +563,18 @@ bool CompositeValueSpec::UnitProxy::ToJson(BeJsValue jUP, bool verbose) const
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //----------------------------------------------------------------------------------------
-bool CompositeValueSpec::UnitProxy::FromJson(Json::Value const& jval, BEU::IUnitsContextCP context)
+bool CompositeValueSpec::UnitProxy::FromJson(BeJsConst jval, BEU::IUnitsContextCP context)
     {
     m_unitLabel.clear();
     m_unit = nullptr;
     if (jval.empty())
         return false;
 
-    Utf8CP paramName;
-    for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
+    if(context == nullptr)
+        return false;
+
+    bool failed = jval.ForEachProperty([&](Utf8CP paramName, BeJsConst val)
         {
-        paramName = iter.memberName();
-        JsonValueCR val = *iter;
         if (BeStringUtilities::StricmpAscii(paramName, json_name()) == 0)
             {
             Utf8String str = val.asString();
@@ -570,12 +584,13 @@ bool CompositeValueSpec::UnitProxy::FromJson(Json::Value const& jval, BEU::IUnit
                 m_unit = context->LookupUnit(str.c_str(), true);
                 }
             if (nullptr == m_unit)
-                return false;
+                return true;
             }
         else if (BeStringUtilities::StricmpAscii(paramName, json_label()) == 0)
             SetLabel(val.asString().c_str());
-        }
-    return true;
+        return false;
+        });
+    return !failed;
     }
 
 //===================================================
@@ -589,7 +604,8 @@ bool CompositeValueSpec::UnitProxy::FromJson(Json::Value const& jval, BEU::IUnit
 Units::Quantity QuantityFormatting::CreateQuantity(Utf8CP input, double* persist, BEU::UnitCP outputUnit, FormatCR inputFormat, FormatProblemCode* problemCode, QuantityFormatting::UnitResolver* resolver)
     {
     *problemCode = Formatting::FormatProblemCode::NoProblems;
-    BEU::Quantity qty = Formatting::FormatParsingSet(input, inputFormat.GetCompositeMajorUnit(), &inputFormat, resolver).GetQuantity(problemCode, &inputFormat);
+    Formatting::FormatParsingSet fps(input, inputFormat.GetCompositeMajorUnit(), &inputFormat, resolver);
+    BEU::Quantity qty = fps.GetQuantity(problemCode, &inputFormat);
     if (*problemCode == Formatting::FormatProblemCode::NoProblems)
         {
         if (nullptr != persist)
@@ -608,9 +624,10 @@ Units::Quantity QuantityFormatting::CreateQuantity(Utf8CP input, double* persist
 // @bsimethod
 //----------------------------------------------------------------------------------------
 // static
-BEU::Quantity QuantityFormatting::CreateQuantity(Utf8CP input, FormatCR inputFormat, FormatProblemCode* problemCode, QuantityFormatting::UnitResolver* resolver)
+BEU::Quantity QuantityFormatting::CreateQuantity(Utf8CP input, FormatCR inputFormat, BEU::UnitCP targetUnit, FormatProblemCode* problemCode, QuantityFormatting::UnitResolver* resolver)
     {
-    return Formatting::FormatParsingSet(input, inputFormat.GetCompositeMajorUnit(), &inputFormat).GetQuantity(problemCode, &inputFormat);
+    Formatting::FormatParsingSet fps(input, targetUnit, &inputFormat);
+    return fps.GetQuantity(problemCode, &inputFormat);
     }
 
 END_BENTLEY_FORMATTING_NAMESPACE

@@ -38,7 +38,8 @@ void RelateInstances(ECDb& ecdb, ECClassCP sourceClass, ECInstanceId sourceECIns
 ECInstanceKey InsertInstance(ECDbR ecdb, ECClassCP ecClass)
     {
     JsonInserter inserter(ecdb, *ecClass, nullptr);
-    Json::Value instance(Json::objectValue);
+    BeJsDocument instance;
+    instance.toObject();
     ECInstanceKey instanceKey;
     EXPECT_EQ(BE_SQLITE_OK, inserter.Insert(instanceKey, instance));
     EXPECT_TRUE(instanceKey.IsValid());
@@ -164,7 +165,7 @@ void RunDeleteReferentialIntegrityTest(bool withRelationsToCachedInfo)
     ECInstanceDeleter deleter(ecdb, *testClass, nullptr);
     auto status = deleter.Delete(testECInstanceKey.GetInstanceId());
     timer.Stop();
-    ASSERT_EQ(SUCCESS, status);
+    ASSERT_EQ(BE_SQLITE_OK, status);
 
     //printf ("Detach from profiler\n");
     //getchar ();

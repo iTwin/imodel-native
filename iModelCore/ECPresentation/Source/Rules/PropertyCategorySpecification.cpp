@@ -33,6 +33,13 @@ std::unique_ptr<PropertyCategoryIdentifier> PropertyCategoryIdentifier::CreateFo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+std::unique_ptr<PropertyCategoryIdentifier> PropertyCategoryIdentifier::CreateSchemaBasedCategory(Utf8String categoryName)
+    {
+    return std::unique_ptr<SchemaPropertyCategoryIdentifier>(new SchemaPropertyCategoryIdentifier(categoryName));
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 std::unique_ptr<PropertyCategoryIdentifier> PropertyCategoryIdentifier::Create(BeJsConst json)
     {
     if (json.isObject() && 0 == strcmp(PROPERTY_CATEGORY_IDENTIFIER_SPECIFICATION_TYPE_NONE, json[PROPERTY_CATEGORY_IDENTIFIER_SPECIFICATION_JSON_ATTRIBUTE_TYPE].asCString()))
@@ -41,9 +48,11 @@ std::unique_ptr<PropertyCategoryIdentifier> PropertyCategoryIdentifier::Create(B
     std::unique_ptr<PropertyCategoryIdentifier> identifier;
     if (json.isString() || json.isObject() && 0 == strcmp(PROPERTY_CATEGORY_IDENTIFIER_SPECIFICATION_TYPE_ID, json[PROPERTY_CATEGORY_IDENTIFIER_SPECIFICATION_JSON_ATTRIBUTE_TYPE].asCString()))
         identifier = std::unique_ptr<IdPropertyCategoryIdentifier>(new IdPropertyCategoryIdentifier());
+    else if (json.isObject() && 0 == strcmp(PROPERTY_CATEGORY_IDENTIFIER_SPECIFICATION_TYPE_SCHEMACATEGORY, json[PROPERTY_CATEGORY_IDENTIFIER_SPECIFICATION_JSON_ATTRIBUTE_TYPE].asCString()))
+        identifier = std::unique_ptr<SchemaPropertyCategoryIdentifier>(new SchemaPropertyCategoryIdentifier());
     else
         identifier = std::unique_ptr<PropertyCategoryIdentifier>(new PropertyCategoryIdentifier(PropertyCategoryIdentifierType::Root));
-    return identifier->ReadJson(json) ? std::move(identifier) : nullptr;
+    return identifier && identifier->ReadJson(json) ? std::move(identifier) : nullptr;
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -77,6 +86,8 @@ bool PropertyCategoryIdentifier::_ReadJson(BeJsConst json)
         m_type = PropertyCategoryIdentifierType::DefaultParent;
     else if (0 == strcmp(PROPERTY_CATEGORY_IDENTIFIER_SPECIFICATION_TYPE_ID, type))
         m_type = PropertyCategoryIdentifierType::Id;
+    else if (0 == strcmp(PROPERTY_CATEGORY_IDENTIFIER_SPECIFICATION_TYPE_SCHEMACATEGORY, type))
+        m_type = PropertyCategoryIdentifierType::SchemaCategory;
     else
         {
         DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Invalid value for `%s.%s`: `%s`. Expected %s.",
@@ -101,8 +112,12 @@ void PropertyCategoryIdentifier::_WriteJson(BeJsValue json) const
         case PropertyCategoryIdentifierType::Id:
             json[PROPERTY_CATEGORY_IDENTIFIER_SPECIFICATION_JSON_ATTRIBUTE_TYPE] = PROPERTY_CATEGORY_IDENTIFIER_SPECIFICATION_TYPE_ID;
             break;
+        case PropertyCategoryIdentifierType::SchemaCategory:
+            json[PROPERTY_CATEGORY_IDENTIFIER_SPECIFICATION_JSON_ATTRIBUTE_TYPE] = PROPERTY_CATEGORY_IDENTIFIER_SPECIFICATION_TYPE_SCHEMACATEGORY;
+            break;
         }
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -152,6 +167,39 @@ void IdPropertyCategoryIdentifier::_WriteJson(BeJsValue json) const
 
     if (m_createClassCategory)
         json[PROPERTY_CATEGORY_IDENTIFIER_SPECIFICATION_JSON_ATTRIBUTE_CREATECLASSCATEGORY] = m_createClassCategory;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 SchemaPropertyCategoryIdentifier::_ComputeHash() const
+    {
+    MD5 md5 = T_Super::_ComputeHash();
+    if (!m_categoryName.empty())
+        ADD_STR_VALUE_TO_HASH(md5, PROPERTY_CATEGORY_IDENTIFIER_SPECIFICATION_JSON_ATTRIBUTE_CATEGORYNAME, m_categoryName);
+    return md5;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SchemaPropertyCategoryIdentifier::_ReadJson(BeJsConst json)
+    {
+    if (!PropertyCategoryIdentifier::_ReadJson(json))
+        return false;
+
+    m_categoryName = json[PROPERTY_CATEGORY_IDENTIFIER_SPECIFICATION_JSON_ATTRIBUTE_CATEGORYNAME].asCString("");
+    if (CommonToolsInternal::CheckRuleIssue(m_categoryName.empty(), _GetJsonElementType(), PROPERTY_CATEGORY_IDENTIFIER_SPECIFICATION_JSON_ATTRIBUTE_CATEGORYNAME, json[PROPERTY_CATEGORY_IDENTIFIER_SPECIFICATION_JSON_ATTRIBUTE_CATEGORYNAME], "non-empty string"))
+        return false;
+
+    return true;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void SchemaPropertyCategoryIdentifier::_WriteJson(BeJsValue json) const
+    {
+    PropertyCategoryIdentifier::_WriteJson(json);
+    json[PROPERTY_CATEGORY_IDENTIFIER_SPECIFICATION_JSON_ATTRIBUTE_CATEGORYNAME] = m_categoryName;
     }
 
 /*---------------------------------------------------------------------------------**//**

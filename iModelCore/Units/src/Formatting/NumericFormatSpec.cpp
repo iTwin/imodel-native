@@ -37,6 +37,7 @@ NumericFormatSpec::NumericFormatSpec()
     , m_explicitlyDefinedStatSeparator(false)
     , m_explicitlyDefinedThousandsSeparator(false)
     , m_explicitlyDefinedUOMSeparator(false)
+    , m_explicitlyDefinedAzimuthBase(false)
     , m_roundFactor(FormatConstant::DefaultRoundingFactor())
     , m_presentationType(FormatConstant::DefaultPresentaitonType())
     , m_signOption(FormatConstant::DefaultSignOption())
@@ -50,34 +51,40 @@ NumericFormatSpec::NumericFormatSpec()
     , m_minWidth(FormatConstant::DefaultMinWidth())
     , m_stationSize(0)
     , m_scientificType(ScientificType::Normalized)
+    , m_northLabel("N")
+    , m_southLabel("S")
+    , m_eastLabel("E")
+    , m_westLabel("W")
+    , m_ratioType(FormatConstant::DefaultRatioType())
+    , m_azimuthBase(0.0)
+    , m_azimuthBaseUnit(nullptr)
+    , m_revolutionUnit(nullptr)
+    , m_azimuthCounterClockwise(false)
     {
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //----------------------------------------------------------------------------------------
-bool NumericFormatSpec::FromJson(NumericFormatSpecR out, JsonValueCR jval)
+bool NumericFormatSpec::FromJson(NumericFormatSpecR out, BeJsConst jval, BEU::IUnitsContextCP context)
     {
     if (jval.empty())
         return false;
 
-    if (Json::objectValue != jval.type())
+    if (!jval.isObject())
         return false;
 
     NumericFormatSpec spec;
     // Presentation Type needs to be read first since reading the precision depends on it.
-    JsonValueCR presType = jval[json_type()];
-    if (Json::nullValue != presType.type())
+    BeJsConst presType = jval[json_type()];
+    if (!presType.isNull())
         Utils::ParsePresentationType(spec.m_presentationType, presType.asCString());
 
-    Utf8CP paramName;
-    for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
+    jval.ForEachProperty([&](Utf8CP paramName, BeJsConst val)
         {
-        paramName = iter.memberName();
-        JsonValueCR val = *iter;
         if (BeStringUtilities::StricmpAscii(paramName, json_roundFactor()) == 0)
             {
-            double rf = val.asDouble();
+            double rf = JsonToDouble(val);
             spec.SetRoundingFactor(rf);
             }
         else if (BeStringUtilities::StricmpAscii(paramName, json_precision()) == 0)
@@ -86,7 +93,7 @@ bool NumericFormatSpec::FromJson(NumericFormatSpecR out, JsonValueCR jval)
                 {
                 case PresentationType::Fractional:
                     FractionalPrecision fracPrec;
-                    Utils::FractionalPrecisionByDenominator(fracPrec, (int32_t)val.asInt64());
+                    Utils::FractionalPrecisionByDenominator(fracPrec, (int32_t)JsonToInt64(val));
                     spec.SetPrecision(fracPrec);
                     break;
                 case PresentationType::Decimal:
@@ -94,7 +101,7 @@ bool NumericFormatSpec::FromJson(NumericFormatSpecR out, JsonValueCR jval)
                 case PresentationType::Station:
                 default:
                     DecimalPrecision decPrec;
-                    Utils::GetDecimalPrecisionByInt(decPrec, (int32_t)val.asInt64());
+                    Utils::GetDecimalPrecisionByInt(decPrec, (int32_t)JsonToInt64(val));
                     spec.SetPrecision(decPrec);
                 }
             }
@@ -137,18 +144,53 @@ bool NumericFormatSpec::FromJson(NumericFormatSpecR out, JsonValueCR jval)
         else if (BeStringUtilities::StricmpAscii(paramName, json_stationOffsetSize()) == 0)
             {
             uint32_t size;
-            size = (uint32_t) val.asUInt();
+            size = JsonToUInt(val);
             spec.SetStationOffsetSize(size);
             }
         else if (BeStringUtilities::StricmpAscii(paramName, json_minWidth()) == 0)
             {
             uint32_t width;
-            width = (uint32_t) val.asUInt();
+            width = JsonToUInt(val);
             spec.SetMinWidth(width);
             }
         else if (BeStringUtilities::StricmpAscii(paramName, json_formatTraits()) == 0)
             spec.SetFormatTraits(val); //Handles both string and array
-        }
+        else if (BeStringUtilities::StricmpAscii(paramName, json_ratioType()) == 0)
+            {
+            RatioType mode;
+            Utils::ParseRatioType(mode, val.asCString());
+            spec.SetRatioType(mode);
+            }
+        else if (BeStringUtilities::StricmpAscii(paramName, json_azimuthBase()) == 0)
+            {
+            double base = JsonToDouble(val);
+            spec.SetAzimuthBase(base);
+            }
+        else if (context != nullptr && BeStringUtilities::StricmpAscii(paramName, json_azimuthBaseUnit()) == 0)
+            {
+            Utf8String fullName = val.asString();
+            if (!fullName.Contains(":"))
+                fullName.ReplaceAll(".", ":"); // To handle the json case where . is used instead of :
+
+            if(!fullName.empty())
+                spec.SetAzimuthBaseUnit(context->LookupUnit(fullName.c_str(), true));
+            }
+        else if (BeStringUtilities::StricmpAscii(paramName, json_azimuthCounterClockwise()) == 0)
+            {
+            bool ccw = val.asBool();
+            spec.SetAzimuthCounterClockwise(ccw);
+            }
+        else if (context != nullptr && BeStringUtilities::StricmpAscii(paramName, json_revolutionUnit()) == 0)
+            {
+            Utf8String fullName = val.asString();
+            if (!fullName.Contains(":"))
+                fullName.ReplaceAll(".", ":"); // To handle the json case where . is used instead of :
+            
+            if(!fullName.empty())
+                spec.SetRevolutionUnit(context->LookupUnit(fullName.c_str(), true));
+            }
+        return false;
+        });
     out = spec;
     return true;
     }
@@ -163,7 +205,11 @@ bool NumericFormatSpec::ToJson(BeJsValue out, bool verbose) const
     // Always show ScientificType if the type is Scientific.
     if (PresentationType::Scientific == GetPresentationType())
         out[json_scientificType()] = Utils::GetScientificTypeString(GetScientificType());
-
+    
+    // always show RatioType if presentation type is ratio
+    if (PresentationType::Ratio == GetPresentationType())
+        out[json_ratioType()] = Utils::GetRatioTypeString(GetRatioType());
+        
     if (PresentationType::Station == GetPresentationType())
         {
         // Always serialize offsetSize for station.
@@ -204,6 +250,30 @@ bool NumericFormatSpec::ToJson(BeJsValue out, bool verbose) const
     if (verbose || HasMinWidth())
         out[json_minWidth()] = GetMinWidth();
 
+    if (PresentationType::Azimuth == GetPresentationType())
+        {
+        if (verbose || HasAzimuthBase())
+            out[json_azimuthBase()] = GetAzimuthBase();
+        BEU::UnitCP azimuthBaseUnit = GetAzimuthBaseUnit();
+        if (verbose || azimuthBaseUnit != nullptr)
+            {
+            if (nullptr != azimuthBaseUnit)
+            out[json_azimuthBaseUnit()] = azimuthBaseUnit->GetName();
+            }
+        if (verbose || GetAzimuthCounterClockwise())
+            out[json_azimuthCounterClockwise()] = GetAzimuthCounterClockwise();
+        }
+
+    if (PresentationType::Bearing == GetPresentationType() || PresentationType::Azimuth == GetPresentationType())
+        {
+        BEU::UnitCP revolutionUnit = GetRevolutionUnit();
+        if (verbose || revolutionUnit != nullptr)
+            {
+            if (nullptr != revolutionUnit)
+                out[json_revolutionUnit()] = revolutionUnit->GetName();
+            }
+        }
+
     return true;
     }
 
@@ -225,6 +295,12 @@ bool NumericFormatSpec::IsIdentical(NumericFormatSpecCR other) const
     if (m_stationSize != other.m_stationSize) return false;
     if (m_scientificType != other.m_scientificType) return false;
     if (m_minWidth != other.m_minWidth) return false;
+    if (m_azimuthBase != other.m_azimuthBase) return false;
+    if (m_northLabel != other.m_northLabel) return false;
+    if (m_southLabel != other.m_southLabel) return false;
+    if (m_eastLabel != other.m_eastLabel) return false;
+    if (m_westLabel != other.m_westLabel) return false;
+    if (m_ratioType != other.m_ratioType) return false;
 
     return true;
     }
@@ -335,7 +411,7 @@ bool NumericFormatSpec::SetFormatTraits(Utf8CP input)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-bool NumericFormatSpec::SetFormatTraits(JsonValueCR jval)
+bool NumericFormatSpec::SetFormatTraits(BeJsConst jval)
     {
     if (jval.empty())
         return true;
@@ -346,10 +422,9 @@ bool NumericFormatSpec::SetFormatTraits(JsonValueCR jval)
     if (!jval.isArray())
         return false;
 
-    Utf8CP paramName;
-    for (Json::ValueIterator iter = jval.begin(); iter != jval.end(); iter++)
+    jval.ForEachArrayMember([&](BeJsConst::ArrayIndex, BeJsConst entry)
         {
-        paramName = (*iter).asCString();
+        Utf8CP paramName = entry.asCString();
         if (BeStringUtilities::StricmpAscii(paramName, json_trailZeroes()) == 0)
             SetKeepTrailingZeroes(true);
         else if (BeStringUtilities::StricmpAscii(paramName, json_keepSingleZero()) == 0)
@@ -370,7 +445,8 @@ bool NumericFormatSpec::SetFormatTraits(JsonValueCR jval)
             SetUse1000Separator(true);
         else if (BeStringUtilities::StricmpAscii(paramName, json_exponentOnlyNegative()) == 0)
             SetExponentOnlyNegative(true);
-        }
+        return false;
+        });
 
     return true;
     }
@@ -725,7 +801,11 @@ size_t NumericFormatSpec::FormatDouble(double dval, Utf8P buf, size_t bufLen) co
         sign = (m_signOption == SignOption::NegativeParentheses) ? '(' : '-';
         }
     bool sci = ((dval > 1.0e12) ||m_presentationType == PresentationType::Scientific);
-    bool decimal = (sci || m_presentationType == PresentationType::Decimal);
+    bool decimal = (sci || m_presentationType == PresentationType::Decimal ||
+                    m_presentationType == PresentationType::Bearing || 
+                    m_presentationType == PresentationType::Azimuth || 
+                    m_presentationType == PresentationType::Ratio 
+                    );
     bool fractional = (!decimal && m_presentationType == PresentationType::Fractional);
     bool stops = m_presentationType == PresentationType::Station;
 
@@ -947,5 +1027,49 @@ double NumericFormatSpec::RoundDouble(double dval, double roundTo)
     rnd = ival * roundTo;
     return (dval < 0.0) ? -rnd : rnd;
     }
+
+Utf8String NumericFormatSpec::FormatToRatio(double value) const
+{
+    double reciprocal;
+
+    if (value == 0) 
+        return "0:1";
+    else
+        reciprocal = 1.0 / value;
+        
+    switch (m_ratioType){
+        case (RatioType::OneToN): return "1:" + Format(reciprocal);
+        case (RatioType::NToOne): return Format(value) + ":1";
+        case (RatioType::ValueBased):
+            if (std::abs(value) > 1)
+                return Format(value) + ":1";
+            else
+                return "1:" + Format(reciprocal);
+        case (RatioType::UseGreatestCommonDivisor):
+        {
+            double precisionFactor = GetDecimalPrecisionFactor();
+            value = RoundDouble(value, 1/precisionFactor);
+
+            int numerator = static_cast<int>(value * precisionFactor);
+            int denominator = static_cast<int>(precisionFactor);
+
+            // int gcd = std::gcd(numerator, denominator);
+            int a = numerator;
+            int b = denominator;
+            while (b != 0) {
+                int temp = b;
+                b = a % b;
+                a = temp;
+            }
+            numerator /= a;
+            denominator /= a;
+
+            return Format(numerator) + ":" + Format(denominator);
+        }
+    }
+
+    return "";
+}
+
 
 END_BENTLEY_FORMATTING_NAMESPACE

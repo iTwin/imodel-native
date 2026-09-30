@@ -513,13 +513,15 @@ void ApplyWorldToLocal(BCurveSegment &bezier)
         }
     }
 
-CentroidSums (DPoint3d referencePoint, TransformCR worldToLocal)
+CentroidSums (DPoint3dCR referencePoint, TransformCR worldToLocal)
     {
     m_referencePoint = referencePoint;
     m_centroidTensor.Zero ();
     m_absAreaSum = 0.0;
     m_normalSum.Zero ();
     m_worldToLocal = worldToLocal;
+
+    ApplyWorldToLocal(m_referencePoint);
     }
 
 
@@ -640,9 +642,15 @@ void _ProcessLineString(ICurvePrimitiveCR curve, bvector<DPoint3d> const &points
     {
    if (NULL == interval)
         {
+        DSegment3d segment;
         size_t n = points.size ();
         for (size_t i = 1; i < n; i++)
-            AddSegment (points.at(i-1), points.at(i));
+            {
+            segment.Init(points.at(i - 1), points.at(i));
+            ApplyWorldToLocal(segment.point[0]);
+            ApplyWorldToLocal(segment.point[1]);
+            AddSegment(segment.point[0], segment.point[1]);
+            }
         }
     else
         {

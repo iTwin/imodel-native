@@ -5,7 +5,6 @@
 #include <ECPresentationPch.h>
 
 #include "PresentationRuleJsonConstants.h"
-#include "PresentationRuleXmlConstants.h"
 #include "CommonToolsInternal.h"
 #include <ECPresentation/Rules/PresentationRules.h>
 
@@ -72,36 +71,6 @@ ContentSpecification::ContentSpecification(ContentSpecification&& other)
 ContentSpecification::~ContentSpecification ()
     {
     CommonToolsInternal::FreePresentationRules(m_relatedInstances);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ContentSpecification::_ReadXml(BeXmlNodeP xmlNode)
-    {
-    if (!PresentationRuleSpecification::_ReadXml(xmlNode))
-        return false;
-
-    // optional:
-    if (BEXML_Success != xmlNode->GetAttributeBooleanValue(m_showImages, CONTENT_SPECIFICATION_XML_ATTRIBUTE_SHOWIMAGES))
-        m_showImages = false;
-    if (BEXML_Success != xmlNode->GetAttributeBooleanValue(m_onlyIfNotHandled, COMMON_XML_ATTRIBUTE_ONLYIFNOTHANDLED))
-        m_onlyIfNotHandled = false;
-
-    CommonToolsInternal::LoadSpecificationsFromXmlNode<RelatedInstanceSpecification, RelatedInstanceSpecificationList> (xmlNode, m_relatedInstances, RELATED_INSTANCE_SPECIFICATION_XML_NODE_NAME, this);
-    return m_modifiers.ReadXml(xmlNode);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ContentSpecification::_WriteXml (BeXmlNodeP specificationNode) const
-    {
-    PresentationRuleSpecification::_WriteXml(specificationNode);
-    specificationNode->AddAttributeBooleanValue(CONTENT_SPECIFICATION_XML_ATTRIBUTE_SHOWIMAGES, m_showImages);
-    specificationNode->AddAttributeBooleanValue(COMMON_XML_ATTRIBUTE_ONLYIFNOTHANDLED, m_onlyIfNotHandled);
-    CommonToolsInternal::WriteRulesToXmlNode<RelatedInstanceSpecification, RelatedInstanceSpecificationList>(specificationNode, m_relatedInstances);
-    m_modifiers.WriteXml(specificationNode);
     }
 
 /*---------------------------------------------------------------------------------**//**

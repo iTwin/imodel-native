@@ -524,38 +524,6 @@ TEST (DirectoryRuleSetLocater, LocateRuleSets_EmptyDirectory)
 /*---------------------------------------------------------------------------------**//**
 * @betest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (DirectoryRuleSetLocater, LocateRuleSets_FindsXmlRuleSets)
-    {
-    BeFileName directory;
-    BeTest::GetHost().GetTempDir(directory);
-    directory.AppendToPath(WString(BeTest::GetNameOfCurrentTest(), true).c_str());
-    if (directory.DoesPathExist())
-        directory.BeDeleteFile();
-
-    BeFileName::CreateNewDirectory(directory.c_str());
-
-    Utf8CP ruleSetXmlString1 = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
-                               "<PresentationRuleSet RuleSetId=\"Items\" VersionMajor=\"5\" VersionMinor=\"3\""
-                               "                     xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""
-                               "                     xsi:noNamespaceSchemaLocation=\"PresentationRuleSetSchema.xsd\" />";
-    Utf8CP ruleSetXmlString2 = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
-                               "<PresentationRuleSet RuleSetId=\"Files\" VersionMajor=\"1\" VersionMinor=\"3\""
-                               "                     xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""
-                               "                     xsi:noNamespaceSchemaLocation=\"PresentationRuleSetSchema.xsd\" />";
-
-    CreateFileWithContent(ruleSetXmlString1, "1.PresentationRuleSet.xml", &directory);
-    CreateFileWithContent(ruleSetXmlString2, "2.PresentationRuleSet.xml", &directory);
-
-    Utf8String list(directory.c_str());
-    RuleSetLocaterPtr locater = DirectoryRuleSetLocater::Create(list.c_str());
-    bvector<PresentationRuleSetPtr> rulesets = locater->LocateRuleSets();
-    ASSERT_EQ(2, rulesets.size());
-    ASSERT_EQ(2, locater->GetRuleSetIds().size());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest
-+---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DirectoryRuleSetLocater, LocateRuleSets_FindsJsonRuleSets)
     {
     BeFileName directory;
@@ -592,22 +560,16 @@ TEST (DirectoryRuleSetLocater, LocateRuleSets_FindsRuleSetsInSubdirectories)
 
     BeFileName::CreateNewDirectory(directory.c_str());
 
-    Utf8CP ruleSetXmlString1 = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
-                               "<PresentationRuleSet RuleSetId=\"Items\" VersionMajor=\"5\" VersionMinor=\"3\""
-                               "                     xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""
-                               "                     xsi:noNamespaceSchemaLocation=\"PresentationRuleSetSchema.xsd\" />";
-    Utf8CP ruleSetXmlString2 = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
-                               "<PresentationRuleSet RuleSetId=\"Files\" VersionMajor=\"1\" VersionMinor=\"3\""
-                               "                     xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""
-                               "                     xsi:noNamespaceSchemaLocation=\"PresentationRuleSetSchema.xsd\" />";
+    Utf8CP ruleSetJsonString1 = "{ \"id\": \"Items\", \"rules\": [] }";
+    Utf8CP ruleSetJsonString2 = "{ \"id\": \"Files\", \"rules\": [] }";
 
     BeFileName ruleset1Path = directory;
     ruleset1Path.AppendToPath(L"subdirectory_1");
-    CreateFileWithContent(ruleSetXmlString1, "a.PresentationRuleSet.xml", &ruleset1Path);
+    CreateFileWithContent(ruleSetJsonString1, "a.PresentationRuleSet.json", &ruleset1Path);
 
     BeFileName ruleset2Path = directory;
     ruleset2Path.AppendToPath(L"subdirectory_2");
-    CreateFileWithContent(ruleSetXmlString2, "b.PresentationRuleSet.xml", &ruleset2Path);
+    CreateFileWithContent(ruleSetJsonString2, "b.PresentationRuleSet.json", &ruleset2Path);
 
     Utf8String list(directory.c_str());
     RuleSetLocaterPtr locater = DirectoryRuleSetLocater::Create(list.c_str());
@@ -629,11 +591,8 @@ TEST (DirectoryRuleSetLocater, CallsRulesetCallbacksHandlerWhenNecessary)
 
     BeFileName::CreateNewDirectory(directory.c_str());
 
-    Utf8CP ruleSetXmlString = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
-                              "<PresentationRuleSet RuleSetId=\"Items\" VersionMajor=\"5\" VersionMinor=\"3\""
-                              "                     xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""
-                              "                     xsi:noNamespaceSchemaLocation=\"PresentationRuleSetSchema.xsd\" />";
-    CreateFileWithContent(ruleSetXmlString, "ruleset.PresentationRuleSet.xml", &directory);
+    Utf8CP ruleSetJsonString = "{ \"id\": \"Items\", \"rules\": [] }";
+    CreateFileWithContent(ruleSetJsonString, "ruleset.PresentationRuleSet.json", &directory);
 
     PresentationRuleSetCP callbackRuleset = nullptr;
     TestRulesetCallbacksHandler handler;
@@ -657,16 +616,10 @@ TEST (DirectoryRuleSetLocater, DisposesAllCachedRulesetsWhenInvalidateRequestedW
         directory.BeDeleteFile();
 
     BeFileName::CreateNewDirectory(directory.c_str());
-    Utf8CP ruleSetXmlString1 = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
-                               "<PresentationRuleSet RuleSetId=\"Ruleset1\" VersionMajor=\"1\" VersionMinor=\"0\""
-                               "                     xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""
-                               "                     xsi:noNamespaceSchemaLocation=\"PresentationRuleSetSchema.xsd\" />";
-    CreateFileWithContent(ruleSetXmlString1, "1.PresentationRuleSet.xml", &directory);
-    Utf8CP ruleSetXmlString2 = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
-                               "<PresentationRuleSet RuleSetId=\"Ruleset2\" VersionMajor=\"1\" VersionMinor=\"0\""
-                               "                     xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""
-                               "                     xsi:noNamespaceSchemaLocation=\"PresentationRuleSetSchema.xsd\" />";
-    CreateFileWithContent(ruleSetXmlString2, "2.PresentationRuleSet.xml", &directory);
+    Utf8CP ruleSetJsonString1 = "{ \"id\": \"Ruleset1\", \"rules\": [] }";
+    CreateFileWithContent(ruleSetJsonString1, "1.PresentationRuleSet.json", &directory);
+    Utf8CP ruleSetJsonString2 = "{ \"id\": \"Ruleset2\", \"rules\": [] }";
+    CreateFileWithContent(ruleSetJsonString2, "2.PresentationRuleSet.json", &directory);
 
     RuleSetLocaterPtr locater = DirectoryRuleSetLocater::Create(directory.GetNameUtf8().c_str());
     bvector<PresentationRuleSetPtr> rulesets = locater->LocateRuleSets();
@@ -695,16 +648,10 @@ TEST (DirectoryRuleSetLocater, DisposesRulesetWithSpecifiedIdWhenInvalidateReque
         directory.BeDeleteFile();
 
     BeFileName::CreateNewDirectory(directory.c_str());
-    Utf8CP ruleSetXmlString1 = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
-                               "<PresentationRuleSet RuleSetId=\"Ruleset1\" VersionMajor=\"1\" VersionMinor=\"0\""
-                               "                     xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""
-                               "                     xsi:noNamespaceSchemaLocation=\"PresentationRuleSetSchema.xsd\" />";
-    CreateFileWithContent(ruleSetXmlString1, "1.PresentationRuleSet.xml", &directory);
-    Utf8CP ruleSetXmlString2 = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
-                               "<PresentationRuleSet RuleSetId=\"Ruleset2\" VersionMajor=\"1\" VersionMinor=\"0\""
-                               "                     xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""
-                               "                     xsi:noNamespaceSchemaLocation=\"PresentationRuleSetSchema.xsd\" />";
-    CreateFileWithContent(ruleSetXmlString2, "2.PresentationRuleSet.xml", &directory);
+    Utf8CP ruleSetJsonString1 = "{ \"id\": \"Ruleset1\", \"rules\": [] }";
+    CreateFileWithContent(ruleSetJsonString1, "1.PresentationRuleSet.json", &directory);
+    Utf8CP ruleSetJsonString2 = "{ \"id\": \"Ruleset2\", \"rules\": [] }";
+    CreateFileWithContent(ruleSetJsonString2, "2.PresentationRuleSet.json", &directory);
 
     RuleSetLocaterPtr locater = DirectoryRuleSetLocater::Create(directory.GetNameUtf8().c_str());
     bvector<PresentationRuleSetPtr> rulesets = locater->LocateRuleSets();
@@ -724,157 +671,6 @@ TEST (DirectoryRuleSetLocater, DisposesRulesetWithSpecifiedIdWhenInvalidateReque
         else
             EXPECT_LT(1, (int)ruleset->GetRefCount());
         }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST(FileRuleSetLocater, LocateRuleSets_NonExistingFile)
-    {
-    BeFileName path;
-    BeTest::GetHost().GetTempDir(path);
-    path.AppendToPath(L"LocateRuleSets_NonExistingFile");
-    if (path.DoesPathExist())
-        path.BeDeleteFile();
-
-    RuleSetLocaterPtr locater = FileRuleSetLocater::Create(path);
-    bvector<PresentationRuleSetPtr> rulesets = locater->LocateRuleSets();
-    ASSERT_TRUE(rulesets.empty());
-    ASSERT_TRUE(locater->GetRuleSetIds().empty());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST(FileRuleSetLocater, LocateRuleSets_FindsRuleset)
-    {
-    Utf8CP ruleSetXmlString = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
-                              "<PresentationRuleSet RuleSetId=\"Items\" VersionMajor=\"5\" VersionMinor=\"3\""
-                              "                     xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""
-                              "                     xsi:noNamespaceSchemaLocation=\"PresentationRuleSetSchema.xsd\" />";
-    BeFileName path = CreateFileWithContent(ruleSetXmlString, "LocateRuleSets_FindsRuleset.xml");
-
-    RuleSetLocaterPtr locater = FileRuleSetLocater::Create(path);
-    bvector<PresentationRuleSetPtr> rulesets = locater->LocateRuleSets();
-    ASSERT_EQ(1, rulesets.size());
-    ASSERT_STREQ("Items", rulesets[0]->GetRuleSetId().c_str());
-    ASSERT_STREQ("Items", locater->GetRuleSetIds()[0].c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST(FileRuleSetLocater, LocateRuleSets_RefreshesRulesetAfterModification)
-    {
-    Utf8CP ruleSetXmlString1 = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
-                               "<PresentationRuleSet RuleSetId=\"Items1\" VersionMajor=\"5\" VersionMinor=\"3\""
-                               "                     xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""
-                               "                     xsi:noNamespaceSchemaLocation=\"PresentationRuleSetSchema.xsd\" />";
-    Utf8CP ruleSetXmlString2 = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
-                               "<PresentationRuleSet RuleSetId=\"Items2\" VersionMajor=\"5\" VersionMinor=\"3\""
-                               "                     xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""
-                               "                     xsi:noNamespaceSchemaLocation=\"PresentationRuleSetSchema.xsd\" />";
-    BeFileName path = CreateFileWithContent(ruleSetXmlString1, "LocateRuleSets_RefreshesRulesetAfterModification.xml");
-
-    PresentationRuleSetCP createdRuleset = nullptr,
-                          disposedRuleset = nullptr;
-    TestRulesetCallbacksHandler handler;
-    handler.SetCreatedHandler([&createdRuleset](PresentationRuleSetCR ruleset){createdRuleset = &ruleset;});
-    handler.SetDisposedHandler([&disposedRuleset](PresentationRuleSetCR ruleset){disposedRuleset = &ruleset;});
-
-    RuleSetLocaterPtr locater = FileRuleSetLocater::Create(path);
-    locater->AddRulesetCallbacksHandler(handler);
-
-    bvector<PresentationRuleSetPtr> rulesets = locater->LocateRuleSets();
-    ASSERT_EQ(1, rulesets.size());
-    ASSERT_EQ(createdRuleset, rulesets[0].get());
-    ASSERT_STREQ("Items1", createdRuleset->GetRuleSetId().c_str());
-
-    RefCountedPtr<PresentationRuleSet const> previousRuleset = createdRuleset;
-    createdRuleset = nullptr;
-
-    BeThreadUtilities::BeSleep(1000); // sleep for 1 second to make sure the "last modified" time differs
-    CreateFileWithContent(ruleSetXmlString2, "LocateRuleSets_RefreshesRulesetAfterModification.xml");
-    rulesets = locater->LocateRuleSets();
-    ASSERT_EQ(1, rulesets.size());
-    ASSERT_EQ(disposedRuleset, previousRuleset.get());
-    ASSERT_EQ(createdRuleset, rulesets[0].get());
-    ASSERT_STREQ("Items2", createdRuleset->GetRuleSetId().c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST (FileRuleSetLocater, DisposesCachedRulesetWhenInvalidateRequestedWithNullRulesetId)
-    {
-    Utf8CP ruleSetXmlString = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
-                              "<PresentationRuleSet RuleSetId=\"Ruleset\" VersionMajor=\"1\" VersionMinor=\"0\""
-                              "                     xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""
-                              "                     xsi:noNamespaceSchemaLocation=\"PresentationRuleSetSchema.xsd\" />";
-    BeFileName rulesetPath = CreateFileWithContent(ruleSetXmlString, "ruleset.PresentationRuleSet.xml");
-
-    RuleSetLocaterPtr locater = FileRuleSetLocater::Create(rulesetPath);
-    bvector<PresentationRuleSetPtr> rulesets = locater->LocateRuleSets();
-    ASSERT_EQ(1, rulesets.size());
-
-    size_t disposedRulesetsCount = 0;
-    TestRulesetCallbacksHandler handler;
-    handler.SetDisposedHandler([&disposedRulesetsCount](PresentationRuleSetCR){disposedRulesetsCount++;});
-    locater->AddRulesetCallbacksHandler(handler);
-
-    locater->InvalidateCache();
-    EXPECT_EQ(1, disposedRulesetsCount);
-    EXPECT_EQ(1, rulesets[0]->GetRefCount());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST (FileRuleSetLocater, DisposesCachedRulesetWhenInvalidateRequestedWithMatchingRulesetId)
-    {
-    Utf8CP ruleSetXmlString = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
-                              "<PresentationRuleSet RuleSetId=\"Ruleset\" VersionMajor=\"1\" VersionMinor=\"0\""
-                              "                     xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""
-                              "                     xsi:noNamespaceSchemaLocation=\"PresentationRuleSetSchema.xsd\" />";
-    BeFileName rulesetPath = CreateFileWithContent(ruleSetXmlString, "ruleset.PresentationRuleSet.xml");
-
-    RuleSetLocaterPtr locater = FileRuleSetLocater::Create(rulesetPath);
-    bvector<PresentationRuleSetPtr> rulesets = locater->LocateRuleSets();
-    ASSERT_EQ(1, rulesets.size());
-
-    size_t disposedRulesetsCount = 0;
-    TestRulesetCallbacksHandler handler;
-    handler.SetDisposedHandler([&disposedRulesetsCount](PresentationRuleSetCR){disposedRulesetsCount++;});
-    locater->AddRulesetCallbacksHandler(handler);
-
-    locater->InvalidateCache("Ruleset");
-    EXPECT_EQ(1, disposedRulesetsCount);
-    EXPECT_EQ(1, (int)rulesets[0]->GetRefCount());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST (FileRuleSetLocater, DoesntDisposeCachedRulesetIfInvalidateRequestedWithNotMatchingRulesetId)
-    {
-    Utf8CP ruleSetXmlString = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
-                              "<PresentationRuleSet RuleSetId=\"Ruleset\" VersionMajor=\"1\" VersionMinor=\"0\""
-                              "                     xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""
-                              "                     xsi:noNamespaceSchemaLocation=\"PresentationRuleSetSchema.xsd\" />";
-    BeFileName rulesetPath = CreateFileWithContent(ruleSetXmlString, "ruleset.PresentationRuleSet.xml");
-
-    RuleSetLocaterPtr locater = FileRuleSetLocater::Create(rulesetPath);
-    bvector<PresentationRuleSetPtr> rulesets = locater->LocateRuleSets();
-    ASSERT_EQ(1, rulesets.size());
-
-    size_t disposedRulesetsCount = 0;
-    TestRulesetCallbacksHandler handler;
-    handler.SetDisposedHandler([&disposedRulesetsCount](PresentationRuleSetCR){disposedRulesetsCount++;});
-    locater->AddRulesetCallbacksHandler(handler);
-
-    locater->InvalidateCache("SomeNotMatchingId");
-    EXPECT_EQ(0, disposedRulesetsCount);
-    EXPECT_LT(1, (int)rulesets[0]->GetRefCount());
     }
 
 /*---------------------------------------------------------------------------------**//**

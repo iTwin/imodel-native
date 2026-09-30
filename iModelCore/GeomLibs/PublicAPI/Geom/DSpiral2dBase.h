@@ -37,7 +37,7 @@ typedef struct AnnounceDoubleDPoint2d &AnnounceDoubleDPoint2dR;
 //! Taking derivatives, the bearing angle of the curve is exactly Q(t), and
 //! the curvature is exactly K(t)=dQ/dt.
 //!
-//! For any intergraion interval, the curve LENGTH is the angle change divided by the average curvature.
+//! For any integration interval, the curve LENGTH is the angle change divided by the average curvature.
 //!
 //! Usage notes:
 //! <list>
@@ -56,7 +56,7 @@ typedef struct AnnounceDoubleDPoint2d &AnnounceDoubleDPoint2dR;
 //! <item>The spiral's length is calculated from angle change divided by average curvature.</item>
 //! <item>The base class supplies the following additional methods:
 //! <list>
-//!    <item>DistanceToFracton -- convert distance-along to fractional coordinate 0..1.</item>
+//!    <item>DistanceToFraction -- convert distance-along to fractional coordinate 0..1.</item>
 //!    <item>DistanceToGlobalAngle -- call DistanceToLocalAngle and add to start angle.</item>
 //!    <item>Stroke methods (static methods, takes a spiral instance as an argument) integrate to (multiple) points along the
 //!            curve.  Caller supplies a desired angular interval between points.  (Recommended value: 0.08 radians)
@@ -214,7 +214,7 @@ public:
     void CopyBaseParameters (DSpiral2dBaseCP pSource);
     // Convert distance-along the spiral to fractional coordinate.
     double DistanceToFraction (double distance) const;
-    // Convert fractional coordiante to distance-along.
+    // Convert fractional coordinate to distance-along.
     double FractionToDistance (double fraction) const;
     //!
 //!    @description BSIVectorIntegrand query function.
@@ -275,7 +275,7 @@ public:
 //!        A default is used if 0.0 is passed.
 //! @param [out] delta  vector from fractional start to fractional end.
 //! @param [out] errorBound  estimated bound on error.
-//! @param [in] maxStrokeLength recommended 10.0 meters
+//! @param [in] maxStrokeLength maximum stroke length. Recommended 10 meters.
 //! @returns false if point integration failed
 //!
 static bool Stroke
@@ -300,7 +300,7 @@ double maxStrokeLength = DEFAULT_SPIRAL_MAX_STROKE_LENGTH
 //! @param [out] uvPoints  array to receive points.  (optional).
 //! @param [out] fractions array to receive fractions.
 //! @param [out] errorBound  estimated bound on error.
-//! @param [in] maxStrokeLength recommended 10.0 meters
+//! @param [in] maxStrokeLength maximum stroke length. Recommended 10 meters.
 //! @returns false if point integration failed
 //!
 static bool Stroke
@@ -326,8 +326,8 @@ double maxStrokeLength = DEFAULT_SPIRAL_MAX_STROKE_LENGTH
 //!        A default is used if 0.0 is passed.
 //! @param [in] F object with a method F->Announce (f, uv) called to announce fraction and coordinate as computed.
 //! @param [out] errorBound  estimated bound on error.
-//! @param [out] minInterval smallest number of intervals allowed
-//! @param [out] maxStrokeLength maximum allowed stroke length
+//! @param [in] minInterval smallest number of intervals allowed
+//! @param [in] maxStrokeLength maximum stroke length. Recommended 10 meters.
 //! @returns false if point integration failed
 //!
 static bool StrokeToAnnouncer
@@ -350,7 +350,7 @@ double maxStrokeLength = DEFAULT_SPIRAL_MAX_STROKE_LENGTH
 //! @param [in] endFraction end of interval to stroke.
 //! @param [in] maxRadians max turn between strokes.
 //! @param [in] minInterval smallest number of intervals.
-//! @param [in] maxStrokeLength largest stroke size.  Recommended 10 meters
+//! @param [in] maxStrokeLength maximum stroke length. Recommended 10 meters.
 static size_t GetIntervalCount
 (
 DSpiral2dBase &spiral,

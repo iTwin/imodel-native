@@ -622,6 +622,10 @@ TEST_F(UnitConversionTests, TestInvertedSlopeUnits)
     {
     testUnitConversion(42.42, "HORIZONTAL_PER_VERTICAL", 1.0 / 42.42, "VERTICAL_PER_HORIZONTAL", 1);
     testUnitConversion(0.0, "HORIZONTAL_PER_VERTICAL", 0.0, "VERTICAL_PER_HORIZONTAL", 1, Units::UnitsProblemCode::InvertingZero);
+
+    testUnitConversion(-1.0, "HORIZONTAL_PER_VERTICAL", -1.0, "VERTICAL_PER_HORIZONTAL", 1);
+    testUnitConversion(-1.0, "VERTICAL_PER_HORIZONTAL", -1.0, "HORIZONTAL_PER_VERTICAL", 1);
+    testUnitConversion(-42, "HORIZONTAL_PER_VERTICAL", -1.0/42, "VERTICAL_PER_HORIZONTAL", 1);
     }
 
 //-------------------------------------------------------------------------------------

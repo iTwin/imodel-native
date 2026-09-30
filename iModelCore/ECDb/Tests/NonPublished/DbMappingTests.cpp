@@ -436,6 +436,32 @@ TEST_F(DbMappingTestFixture, UnionOrderBy)
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(stmt.GetValueDouble(0), 2000); ASSERT_EQ(stmt.GetValueDouble(2), 2000);
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(stmt.GetValueDouble(0), 3000); ASSERT_EQ(stmt.GetValueDouble(2), 1000);
     stmt.Finalize();
+
+    //------------------------------------------------------------------------------------------------------------------
+    //case-13
+    //------------------------------------------------------------------------------------------------------------------
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"(
+        select f1 as test, p1, 3000 from ts.classA
+        union
+        select f2, p2, 2000 val from ts.classB
+        union
+        select f3, p3, 1000 from ts.classC
+        order by test desc
+    )"));
+    stmt.Finalize();
+
+    //------------------------------------------------------------------------------------------------------------------
+    //case-14
+    //------------------------------------------------------------------------------------------------------------------
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, R"(
+        select f1, p1, 3000 from ts.classA
+        union
+        select f2, p2, 2000 val from ts.classB
+        union
+        select f3, p3, 1000 from ts.classC
+        order by f4 desc
+    )"));
+    stmt.Finalize();
     //------------------------------------------------------------------------------------------------------------------
     }
 //---------------------------------------------------------------------------------------

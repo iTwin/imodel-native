@@ -209,7 +209,7 @@ uint32_t ClassMapColumnFactory::MaxColumnsRequiredToPersistProperty(ECN::ECPrope
         {
         if (primitive->GetType() == PrimitiveType::PRIMITIVETYPE_Point3d)
             return 3;
-        
+
         if (primitive->GetType() == PrimitiveType::PRIMITIVETYPE_Point2d)
             return 2;
 
@@ -298,8 +298,8 @@ DbColumn* ClassMapColumnFactory::AllocateColumn(SchemaImportContext& ctx, ECN::E
     DbTable& effectiveTable = *effectiveTableP;
 
     DbColumn* existingColumn = effectiveTable.FindColumnP(params.GetColumnName().c_str());
-    if (existingColumn != nullptr && !IsColumnInUse(*existingColumn) &&
-        DbColumn::IsCompatible(existingColumn->GetType(), colType))
+    if (existingColumn != nullptr && !IsColumnInUse(*existingColumn)
+        && DbColumn::IsCompatible(existingColumn->GetType(), colType))
         {
         if (effectiveTable.GetType() == DbTable::Type::Existing ||
             (existingColumn->GetConstraints().HasNotNullConstraint() == params.AddNotNullConstraint() &&
@@ -414,6 +414,21 @@ DbColumn* ClassMapColumnFactory::AllocateSharedColumn(SchemaImportContext& ctx, 
     auto* column = ReuseOrCreateSharedColumn(ctx);
     return RegisterColumnMap(accessString, column);
     }
+    
+//------------------------------------------------------------------------------------------
+//@bsimethod
+//-----------------------------------------------------------------------------------------
+void ClassMapColumnFactory::EnsurePropertyGoesToOverflow(Utf8StringCR propertyName, SchemaImportContext& ctx) const
+    {
+    BeAssert(!propertyName.empty());
+    ECN::ECPropertyCP property = m_classMap.GetClass().GetPropertyP(propertyName);
+    if (property == nullptr)
+        {
+        BeAssert(false && "Property must exist in associated class map");
+        return;
+        }
+    m_putCurrentPropertyToOverflow = true;
+    }
 
 //------------------------------------------------------------------------------------------
 //@bsimethod
@@ -429,13 +444,13 @@ void ClassMapColumnFactory::EvaluateIfPropertyGoesToOverflow(Utf8StringCR proper
             }
 
     const uint32_t columnsRequired = MaxColumnsRequiredToPersistProperty(*property);
-    EvaluateIfPropertyGoesToOverflow(columnsRequired, ctx);
+    EvaluateIfPropertyGoesToOverflow(columnsRequired, propertyName, ctx);
     }
 
 //------------------------------------------------------------------------------------------
 //@bsimethod
 //-----------------------------------------------------------------------------------------
-void ClassMapColumnFactory::EvaluateIfPropertyGoesToOverflow(uint32_t columnsRequired, SchemaImportContext& ctx) const
+void ClassMapColumnFactory::EvaluateIfPropertyGoesToOverflow(uint32_t columnsRequired, Utf8StringCR propertyName, SchemaImportContext& ctx) const
     {
     if (m_putCurrentPropertyToOverflow)
         {
@@ -460,7 +475,21 @@ void ClassMapColumnFactory::EvaluateIfPropertyGoesToOverflow(uint32_t columnsReq
       const uint32_t nAvaliablePhysicalColumns = maxColumnInBaseTable - (uint32_t) physicalColumns.size();
 
       const std::vector<DbColumn const*> sharedColumns = m_primaryOrJoinedTable->FindAll(DbColumn::Kind::SharedData);
-      const uint32_t nSharedColumns = (uint32_t) sharedColumns.size();
+      
+      uint32_t nSharedColumns;
+      if (!ctx.RemapManager().HasFreedColumns())
+          {
+          nSharedColumns = (uint32_t) sharedColumns.size();
+          }
+      else
+          {
+          nSharedColumns = 0;
+          for (DbColumn const* col : sharedColumns)
+              {
+              if (!ctx.RemapManager().IsColumnFreed(*col))
+                  nSharedColumns++;
+              }
+          }
 
       //Determine how many shared columns can be created
       uint32_t sharedColumnThatCanBeCreated = 0;
@@ -470,13 +499,7 @@ void ClassMapColumnFactory::EvaluateIfPropertyGoesToOverflow(uint32_t columnsReq
           }
       else
           {
-          if (nSharedColumns > m_maxSharedColumnCount.Value())
-              {
-              BeAssert(false && "SharedColumnCount bypassed the limit set in CA");
-              return;
-              }
-
-          sharedColumnThatCanBeCreated = m_maxSharedColumnCount.Value() - (uint32_t) sharedColumns.size();
+          sharedColumnThatCanBeCreated = (nSharedColumns < m_maxSharedColumnCount.Value()) ? m_maxSharedColumnCount.Value() - nSharedColumns : 0;
           if (sharedColumnThatCanBeCreated > nAvaliablePhysicalColumns)
               sharedColumnThatCanBeCreated = nAvaliablePhysicalColumns; //restrict available shared columns to available physical columns
           }
@@ -487,19 +510,27 @@ void ClassMapColumnFactory::EvaluateIfPropertyGoesToOverflow(uint32_t columnsReq
     uint32_t requiredRemainingColumns = columnsRequired - sharedColumnThatCanBeCreated;
     if (requiredRemainingColumns > nSharedColumns)
         { //no need to check, we know there won't be enough columns
+        if (ctx.RemapManager().HasFreedColumns())
+            ctx.AddMappingDecision(Utf8PrintfString("%s.%s: property requiring %u columns goes to the overflow table (more columns required than exist in primary/joined table)", m_classMap.GetClass().GetFullName(), propertyName.c_str(), columnsRequired));
         m_putCurrentPropertyToOverflow = true;
         return;
         }
 
+    const bool hasFreedColumns = ctx.RemapManager().HasFreedColumns();
     for (DbColumn const* sharedColumn : sharedColumns)
         {
+        if (hasFreedColumns && ctx.RemapManager().IsColumnFreed(*sharedColumn))
+            continue;
+
         if (!IsColumnInUse(*sharedColumn) && !IsColumnUsedByAnyDerivedClass(*sharedColumn, ctx))
             requiredRemainingColumns--; //column can be reused
 
         if(requiredRemainingColumns <= 0)
             return;
         }
-    
+
+    if (hasFreedColumns)
+        ctx.AddMappingDecision(Utf8PrintfString("%s.%s: property requiring %u columns goes to the overflow table (%u columns missing in primary/joined table)", m_classMap.GetClass().GetFullName(), propertyName.c_str(), columnsRequired, requiredRemainingColumns));
     m_putCurrentPropertyToOverflow = true; // TODO: this flag is mutable and the current method is marked as const. Use return value instead?
     }
 
@@ -541,14 +572,62 @@ DbColumn* ClassMapColumnFactory::HandleOverflowColumn(DbColumn* column) const
 //-----------------------------------------------------------------------------------------
 DbColumn* ClassMapColumnFactory::Allocate(SchemaImportContext& ctx, ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8StringCR accessString, bool forcePhysicalColum) const
     {
+    const bool hasFreedColumns = ctx.RemapManager().HasFreedColumns();
+    // Recording mapping decisions is limited to imports which freed columns (remapping),
+    // because that is where diagnostics are needed and the recording cost is justified.
+    const bool recordDecisions = hasFreedColumns;
     if (DbColumn* column = GetColumnMaps()->FindP(accessString.c_str()))
         {
         if (IsCompatible(*column, type, param))
-            return HandleOverflowColumn(column);
+            {
+            if (!ctx.RemapManager().IsColumnFreed(*column))
+                {
+                // If the current property as a whole was decided to go to the overflow table, do
+                // not reuse a registered column from the primary/joined table. Doing so would
+                // split a compound property (e.g. a struct) across two tables, which is invalid.
+                // This is narrowly scoped to the only situation where such a split can happen:
+                // - the import freed columns (remapping): the stale registrations causing the
+                //   split stem from this class's own pre-remap property maps.
+                // - the access string refers to a member of a compound property: a single-column
+                //   property can never split, so reusing its registered column is always safe.
+                // - the root property is defined locally on the mapped class: inherited
+                //   properties always follow the mapping of their base class, which is registered
+                //   before the derived class is mapped, so their registered column must be reused
+                //   regardless of the overflow decision.
+                bool refuseReuseBecausePropertyGoesToOverflow = false;
+                if (m_putCurrentPropertyToOverflow && hasFreedColumns && column->GetTable().GetType() != DbTable::Type::Overflow)
+                    {
+                    const size_t dotPos = accessString.find('.');
+                    if (dotPos != Utf8String::npos)
+                        {
+                        Utf8String rootPropertyName = accessString.substr(0, dotPos);
+                        ECN::ECPropertyCP rootProperty = m_classMap.GetClass().GetPropertyP(rootPropertyName, /*includeBaseClasses=*/false);
+                        refuseReuseBecausePropertyGoesToOverflow = rootProperty != nullptr;
+                        }
+                    }
+
+                if (!refuseReuseBecausePropertyGoesToOverflow)
+                    {
+                    if (recordDecisions)
+                        ctx.AddMappingDecision(Utf8PrintfString("%s.%s: reused registered column %s.%s", m_classMap.GetClass().GetFullName(), accessString.c_str(), column->GetTable().GetName().c_str(), column->GetName().c_str()));
+                    return HandleOverflowColumn(column);
+                    }
+
+                if (recordDecisions)
+                    ctx.AddMappingDecision(Utf8PrintfString("%s.%s: registered column %s.%s not reused because the property goes to the overflow table", m_classMap.GetClass().GetFullName(), accessString.c_str(), column->GetTable().GetName().c_str(), column->GetName().c_str()));
+                }
+            else if (recordDecisions)
+                ctx.AddMappingDecision(Utf8PrintfString("%s.%s: registered column %s.%s was freed in this import and cannot be reused", m_classMap.GetClass().GetFullName(), accessString.c_str(), column->GetTable().GetName().c_str(), column->GetName().c_str()));
+            }
         }
 
     if (m_useSharedColumnStrategy && !forcePhysicalColum)
-        return AllocateSharedColumn(ctx, property, param, accessString);
+        {
+        DbColumn* column = AllocateSharedColumn(ctx, property, param, accessString);
+        if (recordDecisions && column != nullptr)
+            ctx.AddMappingDecision(Utf8PrintfString("%s.%s: allocated shared column %s.%s", m_classMap.GetClass().GetFullName(), accessString.c_str(), column->GetTable().GetName().c_str(), column->GetName().c_str()));
+        return column;
+        }
 
     return AllocateColumn(ctx, property, type, param, accessString);
     }
@@ -590,7 +669,7 @@ DbTable* ClassMapColumnFactory::GetOrCreateOverflowTable(SchemaImportContext& ct
         if (overflowTableNode->GetTable().GetType() == DbTable::Type::Overflow)
             m_overflowTable = &overflowTableNode->GetTableR();
         }
-    
+
     if (m_overflowTable == nullptr)
         {
         BeAssert(false && "Cannot create overflow table");
@@ -623,10 +702,14 @@ ColumnMaps* ClassMapColumnFactory::GetColumnMaps() const
 //-----------------------------------------------------------------------------------------
 DbColumn* ClassMapColumnFactory::ReuseOrCreateSharedColumn(SchemaImportContext& ctx) const
     {
+    const bool hasFreedColumns = ctx.RemapManager().HasFreedColumns();
     for (DbColumn const* column : GetEffectiveTable(ctx)->GetColumns())
         {
         if (column->IsShared() && !GetColumnMaps()->IsColumnInUse(*column))
             {
+            if (hasFreedColumns && ctx.RemapManager().IsColumnFreed(*column))
+                continue;
+
             if(!IsColumnUsedByAnyDerivedClass(*column, ctx))
                 return const_cast<DbColumn*>(column);
             }
@@ -643,6 +726,7 @@ bool ClassMapColumnFactory::IsCompatible(DbColumn const& avaliableColumn, DbColu
     if (DbColumn::IsCompatible(avaliableColumn.GetType(), type))
         {
         if (m_primaryOrJoinedTable->GetType() == DbTable::Type::Existing
+            || avaliableColumn.IsShared()   // Shared columns never carry column constraints and must be excluded from the check to avoid creating divergent columns
             || (avaliableColumn.GetConstraints().HasNotNullConstraint() == params.AddNotNullConstraint() &&
                 avaliableColumn.GetConstraints().HasUniqueConstraint() == params.AddUniqueConstraint() &&
                 avaliableColumn.GetConstraints().GetCollation() == params.GetCollation()))
@@ -660,7 +744,7 @@ bool ClassMapColumnFactory::IsColumnUsedByAnyDerivedClass(DbColumn const& column
     // this ensures there is no other class down the hierarchy that occupies a column.
     if (!column.HasId()) // Not-yet-persisted columns cannot be used by subclasses
         return false;
-    
+
     ECClassCR ecClass = m_classMap.GetClass();
     if (!ecClass.HasId())
         { // Not-yet-persisted class
@@ -672,13 +756,13 @@ bool ClassMapColumnFactory::IsColumnUsedByAnyDerivedClass(DbColumn const& column
     BeInt64Id columnId = column.GetId();
     BeInt64Id classId = ecClass.GetId();
     ECDbCR ecdb = ctx.GetECDb();
-    
+
     CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(
         "SELECT EXISTS (SELECT 1 FROM main.ec_PropertyMap pm "
         "JOIN main.ec_cache_ClassHierarchy ch ON ch.ClassId = pm.ClassId "
         "WHERE pm.ColumnId = ? AND ch.BaseClassId = ? limit 1)");
     BeAssert(stmt.IsValid());
-    
+
     stmt->BindId(1, columnId);
     stmt->BindId(2, classId);
 

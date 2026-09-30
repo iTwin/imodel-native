@@ -125,7 +125,7 @@ error:
 	if (csDiagnostic != 0)
 	{
 		CS_errmsg (msgBufr,sizeof (msgBufr));
-		fprintf (csDiagnostic,"Error detected in %s: %s\n",modl_name,msgBufr);
+		CS_fprintf (csDiagnostic,"Error detected in %s: %s\n",modl_name,msgBufr);
 	}
 	return (-cs_Error);
 }
@@ -199,7 +199,7 @@ error:
 	if (csDiagnostic != 0)
 	{
 		CS_errmsg (msgBufr,sizeof (msgBufr));
-		fprintf (csDiagnostic,"Error detected in %s: %s\n",modl_name,msgBufr);
+		CS_fprintf (csDiagnostic,"Error detected in %s: %s\n",modl_name,msgBufr);
 	}
 	return (-cs_Error);
 }

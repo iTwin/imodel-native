@@ -76,10 +76,10 @@ ECSqlStatus DynamicSelectClauseECClass::GeneratePropertyIfRequired(ECN::ECProper
         return dupStat;
 
     //exp that are no prop name exps (e.g. constants or A+B, prop refs (ref to property in a nested select) or alias items always need generated prop
-    const bool needsToGenerate = 
-        selectClauseItemPropNameExp == nullptr || 
-        !columnAlias.empty() || 
-        (selectClauseItemPropNameExp->IsPropertyRef() && !selectClauseItemPropNameExp->GetPropertyRef()->IsPure()) || 
+    const bool needsToGenerate =
+        selectClauseItemPropNameExp == nullptr ||
+        !columnAlias.empty() ||
+        (selectClauseItemPropNameExp->IsPropertyRef() && !selectClauseItemPropNameExp->GetPropertyRef()->IsPure()) ||
         (selectClauseItemExp.GetParent() != nullptr && selectClauseItemExp.GetParent()->GetType() == Exp::Type::NavValueCreationFunc);
     if (needsToGenerate)
         {
@@ -122,24 +122,25 @@ ECSqlStatus DynamicSelectClauseECClass::GeneratePropertyIfRequired(ECN::ECProper
     // Propagate system property by setting the generated property id to leaf property id which would be check when column info is created.
     if (generatedProperty && selectClauseItemPropNameExp && selectClauseItemPropNameExp->IsPropertyRef())
         {
-
-        DerivedPropertyExp const& first = selectClauseItemPropNameExp->GetPropertyRef()->GetEndPointDerivedProperty();
-        if (first.GetExpression()->GetType() == Exp::Type::PropertyName)
+        auto aliasProp = const_cast<ECPropertyP>(generatedProperty)->GetAsPrimitivePropertyP();
+        if (aliasProp && aliasProp->GetExtendedTypeName().empty())
             {
-            const PropertyNameExp& firstExp = first.GetExpression()->GetAs<PropertyNameExp>();
-            const PropertyPath& internalPropPath = firstExp.GetResolvedPropertyPath();
-            const ECPropertyCP leafProp = internalPropPath[internalPropPath.Size() - 1].GetProperty();
-            const bool isSystem = leafProp != nullptr
-                && ctx.GetECDb().Schemas().Main().GetSystemSchemaHelper().GetSystemPropertyInfo(*leafProp).IsSystemProperty();
-            if (isSystem)
+            DerivedPropertyExp const& first = selectClauseItemPropNameExp->GetPropertyRef()->GetEndPointDerivedProperty();
+            if (first.GetExpression()->GetType() == Exp::Type::PropertyName)
                 {
-                auto aliasProp = static_cast<PrimitiveECPropertyP>(const_cast<ECPropertyP>(generatedProperty));
-                aliasProp->SetExtendedTypeName("Id");
-                aliasProp->SetId(leafProp->GetId());
+                const PropertyNameExp& firstExp = first.GetExpression()->GetAs<PropertyNameExp>();
+                const PropertyPath& internalPropPath = firstExp.GetResolvedPropertyPath();
+                const ECPropertyCP leafProp = internalPropPath[internalPropPath.Size() - 1].GetProperty();
+                const bool isSystem = leafProp != nullptr
+                    && ctx.GetECDb().Schemas().Main().GetSystemSchemaHelper().GetSystemPropertyInfo(*leafProp).IsSystemProperty();
+                if (isSystem)
+                    {
+                    aliasProp->SetExtendedTypeName("Id");
+                    aliasProp->SetId(leafProp->GetId());
+                    }
                 }
             }
         }
-
     if (!isDuplicateName)
         RegisterSelectClauseItem(propName, selectClauseItemExp);
 
@@ -204,15 +205,6 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generated
                 //Extended types are preserved as well
                 if (typeInfo.HasExtendedType())
                     primProp->SetExtendedTypeName(typeInfo.GetExtendedTypeName().c_str());
-
-                if (!FeatureManager::IsAvailable(ctx.GetECDb(), Feature::SystemPropertiesHaveIdExtendedType) && selectClauseItemPropNameExp != nullptr && selectClauseItemPropNameExp->GetSystemPropertyInfo().IsId())
-                    {
-                    // In 4.0.0.2 files, the respective system property has already the extended type name Id. So it
-                    // gets added to the dynamic property automatically by the above code. For older files
-                    // we have to do that explicitly here.
-                    BeAssert(primProp->GetType() == PRIMITIVETYPE_Long);
-                    primProp->SetExtendedTypeName(EXTENDEDTYPENAME_Id);
-                    }
 
                 generatedPropertyP = primProp;
                 break;

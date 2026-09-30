@@ -25,6 +25,9 @@
 #include <unordered_map>
 #include <list>
 #include <re2/re2.h>
+#include <unicode/ubrk.h>
+#include <unicode/ucol.h>
+#include <unicode/utf16.h>
 
 static NativeLogging::CategoryLogger LOG("BeSQLite");
 static NativeLogging::CategoryLogger NativeSqliteLog("SQLite");
@@ -35,10 +38,7 @@ using namespace std;
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE
 
-#if !defined (NDEBUG)
-extern "C" int checkNoActiveStatements(SqlDbP db);
-#endif
-
+extern "C" int getStatementState(SqlStatementP pStmt);
 extern "C" int sqlite3_shathree_init(sqlite3 *, char **, const sqlite3_api_routines *);
 
 BEGIN_BENTLEY_SQLITE_NAMESPACE
@@ -567,7 +567,7 @@ DbResult    Statement::BindNull(int col) {return (DbResult)sqlite3_bind_null(m_s
 DbResult    Statement::BindVirtualSet(int col, VirtualSet const& intSet) {return BindInt64(col, (int64_t) &intSet);}
 DbResult    Statement::BindDbValue(int col, struct DbValue const& dbVal) {return (DbResult) sqlite3_bind_value(m_stmt, col, dbVal.GetSqlValueP());}
 DbResult    Statement::BindPointer(int col, void* ptr, const char* name, void(*destroy)(void*))  {return (DbResult) sqlite3_bind_pointer(m_stmt, col, ptr, name, destroy);}
-
+DbResult    Statement::BindValueFrom(int col, Statement& fromStmt, int fromCol) { return (DbResult) sqlite3_bind_value(m_stmt, col, sqlite3_column_value(fromStmt.m_stmt, fromCol)) ;}
 DbValueType Statement::GetColumnType(int col)   {return (DbValueType) sqlite3_column_type(m_stmt, col);}
 Utf8CP      Statement::GetColumnDeclaredType(int col) { return sqlite3_column_decltype(m_stmt, col); }
 Utf8CP      Statement::GetColumnTableName(int col) { return sqlite3_column_table_name(m_stmt, col); }
@@ -645,6 +645,14 @@ int BusyRetry::_OnBusy(int count) const {
     LOG.infov("Busy retry %d",count);
     BeThreadUtilities::BeSleep(m_timeout);
     return 1;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DbFile::GetFileDataVersion(uint32_t& version) const {
+    version = 0;
+    return (DbResult)sqlite3_file_control(m_sqlDb, nullptr, SQLITE_FCNTL_DATA_VERSION, &version);
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -815,10 +823,521 @@ void Db::Interrupt() const {return sqlite3_interrupt(GetSqlDb());}
 int64_t  Db::GetLastInsertRowId() const {return sqlite3_last_insert_rowid(GetSqlDb());}
 int      Db::GetModifiedRowCount() const {return sqlite3_changes(GetSqlDb());}
 int      Db::GetTotalModifiedRowCount() const { return sqlite3_total_changes(GetSqlDb()); }
+int64_t  Db::GetTotalModifiedRowCount64() const { return sqlite3_total_changes64(GetSqlDb()); }
 void     SnappyFromBlob::Finish() {m_blobIO.Close();}
 
 Utf8String ProfileVersion::ToJson() const { return ToString("{\"major\":%" PRIu16 ",\"minor\":%" PRIu16 ",\"sub1\":%" PRIu16 ",\"sub2\":%" PRIu16 "}"); }
 DbResult Db::FreeMemory() const { return (DbResult)sqlite3_db_release_memory(m_dbFile->m_sqlDb); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+std::vector<MetaData::TableInfo> MetaData::QueryTableNames(DbCR& db, std::optional<Utf8String> dbName, DbResult& rc) {
+    std::vector<MetaData::TableInfo> tableNames;
+    Statement stmt;
+    Utf8String sql = "PRAGMA [table_list]";
+    if (dbName.has_value()) {
+        sql = SqlPrintfString("PRAGMA [%s].[table_list]", dbName.value().c_str()).GetUtf8CP()   ;
+    }
+
+    rc = stmt.Prepare(db, sql.c_str());
+    if (rc != BE_SQLITE_OK)
+        return tableNames;
+
+    while ((rc = stmt.Step()) == BE_SQLITE_ROW) {
+        MetaData::TableInfo tableName;
+        tableName.schema = stmt.GetValueText(0);
+        tableName.name = stmt.GetValueText(1);
+        tableName.type = stmt.GetValueText(2);
+        tableName.nColumns = stmt.GetValueInt(3);
+        tableName.hasRowId = stmt.GetValueInt(4) != 0;
+        tableName.isStrict = stmt.GetValueInt(5) != 0;
+        tableNames.push_back(tableName);
+    }
+    rc = rc == BE_SQLITE_DONE ? BE_SQLITE_OK : rc;
+    return tableNames;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+std::vector<MetaData::TableInfo> MetaData::QueryTableNames(DbCR& db, std::optional<Utf8String> dbName){
+    DbResult rc;
+    return QueryTableNames(db, dbName, rc);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult MetaData::QueryTable(DbCR& db, Utf8StringCR dbName, Utf8StringCR tableName, CompleteTableInfo& tableInfo) {
+    MetaData::TableInfo qualifiedTableName;
+    qualifiedTableName.schema = dbName;
+    qualifiedTableName.name = tableName;
+    return QueryTable(db, qualifiedTableName, tableInfo);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult MetaData::QueryTable(DbCR& db, MetaData::TableInfo const& qualifiedTableName, CompleteTableInfo& tableInfo) {
+    tableInfo.name.clear();
+    tableInfo.schema.clear();
+    tableInfo.type.clear();
+    tableInfo.columns.clear();
+    tableInfo.indexes.clear();
+    tableInfo.triggers.clear();
+    tableInfo.foreignKeys.clear();
+    tableInfo.nColumns = 0;
+    tableInfo.hasRowId = false;
+    tableInfo.isStrict = false;
+    const Utf8String& dbName = qualifiedTableName.schema;
+    const Utf8String& tableName = qualifiedTableName.name;
+    DbResult rc = BE_SQLITE_ERROR;
+    auto getSql = [&](Utf8String const& name, Utf8String const& type) -> Utf8String {
+        Statement stmt;
+        rc = stmt.Prepare(db, SqlPrintfString("SELECT [sql] FROM [%s].[sqlite_master] WHERE [type]='%s' AND [name]='%s'", dbName.c_str(), type.c_str(), name.c_str()));
+        if (rc != BE_SQLITE_OK){
+            LOG.warningv("MetaData::QueryTable(): Failed to query sql for %s: %s", type.c_str(), name.c_str());
+            return "";
+        }
+        if (stmt.Step() == BE_SQLITE_ROW) {
+            return stmt.GetValueText(0);
+        }
+        return "";
+    };
+
+    auto findColumns = [&]() {
+        Statement stmt;
+        rc = stmt.Prepare(db, SqlPrintfString("PRAGMA [%s].[table_info]([%s])", dbName.c_str(), tableName.c_str()));
+        if (rc != BE_SQLITE_OK){
+            LOG.errorv("MetaData::QueryTable(): Failed to query column definitions for table: %s", tableName.c_str());
+            return false;
+        }
+
+        while ((rc = stmt.Step()) == BE_SQLITE_ROW) {
+            MetaData::ColumnInfo column;
+            column.cid = stmt.GetValueInt(0);
+            column.name = stmt.GetValueText(1);
+            column.dataType = stmt.GetValueText(2);
+            column.notNull = stmt.GetValueInt(3) != 0;
+            if (!stmt.IsColumnNull(4))
+                column.defaultValue = stmt.GetValueText(4);
+            column.primaryKey = stmt.GetValueInt(5) != 0;
+            column.hidden = stmt.GetValueInt(6) != 0;
+            char const* pzCollSeq;
+            int pAutoinc;
+            rc = (DbResult)sqlite3_table_column_metadata(db.GetSqlDb(), dbName.c_str(), tableName.c_str(), column.name.c_str(), nullptr, &pzCollSeq, nullptr, nullptr, &pAutoinc);
+            if (rc != BE_SQLITE_OK) {
+                LOG.errorv("MetaData::QueryTable(): Failed to query column metadata for column: %s", column.name.c_str());
+                return false;
+            }
+            column.collSeq = pzCollSeq;
+            column.autoIncrement = pAutoinc != 0;
+            tableInfo.columns.push_back(column);
+        }
+        return true;
+    };
+
+    auto findForeignKeys = [&]() {
+        Statement stmt;
+        rc = stmt.Prepare(db, SqlPrintfString("PRAGMA [%s].[foreign_key_list]([%s])", dbName.c_str(), tableName.c_str()));
+        if (rc != BE_SQLITE_OK) {
+            LOG.errorv("MetaData::QueryTable(): Failed to query foreign key definitions for table: %s", tableName.c_str());
+            return false;
+        }
+        int lastId = -1;
+        while ((rc = stmt.Step()) == BE_SQLITE_ROW) {
+            if (lastId == stmt.GetValueInt(0)) {
+                MetaData::ForeignKeyInfo& fk = tableInfo.foreignKeys.back();
+                fk.fromColumns.push_back(stmt.GetValueText(3));
+                fk.toColumns.push_back(stmt.GetValueText(4));
+            } else {
+                MetaData::ForeignKeyInfo fk;
+                lastId = stmt.GetValueInt(0);
+                fk.table = stmt.GetValueText(2);
+                fk.fromColumns.push_back(stmt.GetValueText(3));
+                fk.toColumns.push_back(stmt.GetValueText(4));
+                fk.onUpdate = stmt.GetValueText(5);
+                fk.onDelete = stmt.GetValueText(6);
+                fk.match = stmt.GetValueText(7);
+                tableInfo.foreignKeys.push_back(fk);
+            }
+        }
+        return true;
+    };
+
+    auto findTriggers = [&]() {
+        Statement stmt;
+        rc = stmt.Prepare(db, SqlPrintfString("SELECT [name], [sql] FROM [%s].[sqlite_master] WHERE [type]='trigger' AND [tbl_name]='%s'", dbName.c_str(), tableName.c_str()));
+        if (rc != BE_SQLITE_OK) {
+            LOG.errorv("MetaData::QueryTable(): Failed to query existing trigger definitions for table: %s", tableName.c_str());
+            return false;
+        }
+
+        while ((rc = stmt.Step()) == BE_SQLITE_ROW) {
+            MetaData::TriggerInfo info;
+            info.name = stmt.GetValueText(0);
+            info.sql = stmt.GetValueText(1);
+            tableInfo.triggers.push_back(info);
+        }
+        return true;
+    };
+
+    auto findIndexColumns = [&](MetaData::IndexInfo& info) {
+        Statement stmt;
+        rc = stmt.Prepare(db, SqlPrintfString("PRAGMA [%s].[index_xinfo]([%s])", dbName.c_str(), info.name.c_str()));
+        if (rc != BE_SQLITE_OK) {
+            LOG.errorv("MetaData::QueryTable(): Failed to query index columns definitions for db: %s", info.name.c_str());
+            return false;
+        }
+
+        while ((rc = stmt.Step()) == BE_SQLITE_ROW) {
+            if (stmt.GetValueInt(1) != -1) {
+                MetaData::IndexColumnInfo columnInfo;
+                columnInfo.cid = stmt.GetValueInt(1);
+                columnInfo.name = stmt.GetValueText(2);
+                columnInfo.desc = stmt.GetValueInt(3) != 0;
+                columnInfo.collSeq = stmt.GetValueText(4);
+                columnInfo.key = stmt.GetValueInt(5) != 0;
+                info.columns.push_back(columnInfo);
+            }
+        }
+        return true;
+    };
+
+    auto findIndexes = [&]() {
+        Statement stmt;
+        rc = stmt.Prepare(db, SqlPrintfString("PRAGMA [%s].[index_list]([%s])", dbName.c_str(), tableName.c_str()));
+        if (rc != BE_SQLITE_OK){
+            LOG.errorv("MetaData::QueryTable(): Failed to query indexes for table %s", tableName.c_str());
+            return false;
+        }
+
+        while ((rc = stmt.Step()) == BE_SQLITE_ROW) {
+            MetaData::IndexInfo info;
+            info.name = stmt.GetValueText(1);
+            info.unique = stmt.GetValueInt(2) != 0;
+            info.origin = stmt.GetValueText(3);
+            info.partial = stmt.GetValueInt(4) != 0;
+            info.sql = getSql(info.name, "index");
+            if (!findIndexColumns(info))
+                return false;
+            tableInfo.indexes.push_back(info);
+        }
+        return true;
+    };
+
+    Statement stmt;
+    rc = stmt.Prepare(db, SqlPrintfString("PRAGMA [%s].[table_list]", dbName.c_str()));
+    if (rc != BE_SQLITE_OK) {
+        LOG.errorv("MetaData::QueryTable(): Failed to prepare table_list statement for database %s", dbName.c_str());
+        return rc;
+    }
+
+    while ((rc = stmt.Step()) == BE_SQLITE_ROW) {
+        if (tableName.CompareToI(stmt.GetValueText(1)) == 0) {
+            tableInfo.schema = stmt.GetValueText(0);
+            tableInfo.name = stmt.GetValueText(1);
+            tableInfo.type = stmt.GetValueText(2);
+            tableInfo.nColumns = stmt.GetValueInt(3);
+            tableInfo.hasRowId = stmt.GetValueInt(4) != 0;
+            tableInfo.isStrict = stmt.GetValueInt(5) != 0;
+            tableInfo.sql = getSql(tableName, "table");
+            if (!findColumns())
+                return rc;
+
+            if (!findForeignKeys())
+                return rc;
+
+            if (!findTriggers())
+                return rc;
+
+            if (!findIndexes())
+                return rc;
+
+            break;
+        }
+    }
+    return rc == BE_SQLITE_DONE || rc == BE_SQLITE_OK  ? BE_SQLITE_OK : rc;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult MetaData::SchemaDiff(DbCR lhsDb, DbCR rhsDb, std::vector<Utf8String>& patches, bool allowDrop) {
+    auto defaultFilter = [](auto const& table) {
+        return table.name.StartsWith("sqlite_") || table.type != "table";
+    };
+    return SchemaDiff(lhsDb, rhsDb, defaultFilter, patches);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult MetaData::SchemaDiff(DbCR lhsDb, DbCR rhsDb, std::function<bool(MetaData::TableInfo const&)> excludeFilter, std::vector<Utf8String>& patches, bool allowDrop) {
+    DbResult rc;
+    auto lhsTables = MetaData::QueryTableNames(lhsDb, "main", rc);
+    if (rc != BE_SQLITE_OK) {
+        LOG.error("MetaData::SchemaDiff(): Failed to query table names for lhs database");
+        return rc;
+    }
+
+    auto rhsTables = MetaData::QueryTableNames(rhsDb, "main", rc);
+    if (rc != BE_SQLITE_OK) {
+        LOG.error("MetaData::SchemaDiff(): Failed to query table names for rhs database");
+        return rc;
+    }
+
+    if (nullptr != excludeFilter) {
+        auto filterOutUnsupportedTables = [&](std::vector<MetaData::TableInfo>& list) {
+            list.erase(std::remove_if(list.begin(), list.end(), [&](auto const& table) {
+                return excludeFilter(table);
+            }), list.end());
+        };
+
+        filterOutUnsupportedTables(lhsTables);
+        filterOutUnsupportedTables(rhsTables);
+    }
+
+    // MISSING | EXISTS  | DROP
+    if (allowDrop) {
+        for (auto const& table : rhsTables) {
+            if (std::find(lhsTables.begin(), lhsTables.end(), table) == lhsTables.end()) {
+                patches.push_back(SqlPrintfString("DROP TABLE IF EXISTS [%s].[%s];", table.schema.c_str(), table.name.c_str()).GetUtf8CP());
+            }
+        }
+    }
+
+    // EXISTS | MISSING | CREATE
+    for (auto const& table : lhsTables) {
+        if (std::find(rhsTables.begin(), rhsTables.end(), table) == rhsTables.end()) {
+            MetaData::CompleteTableInfo tableInfo;
+            rc = MetaData::QueryTable(lhsDb, table, tableInfo);
+            if (rc != BE_SQLITE_OK)
+                return rc;
+
+            patches.push_back(tableInfo.sql);
+
+            std::for_each(tableInfo.triggers.begin(), tableInfo.triggers.end(),
+            [&patches](auto const& trigger) {
+                patches.push_back(trigger.sql);
+            });
+
+            std::for_each(tableInfo.indexes.begin(), tableInfo.indexes.end(),
+            [&patches](auto const& index) {
+                if (index.origin== "c") {
+                    patches.push_back(index.sql);
+                }
+            });
+        }
+    }
+
+    // EXISTS | EXISTS  | ALTER
+    for (auto const& table : lhsTables) {
+        if (std::find(rhsTables.begin(), rhsTables.end(), table) == rhsTables.end()) {
+            continue;
+        }
+
+        MetaData::CompleteTableInfo lhsTableInfo;
+        rc = MetaData::QueryTable(lhsDb, table, lhsTableInfo);
+        if (rc != BE_SQLITE_OK)
+            return rc;
+
+        MetaData::CompleteTableInfo rhsTableInfo;
+        rc = MetaData::QueryTable(rhsDb, table, rhsTableInfo);
+        if (rc != BE_SQLITE_OK)
+            return rc;
+        // drop index if its missing
+        if (allowDrop) {
+            for (auto const& rhsIndex : rhsTableInfo.indexes) {
+                if (std::find_if(lhsTableInfo.indexes.begin(), lhsTableInfo.indexes.end(),
+                    [&rhsIndex](auto const& lhsIndex) { return rhsIndex.name == lhsIndex.name; }) == lhsTableInfo.indexes.end()) {
+                    patches.push_back(SqlPrintfString("DROP INDEX IF EXISTS [%s].[%s];", table.schema.c_str(), rhsIndex.name.c_str()).GetUtf8CP());
+                }
+            }
+        }
+        // drop trigger if its missing
+        if (allowDrop) {
+            for (auto const& rhsTrigger : rhsTableInfo.triggers) {
+                if (std::find_if(lhsTableInfo.triggers.begin(), lhsTableInfo.triggers.end(),
+                    [&rhsTrigger](auto const& lhsTrigger) { return rhsTrigger.name == lhsTrigger.name; }) == lhsTableInfo.triggers.end()) {
+                    patches.push_back(SqlPrintfString("DROP TRIGGER IF EXISTS [%s].[%s];", table.schema.c_str(), rhsTrigger.name.c_str()).GetUtf8CP());
+                }
+            }
+        }
+
+        if (allowDrop) {
+            for (auto const& column : rhsTableInfo.columns) {
+                if (std::find_if(lhsTableInfo.columns.begin(), lhsTableInfo.columns.end(),
+                    [&column](auto const& lhsColumn) { return column.name == lhsColumn.name; }) == lhsTableInfo.columns.end()) {
+                    patches.push_back(SqlPrintfString("ALTER TABLE [%s].[%s] DROP COLUMN [%s];", table.schema.c_str(), table.name.c_str(), column.name.c_str()).GetUtf8CP());
+                }
+            }
+        }
+
+        for (auto const& column : lhsTableInfo.columns) {
+            if (std::find_if(rhsTableInfo.columns.begin(), rhsTableInfo.columns.end(),
+                [&column](auto const& rhsColumn) { return column.name == rhsColumn.name; }) == rhsTableInfo.columns.end()) {
+                Utf8String addColumnSql = SqlPrintfString("ALTER TABLE [%s].[%s] ADD COLUMN [%s]", table.schema.c_str(), table.name.c_str(), column.name.c_str()).GetUtf8CP();
+                if (!column.dataType.empty()) {
+                    addColumnSql.append(" ").append(column.dataType);
+                }
+                if (column.primaryKey) {
+                    LOG.error("MetaData::SchemaDiff(): Primary key column cannot be added using ALTER TABLE");
+                    return BE_SQLITE_ERROR;
+                }
+                if (column.notNull) {
+                    addColumnSql.append(" NOT NULL");
+                }
+                if (column.defaultValue.has_value()) {
+                    addColumnSql.append(" DEFAULT (").append(column.defaultValue.value()).append(")");
+                }
+                if (column.collSeq.empty()) {
+                    addColumnSql.append(" COLLATE ").append(column.collSeq);
+                }
+                if (column.hidden) {
+                    addColumnSql.append(" HIDDEN");
+                }
+                for(auto& fk : lhsTableInfo.foreignKeys){
+                    if (std::find_if(fk.fromColumns.begin(), fk.fromColumns.end(),
+                        [&column](auto const& fromColumn) { return column.name == fromColumn; }) != fk.fromColumns.end()) {
+                        if (fk.fromColumns.size() > 1) {
+                            LOG.error("MetaData::SchemaDiff(): Foreign key with multiple columns cannot be added using ALTER TABLE");
+                            return BE_SQLITE_ERROR;
+                        }
+                        addColumnSql.append(SqlPrintfString(" REFERENCES [%s]([%s])", fk.table.c_str(), fk.toColumns[0].c_str()).GetUtf8CP());
+                        if (fk.onUpdate != "NO ACTION") {
+                            addColumnSql.append(" ON UPDATE ").append(fk.onUpdate);
+                        }
+                        if (fk.onDelete != "NO ACTION") {
+                            addColumnSql.append(" ON DELETE ").append(fk.onDelete);
+                        }
+                        if (fk.match != "NONE") {
+                            addColumnSql.append(" MATCH ").append(fk.match);
+                        }
+                        break;
+                    }
+                }
+                addColumnSql.append(";");
+                patches.push_back(addColumnSql);
+            }
+        }
+
+        // update trigger if its different
+        for (auto const& lhsTrigger : lhsTableInfo.triggers) {
+            for(auto const& rhsTrigger : rhsTableInfo.triggers){
+                if (lhsTrigger.name == rhsTrigger.name) {
+                    if (lhsTrigger.sql != rhsTrigger.sql) {
+                        patches.push_back(SqlPrintfString("DROP TRIGGER IF EXISTS [%s].[%s];", table.schema.c_str(), lhsTrigger.name.c_str()).GetUtf8CP());
+                        patches.push_back(lhsTrigger.sql);
+                    }
+                }
+            }
+        }
+
+        // create trigger if its missing on rhs
+        for (auto const& lhsTrigger : lhsTableInfo.triggers) {
+            if (std::find_if(rhsTableInfo.triggers.begin(), rhsTableInfo.triggers.end(),
+                [&lhsTrigger](auto const& rhsTrigger) { return lhsTrigger.name == rhsTrigger.name; }) == rhsTableInfo.triggers.end()) {
+                patches.push_back(lhsTrigger.sql);
+            }
+        }
+
+        // update index if its different
+        for (auto const& lhsIndex : lhsTableInfo.indexes) {
+            for(auto const& rhsIndex : rhsTableInfo.indexes){
+                if (lhsIndex.name == rhsIndex.name) {
+                    if (lhsIndex.sql != rhsIndex.sql) {
+                        patches.push_back(SqlPrintfString("DROP INDEX IF EXISTS [%s].[%s];", table.schema.c_str(), lhsIndex.name.c_str()).GetUtf8CP());
+                        patches.push_back(lhsIndex.sql);
+                    }
+                }
+            }
+        }
+
+        // create index if its missing on rhs
+        for (auto const& lhsIndex : lhsTableInfo.indexes) {
+            if (std::find_if(rhsTableInfo.indexes.begin(), rhsTableInfo.indexes.end(),
+                [&lhsIndex](auto const& rhsIndex) { return lhsIndex.name == rhsIndex.name; }) == rhsTableInfo.indexes.end()) {
+                patches.push_back(lhsIndex.sql);
+            }
+        }
+    }
+    return rc;
+}
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void MetaData::ToJson(CompleteTableInfo const& tableInfo, BeJsValue jsTableInfo){
+    jsTableInfo.SetEmptyObject();
+    jsTableInfo["name"] = tableInfo.name;
+    jsTableInfo["schema"] = tableInfo.schema;
+    jsTableInfo["type"] = tableInfo.type;
+    jsTableInfo["nColumns"] = tableInfo.nColumns;
+    jsTableInfo["hasRowId"] = tableInfo.hasRowId;
+    jsTableInfo["isStrict"] = tableInfo.isStrict;
+    jsTableInfo["sql"] = tableInfo.sql;
+    auto jsColumns = jsTableInfo["columns"];
+    jsColumns.SetEmptyArray();
+    for (auto& column : tableInfo.columns) {
+        BeJsValue col = jsColumns.appendObject();
+        col["cid"] = column.cid;
+        col["name"] = column.name;
+        col["dataType"] = column.dataType;
+        col["notNull"] = column.notNull;
+        col["defaultValue"] = column.defaultValue.has_value() ? column.defaultValue.value() : nullptr;
+        col["primaryKey"] = column.primaryKey;
+        col["collSeq"] = column.collSeq;
+        col["autoIncrement"] = column.autoIncrement;
+    }
+    auto jsIndexes = jsTableInfo["indexes"];
+    jsIndexes.SetEmptyArray();
+    for (auto& index : tableInfo.indexes) {
+        BeJsValue idx = jsIndexes.appendObject();
+        idx["name"] = index.name;
+        idx["unique"] = index.unique;
+        idx["origin"] = index.origin;
+        idx["partial"] = index.partial;
+        idx["sql"] = index.sql;
+        auto jsIndexColumns = idx["columns"];
+        jsIndexColumns.SetEmptyArray();
+        for (auto& column : index.columns) {
+            BeJsValue col = jsIndexColumns.appendObject();
+            col["cid"] = column.cid;
+            col["name"] = column.name;
+            col["desc"] = column.desc;
+            col["collSeq"] = column.collSeq;
+            col["key"] = column.key;
+        }
+    }
+    auto jsTriggers = jsTableInfo["triggers"];
+    jsTriggers.SetEmptyArray();
+    for (auto& trigger : tableInfo.triggers) {
+        BeJsValue trg = jsTriggers.appendObject();
+        trg["name"] = trigger.name;
+        trg["sql"] = trigger.sql;
+    }
+    auto jsForeignKeys= jsTableInfo["foreignKeys"];
+    jsForeignKeys.SetEmptyArray();
+    for (auto& fk : tableInfo.foreignKeys) {
+        BeJsValue fkey = jsForeignKeys.appendObject();
+        fkey["table"] = fk.table;;
+        auto jsFromColumns= fkey["fromColumns"];
+        jsFromColumns.SetEmptyArray();
+        for (auto& col : fk.fromColumns) {
+            jsFromColumns.appendValue() = col;
+        }
+        auto jsToColumns= fkey["toColumns"];
+        jsToColumns.SetEmptyArray();
+        for (auto& col : fk.fromColumns) {
+            jsToColumns.appendValue() = col;
+        }
+        fkey["onUpdate"] = fk.onUpdate;
+        fkey["onDelete"] = fk.onDelete;
+        fkey["match"] = fk.match;
+    }
+}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -916,6 +1435,17 @@ void Statement::DumpResults()
     Reset();
     }
 
+/*---------------------------------------------------------------------------------------
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Statement::TryGetStatementState(StatementState& state)
+    {
+    if(!IsPrepared())
+        return false;
+    state = (StatementState)getStatementState(m_stmt);
+    return true;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -945,7 +1475,7 @@ static int besqliteBusyHandler(void* retry, int count) {return ((BusyRetry const
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbFile::DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode, std::optional<int> busyTimeout) : m_sqlDb(sqlDb), m_cachedProps(nullptr), m_blvCache(*this),
-            m_defaultTxn(*this, "default", defaultTxnMode), m_statements(10),
+            m_defaultTxn(*this, "default", defaultTxnMode), m_statements(10),m_noCaseCollation(NoCaseCollation::ASCII),
             m_regexFunc(RegExpFunc::Create()), m_regexExtractFunc(RegExpExtractFunc::Create()), m_base36Func(Base36Func::Create())
     {
     m_inCommit = false;
@@ -968,6 +1498,73 @@ DbFile::DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode, s
     AddFunction(*m_base36Func);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static void nocaseCollatingFuncLatin1Del(void *pCtx){
+  UCollator *p = (UCollator *)pCtx;
+  ucol_close(p);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static int nocaseCollatingFuncASCII(void *, int nLeft, const void *zLeft, int nRight, const void *zRight){
+    int r = sqlite3_strnicmp((const char *)zLeft, (const char *)zRight, (nLeft<nRight)?nLeft:nRight);
+    if(0 == r){
+        r = nLeft-nRight;
+    }
+    return r;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static int nocaseCollatingFuncLatin1(void *pCtx, int nLeft, const void *zLeft, int nRight, const void *zRight){
+  UCollationResult res;
+  UCollator *p = (UCollator*)pCtx;
+  UErrorCode status;
+  res = ucol_strcollUTF8(p, (Utf8CP)zLeft, nLeft, (Utf8CP)zRight, nRight, &status);
+  switch( res ){
+    case UCOL_LESS: return -1;
+    case UCOL_GREATER: return +1;
+    case UCOL_EQUAL: return 0;
+  }
+  return U_SUCCESS(status) ? BE_SQLITE_OK : BE_SQLITE_ERROR;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DbFile::SetNoCaseCollation(NoCaseCollation col) {
+    auto mutex = sqlite3_db_mutex(m_sqlDb);
+    sqlite3_mutex_enter(mutex);
+    const auto NOCASE = "NOCASE";
+    if (col == NoCaseCollation::ASCII) {
+        const auto rc = (DbResult)sqlite3_create_collation(m_sqlDb, NOCASE, SQLITE_UTF8, nullptr, nocaseCollatingFuncASCII);
+        if (rc == BE_SQLITE_OK){
+            m_noCaseCollation = col;
+        }
+        sqlite3_mutex_leave(mutex);
+        return rc;
+    }
+
+    UCollator *pUCollator;
+    UErrorCode status = U_ZERO_ERROR;
+    pUCollator = ucol_open("latin1", &status);
+    if( !U_SUCCESS(status) ){
+        sqlite3_mutex_leave(mutex);
+        return BE_SQLITE_ERROR;
+    }
+    ucol_setStrength(pUCollator, UCOL_PRIMARY);
+    const auto rc = sqlite3_create_collation_v2(m_sqlDb, NOCASE, SQLITE_UTF8, (void *)pUCollator, nocaseCollatingFuncLatin1, nocaseCollatingFuncLatin1Del);
+    if (rc == BE_SQLITE_OK){
+        m_noCaseCollation = col;
+    }
+    sqlite3_mutex_leave(mutex);
+    return (DbResult)rc;
+}
+
 BriefcaseLocalValueCache& DbFile::GetBLVCache() {return m_blvCache;}
 
 /*---------------------------------------------------------------------------------**//**
@@ -986,26 +1583,41 @@ static Utf8CP getStartTxnSql(BeSQLiteTxnMode mode)
 static int savepointCommitHook(void* arg) {return ((DbFile*) arg)->OnCommit();}
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool BeSQLiteLib::s_throwExceptionOnUnexpectedAutoCommit = false;
-
-/*---------------------------------------------------------------------------------**//**
 * Ensure that all commits and rollbacks are done using BeSQLite api, not through SQL directly
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-int DbFile::OnCommit()
-    {
+int DbFile::OnCommit() {
+    constexpr static const char* errFull = "Sqlite initiated autocommit due to a fatal error (SQLITE_FULL)";
+    constexpr static const char* errIO = "Sqlite initiated autocommit due to a fatal error (SQLITE_IOERR)";
+    constexpr static const char* errNoMem = "Sqlite initiated autocommit due to a fatal error (SQLITE_NOMEM)";
+    constexpr static const char* errBusy = "Sqlite initiated autocommit due to a fatal error (SQLITE_BUSY)";
+    constexpr static const char* errInterrupt = "Sqlite initiated autocommit due to a fatal error (SQLITE_INTERRUPT)";
+    constexpr static const char* errUnknown = "Sqlite initiated autocommit due to a fatal error (UNKNOWN)";
+
     if (m_inCommit || m_txns.empty())
         return  0;
 
-    // Sqlite initiate auto rollback in case of SQLITE_FULL, SQLITE_IOERR, SQLITE_NOMEM, SQLITE_BUSY, and SQLITE_INTERRUPT
-    // We force a crash if COMMIT/ROLLBACK is called outside BeSQLite api.
-    if (sqlite3_get_autocommit(m_sqlDb) != 0 ) {
-        LOG.error("Sqlite initiated autocommit due to a fatal error.");
-        if (BeSQLiteLib::s_throwExceptionOnUnexpectedAutoCommit) {
-             LOG.error("Runtime debug option to throw exception on unexpected autocommit is set to *true*. Caller must handle exception and then delete the briefcase/db afterword.");
-            throw std::runtime_error("sqlite initiated autocommit due to a fatal error");
+    const auto errCode = sqlite3_get_autocommit(m_sqlDb);
+    if (errCode != 0) {
+        switch(errCode) {
+            case SQLITE_FULL:
+                LOG.error(errFull);
+                throw std::runtime_error(errFull);
+            case SQLITE_IOERR:
+                LOG.error(errIO);
+                throw std::runtime_error(errIO);
+            case SQLITE_NOMEM:
+                LOG.error(errNoMem);
+                throw std::runtime_error(errNoMem);
+            case SQLITE_BUSY:
+                LOG.error(errBusy);
+                throw std::runtime_error(errBusy);
+            case SQLITE_INTERRUPT:
+                LOG.error(errInterrupt);
+                throw std::runtime_error(errInterrupt);
+            default:
+                LOG.error(errUnknown);
+                throw std::runtime_error(errUnknown);
         }
         return 0;
     }
@@ -1023,7 +1635,7 @@ int DbFile::OnCommit()
 #endif
 
     return  1;
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -1126,6 +1738,13 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit, Utf8CP operation) 
 
     // Don't check m_tracker->HasChanges - may have dynamic changes to rollback
     ChangeTracker::OnCommitStatus trackerStatus = (m_tracker.IsValid()) ? m_tracker->_OnCommit(isCommit, operation) : ChangeTracker::OnCommitStatus::Commit;
+
+    if (trackerStatus == ChangeTracker::OnCommitStatus::RebaseInProgress) {
+        return BE_SQLITE_ERROR;
+    }
+    if (trackerStatus == ChangeTracker::OnCommitStatus::PropagateChangesFailed) {
+        return BE_SQLITE_ERROR_PropagateChangesFailed;
+    }
     if (trackerStatus == ChangeTracker::OnCommitStatus::Abort) {
         // Abort is considered fatal and application must quit.
         // We do not allocate memory or attempt to log as this is only happens when sqlite returns NOMEM.
@@ -1163,7 +1782,15 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit, Utf8CP operation) 
 
     // BE_SQLITE_INTERRUPT means the transaction was cancelled. Anything other than BE_SQLITE_OK means the transaction is still open.
     if (rc != BE_SQLITE_OK && rc != BE_SQLITE_INTERRUPT) {
-        BeAssert(BE_SQLITE_OK == checkNoActiveStatements(m_sqlDb)); // a common problem is to try to commit while statements are active. Help find that error.
+#if !defined (NDEBUG)
+        // A common cause of a failed commit is a statement left stepped but not finalized, which still holds a lock.
+        for (sqlite3_stmt* stmt = nullptr; nullptr != (stmt = sqlite3_next_stmt(m_sqlDb, stmt));)
+            {
+            const StatementState state = static_cast<StatementState>(getStatementState(stmt));
+            if (state == StatementState::Run || state == StatementState::Halt)
+                LOG.errorv("Unfinalized statement (%s): %s", BeSQLiteLib::GetStatementStateString(state), sqlite3_sql(stmt));
+            }
+#endif
         return rc;
     }
 
@@ -1258,7 +1885,7 @@ DbResult Savepoint::Commit(Utf8CP operation) {return _Commit(operation);}
 DbResult Savepoint::Save(Utf8CP operation)
     {
     DbResult res = Commit(operation);
-    if (BE_SQLITE_BUSY == res) {
+    if (BE_SQLITE_OK != res) {
         return res;
     }
     return Begin();
@@ -2191,6 +2818,36 @@ DbResult Db::DetachDb(Utf8CP alias) const
 /*---------------------------------------------------------------------------------**//**
 *
 +---------------+---------------+---------------+---------------+---------------+------*/
+std::vector<AttachFileInfo> Db::GetAttachedDbs() const {
+    if (!IsDbOpen())
+        return {};
+
+    std::vector<AttachFileInfo> result;
+    Statement stmt;
+    stmt.Prepare(*this, "PRAGMA database_list");
+    while (stmt.Step() == BE_SQLITE_ROW) {
+        AttachFileInfo info;
+        info.m_alias = stmt.GetValueText(1);
+        info.m_fileName = stmt.GetValueText(2);
+        if (info.m_alias.EqualsIAscii("main")) {
+            info.m_type = AttachFileType::Main;
+        } else if (info.m_alias.EqualsIAscii("schema_sync_db")){
+            info.m_type = AttachFileType::SchemaSync;
+        } else if (info.m_alias.EqualsIAscii("ecchange")){
+            info.m_type = AttachFileType::ECChangeCache;
+        } else if (info.m_alias.EqualsIAscii("temp")){
+            info.m_type = AttachFileType::Temp;
+        } else {
+            info.m_type = AttachFileType::Unknown;
+        }
+        result.push_back(info);
+    }
+    return result;
+}
+
+/*---------------------------------------------------------------------------------**//**
+*
++---------------+---------------+---------------+---------------+---------------+------*/
 DbResult BriefcaseLocalValueCache::Register(size_t& index, Utf8CP name)
     {
     BeMutexHolder lock(m_mutex);
@@ -2569,10 +3226,30 @@ DbResult Db::TruncateTable(Utf8CP tableName) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Db::TableExists(Utf8CP tableName) const
     {
-    Statement statement;
-    return BE_SQLITE_OK == statement.TryPrepare(*this, SqlPrintfString("SELECT NULL FROM %s", tableName));
+    // tableName could contain tableSpace, parse if that's the case
+    Utf8String actualTableName(tableName);
+    Utf8String parsedTableSpace;
+    auto dotPosition = actualTableName.find('.');
+    if (dotPosition != Utf8String::npos) {
+        parsedTableSpace = actualTableName.substr(0, dotPosition);
+        actualTableName = actualTableName.substr(dotPosition + 1);
     }
 
+    CachedStatementPtr stmt;
+    if (Utf8String::IsNullOrEmpty(parsedTableSpace.c_str()))
+        stmt = GetCachedStatement("SELECT 1 FROM sqlite_master where type='table' AND name=?");
+    else
+        stmt = GetCachedStatement(Utf8PrintfString("SELECT 1 FROM %s.sqlite_master where type='table' AND name=?", parsedTableSpace.c_str()).c_str());
+
+    if (stmt == nullptr)
+        {
+        BeAssert(false);
+        return false;
+        }
+
+    stmt->BindText(1, actualTableName.c_str(), Statement::MakeCopy::No);
+    return stmt->Step() == BE_SQLITE_ROW;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //--------------+------------------------------------------------------------------------
@@ -2586,26 +3263,44 @@ void Db::FlushPageCache()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Db::ColumnExists(Utf8CP tableName, Utf8CP columnName) const
     {
-    Statement sql;
-    return BE_SQLITE_OK == sql.TryPrepare(*this, SqlPrintfString("SELECT [%s] FROM %s", columnName, tableName));
+    bvector<Utf8String> columns;
+
+    GetColumns(columns, tableName);
+    return columns.end() != std::find_if(columns.begin(), columns.end(), [columnName](Utf8StringCR col) { return col.EqualsIAscii(columnName); });
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Db::GetColumns(bvector<Utf8String>& columns, Utf8CP tableName) const
+{
+    columns.clear();
+
+    Statement stmt;
+    DbResult status;
+
+    const char* dotPosition = strchr(tableName, '.');
+    if (dotPosition != nullptr)
     {
-    Statement statement;
-    DbResult status =  statement.TryPrepare(*this, SqlPrintfString("SELECT * FROM %s LIMIT 0", tableName));
+        Utf8String tablespace(tableName, dotPosition - tableName);
+        Utf8String actualTableName(dotPosition + 1);
+
+        status = stmt.Prepare(*this, SqlPrintfString("PRAGMA %s.table_info([%s])", tablespace.c_str(), actualTableName.c_str()));
+    }
+    else
+    {
+        status = stmt.Prepare(*this, SqlPrintfString("PRAGMA table_info([%s])", tableName));
+    }
+
     if (status != BE_SQLITE_OK)
         return false;
 
-    columns.clear();
-    for (int nColumn = 0; nColumn < statement.GetColumnCount(); nColumn++)
-        columns.push_back(statement.GetColumnName(nColumn));
+    while (stmt.Step() == BE_SQLITE_ROW)
+        columns.push_back(stmt.GetValueText(1));
 
     return true;
-    }
+}
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -2692,13 +3387,21 @@ DbFile::~DbFile() {
 
     if (BE_SQLITE_OK != rc) {
         sqlite3_stmt* stmt = nullptr;
+        std::vector<sqlite3_stmt*> stmts;
         while (nullptr != (stmt = sqlite3_next_stmt(m_sqlDb, stmt))) {
+            stmts.push_back(stmt);
             Utf8String openStatement(sqlite3_sql(stmt)); // keep as separate line for debugging
             LOG.errorv("Statement not closed: '%s'", openStatement.c_str());
         };
+        for(auto stmtItr : stmts)
+            sqlite3_finalize(stmtItr);
 
-        LOG.errorv("Cannot close database '%s'", sqlite3_db_filename(m_sqlDb, "main"));
-        BeAssert(false);
+        rc = (DbResult) sqlite3_close(m_sqlDb);
+        if (rc != BE_SQLITE_OK) {
+            LOG.errorv("Cannot close database '%s'", sqlite3_db_filename(m_sqlDb, "main"));
+            BeAssert(false);
+        }
+
     }
 
     m_sqlDb = 0;
@@ -3203,8 +3906,17 @@ DbResult Db::AbandonChanges()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Db::_OnDbChangedByOtherConnection()
     {
+    ClearDbCache();
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void Db::ClearDbCache()
+    {
     m_dbFile->DeleteCachedPropertyMap();
     m_dbFile->m_blvCache.Clear();
+    m_dbFile->m_statements.Empty();
     }
 
 //---------------------------------------------------------------------------------------
@@ -3746,15 +4458,37 @@ ZipErrors SnappyFromBlob::ReadToChunkedArray(ChunkedArray& array, uint32_t bufSi
 SnappyFromMemory::SnappyFromMemory(void*uncompressedBuffer, uint32_t uncompressedBufferSize)
     {
     BeAssert(SNAPPY_UNCOMPRESSED_BUFFER_SIZE == uncompressedBufferSize);
+    BeAssert(uncompressedBuffer != nullptr);
+    BeAssert(uncompressedBufferSize > 0);
 
+    m_ownsUncompressedBuffer = false;
     m_uncompressed = (Byte*)uncompressedBuffer;
     m_uncompressAvail = 0;
     m_uncompressSize = uncompressedBufferSize;
-
     m_blobData = nullptr;
     m_blobOffset = 0;
     m_blobBytesLeft = 0;
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+SnappyFromMemory::SnappyFromMemory() {
+    m_ownsUncompressedBuffer = true;
+    m_uncompressed = (Byte*)std::malloc(SNAPPY_UNCOMPRESSED_BUFFER_SIZE);
+    m_uncompressAvail = 0;
+    m_uncompressSize = SNAPPY_UNCOMPRESSED_BUFFER_SIZE;
+    m_blobData = nullptr;
+    m_blobOffset = 0;
+    m_blobBytesLeft = 0;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+SnappyFromMemory::~SnappyFromMemory() {
+    if (m_ownsUncompressedBuffer)
+        std::free(m_uncompressed);
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -3933,7 +4667,7 @@ void SnappyToBlob::Finish()
     if (m_chunks.size() <= m_currChunk)
         m_chunks.push_back(new SnappyChunk((uint32_t) snappy::MaxCompressedLength(m_rawSize)));
 
-    unsigned int compressedBytes;
+    size_t compressedBytes;
     snappy::RawCompress((char const*) m_rawBuf, m_rawCurr, (char*) &m_chunks[m_currChunk]->m_data[1], &compressedBytes);
     BeAssert((compressedBytes+2) < 64*1024);
     m_chunks[m_currChunk]->m_data[0] = (uint16_t) compressedBytes + 2; // add 2 because compressed data starts 2 bytes into buffer
@@ -3958,6 +4692,16 @@ DbResult SnappyToBlob::SaveToRow(DbR db, Utf8CP tableName, Utf8CP column, int64_
 
     return SaveToRow(blobIO);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void SnappyToBlob::SaveTo(ByteStream& buffer) {
+    Finish();
+    for (uint32_t i = 0; i < m_currChunk; ++i) {
+        buffer.Append((uint8_t*)m_chunks[i]->m_data, m_chunks[i]->GetChunkSize());
+    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -5211,308 +5955,6 @@ static void isInVirtualSet(sqlite3_context* ctx, int nArgs, sqlite3_value** args
         }
     }
 
-//---------------------------------------------------------------------------------------
-// Direct sqlite callback when we override the LOWER and UPPER scalar functions to delegate to BeSQLiteLib::ILanguageSupport.
-// @bsimethod
-//---------------------------------------------------------------------------------------
-static void caseCallback(sqlite3_context* context, int numArgs, sqlite3_value** args)
-    {
-    // Largely a copy of icuCaseFunc16 in ext/icu/icu.c, but follows our coding standards and redirects the actual ICU call to the host.
-
-    BeSQLiteLib::ILanguageSupport* languageSupport = BeSQLiteLib::GetLanguageSupport();
-    if (nullptr == languageSupport)
-        {
-        BeAssert(false);
-        return;
-        }
-
-    if (1 != numArgs)
-        {
-        BeAssert(false);
-        return;
-        }
-
-    Utf16CP source = (Utf16CP)sqlite3_value_text16(args[0]);
-    if (nullptr == source)
-        return;
-
-    int sourceSize = sqlite3_value_bytes16(args[0]);
-    if (sourceSize <= 0)
-        return;
-
-    int resultSize = (2 * sourceSize) * sizeof(uint16_t);
-    Utf16P result = (Utf16P)sqlite3_malloc(resultSize);
-    if (nullptr == result)
-        {
-        BeAssert(false);
-        return;
-        }
-
-    if (0 != sqlite3_user_data(context))
-        languageSupport->_Upper(source, sourceSize / sizeof(uint16_t), result, resultSize / sizeof(uint16_t));
-    else
-        languageSupport->_Lower(source, sourceSize / sizeof(uint16_t), result, resultSize / sizeof(uint16_t));
-
-    sqlite3_result_text16(context, result, -1, sqlite3_free);
-    }
-
-//---------------------------------------------------------------------------------------
-// Copied from utf8.h in ICU.
-// Supports our LIKE operator implementation.
-// @bsimethod
-//---------------------------------------------------------------------------------------
-#define U8_NEXT_UNSAFE(s, i, c) \
-    {\
-    (c) = (uint8_t)(s)[(i)++]; \
-    if ((c) >= 0x80) {\
-        if ((c)<0xe0) {\
-                (c) = (((c)& 0x1f) << 6) | ((s)[(i)++] & 0x3f); \
-            } else if ((c)<0xf0) {\
-                /* no need for (c&0xf) because the upper bits are truncated after <<12 in the cast to (UChar) */ \
-                (c) = (unsigned char)(((c) << 12) | (((s)[i] & 0x3f) << 6) | ((s)[(i)+1] & 0x3f)); \
-                (i) += 2; \
-            } else {\
-                (c) = (((c)& 7) << 18) | (((s)[i] & 0x3f) << 12) | (((s)[(i)+1] & 0x3f) << 6) | ((s)[(i)+2] & 0x3f); \
-                (i) += 3; \
-            } \
-        } \
-    }
-
-//---------------------------------------------------------------------------------------
-// Copied from utf8.h in ICU.
-// Supports our LIKE operator implementation.
-// @bsimethod
-//---------------------------------------------------------------------------------------
-#define U8_COUNT_TRAIL_BYTES_UNSAFE(leadByte) (((leadByte)>=0xc0)+((leadByte)>=0xe0)+((leadByte)>=0xf0))
-
-//---------------------------------------------------------------------------------------
-// Copied from utf8.h in ICU.
-// Supports our LIKE operator implementation.
-// @bsimethod
-//---------------------------------------------------------------------------------------
-#define U8_FWD_1_UNSAFE(s, i) \
-    {\
-    (i) += 1 + U8_COUNT_TRAIL_BYTES_UNSAFE((uint8_t)(s)[i]); \
-    }
-
-//---------------------------------------------------------------------------------------
-// Actual comparison logic for our custom LIKE operator.
-// @see likeCallback
-// @bsimethod
-//---------------------------------------------------------------------------------------
-static int likeCompare(unsigned char const* patternString, unsigned char const* matchString, uint32_t escapeChar, BeSQLiteLib::ILanguageSupport* languageSupport)
-    {
-    // Largely a copy of icuLikeCompare in ext/icu/icu.c, but follows our coding standards and redirects the actual ICU call to the host.
-    // See also patternCompare in sqlite3/src/func.c... though that also supports globs and can use other nice internal utility functions that we can't, so copying is limited.
-
-    static const uint32_t MATCH_ONE = (uint32_t)'_';
-    static const uint32_t MATCH_ALL = (uint32_t)'%';
-
-    int iPattern = 0; // Current byte index in patternString
-    int iMatch = 0; // Current byte index in matchString
-    bool wasPreviousCharEscape = 0; // True if the previous character was escapeChar
-
-    while (0 != patternString[iPattern])
-        {
-        // Read (and consume) the next character from the input pattern.
-        uint32_t currPatternChar;
-        U8_NEXT_UNSAFE(patternString, iPattern, currPatternChar);
-        BeAssert(0 != currPatternChar);
-
-        // There are now 4 possibilities:
-        //  1. currPatternChar is an unescaped match-all character "%"
-        //  2. currPatternChar is an unescaped match-one character "_"
-        //  3. currPatternChar is an unescaped escape character
-        //  4. currPatternChar is to be handled as an ordinary character
-
-        if (!wasPreviousCharEscape && (MATCH_ALL == currPatternChar))
-            {
-            // Case 1.
-            uint8_t peekPatternChar;
-
-            // Skip any MATCH_ALL or MATCH_ONE characters that follow a MATCH_ALL. For each MATCH_ONE, skip one character in the test string.
-            while ((MATCH_ALL == (peekPatternChar = patternString[iPattern])) || (MATCH_ONE == peekPatternChar))
-                {
-                if (MATCH_ONE == peekPatternChar)
-                    {
-                    if (0 == matchString[iMatch])
-                        return 0;
-
-                    U8_FWD_1_UNSAFE(matchString, iMatch);
-                    }
-
-                ++iPattern;
-                }
-
-            if (0 == patternString[iPattern])
-                return 1;
-
-            while (0 != matchString[iMatch])
-                {
-                if (likeCompare(&patternString[iPattern], &matchString[iMatch], escapeChar, languageSupport))
-                    return 1;
-
-                U8_FWD_1_UNSAFE(matchString, iMatch);
-                }
-
-            return 0;
-            }
-        else if (!wasPreviousCharEscape && (MATCH_ONE == currPatternChar))
-            {
-            // Case 2.
-            if (0 == matchString[iMatch])
-                return 0;
-
-            U8_FWD_1_UNSAFE(matchString, iMatch);
-            }
-        else if (!wasPreviousCharEscape && (currPatternChar == escapeChar))
-            {
-            // Case 3.
-            wasPreviousCharEscape = true;
-            }
-        else{
-            // Case 4.
-            uint32_t currMatchChar;
-            U8_NEXT_UNSAFE(matchString, iMatch, currMatchChar);
-
-            currMatchChar = languageSupport->_FoldCase(currMatchChar);
-            currPatternChar = languageSupport->_FoldCase(currPatternChar);
-
-            if (currMatchChar != currPatternChar)
-                return 0;
-
-            wasPreviousCharEscape = false;
-            }
-        }
-
-    return (0 == matchString[iMatch]);
-    }
-
-//---------------------------------------------------------------------------------------
-// Direct sqlite callback when we override the LIKE operator to delegate to BeSQLiteLib::ILanguageSupport.
-// @bsimethod
-//---------------------------------------------------------------------------------------
-static void likeCallback(sqlite3_context* context, int numArgs, sqlite3_value** args)
-    {
-    // Largely a copy of icuLikeFunc in sqlite3/ext/icu/icu.c, but follows our coding standards and redirects the actual ICU call to the host.
-    // See also likeFunc in sqlite3/src/func.c... though that can use other nice internal utility functions that we can't, so copying is limited.
-
-    auto languageSupport = BeSQLiteLib::GetLanguageSupport();
-    if (nullptr == languageSupport)
-        {
-        BeAssert(false);
-        return;
-        }
-
-    if ((numArgs < 2) || (numArgs > 3))
-        {
-        BeAssert(false);
-        return;
-        }
-
-    auto patternString = sqlite3_value_text(args[0]);
-    auto matchString = sqlite3_value_text(args[1]);
-
-    if ((nullptr == patternString) || (nullptr == matchString))
-        return;
-
-    // Limit the length of the LIKE or GLOB pattern to avoid problems of deep recursion and N*N behavior in likeCompare.
-    auto maxPatternLen = sqlite3_limit(sqlite3_context_db_handle(context), SQLITE_LIMIT_LIKE_PATTERN_LENGTH, -1);
-    if (sqlite3_value_bytes(args[0]) > maxPatternLen)
-        {
-        BeAssert(false);
-        return;
-        }
-
-    uint32_t escapeChar = 0;
-    if (3 == numArgs)
-        {
-        // The escape character string must consist of a single UTF-8 character. Otherwise, return an error.
-        auto escapeCharStr = sqlite3_value_text(args[2]);
-        if (nullptr == escapeCharStr)
-            {
-            BeAssert(false);
-            return;
-            }
-
-        auto escapeCharNumBytes = sqlite3_value_bytes(args[2]);
-        int iNextChar = 0;
-        U8_NEXT_UNSAFE(escapeCharStr, iNextChar, escapeChar);
-
-        if (iNextChar != escapeCharNumBytes)
-            {
-            BeAssert(false);
-            return;
-            }
-        }
-
-    sqlite3_result_int(context, likeCompare(patternString, matchString, escapeChar, languageSupport));
-    }
-
-//---------------------------------------------------------------------------------------
-// Direct sqlite callback when we add custom collations to delegate to BeSQLiteLib::ILanguageSupport.
-// @bsimethod
-//---------------------------------------------------------------------------------------
-static int collateCallback(void* userData, int lhsSize, void const* lhs, int rhsSize, void const* rhs)
-    {
-    // Largely a copy of icuCollationColl in ext/icu/icu.c, but follows our coding standards and redirects the actual ICU call to the host.
-
-    BeSQLiteLib::ILanguageSupport* languageSupport = BeSQLiteLib::GetLanguageSupport();
-    if (nullptr == languageSupport)
-        {
-        BeAssert(false);
-        return 0;
-        }
-
-    return languageSupport->_Collate((Utf16CP)lhs, lhsSize / sizeof(uint16_t), (Utf16CP)rhs, rhsSize / sizeof(uint16_t), userData);
-    }
-
-//---------------------------------------------------------------------------------------
-// Registers overrides and additions to be able to delegate language-aware string processing to BeSQLiteLib::ILanguageSupport.
-// @bsimethod
-//---------------------------------------------------------------------------------------
-static void initLanguageSupportOnDb(sqlite3* db)
-    {
-    BeSQLiteLib::ILanguageSupport* languageSupport = BeSQLiteLib::GetLanguageSupport();
-    if (nullptr == languageSupport)
-        return;
-
-    int rc;
-    UNUSED_VARIABLE(rc);
-
-    // The ICU sample from the sqlite folks overrides scalar functions for both SQLITE_UTF8 and SQLITE_UTF16, but only provides SQLITE_UTF8 versions for operators and collations...
-    // I'm not sure why, but following their example until proven otherwise.
-
-    rc = sqlite3_create_function_v2(db, "lower", 1, SQLITE_UTF8, (void*)0, caseCallback, nullptr, nullptr, nullptr);
-    BeAssert(BE_SQLITE_OK == rc);
-
-    rc = sqlite3_create_function_v2(db, "lower", 1, SQLITE_UTF16, (void*)0, caseCallback, nullptr, nullptr, nullptr);
-    BeAssert(BE_SQLITE_OK == rc);
-
-    rc = sqlite3_create_function_v2(db, "upper", 1, SQLITE_UTF8, (void*)1, caseCallback, nullptr, nullptr, nullptr);
-    BeAssert(BE_SQLITE_OK == rc);
-
-    rc = sqlite3_create_function_v2(db, "upper", 1, SQLITE_UTF16, (void*)1, caseCallback, nullptr, nullptr, nullptr);
-    BeAssert(BE_SQLITE_OK == rc);
-
-    rc = sqlite3_create_function_v2(db, "like", 2, SQLITE_UTF8, (void*)0, likeCallback, nullptr, nullptr, nullptr);
-    BeAssert(BE_SQLITE_OK == rc);
-
-    rc = sqlite3_create_function_v2(db, "like", 3, SQLITE_UTF8, (void*)0, likeCallback, nullptr, nullptr, nullptr);
-    BeAssert(BE_SQLITE_OK == rc);
-
-    bvector<BeSQLiteLib::ILanguageSupport::CollationEntry> collationEntries;
-    BeSQLiteLib::ILanguageSupport::CollationUserDataFreeFunc collatorFreeFunc = nullptr;
-    languageSupport->_InitCollation(collationEntries, collatorFreeFunc);
-
-    for (auto const& collationEntry : collationEntries)
-        {
-        rc = sqlite3_create_collation_v2(db, collationEntry.m_name.c_str(), SQLITE_UTF16, collationEntry.m_collator, collateCallback, collatorFreeFunc);
-        BeAssert(BE_SQLITE_OK == rc);
-        }
-    }
-
-
 /*---------------------------------------------------------------------------------**//**
 * this function is called for every new database connection.
 * @bsimethod
@@ -5527,8 +5969,6 @@ static int besqlite_db_init(sqlite3* db, char** pzErrMsg, struct sqlite3_api_rou
 
     rc = sqlite3_shathree_init(db, nullptr, nullptr);
     BeAssert(BE_SQLITE_OK == rc);
-    // Register language-aware callbacks if necessary.
-    initLanguageSupportOnDb(db);
 
     return BE_SQLITE_OK;
 }
@@ -5570,6 +6010,18 @@ Utf8String BeSQLiteLib::GetLogError(DbResult rc) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP BeSQLiteLib::GetStatementStateString(StatementState state)
+    {
+    switch (state)
+        {
+        case StatementState::Init: return "Init";
+        case StatementState::Ready: return "Ready";
+        case StatementState::Run: return "stepped, more rows to go";
+        case StatementState::Halt: return "stepped to end, not finalized";
+        default: return "Unknown";
+        }
+    }
+
 Utf8CP BeSQLiteLib::GetErrorName(DbResult code) {
     switch (code) {
         case BE_SQLITE_ERROR_DataTransformRequired:       return "BE_SQLITE_ERROR_DataTransformRequired";
@@ -5586,7 +6038,7 @@ Utf8CP BeSQLiteLib::GetErrorName(DbResult code) {
         case BE_SQLITE_ERROR_ProfileTooNewForReadWrite:   return "BE_SQLITE_ERROR_ProfileTooNewForReadWrite";
         case BE_SQLITE_ERROR_ProfileTooNew:               return "BE_SQLITE_ERROR_ProfileTooNew";
         case BE_SQLITE_ERROR_ChangeTrackError:            return "BE_SQLITE_ERROR_ChangeTrackError";
-        case BE_SQLITE_ERROR_InvalidChangeSetVersion:      return "BE_SQLITE_ERROR_InvalidChangeSetVersion";
+        case BE_SQLITE_ERROR_InvalidChangeSetVersion:     return "BE_SQLITE_ERROR_InvalidChangeSetVersion";
         case BE_SQLITE_ERROR_SchemaUpgradeRequired:       return "BE_SQLITE_ERROR_SchemaUpgradeRequired";
         case BE_SQLITE_ERROR_SchemaTooNew:                return "BE_SQLITE_ERROR_SchemaTooNew";
         case BE_SQLITE_ERROR_SchemaTooOld:                return "BE_SQLITE_ERROR_SchemaTooOld";
@@ -6029,8 +6481,33 @@ DbResult Db::QueryCreationDate(DateTime& creationDate) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Db::QueryStandaloneEditFlags(BeJsValue out) const {
     Utf8String val;
-    if (BE_SQLITE_ROW == QueryBriefcaseLocalValue(val, BE_LOCAL_StandaloneEdit))
-        out.From(BeJsDocument(val));
+    if (BE_SQLITE_ROW != QueryBriefcaseLocalValue(val, BE_LOCAL_StandaloneEdit))
+        return;
+
+    // Parse JSON only once and handle all cases
+    BeJsDocument doc(val);
+
+    if (doc.isObject()) {
+        out.From(doc);
+        return;
+    }
+
+    /**
+     * Though we intend for this to be an object, we did previously allow a boolean value to slip through
+     * So we need to handle that here for backward compatibility
+     */
+    if (doc.isBool()) {
+        out.SetEmptyObject();
+        out["txns"] = doc.asBool();
+        return;
+    }
+
+    // Invalid/unsupported value
+    if (!val.empty())
+    {
+        out.SetNull();
+        LOG.warningv("QueryStandaloneEditFlags got an unsupported value: '%s' supported value must be either boolean or json object.", val.c_str());
+    }
 }
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -6044,10 +6521,6 @@ void BeSQLiteLib::Randomness(int numBytes, void* random) {sqlite3_randomness(num
 void* BeSQLiteLib::MallocMem(int sz) {return sqlite3_malloc(sz);}
 void* BeSQLiteLib::ReallocMem(void* p, int sz) {return sqlite3_realloc(p,sz);}
 void BeSQLiteLib::FreeMem(void* p) {sqlite3_free(p);}
-
-BeSQLiteLib::ILanguageSupport* s_languageSupport;
-void BeSQLiteLib::SetLanguageSupport(ILanguageSupport* value) {s_languageSupport = value;}
-BeSQLiteLib::ILanguageSupport* BeSQLiteLib::GetLanguageSupport() {return s_languageSupport;}
 
 #define DB_LZMA_MARKER   "LzmaDgnDb"
 
@@ -6214,6 +6687,34 @@ DbResult Db::SetBusyTimeout(int ms) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+DbResult Db::QueryForeignKeyEnforcement(bool& enabled) const {
+    if (!m_dbFile)
+        return BE_SQLITE_ERROR_NOTOPEN;
+
+    int currentState = 0;
+    const auto rc = static_cast<DbResult>(sqlite3_db_config(GetSqlDb(), SQLITE_DBCONFIG_ENABLE_FKEY, -1, &currentState));
+    if (rc == BE_SQLITE_OK)
+        enabled = currentState != 0;
+    return rc;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult Db::SetForeignKeyEnforcement(bool enabled) const {
+    if (!m_dbFile)
+        return BE_SQLITE_ERROR_NOTOPEN;
+
+    int currentState = 0;
+    const auto rc = static_cast<DbResult>(sqlite3_db_config(GetSqlDb(), SQLITE_DBCONFIG_ENABLE_FKEY, enabled ? 1 : 0, &currentState));
+    if (rc != BE_SQLITE_OK)
+        return rc;
+    return (currentState != 0) == enabled ? BE_SQLITE_OK : BE_SQLITE_ERROR;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 DbResult DbFile::SetBusyTimeout(int ms) {
     // sqlite will clear any existing busy handler as their can be only one per connection.
     if (m_retry.IsValid())
@@ -6222,6 +6723,22 @@ DbResult DbFile::SetBusyTimeout(int ms) {
     return (DbResult)sqlite3_busy_timeout(m_sqlDb, ms);
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void DbFile::SetProgressHandler(std::function<DbProgressAction()> cb, int n) const {
+    m_progressHandler = cb;
+    if (m_progressHandler == nullptr) {
+        sqlite3_progress_handler(m_sqlDb, 1, nullptr, nullptr);
+    } else {
+        sqlite3_progress_handler(m_sqlDb, n, [](void* ctx)->int {
+            auto& cb = static_cast<DbFile*>(ctx)->m_progressHandler;
+            if (cb != nullptr)
+                return static_cast<int>(cb());
+            return (int)DbProgressAction::Continue;
+        }, (void*)this);
+    }
+}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -6268,6 +6785,11 @@ DbResult Db::Vacuum(int newPageSizeInBytes) {
 DbResult Db::VacuumInto(Utf8CP newFileName) {
     SuspendDefaultTxn noDefault(*this);
     return TryExecuteSql(SqlPrintfString("vacuum into '%s'", newFileName));
+}
+
+DbResult Db::Analyze() {
+    SuspendDefaultTxn noDefault(*this);
+    return TryExecuteSql("analyze");
 }
 
 /**

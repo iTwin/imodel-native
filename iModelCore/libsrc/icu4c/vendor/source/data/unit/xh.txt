@@ -1,41 +1,55 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
 // License & terms of use: http://www.unicode.org/copyright.html
-// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
+// Generated using tools/cldr/cldr-to-icu/
 xh{
-    durationUnits{
-        hm{"h:mm"}
-        hms{"h:mm:ss"}
-        ms{"m:ss"}
-    }
     units{
         compound{
-            per{"{0}/{1}"}
-            times{"{0}⋅{1}"}
+            power2{
+                one{
+                    _{
+                        _{"square {0}"}
+                    }
+                }
+                other{
+                    _{
+                        _{"square {0}"}
+                    }
+                }
+            }
+            power3{
+                one{
+                    _{
+                        _{"cubic {0}"}
+                    }
+                }
+                other{
+                    _{
+                        _{"cubic {0}"}
+                    }
+                }
+            }
         }
         coordinate{
-            dnam{"direction"}
-            east{"{0}E"}
-            north{"{0}N"}
-            south{"{0}S"}
-            west{"{0}W"}
+            dnam{"cardinal direction"}
+            east{"{0} east"}
+            north{"{0} north"}
+            south{"{0} south"}
         }
     }
     unitsNarrow{
-        compound{
-            per{"{0}/{1}"}
-            times{"{0}⋅{1}"}
-        }
         coordinate{
-            dnam{"direction"}
-            east{"{0}E"}
-            north{"{0}N"}
             south{"{0}S"}
-            west{"{0}W"}
+        }
+        pressure{
+            pascal{
+                one{"{0} Pa"}
+                other{"{0}Pa"}
+            }
         }
     }
     unitsShort{
         coordinate{
-            dnam{"direction"}
+            south{"{0} S"}
         }
     }
 }

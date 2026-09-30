@@ -554,7 +554,6 @@ int             numPoints               /* => number of Akima points */
 
     for (size_t k = 0; k < 6; k++)
         p[k] = pnts[k];
-    //memcpy (p, pnts, 6*sizeof (DPoint3d));
 
     for (i=0; i < 4; i++)
         d[i] = m[i].NormalizedDifference (p[i+1], p[i]);
@@ -595,15 +594,12 @@ int             numPoints               /* => number of Akima points */
 
         if (i < numVerts - 4)
             {
-            //memcpy (p, &p[1], 5*sizeof(DPoint3d));
             for (size_t k = 0; k < 5; k++)
                 p[k] = p[k+1];
 
-            //memcpy (d, &d[1], 4*sizeof(double));
             for (size_t k = 0; k < 4; k++)
                 d[k] = d[k+1];
 
-            //memcpy (m, &m[1], 4*sizeof(DPoint3d));
             for (size_t k = 0; k < 4; k++)
                 m[k] = m[k+1];
 

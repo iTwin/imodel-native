@@ -1980,6 +1980,7 @@ int         depth
     {
     int parent;
     static int errors = 0;
+    UNUSED_VARIABLE(errors);
     if (SUCCESS == IntArrayWrapper::get (pInstance, &parent, cluster))
         {
         if (parent != cluster)
@@ -2542,7 +2543,7 @@ int          n
         pDest[i]= pSource[i];
         }
 #else
-    memcpy (pDest, pSource, n*sizeof(DPoint3d) );
+    BeStringUtilities::Memcpy (pDest, n * sizeof(DPoint3d), pSource, n * sizeof(DPoint3d));
 #endif
     }
 

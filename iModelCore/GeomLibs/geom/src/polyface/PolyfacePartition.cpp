@@ -299,6 +299,8 @@ bool Load ()
     */
     bool ignore = false;
     size_t numNull = 0;
+    UNUSED_VARIABLE(numNull);
+    
     bvector<DPoint3d>const& points = visitor->Point ();
     for (visitor->Reset (); visitor->AdvanceToNextFace ();)
         {
@@ -1167,7 +1169,7 @@ bool PolyfaceQuery::PartitionByConnectivity (int connectivityType, bvector<ptrdi
     else
         {
         // find blocks.
-        // merge across edges when there are all visible.
+        // merge across edges when they are all invisible.
         for (size_t i1, i0 = 0; i0 < numEdge; i0 = i1)
             {
             for (i1 = i0 + 1; i1 < numEdge && !EdgeComponentData::cb_lt_lowVertexHighVertex (edgeSortArray[i0], edgeSortArray[i1]);)

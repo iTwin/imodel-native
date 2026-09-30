@@ -339,6 +339,7 @@ double                  m_snapAperture;
 DPoint3d                m_closePtWorld;
 DPoint3d                m_closePtLocalCorrected;
 DMap4d                  m_worldToView;
+Transform               m_modelToWorld;
 ICancellableP           m_cancel;
 double                  m_maxOutsideDist = 0.0;
 
@@ -1159,6 +1160,9 @@ bool ProcessBsplineSurface(MSBsplineSurfaceCR surface, DPoint3dCR localPoint, Hi
 
         for (MSBsplineCurvePtr& isoCurveU : segmentsU)
             {
+            if (isoCurveU.IsNull())
+                continue;
+
             ICurvePrimitivePtr  curve = ICurvePrimitive::CreateBsplineCurveSwapFromSource(*isoCurveU);
 
             if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::Surface, parentGeomType))
@@ -1177,6 +1181,9 @@ bool ProcessBsplineSurface(MSBsplineSurfaceCR surface, DPoint3dCR localPoint, Hi
 
         for (MSBsplineCurvePtr& isoCurveV : segmentsV)
             {
+            if (isoCurveV.IsNull())
+                continue;
+
             ICurvePrimitivePtr  curve = ICurvePrimitive::CreateBsplineCurveSwapFromSource(*isoCurveV);
 
             if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::Surface, parentGeomType))
@@ -2265,7 +2272,9 @@ bool ComputeSnapLocation(SnapMode snapMode, bool findArcCenters) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 SnapStatus GetClosestCurve(GeometrySourceCR source, DgnSubCategoryId const* subCategoryId, DgnGeometryClass const* geomClass, ViewFlagsCP viewFlags, ICancellableP cancel)
     {
-    GeometryCollection collection(source);
+    Render::GeometryParams baseParams(source.GetCategoryId());
+    Transform sourceToWorld = Transform::FromProduct(m_modelToWorld, source.GetPlacementTransform());
+    GeometryCollection collection(source.GetGeometryStream(), source.GetSourceDgnDb(), &baseParams, &sourceToWorld);
 
     return GetClosestCurve(collection, source.ToElement(), subCategoryId, geomClass, viewFlags, cancel);
     }
@@ -2293,7 +2302,7 @@ SnapStatus GetClosestCurve(BeJsConst input, DgnDbR db, DgnSubCategoryId const* s
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SnapGeometryHelper(uint32_t divisor, double aperture, DPoint3d closePtWorld, DMap4d worldToView) : m_snapDivisor(divisor), m_snapAperture(aperture), m_closePtWorld(closePtWorld), m_worldToView(worldToView) {}
+SnapGeometryHelper(uint32_t divisor, double aperture, DPoint3d closePtWorld, DMap4d worldToView, Transform modelToWorld) : m_snapDivisor(divisor), m_snapAperture(aperture), m_closePtWorld(closePtWorld), m_worldToView(worldToView), m_modelToWorld(modelToWorld) {}
 
 }; // SnapGeometryHelper
 END_BENTLEY_DGN_NAMESPACE
@@ -2338,6 +2347,7 @@ void SnapContext::DoSnap(BeJsValue out, BeJsConst in, DgnDbR db, ICancellableR c
     DPoint3d closePoint = input.GetClosePoint();
     DMatrix4d worldToView = input.GetWorldToView(), viewToWorld; viewToWorld.QrInverseOf(worldToView);
     DMap4d worldToViewMap = DMap4d::From(worldToView, viewToWorld);
+    Transform modelToWorld = input.GetModelToWorld();
 
     // Hot distance in view coordinates (pixels). Locate aperture * hot distance factor...
     double snapAperture = input.GetSnapAperture();
@@ -2361,7 +2371,7 @@ void SnapContext::DoSnap(BeJsValue out, BeJsConst in, DgnDbR db, ICancellableR c
 
     if (!snapModes.empty())
         {
-        SnapGeometryHelper helper(snapDivisor, snapAperture, closePoint, worldToViewMap);
+        SnapGeometryHelper helper(snapDivisor, snapAperture, closePoint, worldToViewMap, modelToWorld);
         SnapStatus status = SnapStatus::NoSnapPossible;
 
         if (nullptr != source)
@@ -2440,7 +2450,7 @@ void SnapContext::DoSnap(BeJsValue out, BeJsConst in, DgnDbR db, ICancellableR c
                     continue;
                 }
 
-            SnapGeometryHelper helper(snapDivisor, snapAperture, closePoint, worldToViewMap);
+            SnapGeometryHelper helper(snapDivisor, snapAperture, closePoint, worldToViewMap, modelToWorld);
             SnapStatus status = SnapStatus::NoSnapPossible;
 
             // NOTE: Since the subCategory for intersection candidates isn't currently supplied, we can potentially intersect with geometry on a subCategory that isn't displayed.

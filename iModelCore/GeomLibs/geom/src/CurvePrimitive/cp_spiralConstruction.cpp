@@ -93,12 +93,14 @@ ICurvePrimitivePtr CreateBasePartialSpiralWithPreciseBearingCurvatureLengthCurva
     // The actual fractions for the partial spiral are determined by search for precise requested curvatures.
     if (fabs (curvatureA) > fabs (curvatureB))
         {
+        // fraction0 = curvatureB / curvatureA;
         curvature1 = curvatureA;
         radius1    = 1.0 / curvatureA;
         length1    = targetPartialLength * curvatureA / (curvatureA - curvatureB);
         }
     else
         {
+        // fraction0 = curvatureA / curvatureB;
         curvature1 = curvatureB;
         radius1    = 1.0 / curvatureB;
         length1    = targetPartialLength * curvatureB / (curvatureB - curvatureA);
@@ -476,6 +478,7 @@ ICurvePrimitivePtr ICurvePrimitive::CreateAustralianRailCorpBearingRadiusLengthR
         }
     return spiral;
     }
+
 bool ICurvePrimitive::CreateSpiralsStartShoulderTarget
 (
     int transitionType,

@@ -74,65 +74,6 @@ TEST_F(SelectedNodeInstancesSpecificationTests, WriteToJson)
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SelectedNodeInstancesSpecificationTests, LoadFromXml)
-    {
-    static Utf8CP xmlString = R"(
-        <SelectedNodeInstances AcceptableSchemaName="TestSchema" AcceptableClassNames="ClassA" AcceptablePolymorphically="true"/>
-        )";
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
-    ASSERT_EQ(BEXML_Success, xmlStatus);
-
-    SelectedNodeInstancesSpecification spec;
-    EXPECT_TRUE(spec.ReadXml(xml->GetRootElement()));
-    EXPECT_TRUE(spec.GetAcceptablePolymorphically());
-    EXPECT_STREQ("TestSchema", spec.GetAcceptableSchemaName().c_str());
-    EXPECT_STREQ("ClassA", spec.GetAcceptableClassNames().c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsiclass
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SelectedNodeInstancesSpecificationTests, LoadFromXmlWithDefaultValues)
-    {
-    static Utf8CP xmlString = "<SelectedNodeInstances/>";
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
-    ASSERT_EQ(BEXML_Success, xmlStatus);
-
-    SelectedNodeInstancesSpecification spec;
-    EXPECT_TRUE(spec.ReadXml(xml->GetRootElement()));
-    EXPECT_FALSE(spec.GetAcceptablePolymorphically());
-    EXPECT_STREQ("", spec.GetAcceptableSchemaName().c_str());
-    EXPECT_STREQ("", spec.GetAcceptableClassNames().c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsiclass
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SelectedNodeInstancesSpecificationTests, WritesToXml)
-    {
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xml = BeXmlDom::CreateEmpty();
-    xml->AddNewElement("Root", nullptr, nullptr);
-
-    SelectedNodeInstancesSpecification spec;
-    spec.SetAcceptablePolymorphically(true);
-    spec.SetAcceptableSchemaName("TestSchema");
-    spec.SetAcceptableClassNames("ClassA");
-    spec.WriteXml(xml->GetRootElement());
-
-    static Utf8CP expected = ""
-        "<Root>"
-            R"(<SelectedNodeInstances Priority="1000" ShowImages="false" OnlyIfNotHandled="false" AcceptableSchemaName="TestSchema"
-               AcceptableClassNames="ClassA" AcceptablePolymorphically="true"/>)"
-        "</Root>";
-    EXPECT_STREQ(ToPrettyString(*BeXmlDom::CreateAndReadFromString(xmlStatus, expected)).c_str(), ToPrettyString(*xml).c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsiclass
-+---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SelectedNodeInstancesSpecificationTests, ComputesCorrectHashes)
     {
     Utf8CP DEFAULT_HASH = "5d76802072cbf92405575180cdf256f3";

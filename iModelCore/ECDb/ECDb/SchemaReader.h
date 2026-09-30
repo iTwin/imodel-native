@@ -6,6 +6,7 @@
 #include <ECDb/ECDb.h>
 #include "SchemaPersistenceHelper.h"
 #include "DbUtilities.h"
+#include <unordered_map>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -18,6 +19,7 @@ struct SchemaDbEntry final
         ECN::ECSchemaPtr m_cachedSchema = nullptr;    //Contain ECSchema which might be not complete
         int m_typeCountInSchema = -1; //This is read from Db
         uint32_t m_loadedTypeCount = 0; //Every time a class or enum or KOQ is loaded from db for this schema it is incremented
+        bool m_isKnownBad = false; //This is set to true if we know that this schema is not valid. This is used to avoid loading it again
 
         explicit SchemaDbEntry(ECN::ECSchemaR schema) : m_cachedSchema(&schema) {}
         SchemaDbEntry(ECN::ECSchemaPtr& schema, int typeCountInSchema) : m_cachedSchema(schema), m_typeCountInSchema(typeCountInSchema), m_loadedTypeCount(0)
@@ -25,6 +27,8 @@ struct SchemaDbEntry final
 
         ECN::ECSchemaId GetId() const { return m_cachedSchema->GetId(); }
         bool IsFullyLoaded() const { return m_typeCountInSchema == m_loadedTypeCount; }
+        bool IsKnownBad() const { return m_isKnownBad; }
+        void SetKnownBad() { m_isKnownBad = true; }
     };
 
 /*---------------------------------------------------------------------------------------
@@ -79,6 +83,7 @@ struct SchemaReader final
 
     private:
         TableSpaceSchemaManager const& m_schemaManager;
+        mutable std::unordered_map<Utf8String, bset<BeInt64Id>> m_schemaElementsWithUnknowns;
 
         struct LegacyUnitsHelper final
             {
@@ -271,6 +276,28 @@ struct SchemaReader final
         ECN::ECDerivedClassesList GetAllDerivedClasses(ECN::ECClassId) const;
 
         void ClearCache() const;
+
+        /**
+         * @brief Caches a schema element with unknowns.
+         *
+         * The schema being read might be of a newer EC Version, and the current ECDb runtime might not be aware of all the features in the schema.
+         * This function is used to keep track of the schema elements that contain newer features that are as yet unknown to the current ECDb runtime.
+         *
+         * @param tableName The name of the table (eg: ec_Class, ec_Enumeration).
+         * @param elementId The ID of the element (eg: ECClassId, ECEnumerationId).
+         */
+        void CacheSchemaElementWithUnknowns(Utf8StringCR tableName, const BeInt64Id& elementId) const;
+
+        /**
+         * * @brief Checks if the schema element contains unknowns.
+         * 
+         * Checks the cache to see if the given schema element has been marked as contianing unknowns by the schema reader.
+         *
+         * @param tableName The name of the table (eg: ec_Class, ec_Enumeration).
+         * @param elementId The ID of the element (eg: ECClassId, ECEnumerationId).
+         * @return True if a matching entry is found in the cache, false otherwise.
+         */
+        bool SchemaElementContainsUnknowns(Utf8StringCR tableName, const BeInt64Id& elementId) const;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

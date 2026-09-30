@@ -1901,7 +1901,7 @@ size_t RowMajorMatrix::GetAll (double * data, size_t maxCount, bool transpose) c
         }
     else
         {
-        memcpy (data, &at(0), sizeof (double) * myCount);
+        BeStringUtilities::Memcpy(data, sizeof(double) * maxCount, &at(0), sizeof(double) * myCount);
         }
     return myCount;
     }
@@ -2297,6 +2297,7 @@ int     n
     double  tresh, theta, tau, t, sum, s, c, g, h;
     //int nn = n * n;
     int numRotations = 0;
+    UNUSED_VARIABLE(numRotations);
     //int diagonalStep = n + 1;
 
     /* Initialize Eigenvectors as identity matrix */

@@ -34,7 +34,7 @@ protected:
     static void MeasureSchemaMemoryUsage (ECSchemaPtr (*generateSchema) (void), Utf8String testcaseName);
 
     static ECSchemaPtr GenerateFlatTestSchema(size_t numberOfClasses, size_t numberOfProperties);
-    static ECSchemaPtr GenerateDeepHierarchyTestSchema(size_t numberOfClassHierarchies, size_t numberOfClassesPerHierarchy, size_t numberOfMixinsPerHierarchy, size_t numberOfPropertiesPerClass, bool overrideProperties);
+    static ECSchemaPtr GenerateDeepHierarchyTestSchema(size_t numberOfClassHierarchies, size_t numberOfClassesPerHierarchy, size_t numberOfMixinsPerHierarchy, size_t numberOfPropertiesPerClass, bool overrideProperties, ECSchemaReadContextPtr schemaContext);
     static ECSchemaPtr AddCustomAttributesToSchema(ECSchemaPtr schema, size_t numberOfItemsToSkipBetweenEach);
 
     static ECSchemaPtr GenerateSchema20000Classes1PropsPerClass() { return AddCustomAttributesToSchema(GenerateFlatTestSchema(20000, 1), 3); }
@@ -42,9 +42,9 @@ protected:
     static ECSchemaPtr GenerateSchema1000Classes20PropsPerClass() { return AddCustomAttributesToSchema(GenerateFlatTestSchema(1000, 20), 3); }
     static ECSchemaPtr GenerateSchema100Classes200PropsPerClass() { return AddCustomAttributesToSchema(GenerateFlatTestSchema(100, 200), 3); }
     static ECSchemaPtr GenerateSchema10Classes2000PropsPerClass() { return AddCustomAttributesToSchema(GenerateFlatTestSchema(10, 2000), 3); }
-    static ECSchemaPtr GenerateSchema10Root15Deep3Mixin5PropsAndOverrides() { return AddCustomAttributesToSchema(GenerateDeepHierarchyTestSchema(10, 15, 3, 5, true), 3); }
-    static ECSchemaPtr GenerateSchema300Root3Deep200Props() { return AddCustomAttributesToSchema(GenerateDeepHierarchyTestSchema(300, 3, 0, 200, false), 3); }
-    static ECSchemaPtr GenerateSchema50Root5Deep3Mixin5Props() { return AddCustomAttributesToSchema(GenerateDeepHierarchyTestSchema(50, 5, 3, 5, false), 3); }
+    static ECSchemaPtr GenerateSchema10Root15Deep3Mixin5PropsAndOverrides(ECSchemaReadContextPtr schemaContext) { return AddCustomAttributesToSchema(GenerateDeepHierarchyTestSchema(10, 15, 3, 5, true, schemaContext), 3); }
+    static ECSchemaPtr GenerateSchema300Root3Deep200Props(ECSchemaReadContextPtr schemaContext) { return AddCustomAttributesToSchema(GenerateDeepHierarchyTestSchema(300, 3, 0, 200, false, schemaContext), 3); }
+    static ECSchemaPtr GenerateSchema50Root5Deep3Mixin5Props(ECSchemaReadContextPtr schemaContext) { return AddCustomAttributesToSchema(GenerateDeepHierarchyTestSchema(50, 5, 3, 5, false, schemaContext), 3); }
 
     WString GetStandardsPath(WString fileName);
     WString GetAssetsGSchemaPath(WString domain, WString schemaFile);
@@ -55,6 +55,23 @@ protected:
     static const size_t MinimumRepeats = 5;
     static const size_t MaximumRepeats = 70;
     static const int DesiredNumberOfSecondsPerTest = 3;
+
+public:
+    static ECSchemaPtr GenerateSchema10Root15Deep3Mixin5PropsAndOverridesPublic()
+    {
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        return GenerateSchema10Root15Deep3Mixin5PropsAndOverrides(schemaContext);
+    }
+    static ECSchemaPtr GenerateSchema300Root3Deep200PropsPublic()
+    {
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        return GenerateSchema300Root3Deep200Props(schemaContext);
+    }
+    static ECSchemaPtr GenerateSchema50Root5Deep3Mixin5PropsPublic()
+    {
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        return GenerateSchema50Root5Deep3Mixin5Props(schemaContext);
+    }
 };
 
 END_BENTLEY_ECN_TEST_NAMESPACE

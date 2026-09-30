@@ -1987,9 +1987,9 @@ TcsEpsgCode TcsEpsgDataSetV6::LocateOperation (EcsOpType opType,const TcsEpsgCod
 			ok &= copTblPtr->GetAsLong (recVarCode,recordNbr,epsgFldCoordOpVariant);
 			ok &= copTblPtr->GetField (fldData,recordNbr,epsgFldCoordOpType);
 			EcsOpType recOpType = GetEpsgOpType (fldData.c_str ());
-			if (ok && (recOpType == opType) && (recSrcCode == sourceCode) &&
-											   (recTrgCode == targetCode) &&
-											   (variant == 0 || recVarCode == variant))
+			if (ok && (recOpType == opType) && (static_cast<unsigned long>(recSrcCode) == sourceCode) &&
+											   (static_cast<unsigned long>(recTrgCode) == targetCode) &&
+											   (variant == 0 || static_cast<long>(recVarCode) == variant))
 			{
 				ok = copTblPtr->GetAsEpsgCode (operationCode,recordNbr,epsgFldCoordOpCode);
 				break;
@@ -2038,7 +2038,7 @@ unsigned TcsEpsgDataSetV6::LocateParameterValue (const TcsEpsgCode& opCode,const
 			ok &= prmTblPtr->GetAsEpsgCode (recMthCode,idx,epsgFldCoordOpMethodCode);
 			if (ok)
 			{
-				ok = (recOprCode == opCode);
+				ok = (static_cast<unsigned long>(recOprCode) == opCode);
 			}
 			if (!ok)
 			{
@@ -2052,7 +2052,11 @@ unsigned TcsEpsgDataSetV6::LocateParameterValue (const TcsEpsgCode& opCode,const
 
 			// Verify that the current record pertains to the specific operation
 			// method that we have been given.
+#ifdef GEOCOORD_ENHANCEMENT
+            if (!(static_cast<unsigned long>(recMthCode) == opMethCode))
+#else
 			if (recMthCode != opMethCode)
+#endif
 			{
 				// Nope!  Continue on to the next record.
 				continue;
@@ -2061,7 +2065,7 @@ unsigned TcsEpsgDataSetV6::LocateParameterValue (const TcsEpsgCode& opCode,const
 			// See if this is the specific parameter we have been asked to
 			// extract.
 			ok = prmTblPtr->GetAsEpsgCode (recPrmCode,idx,epsgFldParameterCode);
-			if (ok && recPrmCode == prmCode)
+			if (ok && static_cast<unsigned long>(recPrmCode) == prmCode)
 			{
 				// Yup!  Continue on to the next record.  Save the record number
 				// and break the current loop.
@@ -3700,7 +3704,11 @@ bool TcsEpsgDataSetV6::ConvertUnits (double& value,const TcsEpsgCode& trgUomCode
 	double srcFactor;
 	double trgFactor;
 
+#ifdef GEOCOORD_ENHANCEMENT
+    if (!(static_cast<unsigned long>(srcUomCode) == trgUomCode))
+#else
 	if (srcUomCode != trgUomCode)
+#endif
 	{
 		srcType = GetUomFactor (srcFactor,srcUomCode);
 		trgType = GetUomFactor (trgFactor,trgUomCode);
@@ -3759,7 +3767,11 @@ bool TcsEpsgDataSetV6::FieldToReal (double& result,const TcsEpsgCode& trgUomCode
 	}
 	if (ok)
 	{
+#ifdef GEOCOORD_ENHANCEMENT
+        if (!(static_cast<unsigned long>(srcUomCode) == trgUomCode))
+#else
 		if (srcUomCode != trgUomCode)
+#endif
 		{
 			result = realValue * (srcFactor / trgFactor);
 		}
@@ -4446,7 +4458,7 @@ bool TcsEpsgDataSetV6::GetCoordsysQuad (short& quad,TcsEpsgCode& horzUom,TcsEpsg
 	}
 	if (ok)
 	{
-		ok = (uomCodeOne == uomCodeTwo);
+		ok = (static_cast<unsigned long>(uomCodeOne) == uomCodeTwo);
 	}
 	if (ok)
 	{

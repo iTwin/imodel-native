@@ -215,6 +215,9 @@ int                 *cst, // cst[i] means: 1 : constrain C(u[i]), 2: constrain C
 double              tol   // Tolerance to check removability
 )
     {
+    if (pCurve->params.numPoles <= 2 || BsplineParam::NumberInteriorKnots(pCurve->params.numPoles, pCurve->params.order, pCurve->params.closed) == 0)
+        return SUCCESS;
+
     const double WMIN = 1e-5;
     const double WMAX = 200.0;
     int i, j, k, ii, jj, first, last, off, n, m, r, s, fout, l, lp, rp, lt, rt, left = 0, right = 0, p, nu, norem = 0;

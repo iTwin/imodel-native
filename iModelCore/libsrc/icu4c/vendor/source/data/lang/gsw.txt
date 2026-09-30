@@ -1,6 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
 // License & terms of use: http://www.unicode.org/copyright.html
-// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
+// Generated using tools/cldr/cldr-to-icu/
 gsw{
     Keys{
         calendar{"Kaländer"}
@@ -576,14 +576,10 @@ gsw{
             gregorian{"Gregoriaanisch Kaländer"}
             hebrew{"Hebrääisch Kaländer"}
             indian{"Indisch Nationaalkaländer"}
-            islamic{"Islaamisch Kaländer"}
-            islamic-civil{"Bürgerlich islaamisch Kaländer"}
             japanese{"Japaanisch Kaländer"}
             roc{"Kaländer vor Republik Chiina"}
         }
         collation{
-            big5han{"Tradizionells Chineesisch - Big5"}
-            gb2312han{"Veräifachts Chineesisch - GB2312"}
             phonebook{"Telifonbuech-Sortiirregle"}
             pinyin{"Pinyin-Sortiirregle"}
             stroke{"Strichfolg"}
@@ -621,9 +617,5 @@ gsw{
         language{"Schpraach: {0}"}
         script{"Schrift: {0}"}
         territory{"Regioon: {0}"}
-    }
-    localeDisplayPattern{
-        pattern{"{0} ({1})"}
-        separator{"{0}, {1}"}
     }
 }

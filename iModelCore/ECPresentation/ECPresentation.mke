@@ -60,7 +60,6 @@ DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
 
 LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)iTwinBentley$(stlibext)
-LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)iTwinXml$(stlibext)
 LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)iTwinGeom$(stlibext)
 LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)iTwinSQLite$(stlibext)
 LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)iTwinECObjects$(stlibext)

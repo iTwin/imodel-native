@@ -37,6 +37,8 @@ struct BSurfPatch
     //! flag set to true if this is a null interval (high multiplicity knot) in the v direction
     bool  isNullV;
 
+    GEOMDLLIMPEXP BSurfPatch();
+
     GEOMDLLIMPEXP bool Evaluate (DPoint2dCR uv, DPoint3dR xyz) const;
     GEOMDLLIMPEXP bool Evaluate (DPoint2dCR uv, DPoint3dR xyz, DVec3dR dXdu, DVec3dR dXdv) const;
     GEOMDLLIMPEXP DPoint2d PatchUVToKnotUV (DPoint2dCR patchUV) const;
@@ -44,7 +46,6 @@ struct BSurfPatch
 
     // return estimates of how far interior control points are from midpoints of chords.
     // for each grid edge and diagonal, the deviation is point distance from chord midpoint, divided by shorter edge length, capped at 10.
-    //
     GEOMDLLIMPEXP bool MidpointDeviations (double &uFraction, double &vFraction, double &twistFraction) const;
     };
 
@@ -766,7 +767,7 @@ double              tolerance
     bool ComputeSecondMomentAreaProducts
         (
         DMatrix4dR products,
-        double relativeTolerancefForFacets,
+        double relativeToleranceForFacets,
         int numGauss,
         int &numEvaluations
         ) const;
@@ -845,6 +846,16 @@ bvector<CurveAndSolidLocationDetail> &curvePoints     //!< [out] hit points on c
 
     //! Delete previous trim and add new trim.
     void SetTrim (CurveVectorR curves);
+
+    //! Adjust stroked boundary loops of a closed B-spline surface by splitting them across a parametric seam, where
+    //! the knot space wraps around.
+    //! This method uses heuristics to detect a boundary loop that has successive points close to and on opposite
+    //! sides of a parametric seam. Such loops are reflected and split across the seam, resulting in multiple loops whose
+    //! union equates to the projection of a closed space curve onto the surface over its seam.
+    //! The surface's stroked boundary polygons are replaced, but all existing TrimCurves are removed.
+    //! @param [in] seamRelTol fraction of knot range to serve as relative tolerance for computing seam proximity. Pass nonpositive for default (0.01).
+    //! @return true if the operation succeeded or there are no boundaries; false if heuristics failed, in which case the instance is unchanged.
+    bool SplitStrokedBoundaryLoopsAtParametricSeams(double seamRelTol = -1.0);
 
     //! Copy poles from a row into a curve structure. index -1 is understood as "end"
     MSBsplineCurvePtr GetPolygonRowAsCurve (int index) const;

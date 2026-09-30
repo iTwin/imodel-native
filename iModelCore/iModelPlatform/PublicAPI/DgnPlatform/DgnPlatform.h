@@ -24,7 +24,6 @@
 #include <BeSQLite/ChangeSet.h>
 #include <BeSQLite/RTreeMatch.h>
 #include <ECDb/ECDbApi.h>
-#include <GeomJsonWireFormat/JsonUtils.h>
 #include <GeomJsonWireFormat/BeJsGeomUtils.h>
 #include <PlacementOnEarth/Placement.h>
 
@@ -90,6 +89,7 @@ DGNPLATFORM_TYPEDEFS(DgnElementExpressionContext);
 DGNPLATFORM_TYPEDEFS(FreeTypeFace)
 DGNPLATFORM_TYPEDEFS(DgnGCS)
 DGNPLATFORM_TYPEDEFS(DgnGeometryPart)
+DGNPLATFORM_TYPEDEFS(GeometryPartSource)
 DGNPLATFORM_TYPEDEFS(DgnHost)
 DGNPLATFORM_TYPEDEFS(DgnImportContext)
 DGNPLATFORM_TYPEDEFS(DgnLineStyles)

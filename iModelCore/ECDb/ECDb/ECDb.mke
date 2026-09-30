@@ -21,6 +21,7 @@ ECDbPublicHeaders =  \
                 $(publicApiDir)SchemaManager.h \
                 $(publicApiDir)ECInstanceFinder.h \
                 $(publicApiDir)ECSqlStatement.h \
+                $(publicApiDir)IECSqlRow.h \
                 $(publicApiDir)IECSqlValue.h \
                 $(publicApiDir)IECSqlBinder.h \
                 $(publicApiDir)ECSqlColumnInfo.h \
@@ -32,7 +33,11 @@ ECDbPublicHeaders =  \
                 $(publicApiDir)ConcurrentQueryManager.h \
                 $(publicApiDir)InstanceReader.h \
                 $(publicApiDir)ECDbVirtualTab.h \
-                $(publicApiDir)ECDbExpressionSymbolContext.h
+                $(publicApiDir)InstanceGraph.h \
+                $(publicApiDir)InstanceWriter.h \
+                $(publicApiDir)ECDbExpressionSymbolContext.h \
+                $(publicApiDir)InstanceRepository.h \
+                $(publicApiDir)ChangesetReader.h
 
 ECDbAllHeaders = \
                 $(ECDbPublicHeaders) \
@@ -72,11 +77,12 @@ ECDbAllHeaders = \
                 $(baseDir)ChangeSummaryExtractor.h \
                 $(baseDir)ChangeSummaryImpl.h \
                 $(baseDir)ConcurrentQueryManagerImpl.h \
-                $(baseDir)QueryJsonAdaptor.h \
                 $(baseDir)InstanceReaderImpl.h \
                 $(baseDir)SchemaSync.h \
                 $(baseDir)IntegrityChecker.h \
                 $(baseDir)BuiltInVTabs.h \
+                $(baseDir)InstanceGraphImpl.h \
+                $(baseDir)InstanceGraphVTab.h \
                 $(baseDir)ECSql/DynamicSelectClauseECClass.h \
                 $(baseDir)ECSql/Parser/SqlTypes.h \
                 $(baseDir)ECSql/Parser/IParseContext.h \
@@ -126,6 +132,7 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/PointECSqlField.h \
                 $(baseDir)ECSql/PrimitiveECSqlField.h \
                 $(baseDir)ECSql/StructECSqlField.h \
+                $(baseDir)ECSql/JsonECSqlValue.h \
                 $(baseDir)ECSql/ArrayECSqlField.h \
                 $(baseDir)ECSql/NavigationPropertyECSqlField.h \
                 $(baseDir)ECSql/ECInstanceAdapterHelper.h \
@@ -134,10 +141,16 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/ValueCreationFuncExp.h \
                 $(baseDir)DbSchema.h \
                 $(baseDir)DbSchemaPersistenceManager.h \
+                $(baseDir)DerivedDbStructures.h \
                 $(baseDir)LightweightCache.h \
                 $(baseDir)SqlNames.h \
+                $(baseDir)InstanceWriterImpl.h \
                 $(baseDir)ClassMapColumnFactory.h \
-                $(baseDir)ClassViews.h
+                $(baseDir)ClassViews.h \
+                $(baseDir)ChangesetValue.h \
+                $(baseDir)IECSqlValueHelper.h \
+                $(baseDir)ChangesetValueFactory.h \
+                $(baseDir)PreparedChangesetReader.h
 
 
 #----------------------------------------------------------------------
@@ -246,6 +259,16 @@ $(o)ChangeSummaryExtractor$(oext):                            $(baseDir)ChangeSu
 $(o)ChangedIdsIteratorImpl$(oext):                            $(baseDir)ChangedIdsIteratorImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ChangeIteratorImpl$(oext):                                $(baseDir)ChangeIteratorImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)ChangesetReader$(oext):                                 $(baseDir)ChangesetReader.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)PreparedChangesetReader$(oext):                         $(baseDir)PreparedChangesetReader.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)ChangesetValue$(oext):                                    $(baseDir)ChangesetValue.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)IECSqlValueHelper$(oext):                                 $(baseDir)IECSqlValueHelper.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)ChangesetValueFactory$(oext):                             $(baseDir)ChangesetValueFactory.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ChangeSummaryImpl$(oext):                                 $(baseDir)ChangeSummaryImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
@@ -369,6 +392,8 @@ $(o)PointECSqlField$(oext):                                   $(baseDir)ECSql/Po
 
 $(o)StructECSqlField$(oext):                                  $(baseDir)ECSql/StructECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
+$(o)JsonECSqlValue$(oext):                                     $(baseDir)ECSql/JsonECSqlValue.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
 $(o)ArrayECSqlField$(oext):                                   $(baseDir)ECSql/ArrayECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)CommonTableExp$(oext):                                    $(baseDir)ECSql/CommonTableExp.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
@@ -383,23 +408,35 @@ $(o)DbSchema$(oext):                                          $(baseDir)DbSchema
 
 $(o)DbSchemaPersistenceManager$(oext):                        $(baseDir)DbSchemaPersistenceManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
+$(o)DerivedDbStructures$(oext):                               $(baseDir)DerivedDbStructures.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
 $(o)ECDbExpressionSymbolProvider$(oext):                      $(baseDir)ECDbExpressionSymbolProvider.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ClassMapColumnFactory$(oext):                             $(baseDir)ClassMapColumnFactory.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ConcurrentQueryManagerImpl$(oext):                        $(baseDir)ConcurrentQueryManagerImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)QueryJsonAdaptor$(oext):                                  $(baseDir)QueryJsonAdaptor.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECSqlRowAdaptor$(oext):                                   $(baseDir)ECSqlRowAdaptor.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)InstanceReaderImpl$(oext):                                $(baseDir)InstanceReaderImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)SchemaSync$(oext):                                $(baseDir)SchemaSync.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)SchemaSync$(oext):                                        $(baseDir)SchemaSync.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)IntegrityChecker$(oext):                                  $(baseDir)IntegrityChecker.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)BuiltInVTabs$(oext):                                      $(baseDir)BuiltInVTabs.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ClassViews$(oext):                                        $(baseDir)ClassViews.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)InstanceGraph$(oext):                                     $(baseDir)InstanceGraph.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)InstanceGraphVTab$(oext):                                 $(baseDir)InstanceGraphVTab.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)ClassViews$(oext):$(baseDir)ClassViews.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)InstanceWriterImpl$(oext):                                $(baseDir)InstanceWriterImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)InstanceRepository$(oext):                                $(baseDir)InstanceRepository.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)SchemaViewWriter$(oext):                                 $(baseDir)SchemaViewWriter.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 cppObjects=%$(MultiCompileObjectList)
@@ -510,9 +547,7 @@ LINKER_LIBRARIES            = $(ContextSubpartsLibs)$(BeSQLiteLib) \
                               $(ContextSubpartsLibs)$(UnitsLib) \
                               $(ContextSubpartsLibs)$(BentleyGeomLib) \
                               $(ContextSubpartsLibs)$(libprefix)iTwinBentley$(libext) \
-                              $(ContextSubpartsLibs)$(libprefix)iTwinXml$(libext) \
-                              $(ContextSubpartsLibs)$(libprefix)iTwinLibxml2$(libext) \
-                              $(ContextSubpartsLibs)$(libprefix)iTwinJsonCpp$(stlibext) \
+                              $(ContextSubpartsLibs)$(libprefix)iTwinPugixml$(libext) \
                               $(ContextSubpartsLibs)$(libprefix)iTwinGeomSerialization$(libext) \
                               $(ContextSubPartsLibs)$(stlibprefix)iTwin_google_re2$(stlibext)
 

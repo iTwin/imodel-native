@@ -15,6 +15,20 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
+//! Determines how strict DbMapValidator is.
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+enum class DbMapValidationMode
+    {
+    //! Full validation. Any detected inconsistency fails the operation.
+    SchemaImport,
+    //! Used when replaying already accepted timeline changes (changeset apply).
+    //! Missing entity data-property maps and orphan ec_CustomAttribute rows are reported as warnings for
+    //! compatibility with existing files. Loaded property maps and physical structures are validated strictly.
+    ChangesetApply
+    };
+
+//=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct TableSpaceSchemaManager
@@ -103,7 +117,7 @@ struct VirtualSchemaManager : ECN::IECSchemaLocater {
         mutable uint64_t m_idSeq;
         ECDbCR m_ecdb;
         mutable ECN::ECSchemaCachePtr m_cache;
-        mutable bmap<Utf8String, ECN::ECSchemaCP> m_schemas;
+        mutable bmap<Utf8String, ECN::ECSchemaCP, CompareIUtf8Ascii> m_schemas;
         virtual ECN::ECSchemaPtr _LocateSchema(ECN::SchemaKeyR key, ECN::SchemaMatchType matchType, ECN::ECSchemaReadContextR schemaContext) override;
         BentleyStatus AddAndValidateVirtualSchema(Utf8StringCR schemaXml, bool validate) const;
         uint64_t GetNextId() const;
@@ -119,7 +133,12 @@ struct VirtualSchemaManager : ECN::IECSchemaLocater {
         bool IsValidVirtualSchema(ECN::ECSchemaR schema, Utf8StringR err) const;
         ECN::ECSchemaCP GetSchema(Utf8StringCR schemaName) const;
         ECN::ECClassCP GetClass(Utf8StringCR schemaName, Utf8StringCR className) const;
+        // The numberOfClasses parameter gives us the exact number of classes found which can be used for more personalized error message
+        ECN::ECClassCP FindClass(Utf8StringCR className, size_t& numberOfClasses) const;
         BentleyStatus Add(Utf8StringCR schemaXml) const;
+        Utf8String GetDescription() const override {
+            return Utf8PrintfString("ECDb:VirtualSchemaManager %s", m_ecdb.GetDbFileName());
+        }
 };
 //=======================================================================================
 // @bsiclass
@@ -198,7 +217,8 @@ private:
     BentleyStatus CheckForSelectWildCardLimit() const;
     BentleyStatus CanCreateOrUpdateRequiredTables() const;
     BentleyStatus FindIndexes(std::vector<DbIndex const*>& indexes) const;
-    BentleyStatus LoadIndexesSQL(std::map<Utf8String, Utf8String, CompareIUtf8Ascii>& sqliteIndexes) const;
+    BentleyStatus LoadPhysicalIndexes(std::map<Utf8String, Utf8String, CompareIUtf8Ascii>& physicalIndexes) const;
+    bool IsIndexPersistedUnchanged(DbIndex const&) const;
 
     std::set<ClassMap const*> GetRelationshipConstraintClassMaps(SchemaImportContext&, ECN::ECRelationshipConstraintCR) const;
     BentleyStatus GetRelationshipConstraintClassMaps(SchemaImportContext&, std::set<ClassMap const*>&, ECN::ECClassCR, bool recursive) const;
@@ -215,7 +235,6 @@ public:
     BentleyStatus CreateOrUpdateIndexesInDb(SchemaImportContext&) const;
     BentleyStatus PurgeOrphanTables(SchemaImportContext&) const;
     /* ====================== */
-
     SchemaSync& GetSchemaSync() const { return m_schemaSync;  }
     VirtualSchemaManager const& GetVirtualSchemaManager() const;
     SchemaImportResult ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaManager::SchemaImportOptions, SchemaImportToken const*, SchemaSync::SyncDbUri) const;
@@ -223,6 +242,7 @@ public:
     std::set<DbTable const*> GetRelationshipConstraintPrimaryTables(SchemaImportContext&, ECN::ECRelationshipConstraintCR) const;
     size_t GetRelationshipConstraintTableCount(SchemaImportContext&, ECN::ECRelationshipConstraintCR) const;
     DropSchemaResult DropSchema(Utf8StringCR name, SchemaImportToken const* token, bool logIssue) const;
+    DropSchemaResult DropSchemas(bvector<Utf8String> schemaNames, SchemaImportToken const* token, bool logIssue) const;
     BentleyStatus RepopulateCacheTables() const;
     DbResult UpgradeECInstances() const { return UpgradeExistingECInstancesWithNewPropertiesMapToOverflowTable(GetECDb()); }
     BentleyStatus CreateClassViews() const;
@@ -230,6 +250,12 @@ public:
     SchemaChangeEvent& OnBeforeSchemaChanges() const { return m_onBeforeSchemaChanged;}
     SchemaChangeEvent& OnAfterSchemaChanges() const { return m_onAfterSchemaCHanged;};
     ECDbSystemSchemaHelper const& GetSystemSchemaHelper() const { return m_systemSchemaHelper; }
+    //! Syncs the sqlite schema (tables/indexes) with the ec_* meta tables and validates the resulting map.
+    //! @param[in] doNotTrackDDLChanges if true, DDL changes are not tracked
+    //! @param[in] validationMode use DbMapValidationMode::ChangesetApply when replaying already accepted
+    //! timeline changes so that historical inconsistencies do not fail the apply.
+    BentleyStatus UpdateDbSchema(bool doNotTrackDDLChanges, DbMapValidationMode validationMode) const;
+    BentleyStatus ValidatePersistedMappings(SchemaManager::SchemaImportOptions, bool continueAfterError = false) const;
     };
 
 //=======================================================================================
@@ -330,15 +356,18 @@ struct SchemaManager::Dispatcher final
         MainSchemaManager const& Main() const { BeAssert(m_main != nullptr); return *m_main; }
         BentleyStatus AddManager(DbTableSpace const&) const;
         BentleyStatus RemoveManager(DbTableSpace const&) const;
+        bool ExistsManager(Utf8StringCR tableSpace) const;
         bool OwnsSchema(ECN::ECSchemaCR schema) const;
         bvector<ECN::ECSchemaCP> GetSchemas(bool loadSchemaEntities, Utf8CP tableSpace) const;
         ECN::ECSchemaPtr LocateSchema(ECN::SchemaKeyR, ECN::SchemaMatchType, ECN::ECSchemaReadContextR, Utf8CP tableSpace) const;
         bool ContainsSchema(Utf8StringCR schemaNameOrAlias, SchemaLookupMode, Utf8CP tableSpace) const;
         ECN::ECSchemaCP GetSchema(Utf8StringCR schemaNameOrAlias, bool loadSchemaEntities, SchemaLookupMode, Utf8CP tableSpace) const;
-
         ECN::ECClassCP FindClass(Utf8StringCR className, Utf8CP tableSpace) const;
         ECN::ECClassCP GetClass(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, SchemaLookupMode, Utf8CP tableSpace) const;
         ECN::ECClassCP GetClass(ECN::ECClassId classId, Utf8CP tableSpace) const;
+        bool IsSubClassOf(Utf8StringCR subClassECSqlName, Utf8StringCR parentClassECSqlName, Utf8CP tableSpace);
+        bool IsSubClassOf(ECN::ECClassId subClassId, ECN::ECClassId parentClassId, Utf8CP tableSpace);
+
         ECN::ECClassId GetClassId(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, SchemaLookupMode, Utf8CP tableSpace) const;
         ClassMapStrategy GetClassMapStrategy(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, SchemaLookupMode mode, Utf8CP tableSpace) const;
 

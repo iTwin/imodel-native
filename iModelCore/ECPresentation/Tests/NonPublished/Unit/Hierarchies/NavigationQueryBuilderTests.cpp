@@ -160,7 +160,7 @@ TEST_F (NavigationQueryBuilderTests, NotifiesAboutUsedClassesInFromClause)
     TestUsedClassesListener listener;
     GetBuilder().GetParameters().SetUsedClassesListener(&listener);
 
-    RootNodeRule rule("", 1000, false, TargetTree_MainTree, false);
+    RootNodeRule rule("", 1000, false, false);
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false,
         "", classA->GetFullName(), false);
 
@@ -184,7 +184,7 @@ TEST_F (NavigationQueryBuilderTests, NotifiesAboutUsedPolymorphicClassesInFromCl
     TestUsedClassesListener listener;
     GetBuilder().GetParameters().SetUsedClassesListener(&listener);
 
-    RootNodeRule rule("", 1000, false, TargetTree_MainTree, false);
+    RootNodeRule rule("", 1000, false, false);
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false,
         "", classA->GetFullName(), true);
 
@@ -222,7 +222,7 @@ TEST_F (NavigationQueryBuilderTests, NotifiesAboutUsedClassesInJoins)
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classA);
     RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
-    ChildNodeRule rule("", 1000, false, TargetTree_MainTree);
+    ChildNodeRule rule("", 1000, false);
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, false,
         0, "", RequiredRelationDirection_Forward, relAB->GetSchema().GetName(), relAB->GetFullName(), classB->GetFullName());
 
@@ -268,7 +268,7 @@ TEST_F (NavigationQueryBuilderTests, NotifiesAboutUsedRelatedClassesInInstanceFi
     TestUsedClassesListener listener;
     GetBuilder().GetParameters().SetUsedClassesListener(&listener);
 
-    RootNodeRule rule("", 1000, false, TargetTree_MainTree, false);
+    RootNodeRule rule("", 1000, false, false);
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false,
         Utf8PrintfString("this.GetRelatedValue(\"%s\", \"Forward\", \"%s\", \"Prop\") = \"test\"", relAB->GetFullName(), classB->GetFullName()),
         classA->GetFullName(), false);
@@ -313,7 +313,7 @@ TEST_F (NavigationQueryBuilderTests, NotifiesAboutUsedRelatedInstanceClasses)
     TestUsedClassesListener listener;
     GetBuilder().GetParameters().SetUsedClassesListener(&listener);
 
-    RootNodeRule rule("", 1000, false, TargetTree_MainTree, false);
+    RootNodeRule rule("", 1000, false, false);
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "", classA->GetFullName(), false);
     spec.AddRelatedInstance(*new RelatedInstanceSpecification(RequiredRelationDirection_Forward, relAB->GetFullName(), classB->GetFullName(), "b"));
 

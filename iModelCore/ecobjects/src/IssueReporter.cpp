@@ -86,6 +86,10 @@ IssueId ECIssueId::EC_0057 = IssueId("EC_0057");
 IssueId ECIssueId::EC_0058 = IssueId("EC_0058");
 IssueId ECIssueId::EC_0059 = IssueId("EC_0059");
 IssueId ECIssueId::EC_0060 = IssueId("EC_0060");
+IssueId ECIssueId::EC_0061 = IssueId("EC_0061");
+IssueId ECIssueId::EC_0062 = IssueId("EC_0062");
+IssueId ECIssueId::EC_0063 = IssueId("EC_0063");
+IssueId ECIssueId::EC_0064 = IssueId("EC_0064");
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -97,6 +101,7 @@ ECOBJECTS_EXPORT BentleyStatus IssueReporter::AddListener(IIssueListener const& 
         return ERROR;
 
     m_issueListener = &issueListener;
+    m_reportOnceKeys.clear();
     return SUCCESS;
     }
 
@@ -107,6 +112,7 @@ ECOBJECTS_EXPORT void IssueReporter::RemoveListener()
     {
     BeMutexHolder lock(m_mutex);
     m_issueListener = nullptr;
+    m_reportOnceKeys.clear();
     }
 
 //---------------------------------------------------------------------------------------

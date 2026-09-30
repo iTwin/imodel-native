@@ -15,6 +15,9 @@
 #include <Napi/napi.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 #include "DgnDbWorker.h"
+#ifndef BENTLEY_WIN32
+    #include <signal.h>
+#endif
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -33,8 +36,11 @@ USING_NAMESPACE_BENTLEY_EC
 #define SET_CONSTRUCTOR(t) Constructor() = Napi::Persistent(t); Constructor().SuppressDestruct();
 #define DEFINE_CONSTRUCTOR static Napi::FunctionReference& Constructor() { static Napi::FunctionReference s_ctor; return s_ctor; }
 
-#define THROW_JS_EXCEPTION(str) BeNapi::ThrowJsException(info.Env(), str);
 #define THROW_JS_TYPE_EXCEPTION(str) BeNapi::ThrowJsTypeException(info.Env(), str);
+#define THROW_JS_IMODEL_NATIVE_EXCEPTION(env, str, status) BeNapi::ThrowJsException(env, str, (int)status, IModelJsNativeErrorKeyHelper::GetITwinError(status));
+#define THROW_JS_SCHEMA_SYNC_EXCEPTION(env, str, status) BeNapi::ThrowJsException(env, str, (int)status, {"schema-sync", SchemaSync::GetStatusAsString(status)});
+#define THROW_JS_BE_SQLITE_EXCEPTION(env, str, status) BeNapi::ThrowJsException(env, str, (int)status, {"be-sqlite", BeSQLiteLib::GetErrorName(status)});
+#define THROW_JS_DGN_DB_EXCEPTION(env, str, status) BeNapi::ThrowJsException(env, str, (int)status, DgnDbStatusHelper::GetITwinError(status));
 
 #define ARGUMENT_IS_PRESENT(i) (info.Length() > (i))
 #define ARGUMENT_IS_NOT_PRESENT(i) !ARGUMENT_IS_PRESENT(i)
@@ -54,16 +60,28 @@ USING_NAMESPACE_BENTLEY_EC
     }
 
 #define REQUIRE_ARGUMENT_ANY_OBJ(i, var)\
-    if (ARGUMENT_IS_NOT_PRESENT(i)) {\
+    if (ARGUMENT_IS_NOT_PRESENT(i) || !info[i].IsObject()) {\
         THROW_JS_TYPE_EXCEPTION("Argument " #i " must be an object")\
     }\
     Napi::Object var = info[i].As<Napi::Object>();
 
 #define REQUIRE_ARGUMENT_ANY_OBJ_ASYNC(i, var, deferred)\
-    if (ARGUMENT_IS_NOT_PRESENT(i)) {\
+    if (ARGUMENT_IS_NOT_PRESENT(i) || !info[i].IsObject()) {\
         REJECT_DEFERRED_AND_RETURN(deferred, "Argument " #i " must be an object")\
     }\
     Napi::Object var = info[i].As<Napi::Object>();
+
+#define REQUIRE_ARGUMENT_ARRAY(i, var)\
+    if (ARGUMENT_IS_NOT_PRESENT(i) || !info[i].IsArray()) {\
+        THROW_JS_TYPE_EXCEPTION("Argument " #i " must be an array")\
+    }\
+    Napi::Array var = info[i].As<Napi::Array>();
+
+#define REQUIRE_ARGUMENT_ANY_VALUE(i, var)\
+    if (ARGUMENT_IS_NOT_PRESENT(i)) {\
+        THROW_JS_TYPE_EXCEPTION("Argument " #i " must be defined")\
+    }\
+    Napi::Value var = info[i];
 
 #define REQUIRE_ARGUMENT_OBJ(i, T, var)\
     if (ARGUMENT_IS_NOT_PRESENT(i) || !T::InstanceOf(info[i])) {\
@@ -322,25 +340,25 @@ inline static bool boolMember(Napi::Object const& obj, Utf8CP name, bool default
 inline static Utf8String requireString(Napi::Object const& obj, Utf8CP name) {
     auto strVal = stringMember(obj, name);
     if (strVal.empty())
-        BeNapi::ThrowJsException(obj.Env(), Utf8PrintfString("must supply %s", name).c_str());
+        THROW_JS_IMODEL_NATIVE_EXCEPTION(obj.Env(), Utf8PrintfString("must supply %s", name).c_str(), IModelJsNativeErrorKey::BadArg);
     return strVal;
 }
 inline static int requireInt(Napi::Object const& obj, Utf8CP name) {
     auto member = obj.Get(name);
     if (!member.IsNumber())
-        BeNapi::ThrowJsException(obj.Env(), Utf8PrintfString("must supply %s", name).c_str());
+        THROW_JS_IMODEL_NATIVE_EXCEPTION(obj.Env(), Utf8PrintfString("must supply %s", name).c_str(), IModelJsNativeErrorKey::BadArg);
     return  member.ToNumber().Int32Value();
 }
 inline static bool requireBool(Napi::Object const& obj, Utf8CP name) {
     auto member = obj.Get(name);
     if (!member.IsBoolean())
-        BeNapi::ThrowJsException(obj.Env(), Utf8PrintfString("must supply %s", name).c_str());
+        THROW_JS_IMODEL_NATIVE_EXCEPTION(obj.Env(), Utf8PrintfString("must supply %s", name).c_str(), IModelJsNativeErrorKey::BadArg);
     return  member.ToBoolean().Value();
 }
 inline static Napi::Array requireArray(Napi::Object const& obj, Utf8CP name) {
     auto member = obj.Get(name);
     if (!member.IsArray())
-        BeNapi::ThrowJsException(obj.Env(), Utf8PrintfString("must supply array %s", name).c_str());
+        THROW_JS_IMODEL_NATIVE_EXCEPTION(obj.Env(), Utf8PrintfString("must supply array %s", name).c_str(), IModelJsNativeErrorKey::BadArg);
     return member.As<Napi::Array>();
 }
 
@@ -360,7 +378,7 @@ ENUM_IS_FLAGS(TextEmphasis);
 
 struct JsInterop {
     [[noreturn]] static void throwSqlResult(Utf8CP msg, Utf8CP fileName, DbResult result) {
-        BeNapi::ThrowJsException(Env(), Utf8PrintfString("%s [%s]: %s", msg, fileName, BeSQLiteLib::GetErrorString(result)).c_str(), result);
+        THROW_JS_BE_SQLITE_EXCEPTION(Env(), Utf8PrintfString("%s [%s]: rc=%d, %s", msg, fileName, (int)result, BeSQLiteLib::GetLogError(result).c_str()).c_str(), result);
     }
     [[noreturn]] static void throwDgnDbStatus(DgnDbStatus);
     [[noreturn]] static void throwWrongClass() { throwDgnDbStatus(DgnDbStatus::WrongClass); }
@@ -390,6 +408,7 @@ struct JsInterop {
         {
         Utf8String m_schemaSyncDbUri;
         bool m_schemaLockHeld = true;
+        bool m_skipSaveChanges = false;
         ECSchemaReadContextPtr m_customSchemaContext = nullptr;
         };
 
@@ -414,6 +433,7 @@ struct JsInterop {
     BE_JSON_NAME(data)
     BE_JSON_NAME(date)
     BE_JSON_NAME(dbName)
+    BE_JSON_NAME(debugLogging)
     BE_JSON_NAME(defaultTxn)
     BE_JSON_NAME(description)
     BE_JSON_NAME(ecefLocation)
@@ -424,6 +444,7 @@ struct JsInterop {
     BE_JSON_NAME(face)
     BE_JSON_NAME(fileExt)
     BE_JSON_NAME(fileName)
+    BE_JSON_NAME(findOrphanedBlocks)
     BE_JSON_NAME(finishedAtOrAfterTime)
     BE_JSON_NAME(fonts)
     BE_JSON_NAME(forceUseId)
@@ -443,6 +464,7 @@ struct JsInterop {
     BE_JSON_NAME(name)
     BE_JSON_NAME(namespace)
     BE_JSON_NAME(nRequests)
+    BE_JSON_NAME(nSeconds)
     BE_JSON_NAME(numBytes)
     BE_JSON_NAME(offset)
     BE_JSON_NAME(openMode)
@@ -463,6 +485,7 @@ struct JsInterop {
     BE_JSON_NAME(showOnlyFinished)
     BE_JSON_NAME(size)
     BE_JSON_NAME(skipFileCheck)
+    BE_JSON_NAME(skipWriteLockCheck)
     BE_JSON_NAME(startFromId)
     BE_JSON_NAME(state)
     BE_JSON_NAME(storageType)
@@ -477,6 +500,8 @@ struct JsInterop {
     BE_JSON_NAME(value)
     BE_JSON_NAME(writeable)
     BE_JSON_NAME(yesNo)
+    BE_JSON_NAME(uncompressedSize)
+    BE_JSON_NAME(skipFKConstraintValidations)
 
 #define JSON_NAME(__val__) JsInterop::json_##__val__()
 
@@ -484,7 +509,7 @@ private:
     static void GetRowAsJson(BeJsValue json, BeSQLite::EC::ECSqlStatement &);
     static void RegisterOptionalDomains();
     static void InitializeSolidKernel();
-    static void AddFallbackSchemaLocaters(ECDbR db, ECSchemaReadContextPtr schemaContext);
+    static void AddFallbackSchemaLocaters(IECSchemaLocaterR finalLocater, ECSchemaReadContextPtr schemaContext);
     static void AddFallbackSchemaLocaters(ECSchemaReadContextPtr schemaContext);
 public:
     static void HandleAssertion(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType type);
@@ -499,7 +524,10 @@ public:
     static DgnDbStatus GetElement(BeJsValue results, DgnDbR db, Napi::Object);
     static Napi::String InsertElement(DgnDbR db, Napi::Object props, Napi::Value options);
     static void UpdateElement(DgnDbR db, Napi::Object);
+    static void ChangeElementParent(DgnDbR db, Napi::Object props);
+    static void ChangeElementModel(DgnDbR db, Napi::Object props);
     static void DeleteElement(DgnDbR db, Utf8StringCR eidStr);
+    static BulkDeleteElementsResult DeleteElements(DgnDbR dgndb, Napi::Array elementIds, Napi::Value deleteOptionsObj);
     static DgnDbStatus SimplifyElementGeometry(DgnDbR db, Napi::Object simplifyArgs);
     static InlineGeometryPartsResult InlineGeometryParts(DgnDbR db);
     static Napi::String InsertElementAspect(DgnDbR db, Napi::Object aspectProps);
@@ -513,6 +541,8 @@ public:
     static ProcessPolyfaceResult ProcessPolyface(PolyfaceQueryCR, bool wantParamsAndNormals, std::function<void(PolyfaceQueryCR)>);
     static DgnDbStatus ExportGraphics(DgnDbR db, Napi::Object const& exportProps);
     static DgnDbStatus ExportPartGraphics(DgnDbR db, Napi::Object const& exportProps);
+    static Napi::Value ExportGraphicsAsync(DgnDbR db, Napi::Object const& exportProps);
+    static Napi::Value ExportPartGraphicsAsync(DgnDbR db, Napi::Object const& exportProps);
     static Napi::Value GenerateElementMeshes(DgnDbR, Napi::Object const&);
 
     static DgnDbStatus ProcessGeometryStream(DgnDbR db, Napi::Object const& requestProps);
@@ -520,6 +550,7 @@ public:
     static Napi::String InsertLinkTableRelationship(DgnDbR db, Napi::Object props);
     static void UpdateLinkTableRelationship(DgnDbR db, Napi::Object props);
     static void DeleteLinkTableRelationship(DgnDbR db, Napi::Object props);
+    static void DeleteLinkTableRelationships(DgnDbR db, Napi::Array propsArray);
     static Napi::String InsertCodeSpec(DgnDbR db, Utf8StringCR name, BeJsConst jsonProperties);
     static Napi::String InsertModel(DgnDbR db, Napi::Object);
     static void UpdateModel(DgnDbR db, Napi::Object props);
@@ -530,6 +561,19 @@ public:
     static DgnDbStatus QueryDefinitionElementUsage(BeJsValue usageInfo, DgnDbR db, bvector<Utf8String> const& idStringArray);
     static void UpdateProjectExtents(DgnDbR dgndb, BeJsConst newExtents);
     static void UpdateIModelProps(DgnDbR dgndb, BeJsConst);
+    static Napi::Value ReadInstance(ECDbR db, NapiInfoCR info);
+    static Napi::Value InsertInstance(ECDbR db, NapiInfoCR info);
+    static Napi::Value UpdateInstance(ECDbR db, NapiInfoCR info);
+    static Napi::Value DeleteInstance(ECDbR db, NapiInfoCR info);
+    static Napi::Value ImportCSVData(ECDbR db, NapiInfoCR info);
+    static Napi::Value ImportCSVFile(ECDbR db, NapiInfoCR info);
+    static Napi::Value PatchJsonProperties(NapiInfoCR info);
+    static Napi::Value ResolveInstanceKey(DgnDbR db, NapiInfoCR info);
+    static Napi::Value ConvertOrUpdateGeometrySource(DgnDbR db, NapiInfoCR info);
+    static Napi::Value ConvertOrUpdateGeometryPart(DgnDbR db, NapiInfoCR info);
+    static void ClearECDbCache(ECDbR db, NapiInfoCR info);
+
+    static DbResult DropSchemas(ECDbR ecdb, bvector<Utf8String>& schemaNames);
 
     static DbResult CreateECDb(ECDbR, BeFileNameCR pathname);
     static DbResult OpenECDb(ECDbR, BeFileNameCR pathname, BeSQLite::Db::OpenParams const&);
@@ -546,18 +590,18 @@ public:
     static BentleyStatus GetGeoCoordsFromIModelCoords(BeJsValue, DgnDbR, BeJsConst);
     static BentleyStatus GetIModelCoordsFromGeoCoords(BeJsValue, DgnDbR, BeJsConst);
 
-    static void GetIModelProps(BeJsValue, DgnDbCR dgndb);
+    static void GetIModelProps(BeJsValue, DgnDbCR dgndb, Utf8StringCR when);
     static DgnElementIdSet FindGeometryPartReferences(bvector<Utf8String> const& partIds, bool is2d, DgnDbR db);
 
     static void ConcurrentQueryExecute(ECDbCR ecdb, Napi::Object request, Napi::Function callback);
-    static Napi::Object  ConcurrentQueryResetConfig(Napi::Env, ECDbCR, Napi::Object);
-    static Napi::Object  ConcurrentQueryResetConfig(Napi::Env, ECDbCR);
+    static Napi::Object  ConcurrentQueryResetConfig(Napi::Env, Napi::Object);
+    static Napi::Object  ConcurrentQueryResetConfig(Napi::Env);
     static void GetTileTree(ICancellableP, DgnDbR db, Utf8StringCR id, Napi::Function& callback);
     static void GetTileContent(ICancellableP, DgnDbR db, Utf8StringCR treeId, Utf8StringCR tileId, Napi::Function& callback);
     static void SetMaxTileCacheSize(uint64_t maxBytes);
 
     [[noreturn]] static void ThrowJsException(Utf8CP msg);
-    static Json::Value ExecuteTest(DgnDbR, Utf8StringCR testName, Utf8StringCR params);
+    static BeJsDocument ExecuteTest(DgnDbR, Utf8StringCR testName, Utf8StringCR params);
     static NativeLogging::CategoryLogger GetNativeLogger();
 
     static Napi::Env& Env() { static Napi::Env s_env(nullptr); return s_env; }
@@ -575,14 +619,14 @@ public:
     static void RemoveCrashReportDgnDb(Dgn::DgnDbR);
 
     static void SetCrashReportProperty(Utf8CP key, Utf8CP value)
-    #if defined (USING_GOOGLE_BREAKPAD) || defined (BENTLEYCONFIG_CRASHPAD)
+    #if defined (BENTLEYCONFIG_CRASHPAD)
         ;
     #else
         {}
     #endif
 
     static std::map<std::string, std::string> GetCrashReportProperties()
-    #if defined (USING_GOOGLE_BREAKPAD) || defined (BENTLEYCONFIG_CRASHPAD)
+    #if defined (BENTLEYCONFIG_CRASHPAD)
         ;
     #else
         {
@@ -594,11 +638,11 @@ public:
     static void MaintainCrashDumpDir(int& maxNativeCrashTxtFileNo, CrashReportingConfig const&);
     static std::map<std::string,std::string> GetCrashReportPropertiesFromConfig(CrashReportingConfig const&);
 
-    static void InitializeCrashReporting(CrashReportingConfig const&)
-#if defined (USING_GOOGLE_BREAKPAD) || defined (BENTLEYCONFIG_CRASHPAD)
+    static bool InitializeCrashReporting(CrashReportingConfig const&)
+#if defined (BENTLEYCONFIG_CRASHPAD)
         ;
 #else
-        {}
+        { return true; }
 #endif
 
     static void WriteFullElementDependencyGraphToFile(DgnDbR db, Utf8StringCR dotFileName);
@@ -607,21 +651,43 @@ public:
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
+struct CRSListResponseProps
+    {
+    Utf8String m_name;
+    Utf8String m_description;
+    bool m_deprecated;
+    DRange2d m_crsExtent;
+    Utf8String m_unit;
+    };
+
+struct VerticalCRSListResponseProps
+    {
+    Utf8String m_crsName;
+    Utf8String m_id;
+    int m_epsg = 0;
+    Utf8String m_description;
+    bool m_deprecated;
+    Utf8String m_type;
+    Utf8String m_unit;
+    DRange2d m_extent;
+    };
+
 struct GeoServicesInterop
 {
     static BentleyStatus GetGeographicCRSInterpretation(BeJsValue, BeJsConst);
+    static bvector<CRSListResponseProps> GetListOfCRS(DRange2dCP extent, bool includeWorld, Utf8CP unitFilter = nullptr);
+    static StatusInt GetListOfVerticalCRS(bvector<VerticalCRSListResponseProps>& results, BeJsConst props, Utf8StringR errorMessage);
 };
 
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct NativeChangeset {
+struct SqliteChangesetReader {
     private:
 
         bool m_invert;
         Byte* m_primaryKeyColumns;
         Changes::Change m_currentChange;
-        Db m_unusedDb;
         DbOpcode m_opcode;
         int m_columnCount;
         int m_indirect;
@@ -629,6 +695,7 @@ struct NativeChangeset {
         int m_primaryKeyCount;
         std::unique_ptr<Changes> m_changes;
         std::unique_ptr<ChangeStream> m_changeStream;
+        std::unique_ptr<ChangeGroup> m_changeGroup;
         Utf8CP m_tableName;
         Utf8String m_ddl;
 
@@ -640,11 +707,13 @@ struct NativeChangeset {
         bool IsValidPrimaryKeyColumnIndex(int col) { return HasRow() && (col>=0 && col< m_primaryKeyColumnCount); }
 
     public:
-        NativeChangeset():m_primaryKeyColumns(nullptr), m_tableName(nullptr), m_currentChange(nullptr, false), m_invert(false){}
+        SqliteChangesetReader():m_primaryKeyColumns(nullptr), m_tableName(nullptr), m_currentChange(nullptr, false), m_invert(false){}
         void OpenFile(Napi::Env env, Utf8StringCR changesetFile, bool invert);
         void OpenChangeStream(Napi::Env env, std::unique_ptr<ChangeStream>, bool invert);
+        void OpenGroup(Napi::Env env, T_Utf8StringVector const& changesetFiles, Db const& db, bool invert);
         void Close(Napi::Env env);
         void Reset(Napi::Env env);
+        void WriteToFile(Napi::Env env, Utf8String const& fileName, bool containChanges, bool override);
         Napi::Value GetHasRow(Napi::Env env);
         Napi::Value GetColumnCount(Napi::Env env);
         Napi::Value GetColumnValue(Napi::Env env, int col, int target);

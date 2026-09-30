@@ -46,12 +46,17 @@ PragmaManager& ECDb::Impl::GetPragmaManager() const
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-ECDb::Impl::Impl(ECDbR ecdb) : m_ecdb(ecdb), m_profileManager(ecdb), m_changeManager(ecdb), m_sqliteStatementCache(50, &m_mutex), m_idSequenceManager(ecdb, bvector<Utf8CP>(1, "ec_instanceidsequence"))
-    {
+ECDb::Impl::Impl(ECDbR ecdb) :
+    m_ecdb(ecdb),
+    m_profileManager(ecdb),
+    m_changeManager(ecdb),
+    m_sqliteStatementCache(50, &m_mutex),
+    m_idSequenceManager(ecdb, bvector<Utf8CP>(1, "ec_instanceidsequence")),
+    m_disableDDLTracking(false) {
     m_schemaManager = std::make_unique<SchemaManager>(ecdb, m_mutex);
     // set default logger
     IssueDataSource::AppendLogSink(m_issueReporter, "ECDb");
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
@@ -115,7 +120,7 @@ bool IdFactory::Reset() const {
     m_relationshipConstraintIdSeq = IdSequence::Create(m_ecdb, TABLE_RelationshipConstraint, COL_DEFAULTNAME_Id);
     m_relationshipConstraintClassIdSeq = IdSequence::Create(m_ecdb, TABLE_RelationshipConstraintClass, COL_DEFAULTNAME_Id);
     m_schemaIdSeq = IdSequence::Create(m_ecdb, TABLE_Schema, COL_DEFAULTNAME_Id);
-    m_schemaReferencIdSeq = IdSequence::Create(m_ecdb, TABLE_SchemaReference, COL_DEFAULTNAME_Id);
+    m_schemaReferenceIdSeq = IdSequence::Create(m_ecdb, TABLE_SchemaReference, COL_DEFAULTNAME_Id);
     m_tableIdSeq = IdSequence::Create(m_ecdb, TABLE_Table, COL_DEFAULTNAME_Id);
     m_unitIdSeq = IdSequence::Create(m_ecdb, TABLE_Unit, COL_DEFAULTNAME_Id);
     m_unitSystemIdSeq = IdSequence::Create(m_ecdb, TABLE_UnitSystem, COL_DEFAULTNAME_Id);
@@ -144,7 +149,7 @@ bool IdFactory::IsValid() const {
         m_relationshipConstraintIdSeq != nullptr &&
         m_relationshipConstraintClassIdSeq != nullptr &&
         m_schemaIdSeq != nullptr &&
-        m_schemaReferencIdSeq != nullptr &&
+        m_schemaReferenceIdSeq != nullptr &&
         m_tableIdSeq != nullptr &&
         m_unitIdSeq != nullptr &&
         m_unitSystemIdSeq != nullptr;
@@ -233,7 +238,18 @@ void ECDb::Impl::OnInit() const
     RegisterECSqlPragmas();
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDb::Impl::ExecuteDDL(Utf8CP ddl) const {
+    if (m_disableDDLTracking) {
+        // execute SQL track data changes only so DDL will skip through
+        return m_ecdb.ExecuteSql(ddl);
+    }
 
+    // track data and DDL changes.
+    return m_ecdb.ExecuteDdl(ddl);
+}
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
@@ -244,25 +260,100 @@ void ECDb::Impl::RegisterECSqlPragmas() const
     GetPragmaManager().Register(PragmaECDbVersion::Create());
     GetPragmaManager().Register(PragmaChecksum::Create());
     GetPragmaManager().Register(PragmaIntegrityCheck::Create());
+    GetPragmaManager().Register(PragmaValidatePersistedMappings::Create());
     GetPragmaManager().Register(PragmaExperimentalFeatures::Create());
     GetPragmaManager().Register(PragmaParseTree::Create());
+    GetPragmaManager().Register(PragmaPurgeOrphanRelationships::Create());
+    GetPragmaManager().Register(PragmaDbList::Create());
+    GetPragmaManager().Register(PragmaCheckECSqlWriteValues::Create());
+    GetPragmaManager().Register(PragmaECSqlVersion::Create());
+    GetPragmaManager().Register(PragmaSqliteSql::Create());
+    GetPragmaManager().Register(PragmaSchemaView::Create());
+    GetPragmaManager().Register(PragmaSchemaViewFragment::Create());
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::Impl::OnDbAttached(Utf8CP dbFileName, Utf8CP tableSpaceName) const
-    {
-    DbTableSpace tableSpace(tableSpaceName, dbFileName);
-    if (!DbTableSpace::IsAttachedECDbFile(m_ecdb, tableSpaceName))
-        return BE_SQLITE_OK; //only need to react to attached ECDb files
+DbResult ECDb::Impl::AttachDbAsSQLite(Utf8CP dbFileName, Utf8CP tableSpaceName) const {
+    struct RestoreAttachmentAlias {
+        Utf8CP& m_alias;
+        Utf8CP m_previousAlias;
+        ~RestoreAttachmentAlias() { m_alias = m_previousAlias; }
+    } restoreAlias { m_sqliteOnlyAttachmentAlias, m_sqliteOnlyAttachmentAlias };
 
-    if (SUCCESS != m_schemaManager->GetDispatcher().AddManager(tableSpace))
-        return BE_SQLITE_ERROR;
+    m_sqliteOnlyAttachmentAlias = tableSpaceName;
+    return m_ecdb.AttachDb(dbFileName, tableSpaceName);
+}
 
-    GetChangeManager().OnDbAttached(tableSpace, dbFileName);
-    return BE_SQLITE_OK;
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDb::Impl::OnDbAttached(Utf8CP dbFileName, Utf8CP tableSpaceName) const {
+    if (m_sqliteOnlyAttachmentAlias != nullptr && BeStringUtilities::StricmpAscii(m_sqliteOnlyAttachmentAlias, tableSpaceName) == 0)
+        return BE_SQLITE_OK;
+
+    auto tryGetProfileVersion = [&](ProfileVersion& ver) {
+        Statement stmt;
+        auto rc = stmt.Prepare(m_ecdb, SqlPrintfString("SELECT [StrData] FROM [%s].[be_Prop] WHERE [Namespace]='ec_Db' AND [Name] ='SchemaVersion'", tableSpaceName).GetUtf8CP());
+        if (rc != BE_SQLITE_OK) {
+            return false;
+        }
+        if (BE_SQLITE_ROW != stmt.Step()) {
+            return false;
+        }
+
+        ver = ProfileVersion(0, 0, 0, 0);
+        if (!stmt.GetValueText(0))
+            return false;
+
+        if (BentleyStatus::SUCCESS != ver.FromJson(stmt.GetValueText(0))){
+            return false;
+        }
+        return true;
+    };
+    ProfileVersion attachDbProfileVer(0, 0, 0, 0);
+    if (!tryGetProfileVersion(attachDbProfileVer)) {
+        m_issueReporter.ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECSchema,
+            ECDbIssueId::ECDb_0735,
+            "Attached db '%s' will not be accessible via ECSQL as it does not support ECDb profile.",
+            tableSpaceName);
     }
+
+    const auto profileState = Db::CheckProfileVersion(
+        ECDb::CurrentECDbProfileVersion(),
+        attachDbProfileVer,
+        ECDb::MinimumUpgradableECDbProfileVersion(),
+        "ECDb"
+    );
+
+    const auto canOpen = (m_ecdb.IsReadonly() && (profileState.GetCanOpen() ==ProfileState::CanOpen::Readonly || profileState.GetCanOpen() == ProfileState::CanOpen::Readwrite)) || (!m_ecdb.IsReadonly() && profileState.GetCanOpen() ==ProfileState::CanOpen::Readwrite);
+    if (canOpen) {
+        DbTableSpace tableSpace(tableSpaceName, dbFileName);
+        if (!DbTableSpace::IsAttachedECDbFile(m_ecdb, tableSpaceName))
+            return BE_SQLITE_OK; //only need to react to attached ECDb files
+
+        if (SUCCESS != m_schemaManager->GetDispatcher().AddManager(tableSpace))
+            return BE_SQLITE_ERROR;
+
+        GetChangeManager().OnDbAttached(tableSpace, dbFileName);
+    } else {
+
+        m_issueReporter.ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECSchema,
+            ECDbIssueId::ECDb_0736,
+            "Attached db with alias '%s' will not be accessible via ECSQL. Attach file EC profile version '%s' is incompatible with current runtime %s",
+            tableSpaceName,
+            attachDbProfileVer.ToString().c_str(),
+            ECDb::CurrentECDbProfileVersion().ToString().c_str());
+    }
+    return BE_SQLITE_OK;
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
@@ -316,6 +407,8 @@ BentleyStatus ECDb::Impl::ResetInstanceIdSequence(BeBriefcaseId briefcaseId, IdS
     if (!briefcaseId.IsValid() || m_ecdb.IsReadonly())
         return ERROR;
 
+    const auto currentId = GetInstanceIdSequence().GetCurrentValue<BeBriefcaseBasedId>();
+
     //ECInstanceId sequence. It has to compute the current max ECInstanceId across all EC data tables
     ECInstanceId maxECInstanceId;
     if (SUCCESS != DetermineMaxInstanceIdForBriefcase(maxECInstanceId, briefcaseId, ecClassIgnoreList))
@@ -324,6 +417,9 @@ BentleyStatus ECDb::Impl::ResetInstanceIdSequence(BeBriefcaseId briefcaseId, IdS
                    briefcaseId.GetValue());
         return ERROR;
         }
+
+    if (currentId.IsValid() && currentId.GetBriefcaseId() == briefcaseId)
+        maxECInstanceId = ECInstanceId(std::max(currentId.GetValueUnchecked(), maxECInstanceId.GetValueUnchecked()));
 
     if (BE_SQLITE_OK != GetInstanceIdSequence().Reset(maxECInstanceId.GetValueUnchecked()))
         {
@@ -459,14 +555,26 @@ void ECDb::Impl::ClearECDbCache() const
     {
     BeMutexHolder lock(m_mutex);
 
+    auto cacheClearListeners = m_ecdbCacheClearListeners;
+    lock.unlock();
+
     // this event allows consuming code to free anything that relies on the ECDb cache (like ECSchemas, ECSqlStatements etc)
-    for (auto listener : m_ecdbCacheClearListeners)
+    for (auto listener : cacheClearListeners)
         listener->_OnBeforeClearECDbCache();
+
+    lock.lock();
+    ConcurrentQueryMgr::Shutdown(m_ecdb);
 
     for (AppData::Key const* appDataKey : m_appDataToDeleteOnClearCache)
         {
         m_ecdb.DropAppData(*appDataKey);
         }
+
+    if (m_instanceReader != nullptr)
+        m_instanceReader->Reset();
+
+    if (m_instanceWriter != nullptr)
+        m_instanceWriter->Reset();
 
     if (m_schemaManager != nullptr)
         m_schemaManager->ClearCache();
@@ -474,11 +582,15 @@ void ECDb::Impl::ClearECDbCache() const
     const_cast<ChangeManager&>(m_changeManager).ClearCache();
     const_cast<StatementCache&>(m_sqliteStatementCache).Empty();
 
+    if (m_graphStatementCache != nullptr)
+        m_graphStatementCache->Clear();
+
     //increment the counter. This allows code (e.g. ECSqlStatement) that depends on objects in the cache to invalidate itself
     //after the cache was cleared.
     m_clearCacheCounter.Increment();
 
-    for (auto listener : m_ecdbCacheClearListeners)
+    lock.unlock();
+    for (auto listener : cacheClearListeners)
         listener->_OnAfterClearECDbCache();
 
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("After ECDb::ClearECDbCache");
@@ -564,6 +676,10 @@ void ECDb::Impl::RegisterBuiltinFunctions() const
     if (m_extractPropFunc != nullptr)
         m_ecdb.AddFunction(*m_extractPropFunc);
 
+    m_supportInstanceQueryFunc = SupportInstanceQueryFunc::Create(m_ecdb);
+    if (m_supportInstanceQueryFunc != nullptr)
+        m_ecdb.AddFunction(*m_supportInstanceQueryFunc);
+
     m_xmlCAToJsonFunc = XmlCAToJson::Create(m_ecdb.Schemas());
     if (m_xmlCAToJsonFunc != nullptr)
         m_ecdb.AddFunction(*m_xmlCAToJsonFunc);
@@ -605,6 +721,10 @@ void ECDb::Impl::UnregisterBuiltinFunctions() const
     if (m_extractPropFunc != nullptr) {
         m_ecdb.RemoveFunction(*m_extractPropFunc);
         m_extractPropFunc = nullptr;
+    }
+    if (m_supportInstanceQueryFunc != nullptr) {
+        m_ecdb.RemoveFunction(*m_supportInstanceQueryFunc);
+        m_supportInstanceQueryFunc = nullptr;
     }
     if (m_xmlCAToJsonFunc != nullptr) {
         m_ecdb.RemoveFunction(*m_xmlCAToJsonFunc);

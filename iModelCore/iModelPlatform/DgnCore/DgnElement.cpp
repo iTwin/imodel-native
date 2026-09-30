@@ -893,9 +893,13 @@ DgnDbStatus DgnElement::_SetParentId(DgnElementId parentId, DgnClassId parentRel
     if (parentId.IsValid() && !parentRelClassId.IsValid())
         return DgnDbStatus::InvalidId;
 
-    ECClassCP relClass = GetDgnDb().Schemas().GetClass(parentRelClassId);
-    if (relClass == nullptr || !relClass->IsRelationshipClass())
-        return DgnDbStatus::WrongClass;
+    // Clearing parent (both invalid) is always allowed - skip relClass validation
+    if (parentRelClassId.IsValid())
+        {
+        ECClassCP relClass = GetDgnDb().Schemas().GetClass(parentRelClassId);
+        if (relClass == nullptr || !relClass->IsRelationshipClass())
+            return DgnDbStatus::WrongClass;
+        }
 
     m_parent.m_id = parentId;
     m_parent.m_relClassId = parentRelClassId;
@@ -947,6 +951,12 @@ DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
     auto parentId = GetParentId();
     if (parentId.IsValid() && parentId != original.GetParentId() && parentCycleExists(parentId, GetElementId(), GetDgnDb()))
         return DgnDbStatus::InvalidParent;
+
+    if (m_code.GetValueUtf8().length() > (size_t)IModelHubConstants::MaxCodeValueLength) {
+        BeAssert(false);
+        LOG.errorv("Element update rejected because code value [%s] is too long. ECClass=%s", m_code.GetValueUtf8CP(), GetHandlerECClassName());
+        return DgnDbStatus::InvalidCode;
+    }
 
     auto existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
     if ((existingElemWithCode.IsValid() && existingElemWithCode != GetElementId()))
@@ -1010,6 +1020,9 @@ DgnDbStatus DgnElement::_OnDelete() const
         }
     }
 
+    if (GetDgnDb().Elements().IsBulkOperation())
+        return DgnDbStatus::Success;
+
     CallJsPostHandler("onDelete");
     return GetModel()->_OnDeleteElement(*this);
     }
@@ -1043,10 +1056,15 @@ struct OnDeletedCaller  {DgnElement::AppData::DropMe operator()(DgnElement::AppD
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::_OnDeleted() const
     {
+    // For a bulk delete operation, the relationship classes and cache cleanup will be handled separately
+    if (GetDgnDb().Elements().IsBulkOperation())
+        return CallAppData(OnDeletedCaller());
+    
     CallJsPostHandler("onDeleted");
     CallAppData(OnDeletedCaller());
     GetDgnDb().Elements().DropFromPool(*this);
     deleteLinkTableRelationships(GetDgnDb(), GetElementId());
+
     DgnModelPtr model = GetModel();
     if (model.IsValid())
         model->_OnDeletedElement(m_elementId);
@@ -1086,7 +1104,10 @@ void DgnElement::_BindWriteParams(ECSqlStatement& statement, ForInsert forInsert
     else
         statement.BindNull(statement.GetParameterIndex(BIS_ELEMENT_PROP_UserLabel));
 
-    statement.BindNavigationValue(statement.GetParameterIndex(BIS_ELEMENT_PROP_Parent), GetParentId(), GetParentRelClassId());
+    if (GetParentId().IsValid())
+        statement.BindNavigationValue(statement.GetParameterIndex(BIS_ELEMENT_PROP_Parent), GetParentId(), GetParentRelClassId());
+    else
+        statement.BindNull(statement.GetParameterIndex(BIS_ELEMENT_PROP_Parent));
 
     if (m_federationGuid.IsValid())
         statement.BindBlob(statement.GetParameterIndex(BIS_ELEMENT_PROP_FederationGuid), &m_federationGuid, sizeof(m_federationGuid), IECSqlBinder::MakeCopy::No);
@@ -1455,7 +1476,7 @@ GeometrySource3dCP DgnElement::ToGeometrySource3d() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometryStream::ReadGeometryStream(SnappyFromMemory& snappy, DgnDbR dgnDb, void const* blob, int blobSize)
+DgnDbStatus GeometryStream::ReadGeometryStream(SnappyFromMemory& snappy, DgnDbR db, void const* blob, int blobSize)
     {
     if (0 == blobSize && nullptr == blob)
         return DgnDbStatus::Success;
@@ -1591,7 +1612,8 @@ DgnElementPtr DgnElement::_CloneForImport(DgnDbStatus* inStat, DgnModelR destMod
         BeNapi::ThrowJsException(
             m_dgndb.GetJsIModelDb()->Env(),
             params.m_classId.IsValid() ? "invalid create params" : "attempt to clone with unknown class",
-            (int) (params.m_classId.IsValid() ? DgnDbStatus::BadRequest : DgnDbStatus::WrongClass)
+            (int) (params.m_classId.IsValid() ? DgnDbStatus::BadRequest : DgnDbStatus::WrongClass),
+            params.m_classId.IsValid() ? DgnDbStatusHelper::GetITwinError(DgnDbStatus::BadRequest) : DgnDbStatusHelper::GetITwinError(DgnDbStatus::WrongClass)
         );
         }
 
@@ -1824,8 +1846,10 @@ DgnElementPtr DgnElement::Clone(DgnDbStatus* stat, DgnElement::CreateParams cons
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricElement2d::_AdjustPlacementForImport(DgnImportContext const& importer)
     {
-    m_placement.GetOriginR().Add(DPoint2d::From(importer.GetOriginOffset()));
-    m_placement.GetAngleR() = (m_placement.GetAngle() + importer.GetYawAdjustment());
+    if (HasPlacementData(PlacementData_Origin))
+        m_placement.GetOriginR().Add(DPoint2d::From(importer.GetOriginOffset()));
+    if (HasPlacementData(PlacementData_Angles))
+        m_placement.GetAngleR() = (m_placement.GetAngle() + importer.GetYawAdjustment());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1833,8 +1857,10 @@ void GeometricElement2d::_AdjustPlacementForImport(DgnImportContext const& impor
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricElement3d::_AdjustPlacementForImport(DgnImportContext const& importer)
     {
-    m_placement.GetOriginR().Add(importer.GetOriginOffset());
-    m_placement.GetAnglesR().AddYaw(importer.GetYawAdjustment());
+    if (HasPlacementData(PlacementData_Origin))
+        m_placement.GetOriginR().Add(importer.GetOriginOffset());
+    if (HasPlacementData(PlacementData_Angles))
+        m_placement.GetAnglesR().AddYaw(importer.GetYawAdjustment());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1860,6 +1886,7 @@ void GeometricElement2d::_CopyFrom(DgnElementCR el, CopyFromOptions const& opts)
         }
 
     GeometricElement2dCR other = static_cast<GeometricElement2dCR>(el);
+    SetPlacementDataFlags(other.GetPlacementDataFlags());
     m_typeDefinition.m_id = other.m_typeDefinition.m_id;
     m_typeDefinition.m_relClassId = other.m_typeDefinition.m_relClassId;
     }
@@ -1878,6 +1905,7 @@ void GeometricElement3d::_CopyFrom(DgnElementCR el, CopyFromOptions const& opts)
         }
 
     GeometricElement3dCR other = static_cast<GeometricElement3dCR>(el);
+    SetPlacementDataFlags(other.GetPlacementDataFlags());
     m_typeDefinition.m_id = other.m_typeDefinition.m_id;
     m_typeDefinition.m_relClassId = other.m_typeDefinition.m_relClassId;
     }
@@ -2133,11 +2161,11 @@ DgnDbStatus DgnElement::Aspect::ImportAspects(DgnElementR destEl, DgnElementCR s
         }
 
 
-    auto uniqueAspects = srcDb.GetPreparedECSqlStatement("select ecclassid from " BIS_SCHEMA(BIS_CLASS_ElementUniqueAspect) " where ECInstanceId=?");
+    auto uniqueAspects = srcDb.GetPreparedECSqlStatement("select ecclassid from " BIS_SCHEMA(BIS_CLASS_ElementUniqueAspect) " where Element.Id=?");
     uniqueAspects->BindId(1, srcEl.GetElementId());
     while (BE_SQLITE_ROW == uniqueAspects->Step())
         {
-        auto srcAspectClassId = multiAspects->GetValueId<ECClassId>(0);
+        auto srcAspectClassId = uniqueAspects->GetValueId<ECClassId>(0);
         auto srcAspectClass = srcDb.Schemas().GetClass(srcAspectClassId);
         if (nullptr == srcAspectClass)
             {
@@ -2946,43 +2974,56 @@ void dgn_ElementHandler::Geometric3d::_RegisterPropertyAccessors(ECSqlClassInfo&
 
 #define GETGEOMPLCPROPDBL(EXPR) [](ECValueR value, DgnElementCR elIn){GeometricElement3d const& el = (GeometricElement3d const&)elIn; Placement3dCR plc = el.GetPlacement(); value.SetDouble(EXPR); return DgnDbStatus::Success;}
 #define GETGEOMPLCPROPPT3(EXPR) [](ECValueR value, DgnElementCR elIn){GeometricElement3d const& el = (GeometricElement3d const&)elIn; Placement3dCR plc = el.GetPlacement(); value.SetPoint3d(EXPR); return DgnDbStatus::Success;}
-#define SETGEOMPLCPROP(PTYPE, EXPR) [](DgnElement& elIn, ECN::ECValueCR valueIn)\
-            {                                                                          \
+#define SETGEOMPLCPROP(PTYPE, FLAGS, EXPR) [](DgnElement& elIn, ECN::ECValueCR valueIn)  \
+            {                                                                            \
             if (valueIn.IsNull() || valueIn.IsBoolean() || !valueIn.IsPrimitive())       \
                 return DgnDbStatus::BadArg;                                              \
             ECN::ECValue value(valueIn);                                                 \
             if (!value.ConvertToPrimitiveType(PTYPE))                                    \
                 return DgnDbStatus::BadArg;                                              \
             GeometricElement3d& el = (GeometricElement3d&)elIn;                          \
+            uint8_t placementDataFlags = el.GetPlacementDataFlags();                     \
             Placement3d plc = el.GetPlacement();                                         \
             EXPR;                                                                        \
-            return el.SetPlacement(plc);                                                 \
+            if (FLAGS == GeometricElement::PlacementData_Origin &&                       \
+                !PlacementOnEarth::IsValidOrigin(plc.GetOrigin()))                       \
+                return DgnDbStatus::BadArg;                                              \
+            auto status = el.SetPlacement(plc);                                          \
+            if (DgnDbStatus::Success == status)                                          \
+                {                                                                        \
+                uint8_t newPlacementDataFlags = placementDataFlags | FLAGS;              \
+                if (FLAGS == GeometricElement::PlacementData_Bbox &&                     \
+                    !PlacementOnEarth::IsValidBoundingBox(plc.GetElementBox()))          \
+                    newPlacementDataFlags &= ~GeometricElement::PlacementData_Bbox;      \
+                el.SetPlacementDataFlags(newPlacementDataFlags);                         \
+                }                                                                        \
+            return status;                                                               \
             }
 
 
     params.RegisterPropertyAccessors(layout, GeometricElement3d::prop_Yaw(),
         GETGEOMPLCPROPDBL(plc.GetAngles().GetYaw().Degrees()),
-        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Double, plc.GetAnglesR().SetYaw(AngleInDegrees::FromDegrees(value.GetDouble()))));
+        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Double, GeometricElement::PlacementData_Angles, plc.GetAnglesR().SetYaw(AngleInDegrees::FromDegrees(value.GetDouble()))));
 
     params.RegisterPropertyAccessors(layout, GeometricElement3d::prop_Pitch(),
         GETGEOMPLCPROPDBL(plc.GetAngles().GetPitch().Degrees()),
-        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Double, plc.GetAnglesR().SetPitch(AngleInDegrees::FromDegrees(value.GetDouble()))));
+        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Double, GeometricElement::PlacementData_Angles, plc.GetAnglesR().SetPitch(AngleInDegrees::FromDegrees(value.GetDouble()))));
 
     params.RegisterPropertyAccessors(layout, GeometricElement3d::prop_Roll(),
         GETGEOMPLCPROPDBL(plc.GetAngles().GetRoll().Degrees()),
-        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Double, plc.GetAnglesR().SetRoll(AngleInDegrees::FromDegrees(value.GetDouble()))));
+        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Double, GeometricElement::PlacementData_Angles, plc.GetAnglesR().SetRoll(AngleInDegrees::FromDegrees(value.GetDouble()))));
 
     params.RegisterPropertyAccessors(layout, GeometricElement3d::prop_Origin(),
         GETGEOMPLCPROPPT3(plc.GetOrigin()),
-        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Point3d, plc.GetOriginR() = value.GetPoint3d()));
+        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Point3d, GeometricElement::PlacementData_Origin, plc.GetOriginR() = value.GetPoint3d()));
 
     params.RegisterPropertyAccessors(layout, GeometricElement3d::prop_BBoxLow(),
         GETGEOMPLCPROPPT3(plc.GetElementBox().low),
-        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Point3d, plc.GetElementBoxR().low = value.GetPoint3d()));
+        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Point3d, GeometricElement::PlacementData_Bbox, plc.GetElementBoxR().low = value.GetPoint3d()));
 
     params.RegisterPropertyAccessors(layout, GeometricElement3d::prop_BBoxHigh(),
         GETGEOMPLCPROPPT3(plc.GetElementBox().high),
-        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Point3d, plc.GetElementBoxR().high = value.GetPoint3d()));
+        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Point3d, GeometricElement::PlacementData_Bbox, plc.GetElementBoxR().high = value.GetPoint3d()));
 
 #undef GETGEOMPLCPROPDBL
 #undef GETGEOMPLCPROPPT3
@@ -3059,34 +3100,47 @@ void dgn_ElementHandler::Geometric2d::_RegisterPropertyAccessors(ECSqlClassInfo&
             value.SetPoint2d(EXPR);                                                      \
             return DgnDbStatus::Success;                                                 \
             }
-#define SETGEOMPLCPROP(PTYPE, EXPR) [](DgnElement& elIn, ECN::ECValueCR valueIn)\
-            {                                                                          \
+#define SETGEOMPLCPROP(PTYPE, FLAGS, EXPR) [](DgnElement& elIn, ECN::ECValueCR valueIn)  \
+            {                                                                            \
             if (valueIn.IsNull() || valueIn.IsBoolean() || !valueIn.IsPrimitive())       \
                 return DgnDbStatus::BadArg;                                              \
             ECN::ECValue value(valueIn);                                                 \
             if (!value.ConvertToPrimitiveType(PTYPE))                                    \
                 return DgnDbStatus::BadArg;                                              \
             GeometricElement2d& el = (GeometricElement2d&)elIn;                          \
+            uint8_t placementDataFlags = el.GetPlacementDataFlags();                     \
             Placement2d plc = el.GetPlacement();                                         \
             EXPR;                                                                        \
-            return el.SetPlacement(plc);                                                 \
+            if (FLAGS == GeometricElement::PlacementData_Origin &&                       \
+                !PlacementOnEarth::IsValidOrigin(plc.GetOrigin()))                       \
+                return DgnDbStatus::BadArg;                                              \
+            auto status = el.SetPlacement(plc);                                          \
+            if (DgnDbStatus::Success == status)                                          \
+                {                                                                        \
+                uint8_t newPlacementDataFlags = placementDataFlags | FLAGS;              \
+                if (FLAGS == GeometricElement::PlacementData_Bbox &&                     \
+                    !PlacementOnEarth::IsValidBoundingBox(plc.GetElementBox()))          \
+                    newPlacementDataFlags &= ~GeometricElement::PlacementData_Bbox;      \
+                el.SetPlacementDataFlags(newPlacementDataFlags);                         \
+                }                                                                        \
+            return status;                                                               \
             }
 
     params.RegisterPropertyAccessors(layout, GeometricElement::prop_Origin(),
         GETGEOMPLCPROPPT2(plc.GetOrigin()),
-        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Point2d, plc.GetOriginR() = value.GetPoint2d()));
+        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Point2d, GeometricElement::PlacementData_Origin, plc.GetOriginR() = value.GetPoint2d()));
 
     params.RegisterPropertyAccessors(layout, GeometricElement2d::prop_Rotation(),
         GETGEOMPLCPROPDBL(plc.GetAngle().Degrees()),
-        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Double, plc.GetAngleR() = AngleInDegrees::FromDegrees(value.GetDouble())));
+        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Double, GeometricElement::PlacementData_Angles, plc.GetAngleR() = AngleInDegrees::FromDegrees(value.GetDouble())));
 
     params.RegisterPropertyAccessors(layout, GeometricElement::prop_BBoxLow(),
         GETGEOMPLCPROPPT2(plc.GetElementBox().low),
-        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Point2d, plc.GetElementBoxR().low = value.GetPoint2d()));
+        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Point2d, GeometricElement::PlacementData_Bbox, plc.GetElementBoxR().low = value.GetPoint2d()));
 
     params.RegisterPropertyAccessors(layout, GeometricElement::prop_BBoxHigh(),
         GETGEOMPLCPROPPT2(plc.GetElementBox().high),
-        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Point2d, plc.GetElementBoxR().high = value.GetPoint2d()));
+        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Point2d, GeometricElement::PlacementData_Bbox, plc.GetElementBoxR().high = value.GetPoint2d()));
 
     params.RegisterPropertyAccessors(layout, GeometricElement::prop_Category(),
         [](ECValueR value, DgnElementCR elIn)
@@ -3156,8 +3210,37 @@ DgnDbStatus DgnElement::_OnChildUpdate(DgnElementCR, DgnElementCR child) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_OnChildDelete(DgnElementCR child) const
     {
-    CallJsChildPostHandler(child, "onChildDelete");
+    if (!GetDgnDb().Elements().IsBulkOperation())
+        CallJsChildPostHandler(child, "onChildDelete");
     return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::_OnChildDeleted(DgnElementCR child) const
+    {
+    if (!GetDgnDb().Elements().IsBulkOperation())
+        CallJsChildPostHandler(child, "onChildDeleted");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::_OnSubModelDelete(DgnModelCR model) const
+    {
+    if (!GetDgnDb().Elements().IsBulkOperation())
+        CallJsSubModelHandler(model, "onSubModelDelete");
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::_OnSubModelDeleted(DgnModelCR model) const
+    {
+    if (!GetDgnDb().Elements().IsBulkOperation())
+        CallJsSubModelHandler(model, "onSubModelDeleted");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3241,6 +3324,7 @@ DgnDbStatus GeometricElement3d::_SetCategoryId(DgnCategoryId categoryId)
 DgnDbStatus GeometricElement2d::_SetPlacement(Placement2dCR placement)
     {
     m_placement = placement;
+    SetPlacementDataFlags(m_placement.IsValid() ? PlacementData_All : PlacementData_None);
     return DgnDbStatus::Success;
     }
 
@@ -3250,6 +3334,7 @@ DgnDbStatus GeometricElement2d::_SetPlacement(Placement2dCR placement)
 DgnDbStatus GeometricElement3d::_SetPlacement(Placement3dCR placement)
     {
     m_placement = placement;
+    SetPlacementDataFlags(m_placement.IsValid() ? PlacementData_All : PlacementData_None);
     return DgnDbStatus::Success;
     }
 
@@ -3655,6 +3740,7 @@ void GeometricElement::_ToJson(BeJsValue val, BeJsConst opts) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricElement::_FromJson(BeJsConst props)
     {
+    m_geometryWasCleared = false;
     T_Super::_FromJson(props);
     auto catJson = props[json_category()];
     if (!catJson.isNull())
@@ -3669,7 +3755,7 @@ void GeometricElement::_FromJson(BeJsConst props)
         auto napiObj = napiValue->m_napiVal.As<Napi::Object>();
 
         if (napiObj.Has("is2dPart")) { // make sure the caller is not confused about what kind of element this is for
-            BeNapi::ThrowJsException(m_dgndb.GetJsIModelDb()->Env(), "BuildGeometryStream failed - invalid builder parameter", (int)DgnDbStatus::BadArg);
+            BeNapi::ThrowJsException(m_dgndb.GetJsIModelDb()->Env(), "BuildGeometryStream failed - invalid builder parameter", (int)DgnDbStatus::BadArg, DgnDbStatusHelper::GetITwinError(DgnDbStatus::BadArg));
             return;
         }
 
@@ -3684,8 +3770,9 @@ void GeometricElement::_FromJson(BeJsConst props)
         auto status = GeometryStreamIO::BuildGeometryStream(*this, bparams, entryArrayObj.As<Napi::Array>());
         if (DgnDbStatus::Success != status) {
             // throw std::runtime_error("BuildGeometryStream failed");
-            BeNapi::ThrowJsException(m_dgndb.GetJsIModelDb()->Env(), "BuildGeometryStream failed", (int)status);
+            BeNapi::ThrowJsException(m_dgndb.GetJsIModelDb()->Env(), "BuildGeometryStream failed", (int)status, DgnDbStatusHelper::GetITwinError(status));
         }
+        m_geometryWasCleared = 0 == entryArrayObj.As<Napi::Array>().Length();
         return;
     }
 
@@ -3793,7 +3880,27 @@ DgnDbStatus GeometricElement::_InsertInDb()
 DgnDbStatus GeometricElement::_UpdateInDb()
     {
     auto stat = T_Super::_UpdateInDb();
-    return DgnDbStatus::Success == stat ? UpdateGeomStream() : stat;
+    if (DgnDbStatus::Success != stat)
+        return stat;
+
+    stat = UpdateGeomStream();
+    if (DgnDbStatus::Success != stat)
+        return stat;
+
+    // Only 3D geometric elements can have a row in dgn_SpatialIndex.
+    auto element3d = dynamic_cast<GeometricElement3d const*>(this);
+    if (nullptr == element3d)
+        return stat;
+
+    GeometricModel3dCP model3d = GetModel()->ToGeometricModel3d();
+    bool hasSpatialIndexablePlacement = nullptr != model3d && model3d->IsSpatiallyLocated() && element3d->GetPlacement().IsValid() && element3d->HasPlacementData(PlacementData_Origin) && element3d->HasPlacementData(PlacementData_Bbox);
+    if (hasSpatialIndexablePlacement)
+        return stat;
+
+    // Existing iModels may still have the legacy trigger, so remove a stale row explicitly.
+    CachedStatementPtr stmt = GetDgnDb().Elements().GetStatement("DELETE FROM " DGN_VTABLE_SpatialIndex " WHERE ElementId=?");
+    stmt->BindId(1, GetElementId());
+    return BE_SQLITE_DONE == stmt->Step() ? stat : DgnDbStatus::WriteError;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3815,6 +3922,44 @@ DgnDbStatus GeometricElement::_OnUpdate(DgnElementCR el)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Reads json_placement() into placement and sets the placement data flags, which decide which
+* placement columns are stored and which stay NULL. Origin and angles are stored when their JSON
+* member is non-null, so an explicit zero rotation (0 or {}) is stored as zero. A valid JSON bounding
+* box is used only when the geometry is binary or absent.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+template<class T_Placement> void GeometricElement::PlacementFromJson(T_Placement& placement, BeJsConst props, Utf8CP anglesMember)
+    {
+    auto placementJson = props[json_placement()];
+    if (m_geometryWasCleared || placementJson.isNull())
+        return;
+
+    uint8_t placementDataFlags = PlacementData_None;
+    if (!placementJson[T_Placement::json_origin()].isNull())
+        placementDataFlags |= PlacementData_Origin;
+    if (!placementJson[anglesMember].isNull())
+        placementDataFlags |= PlacementData_Angles;
+
+    T_Placement newPlacement;
+    newPlacement.FromJson(placementJson);
+    if (props.isMember(json_geomBinary()) || (props[json_geom()].isNull() && props[json_elementGeometryBuilderParams()].isNull()))
+        {
+        // Uses the JSON bounding box, because binary geometry is copied without parsing and absent geometry gives nothing to compute from.
+        if (!placementJson[T_Placement::json_bbox()].empty() && newPlacement.IsValid())
+            placementDataFlags |= PlacementData_Bbox;
+        }
+    else
+        {
+        // Keeps the bounding box already on the element. GeometricElement::_FromJson has just built the supplied geometry and set this box from it if the build succeeded.
+        newPlacement.GetElementBoxR() = placement.GetElementBox();
+        placementDataFlags |= GetPlacementDataFlags() & PlacementData_Bbox;
+        }
+
+    placement = newPlacement;
+    SetPlacementDataFlags(placementDataFlags);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometricElement2d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
@@ -3825,18 +3970,33 @@ DgnDbStatus GeometricElement2d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlCla
 
     m_typeDefinition.m_id = stmt.GetValueNavigation<DgnElementId>(params.GetSelectIndex(prop_TypeDefinition()), &m_typeDefinition.m_relClassId);
     m_placement = Placement2d();
+    SetPlacementDataFlags(PlacementData_None);
 
     auto originIndex = params.GetSelectIndex(prop_Origin());
     if (stmt.IsValueNull(originIndex))
         return DgnDbStatus::Success;    // null placement
 
-    DPoint2d boxLow = stmt.GetValuePoint2d(params.GetSelectIndex(prop_BBoxLow())),
-             boxHi  = stmt.GetValuePoint2d(params.GetSelectIndex(prop_BBoxHigh()));
+    uint8_t placementDataFlags = PlacementData_Origin;
 
-    m_placement = Placement2d(stmt.GetValuePoint2d(originIndex),
-                              AngleInDegrees::FromDegrees(stmt.GetValueDouble(params.GetSelectIndex(prop_Rotation()))),
-                              ElementAlignedBox2d(boxLow.x, boxLow.y, boxHi.x, boxHi.y));
+    auto rotationIndex = params.GetSelectIndex(prop_Rotation());
+    bool hasRotation = !stmt.IsValueNull(rotationIndex);
+    if (hasRotation)
+        placementDataFlags |= PlacementData_Angles;
 
+    auto bboxLowIndex = params.GetSelectIndex(prop_BBoxLow());
+    auto bboxHighIndex = params.GetSelectIndex(prop_BBoxHigh());
+    bool hasBBox = !stmt.IsValueNull(bboxLowIndex) && !stmt.IsValueNull(bboxHighIndex);
+    if (hasBBox)
+        placementDataFlags |= PlacementData_Bbox;
+
+    AngleInDegrees rotation = AngleInDegrees::FromDegrees(hasRotation ? stmt.GetValueDouble(rotationIndex) : 0.0);
+    ElementAlignedBox2d bbox;
+    if (hasBBox)
+        bbox = ElementAlignedBox2d(stmt.GetValuePoint2d(bboxLowIndex).x, stmt.GetValuePoint2d(bboxLowIndex).y,
+                                   stmt.GetValuePoint2d(bboxHighIndex).x, stmt.GetValuePoint2d(bboxHighIndex).y);
+
+    SetPlacementDataFlags(placementDataFlags);
+    m_placement = Placement2d(stmt.GetValuePoint2d(originIndex), rotation, bbox);
     return DgnDbStatus::Success;
     }
 
@@ -3846,7 +4006,17 @@ DgnDbStatus GeometricElement2d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlCla
 void GeometricElement2d::_ToJson(BeJsValue val, BeJsConst opts) const
     {
     T_Super::_ToJson(val, opts);
-    m_placement.ToJson(val[json_placement()]);
+    if (HasPlacementData(PlacementData_Origin))
+        {
+        BeJsValue placement = val[json_placement()];
+        m_placement.ToJson(placement);
+
+        if (!HasPlacementData(PlacementData_Angles))
+            placement.removeMember(Placement2d::json_angle());
+
+        if (!HasPlacementData(PlacementData_Bbox))
+            placement.removeMember(Placement2d::json_bbox());
+        }
 
     if (m_typeDefinition.IsValid())
         m_typeDefinition.ToJson(GetDgnDb(), val[json_typeDefinition()]);
@@ -3858,24 +4028,7 @@ void GeometricElement2d::_ToJson(BeJsValue val, BeJsConst opts) const
 void GeometricElement2d::_FromJson(BeJsConst props)
     {
     T_Super::_FromJson(props);
-
-    auto placementJson = props[json_placement()];
-    if (!placementJson.isNull())
-        {
-        if (props.isMember(json_geomBinary()) || (props[json_geom()].isNull() && props[json_elementGeometryBuilderParams()].isNull()))
-            {
-            // NOTE: Use the existing bounding box when the GeometryStream is cloned as binary or no geometry exists to calculate from
-            m_placement.FromJson(placementJson);
-            }
-        else
-            {
-            // NOTE: Bounding box will be updated from the supplied geometry
-            Placement2d newPlacement;
-            newPlacement.FromJson(placementJson);
-            m_placement.GetOriginR() = newPlacement.GetOrigin();
-            m_placement.GetAngleR()  = newPlacement.GetAngle();
-            }
-        }
+    PlacementFromJson(m_placement, props, Placement2d::json_angle());
 
     if (props.hasMember(json_typeDefinition())) // support partial update, only update m_typeDefinition if props has member
         {
@@ -3895,21 +4048,44 @@ DgnDbStatus GeometricElement3d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlCla
 
     m_typeDefinition.m_id = stmt.GetValueNavigation<DgnElementId>(params.GetSelectIndex(prop_TypeDefinition()), &m_typeDefinition.m_relClassId);
     m_placement = Placement3d();
+    SetPlacementDataFlags(PlacementData_None);
 
     auto originIndex = params.GetSelectIndex(prop_Origin());
     if (stmt.IsValueNull(originIndex))
         return DgnDbStatus::Success;    // null placement
 
-    DPoint3d boxLow = stmt.GetValuePoint3d(params.GetSelectIndex(prop_BBoxLow())),
-             boxHi  = stmt.GetValuePoint3d(params.GetSelectIndex(prop_BBoxHigh()));
+    uint8_t placementDataFlags = PlacementData_Origin;
 
-    double yaw      = stmt.GetValueDouble(params.GetSelectIndex(prop_Yaw())),
-           pitch    = stmt.GetValueDouble(params.GetSelectIndex(prop_Pitch())),
-           roll     = stmt.GetValueDouble(params.GetSelectIndex(prop_Roll()));
+    auto yawIndex = params.GetSelectIndex(prop_Yaw());
+    auto pitchIndex = params.GetSelectIndex(prop_Pitch());
+    auto rollIndex = params.GetSelectIndex(prop_Roll());
+    bool hasYaw = !stmt.IsValueNull(yawIndex);
+    bool hasPitch = !stmt.IsValueNull(pitchIndex);
+    bool hasRoll = !stmt.IsValueNull(rollIndex);
+    // Angles are NULL only when all three columns are NULL; a partially NULL row keeps its non-NULL angles and reads the rest as zero.
+    if (hasYaw || hasPitch || hasRoll)
+        placementDataFlags |= PlacementData_Angles;
 
+    auto bboxLowIndex = params.GetSelectIndex(prop_BBoxLow());
+    auto bboxHighIndex = params.GetSelectIndex(prop_BBoxHigh());
+    bool hasBBox = !stmt.IsValueNull(bboxLowIndex) && !stmt.IsValueNull(bboxHighIndex);
+    if (hasBBox)
+        placementDataFlags |= PlacementData_Bbox;
+
+    double yaw = hasYaw ? stmt.GetValueDouble(yawIndex) : 0.0;
+    double pitch = hasPitch ? stmt.GetValueDouble(pitchIndex) : 0.0;
+    double roll = hasRoll ? stmt.GetValueDouble(rollIndex) : 0.0;
+    ElementAlignedBox3d bbox;
+    if (hasBBox)
+        {
+        DPoint3d boxLow = stmt.GetValuePoint3d(bboxLowIndex);
+        DPoint3d boxHigh = stmt.GetValuePoint3d(bboxHighIndex);
+        bbox = ElementAlignedBox3d(boxLow.x, boxLow.y, boxLow.z, boxHigh.x, boxHigh.y, boxHigh.z);
+        }
+
+    SetPlacementDataFlags(placementDataFlags);
     m_placement = Placement3d(stmt.GetValuePoint3d(originIndex),
-                              YawPitchRollAngles(Angle::FromDegrees(yaw), Angle::FromDegrees(pitch), Angle::FromDegrees(roll)),
-                              ElementAlignedBox3d(boxLow.x, boxLow.y, boxLow.z, boxHi.x, boxHi.y, boxHi.z));
+                              YawPitchRollAngles(Angle::FromDegrees(yaw), Angle::FromDegrees(pitch), Angle::FromDegrees(roll)), bbox);
     return DgnDbStatus::Success;
     }
 
@@ -3919,10 +4095,21 @@ DgnDbStatus GeometricElement3d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlCla
 void GeometricElement3d::_ToJson(BeJsValue val, BeJsConst opts) const
     {
     T_Super::_ToJson(val, opts);
-    m_placement.ToJson(val[json_placement()]);
+
+    if (HasPlacementData(PlacementData_Origin))
+        {
+        BeJsValue placement = val[json_placement()];
+        m_placement.ToJson(placement);
+
+        if (!HasPlacementData(PlacementData_Angles))
+            placement.removeMember(Placement3d::json_angles());
+
+        if (!HasPlacementData(PlacementData_Bbox))
+            placement.removeMember(Placement3d::json_bbox());
+        }
 
     if (m_typeDefinition.IsValid())
-         m_typeDefinition.ToJson(GetDgnDb(), val[json_typeDefinition()]);
+        m_typeDefinition.ToJson(GetDgnDb(), val[json_typeDefinition()]);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3931,24 +4118,7 @@ void GeometricElement3d::_ToJson(BeJsValue val, BeJsConst opts) const
 void GeometricElement3d::_FromJson(BeJsConst props)
     {
     T_Super::_FromJson(props);
-
-    auto placementJson = props[json_placement()];
-    if (!placementJson.isNull())
-        {
-        if (props.isMember(json_geomBinary()) || (props[json_geom()].isNull() && props[json_elementGeometryBuilderParams()].isNull()))
-            {
-            // NOTE: Use the existing bounding box when the GeometryStream is cloned as binary or no geometry exists to calculate from
-            m_placement.FromJson(placementJson);
-            }
-        else
-            {
-            // NOTE: Bounding box will be updated from the supplied geometry
-            Placement3d newPlacement;
-            newPlacement.FromJson(placementJson);
-            m_placement.GetOriginR() = newPlacement.GetOrigin();
-            m_placement.GetAnglesR() = newPlacement.GetAngles();
-            }
-        }
+    PlacementFromJson(m_placement, props, Placement3d::json_angles());
 
     if (props.hasMember(json_typeDefinition())) // support partial update, only update m_typeDefinition if props has member
         {
@@ -3965,19 +4135,25 @@ void GeometricElement2d::_BindWriteParams(ECSqlStatement& stmt, ForInsert forIns
     T_Super::_BindWriteParams(stmt, forInsert);
     stmt.BindNavigationValue(stmt.GetParameterIndex(prop_TypeDefinition()), m_typeDefinition.m_id, m_typeDefinition.m_relClassId);
 
-    if (!m_placement.IsValid())
-        {
+    if (HasPlacementData(PlacementData_Origin))
+        stmt.BindPoint2d(stmt.GetParameterIndex(prop_Origin()), m_placement.GetOrigin());
+    else
         stmt.BindNull(stmt.GetParameterIndex(prop_Origin()));
-        stmt.BindNull(stmt.GetParameterIndex(prop_BBoxLow()));
-        stmt.BindNull(stmt.GetParameterIndex(prop_BBoxHigh()));
+
+    if (HasPlacementData(PlacementData_Origin) && HasPlacementData(PlacementData_Angles))
+        stmt.BindDouble(stmt.GetParameterIndex(prop_Rotation()), m_placement.GetAngle().Degrees());
+    else
         stmt.BindNull(stmt.GetParameterIndex(prop_Rotation()));
+
+    if (HasPlacementData(PlacementData_Origin) && HasPlacementData(PlacementData_Bbox))
+        {
+        stmt.BindPoint2d(stmt.GetParameterIndex(prop_BBoxLow()), m_placement.GetElementBox().low);
+        stmt.BindPoint2d(stmt.GetParameterIndex(prop_BBoxHigh()), m_placement.GetElementBox().high);
         }
     else
         {
-        stmt.BindPoint2d(stmt.GetParameterIndex(prop_Origin()), m_placement.GetOrigin());
-        stmt.BindDouble(stmt.GetParameterIndex(prop_Rotation()), m_placement.GetAngle().Degrees());
-        stmt.BindPoint2d(stmt.GetParameterIndex(prop_BBoxLow()), m_placement.GetElementBox().low);
-        stmt.BindPoint2d(stmt.GetParameterIndex(prop_BBoxHigh()), m_placement.GetElementBox().high);
+        stmt.BindNull(stmt.GetParameterIndex(prop_BBoxLow()));
+        stmt.BindNull(stmt.GetParameterIndex(prop_BBoxHigh()));
         }
     }
 
@@ -4009,26 +4185,38 @@ void GeometricElement3d::_BindWriteParams(ECSqlStatement& stmt, ForInsert forIns
         return;
         }
 
-    stmt.BindInt(stmt.GetParameterIndex(prop_InSpatialIndex()), model3d->IsSpatiallyLocated() ? 1 : 0);
+    // Spatial-index triggers require a valid bounding box; partial placements are persisted but not indexed.
+    bool hasSpatialIndexablePlacement = m_placement.IsValid() && HasPlacementData(PlacementData_Origin) && HasPlacementData(PlacementData_Bbox);
+    stmt.BindInt(stmt.GetParameterIndex(prop_InSpatialIndex()), model3d->IsSpatiallyLocated() && hasSpatialIndexablePlacement ? 1 : 0);
     stmt.BindNavigationValue(stmt.GetParameterIndex(prop_TypeDefinition()), m_typeDefinition.m_id, m_typeDefinition.m_relClassId);
 
-    if (!m_placement.IsValid())
-        {
-        stmt.BindNull(stmt.GetParameterIndex(prop_Origin()));
-        stmt.BindNull(stmt.GetParameterIndex(prop_Yaw()));
-        stmt.BindNull(stmt.GetParameterIndex(prop_Pitch()));
-        stmt.BindNull(stmt.GetParameterIndex(prop_Roll()));
-        stmt.BindNull(stmt.GetParameterIndex(prop_BBoxLow()));
-        stmt.BindNull(stmt.GetParameterIndex(prop_BBoxHigh()));
-        }
-    else
-        {
+    if (HasPlacementData(PlacementData_Origin))
         stmt.BindPoint3d(stmt.GetParameterIndex(prop_Origin()), m_placement.GetOrigin());
+    else
+        stmt.BindNull(stmt.GetParameterIndex(prop_Origin()));
+
+    if (HasPlacementData(PlacementData_Origin) && HasPlacementData(PlacementData_Angles))
+        {
         stmt.BindDouble(stmt.GetParameterIndex(prop_Yaw()), m_placement.GetAngles().GetYaw().Degrees());
         stmt.BindDouble(stmt.GetParameterIndex(prop_Pitch()), m_placement.GetAngles().GetPitch().Degrees());
         stmt.BindDouble(stmt.GetParameterIndex(prop_Roll()), m_placement.GetAngles().GetRoll().Degrees());
+        }
+    else
+        {
+        stmt.BindNull(stmt.GetParameterIndex(prop_Yaw()));
+        stmt.BindNull(stmt.GetParameterIndex(prop_Pitch()));
+        stmt.BindNull(stmt.GetParameterIndex(prop_Roll()));
+        }
+
+    if (HasPlacementData(PlacementData_Origin) && HasPlacementData(PlacementData_Bbox))
+        {
         stmt.BindPoint3d(stmt.GetParameterIndex(prop_BBoxLow()), m_placement.GetElementBox().low);
         stmt.BindPoint3d(stmt.GetParameterIndex(prop_BBoxHigh()), m_placement.GetElementBox().high);
+        }
+    else
+        {
+        stmt.BindNull(stmt.GetParameterIndex(prop_BBoxLow()));
+        stmt.BindNull(stmt.GetParameterIndex(prop_BBoxHigh()));
         }
     }
 
@@ -4064,6 +4252,28 @@ DgnDbStatus GeometricElement::WriteGeomStream() const
     DgnDbR db = GetDgnDb();
     return GeometryStream::WriteGeometryStream(db.Elements().GetSnappyTo(), db, GetElementId(), _GetGeometryColumnClassName(), prop_GeometryStream());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSqlStatus GeometryStream::Write(BeSQLite::SnappyToBlob& snappy, IECSqlBinder& binder) const {
+    snappy.Init();
+    snappy.Write(data(), (uint32_t)size());
+    ByteStream stream;
+    snappy.SaveTo(stream);
+    return binder.BindBlob(stream.data(), (int)stream.size(), IECSqlBinder::MakeCopy::Yes);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSqlStatus GeometryStream::Read(BeSQLite::SnappyFromMemory& snappy, DgnDbR db, const IECSqlValue& valueReader) {
+    int sz;
+    auto blob = valueReader.GetBlob(&sz);
+    if (ReadGeometryStream(snappy, db, blob, sz)!= DgnDbStatus::Success)
+        return ECSqlStatus::Error;
+    return ECSqlStatus::Success;
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -4537,7 +4747,7 @@ void JobSubjectUtils::SetTransform(SubjectR jobSubject, TransformCR trans)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JobSubjectUtils::InitializeProperties(SubjectR jobSubject, Utf8StringCR bridgeRegSubKey, Utf8CP comments, JsonValueCP properties)
+void JobSubjectUtils::InitializeProperties(SubjectR jobSubject, Utf8StringCR bridgeRegSubKey, Utf8CP comments, BeJsConst const* properties)
     {
     BeAssert(!Utf8String::IsNullOrEmpty(bridgeRegSubKey.c_str()));
 

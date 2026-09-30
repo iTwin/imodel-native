@@ -6,7 +6,6 @@
 #include <Bentley/BeFileName.h>
 #include <Bentley/bvector.h>
 #include <Bentley/bpair.h>
-#include <BeXml/BeXml.h>
 #include <Bentley/BeStringUtilities.h>
 #include <Bentley/BeFileListIterator.h>
 #include <Bentley/Logging.h>

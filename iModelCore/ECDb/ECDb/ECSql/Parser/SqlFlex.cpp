@@ -1,4 +1,4 @@
-#line 2 "ECDb\\ECSql\\parser\\SQLflex.l"
+#line 2 "iModelCore/ECDb/ECDb/ECSql/Parser/sqlflex.l"
 //------------------------------------------------------------
 //
 // Licensed to the Apache Software Foundation (ASF) under one
@@ -83,219 +83,219 @@
 #define yy_create_buffer SQLyy_create_buffer
 #endif
 
-
+    
 #ifdef yy_delete_buffer
 #define SQLyy_delete_buffer_ALREADY_DEFINED
 #else
 #define yy_delete_buffer SQLyy_delete_buffer
 #endif
 
-
+    
 #ifdef yy_scan_buffer
 #define SQLyy_scan_buffer_ALREADY_DEFINED
 #else
 #define yy_scan_buffer SQLyy_scan_buffer
 #endif
 
-
+    
 #ifdef yy_scan_string
 #define SQLyy_scan_string_ALREADY_DEFINED
 #else
 #define yy_scan_string SQLyy_scan_string
 #endif
 
-
+    
 #ifdef yy_scan_bytes
 #define SQLyy_scan_bytes_ALREADY_DEFINED
 #else
 #define yy_scan_bytes SQLyy_scan_bytes
 #endif
 
-
+    
 #ifdef yy_init_buffer
 #define SQLyy_init_buffer_ALREADY_DEFINED
 #else
 #define yy_init_buffer SQLyy_init_buffer
 #endif
 
-
+    
 #ifdef yy_flush_buffer
 #define SQLyy_flush_buffer_ALREADY_DEFINED
 #else
 #define yy_flush_buffer SQLyy_flush_buffer
 #endif
 
-
+    
 #ifdef yy_load_buffer_state
 #define SQLyy_load_buffer_state_ALREADY_DEFINED
 #else
 #define yy_load_buffer_state SQLyy_load_buffer_state
 #endif
 
-
+    
 #ifdef yy_switch_to_buffer
 #define SQLyy_switch_to_buffer_ALREADY_DEFINED
 #else
 #define yy_switch_to_buffer SQLyy_switch_to_buffer
 #endif
 
-
+    
 #ifdef yypush_buffer_state
 #define SQLyypush_buffer_state_ALREADY_DEFINED
 #else
 #define yypush_buffer_state SQLyypush_buffer_state
 #endif
 
-
+    
 #ifdef yypop_buffer_state
 #define SQLyypop_buffer_state_ALREADY_DEFINED
 #else
 #define yypop_buffer_state SQLyypop_buffer_state
 #endif
 
-
+    
 #ifdef yyensure_buffer_stack
 #define SQLyyensure_buffer_stack_ALREADY_DEFINED
 #else
 #define yyensure_buffer_stack SQLyyensure_buffer_stack
 #endif
 
-
+    
 #ifdef yylex
 #define SQLyylex_ALREADY_DEFINED
 #else
 #define yylex SQLyylex
 #endif
 
-
+    
 #ifdef yyrestart
 #define SQLyyrestart_ALREADY_DEFINED
 #else
 #define yyrestart SQLyyrestart
 #endif
 
-
+    
 #ifdef yylex_init
 #define SQLyylex_init_ALREADY_DEFINED
 #else
 #define yylex_init SQLyylex_init
 #endif
 
-
+    
 #ifdef yylex_init_extra
 #define SQLyylex_init_extra_ALREADY_DEFINED
 #else
 #define yylex_init_extra SQLyylex_init_extra
 #endif
 
-
+    
 #ifdef yylex_destroy
 #define SQLyylex_destroy_ALREADY_DEFINED
 #else
 #define yylex_destroy SQLyylex_destroy
 #endif
 
-
+    
 #ifdef yyget_debug
 #define SQLyyget_debug_ALREADY_DEFINED
 #else
 #define yyget_debug SQLyyget_debug
 #endif
 
-
+    
 #ifdef yyset_debug
 #define SQLyyset_debug_ALREADY_DEFINED
 #else
 #define yyset_debug SQLyyset_debug
 #endif
 
-
+    
 #ifdef yyget_extra
 #define SQLyyget_extra_ALREADY_DEFINED
 #else
 #define yyget_extra SQLyyget_extra
 #endif
 
-
+    
 #ifdef yyset_extra
 #define SQLyyset_extra_ALREADY_DEFINED
 #else
 #define yyset_extra SQLyyset_extra
 #endif
 
-
+    
 #ifdef yyget_in
 #define SQLyyget_in_ALREADY_DEFINED
 #else
 #define yyget_in SQLyyget_in
 #endif
 
-
+    
 #ifdef yyset_in
 #define SQLyyset_in_ALREADY_DEFINED
 #else
 #define yyset_in SQLyyset_in
 #endif
 
-
+    
 #ifdef yyget_out
 #define SQLyyget_out_ALREADY_DEFINED
 #else
 #define yyget_out SQLyyget_out
 #endif
 
-
+    
 #ifdef yyset_out
 #define SQLyyset_out_ALREADY_DEFINED
 #else
 #define yyset_out SQLyyset_out
 #endif
 
-
+    
 #ifdef yyget_leng
 #define SQLyyget_leng_ALREADY_DEFINED
 #else
 #define yyget_leng SQLyyget_leng
 #endif
 
-
+    
 #ifdef yyget_text
 #define SQLyyget_text_ALREADY_DEFINED
 #else
 #define yyget_text SQLyyget_text
 #endif
 
-
+    
 #ifdef yyget_lineno
 #define SQLyyget_lineno_ALREADY_DEFINED
 #else
 #define yyget_lineno SQLyyget_lineno
 #endif
 
-
+    
 #ifdef yyset_lineno
 #define SQLyyset_lineno_ALREADY_DEFINED
 #else
 #define yyset_lineno SQLyyset_lineno
 #endif
 
-
-
+    
+        
 #ifdef yyget_column
 #define SQLyyget_column_ALREADY_DEFINED
 #else
 #define yyget_column SQLyyget_column
 #endif
 
-
+        
 #ifdef yyset_column
 #define SQLyyset_column_ALREADY_DEFINED
 #else
 #define yyset_column SQLyyset_column
 #endif
 
-
-
+    
+    
 #ifdef yywrap
 #define SQLyywrap_ALREADY_DEFINED
 #else
@@ -305,14 +305,14 @@
 
 
 
-
+    
 #ifdef yyget_lval
 #define SQLyyget_lval_ALREADY_DEFINED
 #else
 #define yyget_lval SQLyyget_lval
 #endif
 
-
+    
 #ifdef yyset_lval
 #define SQLyyset_lval_ALREADY_DEFINED
 #else
@@ -330,14 +330,14 @@
 #define yyalloc SQLyyalloc
 #endif
 
-
+    
 #ifdef yyrealloc
 #define SQLyyrealloc_ALREADY_DEFINED
 #else
 #define yyrealloc SQLyyrealloc
 #endif
 
-
+    
 #ifdef yyfree
 #define SQLyyfree_ALREADY_DEFINED
 #else
@@ -372,7 +372,7 @@
 #if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
 
 /* C99 says to define __STDC_LIMIT_MACROS before including stdint.h,
- * if you want the limit (max/min) macros for int types.
+ * if you want the limit (max/min) macros for int types. 
  */
 #ifndef __STDC_LIMIT_MACROS
 #define __STDC_LIMIT_MACROS 1
@@ -389,7 +389,7 @@ typedef uint32_t flex_uint32_t;
 typedef signed char flex_int8_t;
 typedef short int flex_int16_t;
 typedef int flex_int32_t;
-typedef unsigned char flex_uint8_t;
+typedef unsigned char flex_uint8_t; 
 typedef unsigned short int flex_uint16_t;
 typedef unsigned int flex_uint32_t;
 
@@ -554,10 +554,10 @@ typedef size_t yy_size_t;
 #define EOB_ACT_CONTINUE_SCAN 0
 #define EOB_ACT_END_OF_FILE 1
 #define EOB_ACT_LAST_MATCH 2
-
+    
     #define YY_LESS_LINENO(n)
     #define YY_LINENO_REWIND_TO(ptr)
-
+    
 /* Return all but the first "n" matched characters back to the input stream. */
 #define yyless(n) \
 	do \
@@ -2674,8 +2674,7 @@ static sal_Int32    parseString(yyscan_t yyscanner);
 #define YY_EXTRA_TYPE OSQLScanner*
 #define YY_INPUT(buf,result,max_size) \
 { \
-    int c = yyget_extra(yyscanner)->SQLyygetc(); \
-    result = (c == EOF) ? YY_NULL : (buf[0] = c, 1); \
+    result = (int) yyget_extra(yyscanner)->SQLyyread((buf), (max_size)); \
 }
 #define YY_FATAL_ERROR(msg) \
 { \
@@ -2703,7 +2702,6 @@ static sal_Int32    parseString(yyscan_t yyscanner);
 
 
 
-
 #ifndef YY_NO_UNISTD_H
 /* Special case for "unistd.h", since it is non-ANSI. We include it way
  * down here because we want the user's section 1 to have been scanned first.
@@ -2711,7 +2709,6 @@ static sal_Int32    parseString(yyscan_t yyscanner);
  */
 #include <unistd.h>
 #endif
-
 
 
 
@@ -2775,13 +2772,13 @@ static int yy_init_globals ( yyscan_t yyscanner );
 
 
 
-
+    
     /* This must go here because YYSTYPE and YYLTYPE are included
      * from bison output in section 1.*/
     #    define yylval yyg->yylval_r
+    
 
-
-
+    
 
 
 int yylex_init (yyscan_t* scanner);
@@ -2878,9 +2875,9 @@ extern int yywrap ( yyscan_t yyscanner );
 #endif
 
 #ifndef YY_NO_UNPUT
-
+    
     static void yyunput ( int c, char *buf_ptr  , yyscan_t yyscanner);
-
+    
 #endif
 
 
@@ -3004,9 +3001,9 @@ static int input ( yyscan_t yyscanner );
 
 
 
-
-
-
+        
+    
+    
 
 
 
@@ -4388,7 +4385,7 @@ static void yy_load_buffer_state  (yyscan_t yyscanner)
     YY_BUFFER_STATE yy_create_buffer  (FILE * file, int  size , yyscan_t yyscanner)
 {
 	YY_BUFFER_STATE b;
-
+    
 	b = (YY_BUFFER_STATE) yyalloc( sizeof( struct yy_buffer_state ) , yyscanner );
 	if ( ! b )
 		YY_FATAL_ERROR( "out of dynamic memory in yy_create_buffer()" );
@@ -4456,9 +4453,9 @@ static void yy_load_buffer_state  (yyscan_t yyscanner)
     }
 
 
-
+    
         b->yy_is_interactive = 0;
-
+    
 
 	errno = oerrno;
 }
@@ -4608,7 +4605,7 @@ static void yyensure_buffer_stack (yyscan_t yyscanner)
 YY_BUFFER_STATE yy_scan_buffer  (char * base, yy_size_t  size , yyscan_t yyscanner)
 {
 	YY_BUFFER_STATE b;
-
+    
 	if ( size < 2 ||
 	     base[size-2] != YY_END_OF_BUFFER_CHAR ||
 	     base[size-1] != YY_END_OF_BUFFER_CHAR )
@@ -4647,7 +4644,7 @@ YY_BUFFER_STATE yy_scan_buffer  (char * base, yy_size_t  size , yyscan_t yyscann
  */
 YY_BUFFER_STATE yy_scan_string (const char * yystr , yyscan_t yyscanner)
 {
-
+    
 	return yy_scan_bytes( yystr, (int) strlen(yystr) , yyscanner);
 }
 
@@ -4667,7 +4664,7 @@ YY_BUFFER_STATE yy_scan_bytes  (const char * yybytes, int  _yybytes_len , yyscan
 	char *buf;
 	yy_size_t n;
 	int i;
-
+    
 	/* Get memory for full buffer, including space for trailing EOB's. */
 	n = (yy_size_t) (_yybytes_len + 2);
 	buf = (char *) yyalloc( n , yyscanner );
@@ -4753,10 +4750,10 @@ int yyget_lineno  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
-
+    
         if (! YY_CURRENT_BUFFER)
             return 0;
-
+    
     return yylineno;
 }
 
@@ -4770,10 +4767,10 @@ int yyget_column  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
-
+    
         if (! YY_CURRENT_BUFFER)
             return 0;
-
+    
     return yycolumn;
 }
 
@@ -4844,11 +4841,11 @@ void yyset_lineno (int  _line_number , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
-
+    
         /* lineno is only valid if an input buffer exists. */
         if (! YY_CURRENT_BUFFER )
            YY_FATAL_ERROR( "yyset_lineno called with no buffer" );
-
+    
     yylineno = _line_number;
 }
 
@@ -4863,11 +4860,11 @@ void yyset_column (int  _column_no , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
-
+    
         /* column is only valid if an input buffer exists. */
         if (! YY_CURRENT_BUFFER )
            YY_FATAL_ERROR( "yyset_column called with no buffer" );
-
+    
     yycolumn = _column_no;
 }
 
@@ -5176,12 +5173,10 @@ sal_Int32 parseString (yyscan_t yyscanner)
     Utf8String sBuffer;
     sBuffer.reserve(256);
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
-    int s = 1;
     while (!checkeof (ch = yyinput (yyscanner)))
     {
     if (ch == delim)
         {
-        s++;
         ch = yyinput (yyscanner);
         if (checkeof (ch))
         {
@@ -5398,8 +5393,8 @@ sal_Int32 gatherNamePre(yyscan_t yyscanner, const sal_Char* text)
             {
             Utf8String sStmt = yyget_extra(yyscanner)->getStatement();
             size_t nLength = strlen(text);
-            size_t nPos = yyget_extra(yyscanner)->GetCurrentPos() - nLength - 2;
-            if (sStmt[nPos] == ':')
+            const sal_Int32 nPos = yyget_extra(yyscanner)->GetScanPos() - (sal_Int32) nLength - 1;
+            if (nPos >= 0 && static_cast<size_t>(nPos) < sStmt.size() && sStmt[nPos] == ':')
             {
                 SQL_NEW_NODE(Utf8String(text), SQL_NODE_NAME);
                 nToken = SQL_TOKEN_NAME;
@@ -5415,13 +5410,11 @@ sal_Int32 gatherNamePre(yyscan_t yyscanner, const sal_Char* text)
 }
 
 using namespace connectivity;
-static bool IN_SQLyyerror;
 
 //------------------------------------------------------------------------------
 OSQLScanner::OSQLScanner(Utf8CP rNewStatement, const IParseContext* pContext, sal_Bool bInternational)
-    : m_nCurrentPos(0), m_bInternational(bInternational), m_pContext(pContext), yyscanner(nullptr), m_nRule(GetSQLRule()), m_sStatement(rNewStatement)
+    : m_nCurrentPos(0), m_bInternational(bInternational), m_pContext(pContext), yyscanner(nullptr), m_nRule(GetSQLRule()), m_sStatement(rNewStatement), m_inSQLyyerror(false)
     {
-    IN_SQLyyerror = false;
     yylex_init(&yyscanner);
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     YY_FLUSH_BUFFER;
@@ -5436,36 +5429,57 @@ OSQLScanner::~OSQLScanner()
     }
 
  //------------------------------------------------------------------------
-sal_Int32 OSQLScanner::SQLyygetc(void)
+// Hands the lexer a block of characters at a time. Feeding flex a single character
+// per YY_INPUT call makes it shift the pending token back to the start of its buffer
+// on every character, which is O(n^2) in the length of a single token (a long
+// identifier or string literal would effectively hang the parser).
+size_t OSQLScanner::SQLyyread(sal_Char* buf, size_t maxSize)
     {
-    sal_Int32 nPos = (static_cast<size_t>(m_nCurrentPos) >= m_sStatement.size()) ? -1 : m_sStatement[m_nCurrentPos];
-    m_nCurrentPos++;
-    return nPos;
+    const size_t statementSize = m_sStatement.size();
+    const size_t currentPos = static_cast<size_t>(m_nCurrentPos);
+    if (0 == maxSize || currentPos >= statementSize)
+        return 0;
+
+    const size_t count = std::min(maxSize, statementSize - currentPos);
+    memcpy(buf, m_sStatement.data() + currentPos, count);
+    m_nCurrentPos += (sal_Int32) count;
+    return count;
     }
 
+//------------------------------------------------------------------------
+sal_Int32 OSQLScanner::GetScanPos() const
+    {
+    struct yyguts_t* yyg = (struct yyguts_t*) yyscanner;
+    if (nullptr == yyg || nullptr == yyg->yy_buffer_stack || nullptr == YY_CURRENT_BUFFER_LVALUE)
+        return m_nCurrentPos;
+
+    // characters delivered to flex that it has not scanned past yet
+    const sal_Int32 unscanned = (sal_Int32) ((YY_CURRENT_BUFFER_LVALUE->yy_ch_buf + yyg->yy_n_chars) - yyg->yy_c_buf_p);
+    return m_nCurrentPos - unscanned;
+    }
 //------------------------------------------------------------------------------
 void OSQLScanner::SQLyyerror(const char *fmt)
     {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
-    if(IN_SQLyyerror)
+    if(m_inSQLyyerror)
         return;
 
-    IN_SQLyyerror = true;
+    m_inSQLyyerror = true;
     OSL_ENSURE(m_pContext, "OSQLScanner::SQLyyerror: No Context set");
     m_sErrorMessage = fmt;
-    if (m_nCurrentPos < (sal_Int32)m_sStatement.size())
+    // m_nCurrentPos is the end of the block last handed to flex, which is typically already the end
+    // of the statement. The offending text is only available where the scanner actually stands.
+    if (GetScanPos() < (sal_Int32)m_sStatement.size())
     {
         m_sErrorMessage.append(": ");
         Utf8String aError;
-        static sal_Int32 BUFFERSIZE = 256;
-        static sal_Char* Buffer = 0;
-        if(!Buffer)
-            Buffer = new sal_Char[BUFFERSIZE];
-
-        sal_Char *s = Buffer;
-        sal_Int32 nPos = 1;
+        // A growing Utf8String replaces the former file static char buffer. That buffer was shared
+        // by every thread parsing ECSQL and its growth path advanced the static pointer itself,
+        // which corrupted the heap once the offending text reached the initial capacity.
+        Utf8String offendingText;
+        offendingText.reserve(256);
         sal_Int32 ch = yytext ? (yytext[0] == 0 ? ' ' : yytext[0]): ' ';
-        *s++ = ch;
+        offendingText.push_back((sal_Char) ch);
         while (!checkeof(ch = yyinput(yyscanner)))
         {
             if (ch == ' ')
@@ -5475,31 +5489,18 @@ void OSQLScanner::SQLyyerror(const char *fmt)
                     if (!checkeof(ch))
                         unput(ch);
                 }
-                *s = '\0';
-                aError.assign(Buffer);
+                aError = offendingText;
                 break;
             }
             else
             {
-                *s++ = ch;
-                if (++nPos == BUFFERSIZE)
-                {
-                    Utf8String aBuf(Buffer);
-                    delete[] Buffer;
-                    BUFFERSIZE *=2;
-                    Buffer = new sal_Char[BUFFERSIZE];
-            for(sal_Int32 i=0;i< (sal_Int32)aBuf.size();++i,++Buffer)
-                        *Buffer = aBuf[i];
-                    s = &Buffer[nPos];
-                }
+                offendingText.push_back((sal_Char) ch);
             }
         }
 
         m_sErrorMessage += aError;
-        delete[] Buffer;
-        Buffer = NULL;
     }
-    IN_SQLyyerror = false;
+    m_inSQLyyerror = false;
     YY_FLUSH_BUFFER;
     }
 

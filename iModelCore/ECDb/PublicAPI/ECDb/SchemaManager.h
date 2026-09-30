@@ -21,6 +21,24 @@ enum class SchemaChangeType {
 using SchemaChangeEvent = BeEvent<ECDbCR,SchemaChangeType>;
 
 //=======================================================================================
+//! Schema import options. Not needed by regular callers. They are specific to certain
+//! exceptional workflows and therefore only used by them.
+//! Reachable as SchemaManager::SchemaImportOptions; it lives out here because SchemaSync, which
+//! is declared first, takes it.
+//! @ingroup ECDbGroup
+//+===============+===============+===============+===============+===============+======
+enum class SchemaImportOptions
+    {
+    None                                        = 0,        //! binary 0000
+    DoNotFailSchemaValidationForLegacyIssues    = 1 << 0,   //! Not needed by regular caller
+    DisallowMajorSchemaUpgrade                  = 1 << 1,   //! If specified, schema upgrades where the major version has changed, are not supported.
+    DoNotFailForDeletionsOrModifications        = 1 << 2,   //! This is for the case of domain schemas that differ between files even though the schema name and versions are unchanged.  In such a case, we only want to merge in acceptable changes, not delete anything
+    AllowDataTransformDuringSchemaUpgrade       = 1 << 4,   //! The allow schema upgrade to transform data if needed.
+    AllowMajorSchemaUpgradeForDynamicSchemas    = 1 << 5,   //! If specified, schema upgrades where the major version has changed are only supported for dynamic schemas. Takes precedence over DisallowMajorSchemaUpgrade.
+    DoNotCreateOrUpdateDataTables               = 1 << 6,   //! Maintain only the ec_ tables. For a file that holds metadata and no data, such as the schema sync db.
+    };
+
+//=======================================================================================
 //! @ingroup ECDbGroup
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
@@ -28,6 +46,20 @@ struct SchemaSync final {
     using FileUri = Utf8String;
     using DataVer = uint64_t;
     using TableList = bvector<Utf8String>;
+
+    //=======================================================================================
+    //! The portion of a schema sync db that a repair operation replaces.
+    //! @ingroup ECDbGroup
+    // @bsiclass
+    //+===============+===============+===============+===============+===============+======
+    enum class RepairScope {
+        //! Restore the ec_ rows and sync identity. The existing profile-table definitions must match.
+        SchemaMetadata = 0,
+        //! Restore the ec_ rows and sync identity after reconciling profile-table definitions.
+        SchemaMetadataAndProfile = 1,
+    };
+
+    struct SyncDbInfo;
     enum class Status {
         OK = BE_SQLITE_OK,
         ERROR = BE_SQLITE_ERROR,
@@ -40,49 +72,21 @@ struct SchemaSync final {
         ERROR_SCHEMA_SYNC_INFO_DONOT_MATCH,
         ERROR_UNABLE_TO_ATTACH,
         ERROR_SYNC_SQL_SCHEMA,
-    };
-    //=======================================================================================
-    // @bsiclass
-    //+===============+===============+===============+===============+===============+======
-    struct SyncDbInfo final{
-        friend struct SchemaSync;
-        private:
-            DataVer m_dataVer;
-            BeGuid m_syncId;
-        public:
-            SyncDbInfo():m_dataVer(0){}
-            SyncDbInfo(SyncDbInfo&&)=default;
-            SyncDbInfo(SyncDbInfo const&)=default;
-            SyncDbInfo& operator=(SyncDbInfo&&)=default;
-            SyncDbInfo& operator=(SyncDbInfo const&)=default;
-            BeGuidCR GetSyncId() const { return m_syncId; }
-            DataVer GetDataVersion() const { return m_dataVer; }
-            bool IsEmpty() const { return !m_syncId.IsValid(); }
-            ECDB_EXPORT void To(BeJsValue) const;
-            ECDB_EXPORT static SyncDbInfo From(BeJsConst);
-            ECDB_EXPORT static SyncDbInfo From(DbCR);
-    };
-    //=======================================================================================
-    // @bsiclass
-    //+===============+===============+===============+===============+===============+======
-    struct LocalDbInfo final {
-        friend struct SchemaSync;
-        private:
-            DataVer m_dataVer;
-            BeGuid m_syncId;
-
-        public:
-            LocalDbInfo():m_dataVer(0){}
-            LocalDbInfo(LocalDbInfo&&)=default;
-            LocalDbInfo(LocalDbInfo const&)=default;
-            LocalDbInfo& operator=(LocalDbInfo&&)=default;
-            LocalDbInfo& operator=(LocalDbInfo const&)=default;
-            BeGuidCR GetSyncId() const { return m_syncId; }
-            DataVer GetDataVersion() const { return m_dataVer; }
-            bool IsEmpty() const { return !m_syncId.IsValid(); }
-            ECDB_EXPORT void To(BeJsValue) const;
-            ECDB_EXPORT static LocalDbInfo From(BeJsConst);
-            ECDB_EXPORT static LocalDbInfo From(DbCR);
+        //! The import cannot be done additively because it would have to move data between columns.
+        //! Callers route this to the upgrade path, which takes the exclusive schema lock.
+        ERROR_DATA_TRANSFORM_REQUIRED,
+        //! The import cannot be done additively because it would destroy instances or property
+        //! values. Same route as ERROR_DATA_TRANSFORM_REQUIRED: the upgrade path.
+        ERROR_DATA_DELETION_REQUIRED,
+        //! The sync db was written to while an import was running in it, which can only happen if
+        //! somebody wrote without holding the container write lock.
+        ERROR_SYNC_DB_CHANGED,
+        //! The briefcase and the sync db are on different EC profile versions. Either could then map
+        //! the same schema differently, so nothing may be imported until they are aligned.
+        ERROR_PROFILE_VERSION_MISMATCH,
+        //! Schema sync was enabled from a briefcase holding unpushed changes or missing pushed ones.
+        //! The sync db would then mirror a state no other briefcase can reach.
+        ERROR_BRIEFCASE_NOT_LEVEL_WITH_TIMELINE,
     };
     //=======================================================================================
     // @bsiclass
@@ -101,21 +105,68 @@ struct SchemaSync final {
             ECDB_EXPORT Utf8String GetDbAttachUri() const;
             ECDB_EXPORT SyncDbInfo GetInfo() const;
     };
+    //=======================================================================================
+    // @bsiclass
+    //+===============+===============+===============+===============+===============+======
+    struct SyncDbInfo final{
+        friend struct SchemaSync;
+        private:
+            DataVer m_dataVer;
+            Utf8String m_syncId;
+        public:
+            SyncDbInfo():m_dataVer(1){}
+            SyncDbInfo(SyncDbInfo&&)=default;
+            SyncDbInfo(SyncDbInfo const&)=default;
+            SyncDbInfo& operator=(SyncDbInfo&&)=default;
+            SyncDbInfo& operator=(SyncDbInfo const&)=default;
+            Utf8StringCR GetSyncId() const { return m_syncId; }
+            DataVer GetDataVersion() const { return m_dataVer; }
+            bool IsEmpty() const { return m_syncId.empty(); }
+            ECDB_EXPORT void To(BeJsValue) const;
+            ECDB_EXPORT static SyncDbInfo From(BeJsConst);
+            ECDB_EXPORT static SyncDbInfo From(DbCR);
+            ECDB_EXPORT static SyncDbInfo From(SyncDbUri);
+    };
+    //=======================================================================================
+    // @bsiclass
+    //+===============+===============+===============+===============+===============+======
+    struct LocalDbInfo final {
+        friend struct SchemaSync;
+        private:
+            DataVer m_dataVer;
+            Utf8String m_syncId;
+
+        public:
+            LocalDbInfo():m_dataVer(1){}
+            LocalDbInfo(LocalDbInfo&&)=default;
+            LocalDbInfo(LocalDbInfo const&)=default;
+            LocalDbInfo& operator=(LocalDbInfo&&)=default;
+            LocalDbInfo& operator=(LocalDbInfo const&)=default;
+            Utf8StringCR GetSyncId() const { return m_syncId; }
+            DataVer GetDataVersion() const { return m_dataVer; }
+            bool IsEmpty() const { return m_syncId.empty(); }
+            ECDB_EXPORT void To(BeJsValue) const;
+            ECDB_EXPORT static LocalDbInfo From(BeJsConst);
+            ECDB_EXPORT static LocalDbInfo From(DbCR);
+};
+
 private:
     ECDbR m_conn;
     SyncDbUri m_defaultSyncDbUri;
     bool m_disabledForProfileUpgrade;
-
-    DbResult UpdateOrCreateSyncDbInfo(DbR syncDb);
-    DbResult UpdateOrCreateSyncDbInfo(SyncDbUri syncDbUri);
-    DbResult UpdateOrCreateLocalDbInfo(SyncDbInfo const& from);
-    Status Init(SyncDbUri const&, TableList);
+    int64_t m_modifiedRowCount;
+    Status InitInternal(SyncDbUri const&, Utf8StringCR, bool);
     Status PullInternal(SyncDbUri const&, TableList);
-    Status PushInternal(SyncDbUri const&, TableList);
-    Status VerifySyncDb(SyncDbUri const&, bool isPull) const;
-    DbResult PullSqlSchema(DbR conn);
-    DbResult PushSqlSchema(DbR conn);
-    static void ParseQueryParams(Db::OpenParams&, SyncDbUri const& uri);
+    Status ImportIntoSyncDb(SyncDbUri const&, bvector<ECN::ECSchemaCP> const& schemas, SchemaImportOptions options, bvector<Utf8String>& importedSchemaNames, DataVer dataVerBeforeImport);
+    Status MirrorToSyncDb(SyncDbUri const&);
+    Status OverwriteSyncDbInternal(SyncDbUri const&);
+    Status VerifyProfileVersionsMatch(SyncDbUri const&) const;
+    Status VerifySyncDb(SyncDbUri const&, bool isPull, bool isInit) const;
+    Status SaveLocalDbInfo(DbR, LocalDbInfo const&);
+    Status SaveSyncDbInfo(DbR, SyncDbInfo const&);
+    Status SaveSyncDbInfo(SyncDbUri, SyncDbInfo const&);
+    void BeginModifiedRowCount() { m_modifiedRowCount = m_conn.GetTotalModifiedRowCount64(); }
+    void EndModifiedRowCount() { m_modifiedRowCount = m_conn.GetTotalModifiedRowCount64() - m_modifiedRowCount; }
 
 public:
     SchemaSync(SchemaSync&&) = delete;
@@ -124,17 +175,104 @@ public:
     SchemaSync& operator=(SchemaSync const&)=delete;
     explicit SchemaSync(ECDbR conn):m_conn(conn), m_disabledForProfileUpgrade(false) {}
     bool IsEnabled() const { return !GetInfo().IsEmpty(); }
-    SyncDbUri const& GetDefaultSyncDbUri() const { return m_defaultSyncDbUri;  }
+    SyncDbUri const& GetDefaultSyncDbUri() const { return m_defaultSyncDbUri; }
     Status SetDefaultSyncDbUri(Utf8CP syncDbUri) { return SetDefaultSyncDbUri(SyncDbUri(syncDbUri)); }
     void DisableSchemaSync() { m_disabledForProfileUpgrade = true; }
     void ReEnableSchemaSync() { m_disabledForProfileUpgrade = false; }
     bool IsSchemaSyncDisabled() const { return m_disabledForProfileUpgrade; }
+    ECDB_EXPORT Status UpdateDataVersion(SyncDbUri const&);
+    ECDB_EXPORT int64_t GetModifiedRowCount() const { return m_modifiedRowCount; }
     ECDB_EXPORT Status UpdateDbSchema();
     ECDB_EXPORT LocalDbInfo GetInfo() const;
-    ECDB_EXPORT Status SetDefaultSyncDbUri(SyncDbUri syncDbUri);
-    ECDB_EXPORT Status Init(SyncDbUri const&);
+    ECDB_EXPORT Status SetDefaultSyncDbUri(SyncDbUri);
+    ECDB_EXPORT Status Init(SyncDbUri const&, Utf8StringCR, bool);
     ECDB_EXPORT Status Pull(SyncDbUri const&, SchemaImportToken const* token = nullptr); // read/write op
-    ECDB_EXPORT Status Push(SyncDbUri const&);
+    //! Adopt the given schemas, and everything they transitively reference, from the sync db.
+    //!
+    //! This is step 2 of the "upstream" flow: the import has already run in the sync
+    //! db, which decided ids and physical layout, and this connection now takes that answer over
+    //! instead of computing its own. Unlike Pull, which mirrors the sync db wholesale, this copies
+    //! only the rows belonging to @p schemaNames and their reference closure - so schemas another
+    //! briefcase imported but has not yet pushed do not leak in.
+    //!
+    //! Physical tables and columns are then materialised locally from the adopted rows, exactly as
+    //! Pull does, so no DDL has to travel between the two files.
+    //! @param[in] schemaNames names of the schemas to adopt. Their references are added automatically.
+    //! @note Rows inside the closure that the sync db no longer has are deleted locally, since the
+    //!       sync db is the record of what those schemas look like.
+    //! Copy the closure of the named schemas down from the sync db and build what it implies. When
+    //! adoptedDataVer is given it is stamped on the briefcase before the adopt commits, so the
+    //! version and the rows it describes are in one txn - a rebase replays txn by txn.
+    ECDB_EXPORT Status AdoptSchemas(SyncDbUri const&, bvector<Utf8String> const& schemaNames, DataVer adoptedDataVer = 0);
+    //! Import schemas the "upstream" way: decide once in the sync db, then adopt.
+    //!
+    //! The two steps this performs are:
+    //!   1. Import @p schemas into the sync db. That import is the ordinary one, unmodified,
+    //!      and it is what decides ids, shared columns, overflow and table layout.
+    //!   2. Adopt those schemas and their reference closure into this briefcase, which therefore
+    //!      decides nothing itself. Other briefcases learn about the change from the changeset.
+    //!
+    //! Schemas arrive resolved against this briefcase, which is what the ordinary import path
+    //! produces. They are re-pointed at the sync db before step 1, so that their references resolve
+    //! to the versions the sync db holds - those can be newer than this briefcase's, and they are
+    //! the ones that decide the mapping.
+    //!
+    //! @param[in] schemas ECSchemas to import. References they resolve from the sync db or from each
+    //!            other need not be listed.
+    //! @return ERROR_DATA_TRANSFORM_REQUIRED if the change would have to move data, or
+    //!         ERROR_DATA_DELETION_REQUIRED if it would destroy data. Both belong on the upgrade
+    //!         path, not here.
+    //! @note The caller must hold the sync db's container write lock for the duration of this call,
+    //!       as it does for an ordinary import. Additive only, and this does not push the resulting
+    //!       changeset; that is the caller's job.
+    ECDB_EXPORT Status ImportSchemas(SyncDbUri const&, bvector<ECN::ECSchemaCP> const& schemas, SchemaImportOptions options);
+    //! Upgrade schemas whose import has to move data, which ImportSchemas refuses to do.
+    //!
+    //! The direction is the opposite of ImportSchemas: the import runs on this briefcase, with data
+    //! transforms allowed, and the sync db is then **overwritten** from the result. The briefcase is
+    //! the authority here, not the sync db.
+    //!
+    //! That overwrite deletes rows the sync db has and this briefcase does not. Under the exclusive
+    //! schema lock that is the intent, not a hazard: the lock cannot be acquired while anyone else
+    //! holds one, so nobody can be holding local changes, so such rows can only be work somebody
+    //! abandoned. It also frees shared column ordinals that nothing else in this design ever frees.
+    //!
+    //! @param[in] schemas ECSchemas to import. Used as they are - resolved against this briefcase.
+    //! @param[in] token The caller's schema import token. The local import needs it, same as an ordinary one.
+    //! @note The caller must hold both the sync db's container write lock and the **exclusive** schema
+    //!       lock, must be at the tip of the timeline, and must push the resulting changeset and
+    //!       upload the sync db before releasing either. If the changeset is dropped after the sync
+    //!       db was uploaded, the two disagree with no way back.
+    ECDB_EXPORT Status UpgradeSchemas(SyncDbUri const&, bvector<ECN::ECSchemaCP> const& schemas, SchemaImportOptions options, SchemaImportToken const* token);
+    //! Replace the sync db's ec_ rows, table definitions and profile version with this briefcase's.
+    //!
+    //! For changes this briefcase had to make locally because the sync db cannot make them: a profile
+    //! upgrade, or a domain schema upgrade that came with one. Those run on the file itself, so the sync
+    //! db learns about them only by being rebuilt from the result.
+    //!
+    //! @note Same conditions as UpgradeSchemas. The rows this discards are, under the exclusive schema
+    //!       lock, work somebody abandoned - and the changeset must be pushed before the lock is
+    //!       released, or the sync db describes a layout no briefcase has.
+    ECDB_EXPORT Status OverwriteSyncDb(SyncDbUri const&);
+    //! Restore schema-owned state in a sync db from this clean, level briefcase.
+    //!
+    //! Only the sync db is written. SchemaMetadata copies every ec_ table, including the derived
+    //! cache tables, the profile properties needed to interpret those rows, and the sync identity.
+    //! It stamps syncDbInfo.dataVer with this briefcase's existing localDbInfo.dataVer. The
+    //! SchemaMetadataAndProfile scope also reconciles the ec_ and be_ profile table definitions.
+    //! Target-only tables and properties are left untouched.
+    //! @note The caller must hold the sync db container write lock and the exclusive schema lock,
+    //!       and must verify that this briefcase is at the tip of the timeline.
+    ECDB_EXPORT Status RepairSyncDb(SyncDbUri const&, RepairScope);
+    ECDB_EXPORT static DbResult ScanForSchemaChanges(ChangeStream& stream, bool&, bool&, bool&);
+    //! Whether this change is the be_Prop row recording which sync db state a briefcase is on. That
+    //! row is tracked, so it travels in the same changeset as the ec_ rows the import it belongs to
+    //! produced - which is what lets a conflict handler tell which of two sides is the later one.
+    ECDB_EXPORT static bool IsLocalDbInfoChange(BeSQLite::Changes::Change const& change);
+    //! Read the data version out of such a change's new value.
+    ECDB_EXPORT static bool TryGetDataVersion(DataVer& dataVer, BeSQLite::Changes::Change const& change);
+    static void ParseQueryParams(Db::OpenParams&, SyncDbUri const&);
+    ECDB_EXPORT static Utf8String GetStatusAsString(Status status);
 };
 //=======================================================================================
 //! Options for how to refer to an ECSchema when looking it up using the SchemaManager
@@ -148,6 +286,7 @@ struct SchemaImportResult final
         OK = BE_SQLITE_OK,
         ERROR = BE_SQLITE_ERROR,
         ERROR_DATA_TRANSFORM_REQUIRED = BE_SQLITE_ERROR_DataTransformRequired,
+        ERROR_DATA_DELETION_REQUIRED = BE_SQLITE_ERROR_DataDeletionRequired,
         ERROR_READONLY = BE_SQLITE_READONLY,
         };
 
@@ -393,18 +532,7 @@ struct DropSchemaResult {
 struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
     {
     public:
-
-        //! Schema import options. Not needed by regular callers. They are specific to certain
-        //! exceptional workflows and therefore only used by them.
-        enum class SchemaImportOptions
-            {
-            None                                        = 0,        //! binary 0000
-            DoNotFailSchemaValidationForLegacyIssues    = 1 << 0,   //! Not needed by regular caller
-            DisallowMajorSchemaUpgrade                  = 1 << 1,   //! If specified, schema upgrades where the major version has changed, are not supported.
-            DoNotFailForDeletionsOrModifications        = 1 << 2,   //! This is for the case of domain schemas that differ between files even though the schema name and versions are unchanged.  In such a case, we only want to merge in acceptable changes, not delete anything
-            AllowDataTransformDuringSchemaUpgrade       = 1 << 4,   //! The allow schema upgrade to transform data if needed.
-            AllowMajorSchemaUpgradeForDynamicSchemas    = 1 << 5,   //! If specified, schema upgrades where the major version has changed are only supported for dynamic schemas. Takes precedence over DisallowMajorSchemaUpgrade.
-            };
+        using SchemaImportOptions = BeSQLite::EC::SchemaImportOptions;
 #if !defined (DOCUMENTATION_GENERATOR)
         struct Dispatcher;
 #endif
@@ -433,7 +561,8 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
 #endif
 
         ECDB_EXPORT SchemaSync& GetSchemaSync() const;
-
+        ECDB_EXPORT bool IsSubClassOf(Utf8StringCR subClassECSqlName, Utf8StringCR parentClassECSqlName, Utf8CP tableSpace = nullptr) const;
+        ECDB_EXPORT bool IsSubClassOf(ECN::ECClassId subClassId, ECN::ECClassId parentClassId, Utf8CP tableSpace = nullptr) const;
         //! Drop a leaf schema from ecdb as long as it has no instances
         //! @param[in] name  name of schema to be dropped.
         //! @param [in] token Token required to perform ECSchema imports if the
@@ -444,6 +573,17 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
         //! @return BentleyStatus::SUCCESS or BentleyStatus::ERROR (error details are being logged)
         //! @see @ref ECDbECSchemaImportAndUpgrade
         ECDB_EXPORT DropSchemaResult DropSchema(Utf8StringCR name, SchemaImportToken const* token = nullptr, bool logIssue = true) const;
+
+        //! Drop a set of schemas from ecdb as long as there are no instances for any of them.
+        //! @param[in] name  string vector of names of the schemas to be dropped.
+        //! @param [in] token Token required to perform ECSchema imports if the
+        //! the ECDb file was set-up with the option "ECSchema import token validation".
+        //! If the option is set, the schema import will fail without a valid token.
+        //! If the option is not set, nullptr can be passed for @p token.
+        //! See documentation of the respective ECDb subclass to find out whether the option is enabled or not.
+        //! @return BentleyStatus::SUCCESS or BentleyStatus::ERROR (error details are being logged)
+        //! @see @ref ECDbECSchemaImportAndUpgrade
+        ECDB_EXPORT DropSchemaResult DropSchemas(bvector<Utf8String> schemaNames, SchemaImportToken const* token = nullptr, bool logIssue = true) const;
 
         //! Imports the list of @ref ECN::ECSchema "ECSchemas" (which must include all its references)
         //! into the @ref ECDbFile "ECDb file".
@@ -655,6 +795,10 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
         //! Called after any schema changes are applied or if apply process failed
         ECDB_EXPORT SchemaChangeEvent& OnAfterSchemaChanges() const;
 
+        Utf8String GetDescription() const override {
+            return Utf8PrintfString("ECDb");
+        }
+
 #if !defined (DOCUMENTATION_GENERATOR)
         //! Truncates and repopulates ECDb's cache tables.
         //! @remarks ECDb maintains a few cache tables that cache meta data for performance reasons.
@@ -667,7 +811,7 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
         //! @note In regular workflows (e.g. when calling SchemaManager::ImportECSchemas)
         //! <b>this method does not have to be called</b>.
         //! @return SUCCESS or ERROR
-        BentleyStatus UpgradeECInstances() const;
+        ECDB_EXPORT BentleyStatus UpgradeECInstances() const;
 
         void ClearCache() const;
         ECN::ECDerivedClassesList const* GetDerivedClassesInternal(ECN::ECClassCR baseClass, Utf8CP tableSpace = nullptr) const;

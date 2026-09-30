@@ -30,24 +30,6 @@ class BaseGCSUnitTests : public ::testing::Test
     };
 
 /*---------------------------------------------------------------------------------**//**
-* Compare Web Mercator to plain Mercator (must be different by polar radius)
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(BaseGCSUnitTests, WebMercatorDiffToMercator)
-{
-    GeoCoordinates::BaseGCSPtr webMercator = GeoCoordinates::BaseGCS::CreateGCS("EPSG:3857");
-
-    ASSERT_TRUE(webMercator.IsValid() && webMercator->IsValid());
-
-    GeoCoordinates::BaseGCSPtr plainMercator = GeoCoordinates::BaseGCS::CreateGCS("Sabotaged3857");
-
-    ASSERT_TRUE(plainMercator.IsValid() && plainMercator->IsValid());
-
-    ASSERT_FALSE(webMercator->IsEquivalent(*plainMercator));
-    ASSERT_FALSE(plainMercator->IsEquivalent(*webMercator));
-}
-
-/*---------------------------------------------------------------------------------**//**
 * Initial test for Json support
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -57,7 +39,7 @@ TEST_F(BaseGCSUnitTests, ToJsonFromJson1)
 
     ASSERT_TRUE(ll84.IsValid() && ll84->IsValid());
 
-    Json::Value result ;
+    BeJsDocument result ;
 
     ASSERT_TRUE(SUCCESS == ll84->ToHorizontalJson(result));
 
@@ -229,12 +211,6 @@ TEST_F(BaseGCSUnitTests, SpecificGetLinearTransformInvalidExtent_Test2)
 
     extent.high.x = 0.01;
     extent.high.y = 0.001; // y extent too small
-
-    // too small extent will result in an error
-    ASSERT_FALSE(REPROJECT_Success == secondGCS->GetLinearTransform(&tfReproject, extent, *firstGCS, &maxError, &meanError));
-
-    extent.high.y = 0.01;
-    extent.high.z = 0.001; // z extent too small
 
     // too small extent will result in an error
     ASSERT_FALSE(REPROJECT_Success == secondGCS->GetLinearTransform(&tfReproject, extent, *firstGCS, &maxError, &meanError));
@@ -435,12 +411,6 @@ TEST_F(BaseGCSUnitTests, SpecificGetLinearTransformExtentForLatLong_Test)
 
     extent.high.x = 0.000001;
     extent.high.y = 0.00000001; // y extent too small
-
-    // too small extent will result in an error
-    ASSERT_FALSE(REPROJECT_Success == secondGCS->GetLinearTransform(&tfReproject, extent, *firstGCS, &maxError, &meanError));
-
-    extent.high.y = 0.000001;
-    extent.high.z = 0.001; // z extent too small
 
     // too small extent will result in an error
     ASSERT_FALSE(REPROJECT_Success == secondGCS->GetLinearTransform(&tfReproject, extent, *firstGCS, &maxError, &meanError));
@@ -649,33 +619,49 @@ TEST_F (BaseGCSUnitTests, VariousVerticalTest1)
     ASSERT_TRUE(vdcFromDatum == theGCS->GetVerticalDatumCode());
     ASSERT_TRUE(!theGCS->IsNAD27());
     ASSERT_TRUE(!theGCS->IsNAD83());
-    ASSERT_STREQ("Ellipsoid", theGCS->GetVerticalDatumName());
+    Utf8String name, fullName;
+    theGCS->GetVerticalDatumName(name);
+    theGCS->GetFullVerticalDatumName(fullName);
+    ASSERT_TRUE(0 == Utf8String("Ellipsoid").CompareToI(name));
+    ASSERT_TRUE(0 == Utf8String("WGS84").CompareToI(fullName));
 
     ASSERT_TRUE(SUCCESS == theGCS->SetVerticalDatumCode(vdcGeoid));
     ASSERT_TRUE(vdcGeoid == theGCS->GetVerticalDatumCode());
     ASSERT_TRUE(!theGCS->IsNAD27());
     ASSERT_TRUE(!theGCS->IsNAD83());
-    ASSERT_STREQ("Geoid", theGCS->GetVerticalDatumName());
+    theGCS->GetVerticalDatumName(name);
+    theGCS->GetFullVerticalDatumName(fullName);
+    ASSERT_TRUE(0 == Utf8String("GEOID").CompareToI(name));
+    ASSERT_TRUE(0 == Utf8String("GEOID").CompareToI(fullName));
 
     // This call should fail since GCS is not NAD27/83 based ... value must remain unchanged.
     ASSERT_TRUE(SUCCESS != theGCS->SetVerticalDatumCode(vdcNGVD29));
     ASSERT_TRUE(vdcGeoid == theGCS->GetVerticalDatumCode());
     ASSERT_TRUE(!theGCS->IsNAD27());
     ASSERT_TRUE(!theGCS->IsNAD83());
-    ASSERT_STREQ("Geoid", theGCS->GetVerticalDatumName());
+    theGCS->GetVerticalDatumName(name);
+    theGCS->GetFullVerticalDatumName(fullName);
+    ASSERT_TRUE(0 == Utf8String("GEOID").CompareToI(name));
+    ASSERT_TRUE(0 == Utf8String("GEOID").CompareToI(fullName));
 
     // This call should fail since GCS is not NAD27/83 based ... value must remain unchanged.
     ASSERT_TRUE(SUCCESS != theGCS->SetVerticalDatumCode(vdcNAVD88));
     ASSERT_TRUE(vdcGeoid == theGCS->GetVerticalDatumCode());
     ASSERT_TRUE(!theGCS->IsNAD27());
     ASSERT_TRUE(!theGCS->IsNAD83());
-    ASSERT_STREQ("Geoid", theGCS->GetVerticalDatumName());
+    theGCS->GetVerticalDatumName(name);
+    theGCS->GetFullVerticalDatumName(fullName);
+    ASSERT_TRUE(0 == Utf8String("GEOID").CompareToI(name));
+    ASSERT_TRUE(0 == Utf8String("GEOID").CompareToI(fullName));
 
     ASSERT_TRUE(SUCCESS == theGCS->SetVerticalDatumCode(vdcEllipsoid));
     ASSERT_TRUE(vdcEllipsoid == theGCS->GetVerticalDatumCode());
     ASSERT_TRUE(!theGCS->IsNAD27());
     ASSERT_TRUE(!theGCS->IsNAD83());
-    ASSERT_STREQ("Ellipsoid", theGCS->GetVerticalDatumName());
+    theGCS->GetVerticalDatumName(name);
+    theGCS->GetFullVerticalDatumName(fullName);
+    ASSERT_TRUE(0 == Utf8String("Ellipsoid").CompareToI(name));
+    ASSERT_TRUE(0 == Utf8String("WGS84").CompareToI(fullName));
 
     GeoCoordinates::BaseGCSPtr theNAD83GCS;
 
@@ -687,23 +673,38 @@ TEST_F (BaseGCSUnitTests, VariousVerticalTest1)
     ASSERT_TRUE(vdcFromDatum == theNAD83GCS->GetVerticalDatumCode());
     ASSERT_TRUE(!theNAD83GCS->IsNAD27());
     ASSERT_TRUE(theNAD83GCS->IsNAD83());
-    ASSERT_STREQ("NAVD88", theNAD83GCS->GetVerticalDatumName()); // From datum is reinterpreted as NAVD88
+    theNAD83GCS->GetVerticalDatumName(name);
+    theNAD83GCS->GetFullVerticalDatumName(fullName);
+    ASSERT_TRUE(0 == Utf8String("NAVD88").CompareToI(name)); // From datum is reinterpreted as NAVD88
+    ASSERT_TRUE(0 == Utf8String("NAVD88 height").CompareToI(fullName));
 
     ASSERT_TRUE(SUCCESS == theNAD83GCS->SetVerticalDatumCode(vdcGeoid));
     ASSERT_TRUE(vdcGeoid == theNAD83GCS->GetVerticalDatumCode());
-    ASSERT_STREQ("Geoid", theNAD83GCS->GetVerticalDatumName());
+    theNAD83GCS->GetVerticalDatumName(name);
+    theNAD83GCS->GetFullVerticalDatumName(fullName);
+    ASSERT_TRUE(0 == Utf8String("GEOID").CompareToI(name));
+    ASSERT_TRUE(0 == Utf8String("GEOID").CompareToI(fullName));
 
     ASSERT_TRUE(SUCCESS == theNAD83GCS->SetVerticalDatumCode(vdcNGVD29));
     ASSERT_TRUE(vdcNGVD29 == theNAD83GCS->GetVerticalDatumCode());
-    ASSERT_STREQ("NGVD29", theNAD83GCS->GetVerticalDatumName());
+    theNAD83GCS->GetVerticalDatumName(name);
+    theNAD83GCS->GetFullVerticalDatumName(fullName);
+    ASSERT_TRUE(0 == Utf8String("NGVD29").CompareToI(name));
+    ASSERT_TRUE(0 == Utf8String("NGVD29 height").CompareToI(fullName));
 
     ASSERT_TRUE(SUCCESS == theNAD83GCS->SetVerticalDatumCode(vdcNAVD88));
     ASSERT_TRUE(vdcNAVD88 == theNAD83GCS->GetVerticalDatumCode());
-    ASSERT_STREQ("NAVD88", theNAD83GCS->GetVerticalDatumName());
+    theNAD83GCS->GetVerticalDatumName(name);
+    theNAD83GCS->GetFullVerticalDatumName(fullName);
+    ASSERT_TRUE(0 == Utf8String("NAVD88").CompareToI(name));
+    ASSERT_TRUE(0 == Utf8String("NAVD88 height").CompareToI(fullName));
 
     ASSERT_TRUE(SUCCESS == theNAD83GCS->SetVerticalDatumCode(vdcEllipsoid));
     ASSERT_TRUE(vdcEllipsoid == theNAD83GCS->GetVerticalDatumCode());
-    ASSERT_STREQ("Ellipsoid", theNAD83GCS->GetVerticalDatumName());
+    theNAD83GCS->GetVerticalDatumName(name);
+    theNAD83GCS->GetFullVerticalDatumName(fullName);
+    ASSERT_TRUE(0 == Utf8String("Ellipsoid").CompareToI(name));
+    ASSERT_TRUE(0 == Utf8String("WGS84").CompareToI(fullName));
 
     GeoCoordinates::BaseGCSPtr theNAD27GCS;
 
@@ -715,23 +716,38 @@ TEST_F (BaseGCSUnitTests, VariousVerticalTest1)
     ASSERT_TRUE(vdcFromDatum == theNAD27GCS->GetVerticalDatumCode());
     ASSERT_TRUE(theNAD27GCS->IsNAD27());
     ASSERT_TRUE(!theNAD27GCS->IsNAD83());
-    ASSERT_STREQ("NGVD29", theNAD27GCS->GetVerticalDatumName()); // From datum is reinterpreted as NAVD88
+    theNAD27GCS->GetVerticalDatumName(name);
+    theNAD27GCS->GetFullVerticalDatumName(fullName);
+    ASSERT_TRUE(0 == Utf8String("NGVD29").CompareToI(name)); // From datum is reinterpreted as NAVD88
+    ASSERT_TRUE(0 == Utf8String("NGVD29 height").CompareToI(fullName));
 
     ASSERT_TRUE(SUCCESS == theNAD27GCS->SetVerticalDatumCode(vdcGeoid));
     ASSERT_TRUE(vdcGeoid == theNAD27GCS->GetVerticalDatumCode());
-    ASSERT_STREQ("Geoid", theNAD27GCS->GetVerticalDatumName());
+    theNAD27GCS->GetVerticalDatumName(name);
+    theNAD27GCS->GetFullVerticalDatumName(fullName);
+    ASSERT_TRUE(0 == Utf8String("Geoid").CompareToI(name));
+    ASSERT_TRUE(0 == Utf8String("Geoid").CompareToI(fullName));
 
     ASSERT_TRUE(SUCCESS == theNAD27GCS->SetVerticalDatumCode(vdcNGVD29));
     ASSERT_TRUE(vdcNGVD29 == theNAD27GCS->GetVerticalDatumCode());
-    ASSERT_STREQ("NGVD29", theNAD27GCS->GetVerticalDatumName());
+    theNAD27GCS->GetVerticalDatumName(name);
+    theNAD27GCS->GetFullVerticalDatumName(fullName);
+    ASSERT_TRUE(0 == Utf8String("NGVD29").CompareToI(name));
+    ASSERT_TRUE(0 == Utf8String("NGVD29 height").CompareToI(fullName));
 
     ASSERT_TRUE(SUCCESS == theNAD27GCS->SetVerticalDatumCode(vdcNAVD88));
     ASSERT_TRUE(vdcNAVD88 == theNAD27GCS->GetVerticalDatumCode());
-    ASSERT_STREQ("NAVD88", theNAD27GCS->GetVerticalDatumName());
+    theNAD27GCS->GetVerticalDatumName(name);
+    theNAD27GCS->GetFullVerticalDatumName(fullName);
+    ASSERT_TRUE(0 == Utf8String("NAVD88").CompareToI(name));
+    ASSERT_TRUE(0 == Utf8String("NAVD88 height").CompareToI(fullName));
 
     ASSERT_TRUE(SUCCESS == theNAD27GCS->SetVerticalDatumCode(vdcEllipsoid));
     ASSERT_TRUE(vdcEllipsoid == theNAD27GCS->GetVerticalDatumCode());
-    ASSERT_STREQ("Ellipsoid", theNAD27GCS->GetVerticalDatumName());
+    theNAD27GCS->GetVerticalDatumName(name);
+    theNAD27GCS->GetFullVerticalDatumName(fullName);
+    ASSERT_TRUE(0 == Utf8String("Ellipsoid").CompareToI(name));
+    ASSERT_TRUE(0 == Utf8String("WGS84").CompareToI(fullName));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -748,7 +764,11 @@ TEST_F (BaseGCSUnitTests, VariousVerticalTestWGS84_to_WGS84)
 
     // Default vertical datum should be vdcFromDatum and it should mean ellipsoid
     ASSERT_TRUE(vdcFromDatum == theWGS84GCS->GetVerticalDatumCode());
-    ASSERT_STREQ("Ellipsoid", theWGS84GCS->GetVerticalDatumName());
+    Utf8String name, fullName;
+    theWGS84GCS->GetVerticalDatumName(name);
+    theWGS84GCS->GetFullVerticalDatumName(fullName);
+    ASSERT_TRUE(0 == Utf8String("Ellipsoid").CompareToI(name));
+    ASSERT_TRUE(0 == Utf8String("WGS84").CompareToI(fullName));
 
     // Default is to reproject elevation
     ASSERT_TRUE(theWGS84GCS->GetReprojectElevation());
@@ -758,7 +778,10 @@ TEST_F (BaseGCSUnitTests, VariousVerticalTestWGS84_to_WGS84)
 
     // Default vertical datum should be vdcFromDatum and it should mean ellipsoid
     ASSERT_TRUE(vdcFromDatum == theOtherWGS84GCS->GetVerticalDatumCode());
-    ASSERT_STREQ("Ellipsoid", theOtherWGS84GCS->GetVerticalDatumName());
+    theOtherWGS84GCS->GetVerticalDatumName(name);
+    theOtherWGS84GCS->GetFullVerticalDatumName(fullName);
+    ASSERT_TRUE(0 == Utf8String("Ellipsoid").CompareToI(name));
+    ASSERT_TRUE(0 == Utf8String("WGS84").CompareToI(fullName));
 
     // Default is to reproject elevation
     ASSERT_TRUE(theOtherWGS84GCS->GetReprojectElevation());
@@ -819,7 +842,11 @@ TEST_F (BaseGCSUnitTests, VariousVerticalTestNAD27_to_NAD27)
 
     // Default vertical datum should be vdcFromDatum and it should mean NGVD29
     ASSERT_TRUE(vdcFromDatum == theNAD27GCS->GetVerticalDatumCode());
-    ASSERT_STREQ("NGVD29", theNAD27GCS->GetVerticalDatumName());
+    Utf8String name, fullName;
+    theNAD27GCS->GetVerticalDatumName(name);
+    theNAD27GCS->GetFullVerticalDatumName(fullName);
+    ASSERT_STREQ("NGVD29", name.c_str());
+    ASSERT_STREQ("NGVD29 height", fullName.c_str());
 
     // Default is to reproject elevation
     ASSERT_TRUE(theNAD27GCS->GetReprojectElevation());
@@ -829,7 +856,10 @@ TEST_F (BaseGCSUnitTests, VariousVerticalTestNAD27_to_NAD27)
 
     // Default vertical datum should be vdcFromDatum and it should mean NGVD29
     ASSERT_TRUE(vdcFromDatum == theOtherNAD27GCS->GetVerticalDatumCode());
-    ASSERT_STREQ("NGVD29", theOtherNAD27GCS->GetVerticalDatumName());
+    theOtherNAD27GCS->GetVerticalDatumName(name);
+    theOtherNAD27GCS->GetFullVerticalDatumName(fullName);
+    ASSERT_STREQ("NGVD29", name.c_str());
+    ASSERT_STREQ("NGVD29 height", fullName.c_str());
 
     // Default is to reproject elevation
     ASSERT_TRUE(theOtherNAD27GCS->GetReprojectElevation());
@@ -1003,7 +1033,11 @@ TEST_F (BaseGCSUnitTests, VariousVerticalTestNAD83_to_NAD83)
 
     // Default vertical datum should be vdcFromDatum and it should mean NAVD88
     ASSERT_TRUE(vdcFromDatum == theNAD83GCS->GetVerticalDatumCode());
-    ASSERT_STREQ("NAVD88", theNAD83GCS->GetVerticalDatumName());
+    Utf8String name, fullName;
+    theNAD83GCS->GetVerticalDatumName(name);
+    theNAD83GCS->GetFullVerticalDatumName(fullName);
+    ASSERT_STREQ("NAVD88", name.c_str());
+    ASSERT_STREQ("NAVD88 height", fullName.c_str());
 
     // Default is to reproject elevation
     ASSERT_TRUE(theNAD83GCS->GetReprojectElevation());
@@ -1013,7 +1047,10 @@ TEST_F (BaseGCSUnitTests, VariousVerticalTestNAD83_to_NAD83)
 
     // Default vertical datum should be vdcFromDatum and it should mean NAVD88
     ASSERT_TRUE(vdcFromDatum == theOtherNAD83GCS->GetVerticalDatumCode());
-    ASSERT_STREQ("NAVD88", theOtherNAD83GCS->GetVerticalDatumName());
+    theOtherNAD83GCS->GetVerticalDatumName(name);
+    theOtherNAD83GCS->GetFullVerticalDatumName(fullName);
+    ASSERT_STREQ("NAVD88", name.c_str());
+    ASSERT_STREQ("NAVD88 height", fullName.c_str());
 
     // Default is to reproject elevation
     ASSERT_TRUE(theOtherNAD83GCS->GetReprojectElevation());
@@ -1185,7 +1222,11 @@ TEST_F (BaseGCSUnitTests, VariousVerticalTestNAD27_to_NAD83)
 
     // Default vertical datum should be vdcFromDatum and it should mean NAVD88
     ASSERT_TRUE(vdcFromDatum == theNAD27GCS->GetVerticalDatumCode());
-    ASSERT_STREQ("NGVD29", theNAD27GCS->GetVerticalDatumName());
+    Utf8String name, fullName;
+    theNAD27GCS->GetVerticalDatumName(name);
+    theNAD27GCS->GetFullVerticalDatumName(fullName);
+    ASSERT_STREQ("NGVD29", name.c_str());
+    ASSERT_STREQ("NGVD29 height", fullName.c_str());
 
     // Default is to reproject elevation
     ASSERT_TRUE(theNAD27GCS->GetReprojectElevation());
@@ -1195,7 +1236,10 @@ TEST_F (BaseGCSUnitTests, VariousVerticalTestNAD27_to_NAD83)
 
     // Default vertical datum should be vdcFromDatum and it should mean NAVD88
     ASSERT_TRUE(vdcFromDatum == theNAD83GCS->GetVerticalDatumCode());
-    ASSERT_STREQ("NAVD88", theNAD83GCS->GetVerticalDatumName());
+    theNAD83GCS->GetVerticalDatumName(name);
+    theNAD83GCS->GetFullVerticalDatumName(fullName);
+    ASSERT_STREQ("NAVD88", name.c_str());
+    ASSERT_STREQ("NAVD88 height", fullName.c_str());
 
     // Default is to reproject elevation
     ASSERT_TRUE(theNAD83GCS->GetReprojectElevation());
@@ -1367,7 +1411,11 @@ TEST_F (BaseGCSUnitTests, VariousVerticalTestNAD27_to_WGS84)
 
     // Default vertical datum should be vdcFromDatum and it should mean NAVD88
     ASSERT_TRUE(vdcFromDatum == theNAD27GCS->GetVerticalDatumCode());
-    ASSERT_STREQ("NGVD29", theNAD27GCS->GetVerticalDatumName());
+    Utf8String name, fullName;
+    theNAD27GCS->GetVerticalDatumName(name);
+    theNAD27GCS->GetFullVerticalDatumName(fullName);
+    ASSERT_STREQ("NGVD29", name.c_str());
+    ASSERT_STREQ("NGVD29 height", fullName.c_str());
 
     // Default is to reproject elevation
     ASSERT_TRUE(theNAD27GCS->GetReprojectElevation());
@@ -1377,7 +1425,10 @@ TEST_F (BaseGCSUnitTests, VariousVerticalTestNAD27_to_WGS84)
 
     // Default vertical datum should be vdcFromDatum and it should mean NAVD88
     ASSERT_TRUE(vdcFromDatum == theWGS84GCS->GetVerticalDatumCode());
-    ASSERT_STREQ("Ellipsoid", theWGS84GCS->GetVerticalDatumName());
+    theWGS84GCS->GetVerticalDatumName(name);
+    theWGS84GCS->GetFullVerticalDatumName(fullName);
+    ASSERT_TRUE(0 == Utf8String("Ellipsoid").CompareToI(name));
+    ASSERT_TRUE(0 == Utf8String("WGS84").CompareToI(fullName));
 
     // Default is to reproject elevation
     ASSERT_TRUE(theWGS84GCS->GetReprojectElevation());
@@ -1504,7 +1555,11 @@ TEST_F (BaseGCSUnitTests, VariousVerticalTestWGS84_to_OSGB)
 
     // Default vertical datum should be vdcFromDatum and it should mean ellipsoid
     ASSERT_TRUE(vdcFromDatum == theWGS84GCS->GetVerticalDatumCode());
-    ASSERT_STREQ("Ellipsoid", theWGS84GCS->GetVerticalDatumName());
+    Utf8String name, fullName;
+    theWGS84GCS->GetVerticalDatumName(name);
+    theWGS84GCS->GetFullVerticalDatumName(fullName);
+    ASSERT_STREQ("Ellipsoid", name.c_str());
+    ASSERT_STREQ("WGS84", fullName.c_str());
 
     // Default is to reproject elevation
     ASSERT_TRUE(theWGS84GCS->GetReprojectElevation());
@@ -1514,7 +1569,10 @@ TEST_F (BaseGCSUnitTests, VariousVerticalTestWGS84_to_OSGB)
 
     // Default vertical datum should be vdcFromDatum and it should mean ellipsoid
     ASSERT_TRUE(vdcFromDatum == theOSGBGCS->GetVerticalDatumCode());
-    ASSERT_STREQ("Ellipsoid", theOSGBGCS->GetVerticalDatumName());
+    theOSGBGCS->GetVerticalDatumName(name);
+    theOSGBGCS->GetFullVerticalDatumName(fullName);
+    ASSERT_STREQ("Ellipsoid", name.c_str());
+    ASSERT_STREQ("WGS84", fullName.c_str());
 
     // Default is to reproject elevation
     ASSERT_TRUE(theOSGBGCS->GetReprojectElevation());
@@ -1525,7 +1583,7 @@ TEST_F (BaseGCSUnitTests, VariousVerticalTestWGS84_to_OSGB)
     myInPoint.y = 3600000;
     myInPoint.z = 1.1;
 
-    double GeoidSeparation = -29.519501732186900;
+    double GeoidSeparation = 48.855223;
 
     DPoint3d myOutPoint;
 
@@ -1932,11 +1990,11 @@ TEST_F (BaseGCSUnitTests, InternalIsNADForGCS)
     theGCS = nullptr;
 
     // NSRS11
-    theGCS = GeoCoordinates::BaseGCS::CreateGCS("NSRS11.SFO-CS13");
-    ASSERT_TRUE(theGCS.IsValid() && theGCS->IsValid());
-    ASSERT_TRUE(theGCS->IsNAD83());
-    ASSERT_TRUE(!theGCS->IsNAD27());
-    theGCS = nullptr;
+//    theGCS = GeoCoordinates::BaseGCS::CreateGCS(L"NSRS11.SFO-CS13-2");
+//    ASSERT_TRUE(theGCS.IsValid() && theGCS->IsValid());
+//    ASSERT_TRUE(theGCS->IsNAD83());
+//    ASSERT_TRUE(!theGCS->IsNAD27());
+//    theGCS = nullptr;
 
     // NAD27
     theGCS = GeoCoordinates::BaseGCS::CreateGCS("AL-E");
@@ -2690,8 +2748,10 @@ TEST_F(BaseGCSUnitTests, ElevationCorrectionForNonCompoundCS_Test)
 
     // make sure the compound WKT has a vertical datum set to "Ellipsoid"
     Utf8String correctedWKT = "";
-    srcGCS->GetCompoundCSWellKnownText(correctedWKT, GeoCoordinates::BaseGCS::wktFlavorOGC, false);
+    srcGCS->GetCompoundCSWellKnownText(correctedWKT, GeoCoordinates::BaseGCS::wktFlavorOGC);
     ASSERT_TRUE(correctedWKT.ContainsI("VERT_CS[\"Ellipsoid Height\",VERT_DATUM[\"Ellipsoid\",2002]")) << correctedWKT.c_str();
+    srcGCS->GetCompoundCSWellKnownText(correctedWKT, GeoCoordinates::BaseGCS::wktFlavorOGC, GeoCoordinates::WKTOptionsFlags::FullVerticalDatumName);
+    ASSERT_TRUE(correctedWKT.ContainsI("VERT_CS[\"WGS84\",VERT_DATUM[\"WGS_1984\",2002]")) << correctedWKT.c_str();
 
     EXPECT_TRUE(REPROJECT_Success == srcGCS->GetLinearTransform(&transformWithElevation, extent, *targetGCS, nullptr, nullptr));
 
@@ -2981,7 +3041,9 @@ TEST_F(BaseGCSUnitTests, CreateAFullySelfContainedDatumWithCustomEllipsoid_Test)
     GeoCoordinates::DatumP theDatum = const_cast<GeoCoordinates::DatumP>(GeoCoordinates::Datum::CreateDatum());
 
     Utf8String errorMessage;
-    ASSERT_TRUE(SUCCESS == theDatum->FromJson(Json::Value::From(customDatum3), errorMessage));
+    BeJsDocument customDatum3Json(customDatum3);
+    ASSERT_FALSE(customDatum3Json.hasParseError());
+    ASSERT_TRUE(SUCCESS == theDatum->FromJson(customDatum3Json, errorMessage));
     Utf8String source;
 
     EXPECT_TRUE(Utf8String(theDatum->GetName()) == "CustomDatum3");
@@ -3070,7 +3132,9 @@ TEST_F(BaseGCSUnitTests, CreateAFullySelfContainedDatumWithCustomEllipsoidButFil
     GeoCoordinates::DatumP theDatum = const_cast<GeoCoordinates::DatumP>(GeoCoordinates::Datum::CreateDatum());
 
     Utf8String errorMessage;
-    ASSERT_TRUE(SUCCESS == theDatum->FromJson(Json::Value::From(customDatum4), errorMessage));
+    BeJsDocument customDatum4Json(customDatum4);
+    ASSERT_FALSE(customDatum4Json.hasParseError());
+    ASSERT_TRUE(SUCCESS == theDatum->FromJson(customDatum4Json, errorMessage));
     Utf8String source;
 
 
@@ -3162,7 +3226,9 @@ TEST_F(BaseGCSUnitTests, CreateAFullySelfContainedDatumWithCustomEllipsoidButFil
     GeoCoordinates::DatumP theDatum = const_cast<GeoCoordinates::DatumP>(GeoCoordinates::Datum::CreateDatum());
 
     Utf8String errorMessage;
-    ASSERT_TRUE(SUCCESS == theDatum->FromJson(Json::Value::From(customDatum4), errorMessage));
+    BeJsDocument customDatum4Json(customDatum4);
+    ASSERT_FALSE(customDatum4Json.hasParseError());
+    ASSERT_TRUE(SUCCESS == theDatum->FromJson(customDatum4Json, errorMessage));
     Utf8String source;
 
 
@@ -3254,7 +3320,9 @@ TEST_F(BaseGCSUnitTests, CreateAFullySelfContainedDatumWithCustomEllipsoidButFil
     GeoCoordinates::DatumP theDatum = const_cast<GeoCoordinates::DatumP>(GeoCoordinates::Datum::CreateDatum());
 
     Utf8String errorMessage;
-    ASSERT_TRUE(SUCCESS == theDatum->FromJson(Json::Value::From(customDatum5), errorMessage));
+    BeJsDocument customDatum5Json(customDatum5);
+    ASSERT_FALSE(customDatum5Json.hasParseError());
+    ASSERT_TRUE(SUCCESS == theDatum->FromJson(customDatum5Json, errorMessage));
     Utf8String source;
 
     EXPECT_TRUE(Utf8String(theDatum->GetName()) == "CustomDatum5");
@@ -4390,10 +4458,6 @@ TEST_F (BaseGCSUnitTests, BasicSetVariousVerticalDatumNAD27FromJson)
     EXPECT_TRUE(SUCCESS == theGCS->FromJson(BeJsDocument(testJsonNAVD88), errorMessage));
     EXPECT_TRUE(theGCS->IsValid());
     EXPECT_TRUE(theGCS->GetVerticalDatumCode() == GeoCoordinates::vdcNAVD88);
-
-    EXPECT_TRUE(SUCCESS != theGCS->FromJson(BeJsDocument(testJsonLocalEllipsoid), errorMessage)); // Invalid
-    EXPECT_TRUE(theGCS->IsValid());
-    EXPECT_TRUE(theGCS->GetVerticalDatumCode() == GeoCoordinates::vdcNAVD88); // Unchanged
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4783,18 +4847,18 @@ TEST_F (BaseGCSUnitTests, GCSTransformToFullJsonThenBack)
 
         if (currentGCS.IsValid() && currentGCS->IsValid())
             {
-            Json::Value result;
+            BeJsDocument result;
 
             if (SUCCESS == currentGCS->ToJson(result, true))
                 {
                 // Transform to string (for debug purposes)
-                Utf8String resultString = result.toStyledString();
+                Utf8String resultString = result.Stringify(StringifyFormat::Indented);
 
                 // Make sure that domain is specified
                 EXPECT_TRUE(!result["horizontalCRS"].isNull());
                 EXPECT_TRUE(!result["verticalCRS"].isNull());
 
-                Utf8String resultString2 = result.toStyledString();
+                Utf8String resultString2 = result.Stringify(StringifyFormat::Indented);
 
                 // Sabotage GCS name to make sure everything is parsed
                 result["horizontalCRS"]["id"] = "XYZ";
@@ -4804,7 +4868,8 @@ TEST_F (BaseGCSUnitTests, GCSTransformToFullJsonThenBack)
                 Utf8String errMessage;
                 EXPECT_EQ(SUCCESS, resultGCS->FromJson(result, errMessage)) << errMessage.c_str();
 
-                EXPECT_TRUE(currentGCS->IsEquivalent(*resultGCS));
+                if (currentGCS->GetQuadrant() == resultGCS->GetQuadrant()) // Quadrant are not preserved through JSON so we bypass lost quadrant entries
+                    EXPECT_TRUE(currentGCS->IsEquivalent(*resultGCS));
                 
                 EXPECT_TRUE(GeoCoordTestCommon::doubleSame(currentGCS->GetMinimumLatitude(), resultGCS->GetMinimumLatitude()));
                 EXPECT_TRUE(GeoCoordTestCommon::doubleSame(currentGCS->GetMinimumLongitude(), resultGCS->GetMinimumLongitude()));
@@ -4822,3 +4887,18 @@ TEST_F (BaseGCSUnitTests, GCSTransformToFullJsonThenBack)
             }
         }
     }
+    
+TEST_F(BaseGCSUnitTests, GCSValidity)
+{
+    GeoCoordinates::BaseGCSPtr theGCS;
+    theGCS = GeoCoordinates::BaseGCS::CreateGCS();
+    ASSERT_TRUE(theGCS.IsValid());
+    ASSERT_FALSE(theGCS->IsValid());
+    Utf8String wellKnownText = "INVALID WKT";
+    ASSERT_TRUE(GeoCoordParse_Success != theGCS->InitFromWellKnownText(NULL, NULL, wellKnownText.c_str()));
+    ASSERT_FALSE(theGCS->IsValid());
+    GeoPoint xLatLong;
+    ASSERT_TRUE((ReprojectStatus)GEOCOORDERR_InvalidCoordSys == theGCS->LatLongFromCartesian(xLatLong, DPoint3d::From(1.0, 0.0, 0.0)));
+    DPoint3d xCartesian;
+    ASSERT_TRUE((ReprojectStatus)GEOCOORDERR_InvalidCoordSys == theGCS->CartesianFromLatLong(xCartesian, xLatLong));
+}

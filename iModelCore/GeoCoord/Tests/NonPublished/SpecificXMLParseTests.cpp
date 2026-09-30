@@ -792,6 +792,246 @@ TEST_F(SpecificXMLParseTests, ParseXML6)
     EXPECT_TRUE(theGCS->IsValid());
 }
 
+TEST_F(SpecificXMLParseTests, ParseXML7)
+{
+    Utf8String theXML = R"X(
+<?xml version="1.0" encoding="UTF-16" standalone="no" ?>
+<Dictionary version="1.0" xmlns="http://www.osgeo.org/mapguide/coordinatesystem">
+  <ProjectedCoordinateSystem id="UKIAN9907-A16H2">
+    <Name>UKIAN9907-A16H2</Name>
+    <Description>Ordnance Survey Interim Advice Note 99/07, Zone A16H2</Description>
+    <Authority>Ordnance Survey: Interim Advice Note 99/07, Nov 2007</Authority>
+    <AdditionalInformation>
+      <ParameterItem type="CsMap">
+        <Key>CSQuadrantSimplified</Key>
+        <IntegerValue>1</IntegerValue>
+      </ParameterItem>
+    </AdditionalInformation>
+    <DomainOfValidity>
+      <Extent>
+        <GeographicElement>
+          <GeographicBoundingBox>
+            <WestBoundLongitude>-3.02194444444444</WestBoundLongitude>
+            <EastBoundLongitude>-1.11777777777778</EastBoundLongitude>
+            <SouthBoundLatitude>49.75</SouthBoundLatitude>
+            <NorthBoundLatitude>52.5</NorthBoundLatitude>
+          </GeographicBoundingBox>
+        </GeographicElement>
+      </Extent>
+    </DomainOfValidity>
+    <DatumId>ETRF89.OSTN15</DatumId>
+    <Axis uom="METER">
+      <CoordinateSystemAxis>
+        <AxisOrder>1</AxisOrder>
+        <AxisName>Easting</AxisName>
+        <AxisAbbreviation>E</AxisAbbreviation>
+        <AxisDirection>east</AxisDirection>
+      </CoordinateSystemAxis>
+      <CoordinateSystemAxis>
+        <AxisOrder>2</AxisOrder>
+        <AxisName>Northing</AxisName>
+        <AxisAbbreviation>N</AxisAbbreviation>
+        <AxisDirection>north</AxisDirection>
+      </CoordinateSystemAxis>
+    </Axis>
+    <Conversion>
+      <Projection>
+        <OperationMethodId>Transverse Mercator with Affine Post Process</OperationMethodId>
+        <ParameterValue>
+          <OperationParameterId>Longitude of natural origin</OperationParameterId>
+          <Value uom="degree">-2</Value>
+        </ParameterValue>
+        <ParameterValue>
+          <OperationParameterId>Affine Transformation A0 Coefficient</OperationParameterId>
+          <Value uom="unity">-346150.74348</Value>
+        </ParameterValue>
+        <ParameterValue>
+          <OperationParameterId>Affine Transformation B0 Coefficient</OperationParameterId>
+          <Value uom="unity">171074.50039</Value>
+        </ParameterValue>
+        <ParameterValue>
+          <OperationParameterId>Affine Transformation A1 Coefficient</OperationParameterId>
+          <Value uom="unity">1.0004356748</Value>
+        </ParameterValue>
+        <ParameterValue>
+          <OperationParameterId>Affine Transformation A2 Coefficient</OperationParameterId>
+          <Value uom="unity">0</Value>
+        </ParameterValue>
+        <ParameterValue>
+          <OperationParameterId>Affine Transformation B1 Coefficient</OperationParameterId>
+          <Value uom="unity">0</Value>
+        </ParameterValue>
+        <ParameterValue>
+          <OperationParameterId>Affine Transformation B2 Coefficient</OperationParameterId>
+          <Value uom="unity">1.0004356748</Value>
+        </ParameterValue>
+        <ParameterValue>
+          <OperationParameterId>Latitude of false origin</OperationParameterId>
+          <Value uom="degree">49</Value>
+        </ParameterValue>
+        <ParameterValue>
+          <OperationParameterId>Scaling factor for coord differences</OperationParameterId>
+          <Value uom="unity">0.9996012717</Value>
+        </ParameterValue>
+        <ParameterValue>
+          <OperationParameterId>False easting</OperationParameterId>
+          <Value uom="METER">400000</Value>
+        </ParameterValue>
+        <ParameterValue>
+          <OperationParameterId>False northing</OperationParameterId>
+          <Value uom="METER">-100000</Value>
+        </ParameterValue>
+      </Projection>
+    </Conversion>
+  </ProjectedCoordinateSystem>
+  <GeodeticDatum id="ETRF89.OSTN15">
+    <Name>ETRF89.OSTN15</Name>
+    <Description>ETRF 89 ala OSTN 2015 (NTv2)</Description>
+    <Authority>A Guide to Coordinate Systems in Great Britain</Authority>
+    <PrimeMeridianId>Greenwich</PrimeMeridianId>
+    <EllipsoidId>GRS1980</EllipsoidId>
+  </GeodeticDatum>
+  <Ellipsoid id="GRS1980">
+    <Name>GRS1980</Name>
+    <Description>Geodetic Reference System of 1980</Description>
+    <Authority>Stem, L.E., Jan 1989, State Plane Coordinate System of 1983</Authority>
+    <SemiMajorAxis uom="meter">6378137</SemiMajorAxis>
+    <SecondDefiningParameter>
+      <SemiMinorAxis uom="meter">6356752.31414035</SemiMinorAxis>
+    </SecondDefiningParameter>
+  </Ellipsoid>
+  <Alias id="7019" type="Ellipsoid">
+    <ObjectId>GRS1980</ObjectId>
+    <Namespace>EPSG Code</Namespace>
+  </Alias>
+  <Transformation id="ETRF89.OSTN15_to_WGS84">
+    <Name>ETRF89.OSTN15_to_WGS84</Name>
+    <Description>European Terrestrial Reference Frame, 1989 (== WGS84)</Description>
+    <Authority>Various sources say ETRF989 is equivalent to WGS84</Authority>
+    <CoordinateOperationAccuracy>
+      <Accuracy uom="meter">8</Accuracy>
+    </CoordinateOperationAccuracy>
+    <SourceDatumId>ETRF89.OSTN15</SourceDatumId>
+    <TargetDatumId>WGS84</TargetDatumId>
+    <IsReversible>true</IsReversible>
+    <OperationMethod>
+      <OperationMethodId>Geocentric translations (geog2D domain)</OperationMethodId>
+      <ParameterValue>
+        <OperationParameterId>X-axis translation</OperationParameterId>
+        <Value uom="meter">0</Value>
+      </ParameterValue>
+      <ParameterValue>
+        <OperationParameterId>Y-axis translation</OperationParameterId>
+        <Value uom="meter">0</Value>
+      </ParameterValue>
+      <ParameterValue>
+        <OperationParameterId>Z-axis translation</OperationParameterId>
+        <Value uom="meter">0</Value>
+      </ParameterValue>
+    </OperationMethod>
+  </Transformation>
+</Dictionary>
+)X";
+    GeoCoordinates::BaseGCSPtr theGCS = GeoCoordinates::BaseGCS::CreateGCS();
+    ASSERT_TRUE(theGCS.IsValid());
+    EXPECT_TRUE(GeoCoordParse_Success == theGCS->InitFromOSGEOXML(theXML.c_str()));
+    EXPECT_TRUE(theGCS->IsValid());
+Utf8String gcsEquivalentJson = R"X({
+   "horizontalCRS" : {
+      "id" : "Equivalent-A16H2",
+      "description" : "England Highway Zone A16H2 Equivalent",
+      "projection" : {
+         "affine" : {
+            "a1" : 1.0004356748000001,
+            "a2" : 0.0,
+            "b1" : 0.0,
+            "b2" : 1.0004356748000001,
+            "translationX" : -346150.743480,
+            "translationY" : 171074.500390
+         },
+         "centralMeridian" : -2.0,
+         "falseEasting" : 400000.0,
+         "falseNorthing" : -100000.0,
+         "latitudeOfOrigin" : 49.0,
+         "method" : "TransverseMercatorAffine",
+         "scaleFactor" : 0.99960127170000002
+      },
+      "source" : "Interim Advice Note 99/07",
+      "unit" : "Meter",
+      "datumId" : "OSGB36/OSTN15",
+      "datum" : {
+         "description" : "OSGB36 through UK transform grid OSTN15_OSGM15_GB.txt",
+         "ellipsoid" : {
+            "description" : "Airy, 1830",
+            "epsg" : 7001,
+            "equatorialRadius" : 6377563.3959999997,
+            "id" : "AIRY30",
+            "polarRadius" : 6356256.9090,
+            "source" : "US Defense Mapping Agency, TR-8350.2-B, December 1987"
+         },
+         "ellipsoidId" : "AIRY30",
+         "id" : "OSGB36/OSTN15",
+         "source" : "A Guide to Coordinate Systems in Great Britain",
+         "transforms" : [
+            {
+               "gridFile" : {
+                  "files" : [
+                     {
+                        "direction" : "Inverse",
+                        "fileName" : "./UK/OSTN15._15",
+                        "format" : "OSTN15"
+                     }
+                  ]
+               },
+               "method" : "GridFiles",
+               "sourceEllipsoid" : {
+                  "equatorialRadius" : 6377563.3959999997,
+                  "id" : "AIRY30",
+                  "polarRadius" : 6356256.9090
+               },
+               "targetDatumId" : "ETRF89",
+               "targetEllipsoid" : {
+                  "equatorialRadius" : 6378137.0,
+                  "id" : "GRS1980",
+                  "polarRadius" : 6356752.3141403478
+               }
+            }
+         ]
+      },
+      "extent" : {
+         "northEast" : {
+            "latitude" : 62.0,
+            "longitude" : 2.50
+         },
+         "southWest" : {
+            "latitude" : 48.0,
+            "longitude" : -6.0
+         }
+      }
+   },
+   "verticalCRS" : {
+      "id" : "ELLIPSOID"
+   }
+})X";
+    GeoCoordinates::BaseGCSPtr compareGCS2 = GeoCoordinates::BaseGCS::CreateGCS();
+    Utf8String errMessage;
+    EXPECT_TRUE(SUCCESS == compareGCS2->FromJson(BeJsDocument(gcsEquivalentJson), errMessage));
+    EXPECT_TRUE(compareGCS2->IsEquivalent(*theGCS));
+    GeoCoordinates::BaseGCSPtr otherGCS = GeoCoordinates::BaseGCS::CreateGCS("EnglandHighway-A16H2/a");
+    DPoint3d result = {0.0, 0.0, 0.0};
+    DPoint3d inputPoint;
+    inputPoint.x = 400000;
+    inputPoint.y = 0.0;
+    inputPoint.z = 0.0;
+    EXPECT_TRUE(REPROJECT_Success == otherGCS->CartesianFromCartesian(result, inputPoint, *theGCS));
+    EXPECT_NEAR(result.x, inputPoint.x, 0.001);
+    EXPECT_NEAR(result.y, inputPoint.y, 0.001);
+    EXPECT_NEAR(result.z, inputPoint.z, 0.001);
+    EXPECT_TRUE(REPROJECT_Success == otherGCS->CartesianFromCartesian(result, inputPoint, *compareGCS2));
+    EXPECT_NEAR(result.x, inputPoint.x, 0.001);
+    EXPECT_NEAR(result.y, inputPoint.y, 0.001);
+    EXPECT_NEAR(result.z, inputPoint.z, 0.001);
+}
 bvector<Utf8String> ListOfOSGEO_XML = {
 
 R"X(

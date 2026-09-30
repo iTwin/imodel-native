@@ -5,7 +5,10 @@
 %include mdl.mki
 
 baseDir       = $(_MakeFilePath)
-CppInclude    = $(baseDir)VendorAPI/
 
+# Create individual VendorAPI domain symlinks instead of linking the whole directory,
+# so that vcpkg-managed libraries (zlib) can provide their own VendorAPI entries.
 always:
-    ~linkdir "$(BuildContext)VendorAPI=${CppInclude}"
+    ~linkdir "$(BuildContext)VendorAPI/liblzma=$(baseDir)VendorAPI/liblzma"
+    ~linkdir "$(BuildContext)VendorAPI/liblzma19=$(baseDir)VendorAPI/liblzma19"
+    ~linkdir "$(BuildContext)VendorAPI/snappy=$(baseDir)VendorAPI/snappy"

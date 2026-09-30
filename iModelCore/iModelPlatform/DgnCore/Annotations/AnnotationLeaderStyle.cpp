@@ -383,17 +383,17 @@ BentleyStatus AnnotationLeaderStylePersistence::DecodeFromFlatBuf(AnnotationLead
     {
     for (auto const& setter : setters)
         {
-        switch (setter.key())
+        switch (setter->key())
             {
-            case FB::AnnotationLeaderStyleProperty_LineColorType: data.SetIntegerProperty(AnnotationLeaderStyleProperty::LineColorType, setter.integerValue()); break;
-            case FB::AnnotationLeaderStyleProperty_LineColorValue: data.SetIntegerProperty(AnnotationLeaderStyleProperty::LineColorValue, setter.integerValue()); break;
-            case FB::AnnotationLeaderStyleProperty_LineType: data.SetIntegerProperty(AnnotationLeaderStyleProperty::LineType, setter.integerValue()); break;
-            case FB::AnnotationLeaderStyleProperty_LineWeight: data.SetIntegerProperty(AnnotationLeaderStyleProperty::LineWeight, setter.integerValue()); break;
-            case FB::AnnotationLeaderStyleProperty_TerminatorColorType: data.SetIntegerProperty(AnnotationLeaderStyleProperty::TerminatorColorType, setter.integerValue()); break;
-            case FB::AnnotationLeaderStyleProperty_TerminatorColorValue: data.SetIntegerProperty(AnnotationLeaderStyleProperty::TerminatorColorValue, setter.integerValue()); break;
-            case FB::AnnotationLeaderStyleProperty_TerminatorScaleFactor: data.SetRealProperty(AnnotationLeaderStyleProperty::TerminatorScaleFactor, setter.realValue()); break;
-            case FB::AnnotationLeaderStyleProperty_TerminatorType: data.SetIntegerProperty(AnnotationLeaderStyleProperty::TerminatorType, setter.integerValue()); break;
-            case FB::AnnotationLeaderStyleProperty_TerminatorWeight: data.SetIntegerProperty(AnnotationLeaderStyleProperty::TerminatorWeight, setter.integerValue()); break;
+            case FB::AnnotationLeaderStyleProperty_LineColorType: data.SetIntegerProperty(AnnotationLeaderStyleProperty::LineColorType, setter->integerValue()); break;
+            case FB::AnnotationLeaderStyleProperty_LineColorValue: data.SetIntegerProperty(AnnotationLeaderStyleProperty::LineColorValue, setter->integerValue()); break;
+            case FB::AnnotationLeaderStyleProperty_LineType: data.SetIntegerProperty(AnnotationLeaderStyleProperty::LineType, setter->integerValue()); break;
+            case FB::AnnotationLeaderStyleProperty_LineWeight: data.SetIntegerProperty(AnnotationLeaderStyleProperty::LineWeight, setter->integerValue()); break;
+            case FB::AnnotationLeaderStyleProperty_TerminatorColorType: data.SetIntegerProperty(AnnotationLeaderStyleProperty::TerminatorColorType, setter->integerValue()); break;
+            case FB::AnnotationLeaderStyleProperty_TerminatorColorValue: data.SetIntegerProperty(AnnotationLeaderStyleProperty::TerminatorColorValue, setter->integerValue()); break;
+            case FB::AnnotationLeaderStyleProperty_TerminatorScaleFactor: data.SetRealProperty(AnnotationLeaderStyleProperty::TerminatorScaleFactor, setter->realValue()); break;
+            case FB::AnnotationLeaderStyleProperty_TerminatorType: data.SetIntegerProperty(AnnotationLeaderStyleProperty::TerminatorType, setter->integerValue()); break;
+            case FB::AnnotationLeaderStyleProperty_TerminatorWeight: data.SetIntegerProperty(AnnotationLeaderStyleProperty::TerminatorWeight, setter->integerValue()); break;
             }
         }
 

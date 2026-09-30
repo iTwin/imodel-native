@@ -20,14 +20,9 @@ struct ContentRule : ConditionalPresentationRule
     DEFINE_T_SUPER(ConditionalPresentationRule)
 
 private:
-    Utf8String                m_customControl;
     ContentSpecificationList  m_specifications;
 
 protected:
-    ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName () const override;
-    ECPRESENTATION_EXPORT bool _ReadXml (BeXmlNodeP xmlNode) override;
-    ECPRESENTATION_EXPORT void _WriteXml (BeXmlNodeP xmlNode) const override;
-
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
@@ -53,12 +48,6 @@ public:
 
     //! Adds ContentSpecification that will be used to provide content.
     ECPRESENTATION_EXPORT void AddSpecification(ContentSpecificationR specification);
-
-    //! Returns display type of custom control which should display content of this rule.
-    ECPRESENTATION_EXPORT Utf8StringCR                      GetCustomControl (void);
-
-    //! Sets display type of custom control which should display content of this rule.
-    ECPRESENTATION_EXPORT void                           SetCustomControl (Utf8StringCR customControl);
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

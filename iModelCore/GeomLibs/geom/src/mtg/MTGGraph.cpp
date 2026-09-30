@@ -764,38 +764,41 @@ size_t MTGGraph::WriteToBinaryStream(void*& serialized)
     size_t count = m_nodeData.size()*sizeof(MTG_Node) + m_nodeLabels.size()*(sizeof(LabelSet)+sizeof(int)) + 10 * sizeof(int);
     for (int i = 0; i < (int)m_nodeLabels.size(); i++) count += m_nodeLabels[i].size()*sizeof(int);
     serialized = malloc(count);
-    _Analysis_assume_(serialized != nullptr);
+    if (serialized == nullptr)
+        return 0;
+
     size_t offset = sizeof(int);
     ((int*)serialized)[0] = (int)m_nodeData.size()*sizeof(MTG_Node);
 
     if (m_nodeData.size() > 0)
-        memcpy((char*)serialized+offset, m_nodeData.data(), m_nodeData.size()*sizeof(MTG_Node));
+        BeStringUtilities::Memcpy((char*)serialized + offset, count - offset, m_nodeData.data(), m_nodeData.size()*sizeof(MTG_Node));
 
     offset += m_nodeData.size()*sizeof(MTG_Node);
     (*(int*)((char*)serialized + offset)) = (int)m_nodeLabels.size()*(2 * sizeof(int) + sizeof(MTGLabelMask));
     offset += sizeof(int);
     for (int i = 0; i < (int)m_nodeLabels.size(); i++)
         {
-        memcpy((char*)serialized + offset+3*sizeof(int)*i, &(m_nodeLabels[i].m_defaultValue), sizeof(int));
-        memcpy((char*)serialized + offset + 3 * sizeof(int) * i + sizeof(int), &(m_nodeLabels[i].m_tag), sizeof(int));
-        memcpy((char*)serialized + offset + 3 * sizeof(int)* i + 2 * sizeof(int), &(m_nodeLabels[i].m_labelMask), sizeof(MTGLabelMask));
+        size_t myOffset = offset + 3 * sizeof(int) * i;
+        BeStringUtilities::Memcpy((char*)serialized + myOffset, count - myOffset, &(m_nodeLabels[i].m_defaultValue), sizeof(int));
+        BeStringUtilities::Memcpy((char*)serialized + myOffset + sizeof(int), count - (myOffset + sizeof(int)), &(m_nodeLabels[i].m_tag), sizeof(int));
+        BeStringUtilities::Memcpy((char*)serialized + myOffset + 2 * sizeof(int), count - (myOffset + 2 * sizeof(int)), &(m_nodeLabels[i].m_labelMask), sizeof(MTGLabelMask));
         }
     offset += m_nodeLabels.size()*(2 * sizeof(int) + sizeof(MTGMask));
     for (int i = 0; i < (int)m_nodeLabels.size(); i++)
         {
         (*(int*)((char*)serialized + offset)) = (int)m_nodeLabels[i].size()*sizeof(int);
         offset += sizeof(int);
-        memcpy((char*)serialized + offset, m_nodeLabels[i].data(), m_nodeLabels[i].size()*sizeof(int));
+        BeStringUtilities::Memcpy((char*)serialized + offset, count - offset, m_nodeLabels[i].data(), m_nodeLabels[i].size()*sizeof(int));
         offset += m_nodeLabels[i].size()*sizeof(int);
         }
-    memcpy((char*)serialized + offset, &firstFreeNodeId, sizeof(MTGNodeId));
+    BeStringUtilities::Memcpy((char*)serialized + offset, count - offset, &firstFreeNodeId, sizeof(MTGNodeId));
     offset += sizeof(MTGNodeId);
-    memcpy((char*)serialized + offset, &numActiveNodes, sizeof(int));
+    BeStringUtilities::Memcpy((char*)serialized + offset, count - offset, &numActiveNodes, sizeof(int));
     offset += sizeof(int);
-    memcpy((char*)serialized + offset, &numFreeNodes, sizeof(int));
+    BeStringUtilities::Memcpy((char*)serialized + offset, count - offset, &numFreeNodes, sizeof(int));
     offset += sizeof(int);
     MTGMask masks[4] = { m_freeMasks, m_edgePropertyMask, m_vertexPropertyMask, m_facePropertyMask };
-    memcpy((char*)serialized + offset, masks, 4*sizeof(MTGMask));
+    BeStringUtilities::Memcpy((char*)serialized + offset, count - offset, masks, 4*sizeof(MTGMask));
     assert(((int*)serialized)[0] == (int)m_nodeData.size()*sizeof(MTG_Node));
     return count;
     }
@@ -808,7 +811,7 @@ void MTGGraph::LoadFromBinaryStream(void* serialized, size_t ct)
     size_t offset = sizeof(int);
 
     m_nodeData.resize(length / sizeof(MTG_Node));
-    memcpy(m_nodeData.data(), (char*)serialized + offset, length);
+    BeStringUtilities::Memcpy(m_nodeData.data(), length, (char*)serialized + offset, length);
     offset += length;
     length = (*(int*)((char*)serialized + offset));
     offset += sizeof(int);
@@ -824,7 +827,7 @@ void MTGGraph::LoadFromBinaryStream(void* serialized, size_t ct)
         length = (*(int*)((char*)serialized + offset));
         offset += sizeof(int);
         m_nodeLabels[i].resize(length / sizeof(int));
-        memcpy(m_nodeLabels[i].data(), (char*)serialized + offset, length);
+        BeStringUtilities::Memcpy(m_nodeLabels[i].data(), length, (char*)serialized + offset, length);
         offset += length;
         }
     firstFreeNodeId = (*(MTGNodeId*)((char*)serialized + offset));
@@ -1046,7 +1049,6 @@ MTGNodeId MTGGraph::FindMaskAroundVertex (MTGNodeId nodeId, MTGMask mask) const
     return MTG_NULL_NODEID;
     }
 
-/// Search vertex loop for mask
 MTGNodeId MTGGraph::FindMaskAroundVertexPred (MTGNodeId nodeId, MTGMask mask) const
     {
     MTGARRAY_VERTEX_PREDLOOP (currNodeId, this, nodeId)
@@ -1058,9 +1060,17 @@ MTGNodeId MTGGraph::FindMaskAroundVertexPred (MTGNodeId nodeId, MTGMask mask) co
     return MTG_NULL_NODEID;
     }
 
+MTGNodeId MTGGraph::FindUnmaskedAroundVertexPred(MTGNodeId nodeId, MTGMask mask) const
+    {
+    MTGARRAY_VERTEX_PREDLOOP(currNodeId, this, nodeId)
+        {
+        if (!GetMaskAt(currNodeId, mask))
+            return currNodeId;
+        }
+    MTGARRAY_END_VERTEX_PREDLOOP(currNodeId, this, nodeId)
+    return MTG_NULL_NODEID;
+    }
 
-
-/// Search face loop for mmissing mask
 MTGNodeId MTGGraph::FindUnmaskedAroundFace (MTGNodeId nodeId, MTGMask mask) const
     {
     MTGARRAY_FACE_LOOP (currNodeId, this, nodeId)
@@ -1105,6 +1115,17 @@ size_t MTGGraph::CountMaskAroundVertex (MTGNodeId nodeId, MTGMask mask) const
             n++;
         }
     MTGARRAY_END_VERTEX_LOOP (currNodeId, this, nodeId)
+    return n;
+    }
+size_t MTGGraph::CountUnmaskedAroundVertex (MTGNodeId nodeId, MTGMask mask) const
+    {
+    size_t n = 0;
+    MTGARRAY_VERTEX_LOOP(currNodeId, this, nodeId)
+        {
+        if (!GetMaskAt(currNodeId, mask))
+            n++;
+        }
+    MTGARRAY_END_VERTEX_LOOP(currNodeId, this, nodeId)
     return n;
     }
 size_t MTGGraph::CountMask   (MTGMask mask) const
@@ -1718,7 +1739,7 @@ int             numNode
         pCurrNode = pGraph->GetNodeP (currId);
         pFSuccNode = pGraph->GetNodeP (fSuccId);
         if (   pCurrNode->fSucc != UNINITIALIZED_NODE_ID
-            // || pCurrNode->fSucc != UNINITIALIZED_NODE_ID     *** NEEDS WORK STATIC ANALYSIS - redundant code - what did we mean to test here in addition to fSucc?
+            || pFSuccNode->vSucc != UNINITIALIZED_NODE_ID
            )
             {
             boolstat = false;

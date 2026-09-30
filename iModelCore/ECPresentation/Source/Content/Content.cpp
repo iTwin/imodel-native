@@ -562,6 +562,87 @@ void ContentDescriptor::UpdateSelectClasses()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+static void CollectFieldNames(bset<Utf8String>& names, bvector<ContentDescriptor::Field*> const& fields)
+    {
+    for (ContentDescriptor::Field const* field : fields)
+        {
+        names.insert(field->GetUniqueName());
+        if (field->IsNestedContentField())
+            CollectFieldNames(names, field->AsNestedContentField()->GetFields());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static void CollectFieldsToRename(bvector<ContentDescriptor::Field*>& fieldsToRename, bset<Utf8String>& usedNames, ContentDescriptor::Field& field)
+    {
+    if (!field.IsDisplayLabelField() && !field.GetUniqueName().empty() && !usedNames.insert(field.GetUniqueName()).second)
+        fieldsToRename.push_back(&field);
+
+    if (field.IsNestedContentField())
+        {
+        for (ContentDescriptor::Field* nestedField : field.AsNestedContentField()->GetFields())
+            CollectFieldsToRename(fieldsToRename, usedNames, *nestedField);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static void AssignUniqueName(ContentDescriptor::Field& field, bset<Utf8String>& usedNames)
+    {
+    // unique name may already have a "/N" suffix, so use the unsuffixed base to avoid names like "x/2/2"
+    Utf8String baseName = field.CreateName();
+    if (baseName.empty())
+        baseName = field.GetUniqueName();
+
+    Utf8String name = baseName;
+    for (uint64_t counter = 2; !usedNames.insert(name).second; ++counter)
+        name = Utf8String(baseName).append("/").append(std::to_string(counter));
+    field.SetUniqueName(name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static void CopyFieldNames(ContentDescriptor::Field& target, ContentDescriptor::Field const& source)
+    {
+    target.SetUniqueName(source.GetUniqueName());
+    if (!target.IsNestedContentField() || !source.IsNestedContentField())
+        return;
+
+    auto& targetFields = target.AsNestedContentField()->GetFields();
+    auto const& sourceFields = source.AsNestedContentField()->GetFields();
+    if (targetFields.size() != sourceFields.size())
+        return;
+
+    for (size_t i = 0; i < targetFields.size(); ++i)
+        CopyFieldNames(*targetFields[i], *sourceFields[i]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool AreFieldsEqualIgnoringNames(ContentDescriptor::Field const& existingField, ContentDescriptor::Field const& incomingField)
+    {
+    if (existingField == incomingField)
+        return true;
+
+    // field equality compares unique names, but an equal field may have been renamed when merging it into this descriptor earlier;
+    // properties fields are matched by property key elsewhere, and fields with different base names can't be equal
+    if (incomingField.IsPropertiesField() || existingField.IsPropertiesField() || !existingField.CreateName().Equals(incomingField.CreateName()))
+        return false;
+
+    // give a copy of the incoming field the existing field's names, so that comparison ignores them
+    std::unique_ptr<ContentDescriptor::Field> renamedField(incomingField.Clone());
+    CopyFieldNames(*renamedField, existingField);
+    return existingField == *renamedField;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void ContentDescriptor::MergeWith(ContentDescriptorCR other)
     {
     if (!m_preferredDisplayType.Equals(other.m_preferredDisplayType))
@@ -645,6 +726,7 @@ void ContentDescriptor::MergeWith(ContentDescriptorCR other)
             m_categories.push_back(sourceCategory);
         }
 
+    bvector<Field*> addedFields;
     for (Field const* sourceField : other.m_fields)
         {
         bool found = false;
@@ -667,7 +749,7 @@ void ContentDescriptor::MergeWith(ContentDescriptorCR other)
             if (targetField->IsPropertiesField())
                 continue;
 
-            if (*targetField == *sourceField)
+            if (AreFieldsEqualIgnoringNames(*targetField, *sourceField))
                 {
                 found = true;
                 break;
@@ -675,8 +757,20 @@ void ContentDescriptor::MergeWith(ContentDescriptorCR other)
             }
 
         if (!found)
-            AddRootField(*sourceField->Clone());
+            addedFields.push_back(sourceField->Clone());
         }
+
+    // field names are used as query aliases, so they must be unique across the whole fields' hierarchy
+    bset<Utf8String> usedNames;
+    CollectFieldNames(usedNames, m_fields);
+    bvector<Field*> fieldsToRename;
+    for (Field* addedField : addedFields)
+        CollectFieldsToRename(fieldsToRename, usedNames, *addedField);
+    for (Field* fieldToRename : fieldsToRename)
+        AssignUniqueName(*fieldToRename, usedNames);
+
+    for (Field* addedField : addedFields)
+        AddRootField(*addedField);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1038,7 +1132,23 @@ bvector<InstanceLabelOverrideCP> ContentDescriptor::DisplayLabelField::CloneLabe
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentDescriptor::Field::TypeDescriptionPtr ContentDescriptor::CalculatedPropertyField::_CreateTypeDescription() const
     {
-    return new PrimitiveTypeDescription("string");
+    switch (m_type)
+        {
+        case PRIMITIVETYPE_String:
+            return new PrimitiveTypeDescription(EC_PRIMITIVE_TYPENAME_STRING);
+        case PRIMITIVETYPE_Integer:
+            return new PrimitiveTypeDescription(EC_PRIMITIVE_TYPENAME_INTEGER);
+        case PRIMITIVETYPE_Boolean:
+            return new PrimitiveTypeDescription(EC_PRIMITIVE_TYPENAME_BOOLEAN);
+        case PRIMITIVETYPE_Long:
+            return new PrimitiveTypeDescription(EC_PRIMITIVE_TYPENAME_LONG);
+        case PRIMITIVETYPE_DateTime:
+            return new PrimitiveTypeDescription(EC_PRIMITIVE_TYPENAME_DATETIME);
+        case PRIMITIVETYPE_Double:
+            return new PrimitiveTypeDescription(EC_PRIMITIVE_TYPENAME_DOUBLE);
+        default:
+            DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, "Unsupported primitive type provided");
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1409,6 +1519,15 @@ void ContentSetItem::AddUsersExtendedData(Utf8CP key, ECValueCR value)
     m_extendedData.AddMember(rapidjson::Value(key, m_extendedData.GetAllocator()), ValueHelpers::GetJsonFromECValue(value, "", &m_extendedData.GetAllocator()), m_extendedData.GetAllocator());
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ContentDescriptor::CalculatedPropertyField::AddExtendedData(Utf8CP key, ECValueCR value)
+    {
+    m_extendedData.AddMember(rapidjson::Value(key, m_extendedData.GetAllocator()), ValueHelpers::GetJsonFromECValue(value, "", &m_extendedData.GetAllocator()), m_extendedData.GetAllocator());
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1710,13 +1829,18 @@ std::unique_ptr<ContentDescriptor::Category> DefaultCategorySupplier::_CreateECC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+std::unique_ptr<ContentDescriptor::Category> DefaultCategorySupplier::_CreatePropertyCategory(PropertyCategoryCR schemaCategory) const
+    {
+    return std::make_unique<ContentDescriptor::Category>(schemaCategory.GetName(), schemaCategory.GetDisplayLabel(),
+        schemaCategory.GetDescription(), schemaCategory.GetPriority());
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 std::unique_ptr<ContentDescriptor::Category> DefaultCategorySupplier::_CreatePropertyCategory(ECPropertyCR ecProperty) const
     {
     PropertyCategoryCP propertyCategory = ecProperty.GetCategory();
     if (nullptr != propertyCategory)
-        {
-        return std::make_unique<ContentDescriptor::Category>(propertyCategory->GetName(), propertyCategory->GetDisplayLabel(),
-            propertyCategory->GetDescription(), propertyCategory->GetPriority());
-        }
+        return CreatePropertyCategory(*propertyCategory);
     return nullptr;
     }

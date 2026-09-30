@@ -35,15 +35,17 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, CommonTableEx
         // render block
         auto blockExp = blocks[i];
         builder.Append(blockExp->GetName());
-        builder.AppendParenLeft();
         auto &cols = blockExp->GetColumns();
+        if(cols.size() != 0)
+            builder.AppendParenLeft();
         for(size_t j =0; j < cols.size(); ++j){
             if (j>0) {
                 builder.AppendComma();
             }
             builder.Append(cols[j]);
         }
-        builder.AppendParenRight();
+        if(cols.size()!=0)
+            builder.AppendParenRight();
         builder.Append(" AS ");
         builder.AppendParenLeft();
         auto rc = Prepare(ctx, *blockExp->GetQuery(), nullptr);
@@ -334,7 +336,7 @@ ECSqlStatus ECSqlSelectPreparer::PrepareDerivedPropertyExp(NativeSqlBuilder::Lis
 
     std::vector<Utf8String> & resultSet = const_cast<DerivedPropertyExp&>(exp).SqlResultSetR();
     Utf8String alias = exp.GetColumnAlias();
-    if (alias.empty() || exp.FindParent(Exp::Type::Subquery) != nullptr)
+    if (alias.empty() || exp.OriginateInASubQuery() || exp.OriginateInACommonTableBlockWithNoColumns())
         alias = exp.GetNestedAlias();
     if (innerExp->GetType() == Exp::Type::CommonTablePropertyName)
         resultSet.push_back(alias);
@@ -366,7 +368,7 @@ ECSqlStatus ECSqlSelectPreparer::PrepareDerivedPropertyExp(NativeSqlBuilder::Lis
             resultSet.push_back(snippet.GetSql());
             }
         }
-    if (ctx.GetCurrentScope().IsRootScope())
+    if (ctx.GetCurrentScope().IsRootScope() && ctx.GetCreateField())
         {
         ctx.GetCurrentScopeR().IncrementNativeSqlSelectClauseColumnCount(nativeSqlSnippets.size() - snippetCountBefore);
         if (exp.GetExpression()->GetType() == Exp::Type::NavValueCreationFunc ||
@@ -441,7 +443,9 @@ void ECSqlSelectPreparer::ExtractPropertyRefs(ECSqlPrepareContext& ctx, Exp cons
         if (propertyName->IsVirtualProperty())
             return;
 
-        ctx.GetSelectionOptionsR().AddProperty(*propertyName->GetPropertyMap());
+        //may be nullptr, e.g. for a reference to a CTE or subquery alias which isn't backed by a mapped property
+        if (PropertyMap const* propertyMap = propertyName->GetPropertyMap())
+            ctx.GetSelectionOptionsR().AddProperty(*propertyMap);
         }
 
     for (Exp const* child : exp->GetChildren())

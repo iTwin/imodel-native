@@ -5,6 +5,89 @@
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 
+/** Return an ECEF point from geographic lat/long coordinates */
+static void coordsToEcef(GeoPointCR coords, DPoint3dR ecef)
+    {
+    static const DPoint3d wgs84RadiiSquared = DPoint3d::From(6378137.0 * 6378137.0, 6378137.0 * 6378137.0, 6356752.3142451793 * 6356752.3142451793);
+
+    auto cosLatitude = cos(coords.latitude);
+    DPoint3d scratchN, scratchK;
+    scratchN.x = cosLatitude * cos(coords.longitude);
+    scratchN.y = cosLatitude * sin(coords.longitude);
+    scratchN.z = sin(coords.latitude);
+    scratchN.Normalize();
+
+    scratchK.x = wgs84RadiiSquared.x * scratchN.x;
+    scratchK.y = wgs84RadiiSquared.y * scratchN.y;
+    scratchK.z = wgs84RadiiSquared.z * scratchN.z;
+    double gamma = sqrt(scratchN.DotProduct(scratchK));
+    scratchK.Scale(1.0 / gamma);
+    scratchN.Scale(coords.elevation);
+
+    ecef.Init(scratchK.x + scratchN.x, scratchK.y + scratchN.y, scratchK.z + scratchN.z);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Transform EcefLocation::ComputeTransform()
+    {
+    if (!m_isValid)
+        return Transform::FromIdentity();
+
+    // If we have vectors, combine them with origin to create the ECEF transform.
+    if (m_haveVectors)
+        {
+        DVec3d zVector;
+        zVector.CrossProduct(m_xVector, m_yVector);
+        zVector.Normalize();
+        return Transform::FromOriginAndVectors(m_origin, m_xVector, m_yVector, zVector);
+        }
+
+    // Otherwise, use the angles (or orientation) combined with origin to create the ECEF transform.
+    return m_angles.ToTransform(m_origin);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+EcefLocation EcefLocation::FromGeographic(GeoPointCR origin, DPoint3dCP point)
+    {
+    static const double earthRadiusWGS84Polar = 6356752.3142;
+
+    DPoint3d ecefOrigin;  coordsToEcef(origin, ecefOrigin);
+    auto deltaRadians = 10 / earthRadiusWGS84Polar;
+    GeoPoint northCarto;  northCarto.Init(origin.longitude, origin.latitude + deltaRadians, origin.elevation);
+    GeoPoint eastCarto;  eastCarto.Init(origin.longitude + deltaRadians, origin.latitude, origin.elevation);
+    DPoint3d ecefNorth;  coordsToEcef(northCarto, ecefNorth);
+    DPoint3d ecefEast;  coordsToEcef(eastCarto, ecefEast);
+    DVec3d xVector = DVec3d::FromStartEnd(ecefOrigin, ecefEast);  xVector.Normalize();
+    DVec3d yVector = DVec3d::FromStartEnd(ecefOrigin, ecefNorth);  yVector.Normalize();
+    RotMatrix rotMatrix = RotMatrix::From2Vectors(xVector, yVector);
+    RotMatrix matrix;
+    matrix.SquareAndNormalizeColumns(rotMatrix, 0, 1);
+
+    // ###TODO, if necessary in the future.
+    // if (angle) {
+    //   const north = Matrix3d.createRotationAroundAxisIndex(AxisIndex.Z, angle);
+    //   matrix.multiplyMatrixMatrix(north, matrix);
+    // }
+
+    if (point) {
+      DPoint3d delta = DPoint3d::From(-point->x, -point->y, -point->z);
+      matrix.Multiply(delta);
+      ecefOrigin.Add(delta);
+    }
+
+    YawPitchRollAngles angles;
+    if (!YawPitchRollAngles::TryFromRotMatrix(angles, matrix))
+        {
+        return EcefLocation(); // default EcefLocation with m_isValid=false indicates failure
+        }
+
+    return EcefLocation(ecefOrigin, angles, 0);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -389,13 +472,21 @@ void DgnGeoLocation::SetProjectExtents(AxisAlignedBox3dCR newExtents)
 
     m_extent = newExtents;
 
-    // DO NOT CHANGE TO RAPID JSON.
-    // JsonCpp and RapidJson differ slightly in precision of floating point numbers.
-    // Tile content Ids include a hash of the project extents.
-    // Differing precision => different content Ids => invalidate every cached tile in existence.
-    Json::Value jsonObj;
+    // NOTE: the serialized text is NOT byte-identical to the legacy JsonCpp form. JsonCpp sorted
+    // object keys ("high" before "low") and rendered doubles in its own style (e.g. 28.32308750),
+    // whereas RapidJson preserves insertion order (DRange3dToJson inserts low, then high) and
+    // writes the shortest round-trip form (28.3230875).
+    // This is SAFE for tile content Ids: that hash is computed from the recovered DRange3d, not
+    // from this text, and LoadProjectExtents parses with kParseFullPrecisionFlag, which recovers
+    // bit-identical doubles from either form (verified for both legacy and current output).
+    // If byte-identical output is ever required (e.g. to stop churning this stored property):
+    //   1. Emit the members in sorted key order - write "high" before "low" here instead of using
+    //      BeJsGeomUtils::DRange3dToJson, which inserts "low" first; and
+    //   2. Render each double using JsonCpp's formatting and insert it as pre-formatted text,
+    //      rather than storing a raw double and letting RapidJson's Writer render it.
+    BeJsDocument jsonObj;
     BeJsGeomUtils::DRange3dToJson(jsonObj, m_extent);
-    m_dgndb.SavePropertyString(DgnProjectProperty::Extents(), jsonObj.ToString());
+    m_dgndb.SavePropertyString(DgnProjectProperty::Extents(), jsonObj.Stringify());
 
     if (!m_ecefLocation.m_isValid)
         {
@@ -403,6 +494,14 @@ void DgnGeoLocation::SetProjectExtents(AxisAlignedBox3dCR newExtents)
         Save();
         }
 
+    NotifyProjectExtentsChanged(newExtents);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnGeoLocation::NotifyProjectExtentsChanged(AxisAlignedBox3dCR newExtents) const
+    {
     for (auto const& kvp : m_dgndb.Models().GetLoadedModels())
         {
         auto spatialModel = kvp.second->ToSpatialModelP();
@@ -458,14 +557,24 @@ AxisAlignedBox3d DgnGeoLocation::ComputeProjectExtents(DRange3dP rangeWithOutlie
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnGeoLocation::LoadProjectExtents() const
     {
-    // DO NOT CHANGE TO RAPID JSON.
-    // JsonCpp and RapidJson differ slightly in precision of floating point numbers.
-    // Tile content Ids include a hash of the project extents.
-    // Differing precision => different content Ids => invalidate every cached tile in existence.
-    Json::Value jsonObj;
     Utf8String value;
-    if (BE_SQLITE_ROW == m_dgndb.QueryProperty(value, DgnProjectProperty::Extents()) && Json::Reader::Parse(value, jsonObj))
-        BeJsGeomUtils::DRange3dFromJson(m_extent, jsonObj);
+    AxisAlignedBox3d extentsBeforeReadingFromDb = AxisAlignedBox3d(m_extent);
+    if (BE_SQLITE_ROW == m_dgndb.QueryProperty(value, DgnProjectProperty::Extents()))
+        {
+        // Tile content Ids include a hash of the project extents (Visualization
+        // Tree::FormatExtentsHash, via Tree::m_contentIdQualifier). Differing precision =>
+        // different content Ids => invalidate every cached tile in existence.
+        // This is safe because BeJsDocument::Parse uses kParseFullPrecisionFlag, so the recovered
+        // DRange3d is bit-identical both for legacy JsonCpp-written property text and for the
+        // text written by SetProjectExtents above. See the comment on BeJsDocument::Parse -
+        // if that flag is ever dropped, this breaks silently.
+        BeJsDocument jsonObj(value);
+        if (!jsonObj.hasParseError())
+            BeJsGeomUtils::DRange3dFromJson(m_extent, jsonObj);
+        }
+
+    if (!extentsBeforeReadingFromDb.IsEqual(m_extent, DoubleOps::SmallMetricDistance()))
+        NotifyProjectExtentsChanged(m_extent);
 
     // if we can't get valid extents from the property, use default values
     if (m_extent.IsEmpty())
@@ -482,4 +591,13 @@ AxisAlignedBox3d DgnGeoLocation::GetProjectExtents() const
 
     return m_extent;
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+AxisAlignedBox3d DgnGeoLocation::GetProjectExtents(Utf8StringCR when) const
+    {
+    if (m_extent.IsEmpty() || when.EqualsI("pullMerge"))
+        LoadProjectExtents();
 
+    return m_extent;
+    }

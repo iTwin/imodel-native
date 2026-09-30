@@ -206,6 +206,54 @@ BentleyStatus FontDb::EmbedFont(bvector<FontFace> const& faces, ByteStreamCR dat
     return SUCCESS;
 }
 
+BentleyStatus FontDb::EmbedFont(uint32_t id, bvector<FontFace> const& faces, ByteStreamCR data, bool compress) {
+    if (faces.empty()) {
+        return ERROR;
+    }
+    
+    PropertySpec spec(EMBEDDED_FACE_DATA_NAME, EMBEDDED_FACE_DATA_NAMESPACE, PropertySpec::Mode::Normal, compress ? PropertySpec::Compress::Yes : PropertySpec::Compress::No);
+    if (BE_SQLITE_OK != m_db.SaveProperty(spec, data.GetData(), data.GetSize(), id, 0)) {
+        return ERROR;
+    }
+
+    Statement stmt;
+    stmt.Prepare(m_db, "SELECT rowId FROM " BEDB_TABLE_Property " WHERE Namespace='" EMBEDDED_FACE_DATA_NAMESPACE "' AND Name='" EMBEDDED_FACE_DATA_NAME "' AND Id=?");
+    stmt.BindInt64(1, id);
+    if (BE_SQLITE_ROW != stmt.Step()) {
+        BeAssert(false);
+        return ERROR;
+    }
+    uint32_t rowId = stmt.GetValueInt(0);
+    
+    BeJsDocument facesJson;
+    for (auto const& face : faces) {
+        auto entry = facesJson.appendObject();
+        entry[FontFace::json_subId()] = face.m_subId;
+        entry[FontFace::json_type()] = (int)face.m_type;
+        entry[FontFace::json_familyName()] = face.m_familyName;
+        entry[FontFace::json_faceName()] = FontFace::StyleToString(face.m_faceStyle);
+
+        if (face.m_encoding.m_codePage != LangCodePage::Unicode)
+            face.m_encoding.ToJSON(entry[FontFace::json_encoding()]);
+    }
+
+    Statement update;
+    update.Prepare(m_db, "UPDATE " BEDB_TABLE_Property " SET StrData=? WHERE rowId=?");
+    update.BindText(1, facesJson.Stringify(), Statement::MakeCopy::Yes);
+    update.BindInt64(2, rowId);
+    if (BE_SQLITE_DONE != update.Step()) {
+        BeAssert(false);
+        return ERROR;
+    }
+
+    auto reader = new FontDbReader(m_db, rowId, id, data.GetSize(), compress);
+    for (auto& face : faces)
+        reader->m_faces.push_back(face);
+
+    AddDbReader(reader);
+    return SUCCESS;
+}
+
 /**
  * Embed either an .shx file or a TrueType file, by file name, into this FontDb
  */

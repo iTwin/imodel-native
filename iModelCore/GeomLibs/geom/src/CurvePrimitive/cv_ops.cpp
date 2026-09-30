@@ -303,7 +303,7 @@ void CurveVector::ConsolidateAdjacentPrimitives (bool doSimplifyLinestrings, boo
                 {
                 if (NULL != (childVector = const_cast <CurveVectorP>(at(baseIndex)->GetChildCurveVectorCP ())))
                     {
-                    childVector->ConsolidateAdjacentPrimitives ();
+                    childVector->ConsolidateAdjacentPrimitives(false);  // we'll simplify all at once below
                     }
                 if (numCompressedPrimitives != baseIndex)
                     at(numCompressedPrimitives++) = at (baseIndex);

@@ -1689,8 +1689,8 @@ TEST_F(SchemaManagerTests, LoadAllUnitsImplicitly)
     //! replace "Phenom" with other xml tags
     //! the units count includes inverted and constants
     const int standardUnitSystemCount = 12;
-    const int standardPhenCount = 79;
-    const int standardUnitCount = 519;
+    const int standardPhenCount = 81;
+    const int standardUnitCount = 531;
     const int standardFormatCount = 10;
 
     assertLoadCount(m_ecdb, "TestSchema", 0, 0, 0, 0, 0, "No schema elements are expected to be loaded at this point");
@@ -1926,7 +1926,7 @@ TEST_F(SchemaManagerTests, Formats)
         else
             {
             ASSERT_TRUE(format->HasNumeric()) << format->GetFullName();
-            Json::Value jval;
+            BeJsDocument jval;
             ASSERT_TRUE(format->GetNumericSpec()->ToJson(jval, false)) << format->GetFullName();
             ASSERT_EQ(numericSpec, JsonValue(jval)) << format->GetFullName();
             }
@@ -1935,7 +1935,7 @@ TEST_F(SchemaManagerTests, Formats)
             ASSERT_FALSE(format->HasComposite()) << format->GetFullName();
         else
             {
-            Json::Value jval;
+            BeJsDocument jval;
             ASSERT_TRUE(format->GetCompositeSpec()->ToJson(jval)) << format->GetFullName();
             ASSERT_TRUE(format->HasComposite()) << format->GetFullName();
             ASSERT_EQ(compSpec, JsonValue(jval)) << format->GetFullName();
@@ -3182,6 +3182,55 @@ TEST_F(SchemaManagerTests, DuplicateInMemorySchemaTest)
 
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(usr, usrXml, *readContext));
     ASSERT_EQ(BentleyStatus::SUCCESS, m_ecdb.Schemas().ImportSchemas(readContext->GetCache().GetSchemas())) << "Failed because locater was not added for schemas that already exist in ECDb";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaManagerTests, SchemaWithChangesButSameVersionTest)
+    {
+    Utf8CP originalSchemaXml =
+        "<?xml version='1.0' encoding='utf-8' ?>"
+        "<ECSchema schemaName='std' alias='std' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "   <ECEntityClass typeName='Foo' >"
+        "       <ECProperty propertyName='Test1' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>";
+
+    Utf8CP changedSchemaXml =
+        "<?xml version='1.0' encoding='utf-8' ?>"
+        "<ECSchema schemaName='std' alias='std' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "   <ECEntityClass typeName='Foo' >"
+        "       <ECProperty propertyName='Test1' typeName='string' />"
+        "       <ECProperty propertyName='Test2' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>";
+
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("SchemaWithChangesButSameVersionTest.ecdb"));
+
+    ECSchemaPtr originalSchema;
+    ECSchemaReadContextPtr readContext1 = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ (SchemaReadStatus::Success, ECSchema::ReadFromXmlString(originalSchema, originalSchemaXml, *readContext1));
+    ASSERT_EQ(BentleyStatus::SUCCESS, m_ecdb.Schemas().ImportSchemas(readContext1->GetCache().GetSchemas()));
+
+    TestLogger logger;
+    LogCatcher logCatcher(logger);
+
+    ECSchemaPtr changedSchema;
+    ECSchemaReadContextPtr readContext2 = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(changedSchema, changedSchemaXml, *readContext2));
+    ASSERT_EQ(BentleyStatus::SUCCESS, m_ecdb.Schemas().ImportSchemas(readContext2->GetCache().GetSchemas()));
+    ASSERT_STREQ("Schema 'std' has changes but its version was not incremented. Proceeding with import, but this may lead to unexpected behavior.", logger.GetLastMessage(NativeLogging::LOG_WARNING)->second.c_str());
+
+    ReopenECDb();
+    ECSchemaCP schema = m_ecdb.Schemas().GetSchema("std");
+    ASSERT_TRUE(schema != nullptr);
+    ECClassCP foo = schema->GetClassCP("Foo");
+    ASSERT_TRUE(foo != nullptr);
+    ECPropertyCP test1 = foo->GetPropertyP("Test1");
+    ASSERT_TRUE(test1 != nullptr);
+    ECPropertyCP test2 = foo->GetPropertyP("Test2");
+    ASSERT_TRUE(test2 != nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**

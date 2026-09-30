@@ -396,3 +396,113 @@ TEST_F(RelatedClassPathTests, Unify_CorrectlyUnifiesMultiStepPath)
     EXPECT_EQ(RelatedClass(*classB, SelectClass<ECRelationshipClass>(*relBCD, "r_bcd"), true, SelectClass<ECClass>(*classCD, "c")), result[1]);
     EXPECT_EQ(RelatedClass(*classCD, SelectClass<ECRelationshipClass>(*relCDE, "r_cde"), true, SelectClass<ECClass>(*classE, "e")), result[2]);
     }
+
+//---------------------------------------------------------------------------------------
+// @betest
+//---------------------------------------------------------------------------------------
+DEFINE_SCHEMA(Unify_ReturnsErrorWhenSourcesDontHaveCommonBase, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B" />
+    <ECEntityClass typeName="Base_of_CD">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="C">
+        <BaseClass>Base_of_CD</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="D">
+        <BaseClass>Base_of_CD</BaseClass>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ACD" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="true">
+            <Class class="Base_of_CD" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="BCD" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
+            <Class class="B"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="true">
+            <Class class="Base_of_CD" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RelatedClassPathTests, Unify_ReturnsErrorWhenSourcesDontHaveCommonBase)
+    {
+    ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
+    ECClassCP classB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B");
+    ECClassCP classC = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "C");
+    ECClassCP classD = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "D");
+    ECRelationshipClassCP relACD = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ACD")->GetRelationshipClassCP();
+    ECRelationshipClassCP relBCD = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "BCD")->GetRelationshipClassCP();
+
+    RelatedClassPath path1{
+        RelatedClass(*classA, SelectClass<ECRelationshipClass>(*relACD, "acd"), true, SelectClass<ECClass>(*classC, "c")),
+        };
+    RelatedClassPath path2{
+        RelatedClass(*classB, SelectClass<ECRelationshipClass>(*relBCD, "bcd"), true, SelectClass<ECClass>(*classD, "d")),
+        };
+    RelatedClassPath result;
+    ASSERT_EQ(ERROR, RelatedClassPath::Unify(result, path1, path2));
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest
+//---------------------------------------------------------------------------------------
+DEFINE_SCHEMA(Unify_ReturnsErrorWhenTargetsDontHaveCommonBase, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B" />
+    <ECEntityClass typeName="Base_of_CD">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="C">
+        <BaseClass>Base_of_CD</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="D">
+        <BaseClass>Base_of_CD</BaseClass>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ACD" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="true">
+            <Class class="Base_of_CD" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="BCD" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
+            <Class class="B"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="true">
+            <Class class="Base_of_CD" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RelatedClassPathTests, Unify_ReturnsErrorWhenTargetsDontHaveCommonBase)
+    {
+    ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
+    ECClassCP classB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B");
+    ECClassCP classC = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "C");
+    ECClassCP classD = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "D");
+    ECRelationshipClassCP relACD = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ACD")->GetRelationshipClassCP();
+    ECRelationshipClassCP relBCD = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "BCD")->GetRelationshipClassCP();
+
+    RelatedClassPath path1{
+        RelatedClass(*classC, SelectClass<ECRelationshipClass>(*relACD, "acd"), false, SelectClass<ECClass>(*classA, "a")),
+        };
+    RelatedClassPath path2{
+        RelatedClass(*classD, SelectClass<ECRelationshipClass>(*relBCD, "bcd"), false, SelectClass<ECClass>(*classB, "b")),
+        };
+    RelatedClassPath result;
+    ASSERT_EQ(ERROR, RelatedClassPath::Unify(result, path1, path2));
+    }

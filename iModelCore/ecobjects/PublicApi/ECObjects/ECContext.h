@@ -140,14 +140,15 @@ public:
     //! Adds a schema locater as first to the current context
     //! @param[in] locater  Locater to add to the current context
     void AddFirstSchemaLocater(IECSchemaLocaterR locater) { m_locaters.insert(m_locaters.begin() + 1, &locater); ++m_userAddedLocatersCount; }
-
+    
     //! Removes a schema locater from the current context
     //! @param[in] locater  Locater to remove from the current context
     ECOBJECTS_EXPORT void RemoveSchemaLocater(IECSchemaLocaterR locater);
 
-    //! Adds a file path that should be used to search for a matching schema name
+    //! Adds a file path that should be used to search for a matching schema name. This method prevents adding duplicates if the path is already in the list.
     //! @param[in] path Path to the directory where schemas can be found
-    ECOBJECTS_EXPORT void AddSchemaPath(WCharCP path);
+    //! @param[in] addOnTop If true, the path will be added with the highest priority. Otherwise, it will be added after all existing user-added and searchPath locaters.
+    ECOBJECTS_EXPORT void AddSchemaPath(WCharCP path, bool addOnTop = false);
 
     //! Adds a file path that should be used to search for a matching conversion schemas
     //! @param[in] path Path to the directory where conversion schemas can be found
@@ -160,6 +161,10 @@ public:
     //! Adds the input search paths to a new schema locater added as the last locater in the current list of locaters
     //! @param[in] searchPaths  Directories to search for schemas
     ECOBJECTS_EXPORT void AddFinalSchemaPaths(bvector<WString> const& searchPaths);
+
+    //! Adds the input search paths to a new schema locater added as the first locater in the current list of locaters
+    //! @param[in] searchPaths  Directories to search for schemas
+    ECOBJECTS_EXPORT void AddFirstSchemaPaths(bvector<WString> const& searchPaths);
 
     //! Find the schema matching the schema key and using matchType as the match criteria. This uses the prioritized list of locators to find the schema.
     //! @param[in] key  The SchemaKey that defines the schema (name and version information) that is being looked for
@@ -196,6 +201,9 @@ public:
     //! Clears any aliases in the list of aliases to prune for the input schemaName, does not clear the list of schemas to prune.
     ECOBJECTS_EXPORT void ClearAliasesToPruneForSchema(Utf8StringCR schemaName);
 
+    //! Returns a description of the current setup of this context, useful for logging and troubleshooting
+    ECOBJECTS_EXPORT Utf8String GetDescription() const;
+
     IssueReporter& Issues() { return m_issueReporter; }
 };
 
@@ -222,23 +230,42 @@ struct ECInstanceReadContext : RefCountedBase
 
 private:
     IStandaloneEnablerLocaterP      m_standaloneEnablerLocater;
-    ECSchemaCR                      m_fallBackSchema;
+    // May be null when the caller has no fallback schema to provide (see the
+    // CreateContext(ECSchemaReadContextR, ECSchemaPtr*) overload). Held as a pointer so
+    // the "no fallback" case is representable in the type system; the reference returned
+    // by GetFallBackSchema() preserves the previous public contract.
+    ECSchema const*                 m_fallBackSchema;
     IPrimitiveTypeResolver const*   m_typeResolver;
     IUnitResolver const*            m_unitResolver;
     IECSchemaRemapperCP             m_schemaRemapper;
     IssueReporter                   m_issueReporter;
+    IssueReporter*                  m_sharedIssueReporter = nullptr;    // Use this shared reporter when issues need to be reported across instances
 
 protected:
-    ECInstanceReadContext(IStandaloneEnablerLocaterP standaloneEnablerLocater, ECSchemaCR fallBackSchema, IPrimitiveTypeResolver const* typeResolver) 
+    ECInstanceReadContext(IStandaloneEnablerLocaterP standaloneEnablerLocater, ECSchemaCP fallBackSchema, IPrimitiveTypeResolver const* typeResolver)
         : m_standaloneEnablerLocater (standaloneEnablerLocater), m_fallBackSchema (fallBackSchema), m_typeResolver (typeResolver), m_schemaRemapper (nullptr), m_unitResolver(nullptr)
         {
+        // Pin the fallback schema for the lifetime of this context. Without this retention a
+        // caller that drops their last ECSchemaPtr while still holding the context would
+        // leave m_fallBackSchema dangling - the bug observed by the Microstation connector,
+        // ADO 2054941. Same retain-by-AddRef pattern as StandaloneECRelationshipInstance.
+        if (m_fallBackSchema != nullptr)
+            m_fallBackSchema->AddRef();
         }
+
+    virtual ~ECInstanceReadContext()
+        {
+        if (m_fallBackSchema != nullptr)
+            m_fallBackSchema->Release();
+        }
+
+    void SetSharedIssueReporter(IssueReporter& reporter) { m_sharedIssueReporter = &reporter; }
 
     //! Will be called by ECInstance deserialization to create the ECInstances that it returns.
     //! The default implementation calls GetDefaultStandaloneEnabler() on the ecClass
     ECOBJECTS_EXPORT virtual IECInstancePtr _CreateStandaloneInstance (ECClassCR ecClass);
 
-    virtual ECSchemaCP _FindSchemaCP(SchemaKeyCR key, SchemaMatchType matchType) const = 0;
+    virtual ECObjectsStatus _FindSchemaCP(SchemaKeyCR key, SchemaMatchType matchType, ECSchemaCP& schema) const = 0;
 
 public:
     PrimitiveType   GetSerializedPrimitiveType (PrimitiveECPropertyCR ecprop) const {return m_typeResolver != nullptr ? m_typeResolver->_ResolvePrimitiveType (ecprop) : ecprop.GetType();}
@@ -252,19 +279,28 @@ public:
     void            ResolveSerializedPropertyName (Utf8StringR name, ECClassCR ecClass) const {if (nullptr != m_schemaRemapper) m_schemaRemapper->ResolvePropertyName (name, ecClass); }
     void            ResolveSerializedClassName (Utf8StringR name, ECSchemaCR schema) const    {if (nullptr != m_schemaRemapper) m_schemaRemapper->ResolveClassName (name, schema); }
 
-    ECSchemaCP FindSchemaCP(SchemaKeyCR key, SchemaMatchType matchType) const;
+    ECObjectsStatus FindSchemaCP(SchemaKeyCR key, SchemaMatchType matchType, ECSchemaCP& schema) const;
 
     IECInstancePtr CreateStandaloneInstance(ECClassCR ecClass);
 
-    ECSchemaCR GetFallBackSchema() {return m_fallBackSchema;}
+    //! Returns the fallback schema. Only call this on a context that was constructed with one;
+    //! contexts created via the CreateContext(ECSchemaReadContextR, ECSchemaPtr*) overload have
+    //! no fallback and dereferencing the result is undefined.
+    ECSchemaCR GetFallBackSchema() {return *m_fallBackSchema;}
 
-    IssueReporter& Issues() { return m_issueReporter; }
+    bool       HasFallBackSchema() const {return m_fallBackSchema != nullptr;}
+
+    IssueReporter& Issues() { return m_sharedIssueReporter != nullptr ? *m_sharedIssueReporter : m_issueReporter; }
 public:
     //! - For use when the caller knows the schema of the instance he is deserializing.
     ECOBJECTS_EXPORT static ECInstanceReadContextPtr CreateContext(ECSchemaCR, IStandaloneEnablerLocaterP = nullptr, IPrimitiveTypeResolver const* typeResolver = nullptr);
 
-    //! - For use when the caller does not know the schema of the instance he is deserializing.
+    //! - For use when the caller has a fallback schema to apply if a referenced schema cannot be located.
     ECOBJECTS_EXPORT static ECInstanceReadContextPtr CreateContext(ECSchemaReadContextR, ECSchemaCR fallBackSchema, ECSchemaPtr* foundSchema);
+
+    //! - For use when the caller does not know the schema yet and has no fallback to provide.
+    //! Replaces the historical pattern of passing *nullptr through the ECSchemaCR overload.
+    ECOBJECTS_EXPORT static ECInstanceReadContextPtr CreateContext(ECSchemaReadContextR, ECSchemaPtr* foundSchema);
 
     //! - For use when the caller is deserializing custom attributes and has the container schema for the current instance
     ECOBJECTS_EXPORT static ECInstanceReadContextPtr CreateContextForCA(ECSchemaCR containerSchema, ECSchemaReadContextR schemaContext);

@@ -44,6 +44,15 @@ SchemaReadStatus ReadTypeNameWithPruning(pugi::xml_node node, ECPropertyP prop, 
     // must come after prune check to make sure we don't default to string properties that should be pruned
     if (setTypeStatus == ECObjectsStatus::ParseError && ignoreParseErrors)
         {
+        // Unknown type(s) encountered in a schema for ECXml versions that are 
+        // 'V3_2 <= ECXml version <= Latest'
+        // then we return InvalidECSchemaXml as SchemaReadStatus
+        if (prop->GetClass().GetSchema().OriginalECXmlVersionAtLeast(ECVersion::V3_2) && !prop->GetClass().GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest))
+            {
+            LOG.errorv("Invalid ECSchemaXML: The Property '%s.%s' has a type name '%s' that can not be resolved to a known type.",
+                prop->GetClass().GetFullName(), prop->GetName().c_str(), typeName.c_str());
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
         LOG.warningv ("Defaulting the type of ECProperty '%s' to '%s' in reaction to non-fatal parse error.", prop->GetName().c_str(), prop->GetTypeName().c_str());
         return SchemaReadStatus::Success;
         }
@@ -875,7 +884,7 @@ SchemaReadStatus ECProperty::_ReadXml (pugi::xml_node propertyNode, ECSchemaRead
                 GetClass().GetFullName(),
                 GetName().c_str());
 
-            return SchemaReadStatus::InvalidECSchemaXml;
+            return SchemaReadStatus::Success;
             }
 
         SetCategory(propertyCategory);
@@ -971,7 +980,7 @@ static bool IsCategorySerializable(const ECProperty& prop)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion)
+SchemaWriteStatus ECProperty::_WriteXml (BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion)
     {
     return _WriteXml (xmlWriter, EC_PROPERTY_ELEMENT, ecXmlVersion);
     }
@@ -979,7 +988,7 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXml
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, ECVersion ecXmlVersion, bvector<bpair<Utf8CP, Utf8CP>>* additionalAttributes, bool writeType)
+SchemaWriteStatus ECProperty::_WriteXml (BePugiXmlWriterR xmlWriter, Utf8CP elementName, ECVersion ecXmlVersion, bvector<bpair<Utf8CP, Utf8CP>>* additionalAttributes, bool writeType)
     {
     SchemaWriteStatus status = SchemaWriteStatus::Success;
 
@@ -1065,13 +1074,13 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementN
 //---------------+---------------+---------------+---------------+---------------+-------
 bool ECProperty::_ToJson(BeJsValue outValue, bool isInherited) const
     {
-    return _ToJson(outValue, isInherited, bvector<bpair<Utf8String, Json::Value>>());
+    return _ToJson(outValue, isInherited, BeJsDocument::Null());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-bool ECProperty::_ToJson(BeJsValue outValue, bool isInherited, bvector<bpair<Utf8String, Json::Value>> additionalAttributes) const
+bool ECProperty::_ToJson(BeJsValue outValue, bool isInherited, BeJsConst additionalAttributes) const
     {
     outValue[NAME_ATTRIBUTE] = GetName();
 
@@ -1122,8 +1131,11 @@ bool ECProperty::_ToJson(BeJsValue outValue, bool isInherited, bvector<bpair<Utf
     if (isInherited)
         outValue[ECJSON_INHERITED_ATTRIBUTE] = true;
 
-    for (auto const& attribute : additionalAttributes)
-        outValue[attribute.first].From(attribute.second);
+    additionalAttributes.ForEachProperty([&](Utf8CP name, BeJsConst value)
+        {
+        outValue[name].From(value);
+        return false;
+        });
 
     return true;
     }
@@ -1158,7 +1170,7 @@ SchemaReadStatus PrimitiveECProperty::_ReadXml (pugi::xml_node propertyNode, ECS
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-static SchemaWriteStatus WriteCommonPrimitivePropertyJsonAttributes(bvector<bpair<Utf8String, Json::Value>>& attributes, ECPropertyCP ecProperty)
+static SchemaWriteStatus WriteCommonPrimitivePropertyJsonAttributes(BeJsValue attributes, ECPropertyCP ecProperty)
     {
     PrimitiveArrayECPropertyCP primArrProp = ecProperty->GetAsPrimitiveArrayProperty();
     PrimitiveECPropertyCP primProp = ecProperty->GetAsPrimitiveProperty();
@@ -1166,58 +1178,45 @@ static SchemaWriteStatus WriteCommonPrimitivePropertyJsonAttributes(bvector<bpai
     if (nullptr == primArrProp && nullptr == primProp)
         return SchemaWriteStatus::FailedToCreateJson;
 
-    attributes.push_back(bpair<Utf8String, Json::Value>(TYPE_NAME_ATTRIBUTE, primProp ? primProp->GetTypeFullName() : primArrProp->GetTypeFullName()));
+    attributes[TYPE_NAME_ATTRIBUTE] = primProp ? primProp->GetTypeFullName() : primArrProp->GetTypeFullName();
     if (primProp ? primProp->IsExtendedTypeDefinedLocally() : primArrProp->IsExtendedTypeDefinedLocally())
-        attributes.push_back(bpair<Utf8String, Json::Value>(
-            EXTENDED_TYPE_NAME_ATTRIBUTE,
-            primProp ? primProp->GetExtendedTypeName() : primArrProp->GetExtendedTypeName()
-            ));
+        attributes[EXTENDED_TYPE_NAME_ATTRIBUTE] = primProp ? primProp->GetExtendedTypeName() : primArrProp->GetExtendedTypeName();
 
     ECObjectsStatus status;
 
     if (primProp ? primProp->IsMinimumValueDefined() : primArrProp->IsMinimumValueDefined())
         {
         ECValue minVal;
-        Json::Value tmpJson;
         if (ECObjectsStatus::Success != (status = primProp ? primProp->GetMinimumValue(minVal) : primArrProp->GetMinimumValue(minVal)))
             return SchemaWriteStatus::FailedToCreateJson;
         if (minVal.IsInteger())
-            tmpJson = minVal.GetInteger();
+            attributes[ECJSON_MINIMUM_VALUE_ATTRIBUTE] = minVal.GetInteger();
         else if (minVal.IsLong())
-            tmpJson = Json::Value(minVal.GetLong());
+            attributes[ECJSON_MINIMUM_VALUE_ATTRIBUTE] = minVal.GetLong();
         else if (minVal.IsDouble())
-            tmpJson = minVal.GetDouble();
+            attributes[ECJSON_MINIMUM_VALUE_ATTRIBUTE] = minVal.GetDouble();
         else
             return SchemaWriteStatus::FailedToCreateJson;
-        attributes.push_back(bpair<Utf8String, Json::Value>(ECJSON_MINIMUM_VALUE_ATTRIBUTE, tmpJson));
         }
 
     if (primProp ? primProp->IsMaximumValueDefined() : primArrProp->IsMaximumValueDefined())
         {
         ECValue maxVal;
-        Json::Value tmpJson;
         if (ECObjectsStatus::Success != (status = primProp ? primProp->GetMaximumValue(maxVal) : primArrProp->GetMaximumValue(maxVal)))
             return SchemaWriteStatus::FailedToCreateJson;
         if (maxVal.IsInteger())
-            tmpJson = maxVal.GetInteger();
+            attributes[ECJSON_MAXIMUM_VALUE_ATTRIBUTE] = maxVal.GetInteger();
         else if (maxVal.IsLong())
-            tmpJson = Json::Value(maxVal.GetLong());
+            attributes[ECJSON_MAXIMUM_VALUE_ATTRIBUTE] = maxVal.GetLong();
         else if (maxVal.IsDouble())
-            tmpJson = maxVal.GetDouble();
+            attributes[ECJSON_MAXIMUM_VALUE_ATTRIBUTE] = maxVal.GetDouble();
         else
             return SchemaWriteStatus::FailedToCreateJson;
-        attributes.push_back(bpair<Utf8String, Json::Value>(ECJSON_MAXIMUM_VALUE_ATTRIBUTE, tmpJson));
         }
     if (primProp ? primProp->IsMinimumLengthDefined() : primArrProp->IsMinimumLengthDefined())
-        attributes.push_back(bpair<Utf8String, Json::Value>(
-            ECJSON_MINIMUM_LENGTH_ATTRIBUTE,
-            primProp ? primProp->GetMinimumLength() : primArrProp->GetMinimumLength()
-            ));
+        attributes[ECJSON_MINIMUM_LENGTH_ATTRIBUTE] = primProp ? primProp->GetMinimumLength() : primArrProp->GetMinimumLength();
     if (primProp ? primProp->IsMaximumLengthDefined() : primArrProp->IsMaximumLengthDefined())
-        attributes.push_back(bpair<Utf8String, Json::Value>(
-            ECJSON_MAXIMUM_LENGTH_ATTRIBUTE,
-            primProp ? primProp->GetMaximumLength() : primArrProp->GetMaximumLength()
-            ));
+        attributes[ECJSON_MAXIMUM_LENGTH_ATTRIBUTE] = primProp ? primProp->GetMaximumLength() : primArrProp->GetMaximumLength();
 
     return SchemaWriteStatus::Success;
     }
@@ -1225,7 +1224,7 @@ static SchemaWriteStatus WriteCommonPrimitivePropertyJsonAttributes(bvector<bpai
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus PrimitiveECProperty::_WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion)
+SchemaWriteStatus PrimitiveECProperty::_WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion)
     {
     bvector<bpair<Utf8CP, Utf8CP>> attributes;
 
@@ -1240,7 +1239,7 @@ SchemaWriteStatus PrimitiveECProperty::_WriteXml(BeXmlWriterR xmlWriter, ECVersi
 //---------------+---------------+---------------+---------------+---------------+-------
 bool PrimitiveECProperty::_ToJson(BeJsValue outValue, bool isInherited) const
     {
-    bvector<bpair<Utf8String, Json::Value>> attributes;
+    BeJsDocument attributes;
     WriteCommonPrimitivePropertyJsonAttributes(attributes, this);
     return T_Super::_ToJson(outValue, isInherited, attributes);
     }
@@ -1462,7 +1461,7 @@ SchemaReadStatus StructECProperty::_ReadXml (pugi::xml_node propertyNode, ECSche
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus StructECProperty::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion)
+SchemaWriteStatus StructECProperty::_WriteXml (BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion)
     {
     return T_Super::_WriteXml (xmlWriter, EC_STRUCTPROPERTY_ELEMENT, ecXmlVersion);
     }
@@ -1472,8 +1471,8 @@ SchemaWriteStatus StructECProperty::_WriteXml (BeXmlWriterR xmlWriter, ECVersion
 //---------------+---------------+---------------+---------------+---------------+-------
 bool StructECProperty::_ToJson(BeJsValue outValue, bool isInherited) const
     {
-    bvector<bpair<Utf8String, Json::Value>> attributes;
-    attributes.push_back(bpair<Utf8String, Json::Value>(TYPE_NAME_ATTRIBUTE, GetTypeFullName()));
+    BeJsDocument attributes;
+    attributes[TYPE_NAME_ATTRIBUTE] = GetTypeFullName();
     return T_Super::_ToJson(outValue, isInherited, attributes);
     }
 
@@ -1749,7 +1748,7 @@ SchemaReadStatus ArrayECProperty::_ReadXml (pugi::xml_node propertyNode, ECSchem
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ArrayECProperty::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion)
+SchemaWriteStatus ArrayECProperty::_WriteXml (BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion)
     {
     bvector<bpair<Utf8CP, Utf8CP>> additionalAttributes;
 
@@ -2051,7 +2050,7 @@ SchemaReadStatus PrimitiveArrayECProperty::_ReadXml(pugi::xml_node propertyNode,
 //---------------+---------------+---------------+---------------+---------------+-------
 bool PrimitiveArrayECProperty::_ToJson(BeJsValue outValue, bool isInherited) const
     {
-    bvector<bpair<Utf8String, Json::Value>> attributes;
+    BeJsDocument attributes;
     WriteCommonPrimitivePropertyJsonAttributes(attributes, this);
     return T_Super::_ToJson(outValue, isInherited, attributes);
     }
@@ -2111,8 +2110,8 @@ ECObjectsStatus StructArrayECProperty::_SetTypeName(Utf8StringCR typeName)
 //---------------+---------------+---------------+---------------+---------------+-------
 bool StructArrayECProperty::_ToJson(BeJsValue outValue, bool isInherited) const
     {
-    bvector<bpair<Utf8String, Json::Value>> attributes;
-    attributes.push_back(bpair<Utf8String, Json::Value>(TYPE_NAME_ATTRIBUTE, GetTypeFullName()));
+    BeJsDocument attributes;
+    attributes[TYPE_NAME_ATTRIBUTE] = GetTypeFullName();
     return T_Super::_ToJson(outValue, isInherited, attributes);
     }
 
@@ -2331,7 +2330,7 @@ SchemaReadStatus NavigationECProperty::_ReadXml(pugi::xml_node propertyNode, ECS
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus NavigationECProperty::_WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion)
+SchemaWriteStatus NavigationECProperty::_WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion)
     {
     if (ECVersion::V2_0 == ecXmlVersion)
         return T_Super::_WriteXml(xmlWriter, EC_PROPERTY_ELEMENT, ecXmlVersion);
@@ -2349,13 +2348,10 @@ SchemaWriteStatus NavigationECProperty::_WriteXml(BeXmlWriterR xmlWriter, ECVers
 //---------------+---------------+---------------+---------------+---------------+-------
 bool NavigationECProperty::_ToJson(BeJsValue outValue, bool isInherited) const
     {
-    bvector<bpair<Utf8String, Json::Value>> attributes;
+    BeJsDocument attributes;
 
-    attributes.push_back(bpair<Utf8String, Json::Value>(RELATIONSHIP_NAME_ATTRIBUTE, ECJsonUtilities::FormatClassName(*GetRelationshipClass())));
-
-    ECRelatedInstanceDirection direction = GetDirection();
-    Utf8String directionString;
-    attributes.push_back(bpair<Utf8String, Json::Value>(DIRECTION_ATTRIBUTE, SchemaParseUtils::DirectionToJsonString(direction)));
+    attributes[RELATIONSHIP_NAME_ATTRIBUTE] = ECJsonUtilities::FormatClassName(*GetRelationshipClass());
+    attributes[DIRECTION_ATTRIBUTE] = SchemaParseUtils::DirectionToJsonString(GetDirection());
 
     return T_Super::_ToJson(outValue, isInherited, attributes);
     }

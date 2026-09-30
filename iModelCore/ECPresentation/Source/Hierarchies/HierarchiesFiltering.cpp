@@ -15,15 +15,14 @@ static bvector<ChildNodeSpecificationCP> GetDirectChildNodeSpecifications(NavNod
     bvector<ChildNodeSpecificationCP> nodeSpecs;
     if (!parentNode)
         {
-        IRulesPreprocessor::RootNodeRuleParameters params(TargetTree_MainTree);
         ContainerHelpers::TransformContainer(
             nodeSpecs,
-            rulesPreprocessor.GetRootNodeSpecifications(params),
+            rulesPreprocessor.GetRootNodeSpecifications(),
             [](auto const& ruleSpec){return &ruleSpec.GetSpecification();});
         }
     else
         {
-        IRulesPreprocessor::ChildNodeRuleParameters params(*parentNode, TargetTree_MainTree);
+        IRulesPreprocessor::ChildNodeRuleParameters params(*parentNode);
         ContainerHelpers::TransformContainer(
             nodeSpecs,
             rulesPreprocessor.GetChildNodeSpecifications(params),
@@ -117,7 +116,7 @@ static NavNodeCPtr CreateFakeInstanceNode(
     NavNodeCP parentNode
 )
     {
-    auto node = props.GetNodesFactory().CreateECInstanceNode(props.GetSchemaHelper().GetConnection(), 
+    auto node = props.GetNodesFactory().CreateECInstanceNode(props.GetSchemaHelper().GetConnection(),
         specificationHash, nullptr, classId, ECInstanceId(), *LabelDefinition::Create());
     if (parentNode)
         NavNodeExtendedData(*node).SetVirtualParentIds({ parentNode->GetNodeId() });

@@ -586,7 +586,7 @@ int CSwriteDatumCatalog (struct csDatumCatalog_ *__This,Const char *path)
 	extern char csErrnam [];
 
 	char *cp;
-	FILE *catFstr;
+	csFILE *catFstr;
 	struct csDatumCatalogEntry_* entryPtr;
 	char newDir [csMAXPATH];
 	char baseDir [csMAXPATH];
@@ -622,7 +622,7 @@ int CSwriteDatumCatalog (struct csDatumCatalog_ *__This,Const char *path)
 	for (entryPtr = __This->listHead;entryPtr != NULL;entryPtr = entryPtr->next)
 	{
 		CSwriteDatumCatalogEntry (entryPtr,catFstr,baseDir);
-		if (ferror (catFstr))
+		if (CS_ferror (catFstr))
 		{
 			CS_stncp (csErrnam,newDir,MAXPATH);
 			CS_erpt (cs_IOERR);
@@ -921,7 +921,16 @@ struct csDatumCatalogEntry_* CSgetDatumCatalogEntry (struct csDatumCatalog_ *__T
 /******************************************************************************
 	Datum catalog 'Entry' constructor.
 */
+#ifdef GEOCOORD_ENHANCEMENT
 struct csDatumCatalogEntry_* CSnewDatumCatalogEntry (Const char* path,short relative,long32_t bufferSize,ulong32_t flags,double density)
+{
+	return CSnewDatumCatalogEntry2(path, relative, bufferSize, flags, density, verticalDatumGridFormatUnknown);
+}
+
+struct csDatumCatalogEntry_* CSnewDatumCatalogEntry2 (Const char* path,short relative,long32_t bufferSize,ulong32_t flags,double density,enum VerticalDatumGridFormat gridFormat)
+#else
+struct csDatumCatalogEntry_* CSnewDatumCatalogEntry (Const char* path,short relative,long32_t bufferSize,ulong32_t flags,double density)
+#endif
 {
 	extern char cs_DirsepC;
 	extern char cs_ExtsepC;
@@ -967,6 +976,9 @@ struct csDatumCatalogEntry_* CSnewDatumCatalogEntry (Const char* path,short rela
 	__This->flags = flags;
 	__This->density = density;
 	__This->relative = relative;
+#ifdef GEOCOORD_ENHANCEMENT
+	__This->gridFormat = gridFormat;
+#endif
 	return __This;
 
 error:

@@ -560,6 +560,16 @@ TEST_F (LiteralExpressionTests, MiscSymbols)
 #undef TEST_PATH_SEP
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(LiteralExpressionTests, ReturnsErrorOnNonExistingProperty)
+    {
+    auto a = CreateInstanceA(0);
+    EvaluationResult result;
+    ExpressionStatus status = EvaluateExpression(result, "this.DoesNotExist.X", *a);
+    EXPECT_EQ(ExpressionStatus::UnknownSymbol, status);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct

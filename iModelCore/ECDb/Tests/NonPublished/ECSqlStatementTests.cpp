@@ -8,6 +8,7 @@
 #include <cmath>
 #include <algorithm>
 #include <set>
+#include <thread>
 #include <BeRapidJson/BeRapidJson.h>
 
 #define CLASS_ID(S,C) (int)m_ecdb.Schemas().GetClassId( #S, #C, SchemaLookupMode::AutoDetect).GetValueUnchecked()
@@ -114,19 +115,347 @@ TEST_F(ECSqlStatementTestFixture, CTECrash) {
         ASSERT_STREQ( stmt.GetNativeSql(), "WITH RECURSIVE F(A) AS (SELECT 1),S(A) AS (SELECT F.A FROM F UNION SELECT 1 FROM S WHERE S.A=1)\nSELECT S.A FROM S");
     }
 }
+
+/*---------------------------------------------------------------------------------**//**
+* Regression test: a compound (UNION/EXCEPT/INTERSECT) select whose branches have a
+* different number of columns must be rejected with an error instead of crashing.
+* The column count mismatch is only validated during preparation, so type resolution
+* used to index the select clause of the other branches out of bounds.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECSqlStatementTestFixture, CompoundSelectWithMismatchingColumnCount) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("compound_select_column_count_mismatch.ecdb"));
+
+    Utf8CP ecsqls[] = {
+        "SELECT b FROM (SELECT NULL a, NULL b UNION ALL SELECT 1)",
+        "SELECT b FROM (SELECT 1 a, NULL b UNION ALL SELECT 1)",
+        "SELECT b FROM (SELECT ? a, ? b UNION ALL SELECT 1)",
+        "SELECT * FROM (SELECT NULL a, NULL b UNION ALL SELECT 1)",
+        "SELECT x.b FROM (SELECT NULL a, NULL b UNION ALL SELECT 1) x",
+        "SELECT b FROM (SELECT NULL a, NULL b UNION ALL SELECT 1 UNION ALL SELECT 1,2)",
+        "SELECT b FROM (SELECT NULL a, NULL b EXCEPT SELECT 1)",
+        "SELECT b FROM (SELECT NULL a, NULL b INTERSECT SELECT 1)",
+        "SELECT b FROM (SELECT NULL a, NULL b UNION ALL SELECT 1) ORDER BY b",
+        "WITH cte AS (SELECT NULL a, NULL b UNION ALL SELECT 1) SELECT b FROM cte",
+        "WITH cte AS (SELECT NULL a, NULL b UNION ALL SELECT 1) SELECT * FROM cte",
+        "WITH cte(x,y) AS (SELECT NULL, NULL UNION ALL SELECT 1) SELECT * FROM cte",
+        };
+
+    for (Utf8CP ecsql : ecsqls) {
+        ECSqlStatement stmt;
+        // must not crash, and must not succeed
+        ASSERT_NE(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql)) << ecsql;
+    }
+
+    // A select clause item that resolves to no type at all is folded into a NULL literal during
+    // preparation, which discards the subquery before its branches are ever prepared. The compound
+    // arity is therefore validated while parsing, so even these must be rejected.
+    Utf8CP foldedToNullEcsqls[] = {
+        "SELECT (SELECT b FROM (SELECT NULL a, NULL b UNION ALL SELECT 1))",
+        "SELECT (SELECT b FROM (SELECT NULL a, NULL b UNION ALL SELECT 1)) FROM (SELECT 1 z)",
+        };
+
+    for (Utf8CP ecsql : foldedToNullEcsqls) {
+        ECSqlStatement stmt;
+        ASSERT_NE(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql)) << ecsql;
+    }
+
+    // well formed compound selects must keep preparing, including the NULL folding shapes
+    Utf8CP validEcsqls[] = {
+        "SELECT (SELECT b FROM (SELECT NULL a, NULL b))",
+        "SELECT b FROM (SELECT NULL a, NULL b UNION ALL SELECT 1, 2)",
+        "SELECT * FROM (SELECT NULL a, NULL b UNION ALL SELECT 1, 2)",
+        "WITH cte AS (SELECT NULL a, NULL b UNION ALL SELECT 1, 2) SELECT b FROM cte",
+        "SELECT b FROM (SELECT NULL a, NULL b UNION ALL SELECT 1, 2 UNION ALL SELECT 3, 4)",
+        };
+
+    for (Utf8CP ecsql : validEcsqls) {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql)) << ecsql;
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* Regression test: the scanner reads the statement in blocks, so the read position usually
+* already sits at the end of the statement while the lexer is still somewhere in the middle.
+* Lexer errors must still report the offending text, which is taken from the scan position.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECSqlStatementTestFixture, InvalidSymbolReportsOffendingText) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("syntax_error_context.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="Foo" modifier="Sealed">
+                <ECProperty propertyName="I" typeName="int"/>
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    TestIssueListener listener;
+    m_ecdb.AddIssueListener(listener);
+
+    // The reported issue is "Failed to parse ECSQL '<ecsql>': <parser error>" and therefore always
+    // repeats the ECSQL itself. Only the parser error after it carries the scanner diagnostic.
+    auto parserError = [&] (Utf8CP ecsql) -> Utf8String {
+        Utf8String message = listener.GetLastMessage();
+        Utf8String echoedEcsql(ecsql);
+        const size_t ecsqlEnd = message.find(echoedEcsql);
+        return ecsqlEnd == Utf8String::npos ? message : Utf8String(message.substr(ecsqlEnd + echoedEcsql.size()));
+        };
+
+    // '#' is not part of the ECSQL grammar, so the lexer reports it as an invalid symbol and
+    // appends the offending text up to the next space. That text is only appended when the
+    // scanner still sees itself inside the statement, which after a block read is only true
+    // for the scan position and no longer for the read position.
+    {
+    Utf8CP ecsql = "SELECT I FROM ts.Foo WHERE I #ZZQQ 1";
+    ECSqlStatement stmt;
+    ASSERT_NE(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+    Utf8String error = parserError(ecsql);
+    ASSERT_TRUE(error.Contains("Invalid symbol")) << "expected an invalid symbol error, but was: " << listener.GetLastMessage().c_str();
+    ASSERT_TRUE(error.Contains("#ZZQQ")) << "error must name the offending text, but was: " << listener.GetLastMessage().c_str();
+    }
+
+    listener.ClearIssues();
+    {
+    // the offending text sits far from the end of the statement, so the read position and the
+    // scan position differ by a lot
+    Utf8CP ecsql = "SELECT I FROM ts.Foo WHERE I #ZZQQ 1 AND I <> 2 AND I <> 3 AND I <> 4 AND I <> 5";
+    ECSqlStatement stmt;
+    ASSERT_NE(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+    Utf8String error = parserError(ecsql);
+    ASSERT_TRUE(error.Contains("Invalid symbol")) << "expected an invalid symbol error, but was: " << listener.GetLastMessage().c_str();
+    ASSERT_TRUE(error.Contains("#ZZQQ")) << "error must name the offending text, but was: " << listener.GetLastMessage().c_str();
+    }
+
+    listener.ClearIssues();
+    {
+    // The offending text used to be collected into a file static char buffer whose growth path
+    // advanced the static pointer itself, so anything past the initial 256 characters wrote out
+    // of bounds and the buffer was then freed through an interior pointer.
+    Utf8String longToken(300, 'Z');
+    Utf8String ecsqlStr("SELECT I FROM ts.Foo WHERE I #");
+    ecsqlStr.append(longToken).append(" 1");
+    Utf8CP ecsql = ecsqlStr.c_str();
+    ECSqlStatement stmt;
+    ASSERT_NE(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+    Utf8String error = parserError(ecsql);
+    ASSERT_TRUE(error.Contains("Invalid symbol")) << "expected an invalid symbol error, but was: " << listener.GetLastMessage().c_str();
+    ASSERT_TRUE(error.Contains(longToken)) << "error must name the whole offending text, but was: " << listener.GetLastMessage().c_str();
+    }
+
+    m_ecdb.RemoveIssueListener();
+}
+
+/*---------------------------------------------------------------------------------**//**
+* Regression test: the scanner used to keep its reentrancy flag and its error text buffer in
+* file statics, but ECSQL is parsed on many threads at once. Concurrent lexer errors must not
+* clear each other's state or share a buffer.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECSqlStatementTestFixture, ConcurrentInvalidSymbolPrepares) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("concurrent_syntax_error.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="Foo" modifier="Sealed">
+                <ECProperty propertyName="I" typeName="int"/>
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    m_ecdb.SaveChanges();
+    BeFileName ecdbFile(m_ecdb.GetDbFileName());
+
+    const int threadCount = 8;
+    std::vector<std::thread> threads;
+    for (int i = 0; i < threadCount; ++i)
+        {
+        threads.push_back(std::thread([&ecdbFile] ()
+            {
+            ECDb ecdb;
+            ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbFile, Db::OpenParams(Db::OpenMode::Readonly)));
+            // long offending text so every thread drives the error buffer well past its initial size
+            Utf8String ecsql("SELECT I FROM ts.Foo WHERE I #");
+            ecsql.append(Utf8String(300, 'Z')).append(" 1");
+            for (int n = 0; n < 25; ++n)
+                {
+                ECSqlStatement stmt;
+                ASSERT_NE(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str()));
+                }
+            ecdb.CloseDb();
+            }));
+        }
+
+    for (std::thread& thread : threads)
+        thread.join();
+}
+
+/*---------------------------------------------------------------------------------**//**
+* Regression test: the lexer used to be handed a single character per read, which made it
+* shift the pending token back to the start of its buffer for every character. That is
+* quadratic in the length of a single token, so a large identifier or string literal
+* effectively hung the parser. Parsing must stay linear and must stay correct.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECSqlStatementTestFixture, PrepareWithVeryLongTokens) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("long_tokens.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="Foo" modifier="Sealed">
+                <ECProperty propertyName="I" typeName="int"/>
+                <ECProperty propertyName="S" typeName="string"/>
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    const size_t tokenLength = 1000 * 1000;
+
+    StopWatch timer(true);
+    {
+    // an unknown identifier, so preparation fails, but it must fail quickly
+    ECSqlStatement stmt;
+    Utf8String ecsql("SELECT [");
+    ecsql.append(tokenLength, 'A').append("] FROM ts.Foo");
+    ASSERT_NE(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str()));
+    }
+    {
+    ECSqlStatement stmt;
+    Utf8String ecsql("SELECT '");
+    ecsql.append(tokenLength, 'x').append("'");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str()));
+    }
+    timer.Stop();
+
+    // the quadratic behaviour took many minutes at this size, linear is well under a second
+    ASSERT_LT(timer.GetElapsedSeconds(), 30.0) << "parsing " << tokenLength << " character tokens took " << timer.GetElapsedSeconds() << "s";
+
+    // long tokens must also still be scanned correctly
+    Utf8String longValue(100 * 1000, 'y');
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Foo(I,S) VALUES(1,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, longValue.c_str(), IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    {
+    // a long string literal embedded in the ECSql text itself
+    ECSqlStatement stmt;
+    Utf8String ecsql("SELECT I FROM ts.Foo WHERE S='");
+    ecsql.append(longValue).append("'");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(1, stmt.GetValueInt(0));
+    }
+    {
+    // named parameters are located from the scan position, which the block reader changed
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT I FROM ts.Foo WHERE S=:p AND I=:i"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(stmt.GetParameterIndex("p"), longValue.c_str(), IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(stmt.GetParameterIndex("i"), 1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(1, stmt.GetValueInt(0));
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECSqlStatementTestFixture, CTEWithAComment) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("CTEWithAComment.ecdb"));
+
+    const auto sqlTemplate = R"(
+        WITH ce(TestColumn1, TestColumn2) AS (
+            %s
+        ) SELECT * FROM ce)";
+
+    for (const auto& [testCaseNumber, expectedSecondColumnValue, ecSqlQuery] : std::vector<std::tuple<int, Utf8String, std::string>>{
+        std::make_tuple(1, "TestColumn",
+            R"(
+                -- comment
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1
+            )"),
+        std::make_tuple(2, "TestColumn",
+            R"(
+                -- multi
+                -- line
+                -- comment
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1
+            )"),
+        std::make_tuple(3, "TestColumn",
+            R"(
+                -- multi
+                -- line
+                -- comment()
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1
+            )"),
+        std::make_tuple(4, "TestColumn",
+            R"(
+                /* comment) */
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1
+            )"),
+        std::make_tuple(5, "TestColumn",
+            R"(
+                // calling function()
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1
+            )"),
+        std::make_tuple(6, "TestColumn",
+            R"(
+                -- calling function()
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1
+            )"),
+        std::make_tuple(7, "TestColumn",
+            R"(
+                /* comment */
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1
+            )"),
+        std::make_tuple(8, "TestColumn",
+            R"(
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1 -- comment)
+            )"),
+        std::make_tuple(9, "TestColumn",
+            R"(
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1 /* comment) */
+            )"),
+        std::make_tuple(10, "invalid -- column",
+            R"(
+                SELECT 1, 'invalid -- column' AS TestColumn FROM meta.ECClassDef LIMIT 1
+            )"),
+        std::make_tuple(11, "text with ) parenthesis",
+            R"(
+                SELECT 1, 'text with ) parenthesis' AS TestColumn FROM meta.ECClassDef LIMIT 1 -- real comment
+            )"),
+        std::make_tuple(12, "text /* not a comment */",
+            R"(
+                SELECT 1, 'text /* not a comment */' AS TestColumn FROM meta.ECClassDef LIMIT 1
+            )"),
+        std::make_tuple(13, "comment)",
+            R"(
+                SELECT 1, 'comment)' AS TestColumn FROM meta.ECClassDef LIMIT 1 -- called from function XYZ()
+            )"),
+        std::make_tuple(14, "TestColumn",
+            R"(
+                SELECT /* Primary Key (class Id) */ 1, /* Class Name */ 'TestColumn' FROM meta.ECClassDef LIMIT 1
+            )"),
+        std::make_tuple(15, "TestColumn",
+            R"(
+                SELECT 1,
+                'TestColumn' /* multiline
+                comment */ FROM meta.ECClassDef LIMIT 1
+            )"),
+    }) {
+        const auto errorMessage = Utf8PrintfString("Test case number: %d failed.", testCaseNumber);
+
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString(sqlTemplate, ecSqlQuery.c_str()))) << errorMessage;
+
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step()) << errorMessage;
+        EXPECT_EQ(1, stmt.GetValueInt(0)) << errorMessage;
+        EXPECT_STREQ(expectedSecondColumnValue.c_str(), stmt.GetValueText(1)) << errorMessage;
+        
+        EXPECT_EQ(BE_SQLITE_DONE, stmt.Step()) << errorMessage;
+    }
+}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSqlStatementTestFixture, DisableFunction) {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("disabledFunc.ecdb"));
-    struct IssueListener: ECN::IIssueListener {
-        mutable bvector<Utf8String> m_issues;
-        void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message) const override {
-            m_issues.push_back(message);
-        }
-        Utf8String const& GetLastError() const { return m_issues.back();}
-    };
-    IssueListener listener;
+    TestIssueListener listener;
     m_ecdb.AddIssueListener(listener);
 
     auto getExpectedErrorMessage =[](Utf8String functionName) -> Utf8String {
@@ -137,14 +466,14 @@ TEST_F(ECSqlStatementTestFixture, DisableFunction) {
 
         //TEST A - Just prepare ecsql as is to verify it can be prepared.
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str())) << "ECSQL should succeed without disabling the function"
-            << "\nECDb (err)" << listener.GetLastError().c_str();
+            << "\nECDb (err)" << listener.GetLastMessage().c_str();
         stmt.Finalize();
 
         //TEST B - Disable function and prepare the ecsql, with expectation that it will fail and puts out a expected error message.
         m_ecdb.GetECSqlConfig().GetDisableFunctions().Add(disableFunc);
         ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, ecsql.c_str())) << "ECSQL should now fail when function is disabled";
         Utf8String erroMessageExpected = getExpectedErrorMessage(functionNameInECSql);
-        ASSERT_STREQ(listener.GetLastError().c_str(), erroMessageExpected.c_str()) << "Perpare should fail with expected error message";
+        ASSERT_STREQ(listener.GetLastMessage().c_str(), erroMessageExpected.c_str()) << "Perpare should fail with expected error message";
         stmt.Finalize();
 
         //TEST C - ReEnable the function and reprepare the ecsql and expect it to be successful
@@ -263,6 +592,28 @@ TEST_F(ECSqlStatementTestFixture, MultilineStringLiteralOrName) {
         ASSERT_STRCASEEQ(stmt.GetValueText(0), "{\"id\":\"SelectStatementExp\",\"select\":{\"id\":\"RowConstructor\",\"values\":[{\"id\":\"DerivedPropertyExp\",\"exp\":{\"id\":\"LiteralValueExp\",\"kind\":\"RAW\",\"value\":\"1\"}},{\"id\":\"DerivedPropertyExp\",\"exp\":{\"id\":\"LiteralValueExp\",\"kind\":\"RAW\",\"value\":\"2\"}},{\"id\":\"DerivedPropertyExp\",\"exp\":{\"id\":\"LiteralValueExp\",\"kind\":\"RAW\",\"value\":\"3\"}},{\"id\":\"DerivedPropertyExp\",\"exp\":{\"id\":\"LiteralValueExp\",\"kind\":\"RAW\",\"value\":\"4\"}}]}}");
     }
 }
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, NestedQueriesWithoutAlias)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("NestedQueriesWithoutAlias.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2" schemaName="AllProperties" alias="aps" version="01.00.00">
+                        <ECEntityClass typeName="TestElement" modifier="None">
+                            <BaseClass>IPrimitive</BaseClass>
+                        </ECEntityClass>
+                        <ECEntityClass typeName="IPrimitive" modifier="Abstract">
+                            <ECProperty propertyName="p2d" typeName="point2d"/>
+                        </ECEntityClass>
+                </ECSchema>)xml")));
+
+    ECSqlStatement stmt;
+    //Nested queries with multiple levels of subqueries without aliases are currently not supported and will fail to prepare.
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT p2d.X FROM (SELECT * FROM (SELECT * FROM aps.TestElement))"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "select p2d.X from (with tmp as (SELECT e.p2d FROM aps.TestElement e LIMIT 1) select p2d from tmp)"));
+
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -466,7 +817,7 @@ TEST_F(ECSqlStatementTestFixture, SelectAsterisk)
     auto retrieveRow = [] (ECSqlStatement const& stmt)
         {
         JsonValue json;
-        json.m_value = Json::Value(Json::objectValue);
+        json.m_value.toObject();
         for (int i = 0; i < stmt.GetColumnCount(); i++)
             {
             if (stmt.IsValueNull(i))
@@ -475,13 +826,12 @@ TEST_F(ECSqlStatementTestFixture, SelectAsterisk)
             ECSqlColumnInfo const& colInfo = stmt.GetColumnInfo(i);
             Utf8String colName = colInfo.GetPropertyPath().ToString();
 
-            Json::Value& memberJson = json.m_value[colName.c_str()];
             if (colInfo.GetDataType().IsNavigation())
-                memberJson = Json::Value(stmt.GetValueNavigation<ECInstanceId>(i).GetValue());
+                json.m_value[colName.c_str()] = (int64_t)stmt.GetValueNavigation<ECInstanceId>(i).GetValue();
             if (colInfo.GetDataType() == PRIMITIVETYPE_Integer || colInfo.GetDataType() == PRIMITIVETYPE_Long)
-                memberJson = Json::Value(stmt.GetValueInt64(i));
+                json.m_value[colName.c_str()] = stmt.GetValueInt64(i);
             else if (colInfo.GetDataType() == PRIMITIVETYPE_String)
-                memberJson = Json::Value(stmt.GetValueText(i));
+                json.m_value[colName.c_str()] = stmt.GetValueText(i);
             }
 
         return json;
@@ -1541,6 +1891,113 @@ TEST_F(ECSqlStatementTestFixture, IsNull)
         }
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ECSqlStatementTestFixture, UseOfWrongPropertyTags_ForAllVersions)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("UseOfWrongPropertyTags.ecdb"));
+
+    unsigned int ecXmlMajorVersion;
+    unsigned int ecXmlMinorVersion;
+    EXPECT_EQ(ECObjectsStatus::Success, ECSchema::ParseECVersion(ecXmlMajorVersion, ecXmlMinorVersion, ECVersion::Latest));
+
+    //Below schema uses ECProperty tag for Struct property which is wrong. It should use ECStructProperty tag.
+    Utf8CP xmlSchema = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.%d.%d">
+                                    <ECStructClass typeName="PrimStruct">
+                                        <ECProperty propertyName="p2d" typeName="Point2d" />
+                                        <ECProperty propertyName="p3d" typeName="Point3d" />
+                                    </ECStructClass>
+                                    <ECEntityClass typeName="UseOfWrongPropertyTags">
+                                        <ECProperty propertyName="Struct" typeName="PrimStruct" />
+                                        <ECStructArrayProperty propertyName="Struct_Array" typeName="PrimStruct" />
+                                    </ECEntityClass>
+                            </ECSchema>)xml";
+
+    //Below schema uses ECProperty tag for Struct property which is wrong. It should use ECStructProperty tag.
+    //Declaring separate xmlSchema for version 2.0 since, previous versions had different xml schema format.
+    Utf8CP xmlSchemaFor_V2_0 = R"xml(<ECSchema schemaName="TestSchema" version="1.0" nameSpacePrefix="test" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                                        <ECClass typeName="PrimStruct" isStruct = "true">
+                                            <ECProperty propertyName="i" typeName="int" />
+                                            <ECArrayProperty propertyName="I" typeName="int" />
+                                        </ECClass>
+                                        <ECClass typeName="UseOfWrongPropertyTags">
+                                            <ECProperty propertyName="Struct" typeName="PrimStruct" />
+                                        </ECClass>
+                                    </ECSchema>)xml";
+    
+    //Below schema uses ECProperty tag for Struct property which is wrong. It should use ECStructProperty tag.
+    //Declaring separate xmlSchema for version 3.0 since, previous versions had different xml schema format.
+    Utf8CP xmlSchemaFor_V3_0 = R"xml(<ECSchema schemaName="TestSchema" version="1.0" nameSpacePrefix="test" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+                                        <ECStructClass typeName="PrimStruct">
+                                            <ECProperty propertyName="p2d" typeName="Point2d" />
+                                            <ECArrayProperty propertyName="p3d" typeName="Point3d" />
+                                        </ECStructClass>
+                                        <ECEntityClass typeName="UseOfWrongPropertyTags">
+                                            <ECProperty propertyName="Struct" typeName="PrimStruct" />
+                                            <ECStructArrayProperty propertyName="Struct_Array" typeName="PrimStruct" />
+                                        </ECEntityClass>
+                                    </ECSchema>)xml";
+
+    for (const auto& [testCaseNumber, majorVersion, minorVersion, xmlSchemaVar, deserializationStatus, importStatus, schemaReadStatus, schemaImportResult] : std::vector<std::tuple<unsigned int, unsigned int, unsigned int, Utf8CP, bool, bool, SchemaReadStatus, SchemaImportResult>>
+        {
+        { 1, 2U, 0U, xmlSchemaFor_V2_0, true , true, SchemaReadStatus::Success, SchemaImportResult::OK },  // Older versions on encountering wrong property type default to a safe type in this case, "string"
+        { 2, 3U, 0U, xmlSchemaFor_V3_0, true , true, SchemaReadStatus::Success, SchemaImportResult::OK },  // Older versions on encountering wrong property type default to a safe type in this case, "string"
+        { 3, 3U, 1U, xmlSchema, true , true, SchemaReadStatus::Success, SchemaImportResult::OK },  // Older versions on encountering wrong property type default to a safe type in this case, "string"
+        { 4, ecXmlMajorVersion, ecXmlMinorVersion, xmlSchema, false , false, SchemaReadStatus::InvalidECSchemaXml, SchemaImportResult::ERROR }, // Current version should always log an error on encountering wrong property type with no deserialization and import
+        { 5, ecXmlMajorVersion, ecXmlMinorVersion + 1U, xmlSchema, true , false, SchemaReadStatus::Success, SchemaImportResult::ERROR }, // Future versions should deserialize successfully, default to a safe type but, import should fail
+        })
+        {
+        ECSchemaPtr schema;
+        const auto context = ECSchemaReadContext::CreateContext();
+        
+        // Schema should always be deserialized successfully irrespective of the ECXml version
+        if (deserializationStatus)
+        {
+        ASSERT_EQ(schemaReadStatus, ECSchema::ReadFromXmlString(schema, Utf8PrintfString(xmlSchemaVar, majorVersion, minorVersion).c_str(), *context)) << "Test case number : " << testCaseNumber << " failed at deserializing.";
+        ASSERT_EQ(deserializationStatus, schema.IsValid()) << "Test case number : " << testCaseNumber << " failed due to invalid schemas.";
+        }
+        else 
+        {
+        // But, schemas having unknown wrong property types with ecxml versions belonging to [V3_2, Latest] inclusive, should fail to deserialize
+        ASSERT_EQ(schemaReadStatus, ECSchema::ReadFromXmlString(schema, Utf8PrintfString(xmlSchemaVar, majorVersion, minorVersion).c_str(), *context)) << "Test case number : " << testCaseNumber << " failed since, a schema with wrong property type shouldn't deserialize for " << ecXmlMajorVersion << "." << ecXmlMinorVersion;
+        ASSERT_EQ(deserializationStatus, schema.IsValid()) << "Test case number : " << testCaseNumber << " failed since, a schema with wrong property type shouldn't deserialize for " << ecXmlMajorVersion << "." << ecXmlMinorVersion;
+        }
+         
+        // Checking if the wrong property types are defaulted to string type
+        if (deserializationStatus)
+            {
+            // Fetching the class pointer 
+            auto classP = schema->GetClassCP("UseOfWrongPropertyTags");
+            ASSERT_TRUE(classP) << "Test case : " << testCaseNumber << " failed to fetch class pointer.";
+            // Fetching the property pointer
+            auto propP = classP->GetPropertyByIndex(0);
+            ASSERT_TRUE(propP) << "Test case : " << testCaseNumber << " failed to fetch property pointer.";
+            // Fetching property as primitive property
+            auto primProp = propP->GetAsPrimitiveProperty();
+            ASSERT_TRUE(primProp) << "Test case failed : " << testCaseNumber << " failed to fetch the primitive property";
+            // Checking for equality of primivite property type to string
+            auto propType = primProp->GetType();
+            EXPECT_EQ(PRIMITIVETYPE_String, propType) << "Test case failed : " << testCaseNumber << " did not default to string type.";
+            }
+
+        
+        // Schema import should fail when ECXml version of the schema is greater than the current version that the ECDb supports
+        if (importStatus)
+        {
+        EXPECT_EQ(schemaImportResult, m_ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas())) << "Test case number : " << testCaseNumber << " failed to import schema.";
+        EXPECT_EQ(importStatus, m_ecdb.Schemas().GetSchema("TestSchema") != nullptr)<< "Test case number : " << testCaseNumber << " failed at fetching the schema.";
+        }
+        else
+        {
+        //But, import should also fail when the schema has wrong property types with ECXml versions belonging to [V3_2, Latest] inclusive
+        EXPECT_EQ(schemaImportResult, m_ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas())) << "Test case number : " << testCaseNumber << " failed since, a schema with wrong property type shouldn't import for " << ecXmlMajorVersion << "." << ecXmlMinorVersion;
+        EXPECT_EQ(importStatus, m_ecdb.Schemas().GetSchema("TestSchema") != nullptr)<< "Test case number : " << testCaseNumber << " failed since, a schema with wrong property type shouldn't import for " << ecXmlMajorVersion << "." << ecXmlMinorVersion;
+        }
+        
+        m_ecdb.AbandonChanges();
+        }
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -3985,6 +4442,135 @@ TEST_F(ECSqlStatementTestFixture, WrapWhereClauseInParams)
     ASSERT_TRUE(nativeSql.find("WHERE ([Customer].[Country]='USA' OR [Customer].[Country]='DUBAI' AND [Customer].[ContactTitle]='AM')") != nativeSql.npos);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECSqlStatementTestFixture, IsAndIsNotOperatorNullSafeSemantics)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IsOperatorSemantics.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+              <ECEnumeration typeName="Status" backingTypeName="int" isStrict="true">
+                <ECEnumerator name="Active" value="1" />
+                <ECEnumerator name="Inactive" value="2" />
+              </ECEnumeration>
+              <ECEntityClass typeName="Foo" modifier="None">
+                <ECProperty propertyName="S1" typeName="string" />
+                <ECProperty propertyName="S2" typeName="string" />
+                <ECProperty propertyName="Status" typeName="Status" />
+                <ECStructProperty propertyName="Info" typeName="Info" />
+                <ECProperty propertyName="P1" typeName="point3d" />
+              </ECEntityClass>
+              <ECStructClass typeName="Info" modifier="None">
+                <ECProperty propertyName="Code" typeName="string" />
+              </ECStructClass>
+            </ECSchema>)xml")));
+
+    // (S1, S2): equal-nonnull, different, both-null, one-null, the-other-null
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Foo(S1,S2,Status,Info.Code) VALUES('a','a',ts.Status.Active,'a')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Foo(S1,S2,Status,Info.Code) VALUES('a','b',ts.Status.Inactive,'b')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Foo(S1,S2,Status,Info.Code) VALUES(NULL,NULL,ts.Status.Active,NULL)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Foo(S1,S2,Status,Info.Code) VALUES(NULL,'b',NULL,'b')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Foo(S1,S2,Status,Info.Code) VALUES('a',NULL,ts.Status.Active,NULL)"));
+
+    auto count = [this](Utf8CP whereClause) -> int
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT COUNT(*) FROM ts.Foo WHERE %s", whereClause).c_str())) << whereClause;
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step()) << whereClause;
+        return stmt.GetValueInt(0);
+        };
+
+    // same as 'count' but with an explicit range alias 'f', so 'f.<prop>' references can be used
+    auto countAliased = [this](Utf8CP whereClause) -> int
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT COUNT(*) FROM ts.Foo f WHERE %s", whereClause).c_str())) << whereClause;
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step()) << whereClause;
+        return stmt.GetValueInt(0);
+        };
+
+    // null-safe equality: matches ('a','a') and (NULL,NULL)
+    EXPECT_EQ(2, count("S1 IS S2"));
+    // null-safe inequality: matches ('a','b'), (NULL,'b'), ('a',NULL)
+    EXPECT_EQ(3, count("S1 IS NOT S2"));
+    // contrast: regular '=' treats NULL comparisons as unknown -> only ('a','a')
+    EXPECT_EQ(1, count("S1 = S2"));
+    // NULL literal operand on either side
+    EXPECT_EQ(2, count("S1 IS NULL"));
+    EXPECT_EQ(3, count("S1 IS NOT NULL"));
+    EXPECT_EQ(2, count("NULL IS S2"));
+
+    // the operands may be any value expression, not just a column or NULL literal:
+    // string literal on the right-hand side
+    EXPECT_EQ(3, count("S1 IS 'a'"));
+    EXPECT_EQ(2, count("S1 IS NOT 'a'"));
+    // function call on the right-hand side (LOWER(S2) equals S2 for these lowercase values)
+    EXPECT_EQ(2, count("S1 IS LOWER(S2)"));
+    EXPECT_EQ(3, count("S1 IS NOT LOWER(S2)"));
+    // function call on the left-hand side
+    EXPECT_EQ(2, count("LOWER(S1) IS S2"));
+    // a parenthesized unqualified name is a value expression here, not a type predicate
+    EXPECT_EQ(2, count("S1 IS (S2)"));
+    // a parenthesized *qualified* property reference '(alias.prop)' is likewise a value expression
+    // (null-safe comparison), not the '(ClassName)' type predicate: the name does not resolve to a
+    // class, so it is reread as the property 'alias.prop'.
+    EXPECT_EQ(2, count("S1 IS (Foo.S2)"));        // implicit class-name range qualifier
+    EXPECT_EQ(3, count("S1 IS NOT (Foo.S2)"));
+    EXPECT_EQ(2, countAliased("f.S1 IS (f.S2)")); // explicit range alias
+    EXPECT_EQ(3, countAliased("f.S1 IS NOT (f.S2)"));
+    // three-part names can also be value expressions: a nested property reference or an enum literal
+    EXPECT_EQ(2, countAliased("f.S1 IS (f.Info.Code)"));
+    EXPECT_EQ(3, countAliased("f.S1 IS NOT (f.Info.Code)"));
+    EXPECT_EQ(3, count("Status IS (ts.Status.Active)"));
+    EXPECT_EQ(2, count("Status IS NOT (ts.Status.Active)"));
+    // regression: a parenthesized name that *is* a class keeps the '(ClassName)' type-predicate meaning
+    EXPECT_EQ(5, count("ECClassId IS (ts.Foo)"));   // every row is a ts.Foo instance
+    EXPECT_EQ(0, count("ECClassId IS NOT (ts.Foo)"));
+
+    // parameter on the right-hand side, bound to a value and to NULL (null-safe both ways)
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT COUNT(*) FROM ts.Foo WHERE S1 IS ?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "a", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    EXPECT_EQ(3, stmt.GetValueInt(0)) << "S1 IS ? bound to 'a'";
+    stmt.Reset();
+    stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNull(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    EXPECT_EQ(2, stmt.GetValueInt(0)) << "S1 IS ? bound to NULL";
+    }
+
+    // operands of incompatible types are rejected (string vs point)
+    ECSqlStatement bad;
+    EXPECT_NE(ECSqlStatus::Success, bad.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE S1 IS P1"));
+
+    // a parenthesized qualified name that resolves to neither a class nor an existing property/enumerator
+    // is rejected at prepare time (it falls through to a property reference that fails to resolve).
+    // The reported issue must be the *property/enumeration* resolution failure - not the pre-fix
+    // "ECClass ... does not exist or could not be loaded" class-resolution failure, which would also
+    // yield a non-success prepare status and so silently hide a regression.
+    TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
+
+    ECSqlStatement badProp;
+    EXPECT_NE(ECSqlStatus::Success, badProp.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE S1 IS (Foo.NonExistentProp)"));
+    Utf8String badPropMessage = issueListener.GetLastMessage();
+    EXPECT_TRUE(badPropMessage.Contains("No property or enumeration found")) << badPropMessage;
+    EXPECT_TRUE(badPropMessage.Contains("NonExistentProp")) << badPropMessage;
+    EXPECT_FALSE(badPropMessage.Contains("does not exist or could not be loaded")) << "must not be the class-resolution failure: " << badPropMessage;
+    issueListener.ClearIssues();
+
+    // enum whose enumerator does not exist: the enum is found but the enumerator is not, so it is not a
+    // silent pass either - and it likewise fails as a property/enumeration resolution, not a class lookup
+    ECSqlStatement badEnum;
+    EXPECT_NE(ECSqlStatus::Success, badEnum.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE Status IS (ts.Status.DoesNotExist)"));
+    Utf8String badEnumMessage = issueListener.GetLastMessage();
+    EXPECT_TRUE(badEnumMessage.Contains("No property or enumeration found")) << badEnumMessage;
+    EXPECT_TRUE(badEnumMessage.Contains("DoesNotExist")) << badEnumMessage;
+    EXPECT_FALSE(badEnumMessage.Contains("does not exist or could not be loaded")) << "must not be the class-resolution failure: " << badEnumMessage;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -4009,6 +4595,10 @@ TEST_F(ECSqlStatementTestFixture, HexLiteral)
 
     expectedECInstanceId = ECInstanceId(UINT64_C(0x7ABCDEF) + 39421 - 0x43);
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(actualKey, "INSERT INTO ts.Sample(ECInstanceId, StringProp) VALUES (0x7ABCDEF + 39421 - 0x43, '0x7ABCDEF + 39421 - 0x43')"));
+    ASSERT_EQ(expectedECInstanceId, actualKey.GetInstanceId());
+
+    expectedECInstanceId = ECInstanceId(UINT64_C(0x7CDAEFB) + 39721 - 0x42);
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(actualKey, "INSERT INTO ONLY ts.Sample(ECInstanceId, StringProp) VALUES (0x7CDAEFB + 39721 - 0x42, '0x7CDAEFB + 39721 - 0x42')"));
     ASSERT_EQ(expectedECInstanceId, actualKey.GetInstanceId());
     }
 
@@ -5560,8 +6150,8 @@ TEST_F(ECSqlStatementTestFixture, Int64InStructArrays)
     ASSERT_TRUE(!actualStructArrayJson.Parse<0>(rawStmt.GetValueText(0)).HasParseError());
 
     ASSERT_TRUE(actualStructArrayJson.IsArray());
-    ASSERT_EQ(123456, actualStructArrayJson[0]["I"]);
-    ASSERT_EQ(id.GetValue(), actualStructArrayJson[0]["I64"]) << "Int64 are expected to not be stringified in the JSON";
+    ASSERT_EQ(actualStructArrayJson[0]["I"], 123456);
+    ASSERT_EQ(actualStructArrayJson[0]["I64"], id.GetValue()) << "Int64 are expected to not be stringified in the JSON";
     }
 
 //---------------------------------------------------------------------------------------
@@ -5580,17 +6170,18 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoAndSystemProperties)
     for (int i = 0; i < 9; i++)
         {
         ECSqlColumnInfo const& colInfo = statement.GetColumnInfo(i);
-        EXPECT_TRUE(colInfo.IsSystemProperty()) << colInfo.GetPropertyPath().ToString();
         EXPECT_FALSE(colInfo.IsGeneratedProperty()) << colInfo.GetPropertyPath().ToString();
         EXPECT_TRUE(colInfo.GetDataType().IsPrimitive()) << colInfo.GetPropertyPath().ToString();
 
         if (i < 2)
             {
+            EXPECT_TRUE(colInfo.IsSystemProperty()) << colInfo.GetPropertyPath().ToString();
             ASSERT_STREQ("ClassECSqlSystemProperties", colInfo.GetProperty()->GetClass().GetName().c_str()) << colInfo.GetPropertyPath().ToString();
             ASSERT_EQ(PrimitiveType::PRIMITIVETYPE_Long, colInfo.GetDataType().GetPrimitiveType()) << colInfo.GetPropertyPath().ToString();
             }
         else if (i < 4)
             {
+            EXPECT_TRUE(colInfo.IsSystemProperty()) << colInfo.GetPropertyPath().ToString();
             ECClassCR navPropMemberClass = colInfo.GetProperty()->GetClass();
             ASSERT_STREQ("NavigationECSqlSystemProperties", navPropMemberClass.GetName().c_str()) << colInfo.GetPropertyPath().ToString();
             ASSERT_TRUE(navPropMemberClass.IsStructClass()) << colInfo.GetPropertyPath().ToString();
@@ -5598,6 +6189,7 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoAndSystemProperties)
             }
         else
             {
+            EXPECT_FALSE(colInfo.IsSystemProperty()) << colInfo.GetPropertyPath().ToString();
             ECClassCR pointMemberClass = colInfo.GetProperty()->GetClass();
             ASSERT_STREQ("PointECSqlSystemProperties", pointMemberClass.GetName().c_str()) << colInfo.GetPropertyPath().ToString();
             ASSERT_TRUE(pointMemberClass.IsStructClass()) << colInfo.GetPropertyPath().ToString();
@@ -6710,7 +7302,7 @@ TEST_F(ECSqlStatementTestFixture, InsertWithStructBinding)
 
     //**** Test 1 *****
     {
-    Json::Value expectedJson;
+    BeJsDocument expectedJson;
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson,R"json(
          { "b" : true,
          "d" : 3.0,
@@ -6735,7 +7327,7 @@ TEST_F(ECSqlStatementTestFixture, InsertWithStructBinding)
     ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
     ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
     JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
-    Json::Value actualJson;
+    BeJsDocument actualJson;
     ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
     ASSERT_TRUE(actualJson.isMember("PStructProp"));
     ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["PStructProp"]));
@@ -6743,7 +7335,7 @@ TEST_F(ECSqlStatementTestFixture, InsertWithStructBinding)
 
     //**** Test 2 *****
     {
-    Json::Value expectedJson;
+    BeJsDocument expectedJson;
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, R"json(
         { "PStructProp" :
         { "b" : true,
@@ -6771,7 +7363,7 @@ TEST_F(ECSqlStatementTestFixture, InsertWithStructBinding)
     ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
     ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
     JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
-    Json::Value actualJson;
+    BeJsDocument actualJson;
     ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
     ASSERT_TRUE(actualJson.isMember("SAStructProp"));
     ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["SAStructProp"]));
@@ -6786,12 +7378,13 @@ TEST_F(ECSqlStatementTestFixture, InsertWithStructBinding)
     ASSERT_EQ(ECSqlStatus::Success, verifyStmt.Prepare(m_ecdb, "SELECT PStructProp FROM ecsql.PSA WHERE ECInstanceId=?"));
     JsonECSqlSelectAdapter verifyAdapter(verifyStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
 
-    Json::Value expectedJson, actualJson;
+    BeJsDocument expectedJson;
+    BeJsDocument actualJson;
 
     {
     //mismatching types which are convertible to each other
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, R"json({ "i" : 3.1415 })json"));
-    ASSERT_EQ(ECSqlStatus::Success, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.ToString();
+    ASSERT_EQ(ECSqlStatus::Success, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.Stringify();
     ECInstanceKey key;
     ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step(key)) << insertStmt.GetECSql();
     insertStmt.Reset();
@@ -6810,7 +7403,7 @@ TEST_F(ECSqlStatementTestFixture, InsertWithStructBinding)
     {
     //mismatching types which are convertible to each other
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, R"json({ "l" : 3.1415 })json"));
-    ASSERT_EQ(ECSqlStatus::Success, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.ToString();
+    ASSERT_EQ(ECSqlStatus::Success, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.Stringify();
     ECInstanceKey key;
     ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step(key)) << insertStmt.GetECSql();
     insertStmt.Reset();
@@ -6828,25 +7421,25 @@ TEST_F(ECSqlStatementTestFixture, InsertWithStructBinding)
     }
 
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, R"json({ "b" : 3.1415 })json"));
-    ASSERT_EQ(ECSqlStatus::Error, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.ToString();
+    ASSERT_EQ(ECSqlStatus::Error, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.Stringify();
 
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, R"json({ "s" : 3.1415 })json"));
-    ASSERT_EQ(ECSqlStatus::Error, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.ToString();
+    ASSERT_EQ(ECSqlStatus::Error, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.Stringify();
 
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, R"json({ "bi" : 3.1415 })json"));
-    ASSERT_EQ(ECSqlStatus::Error, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.ToString();
+    ASSERT_EQ(ECSqlStatus::Error, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.Stringify();
 
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, R"json({ "p2d" : 3.1415 })json"));
-    ASSERT_EQ(ECSqlStatus::Error, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.ToString();
+    ASSERT_EQ(ECSqlStatus::Error, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.Stringify();
 
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, R"json({ "p3d" : 3.1415 })json"));
-    ASSERT_EQ(ECSqlStatus::Error, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.ToString();
+    ASSERT_EQ(ECSqlStatus::Error, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.Stringify();
 
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, R"json({ "dt" : 3.1415 })json"));
-    ASSERT_EQ(ECSqlStatus::Error, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.ToString();
+    ASSERT_EQ(ECSqlStatus::Error, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.Stringify();
 
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, R"json({ "dtUtc" : 3.1415 })json"));
-    ASSERT_EQ(ECSqlStatus::Error, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.ToString();
+    ASSERT_EQ(ECSqlStatus::Error, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.Stringify();
     }
     }
 
@@ -6872,7 +7465,7 @@ TEST_F(ECSqlStatementTestFixture, UpdateWithStructBinding)
     ASSERT_EQ(ECSqlStatus::Success, verifyStmt.Prepare(m_ecdb, "SELECT PStructProp FROM ecsql.PSA WHERE ECInstanceId=?"));
     JsonECSqlSelectAdapter verifyAdapter(verifyStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
 
-    Json::Value initialJson;
+    BeJsDocument initialJson;
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(initialJson, R"json(
        { "PStructProp" : { "b" : true,
          "d" : 3.0,
@@ -6886,9 +7479,9 @@ TEST_F(ECSqlStatementTestFixture, UpdateWithStructBinding)
         }})json"));
 
     ECInstanceKey key;
-    ASSERT_EQ(BE_SQLITE_OK, jsonInserter.Insert(key, initialJson)) << initialJson.ToString();
+    ASSERT_EQ(BE_SQLITE_OK, jsonInserter.Insert(key, initialJson)) << initialJson.Stringify();
 
-    Json::Value expectedUpdatedJson;
+    BeJsDocument expectedUpdatedJson;
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedUpdatedJson, R"json(
        { "b" : false,
          "d" : 6.0,
@@ -6901,15 +7494,15 @@ TEST_F(ECSqlStatementTestFixture, UpdateWithStructBinding)
         "p3d" : { "x" : 3.0, "y" : 5.0, "z" : 6.0}
         })json"));
 
-    ASSERT_EQ(ECSqlStatus::Success, JsonECSqlBinder::BindStructValue(updateStmt.GetBinder(1), expectedUpdatedJson, *pStructClass->GetStructClassCP())) << expectedUpdatedJson.ToString();
-    ASSERT_EQ(ECSqlStatus::Success, updateStmt.BindId(2, key.GetInstanceId())) << expectedUpdatedJson.ToString();
-    ASSERT_EQ(BE_SQLITE_DONE, updateStmt.Step()) << expectedUpdatedJson.ToString();
+    ASSERT_EQ(ECSqlStatus::Success, JsonECSqlBinder::BindStructValue(updateStmt.GetBinder(1), expectedUpdatedJson, *pStructClass->GetStructClassCP())) << expectedUpdatedJson.Stringify();
+    ASSERT_EQ(ECSqlStatus::Success, updateStmt.BindId(2, key.GetInstanceId())) << expectedUpdatedJson.Stringify();
+    ASSERT_EQ(BE_SQLITE_DONE, updateStmt.Step()) << expectedUpdatedJson.Stringify();
     updateStmt.Reset();
     updateStmt.ClearBindings();
 
     ASSERT_EQ(ECSqlStatus::Success, verifyStmt.BindId(1, key.GetInstanceId())) << verifyStmt.GetECSql();
     ASSERT_EQ(BE_SQLITE_ROW, verifyStmt.Step()) << "Id: " << key.GetInstanceId().ToString() << " " << verifyStmt.GetECSql();
-    Json::Value actualJson;
+    BeJsDocument actualJson;
     ASSERT_EQ(SUCCESS, verifyAdapter.GetRow(actualJson)) << key.GetInstanceId().ToString() << " " << verifyStmt.GetECSql();
     ASSERT_TRUE(actualJson.isMember("PStructProp"));
     ASSERT_EQ(JsonValue(expectedUpdatedJson), JsonValue(actualJson["PStructProp"]));
@@ -7802,36 +8395,34 @@ TEST_F(ECSqlStatementTestFixture, Finalize)
 TEST_F(ECSqlStatementTestFixture, IssueListener)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
-    ASSERT_EQ(SUCCESS, PopulateECDb( 10));
+    ASSERT_EQ(SUCCESS, PopulateECDb(10));
 
+    TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
     {
-    ECIssueListener issueListener(m_ecdb);
     ECSqlStatement stmt;
-    ASSERT_FALSE(issueListener.GetIssue().has_value()) << "new ECSqlStatement";
+    ASSERT_TRUE(issueListener.IsEmpty()) << "new ECSqlStatement";
 
     auto stat = stmt.Prepare(m_ecdb, "SELECT * FROM ecsql.P WHERE I = ?");
     ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation for a valid ECSQL failed.";
-    ASSERT_FALSE(issueListener.GetIssue().has_value()) << "After successful call to Prepare.";
+    ASSERT_TRUE(issueListener.IsEmpty()) << "After successful call to Prepare.";
     }
 
     {
-    ECIssueListener issueListener(m_ecdb);
-
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * FROM blablabla")) << "Preparation for an invalid ECSQL succeeded unexpectedly.";
 
-    ECDbIssue lastIssue = issueListener.GetIssue();
-    ASSERT_TRUE(lastIssue.has_value()) << "After preparing invalid ECSQL.";
-    ASSERT_STREQ("Invalid ECSQL class expression 'blablabla': Valid syntax: [<table space>.]<schema name or alias>.<class name>[.function call]", lastIssue.message.c_str());
+    ASSERT_FALSE(issueListener.IsEmpty()) << "After preparing invalid ECSQL.";
+    ASSERT_STREQ("Invalid ECSQL class expression 'blablabla': Valid syntax: [<table space>.]<schema name or alias>.<class name>[.function call]", issueListener.GetLastMessage().c_str());
+    issueListener.ClearIssues();
 
     stmt.Finalize();
-    ASSERT_FALSE(issueListener.GetIssue().has_value()) << "After successful call to Finalize";
+    ASSERT_TRUE(issueListener.IsEmpty()) << "After successful call to Finalize";
 
     //now reprepare with valid ECSQL
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ecsql.P")) << "Preparation for a valid ECSQL failed.";
-    ASSERT_FALSE(issueListener.GetIssue().has_value()) << "After successful call to Prepare";
+    ASSERT_TRUE(issueListener.IsEmpty()) << "After successful call to Prepare";
     }
-
     }
 
 
@@ -8322,15 +8913,15 @@ TEST_F(ECSqlStatementTestFixture, SystemProperties) {
         EXPECT_STREQ(stmt.GetColumnInfo( 0).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id"            );// D.ECInstanceId               CORRECT
         EXPECT_STREQ(stmt.GetColumnInfo( 1).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id"            );// D.ECInstanceId       a1      CORRECT
         EXPECT_STREQ(stmt.GetColumnInfo( 2).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "ClassId"       );// D.ECClassId                  CORRECT
-        EXPECT_STREQ(stmt.GetColumnInfo( 3).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id"            );// D.ECClassId          a2      WRONG?
+        EXPECT_STREQ(stmt.GetColumnInfo( 3).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "ClassId"       );// D.ECClassId          a2      CORRECT
         EXPECT_STREQ(stmt.GetColumnInfo( 4).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "SourceId"      );// D.SourceECInstanceId         CORRECT
-        EXPECT_STREQ(stmt.GetColumnInfo( 5).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id"            );// D.SourceECInstanceId a3      WRONG?
+        EXPECT_STREQ(stmt.GetColumnInfo( 5).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "SourceId"      );// D.SourceECInstanceId a3      CORRECT
         EXPECT_STREQ(stmt.GetColumnInfo( 6).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "SourceClassId" );// D.SourceECClassId            CORRECT
-        EXPECT_STREQ(stmt.GetColumnInfo( 7).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id"            );// D.SourceECClassId    a4      WRONG?
+        EXPECT_STREQ(stmt.GetColumnInfo( 7).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "SourceClassId" );// D.SourceECClassId    a4      CORRECT
         EXPECT_STREQ(stmt.GetColumnInfo( 8).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "TargetId"      );// D.TargetECInstanceId         CORRECT
-        EXPECT_STREQ(stmt.GetColumnInfo( 9).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id"            );// D.TargetECInstanceId a5      WRONG?
+        EXPECT_STREQ(stmt.GetColumnInfo( 9).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "TargetId"      );// D.TargetECInstanceId a5      CORRECT
         EXPECT_STREQ(stmt.GetColumnInfo(10).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "TargetClassId" );// D.TargetECClassId            CORRECT
-        EXPECT_STREQ(stmt.GetColumnInfo(11).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id"            );// D.TargetECClassId    a6      WRONG?
+        EXPECT_STREQ(stmt.GetColumnInfo(11).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "TargetClassId" );// D.TargetECClassId    a6      CORRECT
     }
 
     if ("top level subquery relationship") {
@@ -8366,17 +8957,17 @@ TEST_F(ECSqlStatementTestFixture, SystemProperties) {
         ASSERT_TRUE (stmt.GetColumnInfo(11).IsGeneratedProperty());// D.TargetECClassId    a6      CORRECT
 
         ASSERT_TRUE (stmt.GetColumnInfo( 0).IsSystemProperty());    // D.ECInstanceId               CORRECT
-        ASSERT_FALSE(stmt.GetColumnInfo( 1).IsSystemProperty());    // D.ECInstanceId       a1      WRONG
+        ASSERT_TRUE(stmt.GetColumnInfo( 1).IsSystemProperty());     // D.ECInstanceId       a1      CORRECT
         ASSERT_TRUE (stmt.GetColumnInfo( 2).IsSystemProperty());    // D.ECClassId                  CORRECT
-        ASSERT_FALSE(stmt.GetColumnInfo( 3).IsSystemProperty());    // D.ECClassId          a2      WRONG
+        ASSERT_TRUE(stmt.GetColumnInfo( 3).IsSystemProperty());     // D.ECClassId          a2      CORRECT
         ASSERT_TRUE (stmt.GetColumnInfo( 4).IsSystemProperty());    // D.SourceECInstanceId         CORRECT
-        ASSERT_FALSE(stmt.GetColumnInfo( 5).IsSystemProperty());    // D.SourceECInstanceId a3      WRONG
+        ASSERT_TRUE(stmt.GetColumnInfo( 5).IsSystemProperty());     // D.SourceECInstanceId a3      CORRECT
         ASSERT_TRUE (stmt.GetColumnInfo( 6).IsSystemProperty());    // D.SourceECClassId            CORRECT
-        ASSERT_FALSE(stmt.GetColumnInfo( 7).IsSystemProperty());    // D.SourceECClassId    a4      WRONG
+        ASSERT_TRUE(stmt.GetColumnInfo( 7).IsSystemProperty());     // D.SourceECClassId    a4      CORRECT
         ASSERT_TRUE (stmt.GetColumnInfo( 8).IsSystemProperty());    // D.TargetECInstanceId         CORRECT
-        ASSERT_FALSE(stmt.GetColumnInfo( 9).IsSystemProperty());    // D.TargetECInstanceId a5      WRONG
+        ASSERT_TRUE(stmt.GetColumnInfo( 9).IsSystemProperty());     // D.TargetECInstanceId a5      CORRECT
         ASSERT_TRUE (stmt.GetColumnInfo(10).IsSystemProperty());    // D.TargetECClassId            CORRECT
-        ASSERT_FALSE(stmt.GetColumnInfo(11).IsSystemProperty());    // D.TargetECClassId    a6      WRONG
+        ASSERT_TRUE(stmt.GetColumnInfo(11).IsSystemProperty());     // D.TargetECClassId    a6      CORRECT
 
         EXPECT_STREQ(stmt.GetColumnInfo( 0).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id"        );// D.ECInstanceId               CORRECT
         EXPECT_STREQ(stmt.GetColumnInfo( 1).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id"        );// D.ECInstanceId       a1      CORRECT
@@ -8421,15 +9012,15 @@ TEST_F(ECSqlStatementTestFixture, SystemProperties) {
         ASSERT_TRUE (stmt.GetColumnInfo(9).IsGeneratedProperty());// D.Schema.RelECClassId SRID
 
         ASSERT_TRUE (stmt.GetColumnInfo(0).IsSystemProperty());// D.ECInstanceId,
-        ASSERT_FALSE(stmt.GetColumnInfo(1).IsSystemProperty());// D.ECInstanceId Goo,
+        ASSERT_TRUE(stmt.GetColumnInfo(1).IsSystemProperty());// D.ECInstanceId Goo,
         ASSERT_TRUE (stmt.GetColumnInfo(2).IsSystemProperty());// D.ECClassId,
-        ASSERT_FALSE(stmt.GetColumnInfo(3).IsSystemProperty());// D.ECClassId Boo,
+        ASSERT_TRUE(stmt.GetColumnInfo(3).IsSystemProperty());// D.ECClassId Boo,
         ASSERT_FALSE(stmt.GetColumnInfo(4).IsSystemProperty());// D.Schema,
         ASSERT_TRUE (stmt.GetColumnInfo(5).IsSystemProperty());// D.Schema.Id,
         ASSERT_TRUE (stmt.GetColumnInfo(6).IsSystemProperty());// D.Schema.RelECClassId,
         ASSERT_FALSE(stmt.GetColumnInfo(7).IsSystemProperty());// D.Schema S,
-        ASSERT_FALSE(stmt.GetColumnInfo(8).IsSystemProperty());// D.Schema.Id SID,
-        ASSERT_FALSE(stmt.GetColumnInfo(9).IsSystemProperty());// D.Schema.RelECClassId SRID
+        ASSERT_TRUE(stmt.GetColumnInfo(8).IsSystemProperty());// D.Schema.Id SID,
+        ASSERT_TRUE(stmt.GetColumnInfo(9).IsSystemProperty());// D.Schema.RelECClassId SRID
 
         EXPECT_STREQ(stmt.GetColumnInfo(0).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id");           // D.ECInstanceId,
         EXPECT_STREQ(stmt.GetColumnInfo(1).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id");           // D.ECInstanceId Goo,
@@ -8486,13 +9077,13 @@ TEST_F(ECSqlStatementTestFixture, SystemProperties) {
         EXPECT_STREQ(stmt.GetColumnInfo(0).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id");           // D.ECInstanceId,
         EXPECT_STREQ(stmt.GetColumnInfo(1).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id");           // D.ECInstanceId Goo,
         EXPECT_STREQ(stmt.GetColumnInfo(2).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "ClassId");      // D.ECClassId,
-        EXPECT_STREQ(stmt.GetColumnInfo(3).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id");           // D.ECClassId Boo,             WRONG?
+        EXPECT_STREQ(stmt.GetColumnInfo(3).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "ClassId");      // D.ECClassId Boo,             WRONG?
         ASSERT_TRUE (stmt.GetColumnInfo(4).GetProperty()->GetIsNavigation());                                                       // D.Schema,
         EXPECT_STREQ(stmt.GetColumnInfo(5).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "NavId");        // D.Schema.Id,
         EXPECT_STREQ(stmt.GetColumnInfo(6).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "NavRelClassId");// D.Schema.RelECClassId,
         ASSERT_TRUE (stmt.GetColumnInfo(7).GetProperty()->GetIsNavigation());                                                       // D.Schema S,
-        EXPECT_STREQ(stmt.GetColumnInfo(8).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id");           // D.Schema.Id SID,             WRONG?
-        EXPECT_STREQ(stmt.GetColumnInfo(9).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id");           // D.Schema.RelECClassId SRID   WRONG?
+        EXPECT_STREQ(stmt.GetColumnInfo(8).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "NavId");        // D.Schema.Id SID,             WRONG?
+        EXPECT_STREQ(stmt.GetColumnInfo(9).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "NavRelClassId");// D.Schema.RelECClassId SRID   WRONG?
     }
 }
 //---------------------------------------------------------------------------------------
@@ -9508,7 +10099,7 @@ TEST_F(ECSqlStatementTestFixture, WriteCalculatedECProperty)
     ECSchemaReadContextPtr schemaReadContext = ECSchemaReadContext::CreateContext();
     schemaReadContext->AddSchemaLocater(m_ecdb.GetSchemaLocater());
     ECSchemaPtr schema;
-    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schemaReadContext, *schema, &schema);
+    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schemaReadContext, &schema);
     IECInstancePtr instance;
     InstanceReadStatus status = IECInstance::ReadFromXmlString(instance, instanceXml.c_str(), *instanceContext);
     ASSERT_TRUE(InstanceReadStatus::Success == status);
@@ -9533,7 +10124,8 @@ TEST_F(ECSqlStatementTestFixture, WriteCalculatedECProperty)
         {
         IECInstancePtr newInstance = adapter.GetInstance();
 
-        Json::Value newInstanceJson, instanceJson;
+        BeJsDocument newInstanceJson;
+        BeJsDocument instanceJson;
         ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(newInstanceJson, *newInstance, nullptr, false));
         ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(instanceJson, *instance, nullptr, false));
         ASSERT_EQ(JsonValue(newInstanceJson), JsonValue(instanceJson));
@@ -10527,8 +11119,8 @@ TEST_F(ECSqlStatementTestFixture, AliasedEnumProps)
                 <ECEntityClass typeName="Foo" >
                     <ECProperty propertyName="Status" typeName="Status" />
                     <ECArrayProperty propertyName="Statuses" typeName="Status" />
-                    <ECProperty propertyName="Domain" typeName="Domain" />
-                    <ECArrayProperty propertyName="Domains" typeName="Domain" />
+                    <ECProperty propertyName="Domain" typeName="Domains" />
+                    <ECArrayProperty propertyName="Domains" typeName="Domains" />
                 </ECEntityClass>
               </ECSchema>)xml",
                 R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -10543,8 +11135,8 @@ TEST_F(ECSqlStatementTestFixture, AliasedEnumProps)
                 <ECEntityClass typeName="Foo" >
                     <ECProperty propertyName="Status" typeName="Status" />
                     <ECArrayProperty propertyName="Statuses" typeName="Status" />
-                    <ECProperty propertyName="Domain" typeName="Domain" />
-                    <ECArrayProperty propertyName="Domains" typeName="Domain" />
+                    <ECProperty propertyName="Domain" typeName="Domains" />
+                    <ECArrayProperty propertyName="Domains" typeName="Domains" />
                 </ECEntityClass>
               </ECSchema>)xml"})
         {
@@ -10583,7 +11175,7 @@ TEST_F(ECSqlStatementTestFixture, AliasedEnumProps)
 
         stmt.Finalize();
         CloseECDb();
-        }
+        }   
     }
 
 //---------------------------------------------------------------------------------------
@@ -10992,6 +11584,27 @@ TEST_F(ECSqlStatementTestFixture, CrossJoinTest)
             ])json");
         ASSERT_EQ(expected, GetHelper().ExecuteSelectECSql("SELECT * FROM ts.Person CROSS JOIN ts.Identifier"));
         }
+    if ("CROSS JOIN with ON clause filtering by matching PersonalID = PersonId")
+        {
+        auto expected = JsonValue(R"json([
+                {"FirstName":"A1FirstName","LastName":"A1LastName","PersonId":"A1","PersonalID":"A1","Primary":"A1Primary","Random":789,"Secondary":"A1Secondary","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x1","id_1":"0x4"},
+                {"FirstName":"A2FirstName","LastName":"A2LastName","PersonId":"A2","PersonalID":"A2","Primary":"A2Primary","Random":741,"Secondary":"A2Secondary","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x2","id_1":"0x5"},
+                {"FirstName":"A3FirstName","LastName":"A3LastName","PersonId":"A3","PersonalID":"A3","Primary":"A3Primary","Random":123,"Secondary":"A3Secondary","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x3","id_1":"0x6"}
+            ])json");
+        ASSERT_EQ(expected, GetHelper().ExecuteSelectECSql("SELECT * FROM ts.Person p CROSS JOIN ts.Identifier i ON p.PersonalID = i.PersonId"));
+        }
+    if ("CROSS JOIN with ON clause filtering by numeric condition")
+        {
+        auto expected = JsonValue(R"json([
+                {"FirstName":"A1FirstName","LastName":"A1LastName","PersonId":"A1","PersonalID":"A1","Primary":"A1Primary","Random":789,"Secondary":"A1Secondary","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x1","id_1":"0x4"},
+                {"FirstName":"A1FirstName","LastName":"A1LastName","PersonId":"A2","PersonalID":"A1","Primary":"A2Primary","Random":741,"Secondary":"A2Secondary","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x1","id_1":"0x5"},
+                {"FirstName":"A2FirstName","LastName":"A2LastName","PersonId":"A1","PersonalID":"A2","Primary":"A1Primary","Random":789,"Secondary":"A1Secondary","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x2","id_1":"0x4"},
+                {"FirstName":"A2FirstName","LastName":"A2LastName","PersonId":"A2","PersonalID":"A2","Primary":"A2Primary","Random":741,"Secondary":"A2Secondary","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x2","id_1":"0x5"},
+                {"FirstName":"A3FirstName","LastName":"A3LastName","PersonId":"A1","PersonalID":"A3","Primary":"A1Primary","Random":789,"Secondary":"A1Secondary","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x3","id_1":"0x4"},
+                {"FirstName":"A3FirstName","LastName":"A3LastName","PersonId":"A2","PersonalID":"A3","Primary":"A2Primary","Random":741,"Secondary":"A2Secondary","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x3","id_1":"0x5"}
+            ])json");
+        ASSERT_EQ(expected, GetHelper().ExecuteSelectECSql("SELECT * FROM ts.Person p CROSS JOIN ts.Identifier i ON i.Random > 700"));
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -11041,9 +11654,9 @@ TEST_F(ECSqlStatementTestFixture, verify_inf_and_nan_handling) {
         ASSERT_EQ(stmt.Prepare(m_ecdb, "select inf_pos, inf_neg, nan_val from ts.Element"), ECSqlStatus::Success);
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
         JsonECSqlSelectAdapter adaptor(stmt);
-        Json::Value jsonCpp;
+        BeJsDocument jsonCpp;
         EXPECT_EQ(SUCCESS, adaptor.GetRow(jsonCpp));
-        EXPECT_STREQ("{}", jsonCpp.ToString().c_str());
+        EXPECT_STREQ("{}", jsonCpp.Stringify().c_str());
     }
     if ("rapidjson must return null for inf") {
         ECSqlStatement stmt;
@@ -11090,9 +11703,13 @@ TEST_F(ECSqlStatementTestFixture, verify_inf_and_nan_handling) {
         ASSERT_EQ(stmt.Prepare(m_ecdb, "select inf_pos, inf_neg, nan_val from ts.Element"), ECSqlStatus::Success);
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
         JsonECSqlSelectAdapter adaptor(stmt);
-        Json::Value jsonCpp;
+        BeJsDocument jsonCpp;
         EXPECT_EQ(SUCCESS, adaptor.GetRow(jsonCpp));
-        EXPECT_STREQ("{\"inf_neg\":null,\"inf_pos\":null}", jsonCpp.ToString().c_str());
+        // NOTE: this deliberately compares the SERIALIZED text, not isExactEqual. The adapter stores
+        // the raw +/-Inf doubles in the document; they only become `null` when written out, because
+        // BeRapidJson.h sets RAPIDJSON_WRITE_DEFAULT_FLAGS = kWriteNanAndInfNullFlag. isExactEqual
+        // compares the in-memory values, where Inf is numeric and therefore != null.
+        EXPECT_STREQ(R"({"inf_pos":null,"inf_neg":null})", jsonCpp.Stringify().c_str());
     }
     if ("rapidjson must return null for inf") {
         ECSqlStatement stmt;
@@ -11101,8 +11718,8 @@ TEST_F(ECSqlStatementTestFixture, verify_inf_and_nan_handling) {
         JsonECSqlSelectAdapter adaptor(stmt);
         BeJsDocument rapidJson;
         EXPECT_EQ(SUCCESS, adaptor.GetRow(rapidJson));
-        Utf8String json = rapidJson.Stringify();
-        EXPECT_STREQ("{\"inf_pos\":null,\"inf_neg\":null}", json.c_str());
+        // See the note above: compare serialized text, not values. Inf is numeric in memory.
+        EXPECT_STREQ(R"({"inf_pos":null,"inf_neg":null})", rapidJson.Stringify().c_str());
     }
 }
 
@@ -11167,9 +11784,9 @@ TEST_F(ECSqlStatementTestFixture, verify_inf_and_nan_handling_Point2D) {
         ASSERT_EQ(stmt.Prepare(m_ecdb, selectStmt), ECSqlStatus::Success);
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
         JsonECSqlSelectAdapter adaptor(stmt);
-        Json::Value jsonCpp;
+        BeJsDocument jsonCpp;
         EXPECT_EQ(SUCCESS, adaptor.GetRow(jsonCpp));
-        EXPECT_STREQ("{}", jsonCpp.ToString().c_str());
+        EXPECT_STREQ("{}", jsonCpp.Stringify().c_str());
     }
     if ("rapidjson must return null for inf") {
         ECSqlStatement stmt;
@@ -11242,9 +11859,9 @@ TEST_F(ECSqlStatementTestFixture, verify_inf_and_nan_handling_Point2D) {
         ASSERT_EQ(stmt.Prepare(m_ecdb, selectStmt), ECSqlStatus::Success);
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
         JsonECSqlSelectAdapter adaptor(stmt);
-        Json::Value jsonCpp;
+        BeJsDocument jsonCpp;
         EXPECT_EQ(SUCCESS, adaptor.GetRow(jsonCpp));
-        EXPECT_STREQ("{}", jsonCpp.ToString().c_str());
+        EXPECT_STREQ("{}", jsonCpp.Stringify().c_str());
     }
     if ("rapidjson must return null for inf") {
         ECSqlStatement stmt;
@@ -11343,9 +11960,9 @@ TEST_F(ECSqlStatementTestFixture, verify_inf_and_nan_handling_Point3D) {
         ASSERT_EQ(stmt.Prepare(m_ecdb, selectStmt), ECSqlStatus::Success);
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
         JsonECSqlSelectAdapter adaptor(stmt);
-        Json::Value jsonCpp;
+        BeJsDocument jsonCpp;
         EXPECT_EQ(SUCCESS, adaptor.GetRow(jsonCpp));
-        EXPECT_STREQ("{}", jsonCpp.ToString().c_str());
+        EXPECT_STREQ("{}", jsonCpp.Stringify().c_str());
     }
     if ("rapidjson must return null for inf") {
         ECSqlStatement stmt;
@@ -11455,9 +12072,9 @@ TEST_F(ECSqlStatementTestFixture, verify_inf_and_nan_handling_Point3D) {
         ASSERT_EQ(stmt.Prepare(m_ecdb, selectStmt), ECSqlStatus::Success);
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
         JsonECSqlSelectAdapter adaptor(stmt);
-        Json::Value jsonCpp;
+        BeJsDocument jsonCpp;
         EXPECT_EQ(SUCCESS, adaptor.GetRow(jsonCpp));
-        EXPECT_STREQ("{}", jsonCpp.ToString().c_str());
+        EXPECT_STREQ("{}", jsonCpp.Stringify().c_str());
     }
     if ("rapidjson must return null for inf") {
         ECSqlStatement stmt;
@@ -11615,10 +12232,12 @@ TEST_F(ECSqlStatementTestFixture, SelectAnySomeAll)
     if ("Select 1")
         {
         Utf8CP ecsql = "SELECT 1 FROM ts.SomeEntity WHERE 10 = ANY (SELECT 10)";
-        Utf8PrintfString expectedSql ("SELECT 1 FROM (SELECT [Id] ECInstanceId,%d ECClassId FROM [main].[ts_SomeEntity]) [SomeEntity] WHERE EXISTS(SELECT 10 WHERE 10 = 10)", classId);
+        Utf8PrintfString expectedSql ("SELECT 1 FROM (SELECT [Id] ECInstanceId,%d ECClassId FROM [main].[ts_SomeEntity]) [SomeEntity] "
+                                    "WHERE EXISTS(SELECT 10 WHERE 10 = 10)", classId);
 
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
         ASSERT_STREQ(expectedSql.c_str(), stmt.GetNativeSql());
 
         auto expected = JsonValue(R"json([{"1":1},{"1":1},{"1":1},{"1":1},{"1":1}])json");
@@ -11629,11 +12248,11 @@ TEST_F(ECSqlStatementTestFixture, SelectAnySomeAll)
         {
         Utf8CP ecsql = "SELECT * FROM ts.SomeEntity WHERE Primary = ANY (SELECT Secondary FROM ts.SomeEntity)";
         Utf8PrintfString expectedSql ("SELECT [SomeEntity].[ECInstanceId],[SomeEntity].[ECClassId],[SomeEntity].[Name],[SomeEntity].[Primary],[SomeEntity].[Secondary],[SomeEntity].[Random] "
-            "FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
-            "WHERE EXISTS(SELECT [SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Secondary] FROM [main].[ts_SomeEntity]) [SomeEntity] WHERE [SomeEntity].[Primary] = [Secondary])", classId, classId);
-
+        "FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
+        "WHERE EXISTS(SELECT [SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Secondary] FROM [main].[ts_SomeEntity]) [SomeEntity] WHERE [SomeEntity].[Primary] = [SomeEntity].[Secondary])", classId, classId);
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(6, stmt.GetColumnCount());
         ASSERT_STREQ(expectedSql.c_str(), stmt.GetNativeSql());
 
         auto expected = JsonValue(R"json([
@@ -11647,12 +12266,13 @@ TEST_F(ECSqlStatementTestFixture, SelectAnySomeAll)
         {
         Utf8CP ecsql = "SELECT * FROM ts.SomeEntity WHERE Primary = ANY (SELECT Random, Secondary FROM ts.SomeEntity)";
         Utf8PrintfString expectedSql ("SELECT [SomeEntity].[ECInstanceId],[SomeEntity].[ECClassId],[SomeEntity].[Name],[SomeEntity].[Primary],[SomeEntity].[Secondary],[SomeEntity].[Random] "
-            "FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
-            "WHERE EXISTS(SELECT [SomeEntity].[Random],[SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
-            "WHERE [SomeEntity].[Primary] = [Random] OR [SomeEntity].[Primary] = [Secondary])", classId, classId);
+        "FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
+        "WHERE EXISTS(SELECT [SomeEntity].[Random],[SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Secondary],[Random] "
+        "FROM [main].[ts_SomeEntity]) [SomeEntity] WHERE [SomeEntity].[Primary] = [SomeEntity].[Random] OR [SomeEntity].[Primary] = [SomeEntity].[Secondary])", classId, classId);
 
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(6, stmt.GetColumnCount());
         ASSERT_STREQ(expectedSql.c_str(), stmt.GetNativeSql());
 
         auto expected = JsonValue(R"json([
@@ -11667,12 +12287,13 @@ TEST_F(ECSqlStatementTestFixture, SelectAnySomeAll)
         {
         Utf8CP ecsql = "SELECT * FROM ts.SomeEntity WHERE Primary < ANY (SELECT Secondary FROM ts.SomeEntity WHERE Random <= 0)";
         Utf8PrintfString expectedSql ("SELECT [SomeEntity].[ECInstanceId],[SomeEntity].[ECClassId],[SomeEntity].[Name],[SomeEntity].[Primary],[SomeEntity].[Secondary],[SomeEntity].[Random] "
-            "FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
-            "WHERE EXISTS(SELECT [SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
-            "WHERE ([SomeEntity].[Random]<=0) AND ([SomeEntity].[Primary] < [Secondary]))", classId, classId);
+        "FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
+        "WHERE EXISTS(SELECT [SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
+        "WHERE ([SomeEntity].[Random]<=0) AND ([SomeEntity].[Primary] < [SomeEntity].[Secondary]))", classId, classId);
 
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(6, stmt.GetColumnCount());
         ASSERT_STREQ(expectedSql.c_str(), stmt.GetNativeSql());
 
         auto expected = JsonValue(R"json([
@@ -11688,12 +12309,13 @@ TEST_F(ECSqlStatementTestFixture, SelectAnySomeAll)
         {
         Utf8CP ecsql = "SELECT * FROM ts.SomeEntity WHERE Primary < ANY (SELECT Secondary FROM ts.SomeEntity GROUP BY Random)";
         Utf8PrintfString expectedSql ("SELECT [SomeEntity].[ECInstanceId],[SomeEntity].[ECClassId],[SomeEntity].[Name],[SomeEntity].[Primary],[SomeEntity].[Secondary],[SomeEntity].[Random] "
-            "FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
-            "WHERE EXISTS(SELECT [SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Secondary],[Random] FROM [main].[ts_SomeEntity]) "
-            "[SomeEntity] WHERE [SomeEntity].[Primary] < [Secondary]  GROUP BY [SomeEntity].[Random])", classId, classId);
+        "FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
+        "WHERE EXISTS(SELECT [SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Secondary],[Random] "
+        "FROM [main].[ts_SomeEntity]) [SomeEntity] WHERE [SomeEntity].[Primary] < [SomeEntity].[Secondary]  GROUP BY [SomeEntity].[Random])", classId, classId);
 
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(6, stmt.GetColumnCount());
         ASSERT_STREQ(expectedSql.c_str(), stmt.GetNativeSql());
 
         auto expected = JsonValue(R"json([
@@ -11709,12 +12331,13 @@ TEST_F(ECSqlStatementTestFixture, SelectAnySomeAll)
         {
         Utf8CP ecsql = "SELECT * FROM ts.SomeEntity WHERE Primary >= SOME (SELECT Secondary FROM ts.SomeEntity WHERE Secondary > 0)";
         Utf8PrintfString expectedSql ("SELECT [SomeEntity].[ECInstanceId],[SomeEntity].[ECClassId],[SomeEntity].[Name],[SomeEntity].[Primary],[SomeEntity].[Secondary],[SomeEntity].[Random] "
-            "FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
-            "WHERE EXISTS(SELECT [SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Secondary] FROM [main].[ts_SomeEntity]) "
-            "[SomeEntity] WHERE ([SomeEntity].[Secondary]>0) AND ([SomeEntity].[Primary] >= [Secondary]))", classId, classId);
+        "FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
+        "WHERE EXISTS(SELECT [SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Secondary] FROM [main].[ts_SomeEntity]) [SomeEntity] "
+        "WHERE ([SomeEntity].[Secondary]>0) AND ([SomeEntity].[Primary] >= [SomeEntity].[Secondary]))", classId, classId);
 
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(6, stmt.GetColumnCount());
         ASSERT_STREQ(expectedSql.c_str(), stmt.GetNativeSql());
 
         auto expected = JsonValue(R"json([
@@ -11728,12 +12351,13 @@ TEST_F(ECSqlStatementTestFixture, SelectAnySomeAll)
         {
         Utf8CP ecsql = "SELECT * FROM ts.SomeEntity WHERE Primary <= SOME (SELECT Secondary FROM ts.SomeEntity WHERE Secondary > 0 Limit 1)";
         Utf8PrintfString expectedSql ("SELECT [SomeEntity].[ECInstanceId],[SomeEntity].[ECClassId],[SomeEntity].[Name],[SomeEntity].[Primary],[SomeEntity].[Secondary],[SomeEntity].[Random] "
-            "FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
-            "WHERE EXISTS(SELECT [SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Secondary] FROM [main].[ts_SomeEntity]) "
-            "[SomeEntity] WHERE ([SomeEntity].[Secondary]>0) AND ([SomeEntity].[Primary] <= [Secondary])  LIMIT 1)", classId, classId);
+        "FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
+        "WHERE EXISTS(SELECT [SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Secondary] FROM [main].[ts_SomeEntity]) [SomeEntity] "
+        "WHERE ([SomeEntity].[Secondary]>0) AND ([SomeEntity].[Primary] <= [SomeEntity].[Secondary])  LIMIT 1)", classId, classId);
 
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(6, stmt.GetColumnCount());
         ASSERT_STREQ(expectedSql.c_str(), stmt.GetNativeSql());
 
         auto expected = JsonValue(R"json([
@@ -11749,12 +12373,13 @@ TEST_F(ECSqlStatementTestFixture, SelectAnySomeAll)
         {
         Utf8CP ecsql = "SELECT * FROM ts.SomeEntity WHERE Primary > ALL (SELECT Secondary FROM ts.SomeEntity WHERE Random = 0)";
         Utf8PrintfString expectedSql ("SELECT [SomeEntity].[ECInstanceId],[SomeEntity].[ECClassId],[SomeEntity].[Name],[SomeEntity].[Primary],[SomeEntity].[Secondary],[SomeEntity].[Random] "
-            "FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
-            "WHERE NOT EXISTS(SELECT [SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Secondary],[Random] "
-            "FROM [main].[ts_SomeEntity]) [SomeEntity] WHERE ([SomeEntity].[Random]=0) AND ([Secondary] > [SomeEntity].[Primary]))", classId, classId);
+        "FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
+        "WHERE NOT EXISTS(SELECT [SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
+        "WHERE ([SomeEntity].[Random]=0) AND ([SomeEntity].[Secondary] > [SomeEntity].[Primary]))", classId, classId);
 
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(6, stmt.GetColumnCount());
         ASSERT_STREQ(expectedSql.c_str(), stmt.GetNativeSql());
 
         auto expected = JsonValue(R"json([{"Name":"...","Primary":1230.0,"Random":1,"Secondary":10.0,"className":"TestSchema.SomeEntity","id":"0x3"}])json");
@@ -11765,12 +12390,13 @@ TEST_F(ECSqlStatementTestFixture, SelectAnySomeAll)
         {
         Utf8CP ecsql = "SELECT * FROM ts.SomeEntity WHERE Primary <> ALL (SELECT Secondary FROM ts.SomeEntity WHERE Random > 0)";
         Utf8PrintfString expectedSql ("SELECT [SomeEntity].[ECInstanceId],[SomeEntity].[ECClassId],[SomeEntity].[Name],[SomeEntity].[Primary],[SomeEntity].[Secondary],[SomeEntity].[Random] "
-            "FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
-            "WHERE NOT EXISTS(SELECT [SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Secondary],[Random] "
-            "FROM [main].[ts_SomeEntity]) [SomeEntity] WHERE ([SomeEntity].[Random]>0) AND ([Secondary] = [SomeEntity].[Primary]))", classId, classId);
+        "FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
+        "WHERE NOT EXISTS(SELECT [SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
+        "WHERE ([SomeEntity].[Random]>0) AND ([SomeEntity].[Secondary] = [SomeEntity].[Primary]))", classId, classId);
 
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(6, stmt.GetColumnCount());
         ASSERT_STREQ(expectedSql.c_str(), stmt.GetNativeSql());
 
         auto expected = JsonValue(R"json([
@@ -11786,11 +12412,13 @@ TEST_F(ECSqlStatementTestFixture, SelectAnySomeAll)
         {
         Utf8CP ecsql = "SELECT * FROM ts.SomeEntity WHERE Primary < ALL (SELECT Secondary FROM ts.SomeEntity)";
         Utf8PrintfString expectedSql ("SELECT [SomeEntity].[ECInstanceId],[SomeEntity].[ECClassId],[SomeEntity].[Name],[SomeEntity].[Primary],[SomeEntity].[Secondary],[SomeEntity].[Random] "
-            "FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
-            "WHERE NOT EXISTS(SELECT [SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Secondary] FROM [main].[ts_SomeEntity]) [SomeEntity] WHERE [Secondary] < [SomeEntity].[Primary])", classId, classId);
+        "FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
+        "WHERE NOT EXISTS(SELECT [SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Secondary] FROM [main].[ts_SomeEntity]) [SomeEntity] "
+        "WHERE [SomeEntity].[Secondary] < [SomeEntity].[Primary])", classId, classId);
 
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(6, stmt.GetColumnCount());
         ASSERT_STREQ(expectedSql.c_str(), stmt.GetNativeSql());
 
         auto expected = JsonValue(R"json([
@@ -11800,4 +12428,1660 @@ TEST_F(ECSqlStatementTestFixture, SelectAnySomeAll)
         ASSERT_EQ(expected, GetHelper().ExecuteSelectECSql(ecsql));
         }
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, UpdateToNullBinding)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ec_sql_update_to_null.ecdb", SchemaItem(R"xml(
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="TestClass" modifier="None">
+                <ECProperty propertyName="p2d" typeName="point2d"/>
+                <ECStructProperty propertyName="st" typeName="ComplexStruct"/>
+                <ECArrayProperty propertyName="array_i" typeName="int" minOccurs="0" maxOccurs="unbounded"/>
+            </ECEntityClass>
+            <ECStructClass typeName="BasicStruct" modifier="None">
+                <ECProperty propertyName="i" typeName="int"/>
+                <ECProperty propertyName="b" typeName="boolean"/>
+            </ECStructClass>
+            <ECStructClass typeName="ComplexStruct" modifier="None">
+                <ECProperty propertyName="p2d" typeName="point2d"/>
+                <ECStructProperty propertyName="st" typeName="BasicStruct" />
+                <ECArrayProperty propertyName="array_i" typeName="int" minOccurs="0" maxOccurs="unbounded"/>
+            </ECStructClass>
+        </ECSchema>
+    )xml")));
+
+    ///*** Insertable data
+    auto i = 123;
+    auto p2d = DPoint2d::From(23.22, 31.11);
+    auto st_p2d = DPoint2d::From(53.22, 31.11);
+    auto st_st_b = true;
+    auto st_st_i = 45;
+
+    //*** Update all values to null
+    {
+    Utf8String insertEcsql("INSERT INTO ts.TestClass (p2d, st, array_i) VALUES (?,?,?)");
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, insertEcsql.c_str())) << insertEcsql.c_str();
+    stmt.BindPoint2d(1, p2d);
+    auto& st = stmt.GetBinder(2);
+    st["p2d"].BindPoint2d(st_p2d);
+    st["st"]["b"].BindBoolean(st_st_b);
+    st["st"]["i"].BindBoolean(st_st_i);
+    stmt.GetBinder(3).AddArrayElement().BindInt(i);
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    Utf8String updateEcsql("UPDATE ONLY ts.TestClass SET p2d=?, st=?, array_i=? WHERE ECInstanceId=?");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, updateEcsql.c_str())) << updateEcsql.c_str();
+    for (int i = 1; i <= 3; ++i)
+        {
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindNull(i));
+        }
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, key.GetInstanceId()));
+
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+
+    Utf8String selectEcsql("SELECT p2d, p2d.X, p2d.Y, st, array_i FROM ts.TestClass WHERE ECInstanceId=?");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, selectEcsql.c_str())) << selectEcsql.c_str();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    for (int i = 0; i < stmt.GetColumnCount(); ++i)
+        {
+        ASSERT_TRUE(stmt.IsValueNull(i)) << "no values bound to " << stmt.GetECSql();
+        }
+
+    const int expectedMembersCount = (int) m_ecdb.Schemas().GetClass("TestSchema", "ComplexStruct")->GetPropertyCount(true);
+    IECSqlValue const& structVal = stmt.GetValue(3);
+    int actualMembersCount = 0;
+    for (IECSqlValue const& memberVal : structVal.GetStructIterable())
+        {
+        actualMembersCount++;
+        ASSERT_TRUE(memberVal.IsNull());
+        }
+    ASSERT_EQ(expectedMembersCount, actualMembersCount);
+
+    IECSqlValue const& structArrayVal = stmt.GetValue(4);
+    ASSERT_EQ(0, structArrayVal.GetArrayLength());
+    }
+
+    //*** Update array to contain two null elements
+    {
+    Utf8String insertEcsql("INSERT INTO ts.TestClass (array_i) VALUES (?)");
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, insertEcsql.c_str())) << insertEcsql.c_str();
+    stmt.GetBinder(1).AddArrayElement().BindInt(i);
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    Utf8String updateEcsql("UPDATE ONLY ts.TestClass SET array_i=? WHERE ECInstanceId=?");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, updateEcsql.c_str())) << updateEcsql.c_str();
+    IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+    ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindNull());
+    ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindNull());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, key.GetInstanceId()));
+
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+
+    Utf8String selectEcsql("SELECT array_i FROM ts.TestClass WHERE ECInstanceId=?");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, selectEcsql.c_str())) << selectEcsql.c_str();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+
+    IECSqlValue const& val = stmt.GetValue(0);
+    ASSERT_FALSE(val.IsNull()) << stmt.GetECSql();
+    ASSERT_EQ(2, val.GetArrayLength());
+    for (IECSqlValue const& elementVal : val.GetArrayIterable())
+        {
+        ASSERT_TRUE(elementVal.IsNull()) << stmt.GetECSql();
+
+        if (val.GetColumnInfo().GetDataType().IsStructArray())
+            {
+            for (IECSqlValue const& memberVal : elementVal.GetStructIterable())
+                {
+                ASSERT_TRUE(memberVal.IsNull());
+                }
+            }
+        }
+    }
+
+    // Update points to be partially unset
+    {
+    Utf8String insertEcsql("INSERT INTO ts.TestClass (p2d, st) VALUES (?,?)");
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, insertEcsql.c_str())) << insertEcsql.c_str();
+    stmt.BindPoint2d(1, p2d);
+    auto& st = stmt.GetBinder(2);
+    st["p2d"].BindPoint2d(st_p2d);
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    Utf8String updateEcsql("UPDATE ONLY ts.TestClass SET p2d.X=?, st.p2d.X=? WHERE ECInstanceId=?");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, updateEcsql.c_str())) << updateEcsql.c_str();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNull(1));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNull(2));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, key.GetInstanceId()));
+
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+
+    Utf8String selectEcsql("SELECT p2d, p2d.X, p2d.Y, st.p2d, st.p2d.X, st.p2d.Y FROM ts.TestClass WHERE ECInstanceId=?");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, selectEcsql.c_str())) << selectEcsql.c_str();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+
+    std::set<Utf8String> nullItems { "p2d", "p2d.X", "st.p2d", "st.p2d.X" };
+    for (int i = 0; i < stmt.GetColumnCount(); i++)
+        {
+        IECSqlValue const& val = stmt.GetValue(i);
+        Utf8String propPath = val.GetColumnInfo().GetPropertyPath().ToString();
+        const bool expectedToBeNull = nullItems.find(propPath) != nullItems.end();
+        ASSERT_EQ(expectedToBeNull, val.IsNull()) << "Select clause item " << i << " in " << stmt.GetECSql();
+        }
+    }
+
+    //*** Update nested struct to be partially unset
+    {
+    Utf8String insertEcsql("INSERT INTO ts.TestClass (st) VALUES (?)");
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, insertEcsql.c_str())) << insertEcsql.c_str();
+    auto& st = stmt.GetBinder(1);
+    st["st"]["b"].BindBoolean(st_st_b);
+    st["st"]["i"].BindBoolean(st_st_i);
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    Utf8String updateEcsql("UPDATE ONLY ts.TestClass SET st=? WHERE ECInstanceId=?");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, updateEcsql.c_str())) << updateEcsql.c_str();
+
+    auto& elementBinder = stmt.GetBinder(1);
+    ASSERT_EQ(ECSqlStatus::Success, elementBinder["st"]["i"].BindNull()); // Set st.st.i = null
+    ASSERT_EQ(ECSqlStatus::Success, elementBinder["st"]["b"].BindBoolean(st_st_b)); // Set st.st.b = true, so that the whole structure doesn't become null
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, key.GetInstanceId()));
+
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+
+    Utf8String selectEcsql("SELECT st FROM ts.TestClass WHERE ECInstanceId=?");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, selectEcsql.c_str())) << selectEcsql.c_str();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+
+    ASSERT_FALSE(stmt.IsValueNull(0));
+    IECSqlValue const& structVal = stmt.GetValue(0);
+    for (IECSqlValue const& memberVal : structVal.GetStructIterable())
+        {
+        if (memberVal.GetColumnInfo().GetProperty()->GetName().Equals("st"))
+            {
+            int memberCount = 0;
+            for (IECSqlValue const& nestedMemberVal : memberVal.GetStructIterable())
+                {
+                memberCount++;
+                if (nestedMemberVal.GetColumnInfo().GetProperty()->GetName().Equals("b"))
+                    ASSERT_FALSE(nestedMemberVal.IsNull());
+                else
+                    ASSERT_TRUE(nestedMemberVal.IsNull());
+                }
+            ASSERT_EQ((int) memberVal.GetColumnInfo().GetStructType()->GetPropertyCount(true), memberCount);
+            }
+        else
+            ASSERT_TRUE(memberVal.IsNull());
+        }
+    }
+
+    //*** Update nested struct to have all properties null
+    {
+    Utf8String insertEcsql("INSERT INTO ts.TestClass (st) VALUES (?)");
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, insertEcsql.c_str())) << insertEcsql.c_str();
+    auto& st = stmt.GetBinder(1);
+    st["st"]["i"].BindInt(st_st_i);
+    st["st"]["b"].BindBoolean(st_st_b);
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    Utf8String updateEcsql("UPDATE ONLY ts.TestClass SET st.p2d=?, st.st.i=?, st.st.b=? WHERE ECInstanceId=?");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, updateEcsql.c_str())) << updateEcsql.c_str();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1).BindPoint2d(p2d)); // Make at least one arg in non-nested st not null.
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(2).BindNull());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(3).BindNull());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, key.GetInstanceId()));
+
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+
+    Utf8String selectEcsql("SELECT st FROM ts.TestClass WHERE ECInstanceId=?");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, selectEcsql.c_str())) << selectEcsql.c_str();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+
+    ASSERT_FALSE(stmt.IsValueNull(0));
+    IECSqlValue const& structVal = stmt.GetValue(0);
+    for (IECSqlValue const& memberVal : structVal.GetStructIterable())
+        {
+        if (memberVal.GetColumnInfo().GetProperty()->GetName().Equals("p2d"))
+            ASSERT_FALSE(memberVal.IsNull());
+        else
+            ASSERT_TRUE(memberVal.IsNull()); // st will fall under this check
+        }
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, UpdateToNullInline)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ec_sql_update_to_null_inline.ecdb", SchemaItem(R"xml(
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="TestClass" modifier="None">
+                <ECProperty propertyName="p2d" typeName="point2d"/>
+                <ECStructProperty propertyName="st" typeName="ComplexStruct"/>
+                <ECArrayProperty propertyName="array_i" typeName="int" minOccurs="0" maxOccurs="unbounded"/>
+            </ECEntityClass>
+            <ECStructClass typeName="BasicStruct" modifier="None">
+                <ECProperty propertyName="i" typeName="int"/>
+                <ECProperty propertyName="b" typeName="boolean"/>
+            </ECStructClass>
+            <ECStructClass typeName="ComplexStruct" modifier="None">
+                <ECProperty propertyName="p2d" typeName="point2d"/>
+                <ECStructProperty propertyName="st" typeName="BasicStruct" />
+                <ECArrayProperty propertyName="array_i" typeName="int" minOccurs="0" maxOccurs="unbounded"/>
+            </ECStructClass>
+        </ECSchema>
+    )xml")));
+
+    ///*** Insertable data
+    auto i = 123;
+    auto p2d = DPoint2d::From(23.22, 31.11);
+    auto st_p2d = DPoint2d::From(53.22, 31.11);
+    auto st_st_b = true;
+    auto st_st_i = 45;
+
+    //*** Update all values to null
+    {
+    Utf8String insertEcsql("INSERT INTO ts.TestClass (p2d, st, array_i) VALUES (?,?,?)");
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, insertEcsql.c_str())) << insertEcsql.c_str();
+    stmt.BindPoint2d(1, p2d);
+    auto& st = stmt.GetBinder(2);
+    st["p2d"].BindPoint2d(st_p2d);
+    st["st"]["b"].BindBoolean(st_st_b);
+    st["st"]["i"].BindBoolean(st_st_i);
+    stmt.GetBinder(3).AddArrayElement().BindInt(i);
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    SqlPrintfString updateEcsql("UPDATE ONLY ts.TestClass SET p2d=NULL, st=NULL, array_i=NULL WHERE ECInstanceId=%s", key.GetInstanceId().ToString().c_str());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, updateEcsql.GetUtf8CP())) << updateEcsql.GetUtf8CP();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+
+    SqlPrintfString selectEcsql("SELECT p2d, p2d.X, p2d.Y, st, array_i FROM ts.TestClass WHERE ECInstanceId=%s", key.GetInstanceId().ToString().c_str());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, selectEcsql.GetUtf8CP())) << selectEcsql.GetUtf8CP();
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    for (int i = 0; i < stmt.GetColumnCount(); ++i)
+        {
+        ASSERT_TRUE(stmt.IsValueNull(i)) << "no values bound to " << stmt.GetECSql();
+        }
+
+    const int expectedMembersCount = (int) m_ecdb.Schemas().GetClass("TestSchema", "ComplexStruct")->GetPropertyCount(true);
+    IECSqlValue const& structVal = stmt.GetValue(3);
+    int actualMembersCount = 0;
+    for (IECSqlValue const& memberVal : structVal.GetStructIterable())
+        {
+        actualMembersCount++;
+        ASSERT_TRUE(memberVal.IsNull());
+        }
+    ASSERT_EQ(expectedMembersCount, actualMembersCount);
+
+    IECSqlValue const& structArrayVal = stmt.GetValue(4);
+    ASSERT_EQ(0, structArrayVal.GetArrayLength());
+    }
+
+    // Update points to be partially unset
+    {
+    Utf8String insertEcsql("INSERT INTO ts.TestClass (p2d, st) VALUES (?,?)");
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, insertEcsql.c_str())) << insertEcsql.c_str();
+    stmt.BindPoint2d(1, p2d);
+    auto& st = stmt.GetBinder(2);
+    st["p2d"].BindPoint2d(st_p2d);
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    SqlPrintfString updateEcsql("UPDATE ONLY ts.TestClass SET p2d.X=NULL, st.p2d.X=NULL WHERE ECInstanceId=%s", key.GetInstanceId().ToString().c_str());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, updateEcsql.GetUtf8CP())) << updateEcsql.GetUtf8CP();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+
+    SqlPrintfString selectEcsql("SELECT p2d, p2d.X, p2d.Y, st.p2d, st.p2d.X, st.p2d.Y FROM ts.TestClass WHERE ECInstanceId=%s", key.GetInstanceId().ToString().c_str());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, selectEcsql.GetUtf8CP())) << selectEcsql.GetUtf8CP();
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+
+    std::set<Utf8String> nullItems { "p2d", "p2d.X", "st.p2d", "st.p2d.X" };
+    for (int i = 0; i < stmt.GetColumnCount(); i++)
+        {
+        IECSqlValue const& val = stmt.GetValue(i);
+        Utf8String propPath = val.GetColumnInfo().GetPropertyPath().ToString();
+        const bool expectedToBeNull = nullItems.find(propPath) != nullItems.end();
+        ASSERT_EQ(expectedToBeNull, val.IsNull()) << "Select clause item " << i << " in " << stmt.GetECSql();
+        }
+    }
+
+    //*** Update nested struct to be partially unset
+    {
+    Utf8String insertEcsql("INSERT INTO ts.TestClass (st) VALUES (?)");
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, insertEcsql.c_str())) << insertEcsql.c_str();
+
+    auto& st = stmt.GetBinder(1);
+    st["st"]["b"].BindBoolean(st_st_b);
+    st["st"]["i"].BindBoolean(st_st_i);
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    SqlPrintfString updateEcsql("UPDATE ONLY ts.TestClass SET st.st.i=NULL, st.st.b=TRUE WHERE ECInstanceId=%s", key.GetInstanceId().ToString().c_str());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, updateEcsql.GetUtf8CP())) << updateEcsql.GetUtf8CP();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+
+    SqlPrintfString selectEcsql("SELECT st FROM ts.TestClass WHERE ECInstanceId=%s", key.GetInstanceId().ToString().c_str());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, selectEcsql.GetUtf8CP())) << selectEcsql.GetUtf8CP();
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+
+    ASSERT_FALSE(stmt.IsValueNull(0));
+    IECSqlValue const& structVal = stmt.GetValue(0);
+    for (IECSqlValue const& memberVal : structVal.GetStructIterable())
+        {
+        if (memberVal.GetColumnInfo().GetProperty()->GetName().Equals("st"))
+            {
+            int memberCount = 0;
+            for (IECSqlValue const& nestedMemberVal : memberVal.GetStructIterable())
+                {
+                memberCount++;
+                if (nestedMemberVal.GetColumnInfo().GetProperty()->GetName().Equals("b"))
+                    ASSERT_FALSE(nestedMemberVal.IsNull());
+                else
+                    ASSERT_TRUE(nestedMemberVal.IsNull());
+                }
+            ASSERT_EQ((int) memberVal.GetColumnInfo().GetStructType()->GetPropertyCount(true), memberCount);
+            }
+        else
+            ASSERT_TRUE(memberVal.IsNull());
+        }
+    }
+
+    //*** Update nested struct to have all properties null
+    {
+    Utf8String insertEcsql("INSERT INTO ts.TestClass (st) VALUES (?)");
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, insertEcsql.c_str())) << insertEcsql.c_str();
+
+    auto& st = stmt.GetBinder(1);
+    st["p2d"].BindPoint2d(p2d);
+    st["st"]["i"].BindInt(st_st_i);
+    st["st"]["b"].BindBoolean(st_st_b);
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    SqlPrintfString updateEcsql("UPDATE ONLY ts.TestClass SET st.st.i=NULL, st.st.b=NULL WHERE ECInstanceId=%s", key.GetInstanceId().ToString().c_str());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, updateEcsql.GetUtf8CP())) << updateEcsql.GetUtf8CP();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+
+    SqlPrintfString selectEcsql("SELECT st FROM ts.TestClass WHERE ECInstanceId=%s", key.GetInstanceId().ToString().c_str());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, selectEcsql.GetUtf8CP())) << selectEcsql.GetUtf8CP();
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+
+    ASSERT_FALSE(stmt.IsValueNull(0));
+    IECSqlValue const& structVal = stmt.GetValue(0);
+    for (IECSqlValue const& memberVal : structVal.GetStructIterable())
+        {
+        if (memberVal.GetColumnInfo().GetProperty()->GetName().Equals("p2d"))
+            ASSERT_FALSE(memberVal.IsNull());
+        else
+            ASSERT_TRUE(memberVal.IsNull()); // st will fall under this check
+        }
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, InsertWithOnly)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("InsertWithOnly.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                    <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+                    <ECSchemaReference name="ECDbFileInfo" version="02.00.01" alias="ecdbf" />
+                    <ECEntityClass typeName="A">
+                        <ECCustomAttributes>
+                            <ClassMap xmlns="ECDbMap.02.00.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="Name" typeName="string" />
+                        <ECProperty propertyName="Size" typeName="int" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="B">
+                        <ECCustomAttributes>
+                            <ClassMap xmlns="ECDbMap.02.00.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                        <ECNavigationProperty propertyName="A" relationshipName="AOwnsB" direction="Backward"/>
+                        <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="SubB">
+                        <BaseClass>B</BaseClass>
+                        <ECProperty propertyName="SubName" typeName="string" />
+                     </ECEntityClass>
+                    <ECRelationshipClass typeName="AOwnsB" modifier="Sealed" strength="referencing">
+                      <Source multiplicity="(0..1)" roleLabel="is extracted from" polymorphic="false">
+                        <Class class="A"/>
+                      </Source>
+                      <Target multiplicity="(0..*)" roleLabel="refers to" polymorphic="false">
+                        <Class class="B"/>
+                      </Target>
+                    </ECRelationshipClass>
+                    <ECRelationshipClass typeName="ALinksB" modifier="Sealed" strength="referencing">
+                      <Source multiplicity="(0..*)" roleLabel="is extracted from" polymorphic="false">
+                        <Class class="A"/>
+                      </Source>
+                      <Target multiplicity="(0..*)" roleLabel="refers to" polymorphic="false">
+                        <Class class="B"/>
+                      </Target>
+                    </ECRelationshipClass>
+                    <ECRelationshipClass typeName="SubBLinksFileInfo" modifier="Sealed" strength="referencing">
+                      <Source multiplicity="(0..*)" roleLabel="is extracted from" polymorphic="false">
+                        <Class class="SubB"/>
+                      </Source>
+                      <Target multiplicity="(0..*)" roleLabel="refers to" polymorphic="false">
+                        <Class class="ecdbf:ExternalFileInfo"/>
+                      </Target>
+                      <ECProperty propertyName="Priority" typeName="int" />
+                    </ECRelationshipClass>
+                </ECSchema>)xml")));
+
+    ECInstanceKey aKey, bKey, subBKey, fileInfoKey, aLinksBKey, subBLinksFileInfoKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(aKey, "INSERT INTO ONLY ts.A(Name,Size) VALUES('A-1',100)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(bKey, Utf8PrintfString("INSERT INTO ONLY ts.B(Name,A.Id) VALUES('B-1',%" PRIu64 ")", aKey.GetInstanceId().GetValue()).c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(subBKey, Utf8PrintfString("INSERT INTO ONLY ts.SubB(Name,SubName,A.Id) VALUES('B-2','Sub 1',%" PRIu64 ")", aKey.GetInstanceId().GetValue()).c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(fileInfoKey, "INSERT INTO ONLY ecdbf.ExternalFileInfo(Name) VALUES('DataFile-1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(aLinksBKey, Utf8PrintfString("INSERT INTO ONLY ts.ALinksB(SourceECInstanceId,TargetECInstanceId) VALUES(%" PRIu64 ",%" PRIu64 ")",
+                                                                                          aKey.GetInstanceId().GetValue(), bKey.GetInstanceId().GetValue()).c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(subBLinksFileInfoKey, Utf8PrintfString("INSERT INTO ONLY ts.SubBLinksFileInfo(SourceECInstanceId,TargetECInstanceId, Priority) VALUES(%" PRIu64 ",%" PRIu64 ", 400)",
+                                                                                          subBKey.GetInstanceId().GetValue(), fileInfoKey.GetInstanceId().GetValue()).c_str()));
+
+    auto retrieveRow = [] (ECSqlStatement const& stmt)
+        {
+        JsonValue json;
+        json.m_value.toObject();
+        for (int i = 0; i < stmt.GetColumnCount(); i++)
+            {
+            if (stmt.IsValueNull(i))
+                continue;
+
+            ECSqlColumnInfo const& colInfo = stmt.GetColumnInfo(i);
+            Utf8String colName = colInfo.GetPropertyPath().ToString();
+
+            if (colInfo.GetDataType().IsNavigation())
+                json.m_value[colName.c_str()] = (int64_t)stmt.GetValueNavigation<ECInstanceId>(i).GetValue();
+            if (colInfo.GetDataType() == PRIMITIVETYPE_Integer || colInfo.GetDataType() == PRIMITIVETYPE_Long)
+                json.m_value[colName.c_str()] = stmt.GetValueInt64(i);
+            else if (colInfo.GetDataType() == PRIMITIVETYPE_String)
+                json.m_value[colName.c_str()] = stmt.GetValueText(i);
+            }
+
+        return json;
+        };
+
+    ECClassId aOwnsBClassId = m_ecdb.Schemas().GetClassId("TestSchema", "AOwnsB");
+    ASSERT_TRUE(aOwnsBClassId.IsValid());
+
+    ECSqlStatement stmt;
+    for (Utf8CP ecsql : std::vector<Utf8CP> {"SELECT * FROM ts.A"})
+        {
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql)) << ecsql;
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        EXPECT_EQ(4, stmt.GetColumnCount()) << stmt.GetECSql();
+        EXPECT_EQ(JsonValue(Utf8PrintfString(R"json({"ECInstanceId":%s, "ECClassId":%s, "Name":"A-1", "Size": 100})json", aKey.GetInstanceId().ToString().c_str(),
+                                             aKey.GetClassId().ToString().c_str())), retrieveRow(stmt)) << stmt.GetECSql();
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+        stmt.Finalize();
+        }
+
+    for (Utf8CP ecsql : std::vector<Utf8CP> {"SELECT * FROM ts.B ORDER BY Name"})
+        {
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql)) << ecsql;
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        EXPECT_EQ(4, stmt.GetColumnCount()) << stmt.GetECSql();
+        EXPECT_EQ(JsonValue(Utf8PrintfString(R"json({"ECInstanceId":%s, "ECClassId":%s, "Name":"B-1", "A":%s})json",
+                                             bKey.GetInstanceId().ToString().c_str(),
+                                             bKey.GetClassId().ToString().c_str(),
+                                             aKey.GetInstanceId().ToString().c_str())), retrieveRow(stmt)) << stmt.GetECSql();
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        EXPECT_EQ(JsonValue(Utf8PrintfString(R"json({"ECInstanceId":%s, "ECClassId":%s, "Name":"B-2", "A":%s})json",
+                                             subBKey.GetInstanceId().ToString().c_str(),
+                                             subBKey.GetClassId().ToString().c_str(),
+                                             aKey.GetInstanceId().ToString().c_str())), retrieveRow(stmt)) << stmt.GetECSql();
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+        stmt.Finalize();
+        }
+
+    for (Utf8CP ecsql : std::vector<Utf8CP> {"SELECT * FROM ts.AOwnsB ORDER BY SourceECClassId, TargetECClassId"})
+        {
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql)) << ecsql;
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        EXPECT_EQ(6, stmt.GetColumnCount()) << stmt.GetECSql();
+        EXPECT_EQ(JsonValue(Utf8PrintfString(R"json({"ECInstanceId":%s, "ECClassId":%s, "SourceECInstanceId":%s, "TargetECInstanceId":%s, "SourceECClassId":%s, "TargetECClassId":%s})json",
+                                             bKey.GetInstanceId().ToString().c_str(), // nav prop rels don't have their own id, ECDb hands out the instance's id holding the nav prop
+                                             aOwnsBClassId.ToString().c_str(),
+                                             aKey.GetInstanceId().ToString().c_str(),
+                                             bKey.GetInstanceId().ToString().c_str(),
+                                             aKey.GetClassId().ToString().c_str(),
+                                             bKey.GetClassId().ToString().c_str()
+        )), retrieveRow(stmt)) << stmt.GetECSql();
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        EXPECT_EQ(JsonValue(Utf8PrintfString(R"json({"ECInstanceId":%s, "ECClassId":%s, "SourceECInstanceId":%s,"TargetECInstanceId":%s, "SourceECClassId":%s, "TargetECClassId":%s})json",
+                                             subBKey.GetInstanceId().ToString().c_str(), // nav prop rels don't have their own id, ECDb hands out the instance's id holding the nav prop
+                                             aOwnsBClassId.ToString().c_str(),
+                                             aKey.GetInstanceId().ToString().c_str(),
+                                             subBKey.GetInstanceId().ToString().c_str(),
+                                             aKey.GetClassId().ToString().c_str(),
+                                             subBKey.GetClassId().ToString().c_str()
+        )), retrieveRow(stmt)) << stmt.GetECSql();
+
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+        stmt.Finalize();
+        }
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM (SELECT * FROM ts.AOwnsB) ORDER BY SourceECClassId, TargetECClassId"));
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM (SELECT SourceECClassId, TargetECClassId FROM ts.AOwnsB ORDER BY TargetECInstanceId) ORDER BY SourceECClassId,TargetECClassId"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    EXPECT_EQ(2, stmt.GetColumnCount()) << stmt.GetECSql();
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json({"SourceECClassId":%s, "TargetECClassId":%s})json",
+                                         aKey.GetClassId().ToString().c_str(),
+                                         bKey.GetClassId().ToString().c_str())), retrieveRow(stmt)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json({"SourceECClassId":%s, "TargetECClassId":%s})json",
+                                         aKey.GetClassId().ToString().c_str(),
+                                         subBKey.GetClassId().ToString().c_str())), retrieveRow(stmt)) << stmt.GetECSql();
+
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+
+
+    for (Utf8CP ecsql : std::vector<Utf8CP> {"SELECT * FROM ts.ALinksB"})
+        {
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql)) << ecsql;
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        EXPECT_EQ(6, stmt.GetColumnCount()) << stmt.GetECSql();
+        EXPECT_EQ(JsonValue(Utf8PrintfString(R"json({"ECInstanceId":%s, "ECClassId":%s, "SourceECInstanceId":%s, "TargetECInstanceId":%s, "SourceECClassId":%s, "TargetECClassId":%s})json",
+                                             aLinksBKey.GetInstanceId().ToString().c_str(),
+                                             aLinksBKey.GetClassId().ToString().c_str(),
+                                             aKey.GetInstanceId().ToString().c_str(),
+                                             bKey.GetInstanceId().ToString().c_str(),
+                                             aKey.GetClassId().ToString().c_str(),
+                                             bKey.GetClassId().ToString().c_str()
+        )), retrieveRow(stmt)) << stmt.GetECSql();
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+        stmt.Finalize();
+        }
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM (SELECT SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.ALinksB) ORDER BY SourceECClassId, TargetECClassId"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    EXPECT_EQ(4, stmt.GetColumnCount()) << stmt.GetECSql();
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json({"SourceECInstanceId":%s, "SourceECClassId":%s, "TargetECInstanceId":%s, "TargetECClassId":%s})json",
+                                            aKey.GetInstanceId().ToString().c_str(),
+                                            aKey.GetClassId().ToString().c_str(),
+                                            bKey.GetInstanceId().ToString().c_str(),
+                                            bKey.GetClassId().ToString().c_str()
+    )), retrieveRow(stmt)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+
+    for (Utf8CP ecsql : std::vector<Utf8CP> {"SELECT * FROM ts.SubBLinksFileInfo"})
+        {
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql)) << ecsql;
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        EXPECT_EQ(7, stmt.GetColumnCount()) << stmt.GetECSql();
+        EXPECT_EQ(JsonValue(Utf8PrintfString(R"json({"ECInstanceId":%s, "ECClassId":%s, "SourceECInstanceId":%s, "TargetECInstanceId":%s, "Priority":400, "SourceECClassId":%s, "TargetECClassId":%s})json",
+                                             subBLinksFileInfoKey.GetInstanceId().ToString().c_str(),
+                                             subBLinksFileInfoKey.GetClassId().ToString().c_str(),
+                                             subBKey.GetInstanceId().ToString().c_str(),
+                                             fileInfoKey.GetInstanceId().ToString().c_str(),
+                                             subBKey.GetClassId().ToString().c_str(),
+                                             fileInfoKey.GetClassId().ToString().c_str()
+        )), retrieveRow(stmt)) << stmt.GetECSql();
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+        stmt.Finalize();
+        }
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM (SELECT SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId, Priority FROM ts.SubBLinksFileInfo) ORDER BY SourceECClassId, TargetECClassId"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    EXPECT_EQ(5, stmt.GetColumnCount()) << stmt.GetECSql();
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json({"SourceECInstanceId":%s, "SourceECClassId":%s, "TargetECInstanceId":%s, "TargetECClassId":%s, "Priority":400})json",
+                                         subBKey.GetInstanceId().ToString().c_str(),
+                                         subBKey.GetClassId().ToString().c_str(),
+                                         fileInfoKey.GetInstanceId().ToString().c_str(),
+                                         fileInfoKey.GetClassId().ToString().c_str()
+    )), retrieveRow(stmt)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, InsertWithOnlyWithoutPropClause)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("InsertWithOnlyWithoutPropClause.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                    <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+                    <ECSchemaReference name="ECDbFileInfo" version="02.00.01" alias="ecdbf" />
+                    <ECEntityClass typeName="A">
+                        <ECCustomAttributes>
+                            <ClassMap xmlns="ECDbMap.02.00.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="Name" typeName="string" />
+                        <ECProperty propertyName="Size" typeName="int" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="B">
+                        <ECCustomAttributes>
+                            <ClassMap xmlns="ECDbMap.02.00.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                        <ECNavigationProperty propertyName="A" relationshipName="AOwnsB" direction="Backward"/>
+                        <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="SubB">
+                        <BaseClass>B</BaseClass>
+                        <ECProperty propertyName="SubName" typeName="string" />
+                     </ECEntityClass>
+                    <ECRelationshipClass typeName="AOwnsB" modifier="Sealed" strength="referencing">
+                      <Source multiplicity="(0..1)" roleLabel="is extracted from" polymorphic="false">
+                        <Class class="A"/>
+                      </Source>
+                      <Target multiplicity="(0..*)" roleLabel="refers to" polymorphic="false">
+                        <Class class="B"/>
+                      </Target>
+                    </ECRelationshipClass>
+                    <ECRelationshipClass typeName="ALinksB" modifier="Sealed" strength="referencing">
+                      <Source multiplicity="(0..*)" roleLabel="is extracted from" polymorphic="false">
+                        <Class class="A"/>
+                      </Source>
+                      <Target multiplicity="(0..*)" roleLabel="refers to" polymorphic="false">
+                        <Class class="B"/>
+                      </Target>
+                    </ECRelationshipClass>
+                    <ECRelationshipClass typeName="SubBLinksFileInfo" modifier="Sealed" strength="referencing">
+                      <Source multiplicity="(0..*)" roleLabel="is extracted from" polymorphic="false">
+                        <Class class="SubB"/>
+                      </Source>
+                      <Target multiplicity="(0..*)" roleLabel="refers to" polymorphic="false">
+                        <Class class="ecdbf:ExternalFileInfo"/>
+                      </Target>
+                      <ECProperty propertyName="Priority" typeName="int" />
+                    </ECRelationshipClass>
+                </ECSchema>)xml")));
+
+
+    ECInstanceKey aKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(aKey, "INSERT INTO ONLY ts.A VALUES('A-1',100)"));
+
+    // verify
+    EXPECT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteECSql(Utf8PrintfString("SELECT 1 FROM ts.A WHERE ECInstanceId=%" PRIu64 " AND ECClassId=%" PRIu64 " AND Name='A-1' AND Size=100",
+                                                                              aKey.GetInstanceId().GetValue(), aKey.GetClassId().GetValue()).c_str()));
+
+    ECInstanceKey bKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ONLY ts.B VALUES(?,'B-1')"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(1, aKey.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(bKey));
+    // verify
+    EXPECT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteECSql(Utf8PrintfString("SELECT 1 FROM ts.B WHERE ECInstanceId=%" PRIu64 " AND ECClassId=%" PRIu64 " AND A.Id=%" PRIu64 " AND Name='B-1'",
+                                                                       bKey.GetInstanceId().GetValue(), bKey.GetClassId().GetValue(), aKey.GetInstanceId().GetValue()).c_str()));
+    }
+
+    ECInstanceKey subBKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ONLY ts.SubB VALUES(?,'B-2','Sub 1')"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(1, aKey.GetInstanceId()));
+
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(subBKey));
+    // verify
+    EXPECT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteECSql(Utf8PrintfString("SELECT 1 FROM ts.SubB WHERE ECInstanceId=%" PRIu64 " AND ECClassId=%" PRIu64 " AND A.Id=%" PRIu64 " AND Name='B-2' AND SubName='Sub 1'",
+                                                                       subBKey.GetInstanceId().GetValue(), subBKey.GetClassId().GetValue(), aKey.GetInstanceId().GetValue()).c_str()));
+    }
+
+    ECInstanceKey fileInfoKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(fileInfoKey, "INSERT INTO ONLY ecdbf.ExternalFileInfo VALUES('DataFile-1',1000,'A test file',TIMESTAMP '2018-11-23T00:00Z',ecdbf.StandardRootFolderType.TemporaryFolder,'files/large')"));
+    // verify
+    EXPECT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteECSql(Utf8PrintfString("SELECT 1 FROM ecdbf.ExternalFileInfo WHERE ECInstanceId=%" PRIu64 " AND ECClassId=%" PRIu64 " AND Name='DataFile-1' AND Size=1000 AND Description='A test file' AND LastModified=TIMESTAMP '2018-11-23T00:00Z' AND RootFolder=ecdbf.StandardRootFolderType.TemporaryFolder AND RelativePath='files/large'",
+                                                                              fileInfoKey.GetInstanceId().GetValue(), fileInfoKey.GetClassId().GetValue()).c_str()));
+
+    {
+    ECSqlStatement stmt;
+
+    // SourceECClassId/TargetECClassId is skipped
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "INSERT INTO ONLY ts.ALinksB VALUES(?,-1,?,-1)"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "INSERT INTO ONLY ts.ALinksB VALUES(?,?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "INSERT INTO ONLY ts.ALinksB VALUES(?,?,?)"));
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ONLY ts.ALinksB VALUES(?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, aKey.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, bKey.GetInstanceId()));
+
+    ECInstanceKey aLinksBKey;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(aLinksBKey));
+    // verify
+    EXPECT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteECSql(Utf8PrintfString("SELECT 1 FROM ts.ALinksB WHERE ECInstanceId=%" PRIu64 " AND ECClassId=%" PRIu64 " AND SourceECInstanceId=%" PRIu64 " AND SourceECClassId=%" PRIu64 " AND TargetECInstanceId=%" PRIu64 " AND TargetECClassId=%" PRIu64,
+                                                                       aLinksBKey.GetInstanceId().GetValue(), aLinksBKey.GetClassId().GetValue(),
+                                                                       aKey.GetInstanceId().GetValue(), aKey.GetClassId().GetValue(),
+                                                                       bKey.GetInstanceId().GetValue(), bKey.GetClassId().GetValue()).c_str()));
+    }
+
+    {
+    ECSqlStatement stmt;
+
+    // SourceECClassId/TargetECClassId is skipped
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "INSERT INTO ONLY ts.SubBLinksFileInfo VALUES(400,?,-1,?,-1)"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "INSERT INTO ONLY ts.SubBLinksFileInfo VALUES(400,?,?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "INSERT INTO ONLY ts.SubBLinksFileInfo VALUES(400,?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "INSERT INTO ONLY ts.SubBLinksFileInfo VALUES(?,?,?,?)"));
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ONLY ts.SubBLinksFileInfo VALUES(?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, 400)) << "Priority is expected to be the first prop";
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, subBKey.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, fileInfoKey.GetInstanceId()));
+    ECInstanceKey subBLinksFileInfoKey;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(subBLinksFileInfoKey));
+    // verify
+    EXPECT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteECSql(Utf8PrintfString("SELECT 1 FROM ts.SubBLinksFileInfo WHERE ECInstanceId=%" PRIu64 " AND ECClassId=%" PRIu64 " AND SourceECInstanceId=%" PRIu64 " AND SourceECClassId=%" PRIu64 " AND TargetECInstanceId=%" PRIu64 " AND TargetECClassId=%" PRIu64 " AND Priority=400",
+                                                                       subBLinksFileInfoKey.GetInstanceId().GetValue(), subBLinksFileInfoKey.GetClassId().GetValue(),
+                                                                       subBKey.GetInstanceId().GetValue(), subBKey.GetClassId().GetValue(),
+                                                                       fileInfoKey.GetInstanceId().GetValue(), fileInfoKey.GetClassId().GetValue()).c_str()));
+    }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECSqlStatementTestFixture, CoalesceWithInsertUsingOnly)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("CoalesceWithInsertUsingOnly.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ONLY ecsql.P(I,S) VALUES(22, null)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ONLY ecsql.P(I,S) VALUES(null, 'Foo')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT I,COALESCE(I,S) FROM ecsql.P"));
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        if (stmt.IsValueNull(0))
+            ASSERT_STREQ("Foo", stmt.GetValueText(1));
+        else
+            ASSERT_EQ(22, stmt.GetValueInt(1));
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, AsteriskResolutionColumnInfoTest)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+      <ECSchema schemaName="TestSchema" alias="ts" version="1.0.%d" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name='ECDbMap' version='02.00.04' alias='ecdbmap' />
+          <ECEntityClass typeName="Entity">
+              <ECProperty propertyName="Name" typeName="string" />
+          </ECEntityClass>
+      </ECSchema>)xml";
+
+    SchemaItem testSchema(schemaXml);
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("AsteriskResolutionColumnInfoTest.ecdb", testSchema));
+    auto verifyColumnInfo = [](
+        ECSqlColumnInfoCR colInfo,
+        bool expectedIsGeneratedProperty,
+        bool expectedIsDynamic,
+        bool expectedIsSystemProperty,
+        PrimitiveType expectedPrimitiveType,
+        ValueKind expectedTypeKind,
+        Utf8CP expectedPropertyName,
+        Utf8CP expectedClassName,
+        Utf8CP expectedOriginName,
+        Utf8CP expectedOriginClassName,
+        Utf8CP expectedPropertyPath,
+        Utf8CP expectedRootClassName)
+        {
+        ASSERT_EQ(expectedIsGeneratedProperty, colInfo.IsGeneratedProperty());
+        ASSERT_EQ(expectedIsDynamic, colInfo.IsDynamic());
+        ASSERT_EQ(expectedIsSystemProperty, colInfo.IsSystemProperty());
+        auto& typeInfo = colInfo.GetDataType();
+        ASSERT_EQ(expectedPrimitiveType, typeInfo.GetPrimitiveType());
+        ASSERT_EQ(expectedTypeKind, typeInfo.GetTypeKind());
+        ECPropertyCP property = colInfo.GetProperty();
+        ASSERT_STREQ(expectedPropertyName, property->GetName().c_str());
+        ASSERT_STREQ(expectedClassName, property->GetClass().GetName().c_str());
+
+        ECPropertyCP originProperty = colInfo.GetOriginProperty();
+        if (expectedOriginClassName != nullptr || expectedOriginName != nullptr) {
+            ASSERT_TRUE(originProperty != nullptr);
+            ASSERT_STREQ(expectedOriginName, originProperty->GetName().c_str());
+            ASSERT_STREQ(expectedOriginClassName, originProperty->GetClass().GetName().c_str());
+        }
+
+        ECSqlPropertyPathCR path = colInfo.GetPropertyPath();
+        Utf8String pathStr = path.ToString();
+        ASSERT_STREQ(expectedPropertyPath, pathStr.c_str());
+
+        ECSqlColumnInfo::RootClass const& rootClass = colInfo.GetRootClass();
+        ASSERT_STREQ(expectedRootClassName, rootClass.GetClass().GetName().c_str());
+        };
+
+    if("insert")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Entity(Name) VALUES(?)"));
+        stmt.BindText(1, "Foo", IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());    
+        }
+
+    if("selecting_*_in_SELECT_statements")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.Entity"));
+        verifyColumnInfo(stmt.GetColumnInfo(0),
+        false, false, true, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_Long, ValueKind::VALUEKIND_Primitive,
+        "ECInstanceId", "ClassECSqlSystemProperties", //Property
+        "ECInstanceId", "ClassECSqlSystemProperties", //OriginProperty
+        "ECInstanceId", "Entity"); //PropertyPath, RootClass
+
+        verifyColumnInfo(stmt.GetColumnInfo(1),
+        false, false, true, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_Long, ValueKind::VALUEKIND_Primitive,
+        "ECClassId", "ClassECSqlSystemProperties", //Property
+        "ECClassId", "ClassECSqlSystemProperties", //OriginProperty
+        "ECClassId", "Entity"); //PropertyPath, RootClass
+
+        verifyColumnInfo(stmt.GetColumnInfo(2),
+        false, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_String, ValueKind::VALUEKIND_Primitive,
+        "Name", "Entity", //Property
+        "Name", "Entity", //OriginProperty
+        "Name", "Entity"); //PropertyPath, RootClass
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+        ASSERT_STREQ("1", stmt.GetValueText(0)); 
+        ASSERT_STREQ("88", stmt.GetValueText(1)); 
+        ASSERT_STREQ("Foo", stmt.GetValueText(2)); 
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());  
+        }
+    if("selecting_*_in_CTE_statements_with_columns")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "WITH cte(a,b,c,d) AS (SELECT a.*, Name FROM ts.Entity a) SELECT * FROM cte"));
+        verifyColumnInfo(stmt.GetColumnInfo(0),
+        true, false, true, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_Long, ValueKind::VALUEKIND_Primitive,
+        "a", "DynamicECSqlSelectClause", //Property
+        nullptr, nullptr, //OriginProperty
+        "a", "DynamicECSqlSelectClause"); //PropertyPath, RootClass
+
+        verifyColumnInfo(stmt.GetColumnInfo(1),
+        true, false, true, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_Long, ValueKind::VALUEKIND_Primitive,
+        "b", "DynamicECSqlSelectClause", //Property
+        nullptr, nullptr, //OriginProperty
+        "b", "DynamicECSqlSelectClause"); //PropertyPath, RootClass
+
+        verifyColumnInfo(stmt.GetColumnInfo(2),
+        true, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_String, ValueKind::VALUEKIND_Primitive,
+        "c", "DynamicECSqlSelectClause", //Property
+        nullptr, nullptr, //OriginProperty
+        "c", "DynamicECSqlSelectClause"); //PropertyPath, RootClass
+
+        verifyColumnInfo(stmt.GetColumnInfo(3),
+        true, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_String, ValueKind::VALUEKIND_Primitive,
+        "d", "DynamicECSqlSelectClause", //Property
+        nullptr, nullptr, //OriginProperty
+        "d", "DynamicECSqlSelectClause"); //PropertyPath, RootClass
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+        ASSERT_STREQ("1", stmt.GetValueText(0)); 
+        ASSERT_STREQ("88", stmt.GetValueText(1)); 
+        ASSERT_STREQ("Foo", stmt.GetValueText(2)); 
+        ASSERT_STREQ("Foo", stmt.GetValueText(3)); 
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());  
+        }
+    if("selecting_*_in_CTE_statements_without_columns")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT a.*, Name MyName FROM ts.Entity a) SELECT * FROM cte"));
+        verifyColumnInfo(stmt.GetColumnInfo(0),
+        false, false, true, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_Long, ValueKind::VALUEKIND_Primitive,
+        "ECInstanceId", "ClassECSqlSystemProperties", //Property
+        "ECInstanceId", "ClassECSqlSystemProperties", //OriginProperty
+        "ECInstanceId", "Entity"); //PropertyPath, RootClass
+
+        verifyColumnInfo(stmt.GetColumnInfo(1),
+        false, false, true, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_Long, ValueKind::VALUEKIND_Primitive,
+        "ECClassId", "ClassECSqlSystemProperties", //Property
+        "ECClassId", "ClassECSqlSystemProperties", //OriginProperty
+        "ECClassId", "Entity"); //PropertyPath, RootClass
+
+        verifyColumnInfo(stmt.GetColumnInfo(2),
+        false, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_String, ValueKind::VALUEKIND_Primitive,
+        "Name", "Entity", //Property
+        "Name", "Entity", //OriginProperty
+        "Name", "Entity"); //PropertyPath, RootClass
+
+        verifyColumnInfo(stmt.GetColumnInfo(3),
+        true, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_String, ValueKind::VALUEKIND_Primitive,
+        "MyName", "DynamicECSqlSelectClause", //Property
+        nullptr, nullptr, //OriginProperty
+        "MyName", "DynamicECSqlSelectClause"); //PropertyPath, RootClass
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+        ASSERT_STREQ("1", stmt.GetValueText(0)); 
+        ASSERT_STREQ("88", stmt.GetValueText(1)); 
+        ASSERT_STREQ("Foo", stmt.GetValueText(2)); 
+        ASSERT_STREQ("Foo", stmt.GetValueText(3)); 
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());  
+        }
+    }
+//---------------------------------------------------------------------------------------
+// @bsitest
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, StructArrayUnsetMembersWithInsertUsingOnly)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("StructArrayUnsetMembersWithInsertUsingOnly.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+          <ECEntityClass typeName="MyClass">
+                <ECStructArrayProperty propertyName="Locations" typeName="LocationStruct"/>
+          </ECEntityClass>
+          <ECStructClass typeName="LocationStruct">
+                <ECProperty propertyName="Street" typeName="string"/>
+                <ECStructProperty propertyName="City" typeName="CityStruct"/>
+          </ECStructClass>
+         <ECStructClass typeName="CityStruct">
+               <ECProperty propertyName="Name" typeName="string"/>
+               <ECProperty propertyName="State" typeName="string"/>
+               <ECProperty propertyName="Country" typeName="string"/>
+               <ECProperty propertyName="Zip" typeName="int"/>
+         </ECStructClass>
+        </ECSchema>
+        )xml")));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ONLY ts.MyClass(Locations) VALUES(?)"));
+    IECSqlBinder& structArrayBinder = stmt.GetBinder(1);
+    //first element: don't bind anything
+    structArrayBinder.AddArrayElement();
+
+    {
+    //call BindNull on element
+    IECSqlBinder& elementBinder = structArrayBinder.AddArrayElement();
+    ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindNull());
+    }
+
+    {
+    //bind to prim member in element
+    IECSqlBinder& elementBinder = structArrayBinder.AddArrayElement();
+    ASSERT_EQ(ECSqlStatus::Success, elementBinder["Street"].BindText("mainstreet", IECSqlBinder::MakeCopy::No));
+    }
+
+    {
+    //bind null to prim member in element
+    IECSqlBinder& elementBinder = structArrayBinder.AddArrayElement();
+    ASSERT_EQ(ECSqlStatus::Success, elementBinder["Street"].BindNull());
+    }
+
+    {
+    //call BindNull on struct member in element
+    IECSqlBinder& elementBinder = structArrayBinder.AddArrayElement();
+    ASSERT_EQ(ECSqlStatus::Success, elementBinder["City"].BindNull());
+    }
+
+    {
+    //call BindNull on prim and struct member in element
+    IECSqlBinder& elementBinder = structArrayBinder.AddArrayElement();
+    ASSERT_EQ(ECSqlStatus::Success, elementBinder["Street"].BindNull());
+    ASSERT_EQ(ECSqlStatus::Success, elementBinder["City"].BindNull());
+    }
+
+    {
+    //bind to prim member in struct member in element
+    IECSqlBinder& elementBinder = structArrayBinder.AddArrayElement();
+    ASSERT_EQ(ECSqlStatus::Success, elementBinder["City"]["Zip"].BindInt(34000));
+    }
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    stmt.Finalize();
+
+    Statement validateStmt;
+    ASSERT_EQ(BE_SQLITE_OK, validateStmt.Prepare(m_ecdb, "SELECT Locations FROM ts_MyClass WHERE Id=?"));
+    ASSERT_EQ(BE_SQLITE_OK, validateStmt.BindId(1, key.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, validateStmt.Step());
+    Utf8String actualJson(validateStmt.GetValueText(0));
+    actualJson.ReplaceAll(" ", "");
+    ASSERT_STRCASEEQ(R"json([null,null,{"Street":"mainstreet"},{"Street":null},{"City":null},{"Street":null,"City":null},{"City":{"Zip":34000}}])json", actualJson.c_str());
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, InsertUsingOnlyAndAll)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("InsertUsingOnlyAndAll.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ONLY ecsql.PSA(L,I) VALUES(33,123)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ONLY ecsql.PSA(L,I) VALUES(123456789,123)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ONLY ecsql.PSA(L,I) VALUES(123456789,124)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ONLY ecsql.PSA(L,I) VALUES(4444,123)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ONLY ecsql.P(I) VALUES(123)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ONLY ecsql.P(I) VALUES(124)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ONLY ecsql.P(I) VALUES(123)"));
+    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteECSql("INSERT INTO ALL ecsql.P(I) VALUES(123)"));
+
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT count(*) FROM ecsql.PSA WHERE L=123456789 AND I IN (SELECT I FROM ecsql.P WHERE I=123)"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    ASSERT_EQ(1, stmt.GetValueInt(0)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    }
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, Testing_Table_Valued_Functions_without_schemaNames)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("Testing_Table_Valued_Functions_without_schemaNames.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    auto test_data = R"({
+        "planet": "mars",
+        "gravity": "3.721 m/s²",
+        "surface_area": "144800000 km²",
+        "distance_from_sun":"227900000 km",
+        "radius" : "3389.5 km",
+        "orbital_period" : "687 days",
+        "moons": ["Phobos", "Deimos"]
+    })";
+    //json_each
+    if("json_each without schema name")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select * from json_each(?) s where s.key='gravity'"));
+        stmt.BindText(1, test_data, IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        ASSERT_STREQ(stmt.GetColumnInfo(1).GetProperty()->GetName().c_str(), "value");
+        ASSERT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
+        ASSERT_STREQ(stmt.GetValueText(1),"3.721 m/s²");
+        }
+    if("json_each with schema name")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select * from json1.json_each(?) s where s.key='gravity'"));
+        stmt.BindText(1, test_data, IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        ASSERT_STREQ(stmt.GetColumnInfo(1).GetProperty()->GetName().c_str(), "value");
+        ASSERT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
+        ASSERT_STREQ(stmt.GetValueText(1),"3.721 m/s²");
+        }
+    if("json_each subquery without schema name")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select * from (select * from json_each(?) s where s.key='gravity')"));
+        stmt.BindText(1, test_data, IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        ASSERT_STREQ(stmt.GetColumnInfo(1).GetProperty()->GetName().c_str(), "value");
+        ASSERT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
+        ASSERT_STREQ(stmt.GetValueText(1),"3.721 m/s²");
+        }
+    if("json_each subquery with schema name")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select * from (select * from json1.json_each(?) s where s.key='gravity')"));
+        stmt.BindText(1, test_data, IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        ASSERT_STREQ(stmt.GetColumnInfo(1).GetProperty()->GetName().c_str(), "value");
+        ASSERT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
+        ASSERT_STREQ(stmt.GetValueText(1),"3.721 m/s²");
+        }
+
+        //json_each
+    if("json_each without schema name")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select * from json_tree(?) s where s.key='gravity'"));
+        stmt.BindText(1, test_data, IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        ASSERT_STREQ(stmt.GetColumnInfo(0).GetProperty()->GetName().c_str(), "key");
+        ASSERT_STREQ(stmt.GetColumnInfo(1).GetProperty()->GetName().c_str(), "value");
+        ASSERT_STREQ(stmt.GetColumnInfo(2).GetProperty()->GetName().c_str(), "type");
+        ASSERT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
+        ASSERT_STREQ(stmt.GetValueText(0),"gravity");
+        ASSERT_STREQ(stmt.GetValueText(1),"3.721 m/s²");
+        ASSERT_STREQ(stmt.GetValueText(2),"text");
+        }
+    if("json_each with schema name")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select * from json1.json_tree(?) s where s.key='gravity'"));
+        stmt.BindText(1, test_data, IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        ASSERT_STREQ(stmt.GetColumnInfo(0).GetProperty()->GetName().c_str(), "key");
+        ASSERT_STREQ(stmt.GetColumnInfo(1).GetProperty()->GetName().c_str(), "value");
+        ASSERT_STREQ(stmt.GetColumnInfo(2).GetProperty()->GetName().c_str(), "type");
+        ASSERT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
+        ASSERT_STREQ(stmt.GetValueText(0),"gravity");
+        ASSERT_STREQ(stmt.GetValueText(1),"3.721 m/s²");
+        ASSERT_STREQ(stmt.GetValueText(2),"text");
+        }
+    if("json_each subquery without schema name")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select * from (select * from json_tree(?) s where s.key='gravity')"));
+        stmt.BindText(1, test_data, IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        ASSERT_STREQ(stmt.GetColumnInfo(0).GetProperty()->GetName().c_str(), "key");
+        ASSERT_STREQ(stmt.GetColumnInfo(1).GetProperty()->GetName().c_str(), "value");
+        ASSERT_STREQ(stmt.GetColumnInfo(2).GetProperty()->GetName().c_str(), "type");
+        ASSERT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
+        ASSERT_STREQ(stmt.GetValueText(0),"gravity");
+        ASSERT_STREQ(stmt.GetValueText(1),"3.721 m/s²");
+        ASSERT_STREQ(stmt.GetValueText(2),"text");
+        }
+    if("json_each subquery with schema name")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select * from (select * from json1.json_tree(?) s where s.key='gravity')"));
+        stmt.BindText(1, test_data, IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        ASSERT_STREQ(stmt.GetColumnInfo(0).GetProperty()->GetName().c_str(), "key");
+        ASSERT_STREQ(stmt.GetColumnInfo(1).GetProperty()->GetName().c_str(), "value");
+        ASSERT_STREQ(stmt.GetColumnInfo(2).GetProperty()->GetName().c_str(), "type");
+        ASSERT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
+        ASSERT_STREQ(stmt.GetValueText(0),"gravity");
+        ASSERT_STREQ(stmt.GetValueText(1),"3.721 m/s²");
+        ASSERT_STREQ(stmt.GetValueText(2),"text");
+        }
+    if("json_each with space as schema name")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "select * from   .json_each(?) s where s.key='gravity'"));
+        }
+    if("json_tree with empty schema name")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "select * from .json_tree(?) s where s.key='gravity'"));
+        }
+    if("json_tree without args")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "select * from json_tree s where s.key='gravity'"));
+        }
+    }
+
+class InvalidRelECClassIdTestFixture : public ECSqlStatementTestFixture
+    {
+    public:
+    Utf8String m_schemaXml;
+
+    InvalidRelECClassIdTestFixture() : ECSqlStatementTestFixture()
+        {
+        m_schemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="ECDbMap" version="2.0" alias="ecdbmap"/>
+
+                <ECEntityClass typeName="Element">
+                    <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.2.0">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                    </ECCustomAttributes>
+                    <ECNavigationProperty propertyName="OwnsChildElements" relationshipName="ElementOwnsChildElements" direction="Backward" />
+                    <ECNavigationProperty propertyName="RefersToElements" relationshipName="ElementRefersToElements" direction="Backward" />
+                    <ECProperty propertyName="Name" typeName="string" />
+                </ECEntityClass>
+
+                <ECRelationshipClass typeName="ElementOwnsChildElements" strength="embedding" modifier="None">
+                    <Source multiplicity="(0..1)" roleLabel="owns child" polymorphic="true">
+                        <Class class="Element"/>
+                    </Source>
+                    <Target multiplicity="(0..*)" roleLabel="is owned by parent" polymorphic="true">
+                        <Class class="Element"/>
+                    </Target>
+                </ECRelationshipClass>
+
+                <ECRelationshipClass typeName="ElementOwnsChildElementsDerived" strength="embedding" modifier="None">
+                    <BaseClass>ElementOwnsChildElements</BaseClass>
+                    <Source multiplicity="(0..1)" roleLabel="owns child" polymorphic="true">
+                        <Class class="Element"/>
+                    </Source>
+                    <Target multiplicity="(0..*)" roleLabel="is owned by parent" polymorphic="true">
+                        <Class class="Element"/>
+                    </Target>
+                </ECRelationshipClass>
+
+                <ECRelationshipClass typeName="ElementOwnsChildElementsGrandDerived" strength="embedding" modifier="None">
+                    <BaseClass>ElementOwnsChildElementsDerived</BaseClass>
+                    <Source multiplicity="(0..1)" roleLabel="owns child" polymorphic="true">
+                        <Class class="Element"/>
+                    </Source>
+                    <Target multiplicity="(0..*)" roleLabel="is owned by parent" polymorphic="true">
+                        <Class class="Element"/>
+                    </Target>
+                </ECRelationshipClass>
+
+                <ECRelationshipClass typeName="ElementRefersToElements" strength="embedding" modifier="None">
+                    <Source multiplicity="(0..1)" roleLabel="owns child" polymorphic="true">
+                        <Class class="Element"/>
+                    </Source>
+                    <Target multiplicity="(0..*)" roleLabel="is owned by parent" polymorphic="true">
+                        <Class class="Element"/>
+                    </Target>
+                </ECRelationshipClass>
+            </ECSchema>)xml";
+        }
+
+        void setPragma(const unsigned int testCaseNumber, const bool pragmaValue)
+            {
+            ECSqlStatement stmt;
+            EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("PRAGMA validate_ecsql_writes=%s", pragmaValue ? "true" : "false"))) << "Test case " << testCaseNumber << " failed to call PRAGMA.";
+            EXPECT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Test case " << testCaseNumber << " failed.";
+            EXPECT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Test case " << testCaseNumber << " failed.";
+            stmt.Finalize();
+            ASSERT_EQ(pragmaValue, m_ecdb.GetECSqlConfig().IsWriteValueValidationEnabled()) << "Test case " << testCaseNumber << " failed to set PRAGMA.";
+            }
+
+        void testInsert(const unsigned int testCaseNumber, Utf8StringCR sqlStmt, const ECSqlStatus expectedResult)
+            {
+            ECSqlStatement stmt;
+            EXPECT_EQ(expectedResult, stmt.Prepare(m_ecdb, sqlStmt.c_str())) << "Test case " << testCaseNumber << " failed to prepare statement.";
+            if (expectedResult == ECSqlStatus::Success)
+                EXPECT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Test case " << testCaseNumber << " failed.";
+            stmt.Finalize();
+            m_ecdb.AbandonChanges();
+            }
+
+        struct TestCase
+            {
+            unsigned int m_testCaseNumber;
+            bool m_pragmaValue;
+            Utf8String m_sqlStmt;
+            Utf8String m_firstNavPropValue;
+            Utf8String m_secondNavPropValue;
+            ECSqlStatus m_expectedResult;
+
+            TestCase(unsigned int testCaseNumber, bool pragmaValue, Utf8String sqlStmt, Utf8String firstNavPropValue, Utf8String secondNavPropValue, ECSqlStatus expectedResult)
+                : m_testCaseNumber(testCaseNumber), m_pragmaValue(pragmaValue), m_sqlStmt(sqlStmt), m_firstNavPropValue(firstNavPropValue), m_secondNavPropValue(secondNavPropValue), m_expectedResult(expectedResult)
+                {}
+            };
+
+        void getClassIdStrFromName(Utf8StringCR className, Utf8StringR& classId)
+            {
+            const auto elementOwnsChildElements = m_ecdb.Schemas().FindClass(className.c_str());
+            ASSERT_NE(elementOwnsChildElements, nullptr);
+            classId = elementOwnsChildElements->GetId().ToString();
+            }
+        };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(InvalidRelECClassIdTestFixture, InsertWithInvalidRelECClassId_WithPragma)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("insertWithInvalidRelECClassId.ecdb", SchemaItem(m_schemaXml)));
+    m_ecdb.SaveChanges();
+
+    Utf8String elementOwnsChildElementsId, elementOwnsChildElementDerivedId, elementOwnsChildElementGrandDerivedId, elementRefersToElementsId;
+    getClassIdStrFromName("ts.ElementOwnsChildElements", elementOwnsChildElementsId);
+    getClassIdStrFromName("ts.ElementOwnsChildElementsDerived", elementOwnsChildElementDerivedId);
+    getClassIdStrFromName("ts.ElementOwnsChildElementsGrandDerived", elementOwnsChildElementGrandDerivedId);
+    getClassIdStrFromName("ts.ElementRefersToElements", elementRefersToElementsId);
+
+    const auto sqlErrorStatus = ECSqlStatus(BE_SQLITE_ERROR);
+
+    // Test with hardcoded values in ecsql statements without binders
+    for (const auto& [testCaseNumber, pragmaValue, sqlStmt, firstNavPropValue, secondNavPropValue, expectedResult] : std::vector<TestCase> {
+        {  1, false, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(1, %s)", "9999", "",ECSqlStatus::Success },
+        {  2, false, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(2, %s)", "0", "", ECSqlStatus::Success },
+        {  3, false, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(3, %s)", "-1", "", ECSqlStatus::Success },
+        {  4, false, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(4, %s)", "NULL", "", ECSqlStatus::Success },
+
+        {  5, false, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(5, %s)", elementOwnsChildElementsId, "",ECSqlStatus::Success },
+        {  6, false, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(6, %s)", elementOwnsChildElementDerivedId, "",ECSqlStatus::Success },
+        {  7, false, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(7, %s)", elementOwnsChildElementGrandDerivedId, "",ECSqlStatus::Success },
+        {  8, false, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(8, %s)", elementRefersToElementsId, "",ECSqlStatus::Success },
+
+        {  9, false, "INSERT INTO ts.Element(RefersToElements.Id, RefersToElements.RelECClassId) VALUES(9, %s)", elementOwnsChildElementsId, "",ECSqlStatus::Success },
+        { 10, false, "INSERT INTO ts.Element(RefersToElements.Id, RefersToElements.RelECClassId) VALUES(10, %s)", elementOwnsChildElementDerivedId, "",ECSqlStatus::Success },
+        { 11, false, "INSERT INTO ts.Element(RefersToElements.Id, RefersToElements.RelECClassId) VALUES(11, %s)", elementOwnsChildElementGrandDerivedId, "",ECSqlStatus::Success },
+        { 12, false, "INSERT INTO ts.Element(RefersToElements.Id, RefersToElements.RelECClassId) VALUES(12, %s)", elementRefersToElementsId, "",ECSqlStatus::Success },
+
+        { 13, false, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId, RefersToElements.Id, RefersToElements.RelECClassId) VALUES(13, %s, 14, %s)", elementRefersToElementsId, elementOwnsChildElementDerivedId,ECSqlStatus::Success },
+        { 14, false, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId, RefersToElements.Id, RefersToElements.RelECClassId) VALUES(15, %s, 16, %s)", elementOwnsChildElementDerivedId, elementRefersToElementsId, ECSqlStatus::Success },
+        
+        { 15, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(17, %s)", "9999", "",sqlErrorStatus },
+        { 16, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(18, %s)", "0", "",sqlErrorStatus },
+        { 17, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(19, %s)", "-1", "",sqlErrorStatus },
+        { 18, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(20, %s)", "null", "",ECSqlStatus::Success },
+
+        { 19, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(21, %s)", elementOwnsChildElementsId, "",ECSqlStatus::Success },
+        { 20, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(22, %s)", elementOwnsChildElementDerivedId, "",ECSqlStatus::Success },
+        { 21, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(23, %s)", elementOwnsChildElementGrandDerivedId, "",ECSqlStatus::Success },
+        { 22, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(24, %s)", elementRefersToElementsId, "",sqlErrorStatus },
+
+        { 23, true, "INSERT INTO ts.Element(RefersToElements.Id, RefersToElements.RelECClassId) VALUES(25, %s)", elementOwnsChildElementsId, "",sqlErrorStatus },
+        { 24, true, "INSERT INTO ts.Element(RefersToElements.Id, RefersToElements.RelECClassId) VALUES(26, %s)", elementOwnsChildElementDerivedId, "",sqlErrorStatus },
+        { 25, true, "INSERT INTO ts.Element(RefersToElements.Id, RefersToElements.RelECClassId) VALUES(27, %s)", elementOwnsChildElementGrandDerivedId, "",sqlErrorStatus },
+        { 26, true, "INSERT INTO ts.Element(RefersToElements.Id, RefersToElements.RelECClassId) VALUES(28, %s)", elementRefersToElementsId, "",ECSqlStatus::Success },
+
+        { 27, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId, RefersToElements.Id, RefersToElements.RelECClassId) VALUES(29, %s, 30, %s)", elementRefersToElementsId, elementOwnsChildElementDerivedId,sqlErrorStatus },
+        { 28, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId, RefersToElements.Id, RefersToElements.RelECClassId) VALUES(31, %s, 32, %s)", elementOwnsChildElementDerivedId, elementRefersToElementsId, ECSqlStatus::Success },
+
+        { 29, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId, RefersToElements.Id, RefersToElements.RelECClassId) VALUES(31, %s, 32, %s)", elementOwnsChildElementDerivedId, elementRefersToElementsId, ECSqlStatus::Success },
+    })  {
+        setPragma(testCaseNumber, pragmaValue);
+        testInsert(testCaseNumber, SqlPrintfString(sqlStmt.c_str(), firstNavPropValue.c_str(), secondNavPropValue.c_str()).GetUtf8CP(), expectedResult);
+        }
+
+    // Test with binders
+    for (const auto& [testCaseNumber, pragmaValue, sqlStmt, firstNavPropValue, secondNavPropValue, expectedBindingResult] : std::vector<TestCase> {
+        { 30, false, "INSERT INTO ts.Element(OwnsChildElements) VALUES(?)", elementOwnsChildElementsId, "", ECSqlStatus::Success },
+        { 31, false, "INSERT INTO ts.Element(OwnsChildElements) VALUES(?)", elementOwnsChildElementDerivedId, "", ECSqlStatus::Success },
+        { 32, false, "INSERT INTO ts.Element(OwnsChildElements) VALUES(?)", elementOwnsChildElementGrandDerivedId, "", ECSqlStatus::Success },
+        { 33, false, "INSERT INTO ts.Element(OwnsChildElements) VALUES(?)", elementRefersToElementsId, "", ECSqlStatus::Success },
+        { 34, false, "INSERT INTO ts.Element(OwnsChildElements) VALUES(?)", "9999", "", ECSqlStatus::Success },
+
+        { 35, false, "INSERT INTO ts.Element(RefersToElements) VALUES(?)", elementOwnsChildElementsId, "", ECSqlStatus::Success },
+        { 36, false, "INSERT INTO ts.Element(RefersToElements) VALUES(?)", elementOwnsChildElementDerivedId, "", ECSqlStatus::Success },
+        { 37, false, "INSERT INTO ts.Element(RefersToElements) VALUES(?)", elementOwnsChildElementGrandDerivedId, "", ECSqlStatus::Success },
+        { 38, false, "INSERT INTO ts.Element(RefersToElements) VALUES(?)", elementRefersToElementsId, "", ECSqlStatus::Success },
+        { 39, false, "INSERT INTO ts.Element(RefersToElements) VALUES(?)", "9999", "", ECSqlStatus::Success },
+
+        { 40, false, "INSERT INTO ts.Element(OwnsChildElements, RefersToElements) VALUES(?, ?)", elementOwnsChildElementsId, elementRefersToElementsId, ECSqlStatus::Success },
+        { 41, false, "INSERT INTO ts.Element(RefersToElements, OwnsChildElements) VALUES(?, ?)", elementOwnsChildElementsId, elementRefersToElementsId, ECSqlStatus::Success },
+
+        { 42, true, "INSERT INTO ts.Element(OwnsChildElements) VALUES(?)", elementOwnsChildElementsId, "", ECSqlStatus::Success },
+        { 43, true, "INSERT INTO ts.Element(OwnsChildElements) VALUES(?)", elementOwnsChildElementDerivedId, "", ECSqlStatus::Success },
+        { 44, true, "INSERT INTO ts.Element(OwnsChildElements) VALUES(?)", elementOwnsChildElementGrandDerivedId, "", ECSqlStatus::Success },
+        { 45, true, "INSERT INTO ts.Element(OwnsChildElements) VALUES(?)", elementRefersToElementsId, "", sqlErrorStatus},
+        { 46, true, "INSERT INTO ts.Element(OwnsChildElements) VALUES(?)", "9999", "", sqlErrorStatus },
+
+        { 47, true, "INSERT INTO ts.Element(RefersToElements) VALUES(?)", elementOwnsChildElementsId, "", sqlErrorStatus },
+        { 48, true, "INSERT INTO ts.Element(RefersToElements) VALUES(?)", elementOwnsChildElementDerivedId, "", sqlErrorStatus },
+        { 49, true, "INSERT INTO ts.Element(RefersToElements) VALUES(?)", elementOwnsChildElementGrandDerivedId, "", sqlErrorStatus },
+        { 50, true, "INSERT INTO ts.Element(RefersToElements) VALUES(?)", elementRefersToElementsId, "", ECSqlStatus::Success},
+        { 51, true, "INSERT INTO ts.Element(RefersToElements) VALUES(?)", "9999", "", sqlErrorStatus },
+
+        { 52, true, "INSERT INTO ts.Element(OwnsChildElements, RefersToElements) VALUES(?, ?)", elementOwnsChildElementsId, elementRefersToElementsId, ECSqlStatus::Success },
+        { 53, true, "INSERT INTO ts.Element(RefersToElements, OwnsChildElements) VALUES(?, ?)", elementOwnsChildElementsId, elementRefersToElementsId, sqlErrorStatus },
+    }) {
+        setPragma(testCaseNumber, pragmaValue);
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sqlStmt.c_str())) << "Test case " << testCaseNumber << " failed.";
+
+        ECClassId firstNavPropRelClassId;
+        ECClassId::FromString(firstNavPropRelClassId, firstNavPropValue.c_str());
+        EXPECT_EQ(expectedBindingResult, stmt.BindNavigationValue(1, BeInt64Id(testCaseNumber), firstNavPropRelClassId)) << "Test case " << testCaseNumber << " failed to bind value.";
+
+        if (!Utf8String::IsNullOrEmpty(secondNavPropValue.c_str()))
+            {
+            ECClassId secondNavPropRelClassId;
+            ECClassId::FromString(secondNavPropRelClassId, secondNavPropValue.c_str());
+            EXPECT_EQ(expectedBindingResult, stmt.BindNavigationValue(2, BeInt64Id(testCaseNumber), secondNavPropRelClassId)) << "Test case " << testCaseNumber << " failed to bind second value.";
+            }
+
+        if (expectedBindingResult == ECSqlStatus::Success)
+            EXPECT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Test case " << testCaseNumber << " failed to step.";
+    
+        stmt.Finalize();
+        m_ecdb.AbandonChanges();
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(InvalidRelECClassIdTestFixture, UpdateWithInvalidRelECClassId_WithPragma)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("updateWithInvalidRelECClassId.ecdb", SchemaItem(m_schemaXml)));
+
+    Utf8String elementOwnsChildElementsIdStr, elementOwnsChildElementDerivedIdStr, elementOwnsChildElementGrandDerivedIdStr, elementRefersToElementsIdStr;
+    getClassIdStrFromName("ts.ElementOwnsChildElements", elementOwnsChildElementsIdStr);
+    getClassIdStrFromName("ts.ElementOwnsChildElementsDerived", elementOwnsChildElementDerivedIdStr);
+    getClassIdStrFromName("ts.ElementOwnsChildElementsGrandDerived", elementOwnsChildElementGrandDerivedIdStr);
+    getClassIdStrFromName("ts.ElementRefersToElements", elementRefersToElementsIdStr);
+
+    ECClassId elementOwnsChildElementsId, elementRefersToElementsId;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ECClassId::FromString(elementOwnsChildElementsId, elementOwnsChildElementsIdStr.c_str()));
+    ASSERT_EQ(BentleyStatus::SUCCESS, ECClassId::FromString(elementRefersToElementsId, elementRefersToElementsIdStr.c_str()));
+
+    // Insert a few values to be updated
+    ECSqlStatement insertStmt;
+    EXPECT_EQ(ECSqlStatus::Success, insertStmt.Prepare(m_ecdb, "INSERT INTO ts.Element(OwnsChildElements, RefersToElements) VALUES(?, ?)"));
+    insertStmt.BindNavigationValue(1, BeInt64Id(1), elementOwnsChildElementsId);
+    insertStmt.BindNavigationValue(2, BeInt64Id(2), elementRefersToElementsId);
+    EXPECT_EQ(BE_SQLITE_DONE, insertStmt.Step());
+    insertStmt.Finalize();
+
+    m_ecdb.SaveChanges();
+
+    const auto sqlErrorStatus = ECSqlStatus(BE_SQLITE_ERROR);
+
+    // Test with hardcoded values in ecsql statements without binders
+    for (const auto& [testCaseNumber, pragmaValue, sqlStmt, firstNavPropValue, secondNavPropValue, expectedResult] : std::vector<TestCase> {
+        {  1, false, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", "9999", "", ECSqlStatus::Success },
+        {  2, false, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", "0", "", ECSqlStatus::Success },
+        {  3, false, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", "-1", "", ECSqlStatus::Success },
+        {  4, false, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", "null", "", ECSqlStatus::Success },
+
+        {  5, false, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", elementRefersToElementsIdStr, "", ECSqlStatus::Success },
+        {  6, false, "update ts.Element set RefersToElements.RelECClassId=%s where RefersToElements.Id=1", elementOwnsChildElementsIdStr, "", ECSqlStatus::Success },
+
+        {  7, false, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", elementOwnsChildElementsIdStr, "", ECSqlStatus::Success },
+        {  8, false, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", elementOwnsChildElementDerivedIdStr, "", ECSqlStatus::Success },
+        {  9, false, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", elementOwnsChildElementGrandDerivedIdStr, "", ECSqlStatus::Success },
+        { 10, false, "update ts.Element set RefersToElements.RelECClassId=%s where RefersToElements.Id=1", elementOwnsChildElementsIdStr, "", ECSqlStatus::Success },
+        { 11, false, "update ts.Element set RefersToElements.RelECClassId=%s where RefersToElements.Id=1", elementOwnsChildElementDerivedIdStr, "", ECSqlStatus::Success },
+        { 12, false, "update ts.Element set RefersToElements.RelECClassId=%s where RefersToElements.Id=1", elementOwnsChildElementGrandDerivedIdStr, "", ECSqlStatus::Success },
+        { 13, false, "update ts.Element set RefersToElements.RelECClassId=%s where RefersToElements.Id=1", elementRefersToElementsIdStr, "", ECSqlStatus::Success },
+
+        { 14, true, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", "9999", "", sqlErrorStatus },
+        { 15, true, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", "0", "", sqlErrorStatus },
+        { 16, true, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", "-1", "", sqlErrorStatus },
+        { 17, true, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", "null", "", ECSqlStatus::Success },
+
+        { 18, true, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", elementRefersToElementsIdStr, "", sqlErrorStatus },
+        { 19, true, "update ts.Element set RefersToElements.RelECClassId=%s where RefersToElements.Id=1", elementOwnsChildElementsIdStr, "", sqlErrorStatus },
+
+        { 20, true, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", elementOwnsChildElementsIdStr, "", ECSqlStatus::Success },
+        { 21, true, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", elementOwnsChildElementDerivedIdStr, "", ECSqlStatus::Success },
+        { 22, true, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", elementOwnsChildElementGrandDerivedIdStr, "", ECSqlStatus::Success },
+        { 23, true, "update ts.Element set RefersToElements.RelECClassId=%s where RefersToElements.Id=1", elementOwnsChildElementsIdStr, "", sqlErrorStatus },
+        { 24, true, "update ts.Element set RefersToElements.RelECClassId=%s where RefersToElements.Id=1", elementOwnsChildElementDerivedIdStr, "", sqlErrorStatus },
+        { 25, true, "update ts.Element set RefersToElements.RelECClassId=%s where RefersToElements.Id=1", elementOwnsChildElementGrandDerivedIdStr, "", sqlErrorStatus },
+        { 26, true, "update ts.Element set RefersToElements.RelECClassId=%s where RefersToElements.Id=1", elementRefersToElementsIdStr, "", ECSqlStatus::Success },
+        { 27, true, "update ts.Element set OwnsChildElements.RelECClassId=%s, RefersToElements.RelECClassId=%s", elementOwnsChildElementsIdStr, elementRefersToElementsIdStr, ECSqlStatus::Success },
+        { 28, true, "update ts.Element set OwnsChildElements.RelECClassId=%s, RefersToElements.RelECClassId=%s", elementRefersToElementsIdStr, elementOwnsChildElementsIdStr, sqlErrorStatus },
+    })
+        {
+        setPragma(testCaseNumber, pragmaValue);
+        testInsert(testCaseNumber, SqlPrintfString(sqlStmt.c_str(), firstNavPropValue.c_str(), secondNavPropValue.c_str()).GetUtf8CP(), expectedResult);
+        }
+
+    // Test with binders
+    for (const auto& [testCaseNumber, pragmaValue, sqlStmt, firstNavPropValue, secondNavPropValue, expectedResult] : std::vector<TestCase> {
+        { 29, false, "update ts.Element set OwnsChildElements=? where OwnsChildElements.Id=1", "9999", "", ECSqlStatus::Success },
+        { 30, false, "update ts.Element set OwnsChildElements=? where OwnsChildElements.Id=1", elementOwnsChildElementsIdStr, "", ECSqlStatus::Success },
+        { 31, false, "update ts.Element set OwnsChildElements=? where OwnsChildElements.Id=1", elementOwnsChildElementDerivedIdStr, "", ECSqlStatus::Success },
+        { 32, false, "update ts.Element set OwnsChildElements=? where OwnsChildElements.Id=1", elementOwnsChildElementGrandDerivedIdStr, "", ECSqlStatus::Success },
+        { 33, false, "update ts.Element set OwnsChildElements=? where OwnsChildElements.Id=1", elementRefersToElementsIdStr, "", ECSqlStatus::Success },
+
+        { 34, false, "update ts.Element set RefersToElements=? where RefersToElements.Id=1", elementOwnsChildElementsIdStr, "", ECSqlStatus::Success },
+        { 35, false, "update ts.Element set RefersToElements=? where RefersToElements.Id=1", elementOwnsChildElementDerivedIdStr, "", ECSqlStatus::Success },
+        { 36, false, "update ts.Element set RefersToElements=? where RefersToElements.Id=1", elementOwnsChildElementGrandDerivedIdStr, "", ECSqlStatus::Success },
+        { 37, false, "update ts.Element set RefersToElements=? where RefersToElements.Id=1", elementRefersToElementsIdStr, "", ECSqlStatus::Success },
+
+        { 38, true, "update ts.Element set OwnsChildElements=? where OwnsChildElements.Id=1", "9999", "", sqlErrorStatus },
+        { 39, true, "update ts.Element set OwnsChildElements=? where OwnsChildElements.Id=1", elementOwnsChildElementsIdStr, "", ECSqlStatus::Success },
+        { 40, true, "update ts.Element set OwnsChildElements=? where OwnsChildElements.Id=1", elementOwnsChildElementDerivedIdStr, "", ECSqlStatus::Success },
+        { 41, true, "update ts.Element set OwnsChildElements=? where OwnsChildElements.Id=1", elementOwnsChildElementGrandDerivedIdStr, "", ECSqlStatus::Success },
+        { 42, true, "update ts.Element set OwnsChildElements=? where OwnsChildElements.Id=1", elementRefersToElementsIdStr, "", sqlErrorStatus },
+
+        { 43, true, "update ts.Element set RefersToElements=? where RefersToElements.Id=1", elementOwnsChildElementsIdStr, "", sqlErrorStatus },
+        { 44, true, "update ts.Element set RefersToElements=? where RefersToElements.Id=1", elementOwnsChildElementDerivedIdStr, "", sqlErrorStatus },
+        { 45, true, "update ts.Element set RefersToElements=? where RefersToElements.Id=1", elementOwnsChildElementGrandDerivedIdStr, "", sqlErrorStatus },
+        { 46, true, "update ts.Element set RefersToElements=? where RefersToElements.Id=1", elementRefersToElementsIdStr, "", ECSqlStatus::Success },
+        { 47, true, "update ts.Element set OwnsChildElements=?, RefersToElements=?", elementOwnsChildElementsIdStr, elementRefersToElementsIdStr, ECSqlStatus::Success },
+        { 48, true, "update ts.Element set OwnsChildElements=?, RefersToElements=?", elementRefersToElementsIdStr, elementOwnsChildElementsIdStr, sqlErrorStatus },
+    })
+        {
+        setPragma(testCaseNumber, pragmaValue);
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sqlStmt.c_str())) << "Test case " << testCaseNumber << " failed to prepare statement.";
+        ECClassId relClassId;
+        ECClassId::FromString(relClassId, firstNavPropValue.c_str());
+        EXPECT_EQ(expectedResult, stmt.BindNavigationValue(1, BeInt64Id(1), relClassId)) << "Test case " << testCaseNumber << " failed to bind value.";
+        if (!Utf8String::IsNullOrEmpty(secondNavPropValue.c_str()))
+            {
+            ECClassId secondRelClassId;
+            ECClassId::FromString(secondRelClassId, secondNavPropValue.c_str());
+            EXPECT_EQ(expectedResult, stmt.BindNavigationValue(2, BeInt64Id(1), secondRelClassId)) << "Test case " << testCaseNumber << " failed to bind second value.";
+            }
+        if (expectedResult == ECSqlStatus::Success)
+            EXPECT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Test case " << testCaseNumber << " failed to step.";
+        stmt.Finalize();
+        m_ecdb.AbandonChanges();
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(InvalidRelECClassIdTestFixture, SelectWithInvalidRelECClassId_WithPragma)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("selectWithInvalidRelECClassId.ecdb", SchemaItem(m_schemaXml)));
+    m_ecdb.SaveChanges();
+
+    Utf8String elementOwnsChildElementsId, elementRefersToElementsId;
+    getClassIdStrFromName("ts.ElementOwnsChildElements", elementOwnsChildElementsId);
+    getClassIdStrFromName("ts.ElementRefersToElements", elementRefersToElementsId);
+
+    // Make sure the pragma only works for insert statements
+    for (const auto& [testCaseNumber, pragmaValue, relClassIdStr] : std::vector<std::tuple<unsigned int, bool, Utf8String>> {
+        { 1, false, "9999" },
+        { 2, false, elementOwnsChildElementsId },
+        { 3, false, elementRefersToElementsId },
+
+        { 4, true, "9999" },
+        { 5, true, elementOwnsChildElementsId },
+        { 6, true, elementRefersToElementsId }
+    })
+        {
+        setPragma(testCaseNumber, pragmaValue);
+
+        ECClassId relClassId;
+        ASSERT_EQ(BentleyStatus::SUCCESS, ECClassId::FromString(relClassId, relClassIdStr.c_str())) << "Test case " << testCaseNumber << " failed to convert class id.";
+
+        // Test with hardcoded values in ecsql statements without binders
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT * FROM ts.Element where OwnsChildElements.RelECClassId=%s", relClassIdStr.c_str()))) << "Test case " << testCaseNumber << " failed to prepare statement.";
+        EXPECT_EQ(BE_SQLITE_DONE, stmt.Step());
+        stmt.Finalize();
+
+        // Test with binders
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.Element where OwnsChildElements=?")) << "Test case " << testCaseNumber << " failed to prepare statement.";
+        EXPECT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(1, BeInt64Id(9999ull), relClassId)) << "Test case " << testCaseNumber << " failed to bind value.";
+        EXPECT_EQ(BE_SQLITE_DONE, stmt.Step());
+        stmt.Finalize();
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECSqlStatementTestFixture, IsCoreSelectTests) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("is_core_select_tests.ecdb"));
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * FROM IdSet('[1,2,3,4,5]') LIMIT 3 ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES UNION SELECT * FROM IdSet('[1,2,3,4,5]') ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES"));
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[1,2,3,4,5]') ORDER BY id ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES UNION SELECT * FROM IdSet('[1,2,3,4,5]') ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES"));
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM IdSet('[1,2,3,4,5]') ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES UNION SELECT * FROM IdSet('[5, 6, 7, 8]') LIMIT 3 ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES"));
+        int i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            ASSERT_EQ((1+i++), stmt.GetValueInt64(0));
+            }
+        ASSERT_EQ(i, 3);
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM (SELECT * FROM IdSet('[1,2,3,4,5]') UNION SELECT * FROM IdSet('[5, 6, 7, 8]')) LIMIT 3 ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES"));
+        int i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            ASSERT_EQ((1+i++), stmt.GetValueInt64(0));
+            }
+        ASSERT_EQ(i, 3);
+        }
+}
+
 END_ECDBUNITTESTS_NAMESPACE

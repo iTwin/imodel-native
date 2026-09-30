@@ -81,6 +81,7 @@ struct DerivedPropertyExp final : Exp
         }
         bool IsComputed() const;
         bool OriginateInASubQuery() const { return nullptr != this->FindParent(Exp::Type::Subquery); }
+        bool OriginateInACommonTableBlockWithNoColumns() const;
         bool IsWildCard() const;
         ExtractPropertyValueExp const* TryGetExtractPropExp() const;
     };
@@ -312,6 +313,7 @@ struct SingleSelectStatementExp final : QueryExp
         bool IsRowConstructor() const { return m_fromClauseIndex == UNSET_CHILDINDEX;}
 
         SqlSetQuantifier GetSelectionType() const { return m_selectionType; }
+        PropertyMatchResult FindProperty(ECSqlParseContext& ctx, PropertyPath const &propertyPath, const PropertyMatchOptions &options) const {return _FindProperty(ctx, propertyPath, options);}
         FromExp const* GetFrom() const
             {
             if (m_fromClauseIndex < 0)
@@ -377,13 +379,15 @@ struct SingleSelectStatementExp final : QueryExp
             }
 
 
-        bool IsCoreSelect() const { return m_limitOffsetClauseIndex == UNSET_CHILDINDEX && m_optionsClauseIndex == UNSET_CHILDINDEX; }
+        bool IsCoreSelect() const { return m_orderByClauseIndex == UNSET_CHILDINDEX && m_limitOffsetClauseIndex == UNSET_CHILDINDEX; }
     };
+
 
 //********* QueryExp subclasses ***************************
 //=======================================================================================
 //! @bsiclass
 //+===============+===============+===============+===============+===============+======
+struct CommonTableExp; // Forward Declared for SubqueryExp constructor
 struct SelectStatementExp;
 struct SubqueryExp final : QueryExp
     {
@@ -397,7 +401,9 @@ struct SubqueryExp final : QueryExp
         SelectClauseExp const* _GetSelection() const override;
     public:
         explicit SubqueryExp(std::unique_ptr<SelectStatementExp>);
-        SelectStatementExp const* GetQuery() const;
+        explicit SubqueryExp(std::unique_ptr<CommonTableExp>);
+        template<typename T>
+        T const* GetQuery() const;
     };
 
 
@@ -419,6 +425,7 @@ struct SelectStatementExp final : QueryExp
         int m_rhsSelectStatementExpIndex;
         CompoundOperator m_operator;
         bool m_isAll;
+        std::vector<SingleSelectStatementExp const *> m_flatListOfStatements;
 
         void _ToECSql(ECSqlRenderContext&) const override;
         void _ToJson(BeJsValue, JsonFormat const&) const override;
@@ -438,14 +445,8 @@ struct SelectStatementExp final : QueryExp
         SelectStatementExp const* GetRhsStatement() const;
         bool IsAll()const { return m_isAll; }
         CompoundOperator GetOperator() const { return m_operator; }
-        std::vector<SingleSelectStatementExp const*> GetFlatListOfStatements() const {
-            std::vector<SingleSelectStatementExp const *> list;
-            auto cur = this;
-            do {
-                list.push_back(&cur->GetFirstStatement());
-                cur = cur->GetRhsStatement();
-            } while(cur != nullptr);
-            return list;
+        std::vector<SingleSelectStatementExp const*> const& GetFlatListOfStatements() const {
+            return m_flatListOfStatements;
         }
 
     };
@@ -461,17 +462,13 @@ struct SubqueryRefExp final : RangeClassRefExp
     friend struct ECSqlParser;
     private:
         Utf8StringCR _GetId() const override { return GetAlias(); }
-	    PropertyMatchResult _FindProperty(ECSqlParseContext& ctx, PropertyPath const &propertyPath, const PropertyMatchOptions &options) const override {
-            PropertyMatchOptions overrideOptions = options;
-            overrideOptions.SetAlias(GetAlias().c_str());
-            return GetSubquery()->GetQuery()->FindProperty(ctx, propertyPath, overrideOptions);
-            }
+	    PropertyMatchResult _FindProperty(ECSqlParseContext& ctx, PropertyPath const &propertyPath, const PropertyMatchOptions &options) const override;
         void _OnAliasChanged() override {
             if( auto view = GetViewClassP()) {
                 view->SetAlias(GetAlias());
             }
         }
-        void _ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const override;
+        void _ExpandSelectAsterisk(std::vector<std::unique_ptr<Exp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const override;
         void _ToECSql(ECSqlRenderContext&) const override;
         void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override;

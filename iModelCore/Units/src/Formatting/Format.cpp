@@ -6,6 +6,8 @@
 #include <Formatting/FormattingApi.h>
 #include "../../PrivateAPI/Formatting/FormattingParsing.h"
 #include <regex>
+#define _USE_MATH_DEFINES
+#include <math.h>
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
@@ -93,8 +95,11 @@ Format::Format(NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec)
 // static
 bool Format::FromJson(FormatR out, Utf8CP jsonString, BEU::IUnitsContextCP context)
     {
-    Json::Value jval (Json::objectValue);
-    if (!Json::Reader::Parse(jsonString, jval))
+    if (Utf8String::IsNullOrEmpty(jsonString))
+        return false;
+
+    BeJsDocument jval(jsonString);
+    if (jval.hasParseError())
         return false;
     return FromJson(out, jval, context);
     }
@@ -103,7 +108,7 @@ bool Format::FromJson(FormatR out, Utf8CP jsonString, BEU::IUnitsContextCP conte
 // @bsimethod
 //----------------------------------------------------------------------------------------
 // static
-bool Format::FromJson(FormatR out, Json::Value jval, BEU::IUnitsContextCP context)
+bool Format::FromJson(FormatR out, BeJsConst jval, BEU::IUnitsContextCP context)
     {
     Format f = Format();
     f.m_problem = FormatProblemCode::NoProblems;
@@ -113,21 +118,23 @@ bool Format::FromJson(FormatR out, Json::Value jval, BEU::IUnitsContextCP contex
         return false;
         }
 
-    if (!NumericFormatSpec::FromJson(f.m_numericSpec, jval))
+    if (!NumericFormatSpec::FromJson(f.m_numericSpec, jval, context))
         return false;
-    Utf8CP paramName;
-    for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
+
+    bool failed = jval.ForEachProperty([&](Utf8CP paramName, BeJsConst val)
         {
-        paramName = iter.memberName();
-        JsonValueCR val = *iter;
         if (BeStringUtilities::StricmpAscii(paramName, json_composite()) == 0)
             {
             CompositeValueSpec spec;
             if (!CompositeValueSpec::FromJson(spec, val, context))
-                return false;
+                return true;
             f.SetCompositeSpec(spec);
             }
-        }
+        return false;
+        });
+    if (failed)
+        return false;
+
     out = f;
     return true;
     }
@@ -148,6 +155,132 @@ bool Format::IsIdentical(FormatCR other) const
     return true;
     }
 
+BentleyStatus Format::TryGetRevolution(BEU::UnitCR unit, double& revolution) const
+    {
+    auto numSpec = GetNumericSpec();
+    if (numSpec == nullptr)
+        return BentleyStatus::ERROR;
+
+    auto revUnit = GetNumericSpec()->GetRevolutionUnit();
+    if (revUnit == nullptr)
+        return BentleyStatus::ERROR;
+
+    BEU::Quantity revQuantity(1.0, *revUnit);
+    auto convertedQuantity = revQuantity.ConvertTo(&unit);
+    if (!convertedQuantity.IsValid())
+        return BentleyStatus::ERROR;
+    
+    revolution = convertedQuantity.GetMagnitude();
+    return BentleyStatus::SUCCESS;
+    }
+
+BentleyStatus Format::NormalizeAngle(BEU::Quantity& quantity, Utf8CP operationName, double revolution)
+    {
+    BEU::UnitCP unit = quantity.GetUnit();
+    double magnitude = fmod(quantity.GetMagnitude(), revolution); // Strip anything that goes around more than once
+    
+    if(magnitude < 0) //If the value is negative, representing a counter-clockwise angle, we want to normalize it to a positive angle
+        magnitude += revolution;
+
+    quantity = BEU::Quantity(magnitude, *unit);
+    return BentleyStatus::SUCCESS;
+    }
+
+BentleyStatus Format::FormatBearingAndAzimuth(BEU::Quantity& quantity, std::string& prefix, std::string& suffix) const
+    {
+    NumericFormatSpecCP fmtP = GetNumericSpec();
+    if (fmtP == nullptr)
+        return BentleyStatus::ERROR;
+
+    auto type = fmtP->GetPresentationType();
+    if(type != PresentationType::Bearing && type != PresentationType::Azimuth)
+        return BentleyStatus::ERROR;
+
+    double revolution;
+    auto unit = quantity.GetUnit();
+    if (unit == nullptr)
+        return BentleyStatus::ERROR;
+
+    if (TryGetRevolution(*unit, revolution) != BentleyStatus::SUCCESS)
+        return BentleyStatus::ERROR;
+    if (Format::NormalizeAngle(quantity, type == PresentationType::Bearing ? "bearing" : "azimuth", revolution) != BentleyStatus::SUCCESS)
+        return BentleyStatus::ERROR;
+
+    double quarterRevolution = revolution / 4;
+    double magnitude = quantity.GetMagnitude();
+    if (type == PresentationType::Bearing)
+        {
+        int quadrant = 0;
+        while (magnitude > quarterRevolution) {
+            magnitude -= quarterRevolution;
+            quadrant++;
+        }
+
+        // Quadrants are
+        // 3 0
+        // 2 1
+        // For quadrants 1 and 3 we have to subtract the angle from 90 degrees because they go counter clockwise
+        if (quadrant == 1 || quadrant == 3)
+            magnitude = quarterRevolution - magnitude;
+
+        if (quadrant == 0 || quadrant == 3)
+            prefix = fmtP->GetNorthLabel();
+
+        if (quadrant == 1 || quadrant == 2)
+            prefix = fmtP->GetSouthLabel();
+
+        if (quadrant == 0 || quadrant == 1)
+            suffix = fmtP->GetEastLabel();
+
+        if (quadrant == 2 || quadrant == 3)
+            suffix = fmtP->GetWestLabel();
+
+        // special case, if in quadrant 2 and value is very close to quarter revolution (90°), turn prefix to N because N90:00:00W is preferred over S90:00:00W        
+        if (quadrant == 2 && FormatConstant::IsNegligible(magnitude - quarterRevolution)){
+            prefix = fmtP->GetNorthLabel();
+        }
+
+        quantity = BEU::Quantity(magnitude, *quantity.GetUnit());
+    }
+
+    if (type == PresentationType::Azimuth) {
+        double azimuthBase = 0.0;
+
+        if (fmtP->HasAzimuthBase()) {
+            azimuthBase = fmtP->GetAzimuthBase();
+            auto azimuthBaseUnit = fmtP->GetAzimuthBaseUnit();
+            if (azimuthBaseUnit != nullptr)
+                {
+                BEU::Quantity azimuthBaseQuantity(azimuthBase, *azimuthBaseUnit);
+                BEU::Quantity converted = azimuthBaseQuantity.ConvertTo(quantity.GetUnit());
+                if(!converted.IsValid())
+                    return BentleyStatus::ERROR;
+
+                azimuthBase = converted.GetMagnitude();
+                } 
+            else 
+                return BentleyStatus::ERROR; // if the base is set, but base unit is missing
+        }
+
+        if(azimuthBase == 0.0)
+            return BentleyStatus::SUCCESS; //no conversion necessary with a east base
+
+        magnitude -= azimuthBase;
+        while(magnitude < 0)
+            magnitude += revolution;
+        
+        while(magnitude > revolution)
+            magnitude -= revolution;
+
+        if(fmtP->GetAzimuthCounterClockwise())
+            magnitude = revolution - magnitude;
+
+        quantity = BEU::Quantity(magnitude, *quantity.GetUnit());
+    }
+
+    return BentleyStatus::SUCCESS;
+}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -165,10 +298,30 @@ Utf8String Format::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8
     if (nullptr == fmtP)
         return "";
 
+    Utf8String prefix("");
+    Utf8String suffix("");
+    bool additionalFormatting = false;
+    if (fmtP->GetPresentationType() == PresentationType::Bearing || fmtP->GetPresentationType() == PresentationType::Azimuth)
+        {
+        if (FormatBearingAndAzimuth(temp, prefix, suffix) != BentleyStatus::SUCCESS)
+            return "";
+
+        additionalFormatting = true;
+        }
+
     if (HasComposite())  // procesing composite parts
         {
         CompositeValueSpecCP compS = GetCompositeSpec();
         auto dval = compS->DecomposeValue(temp.GetMagnitude(), temp.GetUnit());
+        if(dval.IsProblem()){
+           if (fmtP->GetPresentationType() == PresentationType::Ratio && dval.GetProblemCode() == FormatProblemCode::QT_InvertingZero)
+                return "1:0"; // special case for ratio
+            return "";
+        }
+
+        if (fmtP->GetPresentationType() == PresentationType::Ratio)
+            return fmtP->FormatToRatio(dval.GetMajor());
+
         Utf8String uomSeparator;
         if (compS->HasSpacer())
             uomSeparator = compS->GetSpacer();
@@ -179,11 +332,19 @@ Utf8String Format::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8
 
         // if caller explicity defines space parameter when calling this method use it, else use what is defined in format specification
         Utf8CP spacer = Utf8String::IsNullOrEmpty(space) ? uomSeparator.c_str() : space;
+        
+        Utf8String compSeparator = compS->GetSeparator(); // for this we do not care if it's explicitly defined or not, always get the value
 
         // for all parts but the last one we need to format an integer
         NumericFormatSpec fmtI;
         fmtI.SetPrecision(DecimalPrecision::Precision0);
         fmtI.SetKeepSingleZero(false);
+        if(additionalFormatting)
+            { // we may want to apply these for any format, but especially for bearing
+            fmtI.SetKeepSingleZero(fmtP->IsKeepSingleZero());
+            fmtI.SetMinWidth(fmtP->GetMinWidth());
+            fmtI.SetKeepDecimalPoint(fmtP->IsKeepDecimalPoint());
+            }
 
         switch (compS->GetUnitCount())
             {
@@ -202,7 +363,7 @@ Utf8String Format::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8
                 midT = fmtP->Format(dval.GetMiddle());
                 if (fmtP->IsShowUnitLabel())
                     midT = Utils::AppendUnitName(midT.c_str(), compS->GetMiddleLabel().c_str(), spacer);
-                majT += " " + midT;
+                majT += compSeparator + midT;
                 break;
 
             case 3:
@@ -215,7 +376,7 @@ Utf8String Format::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8
                 minT = fmtP->Format(dval.GetMinor());
                 if (fmtP->IsShowUnitLabel())
                     minT = Utils::AppendUnitName(minT.c_str(), compS->GetMinorLabel().c_str(), spacer);
-                majT += " " + midT + " " + minT;
+                majT += compSeparator + midT + compSeparator + minT;
                 break;
 
             case 4:
@@ -231,7 +392,7 @@ Utf8String Format::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8
                 subT = fmtP->Format(dval.GetSub());
                 if (fmtP->IsShowUnitLabel())
                     subT = Utils::AppendUnitName(subT.c_str(), compS->GetSubLabel().c_str(), spacer);
-                majT += midT + " " + minT + " " + subT;
+                majT += midT + compSeparator + minT + compSeparator + subT;
                 break;
             }
         }
@@ -241,6 +402,10 @@ Utf8String Format::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8
         if (fmtP->IsShowUnitLabel())
            majT = Utils::AppendUnitName(majT.c_str(), uomLabel, (nullptr == space) ? fmtP->GetUomSeparator() : space);
         }
+
+    if (additionalFormatting)
+        majT = prefix + majT + suffix;
+
     return majT;
     }
 

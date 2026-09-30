@@ -5,7 +5,11 @@
 #include "checkers.h"
 #include <GeomSerialization/GeomSerializationApi.h>
 #include <Bentley/BeTest.h>
+#include <Bentley/BeStringUtilities.h>
 static double s_simpleZeroTol = 1.0e-12;
+
+bool Check::s_enableLongTests = false;
+void Check::SetEnableLongTests(bool enable) { s_enableLongTests = enable; }
 
 struct ScopedPrintState
 {
@@ -23,11 +27,12 @@ PUSH_DISABLE_DEPRECATION_WARNINGS
     if (s == nullptr)
         return 0;
     printf (" string form: (%s)\n", s);
-    int value;
-    if (1 == sscanf (s, "%d", &value))
+    char* unparsed;
+    errno = 0;
+    if (long parsed = std::strtol(s, &unparsed, 10) && errno == 0 && unparsed != s)
         {
-        printf ("GTEST_GEOMLIBS_VERBSOSE=%d\n", value);
-        return value;
+        printf ("GTEST_GEOMLIBS_VERBOSE=%ld\n", parsed);
+        return parsed;
         }
     // not recognized format  . . . call it noisy
     return 100;
@@ -215,6 +220,15 @@ bool Check::LessThanOrEqual (double a, double b, char const*pString)
         return true;
     Check::PrintScope ();
     Check::Fail (Utf8PrintfString("(fail %.17g <= %.17g) %s\n", a, b, pString ? pString : "").c_str());
+    return false;
+    }
+
+bool Check::LessThanOrEqual(size_t a, size_t b, char const* pString)
+    {
+    if (a <= b)
+        return true;
+    Check::PrintScope();
+    Check::Fail(Utf8PrintfString("(fail %zu <= %zu) %s\n", a, b, pString ? pString : "").c_str());
     return false;
     }
 
@@ -413,7 +427,7 @@ void Check::Near (DConic4dCR a, DConic4dCR b, char const*pString, double refValu
     Check::Near (a.start, b.start, pString, refValue);
     }
 
-bool Check::NearPeriodic (double thetaA, double thetaB, char const*pString)
+bool Check::NearPeriodicRadians (double thetaA, double thetaB, char const*pString)
     {
 
     if (Angle::NearlyEqualAllowPeriodShift (thetaA, thetaB))
@@ -424,7 +438,7 @@ bool Check::NearPeriodic (double thetaA, double thetaB, char const*pString)
 
 bool Check::NearPeriodic (Angle thetaA, Angle thetaB, char const*pString)
     {
-    return Check::NearPeriodic (thetaA.Radians (), thetaB.Radians (), pString);
+    return Check::NearPeriodicRadians (thetaA.Radians (), thetaB.Radians (), pString);
     }
 
 bool Check::Near (Angle thetaA, Angle thetaB, char const*pString)
@@ -1191,7 +1205,13 @@ void Check::Print (bvector<double> const &data, char const *name)
     printf (")\n");
     }
 
-
+void Check::Print (DRay3d const & data, char const *name)
+    {
+    printf ("(%s\n", name ? name : "ray");
+    printf (" (%s %g, %g, %g)\n", "origin", data.origin.x, data.origin.y, data.origin.z);
+    printf (" (%s %g, %g, %g)\n", "direction", data.direction.x, data.direction.y, data.direction.z);
+    printf (")\n");
+    }
 
 void Check::Print (DPoint3dCR data, char const *name)
     {
@@ -1409,6 +1429,7 @@ void Check::Print (bvector<DPoint2d> const &data, char const *name)
     printf (")\n");
     }
 
+// Save (clone of) geometry in a cache
 static bvector<IGeometryPtr> s_cache;
 static Transform s_transform = Transform::FromIdentity ();
 void Check::SaveTransformed(IGeometryPtr const &data)
@@ -1435,37 +1456,47 @@ void Check::SaveTransformed(IGeometryPtr const &data)
         s_cache.back ()->TryTransformInPlace (s_transform);
         }
     }
-
 void Check::SaveTransformed(bvector<IGeometryPtr> const &data)
     {
     for (auto &g : data)
         SaveTransformed (g);
     }
-    // Save (clone of) geometry in a cache
 void Check::SaveTransformed(CurveVectorCR data)
     {
     SaveTransformed(IGeometry::Create(data.Clone()));
     }
-
 void Check::SaveTransformed(CurveVectorPtr &data)
     {
     if (data.IsValid ())
         SaveTransformed(IGeometry::Create(data->Clone()));
     }
-
 void Check::SaveTransformed(ICurvePrimitiveCR data)
     {
-    SaveTransformed(IGeometry::Create (data.Clone ()));}
+    SaveTransformed(IGeometry::Create (data.Clone ()));
+    }
+void Check::SaveTransformed(ICurvePrimitivePtr &data)
+    {
+    if (data.IsValid())
+        SaveTransformed(IGeometry::Create(data->Clone()));
+    }
 void Check::SaveTransformed(PolyfaceHeaderCR data)
     {
-    SaveTransformed(IGeometry::Create (data.Clone ()));}
+    SaveTransformed(IGeometry::Create (data.Clone ()));
+    }
 void Check::SaveTransformed(PolyfaceHeaderPtr &data)
     {
     if (data.IsValid ())
-    SaveTransformed(IGeometry::Create (data->Clone ()));}
+        SaveTransformed(IGeometry::Create (data->Clone ()));
+    }
+void Check::SaveTransformed(ISolidPrimitivePtr& data)
+    {
+    if (data.IsValid())
+        SaveTransformed(IGeometry::Create(data->Clone()));
+    }
 void Check::SaveTransformed(ISolidPrimitiveCR data)
     {
-    SaveTransformed(IGeometry::Create (data.Clone ()));}
+    SaveTransformed(IGeometry::Create (data.Clone ()));
+    }
 void Check::SaveTransformed(DEllipse3dCR data)
     {
     if (data.vector0.Magnitude () + data.vector90.Magnitude () == 0.0)
@@ -1473,15 +1504,14 @@ void Check::SaveTransformed(DEllipse3dCR data)
     else
         SaveTransformed(*ICurvePrimitive::CreateArc (data));
     }
-
 void Check::SaveTransformed(MSBsplineSurfacePtr const &data)
     {
-    SaveTransformed(IGeometry::Create (data->Clone ()));}
+    SaveTransformed(IGeometry::Create (data->Clone ()));
+    }
 void Check::SaveTransformed(MSBsplineSurface const &data)
     {
     SaveTransformed(IGeometry::Create(data.Clone()));
     }
-
 void Check::SaveTransformedEdges(DRange3dCR range)
     {
     DPoint3d corners[8];
@@ -1504,7 +1534,13 @@ void Check::SaveTransformed(MSBsplineCurvePtr const &data, bool savePolygon)
     if (savePolygon)
         Check::SaveTransformed (data->poles, data->GetNumPoles ());
     }
-
+void Check::SaveTransformed(bvector<DPoint2d> const& data, bool addClosure)
+    {
+    auto cv = ICurvePrimitive::CreateLineString(data);
+    if (addClosure && data.size() > 0)
+        cv->GetLineStringP()->push_back(DPoint3d::From(data[0]));
+    SaveTransformed(IGeometry::Create(cv));
+    }
 void Check::SaveTransformed (bvector<DPoint3d> const &data, bool addClosure)
     {
     auto cv = ICurvePrimitive::CreateLineString (data);
@@ -1519,7 +1555,6 @@ void Check::SaveTransformed (DPoint3dCP pData, size_t n)
         data.push_back (pData[i]);
     SaveTransformed (data);
     }
-
 void Check::SaveTransformed (bvector<DPoint4d> const &data)
     {
     bvector<DPoint3d> points;
@@ -1531,7 +1566,6 @@ void Check::SaveTransformed (bvector<DPoint4d> const &data)
         }
     SaveTransformed (points);
     }
-
 void Check::SaveTransformedMarker (DPoint3dCR &xyz, double markerSize)
     {
     ICurvePrimitivePtr cp;
@@ -1551,21 +1585,21 @@ void Check::SaveTransformedMarker (DPoint3dCR &xyz, double markerSize)
 
     SaveTransformed (IGeometry::Create (cp));
     }
-
 void Check::SaveTransformedMarkers (bvector<DPoint3d> const &data, double markerSize)
     {
     for (auto &xyz : data)
         SaveTransformedMarker (xyz, markerSize);
     }
-
-
-
+void Check::SaveTransformed(bvector<bvector<DPoint2d>> const &data)
+    {
+    for (auto a : data)
+        SaveTransformed(a);
+    }
 void Check::SaveTransformed (bvector<bvector<DPoint3d>> const &data)
     {
     for (auto a : data)
         SaveTransformed (a);
     }
-
 void Check::SaveTransformed (bvector<DTriangle3d> const &data, bool closed)
     {
     bvector<DPoint3d> points;
@@ -1585,10 +1619,6 @@ void Check::SaveTransformed (bvector<DTriangle3d> const &data, bool closed)
             SaveTransformed (points);
         }
     }
-DPoint3d Check::TransformPoint(DPoint3dCR xyz)
-    {
-    return s_transform * xyz;
-    }
 void Check::SaveTransformed (bvector<DSegment3d> const &data)
     {
     for (auto &segment : data)
@@ -1597,7 +1627,6 @@ void Check::SaveTransformed (bvector<DSegment3d> const &data)
         SaveTransformed (*prim);
         }
     }
-
 void Check::SaveTransformed (DSegment3dCR data)
     {
     auto prim = ICurvePrimitive::CreateLine (data);
@@ -1608,12 +1637,24 @@ void Check::SaveTransformed (MSBsplineCurveCR data)
     auto cv = ICurvePrimitive::CreateBsplineCurve (data);
     SaveTransformed (IGeometry::Create (cv));
     }
+void Check::SaveTransformed(DPlane3dCR plane, double scale)
+    {
+    auto cell = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
+    auto planeDisk = DEllipse3d::FromCenterNormalRadius(plane.origin, plane.normal, scale / 2);
+    auto planeNormal = DSegment3d::From(plane.origin, plane.origin + (plane.normal * scale));
+    cell->push_back(ICurvePrimitive::CreateArc(planeDisk));
+    cell->push_back(ICurvePrimitive::CreateLine(planeNormal));
+    Check::SaveTransformed(cell);
+    }
 
+DPoint3d Check::TransformPoint(DPoint3dCR xyz)
+    {
+    return s_transform * xyz;
+    }
 void Check::Shift (double dx, double dy, double dz)
     {
     s_transform = Transform::From (dx, dy, dz) * s_transform;
     }
-
 void Check::Shift (DVec3dCR shift)
     {
     s_transform = Transform::From (shift.x, shift.y, shift.z) * s_transform;
@@ -1637,7 +1678,6 @@ void Check::ShiftToLowerRight (double dx)
     }
 Transform Check::GetTransform () {return s_transform;}
 void Check::SetTransform (TransformCR transform) {s_transform = transform;}
-
 
 static bvector<Utf8String> s_keyinCache;
 void Check::DirectKeyin (char const *message)
@@ -1748,11 +1788,11 @@ void Check::ClearGeometry (char const *name)
                 }
             }
         if (s_checkIModelJsonRoundTrip){
-            Json::Value value;
-            if (IModelJson::TryGeometryToIModelJsonValue (BeJsValue(value), s_cache))
+            BeJsDocument value;
+            if (IModelJson::TryGeometryToIModelJsonValue (value, s_cache))
                 {
                 bvector<IGeometryPtr> geometryB;
-                IModelJson::TryIModelJsonValueToGeometry (BeJsValue(value), geometryB);
+                IModelJson::TryIModelJsonValueToGeometry (value, geometryB);
                 if (s_cache.size () == geometryB.size ())
                     {
                     uint32_t errors = 0;
@@ -1770,8 +1810,7 @@ void Check::ClearGeometry (char const *name)
                     }
                 else
                     {
-                    Json::FastWriter fastWriter;
-                    auto string = fastWriter.write(value);
+                    auto string = value.Stringify();
                     printf ("\n IMJS size mismatch in %ls (%d) (%d)\n", path.c_str (), (int)s_cache.size (), (int)geometryB.size ());
                     }
                 }

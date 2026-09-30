@@ -9,10 +9,10 @@
 #include "ChangeManager.h"
 #include "ProfileManager.h"
 #include "IssueReporter.h"
+#include "InstanceGraphImpl.h"
 #include <atomic>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
@@ -20,11 +20,11 @@ struct IdFactory final: NonCopyableClass {
     struct IdSequence final: NonCopyableClass {
         private:
             mutable std::atomic<uint64_t> m_id;
-            bool m_isIntializedFromTable;
+            bool m_isInitializedFromTable;
         public:
-            explicit IdSequence(uint64_t id, bool isIntializedFromTable) :m_id(id), m_isIntializedFromTable(isIntializedFromTable){}
-            BeInt64Id NextId() const { BeAssert(m_isIntializedFromTable); return BeInt64Id(++m_id); }
-            bool IsIntializedFromTable() const { return m_isIntializedFromTable; }
+            explicit IdSequence(uint64_t id, bool isInitializedFromTable) :m_id(id), m_isInitializedFromTable(isInitializedFromTable){}
+            BeInt64Id NextId() const { BeAssert(m_isInitializedFromTable); return BeInt64Id(++m_id); }
+            bool IsInitializedFromTable() const { return m_isInitializedFromTable; }
             static std::unique_ptr<IdSequence> Create(ECDbCR db, Utf8CP tableName, Utf8CP idColumnName);
     };
 
@@ -47,7 +47,7 @@ struct IdFactory final: NonCopyableClass {
         mutable std::unique_ptr<IdSequence> m_relationshipConstraintIdSeq;
         mutable std::unique_ptr<IdSequence> m_relationshipConstraintClassIdSeq;
         mutable std::unique_ptr<IdSequence> m_schemaIdSeq;
-        mutable std::unique_ptr<IdSequence> m_schemaReferencIdSeq;
+        mutable std::unique_ptr<IdSequence> m_schemaReferenceIdSeq;
         mutable std::unique_ptr<IdSequence> m_tableIdSeq;
         mutable std::unique_ptr<IdSequence> m_unitIdSeq;
         mutable std::unique_ptr<IdSequence> m_unitSystemIdSeq;
@@ -72,7 +72,7 @@ struct IdFactory final: NonCopyableClass {
         IdSequence& RelationshipConstraint() const { return *m_relationshipConstraintIdSeq; }
         IdSequence& RelationshipConstraintClass() const { return *m_relationshipConstraintClassIdSeq; }
         IdSequence& Schema() const { return *m_schemaIdSeq; }
-        IdSequence& SchemaReference() const { return *m_schemaReferencIdSeq; }
+        IdSequence& SchemaReference() const { return *m_schemaReferenceIdSeq; }
         IdSequence& Table() const { return *m_tableIdSeq; }
         IdSequence& Unit() const { return *m_unitIdSeq; }
         IdSequence& UnitSystem() const { return *m_unitSystemIdSeq; }
@@ -90,8 +90,16 @@ struct PragmaManager;
 struct ECDb::Impl final
     {
 friend struct ECDb;
+friend struct DisableDDLTracking;
 
 public:
+    struct DisableDDLTracking {
+        private:
+            ECDbCR m_ecdb;
+        public:
+            DisableDDLTracking(ECDbCR ecdb): m_ecdb(ecdb) {m_ecdb.GetImpl().m_disableDDLTracking = true; }
+            ~DisableDDLTracking() { m_ecdb.GetImpl().m_disableDDLTracking = false; }
+    };
     //=======================================================================================
     //! The clear cache counter is incremented with every call to ClearECDbCache. This is used
     //! by code that refers to objects held in the cache to invalidate itself.
@@ -146,6 +154,8 @@ private:
     SettingsManager m_settingsManager;
     StatementCache m_sqliteStatementCache;
     mutable std::unique_ptr<InstanceReader> m_instanceReader;
+    mutable std::unique_ptr<InstanceWriter> m_instanceWriter;
+    mutable std::unique_ptr<InstanceRepository> m_instanceRepo;
     BeBriefcaseBasedIdSequenceManager m_idSequenceManager;
     static const uint32_t s_instanceIdSequenceKey = 0;
     mutable bmap<DbFunctionKey, DbFunction*, DbFunctionKey::Comparer> m_sqlFunctions;
@@ -160,8 +170,14 @@ private:
     mutable std::unique_ptr<IdFactory> m_idFactory;
     mutable std::unique_ptr<ExtractInstFunc> m_extractInstFunc;
     mutable std::unique_ptr<ExtractPropFunc> m_extractPropFunc;
+    mutable std::unique_ptr<SupportInstanceQueryFunc> m_supportInstanceQueryFunc;
     mutable EC::ECSqlConfig m_ecSqlConfig;
+    mutable bool m_disableDDLTracking;
+    mutable Utf8CP m_sqliteOnlyAttachmentAlias = nullptr;
     mutable std::unique_ptr<PragmaManager> m_pragmaProcessor;
+    mutable SnappyFromMemory m_snappyReader;
+    mutable SnappyToBlob m_snappyWriter;
+    mutable std::unique_ptr<GraphStatementCache> m_graphStatementCache;
     //Mirrored ECDb methods are only called by ECDb (friend), therefore private
     explicit Impl(ECDbR ecdb);
 
@@ -224,7 +240,21 @@ public:
     ChangeManager const& GetChangeManager() const { return m_changeManager; }
     BeGuid GetId() const  {return m_id; }
     IdFactory& GetIdFactory() const;
+    DbResult ExecuteDDL(Utf8CP) const;
+    DbResult AttachDbAsSQLite(Utf8CP dbFileName, Utf8CP tableSpaceName) const;
     PragmaManager& GetPragmaManager() const;
+
+    template<typename T>
+    T WithSnappyReader(std::function<T(SnappyFromMemory&)> func) const {
+        BeMutexHolder holder(m_mutex);
+        return func(m_snappyReader);
+    }
+    template<typename T>
+    T WithSnappyWriter(std::function<T(SnappyToBlob&)> func) const {
+        BeMutexHolder holder(m_mutex);
+        m_snappyWriter.Init();
+        return func(m_snappyWriter);
+    }
     //! The clear cache counter is incremented with every call to ClearECDbCache. This is used
     //! by code that refers to objects held in the cache to invalidate itself.
     //! E.g. Any existing ECSqlStatement would be invalid after ClearECDbCache and would return
@@ -239,8 +269,36 @@ public:
         }
         return *m_instanceReader;
     }
+    InstanceWriter& GetInstanceWriter() const {
+        if (m_instanceWriter == nullptr) {
+            BeMutexHolder holder(m_mutex);
+            if (m_instanceWriter == nullptr) {
+                m_instanceWriter = std::make_unique<InstanceWriter>(m_ecdb);
+            }
+        }
+        return *m_instanceWriter;
+    }
+    InstanceRepository& GetInstanceRepository() const {
+        if (m_instanceRepo == nullptr) {
+            BeMutexHolder holder(m_mutex);
+            if (m_instanceRepo == nullptr) {
+                m_instanceRepo = std::make_unique<InstanceRepository>(m_ecdb);
+            }
+        }
+        return *m_instanceRepo;
+    }
     IssueDataSource const& Issues() const { return m_issueReporter; }
-
+    GraphStatementCache& GetGraphStatementCache() const {
+        BeMutexHolder holder(m_mutex);
+        if (m_graphStatementCache == nullptr) {
+            m_graphStatementCache = std::make_unique<GraphStatementCache>(m_ecdb);
+        }
+        return *m_graphStatementCache;
+    }
+    ProfileVersion const& RefreshProfileVersion() const {
+        m_profileManager.RefreshProfileVersion();
+        return m_profileManager.GetProfileVersion();
+    }
     BeMutex& GetMutex() const { return m_mutex; }
     };
 

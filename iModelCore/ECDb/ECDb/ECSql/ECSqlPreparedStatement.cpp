@@ -211,11 +211,21 @@ DbResult SingleECSqlPreparedStatement::DoStep()
     if (SUCCESS != AssertIsValid())
         return BE_SQLITE_ERROR;
 
-    if (!m_parameterMap.OnBeforeStep().IsSuccess())
-        return BE_SQLITE_ERROR;
+    // OnBeforeFirstStep only needs to run for the small set of binders that opt into it (e.g. array/struct/
+    // virtual-set binders). The vast majority of statements have none, so we avoid probing the SQLite
+    // statement state (a C call) on every step unless at least one binder requires the first-step callback.
+    if (m_parameterMap.HasBindersToCallOnBeforeStep())
+        {
+        StatementState state;
+        if (m_sqliteStatement.TryGetStatementState(state) && state == StatementState::Ready)
+            {
+            if (!m_parameterMap.OnBeforeFirstStep().IsSuccess())
+                return BE_SQLITE_ERROR;
+            }
+        }
+    
 
     const DbResult nativeSqlStatus = m_sqliteStatement.Step();
-
     switch (nativeSqlStatus)
         {
             case BE_SQLITE_ROW:
@@ -234,7 +244,7 @@ DbResult SingleECSqlPreparedStatement::DoStep()
             break;
             }
         }
-
+         
     return nativeSqlStatus;
     }
 
@@ -376,6 +386,110 @@ Utf8CP CompoundECSqlPreparedStatement::_GetNativeSql() const
     return m_compoundNativeSql.c_str();
     }
 
+namespace
+    {
+    //! Validates that a literal value assigned to a navigation relationship ECClassId property is correct for the schema.
+    //!
+    //!
+    //! This function checks that the provided value expression for a navigation relationship ECClassId property
+    //! is a valid ECClassId, refers to an existing ECRelationship class, and is compatible with the navigation property's
+    //! expected relationship class (including derived classes).
+    //!
+    //! If any check fails, an error is reported to the context and the function returns false.
+    //!
+    //! @param db           The ECDb instance containing the schema.
+    //! @param ctx          The ECSqlPrepareContext for error reporting.
+    //! @param exp          The value expression to validate (should be a literal).
+    //! @param propertyMap  The PropertyMap for the navigation relationship ECClassId property.
+    //! @return true if the value is valid for the navigation property, false otherwise.
+    //! @note This function will only validate if the PRAGMA validate_ecsql_writes is set to true.
+    bool ValidateNavRelECClassIdLiteral(const ECDb& db, const ECSqlPrepareContext& ctx, const ValueExp* exp, const PropertyMap* propertyMap)
+        {
+        if (!exp || !propertyMap)
+            return false;
+
+        if (!db.GetECSqlConfig().IsWriteValueValidationEnabled() || (propertyMap->GetType() != PropertyMap::Type::Navigation && propertyMap->GetType() != PropertyMap::Type::NavigationRelECClassId))
+            return true;
+
+        if (exp->GetType() == Exp::Type::UnaryValue)
+            {
+            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0740,
+                "The ECSql statement contains an invalid or missing relationship class id.");
+            return false;
+            }
+        if (exp->GetType() != Exp::Type::LiteralValue)
+            return true;
+
+        // Extract and validate the class ID value
+        Utf8String relClassIdValueGiven = exp->GetAs<LiteralValueExp>().GetRawValue();
+        if (relClassIdValueGiven.empty())
+            {
+            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0740,
+                "The ECSql statement contains an invalid relationship class id.");
+            return false;
+            }
+        if (relClassIdValueGiven.CompareToI("NULL") == 0)
+            return true;
+
+        // Convert the extracted ECClassId
+        ECClassId relECClassIdToCheck;
+        if (ECClassId::FromString(relECClassIdToCheck, relClassIdValueGiven.c_str()) != SUCCESS)
+            {
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0741,
+                "The ECSql statement contains an invalid relationship class id '%s'.", relClassIdValueGiven.c_str());
+            return false;
+            }
+
+        // Check if the class ID refers to a valid relationship class
+        ECClassCP relECClass = db.Schemas().GetClass(relECClassIdToCheck);
+        if (!relECClass || !relECClass->IsRelationshipClass())
+            {
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0741,
+                "The ECSql statement contains a class with id '%s' which is not a valid relationship class.", relClassIdValueGiven.c_str());
+            return false;
+            }
+
+        // Get navigation property and its relationship class
+        NavigationECPropertyCP navProp = nullptr;
+        if (propertyMap->GetType() == PropertyMap::Type::NavigationRelECClassId)
+            {
+            auto parent = propertyMap->GetParent();
+            if (!parent)
+                return false;
+            navProp = parent->GetProperty().GetAsNavigationProperty();
+            }
+        else
+            {
+            navProp = propertyMap->GetProperty().GetAsNavigationProperty();
+            }
+
+        if (!navProp)
+            return false;
+
+        // Ensure the navigation property is valid and has a relationship class
+        ECClassCP navPropRelClass = db.Schemas().GetClass(navProp->GetRelationshipClass()->GetId());
+        if (!navPropRelClass)
+            return false;
+        
+        // Check if the relationship class ID provided matches the one in the navigation property
+        if (relECClassIdToCheck == navPropRelClass->GetId())
+            return true;
+
+        // Check against all derived classes of the relationship class
+        const auto derivedClasses = db.Schemas().GetAllDerivedClassesInternal(*navPropRelClass);
+        if (!derivedClasses.IsValid()
+            || std::none_of(derivedClasses.Value().begin(), derivedClasses.Value().end(),
+                [&relECClassIdToCheck](const auto& checkClass) { return checkClass->GetId() == relECClassIdToCheck; }))
+            {
+            LOG.errorv("The ECSql statement contains a class id '%s' that does not match the relationship class in the navigation property.",
+                relECClassIdToCheck.ToString().c_str());
+            return false;
+            }
+        return true;
+        }
+    }
+
+
 
 //***************************************************************************************
 //    ECSqlSelectPreparedStatement
@@ -426,7 +540,12 @@ DbResult ECSqlSelectPreparedStatement::Step()
         return BE_SQLITE_ERROR;
 
     if (IsInstanceQuery())
-        m_ecdb.GetInstanceReader().Reset();
+        // Only invalidate the cached seek position for the previous row. We must not call Reset() here:
+        // Reset() clears the InstanceReader's schema-level caches (class/table maps), each of which owns a
+        // prepared SQLite statement. Clearing them on every row forces those statements to be re-prepared for
+        // each row of an instance query. InvalidateSeekPos() forces a re-seek for the next row while keeping
+        // the (row-independent) class/table caches warm.
+        m_ecdb.GetInstanceReader().InvalidateSeekPos();
 
     const DbResult stat = DoStep();
     if (BE_SQLITE_ROW == stat)
@@ -613,6 +732,9 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
             prepareInfo.AddParameterIndex(paramIndex, *table);
             }
 
+        if (!ValidateNavRelECClassIdLiteral(m_ecdb, ctx, valueExp, propertyMap))
+            return ECSqlStatus(BE_SQLITE_ERROR);
+
         prepareInfo.AddPropNameValueInfo(propNameValueInfo, *table);
         }
 
@@ -747,6 +869,17 @@ ECSqlStatus ECSqlInsertPreparedStatement::PopulateProxyBinders(PrepareInfo const
                 }
 
             proxyBinder.AddBinder(*binder);
+
+            // Prepare to cache relationship class IDs for navigation property validation.
+            // Only do this if the statement is a write statement and value validation is enabled.
+            if (prepareInfo.GetContext().GetPreparedStatement().IsWriteStatement() && prepareInfo.GetContext().GetECDb().GetECSqlConfig().IsWriteValueValidationEnabled())
+                {
+                std::vector<ECClassId> relClassIds;
+                // Retrieve the set of valid relationship class IDs for the navigation property from the binder.
+                binder->GetBinderInfo().GetRelClassIdsForNavigationProperties(relClassIds);
+                // Pass the relationship class IDs to the proxy binder for use during parameter binding/validation.
+                proxyBinder.SetBinderInfoWithRelClassIds(relClassIds);
+                }
             }
         }
 
@@ -781,14 +914,13 @@ DbResult ECSqlInsertPreparedStatement::Step(ECInstanceKey& instanceKey)
             idBinder = &m_ecInstanceKeyHelper.GetIdProxyBinder()->GetBinder();
         else
             {
-            ECSqlBinder* binder = nullptr;
-            if (!GetPrimaryTableECSqlStatement().GetParameterMap().TryGetBinder(binder, ECSQLSYS_PARAM_Id))
+            if (nullptr == m_generatedIdBinder && !GetPrimaryTableECSqlStatement().GetParameterMap().TryGetBinder(m_generatedIdBinder, ECSQLSYS_PARAM_Id))
                 {
                 BeAssert(false);
                 return BE_SQLITE_ERROR;
                 }
 
-            idBinder = binder;
+            idBinder = m_generatedIdBinder;
             }
 
         BeAssert(idBinder != nullptr);
@@ -1062,6 +1194,9 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
 
             prepareInfo.AddParameterIndex(paramIndex, table);
             }
+
+        if (!ValidateNavRelECClassIdLiteral(m_ecdb, ctx, rhsExp, lhsPropMap))
+            return ECSqlStatus(BE_SQLITE_ERROR);
         }
 
     if (prepareInfo.HasWhereExp())
@@ -1154,7 +1289,7 @@ bool ECSqlUpdatePreparedStatement::IsWhereClauseSelectorStatementNeeded(PrepareI
             return false;
             }
 
-        if (!getTablesVisitor.Contains(*singleTableInvolvedInAssignment))
+        if (singleTableInvolvedInAssignment != nullptr && !getTablesVisitor.Contains(*singleTableInvolvedInAssignment))
             return true;
         }
 
@@ -1241,6 +1376,9 @@ ECSqlStatus ECSqlUpdatePreparedStatement::PrepareLeafStatements(PrepareInfo& pre
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlUpdatePreparedStatement::PopulateProxyBinders(PrepareInfo const& prepareInfo)
     {
+    const auto validateWriteStatement = (prepareInfo.GetContext().GetPreparedStatement().IsWriteStatement() 
+        && prepareInfo.GetContext().GetECDb().GetECSqlConfig().IsWriteValueValidationEnabled());
+
     for (auto const& parameterNameMapping : prepareInfo.GetECSqlRenderContext().GetParameterIndexNameMap())
         {
         const uint32_t paramIndex = (uint32_t) parameterNameMapping.first;
@@ -1250,6 +1388,8 @@ ECSqlStatus ECSqlUpdatePreparedStatement::PopulateProxyBinders(PrepareInfo const
             m_parameterNameMap[paramName] = paramIndex;
 
         IProxyECSqlBinder& proxyBinder = *m_proxyBinders[(size_t) (paramIndex - 1)];
+
+        std::vector<ECClassId> relClassIds;
 
         auto itTable = prepareInfo.GetTablesByParameterIndex().find(paramIndex);
         if (itTable == prepareInfo.GetTablesByParameterIndex().end())
@@ -1265,6 +1405,13 @@ ECSqlStatus ECSqlUpdatePreparedStatement::PopulateProxyBinders(PrepareInfo const
                 }
 
             proxyBinder.AddBinder(*binder);
+            if (validateWriteStatement)
+                {
+                // Retrieve the set of valid relationship class IDs for the navigation property from the binder.
+                binder->GetBinderInfo().GetRelClassIdsForNavigationProperties(relClassIds);
+                // Pass the relationship class IDs to the proxy binder for use during parameter binding/validation.
+                proxyBinder.SetBinderInfoWithRelClassIds(relClassIds);
+                }
             }
         else
             {
@@ -1281,6 +1428,13 @@ ECSqlStatus ECSqlUpdatePreparedStatement::PopulateProxyBinders(PrepareInfo const
                     }
 
                 proxyBinder.AddBinder(*binder);
+                if (validateWriteStatement)
+                    {
+                    // Retrieve the set of valid relationship class IDs for the navigation property from the binder.
+                    binder->GetBinderInfo().GetRelClassIdsForNavigationProperties(relClassIds);
+                    // Pass the relationship class IDs to the proxy binder for use during parameter binding/validation.
+                    proxyBinder.SetBinderInfoWithRelClassIds(relClassIds);
+                    }
                 }
             }
         }

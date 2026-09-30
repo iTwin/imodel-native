@@ -13,9 +13,9 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct RelationshipStepSpecification : NoXmlSupport<PresentationKey>
+struct RelationshipStepSpecification : PresentationKey
 {
-    DEFINE_T_SUPER(NoXmlSupport<PresentationKey>)
+    DEFINE_T_SUPER(PresentationKey)
 
 private:
     Utf8String m_relationshipClassName;
@@ -72,9 +72,9 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct RelationshipPathSpecification : NoXmlSupport<PresentationKey>
+struct RelationshipPathSpecification : PresentationKey
 {
-    DEFINE_T_SUPER(NoXmlSupport<PresentationKey>)
+    DEFINE_T_SUPER(PresentationKey)
 
 private:
     bvector<RelationshipStepSpecification*> m_steps;
@@ -157,9 +157,9 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct RepeatableRelationshipPathSpecification : NoXmlSupport<PresentationKey>
+struct RepeatableRelationshipPathSpecification : PresentationKey
 {
-    DEFINE_T_SUPER(NoXmlSupport<PresentationKey>)
+    DEFINE_T_SUPER(PresentationKey)
 
 private:
     bvector<RepeatableRelationshipStepSpecification*> m_steps;

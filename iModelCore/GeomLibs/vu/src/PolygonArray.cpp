@@ -141,7 +141,8 @@ void PolygonVectorOps::Multiply (TaggedPolygonVectorR polygons, TransformCR tran
     for (size_t i = 0; i < n; i++)
         {
         bvector <DPoint3d> & points = polygons[i].GetPointsR ();
-        transform.Multiply (&points[0], (int)points.size ());
+        if (!points.empty())
+            transform.Multiply (&points[0], (int)points.size ());
         }
     }
 void TaggedPolygon::Multiply (TransformCR transform)

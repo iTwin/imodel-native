@@ -560,7 +560,7 @@ double maxStrokeLength
 #define MAX_INTERVAL_TYPICAL_ANGLE 100
     if (fabs (beta0 - beta1) < TYPICAL_ANGLE_LIMIT && numInterval > MAX_INTERVAL_TYPICAL_ANGLE)
         numInterval = MAX_INTERVAL_TYPICAL_ANGLE;
-    // Ensure that midpoint of biquadratic does not appera mid-interval ...
+    // Ensure that midpoint of biquadratic does not appear mid-interval ...
     if (numInterval & 0x01)
         numInterval += 1;
     if (numInterval == 0)
@@ -1364,7 +1364,7 @@ DEllipse3dR arc
     // In world space, starting from intersection point Q, we move to the center indicated by each spiral
     // by stepping along its line to the tangency point, then by distances s and t tangent and perpendicular
     // circleCenter = lineIntersection + (uA + sA) unitAX + tA unitAY = lineIntersection + (uB + sB) unitBX + tB unitBY
-    //  [unitAX.x   -unitBX.x][uA] = sB*untiBX.x +tB*unitBY.x - sA*unitAX.x -tA*unitAY.x
+    //  [unitAX.x   -unitBX.x][uA] = sB*unitBX.x +tB*unitBY.x - sA*unitAX.x -tA*unitAY.x
     //  [unitAX.y   -unitBX.y][uB] =  (sim with y for x)
     DVec3d vectorA, vectorB;
     vectorA.SumOf (unitAX, sA, unitAY, tA);

@@ -41,7 +41,10 @@ $(o)main$(oext) : $(SrcDir)main.cpp ${AllHeaders}  ${MultiCompileDepends}
 %include MultiCppCompileGo.mki
 cppObjects=%$(MultiCompileObjectList) 
 
-EXE_NO_SIGN = 1
+%if $(TARGET_PLATFORM) != "Windows"
+    EXE_NO_SIGN = 1
+%endif
+
 EXE_DEST    = $(o)
 EXE_NAME    = $(appName)
 EXE_OBJS    = $(MultiCompileObjectList)
@@ -58,11 +61,9 @@ EXE_OBJS + $(THIN_ARCHIVE_PATH)
 LINKER_LIBRARIES = $(SubpartLibs)$(libprefix)iTwinBentley$(libext)\
                    $(SubpartLibs)$(libprefix)iTwinSQLite$(libext)\
                    $(SubpartLibs)$(libprefix)iTwinSQLiteEC$(libext)\
-                   $(SubpartLibs)$(libprefix)iTwinLibxml2$(libext)\
                    $(SubpartLibs)$(libprefix)iTwinGeom$(libext)\
                    $(SubpartLibs)$(libprefix)iTwinPlatform$(libext)\
                    $(SubpartLibs)$(libprefix)iTwinECObjects$(libext)\
-                   $(SubpartLibs)$(libprefix)iTwinJsonCpp$(stlibext)\
                    $(SubpartLibs)$(libprefix)iTwinUnits$(libext)
 
 %endif

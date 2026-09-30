@@ -1073,6 +1073,143 @@ TEST_F(ECRelationshipClassTest, RelationshipCannotHaveItselfAsAnEndPoint)
     EXPECT_EQ(nullptr, relClassAToMe->GetTarget().GetAbstractConstraint());
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECRelationshipClassTest, TestSupportsClassWithoutAbstractConstraint)
+    {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr ecSchema;
+    auto status = ECSchema::CreateSchema(ecSchema, "TestSchema", "ts", 1, 0, 0);
+    ASSERT_EQ(ECObjectsStatus::Success, status);
+    
+    ECEntityClassP class1;
+    status = ecSchema->CreateEntityClass(class1, "Class1");
+    ASSERT_EQ(ECObjectsStatus::Success, status);
+
+    ECEntityClassP class2;
+    status = ecSchema->CreateEntityClass(class2, "Class2");
+    ASSERT_EQ(ECObjectsStatus::Success, status);
+
+    ECEntityClassP class3;
+    status = ecSchema->CreateEntityClass(class3, "Class3");
+    ASSERT_EQ(ECObjectsStatus::Success, status);
+    class3->AddBaseClass(*class2, true, false, false);
+
+    ECEntityClassP class4;
+    status = ecSchema->CreateEntityClass(class4, "Class4");
+    ASSERT_EQ(ECObjectsStatus::Success, status);
+    class4->AddBaseClass(*class3, true, false, false);
+
+    ECRelationshipClassP relClass;
+    status = ecSchema->CreateRelationshipClass(relClass, "RelClass", false);
+    ASSERT_EQ(ECObjectsStatus::Success, status);
+    ASSERT_FALSE(relClass->GetSource().IsAbstractConstraintDefined());
+    status = relClass->GetSource().AddClass(*class3);
+    ASSERT_EQ(ECObjectsStatus::Success, status);
+    ASSERT_FALSE(relClass->GetSource().IsAbstractConstraintDefined());
+    ASSERT_FALSE(relClass->GetSource().SupportsClass(*class1));
+    ASSERT_TRUE(relClass->GetSource().SupportsClass(*class3));
+    ASSERT_TRUE(relClass->GetSource().SupportsClass(*class4));
+    ASSERT_FALSE(relClass->GetSource().SupportsClass(*class2));
+
+    //Add a second class to the source constraint
+    status = relClass->GetSource().AddClass(*class1);
+    ASSERT_EQ(ECObjectsStatus::Success, status);
+    ASSERT_FALSE(relClass->GetSource().IsAbstractConstraintDefined());
+    ASSERT_TRUE(relClass->GetSource().SupportsClass(*class1));
+    ASSERT_TRUE(relClass->GetSource().SupportsClass(*class3));
+    ASSERT_TRUE(relClass->GetSource().SupportsClass(*class4));
+    ASSERT_FALSE(relClass->GetSource().SupportsClass(*class2));
+    }
+
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECRelationshipClassTest, TestSupportsClassWithAbstractConstraint)
+    {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr ecSchema;
+    auto status = ECSchema::CreateSchema(ecSchema, "TestSchema", "ts", 1, 0, 0);
+    ASSERT_EQ(ECObjectsStatus::Success, status);
+    
+    ECEntityClassP class1;
+    status = ecSchema->CreateEntityClass(class1, "Class1");
+    ASSERT_EQ(ECObjectsStatus::Success, status);
+
+    ECEntityClassP class2;
+    status = ecSchema->CreateEntityClass(class2, "Class2");
+    ASSERT_EQ(ECObjectsStatus::Success, status);
+
+    ECEntityClassP class3;
+    status = ecSchema->CreateEntityClass(class3, "Class3");
+    ASSERT_EQ(ECObjectsStatus::Success, status);
+    class3->AddBaseClass(*class2, true, false, false);
+
+    ECEntityClassP class4;
+    status = ecSchema->CreateEntityClass(class4, "Class4");
+    ASSERT_EQ(ECObjectsStatus::Success, status);
+    class4->AddBaseClass(*class3, true, false, false);
+
+    ECRelationshipClassP relClass;
+    status = ecSchema->CreateRelationshipClass(relClass, "RelClass", false);
+    ASSERT_EQ(ECObjectsStatus::Success, status);
+    status = relClass->GetSource().SetAbstractConstraint(*class2);
+    ASSERT_EQ(ECObjectsStatus::Success, status);
+    ASSERT_TRUE(relClass->GetSource().IsAbstractConstraintDefined());
+
+    status = relClass->GetSource().AddClass(*class3);
+    ASSERT_EQ(ECObjectsStatus::Success, status);
+    ASSERT_FALSE(relClass->GetSource().SupportsClass(*class1));
+    ASSERT_TRUE(relClass->GetSource().SupportsClass(*class3));
+    ASSERT_TRUE(relClass->GetSource().SupportsClass(*class4));
+    ASSERT_TRUE(relClass->GetSource().SupportsClass(*class2));
+
+    //Add a second class to the source constraint
+    status = relClass->GetSource().AddClass(*class1);
+    ASSERT_EQ(ECObjectsStatus::Success, status);
+    ASSERT_TRUE(relClass->GetSource().SupportsClass(*class1));
+    ASSERT_TRUE(relClass->GetSource().SupportsClass(*class3));
+    ASSERT_TRUE(relClass->GetSource().SupportsClass(*class4));
+    ASSERT_TRUE(relClass->GetSource().SupportsClass(*class2));
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECRelationshipClassTest, TestTryAddMultipleClassesWithoutAbstractConstraint)
+    {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr ecSchema;
+    auto status = ECSchema::CreateSchema(ecSchema, "TestSchema", "ts", 1, 0, 0);
+    ASSERT_EQ(ECObjectsStatus::Success, status);
+    
+    ECEntityClassP class1;
+    status = ecSchema->CreateEntityClass(class1, "Class1");
+    ASSERT_EQ(ECObjectsStatus::Success, status);
+
+    ECEntityClassP class2;
+    status = ecSchema->CreateEntityClass(class2, "Class2");
+    ASSERT_EQ(ECObjectsStatus::Success, status);
+
+    ECRelationshipClassP relClass;
+    status = ecSchema->CreateRelationshipClass(relClass, "RelClass", true);
+    ASSERT_EQ(ECObjectsStatus::Success, status);
+    status = relClass->GetSource().SetAbstractConstraint(*class2);
+    ASSERT_EQ(ECObjectsStatus::Success, status);
+    ASSERT_TRUE(relClass->GetSource().IsAbstractConstraintDefined());
+
+    status = relClass->GetSource().AddClass(*class2);
+    ASSERT_EQ(ECObjectsStatus::Success, status);
+    ASSERT_FALSE(relClass->GetSource().SupportsClass(*class1));
+    ASSERT_TRUE(relClass->GetSource().SupportsClass(*class2));
+
+    //Add a second class to the source constraint
+    status = relClass->GetSource().AddClass(*class1);
+    ASSERT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, status);
+    }
+
 //************************************************************************************
 // ECRelationshipDeserializationTest
 //************************************************************************************

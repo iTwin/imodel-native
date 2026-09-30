@@ -153,6 +153,39 @@ struct  ConvexClipPlaneSet : T_ClipPlanes
     //! Create clip plane set from XY box.
     GEOMDLLIMPEXP static ConvexClipPlaneSet  FromXYBox (double x0, double y0, double x1, double y1);
 
+    //! Build side and cap planes for the volume within the ruled surface between a pair of convex, compatibly oriented polygons.
+    //! <ul>
+    //! <li> There is an added edge from each pointA[i] to pointB[i]
+    //! <li> There is a facet (or pair of facets if needed for planarity) pointA[i]..pointB[i]..pointB[i+1]..pointA[i+1]
+    //! <li> both point arrays must include their closure edge.
+    //! <li> Returns empty set for various error conditions:
+    //!   <ul>
+    //!   <li> mismatched point counts
+    //!   <li> negative dot product between area normals of the two point arrays.
+    //!   <li> non-convex at either end
+    //!   <li> inflex angle at any edge (detected by triple product among various vectors)
+    //!   </ul>
+    //! <li> Cap Codes are
+    //!  <ul>
+    //!  <li> 0 -- no cap plane
+    //!  <li> 1 -- cap plane
+    //!  <li> 2 -- cap plane marked "interior"
+    //!  </ul>
+    //! <li> If polygons are requested:
+    //!   <ul>
+    //!   <li>Outer vector is per plane of the returned convex set
+    //!   <li>Inner has points (including closure point) of the polygon on that plane.
+    //!   </ul>
+    //! </ul>
+    GEOMDLLIMPEXP static ConvexClipPlaneSet  FromSweepBetweenCompatibleConvexPolygons
+        (
+        bvector<DPoint3d> const& pointA,
+        int capCodeA,
+        bvector<DPoint3d> const& pointB,
+        int capCodeB,
+        bvector<bvector<DPoint3d>> *polygons = nullptr
+        );
+
     //! Find any vertex of the convex set's planar boundary.
     //! This means finding a point that is
     //! <ul>
@@ -274,7 +307,7 @@ struct  ConvexClipPlaneSet : T_ClipPlanes
     //! If the intervals array is nullptr, returns true immediately when any interior interval is found.
     GEOMDLLIMPEXP bool AppendIntervals(DEllipse3dCR arc, bvector<DSegment1d> *intervals, double planeSign = 1.0) const;
     GEOMDLLIMPEXP bool AppendIntervals(MSBsplineCurveCR curve, bvector<DSegment1d> *intervals) const;
-    //! Return the (0 or 1) intersection polygon and (0 or to numClipPlane) outside pieces.
+    //! Return the (0 or 1) intersection polygon and (0 to numClipPlane) outside pieces.
     GEOMDLLIMPEXP void ConvexPolygonClipInsideOutside
     (
     bvector<DPoint3d> const &input,  //!< [in] points of a convex polygon
@@ -337,6 +370,53 @@ struct  ClipPlaneSet :  bvector <ConvexClipPlaneSet>
 
     //! Create clip plane set from XY box.
     GEOMDLLIMPEXP static ClipPlaneSet  FromXYBox (double x0, double y0, double x1, double y1);
+
+    //! Build side and cap planes for the volume within the ruled surface between a pair of convex, compatibly oriented polygons.
+    //! <ul>
+    //! <li> There is a facet (or pair of facets if needed for planarity) pointA[i]..pointB[i]..pointB[i+1]..pointA[i+1]
+    //! <li> both point arrays must include their closure edge.
+    //! <li> Returns empty set for various error conditions:
+    //!   <ul>
+    //!   <li> mismatched point counts
+    //!   <li> negative dot product between area normals of the two point arrays.
+    //!   <li> non-convex at either end
+    //!   <li> inflex angle at any edge (detected by triple product among various vectors)
+    //!   </ul>
+    //! <li> Cap Codes are
+    //!  <ul>
+    //!  <li> 0 -- no cap plane
+    //!  <li> 1 -- cap plane
+    //!  <li> 2 -- cap plane marked "interior"
+    //!  </ul>
+    //! <li> If polygons are requested:
+    //!   <ul>
+    //!   <li>Outer bvector has an entry per ConvexClipPlaneSet
+    //!   <li>Next bvector has an entry per plane of one ConvexClipPlaneSet
+    //!   <li>Inner has points around one polygon
+    //!   </ul>
+    //! </ul>
+    GEOMDLLIMPEXP static ClipPlaneSet  FromSweepBetweenCompatibleConvexPolygons
+        (
+        bvector<bvector<DPoint3d>> const& points,
+        int startCapCode,
+        int endCapCode,
+        bvector <DRange3d> *ranges = nullptr,
+        bvector<bvector<bvector<DPoint3d>>> *polygons = nullptr
+        );
+
+    //! Generate clip planes for the volume swept between (possibly non-convex) compatible sections.
+    //! * Input polygons may be non-convex, but they may not self-intersect.
+    //! * Compatible polygons have the same point count, orientation, and convex part decompositions.
+    //! * Each ConvexClipPlaneSet returned has inward-facing plane normals.
+    //! * Each interior section is represented by planes marked "interior".
+    //! @param polygonsToSweep compatible sections. Closure point optional.
+    //! @param startCapCode how to cap the volume at the first section. 0 = no cap; 1 = cap plane; 2 = interior cap plane.
+    //! @param endCapCode how to cap the volume at the last section. 0 = no cap; 1 = cap plane; 2 = interior cap plane.
+    //! @param clipRanges (optional) ranges of the returned ConvexClipPlaneSets
+    //! @param clipPolygons (optional) entry [i][j][k] is the kth point of the polygon of the jth plane of the ith returned ConvexClipPlaneSet. Each polygon's computed normal points outward from the convex volume, and includes its closure point.
+    //! @see FromSweepBetweenCompatibleConvexPolygons
+    //! @return vector of swept convex volumes between successive sections
+    GEOMDLLIMPEXP static ClipPlaneSet FromSweepBetweenCompatiblePolygons(bvector<bvector<DPoint3d>> const& polygonsToSweep, int startCapCode, int endCapCode, bvector<DRange3d>* clipRanges = nullptr, bvector<bvector<bvector<DPoint3d>>>* clipPolygons = nullptr);
 
     //! Test for intersection with ray.
     GEOMDLLIMPEXP bool    TestRayIntersect (DPoint3dCR point, DVec3dCR direction) const;
@@ -451,13 +531,16 @@ struct  ClipPlaneSet :  bvector <ConvexClipPlaneSet>
     //! <ul>
     //! <li> [inside, keepPolyfaceInsideParts, keepCutFacesWithInside] controls return of mesh for "inside and on" the clipper
     //! <li> [outside, keepPolyfaceOutsideParts, keepCutFacesWithOutside] controls return of mesh for "outside and on" the clipper
-    //! <li> cutEdges controls return of simple intersection edges between the polyface and the clip.
     //! </ul>
     //! @param polyface [in] polyface to test
     //! @param clipSet [in] the positive clip set
-    //! @param constructNewFacetsOnClipSetPlanes [in] true to construct new faces where clip planes are inside the facet.
     //! @param inside [out] (optional) "inside" parts
+    //! @param keepPolyfaceInsideParts whether the returned "inside" mesh includes polyface facets inside the clip set
+    //! @param keepCutFacesWithInside whether the returned "inside" mesh includes new facets on the planes of the clip set
     //! @param outside [out] (optional) "outside" parts
+    //! @param keepPolyfaceOutsideParts whether the returned "outside" mesh includes polyface facets outside the clip set
+    //! @param keepCutFacesWithOutside whether the returned "outside" mesh includes new facets on the planes of the clip set
+    //! @param distanceTolerance (optional) if positive, this is the distance tolerance for various internal steps, otherwise use defaults.
     GEOMDLLIMPEXP void static ClipPlaneSetIntersectPolyface
         (
         PolyfaceQueryCR polyface,
@@ -468,17 +551,13 @@ struct  ClipPlaneSet :  bvector <ConvexClipPlaneSet>
         PolyfaceHeaderPtr *outside,
         bool keepPolyfaceOutsideParts,
         bool keepCutFacesWithOutside,
-        bvector<bvector<DPoint3d>> *cutEdges
+        double distanceTolerance = 0.0
         );
 
     //! Clip a polyface to a a positive ClipPlaneSet.  This produces cut faces where the clipSet is inside the polyface.
     //! If the polyface is not closed, cut faces may be produced where sections are closed loops.
-    //! This is implemented as a call to the longer argument list ClipPlaneSetIntersectPolyface, with
-    //! <ul>
-    //! <li> inside selection:   inside, true, constructNewFacetsOnClipSetPlanes
-    //! <li> outside selection: outside, true, constructNewFacetsOnClipSetPlanes
-    //! <li> cutEdges: nullptr
-    //! </ul>
+    //! This is implemented as a call to the override with default `distanceTolerance`, which has been problematic for
+    //! large-coordinate metric datasets.
     //! @param polyface [in] polyface to test
     //! @param clipSet [in] the positive clip set
     //! @param constructNewFacetsOnClipSetPlanes [in] true to construct new faces where clip planes are inside the facet.
@@ -493,31 +572,39 @@ struct  ClipPlaneSet :  bvector <ConvexClipPlaneSet>
         PolyfaceHeaderPtr *outside
         );
 
-    //! Clip a polyface to a  positive ClipPlaneSet, producing only faces and linework
-    //! on the cuts.
-    //! @param polyface [in] polyface to test
+    //! Clip a closed polyface to a positive ClipPlaneSet, producing only facets and linework on the cut planes.
+    //! @param polyface [in] polyface to test. For best results, this mesh should be closed, as only section loops
+    //! are clipped and faceted; otherwise, output may feature extraneous facets and/or missing line strings.
     //! @param clipSet [in] the positive clip set
-    //! @param cutSections [out] (optional) cut faces
-    //! @param linestrings [out] (optional) raw linestrings at the cuts
-    //! @param colinearEdgeTolearnce tolerance for optional step to eliminate colinear edges along the cut boundaries.
-    //!     (internal triangularization of larger planar facets commonly creates numerous vertices to remove)
+    //! @param cutSections [out] (optional) triangulations of (closed) sections. Edges added by triangulation are
+    //! marked invisible.
+    //! @param lineStrings [out] (optional) raw section line strings. Section closure is preserved under clipping
+    //! by other planes in the clip set.
+    //! @param colinearEdgeTolerance [in] maximum chord height distance of a redundant output point
+    //! to be removed. Internal triangulation of larger planar facets can create numerous redundant vertices between
+    //! colinear cut boundary edges. Pass a tiny distance so as not to change the shape of the cut boundaries. Pass
+    //! a negative value to compute a default distance (1.0e-12 times the largest point coordinate). Pass an invalid
+    //! object to skip colinear edge removal altogether.
+    //! @see ClipPlaneSetPolyfaceIntersectionEdges
     GEOMDLLIMPEXP void static ClipPlaneSetSectionPolyface
         (
         PolyfaceQueryCR polyface,
         ClipPlaneSetCR clipSet,
         PolyfaceHeaderPtr *cutSections,
-        bvector<bvector<DPoint3d>> *linestrings,
+        bvector<bvector<DPoint3d>> *lineStrings,
         ValidatedDouble &colinearEdgeTolerance
         );
+
     //! Return the edges of intersection between a polyface and a clipSet.
-    //! <ul>
-    //! <li> (Unlike ClipPlaneSetSectionPolyface) This is appropriate whether or not the polyface is closed.
-    //! </ul>
+    //! @param polyface [in] polyface to test, does NOT have to be closed.
+    //! @param clipSet [in] the positive clip set
+    //! @param lineStrings [out] raw section line strings.
+    //! @see ClipPlaneSetSectionPolyface
     GEOMDLLIMPEXP void static ClipPlaneSetPolyfaceIntersectionEdges
         (
         PolyfaceQueryCR polyface,
         ClipPlaneSetCR clipSet,
-        bvector<bvector<DPoint3d>> &linestrings
+        bvector<bvector<DPoint3d>> &lineStrings
         );
 
     //! Clip a polyface to a swept polygon.  This produces side faces where the sweep makes a closed cut.
@@ -531,7 +618,7 @@ struct  ClipPlaneSet :  bvector <ConvexClipPlaneSet>
     GEOMDLLIMPEXP void static SweptPolygonClipPolyface
         (
         PolyfaceQueryCR polyface,
-        bvector<DPoint3d> &polygon,
+        bvector<DPoint3d> const& polygon,
         DVec3dCR sweepDirection,
         bool constructNewFacetsOnClipSetPlanes,
         PolyfaceHeaderPtr *inside,

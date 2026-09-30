@@ -134,7 +134,7 @@ static bvector<conversionTestCustom> s_listOfConversionTestsCustom =
 
 #endif
 
-    { R"X({ "horizontalCRS": { "id": "BritishNatGrid"}, "verticalCRS" : {"id": "ELLIPSOID"} })X", R"X({ "horizontalCRS": { "id": "OSGB-GPS-2015" }, "verticalCRS": {"id": "GEOID"} })X", 473327.251, 257049.636, 0.0, 473325.6830048648, 257049.77062273448, -47.87643904264457, 0.002, 0.002},
+    { R"X({ "horizontalCRS": { "id": "BritishNatGrid"}, "verticalCRS" : {"id": "ELLIPSOID"} })X", R"X({ "horizontalCRS": { "id": "OSGB-GPS-2015" }, "verticalCRS": {"id": "GEOID"} })X", 473327.251, 257049.636, 0.0, 473325.6830048648, 257049.77062273448, -47.87643904264457, 0.002, 0.0035},
 
     { R"X({ "horizontalCRS": { "id": "UTM83-10"}, "verticalCRS": {"id": "NGVD29"} })X",
       R"X({
@@ -471,6 +471,236 @@ static bvector<conversionTestCustom> s_listOfConversionTestsCustom =
               "longitude": -119.5}}},
         "verticalCRS" : {
           "id" : "GEOID"}})X", 632748.112, 4263868.307, 0.0, 2149846.770, 308797.585, 2.500, 0.002, 0.004},
+    { R"X({ "horizontalCRS": { "id": "LL84"}, "verticalCRS": {"id": "GEOID"} })X",
+      R"X({
+    "additionalTransform": {
+        "helmert2DWithZOffset": {
+            "rotDeg": 12.529592024470582,
+            "scale": 1.0,
+            "translationX": 528489.7528985153,
+            "translationY": 6391639.139297983,
+            "translationZ": 0.0
+        }
+    },
+    "horizontalCRS": {
+        "datum": {
+            "additionalTransformPaths": [
+                {
+                    "sourceDatumId": "GDA94",
+                    "targetDatumId": "AGD66",
+                    "transforms": [
+                        {
+                            "gridFile": {
+                                "fallback": {
+                                    "delta": {
+                                        "x": 129.1936845416765,
+                                        "y": 41.2117597992877,
+                                        "z": -130.73020120506286
+                                    },
+                                    "rotation": {
+                                        "x": -0.2459994034562494,
+                                        "y": -0.37400039237836299,
+                                        "z": -0.3289995539523278
+                                    },
+                                    "scalePPM": 2.9550087321528197
+                                },
+                                "files": [
+                                    {
+                                        "direction": "Inverse",
+                                        "fileName": "./Australia/AGD66/A66National-13.09.01.gsb",
+                                        "format": "NTv2"
+                                    }
+                                ]
+                            },
+                            "method": "GridFiles",
+                            "sourceEllipsoid": {
+                                "equatorialRadius": 6378137.0,
+                                "id": "GRS1980",
+                                "polarRadius": 6356752.314140348
+                            },
+                            "targetDatumId": "AGD66",
+                            "targetEllipsoid": {
+                                "equatorialRadius": 6378160.0,
+                                "id": "ANS66",
+                                "polarRadius": 6356774.719195306
+                            }
+                        }
+                    ]
+                },
+                {
+                    "sourceDatumId": "GDA94",
+                    "targetDatumId": "AGD84",
+                    "transforms": [
+                        {
+                            "gridFile": {
+                                "fallback": {
+                                    "delta": {
+                                        "x": 117.76339033168641,
+                                        "y": 51.50965482814769,
+                                        "z": -139.06084655773416
+                                    },
+                                    "rotation": {
+                                        "x": -0.29199940508069396,
+                                        "y": -0.44300039213585448,
+                                        "z": -0.276999372864776
+                                    },
+                                    "scalePPM": 0.19100003645355913
+                                },
+                                "files": [
+                                    {
+                                        "direction": "Inverse",
+                                        "fileName": "./Australia/AGD84/National84-02.07.01.gsb",
+                                        "format": "NTv2"
+                                    }
+                                ]
+                            },
+                            "method": "GridFiles",
+                            "sourceEllipsoid": {
+                                "equatorialRadius": 6378137.0,
+                                "id": "GRS1980",
+                                "polarRadius": 6356752.314140348
+                            },
+                            "targetDatumId": "AGD84",
+                            "targetEllipsoid": {
+                                "equatorialRadius": 6378160.0,
+                                "id": "ANS66",
+                                "polarRadius": 6356774.719195306
+                            }
+                        }
+                    ]
+                },
+                {
+                    "sourceDatumId": "GDA94",
+                    "targetDatumId": "ASTRLA66-Grid",
+                    "transforms": [
+                        {
+                            "gridFile": {
+                                "fallback": {
+                                    "delta": {
+                                        "x": 129.1936845416765,
+                                        "y": 41.2117597992877,
+                                        "z": -130.73020120506286
+                                    },
+                                    "rotation": {
+                                        "x": -0.2459994034562494,
+                                        "y": -0.37400039237836299,
+                                        "z": -0.3289995539523278
+                                    },
+                                    "scalePPM": 2.9550087321528197
+                                },
+                                "files": [
+                                    {
+                                        "direction": "Inverse",
+                                        "fileName": "./Australia/AGD66/A66National-13.09.01.gsb",
+                                        "format": "NTv2"
+                                    }
+                                ]
+                            },
+                            "method": "GridFiles",
+                            "sourceEllipsoid": {
+                                "equatorialRadius": 6378137.0,
+                                "id": "GRS1980",
+                                "polarRadius": 6356752.314140348
+                            },
+                            "targetDatumId": "ASTRLA66-Grid",
+                            "targetEllipsoid": {
+                                "equatorialRadius": 6378160.0,
+                                "id": "AUSSIE",
+                                "polarRadius": 6356774.719195306
+                            }
+                        }
+                    ]
+                },
+                {
+                    "sourceDatumId": "GDA94",
+                    "targetDatumId": "ASTRLA84-Grid",
+                    "transforms": [
+                        {
+                            "gridFile": {
+                                "fallback": {
+                                    "delta": {
+                                        "x": 117.76339033168641,
+                                        "y": 51.50965482814769,
+                                        "z": -139.06084655773416
+                                    },
+                                    "rotation": {
+                                        "x": -0.29199940508069396,
+                                        "y": -0.44300039213585448,
+                                        "z": -0.276999372864776
+                                    },
+                                    "scalePPM": 0.19100003645355913
+                                },
+                                "files": [
+                                    {
+                                        "direction": "Inverse",
+                                        "fileName": "./Australia/AGD84/National84-02.07.01.gsb",
+                                        "format": "NTv2"
+                                    }
+                                ]
+                            },
+                            "method": "GridFiles",
+                            "sourceEllipsoid": {
+                                "equatorialRadius": 6378137.0,
+                                "id": "GRS1980",
+                                "polarRadius": 6356752.314140348
+                            },
+                            "targetDatumId": "ASTRLA84-Grid",
+                            "targetEllipsoid": {
+                                "equatorialRadius": 6378160.0,
+                                "id": "AUSSIE",
+                                "polarRadius": 6356774.719195306
+                            }
+                        }
+                    ]
+                }
+            ],
+            "description": "Consider changing to GDA94/GSB - GDA 94",
+            "ellipsoid": {
+                "description": "Geodetic Reference System of 1980",
+                "epsg": 7019,
+                "equatorialRadius": 6378137.0,
+                "id": "GRS1980",
+                "polarRadius": 6356752.314140348,
+                "source": "Stem, L.E., Jan 1989, State Plane Coordinate System of 1983"
+            },
+            "ellipsoidId": "GRS1980",
+            "epsg": 6283,
+            "id": "GDA94",
+            "source": "Geocentric Datum of Australia Technical Manual",
+            "transforms": [
+                {
+                    "method": "None"
+                }
+            ]
+        },
+        "datumId": "GDA94",
+        "description": "Map Grid of Australia Zone 53 (GDA 94)",
+        "extent": {
+            "northEast": {
+                "latitude": 0.0,
+                "longitude": 138.7412467858333
+            },
+            "southWest": {
+                "latitude": -89.98333333333334,
+                "longitude": 131.25875321416667
+            }
+        },
+        "id": "MGA94-53",
+        "projection": {
+            "centralMeridian": 135.0,
+            "falseEasting": 500000.0,
+            "falseNorthing": 10000000.0,
+            "latitudeOfOrigin": 0.0,
+            "method": "TransverseMercator",
+            "scaleFactor": 0.9996
+        },
+        "source": "National Mapping Council of Australia, Special Publication 10",
+        "unit": "Meter"
+    },
+    "verticalCRS": {
+        "id": "GEOID"
+    } })X"
+      , 135.858029, -34.748299, 0.0, -2583.5894108815119, -242315.76818652917,0.0, 0.002, 0.002},          
 
     };
 

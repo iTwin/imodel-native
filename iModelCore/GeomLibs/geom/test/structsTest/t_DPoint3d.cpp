@@ -1114,11 +1114,15 @@ TEST(General,GFormat)
     LOG.tracev (L"g format string count %d", (int)strings.size ());
     if (Check::Size (s_baseline.size (), strings.size (), "formatted strings counts should match"))
         {
+#if EmitErrors
         size_t numError = 0;
+#endif
         for (size_t i = 0; i < strings.size (); i++)
             if (s_baseline[i] != strings[i])
                 {
+#if EmitErrors
                 numError++;
+#endif
                 printf ("g format string mismatch:\n(baseline %s)\n(runtime  %s)\n", s_baseline[i].c_str(), strings[i].c_str());
                 LOG.tracev (L"g format string mismatch:\n(baseline %s)\n(runtime  %s)\n", s_baseline[i].c_str(), strings[i].c_str());
                 }

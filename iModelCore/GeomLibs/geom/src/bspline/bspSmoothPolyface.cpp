@@ -197,6 +197,9 @@ void vu_deletePairedEdges (VuSetP graph, VuMask mask)
     vu_clearMaskInSet (graph, deleteMask);
     int numVu = 0;
     int numA = 0;
+    UNUSED_VARIABLE(numVu);
+    UNUSED_VARIABLE(numA);
+    
     VU_SET_LOOP (sectorSeed, graph)
         {
         numVu++;
@@ -557,7 +560,7 @@ void AddEvaluatedVuToPolyface (VuSetP graph, IPolyfaceConstructionR builder, MSB
     vu_collectInteriorFaceLoops (faceArrayP, graph);
     vu_arrayOpen (faceArrayP);
     static int s_skipStrangeFaces = 0;
-    for (int i = 0; vu_arrayRead (faceArrayP, &faceP); i++)
+    while (vu_arrayRead (faceArrayP, &faceP))
         {
         // We triangulated.  So of course there are 3 nodes per face.
         // Really?  If the input polygon retraces itself, there will be

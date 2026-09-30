@@ -1136,6 +1136,8 @@ BuilderParams          *mpP                /* => mesh parameters */
     //   But whey didn't this show up in SS3 hline?  Dunno.
     static int s_diagonalFactorForLoHi = 0;   // 0 suppresses transfer of diagonal to edges.
     int numPositive, numNegative;
+    UNUSED_VARIABLE(numPositive);
+
     double polygonLength, polygonLength0, polygonLength1, polygonLength2;
     double          angleTolerance = mpP->options.GetAngleTolerance ();
     static double s_minAngleTolerance = 0.1;
@@ -1171,7 +1173,7 @@ BuilderParams          *mpP                /* => mesh parameters */
     if (rational)
         bsputil_unWeightPoles (poles, patchBezP->poles,  patchBezP->weights, numPoles);
     else
-        memcpy (poles, patchBezP->poles, numPoles * sizeof(DPoint3d));
+        BeStringUtilities::Memcpy (poles, sizeof poles, patchBezP->poles, numPoles * sizeof(DPoint3d));
 
     if (mpP->toleranceTransformP)
         mpP->toleranceTransformP->Multiply (poles, numPoles);
@@ -4022,7 +4024,7 @@ DVec3dR momentxyz
     return stat;
     }
 
-bool MSBsplineSurface::ComputeSecondMomentAreaProducts(DMatrix4dR products, double relativeTolerancefForFacets, int numGauss, int &numEvaluations) const
+bool MSBsplineSurface::ComputeSecondMomentAreaProducts(DMatrix4dR products, double relativeToleranceForFacets, int numGauss, int &numEvaluations) const
     {
     SurfacePropertiesContext context(*this, true, false, numGauss);
     DRange3d range;
@@ -4031,7 +4033,7 @@ bool MSBsplineSurface::ComputeSecondMomentAreaProducts(DMatrix4dR products, doub
     auto options = IFacetOptions::Create();
     options->SetParamsRequired(true);
     GetPoleRange(range);
-    options->SetChordTolerance(tolerance = relativeTolerancefForFacets * range.low.Distance(range.high));
+    options->SetChordTolerance(tolerance = relativeToleranceForFacets * range.low.Distance(range.high));
 
     if (SUCCESS == meshSurface
         (

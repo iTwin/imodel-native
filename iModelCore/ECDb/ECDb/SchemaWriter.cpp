@@ -13,25 +13,112 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DropSchemaResult SchemaWriter::DropSchema(Utf8StringCR schemaName, SchemaImportContext& ctx, bool logIssue) {
-    auto getReferencedBySchemas = [&] (ECSchemaId id) {
-        bvector<Utf8String> schemas;
-        auto stmt = ctx.GetECDb().GetCachedStatement(R"(
-            SELECT [ss].[Name]
-            FROM   [ec_SchemaReference] [rc]
-                JOIN [ec_Schema] [ss] ON [ss].[Id] = [rc].[SchemaId]
-            WHERE  [rc].[ReferencedSchemaId] = ?;)");
-        stmt->BindId(1, id);
-        while(stmt->Step() == BE_SQLITE_ROW) {
-            schemas.push_back(stmt->GetValueText(0));
+DropSchemaResult SchemaWriter::DropSchemas(bvector<Utf8String> schemaNames, SchemaImportContext& ctx, bool logIssue)
+    {
+    bvector<ECSchemaId> schemaIds;
+    bvector<Utf8String> schemaIdStrings;
+    bvector<Utf8String> missingSchemas;
+    
+    // Make sure the schemas exist
+    for (const auto& name : schemaNames)
+        {
+        if (const auto schema = ctx.GetECDb().Schemas().GetSchema(name); schema != nullptr)
+            {
+            const auto schemaId = schema->GetId();
+            schemaIds.push_back(schemaId);
+            schemaIdStrings.push_back(schemaId.ToString());
+            }
+        else
+            missingSchemas.push_back(name);
         }
-        return schemas;
-    };
-    // CustomAttribute has no forign key to container id, following method
-    // gather all customattributes for a given schema and delete them before
-    // schema or its mapping is deleted.
-    auto dropCustomAttributeInstanceAppliedToSchema =[&](ECSchemaId id) {
-        auto stmt = ctx.GetECDb().GetCachedStatement(R"sql(
+
+    if (!missingSchemas.empty())
+        {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0300,
+            "Drop ECSchemas failed. ECSchema: Schemas %s not found.", BeStringUtilities::Join(missingSchemas, ",").c_str());
+        return DropSchemaResult(DropSchemaResult::Status::ErrorSchemaNotFound);
+        }
+
+    // Check if any of the schemas to be deleted are being referenced by other schemas
+    auto refSchemastmt = ctx.GetECDb().GetCachedStatement(Utf8PrintfString(R"sql(
+        SELECT 
+            [s1].[Id], [s1].[Name], [sr].[SchemaId]
+        FROM [ec_Schema] [s1]
+            JOIN [ec_SchemaReference] [sr] ON [s1].[Id] = [sr].[ReferencedSchemaId]
+        WHERE [sr].[ReferencedSchemaId] IN (%s);
+        )sql", BeStringUtilities::Join(schemaIdStrings, ",").c_str()).c_str());
+
+    schemaIdStrings.clear();
+
+    bmap<ECSchemaId, bvector<ECSchemaId>> referencesMap;
+    bmap<ECSchemaId, Utf8String> errorSchemas;
+    while (refSchemastmt->Step() != BE_SQLITE_DONE)
+        {
+        referencesMap[refSchemastmt->GetValueId<ECSchemaId>(0)].push_back(refSchemastmt->GetValueId<ECSchemaId>(2));
+        errorSchemas[refSchemastmt->GetValueId<ECSchemaId>(0)] = refSchemastmt->GetValueText(1);
+        }
+
+    for (const auto& val : referencesMap)
+        {
+        // Check if all the schemas that are referencing are also marked for deletion
+        if (std::all_of(val.second.begin(), val.second.end(), [&schemaIds](const ECSchemaId& schemaId) { return std::find(schemaIds.begin(), schemaIds.end(), schemaId) != std::end(schemaIds); }))
+            {
+            // Ignore duplicates for when mutiple schemas reference the same schema
+            std::for_each(val.second.begin(), val.second.end(), [&schemaIdStrings](const ECSchemaId& schemaId)
+                {
+                if (std::find(schemaIdStrings.begin(), schemaIdStrings.end(), schemaId.ToString()) == std::end(schemaIdStrings))
+                    schemaIdStrings.push_back(schemaId.ToString());
+                });
+            schemaIdStrings.push_back(val.first.ToString());
+
+            errorSchemas.erase(val.first);
+            }
+        }
+
+    if (!errorSchemas.empty())
+        {
+        bvector<Utf8String> errorMessage;
+        for (const auto& val : errorSchemas)
+            errorMessage.push_back(val.second);
+        if (logIssue)
+            {
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0301, "Drop ECSchemas failed. Schema(s) %s are being referenced by other schemas.",
+                BeStringUtilities::Join(errorMessage, ",").c_str());
+            }
+        return DropSchemaResult(DropSchemaResult::Status::ErrorDeletedSchemaIsReferencedByAnotherSchema, std::move(errorMessage));
+        }
+
+    // Check schemas that are not referencing any other
+    for (const auto& schemaId : schemaIds)
+        {
+        if (std::find(schemaIdStrings.begin(), schemaIdStrings.end(), schemaId.ToString()) == std::end(schemaIdStrings))
+            schemaIdStrings.push_back(schemaId.ToString());
+        }
+
+    // Find if there are any instances belonging to the schemas that are about to be deleted.
+    auto stmt = ctx.GetECDb().GetCachedStatement(Utf8PrintfString(R"sql(
+        SELECT [cc].[Id] 
+            FROM [ec_class] [cc] 
+                JOIN [ec_ClassMap] [mm] ON [mm].[ClassId] = [cc].[Id]
+        WHERE [cc].[SchemaId] IN (%s) AND [mm].[MapStrategy] NOT IN (10, 11, 3);)sql", BeStringUtilities::Join(schemaIdStrings, ",").c_str()).c_str());
+
+    BeIdSet classIds;
+    while (stmt->Step() == BE_SQLITE_ROW)
+        classIds.insert(stmt->GetValueId<ECClassId>(0));
+
+    if (auto results = InstanceFinder::FindInstances(ctx.GetECDb(), std::move(classIds)); !results.IsEmpty())
+        {
+        if (logIssue)
+            {
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0302,
+                "Drop ECSchema failed. One or more schemas have instances present. Make sure to delete them before dropping the schemas.");
+            }
+        return DropSchemaResult(DropSchemaResult::Status::ErrorDeleteSchemaHasClassesWithInstances, std::move(results));
+        }
+
+    auto dropCustomAttributeInstanceAppliedToSchema = [&](ECSchemaId id)
+        {
+        auto dropCAStmt = ctx.GetECDb().GetCachedStatement(R"sql(
             with [all_schema_custom_attributes]([schema_id], [custom_attribute_id]) as(
                 select
                     [p].[schemaid],
@@ -73,67 +160,39 @@ DropSchemaResult SchemaWriter::DropSchema(Utf8StringCR schemaName, SchemaImportC
                     join [ec_CustomAttribute] [ca] on [ca].[containerid] = [p].[container_id]
                             and [ca].[containertype] = [p].[container_type]
             )
-            delete from [ec_customAttribute] where [id] in (select [custom_attribute_id] from   [all_schema_custom_attributes] where  [schema_id] = ?);
-        )sql");
-        stmt->BindId(1, id);
-        return stmt->Step();
-    };
-    auto dropSchemaAndItsMapping = [&] (ECSchemaId id) {
-        auto rc = dropCustomAttributeInstanceAppliedToSchema(id);
-        if (rc != BE_SQLITE_DONE)
+            delete from [ec_customAttribute] where [id] in (select [custom_attribute_id] from   [all_schema_custom_attributes] where  [schema_id] = ?);)sql");
+        dropCAStmt->BindId(1, id);
+        return dropCAStmt->Step();
+        };
+    auto dropSchemaAndItsMapping = [&](ECSchemaId id)
+        {
+        if (const auto rc = dropCustomAttributeInstanceAppliedToSchema(id); rc != BE_SQLITE_DONE)
             return rc;
 
-        auto stmt = ctx.GetECDb().GetCachedStatement("DELETE FROM ec_Schema WHERE Id = ?");
-        stmt->BindId(1, id);
-        return stmt->Step();
-    };
-    // make sure the schema exist
-    auto schemaCP = ctx.GetECDb().Schemas().GetSchema(schemaName);
-    if (schemaCP == nullptr) {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0300, "Drop ECSchema failed. ECSchema: Schema %s not found.", schemaName.c_str());
-        return DropSchemaResult(DropSchemaResult::Status::Error);
-    }
-    const auto schemaId =  schemaCP->GetId();
-    // check if the schema is referenced by another schema.
-    auto referencedBy = getReferencedBySchemas(schemaId);
-    if (!referencedBy.empty()) {
-        if (logIssue)
-            {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0301,
-                "Drop ECSchema failed. ECSchema: Schema %s is referenced by other schemas (%s).", schemaName.c_str(), BeStringUtilities::Join(referencedBy, ",").c_str());
-            }
-        return DropSchemaResult(DropSchemaResult::Status::ErrorDeletedSchemaIsReferencedByAnotherSchema, std::move(referencedBy));
-    }
+        auto dropSchemaStmt = ctx.GetECDb().GetCachedStatement("DELETE FROM ec_Schema WHERE Id = ?");
+        dropSchemaStmt->BindId(1, id);
+        return dropSchemaStmt->Step();
+        };
 
-    // find if there are any instances belong to schema that is about to be deleted.
-    auto results = InstanceFinder::FindInstances(ctx.GetECDb(), schemaId, false);
-    if (!results.IsEmpty()) {
-        if (logIssue)
+    for (const auto& schemaId : schemaIds)
+        {
+        if (auto rc = dropSchemaAndItsMapping(schemaId); rc != BE_SQLITE_DONE)
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0302,
-                "Drop ECSchema failed. ECSchema: Schema %s has instances. Make sure to delete them before dropping scheam.", schemaName.c_str());
+            if (logIssue)
+                {
+                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0303,
+                    "Drop ECSchemas failed due to a sqlite error %s.", BeSQLiteLib::GetLogError(rc).c_str());
+                }
+            return DropSchemaResult(DropSchemaResult::Status::Error);
             }
-        return DropSchemaResult(DropSchemaResult::Status::ErrorDeleteSchemaHasClassesWithInstances, std::move(results));
-    }
-
-    // drop schema should cascade delete all property maps
-    auto rc = dropSchemaAndItsMapping(schemaId);
-    if (rc != BE_SQLITE_DONE) {
-        if (logIssue)
-            {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0303,
-                "Drop ECSchema failed. ECSchema: Schema %s fail to drop due to sqlite error %s.", schemaName.c_str(), BeSQLiteLib::GetLogError(rc).c_str());
-            }
-        return DropSchemaResult(DropSchemaResult::Status::Error);
-    }
+        }
 
     // repopulate cache tables
-
-    if (SUCCESS != ctx.GetECDb().Schemas().RepopulateCacheTables()) {
+    if (SUCCESS != ctx.GetECDb().Schemas().RepopulateCacheTables())
         return DropSchemaResult(DropSchemaResult::Status::Error);
-    }
+    
     return DropSchemaResult(DropSchemaResult::Status::Success);
-}
+    }
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -198,6 +257,26 @@ SchemaImportResult SchemaWriter::ImportSchemas(bvector<ECN::ECSchemaCP>& schemas
     return SchemaImportResult::OK;
     }
 
+bool HasChangesExceptInReferences(ECN::SchemaChange& change)
+    {
+    if (change.Alias().IsChanged() || change.Name().IsChanged() || change.DisplayLabel().IsChanged() || change.Description().IsChanged())
+        return true;
+
+    if (change.Classes().IsChanged() ||
+        change.Enumerations().IsChanged() ||
+        change.Units().IsChanged() ||
+        change.Phenomena().IsChanged() ||
+        change.Formats().IsChanged() ||
+        change.KindOfQuantities().IsChanged() ||
+        change.PropertyCategories().IsChanged() ||
+        change.UnitSystems().IsChanged())
+        return true;
+    if (change.CustomAttributes().IsChanged())
+        return true;
+
+    return false;
+    }
+
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -227,6 +306,14 @@ BentleyStatus SchemaWriter::ImportSchema(Context& ctx, ECN::ECSchemaCR ecSchema)
                 {
                 if (schema->GetName().Equals(schemaChange->GetChangeName()))
                     {
+                    if (!schema->IsDynamicSchema() && !schemaChange->VersionWrite().IsChanged() && !schemaChange->VersionRead().IsChanged() && !schemaChange->VersionMinor().IsChanged())
+                        {
+                        if(HasChangesExceptInReferences(*schemaChange)) // changes to references are not considered a schema change that should log a warning
+                            {
+                            LOG.warningv("Schema '%s' has changes but its version was not incremented. Proceeding with import, but this may lead to unexpected behavior.", schema->GetName().c_str());
+                            }
+                        }
+
                     existingSchema = schema;
                     break;
                     }
@@ -2021,7 +2108,7 @@ BentleyStatus SchemaWriter::ReplaceCAEntry(Context& ctx, IECInstanceR customAttr
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-bool SchemaWriter::IsPropertyTypeChangeSupported(Utf8StringR error, StringChange& typeChange, ECPropertyCR oldProperty, ECPropertyCR newProperty, bool isPrimitiveTypeChangeAllowed)
+bool SchemaWriter::IsPropertyTypeChangeSupported(Utf8StringR error, StringChange& typeChange, ECPropertyCR oldProperty, ECPropertyCR newProperty, bool isSchemaVersionValid)
     {
     //changing from primitive to enum and enum to primitive is supported with same type and enum is unstrict
     if (oldProperty.GetIsPrimitive() && newProperty.GetIsPrimitive())
@@ -2032,7 +2119,7 @@ bool SchemaWriter::IsPropertyTypeChangeSupported(Utf8StringR error, StringChange
         ECEnumerationCP bEnum = b->GetEnumeration();
         if (!aEnum && !bEnum)
             {
-            if (isPrimitiveTypeChangeAllowed && a->GetType() != PRIMITIVETYPE_Point2d && a->GetType() != PRIMITIVETYPE_Point3d && b->GetType() != PRIMITIVETYPE_Point2d && b->GetType() != PRIMITIVETYPE_Point3d)
+            if (isSchemaVersionValid && a->GetType() != PRIMITIVETYPE_Point2d && a->GetType() != PRIMITIVETYPE_Point3d && b->GetType() != PRIMITIVETYPE_Point2d && b->GetType() != PRIMITIVETYPE_Point3d)
                 return true;
 
             error.Sprintf("ECSchema Upgrade failed. ECProperty %s.%s: Changing the type of a Primitive ECProperty is not supported. Cannot convert from '%s' to '%s'",
@@ -2044,7 +2131,7 @@ bool SchemaWriter::IsPropertyTypeChangeSupported(Utf8StringR error, StringChange
             {
             if (aEnum->GetType() != b->GetType())
                 {
-                if (isPrimitiveTypeChangeAllowed && aEnum->GetType() != PRIMITIVETYPE_Point2d && aEnum->GetType() != PRIMITIVETYPE_Point3d && b->GetType() != PRIMITIVETYPE_Point2d && b->GetType() != PRIMITIVETYPE_Point3d)
+                if (isSchemaVersionValid && aEnum->GetType() != PRIMITIVETYPE_Point2d && aEnum->GetType() != PRIMITIVETYPE_Point3d && b->GetType() != PRIMITIVETYPE_Point2d && b->GetType() != PRIMITIVETYPE_Point3d)
                     return true;
 
                 error.Sprintf("ECSchema Upgrade failed. ECProperty %s.%s: ECEnumeration specified for property must have same primitive type as new primitive property type",
@@ -2059,7 +2146,7 @@ bool SchemaWriter::IsPropertyTypeChangeSupported(Utf8StringR error, StringChange
             {
             if (a->GetType() != bEnum->GetType())
                 {
-                if (isPrimitiveTypeChangeAllowed && !bEnum->GetIsStrict() && a->GetType() != PRIMITIVETYPE_Point2d && a->GetType() != PRIMITIVETYPE_Point3d && bEnum->GetType() != PRIMITIVETYPE_Point2d && bEnum->GetType() != PRIMITIVETYPE_Point3d)
+                if (isSchemaVersionValid && !bEnum->GetIsStrict() && a->GetType() != PRIMITIVETYPE_Point2d && a->GetType() != PRIMITIVETYPE_Point3d && bEnum->GetType() != PRIMITIVETYPE_Point2d && bEnum->GetType() != PRIMITIVETYPE_Point3d)
                     return true;
 
                 error.Sprintf("ECSchema Upgrade failed. ECProperty %s.%s: Primitive type change to ECEnumeration which as different type then existing primitive property",
@@ -2083,7 +2170,7 @@ bool SchemaWriter::IsPropertyTypeChangeSupported(Utf8StringR error, StringChange
             {
             if (aEnum->GetType() != bEnum->GetType())
                 {
-                if (isPrimitiveTypeChangeAllowed && !bEnum->GetIsStrict() && aEnum->GetType() != PRIMITIVETYPE_Point2d && aEnum->GetType() != PRIMITIVETYPE_Point3d && bEnum->GetType() != PRIMITIVETYPE_Point2d && bEnum->GetType() != PRIMITIVETYPE_Point3d)
+                if (isSchemaVersionValid && !bEnum->GetIsStrict() && aEnum->GetType() != PRIMITIVETYPE_Point2d && aEnum->GetType() != PRIMITIVETYPE_Point3d && bEnum->GetType() != PRIMITIVETYPE_Point2d && bEnum->GetType() != PRIMITIVETYPE_Point3d)
                     return true;
 
                 error.Sprintf("ECSchema Upgrade failed. ECProperty %s.%s: Existing ECEnumeration has different primitive type from the new ECEnumeration specified",
@@ -2155,6 +2242,33 @@ bool SchemaWriter::UnitChangeAllowed (Context& ctx, ECPropertyCR oldProperty, EC
     return persistenceUnitMatches(newKoq, to.ToString());
     }
 
+namespace
+    {
+    bool IsMajorVersionChangeAllowed(const EC::SchemaWriter::Context& ctx, const ECN::ECSchemaId schemaId, const bool isDynamicSchema, Utf8StringR errorMessage)
+        {
+        // For dynamic schemas, if major version changes are allowed, always permit without further checks.
+        if (isDynamicSchema && ctx.IsMajorSchemaVersionChangeAllowedForDynamicSchemas())
+            return true;
+
+        // For non-dynamic schemas, check if the "Read" version has been incremented.
+        if (!ctx.IsMajorSchemaVersionChange(schemaId))
+            {
+            errorMessage = "the 'Read' version number of the ECSchema was not incremented.";
+            return false;
+            }
+
+        // Check if major version changes are globally allowed.
+        if (!ctx.AreMajorSchemaVersionChangesAllowed())
+            {
+            errorMessage = "major schema version changes are disabled for all schemas.";
+            return false;
+            }
+
+        // All checks passed, major version change is allowed.
+        return true;
+        }
+    };
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -2186,18 +2300,29 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, PropertyChange& propert
 
     if (propertyChange.TypeName().IsChanged())
         {
-        Utf8String error;
         // Allow Major schema upgrade for dynamic schemas if AllowMajorSchemaUpgradeForDynamicSchemas import option is set irrespective of the DisallowMajorSchemaUpgrade import option
         // For more information about major schema upgrade rules and examples, see https://dev.azure.com/bentleycs/iModelTechnologies/_wiki/wikis/iModelTechnologies.wiki/36117/Major-Schema-Upgrades
-        const auto isPrimitiveTypeChangeAllowed = ctx.IsMajorSchemaVersionChange(oldProperty.GetClass().GetSchema().GetId()) && (ctx.AreMajorSchemaVersionChangesAllowed() || (ctx.IsMajorSchemaVersionChangeAllowedForDynamicSchemas() && newProperty.GetClass().GetSchema().IsDynamicSchema()));
-        if (!IsPropertyTypeChangeSupported(error, propertyChange.TypeName(), oldProperty, newProperty, isPrimitiveTypeChangeAllowed))
+        Utf8String error;
+        const auto isSchemaVersionValid = IsMajorVersionChangeAllowed(ctx, oldProperty.GetClass().GetSchema().GetId(), newProperty.GetClass().GetSchema().IsDynamicSchema(), error);
+
+        Utf8String errorMessage;
+        if (!IsPropertyTypeChangeSupported(errorMessage, propertyChange.TypeName(), oldProperty, newProperty, isSchemaVersionValid))
             {
             if (ctx.IgnoreIllegalDeletionsAndModifications())
                 {
-                ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0633, "Ignoring upgrade error: %s. Error suppressed, type will not be changed.", error.c_str());
+                ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0633, "Ignoring upgrade error: %s. Error suppressed, type will not be changed.", errorMessage.c_str());
                 return SUCCESS;
                 }
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0336, error.c_str());
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0336, errorMessage.c_str());
+            return ERROR;
+            }
+
+        if (!ctx.ImportCtx().AllowsDataDestroyingChanges())
+            {
+            ctx.ImportCtx().SetDataDeletionRefused();
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0336,
+                "ECSchema Upgrade failed. ECProperty: '%s.%s'. Changing the type can make existing values unreadable and requires the schema upgrade path.",
+                oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
             return ERROR;
             }
         }
@@ -2677,17 +2802,22 @@ BentleyStatus SchemaWriter::UpdateRelationshipConstraint(Context& ctx, ECContain
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::UpdateCustomAttributes(Context& ctx, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType, ECContainerId containerId, CustomAttributeChanges& caChanges, IECCustomAttributeContainerCR oldContainer, IECCustomAttributeContainerCR newContainer)
     {
-    int customAttributeIndex = 0;
-    ECCustomAttributeInstanceIterable customAttributes = oldContainer.GetCustomAttributes(false);
-    auto itor = customAttributes.begin();
-    while (itor != customAttributes.end())
-        {
-        customAttributeIndex++;
-        ++itor;
-        }
-
     if (caChanges.IsEmpty() || caChanges.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
+
+    int customAttributeIndex = 0;
+    CachedStatementPtr stmt = ctx.GetCachedStatement("SELECT MAX(Ordinal) from main. " TABLE_CustomAttribute " WHERE ContainerId = ? AND ContainerType = ?");
+    if (stmt == nullptr)
+        return ERROR;
+
+    stmt->BindId(1, containerId);
+    stmt->BindInt(2, Enum::ToInt(containerType));
+
+    if (stmt->Step() != BE_SQLITE_ROW)
+        {
+        return ERROR;
+        }
+    customAttributeIndex = stmt->GetValueInt(0);
 
     BeAssert(caChanges.GetParent() != nullptr);
     const bool caContainerIsNew = caChanges.GetParent()->GetOpCode() == ECChange::OpCode::New;
@@ -3422,31 +3552,6 @@ BentleyStatus SchemaWriter::DeleteCustomAttributeClass(Context& ctx, ECCustomAtt
     return SUCCESS;
     }
 
-namespace
-    {
-    Utf8String IsMajorVersionChangeAllowed(const EC::SchemaWriter::Context& ctx, const ECN::ECSchemaId schemaId, const bool isDynamicSchema)
-        {
-        auto errorMessage = "";
-        if (!ctx.IsMajorSchemaVersionChange(schemaId)) // Check if the schema "Read" version has been updated to allow the major change
-            errorMessage = "the 'Read' version number of the ECSchema was not incremented.";
-
-        else if (!ctx.AreMajorSchemaVersionChangesAllowed()) // Check if the major version changes are disabled for all schemas with SchemaImportOptions::DisallowMajorSchemaUpgrade (default behavior)
-            {
-            // Major version changes are disabled. Check if schema is dynamic to decide if major version changes can still be done.
-            if (isDynamicSchema)
-                {
-                if (!ctx.IsMajorSchemaVersionChangeAllowedForDynamicSchemas()) // Schema is dynamic, check if major schema changed enabled for dynamic schemas with SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas
-                    errorMessage = "major schema version changes have not been enabled for dynamic schemas.";
-                }
-            else
-                {
-                errorMessage = "major schema version changes are disabled for all schemas.";
-                }
-            }
-        return errorMessage;
-        }
-    };
-
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -3454,7 +3559,8 @@ BentleyStatus SchemaWriter::DeleteClass(Context& ctx, ClassChange& classChange, 
     {
     // Allow Major schema upgrade for dynamic schemas if AllowMajorSchemaUpgradeForDynamicSchemas import option is set irrespective of the DisallowMajorSchemaUpgrade import option
     // For more information about major schema upgrade rules and examples, see https://dev.azure.com/bentleycs/iModelTechnologies/_wiki/wikis/iModelTechnologies.wiki/36117/Major-Schema-Upgrades
-    if (const auto errorMessage = IsMajorVersionChangeAllowed(ctx, deletedClass.GetSchema().GetId(), isDynamicSchema); !Utf8String::IsNullOrEmpty(errorMessage.c_str()))
+    Utf8String errorMessage;
+    if (!IsMajorVersionChangeAllowed(ctx, deletedClass.GetSchema().GetId(), isDynamicSchema, errorMessage))
         {
         if (ctx.IgnoreIllegalDeletionsAndModifications())
             {
@@ -3528,6 +3634,15 @@ BentleyStatus SchemaWriter::DeleteClass(Context& ctx, ClassChange& classChange, 
         return ERROR;
         }
 
+    if (deletedClassMap->GetMapStrategy().GetStrategy() != MapStrategy::NotMapped && !ctx.ImportCtx().AllowsDataDestroyingChanges())
+        {
+        ctx.ImportCtx().SetDataDeletionRefused();
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0687,
+            "ECSchema Upgrade failed. ECSchema %s: Deleting ECClass '%s' destroys its instances, which a schema update cannot do while schema sync is enabled. Use the schema upgrade path, which holds an exclusive schema lock.",
+            deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
+        return ERROR;
+        }
+
     //Delete all instances
     bool purgeECInstances = deletedClassMap->GetMapStrategy().IsTablePerHierarchy();
     if (purgeECInstances)
@@ -3554,6 +3669,9 @@ BentleyStatus SchemaWriter::DeleteClass(Context& ctx, ClassChange& classChange, 
             return ERROR;
             }
         }
+
+    // Discard saved cleaned mapping info for this class to skip property map restoration during remapping
+    ctx.ImportCtx().RemapManager().DiscardCleanedMappingInfoForClass(deletedClass.GetId());
 
     if (auto relationshipClass = deletedClass.GetRelationshipClassCP())
         {
@@ -3628,7 +3746,8 @@ BentleyStatus SchemaWriter::DeleteProperty(Context& ctx, PropertyChange& propert
     if (!isOverriddenProperty)
         {
         // Property is not overriden, hence major schema change rules will be applied
-        if (const auto errorMessage = IsMajorVersionChangeAllowed(ctx, deletedProperty.GetClass().GetSchema().GetId(), isDynamicSchema); !Utf8String::IsNullOrEmpty(errorMessage.c_str()))
+        Utf8String errorMessage;
+        if (!IsMajorVersionChangeAllowed(ctx, deletedProperty.GetClass().GetSchema().GetId(), isDynamicSchema, errorMessage))
             {
             if (ctx.IgnoreIllegalDeletionsAndModifications())
                 {
@@ -3731,6 +3850,15 @@ BentleyStatus SchemaWriter::DeleteProperty(Context& ctx, PropertyChange& propert
 
             if(sharedColumnFound)
                 {
+                if (!ctx.ImportCtx().AllowsDataDestroyingChanges())
+                    {
+                    ctx.ImportCtx().SetDataDeletionRefused();
+                    ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0688,
+                        "ECSchema Upgrade failed. ECClass %s: Deleting ECProperty '%s' clears the data in its shared column, which a schema update cannot do while schema sync is enabled. Use the schema upgrade path, which holds an exclusive schema lock.",
+                        ecClass.GetFullName(), deletedProperty.GetName().c_str());
+                    return ERROR;
+                    }
+
                 Utf8String ecsql;
                 ecsql.Sprintf("UPDATE %s SET [%s]=NULL", ecClass.GetECSqlName().c_str(), deletedProperty.GetName().c_str());
                 ECSqlStatement stmt;
@@ -3874,7 +4002,8 @@ BentleyStatus SchemaWriter::UpdateClasses(Context& ctx, ClassChanges& classChang
 BentleyStatus SchemaWriter::DeleteKindOfQuantity(Context& ctx, ECN::KindOfQuantityCR deletedKoQ, const bool isDynamicSchema)
     {
     // Check if major version change is allowed for given schema
-    if (const auto errorMessage = IsMajorVersionChangeAllowed(ctx, deletedKoQ.GetSchema().GetId(), isDynamicSchema); !Utf8String::IsNullOrEmpty(errorMessage.c_str()))
+    Utf8String errorMessage;
+    if (!IsMajorVersionChangeAllowed(ctx, deletedKoQ.GetSchema().GetId(), isDynamicSchema, errorMessage))
         {
         if (ctx.IgnoreIllegalDeletionsAndModifications())
             {
@@ -4518,7 +4647,8 @@ BentleyStatus SchemaWriter::VerifyEnumeratorChanges(Context& ctx, ECSchemaCR old
 BentleyStatus SchemaWriter::DeleteEnumeration(Context& ctx, ECN::ECEnumerationCR deletedEnum, bool isDynamicSchema)
     {
     // Check if major version change is allowed for given schema
-    if (const auto errorMessage = IsMajorVersionChangeAllowed(ctx, deletedEnum.GetSchema().GetId(), isDynamicSchema); !Utf8String::IsNullOrEmpty(errorMessage.c_str()))
+    Utf8String errorMessage;
+    if (!IsMajorVersionChangeAllowed(ctx, deletedEnum.GetSchema().GetId(), isDynamicSchema, errorMessage))
         {
         if (ctx.IgnoreIllegalDeletionsAndModifications())
             {
@@ -4654,13 +4784,13 @@ BentleyStatus SchemaWriter::UpdatePhenomena(Context& ctx, PhenomenonChanges& cha
             PhenomenonCP phen = newSchema.GetPhenomenonCP(change.GetChangeName());
             if (phen == nullptr)
                 {
-                BeAssert(false && "Failed to find phenomenon");
+                LOG.warningv("SchemaWriter::UpdatePhenomena - failed find phenomenon %s", change.GetChangeName());
                 return ERROR;
                 }
 
             if (SUCCESS != ImportPhenomenon(ctx, *phen))
                 {
-                LOG.debugv("SchemaWriter::UpdatePhenomena - failed to ImportPhenomena %s", phen->GetFullName().c_str());
+                LOG.warningv("SchemaWriter::UpdatePhenomena - failed to ImportPhenomena %s", phen->GetFullName().c_str());
                 return ERROR;
                 }
             }
@@ -4671,18 +4801,18 @@ BentleyStatus SchemaWriter::UpdatePhenomena(Context& ctx, PhenomenonChanges& cha
             PhenomenonCP newVal = newSchema.GetPhenomenonCP(change.GetChangeName());
             if (oldVal == nullptr)
                 {
-                BeAssert(false && "Failed to find Phenomenon");
+                LOG.warningv("SchemaWriter::UpdatePhenomena - failed find old phenomenon %s", change.GetChangeName());
                 return ERROR;
                 }
             if (newVal == nullptr)
                 {
-                BeAssert(false && "Failed to find Phenomenon");
+                LOG.warningv("SchemaWriter::UpdatePhenomena - failed find new phenomenon %s", change.GetChangeName());
                 return ERROR;
                 }
 
             if (UpdatePhenomenon(ctx, change, oldSchema, *oldVal, *newVal) != SUCCESS)
                 {
-                LOG.debugv("SchemaWriter::UpdatePhenomena - failed to UpdatePhenomenon %s", newVal->GetFullName().c_str());
+                LOG.warningv("SchemaWriter::UpdatePhenomena - failed to UpdatePhenomenon %s", newVal->GetFullName().c_str());
                 return ERROR;
                 }
 
@@ -5706,6 +5836,17 @@ BentleyStatus SchemaWriter::Context::PreprocessSchemas(bvector<ECN::ECSchemaCP>&
                 ECSchema::GetECVersionString(ECVersion::Latest),
                 ECSchema::GetECVersionString(schema->GetECVersion())
             );
+            return ERROR;
+            }
+        if (schema->OriginalECXmlVersionGreaterThan(ECVersion::Latest))
+            {
+            Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue,
+                ECDbIssueId::ECDb_0734,
+                "Failed to import ECSchema %s. It has a higher ECXml version %s than the current version %s and may contain unknown elements which are not supported in this version of ECDb.",
+                schema->GetFullSchemaName().c_str(), schema->GetOriginalECXmlVersionAsString().c_str(), ECSchema::GetECVersionString(ECVersion::Latest));
             return ERROR;
             }
 

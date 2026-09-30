@@ -284,6 +284,9 @@ void DefaultECPresentationSerializer::_FieldAsJson(ContextR ctx, ContentDescript
 
     if (nullptr != field.GetEditor())
         fieldBaseJson.AddMember("Editor", field.GetEditor()->AsJson(ctx, &fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
+
+    if (field.IsCalculatedPropertyField() && field.AsCalculatedPropertyField()->GetExtendedData().GetJson().MemberCount() > 0)
+        fieldBaseJson.AddMember("ExtendedData", rapidjson::Value(field.AsCalculatedPropertyField()->GetExtendedData().GetJson(), fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -446,7 +449,6 @@ void DefaultECPresentationSerializer::_AsJson(ContextR ctx, FieldEditorSliderPar
     paramsBaseJson.AddMember("Minimum", sliderParams.GetParameters().GetMinimumValue(), paramsBaseJson.GetAllocator());
     paramsBaseJson.AddMember("Maximum", sliderParams.GetParameters().GetMaximumValue(), paramsBaseJson.GetAllocator());
     paramsBaseJson.AddMember("IntervalsCount", sliderParams.GetParameters().GetIntervalsCount(), paramsBaseJson.GetAllocator());
-    paramsBaseJson.AddMember("ValueFactor", sliderParams.GetParameters().GetValueFactor(), paramsBaseJson.GetAllocator());
     paramsBaseJson.AddMember("IsVertical", sliderParams.GetParameters().IsVertical(), paramsBaseJson.GetAllocator());
     }
 
@@ -607,7 +609,7 @@ rapidjson::Document DefaultECPresentationSerializer::_AsJson(ContextR ctx, Conte
             rapidjson::Value nestedValuesJson(rapidjson::kArrayType);
             for (auto const& nestedItem : nestedContentEntry.second)
                 {
-                static const int valueSerializationFlags = ContentSetItem::SERIALIZE_PrimaryKeys | ContentSetItem::SERIALIZE_Values | ContentSetItem::SERIALIZE_DisplayValues | ContentSetItem::SERIALIZE_MergedFieldNames;
+                static const int valueSerializationFlags = ContentSetItem::SERIALIZE_PrimaryKeys | ContentSetItem::SERIALIZE_Values | ContentSetItem::SERIALIZE_DisplayValues | ContentSetItem::SERIALIZE_MergedFieldNames | ContentSetItem::SERIALIZE_DisplayLabel;
                 nestedValuesJson.PushBack(nestedItem->AsJson(ctx, valueSerializationFlags, &json.GetAllocator()), json.GetAllocator());
                 }
             json["Values"].AddMember(rapidjson::Value(nestedContentEntry.first.c_str(), json.GetAllocator()), nestedValuesJson, json.GetAllocator());
@@ -1216,6 +1218,8 @@ rapidjson::Value DefaultECPresentationSerializer::_AsJson(ContextR ctx, RelatedC
         json.AddMember("IsTargetPolymorphic", relatedClass.GetTargetClass().IsSelectPolymorphic(), allocator);
     if (relatedClass.IsTargetOptional())
         json.AddMember("IsTargetOptional", relatedClass.IsTargetOptional(), allocator);
+    if (!relatedClass.GetTargetInstanceFilter().empty())
+        json.AddMember("TargetInstanceFilter", rapidjson::Value(relatedClass.GetTargetInstanceFilter().c_str(), allocator), allocator);
 
     json.AddMember("RelationshipInfo", _AsJson(ctx, relatedClass.GetRelationship().GetClass(), &allocator), allocator);
     if (!relatedClass.GetRelationship().GetAlias().empty())

@@ -22,7 +22,19 @@
 #include <folly/portability/Config.h>
 
 #if !FOLLY_HAVE_MEMRCHR
+#ifdef _WIN32
+// MSVC CRT and clang-cl on Windows don't provide memrchr; supply an inline fallback.
+inline void* memrchr(const void* s, int c, size_t n) {
+    if (n == 0) return nullptr;
+    const unsigned char* p = static_cast<const unsigned char*>(s) + n;
+    while (n--) {
+        if (*--p == static_cast<unsigned char>(c)) return const_cast<void*>(static_cast<const void*>(p));
+    }
+    return nullptr;
+}
+#else
 extern "C" void* memrchr(const void* s, int c, size_t n);
+#endif
 #endif
 
 #if defined(_WIN32) || defined(__FreeBSD__)

@@ -56,7 +56,7 @@ struct JsCloudCache : CloudCache, Napi::ObjectWrap<JsCloudCache> {
         Utf8StringCR name = stringMember(args, JSON_NAME(name));
         Utf8StringCR rootDir = stringMember(args, JSON_NAME(rootDir));
         if (name.empty() || rootDir.empty())
-            BeNapi::ThrowJsException(info.Env(), "invalid arguments", DbResult::BE_SQLITE_MISUSE);
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "invalid arguments", DbResult::BE_SQLITE_MISUSE);
 
         int64_t cacheSize = 50 * MemorySize::GIG; // default in sqlite is 1G, that's way too small
         auto cacheSizeStr = stringMember(args, JSON_NAME(cacheSize));
@@ -64,14 +64,14 @@ struct JsCloudCache : CloudCache, Napi::ObjectWrap<JsCloudCache> {
             cacheSizeStr.ToUpper();
             cacheSize = parseCacheSize(cacheSizeStr.c_str());
             if (cacheSize < 0)
-                BeNapi::ThrowJsException(info.Env(), "illegal cache size", DbResult::BE_SQLITE_MISUSE);
+                THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "illegal cache size", DbResult::BE_SQLITE_MISUSE);
         }
         bool curlDiagnostics = boolMember(args, JSON_NAME(curlDiagnostics), false);
         auto stat = InitCache(name, rootDir, cacheSize, intMember(args, JSON_NAME(nRequests), 0), intMember(args, JSON_NAME(httpTimeout), 0), curlDiagnostics);
         if (!stat.IsSuccess()) {
             if (stat.m_status == BE_SQLITE_CANTOPEN)
                 stat.m_error = "Cannot create CloudCache: invalid cache directory or directory does not exist";
-            BeNapi::ThrowJsException(info.Env(), stat.m_error.c_str(), stat.m_status);
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), stat.m_error.c_str(), (DbResult)stat.m_status);
         }
     }
 
@@ -157,9 +157,9 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         m_baseUri = stringMember(obj, JSON_NAME(baseUri));
         m_containerId = stringMember(obj, JSON_NAME(containerId));
         if (m_baseUri.empty())
-            BeNapi::ThrowJsException(obj.Env(), "baseUri missing from CloudContainer constructor");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(obj.Env(), "baseUri missing from CloudContainer constructor", IModelJsNativeErrorKey::BadArg);
         if (m_containerId.empty())
-            BeNapi::ThrowJsException(obj.Env(), "containerId missing from CloudContainer constructor");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(obj.Env(), "containerId missing from CloudContainer constructor", IModelJsNativeErrorKey::BadArg);
 
         m_storageType = stringMember(obj, JSON_NAME(storageType), "azure");
         if (m_storageType.Trim().StartsWith("azure")) {
@@ -186,13 +186,13 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
 
     void RequireConnected() {
         if (!IsContainerConnected())
-            BeNapi::ThrowJsException(Env(), "container not connected to cache");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(Env(), "container not connected to cache", IModelJsNativeErrorKey::NotInitialized);
     }
 
     void RequireWriteLock() {
         RequireConnected();
         if (!m_writeLockHeld)
-            BeNapi::ThrowJsException(Env(), Utf8PrintfString("container [%s] is not locked for write access", m_containerId.c_str()).c_str());
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(Env(), Utf8PrintfString("container [%s] is not locked for write access", m_containerId.c_str()).c_str(), IModelJsNativeErrorKey::LockNotHeld);
     }
 
     void CallJsMemberFunc(Utf8CP funcName, std::vector<napi_value> const& args) {
@@ -207,7 +207,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
 
         REQUIRE_ARGUMENT_ANY_OBJ(0, jsCache);
         if (!JsCloudCache::IsInstance(jsCache))
-            BeNapi::ThrowJsException(Env(), "invalid cache argument");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(Env(), "invalid cache argument", IModelJsNativeErrorKey::BadArg);
 
         auto thisObj = Value();
         CallJsMemberFunc("onConnect", {thisObj, jsCache});
@@ -215,7 +215,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         auto cache = Napi::ObjectWrap<JsCloudCache>::Unwrap(jsCache);
         auto stat = CloudContainer::Connect(*cache);
         if (!stat.IsSuccess())
-            BeNapi::ThrowJsException(Env(), stat.m_error.c_str(), stat.m_status);
+            THROW_JS_BE_SQLITE_EXCEPTION(Env(), stat.m_error.c_str(), (DbResult)stat.m_status);
 
         if (cache->IsDaemon())
             m_writeable = false; // daemon cannot be used for writing
@@ -245,7 +245,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         bool isDetach = args.isObject() && args["detach"].GetBoolean(false);
         auto stat = CloudContainer::Disconnect(isDetach, false);
         if (!stat.IsSuccess())
-            BeNapi::ThrowJsException(Env(), stat.m_error.c_str(), stat.m_status);
+            THROW_JS_BE_SQLITE_EXCEPTION(Env(), stat.m_error.c_str(), (DbResult)stat.m_status);
 
         Value().Set("cache", Env().Undefined());
     }
@@ -257,7 +257,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
 
     Napi::Value UploadChanges(NapiInfoCR info) {
         RequireWriteLock();
-        return QueueWorker(info, [=]() { return CloudContainer::UploadChanges(); });
+        return QueueWorker(info, [=, this]() { return CloudContainer::UploadChanges(); });
     }
 
     Napi::Value GetBlockSize(NapiInfoCR) {
@@ -268,7 +268,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
     Napi::Value QueryDatabaseHash(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, dbName);
         if (HasLocalChanges())
-            BeNapi::ThrowJsException(Env(), "cannot obtain database hash with local changes");
+            THROW_JS_BE_SQLITE_EXCEPTION(Env(), "cannot obtain database hash with local changes", BE_SQLITE_BUSY);
         return Napi::String::New(Env(), m_cache->GetDatabaseHash(*this, dbName));
     }
 
@@ -311,7 +311,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         Statement stmt;
         auto rc = stmt.Prepare(m_containerDb, sql.c_str());
         if (rc != BE_SQLITE_OK)
-            BeNapi::ThrowJsException(Env(), Utf8PrintfString("Got error preparing %s", sql.c_str()).c_str(), rc);
+            THROW_JS_BE_SQLITE_EXCEPTION(Env(), Utf8PrintfString("Got error preparing %s", sql.c_str()).c_str(), rc);
 
         if (startFromId != 0 && !finishedAtOrAfterTime.empty()) {
             stmt.BindInt(1, startFromId);
@@ -393,8 +393,9 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         }
 
         Statement stmt;
-        Utf8CP statNames [3] = { "nlock", "ncache", "cachesize" };
-        Utf8CP jsNames [3] = { "lockedCacheslots", "populatedCacheslots", "totalCacheslots" };
+        Utf8CP statNames[] = { "nlock", "ncache", "cachesize", "memory_used", "memory_highwater", "memory_manifest", "memory_client_array", "memory_client_manifest" };
+        Utf8CP jsNames[] = { "lockedCacheslots", "populatedCacheslots", "totalCacheslots", "memoryUsed", "memoryHighwater", "memoryManifest", "memoryClientArray", "memoryClientManifest" };
+        BeAssert (sizeof(statNames) == sizeof(jsNames));
         auto rc = stmt.Prepare(m_containerDb, "SELECT value FROM bcv_stat where name = ?");
         BeAssert (rc == BE_SQLITE_OK);
         UNUSED_VARIABLE(rc);
@@ -403,14 +404,38 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
             stmt.BindText(1, statNames[i], Statement::MakeCopy::No);
             auto result = stmt.Step();
             if (result != BE_SQLITE_ROW) {
-                value[jsNames[i]] = -1; 
+                std::string statName = statNames[i];
+                // The following two stats are only present in daemon mode. So if they do not exist,
+                // do not include them in the output.
+                if (statName != "memory_client_array" && statName != "memory_client_manifest") {
+                    value[jsNames[i]] = Utf8String("SQLITE Error: ") + m_containerDb.GetLastError();
+                }
             } else {
-                value[jsNames[i]] = stmt.GetValueInt(0); 
+                // The actual values in the database are unsigned 64 bit integers, but there is no
+                // direct way to pass those to JavaScript. So we use BeStringUtilities::FormatUInt64
+                // to convert the integer to a hex string, which we can then pass to JS and let JS
+                // convert to a number (or directly deal with the hex string).
+                // Note: the IdToHex function isn't attached to in the cloud container database.
+                uint64_t intValue = stmt.GetValueUInt64(0);
+                if (intValue == 0) {
+                    // FormatUInt64 intentionally doesn't apply the "0x" prefix when the value is 0.
+                    // So we just special case that here.
+                    value[jsNames[i]] = "0x0";
+                } else {
+                    static const size_t stringBufferLength = 19;
+                    Utf8Char stringBuffer[stringBufferLength];
+                    if (BeStringUtilities::FormatUInt64(stringBuffer, stringBufferLength, intValue, HexFormatOptions::IncludePrefix) != 0) {
+                        value[jsNames[i]] = stringBuffer;
+                    } else {
+                        value[jsNames[i]] = Utf8String("Error converting to hex string");
+                    }
+                }
             }
             stmt.Reset();
             stmt.ClearBindings();
         }
         stmt.Finalize();
+
         if (addClientInformation) {
             rc = stmt.Prepare(m_containerDb, "SELECT SUM(nclient), SUM(nprefetch), SUM(ntrans) from bcv_database");
 
@@ -448,13 +473,13 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         RequireWriteLock();
         REQUIRE_ARGUMENT_STRING(0, fromName);
         REQUIRE_ARGUMENT_STRING(1, toName);
-        return QueueWorker(info, [=]() { return CloudContainer::CopyDatabase(fromName, toName); });
+        return QueueWorker(info, [=, this]() { return CloudContainer::CopyDatabase(fromName, toName); });
     }
 
     Napi::Value DeleteDatabase(NapiInfoCR info) {
         RequireWriteLock();
         REQUIRE_ARGUMENT_STRING(0, dbName);
-        return QueueWorker(info, [=]() { return CloudContainer::DeleteDatabase(dbName); });
+        return QueueWorker(info, [=, this]() { return CloudContainer::DeleteDatabase(dbName); });
     }
 
     void InitializeContainer(NapiInfoCR info) {
@@ -466,19 +491,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
             result = handle.InitializeContainer(checksumName ? 24 : 16, requireInt(opts, JSON_NAME(blockSize)));
         }
         if (result.m_status != BE_SQLITE_OK)
-            BeNapi::ThrowJsException(Env(), result.m_error.c_str(), result.m_status);
-    }
-
-    Napi::Value CleanDeletedBlocks(NapiInfoCR info) {
-        RequireWriteLock();
-        OPTIONAL_ARGUMENT_INTEGER(0, nSeconds, (60*60)); // default to one hour
-        return QueueWorker(info, [=]() {
-            JsCloudUtil handle;
-            auto result = handle.Init(*this);
-            if (result.IsSuccess())
-                result = handle.CleanDeletedBlocks(nSeconds);
-            return result.IsSuccess() ? CloudContainer::PollManifest() : result;
-        });
+            THROW_JS_BE_SQLITE_EXCEPTION(Env(), result.m_error.c_str(), (DbResult)result.m_status);
     }
 
     Napi::Value GetWriteLockExpiryTime(NapiInfoCR) {
@@ -578,7 +591,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
     void AcquireWriteLock(Utf8StringCR user) {
         RequireConnected();
         if (!m_writeable)
-            BeNapi::ThrowJsException(Env(), "container is not writeable");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(Env(), "container is not writeable", IModelJsNativeErrorKey::NotOpenForWrite);
 
         m_containerDb.TryExecuteSql("BEGIN");
         CheckLock(); // throws if already locked by another user
@@ -599,8 +612,8 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
             rc = m_containerDb.TryExecuteSql("COMMIT");
         if (rc != BE_SQLITE_OK) {
             if (rc == BE_SQLITE_IOERR_AUTH)
-                BeNapi::ThrowJsException(Env(), "not authorized to obtain write lock", BE_SQLITE_AUTH);
-            BeNapi::ThrowJsException(Env(), "cannot obtain write lock", rc);
+                THROW_JS_BE_SQLITE_EXCEPTION(Env(), "not authorized to obtain write lock", BE_SQLITE_AUTH);
+            THROW_JS_BE_SQLITE_EXCEPTION(Env(), "cannot obtain write lock", rc);
         }
         m_writeLockHeld = true;
     }
@@ -649,7 +662,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         RequireConnected();
         auto stat = ClearWriteLock();
         if (!stat.IsSuccess())
-            BeNapi::ThrowJsException(Env(), stat.m_error.c_str(), stat.m_status);
+            THROW_JS_BE_SQLITE_EXCEPTION(Env(), stat.m_error.c_str(), (DbResult)stat.m_status);
     }
 
     void ReleaseWriteLock(NapiInfoCR info) {
@@ -662,7 +675,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
             stat = ClearWriteLock();
 
         if (!stat.IsSuccess())
-            BeNapi::ThrowJsException(Env(), stat.m_error.c_str(), stat.m_status);
+            THROW_JS_BE_SQLITE_EXCEPTION(Env(), stat.m_error.c_str(), (DbResult)stat.m_status);
     }
 
     void AbandonChanges(NapiInfoCR info) {
@@ -675,7 +688,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
             stat = CloudContainer::RevertChanges();
 
         if (!stat.IsSuccess())
-            BeNapi::ThrowJsException(Env(), stat.m_error.c_str(), stat.m_status);
+            THROW_JS_BE_SQLITE_EXCEPTION(Env(), stat.m_error.c_str(), (DbResult)stat.m_status);
     }
 
     static bool IsInstance(Napi::Object val) { return val.InstanceOf(Constructor().Value()); }
@@ -711,7 +724,6 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
             InstanceAccessor<&JsCloudContainer::GetWriteLockExpiryTime>("writeLockExpires"),
             InstanceMethod<&JsCloudContainer::AbandonChanges>("abandonChanges"),
             InstanceMethod<&JsCloudContainer::AcquireWriteLockJs>("acquireWriteLock"),
-            InstanceMethod<&JsCloudContainer::CleanDeletedBlocks>("cleanDeletedBlocks"),
             InstanceMethod<&JsCloudContainer::ClearWriteLockJs>("clearWriteLock"),
             InstanceMethod<&JsCloudContainer::Connect>("connect"),
             InstanceMethod<&JsCloudContainer::CopyDatabase>("copyDatabase"),
@@ -737,31 +749,36 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
 /**
  * A request to upload or download a CloudDb
  */
-struct CloudDbTransfer : Napi::ObjectWrap<CloudDbTransfer> {
+struct CancellableCloudSqliteJob : Napi::ObjectWrap<CancellableCloudSqliteJob> {
     // Async Worker that does download on another thread.
-    struct Downloader : Napi::AsyncWorker {
-        enum Direction { Upload = 0, Download = 1 };
+    struct Worker : Napi::AsyncWorker {
+        enum JobType { Upload = 0, Download = 1, Cleanup = 2 };
         struct JsDownloadJob : JsCloudUtil { // runs on AsyncWorker thread
             mutable BeMutex m_mutex;
             uint64_t m_nDone = 0;
             uint64_t m_nTotal = 0;
             bool m_abort = false; // set from DownloadV2Checkpoint::CancelDownload
+            bool m_stopAndSaveProgress = false;
             int _OnProgress(uint64_t nDone, uint64_t nTotal) override {
                 BeMutexHolder holder(m_mutex);
                 m_nDone = nDone;
                 m_nTotal = nTotal;
-                return m_abort ? 1 : 0;
+                return m_abort ? BE_SQLITE_ABORT : m_stopAndSaveProgress ? BE_SQLITE_DONE : BE_SQLITE_OK;
             }
         };
 
         Napi::ObjectReference m_request;
-        Direction m_direction;
+        JobType m_jobType;
         JsDownloadJob m_job;
         Utf8String m_dbName;
         Utf8String m_localFile;
+        int m_nSeconds;
+        bool m_findOrphanedBlocks;
 
         void Execute() override { // worker thread
-            auto stat = m_direction == Direction::Upload ? m_job.UploadDatabase(m_localFile, m_dbName) : m_job.DownloadDatabase(m_dbName, m_localFile);
+            auto stat = m_jobType == JobType::Upload ? m_job.UploadDatabase(m_localFile, m_dbName) 
+            : m_jobType == JobType::Download ? m_job.DownloadDatabase(m_dbName, m_localFile)
+            : m_job.CleanDeletedBlocks(m_nSeconds, m_findOrphanedBlocks);
             if (stat.m_status == BE_SQLITE_ABORT)
                 SetError("cancelled");
             else if (stat.m_status != BE_SQLITE_OK)
@@ -769,39 +786,48 @@ struct CloudDbTransfer : Napi::ObjectWrap<CloudDbTransfer> {
         }
 
         void OnOK() override { // main thread
-            auto* request = CloudDbTransfer::Unwrap(m_request.Value());
+            auto* request = CancellableCloudSqliteJob::Unwrap(m_request.Value());
             request->m_promise.Resolve(Napi::Number::New(Env(), 0));
             request->m_pending = nullptr;
         }
 
         void OnError(Napi::Error const& error) override { // main thread
-            auto* request = CloudDbTransfer::Unwrap(m_request.Value());
+            auto* request = CancellableCloudSqliteJob::Unwrap(m_request.Value());
             request->m_promise.Reject(error.Value());
             request->m_pending = nullptr;
         }
 
-        Downloader(Direction direction, JsCloudContainer& container, Napi::Object args, CloudDbTransfer const& request) : Napi::AsyncWorker(args.Env()) {
-            if (direction == Direction::Upload)
+        Worker(JobType jobType, JsCloudContainer& container, Napi::Object args, CancellableCloudSqliteJob const& request) : Napi::AsyncWorker(args.Env()) {
+            if (jobType == JobType::Upload || jobType == JobType::Cleanup)
                 container.RequireWriteLock();
             m_request.Reset(request.Value(), 1);
-            m_direction = direction;
-            m_localFile = requireString(args, JSON_NAME(localFileName));
-            m_dbName = requireString(args, JSON_NAME(dbName));
-            auto stat = m_job.Init(container, 0, intMember(args, JSON_NAME(nRequests), 0), intMember(args, JSON_NAME(httpTimeout), 0));
+            m_jobType = jobType;
+            bool debugLogging = false;
+            if (m_jobType == JobType::Upload || m_jobType == JobType::Download) {
+                m_localFile = requireString(args, JSON_NAME(localFileName));
+                m_dbName = requireString(args, JSON_NAME(dbName));
+            }
+            else if (m_jobType == JobType::Cleanup) {
+                m_findOrphanedBlocks = requireBool(args, JSON_NAME(findOrphanedBlocks));
+                m_nSeconds = requireInt(args, JSON_NAME(nSeconds));
+                debugLogging = requireBool(args, JSON_NAME(debugLogging));
+            }
+
+            auto stat = m_job.Init(container, debugLogging ? 1 : 0, intMember(args, JSON_NAME(nRequests), 0), intMember(args, JSON_NAME(httpTimeout), 0));
             if (!stat.IsSuccess())
-                BeNapi::ThrowJsException(Env(), stat.m_error.c_str(), stat.m_status);
+                THROW_JS_BE_SQLITE_EXCEPTION(Env(), stat.m_error.c_str(), (DbResult)stat.m_status);
         }
 
-        ~Downloader() { m_request.Reset(); }
+        ~Worker() { m_request.Reset(); }
     };
 
     DEFINE_CONSTRUCTOR;
     Napi::Promise::Deferred m_promise;
-    Downloader* m_pending = nullptr;
+    Worker* m_pending = nullptr;
 
     void CheckStillPending(Napi::Env env) {
         if (m_pending == nullptr)
-            BeNapi::ThrowJsException(env, "transfer already completed");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "transfer already completed", IModelJsNativeErrorKey::BadArg);
     }
     // get the current progress of the active upload/download.
     Napi::Value GetProgress(NapiInfoCR info) {
@@ -820,25 +846,47 @@ struct CloudDbTransfer : Napi::ObjectWrap<CloudDbTransfer> {
         m_pending->m_job.m_abort = true;
     }
 
-    CloudDbTransfer(NapiInfoCR info) : Napi::ObjectWrap<CloudDbTransfer>(info), m_promise(Napi::Promise::Deferred::New(info.Env())) {
+    // If this is called and some blocks have begun to be deleted, then the job will stop and upload the manifest reflecting which blocks have been deleted.
+    // For uploads and downloads this will abort the transfer without saving.
+    void StopAndSaveProgress(NapiInfoCR info) {
+        CheckStillPending(info.Env());
+        m_pending->m_job.m_stopAndSaveProgress = true;
+    }
+
+    void handleDefaultArgsForCleanupJob(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_ANY_OBJ(2, args);
+        auto optionsForCleanup = BeJsConst(info[2]);
+        if (!args.Has("debugLogging"))
+            args.Set("debugLogging", Napi::Boolean::New(info.Env(), false));
+        if (!args.Has("findOrphanedBlocks"))
+            args.Set("findOrphanedBlocks", Napi::Boolean::New(info.Env(), true));
+        if (!args.Has("nSeconds"))
+            args.Set("nSeconds", Napi::Number::New(info.Env(), 3600));
+    }
+
+    CancellableCloudSqliteJob(NapiInfoCR info) : Napi::ObjectWrap<CancellableCloudSqliteJob>(info), m_promise(Napi::Promise::Deferred::New(info.Env())) {
         REQUIRE_ARGUMENT_STRING(0, direction);
         REQUIRE_ARGUMENT_ANY_OBJ(1, jsContainer);
         if (!JsCloudContainer::IsInstance(jsContainer))
-            BeNapi::ThrowJsException(Env(), "invalid container argument");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(Env(), "invalid container argument", IModelJsNativeErrorKey::BadArg);
         auto container = Napi::ObjectWrap<JsCloudContainer>::Unwrap(jsContainer);
 
         REQUIRE_ARGUMENT_ANY_OBJ(2, args);
+        if (direction == "cleanup") {
+            handleDefaultArgsForCleanupJob(info);
+        }
         Value().Set(JSON_NAME(promise), m_promise.Promise()); // holds a reference to the promise to keep it alive
-        m_pending = new Downloader(direction.Equals("upload") ? Downloader::Direction::Upload : Downloader::Direction::Download, *container, args, *this);
+        m_pending = new Worker(direction.Equals("upload") ? Worker::JobType::Upload : direction.Equals("download") ? Worker::JobType::Download : Worker::JobType::Cleanup, *container, args, *this);
         m_pending->Queue(); // takes ownership of m_pending, deletes on completion
     }
 
     static void Init(Napi::Env& env, Napi::Object exports) {
-        static constexpr Utf8CP className = "CloudDbTransfer";
+        static constexpr Utf8CP className = "CancellableCloudSqliteJob";
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, className, {
-            InstanceMethod<&CloudDbTransfer::CancelTransfer>("cancelTransfer"),
-            InstanceMethod<&CloudDbTransfer::GetProgress>("getProgress"),
+            InstanceMethod<&CancellableCloudSqliteJob::CancelTransfer>("cancelTransfer"),
+            InstanceMethod<&CancellableCloudSqliteJob::GetProgress>("getProgress"),
+            InstanceMethod<&CancellableCloudSqliteJob::StopAndSaveProgress>("stopAndSaveProgress"),
         });
 
         exports.Set(className, t);
@@ -852,7 +900,7 @@ Napi::Value getJsCloudContainer(Napi::Value arg) {
 
     auto jsContainer = arg.As<Napi::Object>();
     if (!JsCloudContainer::IsInstance(jsContainer))
-        BeNapi::ThrowJsException(arg.Env(), "invalid container argument");
+        THROW_JS_IMODEL_NATIVE_EXCEPTION(arg.Env(), "invalid container argument", IModelJsNativeErrorKey::BadArg);
 
     return arg;
 }
@@ -881,7 +929,7 @@ struct JsCloudPrefetch : Napi::ObjectWrap<JsCloudPrefetch> {
             REQUIRE_ARGUMENT_STRING(1, dbName);
             auto rc = m_prefetch.Init(*container, dbName);
             if (rc != BE_SQLITE_OK)
-                BeNapi::ThrowJsException(Env(), "error initializing prefetch", rc);
+                THROW_JS_BE_SQLITE_EXCEPTION(Env(), "error initializing prefetch", rc);
             if (info[2].IsObject()) {
                 BeJsValue args(info[2]);
                 m_maxRequests = std::min(30, args[JSON_NAME(nRequests)].asInt(m_maxRequests));
@@ -1005,10 +1053,14 @@ struct JsCloudPrefetch : Napi::ObjectWrap<JsCloudPrefetch> {
  * register the classes in this source file.
  */
 void registerCloudSqlite(Napi::Env env, Napi::Object exports) {
-    CloudDbTransfer::Init(env, exports);
+    CancellableCloudSqliteJob::Init(env, exports);
     JsCloudCache::Init(env, exports);
     JsCloudContainer::Init(env, exports);
     JsCloudPrefetch::Init(env, exports);
+    #ifndef BENTLEY_WIN32
+        // Ignore SIGPIPE to prevent crashes in CloudSQLite/curl.
+        signal(SIGPIPE, SIG_IGN);
+    #endif
 }
 
 } // end namespace IModelJsNative

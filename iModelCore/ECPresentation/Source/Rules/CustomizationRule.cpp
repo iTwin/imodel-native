@@ -5,7 +5,6 @@
 #include <ECPresentationPch.h>
 
 #include "PresentationRuleJsonConstants.h"
-#include "PresentationRuleXmlConstants.h"
 #include <ECPresentation/Rules/PresentationRules.h>
 
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
@@ -56,29 +55,6 @@ Utf8StringCR ConditionalCustomizationRule::GetCondition() const { return m_condi
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConditionalCustomizationRule::SetCondition(Utf8String value) { m_condition = value; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ConditionalCustomizationRule::_ReadXml(BeXmlNodeP xmlNode)
-    {
-    if (!CustomizationRule::_ReadXml(xmlNode))
-        return false;
-
-    if (BEXML_Success != xmlNode->GetAttributeStringValue(m_condition, PRESENTATION_RULE_XML_ATTRIBUTE_CONDITION))
-        m_condition = "";
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ConditionalCustomizationRule::_WriteXml(BeXmlNodeP xmlNode) const
-    {
-    CustomizationRule::_WriteXml(xmlNode);
-    xmlNode->AddAttributeStringValue(PRESENTATION_RULE_XML_ATTRIBUTE_CONDITION, m_condition.c_str());
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

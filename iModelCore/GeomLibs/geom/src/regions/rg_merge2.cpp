@@ -118,6 +118,7 @@ int             noisy
     DPoint3d xyNodeId;
     int numThisCluster, clusterIndex, blockIndex;
     int xyNodeIdIndex;
+    UNUSED_VARIABLE(numThisCluster);
 
     jmdlVArrayDPoint3d_identifyMatchedVerticesXY
                             (pXYNodeIdArray, NULL, pBlockedIndexArray, tolerance, 0.0);
@@ -475,22 +476,6 @@ typedef struct
     } VertexSortData;
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-static int vsd_compare
-(
-const VertexSortData *p0,
-const VertexSortData *p1
-)
-    {
-    if (p0->theta < p1->theta)
-        return -1;
-    if (p0->theta > p1->theta)
-        return 1;
-    return 0;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 *  @return distance to mid-edge point.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -546,12 +531,13 @@ bvector<double>   *pParamArray
     DPoint3d xyzCenter, xyzCurr;
     DVec3d vector;
     int numIntersect;
-    int numFail;
+    int numFail = 0;
+    UNUSED_VARIABLE(numFail);
+    
     int i;
     jmdlEmbeddedDPoint3dArray_empty (pXYZArray);
     pParamArray->clear();
     jmdlRG_getVertexData (pRG, &xyzCenter, 0, NULL, pSortData[0].nodeId, 0.0);
-    numFail = 0;
     for (i = 0; i < numSort; i++)
         {
         jmdlRG_edgeCircleXYIntersection (pRG, pParamArray, pXYZArray,
@@ -569,7 +555,7 @@ bvector<double>   *pParamArray
             pSortData[i].theta = Angle::Atan2 (vector.y, vector.x);
             }
         }
-    qsort (pSortData, numSort, sizeof (VertexSortData), (VBArray_SortFunction)vsd_compare);
+    std::sort(pSortData, pSortData + numSort, [](const VertexSortData& a, const VertexSortData& b) { return a.theta < b.theta; });
     }
 
 static bool    anglesWithinTolerance
@@ -760,7 +746,7 @@ EmbeddedDPoint3dArray *pXYZArray
     static double s_angleTol = 1.0e-5;
     double radius;
 
-    qsort (pSortData, numSort, sizeof (VertexSortData), (VBArray_SortFunction)vsd_compare);
+    std::sort(pSortData, pSortData + numSort, [](const VertexSortData& a, const VertexSortData& b) { return a.theta < b.theta; });
     numDup = countAngleDups (pSortData, numSort, s_angleTol);
 
     if (numDup > 0)

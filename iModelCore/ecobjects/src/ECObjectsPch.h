@@ -17,8 +17,8 @@
 #include <Bentley/Logging.h>
 #include <ECObjects/CalculatedProperty.h>
 #include <ECObjects/SystemSymbolProvider.h>
-#include <BeXml/BeXml.h>
 #include <pugixml/src/pugixml.hpp>
 #include <pugixml/src/BePugiXmlHelper.h>
+#include <pugixml/src/BePugiXml.h>
 #include <Units/Units.h>
 #include <Formatting/FormattingApi.h>

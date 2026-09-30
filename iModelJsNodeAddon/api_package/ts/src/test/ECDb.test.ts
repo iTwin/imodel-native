@@ -1,7 +1,8 @@
 import { expect } from "chai";
 import * as os from "os";
+import { DbResult } from "@itwin/core-bentley";
 import {
-  DbBlobRequest, DbBlobResponse, DbQueryRequest, DbQueryResponse, DbRequestKind, DbResponseStatus, DbResult,
+  DbBlobRequest, DbBlobResponse, DbQueryRequest, DbQueryResponse, DbRequestKind, DbResponseStatus,
   ECSqlReader, IModelError, QueryBinder, QueryOptions,
 } from "@itwin/core-common";
 import { IModelJsNative } from "../NativeLibrary";
@@ -12,15 +13,15 @@ import { openDgnDb } from "./";
 *--------------------------------------------------------------------------------------------*/
 import { dbFileName } from "./utils";
 
-// Crash reporting on linux is gated by the presence of this env variable.
-if (os.platform() === "linux")
-  process.env.LINUX_MINIDUMP_ENABLED = "yes";
+// Crash reporting is gated by this env variable on supported platforms.
+if (["linux", "darwin", "win32"].includes(os.platform()))
+  process.env.IMODEL_ADDON_MINIDUMP_ENABLED = "yes";
 
 class ConcurrentQueryHelper {
   public static async executeQueryRequest(conn: IModelJsNative.ECDb | IModelJsNative.DgnDb, request: DbQueryRequest): Promise<DbQueryResponse> {
     return new Promise<DbQueryResponse>((resolve) => {
       request.kind = DbRequestKind.ECSql;
-      conn.concurrentQueryExecute(request as any, (response: any) => {
+      conn.concurrentQueryExecute(request, (response: any) => {
         resolve(response as DbQueryResponse);
       });
     });
@@ -28,7 +29,7 @@ class ConcurrentQueryHelper {
   public static async executeBlobRequest(conn: IModelJsNative.ECDb | IModelJsNative.DgnDb, request: DbBlobRequest): Promise<DbBlobResponse> {
     return new Promise<DbBlobResponse>((resolve) => {
       request.kind = DbRequestKind.BlobIO;
-      conn.concurrentQueryExecute(request as any, (response: any) => {
+      conn.concurrentQueryExecute(request, (response: any) => {
         resolve(response as DbBlobResponse);
       });
     });
@@ -42,12 +43,12 @@ class ConcurrentQueryHelper {
         return ConcurrentQueryHelper.executeQueryRequest(conn, request);
       },
     };
-    return new ECSqlReader(executor, ecsql, params, config as QueryOptions);
+    return new ECSqlReader(executor, ecsql, params, config);
   }
   public static async * query(conn: IModelJsNative.ECDb | IModelJsNative.DgnDb, ecsql: string, params?: QueryBinder, options?: QueryOptions & { delay?: number }): AsyncIterableIterator<any> {
     const reader = this.createQueryReader(conn, ecsql, params, options);
     while (await reader.step()) {
-      yield reader.formatCurrentRow();
+      yield reader.current.toRow();
     }
   }
   public static resetConfig(conn: IModelJsNative.ECDb | IModelJsNative.DgnDb, config?: IModelJsNative.QueryConfig): IModelJsNative.QueryConfig {
@@ -109,7 +110,7 @@ describe("concurrent query tests", () => {
       kind: DbRequestKind.ECSql,
       query: "with cnt(x) as (values(0) union select x+1 from cnt where x < 10 ) select x from cnt",
       delay: 5000,
-    } as DbQueryRequest);
+    });
 
     expect(rc.status).eq(DbResponseStatus.Timeout);
   });
@@ -121,9 +122,164 @@ describe("concurrent query tests", () => {
     const rc = await ConcurrentQueryHelper.executeQueryRequest(conn, {
       kind: DbRequestKind.ECSql,
       query: "with cnt(x) as (values(0) union select x+1 from cnt where x < 1000 ) select x, CAST(randomblob(1000) AS BINARY) from cnt",
-    } as DbQueryRequest);
+    });
 
     expect(rc.status).eq(DbResponseStatus.Partial);
+  });
+
+  it("Test quota memory and time passed together through params", async () => {
+    // Reset Config to defaults
+    const resetConf = ConcurrentQueryHelper.resetConfig(conn);
+    expect(resetConf.ignorePriority).eq(false);
+    expect(resetConf.ignoreDelay).eq(true);
+    expect(resetConf.requestQueueSize).eq(2000);
+    expect(resetConf.workerThreads).not.eq(0);
+    expect(resetConf.globalQuota?.memory).eq(0x800000);
+    expect(resetConf.globalQuota?.time).eq(60);
+    // Case 1: Set memory quota to 64000 and time to 15, and ensure these limits are updated in the query response
+    const rc1 = await ConcurrentQueryHelper.executeQueryRequest(conn, {
+      kind: DbRequestKind.ECSql,
+      query:
+        "with cnt(x) as (values(0) union select x+1 from cnt where x < 1000 ) select x, CAST(randomblob(1000) AS BINARY) from cnt",
+      quota: {
+        memory: 64000,
+        time: 15,
+      },
+    });
+
+    expect(rc1.stats.memLimit).eq(64000);
+    expect(rc1.stats.timeLimit).eq(15000);
+
+    // Case 2: For no quota passed ensure global maximum limits are getting used
+    const rc2 = await ConcurrentQueryHelper.executeQueryRequest(conn, {
+      kind: DbRequestKind.ECSql,
+      query:
+        "with cnt(x) as (values(0) union select x+1 from cnt where x < 1000 ) select x, CAST(randomblob(1000) AS BINARY) from cnt",
+    });
+
+    expect(rc2.stats.memLimit).eq(0x800000);
+    expect(rc2.stats.timeLimit).eq(60000);
+
+    // Case 3: For memory quota limits exceeding global maximum, ensure global maximum limit is used only for memoory
+    const rc3 = await ConcurrentQueryHelper.executeQueryRequest(conn, {
+      kind: DbRequestKind.ECSql,
+      query:
+        "with cnt(x) as (values(0) union select x+1 from cnt where x < 1000 ) select x, CAST(randomblob(1000) AS BINARY) from cnt",
+      quota: {
+        memory: 85464865465,
+        time: 20,
+      },
+    });
+
+    expect(rc3.stats.memLimit).eq(0x800000);
+    expect(rc3.stats.timeLimit).eq(20000);
+
+    // Case 4: For time quota limit exceeding global maximum, ensure global maximum limits is used only for time
+    const rc4 = await ConcurrentQueryHelper.executeQueryRequest(conn, {
+      kind: DbRequestKind.ECSql,
+      query:
+        "with cnt(x) as (values(0) union select x+1 from cnt where x < 1000 ) select x, CAST(randomblob(1000) AS BINARY) from cnt",
+      quota: {
+        memory: 64000,
+        time: 6198,
+      },
+    });
+
+    expect(rc4.stats.memLimit).eq(64000);
+    expect(rc4.stats.timeLimit).eq(60000);
+
+    // Case 5: For both quota limits exceeding global maximum, ensure both global maximum limits are getting used
+    const rc5 = await ConcurrentQueryHelper.executeQueryRequest(conn, {
+      kind: DbRequestKind.ECSql,
+      query:
+        "with cnt(x) as (values(0) union select x+1 from cnt where x < 1000 ) select x, CAST(randomblob(1000) AS BINARY) from cnt",
+      quota: {
+        memory: 85464865465,
+        time: 6198,
+      },
+    });
+
+    expect(rc5.stats.memLimit).eq(0x800000);
+    expect(rc5.stats.timeLimit).eq(60000);
+  });
+
+  it("Test quota memory and time passed individually through params", async () => {
+    // Reset Config with custom quota
+    const resetConf = ConcurrentQueryHelper.resetConfig(conn, {
+      globalQuota: {
+        time: 30,
+        memory: 100000,
+      },
+    });
+
+    expect(resetConf.globalQuota?.memory).eq(100000);
+    expect(resetConf.globalQuota?.time).eq(30);
+    // Case 1: Set memory quota to 64000 , and ensure only memory uses local quota, and time uses global
+    const rc1 = await ConcurrentQueryHelper.executeQueryRequest(conn, {
+      kind: DbRequestKind.ECSql,
+      query:
+        "with cnt(x) as (values(0) union select x+1 from cnt where x < 1000 ) select x, CAST(randomblob(1000) AS BINARY) from cnt",
+      quota: {
+        memory: 64000,
+      },
+    });
+
+    expect(rc1.stats.memLimit).eq(64000);
+    expect(rc1.stats.timeLimit).eq(30000);
+
+    // Case 2: Set time to 12, and ensure only time uses local quota, and memory uses global
+    const rc2 = await ConcurrentQueryHelper.executeQueryRequest(conn, {
+      kind: DbRequestKind.ECSql,
+      query:
+        "with cnt(x) as (values(0) union select x+1 from cnt where x < 1000 ) select x, CAST(randomblob(1000) AS BINARY) from cnt",
+      quota: {
+        time: 12,
+      },
+    });
+
+    expect(rc2.stats.memLimit).eq(100000);
+    expect(rc2.stats.timeLimit).eq(12000);
+  });
+
+  it("Test for very small value passed for memory and time ", async () => {
+    // Reset Config with custom quota
+    const resetConf = ConcurrentQueryHelper.resetConfig(conn, {
+      globalQuota: {
+        time: 30,
+        memory: 100000,
+      },
+    });
+
+    expect(resetConf.globalQuota?.memory).eq(100000);
+    expect(resetConf.globalQuota?.time).eq(30);
+
+    // Case 1: Set memory & time quota to 0 , and ensure they default to global quota
+    const rc1 = await ConcurrentQueryHelper.executeQueryRequest(conn, {
+      kind: DbRequestKind.ECSql,
+      query:
+        "with cnt(x) as (values(0) union select x+1 from cnt where x < 1000 ) select x, CAST(randomblob(1000) AS BINARY) from cnt",
+      quota: {
+        memory: 0,
+        time: 0,
+      },
+    });
+
+    expect(rc1.stats.memLimit).eq(100000);
+    expect(rc1.stats.timeLimit).eq(30000);
+
+    // Case 2: Set memory & time values to 31kb and 9 sec, and ensure they default to global quota
+    const rc2 = await ConcurrentQueryHelper.executeQueryRequest(conn, {
+      kind: DbRequestKind.ECSql,
+      query:
+        "with cnt(x) as (values(0) union select x+1 from cnt where x < 1000 ) select x, CAST(randomblob(1000) AS BINARY) from cnt",
+      quota: {
+        time: 9,
+        memory: 31000,
+      },
+    });
+
+    expect(rc2.stats.memLimit).eq(100000);
+    expect(rc2.stats.timeLimit).eq(30000);
   });
 
   it("restart query", async () => {
@@ -135,19 +291,44 @@ describe("concurrent query tests", () => {
       query: "with cnt(x) as (values(0) union select x+1 from cnt where x < 10 ) select x from cnt",
       delay: 5000,
       restartToken: "token1",
-    } as DbQueryRequest);
+    });
 
     const q1 = ConcurrentQueryHelper.executeQueryRequest(conn, {
       kind: DbRequestKind.ECSql,
       query: "with cnt(x) as (values(0) union select x+1 from cnt where x < 10 ) select x from cnt",
       delay: 0,
       restartToken: "token1",
-    } as DbQueryRequest);
+    });
 
     const r0 = await q0;
     const r1 = await q1;
     expect(r0.status).eq(DbResponseStatus.Cancel);
     expect(r1.status).eq(DbResponseStatus.Done);
+  });
+
+  // Deserializing the request threw a C++ exception for an unknown request kind. The
+  // exception escaped into N-API, which terminated the process instead of reporting it.
+  it("should throw instead of terminating on a malformed request", () => {
+    for (const bad of [{}, { kind: 12345 }, { kind: "nonsense" }, { query: "SELECT 1" }]) {
+      expect(() => conn.concurrentQueryExecute(bad as any, () => { }), JSON.stringify(bad)).to.throw();
+    }
+  });
+
+  it("should throw instead of crashing when concurrentQueryExecute is given a non-object", () => {
+    for (const bad of ["AAAAAAAABBBBBBBB", 42, true, null, undefined]) {
+      expect(() => conn.concurrentQueryExecute(bad as any, () => { }), String(bad)).to.throw();
+    }
+  });
+
+  // ConcurrentQueryMgr::WithInstance throws a C++ exception for a closed db. That call sits
+  // outside the request deserialization, so it used to escape into N-API and terminate the process.
+  it("should throw instead of terminating when the db is closed", () => {
+    const request = { kind: DbRequestKind.ECSql, query: "SELECT 1" };
+    conn.closeFile();
+
+    expect(() => conn.concurrentQueryExecute(request, () => { })).to.throw();
+
+    conn = openDgnDb(dbFileName); // afterEach closes it again
   });
 });
 
