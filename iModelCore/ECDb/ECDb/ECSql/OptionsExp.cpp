@@ -134,7 +134,7 @@ void OptionExp::_ToECSql(ECSqlRenderContext& ctx) const
 //+---------------+---------------+---------------+---------------+---------------+------
 OptionExp const* OptionsExp::FindLocalOrInheritedOption(Utf8CP optionName, ExpCR exp) {
     OptionExp const* opt;
-    auto cur = exp.FindParent(Exp::Type::SingleSelect);
+    ExpCP cur = exp.GetType() == Exp::Type::SingleSelect ? &exp : exp.FindParent(Exp::Type::SingleSelect);
     while(cur != nullptr) {
         auto options = cur->GetAsCP<SingleSelectStatementExp>()->GetOptions();
         if (options) {
@@ -147,4 +147,3 @@ OptionExp const* OptionsExp::FindLocalOrInheritedOption(Utf8CP optionName, ExpCR
     return nullptr;
 }
 END_BENTLEY_SQLITE_EC_NAMESPACE
-
