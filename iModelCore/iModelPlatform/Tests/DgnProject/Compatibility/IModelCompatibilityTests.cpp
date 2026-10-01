@@ -659,7 +659,8 @@ TEST_F(IModelCompatibilityTestFixture, UpgradingEC31EnumsToEC32AfterProfileUpgra
         for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
             {
             TestIModel& testDb = *testDbPtr;
-            ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
+            // This test asserts the state of the handle that performed the profile upgrade, so bypass the upgrade cache (which re-opens the file).
+            ASSERT_EQ(BE_SQLITE_OK, testDb.Open(false)) << testDb.GetDescription();
             testDb.AssertProfileVersion();
 
             // older files for which the schema upgrade wasn't run must have the auto-generated enumerator names
@@ -701,7 +702,8 @@ TEST_F(IModelCompatibilityTestFixture, EC32Enums)
         for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
             {
             TestIModel& testDb = *testDbPtr;
-            ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
+            // This test asserts the state of the handle that performed the profile upgrade, so bypass the upgrade cache (which re-opens the file).
+            ASSERT_EQ(BE_SQLITE_OK, testDb.Open(false)) << testDb.GetDescription();
             testDb.AssertProfileVersion();
 
             if (testDb.VersionSupportsFeature(testDb.GetECDbInitialVersion(), ECDbFeature::NamedEnumerators))
@@ -2111,6 +2113,8 @@ TEST_F(IModelCompatibilityTestFixture, UpgradeDomainIModel)
             // opened and upgraded the schema
             ASSERT_EQ(BE_SQLITE_OK, openStat) << testDb.GetDescription();
             testDb.AssertProfileVersion();
+            // The basic tests never register this domain version, so the upgraded schema state is only verified here.
+            testDb.AssertLoadSchemas();
 
             // As the schema was upgraded, it should have set the original ECXML version, even if it originally
             // was a 4.0.0.1 file.
@@ -2166,6 +2170,8 @@ TEST_F(IModelCompatibilityTestFixture, UpgradeDomainIModelToEC32)
             //schema import is possible to newer ECDb profile files or files that don't support EC3.2 as the profile version is automatically upgraded
             ASSERT_EQ(BE_SQLITE_OK, openStat) << testDb.GetDescription();
             testDb.AssertProfileVersion();
+            // The basic tests never register this domain version, so the upgraded schema state is only verified here.
+            testDb.AssertLoadSchemas();
 
             EXPECT_TRUE(testDb.GetDb().Schemas().ContainsSchema(TESTDOMAIN_NAME)) << testDb.GetDescription();
             EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion(TESTDOMAIN_NAME)) << testDb.GetDescription();

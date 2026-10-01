@@ -877,10 +877,10 @@ void TestDb::AssertBasicTests() const
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult TestDb::Open()
+DbResult TestDb::Open(bool useUpgradeCache)
     {
     // Original behavior: always clone the seed and open (and possibly upgrade) the clone.
-    if (!TestOptimizations::IsEnabled() || (!_GetOpenParams().IsReadonly() && !_RequiresUpgrade()))
+    if (!TestOptimizations::IsEnabled() || !useUpgradeCache || (!_GetOpenParams().IsReadonly() && !_RequiresUpgrade()))
         {
         if (BeFileNameStatus::Success != m_testFile.CloneSeedToOutput())
             return BE_SQLITE_ERROR;

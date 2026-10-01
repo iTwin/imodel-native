@@ -75,8 +75,17 @@ def runTestRunner(exePath, logPath, extraArgs, gtestFilter, env):
 #------------------------------------------------------------------------
 # bsimethod
 #------------------------------------------------------------------------
-def runShard(exePath, logDir, extraArgs, shardIndex, shardCount):
+def unshardedEnv():
     env = dict(os.environ)
+    env.pop("GTEST_TOTAL_SHARDS", None)
+    env.pop("GTEST_SHARD_INDEX", None)
+    return env
+
+#------------------------------------------------------------------------
+# bsimethod
+#------------------------------------------------------------------------
+def runShard(exePath, logDir, extraArgs, shardIndex, shardCount):
+    env = unshardedEnv()
     env["GTEST_TOTAL_SHARDS"] = str(shardCount)
     env["GTEST_SHARD_INDEX"] = str(shardIndex)
     logPath = os.path.join(logDir, "shard{0}.log".format(shardIndex))
@@ -152,7 +161,7 @@ def main():
         print ("Running {0} as a single process ({1}={2})...".format(exePath, OPTIMIZED_ENV_VAR, "1" if isOptimized() else "0"))
         sys.stdout.flush()
         logPath = os.path.join(logDir, "test.log")
-        returnCode, elapsed = runTestRunner(exePath, logPath, extraArgs, None, dict(os.environ))
+        returnCode, elapsed = runTestRunner(exePath, logPath, extraArgs, None, unshardedEnv())
         print ("Finished after {0:.0f}s with exit code {1}.".format(elapsed, returnCode))
         writeCombinedLog(combinedLogPath, [logPath])
         return sys.exit(0) # failures are detected by CheckLogfilesForFailures.py from the logs
@@ -168,7 +177,7 @@ def main():
     print ("Creating test files ({0})...".format(SETUP_TEST_FILTER))
     sys.stdout.flush()
     setupLogPath = os.path.join(logDir, "setup.log")
-    returnCode, elapsed = runTestRunner(exePath, setupLogPath, extraArgs, SETUP_TEST_FILTER, dict(os.environ))
+    returnCode, elapsed = runTestRunner(exePath, setupLogPath, extraArgs, SETUP_TEST_FILTER, unshardedEnv())
     print ("Test file creation finished after {0:.0f}s with exit code {1}.".format(elapsed, returnCode))
     if returnCode != 0:
         print ("Test file creation failed. Not running any shards.", file=sys.stderr)

@@ -419,7 +419,8 @@ TEST_F(ECDbCompatibilityTestFixture, UpgradingEC31EnumsToEC32AfterProfileUpgrade
         for (std::unique_ptr<TestECDb> testDbPtr : TestECDb::GetPermutationsFor(testFile))
             {
             TestECDb& testDb = *testDbPtr;
-            ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
+            // This test asserts the state of the handle that performed the profile upgrade, so bypass the upgrade cache (which re-opens the file).
+            ASSERT_EQ(BE_SQLITE_OK, testDb.Open(false)) << testDb.GetDescription();
             testDb.AssertProfileVersion();
 
             // older files for which the schema upgrade wasn't run must have the auto-generated enumerator names
@@ -459,7 +460,8 @@ TEST_F(ECDbCompatibilityTestFixture, EC32Enums)
         for (std::unique_ptr<TestECDb> testDbPtr : TestECDb::GetPermutationsFor(testFile))
             {
             TestECDb& testDb = *testDbPtr;
-            ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
+            // This test asserts the state of the handle that performed the profile upgrade, so bypass the upgrade cache (which re-opens the file).
+            ASSERT_EQ(BE_SQLITE_OK, testDb.Open(false)) << testDb.GetDescription();
             testDb.AssertProfileVersion();
 
             if (testDb.VersionSupportsFeature(testDb.GetECDbInitialVersion(), ECDbFeature::NamedEnumerators))

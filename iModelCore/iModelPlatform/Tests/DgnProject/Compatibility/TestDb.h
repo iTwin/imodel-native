@@ -55,7 +55,7 @@ protected:
     TestDb(TestDb&&) = default;
     TestDb& operator=(TestDb&&) = default;
 
-    DbResult Open();
+    DbResult Open(bool useUpgradeCache = true);
     void Close() { _Close(); }
 
     BeSQLite::ProfileState::Age GetAge() const { BeAssert(m_age != nullptr); return m_age.Value(); }
