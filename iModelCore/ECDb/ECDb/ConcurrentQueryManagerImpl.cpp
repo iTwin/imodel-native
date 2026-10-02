@@ -77,7 +77,6 @@ std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGet(Utf8CP ecsql, bool
             m_cache.insert(m_cache.begin(), entry);
         }
         entry->GetStatement().Reset();
-        entry->GetStatement().ClearBindings();
         return entry;
     }
 
@@ -215,10 +214,11 @@ ECSqlRowAdaptor& CachedQueryAdaptor::GetJsonAdaptor() {
 //---------------------------------------------------------------------------------------
 void CachedQueryAdaptor::CachedQueryAdaptor::ReleaseMemory() {
     m_stmt.Reset();
+    m_boundLimit.reset();
     m_adaptor.reset();
     m_cachedString.clear();
     m_cachedString.shrink_to_fit();
-    m_cachedJsonDoc.Clear();
+    m_cachedJsonDoc.SetArray();
     m_allocator.Clear();
     if (m_conn){
         m_conn->FreeMemory();
@@ -1307,15 +1307,35 @@ std::string QueryHelper::FormatQuery(const char* query) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void QueryHelper::BindLimits(ECSqlStatement& stmt, QueryLimit const& limit) {
+bool CachedQueryAdaptor::BindRequest(ECSqlRequest const& request, std::string& error) {
+    auto const& limit = request.GetLimit();
+    // Only retain bindings for requests without user arguments. Otherwise omitted parameters
+    // must be cleared to NULL, and a failed bind must never leave reusable partial bindings.
+    if (request.GetArgs().IsEmpty() && m_boundLimit &&
+        m_boundLimit->GetCount() == limit.GetCount() && m_boundLimit->GetOffset() == limit.GetOffset())
+        return true;
+
+    m_boundLimit.reset();
+    if (m_stmt.ClearBindings() != ECSqlStatus::Success) {
+        error = "failed to clear ecsql statement bindings";
+        return false;
+    }
+    if (!request.GetArgs().TryBindTo(m_stmt, error))
+        return false;
+
     // A PRAGMA (or any statement FormatQuery left unwrapped) has no LIMIT/OFFSET parameters.
     // TryGetParameterIndex probes for them without logging a "No parameter index found" error each time.
-    const auto idxCount = stmt.TryGetParameterIndex(LIMIT_VAR_COUNT);
-    const auto idxOffset = stmt.TryGetParameterIndex(LIMIT_VAR_OFFSET);
-    if (idxCount < 0 || idxOffset < 0)
-        return; // PRAGMA or other statement without LIMIT/OFFSET parameters
-    stmt.BindInt64(idxCount, limit.GetCount());
-    stmt.BindInt64(idxOffset, limit.GetOffset());
+    const auto idxCount = m_stmt.TryGetParameterIndex(LIMIT_VAR_COUNT);
+    const auto idxOffset = m_stmt.TryGetParameterIndex(LIMIT_VAR_OFFSET);
+    if (idxCount >= 0 && idxOffset >= 0 &&
+        (m_stmt.BindInt64(idxCount, limit.GetCount()) != ECSqlStatus::Success ||
+         m_stmt.BindInt64(idxOffset, limit.GetOffset()) != ECSqlStatus::Success)) {
+        error = "failed to bind ecsql query limits";
+        return false;
+    }
+    if (request.GetArgs().IsEmpty())
+        m_boundLimit = limit;
+    return true;
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -1633,13 +1653,11 @@ void QueryHelper::Execute(QueryAdaptorCache& adaptorCache, RunnableRequestBase& 
             setError(QueryResponse::Status::Error_ECSql_PreparedFailed, err);
             return;
         }
-        if (!resumed && !request.GetArgs().TryBindTo(adaptor->GetStatement(), err)) {
+        if (!resumed && !adaptor->BindRequest(request, err)) {
             recordPrepareTime();
             setError(QueryResponse::Status::Error_ECSql_BindingFailed, err);
             return;
         }
-        if (!resumed)
-            BindLimits(adaptor->GetStatement(), request.GetLimit());
         recordPrepareTime();
         QueryHelper::Execute(adaptor, cachedConnection, runnableRequest);
     } else {

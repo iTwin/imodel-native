@@ -10,6 +10,7 @@
 #include <future>
 #include <random>
 #include <chrono>
+#include <cstddef>
 
 #define DEFAULT_DONOT_USE_PRIMARY_CONN_TO_PREPARE   false
 #define DEFAULT_IGNORE_DELAY                        true
@@ -65,16 +66,19 @@ struct CachedQueryAdaptor final: std::enable_shared_from_this<CachedQueryAdaptor
         ECSqlStatement m_stmt;
         std::unique_ptr<ECSqlRowAdaptor> m_adaptor;
         std::string m_cachedString;
+        alignas(std::max_align_t) char m_jsonBuffer[4096];
         rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator> m_allocator;
         rapidjson::CrtAllocator m_stackAllocator;
         rapidjson::Document m_cachedJsonDoc;
+        std::optional<QueryLimit> m_boundLimit;
         ECDb const* m_conn = nullptr;
         bool m_usePrimaryConn;
     public:
-        CachedQueryAdaptor() :m_cachedJsonDoc(&m_allocator, 1024, &m_stackAllocator), m_usePrimaryConn(false) { m_cachedJsonDoc.SetArray(); }
+        CachedQueryAdaptor() :m_allocator(m_jsonBuffer, sizeof(m_jsonBuffer)), m_cachedJsonDoc(&m_allocator, 1024, &m_stackAllocator), m_usePrimaryConn(false) { m_cachedJsonDoc.SetArray(); }
         ECSqlStatement& GetStatement() { return m_stmt; }
+        bool BindRequest(ECSqlRequest const& request, std::string& error);
         ECSqlRowAdaptor& GetJsonAdaptor();
-        rapidjson::Document& ClearAndGetCachedJsonDocument() { m_cachedJsonDoc.Clear(); m_allocator.Clear(); return m_cachedJsonDoc; }
+        rapidjson::Document& ClearAndGetCachedJsonDocument() { m_cachedJsonDoc.SetArray(); m_allocator.Clear(); return m_cachedJsonDoc; }
         std::string& ClearAndGetCachedString() { m_cachedString.clear(); return m_cachedString; }
         bool GetUsePrimaryConn() const { return m_usePrimaryConn; }
         void SetUsePrimaryConn(bool val) { m_usePrimaryConn = val; }
@@ -394,7 +398,6 @@ struct QueryExecutor final {
 struct QueryHelper final {
     private:
         static std::string FormatQuery(const char* query);
-        static void BindLimits(ECSqlStatement& stmt, QueryLimit const& limit);
         static void Execute(std::shared_ptr<CachedQueryAdaptor> const& cachedAdaptor, CachedConnection& connection, RunnableRequestBase& request);
         static void ReadBlob(ECDbCR conn, RunnableRequestBase& request);
     public:

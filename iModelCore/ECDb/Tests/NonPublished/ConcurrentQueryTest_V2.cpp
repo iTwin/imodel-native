@@ -50,6 +50,76 @@ TEST_F(ConcurrentQueryFixture, MemoryMapFileSizeWithWorkerAndPrimaryRequests) {
     });
 }
 
+TEST_F(ConcurrentQueryFixture, CachedRequestsClearArgumentsAndUpdateLimits) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("conn_query_cached_bindings.ecdb"));
+    auto config = ConcurrentQueryMgr::Config::Get();
+    config.SetWorkerThreadCount(1);
+    ConcurrentQueryMgr::Config::Reset(config);
+
+    const std::string query = "with cnt(x) as (values(0) union select x+1 from cnt where x < 5) "
+                              "select x from cnt where x >= coalesce(?, 0) and x <= coalesce(?, 5) order by x";
+    struct QueryCase {
+        ECSqlParams args;
+        QueryLimit limit;
+        Utf8CP expected;
+    };
+    const std::vector<QueryCase> cases = {
+        { ECSqlParams(), QueryLimit(2, 0), "[[0],[1]]" },
+        { ECSqlParams(), QueryLimit(2, 0), "[[0],[1]]" },
+        { ECSqlParams(), QueryLimit(2, 2), "[[2],[3]]" },
+        { ECSqlParams(), QueryLimit(1, 0), "[[0]]" },
+        { ECSqlParams().BindInt(1, 4).BindInt(2, 5), QueryLimit(-1, 0), "[[4],[5]]" },
+        { ECSqlParams(), QueryLimit(-1, 0), "[[0],[1],[2],[3],[4],[5]]" },
+        { ECSqlParams(), QueryLimit(-1, 0), "[[0],[1],[2],[3],[4],[5]]" },
+        { ECSqlParams().BindInt(2, 1), QueryLimit(2, 0), "[[0],[1]]" },
+    };
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
+        for (bool primary : {false, true}) {
+            for (auto const& test : cases) {
+                auto request = ECSqlRequest::MakeRequest(query, ECSqlParams(test.args));
+                request->SetUsePrimaryConnection(primary);
+                request->SetLimit(test.limit);
+                auto response = mgr.Enqueue(std::move(request)).Get();
+                ASSERT_TRUE(response->IsDone()) << response->GetError();
+                EXPECT_EQ(test.expected, response->GetAsConst<ECSqlResponse>().asJsonString());
+            }
+            auto invalid = ECSqlRequest::MakeRequest(query, ECSqlParams().BindInt(1, 5).BindInt(2, 1).BindInt("missing", 99));
+            invalid->SetUsePrimaryConnection(primary);
+            EXPECT_EQ(QueryResponse::Status::Error_ECSql_BindingFailed, mgr.Enqueue(std::move(invalid)).Get()->GetStatus());
+            auto request = ECSqlRequest::MakeRequest(query);
+            request->SetUsePrimaryConnection(primary);
+            auto response = mgr.Enqueue(std::move(request)).Get();
+            ASSERT_TRUE(response->IsDone()) << response->GetError();
+            EXPECT_EQ("[[0],[1],[2],[3],[4],[5]]", response->GetAsConst<ECSqlResponse>().asJsonString());
+        }
+    });
+}
+
+#if defined(CREATE_STATIC_LIBRARIES)
+TEST_F(ConcurrentQueryFixture, RowJsonScratchBufferReusesSmallRowsAndReleasesOverflow) {
+    auto adaptor = CachedQueryAdaptor::Make();
+    auto& initialDoc = adaptor->ClearAndGetCachedJsonDocument();
+    const auto capacity = initialDoc.GetAllocator().Capacity();
+    ASSERT_GT(capacity, 0u);
+    ASSERT_LE(capacity, 4096u);
+    for (int repeat = 0; repeat < 3; ++repeat) {
+        for (size_t length : {8u, 65536u, 8u, 0u}) {
+            auto& doc = adaptor->ClearAndGetCachedJsonDocument();
+            EXPECT_EQ(capacity, doc.GetAllocator().Capacity());
+            const std::string value(length, 'x');
+            doc.PushBack(rapidjson::Value(value.c_str(), static_cast<rapidjson::SizeType>(value.size()), doc.GetAllocator()), doc.GetAllocator());
+            BeJsDocument roundTrip;
+            roundTrip.Parse(BeJsValue(doc).Stringify());
+            EXPECT_EQ(value, roundTrip[(BeJsConst::ArrayIndex)0].asString());
+            if (length > 4096)
+                EXPECT_GT(doc.GetAllocator().Capacity(), capacity);
+            else
+                EXPECT_EQ(doc.GetAllocator().Capacity(), capacity);
+        }
+    }
+}
+#endif
+
 struct SleepFunc : BeSQLite::ScalarFunction {
     SleepFunc() : ScalarFunction("imodel_sleep", -1){}
     void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override {
