@@ -1138,6 +1138,9 @@ namespace {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 std::string QueryHelper::FormatQuery(const char* query) {
+    // Practical workaround!
+    // The + 0 expressions work around SQLite recompiling cached statements when LIMIT is rebound.
+    // This is an optimization introduced in SQLite 3.47 which actually significantly hurt performance in some cases.
     Utf8String trimmedECSql = query;
     trimmedECSql.Trim();
     Utf8Char c;
