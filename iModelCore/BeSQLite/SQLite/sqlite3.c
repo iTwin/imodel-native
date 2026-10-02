@@ -238731,6 +238731,30 @@ static int sessionConflictHandler(
 }
 
 /*
+** Increment the sqlite3_session.bIndirect variable by nIncr for all
+** session objects currently attached to database handle db.
+*/
+static void sessionRecordIndirect(sqlite3 *db, int nIncr){
+  if( db->xPreUpdateCallback==xPreUpdate ){
+    sqlite3_session *pSession = (sqlite3_session*)db->pPreUpdateArg;
+    while( pSession ){
+      pSession->bIndirect += nIncr;
+      pSession = pSession->pNext;
+    }
+  }
+}
+
+/*
+** Step statement pStmt. If bIndirect is true, then any changes made by the
+** statement are recorded as indirect by all session objects attached to db.
+*/
+static void sessionStep(sqlite3 *db, sqlite3_stmt *pStmt, int bIndirect){
+  if( bIndirect ) sessionRecordIndirect(db, 1);
+  sqlite3_step(pStmt);
+  if( bIndirect ) sessionRecordIndirect(db, -1);
+}
+
+/*
 ** Attempt to apply the change that the iterator passed as the first argument
 ** currently points to to the database. If a conflict is encountered, invoke
 ** the conflict handler callback.
@@ -238766,12 +238790,13 @@ static int sessionApplyOneOp(
   int op;
   int nCol;
   int rc = SQLITE_OK;
+  int bIndirect = 0;
 
   assert( p->pDelete && p->pInsert && p->pSelect );
   assert( p->azCol && p->abPK );
   assert( !pbReplace || *pbReplace==0 );
 
-  sqlite3changeset_op(pIter, &zDummy, &nCol, &op, 0);
+  sqlite3changeset_op(pIter, &zDummy, &nCol, &op, &bIndirect);
 
   if( op==SQLITE_DELETE ){
 
@@ -238793,7 +238818,7 @@ static int sessionApplyOneOp(
     }
     if( rc!=SQLITE_OK ) return rc;
 
-    sqlite3_step(p->pDelete);
+    sessionStep(p->db, p->pDelete, bIndirect);
     rc = sqlite3_reset(p->pDelete);
     if( rc==SQLITE_OK && sqlite3_changes(p->db)==0 ){
       rc = sessionConflictHandler(
@@ -238827,7 +238852,7 @@ static int sessionApplyOneOp(
 
     /* Attempt the UPDATE. In the case of a NOTFOUND or DATA conflict,
     ** the result will be SQLITE_OK with 0 rows modified. */
-    sqlite3_step(pUp);
+    sessionStep(p->db, pUp, bIndirect);
     rc = sqlite3_reset(pUp);
 
     if( rc==SQLITE_OK && sqlite3_changes(p->db)==0 ){
@@ -238863,7 +238888,7 @@ static int sessionApplyOneOp(
       rc = sessionBindRow(pIter, sqlite3changeset_new, nCol, 0, p->pInsert);
       if( rc!=SQLITE_OK ) return rc;
 
-      sqlite3_step(p->pInsert);
+      sessionStep(p->db, p->pInsert, bIndirect);
       rc = sqlite3_reset(p->pInsert);
     }
 
@@ -238926,7 +238951,7 @@ static int sessionApplyOneWithRetry(
         sqlite3_bind_int(pApply->pDelete, pApply->nCol+1, 1);
       }
       if( rc==SQLITE_OK ){
-        sqlite3_step(pApply->pDelete);
+        sessionStep(db, pApply->pDelete, pIter->bIndirect);
         rc = sqlite3_reset(pApply->pDelete);
       }
       if( rc==SQLITE_OK ){
@@ -239137,6 +239162,7 @@ static int sessionUpdateToDeleteInsert(
     );
   }
 
+<<<<<<< HEAD
   if( rc==SQLITE_OK && sqlite3_step(pSelect)==SQLITE_ROW ){
     int iCol;
     for(iCol=0; iCol<pApply->nCol; iCol++){
@@ -239162,6 +239188,14 @@ static int sessionUpdateToDeleteInsert(
   if( rc==SQLITE_OK ){
     sqlite3_step(pApply->pDelete);
     rc = sqlite3_reset(pApply->pDelete);
+=======
+  /* Evaluate the statement to set each modified column of the row to a random
+  ** value. If this fails with a constraint error, SQLITE_CONSTRAINT is
+  ** returned to the caller, but pApply->zErr is not set.  */
+  if( rc==SQLITE_OK ){
+    sessionStep(db, pRand, pUp->bIndirect);
+    rc = sqlite3_reset(pRand);
+>>>>>>> a7e47f1 (Update SQLite to 3.53.4-r3 with session indirect-flag fix (#1621))
   }
 
   if( rc!=SQLITE_OK ){
@@ -239234,6 +239268,11 @@ static int sessionRetryConstraints(
     sqlite3_changeset_iter *pUp = 0;
     sqlite3_stmt *pInsert = 0;
     int iSkip = 0;
+<<<<<<< HEAD
+=======
+    int bConstraint = 0;          /* True if an SQLITE_CONSTRAINT occurs */
+    int bIndirect = 0;            /* True if the UPDATE change is indirect */
+>>>>>>> a7e47f1 (Update SQLite to 3.53.4-r3 with session indirect-flag fix (#1621))
 
     rc = sessionRetryIterInit(
         &pApply->constraints, bPatchset, zTab, pApply, &pUp
@@ -239246,6 +239285,7 @@ static int sessionRetryConstraints(
         iSkip++;
       }
       if( iThis==iUpdate ){
+        bIndirect = pUp->bIndirect;
         rc = sqlite3_exec(db, "SAVEPOINT update_op", 0, 0, 0);
         if( rc==SQLITE_OK ){
           rc = sessionUpdateToDeleteInsert(db, zTab, pApply, pUp, &pInsert);
@@ -239276,9 +239316,22 @@ static int sessionRetryConstraints(
 
     iUpdate++;
     if( rc==SQLITE_OK ){
+<<<<<<< HEAD
       sqlite3_step(pInsert);
       rc = sqlite3_finalize(pInsert);
       if( (rc&0xff)==SQLITE_CONSTRAINT ){
+=======
+      if( bConstraint==0 ){
+        sessionStep(db, pUpdate, bIndirect);
+        rc = sqlite3_finalize(pUpdate);
+        pUpdate = 0;
+        if( (rc&0xff)==SQLITE_CONSTRAINT ){
+          bConstraint = 1;
+          rc = SQLITE_OK;
+        }
+      }
+      if( bConstraint ){
+>>>>>>> a7e47f1 (Update SQLite to 3.53.4-r3 with session indirect-flag fix (#1621))
         rc = sqlite3_exec(db, "ROLLBACK TO update_op", 0, 0, 0);
         sqlite3_free(pApply->constraints.aBuf);
         pApply->constraints = cons;
