@@ -940,10 +940,53 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
 
     const ECClassId classId = relationMap.GetClass().GetId();
     std::unique_ptr<ForeignKeyPartitionView> view = ForeignKeyPartitionView::CreateReadonly(ctx.GetSchemaManager(), relationMap.GetRelationshipClass());
+    if (view == nullptr)
+        {
+        LOG.errorv("Failed to create a foreign key partition view for relationship class '%s'.", relationMap.GetClass().GetFullName());
+        return ERROR;
+        }
+
     for (ForeignKeyPartitionView::Partition const* partition : view->GetPartitions(true, true))
         {
         const bool isSelf = partition->GetSourceECClassIdColumn()->GetId() == partition->GetTargetECClassIdColumn()->GetId();
         const bool appendAlias = unionList.empty();
+        const bool isSelectFromView = ctx.GetViewType() == ViewType::SelectFromView;
+        const bool isPolymorphic = isSelectFromView ? ctx.GetAs<SelectFromViewContext>().GetPolymorphicInfo().IsPolymorphic() : true;
+        DbColumn const& referenceIdColumn = relationMap.GetReferencedEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? partition->GetSourceECInstanceIdColumn() : partition->GetTargetECInstanceIdColumn();
+        DbColumn const& foreignClassIdColumn = relationMap.GetForeignEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? *partition->GetSourceECClassIdColumn() : *partition->GetTargetECClassIdColumn();
+
+        ECClassId fallbackRelClassId;
+        bvector<ECClassId> fallbackDeclaringClassIds;
+        bool useNavRelClassIdFallback = isSelectFromView &&
+            OptionsExp::FindLocalOrInheritedOption<bool>(
+                ctx.GetAs<SelectFromViewContext>().GetPrepareCtx().GetCurrentScope().GetExp(),
+                OptionsExp::NAV_REL_CLASSID_FALLBACK,
+                [](OptionExp const& opt) { return opt.asBool(); },
+                []() { return false; }) &&
+            !partition->GetECClassIdColumn().IsVirtual() &&
+            !partition->GetECClassIdColumn().DoNotAllowDbNull() &&
+            partition->TryGetNavigationFallback(fallbackRelClassId, fallbackDeclaringClassIds, relationMap.GetRelationshipClass(), isPolymorphic);
+
+        if (useNavRelClassIdFallback && foreignClassIdColumn.IsVirtual())
+            {
+            auto const& holderClassIds = ctx.GetSchemaManager().GetLightweightCache().GetClassesForTable(foreignClassIdColumn.GetTable());
+            bool holderClassMatches = false;
+            if (holderClassIds.size() == 1)
+                {
+                ECClassCP holderClass = ctx.GetSchemaManager().GetClass(holderClassIds.front());
+                for (ECClassId declaringClassId : fallbackDeclaringClassIds)
+                    {
+                    ECClassCP declaringClass = ctx.GetSchemaManager().GetClass(declaringClassId);
+                    if (holderClass != nullptr && declaringClass != nullptr && holderClass->Is(declaringClass))
+                        {
+                        holderClassMatches = true;
+                        break;
+                        }
+                    }
+                }
+            useNavRelClassIdFallback = holderClassMatches;
+            }
+
         NativeSqlBuilder unionQuerySql("SELECT ");
         //ECInstanceId
         toSql(unionQuerySql, partition->GetECInstanceIdColumn());
@@ -955,6 +998,12 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
         //ECClassId
         if (partition->GetECClassIdColumn().IsVirtual())
             unionQuerySql.Append(classId);
+        else if (useNavRelClassIdFallback)
+            {
+            unionQuerySql.Append("IFNULL(");
+            toSql(unionQuerySql, partition->GetECClassIdColumn());
+            unionQuerySql.AppendComma().Append(fallbackRelClassId).AppendParenRight();
+            }
         else
             toSql(unionQuerySql, partition->GetECClassIdColumn());
 
@@ -1028,8 +1077,6 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
         //FROM
         unionQuerySql.Append(" FROM ").AppendEscaped(partition->GetECInstanceIdColumn().GetTable().GetTableSpace().GetName()).AppendDot().AppendEscaped(partition->GetECInstanceIdColumn().GetTable().GetName());
         DbColumn const& refClassIdCol = relationMap.GetReferencedEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? *partition->GetSourceECClassIdColumn() : *partition->GetTargetECClassIdColumn();
-        DbColumn const& referenceIdColumn = relationMap.GetReferencedEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? partition->GetSourceECInstanceIdColumn() : partition->GetTargetECInstanceIdColumn();
-        DbColumn const& foreignClassIdColumn = relationMap.GetForeignEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? *partition->GetSourceECClassIdColumn() : *partition->GetTargetECClassIdColumn();
         if (refClassIdCol.GetPersistenceType() == PersistenceType::Physical)
             {
             DbColumn const* idColumn = refClassIdCol.GetTable().FindFirst(DbColumn::Kind::ECInstanceId);
@@ -1054,13 +1101,37 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
         unionQuerySql.Append(" WHERE ").AppendFullyQualified(referenceIdColumn.GetTable().GetName(), referenceIdColumn.GetName()).Append(" IS NOT NULL");
         if (partition->GetECClassIdColumn().GetPersistenceType() == PersistenceType::Physical)
             {
-            const bool isPolymorphic = ctx.GetViewType() == ViewType::SelectFromView ? ctx.GetAs<SelectFromViewContext>().GetPolymorphicInfo().IsPolymorphic() : true;
             unionQuerySql.Append(" AND ");
+            if (useNavRelClassIdFallback)
+                unionQuerySql.AppendParenLeft();
             toSql(unionQuerySql, partition->GetECClassIdColumn());
             if (isPolymorphic)
                 unionQuerySql.AppendFormatted(" IN (SELECT ClassId FROM [%s]." TABLE_ClassHierarchyCache " WHERE BaseClassId=%s)", ctx.GetSchemaManager().GetTableSpace().GetName().c_str(), relationMap.GetClass().GetId().ToString().c_str());
             else
                 unionQuerySql.Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo)).Append(relationMap.GetClass().GetId());
+
+            if (useNavRelClassIdFallback)
+                {
+                unionQuerySql.Append(" OR (");
+                toSql(unionQuerySql, partition->GetECClassIdColumn());
+                unionQuerySql.Append(" IS NULL");
+                if (!foreignClassIdColumn.IsVirtual())
+                    {
+                    unionQuerySql.Append(" AND ");
+                    toSql(unionQuerySql, foreignClassIdColumn);
+                    unionQuerySql.AppendFormatted(" IN (SELECT ClassId FROM [%s]." TABLE_ClassHierarchyCache " WHERE BaseClassId IN (", ctx.GetSchemaManager().GetTableSpace().GetName().c_str());
+                    for (size_t i = 0; i < fallbackDeclaringClassIds.size(); ++i)
+                        {
+                        if (i > 0)
+                            unionQuerySql.AppendComma();
+                        unionQuerySql.Append(fallbackDeclaringClassIds[i]);
+                        }
+                    unionQuerySql.Append(")))");
+                    }
+                else
+                    unionQuerySql.AppendParenRight();
+                unionQuerySql.AppendParenRight();
+                }
             }
         if (foreignClassIdColumn.GetPersistenceType() == PersistenceType::Physical && referenceIdColumn.IsShared())
             {

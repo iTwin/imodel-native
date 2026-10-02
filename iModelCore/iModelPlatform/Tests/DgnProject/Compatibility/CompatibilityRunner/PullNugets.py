@@ -78,9 +78,10 @@ def unzipNugets(srcPath):
     # Extract all nugets
     for filename in os.listdir(srcPath):
         path = os.path.join(srcPath, filename)
-        zip_ref = zipfile.ZipFile(path, "a")
-        zip_ref.extractall(os.path.splitext(path)[0])
-        zip_ref.close()
+        if os.path.isdir(path) or not filename.lower().endswith(".nupkg"):
+            continue
+        with zipfile.ZipFile(path, "r") as zip_ref:
+            zip_ref.extractall(os.path.splitext(path)[0])
 
 #------------------------------------------------------------------------
 # bsimethod
