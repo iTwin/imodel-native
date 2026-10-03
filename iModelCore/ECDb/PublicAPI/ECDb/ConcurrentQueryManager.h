@@ -276,7 +276,11 @@ struct ECSqlRequest : public QueryRequest{
         static constexpr auto JConvertClassIdsToClassNames = "convertClassIdsToClassNames";
         static constexpr auto JLimit = "limit";
         static constexpr auto JValueFormat = "valueFormat";
+        static constexpr auto JCursorId = "cursorId";
+        static constexpr auto JUseCursor = "useCursor";
+        static constexpr auto JCloseCursor = "closeCursor";
         std::string m_query;
+        std::string m_cursorId;
         ECSqlParams m_args;
         QueryLimit m_limit;
         bool m_abbreviateBlobs;
@@ -285,11 +289,16 @@ struct ECSqlRequest : public QueryRequest{
         bool m_convertClassIdsToClassNames;
         bool m_doNotConvertClassIdsToClassNamesWhenAliased;
         ECSqlValueFormat m_valueFmt;
+        bool m_useCursor = false;
+        bool m_closeCursor = false;
     public:
         ECSqlRequest(std::string const& query, ECSqlParams&& args)
             :QueryRequest(Kind::ECSql), m_query(query), m_args(std::move(args)),m_abbreviateBlobs(false), m_suppressLogErrors(false),m_includeMetaData(true), m_convertClassIdsToClassNames(false), m_doNotConvertClassIdsToClassNamesWhenAliased(true), m_valueFmt(ECSqlValueFormat::ECSqlNames){}
         virtual ~ECSqlRequest(){}
         std::string const& GetQuery() const { return m_query; }
+        std::string const& GetCursorId() const { return m_cursorId; }
+        bool GetUseCursor() const { return m_useCursor; }
+        bool GetCloseCursor() const { return m_closeCursor; }
         ECSqlParams const& GetArgs() const { return  m_args; }
         ECSqlParams const& GetArgsR() { return  m_args; }
         bool GetAbbreviateBlobs() const {return m_abbreviateBlobs; }
@@ -301,6 +310,8 @@ struct ECSqlRequest : public QueryRequest{
         ECSqlValueFormat GetValueFormat() const { return m_valueFmt; }
         ECSqlRequest& SetValueFmt(ECSqlValueFormat fmt) noexcept { m_valueFmt = fmt; return *this;}
         ECSqlRequest& SetLimit(QueryLimit limit) noexcept { m_limit = limit; return *this;}
+        ECSqlRequest& SetUseCursor(bool value) { m_useCursor = value; return *this; }
+        ECSqlRequest& SetCursorId(std::string id) { m_cursorId = std::move(id); return *this; }
         ECSqlRequest& SetAbbreviateBlobs(bool abbreviateBlobs) { m_abbreviateBlobs = abbreviateBlobs; return *this;}
         ECSqlRequest& SetSuppressLogErrors(bool suppressLogErrors) { m_suppressLogErrors = suppressLogErrors; return *this;}
         ECSqlRequest& SetIncludeMetaData(bool includeMetaData) { m_includeMetaData = includeMetaData; return *this;}
@@ -436,16 +447,19 @@ struct ECSqlResponse final : public QueryResponse{
     private:
         static constexpr auto JRowCount = "rowCount";
         static constexpr auto JMeta = "meta";
+        static constexpr auto JCursorId = "cursorId";
         std::string m_dataJson;
+        std::string m_cursorId;
         uint32_t m_rowCount;
         ECSqlRowProperty::List m_properties;
     public:
-        ECSqlResponse(Stats stats, Status status, std::string error, std::string & data, ECSqlRowProperty::List& meta, uint32_t rowCount)
-            :QueryResponse(Kind::ECSql,stats, status, error), m_dataJson(std::move(data)), m_properties(std::move(meta)),m_rowCount(rowCount) {}
+        ECSqlResponse(Stats stats, Status status, std::string error, std::string & data, ECSqlRowProperty::List& meta, uint32_t rowCount, std::string cursorId = {})
+            :QueryResponse(Kind::ECSql,stats, status, error), m_dataJson(std::move(data)), m_cursorId(std::move(cursorId)), m_properties(std::move(meta)),m_rowCount(rowCount) {}
         virtual ~ECSqlResponse(){}
         ECSqlRowProperty::List const& GetProperties() const { return m_properties; }
         std::string const& asJsonString() const {return m_dataJson; }
         uint32_t GetRowCount() const {return m_rowCount;}
+        std::string const& GetCursorId() const { return m_cursorId; }
         ECDB_EXPORT void virtual ToJs(BeJsValue& v, bool includeData) const override;
 };
 
@@ -622,4 +636,3 @@ struct ECSqlReader {
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
-
