@@ -8,11 +8,7 @@ rem +---------------------------------------------------------------------------
 rem This script will update the SQLite source from a fossil branch, and then create the amalgamation `sqlite.c` source file.
 rem @note that it requires cygwin be installed
 
-<<<<<<< HEAD
-set sqlite_tag=itwin-sqlite-v3.53.4-r1
-=======
 set sqlite_tag=itwin-sqlite-v3.53.4-r3
->>>>>>> a7e47f1 (Update SQLite to 3.53.4-r3 with session indirect-flag fix (#1621))
 set imodel_native_sqlite=%SrcRoot%imodel-native\iModelCore\BeSQLite\SQLite\
 set sqlite_root=%appdata%\itwin-sqlite
 set make_target=sqlite3.c
