@@ -713,20 +713,6 @@ DocumentListModelPtr DocumentListModel::CreateAndInsert(DocumentPartitionCR mode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DrawingModel::_OnInsert()
-    {
-    if (!GetDgnDb().Elements().Get<Drawing>(GetModeledElementId()).IsValid() && !GetDgnDb().Elements().Get<TemplateRecipe2d>(GetModeledElementId()).IsValid())
-        {
-        BeAssert(false && "A DrawingModel should be modeling a Drawing or TemplateRecipe2d element");
-        return DgnDbStatus::BadElement;
-        }
-
-    return T_Super::_OnInsert();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 DrawingModelPtr DrawingModel::Create(DrawingCR drawing)
     {
     DgnDbR db = drawing.GetDgnDb();
