@@ -69,7 +69,7 @@ struct CachedQueryAdaptor final: std::enable_shared_from_this<CachedQueryAdaptor
         rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator> m_allocator;
         rapidjson::CrtAllocator m_stackAllocator;
         rapidjson::Document m_cachedJsonDoc;
-        Db const* m_conn;
+        ECDb const* m_conn;
         bool m_usePrimaryConn;
         struct Cursor {
             std::string m_id;
@@ -89,7 +89,7 @@ struct CachedQueryAdaptor final: std::enable_shared_from_this<CachedQueryAdaptor
         bool GetUsePrimaryConn() const { return m_usePrimaryConn; }
         void SetUsePrimaryConn(bool val) { m_usePrimaryConn = val; }
         Db const* GetWorkerConn() const { return m_conn; }
-        void SetWorkerConn(Db const& conn) { m_conn = &conn; }
+        void SetWorkerConn(ECDb const& conn) { m_conn = &conn; }
         void ReleaseMemory();
         void ReleaseResultMemory();
         bool IsParked() const { return m_cursor.has_value(); }

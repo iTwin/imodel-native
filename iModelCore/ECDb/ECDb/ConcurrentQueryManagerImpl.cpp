@@ -216,7 +216,10 @@ std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGet(Utf8CP ecsql, ECSq
 //---------------------------------------------------------------------------------------
 ECSqlRowAdaptor& CachedQueryAdaptor::GetJsonAdaptor() {
     if (!m_adaptor) {
-         m_adaptor = std::unique_ptr<ECSqlRowAdaptor>(new ECSqlRowAdaptor(*m_stmt.GetECDb()));
+        // GetECDb() is the shared preparation connection; rendering must use worker-local
+        // schema lookup and decompression state instead of serializing on its mutex.
+        auto const& renderDb = m_usePrimaryConn ? *m_stmt.GetECDb() : *m_conn;
+        m_adaptor = std::make_unique<ECSqlRowAdaptor>(renderDb);
     }
     return *m_adaptor.get();
 }
