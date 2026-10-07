@@ -310,6 +310,7 @@ struct ECSqlRequest : public QueryRequest{
         ECSqlValueFormat GetValueFormat() const { return m_valueFmt; }
         ECSqlRequest& SetValueFmt(ECSqlValueFormat fmt) noexcept { m_valueFmt = fmt; return *this;}
         ECSqlRequest& SetLimit(QueryLimit limit) noexcept { m_limit = limit; return *this;}
+        /** Retain partial-page statements on WAL worker connections. Omitted or negative offsets are treated as zero. */
         ECSqlRequest& SetUseCursor(bool value) { m_useCursor = value; return *this; }
         ECSqlRequest& SetCursorId(std::string id) { m_cursorId = std::move(id); return *this; }
         ECSqlRequest& SetAbbreviateBlobs(bool abbreviateBlobs) { m_abbreviateBlobs = abbreviateBlobs; return *this;}

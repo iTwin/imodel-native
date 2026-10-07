@@ -768,6 +768,103 @@ TEST_F(ConcurrentQueryFixture, ResumeCursorPagesAndFallBackOnInvalidOffset) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ConcurrentQueryFixture, ResumeCursorWithDefaultAndNegativeOffsets) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("conn_query_cursor_default_offset.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.EnableWalMode(true));
+    auto config = ConcurrentQueryMgr::Config::Get();
+    config.SetWorkerThreadCount(1);
+    config.SetQuota(QueryQuota(std::chrono::seconds(10), 1000));
+    ConcurrentQueryMgr::Config::Reset(config);
+
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
+        const std::string query = "with cnt(x) as (values(0) union select x+1 from cnt where x < 8) "
+            "select x, (select CAST(randomblob(16) AS BINARY)), CAST(randomblob(1000) AS BINARY) from cnt";
+        for (int64_t initialOffset : {-1, -7}) {
+            std::string cursorId;
+            std::string statementValue;
+            int64_t offset = 0;
+            bool done = false;
+            for (int pageIndex = 0; pageIndex < 10; ++pageIndex) {
+                auto request = ECSqlRequest::MakeRequest(query);
+                request->SetUseCursor(true).SetCursorId(cursorId);
+                if (pageIndex > 0)
+                    request->SetLimit(QueryLimit(-1, offset));
+                else if (initialOffset != -1)
+                    request->SetLimit(QueryLimit(-1, initialOffset));
+                auto response = mgr.Enqueue(std::move(request)).Get();
+                ASSERT_TRUE(response->IsSuccess()) << response->GetError();
+                auto const& page = response->GetAsConst<ECSqlResponse>();
+                BeJsDocument rows;
+                rows.Parse(page.asJsonString());
+                for (BeJsConst::ArrayIndex row = 0; row < rows.size(); ++row) {
+                    EXPECT_EQ(offset + row, rows[row][(BeJsConst::ArrayIndex)0].asInt());
+                    if (statementValue.empty())
+                        statementValue = rows[row][(BeJsConst::ArrayIndex)1].asString();
+                    // The uncorrelated scalar is evaluated once per statement, not once per page.
+                    EXPECT_EQ(statementValue, rows[row][(BeJsConst::ArrayIndex)1].asString());
+                }
+                offset += page.GetRowCount();
+                cursorId = page.GetCursorId();
+                if (response->IsDone()) {
+                    done = true;
+                    EXPECT_TRUE(cursorId.empty());
+                    break;
+                }
+                ASSERT_GT(page.GetRowCount(), 0u);
+                ASSERT_FALSE(cursorId.empty());
+            }
+            EXPECT_TRUE(done);
+            EXPECT_EQ(9, offset);
+        }
+    });
+}
+
+TEST_F(ConcurrentQueryFixture, CloseWorkerCursorIgnoresPrimaryConnectionOption) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("conn_query_cursor_close_primary.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.EnableWalMode(true));
+    auto config = ConcurrentQueryMgr::Config::Get();
+    config.SetWorkerThreadCount(1);
+    config.SetQuota(QueryQuota(std::chrono::seconds(10), 1000));
+    ConcurrentQueryMgr::Config::Reset(config);
+
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
+        const std::string query = "with cnt(x) as (values(0) union select x+1 from cnt where x < 8) "
+            "select x, (select CAST(randomblob(16) AS BINARY)), CAST(randomblob(1000) AS BINARY) from cnt";
+        auto request = ECSqlRequest::MakeRequest(query);
+        request->SetUseCursor(true).SetLimit(QueryLimit(-1, 0));
+        auto first = mgr.Enqueue(std::move(request)).Get();
+        ASSERT_TRUE(first->IsSuccess()) << first->GetError();
+        auto const& firstPage = first->GetAsConst<ECSqlResponse>();
+        ASSERT_FALSE(firstPage.GetCursorId().empty());
+        BeJsDocument firstRows;
+        firstRows.Parse(firstPage.asJsonString());
+
+        BeJsDocument close;
+        close["kind"] = (int)QueryRequest::Kind::ECSql;
+        close["query"] = query;
+        close["cursorId"] = firstPage.GetCursorId();
+        close["closeCursor"] = true;
+        close["usePrimaryConn"] = true;
+        for (int repeat = 0; repeat < 2; ++repeat) {
+            auto closeRequest = QueryRequest::Deserialize(close);
+            ASSERT_FALSE(closeRequest->UsePrimaryConnection());
+            auto response = mgr.Enqueue(std::move(closeRequest)).Get();
+            ASSERT_TRUE(response->IsDone()) << response->GetError();
+            EXPECT_EQ(0u, response->GetAsConst<ECSqlResponse>().GetRowCount());
+        }
+
+        auto continuation = ECSqlRequest::MakeRequest(query);
+        continuation->SetUseCursor(true).SetCursorId(firstPage.GetCursorId()).SetLimit(QueryLimit(-1, firstPage.GetRowCount()));
+        auto response = mgr.Enqueue(std::move(continuation)).Get();
+        ASSERT_TRUE(response->IsSuccess()) << response->GetError();
+        BeJsDocument rows;
+        rows.Parse(response->GetAsConst<ECSqlResponse>().asJsonString());
+        ASSERT_GT(rows.size(), 0u);
+        EXPECT_EQ(firstPage.GetRowCount(), rows[0][0].asUInt());
+        EXPECT_NE(firstRows[0][1].asString(), rows[0][1].asString());
+    });
+}
+
 TEST_F(ConcurrentQueryFixture, InterruptCheck_TimeLimitExceeded) {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("conn_query.ecdb"));
 

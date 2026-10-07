@@ -438,7 +438,7 @@ std::shared_ptr<CachedQueryAdaptor> CachedConnection::ResumeCursor(ECSqlRequest 
     if (!request.GetUseCursor() || request.GetCloseCursor() || request.UsePrimaryConnection() ||
         cursor.query != request.GetQuery() || cursor.args != CursorArgs(request) ||
         cursor.restartToken != request.GetRestartToken() ||
-        cursor.offset != limit.GetOffset() || cursor.count != limit.GetCount() ||
+        cursor.offset != std::max<int64_t>(0, limit.GetOffset()) || cursor.count != limit.GetCount() ||
         cursor.format != request.GetValueFormat() || cursor.abbreviateBlobs != request.GetAbbreviateBlobs() ||
         cursor.classNames != request.GetConvertClassIdsToClassNames() ||
         cursor.classNamesWhenAliased != request.GetDoNotConvertClassIdsToClassNamesWhenAliased() ||
@@ -455,7 +455,7 @@ std::string CachedConnection::SaveCursor(std::shared_ptr<CachedQueryAdaptor> ada
     std::string id = BeGuid(true).ToString().c_str();
     auto const& limit = request.GetLimit();
     m_cursors.emplace(id, Cursor{std::move(adaptor), request.GetQuery(), CursorArgs(request), request.GetRestartToken(),
-        limit.GetOffset() + rowCount, limit.GetCount() < 0 ? -1 : limit.GetCount() - rowCount,
+        std::max<int64_t>(0, limit.GetOffset()) + rowCount, limit.GetCount() < 0 ? -1 : limit.GetCount() - rowCount,
         request.GetValueFormat(), request.GetAbbreviateBlobs(), request.GetConvertClassIdsToClassNames(),
         request.GetDoNotConvertClassIdsToClassNamesWhenAliased(), std::chrono::steady_clock::now()});
     return id;
@@ -1470,7 +1470,7 @@ void QueryHelper::Execute(std::shared_ptr<CachedQueryAdaptor> const& cached, Cac
             std::string cursorId;
             if (canResume && row_count > 0 &&
                 (request.GetLimit().GetCount() < 0 || row_count < request.GetLimit().GetCount()) &&
-                request.GetLimit().GetOffset() >= 0 && request.GetUseCursor() && !request.UsePrimaryConnection() &&
+                request.GetUseCursor() && !request.UsePrimaryConnection() &&
                 !runnableRequest.IsTimeExceeded() && !runnableRequest.IsInterrupted() &&
                 // Outside WAL mode the retained read lock would block writers on the primary connection.
                 connection.GetDb().IsWalMode())
@@ -2056,6 +2056,8 @@ void ECSqlRequest::FromJs(BeJsConst const& val) {
         m_closeCursor = val[JCloseCursor].asBool();
     if (m_closeCursor && m_cursorId.empty())
         throw std::runtime_error("concurrent query: closeCursor requires cursorId");
+    if (m_closeCursor)
+        SetUsePrimaryConnection(false); // Retained cursors always belong to worker connections.
     if (val.isBoolMember(JSuppressLogErrors)) {
         m_suppressLogErrors = val[JSuppressLogErrors].asBool();
     }
