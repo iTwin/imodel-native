@@ -68,7 +68,7 @@ TEST_F(ConcurrentQueryFixture, JsonSerializationMatchesRowAdaptor) {
             EXPECT_EQ(expectedJson, page.asJsonString());
         };
         check(sql, args, expected, 4);
-        check("SELECT 1 WHERE 0", ECSqlParams(), "[]", 0);
+        check("SELECT 1 FROM meta.ECClassDef WHERE 1=0", ECSqlParams(), "[]", 0);
         check("SELECT NULL", ECSqlParams(), "[[]]", 1);
         check("SELECT NULL, 1, NULL", ECSqlParams(), "[[null,1]]", 1);
     }
