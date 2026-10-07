@@ -501,6 +501,8 @@ void JsInterop::ConcurrentQueryExecute(ECDbCR ecdb, Napi::Object requestObj, Nap
         ConcurrentQueryMgr::WithInstance(ecdb, [&](ConcurrentQueryMgr& mgr) -> void {
             BeJsValue beJsReq(requestObj);
             QueryRequest::Ptr request = QueryRequest::Deserialize(beJsReq);
+            if (request->GetKind() == QueryRequest::Kind::ECSql)
+                request->GetAsRef<ECSqlRequest>().SetUseV8Serialization(ConcurrentQueryMgr::Config::Get().GetUseV8Serialization());
             if (request->UsePrimaryConnection()) {
                 mgr.Enqueue(std::move(request), [&](QueryResponse::Ptr value) {
                     auto jsResp = Napi::Object::New(Env());
@@ -511,7 +513,10 @@ void JsInterop::ConcurrentQueryExecute(ECDbCR ecdb, Napi::Object requestObj, Nap
                     else if (value->GetKind() == QueryResponse::Kind::ECSql) {
                         auto& resp = value->GetAsConst<ECSqlResponse>();
                         resp.ToJs(beJsResp, false);
-                        if (!resp.asJsonString().empty()) {
+                        if (resp.UsesV8Serialization()) {
+                            auto const& data = resp.GetV8Data();
+                            jsResp[ECSqlResponse::JData] = Napi::Buffer<uint8_t>::Copy(Env(), data.data(), data.size());
+                        } else if (!resp.asJsonString().empty()) {
                             auto parse = Env().Global().Get("JSON").As<Napi::Object>().Get("parse").As<Napi::Function>();
                             auto rows = Napi::String::New(Env(), resp.asJsonString());
                             jsResp[ECSqlResponse::JData] = parse({ rows });
@@ -548,7 +553,10 @@ void JsInterop::ConcurrentQueryExecute(ECDbCR ecdb, Napi::Object requestObj, Nap
                             } else if (value->GetKind() ==  QueryResponse::Kind::ECSql) {
                                 auto& resp = value->GetAsConst<ECSqlResponse>();
                                 resp.ToJs(beJsResp, false);
-                                if (!resp.asJsonString().empty()) {
+                                if (resp.UsesV8Serialization()) {
+                                    auto const& data = resp.GetV8Data();
+                                    jsResp[ECSqlResponse::JData] = Napi::Buffer<uint8_t>::Copy(env, data.data(), data.size());
+                                } else if (!resp.asJsonString().empty()) {
                                     auto parse = env.Global().Get("JSON").As<Napi::Object>().Get("parse").As<Napi::Function>();
                                     auto rows = Napi::String::New(env, resp.asJsonString());
                                     jsResp[ECSqlResponse::JData] = parse({rows});

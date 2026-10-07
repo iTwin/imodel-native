@@ -10,6 +10,8 @@
 #include <functional>
 #include <future>
 #include <map>
+#include <stdexcept>
+#include <vector>
 #include <BeRapidJson/BeJsValue.h>
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 using namespace std::chrono_literals;
@@ -288,6 +290,7 @@ struct ECSqlRequest : public QueryRequest{
         bool m_convertClassIdsToClassNames;
         bool m_doNotConvertClassIdsToClassNamesWhenAliased;
         ECSqlValueFormat m_valueFmt;
+        bool m_useV8Serialization = false;
     public:
         ECSqlRequest(std::string const& query, ECSqlParams&& args)
             :QueryRequest(Kind::ECSql), m_query(query), m_args(std::move(args)),m_abbreviateBlobs(false), m_suppressLogErrors(false),m_includeMetaData(true), m_convertClassIdsToClassNames(false), m_doNotConvertClassIdsToClassNamesWhenAliased(true), m_valueFmt(ECSqlValueFormat::ECSqlNames){}
@@ -304,6 +307,9 @@ struct ECSqlRequest : public QueryRequest{
         bool GetDoNotConvertClassIdsToClassNamesWhenAliased() const { return m_doNotConvertClassIdsToClassNamesWhenAliased; }
         QueryLimit const& GetLimit() const {return m_limit;}
         ECSqlValueFormat GetValueFormat() const { return m_valueFmt; }
+        //! Binary transport selection for Node requests; native readers retain JSON by default.
+        bool GetUseV8Serialization() const { return m_useV8Serialization; }
+        ECSqlRequest& SetUseV8Serialization(bool enabled) { m_useV8Serialization = enabled; return *this; }
         ECSqlRequest& SetValueFmt(ECSqlValueFormat fmt) noexcept { m_valueFmt = fmt; return *this;}
         ECSqlRequest& SetLimit(QueryLimit limit) noexcept { m_limit = limit; return *this;}
         ECSqlRequest& SetAbbreviateBlobs(bool abbreviateBlobs) { m_abbreviateBlobs = abbreviateBlobs; return *this;}
@@ -440,18 +446,28 @@ struct QueryResponse : std::enable_shared_from_this<QueryResponse> {
 struct ECSqlResponse final : public QueryResponse{
     using Ptr = std::shared_ptr<ECSqlResponse>;
     static constexpr auto JData = "data";
+    static constexpr auto JDataEncoding = "dataEncoding";
     private:
         static constexpr auto JRowCount = "rowCount";
         static constexpr auto JMeta = "meta";
         std::string m_dataJson;
+        std::vector<uint8_t> m_dataV8;
         uint32_t m_rowCount;
         ECSqlRowProperty::List m_properties;
     public:
         ECSqlResponse(Stats stats, Status status, std::string error, std::string & data, ECSqlRowProperty::List& meta, uint32_t rowCount)
             :QueryResponse(Kind::ECSql,stats, status, error), m_dataJson(std::move(data)), m_properties(std::move(meta)),m_rowCount(rowCount) {}
+        ECSqlResponse(Stats stats, Status status, std::string error, std::vector<uint8_t>& data, ECSqlRowProperty::List& meta, uint32_t rowCount)
+            :QueryResponse(Kind::ECSql,stats, status, error), m_dataV8(std::move(data)), m_properties(std::move(meta)),m_rowCount(rowCount) {}
         virtual ~ECSqlResponse(){}
         ECSqlRowProperty::List const& GetProperties() const { return m_properties; }
-        std::string const& asJsonString() const {return m_dataJson; }
+        bool UsesV8Serialization() const { return !m_dataV8.empty(); }
+        std::vector<uint8_t> const& GetV8Data() const { return m_dataV8; }
+        std::string const& asJsonString() const {
+            if (UsesV8Serialization())
+                throw std::logic_error("V8 query responses contain binary data, not JSON text");
+            return m_dataJson;
+        }
         uint32_t GetRowCount() const {return m_rowCount;}
         ECDB_EXPORT void virtual ToJs(BeJsValue& v, bool includeData) const override;
 };
@@ -500,6 +516,7 @@ struct ConcurrentQueryMgr final {
          static constexpr auto JEnableCursors = "enableCursors";
          static constexpr auto JMaxCursorsPerWorker = "maxCursorsPerWorker";
          static constexpr auto JCursorIdleTimeout = "cursorIdleTimeout";
+         static constexpr auto JUseV8Serialization = "useV8Serialization";
      private:
          QueryQuota m_quota;
          uint32_t m_workerThreadCount;
@@ -514,11 +531,13 @@ struct ConcurrentQueryMgr final {
          std::chrono::milliseconds m_monitorPollInterval;
          std::chrono::seconds m_autoShutdownWhenIdleForSeconds;
          static Config From(std::string const& json);
+         static Config From(BeJsValue val, Config const& defaultConfig);
          uint32_t m_memoryMapFileSize;
          std::optional<uint32_t> m_cacheSizeInKB;
          static Config s_config;
          uint32_t m_progressOpCount;
          bool m_enableCursors = true;
+         bool m_useV8Serialization = false;
          int32_t m_maxCursorsPerWorker = -1;
          std::chrono::seconds m_cursorIdleTimeout = 30s;
      public:
@@ -540,6 +559,9 @@ struct ConcurrentQueryMgr final {
         //! Sets the page-cache target in KiB for new secondary connections; the default is not overridden.
         ECDB_EXPORT Config& SetCacheSizeInKB(uint32_t cacheSizeInKB);
         bool GetEnableCursors() const { return m_enableCursors; }
+        //! Enables the binary Node transport; native C++ readers continue requesting JSON.
+        bool GetUseV8Serialization() const { return m_useV8Serialization; }
+        Config& SetUseV8Serialization(bool enabled) { m_useV8Serialization = enabled; return *this; }
         int32_t GetMaxCursorsPerWorker() const { return m_maxCursorsPerWorker; }
         std::chrono::seconds GetCursorIdleTimeout() const { return m_cursorIdleTimeout; }
         Config& SetEnableCursors(bool enabled) { m_enableCursors = enabled; return *this; }
