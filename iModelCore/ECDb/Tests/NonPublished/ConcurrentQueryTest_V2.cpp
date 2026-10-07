@@ -77,6 +77,29 @@ struct CursorCountFunc : BeSQLite::ScalarFunction {
     }
 };
 
+struct ConnectionPragmaFunc : BeSQLite::ScalarFunction {
+    std::string m_sql;
+    ConnectionPragmaFunc(Utf8CP name, Utf8CP sql) : ScalarFunction(name, 0), m_sql(sql) {}
+    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int, BeSQLite::DbValue*) override {
+        // BeSQLite passes sqlite3_context directly as its Context wrapper.
+        auto db = sqlite3_context_db_handle(reinterpret_cast<sqlite3_context*>(&ctx));
+        sqlite3_stmt* stmt = nullptr;
+        auto rc = sqlite3_prepare_v2(db, m_sql.c_str(), -1, &stmt, nullptr);
+        if (rc != SQLITE_OK) {
+            ctx.SetResultError_code(rc);
+            return;
+        }
+        rc = sqlite3_step(stmt);
+        if (rc == SQLITE_ROW)
+            ctx.SetResultInt64(sqlite3_column_int64(stmt, 0));
+        else
+            ctx.SetResultError("connection PRAGMA returned no row");
+        rc = sqlite3_finalize(stmt);
+        if (rc != SQLITE_OK)
+            ctx.SetResultError_code(rc);
+    }
+};
+
 TEST_F(ConcurrentQueryFixture, PendingSelectSurvivesSavepointCommit) {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("PendingSelectSurvivesSavepointCommit.ecdb"));
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
@@ -96,20 +119,7 @@ TEST_F(ConcurrentQueryFixture, PendingSelectSurvivesSavepointCommit) {
 }
 
 TEST_F(ConcurrentQueryFixture, MemoryMapFileSizeAppliesToWorkersOnly) {
-    struct MemoryMapSizeFunc : BeSQLite::ScalarFunction {
-        MemoryMapSizeFunc() : ScalarFunction("imodel_mmap_size", 0) {}
-        void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int, BeSQLite::DbValue*) override {
-            // BeSQLite passes sqlite3_context directly as its Context wrapper.
-            auto db = sqlite3_context_db_handle(reinterpret_cast<sqlite3_context*>(&ctx));
-            sqlite3_int64 size = -1;
-            auto rc = sqlite3_file_control(db, "main", SQLITE_FCNTL_MMAP_SIZE, &size);
-            if (rc != SQLITE_OK) {
-                ctx.SetResultError_code(rc);
-                return;
-            }
-            ctx.SetResultInt64(size);
-        }
-    } mmapSize;
+    ConnectionPragmaFunc mmapSize("imodel_mmap_size", "PRAGMA mmap_size");
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("MemoryMapFileSizeAppliesToWorkersOnly.ecdb"));
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AddFunction(mmapSize));
@@ -135,6 +145,41 @@ TEST_F(ConcurrentQueryFixture, MemoryMapFileSizeAppliesToWorkersOnly) {
         auto primary = mgr.Enqueue(std::move(req)).Get();
         ASSERT_EQ(QueryResponse::Status::Done, primary->GetStatus()) << primary->GetError();
         EXPECT_EQ(0, BeJsDocument(primary->GetAsConst<ECSqlResponse>().asJsonString())[0][0].asInt64());
+    }
+}
+
+TEST_F(ConcurrentQueryFixture, CacheSizeInKBAppliesToWorkersOnly) {
+    ConnectionPragmaFunc cacheSize("imodel_cache_size", "PRAGMA cache_size");
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("CacheSizeInKBAppliesToWorkersOnly.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AddFunction(cacheSize));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.TryExecuteSql("PRAGMA cache_size=123"));
+    int64_t defaultCacheSize;
+    {
+        ECDb baseline;
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.OpenSecondaryConnection(baseline, ECDb::OpenParams(Db::OpenMode::Readonly, DefaultTxn::No)));
+        Savepoint txn(baseline, "cache_size_baseline");
+        Statement stmt;
+        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(baseline, "PRAGMA cache_size"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        defaultCacheSize = stmt.GetValueInt64(0);
+    }
+    for (int32_t size : {-1, 0, 8192}) {
+        auto config = ConcurrentQueryMgr::Config::GetDefault();
+        config.SetWorkerThreadCount(1);
+        if (size >= 0)
+            config.SetCacheSizeInKB(static_cast<uint32_t>(size));
+        ConcurrentQueryMgr::Config::Reset(config);
+        ConcurrentQueryMgr mgr(m_ecdb);
+        auto worker = mgr.Enqueue(ECSqlRequest::MakeRequest("SELECT imodel_cache_size()")).Get();
+        ASSERT_EQ(QueryResponse::Status::Done, worker->GetStatus()) << worker->GetError();
+        EXPECT_EQ(size < 0 ? defaultCacheSize : -static_cast<int64_t>(size),
+            BeJsDocument(worker->GetAsConst<ECSqlResponse>().asJsonString())[0][0].asInt64());
+        auto req = ECSqlRequest::MakeRequest("SELECT imodel_cache_size()");
+        req->SetUsePrimaryConnection(true);
+        auto primary = mgr.Enqueue(std::move(req)).Get();
+        ASSERT_EQ(QueryResponse::Status::Done, primary->GetStatus()) << primary->GetError();
+        EXPECT_EQ(123, BeJsDocument(primary->GetAsConst<ECSqlResponse>().asJsonString())[0][0].asInt64());
     }
 }
 
@@ -274,6 +319,31 @@ TEST_F(ConcurrentQueryFixture, CursorConfigRoundTrips) {
     config.To(serialized);
     EXPECT_TRUE(config.Equals(ConcurrentQueryMgr::Config::From(serialized)));
     EXPECT_FALSE(config.Equals(ConcurrentQueryMgr::Config::GetDefault()));
+}
+
+TEST_F(ConcurrentQueryFixture, CacheSizeInKBConfigRoundTrips) {
+    auto const& defaults = ConcurrentQueryMgr::Config::GetDefault();
+    EXPECT_FALSE(defaults.GetCacheSizeInKB().has_value());
+    for (uint32_t size : {0u, 8192u, 2147483647u}) {
+        auto config = defaults;
+        config.SetCacheSizeInKB(size);
+        EXPECT_FALSE(config.Equals(defaults));
+        BeJsDocument serialized;
+        config.To(serialized);
+        EXPECT_EQ(size, serialized["cacheSizeInKB"].asUInt());
+        EXPECT_TRUE(config.Equals(ConcurrentQueryMgr::Config::From(serialized)));
+        defaults.To(serialized);
+        EXPECT_FALSE(serialized.isMember("cacheSizeInKB"));
+    }
+    for (Utf8CP json : {
+        R"json({"cacheSizeInKB":-1})json", R"json({"cacheSizeInKB":1.5})json",
+        R"json({"cacheSizeInKB":2147483648})json", R"json({"cacheSizeInKB":"8192"})json"}) {
+        BeJsDocument input(json);
+        EXPECT_EQ(ConcurrentQueryMgr::Config::GetFromEnv().GetCacheSizeInKB(),
+            ConcurrentQueryMgr::Config::From(input).GetCacheSizeInKB());
+    }
+    auto config = defaults;
+    EXPECT_THROW(config.SetCacheSizeInKB(2147483648u), std::invalid_argument);
 }
 
 TEST_F(ConcurrentQueryFixture, CursorSettingsApplyToExistingManager) {
