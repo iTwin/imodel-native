@@ -1556,6 +1556,8 @@ std::optional<uint32_t> QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, 
     alignas(std::max_align_t) char rowBuffer[4096];
     rapidjson::MemoryPoolAllocator<> rowAllocator(rowBuffer, sizeof(rowBuffer));
     rapidjson::Document rowsDoc(&rowAllocator);
+    rapidjson::StringBuffer rowJson;
+    rapidjson::Writer<rapidjson::StringBuffer> rowWriter(rowJson);
     auto rc = stmt.Step();
     while (rc == BE_SQLITE_ROW) {
         rowsDoc.SetNull();
@@ -1564,14 +1566,17 @@ std::optional<uint32_t> QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, 
         if (adaptor.RenderRowAsArray(rows, ECSqlStatementRow(stmt)) != SUCCESS) {
             setError(QueryResponse::Status::Error_ECSql_RowToJsonFailed, "failed to serialize ecsql statement row to json");
             return std::nullopt;
-        } else {
-            row_count = row_count + 1;
-            if (row_count == 1) {
-                result.append(rows.Stringify());
-            } else {
-                result.append(",").append(rows.Stringify());
-            }
         }
+        rowJson.Clear();
+        rowWriter.Reset(rowJson);
+        if (!rowsDoc.Accept(rowWriter)) {
+            setError(QueryResponse::Status::Error_ECSql_RowToJsonFailed, "failed to serialize ecsql statement row to json");
+            return std::nullopt;
+        }
+        ++row_count;
+        if (row_count > 1)
+            result.push_back(',');
+        result.append(rowJson.GetString(), rowJson.GetSize());
 
         if (result.size() > V8_MAX_STRING_SIZE) {
             cachedAdaptor.ReleaseMemory();

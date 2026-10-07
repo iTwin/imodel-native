@@ -25,6 +25,54 @@ struct ConcurrentQueryFixture : ECDbTestFixture {
         ConcurrentQueryMgr::Config::Reset(std::nullopt);
     }
 };
+TEST_F(ConcurrentQueryFixture, JsonSerializationMatchesRowAdaptor) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("JsonSerializationMatchesRowAdaptor.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    const std::string largeText = std::string(16384, 'x') + "\"\\\n\t" + "\xc3\xa9";
+    const double number = 9.9999999999999995e-21;
+    Utf8CP sql =
+        "WITH sequence(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM sequence WHERE n<4) "
+        "SELECT n, CASE WHEN n%2=0 THEN ? ELSE 'small' END, NULL, ?, NULL FROM sequence ORDER BY n";
+    ECSqlParams args;
+    args.BindString(1, largeText);
+    args.BindDouble(2, number);
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, largeText.c_str(), IECSqlBinder::MakeCopy::Yes));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindDouble(2, number));
+    ECSqlRowAdaptor adaptor(m_ecdb);
+    std::string expected = "[";
+    DbResult rc;
+    while ((rc = stmt.Step()) == BE_SQLITE_ROW) {
+        BeJsDocument row;
+        ASSERT_EQ(SUCCESS, adaptor.RenderRowAsArray(row, ECSqlStatementRow(stmt)));
+        if (expected.size() > 1)
+            expected.push_back(',');
+        expected.append(row.Stringify());
+    }
+    ASSERT_EQ(BE_SQLITE_DONE, rc);
+    expected.push_back(']');
+    stmt.Finalize();
+
+    for (uint32_t threadCount : {2u, 4u, 8u}) {
+        auto config = ConcurrentQueryMgr::Config::GetDefault();
+        config.SetWorkerThreadCount(threadCount);
+        ConcurrentQueryMgr::Config::Reset(config);
+        ConcurrentQueryMgr mgr(m_ecdb);
+        auto check = [&](Utf8CP query, ECSqlParams params, std::string const& expectedJson, uint32_t rowCount) {
+            auto response = mgr.Enqueue(ECSqlRequest::MakeRequest(query, params)).Get();
+            ASSERT_EQ(QueryResponse::Status::Done, response->GetStatus()) << response->GetError();
+            auto const& page = response->GetAsConst<ECSqlResponse>();
+            EXPECT_EQ(rowCount, page.GetRowCount());
+            EXPECT_EQ(expectedJson, page.asJsonString());
+        };
+        check(sql, args, expected, 4);
+        check("SELECT 1 WHERE 0", ECSqlParams(), "[]", 0);
+        check("SELECT NULL", ECSqlParams(), "[[]]", 1);
+        check("SELECT NULL, 1, NULL", ECSqlParams(), "[[null,1]]", 1);
+    }
+}
+
 struct SleepFunc : BeSQLite::ScalarFunction {
     SleepFunc() : ScalarFunction("imodel_sleep", -1){}
     void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override {

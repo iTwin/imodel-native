@@ -63,6 +63,35 @@ void PrintTo(BeInt64Id id, std::ostream* os) { *os << id.GetValueUnchecked(); }
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECJsonUtilitiesTestFixture, FormatClassName)
+    {
+    for (auto const& schemaName : {Utf8String("TestSchema"), Utf8String(96, 'S')})
+        {
+        ECSchemaPtr schema;
+        ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, schemaName.c_str(), "ts", 1, 0, 0));
+        for (auto const& className : {Utf8String("TestClass"), Utf8String(96, 'C')})
+            {
+            ECEntityClassP ecClass;
+            ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(ecClass, className.c_str()));
+            Utf8String dottedName = schemaName + "." + className;
+            Utf8String colonName = schemaName + ":" + className;
+            EXPECT_EQ(dottedName, ECJsonUtilities::FormatClassName(*ecClass));
+            for (bool useColon : {false, true, false})
+                {
+                auto const& expected = useColon ? colonName : dottedName;
+                EXPECT_EQ(expected, ECJsonUtilities::FormatClassName(*ecClass, useColon));
+                BeJsDocument json;
+                ECJsonUtilities::ClassNameToJson(json, *ecClass, useColon);
+                ASSERT_TRUE(json.isString());
+                EXPECT_STREQ(expected.c_str(), json.asCString());
+                }
+            }
+        }
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECJsonUtilitiesTestFixture, JsonToId)
     {
     BeJsDocument jsonDoc;
