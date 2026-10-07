@@ -495,6 +495,7 @@ struct ConcurrentQueryMgr final {
          static constexpr auto JStatementCacheSizePerWorker = "statementCacheSizePerWorker";
          static constexpr auto JMonitorPollInterval = "monitorPollInterval";
          static constexpr auto JMemoryMapFileSize = "memoryMapFileSize";
+         static constexpr auto JCacheSizeInKB = "cacheSizeInKB";
          static constexpr auto JProgressOpCount = "progressOpCount";
          static constexpr auto JEnableCursors = "enableCursors";
          static constexpr auto JMaxCursorsPerWorker = "maxCursorsPerWorker";
@@ -514,6 +515,7 @@ struct ConcurrentQueryMgr final {
          std::chrono::seconds m_autoShutdownWhenIdleForSeconds;
          static Config From(std::string const& json);
          uint32_t m_memoryMapFileSize;
+         std::optional<uint32_t> m_cacheSizeInKB;
          static Config s_config;
          uint32_t m_progressOpCount;
          bool m_enableCursors = true;
@@ -534,6 +536,9 @@ struct ConcurrentQueryMgr final {
         uint32_t GetStatementCacheSizePerWorker() const { return m_statementCacheSizePerWorker; }
         std::chrono::seconds GetAutoShutdownWhenIdleForSeconds() const { return m_autoShutdownWhenIdleForSeconds; }
         uint32_t GetMemoryMapFileSize() const { return m_memoryMapFileSize; }
+        std::optional<uint32_t> GetCacheSizeInKB() const { return m_cacheSizeInKB; }
+        //! Sets the page-cache target in KiB for new secondary connections; the default is not overridden.
+        ECDB_EXPORT Config& SetCacheSizeInKB(uint32_t cacheSizeInKB);
         bool GetEnableCursors() const { return m_enableCursors; }
         int32_t GetMaxCursorsPerWorker() const { return m_maxCursorsPerWorker; }
         std::chrono::seconds GetCursorIdleTimeout() const { return m_cursorIdleTimeout; }

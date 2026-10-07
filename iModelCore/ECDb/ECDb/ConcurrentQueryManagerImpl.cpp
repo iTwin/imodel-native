@@ -12,6 +12,7 @@
 #include <optional>
 #include <mutex>
 #include <cstddef>
+#include <cmath>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 using namespace std::chrono_literals;
@@ -568,11 +569,18 @@ std::shared_ptr<CachedConnection> CachedConnection::Make(ConnectionCache& cache,
         }
         newConn->UpdateSqlFunctions(ConnectionAction::Opening);
         // Workers have no default transaction; connection-local PRAGMAs do not require one.
-        const auto mmsize = ConcurrentQueryMgr::Config::Get().GetMemoryMapFileSize();
+        const auto config = ConcurrentQueryMgr::Config::Get();
+        const auto mmsize = config.GetMemoryMapFileSize();
         const auto rc = newConn->m_db.TryExecuteSql(SqlPrintfString("PRAGMA mmap_size=%" PRIu32, mmsize));
         if (rc != BE_SQLITE_OK)
             log_error("failed to configure concurrent query mmap_size=%" PRIu32 " on connection %" PRIu16 ": %s",
                 mmsize, id, newConn->m_db.GetLastError().c_str());
+        if (auto size = config.GetCacheSizeInKB()) {
+            const auto cacheRc = newConn->m_db.TryExecuteSql(SqlPrintfString("PRAGMA cache_size=-%" PRIu32, *size));
+            if (cacheRc != BE_SQLITE_OK)
+                log_error("failed to configure concurrent query cache_size on connection %" PRIu16 ": %s",
+                    id, newConn->m_db.GetLastError().c_str());
+        }
     }
 
     return newConn;
@@ -2517,6 +2525,13 @@ ConcurrentQueryMgr::Config::Config():
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+ConcurrentQueryMgr::Config& ConcurrentQueryMgr::Config::SetCacheSizeInKB(uint32_t size) {
+    if (size > static_cast<uint32_t>(std::numeric_limits<int32_t>::max()))
+        throw std::invalid_argument("cacheSizeInKB must not exceed 2147483647");
+    m_cacheSizeInKB = size;
+    return *this;
+}
+
 bool ConcurrentQueryMgr::Config::Equals(Config const& rhs) const {
     if (m_quota.MaxMemoryAllowed() != rhs.GetQuota().MaxMemoryAllowed())
         return false;
@@ -2539,6 +2554,8 @@ bool ConcurrentQueryMgr::Config::Equals(Config const& rhs) const {
     if (m_monitorPollInterval != rhs.GetMonitorPollInterval())
         return false;
     if (m_memoryMapFileSize != rhs.GetMemoryMapFileSize())
+        return false;
+    if (m_cacheSizeInKB != rhs.GetCacheSizeInKB())
         return false;
     if (m_enableCursors != rhs.GetEnableCursors() || m_maxCursorsPerWorker != rhs.GetMaxCursorsPerWorker() ||
         m_cursorIdleTimeout != rhs.GetCursorIdleTimeout())
@@ -2585,6 +2602,10 @@ void ConcurrentQueryMgr::Config::To(BeJsValue val) const {
     val[Config::JStatementCacheSizePerWorker] = GetStatementCacheSizePerWorker();
     val[Config::JMonitorPollInterval] = static_cast<uint32_t>(GetMonitorPollInterval().count());
     val[Config::JMemoryMapFileSize] = GetMemoryMapFileSize();
+    if (m_cacheSizeInKB)
+        val[Config::JCacheSizeInKB] = *m_cacheSizeInKB;
+    else
+        val.removeMember(Config::JCacheSizeInKB);
     val[Config::JProgressOpCount] = GetProgressOpCount();
     val[Config::JEnableCursors] = GetEnableCursors();
     val[Config::JMaxCursorsPerWorker] = GetMaxCursorsPerWorker();
@@ -2664,6 +2685,17 @@ ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::From(BeJsValue val) {
     if (val.isNumericMember(Config::JMemoryMapFileSize)) {
         uint32_t memoryMapFileSize = (uint32_t)val[Config::JMemoryMapFileSize].asUInt(defaultConfig.GetMemoryMapFileSize());
         config.SetMemoryMapFileSize(memoryMapFileSize);
+    }
+    if (val.isMember(Config::JCacheSizeInKB)) {
+        if (!val.isNumericMember(Config::JCacheSizeInKB)) {
+            log_error("cacheSizeInKB must be a non-negative integer no greater than 2147483647");
+        } else {
+            const auto size = val[Config::JCacheSizeInKB].asDouble();
+            if (!std::isfinite(size) || size < 0 || size > std::numeric_limits<int32_t>::max() || std::floor(size) != size)
+                log_error("cacheSizeInKB must be a non-negative integer no greater than 2147483647");
+            else
+                config.SetCacheSizeInKB(static_cast<uint32_t>(size));
+        }
     }
     if (val.isBoolMember(Config::JEnableCursors))
         config.SetEnableCursors(val[Config::JEnableCursors].asBool());

@@ -300,6 +300,8 @@ export declare namespace IModelJsNative {
  */
   export interface QueryConfig {
     globalQuota?: QueryQuota;
+    /** SQLite page-cache target per secondary connection in KiB; omitted preserves the default. */
+    cacheSizeInKB?: number;
     ignoreDelay?: boolean;
     ignorePriority?: boolean;
     requestQueueSize?: number;
