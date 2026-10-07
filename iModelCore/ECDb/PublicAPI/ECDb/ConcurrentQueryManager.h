@@ -637,6 +637,7 @@ struct ECSqlReader {
         ECDB_EXPORT ECSqlReader(ConcurrentQueryMgr& mgr, std::string ecsql, ECSqlParams const& args = ECSqlParams());
         ECSqlParams const& GetArgs() const {return m_args;}
         ECSqlRowProperty::List const& GetColumns() const { return m_columns; }
+        //! Returns a view valid until the reader loads another batch or is destroyed.
         Row GetRow() const { return Row(m_rows[m_it],m_columns);}
         ECDB_EXPORT bool Next();
 };

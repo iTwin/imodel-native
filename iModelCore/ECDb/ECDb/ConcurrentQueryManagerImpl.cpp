@@ -11,6 +11,7 @@
 #include <GeomSerialization/GeomLibsSerialization.h>
 #include <optional>
 #include <mutex>
+#include <cstddef>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 using namespace std::chrono_literals;
@@ -261,8 +262,6 @@ bool CachedQueryAdaptor::IsCursorExpired(std::chrono::seconds timeout) const {
 void CachedQueryAdaptor::ReleaseResultMemory() {
     m_cachedString.clear();
     m_cachedString.shrink_to_fit();
-    m_cachedJsonDoc.Clear();
-    m_allocator.Clear();
 }
 
 bool QueryAdaptorCache::HasCursor(ECSqlRequest const& request, std::string const& argsKey) const {
@@ -1543,9 +1542,14 @@ std::optional<uint32_t> QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, 
         }, static_cast<int>(ConcurrentQueryMgr::Config::Get().GetProgressOpCount()));
     }
     // go over each row and serialize result
+    // The first chunk survives Clear(); larger rows overflow to heap chunks freed on the next row.
+    alignas(std::max_align_t) char rowBuffer[4096];
+    rapidjson::MemoryPoolAllocator<> rowAllocator(rowBuffer, sizeof(rowBuffer));
+    rapidjson::Document rowsDoc(&rowAllocator);
     auto rc = stmt.Step();
     while (rc == BE_SQLITE_ROW) {
-        auto& rowsDoc = cachedAdaptor.ClearAndGetCachedJsonDocument();
+        rowsDoc.SetNull();
+        rowAllocator.Clear();
         BeJsValue rows(rowsDoc);
         if (adaptor.RenderRowAsArray(rows, ECSqlStatementRow(stmt)) != SUCCESS) {
             setError(QueryResponse::Status::Error_ECSql_RowToJsonFailed, "failed to serialize ecsql statement row to json");
@@ -1906,6 +1910,8 @@ uint32_t ECSqlReader::Read() {
         throw std::runtime_error(response->GetError());
 
     auto& ecsqlResp = response->GetAsRef<ECSqlResponse>();
+    // Parse replaces the root but does not reclaim the preceding batch's pooled allocations.
+    m_rows = BeJsDocument();
     m_rows.Parse(ecsqlResp.asJsonString());
     m_done = ecsqlResp.IsDone();
     if (readMeta) {

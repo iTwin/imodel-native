@@ -66,9 +66,6 @@ struct CachedQueryAdaptor final: std::enable_shared_from_this<CachedQueryAdaptor
         ECSqlStatement m_stmt;
         std::unique_ptr<ECSqlRowAdaptor> m_adaptor;
         std::string m_cachedString;
-        rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator> m_allocator;
-        rapidjson::CrtAllocator m_stackAllocator;
-        rapidjson::Document m_cachedJsonDoc;
         ECDb const* m_conn;
         bool m_usePrimaryConn;
         struct Cursor {
@@ -81,10 +78,9 @@ struct CachedQueryAdaptor final: std::enable_shared_from_this<CachedQueryAdaptor
         };
         std::optional<Cursor> m_cursor;
     public:
-        CachedQueryAdaptor() :m_cachedJsonDoc(&m_allocator, 1024, &m_stackAllocator), m_usePrimaryConn(false) { m_cachedJsonDoc.SetArray(); }
+        CachedQueryAdaptor() :m_usePrimaryConn(false) {}
         ECSqlStatement& GetStatement() { return m_stmt; }
         ECSqlRowAdaptor& GetJsonAdaptor();
-        rapidjson::Document& ClearAndGetCachedJsonDocument() { m_cachedJsonDoc.Clear(); m_allocator.Clear(); return m_cachedJsonDoc; }
         std::string& ClearAndGetCachedString() { m_cachedString.clear(); return m_cachedString; }
         bool GetUsePrimaryConn() const { return m_usePrimaryConn; }
         void SetUsePrimaryConn(bool val) { m_usePrimaryConn = val; }

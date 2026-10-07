@@ -391,6 +391,36 @@ TEST_F(ConcurrentQueryFixture, NativeReaderCrossesPageBoundaries) {
     EXPECT_FALSE(reader.Next());
 }
 
+TEST_F(ConcurrentQueryFixture, NativeReaderReplacesBatchDocuments) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("NativeReaderReplacesBatchDocuments.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.EnableWalMode(true));
+    auto config = ConcurrentQueryMgr::Config::GetDefault();
+    config.SetWorkerThreadCount(1).SetQuota(QueryQuota(60s, 1));
+    ConcurrentQueryMgr::Config::Reset(config);
+    const std::string largeText(16384, 'x');
+    const double number = 9.9999999999999995e-21;
+    ECSqlParams args;
+    args.BindString(1, largeText);
+    args.BindDouble(2, number);
+    ConcurrentQueryMgr mgr(m_ecdb);
+    ECSqlReader reader(mgr,
+        "WITH sequence(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM sequence WHERE n<100) "
+        "SELECT n, CASE WHEN n%2=0 THEN ? ELSE 'small' END, ?, NULL FROM sequence ORDER BY n",
+        args);
+    int expected = 1;
+    while (reader.Next()) {
+        auto row = reader.GetRow();
+        EXPECT_EQ(expected, row[0].asInt());
+        EXPECT_STREQ(expected % 2 == 0 ? largeText.c_str() : "small", row[1].asCString());
+        EXPECT_DOUBLE_EQ(number, row[2].asDouble());
+        EXPECT_TRUE(row[3].isNull());
+        ++expected;
+    }
+    EXPECT_EQ(101, expected);
+    EXPECT_FALSE(reader.Next());
+}
+
 TEST_F(ConcurrentQueryFixture, CursorBusyOwnerFallsBack) {
     struct GateFunc : BeSQLite::ScalarFunction {
         std::promise<void> m_started;
