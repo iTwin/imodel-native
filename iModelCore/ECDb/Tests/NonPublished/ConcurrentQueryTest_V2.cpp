@@ -3,7 +3,6 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
-#include "../../ECDb/ECSqlV8Serializer.h"
 
 USING_NAMESPACE_BENTLEY_EC
 #include <ECDb/ConcurrentQueryManager.h>
@@ -72,103 +71,6 @@ TEST_F(ConcurrentQueryFixture, JsonSerializationMatchesRowAdaptor) {
         check("SELECT NULL", ECSqlParams(), "[[]]", 1);
         check("SELECT NULL, 1, NULL", ECSqlParams(), "[[null,1]]", 1);
     }
-}
-
-TEST_F(ConcurrentQueryFixture, V8SerializationConfigAndPayloadOwnership) {
-    auto config = ConcurrentQueryMgr::Config::GetDefault();
-    EXPECT_FALSE(config.GetUseV8Serialization());
-    auto changed = config;
-    changed.SetUseV8Serialization(true);
-    EXPECT_FALSE(config.Equals(changed));
-    BeJsDocument settings;
-    changed.To(settings);
-    EXPECT_TRUE(ConcurrentQueryMgr::Config::From(settings).GetUseV8Serialization());
-
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("V8SerializationConfigAndPayloadOwnership.ecdb"));
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.EnableWalMode(true));
-    changed.SetWorkerThreadCount(1).SetQuota(QueryQuota(60s, 1));
-    ConcurrentQueryMgr::Config::Reset(changed);
-    ConcurrentQueryMgr mgr(m_ecdb);
-    std::vector<QueryResponse::Ptr> retained;
-    std::vector<uint8_t> firstBytes;
-    for (int64_t offset = 0; offset < 4; ++offset) {
-        auto request = ECSqlRequest::MakeRequest(
-            "WITH sequence(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM sequence WHERE n<4) SELECT n FROM sequence ORDER BY n");
-        request->SetUseV8Serialization(true).SetCursorId("v8-reader").SetLimit(QueryLimit(4 - offset, offset));
-        auto response = mgr.Enqueue(std::move(request)).Get();
-        ASSERT_EQ(QueryResponse::Status::Partial, response->GetStatus()) << response->GetError();
-        auto const& page = response->GetAsConst<ECSqlResponse>();
-        ASSERT_TRUE(page.UsesV8Serialization());
-        EXPECT_EQ(1, page.GetRowCount());
-        EXPECT_EQ(offset > 0, response->GetStats().Resumed());
-        EXPECT_EQ(page.GetV8Data().size(), response->GetStats().MemUsed());
-        EXPECT_THROW(page.asJsonString(), std::logic_error);
-        rapidjson::Document row(rapidjson::kArrayType);
-        row.PushBack(static_cast<int>(offset + 1), row.GetAllocator());
-        ECSqlV8Serializer expected(256);
-        expected.AppendRow(row);
-        EXPECT_EQ(expected.Finish(), page.GetV8Data());
-        if (offset == 0)
-            firstBytes = page.GetV8Data();
-        retained.push_back(response);
-    }
-    auto request = ECSqlRequest::MakeRequest("SELECT NULL, 1, NULL");
-    request->SetUsePrimaryConnection(true);
-    auto json = mgr.Enqueue(std::move(request)).Get();
-    ASSERT_EQ(QueryResponse::Status::Done, json->GetStatus()) << json->GetError();
-    EXPECT_FALSE(json->GetAsConst<ECSqlResponse>().UsesV8Serialization());
-    EXPECT_EQ("[[null,1]]", json->GetAsConst<ECSqlResponse>().asJsonString());
-    EXPECT_EQ(firstBytes, retained.front()->GetAsConst<ECSqlResponse>().GetV8Data());
-    BeJsDocument metadata;
-    retained.front()->ToJs(metadata, true);
-    EXPECT_STREQ("v8", metadata[ECSqlResponse::JDataEncoding].asCString());
-    json->ToJs(metadata, true);
-    EXPECT_FALSE(metadata.isMember(ECSqlResponse::JDataEncoding));
-}
-
-TEST_F(ConcurrentQueryFixture, V8SerializerFinalizesExactArraySizes) {
-    for (uint32_t count : {0u, 1u, 127u, 128u, 16383u, 16384u}) {
-        ECSqlV8Serializer serializer(256);
-        rapidjson::Document row(rapidjson::kArrayType);
-        for (uint32_t index = 0; index < count; ++index)
-            serializer.AppendRow(row);
-        const auto size = serializer.GetSize(count);
-        auto data = serializer.Finish();
-        EXPECT_EQ(size, data.size());
-        ASSERT_GE(data.size(), 2);
-        EXPECT_EQ(0xff, data[0]);
-        EXPECT_EQ(15, data[1]);
-    }
-}
-
-TEST_F(ConcurrentQueryFixture, V8SerializationEnvironmentDefaults) {
-    struct ScopedEnvironment {
-        std::optional<std::string> previous;
-        ScopedEnvironment() {
-            if (auto value = std::getenv("CONCURRENT_QUERY_CONFIG"))
-                previous = value;
-        }
-        static int Set(Utf8CP value) {
-#if defined(BENTLEY_WIN32)
-            return _putenv_s("CONCURRENT_QUERY_CONFIG", value ? value : "");
-#else
-            return value ? setenv("CONCURRENT_QUERY_CONFIG", value, 1) : unsetenv("CONCURRENT_QUERY_CONFIG");
-#endif
-        }
-        ~ScopedEnvironment() {
-            EXPECT_EQ(0, Set(previous ? previous->c_str() : nullptr));
-        }
-    } environment;
-    ASSERT_EQ(0, environment.Set(R"({"useV8Serialization":true})"));
-    EXPECT_TRUE(ConcurrentQueryMgr::Config::GetFromEnv().GetUseV8Serialization());
-    BeJsDocument overrides;
-    overrides["workerThreads"] = 1;
-    EXPECT_TRUE(ConcurrentQueryMgr::Config::From(overrides).GetUseV8Serialization());
-    overrides["useV8Serialization"] = false;
-    EXPECT_FALSE(ConcurrentQueryMgr::Config::From(overrides).GetUseV8Serialization());
-    ASSERT_EQ(0, environment.Set(R"({"useV8Serialization":false})"));
-    EXPECT_FALSE(ConcurrentQueryMgr::Config::GetFromEnv().GetUseV8Serialization());
 }
 
 struct SleepFunc : BeSQLite::ScalarFunction {

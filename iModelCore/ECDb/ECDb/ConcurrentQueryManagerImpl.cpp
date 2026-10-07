@@ -3,7 +3,6 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include "ECSqlV8Serializer.h"
 #include <regex>
 #include <string>
 #include <ECObjects/ECJsonUtilities.h>
@@ -920,13 +919,6 @@ QueryResponse::Ptr RunnableRequestBase::CreateECSqlResponse(std::string& resultJ
         rowCount);
 }
 
-QueryResponse::Ptr RunnableRequestBase::CreateECSqlResponse(std::vector<uint8_t>& result, ECSqlRowProperty::List& meta, uint32_t rowCount, bool done) const {
-    return std::make_shared<ECSqlResponse>(
-        QueryResponse::Stats(GetCpuTime(), GetTotalTime(), static_cast<uint32_t>(result.size()), m_quota, m_prepareTime, m_resumed),
-        done ? QueryResponse::Status::Done : QueryResponse::Status::Partial,
-        "", result, meta, rowCount);
-}
-
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -1531,23 +1523,14 @@ std::optional<uint32_t> QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, 
     }
     uint32_t row_count = 0;
     std::string& result = cachedAdaptor.ClearAndGetCachedString();
-    std::optional<ECSqlV8Serializer> v8Result;
-    if (request.GetUseV8Serialization())
-        v8Result.emplace(QUERY_WORKER_RESULT_RESERVE_BYTES);
-    else {
-        result.reserve(QUERY_WORKER_RESULT_RESERVE_BYTES);
-        result.append("[");
-    }
+    result.reserve(QUERY_WORKER_RESULT_RESERVE_BYTES);
+    result.append("[");
     auto setResult = [&](status st) {
+        result.append("]");
         if (runnableRequest.IsCancelled())
             runnableRequest.SetResponse(runnableRequest.CreateCancelResponse());
-        else if (v8Result) {
-            auto bytes = v8Result->Finish();
-            runnableRequest.SetResponse(runnableRequest.CreateECSqlResponse(bytes, props, row_count, st == status::done));
-        } else {
-            result.append("]");
+        else
             runnableRequest.SetResponse(runnableRequest.CreateECSqlResponse(result, props, row_count, st == status::done));
-        }
     };
     auto setError = [&] (QueryResponse::Status status, std::string err) {
         runnableRequest.SetResponse(runnableRequest.CreateErrorResponse(status, err));
@@ -1584,35 +1567,25 @@ std::optional<uint32_t> QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, 
             setError(QueryResponse::Status::Error_ECSql_RowToJsonFailed, "failed to serialize ecsql statement row to json");
             return std::nullopt;
         }
-        if (v8Result) {
-            try {
-                v8Result->AppendRow(rowsDoc);
-            } catch (std::logic_error const& error) {
-                setError(QueryResponse::Status::Error_ECSql_RowToJsonFailed, error.what());
-                return std::nullopt;
-            }
-        } else {
-            rowJson.Clear();
-            rowWriter.Reset(rowJson);
-            if (!rowsDoc.Accept(rowWriter)) {
-                setError(QueryResponse::Status::Error_ECSql_RowToJsonFailed, "failed to serialize ecsql statement row to json");
-                return std::nullopt;
-            }
-            if (row_count > 0)
-                result.push_back(',');
-            result.append(rowJson.GetString(), rowJson.GetSize());
+        rowJson.Clear();
+        rowWriter.Reset(rowJson);
+        if (!rowsDoc.Accept(rowWriter)) {
+            setError(QueryResponse::Status::Error_ECSql_RowToJsonFailed, "failed to serialize ecsql statement row to json");
+            return std::nullopt;
         }
         ++row_count;
+        if (row_count > 1)
+            result.push_back(',');
+        result.append(rowJson.GetString(), rowJson.GetSize());
 
-        const auto resultSize = v8Result ? v8Result->GetSize(row_count) : result.size();
-        if (resultSize > V8_MAX_STRING_SIZE) {
+        if (result.size() > V8_MAX_STRING_SIZE) {
             cachedAdaptor.ReleaseMemory();
             log_trace("%s result size exceeded V8_MAX_STRING_SIZE [id=%" PRIu32 "]",GetTimestamp().c_str(), runnableRequest.GetId());
             setError(QueryResponse::Status::Error, "result size exceeded maximum allowed size");
             return std::nullopt;
         }
 
-        if (runnableRequest.IsTimeOrMemoryExceeded(resultSize)) {
+        if (runnableRequest.IsTimeOrMemoryExceeded(result)) {
             log_trace("%s time or memory exceeded for request [id=%" PRIu32 "]",GetTimestamp().c_str(), runnableRequest.GetId());
             setResult(status::partial);
             return row_count;
@@ -2221,14 +2194,8 @@ void QueryResponse::ToJs(BeJsValue& v, bool includeData) const {
 void ECSqlResponse::ToJs(BeJsValue& v, bool includeData) const {
     QueryResponse::ToJs(v, includeData);
     v[JRowCount] = m_rowCount;
-    if (UsesV8Serialization()) {
-        v[JDataEncoding] = "v8";
-        if (includeData)
-            v[JData].SetBinary(m_dataV8.data(), m_dataV8.size());
-    } else {
-        v.removeMember(JDataEncoding);
-        if (includeData)
-            v[JData] = m_dataJson;
+    if (includeData) {
+        v[JData] = m_dataJson;
     }
     auto meta = v[JMeta];
     m_properties.ToJs(meta);
@@ -2595,8 +2562,6 @@ bool ConcurrentQueryMgr::Config::Equals(Config const& rhs) const {
         return false;
     if (m_cacheSizeInKB != rhs.GetCacheSizeInKB())
         return false;
-    if (m_useV8Serialization != rhs.GetUseV8Serialization())
-        return false;
     if (m_enableCursors != rhs.GetEnableCursors() || m_maxCursorsPerWorker != rhs.GetMaxCursorsPerWorker() ||
         m_cursorIdleTimeout != rhs.GetCursorIdleTimeout())
         return false;
@@ -2623,7 +2588,7 @@ ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::From(std::string const& j
     if (!val.isObject()) {
         return Config::GetDefault();
     }
-    return From(val, GetDefault());
+    return From(val);
 }
 
 //---------------------------------------------------------------------------------------
@@ -2648,7 +2613,6 @@ void ConcurrentQueryMgr::Config::To(BeJsValue val) const {
         val.removeMember(Config::JCacheSizeInKB);
     val[Config::JProgressOpCount] = GetProgressOpCount();
     val[Config::JEnableCursors] = GetEnableCursors();
-    val[Config::JUseV8Serialization] = GetUseV8Serialization();
     val[Config::JMaxCursorsPerWorker] = GetMaxCursorsPerWorker();
     val[Config::JCursorIdleTimeout] = static_cast<uint32_t>(GetCursorIdleTimeout().count());
     auto quota = val[Config::JQuota];
@@ -2659,13 +2623,10 @@ void ConcurrentQueryMgr::Config::To(BeJsValue val) const {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::From(BeJsValue val) {
-    return From(val, GetFromEnv());
-}
-
-ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::From(BeJsValue val, Config const& defaultConfig) {
     if (!val.isObject()) {
-        return defaultConfig;
+        return GetFromEnv();
     }
+    auto defaultConfig = Config::GetFromEnv();
     Config config = defaultConfig;
     if (val.isNumericMember(Config::JThreads)) {
         auto threads = val[Config::JThreads].asUInt(defaultConfig.GetWorkerThreadCount());
@@ -2743,12 +2704,6 @@ ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::From(BeJsValue val, Confi
     }
     if (val.isBoolMember(Config::JEnableCursors))
         config.SetEnableCursors(val[Config::JEnableCursors].asBool());
-    if (val.isMember(Config::JUseV8Serialization)) {
-        if (val.isBoolMember(Config::JUseV8Serialization))
-            config.SetUseV8Serialization(val[Config::JUseV8Serialization].asBool());
-        else
-            log_error("useV8Serialization must be a boolean");
-    }
     if (val.isNumericMember(Config::JMaxCursorsPerWorker)) {
         auto count = val[Config::JMaxCursorsPerWorker].asInt64();
         if (count < -1) {

@@ -77,10 +77,6 @@ ECDbAllHeaders = \
                 $(baseDir)ChangeSummaryExtractor.h \
                 $(baseDir)ChangeSummaryImpl.h \
                 $(baseDir)ConcurrentQueryManagerImpl.h \
-                $(baseDir)ECSqlV8Serializer.h \
-                $(baseDir)../../libsrc/v8serial/vendor/include/v8serial/writer.hpp \
-                $(baseDir)../../libsrc/v8serial/vendor/include/v8serial/types.hpp \
-                $(baseDir)../../libsrc/v8serial/vendor/include/v8serial/detail/simd.hpp \
                 $(baseDir)InstanceReaderImpl.h \
                 $(baseDir)SchemaSync.h \
                 $(baseDir)IntegrityChecker.h \

@@ -293,9 +293,7 @@ struct RunnableRequestBase {
         bool IsReady() const { return GetTotalTime() >= m_request->GetDelay(); }
         bool IsCancelled () const {return m_cancelled.load(); }
         bool IsTimeExceeded() const { return m_quota.MaxTimeAllowed() == 0s ? false : GetTotalTime() >  std::chrono::duration_cast<std::chrono::milliseconds>(m_quota.MaxTimeAllowed());}
-        bool IsMemoryExceeded(size_t resultSize) const { return m_quota.MaxMemoryAllowed() != 0 && resultSize > m_quota.MaxMemoryAllowed(); }
-        bool IsMemoryExceeded(std::string const& result) const { return IsMemoryExceeded(result.size()); }
-        bool IsTimeOrMemoryExceeded(size_t resultSize) const { return IsTimeExceeded() || IsMemoryExceeded(resultSize); }
+        bool IsMemoryExceeded(std::string const& result) const { return m_quota.MaxMemoryAllowed() == 0 ? false : result.size() > m_quota.MaxMemoryAllowed(); }
         bool IsTimeOrMemoryExceeded(std::string const& result) const { return IsTimeExceeded() || IsMemoryExceeded(result);}
         void Interrupt(CachedConnection& conn);
         void OnDequeued()  { m_isDequeued = true; m_dequeuedOn = std::chrono::steady_clock::now(); }
@@ -311,7 +309,6 @@ struct RunnableRequestBase {
         QueryResponse::Ptr CreateBlobIOResponse(std::vector<uint8_t>& meta, bool done, uint32_t rawBlobSize) const;
         QueryResponse::Ptr CreateShutDownResponse() const;
         QueryResponse::Ptr CreateECSqlResponse(std::string& result, ECSqlRowProperty::List& meta, uint32_t rowcount, bool done) const;
-        QueryResponse::Ptr CreateECSqlResponse(std::vector<uint8_t>& result, ECSqlRowProperty::List& meta, uint32_t rowcount, bool done) const;
         static QueryResponse::Ptr CreateQueueFullResponse() ;
 
 };

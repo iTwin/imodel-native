@@ -308,10 +308,6 @@ export declare namespace IModelJsNative {
     workerThreads?: number;
     /** Enables unfinished-statement reuse for contiguous pages on WAL databases. Defaults to true. */
     enableCursors?: boolean;
-    /** Opt-in V8 binary query responses. Data is a Uint8Array with dataEncoding "v8";
-     * callers must deserialize using node:v8. Defaults to false.
-     */
-    useV8Serialization?: boolean;
     /** Parked cursors per worker; -1 uses the statement-cache size for read-only handles or four for writable handles. Zero disables reuse. */
     maxCursorsPerWorker?: number;
     /** Positive idle timeout in seconds for parked cursors. Defaults to 30. */
