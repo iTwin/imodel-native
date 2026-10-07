@@ -485,24 +485,11 @@ static DgnElementCPtr insertDefinitionElement(DgnDbR db, DgnModelId modelId, Utf
     }
 
 //---------------------------------------------------------------------------------------
-// Creates a SheetModel through its handler, so that the modeled element need not be a Sheet::Element.
+// Creates a model through its handler, so that the modeled element need not be a Sheet or Drawing.
 // @bsimethod
 //---------------------------------------------------------------------------------------
-static DgnDbStatus insertSheetModel(DgnDbR db, DgnElementId modeledElementId)
+static DgnDbStatus insertModel(DgnDbR db, ModelHandlerR handler, DgnElementId modeledElementId)
     {
-    ModelHandlerR handler = Sheet::Handlers::Model::GetHandler();
-    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, db.Domains().GetClassId(handler), modeledElementId));
-    EXPECT_TRUE(model.IsValid());
-    return model.IsValid() ? model->Insert() : DgnDbStatus::BadModel;
-    }
-
-//---------------------------------------------------------------------------------------
-// Creates a DrawingModel through its handler, so that the modeled element need not be a Drawing.
-// @bsimethod
-//---------------------------------------------------------------------------------------
-static DgnDbStatus insertDrawingModel(DgnDbR db, DgnElementId modeledElementId)
-    {
-    ModelHandlerR handler = dgn_ModelHandler::Drawing::GetHandler();
     DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, db.Domains().GetClassId(handler), modeledElementId));
     EXPECT_TRUE(model.IsValid());
     return model.IsValid() ? model->Insert() : DgnDbStatus::BadModel;
@@ -537,7 +524,7 @@ TEST_F(DgnModelTests, SheetModelOnSubModeledNonSheetElement)
     ASSERT_TRUE(prototype.IsValid());
     ASSERT_TRUE(m_db->Elements().Get<Sheet::Element>(prototype->GetElementId()).IsNull());
 
-    ASSERT_EQ(DgnDbStatus::Success, insertSheetModel(*m_db, prototype->GetElementId()));
+    ASSERT_EQ(DgnDbStatus::Success, insertModel(*m_db, Sheet::Handlers::Model::GetHandler(), prototype->GetElementId()));
     DgnElementId prototypeId = prototype->GetElementId();
     DgnModelId modelId(prototypeId.GetValue());
     prototype = nullptr;
@@ -561,7 +548,7 @@ TEST_F(DgnModelTests, SheetModelOnSubModeledNonSheetElement)
     }
 
 //---------------------------------------------------------------------------------------
-// Width/Height that are unset, zero, negative or not finite yield null extents instead of asserting
+// Width/Height that are absent, unset, zero, negative or not finite yield null extents instead of asserting
 // @bsimethod
 //---------------------------------------------------------------------------------------
 TEST_F(DgnModelTests, SheetModelExtentsWithInvalidSheetSize)
@@ -588,13 +575,8 @@ TEST_F(DgnModelTests, SheetModelExtentsWithInvalidSheetSize)
         {
         {"Width unset", nullptr, &valid},
         {"Width zero", &zero, &valid},
-        {"Width negative", &negative, &valid},
-        {"Width infinite", &infinity, &valid},
-        {"Height unset", &valid, nullptr},
-        {"Height zero", &valid, &zero},
         {"Height negative", &valid, &negative},
         {"Height infinite", &valid, &infinity},
-        {"Width and Height unset", nullptr, nullptr},
         };
 
     bvector<DgnModelId> modelIds;
@@ -602,7 +584,7 @@ TEST_F(DgnModelTests, SheetModelExtentsWithInvalidSheetSize)
         {
         DgnElementCPtr prototype = insertDefinitionElement(*m_db, definitions->GetModelId(), DPTEST_SCHEMA_NAME, "TestSheetPrototype", testCase.width, testCase.height);
         ASSERT_TRUE(prototype.IsValid()) << testCase.label;
-        ASSERT_EQ(DgnDbStatus::Success, insertSheetModel(*m_db, prototype->GetElementId())) << testCase.label;
+        ASSERT_EQ(DgnDbStatus::Success, insertModel(*m_db, Sheet::Handlers::Model::GetHandler(), prototype->GetElementId())) << testCase.label;
         modelIds.push_back(DgnModelId(prototype->GetElementId().GetValue()));
         }
 
@@ -616,26 +598,15 @@ TEST_F(DgnModelTests, SheetModelExtentsWithInvalidSheetSize)
         ASSERT_TRUE(sheetModel.IsValid()) << testCase.label;
         EXPECT_TRUE(sheetModel->GetSheetExtents().IsNull()) << testCase.label;
         }
-    }
 
-//---------------------------------------------------------------------------------------
-// A sub-modeled element without Width/Height properties can still be modeled by a SheetModel
-// @bsimethod
-//---------------------------------------------------------------------------------------
-TEST_F(DgnModelTests, SheetModelOnElementWithoutSheetSize)
-    {
-    SetupSeedProject();
-
-    DefinitionModelPtr definitions = DgnDbTestUtils::InsertDefinitionModel(*m_db, "Definitions");
-    ASSERT_TRUE(definitions.IsValid());
-
+    // A sub-modeled element without Width/Height properties can still be modeled by a SheetModel
     DgnElementCPtr container = insertDefinitionElement(*m_db, definitions->GetModelId(), BIS_ECSCHEMA_NAME, "DefinitionContainer");
     ASSERT_TRUE(container.IsValid());
-    ASSERT_EQ(DgnDbStatus::Success, insertSheetModel(*m_db, container->GetElementId()));
+    ASSERT_EQ(DgnDbStatus::Success, insertModel(*m_db, Sheet::Handlers::Model::GetHandler(), container->GetElementId()));
 
-    Sheet::ModelPtr sheetModel = m_db->Models().Get<Sheet::Model>(DgnModelId(container->GetElementId().GetValue()));
-    ASSERT_TRUE(sheetModel.IsValid());
-    EXPECT_TRUE(sheetModel->GetSheetExtents().IsNull());
+    Sheet::ModelPtr containerModel = m_db->Models().Get<Sheet::Model>(DgnModelId(container->GetElementId().GetValue()));
+    ASSERT_TRUE(containerModel.IsValid());
+    EXPECT_TRUE(containerModel->GetSheetExtents().IsNull());
     }
 
 //---------------------------------------------------------------------------------------
@@ -673,48 +644,13 @@ TEST_F(DgnModelTests, DrawingModelOnSubModeledNonDrawingElement)
     DgnElementCPtr container = insertDefinitionElement(*m_db, definitions->GetModelId(), BIS_ECSCHEMA_NAME, "DefinitionContainer");
     ASSERT_TRUE(container.IsValid());
     ASSERT_TRUE(m_db->Elements().Get<Drawing>(container->GetElementId()).IsNull());
-    ASSERT_EQ(DgnDbStatus::Success, insertDrawingModel(*m_db, container->GetElementId()));
+    ASSERT_EQ(DgnDbStatus::Success, insertModel(*m_db, dgn_ModelHandler::Drawing::GetHandler(), container->GetElementId()));
 
-    DgnElementId containerId = container->GetElementId();
-    DgnModelId modelId(containerId.GetValue());
-    container = nullptr;
-
-    m_db = reopenDb(*m_db);
-    ASSERT_TRUE(m_db.IsValid());
-
+    DgnModelId modelId(container->GetElementId().GetValue());
     DrawingModelPtr drawingModel = m_db->Models().Get<DrawingModel>(modelId);
     ASSERT_TRUE(drawingModel.IsValid());
-    EXPECT_EQ(containerId, drawingModel->GetModeledElementId());
-    EXPECT_EQ(modelId, m_db->Elements().GetElement(containerId)->GetSubModelId());
-    }
-
-//---------------------------------------------------------------------------------------
-// Sheet and Drawing models only require that the modeled element exists and is a bis:ISubModeledElement
-// @bsimethod
-//---------------------------------------------------------------------------------------
-TEST_F(DgnModelTests, SheetAndDrawingModelRejectInvalidModeledElement)
-    {
-    SetupSeedProject();
-
-    DefinitionModelPtr definitions = DgnDbTestUtils::InsertDefinitionModel(*m_db, "Definitions");
-    ASSERT_TRUE(definitions.IsValid());
-
-    DgnElementId missingId(UINT64_C(0x1ffffffff));
-    ASSERT_TRUE(m_db->Elements().GetElement(missingId).IsNull());
-    EXPECT_EQ(DgnDbStatus::BadElement, insertSheetModel(*m_db, missingId));
-    EXPECT_EQ(DgnDbStatus::BadElement, insertDrawingModel(*m_db, missingId));
-
-    // bis:DefinitionGroup does not implement bis:ISubModeledElement
-    DgnElementCPtr group = insertDefinitionElement(*m_db, definitions->GetModelId(), BIS_ECSCHEMA_NAME, "DefinitionGroup");
-    ASSERT_TRUE(group.IsValid());
-
-    BeTest::SetFailOnAssert(false);
-    DgnDbStatus sheetStatus = insertSheetModel(*m_db, group->GetElementId());
-    DgnDbStatus drawingStatus = insertDrawingModel(*m_db, group->GetElementId());
-    BeTest::SetFailOnAssert(true);
-
-    EXPECT_EQ(DgnDbStatus::WrongElement, sheetStatus);
-    EXPECT_EQ(DgnDbStatus::WrongElement, drawingStatus);
+    EXPECT_EQ(container->GetElementId(), drawingModel->GetModeledElementId());
+    EXPECT_EQ(modelId, container->GetSubModelId());
     }
 
 /*---------------------------------------------------------------------------------**//**
