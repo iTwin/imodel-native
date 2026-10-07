@@ -567,10 +567,12 @@ std::shared_ptr<CachedConnection> CachedConnection::Make(ConnectionCache& cache,
             return nullptr;
         }
         newConn->UpdateSqlFunctions(ConnectionAction::Opening);
-    }
-    const auto mmsize = ConcurrentQueryMgr::Config::Get().GetMemoryMapFileSize();
-    if (mmsize > 0) {
-        newConn->m_db.ExecuteSql(SqlPrintfString("PRAGMA mmap_size=%" PRIu32, mmsize));
+        // Workers have no default transaction; connection-local PRAGMAs do not require one.
+        const auto mmsize = ConcurrentQueryMgr::Config::Get().GetMemoryMapFileSize();
+        const auto rc = newConn->m_db.TryExecuteSql(SqlPrintfString("PRAGMA mmap_size=%" PRIu32, mmsize));
+        if (rc != BE_SQLITE_OK)
+            log_error("failed to configure concurrent query mmap_size=%" PRIu32 " on connection %" PRIu16 ": %s",
+                mmsize, id, newConn->m_db.GetLastError().c_str());
     }
 
     return newConn;

@@ -6,6 +6,7 @@
 
 USING_NAMESPACE_BENTLEY_EC
 #include <ECDb/ConcurrentQueryManager.h>
+#include "../../../BeSQLite/SQLite/sqlite3.h"
 #include <future>
 #include <chrono>
 #include <queue>
@@ -92,6 +93,49 @@ TEST_F(ConcurrentQueryFixture, PendingSelectSurvivesSavepointCommit) {
         ASSERT_EQ(BE_SQLITE_OK, txn.Commit());
     }
     EXPECT_EQ(BE_SQLITE_DONE, stmt.Step());
+}
+
+TEST_F(ConcurrentQueryFixture, MemoryMapFileSizeAppliesToWorkersOnly) {
+    struct MemoryMapSizeFunc : BeSQLite::ScalarFunction {
+        MemoryMapSizeFunc() : ScalarFunction("imodel_mmap_size", 0) {}
+        void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int, BeSQLite::DbValue*) override {
+            // BeSQLite passes sqlite3_context directly as its Context wrapper.
+            auto db = sqlite3_context_db_handle(reinterpret_cast<sqlite3_context*>(&ctx));
+            sqlite3_int64 size = -1;
+            auto rc = sqlite3_file_control(db, "main", SQLITE_FCNTL_MMAP_SIZE, &size);
+            if (rc != SQLITE_OK) {
+                ctx.SetResultError_code(rc);
+                return;
+            }
+            ctx.SetResultInt64(size);
+        }
+    } mmapSize;
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("MemoryMapFileSizeAppliesToWorkersOnly.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AddFunction(mmapSize));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.TryExecuteSql("PRAGMA mmap_size=1048576"));
+    ECSqlStatement primarySize;
+    ASSERT_EQ(ECSqlStatus::Success, primarySize.Prepare(m_ecdb, "SELECT imodel_mmap_size()"));
+    ASSERT_EQ(BE_SQLITE_ROW, primarySize.Step());
+    const auto effectiveSize = primarySize.GetValueInt64(0);
+    primarySize.Finalize();
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.TryExecuteSql("PRAGMA mmap_size=0"));
+
+    for (uint32_t size : {0u, 1048576u}) {
+        auto config = ConcurrentQueryMgr::Config::GetDefault();
+        config.SetWorkerThreadCount(1).SetMemoryMapFileSize(size);
+        ConcurrentQueryMgr::Config::Reset(config);
+        ConcurrentQueryMgr mgr(m_ecdb);
+        auto worker = mgr.Enqueue(ECSqlRequest::MakeRequest("SELECT imodel_mmap_size()")).Get();
+        ASSERT_EQ(QueryResponse::Status::Done, worker->GetStatus()) << worker->GetError();
+        EXPECT_EQ(size == 0 ? 0 : effectiveSize,
+            BeJsDocument(worker->GetAsConst<ECSqlResponse>().asJsonString())[0][0].asInt64());
+        auto req = ECSqlRequest::MakeRequest("SELECT imodel_mmap_size()");
+        req->SetUsePrimaryConnection(true);
+        auto primary = mgr.Enqueue(std::move(req)).Get();
+        ASSERT_EQ(QueryResponse::Status::Done, primary->GetStatus()) << primary->GetError();
+        EXPECT_EQ(0, BeJsDocument(primary->GetAsConst<ECSqlResponse>().asJsonString())[0][0].asInt64());
+    }
 }
 
 TEST_F(ConcurrentQueryFixture, CursorResumesSorterWithoutReexecution) {
