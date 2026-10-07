@@ -67,6 +67,434 @@ struct ThreadIdFunc : BeSQLite::ScalarFunction {
     static ThreadIdFunc& Instance() { static ThreadIdFunc f; return f; }
 };
 
+struct CursorCountFunc : BeSQLite::ScalarFunction {
+    std::atomic<uint32_t> m_calls{0};
+    CursorCountFunc() : ScalarFunction("imodel_cursor_count", 1) {}
+    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int, BeSQLite::DbValue* args) override {
+        ++m_calls;
+        ctx.SetResultInt(args[0].GetValueInt());
+    }
+};
+
+TEST_F(ConcurrentQueryFixture, PendingSelectSurvivesSavepointCommit) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("PendingSelectSurvivesSavepointCommit.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ECDb worker;
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.OpenSecondaryConnection(worker, ECDb::OpenParams(Db::OpenMode::Readonly, DefaultTxn::No)));
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(worker,
+        "WITH sequence(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM sequence WHERE n<5) SELECT n FROM sequence LIMIT 4 OFFSET 1"));
+    for (int expected = 2; expected <= 5; ++expected) {
+        Savepoint txn(worker, "cursor_spike", false);
+        ASSERT_EQ(BE_SQLITE_OK, txn.Begin());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_EQ(expected, stmt.GetValueInt(0));
+        ASSERT_EQ(BE_SQLITE_OK, txn.Commit());
+    }
+    EXPECT_EQ(BE_SQLITE_DONE, stmt.Step());
+}
+
+TEST_F(ConcurrentQueryFixture, CursorResumesSorterWithoutReexecution) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("CursorResumesSorterWithoutReexecution.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.EnableWalMode(true));
+    CursorCountFunc count;
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AddFunction(count));
+    for (bool enabled : {false, true}) {
+        auto config = ConcurrentQueryMgr::Config::GetDefault();
+        config.SetWorkerThreadCount(1).SetEnableCursors(enabled).SetQuota(QueryQuota(60s, 1));
+        ConcurrentQueryMgr::Config::Reset(config);
+        count.m_calls = 0;
+        {
+            ConcurrentQueryMgr mgr(m_ecdb);
+            for (int64_t i = 0; i < 10; ++i) {
+                auto req = ECSqlRequest::MakeRequest(
+                    "WITH sequence(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM sequence WHERE n<?) "
+                    "SELECT n FROM sequence ORDER BY imodel_cursor_count(n) DESC", ECSqlParams().BindInt(1, 100));
+                req->SetCursorId("sorter").SetLimit(QueryLimit(10 - i, 5 + i));
+                auto resp = mgr.Enqueue(std::move(req)).Get();
+                ASSERT_EQ(QueryResponse::Status::Partial, resp->GetStatus()) << resp->GetError();
+                EXPECT_EQ(enabled && i > 0, resp->GetStats().Resumed());
+                BeJsDocument rows(resp->GetAsConst<ECSqlResponse>().asJsonString());
+                ASSERT_EQ(1, rows.size());
+                EXPECT_EQ(95 - i, rows[0][0].asInt64());
+                EXPECT_EQ(enabled ? 100u : 100u * (i + 1), count.m_calls.load());
+            }
+        }
+    }
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.RemoveFunction(count));
+}
+
+TEST_F(ConcurrentQueryFixture, CursorMatchingEvictionAndFallback) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("CursorMatchingEvictionAndFallback.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.EnableWalMode(true));
+    auto config = ConcurrentQueryMgr::Config::GetDefault();
+    config.SetWorkerThreadCount(1).SetStatementCacheSizePerWorker(2).SetMaxCursorsPerWorker(1).SetQuota(QueryQuota(60s, 1));
+    ConcurrentQueryMgr::Config::Reset(config);
+    ConcurrentQueryMgr mgr(m_ecdb);
+    auto page = [&](std::string const& id, int64_t offset, int value, int64_t count = -1) {
+        auto req = ECSqlRequest::MakeRequest(
+            "WITH sequence(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM sequence WHERE n<10) SELECT n+? FROM sequence ORDER BY n",
+            ECSqlParams().BindInt(1, value));
+        req->SetCursorId(id).SetLimit(QueryLimit(count, offset));
+        return mgr.Enqueue(std::move(req)).Get();
+    };
+    auto check = [](QueryResponse::Ptr const& resp, int row, bool resumed) {
+        ASSERT_EQ(QueryResponse::Status::Partial, resp->GetStatus()) << resp->GetError();
+        EXPECT_EQ(resumed, resp->GetStats().Resumed());
+        BeJsDocument rows(resp->GetAsConst<ECSqlResponse>().asJsonString());
+        ASSERT_EQ(1, rows.size());
+        EXPECT_EQ(row, rows[0][0].asInt());
+    };
+    check(page("a", 0, 0), 1, false);
+    check(page("a", 1, 0), 2, true);
+    check(page("b", 0, 100), 101, false);
+    check(page("a", 2, 0), 3, false); // a was evicted when b was parked
+    check(page("a", 3, 100), 104, false); // changed bindings
+    check(page("a", 4, 100, 2), 105, false); // changed count
+    check(page("a", 5, 100, 1), 106, true);
+    check(page("a", 6, 100), 107, false); // previous finite LIMIT was consumed
+    check(page("", 0, 0), 1, false);
+    check(page("", 1, 0), 2, true); // legacy caller without a cursor hint
+    check(page("", 5, 0), 6, false); // noncontiguous page
+}
+
+TEST_F(ConcurrentQueryFixture, CursorExpiresAndPrimaryRequestsNeverResume) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("CursorExpiresAndPrimaryRequestsNeverResume.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.EnableWalMode(true));
+    auto config = ConcurrentQueryMgr::Config::GetDefault();
+    config.SetWorkerThreadCount(1).SetCursorIdleTimeout(1s).SetQuota(QueryQuota(60s, 1));
+    ConcurrentQueryMgr::Config::Reset(config);
+    ConcurrentQueryMgr mgr(m_ecdb);
+    auto page = [&](int offset, bool primary) {
+        auto req = ECSqlRequest::MakeRequest(
+            "WITH sequence(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM sequence WHERE n<10) SELECT n FROM sequence");
+        req->SetCursorId("expires").SetLimit(QueryLimit(-1, offset));
+        req->SetUsePrimaryConnection(primary);
+        return mgr.Enqueue(std::move(req)).Get();
+    };
+    EXPECT_FALSE(page(0, false)->GetStats().Resumed());
+    std::this_thread::sleep_for(1100ms);
+    auto expired = page(1, false);
+    ASSERT_EQ(QueryResponse::Status::Partial, expired->GetStatus());
+    EXPECT_FALSE(expired->GetStats().Resumed());
+    EXPECT_EQ(2, BeJsDocument(expired->GetAsConst<ECSqlResponse>().asJsonString())[0][0].asInt());
+    EXPECT_FALSE(page(0, true)->GetStats().Resumed());
+    EXPECT_FALSE(page(1, true)->GetStats().Resumed());
+}
+
+TEST_F(ConcurrentQueryFixture, CursorInvalidatesOnCommittedDataChange) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("CursorInvalidatesOnCommittedDataChange.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="CursorTest" alias="ct" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="Row"><ECProperty propertyName="n" typeName="int"/></ECEntityClass>
+        </ECSchema>)xml")));
+    for (int n = 1; n <= 5; ++n) {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ct.Row(n) VALUES(?)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, n));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.EnableWalMode(true));
+    auto config = ConcurrentQueryMgr::Config::GetDefault();
+    config.SetWorkerThreadCount(1).SetQuota(QueryQuota(60s, 1));
+    ConcurrentQueryMgr::Config::Reset(config);
+    ConcurrentQueryMgr mgr(m_ecdb);
+    auto page = [&](int offset) {
+        auto req = ECSqlRequest::MakeRequest("SELECT n FROM ct.Row ORDER BY n");
+        req->SetCursorId("data-change").SetLimit(QueryLimit(-1, offset));
+        return mgr.Enqueue(std::move(req)).Get();
+    };
+    ASSERT_EQ(QueryResponse::Status::Partial, page(0)->GetStatus());
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ct.Row SET n=n+100"));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    auto resp = page(1);
+    ASSERT_EQ(QueryResponse::Status::Partial, resp->GetStatus()) << resp->GetError();
+    EXPECT_FALSE(resp->GetStats().Resumed());
+    EXPECT_EQ(102, BeJsDocument(resp->GetAsConst<ECSqlResponse>().asJsonString())[0][0].asInt());
+}
+
+TEST_F(ConcurrentQueryFixture, CursorConfigRoundTrips) {
+    BeJsDocument val(R"json({"enableCursors":false,"maxCursorsPerWorker":7,"cursorIdleTimeout":12})json");
+    auto config = ConcurrentQueryMgr::Config::From(val);
+    EXPECT_FALSE(config.GetEnableCursors());
+    EXPECT_EQ(7, config.GetMaxCursorsPerWorker());
+    EXPECT_EQ(12s, config.GetCursorIdleTimeout());
+    BeJsDocument serialized;
+    config.To(serialized);
+    EXPECT_TRUE(config.Equals(ConcurrentQueryMgr::Config::From(serialized)));
+    EXPECT_FALSE(config.Equals(ConcurrentQueryMgr::Config::GetDefault()));
+}
+
+TEST_F(ConcurrentQueryFixture, CursorSettingsApplyToExistingManager) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("CursorSettingsApplyToExistingManager.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.EnableWalMode(true));
+    auto config = ConcurrentQueryMgr::Config::GetDefault();
+    config.SetWorkerThreadCount(1).SetQuota(QueryQuota(60s, 1));
+    ConcurrentQueryMgr::Config::Reset(config);
+    ConcurrentQueryMgr mgr(m_ecdb);
+    auto page = [&](int offset) {
+        auto req = ECSqlRequest::MakeRequest(
+            "WITH sequence(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM sequence WHERE n<10) SELECT n FROM sequence");
+        req->SetCursorId("config").SetLimit(QueryLimit(-1, offset));
+        return mgr.Enqueue(std::move(req)).Get();
+    };
+    ASSERT_EQ(QueryResponse::Status::Partial, page(0)->GetStatus());
+    EXPECT_TRUE(page(1)->GetStats().Resumed());
+    ConcurrentQueryMgr::Config::Reset(config.SetEnableCursors(false));
+    EXPECT_FALSE(page(2)->GetStats().Resumed());
+    ConcurrentQueryMgr::Config::Reset(config.SetEnableCursors(true));
+    EXPECT_FALSE(page(3)->GetStats().Resumed());
+    EXPECT_TRUE(page(4)->GetStats().Resumed());
+    ConcurrentQueryMgr::Config::Reset(config.SetMaxCursorsPerWorker(0));
+    EXPECT_FALSE(page(5)->GetStats().Resumed());
+}
+
+TEST_F(ConcurrentQueryFixture, CursorAutoBudgetAndZeroCapacity) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("CursorAutoBudgetAndZeroCapacity.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.EnableWalMode(true));
+    for (bool readonly : {false, true}) {
+        if (readonly)
+            ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(Db::OpenMode::Readonly)));
+        for (uint32_t cacheSize : {0u, 8u}) {
+            auto config = ConcurrentQueryMgr::Config::GetDefault();
+            config.SetWorkerThreadCount(1).SetStatementCacheSizePerWorker(cacheSize).SetQuota(QueryQuota(60s, 1));
+            ConcurrentQueryMgr::Config::Reset(config);
+            ConcurrentQueryMgr mgr(m_ecdb);
+            auto page = [&](std::string const& id, int offset) {
+                auto req = ECSqlRequest::MakeRequest(
+                    "WITH sequence(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM sequence WHERE n<10) SELECT n FROM sequence");
+                req->SetCursorId(id).SetLimit(QueryLimit(-1, offset));
+                return mgr.Enqueue(std::move(req)).Get();
+            };
+            for (int i = 0; i < 6; ++i)
+                ASSERT_EQ(QueryResponse::Status::Partial, page(std::to_string(i), 0)->GetStatus());
+            auto resp = page("0", 1);
+            ASSERT_EQ(QueryResponse::Status::Partial, resp->GetStatus());
+            EXPECT_EQ(readonly && cacheSize > 0, resp->GetStats().Resumed());
+            EXPECT_EQ(2, BeJsDocument(resp->GetAsConst<ECSqlResponse>().asJsonString())[0][0].asInt());
+        }
+    }
+}
+
+TEST_F(ConcurrentQueryFixture, CursorRestartAndShutdown) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("CursorRestartAndShutdown.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.EnableWalMode(true));
+    auto config = ConcurrentQueryMgr::Config::GetDefault();
+    config.SetWorkerThreadCount(1).SetQuota(QueryQuota(60s, 1));
+    ConcurrentQueryMgr::Config::Reset(config);
+    auto page = [&](ConcurrentQueryMgr& mgr, std::string const& id, int offset) {
+        auto req = ECSqlRequest::MakeRequest(
+            "WITH sequence(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM sequence WHERE n<10) SELECT n FROM sequence");
+        req->SetCursorId(id).SetLimit(QueryLimit(-1, offset));
+        req->SetRestartToken("restart");
+        return mgr.Enqueue(std::move(req)).Get();
+    };
+    {
+        ConcurrentQueryMgr mgr(m_ecdb);
+        EXPECT_FALSE(page(mgr, "old", 0)->GetStats().Resumed());
+        EXPECT_TRUE(page(mgr, "old", 1)->GetStats().Resumed());
+        EXPECT_FALSE(page(mgr, "new", 0)->GetStats().Resumed());
+        EXPECT_FALSE(page(mgr, "old", 2)->GetStats().Resumed());
+    }
+    {
+        ConcurrentQueryMgr mgr(m_ecdb);
+        EXPECT_FALSE(page(mgr, "old", 3)->GetStats().Resumed());
+    }
+}
+
+TEST_F(ConcurrentQueryFixture, CursorReadOnlyPrimaryObservesExternalCommit) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("CursorReadOnlyPrimaryObservesExternalCommit.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="CursorExternal" alias="ce" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="Row"><ECProperty propertyName="n" typeName="int"/></ECEntityClass>
+        </ECSchema>)xml")));
+    for (int n = 1; n <= 5; ++n) {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ce.Row(n) VALUES(?)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, n));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.EnableWalMode(true));
+    ECDb writer;
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.OpenSecondaryConnection(writer, ECDb::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::No)));
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(Db::OpenMode::Readonly)));
+    auto config = ConcurrentQueryMgr::Config::GetDefault();
+    config.SetWorkerThreadCount(1).SetQuota(QueryQuota(60s, 1));
+    ConcurrentQueryMgr::Config::Reset(config);
+    ConcurrentQueryMgr mgr(m_ecdb);
+    auto page = [&](int offset) {
+        auto req = ECSqlRequest::MakeRequest("SELECT n FROM ce.Row ORDER BY n");
+        req->SetCursorId("external").SetLimit(QueryLimit(-1, offset));
+        return mgr.Enqueue(std::move(req)).Get();
+    };
+    ASSERT_EQ(QueryResponse::Status::Partial, page(0)->GetStatus());
+    {
+        Savepoint txn(writer, "external_commit");
+        {
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(writer, "UPDATE ce.Row SET n=n+100"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+        ASSERT_EQ(BE_SQLITE_OK, txn.Commit());
+    }
+    auto resp = page(1);
+    ASSERT_EQ(QueryResponse::Status::Partial, resp->GetStatus()) << resp->GetError();
+    EXPECT_FALSE(resp->GetStats().Resumed());
+    EXPECT_EQ(102, BeJsDocument(resp->GetAsConst<ECSqlResponse>().asJsonString())[0][0].asInt());
+}
+
+TEST_F(ConcurrentQueryFixture, CursorNonWalFallsBack) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("CursorNonWalFallsBack.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.EnableWalMode(false));
+    auto config = ConcurrentQueryMgr::Config::GetDefault();
+    config.SetWorkerThreadCount(1).SetQuota(QueryQuota(60s, 1));
+    ConcurrentQueryMgr::Config::Reset(config);
+    for (bool readonly : {false, true}) {
+        if (readonly)
+            ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(Db::OpenMode::Readonly)));
+        ConcurrentQueryMgr mgr(m_ecdb);
+        for (int offset = 0; offset < 2; ++offset) {
+            auto req = ECSqlRequest::MakeRequest("SELECT ECInstanceId FROM meta.ECClassDef ORDER BY ECInstanceId");
+            req->SetCursorId("non-wal").SetLimit(QueryLimit(-1, offset));
+            auto resp = mgr.Enqueue(std::move(req)).Get();
+            ASSERT_EQ(QueryResponse::Status::Partial, resp->GetStatus());
+            EXPECT_FALSE(resp->GetStats().Resumed());
+        }
+    }
+}
+
+TEST_F(ConcurrentQueryFixture, NativeReaderCrossesPageBoundaries) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("NativeReaderCrossesPageBoundaries.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.EnableWalMode(true));
+    auto config = ConcurrentQueryMgr::Config::GetDefault();
+    config.SetWorkerThreadCount(1).SetQuota(QueryQuota(60s, 1));
+    ConcurrentQueryMgr::Config::Reset(config);
+    ConcurrentQueryMgr mgr(m_ecdb);
+    ECSqlReader reader(mgr,
+        "WITH sequence(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM sequence WHERE n<10) SELECT n FROM sequence ORDER BY n");
+    int expected = 1;
+    while (reader.Next())
+        EXPECT_EQ(expected++, reader.GetRow()[0].asInt());
+    EXPECT_EQ(11, expected);
+    EXPECT_FALSE(reader.Next());
+}
+
+TEST_F(ConcurrentQueryFixture, CursorBusyOwnerFallsBack) {
+    struct GateFunc : BeSQLite::ScalarFunction {
+        std::promise<void> m_started;
+        std::promise<void> m_release;
+        std::shared_future<void> m_released;
+        std::atomic_bool m_completed{false};
+        GateFunc() : ScalarFunction("imodel_cursor_gate", 0), m_released(m_release.get_future().share()) {}
+        void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int, BeSQLite::DbValue*) override {
+            m_started.set_value();
+            m_released.wait_for(10s);
+            m_completed = true;
+            ctx.SetResultInt(1);
+        }
+    } gate;
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("CursorBusyOwnerFallsBack.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.EnableWalMode(true));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AddFunction(gate));
+    auto config = ConcurrentQueryMgr::Config::GetDefault();
+    config.SetWorkerThreadCount(2).SetQuota(QueryQuota(60s, 1));
+    ConcurrentQueryMgr::Config::Reset(config);
+    {
+        ConcurrentQueryMgr mgr(m_ecdb);
+        auto page = [&](int offset) {
+            auto req = ECSqlRequest::MakeRequest(
+                "WITH sequence(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM sequence WHERE n<10) SELECT n FROM sequence");
+            req->SetCursorId("busy").SetLimit(QueryLimit(-1, offset));
+            return mgr.Enqueue(std::move(req)).Get();
+        };
+        EXPECT_EQ(QueryResponse::Status::Partial, page(0)->GetStatus());
+        auto started = gate.m_started.get_future();
+        auto busy = mgr.Enqueue(ECSqlRequest::MakeRequest("SELECT imodel_cursor_gate()"));
+        EXPECT_EQ(std::future_status::ready, started.wait_for(5s));
+        auto resp = page(1);
+        EXPECT_EQ(QueryResponse::Status::Partial, resp->GetStatus()) << resp->GetError();
+        EXPECT_FALSE(resp->GetStats().Resumed());
+        if (resp->IsSuccess())
+            EXPECT_EQ(2, BeJsDocument(resp->GetAsConst<ECSqlResponse>().asJsonString())[0][0].asInt());
+        EXPECT_FALSE(gate.m_completed.load());
+        gate.m_release.set_value();
+        EXPECT_TRUE(busy.Get()->IsSuccess());
+    }
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.RemoveFunction(gate));
+}
+
+TEST_F(ConcurrentQueryFixture, CursorPagingBenchmark) {
+    if (std::getenv("RUN_CURSOR_PAGING_BENCHMARK") == nullptr)
+        GTEST_SKIP() << "Set RUN_CURSOR_PAGING_BENCHMARK to benchmark cursor paging";
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("CursorPagingBenchmark.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.EnableWalMode(true));
+    std::vector<std::string> queries = {
+        "WITH sequence(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM sequence WHERE n<50000) SELECT n FROM sequence",
+        "WITH sequence(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM sequence WHERE n<50000) SELECT n FROM sequence ORDER BY n DESC",
+        "WITH sequence(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM sequence WHERE n<50000) SELECT n,COUNT(*) FROM sequence GROUP BY n",
+        "SELECT ECInstanceId FROM meta.ECClassDef ORDER BY ECInstanceId LIMIT 5",
+    };
+    for (bool readonly : {false, true}) {
+        if (readonly)
+            ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(Db::OpenMode::Readonly)));
+        for (auto const& query : queries) {
+            std::string baselineRows;
+            for (bool enabled : {false, true}) {
+                auto config = ConcurrentQueryMgr::Config::GetDefault();
+                config.SetWorkerThreadCount(1).SetEnableCursors(enabled).SetQuota(QueryQuota(60s, 4096));
+                ConcurrentQueryMgr::Config::Reset(config);
+                ConcurrentQueryMgr mgr(m_ecdb);
+                int64_t offset = 0;
+                uint32_t pages = 0, resumes = 0;
+                int64_t prepareMs = 0;
+                std::vector<int64_t> pageTimes;
+                std::string rows;
+                auto start = std::chrono::steady_clock::now();
+                do {
+                    auto pageStart = std::chrono::steady_clock::now();
+                    auto req = ECSqlRequest::MakeRequest(query);
+                    req->SetCursorId("benchmark").SetLimit(QueryLimit(-1, offset));
+                    auto resp = mgr.Enqueue(std::move(req)).Get();
+                    ASSERT_TRUE(resp->IsSuccess()) << resp->GetError();
+                    auto const& page = resp->GetAsConst<ECSqlResponse>();
+                    pageTimes.push_back(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - pageStart).count());
+                    ++pages;
+                    resumes += resp->GetStats().Resumed() ? 1 : 0;
+                    prepareMs += resp->GetStats().PrepareTime().count();
+                    rows += page.asJsonString();
+                    offset += page.GetRowCount();
+                    if (resp->IsDone())
+                        break;
+                    ASSERT_GT(page.GetRowCount(), 0);
+                } while (true);
+                auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - start).count();
+                if (!enabled)
+                    baselineRows = rows;
+                else
+                    EXPECT_EQ(baselineRows, rows);
+                std::printf("cursor benchmark: readonly=%d enabled=%d rows=%" PRId64 " pages=%u resumes=%u elapsed_us=%" PRId64 " prepare_ms=%" PRId64 " query=%s\n",
+                    readonly, enabled, offset, pages, resumes, elapsed, prepareMs, query.c_str());
+                for (size_t i = 0; i < pageTimes.size(); ++i)
+                    std::printf("  page=%zu elapsed_us=%" PRId64 "\n", i, pageTimes[i]);
+            }
+        }
+    }
+}
+
 struct StressTest {
     using query_request_t = ECSqlRequest::Ptr;
     using futures_t= std::vector<QueryResponse::Future>;
