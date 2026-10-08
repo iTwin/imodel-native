@@ -381,6 +381,7 @@ void PreparedChangesetReader::ClearMembers() {
     m_filters.Reset();
     m_iterator.Reset();
     m_columnCache.Clear();
+    m_isECTableByName.clear();
     m_ecdb = nullptr;
 }
 
@@ -681,6 +682,11 @@ BentleyStatus PreparedChangesetReader::IsECTable(bool& isECTable) const {
     Utf8String tableName;
     if(GetTableName(tableName) != SUCCESS)
         return ERROR;
+    auto cached = m_isECTableByName.find(tableName);
+    if (cached != m_isECTableByName.end()) {
+        isECTable = cached->second;
+        return SUCCESS;
+    }
     CachedStatementPtr stmt = m_ecdb->GetCachedStatement("SELECT 1 FROM ec_Table WHERE Name=?");
     if (stmt == nullptr) {
         LOG.errorv("Failed to prepare statement to check if table '%s' is an EC table.", tableName.c_str());
@@ -697,6 +703,7 @@ BentleyStatus PreparedChangesetReader::IsECTable(bool& isECTable) const {
         return ERROR;
     }
     isECTable = (rc == BE_SQLITE_ROW);
+    m_isECTableByName[tableName] = isECTable;
     return SUCCESS;
 }
 

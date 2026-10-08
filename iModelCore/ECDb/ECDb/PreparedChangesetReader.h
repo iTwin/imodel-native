@@ -106,6 +106,8 @@ private:
     std::vector<Utf8String>                   m_changedPropNames;
     //! IsECTable result for the current row, computed once in ReFetchValues and reused by IsECTable().
     std::optional<bool>                       m_currentRowIsECTable;
+    //! IsECTable result per table name. Like TableColumnCache, assumes the tables don't change while the changeset is read.
+    mutable std::unordered_map<Utf8String, bool> m_isECTableByName;
 
     //! Path to the temporary merged changeset file created by OpenChangeGroup, empty otherwise.
     //! Deleted in Close().
