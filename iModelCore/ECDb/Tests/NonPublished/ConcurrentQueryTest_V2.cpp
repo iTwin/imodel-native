@@ -28,6 +28,21 @@ struct ConcurrentQueryFixture : ECDbTestFixture {
         ECDbTestFixture::SetUp();
         ConcurrentQueryMgr::Config::Reset(std::nullopt);
     }
+    void SetupRenderingPayload(Utf8CP fileName, std::string const& text, double number) {
+        ASSERT_EQ(SUCCESS, SetupECDb(fileName, SchemaItem(
+            R"xml(<ECSchema schemaName="RenderPayload" alias="rp" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECEntityClass typeName="Payload">
+                    <ECProperty propertyName="TextValue" typeName="string"/>
+                    <ECProperty propertyName="DoubleValue" typeName="double"/>
+                </ECEntityClass>
+            </ECSchema>)xml")));
+        ECSqlStatement insert;
+        ASSERT_EQ(ECSqlStatus::Success, insert.Prepare(m_ecdb, "INSERT INTO rp.Payload(TextValue,DoubleValue) VALUES(?,?)"));
+        ASSERT_EQ(ECSqlStatus::Success, insert.BindText(1, text.c_str(), IECSqlBinder::MakeCopy::Yes));
+        ASSERT_EQ(ECSqlStatus::Success, insert.BindDouble(2, number));
+        ASSERT_EQ(BE_SQLITE_DONE, insert.Step());
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    }
 };
 TEST_F(ConcurrentQueryFixture, HexIdRenderingMatchesBeId) {
     auto check = [](uint64_t rawId) {
@@ -95,13 +110,13 @@ TEST_F(ConcurrentQueryFixture, PointCoordinatesRefreshAcrossStepAndReset) {
 }
 
 TEST_F(ConcurrentQueryFixture, JsonSerializationMatchesRowAdaptor) {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("JsonSerializationMatchesRowAdaptor.ecdb"));
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
     const std::string largeText = std::string(16384, 'x') + "\"\\\n\t" + "\xc3\xa9";
     const double number = 9.9999999999999995e-21;
+    ASSERT_NO_FATAL_FAILURE(SetupRenderingPayload("JsonSerializationMatchesRowAdaptor.ecdb", largeText, number));
     Utf8CP sql =
         "WITH sequence(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM sequence WHERE n<4) "
-        "SELECT n, CASE WHEN n%2=0 THEN ? ELSE 'small' END, NULL, ?, NULL FROM sequence ORDER BY n";
+        "SELECT n, CASE WHEN n%2=0 THEN p.TextValue ELSE 'small' END, NULL, p.DoubleValue, NULL "
+        "FROM sequence CROSS JOIN rp.Payload p WHERE p.TextValue=? AND p.DoubleValue=? ORDER BY n";
     ECSqlParams args;
     args.BindString(1, largeText);
     args.BindDouble(2, number);
@@ -242,11 +257,11 @@ TEST_F(ConcurrentQueryFixture, ScalarAndDynamicRenderingPreserveValues) {
         </ECSchema>)xml")));
     const std::string text = std::string(8192, 'x') + "\"\\\n\t" + "\xc3\xa9";
     ECSqlStatement insert;
-    ASSERT_EQ(ECSqlStatus::Success, insert.Prepare(m_ecdb, "INSERT INTO rt.TextRow(Value) VALUES(?)"));
+    ASSERT_EQ(ECSqlStatus::Success, insert.Prepare(m_ecdb, "INSERT INTO rt.TextRow([Value]) VALUES(?)"));
     ASSERT_EQ(ECSqlStatus::Success, insert.BindText(1, text.c_str(), IECSqlBinder::MakeCopy::Yes));
     ASSERT_EQ(BE_SQLITE_DONE, insert.Step());
     insert.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, insert.Prepare(m_ecdb, "INSERT INTO rt.NumberRow(Value) VALUES(-2147483648)"));
+    ASSERT_EQ(ECSqlStatus::Success, insert.Prepare(m_ecdb, "INSERT INTO rt.NumberRow([Value]) VALUES(-2147483648)"));
     ASSERT_EQ(BE_SQLITE_DONE, insert.Step());
     insert.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, insert.Prepare(m_ecdb,
@@ -270,7 +285,7 @@ TEST_F(ConcurrentQueryFixture, ScalarAndDynamicRenderingPreserveValues) {
     ConcurrentQueryMgr mgr(m_ecdb);
     for (Utf8CP query : {
         "SELECT NULL,Text,LongNumber,IntegerNumber,DoubleNumber,Flag,NULL FROM rt.ScalarRow ORDER BY ECInstanceId",
-        "SELECT ECInstanceId,$->Value,NULL FROM rt.Base ORDER BY ECInstanceId",
+        "SELECT ECInstanceId,$->[Value],NULL FROM rt.Base ORDER BY ECInstanceId",
         "SELECT ECClassId,Schema,NULL FROM meta.ECClassDef ORDER BY ECInstanceId LIMIT 10",
     }) {
         ECSqlStatement stmt;
@@ -760,7 +775,7 @@ TEST_F(ConcurrentQueryFixture, CursorInvalidatesOnCommittedDataChange) {
         </ECSchema>)xml")));
     for (int n = 1; n <= 5; ++n) {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ct.Row(n) VALUES(?)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ct.[Row](n) VALUES(?)"));
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, n));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
@@ -771,14 +786,14 @@ TEST_F(ConcurrentQueryFixture, CursorInvalidatesOnCommittedDataChange) {
     ConcurrentQueryMgr::Config::Reset(config);
     ConcurrentQueryMgr mgr(m_ecdb);
     auto page = [&](int offset) {
-        auto req = ECSqlRequest::MakeRequest("SELECT n FROM ct.Row ORDER BY n");
+        auto req = ECSqlRequest::MakeRequest("SELECT n FROM ct.[Row] ORDER BY n");
         req->SetCursorId("data-change").SetLimit(QueryLimit(-1, offset));
         return mgr.Enqueue(std::move(req)).Get();
     };
     ASSERT_EQ(QueryResponse::Status::Partial, page(0)->GetStatus());
     {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ct.Row SET n=n+100"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ct.[Row] SET n=n+100"));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
@@ -912,7 +927,7 @@ TEST_F(ConcurrentQueryFixture, CursorReadOnlyPrimaryObservesExternalCommit) {
         </ECSchema>)xml")));
     for (int n = 1; n <= 5; ++n) {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ce.Row(n) VALUES(?)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ce.[Row](n) VALUES(?)"));
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, n));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
@@ -926,7 +941,7 @@ TEST_F(ConcurrentQueryFixture, CursorReadOnlyPrimaryObservesExternalCommit) {
     ConcurrentQueryMgr::Config::Reset(config);
     ConcurrentQueryMgr mgr(m_ecdb);
     auto page = [&](int offset) {
-        auto req = ECSqlRequest::MakeRequest("SELECT n FROM ce.Row ORDER BY n");
+        auto req = ECSqlRequest::MakeRequest("SELECT n FROM ce.[Row] ORDER BY n");
         req->SetCursorId("external").SetLimit(QueryLimit(-1, offset));
         return mgr.Enqueue(std::move(req)).Get();
     };
@@ -935,7 +950,7 @@ TEST_F(ConcurrentQueryFixture, CursorReadOnlyPrimaryObservesExternalCommit) {
         Savepoint txn(writer, "external_commit");
         {
             ECSqlStatement stmt;
-            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(writer, "UPDATE ce.Row SET n=n+100"));
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(writer, "UPDATE ce.[Row] SET n=n+100"));
             ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         }
         ASSERT_EQ(BE_SQLITE_OK, txn.Commit());
@@ -985,21 +1000,21 @@ TEST_F(ConcurrentQueryFixture, NativeReaderCrossesPageBoundaries) {
 }
 
 TEST_F(ConcurrentQueryFixture, NativeReaderReplacesBatchDocuments) {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("NativeReaderReplacesBatchDocuments.ecdb"));
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    const std::string largeText(16384, 'x');
+    const double number = 9.9999999999999995e-21;
+    ASSERT_NO_FATAL_FAILURE(SetupRenderingPayload("NativeReaderReplacesBatchDocuments.ecdb", largeText, number));
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.EnableWalMode(true));
     auto config = ConcurrentQueryMgr::Config::GetDefault();
     config.SetWorkerThreadCount(1).SetQuota(QueryQuota(60s, 1));
     ConcurrentQueryMgr::Config::Reset(config);
-    const std::string largeText(16384, 'x');
-    const double number = 9.9999999999999995e-21;
     ECSqlParams args;
     args.BindString(1, largeText);
     args.BindDouble(2, number);
     ConcurrentQueryMgr mgr(m_ecdb);
     ECSqlReader reader(mgr,
         "WITH sequence(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM sequence WHERE n<100) "
-        "SELECT n, CASE WHEN n%2=0 THEN ? ELSE 'small' END, ?, NULL FROM sequence ORDER BY n",
+        "SELECT n, CASE WHEN n%2=0 THEN p.TextValue ELSE 'small' END, p.DoubleValue, NULL "
+        "FROM sequence CROSS JOIN rp.Payload p WHERE p.TextValue=? AND p.DoubleValue=? ORDER BY n",
         args);
     int expected = 1;
     while (reader.Next()) {
@@ -1053,7 +1068,12 @@ TEST_F(ConcurrentQueryFixture, CursorBusyOwnerFallsBack) {
         if (resp->IsSuccess())
             EXPECT_EQ(2, BeJsDocument(resp->GetAsConst<ECSqlResponse>().asJsonString())[0][0].asInt());
         EXPECT_FALSE(gate.m_completed.load());
-        EXPECT_TRUE(mgr.Enqueue(ECSqlRequest::MakeRequest("SELECT 42")).Get()->IsDone());
+        auto unrelated = mgr.Enqueue(ECSqlRequest::MakeRequest("SELECT 42")).Get();
+        EXPECT_TRUE(unrelated->IsSuccess()) << unrelated->GetError();
+        if (unrelated->IsSuccess()) {
+            EXPECT_EQ(1u, unrelated->GetAsConst<ECSqlResponse>().GetRowCount());
+            EXPECT_EQ(42, BeJsDocument(unrelated->GetAsConst<ECSqlResponse>().asJsonString())[0][0].asInt());
+        }
         EXPECT_FALSE(gate.m_completed.load());
         gate.m_release.set_value();
         EXPECT_TRUE(busy.Get()->IsSuccess());
