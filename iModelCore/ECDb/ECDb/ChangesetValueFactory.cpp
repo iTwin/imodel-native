@@ -850,19 +850,11 @@ void ChangesetValueFactory::FillChangedPropIfApplicable(std::vector<Utf8String>*
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ChangesetValueFactory::ResolveClassId(
-    ECDbCR conn, DbTable const& tbl, ColumnValueMap const& columnValues, ECClassId& resolvedClassIdOut, bool& classIdFromChangesetOut,
-    ECClassId const* sameRowClassId) {
+BentleyStatus ChangesetValueFactory::ResolveClassIdFromDb(
+    ECDbCR conn, DbTable const& tbl, ColumnValueMap const& columnValues, ECClassId& resolvedClassIdOut) {
     resolvedClassIdOut.Invalidate();
-    classIdFromChangesetOut = false;
 
-    if (TryResolveClassIdFromChangeset(tbl, columnValues, conn, resolvedClassIdOut)) {
-        classIdFromChangesetOut = true;
-    } else if (sameRowClassId != nullptr && sameRowClassId->IsValid()) {
-        resolvedClassIdOut = *sameRowClassId;
-    } else if (TryResolveClassIdFromDbSeek(tbl, columnValues, conn, resolvedClassIdOut)) {
-        // resolved from the current state of the DB
-    } else {
+    if (!TryResolveClassIdFromDbSeek(tbl, columnValues, conn, resolvedClassIdOut)) {
         const ClassMap* classMapOut = GetRootClassMap(tbl, conn);
         if (classMapOut != nullptr) {
             resolvedClassIdOut = classMapOut->GetClass().GetId();

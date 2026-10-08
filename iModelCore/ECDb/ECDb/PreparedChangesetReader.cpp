@@ -340,7 +340,7 @@ void PreparedChangesetReader::ClearFields() {
     m_newFields.clear();
     m_columnValues.clear();
     m_changedPropNames.clear();
-    m_rowClassIdNotFromChangeset.Invalidate();
+    m_rowClassIdFromDb.Invalidate();
 }
 
 //---------------------------------------------------------------------------------------
@@ -431,13 +431,14 @@ PreparedChangesetReader::StageProcessResult PreparedChangesetReader::ProcessStag
     if (GetColumnValues(stage) != SUCCESS)
         return StageProcessResult::Error;
 
+    // A class id carried by the changeset belongs to this stage; one read from the DB belongs to the row.
     ECClassId classId;
-    bool isClassIdFromChangeset = false;
-    ECClassId const* sameRowClassId = m_rowClassIdNotFromChangeset.IsValid() ? &m_rowClassIdNotFromChangeset : nullptr;
-    if (ChangesetValueFactory::ResolveClassId(*m_ecdb, dbTable, m_columnValues, classId, isClassIdFromChangeset, sameRowClassId) != SUCCESS)
-        return StageProcessResult::Error;
-    if (!isClassIdFromChangeset)
-        m_rowClassIdNotFromChangeset = classId;
+    const bool isClassIdFromChangeset = ChangesetValueFactory::TryResolveClassIdFromChangeset(dbTable, m_columnValues, *m_ecdb, classId);
+    if (!isClassIdFromChangeset) {
+        if (!m_rowClassIdFromDb.IsValid() && ChangesetValueFactory::ResolveClassIdFromDb(*m_ecdb, dbTable, m_columnValues, m_rowClassIdFromDb) != SUCCESS)
+            return StageProcessResult::Error;
+        classId = m_rowClassIdFromDb;
+    }
     ECClassCP ecClass = m_ecdb->Schemas().Main().GetClass(classId);
     if (ecClass == nullptr) {
         LOG.errorv("ECClass with id %" PRIu64 " not found in schema.", classId.GetValueUnchecked());

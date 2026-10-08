@@ -103,8 +103,8 @@ private:
     std::vector<std::unique_ptr<IECSqlValue>> m_newFields;
     std::unordered_map<Utf8String, DbValue>   m_columnValues;
     std::vector<Utf8String>                   m_changedPropNames;
-    //! ECClassId of the current row resolved without the changeset (DB seek or root class), reused for its other stage.
-    ECClassId                                 m_rowClassIdNotFromChangeset;
+    //! ECClassId of the current row from the DB (seek or root class), reused for its other stage.
+    ECClassId                                 m_rowClassIdFromDb;
     //! IsECTable result per table name. Like TableColumnCache, assumes the tables don't change while the changeset is read.
     mutable std::unordered_map<Utf8String, bool> m_isECTableByName;
 
