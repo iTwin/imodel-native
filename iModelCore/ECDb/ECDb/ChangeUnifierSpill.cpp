@@ -219,7 +219,7 @@ void WriteRecord(std::vector<Byte>& out, KeyedEntry const& record) {
 }
 
 //---------------------------------------------------------------------------------------
-// Reads the payload of one spill record.
+// Reads the payload of one spill record. Reuses the capacity of the vectors in @p record.
 // @bsimethod
 //---------------------------------------------------------------------------------------
 BentleyStatus ReadRecord(Byte const* data, size_t size, KeyedEntry& record) {
@@ -229,7 +229,6 @@ BentleyStatus ReadRecord(Byte const* data, size_t size, KeyedEntry& record) {
     key.m_rootClassId = reader.GetFixed64();
     key.m_instanceId = reader.GetFixed64();
     key.m_stage = reader.GetByte();
-    entry = UnifiedEntry();
     entry.m_classId = reader.GetFixed64();
     entry.m_op = (UnifiedEntry::Op) reader.GetByte();
     entry.m_hasMainRow = reader.GetByte() != 0;
@@ -238,6 +237,7 @@ BentleyStatus ReadRecord(Byte const* data, size_t size, KeyedEntry& record) {
         uint64_t count = reader.GetVarint();
         if (!reader.IsOk() || count > size)
             return false;
+        ids.clear();
         ids.reserve(static_cast<size_t>(count));
         for (uint64_t i = 0; i < count && reader.IsOk(); ++i)
             ids.push_back(static_cast<uint32_t>(reader.GetVarint()));
@@ -464,7 +464,7 @@ BentleyStatus UnifierSpillFile::Pop(KeyedEntry& out, Utf8StringR err) {
     const size_t index = m_heap.top().second;
     m_heap.pop();
     Cursor& cursor = m_cursors[index];
-    out = std::move(cursor.m_current);
+    std::swap(out, cursor.m_current);
     if (SUCCESS != Advance(cursor)) {
         err = "ChangeUnifier: failed to read spill file.";
         return ERROR;

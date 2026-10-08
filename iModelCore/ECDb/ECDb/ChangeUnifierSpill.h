@@ -144,7 +144,8 @@ public:
     //! Key of the next entry in merge order, or nullptr when all runs are exhausted.
     UnifiedKey const* PeekKey() const { return m_heap.empty() ? nullptr : &m_heap.top().first; }
 
-    //! Moves the next entry in merge order into @p out. Requires PeekKey() != nullptr.
+    //! Swaps the next entry in merge order into @p out. The old content of @p out is reused to read the
+    //! next record, so passing the same object every time avoids allocations. Requires PeekKey() != nullptr.
     BentleyStatus Pop(KeyedEntry& out, Utf8StringR err);
 
     //! Closes and deletes the file. Idempotent.

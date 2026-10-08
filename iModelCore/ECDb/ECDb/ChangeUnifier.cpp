@@ -64,6 +64,8 @@ private:
     UnifierSpillFile m_spill;
     std::vector<KeyedEntry> m_sorted; //!< merged entries in key order when nothing was spilled
     size_t m_sortedPos = 0;
+    KeyedEntry m_merged; //!< result of the current Step; kept so the spill merge can reuse its buffers
+    KeyedEntry m_next; //!< entry with the same key as m_merged, folded into it
 
     // rapidjson never returns memory to its pool allocator, so the scratch document is recreated periodically
     static constexpr uint32_t ScratchReuseLimit = 4096;
@@ -289,23 +291,22 @@ private:
         return BE_SQLITE_OK;
     }
 
-    //! Gets the next fully merged entry. Returns BE_SQLITE_ROW, BE_SQLITE_DONE or an error.
-    DbResult NextMerged(KeyedEntry& out) {
+    //! Moves the next fully merged entry into m_merged. Returns BE_SQLITE_ROW, BE_SQLITE_DONE or an error.
+    DbResult NextMerged() {
         if (!m_spill.HasRuns()) {
             if (m_sortedPos >= m_sorted.size())
                 return BE_SQLITE_DONE;
-            out = std::move(m_sorted[m_sortedPos++]);
+            m_merged = std::move(m_sorted[m_sortedPos++]);
             return BE_SQLITE_ROW;
         }
         if (m_spill.PeekKey() == nullptr)
             return BE_SQLITE_DONE;
-        if (SUCCESS != m_spill.Pop(out, m_lastError))
+        if (SUCCESS != m_spill.Pop(m_merged, m_lastError))
             return Fail(BE_SQLITE_IOERR, m_lastError);
-        for (UnifiedKey const* next = m_spill.PeekKey(); next != nullptr && *next == out.first; next = m_spill.PeekKey()) {
-            KeyedEntry more;
-            if (SUCCESS != m_spill.Pop(more, m_lastError))
+        for (UnifiedKey const* next = m_spill.PeekKey(); next != nullptr && *next == m_merged.first; next = m_spill.PeekKey()) {
+            if (SUCCESS != m_spill.Pop(m_next, m_lastError))
                 return Fail(BE_SQLITE_IOERR, m_lastError);
-            MergeInto(out.second, std::move(more.second));
+            MergeInto(m_merged.second, std::move(m_next.second));
         }
         return BE_SQLITE_ROW;
     }
@@ -457,8 +458,7 @@ public:
             m_lastError = "ChangeUnifier: Step() cannot be called after a failure.";
             return BE_SQLITE_MISUSE;
         }
-        KeyedEntry merged;
-        const DbResult rc = NextMerged(merged);
+        const DbResult rc = NextMerged();
         if (rc == BE_SQLITE_DONE) {
             m_state = State::Done;
             m_sorted.clear();
@@ -467,7 +467,7 @@ public:
         }
         if (rc != BE_SQLITE_ROW)
             return rc;
-        return WriteInstance(merged, instance);
+        return WriteInstance(m_merged, instance);
     }
 };
 
