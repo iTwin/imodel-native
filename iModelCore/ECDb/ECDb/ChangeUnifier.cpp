@@ -95,7 +95,7 @@ private:
     std::vector<Utf8String> m_strings;
     std::unordered_map<Utf8String, uint32_t> m_stringIds;
 
-    ECDb const* m_ecdb = nullptr; //!< ECDb of the latest AppendFrom; the table cache belongs to it
+    ECDb const* m_ecdb = nullptr; //!< ECDb of all readers, bound by the first AppendFrom; only used while appending
     std::unordered_map<Utf8String, TableInfo> m_tableCache;
     std::unordered_map<uint64_t, std::unordered_set<uint64_t>> m_classAncestors;
 
@@ -301,7 +301,7 @@ private:
     }
 
     DbResult Spill() {
-        const DbResult rc = m_spill.WriteRun(*m_ecdb, DrainSorted(), m_lastError);
+        const DbResult rc = m_spill.WriteRun(DrainSorted(), m_lastError);
         return rc == BE_SQLITE_OK ? BE_SQLITE_OK : Fail(rc, m_lastError);
     }
 
@@ -500,9 +500,13 @@ public:
         ECDb const* ecdb = reader.GetECDb();
         if (ecdb == nullptr)
             return Fail(BE_SQLITE_MISUSE, "ChangeUnifier: reader is not open.");
-        if (m_ecdb != ecdb) {
-            m_tableCache.clear();
+        if (m_ecdb == nullptr) {
             m_ecdb = ecdb;
+            m_spill.SetFileNameBase(ecdb->GetTempFileBaseName());
+        } else if (m_ecdb != ecdb) {
+            // merge keys, table and class caches are only meaningful within one ECDb
+            m_lastError = "ChangeUnifier: all readers must use the same ECDb.";
+            return BE_SQLITE_MISUSE;
         }
 
         ECSqlRowAdaptor adaptor(*ecdb, rowOptions);

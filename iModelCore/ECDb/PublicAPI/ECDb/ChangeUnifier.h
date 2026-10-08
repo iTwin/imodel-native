@@ -90,8 +90,9 @@ public:
     //! The reader stays owned by the caller. Only rows returned by the reader's Step() are seen, so the reader should not have been stepped before.
     //! @param[in] reader An open ChangesetReader.
     //! @param[in] rowOptions Options used to render property values.
+    //! All readers must belong to the same ECDb, which must stay open until the last AppendFrom returns.
     //! @return BE_SQLITE_OK on success, BE_SQLITE_MISUSE if called after Step() or Close() or after a previous failure,
-    //! or an error code. On error the unifier cannot be used anymore; see GetLastError().
+    //! or with a reader of another ECDb, or an error code. On other errors the unifier cannot be used anymore; see GetLastError().
     ECDB_EXPORT DbResult AppendFrom(ChangesetReader& reader, JsReadOptions const& rowOptions);
 
     //! Writes the next merged instance into @p instance, which is reset to an object first.

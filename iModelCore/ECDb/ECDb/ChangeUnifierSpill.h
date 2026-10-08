@@ -114,6 +114,7 @@ private:
         }
     };
 
+    Utf8String m_fileNameBase; //!< the spill file is created as <base>-<guid>-unifier.spill
     BeFileName m_fileName;
     BeFile m_file;
     uint64_t m_fileSize = 0;
@@ -133,9 +134,12 @@ public:
 
     bool HasRuns() const { return !m_cursors.empty(); }
 
-    //! Appends @p sorted as a new run. The file is created next to @p ecdb on the first call.
+    //! Sets where the spill file is created, e.g. ECDb::GetTempFileBaseName(). Call before the first WriteRun.
+    void SetFileNameBase(Utf8StringCR base) { m_fileNameBase = base; }
+
+    //! Appends @p sorted as a new run. The file is created on the first call.
     //! @return BE_SQLITE_OK, BE_SQLITE_CANTOPEN or BE_SQLITE_IOERR with @p err set.
-    DbResult WriteRun(ECDbCR ecdb, std::vector<KeyedEntry> const& sorted, Utf8StringR err);
+    DbResult WriteRun(std::vector<KeyedEntry> const& sorted, Utf8StringR err);
 
     //! Positions every run on its first entry. Call once, after the last WriteRun.
     //! The read buffers of all runs share @p memoryBudgetBytes, within fixed per-run bounds.

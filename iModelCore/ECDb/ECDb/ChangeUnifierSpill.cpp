@@ -371,12 +371,13 @@ BentleyStatus UnifiedValueCodec::Decode(std::vector<Byte> const& in, ChangeUnifi
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult UnifierSpillFile::WriteRun(ECDbCR ecdb, std::vector<KeyedEntry> const& sorted, Utf8StringR err) {
+DbResult UnifierSpillFile::WriteRun(std::vector<KeyedEntry> const& sorted, Utf8StringR err) {
     if (sorted.empty())
         return BE_SQLITE_OK;
     if (!m_file.IsOpen()) {
+        BeAssert(!m_fileNameBase.empty());
         BeGuid guid(true);
-        m_fileName = BeFileName(Utf8String(ecdb.GetTempFileBaseName() + "-" + guid.ToString() + "-unifier.spill"));
+        m_fileName = BeFileName(Utf8String(m_fileNameBase + "-" + guid.ToString() + "-unifier.spill"));
         if (BeFileStatus::Success != m_file.Create(m_fileName.GetNameUtf8(), true)) {
             err.Sprintf("ChangeUnifier: failed to create spill file '%s'.", m_fileName.GetNameUtf8().c_str());
             return BE_SQLITE_CANTOPEN;
