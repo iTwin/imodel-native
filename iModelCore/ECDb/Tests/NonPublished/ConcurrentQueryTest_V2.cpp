@@ -3,6 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
+#include "../../ECDb/ECSqlRowRenderer.h"
 
 USING_NAMESPACE_BENTLEY_EC
 #include <ECDb/ConcurrentQueryManager.h>
@@ -15,6 +16,7 @@ USING_NAMESPACE_BENTLEY_EC
 #include <mutex>
 #include <cstdio>
 #include <cstdlib>
+#include <limits>
 BEGIN_ECDBUNITTESTS_NAMESPACE
 using namespace std::chrono_literals;
 
@@ -71,6 +73,368 @@ TEST_F(ConcurrentQueryFixture, JsonSerializationMatchesRowAdaptor) {
         check("SELECT NULL", ECSqlParams(), "[[]]", 1);
         check("SELECT NULL, 1, NULL", ECSqlParams(), "[[null,1]]", 1);
     }
+}
+
+TEST_F(ConcurrentQueryFixture, ScalarRenderingMatchesAcrossPagesAndOptions) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ScalarRenderingMatchesAcrossPagesAndOptions.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.EnableWalMode(true));
+    auto config = ConcurrentQueryMgr::Config::GetDefault();
+    config.SetWorkerThreadCount(1).SetQuota(QueryQuota(60s, 128));
+    ConcurrentQueryMgr::Config::Reset(config);
+    ConcurrentQueryMgr mgr(m_ecdb);
+    std::vector<std::string> queries {
+        "SELECT ECInstanceId, ECClassId, Schema.Id, Name, NULL FROM meta.ECClassDef ORDER BY ECInstanceId",
+        "SELECT ECClassId AS AliasedClass, Schema.RelECClassId, NULL, Name, NULL FROM meta.ECClassDef ORDER BY ECInstanceId",
+        "SELECT ECClassId, Schema, NULL, Name, NULL FROM meta.ECClassDef ORDER BY ECInstanceId",
+    };
+    for (auto const& query : queries) {
+        for (bool primary : {false, true}) {
+            for (auto format : {ECSqlRequest::ECSqlValueFormat::ECSqlNames, ECSqlRequest::ECSqlValueFormat::JsNames}) {
+                for (bool convert : {true, false, true}) {
+                    ECSqlStatement stmt;
+                    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query.c_str()));
+                    JsReadOptions options;
+                    options.SetAbbreviateBlobs(false).SetUseJsNames(format == ECSqlRequest::ECSqlValueFormat::JsNames)
+                        .SetConvertClassIdsToClassNames(convert).SetDoNotConvertClassIdsToClassNamesWhenAliased(true);
+                    ECSqlRowAdaptor adaptor(m_ecdb, options);
+                    PreparedECSqlRowRenderer renderer;
+                    renderer.BeginPage(stmt, adaptor);
+                    EXPECT_TRUE(renderer.CanRender(adaptor));
+                    std::string expected = "[";
+                    uint32_t expectedRows = 0;
+                    DbResult rc;
+                    while ((rc = stmt.Step()) == BE_SQLITE_ROW) {
+                        BeJsDocument row;
+                        ASSERT_EQ(SUCCESS, adaptor.RenderRowAsArray(row, ECSqlStatementRow(stmt)));
+                        if (expectedRows++ > 0)
+                            expected.push_back(',');
+                        expected.append(row.Stringify());
+                    }
+                    ASSERT_EQ(BE_SQLITE_DONE, rc);
+                    expected.push_back(']');
+                    stmt.Finalize();
+
+                    std::string actual = "[";
+                    uint32_t rows = 0, pages = 0, resumed = 0;
+                    for (;;) {
+                        auto req = ECSqlRequest::MakeRequest(query);
+                        req->SetUsePrimaryConnection(primary);
+                        req->SetValueFmt(format).SetConvertClassIdsToClassNames(convert)
+                            .SetCursorId("scalar-rendering").SetLimit(QueryLimit(-1, rows));
+                        auto response = mgr.Enqueue(std::move(req)).Get();
+                        ASSERT_TRUE(response->IsSuccess()) << response->GetError();
+                        auto const& page = response->GetAsConst<ECSqlResponse>();
+                        auto const& json = page.asJsonString();
+                        ASSERT_GE(json.size(), 2u);
+                        if (page.GetRowCount() > 0) {
+                            if (rows > 0)
+                                actual.push_back(',');
+                            actual.append(json, 1, json.size() - 2);
+                        }
+                        rows += page.GetRowCount();
+                        ++pages;
+                        resumed += response->GetStats().Resumed() ? 1 : 0;
+                        if (response->IsDone())
+                            break;
+                        ASSERT_GT(page.GetRowCount(), 0u);
+                        ASSERT_LT(pages, expectedRows + 2);
+                    }
+                    actual.push_back(']');
+                    EXPECT_EQ(expectedRows, rows);
+                    EXPECT_EQ(expected, actual) << query;
+                    if (primary)
+                        EXPECT_EQ(0u, resumed);
+                    else {
+                        EXPECT_GT(pages, 1u);
+                        EXPECT_EQ(pages - 1, resumed);
+                    }
+                }
+            }
+        }
+    }
+}
+
+TEST_F(ConcurrentQueryFixture, ScalarAndDynamicRenderingPreserveValues) {
+    ASSERT_EQ(SUCCESS, SetupECDb("ScalarAndDynamicRenderingPreserveValues.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="RenderTest" alias="rt" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="Base"/>
+            <ECEntityClass typeName="TextRow"><BaseClass>Base</BaseClass>
+                <ECProperty propertyName="Value" typeName="string"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="NumberRow"><BaseClass>Base</BaseClass>
+                <ECProperty propertyName="Value" typeName="int"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="ScalarRow">
+                <ECProperty propertyName="Text" typeName="string"/>
+                <ECProperty propertyName="LongNumber" typeName="long"/>
+                <ECProperty propertyName="IntegerNumber" typeName="int"/>
+                <ECProperty propertyName="DoubleNumber" typeName="double"/>
+                <ECProperty propertyName="Flag" typeName="boolean"/>
+            </ECEntityClass>
+        </ECSchema>)xml")));
+    const std::string text = std::string(8192, 'x') + "\"\\\n\t" + "\xc3\xa9";
+    ECSqlStatement insert;
+    ASSERT_EQ(ECSqlStatus::Success, insert.Prepare(m_ecdb, "INSERT INTO rt.TextRow(Value) VALUES(?)"));
+    ASSERT_EQ(ECSqlStatus::Success, insert.BindText(1, text.c_str(), IECSqlBinder::MakeCopy::Yes));
+    ASSERT_EQ(BE_SQLITE_DONE, insert.Step());
+    insert.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, insert.Prepare(m_ecdb, "INSERT INTO rt.NumberRow(Value) VALUES(-2147483648)"));
+    ASSERT_EQ(BE_SQLITE_DONE, insert.Step());
+    insert.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, insert.Prepare(m_ecdb,
+        "INSERT INTO rt.ScalarRow(Text,LongNumber,IntegerNumber,DoubleNumber,Flag) VALUES(?,?,?,?,?)"));
+    for (double number : {-0.0, 9.9999999999999995e-21, std::numeric_limits<double>::max(),
+                          std::numeric_limits<double>::infinity(), -std::numeric_limits<double>::infinity()}) {
+        ASSERT_EQ(ECSqlStatus::Success, insert.BindText(1, text.c_str(), IECSqlBinder::MakeCopy::Yes));
+        ASSERT_EQ(ECSqlStatus::Success, insert.BindInt64(2, std::numeric_limits<int64_t>::max()));
+        ASSERT_EQ(ECSqlStatus::Success, insert.BindInt(3, std::numeric_limits<int32_t>::min()));
+        ASSERT_EQ(ECSqlStatus::Success, insert.BindDouble(4, number));
+        ASSERT_EQ(ECSqlStatus::Success, insert.BindBoolean(5, true));
+        ASSERT_EQ(BE_SQLITE_DONE, insert.Step());
+        ASSERT_EQ(ECSqlStatus::Success, insert.Reset());
+        ASSERT_EQ(ECSqlStatus::Success, insert.ClearBindings());
+    }
+    insert.Finalize();
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    auto config = ConcurrentQueryMgr::Config::GetDefault();
+    config.SetWorkerThreadCount(2).SetQuota(QueryQuota(60s, 1024 * 1024));
+    ConcurrentQueryMgr::Config::Reset(config);
+    ConcurrentQueryMgr mgr(m_ecdb);
+    for (Utf8CP query : {
+        "SELECT NULL,Text,LongNumber,IntegerNumber,DoubleNumber,Flag,NULL FROM rt.ScalarRow ORDER BY ECInstanceId",
+        "SELECT ECInstanceId,$->Value,NULL FROM rt.Base ORDER BY ECInstanceId",
+        "SELECT ECClassId,Schema,NULL FROM meta.ECClassDef ORDER BY ECInstanceId LIMIT 10",
+    }) {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
+        ECSqlRowAdaptor adaptor(m_ecdb);
+        std::string expected = "[";
+        uint32_t rows = 0;
+        DbResult rc;
+        while ((rc = stmt.Step()) == BE_SQLITE_ROW) {
+            BeJsDocument row;
+            ASSERT_EQ(SUCCESS, adaptor.RenderRowAsArray(row, ECSqlStatementRow(stmt)));
+            if (rows++ > 0)
+                expected.push_back(',');
+            expected.append(row.Stringify());
+        }
+        ASSERT_EQ(BE_SQLITE_DONE, rc);
+        expected.push_back(']');
+        stmt.Finalize();
+        for (bool primary : {false, true}) {
+            auto req = ECSqlRequest::MakeRequest(query);
+            req->SetUsePrimaryConnection(primary);
+            auto response = mgr.Enqueue(std::move(req)).Get();
+            ASSERT_EQ(QueryResponse::Status::Done, response->GetStatus()) << response->GetError();
+            auto const& page = response->GetAsConst<ECSqlResponse>();
+            EXPECT_EQ(rows, page.GetRowCount());
+            EXPECT_EQ(expected, page.asJsonString()) << query;
+        }
+    }
+}
+
+TEST_F(ConcurrentQueryFixture, CompositeRenderingMatchesRowAdaptor) {
+    ASSERT_EQ(SUCCESS, SetupECDb("CompositeRenderingMatchesRowAdaptor.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="CompositeRender" alias="cr" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECStructClass typeName="BaseLeaf">
+                <ECProperty propertyName="Inherited" typeName="int" readOnly="true"/>
+            </ECStructClass>
+            <ECStructClass typeName="Leaf"><BaseClass>BaseLeaf</BaseClass>
+                <ECProperty propertyName="Zeta" typeName="string"/>
+                <ECProperty propertyName="Pair" typeName="Point2d"/>
+            </ECStructClass>
+            <ECStructClass typeName="Container">
+                <ECStructProperty propertyName="Nested" typeName="Leaf"/>
+                <ECArrayProperty propertyName="Numbers" typeName="long" extendedTypeName="Id"/>
+                <ECStructArrayProperty propertyName="Items" typeName="Leaf"/>
+            </ECStructClass>
+            <ECStructClass typeName="Opaque">
+                <ECProperty propertyName="Blob" typeName="binary"/>
+            </ECStructClass>
+            <ECEntityClass typeName="CompositeRow">
+                <ECProperty propertyName="Description" typeName="string"/>
+                <ECProperty propertyName="Point2" typeName="Point2d"/>
+                <ECProperty propertyName="Point3" typeName="Point3d"/>
+                <ECStructProperty propertyName="Payload" typeName="Container"/>
+                <ECStructArrayProperty propertyName="Leaves" typeName="Leaf"/>
+                <ECArrayProperty propertyName="Integers" typeName="int"/>
+                <ECArrayProperty propertyName="Longs" typeName="long" extendedTypeName="Id"/>
+                <ECArrayProperty propertyName="Doubles" typeName="double"/>
+                <ECArrayProperty propertyName="Strings" typeName="string"/>
+                <ECArrayProperty propertyName="Flags" typeName="boolean"/>
+                <ECArrayProperty propertyName="Points2" typeName="Point2d"/>
+                <ECArrayProperty propertyName="Points3" typeName="Point3d"/>
+                <ECStructProperty propertyName="Fallback" typeName="Opaque"/>
+            </ECEntityClass>
+        </ECSchema>)xml")));
+    ECSqlStatement insert;
+    ASSERT_EQ(ECSqlStatus::Success, insert.Prepare(m_ecdb,
+        "INSERT INTO cr.CompositeRow(Description,Point2,Point3,Payload,Leaves,Integers,Longs,Doubles,Strings,Flags,Points2,Points3,Fallback) "
+        "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)"));
+    const auto point2 = DPoint2d::From(-0.0, 9.9999999999999995e-21);
+    const auto point3 = DPoint3d::From(1.5, -2.0, 3.0);
+    const std::string text = std::string(8192, 'x') + "\"\\\n\t" + "\xc3\xa9";
+    ASSERT_EQ(ECSqlStatus::Success, insert.BindText(1, "full", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, insert.BindPoint2d(2, point2));
+    ASSERT_EQ(ECSqlStatus::Success, insert.BindPoint3d(3, point3));
+    auto& payload = insert.GetBinder(4);
+    ASSERT_EQ(ECSqlStatus::Success, payload["Nested"]["Zeta"].BindText(text.c_str(), IECSqlBinder::MakeCopy::Yes));
+    ASSERT_EQ(ECSqlStatus::Success, payload["Nested"]["Inherited"].BindInt(7));
+    ASSERT_EQ(ECSqlStatus::Success, payload["Nested"]["Pair"].BindPoint2d(point2));
+    ASSERT_EQ(ECSqlStatus::Success, payload["Numbers"].AddArrayElement().BindNull());
+    ASSERT_EQ(ECSqlStatus::Success, payload["Numbers"].AddArrayElement().BindInt64(std::numeric_limits<int64_t>::max()));
+    ASSERT_EQ(ECSqlStatus::Success, payload["Items"].AddArrayElement().BindNull());
+    auto& nestedItem = payload["Items"].AddArrayElement();
+    ASSERT_EQ(ECSqlStatus::Success, nestedItem["Inherited"].BindInt(9));
+    ASSERT_EQ(ECSqlStatus::Success, nestedItem["Zeta"].BindText("nested", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, insert.GetBinder(5).AddArrayElement().BindNull());
+    ASSERT_EQ(ECSqlStatus::Success, insert.GetBinder(5).AddArrayElement()["Zeta"].BindText("array", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, insert.GetBinder(6).AddArrayElement().BindInt(1));
+    ASSERT_EQ(ECSqlStatus::Success, insert.GetBinder(6).AddArrayElement().BindNull());
+    ASSERT_EQ(ECSqlStatus::Success, insert.GetBinder(6).AddArrayElement().BindInt(2));
+    ASSERT_EQ(ECSqlStatus::Success, insert.GetBinder(6).AddArrayElement().BindNull());
+    ASSERT_EQ(ECSqlStatus::Success, insert.GetBinder(7).AddArrayElement().BindInt64(std::numeric_limits<int64_t>::max()));
+    ASSERT_EQ(ECSqlStatus::Success, insert.GetBinder(7).AddArrayElement().BindNull());
+    ASSERT_EQ(ECSqlStatus::Success, insert.GetBinder(8).AddArrayElement().BindDouble(-0.0));
+    ASSERT_EQ(ECSqlStatus::Success, insert.GetBinder(8).AddArrayElement().BindDouble(9.9999999999999995e-21));
+    ASSERT_EQ(ECSqlStatus::Success, insert.GetBinder(9).AddArrayElement().BindText(text.c_str(), IECSqlBinder::MakeCopy::Yes));
+    ASSERT_EQ(ECSqlStatus::Success, insert.GetBinder(9).AddArrayElement().BindNull());
+    ASSERT_EQ(ECSqlStatus::Success, insert.GetBinder(10).AddArrayElement().BindBoolean(true));
+    ASSERT_EQ(ECSqlStatus::Success, insert.GetBinder(10).AddArrayElement().BindBoolean(false));
+    ASSERT_EQ(ECSqlStatus::Success, insert.GetBinder(11).AddArrayElement().BindPoint2d(point2));
+    ASSERT_EQ(ECSqlStatus::Success, insert.GetBinder(11).AddArrayElement().BindNull());
+    ASSERT_EQ(ECSqlStatus::Success, insert.GetBinder(12).AddArrayElement().BindPoint3d(point3));
+    const Byte blob[] = {0, 1, 255};
+    ASSERT_EQ(ECSqlStatus::Success, insert.GetBinder(13)["Blob"].BindBlob(blob, sizeof(blob), IECSqlBinder::MakeCopy::Yes));
+    ASSERT_EQ(BE_SQLITE_DONE, insert.Step());
+    insert.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, insert.Prepare(m_ecdb, "INSERT INTO cr.CompositeRow(Description) VALUES('empty')"));
+    ASSERT_EQ(BE_SQLITE_DONE, insert.Step());
+    insert.Finalize();
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(
+        "UPDATE cr_CompositeRow SET Leaves='[]',Integers='[]',Longs='[]',Doubles='[]',Strings='[]',Flags='[]',Points2='[]',Points3='[]' "
+        "WHERE Description='empty'"));
+    ASSERT_EQ(ECSqlStatus::Success, insert.Prepare(m_ecdb, "INSERT INTO cr.CompositeRow(Description) VALUES(NULL)"));
+    ASSERT_EQ(BE_SQLITE_DONE, insert.Step());
+    insert.Finalize();
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.EnableWalMode(true));
+    auto config = ConcurrentQueryMgr::Config::GetDefault();
+    config.SetWorkerThreadCount(1).SetQuota(QueryQuota(60s, 128));
+    ConcurrentQueryMgr::Config::Reset(config);
+    ConcurrentQueryMgr mgr(m_ecdb);
+    std::vector<std::pair<std::string, bool>> queries {
+        {"SELECT NULL,Description,Point2,Point3,Payload,Leaves,Integers,Longs,Doubles,Strings,Flags,Points2,Points3,NULL "
+         "FROM cr.CompositeRow ORDER BY ECInstanceId", true},
+        {"SELECT Payload.Nested AS AliasedStruct,Payload.Items,Payload.Numbers,NULL FROM cr.CompositeRow ORDER BY ECInstanceId", true},
+        {"SELECT ECClassId,Schema,NULL FROM meta.ECClassDef ORDER BY ECInstanceId LIMIT 10", true},
+        {"SELECT ECInstanceId,Fallback,NULL FROM cr.CompositeRow ORDER BY ECInstanceId", false},
+        {"SELECT ECInstanceId,$->Payload,NULL FROM cr.CompositeRow ORDER BY ECInstanceId", false},
+    };
+    for (auto const& query : queries) {
+        for (auto format : {ECSqlRequest::ECSqlValueFormat::ECSqlNames, ECSqlRequest::ECSqlValueFormat::JsNames}) {
+            for (bool convert : {true, false, true}) {
+                ECSqlStatement stmt;
+                ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query.first.c_str()));
+                JsReadOptions options;
+                options.SetAbbreviateBlobs(false).SetUseJsNames(format == ECSqlRequest::ECSqlValueFormat::JsNames)
+                    .SetConvertClassIdsToClassNames(convert).SetDoNotConvertClassIdsToClassNamesWhenAliased(true);
+                ECSqlRowAdaptor adaptor(m_ecdb, options);
+                PreparedECSqlRowRenderer renderer;
+                renderer.BeginPage(stmt, adaptor);
+                EXPECT_EQ(query.second, renderer.CanRender(adaptor)) << query.first;
+                std::string expected = "[";
+                uint32_t expectedRows = 0;
+                DbResult rc;
+                while ((rc = stmt.Step()) == BE_SQLITE_ROW) {
+                    BeJsDocument row;
+                    ASSERT_EQ(SUCCESS, adaptor.RenderRowAsArray(row, ECSqlStatementRow(stmt)));
+                    if (query.second) {
+                        rapidjson::StringBuffer buffer;
+                        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+                        ASSERT_TRUE(renderer.WriteRow(writer, stmt, adaptor));
+                        EXPECT_EQ(row.Stringify(), std::string(buffer.GetString(), buffer.GetSize()));
+                    }
+                    if (expectedRows++ > 0)
+                        expected.push_back(',');
+                    expected.append(row.Stringify());
+                }
+                ASSERT_EQ(BE_SQLITE_DONE, rc);
+                expected.push_back(']');
+                stmt.Finalize();
+                for (bool primary : {false, true}) {
+                    std::string actual = "[";
+                    uint32_t rows = 0, pages = 0;
+                    for (;;) {
+                        auto req = ECSqlRequest::MakeRequest(query.first);
+                        req->SetUsePrimaryConnection(primary);
+                        req->SetValueFmt(format).SetConvertClassIdsToClassNames(convert).SetAbbreviateBlobs(false)
+                            .SetCursorId("composite-rendering").SetLimit(QueryLimit(-1, rows));
+                        auto response = mgr.Enqueue(std::move(req)).Get();
+                        ASSERT_TRUE(response->IsSuccess()) << response->GetError();
+                        auto const& page = response->GetAsConst<ECSqlResponse>();
+                        auto const& json = page.asJsonString();
+                        ASSERT_GE(json.size(), 2u);
+                        if (page.GetRowCount() > 0) {
+                            if (rows > 0)
+                                actual.push_back(',');
+                            actual.append(json, 1, json.size() - 2);
+                        }
+                        rows += page.GetRowCount();
+                        ++pages;
+                        if (response->IsDone())
+                            break;
+                        ASSERT_GT(page.GetRowCount(), 0u);
+                        ASSERT_LT(pages, expectedRows + 2);
+                    }
+                    actual.push_back(']');
+                    EXPECT_EQ(expectedRows, rows);
+                    EXPECT_EQ(expected, actual) << query.first;
+                }
+            }
+        }
+    }
+    for (Utf8CP query : {
+        "SELECT Payload.Nested.Inherited,Payload,Leaves FROM cr.CompositeRow ORDER BY ECInstanceId",
+        "SELECT ECClassId,Schema FROM meta.ECClassDef ORDER BY ECInstanceId LIMIT 10"}) {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
+        ECSqlRowAdaptor adaptor(m_ecdb);
+        PreparedECSqlRowRenderer renderer;
+        for (bool jsNames : {false, true}) {
+            for (bool fullName : {false, true, false}) {
+                for (bool skipReadOnly : {false, true}) {
+                    adaptor.GetOptions().SetUseJsNames(jsNames).SetUseClassFullNameInsteadofClassName(fullName)
+                        .SetSkipReadOnlyProperties(skipReadOnly);
+                    renderer.BeginPage(stmt, adaptor);
+                    ASSERT_TRUE(renderer.CanRender(adaptor));
+                    DbResult rc;
+                    while ((rc = stmt.Step()) == BE_SQLITE_ROW) {
+                        BeJsDocument expected;
+                        ASSERT_EQ(SUCCESS, adaptor.RenderRowAsArray(expected, ECSqlStatementRow(stmt)));
+                        rapidjson::StringBuffer buffer;
+                        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+                        ASSERT_TRUE(renderer.WriteRow(writer, stmt, adaptor));
+                        EXPECT_EQ(expected.Stringify(), std::string(buffer.GetString(), buffer.GetSize()));
+                    }
+                    ASSERT_EQ(BE_SQLITE_DONE, rc);
+                    ASSERT_EQ(ECSqlStatus::Success, stmt.Reset());
+                }
+            }
+        }
+    }
+    ECSqlStatement fixed;
+    ASSERT_EQ(ECSqlStatus::Success, fixed.Prepare(m_ecdb, "SELECT Integers,Leaves FROM cr.CompositeRow WHERE Description='full'"));
+    ASSERT_EQ(BE_SQLITE_ROW, fixed.Step());
+    ECSqlRowAdaptor adaptor(m_ecdb);
+    PreparedECSqlRowRenderer renderer;
+    renderer.BeginPage(fixed, adaptor);
+    ASSERT_TRUE(renderer.CanRender(adaptor));
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    ASSERT_TRUE(renderer.WriteRow(writer, fixed, adaptor));
+    EXPECT_STREQ("[[1,2],[{},{\"Zeta\":\"array\"}]]", buffer.GetString());
 }
 
 struct SleepFunc : BeSQLite::ScalarFunction {

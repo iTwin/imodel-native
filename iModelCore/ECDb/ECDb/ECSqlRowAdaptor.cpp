@@ -3,6 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
+#include "ECSqlRowRenderer.h"
 #include <GeomSerialization/GeomLibsSerialization.h>
 #include <GeomSerialization/GeomLibsJsonSerialization.h>
 #include <cmath>
@@ -178,52 +179,17 @@ BentleyStatus ECSqlRowAdaptor::RenderPrimitiveProperty(BeJsValue out, IECSqlValu
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-static bool IsClassIdProperty(Utf8StringCR propertyName) {
-    static const auto classIdProperties = std::set<Utf8String,CompareIUtf8Ascii> {
-        ECDBSYS_PROP_ECClassId,
-        ECDBSYS_PROP_SourceECClassId,
-        ECDBSYS_PROP_TargetECClassId,
-        ECDBSYS_PROP_NavPropRelECClassId
-    };
-    return classIdProperties.find(propertyName) != classIdProperties.end();
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
 BentleyStatus ECSqlRowAdaptor::RenderLong(BeJsValue out, IECSqlValue const& in, ECN::PrimitiveECPropertyCP prop) const {
-    if (prop != nullptr) {
-        const auto id = in.GetId<ECN::ECClassId>();
-        const auto extendTypeId = ExtendedTypeHelper::GetExtendedType(prop->GetExtendedTypeName());
-        const auto isClassId = Enum::Intersects<ExtendedTypeHelper::ExtendedType>(extendTypeId, ExtendedTypeHelper::ExtendedType::ClassIds);
-        const auto isId = Enum::Intersects<ExtendedTypeHelper::ExtendedType>(extendTypeId, ExtendedTypeHelper::ExtendedType::Ids);
-        if (isClassId) {
-            if (!id.IsValid()) {
-                return SUCCESS;
-            }
-            if(m_options.DoNotConvertClassIdsToClassNamesWhenAliased() && !IsClassIdProperty(prop->GetName())) {
-                out = id.ToHexStr();
-                return SUCCESS;
-            }
-            if (m_options.ConvertClassIdsToClassNames() || m_options.UseJsNames()) {
-                auto classCP = m_ecdb.Schemas().GetClass(id, in.GetColumnInfo().GetRootClass().GetTableSpace().c_str());
-                if (classCP != nullptr) {
-                    ECN::ECJsonUtilities::ClassNameToJson(out, *classCP, m_options.UseClassFullNameInsteadofClassName());
-                    return SUCCESS;
-                }
-            }
-            out = id.ToHexStr();
-            return SUCCESS;
-        } else if (isId) {
-            if (!id.IsValid()) {
-                return SUCCESS;
-            }
-            out = id.ToHexStr();
-            return SUCCESS;
-        }
-    }
-    out = std::trunc(in.GetDouble());
-    return SUCCESS;
+    struct Sink {
+        BeJsValue& m_out;
+        // Invalid IDs leave an existing destination untouched in the generic adaptor.
+        bool Null() { return true; }
+        bool Double(double value) { m_out = value; return true; }
+        bool String(Utf8CP value) { m_out = value; return true; }
+    } sink{out};
+    auto mode = ECSqlLongRenderer::GetMode(prop, m_options);
+    Utf8CP tableSpace = mode == ECSqlLongRenderer::Mode::ClassName ? in.GetColumnInfo().GetRootClass().GetTableSpace().c_str() : nullptr;
+    return ECSqlLongRenderer::Render(sink, in, mode, m_ecdb, tableSpace, m_options.UseClassFullNameInsteadofClassName()) ? SUCCESS : ERROR;
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod

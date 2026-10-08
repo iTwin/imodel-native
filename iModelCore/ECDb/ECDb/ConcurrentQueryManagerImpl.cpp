@@ -310,6 +310,7 @@ void QueryAdaptorCache::Park(CachedQueryAdaptor& adaptor, ECSqlRequest const& re
 
 void CachedQueryAdaptor::CachedQueryAdaptor::ReleaseMemory() {
     ResetCursor();
+    m_rowRenderer = PreparedECSqlRowRenderer();
     m_adaptor.reset();
     ReleaseResultMemory();
     if (m_conn){
@@ -1517,6 +1518,9 @@ std::optional<uint32_t> QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, 
     options.SetConvertClassIdsToClassNames(classIdToClassNames);
     options.SetUseJsNames(request.GetValueFormat() == ECSqlRequest::ECSqlValueFormat::JsNames);
     options.SetDoNotConvertClassIdsToClassNamesWhenAliased(doNotConvertClassIdsToClassNamesWhenAliased);
+    auto& rowRenderer = cachedAdaptor.GetRowRenderer();
+    rowRenderer.BeginPage(stmt, adaptor);
+    const bool writeDirectly = rowRenderer.CanRender(adaptor);
     ECSqlRowProperty::List props;
     if (includeMetaData) {
         adaptor.GetMetaData(props ,stmt);
@@ -1560,16 +1564,18 @@ std::optional<uint32_t> QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, 
     rapidjson::Writer<rapidjson::StringBuffer> rowWriter(rowJson);
     auto rc = stmt.Step();
     while (rc == BE_SQLITE_ROW) {
-        rowsDoc.SetNull();
-        rowAllocator.Clear();
-        BeJsValue rows(rowsDoc);
-        if (adaptor.RenderRowAsArray(rows, ECSqlStatementRow(stmt)) != SUCCESS) {
-            setError(QueryResponse::Status::Error_ECSql_RowToJsonFailed, "failed to serialize ecsql statement row to json");
-            return std::nullopt;
-        }
         rowJson.Clear();
         rowWriter.Reset(rowJson);
-        if (!rowsDoc.Accept(rowWriter)) {
+        bool written;
+        if (writeDirectly) {
+            written = rowRenderer.WriteRow(rowWriter, stmt, adaptor);
+        } else {
+            rowsDoc.SetNull();
+            rowAllocator.Clear();
+            BeJsValue rows(rowsDoc);
+            written = adaptor.RenderRowAsArray(rows, ECSqlStatementRow(stmt)) == SUCCESS && rowsDoc.Accept(rowWriter);
+        }
+        if (!written) {
             setError(QueryResponse::Status::Error_ECSql_RowToJsonFailed, "failed to serialize ecsql statement row to json");
             return std::nullopt;
         }

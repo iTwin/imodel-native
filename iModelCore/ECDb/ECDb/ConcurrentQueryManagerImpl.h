@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include <ECDb/ConcurrentQueryManager.h>
+#include "ECSqlRowRenderer.h"
 #include <queue>
 #include <map>
 #include <thread>
@@ -65,6 +66,7 @@ struct CachedQueryAdaptor final: std::enable_shared_from_this<CachedQueryAdaptor
     private:
         ECSqlStatement m_stmt;
         std::unique_ptr<ECSqlRowAdaptor> m_adaptor;
+        PreparedECSqlRowRenderer m_rowRenderer;
         std::string m_cachedString;
         ECDb const* m_conn;
         bool m_usePrimaryConn;
@@ -81,6 +83,7 @@ struct CachedQueryAdaptor final: std::enable_shared_from_this<CachedQueryAdaptor
         CachedQueryAdaptor() :m_usePrimaryConn(false) {}
         ECSqlStatement& GetStatement() { return m_stmt; }
         ECSqlRowAdaptor& GetJsonAdaptor();
+        PreparedECSqlRowRenderer& GetRowRenderer() { return m_rowRenderer; }
         std::string& ClearAndGetCachedString() { m_cachedString.clear(); return m_cachedString; }
         bool GetUsePrimaryConn() const { return m_usePrimaryConn; }
         void SetUsePrimaryConn(bool val) { m_usePrimaryConn = val; }
