@@ -212,11 +212,15 @@ public:
     //! Resolves the ClassMap, ECClassId, and whether the class id came from the changeset
     //! for a single changeset row.  Tries the changeset first, then a live DB seek,
     //! then falls back to the table's root ClassMap.
+    //! @param[in] sameRowClassId If not null, the class id this function resolved without the changeset for the
+    //! other stage of the same row. It is used instead of seeking the DB again: both stages of a row have the same
+    //! primary key and the DB does not change in between, so the seek would return the same result.
     //! Returns SUCCESS and populates all three out params on success; ERROR otherwise.
     static BentleyStatus ResolveClassId(ECDbCR conn, DbTable const& tbl,
                                         ColumnValueMap const& columnValues,
                                         ECClassId& resolvedClassIdOut,
-                                        bool& classIdFromChangesetOut);
+                                        bool& classIdFromChangesetOut,
+                                        ECClassId const* sameRowClassId = nullptr);
 
     //! Builds the IECSqlValue fields for one changeset row.
     //! If @p changedProps is non-null it is filled with the access paths of all properties

@@ -341,6 +341,7 @@ void PreparedChangesetReader::ClearFields() {
     m_columnValues.clear();
     m_changedPropNames.clear();
     m_currentRowIsECTable.reset();
+    m_rowClassIdNotFromChangeset.Invalidate();
 }
 
 //---------------------------------------------------------------------------------------
@@ -433,8 +434,11 @@ PreparedChangesetReader::StageProcessResult PreparedChangesetReader::ProcessStag
 
     ECClassId classId;
     bool isClassIdFromChangeset = false;
-    if (ChangesetValueFactory::ResolveClassId(*m_ecdb, dbTable, m_columnValues, classId, isClassIdFromChangeset) != SUCCESS)
+    ECClassId const* sameRowClassId = m_rowClassIdNotFromChangeset.IsValid() ? &m_rowClassIdNotFromChangeset : nullptr;
+    if (ChangesetValueFactory::ResolveClassId(*m_ecdb, dbTable, m_columnValues, classId, isClassIdFromChangeset, sameRowClassId) != SUCCESS)
         return StageProcessResult::Error;
+    if (!isClassIdFromChangeset)
+        m_rowClassIdNotFromChangeset = classId;
     ECClassCP ecClass = m_ecdb->Schemas().Main().GetClass(classId);
     if (ecClass == nullptr) {
         LOG.errorv("ECClass with id %" PRIu64 " not found in schema.", classId.GetValueUnchecked());

@@ -125,19 +125,19 @@ CachedStatementPtr ChangesetValueFactory::PreparePkStatement(ECDbCR conn, DbTabl
             return nullptr;
     }
 
-    // Build WHERE clause: [pk1]=? AND [pk2]=? ...
-    Utf8String whereClause;
+    // SELECT [col] FROM [tbl] WHERE [pk1]=? AND [pk2]=? ... (built with appends: this runs for many rows)
+    Utf8String sql;
+    sql.reserve(32 + selectColName.size() + tbl.GetName().size() + 16 * pk->GetColumns().size());
+    sql.append("SELECT [").append(selectColName).append("] FROM [").append(tbl.GetName()).append("] WHERE ");
+    bool firstPkCol = true;
     for (DbColumn const* pkCol : pk->GetColumns()) {
-        if (!whereClause.empty())
-            whereClause.append(" AND ");
-        whereClause.append("[");
-        whereClause.append(pkCol->GetName());
-        whereClause.append("]=?");
+        if (!firstPkCol)
+            sql.append(" AND ");
+        firstPkCol = false;
+        sql.append("[").append(pkCol->GetName()).append("]=?");
     }
 
-    CachedStatementPtr stmt = conn.GetCachedStatement(
-        Utf8PrintfString("SELECT [%s] FROM [%s] WHERE %s",
-            selectColName.c_str(), tbl.GetName().c_str(), whereClause.c_str()).c_str());
+    CachedStatementPtr stmt = conn.GetCachedStatement(sql.c_str());
     if (stmt == nullptr)
         return nullptr;
     
@@ -851,12 +851,15 @@ void ChangesetValueFactory::FillChangedPropIfApplicable(std::vector<Utf8String>*
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ChangesetValueFactory::ResolveClassId(
-    ECDbCR conn, DbTable const& tbl, ColumnValueMap const& columnValues, ECClassId& resolvedClassIdOut, bool& classIdFromChangesetOut) {
+    ECDbCR conn, DbTable const& tbl, ColumnValueMap const& columnValues, ECClassId& resolvedClassIdOut, bool& classIdFromChangesetOut,
+    ECClassId const* sameRowClassId) {
     resolvedClassIdOut.Invalidate();
     classIdFromChangesetOut = false;
 
     if (TryResolveClassIdFromChangeset(tbl, columnValues, conn, resolvedClassIdOut)) {
         classIdFromChangesetOut = true;
+    } else if (sameRowClassId != nullptr && sameRowClassId->IsValid()) {
+        resolvedClassIdOut = *sameRowClassId;
     } else if (TryResolveClassIdFromDbSeek(tbl, columnValues, conn, resolvedClassIdOut)) {
         // resolved from the current state of the DB
     } else {
