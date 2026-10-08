@@ -6,8 +6,10 @@
 #include <ECDb/ECSqlStatement.h>
 #include <ECObjects/ECJsonUtilities.h>
 #include <BeRapidJson/BeRapidJson.h>
+#include "ECDbInternalTypes.h"
 #include "ECDbSystemSchemaHelper.h"
 #include <algorithm>
+#include <charconv>
 #include <cmath>
 #include <set>
 #include <utility>
@@ -21,6 +23,20 @@ struct ECSqlLongRenderer final {
         ECN::ECClassId m_id;
         Utf8String m_name;
     };
+
+    template <typename Sink>
+    static bool RenderHexId(Sink& sink, BeInt64Id id) {
+        if (!id.IsValid())
+            return sink.String("0");
+        char buffer[BeInt64Id::ID_STRINGBUFFER_LENGTH];
+        buffer[0] = '0';
+        buffer[1] = 'x';
+        auto converted = std::to_chars(buffer + 2, buffer + sizeof(buffer) - 1, id.GetValueUnchecked(), 16);
+        if (converted.ec != std::errc())
+            return false;
+        *converted.ptr = '\0';
+        return sink.String(buffer);
+    }
 
     static Mode GetMode(ECN::PrimitiveECPropertyCP prop, JsReadOptions const& options) {
         if (prop == nullptr)
@@ -66,7 +82,7 @@ struct ECSqlLongRenderer final {
                 return sink.String(name.c_str());
             }
         }
-        return sink.String(id.ToHexStr().c_str());
+        return RenderHexId(sink, id);
     }
 };
 
@@ -218,7 +234,7 @@ private:
         auto const& id = value[ECDBSYS_PROP_NavPropId];
         if (!id.IsNull()) {
             if (!writer.Key(m_options.UseJsNames() ? ECN::ECJsonSystemNames::Navigation::Id() : ECDBSYS_PROP_NavPropId) ||
-                !writer.String(id.GetId<ECInstanceId>().ToHexStr().c_str()))
+                !ECSqlLongRenderer::RenderHexId(writer, id.GetId<ECInstanceId>()))
                 return false;
             auto const& classId = value[ECDBSYS_PROP_NavPropRelECClassId];
             if (!classId.IsNull()) {

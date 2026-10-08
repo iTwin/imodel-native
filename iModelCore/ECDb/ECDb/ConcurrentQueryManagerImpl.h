@@ -63,6 +63,7 @@ struct ErrorListenerScope final: ECN::IIssueListener {
 //! @bsiclass
 //=======================================================================================
 struct CachedQueryAdaptor final: std::enable_shared_from_this<CachedQueryAdaptor> {
+    friend struct CachedConnection;
     private:
         ECSqlStatement m_stmt;
         std::unique_ptr<ECSqlRowAdaptor> m_adaptor;
@@ -77,6 +78,8 @@ struct CachedQueryAdaptor final: std::enable_shared_from_this<CachedQueryAdaptor
             std::string m_restartToken;
             QueryLimit m_nextLimit;
             std::chrono::steady_clock::time_point m_lastUsed;
+            bool Matches(ECSqlRequest const&, std::string const& argsKey) const;
+            bool IsExpired(std::chrono::seconds timeout) const { return std::chrono::steady_clock::now() - m_lastUsed >= timeout; }
         };
         std::optional<Cursor> m_cursor;
     public:
@@ -111,6 +114,7 @@ struct RunnableRequestQueue;
 //! @bsiclass
 //=======================================================================================
 struct QueryAdaptorCache final {
+    friend struct CachedConnection;
     private:
             std::vector<std::shared_ptr<CachedQueryAdaptor>> m_cache;
             recursive_mutex_t m_mutex;
@@ -179,6 +183,8 @@ struct CachedConnection final : std::enable_shared_from_this<CachedConnection> {
         recursive_mutex_t m_mutexReq;
         std::unique_ptr<RunnableRequestBase> m_request;
         std::vector<std::string> m_pendingRestarts;
+        // Owned routing metadata may be inspected while the worker mutates its statement cache.
+        std::vector<CachedQueryAdaptor::Cursor> m_cursorHints;
         bool m_clearCursorsOnCompletion = false;
         uint16_t m_id;
         uint64_t m_dataVersion = 0;
@@ -273,8 +279,15 @@ struct RunnableRequestBase {
         std::chrono::milliseconds m_prepareTime;
         bool m_resumed = false;
         std::optional<std::string> m_argsKey;
+        std::optional<std::chrono::steady_clock::time_point> m_cursorAffinityWaitStarted;
         virtual void _SetResponse(QueryResponse::Ptr response) = 0;
     public:
+        static constexpr auto kCursorAffinityWait = 10ms;
+        bool ShouldWaitForCursor(std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now()) {
+            if (!m_cursorAffinityWaitStarted)
+                m_cursorAffinityWaitStarted = now;
+            return now - *m_cursorAffinityWaitStarted < kCursorAffinityWait;
+        }
         RunnableRequestBase(RunnableRequestQueue& queue, QueryRequest::Ptr request, QueryQuota quota, uint32_t id)
             :m_queue(queue), m_request(std::move(request)), m_id(id), m_isCompleted(false),m_dequeuedOn(0s),m_isDequeued(false), m_interrupted(false),
              m_quota(quota), m_submittedOn(std::chrono::steady_clock::now()), m_cancelled(false), m_executorId(0), m_connId(0),m_prepareTime(0){}
@@ -361,7 +374,6 @@ struct RunnableRequestQueue final {
         std::atomic<State> m_state;
         uint32_t m_maxQueueSize;
         uint32_t m_nextId;
-        uint32_t m_lastDelayedQueryId;
         QueryQuota m_quota;
         std::vector<std::unique_ptr<RunnableRequestBase>> m_requests;
         ECDbCR m_ecdb;
@@ -371,8 +383,8 @@ struct RunnableRequestQueue final {
     private:
         void InsertSorted(ConnectionCache&,std::unique_ptr<RunnableRequestBase>&& request);
         uint32_t GetNextId ();
-        std::unique_ptr<RunnableRequestBase> Dequeue();
-        std::unique_ptr<RunnableRequestBase> WaitForDequeue();
+        std::unique_ptr<RunnableRequestBase> Dequeue(ConnectionCache&, std::shared_ptr<CachedConnection>&);
+        std::unique_ptr<RunnableRequestBase> WaitForDequeue(ConnectionCache&, std::shared_ptr<CachedConnection>&);
         QueryQuota AdjustQuota(QueryQuota const& quota) const;
         void ExecuteSynchronously(ConnectionCache&, std::unique_ptr<RunnableRequestBase>);
     public:

@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
 #include "../../ECDb/ECSqlRowRenderer.h"
+#include "../../ECDb/ConcurrentQueryManagerImpl.h"
 
 USING_NAMESPACE_BENTLEY_EC
 #include <ECDb/ConcurrentQueryManager.h>
@@ -17,6 +18,7 @@ USING_NAMESPACE_BENTLEY_EC
 #include <cstdio>
 #include <cstdlib>
 #include <limits>
+#include <random>
 BEGIN_ECDBUNITTESTS_NAMESPACE
 using namespace std::chrono_literals;
 
@@ -27,6 +29,71 @@ struct ConcurrentQueryFixture : ECDbTestFixture {
         ConcurrentQueryMgr::Config::Reset(std::nullopt);
     }
 };
+TEST_F(ConcurrentQueryFixture, HexIdRenderingMatchesBeId) {
+    auto check = [](uint64_t rawId) {
+        BeInt64Id id(rawId);
+        rapidjson::StringBuffer buffer;
+        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+        ASSERT_TRUE(ECSqlLongRenderer::RenderHexId(writer, id));
+        EXPECT_EQ(std::string("\"") + id.ToHexStr().c_str() + "\"", buffer.GetString());
+    };
+    for (uint64_t id : {UINT64_C(0), UINT64_C(1), UINT64_C(15), UINT64_C(16),
+            UINT64_C(255), UINT64_C(256), UINT64_C(0x8000000000000000), UINT64_MAX})
+        check(id);
+    std::mt19937_64 random(42);
+    for (int i = 0; i < 10000; ++i)
+        check(random());
+}
+
+TEST_F(ConcurrentQueryFixture, PointCoordinatesRefreshAcrossStepAndReset) {
+    ASSERT_EQ(SUCCESS, SetupECDb("PointCoordinatesRefreshAcrossStepAndReset.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="PointCache" alias="pc" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="PointRow">
+                <ECProperty propertyName="Ordinal" typeName="int"/>
+                <ECProperty propertyName="Pair" typeName="Point2d"/>
+                <ECProperty propertyName="Triple" typeName="Point3d"/>
+            </ECEntityClass>
+        </ECSchema>)xml")));
+    ECSqlStatement insert;
+    ASSERT_EQ(ECSqlStatus::Success, insert.Prepare(m_ecdb, "INSERT INTO pc.PointRow(Ordinal,Pair,Triple) VALUES(?,?,?)"));
+    for (int i = 0; i < 5; ++i) {
+        ASSERT_EQ(ECSqlStatus::Success, insert.BindInt(1, i));
+        if (i != 2) {
+            double x = i == 3 ? std::numeric_limits<double>::infinity() :
+                i == 4 ? std::numeric_limits<double>::quiet_NaN() : i + 0.5;
+            ASSERT_EQ(ECSqlStatus::Success, insert.BindPoint2d(2, DPoint2d::From(x, -2.0 - i)));
+            ASSERT_EQ(ECSqlStatus::Success, insert.BindPoint3d(3, DPoint3d::From(x, -2.0 - i, 3.0 + i)));
+        }
+        ASSERT_EQ(BE_SQLITE_DONE, insert.Step());
+        ASSERT_EQ(ECSqlStatus::Success, insert.Reset());
+        ASSERT_EQ(ECSqlStatus::Success, insert.ClearBindings());
+    }
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Pair,Triple FROM pc.PointRow ORDER BY Ordinal"));
+    for (bool readBeforeNullCheck : {false, true}) {
+        for (int i = 0; i < 5; ++i) {
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+            auto const& pair = stmt.GetValue(0);
+            auto const& triple = stmt.GetValue(1);
+            if (readBeforeNullCheck) {
+                pair.GetPoint2d();
+                triple.GetPoint3d();
+            }
+            EXPECT_EQ(i >= 2, pair.IsNull());
+            EXPECT_EQ(i >= 2, triple.IsNull());
+            if (i < 2) {
+                EXPECT_DOUBLE_EQ(i + 0.5, pair.GetPoint2d().x);
+                EXPECT_DOUBLE_EQ(-2.0 - i, pair.GetPoint2d().y);
+                EXPECT_DOUBLE_EQ(i + 0.5, triple.GetPoint3d().x);
+                EXPECT_DOUBLE_EQ(-2.0 - i, triple.GetPoint3d().y);
+                EXPECT_DOUBLE_EQ(3.0 + i, triple.GetPoint3d().z);
+            }
+        }
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Reset());
+    }
+}
+
 TEST_F(ConcurrentQueryFixture, JsonSerializationMatchesRowAdaptor) {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("JsonSerializationMatchesRowAdaptor.ecdb"));
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
@@ -986,10 +1053,68 @@ TEST_F(ConcurrentQueryFixture, CursorBusyOwnerFallsBack) {
         if (resp->IsSuccess())
             EXPECT_EQ(2, BeJsDocument(resp->GetAsConst<ECSqlResponse>().asJsonString())[0][0].asInt());
         EXPECT_FALSE(gate.m_completed.load());
+        EXPECT_TRUE(mgr.Enqueue(ECSqlRequest::MakeRequest("SELECT 42")).Get()->IsDone());
+        EXPECT_FALSE(gate.m_completed.load());
         gate.m_release.set_value();
         EXPECT_TRUE(busy.Get()->IsSuccess());
     }
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.RemoveFunction(gate));
+}
+
+TEST_F(ConcurrentQueryFixture, CursorAffinityWaitIsBoundedAndReusesOwner) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("CursorAffinityWaitIsBoundedAndReusesOwner.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.EnableWalMode(true));
+    auto config = ConcurrentQueryMgr::Config::GetDefault();
+    config.SetWorkerThreadCount(2).SetQuota(QueryQuota(60s, 1));
+    ConcurrentQueryMgr::Config::Reset(config);
+    RunnableRequestQueue queue(m_ecdb);
+    ConnectionCache conns(m_ecdb, 2);
+    auto makeRequest = [&](int offset, Utf8CP cursor = "affinity") {
+        auto request = ECSqlRequest::MakeRequest(
+            "WITH sequence(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM sequence WHERE n<10) SELECT n FROM sequence");
+        request->SetCursorId(cursor).SetLimit(QueryLimit(-1, offset));
+        return std::make_unique<RunnableRequestWithPromise>(queue, std::move(request), config.GetQuota(), 1);
+    };
+    auto first = makeRequest(0);
+    auto firstResult = first->GetFuture();
+    auto owner = conns.GetConnection(*first);
+    ASSERT_NE(nullptr, owner);
+    const auto ownerId = owner->Id();
+    owner->Execute([](QueryAdaptorCache& cache, RunnableRequestBase& request) {
+        QueryHelper::Execute(cache, request);
+    }, std::move(first));
+    ASSERT_EQ(QueryResponse::Status::Partial, firstResult.Get()->GetStatus());
+
+    auto waiting = makeRequest(1);
+    EXPECT_EQ(nullptr, conns.GetConnection(*waiting));
+    auto unrelated = makeRequest(1, "unrelated");
+    auto otherConnection = conns.GetConnection(*unrelated);
+    ASSERT_NE(nullptr, otherConnection);
+    EXPECT_NE(ownerId, otherConnection->Id());
+    otherConnection.reset();
+
+    auto expired = makeRequest(1);
+    auto start = std::chrono::steady_clock::now() - RunnableRequestBase::kCursorAffinityWait;
+    EXPECT_TRUE(expired->ShouldWaitForCursor(start));
+    EXPECT_FALSE(expired->ShouldWaitForCursor(start + RunnableRequestBase::kCursorAffinityWait));
+    auto fallback = conns.GetConnection(*expired);
+    ASSERT_NE(nullptr, fallback);
+    EXPECT_NE(ownerId, fallback->Id());
+    fallback.reset();
+
+    owner.reset();
+    auto resumedConnection = conns.GetConnection(*waiting);
+    ASSERT_NE(nullptr, resumedConnection);
+    EXPECT_EQ(ownerId, resumedConnection->Id());
+    auto result = waiting->GetFuture();
+    resumedConnection->Execute([](QueryAdaptorCache& cache, RunnableRequestBase& request) {
+        QueryHelper::Execute(cache, request);
+    }, std::move(waiting));
+    auto response = result.Get();
+    EXPECT_EQ(QueryResponse::Status::Partial, response->GetStatus());
+    EXPECT_TRUE(response->GetStats().Resumed());
+    EXPECT_EQ(2, BeJsDocument(response->GetAsConst<ECSqlResponse>().asJsonString())[0][0].asInt());
 }
 
 TEST_F(ConcurrentQueryFixture, CursorPagingBenchmark) {

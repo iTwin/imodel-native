@@ -229,12 +229,16 @@ ECSqlRowAdaptor& CachedQueryAdaptor::GetJsonAdaptor() {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+bool CachedQueryAdaptor::Cursor::Matches(ECSqlRequest const& request, std::string const& argsKey) const {
+    return !request.UsePrimaryConnection() &&
+        m_id == request.GetCursorId() &&
+        m_query == request.GetQuery() && m_args == argsKey &&
+        m_nextLimit.GetOffset() == std::max<int64_t>(0, request.GetLimit().GetOffset()) &&
+        m_nextLimit.GetCount() == (request.GetLimit().GetCount() < 0 ? -1 : request.GetLimit().GetCount());
+}
+
 bool CachedQueryAdaptor::MatchesCursor(ECSqlRequest const& request, std::string const& argsKey) const {
-    return m_cursor && !request.UsePrimaryConnection() &&
-        m_cursor->m_id == request.GetCursorId() &&
-        m_cursor->m_query == request.GetQuery() && m_cursor->m_args == argsKey &&
-        m_cursor->m_nextLimit.GetOffset() == std::max<int64_t>(0, request.GetLimit().GetOffset()) &&
-        m_cursor->m_nextLimit.GetCount() == (request.GetLimit().GetCount() < 0 ? -1 : request.GetLimit().GetCount());
+    return m_cursor && m_cursor->Matches(request, argsKey);
 }
 
 void CachedQueryAdaptor::Park(ECSqlRequest const& request, std::string const& argsKey, uint32_t rowCount) {
@@ -257,7 +261,7 @@ void CachedQueryAdaptor::ResetCursor() {
 }
 
 bool CachedQueryAdaptor::IsCursorExpired(std::chrono::seconds timeout) const {
-    return m_cursor && std::chrono::steady_clock::now() - m_cursor->m_lastUsed >= timeout;
+    return m_cursor && m_cursor->IsExpired(timeout);
 }
 
 void CachedQueryAdaptor::ReleaseResultMemory() {
@@ -402,6 +406,8 @@ void CachedConnection::Execute(std::function<void(QueryAdaptorCache&,RunnableReq
             RefreshIfPrimaryChanged(dataVersion);
         }
         cb(m_adaptorCache, *m_request);
+        ClearRequest();
+        return;
     } catch (std::exception const& ex) {
         m_adaptorCache.Reset();
         if (m_request != nullptr && !m_request->IsCompleted())
@@ -430,6 +436,17 @@ void CachedConnection::ClearRequest() {
         m_adaptorCache.DropCursors(token);
     m_pendingRestarts.clear();
     m_clearCursorsOnCompletion = false;
+    size_t hints = 0;
+    for (auto const& entry : m_adaptorCache.m_cache) {
+        if (!entry->m_cursor)
+            continue;
+        if (hints < m_cursorHints.size())
+            m_cursorHints[hints] = *entry->m_cursor;
+        else
+            m_cursorHints.push_back(*entry->m_cursor);
+        ++hints;
+    }
+    m_cursorHints.resize(hints);
     m_request = nullptr;
 }
 //---------------------------------------------------------------------------------------
@@ -492,7 +509,15 @@ void CachedConnection::RefreshIfPrimaryChanged(uint64_t dataVersion) {
 
 bool CachedConnection::HasCursor(ECSqlRequest const& request, std::string const& argsKey) {
     recursive_guard_t lock(m_mutexReq);
-    return m_request == nullptr && m_adaptorCache.HasCursor(request, argsKey);
+    if (m_request == nullptr)
+        return m_adaptorCache.HasCursor(request, argsKey);
+    if (m_clearCursorsOnCompletion)
+        return false;
+    auto timeout = ConcurrentQueryMgr::Config::Get().GetCursorIdleTimeout();
+    return std::any_of(m_cursorHints.begin(), m_cursorHints.end(), [&](auto const& cursor) {
+        return !cursor.IsExpired(timeout) && cursor.Matches(request, argsKey) &&
+            std::find(m_pendingRestarts.begin(), m_pendingRestarts.end(), cursor.m_restartToken) == m_pendingRestarts.end();
+    });
 }
 
 void CachedConnection::ExpireCursors(QueryRequest const* incoming, std::string const& argsKey) {
@@ -659,12 +684,16 @@ std::shared_ptr<CachedConnection> ConnectionCache::GetConnection(RunnableRequest
         auto const& ecsqlRequest = request.GetAsConst<ECSqlRequest>();
         for (auto const& conn : m_conns)
             conn->ExpireCursors(&request, *argsKey);
+        bool busyOwner = false;
         for (auto const& conn : m_conns) {
-            if (conn.use_count() != 1)
-                continue;
-            if (conn->HasCursor(ecsqlRequest, *argsKey))
-                return conn;
+            if (conn->HasCursor(ecsqlRequest, *argsKey)) {
+                if (conn.use_count() == 1)
+                    return conn;
+                busyOwner = true;
+            }
         }
+        if (busyOwner && runnableRequest.ShouldWaitForCursor())
+            return nullptr;
     }
     for (auto& it : m_conns) {
         if (it.use_count() == 1)  {
@@ -675,7 +704,10 @@ std::shared_ptr<CachedConnection> ConnectionCache::GetConnection(RunnableRequest
         // Worker connection ids must never collide with SCHEMA_SOURCE_CONN_ID (UINT16_MAX). The
         // default pool size makes this unreachable, but assert the invariant explicitly.
         BeAssert(m_conns.size() < UINT16_MAX - 1);
-        m_conns.push_back(CachedConnection::Make(*this, (uint16_t)m_conns.size() + 1));
+        auto connection = CachedConnection::Make(*this, (uint16_t)m_conns.size() + 1);
+        if (connection == nullptr)
+            throw std::runtime_error("failed to open concurrent query worker connection");
+        m_conns.push_back(std::move(connection));
         return m_conns.back();
     }
 
@@ -934,7 +966,7 @@ QueryResponse::Ptr RunnableRequestBase::CreateShutDownResponse() const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-RunnableRequestQueue::RunnableRequestQueue(ECDbCR ecdb): m_nextId(0), m_state(State::Running), m_lastDelayedQueryId(0),m_ecdb(ecdb) {
+RunnableRequestQueue::RunnableRequestQueue(ECDbCR ecdb): m_nextId(0), m_state(State::Running),m_ecdb(ecdb) {
     auto env = ConcurrentQueryMgr::Config::Get();
     m_quota = env.GetQuota();
     m_maxQueueSize = env.GetRequestQueueSize();
@@ -1021,35 +1053,40 @@ void RunnableRequestQueue::IfReadyForAutoShutdown(std::function<void()> shutdown
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-std::unique_ptr<RunnableRequestBase> RunnableRequestQueue::Dequeue() {
-    if (m_requests.empty())
-        return nullptr;
-
-    auto req = std::move(m_requests.back());
-    m_requests.pop_back();
-    m_lastDequeueTime  = std::chrono::steady_clock::now();
-    if (req->IsReady()) {
-        log_trace("%s dequeued request [id=%" PRIu32 "]", GetTimestamp().c_str(), req->GetId());
-        req->OnDequeued();
-        return req;
+std::unique_ptr<RunnableRequestBase> RunnableRequestQueue::Dequeue(ConnectionCache& conns, std::shared_ptr<CachedConnection>& connection) {
+    for (size_t i = m_requests.size(); i > 0; --i) {
+        auto& request = m_requests[i - 1];
+        if (request->IsTimeExceeded()) {
+            request->SetResponse(request->CreateTimeoutResponse());
+            m_requests.erase(m_requests.begin() + i - 1);
+            continue;
+        }
+        if (!request->IsReady())
+            continue;
+        try {
+            connection = conns.GetConnection(*request);
+        } catch (std::exception const& ex) {
+            log_error("failed to assign concurrent query connection: %s", ex.what());
+            request->SetResponse(request->CreateErrorResponse(QueryResponse::Status::Error, ex.what()));
+            m_requests.erase(m_requests.begin() + i - 1);
+            continue;
+        }
+        if (connection == nullptr)
+            continue;
+        auto result = std::move(request);
+        m_requests.erase(m_requests.begin() + i - 1);
+        m_lastDequeueTime = std::chrono::steady_clock::now();
+        log_trace("%s dequeued request [id=%" PRIu32 "]", GetTimestamp().c_str(), result->GetId());
+        result->OnDequeued();
+        return result;
     }
-    if (m_lastDelayedQueryId != req->GetId()) {
-        m_lastDelayedQueryId = req->GetId();
-        log_trace("%s dequeued request [id=%" PRIu32 "] has delay and will be deferred and put back in queue.",GetTimestamp().c_str(), req->GetId());
-    }
-    if (m_requests.size() > 1)
-        m_requests.insert(m_requests.end() - 1, std::move(req));
-    else
-        m_requests.push_back(std::move(req));
-
-    std::this_thread::yield();
     return nullptr;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-std::unique_ptr<RunnableRequestBase> RunnableRequestQueue::WaitForDequeue() {
+std::unique_ptr<RunnableRequestBase> RunnableRequestQueue::WaitForDequeue(ConnectionCache& conns, std::shared_ptr<CachedConnection>& connection) {
     std::unique_lock<std::recursive_mutex> lock(m_mutex);
     m_cond.wait(lock, [&](){
         return !m_requests.empty() || m_state.load() != State::Running;
@@ -1061,8 +1098,12 @@ std::unique_ptr<RunnableRequestBase> RunnableRequestQueue::WaitForDequeue() {
         m_cond.wait(lock, [&](){ return m_state.load() != State::Paused; });
     }
 
-    if (m_state.load() == State::Running)
-        return Dequeue();
+    if (m_state.load() == State::Running) {
+        auto request = Dequeue(conns, connection);
+        if (request == nullptr && !m_requests.empty())
+            m_cond.wait_for(lock, 1ms);
+        return request;
+    }
 
     return nullptr;
 }
@@ -1755,16 +1796,10 @@ QueryExecutor::QueryExecutor(RunnableRequestQueue& queue, ECDbCR primaryDb, uint
             thread_local const auto execId = m_threadCount.fetch_add(1);
             log_trace("%s executor started [id=%" PRIu32 "]",GetTimestamp().c_str(), execId);
             do {
-                auto runnableQuery = m_queue.WaitForDequeue();
+                std::shared_ptr<CachedConnection> conn;
+                auto runnableQuery = m_queue.WaitForDequeue(m_connCache, conn);
                 if (runnableQuery != nullptr) {
                     log_trace("%s executor [id=%" PRIu32 "] dequeued request [id=%" PRIu32 "]", GetTimestamp().c_str(), execId, runnableQuery->GetId());
-                    std::shared_ptr<CachedConnection> conn;
-                    conn = m_connCache.GetConnection(*runnableQuery);
-                    while (conn == nullptr) {
-                        std::this_thread::yield();
-                        std::this_thread::sleep_for(1s);
-                        conn = m_connCache.GetConnection(*runnableQuery);
-                    }
                     runnableQuery->SetExecutorContext(execId, conn->Id());
                     log_trace("%s executor [id=%" PRIu32 "] with request [id=%" PRIu32 "] is assigned connection [id=%" PRIu32 "]",
                         GetTimestamp().c_str(),
@@ -1803,6 +1838,8 @@ QueryExecutor::QueryExecutor(RunnableRequestQueue& queue, ECDbCR primaryDb, uint
                             runnableQuery.GetId());
 
                     },std::move(runnableQuery));
+                    conn.reset();
+                    m_queue.m_cond.notify_all();
                 }
             } while(m_queue.GetState() != RunnableRequestQueue::State::Stop);
             m_threadCount.fetch_sub(1);
