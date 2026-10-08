@@ -302,8 +302,6 @@ BentleyStatus ChangesetValueFactory::CreatePoint2d(
     const bool yInCurrentTableAndChangeset = yCol.GetTable() == dbTable && IsInMap(yCol.GetName(), columnValues);
 
     if (!xInCurrentTableAndChangeset && !yInCurrentTableAndChangeset) {
-        LOG.infov("Point2d property '%s': no data in changeset — skipping.",
-                  propertyMap.GetProperty().GetName().c_str());
         return SUCCESS;
     }
 
@@ -361,8 +359,6 @@ BentleyStatus ChangesetValueFactory::CreatePoint3d(
     const bool zInCurrentTableAndChangeset = zCol.GetTable() == dbTable && IsInMap(zCol.GetName(), columnValues);
 
     if (!xInCurrentTableAndChangeset && !yInCurrentTableAndChangeset && !zInCurrentTableAndChangeset) {
-        LOG.infov("Point3d property '%s': no data in changeset — skipping.",
-                  propertyMap.GetProperty().GetName().c_str());
         return SUCCESS;
     }
 
@@ -430,16 +426,10 @@ BentleyStatus ChangesetValueFactory::CreatePrimitive(
         return CreatePoint3d(conn, propertyMap, columnValues, dbTable, fieldsOut, changedProps);
 
     const auto& primMap = propertyMap.GetAs<SingleColumnDataPropertyMap>();
-    if(primMap.GetColumn().GetTable() != dbTable) {
-        LOG.infov("Primitive property '%s': column '%s' belongs to a different table than the one being processed — skipping.",
-                  propertyMap.GetProperty().GetName().c_str(), primMap.GetColumn().GetName().c_str());
-        return SUCCESS;
-    }
-    if (!IsInMap(primMap.GetColumn().GetName(), columnValues)) {
-        LOG.infov("Primitive property '%s': no data in changeset — skipping.",
-                  propertyMap.GetProperty().GetName().c_str());
-        return SUCCESS;
-    }
+    if(primMap.GetColumn().GetTable() != dbTable)
+        return SUCCESS; // column belongs to a different table than the one being processed
+    if (!IsInMap(primMap.GetColumn().GetName(), columnValues))
+        return SUCCESS; // no data in changeset
 
     fieldsOut.emplace_back(std::make_unique<ChangesetPrimitiveValue>(
         MakePrimitiveColumnInfo(propertyMap),
@@ -471,17 +461,11 @@ BentleyStatus ChangesetValueFactory::CreateSystem(
 
     const auto& sysMap = propertyMap.GetAs<SystemPropertyMap>();
     const auto* dataMap = sysMap.FindDataPropertyMap(dbTable);
-    if (dataMap == nullptr) {
-        LOG.infov("No data property map found for system property '%s' in table '%s'.",
-                   propertyMap.GetProperty().GetName().c_str(), dbTable.GetName().c_str());
-        return SUCCESS;
-    }
+    if (dataMap == nullptr)
+        return SUCCESS; // system property is not mapped to this table
 
-    if (!IsInMap(dataMap->GetColumn().GetName(), columnValues)) {
-        LOG.infov("System property '%s': no data in changeset — skipping.",
-                  propertyMap.GetProperty().GetName().c_str());
-        return SUCCESS;
-    }
+    if (!IsInMap(dataMap->GetColumn().GetName(), columnValues))
+        return SUCCESS; // no data in changeset
 
     fieldsOut.emplace_back(std::make_unique<ChangesetPrimitiveValue>(columnInfo, GetFromMap(dataMap->GetColumn().GetName(), columnValues)));
     FillChangedPropIfApplicable(changedProps, propertyMap.GetProperty().GetName());
@@ -525,11 +509,8 @@ BentleyStatus ChangesetValueFactory::CreateNav(
     const bool relClassIdIsVirtual = relClassIdMap.GetColumn().IsVirtual();
     const bool hasPhysicalRelClassIdInCurrentTableAndChangeset = relClassIdMap.GetColumn().GetTable() == dbTable && IsInMap(relClassIdMap.GetColumn().GetName(), columnValues);
 
-    if (!hasIdInCurrentTableAndChangeset && !hasPhysicalRelClassIdInCurrentTableAndChangeset) {
-        LOG.infov("Nav property '%s': no data in changeset — skipping.",
-                  propertyMap.GetProperty().GetName().c_str());
-        return SUCCESS;
-    }
+    if (!hasIdInCurrentTableAndChangeset && !hasPhysicalRelClassIdInCurrentTableAndChangeset)
+        return SUCCESS; // no data in changeset
 
     // --- Resolve id sub-component ---
     std::unique_ptr<IECSqlValue> idVal;
@@ -545,15 +526,12 @@ BentleyStatus ChangesetValueFactory::CreateNav(
         CreateFixedId(conn, idPropMap, BeInt64Id(fetchedId), idVal);
     }
 
-    LOG.infov("Nav property '%s'-> virtual: %s", propertyMap.GetProperty().GetName().c_str(), relClassIdIsVirtual ? "true" : "false");
     // --- Resolve relClassId sub-component ---
     std::unique_ptr<IECSqlValue> relClassIdVal;
     if (hasPhysicalRelClassIdInCurrentTableAndChangeset) {
         CreateFixedId(conn, relClassIdMap, CheckNullAndGetBeInt64IdValueFromDbValue(GetFromMap(relClassIdMap.GetColumn().GetName(), columnValues)), relClassIdVal);
     } else if (relClassIdIsVirtual) {
         const auto navProp = propertyMap.GetProperty().GetAsNavigationProperty();
-        LOG.infov("Nav property '%s': relClassId is virtual; using default value based on relationship class '%s'.",
-                   propertyMap.GetProperty().GetName().c_str(), navProp->GetRelationshipClass()->GetFullName());
         CreateFixedId(conn, relClassIdMap, navProp->GetRelationshipClass()->GetId(), relClassIdVal);
     } else {
         BeInt64Id fetchedRelClassId;
@@ -591,17 +569,11 @@ BentleyStatus ChangesetValueFactory::CreateArray(
 
     const auto& primMap = propertyMap.GetAs<SingleColumnDataPropertyMap>();
 
-    if(primMap.GetColumn().GetTable() != dbTable) {
-        LOG.infov("Primitive property '%s': column '%s' belongs to a different table than the one being processed — skipping.",
-                  propertyMap.GetProperty().GetName().c_str(), primMap.GetColumn().GetName().c_str());
-        return SUCCESS;
-    }
+    if(primMap.GetColumn().GetTable() != dbTable)
+        return SUCCESS; // column belongs to a different table than the one being processed
 
-    if (!IsInMap(primMap.GetColumn().GetName(), columnValues)) {
-        LOG.infov("Array property '%s': no data in changeset — skipping.",
-                  propertyMap.GetProperty().GetName().c_str());
-        return SUCCESS;
-    }
+    if (!IsInMap(primMap.GetColumn().GetName(), columnValues))
+        return SUCCESS; // no data in changeset
 
     fieldsOut.emplace_back(std::make_unique<ChangesetArrayValue>(
         MakeArrayColumnInfo(propertyMap),
@@ -777,8 +749,6 @@ BentleyStatus ChangesetValueFactory::ResolveInstanceId(
 
         instanceIdOut = instanceId;
         fieldOut      = std::move(sysVal);
-        LOG.debugv("Table '%s': resolved ECInstanceId %" PRIu64 " from changeset.",
-                   primaryDbTable.GetName().c_str(), instanceId.GetValueUnchecked());
         return SUCCESS;
     }
 
@@ -887,11 +857,8 @@ BentleyStatus ChangesetValueFactory::ResolveClassId(
 
     if (TryResolveClassIdFromChangeset(tbl, columnValues, conn, resolvedClassIdOut)) {
         classIdFromChangesetOut = true;
-        LOG.debugv("Table '%s': resolved ECClassId %" PRIu64 " from changeset.",
-                   tbl.GetName().c_str(), resolvedClassIdOut.GetValueUnchecked());
     } else if (TryResolveClassIdFromDbSeek(tbl, columnValues, conn, resolvedClassIdOut)) {
-        LOG.debugv("Table '%s': resolved ECClassId %" PRIu64 " via DB seek.",
-                   tbl.GetName().c_str(), resolvedClassIdOut.GetValueUnchecked());
+        // resolved from the current state of the DB
     } else {
         const ClassMap* classMapOut = GetRootClassMap(tbl, conn);
         if (classMapOut != nullptr) {
