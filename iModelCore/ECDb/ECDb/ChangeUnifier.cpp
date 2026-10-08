@@ -29,6 +29,47 @@ public:
     IECSqlValue const& GetValue(int) const override { return m_value; }
 };
 
+//=======================================================================================
+// Writes the events of ChangeUnifier::Step(IInstanceWriter&) into a BeJsValue.
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct BeJsValueInstanceWriter final : ChangeUnifier::IInstanceWriter {
+private:
+    BeJsValue m_root;
+    std::vector<std::pair<BeJsValue, bool>> m_containers; //!< open objects and arrays; second is true for arrays
+    Utf8String m_key;
+
+    BeJsValue Target() {
+        if (m_containers.empty())
+            return m_root;
+        auto& top = m_containers.back();
+        return top.second ? top.first.appendValue() : top.first[m_key.c_str()];
+    }
+
+public:
+    explicit BeJsValueInstanceWriter(BeJsValue root) : m_root(root) {}
+    void StartObject() override {
+        BeJsValue target = Target();
+        target.SetEmptyObject();
+        m_containers.push_back(std::make_pair(target, false));
+    }
+    void Key(Utf8CP name, size_t length, uint32_t) override { m_key.assign(name, length); }
+    void EndObject() override { m_containers.pop_back(); }
+    void StartArray() override {
+        BeJsValue target = Target();
+        target.SetEmptyArray();
+        m_containers.push_back(std::make_pair(target, true));
+    }
+    void EndArray() override { m_containers.pop_back(); }
+    void Null() override { Target().SetNull(); }
+    void Bool(bool value) override { Target() = value; }
+    void Int64(int64_t value) override { Target() = value; }
+    void UInt64(uint64_t value) override { Target() = value; }
+    void Double(double value) override { Target() = value; }
+    void String(Utf8CP value, size_t length, uint32_t) override { Target() = Utf8String(value, length).c_str(); }
+    void Binary(Byte const* data, size_t size) override { Target().SetBinary(data, size); }
+};
+
 } // namespace
 
 //=======================================================================================
@@ -66,6 +107,13 @@ private:
     size_t m_sortedPos = 0;
     KeyedEntry m_merged; //!< result of the current Step; kept so the spill merge can reuse its buffers
     KeyedEntry m_next; //!< entry with the same key as m_merged, folded into it
+
+    //! Ids of the fixed strings written for every instance, interned at construction.
+    struct MetaStrings final {
+        uint32_t m_meta, m_tables, m_op, m_stage, m_changeIndexes, m_instanceKey, m_fetchedNames, m_isIndirect;
+        uint32_t m_inserted, m_updated, m_deleted, m_old, m_new;
+    };
+    MetaStrings m_metaStrings;
 
     // rapidjson never returns memory to its pool allocator, so the scratch document is recreated periodically
     static constexpr uint32_t ScratchReuseLimit = 4096;
@@ -303,47 +351,86 @@ private:
         return BE_SQLITE_ROW;
     }
 
-    static Utf8CP OpToString(UnifiedEntry::Op op) {
+    //! Writer id of an interned string; 0 is reserved for strings that are not interned.
+    static uint32_t WriterId(uint32_t internedId) { return internedId + 1; }
+
+    void WriteKey(ChangeUnifier::IInstanceWriter& out, uint32_t internedId) const {
+        Utf8StringCR str = m_strings[internedId];
+        out.Key(str.c_str(), str.size(), WriterId(internedId));
+    }
+
+    void WriteString(ChangeUnifier::IInstanceWriter& out, uint32_t internedId) const {
+        Utf8StringCR str = m_strings[internedId];
+        out.String(str.c_str(), str.size(), WriterId(internedId));
+    }
+
+    uint32_t OpStringId(UnifiedEntry::Op op) const {
         switch (op) {
-            case UnifiedEntry::Op::Inserted: return "Inserted";
-            case UnifiedEntry::Op::Deleted: return "Deleted";
-            default: return "Updated";
+            case UnifiedEntry::Op::Inserted: return m_metaStrings.m_inserted;
+            case UnifiedEntry::Op::Deleted: return m_metaStrings.m_deleted;
+            default: return m_metaStrings.m_updated;
         }
     }
 
-    DbResult WriteInstance(KeyedEntry const& merged, BeJsValue out) {
+    DbResult WriteInstance(KeyedEntry const& merged, ChangeUnifier::IInstanceWriter& out) {
         UnifiedKey const& key = merged.first;
         UnifiedEntry const& entry = merged.second;
-        out.SetEmptyObject();
+        out.StartObject();
         for (auto const& prop : entry.m_props) {
-            if (SUCCESS != UnifiedValueCodec::Decode(prop.m_value, out[m_strings[prop.m_nameId].c_str()]))
+            WriteKey(out, prop.m_nameId);
+            if (SUCCESS != UnifiedValueCodec::Decode(prop.m_value, out))
                 return Fail(BE_SQLITE_CORRUPT, "ChangeUnifier: failed to decode property value.");
         }
-        BeJsValue meta = out["$meta"];
-        meta.SetEmptyObject();
-        BeJsValue tables = meta["tables"];
-        tables.SetEmptyArray();
+        WriteKey(out, m_metaStrings.m_meta);
+        out.StartObject();
+        WriteKey(out, m_metaStrings.m_tables);
+        out.StartArray();
         for (uint32_t tableId : entry.m_tables)
-            tables.appendValue() = m_strings[tableId].c_str();
-        meta["op"] = OpToString(entry.m_op);
-        meta["stage"] = key.m_stage == 1 ? "New" : "Old";
-        BeJsValue changeIndexes = meta["changeIndexes"];
-        changeIndexes.SetEmptyArray();
+            WriteString(out, tableId);
+        out.EndArray();
+        WriteKey(out, m_metaStrings.m_op);
+        WriteString(out, OpStringId(entry.m_op));
+        WriteKey(out, m_metaStrings.m_stage);
+        WriteString(out, key.m_stage == 1 ? m_metaStrings.m_new : m_metaStrings.m_old);
+        WriteKey(out, m_metaStrings.m_changeIndexes);
+        out.StartArray();
         for (uint32_t changeIndex : entry.m_changeIndexes)
-            changeIndexes.appendValue() = changeIndex;
-        Utf8String instanceKey;
-        instanceKey.Sprintf("%s-%s", ECInstanceId(key.m_instanceId).ToHexStr().c_str(), ECClassId(entry.m_classId).ToHexStr().c_str());
-        meta["instanceKey"] = instanceKey.c_str();
-        BeJsValue fetched = meta["changeFetchedPropNames"];
-        fetched.SetEmptyArray();
+            out.Int64(changeIndex);
+        out.EndArray();
+        WriteKey(out, m_metaStrings.m_instanceKey);
+        Utf8Char instanceKey[2 * BeInt64Id::ID_STRINGBUFFER_LENGTH];
+        ECInstanceId(key.m_instanceId).ToString(instanceKey, BeInt64Id::UseHex::Yes);
+        size_t length = strlen(instanceKey);
+        instanceKey[length++] = '-';
+        ECClassId(entry.m_classId).ToString(instanceKey + length, BeInt64Id::UseHex::Yes);
+        out.String(instanceKey, strlen(instanceKey), 0);
+        WriteKey(out, m_metaStrings.m_fetchedNames);
+        out.StartArray();
         for (uint32_t nameId : entry.m_fetchedNames)
-            fetched.appendValue() = m_strings[nameId].c_str();
-        meta["isIndirectChange"] = entry.m_isIndirect;
+            WriteString(out, nameId);
+        out.EndArray();
+        WriteKey(out, m_metaStrings.m_isIndirect);
+        out.Bool(entry.m_isIndirect);
+        out.EndObject();
+        out.EndObject();
         return BE_SQLITE_ROW;
     }
 
 public:
     explicit ChangeUnifierImpl(ChangeUnifier::Options const& options) : m_options(options) {
+        m_metaStrings.m_meta = Intern("$meta");
+        m_metaStrings.m_tables = Intern("tables");
+        m_metaStrings.m_op = Intern("op");
+        m_metaStrings.m_stage = Intern("stage");
+        m_metaStrings.m_changeIndexes = Intern("changeIndexes");
+        m_metaStrings.m_instanceKey = Intern("instanceKey");
+        m_metaStrings.m_fetchedNames = Intern("changeFetchedPropNames");
+        m_metaStrings.m_isIndirect = Intern("isIndirectChange");
+        m_metaStrings.m_inserted = Intern("Inserted");
+        m_metaStrings.m_updated = Intern("Updated");
+        m_metaStrings.m_deleted = Intern("Deleted");
+        m_metaStrings.m_old = Intern("Old");
+        m_metaStrings.m_new = Intern("New");
         for (auto const& name : m_options.m_propNames) {
             m_keepProps.insert(name);
             if (name.EqualsIAscii("Source")) {
@@ -442,7 +529,7 @@ public:
         return BE_SQLITE_OK;
     }
 
-    DbResult Step(BeJsValue instance) {
+    DbResult Step(ChangeUnifier::IInstanceWriter& writer) {
         if (m_state == State::Appending) {
             m_state = State::Stepping;
             const DbResult rc = Finalize();
@@ -464,7 +551,7 @@ public:
         }
         if (rc != BE_SQLITE_ROW)
             return rc;
-        return WriteInstance(m_merged, instance);
+        return WriteInstance(m_merged, writer);
     }
 };
 
@@ -491,7 +578,15 @@ DbResult ChangeUnifier::AppendFrom(ChangesetReader& reader, JsReadOptions const&
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ChangeUnifier::Step(BeJsValue instance) { return m_impl != nullptr ? m_impl->Step(instance) : BE_SQLITE_MISUSE; }
+DbResult ChangeUnifier::Step(IInstanceWriter& writer) { return m_impl != nullptr ? m_impl->Step(writer) : BE_SQLITE_MISUSE; }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult ChangeUnifier::Step(BeJsValue instance) {
+    BeJsValueInstanceWriter writer(instance);
+    return Step(writer);
+}
 
 //---------------------------------------------------------------------------------------
 // Dropping the implementation frees all memory and deletes the spill file.

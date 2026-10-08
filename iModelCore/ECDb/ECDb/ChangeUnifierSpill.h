@@ -73,17 +73,17 @@ struct UnifiedEntry final {
 using KeyedEntry = std::pair<UnifiedKey, UnifiedEntry>;
 
 //=======================================================================================
-// Encodes rendered JSON values into owned bytes and decodes them into any BeJsValue.
+// Encodes rendered JSON values into owned bytes and decodes them as IInstanceWriter events.
 // @remarks Rendering once through ECSqlRowAdaptor into a BeJsDocument and storing the result
 // as tagged bytes keeps the unifier independent of Napi, gives an exact memory estimate, and
-// the bytes can be written to spill files as-is. Decoding writes through the same BeJsValue
-// setters ECSqlRowAdaptor uses, so the resulting JavaScript values are identical to rendering
-// the row directly (int64 stays int64, blobs become Uint8Array, ...).
+// the bytes can be written to spill files as-is. Decoding emits the same value kinds that
+// ECSqlRowAdaptor produced (int64 stays int64, blobs stay binary, ...), so a writer can rebuild
+// exactly the value a ChangesetReader row would have.
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct UnifiedValueCodec final {
     static void Encode(std::vector<Byte>& out, BeJsConst val);
-    static BentleyStatus Decode(std::vector<Byte> const& in, BeJsValue out);
+    static BentleyStatus Decode(std::vector<Byte> const& in, ChangeUnifier::IInstanceWriter& out);
 };
 
 //=======================================================================================

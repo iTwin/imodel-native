@@ -47,6 +47,28 @@ public:
         uint64_t m_memoryBudgetBytes = DefaultMemoryBudgetBytes;
     };
 
+    //! Receives one merged instance from Step(IInstanceWriter&) as JSON-like events, in the order a JSON writer
+    //! would produce them: StartObject, a Key and a value per property and for "$meta", then EndObject.
+    //! @remarks Lets a caller build its own value representation, e.g. JavaScript objects, without an intermediate document.
+    //! Names and strings from the unifier's string table (property names, "$meta" member names, table names, op and stage)
+    //! carry a non-zero @p stringId that identifies the same text for the unifier's lifetime, so a writer can convert each
+    //! text once. Other strings have stringId 0. @p name and @p value are not NUL-terminated.
+    struct IInstanceWriter {
+        virtual ~IInstanceWriter() {}
+        virtual void StartObject() = 0;
+        virtual void Key(Utf8CP name, size_t length, uint32_t stringId) = 0;
+        virtual void EndObject() = 0;
+        virtual void StartArray() = 0;
+        virtual void EndArray() = 0;
+        virtual void Null() = 0;
+        virtual void Bool(bool value) = 0;
+        virtual void Int64(int64_t value) = 0;
+        virtual void UInt64(uint64_t value) = 0;
+        virtual void Double(double value) = 0;
+        virtual void String(Utf8CP value, size_t length, uint32_t stringId) = 0;
+        virtual void Binary(Byte const* data, size_t size) = 0;
+    };
+
 private:
     std::unique_ptr<ChangeUnifierImpl> m_impl;
 
@@ -79,6 +101,9 @@ public:
     //! @return BE_SQLITE_ROW if an instance was written, BE_SQLITE_DONE when all instances were returned,
     //! BE_SQLITE_MISUSE after Close() or after a previous failure, or an error code.
     ECDB_EXPORT DbResult Step(BeJsValue instance);
+
+    //! Same as Step(BeJsValue), but sends the next merged instance to @p writer.
+    ECDB_EXPORT DbResult Step(IInstanceWriter& writer);
 
     //! Frees all memory and deletes spill files. Idempotent.
     ECDB_EXPORT void Close();

@@ -9,6 +9,7 @@
 #include <cstdlib>
 #include <functional>
 #include <map>
+#include <set>
 #include <tuple>
 
 USING_NAMESPACE_BENTLEY_EC
@@ -444,6 +445,52 @@ TEST_F(ChangeUnifierTests, Lifecycle)
     ChangeUnifier empty;
     BeJsDocument emptyDoc;
     EXPECT_EQ(BE_SQLITE_DONE, empty.Step(emptyDoc));
+    }
+
+//---------------------------------------------------------------------------------------
+// Step(IInstanceWriter&) gives every name from the unifier's string table the same non-zero id in every instance,
+// so writers can convert each name once.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangeUnifierTests, Writer_StableStringIds)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("cu_writer.ecdb", SchemaItem(GetSchema())));
+    BeFileName cs = Capture("cu_writer.changeset", [&]
+        {
+        Insert("INSERT INTO tu.Gadget(Name) VALUES('a')");
+        Insert("INSERT INTO tu.Gadget(Name) VALUES('b')");
+        });
+
+    struct KeyIdWriter final : ChangeUnifier::IInstanceWriter
+        {
+        std::map<Utf8String, std::set<uint32_t>> m_keyIds;
+        void StartObject() override {}
+        void Key(Utf8CP name, size_t length, uint32_t stringId) override { m_keyIds[Utf8String(name, length)].insert(stringId); }
+        void EndObject() override {}
+        void StartArray() override {}
+        void EndArray() override {}
+        void Null() override {}
+        void Bool(bool) override {}
+        void Int64(int64_t) override {}
+        void UInt64(uint64_t) override {}
+        void Double(double) override {}
+        void String(Utf8CP, size_t, uint32_t) override {}
+        void Binary(Byte const*, size_t) override {}
+        };
+    KeyIdWriter writer;
+    ChangeUnifier unifier;
+    ASSERT_EQ(BE_SQLITE_OK, Append(unifier, cs));
+    int count = 0;
+    while (unifier.Step(writer) == BE_SQLITE_ROW)
+        ++count;
+    EXPECT_EQ(2, count);
+    EXPECT_EQ(1u, writer.m_keyIds.count("Name"));
+    EXPECT_EQ(1u, writer.m_keyIds.count("$meta"));
+    for (auto const& entry : writer.m_keyIds)
+        {
+        EXPECT_EQ(1u, entry.second.size()) << entry.first.c_str();
+        EXPECT_NE(0u, *entry.second.begin()) << entry.first.c_str();
+        }
     }
 
 //---------------------------------------------------------------------------------------

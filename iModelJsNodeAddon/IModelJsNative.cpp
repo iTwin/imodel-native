@@ -5621,6 +5621,78 @@ private:
     DEFINE_CONSTRUCTOR;
     std::unique_ptr<ChangeUnifier> m_unifier;
 
+    //=======================================================================================
+    // Builds the JavaScript object of one merged instance directly from the unifier's events. Produces the same
+    // values as writing through BeJsNapiObject (null becomes undefined, integers become numbers), but sets each
+    // member once, fills arrays by index, and converts each string of the unifier's string table once per step() call.
+    //=======================================================================================
+    struct InstanceWriter final : ChangeUnifier::IInstanceWriter
+        {
+    private:
+        struct Container { Napi::Value m_value; bool m_isArray; uint32_t m_count; };
+        Napi::Env m_env;
+        std::vector<napi_value> m_strings; // by string id; napi_values are only valid during the current call
+        std::vector<Container> m_containers;
+        Napi::Value m_key;
+        Napi::Value m_result;
+
+        Napi::Value ToJsString(Utf8CP text, size_t length, uint32_t stringId)
+            {
+            if (stringId == 0)
+                return Napi::String::New(m_env, text, length);
+            if (stringId >= m_strings.size())
+                m_strings.resize(stringId + 1, nullptr);
+            if (m_strings[stringId] == nullptr)
+                m_strings[stringId] = Napi::String::New(m_env, text, length);
+            return Napi::Value(m_env, m_strings[stringId]);
+            }
+
+        void Put(Napi::Value value)
+            {
+            if (m_containers.empty())
+                {
+                m_result = value;
+                return;
+                }
+            Container& top = m_containers.back();
+            if (top.m_isArray)
+                top.m_value.As<Napi::Array>().Set(top.m_count++, value);
+            else
+                top.m_value.As<Napi::Object>().Set(m_key, value);
+            }
+
+    public:
+        explicit InstanceWriter(Napi::Env env) : m_env(env) {}
+        Napi::Value TakeResult() { Napi::Value result = m_result; m_result = Napi::Value(); return result; }
+        void StartObject() override
+            {
+            Napi::Object obj = Napi::Object::New(m_env);
+            Put(obj);
+            m_containers.push_back({obj, false, 0});
+            }
+        void Key(Utf8CP name, size_t length, uint32_t stringId) override { m_key = ToJsString(name, length, stringId); }
+        void EndObject() override { m_containers.pop_back(); }
+        void StartArray() override
+            {
+            Napi::Array array = Napi::Array::New(m_env);
+            Put(array);
+            m_containers.push_back({array, true, 0});
+            }
+        void EndArray() override { m_containers.pop_back(); }
+        void Null() override { Put(m_env.Undefined()); }
+        void Bool(bool value) override { Put(Napi::Value::From(m_env, value)); }
+        void Int64(int64_t value) override { Put(Napi::Value::From(m_env, value)); }
+        void UInt64(uint64_t value) override { Put(Napi::Value::From(m_env, static_cast<int64_t>(value))); }
+        void Double(double value) override { Put(Napi::Value::From(m_env, value)); }
+        void String(Utf8CP value, size_t length, uint32_t stringId) override { Put(ToJsString(value, length, stringId)); }
+        void Binary(Byte const* data, size_t size) override
+            {
+            auto array = Napi::Uint8Array::New(m_env, size);
+            std::copy(data, data + size, array.Data());
+            Put(array);
+            }
+        };
+
     static ChangeUnifier::Options ParseOptions(NapiInfoCR info)
         {
         ChangeUnifier::Options options;
@@ -5713,15 +5785,15 @@ public:
 
         Napi::Array result = Napi::Array::New(Env());
         uint32_t count = 0;
+        InstanceWriter writer(Env());
         for (int32_t i = 0; i < maxInstances; ++i)
             {
-            BeJsNapiObject instance(Env());
-            DbResult rc = m_unifier->Step(instance);
+            DbResult rc = m_unifier->Step(writer);
             if (rc == BE_SQLITE_DONE)
                 break;
             if (rc != BE_SQLITE_ROW)
                 ThrowOnFailure(info.Env(), "ChangeUnifier: step() failed", rc);
-            result[count++] = static_cast<Napi::Object>(instance);
+            result.Set(count++, writer.TakeResult());
             }
         return result;
         }

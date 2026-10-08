@@ -107,42 +107,60 @@ public:
 enum class ValueTag : Byte { Null = 0, False = 1, True = 2, Int64 = 3, UInt64 = 4, Double = 5, String = 6, Binary = 7, Array = 8, Object = 9 };
 
 //---------------------------------------------------------------------------------------
+// Strings keep the old NUL-terminated semantics: a value is cut at its first NUL character.
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus DecodeValue(ByteReader& reader, BeJsValue out) {
+size_t TextLength(Byte const* p, size_t len) {
+    void const* nul = memchr(p, 0, len);
+    return nul == nullptr ? len : static_cast<size_t>(static_cast<Byte const*>(nul) - p);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BentleyStatus DecodeValue(ByteReader& reader, ChangeUnifier::IInstanceWriter& out) {
     ValueTag tag = (ValueTag) reader.GetByte();
     if (!reader.IsOk())
         return ERROR;
     switch (tag) {
         case ValueTag::Null:
-            out.SetNull();
+            out.Null();
             return SUCCESS;
         case ValueTag::False:
-            out = false;
+            out.Bool(false);
             return SUCCESS;
         case ValueTag::True:
-            out = true;
+            out.Bool(true);
             return SUCCESS;
-        case ValueTag::Int64:
-            out = static_cast<int64_t>(reader.GetFixed64());
-            return reader.IsOk() ? SUCCESS : ERROR;
-        case ValueTag::UInt64:
-            out = reader.GetFixed64();
-            return reader.IsOk() ? SUCCESS : ERROR;
+        case ValueTag::Int64: {
+            const int64_t v = static_cast<int64_t>(reader.GetFixed64());
+            if (!reader.IsOk())
+                return ERROR;
+            out.Int64(v);
+            return SUCCESS;
+        }
+        case ValueTag::UInt64: {
+            const uint64_t v = reader.GetFixed64();
+            if (!reader.IsOk())
+                return ERROR;
+            out.UInt64(v);
+            return SUCCESS;
+        }
         case ValueTag::Double: {
             uint64_t bits = reader.GetFixed64();
+            if (!reader.IsOk())
+                return ERROR;
             double d;
             memcpy(&d, &bits, sizeof(d));
-            out = d;
-            return reader.IsOk() ? SUCCESS : ERROR;
+            out.Double(d);
+            return SUCCESS;
         }
         case ValueTag::String: {
             size_t len = static_cast<size_t>(reader.GetVarint());
             Byte const* p = reader.GetRaw(len);
             if (!reader.IsOk())
                 return ERROR;
-            Utf8String str(reinterpret_cast<Utf8CP>(p), len);
-            out = str.c_str();
+            out.String(reinterpret_cast<Utf8CP>(p), TextLength(p, len), 0);
             return SUCCESS;
         }
         case ValueTag::Binary: {
@@ -150,34 +168,36 @@ BentleyStatus DecodeValue(ByteReader& reader, BeJsValue out) {
             Byte const* p = reader.GetRaw(len);
             if (!reader.IsOk())
                 return ERROR;
-            out.SetBinary(p, len);
+            out.Binary(p, len);
             return SUCCESS;
         }
         case ValueTag::Array: {
             uint32_t count = reader.GetFixed32();
             if (!reader.IsOk())
                 return ERROR;
-            out.SetEmptyArray();
+            out.StartArray();
             for (uint32_t i = 0; i < count; ++i) {
-                if (SUCCESS != DecodeValue(reader, out.appendValue()))
+                if (SUCCESS != DecodeValue(reader, out))
                     return ERROR;
             }
+            out.EndArray();
             return SUCCESS;
         }
         case ValueTag::Object: {
             uint32_t count = reader.GetFixed32();
             if (!reader.IsOk())
                 return ERROR;
-            out.SetEmptyObject();
+            out.StartObject();
             for (uint32_t i = 0; i < count; ++i) {
                 size_t len = static_cast<size_t>(reader.GetVarint());
                 Byte const* p = reader.GetRaw(len);
                 if (!reader.IsOk())
                     return ERROR;
-                Utf8String name(reinterpret_cast<Utf8CP>(p), len);
-                if (SUCCESS != DecodeValue(reader, out[name.c_str()]))
+                out.Key(reinterpret_cast<Utf8CP>(p), TextLength(p, len), 0);
+                if (SUCCESS != DecodeValue(reader, out))
                     return ERROR;
             }
+            out.EndObject();
             return SUCCESS;
         }
     }
@@ -343,7 +363,7 @@ void UnifiedValueCodec::Encode(std::vector<Byte>& out, BeJsConst val) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus UnifiedValueCodec::Decode(std::vector<Byte> const& in, BeJsValue out) {
+BentleyStatus UnifiedValueCodec::Decode(std::vector<Byte> const& in, ChangeUnifier::IInstanceWriter& out) {
     ByteReader reader(in.data(), in.size());
     return DecodeValue(reader, out);
 }
