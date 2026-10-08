@@ -1948,12 +1948,13 @@ SchemaReadStatus ECClass::_ReadXmlContents (pugi::xml_node classNode, ECSchemaRe
                         ECClass::ParseClassName(alias, className, typeName);
                         const auto resolvedSchema = GetSchema().GetSchemaByAliasP(alias);
                         const auto resolvedClass = nullptr != resolvedSchema ? resolvedSchema->GetClassCP(className.c_str()) : nullptr;
-                        if (nullptr != resolvedClass)
+                        auto propertyNameAttr = childNode.attribute(PROPERTY_NAME_ATTRIBUTE);
+                        if (propertyNameAttr && nullptr != resolvedClass)
                             {
                             context.Issues().ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties, IssueType::ECProperty, ECIssueId::EC_0065,
                                 "The array property '%s.%s' has typeName '%s' which resolves to ECClass '%s' but that class is not an ECStructClass. "
                                 "The property will be read as a primitive array and its type will default to 'string'.",
-                                GetFullName(), childNode.attribute(PROPERTY_NAME_ATTRIBUTE).as_string(), typeName.c_str(), resolvedClass->GetFullName());
+                                GetFullName(), propertyNameAttr.as_string(), typeName.c_str(), resolvedClass->GetFullName());
                             }
                         }
                     }
