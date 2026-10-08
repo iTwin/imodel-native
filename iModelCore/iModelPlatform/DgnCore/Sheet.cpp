@@ -303,10 +303,7 @@ bvector<ViewDefinitionCPtr> Sheet::Model::GetSheetAttachmentViews(DgnDbR db) con
 static bool tryGetPositiveDouble(DgnElementCR element, Utf8CP propertyName, double& result)
     {
     ECN::ECValue value;
-    if (DgnDbStatus::Success != element.GetPropertyValue(value, propertyName))
-        return false;
-
-    if (value.IsNull() || !value.IsPrimitive() || ECN::PRIMITIVETYPE_Double != value.GetPrimitiveType())
+    if (DgnDbStatus::Success != element.GetPropertyValue(value, propertyName) || value.IsNull() || !value.IsDouble())
         return false;
 
     result = value.GetDouble();
