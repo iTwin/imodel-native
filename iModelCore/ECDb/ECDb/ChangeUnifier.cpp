@@ -189,17 +189,9 @@ private:
         lhs.m_classId = best;
     }
 
-    //! Builds the entry of one row stage. Returns ERROR with @p err set on failure.
-    BentleyStatus BuildRowEntry(ChangesetReader const& reader, Changes::Change::Stage stage, ECSqlRowAdaptor const& adaptor, uint32_t tableId, uint32_t changeIndex,
-        bool isMain, UnifiedEntry::Op op, bool isIndirect, std::vector<uint32_t> const& fetchedNames, UnifiedKey& key, UnifiedEntry& entry, Utf8StringR err) {
-        entry = UnifiedEntry();
-        entry.m_hasMainRow = isMain;
-        entry.m_op = isMain ? op : UnifiedEntry::Op::None;
-        entry.m_isIndirect = isIndirect;
-        entry.m_tables.push_back(tableId);
-        entry.m_changeIndexes.push_back(changeIndex);
-        entry.m_fetchedNames = fetchedNames;
-
+    //! Reads the ECInstanceId, ECClassId and kept property values of one row stage into @p key and @p entry,
+    //! which already holds the metadata of the row. Returns ERROR with @p err set on failure.
+    BentleyStatus ReadStageValues(ChangesetReader const& reader, Changes::Change::Stage stage, ECSqlRowAdaptor const& adaptor, UnifiedKey& key, UnifiedEntry& entry, Utf8StringR err) {
         bool hasInstanceId = false;
         bool hasClassId = false;
         const int count = reader.GetColumnCount(stage);
@@ -391,24 +383,29 @@ public:
         TableInfo const* tableInfo = GetTableInfo(*m_ecdb, tableName, err);
         if (tableInfo == nullptr)
             return Fail(BE_SQLITE_ERROR, err);
-        const TableInfo info = *tableInfo;
-        const uint32_t tableId = Intern(tableName);
-        std::vector<uint32_t> fetchedNames;
-        fetchedNames.reserve(names->size());
-        for (auto const& name : *names)
-            fetchedNames.push_back(Intern(name));
+        const uint64_t rootClassId = tableInfo->m_rootClassId;
 
-        const UnifiedEntry::Op op = opcode == DbOpcode::Insert ? UnifiedEntry::Op::Inserted : (opcode == DbOpcode::Delete ? UnifiedEntry::Op::Deleted : UnifiedEntry::Op::Updated);
-        const bool isMain = !info.m_isOverflow;
+        // metadata shared by the Old and New stage of the row
+        UnifiedEntry rowEntry;
+        rowEntry.m_hasMainRow = !tableInfo->m_isOverflow;
+        if (rowEntry.m_hasMainRow)
+            rowEntry.m_op = opcode == DbOpcode::Insert ? UnifiedEntry::Op::Inserted : (opcode == DbOpcode::Delete ? UnifiedEntry::Op::Deleted : UnifiedEntry::Op::Updated);
+        rowEntry.m_isIndirect = isIndirect;
+        rowEntry.m_tables.push_back(Intern(tableName));
+        rowEntry.m_changeIndexes.push_back(changeIndex);
+        rowEntry.m_fetchedNames.reserve(names->size());
+        for (auto const& name : *names)
+            rowEntry.m_fetchedNames.push_back(Intern(name));
+
         for (Changes::Change::Stage stage : {Changes::Change::Stage::New, Changes::Change::Stage::Old}) {
             const DbOpcode excluded = stage == Changes::Change::Stage::New ? DbOpcode::Delete : DbOpcode::Insert;
             if (opcode == excluded || reader.GetColumnCount(stage) <= 0)
                 continue;
             UnifiedKey key;
-            UnifiedEntry entry;
-            if (SUCCESS != BuildRowEntry(reader, stage, adaptor, tableId, changeIndex, isMain, op, isIndirect, fetchedNames, key, entry, err))
+            UnifiedEntry entry = rowEntry;
+            if (SUCCESS != ReadStageValues(reader, stage, adaptor, key, entry, err))
                 return Fail(BE_SQLITE_ERROR, err);
-            key.m_rootClassId = info.m_rootClassId != 0 ? info.m_rootClassId : entry.m_classId;
+            key.m_rootClassId = rootClassId != 0 ? rootClassId : entry.m_classId;
             EnsureAncestors(*m_ecdb, entry.m_classId);
             AddEntry(key, std::move(entry));
             if (m_options.m_memoryBudgetBytes > 0 && m_estimatedBytes + m_entries.GetMemoryBytes() > m_options.m_memoryBudgetBytes) {
