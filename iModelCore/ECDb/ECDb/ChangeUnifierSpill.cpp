@@ -107,15 +107,6 @@ public:
 enum class ValueTag : Byte { Null = 0, False = 1, True = 2, Int64 = 3, UInt64 = 4, Double = 5, String = 6, Binary = 7, Array = 8, Object = 9 };
 
 //---------------------------------------------------------------------------------------
-// Strings keep the old NUL-terminated semantics: a value is cut at its first NUL character.
-// @bsimethod
-//---------------------------------------------------------------------------------------
-size_t TextLength(Byte const* p, size_t len) {
-    void const* nul = memchr(p, 0, len);
-    return nul == nullptr ? len : static_cast<size_t>(static_cast<Byte const*>(nul) - p);
-}
-
-//---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 BentleyStatus DecodeValue(ByteReader& reader, ChangeUnifier::IInstanceWriter& out) {
@@ -160,7 +151,7 @@ BentleyStatus DecodeValue(ByteReader& reader, ChangeUnifier::IInstanceWriter& ou
             Byte const* p = reader.GetRaw(len);
             if (!reader.IsOk())
                 return ERROR;
-            out.String(reinterpret_cast<Utf8CP>(p), TextLength(p, len), 0);
+            out.String(reinterpret_cast<Utf8CP>(p), len, 0);
             return SUCCESS;
         }
         case ValueTag::Binary: {
@@ -193,7 +184,7 @@ BentleyStatus DecodeValue(ByteReader& reader, ChangeUnifier::IInstanceWriter& ou
                 Byte const* p = reader.GetRaw(len);
                 if (!reader.IsOk())
                     return ERROR;
-                out.Key(reinterpret_cast<Utf8CP>(p), TextLength(p, len), 0);
+                out.Key(reinterpret_cast<Utf8CP>(p), len, 0);
                 if (SUCCESS != DecodeValue(reader, out))
                     return ERROR;
             }
@@ -219,7 +210,6 @@ void WriteRecord(std::vector<Byte>& out, KeyedEntry const& record) {
     ByteWriter::PutByte(out, key.m_stage);
     ByteWriter::PutFixed64(out, entry.m_classId);
     ByteWriter::PutByte(out, (Byte) entry.m_op);
-    ByteWriter::PutByte(out, entry.m_hasMainRow ? 1 : 0);
     ByteWriter::PutByte(out, entry.m_isIndirect ? 1 : 0);
     auto putIds = [&](std::vector<uint32_t> const& ids) {
         ByteWriter::PutVarint(out, ids.size());
@@ -251,7 +241,6 @@ BentleyStatus ReadRecord(Byte const* data, size_t size, KeyedEntry& record) {
     key.m_stage = reader.GetByte();
     entry.m_classId = reader.GetFixed64();
     entry.m_op = (UnifiedEntry::Op) reader.GetByte();
-    entry.m_hasMainRow = reader.GetByte() != 0;
     entry.m_isIndirect = reader.GetByte() != 0;
     auto getIds = [&](std::vector<uint32_t>& ids) {
         uint64_t count = reader.GetVarint();

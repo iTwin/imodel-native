@@ -36,7 +36,7 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct ChangeUnifierImpl final {
 private:
-    enum class State { Appending, Stepping, Done, Failed };
+    enum class State { Appending, Stepping, Failed };
 
     struct TableInfo final {
         uint64_t m_rootClassId = 0;
@@ -45,10 +45,13 @@ private:
 
     static constexpr uint64_t PropOverheadBytes = sizeof(UnifiedProp);
 
-    ChangeUnifier::Options m_options;
+    uint64_t m_memoryBudgetBytes;
     bset<Utf8String, CompareIUtf8Ascii> m_keepProps;
     State m_state = State::Appending;
     Utf8String m_lastError;
+
+    //! Strings written for every instance, interned first so their ids are constants. Id 0 means "not interned".
+    struct Fixed final { enum : uint32_t { Meta = 1, Tables, Op, Stage, ChangeIndexes, InstanceKey, FetchedNames, IsIndirect, Inserted, Updated, Deleted, Old, New }; };
 
     // interned strings, retained for the lifetime of the unifier (spill records reference them by id)
     std::vector<Utf8String> m_strings;
@@ -66,13 +69,6 @@ private:
     size_t m_sortedPos = 0;
     KeyedEntry m_merged; //!< result of the current Step; kept so the spill merge can reuse its buffers
     KeyedEntry m_next; //!< entry with the same key as m_merged, folded into it
-
-    //! Ids of the fixed strings written for every instance, interned at construction.
-    struct MetaStrings final {
-        uint32_t m_meta, m_tables, m_op, m_stage, m_changeIndexes, m_instanceKey, m_fetchedNames, m_isIndirect;
-        uint32_t m_inserted, m_updated, m_deleted, m_old, m_new;
-    };
-    MetaStrings m_metaStrings;
 
     // rapidjson never returns memory to its pool allocator, so the scratch document is recreated periodically
     static constexpr uint32_t ScratchReuseLimit = 4096;
@@ -172,8 +168,7 @@ private:
 
     //! Merges @p rhs, which comes later in change order, into @p lhs.
     void MergeInto(UnifiedEntry& lhs, UnifiedEntry&& rhs) const {
-        if (!lhs.m_hasMainRow && rhs.m_hasMainRow) {
-            lhs.m_hasMainRow = true;
+        if (!lhs.HasMainRow() && rhs.HasMainRow()) {
             lhs.m_op = rhs.m_op;
             lhs.m_isIndirect = rhs.m_isIndirect;
         }
@@ -273,7 +268,7 @@ private:
         const DbResult rc = Spill();
         if (rc != BE_SQLITE_OK)
             return rc;
-        if (SUCCESS != m_spill.StartMerge(m_options.m_memoryBudgetBytes, m_lastError))
+        if (SUCCESS != m_spill.StartMerge(m_memoryBudgetBytes, m_lastError))
             return Fail(BE_SQLITE_IOERR, m_lastError);
         return BE_SQLITE_OK;
     }
@@ -298,24 +293,21 @@ private:
         return BE_SQLITE_ROW;
     }
 
-    //! Writer id of an interned string; 0 is reserved for strings that are not interned.
-    static uint32_t WriterId(uint32_t internedId) { return internedId + 1; }
-
     void WriteKey(ChangeUnifier::IInstanceWriter& out, uint32_t internedId) const {
         Utf8StringCR str = m_strings[internedId];
-        out.Key(str.c_str(), str.size(), WriterId(internedId));
+        out.Key(str.c_str(), str.size(), internedId);
     }
 
     void WriteString(ChangeUnifier::IInstanceWriter& out, uint32_t internedId) const {
         Utf8StringCR str = m_strings[internedId];
-        out.String(str.c_str(), str.size(), WriterId(internedId));
+        out.String(str.c_str(), str.size(), internedId);
     }
 
     uint32_t OpStringId(UnifiedEntry::Op op) const {
         switch (op) {
-            case UnifiedEntry::Op::Inserted: return m_metaStrings.m_inserted;
-            case UnifiedEntry::Op::Deleted: return m_metaStrings.m_deleted;
-            default: return m_metaStrings.m_updated;
+            case UnifiedEntry::Op::Inserted: return Fixed::Inserted;
+            case UnifiedEntry::Op::Deleted: return Fixed::Deleted;
+            default: return Fixed::Updated;
         }
     }
 
@@ -328,35 +320,35 @@ private:
             if (SUCCESS != UnifiedValueCodec::Decode(prop.m_value, out))
                 return Fail(BE_SQLITE_CORRUPT, "ChangeUnifier: failed to decode property value.");
         }
-        WriteKey(out, m_metaStrings.m_meta);
+        WriteKey(out, Fixed::Meta);
         out.StartObject();
-        WriteKey(out, m_metaStrings.m_tables);
+        WriteKey(out, Fixed::Tables);
         out.StartArray();
         for (uint32_t tableId : entry.m_tables)
             WriteString(out, tableId);
         out.EndArray();
-        WriteKey(out, m_metaStrings.m_op);
+        WriteKey(out, Fixed::Op);
         WriteString(out, OpStringId(entry.m_op));
-        WriteKey(out, m_metaStrings.m_stage);
-        WriteString(out, key.m_stage == 1 ? m_metaStrings.m_new : m_metaStrings.m_old);
-        WriteKey(out, m_metaStrings.m_changeIndexes);
+        WriteKey(out, Fixed::Stage);
+        WriteString(out, key.m_stage == 1 ? Fixed::New : Fixed::Old);
+        WriteKey(out, Fixed::ChangeIndexes);
         out.StartArray();
         for (uint32_t changeIndex : entry.m_changeIndexes)
             out.Int64(changeIndex);
         out.EndArray();
-        WriteKey(out, m_metaStrings.m_instanceKey);
+        WriteKey(out, Fixed::InstanceKey);
         Utf8Char instanceKey[2 * BeInt64Id::ID_STRINGBUFFER_LENGTH];
         ECInstanceId(key.m_instanceId).ToString(instanceKey, BeInt64Id::UseHex::Yes);
         size_t length = strlen(instanceKey);
         instanceKey[length++] = '-';
         ECClassId(entry.m_classId).ToString(instanceKey + length, BeInt64Id::UseHex::Yes);
         out.String(instanceKey, strlen(instanceKey), 0);
-        WriteKey(out, m_metaStrings.m_fetchedNames);
+        WriteKey(out, Fixed::FetchedNames);
         out.StartArray();
         for (uint32_t nameId : entry.m_fetchedNames)
             WriteString(out, nameId);
         out.EndArray();
-        WriteKey(out, m_metaStrings.m_isIndirect);
+        WriteKey(out, Fixed::IsIndirect);
         out.Bool(entry.m_isIndirect);
         out.EndObject();
         out.EndObject();
@@ -364,21 +356,14 @@ private:
     }
 
 public:
-    explicit ChangeUnifierImpl(ChangeUnifier::Options const& options) : m_options(options) {
-        m_metaStrings.m_meta = Intern("$meta");
-        m_metaStrings.m_tables = Intern("tables");
-        m_metaStrings.m_op = Intern("op");
-        m_metaStrings.m_stage = Intern("stage");
-        m_metaStrings.m_changeIndexes = Intern("changeIndexes");
-        m_metaStrings.m_instanceKey = Intern("instanceKey");
-        m_metaStrings.m_fetchedNames = Intern("changeFetchedPropNames");
-        m_metaStrings.m_isIndirect = Intern("isIndirectChange");
-        m_metaStrings.m_inserted = Intern("Inserted");
-        m_metaStrings.m_updated = Intern("Updated");
-        m_metaStrings.m_deleted = Intern("Deleted");
-        m_metaStrings.m_old = Intern("Old");
-        m_metaStrings.m_new = Intern("New");
-        for (auto const& name : m_options.m_propNames) {
+    explicit ChangeUnifierImpl(ChangeUnifier::Options const& options) : m_memoryBudgetBytes(options.m_memoryBudgetBytes) {
+        static Utf8CP const s_fixedStrings[] = {"$meta", "tables", "op", "stage", "changeIndexes", "instanceKey", "changeFetchedPropNames",
+            "isIndirectChange", "Inserted", "Updated", "Deleted", "Old", "New"};
+        m_strings.emplace_back(); // id 0 is never handed out
+        for (Utf8CP str : s_fixedStrings)
+            Intern(str);
+        BeAssert(m_strings[Fixed::New] == "New");
+        for (auto const& name : options.m_propNames) {
             m_keepProps.insert(name);
             if (name.EqualsIAscii("Source")) {
                 m_keepProps.insert(ECDBSYS_PROP_SourceECInstanceId);
@@ -421,8 +406,7 @@ public:
 
         // metadata shared by the Old and New stage of the row
         UnifiedEntry rowEntry;
-        rowEntry.m_hasMainRow = !tableInfo->m_isOverflow;
-        if (rowEntry.m_hasMainRow)
+        if (!tableInfo->m_isOverflow)
             rowEntry.m_op = opcode == DbOpcode::Insert ? UnifiedEntry::Op::Inserted : (opcode == DbOpcode::Delete ? UnifiedEntry::Op::Deleted : UnifiedEntry::Op::Updated);
         rowEntry.m_isIndirect = isIndirect;
         rowEntry.m_tables.push_back(Intern(tableName));
@@ -432,8 +416,7 @@ public:
             rowEntry.m_fetchedNames.push_back(Intern(name));
 
         for (Changes::Change::Stage stage : {Changes::Change::Stage::New, Changes::Change::Stage::Old}) {
-            const DbOpcode excluded = stage == Changes::Change::Stage::New ? DbOpcode::Delete : DbOpcode::Insert;
-            if (opcode == excluded || reader.GetColumnCount(stage) <= 0)
+            if (reader.GetColumnCount(stage) <= 0) // the reader leaves New empty for a delete and Old for an insert
                 continue;
             UnifiedKey key;
             UnifiedEntry entry = rowEntry;
@@ -442,7 +425,7 @@ public:
             key.m_rootClassId = rootClassId != 0 ? rootClassId : entry.m_classId;
             EnsureAncestors(*m_ecdb, entry.m_classId);
             AddEntry(key, std::move(entry));
-            if (m_options.m_memoryBudgetBytes > 0 && m_estimatedBytes + m_entries.GetMemoryBytes() > m_options.m_memoryBudgetBytes) {
+            if (m_memoryBudgetBytes > 0 && m_estimatedBytes + m_entries.GetMemoryBytes() > m_memoryBudgetBytes) {
                 const DbResult rc = Spill();
                 if (rc != BE_SQLITE_OK)
                     return rc;
@@ -487,15 +470,12 @@ public:
             if (rc != BE_SQLITE_OK)
                 return rc;
         }
-        if (m_state == State::Done)
-            return BE_SQLITE_DONE;
         if (m_state != State::Stepping) {
             m_lastError = "ChangeUnifier: Step() cannot be called after a failure.";
             return BE_SQLITE_MISUSE;
         }
         const DbResult rc = NextMerged();
-        if (rc == BE_SQLITE_DONE) {
-            m_state = State::Done;
+        if (rc == BE_SQLITE_DONE) { // keeps returning DONE: nothing is left to merge
             m_sorted.clear();
             m_spill.Delete();
             return BE_SQLITE_DONE;

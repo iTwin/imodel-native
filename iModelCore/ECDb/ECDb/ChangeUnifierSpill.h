@@ -62,12 +62,13 @@ struct UnifiedEntry final {
 
     uint64_t m_classId = 0; //!< most derived ECClassId seen so far
     Op m_op = Op::None; //!< op of the first main-table row, None if no main-table row was seen
-    bool m_hasMainRow = false;
     bool m_isIndirect = false; //!< from the first main-table row, or from the first row as long as no main-table row was seen
     std::vector<uint32_t> m_tables;
     std::vector<uint32_t> m_changeIndexes;
     std::vector<uint32_t> m_fetchedNames;
     std::vector<UnifiedProp> m_props;
+
+    bool HasMainRow() const { return m_op != Op::None; }
 };
 
 using KeyedEntry = std::pair<UnifiedKey, UnifiedEntry>;
