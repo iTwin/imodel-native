@@ -5620,7 +5620,6 @@ struct NativeChangeUnifier : BeObjectWrap<NativeChangeUnifier>
 private:
     DEFINE_CONSTRUCTOR;
     std::unique_ptr<ChangeUnifier> m_unifier;
-    bool m_stepped = false;
 
     static ChangeUnifier::Options ParseOptions(NapiInfoCR info)
         {
@@ -5691,8 +5690,6 @@ public:
 
     void AppendFrom(NapiInfoCR info)
         {
-        if (m_stepped)
-            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ChangeUnifier: appendFrom() cannot be called after step()", IModelJsNativeErrorKey::BadArg);
         REQUIRE_ARGUMENT_ANY_OBJ(0, readerObj);
         if (!NativeChangesetReader::InstanceOf(readerObj))
             THROW_JS_TYPE_EXCEPTION("ChangeUnifier: reader must be a native ChangesetReader object");
@@ -5714,7 +5711,6 @@ public:
         if (maxInstances <= 0)
             THROW_JS_TYPE_EXCEPTION("ChangeUnifier: maxInstances must be a positive integer");
 
-        m_stepped = true;
         Napi::Array result = Napi::Array::New(Env());
         uint32_t count = 0;
         for (int32_t i = 0; i < maxInstances; ++i)
