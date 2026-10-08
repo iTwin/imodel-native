@@ -3,6 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
+#include "../../ECDb/ChangeUnifierMap.h"
 #include <BeSQLite/ChangesetFile.h>
 #include <algorithm>
 #include <cstdlib>
@@ -443,6 +444,45 @@ TEST_F(ChangeUnifierTests, Lifecycle)
     ChangeUnifier empty;
     BeJsDocument emptyDoc;
     EXPECT_EQ(BE_SQLITE_DONE, empty.Step(emptyDoc));
+    }
+
+//---------------------------------------------------------------------------------------
+// The merge map keeps finding every key across many regrowths, also when all keys share one hash.
+// TakeEntries returns insertion order and leaves an empty, reusable map.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST(ChangeUnifierFlatMapTests, GrowthCollisionsAndTake)
+    {
+    struct SameHash final { size_t operator()(uint64_t) const { return 42; } };
+    auto check = [](auto& map, uint64_t count)
+        {
+        EXPECT_EQ(nullptr, map.Find(0));
+        for (uint64_t i = 1; i <= count; ++i)
+            map.Insert(i, i * 10);
+        ASSERT_EQ(count, map.Size());
+        for (uint64_t i = 1; i <= count; ++i)
+            {
+            uint64_t* value = map.Find(i);
+            ASSERT_NE(nullptr, value) << i;
+            EXPECT_EQ(i * 10, *value);
+            }
+        EXPECT_EQ(nullptr, map.Find(count + 1));
+        *map.Find(1) = 7;
+
+        auto taken = map.TakeEntries();
+        ASSERT_EQ(count, taken.size());
+        for (uint64_t i = 0; i < count; ++i)
+            EXPECT_EQ(i + 1, taken[i].first);
+        EXPECT_EQ(7u, taken[0].second);
+        EXPECT_TRUE(map.IsEmpty());
+        EXPECT_EQ(nullptr, map.Find(1));
+        map.Insert(1, 1);
+        EXPECT_EQ(1u, *map.Find(1));
+        };
+    ChangeUnifierFlatMap<uint64_t, uint64_t, std::hash<uint64_t>> spread;
+    check(spread, 10000);
+    ChangeUnifierFlatMap<uint64_t, uint64_t, SameHash> clashing;
+    check(clashing, 200);
     }
 
 END_ECDBUNITTESTS_NAMESPACE
