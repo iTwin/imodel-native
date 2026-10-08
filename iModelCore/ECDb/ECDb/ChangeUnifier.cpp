@@ -240,33 +240,24 @@ private:
     //! Reads the ECInstanceId, ECClassId and kept property values of one row stage into @p key and @p entry,
     //! which already holds the metadata of the row. Returns ERROR with @p err set on failure.
     BentleyStatus ReadStageValues(ChangesetReader const& reader, Changes::Change::Stage stage, ECSqlRowAdaptor const& adaptor, UnifiedKey& key, UnifiedEntry& entry, Utf8StringR err) {
-        bool hasInstanceId = false;
-        bool hasClassId = false;
         const int count = reader.GetColumnCount(stage);
+        if (count <= ChangesetReader::ClassIdColumn) {
+            Utf8String tableName;
+            reader.GetTableName(tableName);
+            err.Sprintf("ChangeUnifier: row of table '%s' has no ECInstanceId or ECClassId.", tableName.c_str());
+            return ERROR;
+        }
+        key.m_instanceId = reader.GetValue(stage, ChangesetReader::InstanceIdColumn).GetId<ECInstanceId>().GetValueUnchecked();
+        entry.m_classId = reader.GetValue(stage, ChangesetReader::ClassIdColumn).GetId<ECClassId>().GetValueUnchecked();
         for (int i = 0; i < count; ++i) {
             IECSqlValue const& val = reader.GetValue(stage, i);
             ECPropertyCP prop = val.GetColumnInfo().GetProperty();
             if (prop == nullptr)
                 continue;
             Utf8StringCR propName = prop->GetName();
-            // compare the name first: the extended type lookup is only needed for the two candidates
-            const bool isInstanceIdName = propName.EqualsIAscii(ECDBSYS_PROP_ECInstanceId);
-            const bool isClassIdName = !isInstanceIdName && propName.EqualsIAscii(ECDBSYS_PROP_ECClassId);
-            bool isClassIdProp = false;
-            PrimitiveECPropertyCP primProp = (isInstanceIdName || isClassIdName) ? prop->GetAsPrimitiveProperty() : nullptr;
-            if (primProp != nullptr && !val.IsNull()) {
-                const auto extType = ExtendedTypeHelper::GetExtendedType(primProp->GetExtendedTypeName());
-                if (isInstanceIdName && extType == ExtendedTypeHelper::ExtendedType::Id) {
-                    key.m_instanceId = val.GetId<ECInstanceId>().GetValueUnchecked();
-                    hasInstanceId = true;
-                } else if (isClassIdName && extType == ExtendedTypeHelper::ExtendedType::ClassId) {
-                    entry.m_classId = val.GetId<ECClassId>().GetValueUnchecked();
-                    hasClassId = true;
-                    isClassIdProp = true;
-                }
-            }
-            if (!isClassIdProp && !isInstanceIdName && !KeepProperty(propName))
+            if (!KeepProperty(propName)) // always true for ECInstanceId and ECClassId
                 continue;
+            const bool isClassIdProp = i == ChangesetReader::ClassIdColumn;
 
             if (m_scratch == nullptr || ++m_scratchUses > ScratchReuseLimit) {
                 m_scratch = std::make_unique<BeJsDocument>();
@@ -284,12 +275,6 @@ private:
                 entry.m_props.push_back(std::move(unifiedProp));
                 return false;
             });
-        }
-        if (!hasInstanceId || !hasClassId) {
-            Utf8String tableName;
-            reader.GetTableName(tableName);
-            err.Sprintf("ChangeUnifier: row of table '%s' has no ECInstanceId or ECClassId.", tableName.c_str());
-            return ERROR;
         }
         key.m_stage = static_cast<uint8_t>(stage == Changes::Change::Stage::New ? 1 : 0);
         return SUCCESS;

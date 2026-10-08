@@ -799,7 +799,7 @@ BentleyStatus ChangesetValueFactory::BuildPropertyFields(
     std::vector<Utf8String>* changedProps) {
 
     for (auto& propertyMap : classMap.GetPropertyMaps()) {
-        // ECInstanceId and ECClassId are emitted as fixed slots [0] and [1] by the caller.
+        // ECInstanceId and ECClassId are emitted by the caller at ChangesetReader::InstanceIdColumn and ClassIdColumn.
         if (propertyMap->IsSystem()) {
             const auto prim = propertyMap->GetProperty().GetAsPrimitiveProperty();
             if (prim != nullptr) {
@@ -916,6 +916,7 @@ BentleyStatus ChangesetValueFactory::Create(
     // -----------------------------------------------------------------------
     // Step 4: Build remaining property fields (slots [2+]).
     // -----------------------------------------------------------------------
+    static_assert(ChangesetReader::InstanceIdColumn == 0 && ChangesetReader::ClassIdColumn == 1, "ChangesetReader column layout");
     fields.emplace_back(std::move(instanceIdField));
     fields.emplace_back(std::move(classIdField));
 

@@ -24,6 +24,11 @@ public:
         InstanceKey = 2,   //!< Emit ECInstanceId and ECClassId only (cheapest).
     };
 
+    //! Column index of ECInstanceId in every non-empty stage of an EC table row.
+    static constexpr int InstanceIdColumn = 0;
+    //! Column index of ECClassId in every non-empty stage of an EC table row.
+    static constexpr int ClassIdColumn = 1;
+
 private:
     using Stage = Changes::Change::Stage;
     std::unique_ptr<PreparedChangesetReader> m_innerReader;

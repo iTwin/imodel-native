@@ -639,38 +639,14 @@ BentleyStatus PreparedChangesetReader::GetInstanceKey(Stage stage, Utf8StringR k
         LOG.errorv("Attempting to get instance key from a ChangesetReader that is either not open or not stepped or has finished stepping and has reached the end.");
         return ERROR;
     }
-    const int count = GetColumnCount(stage);
-    Utf8String instanceId;
-    Utf8String classId;
-    for (int i = 0; i < count; ++i)
+    if (GetColumnCount(stage) <= ChangesetReader::ClassIdColumn)
         {
-        IECSqlValue const& val = GetValue(stage, i);
-        if (val.IsNull())
-            continue;
-        auto const* prop = val.GetColumnInfo().GetProperty();
-        if (prop == nullptr)
-            continue;
-        // compare the name first: the extended type lookup is only needed for the two candidates
-        Utf8StringCR propName = prop->GetName();
-        const bool isInstanceIdName = propName.EqualsIAscii(ECDBSYS_PROP_ECInstanceId);
-        if (!isInstanceIdName && !propName.EqualsIAscii(ECDBSYS_PROP_ECClassId))
-            continue;
-        auto const* primProp = prop->GetAsPrimitiveProperty();
-        if (primProp == nullptr)
-            continue;
-        const auto extType = ExtendedTypeHelper::GetExtendedType(primProp->GetExtendedTypeName());
-        if (isInstanceIdName && extType == ExtendedTypeHelper::ExtendedType::Id)
-            instanceId = val.GetId<ECInstanceId>().ToHexStr();
-        else if (!isInstanceIdName && extType == ExtendedTypeHelper::ExtendedType::ClassId)
-            classId = val.GetId<ECN::ECClassId>().ToHexStr();
-        }
-    if(instanceId.empty() || classId.empty())
-        {
-        LOG.warningv("Could not find either ECInstanceId or ECClassId or both for stage %s of current change. Instance key cannot be constructed.", stage == Stage::New ? "New" : "Old");
+        LOG.warningv("Stage %s of current change has no ECInstanceId and ECClassId. Instance key cannot be constructed.", stage == Stage::New ? "New" : "Old");
         key.clear();
         return ERROR;
         }
-    key.Sprintf("%s-%s", instanceId.c_str(), classId.c_str());
+    key.Sprintf("%s-%s", GetValue(stage, ChangesetReader::InstanceIdColumn).GetId<ECInstanceId>().ToHexStr().c_str(),
+        GetValue(stage, ChangesetReader::ClassIdColumn).GetId<ECN::ECClassId>().ToHexStr().c_str());
     return SUCCESS;
 }
 
