@@ -47,7 +47,7 @@ public:
         uint64_t m_memoryBudgetBytes = DefaultMemoryBudgetBytes;
     };
 
-    //! Receives one merged instance from Step(IInstanceWriter&) as JSON-like events, in the order a JSON writer
+    //! Receives one merged instance from Step() as JSON-like events, in the order a JSON writer
     //! would produce them: StartObject, a Key and a value per property and for "$meta", then EndObject.
     //! @remarks Lets a caller build its own value representation, e.g. JavaScript objects, without an intermediate document.
     //! Names and strings from the unifier's string table (property names, "$meta" member names, table names, op and stage)
@@ -95,15 +95,12 @@ public:
     //! or with a reader of another ECDb, or an error code. On other errors the unifier cannot be used anymore; see GetLastError().
     ECDB_EXPORT DbResult AppendFrom(ChangesetReader& reader, JsReadOptions const& rowOptions);
 
-    //! Writes the next merged instance into @p instance, which is reset to an object first.
+    //! Sends the next merged instance to @p writer as one object.
     //! @remarks The first call finalizes the merge (sort and k-way merge of spilled runs). After that, AppendFrom fails.
     //! The instance contains the rendered property values plus a "$meta" object with the members
     //! tables, op, stage, changeIndexes, instanceKey, changeFetchedPropNames and isIndirectChange.
     //! @return BE_SQLITE_ROW if an instance was written, BE_SQLITE_DONE when all instances were returned,
     //! BE_SQLITE_MISUSE after Close() or after a previous failure, or an error code.
-    ECDB_EXPORT DbResult Step(BeJsValue instance);
-
-    //! Same as Step(BeJsValue), but sends the next merged instance to @p writer.
     ECDB_EXPORT DbResult Step(IInstanceWriter& writer);
 
     //! Frees all memory and deletes spill files. Idempotent.

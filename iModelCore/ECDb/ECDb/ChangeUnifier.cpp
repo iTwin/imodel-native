@@ -29,47 +29,6 @@ public:
     IECSqlValue const& GetValue(int) const override { return m_value; }
 };
 
-//=======================================================================================
-// Writes the events of ChangeUnifier::Step(IInstanceWriter&) into a BeJsValue.
-// @bsiclass
-//+===============+===============+===============+===============+===============+======
-struct BeJsValueInstanceWriter final : ChangeUnifier::IInstanceWriter {
-private:
-    BeJsValue m_root;
-    std::vector<std::pair<BeJsValue, bool>> m_containers; //!< open objects and arrays; second is true for arrays
-    Utf8String m_key;
-
-    BeJsValue Target() {
-        if (m_containers.empty())
-            return m_root;
-        auto& top = m_containers.back();
-        return top.second ? top.first.appendValue() : top.first[m_key.c_str()];
-    }
-
-public:
-    explicit BeJsValueInstanceWriter(BeJsValue root) : m_root(root) {}
-    void StartObject() override {
-        BeJsValue target = Target();
-        target.SetEmptyObject();
-        m_containers.push_back(std::make_pair(target, false));
-    }
-    void Key(Utf8CP name, size_t length, uint32_t) override { m_key.assign(name, length); }
-    void EndObject() override { m_containers.pop_back(); }
-    void StartArray() override {
-        BeJsValue target = Target();
-        target.SetEmptyArray();
-        m_containers.push_back(std::make_pair(target, true));
-    }
-    void EndArray() override { m_containers.pop_back(); }
-    void Null() override { Target().SetNull(); }
-    void Bool(bool value) override { Target() = value; }
-    void Int64(int64_t value) override { Target() = value; }
-    void UInt64(uint64_t value) override { Target() = value; }
-    void Double(double value) override { Target() = value; }
-    void String(Utf8CP value, size_t length, uint32_t) override { Target() = Utf8String(value, length).c_str(); }
-    void Binary(Byte const* data, size_t size) override { Target().SetBinary(data, size); }
-};
-
 } // namespace
 
 //=======================================================================================
@@ -571,14 +530,6 @@ DbResult ChangeUnifier::AppendFrom(ChangesetReader& reader, JsReadOptions const&
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult ChangeUnifier::Step(IInstanceWriter& writer) { return m_impl != nullptr ? m_impl->Step(writer) : BE_SQLITE_MISUSE; }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-DbResult ChangeUnifier::Step(BeJsValue instance) {
-    BeJsValueInstanceWriter writer(instance);
-    return Step(writer);
-}
 
 //---------------------------------------------------------------------------------------
 // Dropping the implementation frees all memory and deletes the spill file.

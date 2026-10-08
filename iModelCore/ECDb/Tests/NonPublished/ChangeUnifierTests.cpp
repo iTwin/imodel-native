@@ -17,6 +17,56 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 //=======================================================================================
+// Writes the events of ChangeUnifier::Step into a BeJsValue, so tests can compare instances as JSON.
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct BeJsValueInstanceWriter final : ChangeUnifier::IInstanceWriter {
+private:
+    BeJsValue m_root;
+    std::vector<std::pair<BeJsValue, bool>> m_containers; //!< open objects and arrays; second is true for arrays
+    Utf8String m_key;
+
+    BeJsValue Target() {
+        if (m_containers.empty())
+            return m_root;
+        auto& top = m_containers.back();
+        return top.second ? top.first.appendValue() : top.first[m_key.c_str()];
+    }
+
+public:
+    explicit BeJsValueInstanceWriter(BeJsValue root) : m_root(root) {}
+    void StartObject() override {
+        BeJsValue target = Target();
+        target.SetEmptyObject();
+        m_containers.push_back(std::make_pair(target, false));
+    }
+    void Key(Utf8CP name, size_t length, uint32_t) override { m_key.assign(name, length); }
+    void EndObject() override { m_containers.pop_back(); }
+    void StartArray() override {
+        BeJsValue target = Target();
+        target.SetEmptyArray();
+        m_containers.push_back(std::make_pair(target, true));
+    }
+    void EndArray() override { m_containers.pop_back(); }
+    void Null() override { Target().SetNull(); }
+    void Bool(bool value) override { Target() = value; }
+    void Int64(int64_t value) override { Target() = value; }
+    void UInt64(uint64_t value) override { Target() = value; }
+    void Double(double value) override { Target() = value; }
+    void String(Utf8CP value, size_t length, uint32_t) override { Target() = Utf8String(value, length).c_str(); }
+    void Binary(Byte const* data, size_t size) override { Target().SetBinary(data, size); }
+};
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+static DbResult StepInto(ChangeUnifier& unifier, BeJsValue instance)
+    {
+    BeJsValueInstanceWriter writer(instance);
+    return unifier.Step(writer);
+    }
+
+//=======================================================================================
 // @bsiclass
 //=======================================================================================
 struct UnifierTestChangeSet : BeSQLite::ChangeSet
@@ -150,7 +200,7 @@ struct ChangeUnifierTests : ECDbTestFixture
         for (;;)
             {
             auto doc = std::make_unique<BeJsDocument>();
-            DbResult rc = unifier.Step(*doc);
+            DbResult rc = StepInto(unifier, *doc);
             if (rc != BE_SQLITE_ROW)
                 {
                 EXPECT_EQ(BE_SQLITE_DONE, rc) << unifier.GetLastError().c_str();
@@ -434,21 +484,21 @@ TEST_F(ChangeUnifierTests, Lifecycle)
     ChangeUnifier unifier;
     ASSERT_EQ(BE_SQLITE_OK, Append(unifier, cs));
     BeJsDocument doc;
-    ASSERT_EQ(BE_SQLITE_ROW, unifier.Step(doc));
+    ASSERT_EQ(BE_SQLITE_ROW, StepInto(unifier, doc));
     EXPECT_EQ(BE_SQLITE_MISUSE, Append(unifier, cs));
     EXPECT_FALSE(unifier.GetLastError().empty());
-    EXPECT_EQ(BE_SQLITE_DONE, unifier.Step(doc));
-    EXPECT_EQ(BE_SQLITE_DONE, unifier.Step(doc));
+    EXPECT_EQ(BE_SQLITE_DONE, StepInto(unifier, doc));
+    EXPECT_EQ(BE_SQLITE_DONE, StepInto(unifier, doc));
     unifier.Close();
     unifier.Close();
 
     ChangeUnifier empty;
     BeJsDocument emptyDoc;
-    EXPECT_EQ(BE_SQLITE_DONE, empty.Step(emptyDoc));
+    EXPECT_EQ(BE_SQLITE_DONE, StepInto(empty, emptyDoc));
     }
 
 //---------------------------------------------------------------------------------------
-// Step(IInstanceWriter&) gives every name from the unifier's string table the same non-zero id in every instance,
+// Step gives every name from the unifier's string table the same non-zero id in every instance,
 // so writers can convert each name once.
 // @bsimethod
 //---------------------------------------------------------------------------------------
