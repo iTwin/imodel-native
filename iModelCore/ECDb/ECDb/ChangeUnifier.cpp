@@ -284,7 +284,7 @@ private:
         const DbResult rc = Spill();
         if (rc != BE_SQLITE_OK)
             return rc;
-        if (SUCCESS != m_spill.StartMerge(m_lastError))
+        if (SUCCESS != m_spill.StartMerge(m_options.m_memoryBudgetBytes, m_lastError))
             return Fail(BE_SQLITE_IOERR, m_lastError);
         return BE_SQLITE_OK;
     }

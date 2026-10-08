@@ -13,7 +13,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 namespace {
 
 static constexpr size_t SpillWriteChunkBytes = 1024 * 1024;
-static constexpr size_t SpillReadChunkBytes = 64 * 1024;
+static constexpr size_t MinSpillReadChunkBytes = 64 * 1024;
+static constexpr size_t MaxSpillReadChunkBytes = 1024 * 1024;
 
 //=======================================================================================
 // Little-endian byte writer.
@@ -400,7 +401,7 @@ bool UnifierSpillFile::Fill(Cursor& cursor, size_t need) {
     const uint64_t left = cursor.m_fileEnd - cursor.m_filePos;
     if (left < need - available)
         return false;
-    const uint64_t toRead = std::min<uint64_t>(left, std::max<uint64_t>(need - available, static_cast<uint64_t>(SpillReadChunkBytes)));
+    const uint64_t toRead = std::min<uint64_t>(left, std::max<uint64_t>(need - available, static_cast<uint64_t>(m_readChunkBytes)));
     const size_t oldSize = cursor.m_buffer.size();
     cursor.m_buffer.resize(oldSize + static_cast<size_t>(toRead));
     if (BeFileStatus::Success != m_file.SetPointer(static_cast<int64_t>(cursor.m_filePos), BeFileSeekOrigin::Begin))
@@ -442,7 +443,9 @@ BentleyStatus UnifierSpillFile::Advance(Cursor& cursor) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus UnifierSpillFile::StartMerge(Utf8StringR err) {
+BentleyStatus UnifierSpillFile::StartMerge(uint64_t memoryBudgetBytes, Utf8StringR err) {
+    const uint64_t share = m_cursors.empty() ? 0 : memoryBudgetBytes / m_cursors.size();
+    m_readChunkBytes = static_cast<size_t>(std::min<uint64_t>(MaxSpillReadChunkBytes, std::max<uint64_t>(MinSpillReadChunkBytes, share)));
     for (size_t i = 0; i < m_cursors.size(); ++i) {
         if (SUCCESS != Advance(m_cursors[i])) {
             err = "ChangeUnifier: failed to read spill file.";

@@ -120,6 +120,7 @@ private:
     std::vector<Cursor> m_cursors; //!< one per run
     std::priority_queue<HeapItem, std::vector<HeapItem>, HeapGreater> m_heap;
     std::vector<Byte> m_writeBuffer;
+    size_t m_readChunkBytes = 0; //!< bytes read per refill of a cursor, set by StartMerge
 
     bool Fill(Cursor& cursor, size_t need);
     BentleyStatus Advance(Cursor& cursor);
@@ -137,7 +138,8 @@ public:
     DbResult WriteRun(ECDbCR ecdb, std::vector<KeyedEntry> const& sorted, Utf8StringR err);
 
     //! Positions every run on its first entry. Call once, after the last WriteRun.
-    BentleyStatus StartMerge(Utf8StringR err);
+    //! The read buffers of all runs share @p memoryBudgetBytes, within fixed per-run bounds.
+    BentleyStatus StartMerge(uint64_t memoryBudgetBytes, Utf8StringR err);
 
     //! Key of the next entry in merge order, or nullptr when all runs are exhausted.
     UnifiedKey const* PeekKey() const { return m_heap.empty() ? nullptr : &m_heap.top().first; }
