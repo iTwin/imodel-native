@@ -152,7 +152,8 @@ ECDbAllHeaders = \
                 $(baseDir)IECSqlValueHelper.h \
                 $(baseDir)ChangesetValueFactory.h \
                 $(baseDir)PreparedChangesetReader.h \
-                $(baseDir)ChangeUnifierSpill.h
+                $(baseDir)ChangeUnifierSpill.h \
+                $(baseDir)ChangeUnifierMap.h
 
 
 #----------------------------------------------------------------------

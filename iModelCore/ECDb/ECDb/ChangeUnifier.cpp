@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 #include "ChangeUnifierSpill.h"
+#include "ChangeUnifierMap.h"
 #include <unordered_map>
 #include <unordered_set>
 
@@ -13,7 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 namespace {
 
-using UnifiedEntryMap = std::unordered_map<UnifiedKey, UnifiedEntry, UnifiedKeyHash>;
+using UnifiedEntryMap = ChangeUnifierFlatMap<UnifiedKey, UnifiedEntry, UnifiedKeyHash>;
 
 //=======================================================================================
 // IECSqlRow over a single value so that ECSqlRowAdaptor renders one column at a time.
@@ -42,7 +43,6 @@ private:
         bool m_isOverflow = false;
     };
 
-    static constexpr uint64_t EntryOverheadBytes = sizeof(UnifiedKey) + sizeof(UnifiedEntry) + 32; // hash node + bucket
     static constexpr uint64_t PropOverheadBytes = sizeof(UnifiedProp);
 
     ChangeUnifier::Options m_options;
@@ -59,7 +59,7 @@ private:
     std::unordered_map<uint64_t, std::unordered_set<uint64_t>> m_classAncestors;
 
     UnifiedEntryMap m_entries;
-    uint64_t m_estimatedBytes = 0;
+    uint64_t m_estimatedBytes = 0; //!< heap bytes owned by the entries; the map's own storage is UnifiedEntryMap::GetMemoryBytes
 
     UnifierSpillFile m_spill;
     std::vector<KeyedEntry> m_sorted; //!< merged entries in key order when nothing was spilled
@@ -152,9 +152,9 @@ private:
         return current;
     }
 
+    //! Heap bytes owned by @p entry. The entry struct itself lives in the map's storage.
     static uint64_t EstimateBytes(UnifiedEntry const& entry) {
-        uint64_t bytes = EntryOverheadBytes;
-        bytes += sizeof(uint32_t) * (entry.m_tables.capacity() + entry.m_changeIndexes.capacity() + entry.m_fetchedNames.capacity());
+        uint64_t bytes = sizeof(uint32_t) * (entry.m_tables.capacity() + entry.m_changeIndexes.capacity() + entry.m_fetchedNames.capacity());
         bytes += PropOverheadBytes * entry.m_props.capacity();
         for (auto const& prop : entry.m_props)
             bytes += prop.m_value.capacity();
@@ -251,24 +251,20 @@ private:
     }
 
     void AddEntry(UnifiedKey const& key, UnifiedEntry&& entry) {
-        auto it = m_entries.find(key);
-        if (it == m_entries.end()) {
+        UnifiedEntry* existing = m_entries.Find(key);
+        if (existing == nullptr) {
             m_estimatedBytes += EstimateBytes(entry);
-            m_entries.insert(std::make_pair(key, std::move(entry)));
+            m_entries.Insert(key, std::move(entry));
             return;
         }
-        const uint64_t before = EstimateBytes(it->second);
-        MergeInto(it->second, std::move(entry));
-        const uint64_t after = EstimateBytes(it->second);
+        const uint64_t before = EstimateBytes(*existing);
+        MergeInto(*existing, std::move(entry));
+        const uint64_t after = EstimateBytes(*existing);
         m_estimatedBytes = m_estimatedBytes - before + after;
     }
 
     std::vector<KeyedEntry> DrainSorted() {
-        std::vector<KeyedEntry> sorted;
-        sorted.reserve(m_entries.size());
-        for (auto& kv : m_entries)
-            sorted.push_back(std::make_pair(kv.first, std::move(kv.second)));
-        m_entries.clear();
+        std::vector<KeyedEntry> sorted = m_entries.TakeEntries();
         m_estimatedBytes = 0;
         std::sort(sorted.begin(), sorted.end(), [](KeyedEntry const& lhs, KeyedEntry const& rhs) { return lhs.first < rhs.first; });
         return sorted;
@@ -414,7 +410,7 @@ public:
             key.m_rootClassId = info.m_rootClassId != 0 ? info.m_rootClassId : entry.m_classId;
             EnsureAncestors(*m_ecdb, entry.m_classId);
             AddEntry(key, std::move(entry));
-            if (m_options.m_memoryBudgetBytes > 0 && m_estimatedBytes > m_options.m_memoryBudgetBytes) {
+            if (m_options.m_memoryBudgetBytes > 0 && m_estimatedBytes + m_entries.GetMemoryBytes() > m_options.m_memoryBudgetBytes) {
                 const DbResult rc = Spill();
                 if (rc != BE_SQLITE_OK)
                     return rc;
