@@ -5327,25 +5327,27 @@ private:
         }
 
     // Builds the ChangesetRowMetadata object for the current reader row.
+    // The row objects are built with Napi directly rather than through BeJsValue, which does a member lookup and a heap
+    // allocation per write; the values and member order are the same.
     Napi::Value BuildRowMetadata(Napi::Env env)
         {
-        BeJsNapiObject metadata(env);
         Utf8String tableName;
         if (m_reader.GetTableName(tableName) != SUCCESS)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "GetTableName() failed", IModelJsNativeErrorKey::ChangesetError);
-        metadata["tableName"] = tableName.c_str();
         DbOpcode opcode;
         if (m_reader.GetOpcode(opcode) != SUCCESS)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "GetOpcode() failed", IModelJsNativeErrorKey::ChangesetError);
-        metadata["opCode"] = static_cast<int>(opcode);
         bool isIndirectChange;
         if (m_reader.IsIndirectChange(isIndirectChange) != SUCCESS)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "IsIndirectChange() failed", IModelJsNativeErrorKey::ChangesetError);
-        metadata["isIndirectChange"] = isIndirectChange;
         bool isECTable;
         if (m_reader.IsECTable(isECTable) != SUCCESS)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "IsECTable() failed", IModelJsNativeErrorKey::ChangesetError);
-        metadata["isECTable"] = isECTable;
+        Napi::Object metadata = Napi::Object::New(env);
+        metadata.Set("tableName", Napi::String::New(env, tableName.c_str()));
+        metadata.Set("opCode", Napi::Number::New(env, static_cast<int>(opcode)));
+        metadata.Set("isIndirectChange", Napi::Boolean::New(env, isIndirectChange));
+        metadata.Set("isECTable", Napi::Boolean::New(env, isECTable));
         return metadata;
         }
 
@@ -5354,22 +5356,23 @@ private:
         {
         if (m_reader.GetColumnCount(stage) == 0)
             return env.Undefined();
-        BeJsNapiObject rv(env);
-        BeJsValue rowJson = rv["data"];
-        if (adaptor.RenderRowAsObject(rowJson, ChangesetRow(m_reader, stage)) != SUCCESS)
+        BeJsNapiObject data(env);
+        if (adaptor.RenderRowAsObject(data, ChangesetRow(m_reader, stage)) != SUCCESS)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "Failed to render row", IModelJsNativeErrorKey::ChangesetError);
         Utf8String instanceKey;
         if (m_reader.GetInstanceKey(stage, instanceKey) != SUCCESS)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "Failed to get instance key", IModelJsNativeErrorKey::ChangesetError);
-        rv["key"] = instanceKey.c_str();
         const auto* names = m_reader.GetChangeFetchedPropertyNames();
         if (names == nullptr)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "Failed to get change fetched property names", IModelJsNativeErrorKey::ChangesetError);
-        BeJsValue changeFetchedPropNames = rv["changeFetchedPropNames"];
-        changeFetchedPropNames.SetEmptyArray();
+        Napi::Array changeFetchedPropNames = Napi::Array::New(env);
         uint32_t idx = 0;
         for (auto const& name : *names)
-            changeFetchedPropNames[idx++] = name;
+            changeFetchedPropNames.Set(idx++, Napi::String::New(env, name.c_str()));
+        Napi::Object rv = Napi::Object::New(env);
+        rv.Set("data", static_cast<Napi::Object>(data));
+        rv.Set("key", Napi::String::New(env, instanceKey.c_str()));
+        rv.Set("changeFetchedPropNames", changeFetchedPropNames);
         return rv;
         }
 
