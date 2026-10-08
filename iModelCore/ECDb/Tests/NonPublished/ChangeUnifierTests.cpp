@@ -6,6 +6,7 @@
 #include <BeSQLite/ChangesetFile.h>
 #include <algorithm>
 #include <cstdlib>
+#include <functional>
 #include <map>
 #include <tuple>
 
@@ -106,9 +107,12 @@ struct ChangeUnifierTests : ECDbTestFixture
         EXPECT_EQ(BE_SQLITE_DONE, stmt.Step()) << ecsql.c_str();
         }
 
-    //! Writes the changes captured by @p tracker to a changeset file and returns its path.
-    BeFileName WriteChangeset(UnifierTestChangeTracker& tracker, Utf8CP fileName)
+    //! Runs @p mutate with change tracking on and writes the captured changes to a changeset file.
+    BeFileName Capture(Utf8CP fileName, std::function<void()> const& mutate)
         {
+        UnifierTestChangeTracker tracker(m_ecdb);
+        tracker.EnableTracking(true);
+        mutate();
         UnifierTestChangeSet cs;
         EXPECT_EQ(BE_SQLITE_OK, cs.FromChangeTrack(tracker));
         BeFileName path = BuildECDbPath(fileName);
@@ -121,34 +125,50 @@ struct ChangeUnifierTests : ECDbTestFixture
         return path;
         }
 
-    DbResult Append(ChangeUnifier& unifier, BeFileNameCR changesetFile, std::vector<Utf8String> const* tableFilters = nullptr)
+    DbResult Append(ChangeUnifier& unifier, BeFileNameCR changesetFile, std::vector<Utf8String> const& tableFilters = {})
         {
         ChangesetReader reader;
         DbResult rc = reader.OpenChangesetFile(m_ecdb, changesetFile.GetNameUtf8(), false, ChangesetReader::PropertyFilter::All);
         if (rc != BE_SQLITE_OK)
             return rc;
-        if (tableFilters != nullptr)
-            EXPECT_EQ(SUCCESS, reader.SetTableFilters(*tableFilters));
+        if (!tableFilters.empty())
+            EXPECT_EQ(SUCCESS, reader.SetTableFilters(tableFilters));
         rc = unifier.AppendFrom(reader, JsReadOptions());
         EXPECT_EQ(SUCCESS, reader.Close());
         return rc;
         }
 
-    static UnifiedInstances Drain(ChangeUnifier& unifier)
+    UnifiedInstances UnifyWithBudget(std::vector<BeFileName> const& files, ChangeUnifier::Options options, uint64_t budget, std::vector<Utf8String> const& tableFilters)
         {
+        options.m_memoryBudgetBytes = budget;
+        ChangeUnifier unifier(options);
+        for (BeFileNameCR file : files)
+            EXPECT_EQ(BE_SQLITE_OK, Append(unifier, file, tableFilters)) << unifier.GetLastError().c_str();
         UnifiedInstances out;
         for (;;)
             {
             auto doc = std::make_unique<BeJsDocument>();
             DbResult rc = unifier.Step(*doc);
-            if (rc == BE_SQLITE_DONE)
-                break;
-            EXPECT_EQ(BE_SQLITE_ROW, rc) << unifier.GetLastError().c_str();
             if (rc != BE_SQLITE_ROW)
+                {
+                EXPECT_EQ(BE_SQLITE_DONE, rc) << unifier.GetLastError().c_str();
                 break;
+                }
             out.push_back(std::move(doc));
             }
+        unifier.Close();
         return out;
+        }
+
+    //! Unifies @p files in memory and returns the result. Also unifies them with tiny memory budgets, which force
+    //! spilling to disk, and expects identical output.
+    UnifiedInstances Unify(std::vector<BeFileName> const& files, ChangeUnifier::Options const& options = {}, std::vector<Utf8String> const& tableFilters = {})
+        {
+        UnifiedInstances inMemory = UnifyWithBudget(files, options, 0, tableFilters);
+        std::vector<Utf8String> expected = Stringify(inMemory);
+        for (uint64_t budget : {(uint64_t) 1, (uint64_t) 512})
+            EXPECT_EQ(expected, Stringify(UnifyWithBudget(files, options, budget, tableFilters))) << "budget " << budget;
+        return inMemory;
         }
 
     static std::vector<Utf8String> Stringify(UnifiedInstances const& instances)
@@ -186,6 +206,14 @@ struct ChangeUnifierTests : ECDbTestFixture
         {
         return Utf8PrintfString("%s-%s", id.ToHexStr().c_str(), classId.ToHexStr().c_str());
         }
+
+    static void ExpectMeta(BeJsConst inst, Utf8CP op, Utf8CP stage, std::vector<Utf8String> const& tables)
+        {
+        BeJsConst meta = inst["$meta"];
+        EXPECT_STREQ(op, meta["op"].asString().c_str());
+        EXPECT_STREQ(stage, meta["stage"].asString().c_str());
+        EXPECT_EQ(tables, StringArray(meta["tables"]));
+        }
     };
 
 //---------------------------------------------------------------------------------------
@@ -195,22 +223,13 @@ struct ChangeUnifierTests : ECDbTestFixture
 TEST_F(ChangeUnifierTests, JoinedTable_InsertMergesRowsFromAllTables)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("cu_joined.ecdb", SchemaItem(GetSchema())));
-
     ECInstanceKey key;
-    BeFileName csFile;
-    {
-    UnifierTestChangeTracker tracker(m_ecdb);
-    tracker.EnableTracking(true);
-    key = Insert("INSERT INTO tu.JChild(BaseCode, P, Q) VALUES('base', 7, 'q')");
-    csFile = WriteChangeset(tracker, "cu_joined.changeset");
-    }
+    BeFileName cs = Capture("cu_joined.changeset", [&] { key = Insert("INSERT INTO tu.JChild(BaseCode, P, Q) VALUES('base', 7, 'q')"); });
 
-    ChangeUnifier unifier;
-    ASSERT_EQ(BE_SQLITE_OK, Append(unifier, csFile));
-    UnifiedInstances instances = Drain(unifier);
+    UnifiedInstances instances = Unify({cs});
     ASSERT_EQ(1, (int) instances.size());
-
     BeJsConst inst = *instances[0];
+    ExpectMeta(inst, "Inserted", "New", {"tu_JBase", "tu_JChild"});
     EXPECT_STREQ(key.GetInstanceId().ToHexStr().c_str(), inst["ECInstanceId"].asString().c_str());
     EXPECT_STREQ(ClassId("JChild").ToHexStr().c_str(), inst["ECClassId"].asString().c_str());
     EXPECT_STREQ("base", inst["BaseCode"].asString().c_str());
@@ -218,11 +237,8 @@ TEST_F(ChangeUnifierTests, JoinedTable_InsertMergesRowsFromAllTables)
     EXPECT_STREQ("q", inst["Q"].asString().c_str());
 
     BeJsConst meta = inst["$meta"];
-    EXPECT_STREQ("Inserted", meta["op"].asString().c_str());
-    EXPECT_STREQ("New", meta["stage"].asString().c_str());
     EXPECT_FALSE(meta["isIndirectChange"].asBool(true));
     EXPECT_STREQ(ExpectedInstanceKey(key.GetInstanceId(), ClassId("JChild")).c_str(), meta["instanceKey"].asString().c_str());
-    EXPECT_EQ((std::vector<Utf8String>{"tu_JBase", "tu_JChild"}), StringArray(meta["tables"]));
     ASSERT_EQ(2u, meta["changeIndexes"].size());
     EXPECT_EQ(1, meta["changeIndexes"][0u].asInt());
     EXPECT_EQ(2, meta["changeIndexes"][1u].asInt());
@@ -232,111 +248,38 @@ TEST_F(ChangeUnifierTests, JoinedTable_InsertMergesRowsFromAllTables)
     }
 
 //---------------------------------------------------------------------------------------
-// An update yields an Old and a New instance, Old first.
-// @bsimethod
-//---------------------------------------------------------------------------------------
-TEST_F(ChangeUnifierTests, Update_ProducesOldAndNewInstances)
-    {
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("cu_update.ecdb", SchemaItem(GetSchema())));
-    ECInstanceKey key = Insert("INSERT INTO tu.Gadget(Name, Weight) VALUES('a', 1.5)");
-
-    BeFileName csFile;
-    {
-    UnifierTestChangeTracker tracker(m_ecdb);
-    tracker.EnableTracking(true);
-    Execute(Utf8PrintfString("UPDATE tu.Gadget SET Name='b' WHERE ECInstanceId=%" PRIu64, key.GetInstanceId().GetValue()));
-    csFile = WriteChangeset(tracker, "cu_update.changeset");
-    }
-
-    ChangeUnifier unifier;
-    ASSERT_EQ(BE_SQLITE_OK, Append(unifier, csFile));
-    UnifiedInstances instances = Drain(unifier);
-    ASSERT_EQ(2, (int) instances.size());
-
-    BeJsConst oldInst = *instances[0];
-    BeJsConst newInst = *instances[1];
-    EXPECT_STREQ("Old", oldInst["$meta"]["stage"].asString().c_str());
-    EXPECT_STREQ("New", newInst["$meta"]["stage"].asString().c_str());
-    EXPECT_STREQ("Updated", oldInst["$meta"]["op"].asString().c_str());
-    EXPECT_STREQ("Updated", newInst["$meta"]["op"].asString().c_str());
-    EXPECT_STREQ("a", oldInst["Name"].asString().c_str());
-    EXPECT_STREQ("b", newInst["Name"].asString().c_str());
-    EXPECT_STREQ(oldInst["$meta"]["instanceKey"].asString().c_str(), newInst["$meta"]["instanceKey"].asString().c_str());
-    EXPECT_EQ((std::vector<Utf8String>{"tu_Gadget"}), StringArray(newInst["$meta"]["tables"]));
-    }
-
-//---------------------------------------------------------------------------------------
 // When only overflow-table rows contribute, op is "Updated".
 // @bsimethod
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeUnifierTests, OverflowOnly_ReportedAsUpdated)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("cu_overflow.ecdb", SchemaItem(GetSchema())));
-
-    // Insert touches main + overflow table.
-    BeFileName insertFile;
     ECInstanceKey key;
-    {
-    UnifierTestChangeTracker tracker(m_ecdb);
-    tracker.EnableTracking(true);
-    key = Insert("INSERT INTO tu.BigThing(A, B, C, D, E) VALUES('a', 'b', 'c', 'd', 'e')");
-    insertFile = WriteChangeset(tracker, "cu_overflow_insert.changeset");
-    }
+    BeFileName insertCs = Capture("cu_overflow_insert.changeset", [&] { key = Insert("INSERT INTO tu.BigThing(A, B, C, D, E) VALUES('a', 'b', 'c', 'd', 'e')"); });
+    BeFileName updateCs = Capture("cu_overflow_update.changeset", [&] { Execute(Utf8PrintfString("UPDATE tu.BigThing SET D='d2' WHERE ECInstanceId=%" PRIu64, key.GetInstanceId().GetValue())); });
 
-    // Update touches the overflow table only.
-    BeFileName updateFile;
-    {
-    UnifierTestChangeTracker tracker(m_ecdb);
-    tracker.EnableTracking(true);
-    Execute(Utf8PrintfString("UPDATE tu.BigThing SET D='d2' WHERE ECInstanceId=%" PRIu64, key.GetInstanceId().GetValue()));
-    updateFile = WriteChangeset(tracker, "cu_overflow_update.changeset");
-    }
-
-    // Both tables: op comes from the main table.
-        {
-        ChangeUnifier unifier;
-        ASSERT_EQ(BE_SQLITE_OK, Append(unifier, insertFile));
-        UnifiedInstances instances = Drain(unifier);
-        ASSERT_EQ(1, (int) instances.size());
-        BeJsConst inst = *instances[0];
-        EXPECT_STREQ("Inserted", inst["$meta"]["op"].asString().c_str());
-        EXPECT_EQ((std::vector<Utf8String>{"tu_Entity", "tu_Entity_Overflow"}), StringArray(inst["$meta"]["tables"]));
-        for (Utf8CP name : {"A", "B", "C", "D", "E"})
-            EXPECT_TRUE(HasMember(inst, name)) << name;
-        EXPECT_STREQ(ClassId("BigThing").ToHexStr().c_str(), inst["ECClassId"].asString().c_str());
-        }
+    // Main + overflow row: op comes from the main table.
+    UnifiedInstances both = Unify({insertCs});
+    ASSERT_EQ(1, (int) both.size());
+    ExpectMeta(*both[0], "Inserted", "New", {"tu_Entity", "tu_Entity_Overflow"});
+    for (Utf8CP name : {"A", "B", "C", "D", "E"})
+        EXPECT_TRUE(HasMember(*both[0], name)) << name;
+    EXPECT_STREQ(ClassId("BigThing").ToHexStr().c_str(), (*both[0])["ECClassId"].asString().c_str());
 
     // Insert with the main table filtered out: only the overflow row contributes.
-        {
-        std::vector<Utf8String> filters{"tu_Entity_Overflow"};
-        ChangeUnifier unifier;
-        ASSERT_EQ(BE_SQLITE_OK, Append(unifier, insertFile, &filters));
-        UnifiedInstances instances = Drain(unifier);
-        ASSERT_EQ(1, (int) instances.size());
-        BeJsConst inst = *instances[0];
-        EXPECT_STREQ("Updated", inst["$meta"]["op"].asString().c_str());
-        EXPECT_STREQ("New", inst["$meta"]["stage"].asString().c_str());
-        EXPECT_EQ((std::vector<Utf8String>{"tu_Entity_Overflow"}), StringArray(inst["$meta"]["tables"]));
-        EXPECT_FALSE(HasMember(inst, "A"));
-        EXPECT_STREQ("d", inst["D"].asString().c_str());
-        }
+    UnifiedInstances overflowOnly = Unify({insertCs}, {}, {"tu_Entity_Overflow"});
+    ASSERT_EQ(1, (int) overflowOnly.size());
+    ExpectMeta(*overflowOnly[0], "Updated", "New", {"tu_Entity_Overflow"});
+    EXPECT_FALSE(HasMember(*overflowOnly[0], "A"));
+    EXPECT_STREQ("d", (*overflowOnly[0])["D"].asString().c_str());
 
-    // Overflow-only update.
-        {
-        ChangeUnifier unifier;
-        ASSERT_EQ(BE_SQLITE_OK, Append(unifier, updateFile));
-        UnifiedInstances instances = Drain(unifier);
-        ASSERT_EQ(2, (int) instances.size());
-        EXPECT_STREQ("Old", (*instances[0])["$meta"]["stage"].asString().c_str());
-        EXPECT_STREQ("New", (*instances[1])["$meta"]["stage"].asString().c_str());
-        for (auto const& doc : instances)
-            {
-            EXPECT_STREQ("Updated", (*doc)["$meta"]["op"].asString().c_str());
-            EXPECT_EQ((std::vector<Utf8String>{"tu_Entity_Overflow"}), StringArray((*doc)["$meta"]["tables"]));
-            }
-        EXPECT_STREQ("d", (*instances[0])["D"].asString().c_str());
-        EXPECT_STREQ("d2", (*instances[1])["D"].asString().c_str());
-        }
+    // Update that touches the overflow table only.
+    UnifiedInstances updated = Unify({updateCs});
+    ASSERT_EQ(2, (int) updated.size());
+    ExpectMeta(*updated[0], "Updated", "Old", {"tu_Entity_Overflow"});
+    ExpectMeta(*updated[1], "Updated", "New", {"tu_Entity_Overflow"});
+    EXPECT_STREQ("d", (*updated[0])["D"].asString().c_str());
+    EXPECT_STREQ("d2", (*updated[1])["D"].asString().c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -346,29 +289,21 @@ TEST_F(ChangeUnifierTests, OverflowOnly_ReportedAsUpdated)
 TEST_F(ChangeUnifierTests, Projection_KeepsOnlyRequestedProperties)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("cu_projection.ecdb", SchemaItem(GetSchema())));
-
-    BeFileName csFile;
-    {
-    UnifierTestChangeTracker tracker(m_ecdb);
-    tracker.EnableTracking(true);
-    Insert("INSERT INTO tu.Gadget(Name, Weight) VALUES('g', 2.5)");
-    Insert("INSERT INTO tu.JChild(BaseCode, P, Q) VALUES('base', 1, 'q')");
-    csFile = WriteChangeset(tracker, "cu_projection.changeset");
-    }
+    BeFileName cs = Capture("cu_projection.changeset", [&]
+        {
+        Insert("INSERT INTO tu.Gadget(Name, Weight) VALUES('g', 2.5)");
+        Insert("INSERT INTO tu.JChild(BaseCode, P, Q) VALUES('base', 1, 'q')");
+        });
 
     ChangeUnifier::Options options;
     options.m_propNames = {"Name", "Q"};
-    ChangeUnifier unifier(options);
-    ASSERT_EQ(BE_SQLITE_OK, Append(unifier, csFile));
-    UnifiedInstances instances = Drain(unifier);
+    UnifiedInstances instances = Unify({cs}, options);
     ASSERT_EQ(2, (int) instances.size());
-
     for (auto const& doc : instances)
         {
-        BeJsConst inst = *doc;
-        const bool isGadget = inst["ECClassId"].asString() == ClassId("Gadget").ToHexStr();
-        std::vector<Utf8String> expected{"ECInstanceId", "ECClassId", isGadget ? "Name" : "Q", "$meta"};
-        auto names = MemberNames(inst);
+        const bool isGadget = (*doc)["ECClassId"].asString() == ClassId("Gadget").ToHexStr();
+        std::vector<Utf8String> expected{"$meta", "ECClassId", "ECInstanceId", isGadget ? "Name" : "Q"};
+        auto names = MemberNames(*doc);
         std::sort(names.begin(), names.end());
         std::sort(expected.begin(), expected.end());
         EXPECT_EQ(expected, names);
@@ -376,28 +311,26 @@ TEST_F(ChangeUnifierTests, Projection_KeepsOnlyRequestedProperties)
     }
 
 //---------------------------------------------------------------------------------------
-// Output is sorted numerically by (root class id, ECInstanceId, stage) with Old before New.
+// Output is sorted numerically by (root class id, ECInstanceId, stage) with Old before New. An update yields an
+// Old and a New instance; a delete yields an Old instance.
 // @bsimethod
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeUnifierTests, Output_SortedByRootClassInstanceIdAndStage)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("cu_sort.ecdb", SchemaItem(GetSchema())));
-    ECInstanceKey g1 = Insert("INSERT INTO tu.Gadget(Name) VALUES('g1')");
-    ECInstanceKey g2 = Insert("INSERT INTO tu.Gadget(Name) VALUES('g2')");
-    ECInstanceKey g3 = Insert("INSERT INTO tu.Gadget(Name) VALUES('g3')");
+    std::vector<ECInstanceKey> g;
+    for (Utf8CP name : {"g0", "g1", "g2"})
+        g.push_back(Insert(Utf8PrintfString("INSERT INTO tu.Gadget(Name) VALUES('%s')", name).c_str()));
 
-    BeFileName csFile;
-    {
-    UnifierTestChangeTracker tracker(m_ecdb);
-    tracker.EnableTracking(true);
-    Insert("INSERT INTO tu.JChild(BaseCode, P, Q) VALUES('base', 1, 'q')");
-    Execute(Utf8PrintfString("UPDATE tu.Gadget SET Name='g3b' WHERE ECInstanceId=%" PRIu64, g3.GetInstanceId().GetValue()));
-    Execute(Utf8PrintfString("DELETE FROM tu.Gadget WHERE ECInstanceId=%" PRIu64, g2.GetInstanceId().GetValue()));
-    Execute(Utf8PrintfString("UPDATE tu.Gadget SET Name='g1b' WHERE ECInstanceId=%" PRIu64, g1.GetInstanceId().GetValue()));
-    Insert("INSERT INTO tu.Gadget(Name) VALUES('g4')");
-    Insert("INSERT INTO tu.BigThing(A, D) VALUES('a', 'd')");
-    csFile = WriteChangeset(tracker, "cu_sort.changeset");
-    }
+    BeFileName cs = Capture("cu_sort.changeset", [&]
+        {
+        Insert("INSERT INTO tu.JChild(BaseCode, P, Q) VALUES('base', 1, 'q')");
+        Execute(Utf8PrintfString("UPDATE tu.Gadget SET Name='g2b' WHERE ECInstanceId=%" PRIu64, g[2].GetInstanceId().GetValue()));
+        Execute(Utf8PrintfString("DELETE FROM tu.Gadget WHERE ECInstanceId=%" PRIu64, g[1].GetInstanceId().GetValue()));
+        Execute(Utf8PrintfString("UPDATE tu.Gadget SET Name='g0b' WHERE ECInstanceId=%" PRIu64, g[0].GetInstanceId().GetValue()));
+        Insert("INSERT INTO tu.Gadget(Name) VALUES('g3')");
+        Insert("INSERT INTO tu.BigThing(A, D) VALUES('a', 'd')");
+        });
 
     std::map<uint64_t, uint64_t> rootOf{
         {ClassId("JChild").GetValue(), ClassId("JBase").GetValue()},
@@ -405,10 +338,8 @@ TEST_F(ChangeUnifierTests, Output_SortedByRootClassInstanceIdAndStage)
         {ClassId("Gadget").GetValue(), ClassId("Gadget").GetValue()},
     };
 
-    ChangeUnifier unifier;
-    ASSERT_EQ(BE_SQLITE_OK, Append(unifier, csFile));
-    UnifiedInstances instances = Drain(unifier);
-    // JChild New, BigThing New, g1 Old/New, g2 Old, g3 Old/New, g4 New
+    UnifiedInstances instances = Unify({cs});
+    // JChild New, BigThing New, g0 Old/New, g1 Old, g2 Old/New, g3 New
     ASSERT_EQ(8, (int) instances.size());
 
     std::vector<std::tuple<uint64_t, uint64_t, int>> keys;
@@ -417,12 +348,19 @@ TEST_F(ChangeUnifierTests, Output_SortedByRootClassInstanceIdAndStage)
         BeJsConst inst = *doc;
         auto it = rootOf.find(ParseHexId(inst["ECClassId"]));
         ASSERT_NE(rootOf.end(), it);
-        const int stage = inst["$meta"]["stage"].asString() == "Old" ? 0 : 1;
-        keys.push_back(std::make_tuple(it->second, ParseHexId(inst["ECInstanceId"]), stage));
-        if (ParseHexId(inst["ECInstanceId"]) == g2.GetInstanceId().GetValue())
+        const bool isOld = inst["$meta"]["stage"].asString() == "Old";
+        const uint64_t id = ParseHexId(inst["ECInstanceId"]);
+        keys.push_back(std::make_tuple(it->second, id, isOld ? 0 : 1));
+        if (id == g[1].GetInstanceId().GetValue())
             {
-            EXPECT_STREQ("Deleted", inst["$meta"]["op"].asString().c_str());
-            EXPECT_STREQ("g2", inst["Name"].asString().c_str());
+            ExpectMeta(inst, "Deleted", "Old", {"tu_Gadget"});
+            EXPECT_STREQ("g1", inst["Name"].asString().c_str());
+            }
+        if (id == g[0].GetInstanceId().GetValue())
+            {
+            ExpectMeta(inst, "Updated", isOld ? "Old" : "New", {"tu_Gadget"});
+            EXPECT_STREQ(isOld ? "g0" : "g0b", inst["Name"].asString().c_str());
+            EXPECT_STREQ(ExpectedInstanceKey(g[0].GetInstanceId(), ClassId("Gadget")).c_str(), inst["$meta"]["instanceKey"].asString().c_str());
             }
         }
     for (size_t i = 1; i < keys.size(); ++i)
@@ -430,7 +368,8 @@ TEST_F(ChangeUnifierTests, Output_SortedByRootClassInstanceIdAndStage)
     }
 
 //---------------------------------------------------------------------------------------
-// Spilling sorted runs to disk produces exactly the same output as merging in memory.
+// A larger mix of joined, overflow and single-table changes. Unify() checks that tiny budgets which force spilling
+// match the in-memory output; the default budget must match too.
 // @bsimethod
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeUnifierTests, Spill_TinyBudgetMatchesInMemory)
@@ -440,35 +379,19 @@ TEST_F(ChangeUnifierTests, Spill_TinyBudgetMatchesInMemory)
     for (int i = 0; i < 20; ++i)
         gadgets.push_back(Insert(Utf8PrintfString("INSERT INTO tu.Gadget(Name, Weight) VALUES('g%d', %d.5)", i, i).c_str()));
 
-    BeFileName csFile;
-    {
-    UnifierTestChangeTracker tracker(m_ecdb);
-    tracker.EnableTracking(true);
-    for (int i = 0; i < 30; ++i)
-        Insert(Utf8PrintfString("INSERT INTO tu.JChild(BaseCode, P, Q) VALUES('b%d', %d, 'q%d')", i, i, i).c_str());
-    for (int i = 0; i < 10; ++i)
-        Insert(Utf8PrintfString("INSERT INTO tu.BigThing(A, B, C, D, E) VALUES('a%d', 'b', 'c', 'd%d', 'e')", i, i).c_str());
-    for (auto const& g : gadgets)
-        Execute(Utf8PrintfString("UPDATE tu.Gadget SET Name=Name || 'x' WHERE ECInstanceId=%" PRIu64, g.GetInstanceId().GetValue()));
-    csFile = WriteChangeset(tracker, "cu_spill.changeset");
-    }
-
-    auto run = [&](uint64_t budget)
+    BeFileName cs = Capture("cu_spill.changeset", [&]
         {
-        ChangeUnifier::Options options;
-        options.m_memoryBudgetBytes = budget;
-        ChangeUnifier unifier(options);
-        EXPECT_EQ(BE_SQLITE_OK, Append(unifier, csFile));
-        auto out = Stringify(Drain(unifier));
-        unifier.Close();
-        return out;
-        };
+        for (int i = 0; i < 30; ++i)
+            Insert(Utf8PrintfString("INSERT INTO tu.JChild(BaseCode, P, Q) VALUES('b%d', %d, 'q%d')", i, i, i).c_str());
+        for (int i = 0; i < 10; ++i)
+            Insert(Utf8PrintfString("INSERT INTO tu.BigThing(A, B, C, D, E) VALUES('a%d', 'b', 'c', 'd%d', 'e')", i, i).c_str());
+        for (auto const& g : gadgets)
+            Execute(Utf8PrintfString("UPDATE tu.Gadget SET Name=Name || 'x' WHERE ECInstanceId=%" PRIu64, g.GetInstanceId().GetValue()));
+        });
 
-    std::vector<Utf8String> inMemory = run(0);
+    std::vector<Utf8String> inMemory = Stringify(Unify({cs}));
     ASSERT_EQ(30 + 10 + 2 * 20, (int) inMemory.size());
-    EXPECT_EQ(inMemory, run(1));
-    EXPECT_EQ(inMemory, run(512));
-    EXPECT_EQ(inMemory, run(ChangeUnifier::DefaultMemoryBudgetBytes));
+    EXPECT_EQ(inMemory, Stringify(UnifyWithBudget({cs}, {}, ChangeUnifier::DefaultMemoryBudgetBytes, {})));
     }
 
 //---------------------------------------------------------------------------------------
@@ -478,46 +401,23 @@ TEST_F(ChangeUnifierTests, Spill_TinyBudgetMatchesInMemory)
 TEST_F(ChangeUnifierTests, MultipleAppendFrom_MergesAcrossReaders)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("cu_multi.ecdb", SchemaItem(GetSchema())));
-
     ECInstanceKey key;
-    BeFileName cs1;
-    {
-    UnifierTestChangeTracker tracker(m_ecdb);
-    tracker.EnableTracking(true);
-    key = Insert("INSERT INTO tu.JChild(BaseCode, P, Q) VALUES('base', 1, 'v1')");
-    cs1 = WriteChangeset(tracker, "cu_multi_1.changeset");
-    }
-    BeFileName cs2;
-    {
-    UnifierTestChangeTracker tracker(m_ecdb);
-    tracker.EnableTracking(true);
-    Execute(Utf8PrintfString("UPDATE tu.JChild SET Q='v2' WHERE ECInstanceId=%" PRIu64, key.GetInstanceId().GetValue()));
-    cs2 = WriteChangeset(tracker, "cu_multi_2.changeset");
-    }
+    BeFileName cs1 = Capture("cu_multi_1.changeset", [&] { key = Insert("INSERT INTO tu.JChild(BaseCode, P, Q) VALUES('base', 1, 'v1')"); });
+    BeFileName cs2 = Capture("cu_multi_2.changeset", [&] { Execute(Utf8PrintfString("UPDATE tu.JChild SET Q='v2' WHERE ECInstanceId=%" PRIu64, key.GetInstanceId().GetValue())); });
 
-    for (uint64_t budget : {(uint64_t) 0, (uint64_t) 1})
-        {
-        ChangeUnifier::Options options;
-        options.m_memoryBudgetBytes = budget;
-        ChangeUnifier unifier(options);
-        ASSERT_EQ(BE_SQLITE_OK, Append(unifier, cs1));
-        ASSERT_EQ(BE_SQLITE_OK, Append(unifier, cs2));
-        UnifiedInstances instances = Drain(unifier);
-        ASSERT_EQ(2, (int) instances.size());
-
-        BeJsConst oldInst = *instances[0];
-        EXPECT_STREQ("Old", oldInst["$meta"]["stage"].asString().c_str());
-        EXPECT_STREQ("Updated", oldInst["$meta"]["op"].asString().c_str());
-        EXPECT_STREQ("v1", oldInst["Q"].asString().c_str());
-
-        BeJsConst newInst = *instances[1];
-        EXPECT_STREQ("New", newInst["$meta"]["stage"].asString().c_str());
-        EXPECT_STREQ("Inserted", newInst["$meta"]["op"].asString().c_str());
-        EXPECT_STREQ("v2", newInst["Q"].asString().c_str());
-        EXPECT_STREQ("base", newInst["BaseCode"].asString().c_str());
-        EXPECT_EQ(3u, newInst["$meta"]["tables"].size());
-        EXPECT_STREQ(ExpectedInstanceKey(key.GetInstanceId(), ClassId("JChild")).c_str(), newInst["$meta"]["instanceKey"].asString().c_str());
-        }
+    UnifiedInstances instances = Unify({cs1, cs2});
+    ASSERT_EQ(2, (int) instances.size());
+    BeJsConst oldInst = *instances[0];
+    BeJsConst newInst = *instances[1];
+    EXPECT_STREQ("Old", oldInst["$meta"]["stage"].asString().c_str());
+    EXPECT_STREQ("Updated", oldInst["$meta"]["op"].asString().c_str());
+    EXPECT_STREQ("v1", oldInst["Q"].asString().c_str());
+    EXPECT_STREQ("New", newInst["$meta"]["stage"].asString().c_str());
+    EXPECT_STREQ("Inserted", newInst["$meta"]["op"].asString().c_str());
+    EXPECT_EQ(3u, newInst["$meta"]["tables"].size());
+    EXPECT_STREQ("v2", newInst["Q"].asString().c_str());
+    EXPECT_STREQ("base", newInst["BaseCode"].asString().c_str());
+    EXPECT_STREQ(ExpectedInstanceKey(key.GetInstanceId(), ClassId("JChild")).c_str(), newInst["$meta"]["instanceKey"].asString().c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -527,20 +427,13 @@ TEST_F(ChangeUnifierTests, MultipleAppendFrom_MergesAcrossReaders)
 TEST_F(ChangeUnifierTests, Lifecycle)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("cu_lifecycle.ecdb", SchemaItem(GetSchema())));
-
-    BeFileName csFile;
-    {
-    UnifierTestChangeTracker tracker(m_ecdb);
-    tracker.EnableTracking(true);
-    Insert("INSERT INTO tu.Gadget(Name) VALUES('g')");
-    csFile = WriteChangeset(tracker, "cu_lifecycle.changeset");
-    }
+    BeFileName cs = Capture("cu_lifecycle.changeset", [&] { Insert("INSERT INTO tu.Gadget(Name) VALUES('g')"); });
 
     ChangeUnifier unifier;
-    ASSERT_EQ(BE_SQLITE_OK, Append(unifier, csFile));
+    ASSERT_EQ(BE_SQLITE_OK, Append(unifier, cs));
     BeJsDocument doc;
     ASSERT_EQ(BE_SQLITE_ROW, unifier.Step(doc));
-    EXPECT_EQ(BE_SQLITE_MISUSE, Append(unifier, csFile));
+    EXPECT_EQ(BE_SQLITE_MISUSE, Append(unifier, cs));
     EXPECT_FALSE(unifier.GetLastError().empty());
     EXPECT_EQ(BE_SQLITE_DONE, unifier.Step(doc));
     EXPECT_EQ(BE_SQLITE_DONE, unifier.Step(doc));
