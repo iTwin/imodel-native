@@ -647,14 +647,18 @@ BentleyStatus PreparedChangesetReader::GetInstanceKey(Stage stage, Utf8StringR k
         auto const* prop = val.GetColumnInfo().GetProperty();
         if (prop == nullptr)
             continue;
+        // compare the name first: the extended type lookup is only needed for the two candidates
+        Utf8StringCR propName = prop->GetName();
+        const bool isInstanceIdName = propName.EqualsIAscii(ECDBSYS_PROP_ECInstanceId);
+        if (!isInstanceIdName && !propName.EqualsIAscii(ECDBSYS_PROP_ECClassId))
+            continue;
         auto const* primProp = prop->GetAsPrimitiveProperty();
         if (primProp == nullptr)
             continue;
         const auto extType = ExtendedTypeHelper::GetExtendedType(primProp->GetExtendedTypeName());
-        Utf8StringCR propName = prop->GetName();
-        if (extType == ExtendedTypeHelper::ExtendedType::Id && propName.EqualsIAscii(ECDBSYS_PROP_ECInstanceId))
+        if (isInstanceIdName && extType == ExtendedTypeHelper::ExtendedType::Id)
             instanceId = val.GetId<ECInstanceId>().ToHexStr();
-        else if (extType == ExtendedTypeHelper::ExtendedType::ClassId && propName.EqualsIAscii(ECDBSYS_PROP_ECClassId))
+        else if (!isInstanceIdName && extType == ExtendedTypeHelper::ExtendedType::ClassId)
             classId = val.GetId<ECN::ECClassId>().ToHexStr();
         }
     if(instanceId.empty() || classId.empty())

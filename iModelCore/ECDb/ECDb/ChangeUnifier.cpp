@@ -249,20 +249,23 @@ private:
             if (prop == nullptr)
                 continue;
             Utf8StringCR propName = prop->GetName();
+            // compare the name first: the extended type lookup is only needed for the two candidates
+            const bool isInstanceIdName = propName.EqualsIAscii(ECDBSYS_PROP_ECInstanceId);
+            const bool isClassIdName = !isInstanceIdName && propName.EqualsIAscii(ECDBSYS_PROP_ECClassId);
             bool isClassIdProp = false;
-            PrimitiveECPropertyCP primProp = prop->GetAsPrimitiveProperty();
+            PrimitiveECPropertyCP primProp = (isInstanceIdName || isClassIdName) ? prop->GetAsPrimitiveProperty() : nullptr;
             if (primProp != nullptr && !val.IsNull()) {
                 const auto extType = ExtendedTypeHelper::GetExtendedType(primProp->GetExtendedTypeName());
-                if (extType == ExtendedTypeHelper::ExtendedType::Id && propName.EqualsIAscii(ECDBSYS_PROP_ECInstanceId)) {
+                if (isInstanceIdName && extType == ExtendedTypeHelper::ExtendedType::Id) {
                     key.m_instanceId = val.GetId<ECInstanceId>().GetValueUnchecked();
                     hasInstanceId = true;
-                } else if (extType == ExtendedTypeHelper::ExtendedType::ClassId && propName.EqualsIAscii(ECDBSYS_PROP_ECClassId)) {
+                } else if (isClassIdName && extType == ExtendedTypeHelper::ExtendedType::ClassId) {
                     entry.m_classId = val.GetId<ECClassId>().GetValueUnchecked();
                     hasClassId = true;
                     isClassIdProp = true;
                 }
             }
-            if (!isClassIdProp && !propName.EqualsIAscii(ECDBSYS_PROP_ECInstanceId) && !KeepProperty(propName))
+            if (!isClassIdProp && !isInstanceIdName && !KeepProperty(propName))
                 continue;
 
             if (m_scratch == nullptr || ++m_scratchUses > ScratchReuseLimit) {
