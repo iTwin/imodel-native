@@ -1045,7 +1045,14 @@ Nullable<ECDerivedClassesList> TableSpaceSchemaManager::GetAllDerivedClasses(ECN
         return nullptr;
         }
 
-    return Nullable<ECDerivedClassesList>(m_reader.GetAllDerivedClasses(id));
+    ECDerivedClassesList derivedClasses;
+    if (SUCCESS != m_reader.GetAllDerivedClasses(derivedClasses, id))
+        {
+        LOG.errorv("SchemaManager::GetAllDerivedClasses failed for ECClass %s. Its subclasses could not be loaded.", baseClass.GetFullName());
+        return nullptr;
+        }
+
+    return Nullable<ECDerivedClassesList>(derivedClasses);
     }
 
 //---------------------------------------------------------------------------------------
