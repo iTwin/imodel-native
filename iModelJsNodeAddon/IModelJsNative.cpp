@@ -5782,9 +5782,11 @@ public:
 
     Napi::Value Step(NapiInfoCR info)
         {
-        REQUIRE_ARGUMENT_INTEGER(0, maxInstances);
-        if (maxInstances <= 0)
+        // Checked as a double: Int32Value() would truncate fractions and wrap large values.
+        const double maxArg = ARGUMENT_IS_NUMBER(0) ? info[0].As<Napi::Number>().DoubleValue() : 0.0;
+        if (!std::isfinite(maxArg) || maxArg < 1 || maxArg != std::floor(maxArg))
             THROW_JS_TYPE_EXCEPTION("ChangeUnifier: maxInstances must be a positive integer");
+        const int32_t maxInstances = maxArg > std::numeric_limits<int32_t>::max() ? std::numeric_limits<int32_t>::max() : static_cast<int32_t>(maxArg);
 
         Napi::Array result = Napi::Array::New(Env());
         uint32_t count = 0;
