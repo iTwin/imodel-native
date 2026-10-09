@@ -25,6 +25,7 @@
 #define SQLITE_OMIT_AUTOINIT            1
 #define SQLITE_OMIT_DEPRECATED          1
 #define SQLITE_USE_URI                  1
+#define SQLITE_ENABLE_STAT4             1
 
 #define HAVE_STDINT_H
 

@@ -2702,11 +2702,6 @@ DbResult Db::CreateNewDb(Utf8CP inName, CreateParams const& params, BeGuid dbGui
         return rc;
     }
 
-    // Bloom filter introduce in 3.38 has issue with certain queries and fix was in ANALYZE
-    // command which had a rounding error. We need to keep bloom filter disabled for now until
-    // we are able to run ANALYZE on all new checkpoints and old one if necessary.
-    DisableBloomFilter(sqlDb);
-
     sqlite3_extended_result_codes(sqlDb, 1); // turn on extended error codes
     m_dbFile = new DbFile(sqlDb, params.m_busyRetry, (BeSQLiteTxnMode)params.m_startDefaultTxn, params.m_busyTimeout);
     m_isCloudDb = params.m_fromContainer;
@@ -2748,7 +2743,8 @@ DbResult Db::CreateNewDb(Utf8CP inName, CreateParams const& params, BeGuid dbGui
         if (rc != BE_SQLITE_OK)
             return rc;
 
-        // create sqlite_stat1 so it can be tracked later on.
+        // create sqlite_stat1 so it can be tracked later on (sqlite_stat4 is created too when
+        // SQLite is built with SQLITE_ENABLE_STAT4, but it is not tracked - see below).
         rc = ExecuteSql("analyze;");
         if (BE_SQLITE_OK != rc)
             return rc;
@@ -2757,6 +2753,17 @@ DbResult Db::CreateNewDb(Utf8CP inName, CreateParams const& params, BeGuid dbGui
         rc = ExecuteSql("delete from sqlite_stat1;");
         if (BE_SQLITE_OK != rc)
             return rc;
+
+        // Same for sqlite_stat4 (present when SQLite is built with SQLITE_ENABLE_STAT4). Leaving
+        // the rows this initial ANALYZE produced behind would give every db stats derived from an
+        // empty db, which a later ANALYZE replaces wholesale anyway. Starting empty keeps stat4
+        // consistent with stat1.
+        if (TableExists("sqlite_stat4"))
+            {
+            rc = ExecuteSql("delete from sqlite_stat4;");
+            if (BE_SQLITE_OK != rc)
+                return rc;
+            }
     }
 
     rc = _OnDbCreated(params);
