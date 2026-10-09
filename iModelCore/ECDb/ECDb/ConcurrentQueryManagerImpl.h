@@ -266,7 +266,7 @@ struct RunnableRequestBase {
     private:
         QueryRequest::Ptr m_request;
         uint32_t m_id;
-        bool m_isCompleted;
+        std::atomic_bool m_isCompleted;
         bool m_isDequeued;
         std::chrono::time_point<std::chrono::steady_clock> m_dequeuedOn;
         std::chrono::time_point<std::chrono::steady_clock> m_submittedOn;
@@ -302,7 +302,7 @@ struct RunnableRequestBase {
                 m_argsKey = GetRequest().GetAsConst<ECSqlRequest>().GetArgs().GetCacheKey();
             return *m_argsKey;
         }
-        bool IsCompleted() const {return m_isCompleted; }
+        bool IsCompleted() const {return m_isCompleted.load(); }
         RunnableRequestQueue& GetQueue() { return m_queue;}
         bool IsInterrupted() const { return m_interrupted; }
         void Cancel() { m_cancelled.store(true); }

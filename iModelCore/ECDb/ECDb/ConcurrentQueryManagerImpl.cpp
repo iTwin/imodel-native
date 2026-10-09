@@ -461,7 +461,7 @@ void CachedConnection::SetRequest(std::unique_ptr<RunnableRequestBase> request) 
 //---------------------------------------------------------------------------------------
 void CachedConnection::InterruptIf(std::function<bool(RunnableRequestBase const&)> cb, bool cancel) {
     recursive_guard_t lock(m_mutexReq);
-    if (m_request != nullptr) {
+    if (m_request != nullptr && !m_request->IsCompleted()) {
         if (cb(*m_request)) {
             if (cancel) {
                 m_request->Cancel();
@@ -680,7 +680,7 @@ std::shared_ptr<CachedConnection> ConnectionCache::GetConnection(RunnableRequest
     if (enabled && request.GetKind() == QueryRequest::Kind::ECSql)
         argsKey = &runnableRequest.GetArgsKey();
     recursive_guard_t lock(m_mutex);
-    if (enabled && request.GetKind() == QueryRequest::Kind::ECSql) {
+    if (argsKey != nullptr) {
         auto const& ecsqlRequest = request.GetAsConst<ECSqlRequest>();
         for (auto const& conn : m_conns)
             conn->ExpireCursors(&request, *argsKey);
@@ -1271,10 +1271,10 @@ bool RunnableRequestQueue::CancelRequest(uint32_t id) {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 void RunnableRequestBase::SetResponse(QueryResponse::Ptr response) {
-    if (m_isCompleted)
+    // Publish completion before notifying clients that may immediately submit a restart.
+    if (m_isCompleted.exchange(true))
         throw std::runtime_error("already responded");
     try { _SetResponse(response); } catch(std::exception) {}
-    m_isCompleted = true;
 }
 
 
