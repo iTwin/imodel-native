@@ -25,6 +25,11 @@ public:
         InstanceKeyAndIdentifiers = 3, //!< Emit ECInstanceId, ECClassId, and identifiers read only from the changeset: ElementAspect Element.Id; on delete, Element FederationGuid, link-table Source/TargetECInstanceId, and ExternalSourceAspect Scope.Id, Kind, Identifier.
     };
 
+    //! Column index of ECInstanceId in every non-empty stage of an EC table row.
+    static constexpr int InstanceIdColumn = 0;
+    //! Column index of ECClassId in every non-empty stage of an EC table row.
+    static constexpr int ClassIdColumn = 1;
+
 private:
     using Stage = Changes::Change::Stage;
     std::unique_ptr<PreparedChangesetReader> m_innerReader;

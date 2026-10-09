@@ -169,13 +169,6 @@ private:
     // High-level resolution helpers used by Create()
     // ------------------------------------------------------------------
 
-    //! Tries to resolve classMap + classId from the column values map's class-id entry.
-    //! Returns true and populates @p outClassId on success.
-    static bool TryResolveClassIdFromChangeset(DbTable const& dbTable,
-                                                ColumnValueMap const& columnValues,
-                                                ECDbCR conn,
-                                                ECClassId& outClassId);
-
     //! Tries to resolve classMap + classId via a live DB seek on the first PK column.
     //! Returns false immediately when the ECClassId column is virtual.
     //! Returns true and populates @p outClassId on success.
@@ -216,14 +209,19 @@ private:
 
     // ------------------------------------------------------------------
 public:
-    //! Resolves the ClassMap, ECClassId, and whether the class id came from the changeset
-    //! for a single changeset row.  Tries the changeset first, then a live DB seek,
-    //! then falls back to the table's root ClassMap.
-    //! Returns SUCCESS and populates all three out params on success; ERROR otherwise.
-    static BentleyStatus ResolveClassId(ECDbCR conn, DbTable const& tbl,
-                                        ColumnValueMap const& columnValues,
-                                        ECClassId& resolvedClassIdOut,
-                                        bool& classIdFromChangesetOut);
+    //! Reads the ECClassId from the row's own column values.
+    //! Returns true and populates @p outClassId if the changeset carries it.
+    static bool TryResolveClassIdFromChangeset(DbTable const& dbTable,
+                                                ColumnValueMap const& columnValues,
+                                                ECDbCR conn,
+                                                ECClassId& outClassId);
+
+    //! Resolves the ECClassId of a row whose column values don't carry it: a DB seek on the primary key,
+    //! else the table's root class. Both stages of a row get the same answer.
+    //! Returns SUCCESS and populates @p outClassId on success; ERROR otherwise.
+    static BentleyStatus ResolveClassIdFromDb(ECDbCR conn, DbTable const& tbl,
+                                              ColumnValueMap const& columnValues,
+                                              ECClassId& outClassId);
 
     //! Builds the IECSqlValue fields for one changeset row.
     //! If @p changedProps is non-null it is filled with the access paths of all properties

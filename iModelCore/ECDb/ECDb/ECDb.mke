@@ -37,7 +37,8 @@ ECDbPublicHeaders =  \
                 $(publicApiDir)InstanceWriter.h \
                 $(publicApiDir)ECDbExpressionSymbolContext.h \
                 $(publicApiDir)InstanceRepository.h \
-                $(publicApiDir)ChangesetReader.h
+                $(publicApiDir)ChangesetReader.h \
+                $(publicApiDir)ChangeUnifier.h
 
 ECDbAllHeaders = \
                 $(ECDbPublicHeaders) \
@@ -150,7 +151,9 @@ ECDbAllHeaders = \
                 $(baseDir)ChangesetValue.h \
                 $(baseDir)IECSqlValueHelper.h \
                 $(baseDir)ChangesetValueFactory.h \
-                $(baseDir)PreparedChangesetReader.h
+                $(baseDir)PreparedChangesetReader.h \
+                $(baseDir)ChangeUnifierSpill.h \
+                $(baseDir)ChangeUnifierMap.h
 
 
 #----------------------------------------------------------------------
@@ -263,6 +266,10 @@ $(o)ChangeIteratorImpl$(oext):                                $(baseDir)ChangeIt
 $(o)ChangesetReader$(oext):                                 $(baseDir)ChangesetReader.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)PreparedChangesetReader$(oext):                         $(baseDir)PreparedChangesetReader.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)ChangeUnifier$(oext):                                   $(baseDir)ChangeUnifier.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)ChangeUnifierSpill$(oext):                              $(baseDir)ChangeUnifierSpill.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ChangesetValue$(oext):                                    $(baseDir)ChangesetValue.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 

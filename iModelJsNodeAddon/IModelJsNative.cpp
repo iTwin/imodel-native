@@ -5327,25 +5327,27 @@ private:
         }
 
     // Builds the ChangesetRowMetadata object for the current reader row.
+    // The row objects are built with Napi directly rather than through BeJsValue, which does a member lookup and a heap
+    // allocation per write; the values and member order are the same.
     Napi::Value BuildRowMetadata(Napi::Env env)
         {
-        BeJsNapiObject metadata(env);
         Utf8String tableName;
         if (m_reader.GetTableName(tableName) != SUCCESS)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "GetTableName() failed", IModelJsNativeErrorKey::ChangesetError);
-        metadata["tableName"] = tableName.c_str();
         DbOpcode opcode;
         if (m_reader.GetOpcode(opcode) != SUCCESS)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "GetOpcode() failed", IModelJsNativeErrorKey::ChangesetError);
-        metadata["opCode"] = static_cast<int>(opcode);
         bool isIndirectChange;
         if (m_reader.IsIndirectChange(isIndirectChange) != SUCCESS)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "IsIndirectChange() failed", IModelJsNativeErrorKey::ChangesetError);
-        metadata["isIndirectChange"] = isIndirectChange;
         bool isECTable;
         if (m_reader.IsECTable(isECTable) != SUCCESS)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "IsECTable() failed", IModelJsNativeErrorKey::ChangesetError);
-        metadata["isECTable"] = isECTable;
+        Napi::Object metadata = Napi::Object::New(env);
+        metadata.Set("tableName", Napi::String::New(env, tableName.c_str()));
+        metadata.Set("opCode", Napi::Number::New(env, static_cast<int>(opcode)));
+        metadata.Set("isIndirectChange", Napi::Boolean::New(env, isIndirectChange));
+        metadata.Set("isECTable", Napi::Boolean::New(env, isECTable));
         return metadata;
         }
 
@@ -5354,28 +5356,40 @@ private:
         {
         if (m_reader.GetColumnCount(stage) == 0)
             return env.Undefined();
-        BeJsNapiObject rv(env);
-        BeJsValue rowJson = rv["data"];
-        if (adaptor.RenderRowAsObject(rowJson, ChangesetRow(m_reader, stage)) != SUCCESS)
+        BeJsNapiObject data(env);
+        if (adaptor.RenderRowAsObject(data, ChangesetRow(m_reader, stage)) != SUCCESS)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "Failed to render row", IModelJsNativeErrorKey::ChangesetError);
         Utf8String instanceKey;
         if (m_reader.GetInstanceKey(stage, instanceKey) != SUCCESS)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "Failed to get instance key", IModelJsNativeErrorKey::ChangesetError);
-        rv["key"] = instanceKey.c_str();
         const auto* names = m_reader.GetChangeFetchedPropertyNames();
         if (names == nullptr)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "Failed to get change fetched property names", IModelJsNativeErrorKey::ChangesetError);
-        BeJsValue changeFetchedPropNames = rv["changeFetchedPropNames"];
-        changeFetchedPropNames.SetEmptyArray();
+        Napi::Array changeFetchedPropNames = Napi::Array::New(env);
         uint32_t idx = 0;
         for (auto const& name : *names)
-            changeFetchedPropNames[idx++] = name;
+            changeFetchedPropNames.Set(idx++, Napi::String::New(env, name.c_str()));
+        Napi::Object rv = Napi::Object::New(env);
+        rv.Set("data", static_cast<Napi::Object>(data));
+        rv.Set("key", Napi::String::New(env, instanceKey.c_str()));
+        rv.Set("changeFetchedPropNames", changeFetchedPropNames);
         return rv;
         }
 
 public:
     NativeChangesetReader(NapiInfoCR info) : BeObjectWrap<NativeChangesetReader>(info) {}
     ~NativeChangesetReader() { SetInDestructor(); }
+    ChangesetReader& GetReader() { return m_reader; }
+
+    // Check if val is really a NativeChangesetReader peer object
+    static bool InstanceOf(Napi::Value val)
+        {
+        if (!val.IsObject())
+            return false;
+
+        Napi::HandleScope scope(val.Env());
+        return val.As<Napi::Object>().InstanceOf(Constructor().Value());
+        }
 
     static void Init(Napi::Env& env, Napi::Object exports)
         {
@@ -5596,6 +5610,202 @@ public:
         BentleyStatus rc = m_reader.DisableStrictMode();
         if (rc != SUCCESS)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "disableStrictMode() failed, possible reason can be that no change stream is open", IModelJsNativeErrorKey::NotOpen);
+        }
+};
+
+//=======================================================================================
+// Projects the ChangeUnifier class into JS. Merges the rows of one or more ChangesetReaders
+// into one instance per (root ECClassId, ECInstanceId, stage) entirely in native code.
+//! @bsiclass
+//=======================================================================================
+struct NativeChangeUnifier : BeObjectWrap<NativeChangeUnifier>
+{
+private:
+    DEFINE_CONSTRUCTOR;
+    std::unique_ptr<ChangeUnifier> m_unifier;
+
+    //=======================================================================================
+    // Builds the JavaScript object of one merged instance directly from the unifier's events. Produces the same
+    // values as writing through BeJsNapiObject (null becomes undefined, integers become numbers), but sets each
+    // member once, fills arrays by index, and converts each string of the unifier's string table once per step() call.
+    //=======================================================================================
+    struct InstanceWriter final : ChangeUnifier::IInstanceWriter
+        {
+    private:
+        struct Container { Napi::Value m_value; bool m_isArray; uint32_t m_count; };
+        Napi::Env m_env;
+        std::vector<napi_value> m_strings; // by string id; napi_values are only valid during the current call
+        std::vector<Container> m_containers;
+        Napi::Value m_key;
+        Napi::Value m_result;
+
+        Napi::Value ToJsString(Utf8CP text, size_t length, uint32_t stringId)
+            {
+            if (stringId == 0)
+                return Napi::String::New(m_env, text, length);
+            if (stringId >= m_strings.size())
+                m_strings.resize(stringId + 1, nullptr);
+            if (m_strings[stringId] == nullptr)
+                m_strings[stringId] = Napi::String::New(m_env, text, length);
+            return Napi::Value(m_env, m_strings[stringId]);
+            }
+
+        void Put(Napi::Value value)
+            {
+            if (m_containers.empty())
+                {
+                m_result = value;
+                return;
+                }
+            Container& top = m_containers.back();
+            if (top.m_isArray)
+                top.m_value.As<Napi::Array>().Set(top.m_count++, value);
+            else
+                top.m_value.As<Napi::Object>().Set(m_key, value);
+            }
+
+    public:
+        explicit InstanceWriter(Napi::Env env) : m_env(env) {}
+        Napi::Value TakeResult() { Napi::Value result = m_result; m_result = Napi::Value(); return result; }
+        void StartObject() override
+            {
+            Napi::Object obj = Napi::Object::New(m_env);
+            Put(obj);
+            m_containers.push_back({obj, false, 0});
+            }
+        void Key(Utf8CP name, size_t length, uint32_t stringId) override { m_key = ToJsString(name, length, stringId); }
+        void EndObject() override { m_containers.pop_back(); }
+        void StartArray() override
+            {
+            Napi::Array array = Napi::Array::New(m_env);
+            Put(array);
+            m_containers.push_back({array, true, 0});
+            }
+        void EndArray() override { m_containers.pop_back(); }
+        void Null() override { Put(m_env.Undefined()); }
+        void Bool(bool value) override { Put(Napi::Value::From(m_env, value)); }
+        void Int64(int64_t value) override { Put(Napi::Value::From(m_env, value)); }
+        void UInt64(uint64_t value) override { Put(Napi::Value::From(m_env, static_cast<int64_t>(value))); }
+        void Double(double value) override { Put(Napi::Value::From(m_env, value)); }
+        void String(Utf8CP value, size_t length, uint32_t stringId) override { Put(ToJsString(value, length, stringId)); }
+        void Binary(Byte const* data, size_t size) override
+            {
+            auto array = Napi::Uint8Array::New(m_env, size);
+            std::copy(data, data + size, array.Data());
+            Put(array);
+            }
+        };
+
+    static ChangeUnifier::Options ParseOptions(NapiInfoCR info)
+        {
+        ChangeUnifier::Options options;
+        if (ARGUMENT_IS_NOT_PRESENT(0) || info[0].IsUndefined() || info[0].IsNull())
+            return options;
+        if (!info[0].IsObject())
+            THROW_JS_TYPE_EXCEPTION("ChangeUnifier: options must be an object");
+        Napi::Object optObj = info[0].As<Napi::Object>();
+
+        Napi::Value propNames = optObj.Get("propNames");
+        if (!propNames.IsUndefined())
+            {
+            if (!propNames.IsArray())
+                THROW_JS_TYPE_EXCEPTION("ChangeUnifier: propNames must be an array of strings");
+            Napi::Array arr = propNames.As<Napi::Array>();
+            for (uint32_t i = 0; i < arr.Length(); ++i)
+                {
+                Napi::Value name = arr.Get(i);
+                if (!name.IsString())
+                    THROW_JS_TYPE_EXCEPTION("ChangeUnifier: propNames must be an array of strings");
+                options.m_propNames.push_back(Utf8String(name.As<Napi::String>().Utf8Value().c_str()));
+                }
+            }
+
+        Napi::Value budget = optObj.Get("memoryBudgetBytes");
+        if (!budget.IsUndefined())
+            {
+            if (!budget.IsNumber())
+                THROW_JS_TYPE_EXCEPTION("ChangeUnifier: memoryBudgetBytes must be a number");
+            double val = budget.As<Napi::Number>().DoubleValue();
+            if (std::isnan(val) || std::isinf(val) || val < 0 || val != std::floor(val))
+                THROW_JS_TYPE_EXCEPTION("ChangeUnifier: memoryBudgetBytes must be a non-negative integer");
+            if (val > 9007199254740991.0) // Number.MAX_SAFE_INTEGER
+                THROW_JS_TYPE_EXCEPTION("ChangeUnifier: memoryBudgetBytes exceeds the maximum allowed value");
+            options.m_memoryBudgetBytes = static_cast<uint64_t>(val);
+            }
+        return options;
+        }
+
+    void ThrowOnFailure(Napi::Env env, Utf8CP operation, DbResult rc)
+        {
+        Utf8String msg(operation);
+        Utf8StringCR lastError = m_unifier->GetLastError();
+        if (!lastError.empty())
+            msg.append(": ").append(lastError);
+        THROW_JS_BE_SQLITE_EXCEPTION(env, msg.c_str(), rc);
+        }
+
+public:
+    NativeChangeUnifier(NapiInfoCR info) : BeObjectWrap<NativeChangeUnifier>(info)
+        {
+        m_unifier = std::make_unique<ChangeUnifier>(ParseOptions(info));
+        }
+    ~NativeChangeUnifier() { SetInDestructor(); }
+
+    static void Init(Napi::Env& env, Napi::Object exports)
+        {
+        Napi::HandleScope scope(env);
+        Napi::Function t = DefineClass(env, "ChangeUnifier", {
+            InstanceMethod("appendFrom", &NativeChangeUnifier::AppendFrom),
+            InstanceMethod("step",       &NativeChangeUnifier::Step),
+            InstanceMethod("close",      &NativeChangeUnifier::Close),
+        });
+        exports.Set("ChangeUnifier", t);
+        SET_CONSTRUCTOR(t);
+        }
+
+    void AppendFrom(NapiInfoCR info)
+        {
+        REQUIRE_ARGUMENT_ANY_OBJ(0, readerObj);
+        if (!NativeChangesetReader::InstanceOf(readerObj))
+            THROW_JS_TYPE_EXCEPTION("ChangeUnifier: reader must be a native ChangesetReader object");
+        REQUIRE_ARGUMENT_ANY_OBJ(1, optObj);
+        NativeChangesetReader* nativeReader = NativeChangesetReader::Unwrap(readerObj);
+        if (nativeReader == nullptr)
+            THROW_JS_TYPE_EXCEPTION("ChangeUnifier: invalid ChangesetReader object");
+
+        JsReadOptions rowOptions;
+        rowOptions.FromJson(BeJsValue(optObj));
+        DbResult rc = m_unifier->AppendFrom(nativeReader->GetReader(), rowOptions);
+        if (rc != BE_SQLITE_OK)
+            ThrowOnFailure(info.Env(), "ChangeUnifier: appendFrom() failed", rc);
+        }
+
+    Napi::Value Step(NapiInfoCR info)
+        {
+        // Checked as a double: Int32Value() would truncate fractions and wrap large values.
+        const double maxArg = ARGUMENT_IS_NUMBER(0) ? info[0].As<Napi::Number>().DoubleValue() : 0.0;
+        if (!std::isfinite(maxArg) || maxArg < 1 || maxArg != std::floor(maxArg))
+            THROW_JS_TYPE_EXCEPTION("ChangeUnifier: maxInstances must be a positive integer");
+        const int32_t maxInstances = maxArg > std::numeric_limits<int32_t>::max() ? std::numeric_limits<int32_t>::max() : static_cast<int32_t>(maxArg);
+
+        Napi::Array result = Napi::Array::New(Env());
+        uint32_t count = 0;
+        InstanceWriter writer(Env());
+        for (int32_t i = 0; i < maxInstances; ++i)
+            {
+            DbResult rc = m_unifier->Step(writer);
+            if (rc == BE_SQLITE_DONE)
+                break;
+            if (rc != BE_SQLITE_ROW)
+                ThrowOnFailure(info.Env(), "ChangeUnifier: step() failed", rc);
+            result.Set(count++, writer.TakeResult());
+            }
+        return result;
+        }
+
+    void Close(NapiInfoCR info)
+        {
+        m_unifier->Close();
         }
 };
 
@@ -8021,6 +8231,7 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports) {
     NativeECDb::Init(env, exports);
     NativeSqliteChangesetReader::Init(env, exports);
     NativeChangesetReader::Init(env, exports);
+    NativeChangeUnifier::Init(env, exports);
     NativeChangedElementsECDb::Init(env, exports);
     NativeECSqlStatement::Init(env, exports);
     NativeECSqlBinder::Init(env, exports);

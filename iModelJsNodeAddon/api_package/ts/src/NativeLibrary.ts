@@ -1666,6 +1666,42 @@ export declare namespace IModelJsNative {
     public disableStrictMode(): void;
   }
 
+  interface ChangeUnifierOptions {
+    /** Property names to keep (e.g. "FederationGuid", "Model", "Source", "Scope", "Element", "Kind", "Identifier").
+     *  ECInstanceId and ECClassId are always kept. undefined or empty = keep all properties. */
+    propNames?: string[];
+    /** Bytes of merged instance data held in memory before sorted runs spill to temp files. Default 64 MiB. 0 = never spill. */
+    memoryBudgetBytes?: number;
+  }
+
+  interface UnifiedChangeMeta {
+    tables: string[];               // tables that contributed, in the order their rows were seen
+    op: "Inserted" | "Updated" | "Deleted";
+    stage: "Old" | "New";
+    changeIndexes: number[];        // same meaning as today's $meta.changeIndexes
+    instanceKey: string;            // "<hex ECInstanceId>-<hex ECClassId>", same format as ChangesetRowValue.key
+    changeFetchedPropNames: string[]; // union across contributing rows, first-seen order
+    isIndirectChange: boolean;
+  }
+
+  interface UnifiedChangeInstance {
+    $meta: UnifiedChangeMeta;
+    [propName: string]: any;        // ECInstanceId, ECClassId, projected props, formatted by rowOptions
+  }
+
+  class ChangeUnifier {
+    constructor(options?: ChangeUnifierOptions);
+    /** Drains `reader` completely in native code (repeatedly steps it) and merges its rows.
+     *  May be called several times (e.g. one reader per changeset) before the first `step()`.
+     *  Throws if called after `step()` has been called. Reader stays owned by the caller. */
+    public appendFrom(reader: ChangesetReader, rowOptions: ECSqlRowAdaptorOptions): void;
+    /** Returns up to `maxInstances` finished instances in sorted order. Returns an empty array when exhausted.
+     *  First call finalizes (sort / k-way merge of spilled runs). */
+    public step(maxInstances: number): UnifiedChangeInstance[];
+    /** Frees memory and deletes spill files. Idempotent. */
+    public close(): void;
+  }
+
   class DisableNativeAssertions {
     constructor();
     public dispose(): void;
