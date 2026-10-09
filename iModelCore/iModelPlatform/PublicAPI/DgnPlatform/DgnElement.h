@@ -547,8 +547,6 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus GetPropertyValue(ECN::ECValueR value, PropertyArrayIndex const& arrayIndex) const;
 };
 
-#define TEMP_ELEMENT_DELETION "ElementsToDelete"
-
 //=======================================================================================
 //! Indicates the status of the bulk-delete operation.
 //! On Success the operation completed normally and all elements were deleted successfully.
@@ -574,40 +572,6 @@ struct BulkDeleteElementsResult
     BulkDeleteElementsStatus status = BulkDeleteElementsStatus::Success;
     BeSQLite::DbResult sqlDeleteStatus = BeSQLite::DbResult::BE_SQLITE_OK;
     DgnElementIdSet  failedIds;
-    };
-
-class BulkElementDeletion
-    {
-    DgnDbR m_dgndb;
-    DgnElementIdSet m_originalElementIds;
-    DgnElementIdSet m_failedToDelete;
-
-    bool m_geometricElementsExist = false;
-    bool m_subModelRootExists = false;
-    
-    bool m_skipFKConstraintValidations = false;
-
-    // Create temporary tables for bulk deletion
-    BeSQLite::DbResult CreateTempTables() const;
-    BeSQLite::DbResult ExpandElementIdList();
-    int GetTempTableRowCount() const;
-
-    // Find and prune constraint violators
-    BeSQLite::DbResult FindAndPruneConstraintViolators();
-    BeSQLite::DbResult FindAndPruneInUseDefinitionElements();
-    BeSQLite::DbResult PruneViolators();
-
-    bool FireAllCallbacks();
-    BeSQLite::DbResult DeleteLinkTableRelationships() const;
-    BeSQLite::DbResult ExecuteDeletion();
-
-public:
-    BulkElementDeletion(DgnDbR dgndb, const DgnElementIdSet& originalElementIds, bool skipFKConstraintValidations) 
-        :   m_dgndb(dgndb), 
-            m_originalElementIds(originalElementIds), 
-            m_skipFKConstraintValidations(skipFKConstraintValidations) {}
-
-    BulkDeleteElementsResult Execute();
     };
 
 #define DGNELEMENT_DECLARE_MEMBERS(__ECClassName__,__superclass__) \
@@ -4168,6 +4132,7 @@ public:
     
     
     //! Bulk-delete a set of elements from this DgnDb.
+    //! Implemented in DgnCore/BulkElementDeletion.cpp
     //!
     //! This method resolves intra-set dependencies (parent-child hierarchies, code-scope relationships) before
     //! attempting deletion, so callers may pass an entire sub-tree or a group of mutually-scoped elements
