@@ -631,6 +631,36 @@ TEST_F(DgnModelTests, SheetModelExtentsOfSheet)
     }
 
 //---------------------------------------------------------------------------------------
+// A bis:Sheet with an invalid size yields null extents instead of asserting
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(DgnModelTests, SheetModelExtentsOfSheetWithInvalidSize)
+    {
+    SetupSeedProject();
+
+    DocumentListModelPtr sheetListModel = DgnDbTestUtils::InsertDocumentListModel(*m_db, "SheetListModel");
+    ASSERT_TRUE(sheetListModel.IsValid());
+
+    Sheet::ElementPtr zeroWidthSheet = DgnDbTestUtils::InsertSheet(*sheetListModel, 1.0, 1.5, 0.0, "ZeroWidthSheet");
+    ASSERT_TRUE(zeroWidthSheet.IsValid());
+    Sheet::ModelPtr zeroWidthModel = DgnDbTestUtils::InsertSheetModel(*zeroWidthSheet);
+    ASSERT_TRUE(zeroWidthModel.IsValid());
+
+    Sheet::ElementPtr negativeHeightSheet = DgnDbTestUtils::InsertSheet(*sheetListModel, 1.0, -2.0, 1.1, "NegativeHeightSheet");
+    ASSERT_TRUE(negativeHeightSheet.IsValid());
+    Sheet::ModelPtr negativeHeightModel = DgnDbTestUtils::InsertSheetModel(*negativeHeightSheet);
+    ASSERT_TRUE(negativeHeightModel.IsValid());
+
+    // Force the sheets to be reloaded from the Db
+    zeroWidthSheet = nullptr;
+    negativeHeightSheet = nullptr;
+    m_db->Elements().ClearCache();
+
+    EXPECT_TRUE(zeroWidthModel->GetSheetExtents().IsNull());
+    EXPECT_TRUE(negativeHeightModel->GetSheetExtents().IsNull());
+    }
+
+//---------------------------------------------------------------------------------------
 // A DrawingModel may model any bis:ISubModeledElement
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -651,6 +681,29 @@ TEST_F(DgnModelTests, DrawingModelOnSubModeledNonDrawingElement)
     ASSERT_TRUE(drawingModel.IsValid());
     EXPECT_EQ(container->GetElementId(), drawingModel->GetModeledElementId());
     EXPECT_EQ(modelId, container->GetSubModelId());
+    }
+
+//---------------------------------------------------------------------------------------
+// Elements that do not implement bis:ISubModeledElement reject SheetModel and DrawingModel
+// sub-model inserts with WrongElement.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(DgnModelTests, ModelOnNonSubModeledElementIsRejected)
+    {
+    SetupSeedProject();
+
+    // A SpatialCategory is not a bis:ISubModeledElement
+    DgnCategoryId categoryId = DgnDbTestUtils::InsertSpatialCategory(*m_db, "NotSubModeled");
+    ASSERT_TRUE(categoryId.IsValid());
+    DgnElementId categoryElementId(categoryId.GetValue());
+
+    // DgnElement::_OnSubModelInsert asserts before returning WrongElement
+    BeTest::SetFailOnAssert(false);
+    EXPECT_EQ(DgnDbStatus::WrongElement, insertModel(*m_db, Sheet::Handlers::Model::GetHandler(), categoryElementId));
+    EXPECT_EQ(DgnDbStatus::WrongElement, insertModel(*m_db, dgn_ModelHandler::Drawing::GetHandler(), categoryElementId));
+    BeTest::SetFailOnAssert(true);
+
+    EXPECT_FALSE(m_db->Models().GetModel(DgnModelId(categoryElementId.GetValue())).IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
