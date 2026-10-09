@@ -159,7 +159,31 @@ BentleyStatus DbMapValidator::Initialize() const
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus DbMapValidator::CheckDuplicateDataPropertyMap() const {
-    // Depending on size this will take few second to run.
+    // Healthy mappings need no diagnostic column/table joins or string aggregation.
+    {
+        Statement probe;
+        auto rc = probe.Prepare(GetECDb(), R"(
+            SELECT 1
+                FROM [ec_PropertyMap] [pp]
+                    JOIN [ec_PropertyPath] [p] ON [p].[Id] = [pp].[PropertyPathId]
+                WHERE [p].[AccessString] != 'ECClassId' AND [p].[AccessString] != 'ECInstanceId'
+                GROUP BY [pp].[ClassId], [p].[AccessString]
+                HAVING COUNT(*) > 1
+                LIMIT 1;)");
+        if (rc != BE_SQLITE_OK) {
+            Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0114, "Failed to run duplicate data property check");
+            return ERROR;
+        }
+        rc = probe.Step();
+        if (rc == BE_SQLITE_DONE)
+            return SUCCESS;
+        if (rc != BE_SQLITE_ROW) {
+            Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0114, "Failed to run duplicate data property check");
+            return ERROR;
+        }
+    }
+
+    // The broader probe can include orphan mappings; retain the original diagnostic joins.
     Statement stmt;
     auto rc = stmt.Prepare(m_schemaImportContext.GetECDb(), R"(
         SELECT [pp].[ClassId], [p].[AccessString], group_concat([t].[Name] || '.' || [c].[Name], ', ')
