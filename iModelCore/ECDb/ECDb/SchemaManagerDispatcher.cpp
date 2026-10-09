@@ -3,6 +3,8 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
+#include "InstanceGraphVTab.h"
+#include <typeinfo>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -316,6 +318,13 @@ ECClassCP VirtualSchemaManager::FindClass(Utf8StringCR className, size_t& number
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus VirtualSchemaManager::Add(Utf8StringCR schemaXml) const{
     return AddAndValidateVirtualSchema(schemaXml, true, true);
+}
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus VirtualSchemaManager::AddBuiltIn(Utf8StringCR schemaXml) const{
+    return AddAndValidateVirtualSchema(schemaXml, true, false);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -2776,7 +2785,10 @@ void MainSchemaManager::GatherRootClasses(
 //---------------------------------------------------------------------------------------
 DbResult ECDbModule::_OnRegister() {
     auto& vm = GetECDb().Schemas().Main().GetVirtualSchemaManager();
-    if (SUCCESS != vm.Add(m_ecSchema)) {
+    // Only these concrete internal modules have embedded schemas; names do not establish trust.
+    const bool isBuiltIn = typeid(*this) == typeid(IdSetModule) || typeid(*this) == typeid(RelationsModule);
+    const BentleyStatus status = isBuiltIn ? vm.AddBuiltIn(m_ecSchema) : vm.Add(m_ecSchema);
+    if (SUCCESS != status) {
         return BE_SQLITE_ERROR;
     }
     return BE_SQLITE_OK;

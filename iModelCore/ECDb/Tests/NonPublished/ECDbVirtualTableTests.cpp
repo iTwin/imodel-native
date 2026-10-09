@@ -243,6 +243,56 @@ TEST_F(ECDbVirtualTableTests, TokenizeModuleTest) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbVirtualTableTests, BuiltInModuleSchemasMergeWithExternalModulesAcrossReopen) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("builtin_module_schemas.ecdb"));
+
+    auto checkModules = [](ECDbCR db) {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "SELECT id FROM ECVLib.IdSet('[3,1,2,2]')"));
+        ECClassCR idSetClass = stmt.GetColumnInfo(0).GetRootClass().GetClass();
+        ECSchemaCR schema = idSetClass.GetSchema();
+        ECClassCP relationsClass = schema.GetClassCP("Relations");
+        ASSERT_NE(nullptr, relationsClass);
+        EXPECT_TRUE(schema.GetId().IsValid());
+        EXPECT_TRUE(idSetClass.GetId().IsValid());
+        EXPECT_TRUE(relationsClass->GetId().IsValid());
+        EXPECT_NE(idSetClass.GetId(), relationsClass->GetId());
+        EXPECT_TRUE(schema.IsDefined("ECDbVirtual", "VirtualSchema"));
+        EXPECT_TRUE(idSetClass.IsDefinedLocal("ECDbVirtual", "VirtualType"));
+        EXPECT_TRUE(relationsClass->IsDefinedLocal("ECDbVirtual", "VirtualType"));
+        for (int64_t expected : {1, 2, 3}) {
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+            EXPECT_EQ(expected, stmt.GetValueInt64(0));
+        }
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    };
+
+    auto registerExternalModule = [](ECDbR db) {
+        ASSERT_EQ(BE_SQLITE_OK, (new TokenizeModule(db, "ECVLib", "tokenize_extra"))->Register());
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "SELECT token FROM ECVLib.tokenize_extra('one two', ' ')"));
+        ECSchemaCR schema = stmt.GetColumnInfo(0).GetRootClass().GetClass().GetSchema();
+        EXPECT_NE(nullptr, schema.GetClassCP("IdSet"));
+        EXPECT_NE(nullptr, schema.GetClassCP("Relations"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_STREQ("one", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_STREQ("two", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    };
+
+    checkModules(m_ecdb);
+    registerExternalModule(m_ecdb);
+    checkModules(m_ecdb);
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    checkModules(m_ecdb);
+    registerExternalModule(m_ecdb);
+    checkModules(m_ecdb);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbVirtualTableTests, VirtualSchemaMergeIgnoresNameCase) {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("vtab_schema_case.ecdb"));
     ASSERT_EQ(BE_SQLITE_OK, (new TokenizeModule(m_ecdb, "test"))->Register());
