@@ -48,11 +48,24 @@
 
 USING_NAMESPACE_BENTLEY
 
-static BeMutex s_bentleyCS;
+// Use Meyer's Singleton pattern to avoid static initialization order fiasco
+// This ensures the mutex is constructed before first use, even during static initialization
+static BeMutex& GetBentleyCSMutex()
+    {
+    static BeMutex s_bentleyCS;
+    return s_bentleyCS;
+    }
+
+// Use Meyer's Singleton for assert listeners to avoid static initialization order fiasco
+static bvector<BeTest::T_BeAssertListener*>& GetAssertListeners()
+    {
+    static bvector<BeTest::T_BeAssertListener*> s_assertListeners;
+    return s_assertListeners;
+    }
+
 static intptr_t                                 s_mainThreadId;                     // MT: set only during initialization
 static BeAssertFunctions::T_BeAssertHandler*    s_assertHandler;                    // MT: s_bentleyCS
 static bool                                     s_assertHandlerCanBeChanged=true;   // MT: s_bentleyCS
-static bvector<BeTest::T_BeAssertListener*>     s_assertListeners;                  // MT: s_bentleyCS
 static bool                                     s_failOnAssert[(int)BeAssertFunctions::AssertType::TypeCount]; // MT: Problem! If one thread sets this, it will affect assertions that fail on other threads. *** WIP_MT make this thread-local?
 static bool                                     s_failOnInvalidParameterAssert = true;
 static bool                                     s_runningUnderGtest;                // indicates that we are running under gtest. MT: set only during initialization
@@ -201,10 +214,10 @@ POP_DISABLE_DEPRECATION_WARNINGS
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BentleyApi::BeAssertFunctions::PerformBeAssert (WCharCP message, WCharCP file, unsigned line)
     {
-    s_bentleyCS.lock();
+    GetBentleyCSMutex().lock();
     T_BeAssertHandler* host = s_assertHandler;
     s_hadAssert = true;
-    s_bentleyCS.unlock();
+    GetBentleyCSMutex().unlock();
 
     if (NULL != host)
         {
@@ -230,10 +243,10 @@ POP_DISABLE_DEPRECATION_WARNINGS
         return;
 #endif
 
-    s_bentleyCS.lock();
+    GetBentleyCSMutex().lock();
     T_BeAssertHandler* host = s_assertHandler;
     s_hadAssert = true;
-    s_bentleyCS.unlock();
+    GetBentleyCSMutex().unlock();
 
     if (NULL != host)
         {
@@ -249,10 +262,10 @@ POP_DISABLE_DEPRECATION_WARNINGS
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BentleyApi::BeAssertFunctions::SetBeAssertHandler (T_BeAssertHandler* h)
     {
-    s_bentleyCS.lock();
+    GetBentleyCSMutex().lock();
     if (s_assertHandlerCanBeChanged)
         s_assertHandler = h;
-    s_bentleyCS.unlock();
+    GetBentleyCSMutex().unlock();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -260,10 +273,10 @@ void BentleyApi::BeAssertFunctions::SetBeAssertHandler (T_BeAssertHandler* h)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BentleyApi::BeAssertFunctions::SetBeTestAssertHandler (T_BeAssertHandler* h)
     {
-    s_bentleyCS.lock();
+    GetBentleyCSMutex().lock();
     s_assertHandlerCanBeChanged = false;
     s_assertHandler = h;
-    s_bentleyCS.unlock();
+    GetBentleyCSMutex().unlock();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -271,7 +284,7 @@ void BentleyApi::BeAssertFunctions::SetBeTestAssertHandler (T_BeAssertHandler* h
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool BeTest::GetAssertionFailed()
     {
-    BeMutexHolder lock(s_bentleyCS);
+    BeMutexHolder lock(GetBentleyCSMutex());
     return s_hadAssert;
     }
 
@@ -286,7 +299,7 @@ void            BeTest::SetFailOnAssert (bool doFail, BeAssertFunctions::AssertT
         return;
         }
 
-    s_bentleyCS.lock();
+    GetBentleyCSMutex().lock();
 
     if (atype == BeAssertFunctions::AssertType::All)
         {
@@ -301,7 +314,7 @@ void            BeTest::SetFailOnAssert (bool doFail, BeAssertFunctions::AssertT
         s_failOnAssert[(int)atype] = doFail;
         }
 
-    s_bentleyCS.unlock();
+    GetBentleyCSMutex().unlock();
     }
 
 //---------------------------------------------------------------------------------------
@@ -318,7 +331,7 @@ void BeTest::setS_mainThreadId (intptr_t id)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BeTest::SetFailOnInvalidParameterAssert(bool doFail)
     {
-    BeMutexHolder lock(s_bentleyCS);
+    BeMutexHolder lock(GetBentleyCSMutex());
     s_failOnInvalidParameterAssert = doFail;
     }
 
@@ -329,7 +342,7 @@ bool BeTest::GetFailOnAssert (BeAssertFunctions::AssertType atype)
     {
     bool allWillFail = true;
 
-    s_bentleyCS.lock();
+    GetBentleyCSMutex().lock();
 
     if (atype == BeAssertFunctions::AssertType::All)
         {
@@ -345,7 +358,7 @@ bool BeTest::GetFailOnAssert (BeAssertFunctions::AssertType atype)
         allWillFail = s_failOnAssert[(int)atype];
         }
 
-    s_bentleyCS.unlock();
+    GetBentleyCSMutex().unlock();
 
     return allWillFail;
     }
@@ -355,9 +368,9 @@ bool BeTest::GetFailOnAssert (BeAssertFunctions::AssertType atype)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            BeTest::SetBeAssertListener (T_BeAssertListener* l)
     {
-    s_bentleyCS.lock();
-    s_assertListeners.push_back(l);
-    s_bentleyCS.unlock();
+    GetBentleyCSMutex().lock();
+    GetAssertListeners().push_back(l);
+    GetBentleyCSMutex().unlock();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -805,7 +818,7 @@ void BeTest::IncrementErrorCountAndEnableThrows()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BeTest::RethrowAssertFromOtherTreads ()
     {
-    BeMutexHolder holder (s_bentleyCS);
+    BeMutexHolder holder (GetBentleyCSMutex());
     if (s_hadAssertOnAnotherThread)
         s_IFailureHandler->_OnAssertionFailure (L"assert failed in another thread");
     }
@@ -877,10 +890,10 @@ void testing::Test::Run()
 
     size_t e = BeTest::GetErrorCount();
 
-    s_bentleyCS.lock();
+    GetBentleyCSMutex().lock();
     s_hadAssert = false;
     s_hadAssertOnAnotherThread = false;
-    s_bentleyCS.unlock();
+    GetBentleyCSMutex().unlock();
 
     BeAssert(s_currentTestCaseName.Equals(GetTestCaseNameA()));
     BeAssert(s_currentTestName.Equals(GetTestNameA()));
@@ -1024,12 +1037,12 @@ void BeTest::SetFailureJmpbuf(void* jmpbufptr)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BeTest::AssertionFailureHandler (WCharCP _Message, WCharCP _File, unsigned _Line, BeAssertFunctions::AssertType atype)
     {
-    FOR_EACH(BeTest::T_BeAssertListener* listener, s_assertListeners)
+    FOR_EACH(BeTest::T_BeAssertListener* listener, GetAssertListeners())
         listener (_Message, _File, _Line, atype);
 
     bool failOnAssert;
         {
-        BeMutexHolder holder (s_bentleyCS);
+        BeMutexHolder holder (GetBentleyCSMutex());
         failOnAssert = s_failOnAssert[(int)atype];
         }
 
@@ -1066,7 +1079,7 @@ void BeTest::AssertionFailureHandler (WCharCP _Message, WCharCP _File, unsigned 
 
     if (BeThreadUtilities::GetCurrentThreadId () != s_mainThreadId)
         {
-        BeMutexHolder holder (s_bentleyCS);
+        BeMutexHolder holder (GetBentleyCSMutex());
         s_hadAssertOnAnotherThread = true;
         return;
         }
@@ -1106,7 +1119,7 @@ uintptr_t pReserved
 
     bool failOnAssert;
         {
-        BeMutexHolder holder(s_bentleyCS);
+        BeMutexHolder holder(GetBentleyCSMutex());
         failOnAssert = s_failOnInvalidParameterAssert;
         }
 
@@ -1128,7 +1141,7 @@ uintptr_t pReserved
 
     if (!s_runningUnderGtest && BeThreadUtilities::GetCurrentThreadId() != s_mainThreadId)
         {
-        BeMutexHolder holder(s_bentleyCS);
+        BeMutexHolder holder(GetBentleyCSMutex());
         s_hadAssertOnAnotherThread = true;
         return;
         }
