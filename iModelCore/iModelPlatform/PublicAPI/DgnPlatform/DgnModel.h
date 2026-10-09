@@ -1288,7 +1288,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DrawingModel : GraphicalModel2d
     friend struct dgn_ModelHandler::Drawing;
 
 protected:
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     explicit DrawingModel(CreateParams const& params) : T_Super(params) {}
 
     DrawingModelCP _ToDrawingModel() const override {return this;}
