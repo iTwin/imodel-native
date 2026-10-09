@@ -300,6 +300,37 @@ TEST_F(ChangeUnifierTests, JoinedTable_InsertMergesRowsFromAllTables)
     }
 
 //---------------------------------------------------------------------------------------
+// Values that push the scratch render document past its byte limit, including one larger than the limit, come back
+// intact, and so do the values rendered after the document is dropped.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangeUnifierTests, LargeValues_SurviveScratchReset)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("cu_large.ecdb", SchemaItem(GetSchema())));
+    const Utf8String big1(700 * 1024, 'x'), big2(1500 * 1024, 'y');
+    BeFileName cs = Capture("cu_large.changeset", [&]
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO tu.BigThing(A, B) VALUES(?, ?)"));
+        for (Utf8StringCP big : {&big1, &big2})
+            {
+            ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, big->c_str(), IECSqlBinder::MakeCopy::No));
+            ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(2, "after", IECSqlBinder::MakeCopy::No));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Reset();
+            stmt.ClearBindings();
+            }
+        });
+
+    UnifiedInstances instances = Unify({cs});
+    ASSERT_EQ(2, (int) instances.size());
+    EXPECT_TRUE(big1 == (*instances[0])["A"].asString());
+    EXPECT_TRUE(big2 == (*instances[1])["A"].asString());
+    for (auto const& doc : instances)
+        EXPECT_STREQ("after", (*doc)["B"].asString().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
 // When only overflow-table rows contribute, op is "Updated".
 // @bsimethod
 //---------------------------------------------------------------------------------------
