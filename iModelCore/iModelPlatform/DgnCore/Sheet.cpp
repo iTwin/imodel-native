@@ -3,6 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
+#include <cmath>
 
 BEGIN_SHEET_NAMESPACE
 namespace Handlers
@@ -190,20 +191,6 @@ void ViewAttachment::ClearClip()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus Sheet::Model::_OnInsert()
-    {
-    if (!GetDgnDb().Elements().Get<Sheet::Element>(GetModeledElementId()).IsValid())
-        {
-        BeAssert(false && "A SheetModel should be modeling a Sheet element");
-        return DgnDbStatus::BadElement;
-        }
-
-    return T_Super::_OnInsert();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 ModelPtr Sheet::Model::Create(ElementCR sheet)
     {
     DgnDbR db = sheet.GetDgnDb();
@@ -313,26 +300,35 @@ bvector<ViewDefinitionCPtr> Sheet::Model::GetSheetAttachmentViews(DgnDbR db) con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint2d Sheet::Model::GetSheetSize() const
+static bool tryGetPositiveDouble(DgnElementCR element, Utf8CP propertyName, double& result)
     {
-    // Get the Sheet::Element to extract the sheet size
-    auto sheetElement = GetDgnDb().Elements().Get<Sheet::Element>(GetModeledElementId());
-    if (!sheetElement.IsValid())
-        {
-        BeAssert(false); // this is fatal
-        return DPoint2d::From(0.0, 0.0);
-        }
+    ECN::ECValue value;
+    if (DgnDbStatus::Success != element.GetPropertyValue(value, propertyName) || value.IsNull() || !value.IsDouble())
+        return false;
 
-    return DPoint2d::From(sheetElement->GetWidth(), sheetElement->GetHeight());
+    result = value.GetDouble();
+    return std::isfinite(result) && result > 0.0;
     }
 
 /*---------------------------------------------------------------------------------**//**
+* The modeled element may be any ISubModeledElement, not just a Sheet::Element, so read
+* Width/Height by name rather than through Sheet::Element.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 AxisAlignedBox3d Sheet::Model::GetSheetExtents() const
     {
-    DPoint2d size = GetSheetSize();
-    return AxisAlignedBox3d(DPoint3d::FromZero(), DPoint3d::From(size.x, size.y, 0.0));
+    DgnElementCPtr element = GetDgnDb().Elements().GetElement(GetModeledElementId());
+    if (!element.IsValid())
+        {
+        BeAssert(false); // this is fatal
+        return AxisAlignedBox3d();
+        }
+
+    double width, height;
+    if (!tryGetPositiveDouble(*element, Sheet::Element::prop_Width(), width) || !tryGetPositiveDouble(*element, Sheet::Element::prop_Height(), height))
+        return AxisAlignedBox3d();
+
+    return AxisAlignedBox3d(DPoint3d::FromZero(), DPoint3d::From(width, height, 0.0));
     }
 
 /*---------------------------------------------------------------------------------**//**
