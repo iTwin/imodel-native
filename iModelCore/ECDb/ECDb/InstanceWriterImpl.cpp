@@ -1471,10 +1471,12 @@ std::vector<Utf8String> Impl::FindConflictingProperties(BindContext& ctx, ECClas
         if (!ecsql.empty())
             ecsql.append(" UNION ALL ");
         Utf8CP colName = binding.m_propertyMap->GetName().c_str();
-        // See PrepareUpdate/PrepareDelete for why the null-safe match is expressed this way; a mismatch is
-        // simply the negation of that same expression.
+        // Unlike the match in PrepareUpdate/PrepareDelete, this must never evaluate to NULL (e.g. a non-null column
+        // against an expected null), since negating NULL would silently hide the mismatch. Bound as: is-null flag,
+        // is-null flag, expected value.
         ecsql.append("SELECT '").append(colName).append("' FROM ").append(cls->GetECSqlName())
-            .append(" WHERE [ECInstanceId] = ? AND NOT (([").append(colName).append("] = ?) OR ([").append(colName).append("] IS NULL AND ? = 1))");
+            .append(" WHERE [ECInstanceId] = ? AND (([").append(colName).append("] IS NULL AND ? = 0) OR ([")
+            .append(colName).append("] IS NOT NULL AND (? = 1 OR NOT ([").append(colName).append("] = ?))))");
     }
 
     ECSqlStatement stmt;
@@ -1485,9 +1487,12 @@ std::vector<Utf8String> Impl::FindConflictingProperties(BindContext& ctx, ECClas
     for (auto const& binding : checkBindings) {
         stmt.BindId(i++, id);
         auto memberVal = expectedOldValues[binding.m_jsonMemberName.c_str()];
-        auto bindStatus = BindRootProperty(ctx, *binding.m_propertyMap, stmt.GetBinder(i++), memberVal);
+        int isNull = memberVal.isNull() ? 1 : 0;
+        auto bindStatus = stmt.GetBinder(i++).BindInt(isNull);
         if (bindStatus.IsSuccess())
-            bindStatus = stmt.GetBinder(i++).BindInt(memberVal.isNull() ? 1 : 0);
+            bindStatus = stmt.GetBinder(i++).BindInt(isNull);
+        if (bindStatus.IsSuccess())
+            bindStatus = BindRootProperty(ctx, *binding.m_propertyMap, stmt.GetBinder(i++), memberVal);
         if (!bindStatus.IsSuccess())
             return conflicts;
     }
