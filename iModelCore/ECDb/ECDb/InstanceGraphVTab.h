@@ -11,6 +11,14 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
 //! Virtual table module exposing relationship traversal as ECVLib.Relations()
+//! GROUP BY RelationshipECClassId streams adjacent groups without an outer grouping sort.
+//! Constant-class plans are reordered; physical-class plans use ordered SQL and a heap merge.
+//! Counts retain all distinct edges. Other grouping keys and ordinary scans use SQLite's
+//! normal planning. Physical-class streams may still require inner SQLite sorts.
+//! Equality and IN filters on RelationshipECClassId (exact class, not polymorphic) and
+//! RelatedECInstanceId, and equality filters on Direction narrow the traversal itself:
+//! relationship plans that cannot match are skipped and related ids are pushed into the SQL.
+//! SQLite still re-evaluates these filters, so results are identical to an unfiltered scan.
 // @bsiclass
 //=======================================================================================
 struct RelationsModule : ECDbModule
@@ -32,7 +40,8 @@ struct RelationsModule : ECDbModule
                 // Hidden input columns
                 ECInstanceId = 6,
                 ECClassId = 7,
-                TraversalDir = 8
+                TraversalDir = 8,
+                Options = 9
                 };
 
             private:
@@ -46,6 +55,7 @@ struct RelationsModule : ECDbModule
                 ECInstanceId m_seedInstanceId;
                 ECN::ECClassId m_seedClassId;
                 TraversalDirection m_dir = TraversalDirection::Both;
+                bool m_navRelClassIdFallback = false;
 
             public:
                 RelationsCursor(RelationsTable& vt);
@@ -67,7 +77,7 @@ struct RelationsModule : ECDbModule
             db,
             NAME,
             "CREATE TABLE x(RelatedECInstanceId, RelatedECClassId, Direction, RelationshipECClassId, RelationshipECInstanceId, NavPropertyName,"
-            " ECInstanceId HIDDEN, ECClassId HIDDEN, TraversalDirection HIDDEN)",
+            " ECInstanceId HIDDEN, ECClassId HIDDEN, TraversalDirection HIDDEN, Options HIDDEN)",
             R"xml(<?xml version="1.0" encoding="utf-8" ?>
             <ECSchema
                     schemaName="ECVLib"

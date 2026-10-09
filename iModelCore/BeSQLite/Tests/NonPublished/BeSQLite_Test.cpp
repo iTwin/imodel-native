@@ -491,8 +491,8 @@ TEST_F(BeSQliteTestFixture, sqlite_stat1)
 //   UPDATE row 2: name 'goo' -> 'foo'
 // When applied, both UPDATEs initially hit SQLITE_CONSTRAINT (unique violation) and
 // are deferred to the constraints buffer (bDeferConstraints=1). The retry logic in
-// sessionRetryConstraints step 2 resolves this by temporarily deleting one row,
-// applying the other update, then reinserting with the correct value.
+// sessionRetryConstraints resolves this by temporarily updating unique columns,
+// applying the other update, then restoring the requested values.
 //---------------------------------------------------------------------------------------
 TEST_F(BeSQliteTestFixture, apply_changeset_swap_unique_index_values_with_extended_result_codes)
     {
@@ -582,6 +582,87 @@ TEST_F(BeSQliteTestFixture, apply_changeset_swap_unique_index_values_with_extend
     auto stmt = db2->GetCachedStatement("SELECT name FROM test_swap WHERE id=2");
     ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
     ASSERT_STREQ("foo", stmt->GetValueText(0));
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+// Regression for iTwin/itwinjs-backlog#2435 and SQLite check-in 05acfd4dc9a31b94.
+TEST_F(BeSQliteTestFixture, apply_changeset_swap_unique_values_preserves_cascade_children)
+    {
+    auto source = Create("update_loop_source.db");
+    ASSERT_TRUE(source != nullptr);
+    ASSERT_EQ(BE_SQLITE_OK, source->ExecuteSql(
+        "CREATE TABLE parent(id INTEGER PRIMARY KEY, code TEXT NOT NULL UNIQUE);"
+        "CREATE TABLE child(parent_id INTEGER PRIMARY KEY REFERENCES parent(id) ON DELETE CASCADE, payload TEXT NOT NULL);"
+        "INSERT INTO parent VALUES(1, 'A'), (2, 'B');"
+        "INSERT INTO child VALUES(1, 'child A'), (2, 'child B');"));
+    ASSERT_EQ(BE_SQLITE_OK, source->SaveChanges());
+    source->CloseDb();
+    ASSERT_EQ(BeFileNameStatus::Success, Clone("update_loop_source.db", "update_loop_target.db"));
+
+    source = OpenReadWrite("update_loop_source.db");
+    auto target = OpenReadWrite("update_loop_target.db");
+    ASSERT_TRUE(source != nullptr);
+    ASSERT_TRUE(target != nullptr);
+    {
+    auto stmt = target->GetCachedStatement("PRAGMA foreign_keys");
+    ASSERT_TRUE(stmt != nullptr);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+    ASSERT_EQ(1, stmt->GetValueInt(0));
+    }
+
+    // Capture only the net A -> B and B -> A changes, not the temporary value.
+    auto changeset = Capture(*source, [](DbR db, void*) {
+        return BE_SQLITE_OK == db.ExecuteSql(
+            "UPDATE parent SET code='temporary' WHERE id=1;"
+            "UPDATE parent SET code='A' WHERE id=2;"
+            "UPDATE parent SET code='B' WHERE id=1;");
+        }, nullptr);
+    ASSERT_TRUE(changeset != nullptr);
+    ASSERT_EQ(BE_SQLITE_OK, source->SaveChanges());
+
+    int updateCount = 0;
+    for (auto const& change : changeset->GetChanges())
+        {
+        ASSERT_STREQ("parent", change.GetTableName().c_str());
+        ASSERT_TRUE(change.IsUpdate());
+        ++updateCount;
+        }
+    ASSERT_EQ(2, updateCount);
+
+    ApplyChangesArgs args;
+    args.SetAbortOnAnyConflict(true);
+    ASSERT_EQ(BE_SQLITE_OK, changeset->ApplyChanges(*target, args));
+    ASSERT_EQ(BE_SQLITE_OK, target->SaveChanges());
+    target->CloseDb();
+    target = OpenReadWrite("update_loop_target.db");
+    ASSERT_TRUE(target != nullptr);
+
+    {
+    auto stmt = target->GetCachedStatement("SELECT id, code FROM parent ORDER BY id");
+    ASSERT_TRUE(stmt != nullptr);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+    ASSERT_EQ(1, stmt->GetValueInt(0));
+    ASSERT_STREQ("B", stmt->GetValueText(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+    ASSERT_EQ(2, stmt->GetValueInt(0));
+    ASSERT_STREQ("A", stmt->GetValueText(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt->Step());
+    }
+    {
+    // DELETE/REINSERT can swap the parent codes successfully while silently
+    // cascading away a derived-class row. Verify both identities and payloads.
+    auto stmt = target->GetCachedStatement("SELECT parent_id, payload FROM child ORDER BY parent_id");
+    ASSERT_TRUE(stmt != nullptr);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+    ASSERT_EQ(1, stmt->GetValueInt(0));
+    ASSERT_STREQ("child A", stmt->GetValueText(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+    ASSERT_EQ(2, stmt->GetValueInt(0));
+    ASSERT_STREQ("child B", stmt->GetValueText(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt->Step());
     }
     }
 
