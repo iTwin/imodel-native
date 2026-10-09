@@ -945,7 +945,7 @@ TEST_F(ConcurrentQueryFixture, CompletedResponseRestartPreservesCursor) {
     auto makeRequest = [](int offset) {
         auto request = ECSqlRequest::MakeRequest(
             "WITH sequence(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM sequence WHERE n<10) SELECT n FROM sequence");
-        request->SetCursorId("completed").SetRestartToken("restart").SetLimit(QueryLimit(-1, offset));
+        request->SetCursorId("completed").SetLimit(QueryLimit(-1, offset)).SetRestartToken("restart");
         return request;
     };
     RunnableRequestBase* publishingRequest = nullptr;
