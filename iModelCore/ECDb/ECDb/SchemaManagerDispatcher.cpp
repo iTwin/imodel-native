@@ -72,9 +72,14 @@ ECSchemaPtr VirtualSchemaManager::_LocateSchema(SchemaKeyR key, SchemaMatchType 
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus VirtualSchemaManager::AddAndValidateVirtualSchema(Utf8StringCR schemaXml, bool validate) const{
+BentleyStatus VirtualSchemaManager::AddAndValidateVirtualSchema(Utf8StringCR schemaXml, bool validate, bool createConversionContext) const{
    // BeMutexHolder lock(m_ecdb.GetImpl().GetMutex());
-    auto readerContext = ECSchemaReadContext::CreateContext();
+    struct BuiltInSchemaReadContext final : ECSchemaReadContext {
+        BuiltInSchemaReadContext() : ECSchemaReadContext(nullptr, false, false) {}
+    };
+    ECSchemaReadContextPtr readerContext = createConversionContext
+        ? ECSchemaReadContext::CreateContext()
+        : new BuiltInSchemaReadContext();
     readerContext->AddSchemaLocater(const_cast<VirtualSchemaManager&>(*this));
     ECSchemaPtr schema;
     if (ECN::ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *readerContext) != SchemaReadStatus::Success) {
@@ -167,7 +172,8 @@ void VirtualSchemaManager::AddECDbVirtualSchema() const{
             <ECCustomAttributeClass typeName="VirtualSchema" modifier="Sealed" appliesTo="Schema"/>
             <ECCustomAttributeClass typeName="AnyPrimitiveType" modifier="Sealed" appliesTo="PrimitiveProperty"/>
         </ECSchema>)xml";
-    if (AddAndValidateVirtualSchema(schemaXml, false) != SUCCESS) {
+    // Embedded schemas need no legacy conversion or conversion-schema filesystem searches.
+    if (AddAndValidateVirtualSchema(schemaXml, false, false) != SUCCESS) {
         throw std::runtime_error("unable to load ECDbVirtual schema");
     }
 }
@@ -211,7 +217,7 @@ void VirtualSchemaManager::AddSystemVirtualSchemas() const{
                 <ECProperty propertyName="path" typeName="string"/>
             </ECEntityClass>
         </ECSchema>)xml";
-    if (Add(schemaXml) != SUCCESS) {
+    if (AddAndValidateVirtualSchema(schemaXml, true, false) != SUCCESS) {
         throw std::runtime_error("unable to load json1 schema");
     }
 }
@@ -309,7 +315,7 @@ ECClassCP VirtualSchemaManager::FindClass(Utf8StringCR className, size_t& number
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus VirtualSchemaManager::Add(Utf8StringCR schemaXml) const{
-    return AddAndValidateVirtualSchema(schemaXml, true);
+    return AddAndValidateVirtualSchema(schemaXml, true, true);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 

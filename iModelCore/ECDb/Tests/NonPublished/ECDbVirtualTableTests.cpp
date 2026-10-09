@@ -12,6 +12,49 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
 struct ECDbVirtualTableTests : ECDbTestFixture {};
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbVirtualTableTests, BuiltInVirtualSchemasRemainIndependentAcrossReopen) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("builtin_virtual_schemas.ecdb"));
+    ECDb otherDb;
+    ASSERT_EQ(BE_SQLITE_OK, CreateECDb(otherDb, "builtin_virtual_schemas_other.ecdb"));
+
+    auto checkBuiltInTables = [](ECDbCR db) {
+        for (Utf8CP tableName : {"json_each", "json_tree"}) {
+            ECSqlStatement stmt;
+            Utf8PrintfString sql("SELECT s.[key], s.[value] FROM json1.%s('{\"answer\":\"value\"}') s WHERE s.[key]='answer'", tableName);
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, sql.c_str())) << sql;
+            ECClassCR rootClass = stmt.GetColumnInfo(0).GetRootClass().GetClass();
+            EXPECT_TRUE(rootClass.GetId().IsValid());
+            EXPECT_TRUE(rootClass.GetSchema().GetId().IsValid());
+            EXPECT_TRUE(rootClass.IsDefinedLocal("ECDbVirtual", "VirtualType"));
+            EXPECT_TRUE(rootClass.GetSchema().IsDefined("ECDbVirtual", "VirtualSchema"));
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+            EXPECT_STREQ("answer", stmt.GetValueText(0));
+            EXPECT_STREQ("value", stmt.GetValueText(1));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+    };
+
+    checkBuiltInTables(m_ecdb);
+    checkBuiltInTables(otherDb);
+    {
+        ECSqlStatement firstStmt;
+        ECSqlStatement secondStmt;
+        Utf8CP sql = "SELECT key FROM json1.json_each('{\"answer\":\"value\"}')";
+        ASSERT_EQ(ECSqlStatus::Success, firstStmt.Prepare(m_ecdb, sql));
+        ASSERT_EQ(ECSqlStatus::Success, secondStmt.Prepare(otherDb, sql));
+        EXPECT_NE(&firstStmt.GetColumnInfo(0).GetRootClass().GetClass().GetSchema(),
+                  &secondStmt.GetColumnInfo(0).GetRootClass().GetClass().GetSchema());
+    }
+
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    checkBuiltInTables(m_ecdb);
+    checkBuiltInTables(otherDb);
+}
+
 //=======================================================================================
 //! Virtual Table to tokenize string
 // @bsiclass
