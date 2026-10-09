@@ -320,6 +320,13 @@
         <ECProperty propertyName="StringProperty" typeName="string"/>
         <ECProperty propertyName="IntProperty" typeName="int"/>
     </ECEntityClass>
+    <!-- A sub-modelable class that is not a bis:Sheet but carries the Width/Height properties read by Sheet::Model::GetSheetExtents. Intentionally has no handler. -->
+    <ECEntityClass typeName="TestSheetPrototype">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+        <BaseClass>bis:ISubModeledElement</BaseClass>
+        <ECProperty propertyName="Width" typeName="double"/>
+        <ECProperty propertyName="Height" typeName="double"/>
+    </ECEntityClass>
     <!--Class Hierarchy used by PerformanceElementsCRUDTests -->
     <ECEntityClass typeName="PerfElement">
         <BaseClass>bis:PhysicalElement</BaseClass>
