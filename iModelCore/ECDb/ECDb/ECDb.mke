@@ -41,6 +41,7 @@ ECDbPublicHeaders =  \
 
 ECDbAllHeaders = \
                 $(ECDbPublicHeaders) \
+                $(baseDir)ECSqlRowRenderer.h \
                 $(baseDir)ECDbInternalTypes.h \
                 $(baseDir)ECDbLogger.h \
                 $(baseDir)JsonPersistenceHelper.h \

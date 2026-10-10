@@ -4,12 +4,14 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include <ECDb/ConcurrentQueryManager.h>
+#include "ECSqlRowRenderer.h"
 #include <queue>
 #include <map>
 #include <thread>
 #include <future>
 #include <random>
 #include <chrono>
+#include <iterator>
 
 #define DEFAULT_DONOT_USE_PRIMARY_CONN_TO_PREPARE   false
 #define DEFAULT_IGNORE_DELAY                        true
@@ -61,26 +63,43 @@ struct ErrorListenerScope final: ECN::IIssueListener {
 //! @bsiclass
 //=======================================================================================
 struct CachedQueryAdaptor final: std::enable_shared_from_this<CachedQueryAdaptor> {
+    friend struct CachedConnection;
     private:
         ECSqlStatement m_stmt;
         std::unique_ptr<ECSqlRowAdaptor> m_adaptor;
+        PreparedECSqlRowRenderer m_rowRenderer;
         std::string m_cachedString;
-        rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator> m_allocator;
-        rapidjson::CrtAllocator m_stackAllocator;
-        rapidjson::Document m_cachedJsonDoc;
-        Db const* m_conn;
+        ECDb const* m_conn;
         bool m_usePrimaryConn;
+        struct Cursor {
+            std::string m_id;
+            std::string m_query;
+            std::string m_args;
+            std::string m_restartToken;
+            QueryLimit m_nextLimit;
+            std::chrono::steady_clock::time_point m_lastUsed;
+            bool Matches(ECSqlRequest const&, std::string const& argsKey) const;
+            bool IsExpired(std::chrono::seconds timeout) const { return std::chrono::steady_clock::now() - m_lastUsed >= timeout; }
+        };
+        std::optional<Cursor> m_cursor;
     public:
-        CachedQueryAdaptor() :m_cachedJsonDoc(&m_allocator, 1024, &m_stackAllocator), m_usePrimaryConn(false) { m_cachedJsonDoc.SetArray(); }
+        CachedQueryAdaptor() :m_usePrimaryConn(false) {}
         ECSqlStatement& GetStatement() { return m_stmt; }
         ECSqlRowAdaptor& GetJsonAdaptor();
-        rapidjson::Document& ClearAndGetCachedJsonDocument() { m_cachedJsonDoc.Clear(); m_allocator.Clear(); return m_cachedJsonDoc; }
+        PreparedECSqlRowRenderer& GetRowRenderer() { return m_rowRenderer; }
         std::string& ClearAndGetCachedString() { m_cachedString.clear(); return m_cachedString; }
         bool GetUsePrimaryConn() const { return m_usePrimaryConn; }
         void SetUsePrimaryConn(bool val) { m_usePrimaryConn = val; }
         Db const* GetWorkerConn() const { return m_conn; }
-        void SetWorkerConn(Db const& conn) { m_conn = &conn; }
+        void SetWorkerConn(ECDb const& conn) { m_conn = &conn; }
         void ReleaseMemory();
+        void ReleaseResultMemory();
+        bool IsParked() const { return m_cursor.has_value(); }
+        bool MatchesCursor(ECSqlRequest const&, std::string const& argsKey) const;
+        void Park(ECSqlRequest const&, std::string const& argsKey, uint32_t rowCount);
+        void ResetCursor();
+        bool IsCursorExpired(std::chrono::seconds timeout) const;
+        bool HasRestartToken(std::string const& token) const { return m_cursor && m_cursor->m_restartToken == token; }
         std::shared_ptr<CachedQueryAdaptor> Shared() { return shared_from_this(); }
         static std::shared_ptr<CachedQueryAdaptor> Make() {
             return std::make_shared<CachedQueryAdaptor>();
@@ -95,17 +114,28 @@ struct RunnableRequestQueue;
 //! @bsiclass
 //=======================================================================================
 struct QueryAdaptorCache final {
+    friend struct CachedConnection;
     private:
             std::vector<std::shared_ptr<CachedQueryAdaptor>> m_cache;
             recursive_mutex_t m_mutex;
             CachedConnection& m_conn;
             uint32_t m_maxEntries;
+            uint32_t m_maxCursors;
+            std::chrono::seconds m_cursorIdleTimeout;
+            bool m_hasAttachedData = false;
     public:
         QueryAdaptorCache(CachedConnection& conn);
         ~QueryAdaptorCache(){}
-        std::shared_ptr<CachedQueryAdaptor> TryGet(Utf8CP ecsql, bool usePrimaryConn, bool suppressLogError, ECSqlStatus& status, std::string& ecsql_error, RunnableRequestQueue& queue, bool & isShutDownInProgress);
+        std::shared_ptr<CachedQueryAdaptor> TryGet(Utf8CP ecsql, ECSqlRequest const& request, std::string const& argsKey, bool& resumed, ECSqlStatus& status, std::string& ecsql_error, RunnableRequestQueue& queue, bool & isShutDownInProgress);
         void Reset() { m_cache.clear(); }
         CachedConnection& GetConnection() {return m_conn;}
+        bool CanPark() const { return m_maxCursors > 0 && !m_hasAttachedData; }
+        void RefreshCursorConfig();
+        void SetHasAttachedData(bool attached) { m_hasAttachedData = attached; }
+        void Park(CachedQueryAdaptor&, ECSqlRequest const&, std::string const& argsKey, uint32_t rowCount);
+        bool HasCursor(ECSqlRequest const&, std::string const& argsKey) const;
+        void ExpireCursors(QueryRequest const* incoming = nullptr, std::string const& argsKey = "");
+        void DropCursors(std::string const& restartToken);
 };
 
 //=======================================================================================
@@ -152,8 +182,12 @@ struct CachedConnection final : std::enable_shared_from_this<CachedConnection> {
         ECDb m_db;
         recursive_mutex_t m_mutexReq;
         std::unique_ptr<RunnableRequestBase> m_request;
+        std::vector<std::string> m_pendingRestarts;
+        // Owned routing metadata may be inspected while the worker mutates its statement cache.
+        std::vector<CachedQueryAdaptor::Cursor> m_cursorHints;
+        bool m_clearCursorsOnCompletion = false;
         uint16_t m_id;
-        uint32_t m_primaryFileDataVer = 0;
+        uint64_t m_dataVersion = 0;
         QueryAdaptorCache m_adaptorCache;
         QueryRetryHandler::Ptr m_retryHandler;
         void UpdateSqlFunctions(ConnectionAction);
@@ -179,10 +213,11 @@ struct CachedConnection final : std::enable_shared_from_this<CachedConnection> {
         // Returns the shared schema-source connection used to parse/resolve schemas for worker
         // prepares (lazily created), or nullptr if it cannot be opened. See ConnectionCache.
         CachedConnection* GetSchemaSourceConnection();
-        // Clears this (worker) connection's cached schemas and statements if the primary's file data
-        // version changed (e.g. after a changeset apply), so the next request re-prepares against
-        // current state. Called once per request from Execute, before the request runs.
-        void RefreshIfPrimaryChanged();
+        // Reset statements before schemas when the primary or independent observer sees a commit.
+        void RefreshIfPrimaryChanged(uint64_t dataVersion);
+        bool HasCursor(ECSqlRequest const&, std::string const& argsKey);
+        void ExpireCursors(QueryRequest const* incoming = nullptr, std::string const& argsKey = "");
+        void ExpireCursors(uint64_t dataVersion);
         uint16_t Id() const { return m_id; }
         std::shared_ptr<CachedConnection> Shared() { return  shared_from_this(); }
         static std::shared_ptr<CachedConnection> Make(ConnectionCache&,uint16_t);
@@ -204,16 +239,24 @@ struct ConnectionCache final {
         recursive_mutex_t m_mutex;
         uint32_t m_poolSize;
         uint64_t m_primaryAttachFileHash = 0;
+        uint32_t m_primaryDataVersion = 0;
+        int64_t m_observerDataVersion = 0;
+        uint64_t m_dataVersion = 0;
+        bool m_enableCursors;
+        std::atomic_bool m_observerAvailable{false};
     public:
         ConnectionCache(ECDb const& primaryDb, uint32_t pool_size);
         ECDb const& GetPrimaryDb() const { return m_primaryDb; }
-        std::shared_ptr<CachedConnection> GetConnection();
+        std::shared_ptr<CachedConnection> GetConnection(RunnableRequestBase&);
         CachedConnection& GetSyncConnection();
         // Lazily creates and returns the shared schema-source connection, or nullptr if it cannot be
         // opened (callers then fall back to preparing against the worker's own connection).
         CachedConnection* GetSchemaSourceConnection();
         void InterruptIf(std::function<bool(RunnableRequestBase const&)> predicate, bool cancel);
         void SyncAttachDbs();
+        void ExpireCursors();
+        uint64_t GetDataVersion();
+        bool GetEnableCursors() const { return m_enableCursors && m_observerAvailable.load(); }
 };
 
 //=======================================================================================
@@ -223,7 +266,7 @@ struct RunnableRequestBase {
     private:
         QueryRequest::Ptr m_request;
         uint32_t m_id;
-        bool m_isCompleted;
+        std::atomic_bool m_isCompleted;
         bool m_isDequeued;
         std::chrono::time_point<std::chrono::steady_clock> m_dequeuedOn;
         std::chrono::time_point<std::chrono::steady_clock> m_submittedOn;
@@ -234,8 +277,17 @@ struct RunnableRequestBase {
         uint32_t m_connId;
         std::atomic_bool m_interrupted;
         std::chrono::milliseconds m_prepareTime;
+        bool m_resumed = false;
+        std::optional<std::string> m_argsKey;
+        std::optional<std::chrono::steady_clock::time_point> m_cursorAffinityWaitStarted;
         virtual void _SetResponse(QueryResponse::Ptr response) = 0;
     public:
+        static constexpr auto kCursorAffinityWait = 10ms;
+        bool ShouldWaitForCursor(std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now()) {
+            if (!m_cursorAffinityWaitStarted)
+                m_cursorAffinityWaitStarted = now;
+            return now - *m_cursorAffinityWaitStarted < kCursorAffinityWait;
+        }
         RunnableRequestBase(RunnableRequestQueue& queue, QueryRequest::Ptr request, QueryQuota quota, uint32_t id)
             :m_queue(queue), m_request(std::move(request)), m_id(id), m_isCompleted(false),m_dequeuedOn(0s),m_isDequeued(false), m_interrupted(false),
              m_quota(quota), m_submittedOn(std::chrono::steady_clock::now()), m_cancelled(false), m_executorId(0), m_connId(0),m_prepareTime(0){}
@@ -244,7 +296,13 @@ struct RunnableRequestBase {
         uint32_t GetId() const {return m_id; }
         void SetResponse(QueryResponse::Ptr response);
         void SetPrepareTime(std::chrono::milliseconds time) { m_prepareTime = time; }
-        bool IsCompleted() const {return m_isCompleted; }
+        void SetResumed(bool resumed) { m_resumed = resumed; }
+        std::string const& GetArgsKey() {
+            if (!m_argsKey)
+                m_argsKey = GetRequest().GetAsConst<ECSqlRequest>().GetArgs().GetCacheKey();
+            return *m_argsKey;
+        }
+        bool IsCompleted() const {return m_isCompleted.load(); }
         RunnableRequestQueue& GetQueue() { return m_queue;}
         bool IsInterrupted() const { return m_interrupted; }
         void Cancel() { m_cancelled.store(true); }
@@ -316,7 +374,6 @@ struct RunnableRequestQueue final {
         std::atomic<State> m_state;
         uint32_t m_maxQueueSize;
         uint32_t m_nextId;
-        uint32_t m_lastDelayedQueryId;
         QueryQuota m_quota;
         std::vector<std::unique_ptr<RunnableRequestBase>> m_requests;
         ECDbCR m_ecdb;
@@ -326,8 +383,8 @@ struct RunnableRequestQueue final {
     private:
         void InsertSorted(ConnectionCache&,std::unique_ptr<RunnableRequestBase>&& request);
         uint32_t GetNextId ();
-        std::unique_ptr<RunnableRequestBase> Dequeue();
-        std::unique_ptr<RunnableRequestBase> WaitForDequeue();
+        std::unique_ptr<RunnableRequestBase> Dequeue(ConnectionCache&, std::shared_ptr<CachedConnection>&);
+        std::unique_ptr<RunnableRequestBase> WaitForDequeue(ConnectionCache&, std::shared_ptr<CachedConnection>&);
         QueryQuota AdjustQuota(QueryQuota const& quota) const;
         void ExecuteSynchronously(ConnectionCache&, std::unique_ptr<RunnableRequestBase>);
     public:
@@ -367,7 +424,7 @@ struct QueryHelper final {
     private:
         static std::string FormatQuery(const char* query);
         static void BindLimits(ECSqlStatement& stmt, QueryLimit const& limit);
-        static void Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase& request);
+        static std::optional<uint32_t> Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase& request);
         static void ReadBlob(ECDbCR conn, RunnableRequestBase& request);
     public:
         static void Execute(QueryAdaptorCache& adaptorCache, RunnableRequestBase& request);

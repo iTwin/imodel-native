@@ -12,6 +12,49 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
 struct ECDbVirtualTableTests : ECDbTestFixture {};
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbVirtualTableTests, BuiltInVirtualSchemasRemainIndependentAcrossReopen) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("builtin_virtual_schemas.ecdb"));
+    ECDb otherDb;
+    ASSERT_EQ(BE_SQLITE_OK, CreateECDb(otherDb, "builtin_virtual_schemas_other.ecdb"));
+
+    auto checkBuiltInTables = [](ECDbCR db) {
+        for (Utf8CP tableName : {"json_each", "json_tree"}) {
+            ECSqlStatement stmt;
+            Utf8PrintfString sql("SELECT s.[key], s.[value] FROM json1.%s('{\"answer\":\"value\"}') s WHERE s.[key]='answer'", tableName);
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, sql.c_str())) << sql;
+            ECClassCR rootClass = stmt.GetColumnInfo(0).GetRootClass().GetClass();
+            EXPECT_TRUE(rootClass.GetId().IsValid());
+            EXPECT_TRUE(rootClass.GetSchema().GetId().IsValid());
+            EXPECT_TRUE(rootClass.IsDefinedLocal("ECDbVirtual", "VirtualType"));
+            EXPECT_TRUE(rootClass.GetSchema().IsDefined("ECDbVirtual", "VirtualSchema"));
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+            EXPECT_STREQ("answer", stmt.GetValueText(0));
+            EXPECT_STREQ("value", stmt.GetValueText(1));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+    };
+
+    checkBuiltInTables(m_ecdb);
+    checkBuiltInTables(otherDb);
+    {
+        ECSqlStatement firstStmt;
+        ECSqlStatement secondStmt;
+        Utf8CP sql = "SELECT key FROM json1.json_each('{\"answer\":\"value\"}')";
+        ASSERT_EQ(ECSqlStatus::Success, firstStmt.Prepare(m_ecdb, sql));
+        ASSERT_EQ(ECSqlStatus::Success, secondStmt.Prepare(otherDb, sql));
+        EXPECT_NE(&firstStmt.GetColumnInfo(0).GetRootClass().GetClass().GetSchema(),
+                  &secondStmt.GetColumnInfo(0).GetRootClass().GetClass().GetSchema());
+    }
+
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    checkBuiltInTables(m_ecdb);
+    checkBuiltInTables(otherDb);
+}
+
 //=======================================================================================
 //! Virtual Table to tokenize string
 // @bsiclass
@@ -195,6 +238,56 @@ TEST_F(ECDbVirtualTableTests, TokenizeModuleTest) {
         }
         ASSERT_EQ(i, 9);
     }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbVirtualTableTests, BuiltInModuleSchemasMergeWithExternalModulesAcrossReopen) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("builtin_module_schemas.ecdb"));
+
+    auto checkModules = [](ECDbCR db) {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "SELECT id FROM ECVLib.IdSet('[3,1,2,2]')"));
+        ECClassCR idSetClass = stmt.GetColumnInfo(0).GetRootClass().GetClass();
+        ECSchemaCR schema = idSetClass.GetSchema();
+        ECClassCP relationsClass = schema.GetClassCP("Relations");
+        ASSERT_NE(nullptr, relationsClass);
+        EXPECT_TRUE(schema.GetId().IsValid());
+        EXPECT_TRUE(idSetClass.GetId().IsValid());
+        EXPECT_TRUE(relationsClass->GetId().IsValid());
+        EXPECT_NE(idSetClass.GetId(), relationsClass->GetId());
+        EXPECT_TRUE(schema.IsDefined("ECDbVirtual", "VirtualSchema"));
+        EXPECT_TRUE(idSetClass.IsDefinedLocal("ECDbVirtual", "VirtualType"));
+        EXPECT_TRUE(relationsClass->IsDefinedLocal("ECDbVirtual", "VirtualType"));
+        for (int64_t expected : {1, 2, 3}) {
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+            EXPECT_EQ(expected, stmt.GetValueInt64(0));
+        }
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    };
+
+    auto registerExternalModule = [](ECDbR db) {
+        ASSERT_EQ(BE_SQLITE_OK, (new TokenizeModule(db, "ECVLib", "tokenize_extra"))->Register());
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "SELECT token FROM ECVLib.tokenize_extra('one two', ' ')"));
+        ECSchemaCR schema = stmt.GetColumnInfo(0).GetRootClass().GetClass().GetSchema();
+        EXPECT_NE(nullptr, schema.GetClassCP("IdSet"));
+        EXPECT_NE(nullptr, schema.GetClassCP("Relations"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_STREQ("one", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_STREQ("two", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    };
+
+    checkModules(m_ecdb);
+    registerExternalModule(m_ecdb);
+    checkModules(m_ecdb);
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    checkModules(m_ecdb);
+    registerExternalModule(m_ecdb);
+    checkModules(m_ecdb);
 }
 
 //---------------------------------------------------------------------------------------

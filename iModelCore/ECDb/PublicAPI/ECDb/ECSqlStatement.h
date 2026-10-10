@@ -832,6 +832,7 @@ struct JsReadOptions final {
 //! @bsiclass
 //=======================================================================================
 struct ECSqlRowAdaptor {
+    friend struct PreparedECSqlRowRenderer;
     using CustomHandler = std::function<PropertyHandlerResult(BeJsValue out, IECSqlValue const& val)>;
     using SkipPropertyHandler = std::function<bool(ECN::ECPropertyCR)>;
 private:

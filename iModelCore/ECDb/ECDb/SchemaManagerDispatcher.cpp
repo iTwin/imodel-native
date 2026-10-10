@@ -3,6 +3,8 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
+#include "InstanceGraphVTab.h"
+#include <typeinfo>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -72,9 +74,14 @@ ECSchemaPtr VirtualSchemaManager::_LocateSchema(SchemaKeyR key, SchemaMatchType 
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus VirtualSchemaManager::AddAndValidateVirtualSchema(Utf8StringCR schemaXml, bool validate) const{
+BentleyStatus VirtualSchemaManager::AddAndValidateVirtualSchema(Utf8StringCR schemaXml, bool validate, bool createConversionContext) const{
    // BeMutexHolder lock(m_ecdb.GetImpl().GetMutex());
-    auto readerContext = ECSchemaReadContext::CreateContext();
+    struct BuiltInSchemaReadContext final : ECSchemaReadContext {
+        BuiltInSchemaReadContext() : ECSchemaReadContext(nullptr, false, false) {}
+    };
+    ECSchemaReadContextPtr readerContext = createConversionContext
+        ? ECSchemaReadContext::CreateContext()
+        : new BuiltInSchemaReadContext();
     readerContext->AddSchemaLocater(const_cast<VirtualSchemaManager&>(*this));
     ECSchemaPtr schema;
     if (ECN::ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *readerContext) != SchemaReadStatus::Success) {
@@ -167,7 +174,8 @@ void VirtualSchemaManager::AddECDbVirtualSchema() const{
             <ECCustomAttributeClass typeName="VirtualSchema" modifier="Sealed" appliesTo="Schema"/>
             <ECCustomAttributeClass typeName="AnyPrimitiveType" modifier="Sealed" appliesTo="PrimitiveProperty"/>
         </ECSchema>)xml";
-    if (AddAndValidateVirtualSchema(schemaXml, false) != SUCCESS) {
+    // Embedded schemas need no legacy conversion or conversion-schema filesystem searches.
+    if (AddAndValidateVirtualSchema(schemaXml, false, false) != SUCCESS) {
         throw std::runtime_error("unable to load ECDbVirtual schema");
     }
 }
@@ -211,7 +219,7 @@ void VirtualSchemaManager::AddSystemVirtualSchemas() const{
                 <ECProperty propertyName="path" typeName="string"/>
             </ECEntityClass>
         </ECSchema>)xml";
-    if (Add(schemaXml) != SUCCESS) {
+    if (AddAndValidateVirtualSchema(schemaXml, true, false) != SUCCESS) {
         throw std::runtime_error("unable to load json1 schema");
     }
 }
@@ -309,7 +317,14 @@ ECClassCP VirtualSchemaManager::FindClass(Utf8StringCR className, size_t& number
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus VirtualSchemaManager::Add(Utf8StringCR schemaXml) const{
-    return AddAndValidateVirtualSchema(schemaXml, true);
+    return AddAndValidateVirtualSchema(schemaXml, true, true);
+}
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus VirtualSchemaManager::AddBuiltIn(Utf8StringCR schemaXml) const{
+    return AddAndValidateVirtualSchema(schemaXml, true, false);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1030,7 +1045,14 @@ Nullable<ECDerivedClassesList> TableSpaceSchemaManager::GetAllDerivedClasses(ECN
         return nullptr;
         }
 
-    return Nullable<ECDerivedClassesList>(m_reader.GetAllDerivedClasses(id));
+    ECDerivedClassesList derivedClasses;
+    if (SUCCESS != m_reader.GetAllDerivedClasses(derivedClasses, id))
+        {
+        LOG.errorv("SchemaManager::GetAllDerivedClasses failed for ECClass %s. Its subclasses could not be loaded.", baseClass.GetFullName());
+        return nullptr;
+        }
+
+    return Nullable<ECDerivedClassesList>(derivedClasses);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2770,7 +2792,10 @@ void MainSchemaManager::GatherRootClasses(
 //---------------------------------------------------------------------------------------
 DbResult ECDbModule::_OnRegister() {
     auto& vm = GetECDb().Schemas().Main().GetVirtualSchemaManager();
-    if (SUCCESS != vm.Add(m_ecSchema)) {
+    // Only these concrete internal modules have embedded schemas; names do not establish trust.
+    const bool isBuiltIn = typeid(*this) == typeid(IdSetModule) || typeid(*this) == typeid(RelationsModule);
+    const BentleyStatus status = isBuiltIn ? vm.AddBuiltIn(m_ecSchema) : vm.Add(m_ecSchema);
+    if (SUCCESS != status) {
         return BE_SQLITE_ERROR;
     }
     return BE_SQLITE_OK;

@@ -300,10 +300,18 @@ export declare namespace IModelJsNative {
  */
   export interface QueryConfig {
     globalQuota?: QueryQuota;
+    /** SQLite page-cache target per secondary connection in KiB; omitted preserves the default. */
+    cacheSizeInKB?: number;
     ignoreDelay?: boolean;
     ignorePriority?: boolean;
     requestQueueSize?: number;
     workerThreads?: number;
+    /** Enables unfinished-statement reuse for contiguous pages on WAL databases. Defaults to true. */
+    enableCursors?: boolean;
+    /** Parked cursors per worker; -1 uses the statement-cache size for read-only handles or four for writable handles. Zero disables reuse. */
+    maxCursorsPerWorker?: number;
+    /** Positive idle timeout in seconds for parked cursors. Defaults to 30. */
+    cursorIdleTimeout?: number;
   }
 
   interface TileContent {
