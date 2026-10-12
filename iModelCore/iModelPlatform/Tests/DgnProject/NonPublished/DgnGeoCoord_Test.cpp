@@ -1296,6 +1296,28 @@ R"X({ "horizontalCRS": {
 +---------------+---------------+---------------+---------------+---------------+------*/
 class SetAndGetDgnGeoCoord : public DgnDbTestFixture
     {
+protected:
+    static GeoCoordinates::BaseGCSPtr CreateCustomVerticalGcs(Utf8CP name)
+        {
+        BeJsDocument verticalCrs;
+        verticalCrs["crsName"] = name;
+        verticalCrs["datumName"] = name;
+        verticalCrs["type"] = "GEOID";
+        verticalCrs["units"] = "Meter";
+        verticalCrs["extent"]["southWest"]["latitude"] = -90.0;
+        verticalCrs["extent"]["southWest"]["longitude"] = -180.0;
+        verticalCrs["extent"]["northEast"]["latitude"] = 90.0;
+        verticalCrs["extent"]["northEast"]["longitude"] = 180.0;
+        verticalCrs["transforms"][0]["target"] = "WGS84";
+        verticalCrs["transforms"][0]["nullTransform"].SetNull();
+
+        auto gcs = GeoCoordinates::BaseGCS::CreateGCS("LL84");
+        Utf8String errorMessage;
+        if (!gcs.IsValid() || SUCCESS != gcs->FromVerticalJson(verticalCrs, errorMessage))
+            return nullptr;
+
+        return gcs;
+        }
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -1358,6 +1380,93 @@ TEST_F(SetAndGetDgnGeoCoord, SetAndGetAndCompare)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SetAndGetDgnGeoCoord, RefreshesVerticalCrsAfterUndoRedo)
+    {
+    ASSERT_TRUE(InitGeoCoord());
+    SetupSeedProject(Db::OpenMode::ReadWrite, true);
+    ASSERT_TRUE(m_db.IsValid());
+    ASSERT_TRUE(m_db->Txns().IsTracking());
+    ASSERT_EQ(BE_SQLITE_DONE, m_db->DeleteProperty(DgnProjectProperty::DgnGCS()));
+    ASSERT_EQ(BE_SQLITE_DONE, m_db->DeleteProperty(DgnProjectProperty::DgnGCSVerticalCRS()));
+    DgnGCS::InvalidateCache(*m_db);
+    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges());
+
+    auto& geolocation = m_db->GeoLocation();
+    ASSERT_EQ(nullptr, geolocation.GetDgnGCS());
+    ASSERT_EQ(nullptr, DgnGCS::FromProject(*m_db));
+
+    auto verifyName = [&](Utf8CP expectedName)
+        {
+        auto gcs = geolocation.GetDgnGCS();
+        ASSERT_NE(nullptr, gcs);
+        EXPECT_EQ(gcs, DgnGCS::FromProject(*m_db));
+        Utf8String name;
+        ASSERT_EQ(SUCCESS, gcs->GetFullVerticalDatumName(name));
+        EXPECT_STREQ(expectedName, name.c_str());
+        };
+
+    auto gcs = CreateCustomVerticalGcs("First test height");
+    ASSERT_TRUE(gcs.IsValid());
+    geolocation.SetGCS(gcs.get());
+    geolocation.Save();
+    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Set first Vertical CRS"));
+    verifyName("First test height");
+
+    ASSERT_EQ(DgnDbStatus::Success, m_db->Txns().ReverseSingleTxn());
+    EXPECT_EQ(nullptr, geolocation.GetDgnGCS());
+    EXPECT_EQ(nullptr, DgnGCS::FromProject(*m_db));
+    ASSERT_EQ(DgnDbStatus::Success, m_db->Txns().ReinstateTxn());
+    verifyName("First test height");
+
+    Utf8String storedJson;
+    ASSERT_EQ(BE_SQLITE_ROW, m_db->QueryProperty(storedJson, DgnProjectProperty::DgnGCSVerticalCRS()));
+    BeJsDocument storedVerticalCrs(storedJson);
+    storedVerticalCrs["verticalCRS"]["crsName"] = "Second test height";
+    ASSERT_EQ(BE_SQLITE_OK, m_db->SavePropertyString(DgnProjectProperty::DgnGCSVerticalCRS(), storedVerticalCrs.Stringify()));
+    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Change only named Vertical CRS metadata"));
+    DgnGCS::InvalidateCache(*m_db);
+    verifyName("Second test height");
+
+    ASSERT_EQ(DgnDbStatus::Success, m_db->Txns().ReverseSingleTxn());
+    verifyName("First test height");
+    ASSERT_EQ(DgnDbStatus::Success, m_db->Txns().ReinstateTxn());
+    verifyName("Second test height");
+    }
+
+TEST_F(SetAndGetDgnGeoCoord, PreservesUnstoredGcsAfterUndoRedo)
+    {
+    ASSERT_TRUE(InitGeoCoord());
+    SetupSeedProject(Db::OpenMode::ReadWrite, true);
+    ASSERT_TRUE(m_db.IsValid());
+    ASSERT_TRUE(m_db->Txns().IsTracking());
+
+    auto storedGcs = CreateCustomVerticalGcs("Stored test height");
+    ASSERT_TRUE(storedGcs.IsValid());
+    auto& geolocation = m_db->GeoLocation();
+    geolocation.SetGCS(storedGcs.get());
+    geolocation.Save();
+    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Set stored Vertical CRS"));
+    ASSERT_NE(nullptr, geolocation.GetDgnGCS());
+
+    auto pendingGcs = CreateCustomVerticalGcs("Pending test height");
+    ASSERT_TRUE(pendingGcs.IsValid());
+    geolocation.SetGCS(pendingGcs.get());
+    auto pendingDgnGcs = geolocation.GetDgnGCS();
+    ASSERT_NE(nullptr, pendingDgnGcs);
+
+    ASSERT_EQ(DgnDbStatus::Success, m_db->Txns().ReverseSingleTxn());
+    EXPECT_EQ(pendingDgnGcs, geolocation.GetDgnGCS());
+    ASSERT_EQ(DgnDbStatus::Success, m_db->Txns().ReinstateTxn());
+    EXPECT_EQ(pendingDgnGcs, geolocation.GetDgnGCS());
+    Utf8String name;
+    ASSERT_EQ(SUCCESS, geolocation.GetDgnGCS()->GetFullVerticalDatumName(name));
+    EXPECT_STREQ("Pending test height", name.c_str());
+    auto persistedGcs = DgnGCS::FromProject(*m_db);
+    ASSERT_NE(nullptr, persistedGcs);
+    ASSERT_EQ(SUCCESS, persistedGcs->GetFullVerticalDatumName(name));
+    EXPECT_STREQ("Stored test height", name.c_str());
+    }
+
 TEST_F(SetAndGetDgnGeoCoord, PersistsCompleteCustomVerticalCrs)
     {
     ASSERT_TRUE(InitGeoCoord());
