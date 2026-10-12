@@ -822,6 +822,99 @@ TEST_F(ConcurrentQueryFixture, CursorConfigRoundTrips) {
     EXPECT_FALSE(config.Equals(ConcurrentQueryMgr::Config::GetDefault()));
 }
 
+TEST_F(ConcurrentQueryFixture, CursorConfigRejectsInvalidValues) {
+    auto const env = ConcurrentQueryMgr::Config::GetFromEnv();
+    for (Utf8CP json : {R"json({"maxCursorsPerWorker":1.5})json", R"json({"maxCursorsPerWorker":-2})json", R"json({"maxCursorsPerWorker":"4"})json"}) {
+        BeJsDocument input(json);
+        EXPECT_EQ(env.GetMaxCursorsPerWorker(), ConcurrentQueryMgr::Config::From(input).GetMaxCursorsPerWorker()) << json;
+    }
+    for (Utf8CP json : {R"json({"cursorIdleTimeout":0.5})json", R"json({"cursorIdleTimeout":0})json", R"json({"cursorIdleTimeout":4294967296})json"}) {
+        BeJsDocument input(json);
+        EXPECT_EQ(env.GetCursorIdleTimeout(), ConcurrentQueryMgr::Config::From(input).GetCursorIdleTimeout()) << json;
+    }
+    BeJsDocument large(R"json({"maxCursorsPerWorker":1000,"cursorIdleTimeout":5})json");
+    auto config = ConcurrentQueryMgr::Config::From(large);
+    EXPECT_EQ(MAX_STATEMENT_CACHE_SIZE_PER_WORKER, config.GetMaxCursorsPerWorker());
+    EXPECT_EQ(5s, config.GetCursorIdleTimeout());
+}
+
+TEST_F(ConcurrentQueryFixture, CursorSupersededBySameIdIsDropped) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("CursorSupersededBySameIdIsDropped.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.EnableWalMode(true));
+    auto config = ConcurrentQueryMgr::Config::GetDefault();
+    config.SetWorkerThreadCount(1).SetQuota(QueryQuota(60s, 1));
+    ConcurrentQueryMgr::Config::Reset(config);
+    ConcurrentQueryMgr mgr(m_ecdb);
+    auto page = [&](std::string const& id, int64_t offset, int64_t count = -1) {
+        auto req = ECSqlRequest::MakeRequest(
+            "WITH sequence(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM sequence WHERE n<10) SELECT n FROM sequence");
+        req->SetCursorId(id).SetLimit(QueryLimit(count, offset));
+        return mgr.Enqueue(std::move(req)).Get();
+    };
+    auto check = [](QueryResponse::Ptr const& resp, int row, bool resumed) {
+        ASSERT_EQ(QueryResponse::Status::Partial, resp->GetStatus()) << resp->GetError();
+        EXPECT_EQ(resumed, resp->GetStats().Resumed());
+        BeJsDocument rows(resp->GetAsConst<ECSqlResponse>().asJsonString());
+        ASSERT_EQ(1, rows.size());
+        EXPECT_EQ(row, rows[0][0].asInt());
+    };
+    check(page("x", 0), 1, false);
+    check(page("y", 0), 1, false);
+    check(page("x", 4, 1), 5, false); // reader x moved on; its parked cursor can never be resumed
+    check(page("x", 1), 2, false); // so it was released rather than kept until idle timeout
+    check(page("y", 1), 2, true); // cursors of other readers are unaffected
+}
+
+TEST_F(ConcurrentQueryFixture, CursorCancelKeepsPreparedStatements) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("CursorCancelKeepsPreparedStatements.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.EnableWalMode(true));
+    auto config = ConcurrentQueryMgr::Config::GetDefault();
+    config.SetWorkerThreadCount(1).SetQuota(QueryQuota(60s, 1));
+    ConcurrentQueryMgr::Config::Reset(config);
+    RunnableRequestQueue queue(m_ecdb);
+    ConnectionCache conns(m_ecdb, 1);
+    auto makeRequest = [](Utf8CP select, std::string const& id, int offset) {
+        auto request = ECSqlRequest::MakeRequest(
+            std::string("WITH sequence(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM sequence WHERE n<10) ") + select);
+        request->SetCursorId(id).SetLimit(QueryLimit(-1, offset));
+        return request;
+    };
+    uint32_t nextId = 0;
+    CachedConnection* worker = nullptr;
+    auto run = [&](QueryRequest::Ptr request, bool cancel) -> QueryResponse::Ptr {
+        auto runnable = std::make_unique<RunnableRequestWithPromise>(queue, std::move(request), config.GetQuota(), ++nextId);
+        if (cancel)
+            runnable->Cancel();
+        auto result = runnable->GetFuture();
+        auto connection = conns.GetConnection(*runnable);
+        if (connection == nullptr)
+            return nullptr;
+        worker = connection.get();
+        connection->Execute([](QueryAdaptorCache& cache, RunnableRequestBase& request) {
+            QueryHelper::Execute(cache, request);
+        }, std::move(runnable));
+        return result.Get();
+    };
+    auto first = run(makeRequest("SELECT n FROM sequence", "a", 0), false);
+    ASSERT_NE(nullptr, first);
+    EXPECT_EQ(QueryResponse::Status::Partial, first->GetStatus());
+    auto second = run(makeRequest("SELECT n*2 FROM sequence", "b", 0), false);
+    ASSERT_NE(nullptr, second);
+    EXPECT_EQ(QueryResponse::Status::Partial, second->GetStatus());
+    ASSERT_NE(nullptr, worker);
+    EXPECT_EQ(2u, worker->GetAdaptorCache().Size());
+    EXPECT_EQ(2u, worker->GetAdaptorCache().ParkedCount());
+
+    auto cancelled = run(makeRequest("SELECT n FROM sequence", "a", 1), true);
+    ASSERT_NE(nullptr, cancelled);
+    EXPECT_EQ(QueryResponse::Status::Cancel, cancelled->GetStatus());
+    // Cancellation releases retained cursors but keeps prepared statements for later queries.
+    EXPECT_EQ(2u, worker->GetAdaptorCache().Size());
+    EXPECT_EQ(0u, worker->GetAdaptorCache().ParkedCount());
+}
+
 TEST_F(ConcurrentQueryFixture, CacheSizeInKBConfigRoundTrips) {
     auto const& defaults = ConcurrentQueryMgr::Config::GetDefault();
     EXPECT_FALSE(defaults.GetCacheSizeInKB().has_value());

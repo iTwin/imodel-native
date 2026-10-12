@@ -42,6 +42,8 @@ static Utf8String GetTimestamp() {
 // 1..poolSize and the synchronous connection is 0, so UINT16_MAX never collides with either and the
 // schema-source connection is never handed out by ConnectionCache::GetConnection().
 static constexpr uint16_t SCHEMA_SOURCE_CONN_ID = UINT16_MAX;
+// Reserved connection id for the data-  observer connection. Only steps PRAGMA data_version.
+static constexpr uint16_t OBSERVER_CONN_ID = UINT16_MAX - 1;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -277,12 +279,16 @@ bool QueryAdaptorCache::HasCursor(ECSqlRequest const& request, std::string const
 
 void QueryAdaptorCache::ExpireCursors(QueryRequest const* incoming, std::string const& argsKey) {
     RefreshCursorConfig();
+    ECSqlRequest const* incomingECSql = incoming && incoming->GetKind() == QueryRequest::Kind::ECSql ? &incoming->GetAsConst<ECSqlRequest>() : nullptr;
     for (auto const& entry : m_cache) {
         if (!entry->IsParked())
             continue;
         bool restarted = incoming && !incoming->GetRestartToken().empty() && entry->HasRestartToken(incoming->GetRestartToken()) &&
-            (incoming->GetKind() != QueryRequest::Kind::ECSql || !entry->MatchesCursor(incoming->GetAsConst<ECSqlRequest>(), argsKey));
-        if (entry->IsCursorExpired(m_cursorIdleTimeout) || restarted)
+            (incomingECSql == nullptr || !entry->MatchesCursor(*incomingECSql, argsKey));
+        // A reader issues one page at a time, so a non-matching page with the same cursor id means
+        // the reader moved on (reset/seek); its old cursor can never be resumed.
+        bool superseded = incomingECSql != nullptr && entry->HasCursorId(incomingECSql->GetCursorId()) && !entry->MatchesCursor(*incomingECSql, argsKey);
+        if (entry->IsCursorExpired(m_cursorIdleTimeout) || restarted || superseded)
             entry->ResetCursor();
     }
 }
@@ -409,14 +415,20 @@ void CachedConnection::Execute(std::function<void(QueryAdaptorCache&,RunnableReq
         ClearRequest();
         return;
     } catch (std::exception const& ex) {
-        m_adaptorCache.Reset();
+        {
+            recursive_guard_t lock(m_mutexReq);
+            m_adaptorCache.Reset();
+        }
         if (m_request != nullptr && !m_request->IsCompleted())
             m_request->SetResponse(m_request->CreateErrorResponse(QueryResponse::Status::Error, ex.what()));
         else if (request != nullptr && !request->IsCompleted())
             request->SetResponse(request->CreateErrorResponse(QueryResponse::Status::Error, ex.what()));
         log_error("%s unhandled exception while executing query: %s", GetTimestamp().c_str(), ex.what());
     } catch (...) {
-        m_adaptorCache.Reset();
+        {
+            recursive_guard_t lock(m_mutexReq);
+            m_adaptorCache.Reset();
+        }
         if (m_request != nullptr && !m_request->IsCompleted())
             m_request->SetResponse(m_request->CreateErrorResponse(QueryResponse::Status::Error, "unknown error while executing query"));
         else if (request != nullptr && !request->IsCompleted())
@@ -430,8 +442,9 @@ void CachedConnection::Execute(std::function<void(QueryAdaptorCache&,RunnableReq
 //---------------------------------------------------------------------------------------
 void CachedConnection::ClearRequest() {
     recursive_guard_t lock(m_mutexReq);
+    // Only drop retained cursors; keep the prepared statements so later queries avoid a re-prepare.
     if (m_clearCursorsOnCompletion || (m_request && (m_request->IsCancelled() || m_request->IsInterrupted())))
-        m_adaptorCache.Reset();
+        m_adaptorCache.ResetCursors();
     for (auto const& token : m_pendingRestarts)
         m_adaptorCache.DropCursors(token);
     m_pendingRestarts.clear();
@@ -674,10 +687,8 @@ std::shared_ptr<CachedConnection> ConnectionCache::GetConnection(RunnableRequest
         throw std::runtime_error("primary db connection must be open");
 
     auto const& request = runnableRequest.GetRequest();
-    auto config = ConcurrentQueryMgr::Config::Get();
-    bool enabled = m_enableCursors && config.GetEnableCursors() && config.GetMaxCursorsPerWorker() != 0 && config.GetStatementCacheSizePerWorker() > 0;
     std::string const* argsKey = nullptr;
-    if (enabled && request.GetKind() == QueryRequest::Kind::ECSql)
+    if (IsCursorRoutingEnabled() && request.GetKind() == QueryRequest::Kind::ECSql)
         argsKey = &runnableRequest.GetArgsKey();
     recursive_guard_t lock(m_mutex);
     if (argsKey != nullptr) {
@@ -701,9 +712,9 @@ std::shared_ptr<CachedConnection> ConnectionCache::GetConnection(RunnableRequest
         }
     }
     if (m_conns.size() < m_poolSize) {
-        // Worker connection ids must never collide with SCHEMA_SOURCE_CONN_ID (UINT16_MAX). The
+        // Worker connection ids must never collide with SCHEMA_SOURCE_CONN_ID or OBSERVER_CONN_ID. The
         // default pool size makes this unreachable, but assert the invariant explicitly.
-        BeAssert(m_conns.size() < UINT16_MAX - 1);
+        BeAssert(m_conns.size() + 1 < OBSERVER_CONN_ID);
         auto connection = CachedConnection::Make(*this, (uint16_t)m_conns.size() + 1);
         if (connection == nullptr)
             throw std::runtime_error("failed to open concurrent query worker connection");
@@ -712,6 +723,18 @@ std::shared_ptr<CachedConnection> ConnectionCache::GetConnection(RunnableRequest
     }
 
     return nullptr;
+}
+
+bool ConnectionCache::IsCursorRoutingEnabled() const {
+    if (!m_enableCursors)
+        return false;
+    auto config = ConcurrentQueryMgr::Config::Get();
+    return config.GetEnableCursors() && config.GetMaxCursorsPerWorker() != 0 && config.GetStatementCacheSizePerWorker() > 0;
+}
+
+bool ConnectionCache::HasAvailableConnection() {
+    recursive_guard_t lock(m_mutex);
+    return m_conns.size() < m_poolSize || std::any_of(m_conns.begin(), m_conns.end(), [](auto const& conn) { return conn.use_count() == 1; });
 }
 
 void ConnectionCache::ExpireCursors() {
@@ -731,24 +754,29 @@ void ConnectionCache::ExpireCursors() {
 }
 
 uint64_t ConnectionCache::GetDataVersion() {
-    recursive_guard_t lock(m_mutex);
+    // Deliberately does not take m_mutex (the pool lock, reachable from the JS thread via the queue
+    // lock) nor the schema-source mutex (held across slow worker prepares). The dedicated observer
+    // connection and the version bookkeeping are guarded by their own short-lived mutex.
+    guard_t lock(m_versionMutex);
     uint32_t primaryVersion;
     if (GetPrimaryDb().GetFileDataVersion(primaryVersion) != BE_SQLITE_OK) {
         m_observerAvailable = false;
         throw std::runtime_error("failed to read primary data version for concurrent query");
     }
     int64_t observerVersion = 0;
-    auto config = ConcurrentQueryMgr::Config::Get();
-    if (m_enableCursors && config.GetEnableCursors() && config.GetMaxCursorsPerWorker() != 0 && config.GetStatementCacheSizePerWorker() > 0) {
-        auto observer = GetSchemaSourceConnection();
-        if (observer == nullptr) {
-            log_warn("cannot observe database changes; discarding concurrent query cursors");
+    if (IsCursorRoutingEnabled()) {
+        if (m_observerConn == nullptr && !m_observerOpenFailed && m_primaryDb.IsDbOpen()) {
+            m_observerConn = CachedConnection::Make(*this, OBSERVER_CONN_ID);
+            m_observerOpenFailed = m_observerConn == nullptr;
+            if (m_observerOpenFailed)
+                log_warn("cannot observe database changes; concurrent query cursors are disabled");
+        }
+        if (m_observerConn == nullptr) {
             m_observerAvailable = false;
         } else {
             // The primary and worker may both hold old snapshots. A short PRAGMA on an unpinned
             // connection observes external commits too, even when the primary is read-only.
-            BeMutexHolder observerLock(observer->GetDb().GetImpl().GetMutex());
-            auto stmt = observer->GetDb().GetCachedStatement("PRAGMA data_version");
+            auto stmt = m_observerConn->GetDb().GetCachedStatement("PRAGMA data_version");
             if (stmt == nullptr || stmt->Step() != BE_SQLITE_ROW) {
                 m_observerAvailable = false;
                 throw std::runtime_error("failed to observe data version for concurrent query cursors");
@@ -1054,6 +1082,8 @@ void RunnableRequestQueue::IfReadyForAutoShutdown(std::function<void()> shutdown
 // @bsimethod
 //---------------------------------------------------------------------------------------
 std::unique_ptr<RunnableRequestBase> RunnableRequestQueue::Dequeue(ConnectionCache& conns, std::shared_ptr<CachedConnection>& connection) {
+    // Avoid per-request cursor routing work while every worker is busy; still expire timed-out requests.
+    const bool canAssign = conns.HasAvailableConnection();
     for (size_t i = m_requests.size(); i > 0; --i) {
         auto& request = m_requests[i - 1];
         if (request->IsTimeExceeded()) {
@@ -1061,7 +1091,7 @@ std::unique_ptr<RunnableRequestBase> RunnableRequestQueue::Dequeue(ConnectionCac
             m_requests.erase(m_requests.begin() + i - 1);
             continue;
         }
-        if (!request->IsReady())
+        if (!canAssign || !request->IsReady())
             continue;
         try {
             connection = conns.GetConnection(*request);
@@ -1163,6 +1193,9 @@ QueryResponse::Future RunnableRequestQueue::Enqueue(ConnectionCache& conns, Quer
             if (runnableReq->GetRequest().UsePrimaryConnection()) {
                 ExecuteSynchronously(conns, std::move(runnableReq));
             } else {
+                // Hash bound args on the caller's thread rather than under the queue lock in Dequeue.
+                if (runnableReq->GetRequest().GetKind() == QueryRequest::Kind::ECSql && conns.IsCursorRoutingEnabled())
+                    runnableReq->GetArgsKey();
                 InsertSorted(conns, std::move(runnableReq));
                 m_cond.notify_one();
             }
@@ -1199,6 +1232,9 @@ void RunnableRequestQueue::Enqueue(ConnectionCache& conns, QueryRequest::Ptr req
             if (runnableReq->GetRequest().UsePrimaryConnection()) {
                 ExecuteSynchronously(conns, std::move(runnableReq));
             } else {
+                // Hash bound args on the caller's thread rather than under the queue lock in Dequeue.
+                if (runnableReq->GetRequest().GetKind() == QueryRequest::Kind::ECSql && conns.IsCursorRoutingEnabled())
+                    runnableReq->GetArgsKey();
                 InsertSorted(conns, std::move(runnableReq));
                 m_cond.notify_one();
             }
@@ -2748,20 +2784,18 @@ ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::From(BeJsValue val) {
     if (val.isBoolMember(Config::JEnableCursors))
         config.SetEnableCursors(val[Config::JEnableCursors].asBool());
     if (val.isNumericMember(Config::JMaxCursorsPerWorker)) {
-        auto count = val[Config::JMaxCursorsPerWorker].asInt64();
-        if (count < -1) {
-            log_error("maxCursorsPerWorker must be -1 or non-negative");
-            count = defaultConfig.GetMaxCursorsPerWorker();
-        }
-        config.SetMaxCursorsPerWorker(static_cast<int32_t>(std::min<int64_t>(count, MAX_STATEMENT_CACHE_SIZE_PER_WORKER)));
+        const auto count = val[Config::JMaxCursorsPerWorker].asDouble();
+        if (!std::isfinite(count) || count < -1 || std::floor(count) != count)
+            log_error("maxCursorsPerWorker must be -1 or a non-negative integer");
+        else
+            config.SetMaxCursorsPerWorker(static_cast<int32_t>(std::min<double>(count, MAX_STATEMENT_CACHE_SIZE_PER_WORKER)));
     }
     if (val.isNumericMember(Config::JCursorIdleTimeout)) {
-        auto timeout = val[Config::JCursorIdleTimeout].asInt64();
-        if (timeout <= 0 || timeout > std::numeric_limits<uint32_t>::max()) {
-            log_error("cursorIdleTimeout must be a positive number of seconds");
-            timeout = defaultConfig.GetCursorIdleTimeout().count();
-        }
-        config.SetCursorIdleTimeout(std::chrono::seconds(timeout));
+        const auto timeout = val[Config::JCursorIdleTimeout].asDouble();
+        if (!std::isfinite(timeout) || timeout <= 0 || timeout > std::numeric_limits<uint32_t>::max() || std::floor(timeout) != timeout)
+            log_error("cursorIdleTimeout must be a positive integer number of seconds");
+        else
+            config.SetCursorIdleTimeout(std::chrono::seconds(static_cast<int64_t>(timeout)));
     }
     return config;
 }

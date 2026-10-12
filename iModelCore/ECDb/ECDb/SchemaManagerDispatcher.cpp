@@ -3,8 +3,6 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include "InstanceGraphVTab.h"
-#include <typeinfo>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -2792,9 +2790,8 @@ void MainSchemaManager::GatherRootClasses(
 //---------------------------------------------------------------------------------------
 DbResult ECDbModule::_OnRegister() {
     auto& vm = GetECDb().Schemas().Main().GetVirtualSchemaManager();
-    // Only these concrete internal modules have embedded schemas; names do not establish trust.
-    const bool isBuiltIn = typeid(*this) == typeid(IdSetModule) || typeid(*this) == typeid(RelationsModule);
-    const BentleyStatus status = isBuiltIn ? vm.AddBuiltIn(m_ecSchema) : vm.Add(m_ecSchema);
+    // Only internal modules (see friends of ECDbModule) set this; names do not establish trust.
+    const BentleyStatus status = m_hasBuiltInSchema ? vm.AddBuiltIn(m_ecSchema) : vm.Add(m_ecSchema);
     if (SUCCESS != status) {
         return BE_SQLITE_ERROR;
     }

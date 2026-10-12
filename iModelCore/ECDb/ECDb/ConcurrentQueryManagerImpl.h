@@ -100,6 +100,7 @@ struct CachedQueryAdaptor final: std::enable_shared_from_this<CachedQueryAdaptor
         void ResetCursor();
         bool IsCursorExpired(std::chrono::seconds timeout) const;
         bool HasRestartToken(std::string const& token) const { return m_cursor && m_cursor->m_restartToken == token; }
+        bool HasCursorId(std::string const& id) const { return m_cursor && !id.empty() && m_cursor->m_id == id; }
         std::shared_ptr<CachedQueryAdaptor> Shared() { return shared_from_this(); }
         static std::shared_ptr<CachedQueryAdaptor> Make() {
             return std::make_shared<CachedQueryAdaptor>();
@@ -128,6 +129,9 @@ struct QueryAdaptorCache final {
         ~QueryAdaptorCache(){}
         std::shared_ptr<CachedQueryAdaptor> TryGet(Utf8CP ecsql, ECSqlRequest const& request, std::string const& argsKey, bool& resumed, ECSqlStatus& status, std::string& ecsql_error, RunnableRequestQueue& queue, bool & isShutDownInProgress);
         void Reset() { m_cache.clear(); }
+        void ResetCursors() { for (auto const& entry : m_cache) if (entry->IsParked()) entry->ResetCursor(); }
+        size_t Size() const { return m_cache.size(); }
+        size_t ParkedCount() const { return static_cast<size_t>(std::count_if(m_cache.begin(), m_cache.end(), [](auto const& entry) { return entry->IsParked(); })); }
         CachedConnection& GetConnection() {return m_conn;}
         bool CanPark() const { return m_maxCursors > 0 && !m_hasAttachedData; }
         void RefreshCursorConfig();
@@ -201,6 +205,7 @@ struct CachedConnection final : std::enable_shared_from_this<CachedConnection> {
     public:
         CachedConnection(ConnectionCache& cache, uint16_t id):m_cache(cache), m_id(id), m_adaptorCache(*this),m_retryHandler(QueryRetryHandler::Create(60s)){}
         recursive_mutex_t& GetMutex() { return m_mutexReq; }
+        QueryAdaptorCache const& GetAdaptorCache() const { return m_adaptorCache; }
         ~CachedConnection();
         void SyncAttachDbs();
         void Execute(std::function<void(QueryAdaptorCache&,RunnableRequestBase&)>, std::unique_ptr<RunnableRequestBase>);
@@ -235,13 +240,18 @@ struct ConnectionCache final {
         // It is never used to step user queries, so the main thread's primary locks are never involved
         // here, breaking the worker/main-thread deadlock without losing the shared-cache performance.
         std::shared_ptr<CachedConnection> m_schemaConn;
+        // Dedicated read-only connection that only steps PRAGMA data_version. Guarded by m_versionMutex
+        // (never m_mutex) so version checks do not contend with the pool lock or schema-source prepares.
+        std::shared_ptr<CachedConnection> m_observerConn;
+        mutex_t m_versionMutex;
+        bool m_observerOpenFailed = false;
         ECDb const& m_primaryDb;
         recursive_mutex_t m_mutex;
         uint32_t m_poolSize;
         uint64_t m_primaryAttachFileHash = 0;
-        uint32_t m_primaryDataVersion = 0;
-        int64_t m_observerDataVersion = 0;
-        uint64_t m_dataVersion = 0;
+        uint32_t m_primaryDataVersion = 0; // guarded by m_versionMutex
+        int64_t m_observerDataVersion = 0; // guarded by m_versionMutex
+        uint64_t m_dataVersion = 0; // guarded by m_versionMutex
         bool m_enableCursors;
         std::atomic_bool m_observerAvailable{false};
     public:
@@ -257,6 +267,8 @@ struct ConnectionCache final {
         void ExpireCursors();
         uint64_t GetDataVersion();
         bool GetEnableCursors() const { return m_enableCursors && m_observerAvailable.load(); }
+        bool IsCursorRoutingEnabled() const;
+        bool HasAvailableConnection();
 };
 
 //=======================================================================================

@@ -308,9 +308,9 @@ export declare namespace IModelJsNative {
     workerThreads?: number;
     /** Enables unfinished-statement reuse for contiguous pages on WAL databases. Defaults to true. */
     enableCursors?: boolean;
-    /** Parked cursors per worker; -1 uses the statement-cache size for read-only handles or four for writable handles. Zero disables reuse. */
+    /** Parked cursors per worker; -1 uses the statement-cache size for read-only handles or four for writable handles. Zero disables reuse. Non-integer values are ignored. */
     maxCursorsPerWorker?: number;
-    /** Positive idle timeout in seconds for parked cursors. Defaults to 30. */
+    /** Positive integer idle timeout in seconds for parked cursors. Defaults to 30. */
     cursorIdleTimeout?: number;
   }
 
