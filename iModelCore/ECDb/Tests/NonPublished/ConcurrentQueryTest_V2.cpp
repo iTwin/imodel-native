@@ -11,7 +11,6 @@
 
 USING_NAMESPACE_BENTLEY_EC
 #include <ECDb/ConcurrentQueryManager.h>
-#include "../../../BeSQLite/SQLite/sqlite3.h"
 #include <future>
 #include <chrono>
 #include <queue>
@@ -30,6 +29,29 @@ struct ConcurrentQueryFixture : ECDbTestFixture {
          // ConsoleLogger::SetSeverity("ECDb.ConcurrentQuery", BentleyApi::NativeLogging::LOG_TRACE);
         ECDbTestFixture::SetUp();
         ConcurrentQueryMgr::Config::Reset(std::nullopt);
+    }
+    void CheckWorkerAndPrimaryPragma(Utf8CP sql, int64_t expectedWorker, int64_t expectedPrimary) {
+        auto const config = ConcurrentQueryMgr::Config::Get();
+        RunnableRequestQueue queue(m_ecdb);
+        ConnectionCache connections(m_ecdb, 1);
+        auto request = std::make_unique<RunnableRequestWithPromise>(
+            queue, ECSqlRequest::MakeRequest("SELECT 1"), config.GetQuota(), 1);
+        auto result = request->GetFuture();
+        auto worker = connections.GetConnection(*request);
+        ASSERT_NE(nullptr, worker);
+        worker->Execute([](QueryAdaptorCache& cache, RunnableRequestBase& runnable) {
+            QueryHelper::Execute(cache, runnable);
+        }, std::move(request));
+        auto response = result.Get();
+        ASSERT_EQ(QueryResponse::Status::Done, response->GetStatus()) << response->GetError();
+        Statement workerPragma;
+        ASSERT_EQ(BE_SQLITE_OK, workerPragma.Prepare(worker->GetDb(), sql));
+        ASSERT_EQ(BE_SQLITE_ROW, workerPragma.Step());
+        EXPECT_EQ(expectedWorker, workerPragma.GetValueInt64(0));
+        Statement primaryPragma;
+        ASSERT_EQ(BE_SQLITE_OK, primaryPragma.Prepare(m_ecdb, sql));
+        ASSERT_EQ(BE_SQLITE_ROW, primaryPragma.Step());
+        EXPECT_EQ(expectedPrimary, primaryPragma.GetValueInt64(0));
     }
     BentleyStatus SetupRenderingPayload(Utf8CP fileName, std::string const& text, double number) {
         if (SUCCESS != SetupECDb(fileName, SchemaItem(
@@ -578,29 +600,6 @@ struct CursorCountFunc : BeSQLite::ScalarFunction {
     }
 };
 
-struct ConnectionPragmaFunc : BeSQLite::ScalarFunction {
-    std::string m_sql;
-    ConnectionPragmaFunc(Utf8CP name, Utf8CP sql) : ScalarFunction(name, 0), m_sql(sql) {}
-    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int, BeSQLite::DbValue*) override {
-        // BeSQLite passes sqlite3_context directly as its Context wrapper.
-        auto db = sqlite3_context_db_handle(reinterpret_cast<sqlite3_context*>(&ctx));
-        sqlite3_stmt* stmt = nullptr;
-        auto rc = sqlite3_prepare_v2(db, m_sql.c_str(), -1, &stmt, nullptr);
-        if (rc != SQLITE_OK) {
-            ctx.SetResultError_code(rc);
-            return;
-        }
-        rc = sqlite3_step(stmt);
-        if (rc == SQLITE_ROW)
-            ctx.SetResultInt64(sqlite3_column_int64(stmt, 0));
-        else
-            ctx.SetResultError("connection PRAGMA returned no row");
-        rc = sqlite3_finalize(stmt);
-        if (rc != SQLITE_OK)
-            ctx.SetResultError_code(rc);
-    }
-};
-
 TEST_F(ConcurrentQueryFixture, PendingSelectSurvivesSavepointCommit) {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("PendingSelectSurvivesSavepointCommit.ecdb"));
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
@@ -620,13 +619,11 @@ TEST_F(ConcurrentQueryFixture, PendingSelectSurvivesSavepointCommit) {
 }
 
 TEST_F(ConcurrentQueryFixture, MemoryMapFileSizeAppliesToWorkersOnly) {
-    ConnectionPragmaFunc mmapSize("imodel_mmap_size", "PRAGMA mmap_size");
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("MemoryMapFileSizeAppliesToWorkersOnly.ecdb"));
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AddFunction(mmapSize));
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.TryExecuteSql("PRAGMA mmap_size=1048576"));
-    ECSqlStatement primarySize;
-    ASSERT_EQ(ECSqlStatus::Success, primarySize.Prepare(m_ecdb, "SELECT imodel_mmap_size()"));
+    Statement primarySize;
+    ASSERT_EQ(BE_SQLITE_OK, primarySize.Prepare(m_ecdb, "PRAGMA mmap_size"));
     ASSERT_EQ(BE_SQLITE_ROW, primarySize.Step());
     const auto effectiveSize = primarySize.GetValueInt64(0);
     primarySize.Finalize();
@@ -636,24 +633,13 @@ TEST_F(ConcurrentQueryFixture, MemoryMapFileSizeAppliesToWorkersOnly) {
         auto config = ConcurrentQueryMgr::Config::GetDefault();
         config.SetWorkerThreadCount(1).SetMemoryMapFileSize(size);
         ConcurrentQueryMgr::Config::Reset(config);
-        ConcurrentQueryMgr mgr(m_ecdb);
-        auto worker = mgr.Enqueue(ECSqlRequest::MakeRequest("SELECT imodel_mmap_size()")).Get();
-        ASSERT_EQ(QueryResponse::Status::Done, worker->GetStatus()) << worker->GetError();
-        EXPECT_EQ(size == 0 ? 0 : effectiveSize,
-            BeJsDocument(worker->GetAsConst<ECSqlResponse>().asJsonString())[0][0].asInt64());
-        auto req = ECSqlRequest::MakeRequest("SELECT imodel_mmap_size()");
-        req->SetUsePrimaryConnection(true);
-        auto primary = mgr.Enqueue(std::move(req)).Get();
-        ASSERT_EQ(QueryResponse::Status::Done, primary->GetStatus()) << primary->GetError();
-        EXPECT_EQ(0, BeJsDocument(primary->GetAsConst<ECSqlResponse>().asJsonString())[0][0].asInt64());
+        CheckWorkerAndPrimaryPragma("PRAGMA mmap_size", size == 0 ? 0 : effectiveSize, 0);
     }
 }
 
 TEST_F(ConcurrentQueryFixture, CacheSizeInKBAppliesToWorkersOnly) {
-    ConnectionPragmaFunc cacheSize("imodel_cache_size", "PRAGMA cache_size");
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("CacheSizeInKBAppliesToWorkersOnly.ecdb"));
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AddFunction(cacheSize));
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.TryExecuteSql("PRAGMA cache_size=123"));
     int64_t defaultCacheSize;
     {
@@ -671,16 +657,7 @@ TEST_F(ConcurrentQueryFixture, CacheSizeInKBAppliesToWorkersOnly) {
         if (size >= 0)
             config.SetCacheSizeInKB(static_cast<uint32_t>(size));
         ConcurrentQueryMgr::Config::Reset(config);
-        ConcurrentQueryMgr mgr(m_ecdb);
-        auto worker = mgr.Enqueue(ECSqlRequest::MakeRequest("SELECT imodel_cache_size()")).Get();
-        ASSERT_EQ(QueryResponse::Status::Done, worker->GetStatus()) << worker->GetError();
-        EXPECT_EQ(size < 0 ? defaultCacheSize : -static_cast<int64_t>(size),
-            BeJsDocument(worker->GetAsConst<ECSqlResponse>().asJsonString())[0][0].asInt64());
-        auto req = ECSqlRequest::MakeRequest("SELECT imodel_cache_size()");
-        req->SetUsePrimaryConnection(true);
-        auto primary = mgr.Enqueue(std::move(req)).Get();
-        ASSERT_EQ(QueryResponse::Status::Done, primary->GetStatus()) << primary->GetError();
-        EXPECT_EQ(123, BeJsDocument(primary->GetAsConst<ECSqlResponse>().asJsonString())[0][0].asInt64());
+        CheckWorkerAndPrimaryPragma("PRAGMA cache_size", size < 0 ? defaultCacheSize : -static_cast<int64_t>(size), 123);
     }
 }
 
@@ -1294,7 +1271,16 @@ TEST_F(ConcurrentQueryFixture, CursorAffinityWaitIsBoundedAndReusesOwner) {
 }
 
 TEST_F(ConcurrentQueryFixture, CursorPagingBenchmark) {
-    if (std::getenv("RUN_CURSOR_PAGING_BENCHMARK") == nullptr) {
+#if defined(BENTLEY_WIN32)
+    char* benchmarkSetting = nullptr;
+    size_t settingSize = 0;
+    ASSERT_EQ(0, _dupenv_s(&benchmarkSetting, &settingSize, "RUN_CURSOR_PAGING_BENCHMARK"));
+    const bool runBenchmark = benchmarkSetting != nullptr;
+    free(benchmarkSetting);
+#else
+    const bool runBenchmark = std::getenv("RUN_CURSOR_PAGING_BENCHMARK") != nullptr;
+#endif
+    if (!runBenchmark) {
 #if defined(USE_GTEST)
         GTEST_SKIP() << "Set RUN_CURSOR_PAGING_BENCHMARK to benchmark cursor paging";
 #else
@@ -1342,7 +1328,7 @@ TEST_F(ConcurrentQueryFixture, CursorPagingBenchmark) {
                     offset += page.GetRowCount();
                     if (resp->IsDone())
                         break;
-                    ASSERT_GT(page.GetRowCount(), 0);
+                    ASSERT_GT(page.GetRowCount(), 0u);
                 } while (true);
                 auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - start).count();
                 if (!enabled)

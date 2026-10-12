@@ -208,7 +208,7 @@ struct CachedConnection final : std::enable_shared_from_this<CachedConnection> {
         QueryAdaptorCache const& GetAdaptorCache() const { return m_adaptorCache; }
         ~CachedConnection();
         void SyncAttachDbs();
-        void Execute(std::function<void(QueryAdaptorCache&,RunnableRequestBase&)>, std::unique_ptr<RunnableRequestBase>);
+        ECDB_EXPORT void Execute(std::function<void(QueryAdaptorCache&,RunnableRequestBase&)>, std::unique_ptr<RunnableRequestBase>);
         void Reset(bool detachDbs);
         void InterruptIf(std::function<bool(RunnableRequestBase const&)>,bool cancel);
         bool IsSync() const { return m_id == 0; }
@@ -255,14 +255,14 @@ struct ConnectionCache final {
         bool m_enableCursors;
         std::atomic_bool m_observerAvailable{false};
     public:
-        ConnectionCache(ECDb const& primaryDb, uint32_t pool_size);
+        ECDB_EXPORT ConnectionCache(ECDb const& primaryDb, uint32_t pool_size);
         ECDb const& GetPrimaryDb() const { return m_primaryDb; }
-        std::shared_ptr<CachedConnection> GetConnection(RunnableRequestBase&);
+        ECDB_EXPORT std::shared_ptr<CachedConnection> GetConnection(RunnableRequestBase&);
         CachedConnection& GetSyncConnection();
         // Lazily creates and returns the shared schema-source connection, or nullptr if it cannot be
         // opened (callers then fall back to preparing against the worker's own connection).
         CachedConnection* GetSchemaSourceConnection();
-        void InterruptIf(std::function<bool(RunnableRequestBase const&)> predicate, bool cancel);
+        ECDB_EXPORT void InterruptIf(std::function<bool(RunnableRequestBase const&)> predicate, bool cancel);
         void SyncAttachDbs();
         void ExpireCursors();
         uint64_t GetDataVersion();
@@ -351,7 +351,7 @@ struct RunnableRequestWithPromise final : RunnableRequestBase  {
     public:
         RunnableRequestWithPromise(RunnableRequestQueue& queue, QueryRequest::Ptr request, QueryQuota quota, uint32_t id): RunnableRequestBase(queue, std::move(request), quota, id){}
         virtual ~RunnableRequestWithPromise(){}
-        QueryResponse::Future GetFuture();
+        ECDB_EXPORT QueryResponse::Future GetFuture();
 };
 
 //=======================================================================================
@@ -400,7 +400,7 @@ struct RunnableRequestQueue final {
         QueryQuota AdjustQuota(QueryQuota const& quota) const;
         void ExecuteSynchronously(ConnectionCache&, std::unique_ptr<RunnableRequestBase>);
     public:
-        explicit RunnableRequestQueue(ECDbCR ecdb);
+        ECDB_EXPORT explicit RunnableRequestQueue(ECDbCR ecdb);
         ~RunnableRequestQueue() { Stop();}
         bool CancelRequest(uint32_t id);
         ECDbCR GetECDb() const { return m_ecdb; }
@@ -409,7 +409,7 @@ struct RunnableRequestQueue final {
         QueryResponse::Future Enqueue(ConnectionCache&,QueryRequest::Ptr);
         void Enqueue(ConnectionCache&,QueryRequest::Ptr, ConcurrentQueryMgr::OnCompletion onComplete);
         uint32_t Count();
-        bool Stop();
+        ECDB_EXPORT bool Stop();
         void IfReadyForAutoShutdown(std::function<void()> shutdownCb);
 };
 //=======================================================================================
@@ -439,7 +439,7 @@ struct QueryHelper final {
         static std::optional<uint32_t> Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase& request);
         static void ReadBlob(ECDbCR conn, RunnableRequestBase& request);
     public:
-        static void Execute(QueryAdaptorCache& adaptorCache, RunnableRequestBase& request);
+        ECDB_EXPORT static void Execute(QueryAdaptorCache& adaptorCache, RunnableRequestBase& request);
 };
 
 //=======================================================================================
