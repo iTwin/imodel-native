@@ -804,7 +804,7 @@ void PolyfaceHeader::ReverseNormals ()
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 template <typename T>
-void ReverseInRange (T* pIndex, size_t iFirst, size_t iLast)
+static void ReverseInRange (T* pIndex, size_t iFirst, size_t iLast)
     {
     T temp;
     if (NULL == pIndex)
@@ -999,7 +999,7 @@ static bool AllNegativeInRange(int32_t const* pIndex, size_t iFirst, size_t iLas
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 template<typename T>
-void ReverseByBlock (T* data, size_t n, size_t numPerBlock)
+static void ReverseByBlock (T* data, size_t n, size_t numPerBlock)
     {
     if (data != nullptr && n > 0 && numPerBlock > 0)
         {
@@ -1017,7 +1017,7 @@ void ReverseByBlock (T* data, size_t n, size_t numPerBlock)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-bool ReverseMeshByBlock (PolyfaceHeaderR mesh, bool negateNormals)
+static bool ReverseMeshByBlock (PolyfaceHeaderR mesh, bool negateNormals)
     {
     size_t numPerBlock = 0;
     if (  mesh.GetMeshStyle() == MESH_ELM_STYLE_QUAD_GRID
