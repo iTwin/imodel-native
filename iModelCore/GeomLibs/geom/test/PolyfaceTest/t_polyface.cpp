@@ -3104,10 +3104,32 @@ TEST(PolyfaceBuilder,AddPolygon)
 
     //builder->AddPolygon (points);
     builder->AddTriangulation (points);
-
-
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(Polyface,HandleInvalidMesh)
+    {
+    bvector<DPoint3d> polygon { DPoint3d::From(1, 0, 0), DPoint3d::From(1, 1, 0), DPoint3d::From(0, 1, 0), DPoint3d::From(-1, 0, 0), DPoint3d::FromZero(), DPoint3d::From(0, -1, 0) };
+    DVec3d normal = DVec3d::From(0, 0, 1);
+
+    // first invalid mesh has 4 triangles, but only one has normals
+    auto builder0 = CreateBuilder(false, false);
+    builder0->AddTriangulation(polygon);
+    auto iNormal = builder0->FindOrAddNormal(normal);
+    builder0->AddNormalIndexTriangle(iNormal, iNormal, iNormal);
+    auto mesh0 = builder0->GetClientMeshPtr();
+    Check::True(mesh0.IsValid(), "expect mesh pointer");
+    Check::True(mesh0->HasIndexErrors(), "expect invalid mesh to have index errors");
+    Check::False(mesh0->ReverseIndicesAllFaces(), "expect invalid mesh to return false"); // crashed before fix
+
+    
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void CheckIndexedPurge (
 PolyfaceHeaderPtr &mesh1,
 PolyfaceHeaderPtr &mesh2,
