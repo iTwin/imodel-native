@@ -13,10 +13,10 @@
         "copyright": "OpenSSL Software Foundation",
         "description": "A robust, commercial-grade, and full-featured toolkit for the Transport Layer Security (TLS) and Secure Sockets Layer (SSL) protocols.",
         "homepage": "https://www.openssl.org",
-        "licenseUrl": "https://github.com/openssl/openssl/blob/openssl-3.6.4/LICENSE.txt",
+        "licenseUrl": "https://github.com/openssl/openssl/blob/openssl-3.6.5/LICENSE.txt",
         "name": "OpenSSL",
         "SPDX-ID": "Apache-2.0",
-        "version": "3.6.4"
+        "version": "3.6.5"
         }
     ]
 }

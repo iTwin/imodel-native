@@ -1138,6 +1138,9 @@ namespace {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 std::string QueryHelper::FormatQuery(const char* query) {
+    // Practical workaround!
+    // The + 0 expressions work around SQLite recompiling cached statements when LIMIT is rebound.
+    // This is an optimization introduced in SQLite 3.47 which actually significantly hurt performance in some cases.
     Utf8String trimmedECSql = query;
     trimmedECSql.Trim();
     Utf8Char c;
@@ -1151,13 +1154,13 @@ std::string QueryHelper::FormatQuery(const char* query) {
             auto n = matches.position();
             Utf8String prefix = trimmedECSql.substr(0, n + 1);
             Utf8String select = trimmedECSql.substr(n + 2);
-            return Utf8PrintfString("%s select * from (%s \n) limit :" LIMIT_VAR_COUNT " offset :" LIMIT_VAR_OFFSET, prefix.c_str(), select.c_str());
+            return Utf8PrintfString("%s select * from (%s \n) limit :" LIMIT_VAR_COUNT " + 0 offset :" LIMIT_VAR_OFFSET " + 0", prefix.c_str(), select.c_str());
         }
     }
     if (trimmedECSql.StartsWithIAscii("pragma")) {
         return std::move(trimmedECSql);
     }
-    return Utf8PrintfString("select * from (%s \n) limit :" LIMIT_VAR_COUNT " offset :" LIMIT_VAR_OFFSET, trimmedECSql.c_str());
+    return Utf8PrintfString("select * from (%s \n) limit :" LIMIT_VAR_COUNT " + 0 offset :" LIMIT_VAR_OFFSET " + 0", trimmedECSql.c_str());
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod

@@ -1296,6 +1296,7 @@ BentleyStatus DbMappingManager::FkRelationships::UpdatePersistedEnd(SchemaImport
 
     if (auto partition = fkRelMappingInfo.GetPartitionView().FindCompatiblePartiton(navPropMap))
         {
+        const_cast<ForeignKeyPartitionView::Partition*>(partition)->AddNavigationProperty(navProp.GetRelationshipClass()->GetId(), navPropMap.GetClassMap().GetClass().GetId());
         auto navColumns = partition->GetNavigationColumns();
         if (navPropMap.SetMembers(navColumns.GetIdColumn(), navColumns.GetRelECClassIdColumn(), fkRelMappingInfo.GetRelationshipClass().GetId()) != SUCCESS)
             return ERROR;
@@ -1310,6 +1311,15 @@ BentleyStatus DbMappingManager::FkRelationships::UpdatePersistedEnd(SchemaImport
     DbColumn const* relECClassIdColumn = navPropMap.GetClassMap().GetColumnFactory().FindColumn((navPropMap.GetAccessString() + "." + ECDBSYS_PROP_NavPropRelECClassId).c_str());
     if (idColumn != nullptr&& relECClassIdColumn != nullptr)
         {
+        for (auto partition : fkRelMappingInfo.GetPartitionView().GetPartitions())
+            {
+            auto const navColumns = partition->GetNavigationColumns();
+            if (&navColumns.GetIdColumn() == idColumn && &navColumns.GetRelECClassIdColumn() == relECClassIdColumn)
+                {
+                const_cast<ForeignKeyPartitionView::Partition*>(partition)->AddNavigationProperty(navProp.GetRelationshipClass()->GetId(), navPropMap.GetClassMap().GetClass().GetId());
+                break;
+                }
+            }
         if (navPropMap.SetMembers(*idColumn, *relECClassIdColumn, fkRelMappingInfo.GetRelationshipClass().GetId()) != SUCCESS)
             return ERROR;
 
@@ -1338,6 +1348,8 @@ BentleyStatus DbMappingManager::FkRelationships::UpdatePersistedEnd(SchemaImport
         BeAssert(false);
         return ERROR;
         }
+
+    newPartition->AddNavigationProperty(navProp.GetRelationshipClass()->GetId(), navPropMap.GetClassMap().GetClass().GetId());
 
     if (SUCCESS != AddIndexToRelationshipEnd(ctx, fkRelMappingInfo, *newPartition))
         return ERROR;

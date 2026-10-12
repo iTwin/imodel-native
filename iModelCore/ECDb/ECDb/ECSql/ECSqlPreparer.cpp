@@ -908,8 +908,9 @@ ECSqlStatus ECSqlExpPreparer::PrepareTableValuedFunctionExp(NativeSqlBuilder::Li
     // Gate on the resolved virtual class rather than the raw function name, so that an
     // application registered function that happens to be called 'Relations' is not affected.
     ECN::ECClassCP tvfClass = exp.GetClass();
-    if (tvfClass != nullptr && tvfClass->GetName().EqualsIAscii("Relations")
-        && tvfClass->GetSchema().GetName().EqualsIAscii("ECVLib"))
+    bool const isRelations = tvfClass != nullptr && tvfClass->GetName().EqualsIAscii("Relations")
+        && tvfClass->GetSchema().GetName().EqualsIAscii("ECVLib");
+    if (isRelations)
         {
         if (!QueryOptionExperimentalFeaturesEnabled(ctx.GetECDb(), exp))
             {
@@ -919,6 +920,18 @@ ECSqlStatus ECSqlExpPreparer::PrepareTableValuedFunctionExp(NativeSqlBuilder::Li
                 IssueType::ECSQL,
                 ECDbIssueId::ECDb_0744,
                 "ECVLib.Relations() is an experimental feature and is disabled by default. Enable it with: PRAGMA experimental_features_enabled=true or use ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES");
+            return ECSqlStatus::InvalidECSql;
+            }
+
+        size_t const argCount = exp.GetFunctionExp()->GetChildrenCount();
+        if (argCount < 2 || argCount > 3)
+            {
+            ctx.Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue,
+                ECDbIssueId::ECDb_0749,
+                "ECVLib.Relations() expects two or three arguments.");
             return ECSqlStatus::InvalidECSql;
             }
         }
@@ -950,6 +963,12 @@ ECSqlStatus ECSqlExpPreparer::PrepareTableValuedFunctionExp(NativeSqlBuilder::Li
         }
         builder.Append(valueSnippets.front());
     }
+    if (isRelations && QueryOptionNavRelClassIdFallback(exp))
+        {
+        if (exp.GetFunctionExp()->GetChildrenCount() == 2)
+            builder.AppendComma().Append("'both'");
+        builder.AppendComma().Append("1");
+        }
     builder.AppendParenRight();
     if (!exp.GetAlias().empty()) {
         builder.AppendSpace().Append(exp.GetAlias());
@@ -2516,6 +2535,17 @@ bool ECSqlExpPreparer::QueryOptionExperimentalFeaturesEnabled(ECDbCR db, ExpCR e
         OptionsExp::ENABLE_EXPERIMENTAL_FEATURES,
         [](OptionExp const& opt) { return opt.asBool(); },
         [&db]() { return db.GetECSqlConfig().GetExperimentalFeaturesEnabled(); });
+    }
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ECSqlExpPreparer::QueryOptionNavRelClassIdFallback(ExpCR exp)
+    {
+    return OptionsExp::FindLocalOrInheritedOption<bool>(
+        exp,
+        OptionsExp::NAV_REL_CLASSID_FALLBACK,
+        [](OptionExp const& opt) { return opt.asBool(); },
+        []() { return false; });
     }
 //-----------------------------------------------------------------------------------------
 // @bsimethod
