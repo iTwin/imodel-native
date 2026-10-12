@@ -747,7 +747,7 @@ uint64_t ConnectionCache::GetDataVersion() {
         } else {
             // The primary and worker may both hold old snapshots. A short PRAGMA on an unpinned
             // connection observes external commits too, even when the primary is read-only.
-            BeMutexHolder lock(observer->GetDb().GetImpl().GetMutex());
+            BeMutexHolder observerLock(observer->GetDb().GetImpl().GetMutex());
             auto stmt = observer->GetDb().GetCachedStatement("PRAGMA data_version");
             if (stmt == nullptr || stmt->Step() != BE_SQLITE_ROW) {
                 m_observerAvailable = false;
