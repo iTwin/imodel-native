@@ -389,6 +389,191 @@ template<typename T_Db> struct SQLiteOps {
 };
 
 //=======================================================================================
+// Synchronous row reader over a statement leased from the db's ConcurrentQuery primary
+// connection cache. Used by withQueryReader; the statement returns to the cache on dispose.
+//! @bsiclass
+//=======================================================================================
+struct NativeSyncECSqlReader : BeObjectWrap<NativeSyncECSqlReader> {
+private:
+    DEFINE_CONSTRUCTOR
+    std::unique_ptr<ECSqlStatementLease> m_lease;
+    ECSqlRowAdaptor* m_adaptor = nullptr;
+    // Reading ahead is only safe when the db cannot be written while rows are held by the caller.
+    bool m_readAhead = false;
+
+    ECSqlStatement* GetStatement() const { return m_lease == nullptr ? nullptr : m_lease->GetStatement(); }
+
+    void Release() {
+        m_adaptor = nullptr;
+        if (m_lease != nullptr) {
+            m_lease->Release();
+            m_lease.reset();
+        }
+    }
+
+    static DbResult ToDbResult(ECSqlStatus status) {
+        if (status.IsSuccess())
+            return BE_SQLITE_OK;
+        return status.IsSQLiteError() ? status.GetSQLiteError() : BE_SQLITE_ERROR;
+    }
+
+public:
+    NativeSyncECSqlReader(NapiInfoCR info) : BeObjectWrap<NativeSyncECSqlReader>(info) {}
+    ~NativeSyncECSqlReader() { SetInDestructor(); Release(); }
+
+    static void Init(Napi::Env& env, Napi::Object exports) {
+        Napi::HandleScope scope(env);
+        Napi::Function t = DefineClass(env, "ConcurrentQuerySyncReader", {
+            InstanceMethod("stepBatch", &NativeSyncECSqlReader::StepBatch),
+            InstanceMethod("getMetadata", &NativeSyncECSqlReader::GetMetadata),
+            InstanceMethod("getStatementId", &NativeSyncECSqlReader::GetStatementId),
+            InstanceMethod("dispose", &NativeSyncECSqlReader::Dispose),
+        });
+        exports.Set("ConcurrentQuerySyncReader", t);
+        SET_CONSTRUCTOR(t);
+    }
+
+    // JS args: (ecsql: string, args?: object, rowOptions?: object, logErrors?: boolean)
+    static Napi::Value Prepare(NapiInfoCR info, ECDbCR ecdb) {
+        REQUIRE_ARGUMENT_STRING(0, ecsql);
+        OPTIONAL_ARGUMENT_BOOL(3, logErrors, true);
+
+        ECSqlStatus status;
+        std::string error;
+        std::unique_ptr<ECSqlStatementLease> lease;
+        try {
+            lease = ConcurrentQueryMgr::LeaseStatement(ecdb, ecsql.c_str(), logErrors, status, error);
+        } catch (std::exception const& ex) {
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), ex.what(), BE_SQLITE_ERROR);
+        }
+        if (lease == nullptr || lease->GetStatement() == nullptr) {
+            if (error.empty())
+                error = Utf8PrintfString("Failed to prepare ECSql statement: %s", ecsql.c_str());
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), error.c_str(), ToDbResult(status));
+        }
+
+        if (info.Length() > 1 && info[1].IsObject()) {
+            BeJsValue args(info[1]);
+            ECSqlParams params(args);
+            std::string bindError;
+            if (!params.IsEmpty() && !params.TryBindTo(*lease->GetStatement(), bindError)) {
+                lease->Release();
+                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), Utf8PrintfString("Failed to bind parameters: %s", bindError.c_str()).c_str(), IModelJsNativeErrorKey::BadArg);
+            }
+        }
+
+        JsReadOptions options;
+        if (info.Length() > 2 && info[2].IsObject()) {
+            BeJsValue rowOptions(info[2]);
+            options.FromJson(rowOptions);
+        }
+        auto adaptor = lease->ConfigureRowAdaptor(options);
+        if (adaptor == nullptr)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Statement lease is invalidated", BE_SQLITE_ERROR);
+
+        Napi::Object obj = Constructor().New({});
+        auto reader = NativeSyncECSqlReader::Unwrap(obj);
+        reader->m_lease = std::move(lease);
+        reader->m_adaptor = adaptor;
+        reader->m_readAhead = ecdb.IsReadonly();
+        return obj;
+    }
+
+    // JS args: (maxRows: number, rows: any[], renderAsJson?: boolean). Appends up to maxRows rows, each rendered as an
+    // array, to `rows`. On a writable db at most one row is appended per call, so the caller never holds rows stepped
+    // ahead of writes it makes between calls. Returns BE_SQLITE_ROW when the batch is full (more rows may follow),
+    // BE_SQLITE_DONE when the result set is exhausted, or the failing DbResult. Rows stepped before a failure remain
+    // in `rows`.
+    // By default the batch is rendered as one JSON string and parsed with a single JSON.parse call, which is much
+    // cheaper than creating every cell through N-API. JSON-rendered rows hold null (not undefined) for null cells
+    // and base64 strings for blobs; the caller is expected to normalize both.
+    Napi::Value StepBatch(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_INTEGER(0, maxRows);
+        REQUIRE_ARGUMENT_ARRAY(1, rows);
+        OPTIONAL_ARGUMENT_BOOL(2, renderAsJson, true);
+        if (maxRows < 1)
+            THROW_JS_TYPE_EXCEPTION("maxRows must be greater than 0");
+
+        auto stmt = GetStatement();
+        if (stmt == nullptr || m_adaptor == nullptr)
+            return Napi::Number::New(info.Env(), (int) BE_SQLITE_ERROR);
+
+        const int32_t batchSize = m_readAhead ? maxRows : 1;
+        uint32_t rowIndex = rows.Length();
+        auto appendNapiRow = [&]() {
+            BeJsNapiObject holder(info.Env());
+            BeJsValue rowJson = holder["data"];
+            if (m_adaptor->RenderRowAsArray(rowJson, ECSqlStatementRow(*stmt)) != SUCCESS)
+                THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to render row", BE_SQLITE_ERROR);
+            rows.Set(rowIndex++, Napi::Object(holder).Get("data"));
+        };
+
+        if (!renderAsJson) {
+            for (int32_t i = 0; i < batchSize; ++i) {
+                DbResult rc = stmt->Step();
+                if (rc != BE_SQLITE_ROW)
+                    return Napi::Number::New(info.Env(), (int) rc);
+                appendNapiRow();
+            }
+            return Napi::Number::New(info.Env(), (int) BE_SQLITE_ROW);
+        }
+
+        rapidjson::StringBuffer json;
+        uint32_t pendingRows = 0;
+        auto flush = [&]() {
+            if (pendingRows == 0)
+                return;
+            json.Put(']');
+            Napi::Array parsed = NapiValueRef::Parse(Napi::String::New(info.Env(), json.GetString(), json.GetSize())).As<Napi::Array>();
+            for (uint32_t i = 0; i < pendingRows; ++i)
+                rows.Set(rowIndex++, parsed.Get(i));
+            json.Clear();
+            pendingRows = 0;
+        };
+
+        for (int32_t i = 0; i < batchSize; ++i) {
+            DbResult rc = stmt->Step();
+            if (rc != BE_SQLITE_ROW) {
+                flush();
+                return Napi::Number::New(info.Env(), (int) rc);
+            }
+
+            const size_t rowStart = json.GetSize();
+            json.Put(pendingRows == 0 ? '[' : ',');
+            if (m_lease->WriteRowAsJson(json)) {
+                ++pendingRows;
+                continue;
+            }
+            // JSON cannot represent non-finite doubles; render this row through N-API instead.
+            json.Pop(json.GetSize() - rowStart);
+            flush();
+            appendNapiRow();
+        }
+        flush();
+        return Napi::Number::New(info.Env(), (int) BE_SQLITE_ROW);
+    }
+
+    Napi::Value GetMetadata(NapiInfoCR info) {
+        auto stmt = GetStatement();
+        if (stmt == nullptr || m_adaptor == nullptr)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlStatement is not prepared.", IModelJsNativeErrorKey::BadArg);
+
+        BeJsNapiObject out(info.Env());
+        BeJsValue metaJson = out["meta"];
+        ECSqlRowProperty::List props;
+        m_adaptor->GetMetaData(props, *stmt);
+        props.ToJs(metaJson);
+        return Napi::Object(out).Get("meta");
+    }
+
+    Napi::Value GetStatementId(NapiInfoCR info) {
+        return Napi::Number::New(info.Env(), (double) (m_lease == nullptr ? 0 : m_lease->GetStatementId()));
+    }
+
+    void Dispose(NapiInfoCR) { Release(); }
+};
+
+//=======================================================================================
 // Projects the ECDb class into JS
 //! @bsiclass
 //=======================================================================================
@@ -455,6 +640,7 @@ public:
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to detach file", rc);
         }
     }
+    Napi::Value ConcurrentQuerySyncPrepare(NapiInfoCR info) { return NativeSyncECSqlReader::Prepare(info, GetOpenedDb(info)); }
     void ConcurrentQueryExecute(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, requestObj);
         REQUIRE_ARGUMENT_FUNCTION(1, callback);
@@ -673,6 +859,7 @@ public:
             InstanceMethod("detachDb", &NativeECDb::DetachDb),
             InstanceMethod("closeDb", &NativeECDb::CloseDb),
             InstanceMethod("concurrentQueryExecute", &NativeECDb::ConcurrentQueryExecute),
+            InstanceMethod("concurrentQuerySyncPrepare", &NativeECDb::ConcurrentQuerySyncPrepare),
             InstanceMethod("concurrentQueryResetConfig", &NativeECDb::ConcurrentQueryResetConfig),
             InstanceMethod("concurrentQueryShutdown", &NativeECDb::ConcurrentQueryShutdown),
             InstanceMethod("createDb", &NativeECDb::CreateDb),
@@ -3076,6 +3263,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to detach file", rc);
         }
     }
+    Napi::Value ConcurrentQuerySyncPrepare(NapiInfoCR info) { return NativeSyncECSqlReader::Prepare(info, GetOpenedDb(info)); }
     void ConcurrentQueryExecute(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, requestObj);
         REQUIRE_ARGUMENT_FUNCTION(1, callback);
@@ -3332,6 +3520,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("computeProjectExtents", &NativeDgnDb::ComputeProjectExtents),
             InstanceMethod("computeRangesForText", &NativeDgnDb::ComputeRangesForText),
             InstanceMethod("concurrentQueryExecute", &NativeDgnDb::ConcurrentQueryExecute),
+            InstanceMethod("concurrentQuerySyncPrepare", &NativeDgnDb::ConcurrentQuerySyncPrepare),
             InstanceMethod("concurrentQueryResetConfig", &NativeDgnDb::ConcurrentQueryResetConfig),
             InstanceMethod("concurrentQueryShutdown", &NativeDgnDb::ConcurrentQueryShutdown),
             InstanceMethod("createBRepGeometry", &NativeDgnDb::CreateBRepGeometry),
@@ -8023,6 +8212,7 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports) {
     NativeChangesetReader::Init(env, exports);
     NativeChangedElementsECDb::Init(env, exports);
     NativeECSqlStatement::Init(env, exports);
+    NativeSyncECSqlReader::Init(env, exports);
     NativeECSqlBinder::Init(env, exports);
     NativeECSqlValue::Init(env, exports);
     NativeECSqlColumnInfo::Init(env, exports);

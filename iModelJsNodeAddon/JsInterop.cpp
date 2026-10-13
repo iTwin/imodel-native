@@ -510,12 +510,17 @@ void JsInterop::ConcurrentQueryExecute(ECDbCR ecdb, Napi::Object requestObj, Nap
                     }
                     else if (value->GetKind() == QueryResponse::Kind::ECSql) {
                         auto& resp = value->GetAsConst<ECSqlResponse>();
-                        resp.ToJs(beJsResp, false);
+                        // Build metadata and stats without creating each field through N-API.
+                        BeJsDocument response;
+                        resp.ToJs(response, false);
+                        auto json = response.Stringify();
                         if (!resp.asJsonString().empty()) {
-                            auto parse = Env().Global().Get("JSON").As<Napi::Object>().Get("parse").As<Napi::Function>();
-                            auto rows = Napi::String::New(Env(), resp.asJsonString());
-                            jsResp[ECSqlResponse::JData] = parse({ rows });
+                            json.pop_back();
+                            json.append(",\"data\":");
+                            json.append(resp.asJsonString());
+                            json.push_back('}');
                         }
+                        jsResp = NapiValueRef::Parse(Env(), json.c_str()).As<Napi::Object>();
                     }
                     else if (value->GetKind() == QueryResponse::Kind::BlobIO) {
                         auto& resp = value->GetAsConst<BlobIOResponse>();

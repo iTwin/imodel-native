@@ -291,6 +291,10 @@ export declare namespace IModelJsNative {
   }
   interface IConcurrentQueryManager {
     concurrentQueryExecute(request: DbRequest, onResponse: ConcurrentQuery.OnResponse): void;
+    /** Leases a statement from the primary connection's concurrent query statement cache and binds `args`, if any.
+     * Throws if the statement cannot be prepared or bound.
+     */
+    concurrentQuerySyncPrepare(ecsql: string, args: object | undefined, rowOptions: ECSqlRowAdaptorOptions, logErrors?: boolean): ConcurrentQuerySyncReader;
     concurrentQueryResetConfig(config?: QueryConfig): QueryConfig;
     concurrentQueryShutdown(): void;
   }
@@ -651,6 +655,7 @@ export declare namespace IModelJsNative {
     public computeProjectExtents(wantFullExtents: boolean, wantOutlierIds: boolean): { extents: Range3dProps, fullExtents?: Range3dProps, outliers?: Id64Array };
     public computeRangesForText(chars: string, fontId: FontId, bold: boolean, italic: boolean, widthFactor: number, height: number): TextLayoutRangesProps;
     public concurrentQueryExecute(request: DbRequest, onResponse: ConcurrentQuery.OnResponse): void;
+    public concurrentQuerySyncPrepare(ecsql: string, args: object | undefined, rowOptions: ECSqlRowAdaptorOptions, logErrors?: boolean): ConcurrentQuerySyncReader;
     public concurrentQueryResetConfig(config?: QueryConfig): QueryConfig;
     public concurrentQueryShutdown(): void;
     public createBRepGeometry(createProps: BRepGeometryCreate): IModelStatus;
@@ -950,6 +955,7 @@ export declare namespace IModelJsNative {
     /** @not-used-by-itwinjs-core */
     public static enableSharedCache(enable: boolean): DbResult;
     public concurrentQueryExecute(request: DbRequest, onResponse: ConcurrentQuery.OnResponse): void;
+    public concurrentQuerySyncPrepare(ecsql: string, args: object | undefined, rowOptions: ECSqlRowAdaptorOptions, logErrors?: boolean): ConcurrentQuerySyncReader;
     public concurrentQueryResetConfig(config?: QueryConfig): QueryConfig;
     public concurrentQueryShutdown(): void;
     public attachDb(filename: string, alias: string): void;
@@ -969,6 +975,25 @@ export declare namespace IModelJsNative {
     public getChangedElements(startChangesetId: string, endChangesetId: string): ErrorStatusOrResult<IModelStatus, any>;
     public isProcessed(changesetId: string): boolean;
     public cleanCaches(): void;
+  }
+
+  /** Synchronous reader over a statement leased from the concurrent query primary connection cache.
+   * The statement is returned to the cache by `dispose()`; a statement invalidated by cache clear or db close
+   * fails to step.
+   */
+  class ConcurrentQuerySyncReader {
+    private constructor();
+    /** Appends up to `maxRows` rows to `rows`. On a writable db at most one row is appended per call, so rows are never
+     * read ahead of writes made between calls. Returns `BE_SQLITE_ROW` when the batch is full (more rows may follow),
+     * `BE_SQLITE_DONE` when there are no more rows, or the failing `DbResult`. Rows stepped before a failure remain in `rows`.
+     * When `renderAsJson` is true (the default) the batch is parsed from one JSON string: null cells are `null` and blobs
+     * are base64 strings. When false, each cell is created directly: null cells are `undefined` and blobs are `Uint8Array`.
+     */
+    public stepBatch(maxRows: number, rows: any[], renderAsJson?: boolean): DbResult;
+    public getMetadata(): any;
+    /** Identifies the prepared statement; it changes whenever the cache prepares the ECSql again. */
+    public getStatementId(): number;
+    public dispose(): void;
   }
 
   class ECSqlStatement {
