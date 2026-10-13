@@ -33,7 +33,134 @@ class VerticalDatumUnitTests : public ::testing::Test
 
         VerticalDatumUnitTests() {};
         ~VerticalDatumUnitTests() {};
+
+    protected:
+        static StatusInt AddPointApplicabilityDatum(Utf8CP name, bool regional, Utf8CP target = nullptr, bvector<Utf8String> const& preferredPath = {}, bool addToDictionary = true)
+            {
+            BeJsDocument json;
+            json["crsName"] = name;
+            json["datumName"] = name;
+            json["type"] = "GEOID";
+            json["units"] = "meter";
+            json["extent"]["southWest"]["latitude"] = regional ? -10.0 : -90.0;
+            json["extent"]["southWest"]["longitude"] = regional ? -20.0 : -180.0;
+            json["extent"]["northEast"]["latitude"] = regional ? 10.0 : 90.0;
+            json["extent"]["northEast"]["longitude"] = regional ? 20.0 : 180.0;
+            if (nullptr != target)
+                {
+                json["transforms"][0]["target"] = target;
+                json["transforms"][0]["nullTransform"].SetNull();
+                }
+            if (!preferredPath.empty())
+                {
+                json["transformPaths"][0]["target"] = preferredPath.back();
+                for (auto const& datumName : preferredPath)
+                    json["transformPaths"][0]["path"].appendValue() = datumName;
+                }
+
+            StatusInt status = ERROR;
+            auto datumInfo = GeoCoordinates::VerticalDatumInfo::CreateFromJson(json, addToDictionary, status);
+            EXPECT_TRUE(datumInfo.IsValid());
+            return status;
+            }
+
+        static void CheckTransformPointApplicability(bvector<Utf8String> const& expectedPath)
+            {
+#if defined (USE_GTEST)
+            SCOPED_TRACE(expectedPath.front().c_str());
+#endif
+            auto checkPath = [&](const GeoPoint* point, bool applicable)
+                {
+                bvector<GeoCoordinates::VerticalTransformPtr> transforms;
+                StatusInt status = GeoCoordinates::VerticalDatumDictionary::Get()->GetVerticalDatumTransforms(
+                    transforms, expectedPath.front(), expectedPath.back(), point);
+                StatusInt expectedStatus = applicable ? SUCCESS : static_cast<StatusInt>(GeoCoordinates::GEOCOORDERR_NoTransforms);
+                EXPECT_EQ(status, expectedStatus);
+                ASSERT_EQ(transforms.size(), applicable ? expectedPath.size() - 1 : 0U);
+                for (size_t index = 0; index < transforms.size(); ++index)
+                    {
+                    ASSERT_TRUE(transforms[index].IsValid());
+                    EXPECT_TRUE(0 == transforms[index]->GetName().CompareToI(expectedPath[index]));
+                    EXPECT_TRUE(0 == transforms[index]->GetTarget().CompareToI(expectedPath[index + 1]));
+                    }
+                };
+
+            struct PointCase
+                {
+                Utf8CP label;
+                GeoPoint point;
+                bool applicable;
+                };
+            PointCase const cases[] =
+                {
+                {"inside", {0.0, 0.0, 0.0}, true},
+                {"southwest boundary", {-20.0, -10.0, 0.0}, true},
+                {"northeast boundary", {20.0, 10.0, 0.0}, true},
+                {"west of region", {-20.000001, 0.0, 0.0}, false},
+                {"east of region", {20.000001, 0.0, 0.0}, false},
+                {"south of region", {0.0, -10.000001, 0.0}, false},
+                {"north of region", {0.0, 10.000001, 0.0}, false},
+                };
+            for (auto const& testCase : cases)
+                {
+#if defined (USE_GTEST)
+                SCOPED_TRACE(testCase.label);
+#endif
+                checkPath(&testCase.point, testCase.applicable);
+                }
+
+#if defined (USE_GTEST)
+            SCOPED_TRACE("no point filter");
+#endif
+            checkPath(nullptr, true);
+            }
     };
+
+TEST_F(VerticalDatumUnitTests, VerticalDatumDirectTransformPointApplicability)
+{
+    ASSERT_EQ(AddPointApplicabilityDatum("Point applicability direct target", true), SUCCESS);
+    ASSERT_EQ(AddPointApplicabilityDatum("Point applicability direct source", false, "Point applicability direct target"), SUCCESS);
+    CheckTransformPointApplicability({"Point applicability direct source", "Point applicability direct target"});
+    CheckTransformPointApplicability({"Point applicability direct target", "Point applicability direct source"});
+}
+
+TEST_F(VerticalDatumUnitTests, VerticalDatumPredefinedTransformPathPointApplicability)
+{
+    bvector<Utf8String> path = {"Point applicability predefined source", "Point applicability predefined intermediate", "Point applicability predefined target"};
+    ASSERT_EQ(AddPointApplicabilityDatum(path[2].c_str(), false), SUCCESS);
+    ASSERT_EQ(AddPointApplicabilityDatum(path[1].c_str(), true, path[2].c_str()), SUCCESS);
+    ASSERT_EQ(AddPointApplicabilityDatum(path[0].c_str(), false, path[1].c_str(), path), SUCCESS);
+    CheckTransformPointApplicability(path);
+}
+
+TEST_F(VerticalDatumUnitTests, VerticalDatumReversePredefinedTransformPathPointApplicability)
+{
+    bvector<Utf8String> path = {"Point applicability reverse source", "Point applicability reverse intermediate", "Point applicability reverse target"};
+    ASSERT_EQ(AddPointApplicabilityDatum(path[2].c_str(), false), SUCCESS);
+    ASSERT_EQ(AddPointApplicabilityDatum(path[1].c_str(), true, path[2].c_str()), SUCCESS);
+    ASSERT_EQ(AddPointApplicabilityDatum(path[0].c_str(), false, path[1].c_str(), path), SUCCESS);
+    CheckTransformPointApplicability({path[2], path[1], path[0]});
+}
+
+TEST_F(VerticalDatumUnitTests, VerticalDatumRecursiveTransformPathPointApplicability)
+{
+    bvector<Utf8String> path = {"Point applicability recursive source", "Point applicability recursive intermediate", "Point applicability recursive target"};
+    ASSERT_EQ(AddPointApplicabilityDatum(path[2].c_str(), false), SUCCESS);
+    ASSERT_EQ(AddPointApplicabilityDatum(path[1].c_str(), true, path[2].c_str()), SUCCESS);
+    ASSERT_EQ(AddPointApplicabilityDatum(path[0].c_str(), false, path[1].c_str()), SUCCESS);
+    CheckTransformPointApplicability(path);
+}
+
+TEST_F(VerticalDatumUnitTests, VerticalDatumInlineSourceTransformPointApplicability)
+{
+    ASSERT_EQ(AddPointApplicabilityDatum("Point applicability inline target", true), SUCCESS);
+    ASSERT_EQ(AddPointApplicabilityDatum("Point applicability inline source", false, "Point applicability inline target", {}, false), SUCCESS);
+    StatusInt status = SUCCESS;
+    EXPECT_FALSE(GeoCoordinates::VerticalDatumDictionary::Get()->GetVerticalDatumInfoFromName("Point applicability inline source", status).IsValid());
+    EXPECT_NE(status, SUCCESS);
+    CheckTransformPointApplicability({"Point applicability inline source", "Point applicability inline target"});
+    CheckTransformPointApplicability({"Point applicability inline target", "Point applicability inline source"});
+}
 
 /*---------------------------------------------------------------------------------**//**
 * Basic construction and behavior checks for VerticalTransform.
