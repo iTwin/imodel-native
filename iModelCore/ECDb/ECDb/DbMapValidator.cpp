@@ -353,19 +353,13 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
                 return ERROR;
                 }
 
-            if (MaintainsDataTables() && m_schemaImportContext.IsSemanticRebasing())
-                {
-                if (nonVirtualColumnCount > (int) physicalColumns.size())
-                    {
-                    Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0126,
-                        "DbTable '%s' has %d non-virtual columns, but the physical table has only %d columns.", table.GetName().c_str(), nonVirtualColumnCount, (int) physicalColumns.size());
-                    return ERROR;
-                    }
-                }
-            else if (MaintainsDataTables() && nonVirtualColumnCount != (int) physicalColumns.size())
+            // Extra physical columns are tolerated. Undoing a schema import reverts its ec_ rows but not the
+            // columns its DDL added, so the table can have columns no ec_Column row describes. They hold no
+            // data, and UpdateTable reuses them by name. Every mapped column must still exist (ECDb_0137).
+            if (MaintainsDataTables() && nonVirtualColumnCount > (int) physicalColumns.size())
                 {
                 Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0126,
-                    "DbTable '%s' has %d non-virtual columns, but the physical table has %d columns.", table.GetName().c_str(), nonVirtualColumnCount, (int) physicalColumns.size());
+                    "DbTable '%s' has %d non-virtual columns, but the physical table has only %d columns.", table.GetName().c_str(), nonVirtualColumnCount, (int) physicalColumns.size());
                 return ERROR;
                 }
 
@@ -396,19 +390,11 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
                 return ERROR;
                 }
 
-            if (MaintainsDataTables() && m_schemaImportContext.IsSemanticRebasing())
-                {
-                if (nonVirtualColumnCount > (int) physicalColumns.size())
-                    {
-                    Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0130,
-                        "DbTable '%s' has %d non-virtual columns, but the physical table has only %d columns.", table.GetName().c_str(), nonVirtualColumnCount, (int) physicalColumns.size());
-                    return ERROR;
-                    }
-                }
-            else if (MaintainsDataTables() && nonVirtualColumnCount != (int) physicalColumns.size())
+            // Extra physical columns are tolerated, see the Joined case above.
+            if (MaintainsDataTables() && nonVirtualColumnCount > (int) physicalColumns.size())
                 {
                 Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0130,
-                    "DbTable '%s' has %d non-virtual columns, but the physical table has %d columns.", table.GetName().c_str(), nonVirtualColumnCount, (int) physicalColumns.size());
+                    "DbTable '%s' has %d non-virtual columns, but the physical table has only %d columns.", table.GetName().c_str(), nonVirtualColumnCount, (int) physicalColumns.size());
                 return ERROR;
                 }
 
@@ -431,19 +417,11 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
                 return ERROR;
                 }
 
-            if (MaintainsDataTables() && m_schemaImportContext.IsSemanticRebasing())
-                {
-                if (nonVirtualColumnCount > (int) physicalColumns.size())
-                    {
-                    Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0133,
-                        "DbTable '%s' has %d non-virtual columns, but the physical table has only %d columns.", table.GetName().c_str(), nonVirtualColumnCount, (int) physicalColumns.size());
-                    return ERROR;
-                    }
-                }
-            else if (MaintainsDataTables() && nonVirtualColumnCount != (int) physicalColumns.size())
+            // Extra physical columns are tolerated, see the Joined case above.
+            if (MaintainsDataTables() && nonVirtualColumnCount > (int) physicalColumns.size())
                 {
                 Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0133,
-                    "DbTable '%s' has %d non-virtual columns, but the physical table has %d columns.", table.GetName().c_str(), nonVirtualColumnCount, (int) physicalColumns.size());
+                    "DbTable '%s' has %d non-virtual columns, but the physical table has only %d columns.", table.GetName().c_str(), nonVirtualColumnCount, (int) physicalColumns.size());
                 return ERROR;
                 }
 

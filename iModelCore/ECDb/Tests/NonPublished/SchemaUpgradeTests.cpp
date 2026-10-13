@@ -321,6 +321,111 @@ TEST_F(SchemaUpgradeTestFixture, AddPropertyWithPropertyMapCAToSharedColumnHiera
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, ImportToleratesPhysicalColumnsWithoutECColumnRows) {
+    // Undoing a schema import (e.g. BriefcaseDb.discardChanges) reverts its ec_ rows but not the columns
+    // its DDL added. The table then has more columns than ec_Column describes. A later import must not fail
+    // on that, and must reuse those columns by name. See itwinjs-core#9826.
+    Utf8CP v1 = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+        <ECEntityClass typeName="Parent">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00"/>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Name" typeName="string"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="Sub">
+            <BaseClass>Parent</BaseClass>
+            <ECProperty propertyName="SubProp" typeName="string"/>
+        </ECEntityClass>
+    </ECSchema>)xml";
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("importToleratesOrphanColumns.ecdb", SchemaItem(v1)));
+
+    bvector<Utf8String> columnsBefore;
+    ASSERT_TRUE(m_ecdb.GetColumns(columnsBefore, "ts_Parent"));
+    ASSERT_TRUE(std::find(columnsBefore.begin(), columnsBefore.end(), "ps2") != columnsBefore.end());
+
+    // Leave ps3 and ps4 behind with no ec_Column rows, as an undone import that added them would.
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteDdl("ALTER TABLE [ts_Parent] ADD COLUMN [ps3]"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteDdl("ALTER TABLE [ts_Parent] ADD COLUMN [ps4]"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+
+    // An unrelated import validates every table and used to fail with ECDb_0133.
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="OtherSchema" alias="os" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"/>)xml")));
+
+    // A new property reuses the leftover ps3 instead of adding another column.
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+        <ECEntityClass typeName="Parent">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00"/>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Name" typeName="string"/>
+            <ECProperty propertyName="NewProp" typeName="string"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="Sub">
+            <BaseClass>Parent</BaseClass>
+            <ECProperty propertyName="SubProp" typeName="string"/>
+        </ECEntityClass>
+    </ECSchema>)xml")));
+
+    ASSERT_EQ(ExpectedColumn("ts_Parent", "ps3"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Parent", "NewProp")));
+    bvector<Utf8String> columnsAfter;
+    ASSERT_TRUE(m_ecdb.GetColumns(columnsAfter, "ts_Parent"));
+    ASSERT_EQ(columnsBefore.size() + 2, columnsAfter.size());
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Sub (Name, NewProp, SubProp) VALUES ('name', 'newPropValue', 'subProp')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+    EXPECT_EQ(JsonValue(R"json([{"NewProp":"newPropValue"}])json"), GetHelper().ExecuteSelectECSql("SELECT NewProp FROM ts.Parent"));
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, ImportFailsWhenMappedColumnIsMissingFromTable) {
+    // Extra physical columns are tolerated, but every column with an ec_Column row must exist in the table.
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("importFailsMissingMappedColumn.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+        <ECEntityClass typeName="Parent">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00"/>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Name" typeName="string"/>
+            <ECProperty propertyName="Code" typeName="string"/>
+        </ECEntityClass>
+    </ECSchema>)xml")));
+
+    ASSERT_EQ(ExpectedColumn("ts_Parent", "ps2"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Parent", "Code")));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteDdl("ALTER TABLE [ts_Parent] DROP COLUMN [ps2]"));
+    // Keep the column count equal so only the missing-column check can catch it.
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteDdl("ALTER TABLE [ts_Parent] ADD COLUMN [ps9]"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+
+    TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
+    ASSERT_EQ(ERROR, ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="OtherSchema" alias="os" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"/>)xml")));
+    ASSERT_FALSE(issueListener.m_issues.empty());
+    EXPECT_STREQ("Non-virtual DbTable 'ts_Parent' has non-virtual column 'ps2' which does not exist in the file.", issueListener.m_issues[0].message.c_str());
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaUpgradeTestFixture, CustomAttributeOrdinal){
     auto testCaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestCA" alias="tsca" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
