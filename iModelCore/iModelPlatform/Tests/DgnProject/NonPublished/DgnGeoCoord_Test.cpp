@@ -1467,6 +1467,285 @@ TEST_F(SetAndGetDgnGeoCoord, PreservesUnstoredGcsAfterUndoRedo)
     EXPECT_STREQ("Stored test height", name.c_str());
     }
 
+TEST_F(SetAndGetDgnGeoCoord, RejectsInvalidPersistedVerticalCrsWrappers)
+    {
+    ASSERT_TRUE(InitGeoCoord());
+    auto gcs = CreateCustomVerticalGcs("Wrapper validation test height");
+    ASSERT_TRUE(gcs.IsValid());
+
+    BeFileName fileName;
+    BeTest::GetHost().GetOutputRoot(fileName);
+    fileName.AppendToPath(L"InvalidVerticalCrsWrappers.ibim");
+    if (BeFileName::DoesPathExist(fileName))
+        BeFileName::BeDeleteFile(fileName);
+
+    DbResult dbStatus;
+    auto project = DgnDb::CreateIModel(&dbStatus, fileName, CreateDgnDbParams("Vertical CRS wrapper validation"));
+    ASSERT_TRUE(project.IsValid());
+    project->GeoLocation().SetGCS(gcs.get());
+    project->GeoLocation().Save();
+    Utf8String validStoredJson;
+    ASSERT_EQ(BE_SQLITE_ROW, project->QueryProperty(validStoredJson, DgnProjectProperty::DgnGCSVerticalCRS()));
+    ASSERT_EQ(BE_SQLITE_OK, project->SaveChanges());
+    project->CloseDb();
+
+    struct WrapperCase
+        {
+        Utf8CP label;
+        Utf8CP json;
+        };
+    WrapperCase const cases[] =
+        {
+        {"malformed JSON", "{"},
+        {"null wrapper", "null"},
+        {"array wrapper", "[]"},
+        {"missing vertical CRS", R"json({"type66Hash":"stale"})json"},
+        {"null vertical CRS", R"json({"verticalCRS":null,"type66Hash":"stale"})json"},
+        {"array vertical CRS", R"json({"verticalCRS":[],"type66Hash":"stale"})json"},
+        {"missing hash", R"json({"verticalCRS":{}})json"},
+        {"null hash", R"json({"verticalCRS":{},"type66Hash":null})json"},
+        {"numeric hash", R"json({"verticalCRS":{},"type66Hash":42})json"},
+        };
+    for (auto const& testCase : cases)
+        {
+#if defined (USE_GTEST)
+        SCOPED_TRACE(testCase.label);
+#endif
+        project = DgnDb::OpenIModelDb(&dbStatus, fileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+        ASSERT_TRUE(project.IsValid());
+        ASSERT_EQ(BE_SQLITE_OK, project->SavePropertyString(DgnProjectProperty::DgnGCSVerticalCRS(), testCase.json));
+        ASSERT_EQ(BE_SQLITE_OK, project->SaveChanges());
+        project->CloseDb();
+
+        project = DgnDb::OpenIModelDb(&dbStatus, fileName, DgnDb::OpenParams(Db::OpenMode::Readonly));
+        ASSERT_TRUE(project.IsValid());
+        bool threw = false;
+        try
+            {
+            project->GeoLocation().GetDgnGCS();
+            }
+        catch (std::runtime_error const& error)
+            {
+            threw = true;
+            EXPECT_NE(Utf8String::npos, Utf8String(error.what()).find("Invalid DgnGCSVerticalCRS property"));
+            }
+        catch (...)
+            {
+            FAIL() << "Expected std::runtime_error";
+            }
+        EXPECT_TRUE(threw);
+        project->CloseDb();
+        }
+
+    project = DgnDb::OpenIModelDb(&dbStatus, fileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+    ASSERT_TRUE(project.IsValid());
+    ASSERT_EQ(BE_SQLITE_OK, project->SavePropertyString(DgnProjectProperty::DgnGCSVerticalCRS(), validStoredJson));
+    ASSERT_EQ(BE_SQLITE_OK, project->SaveChanges());
+    project->CloseDb();
+    project = DgnDb::OpenIModelDb(&dbStatus, fileName, DgnDb::OpenParams(Db::OpenMode::Readonly));
+    ASSERT_TRUE(project.IsValid());
+    auto restoredGcs = project->GeoLocation().GetDgnGCS();
+    ASSERT_NE(nullptr, restoredGcs);
+    Utf8String name;
+    ASSERT_EQ(SUCCESS, restoredGcs->GetFullVerticalDatumName(name));
+    EXPECT_STREQ("Wrapper validation test height", name.c_str());
+    project->CloseDb();
+    BeFileName::BeDeleteFile(fileName);
+    }
+
+TEST_F(SetAndGetDgnGeoCoord, RejectsInvalidPersistedVerticalCrsDefinitionsWithMatchingHash)
+    {
+    ASSERT_TRUE(InitGeoCoord());
+    auto gcs = CreateCustomVerticalGcs("Definition validation test height");
+    ASSERT_TRUE(gcs.IsValid());
+
+    BeFileName fileName;
+    BeTest::GetHost().GetOutputRoot(fileName);
+    fileName.AppendToPath(L"InvalidVerticalCrsDefinitions.ibim");
+    if (BeFileName::DoesPathExist(fileName))
+        BeFileName::BeDeleteFile(fileName);
+
+    DbResult dbStatus;
+    auto project = DgnDb::CreateIModel(&dbStatus, fileName, CreateDgnDbParams("Vertical CRS definition validation"));
+    ASSERT_TRUE(project.IsValid());
+    project->GeoLocation().SetGCS(gcs.get());
+    project->GeoLocation().Save();
+    Utf8String validStoredJson;
+    ASSERT_EQ(BE_SQLITE_ROW, project->QueryProperty(validStoredJson, DgnProjectProperty::DgnGCSVerticalCRS()));
+    BeJsDocument validStoredCrs(validStoredJson);
+    ASSERT_TRUE(validStoredCrs["type66Hash"].isString());
+    ASSERT_EQ(BE_SQLITE_OK, project->SaveChanges());
+    project->CloseDb();
+
+    struct DefinitionCase
+        {
+        Utf8CP label;
+        Utf8CP json;
+        };
+    DefinitionCase const cases[] =
+        {
+        {"empty definition", "{}"},
+        {"unknown named datum", R"json({"crsName":"Missing persisted test height"})json"},
+        {"invalid EPSG", R"json({"epsg":-1})json"},
+        {"invalid legacy ID", R"json({"id":"Invalid persisted legacy ID"})json"},
+        {"invalid datum type", R"json({"crsName":"Invalid persisted type height","type":"INVALID","units":"Meter"})json"},
+        {"invalid units", R"json({"crsName":"Invalid persisted units height","type":"GEOID","units":"Invalid unit"})json"},
+        {"invalid extent", R"json({"crsName":"Invalid persisted extent height","type":"GEOID","units":"Meter","extent":{"southWest":{"latitude":10,"longitude":-20},"northEast":{"latitude":-10,"longitude":20}}})json"},
+        };
+    for (auto const& testCase : cases)
+        {
+#if defined (USE_GTEST)
+        SCOPED_TRACE(testCase.label);
+#endif
+        BeJsDocument storedCrs(validStoredJson);
+        BeJsDocument invalidDefinition(testCase.json);
+        ASSERT_FALSE(invalidDefinition.hasParseError());
+        storedCrs["verticalCRS"].From(invalidDefinition);
+        ASSERT_TRUE(storedCrs["verticalCRS"].isObject());
+        ASSERT_STREQ(validStoredCrs["type66Hash"].asCString(), storedCrs["type66Hash"].asCString());
+
+        project = DgnDb::OpenIModelDb(&dbStatus, fileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+        ASSERT_TRUE(project.IsValid());
+        ASSERT_EQ(BE_SQLITE_OK, project->SavePropertyString(DgnProjectProperty::DgnGCSVerticalCRS(), storedCrs.Stringify()));
+        ASSERT_EQ(BE_SQLITE_OK, project->SaveChanges());
+        project->CloseDb();
+
+        project = DgnDb::OpenIModelDb(&dbStatus, fileName, DgnDb::OpenParams(Db::OpenMode::Readonly));
+        ASSERT_TRUE(project.IsValid());
+        bool threw = false;
+        try
+            {
+            project->GeoLocation().GetDgnGCS();
+            }
+        catch (std::runtime_error const& error)
+            {
+            threw = true;
+            EXPECT_NE(Utf8String::npos, Utf8String(error.what()).find("Invalid Vertical CRS definition in DgnGCSVerticalCRS property"));
+            }
+        catch (...)
+            {
+            FAIL() << "Expected std::runtime_error";
+            }
+        EXPECT_TRUE(threw);
+        project->CloseDb();
+        }
+
+    project = DgnDb::OpenIModelDb(&dbStatus, fileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+    ASSERT_TRUE(project.IsValid());
+    ASSERT_EQ(BE_SQLITE_OK, project->SavePropertyString(DgnProjectProperty::DgnGCSVerticalCRS(), validStoredJson));
+    ASSERT_EQ(BE_SQLITE_OK, project->SaveChanges());
+    project->CloseDb();
+    project = DgnDb::OpenIModelDb(&dbStatus, fileName, DgnDb::OpenParams(Db::OpenMode::Readonly));
+    ASSERT_TRUE(project.IsValid());
+    auto restoredGcs = project->GeoLocation().GetDgnGCS();
+    ASSERT_NE(nullptr, restoredGcs);
+    Utf8String name;
+    ASSERT_EQ(SUCCESS, restoredGcs->GetFullVerticalDatumName(name));
+    EXPECT_STREQ("Definition validation test height", name.c_str());
+    project->CloseDb();
+    BeFileName::BeDeleteFile(fileName);
+    }
+
+TEST_F(SetAndGetDgnGeoCoord, IgnoresStalePersistedVerticalCrsAfterType66Rewrite)
+    {
+    ASSERT_TRUE(InitGeoCoord());
+    auto originalGcs = CreateCustomVerticalGcs("Stale metadata test height");
+    ASSERT_TRUE(originalGcs.IsValid());
+
+    BeFileName fileName;
+    BeTest::GetHost().GetOutputRoot(fileName);
+    fileName.AppendToPath(L"StaleVerticalCrsMetadata.ibim");
+    if (BeFileName::DoesPathExist(fileName))
+        BeFileName::BeDeleteFile(fileName);
+
+    DbResult dbStatus;
+    auto project = DgnDb::CreateIModel(&dbStatus, fileName, CreateDgnDbParams("Stale Vertical CRS metadata"));
+    ASSERT_TRUE(project.IsValid());
+    project->GeoLocation().SetGCS(originalGcs.get());
+    project->GeoLocation().Save();
+    Utf8String originalStoredJson;
+    ASSERT_EQ(BE_SQLITE_ROW, project->QueryProperty(originalStoredJson, DgnProjectProperty::DgnGCSVerticalCRS()));
+    BeJsDocument originalStoredCrs(originalStoredJson);
+    ASSERT_TRUE(originalStoredCrs["type66Hash"].isString());
+
+    auto replacementGcs = GeoCoordinates::BaseGCS::CreateGCS("LL84");
+    ASSERT_TRUE(replacementGcs.IsValid());
+    ASSERT_EQ(SUCCESS, replacementGcs->SetVerticalDatumCode(GeoCoordinates::vdcEllipsoid));
+    project->GeoLocation().SetGCS(replacementGcs.get());
+    project->GeoLocation().Save();
+    Utf8String replacementStoredJson;
+    ASSERT_EQ(BE_SQLITE_ROW, project->QueryProperty(replacementStoredJson, DgnProjectProperty::DgnGCSVerticalCRS()));
+    BeJsDocument replacementStoredCrs(replacementStoredJson);
+    ASSERT_TRUE(replacementStoredCrs["type66Hash"].isString());
+    ASSERT_STRNE(originalStoredCrs["type66Hash"].asCString(), replacementStoredCrs["type66Hash"].asCString());
+    ASSERT_EQ(BE_SQLITE_DONE, project->DeleteProperty(DgnProjectProperty::DgnGCSVerticalCRS()));
+    ASSERT_EQ(BE_SQLITE_OK, project->SaveChanges());
+    project->CloseDb();
+
+    project = DgnDb::OpenIModelDb(&dbStatus, fileName, DgnDb::OpenParams(Db::OpenMode::Readonly));
+    ASSERT_TRUE(project.IsValid());
+    auto type66Gcs = project->GeoLocation().GetDgnGCS();
+    ASSERT_NE(nullptr, type66Gcs);
+    ASSERT_EQ(GeoCoordinates::vdcEllipsoid, type66Gcs->GetNetVerticalDatumCode());
+    BeJsDocument type66VerticalCrs;
+    ASSERT_EQ(SUCCESS, type66Gcs->ToVerticalJson(type66VerticalCrs));
+    project->CloseDb();
+
+    struct StaleCase
+        {
+        Utf8CP label;
+        Utf8CP definition;
+        };
+    StaleCase const cases[] =
+        {
+        {"valid stale named definition", nullptr},
+        {"empty stale definition", "{}"},
+        {"invalid stale legacy ID", R"json({"id":"Invalid persisted legacy ID"})json"},
+        };
+    for (auto const& testCase : cases)
+        {
+#if defined (USE_GTEST)
+        SCOPED_TRACE(testCase.label);
+#endif
+        BeJsDocument staleCrs(originalStoredJson);
+        if (nullptr != testCase.definition)
+            {
+            BeJsDocument definition(testCase.definition);
+            ASSERT_FALSE(definition.hasParseError());
+            staleCrs["verticalCRS"].From(definition);
+            }
+        ASSERT_STREQ(originalStoredCrs["type66Hash"].asCString(), staleCrs["type66Hash"].asCString());
+        Utf8String staleJson = staleCrs.Stringify();
+        project = DgnDb::OpenIModelDb(&dbStatus, fileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+        ASSERT_TRUE(project.IsValid());
+        ASSERT_EQ(BE_SQLITE_OK, project->SavePropertyString(DgnProjectProperty::DgnGCSVerticalCRS(), staleJson));
+        ASSERT_EQ(BE_SQLITE_OK, project->SaveChanges());
+        project->CloseDb();
+
+        project = DgnDb::OpenIModelDb(&dbStatus, fileName, DgnDb::OpenParams(Db::OpenMode::Readonly));
+        ASSERT_TRUE(project.IsValid());
+        auto fallbackGcs = project->GeoLocation().GetDgnGCS();
+        ASSERT_NE(nullptr, fallbackGcs);
+        EXPECT_EQ(GeoCoordinates::vdcEllipsoid, fallbackGcs->GetNetVerticalDatumCode());
+        BeJsDocument fallbackVerticalCrs;
+        ASSERT_EQ(SUCCESS, fallbackGcs->ToVerticalJson(fallbackVerticalCrs));
+        EXPECT_EQ(type66VerticalCrs.Stringify(), fallbackVerticalCrs.Stringify());
+
+        GeoPoint input = {23.700523, 37.944210, 123.5};
+        GeoPoint output;
+        ASSERT_EQ(REPROJECT_Success, fallbackGcs->LatLongFromLatLong(output, input, *replacementGcs));
+        EXPECT_NEAR(input.longitude, output.longitude, 1.0e-9);
+        EXPECT_NEAR(input.latitude, output.latitude, 1.0e-9);
+        EXPECT_NEAR(input.elevation, output.elevation, 1.0e-9);
+        Utf8String persistedJson;
+        ASSERT_EQ(BE_SQLITE_ROW, project->QueryProperty(persistedJson, DgnProjectProperty::DgnGCSVerticalCRS()));
+        EXPECT_EQ(staleJson, persistedJson);
+        project->CloseDb();
+        }
+
+    BeFileName::BeDeleteFile(fileName);
+    }
+
 TEST_F(SetAndGetDgnGeoCoord, PersistsCompleteCustomVerticalCrs)
     {
     ASSERT_TRUE(InitGeoCoord());
