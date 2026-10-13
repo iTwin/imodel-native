@@ -1433,6 +1433,66 @@ TEST_F(SetAndGetDgnGeoCoord, RefreshesVerticalCrsAfterUndoRedo)
     verifyName("Second test height");
     }
 
+TEST_F(SetAndGetDgnGeoCoord, RefreshesVerticalCrsAfterAbandonWithoutTableHandlers)
+    {
+    ASSERT_TRUE(InitGeoCoord());
+    BeFileName fileName;
+    BeTest::GetHost().GetOutputRoot(fileName);
+    fileName.AppendToPath(L"AbandonVerticalCrsWithoutTableHandlers.ibim");
+    if (BeFileName::DoesPathExist(fileName))
+        BeFileName::BeDeleteFile(fileName);
+
+    DbResult dbStatus;
+    auto project = DgnDb::CreateIModel(&dbStatus, fileName, CreateDgnDbParams("Vertical CRS rollback cache"));
+    ASSERT_TRUE(project.IsValid());
+    auto& txns = project->Txns();
+    ASSERT_FALSE(txns.IsTracking());
+    auto originalGcs = CreateCustomVerticalGcs("Committed rollback test height");
+    ASSERT_TRUE(originalGcs.IsValid());
+    project->GeoLocation().SetGCS(originalGcs.get());
+    project->GeoLocation().Save();
+    ASSERT_EQ(BE_SQLITE_OK, project->SaveChanges());
+    Utf8String committedJson;
+    ASSERT_EQ(BE_SQLITE_ROW, project->QueryProperty(committedJson, DgnProjectProperty::DgnGCSVerticalCRS()));
+    DgnGCS::InvalidateCache(*project);
+
+    auto verifyName = [&](Utf8CP expectedName)
+        {
+        auto cachedGcs = project->GeoLocation().GetDgnGCS();
+        ASSERT_NE(nullptr, cachedGcs);
+        EXPECT_EQ(cachedGcs, DgnGCS::FromProject(*project));
+        Utf8String name;
+        ASSERT_EQ(SUCCESS, cachedGcs->GetFullVerticalDatumName(name));
+        EXPECT_STREQ(expectedName, name.c_str());
+        };
+    verifyName("Committed rollback test height");
+
+    txns.EnableTracking(true);
+    ASSERT_TRUE(txns.IsTracking());
+    ASSERT_FALSE(txns.HasDataChanges());
+    BeJsDocument pendingCrs(committedJson);
+    ASSERT_FALSE(pendingCrs.hasParseError());
+    pendingCrs["verticalCRS"]["crsName"] = "Abandoned rollback test height";
+    ASSERT_EQ(BE_SQLITE_OK, project->SavePropertyString(DgnProjectProperty::DgnGCSVerticalCRS(), pendingCrs.Stringify()));
+    ASSERT_TRUE(txns.HasDataChanges());
+    DgnGCS::InvalidateCache(*project);
+    verifyName("Abandoned rollback test height");
+
+    project->AbandonChanges();
+    ASSERT_FALSE(txns.HasDataChanges());
+    Utf8String restoredJson;
+    ASSERT_EQ(BE_SQLITE_ROW, project->QueryProperty(restoredJson, DgnProjectProperty::DgnGCSVerticalCRS()));
+    EXPECT_EQ(committedJson, restoredJson);
+    verifyName("Committed rollback test height");
+    project->CloseDb();
+
+    project = DgnDb::OpenIModelDb(&dbStatus, fileName, DgnDb::OpenParams(Db::OpenMode::Readonly));
+    ASSERT_TRUE(project.IsValid());
+    verifyName("Committed rollback test height");
+    project->CloseDb();
+    BeFileName::BeDeleteFile(fileName);
+    }
+
 TEST_F(SetAndGetDgnGeoCoord, PreservesUnstoredGcsAfterUndoRedo)
     {
     ASSERT_TRUE(InitGeoCoord());

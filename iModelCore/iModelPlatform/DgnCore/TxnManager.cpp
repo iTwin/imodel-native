@@ -1226,6 +1226,7 @@ void TxnManager::SetOnCommitCallback(T_OnCommitCallback cb) {
 void TxnManager::OnRollback(ChangeStreamCR changeSet) {
     m_dgndb.Elements().ClearCache(); // we can't rely on the elements in the cache after rollback, just abandon them
     if (!m_initTableHandlers) {
+        InvalidateGcsIfChanged(m_dgndb, changeSet, true);
         m_dgndb.Models().ClearCache();
         return;
     }
