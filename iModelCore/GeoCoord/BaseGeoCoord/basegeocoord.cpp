@@ -10230,11 +10230,15 @@ VerticalDatumInfoPtr VerticalDatumInfo::CreateFromJson(BeJsConst jsonVerticalCRS
 
     if (vdatumInfo->m_extent.IsNull()
         || (vdatumInfo->m_extent.low.x < -180.0)
+        || (vdatumInfo->m_extent.low.x > 180.0)
+        || (vdatumInfo->m_extent.high.x < -180.0)
         || (vdatumInfo->m_extent.high.x > 180.0)
         || (vdatumInfo->m_extent.low.y < -90.0)
-        || (vdatumInfo->m_extent.high.y > 90.0))
+        || (vdatumInfo->m_extent.low.y > 90.0)
+        || (vdatumInfo->m_extent.high.y < -90.0)
+        || (vdatumInfo->m_extent.high.y > 90.0)
+        || (vdatumInfo->m_extent.low.y > vdatumInfo->m_extent.high.y))
     {
-        // SK TODO: range can traverse -180.0/180.0
         status = GEOCOORDERR_CoordinateRange;
         vdatumInfo = nullptr;
         return nullptr;

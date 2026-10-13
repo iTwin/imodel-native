@@ -891,6 +891,123 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoGettersTest)
     EXPECT_TRUE(0 == targetNames[1].CompareToI("EGM96 height"));
 }
 
+TEST_F(VerticalDatumUnitTests, VerticalDatumInfoRejectsMalformedExtents)
+{
+    struct ExtentCase
+    {
+        Utf8CP label;
+        Utf8CP json;
+    };
+    ExtentCase const cases[] =
+    {
+        {"missing extent", R"json({})json"},
+        {"null extent", R"json({"extent":null})json"},
+        {"nonobject extent", R"json({"extent":[]})json"},
+        {"missing corners", R"json({"extent":{}})json"},
+        {"missing southwest", R"json({"extent":{"northEast":{"latitude":10,"longitude":20}}})json"},
+        {"missing northeast", R"json({"extent":{"southWest":{"latitude":-10,"longitude":-20}}})json"},
+        {"nonobject southwest", R"json({"extent":{"southWest":0,"northEast":{"latitude":10,"longitude":20}}})json"},
+        {"nonobject northeast", R"json({"extent":{"southWest":{"latitude":-10,"longitude":-20},"northEast":[]}})json"},
+        {"missing southwest latitude", R"json({"extent":{"southWest":{"longitude":-20},"northEast":{"latitude":10,"longitude":20}}})json"},
+        {"missing southwest longitude", R"json({"extent":{"southWest":{"latitude":-10},"northEast":{"latitude":10,"longitude":20}}})json"},
+        {"missing northeast latitude", R"json({"extent":{"southWest":{"latitude":-10,"longitude":-20},"northEast":{"longitude":20}}})json"},
+        {"missing northeast longitude", R"json({"extent":{"southWest":{"latitude":-10,"longitude":-20},"northEast":{"latitude":10}}})json"},
+        {"string southwest latitude", R"json({"extent":{"southWest":{"latitude":"-10","longitude":-20},"northEast":{"latitude":10,"longitude":20}}})json"},
+        {"string southwest longitude", R"json({"extent":{"southWest":{"latitude":-10,"longitude":"-20"},"northEast":{"latitude":10,"longitude":20}}})json"},
+        {"string northeast latitude", R"json({"extent":{"southWest":{"latitude":-10,"longitude":-20},"northEast":{"latitude":"10","longitude":20}}})json"},
+        {"string northeast longitude", R"json({"extent":{"southWest":{"latitude":-10,"longitude":-20},"northEast":{"latitude":10,"longitude":"20"}}})json"},
+        {"boolean latitude", R"json({"extent":{"southWest":{"latitude":false,"longitude":-20},"northEast":{"latitude":10,"longitude":20}}})json"},
+        {"null longitude", R"json({"extent":{"southWest":{"latitude":-10,"longitude":null},"northEast":{"latitude":10,"longitude":20}}})json"},
+        {"object latitude", R"json({"extent":{"southWest":{"latitude":-10,"longitude":-20},"northEast":{"latitude":{},"longitude":20}}})json"},
+        {"array longitude", R"json({"extent":{"southWest":{"latitude":-10,"longitude":-20},"northEast":{"latitude":10,"longitude":[]}}})json"},
+        {"inverted latitudes", R"json({"extent":{"southWest":{"latitude":10,"longitude":-20},"northEast":{"latitude":-10,"longitude":20}}})json"},
+        {"southwest latitude below minimum", R"json({"extent":{"southWest":{"latitude":-90.000001,"longitude":-20},"northEast":{"latitude":10,"longitude":20}}})json"},
+        {"southwest latitude above maximum", R"json({"extent":{"southWest":{"latitude":90.000001,"longitude":-20},"northEast":{"latitude":90,"longitude":20}}})json"},
+        {"northeast latitude below minimum", R"json({"extent":{"southWest":{"latitude":-90,"longitude":-20},"northEast":{"latitude":-90.000001,"longitude":20}}})json"},
+        {"northeast latitude above maximum", R"json({"extent":{"southWest":{"latitude":-10,"longitude":-20},"northEast":{"latitude":90.000001,"longitude":20}}})json"},
+        {"southwest longitude below minimum", R"json({"extent":{"southWest":{"latitude":-10,"longitude":-180.000001},"northEast":{"latitude":10,"longitude":20}}})json"},
+        {"southwest longitude above maximum", R"json({"extent":{"southWest":{"latitude":-10,"longitude":180.000001},"northEast":{"latitude":10,"longitude":180}}})json"},
+        {"northeast longitude below minimum", R"json({"extent":{"southWest":{"latitude":-10,"longitude":-180},"northEast":{"latitude":10,"longitude":-180.000001}}})json"},
+        {"northeast longitude above maximum", R"json({"extent":{"southWest":{"latitude":-10,"longitude":-20},"northEast":{"latitude":10,"longitude":180.000001}}})json"},
+    };
+
+    auto dictionary = GeoCoordinates::VerticalDatumDictionary::Get();
+    ASSERT_TRUE(dictionary.IsValid());
+    for (auto const& testCase : cases)
+    {
+#if defined (USE_GTEST)
+        SCOPED_TRACE(testCase.label);
+#endif
+        Utf8String name("Malformed extent ");
+        name.append(testCase.label);
+        BeJsDocument datumJson(testCase.json);
+        ASSERT_FALSE(datumJson.hasParseError());
+        datumJson["crsName"] = name;
+        datumJson["type"] = "GEOID";
+        datumJson["units"] = "Meter";
+        datumJson["transforms"][0]["target"] = "WGS84";
+        datumJson["transforms"][0]["nullTransform"].SetNull();
+
+        StatusInt status = SUCCESS;
+        auto datumInfo = GeoCoordinates::VerticalDatumInfo::CreateFromJson(datumJson, true, status);
+        EXPECT_FALSE(datumInfo.IsValid());
+        EXPECT_EQ(status, GeoCoordinates::GEOCOORDERR_CoordinateRange);
+        EXPECT_FALSE(dictionary->GetVerticalDatumInfoFromName(name, status).IsValid());
+        EXPECT_EQ(status, GeoCoordinates::GEOCOORDERR_CoordSysNotFound);
+        bvector<GeoCoordinates::VerticalTransformPtr> transforms;
+        EXPECT_EQ(dictionary->GetVerticalDatumTransforms(transforms, name, "WGS84", nullptr), GeoCoordinates::GEOCOORDERR_NoTransforms);
+        EXPECT_TRUE(transforms.empty());
+        transforms.clear();
+        EXPECT_EQ(dictionary->GetVerticalDatumTransforms(transforms, "WGS84", name, nullptr), GeoCoordinates::GEOCOORDERR_NoTransforms);
+        EXPECT_TRUE(transforms.empty());
+    }
+}
+
+TEST_F(VerticalDatumUnitTests, VerticalDatumInfoAcceptsValidExtentBoundaries)
+{
+    struct ExtentCase
+    {
+        Utf8CP name;
+        double west;
+        double south;
+        double east;
+        double north;
+    };
+    ExtentCase const cases[] =
+    {
+        {"Valid global extent", -180.0, -90.0, 180.0, 90.0},
+        {"Valid regional extent", -20.0, -10.0, 20.0, 10.0},
+        {"Valid point extent", 20.0, 10.0, 20.0, 10.0},
+        {"Valid antimeridian extent", 170.0, -10.0, -170.0, 10.0},
+    };
+
+    for (auto const& testCase : cases)
+    {
+#if defined (USE_GTEST)
+        SCOPED_TRACE(testCase.name);
+#endif
+        BeJsDocument datumJson;
+        datumJson["crsName"] = testCase.name;
+        datumJson["type"] = "GEOID";
+        datumJson["units"] = "Meter";
+        datumJson["extent"]["southWest"]["longitude"] = testCase.west;
+        datumJson["extent"]["southWest"]["latitude"] = testCase.south;
+        datumJson["extent"]["northEast"]["longitude"] = testCase.east;
+        datumJson["extent"]["northEast"]["latitude"] = testCase.north;
+
+        StatusInt status = ERROR;
+        auto datumInfo = GeoCoordinates::VerticalDatumInfo::CreateFromJson(datumJson, true, status);
+        EXPECT_EQ(status, SUCCESS);
+        ASSERT_TRUE(datumInfo.IsValid());
+        DRange2d extent;
+        datumInfo->GetExtent(extent);
+        EXPECT_DOUBLE_EQ(extent.low.x, testCase.west);
+        EXPECT_DOUBLE_EQ(extent.low.y, testCase.south);
+        EXPECT_DOUBLE_EQ(extent.high.x, testCase.east);
+        EXPECT_DOUBLE_EQ(extent.high.y, testCase.north);
+    }
+}
+
 /*---------------------------------------------------------------------------------**//**
 * VerticalDatumInfo::CreateFromJson must return GEOCOORDERR_NoTransforms and a null
 * pointer when the JSON contains a transforms entry that is structurally invalid:
