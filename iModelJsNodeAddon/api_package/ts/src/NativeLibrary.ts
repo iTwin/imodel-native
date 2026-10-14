@@ -1695,7 +1695,8 @@ export declare namespace IModelJsNative {
      *  May be called several times (e.g. one reader per changeset) before the first `step()`.
      *  Throws if called after `step()` has been called. Reader stays owned by the caller. */
     public appendFrom(reader: ChangesetReader, rowOptions: ECSqlRowAdaptorOptions): void;
-    /** Returns up to `maxInstances` finished instances in sorted order. Returns an empty array when exhausted.
+    /** Returns up to `maxInstances` finished instances in sorted order, fewer once the batch holds 16 MiB of strings
+     *  and binary data (at least one). Returns an empty array when exhausted.
      *  First call finalizes (sort / k-way merge of spilled runs). */
     public step(maxInstances: number): UnifiedChangeInstance[];
     /** Frees memory and deletes spill files. Idempotent. */

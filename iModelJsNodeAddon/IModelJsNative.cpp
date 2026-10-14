@@ -5638,6 +5638,7 @@ private:
         std::vector<Container> m_containers;
         Napi::Value m_key;
         Napi::Value m_result;
+        size_t m_valueBytes = 0; // bytes of the strings and binary values written so far
 
         Napi::Value ToJsString(Utf8CP text, size_t length, uint32_t stringId)
             {
@@ -5667,6 +5668,7 @@ private:
     public:
         explicit InstanceWriter(Napi::Env env) : m_env(env) {}
         Napi::Value TakeResult() { Napi::Value result = m_result; m_result = Napi::Value(); return result; }
+        size_t GetValueBytes() const { return m_valueBytes; }
         void StartObject() override
             {
             Napi::Object obj = Napi::Object::New(m_env);
@@ -5687,9 +5689,14 @@ private:
         void Int64(int64_t value) override { Put(Napi::Value::From(m_env, value)); }
         void UInt64(uint64_t value) override { Put(Napi::Value::From(m_env, static_cast<int64_t>(value))); }
         void Double(double value) override { Put(Napi::Value::From(m_env, value)); }
-        void String(Utf8CP value, size_t length, uint32_t stringId) override { Put(ToJsString(value, length, stringId)); }
+        void String(Utf8CP value, size_t length, uint32_t stringId) override
+            {
+            m_valueBytes += length;
+            Put(ToJsString(value, length, stringId));
+            }
         void Binary(Byte const* data, size_t size) override
             {
+            m_valueBytes += size;
             auto array = Napi::Uint8Array::New(m_env, size);
             std::copy(data, data + size, array.Data());
             Put(array);
@@ -5780,6 +5787,10 @@ public:
             ThrowOnFailure(info.Env(), "ChangeUnifier: appendFrom() failed", rc);
         }
 
+    // A batch stops early once its strings and binary values reach this size, so that maxInstances large
+    // instances (e.g. unabbreviated geometry streams) cannot allocate an unbounded amount of JavaScript memory.
+    static constexpr size_t MaxBatchValueBytes = 16 * 1024 * 1024;
+
     Napi::Value Step(NapiInfoCR info)
         {
         // Checked as a double: Int32Value() would truncate fractions and wrap large values.
@@ -5799,6 +5810,8 @@ public:
             if (rc != BE_SQLITE_ROW)
                 ThrowOnFailure(info.Env(), "ChangeUnifier: step() failed", rc);
             result.Set(count++, writer.TakeResult());
+            if (writer.GetValueBytes() >= MaxBatchValueBytes)
+                break;
             }
         return result;
         }
