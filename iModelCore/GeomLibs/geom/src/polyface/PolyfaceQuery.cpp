@@ -1068,6 +1068,8 @@ MeshAnnotationVector &description    //!< (optional) array describing errors che
             size_t numParamIndex = vectors->m_paramIndex.size ();
             size_t numNormalIndex = vectors->m_normalIndex.size ();
             size_t numColorIndex = vectors->m_colorIndex.size ();
+            size_t numFaceIndex = vectors->m_faceIndex.size ();
+            size_t numAuxDataIndex = vectors->m_auxData.IsValid() ? vectors->m_auxData->GetIndices().size() : 0;
 
             description.Assert (numPointIndex == numPointIndex1, "PointIndexCount matches overall index count");
             if (vectors->m_pointIndex.Active ())
@@ -1078,19 +1080,31 @@ MeshAnnotationVector &description    //!< (optional) array describing errors che
                 description.Assert (numNormalIndex == numPointIndex, "NormalIndex().Active() but count does not match PointIndex().size()");
             if (vectors->m_paramIndex.Active ())
                 description.Assert (numParamIndex == numPointIndex, "ParamIndex().Active() but count does not match PointIndex().size()");
+            if (vectors->m_faceIndex.Active())
+                description.Assert(numFaceIndex == numPointIndex, "FaceIndex().Active() but count does not match PointIndex().size()");
+            if (vectors->m_auxData.IsValid())
+                description.Assert(numAuxDataIndex == numPointIndex, "AuxData is present but index count does not match PointIndex().size()");
             }
         // Don't attempt index access if early failures ...
         if (description.GetTotalFail () > 0)
             return true;
 
         Validate1BasedIndexArrayRange (description, "PointIndex",  GetPointIndexCP (), GetPointIndexCount (), GetPointCount (), true);
-        Validate1BasedIndexArrayRange (description, "NormalIndex", GetNormalIndexCP (), GetPointIndexCount (), GetNormalCount (), false);
-        Validate1BasedIndexArrayRange (description, "ParamIndex", GetParamIndexCP (), GetPointIndexCount (), GetParamCount (), false);
-        Validate1BasedIndexArrayRange (description, "ColorIndex", GetColorIndexCP (), GetPointIndexCount (), GetColorCount (), false);
+        Validate1BasedIndexArrayRange (description, "NormalIndex", GetNormalIndexCP (), GetNormalIndexCount (), GetNormalCount (), false);
+        Validate1BasedIndexArrayRange (description, "ParamIndex", GetParamIndexCP (), GetParamIndexCount (), GetParamCount (), false);
+        Validate1BasedIndexArrayRange (description, "ColorIndex", GetColorIndexCP (), GetColorIndexCount (), GetColorCount (), false);
+        Validate1BasedIndexArrayRange (description, "FaceIndex", GetFaceIndexCP (), GetFaceIndexCount (), GetFaceCount (), false);
 
-        Validate1BasedIndexArrayZeroStructure (description, "ParamIndex Zeros", GetParamIndexCP (), GetPointIndexCount (), GetPointIndexCP ());
-        Validate1BasedIndexArrayZeroStructure (description, "NormalIndex Zeros", GetNormalIndexCP (), GetPointIndexCount (), GetPointIndexCP ());
-        Validate1BasedIndexArrayZeroStructure (description, "ColorIndex Zeros", GetColorIndexCP (), GetPointIndexCount (), GetPointIndexCP ());
+        Validate1BasedIndexArrayZeroStructure (description, "NormalIndex Zeros", GetNormalIndexCP (), GetNormalIndexCount (), GetPointIndexCP ());
+        Validate1BasedIndexArrayZeroStructure (description, "ParamIndex Zeros", GetParamIndexCP (), GetParamIndexCount (), GetPointIndexCP ());
+        Validate1BasedIndexArrayZeroStructure (description, "ColorIndex Zeros", GetColorIndexCP (), GetColorIndexCount (), GetPointIndexCP ());
+        Validate1BasedIndexArrayZeroStructure (description, "FaceIndex Zeros", GetFaceIndexCP (), GetFaceIndexCount (), GetPointIndexCP ());
+
+        if (GetAuxDataCP().IsValid())
+            {
+            Validate1BasedIndexArrayRange(description, "AuxDataIndex", GetAuxDataCP()->GetIndices().data(), GetAuxDataCP()->GetIndices().size(), GetAuxDataCP()->GetChannels().GetValueCount(), false);
+            Validate1BasedIndexArrayZeroStructure(description, "AuxDataIndex Zeros", GetAuxDataCP()->GetIndices().data(), GetAuxDataCP()->GetIndices().size(), GetPointIndexCP());
+            }
         }
     size_t failures = description.GetTotalFail ();
     return failures > 0;
