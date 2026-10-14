@@ -3114,17 +3114,88 @@ TEST(Polyface,HandleInvalidMesh)
     bvector<DPoint3d> polygon { DPoint3d::From(1, 0, 0), DPoint3d::From(1, 1, 0), DPoint3d::From(0, 1, 0), DPoint3d::From(-1, 0, 0), DPoint3d::FromZero(), DPoint3d::From(0, -1, 0) };
     DVec3d normal = DVec3d::From(0, 0, 1);
 
-    // first invalid mesh has 4 triangles, but only one has normals
+    auto getInvalidMeshFileName = [](int index) -> BeFileName {
+        WString fileName;
+        fileName.Sprintf(L"invalidMesh%d", index);
+        BeFileName fbFileName;
+        BeTest::GetHost().GetDocumentsRoot(fbFileName);
+        fbFileName.AppendToPath(L"GeomLibsTestData");
+        fbFileName.AppendToPath(L"Polyface");
+        fbFileName.AppendToPath(L"validation");
+        fbFileName.AppendToPath(fileName.c_str());
+        fbFileName.AppendExtension(L"fb");
+        return fbFileName;
+    };
+
+    // this invalid mesh has 4 triangles, but only the first triangle has normals
     auto builder0 = CreateBuilder(false, false);
     builder0->AddTriangulation(polygon);
+    auto mesh0 = builder0->GetClientMeshPtr();
+    Check::True(mesh0.IsValid(), "expect mesh0 pointer");
+    Check::False(mesh0->HasIndexErrors(), "expect valid mesh0 to have no index errors");
     auto iNormal = builder0->FindOrAddNormal(normal);
     builder0->AddNormalIndexTriangle(iNormal, iNormal, iNormal);
-    auto mesh0 = builder0->GetClientMeshPtr();
-    Check::True(mesh0.IsValid(), "expect mesh pointer");
-    Check::True(mesh0->HasIndexErrors(), "expect invalid mesh to have index errors");
-    Check::False(mesh0->ReverseIndicesAllFaces(), "expect invalid mesh to return false"); // crashed before fix
+    Check::True(mesh0->HasIndexErrors(), "expect invalid mesh0 to have index errors");
+    Check::False(mesh0->ReverseIndicesAllFaces(), "expect reverse of invalid mesh0 to return false"); // crashed before fix
 
-    
+    // mesh with more auxData than needed
+    auto mesh1 = mesh0->Clone();
+    mesh1->Normal().clear(); mesh1->Normal().SetActive(false);
+    mesh1->NormalIndex().clear(); mesh1->NormalIndex().SetActive(false);
+    Check::False(mesh1->HasIndexErrors(), "expect valid mesh1 to have no index errors");
+    bvector<double> aux3dExtra { 1,2,3, 4,5,6, 7,8,9, 10,11,12, 13,14,15, 16,17,18, 19,20 };
+    Check::True(aux3dExtra.size() > 3 * polygon.size(), "expect overmany auxData");
+    bvector<PolyfaceAuxChannel::DataPtr> aux3dExtraData{ new PolyfaceAuxChannel::Data(0, std::move(aux3dExtra)) };
+    PolyfaceAuxChannelPtr channel0 = new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType::Point, "Aux3dExtra", "Time", std::move(aux3dExtraData));
+    Check::Size(channel0->GetBlockSize(), 3, "expect channel0 block size 3");
+    PolyfaceAuxData::Channels channels0;
+    channels0.push_back(channel0);
+    bvector<int32_t> auxIndex0 = mesh1->PointIndex();
+    PolyfaceAuxDataPtr auxData0(new PolyfaceAuxData(std::move(auxIndex0), std::move(channels0)));
+    mesh1->SetAuxData(auxData0);
+    Check::False(mesh1->HasIndexErrors(), "expect overmany auxData to have no index errors");
+    mesh1->Transform(Transform::FromScaleFactors(1, 2, 3)); // shouldn't crash
+
+    // mesh with less auxData than needed
+    auto mesh2 = mesh1->Clone();
+    mesh2->AuxData() = nullptr;
+    Check::False(mesh2->HasIndexErrors(), "expect valid mesh2 to have no index errors");
+    bvector<double> aux3dMissing { 1,2,3, 4,5,6, 7,8,9, 10,11,12, 13,14,15, 16 };
+    Check::True(aux3dMissing.size() < 3 * polygon.size(), "expect insufficient auxData");
+    bvector<PolyfaceAuxChannel::DataPtr> aux3dMissingData{ new PolyfaceAuxChannel::Data(0, std::move(aux3dMissing)) };
+    PolyfaceAuxChannelPtr channel1 = new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType::Point, "Aux3dMissing", "Time", std::move(aux3dMissingData));
+    Check::Size(channel1->GetBlockSize(), 3, "expect channel1 block size 3");
+    PolyfaceAuxData::Channels channels1;
+    channels1.push_back(channel1);
+    bvector<int32_t> auxIndex1 = mesh2->PointIndex();
+    PolyfaceAuxDataPtr auxData1(new PolyfaceAuxData(std::move(auxIndex1), std::move(channels1)));
+    mesh2->SetAuxData(auxData1);
+    Check::True(mesh2->HasIndexErrors(), "expect insufficient auxData to have index errors");
+    mesh2->Transform(Transform::FromScaleFactors(1, 2, 3)); // crashed before fix
+
+    // Now test flatbuffer conversion of the above meshes. Only mesh1 should succeed.
+    bvector<Byte> bytes0;
+    BentleyGeometryFlatBuffer::GeometryToBytes(*mesh0, bytes0);
+    if (Check::True(bytes0.empty(), "expect invalid mesh0 to fail to serialize to flatbuffers"))
+        Check::False(GTestFileOps::ReadAsBytes(getInvalidMeshFileName(0), bytes0), "expect invalid flatbuffers file0 to fail to deserialize");
+    else // generates invalid file in older version
+        Check::True(GTestFileOps::WriteToFile(bytes0, nullptr, nullptr, L"invalidMesh0", L"fb"), "write invalid fb file");
+
+    bvector<Byte> bytes1;
+    BentleyGeometryFlatBuffer::GeometryToBytes(*mesh1, bytes1);
+    Check::False(bytes1.empty(), "expect valid mesh1 to serialize to flatbuffers");
+    auto geom = BentleyGeometryFlatBuffer::BytesToGeometry(bytes1);
+    Check::True(geom.IsValid(), "deserialized bytes1");
+    auto mesh1RoundTrip = geom->GetAsPolyfaceHeader();
+    Check::True(mesh1RoundTrip.IsValid(), "reconstituted mesh1 is valid");
+    Check::True(mesh1->IsSameStructureAndGeometry(*mesh1RoundTrip, 0.0), "mesh1 successfully roundtrips through flatbuffers"); // actually doesn't compare auxData yet...
+
+    bvector<Byte> bytes2;
+    BentleyGeometryFlatBuffer::GeometryToBytes(*mesh2, bytes2);
+    if (Check::True(bytes2.empty(), "expect invalid mesh2 to fail to serialize to flatbuffers"))
+        Check::False(GTestFileOps::ReadAsBytes(getInvalidMeshFileName(2), bytes2), "expect invalid flatbuffers file2 to fail to deserialize");
+    else // generates invalid file in older version
+        Check::True(GTestFileOps::WriteToFile(bytes2, nullptr, nullptr, L"invalidMesh2", L"fb"), "write invalid fb file");
     }
 
 /*---------------------------------------------------------------------------------**//**
