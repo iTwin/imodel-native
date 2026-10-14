@@ -117,6 +117,11 @@ DgnGCS* GetGCSFromProject (DgnDbR project) override
     return DgnGCS::FromProject (project);
     }
 
+void InvalidateGCS(DgnDbR project) override
+    {
+    DgnGCS::InvalidateCache(project);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
