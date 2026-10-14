@@ -820,9 +820,6 @@ flatbuffers::Offset<BGFB::Polyface> WriteAsFBPolyfaceDirect(PolyfaceQueryCR pare
         return WriteAsFBPolyfaceDirect(*indexedMesh);
         }
 
-    if (parent.HasIndexErrors())
-        return 0; // index arrays aren't parallel
-
     int32_t numPerFace = parent.GetNumPerFace ();
     int32_t numPerRow = parent.GetNumPerRow ();
     bool    twoSided  = parent.GetTwoSided ();
@@ -1473,8 +1470,7 @@ static PolyfaceHeaderPtr ReadPolyfaceHeaderDirect (const BGFB::Polyface *fbPolyf
         }
 
     // imodel-native geomlibs does not currently support edgeMateIndex
-
-    return polyface->HasIndexErrors() ? nullptr : polyface;
+    return polyface;
     }
 
 // Fill the pointers in a carrier.
