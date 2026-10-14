@@ -353,15 +353,18 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
                 return ERROR;
                 }
 
-            // Extra physical columns are tolerated. Undoing a schema import reverts its ec_ rows but not the
-            // columns its DDL added, so the table can have columns no ec_Column row describes. They hold no
-            // data, and UpdateTable reuses them by name. Every mapped column must still exist (ECDb_0137).
+            // Extra physical columns are tolerated if they are unused shared columns. Undoing a schema import
+            // reverts its ec_ rows but not the columns its DDL added, and UpdateTable reuses them by name.
+            // Every mapped column must still exist (ECDb_0137).
             if (MaintainsDataTables() && nonVirtualColumnCount > (int) physicalColumns.size())
                 {
                 Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0126,
                     "DbTable '%s' has %d non-virtual columns, but the physical table has only %d columns.", table.GetName().c_str(), nonVirtualColumnCount, (int) physicalColumns.size());
                 return ERROR;
                 }
+
+            if (MaintainsDataTables() && !m_schemaImportContext.IsSemanticRebasing() && SUCCESS != ValidateUnmappedPhysicalColumns(table, physicalColumns, ECDbIssueId::ECDb_0126))
+                return ERROR;
 
             break;
             }
@@ -398,6 +401,9 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
                 return ERROR;
                 }
 
+            if (MaintainsDataTables() && !m_schemaImportContext.IsSemanticRebasing() && SUCCESS != ValidateUnmappedPhysicalColumns(table, physicalColumns, ECDbIssueId::ECDb_0130))
+                return ERROR;
+
             break;
             }
 
@@ -424,6 +430,9 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
                     "DbTable '%s' has %d non-virtual columns, but the physical table has only %d columns.", table.GetName().c_str(), nonVirtualColumnCount, (int) physicalColumns.size());
                 return ERROR;
                 }
+
+            if (MaintainsDataTables() && !m_schemaImportContext.IsSemanticRebasing() && SUCCESS != ValidateUnmappedPhysicalColumns(table, physicalColumns, ECDbIssueId::ECDb_0133))
+                return ERROR;
 
             break;
             }
@@ -471,6 +480,69 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
         {
         if (SUCCESS != ValidateDbTrigger(*trigger))
             return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// A physical column that no ec_Column row describes is left behind when a schema import is undone,
+// because the undo does not reverse DDL. A later import reuses such a column by name without
+// re-creating it, so only tolerate columns shaped exactly like ECDb creates shared columns:
+// <prefix><n> BLOB, with no NOT NULL, DEFAULT, PRIMARY KEY, UNIQUE index or FOREIGN KEY.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DbMapValidator::ValidateUnmappedPhysicalColumns(DbTable const& table, bvector<Utf8String> const& physicalColumns, ECN::IssueId const& issueId) const
+    {
+    bset<Utf8String, CompareIUtf8Ascii> mappedColumns;
+    for (DbColumn const* column : table.GetColumns())
+        mappedColumns.insert(column->GetName());
+
+    Utf8CP prefix = DbTable::GetSharedColumnNamePrefix(table.GetType());
+    const size_t prefixLen = strlen(prefix);
+    for (Utf8StringCR physicalColumn : physicalColumns)
+        {
+        if (mappedColumns.find(physicalColumn) != mappedColumns.end())
+            continue;
+
+        Utf8CP reason = nullptr;
+        if (physicalColumn.size() <= prefixLen || !physicalColumn.StartsWithIAscii(prefix) ||
+            physicalColumn.find_first_not_of("0123456789", prefixLen) != Utf8String::npos)
+            reason = "it is not named like a shared column";
+
+        if (reason == nullptr)
+            {
+            Statement stmt;
+            if (BE_SQLITE_OK != stmt.Prepare(GetECDb(), "SELECT [type], [notnull], [dflt_value], [pk] FROM pragma_table_xinfo(?) WHERE [name]=? COLLATE NOCASE"))
+                return ERROR;
+            stmt.BindText(1, table.GetName(), Statement::MakeCopy::No);
+            stmt.BindText(2, physicalColumn, Statement::MakeCopy::No);
+            if (BE_SQLITE_ROW != stmt.Step())
+                return ERROR;
+
+            if (!Utf8String(stmt.GetValueText(0)).EqualsIAscii(DbColumn::TypeToSql(DbColumn::Type::Any)) || stmt.GetValueInt(1) != 0 || !stmt.IsColumnNull(2) || stmt.GetValueInt(3) != 0)
+                reason = "its type or constraints differ from a shared column";
+            }
+
+        if (reason == nullptr)
+            {
+            Statement stmt;
+            if (BE_SQLITE_OK != stmt.Prepare(GetECDb(),
+                "SELECT 1 FROM pragma_index_list(?1) il JOIN pragma_index_info(il.[name]) ii WHERE il.[unique]=1 AND ii.[name]=?2 COLLATE NOCASE "
+                "UNION ALL SELECT 1 FROM pragma_foreign_key_list(?1) WHERE [from]=?2 COLLATE NOCASE"))
+                return ERROR;
+            stmt.BindText(1, table.GetName(), Statement::MakeCopy::No);
+            stmt.BindText(2, physicalColumn, Statement::MakeCopy::No);
+            if (BE_SQLITE_ROW == stmt.Step())
+                reason = "it is part of a unique index or foreign key";
+            }
+
+        if (reason != nullptr)
+            {
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, issueId,
+                "DbTable '%s' has physical column '%s' with no ec_Column row, which cannot be reused because %s.", table.GetName().c_str(), physicalColumn.c_str(), reason);
+            return ERROR;
+            }
         }
 
     return SUCCESS;
