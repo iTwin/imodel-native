@@ -1188,11 +1188,10 @@ void PolyfaceHeader::CopyFrom (PolyfaceQueryCR source)
     CopyAndActivate <uint32_t>      (m_intColor,    (uint32_t const*)source.GetIntColorCP (), source.GetColorCount ());
 
     CopyAndActivate <int>(m_pointIndex,     source.GetPointIndexCP (),  source.GetPointIndexCount ());
-    CopyAndActivate <int>(m_normalIndex,    source.GetNormalIndexCP (), source.GetPointIndexCount ());
-    CopyAndActivate <int>(m_paramIndex,     source.GetParamIndexCP (),  source.GetPointIndexCount ());
-    CopyAndActivate <int>(m_colorIndex,     source.GetColorIndexCP (),  source.GetPointIndexCount ());
-    CopyAndActivate <int>(m_faceIndex,      source.GetFaceIndexCP (),   source.GetPointIndexCount ());
-
+    CopyAndActivate <int>(m_normalIndex,    source.GetNormalIndexCP (), source.GetNormalIndexCount ());
+    CopyAndActivate <int>(m_paramIndex,     source.GetParamIndexCP (),  source.GetParamIndexCount ());
+    CopyAndActivate <int>(m_colorIndex,     source.GetColorIndexCP (),  source.GetColorIndexCount ());
+    CopyAndActivate <int>(m_faceIndex,      source.GetFaceIndexCP (),   source.GetFaceIndexCount ());
 
     CopyAndActivate <PolyfaceEdgeChain> (m_edgeChain,   source.GetEdgeChainCP (),      source.GetEdgeChainCount ());
 
@@ -1201,8 +1200,6 @@ void PolyfaceHeader::CopyFrom (PolyfaceQueryCR source)
     m_param.SetStructsPerRow (numPerRow);
     m_intColor.SetStructsPerRow (numPerRow);
     m_faceData.SetStructsPerRow (numPerRow);
-
-
 
     int numIndexPerRow = numPerFace;
     if (numIndexPerRow == 0)
@@ -1247,6 +1244,9 @@ void PolyfaceHeader::ReplicateMissingIndexArrays ()
         }
     }
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
 PolyfaceHeaderPtr PolyfaceQuery::CloneAsVariableSizeIndexed() const
     {
     PolyfaceHeaderPtr clone = PolyfaceHeader::CreateVariableSizeIndexed();
@@ -1261,13 +1261,15 @@ PolyfaceHeaderPtr PolyfaceQuery::CloneAsVariableSizeIndexed(PolyfaceQueryCR sour
     return source.CloneAsVariableSizeIndexed();
     }
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
 PolyfaceHeaderPtr PolyfaceQuery::Clone () const
     {
     PolyfaceHeaderPtr clone = PolyfaceHeader::New();
     clone->CopyFrom (*this);
     return clone;
     }
-
 
 template <typename T>
 static bool IsCompatibleActiveState (bool active, T const *source, size_t count)
@@ -1320,7 +1322,6 @@ static bool TestAndCopyOneBasedIndex (BlockedVectorInt &dest, const int *source,
     return true;
     }
 
-
 // Transfer all possible data (but doCopy param allows first-pass call to test compatibility without changing the destination)
 static bool DoContentTransfer (PolyfaceHeaderR dest, PolyfaceQueryCR source, bool doCopy)
     {
@@ -1332,21 +1333,18 @@ static bool DoContentTransfer (PolyfaceHeaderR dest, PolyfaceQueryCR source, boo
     if (source.GetTwoSided () != source.GetTwoSided ())
         return false;
 
-    size_t numIndex = source.GetPointIndexCount ();
-    if (!TestAndCopyOneBasedIndex (dest.PointIndex (), source.GetPointIndexCP (), numIndex, (int)dest.Point ().size (), doCopy))
+    if (!TestAndCopyOneBasedIndex (dest.PointIndex (), source.GetPointIndexCP (), source.GetPointIndexCount(), (int)dest.Point ().size (), doCopy))
         return false;
-    if (!TestAndCopyOneBasedIndex (dest.ParamIndex (), source.GetParamIndexCP (), numIndex, (int)dest.Param ().size (), doCopy))
+    if (!TestAndCopyOneBasedIndex (dest.ParamIndex (), source.GetParamIndexCP (), source.GetParamIndexCount(), (int)dest.Param ().size (), doCopy))
         return false;
-    if (!TestAndCopyOneBasedIndex (dest.NormalIndex (), source.GetNormalIndexCP (), numIndex, (int)dest.Normal ().size (), doCopy))
+    if (!TestAndCopyOneBasedIndex (dest.NormalIndex (), source.GetNormalIndexCP (), source.GetNormalIndexCount(), (int)dest.Normal ().size (), doCopy))
         return false;
-
-    size_t colorOffset = source.GetColorCount ();
-
-    if (!TestAndCopyOneBasedIndex (dest.ColorIndex (), source.GetColorIndexCP (), numIndex, (int)colorOffset, doCopy))
+    if (!TestAndCopyOneBasedIndex (dest.ColorIndex (), source.GetColorIndexCP (), source.GetColorIndexCount(), (int)dest.IntColor().size(), doCopy))
+        return false;
+    if (!TestAndCopyOneBasedIndex (dest.FaceIndex (), source.GetFaceIndexCP (), source.GetFaceIndexCount (), (int)dest.GetFaceCount (), doCopy))
         return false;
 
-    // Needs work -- what about normalPerVertex shared indexing?
-    // Needs work -- edge chains???
+    // Needs work: edge chains? auxData?
 
     if (!TestAndCopyBlockedData (dest.Point (), source.GetPointCP (), source.GetPointCount (), doCopy))
         return false;
@@ -1355,8 +1353,6 @@ static bool DoContentTransfer (PolyfaceHeaderR dest, PolyfaceQueryCR source, boo
     if (!TestAndCopyBlockedData (dest.Normal (), source.GetNormalCP (), source.GetNormalCount (), doCopy))
         return false;
     if (!TestAndCopyBlockedData (dest.IntColor (), source.GetIntColorCP (), source.GetColorCount (), doCopy))
-        return false;
-    if (!TestAndCopyOneBasedIndex (dest.FaceIndex (), source.GetFaceIndexCP (), source.GetFaceIndexCount (), (int)dest.GetFaceCount (), doCopy))
         return false;
     if (!TestAndCopyBlockedData (dest.FaceData (), source.GetFaceDataCP (), source.GetFaceCount (), doCopy))
         return false;
@@ -1377,8 +1373,6 @@ bool PolyfaceHeader::AddIfMatchedLayout (PolyfaceQueryCR source)
         return false;
     return DoContentTransfer (*this, source, true);
     }
-
-
 
 // TRUE if any pair of the 4 indices is identical.  (Caller applies abs!!)
 static bool IsDegenerateQuad (int i0, int i1, int i2, int i3)

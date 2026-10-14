@@ -564,7 +564,7 @@ bool PolyfaceQuery::TryGetNormalAtReadIndex (size_t readIndex, DVec3dR data) con
     int32_t const*            normalIndex;
     DVec3dCP                normals;
 
-    if (readIndex >= GetPointIndexCount() ||
+    if (readIndex >= GetNormalIndexCount() ||
         NULL == (normalIndex = GetNormalIndexCP()) ||
         NULL == (normals = GetNormalCP()))
         return false;
@@ -589,7 +589,7 @@ bool PolyfaceQuery::TryGetParamAtReadIndex (size_t readIndex, DPoint2dR data) co
     int32_t const*            paramIndex;
     DPoint2dCP              params;
 
-    if (readIndex >= GetPointIndexCount() ||
+    if (readIndex >= GetParamIndexCount() ||
         NULL == (paramIndex = GetParamIndexCP()) ||
         NULL == (params = GetParamCP()))
         return false;
@@ -614,7 +614,7 @@ bool PolyfaceQuery::TryGetIntColorAtReadIndex (size_t readIndex, uint32_t& data)
     int32_t const*          colorIndex;
     uint32_t const*         intColors;
 
-    if (readIndex >= GetPointIndexCount() ||
+    if (readIndex >= GetColorIndexCount() ||
         NULL == (colorIndex = GetColorIndexCP()) ||
         NULL == (intColors = GetIntColorCP()))
         return false;
@@ -638,7 +638,7 @@ bool PolyfaceQuery::TryGetFacetFaceDataAtReadIndex (size_t readIndex, FacetFaceD
     int32_t const*            faceIndex;
     FacetFaceDataCP         faceData;
 
-    if (readIndex >= GetPointIndexCount() ||
+    if (readIndex >= GetFaceIndexCount() ||
         NULL == (faceIndex = GetFaceIndexCP()) ||
         NULL == (faceData = GetFaceDataCP()))
         return false;
@@ -991,28 +991,21 @@ bool PolyfaceQuery::IsSameStructureAndGeometry (PolyfaceQueryCR other, double to
     if (!TaggedNumericData::AreSameStructureAndGeometry(numericTagsA, numericTagsB, tolerance))
         return false;
 
-    size_t numA = GetPointIndexCount ();
-    size_t numB = other.GetPointIndexCount ();
     if (checkIndices)
         {
-        if (!SameIndexArray (
-              GetPointIndexCP (), numA, other.GetPointIndexCP (), numB))
+        if (!SameIndexArray(GetPointIndexCP(), GetPointIndexCount(), other.GetPointIndexCP (), other.GetPointIndexCount()))
             return false;
 
-        if (!SameIndexArray (
-              GetNormalIndexCP (), numA, other.GetNormalIndexCP (), numB))
+        if (!SameIndexArray(GetNormalIndexCP(), GetNormalIndexCount(), other.GetNormalIndexCP(), other.GetNormalIndexCount()))
             return false;
 
-        if (!SameIndexArray (
-              GetParamIndexCP (), numA, other.GetParamIndexCP (), numB))
+        if (!SameIndexArray(GetParamIndexCP(), GetParamIndexCount(), other.GetParamIndexCP(), other.GetParamIndexCount()))
             return false;
 
-        if (!SameIndexArray (
-              GetColorIndexCP (), numA, other.GetColorIndexCP (), numB))
+        if (!SameIndexArray(GetColorIndexCP(), GetColorIndexCount(), other.GetColorIndexCP(), other.GetColorIndexCount()))
             return false;
 
-        if (!SameIndexArray (
-              GetFaceIndexCP (), GetFaceIndexCount (), other.GetFaceIndexCP (), other.GetFaceIndexCount ()))
+        if (!SameIndexArray(GetFaceIndexCP(), GetFaceIndexCount(), other.GetFaceIndexCP(), other.GetFaceIndexCount()))
             return false;
         }
     return true;

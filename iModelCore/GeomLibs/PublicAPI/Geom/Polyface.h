@@ -737,13 +737,13 @@ GEOMDLLIMPEXP size_t                        GetColorCount () const;
 GEOMDLLIMPEXP size_t                        GetFaceCount () const;
 //! Return the number of point indices.
 GEOMDLLIMPEXP size_t                        GetPointIndexCount () const;
-//! Return the number of normal indices.
+//! Return the number of normal indices. Nominally the same as point index count.
 GEOMDLLIMPEXP size_t                        GetNormalIndexCount() const;
-//! Return the number of uv param indices.
+//! Return the number of uv param indices. Nominally the same as point index count.
 GEOMDLLIMPEXP size_t                        GetParamIndexCount() const;
-//! Return the number of color indices.
+//! Return the number of color indices. Nominally the same as point index count.
 GEOMDLLIMPEXP size_t                        GetColorIndexCount() const;
-//! Return the number of face data indices
+//! Return the number of face data indices. Nominally the same as point index count.
 GEOMDLLIMPEXP size_t                        GetFaceIndexCount () const;
 //! Return the number of edge chains.
 GEOMDLLIMPEXP size_t                        GetEdgeChainCount () const;
