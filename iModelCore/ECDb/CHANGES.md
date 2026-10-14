@@ -7,6 +7,12 @@ This document including important changes to syntax or file format.
 | Profile | `4.0.0.5` |
 | ECSQL   | `2.0.4.2` |
 
+## `10/13/2026`: `IdSet` accepts ids with the high bit set
+* The `IdSet` virtual table now accepts valid ids at or above `0x8000000000000000`, such as element ids reserved by schema synchronization (`0xfffff6…`). Previously, binding such ids failed with `IdSet vtab: The element with index N is invalid`, and `id = ?` / `id IN (...)` filters on `IdSet` returned no rows for them.
+* Applies to ids bound through `ECSqlStatement` array binding, concurrent query `BindIdSet`, and JSON arrays passed as text.
+* Behavior change: a negative integer in an `IdSet` JSON array is now read as the id with the same bits. `IdSet('[-1]')` returns `0xffffffffffffffff` instead of failing. `0`, non-integer numbers, and negative numbers written as strings are still rejected.
+* ECSql version is unchanged.
+
 ## `09/25/2026`: Opt-in fallback for NULL navigation relationship class ids
 * ECSql version change `2.0.4.1` -> `2.0.4.2`.
 * `ECSQLOPTIONS NAV_REL_CLASSID_FALLBACK` makes end-table relationship queries treat a non-NULL navigation id with a NULL `RelECClassId` as the relationship declared by the navigation property.
