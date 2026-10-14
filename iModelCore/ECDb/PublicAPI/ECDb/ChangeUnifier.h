@@ -29,8 +29,9 @@ struct ChangeUnifierImpl;
 //!   before any value is stored. A name also matches the relationship end properties derived from it, e.g. "Source"
 //!   keeps SourceECInstanceId and SourceECClassId, "Target" keeps TargetECInstanceId and TargetECClassId.
 //! - Merged data is held in a hash map. When its estimated size exceeds Options::m_memoryBudgetBytes, the map is sorted
-//!   and written as a run to a temporary file next to the ECDb file. The runs and the in-memory remainder are k-way merged
-//!   when stepping starts. Spill files are deleted by Close() and by the destructor.
+//!   and written as a run to a temporary file (BeSQLite::TempFile: SQLite's temp directory, removed by the operating
+//!   system even if the process is killed). The runs and the in-memory remainder are k-way merged when stepping starts.
+//!   Close() and the destructor delete the file.
 //! - Property values are rendered with ECSqlRowAdaptor using the JsReadOptions passed to AppendFrom, exactly as
 //!   the rows of a ChangesetReader are rendered to JavaScript.
 //! - Not thread-safe.

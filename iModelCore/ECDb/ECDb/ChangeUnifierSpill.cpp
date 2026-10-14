@@ -364,26 +364,20 @@ DbResult UnifierSpillFile::WriteRun(std::vector<KeyedEntry> const& sorted, Utf8S
     if (sorted.empty())
         return BE_SQLITE_OK;
     if (!m_file.IsOpen()) {
-        BeAssert(!m_fileNameBase.empty());
-        BeGuid guid(true);
-        m_fileName = BeFileName(Utf8String(m_fileNameBase + "-" + guid.ToString() + "-unifier.spill"));
-        if (BeFileStatus::Success != m_file.Create(m_fileName.GetNameUtf8(), true)) {
-            err.Sprintf("ChangeUnifier: failed to create spill file '%s'.", m_fileName.GetNameUtf8().c_str());
+        const DbResult rc = m_file.Open();
+        if (BE_SQLITE_OK != rc) {
+            err.Sprintf("ChangeUnifier: failed to create spill file (error %d).", (int) rc);
             return BE_SQLITE_CANTOPEN;
         }
         m_fileSize = 0;
     }
     Cursor run;
     run.m_filePos = m_fileSize;
-    if (BeFileStatus::Success != m_file.SetPointer(static_cast<int64_t>(m_fileSize), BeFileSeekOrigin::Begin)) {
-        err = "ChangeUnifier: failed to seek in spill file.";
-        return BE_SQLITE_IOERR;
-    }
     m_writeBuffer.clear();
     for (size_t i = 0; i < sorted.size(); ++i) {
         WriteRecord(m_writeBuffer, sorted[i]);
         if (m_writeBuffer.size() >= SpillWriteChunkBytes || i + 1 == sorted.size()) {
-            if (BeFileStatus::Success != m_file.WriteAll(m_writeBuffer.data(), m_writeBuffer.size())) {
+            if (BE_SQLITE_OK != m_file.Write(m_writeBuffer.data(), m_writeBuffer.size(), m_fileSize)) {
                 err = "ChangeUnifier: failed to write spill file.";
                 return BE_SQLITE_IOERR;
             }
@@ -414,16 +408,8 @@ bool UnifierSpillFile::Fill(Cursor& cursor, size_t need) {
     const uint64_t toRead = std::min<uint64_t>(left, std::max<uint64_t>(need - available, static_cast<uint64_t>(m_readChunkBytes)));
     const size_t oldSize = cursor.m_buffer.size();
     cursor.m_buffer.resize(oldSize + static_cast<size_t>(toRead));
-    if (BeFileStatus::Success != m_file.SetPointer(static_cast<int64_t>(cursor.m_filePos), BeFileSeekOrigin::Begin))
+    if (BE_SQLITE_OK != m_file.Read(cursor.m_buffer.data() + oldSize, static_cast<size_t>(toRead), cursor.m_filePos))
         return false;
-    size_t done = 0;
-    while (done < toRead) {
-        uint32_t chunk = static_cast<uint32_t>(std::min<uint64_t>(toRead - done, 0x40000000ull));
-        uint32_t bytesRead = 0;
-        if (BeFileStatus::Success != m_file.Read(cursor.m_buffer.data() + oldSize + done, &bytesRead, chunk) || bytesRead == 0)
-            return false;
-        done += bytesRead;
-    }
     cursor.m_filePos += toRead;
     return true;
 }
@@ -491,13 +477,8 @@ void UnifierSpillFile::Delete() {
     m_heap = decltype(m_heap)();
     m_cursors.clear();
     m_writeBuffer.clear();
-    if (m_file.IsOpen())
-        m_file.Close();
-    if (!m_fileName.empty()) {
-        if (m_fileName.DoesPathExist() && BeFileNameStatus::Success != m_fileName.BeDeleteFile())
-            LOG.warningv("ChangeUnifier: failed to delete spill file '%s'.", m_fileName.GetNameUtf8().c_str());
-        m_fileName.clear();
-    }
+    m_file.Close();
+    m_fileSize = 0;
 }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

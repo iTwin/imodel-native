@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include <ECDb/ECDbApi.h>
+#include <BeSQLite/TempFile.h>
 #include <queue>
 #include <vector>
 
@@ -88,8 +89,8 @@ struct UnifiedValueCodec final {
 };
 
 //=======================================================================================
-// External sort storage of the ChangeUnifier: sorted runs of entries written to one temporary
-// file, read back as a single stream in key order (k-way merge).
+// External sort storage of the ChangeUnifier: sorted runs of entries written to one TempFile, which the
+// operating system deletes even if the process is killed, read back as a single stream in key order (k-way merge).
 // @remarks Entries with equal keys are returned in the order of the runs that contain them, i.e.
 // in change order, so that the caller can fold them with its regular merge.
 // @bsiclass
@@ -115,9 +116,7 @@ private:
         }
     };
 
-    Utf8String m_fileNameBase; //!< the spill file is created as <base>-<guid>-unifier.spill
-    BeFileName m_fileName;
-    BeFile m_file;
+    TempFile m_file;
     uint64_t m_fileSize = 0;
     std::vector<Cursor> m_cursors; //!< one per run
     std::priority_queue<HeapItem, std::vector<HeapItem>, HeapGreater> m_heap;
@@ -135,9 +134,6 @@ public:
 
     bool HasRuns() const { return !m_cursors.empty(); }
 
-    //! Sets where the spill file is created, e.g. ECDb::GetTempFileBaseName(). Call before the first WriteRun.
-    void SetFileNameBase(Utf8StringCR base) { m_fileNameBase = base; }
-
     //! Appends @p sorted as a new run. The file is created on the first call.
     //! @return BE_SQLITE_OK, BE_SQLITE_CANTOPEN or BE_SQLITE_IOERR with @p err set.
     DbResult WriteRun(std::vector<KeyedEntry> const& sorted, Utf8StringR err);
@@ -153,7 +149,7 @@ public:
     //! next record, so passing the same object every time avoids allocations. Requires PeekKey() != nullptr.
     BentleyStatus Pop(KeyedEntry& out, Utf8StringR err);
 
-    //! Closes and deletes the file. Idempotent.
+    //! Closes the file, which deletes it. Idempotent.
     void Delete();
 };
 

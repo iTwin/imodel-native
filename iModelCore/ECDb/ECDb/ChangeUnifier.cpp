@@ -451,7 +451,6 @@ public:
             return Fail(BE_SQLITE_MISUSE, "ChangeUnifier: reader is not open.");
         if (m_ecdb == nullptr) {
             m_ecdb = ecdb;
-            m_spill.SetFileNameBase(ecdb->GetTempFileBaseName());
         } else if (m_ecdb != ecdb) {
             // merge keys, table and class caches are only meaningful within one ECDb
             m_lastError = "ChangeUnifier: all readers must use the same ECDb.";
