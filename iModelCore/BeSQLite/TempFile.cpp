@@ -9,8 +9,9 @@
 
 BEGIN_BENTLEY_SQLITE_NAMESPACE
 
-// The VFS takes int sizes; larger requests are split.
-static constexpr size_t s_maxChunkBytes = 1 << 30;
+// SQLite only asks a VFS for page-sized transfers (64 KiB at most), and the Unix VFS handles at most 128 KiB per call,
+// so larger requests are split.
+static constexpr size_t s_maxChunkBytes = 64 * 1024;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod

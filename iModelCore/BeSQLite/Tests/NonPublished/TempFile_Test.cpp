@@ -29,7 +29,8 @@ TEST(TempFile, RoundTripAndCleanup)
     ASSERT_TRUE(file.IsOpen());
     EXPECT_EQ(BE_SQLITE_MISUSE, file.Open());
 
-    std::vector<Byte> first(100000), second(5000);
+    // Larger than what one VFS call can transfer, so the helper has to split it.
+    std::vector<Byte> first(300000), second(5000);
     for (size_t i = 0; i < first.size(); ++i)
         first[i] = (Byte) (i * 7);
     for (size_t i = 0; i < second.size(); ++i)
