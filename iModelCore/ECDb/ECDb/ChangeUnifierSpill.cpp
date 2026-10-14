@@ -4,7 +4,10 @@
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 #include "ChangeUnifierSpill.h"
+#include <algorithm>
+#include <cmath>
 #include <cstring>
+#include <limits>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -272,6 +275,267 @@ BentleyStatus ReadRecord(Byte const* data, size_t size, KeyedEntry& record) {
 
 } // namespace
 
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct RenderedValue::Node final {
+    enum class Kind : uint8_t { Null, Bool, Int64, UInt64, Double, String, Binary, Object, Array };
+
+    Kind m_kind = Kind::Null;
+    bool m_bool = false;
+    int64_t m_int64 = 0;
+    uint64_t m_uint64 = 0;
+    double m_double = 0;
+    Utf8String m_string;
+    std::vector<Byte> m_binary;
+    std::vector<std::pair<Utf8String, std::unique_ptr<Node>>> m_members;
+    std::vector<std::unique_ptr<Node>> m_items;
+
+    void Reset() {
+        m_kind = Kind::Null;
+        m_string.clear();
+        m_binary.clear();
+        m_members.clear();
+        m_items.clear();
+    }
+    bool IsNumeric() const { return m_kind == Kind::Int64 || m_kind == Kind::UInt64 || m_kind == Kind::Double; }
+    double AsDouble() const {
+        switch (m_kind) {
+            case Kind::Int64: return static_cast<double>(m_int64);
+            case Kind::UInt64: return static_cast<double>(m_uint64);
+            default: return m_double;
+        }
+    }
+    Node const* FindMember(Utf8CP name) const {
+        if (m_kind == Kind::Object) {
+            for (auto const& member : m_members)
+                if (member.first.Equals(name))
+                    return member.second.get();
+        }
+        return nullptr;
+    }
+};
+
+namespace {
+
+//=======================================================================================
+// JsValueRef over a RenderedValue::Node. Numbers are classified like BeRapidJsonValue does, so that
+// UnifiedValueCodec stores the same kinds as it did for a BeJsDocument.
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct RenderedValueRef final : JsValueRef {
+private:
+    using Node = RenderedValue::Node;
+    using Kind = Node::Kind;
+    Node* m_node; //!< nullptr for a missing member
+
+    template <typename T> static T IntegralFromDouble(double d) {
+        if (std::isnan(d))
+            return 0;
+        if (d <= static_cast<double>(std::numeric_limits<T>::lowest()))
+            return std::numeric_limits<T>::lowest();
+        if (d >= static_cast<double>(std::numeric_limits<T>::max()))
+            return std::numeric_limits<T>::max();
+        return static_cast<T>(d);
+    }
+    Kind GetKind() const { return m_node == nullptr ? Kind::Null : m_node->m_kind; }
+    Node& Set(Kind kind) {
+        m_node->Reset();
+        m_node->m_kind = kind;
+        return *m_node;
+    }
+
+    ValueRefType GetType() const override { return ValueRefType::RapidJson; } // GetType only serves debugging
+    JsValueRef& GetMember(Utf8CP name, bool) override {
+        if (GetKind() != Kind::Object)
+            Set(Kind::Object);
+        for (auto& member : m_node->m_members) {
+            if (member.first.Equals(name))
+                return *new RenderedValueRef(member.second.get());
+        }
+        m_node->m_members.emplace_back(name, std::make_unique<Node>());
+        return *new RenderedValueRef(m_node->m_members.back().second.get());
+    }
+    JsValueRef const& GetConstMember(Utf8CP name) const override {
+        return *new RenderedValueRef(m_node == nullptr ? nullptr : const_cast<Node*>(m_node->FindMember(name)));
+    }
+    JsValueRef& GetArrayMember(ArrayIndex index) override {
+        if (GetKind() != Kind::Array)
+            Set(Kind::Array);
+        if (index >= m_node->m_items.size()) {
+            m_node->m_items.push_back(std::make_unique<Node>());
+            index = static_cast<ArrayIndex>(m_node->m_items.size() - 1);
+        }
+        return *new RenderedValueRef(m_node->m_items[index].get());
+    }
+    JsValueRef const& GetConstArrayMember(ArrayIndex index) const override {
+        Node* item = (GetKind() == Kind::Array && index < m_node->m_items.size()) ? m_node->m_items[index].get() : nullptr;
+        return *new RenderedValueRef(item);
+    }
+    void SetNull() override { Set(Kind::Null); }
+    void removeIndex(ArrayIndex index) override {
+        if (GetKind() == Kind::Array && index < m_node->m_items.size())
+            m_node->m_items.erase(m_node->m_items.begin() + index);
+    }
+    void removeMember(Utf8CP name) override {
+        if (GetKind() != Kind::Object)
+            return;
+        auto& members = m_node->m_members;
+        members.erase(std::remove_if(members.begin(), members.end(), [&](auto const& member) { return member.first.Equals(name); }), members.end());
+    }
+    bool isMember(Utf8CP name) const override { return m_node != nullptr && m_node->FindMember(name) != nullptr; }
+    bool hasMember(Utf8CP name) const override { return isMember(name); }
+    bool isNull() const override { return GetKind() == Kind::Null; }
+    bool isBool() const override { return GetKind() == Kind::Bool; }
+    bool isNumeric() const override { return m_node != nullptr && m_node->IsNumeric(); }
+    bool isString() const override { return GetKind() == Kind::String; }
+    bool isArray() const override { return GetKind() == Kind::Array; }
+    bool isObject() const override { return GetKind() == Kind::Object; }
+    bool isDate() const override { return false; }
+    bool isArrayBuffer() const override { return false; }
+    bool isTypedArray() const override { return false; }
+    bool isFunction() const override { return false; }
+    bool isPromise() const override { return false; }
+    bool isDataView() const override { return false; }
+    bool isBuffer() const override { return false; }
+    bool isExternal() const override { return false; }
+    void toArray() override {
+        if (isNull())
+            Set(Kind::Array);
+    }
+    void toObject() override {
+        if (isNull())
+            Set(Kind::Object);
+    }
+    uint32_t size() const override {
+        switch (GetKind()) {
+            case Kind::Array: return static_cast<uint32_t>(m_node->m_items.size());
+            case Kind::Object: return static_cast<uint32_t>(m_node->m_members.size());
+            default: return 0;
+        }
+    }
+    Utf8CP ToUtf8CP() const override { return isString() ? m_node->m_string.c_str() : ""; }
+    Utf8String ToJsonString() const override { return ToUtf8CP(); }
+    void operator=(double value) override { Set(Kind::Double).m_double = value; }
+    void operator=(bool value) override { Set(Kind::Bool).m_bool = value; }
+    void operator=(int32_t value) override { Set(Kind::Int64).m_int64 = value; }
+    void operator=(uint32_t value) override { Set(Kind::Int64).m_int64 = value; }
+    void operator=(int64_t value) override { Set(Kind::Int64).m_int64 = value; }
+    void operator=(uint64_t value) override {
+        if (value <= static_cast<uint64_t>(std::numeric_limits<int64_t>::max()))
+            Set(Kind::Int64).m_int64 = static_cast<int64_t>(value);
+        else
+            Set(Kind::UInt64).m_uint64 = value;
+    }
+    void operator=(Utf8CP value) override { Set(Kind::String).m_string = value; }
+    double GetDouble(double defVal) const override { return isNumeric() ? m_node->AsDouble() : defVal; }
+    bool GetBoolean(bool defVal) const override {
+        switch (GetKind()) {
+            case Kind::Null: return defVal;
+            case Kind::Bool: return m_node->m_bool;
+            case Kind::String: return !m_node->m_string.empty();
+            default: return isNumeric() ? m_node->AsDouble() != 0.0 : true;
+        }
+    }
+    int32_t GetInt(int32_t defVal) const override {
+        if (!isNumeric())
+            return defVal;
+        if (GetKind() == Kind::Int64 && m_node->m_int64 >= std::numeric_limits<int32_t>::min() && m_node->m_int64 <= std::numeric_limits<int32_t>::max())
+            return static_cast<int32_t>(m_node->m_int64);
+        return IntegralFromDouble<int32_t>(m_node->AsDouble());
+    }
+    uint32_t GetUInt(uint32_t defVal) const override {
+        if (!isNumeric())
+            return defVal;
+        if (GetKind() == Kind::Int64 && m_node->m_int64 >= 0 && m_node->m_int64 <= std::numeric_limits<uint32_t>::max())
+            return static_cast<uint32_t>(m_node->m_int64);
+        return IntegralFromDouble<uint32_t>(m_node->AsDouble());
+    }
+    int64_t GetInt64(int64_t defVal) const override {
+        if (!isNumeric())
+            return defVal;
+        return GetKind() == Kind::Int64 ? m_node->m_int64 : IntegralFromDouble<int64_t>(m_node->AsDouble());
+    }
+    uint64_t GetUInt64(uint64_t defVal) const override {
+        switch (GetKind()) {
+            case Kind::UInt64: return m_node->m_uint64;
+            case Kind::Int64: return m_node->m_int64 >= 0 ? static_cast<uint64_t>(m_node->m_int64) : defVal;
+            case Kind::Double: {
+                const double d = m_node->m_double;
+                return (d >= 0.0 && d < 0x1p64 && d == std::floor(d)) ? static_cast<uint64_t>(d) : defVal;
+            }
+            default: return defVal;
+        }
+    }
+    NumericKind GetNumericKind() const override {
+        switch (GetKind()) {
+            case Kind::Int64: return NumericKind::Int64;
+            case Kind::UInt64: return NumericKind::UInt64;
+            case Kind::Double: return NumericKind::Double;
+            default: return NumericKind::NotNumeric;
+        }
+    }
+    bool isBinary() const override { return GetKind() == Kind::Binary; }
+    BentleyStatus GetBinary(std::vector<Byte>& dest) const override {
+        if (!isBinary()) {
+            dest.clear();
+            return ERROR;
+        }
+        dest = m_node->m_binary;
+        return SUCCESS;
+    }
+    BentleyStatus GetBinary(ByteStream& dest) const override {
+        dest.clear();
+        if (!isBinary())
+            return ERROR;
+        dest.Append(m_node->m_binary.data(), static_cast<uint32_t>(m_node->m_binary.size()));
+        return SUCCESS;
+    }
+    void SetBinary(Byte const* data, size_t size) override { Set(Kind::Binary).m_binary.assign(data, data + size); }
+    bool ForEachProperty(std::function<bool(Utf8CP name, BeJsConst)> fn) const override {
+        if (isObject()) {
+            for (auto const& member : m_node->m_members) {
+                if (fn(member.first.c_str(), BeJsConst(*new RenderedValueRef(member.second.get()))))
+                    return true;
+            }
+        }
+        return false;
+    }
+    bool ForEachArrayMember(std::function<bool(ArrayIndex, BeJsConst)> fn) const override {
+        if (isArray()) {
+            for (size_t i = 0; i < m_node->m_items.size(); ++i) {
+                if (fn(static_cast<ArrayIndex>(i), BeJsConst(*new RenderedValueRef(m_node->m_items[i].get()))))
+                    return true;
+            }
+        }
+        return false;
+    }
+    bool ForEachArrayMemberValue(std::function<bool(ArrayIndex, BeJsValue)> fn) override {
+        if (isArray()) {
+            for (size_t i = 0; i < m_node->m_items.size(); ++i) {
+                if (fn(static_cast<ArrayIndex>(i), BeJsValue(*new RenderedValueRef(m_node->m_items[i].get()))))
+                    return true;
+            }
+        }
+        return false;
+    }
+    Utf8String Stringify(StringifyFormat format) const override {
+        BeJsDocument doc;
+        doc.From(BeJsConst(*new RenderedValueRef(m_node)));
+        return doc.Stringify(format);
+    }
+
+public:
+    explicit RenderedValueRef(Node* node) : m_node(node) {}
+};
+
+} // namespace
+
+RenderedValue::RenderedValue() : m_root(std::make_unique<Node>()) {}
+RenderedValue::~RenderedValue() {}
+BeJsValue RenderedValue::Root() { return BeJsValue(*new RenderedValueRef(m_root.get())); }
+void RenderedValue::Clear() { m_root->Reset(); }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -305,7 +569,8 @@ void UnifiedValueCodec::Encode(std::vector<Byte>& out, BeJsConst val) {
             }
         }
     }
-    // isBinary must be checked before isString: a rapidjson document stores binary data as a base64 string with a header.
+    // RenderedValue keeps binary distinct from strings; with a BeJsValue that stores binary as a base64 string with a
+    // header (rapidjson, JsonCpp), checking isBinary first decodes that string as binary.
     if (val.isBinary()) {
         std::vector<Byte> data;
         val.GetBinary(data);

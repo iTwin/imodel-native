@@ -70,13 +70,7 @@ private:
     KeyedEntry m_merged; //!< result of the current Step; kept so the spill merge can reuse its buffers
     KeyedEntry m_next; //!< entry with the same key as m_merged, folded into it
 
-    // rapidjson never returns memory to its pool allocator, so the scratch document is dropped once it has rendered
-    // this many values or about this many bytes; the memory budget does not cover it
-    static constexpr uint32_t ScratchReuseLimit = 4096;
-    static constexpr size_t ScratchByteLimit = 1024 * 1024;
-    std::unique_ptr<BeJsDocument> m_scratch;
-    uint32_t m_scratchUses = 0;
-    size_t m_scratchBytes = 0;
+    RenderedValue m_rendered; //!< the property being read; cleared before each one, which frees the previous value
 
 private:
     DbResult Fail(DbResult rc, Utf8StringCR msg) {
@@ -216,26 +210,19 @@ private:
                 continue;
             const bool isClassIdProp = i == ChangesetReader::ClassIdColumn;
 
-            if (m_scratch == nullptr) {
-                m_scratch = std::make_unique<BeJsDocument>();
-                m_scratchUses = 0;
-                m_scratchBytes = 0;
-            }
-            if (SUCCESS != adaptor.RenderRowAsObject(*m_scratch, SingleValueRow(val))) {
+            m_rendered.Clear();
+            if (SUCCESS != adaptor.RenderRowAsObject(m_rendered.Root(), SingleValueRow(val))) {
                 err.Sprintf("ChangeUnifier: failed to render property '%s'.", propName.c_str());
                 return ERROR;
             }
-            m_scratch->ForEachProperty([&](Utf8CP name, BeJsConst member) {
+            m_rendered.Root().ForEachProperty([&](Utf8CP name, BeJsConst member) {
                 UnifiedProp unifiedProp;
                 unifiedProp.m_nameId = Intern(name);
                 unifiedProp.m_isClassId = isClassIdProp;
                 UnifiedValueCodec::Encode(unifiedProp.m_value, member);
-                m_scratchBytes += unifiedProp.m_value.size(); // about the size of the rendered value
                 entry.m_props.push_back(std::move(unifiedProp));
                 return false;
             });
-            if (++m_scratchUses >= ScratchReuseLimit || m_scratchBytes >= ScratchByteLimit)
-                m_scratch.reset(); // also drops an oversized value right away
         }
         key.m_stage = static_cast<uint8_t>(stage == Changes::Change::Stage::New ? 1 : 0);
         return SUCCESS;

@@ -5,6 +5,7 @@
 #pragma once
 #include <ECDb/ECDbApi.h>
 #include <BeSQLite/TempFile.h>
+#include <memory>
 #include <queue>
 #include <vector>
 
@@ -75,8 +76,32 @@ struct UnifiedEntry final {
 using KeyedEntry = std::pair<UnifiedKey, UnifiedEntry>;
 
 //=======================================================================================
+// A JSON-like value that ECSqlRowAdaptor renders one property into, through BeJsValue.
+// @remarks Unlike a BeJsDocument, it keeps binary data as binary instead of a string with the
+// "encoding=base64;" header, so a string value that starts with that header stays a string.
+// Clear() releases the memory of the previous value.
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct RenderedValue final {
+    struct Node;
+
+private:
+    std::unique_ptr<Node> m_root;
+
+public:
+    RenderedValue();
+    ~RenderedValue();
+    RenderedValue(RenderedValue const&) = delete;
+    RenderedValue& operator=(RenderedValue const&) = delete;
+
+    //! The root value, to render into and to read back.
+    BeJsValue Root();
+    void Clear();
+};
+
+//=======================================================================================
 // Encodes rendered JSON values into owned bytes and decodes them as IInstanceWriter events.
-// @remarks Rendering once through ECSqlRowAdaptor into a BeJsDocument and storing the result
+// @remarks Rendering once through ECSqlRowAdaptor into a RenderedValue and storing the result
 // as tagged bytes keeps the unifier independent of Napi, gives an exact memory estimate, and
 // the bytes can be written to spill files as-is. Decoding emits the same value kinds that
 // ECSqlRowAdaptor produced (int64 stays int64, blobs stay binary, ...), so a writer can rebuild
