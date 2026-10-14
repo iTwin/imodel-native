@@ -6557,7 +6557,7 @@ BASEGEOCOORD_EXPORTED StatusInt AddVerticalDatumTransform(VerticalTransformPtr& 
 *               GEOCOORDERR_NoTransforms - no transforms were found
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt GetVerticalDatumTransforms(bvector<VerticalTransformPtr>& transforms, const Utf8String& from, const Utf8String& to, const GeoPoint* latLong);
+BASEGEOCOORD_EXPORTED StatusInt GetVerticalDatumTransforms(bvector<VerticalTransformPtr>& transforms, const Utf8String& from, const Utf8String& to, const GeoPoint* latLong);
 
 /*---------------------------------------------------------------------------------**//**
 * Check to see if two vertical datums are equivalent. Checks if the names are
