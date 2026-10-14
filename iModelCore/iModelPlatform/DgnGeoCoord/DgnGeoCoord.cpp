@@ -5377,6 +5377,13 @@ DgnGCSP         DgnGCS::FromProject(DgnDbR project)
     return gcs;
     }
 
+void DgnGCS::InvalidateCache(DgnDbR project)
+    {
+    project.DropAppData(DgnGCSAppData::GetKey());
+    project.DropAppData(NotFoundAppData::GetKey());
+    project.GeoLocation().NewGCSStored();
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -5476,11 +5483,7 @@ StatusInt       DgnGCS::Store(DgnDbR project)
 
     // we have stored a new GCS to the BIM file. Make sure the next time we try to read it, we don't get the GCS that is stored in the DgnAppData.
     if (SUCCESS == status)
-        {
-        project.DropAppData (DgnGCSAppData::GetKey());
-        project.DropAppData (NotFoundAppData::GetKey());
-        project.GeoLocation().NewGCSStored ();
-        }
+        InvalidateCache(project);
 
     return status;
     }
