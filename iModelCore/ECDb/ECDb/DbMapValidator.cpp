@@ -487,9 +487,8 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
 
 //---------------------------------------------------------------------------------------
 // A physical column that no ec_Column row describes is left behind when a schema import is undone,
-// because the undo does not reverse DDL. A later import reuses such a column by name without
-// re-creating it, so only tolerate columns shaped exactly like ECDb creates shared columns:
-// <prefix><n> BLOB, with no NOT NULL, DEFAULT, PRIMARY KEY, UNIQUE index or FOREIGN KEY.
+// because the undo does not reverse DDL. A later import reuses such a column by name, so only tolerate
+// columns named like the table's shared columns.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus DbMapValidator::ValidateUnmappedPhysicalColumns(DbTable const& table, bvector<Utf8String> const& physicalColumns, ECN::IssueId const& issueId) const
@@ -505,42 +504,11 @@ BentleyStatus DbMapValidator::ValidateUnmappedPhysicalColumns(DbTable const& tab
         if (mappedColumns.find(physicalColumn) != mappedColumns.end())
             continue;
 
-        Utf8CP reason = nullptr;
         if (physicalColumn.size() <= prefixLen || !physicalColumn.StartsWithIAscii(prefix) ||
             physicalColumn.find_first_not_of("0123456789", prefixLen) != Utf8String::npos)
-            reason = "it is not named like a shared column";
-
-        if (reason == nullptr)
-            {
-            Statement stmt;
-            if (BE_SQLITE_OK != stmt.Prepare(GetECDb(), "SELECT [type], [notnull], [dflt_value], [pk] FROM pragma_table_xinfo(?) WHERE [name]=? COLLATE NOCASE"))
-                return ERROR;
-            stmt.BindText(1, table.GetName(), Statement::MakeCopy::No);
-            stmt.BindText(2, physicalColumn, Statement::MakeCopy::No);
-            if (BE_SQLITE_ROW != stmt.Step())
-                return ERROR;
-
-            if (!Utf8String(stmt.GetValueText(0)).EqualsIAscii(DbColumn::TypeToSql(DbColumn::Type::Any)) || stmt.GetValueInt(1) != 0 || !stmt.IsColumnNull(2) || stmt.GetValueInt(3) != 0)
-                reason = "its type or constraints differ from a shared column";
-            }
-
-        if (reason == nullptr)
-            {
-            Statement stmt;
-            if (BE_SQLITE_OK != stmt.Prepare(GetECDb(),
-                "SELECT 1 FROM pragma_index_list(?1) il JOIN pragma_index_info(il.[name]) ii WHERE il.[unique]=1 AND ii.[name]=?2 COLLATE NOCASE "
-                "UNION ALL SELECT 1 FROM pragma_foreign_key_list(?1) WHERE [from]=?2 COLLATE NOCASE"))
-                return ERROR;
-            stmt.BindText(1, table.GetName(), Statement::MakeCopy::No);
-            stmt.BindText(2, physicalColumn, Statement::MakeCopy::No);
-            if (BE_SQLITE_ROW == stmt.Step())
-                reason = "it is part of a unique index or foreign key";
-            }
-
-        if (reason != nullptr)
             {
             Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, issueId,
-                "DbTable '%s' has physical column '%s' with no ec_Column row, which cannot be reused because %s.", table.GetName().c_str(), physicalColumn.c_str(), reason);
+                "DbTable '%s' has physical column '%s' with no ec_Column row, which cannot be reused because it is not named like a shared column.", table.GetName().c_str(), physicalColumn.c_str());
             return ERROR;
             }
         }

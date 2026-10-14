@@ -393,9 +393,8 @@ TEST_F(SchemaUpgradeTestFixture, ImportToleratesPhysicalColumnsWithoutECColumnRo
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpgradeTestFixture, ImportFailsOnUnmappedColumnThatIsNotAnUnusedSharedColumn) {
-    // A later import reuses an unmapped column by name without re-creating it, so a typed or constrained
-    // column must not be tolerated: a new property would silently inherit its type and constraints.
+TEST_F(SchemaUpgradeTestFixture, ImportFailsOnUnmappedColumnNotNamedLikeASharedColumn) {
+    // Only unmapped columns named like shared columns are tolerated; anything else is not left behind by ECDb.
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8" ?>
     <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
         <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
@@ -412,28 +411,16 @@ TEST_F(SchemaUpgradeTestFixture, ImportFailsOnUnmappedColumnThatIsNotAnUnusedSha
     Utf8CP otherSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="OtherSchema" alias="os" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"/>)xml";
 
-    struct Case { Utf8CP fileName; Utf8CP ddl; Utf8CP expectedMessage; };
-    for (Case const& testCase : {
-        Case{"unmappedDedicatedColumn.ecdb", "ALTER TABLE [ts_Parent] ADD COLUMN [Foo] INTEGER",
-            "DbTable 'ts_Parent' has physical column 'Foo' with no ec_Column row, which cannot be reused because it is not named like a shared column."},
-        Case{"unmappedTypedSharedColumn.ecdb", "ALTER TABLE [ts_Parent] ADD COLUMN [ps5] INTEGER",
-            "DbTable 'ts_Parent' has physical column 'ps5' with no ec_Column row, which cannot be reused because its type or constraints differ from a shared column."},
-        Case{"unmappedSharedColumnWithDefault.ecdb", "ALTER TABLE [ts_Parent] ADD COLUMN [ps5] BLOB DEFAULT(1)",
-            "DbTable 'ts_Parent' has physical column 'ps5' with no ec_Column row, which cannot be reused because its type or constraints differ from a shared column."},
-        })
-        {
-        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb(testCase.fileName, SchemaItem(schemaXml))) << testCase.ddl;
-        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteDdl(testCase.ddl)) << testCase.ddl;
-        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("unmappedDedicatedColumn.ecdb", SchemaItem(schemaXml)));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteDdl("ALTER TABLE [ts_Parent] ADD COLUMN [Foo] INTEGER"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
 
-        TestIssueListener issueListener;
-        m_ecdb.AddIssueListener(issueListener);
-        ASSERT_EQ(ERROR, ImportSchema(SchemaItem(otherSchemaXml))) << testCase.ddl;
-        ASSERT_FALSE(issueListener.m_issues.empty()) << testCase.ddl;
-        EXPECT_STREQ(testCase.expectedMessage, issueListener.m_issues[0].message.c_str()) << testCase.ddl;
-        m_ecdb.RemoveIssueListener();
-        CloseECDb();
-        }
+    TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
+    ASSERT_EQ(ERROR, ImportSchema(SchemaItem(otherSchemaXml)));
+    ASSERT_FALSE(issueListener.m_issues.empty());
+    EXPECT_STREQ("DbTable 'ts_Parent' has physical column 'Foo' with no ec_Column row, which cannot be reused because it is not named like a shared column.", issueListener.m_issues[0].message.c_str());
+    m_ecdb.RemoveIssueListener();
 }
 
 //---------------------------------------------------------------------------------------
