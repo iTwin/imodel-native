@@ -3177,10 +3177,13 @@ TEST(Polyface,HandleInvalidMesh)
     bvector<Byte> bytes0;
     BentleyGeometryFlatBuffer::GeometryToBytes(*mesh0, bytes0);
     if (Check::True(bytes0.empty(), "expect invalid mesh0 to fail to serialize to flatbuffers"))
-        Check::False(GTestFileOps::ReadAsBytes(getInvalidMeshFileName(0), bytes0), "expect invalid flatbuffers file0 to fail to deserialize");
-    else // generates invalid file in older version
-        Check::True(GTestFileOps::WriteToFile(bytes0, nullptr, nullptr, L"invalidMesh0", L"fb"), "write invalid fb file");
-
+        {
+        // GTestFileOps::WriteToFile(bytes0, nullptr, nullptr, L"invalidMesh0", L"fb"); // generate invalid file in older version (may have to force it in debugger)
+        GTestFileOps::ReadAsBytes(getInvalidMeshFileName(0), bytes0);
+        Check::False(bytes0.empty(), "expect to read bytes from invalidMesh0.fb");
+        auto geom = BentleyGeometryFlatBuffer::BytesToGeometry(bytes0);
+        Check::False(geom.IsValid(), "expect invalidMesh0 bytes deserialization failure");
+        }
     bvector<Byte> bytes1;
     BentleyGeometryFlatBuffer::GeometryToBytes(*mesh1, bytes1);
     Check::False(bytes1.empty(), "expect valid mesh1 to serialize to flatbuffers");
@@ -3193,9 +3196,13 @@ TEST(Polyface,HandleInvalidMesh)
     bvector<Byte> bytes2;
     BentleyGeometryFlatBuffer::GeometryToBytes(*mesh2, bytes2);
     if (Check::True(bytes2.empty(), "expect invalid mesh2 to fail to serialize to flatbuffers"))
-        Check::False(GTestFileOps::ReadAsBytes(getInvalidMeshFileName(2), bytes2), "expect invalid flatbuffers file2 to fail to deserialize");
-    else // generates invalid file in older version
-        Check::True(GTestFileOps::WriteToFile(bytes2, nullptr, nullptr, L"invalidMesh2", L"fb"), "write invalid fb file");
+        {
+        // GTestFileOps::WriteToFile(bytes2, nullptr, nullptr, L"invalidMesh2", L"fb"); // generate invalid file in older version (may have to force it in debugger)
+        GTestFileOps::ReadAsBytes(getInvalidMeshFileName(2), bytes2);
+        Check::False(bytes2.empty(), "expect to read bytes from invalidMesh2.fb");
+        auto geom = BentleyGeometryFlatBuffer::BytesToGeometry(bytes2);
+        Check::False(geom.IsValid(), "expect invalidMesh2 bytes deserialization failure");
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
