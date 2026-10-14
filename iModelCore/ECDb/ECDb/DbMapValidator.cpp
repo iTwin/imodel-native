@@ -168,29 +168,39 @@ BentleyStatus DbMapValidator::CheckDuplicateDataPropertyMap() const {
                 JOIN [ec_Column] [c] ON [c].[Id] = [pp].[ColumnId]
                 JOIN [ec_Table] [t] ON [t].[Id] = [c].[TableId]
             WHERE  [p].[AccessString] != 'ECClassId' AND [p].[AccessString] != 'ECInstanceId'
-            GROUP BY [pp].[ClassId], [pp].[PropertyPathId] HAVING COUNT (*) > 1;)");
+            GROUP BY [pp].[ClassId], [p].[AccessString] HAVING COUNT (*) > 1;)");
 
     if (rc != BE_SQLITE_OK) {
         Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0114, "Failed to run duplicate data property check");
         return ERROR;
     }
 
-    int errors = 0;
+    int duplicateCount = 0;
     while(stmt.Step() == BE_SQLITE_ROW) {
         const ECClassId classId = stmt.GetValueId<ECClassId>(0);
-        const Utf8String accessString = stmt.GetValueText(1);
-        const Utf8String duplicateCols = stmt.GetValueText(2);
         ECClassCP ecClass = GetECDb().Schemas().GetClass(classId);
         if (ecClass == nullptr) {
             Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0115, "Could not load ECClass for ECClassId %s from the file.", classId.ToString().c_str());
             return ERROR;
         }
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0116,
-            "Detected duplicate mapping for ECClass: %s. AccessString '%s' is mapped to '%s'.", ecClass->GetFullName(), accessString.c_str(), duplicateCols.c_str());
-        ++errors;
+        ++duplicateCount;
+        if (m_mode == DbMapValidationMode::ChangesetApply && duplicateCount > MAX_DETAILED_WARNINGS)
+            continue;
+
+        Issues().ReportV(m_mode == DbMapValidationMode::ChangesetApply ? IssueSeverity::Warning : IssueSeverity::Error,
+            IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0116,
+            "Detected duplicate mapping for ECClass: %s. AccessString '%s' is mapped to '%s'.", ecClass->GetFullName(), stmt.GetValueText(1), stmt.GetValueText(2));
     }
 
-    return errors > 0? ERROR : SUCCESS;
+    if (m_mode != DbMapValidationMode::ChangesetApply)
+        return duplicateCount > 0 ? ERROR : SUCCESS;
+
+    if (duplicateCount > MAX_DETAILED_WARNINGS) {
+        Issues().ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0747,
+            "Detected %d duplicate mappings. Suppressed %d additional duplicate mapping warnings.", duplicateCount, duplicateCount - MAX_DETAILED_WARNINGS);
+    }
+
+    return SUCCESS;
 }
 
 //---------------------------------------------------------------------------------------
@@ -202,19 +212,23 @@ BentleyStatus DbMapValidator::Validate() const
     if (SUCCESS != Initialize())
         return ERROR;
 
-    if (SUCCESS != ValidateDbSchema())
-        return ERROR;
+    BentleyStatus result = SUCCESS;
+    for (auto validation : {
+        &DbMapValidator::ValidateDbSchema,
+        &DbMapValidator::ValidateDbMap,
+        &DbMapValidator::CheckDuplicateDataPropertyMap,
+        &DbMapValidator::ValidateCustomAttributeTable,
+        &DbMapValidator::ValidateClassViews})
+        {
+        if (SUCCESS == (this->*validation)())
+            continue;
 
-    if (SUCCESS != ValidateDbMap())
-        return ERROR;
+        result = ERROR;
+        if (!m_continueAfterError)
+            return result;
+        }
 
-    if (SUCCESS != CheckDuplicateDataPropertyMap())
-        return ERROR;
-
-    if (SUCCESS != ValidateCustomAttributeTable())
-        return ERROR;
-
-    return ValidateClassViews();
+    return result;
     }
 
 //---------------------------------------------------------------------------------------
@@ -222,19 +236,29 @@ BentleyStatus DbMapValidator::Validate() const
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus DbMapValidator::ValidateDbSchema() const
     {
+    BentleyStatus result = SUCCESS;
     for (DbTable const* table : GetDbSchema().Tables())
         {
         if (SUCCESS != ValidateDbTable(*table))
-            return ERROR;
+            {
+            result = ERROR;
+            if (!m_continueAfterError)
+                return result;
+            continue;
+            }
 
         for (std::unique_ptr<DbIndex> const& index : table->GetIndexes())
             {
             if (SUCCESS != ValidateDbIndex(*index))
-                return ERROR;
+                {
+                result = ERROR;
+                if (!m_continueAfterError)
+                    return result;
+                }
             }
         }
 
-    return SUCCESS;
+    return result;
     }
 
 //---------------------------------------------------------------------------------------
@@ -723,6 +747,7 @@ BentleyStatus DbMapValidator::ValidateDbIndex(DbIndex const& index) const
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus DbMapValidator::ValidateDbMap() const
     {
+    BentleyStatus result = SUCCESS;
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(GetECDb(), "SELECT count(*) FROM main." TABLE_Class))
         {
@@ -753,7 +778,9 @@ BentleyStatus DbMapValidator::ValidateDbMap() const
         {
         Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0157,
             "The system tables " TABLE_Class " and " TABLE_ClassMap " must have the same number of rows, but they don't: " TABLE_Class ": %d rows, " TABLE_ClassMap ": %d rows.", classCount, classMapCount);
-        return ERROR;
+        result = ERROR;
+        if (!m_continueAfterError)
+            return result;
         }
 
     //store class maps from cache in local vector as validation might load more classes into the cache and
@@ -764,19 +791,30 @@ BentleyStatus DbMapValidator::ValidateDbMap() const
         classMaps.push_back(entry.second.get());
         }
 
+    int incompleteClassMapCount = 0;
     for (ClassMap const* classMap : classMaps)
         {
-        if (SUCCESS != ValidateClassMap(*classMap))
-            return ERROR;
+        if (SUCCESS != ValidateClassMap(*classMap, incompleteClassMapCount))
+            {
+            result = ERROR;
+            if (!m_continueAfterError)
+                break;
+            }
         }
 
-    return SUCCESS;
+    if (incompleteClassMapCount > MAX_DETAILED_WARNINGS)
+        {
+        Issues().ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0748,
+            "Detected %d classes with incomplete property maps. Suppressed %d additional property map count warnings.", incompleteClassMapCount, incompleteClassMapCount - MAX_DETAILED_WARNINGS);
+        }
+
+    return result;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus DbMapValidator::ValidateClassMap(ClassMap const& classMap) const
+BentleyStatus DbMapValidator::ValidateClassMap(ClassMap const& classMap, int& incompleteClassMapCount) const
     {
     if (SUCCESS != ValidateMapStrategy(classMap))
         return ERROR;
@@ -825,19 +863,35 @@ BentleyStatus DbMapValidator::ValidateClassMap(ClassMap const& classMap) const
             const int propCount = (int) classMap.GetClass().GetPropertyCount(true);
             if (dataPropertyMapCount != propCount)
                 {
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0160,
-                    "The number of property maps for ECClass '%s' does not match the number of properties. Property maps: %d, properties: %d.", classMap.GetClass().GetFullName(), dataPropertyMapCount, propCount);
-                return ERROR;
-                }
-
-            // check all properties are mapped. We already know that the count of mapped and actual properties matches, so we only need to compare the names in one direction
-            for (auto& prop : classMap.GetClass().GetProperties(true))
-                {
-                if (mappedDataPropertyNames.find(prop->GetName()) == mappedDataPropertyNames.end())
+                // Changeset apply loads classes beyond those changed by the changeset. Tolerate incomplete
+                // data maps in existing files while keeping schema import and the loaded maps' validation strict.
+                if (m_mode == DbMapValidationMode::ChangesetApply && dataPropertyMapCount < propCount)
                     {
-                    Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0161,
-                        "Mismatch of mapped properties for ECClass '%s'. The count of mapped properties is correct, but property %s is not mapped.", classMap.GetClass().GetFullName(), prop->GetName().c_str());
+                    ++incompleteClassMapCount;
+                    if (incompleteClassMapCount <= MAX_DETAILED_WARNINGS)
+                        {
+                        Issues().ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0160,
+                            "The number of property maps for ECClass '%s' does not match the number of properties. Property maps: %d, properties: %d.", classMap.GetClass().GetFullName(), dataPropertyMapCount, propCount);
+                        }
+                    }
+                else
+                    {
+                    Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0160,
+                        "The number of property maps for ECClass '%s' does not match the number of properties. Property maps: %d, properties: %d.", classMap.GetClass().GetFullName(), dataPropertyMapCount, propCount);
                     return ERROR;
+                    }
+                }
+            else
+                {
+                // With matching counts, comparing names in one direction establishes that every property is mapped.
+                for (auto& prop : classMap.GetClass().GetProperties(true))
+                    {
+                    if (mappedDataPropertyNames.find(prop->GetName()) == mappedDataPropertyNames.end())
+                        {
+                        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0161,
+                            "Mismatch of mapped properties for ECClass '%s'. The count of mapped properties is correct, but property %s is not mapped.", classMap.GetClass().GetFullName(), prop->GetName().c_str());
+                        return ERROR;
+                        }
                     }
                 }
 
@@ -1849,4 +1903,3 @@ BentleyStatus DbMapValidator::ValidateNavigationPropertyMapUniqueness(Navigation
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
-

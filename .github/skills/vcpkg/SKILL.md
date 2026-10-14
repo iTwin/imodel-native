@@ -55,6 +55,13 @@ but build strategies may override them. Mirror the effective build value, not th
 official OS support floor. Omitting this setting lets vcpkg inherit the host SDK's deployment
 target and can produce objects that are too new to link into BentleyBuild outputs.
 
+For static libraries rolled into `imodeljs.node`, preserve the previous build's effective symbol
+visibility and verify both the vcpkg archive and final add-on. Do not assume
+`-fvisibility=hidden` is sufficient: upstream public-API annotations may restore default
+visibility. Audit library-specific visibility options; curl, for example, requires
+`CURL_HIDDEN_SYMBOLS=OFF` so its public API inherits the triplet's hidden visibility instead of
+binding to another curl already loaded in the process.
+
 > **Check whether the library links cleanly into Windows DEBUG builds.** Some libraries fail to
 > link into Windows DEBUG unless their debug artifact is made release-CRT-compatible — either by
 > forcing release-only triplets (`set(VCPKG_BUILD_TYPE release)`) or by fixing up the vcpkg Debug

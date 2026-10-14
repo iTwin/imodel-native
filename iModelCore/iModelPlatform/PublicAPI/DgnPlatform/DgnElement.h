@@ -2336,6 +2336,9 @@ protected:
         m_flags.m_placementData = flags;
         }
 
+    // Reads json_placement() into a Placement2d or Placement3d and records which nullable placement properties it supplies. Defined in DgnElement.cpp.
+    template<class T_Placement> void PlacementFromJson(T_Placement& placement, BeJsConst props, Utf8CP anglesMember);
+
     explicit GeometricElement(CreateParams const& params) : T_Super(params), m_categoryId(params.m_category), m_multiChunkGeomStream(false) {}
 
     virtual bool _IsPlacementValid() const = 0;

@@ -87,6 +87,45 @@ BentleyStatus VirtualSchemaManager::AddAndValidateVirtualSchema(Utf8StringCR sch
             return ERROR;
         }
     }
+
+    // If a schema with the same name already exists, merge the classes into it. This allows
+    // several virtual table modules to contribute classes to one shared virtual schema.
+    auto existingIt = m_schemas.find(schema->GetName());
+    if (existingIt != m_schemas.end()) {
+        auto& existingSchema = *const_cast<ECN::ECSchemaP>(existingIt->second);
+        if (existingSchema.GetVersionRead() != schema->GetVersionRead()
+            || existingSchema.GetVersionWrite() != schema->GetVersionWrite()
+            || existingSchema.GetVersionMinor() != schema->GetVersionMinor()) {
+            LOG.errorv("Virtual schema '%s' is already registered with version %" PRIu32 ".%" PRIu32 ".%" PRIu32
+                       " but was registered again with version %" PRIu32 ".%" PRIu32 ".%" PRIu32
+                       ". All registrations of a virtual schema must use the same version.",
+                       schema->GetName().c_str(),
+                       existingSchema.GetVersionRead(), existingSchema.GetVersionWrite(), existingSchema.GetVersionMinor(),
+                       schema->GetVersionRead(), schema->GetVersionWrite(), schema->GetVersionMinor());
+            return ERROR;
+        }
+
+        for (auto sourceClass : schema->GetClasses()) {
+            if (existingSchema.GetClassCP(sourceClass->GetName().c_str()) != nullptr) {
+                LOG.errorv("Virtual schema '%s' already contains a class named '%s'. Virtual class names must be unique within a virtual schema.",
+                           schema->GetName().c_str(), sourceClass->GetName().c_str());
+                return ERROR;
+            }
+
+            ECN::ECClassP copiedClass = nullptr;
+            if (ECN::ECObjectsStatus::Success != existingSchema.CopyClass(copiedClass, *sourceClass, true)) {
+                LOG.errorv("Failed to merge virtual class '%s' into the already registered virtual schema '%s'.",
+                           sourceClass->GetName().c_str(), schema->GetName().c_str());
+                return ERROR;
+            }
+
+            copiedClass->SetId(ECN::ECClassId(GetNextId()));
+            for (auto& prop : copiedClass->GetProperties(false))
+                const_cast<ECN::ECPropertyP>(prop)->SetId(ECN::ECPropertyId(GetNextId()));
+        }
+        return SUCCESS;
+    }
+
     SetVirtualTypeIds(*schema);
     // schema.SetImmutable(true);
     m_cache->AddSchema(*schema);
@@ -1492,10 +1531,6 @@ SchemaImportResult MainSchemaManager::MapSchemas(SchemaImportContext& ctx, bvect
         return failedToMap();
     }
 
-    if (SUCCESS != DbMapValidator(ctx).Validate()) {
-        return failedToMap();
-    }
-
     // Despite the name, this is where a remap is DETECTED: it appends the data-moving statements to
     // ctx.GetDataTransform(), which is what the gate below reads. It executes nothing, so it has to
     // run even when there are no data tables to move data in.
@@ -1544,9 +1579,55 @@ SchemaImportResult MainSchemaManager::MapSchemas(SchemaImportContext& ctx, bvect
         return failedToMap();
     }
 
+    // Persisted mappings must be reloaded after mapping and data transforms complete.
+    m_ecdb.ClearECDbCache();
+    if (SUCCESS != ValidatePersistedMappings(ctx.GetOptions())) {
+        return failedToMap();
+    }
+
     ClearCache();
     return  SchemaImportResult::OK;
 }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus MainSchemaManager::ValidatePersistedMappings(SchemaManager::SchemaImportOptions options, bool continueAfterError) const
+    {
+    SchemaImportContext validationContext(m_ecdb, options);
+
+    if (SUCCESS != GetDbSchema().ForceReloadTableAndIndexesFromDisk())
+        return ERROR;
+
+    bvector<ECSchemaCP> schemas;
+    if (SUCCESS != GetSchemas(schemas, true))
+        return ERROR;
+
+    bool failedToLoadClassMap = false;
+    for (ECSchemaCP schema : schemas)
+        {
+        for (ECClassCP ecClass : schema->GetClasses())
+            {
+            if (GetClassMap(*ecClass) == nullptr)
+                {
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0113,
+                    "Could not load class map for ECClass %s from the file.", ecClass->GetFullName());
+                failedToLoadClassMap = true;
+                if (!continueAfterError)
+                    return ERROR;
+                }
+            }
+        }
+
+    if (failedToLoadClassMap)
+        return ERROR;
+
+    // Foreign keys and triggers are derived from persisted mappings rather than stored in ec_ tables.
+    if (validationContext.MaintainsDataTables() && SUCCESS != DerivedDbStructures::Derive(*this))
+        return ERROR;
+
+    return DbMapValidator(validationContext, DbMapValidationMode::SchemaImport, continueAfterError).Validate();
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod

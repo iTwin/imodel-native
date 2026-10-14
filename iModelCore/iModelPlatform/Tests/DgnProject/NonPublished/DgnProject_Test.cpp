@@ -41,6 +41,7 @@ struct StepTimer
 //=======================================================================================
 struct DgnDbTest : public DgnDbTestFixture
 {
+    void CheckSpatialIndexTriggerUpgrade(DgnDbProfileVersion const& previousVersion, bool healthySource, bool schemaSync);
 };
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -94,15 +95,41 @@ TEST_F(DgnDbTest, ProjectProfileVersions)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnDbTest, UpgradeSpatialIndexTriggers)
+// healthySource keeps the source's triggers current while the replay recipient retains legacy triggers.
+void DgnDbTest::CheckSpatialIndexTriggerUpgrade(DgnDbProfileVersion const& previousVersion, bool healthySource, bool schemaSync)
 {
-    SetupSeedProject();
+    auto getTriggerSql = [](BeSQLite::Db const& db, Utf8CP triggerName) {
+        Statement statement(db, "SELECT sql FROM sqlite_master WHERE type='trigger' AND name=?");
+        if (BE_SQLITE_OK != statement.BindText(1, triggerName, Statement::MakeCopy::No) || BE_SQLITE_ROW != statement.Step())
+            return Utf8String();
+        return Utf8String(statement.GetValueText(0));
+    };
+
+    SetupSeedProject(Db::OpenMode::ReadWrite, true);
+    Utf8String currentUpdateTriggerSql = getTriggerSql(*m_db, "dgn_rtree_upd");
+    Utf8String currentDeleteTriggerSql = getTriggerSql(*m_db, "dgn_rtree_upd1");
     BeFileName fileName = m_db->GetFileName();
+    m_db->Txns().DeleteAllTxns();
     SaveDb();
+    BeFileName syncFileName(fileName);
+    syncFileName.AppendString(L".sync");
+    if (schemaSync)
+        {
+        if (syncFileName.DoesPathExist())
+            ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeDeleteFile(syncFileName));
+        ECDb syncDb;
+        ASSERT_EQ(BE_SQLITE_OK, syncDb.CreateNewDb(syncFileName));
+        ASSERT_EQ(BE_SQLITE_OK, syncDb.SaveChanges());
+        syncDb.CloseDb();
+        ASSERT_EQ(SchemaSync::Status::OK, m_db->Schemas().GetSchemaSync().Init(SchemaSync::SyncDbUri(syncFileName.GetNameUtf8().c_str()), "trigger-upgrade", false));
+        SaveDb();
+        m_db->Txns().DeleteAllTxns();
+        SaveDb();
+        }
     CloseDb();
     m_db = nullptr;
 
-    // Make the file look like a pre-2.0.0.8 iModel with the legacy trigger definitions.
+    // Legacy triggers can also remain in a 2.0.0.8 recipient after replaying an incomplete upgrade.
     BeSQLite::Db rawDb;
     ASSERT_EQ(BE_SQLITE_OK, rawDb.OpenBeSQLiteDb(fileName, Db::OpenParams(Db::OpenMode::ReadWrite)));
     ASSERT_EQ(BE_SQLITE_OK, rawDb.ExecuteSql("DROP TRIGGER IF EXISTS dgn_rtree_upd"));
@@ -116,10 +143,24 @@ TEST_F(DgnDbTest, UpgradeSpatialIndexTriggers)
         "CREATE TRIGGER dgn_rtree_upd1 AFTER UPDATE OF Origin_X,Origin_Y,Origin_Z,Yaw,Pitch,Roll,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z ON bis_GeometricElement3d "
         "WHEN OLD.Origin_X IS NOT NULL AND NEW.Origin_X IS NULL BEGIN DELETE FROM dgn_SpatialIndex WHERE ElementId=OLD.ElementId;END"));
 
-    DgnDbProfileVersion const previousVersion(2, 0, 0, 7);
     ASSERT_EQ(BE_SQLITE_OK, rawDb.SavePropertyString(DgnProjectProperty::ProfileVersion(), previousVersion.ToJson()));
     ASSERT_EQ(BE_SQLITE_OK, rawDb.SaveChanges());
     rawDb.CloseDb();
+
+    BeFileName replayFileName = DgnDbTestDgnManager::GetOutputFilePath(L"UpgradeSpatialIndexTriggersReplay.bim");
+    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(fileName, replayFileName));
+
+    if (healthySource)
+        {
+        // A healthy source must still publish the repair for its stale recipient.
+        ASSERT_EQ(BE_SQLITE_OK, rawDb.OpenBeSQLiteDb(fileName, Db::OpenParams(Db::OpenMode::ReadWrite)));
+        ASSERT_EQ(BE_SQLITE_OK, rawDb.ExecuteSql("DROP TRIGGER dgn_rtree_upd"));
+        ASSERT_EQ(BE_SQLITE_OK, rawDb.ExecuteSql("DROP TRIGGER dgn_rtree_upd1"));
+        ASSERT_EQ(BE_SQLITE_OK, rawDb.ExecuteSql(currentUpdateTriggerSql.c_str()));
+        ASSERT_EQ(BE_SQLITE_OK, rawDb.ExecuteSql(currentDeleteTriggerSql.c_str()));
+        ASSERT_EQ(BE_SQLITE_OK, rawDb.SaveChanges());
+        rawDb.CloseDb();
+        }
 
     DbResult openStatus = BE_SQLITE_OK;
     DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite);
@@ -131,17 +172,74 @@ TEST_F(DgnDbTest, UpgradeSpatialIndexTriggers)
     ASSERT_EQ(DgnDbProfileVersion::GetCurrent(), m_db->GetProfileVersion());
     ASSERT_EQ(ECDb::CurrentECDbProfileVersion(), m_db->GetECDbProfileVersion());
 
-    auto getTriggerSql = [](BeSQLite::Db const& db, Utf8CP triggerName) {
-        Statement statement(db, "SELECT sql FROM sqlite_master WHERE type='trigger' AND name=?");
-        if (BE_SQLITE_OK != statement.BindText(1, triggerName, Statement::MakeCopy::No) || BE_SQLITE_ROW != statement.Step())
-            return Utf8String();
-        return Utf8String(statement.GetValueText(0));
-    };
+    ASSERT_EQ(DgnDbProfileVersion(2, 0, 0, 9), m_db->GetProfileVersion());
 
     Utf8String updateTriggerSql = getTriggerSql(*m_db, "dgn_rtree_upd");
     Utf8String deleteTriggerSql = getTriggerSql(*m_db, "dgn_rtree_upd1");
     ASSERT_TRUE(updateTriggerSql.find("AFTER UPDATE OF InSpatialIndex") != updateTriggerSql.npos);
     ASSERT_TRUE(deleteTriggerSql.find("NEW.InSpatialIndex = 0") != deleteTriggerSql.npos);
+
+    ChangesetPropsPtr changeset = m_db->Txns().StartCreateChangeset("-profile-upgrade");
+    ASSERT_TRUE(changeset.IsValid());
+    m_db->Txns().FinishCreateChangeset(-1, true);
+
+    ChangesetFileReader reader(changeset->GetFileName(), m_db.get());
+    bool containsSchemaChanges = false;
+    DdlChanges ddlChanges;
+    ASSERT_EQ(BE_SQLITE_OK, reader.MakeReader()->GetSchemaChanges(containsSchemaChanges, ddlChanges));
+    ASSERT_TRUE(containsSchemaChanges);
+    Utf8String ddl = ddlChanges.ToString();
+    for (Utf8CP triggerName : {"dgn_rtree_upd", "dgn_rtree_upd1"})
+        {
+        ASSERT_NE(Utf8String::npos, ddl.find(Utf8String("DROP TRIGGER IF EXISTS ") + triggerName + ";"));
+        ASSERT_NE(Utf8String::npos, ddl.find(Utf8String("CREATE TRIGGER ") + triggerName + " "));
+        }
+
+    DgnDbPtr replayDb = DgnDb::OpenIModelDb(&openStatus, replayFileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+    ASSERT_EQ(BE_SQLITE_OK, openStatus);
+    ASSERT_TRUE(replayDb.IsValid());
+    if (schemaSync)
+        ASSERT_EQ(SchemaSync::Status::OK, replayDb->Schemas().GetSchemaSync().SetDefaultSyncDbUri(syncFileName.GetNameUtf8().c_str()));
+    ASSERT_EQ(previousVersion, replayDb->GetProfileVersion());
+    ASSERT_NE(updateTriggerSql, getTriggerSql(*replayDb, "dgn_rtree_upd"));
+    ASSERT_NE(deleteTriggerSql, getTriggerSql(*replayDb, "dgn_rtree_upd1"));
+
+    ASSERT_EQ(ChangesetStatus::Success, replayDb->Txns().PullMergeApply(*changeset));
+    EXPECT_EQ(m_db->GetProfileVersion(), replayDb->GetProfileVersion());
+    EXPECT_EQ(updateTriggerSql, getTriggerSql(*replayDb, "dgn_rtree_upd"));
+    EXPECT_EQ(deleteTriggerSql, getTriggerSql(*replayDb, "dgn_rtree_upd1"));
+    CloseDb();
+    m_db = nullptr;
+}
+
+TEST_F(DgnDbTest, UpgradeSpatialIndexTriggers)
+{
+    CheckSpatialIndexTriggerUpgrade(DgnDbProfileVersion(2, 0, 0, 7), false, false);
+}
+
+TEST_F(DgnDbTest, UpgradeSpatialIndexTriggersWithSchemaSync)
+{
+    CheckSpatialIndexTriggerUpgrade(DgnDbProfileVersion(2, 0, 0, 7), false, true);
+}
+
+TEST_F(DgnDbTest, RepairSpatialIndexTriggersFromStaleProfile008)
+{
+    CheckSpatialIndexTriggerUpgrade(DgnDbProfileVersion(2, 0, 0, 8), false, false);
+}
+
+TEST_F(DgnDbTest, RepairSpatialIndexTriggersFromStaleProfile008WithSchemaSync)
+{
+    CheckSpatialIndexTriggerUpgrade(DgnDbProfileVersion(2, 0, 0, 8), false, true);
+}
+
+TEST_F(DgnDbTest, RepairSpatialIndexTriggersFromHealthyProfile008)
+{
+    CheckSpatialIndexTriggerUpgrade(DgnDbProfileVersion(2, 0, 0, 8), true, false);
+}
+
+TEST_F(DgnDbTest, RepairSpatialIndexTriggersFromHealthyProfile008WithSchemaSync)
+{
+    CheckSpatialIndexTriggerUpgrade(DgnDbProfileVersion(2, 0, 0, 8), true, true);
 }
 
 //=======================================================================================

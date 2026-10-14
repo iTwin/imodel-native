@@ -23,10 +23,8 @@ enum class DbMapValidationMode
     //! Full validation. Any detected inconsistency fails the operation.
     SchemaImport,
     //! Used when replaying already accepted timeline changes (changeset apply).
-    //! Inconsistencies which can only originate from history written by older software - currently orphan rows
-    //! in ec_CustomAttribute - are logged as a warning instead of failing the operation. Everything else (in
-    //! particular the sqlite schema which the apply path just updated) is still validated strictly.
-    //! See https://github.com/iTwin/itwinjs-backlog/issues/2331
+    //! Missing entity data-property maps and orphan ec_CustomAttribute rows are reported as warnings for
+    //! compatibility with existing files. Loaded property maps and physical structures are validated strictly.
     ChangesetApply
     };
 
@@ -119,7 +117,7 @@ struct VirtualSchemaManager : ECN::IECSchemaLocater {
         mutable uint64_t m_idSeq;
         ECDbCR m_ecdb;
         mutable ECN::ECSchemaCachePtr m_cache;
-        mutable bmap<Utf8String, ECN::ECSchemaCP> m_schemas;
+        mutable bmap<Utf8String, ECN::ECSchemaCP, CompareIUtf8Ascii> m_schemas;
         virtual ECN::ECSchemaPtr _LocateSchema(ECN::SchemaKeyR key, ECN::SchemaMatchType matchType, ECN::ECSchemaReadContextR schemaContext) override;
         BentleyStatus AddAndValidateVirtualSchema(Utf8StringCR schemaXml, bool validate) const;
         uint64_t GetNextId() const;
@@ -257,6 +255,7 @@ public:
     //! @param[in] validationMode use DbMapValidationMode::ChangesetApply when replaying already accepted
     //! timeline changes so that historical inconsistencies do not fail the apply.
     BentleyStatus UpdateDbSchema(bool doNotTrackDDLChanges, DbMapValidationMode validationMode) const;
+    BentleyStatus ValidatePersistedMappings(SchemaManager::SchemaImportOptions, bool continueAfterError = false) const;
     };
 
 //=======================================================================================

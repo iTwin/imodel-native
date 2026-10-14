@@ -201,4 +201,10 @@
         </Bindings>
     </Part>
 
+    <Part Name="v8serial" BentleyBuildMakeFile="v8serial/v8serial.mke">
+        <Bindings>
+            <PublicAPI Domain="v8serial"/>
+        </Bindings>
+    </Part>
+
 </BuildContext>

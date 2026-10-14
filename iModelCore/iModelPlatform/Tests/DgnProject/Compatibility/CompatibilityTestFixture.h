@@ -10,6 +10,36 @@
 #include <BeRapidJson/BeJsValue.h>
 #include <ostream>
 
+//! Controls whether the run-time optimizations of the compatibility tests are enabled. Defaults to 1/True.
+#define TESTOPTIMIZATIONS_ENV_VAR "RUN_EVOLUTION_TESTS_OPTIMIZED"
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct TestOptimizations final
+    {
+    private:
+        TestOptimizations() = delete;
+
+    public:
+        static bool IsEnabled();
+    };
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct TestSharding final
+    {
+    private:
+        TestSharding() = delete;
+
+    public:
+        //! Returns true if the process runs as one of several shards (GTEST_TOTAL_SHARDS > 1). Always false if optimizations are disabled.
+        static bool IsSharded();
+        //! Returns the shard index (GTEST_SHARD_INDEX) or -1 if the process is not sharded.
+        static int GetShardIndex();
+    };
+
 //=======================================================================================
 // @bsiclass
 //======================================================================================
@@ -26,6 +56,22 @@ protected:
     void SetUp() override { Initialize(); }
     virtual void TearDown() override {}
     };
+
+//! Number of gtests the basic tests on all test files are split into.
+#define BASICTESTS_BUCKET_COUNT 8
+
+//! The test files are split into buckets so that the work can be distributed across several gtests shards.
+#define DEFINE_BASICTESTS_ON_ALL_FILES_BUCKET(FIXTURE, i) TEST_F(FIXTURE, BasicTestsOnAllFiles_##i) { RunBasicTestsOnAllFiles(i, BASICTESTS_BUCKET_COUNT); }
+#define DEFINE_BASICTESTS_ON_ALL_FILES(FIXTURE) \
+    DEFINE_BASICTESTS_ON_ALL_FILES_BUCKET(FIXTURE, 0) \
+    DEFINE_BASICTESTS_ON_ALL_FILES_BUCKET(FIXTURE, 1) \
+    DEFINE_BASICTESTS_ON_ALL_FILES_BUCKET(FIXTURE, 2) \
+    DEFINE_BASICTESTS_ON_ALL_FILES_BUCKET(FIXTURE, 3) \
+    DEFINE_BASICTESTS_ON_ALL_FILES_BUCKET(FIXTURE, 4) \
+    DEFINE_BASICTESTS_ON_ALL_FILES_BUCKET(FIXTURE, 5) \
+    DEFINE_BASICTESTS_ON_ALL_FILES_BUCKET(FIXTURE, 6) \
+    DEFINE_BASICTESTS_ON_ALL_FILES_BUCKET(FIXTURE, 7)
+static_assert(BASICTESTS_BUCKET_COUNT == 8, "DEFINE_BASICTESTS_ON_ALL_FILES must define exactly BASICTESTS_BUCKET_COUNT gtests");
 
 //=======================================================================================
 // @bsiclass

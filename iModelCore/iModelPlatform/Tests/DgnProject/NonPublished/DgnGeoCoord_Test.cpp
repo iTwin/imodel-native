@@ -7,6 +7,7 @@
 #include "../TestFixture/DgnDbTestFixtures.h"
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <Bentley/Desktop/FileSystem.h>
+#include <stdexcept>
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -1333,10 +1334,12 @@ TEST_F(SetAndGetDgnGeoCoord, SetAndGetAndCompare)
         ASSERT_TRUE(theNewGCS->IsValid());
 
         auto& geolocation = dgnProj->GeoLocation();
+        ASSERT_EQ(nullptr, geolocation.GetDgnGCS());
 
         geolocation.SetGCS(theNewGCS.get());
 
         geolocation.Save();
+        ASSERT_NE(nullptr, geolocation.GetDgnGCS());
 
         dgnProj->SaveChanges();
         dgnProj->CloseDb();
@@ -1350,6 +1353,102 @@ TEST_F(SetAndGetDgnGeoCoord, SetAndGetAndCompare)
         ASSERT_TRUE(theGCS->IsEquivalent(*theNewGCS));
         }
 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SetAndGetDgnGeoCoord, PersistsCompleteCustomVerticalCrs)
+    {
+    ASSERT_TRUE(InitGeoCoord());
+
+    BeJsDocument verticalCrs;
+    verticalCrs["crsName"] = "Custom test height";
+    verticalCrs["datumName"] = "Custom test datum";
+    verticalCrs["type"] = "GEOID";
+    verticalCrs["units"] = "meter";
+    verticalCrs["description"] = "Custom persisted Vertical CRS";
+    verticalCrs["extent"]["southWest"]["latitude"] = -90.0;
+    verticalCrs["extent"]["southWest"]["longitude"] = -180.0;
+    verticalCrs["extent"]["northEast"]["latitude"] = 90.0;
+    verticalCrs["extent"]["northEast"]["longitude"] = 180.0;
+    verticalCrs["transforms"][0]["target"] = "WGS84";
+    verticalCrs["transforms"][0]["nullTransform"].SetNull();
+
+    Utf8String errorMessage;
+    GeoCoordinates::BaseGCSPtr gcs = GeoCoordinates::BaseGCS::CreateGCS("LL84");
+    ASSERT_TRUE(gcs.IsValid());
+    ASSERT_EQ(SUCCESS, gcs->FromVerticalJson(verticalCrs, errorMessage));
+
+    BeFileName fileName;
+    BeTest::GetHost().GetOutputRoot(fileName);
+    fileName.AppendToPath(L"CustomVerticalCrs.ibim");
+    if (BeFileName::DoesPathExist(fileName))
+        BeFileName::BeDeleteFile(fileName);
+
+    DbResult dbStatus;
+    DgnDbPtr project = DgnDb::CreateIModel(&dbStatus, fileName, CreateDgnDbParams("Custom Vertical CRS"));
+    ASSERT_TRUE(project.IsValid());
+    project->GeoLocation().SetGCS(gcs.get());
+    project->GeoLocation().Save();
+
+    Utf8String storedJson;
+    ASSERT_EQ(BeSQLite::BE_SQLITE_ROW, project->QueryProperty(storedJson, DgnProjectProperty::DgnGCSVerticalCRS()));
+    BeJsDocument storedVerticalCrs(storedJson);
+    ASSERT_TRUE(storedVerticalCrs["type66Hash"].isString());
+    ASSERT_TRUE(storedVerticalCrs["verticalCRS"].isObject());
+    EXPECT_STREQ("Custom test height", storedVerticalCrs["verticalCRS"]["crsName"].asCString());
+    EXPECT_STREQ("Custom test datum", storedVerticalCrs["verticalCRS"]["datumName"].asCString());
+    EXPECT_STREQ("Custom persisted Vertical CRS", storedVerticalCrs["verticalCRS"]["description"].asCString());
+    ASSERT_TRUE(storedVerticalCrs["verticalCRS"]["transforms"].isArray());
+    EXPECT_EQ(1, storedVerticalCrs["verticalCRS"]["transforms"].size());
+
+    storedVerticalCrs["verticalCRS"]["id"] = "ELLIPSOID";
+    ASSERT_EQ(BeSQLite::BE_SQLITE_OK, project->SavePropertyString(DgnProjectProperty::DgnGCSVerticalCRS(), storedVerticalCrs.Stringify()));
+
+    project->SaveChanges();
+    project->CloseDb();
+
+    project = DgnDb::OpenIModelDb(&dbStatus, fileName, DgnDb::OpenParams(Db::OpenMode::Readonly));
+    ASSERT_TRUE(project.IsValid());
+    DgnGCSP storedGcs = project->GeoLocation().GetDgnGCS();
+    ASSERT_NE(nullptr, storedGcs);
+
+    BeJsDocument reopenedVerticalCrs;
+    ASSERT_EQ(SUCCESS, storedGcs->ToVerticalJson(reopenedVerticalCrs));
+    EXPECT_STREQ("Custom test height", reopenedVerticalCrs["crsName"].asCString());
+    EXPECT_STREQ("Custom test datum", reopenedVerticalCrs["datumName"].asCString());
+    EXPECT_STREQ("Custom persisted Vertical CRS", reopenedVerticalCrs["description"].asCString());
+    ASSERT_TRUE(reopenedVerticalCrs["transforms"].isArray());
+    EXPECT_EQ(1, reopenedVerticalCrs["transforms"].size());
+
+    project->CloseDb();
+
+    project = DgnDb::OpenIModelDb(&dbStatus, fileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+    ASSERT_TRUE(project.IsValid());
+    ASSERT_EQ(BeSQLite::BE_SQLITE_OK, project->SavePropertyString(DgnProjectProperty::DgnGCSVerticalCRS(), R"json({"crsName":"Custom test height","id":"GEOID","type66Hash":"unused"})json"));
+    project->SaveChanges();
+    project->CloseDb();
+
+    project = DgnDb::OpenIModelDb(&dbStatus, fileName, DgnDb::OpenParams(Db::OpenMode::Readonly));
+    ASSERT_TRUE(project.IsValid());
+    bool threw = false;
+    try
+        {
+        project->GeoLocation().GetDgnGCS();
+        }
+    catch (std::runtime_error const&)
+        {
+        threw = true;
+        }
+    catch (...)
+        {
+        FAIL() << "Expected std::runtime_error";
+        }
+    EXPECT_TRUE(threw);
+    project->CloseDb();
+
+    BeFileName::BeDeleteFile(fileName);
     }
 
 // INSTANTIATE_TEST_SUITE_P (DgnGeoCoordTest,

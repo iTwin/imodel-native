@@ -3196,6 +3196,152 @@ TEST_F(SchemaRemapTestFixture, MovePropertyFromOverflow)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaRemapTestFixture, RemappingSiblingPropertiesPreservesUnchangedOverrides)
+    {
+    // One shared joined-table column puts GUID in the joined table and Padding in overflow.
+    // DRY_WEIGHT and the sibling ItemTag then share the next overflow column.
+    const auto schemaXml = R"xml(
+      <ECSchema schemaName="OpmRemap" alias="opm" version="01.00.%02d" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+        <ECSchemaReference name="CoreCustomAttributes" version="01.00.03" alias="CoreCA"/>
+        <ECCustomAttributes><DynamicSchema xmlns="CoreCustomAttributes.01.00.03"/></ECCustomAttributes>
+        <ECEntityClass typeName="Root" modifier="Abstract">
+          <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap>
+            <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00.00"/>
+          </ECCustomAttributes>
+        </ECEntityClass>
+        <ECEntityClass typeName="JoinedBase" modifier="Abstract">
+          <BaseClass>Root</BaseClass>
+          <ECCustomAttributes>
+            <ShareColumns xmlns="ECDbMap.02.00.00">
+              <MaxSharedColumnsBeforeOverflow>1</MaxSharedColumnsBeforeOverflow>
+              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+            </ShareColumns>
+          </ECCustomAttributes>
+        </ECEntityClass>
+        <ECEntityClass typeName="PlantBase">
+          <BaseClass>JoinedBase</BaseClass>
+          <ECProperty propertyName="GUID" typeName="string"/>
+          <ECProperty propertyName="Padding" typeName="string"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="NamedItem">
+          <BaseClass>PlantBase</BaseClass>
+          %s
+        </ECEntityClass>
+        <ECEntityClass typeName="Device">
+          <BaseClass>NamedItem</BaseClass>
+          <ECProperty propertyName="DRY_WEIGHT" typeName="double"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="Fastener">
+          <BaseClass>Device</BaseClass>
+          <ECProperty propertyName="DRY_WEIGHT" typeName="double"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="Bolt">
+          <BaseClass>Fastener</BaseClass>
+        </ECEntityClass>
+        <ECEntityClass typeName="Valve">
+          <BaseClass>NamedItem</BaseClass>
+          <ECProperty propertyName="ItemTag" typeName="string"/>
+        </ECEntityClass>
+      </ECSchema>)xml";
+
+    auto verifyUnchangedMappingsAndValue = [&]()
+        {
+        for (Utf8CP className : {"Device", "Fastener", "Bolt"})
+            {
+            Statement mappings;
+            DbResult status = mappings.Prepare(m_ecdb, R"sql(
+              SELECT COUNT(*), COUNT(DISTINCT pm.PropertyPathId), COUNT(DISTINCT pm.ColumnId)
+              FROM ec_PropertyMap pm JOIN ec_Class c ON c.Id=pm.ClassId
+                JOIN ec_Schema s ON s.Id=c.SchemaId JOIN ec_PropertyPath pp ON pp.Id=pm.PropertyPathId
+              WHERE s.Name='OpmRemap' AND c.Name=? AND pp.AccessString='DRY_WEIGHT')sql");
+            EXPECT_EQ(BE_SQLITE_OK, status) << className;
+            if (status != BE_SQLITE_OK)
+                return false;
+            status = mappings.BindText(1, className, Statement::MakeCopy::No);
+            EXPECT_EQ(BE_SQLITE_OK, status) << className;
+            if (status != BE_SQLITE_OK)
+                return false;
+            status = mappings.Step();
+            EXPECT_EQ(BE_SQLITE_ROW, status) << className;
+            if (status != BE_SQLITE_ROW)
+                return false;
+            EXPECT_EQ(1, mappings.GetValueInt(0)) << className;
+            EXPECT_EQ(1, mappings.GetValueInt(1)) << className;
+            EXPECT_EQ(1, mappings.GetValueInt(2)) << className;
+            }
+
+        ECSqlStatement query;
+        ECSqlStatus prepareStatus = query.Prepare(m_ecdb, "SELECT DRY_WEIGHT FROM ONLY OpmRemap.Bolt");
+        EXPECT_EQ(ECSqlStatus::Success, prepareStatus);
+        if (prepareStatus != ECSqlStatus::Success)
+            return false;
+        DbResult status = query.Step();
+        EXPECT_EQ(BE_SQLITE_ROW, status);
+        if (status != BE_SQLITE_ROW)
+            return false;
+        EXPECT_DOUBLE_EQ(12.5, query.GetValueDouble(0));
+        EXPECT_EQ(BE_SQLITE_DONE, query.Step());
+        return true;
+        };
+
+    ASSERT_EQ(SUCCESS, SetupECDb("remappingSiblingPropertiesPreservesUnchangedOverrides.ecdb", SchemaItem(Utf8PrintfString(schemaXml, 0, ""))));
+
+    const auto originalGuidColumn = GetHelper().GetPropertyMapColumn(AccessString("OpmRemap", "Device", "GUID"));
+    ASSERT_TRUE(originalGuidColumn.Exists());
+    ASSERT_EQ(Column::Kind::SharedData, originalGuidColumn.GetKind());
+    ASSERT_STREQ("opm_JoinedBase", originalGuidColumn.GetTableName().c_str());
+
+    const auto originalItemTagColumn = GetHelper().GetPropertyMapColumn(AccessString("OpmRemap", "Valve", "ItemTag"));
+    ASSERT_TRUE(originalItemTagColumn.Exists());
+    ASSERT_EQ(Column::Kind::SharedData, originalItemTagColumn.GetKind());
+    ASSERT_STREQ("opm_JoinedBase_Overflow", originalItemTagColumn.GetTableName().c_str());
+    {
+    Statement sharedMappings;
+    ASSERT_EQ(BE_SQLITE_OK, sharedMappings.Prepare(m_ecdb, R"sql(
+      SELECT COUNT(*), COUNT(DISTINCT pm.PropertyPathId), MIN(declaring.Name),
+        COUNT(DISTINCT pm.ColumnId), MIN(t.Name), MIN(col.Name)
+      FROM ec_PropertyMap pm JOIN ec_Class c ON c.Id=pm.ClassId
+        JOIN ec_Schema s ON s.Id=c.SchemaId JOIN ec_PropertyPath pp ON pp.Id=pm.PropertyPathId
+        JOIN ec_Property p ON p.Id=pp.RootPropertyId JOIN ec_Class declaring ON declaring.Id=p.ClassId
+        JOIN ec_Column col ON col.Id=pm.ColumnId JOIN ec_Table t ON t.Id=col.TableId
+      WHERE s.Name='OpmRemap' AND c.Name IN ('Device','Fastener','Bolt') AND pp.AccessString='DRY_WEIGHT')sql"));
+    ASSERT_EQ(BE_SQLITE_ROW, sharedMappings.Step());
+    ASSERT_EQ(3, sharedMappings.GetValueInt(0));
+    ASSERT_EQ(1, sharedMappings.GetValueInt(1));
+    ASSERT_STREQ("Device", sharedMappings.GetValueText(2));
+    ASSERT_EQ(1, sharedMappings.GetValueInt(3));
+    ASSERT_STREQ(originalItemTagColumn.GetTableName().c_str(), sharedMappings.GetValueText(4));
+    ASSERT_STREQ(originalItemTagColumn.GetName().c_str(), sharedMappings.GetValueText(5));
+    }
+
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO OpmRemap.Bolt (DRY_WEIGHT) VALUES (12.5)");
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    ASSERT_TRUE(verifyUnchangedMappingsAndValue());
+
+    // Both linked tables must free columns in this import to exercise circular-remap column blocking.
+    const Utf8CP newOverrides = R"xml(
+      <ECProperty propertyName="GUID" typeName="string"/>
+      <ECProperty propertyName="ItemTag" typeName="string"/>)xml";
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(Utf8PrintfString(schemaXml, 1, newOverrides)), SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+
+    const auto remappedGuidColumn = GetHelper().GetPropertyMapColumn(AccessString("OpmRemap", "Device", "GUID"));
+    ASSERT_TRUE(remappedGuidColumn.Exists());
+    EXPECT_TRUE(originalGuidColumn.GetTableName() != remappedGuidColumn.GetTableName() || originalGuidColumn.GetName() != remappedGuidColumn.GetName());
+    const auto remappedItemTagColumn = GetHelper().GetPropertyMapColumn(AccessString("OpmRemap", "Valve", "ItemTag"));
+    ASSERT_TRUE(remappedItemTagColumn.Exists());
+    EXPECT_TRUE(originalItemTagColumn.GetTableName() != remappedItemTagColumn.GetTableName() || originalItemTagColumn.GetName() != remappedItemTagColumn.GetName());
+
+    ASSERT_TRUE(verifyUnchangedMappingsAndValue());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaRemapTestFixture, SwapColumnsWithOverflow)
     {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>

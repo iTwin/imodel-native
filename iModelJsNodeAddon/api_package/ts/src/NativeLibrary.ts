@@ -27,7 +27,7 @@ import type {
   IModelCoordinatesResponseProps, IModelProps, LocalDirName, LocalFileName, MassPropertiesResponseProps, ModelExtentsProps, ModelLoadProps,
   ModelProps, PlacementProps, QueryQuota, RelationshipProps, RscFontEncodingProps, SnapRequestProps, SnapResponseProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, UpgradeOptions
 } from "@itwin/core-common";
-import type { LowAndHighXYZProps, Range2dProps, Range3dProps } from "@itwin/core-geometry";
+import type { LowAndHighXYZProps, Range2dProps, Range3dProps, XAndY } from "@itwin/core-geometry";
 
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable no-restricted-syntax */
@@ -874,11 +874,32 @@ export declare namespace IModelJsNative {
     public static computeChangesetId(args: Partial<ChangesetFileProps> & Required<Pick<ChangesetFileProps, "parentId" | "pathname">>): string;
   }
 
+  /** Expected to migrate to `@itwin/core-common` when vertical CRS enumeration is exposed there. */
+  interface VerticalCRSListProps {
+    point?: XAndY;
+    extent?: Range2dProps;
+    includeIntersecting?: boolean;
+    unit?: string;
+  }
+
+  /** Expected to migrate to `@itwin/core-common` with `VerticalCRSListProps`. */
+  interface VerticalCRSListEntry {
+    crsName: string;
+    id: "GEOID" | "ELLIPSOID" | "NGVD29" | "NAVD88" | "LOCAL_ELLIPSOID";
+    epsg?: number;
+    description: string;
+    deprecated: boolean;
+    type: string;
+    unit: string;
+    extent: Range2dProps;
+  }
+
   /** The native object for GeoServices. */
   class GeoServices {
     constructor();
     public static getGeographicCRSInterpretation(props: GeographicCRSInterpretRequestProps): GeographicCRSInterpretResponseProps;
     public static getListOfCRS(extent?: Range2dProps, includeWorld?: boolean, unit?: string): Array<{ name: string, description: string, deprecated: boolean, crsExtent: Range2dProps, unit: string }>;
+    public static getListOfVerticalCRS(props?: VerticalCRSListProps): VerticalCRSListEntry[];
     public static getAvailableUnitNames(): string[];
   }
 
@@ -923,6 +944,14 @@ export declare namespace IModelJsNative {
     /** Throws on failure. A UNIQUE constraint violation additionally carries a [[UniqueConstraintConflictDetail]] as `conflictDetail`. */
     public updateInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean | { updated: boolean, conflictingProperties: string[] };
     public deleteInstance(key: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean | { deleted: boolean, conflictingProperties: string[] };
+    /** Import V8-serialized CSV rows using one prepared ECSQL statement.
+     * Mapped values and `nullValue` must not contain embedded NUL characters.
+     */
+    public importCSVData(className: string, rows: Uint8Array, mapping: ReadonlyArray<{ columnIndex: number, propertyName: string }>, options?: { nullValue?: string }): number;
+    /** Stream a CSV file and import mapped columns using one prepared ECSQL statement.
+     * Mapped values and `nullValue` must not contain embedded NUL characters.
+     */
+    public importCSVFile(className: string, csvFilePath: string, mapping: ReadonlyArray<{ columnIndex: number, propertyName: string }>, options?: { hasHeader?: boolean, nullValue?: string }): number;
     public getSchemaProps(name: string): SchemaProps;
     public importSchema(schemaPathName: string): DbResult;
     public isOpen(): boolean;
@@ -1611,7 +1640,7 @@ export declare namespace IModelJsNative {
     public isIndirectChange(): boolean;
     public getPrimaryKeyColumnIndexes(): number[];
     public openFile(fileName: string, invert: boolean): void;
-    public openGroup(fileName: string[], db: AnyECDb, invert: boolean): void;
+    public openGroup(fileName: string[], db: AnyDb, invert: boolean): void;
     public openLocalChanges(db: DgnDb, includeInMemoryChanges: boolean, invert: boolean): void;
     public openInMemoryChanges(db: DgnDb, invert: boolean): void;
     public openTxn(db: DgnDb, txnId: Id64String, invert: boolean): void;

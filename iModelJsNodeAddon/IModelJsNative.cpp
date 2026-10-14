@@ -483,6 +483,14 @@ public:
         auto& db = GetOpenedDb(info);
         return JsInterop::DeleteInstance(db, info);
     }
+    Napi::Value ImportCSVData(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        return JsInterop::ImportCSVData(db, info);
+    }
+    Napi::Value ImportCSVFile(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        return JsInterop::ImportCSVFile(db, info);
+    }
     Napi::Value ConcurrentQueryResetConfig(NapiInfoCR info) {
         if (info.Length() > 0 && info[0].IsObject()) {
             Napi::Object inConf = info[0].As<Napi::Object>();
@@ -690,6 +698,8 @@ public:
             InstanceMethod("insertInstance", &NativeECDb::InsertInstance),
             InstanceMethod("updateInstance", &NativeECDb::UpdateInstance),
             InstanceMethod("deleteInstance", &NativeECDb::DeleteInstance),
+            InstanceMethod("importCSVData", &NativeECDb::ImportCSVData),
+            InstanceMethod("importCSVFile", &NativeECDb::ImportCSVFile),
             InstanceMethod("saveChanges", &NativeECDb::SaveChanges),
             InstanceMethod("clearECDbCache", &NativeECDb::ClearECDbCache),
             StaticMethod("enableSharedCache", &NativeECDb::EnableSharedCache),
@@ -1855,7 +1865,14 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         auto& db = GetOpenedDb(info);
         OPTIONAL_ARGUMENT_STRING(0, when);
         BeJsNapiObject props(Env());
-        JsInterop::GetIModelProps(props, db, when);
+        try
+            {
+            JsInterop::GetIModelProps(props, db, when);
+            }
+        catch (std::exception const& e)
+            {
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), e.what(), DgnDbStatus::ReadError);
+            }
         return props;
     }
 
@@ -3630,6 +3647,42 @@ struct NativeGeoServices : BeObjectWrap<NativeGeoServices>
         return ret;
         }
 
+    static Napi::Value GetListOfVerticalCRS(NapiInfoCR info)
+        {
+        OPTIONAL_ARGUMENT_ANY_OBJ(0, props, Napi::Object::New(info.Env()));
+
+        bvector<VerticalCRSListResponseProps> list;
+        Utf8String errorMessage;
+        StatusInt status = GeoServicesInterop::GetListOfVerticalCRS(list, props, errorMessage);
+        if (SUCCESS != status)
+            {
+            if (errorMessage.empty())
+                errorMessage.Sprintf("unable to query vertical coordinate reference systems (status %d)", status);
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), errorMessage.c_str(), IModelJsNativeErrorKey::BadArg);
+            }
+
+        auto ret = Napi::Array::New(info.Env(), list.size());
+        uint32_t index = 0;
+        for (auto const& verticalCrs : list)
+            {
+            auto definition = Napi::Object::New(info.Env());
+            definition.Set("crsName", verticalCrs.m_crsName.c_str());
+            definition.Set("id", verticalCrs.m_id.c_str());
+            if (verticalCrs.m_epsg > 0)
+                definition.Set("epsg", verticalCrs.m_epsg);
+            definition.Set("description", verticalCrs.m_description.c_str());
+            definition.Set("deprecated", verticalCrs.m_deprecated);
+            definition.Set("type", verticalCrs.m_type.c_str());
+            definition.Set("unit", verticalCrs.m_unit.c_str());
+            Napi::Object verticalExtent = Napi::Object::New(info.Env());
+            BeJsGeomUtils::DRange2dToJson(verticalExtent, verticalCrs.m_extent);
+            definition.Set("extent", verticalExtent);
+            ret.Set(index++, definition);
+            }
+
+        return ret;
+        }
+
     //  Create projections
     static void Init(Napi::Env& env, Napi::Object exports)
         {
@@ -3637,6 +3690,7 @@ struct NativeGeoServices : BeObjectWrap<NativeGeoServices>
         Napi::Function t = DefineClass(env, "GeoServices", {
             StaticMethod("getGeographicCRSInterpretation", &NativeGeoServices::GetGeographicCRSInterpretation),
             StaticMethod("getListOfCRS", &NativeGeoServices::GetListOfCRS),
+            StaticMethod("getListOfVerticalCRS", &NativeGeoServices::GetListOfVerticalCRS),
             StaticMethod("getAvailableUnitNames", &NativeGeoServices::GetAvailableCRSUnitNames)
         });
 
@@ -5138,23 +5192,26 @@ public:
         REQUIRE_ARGUMENT_ANY_OBJ(1, dbObj);
         REQUIRE_ARGUMENT_BOOL(2, invert);
 
-        ECDb* ecdb = nullptr;
+        Db* db = nullptr;
         if (NativeDgnDb::InstanceOf(dbObj)) {
             NativeDgnDb* addonDgndb = NativeDgnDb::Unwrap(dbObj);
-            ecdb = &addonDgndb->GetDgnDb();
+            db = &addonDgndb->GetDgnDb();
 
         } else if (NativeECDb::InstanceOf(dbObj)) {
             NativeECDb* addonECDb = NativeECDb::Unwrap(dbObj);
-            ecdb = &addonECDb->GetECDb();
+            db = &addonECDb->GetECDb();
 
+        } else if (SQLiteDb::InstanceOf(dbObj)) {
+            SQLiteDb* sqliteDb = SQLiteDb::Unwrap(dbObj);
+            db = &sqliteDb->GetDb();
         } else {
-            THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb or NativeECDb object");
+            THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb, NativeECDb, or SQLiteDb object");
         }
 
-        if (!ecdb || !ecdb->IsDbOpen())
+        if (!db || !db->IsDbOpen())
             THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db not open", DgnDbStatus::NotOpen);
 
-        m_changeset.OpenGroup(Env(), fileNames, *ecdb, invert);
+        m_changeset.OpenGroup(Env(), fileNames, *db, invert);
         }
     void WriteToFile(NapiInfoCR info)
         {
@@ -5270,8 +5327,8 @@ private:
 
     ChangesetReader::PropertyFilter GetPropertyFilter(NapiInfoCR info, int modeInt)
         {
-        if (modeInt < 0 || modeInt > 2)
-            THROW_JS_TYPE_EXCEPTION("Invalid mode. Expected 0 (All_Properties), 1 (Bis_Element_Properties), or 2 (Instance_Key)");
+        if (modeInt < 0 || modeInt > 3)
+            THROW_JS_TYPE_EXCEPTION("Invalid mode. Expected 0 (All_Properties), 1 (Bis_Element_Properties), 2 (Instance_Key), or 3 (Instance_Key_And_Identifiers)");
         return static_cast<ChangesetReader::PropertyFilter>(modeInt);
         }
 
@@ -7116,7 +7173,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         REQUIRE_ARGUMENT_STRING(0, ruleSetId);
         REQUIRE_ARGUMENT_STRING(1, variableId);
         REQUIRE_ARGUMENT_STRING(2, variableType);
-        REQUIRE_ARGUMENT_ANY_OBJ(3, value);
+        REQUIRE_ARGUMENT_ANY_VALUE(3, value);
         ECPresentationResult result = ECPresentationUtils::SetRulesetVariableValue(*m_presentationManager, ruleSetId, variableId, variableType, value);
         return CreateReturnValue(std::move(result));
         }

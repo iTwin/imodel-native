@@ -56,7 +56,10 @@ AxisAlignedBox3d Placement3d::CalculateRange() const {
 void Placement3d::ToJson(BeJsValue val) const {
     val.SetEmptyObject();
     BeJsGeomUtils::DPoint3dToJson(val[json_origin()], m_origin);
-    BeJsGeomUtils::YawPitchRollToJson(val[json_angles()], m_angles);
+    // Placement JSON always carries angles; YawPitchRollToJson writes only nonzero members, so start from {}.
+    auto angles = val[json_angles()];
+    angles.SetEmptyObject();
+    BeJsGeomUtils::YawPitchRollToJson(angles, m_angles);
     BeJsGeomUtils::DRange3dToJson(val[json_bbox()], m_boundingBox);
 }
 

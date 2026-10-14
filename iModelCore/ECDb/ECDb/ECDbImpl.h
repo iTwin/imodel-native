@@ -9,6 +9,7 @@
 #include "ChangeManager.h"
 #include "ProfileManager.h"
 #include "IssueReporter.h"
+#include "InstanceGraphImpl.h"
 #include <atomic>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -172,9 +173,11 @@ private:
     mutable std::unique_ptr<SupportInstanceQueryFunc> m_supportInstanceQueryFunc;
     mutable EC::ECSqlConfig m_ecSqlConfig;
     mutable bool m_disableDDLTracking;
+    mutable Utf8CP m_sqliteOnlyAttachmentAlias = nullptr;
     mutable std::unique_ptr<PragmaManager> m_pragmaProcessor;
     mutable SnappyFromMemory m_snappyReader;
     mutable SnappyToBlob m_snappyWriter;
+    mutable std::unique_ptr<GraphStatementCache> m_graphStatementCache;
     //Mirrored ECDb methods are only called by ECDb (friend), therefore private
     explicit Impl(ECDbR ecdb);
 
@@ -238,6 +241,7 @@ public:
     BeGuid GetId() const  {return m_id; }
     IdFactory& GetIdFactory() const;
     DbResult ExecuteDDL(Utf8CP) const;
+    DbResult AttachDbAsSQLite(Utf8CP dbFileName, Utf8CP tableSpaceName) const;
     PragmaManager& GetPragmaManager() const;
 
     template<typename T>
@@ -284,6 +288,13 @@ public:
         return *m_instanceRepo;
     }
     IssueDataSource const& Issues() const { return m_issueReporter; }
+    GraphStatementCache& GetGraphStatementCache() const {
+        BeMutexHolder holder(m_mutex);
+        if (m_graphStatementCache == nullptr) {
+            m_graphStatementCache = std::make_unique<GraphStatementCache>(m_ecdb);
+        }
+        return *m_graphStatementCache;
+    }
     ProfileVersion const& RefreshProfileVersion() const {
         m_profileManager.RefreshProfileVersion();
         return m_profileManager.GetProfileVersion();

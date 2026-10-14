@@ -55,6 +55,119 @@ TEST_F(ECSqlPragmasTestFixture, ecsql_ver)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlPragmasTestFixture, validate_persisted_mappings)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("validate_persisted_mappings.ecdb", SchemaItem(R"xml(
+        <?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="MappingValidation" alias="mv" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="Root">
+            <ECCustomAttributes>
+              <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+              </ClassMap>
+            </ECCustomAttributes>
+          </ECEntityClass>
+          <ECEntityClass typeName="Child" modifier="Sealed">
+            <BaseClass>Root</BaseClass>
+            <ECProperty propertyName="P1" typeName="string"/>
+            <ECProperty propertyName="P2" typeName="string"/>
+          </ECEntityClass>
+          <ECEntityClass typeName="Sibling" modifier="Sealed">
+            <BaseClass>Root</BaseClass>
+            <ECProperty propertyName="Q1" typeName="string"/>
+            <ECProperty propertyName="Q2" typeName="string"/>
+          </ECEntityClass>
+        </ECSchema>
+    )xml")));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus(BE_SQLITE_ERROR), stmt.Prepare(m_ecdb, "PRAGMA validate_persisted_mappings"));
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "PRAGMA validate_persisted_mappings OPTIONS enable_experimental_features"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(R"sql(
+        DELETE FROM ec_PropertyMap
+        WHERE ClassId = (
+            SELECT c.Id
+            FROM ec_Class c JOIN ec_Schema s ON s.Id = c.SchemaId
+            WHERE s.Name = 'MappingValidation' AND c.Name = 'Child')
+          AND PropertyPathId IN (
+            SELECT pp.Id
+            FROM ec_PropertyPath pp JOIN ec_Property p ON p.Id = pp.RootPropertyId
+            WHERE p.Name = 'P2')
+    )sql"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(R"sql(
+        UPDATE ec_PropertyPath SET AccessString='Q1'
+        WHERE Id = (
+            SELECT pp.Id
+            FROM ec_PropertyPath pp
+              JOIN ec_Property p ON p.Id=pp.RootPropertyId
+              JOIN ec_Class c ON c.Id=p.ClassId
+              JOIN ec_Schema s ON s.Id=c.SchemaId
+            WHERE s.Name='MappingValidation' AND c.Name='Sibling'
+              AND p.Name='Q2' AND pp.AccessString='Q2')
+    )sql"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    m_ecdb.ClearECDbCache();
+
+    TestIssueListener issueListener;
+    ASSERT_EQ(SUCCESS, m_ecdb.AddIssueListener(issueListener));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "PRAGMA validate_persisted_mappings OPTIONS enable_experimental_features"));
+
+    bool foundIncompleteMap = false;
+    bool foundDuplicateMap = false;
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        ASSERT_EQ(5, stmt.GetColumnCount());
+        Utf8String const issueId = stmt.GetValueText(3);
+        Utf8String const message = stmt.GetValueText(4);
+        if (issueId.Equals("ECDb_0160") && message.Contains("MappingValidation:Child"))
+            {
+            EXPECT_STREQ("Error", stmt.GetValueText(0));
+            EXPECT_STREQ("BusinessProperties", stmt.GetValueText(1));
+            EXPECT_STREQ("ECDbIssue", stmt.GetValueText(2));
+            foundIncompleteMap = true;
+            }
+        else if (issueId.Equals("ECDb_0116"))
+            {
+            EXPECT_STREQ("Error", stmt.GetValueText(0));
+            EXPECT_STREQ("BusinessProperties", stmt.GetValueText(1));
+            EXPECT_STREQ("ECDbIssue", stmt.GetValueText(2));
+            EXPECT_TRUE(message.Contains("MappingValidation:Sibling"));
+            EXPECT_TRUE(message.Contains("AccessString 'Q1'"));
+            foundDuplicateMap = true;
+            }
+        }
+    EXPECT_TRUE(foundIncompleteMap);
+    EXPECT_TRUE(foundDuplicateMap);
+
+    bool listenerReceivedIssue = false;
+    for (ReportedIssue const& issue : issueListener.m_issues)
+        listenerReceivedIssue |= Utf8String(issue.id.m_issueId).Equals("ECDb_0160");
+    EXPECT_TRUE(listenerReceivedIssue);
+
+    stmt.Finalize();
+    issueListener.ClearIssues();
+    m_ecdb.ClearECDbCache();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "PRAGMA validate_persisted_mappings OPTIONS enable_experimental_features", false));
+    foundIncompleteMap = false;
+    while (BE_SQLITE_ROW == stmt.Step())
+        foundIncompleteMap |= Utf8String(stmt.GetValueText(3)).Equals("ECDb_0160");
+    EXPECT_TRUE(foundIncompleteMap);
+    stmt.Finalize();
+    m_ecdb.RemoveIssueListener();
+    }
+
+//---------------------------------------------------------------------------------------
 // A pragma must execute its underlying logic against the data-source connection (the read-only
 // connection used to execute the statement), not the schema/parse connection. This mirrors regular
 // ECSQL, which prepares/steps against the data-source connection. In concurrent query the parse

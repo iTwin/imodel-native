@@ -174,8 +174,10 @@
          1) Runs current test runner (from current software) against
             * files it creates itself (-> get saved as nuget afterwards)
             * all downloaded test files.
+         By default the test files are created once and the remaining tests are executed by several concurrent gtest shards.
+         Pass -dRUN_EVOLUTION_TESTS_OPTIMIZED=0 to run as a single process without any of the optimizations.
     -->
-    <Part Name="IModelEvolutionRunCurrentTestRunner" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/runGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=IModelEvolutionGTest -dGTEST_NAME=IModelEvolutionTests -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/IModelEvolutionTests -dGTEST_EXTRA_ARGS=--timeout=-1" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="IModelEvolutionRunCurrentTestRunner" DeferType="RunUnitTests" BentleyBuildMakeFile="Tests/DgnProject/Compatibility/CompatibilityRunner/RunCurrentTestRunner.mke" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubPart PartName="IModelEvolutionPrepareCurrentTestRunner"/>
     </Part>
 

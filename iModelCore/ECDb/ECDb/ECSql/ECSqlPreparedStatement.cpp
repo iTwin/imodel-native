@@ -914,14 +914,13 @@ DbResult ECSqlInsertPreparedStatement::Step(ECInstanceKey& instanceKey)
             idBinder = &m_ecInstanceKeyHelper.GetIdProxyBinder()->GetBinder();
         else
             {
-            ECSqlBinder* binder = nullptr;
-            if (!GetPrimaryTableECSqlStatement().GetParameterMap().TryGetBinder(binder, ECSQLSYS_PARAM_Id))
+            if (nullptr == m_generatedIdBinder && !GetPrimaryTableECSqlStatement().GetParameterMap().TryGetBinder(m_generatedIdBinder, ECSQLSYS_PARAM_Id))
                 {
                 BeAssert(false);
                 return BE_SQLITE_ERROR;
                 }
 
-            idBinder = binder;
+            idBinder = m_generatedIdBinder;
             }
 
         BeAssert(idBinder != nullptr);
