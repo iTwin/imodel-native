@@ -300,11 +300,10 @@ TEST_F(ChangeUnifierTests, JoinedTable_InsertMergesRowsFromAllTables)
     }
 
 //---------------------------------------------------------------------------------------
-// Values that push the scratch render document past its byte limit, including one larger than the limit, come back
-// intact, and so do the values rendered after the document is dropped.
+// Large string values (700 KB and 1.5 MB) come back intact, and so do the small values next to them.
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeUnifierTests, LargeValues_SurviveScratchReset)
+TEST_F(ChangeUnifierTests, LargeValues_RoundTrip)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("cu_large.ecdb", SchemaItem(GetSchema())));
     const Utf8String big1(700 * 1024, 'x'), big2(1500 * 1024, 'y');
@@ -571,6 +570,77 @@ TEST_F(ChangeUnifierTests, Writer_StableStringIds)
         {
         EXPECT_EQ(1u, entry.second.size()) << entry.first.c_str();
         EXPECT_NE(0u, *entry.second.begin()) << entry.first.c_str();
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// A string that starts with BeJsValue's base64 header stays a string at the top level, in a struct and in an
+// array, and binary stays binary, in memory and when spilled. Checked on the writer events, because a BeJsValue
+// writer would store binary as a string with that same header.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangeUnifierTests, Writer_StringsWithBase64HeaderStayStrings)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("cu_base64.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestBase64" alias="tb" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECStructClass typeName="Info">
+                <ECProperty propertyName="Note" typeName="string"/>
+            </ECStructClass>
+            <ECEntityClass typeName="Doc">
+                <ECProperty propertyName="Text" typeName="string"/>
+                <ECProperty propertyName="Data" typeName="binary"/>
+                <ECStructProperty propertyName="Info" typeName="Info"/>
+                <ECArrayProperty propertyName="Tags" typeName="string" minOccurs="0" maxOccurs="unbounded"/>
+            </ECEntityClass>
+        </ECSchema>)xml")));
+    Utf8CP text = "encoding=base64;SGVsbG8=";
+    const Byte data[] = {1, 2, 3};
+    BeFileName cs = Capture("cu_base64.changeset", [&]
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO tb.Doc(Text, Data, Info, Tags) VALUES(?, ?, ?, ?)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, text, IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindBlob(2, data, (int) sizeof(data), IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(3)["Note"].BindText(text, IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(4).AddArrayElement().BindText(text, IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        });
+
+    // Writes strings as s(value), and binary as b(size).
+    struct TypedTextWriter final : ChangeUnifier::IInstanceWriter
+        {
+        std::string m_out;
+        void StartObject() override { m_out += "{"; }
+        void Key(Utf8CP name, size_t length, uint32_t) override { m_out.append(name, length).append(":"); }
+        void EndObject() override { m_out += "}"; }
+        void StartArray() override { m_out += "["; }
+        void EndArray() override { m_out += "]"; }
+        void Null() override { m_out += "null,"; }
+        void Bool(bool value) override { m_out += value ? "true," : "false,"; }
+        void Int64(int64_t value) override { m_out += std::to_string(value) + ","; }
+        void UInt64(uint64_t value) override { m_out += std::to_string(value) + ","; }
+        void Double(double value) override { m_out += std::to_string(value) + ","; }
+        void String(Utf8CP value, size_t length, uint32_t) override { m_out.append("s(").append(value, length).append("),"); }
+        void Binary(Byte const*, size_t size) override { m_out += "b(" + std::to_string(size) + "),"; }
+        };
+    const std::string expectedString = std::string("s(") + text + "),";
+    for (uint64_t budget : {(uint64_t) 0, (uint64_t) 1})
+        {
+        ChangeUnifier::Options options;
+        options.m_memoryBudgetBytes = budget;
+        ChangeUnifier unifier(options);
+        ChangesetReader reader;
+        ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangesetFile(m_ecdb, cs.GetNameUtf8(), false, ChangesetReader::PropertyFilter::All));
+        ASSERT_EQ(BE_SQLITE_OK, unifier.AppendFrom(reader, JsReadOptions().SetAbbreviateBlobs(false))) << unifier.GetLastError().c_str();
+        EXPECT_EQ(SUCCESS, reader.Close());
+
+        TypedTextWriter writer;
+        ASSERT_EQ(BE_SQLITE_ROW, unifier.Step(writer)) << unifier.GetLastError().c_str();
+        EXPECT_EQ(BE_SQLITE_DONE, unifier.Step(writer));
+        EXPECT_NE(std::string::npos, writer.m_out.find("Text:" + expectedString)) << "budget " << budget << ": " << writer.m_out;
+        EXPECT_NE(std::string::npos, writer.m_out.find("Data:b(3),")) << "budget " << budget << ": " << writer.m_out;
+        EXPECT_NE(std::string::npos, writer.m_out.find("Info:{Note:" + expectedString + "}")) << "budget " << budget << ": " << writer.m_out;
+        EXPECT_NE(std::string::npos, writer.m_out.find("Tags:[" + expectedString + "]")) << "budget " << budget << ": " << writer.m_out;
         }
     }
 
