@@ -2,30 +2,27 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-// lzma stuff includes Windows.h! Include it first!
-#include "liblzma/Types.h"
+#include "liblzma/7zTypes.h"
 #include "liblzma/Lzma2Enc.h"
 #include "liblzma/Lzma2Dec.h"
+#include "liblzma/LzFind.h"
 #undef min
 #undef max
 
 #include <BeSQLite/BeLzma.h>
 #include <Bentley/Logging.h>
+#include <mutex>
 
 #define LOG (NativeLogging::CategoryLogger("BeSQLite"))
-
-#ifndef __LZMA2_ENC_H
-typedef struct _CLzma2EncProps CLzma2EncProps;
-#endif
 
 BEGIN_BENTLEY_SQLITE_NAMESPACE
 
 // Functions needed for 7z.  These are for a C API that simulates C++.
-static void *allocFor7z(void *p, size_t size)   {return malloc(size);}
-static void freeFor7z(void *p, void *address)    {free(address);}
-static SRes readFor7z(void *p, void *buf, size_t *size);
-static size_t writeFor7z(void *p, const void *buf, size_t size);
-static SRes progressFor7z(void *p, UInt64 inSize, UInt64 outSize);
+static void *allocFor7z(ISzAllocPtr p, size_t size)   {return malloc(size);}
+static void freeFor7z(ISzAllocPtr p, void *address)    {free(address);}
+static SRes readFor7z(ISeqInStreamPtr p, void *buf, size_t *size);
+static size_t writeFor7z(ISeqOutStreamPtr p, const void *buf, size_t size);
+static SRes progressFor7z(ICompressProgressPtr p, UInt64 inSize, UInt64 outSize);
 
 //=======================================================================================
 // Provides an implementation of the 7z C struct ISeqInStream.
@@ -38,7 +35,7 @@ struct SeqInStreamImpl : ::ISeqInStream
 
     public:
         SeqInStreamImpl(ILzmaInputStream& in) : m_stream(in) { Read = readFor7z; }
-        ILzmaInputStream& GetStream() { return m_stream; }
+        ILzmaInputStream& GetStream() const { return m_stream; }
         SRes ReadData(void *buf, size_t *size) { return Read(this, buf, size); }
         uint64_t GetSize() { return m_stream._GetSize(); }
     };
@@ -53,7 +50,7 @@ struct SeqOutStreamImpl : ::ISeqOutStream
         ILzmaOutputStream&  m_stream;
 
     public:
-        ILzmaOutputStream& GetStream() { return m_stream; }
+        ILzmaOutputStream& GetStream() const { return m_stream; }
         SeqOutStreamImpl(ILzmaOutputStream& outStream) : m_stream(outStream) { Write = writeFor7z; }
         size_t WriteData(const void *buf, size_t size) { return Write(this, buf, size); }
         void SetAlwaysFlush(bool flushOnEveryWrite) { m_stream._SetAlwaysFlush(flushOnEveryWrite); }
@@ -71,9 +68,9 @@ struct  ICompressProgressImpl : ::ICompressProgress
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-static SRes readFor7z(void *p, void *buf, size_t *size)
+static SRes readFor7z(ISeqInStreamPtr p, void *buf, size_t *size)
     {
-    SeqInStreamImpl* pImpl = static_cast <SeqInStreamImpl*>(p);
+    SeqInStreamImpl const* pImpl = static_cast<SeqInStreamImpl const*>(p);
 
     uint32_t bytesRead = 0;
     ZipErrors zipError = pImpl->GetStream()._Read(buf, (uint32_t) *size, bytesRead);
@@ -85,11 +82,12 @@ static SRes readFor7z(void *p, void *buf, size_t *size)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-static size_t writeFor7z(void *p, const void *buf, size_t size)
+static size_t writeFor7z(ISeqOutStreamPtr p, const void *buf, size_t size)
     {
-    SeqOutStreamImpl* pImpl = static_cast<SeqOutStreamImpl*>(p);
-    uint32_t bytesWritten;
-    pImpl->GetStream()._Write(buf, (uint32_t) size, bytesWritten);
+    SeqOutStreamImpl const* pImpl = static_cast<SeqOutStreamImpl const*>(p);
+    uint32_t bytesWritten = 0;
+    if (pImpl->GetStream()._Write(buf, (uint32_t) size, bytesWritten) != ZIP_SUCCESS)
+        return 0;
 
     return bytesWritten;
     }
@@ -97,9 +95,9 @@ static size_t writeFor7z(void *p, const void *buf, size_t size)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-static SRes progressFor7z(void *p, UInt64 inSize, UInt64 outSize)
+static SRes progressFor7z(ICompressProgressPtr p, UInt64 inSize, UInt64 outSize)
     {
-    ICompressProgressImpl* impl = (ICompressProgressImpl*) p;
+    ICompressProgressImpl const* impl = static_cast<ICompressProgressImpl const*>(p);
 
     BeAssert(impl->m_tracker);  //  SetICompressProgress does not use a ICompressProgressImpl with m_tracker == NULL;
 
@@ -339,20 +337,17 @@ ZipErrors MemoryLzmaOutStream::_Write(void const* data, uint32_t writeSize, uint
 
 //=======================================================================================
 // Helper utility to encode a buffer
-// Note: This utility exists only since Lzma2Encode is commented out for some unknown reason in the Lzma vendor API.
 // @bsiclass
 //=======================================================================================
 struct LzmaBufferEncoder
 {
 private:
-    MemoryLzmaInStream m_inStream;
-    SeqInStreamImpl m_inSeqStream;
     bvector<Byte> m_outBuffer;
     MemoryLzmaOutStream m_outStream;
     SeqOutStreamImpl m_outSeqStream;
 
 public:
-    LzmaBufferEncoder() : m_inStream(nullptr, 0), m_outStream(m_outBuffer), m_inSeqStream(m_inStream), m_outSeqStream(m_outStream)
+    LzmaBufferEncoder() : m_outStream(m_outBuffer), m_outSeqStream(m_outStream)
         {}
 
     //---------------------------------------------------------------------------------------
@@ -364,8 +359,9 @@ public:
         m_outBuffer.reserve(nInData); // The compressed data ought to be smaller
 
         BeAssert(nInData > 0);
-        m_inStream.SetData(pInData, (uint32_t) nInData);
-        int res = Lzma2Enc_Encode(encHandle, &m_outSeqStream, &m_inSeqStream, progressImpl);
+        Lzma2Enc_SetDataSize(encHandle, (UInt64)nInData);
+        int res = Lzma2Enc_Encode2(encHandle, &m_outSeqStream, nullptr, nullptr,
+            nullptr, static_cast<Byte const*>(pInData), (size_t)nInData, progressImpl);
         if (SZ_OK != res)
             return translate7ZipError(res, true);
 
@@ -455,7 +451,8 @@ void LzmaEncoder::LzmaParams::ToProps(void* v) const
     props->lzmaProps.level = m_level;
     props->lzmaProps.lp = m_lp;
     props->lzmaProps.mc = m_mc;
-    props->numBlockThreads = m_numBlockThreads;
+    props->numBlockThreads_Max = m_numBlockThreads;
+    props->numBlockThreads_Reduced = m_numBlockThreads;
     props->lzmaProps.numHashBytes = m_numHashBytes;
     props->lzmaProps.numThreads = m_numThreads;
     props->numTotalThreads = m_numTotalThreads;
@@ -478,7 +475,7 @@ void LzmaEncoder::LzmaParams::FromProps(void* v)
     m_level = props->lzmaProps.level;
     m_lp = props->lzmaProps.lp;
     m_mc = props->lzmaProps.mc;
-    m_numBlockThreads = props->numBlockThreads;
+    m_numBlockThreads = props->numBlockThreads_Max;
     m_numHashBytes = props->lzmaProps.numHashBytes;
     m_numThreads = props->lzmaProps.numThreads;
     m_numTotalThreads = props->numTotalThreads;
@@ -570,6 +567,10 @@ private:
     ZipErrors InitHandle()
         {
         BeAssert(m_encHandle == 0);
+
+        // The SDK's SIMD dispatch is shared by all encoders.
+        static std::once_flag initializeMatchFinder;
+        std::call_once(initializeMatchFinder, [] { LzFindPrepare(); });
 
         m_encHandle = Lzma2Enc_Create(&m_szAlloc, &m_szAlloc);
         if (m_encHandle == 0)
@@ -731,6 +732,11 @@ public:
             return ZIP_ERROR_UNKNOWN;
             }
 
+        if (nData == 0)
+            return ZIP_SUCCESS;
+        if (nData < 0 || pData == nullptr)
+            return ZIP_ERROR_BAD_DATA;
+
         void *pOutData = nullptr;
         int nOutData;
 
@@ -780,7 +786,9 @@ public:
         if (ZIP_SUCCESS != zipStatus)
             return zipStatus;
 
-        int res = Lzma2Enc_Encode(m_encHandle, m_outStream, m_inStream, m_progressImpl);
+        Lzma2Enc_SetDataSize(m_encHandle, m_inStream->GetSize());
+        int res = Lzma2Enc_Encode2(m_encHandle, m_outStream, nullptr, nullptr,
+            m_inStream, nullptr, 0, m_progressImpl);
 
         FinalizeHandle();
         FinalizeStreams();
