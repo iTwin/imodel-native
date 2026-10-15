@@ -168,6 +168,69 @@ TEST_F(ECSqlPragmasTestFixture, validate_persisted_mappings)
     }
 
 //---------------------------------------------------------------------------------------
+TEST_F(ECSqlPragmasTestFixture, ValidateMappingsAfterDuplicateAccessStringIsRepaired)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("validate_repaired_duplicate_mapping.ecdb", SchemaItem(R"xml(
+        <ECSchema schemaName="DuplicateValidation" alias="dv" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="Entity">
+            <ECProperty propertyName="P1" typeName="string"/>
+            <ECProperty propertyName="P2" typeName="string"/>
+          </ECEntityClass>
+        </ECSchema>
+    )xml")));
+
+    auto validate = [this](bool expectDuplicate)
+        {
+        m_ecdb.ClearECDbCache();
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+            "PRAGMA validate_persisted_mappings OPTIONS enable_experimental_features"));
+        int issues = 0;
+        int duplicateIssues = 0;
+        DbResult rc;
+        while ((rc = stmt.Step()) == BE_SQLITE_ROW)
+            {
+            ++issues;
+            if (Utf8String(stmt.GetValueText(3)).Equals("ECDb_0116"))
+                {
+                ++duplicateIssues;
+                EXPECT_STREQ("Error", stmt.GetValueText(0));
+                EXPECT_TRUE(Utf8String(stmt.GetValueText(4)).Contains("DuplicateValidation:Entity"));
+                EXPECT_TRUE(Utf8String(stmt.GetValueText(4)).Contains("AccessString 'P1'"));
+                }
+            }
+        ASSERT_EQ(BE_SQLITE_DONE, rc);
+        EXPECT_EQ(expectDuplicate ? 1 : 0, duplicateIssues);
+        if (!expectDuplicate)
+            EXPECT_EQ(0, issues);
+        };
+
+    validate(false);
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(R"sql(
+        UPDATE ec_PropertyPath SET AccessString='P1'
+        WHERE RootPropertyId = (
+            SELECT p.Id FROM ec_Property p
+              JOIN ec_Class c ON c.Id=p.ClassId
+              JOIN ec_Schema s ON s.Id=c.SchemaId
+            WHERE s.Name='DuplicateValidation' AND c.Name='Entity' AND p.Name='P2')
+    )sql"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    validate(true);
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(R"sql(
+        UPDATE ec_PropertyPath SET AccessString='P2'
+        WHERE RootPropertyId = (
+            SELECT p.Id FROM ec_Property p
+              JOIN ec_Class c ON c.Id=p.ClassId
+              JOIN ec_Schema s ON s.Id=c.SchemaId
+            WHERE s.Name='DuplicateValidation' AND c.Name='Entity' AND p.Name='P2')
+    )sql"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    validate(false);
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    validate(false);
+    }
+
+//---------------------------------------------------------------------------------------
 // A pragma must execute its underlying logic against the data-source connection (the read-only
 // connection used to execute the statement), not the schema/parse connection. This mirrors regular
 // ECSQL, which prepares/steps against the data-source connection. In concurrent query the parse

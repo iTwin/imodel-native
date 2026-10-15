@@ -27,7 +27,11 @@ struct ECDbModule : public BeSQLite::DbModule {
                 virtual ~ECDbVirtualTable(){}
         };
     private:
+        // Only these internal modules embed their schema; they skip legacy schema conversion on register.
+        friend struct IdSetModule;
+        friend struct RelationsModule;
         Utf8String m_ecSchema;
+        bool m_hasBuiltInSchema = false;
 
     protected:
         ECDB_EXPORT DbResult _OnRegister() final;
