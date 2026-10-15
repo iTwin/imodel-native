@@ -108,7 +108,6 @@ static SRes progressFor7z(ICompressProgressPtr p, UInt64 inSize, UInt64 outSize)
     }
 
 #define DECODE_INPUT_BUFFER_SIZE (32 * 1024)
-#define ENCODE_INPUT_BUFFER_SIZE (32 * 1024)
 #define DECODE_OUTPUT_BUFFER_SIZE (32 * 1024)
 
 //---------------------------------------------------------------------------------------
@@ -326,11 +325,11 @@ ZipErrors MemoryLzmaInStream::_Read(void* data, uint32_t size, uint32_t& actuall
 //---------------------------------------------------------------------------------------
 ZipErrors MemoryLzmaOutStream::_Write(void const* data, uint32_t writeSize, uint32_t&bytesWritten)
     {
-    //  The LZMA2 multi-threading support  ensures that calls to _Read are sequential and do not overlap, so this code does not need to
-    //  be concerned with preventing race conditions
-    size_t oldSize = m_buffer.size();
-    m_buffer.resize(oldSize + writeSize);
-    memcpy(&m_buffer[oldSize], data, writeSize);
+    if (writeSize > 0)
+        {
+        Byte const* bytes = static_cast<Byte const*>(data);
+        m_buffer.insert(m_buffer.end(), bytes, bytes + writeSize);
+        }
     bytesWritten = writeSize;
     return ZIP_SUCCESS;
     }
@@ -353,20 +352,29 @@ public:
     //---------------------------------------------------------------------------------------
     // @bsimethod
     //---------------------------------------------------------------------------------------
-    ZipErrors EncodeBuffer(::CLzma2EncHandle encHandle, void* &pOutData, int &nOutData, void const* pInData, int nInData, ICompressProgressImpl* progressImpl)
+    ZipErrors EncodeBuffer(::CLzma2EncHandle encHandle, CLzma2EncProps const& configuredProps, void* &pOutData, size_t &nOutData, void const* pInData, int nInData, ICompressProgressImpl* progressImpl)
         {
-        m_outBuffer.resize(0);
-        m_outBuffer.reserve(nInData); // The compressed data ought to be smaller
-
         BeAssert(nInData > 0);
-        Lzma2Enc_SetDataSize(encHandle, (UInt64)nInData);
-        int res = Lzma2Enc_Encode2(encHandle, &m_outSeqStream, nullptr, nullptr,
+        size_t inputSize = static_cast<size_t>(nInData);
+        m_outBuffer.clear();
+        m_outBuffer.reserve(inputSize + (inputSize >> 10) + 16); // Allow for LZMA2 framing on incompressible input.
+
+        // Each page starts with empty history. Bound its dictionary and block workers by the available input.
+        // The stream header retains the configured dictionary limit, which covers every page.
+        CLzma2EncProps props = configuredProps;
+        props.lzmaProps.reduceSize = inputSize;
+        int res = Lzma2Enc_SetProps(encHandle, &props);
+        if (SZ_OK != res)
+            return translate7ZipError(res, true);
+
+        Lzma2Enc_SetDataSize(encHandle, inputSize);
+        res = Lzma2Enc_Encode2(encHandle, &m_outSeqStream, nullptr, nullptr,
             nullptr, static_cast<Byte const*>(pInData), (size_t)nInData, progressImpl);
         if (SZ_OK != res)
             return translate7ZipError(res, true);
 
         pOutData = (void*) &m_outBuffer[0];
-        nOutData = (int) m_outBuffer.size();
+        nOutData = m_outBuffer.size();
 
         return ZIP_SUCCESS;
         }
@@ -637,10 +645,7 @@ private:
         {
         Byte eos = 0;
         if (m_outStream->WriteData(&eos, 1) != 1)
-            {
-            BeAssert(false);
-            return ZIP_ERROR_UNKNOWN;
-            }
+            return ZIP_ERROR_WRITE_ERROR;
         return ZIP_SUCCESS;
         }
 
@@ -680,14 +685,15 @@ public:
         InitStreams(&outStream, nullptr);
 
         ZipErrors zipStatus = InitHandle();
-        if (ZIP_SUCCESS != zipStatus)
-            return zipStatus;
+        if (ZIP_SUCCESS == zipStatus)
+            zipStatus = WriteHeader();
 
-        zipStatus = WriteHeader();
         if (ZIP_SUCCESS != zipStatus)
-            return zipStatus;
-
-        return ZIP_SUCCESS;
+            {
+            FinalizeHandle();
+            FinalizeStreams();
+            }
+        return zipStatus;
         }
 
     //---------------------------------------------------------------------------------------
@@ -738,21 +744,18 @@ public:
             return ZIP_ERROR_BAD_DATA;
 
         void *pOutData = nullptr;
-        int nOutData;
+        size_t nOutData;
 
-        ZipErrors zipStatus = m_bufferEncoder.EncodeBuffer(m_encHandle, pOutData, nOutData, pData, nData, m_progressImpl);
+        ZipErrors zipStatus = m_bufferEncoder.EncodeBuffer(m_encHandle, *m_enc2Props, pOutData, nOutData, pData, nData, m_progressImpl);
         if (zipStatus != ZIP_SUCCESS)
             return zipStatus;
 
         // Skip the last end of stream character (0)
+        BeAssert(nOutData > 0 && static_cast<Byte*>(pOutData)[nOutData - 1] == 0);
         nOutData--;
-        BeAssert(nOutData >= 0 && *((Byte*) pOutData + nOutData) == 0);
 
         if (m_outStream->WriteData(pOutData, nOutData) != nOutData)
-            {
-            BeAssert(false);
             return ZIP_ERROR_WRITE_ERROR;
-            }
 
         return ZIP_SUCCESS;
         }

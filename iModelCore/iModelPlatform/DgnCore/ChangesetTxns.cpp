@@ -924,6 +924,9 @@ void TxnManager::WriteChangesToFile(BeFileNameCR pathname, DdlChangesCR ddlChang
     if (BE_SQLITE_OK != writer.FromChangeGroup(dataChangeGroup))
         m_dgndb.ThrowException("unable to save changes to file", (int) ChangesetStatus::FileWriteError);
 
+    if (BE_SQLITE_OK != writer.Finish())
+        m_dgndb.ThrowException("unable to finish saving changes to file", (int) ChangesetStatus::FileWriteError);
+
     if (!pathname.DoesPathExist())
         m_dgndb.ThrowException("changeset file not created", (int) ChangesetStatus::FileWriteError);
 }

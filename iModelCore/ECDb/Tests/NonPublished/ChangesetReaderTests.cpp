@@ -195,6 +195,7 @@ struct ChangesetReaderTests : ECDbTestFixture {
         BeSQLite::ChangesetFileWriter writer(path, false, emptyDdl, &ecdb);
         EXPECT_EQ(BE_SQLITE_OK, writer.Initialize());
         EXPECT_EQ(BE_SQLITE_OK, writer.FromChangeGroup(group));
+        EXPECT_EQ(BE_SQLITE_OK, writer.Finish());
         return path;
         }
     

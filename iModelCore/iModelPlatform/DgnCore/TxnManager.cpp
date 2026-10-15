@@ -433,6 +433,12 @@ DbResult TxnManager::WriteTxnToFile(TxnId txnId, ChangeSetCR changeset, Byte* ou
             LOG.errorv("WriteTxnToFile: failed to write changeset: %s", BeSQLiteLib::GetErrorName(rc));
             return rc;
         }
+
+        rc = writer.Finish();
+        if (rc != BE_SQLITE_OK) {
+            LOG.errorv("WriteTxnToFile: failed to finish writing changeset: %s", BeSQLiteLib::GetErrorName(rc));
+            return rc;
+        }
     }
 
     // Compute SHA1 checksum of the file using streaming reads
@@ -4247,6 +4253,13 @@ DbResult TxnManager::PullMergeUpdateTxn(ChangeSetCR changeSet, TxnId id) {
             rc = writer.ReadFrom(*reader);
             if (rc != BE_SQLITE_OK) {
                 LOG.errorv("PullMergeUpdateTxn: failed to write changeset to temp file: %s", BeSQLiteLib::GetErrorName(rc));
+                tempPath.BeDeleteFile();
+                return rc;
+            }
+
+            rc = writer.Finish();
+            if (rc != BE_SQLITE_OK) {
+                LOG.errorv("PullMergeUpdateTxn: failed to finish writing changeset to temp file: %s", BeSQLiteLib::GetErrorName(rc));
                 tempPath.BeDeleteFile();
                 return rc;
             }
