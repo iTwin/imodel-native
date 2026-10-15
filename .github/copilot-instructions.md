@@ -31,8 +31,11 @@ This is a **multi-layered C++ codebase** exposed to TypeScript via N-API:
 ## Build Notes
 - Build system: BentleyBuild with files `.PartFile.xml` and low level bmake `.mke` files
 - You cannot build this yourself, it requires an initialized shell environment from Bentley's internal build system, do not bother trying to build.
+- The standalone Linux CloudSQLite socket regression is an exception: run `bash iModelCore/BeSQLite/Tests/Standalone/run-blockcache-socket-test.sh`. It compiles the socket path directly with a C compiler and curl/OpenSSL/SQLite development headers, without the internal build environment.
 
 ## Key Files to Reference
+
+- CloudSQLite client sockets are in `iModelCore/BeSQLite/SQLite/blockcachevfs.c` (`bcvConnectSocket`); standalone socket regressions live in `iModelCore/BeSQLite/Tests/Standalone/`.
 
 - `iModelCore/ecobjects/PublicApi/ECObjects/ECSchema.h` - huge header containing most of the ecobjects public API
 - `iModelCore/ECDb/PublicAPI/ECDb/ECDb.h` - ECDb public API

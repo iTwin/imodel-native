@@ -1,0 +1,25 @@
+name: CloudSQLite socket tests
+
+on:
+  pull_request:
+    paths:
+      - iModelCore/BeSQLite/SQLite/**
+      - iModelCore/BeSQLite/Tests/Standalone/**
+      - .github/workflows/cloudsqlite-socket-tests.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  client-socket:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install development headers
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libcurl4-openssl-dev libssl-dev libsqlite3-dev
+      - name: Check client socket configuration and failure cleanup
+        run: bash iModelCore/BeSQLite/Tests/Standalone/run-blockcache-socket-test.sh

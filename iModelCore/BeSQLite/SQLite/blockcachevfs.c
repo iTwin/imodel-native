@@ -51,6 +51,7 @@ typedef struct Mutex Mutex;
 # define osMkdir(x,y) mkdir(x)
 #else
 # include <pthread.h>
+# include <netinet/tcp.h>
 # define BCV_PATH_SEPARATOR "/"
 # define osMkdir(x,y) mkdir(x,y)
 #endif
@@ -3119,6 +3120,7 @@ static BCV_SOCKET_TYPE bcvConnectSocket(
   char **pzErr                    /* OUT: Error message (if any) */
 ){
   int rc = *pRc;
+  int noDelay = 1;
   struct sockaddr_in addr;
   BCV_SOCKET_TYPE s = INVALID_SOCKET;
 
@@ -3132,9 +3134,14 @@ static BCV_SOCKET_TYPE bcvConnectSocket(
       rc = BCVFS_CANTOPEN;
     }else{
       assert( addr.sin_addr.s_addr!=INADDR_NONE );
-      if( connect(s, (struct sockaddr*)&addr, sizeof(addr))<0 ){
+      /* END has no reply; Nagle can delay a following READ until a delayed ACK. */
+      if( setsockopt(s, IPPROTO_TCP, TCP_NODELAY,
+                    (const char*)&noDelay, sizeof(noDelay))!=0
+       || connect(s, (struct sockaddr*)&addr, sizeof(addr))<0
+      ){
         rc = BCVFS_CANTOPEN;
         bcv_close_socket(s);
+        s = INVALID_SOCKET;
       }
     }
     if( pzErr && rc!=SQLITE_OK ){
