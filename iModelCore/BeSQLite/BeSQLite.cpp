@@ -4300,14 +4300,21 @@ ZipErrors SnappyFromBlob::ReadNextChunk()
     m_blobOffset     += chunkSize;
     m_blobBytesLeft  -= chunkSize;
 
-    size_t uncompressSize;
-    bool bstat = snappy::GetUncompressedLength((char const*) m_blobData, chunkSize, &uncompressSize);
-    UNUSED_VARIABLE(bstat);
-    BeAssert(uncompressSize<=SNAPPY_UNCOMPRESSED_BUFFER_SIZE && uncompressSize>0);
-    BeAssert(bstat);
+    // the uncompressed length is read from the (untrusted) blob. RawUncompress writes that many bytes, so it must fit in our buffer.
+    size_t uncompressSize = 0;
+    if (!snappy::GetUncompressedLength((char const*) m_blobData, chunkSize, &uncompressSize) || 0 == uncompressSize || uncompressSize > SNAPPY_UNCOMPRESSED_BUFFER_SIZE)
+        {
+        m_blobBytesLeft = 0;
+        BeAssert(0);
+        return ZIP_ERROR_BLOB_READ_ERROR;
+        }
 
-    bstat = snappy::RawUncompress((char const*) m_blobData, chunkSize, (char*) m_uncompressed);
-    BeAssert(bstat);
+    if (!snappy::RawUncompress((char const*) m_blobData, chunkSize, (char*) m_uncompressed))
+        {
+        m_blobBytesLeft = 0;
+        BeAssert(0);
+        return ZIP_ERROR_BLOB_READ_ERROR;
+        }
 
     m_uncompressCurr = m_uncompressed;
     m_uncompressAvail = (uint16_t) uncompressSize;
@@ -4507,7 +4514,11 @@ void SnappyFromMemory::Init(void*blobBuffer, uint32_t blobBufferSize)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ZipErrors SnappyFromMemory::TransferFromBlob(void* data, uint32_t numBytes, int offset)
     {
-    //  Verify that it does not go beyond the end of the buffer
+    // m_blobOffset + m_blobBytesLeft is always the total size of the buffer passed to Init.
+    uint64_t blobSize = (uint64_t) m_blobOffset + m_blobBytesLeft;
+    if (nullptr == m_blobData || offset < 0 || (uint64_t) offset + numBytes > blobSize)
+        return ZIP_ERROR_BLOB_READ_ERROR;
+
     memcpy(data, m_blobData + offset, numBytes);
     return ZIP_SUCCESS;
     }
@@ -4530,7 +4541,13 @@ ZipErrors SnappyFromMemory::ReadNextChunk()
         return  ZIP_ERROR_BLOB_READ_ERROR;
         }
 
-    BeAssert(chunkSize <= m_blobBytesLeft);
+    // chunkSize includes its own 2-byte header
+    if (chunkSize <= 2 || chunkSize > m_blobBytesLeft)
+        {
+        m_blobBytesLeft = 0;
+        BeAssert(0);
+        return ZIP_ERROR_BLOB_READ_ERROR;
+        }
 
     m_blobOffset += 2;
     m_blobBytesLeft -= 2;
@@ -4541,14 +4558,21 @@ ZipErrors SnappyFromMemory::ReadNextChunk()
     m_blobOffset     += chunkSize;
     m_blobBytesLeft  -= chunkSize;
 
-    size_t uncompressSize;
-    bool bstat = snappy::GetUncompressedLength((char const*) currentData, chunkSize, &uncompressSize);
-    UNUSED_VARIABLE(bstat);
-    BeAssert(uncompressSize<=32*1024 && uncompressSize>0);
-    BeAssert(bstat);
+    // the uncompressed length is read from the (untrusted) blob. RawUncompress writes that many bytes, so it must fit in our buffer.
+    size_t uncompressSize = 0;
+    if (!snappy::GetUncompressedLength((char const*) currentData, chunkSize, &uncompressSize) || 0 == uncompressSize || uncompressSize > m_uncompressSize)
+        {
+        m_blobBytesLeft = 0;
+        BeAssert(0);
+        return ZIP_ERROR_BLOB_READ_ERROR;
+        }
 
-    bstat = snappy::RawUncompress((char const*) currentData, chunkSize, (char*) m_uncompressed);
-    BeAssert(bstat);
+    if (!snappy::RawUncompress((char const*) currentData, chunkSize, (char*) m_uncompressed))
+        {
+        m_blobBytesLeft = 0;
+        BeAssert(0);
+        return ZIP_ERROR_BLOB_READ_ERROR;
+        }
 
     m_uncompressCurr = m_uncompressed;
     m_uncompressAvail = (uint16_t) uncompressSize;
