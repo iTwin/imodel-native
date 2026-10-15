@@ -10230,11 +10230,15 @@ VerticalDatumInfoPtr VerticalDatumInfo::CreateFromJson(BeJsConst jsonVerticalCRS
 
     if (vdatumInfo->m_extent.IsNull()
         || (vdatumInfo->m_extent.low.x < -180.0)
+        || (vdatumInfo->m_extent.low.x > 180.0)
+        || (vdatumInfo->m_extent.high.x < -180.0)
         || (vdatumInfo->m_extent.high.x > 180.0)
         || (vdatumInfo->m_extent.low.y < -90.0)
-        || (vdatumInfo->m_extent.high.y > 90.0))
+        || (vdatumInfo->m_extent.low.y > 90.0)
+        || (vdatumInfo->m_extent.high.y < -90.0)
+        || (vdatumInfo->m_extent.high.y > 90.0)
+        || (vdatumInfo->m_extent.low.y > vdatumInfo->m_extent.high.y))
     {
-        // SK TODO: range can traverse -180.0/180.0
         status = GEOCOORDERR_CoordinateRange;
         vdatumInfo = nullptr;
         return nullptr;
@@ -10732,6 +10736,24 @@ struct TransformsFrom
     }
 };
 
+static bool IsVerticalDatumApplicableAtPoint(VerticalDatumInfo const& info, const GeoPoint* latLong)
+{
+    if (nullptr == latLong)
+        return true;
+
+    DRange2d extent;
+    info.GetExtent(extent);
+    if (extent.low.x > extent.high.x)
+    {
+        DRange2d extentWest = extent;
+        extentWest.high.x = 180.0;
+        extent.low.x = -180.0;
+        return extent.Contains(latLong->longitude, latLong->latitude) || extentWest.Contains(latLong->longitude, latLong->latitude);
+    }
+
+    return extent.Contains(latLong->longitude, latLong->latitude);
+}
+
 /*---------------------------------------------------------------------------------**//**
 * utility function
 * This utility function searches the provided list of all defined transforms provided in allTransforms
@@ -10756,25 +10778,7 @@ void RecursiveGetTransformsFromTo(bool& foundTarget, TransformsFrom& transformsF
                 if (!info.IsValid())
                     break;
 
-                DRange2d extent;
-                info->GetExtent(extent);
-                bool inRange = (latLong == nullptr);
-
-                if (nullptr != latLong)
-                {
-                    if (extent.low.x > extent.high.x) // extent crosses anti-meridian
-                    {
-                        DRange2d extentWest = extent;
-                        extentWest.high.x = 180.0;
-                        extent.low.x = -180;
-                        if (extent.Contains(latLong->longitude, latLong->latitude) || (extentWest.Contains(latLong->longitude, latLong->latitude)))
-                            inRange = true;
-                    }
-                    else if (extent.Contains(latLong->longitude, latLong->latitude))
-                        inRange = true;
-                }
-
-                if (!inRange)
+                if (!IsVerticalDatumApplicableAtPoint(*info, latLong))
                     continue; // transform not applicable for the given lat long
 
                 TransformsFrom* t = new TransformsFrom(transform->GetTarget());
@@ -10850,9 +10854,21 @@ StatusInt VerticalDatumDictionary::GetVerticalDatumTransforms(bvector<VerticalTr
     if (0 == from.CompareToI(to))
         return SUCCESS; // nothing to do, from and to are the same
 
+    auto isApplicable = [this, latLong](Utf8StringCR name)
+    {
+        if (nullptr == latLong)
+            return true;
+
+        StatusInt status;
+        auto info = GetVerticalDatumInfoFromName(name, status);
+        return !info.IsValid() || IsVerticalDatumApplicableAtPoint(*info, latLong);
+    };
+    if (!isApplicable(from))
+        return GEOCOORDERR_NoTransforms;
+
     // first look for a direct transform from the named transform to named target
     VerticalTransformPtr directTransform = GetDirectVerticalDatumTransform(from, to);
-    if (directTransform.IsValid())
+    if (directTransform.IsValid() && isApplicable(to))
     {
         transforms.push_back(directTransform);
         return SUCCESS;
@@ -10870,7 +10886,7 @@ StatusInt VerticalDatumDictionary::GetVerticalDatumTransforms(bvector<VerticalTr
             for (int i = 0; i < path.size()-1; i++)
             {
                 directTransform = GetDirectVerticalDatumTransform(path[i], path[i+1]);
-                if (directTransform.IsValid())
+                if (directTransform.IsValid() && isApplicable(path[i+1]))
                     transforms.push_back(directTransform);
                 else
                 {
@@ -10895,7 +10911,7 @@ StatusInt VerticalDatumDictionary::GetVerticalDatumTransforms(bvector<VerticalTr
                 for (int i = (int)path.size()-1; i > 0; i--)
                 {
                     directTransform = GetDirectVerticalDatumTransform(path[i], path[i-1]);
-                    if (directTransform.IsValid())
+                    if (directTransform.IsValid() && isApplicable(path[i-1]))
                         transforms.push_back(directTransform);
                     else
                     {

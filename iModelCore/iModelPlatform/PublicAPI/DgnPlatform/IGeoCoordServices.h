@@ -73,6 +73,8 @@ GeoPointR               outLatLong,
 DPoint3dCR              inUors,
 DgnGCS&                 gcs
 ) = 0;
+
+virtual void                                InvalidateGCS (DgnDbR project) { }
 };
 
 END_BENTLEY_DGN_NAMESPACE
