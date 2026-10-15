@@ -1098,6 +1098,33 @@ void TxnManager::OnValidateChanges(ChangeStreamCR changeStream) {
     ProcessModelChanges();
 }
 
+static void InvalidateGcsIfChanged(DgnDbR dgndb, ChangeStreamCR changeStream, bool invert) {
+    for (auto change : Changes(changeStream, invert)) {
+        Utf8CP tableName;
+        int nCols, indirect;
+        DbOpcode opcode;
+
+        DbResult rc = change.GetOperation(&tableName, &nCols, &opcode, &indirect);
+        BeAssert(rc == BE_SQLITE_OK);
+        if (rc != BE_SQLITE_OK || 0 != BeStringUtilities::StricmpAscii(tableName, BEDB_TABLE_Property))
+            continue;
+
+        auto namespaceValue = opcode == DbOpcode::Insert ? change.GetNewValue(0) : change.GetOldValue(0);
+        auto nameValue = opcode == DbOpcode::Insert ? change.GetNewValue(1) : change.GetOldValue(1);
+        Utf8CP propertyNamespace = namespaceValue.IsValid() && namespaceValue.GetValueType() == DbValueType::TextVal ? namespaceValue.GetValueText() : nullptr;
+        Utf8CP propertyName = nameValue.IsValid() && nameValue.GetValueType() == DbValueType::TextVal ? nameValue.GetValueText() : nullptr;
+        if (propertyNamespace != nullptr && propertyName != nullptr) {
+            auto const& gcsProperty = DgnProjectProperty::DgnGCS();
+            auto const& verticalProperty = DgnProjectProperty::DgnGCSVerticalCRS();
+            if (0 == strcmp(propertyNamespace, gcsProperty.GetNamespace()) &&
+                (0 == strcmp(propertyName, gcsProperty.GetName()) || 0 == strcmp(propertyName, verticalProperty.GetName()))) {
+                dgndb.GeoLocation().InvalidateGCS();
+                return;
+            }
+        }
+    }
+}
+
 /*---------------------------------------------------------------------------------**/ /**
 * The supplied changeset was just applied to the database. That means the the database now potentially reflects a different
 * state than the in-memory objects for the affected tables. Use the changeset to send _OnAppliedxxx events to the TxnTables for each changed row,
@@ -1105,6 +1132,8 @@ void TxnManager::OnValidateChanges(ChangeStreamCR changeStream) {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::OnChangeSetApplied(ChangeStreamCR changeStream, bool invert) {
+    InvalidateGcsIfChanged(m_dgndb, changeStream, invert);
+
     if (!m_initTableHandlers) // won't do anything if we don't have table handlers
         return;
 
@@ -1203,6 +1232,7 @@ void TxnManager::SetOnCommitCallback(T_OnCommitCallback cb) {
 void TxnManager::OnRollback(ChangeStreamCR changeSet) {
     m_dgndb.Elements().ClearCache(); // we can't rely on the elements in the cache after rollback, just abandon them
     if (!m_initTableHandlers) {
+        InvalidateGcsIfChanged(m_dgndb, changeSet, true);
         m_dgndb.Models().ClearCache();
         return;
     }
