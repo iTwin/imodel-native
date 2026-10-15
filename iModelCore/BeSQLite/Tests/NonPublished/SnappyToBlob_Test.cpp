@@ -35,6 +35,13 @@ TEST_F (SnappyToBlobTests, WriteGetUncompSize)
 //=======================================================================================
 struct SnappyReaderTests : public ::testing::Test
 {
+    // SQLite is built with SQLITE_OMIT_AUTOINIT; SnappyToBlob and Db both need BeSQLiteLib initialized.
+    void SetUp() override
+    {
+        BeFileName tempDir;
+        BeTest::GetHost().GetTempDir(tempDir);
+        BeSQLiteLib::Initialize(tempDir);
+    }
     // Malformed input intentionally triggers BeAsserts in the readers.
     struct DisableAsserts
     {
