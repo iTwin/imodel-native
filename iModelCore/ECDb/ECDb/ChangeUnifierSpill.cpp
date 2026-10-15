@@ -15,9 +15,9 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 namespace {
 
-static constexpr size_t SpillWriteChunkBytes = 1024 * 1024;
-static constexpr size_t MinSpillReadChunkBytes = 64 * 1024;
-static constexpr size_t MaxSpillReadChunkBytes = 1024 * 1024;
+// SQLite orders integers as signed. Flipping the top bit makes that order match the unsigned order of UnifiedKey.
+int64_t ToSqlOrder(uint64_t value) { return static_cast<int64_t>(value ^ (1ull << 63)); }
+uint64_t FromSqlOrder(int64_t value) { return static_cast<uint64_t>(value) ^ (1ull << 63); }
 
 //=======================================================================================
 // Little-endian byte writer.
@@ -625,125 +625,125 @@ BentleyStatus UnifiedValueCodec::Decode(std::vector<Byte> const& in, ChangeUnifi
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+DbResult UnifierSpillFile::Open(Utf8StringR err) {
+    // nullptr: SQLite creates the database in its temp directory and deletes it on close or when the process ends.
+    Db::CreateParams params(Db::PageSize::PAGESIZE_4K, Db::Encoding::Utf8, true, DefaultTxn::No);
+    params.SetRawSQLite();
+    DbResult rc = m_db.CreateNewDb(nullptr, params);
+    if (BE_SQLITE_OK == rc) {
+        // journal_mode can only change outside a transaction, and the final SELECT is one long read; each run's inserts get a Savepoint.
+        m_db.SetAllowImplicitTransactions(true);
+        rc = m_db.ExecuteSql("PRAGMA journal_mode=OFF;PRAGMA synchronous=OFF;PRAGMA locking_mode=EXCLUSIVE");
+    }
+    if (BE_SQLITE_OK == rc)
+        rc = m_db.ExecuteDdl("CREATE TABLE run(root INTEGER, id INTEGER, stage INTEGER, seq INTEGER, payload BLOB, PRIMARY KEY(root, id, stage, seq)) WITHOUT ROWID");
+    if (BE_SQLITE_OK == rc)
+        rc = m_insert.Prepare(m_db, "INSERT INTO run(root, id, stage, seq, payload) VALUES(?, ?, ?, ?, ?)");
+    if (BE_SQLITE_OK != rc) {
+        err.Sprintf("ChangeUnifier: failed to create spill database (error %d).", (int) rc);
+        Delete();
+    }
+    return rc;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 DbResult UnifierSpillFile::WriteRun(std::vector<KeyedEntry> const& sorted, Utf8StringR err) {
     if (sorted.empty())
         return BE_SQLITE_OK;
-    if (!m_file.IsOpen()) {
-        const DbResult rc = m_file.Open();
-        if (BE_SQLITE_OK != rc) {
-            err.Sprintf("ChangeUnifier: failed to create spill file (error %d).", (int) rc);
-            return BE_SQLITE_CANTOPEN;
-        }
-        m_fileSize = 0;
+    if (!m_db.IsDbOpen()) {
+        const DbResult rc = Open(err);
+        if (BE_SQLITE_OK != rc)
+            return rc;
     }
-    Cursor run;
-    run.m_filePos = m_fileSize;
-    m_writeBuffer.clear();
-    for (size_t i = 0; i < sorted.size(); ++i) {
-        WriteRecord(m_writeBuffer, sorted[i]);
-        if (m_writeBuffer.size() >= SpillWriteChunkBytes || i + 1 == sorted.size()) {
-            if (BE_SQLITE_OK != m_file.Write(m_writeBuffer.data(), m_writeBuffer.size(), m_fileSize)) {
-                err = "ChangeUnifier: failed to write spill file.";
-                return BE_SQLITE_IOERR;
-            }
-            m_fileSize += m_writeBuffer.size();
-            m_writeBuffer.clear();
+    Savepoint run(m_db, "unifierSpillRun");
+    if (!run.IsActive()) {
+        err = "ChangeUnifier: failed to start a transaction in the spill database.";
+        return BE_SQLITE_ERROR;
+    }
+    for (KeyedEntry const& entry : sorted) {
+        m_writeBuffer.clear();
+        WriteRecord(m_writeBuffer, entry);
+        static constexpr size_t lengthPrefix = 4; // WriteRecord's [uint32 length], not needed in a BLOB column
+        m_insert.BindInt64(1, ToSqlOrder(entry.first.m_rootClassId));
+        m_insert.BindInt64(2, ToSqlOrder(entry.first.m_instanceId));
+        m_insert.BindInt(3, entry.first.m_stage);
+        m_insert.BindInt(4, static_cast<int>(m_runCount));
+        m_insert.BindBlob(5, m_writeBuffer.data() + lengthPrefix, static_cast<int>(m_writeBuffer.size() - lengthPrefix), Statement::MakeCopy::No);
+        const DbResult rc = m_insert.Step();
+        m_insert.Reset();
+        if (BE_SQLITE_DONE != rc) {
+            err.Sprintf("ChangeUnifier: failed to write to the spill database (error %d).", (int) rc);
+            run.Cancel();
+            return rc;
         }
     }
-    run.m_fileEnd = m_fileSize;
-    m_cursors.push_back(std::move(run));
+    const DbResult rc = run.Commit();
+    if (BE_SQLITE_OK != rc) {
+        err.Sprintf("ChangeUnifier: failed to commit to the spill database (error %d).", (int) rc);
+        return rc;
+    }
+    ++m_runCount;
     return BE_SQLITE_OK;
 }
 
 //---------------------------------------------------------------------------------------
-// Makes sure @p cursor holds at least @p need unread bytes. Returns false if the run has fewer bytes left.
+// Moves m_select to its next row and reads its key.
 // @bsimethod
 //---------------------------------------------------------------------------------------
-bool UnifierSpillFile::Fill(Cursor& cursor, size_t need) {
-    size_t available = cursor.m_buffer.size() - cursor.m_bufferPos;
-    if (available >= need)
-        return true;
-    if (cursor.m_bufferPos > 0) {
-        cursor.m_buffer.erase(cursor.m_buffer.begin(), cursor.m_buffer.begin() + cursor.m_bufferPos);
-        cursor.m_bufferPos = 0;
+BentleyStatus UnifierSpillFile::StepSelect(Utf8StringR err) {
+    const DbResult rc = m_select.Step();
+    m_hasNext = BE_SQLITE_ROW == rc;
+    if (!m_hasNext) {
+        if (BE_SQLITE_DONE == rc)
+            return SUCCESS;
+        err.Sprintf("ChangeUnifier: failed to read the spill database (error %d).", (int) rc);
+        return ERROR;
     }
-    const uint64_t left = cursor.m_fileEnd - cursor.m_filePos;
-    if (left < need - available)
-        return false;
-    const uint64_t toRead = std::min<uint64_t>(left, std::max<uint64_t>(need - available, static_cast<uint64_t>(m_readChunkBytes)));
-    const size_t oldSize = cursor.m_buffer.size();
-    cursor.m_buffer.resize(oldSize + static_cast<size_t>(toRead));
-    if (BE_SQLITE_OK != m_file.Read(cursor.m_buffer.data() + oldSize, static_cast<size_t>(toRead), cursor.m_filePos))
-        return false;
-    cursor.m_filePos += toRead;
-    return true;
-}
-
-//---------------------------------------------------------------------------------------
-// Advances @p cursor to its next record. Returns ERROR on I/O or format errors.
-// @bsimethod
-//---------------------------------------------------------------------------------------
-BentleyStatus UnifierSpillFile::Advance(Cursor& cursor) {
-    cursor.m_hasCurrent = false;
-    if (cursor.m_filePos >= cursor.m_fileEnd && cursor.m_bufferPos >= cursor.m_buffer.size())
-        return SUCCESS;
-    if (!Fill(cursor, 4))
-        return ERROR;
-    ByteReader lenReader(cursor.m_buffer.data() + cursor.m_bufferPos, 4);
-    const uint32_t len = lenReader.GetFixed32();
-    cursor.m_bufferPos += 4;
-    if (!Fill(cursor, len))
-        return ERROR;
-    if (SUCCESS != ReadRecord(cursor.m_buffer.data() + cursor.m_bufferPos, len, cursor.m_current))
-        return ERROR;
-    cursor.m_bufferPos += len;
-    cursor.m_hasCurrent = true;
+    m_nextKey.m_rootClassId = FromSqlOrder(m_select.GetValueInt64(0));
+    m_nextKey.m_instanceId = FromSqlOrder(m_select.GetValueInt64(1));
+    m_nextKey.m_stage = static_cast<uint8_t>(m_select.GetValueInt(2));
     return SUCCESS;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus UnifierSpillFile::StartMerge(uint64_t memoryBudgetBytes, Utf8StringR err) {
-    const uint64_t share = m_cursors.empty() ? 0 : memoryBudgetBytes / m_cursors.size();
-    m_readChunkBytes = static_cast<size_t>(std::min<uint64_t>(MaxSpillReadChunkBytes, std::max<uint64_t>(MinSpillReadChunkBytes, share)));
-    for (size_t i = 0; i < m_cursors.size(); ++i) {
-        if (SUCCESS != Advance(m_cursors[i])) {
-            err = "ChangeUnifier: failed to read spill file.";
-            return ERROR;
-        }
-        if (m_cursors[i].m_hasCurrent)
-            m_heap.push(std::make_pair(m_cursors[i].m_current.first, i));
+BentleyStatus UnifierSpillFile::StartMerge(uint64_t, Utf8StringR err) {
+    m_insert.Finalize();
+    // The primary key stores the rows in this order, so SQLite reads them without a sort (plan: SCAN run).
+    if (BE_SQLITE_OK != m_select.Prepare(m_db, "SELECT root, id, stage, payload FROM run ORDER BY root, id, stage, seq")) {
+        err = "ChangeUnifier: failed to read the spill database.";
+        return ERROR;
     }
-    return SUCCESS;
+    return StepSelect(err);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 BentleyStatus UnifierSpillFile::Pop(KeyedEntry& out, Utf8StringR err) {
-    const size_t index = m_heap.top().second;
-    m_heap.pop();
-    Cursor& cursor = m_cursors[index];
-    std::swap(out, cursor.m_current);
-    if (SUCCESS != Advance(cursor)) {
-        err = "ChangeUnifier: failed to read spill file.";
+    Byte const* payload = static_cast<Byte const*>(m_select.GetValueBlob(3));
+    const int size = m_select.GetColumnBytes(3);
+    if (payload == nullptr || SUCCESS != ReadRecord(payload, static_cast<size_t>(size), out)) {
+        err = "ChangeUnifier: failed to read the spill database.";
         return ERROR;
     }
-    if (cursor.m_hasCurrent)
-        m_heap.push(std::make_pair(cursor.m_current.first, index));
-    return SUCCESS;
+    return StepSelect(err);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 void UnifierSpillFile::Delete() {
-    m_heap = decltype(m_heap)();
-    m_cursors.clear();
+    m_select.Finalize();
+    m_insert.Finalize();
+    if (m_db.IsDbOpen())
+        m_db.CloseDb();
+    m_runCount = 0;
+    m_hasNext = false;
     m_writeBuffer.clear();
-    m_file.Close();
-    m_fileSize = 0;
 }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

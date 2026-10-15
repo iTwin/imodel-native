@@ -4,9 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include <ECDb/ECDbApi.h>
-#include <BeSQLite/TempFile.h>
 #include <memory>
-#include <queue>
 #include <vector>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -114,42 +112,26 @@ struct UnifiedValueCodec final {
 };
 
 //=======================================================================================
-// External sort storage of the ChangeUnifier: sorted runs of entries written to one TempFile, which the
-// operating system deletes even if the process is killed, read back as a single stream in key order (k-way merge).
-// @remarks Entries with equal keys are returned in the order of the runs that contain them, i.e.
-// in change order, so that the caller can fold them with its regular merge.
+// External sort storage of the ChangeUnifier: each sorted run of entries is inserted into a SQLite temporary
+// database, in a WITHOUT ROWID table whose primary key is (root class id, ECInstanceId, stage, run). The rows
+// are stored in primary key order, so they are read back in key order without a sort.
+// @remarks The database is created with Db::CreateNewDb(nullptr), so SQLite places it in its temp directory and
+// deletes it when it is closed, or when the process ends. Entries with equal keys are returned in the order of
+// the runs that contain them, i.e. in change order, so that the caller can fold them with its regular merge.
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct UnifierSpillFile final {
 private:
-    //! Buffered reader over one run of the file.
-    struct Cursor final {
-        uint64_t m_filePos = 0;
-        uint64_t m_fileEnd = 0;
-        std::vector<Byte> m_buffer;
-        size_t m_bufferPos = 0;
-        bool m_hasCurrent = false;
-        KeyedEntry m_current;
-    };
-
-    using HeapItem = std::pair<UnifiedKey, size_t>; // key, cursor index (earlier runs win ties)
-    struct HeapGreater final {
-        bool operator()(HeapItem const& lhs, HeapItem const& rhs) const {
-            if (lhs.first != rhs.first)
-                return rhs.first < lhs.first;
-            return lhs.second > rhs.second;
-        }
-    };
-
-    TempFile m_file;
-    uint64_t m_fileSize = 0;
-    std::vector<Cursor> m_cursors; //!< one per run
-    std::priority_queue<HeapItem, std::vector<HeapItem>, HeapGreater> m_heap;
+    Db m_db;
+    Statement m_insert;
+    Statement m_select;
+    uint32_t m_runCount = 0;
+    bool m_hasNext = false; //!< m_select is positioned on a row
+    UnifiedKey m_nextKey;
     std::vector<Byte> m_writeBuffer;
-    size_t m_readChunkBytes = 0; //!< bytes read per refill of a cursor, set by StartMerge
 
-    bool Fill(Cursor& cursor, size_t need);
-    BentleyStatus Advance(Cursor& cursor);
+    DbResult Open(Utf8StringR err);
+    BentleyStatus StepSelect(Utf8StringR err);
 
 public:
     UnifierSpillFile() {}
@@ -157,24 +139,23 @@ public:
     UnifierSpillFile(UnifierSpillFile const&) = delete;
     UnifierSpillFile& operator=(UnifierSpillFile const&) = delete;
 
-    bool HasRuns() const { return !m_cursors.empty(); }
+    bool HasRuns() const { return m_runCount > 0; }
 
-    //! Appends @p sorted as a new run. The file is created on the first call.
-    //! @return BE_SQLITE_OK, BE_SQLITE_CANTOPEN or BE_SQLITE_IOERR with @p err set.
+    //! Inserts @p sorted as a new run, in one transaction. The database is created on the first call.
+    //! @return BE_SQLITE_OK, or the SQLite error with @p err set.
     DbResult WriteRun(std::vector<KeyedEntry> const& sorted, Utf8StringR err);
 
-    //! Positions every run on its first entry. Call once, after the last WriteRun.
-    //! The read buffers of all runs share @p memoryBudgetBytes, within fixed per-run bounds.
+    //! Starts reading all runs in key order. Call once, after the last WriteRun. SQLite's page cache, not
+    //! @p memoryBudgetBytes, bounds the memory used to read the runs back.
     BentleyStatus StartMerge(uint64_t memoryBudgetBytes, Utf8StringR err);
 
     //! Key of the next entry in merge order, or nullptr when all runs are exhausted.
-    UnifiedKey const* PeekKey() const { return m_heap.empty() ? nullptr : &m_heap.top().first; }
+    UnifiedKey const* PeekKey() const { return m_hasNext ? &m_nextKey : nullptr; }
 
-    //! Swaps the next entry in merge order into @p out. The old content of @p out is reused to read the
-    //! next record, so passing the same object every time avoids allocations. Requires PeekKey() != nullptr.
+    //! Reads the next entry in merge order into @p out, reusing the capacity of its vectors. Requires PeekKey() != nullptr.
     BentleyStatus Pop(KeyedEntry& out, Utf8StringR err);
 
-    //! Closes the file, which deletes it. Idempotent.
+    //! Closes the database, which deletes it. Idempotent.
     void Delete();
 };
 

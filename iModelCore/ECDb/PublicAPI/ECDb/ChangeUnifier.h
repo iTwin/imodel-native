@@ -29,9 +29,9 @@ struct ChangeUnifierImpl;
 //!   before any value is stored. A name also matches the relationship end properties derived from it, e.g. "Source"
 //!   keeps SourceECInstanceId and SourceECClassId, "Target" keeps TargetECInstanceId and TargetECClassId.
 //! - Merged data is held in a hash map. When its estimated size exceeds Options::m_memoryBudgetBytes, the map is sorted
-//!   and written as a run to a temporary file (BeSQLite::TempFile: SQLite's temp directory, removed by the operating
-//!   system even if the process is killed). The runs and the in-memory remainder are k-way merged when stepping starts.
-//!   Close() and the destructor delete the file.
+//!   and inserted as a run into a SQLite temporary database (SQLite's temp directory, deleted on close or when the
+//!   process ends), keyed so that SQLite stores all runs in key order. The runs and the in-memory remainder are read
+//!   back in key order when stepping starts. Close() and the destructor delete the database.
 //! - Property values are rendered with ECSqlRowAdaptor using the JsReadOptions passed to AppendFrom, exactly as
 //!   the rows of a ChangesetReader are rendered to JavaScript.
 //! - Not thread-safe.
@@ -97,7 +97,7 @@ public:
     ECDB_EXPORT DbResult AppendFrom(ChangesetReader& reader, JsReadOptions const& rowOptions);
 
     //! Sends the next merged instance to @p writer as one object.
-    //! @remarks The first call finalizes the merge (sort and k-way merge of spilled runs). After that, AppendFrom fails.
+    //! @remarks The first call finalizes the merge (sort, or reading back the spilled runs in key order). After that, AppendFrom fails.
     //! The instance contains the rendered property values plus a "$meta" object with the members
     //! tables, op, stage, changeIndexes, instanceKey, changeFetchedPropNames and isIndirectChange.
     //! @return BE_SQLITE_ROW if an instance was written, BE_SQLITE_DONE when all instances were returned,
