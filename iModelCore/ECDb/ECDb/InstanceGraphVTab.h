@@ -100,7 +100,7 @@ struct RelationsModule : ECDbModule
                     <ECProperty propertyName="NavPropertyName" typeName="string"/>
                 </ECEntityClass>
             </ECSchema>)xml"
-            ) {}
+            ) { m_hasBuiltInSchema = true; }
         DbResult Connect(DbVirtualTable*& out, Config& conf, int argc, const char* const* argv) final;
     };
 
