@@ -11,6 +11,7 @@
 
 #include <BeSQLite/BeLzma.h>
 #include <Bentley/Logging.h>
+#include <limits>
 #include <mutex>
 
 #define LOG (NativeLogging::CategoryLogger("BeSQLite"))
@@ -84,9 +85,12 @@ static SRes readFor7z(ISeqInStreamPtr p, void *buf, size_t *size)
 //---------------------------------------------------------------------------------------
 static size_t writeFor7z(ISeqOutStreamPtr p, const void *buf, size_t size)
     {
+    if (size > std::numeric_limits<uint32_t>::max())
+        return 0;
+
     SeqOutStreamImpl const* pImpl = static_cast<SeqOutStreamImpl const*>(p);
     uint32_t bytesWritten = 0;
-    if (pImpl->GetStream()._Write(buf, (uint32_t) size, bytesWritten) != ZIP_SUCCESS)
+    if (pImpl->GetStream()._Write(buf, static_cast<uint32_t>(size), bytesWritten) != ZIP_SUCCESS)
         return 0;
 
     return bytesWritten;
@@ -122,7 +126,11 @@ static ZipErrors translate7ZipError(SRes code, bool readingFromFile)
             case SZ_ERROR_DATA:
             case SZ_ERROR_ARCHIVE:
             case SZ_ERROR_NO_ARCHIVE:
+            case SZ_ERROR_UNSUPPORTED:
                 return ZIP_ERROR_BAD_DATA;
+
+            case SZ_ERROR_MEM:
+                return ZIP_ERROR_UNKNOWN;
 
             case SZ_ERROR_INPUT_EOF:
                 return ZIP_ERROR_END_OF_DATA;
@@ -352,10 +360,9 @@ public:
     //---------------------------------------------------------------------------------------
     // @bsimethod
     //---------------------------------------------------------------------------------------
-    ZipErrors EncodeBuffer(::CLzma2EncHandle encHandle, CLzma2EncProps const& configuredProps, void* &pOutData, size_t &nOutData, void const* pInData, int nInData, ICompressProgressImpl* progressImpl)
+    ZipErrors EncodeBuffer(::CLzma2EncHandle encHandle, CLzma2EncProps const& configuredProps, void* &pOutData, size_t &nOutData, void const* pInData, size_t inputSize, ICompressProgressImpl* progressImpl)
         {
-        BeAssert(nInData > 0);
-        size_t inputSize = static_cast<size_t>(nInData);
+        BeAssert(inputSize > 0);
         m_outBuffer.clear();
         m_outBuffer.reserve(inputSize + (inputSize >> 10) + 16); // Allow for LZMA2 framing on incompressible input.
 
@@ -368,8 +375,9 @@ public:
             return translate7ZipError(res, true);
 
         Lzma2Enc_SetDataSize(encHandle, inputSize);
+        // The output stream appends encoded bytes to m_outBuffer.
         res = Lzma2Enc_Encode2(encHandle, &m_outSeqStream, nullptr, nullptr,
-            nullptr, static_cast<Byte const*>(pInData), (size_t)nInData, progressImpl);
+            nullptr, static_cast<Byte const*>(pInData), inputSize, progressImpl);
         if (SZ_OK != res)
             return translate7ZipError(res, true);
 
@@ -730,7 +738,7 @@ public:
     //---------------------------------------------------------------------------------------
     // @bsimethod
     //---------------------------------------------------------------------------------------
-    ZipErrors CompressNextPage(void const* pData, int nData)
+    ZipErrors CompressNextPage(void const* pData, size_t nData)
         {
         if (m_outStream == nullptr)
             {
@@ -740,7 +748,7 @@ public:
 
         if (nData == 0)
             return ZIP_SUCCESS;
-        if (nData < 0 || pData == nullptr)
+        if (pData == nullptr)
             return ZIP_ERROR_BAD_DATA;
 
         void *pOutData = nullptr;
@@ -782,12 +790,15 @@ public:
         InitStreams(&outStream, &inStream);
 
         ZipErrors zipStatus = InitHandle();
-        if (ZIP_SUCCESS != zipStatus)
-            return zipStatus;
+        if (ZIP_SUCCESS == zipStatus)
+            zipStatus = WriteHeader();
 
-        zipStatus = WriteHeader();
         if (ZIP_SUCCESS != zipStatus)
+            {
+            FinalizeHandle();
+            FinalizeStreams();
             return zipStatus;
+            }
 
         Lzma2Enc_SetDataSize(m_encHandle, m_inStream->GetSize());
         int res = Lzma2Enc_Encode2(m_encHandle, m_outStream, nullptr, nullptr,
@@ -832,7 +843,7 @@ LzmaEncoder::~LzmaEncoder()
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ZipErrors LzmaEncoder::CompressNextPage(void const* pData, int nData)
+ZipErrors LzmaEncoder::CompressNextPage(void const* pData, size_t nData)
     {
     return m_impl->CompressNextPage(pData, nData);
     }
@@ -942,13 +953,15 @@ private:
         {
         Lzma2Dec_Construct(&m_decodeState);
 
-        //  1 byte describing the properties and 8 bytes of uncompressed size
         Byte header;
-        size_t  readSize = sizeof(header);
-        if (m_inStream->ReadData(&header, &readSize) != BSISUCCESS)
+        size_t readSize = sizeof(header);
+        if (m_inStream->ReadData(&header, &readSize) != SZ_OK || readSize != sizeof(header))
             return ZIP_ERROR_BAD_DATA;
 
-        Lzma2Dec_Allocate(&m_decodeState, header, &m_szAlloc);
+        SRes result = Lzma2Dec_Allocate(&m_decodeState, header, &m_szAlloc);
+        if (SZ_OK != result)
+            return translate7ZipError(result, false);
+
         Lzma2Dec_Init(&m_decodeState);
 
         m_initState = true;
@@ -1048,7 +1061,10 @@ public:
 
         ZipErrors zipStatus = InitState();
         if (ZIP_SUCCESS != zipStatus)
+            {
+            FinalizeStreams();
             return zipStatus;
+            }
 
         m_inSize = m_inPos = 0;
         m_totalRead = m_totalWritten = 0;
@@ -1147,7 +1163,10 @@ public:
 
         ZipErrors zipStatus = InitState();
         if (ZIP_SUCCESS != zipStatus)
+            {
+            FinalizeStreams();
             return zipStatus;
+            }
 
         m_inSize = m_inPos = 0;
         m_totalRead = m_totalWritten = 0;

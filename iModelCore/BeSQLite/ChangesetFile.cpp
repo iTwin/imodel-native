@@ -140,7 +140,7 @@ DbResult ChangesetFileWriter::Finish() {
 //---------------------------------------------------------------------------------------
 DbResult ChangesetFileWriter::FlushInput() {
     if (m_outputStatus == BE_SQLITE_OK && !m_pendingInput.empty()) {
-        if (m_lzmaEncoder.CompressNextPage(m_pendingInput.data(), static_cast<int>(m_pendingInput.size())) != ZIP_SUCCESS)
+        if (m_lzmaEncoder.CompressNextPage(m_pendingInput.data(), m_pendingInput.size()) != ZIP_SUCCESS)
             m_outputStatus = BE_SQLITE_ERROR;
     }
     m_pendingInput.clear();
@@ -169,7 +169,7 @@ DbResult ChangesetFileWriter::_Append(Byte const* pData, int nData) {
         if (FlushInput() != BE_SQLITE_OK)
             return m_outputStatus;
         // Large records already amortize initialization and can be encoded without an input copy.
-        if (m_lzmaEncoder.CompressNextPage(pData, nData) != ZIP_SUCCESS)
+        if (m_lzmaEncoder.CompressNextPage(pData, inputSize) != ZIP_SUCCESS)
             m_outputStatus = BE_SQLITE_ERROR;
         return m_outputStatus;
     }
@@ -788,7 +788,7 @@ BentleyStatus RevisionUtility::RecompressRevision(Utf8CP sourceFile, Utf8CP targ
         if (zipStatus != ZIP_SUCCESS)
             return ERROR;
 
-        if (decompressBytesRead > 0 && lzmaEncoder.CompressNextPage(buffer, decompressBytesRead) != ZIP_SUCCESS )
+        if (decompressBytesRead > 0 && lzmaEncoder.CompressNextPage(buffer, static_cast<size_t>(decompressBytesRead)) != ZIP_SUCCESS )
             return ERROR;
 
         } while (zipStatus == ZIP_SUCCESS && decompressBytesRead > 0);
