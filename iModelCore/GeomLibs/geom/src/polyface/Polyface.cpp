@@ -804,6 +804,360 @@ void PolyfaceHeader::ReverseNormals ()
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 template <typename T>
+static void ReverseInRange (T* pIndex, size_t iFirst, size_t iLast)
+    {
+    T temp;
+    if (NULL == pIndex)
+        return;
+    for (; iFirst < iLast; iFirst++, iLast--)
+        {
+        temp = pIndex [iFirst];
+        pIndex[iFirst]= pIndex[iLast];
+        pIndex[iLast] = temp;
+        }
+    }
+
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+static void AbsInRange(int32_t* pIndex, size_t iFirst, size_t iLast)
+    {
+    if (NULL == pIndex)
+        return;
+    for (size_t i = iFirst; i <= iLast; i++)
+        {
+        pIndex[i] = abs (pIndex[i]);
+        }
+    }
+
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+static void NegativeAbsInRange(int32_t* pIndex, size_t iFirst, size_t iLast)
+    {
+    if (NULL == pIndex)
+        return;
+    for (size_t i = iFirst; i <= iLast; i++)
+        {
+        pIndex[i] = -abs (pIndex[i]);
+        }
+    }
+
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+static void NegateInRange(int32_t* pIndex, size_t iFirst, size_t iLast)
+    {
+    if (NULL == pIndex)
+        return;
+    for (size_t i = iFirst; i <= iLast; i++)
+        {
+        pIndex[i] = -pIndex[i];
+        }
+    }
+
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+static void ShiftSignsFromCyclicPredecessorsInRange(int32_t* pIndex, size_t kFirst, size_t kLast)
+    {
+    if (NULL == pIndex)
+        return;
+    int sign0 = pIndex[kLast] >= 0 ? 1 : -1;
+    int sign1;
+    for (size_t k = kFirst; k <= kLast; k++)
+        {
+        sign1 = pIndex[k] >= 0 ? 1 : -1;
+        pIndex[k] = sign0 * abs (pIndex[k]);
+        sign0 = sign1;
+        }
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+void PolyfaceHeader::ReverseIndicesOneFace
+(
+size_t iFirst,
+size_t iLast,
+BlockedVectorInt::IndexAction normalArrayIndexAction
+)
+    {
+    auto pPointIndex   = PointIndex().GetPtr();
+    auto pNormalIndex  = NormalIndex().GetPtr();
+    auto pParamIndex   = ParamIndex().GetPtr();
+    auto pColorIndex   = ColorIndex().GetPtr();
+
+    size_t auxDataIndexCount = AuxData().IsValid() ? AuxData()->GetIndices().size() : 0;
+    auto pAuxDataIndex = auxDataIndexCount > 0 ? AuxData()->GetIndices().data() : nullptr;
+
+    // bypass corruption
+    if (iFirst > iLast)
+        return;
+    if (pPointIndex && iLast >= GetPointIndexCount())
+        return;
+    if (pNormalIndex && iLast >= GetNormalIndexCount())
+        return;
+    if (pParamIndex && iLast >= GetParamIndexCount())
+        return;
+    if (pColorIndex && iLast >= GetColorIndexCount())
+        return;
+    if (pAuxDataIndex && iLast >= auxDataIndexCount)
+        return;
+
+    //TR #164587: preserve hidden edges in vertex index array
+    ShiftSignsFromCyclicPredecessorsInRange(pPointIndex, iFirst, iLast);
+    ReverseInRange(pPointIndex, iFirst, iLast);
+
+    if (pNormalIndex)
+        {
+        ReverseInRange(pNormalIndex, iFirst, iLast);
+
+        if (normalArrayIndexAction == BlockedVectorInt::ForcePositive)
+            AbsInRange(pNormalIndex, iFirst, iLast);
+        else if (normalArrayIndexAction == BlockedVectorInt::ForceNegative)
+            NegativeAbsInRange(pNormalIndex, iFirst, iLast);
+        else if (normalArrayIndexAction == BlockedVectorInt::Negate)
+            NegateInRange(pNormalIndex, iFirst, iLast);
+        }
+
+    if (pColorIndex)
+        ReverseInRange(pColorIndex, iFirst, iLast);  // No sign effects for color indices.
+    if (pParamIndex)
+        ReverseInRange(pParamIndex, iFirst, iLast);  // No sign effects for param indices.
+
+    if (pAuxDataIndex)
+        ReverseInRange(pAuxDataIndex, iFirst, iLast);
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* From given start position, find final (inclusive) position and position for next start search.
+* Initialize iFirst to zero before first call.
+* Return false if no more faces.
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+static bool DelimitFace (int32_t const* pIndex, size_t count, int numPerFace, size_t iFirst, size_t& iLast, size_t& iNext)
+    {
+    if (iFirst >= count)
+        {
+        iNext = iFirst;
+        if (iFirst >= 1)
+            iLast = iFirst - 1;
+        return false;
+        }
+    if (numPerFace > 1)
+        {
+        iLast = iFirst;
+        size_t limit = iFirst + numPerFace;
+        while (iLast < limit && pIndex[iLast] != 0)
+            iLast++;
+        if (iLast >= 1)
+            iLast--;
+        iNext = iFirst + numPerFace;
+        return iLast >= iFirst;
+        }
+    else
+        {
+        // zero terminated.
+        // skip over leading zeros ..
+        while (iFirst < count && pIndex[iFirst] == 0)
+            iFirst++;
+        if (iFirst >= count)
+            {
+            iNext = iFirst;
+            if (iFirst >= 1)
+                iLast = iFirst - 1;
+            return false;
+            }
+        iLast = iFirst + 1;
+        while (iLast < count && pIndex[iLast] != 0)
+            iLast++;
+        // iLast is one after the live stuff for this face.
+        iNext = iLast + 1;
+        if (iLast >= 1)
+            iLast--;
+        return true;
+        }
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+static bool AllNegativeInRange(int32_t const* pIndex, size_t iFirst, size_t iLast)
+    {
+    for (size_t i = iFirst; i < iLast; i++)
+        if (pIndex[i] >= 0)
+            return false;
+    return true;
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+template<typename T>
+static void ReverseByBlock (T* data, size_t n, size_t numPerBlock)
+    {
+    if (data != nullptr && n > 0 && numPerBlock > 0)
+        {
+        for (size_t i0 = 0; i0 < n; i0 += numPerBlock)
+            {
+            size_t numThisBlock = n - i0;
+            if (numThisBlock > numPerBlock)
+                numThisBlock = numPerBlock;
+            for (size_t i = 0, j = numThisBlock - 1; i < j; i++, j--)
+                std::swap (data[i0 + i], data[i0 + j]);
+            }
+        }
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+static bool ReverseMeshByBlock (PolyfaceHeaderR mesh, bool negateNormals)
+    {
+    size_t numPerBlock = 0;
+    if (  mesh.GetMeshStyle() == MESH_ELM_STYLE_QUAD_GRID
+       || mesh.GetMeshStyle() == MESH_ELM_STYLE_TRIANGLE_GRID
+       )
+        {
+        // reverse within each row.
+        numPerBlock = (size_t) mesh.GetNumPerRow();
+        }
+    else if (mesh.GetMeshStyle() == MESH_ELM_STYLE_COORDINATE_QUADS)
+        {
+        // reverse within each block of 4 coordinates . . .
+        numPerBlock = 4;
+        }
+    else if (mesh.GetMeshStyle() == MESH_ELM_STYLE_COORDINATE_TRIANGLES)
+        {
+        // reverse within each block of 3 coordinates
+        numPerBlock = 3;
+        }
+    else
+        {
+        return false;
+        }
+
+    auto points = mesh.Point().GetPtr();
+    auto normals = mesh.Normal().GetPtr();
+    auto params = mesh.Param().GetPtr();
+    auto intColor = mesh.IntColor().GetPtr();
+
+    ReverseByBlock<DPoint3d>(points, mesh.GetPointCount(), numPerBlock);
+    ReverseByBlock<DVec3d>(normals, mesh.GetNormalCount(), numPerBlock);
+    ReverseByBlock<DPoint2d>(params, mesh.GetParamCount(), numPerBlock);
+    ReverseByBlock<uint32_t>(intColor, mesh.GetColorCount(), numPerBlock);
+
+    if (negateNormals && nullptr != normals)
+        {
+        for (size_t i = 0; i < mesh.GetNormalCount(); i++)
+            normals[i].Negate();
+        }
+    return true;
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+bool PolyfaceHeader::ReverseIndicesAllFaces
+(
+bool negateNormals,
+bool flipMarked,
+bool flipUnMarked,
+BlockedVectorInt::IndexAction normalIndexAction
+)
+    {
+    if (ReverseMeshByBlock(*this, negateNormals))
+        return true;
+
+    auto pPointIndex = GetPointIndexCP();
+    auto pNormalIndex = GetNormalIndexCP();
+    auto pNormal = Normal().GetPtr();
+    size_t numNormal  = GetNormalCount();
+    size_t numIndex = GetPointIndexCount();
+
+    // return early if corrupt mesh
+    if (numNormal > 0 && numNormal < numIndex)
+        return false;
+
+    int numPerFace = GetNumPerFace();
+    if (2 == numPerFace)
+        return false;
+
+    size_t iFirst = 0;
+    size_t iNext  = 0;
+    size_t iLast  = 0;
+
+    if ((flipMarked && flipUnMarked) || pPointIndex != NULL)
+        {
+        for (; DelimitFace(pPointIndex, numIndex, numPerFace, iFirst, iLast, iNext); iFirst = iNext)
+            {
+            ReverseIndicesOneFace(iFirst, iLast, normalIndexAction);
+            }
+        }
+    else if (flipMarked || flipUnMarked)
+        {
+        for (; DelimitFace(pPointIndex, numIndex, numPerFace, iFirst, iLast, iNext); iFirst = iNext)
+            {
+            if (AllNegativeInRange(pNormalIndex, iFirst, iLast))
+                if (flipMarked)
+                    ReverseIndicesOneFace(iFirst, iLast, normalIndexAction);
+            else
+                if (flipUnMarked)
+                    ReverseIndicesOneFace (iFirst, iLast, normalIndexAction);
+            }
+        }
+    else
+        {
+        // no index effects
+        }
+
+    if (numNormal > 0 && pNormal != NULL && negateNormals)
+        {
+        for (size_t i = 0; i < numNormal; i++)
+            pNormal [i].Negate ();
+        }
+
+    return true;
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+bool PolyfaceHeader::ReverseIndicesWithTest(DVec3dCP surfaceNormal)
+    {
+    // facets are assumed to be consistently oriented, but possibly incorrectly. Reverse them as necessary.
+    bool reverse = false;
+    if (IsClosedByEdgePairing())
+        {
+        reverse = 0.0 > SumTetrahedralVolumes(GetPointCP()[0]);
+        }
+    else if (surfaceNormal)
+        {
+        DPoint3d centroid;
+        DVec3d normal;
+        double area;
+        auto visitor = PolyfaceVisitor::Attach(*this, false);
+        while (visitor->AdvanceToNextFace())
+            {
+            if (visitor->TryGetFacetCentroidNormalAndArea(centroid, normal, area))
+                {   // found a non-degenerate face to test
+                reverse = 0.0 > normal.DotProduct(*surfaceNormal);
+                break;
+                }
+            }
+        }
+    return reverse ? ReverseIndicesAllFaces() : false;
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+template <typename T>
 static void CopyAndActivate (BlockedVector<T> & dest, T const *sourceData, size_t sourceCount)
     {
     dest.clear ();
@@ -834,11 +1188,10 @@ void PolyfaceHeader::CopyFrom (PolyfaceQueryCR source)
     CopyAndActivate <uint32_t>      (m_intColor,    (uint32_t const*)source.GetIntColorCP (), source.GetColorCount ());
 
     CopyAndActivate <int>(m_pointIndex,     source.GetPointIndexCP (),  source.GetPointIndexCount ());
-    CopyAndActivate <int>(m_normalIndex,    source.GetNormalIndexCP (), source.GetPointIndexCount ());
-    CopyAndActivate <int>(m_paramIndex,     source.GetParamIndexCP (),  source.GetPointIndexCount ());
-    CopyAndActivate <int>(m_colorIndex,     source.GetColorIndexCP (),  source.GetPointIndexCount ());
-    CopyAndActivate <int>(m_faceIndex,      source.GetFaceIndexCP (),   source.GetPointIndexCount ());
-
+    CopyAndActivate <int>(m_normalIndex,    source.GetNormalIndexCP (), source.GetNormalIndexCount ());
+    CopyAndActivate <int>(m_paramIndex,     source.GetParamIndexCP (),  source.GetParamIndexCount ());
+    CopyAndActivate <int>(m_colorIndex,     source.GetColorIndexCP (),  source.GetColorIndexCount ());
+    CopyAndActivate <int>(m_faceIndex,      source.GetFaceIndexCP (),   source.GetFaceIndexCount ());
 
     CopyAndActivate <PolyfaceEdgeChain> (m_edgeChain,   source.GetEdgeChainCP (),      source.GetEdgeChainCount ());
 
@@ -847,8 +1200,6 @@ void PolyfaceHeader::CopyFrom (PolyfaceQueryCR source)
     m_param.SetStructsPerRow (numPerRow);
     m_intColor.SetStructsPerRow (numPerRow);
     m_faceData.SetStructsPerRow (numPerRow);
-
-
 
     int numIndexPerRow = numPerFace;
     if (numIndexPerRow == 0)
@@ -893,6 +1244,9 @@ void PolyfaceHeader::ReplicateMissingIndexArrays ()
         }
     }
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
 PolyfaceHeaderPtr PolyfaceQuery::CloneAsVariableSizeIndexed() const
     {
     PolyfaceHeaderPtr clone = PolyfaceHeader::CreateVariableSizeIndexed();
@@ -907,13 +1261,15 @@ PolyfaceHeaderPtr PolyfaceQuery::CloneAsVariableSizeIndexed(PolyfaceQueryCR sour
     return source.CloneAsVariableSizeIndexed();
     }
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
 PolyfaceHeaderPtr PolyfaceQuery::Clone () const
     {
     PolyfaceHeaderPtr clone = PolyfaceHeader::New();
     clone->CopyFrom (*this);
     return clone;
     }
-
 
 template <typename T>
 static bool IsCompatibleActiveState (bool active, T const *source, size_t count)
@@ -966,7 +1322,6 @@ static bool TestAndCopyOneBasedIndex (BlockedVectorInt &dest, const int *source,
     return true;
     }
 
-
 // Transfer all possible data (but doCopy param allows first-pass call to test compatibility without changing the destination)
 static bool DoContentTransfer (PolyfaceHeaderR dest, PolyfaceQueryCR source, bool doCopy)
     {
@@ -978,21 +1333,18 @@ static bool DoContentTransfer (PolyfaceHeaderR dest, PolyfaceQueryCR source, boo
     if (source.GetTwoSided () != source.GetTwoSided ())
         return false;
 
-    size_t numIndex = source.GetPointIndexCount ();
-    if (!TestAndCopyOneBasedIndex (dest.PointIndex (), source.GetPointIndexCP (), numIndex, (int)dest.Point ().size (), doCopy))
+    if (!TestAndCopyOneBasedIndex (dest.PointIndex (), source.GetPointIndexCP (), source.GetPointIndexCount(), (int)dest.Point ().size (), doCopy))
         return false;
-    if (!TestAndCopyOneBasedIndex (dest.ParamIndex (), source.GetParamIndexCP (), numIndex, (int)dest.Param ().size (), doCopy))
+    if (!TestAndCopyOneBasedIndex (dest.ParamIndex (), source.GetParamIndexCP (), source.GetParamIndexCount(), (int)dest.Param ().size (), doCopy))
         return false;
-    if (!TestAndCopyOneBasedIndex (dest.NormalIndex (), source.GetNormalIndexCP (), numIndex, (int)dest.Normal ().size (), doCopy))
+    if (!TestAndCopyOneBasedIndex (dest.NormalIndex (), source.GetNormalIndexCP (), source.GetNormalIndexCount(), (int)dest.Normal ().size (), doCopy))
         return false;
-
-    size_t colorOffset = source.GetColorCount ();
-
-    if (!TestAndCopyOneBasedIndex (dest.ColorIndex (), source.GetColorIndexCP (), numIndex, (int)colorOffset, doCopy))
+    if (!TestAndCopyOneBasedIndex (dest.ColorIndex (), source.GetColorIndexCP (), source.GetColorIndexCount(), (int)dest.IntColor().size(), doCopy))
+        return false;
+    if (!TestAndCopyOneBasedIndex (dest.FaceIndex (), source.GetFaceIndexCP (), source.GetFaceIndexCount (), (int)dest.GetFaceCount (), doCopy))
         return false;
 
-    // Needs work -- what about normalPerVertex shared indexing?
-    // Needs work -- edge chains???
+    // Needs work: edge chains? auxData?
 
     if (!TestAndCopyBlockedData (dest.Point (), source.GetPointCP (), source.GetPointCount (), doCopy))
         return false;
@@ -1001,8 +1353,6 @@ static bool DoContentTransfer (PolyfaceHeaderR dest, PolyfaceQueryCR source, boo
     if (!TestAndCopyBlockedData (dest.Normal (), source.GetNormalCP (), source.GetNormalCount (), doCopy))
         return false;
     if (!TestAndCopyBlockedData (dest.IntColor (), source.GetIntColorCP (), source.GetColorCount (), doCopy))
-        return false;
-    if (!TestAndCopyOneBasedIndex (dest.FaceIndex (), source.GetFaceIndexCP (), source.GetFaceIndexCount (), (int)dest.GetFaceCount (), doCopy))
         return false;
     if (!TestAndCopyBlockedData (dest.FaceData (), source.GetFaceDataCP (), source.GetFaceCount (), doCopy))
         return false;
@@ -1023,8 +1373,6 @@ bool PolyfaceHeader::AddIfMatchedLayout (PolyfaceQueryCR source)
         return false;
     return DoContentTransfer (*this, source, true);
     }
-
-
 
 // TRUE if any pair of the 4 indices is identical.  (Caller applies abs!!)
 static bool IsDegenerateQuad (int i0, int i1, int i2, int i3)

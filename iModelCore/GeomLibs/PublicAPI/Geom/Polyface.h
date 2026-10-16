@@ -709,14 +709,19 @@ GEOMAPI_VIRTUAL PolyfaceEdgeChainCP          _GetEdgeChainCP () const = 0;
 GEOMAPI_VIRTUAL PolyfaceAuxDataCPtr          _GetAuxDataCP() const { return nullptr; }
 GEOMAPI_VIRTUAL PolyfaceVectors *            _AsPolyfaceVectorsP() const { return nullptr; }
 GEOMAPI_VIRTUAL uint32_t                     _GetExpectedClosure() const = 0;
-GEOMAPI_VIRTUAL TaggedNumericData const *_GetNumericTagsCP() const = 0;
-GEOMAPI_VIRTUAL void _SetNumericTags(TaggedNumericData const & source) = 0;
+GEOMAPI_VIRTUAL TaggedNumericData const *    _GetNumericTagsCP() const = 0;
+GEOMAPI_VIRTUAL void                         _SetNumericTags(TaggedNumericData const & source) const = 0;
+
+// PolyfaceQuery assumes parallel index arrays, but subclasses can override for sanity check
+GEOMAPI_VIRTUAL size_t                       _GetNormalIndexCount() const { return _GetNormalCount() > 0 ? _GetPointIndexCount() : 0;};
+GEOMAPI_VIRTUAL size_t                       _GetParamIndexCount() const { return _GetParamCount() > 0 ? _GetPointIndexCount() : 0;};
+GEOMAPI_VIRTUAL size_t                       _GetColorIndexCount() const { return _GetColorCount() > 0 ? _GetPointIndexCount() : 0;};
 
 PolyfaceQuery () { }
 
 public:
 
-//! Test if this mesh is vaiable sized indexed.
+//! Test if this mesh is variable sized indexed.
 GEOMDLLIMPEXP bool IsVariableSizeIndexed () const;
 
 //! Return the number of points.
@@ -732,7 +737,13 @@ GEOMDLLIMPEXP size_t                        GetColorCount () const;
 GEOMDLLIMPEXP size_t                        GetFaceCount () const;
 //! Return the number of point indices.
 GEOMDLLIMPEXP size_t                        GetPointIndexCount () const;
-//! Return the number of face data indices
+//! Return the number of normal indices. Nominally the same as point index count.
+GEOMDLLIMPEXP size_t                        GetNormalIndexCount() const;
+//! Return the number of uv param indices. Nominally the same as point index count.
+GEOMDLLIMPEXP size_t                        GetParamIndexCount() const;
+//! Return the number of color indices. Nominally the same as point index count.
+GEOMDLLIMPEXP size_t                        GetColorIndexCount() const;
+//! Return the number of face data indices. Nominally the same as point index count.
 GEOMDLLIMPEXP size_t                        GetFaceIndexCount () const;
 //! Return the number of edge chains.
 GEOMDLLIMPEXP size_t                        GetEdgeChainCount () const;
@@ -754,7 +765,7 @@ GEOMDLLIMPEXP PolyfaceAuxDataCPtr           GetAuxDataCP() const;
 GEOMDLLIMPEXP TaggedNumericData const *GetNumericTagsCP() const;
 //! set the numeric data tags.
 //! Note that for a PolyfaceQueryCarrier, this sets in the carrier but not the original data.
-GEOMDLLIMPEXP void SetNumericTags(TaggedNumericData const & source);
+GEOMDLLIMPEXP void SetNumericTags(TaggedNumericData const & source) const;
 
 
 //! For Color, Param, and normal indices, resolveToDefaults allows caller to request using
@@ -948,53 +959,6 @@ GEOMDLLIMPEXP double GetMediumTolerance () const;
 //! Return range of the parameters.
 GEOMDLLIMPEXP DRange2d ParamRange () const;
 
-//!
-//! Reverse a single face loop in parallel index arrays.
-//! @remarks A face loop is reversed after the 1st index: the 2nd/last indices are swapped, the 3rd/penultimate indices are swapped, etc.
-//! @param [in] iFirst       0-based offset to the first index in the face loop
-//! @param [in] iLast       0-based offset to the last index of the face loop.
-//! @param [in] normalArrayIndexAction  selects action in normal index array. This can be
-//! <ul>
-//! <li>IndexAction::None -- leave the index value unchanged
-//! <li>IndexAction::ForcePositive -- change to positive
-//! <li>IndexAction::ForceNegative -- change to negative
-//! <li>IndexAction::Negate -- change to negative of its current sign
-//! </ul>
-//!
-//!
-GEOMDLLIMPEXP void ReverseIndicesOneFace
-(
-size_t        iFirst,
-size_t        iLast,
-BlockedVectorInt::IndexAction           normalArrayIndexAction = BlockedVectorInt::None
-);
-
-//!
-//! Reverse index orientations in place, optionally restricting by sign of indices in NormalIndex()
-//! @remarks The only coordinate data array that is changed by this function is the normal matrix, and then
-//!       only if it is present and negateNormals is true.
-//! @param [in] flipMarked  true to flip when marked by negative indices in NormalIndex()
-//! @param [in] flipUnMarked  true to flip when not marked by negative indices in NormalIndex()
-//! @param [in] normalIndexAction  selects final form of indices in NormalIndex()
-//! @param [in] negateNormals      true to negate normal vectors.
-//!
-//! return SUCCESS if face loops are successfully reversed
-//!
-GEOMDLLIMPEXP bool ReverseIndicesAllFaces
-(
-bool           negateNormals = true,
-bool           flipMarked = true,
-bool           flipUnMarked = true,
-BlockedVectorInt::IndexAction normalIndexAction = BlockedVectorInt::None
-);
-
-//! Reverse mesh face loop orientations so that inferred normals point outward (if mesh is volumetric) or into same half-space as surfaceNormal (if mesh is non-volumetric).
-//! @remarks Input mesh facets are assumed to be consistently oriented.
-//! @see CloneWithConsistentlyOrientedFacets, IsFacetOrientationConsistent
-//! @param [in] surfaceNormal optional direction for orienting the facets of a non-volumetric mesh. If not supplied and mesh is non-volumetric, return false.
-//! @return whether the mesh was reversed
-GEOMDLLIMPEXP bool ReverseIndicesWithTest(DVec3dCP surfaceNormal = nullptr);
-
 //! Test whether facets are oriented consistently by matching interior edges.
 //! @remarks Normals (inferred or auxiliary) are ignored.
 //! @remarks Consistently oriented facets satisfy the following heuristic: the number of pairs of matched undirected edges equals the number of pairs of opposite directed edges.
@@ -1126,7 +1090,7 @@ bvector<int> &linestringIndexOut,
 bvector<int> &meshIndexOut,
 bvector <DPoint3d> const &linestringPoints,
         DVec3dCR                sweepDirection
-);
+) const;
 
 //! @description Output processor for ClipToPlaneSetIntersection and ClipToRange.
 //! Note that if the target polyface is neither clipped by nor wholly inside the clipper, no callback is invoked, as there is nothing to process.
@@ -1337,23 +1301,8 @@ DPoint4dCR eyePoint,    //!< [in] eyepoint for stroke (e.g. weight 1 for camera 
 DPoint3dCR point0,      //!< [in] start point of stroke
 DPoint3dCR point1,      //!< [in] end point of stroke
 bvector<FacetLocationDetail> &pickDetail, //!< [out] pairs of (readIndex, u,v, xyz) for the crossings.  u is along the stroke edge.  v is positive towards the eye. xyz are on the facet plane.
-
 bool exitAfterFirstPick     //!< [in] true to quit as soon as a single pick is found.
-);
-
-//! Search for facets that are touched by a box
-//! returns true if valid point data and one or more facets selected.
-GEOMDLLIMPEXP bool PickFacetsByRectangle
-(
-DPoint4dCR eyePoint,    //!< [in] eyepoint for stroke (e.g. weight 1 for camera point, weight 0 for flat view vector.
-DPoint3dCR point0,      //!< [in] corner of rectangle
-DPoint3dCR point1,      //!< [in] opposite corner of rectangle
-bvector<FacetLocationDetail> &pickDetail, //!< [out] pairs of (readIndex, u,v, xyz) for the crossings.  u is along the stroke edge.  v is positive towards the eye. xyz are on the facet plane.
-
-bool exitAfterFirstPick     //!< [in] true to quit as soon as a single pick is found.
-);
-
-
+) const;
 
 //! Search for intersection edges, tagged with readIndex of affected facets.
 static GEOMDLLIMPEXP bool SearchIntersectionSegments (
@@ -1506,7 +1455,6 @@ bvector<bvector<ptrdiff_t>> &blockedReadIndex,
 bvector<PolyfaceHeaderPtr> &submeshArray
 ) const;
 
-
 //! Return connected meshes.
 //! @param [in] connectivityType 0 for vertex connectivity, 1 for connectivity across any edge (no visibility test), 2 for invisible edge connectivity (any shared visible edge is a barrier)
 //! @param [out] submeshArray This is initially cleared, then filled with as many (smartpointers to) new arrays as needed
@@ -1527,7 +1475,8 @@ GEOMDLLIMPEXP bool PartitionReadIndicesByNormal(
 DVec3dCR vector,
 bvector<bvector<ptrdiff_t>> &readIndices,
 double sideFaceRadiansTolerance = Angle::SmallAngle ()
-);
+) const;
+
 //! If the polyface's numeric tags request it, compute and return the alternate polyface (e.g. decimated or subdivided)
 //! compute and return it.
 GEOMDLLIMPEXP static PolyfaceHeaderPtr  ComputeAlternatePolyface
@@ -1571,7 +1520,7 @@ private:
     uint32_t            m_meshStyle;
     uint32_t            m_numPerRow;
     uint32_t            m_expectedClosure;
-    TaggedNumericData  m_numericTags;
+    mutable TaggedNumericData  m_numericTags;
 public:
 
 //! Constructor with parameters for all the data storable in a mesh element
@@ -1645,7 +1594,7 @@ uint32_t            _GetExpectedClosure()       const override { return m_expect
 GEOMAPI_VIRTUAL TaggedNumericData const *_GetNumericTagsCP() const override {
     return m_numericTags.IsZero () ? nullptr : &m_numericTags;
     }
-GEOMAPI_VIRTUAL void _SetNumericTags (TaggedNumericData const & source) override {
+GEOMAPI_VIRTUAL void _SetNumericTags (TaggedNumericData const & source) const override {
     m_numericTags = source;
     }
 };
@@ -1705,7 +1654,7 @@ protected:
     uint32_t                            m_numPerRow;
     PolyfaceAuxDataPtr                  m_auxData;
     uint32_t                            m_expectedClosure;
-    TaggedNumericData                  m_numericTags;
+    mutable TaggedNumericData           m_numericTags;
 
 protected:
 size_t                  _GetPointCount ()       const override;
@@ -1714,6 +1663,9 @@ size_t                  _GetParamCount ()       const override;
 size_t                  _GetColorCount ()       const override;
 size_t                  _GetFaceCount ()        const override;
 size_t                  _GetPointIndexCount ()  const override;
+size_t                  _GetNormalIndexCount()  const override;
+size_t                  _GetParamIndexCount()   const override;
+size_t                  _GetColorIndexCount()   const override;
 size_t                  _GetFaceIndexCount ()   const override;
 size_t                  _GetEdgeChainCount ()   const override;
 DPoint3dCP              _GetPointCP ()          const override;
@@ -1742,7 +1694,7 @@ uint32_t                _GetExpectedClosure()    const override;
 PolyfaceVectors *       _AsPolyfaceVectorsP() const override; // fast upcast
 
 TaggedNumericData const *_GetNumericTagsCP() const override;
-void _SetNumericTags(TaggedNumericData const &source) override;
+void _SetNumericTags(TaggedNumericData const &source) const override;
 
 PolyfaceVectors ();
 GEOMAPI_VIRTUAL ~PolyfaceVectors () { }  // Virtual destructor needed when there are virtual methods
@@ -1774,57 +1726,58 @@ public:
     //! Set the auxilliary data.
     GEOMDLLIMPEXP void SetAuxData(PolyfaceAuxDataPtr& auxData);
 
-//! Given signed, one-based indices to a (large) data array.
-//! Copy out the data entries that are actually used, and revise indices in place.
-//! Return false if data array is empty.  In this case indices are left alone.
-template<typename T>
-static bool ReindexOneBasedData
-(
-bvector<T> const &data,                 //!< [in] source data
-int invalidIndexReplacement,                   //!< [in] index to replace invalid index
-bvector<int> &indices,                  //!< [inout] indices
-bvector<T> &newData,                    //!< [out] new data
-bvector<size_t> &oldDataToNewData,        //!< [out] array mapping old 0-based data index to new 0-based data index
-size_t &numRangeError                   //!< [out] number of indices out of range (replaced by invalidIndexReplacement)
-)
-    {
-    newData.clear ();
-    size_t numData = data.size ();
-    oldDataToNewData.clear ();
-    if (numData == 0)
+    //! Given signed, one-based indices to a (large) data array.
+    //! Copy out the data entries that are actually used, and revise indices in place.
+    //! Return false if data array is empty.  In this case indices are left alone.
+    template<typename T>
+    static bool ReindexOneBasedData
+    (
+    bvector<T> const &data,                 //!< [in] source data
+    int invalidIndexReplacement,                   //!< [in] index to replace invalid index
+    bvector<int> &indices,                  //!< [inout] indices
+    bvector<T> &newData,                    //!< [out] new data
+    bvector<size_t> &oldDataToNewData,        //!< [out] array mapping old 0-based data index to new 0-based data index
+    size_t &numRangeError                   //!< [out] number of indices out of range (replaced by invalidIndexReplacement)
+    )
         {
-        numRangeError = indices.size ();
-        return false;
-        }
-    for (size_t i = 0; i < numData; i++)
-        oldDataToNewData.push_back (SIZE_MAX);
-    numRangeError = 0;
-    for (int &index1 : indices)  // ONE BASED
-        {
-        if (index1 != 0)
+        newData.clear ();
+        size_t numData = data.size ();
+        oldDataToNewData.clear ();
+        if (numData == 0)
             {
-            size_t index0 = std::abs (index1) - 1;  // 0 BASED
-            if (index0 >= numData)
+            numRangeError = indices.size ();
+            return false;
+            }
+        for (size_t i = 0; i < numData; i++)
+            oldDataToNewData.push_back (SIZE_MAX);
+        numRangeError = 0;
+        for (int &index1 : indices)  // ONE BASED
+            {
+            if (index1 != 0)
                 {
-                index1 = invalidIndexReplacement;     // PANIC
-                numRangeError++;
-                }
-            else
-                {
-                size_t newIndex0 = oldDataToNewData[index0];
-                if (newIndex0 == SIZE_MAX)
+                size_t index0 = std::abs (index1) - 1;  // 0 BASED
+                if (index0 >= numData)
                     {
-                    newIndex0 = oldDataToNewData[index0] = newData.size ();
-                    newData.push_back (data[index0]);
+                    index1 = invalidIndexReplacement;     // PANIC
+                    numRangeError++;
                     }
-                int newIndex1 = (int)newIndex0+ 1;
-                index1 = index1 > 0 ? (int)newIndex1 : -(int)newIndex1;
+                else
+                    {
+                    size_t newIndex0 = oldDataToNewData[index0];
+                    if (newIndex0 == SIZE_MAX)
+                        {
+                        newIndex0 = oldDataToNewData[index0] = newData.size ();
+                        newData.push_back (data[index0]);
+                        }
+                    int newIndex1 = (int)newIndex0+ 1;
+                    index1 = index1 > 0 ? (int)newIndex1 : -(int)newIndex1;
+                    }
                 }
             }
+        return true;
         }
-    return true;
-    }
 };
+
 // Mapping from 3 points (indexed within their parent polygon) to barycentric.
 // Methods to map arbitrary xyz to uv, normal, and color data from correspondingly organized source.
 struct IndexedParameterMap
@@ -2404,6 +2357,52 @@ bool        reverseIndicesIfMirrored = true
 //!
 //! Reverse (negate) all stored normals.  Note that this does NOT change index order.
 GEOMDLLIMPEXP void ReverseNormals ();
+
+//!
+//! Reverse a single face loop in parallel index arrays.
+//! @remarks A face loop is reversed after the 1st index: the 2nd/last indices are swapped, the 3rd/penultimate indices are swapped, etc.
+//! @remarks Does nothing if the input indices are invalid.
+//! @param [in] iFirst 0-based offset to the first index in the face loop
+//! @param [in] iLast 0-based offset to the last index of the face loop.
+//! @param [in] normalArrayIndexAction selects action in normal index array. This can be:
+//! <ul>
+//! <li>IndexAction::None -- leave the index value unchanged
+//! <li>IndexAction::ForcePositive -- change to positive
+//! <li>IndexAction::ForceNegative -- change to negative
+//! <li>IndexAction::Negate -- change to negative of its current sign
+//! </ul>
+//!
+GEOMDLLIMPEXP void ReverseIndicesOneFace
+(
+size_t iFirst,
+size_t iLast,
+BlockedVectorInt::IndexAction normalArrayIndexAction = BlockedVectorInt::None
+);
+
+//!
+//! Reverse index orientations in place, optionally restricting by sign of indices in NormalIndex()
+//! @remarks The only coordinate data array that is changed by this function is the normal matrix, and then
+//! only if it is present and negateNormals is true.
+//! @param [in] negateNormals true to negate normal vectors.
+//! @param [in] flipMarked true to flip when marked by negative indices in NormalIndex()
+//! @param [in] flipUnMarked true to flip when not marked by negative indices in NormalIndex()
+//! @param [in] normalIndexAction selects final form of indices in NormalIndex()
+//! @return SUCCESS if face loops are successfully reversed
+//!
+GEOMDLLIMPEXP bool ReverseIndicesAllFaces
+(
+bool negateNormals = true,
+bool flipMarked = true,
+bool flipUnMarked = true,
+BlockedVectorInt::IndexAction normalIndexAction = BlockedVectorInt::None
+);
+
+//! Reverse mesh face loop orientations so that inferred normals point outward (if mesh is volumetric) or into same half-space as surfaceNormal (if mesh is non-volumetric).
+//! @remarks Input mesh facets are assumed to be consistently oriented.
+//! @see CloneWithConsistentlyOrientedFacets, IsFacetOrientationConsistent
+//! @param [in] surfaceNormal optional direction for orienting the facets of a non-volumetric mesh. If not supplied and mesh is non-volumetric, return false.
+//! @return whether the mesh was reversed
+GEOMDLLIMPEXP bool ReverseIndicesWithTest(DVec3dCP surfaceNormal = nullptr);
 
 //!
 //! Normalize parameters.
