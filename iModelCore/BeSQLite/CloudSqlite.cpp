@@ -111,8 +111,9 @@ void CloudCache::ReadGuid() {
  * construct a new SqliteCloud vfs, and establish the cache directory for its containers.
  * @param name the name of this vfs
  * @param rootDir the directory to use for caching cloud containers
+ * @param compressBlocks if true, blocks uploaded to cloud storage (e.g. when committing changes) are compressed using the deflate algorithm. Compressed blocks are always transparently decompressed when read. Default is false. Only enable when all clients accessing the container support compression. Daemonless mode only.
  */
-CloudResult CloudCache::InitCache(Utf8StringCR name, Utf8StringCR rootDir, int64_t cacheSize, int nRequest, int httpTimeout, bool curlDiagnostics) {
+CloudResult CloudCache::InitCache(Utf8StringCR name, Utf8StringCR rootDir, int64_t cacheSize, int nRequest, int httpTimeout, bool curlDiagnostics, bool compressBlocks) {
     m_name = name;
     m_rootDir = rootDir;
     auto stat = CallSqliteFn([&](Utf8P* msg) { return sqlite3_bcvfs_create(m_rootDir.c_str(), m_name.c_str(), &m_vfs, msg); }, "create CloudCache");
@@ -135,6 +136,8 @@ CloudResult CloudCache::InitCache(Utf8StringCR name, Utf8StringCR rootDir, int64
         if (httpTimeout <= 0)
             httpTimeout = DEFAULT_HTTP_TIMEOUT;
         sqlite3_bcvfs_config(m_vfs, SQLITE_BCV_HTTPTIMEOUT, httpTimeout);
+        if (compressBlocks)
+            sqlite3_bcvfs_config(m_vfs, SQLITE_BCV_COMPRESS, 1);
 
         ReadGuid(); // sets the m_guid member to either a new GUID or one from the localstore for write locks
     }
@@ -424,12 +427,15 @@ CloudPrefetch::PrefetchStatus CloudPrefetch::Run(int nRequest, int timeout) {
  * @param container the container for the connection
  * @param nRequest if >0, the number of simultaneous http requests to make. Default is 6.
  * @param httpTimeout if >0, the number of seconds to wait before considering an http request as timed out. Timed out requests will be tried. Default is 60 seconds.
+ * @param compressBlocks if true, blocks uploaded to cloud storage will be compressed using the deflate algorithm. Default is false.
  */
-CloudResult CloudUtil::Init(CloudContainer const& container, int logLevel, int nRequest, int httpTimeout) {
+CloudResult CloudUtil::Init(CloudContainer const& container, int logLevel, int nRequest, int httpTimeout, bool compressBlocks) {
     int stat = sqlite3_bcv_open(container.GetOpenParams().c_str(), container.m_baseUri.c_str(), container.m_accessToken.c_str(), container.m_containerId.c_str(), &m_handle);
     if (SQLITE_OK != stat)
         return CloudResult(stat,  Utf8PrintfString("cannot open CloudContainer: %s", sqlite3_bcv_errmsg(m_handle)).c_str());
 
+    if (compressBlocks)
+        sqlite3_bcv_config(m_handle, SQLITE_BCVCONFIG_COMPRESS, 1);
     sqlite3_bcv_config(m_handle, SQLITE_BCVCONFIG_PROGRESS, this, ProgressCallback);
     sqlite3_bcv_config(m_handle, SQLITE_BCVCONFIG_LOG, this, LogCallback);
     sqlite3_bcv_config(m_handle, SQLITE_BCVCONFIG_LOGLEVEL, logLevel);

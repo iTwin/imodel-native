@@ -383,6 +383,18 @@ int sqlite3_bcvfs_config(sqlite3_bcvfs *pFs, int op, sqlite3_int64 iVal);
 **   The maximum number of entries that the bcv_http_log table may contain.
 **   A value less than 0 means there is no limit on the number of entries.
 **   The default value is -1.
+**
+** SQLITE_BCV_COMPRESS:
+**   The argument enables (non-zero) or disables (zero, the default) deflate
+**   compression of blocks uploaded to cloud storage (e.g. by
+**   sqlite3_bcvfs_upload() or when committing changes). This option only
+**   affects how blocks are written - compressed blocks are self-describing
+**   and are always transparently decompressed when read, regardless of this
+**   setting. A container may therefore contain a mix of compressed and
+**   uncompressed blocks. Older clients that predate compression support
+**   cannot read compressed blocks, so only enable this once all clients
+**   accessing the container are known to support it. This option is only
+**   available for daemonless mode VFSs.
 */
 #define SQLITE_BCV_CACHESIZE   1
 #define SQLITE_BCV_NREQUEST    2
@@ -390,6 +402,7 @@ int sqlite3_bcvfs_config(sqlite3_bcvfs *pFs, int op, sqlite3_int64 iVal);
 #define SQLITE_BCV_CURLVERBOSE 4
 #define SQLITE_BCV_HTTPLOG_TIMEOUT 5
 #define SQLITE_BCV_HTTPLOG_NENTRY  6
+#define SQLITE_BCV_COMPRESS    7
 
 /*
 ** Return true if this VFS is connected to a daemon process. Or false if
