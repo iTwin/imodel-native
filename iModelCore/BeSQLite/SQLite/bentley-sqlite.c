@@ -18,6 +18,7 @@
 #define SQLITE_ENABLE_RTREE             1
 #define SQLITE_ENABLE_SESSION           1
 #define SQLITE_ENABLE_STMTVTAB          1
+#define SQLITE_ENABLE_ICU               1
 #define SQLITE_MAX_COLUMN               2200
 #define SQLITE_MAX_EXPR_DEPTH           3000
 #define SQLITE_MAX_LENGTH               2147483647
