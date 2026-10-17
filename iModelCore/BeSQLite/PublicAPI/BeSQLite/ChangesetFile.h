@@ -61,9 +61,14 @@ private:
     BeFileLzmaOutStream* m_outLzmaFileStream;
     Utf8String m_prefix;
     Db const* m_db; // Only for debugging
+    bvector<Byte> m_pendingInput;
+    DbResult m_outputStatus = BE_SQLITE_OK;
+    bool m_bufferInput;
+    bool m_initialized = false;
+    bool m_compressionStarted = false;
 
     DbResult StartOutput();
-    BE_SQLITE_EXPORT void FinishOutput();
+    DbResult FlushInput();
     DbResult WritePrefix();
 
     RefCountedPtr<Changes::Reader> _GetReader() const override { return nullptr; }
@@ -75,7 +80,9 @@ public:
     BE_SQLITE_EXPORT ChangesetFileWriter(BeFileNameCR pathname, bool containsEcSchemaChanges, DdlChangesCR ddlChanges, Db const*,
                                          BeSQLite::LzmaEncoder::LzmaParams const& lzmaParams = BeSQLite::LzmaEncoder::LzmaParams());
     BE_SQLITE_EXPORT DbResult Initialize();
-    ~ChangesetFileWriter() { FinishOutput(); }
+    //! Flush buffered input and close the file. Call explicitly to receive compression/write errors.
+    BE_SQLITE_EXPORT DbResult Finish();
+    ~ChangesetFileWriter() { Finish(); }
 };
 
 //=======================================================================================

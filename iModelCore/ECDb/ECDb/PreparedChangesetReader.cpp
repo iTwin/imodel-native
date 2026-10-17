@@ -322,12 +322,17 @@ DbResult PreparedChangesetReader::WriteGroupToFile(ECDbCR ecdb, ChangeGroup& cha
         return BE_SQLITE_ERROR;
     }
 
+    if (BE_SQLITE_OK != writer.Finish()) {
+        LOG.errorv("WriteGroupToFile: failed to finish writing change group to temp file '%s'.", tempPath.GetNameUtf8().c_str());
+        tempPath.BeDeleteFile();
+        return BE_SQLITE_ERROR;
+    }
+
     if(!tempPath.DoesPathExist()) {
         LOG.errorv("WriteGroupToFile: failed to write temp file '%s'.", tempPath.GetNameUtf8().c_str());
         return BE_SQLITE_ERROR;
     }
 
-    // writer destructor fires FinishOutput here, flushing and closing the file
     outPath = tempPath;
     return BE_SQLITE_OK;
 }

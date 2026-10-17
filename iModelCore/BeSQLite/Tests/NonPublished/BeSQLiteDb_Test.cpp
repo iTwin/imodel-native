@@ -4,6 +4,8 @@
 *--------------------------------------------------------------------------------------------*/
 #include "BeSQLiteNonPublishedTests.h"
 #include "BeSQLite/ChangeSet.h"
+#include "BeSQLite/ChangesetFile.h"
+#include <cstring>
 #include <map>
 #include <vector>
 //---------------------------------------------------------------------------------------
@@ -2865,3 +2867,150 @@ TEST_F (BeSQLiteDbTests, nocase_latin1_ascii_support)
 
     m_db.SaveChanges();
 }
+
+struct TestChangesetFileWriter : ChangesetFileWriter
+    {
+    using ChangesetFileWriter::ChangesetFileWriter;
+
+    DbResult Append(Byte const* data, int size)
+        {
+        return (DbResult) ChangeStream::AppendCallback(this, data, size);
+        }
+    };
+
+static bvector<Byte> MakeChangesetTestBytes(size_t size, Byte seed)
+    {
+    bvector<Byte> bytes(size);
+    for (size_t index = 0; index < size; ++index)
+        bytes[index] = (Byte) ((index * 31 + seed) & 0xff);
+    return bytes;
+    }
+
+static BeFileName GetChangesetTestPath(WCharCP name)
+    {
+    BeFileName path;
+    BeTest::GetHost().GetOutputRoot(path);
+    path.AppendToPath(name);
+    return path;
+    }
+
+static void AppendChangesetTestBytes(TestChangesetFileWriter& writer, bvector<Byte> const& bytes, bvector<Byte>& expected)
+    {
+    EXPECT_EQ(BE_SQLITE_OK, writer.Append(bytes.data(), (int) bytes.size()));
+    expected.insert(expected.end(), bytes.begin(), bytes.end());
+    }
+
+static void VerifyChangesetTestFile(BeFileNameCR path, bvector<Byte> const& expectedBody, bool expectedSchemaChanges, DdlChangesCR expectedDdl)
+    {
+    bvector<BeFileName> files;
+    files.push_back(path);
+    ChangesetFileReaderBase changeset(files);
+    auto reader = changeset.MakeReader();
+
+    bool containsSchemaChanges = false;
+    DdlChanges ddlChanges;
+    ASSERT_EQ(BE_SQLITE_OK, reader->GetSchemaChanges(containsSchemaChanges, ddlChanges));
+    EXPECT_EQ(expectedSchemaChanges, containsSchemaChanges);
+    bvector<Utf8String> expectedDdls = expectedDdl.GetDDLs();
+    bvector<Utf8String> actualDdls = ddlChanges.GetDDLs();
+    EXPECT_EQ(expectedDdls.size(), actualDdls.size());
+    if (expectedDdls.size() == actualDdls.size())
+        for (size_t index = 0; index < expectedDdls.size(); ++index)
+            EXPECT_STREQ(expectedDdls[index].c_str(), actualDdls[index].c_str());
+
+    bvector<Byte> actualBody;
+    bvector<Byte> buffer(64 * 1024);
+    while (actualBody.size() < expectedBody.size())
+        {
+        int readSize = (int) (expectedBody.size() - actualBody.size());
+        if (readSize > (int) buffer.size())
+            readSize = (int) buffer.size();
+        DbResult result = reader->_Read(buffer.data(), &readSize);
+        EXPECT_EQ(BE_SQLITE_OK, result);
+        if (result != BE_SQLITE_OK || readSize <= 0)
+            break;
+        actualBody.insert(actualBody.end(), buffer.begin(), buffer.begin() + readSize);
+        }
+
+    EXPECT_EQ(expectedBody.size(), actualBody.size());
+    if (!expectedBody.empty() && expectedBody.size() == actualBody.size())
+        EXPECT_EQ(0, memcmp(expectedBody.data(), actualBody.data(), expectedBody.size()));
+
+    int readSize = static_cast<int>(buffer.size());
+    EXPECT_EQ(BE_SQLITE_OK, reader->_Read(buffer.data(), &readSize));
+    EXPECT_EQ(0, readSize);
+    }
+
+static void RunChangesetFileWriterBatchTest(bool supportRandomAccess, WCharCP fileName)
+    {
+    const size_t batchSize = 256 * 1024;
+    BeSQLite::LzmaEncoder::LzmaParams params(1 << 16, supportRandomAccess, 1, 1);
+    DdlChanges emptyDdl;
+    TestChangesetFileWriter writer(GetChangesetTestPath(fileName), false, emptyDdl, nullptr, params);
+    ASSERT_EQ(BE_SQLITE_OK, writer.Initialize());
+
+    bvector<Byte> expectedBody;
+    bvector<Byte> bytes = MakeChangesetTestBytes(batchSize - 5, 1);
+    AppendChangesetTestBytes(writer, bytes, expectedBody);
+    bytes = MakeChangesetTestBytes(2, 2); // Overflow the pending batch by one byte.
+    AppendChangesetTestBytes(writer, bytes, expectedBody);
+    bytes = MakeChangesetTestBytes(batchSize - 2, 3); // Fill the pending batch exactly.
+    AppendChangesetTestBytes(writer, bytes, expectedBody);
+    bytes = MakeChangesetTestBytes(13, 6);
+    AppendChangesetTestBytes(writer, bytes, expectedBody);
+    bytes = MakeChangesetTestBytes(batchSize + 7, 4); // Flush pending bytes, then encode a large callback directly.
+    AppendChangesetTestBytes(writer, bytes, expectedBody);
+    bytes = MakeChangesetTestBytes(17, 5);
+    AppendChangesetTestBytes(writer, bytes, expectedBody);
+
+    ASSERT_EQ(BE_SQLITE_OK, writer.Finish());
+    EXPECT_EQ(BE_SQLITE_OK, writer.Finish());
+    VerifyChangesetTestFile(GetChangesetTestPath(fileName), expectedBody, false, emptyDdl);
+    }
+
+TEST(BeSQLiteDb, ChangesetFileWriterBatching)
+    {
+    RunChangesetFileWriterBatchTest(false, L"ChangesetFileWriterBatching.changeset");
+    RunChangesetFileWriterBatchTest(true, L"ChangesetFileWriterRandomAccess.changeset");
+    }
+
+TEST(BeSQLiteDb, ChangesetFileWriterPrefixOnly)
+    {
+    BeFileName path = GetChangesetTestPath(L"ChangesetFileWriterPrefixOnly.changeset");
+    DdlChanges ddlChanges;
+    ddlChanges.AddDDL("CREATE TABLE prefix_test(id INTEGER);");
+    TestChangesetFileWriter writer(path, true, ddlChanges, nullptr);
+    ASSERT_EQ(BE_SQLITE_OK, writer.Initialize());
+    ASSERT_EQ(BE_SQLITE_OK, writer.Finish());
+    EXPECT_EQ(BE_SQLITE_OK, writer.Finish());
+
+    bvector<Byte> emptyBody;
+    VerifyChangesetTestFile(path, emptyBody, true, ddlChanges);
+    }
+
+TEST(BeSQLiteDb, ChangesetFileWriterDestructorFallback)
+    {
+    BeFileName path = GetChangesetTestPath(L"ChangesetFileWriterDestructorFallback.changeset");
+    bvector<Byte> expectedBody = MakeChangesetTestBytes(23, 9);
+    DdlChanges ddlChanges;
+    ddlChanges.AddDDL("CREATE TABLE buffered_prefix_test(id INTEGER);");
+    {
+    TestChangesetFileWriter writer(path, true, ddlChanges, nullptr);
+    ASSERT_EQ(BE_SQLITE_OK, writer.Initialize());
+    ASSERT_EQ(BE_SQLITE_OK, writer.Append(expectedBody.data(), (int) expectedBody.size()));
+    }
+    VerifyChangesetTestFile(path, expectedBody, true, ddlChanges);
+    }
+
+TEST(BeSQLiteDb, ChangesetFileWriterStickyError)
+    {
+    BeFileName path = GetChangesetTestPath(L"ChangesetFileWriterStickyError.changeset");
+    DdlChanges emptyDdl;
+    TestChangesetFileWriter writer(path, false, emptyDdl, nullptr);
+    ASSERT_EQ(BE_SQLITE_OK, writer.Initialize());
+    EXPECT_EQ(BE_SQLITE_ERROR, writer.Append(nullptr, 1));
+    Byte byte = 0x42;
+    EXPECT_EQ(BE_SQLITE_ERROR, writer.Append(&byte, 1));
+    EXPECT_EQ(BE_SQLITE_ERROR, writer.Finish());
+    EXPECT_EQ(BE_SQLITE_ERROR, writer.Finish());
+    }
