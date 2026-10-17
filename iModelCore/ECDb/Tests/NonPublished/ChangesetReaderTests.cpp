@@ -2964,6 +2964,77 @@ TEST_F(ChangesetReaderTests, ExistingTable_InsertAndUpdate)
     }
 
 //---------------------------------------------------------------------------------------
+// UPDATE rows of a TablePerHierarchy table don't carry ECClassId, so the class comes from the DB.
+// Both stages of a row must resolve the same class (the second reuses the first's result), unless
+// the changeset carries ECClassId itself (a raw SQL class change), in which case each stage keeps its own.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetReaderTests, Update_ClassIdNotInChangeset_SameForBothStages)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_update_classid.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestClassIdCS" alias="tc" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+        <ECEntityClass typeName="Base">
+            <ECCustomAttributes><ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap></ECCustomAttributes>
+            <ECProperty propertyName="Name" typeName="string"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="Derived"><BaseClass>Base</BaseClass><ECProperty propertyName="Extra" typeName="string"/></ECEntityClass>
+        </ECSchema>)xml")));
+    const ECClassId baseId = m_ecdb.Schemas().GetClassId("TestClassIdCS", "Base");
+    const ECClassId derivedId = m_ecdb.Schemas().GetClassId("TestClassIdCS", "Derived");
+
+    ECInstanceKey key;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO tc.Derived(Name, Extra) VALUES('a', 'x')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    }
+    auto track = [&](Utf8CP sql)
+        {
+        TestCSChangeTracker tracker(m_ecdb);
+        tracker.EnableTracking(true);
+        EXPECT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(sql)) << sql;
+        auto cs = std::make_unique<TestCSChangeSet>();
+        EXPECT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
+        return cs;
+        };
+    // ECClassId of the Old and New stage of the single UPDATE row in the changeset
+    auto readClassIds = [&](std::unique_ptr<TestCSChangeSet> cs)
+        {
+        ChangesetReader reader;
+        EXPECT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb, std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
+        EXPECT_EQ(BE_SQLITE_ROW, reader.Step());
+        DbOpcode opcode;
+        EXPECT_EQ(SUCCESS, reader.GetOpcode(opcode));
+        EXPECT_EQ(DbOpcode::Update, opcode);
+        std::pair<ECClassId, ECClassId> ids(reader.GetValue(Changes::Change::Stage::Old, 1).GetId<ECClassId>(), reader.GetValue(Changes::Change::Stage::New, 1).GetId<ECClassId>());
+        EXPECT_EQ(BE_SQLITE_DONE, reader.Step());
+        EXPECT_EQ(SUCCESS, reader.Close());
+        return ids;
+        };
+    const Utf8PrintfString where("WHERE Id=%" PRIu64, key.GetInstanceId().GetValue());
+
+    // class from the DB seek
+    auto ids = readClassIds(track(Utf8PrintfString("UPDATE tc_Base SET Name='b' %s", where.c_str()).c_str()));
+    EXPECT_EQ(derivedId, ids.first);
+    EXPECT_EQ(derivedId, ids.second);
+
+    // row no longer in the DB: both stages fall back to the root class
+    auto csOfDeletedRow = track(Utf8PrintfString("UPDATE tc_Base SET Name='c' %s", where.c_str()).c_str());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(Utf8PrintfString("DELETE FROM tc_Base %s", where.c_str()).c_str()));
+    ids = readClassIds(std::move(csOfDeletedRow));
+    EXPECT_EQ(baseId, ids.first);
+    EXPECT_EQ(baseId, ids.second);
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AbandonChanges());
+
+    // raw SQL class change: ECClassId is in the changeset, so each stage keeps its own value
+    ids = readClassIds(track(Utf8PrintfString("UPDATE tc_Base SET ECClassId=%" PRIu64 " %s", baseId.GetValue(), where.c_str()).c_str()));
+    EXPECT_EQ(derivedId, ids.first);
+    EXPECT_EQ(baseId, ids.second);
+    }
+
+//---------------------------------------------------------------------------------------
 // Link table relationship with non-polymorphic (polymorphic=false) source and target
 // constraints: SourceECClassId and TargetECClassId have no physical column (virtual).
 // Verify that:
