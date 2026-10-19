@@ -12499,6 +12499,7 @@ StatusInt BaseGCS::Initialize(Utf8CP dataDirectory) {
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BaseGCS::Shutdown() {
+    s_LL84GCS = nullptr;
     s_workspaceDbs.clear();
 
     if (nullptr != cs_Ostn15Ptr)
