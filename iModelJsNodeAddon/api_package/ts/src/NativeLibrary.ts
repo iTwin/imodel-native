@@ -300,10 +300,18 @@ export declare namespace IModelJsNative {
  */
   export interface QueryConfig {
     globalQuota?: QueryQuota;
+    /** SQLite page-cache target per secondary connection in KiB; omitted preserves the default. */
+    cacheSizeInKB?: number;
     ignoreDelay?: boolean;
     ignorePriority?: boolean;
     requestQueueSize?: number;
     workerThreads?: number;
+    /** Enables unfinished-statement reuse for contiguous pages on WAL databases. Defaults to true. */
+    enableCursors?: boolean;
+    /** Parked cursors per worker; -1 uses the statement-cache size for read-only handles or four for writable handles. Zero disables reuse. Non-integer values are ignored. */
+    maxCursorsPerWorker?: number;
+    /** Positive integer idle timeout in seconds for parked cursors. Defaults to 30. */
+    cursorIdleTimeout?: number;
   }
 
   interface TileContent {
@@ -1664,6 +1672,43 @@ export declare namespace IModelJsNative {
     public clearClassNameFilters(): void;
     public enableStrictMode(): void;
     public disableStrictMode(): void;
+  }
+
+  interface ChangeUnifierOptions {
+    /** Property names to keep (e.g. "FederationGuid", "Model", "Source", "Scope", "Element", "Kind", "Identifier").
+     *  ECInstanceId and ECClassId are always kept. undefined or empty = keep all properties. */
+    propNames?: string[];
+    /** Bytes of merged instance data held in memory before sorted runs spill to temp files. Default 64 MiB. 0 = never spill. */
+    memoryBudgetBytes?: number;
+  }
+
+  interface UnifiedChangeMeta {
+    tables: string[];               // tables that contributed, in the order their rows were seen
+    op: "Inserted" | "Updated" | "Deleted";
+    stage: "Old" | "New";
+    changeIndexes: number[];        // same meaning as today's $meta.changeIndexes
+    instanceKey: string;            // "<hex ECInstanceId>-<hex ECClassId>", same format as ChangesetRowValue.key
+    changeFetchedPropNames: string[]; // union across contributing rows, first-seen order
+    isIndirectChange: boolean;
+  }
+
+  interface UnifiedChangeInstance {
+    $meta: UnifiedChangeMeta;
+    [propName: string]: any;        // ECInstanceId, ECClassId, projected props, formatted by rowOptions
+  }
+
+  class ChangeUnifier {
+    constructor(options?: ChangeUnifierOptions);
+    /** Drains `reader` completely in native code (repeatedly steps it) and merges its rows.
+     *  May be called several times (e.g. one reader per changeset) before the first `step()`.
+     *  Throws if called after `step()` has been called. Reader stays owned by the caller. */
+    public appendFrom(reader: ChangesetReader, rowOptions: ECSqlRowAdaptorOptions): void;
+    /** Returns up to `maxInstances` finished instances in sorted order, fewer once the batch holds 16 MiB of strings
+     *  and binary data (at least one). Returns an empty array when exhausted.
+     *  First call finalizes (sort / k-way merge of spilled runs). */
+    public step(maxInstances: number): UnifiedChangeInstance[];
+    /** Frees memory and deletes spill files. Idempotent. */
+    public close(): void;
   }
 
   class DisableNativeAssertions {

@@ -762,6 +762,112 @@ TEST_F(SchemaManagerTests, GetDerivedClasses)
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaManagerTests, AllDerivedClassesAcrossRootsAndSchemaUpgrade)
+    {
+    Utf8String schemaXml = R"xml(
+        <ECSchema schemaName="HierarchyQuery" alias="hq" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="Root"/>
+          <ECEntityClass typeName="Child"><BaseClass>Root</BaseClass></ECEntityClass>
+          <ECEntityClass typeName="Grandchild"><BaseClass>Child</BaseClass></ECEntityClass>
+          <ECEntityClass typeName="OtherRoot"/>
+          <ECEntityClass typeName="OtherChild"><BaseClass>OtherRoot</BaseClass></ECEntityClass>
+          <ECEntityClass typeName="Leaf"/>
+        </ECSchema>
+    )xml";
+    ASSERT_EQ(SUCCESS, SetupECDb("hierarchy_query_reuse.ecdb", SchemaItem(schemaXml)));
+
+    auto check = [this](Utf8CP baseName, std::initializer_list<Utf8CP> expectedNames)
+        {
+        ECClassCP baseClass = m_ecdb.Schemas().GetClass("HierarchyQuery", baseName);
+        ASSERT_NE(nullptr, baseClass);
+        auto derived = m_ecdb.Schemas().GetAllDerivedClassesInternal(*baseClass, "main");
+        ASSERT_TRUE(derived.IsValid());
+        EXPECT_EQ(expectedNames.size(), derived.Value().size());
+        std::set<Utf8String> actualNames;
+        std::set<ECClassId> actualIds;
+        for (ECClassCP ecClass : derived.Value())
+            {
+            EXPECT_NE(baseClass->GetId(), ecClass->GetId());
+            actualNames.insert(ecClass->GetName());
+            actualIds.insert(ecClass->GetId());
+            }
+        std::set<Utf8String> expected;
+        for (Utf8CP name : expectedNames)
+            expected.insert(name);
+        EXPECT_EQ(expected, actualNames);
+
+        ECSqlStatement reference;
+        ASSERT_EQ(ECSqlStatus::Success, reference.Prepare(m_ecdb,
+            "SELECT SourceECInstanceId FROM meta.ClassHasAllBaseClasses WHERE SourceECInstanceId!=TargetECInstanceId AND TargetECInstanceId=?"));
+        ASSERT_EQ(ECSqlStatus::Success, reference.BindId(1, baseClass->GetId()));
+        std::set<ECClassId> referenceIds;
+        DbResult rc;
+        while ((rc = reference.Step()) == BE_SQLITE_ROW)
+            referenceIds.insert(reference.GetValueId<ECClassId>(0));
+        ASSERT_EQ(BE_SQLITE_DONE, rc);
+        EXPECT_EQ(referenceIds, actualIds);
+        };
+
+    for (int i = 0; i < 2; ++i)
+        {
+        check("Root", {"Child", "Grandchild"});
+        check("OtherRoot", {"OtherChild"});
+        check("Leaf", {});
+        check("Child", {"Grandchild"});
+        check("Root", {"Child", "Grandchild"});
+        }
+    m_ecdb.ClearECDbCache();
+    check("Root", {"Child", "Grandchild"});
+
+    schemaXml.ReplaceAll("version=\"01.00.00\"", "version=\"01.00.01\"");
+    schemaXml.ReplaceAll("</ECSchema>",
+        "<ECEntityClass typeName=\"Added\"><BaseClass>Root</BaseClass></ECEntityClass></ECSchema>");
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(schemaXml)));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    check("Root", {"Child", "Grandchild", "Added"});
+    check("OtherRoot", {"OtherChild"});
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    check("Root", {"Child", "Grandchild", "Added"});
+    check("Leaf", {});
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaManagerTests, AllDerivedClassesDistinguishesQueryFailureFromEmptyHierarchy)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("hierarchy_query_failure.ecdb", SchemaItem(R"xml(
+        <ECSchema schemaName="HierarchyFailure" alias="hf" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="Root"/>
+          <ECEntityClass typeName="Child"><BaseClass>Root</BaseClass></ECEntityClass>
+        </ECSchema>
+    )xml")));
+
+    auto check = [this](bool expectSuccess)
+        {
+        ECClassCP baseClass = m_ecdb.Schemas().GetClass("HierarchyFailure", "Root");
+        ASSERT_NE(nullptr, baseClass);
+        auto derived = m_ecdb.Schemas().GetAllDerivedClassesInternal(*baseClass, "main");
+        EXPECT_EQ(expectSuccess, derived.IsValid());
+        if (derived.IsValid())
+            {
+            ASSERT_EQ(1, derived.Value().size());
+            EXPECT_STREQ("Child", derived.Value()[0]->GetName().c_str());
+            }
+        };
+
+    check(true);
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteDdl("ALTER TABLE ec_cache_ClassHierarchy RENAME TO hierarchy_unavailable"));
+    m_ecdb.ClearECDbCache();
+    check(false);
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteDdl("ALTER TABLE hierarchy_unavailable RENAME TO ec_cache_ClassHierarchy"));
+    m_ecdb.ClearECDbCache();
+    check(true);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, GetDerivedECClassesWithoutIncrementalLoading)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecschemamanagertest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));

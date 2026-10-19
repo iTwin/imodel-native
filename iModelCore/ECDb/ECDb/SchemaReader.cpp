@@ -874,22 +874,31 @@ BentleyStatus SchemaReader::EnsureDerivedClassesExist(ECClassId ecClassId) const
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECN::ECDerivedClassesList SchemaReader::GetAllDerivedClasses(ECClassId ecClassId) const
+BentleyStatus SchemaReader::GetAllDerivedClasses(ECDerivedClassesList& derivedClasses, ECClassId ecClassId) const
     {
-    ECDerivedClassesList derivedClasses;
-    ECSqlStatement statement;
-    SqlPrintfString sqlStr("select SourceECInstanceId from meta.ClassHasAllBaseClasses where SourceECInstanceId != TargetECInstanceId and TargetECInstanceId=%d", ecClassId.GetValue());
+    BeMutexHolder ecdbLock(GetECDbMutex());
+    derivedClasses.clear();
+    // ECDbMeta.ClassHasAllBaseClasses maps directly to this persisted hierarchy cache.
+    CachedStatementPtr stmt;
+    if (GetTableSpace().IsMain())
+        stmt = GetCachedStatement("SELECT ClassId FROM main." TABLE_ClassHierarchyCache " WHERE BaseClassId=? AND ClassId!=BaseClassId");
+    else
+        stmt = GetCachedStatement(Utf8PrintfString("SELECT ClassId FROM [%s]." TABLE_ClassHierarchyCache " WHERE BaseClassId=? AND ClassId!=BaseClassId", GetTableSpace().GetName().c_str()).c_str());
+
+    if (stmt == nullptr || BE_SQLITE_OK != stmt->BindId(1, ecClassId))
+        return ERROR;
 
     Context ctx;
-    if (statement.Prepare(GetECDb(), sqlStr.GetUtf8CP()) == ECSqlStatus::Success)
+    DbResult rc;
+    while ((rc = stmt->Step()) == BE_SQLITE_ROW)
         {
-        while (statement.Step() == BE_SQLITE_ROW)
-            {
-            if (const auto derivedClass = GetClass(ctx, statement.GetValueId<ECClassId>(0)); derivedClass != nullptr)
-                derivedClasses.push_back(derivedClass);
-            }
+        if (const auto derivedClass = GetClass(ctx, stmt->GetValueId<ECClassId>(0)); derivedClass != nullptr)
+            derivedClasses.push_back(derivedClass);
         }
-    return derivedClasses;
+    if (rc != BE_SQLITE_DONE)
+        return ERROR;
+
+    return ctx.Postprocess(*this);
     }
 
 //---------------------------------------------------------------------------------------

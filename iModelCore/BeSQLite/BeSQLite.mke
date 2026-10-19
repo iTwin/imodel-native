@@ -66,6 +66,8 @@ $(o)BeSQLite$(oext) : $(baseDir)BeSQLite.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQL
 
 $(o)MonotoneClock$(oext) : $(baseDir)MonotoneClock.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h ${MultiCompileDepends}
 
+$(o)TempFile$(oext) : $(baseDir)TempFile.cpp $(baseDir)/PublicAPI/BeSQLite/TempFile.h $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h ${MultiCompileDepends}
+
 $(o)ChangeSet$(oext) : $(baseDir)ChangeSet.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h  $(baseDir)/PublicAPI/BeSQLite/ChangeSet.h ${MultiCompileDepends}
 
 $(o)CloudSqlite$(oext) : $(baseDir)CloudSqlite.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h  $(baseDir)/PublicAPI/BeSQLite/ChangeSet.h ${MultiCompileDepends}

@@ -340,6 +340,7 @@ void PreparedChangesetReader::ClearFields() {
     m_newFields.clear();
     m_columnValues.clear();
     m_changedPropNames.clear();
+    m_rowClassIdFromDb.Invalidate();
 }
 
 //---------------------------------------------------------------------------------------
@@ -380,6 +381,7 @@ void PreparedChangesetReader::ClearMembers() {
     m_filters.Reset();
     m_iterator.Reset();
     m_columnCache.Clear();
+    m_isECTableByName.clear();
     m_ecdb = nullptr;
 }
 
@@ -429,10 +431,14 @@ PreparedChangesetReader::StageProcessResult PreparedChangesetReader::ProcessStag
     if (GetColumnValues(stage) != SUCCESS)
         return StageProcessResult::Error;
 
+    // A class id carried by the changeset belongs to this stage; one read from the DB belongs to the row.
     ECClassId classId;
-    bool isClassIdFromChangeset = false;
-    if (ChangesetValueFactory::ResolveClassId(*m_ecdb, dbTable, m_columnValues, classId, isClassIdFromChangeset) != SUCCESS)
-        return StageProcessResult::Error;
+    const bool isClassIdFromChangeset = ChangesetValueFactory::TryResolveClassIdFromChangeset(dbTable, m_columnValues, *m_ecdb, classId);
+    if (!isClassIdFromChangeset) {
+        if (!m_rowClassIdFromDb.IsValid() && ChangesetValueFactory::ResolveClassIdFromDb(*m_ecdb, dbTable, m_columnValues, m_rowClassIdFromDb) != SUCCESS)
+            return StageProcessResult::Error;
+        classId = m_rowClassIdFromDb;
+    }
     ECClassCP ecClass = m_ecdb->Schemas().Main().GetClass(classId);
     if (ecClass == nullptr) {
         LOG.errorv("ECClass with id %" PRIu64 " not found in schema.", classId.GetValueUnchecked());
@@ -633,34 +639,14 @@ BentleyStatus PreparedChangesetReader::GetInstanceKey(Stage stage, Utf8StringR k
         LOG.errorv("Attempting to get instance key from a ChangesetReader that is either not open or not stepped or has finished stepping and has reached the end.");
         return ERROR;
     }
-    const int count = GetColumnCount(stage);
-    Utf8String instanceId;
-    Utf8String classId;
-    for (int i = 0; i < count; ++i)
+    if (GetColumnCount(stage) <= ChangesetReader::ClassIdColumn)
         {
-        IECSqlValue const& val = GetValue(stage, i);
-        if (val.IsNull())
-            continue;
-        auto const* prop = val.GetColumnInfo().GetProperty();
-        if (prop == nullptr)
-            continue;
-        auto const* primProp = prop->GetAsPrimitiveProperty();
-        if (primProp == nullptr)
-            continue;
-        const auto extType = ExtendedTypeHelper::GetExtendedType(primProp->GetExtendedTypeName());
-        Utf8StringCR propName = prop->GetName();
-        if (extType == ExtendedTypeHelper::ExtendedType::Id && propName.EqualsIAscii(ECDBSYS_PROP_ECInstanceId))
-            instanceId = val.GetId<ECInstanceId>().ToHexStr();
-        else if (extType == ExtendedTypeHelper::ExtendedType::ClassId && propName.EqualsIAscii(ECDBSYS_PROP_ECClassId))
-            classId = val.GetId<ECN::ECClassId>().ToHexStr();
-        }
-    if(instanceId.empty() || classId.empty())
-        {
-        LOG.warningv("Could not find either ECInstanceId or ECClassId or both for stage %s of current change. Instance key cannot be constructed.", stage == Stage::New ? "New" : "Old");
+        LOG.warningv("Stage %s of current change has no ECInstanceId and ECClassId. Instance key cannot be constructed.", stage == Stage::New ? "New" : "Old");
         key.clear();
         return ERROR;
         }
-    key.Sprintf("%s-%s", instanceId.c_str(), classId.c_str());
+    key.Sprintf("%s-%s", GetValue(stage, ChangesetReader::InstanceIdColumn).GetId<ECInstanceId>().ToHexStr().c_str(),
+        GetValue(stage, ChangesetReader::ClassIdColumn).GetId<ECN::ECClassId>().ToHexStr().c_str());
     return SUCCESS;
 }
 
@@ -675,6 +661,11 @@ BentleyStatus PreparedChangesetReader::IsECTable(bool& isECTable) const {
     Utf8String tableName;
     if(GetTableName(tableName) != SUCCESS)
         return ERROR;
+    auto cached = m_isECTableByName.find(tableName);
+    if (cached != m_isECTableByName.end()) {
+        isECTable = cached->second;
+        return SUCCESS;
+    }
     CachedStatementPtr stmt = m_ecdb->GetCachedStatement("SELECT 1 FROM ec_Table WHERE Name=?");
     if (stmt == nullptr) {
         LOG.errorv("Failed to prepare statement to check if table '%s' is an EC table.", tableName.c_str());
@@ -691,6 +682,7 @@ BentleyStatus PreparedChangesetReader::IsECTable(bool& isECTable) const {
         return ERROR;
     }
     isECTable = (rc == BE_SQLITE_ROW);
+    m_isECTableByName[tableName] = isECTable;
     return SUCCESS;
 }
 

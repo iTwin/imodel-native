@@ -119,7 +119,7 @@ struct VirtualSchemaManager : ECN::IECSchemaLocater {
         mutable ECN::ECSchemaCachePtr m_cache;
         mutable bmap<Utf8String, ECN::ECSchemaCP, CompareIUtf8Ascii> m_schemas;
         virtual ECN::ECSchemaPtr _LocateSchema(ECN::SchemaKeyR key, ECN::SchemaMatchType matchType, ECN::ECSchemaReadContextR schemaContext) override;
-        BentleyStatus AddAndValidateVirtualSchema(Utf8StringCR schemaXml, bool validate) const;
+        BentleyStatus AddAndValidateVirtualSchema(Utf8StringCR schemaXml, bool validate, bool createConversionContext) const;
         uint64_t GetNextId() const;
         void SetVirtualTypeIds (ECN::ECSchemaR schema) const;
         void AddECDbVirtualSchema() const;
@@ -136,6 +136,7 @@ struct VirtualSchemaManager : ECN::IECSchemaLocater {
         // The numberOfClasses parameter gives us the exact number of classes found which can be used for more personalized error message
         ECN::ECClassCP FindClass(Utf8StringCR className, size_t& numberOfClasses) const;
         BentleyStatus Add(Utf8StringCR schemaXml) const;
+        BentleyStatus AddBuiltIn(Utf8StringCR schemaXml) const;
         Utf8String GetDescription() const override {
             return Utf8PrintfString("ECDb:VirtualSchemaManager %s", m_ecdb.GetDbFileName());
         }
