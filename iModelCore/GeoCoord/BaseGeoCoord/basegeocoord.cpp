@@ -11853,10 +11853,6 @@ VerticalDatumConverter* VerticalDatumConverter::Create(const BaseGCS& fromGCS, c
     else
     {
         converter->m_legacyConverter =  VerticalDatumConverter_Legacy::GetVerticalDatumConverterFromCode(fromIsNAD27, fromVDC, toVDC);
-        // If either vertical datum codes are NGVD29 or NAVD88 then we init
-        // the VERTCON american vertical datum system
-        if (fromVDC == vdcNGVD29 || fromVDC == vdcNAVD88 || toVDC == vdcNGVD29 || toVDC == vdcNAVD88)
-            CSvrtconInit();
     }
     
     return converter;
@@ -12500,7 +12496,11 @@ StatusInt BaseGCS::Initialize(Utf8CP dataDirectory) {
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BaseGCS::Shutdown() {
     s_LL84GCS = nullptr;
-    s_workspaceDbs.clear();
+    VerticalDatumDictionary::Uninitialize();
+    CSMap::CS_geoidCls();
+    while (csVertconUSCnt > 0)
+        CSMap::CSvrtconCls();
+    CSMap::CS_recvr();
 
     if (nullptr != cs_Ostn15Ptr)
         {
@@ -12520,8 +12520,7 @@ void BaseGCS::Shutdown() {
         cs_Ostn97Ptr = nullptr;
         }
 
-    VerticalDatumDictionary::Uninitialize();
-
+    s_workspaceDbs.clear();
     s_geoCoordInitialized = false;
 }
 
@@ -20491,11 +20490,13 @@ bool shallowCompare
                         DatumCP datum1raw = Datum::CreateDatum(datum1.key_nm);
                         DatumCP datum2raw = Datum::CreateDatum(datum2.key_nm);
 
-                        bool deprecated1 = datum1raw->IsDeprecated();
-                        bool deprecated2 = datum2raw->IsDeprecated();
+                        bool deprecated1 = (nullptr != datum1raw) && datum1raw->IsDeprecated();
+                        bool deprecated2 = (nullptr != datum2raw) && datum2raw->IsDeprecated();
 
-                        datum1raw->Destroy();
-                        datum2raw->Destroy();
+                        if (nullptr != datum1raw)
+                            datum1raw->Destroy();
+                        if (nullptr != datum2raw)
+                            datum2raw->Destroy();
                         oneIsDeprecated = deprecated1 || deprecated2; // This flag is used below for testing geodetic path.
                         if (!deprecated1 && !deprecated2)
                             return false;  // None are deprecated ... we consider different.
@@ -20514,11 +20515,13 @@ bool shallowCompare
                         DatumCP datum1raw = Datum::CreateDatum(datum1.key_nm);
                         DatumCP datum2raw = Datum::CreateDatum(datum2.key_nm);
 
-                        bool deprecated1 = datum1raw->IsDeprecated();
-                        bool deprecated2 = datum2raw->IsDeprecated();
+                        bool deprecated1 = (nullptr != datum1raw) && datum1raw->IsDeprecated();
+                        bool deprecated2 = (nullptr != datum2raw) && datum2raw->IsDeprecated();
 
-                        datum1raw->Destroy();
-                        datum2raw->Destroy();
+                        if (nullptr != datum1raw)
+                            datum1raw->Destroy();
+                        if (nullptr != datum2raw)
+                            datum2raw->Destroy();
                         oneIsDeprecated = deprecated1 || deprecated2; // This flag is used below for testing geodetic path.
                         if (!deprecated1 && !deprecated2)
                             return false;  // None are deprecated ... we consider different.
@@ -25377,9 +25380,15 @@ StatusInt         Datum::ToJson(BeJsValue jsonValue, bool expandEllipsoid, bool 
         return ERROR;
 
     // Now we need to obtain the geodetic transformation to WGS84
-    static DatumCP wgs84Datum = Datum::CreateDatum("WGS84");
+    static DatumCP wgs84Datum = nullptr;
+    if (nullptr == wgs84Datum || !wgs84Datum->IsValid())
+        {
+        if (nullptr != wgs84Datum)
+            wgs84Datum->Destroy();
+        wgs84Datum = Datum::CreateDatum("WGS84");
+        }
 
-    if (wgs84Datum == nullptr)
+    if (wgs84Datum == nullptr || !wgs84Datum->IsValid())
         return ERROR;
 
     // Create a datum converter to LL84 and extract non-null transformations
@@ -25940,9 +25949,13 @@ bool            Datum::IsWGS84Coincident () const
         return true;
 
     // Now we need to obtain the geodetic transformation to WGS84
-    static DatumCP wgs84Datum;
-    if (nullptr == wgs84Datum)
+    static DatumCP wgs84Datum = nullptr;
+    if (nullptr == wgs84Datum || !wgs84Datum->IsValid())
+        {
+        if (nullptr != wgs84Datum)
+            wgs84Datum->Destroy();
         wgs84Datum = Datum::CreateDatum("WGS84");
+        }
 
     if (nullptr == wgs84Datum || !wgs84Datum->IsValid())
         return false; // Can only occur if dictionary files absent
@@ -26740,11 +26753,15 @@ bool            Datum::IsEquivalent (DatumCR compareTo, bool looselyCompare) con
     // Now we obtain the DatumTransform to WGS84 for both
 
     // Now we need to obtain the geodetic transformation to WGS84
-    static DatumCP wgs84Datum;
-    if (nullptr == wgs84Datum)
+    static DatumCP wgs84Datum = nullptr;
+    if (nullptr == wgs84Datum || !wgs84Datum->IsValid())
+        {
+        if (nullptr != wgs84Datum)
+            wgs84Datum->Destroy();
         wgs84Datum = Datum::CreateDatum("WGS84");
+        }
 
-    if (wgs84Datum == nullptr)
+    if (wgs84Datum == nullptr || !wgs84Datum->IsValid())
         return false;
 
     // This call forces extraction of geodetic transforms from system dictionary
@@ -29847,8 +29864,14 @@ GeodeticTransformPathP         GeodeticTransformPath::CreateToWgs84
     if (!BaseGCS::IsLibraryInitialized())
         return NULL;
 
-    static DatumCP wgs84Datum = Datum::CreateDatum("WGS84");
-    if (nullptr == wgs84Datum)
+    static DatumCP wgs84Datum = nullptr;
+    if (nullptr == wgs84Datum || !wgs84Datum->IsValid())
+        {
+        if (nullptr != wgs84Datum)
+            wgs84Datum->Destroy();
+        wgs84Datum = Datum::CreateDatum("WGS84");
+        }
+    if (nullptr == wgs84Datum || !wgs84Datum->IsValid())
         return nullptr;
 
     CSDatum* srcCSDatum = from.GetCSDatum();
