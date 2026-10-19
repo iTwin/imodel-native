@@ -365,7 +365,7 @@ struct ConflictRow : public IECSqlRow {
     auto buildValuesJson = [&](BeJsValue outJson, std::unordered_map<Utf8String, DbValue> const& dbValues) -> BentleyStatus
         {
         std::vector<std::unique_ptr<IECSqlValue>> fields;
-        if (ChangesetValueFactory::Create(ecdb, *dbTable, dbValues, classId, isClassIdFromChangeset, fields, ChangesetReader::PropertyFilter::All, nullptr) != SUCCESS)
+        if (ChangesetValueFactory::Create(ecdb, *dbTable, dbValues, classId, isClassIdFromChangeset, fields, ChangesetReader::PropertyFilter::All, opcode, nullptr) != SUCCESS)
             return BentleyStatus::ERROR;
         return adaptor.RenderRowAsObject(outJson, ConflictRow(fields));
         };
@@ -757,11 +757,11 @@ struct ConflictRow : public IECSqlRow {
         return BentleyStatus::ERROR;
 
 
-    if (originalValueAvailable && ChangesetValueFactory::Create(ecdb, *dbTable, originalDbValues, classId, isClassIdFromChangeset, outOriginalValues, ChangesetReader::PropertyFilter::All, nullptr) != SUCCESS)
+    if (originalValueAvailable && ChangesetValueFactory::Create(ecdb, *dbTable, originalDbValues, classId, isClassIdFromChangeset, outOriginalValues, ChangesetReader::PropertyFilter::All, opcode, nullptr) != SUCCESS)
         return BentleyStatus::ERROR;
-    if (theirValueAvailable && ChangesetValueFactory::Create(ecdb, *dbTable, theirDbValues, classId, isClassIdFromChangeset, outTheirValues, ChangesetReader::PropertyFilter::All, nullptr) != SUCCESS)
+    if (theirValueAvailable && ChangesetValueFactory::Create(ecdb, *dbTable, theirDbValues, classId, isClassIdFromChangeset, outTheirValues, ChangesetReader::PropertyFilter::All, opcode, nullptr) != SUCCESS)
         return BentleyStatus::ERROR;
-    if (ourValueAvailable && ChangesetValueFactory::Create(ecdb, *dbTable, ourDbValues, classId, isClassIdFromChangeset, outOurValues, ChangesetReader::PropertyFilter::All, nullptr) != SUCCESS)
+    if (ourValueAvailable && ChangesetValueFactory::Create(ecdb, *dbTable, ourDbValues, classId, isClassIdFromChangeset, outOurValues, ChangesetReader::PropertyFilter::All, opcode, nullptr) != SUCCESS)
         return BentleyStatus::ERROR;
 
     // Build conflict property access strings from conflict column names.
