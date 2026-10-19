@@ -3204,9 +3204,9 @@ TEST(Polyface,HandleInvalidMesh)
     // Now test flatbuffer conversion of the above meshes. Only mesh1 should succeed.
     bvector<Byte> bytes0;
     BentleyGeometryFlatBuffer::GeometryToBytes(*mesh0, bytes0);
+    // GTestFileOps::WriteToFile(bytes0, nullptr, nullptr, L"invalidMesh0", L"fb"); // generate invalid file in older version
     if (Check::True(bytes0.empty(), "expect invalid mesh0 to fail to serialize to flatbuffers"))
         {
-        // GTestFileOps::WriteToFile(bytes0, nullptr, nullptr, L"invalidMesh0", L"fb"); // generate invalid file in older version (may have to force it in debugger)
         GTestFileOps::ReadAsBytes(getInvalidMeshFileName(0), bytes0);
         Check::False(bytes0.empty(), "expect to read bytes from invalidMesh0.fb");
         auto geom = BentleyGeometryFlatBuffer::BytesToGeometry(bytes0);
@@ -3224,9 +3224,9 @@ TEST(Polyface,HandleInvalidMesh)
 
     bvector<Byte> bytes2;
     BentleyGeometryFlatBuffer::GeometryToBytes(*mesh2, bytes2);
+    // GTestFileOps::WriteToFile(bytes2, nullptr, nullptr, L"invalidMesh2", L"fb"); // generate invalid file in older version
     if (Check::True(bytes2.empty(), "expect invalid mesh2 to fail to serialize to flatbuffers"))
         {
-        // GTestFileOps::WriteToFile(bytes2, nullptr, nullptr, L"invalidMesh2", L"fb"); // generate invalid file in older version (may have to force it in debugger)
         GTestFileOps::ReadAsBytes(getInvalidMeshFileName(2), bytes2);
         Check::False(bytes2.empty(), "expect to read bytes from invalidMesh2.fb");
         auto geom = BentleyGeometryFlatBuffer::BytesToGeometry(bytes2);
@@ -3235,9 +3235,9 @@ TEST(Polyface,HandleInvalidMesh)
 
     bvector<Byte> bytes3;
     BentleyGeometryFlatBuffer::GeometryToBytes(*mesh3, bytes3);
+    // GTestFileOps::WriteToFile(bytes3, nullptr, nullptr, L"invalidMesh3", L"fb"); // generate invalid file in older version
     if (Check::True(bytes3.empty(), "expect invalid mesh3 to fail to serialize to flatbuffers"))
         {
-        // GTestFileOps::WriteToFile(bytes3, nullptr, nullptr, L"invalidMesh3", L"fb"); // generate invalid file in older version (may have to force it in debugger)
         GTestFileOps::ReadAsBytes(getInvalidMeshFileName(3), bytes3);
         Check::False(bytes3.empty(), "expect to read bytes from invalidMesh3.fb");
         auto geom = BentleyGeometryFlatBuffer::BytesToGeometry(bytes3);
