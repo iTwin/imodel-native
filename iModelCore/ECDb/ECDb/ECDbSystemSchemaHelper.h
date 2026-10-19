@@ -187,7 +187,7 @@ struct ExtendedTypeHelper final {
         All = ClassIds | Ids,
     };
 
-    static ExtendedType GetExtendedType(Utf8StringCR extendedType);
+    ECDB_EXPORT static ExtendedType GetExtendedType(Utf8StringCR extendedType);
     static bool TryGetSystemExtendedType(Utf8StringR extendedTypeName, Utf8StringCR className, Utf8StringCR propertyName);
     static ExtendedType FromProperty(ECN::ECPropertyCR prop);
 };

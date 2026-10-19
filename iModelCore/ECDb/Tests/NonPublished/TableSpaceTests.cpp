@@ -93,6 +93,69 @@ TEST_F(TableSpaceTestFixture, AttachedTableSpace)
 //---------------------------------------------------------------------------------------
 // @bsiMethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(TableSpaceTestFixture, AllDerivedClassesUseAttachedHierarchy)
+    {
+    Utf8String schemaXml = R"xml(
+        <ECSchema schemaName="TableSpaceHierarchy" alias="tsh" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="Root"/>
+          <ECEntityClass typeName="Child"><BaseClass>Root</BaseClass></ECEntityClass>
+        </ECSchema>
+    )xml";
+    ASSERT_EQ(SUCCESS, SetupECDb("hierarchy_query_main.ecdb", SchemaItem(schemaXml)));
+    BeFileName attachedPath;
+    {
+    ECDb attached;
+    ASSERT_EQ(BE_SQLITE_OK, CreateECDb(attached, "hierarchy_query_attached.ecdb"));
+    ASSERT_EQ(SUCCESS, TestHelper(attached).ImportSchema(SchemaItem(schemaXml)));
+    schemaXml.ReplaceAll("version=\"01.00.00\"", "version=\"01.00.01\"");
+    schemaXml.ReplaceAll("</ECSchema>",
+        "<ECEntityClass typeName=\"Grandchild\"><BaseClass>Child</BaseClass></ECEntityClass></ECSchema>");
+    ASSERT_EQ(SUCCESS, TestHelper(attached).ImportSchema(SchemaItem(schemaXml)));
+    ASSERT_EQ(BE_SQLITE_OK, attached.SaveChanges());
+    attachedPath.AssignUtf8(attached.GetDbFileName());
+    }
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachDb(attachedPath.GetNameUtf8().c_str(), "attached"));
+    {
+    ECClassCP mainRoot = m_ecdb.Schemas().GetClass("TableSpaceHierarchy", "Root", SchemaLookupMode::ByName, "main");
+    ECClassCP attachedRoot = m_ecdb.Schemas().GetClass("TableSpaceHierarchy", "Root", SchemaLookupMode::ByName, "attached");
+    ASSERT_NE(nullptr, mainRoot);
+    ASSERT_NE(nullptr, attachedRoot);
+    ASSERT_EQ(mainRoot->GetId(), attachedRoot->GetId());
+    }
+
+    auto check = [this](Utf8CP tableSpace, size_t expectedCount)
+        {
+        ECClassCP root = m_ecdb.Schemas().GetClass("TableSpaceHierarchy", "Root", SchemaLookupMode::ByName, tableSpace);
+        ASSERT_NE(nullptr, root);
+        auto derived = m_ecdb.Schemas().GetAllDerivedClassesInternal(*root, tableSpace);
+        ASSERT_TRUE(derived.IsValid());
+        ASSERT_EQ(expectedCount, derived.Value().size());
+        bool hasChild = false;
+        bool hasGrandchild = false;
+        for (ECClassCP ecClass : derived.Value())
+            {
+            hasChild |= ecClass->GetName().Equals("Child");
+            hasGrandchild |= ecClass->GetName().Equals("Grandchild");
+            }
+        EXPECT_TRUE(hasChild);
+        EXPECT_EQ(expectedCount == 2, hasGrandchild);
+        };
+
+    for (int i = 0; i < 2; ++i)
+        {
+        check("main", 1);
+        check("attached", 2);
+        check("main", 1);
+        }
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.DetachDb("attached"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachDb(attachedPath.GetNameUtf8().c_str(), "attached"));
+    check("attached", 2);
+    check("main", 1);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(TableSpaceTestFixture, AttachWithoutApi)
     {
     BeFileName attachedECDbPath;
