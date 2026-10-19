@@ -58,6 +58,7 @@ BEGIN_EXTERN_C
  extern struct cs_Ostn97_ *cs_Ostn97Ptr;
  extern struct cs_Ostn02_ *cs_Ostn02Ptr;
  extern struct cs_Ostn15_ *cs_Ostn15Ptr;
+ extern int csVertconUSCnt;
 
 //=======================================================================================
 // @bsiclass
@@ -12497,10 +12498,10 @@ StatusInt BaseGCS::Initialize(Utf8CP dataDirectory) {
 void BaseGCS::Shutdown() {
     s_LL84GCS = nullptr;
     VerticalDatumDictionary::Uninitialize();
-    CSMap::CS_geoidCls();
+    CS_geoidCls();
     while (csVertconUSCnt > 0)
-        CSMap::CSvrtconCls();
-    CSMap::CS_recvr();
+        CSvrtconCls();
+    CS_recvr();
 
     if (nullptr != cs_Ostn15Ptr)
         {
