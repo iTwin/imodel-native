@@ -3127,7 +3127,7 @@ TEST(Polyface,HandleInvalidMesh)
         return fbFileName;
     };
 
-    // this invalid mesh has 4 triangles, but only the first triangle has normals
+    // mesh with fewer normal indices than expected
     auto builder0 = CreateBuilder(false, false);
     builder0->AddTriangulation(polygon);
     auto mesh0 = builder0->GetClientMeshPtr();
@@ -3136,7 +3136,7 @@ TEST(Polyface,HandleInvalidMesh)
     auto iNormal = builder0->FindOrAddNormal(normal);
     builder0->AddNormalIndexTriangle(iNormal, iNormal, iNormal);
     Check::True(mesh0->HasIndexErrors(), "expect invalid mesh0 to have index errors");
-    Check::False(mesh0->ReverseIndicesAllFaces(), "expect reverse of invalid mesh0 to return false"); // crashed before fix
+    Check::True(mesh0->ReverseIndicesAllFaces(), "expect reverse of invalid mesh0 to succeed"); // crashed before fix
 
     // mesh with more auxData than needed
     auto mesh1 = mesh0->Clone();

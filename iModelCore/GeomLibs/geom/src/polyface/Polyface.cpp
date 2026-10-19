@@ -900,33 +900,19 @@ size_t iLast,
 BlockedVectorInt::IndexAction normalArrayIndexAction
 )
     {
-    auto pPointIndex   = PointIndex().GetPtr();
-    auto pNormalIndex  = NormalIndex().GetPtr();
-    auto pParamIndex   = ParamIndex().GetPtr();
-    auto pColorIndex   = ColorIndex().GetPtr();
-
-    size_t auxDataIndexCount = AuxData().IsValid() ? AuxData()->GetIndices().size() : 0;
-    auto pAuxDataIndex = auxDataIndexCount > 0 ? AuxData()->GetIndices().data() : nullptr;
-
-    // bypass corruption
     if (iFirst > iLast)
         return;
-    if (pPointIndex && iLast >= GetPointIndexCount())
-        return;
-    if (pNormalIndex && iLast >= GetNormalIndexCount())
-        return;
-    if (pParamIndex && iLast >= GetParamIndexCount())
-        return;
-    if (pColorIndex && iLast >= GetColorIndexCount())
-        return;
-    if (pAuxDataIndex && iLast >= auxDataIndexCount)
-        return;
 
-    //TR #164587: preserve hidden edges in vertex index array
-    ShiftSignsFromCyclicPredecessorsInRange(pPointIndex, iFirst, iLast);
-    ReverseInRange(pPointIndex, iFirst, iLast);
+    auto pPointIndex   = PointIndex().GetPtr();
+    if (pPointIndex && iLast < GetPointIndexCount())
+        {
+        //TR#164587: preserve hidden edges in vertex index array
+        ShiftSignsFromCyclicPredecessorsInRange(pPointIndex, iFirst, iLast);
+        ReverseInRange(pPointIndex, iFirst, iLast);
+        }
 
-    if (pNormalIndex)
+    auto pNormalIndex = NormalIndex().GetPtr();
+    if (pNormalIndex && iLast < GetNormalIndexCount())
         {
         ReverseInRange(pNormalIndex, iFirst, iLast);
 
@@ -938,12 +924,17 @@ BlockedVectorInt::IndexAction normalArrayIndexAction
             NegateInRange(pNormalIndex, iFirst, iLast);
         }
 
-    if (pColorIndex)
-        ReverseInRange(pColorIndex, iFirst, iLast);  // No sign effects for color indices.
-    if (pParamIndex)
+    auto pParamIndex = ParamIndex().GetPtr();
+    if (pParamIndex && iLast < GetParamIndexCount())
         ReverseInRange(pParamIndex, iFirst, iLast);  // No sign effects for param indices.
 
-    if (pAuxDataIndex)
+    auto pColorIndex = ColorIndex().GetPtr();
+    if (pColorIndex && iLast < GetColorIndexCount())
+        ReverseInRange(pColorIndex, iFirst, iLast);  // No sign effects for color indices.
+
+    size_t auxDataIndexCount = AuxData().IsValid() ? AuxData()->GetIndices().size() : 0;
+    auto pAuxDataIndex = auxDataIndexCount > 0 ? AuxData()->GetIndices().data() : nullptr;
+    if (pAuxDataIndex && iLast < auxDataIndexCount)
         ReverseInRange(pAuxDataIndex, iFirst, iLast);
     }
 
