@@ -2360,17 +2360,11 @@ GEOMDLLIMPEXP void ReverseNormals ();
 
 //!
 //! Reverse a single face loop in parallel index arrays.
-//! @remarks A face loop is reversed after the 1st index: the 2nd/last indices are swapped, the 3rd/penultimate indices are swapped, etc.
+//! @remarks Reversal of the face loop is symmetric: swap first/last entries, swap 2nd/penultimate entries, etc.
 //! @remarks Does nothing if the input indices are invalid.
 //! @param [in] iFirst 0-based offset to the first index in the face loop
 //! @param [in] iLast 0-based offset to the last index of the face loop.
-//! @param [in] normalArrayIndexAction selects action in normal index array. This can be:
-//! <ul>
-//! <li>IndexAction::None -- leave the index value unchanged
-//! <li>IndexAction::ForcePositive -- change to positive
-//! <li>IndexAction::ForceNegative -- change to negative
-//! <li>IndexAction::Negate -- change to negative of its current sign
-//! </ul>
+//! @param [in] normalArrayIndexAction how to modify the sign of the normal indices. The default (no sign change) is recommended in general.
 //!
 GEOMDLLIMPEXP void ReverseIndicesOneFace
 (
@@ -2380,13 +2374,20 @@ BlockedVectorInt::IndexAction normalArrayIndexAction = BlockedVectorInt::None
 );
 
 //!
-//! Reverse index orientations in place, optionally restricting by sign of indices in NormalIndex()
-//! @remarks The only coordinate data array that is changed by this function is the normal matrix, and then
-//! only if it is present and negateNormals is true.
-//! @param [in] negateNormals true to negate normal vectors.
-//! @param [in] flipMarked true to flip when marked by negative indices in NormalIndex()
-//! @param [in] flipUnMarked true to flip when not marked by negative indices in NormalIndex()
-//! @param [in] normalIndexAction selects final form of indices in NormalIndex()
+//! Reverse all face loops in parallel index arrays, with special handling for legacy normal index format.
+//! @remarks In general, all defaults should be used for this method.
+//! @remarks Reversal of each face loop is symmetric: swap first/last entries, swap 2nd/penultimate entries, etc.
+//! @remarks The only coordinate data array that is changed by this function is the normals array, and then
+//! only if it is present and `negateNormals` is true.
+//! @remarks Historically, a face loop with all negative normal indices indicated that all indices for that face's data
+//! were incorrectly stored with the opposite orientation even as stored normals were correctly oriented. Such a face
+//! loop was referred to as "marked". Calling this method with the non-default arguments
+//! `(false, true, false, IndexAction::ForcePositive)` removes this legacy normal index convention; thereafter one can
+//! call this method with the defaults to reverse the mesh.
+//! @param [in] negateNormals true to negate normal vectors. Default is true.
+//! @param [in] flipMarked true to reverse a face loop whose normal indices are all negative. Default is true.
+//! @param [in] flipUnMarked true to reverse a face loop whose normal indices are all positive. Default is true.
+//! @param [in] normalIndexAction how to modify the sign of the normal indices. Default is no sign change.
 //! @return SUCCESS if face loops are successfully reversed
 //!
 GEOMDLLIMPEXP bool ReverseIndicesAllFaces
@@ -2397,7 +2398,7 @@ bool flipUnMarked = true,
 BlockedVectorInt::IndexAction normalIndexAction = BlockedVectorInt::None
 );
 
-//! Reverse mesh face loop orientations so that inferred normals point outward (if mesh is volumetric) or into same half-space as surfaceNormal (if mesh is non-volumetric).
+//! Reverse mesh face loop orientations so that inferred normals point outward (if mesh is volumetric) or into same half-space as `surfaceNormal` (if mesh is non-volumetric).
 //! @remarks Input mesh facets are assumed to be consistently oriented.
 //! @see CloneWithConsistentlyOrientedFacets, IsFacetOrientationConsistent
 //! @param [in] surfaceNormal optional direction for orienting the facets of a non-volumetric mesh. If not supplied and mesh is non-volumetric, return false.

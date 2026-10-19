@@ -3167,11 +3167,39 @@ TEST(Polyface,HandleInvalidMesh)
     Check::Size(channel1->GetBlockSize(), 3, "expect channel1 block size 3");
     PolyfaceAuxData::Channels channels1;
     channels1.push_back(channel1);
-    bvector<int32_t> auxIndex1 = mesh2->PointIndex();
+    bvector<int32_t> auxIndex1 = mesh2->PointIndex(); // these indices will try to index beyond the aux data range
     PolyfaceAuxDataPtr auxData1(new PolyfaceAuxData(std::move(auxIndex1), std::move(channels1)));
     mesh2->SetAuxData(auxData1);
     Check::True(mesh2->HasIndexErrors(), "expect insufficient auxData to have index errors");
     mesh2->Transform(Transform::FromScaleFactors(1, 2, 3)); // crashed before fix
+
+    // mesh with auxData channels of sufficient but different sizes
+    auto mesh3 = mesh2->Clone();
+    mesh3->AuxData() = nullptr;
+    Check::False(mesh3->HasIndexErrors(), "expect valid mesh3 to have no index errors");
+    PolyfaceAuxData::Channels channels2;
+    if (true)
+        { // first channel's size is used for all channels, cf. GetAuxDataCP()->GetChannels().GetValueCount()
+        bvector<double> aux3d { 1,2,3, 4,5,6, 7,8,9, 10,11,12, 13,14,15, 16,17,18, 19,20,21 };
+        Check::True(aux3d.size() >= 3 * polygon.size(), "expect sufficient auxData");
+        bvector<PolyfaceAuxChannel::DataPtr> aux3dData{ new PolyfaceAuxChannel::Data(0, std::move(aux3d)) };
+        PolyfaceAuxChannelPtr channel = new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType::Point, "Aux3dValid0", "Time", std::move(aux3dData));
+        Check::Size(channel->GetBlockSize(), 3, "expect channel block size 3");
+        channels2.push_back(channel);
+        }
+    if (true)
+        { // second channel is smaller than first, and will result in OOB when iterating its data
+        bvector<double> aux3d { 1,2,3, 4,5,6, 7,8,9, 10,11,12, 13,14,15, 16,17,18 };
+        Check::True(aux3d.size() >= 3 * polygon.size(), "expect sufficient auxData");
+        bvector<PolyfaceAuxChannel::DataPtr> aux3dData{ new PolyfaceAuxChannel::Data(0, std::move(aux3d)) };
+        PolyfaceAuxChannelPtr channel = new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType::Point, "Aux3dValid1", "Time", std::move(aux3dData));
+        Check::Size(channel->GetBlockSize(), 3, "expect channel block size 3");
+        channels2.push_back(channel);
+        }
+    bvector<int32_t> auxIndex2 = mesh3->PointIndex();
+    PolyfaceAuxDataPtr auxData2(new PolyfaceAuxData(std::move(auxIndex2), std::move(channels2)));
+    mesh3->SetAuxData(auxData2);
+    Check::True(mesh3->HasIndexErrors(), "expect channels of different size to cause index errors");
 
     // Now test flatbuffer conversion of the above meshes. Only mesh1 should succeed.
     bvector<Byte> bytes0;
@@ -3184,6 +3212,7 @@ TEST(Polyface,HandleInvalidMesh)
         auto geom = BentleyGeometryFlatBuffer::BytesToGeometry(bytes0);
         Check::False(geom.IsValid(), "expect invalidMesh0 bytes deserialization failure");
         }
+
     bvector<Byte> bytes1;
     BentleyGeometryFlatBuffer::GeometryToBytes(*mesh1, bytes1);
     Check::False(bytes1.empty(), "expect valid mesh1 to serialize to flatbuffers");
@@ -3202,6 +3231,17 @@ TEST(Polyface,HandleInvalidMesh)
         Check::False(bytes2.empty(), "expect to read bytes from invalidMesh2.fb");
         auto geom = BentleyGeometryFlatBuffer::BytesToGeometry(bytes2);
         Check::False(geom.IsValid(), "expect invalidMesh2 bytes deserialization failure");
+        }
+
+    bvector<Byte> bytes3;
+    BentleyGeometryFlatBuffer::GeometryToBytes(*mesh3, bytes3);
+    if (Check::True(bytes3.empty(), "expect invalid mesh3 to fail to serialize to flatbuffers"))
+        {
+        // GTestFileOps::WriteToFile(bytes3, nullptr, nullptr, L"invalidMesh3", L"fb"); // generate invalid file in older version (may have to force it in debugger)
+        GTestFileOps::ReadAsBytes(getInvalidMeshFileName(3), bytes3);
+        Check::False(bytes3.empty(), "expect to read bytes from invalidMesh3.fb");
+        auto geom = BentleyGeometryFlatBuffer::BytesToGeometry(bytes3);
+        Check::False(geom.IsValid(), "expect invalidMesh3 bytes deserialization failure");
         }
     }
 

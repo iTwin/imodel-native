@@ -1011,19 +1011,40 @@ bool PolyfaceQuery::IsSameStructureAndGeometry (PolyfaceQueryCR other, double to
     return true;
     }
 
-static void Validate1BasedIndexArrayZeroStructure (MeshAnnotationVector &description, Utf8CP name,
-    const int32_t * indices, size_t numIndex,
-    const int32_t * templateIndices
-    )
+/*--------------------------------------------------------------------------------**//**
+* Check that blocked indices contain no partial block.
+* @remarks zeroes are allowed in index arrays with fixed-size blocking as padding.
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+static void Validate1BasedIndexArrayBlocking(MeshAnnotationVector& description, uint32_t blockSize, int32_t const* indices, size_t numIndex)
     {
-    if (numIndex == 0 || indices == nullptr || templateIndices == 0)
+    if (numIndex == 0 || indices == nullptr || blockSize < 3)
         return;         // higher level has to decide if this ok
 
-    for (size_t i = 0; i < numIndex; i++)
-        description.Assert ((indices[i] == 0) == (templateIndices[i] == 0), "Zeros in different places in parallel index arrays");
+    description.Assert((numIndex % blockSize) == 0, "Fixed-size blocked indices cannot contain a partial block");
     }
 
-static void Validate1BasedIndexArrayRange (MeshAnnotationVector &description, Utf8CP name, const int32_t * indices, size_t numIndex, size_t numTarget, bool allowNegative)
+/*--------------------------------------------------------------------------------**//**
+* Check that indices have zeroes in the same places as the template array.
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+static void Validate1BasedIndexArrayZeroStructure(MeshAnnotationVector& description, int32_t const* indices, size_t numIndex, int32_t const* templateIndices, size_t numTemplateIndex)
+    {
+    if (numIndex == 0 || numTemplateIndex == 0 || indices == nullptr || templateIndices == nullptr)
+        return;         // higher level has to decide if this ok
+
+    description.Assert(numIndex == numTemplateIndex, "Parallel index arrays cannot have different lengths");
+
+    size_t n = std::min(numIndex, numTemplateIndex);
+    for (size_t i = 0; i < n; i++)
+        description.Assert((indices[i] == 0) == (templateIndices[i] == 0), "Zeros in different places in parallel index arrays");
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* Check that indices don't lie beyond target range.
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+static void Validate1BasedIndexArrayRange(MeshAnnotationVector& description, Utf8CP name, int32_t const* indices, size_t numIndex, size_t numTarget)
     {
     if (indices == nullptr)
         return;
@@ -1040,63 +1061,83 @@ static void Validate1BasedIndexArrayRange (MeshAnnotationVector &description, Ut
             }
         }
     }
-//! Apply various checks for indexing structure.
-//! @return true if any errors were found.
-bool PolyfaceQuery::HasIndexErrors
-(
-MeshAnnotationVector &description    //!< (optional) array describing errors checked.  Note that there are descriptions of tests even if no errors found.
-) const
-    {
-    PolyfaceVectorsP vectors = _AsPolyfaceVectorsP ();
-    description.clear ();
 
-    size_t numPointIndex = GetPointIndexCount ();        // all or nothing !!!
-    bool isIndexed = GetMeshStyle () == MESH_ELM_STYLE_INDEXED_FACE_LOOPS;
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+bool PolyfaceQuery::HasIndexErrors(MeshAnnotationVector& description) const
+    {
+    PolyfaceVectorsP vectors = _AsPolyfaceVectorsP();
+    description.clear();
+
+    size_t numPointIndex = GetPointIndexCount();
+    bool isIndexed = GetMeshStyle() == MESH_ELM_STYLE_INDEXED_FACE_LOOPS;
     if (isIndexed)
         {
         if (vectors != nullptr)
             {
             // In a header, all index arrays expose individual counts.
-            size_t numPointIndex1 = vectors->m_pointIndex.size ();
-            size_t numParamIndex = vectors->m_paramIndex.size ();
-            size_t numNormalIndex = vectors->m_normalIndex.size ();
-            size_t numColorIndex = vectors->m_colorIndex.size ();
-            size_t numFaceIndex = vectors->m_faceIndex.size ();
+            size_t numPointIndex1 = vectors->m_pointIndex.size();
+            size_t numParamIndex = vectors->m_paramIndex.size();
+            size_t numNormalIndex = vectors->m_normalIndex.size();
+            size_t numColorIndex = vectors->m_colorIndex.size();
+            size_t numFaceIndex = vectors->m_faceIndex.size();
             size_t numAuxDataIndex = vectors->m_auxData.IsValid() ? vectors->m_auxData->GetIndices().size() : 0;
 
-            description.Assert (numPointIndex == numPointIndex1, "PointIndexCount matches overall index count");
-            if (vectors->m_pointIndex.Active ())
-                description.Assert (numPointIndex != 0, "PointIndex().Active() but no indices present");
-            if (vectors->m_colorIndex.Active ())
-                description.Assert (numColorIndex == numPointIndex, "ColorIndex().Active() but count does not match PointIndex().size()");
-            if (vectors->m_normalIndex.Active ())
-                description.Assert (numNormalIndex == numPointIndex, "NormalIndex().Active() but count does not match PointIndex().size()");
-            if (vectors->m_paramIndex.Active ())
-                description.Assert (numParamIndex == numPointIndex, "ParamIndex().Active() but count does not match PointIndex().size()");
+            description.Assert(numPointIndex == numPointIndex1, "PointIndexCount matches overall index count");
+            if (vectors->m_pointIndex.Active())
+                description.Assert(numPointIndex != 0, "PointIndex().Active() but no indices present");
+            if (vectors->m_colorIndex.Active())
+                description.Assert(numColorIndex == numPointIndex, "ColorIndex().Active() but count does not match PointIndex().size()");
+            if (vectors->m_normalIndex.Active())
+                description.Assert(numNormalIndex == numPointIndex, "NormalIndex().Active() but count does not match PointIndex().size()");
+            if (vectors->m_paramIndex.Active())
+                description.Assert(numParamIndex == numPointIndex, "ParamIndex().Active() but count does not match PointIndex().size()");
             if (vectors->m_faceIndex.Active())
                 description.Assert(numFaceIndex == numPointIndex, "FaceIndex().Active() but count does not match PointIndex().size()");
             if (vectors->m_auxData.IsValid())
                 description.Assert(numAuxDataIndex == numPointIndex, "AuxData is present but index count does not match PointIndex().size()");
             }
+
+        description.Assert(GetNumPerFace() != 2, "Invalid index blocking (2)");
+
         // Don't attempt index access if early failures ...
-        if (description.GetTotalFail () > 0)
+        if (description.GetTotalFail() > 0)
             return true;
 
-        Validate1BasedIndexArrayRange (description, "PointIndex",  GetPointIndexCP (), GetPointIndexCount (), GetPointCount (), true);
-        Validate1BasedIndexArrayRange (description, "NormalIndex", GetNormalIndexCP (), GetNormalIndexCount (), GetNormalCount (), false);
-        Validate1BasedIndexArrayRange (description, "ParamIndex", GetParamIndexCP (), GetParamIndexCount (), GetParamCount (), false);
-        Validate1BasedIndexArrayRange (description, "ColorIndex", GetColorIndexCP (), GetColorIndexCount (), GetColorCount (), false);
-        Validate1BasedIndexArrayRange (description, "FaceIndex", GetFaceIndexCP (), GetFaceIndexCount (), GetFaceCount (), false);
+        if (!IsVariableSizeIndexed())
+            {
+            Validate1BasedIndexArrayBlocking(description, GetNumPerFace(), GetPointIndexCP(), numPointIndex);
+            Validate1BasedIndexArrayBlocking(description, GetNumPerFace(), GetNormalIndexCP(), GetNormalIndexCount());
+            Validate1BasedIndexArrayBlocking(description, GetNumPerFace(), GetParamIndexCP(), GetParamIndexCount());
+            Validate1BasedIndexArrayBlocking(description, GetNumPerFace(), GetColorIndexCP(), GetColorIndexCount());
+            Validate1BasedIndexArrayBlocking(description, GetNumPerFace(), GetFaceIndexCP(), GetFaceIndexCount());
+            }
 
-        Validate1BasedIndexArrayZeroStructure (description, "NormalIndex Zeros", GetNormalIndexCP (), GetNormalIndexCount (), GetPointIndexCP ());
-        Validate1BasedIndexArrayZeroStructure (description, "ParamIndex Zeros", GetParamIndexCP (), GetParamIndexCount (), GetPointIndexCP ());
-        Validate1BasedIndexArrayZeroStructure (description, "ColorIndex Zeros", GetColorIndexCP (), GetColorIndexCount (), GetPointIndexCP ());
-        Validate1BasedIndexArrayZeroStructure (description, "FaceIndex Zeros", GetFaceIndexCP (), GetFaceIndexCount (), GetPointIndexCP ());
+        Validate1BasedIndexArrayRange(description, "PointIndex",  GetPointIndexCP(), numPointIndex, GetPointCount());
+        Validate1BasedIndexArrayRange(description, "NormalIndex", GetNormalIndexCP(), GetNormalIndexCount(), GetNormalCount());
+        Validate1BasedIndexArrayRange(description, "ParamIndex", GetParamIndexCP(), GetParamIndexCount(), GetParamCount());
+        Validate1BasedIndexArrayRange(description, "ColorIndex", GetColorIndexCP(), GetColorIndexCount(), GetColorCount());
+        Validate1BasedIndexArrayRange(description, "FaceIndex", GetFaceIndexCP(), GetFaceIndexCount(), GetFaceCount());
+
+        Validate1BasedIndexArrayZeroStructure(description, GetNormalIndexCP(), GetNormalIndexCount(), GetPointIndexCP(), numPointIndex);
+        Validate1BasedIndexArrayZeroStructure(description, GetParamIndexCP(), GetParamIndexCount(), GetPointIndexCP(), numPointIndex);
+        Validate1BasedIndexArrayZeroStructure(description, GetColorIndexCP(), GetColorIndexCount(), GetPointIndexCP(), numPointIndex);
+        Validate1BasedIndexArrayZeroStructure(description, GetFaceIndexCP(), GetFaceIndexCount(), GetPointIndexCP(), numPointIndex);
 
         if (GetAuxDataCP().IsValid())
             {
-            Validate1BasedIndexArrayRange(description, "AuxDataIndex", GetAuxDataCP()->GetIndices().data(), GetAuxDataCP()->GetIndices().size(), GetAuxDataCP()->GetChannels().GetValueCount(), false);
-            Validate1BasedIndexArrayZeroStructure(description, "AuxDataIndex Zeros", GetAuxDataCP()->GetIndices().data(), GetAuxDataCP()->GetIndices().size(), GetPointIndexCP());
+            size_t channel0ValueCount = GetAuxDataCP()->GetChannels().GetValueCount();
+            size_t minChannelValueCount = channel0ValueCount;
+            for (auto const& channel : GetAuxDataCP()->GetChannels())
+                {
+                description.Assert(channel0ValueCount <= channel->GetValueCount(), "Subsequent AuxData channels should have no less data than the first");
+                minChannelValueCount = std::min(minChannelValueCount, channel->GetValueCount());
+                }
+            Validate1BasedIndexArrayRange(description, "AuxDataIndex", GetAuxDataCP()->GetIndices().data(), GetAuxDataCP()->GetIndices().size(), minChannelValueCount);
+            Validate1BasedIndexArrayZeroStructure(description, GetAuxDataCP()->GetIndices().data(), GetAuxDataCP()->GetIndices().size(), GetPointIndexCP(), numPointIndex);
+            if (!IsVariableSizeIndexed())
+                Validate1BasedIndexArrayBlocking(description, GetNumPerFace(), GetAuxDataCP()->GetIndices().data(), GetAuxDataCP()->GetIndices().size());
             }
         }
     size_t failures = description.GetTotalFail ();

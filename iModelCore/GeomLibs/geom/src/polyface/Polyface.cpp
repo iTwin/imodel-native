@@ -801,6 +801,7 @@ void PolyfaceHeader::ReverseNormals ()
     }
 
 /*--------------------------------------------------------------------------------**//**
+* Reverse pIndex array entries between [iFirst, iLast]. Reversal is symmetric about the center of the range.
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 template <typename T>
@@ -819,6 +820,7 @@ static void ReverseInRange (T* pIndex, size_t iFirst, size_t iLast)
 
 
 /*--------------------------------------------------------------------------------**//**
+* Rewrite the entries of pIndex in the range [iFirst, iLast] as positive entries.
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 static void AbsInRange(int32_t* pIndex, size_t iFirst, size_t iLast)
@@ -833,6 +835,7 @@ static void AbsInRange(int32_t* pIndex, size_t iFirst, size_t iLast)
 
 
 /*--------------------------------------------------------------------------------**//**
+* Rewrite the entries of pIndex in the range [iFirst, iLast] as negative entries.
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 static void NegativeAbsInRange(int32_t* pIndex, size_t iFirst, size_t iLast)
@@ -847,6 +850,7 @@ static void NegativeAbsInRange(int32_t* pIndex, size_t iFirst, size_t iLast)
 
 
 /*--------------------------------------------------------------------------------**//**
+* Negate entries of pIndex in the range [iFirst, iLast].
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 static void NegateInRange(int32_t* pIndex, size_t iFirst, size_t iLast)
@@ -861,6 +865,15 @@ static void NegateInRange(int32_t* pIndex, size_t iFirst, size_t iLast)
 
 
 /*--------------------------------------------------------------------------------**//**
+* Shift marked edge signs in the face loop of pIndex indexed by [kFirst, kLast].
+* @remarks Signed polyface point indices imply a directional relationship, e.g., for positive a, b, c, d, and
+* face loop [a, -b, c, d, 0], the negative sign marks the edge from b to c. Before reversing the face loops of the
+* polyface point index array, we call this method to shift the negation in each marked index pair to the other
+* index: [a, b, -c, d, 0]. This ensures that after face loop reversal, the same edge---traversed in the opposite
+* direction---is marked: [d, -c, b, a, 0].
+* @param pIndex The array of signed 1-based indices.
+* @param kFirst The first index of the face loop in pIndex
+* @param kLast The last index of the face loop in pIndex
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 static void ShiftSignsFromCyclicPredecessorsInRange(int32_t* pIndex, size_t kFirst, size_t kLast)
@@ -935,9 +948,14 @@ BlockedVectorInt::IndexAction normalArrayIndexAction
     }
 
 /*--------------------------------------------------------------------------------**//**
-* From given start position, find final (inclusive) position and position for next start search.
-* Initialize iFirst to zero before first call.
-* Return false if no more faces.
+* From the given start index, find the final face loop index and the starting index for next search.
+* @param [in] pIndex pointer to the array of indices.
+* @param [in] count number of indices in the array.
+* @param [in] numPerFace number of indices per fixed-size face loop, or 1 for zero-terminated face loops.
+* @param [in] iFirst starting index for the search. Should be initialized to zero before the first call.
+* @param [out] iLast final (inclusive) index of the current face.
+* @param [out] iNext starting index for the next search.
+* @returns false if no more faces.
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 static bool DelimitFace (int32_t const* pIndex, size_t count, int numPerFace, size_t iFirst, size_t& iLast, size_t& iNext)
@@ -952,7 +970,7 @@ static bool DelimitFace (int32_t const* pIndex, size_t count, int numPerFace, si
     if (numPerFace > 1)
         {
         iLast = iFirst;
-        size_t limit = iFirst + numPerFace;
+        size_t limit = std::min(iFirst + numPerFace, count);
         while (iLast < limit && pIndex[iLast] != 0)
             iLast++;
         if (iLast >= 1)
@@ -996,6 +1014,11 @@ static bool AllNegativeInRange(int32_t const* pIndex, size_t iFirst, size_t iLas
     }
 
 /*--------------------------------------------------------------------------------**//**
+* Reverse each block of a data array in place.
+* @remarks Example numPerBlock = 3: [a,b,c, d,e,f, ...] -> [c,b,a, f,e,d, ...].
+* @param data pointer to blocked data
+* @param n data count
+* @param numPerBlock block count
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 template<typename T>
@@ -1080,10 +1103,6 @@ BlockedVectorInt::IndexAction normalIndexAction
     size_t numNormal  = GetNormalCount();
     size_t numIndex = GetPointIndexCount();
 
-    // return early if corrupt mesh
-    if (numNormal > 0 && numNormal < numIndex)
-        return false;
-
     int numPerFace = GetNumPerFace();
     if (2 == numPerFace)
         return false;
@@ -1108,7 +1127,7 @@ BlockedVectorInt::IndexAction normalIndexAction
                     ReverseIndicesOneFace(iFirst, iLast, normalIndexAction);
             else
                 if (flipUnMarked)
-                    ReverseIndicesOneFace (iFirst, iLast, normalIndexAction);
+                    ReverseIndicesOneFace(iFirst, iLast, normalIndexAction);
             }
         }
     else
@@ -1119,7 +1138,7 @@ BlockedVectorInt::IndexAction normalIndexAction
     if (numNormal > 0 && pNormal != NULL && negateNormals)
         {
         for (size_t i = 0; i < numNormal; i++)
-            pNormal [i].Negate ();
+            pNormal [i].Negate();
         }
 
     return true;
