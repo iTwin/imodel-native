@@ -11794,6 +11794,7 @@ public:
     StatusInt   ConvertElevation(GeoPointR outLatLong, GeoPointCR inLatLongDestDatum, GeoPointCR inLatLongSourceDatum);
     bool        IsNullTransform() const;
     bool        IsEquivalent(VerticalDatumConverterCR compareTo) const;
+    VerticalDatumConverter_Legacy* GetLegacyConverter() const { return m_legacyConverter; }
 
     /*---------------------------------------------------------------------------------**//**
     * Indicates if a geodetic datum related elevation change is required in csmap.
@@ -11864,7 +11865,7 @@ VerticalDatumConverter* VerticalDatumConverter::Create(const BaseGCS& fromGCS, c
 +---------------+---------------+---------------+---------------+---------------+------*/
 VerticalDatumConverter::VerticalDatumConverter (bool inputIsInNAD27, VertDatumCode inputVdc, VertDatumCode outputVdc)
 {
-    m_legacyConverter = new VerticalDatumConverter_Legacy(inputIsInNAD27, inputVdc, outputVdc);
+    m_legacyConverter = VerticalDatumConverter_Legacy::GetVerticalDatumConverterFromCode(inputIsInNAD27, inputVdc, outputVdc);
     m_initializedTransformsValid = false;
     m_ellipsoidHeightConverter = nullptr;
 }
@@ -11874,7 +11875,7 @@ VerticalDatumConverter::VerticalDatumConverter (bool inputIsInNAD27, VertDatumCo
 +---------------+---------------+---------------+---------------+---------------+------*/
 VerticalDatumConverter::VerticalDatumConverter(DatumCR from, DatumCR to, VertDatumCode inputVdc, VertDatumCode outputVdc)
 {
-    m_legacyConverter = new VerticalDatumConverter_Legacy(from, to, inputVdc, outputVdc);
+    m_legacyConverter = VerticalDatumConverter_Legacy::GetVerticalDatumConverterFromCode(from.IsNAD27(), inputVdc, outputVdc);
     m_initializedTransformsValid = false;
     m_ellipsoidHeightConverter = nullptr;
 }
@@ -23083,12 +23084,12 @@ DPoint3dCR      inXYZ
         // Elevation is not ellipsoid based which is the result of the previous function
         // We must convert
 
-        // If elevation datum is NGVD29 based then we need to initialize the vertical datum conversion.
-        if (vdcNGVD29 == elevationDatumCode)
-            if (0 != CSvrtconInit())
-                return REPROJECT_CSMAPERR_VerticalDatumConversionError;
-
         VerticalDatumConverter* vertConverter =  new VerticalDatumConverter (IsNAD27(), vdcEllipsoid, elevationDatumCode);
+        if (nullptr == vertConverter->GetLegacyConverter())
+            {
+            delete vertConverter;
+            return REPROJECT_CSMAPERR_VerticalDatumConversionError;
+            }
 
         GeoPoint inLatLong = {outLatLong.longitude, outLatLong.latitude, outLatLong.elevation};
 
@@ -23146,12 +23147,12 @@ GeoPointCR      inLatLong
         // Elevation is not local ellipsoid based which is the required input of the geocentric function
         // We must convert
 
-        // If elevation datum is NGVD29 based then we need to initialize the vertical datum conversion.
-        if (vdcNGVD29 == elevationDatumCode)
-            if (0 != CSvrtconInit())
-                return REPROJECT_CSMAPERR_VerticalDatumConversionError;
-
         VerticalDatumConverter* vertConverter =  new VerticalDatumConverter (IsNAD27(), elevationDatumCode, vdcEllipsoid);
+        if (nullptr == vertConverter->GetLegacyConverter())
+            {
+            delete vertConverter;
+            return REPROJECT_CSMAPERR_VerticalDatumConversionError;
+            }
 
         vertConverter->ConvertElevation (effectInLatLong, inLatLong, inLatLong);
 
@@ -25382,14 +25383,10 @@ StatusInt         Datum::ToJson(BeJsValue jsonValue, bool expandEllipsoid, bool 
 
     // Now we need to obtain the geodetic transformation to WGS84
     static DatumCP wgs84Datum = nullptr;
-    if (nullptr == wgs84Datum || !wgs84Datum->IsValid())
-        {
-        if (nullptr != wgs84Datum)
-            wgs84Datum->Destroy();
+    if (nullptr == wgs84Datum)
         wgs84Datum = Datum::CreateDatum("WGS84");
-        }
 
-    if (wgs84Datum == nullptr || !wgs84Datum->IsValid())
+    if (wgs84Datum == nullptr)
         return ERROR;
 
     // Create a datum converter to LL84 and extract non-null transformations
@@ -25951,12 +25948,8 @@ bool            Datum::IsWGS84Coincident () const
 
     // Now we need to obtain the geodetic transformation to WGS84
     static DatumCP wgs84Datum = nullptr;
-    if (nullptr == wgs84Datum || !wgs84Datum->IsValid())
-        {
-        if (nullptr != wgs84Datum)
-            wgs84Datum->Destroy();
+    if (nullptr == wgs84Datum)
         wgs84Datum = Datum::CreateDatum("WGS84");
-        }
 
     if (nullptr == wgs84Datum || !wgs84Datum->IsValid())
         return false; // Can only occur if dictionary files absent
@@ -26755,14 +26748,10 @@ bool            Datum::IsEquivalent (DatumCR compareTo, bool looselyCompare) con
 
     // Now we need to obtain the geodetic transformation to WGS84
     static DatumCP wgs84Datum = nullptr;
-    if (nullptr == wgs84Datum || !wgs84Datum->IsValid())
-        {
-        if (nullptr != wgs84Datum)
-            wgs84Datum->Destroy();
+    if (nullptr == wgs84Datum)
         wgs84Datum = Datum::CreateDatum("WGS84");
-        }
 
-    if (wgs84Datum == nullptr || !wgs84Datum->IsValid())
+    if (wgs84Datum == nullptr)
         return false;
 
     // This call forces extraction of geodetic transforms from system dictionary
@@ -29866,13 +29855,9 @@ GeodeticTransformPathP         GeodeticTransformPath::CreateToWgs84
         return NULL;
 
     static DatumCP wgs84Datum = nullptr;
-    if (nullptr == wgs84Datum || !wgs84Datum->IsValid())
-        {
-        if (nullptr != wgs84Datum)
-            wgs84Datum->Destroy();
+    if (nullptr == wgs84Datum)
         wgs84Datum = Datum::CreateDatum("WGS84");
-        }
-    if (nullptr == wgs84Datum || !wgs84Datum->IsValid())
+    if (nullptr == wgs84Datum)
         return nullptr;
 
     CSDatum* srcCSDatum = from.GetCSDatum();
