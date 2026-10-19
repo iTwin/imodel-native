@@ -1012,6 +1012,28 @@ bool PolyfaceQuery::IsSameStructureAndGeometry (PolyfaceQueryCR other, double to
     }
 
 /*--------------------------------------------------------------------------------**//**
+* Check that all auxData channels' data arrays have at least as many blocks as the first.
+* This is an assumption of the AuxData structures.
+* @returns the smallest data array block size
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+static size_t ValidateAuxDataChannels(MeshAnnotationVector& description, PolyfaceAuxData::ChannelsCR channels)
+    {
+    size_t refNumBlocks = channels.GetValueCount();
+    size_t minNumBlocks = refNumBlocks;
+    for (auto const& channel : channels)
+        {
+        for (auto const& data : channel->GetData())
+            {
+            size_t numBlocks = data->GetValueCount() / channel->GetBlockSize();
+            description.Assert(refNumBlocks <= numBlocks, "Each data array of each AuxData channel should have at least as many as the first");
+            minNumBlocks = std::min(minNumBlocks, numBlocks);
+            }
+        }
+    return minNumBlocks;
+    }
+
+/*--------------------------------------------------------------------------------**//**
 * Check that blocked indices contain no partial block.
 * @remarks zeroes are allowed in index arrays with fixed-size blocking as padding.
 * @bsimethod
@@ -1127,14 +1149,8 @@ bool PolyfaceQuery::HasIndexErrors(MeshAnnotationVector& description) const
 
         if (GetAuxDataCP().IsValid())
             {
-            size_t channel0ValueCount = GetAuxDataCP()->GetChannels().GetValueCount();
-            size_t minChannelValueCount = channel0ValueCount;
-            for (auto const& channel : GetAuxDataCP()->GetChannels())
-                {
-                description.Assert(channel0ValueCount <= channel->GetValueCount(), "Subsequent AuxData channels should have no less data than the first");
-                minChannelValueCount = std::min(minChannelValueCount, channel->GetValueCount());
-                }
-            Validate1BasedIndexArrayRange(description, "AuxDataIndex", GetAuxDataCP()->GetIndices().data(), GetAuxDataCP()->GetIndices().size(), minChannelValueCount);
+            size_t minDataCount = ValidateAuxDataChannels(description, GetAuxDataCP()->GetChannels());
+            Validate1BasedIndexArrayRange(description, "AuxDataIndex", GetAuxDataCP()->GetIndices().data(), GetAuxDataCP()->GetIndices().size(), minDataCount);
             Validate1BasedIndexArrayZeroStructure(description, GetAuxDataCP()->GetIndices().data(), GetAuxDataCP()->GetIndices().size(), GetPointIndexCP(), numPointIndex);
             if (!IsVariableSizeIndexed())
                 Validate1BasedIndexArrayBlocking(description, GetNumPerFace(), GetAuxDataCP()->GetIndices().data(), GetAuxDataCP()->GetIndices().size());
