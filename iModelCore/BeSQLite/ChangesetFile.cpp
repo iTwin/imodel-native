@@ -740,19 +740,9 @@ BentleyStatus RevisionUtility::RecompressRevision(Utf8CP sourceFile, Utf8CP targ
         return ERROR;
         }
 
-    uint32_t prefixSizeWrite = prefix.empty() ? 0 : (uint32_t)prefix.SizeInBytes();
-    UIntToByteArray(sizeBytes, prefixSizeWrite);
-
-    zipStatus = lzmaEncoder.CompressNextPage(sizeBytes, 4);
-    if (zipStatus != ZIP_SUCCESS)
+    if (RevisionUtility::WritePrefix(lzmaEncoder, prefix) != SUCCESS)
         return ERROR;
 
-    if (prefixSizeWrite > 0)
-        {
-        zipStatus = lzmaEncoder.CompressNextPage(prefix.c_str(), prefixSizeWrite);
-        if (zipStatus != ZIP_SUCCESS)
-            return ERROR;
-        }
     const int kMaxDecompressBytes = 1024 * 64;
     int decompressBytesRead;
     Byte buffer[kMaxDecompressBytes];
