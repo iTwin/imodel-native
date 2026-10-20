@@ -102,6 +102,7 @@ namespace GeoCoordinates {
 
 BaseGCSPtr BaseGCS::s_LL84GCS(nullptr);
 VerticalDatumDictionaryPtr  VerticalDatumDictionary::s_verticalDatumDictionary = nullptr;
+static bool s_verticalDatumDictionaryNeedsRefresh = false;
 
 bool operator& (const WKTOptionsFlags& lhs, const WKTOptionsFlags& rhs) { return static_cast<uint32_t>(lhs) & static_cast<uint32_t>(rhs); }
 WKTOptionsFlags operator| (const WKTOptionsFlags& lhs, const WKTOptionsFlags& rhs) { return static_cast<WKTOptionsFlags>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs)); }
@@ -10515,12 +10516,19 @@ StatusInt VerticalDatumDictionary::SetStatus(StatusInt status)
 
 bool VerticalDatumDictionary::IsInitialized()
 {
+    Get();
     return (s_verticalDatumDictionary.IsValid()) && (SUCCESS == s_verticalDatumDictionary->GetStatus()) 
         && (s_verticalDatumDictionary->m_verticalDatumInfos.size() > 0) && (s_verticalDatumDictionary->m_verticalDatumTransforms.size() > 0);
 }
 
 VerticalDatumDictionaryPtr VerticalDatumDictionary::Get()
 {
+    if (s_verticalDatumDictionaryNeedsRefresh)
+        {
+        s_verticalDatumDictionaryNeedsRefresh = false;
+        if (s_verticalDatumDictionary.IsValid())
+            ClearAndReinitialize();
+        }
     return s_verticalDatumDictionary;
 }
 
@@ -10543,6 +10551,7 @@ StatusInt VerticalDatumDictionary::Initialize(const WString& dictionaryPath, con
     if (s_verticalDatumDictionary.IsValid())
         return SUCCESS; // already initialized
 
+    s_verticalDatumDictionaryNeedsRefresh = false;
     s_verticalDatumDictionary = new VerticalDatumDictionary(dataDirectory);
     if (!s_verticalDatumDictionary.IsValid())
         return ERROR;
@@ -10568,6 +10577,7 @@ StatusInt VerticalDatumDictionary::ClearAndReinitialize()
 
 StatusInt VerticalDatumDictionary::Uninitialize()
 {
+    s_verticalDatumDictionaryNeedsRefresh = false;
     if (!s_verticalDatumDictionary.IsValid())
         return GEOCOORDERR_NoDictionary;
 
@@ -12283,20 +12293,11 @@ struct WorkspaceDb : RefCountedBase, NonCopyableClass {
         }
         return m_db->IsDbOpen() ? m_db : nullptr;
     }
-    bool ContainsResource(Utf8CP resourceName) {
-        auto db = GetDb();
-        if (nullptr == db)
-            return false;
-
-        Statement stmt;
-        stmt.Prepare(*db, "SELECT 1 FROM blobs WHERE id=? COLLATE NOCASE");
-        stmt.BindText(1, resourceName, Statement::MakeCopy::No);
-        return BE_SQLITE_ROW == stmt.Step();
-    }
     WorkspaceDb(int priority, Utf8StringCR dbName, CloudContainerP container) : m_priority(priority), m_dbName(dbName), m_container(container) {
         if (m_container) {
             // set up a listener for the container being disconnected and remove this entry (closes Db)
             m_container->m_onDisconnect.AddOnce([&](CloudContainerP) {
+                s_verticalDatumDictionaryNeedsRefresh = true;
                 s_workspaceDbs.remove_if([&](WorkspaceDbPtr const& other) { return other.get() == this; });
             });
         }
@@ -12448,14 +12449,12 @@ bool BaseGCS::AddWorkspaceDb(Utf8String dbName, CloudContainerP container, int p
     for (auto it=s_workspaceDbs.begin(); it != s_workspaceDbs.end(); ++it) {
         if (priority > (*it)->m_priority) {
             s_workspaceDbs.emplace(it, newDb);
-            if (VerticalDatumDictionary::Get().IsValid() && newDb->ContainsResource("VerticalDatumDefinitions.json"))
-                VerticalDatumDictionary::ClearAndReinitialize();
+            s_verticalDatumDictionaryNeedsRefresh = true;
             return true;
         }
     }
     s_workspaceDbs.emplace_back(newDb);
-    if (VerticalDatumDictionary::Get().IsValid() && newDb->ContainsResource("VerticalDatumDefinitions.json"))
-        VerticalDatumDictionary::ClearAndReinitialize();
+    s_verticalDatumDictionaryNeedsRefresh = true;
     return true;
 }
 
