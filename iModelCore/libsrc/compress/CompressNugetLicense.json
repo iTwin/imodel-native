@@ -13,20 +13,10 @@
         "copyright": "Igor Pavlov",
         "description": "LZMA SDK",
         "homepage": "https://www.7-zip.org/",
-        "licenseUrl": "https://www.7-zip.org/sdk.html",
+        "licenseUrl": "https://www.7-zip.org/a/lzma2604.7z",
         "name": "LZMA SDK",
-        "SPDX-ID": "",
-        "version": "15.x"
-        },
-        {
-        "authors": "",
-        "copyright": "Igor Pavlov",
-        "description": "LZMA SDK",
-        "homepage": "https://www.7-zip.org/",
-        "licenseUrl": "https://www.7-zip.org/sdk.html",
-        "name": "LZMA SDK",
-        "SPDX-ID": "",
-        "version": "19.x"
+        "SPDX-ID": "SEE LICENSE IN lzma/lzma-sdk.txt",
+        "version": "26.04"
         },
         {
         "authors": "",

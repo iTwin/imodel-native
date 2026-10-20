@@ -111,6 +111,7 @@ struct CachedQueryAdaptor final: std::enable_shared_from_this<CachedQueryAdaptor
         bool IsParked() const { return m_cursor.has_value(); }
         bool MatchesCursor(ECSqlRequest const&, std::string const& argsKey) const;
         void Park(ECSqlRequest const&, std::string const& argsKey, uint32_t rowCount);
+        void ClearParkedCursor() { m_cursor.reset(); }
         void ResetCursor();
         bool IsCursorExpired(std::chrono::seconds timeout) const;
         bool HasRestartToken(std::string const& token) const { return m_cursor && m_cursor->m_restartToken == token; }
@@ -222,7 +223,7 @@ struct CachedConnection final : std::enable_shared_from_this<CachedConnection> {
         CachedConnection& operator = (CachedConnection&&)=delete;
         std::vector<FunctionInfo> GetPrimaryDbSqlFunctions() const;
         void SetRequest(std::unique_ptr<RunnableRequestBase> request);
-        void ClearRequest();
+        std::unique_ptr<RunnableRequestBase> ClearRequest();
     public:
         CachedConnection(ConnectionCache& cache, uint16_t id):m_cache(cache), m_id(id), m_adaptorCache(*this),m_retryHandler(QueryRetryHandler::Create(60s)){}
         recursive_mutex_t& GetMutex() { return m_mutexReq; }
@@ -230,7 +231,7 @@ struct CachedConnection final : std::enable_shared_from_this<CachedConnection> {
         QueryAdaptorCache& GetAdaptorCacheR() { return m_adaptorCache; }
         ~CachedConnection();
         void SyncAttachDbs();
-        ECDB_EXPORT void Execute(std::function<void(QueryAdaptorCache&,RunnableRequestBase&)>, std::unique_ptr<RunnableRequestBase>);
+        ECDB_EXPORT void Execute(std::function<void(QueryAdaptorCache&,RunnableRequestBase&)>, std::unique_ptr<RunnableRequestBase>, std::unique_ptr<RunnableRequestBase>* completedRequest = nullptr);
         void Reset(bool detachDbs);
         void InterruptIf(std::function<bool(RunnableRequestBase const&)>,bool cancel);
         bool IsSync() const { return m_id == 0; }
@@ -242,6 +243,7 @@ struct CachedConnection final : std::enable_shared_from_this<CachedConnection> {
         CachedConnection* GetSchemaSourceConnection();
         // Reset statements before schemas when the primary or independent observer sees a commit.
         void RefreshIfPrimaryChanged(uint64_t dataVersion);
+        void SyncCursorHints();
         bool HasCursor(ECSqlRequest const&, std::string const& argsKey);
         void ExpireCursors(QueryRequest const* incoming = nullptr, std::string const& argsKey = "");
         void ExpireCursors(uint64_t dataVersion);
@@ -323,6 +325,7 @@ struct RunnableRequestBase {
         bool m_resumed = false;
         std::optional<std::string> m_argsKey;
         std::optional<std::chrono::steady_clock::time_point> m_cursorAffinityWaitStarted;
+        QueryResponse::Ptr m_pendingResponse;
         virtual void _SetResponse(QueryResponse::Ptr response) = 0;
     public:
         static constexpr auto kCursorAffinityWait = 10ms;
@@ -338,6 +341,8 @@ struct RunnableRequestBase {
         QueryRequest const& GetRequest() const {return *m_request;}
         uint32_t GetId() const {return m_id; }
         void SetResponse(QueryResponse::Ptr response);
+        void StageResponse(QueryResponse::Ptr response);
+        void PublishPendingResponse();
         void SetPrepareTime(std::chrono::milliseconds time) { m_prepareTime = time; }
         void SetResumed(bool resumed) { m_resumed = resumed; }
         std::string const& GetArgsKey() {
@@ -468,7 +473,7 @@ struct QueryHelper final {
     private:
         static std::string FormatQuery(const char* query);
         static void BindLimits(ECSqlStatement& stmt, QueryLimit const& limit);
-        static std::optional<uint32_t> Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase& request);
+        static void Execute(QueryAdaptorCache& adaptorCache, CachedQueryAdaptor& cachedAdaptor, std::string const& argsKey, RunnableRequestBase& request);
         static void ReadBlob(ECDbCR conn, RunnableRequestBase& request);
     public:
         ECDB_EXPORT static void Execute(QueryAdaptorCache& adaptorCache, RunnableRequestBase& request);

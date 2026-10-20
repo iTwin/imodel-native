@@ -58,6 +58,7 @@ BEGIN_EXTERN_C
  extern struct cs_Ostn97_ *cs_Ostn97Ptr;
  extern struct cs_Ostn02_ *cs_Ostn02Ptr;
  extern struct cs_Ostn15_ *cs_Ostn15Ptr;
+ extern int csVertconUSCnt;
 
 //=======================================================================================
 // @bsiclass
@@ -10230,11 +10231,15 @@ VerticalDatumInfoPtr VerticalDatumInfo::CreateFromJson(BeJsConst jsonVerticalCRS
 
     if (vdatumInfo->m_extent.IsNull()
         || (vdatumInfo->m_extent.low.x < -180.0)
+        || (vdatumInfo->m_extent.low.x > 180.0)
+        || (vdatumInfo->m_extent.high.x < -180.0)
         || (vdatumInfo->m_extent.high.x > 180.0)
         || (vdatumInfo->m_extent.low.y < -90.0)
-        || (vdatumInfo->m_extent.high.y > 90.0))
+        || (vdatumInfo->m_extent.low.y > 90.0)
+        || (vdatumInfo->m_extent.high.y < -90.0)
+        || (vdatumInfo->m_extent.high.y > 90.0)
+        || (vdatumInfo->m_extent.low.y > vdatumInfo->m_extent.high.y))
     {
-        // SK TODO: range can traverse -180.0/180.0
         status = GEOCOORDERR_CoordinateRange;
         vdatumInfo = nullptr;
         return nullptr;
@@ -10732,6 +10737,24 @@ struct TransformsFrom
     }
 };
 
+static bool IsVerticalDatumApplicableAtPoint(VerticalDatumInfo const& info, const GeoPoint* latLong)
+{
+    if (nullptr == latLong)
+        return true;
+
+    DRange2d extent;
+    info.GetExtent(extent);
+    if (extent.low.x > extent.high.x)
+    {
+        DRange2d extentWest = extent;
+        extentWest.high.x = 180.0;
+        extent.low.x = -180.0;
+        return extent.Contains(latLong->longitude, latLong->latitude) || extentWest.Contains(latLong->longitude, latLong->latitude);
+    }
+
+    return extent.Contains(latLong->longitude, latLong->latitude);
+}
+
 /*---------------------------------------------------------------------------------**//**
 * utility function
 * This utility function searches the provided list of all defined transforms provided in allTransforms
@@ -10756,25 +10779,7 @@ void RecursiveGetTransformsFromTo(bool& foundTarget, TransformsFrom& transformsF
                 if (!info.IsValid())
                     break;
 
-                DRange2d extent;
-                info->GetExtent(extent);
-                bool inRange = (latLong == nullptr);
-
-                if (nullptr != latLong)
-                {
-                    if (extent.low.x > extent.high.x) // extent crosses anti-meridian
-                    {
-                        DRange2d extentWest = extent;
-                        extentWest.high.x = 180.0;
-                        extent.low.x = -180;
-                        if (extent.Contains(latLong->longitude, latLong->latitude) || (extentWest.Contains(latLong->longitude, latLong->latitude)))
-                            inRange = true;
-                    }
-                    else if (extent.Contains(latLong->longitude, latLong->latitude))
-                        inRange = true;
-                }
-
-                if (!inRange)
+                if (!IsVerticalDatumApplicableAtPoint(*info, latLong))
                     continue; // transform not applicable for the given lat long
 
                 TransformsFrom* t = new TransformsFrom(transform->GetTarget());
@@ -10850,9 +10855,21 @@ StatusInt VerticalDatumDictionary::GetVerticalDatumTransforms(bvector<VerticalTr
     if (0 == from.CompareToI(to))
         return SUCCESS; // nothing to do, from and to are the same
 
+    auto isApplicable = [this, latLong](Utf8StringCR name)
+    {
+        if (nullptr == latLong)
+            return true;
+
+        StatusInt status;
+        auto info = GetVerticalDatumInfoFromName(name, status);
+        return !info.IsValid() || IsVerticalDatumApplicableAtPoint(*info, latLong);
+    };
+    if (!isApplicable(from))
+        return GEOCOORDERR_NoTransforms;
+
     // first look for a direct transform from the named transform to named target
     VerticalTransformPtr directTransform = GetDirectVerticalDatumTransform(from, to);
-    if (directTransform.IsValid())
+    if (directTransform.IsValid() && isApplicable(to))
     {
         transforms.push_back(directTransform);
         return SUCCESS;
@@ -10870,7 +10887,7 @@ StatusInt VerticalDatumDictionary::GetVerticalDatumTransforms(bvector<VerticalTr
             for (int i = 0; i < path.size()-1; i++)
             {
                 directTransform = GetDirectVerticalDatumTransform(path[i], path[i+1]);
-                if (directTransform.IsValid())
+                if (directTransform.IsValid() && isApplicable(path[i+1]))
                     transforms.push_back(directTransform);
                 else
                 {
@@ -10895,7 +10912,7 @@ StatusInt VerticalDatumDictionary::GetVerticalDatumTransforms(bvector<VerticalTr
                 for (int i = (int)path.size()-1; i > 0; i--)
                 {
                     directTransform = GetDirectVerticalDatumTransform(path[i], path[i-1]);
-                    if (directTransform.IsValid())
+                    if (directTransform.IsValid() && isApplicable(path[i-1]))
                         transforms.push_back(directTransform);
                     else
                     {
@@ -11777,6 +11794,7 @@ public:
     StatusInt   ConvertElevation(GeoPointR outLatLong, GeoPointCR inLatLongDestDatum, GeoPointCR inLatLongSourceDatum);
     bool        IsNullTransform() const;
     bool        IsEquivalent(VerticalDatumConverterCR compareTo) const;
+    VerticalDatumConverter_Legacy* GetLegacyConverter() const { return m_legacyConverter; }
 
     /*---------------------------------------------------------------------------------**//**
     * Indicates if a geodetic datum related elevation change is required in csmap.
@@ -11837,10 +11855,6 @@ VerticalDatumConverter* VerticalDatumConverter::Create(const BaseGCS& fromGCS, c
     else
     {
         converter->m_legacyConverter =  VerticalDatumConverter_Legacy::GetVerticalDatumConverterFromCode(fromIsNAD27, fromVDC, toVDC);
-        // If either vertical datum codes are NGVD29 or NAVD88 then we init
-        // the VERTCON american vertical datum system
-        if (fromVDC == vdcNGVD29 || fromVDC == vdcNAVD88 || toVDC == vdcNGVD29 || toVDC == vdcNAVD88)
-            CSvrtconInit();
     }
     
     return converter;
@@ -11851,7 +11865,7 @@ VerticalDatumConverter* VerticalDatumConverter::Create(const BaseGCS& fromGCS, c
 +---------------+---------------+---------------+---------------+---------------+------*/
 VerticalDatumConverter::VerticalDatumConverter (bool inputIsInNAD27, VertDatumCode inputVdc, VertDatumCode outputVdc)
 {
-    m_legacyConverter = new VerticalDatumConverter_Legacy(inputIsInNAD27, inputVdc, outputVdc);
+    m_legacyConverter = VerticalDatumConverter_Legacy::GetVerticalDatumConverterFromCode(inputIsInNAD27, inputVdc, outputVdc);
     m_initializedTransformsValid = false;
     m_ellipsoidHeightConverter = nullptr;
 }
@@ -11861,7 +11875,7 @@ VerticalDatumConverter::VerticalDatumConverter (bool inputIsInNAD27, VertDatumCo
 +---------------+---------------+---------------+---------------+---------------+------*/
 VerticalDatumConverter::VerticalDatumConverter(DatumCR from, DatumCR to, VertDatumCode inputVdc, VertDatumCode outputVdc)
 {
-    m_legacyConverter = new VerticalDatumConverter_Legacy(from, to, inputVdc, outputVdc);
+    m_legacyConverter = VerticalDatumConverter_Legacy::GetVerticalDatumConverterFromCode(from.IsNAD27(), inputVdc, outputVdc);
     m_initializedTransformsValid = false;
     m_ellipsoidHeightConverter = nullptr;
 }
@@ -12483,7 +12497,12 @@ StatusInt BaseGCS::Initialize(Utf8CP dataDirectory) {
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BaseGCS::Shutdown() {
-    s_workspaceDbs.clear();
+    s_LL84GCS = nullptr;
+    VerticalDatumDictionary::Uninitialize();
+    CS_geoidCls();
+    while (csVertconUSCnt > 0)
+        CSvrtconCls();
+    CS_recvr();
 
     if (nullptr != cs_Ostn15Ptr)
         {
@@ -12503,8 +12522,7 @@ void BaseGCS::Shutdown() {
         cs_Ostn97Ptr = nullptr;
         }
 
-    VerticalDatumDictionary::Uninitialize();
-
+    s_workspaceDbs.clear();
     s_geoCoordInitialized = false;
 }
 
@@ -20474,11 +20492,13 @@ bool shallowCompare
                         DatumCP datum1raw = Datum::CreateDatum(datum1.key_nm);
                         DatumCP datum2raw = Datum::CreateDatum(datum2.key_nm);
 
-                        bool deprecated1 = datum1raw->IsDeprecated();
-                        bool deprecated2 = datum2raw->IsDeprecated();
+                        bool deprecated1 = (nullptr != datum1raw) && datum1raw->IsDeprecated();
+                        bool deprecated2 = (nullptr != datum2raw) && datum2raw->IsDeprecated();
 
-                        datum1raw->Destroy();
-                        datum2raw->Destroy();
+                        if (nullptr != datum1raw)
+                            datum1raw->Destroy();
+                        if (nullptr != datum2raw)
+                            datum2raw->Destroy();
                         oneIsDeprecated = deprecated1 || deprecated2; // This flag is used below for testing geodetic path.
                         if (!deprecated1 && !deprecated2)
                             return false;  // None are deprecated ... we consider different.
@@ -20497,11 +20517,13 @@ bool shallowCompare
                         DatumCP datum1raw = Datum::CreateDatum(datum1.key_nm);
                         DatumCP datum2raw = Datum::CreateDatum(datum2.key_nm);
 
-                        bool deprecated1 = datum1raw->IsDeprecated();
-                        bool deprecated2 = datum2raw->IsDeprecated();
+                        bool deprecated1 = (nullptr != datum1raw) && datum1raw->IsDeprecated();
+                        bool deprecated2 = (nullptr != datum2raw) && datum2raw->IsDeprecated();
 
-                        datum1raw->Destroy();
-                        datum2raw->Destroy();
+                        if (nullptr != datum1raw)
+                            datum1raw->Destroy();
+                        if (nullptr != datum2raw)
+                            datum2raw->Destroy();
                         oneIsDeprecated = deprecated1 || deprecated2; // This flag is used below for testing geodetic path.
                         if (!deprecated1 && !deprecated2)
                             return false;  // None are deprecated ... we consider different.
@@ -23062,12 +23084,12 @@ DPoint3dCR      inXYZ
         // Elevation is not ellipsoid based which is the result of the previous function
         // We must convert
 
-        // If elevation datum is NGVD29 based then we need to initialize the vertical datum conversion.
-        if (vdcNGVD29 == elevationDatumCode)
-            if (0 != CSvrtconInit())
-                return REPROJECT_CSMAPERR_VerticalDatumConversionError;
-
         VerticalDatumConverter* vertConverter =  new VerticalDatumConverter (IsNAD27(), vdcEllipsoid, elevationDatumCode);
+        if (nullptr == vertConverter->GetLegacyConverter())
+            {
+            delete vertConverter;
+            return REPROJECT_CSMAPERR_VerticalDatumConversionError;
+            }
 
         GeoPoint inLatLong = {outLatLong.longitude, outLatLong.latitude, outLatLong.elevation};
 
@@ -23125,12 +23147,12 @@ GeoPointCR      inLatLong
         // Elevation is not local ellipsoid based which is the required input of the geocentric function
         // We must convert
 
-        // If elevation datum is NGVD29 based then we need to initialize the vertical datum conversion.
-        if (vdcNGVD29 == elevationDatumCode)
-            if (0 != CSvrtconInit())
-                return REPROJECT_CSMAPERR_VerticalDatumConversionError;
-
         VerticalDatumConverter* vertConverter =  new VerticalDatumConverter (IsNAD27(), elevationDatumCode, vdcEllipsoid);
+        if (nullptr == vertConverter->GetLegacyConverter())
+            {
+            delete vertConverter;
+            return REPROJECT_CSMAPERR_VerticalDatumConversionError;
+            }
 
         vertConverter->ConvertElevation (effectInLatLong, inLatLong, inLatLong);
 
@@ -25360,7 +25382,9 @@ StatusInt         Datum::ToJson(BeJsValue jsonValue, bool expandEllipsoid, bool 
         return ERROR;
 
     // Now we need to obtain the geodetic transformation to WGS84
-    static DatumCP wgs84Datum = Datum::CreateDatum("WGS84");
+    static DatumCP wgs84Datum = nullptr;
+    if (nullptr == wgs84Datum)
+        wgs84Datum = Datum::CreateDatum("WGS84");
 
     if (wgs84Datum == nullptr)
         return ERROR;
@@ -25923,7 +25947,7 @@ bool            Datum::IsWGS84Coincident () const
         return true;
 
     // Now we need to obtain the geodetic transformation to WGS84
-    static DatumCP wgs84Datum;
+    static DatumCP wgs84Datum = nullptr;
     if (nullptr == wgs84Datum)
         wgs84Datum = Datum::CreateDatum("WGS84");
 
@@ -26723,7 +26747,7 @@ bool            Datum::IsEquivalent (DatumCR compareTo, bool looselyCompare) con
     // Now we obtain the DatumTransform to WGS84 for both
 
     // Now we need to obtain the geodetic transformation to WGS84
-    static DatumCP wgs84Datum;
+    static DatumCP wgs84Datum = nullptr;
     if (nullptr == wgs84Datum)
         wgs84Datum = Datum::CreateDatum("WGS84");
 
@@ -29830,7 +29854,9 @@ GeodeticTransformPathP         GeodeticTransformPath::CreateToWgs84
     if (!BaseGCS::IsLibraryInitialized())
         return NULL;
 
-    static DatumCP wgs84Datum = Datum::CreateDatum("WGS84");
+    static DatumCP wgs84Datum = nullptr;
+    if (nullptr == wgs84Datum)
+        wgs84Datum = Datum::CreateDatum("WGS84");
     if (nullptr == wgs84Datum)
         return nullptr;
 

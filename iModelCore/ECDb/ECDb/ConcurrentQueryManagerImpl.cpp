@@ -90,7 +90,9 @@ std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGet(Utf8CP ecsql, ECSq
             m_cache.erase(iter);
             m_cache.insert(m_cache.begin(), entry);
         }
-        if (!resumed) {
+        if (resumed) {
+            entry->ClearParkedCursor();
+        } else {
             entry->GetStatement().Reset();
             entry->GetStatement().ClearBindings();
         }
@@ -421,8 +423,10 @@ void QueryAdaptorCache::Park(CachedQueryAdaptor& adaptor, ECSqlRequest const& re
     RefreshCursorConfig();
     if (!CanPark() || request.UsePrimaryConnection() ||
         adaptor.GetStatement().TryGetParameterIndex(LIMIT_VAR_COUNT) <= 0 ||
-        adaptor.GetStatement().TryGetParameterIndex(LIMIT_VAR_OFFSET) <= 0)
+        adaptor.GetStatement().TryGetParameterIndex(LIMIT_VAR_OFFSET) <= 0) {
+        adaptor.ResetCursor();
         return;
+    }
     uint32_t parked = 0;
     for (auto const& entry : m_cache)
         if (entry.get() != &adaptor && entry->IsParked())
@@ -466,6 +470,7 @@ void CachedConnection::SyncAttachDbs() {
     std::once_flag cachedClearFlag;
     auto reset = [&]() {
         m_adaptorCache.Reset();
+        SyncCursorHints();
         m_db.ClearECDbCache();
     };
 
@@ -516,12 +521,19 @@ void CachedConnection::SyncAttachDbs() {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void CachedConnection::Execute(std::function<void(QueryAdaptorCache&,RunnableRequestBase&)> cb, std::unique_ptr<RunnableRequestBase> request) {
+void CachedConnection::Execute(std::function<void(QueryAdaptorCache&,RunnableRequestBase&)> cb, std::unique_ptr<RunnableRequestBase> request, std::unique_ptr<RunnableRequestBase>* completedRequest) {
     // Drop this connection's caches if the primary's file data version changed (schema import /
     // changeset apply) so the worker re-prepares against current schemas.
     // A query executor thread must never let an exception escape: an unhandled exception on a worker
     // thread terminates the process, and the request's promise would never be satisfied, so callers
     // blocked in Future::Get()/Wait() would hang forever. Convert any failure into an error response.
+    auto finishRequest = [&]() {
+        auto done = ClearRequest();
+        if (completedRequest != nullptr)
+            *completedRequest = std::move(done);
+        else if (done != nullptr)
+            done->PublishPendingResponse();
+    };
     try {
         auto dataVersion = m_cache.GetDataVersion();
         {
@@ -531,7 +543,7 @@ void CachedConnection::Execute(std::function<void(QueryAdaptorCache&,RunnableReq
             RefreshIfPrimaryChanged(dataVersion);
         }
         cb(m_adaptorCache, *m_request);
-        ClearRequest();
+        finishRequest();
         return;
     } catch (std::exception const& ex) {
         {
@@ -539,9 +551,11 @@ void CachedConnection::Execute(std::function<void(QueryAdaptorCache&,RunnableReq
             m_adaptorCache.Reset();
         }
         if (m_request != nullptr && !m_request->IsCompleted())
-            m_request->SetResponse(m_request->CreateErrorResponse(QueryResponse::Status::Error, ex.what()));
-        else if (request != nullptr && !request->IsCompleted())
-            request->SetResponse(request->CreateErrorResponse(QueryResponse::Status::Error, ex.what()));
+            m_request->StageResponse(m_request->CreateErrorResponse(QueryResponse::Status::Error, ex.what()));
+        else if (request != nullptr && !request->IsCompleted()) {
+            request->StageResponse(request->CreateErrorResponse(QueryResponse::Status::Error, ex.what()));
+            SetRequest(std::move(request));
+        }
         log_error("%s unhandled exception while executing query: %s", GetTimestamp().c_str(), ex.what());
     } catch (...) {
         {
@@ -549,17 +563,19 @@ void CachedConnection::Execute(std::function<void(QueryAdaptorCache&,RunnableReq
             m_adaptorCache.Reset();
         }
         if (m_request != nullptr && !m_request->IsCompleted())
-            m_request->SetResponse(m_request->CreateErrorResponse(QueryResponse::Status::Error, "unknown error while executing query"));
-        else if (request != nullptr && !request->IsCompleted())
-            request->SetResponse(request->CreateErrorResponse(QueryResponse::Status::Error, "unknown error while executing query"));
+            m_request->StageResponse(m_request->CreateErrorResponse(QueryResponse::Status::Error, "unknown error while executing query"));
+        else if (request != nullptr && !request->IsCompleted()) {
+            request->StageResponse(request->CreateErrorResponse(QueryResponse::Status::Error, "unknown error while executing query"));
+            SetRequest(std::move(request));
+        }
         log_error("%s unhandled non-standard exception while executing query.", GetTimestamp().c_str());
     }
-    ClearRequest();
+    finishRequest();
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void CachedConnection::ClearRequest() {
+std::unique_ptr<RunnableRequestBase> CachedConnection::ClearRequest() {
     recursive_guard_t lock(m_mutexReq);
     // Only drop retained cursors; keep the prepared statements so later queries avoid a re-prepare.
     if (m_clearCursorsOnCompletion || (m_request && (m_request->IsCancelled() || m_request->IsInterrupted())))
@@ -568,6 +584,12 @@ void CachedConnection::ClearRequest() {
         m_adaptorCache.DropCursors(token);
     m_pendingRestarts.clear();
     m_clearCursorsOnCompletion = false;
+    SyncCursorHints();
+    return std::move(m_request);
+}
+
+void CachedConnection::SyncCursorHints() {
+    recursive_guard_t lock(m_mutexReq);
     size_t hints = 0;
     for (auto const& entry : m_adaptorCache.m_cache) {
         if (!entry->m_cursor)
@@ -579,7 +601,6 @@ void CachedConnection::ClearRequest() {
         ++hints;
     }
     m_cursorHints.resize(hints);
-    m_request = nullptr;
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -618,6 +639,7 @@ CachedConnection::~CachedConnection() {
 void CachedConnection::Reset(bool detachDbs) {
     recursive_guard_t lock(m_mutexReq);
     m_adaptorCache.Reset();
+    SyncCursorHints();
     m_db.ClearECDbCache();
     if (detachDbs) {
         m_db.DetachChangeCache();
@@ -631,9 +653,10 @@ void CachedConnection::RefreshIfPrimaryChanged(uint64_t dataVersion) {
     if (!m_db.IsDbOpen())
         return;
 
-    if (dataVersion != m_dataVersion) {
+    if (dataVersion > m_dataVersion) {
         // Row adaptors hold schema references; destroy them before clearing the schema cache.
         m_adaptorCache.Reset();
+        SyncCursorHints();
         m_db.ClearECDbCache();
         m_db.ClearDbCache();
         m_dataVersion = dataVersion;
@@ -655,9 +678,10 @@ bool CachedConnection::HasCursor(ECSqlRequest const& request, std::string const&
 
 void CachedConnection::ExpireCursors(QueryRequest const* incoming, std::string const& argsKey) {
     recursive_guard_t lock(m_mutexReq);
-    if (m_request == nullptr)
+    if (m_request == nullptr) {
         m_adaptorCache.ExpireCursors(incoming, argsKey);
-    else if (incoming && !incoming->GetRestartToken().empty() &&
+        SyncCursorHints();
+    } else if (incoming && !incoming->GetRestartToken().empty() &&
         std::find(m_pendingRestarts.begin(), m_pendingRestarts.end(), incoming->GetRestartToken()) == m_pendingRestarts.end()) {
         // Never touch statements being stepped by another thread, or accumulate unbounded restart tokens.
         if (m_pendingRestarts.size() < MAX_STATEMENT_CACHE_SIZE_PER_WORKER)
@@ -672,6 +696,7 @@ void CachedConnection::ExpireCursors(uint64_t dataVersion) {
     if (m_request == nullptr) {
         RefreshIfPrimaryChanged(dataVersion);
         m_adaptorCache.ExpireCursors();
+        SyncCursorHints();
     }
 }
 
@@ -878,11 +903,6 @@ uint64_t ConnectionCache::GetDataVersion() {
     // lock) nor the schema-source mutex (held across slow worker prepares). The dedicated observer
     // connection and the version bookkeeping are guarded by their own short-lived mutex.
     guard_t lock(m_versionMutex);
-    uint32_t primaryVersion;
-    if (GetPrimaryDb().GetFileDataVersion(primaryVersion) != BE_SQLITE_OK) {
-        m_observerAvailable = false;
-        throw std::runtime_error("failed to read primary data version for concurrent query");
-    }
     int64_t observerVersion = 0;
     if (IsCursorRoutingEnabled()) {
         if (m_observerConn == nullptr && !m_observerOpenFailed && m_primaryDb.IsDbOpen()) {
@@ -904,6 +924,11 @@ uint64_t ConnectionCache::GetDataVersion() {
             observerVersion = stmt->GetValueInt64(0);
             m_observerAvailable = true;
         }
+    }
+    uint32_t primaryVersion;
+    if (GetPrimaryDb().GetFileDataVersion(primaryVersion) != BE_SQLITE_OK) {
+        m_observerAvailable = false;
+        throw std::runtime_error("failed to read primary data version for concurrent query");
     }
     if (m_dataVersion == 0 || primaryVersion != m_primaryDataVersion || observerVersion != m_observerDataVersion) {
         ++m_dataVersion;
@@ -1459,11 +1484,30 @@ bool RunnableRequestQueue::CancelRequest(uint32_t id) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void RunnableRequestBase::SetResponse(QueryResponse::Ptr response) {
-    // Publish completion before notifying clients that may immediately submit a restart.
+void RunnableRequestBase::StageResponse(QueryResponse::Ptr response) {
+    // Mark completed before parking/releasing the connection so concurrent restarts do not
+    // interrupt an already-finished request, then publish once the connection is idle.
     if (m_isCompleted.exchange(true))
         throw std::runtime_error("already responded");
-    try { _SetResponse(response); } catch(std::exception) {}
+    m_pendingResponse = std::move(response);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void RunnableRequestBase::PublishPendingResponse() {
+    if (m_pendingResponse == nullptr)
+        return;
+    auto response = std::move(m_pendingResponse);
+    try { _SetResponse(std::move(response)); } catch(std::exception) {}
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void RunnableRequestBase::SetResponse(QueryResponse::Ptr response) {
+    StageResponse(std::move(response));
+    PublishPendingResponse();
 }
 
 
@@ -1725,8 +1769,17 @@ Utf8CP QueryResponse::StatusToString(QueryResponse::Status status) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-std::optional<uint32_t> QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase& runnableRequest) {
+void QueryHelper::Execute(QueryAdaptorCache& adaptorCache, CachedQueryAdaptor& cachedAdaptor, std::string const& argsKey, RunnableRequestBase& runnableRequest) {
     enum class status { partial, done };
+    struct StatementGuard final {
+        CachedQueryAdaptor& m_adaptor;
+        bool m_keepCursor = false;
+        ~StatementGuard() {
+            if (!m_keepCursor) {
+                m_adaptor.ResetCursor();
+            }
+        }
+    } statementGuard{cachedAdaptor};
     auto& request= runnableRequest.GetRequest().GetAsConst<ECSqlRequest>();
     const auto abbreviateBlobs = request.GetAbbreviateBlobs();
     const auto includeMetaData= request.GetIncludeMetaData();
@@ -1762,15 +1815,33 @@ std::optional<uint32_t> QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, 
     std::string& result = cachedAdaptor.ClearAndGetCachedString();
     result.reserve(QUERY_WORKER_RESULT_RESERVE_BYTES);
     result.append("[");
-    auto setResult = [&](status st) {
+    auto finalizeCursor = [&](bool canPark) {
+        if (canPark && !runnableRequest.IsCancelled() && !runnableRequest.IsInterrupted() &&
+            runnableRequest.GetQueue().GetState() == RunnableRequestQueue::State::Running) {
+            adaptorCache.Park(cachedAdaptor, request, argsKey, row_count);
+            statementGuard.m_keepCursor = cachedAdaptor.IsParked();
+        } else {
+            cachedAdaptor.ResetCursor();
+            statementGuard.m_keepCursor = true;
+        }
+        adaptorCache.GetConnection().SyncCursorHints();
+    };
+    auto setResult = [&](status st, bool canPark) {
         result.append("]");
-        if (runnableRequest.IsCancelled())
-            runnableRequest.SetResponse(runnableRequest.CreateCancelResponse());
-        else
-            runnableRequest.SetResponse(runnableRequest.CreateECSqlResponse(result, props, row_count, st == status::done));
+        QueryResponse::Ptr response;
+        if (runnableRequest.IsCancelled()) {
+            response = runnableRequest.CreateCancelResponse();
+            runnableRequest.StageResponse(std::move(response));
+            finalizeCursor(false);
+        } else {
+            response = runnableRequest.CreateECSqlResponse(result, props, row_count, st == status::done);
+            runnableRequest.StageResponse(std::move(response));
+            finalizeCursor(canPark);
+        }
     };
     auto setError = [&] (QueryResponse::Status status, std::string err) {
-        runnableRequest.SetResponse(runnableRequest.CreateErrorResponse(status, err));
+        runnableRequest.StageResponse(runnableRequest.CreateErrorResponse(status, err));
+        finalizeCursor(false);
         log_error("%s. (%s)", err.c_str(), QueryResponse::StatusToString(status));
     };
 
@@ -1810,7 +1881,7 @@ std::optional<uint32_t> QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, 
         }
         if (!written) {
             setError(QueryResponse::Status::Error_ECSql_RowToJsonFailed, "failed to serialize ecsql statement row to json");
-            return std::nullopt;
+            return;
         }
         ++row_count;
         if (row_count > 1)
@@ -1819,21 +1890,22 @@ std::optional<uint32_t> QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, 
 
         if (result.size() > V8_MAX_STRING_SIZE) {
             cachedAdaptor.ReleaseMemory();
+            statementGuard.m_keepCursor = true;
             log_trace("%s result size exceeded V8_MAX_STRING_SIZE [id=%" PRIu32 "]",GetTimestamp().c_str(), runnableRequest.GetId());
             setError(QueryResponse::Status::Error, "result size exceeded maximum allowed size");
-            return std::nullopt;
+            return;
         }
 
         if (runnableRequest.IsTimeOrMemoryExceeded(result)) {
             log_trace("%s time or memory exceeded for request [id=%" PRIu32 "]",GetTimestamp().c_str(), runnableRequest.GetId());
-            setResult(status::partial);
-            return row_count;
+            setResult(status::partial, true);
+            return;
         }
         rc = stmt.Step();
     }
 
     if (rc == BE_SQLITE_INTERRUPT || rc == BE_SQLITE_BUSY) {
-        setResult(status::partial);
+        setResult(status::partial, false);
     } else if (rc != BE_SQLITE_DONE) {
         DbResult lastError;
         std::string sqlStepError = cachedAdaptor.GetWorkerConn()->GetLastError(&lastError);
@@ -1844,16 +1916,15 @@ std::optional<uint32_t> QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, 
             setError(QueryResponse::Status::Error_ECSql_StepFailed, "concurrent query step() failed");
         }
     } else {
-        setResult(status::done);
+        setResult(status::done, false);
     }
-    return std::nullopt;
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 void QueryHelper::ReadBlob(ECDbCR conn, RunnableRequestBase& runnableRequest) {
     auto setError = [&] (QueryResponse::Status status, std::string err) {
-        runnableRequest.SetResponse(runnableRequest.CreateErrorResponse(status, err));
+        runnableRequest.StageResponse(runnableRequest.CreateErrorResponse(status, err));
       log_error("%s. (%s)", err.c_str(), QueryResponse::StatusToString(status));
     };
     auto& request  =runnableRequest.GetRequest().GetAsConst<BlobIORequest>();
@@ -1872,7 +1943,7 @@ void QueryHelper::ReadBlob(ECDbCR conn, RunnableRequestBase& runnableRequest) {
     const auto blobLength = (uint32_t)blobIo.GetNumBytes();
     std::vector<uint8_t> buffer;
     if (blobLength == 0) {
-        runnableRequest.SetResponse(runnableRequest.CreateBlobIOResponse(buffer, true, blobLength));
+        runnableRequest.StageResponse(runnableRequest.CreateBlobIOResponse(buffer, true, blobLength));
         return;
     }
 
@@ -1891,7 +1962,7 @@ void QueryHelper::ReadBlob(ECDbCR conn, RunnableRequestBase& runnableRequest) {
     buffer.resize(numBytes);
     auto rc = blobIo.Read(&buffer[0], (int)numBytes, offset);
     if (rc == BE_SQLITE_OK) {
-        runnableRequest.SetResponse(runnableRequest.CreateBlobIOResponse(buffer, true, blobLength));
+        runnableRequest.StageResponse(runnableRequest.CreateBlobIOResponse(buffer, true, blobLength));
         return;
     }
     setError(QueryResponse::Status::Error, "BlobIO: unable to read blob due to sqlite error");
@@ -1903,10 +1974,10 @@ void QueryHelper::ReadBlob(ECDbCR conn, RunnableRequestBase& runnableRequest) {
 void QueryHelper::Execute(QueryAdaptorCache& adaptorCache, RunnableRequestBase& runnableRequest) {
 
     auto setError = [&] (QueryResponse::Status status, std::string err) {
-        runnableRequest.SetResponse(runnableRequest.CreateErrorResponse(status, err));
+        runnableRequest.StageResponse(runnableRequest.CreateErrorResponse(status, err));
     };
     if (runnableRequest.IsTimeExceeded()) {
-        runnableRequest.SetResponse(runnableRequest.CreateTimeoutResponse());
+        runnableRequest.StageResponse(runnableRequest.CreateTimeoutResponse());
         return;
     }
     if (runnableRequest.GetRequest().GetKind() == QueryRequest::Kind::BlobIO) {
@@ -1933,16 +2004,16 @@ void QueryHelper::Execute(QueryAdaptorCache& adaptorCache, RunnableRequestBase& 
             recordPrepareTime();
             if(isShutDownInProgress) {
                 log_error("%s cancelling request [id=%" PRIu32 "] because %s.", GetTimestamp().c_str(), runnableRequest.GetId(), err.c_str());
-                runnableRequest.SetResponse(runnableRequest.CreateShutDownResponse());
+                runnableRequest.StageResponse(runnableRequest.CreateShutDownResponse());
                 return;
             }
             if (status.IsSQLiteError()) {
                 if (status.GetSQLiteError() == BE_SQLITE_INTERRUPT) {
                     if (runnableRequest.IsCancelled()) {
-                        runnableRequest.SetResponse(runnableRequest.CreateCancelResponse());
+                        runnableRequest.StageResponse(runnableRequest.CreateCancelResponse());
                         return;
                     } else if (runnableRequest.IsTimeExceeded()){
-                        runnableRequest.SetResponse(runnableRequest.CreateTimeoutResponse());
+                        runnableRequest.StageResponse(runnableRequest.CreateTimeoutResponse());
                         return;
                     }
                 }
@@ -1950,27 +2021,19 @@ void QueryHelper::Execute(QueryAdaptorCache& adaptorCache, RunnableRequestBase& 
             setError(QueryResponse::Status::Error_ECSql_PreparedFailed, err);
             return;
         }
-        struct StatementGuard final {
-            CachedQueryAdaptor& m_adaptor;
-            bool m_keepCursor = false;
-            ~StatementGuard() { if (!m_keepCursor) m_adaptor.ResetCursor(); }
-        } statementGuard{*adaptor};
         runnableRequest.SetResumed(resumed);
         if (!resumed) {
             if (!request.GetArgs().TryBindTo(adaptor->GetStatement(), err)) {
                 recordPrepareTime();
+                adaptor->ResetCursor();
+                adaptorCache.GetConnection().SyncCursorHints();
                 setError(QueryResponse::Status::Error_ECSql_BindingFailed, err);
                 return;
             }
             BindLimits(adaptor->GetStatement(), request.GetLimit());
         }
         recordPrepareTime();
-        auto rowCount = QueryHelper::Execute(*adaptor, runnableRequest);
-        if (rowCount && !runnableRequest.IsCancelled() && !runnableRequest.IsInterrupted() &&
-            runnableRequest.GetQueue().GetState() == RunnableRequestQueue::State::Running) {
-            adaptorCache.Park(*adaptor, request, argsKey, *rowCount);
-            statementGuard.m_keepCursor = adaptor->IsParked();
-        }
+        QueryHelper::Execute(adaptorCache, *adaptor, argsKey, runnableRequest);
     } else {
         setError(QueryResponse::Status::Error, "unsupported kind of request");
     }
@@ -1999,6 +2062,7 @@ QueryExecutor::QueryExecutor(RunnableRequestQueue& queue, ECDbCR primaryDb, uint
                         runnableQuery->GetId(),
                         runnableQuery->GetConnectionId());
 
+                    std::unique_ptr<RunnableRequestBase> completedQuery;
                     conn->Execute([](QueryAdaptorCache& adaptorCache, RunnableRequestBase& runnableQuery) {
                         log_trace("%s executing [exec_id=%" PRIu32 ", conn_id=%" PRIu32 ", req_id=%" PRIu32 "] started.",
                             GetTimestamp().c_str() ,
@@ -2016,7 +2080,7 @@ QueryExecutor::QueryExecutor(RunnableRequestQueue& queue, ECDbCR primaryDb, uint
                             BeAssert(false && "primary-connection request must not run on a worker thread");
                             log_error("%s primary-connection request [id=%" PRIu32 "] reached worker thread; refusing to avoid deadlock.",
                                 GetTimestamp().c_str(), runnableQuery.GetId());
-                            runnableQuery.SetResponse(runnableQuery.CreateErrorResponse(
+                            runnableQuery.StageResponse(runnableQuery.CreateErrorResponse(
                                 QueryResponse::Status::Error,
                                 "primary-connection request must be executed synchronously on the caller thread"));
                         } else {
@@ -2029,8 +2093,10 @@ QueryExecutor::QueryExecutor(RunnableRequestQueue& queue, ECDbCR primaryDb, uint
                             runnableQuery.GetConnectionId(),
                             runnableQuery.GetId());
 
-                    },std::move(runnableQuery));
+                    }, std::move(runnableQuery), &completedQuery);
                     conn.reset();
+                    if (completedQuery != nullptr)
+                        completedQuery->PublishPendingResponse();
                     m_queue.m_cond.notify_all();
                 }
             } while(m_queue.GetState() != RunnableRequestQueue::State::Stop);

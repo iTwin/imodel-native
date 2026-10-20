@@ -400,20 +400,26 @@ void ChangedElementsManager::ChangedElementsToJSON(BeJsValue val, ChangedElement
 //---------------------------------------------------------------------------------------
 DbResult ChangedElementsManager::ProcessChangesets(ECDbR cacheDb, Utf8String rulesetId, bvector<ChangesetPropsPtr> const& revisions)
     {
-    bool multiProcessing = revisions.size() > 1;
+    if (revisions.empty())
+        return BE_SQLITE_OK;
+
+    bvector<ChangesetPropsPtr> processedRevisions = revisions;
+    bool multiProcessing = processedRevisions.size() > 1;
+    // Process the parent chain forwards, regardless of timestamp resolution or input direction.
+    if (multiProcessing && processedRevisions[0]->GetParentId().Equals(processedRevisions[1]->GetChangesetId()))
+        std::reverse(processedRevisions.begin(), processedRevisions.end());
+
+    for (size_t i = 1; i < processedRevisions.size(); ++i)
+        {
+        if (!processedRevisions[i]->GetParentId().Equals(processedRevisions[i - 1]->GetChangesetId()))
+            {
+            LOG.errorv("Changesets must form a consecutive parent chain.");
+            return BE_SQLITE_ERROR;
+            }
+        }
+
     // Clone briefcase so that we may roll it if we have multiple changesets to process
     BeFileName dbFilename = multiProcessing ? CloneDb(m_dbFilename) : m_dbFilename;
-
-    bvector<ChangesetPropsPtr> processedRevisions;
-    for (ChangesetPropsPtr rev : revisions)
-        processedRevisions.push_back(rev);
-
-    // We always have to process from newest to oldest
-    DateTime firstDate = (*revisions[0]).GetDateTime();
-    DateTime lastDate = (*revisions[revisions.size() - 1]).GetDateTime();
-	// Process forwards
-    if (DateTime::Compare(firstDate, lastDate) != DateTime::CompareResult::EarlierThan)
-        std::reverse(processedRevisions.begin(), processedRevisions.end());
 
     // Use version compare change summary to generate the changed elements list
     for (ChangesetPropsPtr revision : processedRevisions)
@@ -469,47 +475,68 @@ DbResult ChangedElementsManager::ProcessChangesets(ECDbR cacheDb, Utf8String rul
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+static DbResult QueryChangesetRange(bvector<ECInstanceId>& changesetIds, ECDbR cacheDb, Utf8StringCR startChangesetId, Utf8StringCR endChangesetId)
+    {
+    struct CachedChangeset
+        {
+        ECInstanceId m_instanceId;
+        Utf8String m_parentId;
+        };
+
+    // ChangesetId has no index in existing caches. Read the links once instead of scanning for every parent.
+    bmap<Utf8String, CachedChangeset> changesets;
+    ECSqlStatement stmt;
+    if (ECSqlStatus::Success != stmt.Prepare(cacheDb, "SELECT ECInstanceId, ChangesetId, ParentId FROM chems.Changeset"))
+        return BE_SQLITE_ERROR;
+
+    DbResult result;
+    while (BE_SQLITE_ROW == (result = stmt.Step()))
+        {
+        CachedChangeset changeset{stmt.GetValueId<ECInstanceId>(0), stmt.GetValueText(2)};
+        if (!changesets.emplace(stmt.GetValueText(1), changeset).second)
+            return BE_SQLITE_ERROR;
+        }
+    if (result != BE_SQLITE_DONE)
+        return result;
+
+    auto collectRange = [&](Utf8StringCR oldestId, Utf8String newestId)
+        {
+        changesetIds.clear();
+        // Bound traversal so a corrupt parent cycle cannot loop indefinitely.
+        for (size_t remaining = changesets.size(); remaining > 0; --remaining)
+            {
+            auto entry = changesets.find(newestId);
+            if (entry == changesets.end())
+                return false;
+
+            changesetIds.push_back(entry->second.m_instanceId);
+            if (newestId.Equals(oldestId))
+                {
+                std::reverse(changesetIds.begin(), changesetIds.end());
+                return true;
+                }
+            newestId = entry->second.m_parentId;
+            }
+        return false;
+        };
+
+    if (collectRange(startChangesetId, endChangesetId) || collectRange(endChangesetId, startChangesetId))
+        return BE_SQLITE_OK;
+
+    changesetIds.clear();
+    LOG.errorv("Changeset range is not a complete parent chain in the cache.");
+    return BE_SQLITE_ERROR;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 DbResult ChangedElementsManager::GetChangedElements(ECDbR cacheDb, ChangedElementsMap& changedElementsMap, Utf8String startChangesetId, Utf8String endChangesetId)
     {
-    // Find changesets in range
-    ECSqlStatement stmt;
-    stmt.Prepare(cacheDb, "SELECT PushDate FROM chems.Changeset WHERE ChangesetId=?");
-    stmt.BindText(1, startChangesetId.c_str(), IECSqlBinder::MakeCopy::No);
-    if (BE_SQLITE_ROW != stmt.Step())
-        return BE_SQLITE_ERROR;
-
-    // Check if null
-    if (stmt.IsValueNull(0))
-        {
-        LOG.errorv("PushDate is null on changeset entry");
-        return BE_SQLITE_ERROR;
-        }
-
-    DateTime startTime = stmt.GetValueDateTime(0);
-    stmt.Reset();
-    stmt.ClearBindings();
-
-    stmt.BindText(1, endChangesetId.c_str(), IECSqlBinder::MakeCopy::No);
-    if (BE_SQLITE_ROW != stmt.Step())
-        return BE_SQLITE_ERROR;
-
-    // Check if null
-    if (stmt.IsValueNull(0))
-        {
-        LOG.errorv("PushDate is null on changeset entry");
-        return BE_SQLITE_ERROR;
-        }
-
-    DateTime endTime = stmt.GetValueDateTime(0);
-    stmt.Reset();
-    stmt.Finalize();
-
-    // Find all changesets in range and order them
-    stmt.Prepare(cacheDb, "SELECT ECInstanceId FROM chems.Changeset WHERE PushDate >= ? AND PushDate <= ? ORDER BY PushDate ASC");
-	bool startTimeIsLater = (DateTime::Compare(startTime, endTime) == DateTime::CompareResult::LaterThan);
-	stmt.BindDateTime(1, startTimeIsLater ? endTime : startTime);
-	stmt.BindDateTime(2, startTimeIsLater ? startTime : endTime);
-
+    bvector<ECInstanceId> changesetIds;
+    DbResult result = QueryChangesetRange(changesetIds, cacheDb, startChangesetId, endChangesetId);
+    if (result != BE_SQLITE_OK)
+        return result;
 
     // Clear the map before populating it
     changedElementsMap.clear();
@@ -517,11 +544,8 @@ DbResult ChangedElementsManager::GetChangedElements(ECDbR cacheDb, ChangedElemen
     // Select data for the elements
     ECSqlStatement elementStmt;
     elementStmt.Prepare(cacheDb, "SELECT ChangedInstance.Id, ChangedInstance.ClassId, OpCode, ModelId, BBoxLow, BBoxHigh, ChangesType, Properties, PropertyOldChecksums, PropertyNewChecksums, Parent.Id, Parent.ClassId FROM chems.InstanceChange WHERE Changeset.Id=?");
-    // bvector<ECInstanceId> changesetIds;
-    while(stmt.Step() == BE_SQLITE_ROW)
+    for (ECInstanceId id : changesetIds)
         {
-        ECInstanceId id = stmt.GetValueId<ECInstanceId>(0);
-
         elementStmt.BindId(1, id);
         while(elementStmt.Step() == BE_SQLITE_ROW)
             {
@@ -577,7 +601,6 @@ DbResult ChangedElementsManager::GetChangedElements(ECDbR cacheDb, ChangedElemen
         elementStmt.ClearBindings();
         }
 
-    stmt.Finalize();
     elementStmt.Finalize();
 
     return BE_SQLITE_OK;
@@ -588,43 +611,10 @@ DbResult ChangedElementsManager::GetChangedElements(ECDbR cacheDb, ChangedElemen
 //---------------------------------------------------------------------------------------
 DbResult ChangedElementsManager::GetChangedModels(ECDbR cacheDb, bmap<DgnModelId, AxisAlignedBox3d>& changedModels, Utf8String startChangesetId, Utf8String endChangesetId)
     {
-    // Find changesets in range
-    ECSqlStatement stmt;
-    stmt.Prepare(cacheDb, "SELECT PushDate FROM chems.Changeset WHERE ChangesetId=?");
-    stmt.BindText(1, startChangesetId.c_str(), IECSqlBinder::MakeCopy::No);
-    if (BE_SQLITE_ROW != stmt.Step())
-        return BE_SQLITE_ERROR;
-
-    // Check if null
-    if (stmt.IsValueNull(0))
-        {
-        LOG.errorv("PushDate is null on changeset entry");
-        return BE_SQLITE_ERROR;
-        }
-
-    DateTime startTime = stmt.GetValueDateTime(0);
-    stmt.Reset();
-    stmt.ClearBindings();
-
-    stmt.BindText(1, endChangesetId.c_str(), IECSqlBinder::MakeCopy::No);
-    if (BE_SQLITE_ROW != stmt.Step())
-        return BE_SQLITE_ERROR;
-
-    // Check if null
-    if (stmt.IsValueNull(0))
-        {
-        LOG.errorv("PushDate is null on changeset entry");
-        return BE_SQLITE_ERROR;
-        }
-
-    DateTime endTime = stmt.GetValueDateTime(0);
-    stmt.Reset();
-    stmt.Finalize();
-
-    // Find all changesets in range and order them
-    stmt.Prepare(cacheDb, "SELECT ECInstanceId FROM chems.Changeset WHERE PushDate >= ? AND PushDate <= ? ORDER BY PushDate DESC");
-    stmt.BindDateTime(1, startTime);
-    stmt.BindDateTime(2, endTime);
+    bvector<ECInstanceId> changesetIds;
+    DbResult result = QueryChangesetRange(changesetIds, cacheDb, startChangesetId, endChangesetId);
+    if (result != BE_SQLITE_OK)
+        return result;
 
     // Clear the map before populating it
     changedModels.clear();
@@ -632,13 +622,9 @@ DbResult ChangedElementsManager::GetChangedModels(ECDbR cacheDb, bmap<DgnModelId
     // Select data for the elements
     ECSqlStatement elementStmt;
     elementStmt.Prepare(cacheDb, "SELECT ModelId, BBoxLow, BBoxHigh FROM chems.ModelChange WHERE Changeset.Id=?");
-    // bvector<ECInstanceId> changesetIds;
-    while(stmt.Step() == BE_SQLITE_ROW)
+    for (auto id = changesetIds.rbegin(); id != changesetIds.rend(); ++id)
         {
-        ECInstanceId id = stmt.GetValueId<ECInstanceId>(0);
-        // changesetIds.push_back(stmt.GetValueId<ECInstanceId>(0));
-
-        elementStmt.BindId(1, id);
+        elementStmt.BindId(1, *id);
         while(elementStmt.Step() == BE_SQLITE_ROW)
             {
             // Process elements and accumulate change
@@ -663,7 +649,6 @@ DbResult ChangedElementsManager::GetChangedModels(ECDbR cacheDb, bmap<DgnModelId
         elementStmt.ClearBindings();
         }
 
-    stmt.Finalize();
     elementStmt.Finalize();
 
     return BE_SQLITE_OK;

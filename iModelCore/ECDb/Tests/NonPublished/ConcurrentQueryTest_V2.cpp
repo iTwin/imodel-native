@@ -309,6 +309,7 @@ TEST_F(ConcurrentQueryFixture, ScalarRenderingMatchesAcrossPagesAndOptions) {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ScalarRenderingMatchesAcrossPagesAndOptions.ecdb"));
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.EnableWalMode(true));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.TryExecuteSql("PRAGMA data_version"));
     auto config = ConcurrentQueryMgr::Config::GetDefault();
     config.SetWorkerThreadCount(1).SetQuota(QueryQuota(60s, 128));
     ConcurrentQueryMgr::Config::Reset(config);
@@ -1282,55 +1283,60 @@ TEST_F(ConcurrentQueryFixture, NativeReaderReplacesBatchDocuments) {
 }
 
 TEST_F(ConcurrentQueryFixture, CursorBusyOwnerFallsBack) {
-    struct GateFunc : BeSQLite::ScalarFunction {
-        std::promise<void> m_started;
-        std::promise<void> m_release;
-        std::shared_future<void> m_released;
-        std::atomic_bool m_completed{false};
-        GateFunc() : ScalarFunction("imodel_cursor_gate", 0), m_released(m_release.get_future().share()) {}
-        void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int, BeSQLite::DbValue*) override {
-            m_started.set_value();
-            m_released.wait_for(10s);
-            m_completed = true;
-            ctx.SetResultInt(1);
-        }
-    } gate;
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("CursorBusyOwnerFallsBack.ecdb"));
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.EnableWalMode(true));
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AddFunction(gate));
     auto config = ConcurrentQueryMgr::Config::GetDefault();
     config.SetWorkerThreadCount(2).SetQuota(QueryQuota(60s, 1));
     ConcurrentQueryMgr::Config::Reset(config);
-    {
-        ConcurrentQueryMgr mgr(m_ecdb);
-        auto page = [&](int offset) {
-            auto req = ECSqlRequest::MakeRequest(
-                "WITH sequence(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM sequence WHERE n<10) SELECT n FROM sequence");
-            req->SetCursorId("busy").SetLimit(QueryLimit(-1, offset));
-            return mgr.Enqueue(std::move(req)).Get();
-        };
-        EXPECT_EQ(QueryResponse::Status::Partial, page(0)->GetStatus());
-        auto started = gate.m_started.get_future();
-        auto busy = mgr.Enqueue(ECSqlRequest::MakeRequest("SELECT imodel_cursor_gate()"));
-        EXPECT_EQ(std::future_status::ready, started.wait_for(5s));
-        auto resp = page(1);
-        EXPECT_EQ(QueryResponse::Status::Partial, resp->GetStatus()) << resp->GetError();
-        EXPECT_FALSE(resp->GetStats().Resumed());
-        if (resp->IsSuccess())
-            EXPECT_EQ(2, BeJsDocument(resp->GetAsConst<ECSqlResponse>().asJsonString())[0][0].asInt());
-        EXPECT_FALSE(gate.m_completed.load());
-        auto unrelated = mgr.Enqueue(ECSqlRequest::MakeRequest("SELECT 42")).Get();
-        EXPECT_TRUE(unrelated->IsSuccess()) << unrelated->GetError();
-        if (unrelated->IsSuccess()) {
-            EXPECT_EQ(1u, unrelated->GetAsConst<ECSqlResponse>().GetRowCount());
-            EXPECT_EQ(42, BeJsDocument(unrelated->GetAsConst<ECSqlResponse>().asJsonString())[0][0].asInt());
-        }
-        EXPECT_FALSE(gate.m_completed.load());
-        gate.m_release.set_value();
-        EXPECT_TRUE(busy.Get()->IsSuccess());
-    }
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.RemoveFunction(gate));
+    RunnableRequestQueue queue(m_ecdb);
+    ConnectionCache conns(m_ecdb, 2);
+    auto makeRequest = [&](int offset) {
+        auto request = ECSqlRequest::MakeRequest(
+            "WITH sequence(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM sequence WHERE n<10) SELECT n FROM sequence");
+        request->SetCursorId("busy").SetLimit(QueryLimit(-1, offset));
+        return std::make_unique<RunnableRequestWithPromise>(queue, std::move(request), config.GetQuota(), offset + 1);
+    };
+    auto execute = [](QueryAdaptorCache& cache, RunnableRequestBase& request) {
+        QueryHelper::Execute(cache, request);
+    };
+    auto first = makeRequest(0);
+    auto firstResult = first->GetFuture();
+    auto owner = conns.GetConnection(*first);
+    ASSERT_NE(nullptr, owner);
+    owner->Execute(execute, std::move(first));
+    ASSERT_EQ(QueryResponse::Status::Partial, firstResult.Get()->GetStatus());
+
+    // Holding the owner reserves that exact connection, independently of worker scheduling.
+    auto waiting = makeRequest(1);
+    ASSERT_EQ(nullptr, conns.GetConnection(*waiting));
+    auto next = makeRequest(1);
+    auto result = next->GetFuture();
+    auto start = std::chrono::steady_clock::now() - RunnableRequestBase::kCursorAffinityWait;
+    ASSERT_TRUE(next->ShouldWaitForCursor(start));
+    ASSERT_FALSE(next->ShouldWaitForCursor(start + RunnableRequestBase::kCursorAffinityWait));
+    auto fallback = conns.GetConnection(*next);
+    ASSERT_NE(nullptr, fallback);
+    ASSERT_NE(owner->Id(), fallback->Id());
+    fallback->Execute(execute, std::move(next));
+    auto response = result.Get();
+    ASSERT_EQ(QueryResponse::Status::Partial, response->GetStatus()) << response->GetError();
+    EXPECT_FALSE(response->GetStats().Resumed());
+    ASSERT_EQ(1u, response->GetAsConst<ECSqlResponse>().GetRowCount());
+    EXPECT_EQ(2, BeJsDocument(response->GetAsConst<ECSqlResponse>().asJsonString())[0][0].asInt());
+    fallback.reset();
+
+    auto unrelated = std::make_unique<RunnableRequestWithPromise>(
+        queue, ECSqlRequest::MakeRequest("SELECT 42"), config.GetQuota(), 3);
+    auto unrelatedResult = unrelated->GetFuture();
+    auto otherConnection = conns.GetConnection(*unrelated);
+    ASSERT_NE(nullptr, otherConnection);
+    ASSERT_NE(owner->Id(), otherConnection->Id());
+    otherConnection->Execute(execute, std::move(unrelated));
+    auto unrelatedResponse = unrelatedResult.Get();
+    ASSERT_TRUE(unrelatedResponse->IsSuccess()) << unrelatedResponse->GetError();
+    ASSERT_EQ(1u, unrelatedResponse->GetAsConst<ECSqlResponse>().GetRowCount());
+    EXPECT_EQ(42, BeJsDocument(unrelatedResponse->GetAsConst<ECSqlResponse>().asJsonString())[0][0].asInt());
 }
 
 TEST_F(ConcurrentQueryFixture, CursorAffinityWaitIsBoundedAndReusesOwner) {

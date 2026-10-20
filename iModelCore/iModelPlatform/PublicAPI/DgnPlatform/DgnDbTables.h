@@ -634,6 +634,9 @@ public:
     void NewGCSStored () {m_hasCheckedForGCS = false;}
 
     //! @private
+    void InvalidateGCS();
+
+    //! @private
     //! Return a reasonable value that can be used if the project extents have never been established for this BIM.
     //! This is an arbitrary volume intended to represent a cube of a reasonable size, if we have no idea what is being modeled by
     //! this BIM. The default is (in meters) : [{-50,-50,-10},{50,50,30}]
