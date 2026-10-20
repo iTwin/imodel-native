@@ -475,9 +475,9 @@ private:
     DbTable(DbTable const&) = delete;
     DbTable& operator=(DbTable const&) = delete;
     DbColumn* AddColumn(DbColumnId, Utf8StringCR name, DbColumn::Type type, int position, DbColumn::Kind kind, PersistenceType persType);
-    static Utf8CP GetSharedColumnNamePrefix(Type);
 
 public:
+    static Utf8CP GetSharedColumnNamePrefix(Type);
     DbTable(DbTableId id, Utf8StringCR name, DbTableSpace const&, Type, ECN::ECClassId exclusiveRootClass, DbTable const* parentTable);
     ~DbTable() {}
 
