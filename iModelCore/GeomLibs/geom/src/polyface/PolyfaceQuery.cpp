@@ -15,6 +15,9 @@ ImplementNullArgPolyfaceQueryDispatcher1 (size_t,GetFaceCount)
 ImplementNullArgPolyfaceQueryDispatcher1 (size_t,GetParamCount)
 ImplementNullArgPolyfaceQueryDispatcher1 (size_t,GetColorCount)
 ImplementNullArgPolyfaceQueryDispatcher1 (size_t,GetPointIndexCount)
+ImplementNullArgPolyfaceQueryDispatcher1 (size_t,GetNormalIndexCount)
+ImplementNullArgPolyfaceQueryDispatcher1 (size_t,GetParamIndexCount)
+ImplementNullArgPolyfaceQueryDispatcher1 (size_t,GetColorIndexCount)
 ImplementNullArgPolyfaceQueryDispatcher1 (size_t,GetFaceIndexCount)
 ImplementNullArgPolyfaceQueryDispatcher1 (size_t,GetEdgeChainCount)
 
@@ -55,335 +58,8 @@ PolyfaceAuxDataCPtr PolyfaceQuery::GetAuxDataCP() const                         
 uint32_t            PolyfaceQuery::GetExpectedClosure() const { return _GetExpectedClosure(); }
 
 TaggedNumericData const *PolyfaceQuery::GetNumericTagsCP() const { return _GetNumericTagsCP();}
-void PolyfaceQuery::SetNumericTags (TaggedNumericData const & source) {_SetNumericTags (source);}
+void PolyfaceQuery::SetNumericTags (TaggedNumericData const & source) const {_SetNumericTags (source);}
 
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod
-+--------------------------------------------------------------------------------------*/
-template <typename T>
-void ReverseInRange (T *pIndex, size_t iFirst, size_t iLast)
-    {
-    T temp;
-    if (NULL == pIndex)
-        return;
-    for (; iFirst < iLast; iFirst++, iLast--)
-        {
-        temp = pIndex [iFirst];
-        pIndex[iFirst]= pIndex[iLast];
-        pIndex[iLast] = temp;
-        }
-    }
-
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod
-+--------------------------------------------------------------------------------------*/
-void AbsInRange(int32_t *pIndex, size_t iFirst, size_t iLast)
-    {
-    if (NULL == pIndex)
-        return;
-    for (size_t i = iFirst; i <= iLast; i++)
-        {
-        pIndex[i] = abs (pIndex[i]);
-        }
-    }
-
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod
-+--------------------------------------------------------------------------------------*/
-void NegativeAbsInRange(int32_t *pIndex, size_t iFirst, size_t iLast)
-    {
-    if (NULL == pIndex)
-        return;
-    for (size_t i = iFirst; i <= iLast; i++)
-        {
-        pIndex[i] = -abs (pIndex[i]);
-        }
-    }
-
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod
-+--------------------------------------------------------------------------------------*/
-void NegateInRange(int32_t *pIndex, size_t iFirst, size_t iLast)
-    {
-    if (NULL == pIndex)
-        return;
-    for (size_t i = iFirst; i <= iLast; i++)
-        {
-        pIndex[i] = -pIndex[i];
-        }
-    }
-
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod
-+--------------------------------------------------------------------------------------*/
-void ShiftSignsFromCyclicPredecessorsInRange(int32_t *pIndex, size_t kFirst, size_t kLast)
-    {
-    if (NULL == pIndex)
-        return;
-    int sign0 = pIndex[kLast] >= 0 ? 1 : -1;
-    int sign1;
-    for (size_t k = kFirst; k <= kLast; k++)
-        {
-        sign1 = pIndex[k] >= 0 ? 1 : -1;
-        pIndex[k] = sign0 * abs (pIndex[k]);
-        sign0 = sign1;
-        }
-    }
-
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod
-+--------------------------------------------------------------------------------------*/
-void PolyfaceQuery::ReverseIndicesOneFace
-(
-size_t        iFirst,
-size_t        iLast,
-BlockedVectorInt::IndexAction           normalArrayIndexAction
-)
-    {
-    int const*pPointIndex  = (int const*)GetPointIndexCP ();
-    int const*pNormalIndex = (int const*)GetNormalIndexCP ();
-    int const*pParamIndex  = (int const*)GetParamIndexCP ();
-    int const*pColorIndex  = (int const*)GetColorIndexCP ();
-
-    //TR #164587: preserve hidden edges in vertex index array
-    ShiftSignsFromCyclicPredecessorsInRange (const_cast<int*>(pPointIndex), iFirst, iLast);
-    ReverseInRange (const_cast<int*>(pPointIndex), iFirst, iLast);
-
-
-    if (pNormalIndex)
-        {
-        ReverseInRange (const_cast<int*>(pNormalIndex), iFirst, iLast);
-
-        if (normalArrayIndexAction == BlockedVectorInt::ForcePositive)
-            AbsInRange (const_cast<int*>(pNormalIndex), iFirst, iLast);
-        else if (normalArrayIndexAction == BlockedVectorInt::ForceNegative)
-            NegativeAbsInRange (const_cast<int*>(pNormalIndex), iFirst, iLast);
-        else if (normalArrayIndexAction == BlockedVectorInt::Negate)
-            NegateInRange (const_cast<int*>(pNormalIndex), iFirst, iLast);
-        }
-
-    if (pColorIndex)
-        ReverseInRange (const_cast<int*>(pColorIndex), iFirst, iLast);  // No sign effects for color indices.
-    if (pParamIndex)
-        ReverseInRange (const_cast<int*>(pParamIndex), iFirst, iLast);  // No sign effects for param indices.
-
-    if (GetAuxDataCP().IsValid())
-        ReverseInRange(const_cast<int32_t*> (GetAuxDataCP()->GetIndices().data()), iFirst, iLast);
-    }
-
-/** From given start position, find final (inclusive) position and position for next start search.
-  Initialize iFirst to zero before first call.
-  Return false if no more faces. */
-static bool DelimitFace (int32_t *pIndex, size_t count, int numPerFace, size_t iFirst, size_t &iLast, size_t &iNext)
-    {
-    if (iFirst >= count)
-        {
-        iNext = iFirst;
-        if (iFirst >= 1)
-            iLast = iFirst - 1;
-        return false;
-        }
-    if (numPerFace > 1)
-        {
-        iLast = iFirst;
-        size_t limit = iFirst + numPerFace;
-        while (iLast < limit && pIndex[iLast] != 0)
-            iLast++;
-        if (iLast >= 1)
-            iLast--;
-        iNext = iFirst + numPerFace;
-        return iLast >= iFirst;
-        }
-    else
-        {
-        // zero terminated.
-        // skip over leading zeros ..
-        while (iFirst < count && pIndex[iFirst] == 0)
-            iFirst++;
-        if (iFirst >= count)
-            {
-            iNext = iFirst;
-            if (iFirst >= 1)
-                iLast = iFirst - 1;
-            return false;
-            }
-        iLast = iFirst + 1;
-        while (iLast < count && pIndex[iLast] != 0)
-            iLast++;
-        // iLast is one after the live stuff for this face.
-        iNext = iLast + 1;
-        if (iLast >= 1)
-            iLast--;
-        return true;
-        }
-    }
-
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod
-+--------------------------------------------------------------------------------------*/
-static bool AllNegativeInRange(int32_t *pIndex, size_t iFirst, size_t iLast)
-    {
-    for (size_t i = iFirst; i < iLast; i++)
-        if (pIndex[i] >= 0)
-            return false;
-    return true;
-    }
-
-template<typename T>
-void ReverseByBlock (T *data, size_t n, size_t numPerBlock)
-    {
-    if (data != nullptr && n > 0 && numPerBlock > 0)
-        {
-        for (size_t i0 = 0; i0 < n; i0 += numPerBlock)
-            {
-            size_t numThisBlock = n - i0;
-            if (numThisBlock > numPerBlock)
-                numThisBlock = numPerBlock;
-            for (size_t i = 0, j = numThisBlock - 1; i < j; i++, j--)
-                std::swap (data[i0 + i], data[i0 + j]);
-            }
-        }
-    }
-
-bool ReverseMeshByBlock (PolyfaceQueryR mesh, bool negateNormals)
-    {
-    size_t n = mesh.GetPointCount ();
-    size_t numPerBlock = 0;
-    if (  mesh.GetMeshStyle () == MESH_ELM_STYLE_QUAD_GRID
-       || mesh.GetMeshStyle () == MESH_ELM_STYLE_TRIANGLE_GRID
-       )
-        {
-        // reverse within each row.
-        numPerBlock = (size_t)mesh.GetNumPerRow ();
-        }
-    else if (mesh.GetMeshStyle () == MESH_ELM_STYLE_COORDINATE_QUADS)
-        {
-        // reverse within each block of 4 coordinates . . .
-        numPerBlock = 4;
-        }
-    else if (mesh.GetMeshStyle () == MESH_ELM_STYLE_COORDINATE_TRIANGLES)
-        {
-        // reverse within each block of 3 coordinates
-        numPerBlock = 3;
-        }
-    else
-        {
-        return false;
-        }
-
-    DPoint3dP points = const_cast<DPoint3d*>(mesh.GetPointCP ());
-    DVec3dP normals = const_cast<DVec3d*>(mesh.GetNormalCP ());
-    DPoint2dP params = const_cast<DPoint2d*>(mesh.GetParamCP ());
-    uint32_t *intColor = const_cast<uint32_t*>(mesh.GetIntColorCP ());
-    ReverseByBlock <DPoint3d> (points, n, numPerBlock);
-    ReverseByBlock <DVec3d> (normals, n, numPerBlock);
-    ReverseByBlock <DPoint2d> (params, n, numPerBlock);
-    ReverseByBlock <uint32_t> (intColor, n, numPerBlock);
-    if (negateNormals && nullptr != normals)
-        {
-        for (size_t i = 0; i < n; i++)
-            normals[i].Negate ();
-        }
-    return true;
-    }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod
-+--------------------------------------------------------------------------------------*/
-bool PolyfaceQuery::ReverseIndicesAllFaces
-(
-bool           negateNormals,
-bool           flipMarked,
-bool           flipUnMarked,
-BlockedVectorInt::IndexAction normalIndexAction
-)
-    {
-    if (ReverseMeshByBlock (*this,negateNormals))
-        return true;
-
-
-    int const*pPointIndex  = (int const*)GetPointIndexCP ();
-    int const*pNormalIndex = (int const*)GetNormalIndexCP ();
-    DVec3dP pNormal   = const_cast<DVec3dP>(GetNormalCP ());
-    size_t numNormal  = GetNormalCount ();
-    size_t numIndex = GetPointIndexCount ();
-
-    int numPerFace = GetNumPerFace ();
-
-    if (2 == numPerFace)
-        return false;
-
-    size_t iFirst = 0;
-    size_t iNext  = 0;
-    size_t iLast  = 0;
-
-    if ((flipMarked && flipUnMarked) || pPointIndex != NULL)
-        {
-        for (;DelimitFace (const_cast<int*>(pPointIndex), numIndex, numPerFace, iFirst, iLast, iNext); iFirst = iNext)
-            {
-            ReverseIndicesOneFace (iFirst, iLast, normalIndexAction);
-            }
-        }
-    else if (flipMarked || flipUnMarked)
-        {
-        for (;DelimitFace (const_cast<int*>(pPointIndex), numIndex, numPerFace, iFirst, iLast, iNext); iFirst = iNext)
-            {
-            if (AllNegativeInRange (const_cast<int*>(pNormalIndex), iFirst, iLast))
-                if (flipMarked)
-                    ReverseIndicesOneFace (iFirst, iLast, normalIndexAction);
-            else
-                if (flipUnMarked)
-                    ReverseIndicesOneFace (iFirst, iLast, normalIndexAction);
-            }
-        }
-    else
-        {
-        // no index effects
-        }
-
-    if (numNormal > 0 && pNormal != NULL && negateNormals)
-        {
-        for (size_t i = 0; i < numNormal; i++)
-            pNormal [i].Negate ();
-        }
-
-    return true;
-    }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod
-+--------------------------------------------------------------------------------------*/
-bool PolyfaceQuery::ReverseIndicesWithTest(DVec3dCP surfaceNormal)
-    {
-    // facets are assumed to be consistently oriented, but possibly incorrectly. Reverse them as necessary.
-    bool reverse = false;
-    if (IsClosedByEdgePairing())
-        {
-        reverse = 0.0 > SumTetrahedralVolumes(GetPointCP()[0]);
-        }
-    else if (surfaceNormal)
-        {
-        DPoint3d centroid;
-        DVec3d normal;
-        double area;
-        auto visitor = PolyfaceVisitor::Attach(*this, false);
-        while (visitor->AdvanceToNextFace())
-            {
-            if (visitor->TryGetFacetCentroidNormalAndArea(centroid, normal, area))
-                {   // found a non-degenerate face to test
-                reverse = 0.0 > normal.DotProduct(*surfaceNormal);
-                break;
-                }
-            }
-        }
-    return reverse ? ReverseIndicesAllFaces() : false;
-    }
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
@@ -888,7 +564,7 @@ bool PolyfaceQuery::TryGetNormalAtReadIndex (size_t readIndex, DVec3dR data) con
     int32_t const*            normalIndex;
     DVec3dCP                normals;
 
-    if (readIndex >= GetPointIndexCount() ||
+    if (readIndex >= GetNormalIndexCount() ||
         NULL == (normalIndex = GetNormalIndexCP()) ||
         NULL == (normals = GetNormalCP()))
         return false;
@@ -913,7 +589,7 @@ bool PolyfaceQuery::TryGetParamAtReadIndex (size_t readIndex, DPoint2dR data) co
     int32_t const*            paramIndex;
     DPoint2dCP              params;
 
-    if (readIndex >= GetPointIndexCount() ||
+    if (readIndex >= GetParamIndexCount() ||
         NULL == (paramIndex = GetParamIndexCP()) ||
         NULL == (params = GetParamCP()))
         return false;
@@ -938,7 +614,7 @@ bool PolyfaceQuery::TryGetIntColorAtReadIndex (size_t readIndex, uint32_t& data)
     int32_t const*          colorIndex;
     uint32_t const*         intColors;
 
-    if (readIndex >= GetPointIndexCount() ||
+    if (readIndex >= GetColorIndexCount() ||
         NULL == (colorIndex = GetColorIndexCP()) ||
         NULL == (intColors = GetIntColorCP()))
         return false;
@@ -962,7 +638,7 @@ bool PolyfaceQuery::TryGetFacetFaceDataAtReadIndex (size_t readIndex, FacetFaceD
     int32_t const*            faceIndex;
     FacetFaceDataCP         faceData;
 
-    if (readIndex >= GetPointIndexCount() ||
+    if (readIndex >= GetFaceIndexCount() ||
         NULL == (faceIndex = GetFaceIndexCP()) ||
         NULL == (faceData = GetFaceDataCP()))
         return false;
@@ -1315,46 +991,82 @@ bool PolyfaceQuery::IsSameStructureAndGeometry (PolyfaceQueryCR other, double to
     if (!TaggedNumericData::AreSameStructureAndGeometry(numericTagsA, numericTagsB, tolerance))
         return false;
 
-    size_t numA = GetPointIndexCount ();
-    size_t numB = other.GetPointIndexCount ();
     if (checkIndices)
         {
-        if (!SameIndexArray (
-              GetPointIndexCP (), numA, other.GetPointIndexCP (), numB))
+        if (!SameIndexArray(GetPointIndexCP(), GetPointIndexCount(), other.GetPointIndexCP (), other.GetPointIndexCount()))
             return false;
 
-        if (!SameIndexArray (
-              GetNormalIndexCP (), numA, other.GetNormalIndexCP (), numB))
+        if (!SameIndexArray(GetNormalIndexCP(), GetNormalIndexCount(), other.GetNormalIndexCP(), other.GetNormalIndexCount()))
             return false;
 
-        if (!SameIndexArray (
-              GetParamIndexCP (), numA, other.GetParamIndexCP (), numB))
+        if (!SameIndexArray(GetParamIndexCP(), GetParamIndexCount(), other.GetParamIndexCP(), other.GetParamIndexCount()))
             return false;
 
-        if (!SameIndexArray (
-              GetColorIndexCP (), numA, other.GetColorIndexCP (), numB))
+        if (!SameIndexArray(GetColorIndexCP(), GetColorIndexCount(), other.GetColorIndexCP(), other.GetColorIndexCount()))
             return false;
 
-        if (!SameIndexArray (
-              GetFaceIndexCP (), GetFaceIndexCount (), other.GetFaceIndexCP (), other.GetFaceIndexCount ()))
+        if (!SameIndexArray(GetFaceIndexCP(), GetFaceIndexCount(), other.GetFaceIndexCP(), other.GetFaceIndexCount()))
             return false;
         }
     return true;
     }
 
-static void Validate1BasedIndexArrayZeroStructure (MeshAnnotationVector &description, Utf8CP name,
-    const int32_t * indices, size_t numIndex,
-    const int32_t * templateIndices
-    )
+/*--------------------------------------------------------------------------------**//**
+* Check that all auxData channels' data arrays have at least as many blocks as the first.
+* This is an assumption of the AuxData structures.
+* @returns the smallest data array block size
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+static size_t ValidateAuxDataChannels(MeshAnnotationVector& description, PolyfaceAuxData::ChannelsCR channels)
     {
-    if (numIndex == 0 || indices == nullptr || templateIndices == 0)
-        return;         // higher level has to decide if this ok
-
-    for (size_t i = 0; i < numIndex; i++)
-        description.Assert ((indices[i] == 0) == (templateIndices[i] == 0), "Zeros in different places in parallel index arrays");
+    size_t refNumBlocks = channels.GetValueCount();
+    size_t minNumBlocks = refNumBlocks;
+    for (auto const& channel : channels)
+        {
+        for (auto const& data : channel->GetData())
+            {
+            size_t numBlocks = data->GetValueCount() / channel->GetBlockSize();
+            description.Assert(refNumBlocks <= numBlocks, "Each data array of each AuxData channel should have at least as many as the first");
+            minNumBlocks = std::min(minNumBlocks, numBlocks);
+            }
+        }
+    return minNumBlocks;
     }
 
-static void Validate1BasedIndexArrayRange (MeshAnnotationVector &description, Utf8CP name, const int32_t * indices, size_t numIndex, size_t numTarget, bool allowNegative)
+/*--------------------------------------------------------------------------------**//**
+* Check that blocked indices contain no partial block.
+* @remarks zeroes are allowed in index arrays with fixed-size blocking as padding.
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+static void Validate1BasedIndexArrayBlocking(MeshAnnotationVector& description, uint32_t blockSize, int32_t const* indices, size_t numIndex)
+    {
+    if (numIndex == 0 || indices == nullptr || blockSize < 3)
+        return;         // higher level has to decide if this ok
+
+    description.Assert((numIndex % blockSize) == 0, "Fixed-size blocked indices cannot contain a partial block");
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* Check that indices have zeroes in the same places as the template array.
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+static void Validate1BasedIndexArrayZeroStructure(MeshAnnotationVector& description, int32_t const* indices, size_t numIndex, int32_t const* templateIndices, size_t numTemplateIndex)
+    {
+    if (numIndex == 0 || numTemplateIndex == 0 || indices == nullptr || templateIndices == nullptr)
+        return;         // higher level has to decide if this ok
+
+    description.Assert(numIndex == numTemplateIndex, "Parallel index arrays cannot have different lengths");
+
+    size_t n = std::min(numIndex, numTemplateIndex);
+    for (size_t i = 0; i < n; i++)
+        description.Assert((indices[i] == 0) == (templateIndices[i] == 0), "Zeros in different places in parallel index arrays");
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* Check that indices don't lie beyond target range.
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+static void Validate1BasedIndexArrayRange(MeshAnnotationVector& description, Utf8CP name, int32_t const* indices, size_t numIndex, size_t numTarget)
     {
     if (indices == nullptr)
         return;
@@ -1371,50 +1083,78 @@ static void Validate1BasedIndexArrayRange (MeshAnnotationVector &description, Ut
             }
         }
     }
-//! Apply various checks for indexing structure.
-//! @return true if any errors were found.
-bool PolyfaceQuery::HasIndexErrors
-(
-MeshAnnotationVector &description    //!< (optional) array describing errors checked.  Note that there are descriptions of tests even if no errors found.
-) const
-    {
-    PolyfaceVectorsP vectors = _AsPolyfaceVectorsP ();
-    description.clear ();
 
-    size_t numPointIndex = GetPointIndexCount ();        // all or nothing !!!
-    bool isIndexed = GetMeshStyle () == MESH_ELM_STYLE_INDEXED_FACE_LOOPS;
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+bool PolyfaceQuery::HasIndexErrors(MeshAnnotationVector& description) const
+    {
+    PolyfaceVectorsP vectors = _AsPolyfaceVectorsP();
+    description.clear();
+
+    size_t numPointIndex = GetPointIndexCount();
+    bool isIndexed = GetMeshStyle() == MESH_ELM_STYLE_INDEXED_FACE_LOOPS;
     if (isIndexed)
         {
         if (vectors != nullptr)
             {
             // In a header, all index arrays expose individual counts.
-            size_t numPointIndex1 = vectors->m_pointIndex.size ();
-            size_t numParamIndex = vectors->m_paramIndex.size ();
-            size_t numNormalIndex = vectors->m_normalIndex.size ();
-            size_t numColorIndex = vectors->m_colorIndex.size ();
+            size_t numPointIndex1 = vectors->m_pointIndex.size();
+            size_t numParamIndex = vectors->m_paramIndex.size();
+            size_t numNormalIndex = vectors->m_normalIndex.size();
+            size_t numColorIndex = vectors->m_colorIndex.size();
+            size_t numFaceIndex = vectors->m_faceIndex.size();
+            size_t numAuxDataIndex = vectors->m_auxData.IsValid() ? vectors->m_auxData->GetIndices().size() : 0;
 
-            description.Assert (numPointIndex == numPointIndex1, "PointIndexCount matches overall index count");
-            if (vectors->m_pointIndex.Active ())
-                description.Assert (numPointIndex != 0, "PointIndex().Active() but no indices present");
-            if (vectors->m_colorIndex.Active ())
-                description.Assert (numColorIndex == numPointIndex, "ColorIndex().Active() but count does not match PointIndex().size()");
-            if (vectors->m_normalIndex.Active ())
-                description.Assert (numNormalIndex == numPointIndex, "NormalIndex().Active() but count does not match PointIndex().size()");
-            if (vectors->m_paramIndex.Active ())
-                description.Assert (numParamIndex == numPointIndex, "ParamIndex().Active() but count does not match PointIndex().size()");
+            description.Assert(numPointIndex == numPointIndex1, "PointIndexCount matches overall index count");
+            if (vectors->m_pointIndex.Active())
+                description.Assert(numPointIndex != 0, "PointIndex().Active() but no indices present");
+            if (vectors->m_colorIndex.Active())
+                description.Assert(numColorIndex == numPointIndex, "ColorIndex().Active() but count does not match PointIndex().size()");
+            if (vectors->m_normalIndex.Active())
+                description.Assert(numNormalIndex == numPointIndex, "NormalIndex().Active() but count does not match PointIndex().size()");
+            if (vectors->m_paramIndex.Active())
+                description.Assert(numParamIndex == numPointIndex, "ParamIndex().Active() but count does not match PointIndex().size()");
+            if (vectors->m_faceIndex.Active())
+                description.Assert(numFaceIndex == numPointIndex, "FaceIndex().Active() but count does not match PointIndex().size()");
+            if (vectors->m_auxData.IsValid())
+                description.Assert(numAuxDataIndex == numPointIndex, "AuxData is present but index count does not match PointIndex().size()");
             }
+
+        description.Assert(GetNumPerFace() != 2, "Invalid index blocking (2)");
+
         // Don't attempt index access if early failures ...
-        if (description.GetTotalFail () > 0)
+        if (description.GetTotalFail() > 0)
             return true;
 
-        Validate1BasedIndexArrayRange (description, "PointIndex",  GetPointIndexCP (), GetPointIndexCount (), GetPointCount (), true);
-        Validate1BasedIndexArrayRange (description, "NormalIndex", GetNormalIndexCP (), GetPointIndexCount (), GetNormalCount (), false);
-        Validate1BasedIndexArrayRange (description, "ParamIndex", GetParamIndexCP (), GetPointIndexCount (), GetParamCount (), false);
-        Validate1BasedIndexArrayRange (description, "ColorIndex", GetColorIndexCP (), GetPointIndexCount (), GetColorCount (), false);
+        if (!IsVariableSizeIndexed())
+            {
+            Validate1BasedIndexArrayBlocking(description, GetNumPerFace(), GetPointIndexCP(), numPointIndex);
+            Validate1BasedIndexArrayBlocking(description, GetNumPerFace(), GetNormalIndexCP(), GetNormalIndexCount());
+            Validate1BasedIndexArrayBlocking(description, GetNumPerFace(), GetParamIndexCP(), GetParamIndexCount());
+            Validate1BasedIndexArrayBlocking(description, GetNumPerFace(), GetColorIndexCP(), GetColorIndexCount());
+            Validate1BasedIndexArrayBlocking(description, GetNumPerFace(), GetFaceIndexCP(), GetFaceIndexCount());
+            }
 
-        Validate1BasedIndexArrayZeroStructure (description, "ParamIndex Zeros", GetParamIndexCP (), GetPointIndexCount (), GetPointIndexCP ());
-        Validate1BasedIndexArrayZeroStructure (description, "NormalIndex Zeros", GetNormalIndexCP (), GetPointIndexCount (), GetPointIndexCP ());
-        Validate1BasedIndexArrayZeroStructure (description, "ColorIndex Zeros", GetColorIndexCP (), GetPointIndexCount (), GetPointIndexCP ());
+        Validate1BasedIndexArrayRange(description, "PointIndex",  GetPointIndexCP(), numPointIndex, GetPointCount());
+        Validate1BasedIndexArrayRange(description, "NormalIndex", GetNormalIndexCP(), GetNormalIndexCount(), GetNormalCount());
+        Validate1BasedIndexArrayRange(description, "ParamIndex", GetParamIndexCP(), GetParamIndexCount(), GetParamCount());
+        Validate1BasedIndexArrayRange(description, "ColorIndex", GetColorIndexCP(), GetColorIndexCount(), GetColorCount());
+        Validate1BasedIndexArrayRange(description, "FaceIndex", GetFaceIndexCP(), GetFaceIndexCount(), GetFaceCount());
+
+        Validate1BasedIndexArrayZeroStructure(description, GetNormalIndexCP(), GetNormalIndexCount(), GetPointIndexCP(), numPointIndex);
+        Validate1BasedIndexArrayZeroStructure(description, GetParamIndexCP(), GetParamIndexCount(), GetPointIndexCP(), numPointIndex);
+        Validate1BasedIndexArrayZeroStructure(description, GetColorIndexCP(), GetColorIndexCount(), GetPointIndexCP(), numPointIndex);
+        Validate1BasedIndexArrayZeroStructure(description, GetFaceIndexCP(), GetFaceIndexCount(), GetPointIndexCP(), numPointIndex);
+
+        if (GetAuxDataCP().IsValid())
+            {
+            size_t minDataCount = ValidateAuxDataChannels(description, GetAuxDataCP()->GetChannels());
+            Validate1BasedIndexArrayRange(description, "AuxDataIndex", GetAuxDataCP()->GetIndices().data(), GetAuxDataCP()->GetIndices().size(), minDataCount);
+            Validate1BasedIndexArrayZeroStructure(description, GetAuxDataCP()->GetIndices().data(), GetAuxDataCP()->GetIndices().size(), GetPointIndexCP(), numPointIndex);
+            if (!IsVariableSizeIndexed())
+                Validate1BasedIndexArrayBlocking(description, GetNumPerFace(), GetAuxDataCP()->GetIndices().data(), GetAuxDataCP()->GetIndices().size());
+            }
         }
     size_t failures = description.GetTotalFail ();
     return failures > 0;

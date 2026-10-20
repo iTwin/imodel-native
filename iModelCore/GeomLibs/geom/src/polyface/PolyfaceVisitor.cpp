@@ -41,25 +41,26 @@ bool PushIndexDataFromMesh      // carefully get data by way of in index array. 
         (
         size_t readIndex,
         BlockedVector<TargetType> &dataDest,        // destination data in visitor.
-        BlockedVectorInt &indexDest,              // destination index in visitor
+        BlockedVectorInt &indexDest,                // destination index in visitor
         TargetType const *data, size_t nData,       // contiguous data in source.
         int const *index,                           // index array in source.
-        int const *defaultIndex,                  // default index array source.
-        size_t nIndex                             // size of index arrays (same size for both index and defaultIndex)
+        size_t nIndex,                              // size of index array
+        int const *defaultIndex,                    // default index array source.
+        size_t nDefaultIndex                        // size of default index array (nominally same as nIndex)
         )
     {
-    if (readIndex >= nIndex)
-        return false;
     if (data == nullptr)
         return false;
 
     if (index != nullptr)
         {
+        if (readIndex >= nIndex)
+            return false;
         int oneBasedIndex = index[readIndex];
         if (oneBasedIndex == 0)
             return false;
         size_t zeroBasedIndex = (size_t)abs (oneBasedIndex) - 1;
-        if (zeroBasedIndex > nData)
+        if (zeroBasedIndex >= nData)
             return false;
         dataDest.push_back (data[zeroBasedIndex]);
         indexDest.push_back ((int)zeroBasedIndex);
@@ -67,11 +68,13 @@ bool PushIndexDataFromMesh      // carefully get data by way of in index array. 
         }
     else if (defaultIndex != nullptr)
         {
+        if (readIndex >= nDefaultIndex)
+            return false;
         int oneBasedIndex = defaultIndex[readIndex];
         if (oneBasedIndex == 0)
             return false;
         size_t zeroBasedIndex = (size_t)abs (oneBasedIndex) - 1;
-        if (zeroBasedIndex > nData)
+        if (zeroBasedIndex >= nData)
             return false;
         dataDest.push_back (data[zeroBasedIndex]);
         indexDest.push_back ((int)zeroBasedIndex);
@@ -535,7 +538,7 @@ bool _AdvanceToNextFace () override
             else
                 m_normal.ClearAndAppendByOneBasedIndices (m_normalIndex,    NULL,
                     m_parentMesh.GetNormalCP (), m_parentMesh.GetNormalCount (),
-                    m_parentMesh.GetNormalIndexCP (), m_parentMesh.GetPointIndexCount (),
+                    m_parentMesh.GetNormalIndexCP (), m_parentMesh.GetNormalIndexCount (),
                     i0, m_numEdgesThisFace, m_numWrap);
 
 
@@ -547,9 +550,8 @@ bool _AdvanceToNextFace () override
             else
                 m_param.ClearAndAppendByOneBasedIndices (m_paramIndex,      NULL,
                     m_parentMesh.GetParamCP (), m_parentMesh.GetParamCount (),
-                    m_parentMesh.GetParamIndexCP (), m_parentMesh.GetPointIndexCount (),
+                    m_parentMesh.GetParamIndexCP (), m_parentMesh.GetParamIndexCount (),
                    i0, m_numEdgesThisFace, m_numWrap);
-
 
             m_faceData.ClearAndAppendByOneBasedIndices (m_faceIndex,      NULL,
                     m_parentMesh.GetFaceDataCP (), m_parentMesh.GetFaceCount (),
@@ -559,7 +561,7 @@ bool _AdvanceToNextFace () override
             if (m_parentMesh.GetIntColorCP () != NULL)
                 m_intColor.ClearAndAppendByOneBasedIndices (m_colorIndex,   NULL,
                     m_parentMesh.GetIntColorCP (), m_parentMesh.GetColorCount (),
-                    m_parentMesh.GetColorIndexCP (), m_parentMesh.GetPointIndexCount (),
+                    m_parentMesh.GetColorIndexCP (), m_parentMesh.GetColorIndexCount (),
                     i0, m_numEdgesThisFace, m_numWrap);
 
             if (m_auxData.IsValid())
@@ -606,6 +608,7 @@ bool _AddVertexByReadIndex (size_t readIndex) override
                 m_parentMesh.GetNormalCP (),
                 m_parentMesh.GetNormalCount (),
                 m_parentMesh.GetNormalIndexCP (),
+                m_parentMesh.GetNormalIndexCount(),
                 m_parentMesh.GetPointIndexCP (),
                 numIndex
                 )))
@@ -618,6 +621,7 @@ bool _AddVertexByReadIndex (size_t readIndex) override
                 m_parentMesh.GetParamCP (),
                 m_parentMesh.GetParamCount (),
                 m_parentMesh.GetParamIndexCP (),
+                m_parentMesh.GetParamIndexCount(),
                 m_parentMesh.GetPointIndexCP (),
                 numIndex
                 )))
@@ -630,6 +634,7 @@ bool _AddVertexByReadIndex (size_t readIndex) override
                 m_parentMesh.GetIntColorCP (),
                 m_parentMesh.GetColorCount (),
                 m_parentMesh.GetColorIndexCP (),
+                m_parentMesh.GetColorIndexCount(),
                 m_parentMesh.GetPointIndexCP (),
                 numIndex
                 )))
