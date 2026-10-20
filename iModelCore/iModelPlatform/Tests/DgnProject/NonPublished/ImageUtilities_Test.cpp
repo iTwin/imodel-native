@@ -160,6 +160,64 @@ TEST (ImageUtilities_Tests, JPG)
     ASSERT_TRUE(image_jpeg.IsValid());
     }
 
+//---------------------------------------------------------------------------------------
+// A JPEG whose header dimensions cause width * height * 4 to overflow uint32_t must be rejected.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST (ImageUtilities_Tests, JPGDimensionsOverflow)
+    {
+    uint32_t width = 16;
+    uint32_t height = 16;
+    ByteStream testImage(height * width * 3);
+    memset(testImage.GetDataP(), 0x7f, testImage.GetSize());
+
+    Image image(width, height, std::move(testImage), Image::Format::Rgb);
+    ImageSource jpgImg(image, ImageSource::Format::Jpeg, 100);
+    ASSERT_TRUE(jpgImg.IsValid());
+
+    ByteStream jpegBytes(jpgImg.GetByteStream().GetData(), jpgImg.GetByteStream().GetSize());
+
+    // Walk the JPEG markers to find the SOF0 segment and patch its dimensions so that width * height * 4 > UINT32_MAX.
+    // SOF0 layout: FF C0 | length (2) | precision (1) | height (2) | width (2) | ...
+    uint16_t const bigWidth = 32768;
+    uint16_t const bigHeight = 32769;
+    Byte* data = jpegBytes.GetDataP();
+    uint32_t size = jpegBytes.GetSize();
+    bool patched = false;
+    for (uint32_t i = 2; i + 9 <= size && 0xff == data[i]; )
+        {
+        Byte marker = data[i+1];
+        uint32_t segmentLength = (static_cast<uint32_t>(data[i+2]) << 8) | data[i+3];
+        if (0xc0 == marker)
+            {
+            data[i+5] = static_cast<Byte>(bigHeight >> 8);
+            data[i+6] = static_cast<Byte>(bigHeight & 0xff);
+            data[i+7] = static_cast<Byte>(bigWidth >> 8);
+            data[i+8] = static_cast<Byte>(bigWidth & 0xff);
+            patched = true;
+            break;
+            }
+
+        i += 2 + segmentLength;
+        }
+
+    ASSERT_TRUE(patched);
+
+    ImageSource badSource(ImageSource::Format::Jpeg, ByteStream(jpegBytes.GetData(), jpegBytes.GetSize()));
+    Point2d badSize = badSource.GetSize();
+    ASSERT_EQ(static_cast<int32_t>(bigWidth), badSize.x);
+    ASSERT_EQ(static_cast<int32_t>(bigHeight), badSize.y);
+
+    Image fromJpegRgba = Image::FromJpeg(jpegBytes.GetData(), jpegBytes.GetSize(), Image::Format::Rgba, Image::BottomUp::No);
+    EXPECT_FALSE(fromJpegRgba.IsValid());
+
+    Image fromJpegRgb = Image::FromJpeg(jpegBytes.GetData(), jpegBytes.GetSize(), Image::Format::Rgb, Image::BottomUp::No);
+    EXPECT_FALSE(fromJpegRgb.IsValid());
+
+    Image fromSource(badSource, Image::Format::Rgba);
+    EXPECT_FALSE(fromSource.IsValid());
+    }
+
 #if defined(RUN_TRANSPARENCY_TESTS)
 // This test was run to verify that ImageSource::SupportsTransparency produces correct results for all of the PNG files at http://www.schaik.com/pngsuite/pngsuite_trn_png.html
 // and http://www.schaik.com/pngsuite/pngsuite_bas_png.html. It requires access to those files, hence it is not run by default.
