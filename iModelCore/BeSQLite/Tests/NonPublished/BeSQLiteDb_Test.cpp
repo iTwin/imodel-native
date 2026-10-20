@@ -3014,3 +3014,168 @@ TEST(BeSQLiteDb, ChangesetFileWriterStickyError)
     EXPECT_EQ(BE_SQLITE_ERROR, writer.Finish());
     EXPECT_EQ(BE_SQLITE_ERROR, writer.Finish());
     }
+
+//---------------------------------------------------------------------------------------
+// Writes a changeset file whose decompressed stream is exactly 'stream', so that malformed prefixes can be crafted.
+//---------------------------------------------------------------------------------------
+static void WriteRawChangesetTestFile(BeFileNameCR path, bvector<Byte> const& stream)
+    {
+    // Borrow a valid header from a file produced by the real writer. The header starts with its own size as a uint16_t.
+    BeFileName templatePath = GetChangesetTestPath(L"ChangesetHeaderTemplate.changeset");
+    DdlChanges emptyDdl;
+    {
+    TestChangesetFileWriter writer(templatePath, false, emptyDdl, nullptr);
+    ASSERT_EQ(BE_SQLITE_OK, writer.Initialize());
+    ASSERT_EQ(BE_SQLITE_OK, writer.Finish());
+    }
+
+    bvector<Byte> templateBytes;
+    {
+    BeFile templateFile;
+    ASSERT_EQ(BeFileStatus::Success, templateFile.Open(templatePath.GetName(), BeFileAccess::Read));
+    ASSERT_EQ(BeFileStatus::Success, templateFile.ReadEntireFile(templateBytes));
+    }
+    uint16_t headerSize = 0;
+    ASSERT_GE(templateBytes.size(), sizeof(headerSize));
+    memcpy(&headerSize, templateBytes.data(), sizeof(headerSize));
+    ASSERT_LE((size_t) headerSize, templateBytes.size());
+
+    BeFileLzmaOutStream outStream;
+    ASSERT_EQ(BeFileStatus::Success, outStream.CreateOutputFile(path, true));
+    uint32_t bytesWritten = 0;
+    ASSERT_EQ(ZIP_SUCCESS, outStream._Write(templateBytes.data(), headerSize, bytesWritten));
+    LzmaEncoder encoder;
+    ASSERT_EQ(ZIP_SUCCESS, encoder.StartCompress(outStream));
+    if (!stream.empty())
+        ASSERT_EQ(ZIP_SUCCESS, encoder.CompressNextPage(stream.data(), stream.size()));
+    ASSERT_EQ(ZIP_SUCCESS, encoder.FinishCompress());
+    }
+
+static bvector<Byte> MakeChangesetTestStream(uint32_t declaredPrefixSize, bvector<Byte> const& prefixBytes, bvector<Byte> const& body)
+    {
+    bvector<Byte> stream;
+    stream.push_back((Byte) ((declaredPrefixSize >> 24) & 0xff));
+    stream.push_back((Byte) ((declaredPrefixSize >> 16) & 0xff));
+    stream.push_back((Byte) ((declaredPrefixSize >> 8) & 0xff));
+    stream.push_back((Byte) (declaredPrefixSize & 0xff));
+    stream.insert(stream.end(), prefixBytes.begin(), prefixBytes.end());
+    stream.insert(stream.end(), body.begin(), body.end());
+    return stream;
+    }
+
+static DbResult ReadChangesetTestPrefix(BeFileNameCR path, Utf8StringR prefix)
+    {
+    bvector<BeFileName> files;
+    files.push_back(path);
+    ChangesetFileReaderBase changeset(files);
+    auto reader = changeset.MakeReader();
+    DbResult result = BE_SQLITE_ERROR;
+    prefix = reader->GetPrefix(result);
+    return result;
+    }
+
+//---------------------------------------------------------------------------------------
+// A prefix that is not NUL-terminated must be read using its declared length only.
+// Covers both the inline (stack) and heap-allocated buffer sizes used by the reader previously.
+//---------------------------------------------------------------------------------------
+TEST(BeSQLiteDb, ChangesetPrefixWithoutNulTerminator)
+    {
+    for (size_t prefixSize : {(size_t) 1, (size_t) 100, (size_t) 511, (size_t) 512, (size_t) 4096, (size_t) (200 * 1024)})
+        {
+        BeFileName path = GetChangesetTestPath(L"ChangesetPrefixWithoutNulTerminator.changeset");
+        bvector<Byte> prefixBytes(prefixSize, (Byte) 'A');
+        bvector<Byte> body = MakeChangesetTestBytes(37, 11);
+        WriteRawChangesetTestFile(path, MakeChangesetTestStream((uint32_t) prefixSize, prefixBytes, body));
+
+        Utf8String prefix;
+        ASSERT_EQ(BE_SQLITE_OK, ReadChangesetTestPrefix(path, prefix)) << prefixSize;
+        EXPECT_EQ(prefixSize, prefix.size());
+        EXPECT_STREQ(std::string(prefixSize, 'A').c_str(), prefix.c_str());
+
+        // The body must start immediately after the declared prefix.
+        bvector<BeFileName> files;
+        files.push_back(path);
+        ChangesetFileReaderBase changeset(files);
+        auto reader = changeset.MakeReader();
+        bvector<Byte> actualBody;
+        bvector<Byte> buffer(body.size() + 16);
+        for (;;)
+            {
+            int readSize = (int) buffer.size();
+            ASSERT_EQ(BE_SQLITE_OK, reader->_Read(buffer.data(), &readSize));
+            if (readSize <= 0)
+                break;
+            actualBody.insert(actualBody.end(), buffer.begin(), buffer.begin() + readSize);
+            }
+        ASSERT_EQ(body.size(), actualBody.size());
+        EXPECT_EQ(0, memcmp(body.data(), actualBody.data(), body.size()));
+
+        uint32_t compressSize = 0, uncompressSize = 0, revisionPrefixSize = 0;
+        ASSERT_EQ(SUCCESS, RevisionUtility::GetUncompressSize(path.GetNameUtf8().c_str(), compressSize, uncompressSize, revisionPrefixSize));
+        EXPECT_EQ((uint32_t) prefixSize, revisionPrefixSize);
+        EXPECT_EQ((uint32_t) body.size(), uncompressSize);
+
+        BeFileName recompressedPath = GetChangesetTestPath(L"ChangesetPrefixWithoutNulTerminator.recompressed.changeset");
+        ASSERT_EQ(SUCCESS, RevisionUtility::RecompressRevision(path.GetNameUtf8().c_str(), recompressedPath.GetNameUtf8().c_str(), LzmaEncoder::LzmaParams()));
+        Utf8String recompressedPrefix;
+        ASSERT_EQ(BE_SQLITE_OK, ReadChangesetTestPrefix(recompressedPath, recompressedPrefix));
+        EXPECT_STREQ(prefix.c_str(), recompressedPrefix.c_str());
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// Embedded NULs keep the historical behavior of truncating the prefix at the first NUL.
+//---------------------------------------------------------------------------------------
+TEST(BeSQLiteDb, ChangesetPrefixWithEmbeddedNul)
+    {
+    BeFileName path = GetChangesetTestPath(L"ChangesetPrefixWithEmbeddedNul.changeset");
+    bvector<Byte> prefixBytes = {'a', 'b', 'c', 0, 'd', 'e', 'f'};
+    WriteRawChangesetTestFile(path, MakeChangesetTestStream((uint32_t) prefixBytes.size(), prefixBytes, bvector<Byte>()));
+
+    Utf8String prefix;
+    ASSERT_EQ(BE_SQLITE_OK, ReadChangesetTestPrefix(path, prefix));
+    EXPECT_STREQ("abc", prefix.c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// A declared prefix size larger than the available data must fail rather than loop forever.
+//---------------------------------------------------------------------------------------
+TEST(BeSQLiteDb, ChangesetPrefixTruncated)
+    {
+    for (uint32_t declaredSize : {(uint32_t) 11, (uint32_t) 1000, (uint32_t) (1024 * 1024)})
+        {
+        BeFileName path = GetChangesetTestPath(L"ChangesetPrefixTruncated.changeset");
+        bvector<Byte> prefixBytes(10, (Byte) 'B');
+        WriteRawChangesetTestFile(path, MakeChangesetTestStream(declaredSize, prefixBytes, bvector<Byte>()));
+
+        Utf8String prefix;
+        EXPECT_EQ(BE_SQLITE_ERROR, ReadChangesetTestPrefix(path, prefix)) << declaredSize;
+        EXPECT_TRUE(prefix.empty());
+
+        uint32_t compressSize = 0, uncompressSize = 0, revisionPrefixSize = 0;
+        EXPECT_EQ(ERROR, RevisionUtility::GetUncompressSize(path.GetNameUtf8().c_str(), compressSize, uncompressSize, revisionPrefixSize));
+
+        BeFileName recompressedPath = GetChangesetTestPath(L"ChangesetPrefixTruncated.recompressed.changeset");
+        EXPECT_EQ(ERROR, RevisionUtility::RecompressRevision(path.GetNameUtf8().c_str(), recompressedPath.GetNameUtf8().c_str(), LzmaEncoder::LzmaParams()));
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// Declared prefix sizes that do not fit in a signed int must be rejected without allocating.
+//---------------------------------------------------------------------------------------
+TEST(BeSQLiteDb, ChangesetPrefixInvalidSize)
+    {
+    for (uint32_t declaredSize : {(uint32_t) 0x80000000, (uint32_t) 0xFFFFFFFF})
+        {
+        BeFileName path = GetChangesetTestPath(L"ChangesetPrefixInvalidSize.changeset");
+        bvector<Byte> prefixBytes(16, (Byte) 'C');
+        WriteRawChangesetTestFile(path, MakeChangesetTestStream(declaredSize, prefixBytes, bvector<Byte>()));
+
+        Utf8String prefix;
+        EXPECT_EQ(BE_SQLITE_ERROR, ReadChangesetTestPrefix(path, prefix)) << declaredSize;
+        EXPECT_TRUE(prefix.empty());
+
+        uint32_t compressSize = 0, uncompressSize = 0, revisionPrefixSize = 0;
+        EXPECT_EQ(ERROR, RevisionUtility::GetUncompressSize(path.GetNameUtf8().c_str(), compressSize, uncompressSize, revisionPrefixSize));
+        }
+    }
