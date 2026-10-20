@@ -251,7 +251,8 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::FilterJSONBasedOnType(BeJsConst& 
         return BE_SQLITE_ERROR;
     }
     else if(val.isNumeric()) {
-        uint64_t id = val.GetUInt64();
+        // Ids are bound as int64, so ids with the high bit set arrive as negative numbers.
+        uint64_t id = val.GetNumericKind() == JsValueRef::NumericKind::Int64 ? (uint64_t)val.GetInt64() : val.GetUInt64();
         if(id == 0)
             return BE_SQLITE_ERROR;
         m_ids.push_back(id);
@@ -318,7 +319,7 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::Filter(int idxNum, const char *id
         DbModule::InFirst(inVal, current);
         while(current.IsValid()){
             int64_t rawId = current.GetValueInt64();
-            if (rawId > 0) {
+            if (rawId != 0) {
                 uint64_t id = (uint64_t)rawId;
                 if (std::binary_search(m_ids.begin(), m_ids.end(), id))
                     m_matchedIds.push_back(id);
@@ -330,7 +331,7 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::Filter(int idxNum, const char *id
     else if (idxNum & 2) {
         m_pointLookup = true;
         int64_t rawId = argv[argIdx].GetValueInt64();
-        if (rawId <= 0) {
+        if (rawId == 0) {
             m_lookupId = 0;
             m_lookupFound = false;
         } else {

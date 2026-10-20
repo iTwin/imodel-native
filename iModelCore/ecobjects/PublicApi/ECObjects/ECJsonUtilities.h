@@ -188,11 +188,17 @@ private:
 public:
     //! Generates the fully qualified name of an ECClass as used in the ECJSON format: &lt;schema name&gt;.&lt;class name&gt;
     //! @param[in] ecClass ECClass
+    //! @param[in] useColon Use a colon instead of a dot as the separator.
     //! @return Fully qualified class name for the ECJSON format
     static Utf8String FormatClassName(ECClassCR ecClass, bool useColon = false) {
-        if (useColon)
-            return Utf8PrintfString("%s:%s", ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str());
-        return Utf8PrintfString("%s.%s", ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str());
+        auto const& schemaName = ecClass.GetSchema().GetName();
+        auto const& className = ecClass.GetName();
+        Utf8String name;
+        name.reserve(schemaName.size() + className.size() + 1);
+        name.append(schemaName);
+        name.push_back(useColon ? ':' : '.');
+        name.append(className);
+        return name;
     }
 
     //! Generates the fully qualified name of an PropertyCategory as used in the ECJSON format: &lt;schema name&gt;.&lt;PropertyCategory name&gt;

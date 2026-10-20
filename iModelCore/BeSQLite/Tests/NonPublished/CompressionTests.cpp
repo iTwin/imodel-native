@@ -12,6 +12,9 @@
 #include <zlib/zip/zip.h>
 #include <zlib/zip/unzip.h>
 
+#include <atomic>
+#include <thread>
+
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
@@ -163,7 +166,8 @@ public:
     virtual void CompressAndUncompress(bvector<Byte>&out, Byte*input, size_t lenInput)
         {
         bvector<Byte>   compressed;
-        compressed.resize(lenInput/3); //  avoid too many resizes
+        compressed.reserve(lenInput/3);
+        out.clear();
 
         uint64_t beforeCompress = BeTimeUtilities::QueryMillisecondsCounter();
         BeSQLite::LzmaEncoder  encoder(BeSQLite::LzmaEncoder::LzmaParams(1 << (m_level+10), true /*=supportRandomAccess*/));
@@ -183,7 +187,8 @@ public:
 
     void Compress(bvector<Byte>&compressed, Byte*input, size_t lenInput)
         {
-        compressed.resize(lenInput/3); //  avoid too many resizes
+        compressed.clear();
+        compressed.reserve(lenInput/3);
 
         BeSQLite::LzmaEncoder encoder(BeSQLite::LzmaEncoder::LzmaParams(1 << (m_level+10), true /*=supportRandomAccess*/));
         encoder.CompressBuffer(compressed, input, (uint32_t)lenInput);
@@ -484,4 +489,649 @@ TEST(CompressionTests, DirectComparisonBigInput)
         }
     }
 #endif
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+static bvector<Byte> makeLzmaRegressionData(uint32_t size, uint32_t seed)
+    {
+    bvector<Byte> data;
+    data.resize(size);
+
+    uint32_t state = seed;
+    for (uint32_t i = 0; i < size; ++i)
+        {
+        state ^= state << 13;
+        state ^= state >> 17;
+        state ^= state << 5;
+        data[i] = static_cast<Byte>(state >> 24);
+        }
+
+    return data;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+static void appendLzmaRegressionData(bvector<Byte>& target, Byte const* data, uint32_t size)
+    {
+    if (size == 0)
+        return;
+
+    size_t oldSize = target.size();
+    target.resize(oldSize + size);
+    memcpy(&target[oldSize], data, size);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+static void expectLzmaDataEqual(bvector<Byte> const& expected, bvector<Byte> const& actual)
+    {
+    EXPECT_EQ(expected.size(), actual.size());
+    if (expected.size() == actual.size() && !expected.empty())
+        EXPECT_EQ(0, memcmp(&expected[0], &actual[0], expected.size()));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+static bool decodeLzmaInPages(BeSQLite::LzmaDecoder& decoder, bvector<Byte>& decoded, bvector<Byte> const& compressed)
+    {
+    if (compressed.empty())
+        return false;
+
+    BeSQLite::MemoryLzmaInStream input(&compressed[0], static_cast<uint32_t>(compressed.size()));
+    if (decoder.StartDecompress(input) != BeSQLite::ZIP_SUCCESS)
+        return false;
+
+    static int const pageSizes[] = { 1, 17, 4096, 64 * 1024, 13 };
+    static unsigned const numPageSizes = sizeof(pageSizes) / sizeof(pageSizes[0]);
+
+    for (unsigned pageIndex = 0;; ++pageIndex)
+        {
+        int pageSize = pageSizes[pageIndex % numPageSizes];
+        bvector<Byte> page;
+        page.resize(pageSize);
+
+        int bytesInPage = pageSize;
+        BeSQLite::ZipErrors status = decoder.DecompressNextPage(&page[0], &bytesInPage);
+        if (status != BeSQLite::ZIP_SUCCESS || bytesInPage < 0 || bytesInPage > pageSize)
+            {
+            decoder.FinishDecompress();
+            return false;
+            }
+
+        if (bytesInPage == 0)
+            break;
+
+        size_t oldSize = decoded.size();
+        decoded.resize(oldSize + bytesInPage);
+        memcpy(&decoded[oldSize], &page[0], bytesInPage);
+        }
+
+    decoder.FinishDecompress();
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST(CompressionTests, LzmaCompressBufferRoundTrip)
+    {
+    const uint32_t blockSize = 64 * 1024;
+    bvector<Byte> input = makeLzmaRegressionData(3 * blockSize + 123, 0x13579bdf);
+    memset(input.data() + blockSize, 'a', blockSize);
+
+    for (int threads : { 1, 4 })
+        {
+        BeSQLite::LzmaEncoder::LzmaParams params(64 * 1024, false, 7, threads);
+        params.SetBlockSize(blockSize);
+        BeSQLite::LzmaEncoder encoder(params);
+
+        bvector<Byte> compressed;
+        BeSQLite::ZipErrors status = encoder.CompressBuffer(compressed, &input[0], static_cast<uint32_t>(input.size()));
+        EXPECT_EQ(BeSQLite::ZIP_SUCCESS, status);
+        EXPECT_TRUE(!compressed.empty());
+        if (status != BeSQLite::ZIP_SUCCESS || compressed.empty())
+            continue;
+
+        bvector<Byte> decoded;
+        BeSQLite::LzmaDecoder decoder;
+        status = decoder.DecompressBuffer(decoded, &compressed[0], static_cast<uint32_t>(compressed.size()));
+        EXPECT_EQ(BeSQLite::ZIP_SUCCESS, status);
+        if (status == BeSQLite::ZIP_SUCCESS)
+            expectLzmaDataEqual(input, decoded);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST(CompressionTests, LzmaIncrementalPages)
+    {
+    const uint32_t blockSize = 64 * 1024;
+    Byte prefix[] = { 0x00, 0x7f, 0x80, 0xff, 0x11, 0x22, 0x33 };
+    bvector<Byte> largePage = makeLzmaRegressionData(blockSize + 257, 0x2468ace1);
+    bvector<Byte> noisyPage = makeLzmaRegressionData(48 * 1024 + 3, 0xdeadbeef);
+    memset(largePage.data() + blockSize / 2, 'b', blockSize / 2);
+
+    bvector<Byte> expected;
+    appendLzmaRegressionData(expected, prefix, sizeof(prefix));
+    appendLzmaRegressionData(expected, nullptr, 0);
+    appendLzmaRegressionData(expected, &largePage[0], static_cast<uint32_t>(largePage.size()));
+    appendLzmaRegressionData(expected, &noisyPage[0], static_cast<uint32_t>(noisyPage.size()));
+
+    for (int threads : { 1, 4 })
+        {
+        BeSQLite::LzmaEncoder::LzmaParams params(64 * 1024, false, 7, threads);
+        params.SetBlockSize(blockSize);
+        BeSQLite::LzmaEncoder encoder(params);
+        bvector<Byte> compressed;
+        BeSQLite::MemoryLzmaOutStream output(compressed);
+
+        ASSERT_EQ(BeSQLite::ZIP_SUCCESS, encoder.StartCompress(output));
+        ASSERT_EQ(BeSQLite::ZIP_SUCCESS, encoder.CompressNextPage(prefix, sizeof(prefix)));
+        ASSERT_EQ(BeSQLite::ZIP_SUCCESS, encoder.CompressNextPage(nullptr, 0));
+        ASSERT_EQ(BeSQLite::ZIP_SUCCESS, encoder.CompressNextPage(&largePage[0], largePage.size()));
+        ASSERT_EQ(BeSQLite::ZIP_SUCCESS, encoder.CompressNextPage(&noisyPage[0], noisyPage.size()));
+        ASSERT_EQ(BeSQLite::ZIP_SUCCESS, encoder.FinishCompress());
+
+        bvector<Byte> decoded;
+        BeSQLite::LzmaDecoder decoder;
+        EXPECT_TRUE(decodeLzmaInPages(decoder, decoded, compressed));
+        expectLzmaDataEqual(expected, decoded);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST(CompressionTests, LzmaIncrementalHandleReuse)
+    {
+    BeSQLite::LzmaEncoder::LzmaParams params(64 * 1024, false, 7, 4);
+    BeSQLite::LzmaEncoder encoder(params);
+    BeSQLite::LzmaDecoder decoder;
+
+    for (unsigned streamIndex = 0; streamIndex < 2; ++streamIndex)
+        {
+        uint32_t inputSize = streamIndex == 0 ? 19 : 96 * 1024 + 11;
+        bvector<Byte> input = makeLzmaRegressionData(inputSize, 0x10203040 + streamIndex);
+        bvector<Byte> compressed;
+        BeSQLite::MemoryLzmaOutStream output(compressed);
+
+        BeSQLite::ZipErrors status = encoder.StartCompress(output);
+        EXPECT_EQ(BeSQLite::ZIP_SUCCESS, status);
+        if (status != BeSQLite::ZIP_SUCCESS)
+            return;
+
+        status = encoder.CompressNextPage(&input[0], input.size());
+        EXPECT_EQ(BeSQLite::ZIP_SUCCESS, status);
+        if (status != BeSQLite::ZIP_SUCCESS)
+            {
+            encoder.FinishCompress();
+            return;
+            }
+
+        status = encoder.FinishCompress();
+        EXPECT_EQ(BeSQLite::ZIP_SUCCESS, status);
+        if (status != BeSQLite::ZIP_SUCCESS)
+            return;
+
+        bvector<Byte> decoded;
+        EXPECT_TRUE(decodeLzmaInPages(decoder, decoded, compressed));
+        expectLzmaDataEqual(input, decoded);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST(CompressionTests, LzmaEmptyInputRoundTrip)
+    {
+    BeSQLite::LzmaEncoder::LzmaParams params(64 * 1024, false, 7, 1);
+    BeSQLite::LzmaEncoder encoder(params);
+    bvector<Byte> compressed;
+
+    BeSQLite::ZipErrors status = encoder.CompressBuffer(compressed, nullptr, 0);
+    EXPECT_EQ(BeSQLite::ZIP_SUCCESS, status);
+    EXPECT_TRUE(!compressed.empty());
+    if (status != BeSQLite::ZIP_SUCCESS || compressed.empty())
+        return;
+
+    bvector<Byte> decoded;
+    BeSQLite::LzmaDecoder decoder;
+    EXPECT_EQ(BeSQLite::ZIP_SUCCESS, decoder.DecompressBuffer(decoded, &compressed[0], static_cast<uint32_t>(compressed.size())));
+    EXPECT_TRUE(decoded.empty());
+    }
+
+TEST(CompressionTests, LzmaStartDecompressMalformedHeaderReuse)
+    {
+    bvector<Byte> input = makeLzmaRegressionData(23, 0x3456789a);
+    bvector<Byte> compressed;
+    BeSQLite::LzmaEncoder encoder(BeSQLite::LzmaEncoder::LzmaParams(64 * 1024, false, 7, 1));
+    ASSERT_EQ(BeSQLite::ZIP_SUCCESS, encoder.CompressBuffer(compressed, input.data(), static_cast<uint32_t>(input.size())));
+    ASSERT_FALSE(compressed.empty());
+
+    Byte emptyBacking = 0;
+    Byte invalidProperty = 41;
+    BeSQLite::LzmaDecoder decoder;
+    bvector<Byte> decoded;
+    BeSQLite::MemoryLzmaInStream emptyInput(&emptyBacking, 0);
+    EXPECT_EQ(BeSQLite::ZIP_ERROR_BAD_DATA, decoder.StartDecompress(emptyInput));
+    ASSERT_TRUE(decodeLzmaInPages(decoder, decoded, compressed));
+    expectLzmaDataEqual(input, decoded);
+
+    decoded.clear();
+    BeSQLite::MemoryLzmaInStream invalidInput(&invalidProperty, 1);
+    EXPECT_EQ(BeSQLite::ZIP_ERROR_BAD_DATA, decoder.StartDecompress(invalidInput));
+    ASSERT_TRUE(decodeLzmaInPages(decoder, decoded, compressed));
+    expectLzmaDataEqual(input, decoded);
+    }
+
+TEST(CompressionTests, LzmaDecompressStreamMalformedHeaderReuse)
+    {
+    bvector<Byte> input = makeLzmaRegressionData(23, 0x456789ab);
+    bvector<Byte> compressed;
+    BeSQLite::LzmaEncoder encoder(BeSQLite::LzmaEncoder::LzmaParams(64 * 1024, false, 7, 1));
+    ASSERT_EQ(BeSQLite::ZIP_SUCCESS, encoder.CompressBuffer(compressed, input.data(), static_cast<uint32_t>(input.size())));
+    ASSERT_FALSE(compressed.empty());
+
+    Byte emptyBacking = 0;
+    Byte invalidProperty = 41;
+    BeSQLite::LzmaDecoder decoder;
+    bvector<Byte> decoded;
+    BeSQLite::MemoryLzmaOutStream output(decoded);
+    BeSQLite::MemoryLzmaInStream emptyInput(&emptyBacking, 0);
+    EXPECT_EQ(BeSQLite::ZIP_ERROR_BAD_DATA, decoder.DecompressStream(output, emptyInput));
+    BeSQLite::MemoryLzmaInStream validInput(compressed.data(), static_cast<uint32_t>(compressed.size()));
+    ASSERT_EQ(BeSQLite::ZIP_SUCCESS, decoder.DecompressStream(output, validInput));
+    expectLzmaDataEqual(input, decoded);
+
+    decoded.clear();
+    BeSQLite::MemoryLzmaInStream invalidInput(&invalidProperty, 1);
+    EXPECT_EQ(BeSQLite::ZIP_ERROR_BAD_DATA, decoder.DecompressStream(output, invalidInput));
+    validInput.SetData(compressed.data(), static_cast<uint32_t>(compressed.size()));
+    ASSERT_EQ(BeSQLite::ZIP_SUCCESS, decoder.DecompressStream(output, validInput));
+    expectLzmaDataEqual(input, decoded);
+    }
+
+struct LzmaCancellingProgressTracker : BeSQLite::ICompressProgressTracker
+    {
+    uint32_t m_calls = 0;
+
+    StatusInt _Progress(uint64_t, int64_t) override
+        {
+        ++m_calls;
+        return BSIERROR;
+        }
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST(CompressionTests, LzmaProgressCancellation)
+    {
+    bvector<Byte> input = makeLzmaRegressionData(256 * 1024, 0xabcdef01);
+    BeSQLite::LzmaEncoder::LzmaParams params(64 * 1024, false, 7, 4);
+    params.SetBlockSize(64 * 1024);
+    BeSQLite::LzmaEncoder encoder(params);
+    LzmaCancellingProgressTracker tracker;
+    encoder.SetProgressTracker(&tracker);
+
+    bvector<Byte> compressed;
+    EXPECT_EQ(BeSQLite::ZIP_ERROR_ABORTED, encoder.CompressBuffer(compressed, &input[0], static_cast<uint32_t>(input.size())));
+    EXPECT_TRUE(tracker.m_calls > 0);
+    }
+
+struct LzmaFailingOutputStream : BeSQLite::ILzmaOutputStream
+    {
+    uint32_t m_calls = 0;
+    uint32_t m_successfulWrites = 0;
+
+    BeSQLite::ZipErrors _Write(void const*, uint32_t size, uint32_t& bytesWritten) override
+        {
+        ++m_calls;
+        bytesWritten = size;
+        return m_calls <= m_successfulWrites ? BeSQLite::ZIP_SUCCESS : BeSQLite::ZIP_ERROR_WRITE_ERROR;
+        }
+
+    void _SetAlwaysFlush(bool) override {}
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST(CompressionTests, LzmaOutputWriteFailure)
+    {
+    BeSQLite::LzmaEncoder::LzmaParams params(64 * 1024, false, 7, 1);
+    BeSQLite::LzmaEncoder encoder(params);
+    LzmaFailingOutputStream output;
+
+    EXPECT_EQ(BeSQLite::ZIP_ERROR_WRITE_ERROR, encoder.StartCompress(output));
+    EXPECT_EQ(1u, output.m_calls);
+
+    bvector<Byte> input = makeLzmaRegressionData(128 * 1024, 0x12345678);
+    bvector<Byte> recovered;
+    BeSQLite::MemoryLzmaOutStream recoveredOutput(recovered);
+    ASSERT_EQ(BeSQLite::ZIP_SUCCESS, encoder.StartCompress(recoveredOutput));
+    ASSERT_EQ(BeSQLite::ZIP_SUCCESS, encoder.CompressNextPage(input.data(), input.size()));
+    ASSERT_EQ(BeSQLite::ZIP_SUCCESS, encoder.FinishCompress());
+    bvector<Byte> decoded;
+    BeSQLite::LzmaDecoder decoder;
+    ASSERT_TRUE(decodeLzmaInPages(decoder, decoded, recovered));
+    expectLzmaDataEqual(input, decoded);
+
+    BeSQLite::MemoryLzmaInStream inputStream(input.data(), static_cast<uint32_t>(input.size()));
+    BeSQLite::LzmaEncoder streamEncoder(BeSQLite::LzmaEncoder::LzmaParams(64 * 1024, false, 7, 4));
+    output.m_calls = 0;
+    output.m_successfulWrites = 1;
+    EXPECT_EQ(BeSQLite::ZIP_ERROR_WRITE_ERROR, streamEncoder.CompressStream(output, inputStream));
+    EXPECT_TRUE(output.m_calls > 1);
+    }
+
+TEST(CompressionTests, LzmaCompressStreamHeaderWriteFailureReuse)
+    {
+    bvector<Byte> input = makeLzmaRegressionData(37, 0x23456789);
+    BeSQLite::LzmaEncoder encoder(BeSQLite::LzmaEncoder::LzmaParams(64 * 1024, false, 7, 1));
+    LzmaFailingOutputStream failingOutput;
+    BeSQLite::MemoryLzmaInStream failedInput(input.data(), static_cast<uint32_t>(input.size()));
+
+    EXPECT_EQ(BeSQLite::ZIP_ERROR_WRITE_ERROR, encoder.CompressStream(failingOutput, failedInput));
+    EXPECT_EQ(1u, failingOutput.m_calls);
+
+    bvector<Byte> compressed;
+    BeSQLite::MemoryLzmaOutStream healthyOutput(compressed);
+    BeSQLite::MemoryLzmaInStream retryInput(input.data(), static_cast<uint32_t>(input.size()));
+    ASSERT_EQ(BeSQLite::ZIP_SUCCESS, encoder.CompressStream(healthyOutput, retryInput));
+
+    bvector<Byte> decoded;
+    BeSQLite::LzmaDecoder decoder;
+    ASSERT_TRUE(decodeLzmaInPages(decoder, decoded, compressed));
+    expectLzmaDataEqual(input, decoded);
+    }
+
+TEST(CompressionTests, LzmaIncrementalWriteFailures)
+    {
+    bvector<Byte> input = makeLzmaRegressionData(128 * 1024 + 1, 0x98765432);
+    BeSQLite::LzmaEncoder::LzmaParams params(64 * 1024, false, 7, 4);
+    params.SetBlockSize(64 * 1024);
+    BeSQLite::LzmaEncoder encoder(params);
+
+    for (uint32_t successfulWrites : { 1u, 2u })
+        {
+        LzmaFailingOutputStream output;
+        output.m_successfulWrites = successfulWrites;
+        ASSERT_EQ(BeSQLite::ZIP_SUCCESS, encoder.StartCompress(output));
+        EXPECT_EQ(successfulWrites == 1 ? BeSQLite::ZIP_ERROR_WRITE_ERROR : BeSQLite::ZIP_SUCCESS,
+            encoder.CompressNextPage(input.data(), input.size()));
+        EXPECT_EQ(BeSQLite::ZIP_ERROR_WRITE_ERROR, encoder.FinishCompress());
+        }
+    }
+
+struct LzmaWriteCollector : BeSQLite::ILzmaOutputStream
+    {
+    bvector<bvector<Byte>> m_writes;
+    bool m_flushOnEveryWrite = false;
+
+    BeSQLite::ZipErrors _Write(void const* data, uint32_t size, uint32_t& bytesWritten) override
+        {
+        bvector<Byte> write;
+        if (size > 0)
+            {
+            Byte const* bytes = static_cast<Byte const*>(data);
+            write.insert(write.end(), bytes, bytes + size);
+            }
+        m_writes.push_back(write);
+        bytesWritten = size;
+        return BeSQLite::ZIP_SUCCESS;
+        }
+
+    void _SetAlwaysFlush(bool flushOnEveryWrite) override
+        {
+        m_flushOnEveryWrite = flushOnEveryWrite;
+        }
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+static bool decodeLzmaPage(Byte header, bvector<Byte> const& page, bvector<Byte> const& endOfStream, bvector<Byte>& decoded)
+    {
+    bvector<Byte> compressed;
+    compressed.reserve(1 + page.size() + endOfStream.size());
+    compressed.push_back(header);
+    compressed.insert(compressed.end(), page.begin(), page.end());
+    compressed.insert(compressed.end(), endOfStream.begin(), endOfStream.end());
+
+    BeSQLite::LzmaDecoder decoder;
+    return BeSQLite::ZIP_SUCCESS == decoder.DecompressBuffer(decoded, &compressed[0], static_cast<uint32_t>(compressed.size()));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST(CompressionTests, LzmaIncrementalDefaultDictionarySizeChanges)
+    {
+    bvector<Byte> tiny = makeLzmaRegressionData(4, 0x1001);
+    bvector<Byte> medium = makeLzmaRegressionData(64 * 1024 + 23, 0x1002);
+    bvector<Byte> large = makeLzmaRegressionData(1600 * 1024 + 37, 0x1003);
+    memset(medium.data() + medium.size() / 2, 'm', medium.size() - medium.size() / 2);
+    memset(large.data() + large.size() / 4, 'l', large.size() / 2);
+
+    bvector<Byte> expected;
+    appendLzmaRegressionData(expected, tiny.data(), static_cast<uint32_t>(tiny.size()));
+    appendLzmaRegressionData(expected, medium.data(), static_cast<uint32_t>(medium.size()));
+    appendLzmaRegressionData(expected, large.data(), static_cast<uint32_t>(large.size()));
+    appendLzmaRegressionData(expected, tiny.data(), static_cast<uint32_t>(tiny.size()));
+    appendLzmaRegressionData(expected, medium.data(), static_cast<uint32_t>(medium.size()));
+
+    Byte originalHeader = 0;
+    bool haveOriginalHeader = false;
+    for (int threads : { 1, 8 })
+        {
+        BeSQLite::LzmaEncoder::LzmaParams params(1 << 24, false, 7, threads);
+        BeSQLite::LzmaEncoder encoder(params);
+        bvector<Byte> compressed;
+        BeSQLite::MemoryLzmaOutStream output(compressed);
+
+        ASSERT_EQ(BeSQLite::ZIP_SUCCESS, encoder.StartCompress(output));
+        ASSERT_EQ(BeSQLite::ZIP_SUCCESS, encoder.CompressNextPage(tiny.data(), tiny.size()));
+        ASSERT_EQ(BeSQLite::ZIP_SUCCESS, encoder.CompressNextPage(medium.data(), medium.size()));
+        ASSERT_EQ(BeSQLite::ZIP_SUCCESS, encoder.CompressNextPage(large.data(), large.size()));
+        ASSERT_EQ(BeSQLite::ZIP_SUCCESS, encoder.CompressNextPage(tiny.data(), tiny.size()));
+        ASSERT_EQ(BeSQLite::ZIP_SUCCESS, encoder.CompressNextPage(medium.data(), medium.size()));
+        ASSERT_EQ(BeSQLite::ZIP_SUCCESS, encoder.FinishCompress());
+
+        ASSERT_TRUE(compressed.size() > 1);
+        if (!haveOriginalHeader)
+            {
+            originalHeader = compressed[0];
+            haveOriginalHeader = true;
+            }
+        else
+            EXPECT_EQ(originalHeader, compressed[0]);
+
+        bvector<Byte> decoded;
+        BeSQLite::LzmaDecoder decoder;
+        ASSERT_EQ(BeSQLite::ZIP_SUCCESS, decoder.DecompressBuffer(decoded, compressed.data(), static_cast<uint32_t>(compressed.size())));
+        expectLzmaDataEqual(expected, decoded);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST(CompressionTests, LzmaIncrementalExplicitBlockSizeTransitions)
+    {
+    const uint32_t blockSize = 64 * 1024;
+    bvector<bvector<Byte>> pages;
+    pages.push_back(makeLzmaRegressionData(4, 0x2001));
+    pages.push_back(makeLzmaRegressionData(65535, 0x2002));
+    pages.push_back(makeLzmaRegressionData(65536, 0x2003));
+    pages.push_back(makeLzmaRegressionData(65537, 0x2004));
+    pages.push_back(makeLzmaRegressionData(3 * blockSize + 31, 0x2005));
+    pages.push_back(makeLzmaRegressionData(4, 0x2006));
+    memset(pages[3].data() + pages[3].size() / 2, 'p', pages[3].size() / 2);
+    memset(pages[4].data() + pages[4].size() / 3, 'q', pages[4].size() / 3);
+
+    bvector<Byte> expected;
+    for (bvector<Byte> const& page : pages)
+        appendLzmaRegressionData(expected, page.data(), static_cast<uint32_t>(page.size()));
+
+    BeSQLite::LzmaEncoder::LzmaParams params(blockSize, false, 7, 8);
+    params.SetBlockSize(blockSize);
+    BeSQLite::LzmaEncoder encoder(params);
+    bvector<Byte> compressed;
+    BeSQLite::MemoryLzmaOutStream output(compressed);
+
+    ASSERT_EQ(BeSQLite::ZIP_SUCCESS, encoder.StartCompress(output));
+    for (bvector<Byte> const& page : pages)
+        ASSERT_EQ(BeSQLite::ZIP_SUCCESS, encoder.CompressNextPage(page.data(), page.size()));
+    ASSERT_EQ(BeSQLite::ZIP_SUCCESS, encoder.FinishCompress());
+
+    bvector<Byte> decoded;
+    BeSQLite::LzmaDecoder decoder;
+    ASSERT_EQ(BeSQLite::ZIP_SUCCESS, decoder.DecompressBuffer(decoded, compressed.data(), static_cast<uint32_t>(compressed.size())));
+    expectLzmaDataEqual(expected, decoded);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST(CompressionTests, LzmaIncrementalRandomAccessWrites)
+    {
+    const uint32_t blockSize = 64 * 1024;
+    bvector<bvector<Byte>> pages;
+    pages.push_back(makeLzmaRegressionData(4, 0x3001));
+    pages.push_back(bvector<Byte>());
+    pages.push_back(makeLzmaRegressionData(65535, 0x3002));
+    pages.push_back(makeLzmaRegressionData(65536, 0x3003));
+    pages.push_back(makeLzmaRegressionData(65537, 0x3004));
+    pages.push_back(makeLzmaRegressionData(2 * blockSize + 19, 0x3005));
+    pages.push_back(makeLzmaRegressionData(4, 0x3006));
+    memset(pages[4].data(), 'r', pages[4].size() / 2);
+
+    BeSQLite::LzmaEncoder::LzmaParams params(blockSize, true, 7, 8);
+    params.SetBlockSize(blockSize);
+    BeSQLite::LzmaEncoder encoder(params);
+    LzmaWriteCollector output;
+
+    ASSERT_EQ(BeSQLite::ZIP_SUCCESS, encoder.StartCompress(output));
+    for (bvector<Byte> const& page : pages)
+        {
+        void const* data = page.empty() ? nullptr : page.data();
+        ASSERT_EQ(BeSQLite::ZIP_SUCCESS, encoder.CompressNextPage(data, page.size()));
+        }
+    ASSERT_EQ(BeSQLite::ZIP_SUCCESS, encoder.FinishCompress());
+
+    size_t nonEmptyPageCount = 0;
+    for (bvector<Byte> const& page : pages)
+        if (!page.empty())
+            ++nonEmptyPageCount;
+
+    ASSERT_TRUE(output.m_flushOnEveryWrite);
+    ASSERT_EQ(2 + nonEmptyPageCount, output.m_writes.size());
+    ASSERT_EQ(1u, output.m_writes[0].size());
+    ASSERT_EQ(1u, output.m_writes.back().size());
+    EXPECT_EQ(0, output.m_writes.back()[0]);
+
+    Byte originalHeader = output.m_writes[0][0];
+    size_t writeIndex = 1;
+    for (bvector<Byte> const& page : pages)
+        {
+        if (page.empty())
+            continue;
+
+        EXPECT_TRUE(!output.m_writes[writeIndex].empty());
+        bvector<Byte> decoded;
+        EXPECT_TRUE(decodeLzmaPage(originalHeader, output.m_writes[writeIndex], output.m_writes.back(), decoded));
+        expectLzmaDataEqual(page, decoded);
+        ++writeIndex;
+        }
+    }
+
+struct LzmaConcurrentResult
+    {
+    BeSQLite::ZipErrors m_compressStatus = BeSQLite::ZIP_ERROR_UNKNOWN;
+    BeSQLite::ZipErrors m_decodeStatus = BeSQLite::ZIP_ERROR_UNKNOWN;
+    bool m_bytesMatch = false;
+    bvector<Byte> m_input;
+    bvector<Byte> m_decoded;
+    };
+
+struct LzmaConcurrentCase
+    {
+    uint32_t m_size;
+    uint32_t m_seed;
+    int m_threads;
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST(CompressionTests, LzmaConcurrentIndependentEncoders)
+    {
+    static LzmaConcurrentCase const cases[] =
+        {
+        { 4, 0x4001, 1 },
+        { 96 * 1024 + 17, 0x4002, 8 },
+        { 384 * 1024 + 29, 0x4003, 1 },
+        { 1200 * 1024 + 41, 0x4004, 8 },
+        };
+    static size_t const caseCount = sizeof(cases) / sizeof(cases[0]);
+
+    LzmaConcurrentResult results[caseCount];
+    std::thread workers[caseCount];
+    std::atomic<size_t> readyCount{0};
+    std::atomic<bool> start{false};
+    for (size_t i = 0; i < caseCount; ++i)
+        {
+        workers[i] = std::thread([&results, &readyCount, &start, i]()
+            {
+            ++readyCount;
+            while (!start.load())
+                std::this_thread::yield();
+
+            LzmaConcurrentCase const& testCase = cases[i];
+            LzmaConcurrentResult& result = results[i];
+            result.m_input = makeLzmaRegressionData(testCase.m_size, testCase.m_seed);
+            if (i % 2 == 1)
+                memset(result.m_input.data() + result.m_input.size() / 2, 'c', result.m_input.size() / 2);
+
+            BeSQLite::LzmaEncoder::LzmaParams params(64 * 1024, false, 7, testCase.m_threads);
+            params.SetBlockSize(64 * 1024);
+            BeSQLite::LzmaEncoder encoder(params);
+            bvector<Byte> compressed;
+            BeSQLite::MemoryLzmaOutStream output(compressed);
+            result.m_compressStatus = encoder.StartCompress(output);
+            if (result.m_compressStatus == BeSQLite::ZIP_SUCCESS)
+                result.m_compressStatus = encoder.CompressNextPage(result.m_input.data(), result.m_input.size());
+            if (result.m_compressStatus == BeSQLite::ZIP_SUCCESS)
+                result.m_compressStatus = encoder.FinishCompress();
+            if (result.m_compressStatus != BeSQLite::ZIP_SUCCESS)
+                return;
+
+            BeSQLite::LzmaDecoder decoder;
+            result.m_decodeStatus = decoder.DecompressBuffer(result.m_decoded, compressed.data(), static_cast<uint32_t>(compressed.size()));
+            result.m_bytesMatch = result.m_decodeStatus == BeSQLite::ZIP_SUCCESS && result.m_input.size() == result.m_decoded.size() &&
+                0 == memcmp(result.m_input.data(), result.m_decoded.data(), result.m_input.size());
+            });
+        }
+
+    while (readyCount.load() != caseCount)
+        std::this_thread::yield();
+    start = true;
+
+    for (size_t i = 0; i < caseCount; ++i)
+        workers[i].join();
+
+    for (size_t i = 0; i < caseCount; ++i)
+        {
+        EXPECT_EQ(BeSQLite::ZIP_SUCCESS, results[i].m_compressStatus);
+        EXPECT_EQ(BeSQLite::ZIP_SUCCESS, results[i].m_decodeStatus);
+        EXPECT_TRUE(results[i].m_bytesMatch);
+        expectLzmaDataEqual(results[i].m_input, results[i].m_decoded);
+        }
+    }
 
