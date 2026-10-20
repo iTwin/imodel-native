@@ -320,40 +320,46 @@ TEST(Serialization, ExpectedClosure)
     {
     auto meshA = CreatePolyface_ExtrudedL(0, 0, 3, 4, 2, 6, 2);
     Check::True(meshA->IsClosedByEdgePairing(), "verify closure");
-    for (uint32_t closure : {0, 1, 2, 0, 2, 1})
+    for (uint32_t closure : { 0, 1, 2 })
         {
+        // verify closure flag is preserved during de/serialization
         Check::StartScope("closure case", (size_t)closure);
         meshA->SetExpectedClosure(closure);
         Check::Int(closure, meshA->GetExpectedClosure());
-        {
-        BeJsDocument jsonA;
-        Check::True(IModelJson::TryGeometryToIModelJsonValue(jsonA, *IGeometry::Create(meshA)), "geomery to json");
-        bvector<IGeometryPtr> geometryB;
-        Check::True(IModelJson::TryIModelJsonValueToGeometry(jsonA, geometryB), "json to geometry");
-        if (Check::Size(1, geometryB.size()), "singleton from json")
+        if (true)
             {
-            auto meshB = geometryB[0]->GetAsPolyfaceHeader ();
-            if (Check::True(meshB.IsValid()), "singleton mesh")
+            BeJsDocument jsonA;
+            Check::True(IModelJson::TryGeometryToIModelJsonValue(jsonA, *IGeometry::Create(meshA)), "geometry to json");
+            bvector<IGeometryPtr> geometryB;
+            if (Check::True(IModelJson::TryIModelJsonValueToGeometry(jsonA, geometryB), "json to geometry"))
                 {
-                Check::Int(closure, meshB->GetExpectedClosure(), "expectdClosure json");
+                if (Check::Size(1, geometryB.size()), "singleton from json")
+                    {
+                    auto meshB = geometryB[0]->GetAsPolyfaceHeader ();
+                    if (Check::True(meshB.IsValid()), "singleton mesh")
+                        {
+                        Check::Int(closure, meshB->GetExpectedClosure(), "expectedClosure json");
+                        }
+                    }
                 }
             }
-        }
-
-        {
-        bvector<Byte> bytes;
-        BentleyGeometryFlatBuffer::GeometryToBytes(*IGeometry::Create(meshA), bytes);
-        bvector<IGeometryPtr> geometryC;
-        BentleyGeometryFlatBuffer::BytesToVectorOfGeometrySafe(bytes, geometryC);
-        if (Check::Size(1, geometryC.size()), "singleton from flatbuffer")
+        if (true)
             {
-            auto meshC = geometryC[0]->GetAsPolyfaceHeader();
-            if (Check::True(meshC.IsValid()), "singleton mesh")
+            bvector<Byte> bytes;
+            BentleyGeometryFlatBuffer::GeometryToBytes(*IGeometry::Create(meshA), bytes);
+            bvector<IGeometryPtr> geometryC;
+            if (Check::True(BentleyGeometryFlatBuffer::BytesToVectorOfGeometrySafe(bytes, geometryC), "flatbuffer to geometry"))
                 {
-                Check::Int(closure, meshC->GetExpectedClosure(), "expectdClosure fb");
+                if (Check::Size(1, geometryC.size()), "singleton from flatbuffer")
+                    {
+                    auto meshC = geometryC[0]->GetAsPolyfaceHeader();
+                    if (Check::True(meshC.IsValid()), "singleton mesh")
+                        {
+                        Check::Int(closure, meshC->GetExpectedClosure(), "expectedClosure fb");
+                        }
+                    }
                 }
             }
-        }
         Check::EndScope();
         }
     }
