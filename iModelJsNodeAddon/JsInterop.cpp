@@ -1615,13 +1615,20 @@ void SqliteChangesetReader::WriteToFile(Napi::Env env, Utf8String const& fileNam
     }
 
     if(m_changeGroup){
-        writer.FromChangeGroup(*m_changeGroup);
+        if (BE_SQLITE_OK != writer.FromChangeGroup(*m_changeGroup)) {
+            THROW_JS_BE_SQLITE_EXCEPTION(env, "writeToFile(): unable to write changeset", BE_SQLITE_ERROR);
+        }
     } else if (m_changeStream) {
         ChangeGroup changeGroup;
         m_changeStream->AddToChangeGroup(changeGroup);
-        writer.FromChangeGroup(changeGroup);
+        if (BE_SQLITE_OK != writer.FromChangeGroup(changeGroup)) {
+            THROW_JS_BE_SQLITE_EXCEPTION(env, "writeToFile(): unable to write changeset", BE_SQLITE_ERROR);
+        }
     } else {
         THROW_JS_BE_SQLITE_EXCEPTION(env, "writeToFile(): no changeset to write", BE_SQLITE_ERROR);
+    }
+    if (BE_SQLITE_OK != writer.Finish()) {
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "writeToFile(): unable to finish changeset writer", BE_SQLITE_ERROR);
     }
     if (!outputFile.DoesPathExist()) {
         THROW_JS_BE_SQLITE_EXCEPTION(env, "writeToFile(): unable to write changeset file", BE_SQLITE_ERROR);
