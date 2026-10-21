@@ -68,10 +68,20 @@ BentleyStatus BeJpegDecompressor::ReadHeader(uint32_t& width, uint32_t& height, 
 BentleyStatus BeJpegDecompressor::Decompress(Byte* pOutBuffer, size_t outBufferSize, Byte const* jpegBuffer, size_t jpegBufferSize, BeJpegPixelType pixelType, BeJpegBottomUp bottomUp)
     {
     int tjPixeltype = getTjPixelType(pixelType);
-    if (-1 == tjPixeltype)
+    if (-1 == tjPixeltype || nullptr == pOutBuffer)
         return ERROR;
 
-    return tjDecompress2(m_jpegImpl, const_cast<Byte*>(jpegBuffer), (unsigned long)jpegBufferSize, pOutBuffer, 0, 0, 0, tjPixeltype, BeJpegBottomUp::No==bottomUp ? 0 : TJFLAG_BOTTOMUP) ? ERROR : SUCCESS;
+    int tjWidth, tjHeight, tjjpegSubsamp;
+    if (0 != tjDecompressHeader2(m_jpegImpl, const_cast<Byte*>(jpegBuffer), (unsigned long)jpegBufferSize, &tjWidth, &tjHeight, &tjjpegSubsamp) || tjWidth <= 0 || tjHeight <= 0)
+        return ERROR;
+
+    // Make sure the decompressed image fits in the caller's buffer. Compute in 64 bits to avoid overflow.
+    uint64_t pitch = static_cast<uint64_t>(tjWidth) * static_cast<uint64_t>(tjPixelSize[tjPixeltype]);
+    uint64_t requiredSize = pitch * static_cast<uint64_t>(tjHeight);
+    if (requiredSize > static_cast<uint64_t>(outBufferSize))
+        return ERROR;
+
+    return tjDecompress2(m_jpegImpl, const_cast<Byte*>(jpegBuffer), (unsigned long)jpegBufferSize, pOutBuffer, tjWidth, static_cast<int>(pitch), tjHeight, tjPixeltype, BeJpegBottomUp::No==bottomUp ? 0 : TJFLAG_BOTTOMUP) ? ERROR : SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
