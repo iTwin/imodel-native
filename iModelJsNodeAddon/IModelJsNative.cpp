@@ -1925,11 +1925,18 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         ret.Set("status", Napi::Number::New(Env(), static_cast<int>(result.status)));
         ret.Set("sqlDeleteStatus", Napi::Number::New(Env(), static_cast<int>(result.sqlDeleteStatus)));
 
-        uint32_t index = 0;
-        auto failedArr = Napi::Array::New(Env(), result.failedIds.size());
-        for (const auto& elemId : result.failedIds)
-            failedArr.Set(index++, Napi::String::New(Env(), elemId.ToHexStr().c_str()));
-        ret.Set("failedIds", failedArr);
+        uint32_t fIndex = 0;
+        auto failuresArr = Napi::Array::New(Env(), result.failures.size());
+        for (const auto& f : result.failures) {
+            const auto idStr = f.elementId.ToHexStr();
+            BeJsNapiObject entry(Env());
+            entry["elementId"] = idStr;
+            entry["reason"] = static_cast<int>(f.reason);
+            if (!f.detail.empty())
+                entry["detail"] = f.detail;
+            failuresArr.Set(fIndex++, static_cast<Napi::Object>(entry));
+        }
+        ret.Set("failures", failuresArr);
 
         return ret;
     }

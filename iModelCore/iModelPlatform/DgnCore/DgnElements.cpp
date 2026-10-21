@@ -484,6 +484,64 @@ DgnElementId ElementAspectIteratorEntry::GetElementId() const {return m_statemen
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElements::CacheFkConstraints() const
+    {
+    BeMutexHolder _v(m_mutex);
+    if (m_fkConstraints.has_value())
+        return;
+
+    static const auto toAction = [](Utf8CP sql) -> FkOnDeleteAction
+        {
+        Utf8String s(sql);
+        if (s.EqualsIAscii("CASCADE"))
+            return FkOnDeleteAction::Cascade;
+        if (s.EqualsIAscii("SET NULL"))
+            return FkOnDeleteAction::SetNull;
+        if (s.EqualsIAscii("SET DEFAULT"))
+            return FkOnDeleteAction::SetDefault;
+        if (s.EqualsIAscii("RESTRICT"))
+            return FkOnDeleteAction::Restrict;
+        return FkOnDeleteAction::NoAction;
+        };
+
+    ElementFkConstraintMap constraints;
+    Statement stmt;
+    
+    const auto rc = stmt.Prepare(m_dgndb,
+        "SELECT m.name, f.\"from\", f.on_delete, "
+            "CASE WHEN m.name = '" BIS_TABLE(BIS_CLASS_Element) "' THEN 'Id' "
+                 "WHEN EXISTS (SELECT 1 FROM pragma_table_info(m.name) c WHERE c.name = 'ElementId' AND c.pk = 1) THEN 'ElementId' "
+                 "ELSE NULL END "
+        "FROM main.sqlite_master m, pragma_foreign_key_list(m.name) f "
+        "WHERE m.type = 'table' AND f.\"table\" = '" BIS_TABLE(BIS_CLASS_Element) "' COLLATE NOCASE "
+        "ORDER BY m.name, f.\"from\"");
+    if (BE_SQLITE_OK != rc)
+        {
+        LOG.errorv("DgnElements::CacheFkConstraints: failed to prepare FK query: %s", BeSQLiteLib::GetLogError(rc).c_str());
+        m_fkConstraints.emplace(); // engage an empty cache so callers don't retry on every call; ClearECCaches() resets it
+        return;
+        }
+
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        ElementFkConstraint fk;
+        fk.m_tableName  = stmt.GetValueText(0);
+        fk.m_fromColumn = stmt.GetValueText(1);
+        if (!stmt.IsColumnNull(3))
+            fk.m_elementIdColumn = stmt.GetValueText(3);
+
+        LOG.debugv("DgnElements::CacheFkConstraints: %s.%s ON DELETE %s (elementIdColumn=%s)",
+                   fk.m_tableName.c_str(), fk.m_fromColumn.c_str(), stmt.GetValueText(2), fk.m_elementIdColumn.c_str());
+
+        constraints[toAction(stmt.GetValueText(2))].push_back(std::move(fk));
+        }
+
+    m_fkConstraints = std::move(constraints);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementCPtr DgnElements::PerformInsert(DgnElementR element, DgnDbStatus& stat)
     {
     if (element.m_flags.m_preassignedId)  {

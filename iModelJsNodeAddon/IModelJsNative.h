@@ -502,6 +502,7 @@ struct JsInterop {
     BE_JSON_NAME(yesNo)
     BE_JSON_NAME(uncompressedSize)
     BE_JSON_NAME(skipFKConstraintValidations)
+    BE_JSON_NAME(deleteMode)
 
 #define JSON_NAME(__val__) JsInterop::json_##__val__()
 

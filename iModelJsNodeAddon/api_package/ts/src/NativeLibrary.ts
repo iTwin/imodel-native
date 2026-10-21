@@ -36,13 +36,76 @@ import type { LowAndHighXYZProps, Range2dProps, Range3dProps, XAndY } from "@itw
 // cspell:ignore  blocksize cachesize polltime bentleyjs imodeljs ecsql pollable polyface txns lzma uncompress changesets ruleset ulas oidc keychain libsecret rulesets struct
 
 /**
+ * Controls how `deleteElements` treats elements that are still referenced from outside the delete set.
+ * @internal
+ */
+export enum BulkDeleteMode {
+  /** Default best effort. Skip referenced elements and their logical subtree inside the set (if any), delete the rest, return `PartialSuccess`/`Success`. */
+  RemoveFKViolators = 0,
+  /** Validate everything first; if any element is still referenced, delete nothing and return `ConstraintViolation`. */
+  FailFast = 1,
+  /** Skip validation entirely. The caller guarantees nothing outside the set references it. */
+  SkipValidation = 2,
+}
+
+/**
  * Status codes returned by the native bulk-delete operation.
  * @internal
  */
 export enum BulkDeleteElementsStatus {
+  /** All requested elements were deleted. */
   Success = 0,
+  /** Possible with `RemoveFKViolators` mode only: some requested elements were skipped; see `failures` for the violators. */
   PartialSuccess = 1,
-  DeletionFailed = 2,
+  /** Possible with `FailFast` mode only: nothing was deleted because some elements are still referenced from outside the delete set; see `failures` for the violators. */
+  ConstraintViolation = 2,
+  /** An internal error occurred. The iModel may be partially modified; the caller must abandon the current txn. `failures` will be empty. */
+  DeletionFailed = 3,
+}
+
+/**
+ * Options for `deleteElements`.
+ * @internal
+ */
+export interface BulkDeleteElementsOptions {
+  /** How to treat elements still referenced from outside the delete set. Defaults to `BulkDeleteMode.RemoveFKViolators`. */
+  deleteMode?: BulkDeleteMode;
+  /** @deprecated Use `deleteMode` for more control. `true` is equivalent to `BulkDeleteMode.SkipValidation`. Ignored if `deleteMode` is set. */
+  skipFKConstraintValidations?: boolean;
+}
+
+/**
+ * Why an element could not be deleted by `deleteElements`.
+ * @internal
+ */
+export enum BulkDeleteFailureReason {
+  /**
+   * A row outside the delete set references it via a NO ACTION / RESTRICT foreign key.
+   * Reported for any element in the expanded delete set (not only requested ids) since this is what must be fixed before retrying.
+   */
+  ReferencedByForeignKey = 0,
+  /** It is a DefinitionElement still used by elements outside the delete set. */
+  DefinitionInUse = 1,
+  /**
+   * `RemoveFKViolators` mode only: a *requested* id that was skipped because a logical ancestor/descendant in the delete set failed.
+   * `detail` holds the id of that direct violator, which has its own entry in `failures`.
+   */
+  BlockedByRelative = 2,
+}
+
+/**
+ * One element that could not be deleted, and why.
+ * @internal
+ */
+export interface BulkDeleteFailure {
+  elementId: Id64String;
+  reason: BulkDeleteFailureReason;
+  /**
+   * `ReferencedByForeignKey`: the referencing `table.column`, e.g. `bis_GeometricElement3d.CategoryId`.
+   * `BlockedByRelative`: the `Id64String` of the direct violator that caused this element to be skipped.
+   * `DefinitionInUse`: absent.
+   */
+  detail?: string;
 }
 
 /**
@@ -51,7 +114,16 @@ export enum BulkDeleteElementsStatus {
  */
 export interface BulkDeleteElementsResult {
   status: BulkDeleteElementsStatus;
+  /** Only meaningful when `status === DeletionFailed`. */
   sqlDeleteStatus: DbResult;
+  /**
+   * Elements that could not be deleted, with the reason (`PartialSuccess` / `ConstraintViolation`).
+   * An element may appear more than once if several foreign keys reference it. Capped at 100 entries in total;
+   * direct violators (`ReferencedByForeignKey` / `DefinitionInUse`) are collected first, then `BlockedByRelative`.
+   * Empty on `Success` and `DeletionFailed`.
+   */
+  failures: BulkDeleteFailure[];
+  /** @deprecated Use `failures` for a more detailed failure report. */
   failedIds: Id64Array;
 }
 
@@ -651,7 +723,7 @@ export declare namespace IModelJsNative {
     public createIModel(fileName: string, props: CreateEmptyStandaloneIModelProps): void;
     public deleteAllTxns(): void;
     public deleteElement(elemIdJson: string): void;
-    public deleteElements(elementIds: Id64Array, deleteOptions?: { skipFKConstraintValidations?: boolean }): BulkDeleteElementsResult;
+    public deleteElements(elementIds: Id64Array, deleteOptions?: BulkDeleteElementsOptions): BulkDeleteElementsResult;
     public deleteElementAspect(aspectIdJson: string): void;
     public deleteLinkTableRelationship(props: RelationshipProps): DbResult;
     public deleteLinkTableRelationships(props: ReadonlyArray<RelationshipProps>): DbResult;

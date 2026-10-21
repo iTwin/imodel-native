@@ -981,6 +981,7 @@ void DgnElements::ClearECCaches()
     m_stmts.Empty();
     m_classInfos.clear();
     m_updaterCache.Clear();
+    m_fkConstraints.reset(); // force re-query on next use
     }
 
 /*---------------------------------------------------------------------------------**//**
