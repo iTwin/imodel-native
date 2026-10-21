@@ -31,6 +31,7 @@ struct SchemaPolicy
         ECN::ECSchemaId m_optingInSchemaId;
         bset<ECN::ECSchemaId> m_schemaExceptions;
         bset<ECN::ECClassId> m_classExceptions;
+        bvector<bvector<Utf8String>> m_unresolvedExceptions;
 
     private:
         SchemaPolicy(SchemaPolicy const&) = delete;
@@ -40,6 +41,7 @@ struct SchemaPolicy
         SchemaPolicy(Type type, ECN::ECSchemaId optingInSchemaId) : m_type(type), m_optingInSchemaId(optingInSchemaId) {}
 
         bool IsException(ECN::ECClassCR candidateClass) const;
+        bool IsUnresolvedException(ECN::ECClassCR candidateClass, Utf8CP propertyName = nullptr) const;
 
         static BentleyStatus RetrieveExceptions(bvector<bvector<Utf8String>>&, ECN::IECInstanceCR policyCA, Utf8CP exceptionsPropName);
 

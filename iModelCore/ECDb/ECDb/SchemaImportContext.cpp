@@ -155,11 +155,28 @@ std::vector<ECSchemaId> SchemaPolicies::GetSystemSchemaExceptions(ECDbCR ecdb)
 //---------------------------------------------------------------------------------------
 bool SchemaPolicy::IsException(ECN::ECClassCR candidateClass) const
     {
-    if (m_schemaExceptions.find(candidateClass.GetSchema().GetId()) != m_schemaExceptions.end())
+    if (candidateClass.GetSchema().HasId() &&
+        m_schemaExceptions.find(candidateClass.GetSchema().GetId()) != m_schemaExceptions.end())
         return true;
 
-    return m_classExceptions.find(candidateClass.GetId()) != m_classExceptions.end();
+    return (candidateClass.HasId() && m_classExceptions.find(candidateClass.GetId()) != m_classExceptions.end()) ||
+        IsUnresolvedException(candidateClass);
     }
+
+bool SchemaPolicy::IsUnresolvedException(ECN::ECClassCR candidateClass, Utf8CP propertyName) const {
+    for (auto const& tokens : m_unresolvedExceptions) {
+        auto const& schema = candidateClass.GetSchema();
+        if (!tokens[0].EqualsIAscii(schema.GetName()) && !tokens[0].EqualsIAscii(schema.GetAlias()))
+            continue;
+        if (tokens.size() == 1 || tokens[1].Equals("*"))
+            return true;
+        if (!tokens[1].EqualsIAscii(candidateClass.GetName()))
+            continue;
+        if (tokens.size() == 2 || tokens[2].Equals("*") || (propertyName != nullptr && tokens[2].EqualsIAscii(propertyName)))
+            return true;
+    }
+    return false;
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -252,17 +269,19 @@ std::unique_ptr<SchemaPolicy> NoAdditionalRootEntityClassesPolicy::Create(ECDbCR
         if (tokenCount == 1 || tokenizedException[1].EqualsIAscii("*"))
             {
             ECSchemaId exceptionSchemaId = SchemaPersistenceHelper::GetSchemaId(ecdb, DbTableSpace::Main(), tokenizedException[0].c_str(), SchemaLookupMode::AutoDetect);
-            // If schema id doesn't exist, the schema is not yet imported by this schema import. Exception can be ignored
             if (exceptionSchemaId.IsValid())
                 policy->m_schemaExceptions.insert(exceptionSchemaId);
+            else
+                policy->m_unresolvedExceptions.push_back(tokenizedException);
             }
         else
             {
             ECClassId exceptionClassId = ecdb.Schemas().GetClassId(tokenizedException[0], tokenizedException[1], SchemaLookupMode::AutoDetect);
 
-            // If class id doesn't exist, the class is not yet imported by this schema import. Exception can be ignored
             if (exceptionClassId.IsValid())
                 policy->m_classExceptions.insert(exceptionClassId);
+            else
+                policy->m_unresolvedExceptions.push_back(tokenizedException);
             }
         }
 
@@ -337,17 +356,19 @@ std::unique_ptr<SchemaPolicy> NoAdditionalLinkTablesPolicy::Create(ECDbCR ecdb, 
         if (tokenCount == 1 || tokenizedException[1].EqualsIAscii("*"))
             {
             ECSchemaId exceptionSchemaId = SchemaPersistenceHelper::GetSchemaId(ecdb, DbTableSpace::Main(), tokenizedException[0].c_str(), SchemaLookupMode::AutoDetect);
-            // If schema id doesn't exist, the schema is not yet imported by this schema import. Exception can be ignored
             if (exceptionSchemaId.IsValid())
                 policy->m_schemaExceptions.insert(exceptionSchemaId);
+            else
+                policy->m_unresolvedExceptions.push_back(tokenizedException);
             }
         else
             {
             ECClassId exceptionClassId = ecdb.Schemas().Main().GetClassId(tokenizedException[0], tokenizedException[1], SchemaLookupMode::AutoDetect);
 
-            // If class id doesn't exist, the class is not yet imported by this schema import. Exception can be ignored
             if (exceptionClassId.IsValid())
                 policy->m_classExceptions.insert(exceptionClassId);
+            else
+                policy->m_unresolvedExceptions.push_back(tokenizedException);
             }
         }
 
@@ -445,24 +466,27 @@ BentleyStatus NoAdditionalForeignKeyConstraintsPolicy::ReadExceptionsFromCA(ECDb
         if (tokenCount == 1 || tokenizedException[1].EqualsIAscii("*"))
             {
             ECSchemaId exceptionSchemaId = SchemaPersistenceHelper::GetSchemaId(ecdb, DbTableSpace::Main(), tokenizedException[0].c_str(), SchemaLookupMode::AutoDetect);
-            // If schema id doesn't exist, the schema is not yet imported by this schema import. Exception can be ignored
             if (exceptionSchemaId.IsValid())
                 m_schemaExceptions.insert(exceptionSchemaId);
+            else
+                m_unresolvedExceptions.push_back(tokenizedException);
             }
         else if (tokenCount == 2 || tokenizedException[2].EqualsIAscii("*"))
             {
             ECClassId exceptionClassId = ecdb.Schemas().Main().GetClassId(tokenizedException[0], tokenizedException[1], SchemaLookupMode::AutoDetect);
 
-            // If class id doesn't exist, the class is not yet imported by this schema import. Exception can be ignored
             if (exceptionClassId.IsValid())
                 m_classExceptions.insert(exceptionClassId);
+            else
+                m_unresolvedExceptions.push_back(tokenizedException);
             }
         else
             {
             ECPropertyId exceptionPropId = SchemaPersistenceHelper::GetPropertyId(ecdb, DbTableSpace::Main(), tokenizedException[0].c_str(), tokenizedException[1].c_str(), tokenizedException[2].c_str(), SchemaLookupMode::AutoDetect);
-            // If property id doesn't exist, the class is not yet imported by this schema import. Exception can be ignored
             if (exceptionPropId.IsValid())
                 m_propertyExceptions.insert(exceptionPropId);
+            else
+                m_unresolvedExceptions.push_back(tokenizedException);
             }
         }
 
@@ -499,7 +523,8 @@ bool NoAdditionalForeignKeyConstraintsPolicy::IsException(ECN::NavigationECPrope
     if (IsException(navProp.GetClass()))
         return true;
 
-    return m_propertyExceptions.find(navProp.GetId()) != m_propertyExceptions.end();
+    return (navProp.HasId() && m_propertyExceptions.find(navProp.GetId()) != m_propertyExceptions.end()) ||
+        IsUnresolvedException(navProp.GetClass(), navProp.GetName().c_str());
 }
 
 //***************************************************************************************

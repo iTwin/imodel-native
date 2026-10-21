@@ -495,10 +495,13 @@ BentleyStatus SavePropertyMapVisitor::_Visit(SingleColumnDataPropertyMap const& 
 
     const auto kPerTableId = Enum::Or<PropertyMap::Type>(PropertyMap::Type::SystemPerTableClassId, PropertyMap::Type::SystemPerTableId);
     const auto isPerTable = Enum::Intersects<PropertyMap::Type>(propertyMap.GetType(), kPerTableId);
-    if (m_action == Action::SkipIfExists)
+    if (m_action != Action::InsertNew)
         {
         uint64_t propertyMapId;
-        if (SUCCESS != m_context.TryPropertyMapExists(propertyMapId, rootPropertyId, accessString.c_str(), isPerTable? propertyMap.GetColumn().GetId(): DbColumnId()))
+        auto status = m_action == Action::SkipIfMapped && !isPerTable ?
+            m_context.TryPropertyMapExistsByAccessString(propertyMapId, accessString.c_str()) :
+            m_context.TryPropertyMapExists(propertyMapId, rootPropertyId, accessString.c_str(), isPerTable ? propertyMap.GetColumn().GetId() : DbColumnId());
+        if (SUCCESS != status)
             {
             BeAssert(false);
             return ERROR;

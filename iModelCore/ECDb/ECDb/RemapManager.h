@@ -184,6 +184,8 @@ public:
         return !m_allFreedColumnIdentifiers.empty();
         }
 
+    bool HasCleanedPropertyMappings() const { return !m_cleanedMappingInfo.empty(); }
+
     bool HasCleanedPropertyMapping(ECN::ECClassId classId, Utf8StringCR propertyName) const
         {
         auto it = m_cleanedMappingInfo.find(classId);

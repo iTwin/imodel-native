@@ -19,6 +19,8 @@ ECDbPublicHeaders =  \
                 $(publicApiDir)ECDb.h \
                 $(publicApiDir)ECInstanceId.h \
                 $(publicApiDir)SchemaManager.h \
+                $(publicApiDir)SchemaEditor.h \
+                $(publicApiDir)SchemaImportAdapter.h \
                 $(publicApiDir)ECInstanceFinder.h \
                 $(publicApiDir)ECSqlStatement.h \
                 $(publicApiDir)IECSqlRow.h \
@@ -65,6 +67,10 @@ ECDbAllHeaders = \
                 $(baseDir)SchemaWriter.h \
                 $(baseDir)SchemaValidator.h \
                 $(baseDir)SchemaImportContext.h \
+                $(baseDir)SchemaEditor/SchemaCommand.h \
+                $(baseDir)SchemaEditor/SchemaCommandArgParser.h \
+                $(baseDir)SchemaEditor/SchemaCommandHelpers.h \
+                $(baseDir)SchemaEditor/SchemaImportPlanBuilder.h \
                 $(baseDir)ClassMappingInfo.h \
                 $(baseDir)ViewGenerator.h \
                 $(baseDir)ProfileManager.h \
@@ -235,6 +241,38 @@ $(o)SchemaReader$(oext):                                      $(baseDir)SchemaRe
 $(o)SchemaWriter$(oext):                                      $(baseDir)SchemaWriter.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)SchemaImportContext$(oext):                               $(baseDir)SchemaImportContext.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)SchemaEditor$(oext):                                      $(baseDir)SchemaEditor/SchemaEditor.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)SchemaCommandArgs$(oext):                                 $(baseDir)SchemaEditor/SchemaCommandArgs.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)SchemaCommandArgParser$(oext):                            $(baseDir)SchemaEditor/SchemaCommandArgParser.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)SchemaEditContext$(oext):                                 $(baseDir)SchemaEditor/SchemaEditContext.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)MetaTableWriter$(oext):                                   $(baseDir)SchemaEditor/MetaTableWriter.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)IncrementalMapper$(oext):                                 $(baseDir)SchemaEditor/IncrementalMapper.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)SchemaCommands$(oext):                                    $(baseDir)SchemaEditor/SchemaCommands.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)SchemaClassCommands$(oext):                               $(baseDir)SchemaEditor/SchemaClassCommands.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)SchemaPropertyCommands$(oext):                            $(baseDir)SchemaEditor/SchemaPropertyCommands.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)SchemaEnumerationCommands$(oext):                         $(baseDir)SchemaEditor/SchemaEnumerationCommands.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)SchemaCustomAttributeCommands$(oext):                     $(baseDir)SchemaEditor/SchemaCustomAttributeCommands.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)SchemaRelationshipCommands$(oext):                        $(baseDir)SchemaEditor/SchemaRelationshipCommands.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)SchemaUnitCommands$(oext):                                $(baseDir)SchemaEditor/SchemaUnitCommands.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)SchemaQuantityCommands$(oext):                            $(baseDir)SchemaEditor/SchemaQuantityCommands.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)SchemaImportPlan$(oext):                                  $(baseDir)SchemaEditor/SchemaImportPlan.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)SchemaImportAdapter$(oext):                               $(baseDir)SchemaEditor/SchemaImportAdapter.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)SchemaValidator$(oext):                                   $(baseDir)SchemaValidator.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 

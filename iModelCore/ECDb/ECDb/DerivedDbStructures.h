@@ -48,6 +48,9 @@ struct DerivedDbStructures final
         //! @pre The EC cache tables reflect the persisted metadata. Relationship derivation reads
         //!      ec_cache_ClassHasTables, so callers must refresh the caches after their last metadata change.
         static BentleyStatus Derive(MainSchemaManager const&);
+        //! Derives only the triggers. Sufficient when no table will be created and no column
+        //! added, because foreign keys are only emitted by CREATE TABLE and ADD COLUMN.
+        static BentleyStatus DeriveTriggers(MainSchemaManager const& manager) { return AddCurrentTimeStampTriggers(manager); }
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

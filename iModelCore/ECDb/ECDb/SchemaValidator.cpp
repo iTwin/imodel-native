@@ -33,25 +33,64 @@ bool SchemaValidator::ValidateSchemas(SchemaImportContext& ctx, IssueDataSource 
 
         for (ECClassCP ecClass : schema->GetClasses())
             {
-            //per class rules
-            succeeded = baseClassesRule.Validate(ctx, issueReporter, *schema, *ecClass);
-            if (!succeeded)
+            if (!ValidateClass(ctx, issueReporter, *ecClass, baseClassesRule, relRule, validPropertyRule))
                 valid = false;
-
-            succeeded = relRule.Validate(issueReporter, *schema, *ecClass);
-            if (!succeeded)
-                valid = false;
-
-            //per property rules
-            for (ECPropertyCP prop : ecClass->GetProperties(false))
-                {
-                if (!validPropertyRule.Validate(issueReporter, *ecClass, *prop))
-                    valid = false;
-                }
             }
         }
 
     return valid;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+//static
+bool SchemaValidator::ValidateClass(SchemaImportContext const& ctx, IssueDataSource const& issueReporter, ECN::ECClassCR ecClass, ValidBaseClassesRule const& baseClassesRule, ValidRelationshipRule const& relRule, ValidPropertyRule const& validPropertyRule)
+    {
+    bool valid = true;
+    //per class rules
+    if (!baseClassesRule.Validate(ctx, issueReporter, ecClass.GetSchema(), ecClass))
+        valid = false;
+
+    if (!relRule.Validate(issueReporter, ecClass.GetSchema(), ecClass))
+        valid = false;
+
+    //per property rules
+    for (ECPropertyCP prop : ecClass.GetProperties(false))
+        {
+        if (!validPropertyRule.Validate(issueReporter, ecClass, *prop))
+            valid = false;
+        }
+
+    return valid;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+//static
+bool SchemaValidator::ValidateClass(SchemaImportContext const& ctx, IssueDataSource const& issueReporter, ECN::ECClassCR ecClass)
+    {
+    if (ecClass.GetSchema().GetName().EqualsIAscii(ECSCHEMA_ECDbSystem))
+        return true; //ValidateSchemas skips the per class and per property rules for this schema
+
+    ValidBaseClassesRule baseClassesRule;
+    ValidRelationshipRule relRule;
+    ValidPropertyRule validPropertyRule;
+    return ValidateClass(ctx, issueReporter, ecClass, baseClassesRule, relRule, validPropertyRule);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+//static
+bool SchemaValidator::ValidateProperty(IssueDataSource const& issueReporter, ECN::ECClassCR ecClass, ECN::ECPropertyCR prop)
+    {
+    if (ecClass.GetSchema().GetName().EqualsIAscii(ECSCHEMA_ECDbSystem))
+        return true; //ValidateSchemas skips the per class and per property rules for this schema
+
+    ValidPropertyRule validPropertyRule;
+    return validPropertyRule.Validate(issueReporter, ecClass, prop);
     }
 
 //*************************************************************************

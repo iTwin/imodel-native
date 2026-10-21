@@ -593,9 +593,37 @@ BentleyStatus ClassMap::Update(SchemaImportContext& ctx)
     m_state = ObjectState::Modified;
 
     UpdateColumnResolutionScope columnResolutionScope(*this);
+    bvector<ClassMap const*> tphBaseClassMaps;
+    DbMappingManager::Classes::PropertyMapInheritanceMode inheritanceMode = DbMappingManager::Classes::GetPropertyMapInheritanceMode(m_mapStrategyExtInfo);
+    if (inheritanceMode == DbMappingManager::Classes::PropertyMapInheritanceMode::Clone) {
+        for (ECClassCP baseClass : m_ecClass.GetBaseClasses()) {
+            ClassMap const* baseClassMap = GetSchemaManager().GetClassMap(*baseClass);
+            if (baseClassMap == nullptr)
+                return ERROR;
+            if (baseClassMap->GetMapStrategy().IsTablePerHierarchy())
+                tphBaseClassMaps.push_back(baseClassMap);
+        }
+    }
+
     for (ECPropertyCP property : m_failedToLoadProperties)
         {
-        PropertyMap const* propMap = DbMappingManager::Classes::MapProperty(ctx, *this, *property);
+        PropertyMap const* propMap = nullptr;
+        RefCountedPtr<PropertyMap> clonedPropMap = nullptr;
+        if (inheritanceMode == DbMappingManager::Classes::PropertyMapInheritanceMode::Clone && GetMapStrategy().GetTphInfo().GetShareColumnsMode() != TablePerHierarchyInfo::ShareColumnsMode::Yes) {
+            for (ClassMap const* baseClassMap : tphBaseClassMaps) {
+                PropertyMap const* basePropMap = baseClassMap->GetPropertyMaps().Find(property->GetName().c_str());
+                if (basePropMap != nullptr && basePropMap->IsData()) {
+                    clonedPropMap = PropertyMapCopier::CreateCopy(basePropMap->GetAs<DataPropertyMap>(), *this);
+                    if (clonedPropMap == nullptr || m_propertyMaps.Insert(clonedPropMap) != SUCCESS)
+                        return ERROR;
+                    propMap = clonedPropMap.get();
+                    break;
+                }
+            }
+        }
+
+        if (propMap == nullptr)
+            propMap = DbMappingManager::Classes::MapProperty(ctx, *this, *property);
         if (propMap == nullptr)
             {
             LOG.errorv("Failed to map property '%s.%s' while updating the class map during schema import.", m_ecClass.GetFullName(), property->GetName().c_str());
@@ -608,12 +636,13 @@ BentleyStatus ClassMap::Update(SchemaImportContext& ctx)
             return ERROR;
             }
 
-        //Nav property maps cannot be saved here as they are not yet mapped.
         if (propMap->GetType() == PropertyMap::Type::Navigation)
             {
             NavigationPropertyMap& navPropMap = const_cast<NavigationPropertyMap&>(propMap->GetAs<NavigationPropertyMap>());
             if (ClassMappingStatus::Success != DbMappingManager::Classes::MapNavigationProperty(ctx, navPropMap))
                 return ERROR;
+            if (!navPropMap.IsComplete())
+                continue;
             }
 
         //! ECSchema update added new property for which we need to save property map

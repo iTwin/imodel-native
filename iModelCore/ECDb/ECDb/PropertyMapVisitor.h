@@ -163,6 +163,7 @@ struct SavePropertyMapVisitor final : IPropertyMapVisitor
         enum class Action {
             InsertNew,
             SkipIfExists,
+            SkipIfMapped,
         };
     private:
         DbClassMapSaveContext& m_context;

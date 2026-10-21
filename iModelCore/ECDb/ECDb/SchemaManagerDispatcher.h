@@ -199,6 +199,8 @@ struct ECSchemaOwnershipClaimAppData : ECN::ECAppData::Data {
 //+===============+===============+===============+===============+===============+======
 struct MainSchemaManager final : TableSpaceSchemaManager
     {
+    friend struct IncrementalSchemaMapper;
+
 private:
     BeMutex& m_mutex;
     VirtualSchemaManager m_vsm;
@@ -206,6 +208,7 @@ private:
     mutable SchemaChangeEvent m_onBeforeSchemaChanged;
     mutable SchemaChangeEvent m_onAfterSchemaCHanged;
     mutable SchemaSync m_schemaSync;
+    mutable bool m_schemaEditorActive = false;
     SchemaImportResult ImportSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const& schemas, SchemaImportToken const*, SchemaSync::SyncDbUri) const;
 
     SchemaImportResult MapSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const&) const;
@@ -213,9 +216,9 @@ private:
     ClassMappingStatus MapClass(SchemaImportContext&, ClassMappingInfo const&) const;
     ClassMappingStatus MapDerivedClasses(SchemaImportContext&, ECN::ECClassCR baseClass) const;
     BentleyStatus SaveDbSchema(SchemaImportContext&) const;
-    BentleyStatus CheckForPerTableColumnLimit() const;
-    BentleyStatus CheckForSelectWildCardLimit() const;
-    BentleyStatus CanCreateOrUpdateRequiredTables() const;
+    BentleyStatus CheckForPerTableColumnLimit(std::set<ECN::ECClassId> const* classes) const;
+    BentleyStatus CheckForSelectWildCardLimit(std::set<ECN::ECClassId> const* classes) const;
+    BentleyStatus CanCreateOrUpdateRequiredTables(std::set<ECN::ECClassId> const* classes = nullptr) const;
     BentleyStatus FindIndexes(std::vector<DbIndex const*>& indexes) const;
     BentleyStatus LoadPhysicalIndexes(std::map<Utf8String, Utf8String, CompareIUtf8Ascii>& physicalIndexes) const;
     bool IsIndexPersistedUnchanged(DbIndex const&) const;
@@ -228,11 +231,22 @@ private:
     static DbResult UpgradeExistingECInstancesWithNewPropertiesMapToOverflowTable(ECDbCR ecdb, SchemaImportContext* ctx = nullptr);
     void ResetIds(bvector<ECN::ECSchemaCP> const& schemas) const;
 public:
+    bool IsSchemaEditorActive() const { return m_schemaEditorActive; }
+    void SetSchemaEditorActive(bool active) const { m_schemaEditorActive = active; }
     explicit MainSchemaManager(ECDbCR ecdb, BeMutex& mutex) : TableSpaceSchemaManager(ecdb, DbTableSpace::Main()), m_mutex(mutex), m_systemSchemaHelper(ecdb), m_vsm(ecdb), m_schemaSync(const_cast<ECDbR>(ecdb)) {}
     ~MainSchemaManager() {}
     /* ====================== */
-    BentleyStatus CreateOrUpdateRequiredTables() const;
-    BentleyStatus CreateOrUpdateIndexesInDb(SchemaImportContext&) const;
+    //! @param[in] limitCheckedClasses When not null, only these classes' mapped columns are checked
+    //! against the column limits. The caller guarantees no other class's property maps changed.
+    BentleyStatus CreateOrUpdateRequiredTables(std::set<ECN::ECClassId> const* limitCheckedClasses = nullptr) const;
+    //! Limits index reconciliation to indexes declared by m_classes and indexes not yet created.
+    //! An index's DDL depends only on its definition and its class's storage description (the class
+    //! and its subclasses), so the caller must include every class whose definition, mapping or
+    //! subclasses changed, and must not have removed tables or columns.
+    struct IndexScope final {
+        std::set<ECN::ECClassId> m_classes;
+    };
+    BentleyStatus CreateOrUpdateIndexesInDb(SchemaImportContext&, IndexScope const* scope = nullptr) const;
     BentleyStatus PurgeOrphanTables(SchemaImportContext&) const;
     /* ====================== */
     SchemaSync& GetSchemaSync() const { return m_schemaSync;  }

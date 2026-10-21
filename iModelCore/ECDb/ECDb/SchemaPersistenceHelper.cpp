@@ -283,18 +283,19 @@ PropertyCategoryId SchemaPersistenceHelper::GetPropertyCategoryId(ECDbCR ecdb, D
     else
         sql.Sprintf("SELECT cat.Id FROM [%s]." TABLE_PropertyCategory " cat, [%s]." TABLE_Schema " s", tableSpace.GetName().c_str(), tableSpace.GetName().c_str());
 
+    // "+" keeps SQLite on the category name index; a schema can hold hundreds of categories.
     switch (lookupMode)
         {
             case SchemaLookupMode::ByName:
-                sql.append(" WHERE cat.SchemaId=s.Id AND s.Name=?1 AND cat.Name=?2");
+                sql.append(" WHERE +cat.SchemaId=s.Id AND s.Name=?1 AND cat.Name=?2");
                 break;
 
             case SchemaLookupMode::ByAlias:
-                sql.append(" WHERE cat.SchemaId=s.Id AND s.Alias=?1 AND cat.Name=?2");
+                sql.append(" WHERE +cat.SchemaId=s.Id AND s.Alias=?1 AND cat.Name=?2");
                 break;
 
             default:
-                sql.append(" WHERE cat.SchemaId=s.Id AND (s.Name=?1 OR s.Alias=?1) AND cat.Name=?2");
+                sql.append(" WHERE +cat.SchemaId=s.Id AND (s.Name=?1 OR s.Alias=?1) AND cat.Name=?2");
                 break;
         }
 

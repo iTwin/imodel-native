@@ -92,6 +92,7 @@ struct DbClassMapSaveContext final
         ClassMapCR GetClassMap() const { return m_classMap; }
         BentleyStatus InsertPropertyMap(ECN::ECPropertyId rootPropertyId, Utf8CP accessString, DbColumnId columnId);
         BentleyStatus TryPropertyMapExists(uint64_t& propertyMapId, ECN::ECPropertyId rootPropertyId, Utf8CP accessString, DbColumnId columnId);
+        BentleyStatus TryPropertyMapExistsByAccessString(uint64_t& propertyMapId, Utf8CP accessString);
         BentleyStatus UpdatePropertyMapColumn(uint64_t propertyMapId, DbColumnId columnId);
     };
 

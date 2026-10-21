@@ -3,6 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
+#include <ECDb/SchemaImportAdapter.h>
 #include <set>
 #include <ECObjects/SchemaComparer.h>
 #include <regex>
@@ -27,6 +28,13 @@ struct SchemaUpgradeTestFixture : public ECDbTestFixture
     {
     std::vector<Utf8String> m_updatedDbs;
     protected:
+        virtual BentleyStatus ImportUpgrade(ECDbR db, SchemaItem const& schema, SchemaImportOptions options) {
+            return TestHelper(db).ImportSchema(schema, options);
+        }
+
+        BentleyStatus ImportSchema(SchemaItem const& schema, SchemaImportOptions options = SchemaImportOptions::None) {
+            return ImportUpgrade(m_ecdb, schema, options);
+        }
 
         //---------------------------------------------------------------------------------------
         // @bsimethod
@@ -65,15 +73,14 @@ struct SchemaUpgradeTestFixture : public ECDbTestFixture
             SchemaItem schemaItem(schemaXml);
             if (expectedToSucceed)
                 {
-                ASSERT_EQ(SUCCESS, TestHelper(ecdb).ImportSchema(schemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas)) << assertMessageFull.c_str();
+                ASSERT_EQ(SUCCESS, ImportUpgrade(ecdb, schemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas)) << assertMessageFull.c_str();
                 }
             else
                 {
-                ASSERT_EQ(ERROR, TestHelper(ecdb).ImportSchema(schemaItem, SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas)) << assertMessageFull.c_str();
-                if (!Utf8String::IsNullOrEmpty(errorMessage))
-                    {
-                    ASSERT_EQ(issueListener.m_issues.size(), 1U);
-                    EXPECT_STREQ(errorMessage, issueListener.GetLastMessage().c_str());
+                    ASSERT_EQ(ERROR, ImportUpgrade(ecdb, schemaItem, SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas)) << assertMessageFull.c_str();
+                    if (!Utf8String::IsNullOrEmpty(errorMessage)) {
+                        ASSERT_EQ(issueListener.m_issues.size(), 1U);
+                        EXPECT_STREQ(errorMessage, issueListener.GetLastMessage().c_str());
                     }
                 }
 
@@ -90,9 +97,9 @@ struct SchemaUpgradeTestFixture : public ECDbTestFixture
             assertMessageFull.assign("[schema import with disallowed major schema changes] ").append(assertMessage);
 
             if (expectedToSucceed)
-                ASSERT_EQ(SUCCESS, TestHelper(ecdb).ImportSchema(schemaItem, SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade)) << assertMessageFull.c_str();
+                ASSERT_EQ(SUCCESS, ImportUpgrade(ecdb, schemaItem, SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade)) << assertMessageFull.c_str();
             else
-                ASSERT_EQ(ERROR, TestHelper(ecdb).ImportSchema(schemaItem, SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade)) << assertMessageFull.c_str();
+                ASSERT_EQ(ERROR, ImportUpgrade(ecdb, schemaItem, SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade)) << assertMessageFull.c_str();
 
             if (expectedToSucceed)
                 m_updatedDbs.push_back((Utf8String) ecdb.GetDbFileName());
@@ -102,9 +109,41 @@ struct SchemaUpgradeTestFixture : public ECDbTestFixture
             }
     };
 
-struct SchemaUpgradeExtendedTests : SchemaUpgradeTestFixture
-    {
-    ECDB_EXTENDED_TIER_GATE(SchemaUpgradeTestFixture)
+    // Initial databases use the existing native seed setup; only the upgrade path varies.
+    struct SchemaUpgradeImportTests : SchemaUpgradeTestFixture, testing::WithParamInterface<bool> {
+    protected:
+        BentleyStatus ImportUpgrade(ECDbR db, SchemaItem const& schema, SchemaImportOptions options) override {
+            if (!GetParam())
+                return SchemaUpgradeTestFixture::ImportUpgrade(db, schema, options);
+            auto context = ECSchemaReadContext::CreateContext();
+            BeFileName searchPath;
+            BeTest::GetHost().GetDgnPlatformAssetsDirectory(searchPath);
+            searchPath.AppendToPath(L"ECSchemas").AppendToPath(L"ECDb");
+            context->AddSchemaPath(searchPath);
+            context->AddSchemaLocater(db.GetSchemaLocater());
+            if (SUCCESS != ReadECSchema(context, db, schema))
+                return ERROR;
+            SchemaImportCompletion completion;
+            auto result = SchemaImportAdapter::ImportSchemas(db, context->GetCache().GetSchemas(), &completion, options);
+            if (!result.IsOk()) {
+                BeJsDocument diagnostic;
+                result.ToJson(diagnostic);
+                RecordProperty("SchemaImportAdapterResult", diagnostic.Stringify().c_str());
+                return ERROR;
+            }
+            if (completion.IsPending() && completion.Commit() != BE_SQLITE_OK) {
+                EXPECT_EQ(BE_SQLITE_OK, completion.Abandon());
+                return ERROR;
+            }
+            return SUCCESS;
+        }
+    };
+
+    INSTANTIATE_TEST_SUITE_P(ImportMethods, SchemaUpgradeImportTests, testing::Values(false, true),
+                             [](testing::TestParamInfo<bool> const& info) { return info.param ? "SchemaEditor" : "Native"; });
+
+    struct SchemaUpgradeExtendedTests : SchemaUpgradeTestFixture {
+        ECDB_EXTENDED_TIER_GATE(SchemaUpgradeTestFixture)
     };
 
 void AssertECProperties(ECDbCR ecdb, Utf8CP assertExpression, bool strict = true)
@@ -321,7 +360,7 @@ TEST_F(SchemaUpgradeTestFixture, AddPropertyWithPropertyMapCAToSharedColumnHiera
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpgradeTestFixture, CustomAttributeOrdinal){
+TEST_P(SchemaUpgradeImportTests, CustomAttributeOrdinal) {
     auto testCaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestCA" alias="tsca" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
         <ECCustomAttributeClass typeName="TestCA1" modifier="Sealed" appliesTo="Any"/>
@@ -1262,311 +1301,301 @@ TEST_F(SchemaUpgradeTestFixture, UpdateECClassAttributes)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpgradeTestFixture, AddingUpdatingAndDeletingMinMax)
-    {
-    SchemaItem schemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "   <ECEntityClass typeName='Foo'>"
-        "       <ECProperty propertyName='P1' typeName='long'   minimumValue  = '1'     maximumValue   = '200'    />"
-        "       <ECProperty propertyName='P2' typeName='double' minimumValue  = '1.22'  maximumValue   = '100.22' />"
-        "       <ECProperty propertyName='P3' typeName='string' minimumLength = '1'     maximumLength  = '1000'   />"
-        "       <ECProperty propertyName='P4' typeName='long'   maximumValue  = '1200'                            />"
-        "       <ECProperty propertyName='P5' typeName='double' maximumValue  = '1200.12'                         />"
-        "       <ECProperty propertyName='P6' typeName='string' maximumLength = '1000'                            />"
-        "   </ECEntityClass>"
-        "</ECSchema>");
+    TEST_P(SchemaUpgradeImportTests, AddingUpdatingAndDeletingMinMax) {
+        SchemaItem schemaItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "   <ECEntityClass typeName='Foo'>"
+            "       <ECProperty propertyName='P1' typeName='long'   minimumValue  = '1'     maximumValue   = '200'    />"
+            "       <ECProperty propertyName='P2' typeName='double' minimumValue  = '1.22'  maximumValue   = '100.22' />"
+            "       <ECProperty propertyName='P3' typeName='string' minimumLength = '1'     maximumLength  = '1000'   />"
+            "       <ECProperty propertyName='P4' typeName='long'   maximumValue  = '1200'                            />"
+            "       <ECProperty propertyName='P5' typeName='double' maximumValue  = '1200.12'                         />"
+            "       <ECProperty propertyName='P6' typeName='string' maximumLength = '1000'                            />"
+            "   </ECEntityClass>"
+            "</ECSchema>");
 
-
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemaupdate_minMax.ecdb", schemaItem));
-    {
-    ECClassCP foo = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
-    ASSERT_NE(nullptr, foo);
-
-    ECValue minV, maxV;
-    ASSERT_EQ(ECObjectsStatus::Success, foo->GetPropertyP("P1")->GetMinimumValue(minV));
-    ASSERT_EQ(ECObjectsStatus::Success, foo->GetPropertyP("P1")->GetMaximumValue(maxV));
-    ASSERT_EQ(1, minV.GetLong());
-    ASSERT_EQ(200, maxV.GetLong());
-
-    minV = maxV = ECValue();
-    ASSERT_EQ(ECObjectsStatus::Success, foo->GetPropertyP("P2")->GetMinimumValue(minV));
-    ASSERT_EQ(ECObjectsStatus::Success, foo->GetPropertyP("P2")->GetMaximumValue(maxV));
-    ASSERT_EQ(1.22, minV.GetDouble());
-    ASSERT_EQ(100.22, maxV.GetDouble());
-
-    ASSERT_EQ(1, foo->GetPropertyP("P3")->GetMinimumLength());
-    ASSERT_EQ(1000, foo->GetPropertyP("P3")->GetMaximumLength());
-
-    minV = maxV = ECValue();
-    ASSERT_EQ(ECObjectsStatus::Error, foo->GetPropertyP("P4")->GetMinimumValue(minV));
-    ASSERT_EQ(ECObjectsStatus::Success, foo->GetPropertyP("P4")->GetMaximumValue(maxV));
-    ASSERT_TRUE(minV.IsNull());
-    ASSERT_EQ(1200, maxV.GetLong());
-
-    minV = maxV = ECValue();
-    ASSERT_EQ(ECObjectsStatus::Error, foo->GetPropertyP("P5")->GetMinimumValue(minV));
-    ASSERT_EQ(ECObjectsStatus::Success, foo->GetPropertyP("P5")->GetMaximumValue(maxV));
-    ASSERT_TRUE(minV.IsNull());
-    ASSERT_EQ(1200.12, maxV.GetDouble());
-
-    ASSERT_EQ(0, foo->GetPropertyP("P6")->GetMinimumLength());
-    ASSERT_EQ(1000, foo->GetPropertyP("P6")->GetMaximumLength());
-    }
-
-    ReopenECDb();
-    SchemaItem editedSchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "   <ECEntityClass typeName='Foo'>"
-        "       <ECProperty propertyName='P1' typeName='long'   />"
-        "       <ECProperty propertyName='P2' typeName='double' />"
-        "       <ECProperty propertyName='P3' typeName='string' />"
-        "       <ECProperty propertyName='P4' typeName='long'   minimumValue  = '12'   maximumValue   = '2200'    />"
-        "       <ECProperty propertyName='P5' typeName='double' minimumValue  = '1.33' maximumValue   = '2200.12' />"
-        "       <ECProperty propertyName='P6' typeName='string' minimumLength = '11'    maximumLength  = '9000'    />"
-        "   </ECEntityClass>"
-        "</ECSchema>");
-
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
-    ReopenECDb();
-    {
-    ECClassCP foo = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
-    ASSERT_NE(nullptr, foo);
-
-    ECValue minV, maxV;
-    ASSERT_EQ(ECObjectsStatus::Error, foo->GetPropertyP("P1")->GetMinimumValue(minV));
-    ASSERT_EQ(ECObjectsStatus::Error, foo->GetPropertyP("P1")->GetMaximumValue(maxV));
-    ASSERT_TRUE(minV.IsNull());
-    ASSERT_TRUE(maxV.IsNull());
-
-    minV = maxV = ECValue();
-    ASSERT_EQ(ECObjectsStatus::Error, foo->GetPropertyP("P2")->GetMinimumValue(minV));
-    ASSERT_EQ(ECObjectsStatus::Error, foo->GetPropertyP("P2")->GetMaximumValue(maxV));
-    ASSERT_TRUE(minV.IsNull());
-    ASSERT_TRUE(maxV.IsNull());
-
-    ASSERT_EQ(0, foo->GetPropertyP("P3")->GetMinimumLength());
-    ASSERT_EQ(0, foo->GetPropertyP("P3")->GetMaximumLength());
-
-    minV = maxV = ECValue();
-    ASSERT_EQ(ECObjectsStatus::Success, foo->GetPropertyP("P4")->GetMinimumValue(minV));
-    ASSERT_EQ(ECObjectsStatus::Success, foo->GetPropertyP("P4")->GetMaximumValue(maxV));
-    ASSERT_EQ(12, minV.GetLong());
-    ASSERT_EQ(2200, maxV.GetLong());
-
-    minV = maxV = ECValue();
-    ASSERT_EQ(ECObjectsStatus::Success, foo->GetPropertyP("P5")->GetMinimumValue(minV));
-    ASSERT_EQ(ECObjectsStatus::Success, foo->GetPropertyP("P5")->GetMaximumValue(maxV));
-    ASSERT_EQ(1.33, minV.GetDouble());
-    ASSERT_EQ(2200.12, maxV.GetDouble());
-
-    ASSERT_EQ(11, foo->GetPropertyP("P6")->GetMinimumLength());
-    ASSERT_EQ(9000, foo->GetPropertyP("P6")->GetMaximumLength());
-    }
-
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpgradeTestFixture, AddingUpdatingAndDeletingPriority)
-    {
-    SchemaItem schemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "   <ECEntityClass typeName='Foo'>"
-        "       <ECProperty propertyName='P1' typeName='string' priority='1010' />"
-        "       <ECProperty propertyName='P2' typeName='string' priority='1020' />"
-        "       <ECProperty propertyName='P3' typeName='string' priority='1030' />"
-        "       <ECProperty propertyName='P4' typeName='string' />"
-        "       <ECProperty propertyName='P5' typeName='string' />"
-        "   </ECEntityClass>"
-        "</ECSchema>");
-
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemaupdate_priority.ecdb", schemaItem));
-    {
-    ECClassCP foo = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
-    ASSERT_NE(nullptr, foo);
-    ASSERT_EQ(1010, foo->GetPropertyP("P1")->GetPriority());
-    ASSERT_EQ(1020, foo->GetPropertyP("P2")->GetPriority());
-    ASSERT_EQ(1030, foo->GetPropertyP("P3")->GetPriority());
-    ASSERT_EQ(0, foo->GetPropertyP("P4")->GetPriority());
-    ASSERT_EQ(0, foo->GetPropertyP("P5")->GetPriority());
-    }
-    ReopenECDb();
-    //import edited schema with some changes.
-    SchemaItem editedSchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "   <ECEntityClass typeName='Foo'>"
-        "       <ECProperty propertyName='P1' typeName='string' priority='2010' />"
-        "       <ECProperty propertyName='P2' typeName='string' priority='2020' />"
-        "       <ECProperty propertyName='P3' typeName='string'                 />"
-        "       <ECProperty propertyName='P4' typeName='string' priority='1040' />"
-        "       <ECProperty propertyName='P5' typeName='string' priority='1050' />"
-        "   </ECEntityClass>"
-        "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
-    {
-    ECClassCP foo = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
-    ASSERT_NE(nullptr, foo);
-    ASSERT_EQ(2010, foo->GetPropertyP("P1")->GetPriority());
-    ASSERT_EQ(2020, foo->GetPropertyP("P2")->GetPriority());
-    ASSERT_EQ(0, foo->GetPropertyP("P3")->GetPriority());
-    ASSERT_EQ(1040, foo->GetPropertyP("P4")->GetPriority());
-    ASSERT_EQ(1050, foo->GetPropertyP("P5")->GetPriority());
-    }
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpgradeTestFixture, UpdateBaseClass_Update_Mixin_AppliesToEntityClass_Generalized)
-    {
-    SchemaItem schemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' prefix='CoreCA'/>"
-        "  <ECEntityClass typeName='IOptionA' modifier='Abstract'>"
-        "      <ECCustomAttributes>"
-        "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
-        "              <AppliesToEntityClass>SubElement</AppliesToEntityClass>"
-        "          </IsMixin>"
-        "      </ECCustomAttributes>"
-        "  </ECEntityClass>"
-        "   <ECEntityClass typeName='Element'>"
-        "       <ECProperty propertyName='Code' typeName='string' />"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='SubElement'>"
-        "       <BaseClass>Element</BaseClass>"
-        "       <ECProperty propertyName='Text' typeName='string' />"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='SupportOption' modifier='None' >"
-        "       <BaseClass>SubElement</BaseClass>"
-        "       <BaseClass>IOptionA</BaseClass>"
-        "       <ECProperty propertyName='P1' typeName='string' />"
-        "   </ECEntityClass>"
-        "</ECSchema>");
-
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("appliesToEntityClass.ecdb", schemaItem));
-    [&]()
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemaupdate_minMax.ecdb", schemaItem));
         {
-        auto mixIn = m_ecdb.Schemas().GetClass("TestSchema", "IOptionA");
-        auto ca = mixIn->GetCustomAttributeLocal("CoreCustomAttributes", "IsMixin");
-        ECValue appliesToValue;
-        ca->GetValue(appliesToValue, "AppliesToEntityClass");
-        ASSERT_FALSE(appliesToValue.IsNull() || !appliesToValue.IsString());
-        ASSERT_STRCASEEQ(appliesToValue.GetUtf8CP(), "SubElement");
+            ECClassCP foo = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
+            ASSERT_NE(nullptr, foo);
+
+            ECValue minV, maxV;
+            ASSERT_EQ(ECObjectsStatus::Success, foo->GetPropertyP("P1")->GetMinimumValue(minV));
+            ASSERT_EQ(ECObjectsStatus::Success, foo->GetPropertyP("P1")->GetMaximumValue(maxV));
+            ASSERT_EQ(1, minV.GetLong());
+            ASSERT_EQ(200, maxV.GetLong());
+
+            minV = maxV = ECValue();
+            ASSERT_EQ(ECObjectsStatus::Success, foo->GetPropertyP("P2")->GetMinimumValue(minV));
+            ASSERT_EQ(ECObjectsStatus::Success, foo->GetPropertyP("P2")->GetMaximumValue(maxV));
+            ASSERT_EQ(1.22, minV.GetDouble());
+            ASSERT_EQ(100.22, maxV.GetDouble());
+
+            ASSERT_EQ(1, foo->GetPropertyP("P3")->GetMinimumLength());
+            ASSERT_EQ(1000, foo->GetPropertyP("P3")->GetMaximumLength());
+
+            minV = maxV = ECValue();
+            ASSERT_EQ(ECObjectsStatus::Error, foo->GetPropertyP("P4")->GetMinimumValue(minV));
+            ASSERT_EQ(ECObjectsStatus::Success, foo->GetPropertyP("P4")->GetMaximumValue(maxV));
+            ASSERT_TRUE(minV.IsNull());
+            ASSERT_EQ(1200, maxV.GetLong());
+
+            minV = maxV = ECValue();
+            ASSERT_EQ(ECObjectsStatus::Error, foo->GetPropertyP("P5")->GetMinimumValue(minV));
+            ASSERT_EQ(ECObjectsStatus::Success, foo->GetPropertyP("P5")->GetMaximumValue(maxV));
+            ASSERT_TRUE(minV.IsNull());
+            ASSERT_EQ(1200.12, maxV.GetDouble());
+
+            ASSERT_EQ(0, foo->GetPropertyP("P6")->GetMinimumLength());
+            ASSERT_EQ(1000, foo->GetPropertyP("P6")->GetMaximumLength());
+        }
+
+        ReopenECDb();
+        SchemaItem editedSchemaItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "   <ECEntityClass typeName='Foo'>"
+            "       <ECProperty propertyName='P1' typeName='long'   />"
+            "       <ECProperty propertyName='P2' typeName='double' />"
+            "       <ECProperty propertyName='P3' typeName='string' />"
+            "       <ECProperty propertyName='P4' typeName='long'   minimumValue  = '12'   maximumValue   = '2200'    />"
+            "       <ECProperty propertyName='P5' typeName='double' minimumValue  = '1.33' maximumValue   = '2200.12' />"
+            "       <ECProperty propertyName='P6' typeName='string' minimumLength = '11'    maximumLength  = '9000'    />"
+            "   </ECEntityClass>"
+            "</ECSchema>");
+
+        ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
+        ReopenECDb();
+        {
+            ECClassCP foo = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
+            ASSERT_NE(nullptr, foo);
+
+            ECValue minV, maxV;
+            ASSERT_EQ(ECObjectsStatus::Error, foo->GetPropertyP("P1")->GetMinimumValue(minV));
+            ASSERT_EQ(ECObjectsStatus::Error, foo->GetPropertyP("P1")->GetMaximumValue(maxV));
+            ASSERT_TRUE(minV.IsNull());
+            ASSERT_TRUE(maxV.IsNull());
+
+            minV = maxV = ECValue();
+            ASSERT_EQ(ECObjectsStatus::Error, foo->GetPropertyP("P2")->GetMinimumValue(minV));
+            ASSERT_EQ(ECObjectsStatus::Error, foo->GetPropertyP("P2")->GetMaximumValue(maxV));
+            ASSERT_TRUE(minV.IsNull());
+            ASSERT_TRUE(maxV.IsNull());
+
+            ASSERT_EQ(0, foo->GetPropertyP("P3")->GetMinimumLength());
+            ASSERT_EQ(0, foo->GetPropertyP("P3")->GetMaximumLength());
+
+            minV = maxV = ECValue();
+            ASSERT_EQ(ECObjectsStatus::Success, foo->GetPropertyP("P4")->GetMinimumValue(minV));
+            ASSERT_EQ(ECObjectsStatus::Success, foo->GetPropertyP("P4")->GetMaximumValue(maxV));
+            ASSERT_EQ(12, minV.GetLong());
+            ASSERT_EQ(2200, maxV.GetLong());
+
+            minV = maxV = ECValue();
+            ASSERT_EQ(ECObjectsStatus::Success, foo->GetPropertyP("P5")->GetMinimumValue(minV));
+            ASSERT_EQ(ECObjectsStatus::Success, foo->GetPropertyP("P5")->GetMaximumValue(maxV));
+            ASSERT_EQ(1.33, minV.GetDouble());
+            ASSERT_EQ(2200.12, maxV.GetDouble());
+
+            ASSERT_EQ(11, foo->GetPropertyP("P6")->GetMinimumLength());
+            ASSERT_EQ(9000, foo->GetPropertyP("P6")->GetMaximumLength());
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+    TEST_P(SchemaUpgradeImportTests, AddingUpdatingAndDeletingPriority) {
+        SchemaItem schemaItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "   <ECEntityClass typeName='Foo'>"
+            "       <ECProperty propertyName='P1' typeName='string' priority='1010' />"
+            "       <ECProperty propertyName='P2' typeName='string' priority='1020' />"
+            "       <ECProperty propertyName='P3' typeName='string' priority='1030' />"
+            "       <ECProperty propertyName='P4' typeName='string' />"
+            "       <ECProperty propertyName='P5' typeName='string' />"
+            "   </ECEntityClass>"
+            "</ECSchema>");
+
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemaupdate_priority.ecdb", schemaItem));
+        {
+            ECClassCP foo = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
+            ASSERT_NE(nullptr, foo);
+            ASSERT_EQ(1010, foo->GetPropertyP("P1")->GetPriority());
+            ASSERT_EQ(1020, foo->GetPropertyP("P2")->GetPriority());
+            ASSERT_EQ(1030, foo->GetPropertyP("P3")->GetPriority());
+            ASSERT_EQ(0, foo->GetPropertyP("P4")->GetPriority());
+            ASSERT_EQ(0, foo->GetPropertyP("P5")->GetPriority());
+        }
+        ReopenECDb();
+        //import edited schema with some changes.
+        SchemaItem editedSchemaItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "   <ECEntityClass typeName='Foo'>"
+            "       <ECProperty propertyName='P1' typeName='string' priority='2010' />"
+            "       <ECProperty propertyName='P2' typeName='string' priority='2020' />"
+            "       <ECProperty propertyName='P3' typeName='string'                 />"
+            "       <ECProperty propertyName='P4' typeName='string' priority='1040' />"
+            "       <ECProperty propertyName='P5' typeName='string' priority='1050' />"
+            "   </ECEntityClass>"
+            "</ECSchema>");
+        ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
+        {
+            ECClassCP foo = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
+            ASSERT_NE(nullptr, foo);
+            ASSERT_EQ(2010, foo->GetPropertyP("P1")->GetPriority());
+            ASSERT_EQ(2020, foo->GetPropertyP("P2")->GetPriority());
+            ASSERT_EQ(0, foo->GetPropertyP("P3")->GetPriority());
+            ASSERT_EQ(1040, foo->GetPropertyP("P4")->GetPriority());
+            ASSERT_EQ(1050, foo->GetPropertyP("P5")->GetPriority());
+        }
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+    TEST_P(SchemaUpgradeImportTests, UpdateBaseClass_Update_Mixin_AppliesToEntityClass_Generalized) {
+        SchemaItem schemaItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+            "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' prefix='CoreCA'/>"
+            "  <ECEntityClass typeName='IOptionA' modifier='Abstract'>"
+            "      <ECCustomAttributes>"
+            "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+            "              <AppliesToEntityClass>SubElement</AppliesToEntityClass>"
+            "          </IsMixin>"
+            "      </ECCustomAttributes>"
+            "  </ECEntityClass>"
+            "   <ECEntityClass typeName='Element'>"
+            "       <ECProperty propertyName='Code' typeName='string' />"
+            "   </ECEntityClass>"
+            "   <ECEntityClass typeName='SubElement'>"
+            "       <BaseClass>Element</BaseClass>"
+            "       <ECProperty propertyName='Text' typeName='string' />"
+            "   </ECEntityClass>"
+            "   <ECEntityClass typeName='SupportOption' modifier='None' >"
+            "       <BaseClass>SubElement</BaseClass>"
+            "       <BaseClass>IOptionA</BaseClass>"
+            "       <ECProperty propertyName='P1' typeName='string' />"
+            "   </ECEntityClass>"
+            "</ECSchema>");
+
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("appliesToEntityClass.ecdb", schemaItem));
+        [&]() {
+            auto mixIn = m_ecdb.Schemas().GetClass("TestSchema", "IOptionA");
+            auto ca = mixIn->GetCustomAttributeLocal("CoreCustomAttributes", "IsMixin");
+            ECValue appliesToValue;
+            ca->GetValue(appliesToValue, "AppliesToEntityClass");
+            ASSERT_FALSE(appliesToValue.IsNull() || !appliesToValue.IsString());
+            ASSERT_STRCASEEQ(appliesToValue.GetUtf8CP(), "SubElement");
         }();
 
-    //import edited schema with some changes.
-    SchemaItem editedSchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' prefix='CoreCA'/>"
-        "  <ECEntityClass typeName='IOptionA' modifier='Abstract'>"
-        "      <ECCustomAttributes>"
-        "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
-        "              <AppliesToEntityClass>Element</AppliesToEntityClass>"
-        "          </IsMixin>"
-        "      </ECCustomAttributes>"
-        "  </ECEntityClass>"
-        "   <ECEntityClass typeName='Element'>"
-        "       <ECProperty propertyName='Code' typeName='string' />"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='SubElement'>"
-        "       <BaseClass>Element</BaseClass>"
-        "       <ECProperty propertyName='Text' typeName='string' />"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='SupportOption' modifier='None' >"
-        "       <BaseClass>SubElement</BaseClass>"
-        "       <BaseClass>IOptionA</BaseClass>"
-        "       <ECProperty propertyName='P1' typeName='string' />"
-        "   </ECEntityClass>"
-        "</ECSchema>");
+        //import edited schema with some changes.
+        SchemaItem editedSchemaItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+            "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' prefix='CoreCA'/>"
+            "  <ECEntityClass typeName='IOptionA' modifier='Abstract'>"
+            "      <ECCustomAttributes>"
+            "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+            "              <AppliesToEntityClass>Element</AppliesToEntityClass>"
+            "          </IsMixin>"
+            "      </ECCustomAttributes>"
+            "  </ECEntityClass>"
+            "   <ECEntityClass typeName='Element'>"
+            "       <ECProperty propertyName='Code' typeName='string' />"
+            "   </ECEntityClass>"
+            "   <ECEntityClass typeName='SubElement'>"
+            "       <BaseClass>Element</BaseClass>"
+            "       <ECProperty propertyName='Text' typeName='string' />"
+            "   </ECEntityClass>"
+            "   <ECEntityClass typeName='SupportOption' modifier='None' >"
+            "       <BaseClass>SubElement</BaseClass>"
+            "       <BaseClass>IOptionA</BaseClass>"
+            "       <ECProperty propertyName='P1' typeName='string' />"
+            "   </ECEntityClass>"
+            "</ECSchema>");
 
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
-    [&]()
-        {
-        auto mixIn = m_ecdb.Schemas().GetClass("TestSchema", "IOptionA");
-        auto ca = mixIn->GetCustomAttributeLocal("CoreCustomAttributes", "IsMixin");
-        ECValue appliesToValue;
-        ca->GetValue(appliesToValue, "AppliesToEntityClass");
-        ASSERT_FALSE(appliesToValue.IsNull() || !appliesToValue.IsString());
-        ASSERT_STRCASEEQ(appliesToValue.GetUtf8CP(), "Element");
+        ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
+        [&]() {
+            auto mixIn = m_ecdb.Schemas().GetClass("TestSchema", "IOptionA");
+            auto ca = mixIn->GetCustomAttributeLocal("CoreCustomAttributes", "IsMixin");
+            ECValue appliesToValue;
+            ca->GetValue(appliesToValue, "AppliesToEntityClass");
+            ASSERT_FALSE(appliesToValue.IsNull() || !appliesToValue.IsString());
+            ASSERT_STRCASEEQ(appliesToValue.GetUtf8CP(), "Element");
         }();
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpgradeTestFixture, UpdateBaseClass_Update_Mixin_AppliesToEntityClass_Specialized)
-    {
-    SchemaItem schemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' prefix='CoreCA'/>"
-        "  <ECEntityClass typeName='IOptionA' modifier='Abstract'>"
-        "      <ECCustomAttributes>"
-        "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
-        "              <AppliesToEntityClass>SubElement</AppliesToEntityClass>"
-        "          </IsMixin>"
-        "      </ECCustomAttributes>"
-        "  </ECEntityClass>"
-        "   <ECEntityClass typeName='Element'>"
-        "       <ECProperty propertyName='Code' typeName='string' />"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='SubElement'>"
-        "       <BaseClass>Element</BaseClass>"
-        "       <ECProperty propertyName='Text' typeName='string' />"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='SupportOption' modifier='None' >"
-        "       <BaseClass>SubElement</BaseClass>"
-        "       <BaseClass>IOptionA</BaseClass>"
-        "       <ECProperty propertyName='P1' typeName='string' />"
-        "   </ECEntityClass>"
-        "</ECSchema>");
+    TEST_P(SchemaUpgradeImportTests, UpdateBaseClass_Update_Mixin_AppliesToEntityClass_Specialized) {
+        SchemaItem schemaItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+            "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' prefix='CoreCA'/>"
+            "  <ECEntityClass typeName='IOptionA' modifier='Abstract'>"
+            "      <ECCustomAttributes>"
+            "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+            "              <AppliesToEntityClass>SubElement</AppliesToEntityClass>"
+            "          </IsMixin>"
+            "      </ECCustomAttributes>"
+            "  </ECEntityClass>"
+            "   <ECEntityClass typeName='Element'>"
+            "       <ECProperty propertyName='Code' typeName='string' />"
+            "   </ECEntityClass>"
+            "   <ECEntityClass typeName='SubElement'>"
+            "       <BaseClass>Element</BaseClass>"
+            "       <ECProperty propertyName='Text' typeName='string' />"
+            "   </ECEntityClass>"
+            "   <ECEntityClass typeName='SupportOption' modifier='None' >"
+            "       <BaseClass>SubElement</BaseClass>"
+            "       <BaseClass>IOptionA</BaseClass>"
+            "       <ECProperty propertyName='P1' typeName='string' />"
+            "   </ECEntityClass>"
+            "</ECSchema>");
 
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("appliesToEntityClass_props.ecdb", schemaItem));
-    [&]()
-        {
-        auto mixIn = m_ecdb.Schemas().GetClass("TestSchema", "IOptionA");
-        auto ca = mixIn->GetCustomAttributeLocal("CoreCustomAttributes", "IsMixin");
-        ECValue appliesToValue;
-        ca->GetValue(appliesToValue, "AppliesToEntityClass");
-        ASSERT_FALSE(appliesToValue.IsNull() || !appliesToValue.IsString());
-        ASSERT_STRCASEEQ(appliesToValue.GetUtf8CP(), "SubElement");
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("appliesToEntityClass_props.ecdb", schemaItem));
+        [&]() {
+            auto mixIn = m_ecdb.Schemas().GetClass("TestSchema", "IOptionA");
+            auto ca = mixIn->GetCustomAttributeLocal("CoreCustomAttributes", "IsMixin");
+            ECValue appliesToValue;
+            ca->GetValue(appliesToValue, "AppliesToEntityClass");
+            ASSERT_FALSE(appliesToValue.IsNull() || !appliesToValue.IsString());
+            ASSERT_STRCASEEQ(appliesToValue.GetUtf8CP(), "SubElement");
         }();
-    //import edited schema with some changes.
-    SchemaItem editedSchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' prefix='CoreCA'/>"
-        "  <ECEntityClass typeName='IOptionA' modifier='Abstract'>"
-        "      <ECCustomAttributes>"
-        "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
-        "              <AppliesToEntityClass>SupportOption</AppliesToEntityClass>"
-        "          </IsMixin>"
-        "      </ECCustomAttributes>"
-        "  </ECEntityClass>"
-        "   <ECEntityClass typeName='Element'>"
-        "       <ECProperty propertyName='Code' typeName='string' />"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='SubElement'>"
-        "       <BaseClass>Element</BaseClass>"
-        "       <ECProperty propertyName='Text' typeName='string' />"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='SupportOption' modifier='None' >"
-        "       <BaseClass>SubElement</BaseClass>"
-        "       <BaseClass>IOptionA</BaseClass>"
-        "       <ECProperty propertyName='P1' typeName='string' />"
-        "   </ECEntityClass>"
-        "</ECSchema>");
-    ASSERT_EQ(ERROR, ImportSchema(editedSchemaItem));
+        //import edited schema with some changes.
+        SchemaItem editedSchemaItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+            "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' prefix='CoreCA'/>"
+            "  <ECEntityClass typeName='IOptionA' modifier='Abstract'>"
+            "      <ECCustomAttributes>"
+            "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+            "              <AppliesToEntityClass>SupportOption</AppliesToEntityClass>"
+            "          </IsMixin>"
+            "      </ECCustomAttributes>"
+            "  </ECEntityClass>"
+            "   <ECEntityClass typeName='Element'>"
+            "       <ECProperty propertyName='Code' typeName='string' />"
+            "   </ECEntityClass>"
+            "   <ECEntityClass typeName='SubElement'>"
+            "       <BaseClass>Element</BaseClass>"
+            "       <ECProperty propertyName='Text' typeName='string' />"
+            "   </ECEntityClass>"
+            "   <ECEntityClass typeName='SupportOption' modifier='None' >"
+            "       <BaseClass>SubElement</BaseClass>"
+            "       <BaseClass>IOptionA</BaseClass>"
+            "       <ECProperty propertyName='P1' typeName='string' />"
+            "   </ECEntityClass>"
+            "</ECSchema>");
+        ASSERT_EQ(ERROR, ImportSchema(editedSchemaItem));
 
-    // ERROR ECDb - ECSchema Upgrade failed. MixIn TestSchema:IOptionA: Modifing 'AppliesToEntityClass' from TestSchema:SubElement to TestSchema:SupportOption is only
-    // supported TestSchema:SubElement derived from TestSchema:SupportOption.ERROR ECDb - ECSchema Upgrade failed. MixIn TestSchema:IOptionA: Modifing 'AppliesToEntityClass'
-    // from TestSchema:SubElement to TestSchema:SupportOption is only supported TestSchema:SubElement derived from TestSchema:SupportOption.
+        // ERROR ECDb - ECSchema Upgrade failed. MixIn TestSchema:IOptionA: Modifing 'AppliesToEntityClass' from TestSchema:SubElement to TestSchema:SupportOption is only
+        // supported TestSchema:SubElement derived from TestSchema:SupportOption.ERROR ECDb - ECSchema Upgrade failed. MixIn TestSchema:IOptionA: Modifing 'AppliesToEntityClass'
+        // from TestSchema:SubElement to TestSchema:SupportOption is only supported TestSchema:SubElement derived from TestSchema:SupportOption.
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -1732,158 +1761,161 @@ TEST_F(SchemaUpgradeTestFixture, UpdateBaseClass_UpdateEmtptyMixinBaseClassWithN
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpgradeTestFixture, UpdateBaseClass_AddMixinBaseClassWithProperties)
-    {
-    SchemaItem schemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' prefix='CoreCA'/>"
-        "  <ECEntityClass typeName='IMyMixin' modifier='Abstract'>"
-        "      <ECCustomAttributes>"
-        "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
-        "              <AppliesToEntityClass>Element</AppliesToEntityClass>"
-        "          </IsMixin>"
-        "      </ECCustomAttributes>"
-        "       <ECProperty propertyName='M1' typeName='string' />"
-        "  </ECEntityClass>"
-        "   <ECEntityClass typeName='Element'>"
-        "       <ECProperty propertyName='Code' typeName='string' />"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='SupportOption' modifier='None' >"
-        "       <BaseClass>Element</BaseClass>"
-        "       <ECProperty propertyName='P1' typeName='string' />"
-        "   </ECEntityClass>"
-        "</ECSchema>");
+    TEST_P(SchemaUpgradeImportTests, UpdateBaseClass_AddMixinBaseClassWithProperties) {
+        SchemaItem schemaItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+            "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' prefix='CoreCA'/>"
+            "  <ECEntityClass typeName='IMyMixin' modifier='Abstract'>"
+            "      <ECCustomAttributes>"
+            "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+            "              <AppliesToEntityClass>Element</AppliesToEntityClass>"
+            "          </IsMixin>"
+            "      </ECCustomAttributes>"
+            "       <ECProperty propertyName='M1' typeName='string' />"
+            "  </ECEntityClass>"
+            "   <ECEntityClass typeName='Element'>"
+            "       <ECProperty propertyName='Code' typeName='string' />"
+            "   </ECEntityClass>"
+            "   <ECEntityClass typeName='SupportOption' modifier='None' >"
+            "       <BaseClass>Element</BaseClass>"
+            "       <ECProperty propertyName='P1' typeName='string' />"
+            "   </ECEntityClass>"
+            "</ECSchema>");
 
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
-    {
-    ECClassCP supportOption = m_ecdb.Schemas().GetClass("TestSchema", "SupportOption");
-    ASSERT_NE(supportOption, nullptr);
-    ASSERT_STREQ(supportOption->GetBaseClasses().at(0)->GetFullName(), "TestSchema:Element");
-    ASSERT_EQ(1, supportOption->GetBaseClasses().size());
-    ASSERT_EQ(2, supportOption->GetPropertyCount(true));
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
+        {
+            ECClassCP supportOption = m_ecdb.Schemas().GetClass("TestSchema", "SupportOption");
+            ASSERT_NE(supportOption, nullptr);
+            ASSERT_STREQ(supportOption->GetBaseClasses().at(0)->GetFullName(), "TestSchema:Element");
+            ASSERT_EQ(1, supportOption->GetBaseClasses().size());
+            ASSERT_EQ(2, supportOption->GetPropertyCount(true));
+        }
+
+        //import edited schema with some changes.
+        SchemaItem editedSchemaItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+            "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' prefix='CoreCA'/>"
+            "  <ECEntityClass typeName='IMyMixin' modifier='Abstract'>"
+            "      <ECCustomAttributes>"
+            "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+            "              <AppliesToEntityClass>Element</AppliesToEntityClass>"
+            "          </IsMixin>"
+            "      </ECCustomAttributes>"
+            "       <ECProperty propertyName='M1' typeName='string' />"
+            "  </ECEntityClass>"
+            "   <ECEntityClass typeName='Element'>"
+            "       <ECProperty propertyName='Code' typeName='string' />"
+            "   </ECEntityClass>"
+            "   <ECEntityClass typeName='SupportOption' modifier='None' >"
+            "       <BaseClass>Element</BaseClass>"
+            "       <BaseClass>IMyMixin</BaseClass>"
+            "       <ECProperty propertyName='P1' typeName='string' />"
+            "   </ECEntityClass>"
+            "</ECSchema>");
+        ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
+
+        {
+            ECClassCP supportOption = m_ecdb.Schemas().GetClass("TestSchema", "SupportOption");
+            ASSERT_NE(supportOption, nullptr);
+            ASSERT_STREQ(supportOption->GetBaseClasses().at(0)->GetFullName(), "TestSchema:Element");
+            ASSERT_STREQ(supportOption->GetBaseClasses().at(1)->GetFullName(), "TestSchema:IMyMixin");
+            ASSERT_EQ(2, supportOption->GetBaseClasses().size());
+            ASSERT_EQ(3, supportOption->GetPropertyCount(true));
+        }
+
+        // Verify we can insert and select
+        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.SupportOption (Code,M1,P1) VALUES ('code1', 'm1', 'p1')");
+        ASSERT_EQ(JsonValue(R"json([{"Code":"code1", "M1":"m1", "P1":"p1"}])json"),
+                  GetHelper().ExecuteSelectECSql("SELECT Code, M1, P1 FROM TestSchema.SupportOption WHERE Code='code1'"))
+            << "Verify inserted instance";
+
+        // select polymorphically
+        ASSERT_EQ(JsonValue(R"json([{"Code":"code1"}])json"),
+                  GetHelper().ExecuteSelectECSql("SELECT Code FROM TestSchema.Element"))
+            << "Verify polymorphic query by base class";
+
+        ASSERT_EQ(JsonValue(R"json([{"M1":"m1"}])json"),
+                  GetHelper().ExecuteSelectECSql("SELECT M1 FROM TestSchema.IMyMixin"))
+            << "Verify polymorphic query by mixin";
     }
-
-    //import edited schema with some changes.
-    SchemaItem editedSchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' prefix='CoreCA'/>"
-        "  <ECEntityClass typeName='IMyMixin' modifier='Abstract'>"
-        "      <ECCustomAttributes>"
-        "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
-        "              <AppliesToEntityClass>Element</AppliesToEntityClass>"
-        "          </IsMixin>"
-        "      </ECCustomAttributes>"
-        "       <ECProperty propertyName='M1' typeName='string' />"
-        "  </ECEntityClass>"
-        "   <ECEntityClass typeName='Element'>"
-        "       <ECProperty propertyName='Code' typeName='string' />"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='SupportOption' modifier='None' >"
-        "       <BaseClass>Element</BaseClass>"
-        "       <BaseClass>IMyMixin</BaseClass>"
-        "       <ECProperty propertyName='P1' typeName='string' />"
-        "   </ECEntityClass>"
-        "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
-
-    {
-    ECClassCP supportOption = m_ecdb.Schemas().GetClass("TestSchema", "SupportOption");
-    ASSERT_NE(supportOption, nullptr);
-    ASSERT_STREQ(supportOption->GetBaseClasses().at(0)->GetFullName(), "TestSchema:Element");
-    ASSERT_STREQ(supportOption->GetBaseClasses().at(1)->GetFullName(), "TestSchema:IMyMixin");
-    ASSERT_EQ(2, supportOption->GetBaseClasses().size());
-    ASSERT_EQ(3, supportOption->GetPropertyCount(true));
-    }
-
-    // Verify we can insert and select
-    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.SupportOption (Code,M1,P1) VALUES ('code1', 'm1', 'p1')");
-    ASSERT_EQ(JsonValue(R"json([{"Code":"code1", "M1":"m1", "P1":"p1"}])json"),
-     GetHelper().ExecuteSelectECSql("SELECT Code, M1, P1 FROM TestSchema.SupportOption WHERE Code='code1'")) << "Verify inserted instance";
-
-    // select polymorphically
-    ASSERT_EQ(JsonValue(R"json([{"Code":"code1"}])json"),
-     GetHelper().ExecuteSelectECSql("SELECT Code FROM TestSchema.Element")) << "Verify polymorphic query by base class";
-
-    ASSERT_EQ(JsonValue(R"json([{"M1":"m1"}])json"),
-     GetHelper().ExecuteSelectECSql("SELECT M1 FROM TestSchema.IMyMixin")) << "Verify polymorphic query by mixin";
-    }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpgradeTestFixture, UpdateBaseClass_AddPropertiesToEmptyMixinBaseClass)
-    {
-    SchemaItem schemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' prefix='CoreCA'/>"
-        "  <ECEntityClass typeName='IMyMixin' modifier='Abstract'>"
-        "      <ECCustomAttributes>"
-        "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
-        "              <AppliesToEntityClass>Element</AppliesToEntityClass>"
-        "          </IsMixin>"
-        "      </ECCustomAttributes>"
-        "  </ECEntityClass>"
-        "   <ECEntityClass typeName='Element'>"
-        "       <ECProperty propertyName='Code' typeName='string' />"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='SupportOption' modifier='None' >"
-        "       <BaseClass>Element</BaseClass>"
-        "       <BaseClass>IMyMixin</BaseClass>"
-        "       <ECProperty propertyName='P1' typeName='string' />"
-        "   </ECEntityClass>"
-        "</ECSchema>");
+    TEST_P(SchemaUpgradeImportTests, UpdateBaseClass_AddPropertiesToEmptyMixinBaseClass) {
+        SchemaItem schemaItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+            "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' prefix='CoreCA'/>"
+            "  <ECEntityClass typeName='IMyMixin' modifier='Abstract'>"
+            "      <ECCustomAttributes>"
+            "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+            "              <AppliesToEntityClass>Element</AppliesToEntityClass>"
+            "          </IsMixin>"
+            "      </ECCustomAttributes>"
+            "  </ECEntityClass>"
+            "   <ECEntityClass typeName='Element'>"
+            "       <ECProperty propertyName='Code' typeName='string' />"
+            "   </ECEntityClass>"
+            "   <ECEntityClass typeName='SupportOption' modifier='None' >"
+            "       <BaseClass>Element</BaseClass>"
+            "       <BaseClass>IMyMixin</BaseClass>"
+            "       <ECProperty propertyName='P1' typeName='string' />"
+            "   </ECEntityClass>"
+            "</ECSchema>");
 
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
 
-    ECClassCP supportOption = m_ecdb.Schemas().GetClass("TestSchema", "SupportOption");
-    ASSERT_NE(supportOption, nullptr);
-    ASSERT_STREQ(supportOption->GetBaseClasses().at(0)->GetFullName(), "TestSchema:Element");
-    ASSERT_STREQ(supportOption->GetBaseClasses().at(1)->GetFullName(), "TestSchema:IMyMixin");
-    ASSERT_EQ(2, supportOption->GetBaseClasses().size());
-    ASSERT_EQ(2, supportOption->GetPropertyCount(true));
+        ECClassCP supportOption = m_ecdb.Schemas().GetClass("TestSchema", "SupportOption");
+        ASSERT_NE(supportOption, nullptr);
+        ASSERT_STREQ(supportOption->GetBaseClasses().at(0)->GetFullName(), "TestSchema:Element");
+        ASSERT_STREQ(supportOption->GetBaseClasses().at(1)->GetFullName(), "TestSchema:IMyMixin");
+        ASSERT_EQ(2, supportOption->GetBaseClasses().size());
+        ASSERT_EQ(2, supportOption->GetPropertyCount(true));
 
-    //import edited schema with some changes.
-    SchemaItem editedSchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' prefix='CoreCA'/>"
-        "  <ECEntityClass typeName='IMyMixin' modifier='Abstract'>"
-        "      <ECCustomAttributes>"
-        "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
-        "              <AppliesToEntityClass>Element</AppliesToEntityClass>"
-        "          </IsMixin>"
-        "      </ECCustomAttributes>"
-        "       <ECProperty propertyName='M1' typeName='string' />"
-        "  </ECEntityClass>"
-        "   <ECEntityClass typeName='Element'>"
-        "       <ECProperty propertyName='Code' typeName='string' />"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='SupportOption' modifier='None' >"
-        "       <BaseClass>Element</BaseClass>"
-        "       <BaseClass>IMyMixin</BaseClass>"
-        "       <ECProperty propertyName='P1' typeName='string' />"
-        "   </ECEntityClass>"
-        "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
-    supportOption = m_ecdb.Schemas().GetClass("TestSchema", "SupportOption");
-    ASSERT_EQ(2, supportOption->GetBaseClasses().size());
-    ASSERT_EQ(3, supportOption->GetPropertyCount(true));
+        //import edited schema with some changes.
+        SchemaItem editedSchemaItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+            "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' prefix='CoreCA'/>"
+            "  <ECEntityClass typeName='IMyMixin' modifier='Abstract'>"
+            "      <ECCustomAttributes>"
+            "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+            "              <AppliesToEntityClass>Element</AppliesToEntityClass>"
+            "          </IsMixin>"
+            "      </ECCustomAttributes>"
+            "       <ECProperty propertyName='M1' typeName='string' />"
+            "  </ECEntityClass>"
+            "   <ECEntityClass typeName='Element'>"
+            "       <ECProperty propertyName='Code' typeName='string' />"
+            "   </ECEntityClass>"
+            "   <ECEntityClass typeName='SupportOption' modifier='None' >"
+            "       <BaseClass>Element</BaseClass>"
+            "       <BaseClass>IMyMixin</BaseClass>"
+            "       <ECProperty propertyName='P1' typeName='string' />"
+            "   </ECEntityClass>"
+            "</ECSchema>");
+        ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
+        supportOption = m_ecdb.Schemas().GetClass("TestSchema", "SupportOption");
+        ASSERT_EQ(2, supportOption->GetBaseClasses().size());
+        ASSERT_EQ(3, supportOption->GetPropertyCount(true));
 
-    // Verify we can insert and select
-    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.SupportOption (Code,M1,P1) VALUES ('code2', 'm1', 'p1')");
-    ASSERT_EQ(JsonValue(R"json([{"Code":"code2", "M1":"m1", "P1":"p1"}])json"),
-     GetHelper().ExecuteSelectECSql("SELECT Code, M1, P1 FROM TestSchema.SupportOption WHERE Code='code2'")) << "Verify inserted instance";
+        // Verify we can insert and select
+        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.SupportOption (Code,M1,P1) VALUES ('code2', 'm1', 'p1')");
+        ASSERT_EQ(JsonValue(R"json([{"Code":"code2", "M1":"m1", "P1":"p1"}])json"),
+                  GetHelper().ExecuteSelectECSql("SELECT Code, M1, P1 FROM TestSchema.SupportOption WHERE Code='code2'"))
+            << "Verify inserted instance";
 
-    // select polymorphically
-    ASSERT_EQ(JsonValue(R"json([{"Code":"code2"}])json"),
-     GetHelper().ExecuteSelectECSql("SELECT Code FROM TestSchema.Element")) << "Verify polymorphic query by base class";
+        // select polymorphically
+        ASSERT_EQ(JsonValue(R"json([{"Code":"code2"}])json"),
+                  GetHelper().ExecuteSelectECSql("SELECT Code FROM TestSchema.Element"))
+            << "Verify polymorphic query by base class";
 
-    ASSERT_EQ(JsonValue(R"json([{"M1":"m1"}])json"),
-     GetHelper().ExecuteSelectECSql("SELECT M1 FROM TestSchema.IMyMixin")) << "Verify polymorphic query by mixin";
+        ASSERT_EQ(JsonValue(R"json([{"M1":"m1"}])json"),
+                  GetHelper().ExecuteSelectECSql("SELECT M1 FROM TestSchema.IMyMixin"))
+            << "Verify polymorphic query by mixin";
     }
 
 //---------------------------------------------------------------------------------------
@@ -2267,87 +2299,87 @@ TEST_F(SchemaUpgradeTestFixture, UpdateClass_ChangeAbstractIntoConcreteClass)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpgradeTestFixture, UpdateClass_ChangeAbstractIntoConcreteClassUsingTablePerHierarchy)
-    {
-    SchemaItem schemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "  <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='Base' modifier='Abstract'>"
-        "        <ECCustomAttributes>"
-        "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "       <ECProperty propertyName='BaseProperty' typeName='string' />"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='MyClass' modifier='Abstract'>"
-        "       <BaseClass>Base</BaseClass>"
-        "       <ECProperty propertyName='MyProperty' typeName='string' />"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='Subclass' modifier='None' >"
-        "       <BaseClass>MyClass</BaseClass>"
-        "       <ECProperty propertyName='SubclassProperty' typeName='string' />"
-        "   </ECEntityClass>"
-        "</ECSchema>");
+    TEST_P(SchemaUpgradeImportTests, UpdateClass_ChangeAbstractIntoConcreteClassUsingTablePerHierarchy) {
+        SchemaItem schemaItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+            "  <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+            "   <ECEntityClass typeName='Base' modifier='Abstract'>"
+            "        <ECCustomAttributes>"
+            "         <ClassMap xmlns='ECDbMap.02.00'>"
+            "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+            "            </ClassMap>"
+            "        </ECCustomAttributes>"
+            "       <ECProperty propertyName='BaseProperty' typeName='string' />"
+            "   </ECEntityClass>"
+            "   <ECEntityClass typeName='MyClass' modifier='Abstract'>"
+            "       <BaseClass>Base</BaseClass>"
+            "       <ECProperty propertyName='MyProperty' typeName='string' />"
+            "   </ECEntityClass>"
+            "   <ECEntityClass typeName='Subclass' modifier='None' >"
+            "       <BaseClass>MyClass</BaseClass>"
+            "       <ECProperty propertyName='SubclassProperty' typeName='string' />"
+            "   </ECEntityClass>"
+            "</ECSchema>");
 
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
-    {
-    ECClassCP subclass = m_ecdb.Schemas().GetClass("TestSchema", "Subclass");
-    ASSERT_NE(subclass, nullptr);
-    ASSERT_STREQ(subclass->GetBaseClasses().at(0)->GetFullName(), "TestSchema:MyClass");
-    ASSERT_EQ(1, subclass->GetBaseClasses().size());
-    ASSERT_EQ(3, subclass->GetPropertyCount(true));
-    ECClassCP myClass = m_ecdb.Schemas().GetClass("TestSchema", "MyClass");
-    ASSERT_NE(myClass, nullptr);
-    ASSERT_EQ(ECClassModifier::Abstract, myClass->GetClassModifier()) << "Verify initial state of the class is abstract";
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
+        {
+            ECClassCP subclass = m_ecdb.Schemas().GetClass("TestSchema", "Subclass");
+            ASSERT_NE(subclass, nullptr);
+            ASSERT_STREQ(subclass->GetBaseClasses().at(0)->GetFullName(), "TestSchema:MyClass");
+            ASSERT_EQ(1, subclass->GetBaseClasses().size());
+            ASSERT_EQ(3, subclass->GetPropertyCount(true));
+            ECClassCP myClass = m_ecdb.Schemas().GetClass("TestSchema", "MyClass");
+            ASSERT_NE(myClass, nullptr);
+            ASSERT_EQ(ECClassModifier::Abstract, myClass->GetClassModifier()) << "Verify initial state of the class is abstract";
+        }
+
+        //import edited schema with some changes.
+        SchemaItem editedSchemaItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+            "  <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+            "   <ECEntityClass typeName='Base' modifier='Abstract'>"
+            "        <ECCustomAttributes>"
+            "         <ClassMap xmlns='ECDbMap.02.00'>"
+            "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+            "            </ClassMap>"
+            "        </ECCustomAttributes>"
+            "       <ECProperty propertyName='BaseProperty' typeName='string' />"
+            "   </ECEntityClass>"
+            "   <ECEntityClass typeName='MyClass' modifier='None'>"
+            "       <BaseClass>Base</BaseClass>"
+            "       <ECProperty propertyName='MyProperty' typeName='string' />"
+            "   </ECEntityClass>"
+            "   <ECEntityClass typeName='Subclass' modifier='None' >"
+            "       <BaseClass>MyClass</BaseClass>"
+            "       <ECProperty propertyName='SubclassProperty' typeName='string' />"
+            "   </ECEntityClass>"
+            "</ECSchema>");
+        ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
+
+        {
+            ECClassCP subclass = m_ecdb.Schemas().GetClass("TestSchema", "Subclass");
+            ASSERT_NE(subclass, nullptr);
+            ASSERT_STREQ(subclass->GetBaseClasses().at(0)->GetFullName(), "TestSchema:MyClass");
+            ASSERT_EQ(1, subclass->GetBaseClasses().size());
+            ASSERT_EQ(3, subclass->GetPropertyCount(true));
+            ECClassCP myClass = m_ecdb.Schemas().GetClass("TestSchema", "MyClass");
+            ASSERT_NE(myClass, nullptr);
+            ASSERT_EQ(ECClassModifier::None, myClass->GetClassModifier()) << "Verify new state of the class is abstract";
+        }
+
+        // Verify we can insert and select
+        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.MyClass (BaseProperty,MyProperty) VALUES ('base', 'value')");
+        ASSERT_EQ(JsonValue(R"json([{"BaseProperty":"base", "MyProperty":"value"}])json"),
+                  GetHelper().ExecuteSelectECSql("SELECT BaseProperty, MyProperty FROM TestSchema.MyClass WHERE MyProperty='value'"))
+            << "Verify inserted instance";
+
+        // select polymorphically
+        ASSERT_EQ(JsonValue(R"json([{"BaseProperty":"base"}])json"),
+                  GetHelper().ExecuteSelectECSql("SELECT BaseProperty FROM TestSchema.Base"))
+            << "Verify polymorphic query by base class";
     }
-
-    //import edited schema with some changes.
-    SchemaItem editedSchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "  <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='Base' modifier='Abstract'>"
-        "        <ECCustomAttributes>"
-        "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "       <ECProperty propertyName='BaseProperty' typeName='string' />"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='MyClass' modifier='None'>"
-        "       <BaseClass>Base</BaseClass>"
-        "       <ECProperty propertyName='MyProperty' typeName='string' />"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='Subclass' modifier='None' >"
-        "       <BaseClass>MyClass</BaseClass>"
-        "       <ECProperty propertyName='SubclassProperty' typeName='string' />"
-        "   </ECEntityClass>"
-        "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
-
-    {
-    ECClassCP subclass = m_ecdb.Schemas().GetClass("TestSchema", "Subclass");
-    ASSERT_NE(subclass, nullptr);
-    ASSERT_STREQ(subclass->GetBaseClasses().at(0)->GetFullName(), "TestSchema:MyClass");
-    ASSERT_EQ(1, subclass->GetBaseClasses().size());
-    ASSERT_EQ(3, subclass->GetPropertyCount(true));
-    ECClassCP myClass = m_ecdb.Schemas().GetClass("TestSchema", "MyClass");
-    ASSERT_NE(myClass, nullptr);
-    ASSERT_EQ(ECClassModifier::None, myClass->GetClassModifier()) << "Verify new state of the class is abstract";
-    }
-
-    // Verify we can insert and select
-    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.MyClass (BaseProperty,MyProperty) VALUES ('base', 'value')");
-    ASSERT_EQ(JsonValue(R"json([{"BaseProperty":"base", "MyProperty":"value"}])json"),
-     GetHelper().ExecuteSelectECSql("SELECT BaseProperty, MyProperty FROM TestSchema.MyClass WHERE MyProperty='value'")) << "Verify inserted instance";
-
-    // select polymorphically
-    ASSERT_EQ(JsonValue(R"json([{"BaseProperty":"base"}])json"),
-     GetHelper().ExecuteSelectECSql("SELECT BaseProperty FROM TestSchema.Base")) << "Verify polymorphic query by base class";
-    }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -4458,59 +4490,57 @@ TEST_F(SchemaUpgradeTestFixture, AddNewCA)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpgradeTestFixture, AddNewECProperty)
-    {
-    SchemaItem schemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECEntityClass typeName='TestClass' modifier='None' >"
-        "   </ECEntityClass>"
-        "</ECSchema>");
+    TEST_P(SchemaUpgradeImportTests, AddNewECProperty) {
+        SchemaItem schemaItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+            "   <ECEntityClass typeName='TestClass' modifier='None' >"
+            "   </ECEntityClass>"
+            "</ECSchema>");
 
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
 
-    BeFileName filePath(m_ecdb.GetDbFileName());
-    m_ecdb.CloseDb();
-
-    Utf8CP schemaXml =
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECEntityClass typeName='TestClass' modifier='None' >"
-        "       <ECProperty propertyName='TestProperty' displayLabel='Test Property' description='this is property' typeName='string' />"
-        "   </ECEntityClass>"
-        "</ECSchema>";
-
-    m_updatedDbs.clear();
-    AssertSchemaUpdate(schemaXml, filePath, {true, true}, "Add new ECProperty");
-
-    for (Utf8StringCR dbPath : m_updatedDbs)
-        {
-        ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
-
-        //Verify newly added property exists
-        ECSchemaCP testSchema = m_ecdb.Schemas().GetSchema("TestSchema");
-        ASSERT_TRUE(testSchema != nullptr);
-
-        ECClassCP testClass = testSchema->GetClassCP("TestClass");
-        ASSERT_TRUE(testClass != nullptr);
-
-        ECPropertyCP testProperty = testClass->GetPropertyP("TestProperty");
-        ASSERT_TRUE(testProperty != nullptr);
-        ASSERT_TRUE(testProperty->GetDisplayLabel() == "Test Property");
-        ASSERT_TRUE(testProperty->GetDescription() == "this is property");
-
-        ECSqlStatement statement;
-        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT DisplayLabel, Description FROM meta.ECPropertyDef WHERE Name='TestProperty'"));
-        ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-        ASSERT_STREQ("Test Property", statement.GetValueText(0));
-        ASSERT_STREQ("this is property", statement.GetValueText(1));
-
-        //Query newly added Property
-        statement.Finalize();
-        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT TestProperty FROM ts.TestClass"));
-        ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
-        statement.Finalize();
+        BeFileName filePath(m_ecdb.GetDbFileName());
         m_ecdb.CloseDb();
+
+        Utf8CP schemaXml =
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+            "   <ECEntityClass typeName='TestClass' modifier='None' >"
+            "       <ECProperty propertyName='TestProperty' displayLabel='Test Property' description='this is property' typeName='string' />"
+            "   </ECEntityClass>"
+            "</ECSchema>";
+
+        m_updatedDbs.clear();
+        AssertSchemaUpdate(schemaXml, filePath, {true, true}, "Add new ECProperty");
+
+        for (Utf8StringCR dbPath : m_updatedDbs) {
+            ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
+
+            //Verify newly added property exists
+            ECSchemaCP testSchema = m_ecdb.Schemas().GetSchema("TestSchema");
+            ASSERT_TRUE(testSchema != nullptr);
+
+            ECClassCP testClass = testSchema->GetClassCP("TestClass");
+            ASSERT_TRUE(testClass != nullptr);
+
+            ECPropertyCP testProperty = testClass->GetPropertyP("TestProperty");
+            ASSERT_TRUE(testProperty != nullptr);
+            ASSERT_TRUE(testProperty->GetDisplayLabel() == "Test Property");
+            ASSERT_TRUE(testProperty->GetDescription() == "this is property");
+
+            ECSqlStatement statement;
+            ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT DisplayLabel, Description FROM meta.ECPropertyDef WHERE Name='TestProperty'"));
+            ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+            ASSERT_STREQ("Test Property", statement.GetValueText(0));
+            ASSERT_STREQ("this is property", statement.GetValueText(1));
+
+            //Query newly added Property
+            statement.Finalize();
+            ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT TestProperty FROM ts.TestClass"));
+            ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+            statement.Finalize();
+            m_ecdb.CloseDb();
         }
     }
 //---------------------------------------------------------------------------------------
@@ -5773,146 +5803,142 @@ TEST_F(SchemaUpgradeTestFixture, UpdateECDbMapCA_AddMaxSharedColumnsBeforeOverfl
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpgradeTestFixture, MaxSharedColumnsBeforeOverflowForSubClasses_AddProperty)
-    {
-    SchemaItem schemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='Parent' modifier='None' >"
-        "        <ECCustomAttributes>"
-        "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>TablePerHierarchy</MapStrategy>"
-        "         </ClassMap>"
-        "         <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
-        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
-        "         </ShareColumns>"
-        "        </ECCustomAttributes>"
-        "       <ECProperty propertyName='P1' typeName='int' />"
-        "   </ECEntityClass>"
-        "    <ECEntityClass typeName='Sub1' modifier='None'>"
-        "        <BaseClass>Parent</BaseClass>"
-        "        <ECProperty propertyName='S1' typeName='double' />"
-        "    </ECEntityClass>"
-        "</ECSchema>");
+    TEST_P(SchemaUpgradeImportTests, MaxSharedColumnsBeforeOverflowForSubClasses_AddProperty) {
+        SchemaItem schemaItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+            "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+            "   <ECEntityClass typeName='Parent' modifier='None' >"
+            "        <ECCustomAttributes>"
+            "         <ClassMap xmlns='ECDbMap.02.00'>"
+            "             <MapStrategy>TablePerHierarchy</MapStrategy>"
+            "         </ClassMap>"
+            "         <ShareColumns xmlns='ECDbMap.02.00'>"
+            "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
+            "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+            "         </ShareColumns>"
+            "        </ECCustomAttributes>"
+            "       <ECProperty propertyName='P1' typeName='int' />"
+            "   </ECEntityClass>"
+            "    <ECEntityClass typeName='Sub1' modifier='None'>"
+            "        <BaseClass>Parent</BaseClass>"
+            "        <ECProperty propertyName='S1' typeName='double' />"
+            "    </ECEntityClass>"
+            "</ECSchema>");
 
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
 
-    ASSERT_EQ(4, GetHelper().GetColumnCount("ts_Parent"));
+        ASSERT_EQ(4, GetHelper().GetColumnCount("ts_Parent"));
 
-    BeFileName filePath(m_ecdb.GetDbFileName());
-    m_ecdb.CloseDb();
-
-    Utf8CP editedSchemaXml =
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='Parent' modifier='None' >"
-        "        <ECCustomAttributes>"
-        "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>TablePerHierarchy</MapStrategy>"
-        "         </ClassMap>"
-        "         <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
-        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
-        "         </ShareColumns>"
-        "        </ECCustomAttributes>"
-        "       <ECProperty propertyName='P1' typeName='int' />"
-        "   </ECEntityClass>"
-        "    <ECEntityClass typeName='Sub1' modifier='None'>"
-        "        <BaseClass>Parent</BaseClass>"
-        "        <ECProperty propertyName='S1' typeName='double' />"
-        "        <ECProperty propertyName='S2' typeName='double' />"
-        "        <ECProperty propertyName='S3' typeName='double' />"
-        "        <ECProperty propertyName='S4' typeName='double' />"
-        "        <ECProperty propertyName='S5' typeName='double' />"
-        "    </ECEntityClass>"
-        "</ECSchema>";
-
-    m_updatedDbs.clear();
-    AssertSchemaUpdate(editedSchemaXml, filePath, {true, true}, "Add new property mapped tp shared column");
-
-    for (Utf8StringCR dbPath : m_updatedDbs)
-        {
-        ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
-        ASSERT_EQ(8, GetHelper().GetColumnCount("ts_Parent"));
+        BeFileName filePath(m_ecdb.GetDbFileName());
         m_ecdb.CloseDb();
+
+        Utf8CP editedSchemaXml =
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+            "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+            "   <ECEntityClass typeName='Parent' modifier='None' >"
+            "        <ECCustomAttributes>"
+            "         <ClassMap xmlns='ECDbMap.02.00'>"
+            "             <MapStrategy>TablePerHierarchy</MapStrategy>"
+            "         </ClassMap>"
+            "         <ShareColumns xmlns='ECDbMap.02.00'>"
+            "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
+            "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+            "         </ShareColumns>"
+            "        </ECCustomAttributes>"
+            "       <ECProperty propertyName='P1' typeName='int' />"
+            "   </ECEntityClass>"
+            "    <ECEntityClass typeName='Sub1' modifier='None'>"
+            "        <BaseClass>Parent</BaseClass>"
+            "        <ECProperty propertyName='S1' typeName='double' />"
+            "        <ECProperty propertyName='S2' typeName='double' />"
+            "        <ECProperty propertyName='S3' typeName='double' />"
+            "        <ECProperty propertyName='S4' typeName='double' />"
+            "        <ECProperty propertyName='S5' typeName='double' />"
+            "    </ECEntityClass>"
+            "</ECSchema>";
+
+        m_updatedDbs.clear();
+        AssertSchemaUpdate(editedSchemaXml, filePath, {true, true}, "Add new property mapped tp shared column");
+
+        for (Utf8StringCR dbPath : m_updatedDbs) {
+            ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
+            ASSERT_EQ(8, GetHelper().GetColumnCount("ts_Parent"));
+            m_ecdb.CloseDb();
         }
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpgradeTestFixture, MaxSharedColumnsBeforeOverflowWithJoinedTable_AddProperty)
-    {
-    SchemaItem schemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='Parent' modifier='None' >"
-        "        <ECCustomAttributes>"
-        "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>TablePerHierarchy</MapStrategy>"
-        "         </ClassMap>"
-        "         <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
-        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
-        "         </ShareColumns>"
-        "         <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
-        "        </ECCustomAttributes>"
-        "       <ECProperty propertyName='P1' typeName='int' />"
-        "   </ECEntityClass>"
-        "    <ECEntityClass typeName='Sub1' modifier='None'>"
-        "        <BaseClass>Parent</BaseClass>"
-        "        <ECProperty propertyName='S1' typeName='double' />"
-        "    </ECEntityClass>"
-        "</ECSchema>");
+    TEST_P(SchemaUpgradeImportTests, MaxSharedColumnsBeforeOverflowWithJoinedTable_AddProperty) {
+        SchemaItem schemaItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+            "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+            "   <ECEntityClass typeName='Parent' modifier='None' >"
+            "        <ECCustomAttributes>"
+            "         <ClassMap xmlns='ECDbMap.02.00'>"
+            "             <MapStrategy>TablePerHierarchy</MapStrategy>"
+            "         </ClassMap>"
+            "         <ShareColumns xmlns='ECDbMap.02.00'>"
+            "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
+            "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+            "         </ShareColumns>"
+            "         <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+            "        </ECCustomAttributes>"
+            "       <ECProperty propertyName='P1' typeName='int' />"
+            "   </ECEntityClass>"
+            "    <ECEntityClass typeName='Sub1' modifier='None'>"
+            "        <BaseClass>Parent</BaseClass>"
+            "        <ECProperty propertyName='S1' typeName='double' />"
+            "    </ECEntityClass>"
+            "</ECSchema>");
 
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
 
-    ASSERT_EQ(3, GetHelper().GetColumnCount("ts_Parent"));
-    ASSERT_EQ(3, GetHelper().GetColumnCount("ts_Sub1"));
-
-    BeFileName filePath(m_ecdb.GetDbFileName());
-    m_ecdb.CloseDb();
-
-    Utf8CP addPropertiesToSharedColumns =
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='Parent' modifier='None' >"
-        "        <ECCustomAttributes>"
-        "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>TablePerHierarchy</MapStrategy>"
-        "         </ClassMap>"
-        "         <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
-        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
-        "         </ShareColumns>"
-        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
-        "        </ECCustomAttributes>"
-        "       <ECProperty propertyName='P1' typeName='int' />"
-        "   </ECEntityClass>"
-        "    <ECEntityClass typeName='Sub1' modifier='None'>"
-        "        <BaseClass>Parent</BaseClass>"
-        "        <ECProperty propertyName='S1' typeName='double' />"
-        "        <ECProperty propertyName='S2' typeName='double' />"
-        "        <ECProperty propertyName='S3' typeName='double' />"
-        "        <ECProperty propertyName='S4' typeName='double' />"
-        "        <ECProperty propertyName='S5' typeName='double' />"
-        "    </ECEntityClass>"
-        "</ECSchema>";
-
-    m_updatedDbs.clear();
-    AssertSchemaUpdate(addPropertiesToSharedColumns, filePath, {true, true}, "Add new property mapped to shared columns in a JoinedTable");
-
-    for (Utf8StringCR dbPath : m_updatedDbs)
-        {
-        ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
         ASSERT_EQ(3, GetHelper().GetColumnCount("ts_Parent"));
-        ASSERT_EQ(7, GetHelper().GetColumnCount("ts_Sub1"));
+        ASSERT_EQ(3, GetHelper().GetColumnCount("ts_Sub1"));
+
+        BeFileName filePath(m_ecdb.GetDbFileName());
         m_ecdb.CloseDb();
+
+        Utf8CP addPropertiesToSharedColumns =
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+            "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+            "   <ECEntityClass typeName='Parent' modifier='None' >"
+            "        <ECCustomAttributes>"
+            "         <ClassMap xmlns='ECDbMap.02.00'>"
+            "             <MapStrategy>TablePerHierarchy</MapStrategy>"
+            "         </ClassMap>"
+            "         <ShareColumns xmlns='ECDbMap.02.00'>"
+            "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
+            "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+            "         </ShareColumns>"
+            "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+            "        </ECCustomAttributes>"
+            "       <ECProperty propertyName='P1' typeName='int' />"
+            "   </ECEntityClass>"
+            "    <ECEntityClass typeName='Sub1' modifier='None'>"
+            "        <BaseClass>Parent</BaseClass>"
+            "        <ECProperty propertyName='S1' typeName='double' />"
+            "        <ECProperty propertyName='S2' typeName='double' />"
+            "        <ECProperty propertyName='S3' typeName='double' />"
+            "        <ECProperty propertyName='S4' typeName='double' />"
+            "        <ECProperty propertyName='S5' typeName='double' />"
+            "    </ECEntityClass>"
+            "</ECSchema>";
+
+        m_updatedDbs.clear();
+        AssertSchemaUpdate(addPropertiesToSharedColumns, filePath, {true, true}, "Add new property mapped to shared columns in a JoinedTable");
+
+        for (Utf8StringCR dbPath : m_updatedDbs) {
+            ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
+            ASSERT_EQ(3, GetHelper().GetColumnCount("ts_Parent"));
+            ASSERT_EQ(7, GetHelper().GetColumnCount("ts_Sub1"));
+            m_ecdb.CloseDb();
         }
     }
 
@@ -7900,136 +7926,132 @@ TEST_F(SchemaUpgradeTestFixture, DeleteECStructClassUnsupported)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpgradeTestFixture, UpdateECDbMapCA_DbIndexChanges)
-    {
-    SchemaItem schemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
-        "    <ECEntityClass typeName='A'>"
-        "        <ECProperty propertyName='PA' typeName='int' />"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='B' modifier='Sealed'>"
-        "       <ECCustomAttributes>"
-        "           <DbIndexList xmlns='ECDbMap.02.00'>"
-        "               <Indexes>"
-        "                   <DbIndex>"
-        "                       <Name>IDX_Partial_Index</Name>"
-        "                       <IsUnique>False</IsUnique>"
-        "                       <Properties>"
-        "                           <string>AId.Id</string>"
-        "                       </Properties>"
-        "                   </DbIndex>"
-        "               </Indexes>"
-        "           </DbIndexList>"
-        "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='PB' typeName='int' />"
-        "        <ECNavigationProperty propertyName='AId' relationshipName='AHasB' direction='Backward' />"
-        "    </ECEntityClass>"
-        "   <ECRelationshipClass typeName='AHasB' strength='Embedding'>"
-        "      <Source cardinality='(0,1)' polymorphic='False'>"
-        "          <Class class ='A' />"
-        "      </Source>"
-        "      <Target cardinality='(0,N)' polymorphic='False'>"
-        "          <Class class ='B' />"
-        "      </Target>"
-        "   </ECRelationshipClass>"
-        "</ECSchema>");
+    TEST_P(SchemaUpgradeImportTests, UpdateECDbMapCA_DbIndexChanges) {
+        SchemaItem schemaItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+            "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+            "    <ECEntityClass typeName='A'>"
+            "        <ECProperty propertyName='PA' typeName='int' />"
+            "    </ECEntityClass>"
+            "    <ECEntityClass typeName='B' modifier='Sealed'>"
+            "       <ECCustomAttributes>"
+            "           <DbIndexList xmlns='ECDbMap.02.00'>"
+            "               <Indexes>"
+            "                   <DbIndex>"
+            "                       <Name>IDX_Partial_Index</Name>"
+            "                       <IsUnique>False</IsUnique>"
+            "                       <Properties>"
+            "                           <string>AId.Id</string>"
+            "                       </Properties>"
+            "                   </DbIndex>"
+            "               </Indexes>"
+            "           </DbIndexList>"
+            "        </ECCustomAttributes>"
+            "        <ECProperty propertyName='PB' typeName='int' />"
+            "        <ECNavigationProperty propertyName='AId' relationshipName='AHasB' direction='Backward' />"
+            "    </ECEntityClass>"
+            "   <ECRelationshipClass typeName='AHasB' strength='Embedding'>"
+            "      <Source cardinality='(0,1)' polymorphic='False'>"
+            "          <Class class ='A' />"
+            "      </Source>"
+            "      <Target cardinality='(0,N)' polymorphic='False'>"
+            "          <Class class ='B' />"
+            "      </Target>"
+            "   </ECRelationshipClass>"
+            "</ECSchema>");
 
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
 
-    ECClassCP b = m_ecdb.Schemas().GetClass("TestSchema", "B");
-    ASSERT_NE(b, nullptr);
-    IECInstancePtr ca = b->GetCustomAttribute("DbIndexList");
-    ASSERT_FALSE(ca.IsNull());
+        ECClassCP b = m_ecdb.Schemas().GetClass("TestSchema", "B");
+        ASSERT_NE(b, nullptr);
+        IECInstancePtr ca = b->GetCustomAttribute("DbIndexList");
+        ASSERT_FALSE(ca.IsNull());
 
-    ECValue indexes, indexName;
-    ASSERT_EQ(ca->GetValue(indexes, "Indexes", 0), ECObjectsStatus::Success);
-    ASSERT_EQ(indexes.GetStruct()->GetValue(indexName, "Name"), ECObjectsStatus::Success);
-    ASSERT_STREQ(indexName.GetUtf8CP(), "IDX_Partial_Index");
+        ECValue indexes, indexName;
+        ASSERT_EQ(ca->GetValue(indexes, "Indexes", 0), ECObjectsStatus::Success);
+        ASSERT_EQ(indexes.GetStruct()->GetValue(indexName, "Name"), ECObjectsStatus::Success);
+        ASSERT_STREQ(indexName.GetUtf8CP(), "IDX_Partial_Index");
 
-    Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT NULL FROM ec_Index WHERE Name='IDX_Partial_Index'"));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    stmt.Finalize();
+        Statement stmt;
+        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT NULL FROM ec_Index WHERE Name='IDX_Partial_Index'"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        stmt.Finalize();
 
-    BeFileName filePath(m_ecdb.GetDbFileName());
-    m_ecdb.CloseDb();
+        BeFileName filePath(m_ecdb.GetDbFileName());
+        m_ecdb.CloseDb();
 
-    Utf8CP schemaWithIndexNameModified =
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
-        "    <ECEntityClass typeName='A'>"
-        "        <ECProperty propertyName='PA' typeName='int' />"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='B' modifier='Sealed'>"
-        "       <ECCustomAttributes>"
-        "           <DbIndexList xmlns='ECDbMap.02.00'>"
-        "               <Indexes>"
-        "                   <DbIndex>"
-        "                       <Name>IDX_Partial</Name>"
-        "                       <IsUnique>False</IsUnique>"
-        "                       <Properties>"
-        "                           <string>AId.Id</string>"
-        "                       </Properties>"
-        "                   </DbIndex>"
-        "               </Indexes>"
-        "           </DbIndexList>"
-        "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='PB' typeName='int' />"
-        "        <ECNavigationProperty propertyName='AId' relationshipName='AHasB' direction='Backward' />"
-        "    </ECEntityClass>"
-        "   <ECRelationshipClass typeName='AHasB' strength='Embedding'>"
-        "      <Source cardinality='(0,1)' polymorphic='False'>"
-        "          <Class class ='A' />"
-        "      </Source>"
-        "      <Target cardinality='(0,N)' polymorphic='False'>"
-        "          <Class class ='B' />"
-        "      </Target>"
-        "   </ECRelationshipClass>"
-        "</ECSchema>";
+        Utf8CP schemaWithIndexNameModified =
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+            "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+            "    <ECEntityClass typeName='A'>"
+            "        <ECProperty propertyName='PA' typeName='int' />"
+            "    </ECEntityClass>"
+            "    <ECEntityClass typeName='B' modifier='Sealed'>"
+            "       <ECCustomAttributes>"
+            "           <DbIndexList xmlns='ECDbMap.02.00'>"
+            "               <Indexes>"
+            "                   <DbIndex>"
+            "                       <Name>IDX_Partial</Name>"
+            "                       <IsUnique>False</IsUnique>"
+            "                       <Properties>"
+            "                           <string>AId.Id</string>"
+            "                       </Properties>"
+            "                   </DbIndex>"
+            "               </Indexes>"
+            "           </DbIndexList>"
+            "        </ECCustomAttributes>"
+            "        <ECProperty propertyName='PB' typeName='int' />"
+            "        <ECNavigationProperty propertyName='AId' relationshipName='AHasB' direction='Backward' />"
+            "    </ECEntityClass>"
+            "   <ECRelationshipClass typeName='AHasB' strength='Embedding'>"
+            "      <Source cardinality='(0,1)' polymorphic='False'>"
+            "          <Class class ='A' />"
+            "      </Source>"
+            "      <Target cardinality='(0,N)' polymorphic='False'>"
+            "          <Class class ='B' />"
+            "      </Target>"
+            "   </ECRelationshipClass>"
+            "</ECSchema>";
 
-    m_updatedDbs.clear();
-    AssertSchemaUpdate(schemaWithIndexNameModified, filePath, {false, false}, "Modifying DbIndex::Name");
+        m_updatedDbs.clear();
+        AssertSchemaUpdate(schemaWithIndexNameModified, filePath, {false, false}, "Modifying DbIndex::Name");
 
-    Utf8CP schemaWithIndexDeleted =
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
-        "    <ECEntityClass typeName='A'>"
-        "        <ECProperty propertyName='PA' typeName='int' />"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='B'>"
-        "       <ECCustomAttributes>"
-        "           <ClassMap xmlns='ECDbMap.02.00'>"
-        "           </ClassMap>"
-        "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='PB' typeName='int' />"
-        "        <ECNavigationProperty propertyName='AId' relationshipName='AHasB' direction='Backward' />"
-        "    </ECEntityClass>"
-        "   <ECRelationshipClass typeName='AHasB' strength='Embedding'>"
-        "      <Source cardinality='(0,1)' polymorphic='False'>"
-        "          <Class class ='A' />"
-        "      </Source>"
-        "      <Target cardinality='(0,N)' polymorphic='False'>"
-        "          <Class class ='B' />"
-        "      </Target>"
-        "   </ECRelationshipClass>"
-        "</ECSchema>";
+        Utf8CP schemaWithIndexDeleted =
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+            "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+            "    <ECEntityClass typeName='A'>"
+            "        <ECProperty propertyName='PA' typeName='int' />"
+            "    </ECEntityClass>"
+            "    <ECEntityClass typeName='B'>"
+            "       <ECCustomAttributes>"
+            "           <ClassMap xmlns='ECDbMap.02.00'>"
+            "           </ClassMap>"
+            "        </ECCustomAttributes>"
+            "        <ECProperty propertyName='PB' typeName='int' />"
+            "        <ECNavigationProperty propertyName='AId' relationshipName='AHasB' direction='Backward' />"
+            "    </ECEntityClass>"
+            "   <ECRelationshipClass typeName='AHasB' strength='Embedding'>"
+            "      <Source cardinality='(0,1)' polymorphic='False'>"
+            "          <Class class ='A' />"
+            "      </Source>"
+            "      <Target cardinality='(0,N)' polymorphic='False'>"
+            "          <Class class ='B' />"
+            "      </Target>"
+            "   </ECRelationshipClass>"
+            "</ECSchema>";
 
-    m_updatedDbs.clear();
-    AssertSchemaUpdate(schemaWithIndexDeleted, filePath, {false, false}, "Deleting DbIndex");
+        m_updatedDbs.clear();
+        AssertSchemaUpdate(schemaWithIndexDeleted, filePath, {false, false}, "Deleting DbIndex");
     }
-
-
 
 //---------------------------------------------------------------------------------------
 // @bsitest
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpgradeTestFixture, AddNavigationProperty)
-    {
-    Utf8CP schemaTemplate = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    TEST_P(SchemaUpgradeImportTests, AddNavigationProperty) {
+        Utf8CP schemaTemplate = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     %s
                     <ECEntityClass typeName="A" modifier="None">
                         <ECProperty propertyName="Prop1" typeName="string" />
@@ -8048,27 +8070,27 @@ TEST_F(SchemaUpgradeTestFixture, AddNavigationProperty)
                      </ECRelationshipClass>
                 </ECSchema>)xml";
 
-    Utf8String schemaV1Xml;
-    schemaV1Xml.Sprintf(schemaTemplate, "", "");
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemaupdate_addnavprop.ecdb", SchemaItem(schemaV1Xml))) << "Schema import with " << schemaV1Xml.c_str();
+        Utf8String schemaV1Xml;
+        schemaV1Xml.Sprintf(schemaTemplate, "", "");
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemaupdate_addnavprop.ecdb", SchemaItem(schemaV1Xml))) << "Schema import with " << schemaV1Xml.c_str();
 
-    //now add nav prop (logical FK)
-    Utf8String schemaV2Xml;
-    schemaV2Xml.Sprintf(schemaTemplate, "", R"xml(<ECNavigationProperty propertyName="A" relationshipName="Rel" direction="Backward"/>)xml");
+        //now add nav prop (logical FK)
+        Utf8String schemaV2Xml;
+        schemaV2Xml.Sprintf(schemaTemplate, "", R"xml(<ECNavigationProperty propertyName="A" relationshipName="Rel" direction="Backward"/>)xml");
 
-    ASSERT_EQ(ERROR, ImportSchema(SchemaItem(schemaV2Xml))) << "Schema update should fail when a nav prop (w/o ForeignKeyConstraint) is added because it would change the mapping type from link table to logical FK";
-    m_ecdb.AbandonChanges();
+        ASSERT_EQ(ERROR, ImportSchema(SchemaItem(schemaV2Xml))) << "Schema update should fail when a nav prop (w/o ForeignKeyConstraint) is added because it would change the mapping type from link table to logical FK";
+        m_ecdb.AbandonChanges();
 
-    //now add nav prop (physical FK)
-    schemaV2Xml.Sprintf(schemaTemplate, R"xml(<ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>)xml",
-                        R"xml(<ECNavigationProperty propertyName="A" relationshipName="Rel" direction="Backward">
+        //now add nav prop (physical FK)
+        schemaV2Xml.Sprintf(schemaTemplate, R"xml(<ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>)xml",
+                            R"xml(<ECNavigationProperty propertyName="A" relationshipName="Rel" direction="Backward">
                             <ECCustomAttributes>
                                 <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
                             </ECCustomAttributes>
                         </ECNavigationProperty>)xml");
 
-    ASSERT_EQ(ERROR, ImportSchema(SchemaItem(schemaV2Xml))) << "Schema update should fail when a nav prop (with ForeignKeyConstraint) is added because it would change the mapping type from link table to physical FK";
-    m_ecdb.AbandonChanges();
+        ASSERT_EQ(ERROR, ImportSchema(SchemaItem(schemaV2Xml))) << "Schema update should fail when a nav prop (with ForeignKeyConstraint) is added because it would change the mapping type from link table to physical FK";
+        m_ecdb.AbandonChanges();
     }
 
 //---------------------------------------------------------------------------------------
@@ -10491,86 +10513,83 @@ TEST_F(SchemaUpgradeTestFixture, AddKoQAndUpdatePropertiesWithKoQ)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpgradeTestFixture, ModifyPropertyType_PrimitiveToNonStrictEnum)
-    {
-    SchemaItem schemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "  <ECEntityClass typeName='Foo' >"
-        "    <ECProperty propertyName='Type' typeName='int' />"
-        "  </ECEntityClass>"
-        "</ECSchema>");
+    TEST_P(SchemaUpgradeImportTests, ModifyPropertyType_PrimitiveToNonStrictEnum) {
+        SchemaItem schemaItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+            "  <ECEntityClass typeName='Foo' >"
+            "    <ECProperty propertyName='Type' typeName='int' />"
+            "  </ECEntityClass>"
+            "</ECSchema>");
 
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
 
-    BeFileName filePath(m_ecdb.GetDbFileName());
-    m_ecdb.CloseDb();
-
-    Utf8CP editedSchemaXml =
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "    <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='False'>"
-        "        <ECEnumerator value = '0' displayLabel = 'txt' />"
-        "        <ECEnumerator value = '1' displayLabel = 'bat' />"
-        "    </ECEnumeration>"
-        "    <ECEntityClass typeName='Foo' >"
-        "        <ECProperty propertyName='Type' typeName='NonStrictEnum' />"
-        "    </ECEntityClass>"
-        "</ECSchema>";
-
-    m_updatedDbs.clear();
-    AssertSchemaUpdate(editedSchemaXml, filePath, {true, true}, "changing primitive to NonString Enum is supported");
-
-    for (Utf8StringCR dbPath : m_updatedDbs)
-        {
-        ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
-
-        ECEnumerationCP nonStrictEnum = m_ecdb.Schemas().GetEnumeration("TestSchema", "NonStrictEnum");
-        ASSERT_TRUE(nonStrictEnum != nullptr);
-        ECClassCP foo = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
-        ASSERT_TRUE(foo != nullptr);
-
-        PrimitiveECPropertyCP foo_type = foo->GetPropertyP("Type")->GetAsPrimitiveProperty();
-
-        ASSERT_TRUE(foo_type != nullptr);
-        ASSERT_TRUE(foo_type->GetEnumeration() == nonStrictEnum);
-
+        BeFileName filePath(m_ecdb.GetDbFileName());
         m_ecdb.CloseDb();
+
+        Utf8CP editedSchemaXml =
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+            "    <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='False'>"
+            "        <ECEnumerator value = '0' displayLabel = 'txt' />"
+            "        <ECEnumerator value = '1' displayLabel = 'bat' />"
+            "    </ECEnumeration>"
+            "    <ECEntityClass typeName='Foo' >"
+            "        <ECProperty propertyName='Type' typeName='NonStrictEnum' />"
+            "    </ECEntityClass>"
+            "</ECSchema>";
+
+        m_updatedDbs.clear();
+        AssertSchemaUpdate(editedSchemaXml, filePath, {true, true}, "changing primitive to NonString Enum is supported");
+
+        for (Utf8StringCR dbPath : m_updatedDbs) {
+            ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
+
+            ECEnumerationCP nonStrictEnum = m_ecdb.Schemas().GetEnumeration("TestSchema", "NonStrictEnum");
+            ASSERT_TRUE(nonStrictEnum != nullptr);
+            ECClassCP foo = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
+            ASSERT_TRUE(foo != nullptr);
+
+            PrimitiveECPropertyCP foo_type = foo->GetPropertyP("Type")->GetAsPrimitiveProperty();
+
+            ASSERT_TRUE(foo_type != nullptr);
+            ASSERT_TRUE(foo_type->GetEnumeration() == nonStrictEnum);
+
+            m_ecdb.CloseDb();
         }
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpgradeTestFixture, ModifyPropertyType_PrimitiveToStrictEnum)
-    {
-    SchemaItem schemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "  <ECEntityClass typeName='Foo' >"
-        "    <ECProperty propertyName='Type' typeName='int' />"
-        "  </ECEntityClass>"
-        "</ECSchema>");
+    TEST_P(SchemaUpgradeImportTests, ModifyPropertyType_PrimitiveToStrictEnum) {
+        SchemaItem schemaItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+            "  <ECEntityClass typeName='Foo' >"
+            "    <ECProperty propertyName='Type' typeName='int' />"
+            "  </ECEntityClass>"
+            "</ECSchema>");
 
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
 
-    BeFileName filePath(m_ecdb.GetDbFileName());
-    m_ecdb.CloseDb();
+        BeFileName filePath(m_ecdb.GetDbFileName());
+        m_ecdb.CloseDb();
 
-    Utf8CP editedSchemaXml =
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "    <ECEnumeration typeName='StrictEnum' backingTypeName='int' isStrict='True'>"
-        "        <ECEnumerator value = '0' displayLabel = 'txt' />"
-        "        <ECEnumerator value = '1' displayLabel = 'bat' />"
-        "    </ECEnumeration>"
-        "    <ECEntityClass typeName='Foo' >"
-        "        <ECProperty propertyName='Type' typeName='StrictEnum' />"
-        "    </ECEntityClass>"
-        "</ECSchema>";
+        Utf8CP editedSchemaXml =
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+            "    <ECEnumeration typeName='StrictEnum' backingTypeName='int' isStrict='True'>"
+            "        <ECEnumerator value = '0' displayLabel = 'txt' />"
+            "        <ECEnumerator value = '1' displayLabel = 'bat' />"
+            "    </ECEnumeration>"
+            "    <ECEntityClass typeName='Foo' >"
+            "        <ECProperty propertyName='Type' typeName='StrictEnum' />"
+            "    </ECEntityClass>"
+            "</ECSchema>";
 
-    m_updatedDbs.clear();
-    AssertSchemaUpdate(editedSchemaXml, filePath, {false, false}, "changing primitive to Strict Enum is not supported");
+        m_updatedDbs.clear();
+        AssertSchemaUpdate(editedSchemaXml, filePath, {false, false}, "changing primitive to Strict Enum is not supported");
     }
 
 //---------------------------------------------------------------------------------------

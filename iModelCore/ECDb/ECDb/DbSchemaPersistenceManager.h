@@ -78,10 +78,16 @@ public:
     static BentleyStatus CreateIndex(ECDbCR, DbIndex const&, Utf8StringCR ddl);
 
     static BentleyStatus BuildCreateIndexDdl(Utf8StringR ddl, Utf8StringR comparableIndexDef, ECDbCR, DbIndex const&);
+    //! Recovers the comparable definition BuildCreateIndexDdl produced for @p index from its
+    //! physical DDL, without regenerating the WHERE clause. Returns false if the DDL doesn't have
+    //! the shape BuildCreateIndexDdl generates for this index's name, uniqueness, table and columns.
+    static bool TryGetComparableIndexDef(Utf8StringR comparableIndexDef, DbIndex const&, Utf8StringCR physicalDdl);
 
     static CreateOrUpdateTableResult CreateOrUpdateTable(ECDbCR, DbTable const&);
     static BentleyStatus RepopulateClassHierarchyCacheTable(ECDbCR);
     static BentleyStatus RepopulateClassHasTableCacheTable(ECDbCR);
+    //! Replaces only the rows of the given classes; other classes' mappings must be unchanged.
+    static BentleyStatus RepopulateClassHasTableCacheTable(ECDbCR, std::set<ECN::ECClassId> const&);
 
  
     //!Safe method to cast an integer value to the MapStrategy enum.

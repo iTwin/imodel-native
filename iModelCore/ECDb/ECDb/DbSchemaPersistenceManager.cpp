@@ -37,6 +37,14 @@ BentleyStatus DbSchemaPersistenceManager::RepopulateClassHierarchyCacheTable(ECD
     return SUCCESS;
     }
 
+#define CLASSHASTABLES_SELECT "INSERT INTO main." TABLE_ClassHasTablesCache " " \
+    "SELECT NULL,cm.ClassId,t.Id FROM main." TABLE_PropertyMap " pm" \
+    " INNER JOIN main." TABLE_Column " c ON c.Id=pm.ColumnId" \
+    " INNER JOIN main." TABLE_ClassMap " cm ON cm.ClassId=pm.ClassId" \
+    " INNER JOIN main." TABLE_Table " t ON t.Id=c.TableId" \
+    " WHERE c.ColumnKind & " SQLVAL_DbColumn_Kind_ECClassId "=0 AND " \
+    "   cm.MapStrategy NOT IN(" SQLVAL_MapStrategy_ForeignKeyRelationshipInSourceTable "," SQLVAL_MapStrategy_ForeignKeyRelationshipInTargetTable ")"
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -47,17 +55,36 @@ BentleyStatus DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(ECDb
     if (BE_SQLITE_OK != ecdb.ExecuteSql("DELETE FROM main." TABLE_ClassHasTablesCache))
         return ERROR;
 
-    if (BE_SQLITE_OK != ecdb.ExecuteSql("INSERT INTO main." TABLE_ClassHasTablesCache " "
-                                        "SELECT NULL,cm.ClassId,t.Id FROM main." TABLE_PropertyMap " pm"
-                                        " INNER JOIN main." TABLE_Column " c ON c.Id=pm.ColumnId"
-                                        " INNER JOIN main." TABLE_ClassMap " cm ON cm.ClassId=pm.ClassId"
-                                        " INNER JOIN main." TABLE_Table " t ON t.Id=c.TableId"
-                                        " WHERE c.ColumnKind & " SQLVAL_DbColumn_Kind_ECClassId "=0 AND "
-                                        "   cm.MapStrategy NOT IN(" SQLVAL_MapStrategy_ForeignKeyRelationshipInSourceTable "," SQLVAL_MapStrategy_ForeignKeyRelationshipInTargetTable ")"
-                                        " GROUP BY cm.ClassId, t.Id"))
+    if (BE_SQLITE_OK != ecdb.ExecuteSql(CLASSHASTABLES_SELECT " GROUP BY cm.ClassId, t.Id"))
         return ERROR;
 
     PERFLOG_FINISH("ECDb", "Repopulate table " TABLE_ClassHasTablesCache);
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(ECDbCR ecdb, std::set<ECClassId> const& classes)
+    {
+    if (classes.empty())
+        return SUCCESS;
+
+    Utf8String ids;
+    for (ECClassId id : classes)
+        {
+        if (!ids.empty())
+            ids.append(",");
+        ids.append(id.ToString());
+        }
+
+    if (BE_SQLITE_OK != ecdb.ExecuteSql(Utf8PrintfString("DELETE FROM main." TABLE_ClassHasTablesCache " WHERE ClassId IN (%s)", ids.c_str()).c_str()))
+        return ERROR;
+
+    if (BE_SQLITE_OK != ecdb.ExecuteSql(Utf8PrintfString(CLASSHASTABLES_SELECT " AND cm.ClassId IN (%s) GROUP BY cm.ClassId, t.Id", ids.c_str()).c_str()))
+        return ERROR;
+
     return SUCCESS;
     }
 
@@ -398,6 +425,41 @@ BentleyStatus DbSchemaPersistenceManager::BuildCreateIndexDdl(Utf8StringR ddl, U
 
     comparableIndexDef.ToLower();
     return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+//static
+bool DbSchemaPersistenceManager::TryGetComparableIndexDef(Utf8StringR comparableIndexDef, DbIndex const& index, Utf8StringCR physicalDdl)
+    {
+    Utf8String columnsDdl;
+    AppendColumnNamesToDdl(columnsDdl, index.GetColumns());
+    Utf8String head("CREATE ");
+    comparableIndexDef.clear();
+    if (index.GetIsUnique())
+        {
+        head.append("UNIQUE ");
+        comparableIndexDef.assign("u ");
+        }
+    Utf8StringCR tableName = index.GetTable().GetName();
+    head.append("INDEX [").append(index.GetName()).append("] ON [").append(tableName).append("](").append(columnsDdl).append(")");
+    if (physicalDdl.size() < head.size() || 0 != BeStringUtilities::Strnicmp(physicalDdl.c_str(), head.c_str(), head.size()))
+        return false;
+
+    Utf8String whereClause;
+    if (physicalDdl.size() > head.size())
+        {
+        Utf8CP whereKeyword = " WHERE ";
+        const size_t keywordLength = strlen(whereKeyword);
+        if (0 != BeStringUtilities::Strnicmp(physicalDdl.c_str() + head.size(), whereKeyword, keywordLength) || physicalDdl.size() == head.size() + keywordLength)
+            return false;
+        whereClause = physicalDdl.substr(head.size() + keywordLength);
+        }
+
+    comparableIndexDef.append(tableName).append("(").append(columnsDdl).append(")").append(whereClause);
+    comparableIndexDef.ToLower();
+    return true;
     }
 
 //---------------------------------------------------------------------------------------

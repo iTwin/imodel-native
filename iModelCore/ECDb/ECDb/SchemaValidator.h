@@ -82,8 +82,14 @@ struct SchemaValidator final
         SchemaValidator();
         ~SchemaValidator();
 
+        static bool ValidateClass(SchemaImportContext const&, IssueDataSource const&, ECN::ECClassCR, ValidBaseClassesRule const&, ValidRelationshipRule const&, ValidPropertyRule const&);
+
     public:
         static bool ValidateSchemas(SchemaImportContext&, IssueDataSource const&, bvector<ECN::ECSchemaCP> const&);
+        //! Applies the per-class and per-property rules of ValidateSchemas to one class.
+        static bool ValidateClass(SchemaImportContext const&, IssueDataSource const&, ECN::ECClassCR);
+        //! Applies the per-property rules of ValidateSchemas to one property.
+        static bool ValidateProperty(IssueDataSource const&, ECN::ECClassCR, ECN::ECPropertyCR);
     };
 
 

@@ -1163,6 +1163,11 @@ DropSchemaResult MainSchemaManager::DropSchema(Utf8StringCR name, SchemaImportTo
 +---------------+---------------+---------------+---------------+---------------+------*/
 DropSchemaResult MainSchemaManager::DropSchemas(bvector<Utf8String> schemaNames, SchemaImportToken const* schemaImportToken, bool logIssue) const
     {
+    BeMutexHolder editorGuard(m_mutex);
+    if (IsSchemaEditorActive()) {
+        LOG.error("Cannot drop schemas while a SchemaEditor session is active.");
+        return DropSchemaResult(DropSchemaResult::Status::Error);
+    }
     ECDB_PERF_LOG_SCOPE("Drop multiple schemas");
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaManager::DropSchemas");
     OnBeforeSchemaChanges().RaiseEvent(m_ecdb, SchemaChangeType::SchemaImport);
@@ -1229,6 +1234,11 @@ DropSchemaResult MainSchemaManager::DropSchemas(bvector<Utf8String> schemaNames,
 //+---------------+---------------+---------------+---------------+---------------+------
 SchemaImportResult MainSchemaManager::ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaManager::SchemaImportOptions options, SchemaImportToken const* token, SchemaSync::SyncDbUri schemaSync) const
     {
+    BeMutexHolder editorGuard(m_mutex);
+    if (IsSchemaEditorActive()) {
+        LOG.error("Cannot import schemas while a SchemaEditor session is active.");
+        return SchemaImportResult::ERROR;
+    }
     ECDB_PERF_LOG_SCOPE("Schema import");
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaManager::ImportSchemas");
     OnBeforeSchemaChanges().RaiseEvent(m_ecdb, SchemaChangeType::SchemaImport);
@@ -1837,6 +1847,28 @@ ClassMappingStatus MainSchemaManager::MapClass(SchemaImportContext& ctx, ClassMa
     return MapDerivedClasses(ctx, mappingInfo.GetClass());
     }
 
+namespace
+    {
+    //! Returns "AND <column> IN (...)" for a class scope, or an empty string for all classes.
+    Utf8String ClassIdFilter(Utf8CP column, std::set<ECClassId> const* classes)
+        {
+        if (classes == nullptr)
+            return Utf8String();
+
+        Utf8String filter;
+        filter.Sprintf("AND %s IN (", column);
+        bool first = true;
+        for (ECClassId id : *classes)
+            {
+            if (!first)
+                filter.append(",");
+            filter.append(id.ToString());
+            first = false;
+            }
+        return filter.append(")");
+        }
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1861,7 +1893,7 @@ ClassMappingStatus MainSchemaManager::MapDerivedClasses(SchemaImportContext& ctx
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus MainSchemaManager::CheckForPerTableColumnLimit() const
+BentleyStatus MainSchemaManager::CheckForPerTableColumnLimit(std::set<ECClassId> const* classes) const
     {
     ECDB_PERF_LOG_SCOPE("Schema import> Check for per table column limit");
     // Note: maxColumns should never be less than the limit defined by SQLITE_MAX_COLUMN; previous limit was 2000
@@ -1880,12 +1912,12 @@ BentleyStatus MainSchemaManager::CheckForPerTableColumnLimit() const
             JOIN [ec_ClassMap] [cm] ON [cm].[ClassId] = [cl].[id]
         WHERE
             [co].[IsVirtual] = 0
-            AND [cm].[MapStrategy] <> 3
+            AND [cm].[MapStrategy] <> 3 %s
         GROUP BY [cl].[Id], [tb].[Id]
         HAVING COUNT (*) > ?;)";
 
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, sql))
+    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, Utf8PrintfString(sql, ClassIdFilter("[pm].[ClassId]", classes).c_str()).c_str()))
         {
         BeAssert(false);
         return ERROR;
@@ -1906,7 +1938,7 @@ BentleyStatus MainSchemaManager::CheckForPerTableColumnLimit() const
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus MainSchemaManager::CheckForSelectWildCardLimit() const
+BentleyStatus MainSchemaManager::CheckForSelectWildCardLimit(std::set<ECClassId> const* classes) const
     {
     ECDB_PERF_LOG_SCOPE("Schema import> Check for select wild card limit");
     const int selectWildCardLimit = GetECDb().GetLimit(DbLimits::Column);
@@ -1918,12 +1950,12 @@ BentleyStatus MainSchemaManager::CheckForSelectWildCardLimit() const
             [ec_PropertyMap] [pm]
             JOIN [ec_PropertyPath] [pp] ON [pp].[Id] = [pm].[PropertyPathId]
         WHERE
-            [pp].[AccessString] NOT IN ('ECInstanceId', 'ECClassId')
+            [pp].[AccessString] NOT IN ('ECInstanceId', 'ECClassId') %s
         GROUP BY [pm].[ClassId]
         HAVING [ColumnCount] > ?;)";
 
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, sql))
+    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, Utf8PrintfString(sql, ClassIdFilter("[pm].[ClassId]", classes).c_str()).c_str()))
         {
         BeAssert(false);
         return ERROR;
@@ -1946,12 +1978,12 @@ BentleyStatus MainSchemaManager::CheckForSelectWildCardLimit() const
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus MainSchemaManager::CanCreateOrUpdateRequiredTables() const
+BentleyStatus MainSchemaManager::CanCreateOrUpdateRequiredTables(std::set<ECClassId> const* classes) const
     {
-    if (SUCCESS != CheckForPerTableColumnLimit())
+    if (SUCCESS != CheckForPerTableColumnLimit(classes))
         return ERROR;
 
-    if (SUCCESS != CheckForSelectWildCardLimit())
+    if (SUCCESS != CheckForSelectWildCardLimit(classes))
         return ERROR;
 
     return SUCCESS;
@@ -1960,7 +1992,7 @@ BentleyStatus MainSchemaManager::CanCreateOrUpdateRequiredTables() const
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus MainSchemaManager::CreateOrUpdateRequiredTables() const
+BentleyStatus MainSchemaManager::CreateOrUpdateRequiredTables(std::set<ECClassId> const* limitCheckedClasses) const
     {
     ECDB_PERF_LOG_SCOPE("Schema import> Create or update tables");
     m_ecdb.GetStatementCache().Empty();
@@ -1969,7 +2001,7 @@ BentleyStatus MainSchemaManager::CreateOrUpdateRequiredTables() const
     int nUpdated = 0;
     int nWasUpToDate = 0;
 
-    if (SUCCESS != CanCreateOrUpdateRequiredTables())
+    if (SUCCESS != CanCreateOrUpdateRequiredTables(limitCheckedClasses))
         return ERROR;
 
     for (DbTable const* table : GetDbSchema().Tables().GetTablesInDependencyOrder())
@@ -2096,7 +2128,7 @@ bool MainSchemaManager::IsIndexPersistedUnchanged(DbIndex const& index) const
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& ctx) const
+BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& ctx, IndexScope const* scope) const
     {
     ECDB_PERF_LOG_SCOPE("Schema import> Create or update indexes");
     if (SUCCESS != m_dbSchema.LoadIndexDefs())
@@ -2124,7 +2156,16 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
     for (DbIndex const* indexCP : indexes)
         {
         DbIndex const& index = *indexCP;
-        if (!index.IsAutoGenerated() && index.HasClassId())
+        Utf8String unchangedComparableDef;
+        bool inScope = true;
+        if (scope != nullptr && ctx.MaintainsDataTables() && index.GetTable().GetType() != DbTable::Type::Virtual &&
+            !(index.HasClassId() && scope->m_classes.count(index.GetClassId()) != 0))
+            {
+            auto physical = physicalIndexes.find(index.GetName());
+            inScope = physical == physicalIndexes.end() ||
+                !DbSchemaPersistenceManager::TryGetComparableIndexDef(unchangedComparableDef, index, physical->second);
+            }
+        if (inScope && !index.IsAutoGenerated() && index.HasClassId())
             {
             ECClassCP ecClass = m_ecdb.Schemas().GetClass(index.GetClassId());
             if (ecClass == nullptr)
@@ -2164,6 +2205,16 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
             }
         else
             usedIndexNames.insert(index.GetName().c_str());
+
+        if (!inScope)
+            {
+            // Unaffected by the caller's edits: its physical DDL is current, so only register it for
+            // duplicate detection, as the full reconciliation would.
+            if (comparableIndexDefs.find(unchangedComparableDef) == comparableIndexDefs.end())
+                comparableIndexDefs[unchangedComparableDef] = &index;
+            physicalIndexes.erase(index.GetName());
+            continue;
+            }
 
         //indexes on virtual tables are ignored
         if (index.GetTable().GetType() != DbTable::Type::Virtual)

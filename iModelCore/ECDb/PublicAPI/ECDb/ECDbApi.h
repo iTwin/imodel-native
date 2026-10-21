@@ -5,6 +5,8 @@
 #pragma once
 #include <ECDb/ECDb.h>
 #include <ECDb/SchemaManager.h>
+#include <ECDb/SchemaEditor.h>
+#include <ECDb/SchemaImportAdapter.h>
 #include <ECDb/ECSqlStatement.h>
 #include <ECDb/ECInstanceId.h>
 #include <ECDb/ECSqlStatus.h>

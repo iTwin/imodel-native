@@ -96,6 +96,32 @@ BentleyStatus DbClassMapSaveContext::TryPropertyMapExists(uint64_t& propertyMapI
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+BentleyStatus DbClassMapSaveContext::TryPropertyMapExistsByAccessString(uint64_t& propertyMapId, Utf8CP accessString)
+    {
+    CachedStatementPtr stmt = GetMapSaveContext().GetECDb().GetImpl().GetCachedSqliteStatement(
+        "SELECT m.Id FROM main.ec_PropertyMap m JOIN main.ec_PropertyPath p ON p.Id=m.PropertyPathId "
+        "WHERE m.ClassId=? AND p.AccessString=?");
+    if (stmt == nullptr ||
+        BE_SQLITE_OK != stmt->BindId(1, m_classMap.GetClass().GetId()) ||
+        BE_SQLITE_OK != stmt->BindText(2, accessString, Statement::MakeCopy::No))
+        return ERROR;
+
+    auto status = stmt->Step();
+    if (status == BE_SQLITE_DONE)
+        {
+        propertyMapId = 0;
+        return SUCCESS;
+        }
+    if (status != BE_SQLITE_ROW)
+        return ERROR;
+
+    propertyMapId = stmt->GetValueUInt64(0);
+    return stmt->Step() == BE_SQLITE_DONE ? SUCCESS : ERROR;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 BentleyStatus DbClassMapSaveContext::InsertPropertyMap(ECPropertyId rootPropertyId, Utf8CP accessString, DbColumnId columnId)
     {
     PropertyPathId propertyPathId;
