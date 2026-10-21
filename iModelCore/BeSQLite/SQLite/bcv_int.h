@@ -31,6 +31,7 @@ typedef unsigned short u16;
 # include <sys/types.h> 
 # include <sys/socket.h> 
 # include <arpa/inet.h> 
+# include <netinet/tcp.h>
 # define BCV_SOCKET_TYPE int
 # define O_BINARY 0
 # define INVALID_SOCKET -1

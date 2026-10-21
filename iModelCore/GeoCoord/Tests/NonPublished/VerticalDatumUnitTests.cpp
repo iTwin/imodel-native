@@ -463,8 +463,7 @@ TEST_F(VerticalDatumUnitTests, VerticalTransformVertconGridFilesFromWorkspaceTes
 }
 
 /*---------------------------------------------------------------------------------**//**
-* Registering a workspace after initialization should retry loading a vertical
-* dictionary that was unavailable during initialization.
+* Registering a workspace should defer opening it until the vertical dictionary is accessed.
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(VerticalDatumUnitTests, VerticalDatumDictionaryFromLateWorkspaceTest)
 {
@@ -491,6 +490,13 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumDictionaryFromLateWorkspaceTest)
     if (BeFileName::DoesPathExist(workspacePath))
         ASSERT_EQ(BeFileName::BeDeleteFile(workspacePath), BeFileNameStatus::Success);
 
+    GeoCoordTestCommon::Shutdown();
+    ScopedDisableLocalGcsFiles disableLocalGcsFiles;
+    BeFileName dataDirectory = workspacePath.GetDirectoryName();
+    ASSERT_EQ(GeoCoordinates::BaseGCS::Initialize(dataDirectory.GetNameUtf8().c_str()), SUCCESS);
+    ASSERT_EQ(GeoCoordinates::VerticalDatumDictionary::Get()->GetStatus(), GeoCoordinates::GeoCoordParse_MissingFile);
+    ASSERT_TRUE(GeoCoordinates::BaseGCS::AddWorkspaceDb(workspacePath.GetNameUtf8(), nullptr, 10001));
+
     BeSQLite::Db workspaceDb;
     ASSERT_EQ(workspaceDb.CreateNewDb(workspacePath.GetNameUtf8().c_str()), BeSQLite::BE_SQLITE_OK);
     ASSERT_EQ(workspaceDb.ExecuteSql("CREATE TABLE blobs(id TEXT PRIMARY KEY NOT NULL, value BLOB)"), BeSQLite::BE_SQLITE_OK);
@@ -504,15 +510,6 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumDictionaryFromLateWorkspaceTest)
     }
     ASSERT_EQ(workspaceDb.SaveChanges(), BeSQLite::BE_SQLITE_OK);
     workspaceDb.CloseDb();
-
-    GeoCoordTestCommon::Shutdown();
-    {
-    ScopedDisableLocalGcsFiles disableLocalGcsFiles;
-    BeFileName dataDirectory = workspacePath.GetDirectoryName();
-    ASSERT_EQ(GeoCoordinates::BaseGCS::Initialize(dataDirectory.GetNameUtf8().c_str()), SUCCESS);
-    ASSERT_EQ(GeoCoordinates::VerticalDatumDictionary::Get()->GetStatus(), GeoCoordinates::GeoCoordParse_MissingFile);
-    ASSERT_TRUE(GeoCoordinates::BaseGCS::AddWorkspaceDb(workspacePath.GetNameUtf8(), nullptr, 10001));
-    }
 
     StatusInt status = ERROR;
     GeoCoordinates::VerticalDatumInfoPtr datumInfo = GeoCoordinates::VerticalDatumDictionary::Get()->GetVerticalDatumInfoFromName("Workspace test height", status);
