@@ -740,7 +740,7 @@ BulkDeleteElementsResult JsInterop::DeleteElements(DgnDbR dgndb, Napi::Array ele
     if (!deleteOptionsJson.isObject())
         return dgndb.Elements().DeleteElements(elementIdSet);
 
-    // `deleteMode` takes precedence. `skipFKConstraintValidations` is the legacy option: true => SkipValidation,
+    // `deleteMode` takes precedence. `skipFKConstraintValidations` is the legacy option: true => FailFast,
     // false/absent => RemoveFKViolators (the default).
     auto deleteMode = BulkDeleteMode::RemoveFKViolators;
     if (deleteOptionsJson.isNumericMember(json_deleteMode()))
@@ -753,15 +753,12 @@ BulkDeleteElementsResult JsInterop::DeleteElements(DgnDbR dgndb, Napi::Array ele
             case static_cast<int>(BulkDeleteMode::RemoveFKViolators):
                 deleteMode = BulkDeleteMode::RemoveFKViolators;
                 break;
-            case static_cast<int>(BulkDeleteMode::SkipValidation):
-                deleteMode = BulkDeleteMode::SkipValidation;
-                break;
             default:
                 BeNapi::ThrowJsTypeException(elementIds.Env(), "Invalid deleteOptions.deleteMode given to deleteElements");
             }
         }
     else if (deleteOptionsJson[json_skipFKConstraintValidations()].asBool())    // deprecated
-        deleteMode = BulkDeleteMode::SkipValidation;
+        deleteMode = BulkDeleteMode::FailFast;
 
     return dgndb.Elements().DeleteElements(elementIdSet, deleteMode);
 }

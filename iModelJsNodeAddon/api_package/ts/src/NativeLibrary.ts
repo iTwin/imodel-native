@@ -44,8 +44,6 @@ export enum BulkDeleteMode {
   RemoveFKViolators = 0,
   /** Validate everything first; if any element is still referenced, delete nothing and return `ConstraintViolation`. */
   FailFast = 1,
-  /** Skip validation entirely. The caller guarantees nothing outside the set references it. */
-  SkipValidation = 2,
 }
 
 /**
@@ -70,7 +68,7 @@ export enum BulkDeleteElementsStatus {
 export interface BulkDeleteElementsOptions {
   /** How to treat elements still referenced from outside the delete set. Defaults to `BulkDeleteMode.RemoveFKViolators`. */
   deleteMode?: BulkDeleteMode;
-  /** @deprecated Use `deleteMode` for more control. `true` is equivalent to `BulkDeleteMode.SkipValidation`. Ignored if `deleteMode` is set. */
+  /** @deprecated Constraint skipping is not allowed anymore. Use `deleteMode` for more control. `true` is equivalent to `BulkDeleteMode.FailFast`. Ignored if `deleteMode` is set. */
   skipFKConstraintValidations?: boolean;
 }
 

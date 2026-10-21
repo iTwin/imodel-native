@@ -560,9 +560,6 @@ enum class BulkDeleteMode : int
     //! Validate the whole delete set first; if any element is still referenced, delete nothing and return
     //! BulkDeleteElementsStatus::ConstraintViolation with the offending elements in BulkDeleteElementsResult::failures.
     FailFast = 1,
-    //! Skip all constraint validation and issue the DELETE directly. The caller is responsible for ensuring that nothing
-    //! outside the delete set references it; otherwise the DELETE fails with a foreign key error (DeletionFailed).
-    SkipValidation = 2,
     };
 
 //=======================================================================================
@@ -4229,10 +4226,10 @@ public:
     //! @note This function can only be safely invoked from the client thread.
     DGNPLATFORM_EXPORT BulkDeleteElementsResult DeleteElements(const DgnElementIdSet& elementIds, BulkDeleteMode mode = BulkDeleteMode::RemoveFKViolators);
 
-    //! @deprecated Use DeleteElements(elementIds, BulkDeleteMode). `true` maps to BulkDeleteMode::SkipValidation, `false` to BulkDeleteMode::RemoveFKViolators.
+    //! @deprecated Use DeleteElements(elementIds, BulkDeleteMode).
     BulkDeleteElementsResult DeleteElements(const DgnElementIdSet& elementIds, bool skipFKConstraintValidations)
         {
-        return DeleteElements(elementIds, skipFKConstraintValidations ? BulkDeleteMode::SkipValidation : BulkDeleteMode::RemoveFKViolators);
+        return DeleteElements(elementIds, skipFKConstraintValidations ? BulkDeleteMode::FailFast : BulkDeleteMode::RemoveFKViolators);
         }
 
     //! Delete a DgnElement from this DgnDb by DgnElementId.
