@@ -3131,8 +3131,11 @@ static BCV_SOCKET_TYPE bcvConnectSocket(
     if( bcv_socket_is_valid(s)==0 ){
       rc = BCVFS_CANTOPEN;
     }else{
+      const int optval = 1;
       assert( addr.sin_addr.s_addr!=INADDR_NONE );
-      if( connect(s, (struct sockaddr*)&addr, sizeof(addr))<0 ){
+      if( setsockopt(s, IPPROTO_TCP, TCP_NODELAY, &optval, sizeof(optval))<0
+       || connect(s, (struct sockaddr*)&addr, sizeof(addr))<0
+      ){
         rc = BCVFS_CANTOPEN;
         bcv_close_socket(s);
       }
