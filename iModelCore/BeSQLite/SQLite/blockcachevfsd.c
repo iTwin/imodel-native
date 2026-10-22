@@ -1291,6 +1291,13 @@ static void bdNewConnection(DaemonCtx *p){
   pNew->fd = accept(p->fdListen, (struct sockaddr*)&addr, &len);
   if( pNew->fd<0 ){
     fatal_system_error("accept()", errno);
+  }else{
+    /* BENTLEY SPECIFIC CHANGE. Disable Nagle's algorithm so the tail of
+    ** each reply is not held back waiting for the client's delayed ACK.
+    ** Clients do the same on their end (see bcvConnectSocket()). Failure
+    ** is harmless, so the return value is ignored. */
+    int optval = 1;
+    setsockopt(pNew->fd, IPPROTO_TCP, TCP_NODELAY, &optval, sizeof(optval));
   }
   pNew->iClientId = ++p->iNextId;
   pNew->pNext = p->pClientList;
