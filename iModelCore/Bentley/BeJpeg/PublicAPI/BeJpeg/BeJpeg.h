@@ -45,12 +45,12 @@ public:
 
     //! Decompress a JPEG Image.
     //! @param[out] pOutBuffer       Destination buffer that will hold uncompress pixels.
-    //! @param[out] outBufferSize    The size of the destination buffer in bytes.
+    //! @param outBufferSize         The size of the destination buffer in bytes. Must be at least width * height * bytes-per-pixel of pixelType.
     //! @param jpegBuffer            Buffer containing a JPEG image.
     //! @param jpegBufferSize        The size of the JPEG buffer in bytes.
     //! @param pixelType             The destination pixel type. See BeJpegPixelType.
     //! @param bottomUp Whether the image is flipped in Y direction
-    //! @return SUCCESS if successful, or ERROR if an error occurred.
+    //! @return SUCCESS if successful, or ERROR if an error occurred or if outBufferSize is too small to hold the decompressed image.
     BentleyStatus Decompress(Byte* pOutBuffer, size_t outBufferSize, Byte const* jpegBuffer, size_t jpegBufferSize, BeJpegPixelType pixelType, BeJpegBottomUp bottomUp=BeJpegBottomUp::No);
     };
 
