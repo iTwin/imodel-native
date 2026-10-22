@@ -88,6 +88,92 @@ TEST_F(ConcurrentQueryFixture, HexIdRenderingMatchesBeId) {
         check(random());
 }
 
+TEST_F(ConcurrentQueryFixture, RecursiveCtePreservesZeroIdAndColumnPositions) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("RecursiveCtePreservesZeroIdAndColumnPositions.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ConcurrentQueryMgr mgr(m_ecdb);
+    for (Utf8CP unionOp : {"UNION", "UNION ALL"}) {
+        for (Utf8CP childId : {"0", "7", "NULL"}) {
+            Utf8String query = Utf8String("WITH RECURSIVE tree(authoringId,label,level) AS (")
+                + "SELECT ECInstanceId,'root',0 FROM meta.ECClassDef WHERE Name='ECClassDef' "
+                + unionOp + " SELECT " + childId + ",'child',level+1 FROM tree WHERE level<1) "
+                + "SELECT authoringId,label,level,NULL FROM tree ORDER BY level";
+            SCOPED_TRACE(query.c_str());
+            for (bool useJsNames : {false, true}) {
+                ECSqlStatement stmt;
+                ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query.c_str()));
+                JsReadOptions options;
+                options.SetUseJsNames(useJsNames);
+                ECSqlRowAdaptor adaptor(m_ecdb, options);
+                PreparedECSqlRowRenderer renderer;
+                renderer.BeginPage(stmt, adaptor);
+                ASSERT_TRUE(renderer.CanRender(adaptor));
+                auto checkRow = [&](BeJsConst row, int ordinal, Utf8StringCR rootId) {
+                    ASSERT_EQ(3u, row.size());
+                    EXPECT_STREQ(ordinal == 0 ? "root" : "child", row[1].asCString());
+                    EXPECT_EQ(ordinal, row[2].asInt());
+                    if (ordinal == 0) {
+                        EXPECT_EQ(rootId, row[0].asString());
+                    } else if (strcmp(childId, "NULL") == 0) {
+                        EXPECT_TRUE(row[0].isNull());
+                    } else if (strcmp(childId, "0") == 0) {
+                        EXPECT_TRUE(row[0].isNumeric());
+                        EXPECT_DOUBLE_EQ(0, row[0].asDouble());
+                    } else {
+                        EXPECT_STREQ("0x7", row[0].asCString());
+                    }
+                };
+                Utf8String rootId;
+                for (int ordinal = 0; ordinal < 2; ++ordinal) {
+                    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+                    if (ordinal == 0)
+                        rootId = stmt.GetValue(0).GetId<ECInstanceId>().ToHexStr();
+                    BeJsDocument row;
+                    ASSERT_EQ(SUCCESS, adaptor.RenderRowAsArray(row, ECSqlStatementRow(stmt)));
+                    checkRow(row, ordinal, rootId);
+                    rapidjson::StringBuffer buffer;
+                    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+                    ASSERT_TRUE(renderer.WriteRow(writer, stmt, adaptor));
+                    BeJsDocument rendered(buffer.GetString());
+                    checkRow(rendered, ordinal, rootId);
+
+                    Utf8String memberName = stmt.GetColumnInfo(0).GetProperty()->GetName();
+                    if (useJsNames)
+                        ECN::ECJsonUtilities::LowerFirstChar(memberName);
+                    BeJsDocument object;
+                    ASSERT_EQ(SUCCESS, adaptor.RenderRowAsObject(object, ECSqlStatementRow(stmt)));
+                    if (ordinal == 1 && strcmp(childId, "NULL") == 0) {
+                        EXPECT_FALSE(object.isMember(memberName.c_str()));
+                    } else {
+                        EXPECT_EQ(row[0].Stringify(), object[memberName].Stringify());
+                    }
+                    BeJsDocument value;
+                    value = -1;
+                    ASSERT_EQ(SUCCESS, adaptor.RenderValue(value, stmt.GetValue(0)));
+                    if (ordinal == 1 && strcmp(childId, "NULL") == 0) {
+                        EXPECT_EQ(-1, value.asInt());
+                    } else {
+                        EXPECT_EQ(row[0].Stringify(), value.Stringify());
+                    }
+                }
+                ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+                stmt.Finalize();
+                for (bool primary : {false, true}) {
+                    auto request = ECSqlRequest::MakeRequest(query);
+                    request->SetUsePrimaryConnection(primary);
+                    request->SetValueFmt(useJsNames ? ECSqlRequest::ECSqlValueFormat::JsNames : ECSqlRequest::ECSqlValueFormat::ECSqlNames);
+                    auto response = mgr.Enqueue(std::move(request)).Get();
+                    ASSERT_EQ(QueryResponse::Status::Done, response->GetStatus()) << response->GetError();
+                    BeJsDocument rows(response->GetAsConst<ECSqlResponse>().asJsonString());
+                    ASSERT_EQ(2u, rows.size());
+                    checkRow(rows[0], 0, rootId);
+                    checkRow(rows[1], 1, rootId);
+                }
+            }
+        }
+    }
+}
+
 TEST_F(ConcurrentQueryFixture, PointCoordinatesRefreshAcrossStepAndReset) {
     ASSERT_EQ(SUCCESS, SetupECDb("PointCoordinatesRefreshAcrossStepAndReset.ecdb", SchemaItem(
         R"xml(<ECSchema schemaName="PointCache" alias="pc" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">

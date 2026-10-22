@@ -182,7 +182,7 @@ BentleyStatus ECSqlRowAdaptor::RenderPrimitiveProperty(BeJsValue out, IECSqlValu
 BentleyStatus ECSqlRowAdaptor::RenderLong(BeJsValue out, IECSqlValue const& in, ECN::PrimitiveECPropertyCP prop) const {
     struct Sink {
         BeJsValue& m_out;
-        // Invalid IDs leave an existing destination untouched in the generic adaptor.
+        // SQL NULL leaves an existing destination untouched in the generic adaptor.
         bool Null() { return true; }
         bool Double(double value) { m_out = value; return true; }
         bool String(Utf8CP value) { m_out = value; return true; }
