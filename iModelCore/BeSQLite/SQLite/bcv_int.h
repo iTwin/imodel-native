@@ -189,6 +189,11 @@ struct ManifestDb {
 **   (b) is currently the target slot for an ongoing download of a new 
 **   block.
 **
+** nHashEntry:
+**   Number of CacheEntry structs currently in the aHash[] table. Used to
+**   grow aHash[] as the cache fills so that chains stay short.
+**   BENTLEY SPECIFIC CHANGE.
+**
 ** pUnused:
 **   Singly-linked list of CacheEntry structs for cache-file slots that
 **   do not contain a valid block and have no thread currently downloading
@@ -214,6 +219,7 @@ struct BcvCommon {
   CacheEntry *pLruLast;
   i64 iLruTick;
   int nHash;                      /* Number of hash buckets */
+  int nHashEntry;                 /* Number of entries in aHash[] */
   int nBlk;                       /* Number of blocks in cache file */
 
   /* Virtual table log object */

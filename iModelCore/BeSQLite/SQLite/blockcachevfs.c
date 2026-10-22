@@ -924,13 +924,50 @@ CacheEntry *bcvfsHashFind(BcvCommon *p, const u8 *pBlk, int nBlk){
 }
 
 /*
+** Resize the hash table to nNew buckets, rehashing all entries. If the
+** allocation fails, the hash table is left unchanged - it still works,
+** it is just slower.
+**
+** BENTLEY SPECIFIC CHANGE. The hash table used to be fixed at 128
+** buckets. With a large cache (e.g. 256GB of 4MB blocks = 65536 entries)
+** chains grow to hundreds of entries and the daemon, which looks up every
+** block of a database when answering each READ message, spends most of
+** its (single) thread walking them.
+*/
+static void bcvfsHashResize(BcvCommon *p, int nNew){
+  CacheEntry **aNew = (CacheEntry**)sqlite3_malloc64(sizeof(CacheEntry*)*nNew);
+  if( aNew ){
+    int ii;
+    memset(aNew, 0, sizeof(CacheEntry*)*nNew);
+    for(ii=0; ii<p->nHash; ii++){
+      CacheEntry *pEntry = p->aHash[ii];
+      while( pEntry ){
+        CacheEntry *pNext = pEntry->pHashNext;
+        u32 iHash = bcvfsBlockHash(pEntry->aName, pEntry->nName) % nNew;
+        pEntry->pHashNext = aNew[iHash];
+        aNew[iHash] = pEntry;
+        pEntry = pNext;
+      }
+    }
+    sqlite3_free(p->aHash);
+    p->aHash = aNew;
+    p->nHash = nNew;
+  }
+}
+
+/*
 ** Add the entry passed as the second argument to the hash table. This
 ** function assumes that the entry is not already in the hash table.
 */
 void bcvfsHashAdd(BcvCommon *p, CacheEntry *pEntry){
-  u32 iHash = bcvfsBlockHash(pEntry->aName, pEntry->nName) % p->nHash;
+  u32 iHash;
+  if( p->nHashEntry>=p->nHash && p->nHash<(1<<24) ){
+    bcvfsHashResize(p, p->nHash*2);
+  }
+  iHash = bcvfsBlockHash(pEntry->aName, pEntry->nName) % p->nHash;
   pEntry->pHashNext = p->aHash[iHash];
   p->aHash[iHash] = pEntry;
+  p->nHashEntry++;
 }
 
 /*
@@ -943,6 +980,7 @@ void bcvfsHashRemove(BcvCommon *p, CacheEntry *pEntry){
   for(pp=&p->aHash[iHash]; *pp; pp=&(*pp)->pHashNext){
     if( *pp==pEntry ){
       *pp = pEntry->pHashNext;
+      p->nHashEntry--;
       break;
     }
   }

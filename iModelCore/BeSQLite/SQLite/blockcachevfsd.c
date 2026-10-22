@@ -2135,7 +2135,7 @@ static CacheEntry *bdHashFind(
     while( (pEntry = pEntry->pHashNext) ){
       if( pEntry->iEnc==iEnc 
        && pEntry->nName==nName 
-       && memcpy(pEntry->aName, aName, nName)
+       && 0==memcmp(pEntry->aName, aName, nName) /* BENTLEY SPECIFIC CHANGE. Was memcpy(). */
       ){
         break;
       }
