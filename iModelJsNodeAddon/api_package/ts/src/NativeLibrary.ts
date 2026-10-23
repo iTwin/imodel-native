@@ -1026,6 +1026,8 @@ export declare namespace IModelJsNative {
     public isGeneratedProperty(): boolean;
     public isSystemProperty(): boolean;
     public isDynamicProp(): boolean;
+    /** Exact extended type name of the column (e.g. "Id", "ClassId", "Json", "BeGuid"), or undefined if none. */
+    public getExtendedTypeName(): string | undefined;
   }
 
   class ECSqlValue {

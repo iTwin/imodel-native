@@ -310,6 +310,16 @@ BentleyStatus ECSqlParser::ParseSingleSelectStatement(std::unique_ptr<SingleSele
         return SUCCESS;
     }
 
+    if (tableExpNode->count() == 1) {
+        // SELECT without FROM clause but with an ECSQLOPTIONS clause
+        std::unique_ptr<OptionsExp> optionsExp = nullptr;
+        if (SUCCESS != ParseOptECSqlOptionsClause(optionsExp, tableExpNode->getChild(0)))
+            return ERROR;
+
+        exp = std::make_unique<SingleSelectStatementExp>(opt_all_distinct,std::move(selectClauseExp), nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, std::move(optionsExp));
+        return SUCCESS;
+    }
+
     BeAssert(tableExpNode->count() == 8);
     std::unique_ptr<FromExp> fromExp = nullptr;
     if (SUCCESS != ParseFromClause(fromExp, tableExpNode->getChild(0)))
@@ -1061,6 +1071,32 @@ BentleyStatus ECSqlParser::ParseCastSpec(std::unique_ptr<ValueExp>& exp, OSQLPar
     if (SUCCESS != ParseValueExp(castOperandExp, castOperandNode))
         return ERROR;
 
+    return ParseCastTarget(exp, std::move(castOperandExp), castTargetNode, false);
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECSqlParser::ParsePostfixCastSpec(std::unique_ptr<ValueExp>& exp, OSQLParseNode const* parseNode) const
+    {
+    if (!SQL_ISRULE(parseNode, postfix_cast_spec) || parseNode->count() != 3)
+        {
+        BeAssert(false && "Wrong grammar");
+        return ERROR;
+        }
+
+    std::unique_ptr<ValueExp> castOperandExp = nullptr;
+    if (SUCCESS != ParseValueExp(castOperandExp, parseNode->getChild(0)))
+        return ERROR;
+
+    return ParseCastTarget(exp, std::move(castOperandExp), parseNode->getChild(2), true);
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECSqlParser::ParseCastTarget(std::unique_ptr<ValueExp>& exp, std::unique_ptr<ValueExp> castOperandExp, OSQLParseNode const* castTargetNode, bool isPostfix) const
+    {
     const bool isArrayTargetType = SQL_ISRULE(castTargetNode, cast_target_array);
     OSQLParseNode const* scalarTargetNode = nullptr;
 
@@ -1094,7 +1130,7 @@ BentleyStatus ECSqlParser::ParseCastSpec(std::unique_ptr<ValueExp>& exp, OSQLPar
         else
             castTargetTypeName = primTypeNode->getTokenValue().c_str();
 
-        exp = std::make_unique<CastExp>(std::move(castOperandExp), castTargetTypeName, isArrayTargetType);
+        exp = std::make_unique<CastExp>(std::move(castOperandExp), castTargetTypeName, isArrayTargetType, isPostfix);
         return SUCCESS;
         }
 
@@ -1107,7 +1143,7 @@ BentleyStatus ECSqlParser::ParseCastSpec(std::unique_ptr<ValueExp>& exp, OSQLPar
 
     Utf8StringCR targetSchemaName = scalarTargetNode->getChild(0)->getTokenValue();
     Utf8StringCR targetTypeName = scalarTargetNode->getChild(2)->getTokenValue();
-    exp = std::make_unique<CastExp>(std::move(castOperandExp), targetSchemaName, targetTypeName, isArrayTargetType);
+    exp = std::make_unique<CastExp>(std::move(castOperandExp), targetSchemaName, targetTypeName, isArrayTargetType, isPostfix);
     return SUCCESS;
     }
 
@@ -3627,6 +3663,8 @@ BentleyStatus ECSqlParser::ParseValueExp(std::unique_ptr<ValueExp>& valueExp, OS
             {
                 case OSQLParseNode::cast_spec:
                     return ParseCastSpec(valueExp, parseNode);
+                case OSQLParseNode::postfix_cast_spec:
+                    return ParsePostfixCastSpec(valueExp, parseNode);
                 case OSQLParseNode::column_ref:
                     return ParseColumnRef(valueExp, parseNode, false);
                 case OSQLParseNode::num_value_exp:
@@ -4664,6 +4702,40 @@ BentleyStatus ECSqlParseContext::FinalizeParsing(Exp& rootExp)
         {
         if (!parameterExp->TryDetermineParameterExpType(*this, *parameterExp))
             parameterExp->SetDefaultTargetExpInfo();
+        }
+
+    // Named parameters share one binder. If any occurrence was typed explicitly by a CAST_V2 cast,
+    // all explicit types must agree and the other occurrences adopt that type.
+    bmap<Utf8String, ParameterExp*, CompareIUtf8Ascii> explicitlyTypedParams;
+    for (ParameterExp* parameterExp : m_parameterExpList)
+        {
+        if (!parameterExp->IsNamedParameter() || !parameterExp->HasExplicitType())
+            continue;
+
+        auto it = explicitlyTypedParams.find(parameterExp->GetParameterName());
+        if (it == explicitlyTypedParams.end())
+            {
+            explicitlyTypedParams[parameterExp->GetParameterName()] = parameterExp;
+            continue;
+            }
+
+        if (it->second->GetTypeInfo() != parameterExp->GetTypeInfo())
+            {
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0752,
+                "Parameter ':%s' is cast to incompatible input types '%s' and '%s'. All casts of a named parameter must use the same input type.",
+                parameterExp->GetParameterName().c_str(), CastExp::TypeToString(it->second->GetTypeInfo()).c_str(), CastExp::TypeToString(parameterExp->GetTypeInfo()).c_str());
+            return ERROR;
+            }
+        }
+
+    for (ParameterExp* parameterExp : m_parameterExpList)
+        {
+        if (!parameterExp->IsNamedParameter() || parameterExp->HasExplicitType())
+            continue;
+
+        auto it = explicitlyTypedParams.find(parameterExp->GetParameterName());
+        if (it != explicitlyTypedParams.end())
+            parameterExp->SetTargetExpInfo(it->second->GetTypeInfo());
         }
 
     if (GetDeferFinalize()) {

@@ -434,9 +434,29 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef(NativeSqlBuilder:
                     if (alias.empty())
                         return ECSqlStatus::Error;
 
-                    NativeSqlBuilder sqlSnippet;
-                    sqlSnippet.AppendEscaped(alias);
-                    nativeSqlSnippets.push_back(sqlSnippet);
+                    // point values (e.g. CAST_V2 text-to-point) span several columns which the select preparer suffixes with _<n>
+                    ECSqlTypeInfo const& refType = referencedValueExp->GetTypeInfo();
+                    int columnCount = 1;
+                    if (refType.IsPrimitive() && refType.GetPrimitiveType() == PRIMITIVETYPE_Point2d)
+                        columnCount = 2;
+                    else if (refType.IsPrimitive() && refType.GetPrimitiveType() == PRIMITIVETYPE_Point3d)
+                        columnCount = 3;
+
+                    if (columnCount == 1)
+                        {
+                        NativeSqlBuilder sqlSnippet;
+                        sqlSnippet.AppendEscaped(alias);
+                        nativeSqlSnippets.push_back(sqlSnippet);
+                        }
+                    else
+                        {
+                        for (int i = 0; i < columnCount; ++i)
+                            {
+                            NativeSqlBuilder sqlSnippet;
+                            sqlSnippet.AppendEscaped(Utf8PrintfString("%s_%d", alias.c_str(), i));
+                            nativeSqlSnippets.push_back(sqlSnippet);
+                            }
+                        }
                 }
                 break;
             }
