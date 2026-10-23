@@ -172,6 +172,7 @@ using namespace connectivity;
 
 %left SQL_TOKEN_NATURAL SQL_TOKEN_CROSS SQL_TOKEN_FULL SQL_TOKEN_LEFT SQL_TOKEN_RIGHT
 %right SQL_BITWISE_NOT
+%left <pParseNode> SQL_DOUBLE_COLON
 %left ')'
 %right '='
 %right '.'
@@ -200,7 +201,7 @@ using namespace connectivity;
 %type <pParseNode> column_ref column parameter range_variable
 /* neue Regeln bei OJ */
 %type <pParseNode> derived_column as_clause num_primary term num_value_exp term_add_sub
-%type <pParseNode> value_exp_primary unsigned_value_spec cast_spec fct_spec scalar_subquery
+%type <pParseNode> value_exp_primary unsigned_value_spec cast_spec postfix_cast_spec fct_spec scalar_subquery
 %type <pParseNode> general_value_spec iif_spec
 %type <pParseNode> aggregate_fct set_fct_type joined_table ecrelationship_join op_relationship_direction
 %type <pParseNode> row_value_constructor_commalist row_value_constructor row_value_constructor_elem
@@ -736,6 +737,11 @@ limit_offset_clause:
     ;
 table_exp:
         { $$ = SQL_NEW_RULE; }
+        | ecsqloptions_clause
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+        }
         | from_clause opt_where_clause opt_group_by_clause opt_having_clause opt_window_clause opt_order_by_clause opt_limit_offset_clause opt_ecsqloptions_clause
         {
             $$ = SQL_NEW_RULE;
@@ -2226,6 +2232,24 @@ value_exp_primary:
 
 num_primary:
         value_exp_primary
+    |   postfix_cast_spec
+    ;
+
+postfix_cast_spec:
+        num_primary SQL_DOUBLE_COLON cast_target
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2);
+            $$->append($3);
+        }
+    |   char_primary SQL_DOUBLE_COLON cast_target
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2);
+            $$->append($3);
+        }
     ;
 
 factor:
