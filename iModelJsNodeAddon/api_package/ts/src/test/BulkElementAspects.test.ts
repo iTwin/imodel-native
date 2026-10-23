@@ -10,7 +10,7 @@ import { BulkElementAspectsStatus, IModelJsNative } from "../NativeLibrary";
 import { copyFile, dbFileName, iModelJsNative } from "./utils";
 
 const testSchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="BulkAspectTest" alias="bat" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+<ECSchema schemaName="BulkAspectTest" alias="bat" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
   <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
   <ECEntityClass typeName="TestUniqueAspect">
     <BaseClass>bis:ElementUniqueAspect</BaseClass>
@@ -405,9 +405,10 @@ describe("bulk element aspects", () => {
         expect(c.arg.iModel).to.equal(mock.mockJsDb);
         expect(c.arg.model).to.equal("0x1");
       });
-      // Each owning element is updated exactly once, no matter how many aspects it gets.
-      expect(mock.elementCalls("onUpdate").length).to.equal(2);
+      // Each owning element is updated exactly once, no matter how many aspects it gets. Native element updates only fire
+      // the post-update handler; the element pre-update handler is called by TypeScript, not by native code.
       expect(mock.elementCalls("onUpdated").length).to.equal(2);
+      expect(mock.elementCalls("onUpdate").length).to.equal(0);
 
       mock.calls.length = 0;
       const updated = db.updateElementAspects([
@@ -418,7 +419,7 @@ describe("bulk element aspects", () => {
       expect(updated.status).to.equal(BulkElementAspectsStatus.Success);
       expect(mock.aspectCalls("onUpdate").length).to.equal(3);
       expect(mock.aspectCalls("onUpdated").length).to.equal(3);
-      expect(mock.elementCalls("onUpdate").length).to.equal(2);
+      expect(mock.elementCalls("onUpdated").length).to.equal(2);
 
       mock.calls.length = 0;
       const deleted = db.deleteElementAspects(inserted.ids);
@@ -427,7 +428,7 @@ describe("bulk element aspects", () => {
       expect(mock.aspectCalls("onDeleted").length).to.equal(4);
       expect(mock.aspectCalls("onDelete").map((c) => c.arg.aspectId)).to.deep.equal(inserted.ids);
       expect(mock.aspectCalls("onDelete").map((c) => c.arg.element)).to.deep.equal([e1, e1, e1, e2]);
-      expect(mock.elementCalls("onUpdate").length).to.equal(2);
+      expect(mock.elementCalls("onUpdated").length).to.equal(2);
     });
 
     it("calls the bulk handlers once per class when they exist", () => {
@@ -474,7 +475,7 @@ describe("bulk element aspects", () => {
       db.setIModelDb(mock.mockJsDb);
       expect(() => db.insertElementAspects([multiProps(e1, "new1"), multiProps(e2, "new2")])).to.throw("onInsert rejected");
       expect(mock.aspectCalls("onInsert").length).to.equal(1);
-      expect(mock.elementCalls("onUpdate").length).to.equal(0);
+      expect(mock.elementCalls("onUpdated").length).to.equal(0);
       expect(queryAspects()).to.deep.equal(before);
 
       db.setIModelDb(makeMockJsDb({ throwIn: "onUpdate" }).mockJsDb);
