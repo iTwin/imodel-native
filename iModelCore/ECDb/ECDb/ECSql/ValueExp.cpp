@@ -620,6 +620,22 @@ Exp::FinalizeParseStatus CastExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
     {
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         {
+        OptionExp const* castV2Option = OptionsExp::FindLocalOrInheritedOption(OptionsExp::CAST_V2, *this);
+        m_isV2 = castV2Option != nullptr && castV2Option->asBool();
+        }
+
+    if (m_isV2)
+        return FinalizeV2(ctx, mode);
+
+    if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
+        {
+        if (m_isPostfix)
+            {
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0750,
+                "The '::' cast operator requires the ECSQL option CAST_V2 (e.g. 'SELECT 1::INTEGER OPTIONS CAST_V2'): '%s'.", ToECSql().c_str());
+            return FinalizeParseStatus::Error;
+            }
+
         //if operands are parameters set the target exp in those expressions
         if (GetCastOperand()->IsParameterExp())
             {
@@ -633,6 +649,13 @@ Exp::FinalizeParseStatus CastExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
             ECN::PrimitiveType targetType;
             if (ExpHelper::ToPrimitiveType(targetType, GetCastTargetPrimitiveType()) != SUCCESS)
                 {
+                if (GetSpecialTarget(GetCastTargetPrimitiveType()) != SpecialTarget::None)
+                    {
+                    ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0750,
+                        "CAST target type '%s' requires the ECSQL option CAST_V2: '%s'.", GetCastTargetPrimitiveType().c_str(), ToECSql().c_str());
+                    return FinalizeParseStatus::Error;
+                    }
+
                 ctx.Issues().ReportV(
                     IssueSeverity::Error,
                     IssueCategory::BusinessProperties,
@@ -718,6 +741,274 @@ Exp::FinalizeParseStatus CastExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
 
     return FinalizeParseStatus::Completed;
     }
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+CastExp::SpecialTarget CastExp::GetSpecialTarget(Utf8StringCR typeName, Utf8CP* extendedTypeName)
+    {
+    static Utf8CP const s_idTypes[] = {EXTENDEDTYPENAME_Id, EXTENDEDTYPENAME_ClassId, EXTENDEDTYPENAME_SourceId, EXTENDEDTYPENAME_SourceClassId,
+        EXTENDEDTYPENAME_TargetId, EXTENDEDTYPENAME_TargetClassId, EXTENDEDTYPENAME_NavId, EXTENDEDTYPENAME_NavRelClassId};
+
+    for (Utf8CP idType : s_idTypes)
+        {
+        if (typeName.EqualsIAscii(idType))
+            {
+            if (extendedTypeName != nullptr)
+                *extendedTypeName = idType;
+            return SpecialTarget::IdFamily;
+            }
+        }
+
+    if (typeName.EqualsIAscii("ClassName"))
+        return SpecialTarget::ClassName;
+
+    if (typeName.EqualsIAscii(EXTENDEDTYPENAME_Json))
+        {
+        if (extendedTypeName != nullptr)
+            *extendedTypeName = EXTENDEDTYPENAME_Json;
+        return SpecialTarget::Json;
+        }
+
+    if (typeName.EqualsIAscii("Guid"))
+        {
+        if (extendedTypeName != nullptr)
+            *extendedTypeName = EXTENDEDTYPENAME_BeGuid;
+        return SpecialTarget::Guid;
+        }
+
+    return SpecialTarget::None;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+Utf8String CastExp::TypeToString(ECSqlTypeInfo const& typeInfo)
+    {
+    Utf8String str;
+    switch (typeInfo.GetKind())
+        {
+            case ECSqlTypeInfo::Kind::Null:
+                return "NULL";
+            case ECSqlTypeInfo::Kind::Navigation:
+                return "Navigation";
+            case ECSqlTypeInfo::Kind::Struct:
+            case ECSqlTypeInfo::Kind::StructArray:
+                str = typeInfo.GetStructType().GetFullName();
+                break;
+            case ECSqlTypeInfo::Kind::Primitive:
+            case ECSqlTypeInfo::Kind::PrimitiveArray:
+                if (typeInfo.GetEnumerationType() != nullptr)
+                    str = typeInfo.GetEnumerationType()->GetFullName();
+                else
+                    str = ExpHelper::ToString(typeInfo.GetPrimitiveType());
+
+                if (typeInfo.HasExtendedType())
+                    str.append("(").append(typeInfo.GetExtendedTypeName()).append(")");
+                break;
+            default:
+                return "<unknown>";
+        }
+
+    if (typeInfo.IsArray())
+        str.append("[]");
+
+    return str;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus CastExp::ResolveTargetType(ECSqlParseContext& ctx, bool allowSpecialTargets)
+    {
+    if (m_castTargetSchemaName.empty())
+        {
+        Utf8CP extendedTypeName = nullptr;
+        m_specialTarget = allowSpecialTargets ? GetSpecialTarget(m_castTargetTypeName, &extendedTypeName) : SpecialTarget::None;
+        switch (m_specialTarget)
+            {
+                case SpecialTarget::IdFamily:
+                    SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_Long, m_castTargetIsArray, extendedTypeName));
+                    return SUCCESS;
+                case SpecialTarget::ClassName:
+                    SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_String, m_castTargetIsArray));
+                    return SUCCESS;
+                case SpecialTarget::Json:
+                    SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_String, m_castTargetIsArray, extendedTypeName));
+                    return SUCCESS;
+                case SpecialTarget::Guid:
+                    SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_Binary, m_castTargetIsArray, extendedTypeName));
+                    return SUCCESS;
+                default:
+                    break;
+            }
+
+        ECN::PrimitiveType targetType;
+        if (ExpHelper::ToPrimitiveType(targetType, m_castTargetTypeName) != SUCCESS)
+            {
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0267,
+                "Invalid CAST target type '%s'. Valid target types are the EC primitive types, Id, ClassId, SourceId, SourceClassId, TargetId, TargetClassId, NavId, NavRelClassId, ClassName, Json, Guid, a fully qualified EC enumeration or struct type or arrays of those.",
+                m_castTargetTypeName.c_str());
+            return ERROR;
+            }
+
+        if (targetType == ECN::PRIMITIVETYPE_DateTime && m_castTargetTypeName.EqualsIAscii("date"))
+            SetTypeInfo(ECSqlTypeInfo::CreateDateTime(DateTime::Info::CreateForDate(), m_castTargetIsArray));
+        else
+            SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(targetType, m_castTargetIsArray));
+
+        return SUCCESS;
+        }
+
+    ECEnumerationCP targetEnumType = ctx.Schemas().GetEnumeration(m_castTargetSchemaName, m_castTargetTypeName, SchemaLookupMode::AutoDetect);
+    if (targetEnumType != nullptr)
+        {
+        SetTypeInfo(ECSqlTypeInfo::CreateEnum(*targetEnumType, m_castTargetIsArray));
+        return SUCCESS;
+        }
+
+    ECClassCP targetClassType = ctx.Schemas().GetClass(m_castTargetSchemaName, m_castTargetTypeName, SchemaLookupMode::AutoDetect);
+    if (targetClassType == nullptr)
+        {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0269,
+            "Invalid CAST target type '%s.%s'. The type does not exist.", m_castTargetSchemaName.c_str(), m_castTargetTypeName.c_str());
+        return ERROR;
+        }
+
+    if (!targetClassType->IsStructClass())
+        {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0270,
+            "Invalid CAST target type '%s.%s'. Only enumeration and struct types are supported.", m_castTargetSchemaName.c_str(), m_castTargetTypeName.c_str());
+        return ERROR;
+        }
+
+    SetTypeInfo(ECSqlTypeInfo::CreateStruct(*targetClassType->GetStructClassCP(), m_castTargetIsArray));
+    return SUCCESS;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+ECSqlTypeInfo CastExp::GetParameterInputType() const
+    {
+    switch (m_specialTarget)
+        {
+            case SpecialTarget::IdFamily:
+            case SpecialTarget::ClassName:
+                return ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_Long, m_castTargetIsArray, EXTENDEDTYPENAME_Id);
+            case SpecialTarget::Guid:
+                return ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_Binary, m_castTargetIsArray, EXTENDEDTYPENAME_BeGuid);
+            case SpecialTarget::Json:
+                return ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_String, m_castTargetIsArray);
+            default:
+                return GetTypeInfo();
+        }
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+bool CastExp::_TryDetermineParameterExpType(ECSqlParseContext& ctx, ParameterExp& parameterExp) const
+    {
+    // Only a direct parameter operand gets its type from the cast. Parameters nested deeper
+    // (e.g. in arithmetic or functions) keep the regular inference of their own parents.
+    if (!m_isV2 || GetCastOperand() != &parameterExp)
+        return false;
+
+    parameterExp.SetExplicitTypeInfo(GetParameterInputType());
+    return true;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+bool CastExp::IsSupportedV2Conversion(ECSqlTypeInfo const& source, ECSqlTypeInfo const& target, SpecialTarget specialTarget)
+    {
+    if (source.IsNull())
+        return true;
+
+    if (target.IsArray() || target.IsStruct())
+        return source == target;
+
+    BeAssert(target.IsPrimitive());
+    switch (specialTarget)
+        {
+            case SpecialTarget::IdFamily:
+                // a navigation value only projects the referenced instance id
+                if (source.IsNavigation())
+                    return target.GetExtendedTypeName().EqualsIAscii(EXTENDEDTYPENAME_Id) || target.GetExtendedTypeName().EqualsIAscii(EXTENDEDTYPENAME_NavId);
+
+                return (source.IsExactNumeric() && !source.IsEnum()) || source.IsString();
+            case SpecialTarget::ClassName:
+                return (source.IsExactNumeric() && !source.IsEnum()) || source.IsString();
+            case SpecialTarget::Json:
+                return source.IsString();
+            case SpecialTarget::Guid:
+                return source.IsString() || source.IsBinary();
+            default:
+                break;
+        }
+
+    const ECN::PrimitiveType targetType = target.GetPrimitiveType();
+    if (source.IsNavigation())
+        return targetType == ECN::PRIMITIVETYPE_Long || targetType == ECN::PRIMITIVETYPE_String;
+
+    if (source.IsStruct() || source.IsArray())
+        return targetType == ECN::PRIMITIVETYPE_String && !target.IsEnum();
+
+    if (!source.IsPrimitive())
+        return false;
+
+    if (source.IsPoint())
+        return (targetType == ECN::PRIMITIVETYPE_String && !target.IsEnum()) || source.GetPrimitiveType() == targetType;
+
+    if (target.IsPoint())
+        return source.IsString();
+
+    return true;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Exp::FinalizeParseStatus CastExp::FinalizeV2(ECSqlParseContext& ctx, FinalizeParseMode mode)
+    {
+    if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
+        {
+        if (SUCCESS != ResolveTargetType(ctx, true))
+            return FinalizeParseStatus::Error;
+
+        return FinalizeParseStatus::NotCompleted;
+        }
+
+    // A direct parameter operand gets its type from this expression in _TryDetermineParameterExpType
+    if (GetCastOperand()->IsParameterExp())
+        return FinalizeParseStatus::Completed;
+
+    ECSqlTypeInfo const& sourceType = GetCastOperand()->GetTypeInfo();
+    if (sourceType.IsUnset() || sourceType.GetKind() == ECSqlTypeInfo::Kind::Varies)
+        {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0751,
+            "Cannot determine the type of the CAST operand in '%s'.", ToECSql().c_str());
+        return FinalizeParseStatus::Error;
+        }
+
+    if (!IsSupportedV2Conversion(sourceType, GetTypeInfo(), m_specialTarget))
+        {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0751,
+            "Casting from '%s' to '%s' is not supported: '%s'.", TypeToString(sourceType).c_str(), TypeToString(GetTypeInfo()).c_str(), ToECSql().c_str());
+        return FinalizeParseStatus::Error;
+        }
+
+    // nav::Id projects the referenced instance id, which is a NavId
+    if (sourceType.IsNavigation() && m_specialTarget == SpecialTarget::IdFamily && GetTypeInfo().GetExtendedTypeName().EqualsIAscii(EXTENDEDTYPENAME_Id))
+        SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_Long, m_castTargetIsArray, EXTENDEDTYPENAME_NavId));
+
+    return FinalizeParseStatus::Completed;
+    }
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1013,6 +1304,13 @@ Exp::FinalizeParseStatus FunctionCallExp::_FinalizeParsing(ECSqlParseContext& ct
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         {
         return FinalizeParseStatus::NotCompleted;
+        }
+
+    if (m_functionName.EqualsIAscii(SQLFUNC_ECSqlCast))
+        {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0757,
+            "Function '%s' is internal to ECDb and cannot be called from ECSQL.", m_functionName.c_str());
+        return FinalizeParseStatus::Error;
         }
 
     DetermineReturnType(ctx.GetECDb());
@@ -1476,7 +1774,7 @@ BentleyStatus LiteralValueExp::Create(std::unique_ptr<ValueExp>& exp, ECSqlParse
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-LiteralValueExp::LiteralValueExp(Utf8CP value, ECSqlTypeInfo const& typeInfo) : ValueExp(Type::LiteralValue, true), m_rawValue(value) { SetTypeInfo(typeInfo); }
+LiteralValueExp::LiteralValueExp(Utf8CP value, ECSqlTypeInfo const& typeInfo) : ValueExp(Type::LiteralValue, true), m_rawValue(value), m_isNullLiteral(typeInfo.IsNull()) { SetTypeInfo(typeInfo); }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -1564,7 +1862,7 @@ void LiteralValueExp::_ToJson(BeJsValue val , JsonFormat const&) const  {
     val.SetEmptyObject();
     val["id"] = "LiteralValueExp";
     ECSqlTypeInfo const& typeInfo = GetTypeInfo();
-    if (typeInfo.IsNull()) {
+    if (typeInfo.IsNull() || m_isNullLiteral) {
         val["kind"] = "NULL";
         return;
     } else if (typeInfo.IsPrimitive()) {
@@ -1607,7 +1905,7 @@ void LiteralValueExp::_ToECSql(ECSqlRenderContext& ctx) const
         ctx.AppendToECSql("(");
 
     ECSqlTypeInfo const& typeInfo = GetTypeInfo();
-    if (typeInfo.IsNull())
+    if (typeInfo.IsNull() || m_isNullLiteral)
         {
         ctx.AppendToECSql("NULL");
         if (HasParentheses())

@@ -221,27 +221,45 @@ struct SearchCaseValueExp final : ValueExp
 //+===============+===============+===============+===============+===============+======
 struct CastExp final : ValueExp
     {
+    public:
+        //! Special CAST_V2 targets which are not EC type names
+        enum class SpecialTarget
+            {
+            None,
+            IdFamily, //!< Long with one of the Id extended types (Id, ClassId, SourceId, ...)
+            ClassName, //!< Class id converted to 'Schema:Class'
+            Json, //!< String validated as JSON with the Json extended type
+            Guid, //!< Binary with the BeGuid extended type
+            };
+
     private:
         Utf8String m_castTargetSchemaName;
         Utf8String m_castTargetTypeName;
         bool m_castTargetIsArray;
+        bool m_isPostfix = false;
+        bool m_isV2 = false;
+        SpecialTarget m_specialTarget = SpecialTarget::None;
         size_t m_castOperandIndex;
 
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
+        bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
+        FinalizeParseStatus FinalizeV2(ECSqlParseContext&, FinalizeParseMode mode);
+        BentleyStatus ResolveTargetType(ECSqlParseContext&, bool allowSpecialTargets);
+        ECSqlTypeInfo GetParameterInputType() const;
 
         void _ToECSql(ECSqlRenderContext&) const override;
         void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override;
 
     public:
-        CastExp(std::unique_ptr<ValueExp> castOperand, Utf8CP castTargetPrimitiveType, bool castTargetIsArray)
-            : ValueExp(Type::Cast, castOperand->IsConstant()), m_castTargetTypeName(castTargetPrimitiveType), m_castTargetIsArray(castTargetIsArray)
+        CastExp(std::unique_ptr<ValueExp> castOperand, Utf8CP castTargetPrimitiveType, bool castTargetIsArray, bool isPostfix = false)
+            : ValueExp(Type::Cast, castOperand->IsConstant()), m_castTargetTypeName(castTargetPrimitiveType), m_castTargetIsArray(castTargetIsArray), m_isPostfix(isPostfix)
             {
             m_castOperandIndex = AddChild(std::move(castOperand));
             }
 
-        CastExp(std::unique_ptr<ValueExp> castOperand, Utf8StringCR castTargetSchemaName, Utf8StringCR castTargetTypeName, bool castTargetIsArray)
-            : ValueExp(Type::Cast, castOperand->IsConstant()), m_castTargetSchemaName(castTargetSchemaName), m_castTargetTypeName(castTargetTypeName), m_castTargetIsArray(castTargetIsArray)
+        CastExp(std::unique_ptr<ValueExp> castOperand, Utf8StringCR castTargetSchemaName, Utf8StringCR castTargetTypeName, bool castTargetIsArray, bool isPostfix = false)
+            : ValueExp(Type::Cast, castOperand->IsConstant()), m_castTargetSchemaName(castTargetSchemaName), m_castTargetTypeName(castTargetTypeName), m_castTargetIsArray(castTargetIsArray), m_isPostfix(isPostfix)
             {
             m_castOperandIndex = AddChild(std::move(castOperand));
             }
@@ -251,6 +269,13 @@ struct CastExp final : ValueExp
         Utf8StringCR GetCastTargetTypeName() const { BeAssert(!m_castTargetSchemaName.empty()); return m_castTargetTypeName; }
         Utf8StringCR GetCastTargetPrimitiveType() const { BeAssert(m_castTargetSchemaName.empty()); return m_castTargetTypeName; }
         bool CastTargetIsArray() const { return m_castTargetIsArray; }
+        bool IsPostfix() const { return m_isPostfix; }
+        //! True if the CAST_V2 option is in effect for this expression
+        bool IsV2() const { return m_isV2; }
+        SpecialTarget GetSpecialTarget() const { return m_specialTarget; }
+        static SpecialTarget GetSpecialTarget(Utf8StringCR typeName, Utf8CP* extendedTypeName = nullptr);
+        static Utf8String TypeToString(ECSqlTypeInfo const&);
+        static bool IsSupportedV2Conversion(ECSqlTypeInfo const& source, ECSqlTypeInfo const& target, SpecialTarget);
         bool NeedsCasting() const { BeAssert(IsComplete()); return GetCastOperand()->GetTypeInfo() != GetTypeInfo(); }
     };
 
@@ -262,6 +287,7 @@ struct LiteralValueExp final : ValueExp
     {
     private:
         Utf8String m_rawValue;
+        bool m_isNullLiteral = false;
 
         LiteralValueExp(Utf8CP value, ECSqlTypeInfo const&);
 
@@ -276,6 +302,9 @@ struct LiteralValueExp final : ValueExp
         static BentleyStatus Create(std::unique_ptr<ValueExp>&, ECSqlParseContext&, Utf8CP value, ECSqlTypeInfo const&);
 
         Utf8StringCR GetRawValue() const { return m_rawValue; }
+        //! True for the NULL literal, even after it adopted the type of a typed counterpart (e.g. in a compound select)
+        bool IsNullLiteral() const { return m_isNullLiteral; }
+        void AdoptTypeForNullLiteral(ECSqlTypeInfo const& typeInfo) { BeAssert(m_isNullLiteral); SetTypeInfo(typeInfo); }
 
         BentleyStatus TryParse(ECN::ECValue&) const;
 
@@ -514,6 +543,7 @@ struct ParameterExp final : ValueExp
         int m_parameterIndex = -1;
         Utf8String m_parameterName;
         ComputedExp const* m_targetExp = nullptr;
+        bool m_hasExplicitType = false;
 
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
         void _ToECSql(ECSqlRenderContext&) const override;
@@ -526,6 +556,9 @@ struct ParameterExp final : ValueExp
         void SetDefaultTargetExpInfo();
         void SetTargetExpInfo(ComputedExp const& exp);
         void SetTargetExpInfo(ECSqlTypeInfo const& targetTypeInfo);
+        //! Sets the parameter type from an explicit CAST_V2 cast (e.g. ?::INTEGER)
+        void SetExplicitTypeInfo(ECSqlTypeInfo const& typeInfo) { SetTargetExpInfo(typeInfo); m_hasExplicitType = true; }
+        bool HasExplicitType() const { return m_hasExplicitType; }
         ComputedExp const* GetTargetExp() const { return m_targetExp; }
         bool IsNamedParameter() const { return !m_parameterName.empty(); }
         Utf8StringCR GetParameterName() const { return m_parameterName; }
