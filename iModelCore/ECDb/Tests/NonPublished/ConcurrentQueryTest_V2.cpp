@@ -98,7 +98,9 @@ TEST_F(ConcurrentQueryFixture, RecursiveCtePreservesZeroIdAndColumnPositions) {
                 + "SELECT ECInstanceId,'root',0 FROM meta.ECClassDef WHERE Name='ECClassDef' "
                 + unionOp + " SELECT " + childId + ",'child',level+1 FROM tree WHERE level<1) "
                 + "SELECT authoringId,label,level,NULL FROM tree ORDER BY level";
+#if defined (USE_GTEST)
             SCOPED_TRACE(query.c_str());
+#endif
             for (bool useJsNames : {false, true}) {
                 ECSqlStatement stmt;
                 ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query.c_str()));
