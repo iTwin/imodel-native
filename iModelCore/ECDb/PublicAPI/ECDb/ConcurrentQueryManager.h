@@ -16,6 +16,9 @@ using namespace std::chrono_literals;
 typedef uint32_t TaskId;
 struct ECDb;
 struct ECSqlStatement;
+struct ECSqlStatus;
+struct ECSqlRowAdaptor;
+struct JsReadOptions;
 
 //=======================================================================================
 // @bsiclass
@@ -476,6 +479,35 @@ struct BlobIOResponse : public QueryResponse {
         ECDB_EXPORT void virtual ToJs(BeJsValue& v, bool includeData) const override;
 };
 
+struct CachedQueryAdaptor;
+
+//=======================================================================================
+//! A primary-connection ECSqlStatement leased from the ConcurrentQuery statement cache so it can be
+//! stepped synchronously on the thread that owns the primary connection. Releasing or destroying the
+//! lease resets the statement and returns it to the cache. While leased, the statement is never handed
+//! to another caller. Shutting down the ConcurrentQueryMgr (e.g. ECDb::ClearECDbCache or closing the db)
+//! finalizes the statement, after which GetStatement() returns nullptr.
+// @bsiclass
+//=======================================================================================
+struct ECSqlStatementLease final {
+    private:
+        std::shared_ptr<CachedQueryAdaptor> m_entry;
+        ECSqlStatementLease(ECSqlStatementLease const&) = delete;
+        ECSqlStatementLease& operator=(ECSqlStatementLease const&) = delete;
+    public:
+        explicit ECSqlStatementLease(std::shared_ptr<CachedQueryAdaptor> entry) : m_entry(std::move(entry)) {}
+        ECDB_EXPORT ~ECSqlStatementLease();
+        //! Returns the leased statement, or nullptr if the lease was released or invalidated.
+        ECDB_EXPORT ECSqlStatement* GetStatement() const;
+        //! Unique id of the prepared statement; changes whenever the cache prepares a new statement.
+        ECDB_EXPORT uint64_t GetStatementId() const;
+        //! Configures the cached adaptor and renderer for this lease. Returns nullptr for an invalidated lease.
+        ECDB_EXPORT ECSqlRowAdaptor* ConfigureRowAdaptor(JsReadOptions const&);
+        //! Appends the current row as strict JSON; on false (e.g. Infinity), discard partial output and render directly.
+        ECDB_EXPORT bool WriteRowAsJson(rapidjson::StringBuffer&);
+        ECDB_EXPORT void Release();
+};
+
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
@@ -598,6 +630,9 @@ struct ConcurrentQueryMgr final {
         // change config
         ECDB_EXPORT static void WithInstance(ECDb const&, std::function<void(ConcurrentQueryMgr&)>);
         ECDB_EXPORT static void Shutdown(ECDbCR ecdb);
+        //! Leases a cached primary-connection statement for synchronous stepping on the thread that owns the
+        //! primary connection. Returns nullptr and sets @p status and @p error if the ECSQL cannot be prepared.
+        ECDB_EXPORT static std::unique_ptr<ECSqlStatementLease> LeaseStatement(ECDbCR ecdb, Utf8CP ecsql, bool logErrors, ECSqlStatus& status, std::string& error);
 };
 
 //=======================================================================================

@@ -44,6 +44,7 @@ using recursive_guard_t = std::lock_guard<recursive_mutex_t>;
 
 struct CachedConnection;
 struct ConnectionCache;
+struct QueryAdaptorCache;
 //=======================================================================================
 //! @bsiclass
 //=======================================================================================
@@ -64,10 +65,14 @@ struct ErrorListenerScope final: ECN::IIssueListener {
 //=======================================================================================
 struct CachedQueryAdaptor final: std::enable_shared_from_this<CachedQueryAdaptor> {
     friend struct CachedConnection;
+    friend struct QueryAdaptorCache;
     private:
         ECSqlStatement m_stmt;
         std::unique_ptr<ECSqlRowAdaptor> m_adaptor;
         PreparedECSqlRowRenderer m_rowRenderer;
+        std::optional<ECSqlRowProperty::List> m_metadata;
+        bool m_metadataAbbreviateBlobs = false;
+        bool m_metadataUseClassFullName = false;
         std::string m_cachedString;
         ECDb const* m_conn;
         bool m_usePrimaryConn;
@@ -82,10 +87,19 @@ struct CachedQueryAdaptor final: std::enable_shared_from_this<CachedQueryAdaptor
             bool IsExpired(std::chrono::seconds timeout) const { return std::chrono::steady_clock::now() - m_lastUsed >= timeout; }
         };
         std::optional<Cursor> m_cursor;
+        // Set while an ECSqlStatementLease holds this entry; cleared when it is returned or invalidated.
+        QueryAdaptorCache* m_leaseOwner = nullptr;
+        uint64_t m_statementId = 0;
+        bool m_forLease = false;
     public:
         CachedQueryAdaptor() :m_usePrimaryConn(false) {}
         ECSqlStatement& GetStatement() { return m_stmt; }
+        bool IsForLease() const { return m_forLease; }
+        QueryAdaptorCache* GetLeaseOwner() const { return m_leaseOwner; }
+        uint64_t GetStatementId() const { return m_statementId; }
+        void Invalidate();
         ECSqlRowAdaptor& GetJsonAdaptor();
+        ECSqlRowProperty::List GetMetaData();
         PreparedECSqlRowRenderer& GetRowRenderer() { return m_rowRenderer; }
         std::string& ClearAndGetCachedString() { m_cachedString.clear(); return m_cachedString; }
         bool GetUsePrimaryConn() const { return m_usePrimaryConn; }
@@ -119,6 +133,8 @@ struct QueryAdaptorCache final {
     friend struct CachedConnection;
     private:
             std::vector<std::shared_ptr<CachedQueryAdaptor>> m_cache;
+            // Entries checked out by ECSqlStatementLease; never in m_cache while leased.
+            std::vector<std::shared_ptr<CachedQueryAdaptor>> m_leased;
             recursive_mutex_t m_mutex;
             CachedConnection& m_conn;
             uint32_t m_maxEntries;
@@ -127,9 +143,14 @@ struct QueryAdaptorCache final {
             bool m_hasAttachedData = false;
     public:
         QueryAdaptorCache(CachedConnection& conn);
-        ~QueryAdaptorCache(){}
+        ~QueryAdaptorCache(){ InvalidateLeases(); }
         std::shared_ptr<CachedQueryAdaptor> TryGet(Utf8CP ecsql, ECSqlRequest const& request, std::string const& argsKey, bool& resumed, ECSqlStatus& status, std::string& ecsql_error, RunnableRequestQueue& queue, bool & isShutDownInProgress);
+        // Leased entries are owned by their leases; only the idle cache is cleared.
         void Reset() { m_cache.clear(); }
+        std::shared_ptr<CachedQueryAdaptor> Lease(Utf8CP ecsql, bool logErrors, ECSqlStatus& status, std::string& error);
+        void ReturnLease(CachedQueryAdaptor&);
+        void InvalidateLeases();
+        size_t LeasedCount() const { return m_leased.size(); }
         void ResetCursors() { for (auto const& entry : m_cache) if (entry->IsParked()) entry->ResetCursor(); }
         size_t Size() const { return m_cache.size(); }
         size_t ParkedCount() const { return static_cast<size_t>(std::count_if(m_cache.begin(), m_cache.end(), [](auto const& entry) { return entry->IsParked(); })); }
@@ -207,6 +228,7 @@ struct CachedConnection final : std::enable_shared_from_this<CachedConnection> {
         CachedConnection(ConnectionCache& cache, uint16_t id):m_cache(cache), m_id(id), m_adaptorCache(*this),m_retryHandler(QueryRetryHandler::Create(60s)){}
         recursive_mutex_t& GetMutex() { return m_mutexReq; }
         QueryAdaptorCache const& GetAdaptorCache() const { return m_adaptorCache; }
+        QueryAdaptorCache& GetAdaptorCacheR() { return m_adaptorCache; }
         ~CachedConnection();
         void SyncAttachDbs();
         ECDB_EXPORT void Execute(std::function<void(QueryAdaptorCache&,RunnableRequestBase&)>, std::unique_ptr<RunnableRequestBase>, std::unique_ptr<RunnableRequestBase>* completedRequest = nullptr);
@@ -256,8 +278,17 @@ struct ConnectionCache final {
         uint64_t m_dataVersion = 0; // guarded by m_versionMutex
         bool m_enableCursors;
         std::atomic_bool m_observerAvailable{false};
+        // Gate between active statement leases and the monitor's idle auto-shutdown.
+        mutex_t m_leaseMutex;
+        uint32_t m_activeLeases = 0;
+        bool m_leasesBlocked = false;
+        std::chrono::steady_clock::time_point m_lastLeaseTime = std::chrono::steady_clock::now();
     public:
         ECDB_EXPORT ConnectionCache(ECDb const& primaryDb, uint32_t pool_size);
+        bool BeginLease();
+        void EndLease();
+        // Blocks new leases if none are active and none were taken within idleFor; returns false otherwise.
+        bool TryBlockLeasesForShutdown(std::chrono::seconds idleFor);
         ECDb const& GetPrimaryDb() const { return m_primaryDb; }
         ECDB_EXPORT std::shared_ptr<CachedConnection> GetConnection(RunnableRequestBase&);
         CachedConnection& GetSyncConnection();
@@ -409,6 +440,7 @@ struct RunnableRequestQueue final {
         ~RunnableRequestQueue() { Stop();}
         bool CancelRequest(uint32_t id);
         ECDbCR GetECDb() const { return m_ecdb; }
+        std::chrono::seconds GetShutdownWhenIdleFor() const { return m_shutdownWhenIdleFor; }
         void RemoveIf (std::function<bool(RunnableRequestBase&)> predicate);
         State GetState() const { return m_state.load(); }
         QueryResponse::Future Enqueue(ConnectionCache&,QueryRequest::Ptr);
@@ -491,6 +523,7 @@ struct ConcurrentQueryMgr::Impl  {
         ~Impl();
         QueryResponse::Future Enqueue(QueryRequest::Ptr request) { return m_queue.Enqueue(m_executor.GetConnectionCache(), std::move(request)); }
         void Enqueue(QueryRequest::Ptr request, OnCompletion completion) { m_queue.Enqueue(m_executor.GetConnectionCache(), std::move(request), completion); }
+        std::shared_ptr<CachedQueryAdaptor> LeaseStatement(Utf8CP ecsql, bool logErrors, ECSqlStatus& status, std::string& error, bool& shuttingDown);
 
 };
 

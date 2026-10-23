@@ -21,6 +21,7 @@ USING_NAMESPACE_BENTLEY_EC
 #include <cstdlib>
 #include <limits>
 #include <random>
+#include <stdexcept>
 BEGIN_ECDBUNITTESTS_NAMESPACE
 using namespace std::chrono_literals;
 
@@ -72,6 +73,124 @@ struct ConcurrentQueryFixture : ECDbTestFixture {
         return SUCCESS;
     }
 };
+TEST_F(ConcurrentQueryFixture, RequestDecodingPreservesTypedOptionsAndDefaults) {
+    BeJsDocument input(R"json({
+        "query":"SELECT ?","cursorId":"reader","usePrimaryConn":true,
+        "priority":7,"delay":25,"restartToken":"restart",
+        "quota":{"time":12,"memory":64000},"limit":{"count":5,"offset":2},
+        "includeMetaData":false,"abbreviateBlobs":true,"suppressLogErrors":true,
+        "convertClassIdsToClassNames":true,"doNotConvertClassIdsToClassNamesWhenAliased":false,
+        "valueFormat":1
+    })json");
+    input["kind"] = static_cast<int>(QueryRequest::Kind::ECSql);
+    ECSqlParams args;
+    args.BindInt(1, 42);
+    args.ToJs(input["args"]);
+    auto request = QueryRequest::Deserialize(input);
+    auto const& ecsql = request->GetAsConst<ECSqlRequest>();
+    EXPECT_EQ("SELECT ?", ecsql.GetQuery());
+    EXPECT_EQ("reader", ecsql.GetCursorId());
+    EXPECT_EQ(1, ecsql.GetArgs().Count());
+    EXPECT_TRUE(request->UsePrimaryConnection());
+    EXPECT_EQ(7, request->GetPriority());
+    EXPECT_EQ(25ms, request->GetDelay());
+    EXPECT_EQ("restart", request->GetRestartToken());
+    EXPECT_EQ(12s, request->GetQuota().MaxTimeAllowed());
+    EXPECT_EQ(64000, request->GetQuota().MaxMemoryAllowed());
+    EXPECT_EQ(5, ecsql.GetLimit().GetCount());
+    EXPECT_EQ(2, ecsql.GetLimit().GetOffset());
+    EXPECT_FALSE(ecsql.GetIncludeMetaData());
+    EXPECT_TRUE(ecsql.GetAbbreviateBlobs());
+    EXPECT_TRUE(ecsql.GetSuppressLogErrors());
+    EXPECT_TRUE(ecsql.GetConvertClassIdsToClassNames());
+    EXPECT_FALSE(ecsql.GetDoNotConvertClassIdsToClassNamesWhenAliased());
+    EXPECT_EQ(ECSqlRequest::ECSqlValueFormat::JsNames, ecsql.GetValueFormat());
+
+    BeJsDocument invalid(R"json({
+        "kind":1,"query":42,"usePrimaryConn":"true","includeMetaData":null,
+        "abbreviateBlobs":1,"valueFormat":"1","limit":false,"quota":false
+    })json");
+    auto defaults = QueryRequest::Deserialize(invalid);
+    auto const& defaultECSql = defaults->GetAsConst<ECSqlRequest>();
+    EXPECT_TRUE(defaultECSql.GetQuery().empty());
+    EXPECT_FALSE(defaults->UsePrimaryConnection());
+    EXPECT_TRUE(defaultECSql.GetIncludeMetaData());
+    EXPECT_FALSE(defaultECSql.GetAbbreviateBlobs());
+    EXPECT_EQ(ECSqlRequest::ECSqlValueFormat::ECSqlNames, defaultECSql.GetValueFormat());
+    EXPECT_EQ(-1, defaultECSql.GetLimit().GetCount());
+    EXPECT_EQ(-1, defaultECSql.GetLimit().GetOffset());
+    invalid["kind"] = "1";
+    bool rejected = false;
+    try {
+        QueryRequest::Deserialize(invalid);
+    } catch (std::runtime_error const&) {
+        rejected = true;
+    }
+    EXPECT_TRUE(rejected);
+}
+
+TEST_F(ConcurrentQueryFixture, CachedMetadataTracksOptionsAndInvalidation) {
+    ASSERT_EQ(SUCCESS, SetupECDb("CachedMetadataTracksOptionsAndInvalidation.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="MetadataCache" alias="mc" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="Payload">
+                <ECProperty propertyName="Bytes" typeName="binary"/>
+            </ECEntityClass>
+        </ECSchema>)xml")));
+    auto cached = CachedQueryAdaptor::Make();
+    cached->SetWorkerConn(m_ecdb);
+    cached->SetUsePrimaryConn(true);
+    ASSERT_EQ(ECSqlStatus::Success, cached->GetStatement().Prepare(m_ecdb, "SELECT ECClassId,Bytes,Bytes AS Copy FROM mc.Payload"));
+    auto& adaptor = cached->GetJsonAdaptor();
+    for (bool abbreviate : {false, true, false}) {
+        for (bool fullName : {false, true, false}) {
+            adaptor.GetOptions().SetAbbreviateBlobs(abbreviate).SetUseJsNames(true).SetUseClassFullNameInsteadofClassName(fullName);
+            ECSqlRowProperty::List expected;
+            adaptor.GetMetaData(expected, cached->GetStatement());
+            BeJsDocument expectedJson;
+            expected.ToJs(expectedJson);
+            for (int repeat = 0; repeat < 2; ++repeat) {
+                auto actual = cached->GetMetaData();
+                ASSERT_EQ(3, actual.size());
+                EXPECT_EQ(abbreviate ? "string" : "binary", actual[1].GetTypeName());
+                BeJsDocument actualJson;
+                actual.ToJs(actualJson);
+                EXPECT_TRUE(expectedJson.isExactEqual(actualJson));
+                actual.clear();
+                EXPECT_EQ(3, cached->GetMetaData().size());
+            }
+        }
+    }
+    cached->ReleaseMemory();
+    EXPECT_EQ("string", cached->GetMetaData()[1].GetTypeName());
+    cached->Invalidate();
+    ASSERT_EQ(ECSqlStatus::Success, cached->GetStatement().Prepare(m_ecdb, "SELECT Bytes FROM mc.Payload"));
+    auto metadata = cached->GetMetaData();
+    ASSERT_EQ(1, metadata.size());
+    EXPECT_EQ("Bytes", metadata[0].GetName());
+}
+
+TEST_F(ConcurrentQueryFixture, DynamicMetadataIsRefreshedAfterStepping) {
+    ASSERT_EQ(SUCCESS, SetupRenderingPayload("DynamicMetadataIsRefreshedAfterStepping.ecdb", "text", 2.5));
+    auto cached = CachedQueryAdaptor::Make();
+    cached->SetWorkerConn(m_ecdb);
+    cached->SetUsePrimaryConn(true);
+    auto& stmt = cached->GetStatement();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId,$->DoubleValue FROM rp.Payload"));
+    ASSERT_TRUE(stmt.GetColumnInfo(1).IsDynamic());
+    for (bool step : {false, true, false}) {
+        if (step)
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        else
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Reset());
+        ECSqlRowProperty::List expected;
+        cached->GetJsonAdaptor().GetMetaData(expected, stmt);
+        BeJsDocument expectedJson, actualJson;
+        expected.ToJs(expectedJson);
+        cached->GetMetaData().ToJs(actualJson);
+        EXPECT_TRUE(expectedJson.isExactEqual(actualJson));
+    }
+}
+
 TEST_F(ConcurrentQueryFixture, HexIdRenderingMatchesBeId) {
     auto check = [](uint64_t rawId) {
         BeInt64Id id(rawId);
