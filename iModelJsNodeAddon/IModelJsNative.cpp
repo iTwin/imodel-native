@@ -1994,6 +1994,27 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         JsInterop::DeleteElementAspect(GetOpenedDb(info), aspectIdStr);
     }
 
+    Napi::Value InsertElementAspects(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        if (ARGUMENT_IS_NOT_PRESENT(0) || !info[0].IsArray())
+            THROW_JS_TYPE_EXCEPTION("Invalid argument given to insertElementAspects");
+        return JsInterop::InsertElementAspects(db, info[0].As<Napi::Array>());
+    }
+
+    Napi::Value UpdateElementAspects(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        if (ARGUMENT_IS_NOT_PRESENT(0) || !info[0].IsArray())
+            THROW_JS_TYPE_EXCEPTION("Invalid argument given to updateElementAspects");
+        return JsInterop::UpdateElementAspects(db, info[0].As<Napi::Array>());
+    }
+
+    Napi::Value DeleteElementAspects(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        if (ARGUMENT_IS_NOT_PRESENT(0) || !info[0].IsArray())
+            THROW_JS_TYPE_EXCEPTION("Invalid argument given to deleteElementAspects");
+        return JsInterop::DeleteElementAspects(db, info[0].As<Napi::Array>());
+    }
+
     Napi::Value ExportGraphics(NapiInfoCR info)
         {
         auto& db = GetOpenedDb(info);
@@ -3342,6 +3363,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("deleteElement", &NativeDgnDb::DeleteElement),
             InstanceMethod("deleteElements", &NativeDgnDb::DeleteElements),
             InstanceMethod("deleteElementAspect", &NativeDgnDb::DeleteElementAspect),
+            InstanceMethod("deleteElementAspects", &NativeDgnDb::DeleteElementAspects),
             InstanceMethod("deleteLinkTableRelationship", &NativeDgnDb::DeleteLinkTableRelationship),
             InstanceMethod("deleteLinkTableRelationships", &NativeDgnDb::DeleteLinkTableRelationships),
             InstanceMethod("deleteLocalValue", &NativeDgnDb::DeleteLocalValue),
@@ -3421,6 +3443,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("insertCodeSpec", &NativeDgnDb::InsertCodeSpec),
             InstanceMethod("insertElement", &NativeDgnDb::InsertElement),
             InstanceMethod("insertElementAspect", &NativeDgnDb::InsertElementAspect),
+            InstanceMethod("insertElementAspects", &NativeDgnDb::InsertElementAspects),
             InstanceMethod("insertLinkTableRelationship", &NativeDgnDb::InsertLinkTableRelationship),
             InstanceMethod("insertModel", &NativeDgnDb::InsertModel),
             InstanceMethod("isChangeCacheAttached", &NativeDgnDb::IsChangeCacheAttached),
@@ -3490,6 +3513,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("changeElementParent", &NativeDgnDb::ChangeElementParent),
             InstanceMethod("changeElementModel", &NativeDgnDb::ChangeElementModel),
             InstanceMethod("updateElementAspect", &NativeDgnDb::UpdateElementAspect),
+            InstanceMethod("updateElementAspects", &NativeDgnDb::UpdateElementAspects),
             InstanceMethod("updateElementGeometryCache", &NativeDgnDb::UpdateElementGeometryCache),
             InstanceMethod("updateIModelProps", &NativeDgnDb::UpdateIModelProps),
             InstanceMethod("updateLinkTableRelationship", &NativeDgnDb::UpdateLinkTableRelationship),

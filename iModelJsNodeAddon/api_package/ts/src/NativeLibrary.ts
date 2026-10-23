@@ -55,6 +55,50 @@ export interface BulkDeleteElementsResult {
   failedIds: Id64Array;
 }
 
+/**
+ * Status codes returned by the native bulk ElementAspect operations.
+ * @internal
+ */
+export enum BulkElementAspectsStatus {
+  /** Every row succeeded (or the input was empty). */
+  Success = 0,
+  /** Some rows failed. See [[BulkElementAspectsResult.failures]]. */
+  PartialSuccess = 1,
+  /** Every row failed. */
+  Failed = 2,
+}
+
+/**
+ * A row that failed in a native bulk ElementAspect operation.
+ * @internal
+ */
+export interface BulkElementAspectFailure {
+  /** Index of the row in the input array. */
+  index: number;
+  status: IModelStatus;
+  message: string;
+}
+
+/**
+ * Result of `insertElementAspects`, `updateElementAspects` and `deleteElementAspects`.
+ * @note Exceptions thrown by the JavaScript `onInsert`/`onUpdate`/`onDelete` (or `onBulkXXX`) handlers abort the whole call before anything is written.
+ * @internal
+ */
+export interface BulkElementAspectsResult {
+  status: BulkElementAspectsStatus;
+  /** Failed rows, in ascending index order. */
+  failures: BulkElementAspectFailure[];
+}
+
+/**
+ * Result of `insertElementAspects`.
+ * @internal
+ */
+export interface BulkInsertElementAspectsResult extends BulkElementAspectsResult {
+  /** Id of the inserted aspect for each input row, or "0" for rows that failed. */
+  ids: Id64String[];
+}
+
 /** Logger categories used by the native addon
  * @internal
  */
@@ -661,6 +705,7 @@ export declare namespace IModelJsNative {
     public deleteElement(elemIdJson: string): void;
     public deleteElements(elementIds: Id64Array, deleteOptions?: { skipFKConstraintValidations?: boolean }): BulkDeleteElementsResult;
     public deleteElementAspect(aspectIdJson: string): void;
+    public deleteElementAspects(aspectIds: Id64Array): BulkElementAspectsResult;
     public deleteLinkTableRelationship(props: RelationshipProps): DbResult;
     public deleteLinkTableRelationships(props: ReadonlyArray<RelationshipProps>): DbResult;
     public deleteLocalValue(name: string): void;
@@ -746,6 +791,7 @@ export declare namespace IModelJsNative {
     public insertCodeSpec(name: string, jsonProperties: CodeSpecProperties): Id64String;
     public insertElement(elemProps: ElementProps, options?: { forceUseId?: boolean }): Id64String;
     public insertElementAspect(aspectProps: ElementAspectProps): Id64String;
+    public insertElementAspects(aspectProps: ReadonlyArray<ElementAspectProps>): BulkInsertElementAspectsResult;
     public insertLinkTableRelationship(props: RelationshipProps): Id64String;
     public insertModel(modelProps: ModelProps): Id64String;
     public isChangeCacheAttached(): boolean;
@@ -821,6 +867,7 @@ export declare namespace IModelJsNative {
     public changeElementParent(props: { id: Id64String, parentId: Id64String }): void;
     public changeElementModel(props: { id: Id64String, modelId: Id64String }): void;
     public updateElementAspect(aspectProps: ElementAspectProps): void;
+    public updateElementAspects(aspectProps: ReadonlyArray<ElementAspectProps>): BulkElementAspectsResult;
     public updateElementGeometryCache(props: ElementGeometryCacheRequestProps): Promise<ElementGeometryCacheResponseProps>;
     public updateIModelProps(props: IModelProps): void;
     public updateLinkTableRelationship(props: RelationshipProps): DbResult;
