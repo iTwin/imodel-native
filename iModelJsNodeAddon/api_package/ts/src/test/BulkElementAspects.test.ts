@@ -449,6 +449,8 @@ describe("bulk element aspects", () => {
       expect(bulkInsert[0].arg.iModel).to.equal(mock.mockJsDb);
       expect(bulkInsert[0].arg.aspects.map((a: any) => a.props.strProp)).to.deep.equal(["m1", "m2"]);
       expect(bulkInsert[1].arg.aspects.map((a: any) => a.props.strProp)).to.deep.equal(["u1"]);
+      for (const c of bulkInsert)
+        c.arg.aspects.forEach((a: any) => expect(a.iModel).to.equal(mock.mockJsDb));
       expect(mock.aspectCalls("onBulkInserted").length).to.equal(2);
 
       mock.calls.length = 0;
@@ -460,6 +462,7 @@ describe("bulk element aspects", () => {
       mock.calls.length = 0;
       expect(db.deleteElementAspects(inserted.ids).status).to.equal(BulkElementAspectsStatus.Success);
       expect(mock.aspectCalls("onBulkDelete").map((c) => c.arg.aspects.length)).to.deep.equal([2, 1]);
+      mock.aspectCalls("onBulkDelete").forEach((c) => c.arg.aspects.forEach((a: any) => expect(a.iModel).to.equal(mock.mockJsDb)));
       expect(mock.aspectCalls("onBulkDeleted").length).to.equal(2);
       expect(mock.aspectCalls("onDelete").length).to.equal(0);
     });

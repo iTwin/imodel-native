@@ -1042,6 +1042,9 @@ struct BulkAspectJsHooks {
 
         for (auto classId : classOrder) {
             auto const& args = argsByClass[classId];
+            for (auto arg : args)
+                arg.Set("iModel", m_jsDb);
+
             auto jsClass = GetJsClass(classId);
             auto bulkFunc = jsClass.Get(bulkMethod);
             if (bulkFunc.IsFunction()) {
@@ -1063,10 +1066,8 @@ struct BulkAspectJsHooks {
                 BeNapi::ThrowJsException(m_env, err.c_str(), (int) DgnDbStatus::BadArg);
             }
 
-            for (auto arg : args) {
-                arg.Set("iModel", m_jsDb);
+            for (auto arg : args)
                 singleFunc.As<Napi::Function>().Call(jsClass, {arg});
-            }
         }
     }
 };
