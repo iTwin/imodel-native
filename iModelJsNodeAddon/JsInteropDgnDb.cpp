@@ -1214,9 +1214,8 @@ Napi::Object JsInterop::InsertElementAspects(DgnDbR db, Napi::Array propsArray) 
         hookCalls.push_back(std::make_pair(row.m_classId, row.m_hookArg));
     hooks.Call(hookCalls, "onBulkInsert", "onInsert");
 
-    // Phase 3: write, grouped by owning element
+    // Phase 3: write, grouped by owning element. All aspects of an owner are added to one editable copy and written by a single Update.
     ECClassId multiAspectRelClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsMultiAspects).GetValue());
-    std::map<DgnClassId, std::unique_ptr<ECInstanceInserter>> inserters;
     hookCalls.clear();
 
     auto ownerGroups = groupBulkAspectRowsByOwner(rows, [](InsertRow const& row) { return row.m_owner->GetElementId(); });
@@ -1233,15 +1232,28 @@ Napi::Object JsInterop::InsertElementAspects(DgnDbR db, Napi::Array propsArray) 
             continue;
         }
 
-        // Unique aspects are set on the element and written by its Update. SetAspect behaves as an upsert, so when the same
-        // (element, class) appears more than once, the last row wins and all of those rows report the resulting aspect id.
+        // SetAspect behaves as an upsert for unique aspects, so when the same (element, class) appears more than once,
+        // the last row wins and all of those rows report the resulting aspect id.
         std::map<DgnClassId, RefCountedPtr<DgnElement::UniqueAspect>> uniqueAspects;
+        std::map<size_t, RefCountedPtr<DgnElement::MultiAspect>> multiAspects;
         for (auto r : rowIndices) {
             auto& row = rows[r];
-            if (row.m_isMulti)
-                continue;
-
             DgnDbStatus stat;
+            if (row.m_isMulti) {
+                ECValue elementVal;
+                row.m_instance->GetValue(elementVal, "Element");
+                if (elementVal.IsNull() || !elementVal.IsNavigation() || !elementVal.GetNavigationInfo().GetRelationshipClassId().IsValid())
+                    row.m_instance->SetValue("Element", ECValue(group.first, multiAspectRelClassId));
+
+                auto aspect = DgnElement::GenericMultiAspect::AddAspect(*elementEdit, *row.m_instance, &stat);
+                if (DgnDbStatus::Success != stat || !aspect.IsValid()) {
+                    failures.Fail(row.m_index, stat, "unable to add multi aspect");
+                    continue;
+                }
+                multiAspects[r] = aspect;
+                continue;
+            }
+
             auto aspect = DgnElement::GenericUniqueAspect::SetAspect(*elementEdit, *row.m_instance, nullptr, &stat);
             if (DgnDbStatus::Success != stat || !aspect.IsValid()) {
                 failures.Fail(row.m_index, stat, "unable to set unique aspect");
@@ -1261,40 +1273,12 @@ Napi::Object JsInterop::InsertElementAspects(DgnDbR db, Napi::Array propsArray) 
             if (failures.HasFailed(row.m_index))
                 continue;
 
-            if (!row.m_isMulti) {
-                ECInstanceId aspectId = uniqueAspects[row.m_classId]->GetAspectInstanceId();
-                if (!aspectId.IsValid()) {
-                    failures.Fail(row.m_index, DgnDbStatus::WriteError, "unable to write unique aspect");
-                    continue;
-                }
-                insertedIds[row.m_index] = aspectId;
-                hookCalls.push_back(std::make_pair(row.m_classId, row.m_hookArg));
+            ECInstanceId aspectId = row.m_isMulti ? multiAspects[r]->GetAspectInstanceId() : uniqueAspects[row.m_classId]->GetAspectInstanceId();
+            if (!aspectId.IsValid()) {
+                failures.Fail(row.m_index, DgnDbStatus::WriteError, "unable to write aspect");
                 continue;
             }
-
-            // Multi aspects are inserted directly with a single statement per aspect (prepared once per class).
-            auto& inserter = inserters[row.m_classId];
-            if (nullptr == inserter)
-                inserter = std::make_unique<ECInstanceInserter>(db, *row.m_class, db.GetECCrudWriteToken());
-
-            if (!inserter->IsValid()) {
-                failures.Fail(row.m_index, DgnDbStatus::WrongClass, "aspect class cannot be inserted");
-                continue;
-            }
-
-            ECValue elementVal;
-            row.m_instance->GetValue(elementVal, "Element");
-            if (elementVal.IsNull() || !elementVal.IsNavigation() || !elementVal.GetNavigationInfo().GetRelationshipClassId().IsValid())
-                row.m_instance->SetValue("Element", ECValue(group.first, multiAspectRelClassId));
-
-            ECInstanceKey key;
-            DbResult rc = inserter->Insert(key, *row.m_instance);
-            if (BE_SQLITE_OK != rc) {
-                failures.Fail(row.m_index, DgnDbStatus::WriteError, Utf8PrintfString("unable to insert multi aspect: %s", BeSQLiteLib::GetLogError(rc).c_str()));
-                continue;
-            }
-
-            insertedIds[row.m_index] = key.GetInstanceId();
+            insertedIds[row.m_index] = aspectId;
             hookCalls.push_back(std::make_pair(row.m_classId, row.m_hookArg));
         }
     }
@@ -1418,8 +1402,8 @@ Napi::Object JsInterop::UpdateElementAspects(DgnDbR db, Napi::Array propsArray) 
 }
 
 /*---------------------------------------------------------------------------------**//**
-* Delete many ElementAspects by id. Ids are resolved with a single query; aspects are deleted with one statement per aspect class,
-* and each owning element is updated once. Duplicate ids are deleted once.
+* Delete many ElementAspects by id. Ids are resolved with a single query; the aspects of each owning element are deleted
+* through one editable copy of the element and written by a single update of it. Duplicate ids are deleted once.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 Napi::Object JsInterop::DeleteElementAspects(DgnDbR db, Napi::Array aspectIds) {
@@ -1534,57 +1518,46 @@ Napi::Object JsInterop::DeleteElementAspects(DgnDbR db, Napi::Array aspectIds) {
         hookCalls.push_back(std::make_pair(row.m_classId, row.m_hookArg));
     hooks.Call(hookCalls, "onBulkDelete", "onDelete");
 
-    // Phase 3a: update each owning element once
+    // Phase 3: mark the aspects deleted on one editable copy per owning element, then update each owning element once
+    hookCalls.clear();
     auto ownerGroups = groupBulkAspectRowsByOwner(validRows, [](DeleteRow const& row) { return row.m_ownerId; });
     for (auto const& group : ownerGroups) {
         DgnElementPtr elementEdit = validRows[group.second.front()].m_owner->CopyForEdit();
-        DgnDbStatus stat = elementEdit.IsValid() ? elementEdit->Update() : DgnDbStatus::WriteError;
+        if (!elementEdit.IsValid()) {
+            for (auto r : group.second)
+                failRow(validRows[r], DgnDbStatus::WriteError, "unable to edit owning element");
+            continue;
+        }
+
+        bool anyDeleted = false;
+        for (auto r : group.second) {
+            auto& row = validRows[r];
+            ECClassCP aspectClass = db.Schemas().GetClass(row.m_classId);
+            DgnElement::Aspect* aspect = aspectClass->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementMultiAspect)
+                ? static_cast<DgnElement::Aspect*>(DgnElement::MultiAspect::GetAspectP(*elementEdit, *aspectClass, row.m_id))
+                : static_cast<DgnElement::Aspect*>(DgnElement::UniqueAspect::GetAspectP(*elementEdit, *aspectClass));
+            if (nullptr == aspect) {
+                failRow(row, DgnDbStatus::NotFound, "aspect not found");
+                continue;
+            }
+            aspect->Delete();
+            anyDeleted = true;
+        }
+
+        if (!anyDeleted)
+            continue;
+
+        DgnDbStatus stat = elementEdit->Update();
         if (DgnDbStatus::Success != stat) {
             for (auto r : group.second)
                 failRow(validRows[r], stat, "unable to update owning element");
-        }
-    }
-
-    // Phase 3b: delete the aspects with one statement per aspect class
-    bvector<DgnClassId> classOrder;
-    std::map<DgnClassId, bvector<size_t>> rowsByClass;
-    for (size_t r = 0; r < validRows.size(); ++r) {
-        if (validRows[r].m_failed)
-            continue;
-        auto& classRows = rowsByClass[validRows[r].m_classId];
-        if (classRows.empty())
-            classOrder.push_back(validRows[r].m_classId);
-        classRows.push_back(r);
-    }
-
-    hookCalls.clear();
-    for (auto classId : classOrder) {
-        auto const& classRows = rowsByClass[classId];
-        ECClassCP aspectClass = db.Schemas().GetClass(classId);
-        Utf8PrintfString ecsql("DELETE FROM ONLY %s WHERE InVirtualSet(?,ECInstanceId)", aspectClass->GetECSqlName().c_str());
-        CachedECSqlStatementPtr statement = db.GetNonSelectPreparedECSqlStatement(ecsql.c_str(), db.GetECCrudWriteToken());
-        if (!statement.IsValid()) {
-            for (auto r : classRows)
-                failRow(validRows[r], DgnDbStatus::SQLiteError, "unable to prepare aspect delete statement");
             continue;
         }
 
-        auto classIdSet = std::make_shared<IdSet<BeInt64Id>>();
-        for (auto r : classRows)
-            classIdSet->insert(validRows[r].m_id);
-
-        statement->BindVirtualSet(1, classIdSet);
-        DbResult rc = statement->Step();
-        statement->Reset();
-        statement->ClearBindings();
-        if (BE_SQLITE_DONE != rc) {
-            for (auto r : classRows)
-                failRow(validRows[r], DgnDbStatus::SQLiteError, Utf8PrintfString("unable to delete aspects: %s", BeSQLiteLib::GetLogError(rc).c_str()));
-            continue;
+        for (auto r : group.second) {
+            if (!validRows[r].m_failed)
+                hookCalls.push_back(std::make_pair(validRows[r].m_classId, validRows[r].m_hookArg));
         }
-
-        for (auto r : classRows)
-            hookCalls.push_back(std::make_pair(classId, validRows[r].m_hookArg));
     }
 
     // Phase 4: JS post-delete handlers for the rows that succeeded
