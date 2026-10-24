@@ -666,6 +666,32 @@ int sqlite3_bcvfs_prefetch_run(
 );
 
 /*
+** Restrict a prefetch object to a specific list of blocks.
+**
+** By default a prefetch object walks the database file sequentially from
+** block 0. After a successful call to this function, subsequent calls to
+** sqlite3_bcvfs_prefetch_run() instead issue requests only for the nBlk
+** block indices in aBlk[] (in that order) that are not already cached or
+** being downloaded. Up to nRequest of them are downloaded in parallel.
+** prefetch_run() returns SQLITE_DONE once every listed block has been
+** fetched. Indices beyond the end of the database are ignored.
+**
+** This must be called before the first call to sqlite3_bcvfs_prefetch_run()
+** on the object, and at most once. Otherwise SQLITE_MISUSE is returned.
+** The array is copied, so the caller may free aBlk[] when this returns.
+**
+** In daemon mode, the daemon must support block-list prefetch. If it does
+** not, the first sqlite3_bcvfs_prefetch_run() call fails with
+** SQLITE_NOTFOUND. Before that reply arrives, an older daemon may already
+** have started at most nRequest sequential downloads.
+*/
+int sqlite3_bcvfs_prefetch_blocks(
+  sqlite3_prefetch*,
+  int nBlk,
+  const unsigned int *aBlk
+);
+
+/*
 ** If sqlite3_bcvfs_prefetch_run() has encountered an error - returned
 ** some value other than SQLITE_OK or SQLITE_DONE - this function returns
 ** a pointer to a buffer containing an English language error message.
