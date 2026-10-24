@@ -1182,6 +1182,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     // workers such that it can be checked for cancellation in the worker's Execute() function to
     // trivially exit if the DgnDb was closed in the interim.
     AtomicCancellablePtr m_cancellationToken;
+    bool m_openPending = false; // true while an openIModelAsync worker is running
     ElementGraphicsRequestsUPtr m_elemGraphicsRequests;
 
     NativeDgnDb(NapiInfoCR info) : BeObjectWrap<NativeDgnDb>(info) {}
@@ -1303,9 +1304,12 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             THROW_JS_DGN_DB_EXCEPTION(info.Env(), "unable to set busyTimeout", DgnDbStatus::TimeoutFailed);
     }
 
-    void OpenIModel(NapiInfoCR info) {
-        REQUIRE_ARGUMENT_STRING(0, dbName);
+    // Parse the arguments shared by openIModel and openIModelAsync. Must be called on the main thread
+    // because it sets the JavaScript "cloudContainer" member of this object.
+    std::unique_ptr<DgnDb::OpenParams> ParseOpenArgs(NapiInfoCR info, Utf8StringR dbName) {
+        REQUIRE_ARGUMENT_STRING(0, dbNameArg);
         REQUIRE_ARGUMENT_INTEGER(1, mode);
+        dbName = dbNameArg;
 
         SchemaUpgradeOptions::DomainUpgradeOptions domainOptions = SchemaUpgradeOptions::DomainUpgradeOptions::CheckRequiredUpgrades;
         BeSQLite::Db::ProfileUpgradeOptions profileOptions = BeSQLite::Db::ProfileUpgradeOptions::None;
@@ -1323,35 +1327,116 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         }
 
         SchemaUpgradeOptions schemaUpgradeOptions(domainOptions);
-        DgnDb::OpenParams openParams((Db::OpenMode)mode, BeSQLite::DefaultTxn::Yes, schemaUpgradeOptions);
-        openParams.SetProfileUpgradeOptions(profileOptions);
-        openParams.m_schemaLockHeld = schemaLockHeld;
-
+        auto openParams = std::make_unique<DgnDb::OpenParams>((Db::OpenMode)mode, BeSQLite::DefaultTxn::Yes, schemaUpgradeOptions);
+        openParams->SetProfileUpgradeOptions(profileOptions);
+        openParams->m_schemaLockHeld = schemaLockHeld;
 
         BeJsConst props(info[3]);
         bool skipWriteLockCheck = false;
         if (props.isObject()) {
             auto tempFileBase = props[JSON_NAME(tempFileBase)];
             if (tempFileBase.isString())
-                openParams.m_tempfileBase = tempFileBase.asString();
+                openParams->m_tempfileBase = tempFileBase.asString();
             skipWriteLockCheck = props[JSON_NAME(skipWriteLockCheck)].asBool(false);
         }
 
-        addContainerParams(Value(), dbName, openParams, info[4], skipWriteLockCheck);
+        addContainerParams(Value(), dbName, *openParams, info[4], skipWriteLockCheck);
 
-        if (!openParams.IsReadonly()) {
+        if (!openParams->IsReadonly()) {
             // 20 sec to retain previous behaviour.
-            openParams.m_busyTimeout =  20000;
+            openParams->m_busyTimeout =  20000;
         }
         if (info.Length() > 5) {
             BeJsConst sqliteOptions(info[5]);
             if (sqliteOptions.isObject()) {
                 if (sqliteOptions.isNumericMember("busyTimeout")) {
-                    openParams.m_busyTimeout = sqliteOptions["busyTimeout"].asInt();
+                    openParams->m_busyTimeout = sqliteOptions["busyTimeout"].asInt();
                 }
             }
         }
-        OpenIModelDb(BeFileName(dbName), openParams);
+        return openParams;
+    }
+
+    void ThrowIfOpenPending(NapiInfoCR info) {
+        if (m_openPending)
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "an asynchronous open of this iModel is in progress", DgnDbStatus::AlreadyOpen);
+    }
+
+    void OpenIModel(NapiInfoCR info) {
+        ThrowIfOpenPending(info);
+        Utf8String dbName;
+        auto openParams = ParseOpenArgs(info, dbName);
+        OpenIModelDb(BeFileName(dbName), *openParams);
+    }
+
+    //=======================================================================================
+    // Opens a DgnDb on a libuv worker thread so that the (potentially slow) reads performed while
+    // opening a cloud-hosted iModel do not block the JavaScript main thread. Everything that touches
+    // JavaScript state (argument parsing, SetDgnDb) happens on the main thread.
+    //=======================================================================================
+    struct OpenIModelWorker : Napi::AsyncWorker {
+        Napi::Promise::Deferred m_promise;
+        Napi::ObjectReference m_nativeDb; // keeps the NativeDgnDb (and its cloudContainer) alive until we finish
+        NativeDgnDb& m_owner;
+        BeFileName m_fileName;
+        std::unique_ptr<DgnDb::OpenParams> m_params;
+        DgnDbPtr m_dgndb;
+        DbResult m_result = BE_SQLITE_ERROR;
+
+        OpenIModelWorker(NativeDgnDb& owner, Utf8StringCR dbName, std::unique_ptr<DgnDb::OpenParams> params)
+            : Napi::AsyncWorker(owner.Env()), m_promise(Napi::Promise::Deferred::New(owner.Env())), m_owner(owner), m_fileName(dbName), m_params(std::move(params)) {
+            m_nativeDb.Reset(owner.Value(), 1);
+        }
+        ~OpenIModelWorker() { m_nativeDb.Reset(); }
+
+        void Execute() override {
+            m_dgndb = DgnDb::OpenIModelDb(&m_result, m_fileName, *m_params);
+            if (BE_SQLITE_OK != m_result || m_dgndb.IsNull())
+                SetError("error opening iModel");
+        }
+        void OnOK() override {
+            m_owner.m_openPending = false;
+            if (m_owner.IsOpen()) { // should not be possible, but never leak or replace an open db
+                m_dgndb->CloseDb();
+                Reject(BE_SQLITE_ERROR);
+                return;
+            }
+            m_owner.SetDgnDb(*m_dgndb);
+            m_promise.Resolve(Env().Undefined());
+        }
+        void OnError(Napi::Error const&) override {
+            m_owner.m_openPending = false;
+            Reject(BE_SQLITE_OK == m_result ? BE_SQLITE_ERROR : m_result);
+        }
+        void Reject(DbResult result) {
+            // same message format and error properties as JsInterop::throwSqlResult
+            Utf8PrintfString msg("%s [%s]: rc=%d, %s", "error opening iModel", m_fileName.GetNameUtf8().c_str(), (int)result, BeSQLiteLib::GetLogError(result).c_str());
+            auto err = Napi::Error::New(Env(), msg.c_str());
+            err.Value()["errorNumber"] = (int)result;
+            iTwinErrorId id = {"be-sqlite", BeSQLiteLib::GetErrorName(result)};
+            id.setITwinErrorId(err);
+            m_promise.Reject(err.Value());
+        }
+    };
+
+    // Asynchronous version of openIModel. Only read-only opens are supported, since opening for write
+    // may upgrade schemas or the profile, which must not happen off the main thread.
+    Napi::Value OpenIModelAsync(NapiInfoCR info) {
+        ThrowIfOpenPending(info);
+        if (IsOpen())
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "iModel is already open", DgnDbStatus::AlreadyOpen);
+
+        Utf8String dbName;
+        auto openParams = ParseOpenArgs(info, dbName);
+        if (!openParams->IsReadonly())
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "openIModelAsync only supports read-only opens", DgnDbStatus::BadArg);
+
+        NativeLogging::CategoryLogger("BeSQLite").infov("Opening DgnDb (async) %s", dbName.c_str());
+        auto worker = new OpenIModelWorker(*this, dbName, std::move(openParams));
+        auto promise = worker->m_promise.Promise();
+        m_openPending = true;
+        worker->Queue();
+        return promise;
     }
     Napi::Value GetNoCaseCollation(NapiInfoCR info){
         auto& db = GetOpenedDb(info);
@@ -3435,6 +3520,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("isUndoPossible", &NativeDgnDb::IsUndoPossible),
             InstanceMethod("logTxnError", &NativeDgnDb::LogTxnError),
             InstanceMethod("openIModel", &NativeDgnDb::OpenIModel),
+            InstanceMethod("openIModelAsync", &NativeDgnDb::OpenIModelAsync),
             InstanceMethod("pauseProfiler", &NativeDgnDb::PauseProfiler),
             InstanceMethod("pollTileContent", &NativeDgnDb::PollTileContent),
             InstanceMethod("processGeometryStream", &NativeDgnDb::ProcessGeometryStream),
