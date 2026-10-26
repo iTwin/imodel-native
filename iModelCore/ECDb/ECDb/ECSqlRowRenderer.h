@@ -61,7 +61,7 @@ struct ECSqlLongRenderer final {
             return sink.Double(std::trunc(value.GetDouble()));
         auto id = value.GetId<ECN::ECClassId>();
         if (!id.IsValid())
-            return sink.Null();
+            return value.IsNull() ? sink.Null() : sink.Double(0);
         return RenderId(sink, id, mode == Mode::ClassName, ecdb, tableSpace, useColon, cached);
     }
 
