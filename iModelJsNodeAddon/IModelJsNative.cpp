@@ -1927,16 +1927,20 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
 
         uint32_t fIndex = 0;
         auto failuresArr = Napi::Array::New(Env(), result.failures.size());
+        auto failedIdsArr = Napi::Array::New(Env(), result.failures.size()); // deprecated, kept for compatibility with older itwinjs-core
         for (const auto& f : result.failures) {
-            const auto idStr = f.elementId.ToHexStr();
+            const auto idStr = Napi::String::New(Env(), f.elementId.ToHexStr());
             BeJsNapiObject entry(Env());
-            entry["elementId"] = idStr;
+            static_cast<Napi::Object>(entry).Set("elementId", idStr);
             entry["reason"] = static_cast<int>(f.reason);
             if (!f.detail.empty())
                 entry["detail"] = f.detail;
-            failuresArr.Set(fIndex++, static_cast<Napi::Object>(entry));
+            failuresArr.Set(fIndex, static_cast<Napi::Object>(entry));
+            failedIdsArr.Set(fIndex, idStr);
+            ++fIndex;
         }
         ret.Set("failures", failuresArr);
+        ret.Set("failedIds", failedIdsArr);
 
         return ret;
     }
