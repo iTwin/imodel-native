@@ -236,24 +236,26 @@ describe("bulk element aspects", () => {
         { ...multiProps(e1, "badClass"), classFullName: "BulkAspectTest:DoesNotExist" },
         { ...multiProps(e1, "notAnAspect"), classFullName: "BisCore:Subject" },
         "not an object",
+        { ...multiProps(e1, "noClass"), classFullName: undefined },
         uniqueProps(e1, "ok2"),
       ];
 
       const result = db.insertElementAspects(props);
       expect(result.status).to.equal(BulkElementAspectsStatus.PartialSuccess);
-      expect(result.failures.map((f) => f.index)).to.deep.equal([1, 2, 3, 4, 5]);
+      expect(result.failures.map((f) => f.index)).to.deep.equal([1, 2, 3, 4, 5, 6]);
       expect(result.failures.map((f) => f.status)).to.deep.equal([
         IModelStatus.InvalidId,
         IModelStatus.MissingId,
+        IModelStatus.BadSchema,
         IModelStatus.WrongClass,
-        IModelStatus.WrongClass,
+        IModelStatus.BadArg,
         IModelStatus.BadArg,
       ]);
       result.failures.forEach((f) => expect(f.message).to.be.a("string").and.not.empty);
 
       expect(Id64.isValidId64(result.ids[0])).to.be.true;
-      expect(Id64.isValidId64(result.ids[6])).to.be.true;
-      [1, 2, 3, 4, 5].forEach((i) => expect(result.ids[i]).to.equal("0"));
+      expect(Id64.isValidId64(result.ids[7])).to.be.true;
+      [1, 2, 3, 4, 5, 6].forEach((i) => expect(result.ids[i]).to.equal("0"));
       expect(queryAspects().filter((r) => r.element === e1).map((r) => r.strProp).sort()).to.deep.equal(["ok1", "ok2"]);
     });
 

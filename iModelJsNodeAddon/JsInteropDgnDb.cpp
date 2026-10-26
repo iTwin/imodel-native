@@ -1115,9 +1115,16 @@ static bool resolveBulkAspectPropsRow(BulkAspectPropsRow& row, DgnDbR db, Napi::
     }
     row.m_owner = owner->second;
 
-    row.m_classId = ECJsonUtilities::GetClassIdFromClassNameJson(props[DgnElement::json_classFullName()], db.GetClassLocater());
+    auto classFullName = props[DgnElement::json_classFullName()];
+    if (!classFullName.isString() || classFullName.asString().empty()) {
+        failures.Fail(index, DgnDbStatus::BadArg, "aspect props must have a classFullName");
+        return false;
+    }
+
+    // BadSchema (rather than WrongClass) lets callers tell a class missing from the iModel apart from a class that is not an aspect.
+    row.m_classId = ECJsonUtilities::GetClassIdFromClassNameJson(classFullName, db.GetClassLocater());
     if (!row.m_classId.IsValid()) {
-        failures.Fail(index, DgnDbStatus::WrongClass, "invalid aspect classFullName");
+        failures.Fail(index, DgnDbStatus::BadSchema, "aspect class not found");
         return false;
     }
 
@@ -1179,6 +1186,10 @@ static bvector<std::pair<DgnElementId, bvector<size_t>>> groupBulkAspectRowsByOw
 * Insert many ElementAspects. Rows are validated first; then the JS pre-insert handlers are called for all valid rows
 * (an exception aborts the whole call before anything is written); then the aspects are written grouped by owning
 * element, with a single update of each owning element; finally the JS post-insert handlers are called for the rows that succeeded.
+* The aspects of an owner are written by DgnElement::_OnUpdated, after the owner's row has been written, so an owner update that
+* fails leaves none of its aspects written. Exceptions thrown by JS handlers during or after the writes (the element's onUpdated,
+* or the post-insert handlers) propagate to the caller and leave the rows that were already written in the Txn, the same as the
+* single-aspect operations; the caller can abandon the changes.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 Napi::Object JsInterop::InsertElementAspects(DgnDbR db, Napi::Array propsArray) {
