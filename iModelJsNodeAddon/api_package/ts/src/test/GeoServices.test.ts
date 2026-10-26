@@ -359,19 +359,40 @@ describe("GeoServices", () => {
     }
   });
 
-  it("uses the fallback id when the named vertical coordinate reference system is unknown", () => {
+  it("rejects an unknown or invalid named vertical coordinate reference system instead of using the fallback id", () => {
+    for (const verticalCRS of [
+      { crsName: "Unknown test height", id: "GEOID" },
+      { crsName: "", id: "GEOID" },
+      { epsg: 999999, id: "GEOID" },
+      { epsg: 0, id: "GEOID" },
+      { epsg: -1, id: "GEOID" },
+      { epsg: "5773", id: "GEOID" },
+      { crsName: "Unknown test height", epsg: 999999, id: "GEOID" },
+    ]) {
+      const response = iModelJsNative.GeoServices.getGeographicCRSInterpretation({
+        format: "JSON",
+        geographicCRSDef: JSON.stringify({ horizontalCRS: { id: "LL84" }, verticalCRS }),
+      });
+
+      expect(response.status, JSON.stringify(verticalCRS)).to.not.equal(0);
+      expect(response.geographicCRS, JSON.stringify(verticalCRS)).to.be.undefined;
+    }
+  });
+
+  it("omits epsg from a vertical coordinate reference system that has no EPSG code", () => {
     const response = iModelJsNative.GeoServices.getGeographicCRSInterpretation({
       format: "JSON",
       geographicCRSDef: JSON.stringify({
         horizontalCRS: { id: "LL84" },
-        verticalCRS: { crsName: "Unknown test height", id: "GEOID" },
+        verticalCRS: { crsName: "NAVD88 height", id: "NAVD88" },
       }),
     });
 
     expect(response.status).to.equal(0);
-    const verticalCRS = (response.geographicCRS as { verticalCRS?: { id?: string } } | undefined)?.verticalCRS;
+    const verticalCRS = (response.geographicCRS as { verticalCRS?: { crsName?: string, epsg?: number } } | undefined)?.verticalCRS;
     assert.isDefined(verticalCRS);
-    expect(verticalCRS.id).to.equal("GEOID");
+    expect(verticalCRS.crsName).to.equal("NAVD88 height");
+    expect(verticalCRS).to.not.have.property("epsg");
   });
 
   it("filters vertical coordinate reference systems by point", () => {

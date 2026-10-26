@@ -10344,7 +10344,8 @@ StatusInt VerticalDatumInfo::ToJson(BeJsValue jsonValue) const
     jsonValue["crsName"] = Utf8String(m_crsName);
     jsonValue["datumName"] = Utf8String(m_datumName);
     jsonValue["type"] = Utf8String(m_type);
-    jsonValue["epsg"] = m_epsgCode;
+    if (EPSGCodeIsValid())
+        jsonValue["epsg"] = m_epsgCode;
     jsonValue["description"] = Utf8String(m_description);
     jsonValue["areaOfUse"] = Utf8String(m_areaOfUse);
     jsonValue["remarks"] = Utf8String(m_remarks);
@@ -14653,43 +14654,68 @@ StatusInt BaseGCS::FromVerticalJson(BeJsConst jsonValue, Utf8StringR errorMessag
     StatusInt status = ERROR;
     VerticalDatumInfoPtr verticalDatumInfo = VerticalDatumInfo::CreateFromJson(jsonValue, false, status); // don't add to dictionary
 
-    if ((SUCCESS != status || !verticalDatumInfo.IsValid()) && !jsonValue["crsName"].isNull())
+    BeJsConst crsNameJson = jsonValue["crsName"];
+    BeJsConst epsgJson = jsonValue["epsg"];
+    bool hasCrsName = !crsNameJson.isNull();
+    bool hasEpsg = !epsgJson.isNull();
+
+    if ((SUCCESS != status || !verticalDatumInfo.IsValid()) && hasCrsName)
     {
-        VerticalDatumDictionaryPtr verticalDatumDictionary = VerticalDatumDictionary::Get();
-        if (verticalDatumDictionary.IsValid())
+        if (!crsNameJson.isString())
+            status = GEOCOORDERR_BadArg;
+        else
         {
-            Utf8String verticalDatumName = jsonValue["crsName"].asString();
-            verticalDatumInfo = verticalDatumDictionary->GetVerticalDatumInfoFromName(verticalDatumName, status);
+            VerticalDatumDictionaryPtr verticalDatumDictionary = VerticalDatumDictionary::Get();
+            if (verticalDatumDictionary.IsValid())
+                verticalDatumInfo = verticalDatumDictionary->GetVerticalDatumInfoFromName(crsNameJson.asString(), status);
+            else
+                status = GEOCOORDERR_NoDictionary;
         }
     }
 
-    if ((SUCCESS != status || !verticalDatumInfo.IsValid()) && !jsonValue["epsg"].isNull())
+    if ((SUCCESS != status || !verticalDatumInfo.IsValid()) && hasEpsg)
     {
-        VerticalDatumDictionaryPtr verticalDatumDictionary = VerticalDatumDictionary::Get();
-        if (verticalDatumDictionary.IsValid())
+        if (!epsgJson.isNumeric() || epsgJson.asInt() <= 0)
+            status = GEOCOORDERR_BadArg;
+        else
         {
-            int epsgCode = jsonValue["epsg"].asInt();
-            if (epsgCode > 0)
-                verticalDatumInfo = verticalDatumDictionary->GetVerticalDatumInfoFromEPSGCode(epsgCode, status);
+            VerticalDatumDictionaryPtr verticalDatumDictionary = VerticalDatumDictionary::Get();
+            if (verticalDatumDictionary.IsValid())
+                verticalDatumInfo = verticalDatumDictionary->GetVerticalDatumInfoFromEPSGCode(epsgJson.asInt(), status);
+            else
+                status = GEOCOORDERR_NoDictionary;
         }
     }
 
-    if (SUCCESS == status && verticalDatumInfo.IsValid())
+    if (SUCCESS == status)
     {
-        VerticalDatumPtr verticalDatum = VerticalDatum::Create(status, verticalDatumInfo);
-        if (SUCCESS == status)
+        if (verticalDatumInfo.IsValid())
         {
-            status = SetVerticalDatum(verticalDatum);
+            VerticalDatumPtr verticalDatum = VerticalDatum::Create(status, verticalDatumInfo);
+            if (SUCCESS == status)
+                status = SetVerticalDatum(verticalDatum);
+
             if (SUCCESS == status)
             {
                 AlignVerticalDatumLegacyCodeWithCurrentVerticalDatum();
                 SetModified(true);
             }
+
+            return status;
         }
     }
+    if (hasCrsName || hasEpsg)
+    {
+        if (SUCCESS == status)
+            status = GEOCOORDERR_BadArg;
 
-    if (SUCCESS == status)
+        // A requested named identity must not silently degrade to the legacy id.
+        if (hasCrsName)
+            errorMessage.Sprintf("Unable to resolve vertical CRS crsName %s (status %d)", crsNameJson.Stringify().c_str(), status);
+        else
+            errorMessage.Sprintf("Unable to resolve vertical CRS EPSG code %s (status %d)", epsgJson.Stringify().c_str(), status);
         return status;
+    }
 
     VertDatumCode vertCode = vdcFromDatum;
 
