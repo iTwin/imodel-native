@@ -176,6 +176,40 @@ TEST_F(ECSqlStatementTestFixture, CompoundSelectWithMismatchingColumnCount) {
 }
 
 /*---------------------------------------------------------------------------------**//**
+* A SELECT inside a scalar subquery collects the range classes of its enclosing SELECTs.
+* Enclosing SELECTs without a FROM clause must be skipped.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECSqlStatementTestFixture, ScalarSubqueryNestedInSelectWithoutFrom) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("scalar_subquery_nested_in_select_without_from.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="Foo" modifier="Sealed">
+                <ECProperty propertyName="N" typeName="int"/>
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    for (int n : {1, 1, 2}) {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("INSERT INTO ts.Foo(N) VALUES(%d)", n).c_str()));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    Utf8CP ecsqls[] = {
+        "SELECT (SELECT (SELECT MAX(N) FROM ts.Foo))",
+        "SELECT (SELECT COUNT(*) FROM (SELECT N FROM ts.Foo GROUP BY N))",
+        "SELECT * FROM (SELECT (SELECT (SELECT MAX(N) FROM ts.Foo)))",
+        "SELECT (SELECT (SELECT (SELECT MAX(N) FROM ts.Foo))) FROM ts.Foo",
+        };
+
+    for (Utf8CP ecsql : ecsqls) {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql)) << ecsql;
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << ecsql;
+        ASSERT_EQ(2, stmt.GetValueInt(0)) << ecsql;
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
 * Regression test: the scanner reads the statement in blocks, so the read position usually
 * already sits at the end of the statement while the lexer is still somewhere in the middle.
 * Lexer errors must still report the offending text, which is taken from the scan position.
