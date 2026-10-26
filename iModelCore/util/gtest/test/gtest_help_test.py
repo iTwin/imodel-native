@@ -43,16 +43,28 @@ import sys
 from googletest.test import gtest_test_utils
 
 
+FREEBSD = ('FreeBSD', 'GNU/kFreeBSD')
+NETBSD = ('NetBSD',)
+OPENBSD = ('OpenBSD',)
+
+
+def is_bsd_based_os() -> bool:
+  """Determine whether or not the OS is BSD-based."""
+  if os.name != 'posix':
+    return False
+
+  return os.uname()[0] in (FREEBSD + NETBSD + OPENBSD)
+
+
 IS_DARWIN = os.name == 'posix' and os.uname()[0] == 'Darwin'
 IS_LINUX = os.name == 'posix' and os.uname()[0] == 'Linux'
 IS_GNUHURD = os.name == 'posix' and os.uname()[0] == 'GNU'
-IS_GNUKFREEBSD = os.name == 'posix' and os.uname()[0] == 'GNU/kFreeBSD'
-IS_OPENBSD = os.name == 'posix' and os.uname()[0] == 'OpenBSD'
 IS_WINDOWS = os.name == 'nt'
 
 PROGRAM_PATH = gtest_test_utils.GetTestExecutablePath('gtest_help_test_')
 FLAG_PREFIX = '--gtest_'
 DEATH_TEST_STYLE_FLAG = FLAG_PREFIX + 'death_test_style'
+DEATH_TEST_USE_FORK_FLAG = FLAG_PREFIX + 'death_test_use_fork'
 STREAM_RESULT_TO_FLAG = FLAG_PREFIX + 'stream_result_to'
 LIST_TESTS_FLAG = FLAG_PREFIX + 'list_tests'
 INTERNAL_FLAG_FOR_TESTING = FLAG_PREFIX + 'internal_flag_for_testing'
@@ -79,11 +91,17 @@ HELP_REGEX = re.compile(
     + FLAG_PREFIX
     + r'random_seed=.*'
     + FLAG_PREFIX
+    + r'fail_fast.*'
+    + FLAG_PREFIX
+    + r'fail_if_no_test_linked.*'
+    + FLAG_PREFIX
     + r'color=.*'
     + FLAG_PREFIX
     + r'brief.*'
     + FLAG_PREFIX
     + r'print_time.*'
+    + FLAG_PREFIX
+    + r'print_utf8.*'
     + FLAG_PREFIX
     + r'output=.*'
     + FLAG_PREFIX
@@ -91,12 +109,14 @@ HELP_REGEX = re.compile(
     + FLAG_PREFIX
     + r'throw_on_failure.*'
     + FLAG_PREFIX
-    + r'catch_exceptions=0.*',
+    + r'catch_exceptions=0.*'
+    + FLAG_PREFIX
+    + r'stack_trace_depth=.*',
     re.DOTALL,
 )
 
 
-def RunWithFlag(flag):
+def run_with_flag(flag):
   """Runs gtest_help_test_ with the given flag.
 
   Returns:
@@ -116,17 +136,14 @@ def RunWithFlag(flag):
 class GTestHelpTest(gtest_test_utils.TestCase):
   """Tests the --help flag and its equivalent forms."""
 
-  def TestHelpFlag(self, flag):
+  def test_prints_help_with_full_flag(self):
     """Verifies correct behavior when help flag is specified.
 
     The right message must be printed and the tests must
     skipped when the given flag is specified.
-
-    Args:
-      flag:  A flag to pass to the binary or None.
     """
 
-    exit_code, output = RunWithFlag(flag)
+    exit_code, output = run_with_flag('--help')
     if HAS_ABSL_FLAGS:
       # The Abseil flags library prints the ProgramUsageMessage() with
       # --help and returns 1.
@@ -136,63 +153,39 @@ class GTestHelpTest(gtest_test_utils.TestCase):
 
     self.assertTrue(HELP_REGEX.search(output), output)
 
-    if IS_DARWIN or IS_LINUX or IS_GNUHURD or IS_GNUKFREEBSD or IS_OPENBSD:
+    if IS_DARWIN or IS_LINUX or IS_GNUHURD or is_bsd_based_os():
       self.assertIn(STREAM_RESULT_TO_FLAG, output)
     else:
       self.assertNotIn(STREAM_RESULT_TO_FLAG, output)
 
     if SUPPORTS_DEATH_TESTS and not IS_WINDOWS:
       self.assertIn(DEATH_TEST_STYLE_FLAG, output)
+      self.assertIn(DEATH_TEST_USE_FORK_FLAG, output)
     else:
       self.assertNotIn(DEATH_TEST_STYLE_FLAG, output)
+      self.assertNotIn(DEATH_TEST_USE_FORK_FLAG, output)
 
-  def TestUnknownFlagWithAbseil(self, flag):
-    """Verifies correct behavior when an unknown flag is specified.
-
-    The right message must be printed and the tests must
-    skipped when the given flag is specified.
-
-    Args:
-      flag:  A flag to pass to the binary or None.
-    """
-    exit_code, output = RunWithFlag(flag)
-    self.assertEqual(1, exit_code)
-    self.assertIn('ERROR: Unknown command line flag', output)
-
-  def TestNonHelpFlag(self, flag):
+  def test_runs_tests_without_help_flag(self):
     """Verifies correct behavior when no help flag is specified.
 
     Verifies that when no help flag is specified, the tests are run
     and the help message is not printed.
-
-    Args:
-      flag:  A flag to pass to the binary or None.
     """
 
-    exit_code, output = RunWithFlag(flag)
+    exit_code, output = run_with_flag(None)
     self.assertNotEqual(exit_code, 0)
     self.assertFalse(HELP_REGEX.search(output), output)
 
-  def testPrintsHelpWithFullFlag(self):
-    self.TestHelpFlag('--help')
-
-  def testRunsTestsWithoutHelpFlag(self):
-    """Verifies correct behavior when no help flag is specified.
-
-    Verifies that when no help flag is specified, the tests are run
-    and the help message is not printed.
-    """
-
-    self.TestNonHelpFlag(None)
-
-  def testRunsTestsWithGtestInternalFlag(self):
+  def test_runs_tests_with_gtest_internal_flag(self):
     """Verifies correct behavior when internal testing flag is specified.
 
     Verifies that the tests are run and no help message is printed when
     a flag starting with Google Test prefix and 'internal_' is supplied.
     """
 
-    self.TestNonHelpFlag(INTERNAL_FLAG_FOR_TESTING)
+    exit_code, output = run_with_flag(INTERNAL_FLAG_FOR_TESTING)
+    self.assertNotEqual(exit_code, 0)
+    self.assertFalse(HELP_REGEX.search(output), output)
 
 
 if __name__ == '__main__':
