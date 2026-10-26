@@ -116,8 +116,9 @@ export interface BulkDeleteElementsResult {
   sqlDeleteStatus: DbResult;
   /**
    * Elements that could not be deleted, with the reason (`PartialSuccess` / `ConstraintViolation`).
-   * An element may appear more than once if several foreign keys reference it. Capped at 100 entries in total;
-   * direct violators (`ReferencedByForeignKey` / `DefinitionInUse`) are collected first, then `BlockedByRelative`.
+   * Each element appears at most once per reason; an element referenced through several foreign keys is reported once
+   * with the first referencing `table.column` found. Direct violators (`ReferencedByForeignKey` / `DefinitionInUse`)
+   * are listed first, then `BlockedByRelative`. Not capped.
    * Empty on `Success` and `DeletionFailed`.
    */
   failures: BulkDeleteFailure[];

@@ -17,14 +17,23 @@ class BulkElementDeletion
     DgnElements::ElementFkConstraintMap const& m_fkConstraints;
     DgnElementIdSet m_originalElementIds;
     std::vector<BulkDeleteFailure> m_failures;
-
-    static constexpr int64_t MAX_FAILURES = 100;
-
-    int64_t CheckMaxCap() const { return MAX_FAILURES - static_cast<int64_t>(m_failures.size()); }
+    std::unordered_map<uint64_t, size_t> m_failureIndex; // elementId -> index into m_failures
 
     void AddFailure(DgnElementId id, BulkDeleteFailureReason reason, Utf8String detail = "")
         {
-        m_failures.push_back({ id, reason, std::move(detail) });
+        const auto [it, inserted] = m_failureIndex.try_emplace(id.GetValue(), m_failures.size());
+        if (inserted)
+            {
+            m_failures.push_back({ id, reason, std::move(detail) });
+            return;
+            }
+
+        auto& existing = m_failures[it->second];
+        if (static_cast<int>(reason) < static_cast<int>(existing.reason))
+            {
+            existing.reason = reason;
+            existing.detail = std::move(detail);
+            }
         }
 
     bool m_geometricElementsExist = false;
@@ -190,21 +199,17 @@ DbResult BulkElementDeletion::PruneViolators()
     // Requested ids being pruned that are not themselves direct violators (BlockedById == ElementId) were taken down by a
     // relative; report them with the id of the direct violator so the caller can pair them with its ReferencedByForeignKey /
     // DefinitionInUse entry. Error path only.
-    if (const auto remaining = CheckMaxCap(); remaining > 0)
+    auto collectStmt = m_dgndb.GetCachedStatement(
+        "SELECT ElementId, BlockedById FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " "
+        "WHERE IsViolator = 1 AND BlockedById IS NOT ElementId AND InVirtualSet(?, ElementId)");
+    if (collectStmt.IsNull())
         {
-        auto collectStmt = m_dgndb.GetCachedStatement(
-            "SELECT ElementId, BlockedById FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " "
-            "WHERE IsViolator = 1 AND BlockedById IS NOT ElementId AND InVirtualSet(?, ElementId) LIMIT ?");
-        if (collectStmt.IsNull())
-            {
-            LOG.error("BulkElementDeletion: Failed to collect constraint violators");
-            return BE_SQLITE_ERROR;
-            }
-        collectStmt->BindVirtualSet(1, m_originalElementIds);
-        collectStmt->BindInt64(2, remaining);
-        while (BE_SQLITE_ROW == collectStmt->Step())
-            AddFailure(collectStmt->GetValueId<DgnElementId>(0), BulkDeleteFailureReason::BlockedByRelative, collectStmt->GetValueId<DgnElementId>(1).ToHexStr());
+        LOG.error("BulkElementDeletion: Failed to collect constraint violators");
+        return BE_SQLITE_ERROR;
         }
+    collectStmt->BindVirtualSet(1, m_originalElementIds);
+    while (BE_SQLITE_ROW == collectStmt->Step())
+        AddFailure(collectStmt->GetValueId<DgnElementId>(0), BulkDeleteFailureReason::BlockedByRelative, collectStmt->GetValueId<DgnElementId>(1).ToHexStr());
 
     if (IsFailFastModeEnabled())
         {
@@ -236,24 +241,20 @@ void BulkElementDeletion::CollectFkViolations()
     {
     for (const auto& fk : GetFks(FkAction::NoAction))
         {
-        const auto remaining = CheckMaxCap();
-        if (remaining <= 0)
-            return;
         if (IsStructurallyHandled(fk))
             continue;
 
         const Utf8String sql = fk.m_elementIdColumn.empty()
-            ? SqlPrintfString("SELECT DISTINCT t.ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " t JOIN [%s] r ON r.[%s] = t.ElementId LIMIT ?",
+            ? SqlPrintfString("SELECT DISTINCT t.ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " t JOIN [%s] r ON r.[%s] = t.ElementId",
                                 fk.m_tableName.c_str(), fk.m_fromColumn.c_str()).GetUtf8CP()
             : SqlPrintfString("SELECT DISTINCT t.ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " t JOIN [%s] r ON r.[%s] = t.ElementId "
-                                "LEFT JOIN " TEMP_TABLE(TEMP_ELEMENT_DELETION) " td ON td.ElementId = r.[%s] WHERE td.ElementId IS NULL LIMIT ?",
+                                "LEFT JOIN " TEMP_TABLE(TEMP_ELEMENT_DELETION) " td ON td.ElementId = r.[%s] WHERE td.ElementId IS NULL",
                                 fk.m_tableName.c_str(), fk.m_fromColumn.c_str(), fk.m_elementIdColumn.c_str()).GetUtf8CP();
 
         auto stmt = m_dgndb.GetCachedStatement(sql.c_str());
         if (stmt.IsNull())
             continue;
 
-        stmt->BindInt64(1, remaining);
         const Utf8String tableAndColumn = fk.m_tableName + "." + fk.m_fromColumn;
         while (BE_SQLITE_ROW == stmt->Step())
             AddFailure(stmt->GetValueId<DgnElementId>(0), BulkDeleteFailureReason::ReferencedByForeignKey, tableAndColumn);
@@ -393,7 +394,17 @@ DbResult BulkElementDeletion::FindInUseDefinitionElements()
 
     // Exclude intra-set usages from the usage check: elements referencing
     // each other inside the delete set are fine since all will be deleted.
-    auto usageInfo = DefinitionElementUsageInfo::Create(m_dgndb, definitionIds, std::make_shared<BeSQLite::IdSet<BeInt64Id>>(BeIdSet(definitionIds.GetBeIdSet())));
+    auto excludeIds = std::make_shared<BeSQLite::IdSet<BeInt64Id>>();
+    auto allIdsStmt = m_dgndb.GetCachedStatement("SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION));
+    if (!allIdsStmt.IsValid())
+        {
+        LOG.error("BulkElementDeletion: Failed to query delete set for definition usage check");
+        return BE_SQLITE_ERROR;
+        }
+    while (BE_SQLITE_ROW == allIdsStmt->Step())
+        excludeIds->insert(allIdsStmt->GetValueId<BeInt64Id>(0));
+
+    auto usageInfo = DefinitionElementUsageInfo::Create(m_dgndb, definitionIds, excludeIds);
     if (!usageInfo.IsValid())
         return BE_SQLITE_OK; // no usage info means nothing blocks deletion
 
@@ -408,11 +419,7 @@ DbResult BulkElementDeletion::FindInUseDefinitionElements()
         return BE_SQLITE_OK;
 
     for (const auto& id : inUse)
-        {
-        if (CheckMaxCap() <= 0)
-            break;
         AddFailure(id, BulkDeleteFailureReason::DefinitionInUse);
-        }
 
     if (IsFailFastModeEnabled())
         LOG.errorv("BulkElementDeletion: %zu DefinitionElement(s) in the delete set are still in use by elements outside the set", inUse.size());
