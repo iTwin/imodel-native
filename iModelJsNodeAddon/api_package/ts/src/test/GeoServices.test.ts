@@ -6,9 +6,9 @@ import { assert, expect } from "chai";
 import { spawnSync } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
-import { OpenMode } from "@itwin/core-bentley";
+import { IModelStatus, OpenMode } from "@itwin/core-bentley";
 import { GeoCoordStatus } from "@itwin/core-common";
-import { Point3d } from "@itwin/core-geometry";
+import { Point3d, Range3d } from "@itwin/core-geometry";
 import { getLocalBuildOfAddonPath, getOutputDir, iModelJsNative } from "./utils";
 
 const verticalDatumDictionary = JSON.stringify({
@@ -353,6 +353,101 @@ describe("GeoServices", () => {
       const legacyVerticalCRS = (iModelDb.getIModelProps().geographicCoordinateSystem?.verticalCRS as { crsName?: string, id?: string } | undefined);
       expect(legacyVerticalCRS?.crsName).to.equal("WGS84");
       expect(legacyVerticalCRS?.id).to.equal("ELLIPSOID");
+    } finally {
+      iModelDb.closeFile();
+      fs.rmSync(iModelPath, { force: true });
+    }
+  });
+
+  it("rejects invalid GCS updates without changing geolocation or persisted properties", () => {
+    const iModelPath = path.join(getOutputDir(), "InvalidGcsUpdate.bim");
+    fs.rmSync(iModelPath, { force: true });
+    const iModelDb = new iModelJsNative.DgnDb();
+    try {
+      iModelDb.createIModel(iModelPath, { rootSubject: { name: "Invalid GCS update" } });
+      const initialGcs = {
+        horizontalCRS: { id: "LL84" },
+        verticalCRS: { id: "GEOID" as const, crsName: "EGM96 height" },
+      };
+      iModelDb.updateIModelProps({
+        rootSubject: { name: "ignored" },
+        geographicCoordinateSystem: initialGcs,
+      });
+      iModelDb.saveChanges();
+      const originalProps = iModelDb.getIModelProps();
+      const property = (name: string) => iModelDb.queryFileProperty({ namespace: "dgn_Db", name }, true);
+      const originalUnits = property("Units");
+      const originalGcs = iModelDb.queryFileProperty({ namespace: "dgn_Db", name: "DgnGCS" }, false);
+      const originalVerticalCrs = property("DgnGCSVerticalCRS");
+      assert.isString(originalUnits);
+      assert.instanceOf(originalGcs, Uint8Array);
+      assert.isString(originalVerticalCrs);
+
+      for (const geographicCoordinateSystem of [
+        {},
+        { horizontalCRS: { id: "Unknown horizontal CRS" } },
+        { horizontalCRS: { id: "LL84" }, verticalCRS: { id: "GEOID" as const, crsName: "Unknown test height" } },
+        { horizontalCRS: { id: "LL84" }, verticalCRS: { id: "GEOID" as const, epsg: 999999 } },
+      ]) {
+        expect(() => iModelDb.updateIModelProps({
+          rootSubject: { name: "ignored" },
+          geographicCoordinateSystem,
+          projectExtents: { low: { x: -100, y: -200, z: -300 }, high: { x: 400, y: 500, z: 600 } },
+          globalOrigin: { x: 100, y: 200, z: 300 },
+          ecefLocation: { origin: { x: 400, y: 500, z: 600 }, orientation: { yaw: 0, pitch: 0, roll: 0 } },
+        })).to.throw(/Invalid geographic coordinate system: .+/).with.property("errorNumber", IModelStatus.BadArg);
+        expect(iModelDb.getIModelProps()).to.deep.equal(originalProps);
+        expect(property("Units")).to.equal(originalUnits);
+        expect(iModelDb.queryFileProperty({ namespace: "dgn_Db", name: "DgnGCS" }, false)).to.deep.equal(originalGcs);
+        expect(property("DgnGCSVerticalCRS")).to.equal(originalVerticalCrs);
+        iModelDb.saveChanges();
+        iModelDb.closeFile();
+        iModelDb.openIModel(iModelPath, OpenMode.ReadWrite);
+        expect(iModelDb.getIModelProps()).to.deep.equal(originalProps);
+        expect(property("Units")).to.equal(originalUnits);
+        expect(iModelDb.queryFileProperty({ namespace: "dgn_Db", name: "DgnGCS" }, false)).to.deep.equal(originalGcs);
+        expect(property("DgnGCSVerticalCRS")).to.equal(originalVerticalCrs);
+      }
+    } finally {
+      iModelDb.closeFile();
+      fs.rmSync(iModelPath, { force: true });
+    }
+  });
+
+  it("persists intentional GCS replacements with other geolocation updates", () => {
+    const iModelPath = path.join(getOutputDir(), "ValidGcsUpdate.bim");
+    fs.rmSync(iModelPath, { force: true });
+    const iModelDb = new iModelJsNative.DgnDb();
+    try {
+      iModelDb.createIModel(iModelPath, { rootSubject: { name: "Valid GCS update" } });
+      for (const verticalCRS of [
+        { id: "GEOID" as const, crsName: "EGM96 height" },
+        { id: "ELLIPSOID" as const },
+      ]) {
+        const projectExtents = { low: { x: -100, y: -200, z: -300 }, high: { x: 400, y: 500, z: 600 } };
+        const globalOrigin = { x: 100, y: 200, z: 300 };
+        const ecefLocation = { origin: { x: 400, y: 500, z: 600 }, orientation: { yaw: 0, pitch: 0, roll: 0 } };
+        iModelDb.updateIModelProps({
+          rootSubject: { name: "ignored" },
+          geographicCoordinateSystem: { horizontalCRS: { id: "LL84" }, verticalCRS },
+          projectExtents, globalOrigin, ecefLocation,
+        });
+        const storedUnits = iModelDb.queryFileProperty({ namespace: "dgn_Db", name: "Units" }, true);
+        if (typeof storedUnits !== "string")
+          assert.fail("Expected the geolocation Units file property to exist as a string");
+        const units = JSON.parse(storedUnits);
+        expect(Point3d.fromJSON(units.globalOrigin).isAlmostEqual(Point3d.fromJSON(globalOrigin))).to.be.true;
+        expect(Point3d.fromJSON(units.ecefLocation.origin).isAlmostEqual(Point3d.fromJSON(ecefLocation.origin))).to.be.true;
+        const updatedProps = iModelDb.getIModelProps();
+        expect(Range3d.fromJSON(updatedProps.projectExtents).isAlmostEqual(Range3d.fromJSON(projectExtents))).to.be.true;
+        expect(Point3d.fromJSON(updatedProps.globalOrigin).isAlmostEqual(Point3d.fromJSON(globalOrigin))).to.be.true;
+        assert.isDefined(updatedProps.ecefLocation);
+        expect(updatedProps.geographicCoordinateSystem?.verticalCRS?.id).to.equal(verticalCRS.id);
+        iModelDb.saveChanges();
+        iModelDb.closeFile();
+        iModelDb.openIModel(iModelPath, OpenMode.ReadWrite);
+        expect(iModelDb.getIModelProps()).to.deep.equal(updatedProps);
+      }
     } finally {
       iModelDb.closeFile();
       fs.rmSync(iModelPath, { force: true });

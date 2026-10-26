@@ -822,6 +822,7 @@ export declare namespace IModelJsNative {
     public changeElementModel(props: { id: Id64String, modelId: Id64String }): void;
     public updateElementAspect(aspectProps: ElementAspectProps): void;
     public updateElementGeometryCache(props: ElementGeometryCacheRequestProps): Promise<ElementGeometryCacheResponseProps>;
+    /** Throws for an invalid geographic coordinate system before changing any geolocation properties. */
     public updateIModelProps(props: IModelProps): void;
     public updateLinkTableRelationship(props: RelationshipProps): DbResult;
     public updateModel(modelProps: ModelProps): void;

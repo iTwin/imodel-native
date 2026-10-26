@@ -731,12 +731,18 @@ TEST_F(VerticalDatumUnitTests, FromVerticalJsonRejectsUnresolvableIdentifiersDes
         GeoCoordinates::BaseGCSPtr gcs = GeoCoordinates::BaseGCS::CreateGCS("LL84");
         ASSERT_TRUE(gcs.IsValid());
         GeoCoordinates::VertDatumCode const codeBefore = gcs->GetVerticalDatumCode();
+        bool const hadValidVerticalDatum = gcs->HasValidVerticalDatum();
+        BeJsDocument verticalBefore;
+        ASSERT_EQ(gcs->ToVerticalJson(verticalBefore), SUCCESS);
 
         Utf8String errorMessage;
         EXPECT_NE(gcs->FromVerticalJson(verticalJson, errorMessage), SUCCESS);
         EXPECT_FALSE(errorMessage.empty());
-        EXPECT_FALSE(gcs->HasValidVerticalDatum());
+        EXPECT_EQ(gcs->HasValidVerticalDatum(), hadValidVerticalDatum);
         EXPECT_EQ(gcs->GetVerticalDatumCode(), codeBefore);
+        BeJsDocument verticalAfter;
+        ASSERT_EQ(gcs->ToVerticalJson(verticalAfter), SUCCESS);
+        EXPECT_EQ(verticalAfter.Stringify(), verticalBefore.Stringify());
         }
 
     // A datum without an EPSG code must not serialize a placeholder that would then be rejected on read.
