@@ -12,9 +12,11 @@ via the `PATCHES` list in `openssl/portfile.cmake`:
 The version pinned is **3.5.9 LTS**. The vcpkg registry does not currently package this patch,
 so the OpenSSL, curl, and crashpad consumer configurations all reference this overlay. The port
 uses the registry's 3.6.5 packaging files with the source version and hash changed to 3.5.9, plus
-the two Bentley patches above and their two lines in `portfile.cmake`'s `PATCHES` list. To re-sync
+the two Bentley patches above and their two lines in `portfile.cmake`'s `PATCHES` list. The Unix
+build target is `build_sw`; the 3.6.5 port's `build_inst_sw` target does not exist in 3.5.9. To re-sync
 after a future registry bump, overwrite these files from `microsoft/vcpkg`'s `ports/openssl`,
-restore the 3.5 LTS source version and hash, and re-append the two Bentley patch lines.
+restore the 3.5 LTS source version and hash, retain the `build_sw` Unix build target, and
+re-append the two Bentley patch lines.
 
 All patches in the `PATCHES` list (the ten carried over from the registry's 3.6.5 port plus the
 two Bentley patches above) have been verified to apply cleanly to fresh 3.5.9 source with
