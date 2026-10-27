@@ -2301,14 +2301,19 @@ static void bdPollCb(
   }
 
   if( rc==SQLITE_OK ){
+    /* bcvManifestUpdate() takes ownership of pMan, and may free it even
+    ** if successful (if it has to be expanded to accommodate local dbs).
+    ** If successful, the new manifest object is installed as pCont->pMan. */
     rc = bcvManifestUpdate(&p->c, pCont, pMan, &zErr);
+    pMan = (rc==SQLITE_OK ? pCont->pMan : 0);
   }
   pCont->eState = CONTAINER_STATE_NONE;
 
   /* Search for clients that currently have an open transaction on this
   ** container. If possible (if the db they have open has not changed),
-  ** upgrade such clients to the new manifest object. */
-  for(pIter=p->pClientList; pIter; pIter=pIter->pNext){
+  ** upgrade such clients to the new manifest object. Skip this if the
+  ** poll failed, as in that case there is no new manifest object.  */
+  for(pIter=p->pClientList; rc==SQLITE_OK && pIter; pIter=pIter->pNext){
     if( pIter->pMan && pIter->pCont==pCont ){
       ManifestDb *pOldDb = pIter->pManDb;
       int iOff = pOldDb - pIter->pMan->aDb;
