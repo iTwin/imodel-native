@@ -17,7 +17,6 @@ Libraries built in `iModelCore/libsrc/`.
 | `google_re2` | Google RE2 | SONAME 9 | No |
 | `icu4c` | ICU4C | 78.1 | No |
 | `ios-cmake` | ios-cmake | unknown | No |
-| `jsoncpp` | JsonCpp | unknown | No |
 | `libjpegturbo` | libjpeg-turbo | 3.1.2 | No |
 | `libxml2` | libxml2 | 2.13.5 | No |
 | `openssl` | OpenSSL | 3.6.5 | Yes |
