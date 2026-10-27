@@ -10159,7 +10159,25 @@ bool VerticalDatumInfo::operator== (const VerticalDatumInfo& other) const
     return true;
 }
 
-VerticalDatumInfoPtr VerticalDatumInfo::CreateFromJson(BeJsConst jsonVerticalCRS, bool addToDictionary, StatusInt& status)
+VerticalDatumInfoPtr VerticalDatumInfo::CreateAndRegisterFromJson(BeJsConst jsonVerticalCRS, StatusInt& status)
+{
+    VerticalDatumInfoPtr vdatumInfo = CreateFromJson(jsonVerticalCRS, status);
+    if (vdatumInfo.IsValid())
+    {
+        vdatumInfo->RegisterTransforms();
+        status = VerticalDatumDictionary::Get()->AddVerticalDatumInfo(vdatumInfo);
+    }
+
+    return vdatumInfo;
+}
+
+void VerticalDatumInfo::RegisterTransforms()
+{
+    for (auto& transform : m_transforms)
+        VerticalDatumDictionary::Get()->AddVerticalDatumTransform(transform);
+}
+
+VerticalDatumInfoPtr VerticalDatumInfo::CreateFromJson(BeJsConst jsonVerticalCRS, StatusInt& status)
 {
     VerticalDatumInfoPtr vdatumInfo = nullptr;
     status = ERROR;
@@ -10271,11 +10289,6 @@ VerticalDatumInfoPtr VerticalDatumInfo::CreateFromJson(BeJsConst jsonVerticalCRS
                     return nullptr;
                 }                    
                 
-                VerticalDatumDictionary::Get()->AddVerticalDatumTransform(transform); // Note: even if we are not adding the item to the dictionary we need to save the transform
-
-                // keep a list of the transforms in the VerticalDatumInfo too so we can compare whether two VerticalDatums
-                // are equal which included if their transforms are equal, transforms are used from the VerticalDatumDictionary
-                // and not directly from here, ths is only for comparison
                 vdatumInfo->AddTransform(transform);
             }
             else
@@ -10319,14 +10332,7 @@ VerticalDatumInfoPtr VerticalDatumInfo::CreateFromJson(BeJsConst jsonVerticalCRS
         }
     }
 
-    if (!vdatumInfo.IsNull())
-    {
-        if (addToDictionary)
-            status = VerticalDatumDictionary::Get()->AddVerticalDatumInfo(vdatumInfo);
-        else
-            status = SUCCESS;
-    }
-
+    status = SUCCESS;
     return vdatumInfo;
 }
 
@@ -10346,6 +10352,8 @@ StatusInt VerticalDatumInfo::ToJson(BeJsValue jsonValue) const
     jsonValue["type"] = Utf8String(m_type);
     if (EPSGCodeIsValid())
         jsonValue["epsg"] = m_epsgCode;
+    else
+        jsonValue.removeMember("epsg");
     jsonValue["description"] = Utf8String(m_description);
     jsonValue["areaOfUse"] = Utf8String(m_areaOfUse);
     jsonValue["remarks"] = Utf8String(m_remarks);
@@ -10660,7 +10668,7 @@ StatusInt VerticalDatumDictionary::AddVerticalDatumsFromJsonString(const Utf8Str
         if (!verticalCRSArray[i].isMember("verticalCRS"))
             return GeoCoordParse_ParseError;
 
-        VerticalDatumInfoPtr vdatumInfo = VerticalDatumInfo::CreateFromJson(verticalCRSArray[i]["verticalCRS"], true, createStatus);
+        VerticalDatumInfoPtr vdatumInfo = VerticalDatumInfo::CreateAndRegisterFromJson(verticalCRSArray[i]["verticalCRS"], createStatus);
         if (!vdatumInfo.IsValid())
             return createStatus;
     }
@@ -13136,10 +13144,11 @@ StatusInt BaseGCS::FromJson(BeJsConst jsonValue, Utf8StringR errorMessage) {
     if (SUCCESS != (result = FromHorizontalJson(jsonValue["horizontalCRS"], errorMessage)))
         return result;
 
-    if (!jsonValue["verticalCRS"].isNull() && (SUCCESS != (result = FromVerticalJson(jsonValue["verticalCRS"], errorMessage))))
+    if (!jsonValue["additionalTransform"].isNull() && (SUCCESS != (result = FromLocalTransformerJson(jsonValue["additionalTransform"], errorMessage))))
         return result;
 
-    if (!jsonValue["additionalTransform"].isNull() && (SUCCESS != (result = FromLocalTransformerJson(jsonValue["additionalTransform"], errorMessage))))
+    // Applying a vertical datum publishes its transforms, so validate the other portions first.
+    if (!jsonValue["verticalCRS"].isNull() && (SUCCESS != (result = FromVerticalJson(jsonValue["verticalCRS"], errorMessage))))
         return result;
 
     return result;
@@ -14652,7 +14661,7 @@ StatusInt BaseGCS::FromVerticalJson(BeJsConst jsonValue, Utf8StringR errorMessag
 
     // Create vertical datum from full Json if available, if not try using just the legacy ID
     StatusInt status = ERROR;
-    VerticalDatumInfoPtr verticalDatumInfo = VerticalDatumInfo::CreateFromJson(jsonValue, false, status); // don't add to dictionary
+    VerticalDatumInfoPtr verticalDatumInfo = VerticalDatumInfo::CreateFromJson(jsonValue, status);
 
     BeJsConst crsNameJson = jsonValue["crsName"];
     BeJsConst epsgJson = jsonValue["epsg"];
@@ -14697,6 +14706,7 @@ StatusInt BaseGCS::FromVerticalJson(BeJsConst jsonValue, Utf8StringR errorMessag
 
             if (SUCCESS == status)
             {
+                verticalDatumInfo->RegisterTransforms();
                 AlignVerticalDatumLegacyCodeWithCurrentVerticalDatum();
                 SetModified(true);
             }
@@ -19547,7 +19557,7 @@ StatusInt BaseGCS::SetVerticalDatumFromJsonString(const Utf8String jsonString)
 StatusInt BaseGCS::SetVerticalDatumFromJson(BeJsConst verticalCRS)
 {
     StatusInt status = ERROR;
-    VerticalDatumInfoPtr verticalDatumInfo = VerticalDatumInfo::CreateFromJson(verticalCRS["verticalCRS"], false, status); // don't add to dictionary
+    VerticalDatumInfoPtr verticalDatumInfo = VerticalDatumInfo::CreateFromJson(verticalCRS["verticalCRS"], status);
 
     if (SUCCESS == status)
     {
@@ -19557,6 +19567,7 @@ StatusInt BaseGCS::SetVerticalDatumFromJson(BeJsConst verticalCRS)
             status = SetVerticalDatum(verticalDatum);
             if (SUCCESS == status)
             {
+                verticalDatumInfo->RegisterTransforms();
                 AlignVerticalDatumLegacyCodeWithCurrentVerticalDatum();
                 SetModified(true);
             }

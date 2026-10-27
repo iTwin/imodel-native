@@ -58,8 +58,15 @@ class VerticalDatumUnitTests : public ::testing::Test
                     json["transformPaths"][0]["path"].appendValue() = datumName;
                 }
 
+            if (!addToDictionary)
+                {
+                auto gcs = GeoCoordinates::BaseGCS::CreateGCS("LL84");
+                Utf8String errorMessage;
+                return gcs->FromVerticalJson(json, errorMessage);
+                }
+
             StatusInt status = ERROR;
-            auto datumInfo = GeoCoordinates::VerticalDatumInfo::CreateFromJson(json, addToDictionary, status);
+            auto datumInfo = GeoCoordinates::VerticalDatumInfo::CreateAndRegisterFromJson(json, status);
             EXPECT_TRUE(datumInfo.IsValid());
             return status;
             }
@@ -763,6 +770,7 @@ TEST_F(VerticalDatumUnitTests, FromVerticalJsonRejectsUnresolvableIdentifiersDes
     Utf8String errorMessage;
     ASSERT_EQ(gcs->FromVerticalJson(datumContent, errorMessage), SUCCESS);
     BeJsDocument serialized;
+    serialized["epsg"] = 5773;
     ASSERT_EQ(gcs->ToVerticalJson(serialized), SUCCESS);
     EXPECT_FALSE(serialized.isMember("epsg"));
 
@@ -809,7 +817,7 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoCreateFromJsonRejectsIncompleteD
 
     StatusInt status = SUCCESS;
     GeoCoordinates::VerticalDatumInfoPtr datumInfo =
-        GeoCoordinates::VerticalDatumInfo::CreateFromJson(jsonValue, false, status);
+        GeoCoordinates::VerticalDatumInfo::CreateFromJson(jsonValue, status);
 
     EXPECT_FALSE(datumInfo.IsValid());
     EXPECT_EQ(status, GeoCoordinates::GEOCOORDERR_UnknownDatumType);
@@ -822,7 +830,7 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoCreateFromJsonRejectsIncompleteD
 
     StatusInt status = SUCCESS;
     GeoCoordinates::VerticalDatumInfoPtr datumInfo =
-        GeoCoordinates::VerticalDatumInfo::CreateFromJson(jsonValue, false, status);
+        GeoCoordinates::VerticalDatumInfo::CreateFromJson(jsonValue, status);
 
     EXPECT_FALSE(datumInfo.IsValid());
     EXPECT_EQ(status, GeoCoordinates::GEOCOORDERR_NoCRSName);
@@ -835,7 +843,7 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoCreateFromJsonRejectsIncompleteD
 
     StatusInt status = SUCCESS;
     GeoCoordinates::VerticalDatumInfoPtr datumInfo =
-        GeoCoordinates::VerticalDatumInfo::CreateFromJson(jsonValue, false, status);
+        GeoCoordinates::VerticalDatumInfo::CreateFromJson(jsonValue, status);
 
     EXPECT_FALSE(datumInfo.IsValid());
     EXPECT_EQ(status, GeoCoordinates::GEOCOORDERR_NoCRSName);
@@ -869,7 +877,7 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoJsonRoundTripTest)
 
     StatusInt status = ERROR;
     GeoCoordinates::VerticalDatumInfoPtr datumInfo =
-        GeoCoordinates::VerticalDatumInfo::CreateFromJson(inputJson, false, status);
+        GeoCoordinates::VerticalDatumInfo::CreateFromJson(inputJson, status);
     ASSERT_TRUE(datumInfo.IsValid());
     EXPECT_EQ(status, SUCCESS);
 
@@ -930,7 +938,7 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoGettersTest)
 
     StatusInt status = ERROR;
     GeoCoordinates::VerticalDatumInfoPtr datumInfo =
-        GeoCoordinates::VerticalDatumInfo::CreateFromJson(inputJson, false, status);
+        GeoCoordinates::VerticalDatumInfo::CreateFromJson(inputJson, status);
     ASSERT_TRUE(datumInfo.IsValid());
     ASSERT_EQ(status, SUCCESS);
 
@@ -1046,7 +1054,7 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoRejectsMalformedExtents)
         datumJson["transforms"][0]["nullTransform"].SetNull();
 
         StatusInt status = SUCCESS;
-        auto datumInfo = GeoCoordinates::VerticalDatumInfo::CreateFromJson(datumJson, true, status);
+        auto datumInfo = GeoCoordinates::VerticalDatumInfo::CreateAndRegisterFromJson(datumJson, status);
         EXPECT_FALSE(datumInfo.IsValid());
         EXPECT_EQ(status, GeoCoordinates::GEOCOORDERR_CoordinateRange);
         EXPECT_FALSE(dictionary->GetVerticalDatumInfoFromName(name, status).IsValid());
@@ -1093,7 +1101,7 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoAcceptsValidExtentBoundaries)
         datumJson["extent"]["northEast"]["latitude"] = testCase.north;
 
         StatusInt status = ERROR;
-        auto datumInfo = GeoCoordinates::VerticalDatumInfo::CreateFromJson(datumJson, true, status);
+        auto datumInfo = GeoCoordinates::VerticalDatumInfo::CreateAndRegisterFromJson(datumJson, status);
         EXPECT_EQ(status, SUCCESS);
         ASSERT_TRUE(datumInfo.IsValid());
         DRange2d extent;
@@ -1135,7 +1143,7 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoInvalidTransformTest)
 
     StatusInt status = SUCCESS;
     GeoCoordinates::VerticalDatumInfoPtr datumInfo =
-        GeoCoordinates::VerticalDatumInfo::CreateFromJson(datumJson, false, status);
+        GeoCoordinates::VerticalDatumInfo::CreateFromJson(datumJson, status);
 
     EXPECT_FALSE(datumInfo.IsValid());
     EXPECT_EQ(status, GeoCoordinates::GEOCOORDERR_NoTransforms);
@@ -1149,7 +1157,7 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoInvalidTransformTest)
 
     StatusInt status = SUCCESS;
     GeoCoordinates::VerticalDatumInfoPtr datumInfo =
-        GeoCoordinates::VerticalDatumInfo::CreateFromJson(datumJson, false, status);
+        GeoCoordinates::VerticalDatumInfo::CreateFromJson(datumJson, status);
 
     EXPECT_FALSE(datumInfo.IsValid());
     EXPECT_EQ(status, GeoCoordinates::GEOCOORDERR_NoTransforms);
@@ -1164,7 +1172,7 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoInvalidTransformTest)
 
     StatusInt status = ERROR;
     GeoCoordinates::VerticalDatumInfoPtr datumInfo =
-        GeoCoordinates::VerticalDatumInfo::CreateFromJson(datumJson, false, status);
+        GeoCoordinates::VerticalDatumInfo::CreateFromJson(datumJson, status);
 
     EXPECT_TRUE(datumInfo.IsValid());
     EXPECT_EQ(status, SUCCESS);
@@ -1203,7 +1211,7 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoInvalidTransformPathTest)
 
     StatusInt status = SUCCESS;
     GeoCoordinates::VerticalDatumInfoPtr datumInfo =
-        GeoCoordinates::VerticalDatumInfo::CreateFromJson(jsonValue, false, status);
+        GeoCoordinates::VerticalDatumInfo::CreateFromJson(jsonValue, status);
 
     EXPECT_FALSE(datumInfo.IsValid());
     EXPECT_EQ(status, GeoCoordinates::GEOCOORDERR_InvalidTransformPath);
@@ -1219,7 +1227,7 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoInvalidTransformPathTest)
 
     StatusInt status = SUCCESS;
     GeoCoordinates::VerticalDatumInfoPtr datumInfo =
-        GeoCoordinates::VerticalDatumInfo::CreateFromJson(jsonValue, false, status);
+        GeoCoordinates::VerticalDatumInfo::CreateFromJson(jsonValue, status);
 
     EXPECT_FALSE(datumInfo.IsValid());
     EXPECT_EQ(status, GeoCoordinates::GEOCOORDERR_InvalidTransformPath);
@@ -1235,7 +1243,7 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoInvalidTransformPathTest)
 
     StatusInt status = ERROR;
     GeoCoordinates::VerticalDatumInfoPtr datumInfo =
-        GeoCoordinates::VerticalDatumInfo::CreateFromJson(jsonValue, false, status);
+        GeoCoordinates::VerticalDatumInfo::CreateFromJson(jsonValue, status);
 
     EXPECT_TRUE(datumInfo.IsValid());
     EXPECT_EQ(status, SUCCESS);
