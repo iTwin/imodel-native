@@ -831,6 +831,101 @@ TEST_F(IntegrityCheckerFixture, check_diverged_prop_maps_across_overflow_table) 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(IntegrityCheckerFixture, inherited_override_storage_projection) {
+    ASSERT_EQ(SUCCESS, SetupECDb("inherited_override_storage_projection.ecdb", SchemaItem(R"xml(
+    <ECSchema schemaName="ProjectionTest" alias="pt" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+        <ECEntityClass typeName="Element">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap>
+                <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00.00"/>
+                <ShareColumns xmlns="ECDbMap.02.00.00">
+                    <MaxSharedColumnsBeforeOverflow>0</MaxSharedColumnsBeforeOverflow>
+                    <ApplyToSubclassesOnly>true</ApplyToSubclassesOnly>
+                </ShareColumns>
+            </ECCustomAttributes>
+        </ECEntityClass>
+        <ECEntityClass typeName="Device">
+            <BaseClass>Element</BaseClass>
+            <ECProperty propertyName="ServiceName" typeName="string"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="Instrument">
+            <BaseClass>Device</BaseClass>
+        </ECEntityClass>
+        <ECEntityClass typeName="PipingComponent">
+            <BaseClass>Instrument</BaseClass>
+            <ECProperty propertyName="ServiceName" typeName="string"/>
+            <ECProperty propertyName="DesignLength" typeName="string"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="Flange">
+            <BaseClass>PipingComponent</BaseClass>
+        </ECEntityClass>
+        <ECEntityClass typeName="ThreadedFlange">
+            <BaseClass>Flange</BaseClass>
+        </ECEntityClass>
+        <ECEntityClass typeName="AReducingThreadedFlange">
+            <BaseClass>ThreadedFlange</BaseClass>
+            <ECProperty propertyName="ServiceName" typeName="string"/>
+            <ECProperty propertyName="DesignLength" typeName="string"/>
+        </ECEntityClass>
+    </ECSchema>)xml")));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql(
+        "INSERT INTO pt.ThreadedFlange(ServiceName,DesignLength) VALUES('SERVICE_VALUE','LENGTH_VALUE')"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+
+    const Utf8String serviceColumn = GetMappedColumn(m_ecdb, "ThreadedFlange", "ServiceName");
+    const Utf8String lengthColumn = GetMappedColumn(m_ecdb, "ThreadedFlange", "DesignLength");
+    ASSERT_NE(serviceColumn, lengthColumn);
+    ASSERT_LT(m_ecdb.Schemas().GetClassId("pt", "AReducingThreadedFlange"),
+        m_ecdb.Schemas().GetClassId("pt", "ThreadedFlange"));
+    Utf8CP queries[] = {
+        "SELECT ServiceName,DesignLength FROM ONLY pt.ThreadedFlange",
+        "SELECT ServiceName,DesignLength FROM pt.ThreadedFlange"
+    };
+    Utf8String expectedNativeSql[2];
+    auto verify = [&](bool captureNativeSql) {
+        for (size_t i = 0; i < 2; ++i) {
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, queries[i]));
+            SCOPED_TRACE(stmt.GetNativeSql());
+            if (captureNativeSql)
+                expectedNativeSql[i] = stmt.GetNativeSql();
+            else
+                EXPECT_EQ(expectedNativeSql[i], stmt.GetNativeSql());
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+            EXPECT_STREQ("SERVICE_VALUE", stmt.GetValueText(0));
+            EXPECT_STREQ("LENGTH_VALUE", stmt.GetValueText(1));
+            EXPECT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+    };
+    verify(true);
+
+    // An empty, lower-id descendant must not supply storage for an ONLY query on its parent.
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(R"sql(
+        UPDATE ec_PropertyMap SET ColumnId=CASE
+        WHEN PropertyPathId IN (SELECT Id FROM ec_PropertyPath WHERE AccessString='ServiceName') THEN (
+            SELECT pm.ColumnId FROM ec_PropertyMap pm
+            JOIN ec_PropertyPath pp ON pp.Id=pm.PropertyPathId
+            JOIN ec_Class c ON c.Id=pm.ClassId
+            WHERE c.Name='ThreadedFlange' AND pp.AccessString='DesignLength')
+        ELSE (
+            SELECT pm.ColumnId FROM ec_PropertyMap pm
+            JOIN ec_PropertyPath pp ON pp.Id=pm.PropertyPathId
+            JOIN ec_Class c ON c.Id=pm.ClassId
+            WHERE c.Name='ThreadedFlange' AND pp.AccessString='ServiceName') END
+        WHERE ClassId IN (SELECT Id FROM ec_Class WHERE Name='AReducingThreadedFlange')
+            AND PropertyPathId IN (SELECT Id FROM ec_PropertyPath WHERE AccessString IN ('ServiceName','DesignLength'))
+    )sql"));
+    ASSERT_EQ(2, m_ecdb.GetModifiedRowCount());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    EXPECT_EQ(serviceColumn, GetMappedColumn(m_ecdb, "ThreadedFlange", "ServiceName"));
+    EXPECT_EQ(lengthColumn, GetMappedColumn(m_ecdb, "AReducingThreadedFlange", "ServiceName"));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
+    EXPECT_NE(ParseJSON("[]"), RunPropertyMapDivergenceCheck(m_ecdb));
+    verify(false);
+}
+
 TEST_F(IntegrityCheckerFixture, check_diverged_prop_maps_property_override) {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("check_diverged_prop_maps_override.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
