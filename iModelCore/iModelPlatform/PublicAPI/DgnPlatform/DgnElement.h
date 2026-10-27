@@ -915,6 +915,7 @@ public:
         DGNPLATFORM_EXPORT DropMe _OnInserted(DgnElementCR el) override final;
         DGNPLATFORM_EXPORT DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original, bool isOriginal) override final;
         friend struct MultiAspectMux;
+        DgnDbStatus m_lastWriteStatus = DgnDbStatus::Success;
 
     protected:
         BeSQLite::EC::ECInstanceId m_instanceId;
@@ -989,6 +990,10 @@ public:
         //! Prepare to delete this aspect.
         //! @note The aspect will not actually be deleted in the Db until you call DgnElements::Update on the aspect's host element.
         void Delete() {m_changeType = ChangeType::Delete;}
+
+        //! Get the status of the last time this aspect's pending change was written to the Db, when its host element was inserted or updated.
+        //! @note The insert or update of the host element does not fail when writing one of its aspects fails, so check this to detect such failures.
+        DgnDbStatus GetLastWriteStatus() const {return m_lastWriteStatus;}
 
         //! Get the Id of the ECClass for this aspect
         DGNPLATFORM_EXPORT DgnClassId GetECClassId(DgnDbR) const;

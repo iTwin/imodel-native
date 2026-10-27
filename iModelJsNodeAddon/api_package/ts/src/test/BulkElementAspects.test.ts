@@ -149,6 +149,19 @@ describe("bulk element aspects", () => {
     return queryAspects().find((row) => row.id === id);
   }
 
+  /** Makes SQLite reject every `event` on the rows of `aspectClass` in `table` while `fn` runs, so that writing those aspects fails. */
+  function withFailingAspectWrites(table: string, event: "UPDATE" | "DELETE", aspectClass: string, fn: () => void) {
+    const [schemaName, className] = aspectClass.split(":");
+    const classId = `(SELECT c.Id FROM ec_Class c JOIN ec_Schema s ON s.Id=c.SchemaId WHERE s.Name='${schemaName}' AND c.Name='${className}')`;
+    const trigger = `bulk_aspect_test_fail_${table}`;
+    expect(db.executeSql(`CREATE TEMP TRIGGER ${trigger} BEFORE ${event} ON ${table} WHEN OLD.ECClassId=${classId} BEGIN SELECT RAISE(ABORT, 'rejected by test'); END`)).to.equal(DbResult.BE_SQLITE_OK);
+    try {
+      fn();
+    } finally {
+      expect(db.executeSql(`DROP TRIGGER temp.${trigger}`)).to.equal(DbResult.BE_SQLITE_OK);
+    }
+  }
+
   describe("insertElementAspects", () => {
     it("inserts unique and multi aspects of several classes on several owners", () => {
       const e1 = insertOwner();
@@ -273,6 +286,51 @@ describe("bulk element aspects", () => {
     it("throws if the argument is not an array", () => {
       expect(() => db.insertElementAspects({} as any)).to.throw();
     });
+
+    it("finds the owner from the element member only; other spellings of it are ignored", () => {
+      const e1 = insertOwner();
+      const e2 = insertOwner();
+      const result = db.insertElementAspects([
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        { ...multiProps(e1, "m1"), Element: { id: e2, relClassName: "BisCore:ElementOwnsMultiAspects" } } as TestAspectProps,
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        { ...uniqueProps(e1, "u1"), ELEMENT: { id: e2, relClassName: "BisCore:ElementOwnsUniqueAspect" } } as TestAspectProps,
+      ]);
+      expect(result.status).to.equal(BulkElementAspectsStatus.Success);
+      expect(findAspect(result.ids[0])).to.deep.include({ element: e1, strProp: "m1" });
+      expect(findAspect(result.ids[1])).to.deep.include({ element: e1, strProp: "u1" });
+    });
+
+    it("reports aspects that cannot be written and leaves no new row behind for them", () => {
+      const e1 = insertOwner();
+      const e2 = insertOwner();
+      expect(db.insertElementAspects([uniqueProps(e2, "o2", undefined, otherUniqueClass)]).status).to.equal(BulkElementAspectsStatus.Success);
+      const mock = makeMockJsDb();
+      db.setIModelDb(mock.mockJsDb);
+
+      withFailingAspectWrites("bis_ElementMultiAspect", "UPDATE", otherMultiClass, () => {
+        withFailingAspectWrites("bis_ElementUniqueAspect", "UPDATE", otherUniqueClass, () => {
+          const result = db.insertElementAspects([
+            multiProps(e1, "m1"),
+            multiProps(e1, "om1", undefined, otherMultiClass), // new multi aspect
+            uniqueProps(e1, "ou1", undefined, otherUniqueClass), // new unique aspect
+            uniqueProps(e2, "o2-new", undefined, otherUniqueClass), // upsert of an existing unique aspect
+            uniqueProps(e1, "u1"),
+          ]);
+          expect(result.status).to.equal(BulkElementAspectsStatus.PartialSuccess);
+          expect(result.failures.map((f) => [f.index, f.status])).to.deep.equal([
+            [1, IModelStatus.WriteError],
+            [2, IModelStatus.WriteError],
+            [3, IModelStatus.WriteError],
+          ]);
+          expect(result.ids.map((id) => Id64.isValidId64(id))).to.deep.equal([true, false, false, false, true]);
+        });
+      });
+
+      expect(mock.aspectCalls("onInserted").map((c) => c.arg.props.strProp)).to.deep.equal(["m1", "u1"]);
+      const aspects = queryAspects().filter((r) => r.element === e1 || r.element === e2).map((r) => `${r.className}:${r.strProp}`).sort();
+      expect(aspects).to.deep.equal([`${multiClass}:m1`, `${otherUniqueClass}:o2`, `${uniqueClass}:u1`].sort());
+    });
   });
 
   describe("updateElementAspects", () => {
@@ -327,6 +385,62 @@ describe("bulk element aspects", () => {
 
       expect(findAspect(inserted.ids[0])!.strProp).to.equal("m1-new");
       expect(findAspect(inserted.ids[1])!.strProp).to.equal("u2-new");
+    });
+
+    it("ignores every spelling of element, so an aspect cannot be moved to another owner", () => {
+      const e1 = insertOwner();
+      const e2 = insertOwner();
+      const inserted = db.insertElementAspects([multiProps(e1, "m1"), uniqueProps(e1, "u1")]);
+      expect(inserted.status).to.equal(BulkElementAspectsStatus.Success);
+
+      const result = db.updateElementAspects([
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        { ...multiProps(e1, "m1-new"), id: inserted.ids[0], Element: { id: e2, relClassName: "BisCore:ElementOwnsMultiAspects" } } as TestAspectProps,
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        { ...uniqueProps(e1, "u1-new"), Element: { id: e2, relClassName: "BisCore:ElementOwnsUniqueAspect" } } as TestAspectProps,
+      ]);
+      expect(result.status).to.equal(BulkElementAspectsStatus.Success);
+      expect(findAspect(inserted.ids[0])).to.deep.include({ element: e1, strProp: "m1-new" });
+      expect(findAspect(inserted.ids[1])).to.deep.include({ element: e1, strProp: "u1-new" });
+    });
+
+    it("does not update a multi aspect owned by another element", () => {
+      const e1 = insertOwner();
+      const e2 = insertOwner();
+      const inserted = db.insertElementAspects([multiProps(e1, "m1"), multiProps(e2, "m2")]);
+      expect(inserted.status).to.equal(BulkElementAspectsStatus.Success);
+
+      const result = db.updateElementAspects([
+        { ...multiProps(e1, "m2-moved"), id: inserted.ids[1] },
+        { ...multiProps(e1, "m1-new"), id: inserted.ids[0] },
+      ]);
+      expect(result.status).to.equal(BulkElementAspectsStatus.PartialSuccess);
+      expect(result.failures).to.deep.equal([{ index: 0, status: IModelStatus.NotFound, message: "aspect not found on the owning element" }]);
+      expect(findAspect(inserted.ids[1])).to.deep.include({ element: e2, strProp: "m2" });
+      expect(findAspect(inserted.ids[0])).to.deep.include({ element: e1, strProp: "m1-new" });
+    });
+
+    it("reports aspects that cannot be written; the other aspects of the same owner are still written", () => {
+      const e1 = insertOwner();
+      const inserted = db.insertElementAspects([multiProps(e1, "m1"), multiProps(e1, "om1", undefined, otherMultiClass), uniqueProps(e1, "u1")]);
+      expect(inserted.status).to.equal(BulkElementAspectsStatus.Success);
+      const mock = makeMockJsDb();
+      db.setIModelDb(mock.mockJsDb);
+
+      withFailingAspectWrites("bis_ElementMultiAspect", "UPDATE", otherMultiClass, () => {
+        const result = db.updateElementAspects([
+          { ...multiProps(e1, "m1-new"), id: inserted.ids[0] },
+          { ...multiProps(e1, "om1-new", undefined, otherMultiClass), id: inserted.ids[1] },
+          uniqueProps(e1, "u1-new"),
+        ]);
+        expect(result.status).to.equal(BulkElementAspectsStatus.PartialSuccess);
+        expect(result.failures.map((f) => [f.index, f.status])).to.deep.equal([[1, IModelStatus.WriteError]]);
+      });
+
+      expect(mock.aspectCalls("onUpdated").map((c) => c.arg.props.strProp)).to.deep.equal(["m1-new", "u1-new"]);
+      expect(findAspect(inserted.ids[0])!.strProp).to.equal("m1-new");
+      expect(findAspect(inserted.ids[1])!.strProp).to.equal("om1");
+      expect(findAspect(inserted.ids[2])!.strProp).to.equal("u1-new");
     });
   });
 
@@ -383,6 +497,23 @@ describe("bulk element aspects", () => {
 
       const empty = db.deleteElementAspects([]);
       expect(empty.status).to.equal(BulkElementAspectsStatus.Success);
+    });
+
+    it("reports aspects that cannot be deleted; the other aspects of the same owner are still deleted", () => {
+      const e1 = insertOwner();
+      const inserted = db.insertElementAspects([multiProps(e1, "m1"), multiProps(e1, "om1", undefined, otherMultiClass), uniqueProps(e1, "u1")]);
+      expect(inserted.status).to.equal(BulkElementAspectsStatus.Success);
+      const mock = makeMockJsDb();
+      db.setIModelDb(mock.mockJsDb);
+
+      withFailingAspectWrites("bis_ElementMultiAspect", "DELETE", otherMultiClass, () => {
+        const result = db.deleteElementAspects(inserted.ids);
+        expect(result.status).to.equal(BulkElementAspectsStatus.PartialSuccess);
+        expect(result.failures.map((f) => [f.index, f.status])).to.deep.equal([[1, IModelStatus.WriteError]]);
+      });
+
+      expect(mock.aspectCalls("onDeleted").map((c) => c.arg.aspectId)).to.deep.equal([inserted.ids[0], inserted.ids[2]]);
+      expect(queryAspects().filter((r) => r.element === e1).map((r) => r.id)).to.deep.equal([inserted.ids[1]]);
     });
   });
 
@@ -467,6 +598,27 @@ describe("bulk element aspects", () => {
       mock.aspectCalls("onBulkDelete").forEach((c) => c.arg.aspects.forEach((a: any) => expect(a.iModel).to.equal(mock.mockJsDb)));
       expect(mock.aspectCalls("onBulkDeleted").length).to.equal(2);
       expect(mock.aspectCalls("onDelete").length).to.equal(0);
+    });
+
+    it("calls the post-handlers in input order when owners are interleaved", () => {
+      const e1 = insertOwner();
+      const e2 = insertOwner();
+      const mock = makeMockJsDb({ bulk: true });
+      db.setIModelDb(mock.mockJsDb);
+      const strProps = (method: string) => mock.aspectCalls(method).map((c) => c.arg.aspects.map((a: any) => a.props?.strProp ?? a.aspectId));
+
+      const inserted = db.insertElementAspects([multiProps(e1, "a"), multiProps(e2, "b"), multiProps(e1, "c")]);
+      expect(inserted.status).to.equal(BulkElementAspectsStatus.Success);
+      expect(strProps("onBulkInsert")).to.deep.equal([["a", "b", "c"]]);
+      expect(strProps("onBulkInserted")).to.deep.equal([["a", "b", "c"]]);
+
+      const updated = db.updateElementAspects(inserted.ids.map((id, i) => ({ ...multiProps(i === 1 ? e2 : e1, `${i}`), id })));
+      expect(updated.status).to.equal(BulkElementAspectsStatus.Success);
+      expect(strProps("onBulkUpdated")).to.deep.equal([["0", "1", "2"]]);
+
+      const deleted = db.deleteElementAspects(inserted.ids);
+      expect(deleted.status).to.equal(BulkElementAspectsStatus.Success);
+      expect(strProps("onBulkDeleted")).to.deep.equal([inserted.ids]);
     });
 
     it("an exception from a pre-handler aborts the whole call before anything is written", () => {

@@ -2269,6 +2269,7 @@ DgnElement::AppData::DropMe DgnElement::Aspect::_OnInserted(DgnElementCR el)
     if (ChangeType::Delete != m_changeType) // (caller can cancel an add by calling Delete)
         {
         auto status = InsertThis(el);
+        m_lastWriteStatus = status;
         if (DgnDbStatus::Success != status)
             {
             LOG.errorv("Attempt to insert aspect %llu:%llu failed with status=%x", el.GetElementId().GetValueUnchecked(), GetAspectInstanceId().GetValueUnchecked(), status);
@@ -2290,22 +2291,27 @@ DgnElement::AppData::DropMe DgnElement::Aspect::_OnUpdated(DgnElementCR modified
 
     if (ChangeType::Delete == m_changeType)
         {
-        _DeleteInstance(modified, original.GetDgnDb().GetECCrudWriteToken());
+        m_lastWriteStatus = _DeleteInstance(modified, original.GetDgnDb().GetECCrudWriteToken());
         }
     else
         {
         DgnDbR db = modified.GetDgnDb();
         ECInstanceKey existing = _QueryExistingInstanceKey(modified);
+        m_lastWriteStatus = DgnDbStatus::Success;
         if (existing.IsValid() && (existing.GetClassId() != GetECClassId(db)))
             {
-            _DeleteInstance(modified, original.GetDgnDb().GetECCrudWriteToken());
+            m_lastWriteStatus = _DeleteInstance(modified, original.GetDgnDb().GetECCrudWriteToken());
             existing = ECInstanceKey();  //  trigger an insert below
             }
 
         if (!existing.IsValid())
-            InsertThis(modified);
+            {
+            auto status = InsertThis(modified);
+            if (DgnDbStatus::Success == m_lastWriteStatus)
+                m_lastWriteStatus = status;
+            }
         else
-            _UpdateProperties(modified, original.GetDgnDb().GetECCrudWriteToken());
+            m_lastWriteStatus = _UpdateProperties(modified, original.GetDgnDb().GetECCrudWriteToken());
         }
 
     m_changeType = ChangeType::None; // (Just in case)
