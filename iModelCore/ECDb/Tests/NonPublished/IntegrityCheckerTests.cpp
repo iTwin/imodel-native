@@ -924,6 +924,38 @@ TEST_F(IntegrityCheckerFixture, inherited_override_storage_projection) {
     ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
     EXPECT_NE(ParseJSON("[]"), RunPropertyMapDivergenceCheck(m_ecdb));
     verify(false);
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql(
+        "INSERT INTO pt.AReducingThreadedFlange(ServiceName,DesignLength) VALUES('CHILD_SERVICE','CHILD_LENGTH')"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+            "SELECT ServiceName,DesignLength FROM ONLY pt.AReducingThreadedFlange"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_STREQ("CHILD_SERVICE", stmt.GetValueText(0));
+        EXPECT_STREQ("CHILD_LENGTH", stmt.GetValueText(1));
+        EXPECT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    {
+        // Divergent populated storage is still invalid: a parent projection cannot use both mappings.
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+            "SELECT ServiceName,DesignLength FROM pt.ThreadedFlange WHERE ECClassId IS (pt.AReducingThreadedFlange)"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_STREQ("CHILD_LENGTH", stmt.GetValueText(0));
+        EXPECT_STREQ("CHILD_SERVICE", stmt.GetValueText(1));
+        EXPECT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, queries[0]));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_STREQ("SERVICE_VALUE", stmt.GetValueText(0));
+        EXPECT_STREQ("LENGTH_VALUE", stmt.GetValueText(1));
+        EXPECT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
 }
 
 TEST_F(IntegrityCheckerFixture, check_diverged_prop_maps_property_override) {
