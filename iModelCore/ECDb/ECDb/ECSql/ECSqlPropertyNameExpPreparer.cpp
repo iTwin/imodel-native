@@ -35,6 +35,12 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
         return ECSqlStatus::Success;
     }
     PropertyMap const* propMap = exp.GetPropertyMap();
+    if (propMap == nullptr)
+        {
+        BeAssert(propMap != nullptr && "PropertyNameExp is expected to have a property map at this point");
+        return ECSqlStatus::Error;
+        }
+
     ECSqlPrepareContext::ExpScope const& currentScope = ctx.GetCurrentScope();
 
     if (!NeedsPreparation(ctx, currentScope, *propMap))

@@ -772,8 +772,13 @@ int EXP_LVL3 CScs2WktEx (char *csWktBufr,size_t bufrSize,enum ErcWktFlavor flavo
 			primeMer = 7.439583333333333;
 			kCp = "Bern";
 			break;
-		case 9:
+#ifdef GEOCOORD_ENHANCEMENT
+		case -9:
+			primeMer = -9.13190611111111;
+#else
+        case 9:
 			primeMer = 9.13190611111111;
+#endif
 			kCp = "Lisbon";
 			break;
 		case 10:
@@ -785,9 +790,19 @@ int EXP_LVL3 CScs2WktEx (char *csWktBufr,size_t bufrSize,enum ErcWktFlavor flavo
 			kCp = "Rome";
 			break;
 		case 18:
+#ifdef GEOCOORD_ENHANCEMENT
+			primeMer = 18.0582777777778;
+#else
 			primeMer = 18.05082777777778;
+#endif
 			kCp = "Stockholm";
 			break;
+#ifdef GEOCOORD_ENHANCEMENT
+		case 23:
+			primeMer = 23.71633750000000;
+			kCp = "Athens";
+			break;
+#endif
 		case 106:
 			primeMer = 106.8077194444444;
 			kCp = "Jakarta";

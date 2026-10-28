@@ -184,11 +184,43 @@ public:
         return !m_allFreedColumnIdentifiers.empty();
         }
 
+    bool HasCleanedPropertyMapping(ECN::ECClassId classId, Utf8StringCR propertyName) const
+        {
+        auto it = m_cleanedMappingInfo.find(classId);
+        if (it == m_cleanedMappingInfo.end())
+            return false;
+
+        for (auto const& mapping : it->second)
+            if (mapping.m_propertyName.EqualsI(propertyName))
+                return true;
+
+        return false;
+        }
+
     // Returns true if the given column was freed during CleanModifiedMappings AND its table's linked primary/overflow table also freed columns in the same import.
     // Such a column cannot be immediately reused due to the risk of a cross-table circular remap.
     bool IsColumnFreed(const DbColumn& column) const
         {
         return m_allFreedColumnIdentifiers.count(RemapManager::GetFullColumnIdentifier(column.GetTable().GetName(), column.GetName())) > 0;
+        }
+
+    // Returns a short aggregate description of the remapping work in this import. Used for failure diagnostics.
+    Utf8String BuildDiagnosticsSummary() const
+        {
+        size_t addedPropertyCount = 0;
+        size_t addedBaseClassCount = 0;
+        for (auto const& [classId, remapInfo] : m_remapInfos)
+            {
+            addedPropertyCount += remapInfo.m_addedProperties.size();
+            addedBaseClassCount += remapInfo.m_addedBaseClasses.size();
+            }
+
+        size_t cleanedMappingCount = 0;
+        for (auto const& [classId, cleanedInfos] : m_cleanedMappingInfo)
+            cleanedMappingCount += cleanedInfos.size();
+
+        return Utf8PrintfString("Remapping summary: %zu modified classes (%zu added properties, %zu added base classes), %zu cleaned property mappings across %zu classes, %zu freed columns blocked from immediate reuse.",
+            m_remapInfos.size(), addedPropertyCount, addedBaseClassCount, cleanedMappingCount, m_cleanedMappingInfo.size(), m_allFreedColumnIdentifiers.size());
         }
     };
 

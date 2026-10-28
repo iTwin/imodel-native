@@ -74,13 +74,17 @@ bool ReadStringFromUtf8File(Utf8String& strValue, WCharCP path)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ReadJsonFromFile(Json::Value& jsonValue, WCharCP path)
+bool ReadJsonFromFile(BeJsDocument& jsonValue, WCharCP path)
     {
     Utf8String strValue;
     if (!ReadStringFromUtf8File(strValue, path))
         return false;
 
-    return Json::Reader::Parse(strValue, jsonValue);
+    if (strValue.empty())
+        return false;
+
+    jsonValue.Parse(strValue);
+    return !jsonValue.hasParseError();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -106,9 +110,9 @@ bool WriteStringToUtf8File(WCharCP path, Utf8StringCR strValue)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool WriteJsonToFile(WCharCP path, const Json::Value& jsonValue)
+bool WriteJsonToFile(WCharCP path, BeJsConst jsonValue)
     {
-    Utf8String strValue = Json::StyledWriter().write(jsonValue);
+    Utf8String strValue = jsonValue.Stringify(Indented);
     return WriteStringToUtf8File(path, strValue);
     }
 

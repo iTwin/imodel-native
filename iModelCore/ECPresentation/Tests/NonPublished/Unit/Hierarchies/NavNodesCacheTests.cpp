@@ -1131,6 +1131,8 @@ TEST_F(NodesCacheTests, LocateNode_LocatesCustomNode)
     }
 
 #ifdef wip_ruleset_variables
+// NOTE: this block has not compiled for a long time - UserSettingEntry no longer exists anywhere
+// in the tree. BeJs types are handles with no value constructors, hence the named documents.
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1155,12 +1157,16 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Settings_ReturnsOnlyRelatedDat
 
     // cache unrelated datasource
     auto childInfo0 = CacheDataSource(m_connection->GetId(), TEST_RULESET_ID, rootNodes[0]->GetNodeId());
-    bvector<UserSettingEntry> settings0 = {UserSettingEntry("setting_0", Json::Value("value0"))};
+    BeJsDocument settingValue0;
+    settingValue0.SetString("value0");
+    bvector<UserSettingEntry> settings0 = {UserSettingEntry("setting_0", settingValue0)};
     m_cache->Update(childInfo0.second, nullptr, nullptr, &settings0);
 
     // cache related datasource
     auto childInfo1 = CacheDataSource(m_connection->GetId(), TEST_RULESET_ID, rootNodes[1]->GetNodeId());
-    bvector<UserSettingEntry> settings1 = {UserSettingEntry("setting_1", Json::Value("value1")) };
+    BeJsDocument settingValue1;
+    settingValue1.SetString("value1");
+    bvector<UserSettingEntry> settings1 = {UserSettingEntry("setting_1", settingValue1)};
     m_cache->Update(childInfo1.second, nullptr, nullptr, &settings1);
 
     // verify the correct datasource is found
@@ -1623,7 +1629,9 @@ TEST_F(NodesCacheTests, GetHierarchyLevel_ReturnsInvalidChildDatasourceForDiffer
 TEST_F(NodesCacheTests, GetDataSource_ClearsRootDatasourceCacheIfRelatedSettingsValuesChanged)
     {
     m_userSettings.GetSettings(TEST_RULESET_ID).SetSettingValue("setting_id", "value0");
-    bvector<UserSettingEntry> settingsValues = {UserSettingEntry("setting_id", Json::Value("value0"))};
+    BeJsDocument settingValue;
+    settingValue.SetString("value0");
+    bvector<UserSettingEntry> settingsValues = {UserSettingEntry("setting_id", settingValue)};
     auto info = CacheDataSource(m_connection->GetId(), TEST_RULESET_ID, 0);
     m_cache->Update(info.second, nullptr, nullptr, &settingsValues);
 
@@ -1642,7 +1650,9 @@ TEST_F(NodesCacheTests, GetDataSource_ClearsRootDatasourceCacheIfRelatedSettings
 TEST_F(NodesCacheTests, GetDataSource_DoesntClearRootDatasourceCacheIfRelatedSettingsValuesDidntChange)
     {
     m_userSettings.GetSettings(TEST_RULESET_ID).SetSettingIntValue("setting_id", 10);
-    bvector<UserSettingEntry> settingsValues = {UserSettingEntry("setting_id", Json::Value(10))};
+    BeJsDocument settingValue;
+    settingValue["v"] = 10;
+    bvector<UserSettingEntry> settingsValues = {UserSettingEntry("setting_id", settingValue["v"])};
     auto info = CacheDataSource(m_connection->GetId(), TEST_RULESET_ID, 0);
     m_cache->Update(info.second, nullptr, nullptr, &settingsValues);
 
@@ -1666,7 +1676,9 @@ TEST_F(NodesCacheTests, GetDataSource_ClearsChildDatasourceCacheIfRelatedSetting
 
     // cache child data source
     m_userSettings.GetSettings(TEST_RULESET_ID).SetSettingIntValue("setting_id", 1);
-    bvector<UserSettingEntry> settingsValues = {UserSettingEntry("setting_id", Json::Value(1))};
+    BeJsDocument settingValue;
+    settingValue["v"] = 1;
+    bvector<UserSettingEntry> settingsValues = {UserSettingEntry("setting_id", settingValue["v"])};
     auto childInfo = CacheDataSource(m_connection->GetId(), TEST_RULESET_ID, rootNodes[0]->GetNodeId());
     m_cache->Update(childInfo.second, nullptr, nullptr, &settingsValues);
 

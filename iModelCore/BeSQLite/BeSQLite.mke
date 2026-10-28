@@ -66,6 +66,8 @@ $(o)BeSQLite$(oext) : $(baseDir)BeSQLite.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQL
 
 $(o)MonotoneClock$(oext) : $(baseDir)MonotoneClock.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h ${MultiCompileDepends}
 
+$(o)TempFile$(oext) : $(baseDir)TempFile.cpp $(baseDir)/PublicAPI/BeSQLite/TempFile.h $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h ${MultiCompileDepends}
+
 $(o)ChangeSet$(oext) : $(baseDir)ChangeSet.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h  $(baseDir)/PublicAPI/BeSQLite/ChangeSet.h ${MultiCompileDepends}
 
 $(o)CloudSqlite$(oext) : $(baseDir)CloudSqlite.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h  $(baseDir)/PublicAPI/BeSQLite/ChangeSet.h ${MultiCompileDepends}
@@ -119,9 +121,10 @@ BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(libprefix)iTwinIcu4c$(libext)
 
 
 %if $(TARGET_PLATFORM)=="MacOS" || $(TARGET_PLATFORM)=="iOS"
+    # curl's Apple SecTrust certificate verification (was previously rustls).
     BeSQLiteRequiredLibs + -framework Security
+    BeSQLiteRequiredLibs + -framework CoreServices
     BeSQLiteRequiredLibs + -framework Foundation
-    BeSQLiteRequiredLibs + $(ContextSubPartsStaticLibs)$(stlibprefix)rustls$(stlibext)
 %endif
 
 %if $(TARGET_PLATFORM)!="Android" && $(TARGET_PLATFORM)!="Linux"

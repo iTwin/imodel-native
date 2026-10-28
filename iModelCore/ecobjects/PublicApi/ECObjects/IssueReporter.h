@@ -139,6 +139,7 @@ struct ECOBJECTS_EXPORT ECIssueId
     static IssueId EC_0062;
     static IssueId EC_0063;
     static IssueId EC_0064;
+    static IssueId EC_0065;
     };
 
 //=======================================================================================

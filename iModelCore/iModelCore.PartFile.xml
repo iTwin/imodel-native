@@ -45,6 +45,7 @@
     <UPackProduct Name="iModelNativeUPack" Description="iModel Native SDK" OnlyPlatforms="linux*,x64,macosarm64">
         <Directories DirectoryListName="iModelCoreNugetDirs"/>
         <SubPart PartName="iModelCore"/>
+        <SubPart PartName="ITwinDaemon-exe" PartFile="iModelCore/BeSQLite/BeSQLite" />
         <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
         <SubPart PartName="PSBRepGeometry" PartFile="iModelCore/PSBRepGeometry/PSBRepGeometry" Repository="imodel-native-internal"/>
         <SubPart PartName="VisualizationDll" PartFile="iModelCore/Visualization/Visualization" Repository="imodel-native-internal"/>
@@ -55,10 +56,21 @@
 
         <ProductDirectory Name="Assemblies"                                 RelativeTo="Root" Path="bin"/>
         <ProductDirectory Name="Assemblies"             LibType="Static"    Deliver="false"/>
+        <!-- ITwinDaemon is always linked statically, so it delivers its executable here. -->
+        <ProductDirectory Name="StaticAssemblies"       LibType="Static"    RelativeTo="Root" Path="bin"/>
         <ProductDirectory Name="Assets"                                     RelativeTo="Root" Path="assets"/>
         <ProductDirectory Name="Assets"                 LibType="Static"    RelativeTo="Root" Path="assets"/>
         <ProductDirectory Name="Libs"                                       RelativeTo="Root" Path="lib"/>
         <ProductDirectory Name="Libs"                   LibType="Static"    RelativeTo="Root" Path="lib"/>
+        <!--
+            On x64 this product is the *dynamic* SDK, but ITwinDaemon-exe drags in a parallel static
+            dependency chain (openssl, curl, proxyres, ...). Those libraries are link-time inputs for
+            the daemon executable only - nothing consuming this package links them - and they collide
+            with their dynamic import libraries of the same name in "lib". Don't deliver them.
+            The platforms that build this product entirely Static ship their libraries as the actual
+            deliverable, so they keep the default entry above.
+        -->
+        <ProductDirectory Name="Libs"                   LibType="Static"    Platforms="x64" Deliver="false"/>
         <ProductDirectory Name="PublicApi"                                  RelativeTo="Root" Path="include"/>
         <ProductDirectory Name="PublicApi"              LibType="Static"    RelativeTo="Root" Path="include"/>
         <ProductDirectory Name="VendorApi"                                  RelativeTo="Root" Path="include"/>

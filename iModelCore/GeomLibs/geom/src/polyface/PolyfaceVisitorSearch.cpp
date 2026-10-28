@@ -641,7 +641,7 @@ DPoint3dCR point0,
 DPoint3dCR point1,
 bvector<FacetLocationDetail> &pickData,
 bool exitAtFirstPick
-)
+) const
     {
     pickData.clear ();
     PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*this, false);
@@ -925,7 +925,7 @@ double maxDistance                  //!< ignore larger distances.  Send 0 to con
 };
 // Search for closest approach between two meshes.
 //
-GEOMDLLIMPEXP bool PolyfaceQuery::SearchClosestApproach (
+bool PolyfaceQuery::SearchClosestApproach (
 PolyfaceQueryR polyfaceA,           //!< first polyface
 PolyfaceQueryR polyfaceB,           //!< second polyface
 double maxDistance,                 //!< ignore larger distances.  Send 0 to consider all pairs.
@@ -951,7 +951,7 @@ struct PolyfaceIndexedHeapRangeTree *treeB     //! optional range tree for polyf
 
 // Search for closest approach between two meshes.
 //
-GEOMDLLIMPEXP bool PolyfaceQuery::SearchClosestApproach (
+bool PolyfaceQuery::SearchClosestApproach (
 PolyfaceQueryR polyfaceA,           //!< first polyface
 PolyfaceQueryR polyfaceB,           //!< second polyface
 double maxDistance,                 //!< ignore larger distances.  Send 0 to consider all pairs.
@@ -992,7 +992,7 @@ bool AreAnyValuesShared (bvector<T> &indexA, bvector<T> &indexB)
 
 // Search for closest approach of the polyface to itself
 //
-GEOMDLLIMPEXP bool PolyfaceQuery::SearchClosestApproach (
+bool PolyfaceQuery::SearchClosestApproach (
 PolyfaceQueryR polyfaceA,           //!< first polyface
 double maxDistance,                 //!< ignore larger distances.  Send 0 to consider all pairs.
 DSegment3dR segment,                 //!< shortest segment.
@@ -1058,7 +1058,7 @@ double normalTestRadians
     return found;
     }
 
-GEOMDLLIMPEXP bool PolyfaceQuery::SearchClosestApproach (
+bool PolyfaceQuery::SearchClosestApproach (
 PolyfaceQueryR polyfaceA,           //!< first polyface
 double maxDistance,                 //!< ignore larger distances.  Send 0 to consider all pairs.
 DSegment3dR segment                 //!< shortest segment.

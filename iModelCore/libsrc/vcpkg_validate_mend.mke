@@ -1,0 +1,14 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+# vcpkg_validate_mend.mke - Check every vcpkg consumer's Mend scan configuration.
+# This downloads nothing; it only reads the manifests, so it is cheap enough to gate the head of
+# the vcpkg install chain.  The install wrappers already reject a consumer whose own
+# vcpkg-mend.json is missing or empty; this adds the cross-consumer checks none of them can make.
+#---------------------------------------------------------------------------------------------
+
+%include mdl.mki
+
+always:
+    powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$(_MakeFilePath)vcpkg_download_mend_sources.ps1" -ValidateOnly

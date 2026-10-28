@@ -6,9 +6,9 @@
 
 BEGIN_UNNAMED_NAMESPACE
 
-static Json::Value lookAtVolume(DgnDbR db, Utf8String params)
+static BeJsDocument lookAtVolume(DgnDbR db, Utf8String params)
 	{
-	auto props = Json::Value::From(params);
+	BeJsDocument props(params);
 	auto viewProps = props["view"];
 	auto idJsonVal = viewProps[DgnElement::json_id()];
 	DgnElementId vId(BeInt64Id::FromString(idJsonVal.asCString()).GetValue());
@@ -20,15 +20,15 @@ static Json::Value lookAtVolume(DgnDbR db, Utf8String params)
 	ViewDefinition::MarginPercent margin(marginProp["left"].asDouble(), marginProp["top"].asDouble(), marginProp["right"].asDouble(), marginProp["bottom"].asDouble());
 	const double aspect = props["aspectRatio"].asDouble();
 
-	view->LookAtVolume(JsonUtils::ToDRange3d(props["volume"]), &aspect, &margin);
-	Json::Value val;
+	view->LookAtVolume(BeJsGeomUtils::ToDRange3d(props["volume"]), &aspect, &margin);
+	BeJsDocument val;
 	view->ToJson(val);
 	return val;
 	}
 
-static Json::Value lookAtUsingLensAngle(DgnDbR db, Utf8String params)
+static BeJsDocument lookAtUsingLensAngle(DgnDbR db, Utf8String params)
 	{
-	auto props = Json::Value::From(params);
+	BeJsDocument props(params);
 	auto viewProps = props["view"];
 	auto idJsonVal = viewProps[DgnElement::json_id()];
 	DgnElementId vId(BeInt64Id::FromString(idJsonVal.asCString()).GetValue());
@@ -36,22 +36,22 @@ static Json::Value lookAtUsingLensAngle(DgnDbR db, Utf8String params)
 	auto view = viewOrig->MakeCopy<SpatialViewDefinition>();
 	view->FromJson(viewProps);
 
-	auto eye = JsonUtils::ToDPoint3d(props["eye"]);
-	auto target = JsonUtils::ToDPoint3d(props["target"]);
-	auto up = JsonUtils::ToDVec3d(props["up"]);
-	auto lens = JsonUtils::ToAngle(props["lens"]);
+	auto eye = BeJsGeomUtils::ToDPoint3d(props["eye"]);
+	auto target = BeJsGeomUtils::ToDPoint3d(props["target"]);
+	auto up = BeJsGeomUtils::ToDVec3d(props["up"]);
+	auto lens = BeJsGeomUtils::ToAngle(props["lens"]);
 	double front = props["front"].asDouble();
 	double back = props["back"].asDouble();
 
 	view->LookAtUsingLensAngle(eye, target, up, lens, &front, &back);
-	Json::Value val;
+	BeJsDocument val;
 	view->ToJson(val);
 	return val;
 	}
 
-	static Json::Value rotateCameraLocal(DgnDbR db, Utf8String params)
+	static BeJsDocument rotateCameraLocal(DgnDbR db, Utf8String params)
 	{
-	auto props = Json::Value::From(params);
+	BeJsDocument props(params);
 	auto viewProps = props["view"];
 	auto idJsonVal = viewProps[DgnElement::json_id()];
 	DgnElementId vId(BeInt64Id::FromString(idJsonVal.asCString()).GetValue());
@@ -60,29 +60,29 @@ static Json::Value lookAtUsingLensAngle(DgnDbR db, Utf8String params)
 	view->FromJson(viewProps);
 
 	auto angle = props["angle"].asDouble();
-	auto axis = JsonUtils::ToDVec3d(props["axis"]);
+	auto axis = BeJsGeomUtils::ToDVec3d(props["axis"]);
 	DPoint3d about;
 	DPoint3dP aboutP = nullptr;
 	if (props.isMember("about"))
 		{
-		about = JsonUtils::ToDPoint3d(props["about"]);
+		about = BeJsGeomUtils::ToDPoint3d(props["about"]);
 		aboutP = &about;
 		}
 
 	view->RotateCameraLocal(angle, axis, aboutP);
-	Json::Value val;
+	BeJsDocument val;
 	view->ToJson(val);
 	return val;
 	}
 
-	Json::Value deserializeGeometryStream(DgnDbR dbin, Utf8String params)
+	BeJsDocument deserializeGeometryStream(DgnDbR dbin, Utf8String params)
 	{
-	Json::Value props(Json::Value::From(params));
+	BeJsDocument props(params);
 	if (!props.isMember("geom") ||
 		!props.isMember("bsurfacePts") || !props.isMember("numSurfacePts") || !props["bsurfacePts"].isArray() ||
 		!props.isMember("polyPts") || !props.isMember("numPolyPts") || !props["polyPts"].isArray() ||
 		!props.isMember("outFileName"))
-		return Json::Value();
+		return BeJsDocument();
 
 	// Set up the original geometry to test against de-serialized geometry
 	DEllipse3d origCurve;
@@ -98,14 +98,14 @@ static Json::Value lookAtUsingLensAngle(DgnDbR db, Utf8String params)
 
 	bvector<DPoint3d> bSurfacePts;
 	int numSurfacePts = props["numSurfacePts"].asInt();
-	Json::Value surfacePts = props["bsurfacePts"];
+	auto surfacePts = props["bsurfacePts"];
 	for (int i = 0; i < numSurfacePts; i++)
 		bSurfacePts.push_back(DPoint3d::From(surfacePts[i][0].asDouble(), surfacePts[i][1].asDouble(), surfacePts[i][2].asDouble()));
 	MSBsplineSurfacePtr origSurface = MSBsplineSurface::CreatePtr();
 	origSurface->InitFromPointsAndOrder(3, 4, 4, 6, &bSurfacePts[0]);
 
 	int numPolyPts = props["numPolyPts"].asInt();
-	Json::Value polyPts = props["polyPts"];
+	auto polyPts = props["polyPts"];
 	PolyfaceHeaderPtr origPolyface = PolyfaceHeader::CreateVariableSizeIndexed();
 	for (int i = 0; i < numPolyPts; i++)
 		origPolyface->Point().push_back(DPoint3d::From(polyPts[i][0].asDouble(), polyPts[i][1].asDouble(), polyPts[i][2].asDouble()));
@@ -133,7 +133,7 @@ static Json::Value lookAtUsingLensAngle(DgnDbR db, Utf8String params)
 	{
 		GeometricPrimitivePtr geom = iter.GetGeometryPtr();
 		if (!geom.IsValid())
-			return Json::Value();
+			return BeJsDocument();
 
 		GeometricPrimitive::GeometryType geomType = geom->GetGeometryType();
 		switch ((int)geomType)
@@ -142,28 +142,28 @@ static Json::Value lookAtUsingLensAngle(DgnDbR db, Utf8String params)
 		{
 			ICurvePrimitivePtr curve = geom->GetAsICurvePrimitive();
 			if (!curve->IsSameStructureAndGeometry(*ICurvePrimitive::CreateArc(origCurve)))
-				return Json::Value();
+				return BeJsDocument();
 			break;
 		}
 		case 2: // CurveVector
 		{
 			CurveVectorPtr curveVect = geom->GetAsCurveVector();
 			if (!curveVect->IsSameStructureAndGeometry(*origCurveVect))
-				return Json::Value();
+				return BeJsDocument();
 			break;
 		}
 		case 3: // SolidPrimitive
 		{
 			ISolidPrimitivePtr solid = geom->GetAsISolidPrimitive();
 			if (!solid->IsSameStructureAndGeometry(*origSolid))
-				return Json::Value();
+				return BeJsDocument();
 			break;
 		}
 		case 4: // BsplineSurface
 		{
 			MSBsplineSurfacePtr surface = geom->GetAsMSBsplineSurface();
 			if (!surface->IsSameStructureAndGeometry(*origSurface, 0))
-				return Json::Value();
+				return BeJsDocument();
 			break;
 		}
 		case 5: // Polyface
@@ -173,35 +173,35 @@ static Json::Value lookAtUsingLensAngle(DgnDbR db, Utf8String params)
 			DPoint3dCP jsPoints = polyface->GetPointCP();
 			for (size_t i = 0; i < numPolyPts; i++)
 				if (!nativePoints[i].IsEqual(jsPoints[i]))
-					return Json::Value();
+					return BeJsDocument();
 			size_t numIndexes = origPolyface->GetPointIndexCount();
 			int32_t const *nativeIndexes = origPolyface->GetPointIndexCP();
 			int32_t const *jsIndexes = polyface->GetPointIndexCP();
 			for (size_t i = 0; i < numIndexes; i++)
 				if (nativeIndexes[i] != jsIndexes[i])
-					return Json::Value();
+					return BeJsDocument();
 			break;
 		}
 		default:
 		{
-			return Json::Value();
+			return BeJsDocument();
 		}
 		}
 	}
 
 	// All geometry de-serialized matched the originals
-	Json::Value retVal;
+	BeJsDocument retVal;
 	retVal["returnValue"] = true;
 	return retVal;
 	}
 
-	static Json::Value buildKnownGeometryStream(DgnDbR dbin, Utf8String params)
+	static BeJsDocument buildKnownGeometryStream(DgnDbR dbin, Utf8String params)
 	{
-	Json::Value props(Json::Value::From(params));
+	BeJsDocument props(params);
 	if (!props.isMember("bsurfacePts") || !props.isMember("numSurfacePts") || !props["bsurfacePts"].isArray() ||
 		!props.isMember("polyPts") || !props.isMember("numPolyPts") || !props["polyPts"].isArray() ||
 		!props.isMember("outFileName"))
-		return Json::Value();
+		return BeJsDocument();
 
 	// Set up the geometry to insert into the geometry stream
 	DEllipse3d origCurve;
@@ -214,7 +214,7 @@ static Json::Value lookAtUsingLensAngle(DgnDbR db, Utf8String params)
 	ISolidPrimitivePtr origSolid = ISolidPrimitive::CreateDgnCone(DgnConeDetail(DPoint3d::From(0, 0.34, 0), DPoint3d::From(0, 0, 1030.0), DVec3d::From(-1, 0, 0), DVec3d::From(-0, -0.9999999455179609, -0.00033009706939427836), 1.5, 1.5, true));
 	bvector<DPoint3d> pointArr;
 	int numSurfacePts = props["numSurfacePts"].asInt();
-	Json::Value surfacePts = props["bsurfacePts"];
+	auto surfacePts = props["bsurfacePts"];
 	for (int i = 0; i < numSurfacePts; i++)
 	{
 		pointArr.push_back(DPoint3d::From(surfacePts[i][0].asInt(), surfacePts[i][1].asInt(), surfacePts[i][2].asInt()));
@@ -223,7 +223,7 @@ static Json::Value lookAtUsingLensAngle(DgnDbR db, Utf8String params)
 	origSurface->InitFromPointsAndOrder(3, 4, 4, 6, &pointArr[0]);
 
 	int numPolyPts = props["numPolyPts"].asInt();
-	Json::Value polyPts = props["polyPts"];
+	auto polyPts = props["polyPts"];
 	PolyfaceHeaderPtr origPolyface = PolyfaceHeader::CreateVariableSizeIndexed();
 	for (int i = 0; i < numPolyPts; i++)
 		origPolyface->Point().push_back(DPoint3d::From(polyPts[i][0].asDouble(), polyPts[i][1].asDouble(), polyPts[i][2].asDouble()));
@@ -252,19 +252,19 @@ static Json::Value lookAtUsingLensAngle(DgnDbR db, Utf8String params)
 	// Output the GeometryStream
 	GeometryStream gs = GeometryStream();
 	builder.GetGeometryStream(gs);
-	Json::Value retVal;
+	BeJsDocument retVal;
 	retVal["geom"] = gs.ToBase64();
 	return retVal;
 	}
 
 END_UNNAMED_NAMESPACE
 
-Json::Value IModelJsNative::JsInterop::ExecuteTest(DgnDbR db, Utf8StringCR testName, Utf8StringCR params)
+BeJsDocument IModelJsNative::JsInterop::ExecuteTest(DgnDbR db, Utf8StringCR testName, Utf8StringCR params)
     {
 	if (testName.Equals("lookAtVolume")) return lookAtVolume(db, params);
 	if (testName.Equals("lookAtUsingLensAngle")) return lookAtUsingLensAngle(db, params);
 	if (testName.Equals("rotateCameraLocal")) return rotateCameraLocal(db, params);
 	if (testName.Equals("buildKnownGeometryStream")) return buildKnownGeometryStream(db, params);
 	if (testName.Equals("deserializeGeometryStream")) return deserializeGeometryStream(db, params);
-	return Json::Value();
+	return BeJsDocument();
     }

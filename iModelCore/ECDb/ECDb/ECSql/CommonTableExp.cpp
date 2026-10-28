@@ -55,14 +55,17 @@ bool CommonTableBlockExp::ExpandDerivedProperties() const {
     }
     auto query = GetQuery();
     auto cols = std::min(query->GetSelection()->GetChildrenCount(), m_columnList.size());
-    for (auto i = 0; i < cols; ++i) {
+    for (size_t i = 0; i < cols; ++i) {
         auto target = query->GetSelection()->GetChildren().Get<DerivedPropertyExp>(i);
-        if (target->IsWildCard()) {
+        if (target != nullptr && target->IsWildCard()) {
             return false;
         }
     }
-    for (auto i = 0; i < cols; ++i) {
+    for (size_t i = 0; i < cols; ++i) {
         auto target = query->GetSelection()->GetChildren().Get<DerivedPropertyExp>(i);
+        if (target == nullptr)
+            continue;
+
         auto property = std::make_unique<CommonTablePropertyNameExp>(m_columnList[i].c_str(), *target, [&](Utf8String col) {
             return FindType(col);
         });
@@ -119,8 +122,13 @@ ECSqlTypeInfo CommonTableBlockExp::FindType (Utf8StringCR col) const {
         auto columnIdx = std::distance(m_columnList.begin(), it);
         std::vector<SingleSelectStatementExp const*> const& singleStmtExp = GetQuery()->GetFlatListOfStatements();
         for (auto stmtIdx = 0; stmtIdx < singleStmtExp.size(); ++stmtIdx) {
-            BeAssert(singleStmtExp[stmtIdx]->GetSelection()->GetChildren().Get<DerivedPropertyExp>(columnIdx) != nullptr && "Programmer Error: All the select statements in the compound statement are expected to have the same number of columns in their select clause");
-            auto typeInfo = singleStmtExp[stmtIdx]->GetSelection()->GetChildren().Get<DerivedPropertyExp>(columnIdx)->GetExpression()->GetTypeInfo();
+            // The select clauses of a compound statement may have a different number of columns. This is an error which is
+            // only reported later during preparation, so the column index must not be assumed to be valid here.
+            auto const* derivedProp = singleStmtExp[stmtIdx]->GetSelection()->GetChildren().Get<DerivedPropertyExp>((size_t) columnIdx);
+            if (derivedProp == nullptr || derivedProp->GetExpression() == nullptr)
+                continue;
+
+            auto typeInfo = derivedProp->GetExpression()->GetTypeInfo();
             // try to find non-null type info
             if (resolvedTypeInfo.IsUnset() || resolvedTypeInfo.IsNull() && !typeInfo.IsNull()) {
                 resolvedTypeInfo = typeInfo;
@@ -221,9 +229,14 @@ void CommonTableBlockExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<Exp>
     else
     {
         auto selection = GetQuery()->GetSelection();
-        auto nCols = std::max(m_columnList.size(), selection->GetChildrenCount());
-        for (auto i = 0; i < nCols; ++i) {
+        // Must be the minimum of both: a mismatch between the declared column list and the number of
+        // selected columns is an error which is only reported later, so both must be indexed safely.
+        auto nCols = std::min(m_columnList.size(), selection->GetChildrenCount());
+        for (size_t i = 0; i < nCols; ++i) {
             auto target = selection->GetChildren().Get<DerivedPropertyExp>(i);
+            if (target == nullptr)
+                continue;
+
             auto property = std::make_unique<CommonTablePropertyNameExp>(m_columnList[i].c_str(), *target, [&](Utf8String col) {
                 return FindType(col);
             }, ctb);

@@ -772,6 +772,9 @@ SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaCP> const &importSchema
         if (rc == SchemaImportResult::ERROR_DATA_TRANSFORM_REQUIRED)
             return SchemaStatus::DataTransformRequired;
 
+        if (rc == SchemaImportResult::ERROR_DATA_DELETION_REQUIRED)
+            return SchemaStatus::DataDeletionRequired;
+
         return SchemaStatus::SchemaImportFailed;
     }
 

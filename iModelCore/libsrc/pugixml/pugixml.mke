@@ -2,14 +2,31 @@
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #  See LICENSE.md in the repository root for full copyright notice.
 #---------------------------------------------------------------------------------------------
+# pugixml.mke - Build iTwinPugixml from our BePugiXml wrapper + the vcpkg-built pugixml archive.
+#
+# Upstream pugixml is no longer compiled file-by-file from a checked-in source tree. vcpkg
+# builds it (static triplet on every platform; see ../vcpkg.mki and ./vcpkg.json / overlay-ports)
+# and this makefile combines that archive with our own BePugiXml.o wrapper into the deliverable
+# downstream code expects:
+#
+#   * Static delivery: merge BePugiXml.o + vcpkg's libpugixml archive into one libiTwinPugixml
+#     static archive (consumed as a thin-archive input by imodeljs.node).
+#   * Dynamic delivery: link iTwinPugixml (shared lib + import lib) from BePugiXml.o + vcpkg's
+#     libpugixml archive via the standard dlmlink machinery (linkLibrary.mki).
+#
+# The pugi:: export surface is preserved by the dllexport annotation injected into the vcpkg
+# pugiconfig.hpp (see overlay-ports/pugixml/portfile.cmake); the wrapper symbols are exported
+# via BEPUGIXML_EXPORT. No .def is involved.
+#---------------------------------------------------------------------------------------------
 BUILD_WITH_C20=1
 
 %include mdl.mki
 
 cDefs +% -D__PUGIXML_BUILD__
 
-baseDir = $(_MakeFilePath)
-srcDir = $(baseDir)src/
+baseDir   = $(_MakeFilePath)
+srcDir    = $(baseDir)src/
+libsrcDir = $(baseDir)../
 o = $(PartBuildDir)
 
 appName = iTwinPugixml
@@ -18,33 +35,110 @@ CCompPDBName = $(appName)
 #Ignore unknown pragmas (i.e. pragma mark)
 LLVMCommonCompOpts  + -Wno-unknown-pragmas
 
+#--------------------------------------------------------------------------------------
+#   Resolve the vcpkg triplet and install root. The vcpkg_install_pugixml chain part always
+#   runs as Static, so the installed packages live under the static OutputRootDir. Both static
+#   and dynamic builds of this mke point vcpkgInstallRoot at that same location; no second
+#   vcpkg invocation is needed.
+#--------------------------------------------------------------------------------------
+%include $(libsrcDir)vcpkg.mki
+%if defined (CREATE_STATIC_LIBRARIES)
+vcpkgInstallRoot = $(OutputRootDir)vcpkg_installed/pugixml/
+%else
+vcpkgInstallRoot = $(OutputRootDir)static/vcpkg_installed/pugixml/
+%endif
+vcpkgTripletDir = $(vcpkgInstallRoot)$(vcpkgTriplet)/
+vcpkgIncludeDir = $(vcpkgTripletDir)include/
+vcpkgLibDir     = $(vcpkgTripletDir)lib/
+vcpkgDbgLibDir  = $(vcpkgTripletDir)debug/lib/
+
+#--------------------------------------------------------------------------------------
+#   Resolve the vcpkg-produced pugixml static archive (single translation unit, so the whole
+#   object is pulled in whenever any pugi symbol is referenced). Release and debug share the
+#   same file name and differ only by directory.
+#--------------------------------------------------------------------------------------
+%if $(TARGET_PLATFORM) == "Windows"
+    pugixmlLibName = pugixml.lib
+%else
+    pugixmlLibName = libpugixml.a
+%endif
+
+%if defined (DEBUG)
+    vcpkgPugixml = $(vcpkgDbgLibDir)$(pugixmlLibName)
+%else
+    vcpkgPugixml = $(vcpkgLibDir)$(pugixmlLibName)
+%endif
+
 always:
     !~@mkdir $(o)
 
+#--------------------------------------------------------------------------------------
+#   Compile our Bentley wrapper (the only source we still own; vcpkg builds pugixml.cpp).
+#--------------------------------------------------------------------------------------
 MultiCompileDepends=$(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-PugiXmlHeaders =                $(srcDir)pugixml.hpp \
-                                $(srcDir)pugiconfig.hpp
-
 BePugiXmlHeaders =              $(srcDir)BePugiXml.h
 
-$(o)pugixml$(oext) : $(srcDir)pugixml.cpp $(PugiXmlHeaders) ${MultiCompileDepends}
+# BePugiXml.h includes <pugixml/src/pugixml.hpp>, which now comes from the vcpkg install tree
+# (prewire.mke stages it into VendorAPI). List the vcpkg-installed headers explicitly so a
+# version bump or an overlay-port change to pugiconfig.hpp rebuilds the wrapper object instead
+# of silently leaving a stale one behind.
+PugiXmlHeaders =                $(vcpkgIncludeDir)pugixml.hpp \
+                                $(vcpkgIncludeDir)pugiconfig.hpp
 
 $(o)BePugiXml$(oext) : $(srcDir)BePugiXml.cpp $(BePugiXmlHeaders) $(PugiXmlHeaders) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 cppObjects=%$(MultiCompileObjectList)
 
-DLM_NAME            = $(appName)
-DLM_DEST            = $(o)
-DLM_OBJECT_FILES    = $(cppObjects)
-DLM_EXPORT_DEST     = $(o)
-DLM_NOINITFUNC      = 1
-DLM_NOENTRY         = 1
-DLM_OBJECT_DEST     = $(o)
+#--------------------------------------------------------------------------------------
+#   Produce the iTwinPugixml deliverable.
+#--------------------------------------------------------------------------------------
+%if defined (CREATE_STATIC_LIBRARIES)
 
-LINKER_LIBRARIES + $(BuildContext)SubParts/Libs/$(libprefix)iTwinBentley$(stlibext)
+    #----------------------------------------------------------------------------------
+    #   Static delivery: merge BePugiXml.o + vcpkg's libpugixml archive into one archive.
+    #   macOS/iOS use libtool, Linux/Android use ar (via merge_static_libs.sh / ar qcL),
+    #   Windows-static uses lib.exe.
+    #----------------------------------------------------------------------------------
+    pugixmlStaticOut = $(o)$(stlibprefix)$(appName)$(stlibext)
 
-# We support shared or static linking.
-%include $(sharedMki)linkLibrary.mki
+    always:
+        -$(deleteCmd) "$(pugixmlStaticOut)"
+    %if $(TARGET_PLATFORM) == "Windows"
+        lib "-OUT:$(pugixmlStaticOut)" $(cppObjects) "$(vcpkgPugixml)"
+    %elif $(TARGET_PLATFORM) == "MacOS" || $(TARGET_PLATFORM) == "iOS"
+        libtool -static -o "$(pugixmlStaticOut)" $(cppObjects) "$(vcpkgPugixml)"
+    %elif $(TARGET_PLATFORM) == "Linux"
+        $(libsrcDir)merge_static_libs.sh "$(pugixmlStaticOut)" $(cppObjects) "$(vcpkgPugixml)"
+    %elif $(TARGET_PLATFORM) == "Android"
+        $(BENTLEY_ANDROID_TOOLCHAIN_ar) qcL "$(pugixmlStaticOut)" $(cppObjects) "$(vcpkgPugixml)"
+    %endif
+
+    always:
+        -$(deleteCmd) "$(BuildContext)Delivery/$(stlibprefix)$(appName)$(stlibext)"
+        ~linkfile "$(BuildContext)Delivery/$(stlibprefix)$(appName)$(stlibext)=$(pugixmlStaticOut)"
+
+%else
+
+    #----------------------------------------------------------------------------------
+    #   Dynamic delivery: link the shared lib + import lib from BePugiXml.o + vcpkg's
+    #   libpugixml archive. Reuses the standard dlmlink machinery so versioning, signing,
+    #   the import library, and BuildContext delivery behave exactly as before. The pugi API
+    #   is re-exported via the dllexport annotations baked into the vcpkg archive on Windows
+    #   (default visibility elsewhere); the wrapper symbols via BEPUGIXML_EXPORT. No .def.
+    #----------------------------------------------------------------------------------
+    DLM_NAME            = $(appName)
+    DLM_DEST            = $(o)
+    DLM_OBJECT_FILES    = $(cppObjects) $(vcpkgPugixml)
+    DLM_EXPORT_DEST     = $(o)
+    DLM_NOINITFUNC      = 1
+    DLM_NOENTRY         = 1
+    DLM_OBJECT_DEST     = $(o)
+
+    LINKER_LIBRARIES + $(BuildContext)SubParts/Libs/$(libprefix)iTwinBentley$(stlibext)
+
+    %include $(sharedMki)linkLibrary.mki
+
+%endif

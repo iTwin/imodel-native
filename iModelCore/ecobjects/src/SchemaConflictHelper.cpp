@@ -5,6 +5,7 @@
 #include "ECObjectsPch.h"
 #include <ECObjects/SchemaConflictHelper.h>
 #include <numeric>
+#include <string>
 
 USING_NAMESPACE_BENTLEY_EC
 

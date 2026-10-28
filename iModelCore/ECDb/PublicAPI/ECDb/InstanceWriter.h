@@ -49,6 +49,7 @@ public:
 
     protected:
         bool m_useJsName;
+        bool m_convertClassIdsToClassNames = false;
         UserPropertyHandler m_userPropertyHandler;
         CustomBindHandler m_customBindHandler;
         CanBindHanlder m_canBindHandler;
@@ -57,11 +58,16 @@ public:
     public:
         Options(WriterOp op) : m_useJsName(false), m_op(op) {}
         bool GetUseJsNames() const { return m_useJsName; }
+        bool GetConvertClassIdsToClassNames() const { return m_convertClassIdsToClassNames; }
         CustomBindHandler GetCustomBindHandler() const { return m_customBindHandler; }
         CanBindHanlder GetCanBindHandler() const { return m_canBindHandler; }
         UserPropertyHandler GetUserPropertyHandler() const { return m_userPropertyHandler; }
         Options& UseJsNames(bool v) {
             m_useJsName = v;
+            return *this;
+        }
+        Options& ConvertClassIdsToClassNames(bool v) {
+            m_convertClassIdsToClassNames = v;
             return *this;
         }
         Options& SetUserPropertyHandler(UserPropertyHandler handler) {
@@ -152,8 +158,8 @@ public:
     ECDB_EXPORT void ToJson(BeJsValue out, ECInstanceId instanceId, ECN::ECClassId classId, JsFormat jsFmt = JsFormat::Standard) const;
     ECDB_EXPORT void ToJson(BeJsValue out, ECInstanceKeyCR key, JsFormat jsFmt = JsFormat::Standard) const;
     ECDB_EXPORT bool TryGetId(ECInstanceId& instanceId, BeJsConst in, JsFormat jsFmt = JsFormat::Standard) const;
-    ECDB_EXPORT bool TryGetClassId(ECN::ECClassId& classId, BeJsConst in, JsFormat jsFmt = JsFormat::Standard) const;
-    ECDB_EXPORT bool TryGetInstanceKey(ECInstanceKeyR key, BeJsConst in, JsFormat jsFmt = JsFormat::Standard) const;
+    ECDB_EXPORT bool TryGetClassId(ECN::ECClassId& classId, BeJsConst in, JsFormat jsFmt = JsFormat::Standard, bool convertClassIdsToClassNames = false) const;
+    ECDB_EXPORT bool TryGetInstanceKey(ECInstanceKeyR key, BeJsConst in, JsFormat jsFmt = JsFormat::Standard, bool convertClassIdsToClassNames = false) const;
 
     ECDB_EXPORT void Reset();
 };

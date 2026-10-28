@@ -2,7 +2,7 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-import { DbResult, Id64Array, Id64String, IModelStatus, OpenMode } from "@itwin/core-bentley";
+import { DbResult, Id64, Id64Array, Id64String, IModelStatus, OpenMode } from "@itwin/core-bentley";
 import { BlobRange, Code, DbBlobRequest, DbBlobResponse, DbQueryRequest, DbQueryResponse, DbRequestKind, DbResponseStatus, GeometryPartProps, IModel, PhysicalElementProps, ProfileOptions, RelationshipProps } from "@itwin/core-common";
 import { DomainOptions } from "@itwin/core-common/lib/cjs/BriefcaseTypes";
 import { assert, expect } from "chai";
@@ -59,13 +59,13 @@ describe("basic tests", () => {
       partialKey: {
         baseClassName: "BisCore:Element"
       } as any // missing id
-    } as any)).to.throw("missing id");
+    })).to.throw("missing id");
 
     expect(() => dgndb.resolveInstanceKey({
       partialKey: {
         id: "0x1b"
       } as any // missing baseClassName
-    } as any)).to.throw("missing baseClassName");
+    })).to.throw("missing baseClassName");
 
     expect(() => dgndb.resolveInstanceKey({
       partialKey: {
@@ -137,21 +137,21 @@ describe("basic tests", () => {
         scope: "0x1",
         value: "test"
       } as any // missing spec
-    } as any)).to.throw("missing spec");
+    })).to.throw("missing spec");
 
     expect(() => dgndb.resolveInstanceKey({
       code: {
         spec: "0x1",
         value: "test"
       } as any // missing scope
-    } as any)).to.throw("missing type");
+    })).to.throw("missing type");
 
     expect(() => dgndb.resolveInstanceKey({
       code: {
         spec: "0x1",
         scope: "0x1"
-      } as any // missing value
-    } as any)).to.throw("missing value");
+      } // missing value
+    })).to.throw("missing value");
 
     expect(() => dgndb.resolveInstanceKey({
       code: {
@@ -169,9 +169,11 @@ describe("basic tests", () => {
       }
     })).to.throw("failed to resolve element from code");
 
-    expect(() => dgndb.resolveInstanceKey(null as any)).to.throw("invalid input");
+    // non-objects (including null) are now rejected by the argument check itself, before
+    // any attempt to read properties off them
+    expect(() => dgndb.resolveInstanceKey(null as any)).to.throw("must be an object");
 
-    expect(() => dgndb.resolveInstanceKey({} as any)).to.throw("must provide partialKey, federationGuid or");
+    expect(() => dgndb.resolveInstanceKey({})).to.throw("must provide partialKey, federationGuid or");
   });
   it("compress/decompress", () => {
     const assertCompressAndThenDecompress = (sourceData: Uint8Array) => {
@@ -313,7 +315,7 @@ describe("basic tests", () => {
     b0.importXmlSchemas([schema1], { schemaSyncDbUri: syncDbUri });
 
     const schema2 = `<?xml version="1.0" encoding="UTF-8"?>
-    <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
         <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
         <ECEntityClass typeName="Pipe1">
           <BaseClass>bis:GeometricElement2d</BaseClass>
@@ -325,12 +327,13 @@ describe("basic tests", () => {
     </ECSchema>`;
     b1.importXmlSchemas([schema2], { schemaSyncDbUri: syncDbUri });
 
-    b0.schemaSyncPull(syncDbUri);
+    // Importing through the current front door adopts the sync db's existing answer.
+    b0.importXmlSchemas([schema2], { schemaSyncDbUri: syncDbUri });
 
     // test default URI
     b2.schemaSyncSetDefaultUri(syncDbUri);
     assert.equal(b2.schemaSyncGetDefaultUri(), syncDbUri);
-    b2.schemaSyncPull();
+    b2.importXmlSchemas([schema2]);
 
     // b1 = b2 == b0
     const b0Hashes = getSchemaHashes(b0);
@@ -340,7 +343,7 @@ describe("basic tests", () => {
     assert.deepEqual(b0Hashes, b2Hashes);
 
     const schema3 = `<?xml version="1.0" encoding="UTF-8"?>
-    <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
         <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
         <ECEntityClass typeName="Pipe1">
           <BaseClass>bis:GeometricElement2d</BaseClass>
@@ -549,6 +552,44 @@ describe("basic tests", () => {
     return { elementId, partId };
   }
 
+  it("re-reads forceUseId after JS onInsert", () => {
+    try {
+      const sequenceValue = dgndb.queryLocalValue("bis_elementidsequence");
+      const nextLocalId = Number(BigInt(sequenceValue ?? "0") & 0xFFFFFFFFFFn) + 100;
+      const forcedId = Id64.fromLocalAndBriefcaseIds(nextLocalId, dgndb.getBriefcaseId());
+
+      const mockJsDb: any = {
+        getJsClass: () => ({
+          onInsert(arg: { iModel: any, props: GeometryPartProps & { id?: Id64String }, options: { forceUseId?: boolean } }) {
+            expect(arg.iModel).to.equal(mockJsDb);
+            expect(arg.options).to.deep.equal({});
+            arg.props.id = forcedId;
+            arg.options.forceUseId = true;
+          },
+          onInsertElement(){},
+          onInserted(){},
+          onInsertedElement(){},
+        }),
+      };
+      dgndb.setIModelDb(mockJsDb);
+
+      const geometryPartProps: GeometryPartProps = {
+        classFullName: "BisCore:GeometryPart",
+        model: IModel.dictionaryId,
+        code: Code.createEmpty(),
+        geom: [
+          { box: { origin: [0, 0, 0], baseX: 10, baseY: 10, height: 1 } }
+        ]
+      };
+
+      const partId = dgndb.insertElement(geometryPartProps, {});
+      expect(partId).to.equal(forcedId);
+    } finally {
+      dgndb.setIModelDb(undefined);
+      dgndb.abandonChanges();
+    }
+  });
+
   it("exportGraphicsAsync enumerates parts directly if array is not provided", async () => {
     try {
       const partDetails = createPhysicalElementWithPart();
@@ -650,6 +691,39 @@ describe("basic tests", () => {
     db.getSchemaProps("PresentationRules");
     bisProps = db.getSchemaProps("BisCore");
     assert.isTrue(bisProps.version >= "01.00.15"); // PR references 01.00.15+, so importing PR will cause it to upgrade.
+  });
+
+  it("importXmlSchemas resolves references from ecSchemaXmlContext", () => {
+    const writeDbFileName = copyFile("importXmlSchemasWithContext.bim", dbFileName);
+    const db = openDgnDb(writeDbFileName, { profile: ProfileOptions.Upgrade, schemaLockHeld: true });
+    const schemaDirectory = path.join(getOutputDir(), "importXmlSchemasContext");
+    fs.ensureDirSync(schemaDirectory);
+    const referencedSchemaPath = path.join(schemaDirectory, "ImportXmlSchemasReference.01.00.00.ecschema.xml");
+    fs.writeFileSync(referencedSchemaPath, `<?xml version="1.0" encoding="UTF-8"?>
+      <ECSchema schemaName="ImportXmlSchemasReference" alias="ref" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+        <ECEntityClass typeName="ReferencedClass">
+          <BaseClass>bis:InformationRecordElement</BaseClass>
+        </ECEntityClass>
+      </ECSchema>`);
+
+    const schemaContext = new iModelJsNative.ECSchemaXmlContext();
+    schemaContext.addSchemaPath(schemaDirectory);
+    const schema = `<?xml version="1.0" encoding="UTF-8"?>
+      <ECSchema schemaName="ImportXmlSchemasMain" alias="ims" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ImportXmlSchemasReference" version="01.00.00" alias="ref"/>
+        <ECEntityClass typeName="DerivedClass">
+          <BaseClass>ref:ReferencedClass</BaseClass>
+        </ECEntityClass>
+      </ECSchema>`;
+
+    try {
+      db.importXmlSchemas([schema], { schemaLockHeld: true, ecSchemaXmlContext: schemaContext });
+      assert.equal(db.getSchemaProps("ImportXmlSchemasReference").version, "01.00.00");
+      assert.isTrue(db.isSubClassOf("ImportXmlSchemasMain:DerivedClass", "ImportXmlSchemasReference:ReferencedClass"));
+    } finally {
+      db.closeFile();
+    }
   });
 
   it("testSchemaImport NoAdditionalRootEntityClasses", () => {

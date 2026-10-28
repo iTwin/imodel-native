@@ -1,0 +1,13 @@
+{
+  "name": "imodel-native-pugixml",
+  "version": "1.0.0",
+  "dependencies": [
+    {
+      "name": "pugixml",
+      "version>=": "1.15"
+    }
+  ],
+  "overrides": [
+    { "name": "pugixml", "version": "1.15" }
+  ]
+}

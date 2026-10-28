@@ -508,6 +508,50 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_GetsV
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(SelectedNodeInstances_GetsValidContentForClassWithNullProperty, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="Null" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_GetsValidContentForClassWithNullProperty)
+    {
+    // set up the dataset
+    ECEntityClassCP classA = GetClass("A")->GetEntityClassCP();
+    IECInstancePtr instanceA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) { instance.SetValue("Null", ECValue("stringVal")); });
+
+    // set up input
+    KeySetPtr input = KeySet::Create(bvector<IECInstancePtr>{instanceA});
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    contentRule->AddSpecification(*new SelectedNodeInstancesSpecification());
+    rules->AddPresentationRule(*contentRule);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *input)));
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    // request for content
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    rapidjson::Document jsonDoc = contentSet.Get(0)->AsJson();
+    RapidJsonValueCR jsonValues = jsonDoc["Values"];
+    EXPECT_TRUE(jsonValues.HasMember(FIELD_NAME(classA, "Null")));
+    EXPECT_STREQ("stringVal", jsonValues[FIELD_NAME(classA, "Null")].GetString());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 // @betest
 +---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(DescriptorOverride_WithSortingFieldAndOrder, R"*(
@@ -5661,7 +5705,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstancesSpecif
         new RelationshipStepSpecification(relationshipAHasB->GetFullName(), RequiredRelationDirection_Forward, classB->GetFullName())
         }), { new PropertySpecification("*") }, RelationshipMeaning::RelatedInstance, true));
     rules->AddPresentationRule(*relatedPropertiesModifier);
-    
+
     ContentModifierP calculatedPropertiesModifierApplyOnNestedB = new ContentModifier(GetSchema()->GetName(), classB->GetName());
     calculatedPropertiesModifierApplyOnNestedB->AddCalculatedProperty(*new CalculatedPropertiesSpecification("Test calculated property", 1000, "this.PropertyB"));
     calculatedPropertiesModifierApplyOnNestedB->SetApplyOnNestedContent(true);
@@ -5677,7 +5721,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstancesSpecif
     ContentDescriptor::Field* relatedContentField = descriptor->GetVisibleFields()[0];
     ContentDescriptor::Field* calculatedField = relatedContentField->AsNestedContentField()->GetFields()[1];
     EXPECT_STREQ("Test calculated property", calculatedField->GetLabel().c_str());
-    
+
     // request for content
     ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
@@ -6559,7 +6603,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstancesSpecif
 
     // insert some instances
     IECInstancePtr instanceA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
-    
+
     // set up input
     KeySetPtr input = KeySet::Create(*instanceA);
 
@@ -10734,6 +10778,118 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesDescriptorsWithSimila
     mergedDescriptor->MergeWith(*descriptor2);
     ASSERT_TRUE(mergedDescriptor.IsValid());
     EXPECT_EQ(mergedDescriptor->GetAllFields().size(), descriptor->GetAllFields().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(ContentRelatedInstances_LoadsContentWhenSpecificationsReturnSameClassWithRelatedPropertiesOfSharedBaseClass, R"*(
+    <ECEntityClass typeName="Element">
+        <ECProperty propertyName="Name" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="Graphic">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="Functional">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="Link">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="GraphicRepresentsFunctional" strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..*)" roleLabel="represents" polymorphic="True">
+            <Class class="Graphic" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is represented by" polymorphic="True">
+            <Class class="Functional" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="StagingGraphicRepresentsFunctional" strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..*)" roleLabel="represents in staging" polymorphic="True">
+            <Class class="Graphic" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is represented in staging by" polymorphic="True">
+            <Class class="Functional" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="FunctionalReferencesLink" strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..*)" roleLabel="references" polymorphic="True">
+            <Class class="Functional" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="True">
+            <Class class="Link" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_LoadsContentWhenSpecificationsReturnSameClassWithRelatedPropertiesOfSharedBaseClass)
+    {
+    // set up data set
+    ECClassCP elementClass = GetClass("Element");
+    ECClassCP graphicClass = GetClass("Graphic");
+    ECClassCP functionalClass = GetClass("Functional");
+    ECClassCP linkClass = GetClass("Link");
+    ECRelationshipClassCP representsRel = GetClass("GraphicRepresentsFunctional")->GetRelationshipClassCP();
+    ECRelationshipClassCP stagingRepresentsRel = GetClass("StagingGraphicRepresentsFunctional")->GetRelationshipClassCP();
+    ECRelationshipClassCP referencesLinkRel = GetClass("FunctionalReferencesLink")->GetRelationshipClassCP();
+
+    auto createNamedInstance = [&](ECClassCR ecClass, Utf8CP name)
+        {
+        return RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), ecClass, [&](IECInstanceR instance){instance.SetValue("Name", ECValue(name));});
+        };
+    IECInstancePtr graphic = createNamedInstance(*graphicClass, "G");
+    IECInstancePtr functional1 = createNamedInstance(*functionalClass, "F1");
+    IECInstancePtr functional2 = createNamedInstance(*functionalClass, "F2");
+    IECInstancePtr link1 = createNamedInstance(*linkClass, "L1");
+    IECInstancePtr link2 = createNamedInstance(*linkClass, "L2");
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *representsRel, *graphic, *functional1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *stagingRepresentsRel, *graphic, *functional2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *referencesLinkRel, *functional1, *link1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *referencesLinkRel, *functional2, *link2);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, "", {new RepeatableRelationshipPathSpecification({new RepeatableRelationshipStepSpecification(
+        representsRel->GetFullName(), RequiredRelationDirection_Forward, functionalClass->GetFullName())})}));
+    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, "", {new RepeatableRelationshipPathSpecification({new RepeatableRelationshipStepSpecification(
+        stagingRepresentsRel->GetFullName(), RequiredRelationDirection_Forward, functionalClass->GetFullName())})}));
+    rules->AddPresentationRule(*rule);
+
+    ContentModifierP modifier = new ContentModifier(GetSchema()->GetName(), functionalClass->GetName());
+    modifier->AddRelatedProperty(*new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
+        {
+        new RelationshipStepSpecification(referencesLinkRel->GetFullName(), RequiredRelationDirection_Forward, linkClass->GetFullName())
+        }), { new PropertySpecification("*") }, RelationshipMeaning::RelatedInstance));
+    rules->AddPresentationRule(*modifier);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create(*graphic))));
+    ASSERT_TRUE(descriptor.IsValid());
+
+    // request for content
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP>{ functional1.get(), functional2.get() }, *content);
+
+    struct ExpectedLink { Utf8String linkName; Utf8String fieldName; Utf8String propertyFieldName; };
+    std::map<Utf8String, ExpectedLink> expectedLinks = {
+        { "F1", { "L1", NESTED_CONTENT_FIELD_NAME(functionalClass, linkClass), FIELD_NAME_C(elementClass, "Name", 2) } },
+        { "F2", { "L2", NESTED_CONTENT_FIELD_NAME_C(functionalClass, linkClass, 2), FIELD_NAME_C(elementClass, "Name", 3) } },
+        };
+    auto contentSet = content->GetContentSet();
+    ASSERT_EQ(2, contentSet.GetSize());
+    for (size_t i = 0; i < contentSet.GetSize(); ++i)
+        {
+        rapidjson::Document json = contentSet.Get(i)->AsJson();
+        RapidJsonValueCR values = json["Values"];
+        auto expectedLink = expectedLinks.find(values[FIELD_NAME(elementClass, "Name")].GetString());
+        ASSERT_TRUE(expectedLinks.end() != expectedLink);
+
+        RapidJsonValueCR linkValues = values[expectedLink->second.fieldName.c_str()];
+        ASSERT_EQ(1, linkValues.Size());
+        EXPECT_STREQ(expectedLink->second.linkName.c_str(), linkValues[0]["Values"][expectedLink->second.propertyFieldName.c_str()].GetString());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

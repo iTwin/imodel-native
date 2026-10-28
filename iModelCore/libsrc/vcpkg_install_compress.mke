@@ -9,8 +9,8 @@
 
 %include mdl.mki
 
-compressDir = $(_MakeFilePath)compress/
-installRoot = $(OutputRootDir)vcpkg_installed/compress/
+compressDir = $(_MakeFilePath)compress
+installRoot = $(OutputRootDir)vcpkg_installed/compress
 
 # This library's base triplet sets explicit -RTC flags, so use the veracode overlay
 # triplet (which omits them) for veracode builds.
@@ -19,7 +19,7 @@ vcpkgUseVeracodeTriplet = 1
 
 always:
 %if defined (winNT)
-    $(_MakeFilePath)vcpkg_run_install.bat $(compressDir) $(installRoot) $(vcpkgTriplet)
+    powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$(_MakeFilePath)vcpkg_run_install.ps1" "$(compressDir)" "$(installRoot)" "$(vcpkgTriplet)"
 %else
     $(_MakeFilePath)vcpkg_run_install.sh $(compressDir) $(installRoot) $(vcpkgTriplet)
 %endif

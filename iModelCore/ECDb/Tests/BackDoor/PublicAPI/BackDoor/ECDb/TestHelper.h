@@ -9,7 +9,7 @@
 #include <Bentley/BeNumerical.h>
 #include <Bentley/BeVersion.h>
 #include <Bentley/Nullable.h>
-#include <json/json.h>
+#include <BeRapidJson/BeJsValue.h>
 #include <BeRapidJson/BeRapidJson.h>
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
@@ -118,11 +118,9 @@ struct TestUtilities final
 
     public:
         static BentleyStatus ReadFile(Utf8StringR, BeFileNameCR);
-        static BentleyStatus ReadFile(Json::Value&, BeFileNameCR);
         static BentleyStatus ReadFile(BeJsDocument&, BeFileNameCR);
         static BentleyStatus ReadFile(rapidjson::Document&, BeFileNameCR);
 
-        static BentleyStatus ParseJson(Json::Value& json, Utf8StringCR jsonStr) { return Json::Reader::Parse(jsonStr, json) ? SUCCESS : ERROR; }
         static BentleyStatus ParseJson(BeJsDocument& json, Utf8StringCR jsonStr) 
             { 
                 json.Parse(jsonStr.c_str()); 
@@ -138,7 +136,7 @@ struct TestUtilities final
             return jsonStrBuf.GetString();
             }
 
-        static Json::Value DbValueToJson(DbValue const& v)
+        static void DbValueToJson(BeJsValue json, DbValue const& v)
             {
             switch (v.GetValueType())
                 {
@@ -146,21 +144,27 @@ struct TestUtilities final
                     {
                     Utf8String base64Str;
                     Base64Utilities::Encode(base64Str, (Byte const*) v.GetValueBlob(), (size_t) v.GetValueBytes());
-                    return Json::Value(base64Str);
+                    json = base64Str;
+                    return;
                     }
 
                     case DbValueType::FloatVal:
-                        return Json::Value(v.GetValueDouble());
+                        json = v.GetValueDouble();
+                        return;
                     case DbValueType::IntegerVal:
-                        return Json::Value(v.GetValueInt64());
+                        json = v.GetValueInt64();
+                        return;
                     case DbValueType::TextVal:
-                        return Json::Value(v.GetValueText());
+                        json = v.GetValueText();
+                        return;
                     case DbValueType::NullVal:
-                        return Json::Value(Json::ValueType::nullValue);
+                        json.SetNull();
+                        return;
 
                     default:
                         BeAssert(false && "Unhandled DbValueType value");
-                        return Json::Value(Json::ValueType::nullValue);
+                        json.SetNull();
+                        return;
                 }
             };
         //! Use this method to compare to double values in tests as comparing them directly often fails due to floating point inaccuracies

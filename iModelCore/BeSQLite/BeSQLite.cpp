@@ -38,10 +38,6 @@ using namespace std;
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE
 
-#if !defined (NDEBUG)
-extern "C" int checkNoActiveStatements(SqlDbP db);
-#endif
-
 extern "C" int getStatementState(SqlStatementP pStmt);
 extern "C" int sqlite3_shathree_init(sqlite3 *, char **, const sqlite3_api_routines *);
 
@@ -1786,7 +1782,15 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit, Utf8CP operation) 
 
     // BE_SQLITE_INTERRUPT means the transaction was cancelled. Anything other than BE_SQLITE_OK means the transaction is still open.
     if (rc != BE_SQLITE_OK && rc != BE_SQLITE_INTERRUPT) {
-        BeAssert(BE_SQLITE_OK == checkNoActiveStatements(m_sqlDb)); // a common problem is to try to commit while statements are active. Help find that error.
+#if !defined (NDEBUG)
+        // A common cause of a failed commit is a statement left stepped but not finalized, which still holds a lock.
+        for (sqlite3_stmt* stmt = nullptr; nullptr != (stmt = sqlite3_next_stmt(m_sqlDb, stmt));)
+            {
+            const StatementState state = static_cast<StatementState>(getStatementState(stmt));
+            if (state == StatementState::Run || state == StatementState::Halt)
+                LOG.errorv("Unfinalized statement (%s): %s", BeSQLiteLib::GetStatementStateString(state), sqlite3_sql(stmt));
+            }
+#endif
         return rc;
     }
 
@@ -4296,14 +4300,21 @@ ZipErrors SnappyFromBlob::ReadNextChunk()
     m_blobOffset     += chunkSize;
     m_blobBytesLeft  -= chunkSize;
 
-    size_t uncompressSize;
-    bool bstat = snappy::GetUncompressedLength((char const*) m_blobData, chunkSize, &uncompressSize);
-    UNUSED_VARIABLE(bstat);
-    BeAssert(uncompressSize<=SNAPPY_UNCOMPRESSED_BUFFER_SIZE && uncompressSize>0);
-    BeAssert(bstat);
+    // the uncompressed length is read from the (untrusted) blob. RawUncompress writes that many bytes, so it must fit in our buffer.
+    size_t uncompressSize = 0;
+    if (!snappy::GetUncompressedLength((char const*) m_blobData, chunkSize, &uncompressSize) || 0 == uncompressSize || uncompressSize > SNAPPY_UNCOMPRESSED_BUFFER_SIZE)
+        {
+        m_blobBytesLeft = 0;
+        BeAssert(0);
+        return ZIP_ERROR_BLOB_READ_ERROR;
+        }
 
-    bstat = snappy::RawUncompress((char const*) m_blobData, chunkSize, (char*) m_uncompressed);
-    BeAssert(bstat);
+    if (!snappy::RawUncompress((char const*) m_blobData, chunkSize, (char*) m_uncompressed))
+        {
+        m_blobBytesLeft = 0;
+        BeAssert(0);
+        return ZIP_ERROR_BLOB_READ_ERROR;
+        }
 
     m_uncompressCurr = m_uncompressed;
     m_uncompressAvail = (uint16_t) uncompressSize;
@@ -4503,7 +4514,11 @@ void SnappyFromMemory::Init(void*blobBuffer, uint32_t blobBufferSize)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ZipErrors SnappyFromMemory::TransferFromBlob(void* data, uint32_t numBytes, int offset)
     {
-    //  Verify that it does not go beyond the end of the buffer
+    // m_blobOffset + m_blobBytesLeft is always the total size of the buffer passed to Init.
+    uint64_t blobSize = (uint64_t) m_blobOffset + m_blobBytesLeft;
+    if (nullptr == m_blobData || offset < 0 || (uint64_t) offset + numBytes > blobSize)
+        return ZIP_ERROR_BLOB_READ_ERROR;
+
     memcpy(data, m_blobData + offset, numBytes);
     return ZIP_SUCCESS;
     }
@@ -4526,7 +4541,13 @@ ZipErrors SnappyFromMemory::ReadNextChunk()
         return  ZIP_ERROR_BLOB_READ_ERROR;
         }
 
-    BeAssert(chunkSize <= m_blobBytesLeft);
+    // chunkSize includes its own 2-byte header
+    if (chunkSize <= 2 || chunkSize > m_blobBytesLeft)
+        {
+        m_blobBytesLeft = 0;
+        BeAssert(0);
+        return ZIP_ERROR_BLOB_READ_ERROR;
+        }
 
     m_blobOffset += 2;
     m_blobBytesLeft -= 2;
@@ -4537,14 +4558,21 @@ ZipErrors SnappyFromMemory::ReadNextChunk()
     m_blobOffset     += chunkSize;
     m_blobBytesLeft  -= chunkSize;
 
-    size_t uncompressSize;
-    bool bstat = snappy::GetUncompressedLength((char const*) currentData, chunkSize, &uncompressSize);
-    UNUSED_VARIABLE(bstat);
-    BeAssert(uncompressSize<=32*1024 && uncompressSize>0);
-    BeAssert(bstat);
+    // the uncompressed length is read from the (untrusted) blob. RawUncompress writes that many bytes, so it must fit in our buffer.
+    size_t uncompressSize = 0;
+    if (!snappy::GetUncompressedLength((char const*) currentData, chunkSize, &uncompressSize) || 0 == uncompressSize || uncompressSize > m_uncompressSize)
+        {
+        m_blobBytesLeft = 0;
+        BeAssert(0);
+        return ZIP_ERROR_BLOB_READ_ERROR;
+        }
 
-    bstat = snappy::RawUncompress((char const*) currentData, chunkSize, (char*) m_uncompressed);
-    BeAssert(bstat);
+    if (!snappy::RawUncompress((char const*) currentData, chunkSize, (char*) m_uncompressed))
+        {
+        m_blobBytesLeft = 0;
+        BeAssert(0);
+        return ZIP_ERROR_BLOB_READ_ERROR;
+        }
 
     m_uncompressCurr = m_uncompressed;
     m_uncompressAvail = (uint16_t) uncompressSize;
@@ -6006,6 +6034,18 @@ Utf8String BeSQLiteLib::GetLogError(DbResult rc) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP BeSQLiteLib::GetStatementStateString(StatementState state)
+    {
+    switch (state)
+        {
+        case StatementState::Init: return "Init";
+        case StatementState::Ready: return "Ready";
+        case StatementState::Run: return "stepped, more rows to go";
+        case StatementState::Halt: return "stepped to end, not finalized";
+        default: return "Unknown";
+        }
+    }
+
 Utf8CP BeSQLiteLib::GetErrorName(DbResult code) {
     switch (code) {
         case BE_SQLITE_ERROR_DataTransformRequired:       return "BE_SQLITE_ERROR_DataTransformRequired";
@@ -6666,6 +6706,34 @@ DbResult Db::SetBusyTimeout(int ms) {
         return SetBusyTimeout(ms);
 
     return BE_SQLITE_ERROR_NOTOPEN;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult Db::QueryForeignKeyEnforcement(bool& enabled) const {
+    if (!m_dbFile)
+        return BE_SQLITE_ERROR_NOTOPEN;
+
+    int currentState = 0;
+    const auto rc = static_cast<DbResult>(sqlite3_db_config(GetSqlDb(), SQLITE_DBCONFIG_ENABLE_FKEY, -1, &currentState));
+    if (rc == BE_SQLITE_OK)
+        enabled = currentState != 0;
+    return rc;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult Db::SetForeignKeyEnforcement(bool enabled) const {
+    if (!m_dbFile)
+        return BE_SQLITE_ERROR_NOTOPEN;
+
+    int currentState = 0;
+    const auto rc = static_cast<DbResult>(sqlite3_db_config(GetSqlDb(), SQLITE_DBCONFIG_ENABLE_FKEY, enabled ? 1 : 0, &currentState));
+    if (rc != BE_SQLITE_OK)
+        return rc;
+    return (currentState != 0) == enabled ? BE_SQLITE_OK : BE_SQLITE_ERROR;
 }
 
 //---------------------------------------------------------------------------------------

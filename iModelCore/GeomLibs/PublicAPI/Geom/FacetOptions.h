@@ -785,9 +785,6 @@ GEOMDLLIMPEXP void AddEdgeChains (CurveTopologyId::Type type, uint32_t chainInde
 //! add a single edge chain with 0-based indices
 GEOMDLLIMPEXP void AddEdgeChainZeroBased (CurveTopologyId::Type type, uint32_t chainIndex, bvector <size_t> const &pointIndices);
 
-//! Add a polygon
-GEOMDLLIMPEXP bool AddPolygon(bvector<DPoint3d> &points);
-
 //! Make a Rotational sweep from base points.
 //! To indicate a sharp corner, duplicate the point, using incoming tangent on the first, outgoing on the second.
 //! The zero-length edge will be skipped, and the sweep edge will be marked visible.

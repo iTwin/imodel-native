@@ -116,7 +116,9 @@ struct cs_Ostn15_ *CSnewOstn15 (const char *filePath)
 	char *cp;
 	struct cs_Ostn15_ *__This = NULL;
 
+#ifndef GEOCOORD_ENHANCEMENT
 	double testValue;
+#endif
 
 	/* Allocate and initialize the object. */
 	__This = CS_malc (sizeof (struct cs_Ostn15_));
@@ -140,7 +142,11 @@ struct cs_Ostn15_ *CSnewOstn15 (const char *filePath)
 
 	__This->strm = NULL;
 	__This->dataBuffer = NULL;
+#ifdef GEOCOORD_ENHANCEMENT
+	__This->bufferSize = 400 * __This->recordSize;
+#else
 	__This->bufferSize = 4 * __This->recordSize;
+#endif
 	__This->bufferBeginPosition = -1L;
 	__This->bufferEndPosition = -2L;
 
@@ -225,6 +231,10 @@ struct cs_Ostn15_ *CSnewOstn15 (const char *filePath)
 	if (st != 0) goto error;
 
 #endif
+
+#ifndef GEOCOORD_ENHANCEMENT
+    /* We deactivated this test because it loaded the buffer for no valid reason. Many datum converters are simply for potential conversion. */
+
 	/* As this module has been modified to operate with binary files
 	   provided with the distribution, thus opening the possibility of
 	   byte order disparities, it is appropriate that a quick simple
@@ -236,6 +246,7 @@ struct cs_Ostn15_ *CSnewOstn15 (const char *filePath)
 		CS_erpt (cs_SELF_TEST);
 		goto error;
 	}
+#endif
 
 	/* That's that. */
 	return __This;

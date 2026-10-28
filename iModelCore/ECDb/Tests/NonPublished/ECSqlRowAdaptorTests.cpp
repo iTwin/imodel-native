@@ -10,6 +10,7 @@
 #include <cmath>
 #include <regex>
 #include <set>
+#include <string>
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 

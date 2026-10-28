@@ -126,20 +126,6 @@ struct CreateCommand final : public Command
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //---------------------------------------------------------------------------------------
-struct SyncCommand final : public Command
-    {
-    private:
-        Utf8String _GetName() const override { return ".sync"; }
-        Utf8String _GetUsage() const override;
-        void _Run(Session&, Utf8StringCR args) const override;
-
-    public:
-        SyncCommand() : Command() {}
-        ~SyncCommand() {}
-    };
-//---------------------------------------------------------------------------------------
-// @bsiclass
-//---------------------------------------------------------------------------------------
 struct FileInfoCommand final : public Command
     {
     private:

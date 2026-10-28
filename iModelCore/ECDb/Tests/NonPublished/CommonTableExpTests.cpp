@@ -2858,7 +2858,7 @@ TEST_F(CommonTableExpTestFixture, CTEWithStructBinding)
 
     //**** Test 1 *****
     {
-    Json::Value expectedJson;
+    BeJsDocument expectedJson;
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson,R"json(
          { "b" : true,
          "d" : 3.0,
@@ -2883,7 +2883,7 @@ TEST_F(CommonTableExpTestFixture, CTEWithStructBinding)
         ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
         ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
         JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
-        Json::Value actualJson;
+        BeJsDocument actualJson;
         ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
         ASSERT_TRUE(actualJson.isMember("PStructProp"));
         ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["PStructProp"]));
@@ -2894,7 +2894,7 @@ TEST_F(CommonTableExpTestFixture, CTEWithStructBinding)
         ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
         ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
         JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
-        Json::Value actualJson;
+        BeJsDocument actualJson;
         ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
         ASSERT_TRUE(actualJson.isMember("PStructProp"));
         ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["PStructProp"]));
@@ -2905,7 +2905,7 @@ TEST_F(CommonTableExpTestFixture, CTEWithStructBinding)
         ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
         ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
         JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
-        Json::Value actualJson;
+        BeJsDocument actualJson;
         ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
         ASSERT_TRUE(actualJson.isMember("PStructProp"));
         ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["PStructProp"]));
@@ -2916,7 +2916,7 @@ TEST_F(CommonTableExpTestFixture, CTEWithStructBinding)
         ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
         ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
         JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
-        Json::Value actualJson;
+        BeJsDocument actualJson;
         ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
         ASSERT_TRUE(actualJson.isMember("PStructProp"));
         ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["PStructProp"]));
@@ -2957,7 +2957,7 @@ TEST_F(CommonTableExpTestFixture, CTEWithStructBinding)
         ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
         ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
         JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
-        Json::Value actualJson;
+        BeJsDocument actualJson;
         ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
         ASSERT_TRUE(actualJson.isMember("PStructProp"));
         ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["PStructProp"]));
@@ -2999,7 +2999,7 @@ TEST_F(CommonTableExpTestFixture, CTEWithStructBinding)
 
     //**** Test 2 *****
     {
-    Json::Value expectedJson;
+    BeJsDocument expectedJson;
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, R"json(
         { "PStructProp" :
         { "b" : true,
@@ -3028,7 +3028,7 @@ TEST_F(CommonTableExpTestFixture, CTEWithStructBinding)
         ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
         ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
         JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
-        Json::Value actualJson;
+        BeJsDocument actualJson;
         ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
         ASSERT_TRUE(actualJson.isMember("SAStructProp"));
         ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["SAStructProp"]));
@@ -3039,7 +3039,7 @@ TEST_F(CommonTableExpTestFixture, CTEWithStructBinding)
         ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
         ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
         JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
-        Json::Value actualJson;
+        BeJsDocument actualJson;
         ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
         ASSERT_TRUE(actualJson.isMember("SAStructProp"));
         ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["SAStructProp"]));
@@ -3050,7 +3050,7 @@ TEST_F(CommonTableExpTestFixture, CTEWithStructBinding)
         ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
         ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
         JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
-        Json::Value actualJson;
+        BeJsDocument actualJson;
         ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
         ASSERT_TRUE(actualJson.isMember("SAStructProp"));
         ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["SAStructProp"]));
@@ -3061,7 +3061,7 @@ TEST_F(CommonTableExpTestFixture, CTEWithStructBinding)
         ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
         ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
         JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
-        Json::Value actualJson;
+        BeJsDocument actualJson;
         ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
         ASSERT_TRUE(actualJson.isMember("SAStructProp"));
         ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["SAStructProp"]));
@@ -4267,5 +4267,159 @@ TEST_F(CommonTableExpTestFixture, Values_OnlyNull)
             "WITH cte AS (VALUES (NULL,NULL),(null, null)) SELECT * FROM cte"));
         }
     }
+
+//=======================================================================================
+// Regression coverage for iTwin/itwinjs-backlog#2311.
+//
+// ECSqlBinderFactory::CreateBinder (ECSqlBinder.cpp:82) does:
+//     return CreateIdBinder(ctx, *propNameExp.GetPropertyMap(), sysPropInfo, paramNameGen);
+// without checking GetPropertyMap() for nullptr. PropertyNameExp::GetPropertyMap() can
+// legitimately return nullptr (PropertyNameExp.cpp:539) and the guards there are BeAsserts,
+// which compile out under NDEBUG.
+//
+// To reach it, an alias must at the same time
+//   a) have an inferred Id type - ECSqlTypeInfo::IsId() requires exact-numeric plus the
+//      "Id" extended type name. GetTypeInfoFromPropertyRef() (PropertyNameExp.cpp:176)
+//      supplies it for a compound (UNION) select by borrowing the type from a sibling
+//      branch when the linked branch's own type is Null/Unset; and
+//   b) have no backing PropertyMap - PropertyRef::TryGetPropertyMap()
+//      (PropertyNameExp.cpp:724) returns nullptr when the linked DerivedPropertyExp's
+//      expression is not a PropertyNameExp / NavValueCreationFuncExp.
+//
+// A NULL literal in one UNION branch satisfies both at once. The expected crash is
+// EXCEPTION_ACCESS_VIOLATION_READ at 0x20 - the offset of PropertyMap::m_ecProperty, read
+// by the inlined ECSqlTypeInfo(PropertyMap const&) ctor off a null `this`.
+//
+// Each query lives in its own TEST_F so that a crash identifies the exact failing shape
+// instead of taking the whole suite down at the first one.
+//=======================================================================================
+struct CommonTableExpNullPropertyMapTestFixture : ECDbTestFixture {};
+
+//---------------------------------------------------------------------------------------
+// Query 1: subquery + UNION. Primary candidate.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpNullPropertyMapTestFixture, BindIdParam_SubqueryUnionNullAlias) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("issue2311_subquery_union.ecdb"));
+
+    auto query = R"(
+        SELECT * FROM (
+            SELECT NULL AS eid FROM meta.ECClassDef
+            UNION ALL
+            SELECT ECInstanceId AS eid FROM meta.ECClassDef
+        ) WHERE eid = ?
+    )";
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query)) << query;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, ECInstanceId((uint64_t) 1))) << query;
+    ASSERT_NE(BE_SQLITE_ERROR, stmt.Step()) << query;
+}
+
+//---------------------------------------------------------------------------------------
+// Query 2: CTE without a column list. Matches the CommonTableExp frame in the minidump.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpNullPropertyMapTestFixture, BindIdParam_CteWithoutColumnList) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("issue2311_cte_no_columns.ecdb"));
+
+    auto query = R"(
+        WITH cte AS (
+            SELECT NULL AS eid FROM meta.ECClassDef
+            UNION ALL
+            SELECT ECInstanceId AS eid FROM meta.ECClassDef
+        )
+        SELECT * FROM cte WHERE eid = ?
+    )";
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query)) << query;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, ECInstanceId((uint64_t) 1))) << query;
+    ASSERT_NE(BE_SQLITE_ERROR, stmt.Step()) << query;
+}
+
+//---------------------------------------------------------------------------------------
+// Query 3: control case. A CTE *with* a column list takes the guarded
+// IsPropertyFromCommonTableBlockWithColumns() -> CreateIdBinderForQuery path, so this one
+// is expected to pass both before and after the fix. The contrast with Query 2 confirms
+// the diagnosis.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpNullPropertyMapTestFixture, BindIdParam_CteWithColumnList_Control) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("issue2311_cte_with_columns.ecdb"));
+
+    auto query = R"(
+        WITH cte(eid) AS (
+            SELECT NULL AS eid FROM meta.ECClassDef
+            UNION ALL
+            SELECT ECInstanceId AS eid FROM meta.ECClassDef
+        )
+        SELECT * FROM cte WHERE eid = ?
+    )";
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query)) << query;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, ECInstanceId((uint64_t) 1))) << query;
+    ASSERT_NE(BE_SQLITE_ERROR, stmt.Step()) << query;
+}
+
+//---------------------------------------------------------------------------------------
+// Query 4: reversed UNION branch order. Exercises the type resolution loop rather than
+// relying on the NULL branch coming first.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpNullPropertyMapTestFixture, BindIdParam_SubqueryUnionReversedBranchOrder) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("issue2311_subquery_union_reversed.ecdb"));
+
+    auto query = R"(
+        SELECT * FROM (
+            SELECT ECInstanceId AS eid FROM meta.ECClassDef
+            UNION ALL
+            SELECT NULL AS eid FROM meta.ECClassDef
+        ) WHERE eid = ?
+    )";
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query)) << query;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, ECInstanceId((uint64_t) 1))) << query;
+    ASSERT_NE(BE_SQLITE_ERROR, stmt.Step()) << query;
+}
+
+//---------------------------------------------------------------------------------------
+// Query 5: navigation / relationship end Id variant.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpNullPropertyMapTestFixture, BindIdParam_SubqueryUnionRelationshipEndId) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("issue2311_rel_end_id.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+            <ECEntityClass typeName='Model'>
+                <ECProperty propertyName="Name" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName='Element'>
+                <ECProperty propertyName="Code" typeName="string" />
+            </ECEntityClass>
+            <ECRelationshipClass typeName='ModelHasElements' strength='embedding' modifier='Sealed'>
+                <Source multiplicity='(0..1)' roleLabel='has' polymorphic='false'>
+                    <Class class='Model' />
+                </Source>
+                <Target multiplicity='(0..*)' roleLabel='is owned by' polymorphic='false'>
+                    <Class class='Element' />
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml")));
+
+    auto query = R"(
+        SELECT * FROM (
+            SELECT NULL AS tid FROM meta.ECClassDef
+            UNION ALL
+            SELECT TargetECInstanceId AS tid FROM ts.ModelHasElements
+        ) WHERE tid = ?
+    )";
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query)) << query;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, ECInstanceId((uint64_t) 1))) << query;
+    ASSERT_NE(BE_SQLITE_ERROR, stmt.Step()) << query;
+}
 
 END_ECDBUNITTESTS_NAMESPACE

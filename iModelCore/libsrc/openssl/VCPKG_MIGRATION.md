@@ -1,9 +1,8 @@
 # Migrating the OpenSSL build to vcpkg
 
-> **Update (post-migration):** OpenSSL has since been bumped from 3.4.6 to **3.6.3**, which the
-> vcpkg registry now packages natively. The overlay port is therefore a verbatim copy of the
-> registry's 3.6.3 `ports/openssl` plus our two Bentley patches; it no longer needs to pin a
-> version the registry lacks. See [`overlay-ports/README.md`](overlay-ports/README.md) for the
+> **Update (post-migration):** OpenSSL now uses **3.5.9 LTS**. Because the vcpkg registry does
+> not currently package that patch, the OpenSSL, curl, and crashpad consumer configurations
+> reference the local overlay. See [`overlay-ports/README.md`](overlay-ports/README.md) for the
 > current state. The 3.4.6-specific notes below are retained for historical context.
 
 This document enumerates the steps to replace the current build-from-source OpenSSL
@@ -17,7 +16,7 @@ of custom behavior we depend on:
 The model to follow is the existing crashpad vcpkg integration:
 [`../crashpad/client.mke`](../crashpad/client.mke), [`../crashpad/vcpkg.json`](../crashpad/vcpkg.json),
 [`../crashpad/vcpkg-configuration.json`](../crashpad/vcpkg-configuration.json), and the shared
-[`../vcpkg.mki`](../vcpkg.mki) / `vcpkg_run_install.sh` / `vcpkg_run_install.bat` helpers.
+[`../vcpkg.mki`](../vcpkg.mki) / `vcpkg_run_install.sh` / `vcpkg_run_install.ps1` helpers.
 
 ---
 

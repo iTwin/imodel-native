@@ -818,7 +818,7 @@ bvector<int> &linestringIndexOut,
 bvector<int> &meshIndexOut,
 bvector <DPoint3d> const &linestringPoints,
 DVec3dCR  sweepDirection
-)
+) const
     {
     bvector <AnnotatedSegment> sweptSegments;
     DRange3d linestringRange;

@@ -203,17 +203,15 @@ struct PerformanceFixtureCRUD : PerformanceElementsCRUDTestFixture
         Utf8String json((Utf8CP)byteStream.GetData(), byteStream.GetSize());
         file.Close();
 
-        Json::Reader reader;
-        Json::Value value;
+        BeJsDocument value;
+        value.Parse(json);
 
-        if (reader.Parse(json, value))
+        if (!value.hasParseError())
             {
-            auto requirements = value["CrudTestRequirement"];
-
-            for (auto iter : requirements)
+            value["CrudTestRequirement"].ForEachArrayMember([&](BeJsConst::ArrayIndex, BeJsConst iter)
                 {
                 auto InitialCount = iter["InitialCount"].asInt();
-                for (auto percentage : iter["InitialCountPercentage"])
+                iter["InitialCountPercentage"].ForEachArrayMember([&](BeJsConst::ArrayIndex, BeJsConst percentage)
                     {
                     switch (op) {
 
@@ -236,8 +234,10 @@ struct PerformanceFixtureCRUD : PerformanceElementsCRUDTestFixture
                         default:
                             printf("Invalid operation.");
                         }
-                    }
-                }
+                    return false;
+                    });
+                return false;
+                });
             }
         }
 

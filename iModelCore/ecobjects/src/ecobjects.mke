@@ -178,7 +178,6 @@ DLM_NO_BENTLEY_LIB          = 1
 LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)iTwinBentley$(libext)
 LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)iTwinGeom$(libext)
 LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)iTwinGeomSerialization$(libext)
-LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)iTwinJsonCpp$(stlibext)
 LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)iTwinUnits$(libext)
 LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)iTwinPugixml$(stlibext)
 

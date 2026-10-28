@@ -68,6 +68,9 @@ namespace connectivity
             sal_Int32 m_nCurrentPos; // next position to read from the statement
             sal_Bool m_bInternational; // do we have a statement which may uses
             sal_Int32 m_nRule; // rule to be set
+            // Reentrancy guard for SQLyyerror. Must be per scanner: ECSQL is parsed on several
+            // threads at once, so a file static would let one scanner clear another one's flag.
+            bool m_inSQLyyerror;
             OSQLParseNodesContainer m_pGarbageCollector;
             void SetRule(sal_Int32 nRule) { m_nRule = nRule; }
 
@@ -83,7 +86,8 @@ namespace connectivity
             virtual IParseContext::InternationalKeyCode getInternationalTokenID(const char* sToken) const;
             // setting the new information before scanning
             const Utf8String& getErrorMessage() const { return m_sErrorMessage; }
-            sal_Int32 SQLyygetc(void);
+            // Fills buf with up to maxSize characters, returning the number copied (0 at end of input).
+            size_t SQLyyread(sal_Char* buf, size_t maxSize);
             Utf8String getStatement() const { return m_sStatement; }
             sal_Int32 SQLlex(YYSTYPE* val);
             // set this as scanner for flex
@@ -94,7 +98,9 @@ namespace connectivity
             sal_Int32    GetSQLRule() const;
             sal_Int32    GetDATERule() const;
             sal_Int32    GetSTRINGRule() const;
-            inline sal_Int32 GetCurrentPos() const { return m_nCurrentPos; }
+            // The position the scanner has actually consumed up to, which trails m_nCurrentPos
+            // because characters are handed to the lexer in blocks.
+            sal_Int32 GetScanPos() const;
 
             OSQLParseNode* NewNode(const sal_Char* pNewValue, SQLNodeType eNodeType, sal_uInt32 nNodeID = 0);
             OSQLParseNode* NewNode(Utf8String const& _rNewValue, SQLNodeType eNodeType, sal_uInt32 nNodeID = 0);

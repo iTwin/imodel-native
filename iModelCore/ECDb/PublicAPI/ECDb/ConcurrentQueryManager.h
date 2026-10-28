@@ -8,6 +8,9 @@
 #include <string>
 #include <memory>
 #include <functional>
+#include <future>
+#include <map>
+#include <BeRapidJson/BeJsValue.h>
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 using namespace std::chrono_literals;
 typedef uint32_t TaskId;
@@ -170,31 +173,32 @@ class ECSqlParams final {
             static constexpr auto Jx = "x";
             static constexpr auto Jy = "y";
             static constexpr auto Jz = "z";
-            Json::Value m_val;
+            BeJsDocument m_val;
             Type m_type;
             std::string m_name;
         public:
             ECSqlParam(ECSqlParam && rhs):m_val(std::move(rhs.m_val)), m_type(std::move(rhs.m_type)),m_name(std::move(rhs.m_name)){}
             ECDB_EXPORT ECSqlParam& operator = (ECSqlParam && rhs);
-            ECSqlParam(const ECSqlParam & rhs):m_val(rhs.m_val), m_type(rhs.m_type),m_name(rhs.m_name){}
+            // BeJsDocument is not copyable, so the value has to be deep-copied explicitly.
+            ECSqlParam(const ECSqlParam & rhs): m_type(rhs.m_type),m_name(rhs.m_name){ m_val.From(rhs.m_val); }
             ECDB_EXPORT ECSqlParam& operator = (const ECSqlParam & rhs);
             ECSqlParam():m_type(Type::Null){}
-            ECSqlParam(std::string const& name, Type type, Json::Value const& val): m_type(type),m_val(val), m_name(name){}
-            ECSqlParam(std::string const& name): m_type(Type::Null),m_val(Json::ValueType::nullValue), m_name(name){}
-            ECSqlParam(std::string const& name, BeInt64Id const& val): m_type(Type::Id), m_val(val.ToHexStr()), m_name(name){}
-            ECSqlParam(std::string const& name, std::string const& val): m_type(Type::String), m_val(val), m_name(name){}
-            ECSqlParam(std::string const& name, double val): m_type(Type::Double), m_val(val), m_name(name){}
-            ECSqlParam(std::string const& name, int val): m_type(Type::Integer), m_val(val), m_name(name){}
-            ECSqlParam(std::string const& name, bool val): m_type(Type::Boolean), m_val(val), m_name(name){}
-            ECSqlParam(std::string const& name, int64_t val): m_type(Type::Long), m_val(val), m_name(name){}
-            ECSqlParam(std::string const& name, BeIdSet const& val): m_type(Type::IdSet), m_val(val.ToCompactString()), m_name(name){}
+            ECSqlParam(std::string const& name, Type type, BeJsConst val): m_type(type), m_name(name){ m_val.From(val); }
+            ECSqlParam(std::string const& name): m_type(Type::Null), m_name(name){}
+            ECSqlParam(std::string const& name, BeInt64Id const& val): m_type(Type::Id), m_name(name){ m_val.SetString(val.ToHexStr()); }
+            ECSqlParam(std::string const& name, std::string const& val): m_type(Type::String), m_name(name){ m_val.SetString(val); }
+            ECSqlParam(std::string const& name, double val): m_type(Type::Double), m_name(name){ m_val = val; }
+            ECSqlParam(std::string const& name, int val): m_type(Type::Integer), m_name(name){ m_val = val; }
+            ECSqlParam(std::string const& name, bool val): m_type(Type::Boolean), m_name(name){ m_val = val; }
+            ECSqlParam(std::string const& name, int64_t val): m_type(Type::Long), m_name(name){ m_val = val; }
+            ECSqlParam(std::string const& name, BeIdSet const& val): m_type(Type::IdSet), m_name(name){ m_val.SetString(val.ToCompactString()); }
             ECDB_EXPORT ECSqlParam(std::string const& name, DPoint2d const& val);
             ECDB_EXPORT ECSqlParam(std::string const& name, DPoint3d const& val);
             ECDB_EXPORT ECSqlParam(std::string const& name, bvector<Byte> const& val);
-            virtual ~ECSqlParam(){}
+            ~ECSqlParam(){} // Class is final, so not virtual
             ECDB_EXPORT int GetIndex() const;
             bool IsNull() const { return m_type == Type::Null;}
-            Json::Value const& GetValue() const { return m_val; }
+            BeJsConst GetValue() const { return m_val; }
             Type GetType() const { return m_type;}
             std::string const& GetName() const { return m_name; }
             bool IsNamed() const { return GetIndex() == -1;}
@@ -220,8 +224,8 @@ class ECSqlParams final {
         ECSqlParams(const ECSqlParams& rhs): m_params(rhs.m_params) {}
         ECDB_EXPORT ECSqlParams& operator = (ECSqlParams && rhs);
         ECDB_EXPORT ECSqlParams& operator = (const ECSqlParams & rhs);
-        explicit ECSqlParams(Json::Value const& v) { FromJs(v); }
-        virtual ~ECSqlParams(){}
+        explicit ECSqlParams(BeJsConst v) { FromJs(v); }
+        ~ECSqlParams(){} // Class is final, so not virtual
         bool IsEmpty() const { return m_params.size() == 0; }
         size_t Count() const { return m_params.size(); }
         auto& GetParam(std::string const& name) { return m_params[name]; }
@@ -248,10 +252,11 @@ class ECSqlParams final {
         ECSqlParams& BindPoint2d(int index, DPoint2dCR val) { BindPoint2d(std::to_string(index), val); return *this;}
         ECSqlParams& BindPoint3d(int index, DPoint3dCR val) { BindPoint3d(std::to_string(index), val); return *this;}
         ECSqlParams& BindString(int index, std::string const& val) { BindString(std::to_string(index), val); return *this;}
-        ECDB_EXPORT void ToJs(Json::Value& val);
-        ECDB_EXPORT void FromJs(Json::Value const& val);
+        ECDB_EXPORT void ToJs(BeJsValue val);
+        ECDB_EXPORT void FromJs(BeJsConst val);
         ECDB_EXPORT std::vector<std::string> GetKeys() const;
         ECDB_EXPORT bool TryBindTo(ECSqlStatement& stmt, std::string& err) const;
+        ECDB_EXPORT std::string GetCacheKey() const;
 };
 
 //=======================================================================================
@@ -272,7 +277,9 @@ struct ECSqlRequest : public QueryRequest{
         static constexpr auto JConvertClassIdsToClassNames = "convertClassIdsToClassNames";
         static constexpr auto JLimit = "limit";
         static constexpr auto JValueFormat = "valueFormat";
+        static constexpr auto JCursorId = "cursorId";
         std::string m_query;
+        std::string m_cursorId;
         ECSqlParams m_args;
         QueryLimit m_limit;
         bool m_abbreviateBlobs;
@@ -286,6 +293,8 @@ struct ECSqlRequest : public QueryRequest{
             :QueryRequest(Kind::ECSql), m_query(query), m_args(std::move(args)),m_abbreviateBlobs(false), m_suppressLogErrors(false),m_includeMetaData(true), m_convertClassIdsToClassNames(false), m_doNotConvertClassIdsToClassNamesWhenAliased(true), m_valueFmt(ECSqlValueFormat::ECSqlNames){}
         virtual ~ECSqlRequest(){}
         std::string const& GetQuery() const { return m_query; }
+        std::string const& GetCursorId() const { return m_cursorId; }
+        ECSqlRequest& SetCursorId(std::string const& id) { m_cursorId = id; return *this; }
         ECSqlParams const& GetArgs() const { return  m_args; }
         ECSqlParams const& GetArgsR() { return  m_args; }
         bool GetAbbreviateBlobs() const {return m_abbreviateBlobs; }
@@ -301,7 +310,7 @@ struct ECSqlRequest : public QueryRequest{
         ECSqlRequest& SetSuppressLogErrors(bool suppressLogErrors) { m_suppressLogErrors = suppressLogErrors; return *this;}
         ECSqlRequest& SetIncludeMetaData(bool includeMetaData) { m_includeMetaData = includeMetaData; return *this;}
         ECSqlRequest& SetConvertClassIdsToClassNames(bool convertClassIdsToClassNames) { m_convertClassIdsToClassNames = convertClassIdsToClassNames; return *this;}
-        ECSqlRequest& SetArgs(Json::Value const& args) { m_args.FromJs(args); return *this;}
+        ECSqlRequest& SetArgs(BeJsConst args) { m_args.FromJs(args); return *this;}
         ECSqlRequest& SetArgs(ECSqlParams const& args) { m_args = args; return *this;}
         static Ptr MakeRequest(std::string const& query) {
             return std::make_unique<ECSqlRequest>(query, ECSqlParams());
@@ -356,12 +365,13 @@ struct QueryResponse : std::enable_shared_from_this<QueryResponse> {
             std::chrono::milliseconds m_prepareTime;
             uint32_t m_memLimit;
             uint32_t m_memUsed;
+            bool m_resumed = false;
         public:
             Stats():m_cpuTime(0ms),m_totalTime(0ms), m_timeLimit(0ms),m_prepareTime(0),m_memLimit(0), m_memUsed(0){}
-            Stats(std::chrono::microseconds cpuTime, std::chrono::milliseconds totalTime, uint32_t memUsed, QueryQuota const& quota, std::chrono::milliseconds prepareTime):
+            Stats(std::chrono::microseconds cpuTime, std::chrono::milliseconds totalTime, uint32_t memUsed, QueryQuota const& quota, std::chrono::milliseconds prepareTime, bool resumed = false):
                 m_cpuTime(cpuTime), m_totalTime(totalTime),
                 m_timeLimit(std::chrono::duration_cast<std::chrono::milliseconds>(quota.MaxTimeAllowed())), m_prepareTime(prepareTime),
-                m_memLimit(quota.MaxMemoryAllowed()),m_memUsed(memUsed){}
+                m_memLimit(quota.MaxMemoryAllowed()),m_memUsed(memUsed),m_resumed(resumed){}
             virtual ~Stats(){}
             std::chrono::microseconds CpuTime() const { return m_cpuTime;}
             std::chrono::milliseconds TotalTime() const { return m_totalTime;}
@@ -369,6 +379,7 @@ struct QueryResponse : std::enable_shared_from_this<QueryResponse> {
             std::chrono::milliseconds PrepareTime() const { return m_prepareTime;}
             uint32_t MemLimit() const { return m_memLimit;}
             uint32_t MemUsed() const { return m_memUsed;}
+            bool Resumed() const { return m_resumed; }
             ECDB_EXPORT void ToJs(BeJsValue&) const;
     };
     enum class Status {
@@ -484,7 +495,11 @@ struct ConcurrentQueryMgr final {
          static constexpr auto JStatementCacheSizePerWorker = "statementCacheSizePerWorker";
          static constexpr auto JMonitorPollInterval = "monitorPollInterval";
          static constexpr auto JMemoryMapFileSize = "memoryMapFileSize";
+         static constexpr auto JCacheSizeInKB = "cacheSizeInKB";
          static constexpr auto JProgressOpCount = "progressOpCount";
+         static constexpr auto JEnableCursors = "enableCursors";
+         static constexpr auto JMaxCursorsPerWorker = "maxCursorsPerWorker";
+         static constexpr auto JCursorIdleTimeout = "cursorIdleTimeout";
      private:
          QueryQuota m_quota;
          uint32_t m_workerThreadCount;
@@ -500,8 +515,12 @@ struct ConcurrentQueryMgr final {
          std::chrono::seconds m_autoShutdownWhenIdleForSeconds;
          static Config From(std::string const& json);
          uint32_t m_memoryMapFileSize;
+         std::optional<uint32_t> m_cacheSizeInKB;
          static Config s_config;
          uint32_t m_progressOpCount;
+         bool m_enableCursors = true;
+         int32_t m_maxCursorsPerWorker = -1;
+         std::chrono::seconds m_cursorIdleTimeout = 30s;
      public:
         ECDB_EXPORT Config();
         ECDB_EXPORT bool Equals(Config const& rhs) const;
@@ -517,6 +536,15 @@ struct ConcurrentQueryMgr final {
         uint32_t GetStatementCacheSizePerWorker() const { return m_statementCacheSizePerWorker; }
         std::chrono::seconds GetAutoShutdownWhenIdleForSeconds() const { return m_autoShutdownWhenIdleForSeconds; }
         uint32_t GetMemoryMapFileSize() const { return m_memoryMapFileSize; }
+        std::optional<uint32_t> GetCacheSizeInKB() const { return m_cacheSizeInKB; }
+        //! Sets the page-cache target in KiB for new secondary connections; the default is not overridden.
+        ECDB_EXPORT Config& SetCacheSizeInKB(uint32_t cacheSizeInKB);
+        bool GetEnableCursors() const { return m_enableCursors; }
+        int32_t GetMaxCursorsPerWorker() const { return m_maxCursorsPerWorker; }
+        std::chrono::seconds GetCursorIdleTimeout() const { return m_cursorIdleTimeout; }
+        Config& SetEnableCursors(bool enabled) { m_enableCursors = enabled; return *this; }
+        Config& SetMaxCursorsPerWorker(int32_t count) { m_maxCursorsPerWorker = count; return *this; }
+        Config& SetCursorIdleTimeout(std::chrono::seconds timeout) { m_cursorIdleTimeout = timeout; return *this; }
         Config& SetProgressOpCount(uint32_t progressOpCount) { m_progressOpCount = progressOpCount; return *this;}
         Config& SetIgnoreDelay(bool ignoreDelay) {
             m_ignoreDelay = ignoreDelay;
@@ -582,40 +610,41 @@ struct ECSqlReader {
             UseName
         };
         private:
-            Json::Value const& m_row;
+            BeJsConst m_row;
             ECSqlRowProperty::List const& m_columns;
-            ECDB_EXPORT Json::Value const& GetValue(int index) const;
-            ECDB_EXPORT Json::Value const& GetValue(std::string const& name) const;
+            ECDB_EXPORT BeJsConst GetValue(int index) const;
+            ECDB_EXPORT BeJsConst GetValue(std::string const& name) const;
         public:
-            Row(Json::Value const& row, ECSqlRowProperty::List const& cols):m_row(row), m_columns(cols){}
+            Row(BeJsConst row, ECSqlRowProperty::List const& cols):m_row(row), m_columns(cols){}
             ECSqlRowProperty const& GetProperty(int index) const { return m_columns[index]; }
             ECSqlRowProperty const& GetProperty(std::string const& name) const {return m_columns[name]; }
             //=========
-            Json::Value const& operator [] (std::string const& col) const { return GetValue(col);}
-            Json::Value const& operator [] (ECSqlRowProperty const& col) const { return GetValue(col.GetIndex());}
-            Json::Value const& operator [] (int col) const { return GetValue(col); }
+            BeJsConst operator [] (std::string const& col) const { return GetValue(col);}
+            BeJsConst operator [] (ECSqlRowProperty const& col) const { return GetValue(col.GetIndex());}
+            BeJsConst operator [] (int col) const { return GetValue(col); }
             //=========
             size_t Count() const { return m_columns.size();}
-            ECDB_EXPORT Json::Value ToJson(Format fmt = Format::UseJsonName) const;
+            ECDB_EXPORT BeJsDocument ToJson(Format fmt = Format::UseJsonName) const;
     };
     private:
         ConcurrentQueryMgr& m_mgr;
         int64_t m_globalOffset;
         ECSqlParams m_args;
-        Json::Value m_rows;
+        BeJsDocument m_rows;
         ECSqlRowProperty::List m_columns;
         std::string m_ecsql;
+        std::string m_cursorId;
         bool m_done;
-        Json::Value::ArrayIndex m_it;
+        BeJsConst::ArrayIndex m_it;
     private:
         uint32_t Read();
     public:
         ECDB_EXPORT ECSqlReader(ConcurrentQueryMgr& mgr, std::string ecsql, ECSqlParams const& args = ECSqlParams());
         ECSqlParams const& GetArgs() const {return m_args;}
         ECSqlRowProperty::List const& GetColumns() const { return m_columns; }
+        //! Returns a view valid until the reader loads another batch or is destroyed.
         Row GetRow() const { return Row(m_rows[m_it],m_columns);}
         ECDB_EXPORT bool Next();
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
-

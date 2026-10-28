@@ -443,7 +443,9 @@ void ECSqlSelectPreparer::ExtractPropertyRefs(ECSqlPrepareContext& ctx, Exp cons
         if (propertyName->IsVirtualProperty())
             return;
 
-        ctx.GetSelectionOptionsR().AddProperty(*propertyName->GetPropertyMap());
+        //may be nullptr, e.g. for a reference to a CTE or subquery alias which isn't backed by a mapped property
+        if (PropertyMap const* propertyMap = propertyName->GetPropertyMap())
+            ctx.GetSelectionOptionsR().AddProperty(*propertyMap);
         }
 
     for (Exp const* child : exp->GetChildren())

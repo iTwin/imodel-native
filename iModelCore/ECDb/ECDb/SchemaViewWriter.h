@@ -31,6 +31,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! Format spec: docs/learning/metadata/SchemaViewBinaryFormat.md in itwinjs-core.
 //!
 //! Thread safety: safe for concurrent reads when ECDb is in WAL mode.
+//! HOWEVER, the writer itself is **not designed for concurrent use.** Each thread must create its own SchemaViewWriter instance.
 //! Called from the PragmaSchemaView handler on the ConcurrentQuery thread pool.
 // @bsistruct
 //=======================================================================================
@@ -114,6 +115,12 @@ private:
     std::unordered_set<int64_t> m_hiddenClassIds;
     std::unordered_set<int64_t> m_explicitlyShownClassIds; // HiddenClass with Show = true
 
+    // Fragment support. When m_isFragment is true, only rows owned by schemas in
+    // m_requestedSchemaIds are emitted (still intersected with the standard-schema exclusion).
+    // When false, every non-excluded schema is emitted - the whole-schema blob.
+    std::unordered_set<int64_t> m_requestedSchemaIds;
+    bool m_isFragment = false;
+
     // Pre-pass: collect metadata needed before writing
     DbResult CollectExcludedSchemaIds(DbCR db);
     DbResult ResolveHiddenPropertyCAClassId(DbCR db);
@@ -127,6 +134,21 @@ private:
     DbResult CollectHiddenSchemaIds(DbCR db);
     DbResult CollectHiddenClassIds(DbCR db);
     uint32_t InternPropertyDef(PropertyDefRecord const& def);
+
+    // Append a "WHERE ..." filter (leading space, no trailing) restricting `column` - an
+    // ec_Schema.Id or ec_*.SchemaId column - to the schemas this writer emits: always excludes
+    // standard schemas, and for a fragment additionally restricts to m_requestedSchemaIds.
+    void AppendSchemaFilter(Utf8StringR sql, Utf8CP column) const;
+
+    // Verify every id in m_requestedSchemaIds is a real ec_Schema row. BE_SQLITE_NOTFOUND if not.
+    DbResult ValidateRequestedSchemaIds(DbCR db);
+
+    // Reset all per-run accumulation state so a single instance can be reused for multiple
+    // WriteAllSchemas / WriteSchemas calls.
+    void ResetState();
+
+    // Shared body of WriteAllSchemas / WriteSchemas - resets state, runs the pre-passes and writes the tables.
+    DbResult WriteBlob(DbCR db);
 
     // Per-table writers
     DbResult WritePropertyDefTable();
@@ -167,7 +189,20 @@ public:
     //! @return BE_SQLITE_OK on success, or an error code if the ec_ tables are missing/corrupt.
     DbResult WriteAllSchemas(DbCR db);
 
-    //! Get the output blob. Valid after WriteAllSchemas() completes.
+    //! Read a chosen subset of schemas and write the binary blob - a "fragment".
+    //! Only rows owned by schemas in requestedSchemaIds are emitted; standard/excluded schemas
+    //! are skipped even when requested. Cross-schema references to schemas outside the fragment
+    //! are written with the same global encoding as the whole-schema blob (row ids, name pairs);
+    //! the consumer resolves them against its accumulated view when merging fragments.
+    //! @param requestedSchemaIds ec_Schema.Id values to include. The caller is responsible for
+    //!        passing a dependency-closed set (the reference closure); the writer does not expand
+    //!        references. Must be non-empty.
+    //! @return BE_SQLITE_OK on success; BE_SQLITE_ERROR on an empty set; BE_SQLITE_NOTFOUND if any
+    //!         id is not an ec_Schema row.
+    DbResult WriteSchemas(DbCR db, std::unordered_set<int64_t> const& requestedSchemaIds);
+
+    //! Get the output blob. Only valid after WriteAllSchemas() / WriteSchemas() returns BE_SQLITE_OK;
+    //! on an error return the blob is partial and must not be used.
     bvector<Byte> const& GetOutput() const { return m_output; }
 
     //! Move the output blob out. Invalidates internal state.

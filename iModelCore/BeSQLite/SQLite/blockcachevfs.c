@@ -186,6 +186,13 @@ struct BcvfsFile {
   CacheEntry *pEntry;
   int rc;
 
+  /* Statistics for blocks downloaded by queries on this connection.
+  ** Reported by the "nqueryblock", "nquerybyte" and "nqueryms" rows of
+  ** the bcv_stat table. Used in direct (non-daemon) mode only. */
+  i64 nQueryBlock;
+  i64 nQueryByte;
+  i64 nQueryMs;
+
   BcvfsFile *pNextFile;
 };
 
@@ -620,6 +627,7 @@ static void bcvfsFetchBlockCb(
   if( rc==SQLITE_OK ){
     i64 iOff = (pFile->pEntry->iPos * pFile->pFs->c.szBlk);
     rc = bcvWritefile(pFile->pCacheFile, aData, nData, iOff);
+    if( rc==SQLITE_OK ) pFile->nQueryByte += nData;
   }else{
     /* TODO: log the error somehow */
   }
@@ -641,6 +649,7 @@ static int bcvfsFetchBlock(
   sqlite3_bcvfs *pFs = pFile->pFs;
   int rc = SQLITE_OK;
   char aName[BCV_MAX_FSNAMEBYTES];
+  i64 iStart = 0;
 
   pFile->pEntry = pEntry;
   pFile->rc = SQLITE_OK;
@@ -657,9 +666,14 @@ static int bcvfsFetchBlock(
     rc = bcvDispatchFetch(pDisp,pBcv,aName,0,0,(void*)pFile,bcvfsFetchBlockCb);
   }
   if( rc==SQLITE_OK ){
+    iStart = sqlite_timestamp();
     rc = bcvDispatchRunAll(pDisp);
   }
   rc = (rc==SQLITE_OK ? pFile->rc : rc);
+  if( rc==SQLITE_OK ){
+    pFile->nQueryBlock++;
+    pFile->nQueryMs += (sqlite_timestamp() - iStart);
+  }
 
   ENTER_VFS_MUTEX; {
     pFs->nOnDemand--;
@@ -785,6 +799,16 @@ static void bcvfsCloseFile(sqlite3_file *pFile){
   }
 }
 
+/*
+** Free a string buffer returned by bcvfsLocalPath().
+*/
+static void bcvfsFreeLocalPath(char *zLocal){
+  if( zLocal ){
+    char *pFree = &zLocal[-4];
+    sqlite3_free(pFree);
+  }
+}
+
 static int bcvfsClose(sqlite3_file *pFd){
   BcvfsFile *pFile = (BcvfsFile*)pFd;
   sqlite3_bcvfs *pFs = pFile->pFs;
@@ -819,7 +843,7 @@ static int bcvfsClose(sqlite3_file *pFd){
   bcvfsProxyCloseTransactionIf(pFile);
   bcvCloseLocal(pFile->pCacheFile);
   bcvfsCloseFile(pFile->pFile);
-  sqlite3_free(pFile->zLocalPath);
+  bcvfsFreeLocalPath(pFile->zLocalPath);
   sqlite3_free(pFile->pPath);
   sqlite3_free(pFile->zClientId);
   return SQLITE_OK;
@@ -914,13 +938,47 @@ CacheEntry *bcvfsHashFind(BcvCommon *p, const u8 *pBlk, int nBlk){
 }
 
 /*
+** Attempt to double the size of the hash table. If the allocation fails,
+** leave the hash table as it is - it is still usable, just less efficient.
+*/
+static void bcvfsHashGrow(BcvCommon *p){
+  i64 nNew = (i64)p->nHash * 2;
+  CacheEntry **aNew = 0;
+  int ii;
+
+  if( nNew>0x40000000 ) return;
+  aNew = (CacheEntry**)sqlite3_malloc64(sizeof(CacheEntry*)*nNew);
+  if( aNew==0 ) return;
+  memset(aNew, 0, sizeof(CacheEntry*)*nNew);
+
+  for(ii=0; ii<p->nHash; ii++){
+    CacheEntry *pEntry;
+    while( (pEntry = p->aHash[ii]) ){
+      u32 iHash = bcvfsBlockHash(pEntry->aName, pEntry->nName) % nNew;
+      p->aHash[ii] = pEntry->pHashNext;
+      pEntry->pHashNext = aNew[iHash];
+      aNew[iHash] = pEntry;
+    }
+  }
+
+  sqlite3_free(p->aHash);
+  p->aHash = aNew;
+  p->nHash = (int)nNew;
+}
+
+/*
 ** Add the entry passed as the second argument to the hash table. This
 ** function assumes that the entry is not already in the hash table.
 */
 void bcvfsHashAdd(BcvCommon *p, CacheEntry *pEntry){
-  u32 iHash = bcvfsBlockHash(pEntry->aName, pEntry->nName) % p->nHash;
+  u32 iHash;
+  if( (i64)(p->nHashEntry+1)*2 > p->nHash ){
+    bcvfsHashGrow(p);
+  }
+  iHash = bcvfsBlockHash(pEntry->aName, pEntry->nName) % p->nHash;
   pEntry->pHashNext = p->aHash[iHash];
   p->aHash[iHash] = pEntry;
+  p->nHashEntry++;
 }
 
 /*
@@ -933,6 +991,7 @@ void bcvfsHashRemove(BcvCommon *p, CacheEntry *pEntry){
   for(pp=&p->aHash[iHash]; *pp; pp=&(*pp)->pHashNext){
     if( *pp==pEntry ){
       *pp = pEntry->pHashNext;
+      p->nHashEntry--;
       break;
     }
   }
@@ -2339,8 +2398,13 @@ static void bcvBufferAppendEscaped(int *pRc, BcvBuffer *pBuf, const char *zStr){
 
 /*
 ** Return the full local path to the database or wal file identified by
-** pPath. The caller is responsible for ensuring that the returned buffer
-** is eventually freed using sqlite3_free().
+** pPath. 
+**
+** The caller is responsible for ensuring that the returned buffer is
+** eventually freed using bcvfsFreeLocalPath(). This must be used instead
+** of sqlite3_free() to ensure that there are 4 0x00 bytes preceding the
+** returned string, making it safe to pass to an sqlite3_vfs.xOpen() 
+** method.
 */
 static char *bcvfsLocalPath(
   int *pRc, 
@@ -2349,6 +2413,7 @@ static char *bcvfsLocalPath(
   int bReadonlyShm
 ){
   BcvBuffer b = {0,0,0};
+  bcvBufferAppendRc(pRc, &b, "\0\0\0\0", 4);
   bcvBufferAppendString(pRc, &b, pFs->c.zDir);
   bcvBufferAppendString(pRc, &b, BCV_PATH_SEPARATOR);
   bcvBufferAppendEscaped(pRc, &b, pPath->zContainer);
@@ -2362,7 +2427,7 @@ static char *bcvfsLocalPath(
   }
   bcvBufferAppendRc(pRc, &b, "\0\0", 2);
   assert( *pRc==SQLITE_OK || b.aData==0 );
-  return (char*)b.aData;
+  return (b.aData ? (char*)&b.aData[4] : 0);
 }
 
 /*
@@ -3115,8 +3180,11 @@ static BCV_SOCKET_TYPE bcvConnectSocket(
     if( bcv_socket_is_valid(s)==0 ){
       rc = BCVFS_CANTOPEN;
     }else{
+      const int optval = 1;
       assert( addr.sin_addr.s_addr!=INADDR_NONE );
-      if( connect(s, (struct sockaddr*)&addr, sizeof(addr))<0 ){
+      if( setsockopt(s, IPPROTO_TCP, TCP_NODELAY, &optval, sizeof(optval))<0
+       || connect(s, (struct sockaddr*)&addr, sizeof(addr))<0
+      ){
         rc = BCVFS_CANTOPEN;
         bcv_close_socket(s);
       }
@@ -3375,7 +3443,7 @@ static int bcvfsDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
     char *zLocal = bcvfsLocalPath(&rc, pFs, pPath, 0);
     if( rc==SQLITE_OK ){
       rc = pFs->c.pVfs->xDelete(pFs->c.pVfs, zLocal, dirSync);
-      sqlite3_free(zLocal);
+      bcvfsFreeLocalPath(zLocal);
     }
   }
   sqlite3_free(pPath);
@@ -3555,6 +3623,7 @@ static int no_blocks_leaked(BcvCommon *p){
     u8 *aBit = (u8*)malloc(nByte);
     memset(aBit, 0, nByte);
     int nTotal = 0;
+    int nHashEntry = 0;
 
     for(pEntry=p->pUnused; pEntry; pEntry=pEntry->pHashNext){
       int iElem = pEntry->iPos / 8;
@@ -3568,8 +3637,10 @@ static int no_blocks_leaked(BcvCommon *p){
         int iBit = pEntry->iPos & 0x07;
         aBit[iElem] = aBit[iElem] | (1 << iBit);
         nTotal++;
+        nHashEntry++;
       }
     }
+    assert( nHashEntry==p->nHashEntry );
 
     for(ii=0; ii<p->nBlk; ii++){
       int iElem = ii / 8;
@@ -6789,6 +6860,19 @@ static int bcvReadonlyVtabFilter(
             colUsed, &pCur->data.nData, &pCur->iVersion
         );
       } LEAVE_VFS_MUTEX;
+      if( bcvStrcmp(pTab->zMod, "bcv_stat")==0 ){
+        BcvBuffer buf;
+        buf.aData = (u8*)pCur->data.aData;
+        buf.nData = buf.nAlloc = pCur->data.nData;
+        bcvBufferMsgString(&rc, &buf, "nqueryblock");
+        bcvBufferAppendU64(&rc, &buf, (u64)pFile->nQueryBlock);
+        bcvBufferMsgString(&rc, &buf, "nquerybyte");
+        bcvBufferAppendU64(&rc, &buf, (u64)pFile->nQueryByte);
+        bcvBufferMsgString(&rc, &buf, "nqueryms");
+        bcvBufferAppendU64(&rc, &buf, (u64)pFile->nQueryMs);
+        pCur->data.aData = buf.aData;
+        pCur->data.nData = buf.nData;
+      }
       pCur->pFreeData = (void*)pCur->data.aData;
     }
     if( rc==SQLITE_OK ){
@@ -7847,5 +7931,4 @@ int sqlite3_bcvfs_register_vtab(sqlite3 *db){
   }
   return rc;
 }
-
 

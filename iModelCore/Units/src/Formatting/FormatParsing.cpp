@@ -9,6 +9,7 @@
 #include <regex>
 #include <string>
 #include <sstream>
+#include <cmath>
 
 #define MAX_PARSING_DIGITS 16
 
