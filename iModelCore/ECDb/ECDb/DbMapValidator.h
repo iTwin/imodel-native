@@ -30,6 +30,7 @@ struct DbMapValidator final
         BentleyStatus ValidateDbSchema() const;
         BentleyStatus ValidateDbTable(DbTable const&) const;
         BentleyStatus ValidateDbColumn(DbColumn const&, bset<Utf8String, CompareIUtf8Ascii> const& physicalColumns) const;
+        BentleyStatus ValidateUnmappedPhysicalColumns(DbTable const&, bvector<Utf8String> const& physicalColumns, ECN::IssueId const&) const;
         BentleyStatus ValidateDbConstraint(DbConstraint const&) const;
         BentleyStatus ValidateForeignKeyDbConstraint(ForeignKeyDbConstraint const&) const;
         BentleyStatus ValidatePrimaryKeyDbConstraint(PrimaryKeyDbConstraint const&) const;

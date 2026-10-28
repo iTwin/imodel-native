@@ -1105,6 +1105,12 @@ struct DClient {
 
   int pgsz;                       /* Page-size of connected database */
   sqlite3_file *pCloseFd;
+
+  /* Statistics for blocks downloaded on behalf of this client. Reported
+  ** by the "nqueryblock", "nquerybyte" and "nqueryms" rows of bcv_stat. */
+  i64 nQueryBlock;
+  i64 nQueryByte;
+  i64 nQueryMs;
 };
 
 struct DaemonCtx {
@@ -1127,6 +1133,7 @@ struct FetchCtx {
   CacheEntry *pEntry;             /* Cache entry to populate (if any) */
   Container *pCont;
   BcvIntKey *pKey;
+  i64 iStart;                     /* Time request was dispatched (ms) */
 };
 
 static void daemon_usage(char *argv0){
@@ -1831,9 +1838,24 @@ static void bcvProxyClientCount(
 **   memory_client_array:
 **     Memory used for arrays of block references held in the daemon on 
 **     behalf of clients.
+**
+** And three more rows specific to client pReq, the client that made the
+** request:
+**
+**   nqueryblock, nquerybyte, nqueryms:
+**     Number of blocks and bytes downloaded on behalf of pReq, and the
+**     total latency in ms of those downloads. Blocks found in the cache,
+**     or already being downloaded on behalf of some other client, are
+**     not included.
 **  
 */
-static u8 *bdExtraVtabData(int *pRc, DaemonCtx *p, u8 *aData, int *pnData){
+static u8 *bdExtraVtabData(
+  int *pRc,
+  DaemonCtx *p,
+  DClient *pReq,
+  u8 *aData,
+  int *pnData
+){
   i64 nManifest = 0;
   i64 nArray = 0;
   DClient *pClient = 0;
@@ -1857,6 +1879,12 @@ static u8 *bdExtraVtabData(int *pRc, DaemonCtx *p, u8 *aData, int *pnData){
   bcvBufferAppendU64(pRc, &buf, (u64)nManifest);
   bcvBufferMsgString(pRc, &buf, "memory_client_array");
   bcvBufferAppendU64(pRc, &buf, (u64)nArray);
+  bcvBufferMsgString(pRc, &buf, "nqueryblock");
+  bcvBufferAppendU64(pRc, &buf, (u64)pReq->nQueryBlock);
+  bcvBufferMsgString(pRc, &buf, "nquerybyte");
+  bcvBufferAppendU64(pRc, &buf, (u64)pReq->nQueryByte);
+  bcvBufferMsgString(pRc, &buf, "nqueryms");
+  bcvBufferAppendU64(pRc, &buf, (u64)pReq->nQueryMs);
 
   *pnData = buf.nData;
   return buf.aData;
@@ -1888,7 +1916,7 @@ static void bdHandleVtab(
       zTab, zCont, zDb, bcvProxyClientCount, colUsed, &nData, &iVersion
   );
   if( 0==bcvStrcmp(zTab, "bcv_stat") ){
-    aData = bdExtraVtabData(&rc, p, aData, &nData);
+    aData = bdExtraVtabData(&rc, p, pClient, aData, &nData);
   }
 
   reply.u.vtab_r.aData = aData;
@@ -2061,6 +2089,11 @@ static void bdBlockDownloadCb(
     pEntry->bValid = 1;
     bcvfsLruAdd(&p->c, pEntry);
     if( pDLCtx->pKey==0 ) bdWriteBlock(&p->c, pEntry);
+    if( pClient ){
+      pClient->nQueryBlock++;
+      pClient->nQueryByte += nData;
+      pClient->nQueryMs += (sqlite_timestamp() - pDLCtx->iStart);
+    }
   }else{
     /* An error has occurred. Unless it has already disconnected (pClient==0),
     ** send an error reply to the client that initiated this request. Then
@@ -2123,7 +2156,9 @@ static i64 bdFindMinTick(DaemonCtx *pCtx){
 }
 
 /*
-**
+** Search the hash table for a cache entry for block aName[] (nName bytes
+** in size) with encryption index iEnc. Return a pointer to it if found,
+** or NULL otherwise.
 */
 static CacheEntry *bdHashFind(
   BcvCommon *pCommon,             /* Hash tables to search */
@@ -2135,7 +2170,7 @@ static CacheEntry *bdHashFind(
     while( (pEntry = pEntry->pHashNext) ){
       if( pEntry->iEnc==iEnc 
        && pEntry->nName==nName 
-       && memcpy(pEntry->aName, aName, nName)
+       && memcmp(pEntry->aName, aName, nName)==0
       ){
         break;
       }
@@ -2180,6 +2215,7 @@ static void bdHandleReadMsg(DaemonCtx *p, DClient *pClient){
     bcvfsHashAdd(&p->c, pEntry);
 
     pDLCtx = bdFetchCtx(pClient, pEntry);
+    pDLCtx->iStart = sqlite_timestamp();
     bcvfsBlockidToText(aName, nName, zName);
     bcvDispatchClientId(p->pDisp, pClient->zClientId);
     bcvDispatchLogmsg(p->pDisp, "demand %d of %s",iBlk,pClient->pManDb->zDName);
@@ -2666,9 +2702,20 @@ static void bdHandleClientMessage(
         bdHandleRead(p, pClient, pMsg);
         *pbLogin = 1;
         break;
-      case BCV_MESSAGE_END:
+      case BCV_MESSAGE_END: {
+#ifdef TCP_QUICKACK
+        /* For all other message types this daemon process will send a reply
+        ** message to the client. But for END there is no reply message,
+        ** so set TCP_QUICKACK to encourage the system to send an ACK message
+        ** to the client immediately. If we do not do that there is a chance
+        ** that Nagle's algorithm slows older clients down. New clients do
+        ** not have this problem, as they set TCP_NODELAY.  */
+        int one = 1;
+        setsockopt(pClient->fd, IPPROTO_TCP, TCP_QUICKACK, &one, sizeof(one));
+#endif
         bdHandleEnd(p, pClient, pMsg);
         break;
+      }
       case BCV_MESSAGE_CMD:
         if( pMsg->u.cmd.eCmd==BCV_CMD_POLL ){
           pClient->pMsg = pMsg;
