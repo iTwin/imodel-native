@@ -301,7 +301,7 @@ describe("bulk element aspects", () => {
       expect(findAspect(result.ids[1])).to.deep.include({ element: e1, strProp: "u1" });
     });
 
-    it("reports aspects that cannot be written and leaves no new row behind for them", () => {
+    it("reports aspects that cannot be written, still writing the owner's other aspects", () => {
       const e1 = insertOwner();
       const e2 = insertOwner();
       expect(db.insertElementAspects([uniqueProps(e2, "o2", undefined, otherUniqueClass)]).status).to.equal(BulkElementAspectsStatus.Success);
@@ -328,7 +328,8 @@ describe("bulk element aspects", () => {
       });
 
       expect(mock.aspectCalls("onInserted").map((c) => c.arg.props.strProp)).to.deep.equal(["m1", "u1"]);
-      const aspects = queryAspects().filter((r) => r.element === e1 || r.element === e2).map((r) => `${r.className}:${r.strProp}`).sort();
+      // Nothing is rolled back, so the failed new aspects may be left without their properties; the existing unique aspect is unchanged.
+      const aspects = queryAspects().filter((r) => (r.element === e1 || r.element === e2) && r.strProp !== undefined).map((r) => `${r.className}:${r.strProp}`).sort();
       expect(aspects).to.deep.equal([`${multiClass}:m1`, `${otherUniqueClass}:o2`, `${uniqueClass}:u1`].sort());
     });
   });

@@ -1180,17 +1180,6 @@ static bool bindBulkAspectIdSet(ECSqlStatement& stmt, int index, T_Ids const& id
 }
 
 /*---------------------------------------------------------------------------------**//**
-* Deletes an aspect row that was inserted by the update of its owner although its properties could not be written.
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void deleteFailedBulkAspectInsert(DgnDbR db, ECInstanceId aspectId, bool isMulti) {
-    auto stmt = db.GetNonSelectPreparedECSqlStatement(isMulti
-        ? "DELETE FROM " BIS_SCHEMA(BIS_CLASS_ElementMultiAspect) " WHERE ECInstanceId=?"
-        : "DELETE FROM " BIS_SCHEMA(BIS_CLASS_ElementUniqueAspect) " WHERE ECInstanceId=?", db.GetECCrudWriteToken());
-    if (!stmt.IsValid() || ECSqlStatus::Success != stmt->BindId(1, aspectId) || BE_SQLITE_DONE != stmt->Step())
-        JsInterop::GetNativeLogger().errorv("Unable to delete aspect %s whose properties could not be written", aspectId.ToHexStr().c_str());
-}
-
-/*---------------------------------------------------------------------------------**//**
 * Groups row indices by owning element, preserving the order in which owners first appear.
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T_Row, typename T_GetOwnerId>
@@ -1216,8 +1205,9 @@ static bvector<std::pair<DgnElementId, bvector<size_t>>> groupBulkAspectRowsByOw
 * (an exception aborts the whole call before anything is written); then the aspects are written grouped by owning
 * element, with a single update of each owning element; finally the JS post-insert handlers are called for the rows that succeeded.
 * The aspects of an owner are written by DgnElement::_OnUpdated, after the owner's row has been written, so an owner update that
-* fails leaves none of its aspects written. An aspect whose write fails while its owner is updated is reported as failed, and
-* any row that was inserted for it is removed; the owner and its other aspects are still written. Exceptions thrown by JS handlers
+* fails leaves none of its aspects written. An aspect whose write fails while its owner is updated is reported as failed; the owner
+* and its other aspects are still written. As with the single-aspect operations, nothing is rolled back: the failed aspect may be
+* partially written (e.g. a row without its properties), so the caller should abandon the changes. Exceptions thrown by JS handlers
 * during or after the writes (the element's onUpdated, or the post-insert handlers) propagate to the caller and leave the rows that
 * were already written in the Txn, the same as the single-aspect operations; the caller can abandon the changes.
 * @bsimethod
@@ -1304,11 +1294,6 @@ Napi::Object JsInterop::InsertElementAspects(DgnDbR db, Napi::Array propsArray) 
             uniqueAspects[row.m_classId] = aspect;
         }
 
-        // SetAspect keeps the id of an existing unique aspect of the same class, so a unique aspect without an id is inserted as a new row.
-        std::map<DgnClassId, ECInstanceId> uniqueIdsBefore;
-        for (auto const& unique : uniqueAspects)
-            uniqueIdsBefore[unique.first] = unique.second->GetAspectInstanceId();
-
         DgnDbStatus stat = elementEdit->Update();
         if (DgnDbStatus::Success != stat) {
             failGroup(stat, "unable to update owning element");
@@ -1316,7 +1301,6 @@ Napi::Object JsInterop::InsertElementAspects(DgnDbR db, Napi::Array propsArray) 
         }
 
         // The update of the owner succeeds even when one of its aspects cannot be written, so check each aspect.
-        std::set<ECInstanceId> deletedFailedIds;
         for (auto r : rowIndices) {
             auto& row = rows[r];
             if (failures.HasFailed(row.m_index))
@@ -1326,10 +1310,6 @@ Napi::Object JsInterop::InsertElementAspects(DgnDbR db, Napi::Array propsArray) 
             ECInstanceId aspectId = aspect->GetAspectInstanceId();
             DgnDbStatus writeStatus = aspect->GetLastWriteStatus();
             if (DgnDbStatus::Success != writeStatus || !aspectId.IsValid()) {
-                // A new row can be inserted although its properties could not be written. Remove it, so that a failed row leaves nothing behind.
-                bool isNewRow = row.m_isMulti || !uniqueIdsBefore[row.m_classId].IsValid();
-                if (isNewRow && aspectId.IsValid() && deletedFailedIds.insert(aspectId).second)
-                    deleteFailedBulkAspectInsert(db, aspectId, row.m_isMulti);
                 failures.Fail(row.m_index, DgnDbStatus::Success != writeStatus ? writeStatus : DgnDbStatus::WriteError, "unable to write aspect");
                 continue;
             }
