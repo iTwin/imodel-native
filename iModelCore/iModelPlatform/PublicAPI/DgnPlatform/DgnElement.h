@@ -639,9 +639,7 @@ class BulkElementAspectWriter
 
 public:
     //! @param[in] db The DgnDb to write to
-    //! @param[in] singleStatementInsert If true, a new aspect whose properties can all be written by a single INSERT is inserted
-    //!   that way, rather than by an INSERT followed by an UPDATE.
-    DGNPLATFORM_EXPORT explicit BulkElementAspectWriter(DgnDbR db, bool singleStatementInsert = false);
+    DGNPLATFORM_EXPORT explicit BulkElementAspectWriter(DgnDbR db);
     DGNPLATFORM_EXPORT ~BulkElementAspectWriter();
 
     //! Whether existing aspects of the given class are loaded as generic aspects, i.e. the class has no registered C++ aspect handler

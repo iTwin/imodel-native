@@ -285,22 +285,6 @@ static bool bindBulkAspectIdSet(ECSqlStatement& stmt, int index, T_Ids const& id
     return true;
 }
 
-/*---------------------------------------------------------------------------------**//**
-* PROTOTYPE ONLY: lets benchmarks compare inserting new aspects with a single INSERT against the INSERT + UPDATE used by the
-* single-aspect operations. The single INSERT does not fire UPDATE triggers, so it is off unless the environment variable is set.
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool bulkAspectSingleInsertEnabled() {
-#if defined(_MSC_VER)
-    char* value = nullptr;
-    size_t length = 0;
-    bool isSet = (0 == _dupenv_s(&value, &length, "IMODELJS_BULK_ASPECT_SINGLE_INSERT")) && (nullptr != value);
-    free(value);
-    return isSet;
-#else
-    return nullptr != ::getenv("IMODELJS_BULK_ASPECT_SINGLE_INSERT");
-#endif
-}
-
 //=======================================================================================
 // An existing aspect to update. Rows of updateElementAspects that name the same aspect (multi: class and id; unique: owner and
 // class) share one, so their props are applied in order and the aspect is written once.
@@ -473,7 +457,7 @@ Napi::Object JsInterop::InsertElementAspects(DgnDbR db, Napi::Array propsArray, 
 
     // Phase 3: write, grouped by owning element. The aspects of an owner are written by a single Update of one editable copy, the same
     // way as GenericMultiAspect::AddAspect and GenericUniqueAspect::SetAspect would write them.
-    BulkElementAspectWriter writer(db, bulkAspectSingleInsertEnabled());
+    BulkElementAspectWriter writer(db);
     hookCalls.clear();
 
     auto ownerGroups = groupBulkAspectRowsByOwner(rows, [](InsertRow const& row) { return row.m_owner->GetElementId(); });

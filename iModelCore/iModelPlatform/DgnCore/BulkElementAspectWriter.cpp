@@ -16,8 +16,6 @@ struct BulkElementAspectWriterClassInfo
     bool m_isGenericComputed = false;
     Utf8String m_insertECSql;   // INSERT INTO [instance class] (Element.Id,Element.RelECClassId) VALUES (?,?)
     Utf8String m_deleteECSql;   // DELETE FROM [key class] WHERE Element.Id=? (unique aspects)
-    bool m_singleInsertComputed = false;
-    std::unique_ptr<ECInstanceInserter> m_inserter; // null if the class cannot be inserted by a single INSERT
     };
 
 //=======================================================================================
@@ -26,12 +24,11 @@ struct BulkElementAspectWriterClassInfo
 struct BulkElementAspectWriter::Impl
     {
     DgnDbR m_dgndb;
-    bool m_singleStatementInsert;
     ECClassId m_multiRelClassId;
     ECClassId m_uniqueRelClassId;
     std::map<ECClassId, BulkElementAspectWriterClassInfo> m_classes;
 
-    Impl(DgnDbR db, bool singleStatementInsert) : m_dgndb(db), m_singleStatementInsert(singleStatementInsert)
+    explicit Impl(DgnDbR db) : m_dgndb(db)
         {
         m_multiRelClassId = ECClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsMultiAspects).GetValue());
         m_uniqueRelClassId = ECClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsUniqueAspect).GetValue());
@@ -78,48 +75,10 @@ struct BulkElementAspectWriter::Impl
         return (BE_SQLITE_OK == updater->Update(instance)) ? DgnDbStatus::Success : DgnDbStatus::WriteError;
         }
 
-    ECInstanceInserter* GetSingleStatementInserter(BulkElementAspectWriterClassInfo& info, ECClassCR cls);
     DgnDbStatus Insert(IECInstanceR instance, ECInstanceId& id, DgnElementId ownerId, bool isMulti);
     ECInstanceKey QueryExistingUniqueAspect(ECClassCR keyClass, DgnElementId ownerId);
     void Write(BulkElementAspectWrite& write, DgnElementId ownerId);
     };
-
-/*---------------------------------------------------------------------------------**//**
-* Returns the inserter that inserts all the properties of an aspect of the class with a single INSERT, or nullptr if that would not
-* write the same values as the INSERT of the owner followed by the UPDATE of the properties: every property that the inserter binds
-* must also be bound by the updater (which binds the AutoHandled properties).
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceInserter* BulkElementAspectWriter::Impl::GetSingleStatementInserter(BulkElementAspectWriterClassInfo& info, ECClassCR cls)
-    {
-    if (info.m_singleInsertComputed)
-        return info.m_inserter.get();
-
-    info.m_singleInsertComputed = true;
-    if (nullptr == BulkElementAspectWriter::GetUpdater(m_dgndb, cls))
-        return nullptr;
-
-    ECN::PrimitiveECPropertyCP currentTimeStampProp = nullptr;
-    if (SUCCESS != ECN::CoreCustomAttributeHelper::GetCurrentTimeStampProperty(currentTimeStampProp, cls) || nullptr != currentTimeStampProp)
-        return nullptr;
-
-    bset<ECPropertyCP> autoHandled;
-    for (auto prop : AutoHandledPropertiesCollection(cls, m_dgndb, ECSqlClassParams::StatementType::InsertUpdate, false))
-        autoHandled.insert(prop);
-
-    for (auto prop : cls.GetProperties(true))
-        {
-        if (autoHandled.end() == autoHandled.find(prop))
-            return nullptr;
-        }
-
-    auto inserter = std::make_unique<ECInstanceInserter>(m_dgndb, cls, m_dgndb.GetECCrudWriteToken());
-    if (!inserter->IsValid())
-        return nullptr;
-
-    info.m_inserter = std::move(inserter);
-    return info.m_inserter.get();
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * The same as DgnElement::Aspect::InsertThis for a generic aspect: the INSERT of the owner (see MultiAspect::_InsertInstance and
@@ -133,17 +92,6 @@ DgnDbStatus BulkElementAspectWriter::Impl::Insert(IECInstanceR instance, ECInsta
 
     // The INSERT uses the relationship class of the Element property, so setting it first does not change what is written.
     SetElement(instance, ownerId, isMulti);
-
-    ECInstanceInserter* inserter = m_singleStatementInsert ? GetSingleStatementInserter(info, cls) : nullptr;
-    if (nullptr != inserter)
-        {
-        ECInstanceKey key;
-        if (BE_SQLITE_OK != inserter->Insert(key, instance))
-            return DgnDbStatus::WriteError;
-        id = key.GetInstanceId();
-        SetInstanceId(instance, id);
-        return DgnDbStatus::Success;
-        }
 
     CachedECSqlStatementPtr stmt = m_dgndb.GetNonSelectPreparedECSqlStatement(info.m_insertECSql.c_str(), m_dgndb.GetECCrudWriteToken());
     if (!stmt.IsValid())
@@ -268,7 +216,7 @@ struct BulkElementAspectWriter::WriterAppData : DgnElement::AppData
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BulkElementAspectWriter::BulkElementAspectWriter(DgnDbR db, bool singleStatementInsert) : m_impl(new Impl(db, singleStatementInsert)) {}
+BulkElementAspectWriter::BulkElementAspectWriter(DgnDbR db) : m_impl(new Impl(db)) {}
 BulkElementAspectWriter::~BulkElementAspectWriter() { delete m_impl; }
 
 /*---------------------------------------------------------------------------------**//**
