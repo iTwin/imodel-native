@@ -286,6 +286,102 @@ static bool bindBulkAspectIdSet(ECSqlStatement& stmt, int index, T_Ids const& id
 }
 
 /*---------------------------------------------------------------------------------**//**
+* PROTOTYPE ONLY: lets benchmarks compare inserting new aspects with a single INSERT against the INSERT + UPDATE used by the
+* single-aspect operations. The single INSERT does not fire UPDATE triggers, so it is off unless the environment variable is set.
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool bulkAspectSingleInsertEnabled() {
+    return nullptr != ::getenv("IMODELJS_BULK_ASPECT_SINGLE_INSERT");
+}
+
+//=======================================================================================
+// An existing aspect to update. Rows of updateElementAspects that name the same aspect (multi: class and id; unique: owner and
+// class) share one, so their props are applied in order and the aspect is written once.
+//=======================================================================================
+struct BulkAspectLoad {
+    ECClassCP m_class = nullptr; // the class given in the props
+    bool m_isMulti = false;
+    DgnElementId m_ownerId;
+    ECInstanceId m_aspectId; // multi: given in the props; unique: set when loaded
+    IECInstancePtr m_instance; // set when loaded
+};
+
+/*---------------------------------------------------------------------------------**//**
+* Loads the aspects with one query per class, getting the same instances as GenericMultiAspect::_LoadProperties and
+* GenericUniqueAspect::_LoadProperties. An aspect that is not found, or that cannot be loaded, is left without an instance.
++---------------+---------------+---------------+---------------+---------------+------*/
+static void loadBulkAspectsForUpdate(DgnDbR db, bvector<BulkAspectLoad>& loads) {
+    std::map<ECClassId, bvector<size_t>> multiByClass, uniqueByClass;
+    for (size_t i = 0; i < loads.size(); ++i)
+        (loads[i].m_isMulti ? multiByClass : uniqueByClass)[loads[i].m_class->GetId()].push_back(i);
+
+    // Selects the aspects of a class by id and sets their instances. The class may be a base class of the aspects (polymorphic select).
+    auto selectInstances = [&](ECClassCR cls, std::map<ECInstanceId, size_t> const& loadById) {
+        bvector<ECInstanceId> ids;
+        for (auto const& entry : loadById)
+            ids.push_back(entry.first);
+
+        Utf8PrintfString ecsql("SELECT * FROM %s WHERE ECInstanceId IN (SELECT id FROM IdSet(?))", cls.GetECSqlName().c_str());
+        CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(ecsql.c_str());
+        if (!stmt.IsValid() || !bindBulkAspectIdSet(*stmt, 1, ids))
+            return;
+
+        ECInstanceECSqlSelectAdapter adapter(*stmt);
+        while (BE_SQLITE_ROW == stmt->Step()) {
+            ECInstanceId id;
+            adapter.GetInstanceId(id);
+            auto found = loadById.find(id);
+            if (loadById.end() != found)
+                loads[found->second].m_instance = adapter.GetInstance();
+        }
+        stmt->Reset();
+        stmt->ClearBindings();
+    };
+
+    // Multi aspects: SELECT * FROM [class] WHERE ECInstanceId=?
+    for (auto const& entry : multiByClass) {
+        std::map<ECInstanceId, size_t> loadById;
+        for (auto i : entry.second)
+            loadById[loads[i].m_aspectId] = i;
+        selectInstances(*loads[entry.second.front()].m_class, loadById);
+    }
+
+    // Unique aspects: find the actual class of the owner's aspect of the class (or of a subclass), then SELECT * FROM [actual class]
+    for (auto const& entry : uniqueByClass) {
+        ECClassCR keyClass = *loads[entry.second.front()].m_class;
+        std::map<DgnElementId, size_t> loadByOwner;
+        for (auto i : entry.second)
+            loadByOwner[loads[i].m_ownerId] = i;
+
+        bvector<DgnElementId> ownerIds;
+        for (auto const& owner : loadByOwner)
+            ownerIds.push_back(owner.first);
+
+        Utf8PrintfString ecsql("SELECT ECInstanceId,ECClassId,Element.Id FROM %s WHERE Element.Id IN (SELECT id FROM IdSet(?))", keyClass.GetECSqlName().c_str());
+        CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(ecsql.c_str());
+        if (!stmt.IsValid() || !bindBulkAspectIdSet(*stmt, 1, ownerIds))
+            continue;
+
+        std::map<ECClassId, std::map<ECInstanceId, size_t>> loadByActualClass;
+        while (BE_SQLITE_ROW == stmt->Step()) {
+            auto found = loadByOwner.find(stmt->GetValueId<DgnElementId>(2));
+            if (loadByOwner.end() == found || loads[found->second].m_aspectId.IsValid())
+                continue;
+            auto& load = loads[found->second];
+            load.m_aspectId = stmt->GetValueId<ECInstanceId>(0);
+            loadByActualClass[stmt->GetValueId<ECClassId>(1)][load.m_aspectId] = found->second;
+        }
+        stmt->Reset();
+        stmt->ClearBindings();
+
+        for (auto const& actual : loadByActualClass) {
+            ECClassCP actualClass = db.Schemas().GetClass(actual.first);
+            if (nullptr != actualClass)
+                selectInstances(*actualClass, actual.second);
+        }
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
 * Groups row indices by owning element, preserving the order in which owners first appear.
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T_Row, typename T_GetOwnerId>
@@ -367,8 +463,9 @@ Napi::Object JsInterop::InsertElementAspects(DgnDbR db, Napi::Array propsArray, 
         hookCalls.push_back(std::make_pair(row.m_classId, row.m_hookArg));
     hooks.Call(hookCalls, "onBulkInsert", "onInsert");
 
-    // Phase 3: write, grouped by owning element. All aspects of an owner are added to one editable copy and written by a single Update.
-    ECClassId multiAspectRelClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsMultiAspects).GetValue());
+    // Phase 3: write, grouped by owning element. The aspects of an owner are written by a single Update of one editable copy, the same
+    // way as GenericMultiAspect::AddAspect and GenericUniqueAspect::SetAspect would write them.
+    BulkElementAspectWriter writer(db, bulkAspectSingleInsertEnabled());
     hookCalls.clear();
 
     auto ownerGroups = groupBulkAspectRowsByOwner(rows, [](InsertRow const& row) { return row.m_owner->GetElementId(); });
@@ -385,56 +482,42 @@ Napi::Object JsInterop::InsertElementAspects(DgnDbR db, Napi::Array propsArray, 
             continue;
         }
 
-        // SetAspect behaves as an upsert for unique aspects, so when the same (element, class) appears more than once,
+        // Unique aspects are upserted, so when the same (element, class) appears more than once,
         // the last row wins and all of those rows report the resulting aspect id.
-        std::map<DgnClassId, RefCountedPtr<DgnElement::UniqueAspect>> uniqueAspects;
-        std::map<size_t, RefCountedPtr<DgnElement::MultiAspect>> multiAspects;
+        bvector<BulkElementAspectWrite> writes;
+        bvector<size_t> writeIndices;
+        std::map<DgnClassId, size_t> uniqueWrites;
         for (auto r : rowIndices) {
             auto& row = rows[r];
-            DgnDbStatus stat;
-            if (row.m_isMulti) {
-                ECValue elementVal;
-                row.m_instance->GetValue(elementVal, "Element");
-                if (elementVal.IsNull() || !elementVal.IsNavigation() || !elementVal.GetNavigationInfo().GetRelationshipClassId().IsValid())
-                    row.m_instance->SetValue("Element", ECValue(group.first, multiAspectRelClassId));
-
-                auto aspect = DgnElement::GenericMultiAspect::AddAspect(*elementEdit, *row.m_instance, &stat);
-                if (DgnDbStatus::Success != stat || !aspect.IsValid()) {
-                    failures.Fail(row.m_index, stat, "unable to add multi aspect");
+            if (!row.m_isMulti) {
+                auto found = uniqueWrites.find(row.m_classId);
+                if (uniqueWrites.end() != found) {
+                    writes[found->second].instance = row.m_instance;
+                    writeIndices.push_back(found->second);
                     continue;
                 }
-                multiAspects[r] = aspect;
-                continue;
+                uniqueWrites[row.m_classId] = writes.size();
             }
-
-            auto aspect = DgnElement::GenericUniqueAspect::SetAspect(*elementEdit, *row.m_instance, nullptr, &stat);
-            if (DgnDbStatus::Success != stat || !aspect.IsValid()) {
-                failures.Fail(row.m_index, stat, "unable to set unique aspect");
-                continue;
-            }
-            uniqueAspects[row.m_classId] = aspect;
+            writeIndices.push_back(writes.size());
+            writes.push_back(BulkElementAspectWrite());
+            writes.back().instance = row.m_instance;
         }
 
-        DgnDbStatus stat = elementEdit->Update();
+        DgnDbStatus stat = writer.UpdateElement(*elementEdit, writes);
         if (DgnDbStatus::Success != stat) {
             failGroup(stat, "unable to update owning element");
             continue;
         }
 
         // The update of the owner succeeds even when one of its aspects cannot be written, so check each aspect.
-        for (auto r : rowIndices) {
-            auto& row = rows[r];
-            if (failures.HasFailed(row.m_index))
-                continue;
-
-            DgnElement::Aspect* aspect = row.m_isMulti ? static_cast<DgnElement::Aspect*>(multiAspects[r].get()) : uniqueAspects[row.m_classId].get();
-            ECInstanceId aspectId = aspect->GetAspectInstanceId();
-            DgnDbStatus writeStatus = aspect->GetLastWriteStatus();
-            if (DgnDbStatus::Success != writeStatus || !aspectId.IsValid()) {
-                failures.Fail(row.m_index, DgnDbStatus::Success != writeStatus ? writeStatus : DgnDbStatus::WriteError, "unable to write aspect");
+        for (size_t i = 0; i < rowIndices.size(); ++i) {
+            auto& row = rows[rowIndices[i]];
+            auto const& write = writes[writeIndices[i]];
+            if (DgnDbStatus::Success != write.status || !write.aspectId.IsValid()) {
+                failures.Fail(row.m_index, DgnDbStatus::Success != write.status ? write.status : DgnDbStatus::WriteError, "unable to write aspect");
                 continue;
             }
-            insertedIds[row.m_index] = aspectId;
+            insertedIds[row.m_index] = write.aspectId;
         }
     }
 
@@ -465,8 +548,7 @@ Napi::Object JsInterop::UpdateElementAspects(DgnDbR db, Napi::Array propsArray, 
 
     struct UpdateRow : BulkAspectPropsRow {
         ECInstanceId m_aspectId;
-        IECInstanceP m_aspect = nullptr;
-        RefCountedPtr<DgnElement::Aspect> m_platformAspect;
+        size_t m_loadIndex = 0;
     };
 
     // Phase 1: validate every row
@@ -511,8 +593,11 @@ Napi::Object JsInterop::UpdateElementAspects(DgnDbR db, Napi::Array propsArray, 
         statement->ClearBindings();
     }
 
-    // Load the aspects to update onto one editable copy per owning element
-    bvector<UpdateRow> rows;
+    // Load the aspects to update. Each owning element gets one editable copy.
+    BulkElementAspectWriter writer(db);
+    bvector<UpdateRow> loadRows;
+    bvector<BulkAspectLoad> loaded;
+    std::map<std::tuple<bool, uint64_t, uint64_t>, size_t> loadIndices;
     std::map<DgnElementId, DgnElementPtr> elementEdits;
     for (auto& row : candidates) {
         DgnElementId ownerId = row.m_owner->GetElementId();
@@ -536,20 +621,37 @@ Napi::Object JsInterop::UpdateElementAspects(DgnDbR db, Napi::Array propsArray, 
             continue;
         }
 
-        if (row.m_isMulti) {
-            row.m_aspect = DgnElement::GenericMultiAspect::GetAspectP(*elementEdit, *row.m_class, row.m_aspectId);
-            if (nullptr != row.m_aspect)
-                row.m_platformAspect = DgnElement::MultiAspect::GetAspectP(*elementEdit, *row.m_class, row.m_aspectId);
-        } else {
-            row.m_aspect = DgnElement::GenericUniqueAspect::GetAspectP(*elementEdit, *row.m_class);
-            if (nullptr != row.m_aspect)
-                row.m_platformAspect = DgnElement::UniqueAspect::GetAspectP(*elementEdit, *row.m_class);
-        }
-        if (nullptr == row.m_aspect || row.m_platformAspect.IsNull()) {
+        // Aspects of classes with a handler cannot be modified as generic aspects
+        if (!writer.IsGenericAspectClass(*row.m_class)) {
             failures.Fail(row.m_index, DgnDbStatus::NotFound, "aspect not found");
             continue;
         }
 
+        size_t loadIndex = loaded.size();
+        auto loadKey = row.m_isMulti ?
+            std::make_tuple(true, row.m_class->GetId().GetValue(), row.m_aspectId.GetValue()) :
+            std::make_tuple(false, ownerId.GetValue(), row.m_class->GetId().GetValue());
+        auto inserted = loadIndices.emplace(loadKey, loadIndex);
+        if (inserted.second) {
+            BulkAspectLoad aspect;
+            aspect.m_class = row.m_class;
+            aspect.m_isMulti = row.m_isMulti;
+            aspect.m_ownerId = ownerId;
+            aspect.m_aspectId = row.m_aspectId;
+            loaded.push_back(aspect);
+        }
+        row.m_loadIndex = inserted.first->second;
+        loadRows.push_back(row);
+    }
+
+    loadBulkAspectsForUpdate(db, loaded);
+
+    bvector<UpdateRow> rows;
+    for (auto& row : loadRows) {
+        if (!loaded[row.m_loadIndex].m_instance.IsValid()) {
+            failures.Fail(row.m_index, DgnDbStatus::NotFound, "aspect not found");
+            continue;
+        }
         rows.push_back(row);
     }
 
@@ -573,13 +675,23 @@ Napi::Object JsInterop::UpdateElementAspects(DgnDbR db, Napi::Array propsArray, 
                 failures.Fail(rows[r].m_index, status, message);
         };
 
+        // Rows that name the same aspect share its instance, so their props are applied in order and the aspect is written once.
         bool applied = true;
+        bvector<BulkElementAspectWrite> writes;
+        std::map<size_t, size_t> writeByLoad;
         for (auto r : rowIndices) {
             auto& row = rows[r];
-            if (SUCCESS != bulkAspectJsonToInstance(db, *row.m_aspect, row, true)) {
+            auto& load = loaded[row.m_loadIndex];
+            if (SUCCESS != bulkAspectJsonToInstance(db, *load.m_instance, row, true)) {
                 failures.Fail(row.m_index, DgnDbStatus::BadRequest, "invalid aspect properties");
                 applied = false;
                 break;
+            }
+            if (writeByLoad.emplace(row.m_loadIndex, writes.size()).second) {
+                writes.push_back(BulkElementAspectWrite());
+                writes.back().instance = load.m_instance;
+                writes.back().keyClass = load.m_isMulti ? nullptr : load.m_class;
+                writes.back().aspectId = load.m_aspectId;
             }
         }
 
@@ -588,7 +700,7 @@ Napi::Object JsInterop::UpdateElementAspects(DgnDbR db, Napi::Array propsArray, 
             continue;
         }
 
-        DgnDbStatus stat = elementEdits[group.first]->Update();
+        DgnDbStatus stat = writer.UpdateElement(*elementEdits[group.first], writes);
         if (DgnDbStatus::Success != stat) {
             failGroup(stat, "unable to update owning element");
             continue;
@@ -596,7 +708,7 @@ Napi::Object JsInterop::UpdateElementAspects(DgnDbR db, Napi::Array propsArray, 
 
         // The update of the owner succeeds even when one of its aspects cannot be written, so check each aspect.
         for (auto r : rowIndices) {
-            DgnDbStatus writeStatus = rows[r].m_platformAspect->GetLastWriteStatus();
+            DgnDbStatus writeStatus = writes[writeByLoad[rows[r].m_loadIndex]].status;
             if (DgnDbStatus::Success != writeStatus)
                 failures.Fail(rows[r].m_index, writeStatus, "unable to write aspect");
         }

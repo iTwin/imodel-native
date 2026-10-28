@@ -281,6 +281,8 @@ $(CoreObjs)EntityIdsChangeGroup$(oext) :            $(DgnCoreDir)EntityIdsChange
 
 $(CoreObjs)BulkElementAspectDeletion$(oext) :       $(DgnCoreDir)BulkElementAspectDeletion.cpp $(iModelPlatformAPISrc)DgnElement.h ${MultiCompileDepends}
 
+$(CoreObjs)BulkElementAspectWriter$(oext) :         $(DgnCoreDir)BulkElementAspectWriter.cpp $(iModelPlatformAPISrc)DgnElement.h ${MultiCompileDepends}
+
 #----------------------------------------------------------------------
 #   DgnGeoCoord
 #----------------------------------------------------------------------

@@ -21,6 +21,10 @@ const testSchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
     <BaseClass>bis:ElementUniqueAspect</BaseClass>
     <ECProperty propertyName="StrProp" typeName="string"/>
   </ECEntityClass>
+  <ECEntityClass typeName="DerivedUniqueAspect">
+    <BaseClass>TestUniqueAspect</BaseClass>
+    <ECProperty propertyName="DerivedProp" typeName="string"/>
+  </ECEntityClass>
   <ECEntityClass typeName="TestMultiAspect">
     <BaseClass>bis:ElementMultiAspect</BaseClass>
     <ECProperty propertyName="StrProp" typeName="string"/>
@@ -443,6 +447,65 @@ describe("bulk element aspects", () => {
       expect(findAspect(inserted.ids[0])!.strProp).to.equal("m1-new");
       expect(findAspect(inserted.ids[1])!.strProp).to.equal("om1");
       expect(findAspect(inserted.ids[2])!.strProp).to.equal("u1-new");
+    });
+
+    it("applies rows that name the same aspect in order", () => {
+      const e1 = insertOwner();
+      const inserted = db.insertElementAspects([uniqueProps(e1, "u1", 1), multiProps(e1, "m1", 2)]);
+      expect(inserted.status).to.equal(BulkElementAspectsStatus.Success);
+
+      const result = db.updateElementAspects([
+        { classFullName: uniqueClass, element: { id: e1 }, strProp: "u1-a" } as TestAspectProps,
+        { classFullName: multiClass, element: { id: e1 }, id: inserted.ids[1], intProp: 20 } as TestAspectProps,
+        { classFullName: uniqueClass, element: { id: e1 }, intProp: 10 } as TestAspectProps,
+        { classFullName: multiClass, element: { id: e1 }, id: inserted.ids[1], strProp: "m1-b" } as TestAspectProps,
+        { classFullName: uniqueClass, element: { id: e1 }, strProp: "u1-c" } as TestAspectProps,
+      ]);
+      expect(result.status).to.equal(BulkElementAspectsStatus.Success);
+      expect(findAspect(inserted.ids[0])).to.deep.include({ strProp: "u1-c", intProp: 10 });
+      expect(findAspect(inserted.ids[1])).to.deep.include({ strProp: "m1-b", intProp: 20 });
+    });
+
+    it("updates a unique aspect of a derived class through its base class, keeping the derived properties", () => {
+      const e1 = insertOwner();
+      const inserted = db.insertElementAspects([{ ...uniqueProps(e1, "d1", 1, "BulkAspectTest:DerivedUniqueAspect"), derivedProp: "derived" } as TestAspectProps]);
+      expect(inserted.status).to.equal(BulkElementAspectsStatus.Success);
+
+      const result = db.updateElementAspects([{ classFullName: uniqueClass, element: { id: e1 }, strProp: "d1-new" } as TestAspectProps]);
+      expect(result.status).to.equal(BulkElementAspectsStatus.Success);
+
+      const stmt = new iModelJsNative.ECSqlStatement();
+      expect(stmt.prepare(db, "SELECT ECInstanceId, ECClassId, StrProp, IntProp, DerivedProp FROM BulkAspectTest.DerivedUniqueAspect WHERE Element.Id=?").status).to.equal(DbResult.BE_SQLITE_OK);
+      stmt.getBinder(1).bindId(e1);
+      expect(stmt.step()).to.equal(DbResult.BE_SQLITE_ROW);
+      expect(stmt.getValue(0).getId()).to.equal(inserted.ids[0]);
+      expect(stmt.getValue(1).getClassNameForClassId()).to.equal("BulkAspectTest.DerivedUniqueAspect");
+      expect(stmt.getValue(2).getString()).to.equal("d1-new");
+      expect(stmt.getValue(3).getInt()).to.equal(1);
+      expect(stmt.getValue(4).getString()).to.equal("derived");
+      expect(stmt.step()).to.equal(DbResult.BE_SQLITE_DONE);
+      stmt.dispose();
+    });
+
+    it("the single-aspect API sees aspects written by the bulk API, and the other way around", () => {
+      const e1 = insertOwner();
+      const inserted = db.insertElementAspects([uniqueProps(e1, "u1", 1), multiProps(e1, "m1", 2)]);
+      expect(inserted.status).to.equal(BulkElementAspectsStatus.Success);
+      db.updateElementAspect({ classFullName: uniqueClass, element: { id: e1 }, intProp: 10 } as TestAspectProps);
+      db.updateElementAspect({ classFullName: multiClass, element: { id: e1 }, id: inserted.ids[1], intProp: 20 } as TestAspectProps);
+
+      const result = db.updateElementAspects([
+        { classFullName: uniqueClass, element: { id: e1 }, strProp: "u1-bulk" } as TestAspectProps,
+        { classFullName: multiClass, element: { id: e1 }, id: inserted.ids[1], strProp: "m1-bulk" } as TestAspectProps,
+      ]);
+      expect(result.status).to.equal(BulkElementAspectsStatus.Success);
+      expect(findAspect(inserted.ids[0])).to.deep.include({ strProp: "u1-bulk", intProp: 10 });
+      expect(findAspect(inserted.ids[1])).to.deep.include({ strProp: "m1-bulk", intProp: 20 });
+
+      db.updateElementAspect({ classFullName: uniqueClass, element: { id: e1 }, intProp: 100 } as TestAspectProps);
+      db.updateElementAspect({ classFullName: multiClass, element: { id: e1 }, id: inserted.ids[1], intProp: 200 } as TestAspectProps);
+      expect(findAspect(inserted.ids[0])).to.deep.include({ strProp: "u1-bulk", intProp: 100 });
+      expect(findAspect(inserted.ids[1])).to.deep.include({ strProp: "m1-bulk", intProp: 200 });
     });
   });
 

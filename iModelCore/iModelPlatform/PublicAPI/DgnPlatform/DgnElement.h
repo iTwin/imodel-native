@@ -599,6 +599,65 @@ struct BulkDeleteElementAspectsResult
     bvector<BulkDeleteElementAspectsFailure> failures;
     };
 
+//=======================================================================================
+//! An ElementAspect written by BulkElementAspectWriter::UpdateElement.
+// @bsiclass
+//=======================================================================================
+struct BulkElementAspectWrite
+    {
+    //! The properties of the aspect. The aspect is written with the class of this instance.
+    ECN::IECInstancePtr instance;
+    //! Unique aspects only: the class used to find the owner's existing aspect, which is replaced if it is of another class.
+    //! If null, the class of instance is used.
+    ECN::ECClassCP keyClass = nullptr;
+    //! Multi aspects: the id of the aspect to update, or an invalid id to insert a new aspect.
+    //! Unique aspects: the existing aspect of the owner is updated if it is of the class of instance, otherwise the instance is
+    //! inserted. If valid, this is the id used to update it, otherwise the id of the existing aspect is used.
+    //! On output: the id of the written aspect.
+    BeSQLite::EC::ECInstanceId aspectId;
+    //! On output: the result of writing the aspect.
+    DgnDbStatus status = DgnDbStatus::Success;
+    };
+
+//=======================================================================================
+//! Writes many ElementAspects of an element with the update of that element, the same way as DgnElement::GenericUniqueAspect
+//! and DgnElement::GenericMultiAspect write them, but without creating an aspect object for each of them. Use one writer for
+//! all the elements of a bulk operation, so that the per-class information is computed once.
+//! Implemented in DgnCore/BulkElementAspectWriter.cpp
+// @bsiclass
+//=======================================================================================
+class BulkElementAspectWriter
+    {
+    struct Impl;
+    struct WriterAppData;
+    Impl* m_impl;
+
+    BulkElementAspectWriter(BulkElementAspectWriter const&) = delete;
+    BulkElementAspectWriter& operator=(BulkElementAspectWriter const&) = delete;
+
+    static BeSQLite::EC::ECInstanceUpdater* GetUpdater(DgnDbR db, ECN::ECClassCR aspectClass);
+
+public:
+    //! @param[in] db The DgnDb to write to
+    //! @param[in] singleStatementInsert If true, a new aspect whose properties can all be written by a single INSERT is inserted
+    //!   that way, rather than by an INSERT followed by an UPDATE.
+    DGNPLATFORM_EXPORT explicit BulkElementAspectWriter(DgnDbR db, bool singleStatementInsert = false);
+    DGNPLATFORM_EXPORT ~BulkElementAspectWriter();
+
+    //! Whether existing aspects of the given class are loaded as generic aspects, i.e. the class has no registered C++ aspect handler
+    //! and no ClassHasHandler custom attribute. DgnElement::GenericUniqueAspect::GetAspectP and DgnElement::GenericMultiAspect::GetAspectP
+    //! return nullptr for aspects of other classes.
+    DGNPLATFORM_EXPORT bool IsGenericAspectClass(ECN::ECClassCR aspectClass);
+
+    //! Updates elementEdit (see DgnElement::Update) and writes the aspects while the element is updated, at the point where
+    //! the element's DgnElement::Aspect objects are written.
+    //! @param[in] elementEdit An editable copy of the owning element. Other aspects added to it are written by the same update.
+    //! @param[in, out] writes The aspects to write, in order. The status and aspectId of each are set when the element is updated.
+    //!   writes must not be modified until this returns.
+    //! @return The status of the update of the element. If it is not DgnDbStatus::Success, the aspects were not written.
+    DGNPLATFORM_EXPORT DgnDbStatus UpdateElement(DgnElementR elementEdit, bvector<BulkElementAspectWrite>& writes);
+    };
+
 class BulkElementDeletion
     {
     DgnDbR m_dgndb;
@@ -3988,6 +4047,7 @@ struct DgnElements : DgnDbTable
     friend struct GeometricElement;
     friend struct ElementAutoHandledPropertiesECInstanceAdapter;
     friend class BulkElementDeletion;
+    friend class BulkElementAspectWriter;
 
 private:
     // THIS MUST NOT BE EXPORTED, AS IT BYPASSES THE ECCRUDWRITETOKEN
