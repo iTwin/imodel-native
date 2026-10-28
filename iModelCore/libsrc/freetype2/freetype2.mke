@@ -95,6 +95,8 @@ $(o)ftsynth$(oext) : $(BaseDir)vendor/src/base/ftsynth.c ${CommonDependencies}
 
 $(o)ftsystem$(oext) : $(BaseDir)vendor/src/base/ftsystem.c ${CommonDependencies}
 
+$(o)hvf$(oext) : $(BaseDir)vendor/src/hvf/hvf.c ${CommonDependencies}
+
 $(o)fttype1$(oext) : $(BaseDir)vendor/src/base/fttype1.c ${CommonDependencies}
 
 $(o)pcf$(oext) : $(BaseDir)vendor/src/pcf/pcf.c ${CommonDependencies}

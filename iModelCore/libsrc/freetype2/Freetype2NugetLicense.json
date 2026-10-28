@@ -13,10 +13,10 @@
         "copyright": "David Turner, Robert Wilhelm, and Werner Lemberg",
         "description": "A freely available software library to render fonts.",
         "homepage": "https://www.freetype.org",
-        "licenseUrl": "https://gitlab.freedesktop.org/freetype/freetype/-/blob/VER-2-13-3/docs/FTL.TXT",
+        "licenseUrl": "https://gitlab.freedesktop.org/freetype/freetype/-/blob/VER-2-15-0/docs/FTL.TXT",
         "name": "Freetype2",
         "SPDX-ID": "FTL",
-        "version": "2.13.3"
+        "version": "2.15.0"
         }
     ]
 }
