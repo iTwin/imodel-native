@@ -290,7 +290,15 @@ static bool bindBulkAspectIdSet(ECSqlStatement& stmt, int index, T_Ids const& id
 * single-aspect operations. The single INSERT does not fire UPDATE triggers, so it is off unless the environment variable is set.
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool bulkAspectSingleInsertEnabled() {
+#if defined(_MSC_VER)
+    char* value = nullptr;
+    size_t length = 0;
+    bool isSet = (0 == _dupenv_s(&value, &length, "IMODELJS_BULK_ASPECT_SINGLE_INSERT")) && (nullptr != value);
+    free(value);
+    return isSet;
+#else
     return nullptr != ::getenv("IMODELJS_BULK_ASPECT_SINGLE_INSERT");
+#endif
 }
 
 //=======================================================================================
