@@ -21,3 +21,10 @@ set(VCPKG_LOAD_VCVARS_ENV ON)
 # vcpkg scrubs the build environment; whitelist LLVM_DIR so the chainload toolchain can locate
 # clang-cl via $ENV{LLVM_DIR} in every phase (detect_compiler, compiler-ABI try_compile, build).
 set(VCPKG_ENV_PASSTHROUGH "LLVM_DIR")
+
+# FreeType compiles src/base/ftver.rc on every Windows build (static included). Under Ninja,
+# CMake scans .rc dependencies by running the C compiler (clang-cl) with CMAKE_RC_FLAGS, and
+# clang-cl rejects rc.exe's /c65001 code-page flag from vcpkg's windows.cmake default
+# ("/c65001 /DWIN32"). ftver.rc is plain ASCII, so drop /c65001 (the toolchain only sets the
+# cache default, so this configure option wins).
+list(APPEND VCPKG_CMAKE_CONFIGURE_OPTIONS "-DCMAKE_RC_FLAGS=/DWIN32")
