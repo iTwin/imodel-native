@@ -887,7 +887,6 @@ TEST_F(IntegrityCheckerFixture, inherited_override_storage_projection) {
         for (size_t i = 0; i < 2; ++i) {
             ECSqlStatement stmt;
             ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, queries[i]));
-            SCOPED_TRACE(stmt.GetNativeSql());
             if (captureNativeSql)
                 expectedNativeSql[i] = stmt.GetNativeSql();
             else
