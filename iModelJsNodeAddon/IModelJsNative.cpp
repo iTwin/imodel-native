@@ -1998,21 +1998,21 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         auto& db = GetOpenedDb(info);
         if (ARGUMENT_IS_NOT_PRESENT(0) || !info[0].IsArray())
             THROW_JS_TYPE_EXCEPTION("Invalid argument given to insertElementAspects");
-        return JsInterop::InsertElementAspects(db, info[0].As<Napi::Array>());
+        return JsInterop::InsertElementAspects(db, info[0].As<Napi::Array>(), info[1]);
     }
 
     Napi::Value UpdateElementAspects(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
         if (ARGUMENT_IS_NOT_PRESENT(0) || !info[0].IsArray())
             THROW_JS_TYPE_EXCEPTION("Invalid argument given to updateElementAspects");
-        return JsInterop::UpdateElementAspects(db, info[0].As<Napi::Array>());
+        return JsInterop::UpdateElementAspects(db, info[0].As<Napi::Array>(), info[1]);
     }
 
     Napi::Value DeleteElementAspects(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
         if (ARGUMENT_IS_NOT_PRESENT(0) || !info[0].IsArray())
             THROW_JS_TYPE_EXCEPTION("Invalid argument given to deleteElementAspects");
-        return JsInterop::DeleteElementAspects(db, info[0].As<Napi::Array>());
+        return JsInterop::DeleteElementAspects(db, info[0].As<Napi::Array>(), info[1]);
     }
 
     Napi::Value ExportGraphics(NapiInfoCR info)

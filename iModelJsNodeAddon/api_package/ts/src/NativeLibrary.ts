@@ -66,6 +66,28 @@ export enum BulkElementAspectsStatus {
   PartialSuccess = 1,
   /** Every row failed. */
   Failed = 2,
+  /** `FailFast` mode only: some rows failed validation, so nothing was written and no handlers were called. See [[BulkElementAspectsResult.failures]]. */
+  ValidationFailed = 3,
+}
+
+/**
+ * How the native bulk ElementAspect operations treat invalid rows.
+ * @internal
+ */
+export enum BulkElementAspectsMode {
+  /** Default. Write the valid rows and report the invalid ones. */
+  BestEffort = 0,
+  /** Validate every row first. If any row is invalid, write nothing, call no handlers, and return `ValidationFailed`. */
+  FailFast = 1,
+}
+
+/**
+ * Options for `insertElementAspects`, `updateElementAspects` and `deleteElementAspects`.
+ * @internal
+ */
+export interface BulkElementAspectsOptions {
+  /** Defaults to `BulkElementAspectsMode.BestEffort`. */
+  mode?: BulkElementAspectsMode;
 }
 
 /**
@@ -705,7 +727,7 @@ export declare namespace IModelJsNative {
     public deleteElement(elemIdJson: string): void;
     public deleteElements(elementIds: Id64Array, deleteOptions?: { skipFKConstraintValidations?: boolean }): BulkDeleteElementsResult;
     public deleteElementAspect(aspectIdJson: string): void;
-    public deleteElementAspects(aspectIds: Id64Array): BulkElementAspectsResult;
+    public deleteElementAspects(aspectIds: Id64Array, options?: BulkElementAspectsOptions): BulkElementAspectsResult;
     public deleteLinkTableRelationship(props: RelationshipProps): DbResult;
     public deleteLinkTableRelationships(props: ReadonlyArray<RelationshipProps>): DbResult;
     public deleteLocalValue(name: string): void;
@@ -791,7 +813,7 @@ export declare namespace IModelJsNative {
     public insertCodeSpec(name: string, jsonProperties: CodeSpecProperties): Id64String;
     public insertElement(elemProps: ElementProps, options?: { forceUseId?: boolean }): Id64String;
     public insertElementAspect(aspectProps: ElementAspectProps): Id64String;
-    public insertElementAspects(aspectProps: ReadonlyArray<ElementAspectProps>): BulkInsertElementAspectsResult;
+    public insertElementAspects(aspectProps: ReadonlyArray<ElementAspectProps>, options?: BulkElementAspectsOptions): BulkInsertElementAspectsResult;
     public insertLinkTableRelationship(props: RelationshipProps): Id64String;
     public insertModel(modelProps: ModelProps): Id64String;
     public isChangeCacheAttached(): boolean;
@@ -867,7 +889,7 @@ export declare namespace IModelJsNative {
     public changeElementParent(props: { id: Id64String, parentId: Id64String }): void;
     public changeElementModel(props: { id: Id64String, modelId: Id64String }): void;
     public updateElementAspect(aspectProps: ElementAspectProps): void;
-    public updateElementAspects(aspectProps: ReadonlyArray<ElementAspectProps>): BulkElementAspectsResult;
+    public updateElementAspects(aspectProps: ReadonlyArray<ElementAspectProps>, options?: BulkElementAspectsOptions): BulkElementAspectsResult;
     public updateElementGeometryCache(props: ElementGeometryCacheRequestProps): Promise<ElementGeometryCacheResponseProps>;
     public updateIModelProps(props: IModelProps): void;
     public updateLinkTableRelationship(props: RelationshipProps): DbResult;

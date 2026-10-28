@@ -79,6 +79,8 @@ $(o)CsvImporter$(oext) : $(baseDir)CsvImporter.cpp $(baseDir)CsvImporter.h $(bas
 
 $(o)JsInteropDgnDb$(oext) : $(baseDir)JsInteropDgnDb.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends}
 
+$(o)JsInteropBulkElementAspects$(oext) : $(baseDir)JsInteropBulkElementAspects.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends}
+
 $(o)InlineGeometryParts$(oext) : $(baseDir)InlineGeometryParts.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends}
 
 $(o)GeoServicesInterop$(oext) : $(baseDir)GeoServicesInterop.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends}

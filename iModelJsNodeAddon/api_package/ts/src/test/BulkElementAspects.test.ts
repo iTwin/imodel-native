@@ -6,7 +6,7 @@ import { DbResult, Id64, Id64String, IModelStatus } from "@itwin/core-bentley";
 import type { ElementAspectProps, SubjectProps } from "@itwin/core-common";
 import { expect } from "chai";
 import { openDgnDb } from ".";
-import { BulkElementAspectsStatus, IModelJsNative } from "../NativeLibrary";
+import { BulkElementAspectsMode, BulkElementAspectsStatus, IModelJsNative } from "../NativeLibrary";
 import { copyFile, dbFileName, iModelJsNative } from "./utils";
 
 const testSchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -643,6 +643,123 @@ describe("bulk element aspects", () => {
       db.setIModelDb(makeMockJsDb({ throwIn: "onDelete" }).mockJsDb);
       expect(() => db.deleteElementAspects(existing.ids)).to.throw("onDelete rejected");
       expect(queryAspects()).to.deep.equal(before);
+    });
+  });
+
+  describe("FailFast mode", () => {
+    const failFast = { mode: BulkElementAspectsMode.FailFast };
+
+    it("insert writes nothing and calls no handlers if any row is invalid", () => {
+      const e1 = insertOwner();
+      const mock = makeMockJsDb();
+      db.setIModelDb(mock.mockJsDb);
+      const before = queryAspects();
+
+      const result = db.insertElementAspects([multiProps(e1, "ok"), multiProps("0", "invalidOwner"), { ...uniqueProps(e1, "badClass"), classFullName: "BulkAspectTest:DoesNotExist" }], failFast);
+      expect(result.status).to.equal(BulkElementAspectsStatus.ValidationFailed);
+      expect(result.failures.map((f) => [f.index, f.status])).to.deep.equal([[1, IModelStatus.InvalidId], [2, IModelStatus.BadSchema]]);
+      expect(result.ids).to.deep.equal(["0", "0", "0"]);
+      expect(mock.calls).to.deep.equal([]);
+      expect(queryAspects()).to.deep.equal(before);
+    });
+
+    it("update writes nothing and calls no handlers if any row is invalid or not found", () => {
+      const e1 = insertOwner();
+      const e2 = insertOwner();
+      const inserted = db.insertElementAspects([multiProps(e1, "m1"), uniqueProps(e2, "u2")]);
+      expect(inserted.status).to.equal(BulkElementAspectsStatus.Success);
+      const mock = makeMockJsDb();
+      db.setIModelDb(mock.mockJsDb);
+      const before = queryAspects();
+
+      const result = db.updateElementAspects([
+        { ...multiProps(e1, "m1-new"), id: inserted.ids[0] },
+        uniqueProps(e2, "u2-new"),
+        { ...multiProps(e2, "wrongOwner"), id: inserted.ids[0] },
+        { ...multiProps(e1, "missing"), id: "0xffffff0" },
+      ], failFast);
+      expect(result.status).to.equal(BulkElementAspectsStatus.ValidationFailed);
+      expect(result.failures.map((f) => [f.index, f.status])).to.deep.equal([[2, IModelStatus.NotFound], [3, IModelStatus.NotFound]]);
+      expect(mock.calls).to.deep.equal([]);
+      expect(queryAspects()).to.deep.equal(before);
+    });
+
+    it("delete writes nothing and calls no handlers if any id is invalid or not found", () => {
+      const e1 = insertOwner();
+      const inserted = db.insertElementAspects([multiProps(e1, "m1"), uniqueProps(e1, "u1")]);
+      expect(inserted.status).to.equal(BulkElementAspectsStatus.Success);
+      const mock = makeMockJsDb();
+      db.setIModelDb(mock.mockJsDb);
+      const before = queryAspects();
+
+      const result = db.deleteElementAspects([inserted.ids[0], "0xffffff0", "bad", inserted.ids[1]], failFast);
+      expect(result.status).to.equal(BulkElementAspectsStatus.ValidationFailed);
+      expect(result.failures.map((f) => [f.index, f.status])).to.deep.equal([[1, IModelStatus.NotFound], [2, IModelStatus.InvalidId]]);
+      expect(mock.calls).to.deep.equal([]);
+      expect(queryAspects()).to.deep.equal(before);
+    });
+
+    it("behaves like BestEffort when every row is valid", () => {
+      const e1 = insertOwner();
+      const e2 = insertOwner();
+      const mock = makeMockJsDb();
+      db.setIModelDb(mock.mockJsDb);
+
+      const inserted = db.insertElementAspects([multiProps(e1, "m1"), uniqueProps(e2, "u2")], failFast);
+      expect(inserted.status).to.equal(BulkElementAspectsStatus.Success);
+      expect(inserted.failures).to.deep.equal([]);
+      inserted.ids.forEach((id) => expect(Id64.isValidId64(id)).to.be.true);
+
+      const updated = db.updateElementAspects([{ ...multiProps(e1, "m1-new"), id: inserted.ids[0] }, uniqueProps(e2, "u2-new")], failFast);
+      expect(updated.status).to.equal(BulkElementAspectsStatus.Success);
+      expect(findAspect(inserted.ids[0])!.strProp).to.equal("m1-new");
+      expect(findAspect(inserted.ids[1])!.strProp).to.equal("u2-new");
+
+      const deleted = db.deleteElementAspects(inserted.ids, failFast);
+      expect(deleted.status).to.equal(BulkElementAspectsStatus.Success);
+      expect(inserted.ids.map((id) => findAspect(id))).to.deep.equal([undefined, undefined]);
+      expect(mock.aspectCalls("onInserted").length).to.equal(2);
+      expect(mock.aspectCalls("onUpdated").length).to.equal(2);
+      expect(mock.aspectCalls("onDeleted").length).to.equal(2);
+    });
+
+    it("an empty array reports Success", () => {
+      expect(db.insertElementAspects([], failFast).status).to.equal(BulkElementAspectsStatus.Success);
+      expect(db.updateElementAspects([], failFast).status).to.equal(BulkElementAspectsStatus.Success);
+      expect(db.deleteElementAspects([], failFast).status).to.equal(BulkElementAspectsStatus.Success);
+    });
+
+    it("failures while writing are still reported per row, with the other rows written", () => {
+      const e1 = insertOwner();
+      const inserted = db.insertElementAspects([multiProps(e1, "m1"), multiProps(e1, "om1", undefined, otherMultiClass)]);
+      expect(inserted.status).to.equal(BulkElementAspectsStatus.Success);
+
+      withFailingAspectWrites("bis_ElementMultiAspect", "DELETE", otherMultiClass, () => {
+        const result = db.deleteElementAspects(inserted.ids, failFast);
+        expect(result.status).to.equal(BulkElementAspectsStatus.PartialSuccess);
+        expect(result.failures.map((f) => [f.index, f.status])).to.deep.equal([[1, IModelStatus.WriteError]]);
+      });
+      expect(queryAspects().filter((r) => r.element === e1).map((r) => r.id)).to.deep.equal([inserted.ids[1]]);
+    });
+
+    it("BestEffort is the default", () => {
+      const e1 = insertOwner();
+      const rows = () => [multiProps(e1, "ok"), multiProps("0", "invalidOwner")];
+      for (const options of [undefined, {}, { mode: undefined }, { mode: BulkElementAspectsMode.BestEffort }]) {
+        const result = db.insertElementAspects(rows(), options);
+        expect(result.status).to.equal(BulkElementAspectsStatus.PartialSuccess);
+        expect(Id64.isValidId64(result.ids[0])).to.be.true;
+      }
+    });
+
+    it("throws for an invalid mode or options", () => {
+      const e1 = insertOwner();
+      for (const options of [{ mode: 2 }, { mode: -1 }, { mode: 0.5 }, { mode: "1" }, { mode: null }, 5, "FailFast"] as any[]) {
+        expect(() => db.insertElementAspects([multiProps(e1, "a")], options)).to.throw(TypeError);
+        expect(() => db.updateElementAspects([uniqueProps(e1, "a")], options)).to.throw(TypeError);
+        expect(() => db.deleteElementAspects(["0x1"], options)).to.throw(TypeError);
+      }
+      expect(queryAspects().filter((r) => r.element === e1)).to.deep.equal([]);
     });
   });
 
