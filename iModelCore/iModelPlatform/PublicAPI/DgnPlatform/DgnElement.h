@@ -576,6 +576,29 @@ struct BulkDeleteElementsResult
     DgnElementIdSet  failedIds;
     };
 
+//=======================================================================================
+//! An ElementAspect that DgnElements::DeleteElementAspects did not delete.
+// @bsiclass
+//=======================================================================================
+struct BulkDeleteElementAspectsFailure
+    {
+    BeSQLite::EC::ECInstanceId aspectId;
+    DgnDbStatus status = DgnDbStatus::Success;
+    Utf8String message;
+    };
+
+//=======================================================================================
+//! Result of DgnElements::DeleteElementAspects.
+// @bsiclass
+//=======================================================================================
+struct BulkDeleteElementAspectsResult
+    {
+    //! BE_SQLITE_OK unless the aspects could not be looked up, in which case nothing was written.
+    BeSQLite::DbResult sqlStatus = BeSQLite::DbResult::BE_SQLITE_OK;
+    //! The aspects that were not deleted. Invalid ids are ignored and are not reported.
+    bvector<BulkDeleteElementAspectsFailure> failures;
+    };
+
 class BulkElementDeletion
     {
     DgnDbR m_dgndb;
@@ -4190,6 +4213,20 @@ public:
     //! @return A result object containing the status of the bulk delete operation and any element IDs that could not be deleted.
     //! @note This function can only be safely invoked from the client thread.
     DGNPLATFORM_EXPORT BulkDeleteElementsResult DeleteElements(const DgnElementIdSet& elementIds, bool skipFKConstraintValidations = false);
+
+    //! Bulk-delete a set of ElementAspects from this DgnDb.
+    //! Implemented in DgnCore/BulkElementAspectDeletion.cpp
+    //!
+    //! The aspects are looked up with a single query. Each owning element is updated once (see DgnElement::Update), then the
+    //! aspects of each ECClass are deleted with a single statement. Aspects of a class that has a registered C++ aspect handler
+    //! are instead deleted through that handler, by the update of their owning element.
+    //! @param[in] aspectIds The ids of the ElementUniqueAspects and ElementMultiAspects to delete. Invalid and duplicate ids are ignored.
+    //! @return The aspects that were not deleted, with the reason. If the owning element cannot be updated, none of its aspects are deleted.
+    //! @note This method does not call the JavaScript ElementAspect handlers; the caller is responsible for that.
+    //! @note This method does not open a transaction of its own. If an aspect cannot be deleted after its owner was updated,
+    //!   the owner's update is not rolled back.
+    //! @note This function can only be safely invoked from the client thread.
+    DGNPLATFORM_EXPORT BulkDeleteElementAspectsResult DeleteElementAspects(bvector<BeSQLite::EC::ECInstanceId> const& aspectIds);
 
     //! Delete a DgnElement from this DgnDb by DgnElementId.
     //! @return DgnDbStatus::Success if the element was deleted, error status otherwise.

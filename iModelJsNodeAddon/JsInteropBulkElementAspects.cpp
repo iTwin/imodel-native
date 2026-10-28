@@ -613,9 +613,9 @@ Napi::Object JsInterop::UpdateElementAspects(DgnDbR db, Napi::Array propsArray, 
 }
 
 /*---------------------------------------------------------------------------------**//**
-* Delete many ElementAspects by id. Ids are resolved with a single query; the aspects of each owning element are deleted
-* through one editable copy of the element and written by a single update of it. Duplicate ids are deleted once.
-* An aspect whose delete fails while its owner is updated is reported as failed; the owner and its other aspects are still written.
+* Delete many ElementAspects by id. Ids are resolved with a single query; each owning element is updated once and the aspects of
+* each class are deleted with a single statement (DgnElements::DeleteElementAspects). Duplicate ids are deleted once.
+* An aspect whose delete fails after its owner is updated is reported as failed; the owner and its other aspects are still written.
 * FailFast mode behaves as for InsertElementAspects; malformed ids and aspects that are not found are validation failures.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -737,49 +737,25 @@ Napi::Object JsInterop::DeleteElementAspects(DgnDbR db, Napi::Array aspectIds, N
         hookCalls.push_back(std::make_pair(row.m_classId, row.m_hookArg));
     hooks.Call(hookCalls, "onBulkDelete", "onDelete");
 
-    // Phase 3: mark the aspects deleted on one editable copy per owning element, then update each owning element once
+    // Phase 3: update each owning element once, then delete the aspects of each class with one statement (see DgnElements::DeleteElementAspects).
+    // The aspects are looked up again, so ones that the pre-delete handlers removed are reported as not found.
     hookCalls.clear();
-    auto ownerGroups = groupBulkAspectRowsByOwner(validRows, [](DeleteRow const& row) { return row.m_ownerId; });
-    for (auto const& group : ownerGroups) {
-        DgnElementPtr elementEdit = validRows[group.second.front()].m_owner->CopyForEdit();
-        if (!elementEdit.IsValid()) {
-            for (auto r : group.second)
-                failRow(validRows[r], DgnDbStatus::WriteError, "unable to edit owning element");
-            continue;
+    if (!validRows.empty()) {
+        bvector<ECInstanceId> validIds;
+        std::map<ECInstanceId, size_t> validRowById;
+        for (size_t r = 0; r < validRows.size(); ++r) {
+            validIds.push_back(validRows[r].m_id);
+            validRowById[validRows[r].m_id] = r;
         }
 
-        bool anyDeleted = false;
-        std::map<size_t, RefCountedPtr<DgnElement::Aspect>> deletedAspects;
-        for (auto r : group.second) {
-            auto& row = validRows[r];
-            ECClassCP aspectClass = db.Schemas().GetClass(row.m_classId);
-            DgnElement::Aspect* aspect = aspectClass->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementMultiAspect)
-                ? static_cast<DgnElement::Aspect*>(DgnElement::MultiAspect::GetAspectP(*elementEdit, *aspectClass, row.m_id))
-                : static_cast<DgnElement::Aspect*>(DgnElement::UniqueAspect::GetAspectP(*elementEdit, *aspectClass));
-            if (nullptr == aspect) {
-                failRow(row, DgnDbStatus::NotFound, "aspect not found");
-                continue;
-            }
-            aspect->Delete();
-            deletedAspects[r] = aspect;
-            anyDeleted = true;
-        }
+        BulkDeleteElementAspectsResult result = db.Elements().DeleteElementAspects(validIds);
+        if (BE_SQLITE_OK != result.sqlStatus)
+            throwSqlError();
 
-        if (!anyDeleted)
-            continue;
-
-        DgnDbStatus stat = elementEdit->Update();
-        if (DgnDbStatus::Success != stat) {
-            for (auto r : group.second)
-                failRow(validRows[r], stat, "unable to update owning element");
-            continue;
-        }
-
-        // The update of the owner succeeds even when one of its aspects cannot be deleted, so check each aspect.
-        for (auto const& deleted : deletedAspects) {
-            DgnDbStatus writeStatus = deleted.second->GetLastWriteStatus();
-            if (DgnDbStatus::Success != writeStatus)
-                failRow(validRows[deleted.first], writeStatus, "unable to delete aspect");
+        for (auto const& failure : result.failures) {
+            auto found = validRowById.find(failure.aspectId);
+            if (validRowById.end() != found)
+                failRow(validRows[found->second], failure.status, failure.message);
         }
     }
 

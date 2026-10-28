@@ -57,7 +57,7 @@ interface HookCall {
 }
 
 /** A mock JS IModelDb whose classes record every handler call. Bulk handlers ("onBulk*") are only exposed for the test aspect classes when `bulk` is set. */
-function makeMockJsDb(opts: { bulk?: boolean, throwIn?: string } = {}) {
+function makeMockJsDb(opts: { bulk?: boolean, throwIn?: string, onCall?: (call: HookCall) => void } = {}) {
   const calls: HookCall[] = [];
   const mockJsDb: any = {
     getJsClass: (className: string) => new Proxy({}, {
@@ -68,6 +68,7 @@ function makeMockJsDb(opts: { bulk?: boolean, throwIn?: string } = {}) {
           return undefined;
         return (arg: any) => {
           calls.push({ className, method, arg });
+          opts.onCall?.({ className, method, arg });
           if (opts.throwIn === method)
             throw new Error(`${method} rejected`);
         };
@@ -515,6 +516,63 @@ describe("bulk element aspects", () => {
 
       expect(mock.aspectCalls("onDeleted").map((c) => c.arg.aspectId)).to.deep.equal([inserted.ids[0], inserted.ids[2]]);
       expect(queryAspects().filter((r) => r.element === e1).map((r) => r.id)).to.deep.equal([inserted.ids[1]]);
+    });
+
+    it("deletes the aspects of many owners and updates each owner once", () => {
+      const owners = [insertOwner(), insertOwner(), insertOwner()];
+      const props: TestAspectProps[] = [];
+      owners.forEach((e, i) => props.push(
+        multiProps(e, `m${i}a`),
+        multiProps(e, `m${i}b`),
+        uniqueProps(e, `u${i}`),
+        multiProps(e, `om${i}`, undefined, otherMultiClass),
+      ));
+      const inserted = db.insertElementAspects(props);
+      expect(inserted.status).to.equal(BulkElementAspectsStatus.Success);
+      const mock = makeMockJsDb();
+      db.setIModelDb(mock.mockJsDb);
+
+      const result = db.deleteElementAspects(inserted.ids);
+      expect(result.status).to.equal(BulkElementAspectsStatus.Success);
+      expect(queryAspects().filter((r) => owners.includes(r.element))).to.deep.equal([]);
+      expect(mock.elementCalls("onUpdated").map((c) => c.arg.id)).to.deep.equal(owners);
+      expect(mock.aspectCalls("onDeleted").map((c) => c.arg.aspectId)).to.deep.equal(inserted.ids);
+    });
+
+    it("deletes aspects that the single-aspect API has loaded, leaving none of them cached", () => {
+      const e1 = insertOwner();
+      const inserted = db.insertElementAspects([uniqueProps(e1, "u1"), multiProps(e1, "m1"), multiProps(e1, "m2")]);
+      expect(inserted.status).to.equal(BulkElementAspectsStatus.Success);
+      db.updateElementAspect(uniqueProps(e1, "u1-new"));
+      db.updateElementAspect({ ...multiProps(e1, "m1-new"), id: inserted.ids[1] });
+
+      expect(db.deleteElementAspects([inserted.ids[0], inserted.ids[1]]).status).to.equal(BulkElementAspectsStatus.Success);
+      expect(queryAspects().filter((r) => r.element === e1).map((r) => r.id)).to.deep.equal([inserted.ids[2]]);
+      expect(() => db.updateElementAspect(uniqueProps(e1, "u1-again"))).to.throw();
+      expect(() => db.updateElementAspect({ ...multiProps(e1, "m1-again"), id: inserted.ids[1] })).to.throw();
+      db.updateElementAspect({ ...multiProps(e1, "m2-new"), id: inserted.ids[2] });
+      expect(findAspect(inserted.ids[2])!.strProp).to.equal("m2-new");
+    });
+
+    it("reports aspects removed by a pre-delete handler as not found", () => {
+      const e1 = insertOwner();
+      const inserted = db.insertElementAspects([multiProps(e1, "m1"), multiProps(e1, "m2"), multiProps(e1, "m3")]);
+      expect(inserted.status).to.equal(BulkElementAspectsStatus.Success);
+      let removed = false;
+      const mock = makeMockJsDb({
+        onCall: (call) => {
+          if (!removed && call.method === "onDelete" && call.arg.aspectId === inserted.ids[0]) {
+            removed = true;
+            db.deleteElementAspect(inserted.ids[1]);
+          }
+        },
+      });
+      db.setIModelDb(mock.mockJsDb);
+
+      const result = db.deleteElementAspects(inserted.ids);
+      expect(result.status).to.equal(BulkElementAspectsStatus.PartialSuccess);
+      expect(result.failures.map((f) => [f.index, f.status])).to.deep.equal([[1, IModelStatus.NotFound]]);
+      expect(queryAspects().filter((r) => r.element === e1)).to.deep.equal([]);
     });
   });
 
