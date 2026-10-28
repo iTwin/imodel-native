@@ -181,13 +181,16 @@ struct ManifestDb {
 **   INSERT statement used for writing to the "manifest" table:
 **      REPLACE INTO manifest VALUES(?,?,?,?,?,?);
 **
-** aHash, nHash:
+** aHash, nHash, nHashEntry:
 **   aHash[] is a hash table array nHash entries in size containing
 **   CacheEntry structs, indexed by the block name of the block that
 **   the corresponding cache slot contains. The hash table contains
 **   any entry for each cache slot that (a) contains a valid block, or
 **   (b) is currently the target slot for an ongoing download of a new 
-**   block.
+**   block. nHashEntry is the number of entries currently in the hash
+**   table. bcvfsHashAdd() attempts to double the size of aHash[] if
+**   (nHashEntry*2 > nHash) after the new entry is added. aHash[] is
+**   never shrunk.
 **
 ** pUnused:
 **   Singly-linked list of CacheEntry structs for cache-file slots that
@@ -214,6 +217,7 @@ struct BcvCommon {
   CacheEntry *pLruLast;
   i64 iLruTick;
   int nHash;                      /* Number of hash buckets */
+  int nHashEntry;                 /* Number of entries in aHash[] */
   int nBlk;                       /* Number of blocks in cache file */
 
   /* Virtual table log object */
