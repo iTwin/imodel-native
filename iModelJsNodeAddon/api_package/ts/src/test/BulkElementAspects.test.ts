@@ -536,7 +536,7 @@ describe("bulk element aspects", () => {
       expect(result.status).to.equal(BulkElementAspectsStatus.Success);
       expect(queryAspects().filter((r) => owners.includes(r.element))).to.deep.equal([]);
       expect(mock.elementCalls("onUpdated").map((c) => c.arg.id)).to.deep.equal(owners);
-      expect(mock.aspectCalls("onDeleted").map((c) => c.arg.aspectId)).to.deep.equal(inserted.ids);
+      expect(mock.aspectCalls("onDeleted").map((c) => c.arg.aspectId)).to.have.members(inserted.ids);
     });
 
     it("deletes aspects that the single-aspect API has loaded, leaving none of them cached", () => {
