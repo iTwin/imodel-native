@@ -791,3 +791,4 @@ Napi::Object JsInterop::DeleteElementAspects(DgnDbR db, Napi::Array aspectIds, N
     hooks.Call(hookCalls, "onBulkDeleted", "onDeleted");
 
     return failures.ToJs(env);
+}
