@@ -5,21 +5,29 @@
     xsi:noNamespaceSchemaLocation="../../../../bentleybuild/PartFile.xsd"
     >
 
-    <!--
-        To support LKGs and products that mix static vs. dynamic, data files must always be treated as static.
-        This prevents attempting to symlink the static data file over the dynamic. While the files are actually the same, BB doesn't know this, and will fail.
-     -->
-    <Part Name="Notices" BentleyBuildMakeFile="StaticDataFiles.mke">
+    <!-- Bind the FreeType headers (staged from the vcpkg install) into BuildContext/VendorAPI and deliver the license notice.
+         To support LKGs and products that mix static vs. dynamic, this part must always be built as static (see the
+         Freetype2Library SubPart below). This prevents attempting to symlink the static data file over the dynamic. -->
+    <Part Name="PublicAPI" BentleyBuildMakeFile="freetype2.prewire.mke">
+        <!-- LibType="Static": the chain runs static-only; the prewire stages headers from the static vcpkg install root. -->
+        <SubPart PartName="vcpkg_install_freetype2" PartFile="iModelCore/libsrc/vcpkg" LibType="Static"/>
         <Bindings>
+            <VendorAPI Domain="freetype2"/>
             <VendorNotices>Delivery/freetype2-license.txt</VendorNotices>
         </Bindings>
     </Part>
 
     <Part Name="Freetype2Library" BentleyBuildMakeFile="freetype2.mke">
-        <SubPart  LibType="Static" PartName="Zlib" PartFile="iModelCore\libsrc\compress\Zlib"/>
-        <SubPart PartName="Notices"/>
+        <!-- LibType="Static": the vcpkg install (and thus the prewire that stages headers from it) runs static-only,
+             writing under the static OutputRootDir. Pulling PublicAPI as Static forces the prewire to run in the static
+             flavor too, so its $(OutputRootDir) matches the install root even when this part is built dynamic
+             (Freetype2LibraryDynamic / iTwinFreetype2.dll). -->
+        <SubPart PartName="PublicAPI" LibType="Static"/>
+        <!-- LibType="Static": freetype2.mke reads the vcpkg-built archive from the static install root for both static
+             and dynamic builds. -->
+        <SubPart PartName="vcpkg_install_freetype2" PartFile="iModelCore/libsrc/vcpkg" LibType="Static"/>
+        <SubPart LibType="Static" PartName="Zlib" PartFile="iModelCore\libsrc\compress\Zlib"/>
         <Bindings>
-            <VendorAPI Domain="freetype2"/>
             <Libs>Delivery/$(libprefix)iTwinFreetype2$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)iTwinFreetype2$(shlibext)</Assemblies>
         </Bindings>
