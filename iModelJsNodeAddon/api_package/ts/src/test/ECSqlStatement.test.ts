@@ -7,7 +7,7 @@ import { assert, expect } from "chai";
 import * as fs from "fs-extra";
 import * as path from "path";
 import { DbResult, Guid } from "@itwin/core-bentley";
-import { DbRequestKind } from "@itwin/core-common";
+import { DbRequestKind, QueryParamType } from "@itwin/core-common";
 import { IModelJsNative } from "../NativeLibrary";
 import { getOutputDir, iModelJsNative } from "./utils";
 
@@ -69,6 +69,29 @@ describe("ECSqlStatement", () => {
 
   it("should throw exception if toRow is called when statement is not prepared", () => {
     expect(() => stmt.toRow({})).to.throw("ECSqlStatement is not prepared.");
+  });
+
+  it("preserves integer and long parameter conversions in synchronous readers", () => {
+    db = createECDb(outDir, "sync-reader-numeric-bindings.ecdb");
+    const cases = [
+      { type: QueryParamType.Long, value: 2 ** 53, expected: 2 ** 53 },
+      { type: QueryParamType.Long, value: -(2 ** 53), expected: -(2 ** 53) },
+      { type: QueryParamType.Long, value: -3.5, expected: -3 },
+      { type: QueryParamType.Integer, value: 2 ** 31, expected: 2 ** 31 - 1 },
+      { type: QueryParamType.Integer, value: -(2 ** 31) - 1, expected: -(2 ** 31) },
+      { type: QueryParamType.Integer, value: 3.5, expected: 3 },
+    ];
+    for (const key of ["1", "n"]) {
+      for (const { type, value, expected } of cases) {
+        const reader = db.concurrentQuerySyncPrepare("SELECT :n", [key, type, value], 0, 0, []);
+        try {
+          const batch = reader.stepBatch(1);
+          assert.deepEqual(typeof batch === "string" ? JSON.parse(batch) : batch, [[expected]], `${key}: ${type}, ${value}`);
+        } finally {
+          reader.dispose();
+        }
+      }
+    }
   });
 
   it("preserves a zero-valued ID and following columns in a recursive CTE", () => {

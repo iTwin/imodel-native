@@ -97,16 +97,16 @@ struct CachedQueryAdaptor final: std::enable_shared_from_this<CachedQueryAdaptor
         bool IsForLease() const { return m_forLease; }
         QueryAdaptorCache* GetLeaseOwner() const { return m_leaseOwner; }
         uint64_t GetStatementId() const { return m_statementId; }
-        void Invalidate();
-        ECSqlRowAdaptor& GetJsonAdaptor();
-        ECSqlRowProperty::List GetMetaData();
+        ECDB_EXPORT void Invalidate();
+        ECDB_EXPORT ECSqlRowAdaptor& GetJsonAdaptor();
+        ECDB_EXPORT ECSqlRowProperty::List GetMetaData();
         PreparedECSqlRowRenderer& GetRowRenderer() { return m_rowRenderer; }
         std::string& ClearAndGetCachedString() { m_cachedString.clear(); return m_cachedString; }
         bool GetUsePrimaryConn() const { return m_usePrimaryConn; }
         void SetUsePrimaryConn(bool val) { m_usePrimaryConn = val; }
         Db const* GetWorkerConn() const { return m_conn; }
         void SetWorkerConn(ECDb const& conn) { m_conn = &conn; }
-        void ReleaseMemory();
+        ECDB_EXPORT void ReleaseMemory();
         void ReleaseResultMemory();
         bool IsParked() const { return m_cursor.has_value(); }
         bool MatchesCursor(ECSqlRequest const&, std::string const& argsKey) const;

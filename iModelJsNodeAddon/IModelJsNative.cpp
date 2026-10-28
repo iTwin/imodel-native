@@ -430,8 +430,8 @@ private:
 
     // Binds `args`, a flat array of [key, type, value, ...] triples where key is the parameter index or name as a
     // string and type is an ECSqlParams::ECSqlParam::Type. Matches ECSqlParams::FromJs + TryBindTo: index resolution,
-    // error messages, and ignoring the status of individual Bind calls are unchanged. Scalar types bind directly;
-    // other types go through ECSqlParams so their conversion rules stay in one place.
+    // error messages, and ignoring the status of individual Bind calls are unchanged. Integer and long values go
+    // through ECSqlParams to preserve its numeric conversions instead of N-API's wrapping or safe-integer limits.
     static bool BindArgs(Napi::Array args, ECSqlStatement& stmt, std::string& err) {
         using Type = ECSqlParams::ECSqlParam::Type;
         const uint32_t len = args.Length();
@@ -446,8 +446,7 @@ private:
             std::string key = keyVal.As<Napi::String>().Utf8Value();
             const Type type = (Type) typeVal.As<Napi::Number>().Int32Value();
             switch (type) {
-                case Type::Boolean: case Type::Double: case Type::Id: case Type::Integer:
-                case Type::Long: case Type::Null: case Type::String:
+                case Type::Boolean: case Type::Double: case Type::Id: case Type::Null: case Type::String:
                     break;
                 default: {
                     ECSqlParams params;
@@ -474,8 +473,6 @@ private:
                 case Type::Boolean: stmt.BindBoolean(index, v.asBool()); break;
                 case Type::Double: stmt.BindDouble(index, v.asDouble()); break;
                 case Type::Id: stmt.BindId(index, BeInt64Id::FromString(v.asCString())); break;
-                case Type::Integer: stmt.BindInt(index, v.asInt()); break;
-                case Type::Long: stmt.BindInt64(index, v.asInt64()); break;
                 case Type::Null: stmt.BindNull(index); break;
                 case Type::String: stmt.BindText(index, v.asCString(), IECSqlBinder::MakeCopy::Yes); break;
                 default: break;
