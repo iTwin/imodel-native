@@ -1,0 +1,22 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+# vcpkg_install_freetype2.mke - Run vcpkg install for the freetype2 manifest (FreeType).
+# This mke is part of the sequential vcpkg install chain in vcpkg.PartFile.xml so that
+# only one vcpkg process runs at a time.
+#---------------------------------------------------------------------------------------------
+
+%include mdl.mki
+
+freetype2Dir = $(_MakeFilePath)freetype2
+installRoot  = $(OutputRootDir)vcpkg_installed/freetype2
+
+%include $(_MakeFilePath)vcpkg.mki
+
+always:
+%if defined (winNT)
+    powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$(_MakeFilePath)vcpkg_run_install.ps1" "$(freetype2Dir)" "$(installRoot)" "$(vcpkgTriplet)"
+%else
+    $(_MakeFilePath)vcpkg_run_install.sh $(freetype2Dir) $(installRoot) $(vcpkgTriplet)
+%endif

@@ -22,7 +22,8 @@ vcpkg (bootstrap)
               └─► vcpkg_install_pugixml
                     └─► vcpkg_install_openssl
                           └─► vcpkg_install_curl
-                                └─► vcpkg_install_crashpad
+                                └─► vcpkg_install_freetype2
+                                      └─► vcpkg_install_crashpad
 ```
 
 Each link is a separate Part with its own `vcpkg_install_<consumer>.mke` that calls
