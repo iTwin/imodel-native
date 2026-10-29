@@ -99,9 +99,8 @@ bool ResolveCheckProperties(BindContext& ctx, ClassMapCR classMap, BeJsConst exp
 }
 
 //---------------------------------------------------------------------------------------
-// Name of classMap's TimeStampProperty (e.g. LastMod), or an empty string if it has none. Such a property
-// always changes on any write, so it must never gate an optimistic-concurrency check (every conflicting
-// write would then "fail" it), but it should still be reportable via FindConflictingProperties.
+// Name of classMap's TimeStampProperty (e.g. LastMod), or an empty string if it has none.
+// The property is managed by the database rather than bound as an inserted/updated value.
 // @bsimethod
 //---------------------------------------------------------------------------------------
 Utf8String GetCurrentTimeStampPropertyName(ClassMapCR classMap) {
@@ -1546,11 +1545,7 @@ DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& optio
     }
 
     bool hasCheck = options.HasExpectedOldValues();
-    // checkBindings is the full set of checked properties (used for reporting via FindConflictingProperties);
-    // gateCheckBindings excludes the class's TimeStampProperty, if any, since that property always changes on
-    // any write and so must never gate the conditional UPDATE below (every conflicting write would "fail" it).
     std::vector<CheckPropertyBinding> checkBindings;
-    std::vector<CheckPropertyBinding> gateCheckBindings;
     std::vector<Utf8String> checkNames;
     if (hasCheck) {
         auto cls = m_cache.GetECDb().Schemas().GetClass(classId);
@@ -1562,11 +1557,7 @@ DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& optio
         if (!ResolveCheckProperties(ctx, *classMap, options.GetExpectedOldValues(), checkBindings)) {
             return BE_SQLITE_ERROR;
         }
-        Utf8String timestampProp = GetCurrentTimeStampPropertyName(*classMap);
         for (auto const& b : checkBindings) {
-            if (!timestampProp.empty() && timestampProp.EqualsIAscii(b.m_propertyMap->GetName()))
-                continue;
-            gateCheckBindings.push_back(b);
             checkNames.push_back(b.m_propertyMap->GetName());
         }
     }
@@ -1637,8 +1628,8 @@ DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& optio
 
         if (hasCheck) {
             auto const& checkBinders = stmt.GetCheckBinders();
-            for (size_t i = 0; i < gateCheckBindings.size(); ++i) {
-                auto memberVal = options.GetExpectedOldValues()[gateCheckBindings[i].m_jsonMemberName.c_str()];
+            for (size_t i = 0; i < checkBindings.size(); ++i) {
+                auto memberVal = options.GetExpectedOldValues()[checkBindings[i].m_jsonMemberName.c_str()];
                 // Each checked property has two binders (see PrepareUpdate): the first is bound to the
                 // expected value itself; the second is an integer flag (1 if that value is null, else 0).
                 bindStatus = BindRootProperty(ctx, checkBinders[2 * i].GetPropertyMap(), checkBinders[2 * i].GetBinder(), memberVal);
@@ -1706,10 +1697,7 @@ DbResult Impl::Delete(ECInstanceKeyCR key, InstanceWriter::DeleteOptions const& 
     }
 
     bool hasCheck = options.HasExpectedOldValues();
-    // See Impl::Update: checkBindings is the full set (for reporting), gateCheckBindings excludes the
-    // class's TimeStampProperty (for the actual conditional DELETE below).
     std::vector<CheckPropertyBinding> checkBindings;
-    std::vector<CheckPropertyBinding> gateCheckBindings;
     std::vector<Utf8String> checkNames;
     if (hasCheck) {
         auto cls = m_cache.GetECDb().Schemas().GetClass(key.GetClassId());
@@ -1721,11 +1709,7 @@ DbResult Impl::Delete(ECInstanceKeyCR key, InstanceWriter::DeleteOptions const& 
         if (!ResolveCheckProperties(ctx, *classMap, options.GetExpectedOldValues(), checkBindings)) {
             return BE_SQLITE_ERROR;
         }
-        Utf8String timestampProp = GetCurrentTimeStampPropertyName(*classMap);
         for (auto const& b : checkBindings) {
-            if (!timestampProp.empty() && timestampProp.EqualsIAscii(b.m_propertyMap->GetName()))
-                continue;
-            gateCheckBindings.push_back(b);
             checkNames.push_back(b.m_propertyMap->GetName());
         }
     }
@@ -1736,8 +1720,8 @@ DbResult Impl::Delete(ECInstanceKeyCR key, InstanceWriter::DeleteOptions const& 
 
         if (hasCheck) {
             auto const& checkBinders = stmt.GetCheckBinders();
-            for (size_t i = 0; i < gateCheckBindings.size(); ++i) {
-                auto memberVal = options.GetExpectedOldValues()[gateCheckBindings[i].m_jsonMemberName.c_str()];
+            for (size_t i = 0; i < checkBindings.size(); ++i) {
+                auto memberVal = options.GetExpectedOldValues()[checkBindings[i].m_jsonMemberName.c_str()];
                 // Each checked property has two binders (see PrepareDelete): the first is bound to the
                 // expected value itself; the second is an integer flag (1 if that value is null, else 0).
                 auto bindStatus = BindRootProperty(ctx, checkBinders[2 * i].GetPropertyMap(), checkBinders[2 * i].GetBinder(), memberVal);

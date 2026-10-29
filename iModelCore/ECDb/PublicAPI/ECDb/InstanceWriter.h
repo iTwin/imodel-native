@@ -119,7 +119,9 @@ public:
         // verified need be present). When set, the row is only updated if its current values still match these
         // values (a null-safe comparison), so the caller can detect optimistic-concurrency conflicts. Identity
         // members (id/className/classFullName/ECInstanceId/ECClassId) are ignored if present, since the row is
-        // already located via the primary instance/key argument. Array-valued properties are not supported.
+        // already located via the primary instance/key argument. Timestamp properties (e.g. LastMod) are
+        // compared when provided, even though their new values are managed by the database rather than bound.
+        // Array-valued properties are not supported.
         bool HasExpectedOldValues() const { return m_expectedOldValues.has_value(); }
         BeJsConst GetExpectedOldValues() const { return *m_expectedOldValues; }
         UpdateOptions& CompareBeforeUpdate(BeJsConst expectedOldValues) {
