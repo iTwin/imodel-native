@@ -368,9 +368,13 @@ std::unique_ptr<StorageDescription> StorageDescription::Create(ClassMap const& c
             continue;
 
         Partition* vp = storageDescription->AddVerticalPartition(*table, storageDescription->GetHorizontalPartition(*table) != nullptr);
+        // The first id supplies the partition's property maps; a lower-id descendant is not its root.
+        if (derviedClassSet.find(classId) != derviedClassSet.end())
+            vp->AddClassId(classId);
         for (ECClassId ecClassId : derviedClassSet)
             {
-            vp->AddClassId(ecClassId);
+            if (ecClassId != classId)
+                vp->AddClassId(ecClassId);
             }
 
         vp->GenerateClassIdFilter(lwmc.GetClassesForTable(*table));
@@ -566,4 +570,3 @@ void Partition::AppendECClassIdFilterSql(Utf8StringR filterSqlExpression, Utf8CP
         }
     }
 END_BENTLEY_SQLITE_EC_NAMESPACE
-
