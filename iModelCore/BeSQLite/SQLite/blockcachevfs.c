@@ -5460,6 +5460,10 @@ struct sqlite3_prefetch {
   sqlite3_file *pCacheFile;
 
   int iNext;                      /* Next block of file to request */
+  u32 *aList;                     /* Block-list prefetch: blocks to fetch */
+  int nList;                      /* Number of entries in aList[] */
+  int iList;                      /* Next entry of aList[] to request */
+  int bListSent;                  /* True once aList[] sent to daemon */
   int nOutstanding;               /* Current number of outstanding requests */
   int nOnDemand;                  /* Count of on-demand requests (proxy only) */
   int nAuthFailure;
@@ -5605,8 +5609,15 @@ void bcvfsPrefetchRun(
   ManifestDb *pManDb = p->pManDb;
 
   while( rc==SQLITE_OK && p->nOutstanding<nRequest ){
-    int iBlk = p->iNext++;
-    if( iBlk>=pManDb->nBlkLocal ){
+    int iBlk;
+    if( p->aList ){
+      iBlk = (p->iList<p->nList) ? (int)p->aList[p->iList++] : -1;
+      if( iBlk>=pManDb->nBlkLocal ) continue;
+    }else{
+      iBlk = p->iNext++;
+      if( iBlk>=pManDb->nBlkLocal ) iBlk = -1;
+    }
+    if( iBlk<0 ){
       break;
     }else{
       CacheEntry *pEntry = 0;
@@ -5658,6 +5669,7 @@ void bcvfsPrefetchRun(
       p->zErr = 0;
       p->nAuthFailure++;
       p->iNext = 0;
+      p->iList = 0;
       ENTER_VFS_MUTEX; {
         bcvfsContainerReleaseBcv(pFs, p->pCont, p->pDisp, p->pBcv, 1);
         p->rc = bcvfsContainerGetBcv(
@@ -5668,7 +5680,9 @@ void bcvfsPrefetchRun(
   }
 
   if( p->rc==SQLITE_OK ) p->rc = rc;
-  if( p->rc==SQLITE_OK && p->iNext>=pManDb->nBlkLocal && p->nOutstanding==0 ){
+  if( p->rc==SQLITE_OK && p->nOutstanding==0 
+   && (p->aList ? p->iList>=p->nList : p->iNext>=pManDb->nBlkLocal)
+  ){
     p->rc = SQLITE_DONE;
   }
 }
@@ -5698,8 +5712,13 @@ void bcvfsProxyPrefetchRun(
     prefetch.u.prefetch.zAuth = p->zAuth;
     prefetch.u.prefetch.nRequest = (u32)nRequest;
     prefetch.u.prefetch.nMs = (u32)nMs;
+    if( p->aList && p->bListSent==0 ){
+      prefetch.u.prefetch.nBlk = (u32)p->nList;
+      prefetch.u.prefetch.aBlk = p->aList;
+    }
 
     pReply = bcvExchangeMessage(&p->rc, p->fdProxy, &prefetch);
+    if( p->rc==SQLITE_OK && prefetch.u.prefetch.nBlk>0 ) p->bListSent = 1;
 
     if( pReply ){
       assert( pReply->eType==BCV_MESSAGE_PREFETCH_REPLY );
@@ -5716,10 +5735,40 @@ void bcvfsProxyPrefetchRun(
         }
         p->nOutstanding = pReply->u.prefetch_r.nOutstanding;
         p->nOnDemand = pReply->u.prefetch_r.nOnDemand;
+        if( p->rc==SQLITE_OK && p->aList && !pReply->u.prefetch_r.bBlockList ){
+          /* An older daemon ignored the block list and started a
+          ** sequential prefetch. Stop rather than download the whole file. */
+          p->rc = SQLITE_NOTFOUND;
+          p->zErr = sqlite3_mprintf("daemon does not support block-list prefetch");
+        }
       }
       sqlite3_free(pReply);
     }
   }while( bContinue );
+}
+
+/*
+** Restrict a prefetch object to the listed blocks. See blockcachevfs.h.
+*/
+int sqlite3_bcvfs_prefetch_blocks(
+  sqlite3_prefetch *p,
+  int nBlk,
+  const unsigned int *aBlk
+){
+  u32 *aList = 0;
+  if( p==0 ) return SQLITE_NOMEM;
+  if( p->rc!=SQLITE_OK ) return p->rc;
+  if( nBlk<=0 || aBlk==0 ) return SQLITE_MISUSE;
+  if( p->aList || p->iNext>0 || p->nOutstanding>0 ){
+    return SQLITE_MISUSE;
+  }
+  aList = (u32*)sqlite3_malloc64(sizeof(u32) * (sqlite3_int64)nBlk);
+  if( aList==0 ) return SQLITE_NOMEM;
+  memcpy(aList, aBlk, sizeof(u32) * (size_t)nBlk);
+  p->aList = aList;
+  p->nList = nBlk;
+  p->iList = 0;
+  return SQLITE_OK;
 }
 
 /*
@@ -5802,6 +5851,7 @@ void sqlite3_bcvfs_prefetch_destroy(sqlite3_prefetch *p){
     bcvCloseLocal(p->pCacheFile);
 
     sqlite3_free(p->zErr);
+    sqlite3_free(p->aList);
     bcv_close_socket(p->fdProxy);
     sqlite3_free(p->pReply);
     sqlite3_free(p->zAuth);

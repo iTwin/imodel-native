@@ -1082,6 +1082,9 @@ struct DPrefetch {
   int bReply;
   int errCode;
   char *zErrMsg;
+  u32 *aList;                     /* Block-list prefetch: blocks to fetch */
+  int nList;                      /* Number of entries in aList[] */
+  int iList;                      /* Next entry of aList[] to fetch */
 };
 
 /*
@@ -1421,9 +1424,10 @@ static void bdLogRecvMsg(DaemonCtx *p, DClient *pClient, BcvMessage *pMsg){
 
       case BCV_MESSAGE_PREFETCH:
         daemon_msg_log(p, "%d->D: "
-            "PREFETCH(%d bytes of auth data, %d, %d)", pClient->iClientId, 
+            "PREFETCH(%d bytes of auth data, %d, %d, %d blocks)", 
+            pClient->iClientId, 
             bcvStrlen(pMsg->u.prefetch.zAuth), pMsg->u.prefetch.nRequest,
-            pMsg->u.prefetch.nMs
+            pMsg->u.prefetch.nMs, pMsg->u.prefetch.nBlk
         );
         break;
       default:
@@ -1558,6 +1562,7 @@ static void bdDisconnectClient(
   bcvContainerClose(pClient->pBcv);
   sqlite3_free(pClient->zAuth);
   sqlite3_free(pClient->prefetch.zErrMsg);
+  sqlite3_free(pClient->prefetch.aList);
 
   if( pClient->pCloseFd ){
     pClient->pCloseFd->pMethods->xShmUnmap(pClient->pCloseFd, 0);
@@ -2546,6 +2551,58 @@ static void bdHandleClient(
   sqlite3_free(pMsg);
 }
 
+/*
+** Return true if a prefetch client has requested every block it is going
+** to request. For a block-list prefetch, that is every block in the list.
+** Otherwise it is every block in the database.
+*/
+static int bdPrefetchFinished(DClient *pClient){
+  if( pClient->prefetch.aList ){
+    return pClient->prefetch.iList>=pClient->prefetch.nList;
+  }
+  return pClient->prefetch.iNext>=pClient->pManDb->nBlkLocal;
+}
+
+/*
+** Return the index of the next block a prefetch client should consider
+** fetching and advance the cursor. Return -1 if there are no more blocks.
+*/
+static int bdPrefetchNextBlock(DClient *pClient){
+  if( pClient->prefetch.aList ){
+    if( pClient->prefetch.iList<pClient->prefetch.nList ){
+      return (int)pClient->prefetch.aList[pClient->prefetch.iList++];
+    }
+    return -1;
+  }
+  if( pClient->prefetch.iNext<pClient->pManDb->nBlkLocal ){
+    return pClient->prefetch.iNext++;
+  }
+  return -1;
+}
+
+/*
+** Store the block list carried by a PREFETCH message. Only the first list
+** received on a connection is used. Out-of-range indices are discarded.
+*/
+static void bdPrefetchSetList(DClient *pClient, BcvMessage *pMsg){
+  u32 nBlk = pMsg->u.prefetch.nBlk;
+  if( nBlk>0 && pClient->prefetch.aList==0 ){
+    u32 *aIn = pMsg->u.prefetch.aBlk;
+    u32 *aList = (u32*)sqlite3_malloc64(sizeof(u32) * (i64)nBlk);
+    int nList = 0;
+    u32 ii;
+    if( aList==0 ) fatal_oom_error();
+    for(ii=0; ii<nBlk; ii++){
+      u32 iBlk;
+      memcpy(&iBlk, &aIn[ii], sizeof(u32));
+      if( iBlk<(u32)pClient->pManDb->nBlkLocal ) aList[nList++] = iBlk;
+    }
+    pClient->prefetch.aList = aList;
+    pClient->prefetch.nList = nList;
+    pClient->prefetch.iList = 0;
+  }
+}
+
 static void bdSendPrefetchReply(DClient *pClient){
   BcvMessage msg;
   DClient *pIter = 0;
@@ -2554,7 +2611,7 @@ static void bdSendPrefetchReply(DClient *pClient){
   int rc = pClient->prefetch.errCode;
   if( rc==SQLITE_OK 
    && pClient->prefetch.nOutstanding==0 
-   && pClient->prefetch.iNext>=pClient->pManDb->nBlkLocal 
+   && bdPrefetchFinished(pClient)
   ){
     rc = SQLITE_DONE;
   }
@@ -2571,6 +2628,7 @@ static void bdSendPrefetchReply(DClient *pClient){
   msg.u.prefetch_r.zErrMsg = pClient->prefetch.zErrMsg;
   msg.u.prefetch_r.nOutstanding = pClient->prefetch.nOutstanding;
   msg.u.prefetch_r.nOnDemand = nOnDemand;
+  msg.u.prefetch_r.bBlockList = 1;
   bdSendMsg(pClient->pCtx, pClient, &msg);
 
   pClient->prefetch.bReply = 0;
@@ -2579,6 +2637,7 @@ static void bdSendPrefetchReply(DClient *pClient){
   pClient->prefetch.zErrMsg = 0;
   if( rc==HTTP_AUTH_ERROR ){
     pClient->prefetch.iNext = 0;
+    pClient->prefetch.iList = 0;
   }
 }
 
@@ -2658,13 +2717,17 @@ static void bdHandlePrefetch(
     }
   }
 
-  while( pClient->prefetch.nOutstanding<pMsg->u.prefetch.nRequest
-      && pClient->prefetch.iNext<pClient->pManDb->nBlkLocal
+  if( pClient->pManDb ) bdPrefetchSetList(pClient, pMsg);
+
+  while( pClient->pManDb
+      && pClient->prefetch.nOutstanding<pMsg->u.prefetch.nRequest
   ){
     int nName = NAMEBYTES(pClient->pMan);
-    int iBlk = pClient->prefetch.iNext++;
-    const u8 *aName = &pClient->pManDb->aBlkLocal[iBlk * nName];
+    int iBlk = bdPrefetchNextBlock(pClient);
+    const u8 *aName;
     CacheEntry *pEntry = 0;
+    if( iBlk<0 ) break;
+    aName = &pClient->pManDb->aBlkLocal[iBlk * nName];
 
     pEntry = bdHashFind(&p->c, aName, nName, pClient->pCont->iEnc);
     if( pEntry==0 ){

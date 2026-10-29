@@ -640,12 +640,21 @@ struct BcvPrefetchMsg {
   const char *zAuth;
   u32 nRequest;
   u32 nMs;
+  /* Optional trailing field. If nBlk>0, aBlk[] is the list of block
+  ** indices to prefetch on this connection instead of walking the file
+  ** sequentially. Only the first PREFETCH on a connection that carries
+  ** a list is significant. Older daemons ignore this field. */
+  u32 nBlk;
+  u32 *aBlk;
 };
 struct BcvPrefetchReply {
   u32 errCode;                    /* Error code */
   const char *zErrMsg;            /* Error message */
   u32 nOnDemand;
   u32 nOutstanding;
+  /* Optional trailing field. Set to 1 by daemons that support block-list
+  ** prefetch. Left as 0 when the reply came from an older daemon. */
+  u32 bBlockList;
 };
 
 /*

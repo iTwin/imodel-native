@@ -135,6 +135,8 @@ struct CloudPrefetch {
     bool IsRunning() { return m_prefetch!= nullptr; }
 
     BE_SQLITE_EXPORT DbResult Init(CloudContainer& container, Utf8StringCR dbName);
+    //! Restrict this prefetch to the listed block indices. Must be called after Init and before the first Run.
+    BE_SQLITE_EXPORT DbResult SetBlocks(bvector<uint32_t> const& blocks);
     BE_SQLITE_EXPORT void Stop();
     BE_SQLITE_EXPORT PrefetchStatus Run(int nRequests, int timeout);
 };
