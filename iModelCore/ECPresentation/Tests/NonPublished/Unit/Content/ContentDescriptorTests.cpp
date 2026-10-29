@@ -17,6 +17,7 @@ struct ContentDescriptorTests : ::testing::Test
     {
     static std::unique_ptr<ECDbTestProject> s_project;
     IConnectionCPtr m_connection;
+    PresentationRuleSetPtr m_ruleset;
     std::shared_ptr<ContentDescriptor::Category> m_category;
 
     static void SetUpTestCase()
@@ -33,19 +34,49 @@ struct ContentDescriptorTests : ::testing::Test
     void SetUp() override
         {
         m_connection = new TestConnection(s_project->GetECDb());
+        m_ruleset = PresentationRuleSet::CreateInstance("");
         m_category = std::make_shared<ContentDescriptor::Category>("test", "Test", "", 0);
         }
 
     ContentDescriptorPtr CreateEmptyDescriptor() const
         {
-        return ContentDescriptor::Create(*m_connection, *PresentationRuleSet::CreateInstance(""), RulesetVariables(), *NavNodeKeyListContainer::Create());
+        return ContentDescriptor::Create(*m_connection, *m_ruleset, RulesetVariables(), *NavNodeKeyListContainer::Create());
         }
 
-    ContentDescriptor::CalculatedPropertyField* CreateCalculatedField(Utf8CP name) const
+    ContentDescriptor::CalculatedPropertyField* CreateCalculatedField(Utf8CP name, Utf8CP label = nullptr) const
         {
-        auto field = new ContentDescriptor::CalculatedPropertyField(m_category, name, name, "", PRIMITIVETYPE_String, nullptr);
+        auto field = new ContentDescriptor::CalculatedPropertyField(m_category, label ? label : name, name, "", PRIMITIVETYPE_String, nullptr);
         field->SetUniqueName(field->CreateName());
         return field;
+        }
+
+    ContentDescriptor::RelatedContentField* CreateRelatedContentField(bvector<ContentDescriptor::Field*> fields) const
+        {
+        ECClassCP sourceClass = m_connection->GetECDb().Schemas().GetClass("ECDbMeta", "ECClassDef");
+        ECClassCP targetClass = m_connection->GetECDb().Schemas().GetClass("ECDbMeta", "ECSchemaDef");
+        ECRelationshipClassCP relationship = m_connection->GetECDb().Schemas().GetClass("ECDbMeta", "SchemaOwnsClasses")->GetRelationshipClassCP();
+        auto field = new ContentDescriptor::RelatedContentField(m_category, "Related",
+            { RelatedClass(*sourceClass, SelectClass<ECRelationshipClass>(*relationship, ""), false, SelectClass<ECClass>(*targetClass, "")) },
+            fields);
+        field->SetUniqueName(field->CreateName());
+        return field;
+        }
+
+    static void CollectFieldNames(bvector<Utf8String>& names, bvector<ContentDescriptor::Field*> const& fields)
+        {
+        for (auto field : fields)
+            {
+            names.push_back(field->GetUniqueName());
+            if (field->IsNestedContentField())
+                CollectFieldNames(names, field->AsNestedContentField()->GetFields());
+            }
+        }
+
+    static bool HasUniqueFieldNames(ContentDescriptorCR descriptor)
+        {
+        bvector<Utf8String> names;
+        CollectFieldNames(names, descriptor.GetAllFields());
+        return names.size() == std::set<Utf8String>(names.begin(), names.end()).size();
         }
 
     static bvector<ContentDescriptor::Field const*> GetFields(ContentDescriptor::NestedContentField const& field)
@@ -400,4 +431,96 @@ TEST_F(ContentDescriptorTests, FieldClonesAreValid)
     EXPECT_STREQ("a", clonedChild->GetEditor()->GetName().c_str());
 
     DELETE_AND_CLEAR(clonedParent);
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest
+//---------------------------------------------------------------------------------------
+TEST_F(ContentDescriptorTests, MergeWith_RenamesIncomingNestedFieldWhenNameCollidesWithRootField)
+    {
+    auto descriptor = CreateEmptyDescriptor();
+    descriptor->AddRootField(*CreateCalculatedField("x", "Root"));
+
+    auto other = CreateEmptyDescriptor();
+    other->AddRootField(*CreateRelatedContentField({ CreateCalculatedField("x", "Nested") }));
+    Utf8String relatedFieldName = other->GetAllFields()[0]->GetUniqueName();
+
+    descriptor->MergeWith(*other);
+
+    EXPECT_TRUE(HasUniqueFieldNames(*descriptor));
+    ASSERT_EQ(2, descriptor->GetAllFields().size());
+    EXPECT_STREQ("x", descriptor->GetAllFields()[0]->GetUniqueName().c_str());
+    auto mergedRelatedField = descriptor->GetAllFields()[1]->AsNestedContentField();
+    EXPECT_STREQ(relatedFieldName.c_str(), mergedRelatedField->GetUniqueName().c_str());
+    EXPECT_STREQ("x/2", mergedRelatedField->GetFields()[0]->GetUniqueName().c_str());
+    EXPECT_EQ(mergedRelatedField, mergedRelatedField->GetFields()[0]->GetParent());
+
+    // source descriptor is not modified
+    EXPECT_STREQ("x", other->GetAllFields()[0]->AsNestedContentField()->GetFields()[0]->GetUniqueName().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest
+//---------------------------------------------------------------------------------------
+TEST_F(ContentDescriptorTests, MergeWith_RenamesCollidingNestedContentFieldAndItsChildren)
+    {
+    auto descriptor = CreateEmptyDescriptor();
+    descriptor->AddRootField(*CreateRelatedContentField({ CreateCalculatedField("y", "A") }));
+    Utf8String relatedFieldName = descriptor->GetAllFields()[0]->GetUniqueName();
+
+    auto other = CreateEmptyDescriptor();
+    other->AddRootField(*CreateRelatedContentField({ CreateCalculatedField("y", "B") }));
+
+    descriptor->MergeWith(*other);
+
+    EXPECT_TRUE(HasUniqueFieldNames(*descriptor));
+    ASSERT_EQ(2, descriptor->GetAllFields().size());
+    EXPECT_STREQ(relatedFieldName.c_str(), descriptor->GetAllFields()[0]->GetUniqueName().c_str());
+    EXPECT_STREQ("y", descriptor->GetAllFields()[0]->AsNestedContentField()->GetFields()[0]->GetUniqueName().c_str());
+    EXPECT_STREQ(Utf8PrintfString("%s/2", relatedFieldName.c_str()).c_str(), descriptor->GetAllFields()[1]->GetUniqueName().c_str());
+    EXPECT_STREQ("y/2", descriptor->GetAllFields()[1]->AsNestedContentField()->GetFields()[0]->GetUniqueName().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest
+//---------------------------------------------------------------------------------------
+TEST_F(ContentDescriptorTests, MergeWith_DoesntAssignNameUsedByAnotherIncomingField)
+    {
+    auto descriptor = CreateEmptyDescriptor();
+    descriptor->AddRootField(*CreateCalculatedField("x", "A"));
+
+    auto other = CreateEmptyDescriptor();
+    other->AddRootField(*CreateCalculatedField("x", "B"));
+    auto suffixedField = CreateCalculatedField("x", "C");
+    suffixedField->SetUniqueName("x/2");
+    other->AddRootField(*suffixedField);
+
+    descriptor->MergeWith(*other);
+
+    EXPECT_TRUE(HasUniqueFieldNames(*descriptor));
+    ASSERT_EQ(3, descriptor->GetAllFields().size());
+    EXPECT_STREQ("x", descriptor->GetAllFields()[0]->GetUniqueName().c_str());
+    EXPECT_STREQ("x/3", descriptor->GetAllFields()[1]->GetUniqueName().c_str());
+    EXPECT_STREQ("x/2", descriptor->GetAllFields()[2]->GetUniqueName().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest
+//---------------------------------------------------------------------------------------
+TEST_F(ContentDescriptorTests, MergeWith_DoesntDuplicateFieldRenamedByPreviousMerge)
+    {
+    auto descriptor = CreateEmptyDescriptor();
+    descriptor->AddRootField(*CreateCalculatedField("x", "Root"));
+
+    auto other1 = CreateEmptyDescriptor();
+    other1->AddRootField(*CreateRelatedContentField({ CreateCalculatedField("x", "Nested") }));
+    descriptor->MergeWith(*other1);
+
+    auto other2 = CreateEmptyDescriptor();
+    other2->AddRootField(*CreateRelatedContentField({ CreateCalculatedField("x", "Nested") }));
+    descriptor->MergeWith(*other2);
+
+    EXPECT_TRUE(HasUniqueFieldNames(*descriptor));
+    ASSERT_EQ(2, descriptor->GetAllFields().size());
+    EXPECT_STREQ("x/2", descriptor->GetAllFields()[1]->AsNestedContentField()->GetFields()[0]->GetUniqueName().c_str());
     }

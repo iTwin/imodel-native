@@ -71,6 +71,27 @@ describe("ECSqlStatement", () => {
     expect(() => stmt.toRow({})).to.throw("ECSqlStatement is not prepared.");
   });
 
+  it("preserves a zero-valued ID and following columns in a recursive CTE", () => {
+    db = createECDb(outDir, "cte-zero-id.ecdb");
+    const query = `
+      WITH RECURSIVE tree(authoringId, label, level) AS (
+        SELECT ECInstanceId, 'root', 0 FROM meta.ECClassDef WHERE Name = 'ECClassDef'
+        UNION
+        SELECT 0, 'child', level + 1 FROM tree WHERE level < 1
+      )
+      SELECT authoringId, label, level FROM tree ORDER BY level`;
+    for (const useJsName of [false, true]) {
+      assert.equal(stmt.prepare(db, query).status, DbResult.BE_SQLITE_OK);
+      assert.equal(stmt.step(), DbResult.BE_SQLITE_ROW);
+      const rootId = stmt.getValue(0).getId();
+      assert.deepEqual(stmt.toRow({ useJsName }).data, [rootId, "root", 0]);
+      assert.equal(stmt.step(), DbResult.BE_SQLITE_ROW);
+      assert.deepEqual(stmt.toRow({ useJsName }).data, [0, "child", 1]);
+      assert.equal(stmt.step(), DbResult.BE_SQLITE_DONE);
+      stmt.dispose();
+    }
+  });
+
   it("should return correct row when toRow is called after statement is prepared and executed", async () => {
     db = createECDb(outDir, "bindnumbers.ecdb",
       `<ECSchema schemaName="Test" alias="test" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">

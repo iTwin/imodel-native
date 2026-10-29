@@ -3677,4 +3677,49 @@ TEST_F(ECSqlDeletePrepareTests, Testing_classes_names_without_schemas)
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY p WHERE i<0"));
     }
 
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+struct ECSqlPrepareDamagedMappingTests : ECDbTestFixture {};
+
+//---------------------------------------------------------------------------------------
+// A class' horizontal partitions are the tables its own rows and its subclasses' rows live in -
+// one per table the hierarchy was mapped onto, each carrying the class ids that table holds.
+// ViewGenerator unions them to build the view an ECSql select reads from. They are worked out from
+// ec_cache_ClassHasTables, which is derived state rebuilt by RepopulateCacheTables rather than
+// something a changeset carries, so a file can end up with ec_ rows describing a mapped class and
+// no cache row for it. Every partition list is then empty.
+//
+// A mapped entity class always sits in at least one table, even when that table is virtual, so this
+// only happens on a damaged file and the prepare has to say so.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlPrepareDamagedMappingTests, PrepareAgainstAClassWithNoHorizontalPartition)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("nohorizontalpartition.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="Widget">
+                <ECProperty propertyName="Name" typeName="string" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    ECN::ECClassCP widget = m_ecdb.Schemas().GetClass("TestSchema", "Widget");
+    ASSERT_TRUE(widget != nullptr);
+    const ECN::ECClassId widgetId = widget->GetId();
+
+    ASSERT_EQ(ECSqlStatus::Success, GetHelper().PrepareECSql("SELECT Name FROM ONLY ts.Widget")) << "the mapping is intact at this point";
+
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(Utf8PrintfString("DELETE FROM main.ec_cache_ClassHasTables WHERE ClassId=%s",
+                                                               widgetId.ToString().c_str()).c_str()));
+    m_ecdb.ClearECDbCache();
+
+    // The file is damaged, so anything downstream is entitled to assert. What it may not do is read
+    // through a null pointer.
+    ScopedDisableFailOnAssertion disableFailOnAssert;
+
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("SELECT Name FROM ONLY ts.Widget"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("SELECT Name FROM ts.Widget"))
+        << "the polymorphic form used to answer with an empty result, which hides the damage";
+    }
+
 END_ECDBUNITTESTS_NAMESPACE

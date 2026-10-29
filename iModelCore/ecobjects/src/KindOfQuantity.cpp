@@ -5,6 +5,7 @@
 #include "ECObjectsPch.h"
 #include <algorithm>
 #include <regex>
+#include <string>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -649,22 +650,17 @@ ECObjectsStatus KindOfQuantity::CreateOverrideString(Utf8StringR out, ECFormatCR
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-Json::Value KindOfQuantity::GetPresentationFormatsJson() const
+void KindOfQuantity::GetPresentationFormatsJson(BeJsValue out) const
     {
-    Json::Value arrayObj(Json::arrayValue);
+    out.toArray();
 
-    bvector<NamedFormat> const& presentationUnits = GetPresentationFormats();
-    if (presentationUnits.size() > 0)
+    for (NamedFormatCR format : GetPresentationFormats())
         {
-        for (NamedFormatCR format : presentationUnits)
-            {
-            if (format.IsProblem())
-                continue;
+        if (format.IsProblem())
+            continue;
 
-            arrayObj.append(format.GetName());
-            }
+        out.appendValue() = format.GetName();
         }
-    return arrayObj;
     }
 
 //---------------------------------------------------------------------------------------

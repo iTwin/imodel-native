@@ -44,6 +44,7 @@
 #include "DbSchema.h"
 #include "SqlNames.h"
 #include "DbSchemaPersistenceManager.h"
+#include "DerivedDbStructures.h"
 #include "ClassMap.h"
 #include "PropertyMap.h"
 #include "SystemPropertyMap.h"

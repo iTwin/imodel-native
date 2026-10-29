@@ -6957,6 +6957,9 @@ int			EXP_LVL5	CS_elDiff (FILE *rptStrm,struct cs_Eldef_ *was,struct cs_Eldef_ *
 int			EXP_LVL1	CS_elEnum (int index,char *key_name,int size);
 void		EXP_LVL1	CS_elfnm (Const char *new_name);
 int			EXP_LVL1	CS_elIsValid (Const char *key_name);
+#ifdef GEOCOORD_ENHANCEMENT
+int			EXP_LVL5	CS_elHasValidProps(struct cs_Eldef_ *eldef);
+#endif
 csFILE *	EXP_LVL5	CS_elopn (Const char *mode);
 int			EXP_LVL5	CS_elrd (csFILE *strm,struct cs_Eldef_ *el_def,int *crypt);
 int			EXP_LVL5	CS_elrup (Const char *distrb,Const char *bkupnm);

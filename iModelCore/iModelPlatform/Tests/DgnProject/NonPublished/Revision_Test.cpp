@@ -80,6 +80,17 @@ bool QueryTestDomain(DgnDbR db, Utf8StringR description, int& version)
     version = stmt.GetValueInt(1);
     return true;
     }
+
+bool QueryBeLocalStat(DgnDbR db, Utf8StringR stat)
+    {
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(db, "SELECT stat FROM sqlite_stat1 WHERE tbl='be_Local' AND idx='sqlite_autoindex_be_Local_1'"))
+        return false;
+    if (stmt.Step() != BE_SQLITE_ROW)
+        return false;
+    stat = stmt.GetValueText(0);
+    return true;
+    }
 }
 
 //=======================================================================================
@@ -640,7 +651,7 @@ TEST_F(RevisionTestFixture, DdlChanges)
     BackupTestFile();
 
     // Create Revision 1 (Schema changes - creating two tables)
-    m_db->CreateTable("TestTable1", "Id INTEGER PRIMARY KEY, Column1 INTEGER");
+    m_db->CreateTable("TestTable1", "Id INTEGER PRIMARY KEY, Column1 INTEGER, Label TEXT DEFAULT 'a; b'");
     m_db->CreateTable("TestTable2", "Id INTEGER PRIMARY KEY, Column1 INTEGER");
 
     ASSERT_FALSE(m_db->Txns().HasDataChanges());
@@ -718,6 +729,11 @@ TEST_F(RevisionTestFixture, DdlChanges)
 
     ASSERT_TRUE(m_db->TableExists("TestTable1"));
     ASSERT_TRUE(m_db->TableExists("TestTable2"));
+    {
+    Statement statement(*m_db, "SELECT sql FROM sqlite_master WHERE name='TestTable1'");
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+    EXPECT_TRUE(Utf8String(statement.GetValueText(0)).Contains("DEFAULT 'a; b'"));
+    }
 
     ASSERT_TRUE(m_db->ColumnExists("TestTable1", "Id"));
     ASSERT_TRUE(m_db->ColumnExists("TestTable1", "Column1"));
@@ -831,6 +847,50 @@ TEST_F(RevisionTestFixture, ReverseSchemaChangeset)
 
     // Parent changeset correctly points back to cs0.
     ASSERT_STREQ(m_db->Txns().GetParentChangesetId().c_str(), cs0->GetChangesetId().c_str());
+
+    // Reapply restores the mapping even though reverse retained the physical table.
+    ASSERT_EQ(ChangesetStatus::Success, m_db->Txns().PullMergeApply(*cs1));
+    ASSERT_TRUE(m_db->Schemas().GetClass("ReverseSchemaTest", "TestWidget") != nullptr);
+    ASSERT_STREQ(m_db->Txns().GetParentChangesetId().c_str(), cs1->GetChangesetId().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, ReconstructMissingMappedTable)
+    {
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"ReconstructMissingMappedTable.bim");
+    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges());
+    ASSERT_TRUE(CreateRevision("-baseline").IsValid());
+    BackupTestFile();
+
+    auto context = ECSchemaReadContext::CreateContext();
+    context->AddSchemaLocater(m_db->GetSchemaLocater());
+    ECSchemaPtr schema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, R"xml(
+        <ECSchema schemaName="ReconstructionTest" alias="rt" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="1.0.0" alias="bis"/>
+            <ECEntityClass typeName="TestElement">
+                <BaseClass>bis:GraphicalElement2d</BaseClass>
+                <ECProperty propertyName="Prop1" typeName="string"/>
+                <ECProperty propertyName="Prop2" typeName="string"/>
+                <ECProperty propertyName="Prop3" typeName="string"/>
+            </ECEntityClass>
+        </ECSchema>)xml", *context));
+    ASSERT_EQ(SchemaStatus::Success, m_db->ImportSchemas({schema.get()}, true));
+    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges());
+    auto revision = CreateRevision("-add-shared-column");
+    ASSERT_TRUE(revision.IsValid());
+    ASSERT_TRUE(revision->ContainsDdlChanges(*m_db));
+    RestoreTestFile();
+
+    // ALTER TABLE fails, but ec_* metadata can reconstruct the missing mapped table.
+    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteSql("DROP TABLE bis_GeometricElement2d"));
+    ASSERT_EQ(ChangesetStatus::Success, m_db->Txns().PullMergeApply(*revision));
+    Statement column(*m_db, "SELECT 1 FROM pragma_table_info('bis_GeometricElement2d') WHERE name='js3'");
+    ASSERT_EQ(BE_SQLITE_ROW, column.Step());
+    ASSERT_TRUE(m_db->Schemas().GetClass("ReconstructionTest", "TestElement") != nullptr);
+    ASSERT_STREQ(revision->GetChangesetId().c_str(), m_db->Txns().GetParentChangesetId().c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -861,6 +921,7 @@ TEST_F(RevisionTestFixture, InvalidSchemaChanges)
     m_db->Txns().EnableTracking(false);
     ASSERT_TRUE(BE_SQLITE_OK == m_db->DropTable("TestTableWillHappen"));
     m_db->Txns().EnableTracking(true);
+
     }
 
 //---------------------------------------------------------------------------------------
@@ -2636,4 +2697,95 @@ TEST_F(RevisionTestFixture, NonDomainDuplicateInsertAbortsWithPendingTxns)
 
     expectToThrow([&]() { m_db->Txns().MergeChangeset(*csInsert, false); },
         "PRIMARY KEY INSERT CONFLICT - rejecting this changeset");
+    }
+
+//---------------------------------------------------------------------------------------
+// sqlite_stat1 contains query-planner statistics that may legitimately differ between
+// briefcases. A conflicting statistics row must not abort a pull merely because unrelated
+// local work is pending.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, SqliteStat1InsertConflictReplacesWithPendingTxns)
+    {
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"SqliteStat1Conflict.bim");
+    m_db->SaveChanges("Created Initial Model");
+    ASSERT_TRUE(CreateRevision("-cs0").IsValid());
+
+    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteSql("DELETE FROM sqlite_stat1 WHERE tbl='be_Local' AND idx='sqlite_autoindex_be_Local_1'"));
+    m_db->SaveChanges("empty baseline statistics");
+    if (m_db->Txns().HasPendingTxns())
+        ASSERT_TRUE(CreateRevision("-cs-baseline").IsValid());
+    BackupTestFile();
+
+    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteSql("ANALYZE be_Local"));
+    Utf8String incomingStat;
+    ASSERT_TRUE(QueryBeLocalStat(*m_db, incomingStat));
+    m_db->SaveChanges("incoming statistics");
+    ChangesetPropsPtr csStat = CreateRevision("-cs-stat");
+    ASSERT_TRUE(csStat.IsValid());
+
+    RestoreTestFile();
+    ASSERT_EQ(BE_SQLITE_DONE, m_db->SaveBriefcaseLocalValue("sqlite-stat1-conflict-test", "local"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteSql("ANALYZE be_Local"));
+    DgnElementId elementId = InsertPhysicalElement(*m_db, *m_defaultModel, m_defaultCategoryId, 8, 8, 8);
+    ASSERT_TRUE(elementId.IsValid());
+    m_db->SaveChanges("local statistics and pending work");
+    ASSERT_TRUE(m_db->Txns().HasPendingTxns());
+
+    Utf8String localStat;
+    ASSERT_TRUE(QueryBeLocalStat(*m_db, localStat));
+    ASSERT_STRNE(incomingStat.c_str(), localStat.c_str());
+
+    EXPECT_EQ(ChangesetStatus::Success, m_db->Txns().MergeChangeset(*csStat, false));
+
+    Utf8String mergedStat;
+    ASSERT_TRUE(QueryBeLocalStat(*m_db, mergedStat));
+    EXPECT_STREQ(incomingStat.c_str(), mergedStat.c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// A sqlite_stat1 UPDATE whose before value differs from locally computed statistics must
+// also be replaced while unrelated local work is pending.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, SqliteStat1DataConflictReplacesWithPendingTxns)
+    {
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"SqliteStat1DataConflict.bim");
+    m_db->SaveChanges("Created Initial Model");
+    ASSERT_TRUE(CreateRevision("-cs0").IsValid());
+
+    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteSql("ANALYZE be_Local"));
+    Utf8String baselineStat;
+    ASSERT_TRUE(QueryBeLocalStat(*m_db, baselineStat));
+    m_db->SaveChanges("baseline statistics");
+    ASSERT_TRUE(CreateRevision("-cs-baseline").IsValid());
+    BackupTestFile();
+
+    ASSERT_EQ(BE_SQLITE_DONE, m_db->SaveBriefcaseLocalValue("sqlite-stat1-incoming", "incoming"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteSql("ANALYZE be_Local"));
+    Utf8String incomingStat;
+    ASSERT_TRUE(QueryBeLocalStat(*m_db, incomingStat));
+    ASSERT_STRNE(baselineStat.c_str(), incomingStat.c_str());
+    m_db->SaveChanges("incoming statistics");
+    ChangesetPropsPtr csStat = CreateRevision("-cs-stat");
+    ASSERT_TRUE(csStat.IsValid());
+
+    RestoreTestFile();
+    ASSERT_EQ(BE_SQLITE_DONE, m_db->SaveBriefcaseLocalValue("sqlite-stat1-local-1", "local"));
+    ASSERT_EQ(BE_SQLITE_DONE, m_db->SaveBriefcaseLocalValue("sqlite-stat1-local-2", "local"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteSql("ANALYZE be_Local"));
+    DgnElementId elementId = InsertPhysicalElement(*m_db, *m_defaultModel, m_defaultCategoryId, 9, 9, 9);
+    ASSERT_TRUE(elementId.IsValid());
+    m_db->SaveChanges("local statistics and pending work");
+    ASSERT_TRUE(m_db->Txns().HasPendingTxns());
+
+    Utf8String localStat;
+    ASSERT_TRUE(QueryBeLocalStat(*m_db, localStat));
+    ASSERT_STRNE(incomingStat.c_str(), localStat.c_str());
+
+    EXPECT_EQ(ChangesetStatus::Success, m_db->Txns().MergeChangeset(*csStat, false));
+
+    Utf8String mergedStat;
+    ASSERT_TRUE(QueryBeLocalStat(*m_db, mergedStat));
+    EXPECT_STREQ(incomingStat.c_str(), mergedStat.c_str());
     }

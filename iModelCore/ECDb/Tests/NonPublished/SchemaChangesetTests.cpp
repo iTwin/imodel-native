@@ -335,4 +335,400 @@ TEST_F(SchemaChangesetTestFixture, ApplySchemaChangesetWithOrphanCustomAttribute
         }
     ASSERT_TRUE(reportedAsError) << "schema import must report orphan custom attribute rows as an error";
     }
+
+//---------------------------------------------------------------------------------------
+// A changeset may load an existing class whose persisted data maps are incomplete. Keep
+// that historical state intact while still rejecting the same state during import.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaChangesetTestFixture, ApplyChangesetWithIncompleteDerivedClassMaps)
+    {
+    Utf8String schemaXml(R"xml(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="HistoryMapProbe" alias="hmp" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="Root">
+            <ECCustomAttributes>
+              <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+              </ClassMap>
+            </ECCustomAttributes>
+          </ECEntityClass>
+          <ECEntityClass typeName="Child" modifier="Sealed">
+            <BaseClass>Root</BaseClass>
+)xml");
+    for (int propertyIndex = 1; propertyIndex <= 138; ++propertyIndex)
+        schemaXml.append(Utf8PrintfString("            <ECProperty propertyName=\"P%d\" typeName=\"string\" />\r\n", propertyIndex));
+    schemaXml.append(R"xml(          </ECEntityClass>
+          <ECRelationshipClass typeName="RootReferencesRoot" modifier="Sealed" strength="referencing">
+            <Source multiplicity="(0..*)" roleLabel="references" polymorphic="true">
+              <Class class="Root"/>
+            </Source>
+            <Target multiplicity="(0..*)" roleLabel="is referenced by" polymorphic="true">
+              <Class class="Root"/>
+            </Target>
+          </ECRelationshipClass>
+        </ECSchema>
+)xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("historyMapProbe.ecdb", SchemaItem(schemaXml)));
+    ASSERT_FALSE(m_ecdb.Schemas().GetSchemaSync().IsEnabled());
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO HistoryMapProbe.Child (P1) VALUES ('intact')");
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(R"sql(
+        DELETE FROM ec_PropertyMap
+        WHERE ClassId = (SELECT c.Id FROM ec_Class c JOIN ec_Schema s ON s.Id=c.SchemaId
+                         WHERE c.Name='Child' AND s.Name='HistoryMapProbe')
+          AND PropertyPathId IN (SELECT Id FROM ec_PropertyPath WHERE AccessString IN ('P136','P137','P138'))
+)sql"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    m_ecdb.ClearECDbCache();
+
+    SchemaChangesetTestChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("UPDATE ec_Schema SET Description='unrelated description' WHERE Name='HistoryMapProbe'"));
+    SchemaChangesetTestChangeSet changeset;
+    ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
+    tracker.EndTracking();
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AbandonChanges());
+
+    TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
+    ASSERT_EQ(BE_SQLITE_OK, changeset.ApplyChanges(m_ecdb));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AfterSchemaChangeSetApplied());
+
+    bool incompleteMapWarning = false;
+    for (ReportedIssue const& issue : issueListener.m_issues)
+        {
+        ASSERT_NE(ECN::IssueSeverity::Error, issue.severity) << issue.message.c_str();
+        if (Utf8String(issue.id.m_issueId).CompareToIAscii("ECDb_0160") == 0)
+            {
+            ASSERT_EQ(ECN::IssueSeverity::Warning, issue.severity);
+            ASSERT_TRUE(issue.message.Contains("Property maps: 135, properties: 138."));
+            incompleteMapWarning = true;
+            }
+        }
+    ASSERT_TRUE(incompleteMapWarning);
+
+    ECClassCP childClass = m_ecdb.Schemas().GetClass("HistoryMapProbe", "Child");
+    ASSERT_NE(nullptr, childClass);
+    ASSERT_EQ(138U, childClass->GetPropertyCount(true));
+    ASSERT_STREQ("unrelated description", childClass->GetSchema().GetDescription().c_str());
+    Statement mapCount;
+    ASSERT_EQ(BE_SQLITE_OK, mapCount.Prepare(m_ecdb, R"sql(
+        SELECT count(*) FROM ec_PropertyMap pm JOIN ec_PropertyPath pp ON pp.Id=pm.PropertyPathId
+        WHERE pm.ClassId = (SELECT c.Id FROM ec_Class c JOIN ec_Schema s ON s.Id=c.SchemaId
+                            WHERE c.Name='Child' AND s.Name='HistoryMapProbe')
+          AND pp.AccessString NOT IN ('ECInstanceId','ECClassId')
+)sql"));
+    ASSERT_EQ(BE_SQLITE_ROW, mapCount.Step());
+    ASSERT_EQ(135, mapCount.GetValueInt(0));
+    mapCount.Finalize();
+    ASSERT_EQ(JsonValue(R"json([{"P1":"intact"}])json"), GetHelper().ExecuteSelectECSql("SELECT P1 FROM HistoryMapProbe.Child"));
+
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    issueListener.ClearIssues();
+    SchemaItem unrelatedSchema(R"xml(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="UnrelatedHistoryProbe" alias="uhp" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="UnrelatedRoot"/>
+        </ECSchema>
+)xml");
+    ASSERT_EQ(BentleyStatus::ERROR, ImportSchema(unrelatedSchema));
+
+    bool incompleteMapImportError = false;
+    for (ReportedIssue const& issue : issueListener.m_issues)
+        {
+        if (Utf8String(issue.id.m_issueId).CompareToIAscii("ECDb_0160") == 0)
+            {
+            ASSERT_EQ(ECN::IssueSeverity::Error, issue.severity);
+            incompleteMapImportError = true;
+            }
+        }
+    ASSERT_TRUE(incompleteMapImportError);
+    m_ecdb.RemoveIssueListener();
+    }
+
+//---------------------------------------------------------------------------------------
+// A changeset may load an existing class whose distinct property paths have the same
+// access string. Keep that historical state intact while still rejecting it during import.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaChangesetTestFixture, ApplyChangesetWithDuplicatePropertyMapAccessStrings)
+    {
+    SchemaItem schema(R"xml(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="DuplicateMapProbe" alias="dmp" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="Root">
+            <ECCustomAttributes>
+              <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+              </ClassMap>
+            </ECCustomAttributes>
+          </ECEntityClass>
+          <ECEntityClass typeName="Child" modifier="Sealed">
+            <BaseClass>Root</BaseClass>
+            <ECProperty propertyName="P1" typeName="string"/>
+            <ECProperty propertyName="P2" typeName="string"/>
+          </ECEntityClass>
+        </ECSchema>
+)xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("duplicateMapProbe.ecdb", schema));
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO DuplicateMapProbe.Child (P1,P2) VALUES ('one','two')");
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+
+    const auto p1Column = GetHelper().GetPropertyMapColumn(AccessString("DuplicateMapProbe", "Child", "P1"));
+    const auto p2Column = GetHelper().GetPropertyMapColumn(AccessString("DuplicateMapProbe", "Child", "P2"));
+    ASSERT_TRUE(p1Column.Exists());
+    ASSERT_TRUE(p2Column.Exists());
+    ASSERT_STREQ(p1Column.GetTableName().c_str(), p2Column.GetTableName().c_str());
+
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(R"sql(
+        UPDATE ec_PropertyPath SET AccessString='P1'
+        WHERE Id = (
+          SELECT pp.Id
+          FROM ec_PropertyPath pp
+            JOIN ec_Property p ON p.Id=pp.RootPropertyId
+            JOIN ec_Class c ON c.Id=p.ClassId
+            JOIN ec_Schema s ON s.Id=c.SchemaId
+          WHERE s.Name='DuplicateMapProbe' AND c.Name='Child'
+            AND p.Name='P2' AND pp.AccessString='P2')
+)sql"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    m_ecdb.ClearECDbCache();
+
+    Statement duplicatePaths;
+    ASSERT_EQ(BE_SQLITE_OK, duplicatePaths.Prepare(m_ecdb, R"sql(
+        SELECT COUNT(*), COUNT(DISTINCT pm.PropertyPathId), COUNT(DISTINCT pp.AccessString)
+        FROM ec_PropertyMap pm
+          JOIN ec_PropertyPath pp ON pp.Id=pm.PropertyPathId
+          JOIN ec_Class c ON c.Id=pm.ClassId
+          JOIN ec_Schema s ON s.Id=c.SchemaId
+        WHERE s.Name='DuplicateMapProbe' AND c.Name='Child' AND pp.AccessString='P1'
+)sql"));
+    ASSERT_EQ(BE_SQLITE_ROW, duplicatePaths.Step());
+    ASSERT_EQ(2, duplicatePaths.GetValueInt(0));
+    ASSERT_EQ(2, duplicatePaths.GetValueInt(1));
+    ASSERT_EQ(1, duplicatePaths.GetValueInt(2));
+
+    SchemaChangesetTestChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("UPDATE ec_Schema SET Description='unrelated description' WHERE Name='DuplicateMapProbe'"));
+    SchemaChangesetTestChangeSet changeset;
+    ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
+    tracker.EndTracking();
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AbandonChanges());
+
+    TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
+    ASSERT_EQ(BE_SQLITE_OK, changeset.ApplyChanges(m_ecdb));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AfterSchemaChangeSetApplied());
+
+    bool duplicateMapWarning = false;
+    for (ReportedIssue const& issue : issueListener.m_issues)
+        {
+        ASSERT_NE(ECN::IssueSeverity::Error, issue.severity) << issue.message.c_str();
+        if (Utf8String(issue.id.m_issueId).CompareToIAscii("ECDb_0116") == 0)
+            {
+            ASSERT_EQ(ECN::IssueSeverity::Warning, issue.severity);
+            ASSERT_TRUE(issue.message.Contains("DuplicateMapProbe:Child"));
+            ASSERT_TRUE(issue.message.Contains("AccessString 'P1'"));
+            ASSERT_TRUE(issue.message.Contains(p1Column.GetName()));
+            ASSERT_TRUE(issue.message.Contains(p2Column.GetName()));
+            duplicateMapWarning = true;
+            }
+        }
+    ASSERT_TRUE(duplicateMapWarning);
+    ASSERT_STREQ("unrelated description", m_ecdb.Schemas().GetSchema("DuplicateMapProbe")->GetDescription().c_str());
+
+    Statement persistedData;
+    ASSERT_EQ(BE_SQLITE_OK, persistedData.Prepare(m_ecdb, SqlPrintfString(
+        "SELECT [%s], [%s] FROM [%s]", p1Column.GetName().c_str(), p2Column.GetName().c_str(), p1Column.GetTableName().c_str())));
+    ASSERT_EQ(BE_SQLITE_ROW, persistedData.Step());
+    ASSERT_STREQ("one", persistedData.GetValueText(0));
+    ASSERT_STREQ("two", persistedData.GetValueText(1));
+    ASSERT_EQ(BE_SQLITE_DONE, persistedData.Step());
+    persistedData.Finalize();
+
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    issueListener.ClearIssues();
+    SchemaItem unrelatedSchema(R"xml(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="UnrelatedDuplicateProbe" alias="udp" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="UnrelatedRoot"/>
+        </ECSchema>
+)xml");
+    ASSERT_EQ(BentleyStatus::ERROR, ImportSchema(unrelatedSchema));
+
+    bool invalidMapImportError = false;
+    for (ReportedIssue const& issue : issueListener.m_issues)
+        {
+        if (Utf8String(issue.id.m_issueId).CompareToIAscii("ECDb_0160") == 0)
+            {
+            ASSERT_EQ(ECN::IssueSeverity::Error, issue.severity);
+            ASSERT_TRUE(issue.message.Contains("Property maps: 0, properties: 2."));
+            invalidMapImportError = true;
+            }
+        }
+    ASSERT_TRUE(invalidMapImportError);
+    m_ecdb.RemoveIssueListener();
+    }
+
+//---------------------------------------------------------------------------------------
+// Changeset validation caps duplicate and incomplete property-map warnings independently and
+// summarizes the rest. The persisted-mapping pragma keeps reporting every issue as an error.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaChangesetTestFixture, ApplyChangesetWithPropertyMapWarningsCappedAndReset)
+    {
+    constexpr int classCount = 5;
+    Utf8String schemaXml(R"xml(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="DuplicateMapWarningProbe" alias="dmwp" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="Root">
+            <ECCustomAttributes>
+              <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+              </ClassMap>
+            </ECCustomAttributes>
+          </ECEntityClass>
+)xml");
+    for (int classIndex = 1; classIndex <= classCount; ++classIndex)
+        schemaXml.append(Utf8PrintfString(R"xml(          <ECEntityClass typeName="Child%d" modifier="Sealed">
+            <BaseClass>Root</BaseClass>
+            <ECProperty propertyName="P1" typeName="string"/>
+            <ECProperty propertyName="P2" typeName="string"/>
+          </ECEntityClass>
+)xml", classIndex));
+    // Polymorphic relationship constraints load the child class maps before validation.
+    schemaXml.append(R"xml(          <ECRelationshipClass typeName="RootReferencesRoot" modifier="Sealed" strength="referencing">
+            <Source multiplicity="(0..*)" roleLabel="references" polymorphic="true">
+              <Class class="Root"/>
+            </Source>
+            <Target multiplicity="(0..*)" roleLabel="is referenced by" polymorphic="true">
+              <Class class="Root"/>
+            </Target>
+          </ECRelationshipClass>
+        </ECSchema>
+)xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("duplicateMapWarningProbe.ecdb", SchemaItem(schemaXml)));
+
+    TestIssueListener issueListener;
+    ASSERT_EQ(SUCCESS, m_ecdb.AddIssueListener(issueListener));
+    int affectedClassCount = 0;
+    int changeNumber = 0;
+    for (int expectedAffectedClassCount : {0, 1, 3, 4, 5, 5})
+        {
+        while (affectedClassCount < expectedAffectedClassCount)
+            {
+            ++affectedClassCount;
+            ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(SqlPrintfString(R"sql(
+                UPDATE ec_PropertyPath SET AccessString='P1'
+                WHERE Id = (
+                  SELECT pp.Id
+                  FROM ec_PropertyPath pp
+                    JOIN ec_Property p ON p.Id=pp.RootPropertyId
+                    JOIN ec_Class c ON c.Id=p.ClassId
+                    JOIN ec_Schema s ON s.Id=c.SchemaId
+                  WHERE s.Name='DuplicateMapWarningProbe' AND c.Name='Child%d'
+                    AND p.Name='P2' AND pp.AccessString='P2')
+)sql", affectedClassCount)));
+            ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+            m_ecdb.ClearECDbCache();
+            }
+
+        SchemaChangesetTestChangeTracker tracker(m_ecdb);
+        tracker.EnableTracking(true);
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(SqlPrintfString(
+            "UPDATE ec_Schema SET Description='change %d' WHERE Name='DuplicateMapWarningProbe'", changeNumber)));
+        SchemaChangesetTestChangeSet changeset;
+        ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
+        tracker.EndTracking();
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AbandonChanges());
+
+        issueListener.ClearIssues();
+        ASSERT_EQ(BE_SQLITE_OK, changeset.ApplyChanges(m_ecdb));
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AfterSchemaChangeSetApplied());
+
+        int duplicateWarnings = 0;
+        int incompleteMapWarnings = 0;
+        int duplicateSummaryWarnings = 0;
+        int incompleteMapSummaryWarnings = 0;
+        for (ReportedIssue const& issue : issueListener.m_issues)
+            {
+            const auto issueId = Utf8String(issue.id.m_issueId);
+            if (issueId.Equals("ECDb_0116"))
+                {
+                ASSERT_EQ(ECN::IssueSeverity::Warning, issue.severity);
+                ++duplicateWarnings;
+                }
+            else if (issueId.Equals("ECDb_0160"))
+                {
+                ASSERT_EQ(ECN::IssueSeverity::Warning, issue.severity);
+                ASSERT_TRUE(issue.message.Contains("Property maps: 0, properties: 2."));
+                ++incompleteMapWarnings;
+                }
+            else if (issueId.Equals("ECDb_0747"))
+                {
+                ASSERT_EQ(ECN::IssueSeverity::Warning, issue.severity);
+                ++duplicateSummaryWarnings;
+                ASSERT_STREQ(Utf8PrintfString(
+                    "Detected %d duplicate mappings. Suppressed %d additional duplicate mapping warnings.",
+                    expectedAffectedClassCount, expectedAffectedClassCount - 3).c_str(), issue.message.c_str());
+                }
+            else if (issueId.Equals("ECDb_0748"))
+                {
+                ASSERT_EQ(ECN::IssueSeverity::Warning, issue.severity);
+                ++incompleteMapSummaryWarnings;
+                ASSERT_STREQ(Utf8PrintfString(
+                    "Detected %d classes with incomplete property maps. Suppressed %d additional property map count warnings.",
+                    expectedAffectedClassCount, expectedAffectedClassCount - 3).c_str(), issue.message.c_str());
+                }
+            else
+                ASSERT_NE(ECN::IssueSeverity::Error, issue.severity) << issue.message.c_str();
+            }
+        EXPECT_EQ(expectedAffectedClassCount < 3 ? expectedAffectedClassCount : 3, duplicateWarnings) << "Changeset " << changeNumber;
+        EXPECT_EQ(expectedAffectedClassCount < 3 ? expectedAffectedClassCount : 3, incompleteMapWarnings) << "Changeset " << changeNumber;
+        ASSERT_EQ(expectedAffectedClassCount > 3 ? 1 : 0, duplicateSummaryWarnings) << "Changeset " << changeNumber;
+        ASSERT_EQ(expectedAffectedClassCount > 3 ? 1 : 0, incompleteMapSummaryWarnings) << "Changeset " << changeNumber;
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+        ++changeNumber;
+        }
+
+    issueListener.ClearIssues();
+    ECSqlStatement validation;
+    ASSERT_EQ(ECSqlStatus::Success, validation.Prepare(m_ecdb,
+        "PRAGMA validate_persisted_mappings OPTIONS enable_experimental_features"));
+    int pragmaDuplicateErrors = 0;
+    int pragmaIncompleteMapErrors = 0;
+    int pragmaSummaryWarnings = 0;
+    while (BE_SQLITE_ROW == validation.Step())
+        {
+        const auto issueId = Utf8String(validation.GetValueText(3));
+        if (issueId.Equals("ECDb_0116"))
+            {
+            ASSERT_STREQ("Error", validation.GetValueText(0));
+            ++pragmaDuplicateErrors;
+            }
+        else if (issueId.Equals("ECDb_0160"))
+            {
+            ASSERT_STREQ("Error", validation.GetValueText(0));
+            ASSERT_TRUE(Utf8String(validation.GetValueText(4)).Contains("Property maps: 0, properties: 2."));
+            ++pragmaIncompleteMapErrors;
+            }
+        else if (issueId.Equals("ECDb_0747") || issueId.Equals("ECDb_0748"))
+            ++pragmaSummaryWarnings;
+        }
+    ASSERT_EQ(classCount, pragmaDuplicateErrors);
+    ASSERT_EQ(classCount, pragmaIncompleteMapErrors);
+    ASSERT_EQ(0, pragmaSummaryWarnings);
+    for (ReportedIssue const& issue : issueListener.m_issues)
+        {
+        ASSERT_FALSE(Utf8String(issue.id.m_issueId).Equals("ECDb_0747"));
+        ASSERT_FALSE(Utf8String(issue.id.m_issueId).Equals("ECDb_0748"));
+        }
+    validation.Finalize();
+    m_ecdb.RemoveIssueListener();
+    }
 END_ECDBUNITTESTS_NAMESPACE

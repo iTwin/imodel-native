@@ -1554,7 +1554,7 @@ void DisplayStyle::_OnLoadedJsonProperties()
 
     auto overrides = styles[json_subCategoryOvr()];
     auto size = overrides.size();
-    for (Json::ArrayIndex i = 0; i<size; ++i)
+    for (BeJsValue::ArrayIndex i = 0; i<size; ++i)
         {
         auto val = overrides[i];
         auto subCatIdJson = val[json_subCategory()];
@@ -1617,7 +1617,7 @@ void DisplayStyle::_ToJson(BeJsValue val, BeJsConst opts) const
         // The Ids are compressed; callers wants them uncompressed.
         auto ids = GetExcludedElements();
         excludedElems.SetEmptyArray();
-        Json::ArrayIndex i = 0;
+        BeJsValue::ArrayIndex i = 0;
         for (auto const& id : ids)
             excludedElems[i++] = id;
         }
@@ -1709,7 +1709,7 @@ DgnElementIdSet DisplayStyle::GetExcludedElements() const
     if (excludedElementsJson.isArray())
         {
         auto size = excludedElementsJson.size();
-        for (Json::ArrayIndex i = 0; i < size; ++i)
+        for (BeJsValue::ArrayIndex i = 0; i < size; ++i)
             excludedElements.insert(excludedElementsJson[i].GetId64<DgnElementId>());
         }
     else if (excludedElementsJson.isString())

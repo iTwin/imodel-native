@@ -1169,7 +1169,7 @@ struct PropertyData
 }; // PropertyData
 
 typedef bmap<DgnElementId, bvector<PropertyData>> ElementInputPropertyMap;
-typedef bmap<DgnElementId, Json::Value> ElementOutputPropertyMap;
+typedef bmap<DgnElementId, std::shared_ptr<BeJsDocument>> ElementOutputPropertyMap;
 
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod
@@ -1186,23 +1186,30 @@ void AddEntry(ElementInputPropertyMap& map, DgnElementId elementId, Utf8String a
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TestEqual(Json::Value & json, ECValue value)
+void TestEqual(BeJsConst json, ECValue value)
     {
-    switch(json.type())
+    // NOTE: BeJs offers only isNumeric() - there is no int/uint/real subtype - so the numeric case
+    // is dispatched on the ECValue's type instead. Also, bools are NOT numeric in BeJs, so
+    // isBool() comes first.
+    if (json.isBool())
         {
-        case Json::ValueType::uintValue:
-        case Json::ValueType::intValue:
-            ASSERT_EQ(json.asInt(), value.GetInteger());
-            return;
-        case Json::ValueType::realValue:
+        ASSERT_EQ(json.asBool(), value.GetBoolean());
+        return;
+        }
+
+    if (json.isNumeric())
+        {
+        if (value.IsDouble())
             ASSERT_EQ(json.asDouble(), value.GetDouble());
-            return;
-        case Json::ValueType::stringValue:
-            ASSERT_EQ(json.asString(), Utf8String(value.GetUtf8CP()));
-            return;
-        case Json::ValueType::booleanValue:
-            ASSERT_EQ(json.asBool(), value.GetBoolean());
-            return;
+        else
+            ASSERT_EQ(json.asInt(), value.GetInteger());
+        return;
+        }
+
+    if (json.isString())
+        {
+        ASSERT_EQ(json.asString(), Utf8String(value.GetUtf8CP()));
+        return;
         }
 
     ASSERT_TRUE(false && "This shouldn't happen");
@@ -1218,15 +1225,17 @@ void CheckPropertyOutput(ElementInputPropertyMap& inputMap, ElementOutputPropert
         DgnElementId elementId = inputEntry.first;
         bvector<PropertyData> propertyDatas = inputEntry.second;
         ASSERT_TRUE(outputMap.find(elementId) != outputMap.end());
-        Json::Value outputContent = outputMap[elementId];
+        auto const& outputDoc = outputMap[elementId];
+        ASSERT_TRUE(outputDoc != nullptr);
+        BeJsConst outputContent = *outputDoc;
 
-        Utf8String jsonString = outputContent.ToString();
+        Utf8String jsonString = outputContent.Stringify();
         if (jsonString.empty()) { }
 
         for (PropertyData const& data : propertyDatas)
             {
-            Json::Value currentValue = outputContent[data.m_accessor]["currentValue"];
-            Json::Value targetValue = outputContent[data.m_accessor]["targetValue"];
+            BeJsConst currentValue = outputContent[data.m_accessor]["currentValue"];
+            BeJsConst targetValue = outputContent[data.m_accessor]["targetValue"];
             ASSERT_TRUE(!currentValue.isNull() && !targetValue.isNull());
             TestEqual(currentValue, data.m_oldValue);
             TestEqual(targetValue, data.m_newValue);
@@ -1266,6 +1275,11 @@ TEST_F(VersionCompareTestFixture, ChangedElementsManagerTest1)
     m_db->Elements().Delete(firstElement->GetElementId());
     changesets.push_back(CreateRevision("-cs3"));
 
+    // Changesets created within one clock tick must still be ordered and queried individually.
+    DateTime pushDate = changesets.front()->GetDateTime();
+    for (auto const& changeset : changesets)
+        changeset->SetDateTime(pushDate);
+
     // Filename and cleanup if needed
     BeFileName cacheFilename;
     BeTest::GetHost().GetOutputRoot(cacheFilename);
@@ -1281,8 +1295,11 @@ TEST_F(VersionCompareTestFixture, ChangedElementsManagerTest1)
     // Create the Db file
     // TODO: Good filename
     EXPECT_EQ(BE_SQLITE_OK, ceMgr.CreateChangedElementsCache(cacheDb, cacheFilename));
+    bvector<ChangesetPropsPtr> incompleteChangesets{changesets.front(), changesets.back()};
+    EXPECT_EQ(BE_SQLITE_ERROR, ceMgr.ProcessChangesets(cacheDb, "Items", incompleteChangesets));
+    EXPECT_FALSE(ceMgr.IsProcessed(cacheDb, changesets.front()->GetChangesetId()));
     // Process the changeset
-    EXPECT_EQ(BE_SQLITE_OK, ceMgr.ProcessChangesets(cacheDb, "Items", changesets));
+    ASSERT_EQ(BE_SQLITE_OK, ceMgr.ProcessChangesets(cacheDb, "Items", changesets));
     // Should be able to retrieve the changed elements from the cache Db
     ChangedElementsMap map;
     // Check first changeset 1 and 2 above
@@ -1337,6 +1354,22 @@ TEST_F(VersionCompareTestFixture, ChangedElementsManagerTest1)
     EXPECT_EQ(BE_SQLITE_OK, ceMgr.GetChangedModels(cacheDb, changedModels, changesets[0]->GetChangesetId(), changesets[2]->GetChangesetId()));
     // Should have the default model in the changed models
     EXPECT_TRUE(changedModels.find(m_defaultModelId) != changedModels.end());
+
+    EXPECT_EQ(BE_SQLITE_ERROR, ceMgr.GetChangedElements(cacheDb, map, changesets[0]->GetChangesetId(), "missing"));
+    EXPECT_EQ(BE_SQLITE_ERROR, ceMgr.GetChangedModels(cacheDb, changedModels, "missing", changesets[2]->GetChangesetId()));
+
+    ECSqlStatement deleteChangeset;
+    ASSERT_EQ(ECSqlStatus::Success, deleteChangeset.Prepare(cacheDb, "DELETE FROM chems.Changeset WHERE ChangesetId=?"));
+    deleteChangeset.BindText(1, changesets[1]->GetChangesetId().c_str(), IECSqlBinder::MakeCopy::Yes);
+    ASSERT_EQ(BE_SQLITE_DONE, deleteChangeset.Step());
+    deleteChangeset.Finalize();
+    ASSERT_EQ(BE_SQLITE_OK, cacheDb.SaveChanges());
+
+    EXPECT_EQ(BE_SQLITE_ERROR, ceMgr.GetChangedElements(cacheDb, map, changesets[0]->GetChangesetId(), changesets[2]->GetChangesetId()));
+    EXPECT_EQ(BE_SQLITE_ERROR, ceMgr.GetChangedElements(cacheDb, map, changesets[2]->GetChangesetId(), changesets[0]->GetChangesetId()));
+    EXPECT_EQ(BE_SQLITE_ERROR, ceMgr.GetChangedModels(cacheDb, changedModels, changesets[0]->GetChangesetId(), changesets[2]->GetChangesetId()));
+    EXPECT_EQ(BE_SQLITE_OK, ceMgr.GetChangedElements(cacheDb, map, changesets[2]->GetChangesetId(), changesets[2]->GetChangesetId()));
+    EXPECT_EQ(BE_SQLITE_OK, ceMgr.GetChangedModels(cacheDb, changedModels, changesets[2]->GetChangesetId(), changesets[2]->GetChangesetId()));
 
     // Close cache Db
     cacheDb.CloseDb();
@@ -1422,6 +1455,7 @@ TEST_F(VersionCompareTestFixture, ChangedElementsManagerTest2_ChangedModels)
     ModifyElementPlacement(secondElement->GetElementId());
     ChangesetPropsPtr changeset2 = CreateRevision("-cs2");
     changesets.push_back(changeset2);
+    changeset2->SetDateTime(changeset1->GetDateTime());
 
     // Filename and cleanup if needed
     BeFileName cacheFilename;
@@ -1439,8 +1473,8 @@ TEST_F(VersionCompareTestFixture, ChangedElementsManagerTest2_ChangedModels)
     // Create the Db file
     // TODO: Good filename
     EXPECT_EQ(BE_SQLITE_OK, ceMgr.CreateChangedElementsCache(cacheDb, cacheFilename));
-    // Process the changeset
-    EXPECT_EQ(BE_SQLITE_OK, ceMgr.ProcessChangesets(cacheDb, "Items", changesets));
+    bvector<ChangesetPropsPtr> newestFirstChangesets(changesets.rbegin(), changesets.rend());
+    ASSERT_EQ(BE_SQLITE_OK, ceMgr.ProcessChangesets(cacheDb, "Items", newestFirstChangesets));
 
     // Test we can get changed models for first changeset
     bmap<DgnModelId, AxisAlignedBox3d> changedModels;
@@ -1470,6 +1504,10 @@ TEST_F(VersionCompareTestFixture, ChangedElementsManagerTest2_ChangedModels)
     EXPECT_EQ(bbox.low.x, 0.5);
     EXPECT_EQ(bbox.low.y, 0.5);
     EXPECT_EQ(bbox.low.z, 0.5);
+
+    ASSERT_EQ(BE_SQLITE_OK, ceMgr.GetChangedModels(cacheDb, changedModels, changeset2->GetChangesetId(), changeset1->GetChangesetId()));
+    ASSERT_TRUE(changedModels.find(m_defaultModelId) != changedModels.end());
+    EXPECT_TRUE(bbox.IsEqual(changedModels.at(m_defaultModelId)));
 
     // Test we can get changed models for last changeset only
     EXPECT_EQ(BE_SQLITE_OK, ceMgr.GetChangedModels(cacheDb, changedModels, changeset2->GetChangesetId(), changeset2->GetChangesetId()));
@@ -1763,6 +1801,10 @@ TEST_F(VersionCompareTestFixture, PropertyChecksumTest)
     props.push_back("TestIntegerProperty2");
     props.push_back("TestElementProperty");
     elementMap[propertyEl->GetElementId()] = ElementData(propertyEl, DbOpcode::Update, ElementChangesType::Type::Mask_Property, props);
+
+    DateTime pushDate = changesets.front()->GetDateTime();
+    for (auto const& changeset : changesets)
+        changeset->SetDateTime(pushDate);
 
     // Test that the output matches with the input rolling forward
     CreateSummaryAndCheckOutput(targetDb, elementMap, changesets, *m_manager);

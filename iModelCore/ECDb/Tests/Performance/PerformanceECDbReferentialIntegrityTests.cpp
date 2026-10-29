@@ -38,7 +38,8 @@ void RelateInstances(ECDb& ecdb, ECClassCP sourceClass, ECInstanceId sourceECIns
 ECInstanceKey InsertInstance(ECDbR ecdb, ECClassCP ecClass)
     {
     JsonInserter inserter(ecdb, *ecClass, nullptr);
-    Json::Value instance(Json::objectValue);
+    BeJsDocument instance;
+    instance.toObject();
     ECInstanceKey instanceKey;
     EXPECT_EQ(BE_SQLITE_OK, inserter.Insert(instanceKey, instance));
     EXPECT_TRUE(instanceKey.IsValid());

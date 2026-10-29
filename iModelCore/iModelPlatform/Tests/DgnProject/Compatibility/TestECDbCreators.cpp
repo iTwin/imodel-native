@@ -20,6 +20,12 @@ BentleyStatus TestECDbCreation::Run()
         return SUCCESS;
 
     s_hasRun = true;
+
+    // When running as one of several shards, the test files were already created by the launcher.
+    // Creating them again from every shard would race on the shared NewFiles folder.
+    if (TestSharding::IsSharded())
+        return SUCCESS;
+
     return TestFileCreation::Run(std::vector<std::shared_ptr<TestFileCreator>>(TESTECDBCREATOR_LIST));
     }
 
@@ -82,12 +88,8 @@ BentleyStatus TestECDbCreator::ImportSchemas(ECDbR ecdb, std::vector<SchemaItem>
 BentleyStatus TestECDbCreator::_UpgradeOldFiles() const
     {
     Profile const& profile = ECDbProfile::Get();
-    std::vector<TestFile> testFiles = profile.GetAllVersionsOfTestFile(profile.GetTestDataFolder(), m_fileName.c_str(), false);
-    for (TestFile const& testFile : testFiles)
+    for (TestFile const& testFile : profile.GetOldTestFilesToUpgrade(m_fileName.c_str()))
         {
-        if (testFile.GetAge() != ProfileState::Age::Older)
-            continue; // only older files can be upgraded
-
         BeFileName targetPath = profile.GetPathForNewUpgradedTestFile(testFile);
         if (BeFileNameStatus::Success != testFile.CloneSeed(targetPath))
             {

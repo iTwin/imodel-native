@@ -5,6 +5,7 @@
 #include "ECObjectsPch.h"
 #include <ctype.h>
 #include <regex>
+#include <string>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 

@@ -6,6 +6,7 @@
 #include <windows.h>
 #endif
 #include "IModelJsNative.h"
+#include "CsvImporter.h"
 #include <Bentley/Base64Utilities.h>
 #include <Bentley/Desktop/FileSystem.h>
 #include <GeomSerialization/GeomSerializationApi.h>
@@ -15,7 +16,11 @@
     #include <Visualization/Visualization.h>
 #endif
 #include <DgnPlatform/EntityIdsChangeGroup.h>
+#include <algorithm>
 #include <chrono>
+#include <cmath>
+#include <limits>
+#include <string>
 #include <tuple>
 
 #if defined (BENTLEYCONFIG_PARASOLID)
@@ -631,91 +636,44 @@ ChangesetStatus JsInterop::DumpChangeSet(DgnDbR dgndb, BeJsConst changeSet)
 //---------------------------------------------------------------------------------------
 DgnDbStatus JsInterop::ExtractChangedInstanceIdsFromChangeSets(BeJsValue jsonOut, DgnDbR db, const bvector<BeFileName>& changeSetFiles)
     {
-    Json::Value elementJson(Json::ValueType::objectValue);
-    Json::Value elementInsertIds(Json::ValueType::arrayValue);
-    Json::Value elementUpdateIds(Json::ValueType::arrayValue);
-    Json::Value elementDeleteIds(Json::ValueType::arrayValue);
-
-    Json::Value aspectJson(Json::ValueType::objectValue);
-    Json::Value aspectInsertIds(Json::ValueType::arrayValue);
-    Json::Value aspectUpdateIds(Json::ValueType::arrayValue);
-    Json::Value aspectDeleteIds(Json::ValueType::arrayValue);
-
-    Json::Value modelJson(Json::ValueType::objectValue);
-    Json::Value modelInsertIds(Json::ValueType::arrayValue);
-    Json::Value modelUpdateIds(Json::ValueType::arrayValue);
-    Json::Value modelDeleteIds(Json::ValueType::arrayValue);
-
-    Json::Value relationshipJson(Json::ValueType::objectValue);
-    Json::Value relationshipInsertIds(Json::ValueType::arrayValue);
-    Json::Value relationshipUpdateIds(Json::ValueType::arrayValue);
-    Json::Value relationshipDeleteIds(Json::ValueType::arrayValue);
-
-    Json::Value codeSpecJson(Json::ValueType::objectValue);
-    Json::Value codeSpecInsertIds(Json::ValueType::arrayValue);
-    Json::Value codeSpecUpdateIds(Json::ValueType::arrayValue);
-    Json::Value codeSpecDeleteIds(Json::ValueType::arrayValue);
-
-    Json::Value fontJson(Json::ValueType::objectValue);
-    Json::Value fontInsertIds(Json::ValueType::arrayValue);
-    Json::Value fontUpdateIds(Json::ValueType::arrayValue);
-    Json::Value fontDeleteIds(Json::ValueType::arrayValue);
-
     EntityIdsChangeGroup entityIdsChangeGroup;
     entityIdsChangeGroup.ExtractChangedInstanceIdsFromChangeSets(db, changeSetFiles);
-    for (auto& opsAndJsonIds : {
-        std::tie(entityIdsChangeGroup.elementOps, elementInsertIds, elementUpdateIds, elementDeleteIds),
-        std::tie(entityIdsChangeGroup.aspectOps, aspectInsertIds, aspectUpdateIds, aspectDeleteIds),
-        std::tie(entityIdsChangeGroup.modelOps, modelInsertIds, modelUpdateIds, modelDeleteIds),
-        std::tie(entityIdsChangeGroup.relationshipOps, relationshipInsertIds, relationshipUpdateIds, relationshipDeleteIds),
-        std::tie(entityIdsChangeGroup.codeSpecOps, codeSpecInsertIds, codeSpecUpdateIds, codeSpecDeleteIds),
-        std::tie(entityIdsChangeGroup.fontOps, fontInsertIds, fontUpdateIds, fontDeleteIds)
-    })
+
+    auto addCategory = [&](Utf8CP categoryName, auto const& opMap)
         {
-        // can replace this all in C++17 with a destructuring assignment in the loop decl
-        const auto& opMap = std::get<0>(opsAndJsonIds);
-        auto& insertIds = std::get<1>(opsAndJsonIds);
-        auto& updateIds = std::get<2>(opsAndJsonIds);
-        auto& deleteIds = std::get<3>(opsAndJsonIds);
-        for (const auto& entry : opMap)
+        bvector<Utf8String> insertIds, updateIds, deleteIds;
+        for (auto const& entry : opMap)
             {
-            const auto& id = entry.first;
-            const auto& op = entry.second;
-            if (op == DbOpcode::Insert) insertIds.append(id.ToHexStr());
-            if (op == DbOpcode::Update) updateIds.append(id.ToHexStr());
-            if (op == DbOpcode::Delete) deleteIds.append(id.ToHexStr());
+            if (entry.second == DbOpcode::Insert) insertIds.push_back(entry.first.ToHexStr());
+            if (entry.second == DbOpcode::Update) updateIds.push_back(entry.first.ToHexStr());
+            if (entry.second == DbOpcode::Delete) deleteIds.push_back(entry.first.ToHexStr());
             }
-        }
 
-    if (elementInsertIds.size() > 0) elementJson["insert"] = elementInsertIds;
-    if (elementUpdateIds.size() > 0) elementJson["update"] = elementUpdateIds;
-    if (elementDeleteIds.size() > 0) elementJson["delete"] = elementDeleteIds;
-    if (!elementJson.empty()) jsonOut["element"].From(elementJson);
+        if (insertIds.empty() && updateIds.empty() && deleteIds.empty())
+            return;
 
-    if (aspectInsertIds.size() > 0) aspectJson["insert"] = aspectInsertIds;
-    if (aspectUpdateIds.size() > 0) aspectJson["update"] = aspectUpdateIds;
-    if (aspectDeleteIds.size() > 0) aspectJson["delete"] = aspectDeleteIds;
-    if (!aspectJson.empty()) jsonOut["aspect"].From(aspectJson);
+        auto category = jsonOut[categoryName];
+        auto addIds = [&](Utf8CP key, bvector<Utf8String> const& ids)
+            {
+            if (ids.empty())
+                return;
+            auto arr = category[key];
+            arr.toArray();
+            for (auto const& id : ids)
+                arr.appendValue() = id;
+            };
 
-    if (modelInsertIds.size() > 0) modelJson["insert"] = modelInsertIds;
-    if (modelUpdateIds.size() > 0) modelJson["update"] = modelUpdateIds;
-    if (modelDeleteIds.size() > 0) modelJson["delete"] = modelDeleteIds;
-    if (!modelJson.empty()) jsonOut["model"].From(modelJson);
+        addIds("insert", insertIds);
+        addIds("update", updateIds);
+        addIds("delete", deleteIds);
+        };
 
-    if (relationshipInsertIds.size() > 0) relationshipJson["insert"] = relationshipInsertIds;
-    if (relationshipUpdateIds.size() > 0) relationshipJson["update"] = relationshipUpdateIds;
-    if (relationshipDeleteIds.size() > 0) relationshipJson["delete"] = relationshipDeleteIds;
-    if (!relationshipJson.empty()) jsonOut["relationship"].From(relationshipJson);
-
-    if (codeSpecInsertIds.size() > 0) codeSpecJson["insert"] = codeSpecInsertIds;
-    if (codeSpecUpdateIds.size() > 0) codeSpecJson["update"] = codeSpecUpdateIds;
-    if (codeSpecDeleteIds.size() > 0) codeSpecJson["delete"] = codeSpecDeleteIds;
-    if (!codeSpecJson.empty()) jsonOut["codeSpec"].From(codeSpecJson);
-
-    if (fontInsertIds.size() > 0) fontJson["insert"] = fontInsertIds;
-    if (fontUpdateIds.size() > 0) fontJson["update"] = fontUpdateIds;
-    if (fontDeleteIds.size() > 0) fontJson["delete"] = fontDeleteIds;
-    if (!fontJson.empty()) jsonOut["font"].From(fontJson);
+    addCategory("element", entityIdsChangeGroup.elementOps);
+    addCategory("aspect", entityIdsChangeGroup.aspectOps);
+    addCategory("model", entityIdsChangeGroup.modelOps);
+    addCategory("relationship", entityIdsChangeGroup.relationshipOps);
+    addCategory("codeSpec", entityIdsChangeGroup.codeSpecOps);
+    addCategory("font", entityIdsChangeGroup.fontOps);
 
     return DgnDbStatus::Success;
     }
@@ -1085,6 +1043,125 @@ Napi::Value JsInterop::DeleteInstance(ECDbR db, NapiInfoCR info) {
         THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), repo.GetLastError().c_str(), rc);
     }
     return Napi::Value::From(info.Env(), db.GetModifiedRowCount() > 0);;
+}
+
+namespace {
+bool parseCSVImportMapping(Napi::Array const& mapping, bvector<CsvImportMapping>& nativeMapping, Utf8StringR error) {
+    if (0 == mapping.Length()) {
+        error = "mapping must not be empty";
+        return false;
+    }
+
+    bset<uint32_t> seenColumnIndexes;
+    nativeMapping.reserve(mapping.Length());
+    for (uint32_t mappingIndex = 0; mappingIndex < mapping.Length(); ++mappingIndex) {
+        const auto value = mapping.Get(mappingIndex);
+        if (!value.IsObject()) {
+            error = "mapping must contain only objects";
+            return false;
+        }
+
+        const auto entry = value.As<Napi::Object>();
+        const auto columnIndexValue = entry.Get("columnIndex");
+        const auto propertyName = entry.Get("propertyName");
+        if (!columnIndexValue.IsNumber() || !propertyName.IsString()) {
+            error = "each mapping entry must contain a numeric columnIndex and string propertyName";
+            return false;
+        }
+
+        const double columnIndexNumber = columnIndexValue.As<Napi::Number>().DoubleValue();
+        if (columnIndexNumber < 0 || columnIndexNumber >= std::numeric_limits<uint32_t>::max() || std::floor(columnIndexNumber) != columnIndexNumber) {
+            error = "mapping columnIndex values must be non-negative integers";
+            return false;
+        }
+
+        const uint32_t columnIndex = static_cast<uint32_t>(columnIndexNumber);
+        if (!seenColumnIndexes.insert(columnIndex).second) {
+            error = "mapping must not contain duplicate columnIndex values";
+            return false;
+        }
+
+        nativeMapping.push_back({columnIndex, propertyName.As<Napi::String>().Utf8Value()});
+    }
+    return true;
+}
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Napi::Value JsInterop::ImportCSVData(ECDbR db, NapiInfoCR info) {
+    REQUIRE_ARGUMENT_STRING(0, className);
+    REQUIRE_ARGUMENT_ANY_OBJ(1, serializedRows);
+    REQUIRE_ARGUMENT_ARRAY(2, mapping);
+    OPTIONAL_ARGUMENT_ANY_OBJ(3, options, Napi::Object::New(info.Env()));
+
+    if (!serializedRows.IsTypedArray() || serializedRows.As<Napi::TypedArray>().TypedArrayType() != napi_uint8_array)
+        THROW_JS_TYPE_EXCEPTION("serializedRows must be a Uint8Array")
+    const auto bytes = serializedRows.As<Napi::Uint8Array>();
+
+    CsvImportOptions nativeOptions;
+    const auto nullValueOption = options.Get("nullValue");
+    if (!nullValueOption.IsUndefined()) {
+        if (!nullValueOption.IsString())
+            THROW_JS_TYPE_EXCEPTION("options.nullValue must be a string")
+        nativeOptions.m_nullValue = nullValueOption.As<Napi::String>().Utf8Value();
+        if (nativeOptions.m_nullValue->find('\0') != Utf8String::npos)
+            THROW_JS_TYPE_EXCEPTION("options.nullValue must not contain NUL")
+    }
+
+    bvector<CsvImportMapping> nativeMapping;
+    Utf8String mappingError;
+    if (!parseCSVImportMapping(mapping, nativeMapping, mappingError))
+        THROW_JS_TYPE_EXCEPTION(mappingError.c_str())
+
+    try {
+        const auto rowCount = CsvImporter::ImportData(db, className, bytes.Data(), bytes.ByteLength(), nativeMapping, nativeOptions);
+        return Napi::Number::New(info.Env(), static_cast<double>(rowCount));
+    } catch (CsvImportError const& error) {
+        if (BE_SQLITE_OK != error.GetSQLiteError())
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), error.what(), error.GetSQLiteError())
+        THROW_JS_TYPE_EXCEPTION(error.what())
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Napi::Value JsInterop::ImportCSVFile(ECDbR db, NapiInfoCR info) {
+    REQUIRE_ARGUMENT_STRING(0, className);
+    REQUIRE_ARGUMENT_STRING(1, csvFilePath);
+    REQUIRE_ARGUMENT_ARRAY(2, mapping);
+    OPTIONAL_ARGUMENT_ANY_OBJ(3, options, Napi::Object::New(info.Env()));
+
+    const auto hasHeaderValue = options.Get("hasHeader");
+    if (!hasHeaderValue.IsUndefined() && !hasHeaderValue.IsBoolean())
+        THROW_JS_TYPE_EXCEPTION("options.hasHeader must be a boolean")
+    CsvImportOptions nativeOptions;
+    nativeOptions.m_hasHeader = !hasHeaderValue.IsUndefined() && hasHeaderValue.As<Napi::Boolean>().Value();
+
+    const auto nullValueOption = options.Get("nullValue");
+    if (!nullValueOption.IsUndefined()) {
+        if (!nullValueOption.IsString())
+            THROW_JS_TYPE_EXCEPTION("options.nullValue must be a string")
+        nativeOptions.m_nullValue = nullValueOption.As<Napi::String>().Utf8Value();
+        if (nativeOptions.m_nullValue->find('\0') != Utf8String::npos)
+            THROW_JS_TYPE_EXCEPTION("options.nullValue must not contain NUL")
+    }
+
+    bvector<CsvImportMapping> nativeMapping;
+    Utf8String mappingError;
+    if (!parseCSVImportMapping(mapping, nativeMapping, mappingError))
+        THROW_JS_TYPE_EXCEPTION(mappingError.c_str())
+
+    try {
+        const auto rowCount = CsvImporter::ImportFile(db, className, csvFilePath, nativeMapping, nativeOptions);
+        return Napi::Number::New(info.Env(), static_cast<double>(rowCount));
+    } catch (CsvImportError const& error) {
+        if (BE_SQLITE_OK != error.GetSQLiteError())
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), error.what(), error.GetSQLiteError())
+        THROW_JS_TYPE_EXCEPTION(error.what())
+    }
 }
 
 //---------------------------------------------------------------------------------------
@@ -1461,6 +1538,7 @@ void SqliteChangesetReader::OpenChangeStream(Napi::Env env, std::unique_ptr<Chan
 void SqliteChangesetReader::OpenGroup(Napi::Env env, T_Utf8StringVector const& changesetFiles, Db const& db, bool invert) {
     m_changeGroup = std::make_unique<ChangeGroup>(db);
     DdlChanges ddlGroup;
+    bset<Utf8String> checkedTables;
     for(auto& changesetFile : changesetFiles) {
         BeFileName inputFile(changesetFile);
         if (!inputFile.DoesPathExist()) {
@@ -1468,6 +1546,25 @@ void SqliteChangesetReader::OpenGroup(Napi::Env env, T_Utf8StringVector const& c
         }
 
         ChangesetFileReader reader(inputFile);
+        Changes changes(reader, false);
+        for (auto change = changes.begin(); change.IsValid(); ++change) {
+            Utf8CP tableName;
+            int columnCount;
+            DbOpcode opcode;
+            int indirect;
+            if (BE_SQLITE_OK != change.GetOperation(&tableName, &columnCount, &opcode, &indirect))
+                THROW_JS_BE_SQLITE_EXCEPTION(env, "openGroup(): unable to read changeset", BE_SQLITE_ERROR);
+
+            if (checkedTables.insert(tableName).second) {
+                bvector<Utf8String> columns;
+                if (!db.GetColumns(columns, tableName) || columns.empty())
+                    THROW_JS_BE_SQLITE_EXCEPTION(env, SqlPrintfString("openGroup(): changeset table %s does not exist in the provided db", tableName), BE_SQLITE_SCHEMA);
+
+                if (columns.size() < static_cast<size_t>(columnCount))
+                    THROW_JS_BE_SQLITE_EXCEPTION(env, SqlPrintfString("openGroup(): changeset table %s has fewer columns than the changeset", tableName), BE_SQLITE_SCHEMA);
+            }
+        }
+
         bool containsSchemaChanges;
         DdlChanges ddlChanges;
         if (BE_SQLITE_OK != reader.MakeReader()->GetSchemaChanges(containsSchemaChanges, ddlChanges)){
@@ -1518,13 +1615,20 @@ void SqliteChangesetReader::WriteToFile(Napi::Env env, Utf8String const& fileNam
     }
 
     if(m_changeGroup){
-        writer.FromChangeGroup(*m_changeGroup);
+        if (BE_SQLITE_OK != writer.FromChangeGroup(*m_changeGroup)) {
+            THROW_JS_BE_SQLITE_EXCEPTION(env, "writeToFile(): unable to write changeset", BE_SQLITE_ERROR);
+        }
     } else if (m_changeStream) {
         ChangeGroup changeGroup;
         m_changeStream->AddToChangeGroup(changeGroup);
-        writer.FromChangeGroup(changeGroup);
+        if (BE_SQLITE_OK != writer.FromChangeGroup(changeGroup)) {
+            THROW_JS_BE_SQLITE_EXCEPTION(env, "writeToFile(): unable to write changeset", BE_SQLITE_ERROR);
+        }
     } else {
         THROW_JS_BE_SQLITE_EXCEPTION(env, "writeToFile(): no changeset to write", BE_SQLITE_ERROR);
+    }
+    if (BE_SQLITE_OK != writer.Finish()) {
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "writeToFile(): unable to finish changeset writer", BE_SQLITE_ERROR);
     }
     if (!outputFile.DoesPathExist()) {
         THROW_JS_BE_SQLITE_EXCEPTION(env, "writeToFile(): unable to write changeset file", BE_SQLITE_ERROR);

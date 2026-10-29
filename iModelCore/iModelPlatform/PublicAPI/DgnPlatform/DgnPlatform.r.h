@@ -6,7 +6,6 @@
 
   #include <Geom/GeomApi.h>
   #include "ExportMacros.h"
-  #include <BeJsonCpp/BeJsonUtilities.h>
 
   #define BEGIN_BENTLEY_DGN_NAMESPACE BEGIN_BENTLEY_NAMESPACE namespace Dgn {
   #define END_BENTLEY_DGN_NAMESPACE   } END_BENTLEY_NAMESPACE

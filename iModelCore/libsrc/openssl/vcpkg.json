@@ -4,13 +4,13 @@
   "dependencies": [
     {
       "name": "openssl",
-      "version>=": "3.6.3"
+      "version>=": "3.5.9"
     }
   ],
   "overrides": [
     {
       "name": "openssl",
-      "version": "3.6.3"
+      "version": "3.5.9"
     }
   ]
 }

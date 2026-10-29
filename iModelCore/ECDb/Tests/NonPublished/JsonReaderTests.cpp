@@ -15,7 +15,7 @@ struct IJson
     {
     private:
         virtual RapidJsonValueCR _RapidJson() const = 0;
-        virtual JsonValueCR _JsonCpp() const = 0;
+        virtual BeJsConst _BeJs() const = 0;
 
     protected:
         IJson() {}
@@ -26,9 +26,9 @@ struct IJson
         Nullable<bool> Equals(IJson const& rhs) const
             {
             const bool rapidJsonEquals = _RapidJson() == rhs._RapidJson();
-            const bool jsonCppEquals = _JsonCpp() == rhs._JsonCpp();
+            const bool beJsEquals = _BeJs().isExactEqual(rhs._BeJs());
 
-            if (rapidJsonEquals != jsonCppEquals)
+            if (rapidJsonEquals != beJsEquals)
                 return nullptr;
 
             return rapidJsonEquals;
@@ -37,7 +37,7 @@ struct IJson
         Nullable<bool> IsNull() const
             {
             const bool result = _RapidJson().IsNull();
-            if (result != _JsonCpp().isNull())
+            if (result != _BeJs().isNull())
                 return nullptr;
 
             return result;
@@ -46,7 +46,7 @@ struct IJson
         Nullable<bool> GetBool() const
             {
             const bool result = _RapidJson().GetBool();
-            if (result != _JsonCpp().asBool())
+            if (result != _BeJs().asBool())
                 return nullptr;
 
             return result;
@@ -62,7 +62,7 @@ struct IJson
             else
                 return nullptr;
 
-            if (result != _JsonCpp().asInt())
+            if (result != _BeJs().asInt())
                 return nullptr;
 
             return result;
@@ -78,7 +78,7 @@ struct IJson
             else
                 return nullptr;
 
-            if (result != _JsonCpp().asInt64())
+            if (result != _BeJs().asInt64())
                 return nullptr;
 
             return result;
@@ -90,7 +90,7 @@ struct IJson
                 return nullptr;
 
             const double result = _RapidJson().GetDouble();
-            if (result != _JsonCpp().asDouble())
+            if (result != _BeJs().asDouble())
                 return nullptr;
 
             return result;
@@ -99,7 +99,7 @@ struct IJson
         Nullable<bool> IsString() const
             {
             const bool result = _RapidJson().IsString();
-            if (result != _JsonCpp().isString())
+            if (result != _BeJs().isString())
                 return nullptr;
 
             return result;
@@ -108,7 +108,7 @@ struct IJson
         Utf8CP GetString() const
             {
             Utf8CP result = _RapidJson().GetString();
-            if (strcmp(result, _JsonCpp().asCString()) != 0)
+            if (strcmp(result, _BeJs().asCString()) != 0)
                 return nullptr;
 
             return result;
@@ -117,7 +117,7 @@ struct IJson
         Nullable<bool> IsArray() const
             {
             const bool result = _RapidJson().IsArray();
-            if (result != _JsonCpp().isArray())
+            if (result != _BeJs().isArray())
                 return nullptr;
 
             return result;
@@ -126,7 +126,7 @@ struct IJson
         Nullable<int> ArraySize() const
             {
             const int result = (int) _RapidJson().Size();
-            if (result != (int) _JsonCpp().size())
+            if (result != (int) _BeJs().size())
                 return nullptr;
 
             return result;
@@ -135,7 +135,7 @@ struct IJson
         Nullable<bool> IsObject() const
             {
             const bool result = _RapidJson().IsObject();
-            if (result != _JsonCpp().isObject())
+            if (result != _BeJs().isObject())
                 return nullptr;
 
             return result;
@@ -144,7 +144,7 @@ struct IJson
         Nullable<int> MemberCount() const
             {
             const int result = (int) _RapidJson().MemberCount();
-            if (result != (int) _JsonCpp().size())
+            if (result != (int) _BeJs().size())
                 return nullptr;
 
             return result;
@@ -154,7 +154,7 @@ struct IJson
         Nullable<bool> HasMember(Utf8CP memberName) const
             {
             const bool result = _RapidJson().HasMember(memberName);
-            if (result != _JsonCpp().isMember(memberName))
+            if (result != _BeJs().isMember(memberName))
                 return nullptr;
 
             return result;
@@ -163,11 +163,11 @@ struct IJson
 
         Utf8String ToString() const
             {
-            return Utf8PrintfString("[rapidjson: %s | jsoncpp: %s]", TestUtilities::ToString(_RapidJson()).c_str(), _JsonCpp().ToString().c_str());
+            return Utf8PrintfString("[rapidjson: %s | bejs: %s]", TestUtilities::ToString(_RapidJson()).c_str(), _BeJs().Stringify().c_str());
             }
 
         RapidJsonValueCR RapidJson() const { return _RapidJson(); }
-        JsonValueCR JsonCpp() const { return _JsonCpp(); }
+        BeJsConst BeJs() const { return _BeJs(); }
     };
 
 //=======================================================================================
@@ -177,25 +177,25 @@ struct JsonRef : IJson
     {
     private:
         rapidjson::Value const& m_rapidjson;
-        Json::Value const& m_jsoncpp;
+        BeJsConst m_bejs;
 
         RapidJsonValueCR _RapidJson() const override { return m_rapidjson; }
-        JsonValueCR _JsonCpp() const override { return m_jsoncpp; }
+        BeJsConst _BeJs() const override { return m_bejs; }
 
     public:
-        JsonRef(rapidjson::Value const& rapidjson, Json::Value const& jsoncpp) : m_rapidjson(rapidjson), m_jsoncpp(jsoncpp) {}
+        JsonRef(rapidjson::Value const& rapidjson, BeJsConst bejs) : m_rapidjson(rapidjson), m_bejs(bejs) {}
 
         JsonRef operator[](Utf8StringCR memberName) const { return operator[](memberName.c_str()); }
         JsonRef operator[](Utf8CP memberName) const
             {
             BeAssert(HasMember(memberName) == true);
-            return JsonRef(_RapidJson()[memberName], _JsonCpp()[memberName]);
+            return JsonRef(_RapidJson()[memberName], _BeJs()[memberName]);
             }
 
         JsonRef operator[](int arrayIndex) const
             {
             BeAssert(ArraySize() != nullptr && ArraySize().Value() > arrayIndex);
-            return JsonRef(_RapidJson()[(rapidjson::SizeType) arrayIndex], _JsonCpp()[(Json::ArrayIndex) arrayIndex]);
+            return JsonRef(_RapidJson()[(rapidjson::SizeType) arrayIndex], _BeJs()[(BeJsConst::ArrayIndex) arrayIndex]);
             }
 
     };
@@ -207,10 +207,10 @@ struct JsonDoc final : IJson
     {
     private:
         rapidjson::Document m_rapidjson;
-        Json::Value m_jsoncpp;
+        BeJsDocument m_bejs;
 
         RapidJsonValueCR _RapidJson() const override { return m_rapidjson;  }
-        JsonValueCR _JsonCpp() const override { return m_jsoncpp; }
+        BeJsConst _BeJs() const override { return m_bejs; }
 
     public:
         JsonDoc() : IJson(){}
@@ -219,10 +219,11 @@ struct JsonDoc final : IJson
         void Clear()
             {
             m_rapidjson.SetNull();
-            m_jsoncpp = Json::Value(Json::nullValue);
+            m_bejs.SetNull();
             }
 
-        Json::Value& JsonCpp() { return m_jsoncpp; }
+        BeJsValue BeJs() { return m_bejs; }
+        BeJsDocument& BeJsDoc() { return m_bejs; }
         rapidjson::Document& RapidJson() { return m_rapidjson; }
         rapidjson::MemoryPoolAllocator<>& Allocator() { return m_rapidjson.GetAllocator(); }
 
@@ -230,13 +231,13 @@ struct JsonDoc final : IJson
         JsonRef operator[](Utf8CP memberName) const
             {
             BeAssert(HasMember(memberName) == true);
-            return JsonRef(_RapidJson()[memberName], _JsonCpp()[memberName]);
+            return JsonRef(_RapidJson()[memberName], _BeJs()[memberName]);
             }
 
         JsonRef operator[](int arrayIndex) const
             {
             BeAssert(ArraySize() != nullptr && ArraySize().Value() > arrayIndex);
-            return JsonRef(_RapidJson()[(rapidjson::SizeType) arrayIndex], _JsonCpp()[(Json::ArrayIndex) arrayIndex]);
+            return JsonRef(_RapidJson()[(rapidjson::SizeType) arrayIndex], _BeJs()[(BeJsConst::ArrayIndex) arrayIndex]);
             }
 
     };
@@ -258,17 +259,17 @@ TEST_F(JsonECSqlSelectAdapterTests, RepreparedStatements)
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM meta.ECSchemaDef LIMIT 1"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
-    Json::Value json;
+    BeJsDocument json;
     JsonECSqlSelectAdapter adapter(stmt);
     ASSERT_EQ(SUCCESS, adapter.GetRow(json)) << stmt.GetECSql();
-    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json({"id":"%s"})json", stmt.GetValueId<ECInstanceId>(0).ToHexStr().c_str())), JsonValue(json)) << stmt.GetECSql();
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json({"id":"%s"})json", stmt.GetValueId<ECInstanceId>(0).ToHexStr().c_str())), JsonValue(BeJsConst(json))) << stmt.GetECSql();
     stmt.Finalize();
     ASSERT_EQ(ERROR, adapter.GetRow(json)) << stmt.GetECSql();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM meta.ECSchemaDef LIMIT 1"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(SUCCESS, adapter.GetRow(json)) << stmt.GetECSql();
-    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json({"id":"%s"})json", stmt.GetValueId<ECInstanceId>(0).ToHexStr().c_str())), JsonValue(json)) << stmt.GetECSql();
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json({"id":"%s"})json", stmt.GetValueId<ECInstanceId>(0).ToHexStr().c_str())), JsonValue(BeJsConst(json))) << stmt.GetECSql();
 
     stmt.Finalize();
     ASSERT_EQ(ERROR, adapter.GetRow(json)) << stmt.GetECSql();
@@ -276,7 +277,7 @@ TEST_F(JsonECSqlSelectAdapterTests, RepreparedStatements)
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId MyId FROM meta.ECSchemaDef"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(SUCCESS, adapter.GetRow(json)) << stmt.GetECSql();
-    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json({"MyId":"%s"})json", stmt.GetValueId<ECInstanceId>(0).ToString().c_str())), JsonValue(json)) << stmt.GetECSql();
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json({"MyId":"%s"})json", stmt.GetValueId<ECInstanceId>(0).ToString().c_str())), JsonValue(BeJsConst(json))) << stmt.GetECSql();
     }
 
 //---------------------------------------------------------------------------------------
@@ -308,12 +309,12 @@ TEST_F(JsonECSqlSelectAdapterTests, JsonMemberNames)
 
     JsonECSqlSelectAdapter defaultAdapter(stmt);
     JsonDoc defaultJson;
-    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.BeJs()));
     ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.RapidJson(), defaultJson.Allocator()));
 
     JsonECSqlSelectAdapter javaScriptAdapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
     JsonDoc javaScriptJson;
-    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.BeJs()));
     ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.RapidJson(), javaScriptJson.Allocator()));
 
     {
@@ -420,11 +421,11 @@ TEST_F(JsonECSqlSelectAdapterTests, GetRowInstanceAndDuplicateMemberNames)
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     JsonDoc rowJson, classJson, schemaJson;
     ASSERT_EQ(SUCCESS, adapter.GetRow(rowJson.RapidJson(), rowJson.Allocator()));
-    ASSERT_EQ(SUCCESS, adapter.GetRow(rowJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, adapter.GetRow(rowJson.BeJs()));
     ASSERT_EQ(SUCCESS, adapter.GetRowInstance(classJson.RapidJson(), classDefId, classJson.Allocator()));
-    ASSERT_EQ(SUCCESS, adapter.GetRowInstance(classJson.JsonCpp(), classDefId));
+    ASSERT_EQ(SUCCESS, adapter.GetRowInstance(classJson.BeJs(), classDefId));
     ASSERT_EQ(SUCCESS, adapter.GetRowInstance(schemaJson.RapidJson(), schemaDefId, schemaJson.Allocator()));
-    ASSERT_EQ(SUCCESS, adapter.GetRowInstance(schemaJson.JsonCpp(), schemaDefId));
+    ASSERT_EQ(SUCCESS, adapter.GetRowInstance(schemaJson.BeJs(), schemaDefId));
 
     ASSERT_TRUE_NULLABLE(rowJson.HasMember("id")) << rowJson.ToString();
     EXPECT_STREQ(stmt.GetValueId<ECInstanceId>(0).ToHexStr().c_str(), rowJson["id"].GetString()) << rowJson.ToString();
@@ -482,13 +483,13 @@ TEST_F(JsonECSqlSelectAdapterTests, AppendToJson)
 
     JsonECSqlSelectAdapter adapter(stmt);
     {
-    Json::Value json;
+    BeJsDocument json;
     ASSERT_EQ(ERROR, adapter.GetRow(json, true)) << "Cannot append to JSON null";
-    json = Json::Value(Json::arrayValue);
+    json.toArray();
     ASSERT_EQ(ERROR, adapter.GetRow(json, true)) << "Cannot append to JSON array";
-    json = Json::Value(10);
+    json.SetNull(); json = 10;
     ASSERT_EQ(ERROR, adapter.GetRow(json, true)) << "Cannot append to JSON number";
-    json = Json::Value("12313");
+    json.SetNull(); json.SetString("12313");
     ASSERT_EQ(ERROR, adapter.GetRow(json, true)) << "Cannot append to JSON string";
     }
     {
@@ -505,22 +506,22 @@ TEST_F(JsonECSqlSelectAdapterTests, AppendToJson)
     Utf8PrintfString expectedJsonCore(R"json("id":"%s", "Name": "%s", "Type": %d, "Modifier": %d)json", stmt.GetValueId<ECInstanceId>(0).ToHexStr().c_str(),
                                       stmt.GetValueText(1), stmt.GetValueInt(2), stmt.GetValueInt(3));
     {
-    Json::Value json(Json::objectValue);
+    BeJsDocument json; json.toObject();
     ASSERT_EQ(SUCCESS, adapter.GetRow(json, true)) << "Append to empty JSON object";
-    EXPECT_EQ(4, (int) json.size()) << json.ToString();
-    EXPECT_EQ(JsonValue(Utf8PrintfString("{%s}", expectedJsonCore.c_str())), JsonValue(json)) << json.ToString();
+    EXPECT_EQ(4, (int) json.size()) << json.Stringify();
+    EXPECT_EQ(JsonValue(Utf8PrintfString("{%s}", expectedJsonCore.c_str())), JsonValue(BeJsConst(json))) << json.Stringify();
 
-    json = Json::Value(Json::objectValue);
-    json["MyNumber"] = Json::Value(54321);
-    json["MyArray"] = Json::Value(Json::arrayValue);
-    json["MyArray"].append(Json::Value(5));
-    json["MyArray"].append(Json::Value(4));
-    json["MyObj"]["FirstName"] = Json::Value("Gustav");
-    json["MyObj"]["LastName"] = Json::Value("Mueller");
+    json.SetNull(); json.toObject();
+    json["MyNumber"] = 54321;
+    json["MyArray"].toArray();
+    json["MyArray"].appendValue() = 5;
+    json["MyArray"].appendValue() = 4;
+    json["MyObj"]["FirstName"] = "Gustav";
+    json["MyObj"]["LastName"] = "Mueller";
 
     ASSERT_EQ(SUCCESS, adapter.GetRow(json, true)) << "Append to non-empty JSON object";
-    EXPECT_EQ(7, (int) json.size()) << json.ToString();
-    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json({"MyNumber":54321,"MyArray":[5,4],"MyObj":{"FirstName":"Gustav","LastName":"Mueller"},%s})json", expectedJsonCore.c_str())), JsonValue(json)) << json.ToString();
+    EXPECT_EQ(7, (int) json.size()) << json.Stringify();
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json({"MyNumber":54321,"MyArray":[5,4],"MyObj":{"FirstName":"Gustav","LastName":"Mueller"},%s})json", expectedJsonCore.c_str())), JsonValue(BeJsConst(json))) << json.Stringify();
     }
     {
     rapidjson::Document json;
@@ -570,9 +571,9 @@ TEST_F(JsonECSqlSelectAdapterTests, SpecialSelectClauseItems)
 
     JsonDoc defaultJson, javaScriptJson;
     ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.RapidJson(), defaultJson.Allocator()));
-    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.BeJs()));
     ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.RapidJson(), javaScriptJson.Allocator()));
-    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.BeJs()));
 
     {
     ASSERT_TRUE_NULLABLE(defaultJson.IsObject()) << stmt.GetECSql() << " - " << defaultJson.ToString();
@@ -600,9 +601,9 @@ TEST_F(JsonECSqlSelectAdapterTests, SpecialSelectClauseItems)
 
     JsonDoc defaultJson, javaScriptJson;
     ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.RapidJson(), defaultJson.Allocator()));
-    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.BeJs()));
     ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.RapidJson(), javaScriptJson.Allocator()));
-    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.BeJs()));
 
     {
     ASSERT_TRUE_NULLABLE(defaultJson.IsObject()) << defaultJson.ToString();
@@ -669,9 +670,9 @@ TEST_F(JsonECSqlSelectAdapterTests, SpecialSelectClauseItems)
 
     JsonDoc defaultJson, javaScriptJson;
     ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.RapidJson(), defaultJson.Allocator()));
-    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.BeJs()));
     ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.RapidJson(), javaScriptJson.Allocator()));
-    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.BeJs()));
 
     {
     ASSERT_TRUE_NULLABLE(defaultJson.IsObject()) << defaultJson.ToString();
@@ -755,9 +756,9 @@ TEST_F(JsonECSqlSelectAdapterTests, SpecialSelectClauseItems)
 
     JsonDoc defaultJson, javaScriptJson;
     ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.RapidJson(), defaultJson.Allocator()));
-    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.BeJs()));
     ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.RapidJson(), javaScriptJson.Allocator()));
-    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.BeJs()));
 
     {
     ASSERT_TRUE_NULLABLE(defaultJson.IsObject()) << defaultJson.ToString();
@@ -793,9 +794,9 @@ TEST_F(JsonECSqlSelectAdapterTests, SpecialSelectClauseItems)
 
     JsonDoc defaultJson, javaScriptJson;
     ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.RapidJson(), defaultJson.Allocator()));
-    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.BeJs()));
     ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.RapidJson(), javaScriptJson.Allocator()));
-    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.BeJs()));
 
     {
     ASSERT_TRUE_NULLABLE(defaultJson.IsObject()) << defaultJson.ToString();
@@ -846,9 +847,9 @@ TEST_F(JsonECSqlSelectAdapterTests, ReservedWordsCollisions)
     JsonECSqlSelectAdapter javaScriptAdapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
     JsonDoc defaultJson, javaScriptJson;
     ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.RapidJson(), defaultJson.Allocator()));
-    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.BeJs()));
     ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.RapidJson(), javaScriptJson.Allocator()));
-    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.BeJs()));
 
     {
     ASSERT_TRUE_NULLABLE(defaultJson.IsObject()) << defaultJson.ToString();
@@ -884,9 +885,9 @@ TEST_F(JsonECSqlSelectAdapterTests, ReservedWordsCollisions)
     JsonECSqlSelectAdapter javaScriptAdapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
     JsonDoc defaultJson, javaScriptJson;
     ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.RapidJson(), defaultJson.Allocator()));
-    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.BeJs()));
     ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.RapidJson(), javaScriptJson.Allocator()));
-    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.BeJs()));
 
     {
     ASSERT_TRUE_NULLABLE(defaultJson.IsObject()) << defaultJson.ToString();
@@ -919,9 +920,9 @@ TEST_F(JsonECSqlSelectAdapterTests, ReservedWordsCollisions)
     JsonECSqlSelectAdapter javaScriptAdapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
     JsonDoc defaultJson, javaScriptJson;
     ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.RapidJson(), defaultJson.Allocator()));
-    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.BeJs()));
     ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.RapidJson(), javaScriptJson.Allocator()));
-    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.BeJs()));
 
     {
     ASSERT_TRUE_NULLABLE(defaultJson.IsObject()) << defaultJson.ToString();
@@ -954,9 +955,9 @@ TEST_F(JsonECSqlSelectAdapterTests, ReservedWordsCollisions)
     JsonECSqlSelectAdapter javaScriptAdapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
     JsonDoc defaultJson, javaScriptJson;
     ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.RapidJson(), defaultJson.Allocator()));
-    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.BeJs()));
     ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.RapidJson(), javaScriptJson.Allocator()));
-    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.BeJs()));
 
     {
     ASSERT_TRUE_NULLABLE(defaultJson.IsObject()) << defaultJson.ToString();
@@ -1008,9 +1009,9 @@ TEST_F(JsonECSqlSelectAdapterTests, ReservedWordsCollisions)
     JsonECSqlSelectAdapter javaScriptAdapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
     JsonDoc defaultJson, javaScriptJson;
     ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.RapidJson(), defaultJson.Allocator()));
-    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.BeJs()));
     ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.RapidJson(), javaScriptJson.Allocator()));
-    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.BeJs()));
 
     {
     ASSERT_TRUE_NULLABLE(defaultJson.IsObject()) << defaultJson.ToString();
@@ -1057,9 +1058,9 @@ TEST_F(JsonECSqlSelectAdapterTests, ReservedWordsCollisions)
     JsonECSqlSelectAdapter javaScriptAdapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
     JsonDoc defaultJson, javaScriptJson;
     ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.RapidJson(), defaultJson.Allocator()));
-    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.BeJs()));
     ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.RapidJson(), javaScriptJson.Allocator()));
-    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.BeJs()));
 
     {
     ASSERT_TRUE_NULLABLE(defaultJson.IsObject()) << defaultJson.ToString();
@@ -1191,7 +1192,7 @@ TEST_F(JsonECSqlSelectAdapterTests, DataTypes)
     JsonECSqlSelectAdapter adapter(stmt);
     JsonDoc actualJson;
     ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.RapidJson(), actualJson.Allocator()));
-    ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.BeJs()));
 
     ASSERT_TRUE_NULLABLE(actualJson.IsObject()) << actualJson.ToString();
     ASSERT_EQ_NULLABLE(16, actualJson.MemberCount()) << actualJson.ToString();
@@ -1207,7 +1208,7 @@ TEST_F(JsonECSqlSelectAdapterTests, DataTypes)
 
     ASSERT_TRUE_NULLABLE(actualJson.HasMember("Bi"));
     bvector<Byte> actualBlob;
-    BeJsConst(actualJson["Bi"].JsonCpp()).GetBinary(actualBlob);
+    BeJsConst(actualJson["Bi"].BeJs()).GetBinary(actualBlob);
     EXPECT_EQ(blobVal, actualBlob);
     BeJsConst(actualJson["Bi"].RapidJson(), actualJson.Allocator()).GetBinary(actualBlob);
     EXPECT_EQ(blobVal, actualBlob);
@@ -1220,7 +1221,7 @@ TEST_F(JsonECSqlSelectAdapterTests, DataTypes)
 
     ASSERT_TRUE_NULLABLE(actualJson.HasMember("G")) << actualJson.ToString();
     ASSERT_TRUE_NULLABLE(actualJson["G"].IsObject()) << actualJson.ToString();
-    EXPECT_EQ(JsonValue("{\"LineSegment\":{\"endPoint\":[1,1,1],\"startPoint\":[0,0,0]}}"), JsonValue(actualJson["G"].JsonCpp())) << actualJson.ToString();
+    EXPECT_EQ(JsonValue("{\"LineSegment\":{\"endPoint\":[1,1,1],\"startPoint\":[0,0,0]}}"), JsonValue(actualJson["G"].BeJs())) << actualJson.ToString();
     EXPECT_EQ(JsonValue("{\"LineSegment\":{\"endPoint\":[1,1,1],\"startPoint\":[0,0,0]}}"), JsonValue(TestUtilities::ToString(actualJson["G"].RapidJson()))) << actualJson.ToString();
 
     ASSERT_TRUE_NULLABLE(actualJson.HasMember("I")) << actualJson.ToString();
@@ -1280,11 +1281,11 @@ TEST_F(JsonECSqlSelectAdapterTests, DataTypes)
     JsonECSqlSelectAdapter adapter(stmt, options);
     JsonDoc actualJson;
     ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.RapidJson(), actualJson.Allocator()));
-    ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.BeJs()));
 
     ASSERT_TRUE_NULLABLE(actualJson.HasMember("g")) << actualJson.ToString();
     ASSERT_TRUE_NULLABLE(actualJson["g"].IsObject()) << actualJson.ToString();
-    EXPECT_EQ(JsonValue("{\"lineSegment\":[[0.0,0.0,0.0],[1.0,1.0,1.0]]}"), JsonValue(actualJson["g"].JsonCpp())) << actualJson.ToString();
+    EXPECT_EQ(JsonValue("{\"lineSegment\":[[0.0,0.0,0.0],[1.0,1.0,1.0]]}"), JsonValue(actualJson["g"].BeJs())) << actualJson.ToString();
     EXPECT_EQ(JsonValue("{\"lineSegment\":[[0.0,0.0,0.0],[1.0,1.0,1.0]]}"), JsonValue(TestUtilities::ToString(actualJson["g"].RapidJson()))) << actualJson.ToString();
     }
 
@@ -1297,7 +1298,7 @@ TEST_F(JsonECSqlSelectAdapterTests, DataTypes)
     JsonECSqlSelectAdapter relAdapter(stmt);
     JsonDoc actualJson;
     ASSERT_EQ(SUCCESS, relAdapter.GetRow(actualJson.RapidJson(), actualJson.Allocator()));
-    ASSERT_EQ(SUCCESS, relAdapter.GetRow(actualJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, relAdapter.GetRow(actualJson.BeJs()));
 
     ASSERT_TRUE_NULLABLE(actualJson.IsObject()) << actualJson.ToString();
     EXPECT_EQ_NULLABLE(6, actualJson.MemberCount()) << actualJson.ToString();
@@ -1370,24 +1371,24 @@ TEST_F(JsonECSqlSelectAdapterTests, DataTypes)
         bvector<Byte> abbreviatedVal(fullBlobVal.cbegin(), fullBlobVal.cbegin() + 1);
 
         ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.RapidJson(), actualJson.Allocator(), false, true));
-        ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.JsonCpp(), false, true));
+        ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.BeJs(), false, true));
         ASSERT_TRUE_NULLABLE(actualJson.HasMember("Bi"));
         bvector<Byte> actualBlob;
-        BeJsConst(actualJson["Bi"].JsonCpp()).GetBinary(actualBlob);
+        BeJsConst(actualJson["Bi"].BeJs()).GetBinary(actualBlob);
         EXPECT_EQ(abbreviatedVal, actualBlob);
         BeJsConst(actualJson["Bi"].RapidJson(), actualJson.Allocator()).GetBinary(actualBlob);
         EXPECT_EQ(abbreviatedVal, actualBlob);
 
         ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.RapidJson(), actualJson.Allocator(), false, false));
-        ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.JsonCpp(), false, false));
-        BeJsConst(actualJson["Bi"].JsonCpp()).GetBinary(actualBlob);
+        ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.BeJs(), false, false));
+        BeJsConst(actualJson["Bi"].BeJs()).GetBinary(actualBlob);
         EXPECT_EQ(fullBlobVal, actualBlob);
         BeJsConst(actualJson["Bi"].RapidJson(), actualJson.Allocator()).GetBinary(actualBlob);
         EXPECT_EQ(fullBlobVal, actualBlob);
 
         ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.RapidJson(), actualJson.Allocator()));
-        ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.JsonCpp()));
-        BeJsConst(actualJson["Bi"].JsonCpp()).GetBinary(actualBlob);
+        ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.BeJs()));
+        BeJsConst(actualJson["Bi"].BeJs()).GetBinary(actualBlob);
         EXPECT_EQ(fullBlobVal, actualBlob);
         BeJsConst(actualJson["Bi"].RapidJson(), actualJson.Allocator()).GetBinary(actualBlob);
         EXPECT_EQ(fullBlobVal, actualBlob);
@@ -1400,23 +1401,23 @@ TEST_F(JsonECSqlSelectAdapterTests, DataTypes)
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         
         ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.RapidJson(), actualJson.Allocator(), false, true));
-        ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.JsonCpp(), false, true));
+        ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.BeJs(), false, true));
         ASSERT_TRUE_NULLABLE(actualJson.HasMember("Bi"));
-        BeJsConst(actualJson["Bi"].JsonCpp()).GetBinary(actualBlob);
+        BeJsConst(actualJson["Bi"].BeJs()).GetBinary(actualBlob);
         EXPECT_EQ(singleBlobVal, actualBlob);
         BeJsConst(actualJson["Bi"].RapidJson(), actualJson.Allocator()).GetBinary(actualBlob);
         EXPECT_EQ(singleBlobVal, actualBlob);
 
         ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.RapidJson(), actualJson.Allocator(), false, false));
-        ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.JsonCpp(), false, false));
-        BeJsConst(actualJson["Bi"].JsonCpp()).GetBinary(actualBlob);
+        ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.BeJs(), false, false));
+        BeJsConst(actualJson["Bi"].BeJs()).GetBinary(actualBlob);
         EXPECT_EQ(singleBlobVal, actualBlob);
         BeJsConst(actualJson["Bi"].RapidJson(), actualJson.Allocator()).GetBinary(actualBlob);
         EXPECT_EQ(singleBlobVal, actualBlob);
 
         ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.RapidJson(), actualJson.Allocator()));
-        ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.JsonCpp()));
-        BeJsConst(actualJson["Bi"].JsonCpp()).GetBinary(actualBlob);
+        ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.BeJs()));
+        BeJsConst(actualJson["Bi"].BeJs()).GetBinary(actualBlob);
         EXPECT_EQ(singleBlobVal, actualBlob);
         BeJsConst(actualJson["Bi"].RapidJson(), actualJson.Allocator()).GetBinary(actualBlob);
         EXPECT_EQ(singleBlobVal, actualBlob);
@@ -1429,23 +1430,23 @@ TEST_F(JsonECSqlSelectAdapterTests, DataTypes)
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         
         ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.RapidJson(), actualJson.Allocator(), false, true));
-        ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.JsonCpp(), false, true));
+        ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.BeJs(), false, true));
         ASSERT_TRUE_NULLABLE(actualJson.HasMember("Bi"));
-        BeJsConst(actualJson["Bi"].JsonCpp()).GetBinary(actualBlob);
+        BeJsConst(actualJson["Bi"].BeJs()).GetBinary(actualBlob);
         EXPECT_EQ(emptyBlobVal, actualBlob);
         BeJsConst(actualJson["Bi"].RapidJson(), actualJson.Allocator()).GetBinary(actualBlob);
         EXPECT_EQ(emptyBlobVal, actualBlob);
         
         ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.RapidJson(), actualJson.Allocator(), false, false));
-        ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.JsonCpp(), false, false));
-        BeJsConst(actualJson["Bi"].JsonCpp()).GetBinary(actualBlob);
+        ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.BeJs(), false, false));
+        BeJsConst(actualJson["Bi"].BeJs()).GetBinary(actualBlob);
         EXPECT_EQ(emptyBlobVal, actualBlob);
         BeJsConst(actualJson["Bi"].RapidJson(), actualJson.Allocator()).GetBinary(actualBlob);
         EXPECT_EQ(emptyBlobVal, actualBlob);
 
         ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.RapidJson(), actualJson.Allocator()));
-        ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.JsonCpp()));
-        BeJsConst(actualJson["Bi"].JsonCpp()).GetBinary(actualBlob);
+        ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.BeJs()));
+        BeJsConst(actualJson["Bi"].BeJs()).GetBinary(actualBlob);
         EXPECT_EQ(emptyBlobVal, actualBlob);
         BeJsConst(actualJson["Bi"].RapidJson(), actualJson.Allocator()).GetBinary(actualBlob);
         EXPECT_EQ(emptyBlobVal, actualBlob);
@@ -1457,13 +1458,13 @@ TEST_F(JsonECSqlSelectAdapterTests, DataTypes)
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, nullKey.GetInstanceId()));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.RapidJson(), actualJson.Allocator(), false, true));
-        ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.JsonCpp(), false, true));
+        ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.BeJs(), false, true));
         ASSERT_FALSE_NULLABLE(actualJson.HasMember("Bi"));
         ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.RapidJson(), actualJson.Allocator(), false, false));
-        ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.JsonCpp(), false, false));
+        ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.BeJs(), false, false));
         ASSERT_FALSE_NULLABLE(actualJson.HasMember("Bi"));
         ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.RapidJson(), actualJson.Allocator()));
-        ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.JsonCpp()));
+        ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.BeJs()));
         ASSERT_FALSE_NULLABLE(actualJson.HasMember("Bi"));
 
         }
@@ -1490,7 +1491,7 @@ TEST_F(JsonECSqlSelectAdapterTests, LongDataType)
     JsonECSqlSelectAdapter adapter1(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
     JsonDoc actualJson;
     ASSERT_EQ(SUCCESS, adapter1.GetRow(actualJson.RapidJson(), actualJson.Allocator()));
-    ASSERT_EQ(SUCCESS, adapter1.GetRow(actualJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, adapter1.GetRow(actualJson.BeJs()));
 
     ASSERT_TRUE_NULLABLE(actualJson.IsObject()) << actualJson.ToString();
     EXPECT_EQ_NULLABLE(1, actualJson.MemberCount()) << actualJson.ToString();
@@ -1501,7 +1502,7 @@ TEST_F(JsonECSqlSelectAdapterTests, LongDataType)
     JsonECSqlSelectAdapter adapter2(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsDecimalString));
     actualJson.Clear();
     ASSERT_EQ(SUCCESS, adapter2.GetRow(actualJson.RapidJson(), actualJson.Allocator()));
-    ASSERT_EQ(SUCCESS, adapter2.GetRow(actualJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, adapter2.GetRow(actualJson.BeJs()));
 
     ASSERT_TRUE_NULLABLE(actualJson.IsObject()) << actualJson.ToString();
     EXPECT_EQ_NULLABLE(1, actualJson.MemberCount()) << actualJson.ToString();
@@ -1513,7 +1514,7 @@ TEST_F(JsonECSqlSelectAdapterTests, LongDataType)
     JsonECSqlSelectAdapter adapter3(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsHexadecimalString));
     actualJson.Clear();
     ASSERT_EQ(SUCCESS, adapter3.GetRow(actualJson.RapidJson(), actualJson.Allocator()));
-    ASSERT_EQ(SUCCESS, adapter3.GetRow(actualJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, adapter3.GetRow(actualJson.BeJs()));
     ASSERT_TRUE_NULLABLE(actualJson.IsObject()) << actualJson.ToString();
     EXPECT_EQ_NULLABLE(1, actualJson.MemberCount()) << actualJson.ToString();
 
@@ -1570,11 +1571,11 @@ TEST_F(JsonECSqlSelectAdapterTests, JsonStructAndArrays)
 
     JsonECSqlSelectAdapter defaultAdapter(statement);
     ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(actualDefaultJson.RapidJson(), actualDefaultJson.Allocator()));
-    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(actualDefaultJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(actualDefaultJson.BeJs()));
 
     JsonECSqlSelectAdapter jsAdapter(statement, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
     ASSERT_EQ(SUCCESS, jsAdapter.GetRow(actualJavaScriptJson.RapidJson(), actualJavaScriptJson.Allocator()));
-    ASSERT_EQ(SUCCESS, jsAdapter.GetRow(actualJavaScriptJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, jsAdapter.GetRow(actualJavaScriptJson.BeJs()));
 
     statement.Finalize();
 
@@ -1596,11 +1597,11 @@ TEST_F(JsonECSqlSelectAdapterTests, JsonStructAndArrays)
 
     JsonDoc expectedDefaultJson;
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedDefaultJson.RapidJson(), expectedDefaultJsonStr));
-    ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedDefaultJson.JsonCpp(), expectedDefaultJsonStr));
+    ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedDefaultJson.BeJsDoc(), expectedDefaultJsonStr));
 
     JsonDoc expectedJavaScriptJson;
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJavaScriptJson.RapidJson(), expectedJavaScriptJsonStr));
-    ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJavaScriptJson.JsonCpp(), expectedJavaScriptJsonStr));
+    ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJavaScriptJson.BeJsDoc(), expectedJavaScriptJsonStr));
 
     ASSERT_TRUE_NULLABLE(expectedDefaultJson.Equals(actualDefaultJson)) << "Expected: " << expectedDefaultJson.ToString() << " | Actual: " << actualDefaultJson.ToString();
     ASSERT_TRUE_NULLABLE(expectedJavaScriptJson.Equals(actualJavaScriptJson)) << "Expected: " << expectedDefaultJson.ToString() << " | Actual: " << actualDefaultJson.ToString();
@@ -1633,10 +1634,10 @@ TEST_F(JsonReaderTests, PartialPoints)
     JsonECSqlSelectAdapter javaScriptAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
 
     ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.RapidJson(), defaultJson.Allocator()));
-    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.BeJs()));
 
     ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.RapidJson(), javaScriptJson.Allocator()));
-    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.BeJs()));
     selStmt.Finalize();
 
     ASSERT_TRUE_NULLABLE(defaultJson.IsObject()) << defaultJson.ToString();
@@ -1667,12 +1668,12 @@ TEST_F(JsonReaderTests, PartialPoints)
     ASSERT_TRUE(testClass != nullptr);
     JsonReader defaultReader(m_ecdb, *testClass);
     ASSERT_TRUE(defaultReader.IsValid());
-    ASSERT_EQ(SUCCESS, defaultReader.Read(defaultJson.JsonCpp(), key.GetInstanceId()));
+    ASSERT_EQ(SUCCESS, defaultReader.Read(defaultJson.BeJs(), key.GetInstanceId()));
     ASSERT_EQ(SUCCESS, defaultReader.Read(defaultJson.RapidJson(), key.GetInstanceId(), defaultJson.Allocator()));
 
     JsonReader javaScriptReader(m_ecdb, *testClass, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
     ASSERT_TRUE(javaScriptReader.IsValid());
-    ASSERT_EQ(SUCCESS, javaScriptReader.Read(javaScriptJson.JsonCpp(), key.GetInstanceId()));
+    ASSERT_EQ(SUCCESS, javaScriptReader.Read(javaScriptJson.BeJs(), key.GetInstanceId()));
     ASSERT_EQ(SUCCESS, javaScriptReader.Read(javaScriptJson.RapidJson(), key.GetInstanceId(), javaScriptJson.Allocator()));
 
     ASSERT_TRUE_NULLABLE(defaultJson.IsObject()) << defaultJson.ToString();
@@ -1809,14 +1810,14 @@ TEST_F(JsonReaderTests, RoundTrip_ReadThenInsert)
 
         JsonDoc actualJson;
         ASSERT_EQ(SUCCESS, reader.Read(actualJson.RapidJson(), psaKey.GetInstanceId(), actualJson.Allocator()));
-        ASSERT_EQ(SUCCESS, reader.Read(actualJson.JsonCpp(), psaKey.GetInstanceId()));
+        ASSERT_EQ(SUCCESS, reader.Read(actualJson.BeJs(), psaKey.GetInstanceId()));
 
-        actualJson.JsonCpp().removeMember(ECJsonUtilities::json_id());
-        ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(newKey, actualJson.JsonCpp())) << "Insert after removing id member from read JSON ";
+        actualJson.BeJs().removeMember(ECJsonUtilities::json_id());
+        ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(newKey, actualJson.BeJs())) << "Insert after removing id member from read JSON ";
         validate(newKey.GetInstanceId());
 
-        actualJson.JsonCpp().removeMember(ECJsonUtilities::json_className());
-        ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(newKey, actualJson.JsonCpp())) << "Insert after removing id and className member from read JSON";
+        actualJson.BeJs().removeMember(ECJsonUtilities::json_className());
+        ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(newKey, actualJson.BeJs())) << "Insert after removing id and className member from read JSON";
         validate(newKey.GetInstanceId());
 
         actualJson.RapidJson().RemoveMember(ECJsonSystemNames::Id());

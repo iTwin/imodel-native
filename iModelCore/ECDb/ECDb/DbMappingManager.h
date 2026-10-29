@@ -200,7 +200,9 @@ struct DbMappingManager final
 
             static BentleyStatus AddIndexToRelationshipEnd(SchemaImportContext&, FkRelationshipMappingInfo const&, ForeignKeyPartitionView::Partition const&);
             static DbColumn* CreateForeignKeyColumn(FkRelationshipMappingInfo::ForeignKeyColumnInfo&, SchemaImportContext&, FkRelationshipMappingInfo const&, DbTable& fkTable, NavigationPropertyMap const&);
-            static BentleyStatus CreateForeignKeyConstraint(SchemaImportContext&, FkRelationshipMappingInfo const&, DbTable const& referencedTable);
+            //! Checks that a navigation property's foreign key mapping is legal. The constraint it describes
+            //! is built by DerivedDbStructures, since it is not persisted and every file has to derive it.
+            static BentleyStatus ValidateForeignKeyConstraint(SchemaImportContext&, FkRelationshipMappingInfo const&);
             static DbColumn* CreateRelECClassIdColumn(SchemaImportContext&, FkRelationshipMappingInfo const&, FkRelationshipMappingInfo::ForeignKeyColumnInfo const&, DbTable& fkTable, DbColumn const& fkCol, NavigationPropertyMap const&);
             static BentleyStatus FinishMapping(SchemaImportContext&, FkRelationshipMappingInfo const&);
             static BentleyStatus ValidateForeignKeyColumn(SchemaImportContext&, FkRelationshipMappingInfo const&, DbColumn const& fkColumn, bool cardinalityImpliesNotNullOnFkCol);

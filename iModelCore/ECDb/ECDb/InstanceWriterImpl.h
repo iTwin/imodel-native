@@ -163,6 +163,7 @@ struct InstanceWriter::Impl final {
             return m_writer.GetECDb().Schemas().FindClass(name);
         }
         bool UseJsNames() const { return m_options.GetUseJsNames(); }
+        bool ConvertClassIdsToClassNames() const { return m_options.GetConvertClassIdsToClassNames(); }
         ECSqlStatus NotifyUserProperty(Utf8CP prop, BeJsConst val, InstanceWriter::Impl::MruStatementCache::CachedWriteStatement& stmt) const;
         void SetError(const char* fmt, ...);
         void PrependError(const char* fmt, ...);
@@ -206,8 +207,8 @@ public:
     void ToJson(BeJsValue out, ECInstanceId instanceId, ECClassId classId, JsFormat jsFmt) const;
     void ToJson(BeJsValue out, ECInstanceKeyCR key, JsFormat jsFmt) const;
     bool TryGetId(ECInstanceId& instanceId, BeJsConst in, JsFormat jsFmt = JsFormat::Standard) const;
-    bool TryGetClassId(ECClassId& classId, BeJsConst in, JsFormat jsFmt = JsFormat::Standard) const;
-    bool TryGetInstanceKey(ECInstanceKeyR key, BeJsConst in, JsFormat jsFmt = JsFormat::Standard) const;
+    bool TryGetClassId(ECClassId& classId, BeJsConst in, JsFormat jsFmt = JsFormat::Standard, bool convertClassIdsToClassNames = false) const;
+    bool TryGetInstanceKey(ECInstanceKeyR key, BeJsConst in, JsFormat jsFmt = JsFormat::Standard, bool convertClassIdsToClassNames = false) const;
     void Reset();
 };
 

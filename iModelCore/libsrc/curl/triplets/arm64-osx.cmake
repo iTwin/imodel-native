@@ -9,12 +9,15 @@ set(VCPKG_LIBRARY_LINKAGE static)
 
 set(VCPKG_CMAKE_SYSTEM_NAME Darwin)
 set(VCPKG_OSX_ARCHITECTURES arm64)
+set(VCPKG_OSX_DEPLOYMENT_TARGET 15.0)
 
 # curl's OpenSSL backend verifies the peer certificate chain against the macOS system trust
-# store (Keychain) via Apple SecTrust. vcpkg_cmake_configure forwards this triplet option to
-# curl's CMake, which then auto-links Security/CoreFoundation/CoreServices. The option is also
-# passed to curl's transitive cmake deps (zlib, c-ares), where it is an unused, harmless define.
-set(VCPKG_CMAKE_CONFIGURE_OPTIONS "-DUSE_APPLE_SECTRUST=ON")
+# store (Keychain) via Apple SecTrust. CURL_HIDDEN_SYMBOLS normally marks curl's public API with
+# default visibility, overriding the triplet's hidden visibility flags below. Disable that
+# selective hiding so all symbols in the static library remain private to imodeljs.node.
+# Xcode 27 declares pipe2 when targeting macOS 15, although that symbol is unavailable there;
+# disable c-ares' probe result. Other transitive CMake dependencies ignore unused options.
+set(VCPKG_CMAKE_CONFIGURE_OPTIONS "-DUSE_APPLE_SECTRUST=ON" "-DCURL_HIDDEN_SYMBOLS=OFF" "-DHAVE_PIPE2=OFF")
 
 # Build curl and c-ares with hidden symbol visibility so their symbols are not exported from
 # the final imodeljs.node. This matches the previous file-by-file build (BeCurl.mke set

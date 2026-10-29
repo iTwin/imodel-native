@@ -10,7 +10,6 @@ THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinCurl.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinFolly.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinIcu4c.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinJpeg.a
-THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinJsonCpp.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libBeLibJpegTurbo.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinBentley.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinGeom.a
@@ -51,7 +50,6 @@ THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinVisualization.a
 
 %else
 
-DLM_OBJECT_FILES + $(ContextSubpartsLibs)$(libprefix)iTwinJsonCpp$(stlibext)
 DLM_OBJECT_FILES + $(ContextSubpartsLibs)$(libprefix)iTwin_google_re2$(stlibext)
 
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)iTwinBentley$(libext)

@@ -176,6 +176,40 @@ TEST_F(ECSqlStatementTestFixture, CompoundSelectWithMismatchingColumnCount) {
 }
 
 /*---------------------------------------------------------------------------------**//**
+* A SELECT inside a scalar subquery collects the range classes of its enclosing SELECTs.
+* Enclosing SELECTs without a FROM clause must be skipped.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECSqlStatementTestFixture, ScalarSubqueryNestedInSelectWithoutFrom) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("scalar_subquery_nested_in_select_without_from.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="Foo" modifier="Sealed">
+                <ECProperty propertyName="N" typeName="int"/>
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    for (int n : {1, 1, 2}) {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("INSERT INTO ts.Foo(N) VALUES(%d)", n).c_str()));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    Utf8CP ecsqls[] = {
+        "SELECT (SELECT (SELECT MAX(N) FROM ts.Foo))",
+        "SELECT (SELECT COUNT(*) FROM (SELECT N FROM ts.Foo GROUP BY N))",
+        "SELECT * FROM (SELECT (SELECT (SELECT MAX(N) FROM ts.Foo)))",
+        "SELECT (SELECT (SELECT (SELECT MAX(N) FROM ts.Foo))) FROM ts.Foo",
+        };
+
+    for (Utf8CP ecsql : ecsqls) {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql)) << ecsql;
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << ecsql;
+        ASSERT_EQ(2, stmt.GetValueInt(0)) << ecsql;
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
 * Regression test: the scanner reads the statement in blocks, so the read position usually
 * already sits at the end of the statement while the lexer is still somewhere in the middle.
 * Lexer errors must still report the offending text, which is taken from the scan position.
@@ -817,7 +851,7 @@ TEST_F(ECSqlStatementTestFixture, SelectAsterisk)
     auto retrieveRow = [] (ECSqlStatement const& stmt)
         {
         JsonValue json;
-        json.m_value = Json::Value(Json::objectValue);
+        json.m_value.toObject();
         for (int i = 0; i < stmt.GetColumnCount(); i++)
             {
             if (stmt.IsValueNull(i))
@@ -826,13 +860,12 @@ TEST_F(ECSqlStatementTestFixture, SelectAsterisk)
             ECSqlColumnInfo const& colInfo = stmt.GetColumnInfo(i);
             Utf8String colName = colInfo.GetPropertyPath().ToString();
 
-            Json::Value& memberJson = json.m_value[colName.c_str()];
             if (colInfo.GetDataType().IsNavigation())
-                memberJson = Json::Value(stmt.GetValueNavigation<ECInstanceId>(i).GetValue());
+                json.m_value[colName.c_str()] = (int64_t)stmt.GetValueNavigation<ECInstanceId>(i).GetValue();
             if (colInfo.GetDataType() == PRIMITIVETYPE_Integer || colInfo.GetDataType() == PRIMITIVETYPE_Long)
-                memberJson = Json::Value(stmt.GetValueInt64(i));
+                json.m_value[colName.c_str()] = stmt.GetValueInt64(i);
             else if (colInfo.GetDataType() == PRIMITIVETYPE_String)
-                memberJson = Json::Value(stmt.GetValueText(i));
+                json.m_value[colName.c_str()] = stmt.GetValueText(i);
             }
 
         return json;
@@ -7303,7 +7336,7 @@ TEST_F(ECSqlStatementTestFixture, InsertWithStructBinding)
 
     //**** Test 1 *****
     {
-    Json::Value expectedJson;
+    BeJsDocument expectedJson;
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson,R"json(
          { "b" : true,
          "d" : 3.0,
@@ -7328,7 +7361,7 @@ TEST_F(ECSqlStatementTestFixture, InsertWithStructBinding)
     ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
     ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
     JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
-    Json::Value actualJson;
+    BeJsDocument actualJson;
     ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
     ASSERT_TRUE(actualJson.isMember("PStructProp"));
     ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["PStructProp"]));
@@ -7336,7 +7369,7 @@ TEST_F(ECSqlStatementTestFixture, InsertWithStructBinding)
 
     //**** Test 2 *****
     {
-    Json::Value expectedJson;
+    BeJsDocument expectedJson;
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, R"json(
         { "PStructProp" :
         { "b" : true,
@@ -7364,7 +7397,7 @@ TEST_F(ECSqlStatementTestFixture, InsertWithStructBinding)
     ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
     ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
     JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
-    Json::Value actualJson;
+    BeJsDocument actualJson;
     ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
     ASSERT_TRUE(actualJson.isMember("SAStructProp"));
     ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["SAStructProp"]));
@@ -7379,12 +7412,13 @@ TEST_F(ECSqlStatementTestFixture, InsertWithStructBinding)
     ASSERT_EQ(ECSqlStatus::Success, verifyStmt.Prepare(m_ecdb, "SELECT PStructProp FROM ecsql.PSA WHERE ECInstanceId=?"));
     JsonECSqlSelectAdapter verifyAdapter(verifyStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
 
-    Json::Value expectedJson, actualJson;
+    BeJsDocument expectedJson;
+    BeJsDocument actualJson;
 
     {
     //mismatching types which are convertible to each other
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, R"json({ "i" : 3.1415 })json"));
-    ASSERT_EQ(ECSqlStatus::Success, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.ToString();
+    ASSERT_EQ(ECSqlStatus::Success, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.Stringify();
     ECInstanceKey key;
     ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step(key)) << insertStmt.GetECSql();
     insertStmt.Reset();
@@ -7403,7 +7437,7 @@ TEST_F(ECSqlStatementTestFixture, InsertWithStructBinding)
     {
     //mismatching types which are convertible to each other
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, R"json({ "l" : 3.1415 })json"));
-    ASSERT_EQ(ECSqlStatus::Success, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.ToString();
+    ASSERT_EQ(ECSqlStatus::Success, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.Stringify();
     ECInstanceKey key;
     ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step(key)) << insertStmt.GetECSql();
     insertStmt.Reset();
@@ -7421,25 +7455,25 @@ TEST_F(ECSqlStatementTestFixture, InsertWithStructBinding)
     }
 
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, R"json({ "b" : 3.1415 })json"));
-    ASSERT_EQ(ECSqlStatus::Error, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.ToString();
+    ASSERT_EQ(ECSqlStatus::Error, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.Stringify();
 
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, R"json({ "s" : 3.1415 })json"));
-    ASSERT_EQ(ECSqlStatus::Error, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.ToString();
+    ASSERT_EQ(ECSqlStatus::Error, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.Stringify();
 
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, R"json({ "bi" : 3.1415 })json"));
-    ASSERT_EQ(ECSqlStatus::Error, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.ToString();
+    ASSERT_EQ(ECSqlStatus::Error, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.Stringify();
 
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, R"json({ "p2d" : 3.1415 })json"));
-    ASSERT_EQ(ECSqlStatus::Error, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.ToString();
+    ASSERT_EQ(ECSqlStatus::Error, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.Stringify();
 
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, R"json({ "p3d" : 3.1415 })json"));
-    ASSERT_EQ(ECSqlStatus::Error, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.ToString();
+    ASSERT_EQ(ECSqlStatus::Error, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.Stringify();
 
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, R"json({ "dt" : 3.1415 })json"));
-    ASSERT_EQ(ECSqlStatus::Error, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.ToString();
+    ASSERT_EQ(ECSqlStatus::Error, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.Stringify();
 
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, R"json({ "dtUtc" : 3.1415 })json"));
-    ASSERT_EQ(ECSqlStatus::Error, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.ToString();
+    ASSERT_EQ(ECSqlStatus::Error, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.Stringify();
     }
     }
 
@@ -7465,7 +7499,7 @@ TEST_F(ECSqlStatementTestFixture, UpdateWithStructBinding)
     ASSERT_EQ(ECSqlStatus::Success, verifyStmt.Prepare(m_ecdb, "SELECT PStructProp FROM ecsql.PSA WHERE ECInstanceId=?"));
     JsonECSqlSelectAdapter verifyAdapter(verifyStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
 
-    Json::Value initialJson;
+    BeJsDocument initialJson;
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(initialJson, R"json(
        { "PStructProp" : { "b" : true,
          "d" : 3.0,
@@ -7479,9 +7513,9 @@ TEST_F(ECSqlStatementTestFixture, UpdateWithStructBinding)
         }})json"));
 
     ECInstanceKey key;
-    ASSERT_EQ(BE_SQLITE_OK, jsonInserter.Insert(key, initialJson)) << initialJson.ToString();
+    ASSERT_EQ(BE_SQLITE_OK, jsonInserter.Insert(key, initialJson)) << initialJson.Stringify();
 
-    Json::Value expectedUpdatedJson;
+    BeJsDocument expectedUpdatedJson;
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedUpdatedJson, R"json(
        { "b" : false,
          "d" : 6.0,
@@ -7494,15 +7528,15 @@ TEST_F(ECSqlStatementTestFixture, UpdateWithStructBinding)
         "p3d" : { "x" : 3.0, "y" : 5.0, "z" : 6.0}
         })json"));
 
-    ASSERT_EQ(ECSqlStatus::Success, JsonECSqlBinder::BindStructValue(updateStmt.GetBinder(1), expectedUpdatedJson, *pStructClass->GetStructClassCP())) << expectedUpdatedJson.ToString();
-    ASSERT_EQ(ECSqlStatus::Success, updateStmt.BindId(2, key.GetInstanceId())) << expectedUpdatedJson.ToString();
-    ASSERT_EQ(BE_SQLITE_DONE, updateStmt.Step()) << expectedUpdatedJson.ToString();
+    ASSERT_EQ(ECSqlStatus::Success, JsonECSqlBinder::BindStructValue(updateStmt.GetBinder(1), expectedUpdatedJson, *pStructClass->GetStructClassCP())) << expectedUpdatedJson.Stringify();
+    ASSERT_EQ(ECSqlStatus::Success, updateStmt.BindId(2, key.GetInstanceId())) << expectedUpdatedJson.Stringify();
+    ASSERT_EQ(BE_SQLITE_DONE, updateStmt.Step()) << expectedUpdatedJson.Stringify();
     updateStmt.Reset();
     updateStmt.ClearBindings();
 
     ASSERT_EQ(ECSqlStatus::Success, verifyStmt.BindId(1, key.GetInstanceId())) << verifyStmt.GetECSql();
     ASSERT_EQ(BE_SQLITE_ROW, verifyStmt.Step()) << "Id: " << key.GetInstanceId().ToString() << " " << verifyStmt.GetECSql();
-    Json::Value actualJson;
+    BeJsDocument actualJson;
     ASSERT_EQ(SUCCESS, verifyAdapter.GetRow(actualJson)) << key.GetInstanceId().ToString() << " " << verifyStmt.GetECSql();
     ASSERT_TRUE(actualJson.isMember("PStructProp"));
     ASSERT_EQ(JsonValue(expectedUpdatedJson), JsonValue(actualJson["PStructProp"]));
@@ -10124,7 +10158,8 @@ TEST_F(ECSqlStatementTestFixture, WriteCalculatedECProperty)
         {
         IECInstancePtr newInstance = adapter.GetInstance();
 
-        Json::Value newInstanceJson, instanceJson;
+        BeJsDocument newInstanceJson;
+        BeJsDocument instanceJson;
         ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(newInstanceJson, *newInstance, nullptr, false));
         ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(instanceJson, *instance, nullptr, false));
         ASSERT_EQ(JsonValue(newInstanceJson), JsonValue(instanceJson));
@@ -11648,15 +11683,6 @@ TEST_F(ECSqlStatementTestFixture, verify_inf_and_nan_handling) {
         ASSERT_EQ(inf_neg_isnull, true);
         ASSERT_EQ(nan_val_isnull, true);
     }
-    if ("jsoncpp must return null for inf") {
-        ECSqlStatement stmt;
-        ASSERT_EQ(stmt.Prepare(m_ecdb, "select inf_pos, inf_neg, nan_val from ts.Element"), ECSqlStatus::Success);
-        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
-        JsonECSqlSelectAdapter adaptor(stmt);
-        Json::Value jsonCpp;
-        EXPECT_EQ(SUCCESS, adaptor.GetRow(jsonCpp));
-        EXPECT_STREQ("{}", jsonCpp.ToString().c_str());
-    }
     if ("rapidjson must return null for inf") {
         ECSqlStatement stmt;
         ASSERT_EQ(stmt.Prepare(m_ecdb, "select inf_pos, inf_neg, nan_val from ts.Element"), ECSqlStatus::Success);
@@ -11697,15 +11723,6 @@ TEST_F(ECSqlStatementTestFixture, verify_inf_and_nan_handling) {
         ASSERT_EQ(inf_neg_isnull, false);
         ASSERT_EQ(nan_val_isnull, true);
     }
-    if ("jsoncpp must return null for inf") {
-        ECSqlStatement stmt;
-        ASSERT_EQ(stmt.Prepare(m_ecdb, "select inf_pos, inf_neg, nan_val from ts.Element"), ECSqlStatus::Success);
-        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
-        JsonECSqlSelectAdapter adaptor(stmt);
-        Json::Value jsonCpp;
-        EXPECT_EQ(SUCCESS, adaptor.GetRow(jsonCpp));
-        EXPECT_STREQ("{\"inf_neg\":null,\"inf_pos\":null}", jsonCpp.ToString().c_str());
-    }
     if ("rapidjson must return null for inf") {
         ECSqlStatement stmt;
         ASSERT_EQ(stmt.Prepare(m_ecdb, "select inf_pos, inf_neg, nan_val from ts.Element"), ECSqlStatus::Success);
@@ -11713,8 +11730,11 @@ TEST_F(ECSqlStatementTestFixture, verify_inf_and_nan_handling) {
         JsonECSqlSelectAdapter adaptor(stmt);
         BeJsDocument rapidJson;
         EXPECT_EQ(SUCCESS, adaptor.GetRow(rapidJson));
-        Utf8String json = rapidJson.Stringify();
-        EXPECT_STREQ("{\"inf_pos\":null,\"inf_neg\":null}", json.c_str());
+        // NOTE: this deliberately compares the SERIALIZED text, not isExactEqual. The adapter stores
+        // the raw +/-Inf doubles in the document; they only become `null` when written out, because
+        // BeRapidJson.h sets RAPIDJSON_WRITE_DEFAULT_FLAGS = kWriteNanAndInfNullFlag. isExactEqual
+        // compares the in-memory values, where Inf is numeric and therefore != null.
+        EXPECT_STREQ(R"({"inf_pos":null,"inf_neg":null})", rapidJson.Stringify().c_str());
     }
 }
 
@@ -11773,15 +11793,6 @@ TEST_F(ECSqlStatementTestFixture, verify_inf_and_nan_handling_Point2D) {
             EXPECT_FALSE(std::isnan(coordY)) << "Value at column " << columnIndex + 1 << " should not be NaN";
             EXPECT_TRUE(stmt.IsValueNull(columnIndex)) << "Value at column " << columnIndex + 1 << " should be NULL";
             }
-    }
-    if ("jsoncpp must return null for inf") {
-        ECSqlStatement stmt;
-        ASSERT_EQ(stmt.Prepare(m_ecdb, selectStmt), ECSqlStatus::Success);
-        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
-        JsonECSqlSelectAdapter adaptor(stmt);
-        Json::Value jsonCpp;
-        EXPECT_EQ(SUCCESS, adaptor.GetRow(jsonCpp));
-        EXPECT_STREQ("{}", jsonCpp.ToString().c_str());
     }
     if ("rapidjson must return null for inf") {
         ECSqlStatement stmt;
@@ -11848,15 +11859,6 @@ TEST_F(ECSqlStatementTestFixture, verify_inf_and_nan_handling_Point2D) {
 
             EXPECT_TRUE(stmt.IsValueNull(columnIndex)) << "Test failed for column " << columnName;
             }
-    }
-    if ("jsoncpp must return null for inf") {
-        ECSqlStatement stmt;
-        ASSERT_EQ(stmt.Prepare(m_ecdb, selectStmt), ECSqlStatus::Success);
-        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
-        JsonECSqlSelectAdapter adaptor(stmt);
-        Json::Value jsonCpp;
-        EXPECT_EQ(SUCCESS, adaptor.GetRow(jsonCpp));
-        EXPECT_STREQ("{}", jsonCpp.ToString().c_str());
     }
     if ("rapidjson must return null for inf") {
         ECSqlStatement stmt;
@@ -11949,15 +11951,6 @@ TEST_F(ECSqlStatementTestFixture, verify_inf_and_nan_handling_Point3D) {
             EXPECT_FALSE(std::isnan(coordZ)) << "Value at column " << columnIndex + 1 << " should not be NaN";
             EXPECT_TRUE(stmt.IsValueNull(columnIndex)) << "Value at column " << columnIndex + 1 << " should be NULL";
             }
-    }
-    if ("jsoncpp must return null for inf") {
-        ECSqlStatement stmt;
-        ASSERT_EQ(stmt.Prepare(m_ecdb, selectStmt), ECSqlStatus::Success);
-        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
-        JsonECSqlSelectAdapter adaptor(stmt);
-        Json::Value jsonCpp;
-        EXPECT_EQ(SUCCESS, adaptor.GetRow(jsonCpp));
-        EXPECT_STREQ("{}", jsonCpp.ToString().c_str());
     }
     if ("rapidjson must return null for inf") {
         ECSqlStatement stmt;
@@ -12061,15 +12054,6 @@ TEST_F(ECSqlStatementTestFixture, verify_inf_and_nan_handling_Point3D) {
 
             EXPECT_TRUE(stmt.IsValueNull(columnIndex)) << "Test failed for column " << columnName;
         }
-    }
-    if ("jsoncpp must return null for inf") {
-        ECSqlStatement stmt;
-        ASSERT_EQ(stmt.Prepare(m_ecdb, selectStmt), ECSqlStatus::Success);
-        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
-        JsonECSqlSelectAdapter adaptor(stmt);
-        Json::Value jsonCpp;
-        EXPECT_EQ(SUCCESS, adaptor.GetRow(jsonCpp));
-        EXPECT_STREQ("{}", jsonCpp.ToString().c_str());
     }
     if ("rapidjson must return null for inf") {
         ECSqlStatement stmt;
@@ -12936,7 +12920,7 @@ TEST_F(ECSqlStatementTestFixture, InsertWithOnly)
     auto retrieveRow = [] (ECSqlStatement const& stmt)
         {
         JsonValue json;
-        json.m_value = Json::Value(Json::objectValue);
+        json.m_value.toObject();
         for (int i = 0; i < stmt.GetColumnCount(); i++)
             {
             if (stmt.IsValueNull(i))
@@ -12945,13 +12929,12 @@ TEST_F(ECSqlStatementTestFixture, InsertWithOnly)
             ECSqlColumnInfo const& colInfo = stmt.GetColumnInfo(i);
             Utf8String colName = colInfo.GetPropertyPath().ToString();
 
-            Json::Value& memberJson = json.m_value[colName.c_str()];
             if (colInfo.GetDataType().IsNavigation())
-                memberJson = Json::Value(stmt.GetValueNavigation<ECInstanceId>(i).GetValue());
+                json.m_value[colName.c_str()] = (int64_t)stmt.GetValueNavigation<ECInstanceId>(i).GetValue();
             if (colInfo.GetDataType() == PRIMITIVETYPE_Integer || colInfo.GetDataType() == PRIMITIVETYPE_Long)
-                memberJson = Json::Value(stmt.GetValueInt64(i));
+                json.m_value[colName.c_str()] = stmt.GetValueInt64(i);
             else if (colInfo.GetDataType() == PRIMITIVETYPE_String)
-                memberJson = Json::Value(stmt.GetValueText(i));
+                json.m_value[colName.c_str()] = stmt.GetValueText(i);
             }
 
         return json;

@@ -5,6 +5,7 @@
 #include "ECDbPch.h"
 #include "Parser/SqlNode.h"
 #include "Parser/SqlParse.h"
+#include <string>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 

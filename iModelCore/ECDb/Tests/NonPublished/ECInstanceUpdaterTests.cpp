@@ -167,7 +167,7 @@ TEST_F(ECInstanceUpdaterTests, UpdateWithCurrentTimeStampTrigger)
     ASSERT_TRUE(firstLastMod.IsValid());
 
     //now update an ECInstance
-    BeThreadUtilities::BeSleep(1000); //so that new last mod differs significantly from old last mod
+    BeThreadUtilities::BeSleep(250); //so that new last mod differs significantly from old last mod
     v.Clear();
 
     v.SetInteger(2);

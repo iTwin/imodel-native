@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 
+#include <string>
 #include <ECPresentation/ECPresentationManager.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <Bentley/Logging.h>

@@ -12,6 +12,7 @@ set(VCPKG_LIBRARY_LINKAGE static)
 
 set(VCPKG_CMAKE_SYSTEM_NAME Darwin)
 set(VCPKG_OSX_ARCHITECTURES arm64)
+set(VCPKG_OSX_DEPLOYMENT_TARGET 15.0)
 
 # No extra C/C++ flags are needed on macOS: the Linux triplets' -D_FILE_OFFSET_BITS=64 is a
 # Linux large-file ABI concern (macOS off_t is already 64-bit), and the Windows triplets'

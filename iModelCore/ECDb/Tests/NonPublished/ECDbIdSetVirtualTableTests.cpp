@@ -3,6 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
+#include <ECDb/ConcurrentQueryManager.h>
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
@@ -393,8 +394,13 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[-1,-2,3,-4,5]')"));
-        // negative values are not allowed so empty table and should log error
-        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+        // negative int64 numbers are ids with the high bit set (how SQLite stores them), so they are reinterpreted as unsigned
+        for (int64_t expected : {INT64_C(3), INT64_C(5), INT64_C(-4), INT64_C(-2), INT64_C(-1)})
+            {
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+            ASSERT_EQ(expected, stmt.GetValueInt64(0));
+            }
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         }
         {
         std::vector<int> ids = std::vector<int>{0,1,1,2};
@@ -1570,6 +1576,214 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, InAllAtOnceOptimization) {
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[1,2,3,4,5]') WHERE id IN (2, 4)"));
         auto explain = m_ecdb.ExplainQuery(stmt.GetNativeSql(), true);
         ASSERT_TRUE(explain.Contains("VIRTUAL TABLE INDEX 5")) << "Expected IN plan (INDEX 5), got: " << explain.c_str();
+        }
+}
+
+//---------------------------------------------------------------------------------------
+// IDs with the high bit set (e.g. SchemaSync-reserved 0xfffff6...) are stored by SQLite as
+// negative int64 values. IdSet must accept them on every path while still rejecting 0.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbIdSetVirtualTableTestFixture, HighBitIds) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("idset_high_bit_ids.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    <ECSchema schemaName='TestSchema' alias='ts' version='10.10.10' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECEntityClass typeName='Element' >
+            <ECProperty propertyName="label" typeName="string" />
+        </ECEntityClass>
+        </ECSchema>)xml")));
+
+    const BeInt64Id lowId(UINT64_C(0x7fffff0000000001));
+    const BeInt64Id highId(UINT64_C(0x8000000000000001));
+    const BeInt64Id reservedId(UINT64_C(0xfffff60000000001));
+    const BeInt64Id missingHighId(UINT64_C(0xfffff60000000002));
+
+    {
+    ECSqlStatement insertStmt;
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(m_ecdb, "INSERT INTO ts.Element(ECInstanceId, label) VALUES(?, ?)"));
+    for (auto const& entry : std::vector<std::pair<BeInt64Id, Utf8CP>>{{lowId, "low"}, {highId, "high"}, {reservedId, "reserved"}})
+        {
+        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(1, entry.first));
+        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindText(2, entry.second, IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step());
+        insertStmt.ClearBindings();
+        insertStmt.Reset();
+        }
+    m_ecdb.SaveChanges();
+    }
+
+    auto bindHighIds = [&](ECSqlStatement& stmt) {
+        IECSqlBinder& binder = stmt.GetBinder(1);
+        EXPECT_EQ(ECSqlStatus::Success, binder.AddArrayElement().BindId(highId));
+        EXPECT_EQ(ECSqlStatus::Success, binder.AddArrayElement().BindId(reservedId));
+    };
+    // Steps to completion; returns the first column of every row as an unsigned id and records the final step result.
+    auto readIds = [](ECSqlStatement& stmt) {
+        std::set<uint64_t> ids;
+        DbResult rc;
+        while ((rc = stmt.Step()) == BE_SQLITE_ROW)
+            ids.insert(stmt.GetValueId<BeInt64Id>(0).GetValueUnchecked());
+        EXPECT_EQ(BE_SQLITE_DONE, rc) << stmt.GetECSql();
+        return ids;
+    };
+    const std::set<uint64_t> expectedIds {highId.GetValueUnchecked(), reservedId.GetValueUnchecked()};
+
+    if ("ECSqlStatement array binding with BindId")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
+        bindHighIds(stmt);
+        EXPECT_EQ(expectedIds, readIds(stmt)) << "BindId";
+        }
+
+    if ("ECSqlStatement array binding with hex strings")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
+        IECSqlBinder& binder = stmt.GetBinder(1);
+        EXPECT_EQ(ECSqlStatus::Success, binder.AddArrayElement().BindText("0x8000000000000001", IECSqlBinder::MakeCopy::No));
+        EXPECT_EQ(ECSqlStatus::Success, binder.AddArrayElement().BindText("0xfffff60000000001", IECSqlBinder::MakeCopy::No));
+        EXPECT_EQ(expectedIds, readIds(stmt)) << "BindText";
+        }
+
+    if ("JSON text forms: hex strings, unsigned and signed int64 numbers")
+        {
+        for (Utf8CP ecsql : {
+                "SELECT id FROM IdSet('[\"0x8000000000000001\",\"0xfffff60000000001\"]')",
+                "SELECT id FROM IdSet('[9223372036854775809,18446733078593273857]')",
+                "SELECT id FROM IdSet('[-9223372036854775807,-10995116277759]')"})
+            {
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+            EXPECT_EQ(expectedIds, readIds(stmt)) << ecsql;
+            }
+        }
+
+    if ("zero is still rejected alongside high-bit ids")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[-9223372036854775807,0]')"));
+        EXPECT_EQ(BE_SQLITE_ERROR, stmt.Step());
+        }
+
+    if ("non-integer numbers are still rejected")
+        {
+        for (Utf8CP ecsql : {"SELECT id FROM IdSet('[1.5]')", "SELECT id FROM IdSet('[-1.5]')"})
+            {
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+            EXPECT_EQ(BE_SQLITE_ERROR, stmt.Step()) << ecsql;
+            }
+        }
+
+    if ("plain join")
+        {
+        for (Utf8CP ecsql : {
+                "SELECT e.label FROM ts.Element e JOIN IdSet(?) v ON e.ECInstanceId = v.id ORDER BY e.label",
+                "SELECT e.label FROM IdSet(?) v JOIN ts.Element e ON e.ECInstanceId = v.id ORDER BY e.label",
+                "SELECT e.label FROM ts.Element e, IdSet(?) v WHERE e.ECInstanceId = v.id ORDER BY e.label"})
+            {
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+            bindHighIds(stmt);
+            std::vector<Utf8String> labels;
+            DbResult rc;
+            while ((rc = stmt.Step()) == BE_SQLITE_ROW)
+                labels.push_back(stmt.GetValueText(0));
+            EXPECT_EQ(BE_SQLITE_DONE, rc) << ecsql;
+            EXPECT_EQ((std::vector<Utf8String>{"high", "reserved"}), labels) << ecsql;
+            }
+        }
+
+    if ("id IN (...)")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?) WHERE id IN (?, ?, ?)"));
+        ASSERT_TRUE(m_ecdb.ExplainQuery(stmt.GetNativeSql(), true).Contains("VIRTUAL TABLE INDEX 5"));
+        bindHighIds(stmt);
+        EXPECT_EQ(ECSqlStatus::Success, stmt.BindId(2, highId));
+        EXPECT_EQ(ECSqlStatus::Success, stmt.BindId(3, reservedId));
+        EXPECT_EQ(ECSqlStatus::Success, stmt.BindId(4, missingHighId));
+        EXPECT_EQ(expectedIds, readIds(stmt)) << "id IN (...)";
+        }
+
+    if ("id IN (...) and id = ? with a set that parses without the numeric fix")
+        {
+        // Unsigned JSON numbers already parse, so these isolate the signed-value checks in Filter().
+        ECSqlStatement inStmt;
+        ASSERT_EQ(ECSqlStatus::Success, inStmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[9223372036854775809,18446733078593273857]') WHERE id IN (?, ?)"));
+        EXPECT_EQ(ECSqlStatus::Success, inStmt.BindId(1, highId));
+        EXPECT_EQ(ECSqlStatus::Success, inStmt.BindId(2, reservedId));
+        EXPECT_EQ(expectedIds, readIds(inStmt)) << "unsigned JSON, id IN (...)";
+
+        ECSqlStatement eqStmt;
+        ASSERT_EQ(ECSqlStatus::Success, eqStmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[9223372036854775809,18446733078593273857]') WHERE id = ?"));
+        EXPECT_EQ(ECSqlStatus::Success, eqStmt.BindId(1, reservedId));
+        EXPECT_EQ(std::set<uint64_t>{reservedId.GetValueUnchecked()}, readIds(eqStmt)) << "unsigned JSON, id = ?";
+        }
+
+    if ("id = ?")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?) WHERE id = ?"));
+        ASSERT_TRUE(m_ecdb.ExplainQuery(stmt.GetNativeSql(), true).Contains("VIRTUAL TABLE INDEX 3"));
+        for (BeInt64Id const& id : {highId, reservedId, missingHighId})
+            {
+            stmt.Reset();
+            stmt.ClearBindings();
+            bindHighIds(stmt);
+            EXPECT_EQ(ECSqlStatus::Success, stmt.BindId(2, id));
+            std::set<uint64_t> expected;
+            if (id != missingHighId)
+                expected.insert(id.GetValueUnchecked());
+            EXPECT_EQ(expected, readIds(stmt)) << "id = " << id.ToHexStr().c_str();
+            }
+        }
+
+    if ("concurrent query BindIdSet")
+        {
+        BeIdSet idSet;
+        idSet.insert(highId);
+        idSet.insert(reservedId);
+        ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
+            for (Utf8CP ecsql : {
+                    "SELECT id FROM IdSet(?)",
+                    "SELECT e.ECInstanceId FROM ts.Element e JOIN IdSet(?) v ON e.ECInstanceId = v.id"})
+                {
+                ECSqlReader reader(mgr, ecsql, ECSqlParams().BindIdSet(1, idSet));
+                std::set<uint64_t> ids;
+                try {
+                    while (reader.Next())
+                        ids.insert(BeInt64Id::FromString(reader.GetRow()[0].asString().c_str()).GetValueUnchecked());
+                } catch (std::runtime_error const& e) {
+                    ADD_FAILURE() << ecsql << ": " << e.what();
+                }
+                EXPECT_EQ(expectedIds, ids) << ecsql;
+                }
+        });
+        }
+
+    if ("concurrent query args in the JSON form core's QueryBinder.bindIdSet sends")
+        {
+        // Values are CompressedId64Set.compressArray() output from @itwin/core-bentley for the sorted ids.
+        for (auto const& entry : std::vector<std::pair<Utf8CP, std::set<uint64_t>>>{
+                {"+8000000000000001", {highId.GetValueUnchecked()}},
+                {"+FFFFF60000000001", {reservedId.GetValueUnchecked()}},
+                {"+7FFFFF0000000001+10000000000+7FFFF60000000000", {lowId.GetValueUnchecked(), highId.GetValueUnchecked(), reservedId.GetValueUnchecked()}}})
+            {
+            BeJsDocument args;
+            args.Parse(Utf8PrintfString(R"json({"ids":{"type":3,"value":"%s"}})json", entry.first).c_str());
+            ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
+                ECSqlReader reader(mgr, "SELECT id FROM IdSet(:ids)", ECSqlParams(args));
+                std::set<uint64_t> ids;
+                try {
+                    while (reader.Next())
+                        ids.insert(BeInt64Id::FromString(reader.GetRow()[0].asString().c_str()).GetValueUnchecked());
+                } catch (std::runtime_error const& e) {
+                    ADD_FAILURE() << entry.first << ": " << e.what();
+                }
+                EXPECT_EQ(entry.second, ids) << entry.first;
+            });
+            }
         }
 }
 
