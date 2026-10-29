@@ -518,8 +518,9 @@ void JsInterop::ConcurrentQueryExecute(ECDbCR ecdb, Napi::Object requestObj, Nap
                         rapidjson::StringBuffer json;
                         rapidjson::Writer<rapidjson::StringBuffer> writer(json);
                         writer.StartObject();
-                        for (auto const& member : response.GetObject()) {
-                            if (!writer.Key(member.name.GetString(), member.name.GetStringLength()) || !member.value.Accept(writer))
+                        // Avoid GetObject(): windows.h defines it as a macro.
+                        for (auto it = response.MemberBegin(); it != response.MemberEnd(); ++it) {
+                            if (!writer.Key(it->name.GetString(), it->name.GetStringLength()) || !it->value.Accept(writer))
                                 THROW_JS_BE_SQLITE_EXCEPTION(Env(), "Failed to serialize query response", BE_SQLITE_ERROR);
                         }
                         if (!resp.asJsonString().empty()) {
