@@ -764,6 +764,12 @@ export declare namespace IModelJsNative {
     public isUndoPossible(): boolean;
     public logTxnError(fatal: boolean): void;
     public openIModel(dbName: string, mode: OpenMode, upgradeOptions?: UpgradeOptions & SchemaImportOptions, props?: SnapshotOpenOptions, container?: CloudContainer, sqliteOptions?: { busyTimeout?: number }): void;
+    /** Asynchronous version of [[openIModel]] that performs the open on a worker thread so that reading the
+     * file (e.g., downloading blocks of a cloud-hosted iModel) does not block the JavaScript thread.
+     * Only [[OpenMode.Readonly]] is supported. The DgnDb may not be used until the returned promise resolves.
+     * @internal
+     */
+    public openIModelAsync(dbName: string, mode: OpenMode.Readonly, upgradeOptions?: UpgradeOptions & SchemaImportOptions, props?: SnapshotOpenOptions, container?: CloudContainer, sqliteOptions?: { busyTimeout?: number }): Promise<void>;
     /** @not-used-by-itwinjs-core Part of the SQLite profiler API, which iTwin.js does not surface. */
     public pauseProfiler(): DbResult;
     public pollTileContent(treeId: string, tileId: string): ErrorStatusOrResult<IModelStatus, TileContentState | TileContent>;
