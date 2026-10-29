@@ -8,6 +8,7 @@
 #include "IModelJsNative.h"
 #include "CsvImporter.h"
 #include <Bentley/Base64Utilities.h>
+#include <BeRapidJson/BeRapidJson.h>
 #include <Bentley/Desktop/FileSystem.h>
 #include <GeomSerialization/GeomSerializationApi.h>
 #include <ECDb/ChangedIdsIterator.h>
@@ -511,16 +512,24 @@ void JsInterop::ConcurrentQueryExecute(ECDbCR ecdb, Napi::Object requestObj, Nap
                     else if (value->GetKind() == QueryResponse::Kind::ECSql) {
                         auto& resp = value->GetAsConst<ECSqlResponse>();
                         // Build metadata and stats without creating each field through N-API.
-                        BeJsDocument response;
-                        resp.ToJs(response, false);
-                        auto json = response.Stringify();
-                        if (!resp.asJsonString().empty()) {
-                            json.pop_back();
-                            json.append(",\"data\":");
-                            json.append(resp.asJsonString());
-                            json.push_back('}');
+                        rapidjson::Document response;
+                        BeJsValue responseValue(response);
+                        resp.ToJs(responseValue, false);
+                        rapidjson::StringBuffer json;
+                        rapidjson::Writer<rapidjson::StringBuffer> writer(json);
+                        writer.StartObject();
+                        for (auto const& member : response.GetObject()) {
+                            if (!writer.Key(member.name.GetString(), member.name.GetStringLength()) || !member.value.Accept(writer))
+                                THROW_JS_BE_SQLITE_EXCEPTION(Env(), "Failed to serialize query response", BE_SQLITE_ERROR);
                         }
-                        jsResp = NapiValueRef::Parse(Env(), json.c_str()).As<Napi::Object>();
+                        if (!resp.asJsonString().empty()) {
+                            writer.Key(ECSqlResponse::JData);
+                            // Rows are already serialized by the query renderer; do not parse or marshal them again.
+                            if (!writer.RawValue(resp.asJsonString().c_str(), resp.asJsonString().size(), rapidjson::kArrayType))
+                                THROW_JS_BE_SQLITE_EXCEPTION(Env(), "Failed to serialize query rows", BE_SQLITE_ERROR);
+                        }
+                        writer.EndObject();
+                        jsResp = NapiValueRef::Parse(Env(), json.GetString()).As<Napi::Object>();
                     }
                     else if (value->GetKind() == QueryResponse::Kind::BlobIO) {
                         auto& resp = value->GetAsConst<BlobIOResponse>();

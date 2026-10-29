@@ -259,6 +259,7 @@ class ECSqlParams final {
         ECDB_EXPORT void FromJs(BeJsConst val);
         ECDB_EXPORT std::vector<std::string> GetKeys() const;
         ECDB_EXPORT bool TryBindTo(ECSqlStatement& stmt, std::string& err) const;
+        ECDB_EXPORT static bool TryBindParameter(ECSqlStatement& stmt, std::string const& name, ECSqlParam::Type type, BeJsConst value, std::string& err);
         ECDB_EXPORT std::string GetCacheKey() const;
 };
 
@@ -503,6 +504,8 @@ struct ECSqlStatementLease final {
         ECDB_EXPORT uint64_t GetStatementId() const;
         //! Configures the cached adaptor and renderer for this lease. Returns nullptr for an invalidated lease.
         ECDB_EXPORT ECSqlRowAdaptor* ConfigureRowAdaptor(JsReadOptions const&);
+        //! Returns the adaptor, or nullptr if the lease was released or invalidated.
+        ECDB_EXPORT ECSqlRowAdaptor* GetRowAdaptor() const;
         //! Appends the current row as strict JSON; on false (e.g. Infinity), discard partial output and render directly.
         ECDB_EXPORT bool WriteRowAsJson(rapidjson::StringBuffer&);
         ECDB_EXPORT void Release();
@@ -599,6 +602,7 @@ struct ConcurrentQueryMgr final {
         //! ordering deadlock with the primary connection. Kept for backward-compatible config
         //! serialization only; calling it has no effect on behavior.
         Config& SetDoNotUsePrimaryConnToPrepare(bool doNotUsePrimaryConnToPrepare) { m_doNotUsePrimaryConnToPrepare = doNotUsePrimaryConnToPrepare; return *this;}
+        //! Applies only to read-only managers that have not used the primary connection for queries or statement leases.
         Config& SetAutoShutdownWhenIdleForSeconds(std::chrono::seconds autoShutdownWhenIdleForSeconds) { m_autoShutdownWhenIdleForSeconds = autoShutdownWhenIdleForSeconds; return *this;}
         Config& SetStatementCacheSizePerWorker(uint32_t statementCacheSizePerWorker) { m_statementCacheSizePerWorker = statementCacheSizePerWorker; return *this;}
 

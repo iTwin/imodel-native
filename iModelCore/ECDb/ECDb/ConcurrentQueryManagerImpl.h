@@ -70,9 +70,6 @@ struct CachedQueryAdaptor final: std::enable_shared_from_this<CachedQueryAdaptor
         ECSqlStatement m_stmt;
         std::unique_ptr<ECSqlRowAdaptor> m_adaptor;
         PreparedECSqlRowRenderer m_rowRenderer;
-        std::optional<ECSqlRowProperty::List> m_metadata;
-        bool m_metadataAbbreviateBlobs = false;
-        bool m_metadataUseClassFullName = false;
         std::string m_cachedString;
         ECDb const* m_conn;
         bool m_usePrimaryConn;
@@ -97,16 +94,15 @@ struct CachedQueryAdaptor final: std::enable_shared_from_this<CachedQueryAdaptor
         bool IsForLease() const { return m_forLease; }
         QueryAdaptorCache* GetLeaseOwner() const { return m_leaseOwner; }
         uint64_t GetStatementId() const { return m_statementId; }
-        ECDB_EXPORT void Invalidate();
-        ECDB_EXPORT ECSqlRowAdaptor& GetJsonAdaptor();
-        ECDB_EXPORT ECSqlRowProperty::List GetMetaData();
+        void Invalidate();
+        ECSqlRowAdaptor& GetJsonAdaptor();
         PreparedECSqlRowRenderer& GetRowRenderer() { return m_rowRenderer; }
         std::string& ClearAndGetCachedString() { m_cachedString.clear(); return m_cachedString; }
         bool GetUsePrimaryConn() const { return m_usePrimaryConn; }
         void SetUsePrimaryConn(bool val) { m_usePrimaryConn = val; }
         Db const* GetWorkerConn() const { return m_conn; }
         void SetWorkerConn(ECDb const& conn) { m_conn = &conn; }
-        ECDB_EXPORT void ReleaseMemory();
+        void ReleaseMemory();
         void ReleaseResultMemory();
         bool IsParked() const { return m_cursor.has_value(); }
         bool MatchesCursor(ECSqlRequest const&, std::string const& argsKey) const;
@@ -278,20 +274,15 @@ struct ConnectionCache final {
         uint64_t m_dataVersion = 0; // guarded by m_versionMutex
         bool m_enableCursors;
         std::atomic_bool m_observerAvailable{false};
-        // Gate between active statement leases and the monitor's idle auto-shutdown.
-        mutex_t m_leaseMutex;
-        uint32_t m_activeLeases = 0;
-        bool m_leasesBlocked = false;
-        std::chrono::steady_clock::time_point m_lastLeaseTime = std::chrono::steady_clock::now();
+        // Guarded by m_mutex, together with m_syncConn.
+        bool m_primaryConnectionBlocked = false;
     public:
         ECDB_EXPORT ConnectionCache(ECDb const& primaryDb, uint32_t pool_size);
-        bool BeginLease();
-        void EndLease();
-        // Blocks new leases if none are active and none were taken within idleFor; returns false otherwise.
-        bool TryBlockLeasesForShutdown(std::chrono::seconds idleFor);
+        // Only read-only, worker-only managers may auto-shutdown. Blocks primary use atomically with that decision.
+        ECDB_EXPORT bool TryBlockPrimaryConnectionForShutdown();
         ECDb const& GetPrimaryDb() const { return m_primaryDb; }
         ECDB_EXPORT std::shared_ptr<CachedConnection> GetConnection(RunnableRequestBase&);
-        CachedConnection& GetSyncConnection();
+        ECDB_EXPORT CachedConnection* TryGetSyncConnection();
         // Lazily creates and returns the shared schema-source connection, or nullptr if it cannot be
         // opened (callers then fall back to preparing against the worker's own connection).
         CachedConnection* GetSchemaSourceConnection();
@@ -440,7 +431,6 @@ struct RunnableRequestQueue final {
         ~RunnableRequestQueue() { Stop();}
         bool CancelRequest(uint32_t id);
         ECDbCR GetECDb() const { return m_ecdb; }
-        std::chrono::seconds GetShutdownWhenIdleFor() const { return m_shutdownWhenIdleFor; }
         void RemoveIf (std::function<bool(RunnableRequestBase&)> predicate);
         State GetState() const { return m_state.load(); }
         QueryResponse::Future Enqueue(ConnectionCache&,QueryRequest::Ptr);

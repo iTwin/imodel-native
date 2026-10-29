@@ -303,7 +303,7 @@ export declare namespace IModelJsNative {
      * @param out Receives the first batch (as returned by `stepBatch`, or `undefined` when not stepped) at index 0,
      * the statement id at index 1, and at index 2 whether a column is dynamic, in which case metadata must not be cached.
      */
-    concurrentQuerySyncPrepare(ecsql: string, args: any[] | undefined, rowFlags: number, maxRows: number, out: any[], logErrors?: boolean): ConcurrentQuerySyncReader;
+    prepareECSqlBatchReader(ecsql: string, args: any[] | undefined, rowFlags: number, maxRows: number, out: any[], logErrors?: boolean): ECSqlBatchReader;
     concurrentQueryResetConfig(config?: QueryConfig): QueryConfig;
     concurrentQueryShutdown(): void;
   }
@@ -664,7 +664,7 @@ export declare namespace IModelJsNative {
     public computeProjectExtents(wantFullExtents: boolean, wantOutlierIds: boolean): { extents: Range3dProps, fullExtents?: Range3dProps, outliers?: Id64Array };
     public computeRangesForText(chars: string, fontId: FontId, bold: boolean, italic: boolean, widthFactor: number, height: number): TextLayoutRangesProps;
     public concurrentQueryExecute(request: DbRequest, onResponse: ConcurrentQuery.OnResponse): void;
-    public concurrentQuerySyncPrepare(ecsql: string, args: any[] | undefined, rowFlags: number, maxRows: number, out: any[], logErrors?: boolean): ConcurrentQuerySyncReader;
+    public prepareECSqlBatchReader(ecsql: string, args: any[] | undefined, rowFlags: number, maxRows: number, out: any[], logErrors?: boolean): ECSqlBatchReader;
     public concurrentQueryResetConfig(config?: QueryConfig): QueryConfig;
     public concurrentQueryShutdown(): void;
     public createBRepGeometry(createProps: BRepGeometryCreate): IModelStatus;
@@ -964,7 +964,7 @@ export declare namespace IModelJsNative {
     /** @not-used-by-itwinjs-core */
     public static enableSharedCache(enable: boolean): DbResult;
     public concurrentQueryExecute(request: DbRequest, onResponse: ConcurrentQuery.OnResponse): void;
-    public concurrentQuerySyncPrepare(ecsql: string, args: any[] | undefined, rowFlags: number, maxRows: number, out: any[], logErrors?: boolean): ConcurrentQuerySyncReader;
+    public prepareECSqlBatchReader(ecsql: string, args: any[] | undefined, rowFlags: number, maxRows: number, out: any[], logErrors?: boolean): ECSqlBatchReader;
     public concurrentQueryResetConfig(config?: QueryConfig): QueryConfig;
     public concurrentQueryShutdown(): void;
     public attachDb(filename: string, alias: string): void;
@@ -990,7 +990,7 @@ export declare namespace IModelJsNative {
    * The statement is returned to the cache by `dispose()`; a statement invalidated by cache clear or db close
    * fails to step.
    */
-  class ConcurrentQuerySyncReader {
+  class ECSqlBatchReader {
     private constructor();
     /** Steps up to `maxRows` rows. On a writable db at most one row is stepped per call, so rows are never read ahead
      * of writes made between calls.

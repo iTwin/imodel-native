@@ -6,7 +6,7 @@
 import { assert, expect } from "chai";
 import * as fs from "fs-extra";
 import * as path from "path";
-import { DbResult, Guid } from "@itwin/core-bentley";
+import { DbResult, Guid, OpenMode } from "@itwin/core-bentley";
 import { DbRequestKind, QueryParamType } from "@itwin/core-common";
 import { IModelJsNative } from "../NativeLibrary";
 import { getOutputDir, iModelJsNative } from "./utils";
@@ -71,7 +71,7 @@ describe("ECSqlStatement", () => {
     expect(() => stmt.toRow({})).to.throw("ECSqlStatement is not prepared.");
   });
 
-  it("preserves integer and long parameter conversions in synchronous readers", () => {
+  it("preserves typed parameter conversions in synchronous readers", () => {
     db = createECDb(outDir, "sync-reader-numeric-bindings.ecdb");
     const cases = [
       { type: QueryParamType.Long, value: 2 ** 53, expected: 2 ** 53 },
@@ -80,18 +80,65 @@ describe("ECSqlStatement", () => {
       { type: QueryParamType.Integer, value: 2 ** 31, expected: 2 ** 31 - 1 },
       { type: QueryParamType.Integer, value: -(2 ** 31) - 1, expected: -(2 ** 31) },
       { type: QueryParamType.Integer, value: 3.5, expected: 3 },
+      { type: QueryParamType.Boolean, value: true, expected: 1 },
+      { type: QueryParamType.Double, value: 1.25, expected: 1.25 },
+      { type: QueryParamType.String, value: "quoted \"text\"\n", expected: "quoted \"text\"\n" },
+      { type: QueryParamType.Null, value: null, expected: null },
     ];
     for (const key of ["1", "n"]) {
       for (const { type, value, expected } of cases) {
-        const reader = db.concurrentQuerySyncPrepare("SELECT :n", [key, type, value], 0, 0, []);
+        // An untyped SELECT parameter defaults to Double in ECSQL.
+        const query = type === QueryParamType.String ? "SELECT :n || '',7" : "SELECT :n,7";
+        const reader = db.prepareECSqlBatchReader(query, [key, type, value], 0, 0, []);
         try {
           const batch = reader.stepBatch(1);
-          assert.deepEqual(typeof batch === "string" ? JSON.parse(batch) : batch, [[expected]], `${key}: ${type}, ${value}`);
+          assert.deepEqual(typeof batch === "string" ? JSON.parse(batch) : batch, [[expected, 7]], `${key}: ${type}, ${value}`);
         } finally {
           reader.dispose();
         }
       }
     }
+  });
+
+  it("returns a stepped lease immediately when preparing the output throws", () => {
+    const fileName = "batch-reader-prepare-failure.ecdb";
+    db = createECDb(outDir, fileName);
+    assert.equal(db.saveChanges(), DbResult.BE_SQLITE_OK);
+    db.closeDb();
+    assert.equal(db.openDb(path.join(outDir, fileName), OpenMode.Readonly), DbResult.BE_SQLITE_OK);
+    const query = "SELECT 1 UNION ALL SELECT 2";
+    const first = db.prepareECSqlBatchReader(query, undefined, 0, 0, []);
+    const statementId = first.getStatementId();
+    first.dispose();
+
+    const out: unknown[] = [];
+    Object.defineProperty(out, 0, {
+      set(batch: string) {
+        assert.deepEqual(JSON.parse(batch), [[1]]);
+        throw new Error("prepare output failed");
+      },
+    });
+    expect(() => db.prepareECSqlBatchReader(query, undefined, 0, 1, out)).to.throw("prepare output failed");
+    // No GC: the failed prepare must have returned and reset its statement already.
+    const next = db.prepareECSqlBatchReader(query, undefined, 0, 0, []);
+    try {
+      assert.equal(next.getStatementId(), statementId);
+      const batch = next.stepBatch(1);
+      assert.deepEqual(typeof batch === "string" ? JSON.parse(batch) : batch, [[1]]);
+    } finally {
+      next.dispose();
+    }
+  });
+
+  it("uses the shared parameter index rules and binding errors", () => {
+    db = createECDb(outDir, "batch-reader-binding-errors.ecdb");
+    for (const key of ["missing", "-1"])
+      expect(() => db.prepareECSqlBatchReader("SELECT :n", [key, QueryParamType.String, "text"], 0, 0, []))
+        .to.throw(`fail to find param index for named param '${key}'`);
+    expect(() => db.prepareECSqlBatchReader("SELECT :n", ["-2", QueryParamType.String, "text"], 0, 0, []))
+      .to.throw("expecting binding index to be > 0");
+    expect(() => db.prepareECSqlBatchReader("SELECT :n", ["n", QueryParamType.Struct, {}], 0, 0, []))
+      .to.throw("Struct type binding not supported");
   });
 
   it("preserves a zero-valued ID and following columns in a recursive CTE", () => {

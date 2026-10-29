@@ -129,65 +129,117 @@ TEST_F(ConcurrentQueryFixture, RequestDecodingPreservesTypedOptionsAndDefaults) 
     EXPECT_TRUE(rejected);
 }
 
-TEST_F(ConcurrentQueryFixture, CachedMetadataTracksOptionsAndInvalidation) {
-    ASSERT_EQ(SUCCESS, SetupECDb("CachedMetadataTracksOptionsAndInvalidation.ecdb", SchemaItem(
-        R"xml(<ECSchema schemaName="MetadataCache" alias="mc" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-            <ECEntityClass typeName="Payload">
-                <ECProperty propertyName="Bytes" typeName="binary"/>
-            </ECEntityClass>
-        </ECSchema>)xml")));
-    auto cached = CachedQueryAdaptor::Make();
-    cached->SetWorkerConn(m_ecdb);
-    cached->SetUsePrimaryConn(true);
-    ASSERT_EQ(ECSqlStatus::Success, cached->GetStatement().Prepare(m_ecdb, "SELECT ECClassId,Bytes,Bytes AS Copy FROM mc.Payload"));
-    auto& adaptor = cached->GetJsonAdaptor();
-    for (bool abbreviate : {false, true, false}) {
-        for (bool fullName : {false, true, false}) {
-            adaptor.GetOptions().SetAbbreviateBlobs(abbreviate).SetUseJsNames(true).SetUseClassFullNameInsteadofClassName(fullName);
-            ECSqlRowProperty::List expected;
-            adaptor.GetMetaData(expected, cached->GetStatement());
-            BeJsDocument expectedJson;
-            expected.ToJs(expectedJson);
-            for (int repeat = 0; repeat < 2; ++repeat) {
-                auto actual = cached->GetMetaData();
-                ASSERT_EQ(3, actual.size());
-                EXPECT_EQ(abbreviate ? "string" : "binary", actual[1].GetTypeName());
-                BeJsDocument actualJson;
-                actual.ToJs(actualJson);
-                EXPECT_TRUE(expectedJson.isExactEqual(actualJson));
-                actual.clear();
-                EXPECT_EQ(3, cached->GetMetaData().size());
-            }
-        }
-    }
-    cached->ReleaseMemory();
-    EXPECT_EQ("string", cached->GetMetaData()[1].GetTypeName());
-    cached->Invalidate();
-    ASSERT_EQ(ECSqlStatus::Success, cached->GetStatement().Prepare(m_ecdb, "SELECT Bytes FROM mc.Payload"));
-    auto metadata = cached->GetMetaData();
-    ASSERT_EQ(1, metadata.size());
-    EXPECT_EQ("Bytes", metadata[0].GetName());
+TEST_F(ConcurrentQueryFixture, LeasedStatementsSurviveEvictionAndResetOnReturn) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("LeasedStatementsSurviveEviction.ecdb"));
+    auto config = ConcurrentQueryMgr::Config::Get();
+    config.SetStatementCacheSizePerWorker(1);
+    ConcurrentQueryMgr::Config::Reset(config);
+    ECSqlStatus status;
+    std::string error;
+    auto outer = ConcurrentQueryMgr::LeaseStatement(m_ecdb, "SELECT ?", false, status, error);
+    ASSERT_NE(nullptr, outer) << error;
+    const auto outerId = outer->GetStatementId();
+    ASSERT_EQ(ECSqlStatus::Success, outer->GetStatement()->BindInt(1, 11));
+    ASSERT_EQ(BE_SQLITE_ROW, outer->GetStatement()->Step());
+    EXPECT_EQ(11, outer->GetStatement()->GetValueInt(0));
+
+    auto inner = ConcurrentQueryMgr::LeaseStatement(m_ecdb, "SELECT ?", false, status, error);
+    ASSERT_NE(nullptr, inner) << error;
+    EXPECT_NE(outerId, inner->GetStatementId());
+    ASSERT_EQ(ECSqlStatus::Success, inner->GetStatement()->BindInt(1, 22));
+    ASSERT_EQ(BE_SQLITE_ROW, inner->GetStatement()->Step());
+    EXPECT_EQ(22, inner->GetStatement()->GetValueInt(0));
+    inner->Release();
+    auto other = ConcurrentQueryMgr::LeaseStatement(m_ecdb, "SELECT 3", false, status, error);
+    ASSERT_NE(nullptr, other) << error;
+    other->Release(); // Evicts the returned inner statement, not the active outer one.
+    EXPECT_EQ(11, outer->GetStatement()->GetValueInt(0));
+    EXPECT_EQ(BE_SQLITE_DONE, outer->GetStatement()->Step());
+    outer->Release();
+
+    auto reused = ConcurrentQueryMgr::LeaseStatement(m_ecdb, "SELECT ?", false, status, error);
+    ASSERT_NE(nullptr, reused) << error;
+    EXPECT_EQ(outerId, reused->GetStatementId());
+    ASSERT_EQ(BE_SQLITE_ROW, reused->GetStatement()->Step());
+    EXPECT_TRUE(reused->GetStatement()->IsValueNull(0));
+    reused->Release();
+    reused = ConcurrentQueryMgr::LeaseStatement(m_ecdb, "SELECT ?", false, status, error);
+    ASSERT_NE(nullptr, reused) << error;
+    ASSERT_EQ(ECSqlStatus::Success, reused->GetStatement()->BindInt(1, 33));
+    ASSERT_EQ(BE_SQLITE_ROW, reused->GetStatement()->Step());
+    EXPECT_EQ(33, reused->GetStatement()->GetValueInt(0));
 }
 
-TEST_F(ConcurrentQueryFixture, DynamicMetadataIsRefreshedAfterStepping) {
-    ASSERT_EQ(SUCCESS, SetupRenderingPayload("DynamicMetadataIsRefreshedAfterStepping.ecdb", "text", 2.5));
-    auto cached = CachedQueryAdaptor::Make();
-    cached->SetWorkerConn(m_ecdb);
-    cached->SetUsePrimaryConn(true);
-    auto& stmt = cached->GetStatement();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId,$->DoubleValue FROM rp.Payload"));
-    ASSERT_TRUE(stmt.GetColumnInfo(1).IsDynamic());
-    for (bool step : {false, true, false}) {
-        if (step)
-            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        else
-            ASSERT_EQ(ECSqlStatus::Success, stmt.Reset());
-        ECSqlRowProperty::List expected;
-        cached->GetJsonAdaptor().GetMetaData(expected, stmt);
-        BeJsDocument expectedJson, actualJson;
-        expected.ToJs(expectedJson);
-        cached->GetMetaData().ToJs(actualJson);
-        EXPECT_TRUE(expectedJson.isExactEqual(actualJson));
+TEST_F(ConcurrentQueryFixture, ShutdownAndCloseInvalidateLeasedStatementsAndAdaptors) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ShutdownInvalidatesLeasedStatements.ecdb"));
+    ECSqlStatus status;
+    std::string error;
+    auto lease = ConcurrentQueryMgr::LeaseStatement(m_ecdb, "SELECT 1", false, status, error);
+    ASSERT_NE(nullptr, lease) << error;
+    const auto firstId = lease->GetStatementId();
+    ASSERT_NE(nullptr, lease->ConfigureRowAdaptor(JsReadOptions()));
+    ASSERT_EQ(BE_SQLITE_ROW, lease->GetStatement()->Step());
+    ConcurrentQueryMgr::Shutdown(m_ecdb);
+    EXPECT_EQ(nullptr, lease->GetStatement());
+    EXPECT_EQ(nullptr, lease->GetRowAdaptor());
+    lease->Release();
+    lease->Release();
+
+    lease = ConcurrentQueryMgr::LeaseStatement(m_ecdb, "SELECT 1", false, status, error);
+    ASSERT_NE(nullptr, lease) << error;
+    EXPECT_NE(firstId, lease->GetStatementId());
+    ASSERT_NE(nullptr, lease->ConfigureRowAdaptor(JsReadOptions()));
+    ASSERT_EQ(BE_SQLITE_ROW, lease->GetStatement()->Step());
+    m_ecdb.CloseDb();
+    EXPECT_EQ(nullptr, lease->GetStatement());
+    EXPECT_EQ(nullptr, lease->GetRowAdaptor());
+    lease->Release();
+}
+
+TEST_F(ConcurrentQueryFixture, AutoShutdownIsLimitedToReadOnlyWorkerConnections) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("AutoShutdownPrimaryConnectionGate.ecdb"));
+    {
+        ConnectionCache connections(m_ecdb, 1);
+        EXPECT_FALSE(connections.TryBlockPrimaryConnectionForShutdown());
+    }
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(Db::OpenMode::Readonly)));
+    {
+        ConnectionCache connections(m_ecdb, 1);
+        EXPECT_TRUE(connections.TryBlockPrimaryConnectionForShutdown());
+        EXPECT_EQ(nullptr, connections.TryGetSyncConnection());
+    }
+    {
+        RunnableRequestQueue queue(m_ecdb);
+        ConnectionCache connections(m_ecdb, 1);
+        auto conn = connections.TryGetSyncConnection();
+        ASSERT_NE(nullptr, conn);
+        auto query = ECSqlRequest::MakeRequest("SELECT 1");
+        query->SetUsePrimaryConnection(true);
+        auto request = std::make_unique<RunnableRequestWithPromise>(
+            queue, std::move(query), ConcurrentQueryMgr::Config::Get().GetQuota(), 1);
+        auto result = request->GetFuture();
+        conn->Execute([](QueryAdaptorCache& cache, RunnableRequestBase& runnable) {
+            QueryHelper::Execute(cache, runnable);
+        }, std::move(request));
+        ASSERT_EQ(QueryResponse::Status::Done, result.Get()->GetStatus());
+        EXPECT_FALSE(connections.TryBlockPrimaryConnectionForShutdown());
+    }
+}
+
+TEST_F(ConcurrentQueryFixture, AutoShutdownAndPrimaryConnectionCreationAreMutuallyExclusive) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("AutoShutdownPrimaryConnectionRace.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(Db::OpenMode::Readonly)));
+    for (int i = 0; i < 50; ++i) {
+        ConnectionCache connections(m_ecdb, 1);
+        std::promise<void> start;
+        auto ready = start.get_future();
+        auto shutdown = std::async(std::launch::async, [&] {
+            ready.wait();
+            return connections.TryBlockPrimaryConnectionForShutdown();
+        });
+        start.set_value();
+        auto conn = connections.TryGetSyncConnection();
+        EXPECT_EQ(conn == nullptr, shutdown.get());
     }
 }
 

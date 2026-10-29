@@ -393,18 +393,17 @@ template<typename T_Db> struct SQLiteOps {
 // connection cache. Used by withQueryReader; the statement returns to the cache on dispose.
 //! @bsiclass
 //=======================================================================================
-struct NativeSyncECSqlReader : BeObjectWrap<NativeSyncECSqlReader> {
+struct ECSqlBatchReader : BeObjectWrap<ECSqlBatchReader> {
 private:
     DEFINE_CONSTRUCTOR
     std::unique_ptr<ECSqlStatementLease> m_lease;
-    ECSqlRowAdaptor* m_adaptor = nullptr;
     // Reading ahead is only safe when the db cannot be written while rows are held by the caller.
     bool m_readAhead = false;
     // BE_SQLITE_ROW until the statement reports DONE or an error. Later batches return the stored status without
     // stepping again, so a finished statement is never restarted.
     DbResult m_status = BE_SQLITE_ROW;
 
-    // Bits of the rowFlags argument of concurrentQuerySyncPrepare.
+    // Bits of the rowFlags argument of prepareECSqlBatchReader.
     enum RowFlags : uint32_t {
         AbbreviateBlobs = 1 << 0,
         ClassIdsToClassNames = 1 << 1,
@@ -415,7 +414,6 @@ private:
     ECSqlStatement* GetStatement() const { return m_lease == nullptr ? nullptr : m_lease->GetStatement(); }
 
     void Release() {
-        m_adaptor = nullptr;
         if (m_lease != nullptr) {
             m_lease->Release();
             m_lease.reset();
@@ -429,9 +427,8 @@ private:
     }
 
     // Binds `args`, a flat array of [key, type, value, ...] triples where key is the parameter index or name as a
-    // string and type is an ECSqlParams::ECSqlParam::Type. Matches ECSqlParams::FromJs + TryBindTo: index resolution,
-    // error messages, and ignoring the status of individual Bind calls are unchanged. Integer and long values go
-    // through ECSqlParams to preserve its numeric conversions instead of N-API's wrapping or safe-integer limits.
+    // string and type is an ECSqlParams::ECSqlParam::Type. Canonicalize integer and long values to preserve
+    // ECSqlParams' numeric conversions instead of N-API's wrapping or safe-integer limits.
     static bool BindArgs(Napi::Array args, ECSqlStatement& stmt, std::string& err) {
         using Type = ECSqlParams::ECSqlParam::Type;
         const uint32_t len = args.Length();
@@ -445,38 +442,13 @@ private:
             }
             std::string key = keyVal.As<Napi::String>().Utf8Value();
             const Type type = (Type) typeVal.As<Napi::Number>().Int32Value();
-            switch (type) {
-                case Type::Boolean: case Type::Double: case Type::Id: case Type::Null: case Type::String:
-                    break;
-                default: {
-                    ECSqlParams params;
-                    params.GetParam(key) = ECSqlParams::ECSqlParam(key, type, BeJsConst(value));
-                    if (!params.TryBindTo(stmt, err))
-                        return false;
-                    continue;
-                }
-            }
-
-            // Same index rule as ECSqlParams::ECSqlParam::GetIndex: a key that does not parse to a non-zero integer is a name.
-            const intmax_t num = strtoimax(key.c_str(), nullptr, 10);
-            const bool isIndexed = !((num == INTMAX_MAX && errno == ERANGE) || num == 0);
-            int index = isIndexed ? (int) num : stmt.GetParameterIndex(key.c_str());
-            if (index < 1) {
-                if (isIndexed)
-                    err = "expecting binding index to be > 0";
-                else
-                    err = SqlPrintfString("fail to find param index for named param '%s'", key.c_str()).GetUtf8CP();
+            if (type == Type::Integer || type == Type::Long) {
+                BeJsDocument canonical;
+                canonical.From(BeJsConst(value));
+                if (!ECSqlParams::TryBindParameter(stmt, key, type, canonical, err))
+                    return false;
+            } else if (!ECSqlParams::TryBindParameter(stmt, key, type, BeJsConst(value), err))
                 return false;
-            }
-            BeJsConst v(value);
-            switch (type) {
-                case Type::Boolean: stmt.BindBoolean(index, v.asBool()); break;
-                case Type::Double: stmt.BindDouble(index, v.asDouble()); break;
-                case Type::Id: stmt.BindId(index, BeInt64Id::FromString(v.asCString())); break;
-                case Type::Null: stmt.BindNull(index); break;
-                case Type::String: stmt.BindText(index, v.asCString(), IECSqlBinder::MakeCopy::Yes); break;
-                default: break;
-            }
         }
         return true;
     }
@@ -484,7 +456,8 @@ private:
     void AppendNapiRow(Napi::Env env, Napi::Array& rows, ECSqlStatement& stmt) {
         BeJsNapiObject holder(env);
         BeJsValue rowJson = holder["data"];
-        if (m_adaptor->RenderRowAsArray(rowJson, ECSqlStatementRow(stmt)) != SUCCESS)
+        auto adaptor = m_lease->GetRowAdaptor();
+        if (adaptor == nullptr || adaptor->RenderRowAsArray(rowJson, ECSqlStatementRow(stmt)) != SUCCESS)
             THROW_JS_BE_SQLITE_EXCEPTION(env, "Failed to render row", BE_SQLITE_ERROR);
         rows.Set(rows.Length(), Napi::Object(holder).Get("data"));
     }
@@ -497,7 +470,7 @@ private:
             return Napi::Number::New(env, (int) m_status);
 
         auto stmt = GetStatement();
-        if (stmt == nullptr || m_adaptor == nullptr)
+        if (stmt == nullptr)
             return Napi::Number::New(env, (int) BE_SQLITE_ERROR);
 
         const int32_t batchSize = m_readAhead ? maxRows : 1;
@@ -557,18 +530,18 @@ private:
     }
 
 public:
-    NativeSyncECSqlReader(NapiInfoCR info) : BeObjectWrap<NativeSyncECSqlReader>(info) {}
-    ~NativeSyncECSqlReader() { SetInDestructor(); Release(); }
+    ECSqlBatchReader(NapiInfoCR info) : BeObjectWrap<ECSqlBatchReader>(info) {}
+    ~ECSqlBatchReader() { SetInDestructor(); Release(); }
 
     static void Init(Napi::Env& env, Napi::Object exports) {
         Napi::HandleScope scope(env);
-        Napi::Function t = DefineClass(env, "ConcurrentQuerySyncReader", {
-            InstanceMethod("stepBatch", &NativeSyncECSqlReader::StepBatch),
-            InstanceMethod("getMetadata", &NativeSyncECSqlReader::GetMetadata),
-            InstanceMethod("getStatementId", &NativeSyncECSqlReader::GetStatementId),
-            InstanceMethod("dispose", &NativeSyncECSqlReader::Dispose),
+        Napi::Function t = DefineClass(env, "ECSqlBatchReader", {
+            InstanceMethod("stepBatch", &ECSqlBatchReader::StepBatch),
+            InstanceMethod("getMetadata", &ECSqlBatchReader::GetMetadata),
+            InstanceMethod("getStatementId", &ECSqlBatchReader::GetStatementId),
+            InstanceMethod("dispose", &ECSqlBatchReader::Dispose),
         });
-        exports.Set("ConcurrentQuerySyncReader", t);
+        exports.Set("ECSqlBatchReader", t);
         SET_CONSTRUCTOR(t);
     }
 
@@ -612,14 +585,16 @@ public:
             .SetConvertClassIdsToClassNames((rowFlags & ClassIdsToClassNames) != 0)
             .SetUseJsNames((rowFlags & UseJsName) != 0)
             .SetDoNotConvertClassIdsToClassNamesWhenAliased((rowFlags & DoNotConvertClassIdsToClassNamesWhenAliased) != 0);
-        auto adaptor = lease->ConfigureRowAdaptor(options);
-        if (adaptor == nullptr)
+        if (lease->ConfigureRowAdaptor(options) == nullptr)
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Statement lease is invalidated", BE_SQLITE_ERROR);
 
         Napi::Object obj = Constructor().New({});
-        auto reader = NativeSyncECSqlReader::Unwrap(obj);
+        auto reader = ECSqlBatchReader::Unwrap(obj);
         reader->m_lease = std::move(lease);
-        reader->m_adaptor = adaptor;
+        struct PrepareGuard {
+            ECSqlBatchReader* m_reader;
+            ~PrepareGuard() { if (m_reader != nullptr) m_reader->Release(); }
+        } guard{reader};
         reader->m_readAhead = ecdb.IsReadonly();
         auto& stmt = *reader->m_lease->GetStatement();
         bool hasDynamicColumn = false;
@@ -630,6 +605,7 @@ public:
         out.Set((uint32_t) 0, stepNow ? reader->NextBatch(info.Env(), maxRows, true) : info.Env().Undefined());
         out.Set((uint32_t) 1, Napi::Number::New(info.Env(), (double) reader->m_lease->GetStatementId()));
         out.Set((uint32_t) 2, Napi::Boolean::New(info.Env(), hasDynamicColumn));
+        guard.m_reader = nullptr;
         return obj;
     }
 
@@ -646,13 +622,14 @@ public:
 
     Napi::Value GetMetadata(NapiInfoCR info) {
         auto stmt = GetStatement();
-        if (stmt == nullptr || m_adaptor == nullptr)
+        auto adaptor = m_lease == nullptr ? nullptr : m_lease->GetRowAdaptor();
+        if (stmt == nullptr || adaptor == nullptr)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlStatement is not prepared.", IModelJsNativeErrorKey::BadArg);
 
         BeJsNapiObject out(info.Env());
         BeJsValue metaJson = out["meta"];
         ECSqlRowProperty::List props;
-        m_adaptor->GetMetaData(props, *stmt);
+        adaptor->GetMetaData(props, *stmt);
         props.ToJs(metaJson);
         return Napi::Object(out).Get("meta");
     }
@@ -731,7 +708,7 @@ public:
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to detach file", rc);
         }
     }
-    Napi::Value ConcurrentQuerySyncPrepare(NapiInfoCR info) { return NativeSyncECSqlReader::Prepare(info, GetOpenedDb(info)); }
+    Napi::Value PrepareECSqlBatchReader(NapiInfoCR info) { return ECSqlBatchReader::Prepare(info, GetOpenedDb(info)); }
     void ConcurrentQueryExecute(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, requestObj);
         REQUIRE_ARGUMENT_FUNCTION(1, callback);
@@ -950,7 +927,7 @@ public:
             InstanceMethod("detachDb", &NativeECDb::DetachDb),
             InstanceMethod("closeDb", &NativeECDb::CloseDb),
             InstanceMethod("concurrentQueryExecute", &NativeECDb::ConcurrentQueryExecute),
-            InstanceMethod("concurrentQuerySyncPrepare", &NativeECDb::ConcurrentQuerySyncPrepare),
+            InstanceMethod("prepareECSqlBatchReader", &NativeECDb::PrepareECSqlBatchReader),
             InstanceMethod("concurrentQueryResetConfig", &NativeECDb::ConcurrentQueryResetConfig),
             InstanceMethod("concurrentQueryShutdown", &NativeECDb::ConcurrentQueryShutdown),
             InstanceMethod("createDb", &NativeECDb::CreateDb),
@@ -3354,7 +3331,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to detach file", rc);
         }
     }
-    Napi::Value ConcurrentQuerySyncPrepare(NapiInfoCR info) { return NativeSyncECSqlReader::Prepare(info, GetOpenedDb(info)); }
+    Napi::Value PrepareECSqlBatchReader(NapiInfoCR info) { return ECSqlBatchReader::Prepare(info, GetOpenedDb(info)); }
     void ConcurrentQueryExecute(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, requestObj);
         REQUIRE_ARGUMENT_FUNCTION(1, callback);
@@ -3611,7 +3588,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("computeProjectExtents", &NativeDgnDb::ComputeProjectExtents),
             InstanceMethod("computeRangesForText", &NativeDgnDb::ComputeRangesForText),
             InstanceMethod("concurrentQueryExecute", &NativeDgnDb::ConcurrentQueryExecute),
-            InstanceMethod("concurrentQuerySyncPrepare", &NativeDgnDb::ConcurrentQuerySyncPrepare),
+            InstanceMethod("prepareECSqlBatchReader", &NativeDgnDb::PrepareECSqlBatchReader),
             InstanceMethod("concurrentQueryResetConfig", &NativeDgnDb::ConcurrentQueryResetConfig),
             InstanceMethod("concurrentQueryShutdown", &NativeDgnDb::ConcurrentQueryShutdown),
             InstanceMethod("createBRepGeometry", &NativeDgnDb::CreateBRepGeometry),
@@ -8527,7 +8504,7 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports) {
     NativeChangeUnifier::Init(env, exports);
     NativeChangedElementsECDb::Init(env, exports);
     NativeECSqlStatement::Init(env, exports);
-    NativeSyncECSqlReader::Init(env, exports);
+    ECSqlBatchReader::Init(env, exports);
     NativeECSqlBinder::Init(env, exports);
     NativeECSqlValue::Init(env, exports);
     NativeECSqlColumnInfo::Init(env, exports);

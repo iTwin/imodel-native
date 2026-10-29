@@ -225,7 +225,6 @@ static std::atomic<uint64_t> s_nextLeasedStatementId{0};
 void CachedQueryAdaptor::Invalidate() {
     m_leaseOwner = nullptr;
     m_adaptor.reset();
-    m_metadata.reset();
     m_cursor.reset();
     m_stmt.Finalize();
 }
@@ -299,7 +298,6 @@ void QueryAdaptorCache::ReturnLease(CachedQueryAdaptor& entry) {
         }
         m_cache.insert(m_cache.begin(), std::move(returned));
     }
-    m_conn.m_cache.EndLease();
 }
 
 //---------------------------------------------------------------------------------------
@@ -323,29 +321,6 @@ ECSqlRowAdaptor& CachedQueryAdaptor::GetJsonAdaptor() {
         m_adaptor = std::make_unique<ECSqlRowAdaptor>(renderDb);
     }
     return *m_adaptor.get();
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-ECSqlRowProperty::List CachedQueryAdaptor::GetMetaData() {
-    auto& adaptor = GetJsonAdaptor();
-    auto const& options = adaptor.GetOptions();
-    if (m_metadata && m_metadataAbbreviateBlobs == options.AbbreviateBlobs() &&
-        m_metadataUseClassFullName == options.UseClassFullNameInsteadofClassName())
-        return *m_metadata;
-
-    ECSqlRowProperty::List properties;
-    adaptor.GetMetaData(properties, m_stmt);
-    // Dynamic column metadata can change as the statement is stepped or rebound.
-    for (int i = 0; i < m_stmt.GetColumnCount(); ++i)
-        if (m_stmt.GetColumnInfo(i).IsDynamic())
-            return properties;
-
-    m_metadata = properties;
-    m_metadataAbbreviateBlobs = options.AbbreviateBlobs();
-    m_metadataUseClassFullName = options.UseClassFullNameInsteadofClassName();
-    return properties;
 }
 
 //---------------------------------------------------------------------------------------
@@ -444,7 +419,6 @@ void CachedQueryAdaptor::CachedQueryAdaptor::ReleaseMemory() {
     ResetCursor();
     m_rowRenderer = PreparedECSqlRowRenderer();
     m_adaptor.reset();
-    m_metadata.reset();
     ReleaseResultMemory();
     if (m_conn){
         m_conn->FreeMemory();
@@ -941,43 +915,27 @@ uint64_t ConnectionCache::GetDataVersion() {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-CachedConnection& ConnectionCache::GetSyncConnection() {
+CachedConnection* ConnectionCache::TryGetSyncConnection() {
+    recursive_guard_t lock(m_mutex);
+    if (m_primaryConnectionBlocked)
+        return nullptr;
     if (m_syncConn == nullptr) {
         m_syncConn = CachedConnection::Make(*this, 0);
     }
-    return *m_syncConn;
+    return m_syncConn.get();
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-bool ConnectionCache::BeginLease() {
-    guard_t lock(m_leaseMutex);
-    if (m_leasesBlocked)
+bool ConnectionCache::TryBlockPrimaryConnectionForShutdown() {
+    recursive_guard_t lock(m_mutex);
+    // Even idle primary statements must not be finalized on the auto-shutdown thread: Shutdown holds
+    // the ECDb mutex, while another primary statement can hold SQLite's mutex and need the ECDb mutex.
+    // Keep the manager until explicit shutdown once its primary cache has been created.
+    if (!m_primaryDb.IsReadonly() || m_syncConn != nullptr)
         return false;
-    ++m_activeLeases;
-    return true;
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-void ConnectionCache::EndLease() {
-    guard_t lock(m_leaseMutex);
-    BeAssert(m_activeLeases > 0);
-    if (m_activeLeases > 0)
-        --m_activeLeases;
-    m_lastLeaseTime = std::chrono::steady_clock::now();
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-bool ConnectionCache::TryBlockLeasesForShutdown(std::chrono::seconds idleFor) {
-    guard_t lock(m_leaseMutex);
-    if (m_activeLeases > 0 || std::chrono::steady_clock::now() - m_lastLeaseTime < idleFor)
-        return false;
-    m_leasesBlocked = true;
+    m_primaryConnectionBlocked = true;
     return true;
 }
 //---------------------------------------------------------------------------------------
@@ -1334,9 +1292,14 @@ QueryQuota RunnableRequestQueue::AdjustQuota(QueryQuota const& requestedQuota) c
 //---------------------------------------------------------------------------------------
 void RunnableRequestQueue::ExecuteSynchronously(ConnectionCache& conns, std::unique_ptr<RunnableRequestBase> runnableReq) {
     // sync connection must be called on main thread.
+    auto conn = conns.TryGetSyncConnection();
+    if (conn == nullptr) {
+        runnableReq->SetResponse(runnableReq->CreateShutDownResponse());
+        return;
+    }
     log_trace("%s executing query synchronously [id=%" PRIu32 "] started.", GetTimestamp().c_str(), runnableReq->GetId());
     runnableReq->OnDequeued();
-    conns.GetSyncConnection().Execute([](QueryAdaptorCache& adaptorCache, RunnableRequestBase& runnableQuery) {
+    conn->Execute([](QueryAdaptorCache& adaptorCache, RunnableRequestBase& runnableQuery) {
         QueryHelper::Execute(adaptorCache, runnableQuery);
         log_trace("%s executing query synchronously [id=%" PRIu32 "] ended.",GetTimestamp().c_str(), runnableQuery.GetId());
     }, std::move(runnableReq));
@@ -1805,12 +1768,8 @@ void QueryHelper::Execute(QueryAdaptorCache& adaptorCache, CachedQueryAdaptor& c
     rowRenderer.BeginPage(stmt, adaptor);
     const bool writeDirectly = rowRenderer.CanRender(adaptor);
     ECSqlRowProperty::List props;
-    if (includeMetaData) {
-        if (request.UsePrimaryConnection())
-            props = cachedAdaptor.GetMetaData();
-        else
-            adaptor.GetMetaData(props, stmt);
-    }
+    if (includeMetaData)
+        adaptor.GetMetaData(props, stmt);
     uint32_t row_count = 0;
     std::string& result = cachedAdaptor.ClearAndGetCachedString();
     result.reserve(QUERY_WORKER_RESULT_RESERVE_BYTES);
@@ -2150,8 +2109,7 @@ QueryMonitor::QueryMonitor(RunnableRequestQueue& queue, QueryExecutor& executor)
                 log_error("failed to expire concurrent query cursors: %s", ex.what());
             }
             m_queue.IfReadyForAutoShutdown([&](){
-                // Statement leases do not go through the queue, so they must be idle as well.
-                if (!m_executor.GetConnectionCache().TryBlockLeasesForShutdown(m_queue.GetShutdownWhenIdleFor()))
+                if (!m_executor.GetConnectionCache().TryBlockPrimaryConnectionForShutdown())
                     return;
                 m_queue.Stop();
                 log_trace("%s monitor invoking autoshutdown.", GetTimestamp().c_str());
@@ -2306,14 +2264,16 @@ ConcurrentQueryMgr::Impl::~Impl() {
 //---------------------------------------------------------------------------------------
 std::shared_ptr<CachedQueryAdaptor> ConcurrentQueryMgr::Impl::LeaseStatement(Utf8CP ecsql, bool logErrors, ECSqlStatus& status, std::string& error, bool& shuttingDown) {
     auto& connCache = m_executor.GetConnectionCache();
-    if (m_queue.GetState() == RunnableRequestQueue::State::Stop || !connCache.BeginLease()) {
+    if (m_queue.GetState() == RunnableRequestQueue::State::Stop) {
         shuttingDown = true;
         return nullptr;
     }
-    auto entry = connCache.GetSyncConnection().GetAdaptorCacheR().Lease(ecsql, logErrors, status, error);
-    if (entry == nullptr)
-        connCache.EndLease();
-    return entry;
+    auto conn = connCache.TryGetSyncConnection();
+    if (conn == nullptr) {
+        shuttingDown = true;
+        return nullptr;
+    }
+    return conn->GetAdaptorCacheR().Lease(ecsql, logErrors, status, error);
 }
 
 //---------------------------------------------------------------------------------------
@@ -2348,6 +2308,10 @@ ECSqlRowAdaptor* ECSqlStatementLease::ConfigureRowAdaptor(JsReadOptions const& o
     adaptor.GetOptions() = options;
     m_entry->GetRowRenderer().BeginPage(*stmt, adaptor);
     return &adaptor;
+}
+
+ECSqlRowAdaptor* ECSqlStatementLease::GetRowAdaptor() const {
+    return GetStatement() == nullptr ? nullptr : &m_entry->GetJsonAdaptor();
 }
 
 //---------------------------------------------------------------------------------------
@@ -2740,12 +2704,16 @@ ECSqlParams::ECSqlParam::ECSqlParam(std::string const& name, bvector<Byte> const
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-int ECSqlParams::ECSqlParam::GetIndex() const {
-    const intmax_t num = strtoimax(m_name.c_str(), nullptr, 10);
+static int ParseParameterIndex(Utf8CP name) {
+    const intmax_t num = strtoimax(name, nullptr, 10);
     if ((num == INTMAX_MAX && errno == ERANGE) || num == 0) {
         return -1;
     }
     return (int)num;
+}
+
+int ECSqlParams::ECSqlParam::GetIndex() const {
+    return ParseParameterIndex(m_name.c_str());
 }
 
 //---------------------------------------------------------------------------------------
@@ -2800,87 +2768,91 @@ void ECSqlParams::FromJs(BeJsConst val) {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 bool ECSqlParams::TryBindTo(ECSqlStatement& stmt, std::string& err) const {
-    if (IsEmpty()) {
-        return true;
+    for (auto const& kp : m_params) {
+        auto const& param = kp.second;
+        if (!TryBindParameter(stmt, param.GetName(), param.GetType(), param.GetValue(), err))
+            return false;
     }
-    for(auto& kp : m_params) {
-        auto& param = kp.second;
-        int index = param.IsIndexed() ? param.GetIndex() : stmt.GetParameterIndex(param.GetName().c_str());
-        if (index < 1) {
-            if (param.IsIndexed())
-                err = "expecting binding index to be > 0";
+    return true;
+}
+
+bool ECSqlParams::TryBindParameter(ECSqlStatement& stmt, std::string const& name, ECSqlParam::Type type, BeJsConst value, std::string& err) {
+    const int parsedIndex = ParseParameterIndex(name.c_str());
+    const bool isIndexed = parsedIndex != -1;
+    int index = isIndexed ? parsedIndex : stmt.GetParameterIndex(name.c_str());
+    if (index < 1) {
+        if (isIndexed)
+            err = "expecting binding index to be > 0";
+        else
+            err = SqlPrintfString("fail to find param index for named param '%s'", name.c_str()).GetUtf8CP();
+        return false;
+    }
+    ECSqlStatus st;
+    switch(type) {
+        case ECSqlParam::Type::Boolean:
+            st = stmt.BindBoolean(index, value.asBool()); break;
+        case ECSqlParam::Type::Double:
+            st = stmt.BindDouble(index, value.asDouble()); break;
+        case ECSqlParam::Type::Id:
+            st = stmt.BindId(index, BeInt64Id::FromString(value.asCString())); break;
+        case ECSqlParam::Type::IdSet: {
+            BeIdSet values;
+            values.FromString(value.asCString());
+            BinderInfo const& binderInfo = stmt.GetBinderInfo(index);
+            if(binderInfo.GetType() == BinderInfo::BinderType::VirtualSet) {
+                std::shared_ptr<IdSet<BeInt64Id>> idSet = std::make_shared<IdSet<BeInt64Id>>(std::move(values));
+                st = stmt.BindVirtualSet(index, idSet);
+            }
+            else if(binderInfo.GetType() == BinderInfo::BinderType::Array && binderInfo.IsForIdSet()) {
+                bool allElementsAdded = true;
+                IECSqlBinder& binder = stmt.GetBinder(index);
+                IdSet<BeInt64Id> set(std::move(values));
+                for(auto& ids: set) {
+                    if(!ids.IsValid()) {
+                        allElementsAdded = false;
+                        break;
+                    }
+                    st = binder.AddArrayElement().BindInt64((int64_t) ids.GetValue());
+                    if(!st.IsSuccess()) {
+                        allElementsAdded = false;
+                        break;
+                    }
+                }
+                st = allElementsAdded ? ECSqlStatus::Success : ECSqlStatus::Error;
+            }
             else
-                err = SqlPrintfString("fail to find param index for named param '%s'", param.GetName().c_str()).GetUtf8CP();
+                st = ECSqlStatus::Error;
+            break;
+        }
+        case ECSqlParam::Type::Integer:
+            st = stmt.BindInt(index, value.asInt()); break;
+        case ECSqlParam::Type::Long:
+            st = stmt.BindInt64(index, value.asInt64()); break;
+        case ECSqlParam::Type::Null:
+            st = stmt.BindNull(index); break;
+        case ECSqlParam::Type::Point2d:
+            st = stmt.BindPoint2d(index, DPoint2d::From(value["x"].asDouble(), value["y"].asDouble())); break;
+        case ECSqlParam::Type::Point3d:
+            st = stmt.BindPoint3d(index, DPoint3d::From(value["x"].asDouble(), value["y"].asDouble(), value["z"].asDouble())); break;
+        case ECSqlParam::Type::String:
+            st = stmt.BindText(index, value.asCString(), IECSqlBinder::MakeCopy::Yes); break;
+        case ECSqlParam::Type::Blob: {
+            bvector<Byte> buffer;
+            std::string base64 = value.asCString();
+            Base64Utilities::Decode(buffer, base64.c_str(), base64.size());
+            st = stmt.BindBlob(index, buffer.data(), (int)buffer.size(), IECSqlBinder::MakeCopy::Yes); break;
+        }
+        case ECSqlParam::Type::Struct: {
+            err = "Struct type binding not supported";
             return false;
         }
-        ECSqlStatus st;
-        switch(param.GetType()) {
-            case ECSqlParam::Type::Boolean:
-                st = stmt.BindBoolean(index, param.GetValueBool()); break;
-            case ECSqlParam::Type::Double:
-                st = stmt.BindDouble(index, param.GetValueDouble()); break;
-            case ECSqlParam::Type::Id:
-                st = stmt.BindId(index, param.GetValueId());  break;
-            case ECSqlParam::Type::IdSet: {
-                BinderInfo const& binderInfo = stmt.GetBinderInfo(index);
-                if(binderInfo.GetType() == BinderInfo::BinderType::VirtualSet) {
-                    std::shared_ptr<IdSet<BeInt64Id>> idSet = std::make_shared<IdSet<BeInt64Id>>(param.GetValueIdSet());
-                    st = stmt.BindVirtualSet(index, idSet);
-                }
-                else if(binderInfo.GetType() == BinderInfo::BinderType::Array && binderInfo.IsForIdSet()) {
-                    bool allElementsAdded = true;
-                    IECSqlBinder& binder = stmt.GetBinder(index);
-                    IdSet<BeInt64Id> set(param.GetValueIdSet());
-                    for(auto& ids: set) {
-                        if(!ids.IsValid()) {
-                            allElementsAdded = false;
-                            break;
-                        }
-                        st = binder.AddArrayElement().BindInt64((int64_t) ids.GetValue());
-                        if(!st.IsSuccess()) {
-                            allElementsAdded = false;
-                            break;
-                        }
-                    }
-                    if(allElementsAdded) // If even one array element has failed to be added we set the status for the entire operation as ECSqlStatus::Error although for the time being we don't do anything with status even if it fails
-                        st = ECSqlStatus::Success;
-                    else
-                        st = ECSqlStatus::Error;
-                }
-                else
-                    st = ECSqlStatus::Error;
-
-                break;
-            }
-            case ECSqlParam::Type::Integer:
-                st = stmt.BindInt(index, param.GetValueInt()); break;
-            case ECSqlParam::Type::Long:
-                st = stmt.BindInt64(index, param.GetValueLong()); break;
-            case ECSqlParam::Type::Null:
-                st = stmt.BindNull(index); break;
-            case ECSqlParam::Type::Point2d:
-                st = stmt.BindPoint2d(index, param.GetValuePoint2d()); break;
-            case ECSqlParam::Type::Point3d:
-                st = stmt.BindPoint3d(index, param.GetValuePoint3d()); break;
-            case ECSqlParam::Type::String:
-                st = stmt.BindText(index, param.GetValueString().c_str(), IECSqlBinder::MakeCopy::Yes); break;
-            case ECSqlParam::Type::Blob: {
-                auto buffer = param.GetValueBlob();
-                st = stmt.BindBlob(index, &buffer[0], (int)buffer.size(), IECSqlBinder::MakeCopy::Yes); break;
-            }
-            case ECSqlParam::Type::Struct: {
-                err = "Struct type binding not supported";
-                return false;
-            }
-            default: {
-                err = SqlPrintfString("unsupported parameter type '%d'", (int)param.GetType()).GetUtf8CP();
-                return false;
-            }
-        };
-        if (st != ECSqlStatus::Success) {
-            // err = SqlPrintfString("fail to bind param '%s'. Make sure type are not missmatch", param.GetName().c_str()).GetUtf8CP();
+        default: {
+            err = SqlPrintfString("unsupported parameter type '%d'", (int)type).GetUtf8CP();
+            return false;
         }
     }
+    // Preserve TryBindTo's existing behavior: individual binder statuses do not fail the request.
+    (void) st;
     return true;
 }
 
