@@ -5,7 +5,15 @@ This document including important changes to syntax or file format.
 | Module  | Version   |
 | ------- | --------- |
 | Profile | `4.0.0.5` |
-| ECSQL   | `2.0.5.0` |
+| ECSQL   | `2.0.6.0` |
+
+## `10/29/2026`: Extended casting is the default
+* ECSql version change `2.0.5.0` -> `2.0.6.0`.
+* Extended casting applies to both `CAST(...)` and `::` without an option, including CTEs, compound queries, subqueries, `INSERT` values, `UPDATE` assignments, and `DELETE` predicates.
+* `CAST_V2` has been removed. Remove it (including `CAST_V2=true` and `CAST_V2=false`) from existing statements. Its use now fails to prepare with `ECDb_0750`; there is no legacy-casting option.
+* Existing `CAST(...)` expressions now use the extended conversions: Boolean-to-TEXT returns `true`/`false`, DateTime-to-TEXT returns ISO-8601, Binary-to-TEXT returns Base64, and strict enumeration casts return `NULL` for values outside the enumeration.
+* Update consumers of these text results. For numeric Boolean or Julian day results, cast to `INTEGER` or `DOUBLE` respectively. Select Binary values directly when raw bytes are needed.
+* Compound-query columns containing a cast require matching extended types across typed branches. Cast branches to a common type when combining an Id cast with a plain integer or another Id type. Queries without explicit casts keep their existing compound-query typing.
 
 ## `10/23/2026`: Extended casting with `OPTIONS CAST_V2`
 * ECSql version change `2.0.4.2` -> `2.0.5.0`.

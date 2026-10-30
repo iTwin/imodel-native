@@ -99,7 +99,7 @@ struct StrToGuid final : ScalarFunction
         static StrToGuid& GetSingleton();
     };
 //=======================================================================================
-//! Internal conversion function used by ECSQL CAST_V2 lowering: _ecsql_cast(op, args...)
+//! Internal conversion function used by ECSQL cast lowering: _ecsql_cast(op, args...)
 //! Invalid input values yield NULL. Not meant to be called directly in ECSQL.
 // @bsiclass
 //=======================================================================================

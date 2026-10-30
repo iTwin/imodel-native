@@ -170,7 +170,7 @@ private:
 
     BentleyStatus ParseCastSpec(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParsePostfixCastSpec(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus ParseCastTarget(std::unique_ptr<ValueExp>&, std::unique_ptr<ValueExp> castOperand, connectivity::OSQLParseNode const* castTargetNode, bool isPostfix) const;
+    BentleyStatus ParseCastTarget(std::unique_ptr<ValueExp>&, std::unique_ptr<ValueExp> castOperand, connectivity::OSQLParseNode const* castTargetNode) const;
     BentleyStatus ParseColumn(std::unique_ptr<PropertyNameExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseColumnRef(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*, bool forceIntoPropertyNameExp) const;
     BentleyStatus ParseColumnRefAsPropertyNameExp(std::unique_ptr<PropertyNameExp>&, connectivity::OSQLParseNode const*) const;

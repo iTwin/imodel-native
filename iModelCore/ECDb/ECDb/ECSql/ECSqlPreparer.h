@@ -34,8 +34,7 @@ struct ECSqlExpPreparer final
         ~ECSqlExpPreparer();
 
         static ECSqlStatus PrepareNullCastExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, CastExp const&);
-        static ECSqlStatus PrepareCastExpV2(NativeSqlBuilder::List&, ECSqlPrepareContext&, CastExp const&);
-        static ECSqlStatus PrepareCastExpV2ToString(Utf8StringR, ECSqlPrepareContext&, CastExp const&, NativeSqlBuilder::List const& operandSnippets);
+        static ECSqlStatus PrepareCastExpToString(Utf8StringR, ECSqlPrepareContext&, CastExp const&, NativeSqlBuilder::List const& operandSnippets);
         static BentleyStatus PrepareCastExpForPrimitive(Utf8StringR, ECN::PrimitiveType, Utf8StringCR castOperandSnippet);
         static ECSqlStatus PrepareSearchConditionExp(NativeSqlBuilder&, ECSqlPrepareContext&, BooleanExp const& searchConditionExp);
         static void RemovePropertyRefs(ECSqlPrepareContext&, ClassRefExp const&, ClassMap const&);

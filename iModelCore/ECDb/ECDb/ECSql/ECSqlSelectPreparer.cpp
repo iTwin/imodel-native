@@ -42,7 +42,19 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, CommonTableEx
             if (j>0) {
                 builder.AppendComma();
             }
-            builder.Append(cols[j]);
+            auto const& type = blockExp->GetQuery()->GetSelection()->GetChildren().Get<DerivedPropertyExp>(j)->GetExpression()->GetTypeInfo();
+            if (!type.IsPoint())
+                builder.Append(cols[j]);
+            else
+                {
+                const int dimensions = type.GetPrimitiveType() == PRIMITIVETYPE_Point2d ? 2 : 3;
+                for (int coordinate = 0; coordinate < dimensions; ++coordinate)
+                    {
+                    if (coordinate > 0)
+                        builder.AppendComma();
+                    builder.AppendEscaped(blockExp->GetPointColumnName(cols[j], coordinate));
+                    }
+                }
         }
         if(cols.size()!=0)
             builder.AppendParenRight();
@@ -339,7 +351,10 @@ ECSqlStatus ECSqlSelectPreparer::PrepareDerivedPropertyExp(NativeSqlBuilder::Lis
     if (alias.empty() || exp.OriginateInASubQuery() || exp.OriginateInACommonTableBlockWithNoColumns())
         alias = exp.GetNestedAlias();
     if (innerExp->GetType() == Exp::Type::CommonTablePropertyName)
-        resultSet.push_back(alias);
+        {
+        for (size_t i = 0; i < nativeSqlSnippets.size(); ++i)
+            resultSet.push_back(nativeSqlSnippets.size() == 1 ? alias : Utf8PrintfString("%s_%d", alias.c_str(), (int) i));
+        }
     else if (!alias.empty() && exp.GetExpression()->GetType() != Exp::Type::NavValueCreationFunc)
         {
         if (nativeSqlSnippets.size() == 1)

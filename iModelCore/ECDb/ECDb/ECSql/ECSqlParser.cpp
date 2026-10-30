@@ -1071,7 +1071,7 @@ BentleyStatus ECSqlParser::ParseCastSpec(std::unique_ptr<ValueExp>& exp, OSQLPar
     if (SUCCESS != ParseValueExp(castOperandExp, castOperandNode))
         return ERROR;
 
-    return ParseCastTarget(exp, std::move(castOperandExp), castTargetNode, false);
+    return ParseCastTarget(exp, std::move(castOperandExp), castTargetNode);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -1089,13 +1089,13 @@ BentleyStatus ECSqlParser::ParsePostfixCastSpec(std::unique_ptr<ValueExp>& exp, 
     if (SUCCESS != ParseValueExp(castOperandExp, parseNode->getChild(0)))
         return ERROR;
 
-    return ParseCastTarget(exp, std::move(castOperandExp), parseNode->getChild(2), true);
+    return ParseCastTarget(exp, std::move(castOperandExp), parseNode->getChild(2));
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSqlParser::ParseCastTarget(std::unique_ptr<ValueExp>& exp, std::unique_ptr<ValueExp> castOperandExp, OSQLParseNode const* castTargetNode, bool isPostfix) const
+BentleyStatus ECSqlParser::ParseCastTarget(std::unique_ptr<ValueExp>& exp, std::unique_ptr<ValueExp> castOperandExp, OSQLParseNode const* castTargetNode) const
     {
     const bool isArrayTargetType = SQL_ISRULE(castTargetNode, cast_target_array);
     OSQLParseNode const* scalarTargetNode = nullptr;
@@ -1130,7 +1130,7 @@ BentleyStatus ECSqlParser::ParseCastTarget(std::unique_ptr<ValueExp>& exp, std::
         else
             castTargetTypeName = primTypeNode->getTokenValue().c_str();
 
-        exp = std::make_unique<CastExp>(std::move(castOperandExp), castTargetTypeName, isArrayTargetType, isPostfix);
+        exp = std::make_unique<CastExp>(std::move(castOperandExp), castTargetTypeName, isArrayTargetType);
         return SUCCESS;
         }
 
@@ -1143,7 +1143,7 @@ BentleyStatus ECSqlParser::ParseCastTarget(std::unique_ptr<ValueExp>& exp, std::
 
     Utf8StringCR targetSchemaName = scalarTargetNode->getChild(0)->getTokenValue();
     Utf8StringCR targetTypeName = scalarTargetNode->getChild(2)->getTokenValue();
-    exp = std::make_unique<CastExp>(std::move(castOperandExp), targetSchemaName, targetTypeName, isArrayTargetType, isPostfix);
+    exp = std::make_unique<CastExp>(std::move(castOperandExp), targetSchemaName, targetTypeName, isArrayTargetType);
     return SUCCESS;
     }
 
@@ -4704,7 +4704,7 @@ BentleyStatus ECSqlParseContext::FinalizeParsing(Exp& rootExp)
             parameterExp->SetDefaultTargetExpInfo();
         }
 
-    // Named parameters share one binder. If any occurrence was typed explicitly by a CAST_V2 cast,
+    // Named parameters share one binder. If any occurrence was typed explicitly by a cast,
     // all explicit types must agree and the other occurrences adopt that type.
     bmap<Utf8String, ParameterExp*, CompareIUtf8Ascii> explicitlyTypedParams;
     for (ParameterExp* parameterExp : m_parameterExpList)

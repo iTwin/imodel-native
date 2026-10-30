@@ -222,7 +222,7 @@ struct SearchCaseValueExp final : ValueExp
 struct CastExp final : ValueExp
     {
     public:
-        //! Special CAST_V2 targets which are not EC type names
+        //! Special cast targets which are not EC type names
         enum class SpecialTarget
             {
             None,
@@ -236,15 +236,12 @@ struct CastExp final : ValueExp
         Utf8String m_castTargetSchemaName;
         Utf8String m_castTargetTypeName;
         bool m_castTargetIsArray;
-        bool m_isPostfix = false;
-        bool m_isV2 = false;
         SpecialTarget m_specialTarget = SpecialTarget::None;
         size_t m_castOperandIndex;
 
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
         bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
-        FinalizeParseStatus FinalizeV2(ECSqlParseContext&, FinalizeParseMode mode);
-        BentleyStatus ResolveTargetType(ECSqlParseContext&, bool allowSpecialTargets);
+        BentleyStatus ResolveTargetType(ECSqlParseContext&);
         ECSqlTypeInfo GetParameterInputType() const;
 
         void _ToECSql(ECSqlRenderContext&) const override;
@@ -252,14 +249,14 @@ struct CastExp final : ValueExp
         Utf8String _ToString() const override;
 
     public:
-        CastExp(std::unique_ptr<ValueExp> castOperand, Utf8CP castTargetPrimitiveType, bool castTargetIsArray, bool isPostfix = false)
-            : ValueExp(Type::Cast, castOperand->IsConstant()), m_castTargetTypeName(castTargetPrimitiveType), m_castTargetIsArray(castTargetIsArray), m_isPostfix(isPostfix)
+        CastExp(std::unique_ptr<ValueExp> castOperand, Utf8CP castTargetPrimitiveType, bool castTargetIsArray)
+            : ValueExp(Type::Cast, castOperand->IsConstant()), m_castTargetTypeName(castTargetPrimitiveType), m_castTargetIsArray(castTargetIsArray)
             {
             m_castOperandIndex = AddChild(std::move(castOperand));
             }
 
-        CastExp(std::unique_ptr<ValueExp> castOperand, Utf8StringCR castTargetSchemaName, Utf8StringCR castTargetTypeName, bool castTargetIsArray, bool isPostfix = false)
-            : ValueExp(Type::Cast, castOperand->IsConstant()), m_castTargetSchemaName(castTargetSchemaName), m_castTargetTypeName(castTargetTypeName), m_castTargetIsArray(castTargetIsArray), m_isPostfix(isPostfix)
+        CastExp(std::unique_ptr<ValueExp> castOperand, Utf8StringCR castTargetSchemaName, Utf8StringCR castTargetTypeName, bool castTargetIsArray)
+            : ValueExp(Type::Cast, castOperand->IsConstant()), m_castTargetSchemaName(castTargetSchemaName), m_castTargetTypeName(castTargetTypeName), m_castTargetIsArray(castTargetIsArray)
             {
             m_castOperandIndex = AddChild(std::move(castOperand));
             }
@@ -269,14 +266,10 @@ struct CastExp final : ValueExp
         Utf8StringCR GetCastTargetTypeName() const { BeAssert(!m_castTargetSchemaName.empty()); return m_castTargetTypeName; }
         Utf8StringCR GetCastTargetPrimitiveType() const { BeAssert(m_castTargetSchemaName.empty()); return m_castTargetTypeName; }
         bool CastTargetIsArray() const { return m_castTargetIsArray; }
-        bool IsPostfix() const { return m_isPostfix; }
-        //! True if the CAST_V2 option is in effect for this expression
-        bool IsV2() const { return m_isV2; }
         SpecialTarget GetSpecialTarget() const { return m_specialTarget; }
         static SpecialTarget GetSpecialTarget(Utf8StringCR typeName, Utf8CP* extendedTypeName = nullptr);
         static Utf8String TypeToString(ECSqlTypeInfo const&);
-        static bool IsSupportedV2Conversion(ECSqlTypeInfo const& source, ECSqlTypeInfo const& target, SpecialTarget);
-        bool NeedsCasting() const { BeAssert(IsComplete()); return GetCastOperand()->GetTypeInfo() != GetTypeInfo(); }
+        static bool IsSupportedConversion(ECSqlTypeInfo const& source, ECSqlTypeInfo const& target, SpecialTarget);
     };
 
 
@@ -556,7 +549,7 @@ struct ParameterExp final : ValueExp
         void SetDefaultTargetExpInfo();
         void SetTargetExpInfo(ComputedExp const& exp);
         void SetTargetExpInfo(ECSqlTypeInfo const& targetTypeInfo);
-        //! Sets the parameter type from an explicit CAST_V2 cast (e.g. ?::INTEGER)
+        //! Sets the parameter type from an explicit cast (e.g. ?::INTEGER)
         void SetExplicitTypeInfo(ECSqlTypeInfo const& typeInfo) { SetTargetExpInfo(typeInfo); m_hasExplicitType = true; }
         bool HasExplicitType() const { return m_hasExplicitType; }
         ComputedExp const* GetTargetExp() const { return m_targetExp; }

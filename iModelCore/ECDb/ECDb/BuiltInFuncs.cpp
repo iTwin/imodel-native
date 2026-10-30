@@ -1685,6 +1685,15 @@ void ECSqlCastFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
         }
 
     const DbValueType type = v.GetValueType();
+    // These parsers consume C strings; do not let an embedded NUL hide trailing input.
+    if (type == DbValueType::TextVal && memchr(v.GetValueText(), '\0', v.GetValueBytes()) != nullptr &&
+        (0 == strcmp(op, "id") || 0 == strcmp(op, "json") || 0 == strcmp(op, "guid") ||
+         0 == strcmp(op, "text_bool") || 0 == strcmp(op, "text_dt") || 0 == strcmp(op, "text_pt") || 0 == strcmp(op, "enum")))
+        {
+        ctx.SetResultNull();
+        return;
+        }
+
     if (0 == strcmp(op, "id"))
         {
         if (type == DbValueType::IntegerVal)
