@@ -1096,27 +1096,8 @@ public:
     DGNPLATFORM_EXPORT static Utf8String ComputeChangesetId(Utf8StringCR parentRevId, BeFileNameCR changesetFile, Napi::Env env);
 };
 
-//=======================================================================================
-//! Creates the argument objects passed to a JavaScript changeset conflict handler.
-//! The functions are created on the first conflict and shared by the argument objects of all later conflicts of the same apply.
-//! Each conflict gets its own argument object, whose functions only work while the handler for that conflict runs.
-// @bsiclass
-//=======================================================================================
-struct JsChangesetConflictArgs {
-    struct Conflict;
-    struct Functions;
-private:
-    // Both are defined in the .cpp and held by shared_ptr, so code that only creates or destroys a
-    // ChangesetFileReader never instantiates Node-API code and does not need to link against it.
-    std::shared_ptr<Conflict> m_conflict;
-    std::shared_ptr<Functions> m_functions;
-    void CreateFunctions(Napi::Env);
-
-public:
-    //! Call `handler` for the conflict on `change`. Must be called inside a Napi::HandleScope.
-    //! `contextName` and `contextValue` add a property that tells the handler where the conflict comes from.
-    Napi::Value CallHandler(Napi::Function handler, Napi::Object receiver, DgnDbR db, BeSQLite::ChangeSet::ConflictCause cause, BeSQLite::Changes::Change const& change, Utf8StringR lastErrorMessage, Utf8CP contextName, Napi::Value contextValue);
-};
+// Defined in ChangesetTxns.cpp, so code using the changeset readers below does not depend on Node-API.
+struct JsChangesetConflictArgs;
 
 //=======================================================================================
 // @bsiclass
@@ -1126,7 +1107,7 @@ private:
     DGNPLATFORM_EXPORT BeSQLite::ChangeSet::ConflictResolution _OnConflict(BeSQLite::ChangeSet::ConflictCause, BeSQLite::Changes::Change iter) override;
     DgnDb* m_dgndb;
     Utf8String m_lastErrorMessage;
-    JsChangesetConflictArgs m_jsConflictArgs;
+    std::shared_ptr<JsChangesetConflictArgs> m_jsConflictArgs; // created on the first conflict passed to JavaScript
 
 public:
     ChangesetFileReader(BeFileNameCR pathname, DgnDb* dgndb = nullptr) : BeSQLite::ChangesetFileReaderBase({pathname}, dgndb), m_dgndb(dgndb) {}
@@ -1145,7 +1126,7 @@ private:
     TxnManager::TxnId m_id;
     TxnType m_type;
     Utf8String m_descr;
-    JsChangesetConflictArgs m_jsConflictArgs;
+    std::shared_ptr<JsChangesetConflictArgs> m_jsConflictArgs; // created on the first conflict passed to JavaScript
     bool m_ecChangesSupersedeBriefcase = false;
     BeSQLite::ChangeGroup m_supersedingRows;
     bool m_hasSupersedingRows = false;

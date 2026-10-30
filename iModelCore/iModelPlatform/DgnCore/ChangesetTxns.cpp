@@ -107,35 +107,6 @@ DbResult LocalChangeSet::ApplySupersedingRows() {
     return rows.ApplyChanges(m_dgndb, args);
 }
 
-//=======================================================================================
-// The conflict being handled. Only set while its JavaScript handler runs.
-// @bsiclass
-//=======================================================================================
-struct JsChangesetConflictArgs::Conflict {
-    DgnDb* m_db = nullptr;
-    Changes::Change const* m_change = nullptr;
-    Utf8String* m_lastErrorMessage = nullptr;
-    napi_value m_jsArgs = nullptr;
-
-    // The functions are shared by the argument objects of all conflicts, so they check that they
-    // were called on the argument object of the conflict being handled.
-    Changes::Change const& GetChange(Napi::CallbackInfo const& info) const {
-        if (nullptr == m_change || !info.This().StrictEquals(Napi::Value(info.Env(), m_jsArgs)))
-            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Changeset conflict arguments may only be used during the conflict handler call", DgnDbStatus::BadRequest);
-
-        return *m_change;
-    }
-};
-
-//=======================================================================================
-// The JavaScript functions shared by the argument objects of all conflicts. Kept apart from
-// Conflict because the functions themselves hold the Conflict.
-// @bsiclass
-//=======================================================================================
-struct JsChangesetConflictArgs::Functions {
-    std::vector<std::pair<Utf8CP, Napi::FunctionReference>> m_list;
-};
-
 //---------------------------------------------------------------------------------------
 // Returns an invalid value if the column index or stage is out of range.
 // @bsimethod
@@ -149,17 +120,51 @@ static DbValue GetConflictValue(Napi::CallbackInfo const& info, Changes::Change 
     return change.GetValue(columnIdx, (Changes::Change::Stage) stage);
 }
 
+//=======================================================================================
+// Creates the argument objects passed to a JavaScript changeset conflict handler.
+// The functions are created once per apply and shared by the argument objects of all its conflicts.
+// Each conflict gets its own argument object, whose functions only work while the handler for that conflict runs.
+// @bsiclass
+//=======================================================================================
+struct JsChangesetConflictArgs {
+private:
+    // The conflict being handled. Only set while its JavaScript handler runs.
+    struct Conflict {
+        DgnDb* m_db = nullptr;
+        Changes::Change const* m_change = nullptr;
+        Utf8String* m_lastErrorMessage = nullptr;
+        napi_value m_jsArgs = nullptr;
+
+        // The functions are shared by the argument objects of all conflicts, so they check that they
+        // were called on the argument object of the conflict being handled.
+        Changes::Change const& GetChange(Napi::CallbackInfo const& info) const {
+            if (nullptr == m_change || !info.This().StrictEquals(Napi::Value(info.Env(), m_jsArgs)))
+                THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Changeset conflict arguments may only be used during the conflict handler call", DgnDbStatus::BadRequest);
+
+            return *m_change;
+        }
+    };
+
+    // The functions share ownership of the conflict, so calling them after this object is gone
+    // throws instead of reading freed memory.
+    std::shared_ptr<Conflict> m_conflict = std::make_shared<Conflict>();
+    std::vector<std::pair<Utf8CP, Napi::FunctionReference>> m_functions;
+
+public:
+    explicit JsChangesetConflictArgs(Napi::Env);
+
+    // Call `handler` for the conflict on `change`. Must be called inside a Napi::HandleScope.
+    // `contextName` and `contextValue` add a property that tells the handler where the conflict comes from.
+    Napi::Value CallHandler(Napi::Function handler, Napi::Object receiver, DgnDbR db, ChangeSet::ConflictCause cause, Changes::Change const& change, Utf8StringR lastErrorMessage, Utf8CP contextName, Napi::Value contextValue);
+};
+
 //---------------------------------------------------------------------------------------
-// The functions share ownership of the conflict, so calling them after this object is gone
-// throws instead of reading freed memory.
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void JsChangesetConflictArgs::CreateFunctions(Napi::Env env) {
-    m_conflict = std::make_shared<Conflict>();
-    m_functions = std::make_shared<Functions>();
+JsChangesetConflictArgs::JsChangesetConflictArgs(Napi::Env env) {
     auto conflict = m_conflict;
     auto addFunction = [&](Utf8CP name, auto callback) {
-        m_functions->m_list.emplace_back(name, Napi::Persistent(Napi::Function::New(env, callback, name)));
+        m_functions.emplace_back(name, Napi::Persistent(Napi::Function::New(env, callback, name)));
     };
 
     addFunction("getForeignKeyConflicts", [conflict](Napi::CallbackInfo const& info) -> Napi::Value {
@@ -269,11 +274,8 @@ void JsChangesetConflictArgs::CreateFunctions(Napi::Env env) {
 //---------------------------------------------------------------------------------------
 Napi::Value JsChangesetConflictArgs::CallHandler(Napi::Function handler, Napi::Object receiver, DgnDbR db, ChangeSet::ConflictCause cause, Changes::Change const& change, Utf8StringR lastErrorMessage, Utf8CP contextName, Napi::Value contextValue) {
     auto env = handler.Env();
-    if (nullptr == m_functions)
-        CreateFunctions(env);
-
     auto args = Napi::Object::New(env);
-    for (auto const& function : m_functions->m_list)
+    for (auto const& function : m_functions)
         args.Set(function.first, function.second.Value());
 
     args.Set("cause", Napi::Number::New(env, (int) cause));
@@ -343,7 +345,10 @@ ChangeSet::ConflictResolution LocalChangeSet::_OnConflict(ChangeSet::ConflictCau
     txnInfo.Set("descr", Napi::String::New(env, m_descr));
     txnInfo.Set("type" , Napi::String::New(env, m_type == TxnType::Data? "Data" : "Schema"));
 
-    const auto resJsVal = m_jsConflictArgs.CallHandler(onRebaseLocalTxnConflict.As<Napi::Function>(), jsTxns, m_dgndb, cause, iter, m_lastErrorMessage, "txn", txnInfo);
+    if (nullptr == m_jsConflictArgs)
+        m_jsConflictArgs = std::make_shared<JsChangesetConflictArgs>(env);
+
+    const auto resJsVal = m_jsConflictArgs->CallHandler(onRebaseLocalTxnConflict.As<Napi::Function>(), jsTxns, m_dgndb, cause, iter, m_lastErrorMessage, "txn", txnInfo);
     if (resJsVal.IsUndefined())
         THROW_JS_DGN_DB_EXCEPTION(env, "_onRebaseLocalTxnConflict must return a resolution", DgnDbStatus::BadArg);
 
@@ -387,8 +392,11 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
         const auto jsDgnDb = jsIModelDb->Value();
         const auto onChangesetConflict = jsDgnDb.Get("onChangesetConflict");
         if (onChangesetConflict.IsFunction()) {
+            if (nullptr == m_jsConflictArgs)
+                m_jsConflictArgs = std::make_shared<JsChangesetConflictArgs>(env);
+
             const auto changesetFile = Napi::String::New(env, GetFiles().front().GetNameUtf8());
-            const auto resolutionJsVal = m_jsConflictArgs.CallHandler(onChangesetConflict.As<Napi::Function>(), jsDgnDb, *m_dgndb, cause, iter, m_lastErrorMessage, "changesetFile", changesetFile);
+            const auto resolutionJsVal = m_jsConflictArgs->CallHandler(onChangesetConflict.As<Napi::Function>(), jsDgnDb, *m_dgndb, cause, iter, m_lastErrorMessage, "changesetFile", changesetFile);
 
             // if handler return undefined we revert to native handler.
             if (!resolutionJsVal.IsUndefined()) {
