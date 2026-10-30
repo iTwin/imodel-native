@@ -17,6 +17,39 @@ BEGIN_BENTLEY_SQLITE_NAMESPACE
 
 struct CloudContainer;
 
+/** Opt-in main-file Cloud SQLite statistics for one active native request/page.
+ * Snapshot overhead and attached-file waits are not attributed to main-file
+ * download waits. Measurements crossing application callbacks are unavailable.
+ */
+struct CloudSqliteTiming : NonCopyableClass {
+    struct Impl;
+    std::shared_ptr<Impl> m_impl;
+    BE_SQLITE_EXPORT CloudSqliteTiming();
+    BE_SQLITE_EXPORT ~CloudSqliteTiming();
+    BE_SQLITE_EXPORT void Reset(bool enabled);
+    BE_SQLITE_EXPORT bool TryGet(double& downloadTime, double& executionTime, uint64_t& downloadBlocks, uint64_t& downloadBlockSize) const;
+
+    struct Scope : NonCopyableClass {
+        std::shared_ptr<Impl> m_impl;
+        void* m_previous = nullptr;
+        bool m_active = false;
+        bool m_includeInParent = false;
+        void Start(Db const*);
+        BE_SQLITE_EXPORT Scope(CloudSqliteTiming&, Db const* = nullptr);
+        /** Include another connection in the current request while its caller holds exclusive access. */
+        BE_SQLITE_EXPORT explicit Scope(Db const&);
+        BE_SQLITE_EXPORT ~Scope();
+        BE_SQLITE_EXPORT void Finish();
+    };
+
+    /** Invalidate the current measurement while native code calls application JavaScript. */
+    struct Suspension : NonCopyableClass {
+        void* m_previous;
+        BE_SQLITE_EXPORT Suspension();
+        BE_SQLITE_EXPORT ~Suspension();
+    };
+};
+
 /**
  * the result status and error message for a CloudSqlite operation.
  */

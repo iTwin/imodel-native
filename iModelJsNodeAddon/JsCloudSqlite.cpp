@@ -404,7 +404,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
             "memory_client_manifest",
             "nqueryblock",
             "nquerybyte",
-            "nqueryms",
+            "nqueryus",
         };
         Utf8CP jsNames[] = {
             "lockedCacheslots",
@@ -427,6 +427,15 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         for (int i = 0; i < sizeof(statNames) / sizeof(statNames[0]); i++) {
             stmt.BindText(1, statNames[i], Statement::MakeCopy::No);
             auto result = stmt.Step();
+            bool microseconds = strcmp(statNames[i], "nqueryus") == 0;
+            if (microseconds && result == BE_SQLITE_DONE) {
+                // Older daemons expose milliseconds. Keep the existing JS API
+                // in milliseconds regardless of which daemon supplies the row.
+                stmt.Reset();
+                stmt.BindText(1, "nqueryms", Statement::MakeCopy::No);
+                result = stmt.Step();
+                microseconds = false;
+            }
             if (result != BE_SQLITE_ROW) {
                 std::string statName = statNames[i];
                 // The following two stats are only present in daemon mode. So if they do not exist,
@@ -441,6 +450,8 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
                 // convert to a number (or directly deal with the hex string).
                 // Note: the IdToHex function isn't attached to in the cloud container database.
                 uint64_t intValue = stmt.GetValueUInt64(0);
+                if (microseconds)
+                    intValue /= 1000;
                 if (intValue == 0) {
                     // FormatUInt64 intentionally doesn't apply the "0x" prefix when the value is 0.
                     // So we just special case that here.

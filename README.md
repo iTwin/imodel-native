@@ -56,6 +56,77 @@ graph TD
 | **Node Addon** | `iModelJsNodeAddon/` | N-API glue layer. Wraps all of the above and exposes them to Node.js. |
 | **TypeScript API** | `iModelJsNodeAddon/api_package/ts/` | TypeScript declarations (`NativeLibrary.ts`) that form the public contract consumed by `@itwin/core-backend`. |
 
+## Per-query Cloud SQLite timing
+
+Applications enable collection host-wide with
+`IModelHost.startup({ collectCloudSqliteStats: true })`. There is no public
+per-request override. The backend sets the internal native request flag
+`collectCloudSqliteStats` from the host configuration for each concurrent ECSQL
+request; native request/page measurement boundaries remain unchanged.
+Collection defaults to **off**; no native overhead benchmark has established a
+negligible cost. Statistics contain an optional `downloadTime`/`executionTime`
+pair in fractional milliseconds, measured with a monotonic clock, plus
+`downloadBlocks` and `downloadBlockSize` (bytes). Only the `main` database is
+instrumented; attached-database waits remain in the execution remainder.
+Download time is the connection's wait for successfully downloaded blocks,
+including waiting for another downloader or prefetch. It is not summed HTTP
+transfer time. Execution time is the remainder of active native query time,
+not CPU usage; waits not accounted for by upstream remain in this remainder.
+The vendor sources include the query-statistics changes from upstream
+[843dff88c1e0a10b](https://sqlite.org/cloudsqlite/info/843dff88c1e0a10b),
+including its monotonic microsecond clock, while retaining Bentley-specific
+changes. No custom statistics API, control bits or additional VFS counters remain.
+
+The scope includes query preparation, binding, metadata, stepping, and row
+extraction. Concurrent connection initialization/attachment synchronization before
+query execution is outside both measurements. Queueing, RPC and idle time
+between request pages are excluded. Requests crossing application JavaScript
+callbacks report these optional statistics as unavailable: upstream counters
+cannot pause an in-progress wait to exclude callback work.
+Fully cached Cloud SQLite reads report zero download wait and zero waited
+blocks, while retaining the main cache's positive logical block size.
+Waited blocks count successful acquisitions, including shared-download and
+prefetch waits. Reacquiring an evicted block counts again; repeated
+condition-variable wakeups during one acquisition do not. Failed downloads are
+not guaranteed to contribute wait time or block counts.
+
+Collection is available through concurrent query requests (`createQueryReader`),
+not native synchronous `ECSqlStatement` or `withQueryReader`. There are no
+per-row statistics queries.
+
+Local-main connections (even with cloud attachments) and incomplete
+measurements omit the timing and block fields. Concurrent
+statistics additionally distinguish `cloudSqliteTimingState: "notExecuted"`,
+`"measured"` (requires the pair), and `"unavailable"`; absence is legacy/unknown.
+In-process files and daemon clients maintain upstream cumulative counters.
+Each opted-in active native request/page reads `nqueryus`, `nqueryblock` and
+`nquerybyte` together in one `bcv_stat` query before work, then again afterwards.
+Preparation against the shared schema-source connection also snapshots that
+connection under its schema mutex. Its download deltas are included in the
+request without adding its elapsed time twice; these extra snapshot calls are
+excluded from active time as well. If either connection cannot be measured,
+the request reports unavailable statistics.
+The microsecond delta is divided by 1000 to produce fractional milliseconds.
+Snapshot overhead is excluded from active time; no queries are made per row
+or during application callbacks. The logical block size comes from
+`PRAGMA main.bcv_blocksize`, not by dividing downloaded bytes by block count.
+Legacy daemons without `nqueryus` still execute queries, but their request
+statistics are unavailable rather than a false measured zero. The existing
+`queryBcvStats().onDemandDownloadTimeMs` remains in integer milliseconds and
+supports both old and new daemons.
+
+The focused native source tests cover before/after SQL snapshots, legacy row
+absence, malformed counters, counter resets,
+local concurrent-query omission, serialization and callback/reset lifetime.
+They do not exercise a live cloud VFS or daemon. Native builds, native runtime
+tests and overhead benchmarks require Bentley's initialized internal build
+environment and have not been run for this change.
+
+Legacy `cpuTime` remains elapsed microseconds since dequeue (including waits).
+`totalTime` remains queue-inclusive milliseconds and `prepareTime` overlaps query
+execution; both now preserve fractional milliseconds. Quota/delay comparisons
+retain their previous integer-millisecond behavior.
+
 ## Repository Structure
 
 ```

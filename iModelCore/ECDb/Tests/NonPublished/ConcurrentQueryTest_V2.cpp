@@ -72,6 +72,88 @@ struct ConcurrentQueryFixture : ECDbTestFixture {
         return SUCCESS;
     }
 };
+TEST_F(ConcurrentQueryFixture, CloudTimingLocalSuccessAndPreparationFailure) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("cloud_timing_local.ecdb"));
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
+        for (bool primary : {false, true}) {
+            for (bool collect : {false, true}) {
+                for (bool valid : {false, true}) {
+                    auto req = ECSqlRequest::MakeRequest(valid ? "SELECT 1" : "SELECT * FROM MissingSchema.MissingClass");
+                    req->SetCollectCloudSqliteStats(collect).SetUsePrimaryConnection(primary);
+                    auto response = mgr.Enqueue(std::move(req)).Get();
+                    EXPECT_EQ(valid ? QueryResponse::Status::Done : QueryResponse::Status::Error_ECSql_PreparedFailed, response->GetStatus());
+                    BeJsDocument stats;
+                    response->GetStats().ToJs(stats);
+                    EXPECT_FALSE(stats.isMember("downloadTime"));
+                    EXPECT_FALSE(stats.isMember("executionTime"));
+                    EXPECT_FALSE(stats.isMember("downloadBlocks"));
+                    EXPECT_FALSE(stats.isMember("downloadBlockSize"));
+                    if (collect)
+                        EXPECT_STREQ("unavailable", stats["cloudSqliteTimingState"].asCString());
+                    else
+                        EXPECT_FALSE(stats.isMember("cloudSqliteTimingState"));
+                }
+            }
+        }
+    });
+}
+
+TEST_F(ConcurrentQueryFixture, CloudTimingKnownUnexecutedRequest) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("cloud_timing_unexecuted.ecdb"));
+    RunnableRequestQueue queue(m_ecdb);
+    auto req = ECSqlRequest::MakeRequest("SELECT 1");
+    req->SetCollectCloudSqliteStats(true);
+    RunnableRequestWithPromise runnable(queue, std::move(req), ConcurrentQueryMgr::Config::Get().GetQuota(), 1);
+    auto future = runnable.GetFuture();
+    runnable.SetResponse(runnable.CreateTimeoutResponse());
+    auto response = future.Get();
+    EXPECT_EQ(QueryResponse::Status::Timeout, response->GetStatus());
+    BeJsDocument stats;
+    response->GetStats().ToJs(stats);
+    EXPECT_STREQ("notExecuted", stats["cloudSqliteTimingState"].asCString());
+    EXPECT_FALSE(stats.isMember("downloadTime"));
+    EXPECT_FALSE(stats.isMember("executionTime"));
+    EXPECT_FALSE(stats.isMember("downloadBlocks"));
+    EXPECT_FALSE(stats.isMember("downloadBlockSize"));
+}
+
+TEST_F(ConcurrentQueryFixture, CloudTimingMeasuredSerializationIncludesAcquisitionsAndWarmCacheBlockSize) {
+    QueryResponse::Stats source(123us, 1250us, 0, QueryQuota(), 250us);
+    BeJsDocument stats;
+    source.SetCloudSqliteTiming("measured", 0.025, 0.125, 2, 4 * 1024 * 1024);
+    source.ToJs(stats);
+    EXPECT_DOUBLE_EQ(0.025, stats["downloadTime"].asDouble());
+    EXPECT_DOUBLE_EQ(2, stats["downloadBlocks"].asDouble());
+    source.SetCloudSqliteTiming("measured", 0, 0.125, 0, 4 * 1024 * 1024);
+    source.ToJs(stats);
+    EXPECT_STREQ("measured", stats["cloudSqliteTimingState"].asCString());
+    EXPECT_DOUBLE_EQ(0, stats["downloadTime"].asDouble());
+    EXPECT_DOUBLE_EQ(0.125, stats["executionTime"].asDouble());
+    EXPECT_DOUBLE_EQ(0, stats["downloadBlocks"].asDouble());
+    EXPECT_DOUBLE_EQ(4 * 1024 * 1024, stats["downloadBlockSize"].asDouble());
+}
+
+TEST_F(ConcurrentQueryFixture, TimingSerializationPreservesSubMilliseconds) {
+    QueryResponse::Stats source(123us, 1250us, 0, QueryQuota(), 250us);
+    BeJsDocument stats;
+    source.ToJs(stats);
+    EXPECT_DOUBLE_EQ(1.25, stats["totalTime"].asDouble());
+    EXPECT_DOUBLE_EQ(0.25, stats["prepareTime"].asDouble());
+    EXPECT_EQ(123, stats["cpuTime"].asInt());
+
+    BeJsDocument input(R"json({"kind":1,"query":"SELECT 1","collectCloudSqliteStats":true})json");
+    auto request = ECSqlRequest::MakeRequest("SELECT 1");
+    EXPECT_FALSE(request->GetCollectCloudSqliteStats());
+    request->FromJs(input);
+    EXPECT_TRUE(request->GetCollectCloudSqliteStats());
+    input["collectCloudSqliteStats"] = false;
+    request->FromJs(input);
+    EXPECT_FALSE(request->GetCollectCloudSqliteStats());
+    input["collectCloudSqliteStats"] = "true";
+    request->FromJs(input);
+    EXPECT_FALSE(request->GetCollectCloudSqliteStats());
+}
+
 TEST_F(ConcurrentQueryFixture, HexIdRenderingMatchesBeId) {
     auto check = [](uint64_t rawId) {
         BeInt64Id id(rawId);
