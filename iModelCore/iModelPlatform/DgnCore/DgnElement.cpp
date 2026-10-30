@@ -22,6 +22,7 @@ static bool hasHandler(ECN::ECClassCR cls)
 void DgnElement::CallJsPostHandler(Utf8CP methodName) const {
     auto jsDb = m_dgndb.GetJsIModelDb();
     if (jsDb) {
+        Napi::HandleScope scope(jsDb->Env());
         BeJsNapiObject arg(jsDb->Env());
         arg[json_id()] = m_elementId;
         arg[json_model()] = m_modelId;
@@ -36,6 +37,7 @@ void DgnElement::CallJsPostHandler(Utf8CP methodName) const {
 void DgnElement::CallJsChildPreHandler(DgnElementCR child, Utf8CP methodName) const {
     auto jsDb = m_dgndb.GetJsIModelDb();
     if (jsDb && child.m_napiObj) {
+        Napi::HandleScope scope(jsDb->Env());
         BeJsNapiObject arg(jsDb->Env());
         arg["parentId"] = m_elementId;
         ((Napi::Object) arg).Set("childProps", *child.m_napiObj);
@@ -49,6 +51,7 @@ void DgnElement::CallJsChildPreHandler(DgnElementCR child, Utf8CP methodName) co
 void DgnElement::CallJsChildPostHandler(DgnElementCR child, Utf8CP methodName) const {
     auto jsDb = m_dgndb.GetJsIModelDb();
     if (jsDb) {
+        Napi::HandleScope scope(jsDb->Env());
         BeJsNapiObject arg(jsDb->Env());
         arg["parentId"] = m_elementId;
         arg["childId"] = child.m_elementId;
@@ -62,6 +65,7 @@ void DgnElement::CallJsChildPostHandler(DgnElementCR child, Utf8CP methodName) c
 void DgnElement::CallJsSubModelHandler(DgnModelCR model, Utf8CP methodName) const {
     auto jsDb = m_dgndb.GetJsIModelDb();
     if (jsDb) {
+        Napi::HandleScope scope(jsDb->Env());
         BeJsNapiObject arg(jsDb->Env());
         arg["subModelId"] = model.GetModelId();
         m_dgndb.CallJsHandlerMethod(m_classId, methodName, arg);

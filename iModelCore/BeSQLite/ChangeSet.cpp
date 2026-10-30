@@ -695,6 +695,9 @@ Utf8String Changes::Change::FormatChange(Db const& db, Utf8CP tableName, DbOpcod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Changes::Change::Dump(Db const& db, bool isPatchSet, bset<Utf8String>& tablesSeen, int detailLevel) const
     {
+    if (!LOGCHANGESET.isSeverityEnabled(NativeLogging::LOG_INFO))
+        return;
+
     Utf8CP tableName;
     int nCols,indirect;
     DbOpcode opcode;
@@ -718,6 +721,9 @@ void Changes::Change::Dump(Db const& db, bool isPatchSet, bset<Utf8String>& tabl
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ChangeStream::Dump(Utf8CP label, Db const& db, bool isPatchSet, int detailLevel) const {
+    if (!LOGCHANGESET.isSeverityEnabled(NativeLogging::LOG_INFO))
+        return;
+
     if (label)
         LOGCHANGESET.infov("%s", label);
 
@@ -766,12 +772,12 @@ void Changes::Change::DumpCurrentValuesOfChangedColumns(Db const& db) const
     int npcols = 0;
     GetPrimaryKeyColumns(&pcols, &npcols);
 
-    if (!pcols)
+    if (!pcols || (int) columnNames.size() < npcols)
         return;
 
     int64_t pk = 0;
     int pki = 0;
-    for (int i = 0; i <= npcols; ++i)
+    for (int i = 0; i < npcols; ++i)
         {
         if (pcols[i] == 0)
             continue;
@@ -781,7 +787,7 @@ void Changes::Change::DumpCurrentValuesOfChangedColumns(Db const& db) const
         break;
         }
 
-    for (int i = 0; i <= npcols; ++i)
+    for (int i = 0; i < npcols; ++i)
         {
         if (pcols[i] > 0)
             continue;

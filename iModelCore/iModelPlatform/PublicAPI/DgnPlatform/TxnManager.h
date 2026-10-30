@@ -10,6 +10,7 @@
 #include <BeSQLite/ChangesetFile.h>
 #include <ECDb/ECInstanceId.h>
 #include <functional>
+#include <memory>
 
 DGNPLATFORM_TYPEDEFS(TxnMonitor)
 
@@ -1096,6 +1097,25 @@ public:
 };
 
 //=======================================================================================
+//! The argument object passed to a JavaScript changeset conflict handler.
+//! It is created on the first conflict and reused for the later conflicts of the same apply.
+//! Its functions read the conflict currently being handled and throw once the handler call has returned.
+// @bsiclass
+//=======================================================================================
+struct JsChangesetConflictArgs {
+    struct Conflict;
+private:
+    std::shared_ptr<Conflict> m_conflict;
+    Napi::ObjectReference m_jsObject;
+    Napi::Object GetJsObject(Napi::Env);
+
+public:
+    //! Call `handler` for the conflict on `change`. Must be called inside a Napi::HandleScope.
+    //! `contextName` and `contextValue` add a property that tells the handler where the conflict comes from.
+    Napi::Value CallHandler(Napi::Function handler, Napi::Object receiver, DgnDbR db, BeSQLite::ChangeSet::ConflictCause cause, BeSQLite::Changes::Change const& change, Utf8StringR lastErrorMessage, Utf8CP contextName, Napi::Value contextValue);
+};
+
+//=======================================================================================
 // @bsiclass
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ChangesetFileReader : BeSQLite::ChangesetFileReaderBase {
@@ -1103,6 +1123,7 @@ private:
     DGNPLATFORM_EXPORT BeSQLite::ChangeSet::ConflictResolution _OnConflict(BeSQLite::ChangeSet::ConflictCause, BeSQLite::Changes::Change iter) override;
     DgnDb* m_dgndb;
     Utf8String m_lastErrorMessage;
+    JsChangesetConflictArgs m_jsConflictArgs;
 
 public:
     ChangesetFileReader(BeFileNameCR pathname, DgnDb* dgndb = nullptr) : BeSQLite::ChangesetFileReaderBase({pathname}, dgndb), m_dgndb(dgndb) {}
@@ -1121,6 +1142,7 @@ private:
     TxnManager::TxnId m_id;
     TxnType m_type;
     Utf8String m_descr;
+    JsChangesetConflictArgs m_jsConflictArgs;
     bool m_ecChangesSupersedeBriefcase = false;
     BeSQLite::ChangeGroup m_supersedingRows;
     bool m_hasSupersedingRows = false;

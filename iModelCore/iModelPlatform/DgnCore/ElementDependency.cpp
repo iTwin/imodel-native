@@ -201,6 +201,7 @@ static void callJsDriverFunc(Graph const& graph, DgnElementId id, Utf8CP methodN
     if (jsTxns == nullptr)
         return;
     auto& db = graph.GetDgnDb();
+    Napi::HandleScope scope(jsTxns.Env());
     DgnDb::CallJsFunction(graph.m_jsTxns, methodName, {db.GetJsClassName(id), db.ToJsString(id)});
 }
 
@@ -212,6 +213,7 @@ static void callJsEdgeFunc(Graph const& graph, Edge const& edge, Utf8CP methodNa
     if (jsTxns == nullptr)
         return;
     auto& db = graph.GetDgnDb();
+    Napi::HandleScope scope(jsTxns.Env());
     Napi::Object props = Napi::Object::New(jsTxns.Env());
 
     auto relClass = db.Schemas().GetClass(edge.GetKey().GetClassId());

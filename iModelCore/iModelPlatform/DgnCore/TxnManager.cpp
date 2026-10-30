@@ -4503,6 +4503,11 @@ void TxnManager::CaptureInstanceChanges(TxnId txnId) {
     if (GetTxnType(txnId) != TxnType::Data)
         return;
 
+    auto jsIModelDb = m_dgndb.GetJsIModelDb();
+    if (nullptr == jsIModelDb)
+        return;
+
+    Napi::HandleScope scope(jsIModelDb->Env());
     auto jsTxns = m_dgndb.GetJsTxns();
     if (nullptr != jsTxns)
         m_dgndb.CallJsFunction(jsTxns, "_captureInstanceChanges", {Napi::String::New(jsTxns.Env(), BeInt64Id(txnId.GetValue()).ToHexStr().c_str())});
