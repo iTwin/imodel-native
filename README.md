@@ -58,7 +58,11 @@ graph TD
 
 ## Per-query Cloud SQLite timing
 
-Concurrent ECSQL requests can opt in with `collectCloudSqliteStats: true`.
+Applications enable collection host-wide with
+`IModelHost.startup({ collectCloudSqliteStats: true })`. There is no public
+per-request override. The backend sets the internal native request flag
+`collectCloudSqliteStats` from the host configuration for each concurrent ECSQL
+request; native request/page measurement boundaries remain unchanged.
 Collection defaults to **off**; no native overhead benchmark has established a
 negligible cost. Statistics contain an optional `downloadTime`/`executionTime`
 pair in fractional milliseconds, measured with a monotonic clock, plus
