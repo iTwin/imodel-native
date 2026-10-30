@@ -11,7 +11,6 @@
 #include <ECDb/ECInstanceId.h>
 #include <functional>
 #include <memory>
-#include <vector>
 
 DGNPLATFORM_TYPEDEFS(TxnMonitor)
 
@@ -1105,15 +1104,15 @@ public:
 //=======================================================================================
 struct JsChangesetConflictArgs {
     struct Conflict;
+    struct Functions;
 private:
+    // Both are defined in the .cpp and held by shared_ptr, so code that only creates or destroys a
+    // ChangesetFileReader never instantiates Node-API code and does not need to link against it.
     std::shared_ptr<Conflict> m_conflict;
-    std::vector<std::pair<Utf8CP, Napi::FunctionReference>> m_functions;
+    std::shared_ptr<Functions> m_functions;
     void CreateFunctions(Napi::Env);
 
 public:
-    // Defined out of line so that code destroying a ChangesetFileReader does not need to link against Node-API.
-    DGNPLATFORM_EXPORT ~JsChangesetConflictArgs();
-
     //! Call `handler` for the conflict on `change`. Must be called inside a Napi::HandleScope.
     //! `contextName` and `contextValue` add a property that tells the handler where the conflict comes from.
     Napi::Value CallHandler(Napi::Function handler, Napi::Object receiver, DgnDbR db, BeSQLite::ChangeSet::ConflictCause cause, BeSQLite::Changes::Change const& change, Utf8StringR lastErrorMessage, Utf8CP contextName, Napi::Value contextValue);

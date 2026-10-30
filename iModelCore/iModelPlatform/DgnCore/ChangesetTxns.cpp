@@ -127,6 +127,15 @@ struct JsChangesetConflictArgs::Conflict {
     }
 };
 
+//=======================================================================================
+// The JavaScript functions shared by the argument objects of all conflicts. Kept apart from
+// Conflict because the functions themselves hold the Conflict.
+// @bsiclass
+//=======================================================================================
+struct JsChangesetConflictArgs::Functions {
+    std::vector<std::pair<Utf8CP, Napi::FunctionReference>> m_list;
+};
+
 //---------------------------------------------------------------------------------------
 // Returns an invalid value if the column index or stage is out of range.
 // @bsimethod
@@ -147,9 +156,10 @@ static DbValue GetConflictValue(Napi::CallbackInfo const& info, Changes::Change 
 //---------------------------------------------------------------------------------------
 void JsChangesetConflictArgs::CreateFunctions(Napi::Env env) {
     m_conflict = std::make_shared<Conflict>();
+    m_functions = std::make_shared<Functions>();
     auto conflict = m_conflict;
     auto addFunction = [&](Utf8CP name, auto callback) {
-        m_functions.emplace_back(name, Napi::Persistent(Napi::Function::New(env, callback, name)));
+        m_functions->m_list.emplace_back(name, Napi::Persistent(Napi::Function::New(env, callback, name)));
     };
 
     addFunction("getForeignKeyConflicts", [conflict](Napi::CallbackInfo const& info) -> Napi::Value {
@@ -257,18 +267,13 @@ void JsChangesetConflictArgs::CreateFunctions(Napi::Env env) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-JsChangesetConflictArgs::~JsChangesetConflictArgs() {}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
 Napi::Value JsChangesetConflictArgs::CallHandler(Napi::Function handler, Napi::Object receiver, DgnDbR db, ChangeSet::ConflictCause cause, Changes::Change const& change, Utf8StringR lastErrorMessage, Utf8CP contextName, Napi::Value contextValue) {
     auto env = handler.Env();
-    if (m_functions.empty())
+    if (nullptr == m_functions)
         CreateFunctions(env);
 
     auto args = Napi::Object::New(env);
-    for (auto const& function : m_functions)
+    for (auto const& function : m_functions->m_list)
         args.Set(function.first, function.second.Value());
 
     args.Set("cause", Napi::Number::New(env, (int) cause));
