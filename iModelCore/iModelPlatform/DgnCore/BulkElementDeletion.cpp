@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <algorithm>
+#include <set>
 #include <unordered_set>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
@@ -35,6 +36,24 @@ struct FkConstraint
 using FkConstraintMap = std::map<FkAction, std::vector<FkConstraint>>;
 
 //=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct LogicalNavColumn
+    {
+    Utf8String m_idColumn;             // physical column holding the referenced ElementId
+    Utf8String m_relClassIdColumn;     // companion RelECClassId column; empty if virtual
+    std::set<uint64_t> m_classIds;     // ECClassIds whose rows store this nav property in these columns
+    };
+
+struct LogicalNavTable
+    {
+    Utf8String m_elementIdColumn;      // see FkConstraint::m_elementIdColumn
+    std::vector<LogicalNavColumn> m_columns;
+    };
+
+using LogicalNavTableMap = std::map<Utf8String, LogicalNavTable>; // table name -> columns
+
+//=======================================================================================
 //! Restores ChangeTracker mode.
 // @bsiclass
 //=======================================================================================
@@ -50,6 +69,7 @@ class BulkElementDeletion
     {
     DgnDbR m_dgndb;
     FkConstraintMap m_fkConstraints;
+    LogicalNavTableMap m_logicalNavTables;
     DgnElementIdSet const& m_originalElementIds;
     std::vector<BulkDeleteFailure> m_failures;
     std::unordered_set<uint64_t> m_failureIds; // elements already present in m_failures
@@ -87,6 +107,8 @@ class BulkElementDeletion
         }
 
     BeSQLite::DbResult LoadFkConstraints();
+    BeSQLite::DbResult LoadLogicalNavProperties();
+    bool HasPhysicalFk(Utf8StringCR tableName, Utf8StringCR column) const;
 
     // Create temporary tables for bulk deletion
     BeSQLite::DbResult CreateTempTables() const;
@@ -99,6 +121,7 @@ class BulkElementDeletion
     void CollectFkViolations();
 
     bool FireAllCallbacks();
+    BeSQLite::DbResult NullifyLogicalNavProperties() const;
     BeSQLite::DbResult DeleteLinkTableRelationships() const;
     BeSQLite::DbResult ExecuteDeletion();
 
@@ -168,6 +191,89 @@ DbResult BulkElementDeletion::LoadFkConstraints()
         }
 
     m_fkConstraints = std::move(constraints);
+    return BE_SQLITE_OK;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BulkElementDeletion::HasPhysicalFk(Utf8StringCR tableName, Utf8StringCR column) const
+    {
+    for (const auto& [action, fks] : m_fkConstraints)
+        for (const auto& fk : fks)
+            if (fk.m_tableName.EqualsIAscii(tableName) && fk.m_fromColumn.EqualsIAscii(column))
+                return true;
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult BulkElementDeletion::LoadLogicalNavProperties()
+    {
+    Statement stmt;
+    const auto rc = stmt.Prepare(m_dgndb,
+        "SELECT t.Name, cId.Name, CASE WHEN cRel.IsVirtual = 0 THEN cRel.Name END, pm.ClassId, "
+            "CASE WHEN t.Name = '" BIS_TABLE(BIS_CLASS_Element) "' THEN 'Id' "
+                 "WHEN EXISTS (SELECT 1 FROM pragma_table_info(t.Name) c WHERE c.name = 'ElementId' AND c.pk = 1) THEN 'ElementId' "
+                 "ELSE NULL END "
+        "FROM ec_Property p "
+        "JOIN ec_RelationshipConstraint rc ON rc.RelationshipClassId = p.NavigationRelationshipClassId "
+            "AND rc.RelationshipEnd = CASE p.NavigationDirection WHEN 1 THEN 1 ELSE 0 END "
+        "JOIN ec_RelationshipConstraintClass rcc ON rcc.ConstraintId = rc.Id "
+        "JOIN ec_cache_ClassHierarchy ch ON ch.ClassId = rcc.ClassId AND ch.BaseClassId = ? "
+        "JOIN ec_PropertyPath ppId ON ppId.RootPropertyId = p.Id AND ppId.AccessString = p.Name || '.Id' "
+        "JOIN ec_PropertyMap pm ON pm.PropertyPathId = ppId.Id "
+        "JOIN ec_Column cId ON cId.Id = pm.ColumnId AND cId.IsVirtual = 0 "
+        "JOIN ec_Table t ON t.Id = cId.TableId "
+        "LEFT JOIN ec_PropertyPath ppRel ON ppRel.RootPropertyId = p.Id AND ppRel.AccessString = p.Name || '.RelECClassId' "
+        "LEFT JOIN ec_PropertyMap pmRel ON pmRel.PropertyPathId = ppRel.Id AND pmRel.ClassId = pm.ClassId "
+        "LEFT JOIN ec_Column cRel ON cRel.Id = pmRel.ColumnId "
+        "WHERE p.NavigationRelationshipClassId IS NOT NULL "
+        "ORDER BY t.Name, cId.Name");
+    if (BE_SQLITE_OK != rc)
+        {
+        LOG.errorv("BulkElementDeletion: failed to prepare logical navigation property query: %s", BeSQLiteLib::GetLogError(rc).c_str());
+        return rc;
+        }
+
+    const auto elementClassId = m_dgndb.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_Element);
+    if (!elementClassId.IsValid())
+        return BE_SQLITE_ERROR;
+    stmt.BindId(1, elementClassId);
+
+    LogicalNavTableMap tables;
+    DbResult stepRc;
+    while (BE_SQLITE_ROW == (stepRc = stmt.Step()))
+        {
+        const Utf8String tableName = stmt.GetValueText(0);
+        const Utf8String idColumn  = stmt.GetValueText(1);
+        if (HasPhysicalFk(tableName, idColumn))
+            continue; // SQLite handles it
+
+        auto& table = tables[tableName];
+        if (!stmt.IsColumnNull(4))
+            table.m_elementIdColumn = stmt.GetValueText(4);
+
+        // One LogicalNavColumn per physical column.
+        if (table.m_columns.empty() || !table.m_columns.back().m_idColumn.Equals(idColumn))
+            {
+            LogicalNavColumn col;
+            col.m_idColumn = idColumn;
+            if (!stmt.IsColumnNull(2))
+                col.m_relClassIdColumn = stmt.GetValueText(2);
+            table.m_columns.push_back(std::move(col));
+            }
+        table.m_columns.back().m_classIds.insert(stmt.GetValueUInt64(3));
+        }
+
+    if (BE_SQLITE_DONE != stepRc)
+        {
+        LOG.errorv("BulkElementDeletion: failed to read logical navigation properties: %s", BeSQLiteLib::GetLogError(stepRc).c_str());
+        return stepRc;
+        }
+
+    m_logicalNavTables = std::move(tables);
     return BE_SQLITE_OK;
     }
 
@@ -769,6 +875,76 @@ bool BulkElementDeletion::FireAllCallbacks()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Null out logical (non-FK) navigation properties that point into the delete set.
+* One UPDATE per table, touching every affected column of that table in a single pass;
+* rows that are themselves being deleted are left alone.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult BulkElementDeletion::NullifyLogicalNavProperties() const
+    {
+    for (const auto& [tableName, table] : m_logicalNavTables)
+        {
+        if (auto probe = m_dgndb.GetCachedStatement(SqlPrintfString("SELECT 1 FROM [%s] LIMIT 1", tableName.c_str())); probe.IsValid() && BE_SQLITE_ROW != probe->Step())
+            continue; // empty table
+
+        std::vector<Utf8String> conditions;
+        conditions.reserve(table.m_columns.size());
+        for (const auto& col : table.m_columns)
+            {
+            Utf8String classList;
+            for (const auto classId : col.m_classIds)
+                classList.append(classList.empty() ? "" : ",").append(std::to_string(classId));
+
+            conditions.push_back(SqlPrintfString("ECClassId IN (%s) AND [%s] IN (SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) ")", classList.c_str(), col.m_idColumn.c_str()).GetUtf8CP());
+            }
+
+        Utf8String sql = SqlPrintfString("UPDATE [%s] SET ", tableName.c_str()).GetUtf8CP();
+        Utf8String where;
+        const bool single = table.m_columns.size() == 1;
+        for (size_t i = 0; i < table.m_columns.size(); ++i)
+            {
+            const auto& col = table.m_columns[i];
+            const auto& cond = conditions[i];
+            if (i > 0)
+                {
+                sql.append(", ");
+                where.append(" OR ");
+                }
+
+            if (single)
+                {
+                sql.append(SqlPrintfString("[%s] = NULL", col.m_idColumn.c_str()).GetUtf8CP());
+                if (!col.m_relClassIdColumn.empty())
+                    sql.append(SqlPrintfString(", [%s] = NULL", col.m_relClassIdColumn.c_str()).GetUtf8CP());
+                }
+            else
+                {
+                sql.append(SqlPrintfString("[%s] = CASE WHEN %s THEN NULL ELSE [%s] END", col.m_idColumn.c_str(), cond.c_str(), col.m_idColumn.c_str()).GetUtf8CP());
+                if (!col.m_relClassIdColumn.empty())
+                    sql.append(SqlPrintfString(", [%s] = CASE WHEN %s THEN NULL ELSE [%s] END", col.m_relClassIdColumn.c_str(), cond.c_str(), col.m_relClassIdColumn.c_str()).GetUtf8CP());
+                }
+
+            where.append("(").append(cond).append(")");
+            }
+
+        sql.append(" WHERE (").append(where).append(")");
+        if (!table.m_elementIdColumn.empty())
+            sql.append(SqlPrintfString(" AND [%s] NOT IN (SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) ")", table.m_elementIdColumn.c_str()).GetUtf8CP());
+
+        if (const auto stat = m_dgndb.TryExecuteSql(sql.c_str()); stat != BE_SQLITE_OK)
+            {
+            LOG.errorv("BulkElementDeletion: failed to null logical navigation properties in %s: %s", tableName.c_str(), BeSQLiteLib::GetLogError(stat).c_str());
+            return stat;
+            }
+
+        if (const auto n = m_dgndb.GetModifiedRowCount(); n > 0)
+            LOG.infov("BulkElementDeletion: nulled logical navigation properties in %d row(s) of %s", n, tableName.c_str());
+        }
+
+    return BE_SQLITE_OK;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult BulkElementDeletion::ExecuteDeletion()
@@ -814,6 +990,10 @@ DbResult BulkElementDeletion::ExecuteDeletion()
             return stat;
             }
         }
+
+    // Navigation properties without a SQLite FK would otherwise be left dangling.
+    if (const auto stat = NullifyLogicalNavProperties(); stat != BE_SQLITE_OK)
+        return stat;
     }
 
     auto restoreFkState = [&]() {
@@ -914,22 +1094,22 @@ DbResult BulkElementDeletion::DeleteLinkTableRelationships() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BulkDeleteElementsResult BulkElementDeletion::Execute()
     {
-    // Bulk Element Deletion algorithm (all or nothing):
+    // Bulk Element Deletion algorithm:
     //
     //  1. LoadFkConstraints     – read every FK that targets bis_Element.Id from the SQLite schema.
-    //  2. CreateTempTables      – set up temp.ElementsToDelete scratch space.
-    //  3. ExpandElementIdList   – recursively pull in children and sub-model members.
-    //  4. ANALYZE               – give SQLite fresh statistics for the temp table so the
+    //  2. LoadLogicalNavProperties – read every nav property targeting bis:Element that has NO SQLite FK (EC metadata).
+    //  3. CreateTempTables      – set up temp.ElementsToDelete scratch space.
+    //  4. ExpandElementIdList   – recursively pull in children and sub-model members.
+    //  5. ANALYZE               – give SQLite fresh statistics for the temp table so the
     //                             query planner makes good choices in later steps.
-    //  5. FindProtectedElements         – root Subject and the built-in partitions can never be deleted.
-    //  6. FindReadOnlyDomainElements    – elements whose handler belongs to a read-only DgnDomain.
-    //  7. FindConstraintViolators       – elements still referenced via NO ACTION / RESTRICT FKs to bis_Element
-    //  8. FindInUseDefinitionElements   – DefinitionElements still used by elements outside the set.
-    //          If 5-8 found anything, nothing has been modified yet: return ConstraintViolation with the report.
-    //  9. FireAllCallbacks      – dispatch C++ and JS pre-/post-delete notifications in bulk (purge operation active).
-    // 10. ExecuteDeletion       – emulate CASCADE / SET NULL FKs, then bulk DELETE from bis_Element (FK enforcement off)
-    //                             and bis_Model for sub-model roots.
-    // 11. DeleteLinkTableRelationships – clean up link-table rows for deleted endpoints.
+    //  6. FindProtectedElements         – root Subject and the built-in partitions can never be deleted.
+    //  7. FindReadOnlyDomainElements    – elements whose handler belongs to a read-only DgnDomain.
+    //  8. FindConstraintViolators       – elements still referenced via NO ACTION / RESTRICT FKs to bis_Element
+    //  9. FindInUseDefinitionElements   – DefinitionElements still used by elements outside the set. 
+    //      - If 6-9 found anything, nothing has been modified yet: return ConstraintViolation with the report.
+    // 10. FireAllCallbacks      – dispatch C++ and JS pre-/post-delete notifications in bulk (purge operation active).
+    // 11. ExecuteDeletion       – emulate CASCADE / SET NULL FKs, null logical nav properties, then bulk DELETE from bis_Element and bis_Model for sub-model roots.
+    // 12. DeleteLinkTableRelationships – clean up link-table rows for deleted endpoints.
 
     DgnDb::VerifyClientThread();
 
@@ -962,6 +1142,9 @@ BulkDeleteElementsResult BulkElementDeletion::Execute()
     };
 
     if (const auto stat = LoadFkConstraints(); stat != BE_SQLITE_OK)
+        return fail(stat);
+
+    if (const auto stat = LoadLogicalNavProperties(); stat != BE_SQLITE_OK)
         return fail(stat);
 
     if (const auto stat = CreateTempTables(); stat != BE_SQLITE_OK)
