@@ -257,6 +257,11 @@ void JsChangesetConflictArgs::CreateFunctions(Napi::Env env) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+JsChangesetConflictArgs::~JsChangesetConflictArgs() {}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 Napi::Value JsChangesetConflictArgs::CallHandler(Napi::Function handler, Napi::Object receiver, DgnDbR db, ChangeSet::ConflictCause cause, Changes::Change const& change, Utf8StringR lastErrorMessage, Utf8CP contextName, Napi::Value contextValue) {
     auto env = handler.Env();
     if (m_functions.empty())

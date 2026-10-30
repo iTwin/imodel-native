@@ -1111,6 +1111,9 @@ private:
     void CreateFunctions(Napi::Env);
 
 public:
+    // Defined out of line so that code destroying a ChangesetFileReader does not need to link against Node-API.
+    DGNPLATFORM_EXPORT ~JsChangesetConflictArgs();
+
     //! Call `handler` for the conflict on `change`. Must be called inside a Napi::HandleScope.
     //! `contextName` and `contextValue` add a property that tells the handler where the conflict comes from.
     Napi::Value CallHandler(Napi::Function handler, Napi::Object receiver, DgnDbR db, BeSQLite::ChangeSet::ConflictCause cause, BeSQLite::Changes::Change const& change, Utf8StringR lastErrorMessage, Utf8CP contextName, Napi::Value contextValue);
