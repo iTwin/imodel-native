@@ -108,6 +108,198 @@ DbResult LocalChangeSet::ApplySupersedingRows() {
 }
 
 //---------------------------------------------------------------------------------------
+// Returns an invalid value if the column index or stage is out of range.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+static DbValue GetConflictValue(Napi::CallbackInfo const& info, Changes::Change const& change) {
+    REQUIRE_ARGUMENT_INTEGER(0, columnIdx);
+    REQUIRE_ARGUMENT_INTEGER(1, stage);
+    if (columnIdx < 0 || columnIdx >= change.GetColumnCount() || (stage != 0 && stage != 1))
+        return DbValue(nullptr);
+
+    return change.GetValue(columnIdx, (Changes::Change::Stage) stage);
+}
+
+//=======================================================================================
+// Creates the argument objects passed to a JavaScript changeset conflict handler.
+// The functions are created once per apply and shared by the argument objects of all its conflicts.
+// Each conflict gets its own argument object, whose functions only work while the handler for that conflict runs.
+// @bsiclass
+//=======================================================================================
+struct JsChangesetConflictArgs {
+private:
+    // The conflict being handled. Only set while its JavaScript handler runs.
+    struct Conflict {
+        DgnDb* m_db = nullptr;
+        Changes::Change const* m_change = nullptr;
+        Utf8String* m_lastErrorMessage = nullptr;
+        napi_value m_jsArgs = nullptr;
+
+        // The functions are shared by the argument objects of all conflicts, so they check that they
+        // were called on the argument object of the conflict being handled.
+        Changes::Change const& GetChange(Napi::CallbackInfo const& info) const {
+            if (nullptr == m_change || !info.This().StrictEquals(Napi::Value(info.Env(), m_jsArgs)))
+                THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Changeset conflict arguments may only be used during the conflict handler call", DgnDbStatus::BadRequest);
+
+            return *m_change;
+        }
+    };
+
+    // The functions share ownership of the conflict, so calling them after this object is gone
+    // throws instead of reading freed memory.
+    std::shared_ptr<Conflict> m_conflict = std::make_shared<Conflict>();
+    std::vector<std::pair<Utf8CP, Napi::FunctionReference>> m_functions;
+
+public:
+    explicit JsChangesetConflictArgs(Napi::Env);
+
+    // Call `handler` for the conflict on `change`. Must be called inside a Napi::HandleScope.
+    // `contextName` and `contextValue` add a property that tells the handler where the conflict comes from.
+    Napi::Value CallHandler(Napi::Function handler, Napi::Object receiver, DgnDbR db, ChangeSet::ConflictCause cause, Changes::Change const& change, Utf8StringR lastErrorMessage, Utf8CP contextName, Napi::Value contextValue);
+};
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+JsChangesetConflictArgs::JsChangesetConflictArgs(Napi::Env env) {
+    auto conflict = m_conflict;
+    auto addFunction = [&](Utf8CP name, auto callback) {
+        m_functions.emplace_back(name, Napi::Persistent(Napi::Function::New(env, callback, name)));
+    };
+
+    addFunction("getForeignKeyConflicts", [conflict](Napi::CallbackInfo const& info) -> Napi::Value {
+        return Napi::Number::New(info.Env(), conflict->GetChange(info).GetForeignKeyConflicts());
+    });
+    addFunction("getColumnNames", [conflict](Napi::CallbackInfo const& info) -> Napi::Value {
+        auto const& change = conflict->GetChange(info);
+        auto array = Napi::Array::New(info.Env());
+        bvector<Utf8String> columns;
+        if (conflict->m_db->GetColumns(columns, change.GetTableName().c_str())) {
+            for (uint32_t i = 0; i < (uint32_t) columns.size(); ++i)
+                array.Set(i, Napi::String::New(info.Env(), columns[i].c_str()));
+        }
+        return array;
+    });
+    addFunction("getPrimaryKeyColumns", [conflict](Napi::CallbackInfo const& info) -> Napi::Value {
+        auto const& change = conflict->GetChange(info);
+        auto array = Napi::Array::New(info.Env());
+        uint32_t k = 0;
+        for (int i = 0; i < change.GetPrimaryKeyColumnCount(); ++i) {
+            if (change.IsPrimaryKeyColumn(i))
+                array.Set(k++, Napi::Number::New(info.Env(), i));
+        }
+        return array;
+    });
+    addFunction("getValueType", [conflict](Napi::CallbackInfo const& info) -> Napi::Value {
+        auto val = GetConflictValue(info, conflict->GetChange(info));
+        if (!val.IsValid())
+            return info.Env().Undefined();
+
+        return Napi::Number::New(info.Env(), (int) val.GetValueType());
+    });
+    addFunction("getValueBinary", [conflict](Napi::CallbackInfo const& info) -> Napi::Value {
+        auto val = GetConflictValue(info, conflict->GetChange(info));
+        if (!val.IsValid())
+            return info.Env().Undefined();
+
+        if (val.IsNull())
+            return info.Env().Null();
+
+        auto nBytes = val.GetValueBytes();
+        auto blob = Napi::Uint8Array::New(info.Env(), nBytes);
+        memcpy(blob.Data(), val.GetValueBlob(), nBytes);
+        return blob;
+    });
+    addFunction("getValueText", [conflict](Napi::CallbackInfo const& info) -> Napi::Value {
+        auto val = GetConflictValue(info, conflict->GetChange(info));
+        if (!val.IsValid())
+            return info.Env().Undefined();
+
+        if (val.IsNull())
+            return info.Env().Null();
+
+        return Napi::String::New(info.Env(), val.GetValueText());
+    });
+    addFunction("getValueId", [conflict](Napi::CallbackInfo const& info) -> Napi::Value {
+        auto val = GetConflictValue(info, conflict->GetChange(info));
+        if (!val.IsValid())
+            return info.Env().Undefined();
+
+        if (val.IsNull())
+            return info.Env().Null();
+
+        return Napi::String::New(info.Env(), val.GetValueUInt64() == 0 ? "0x0" : BeInt64Id(val.GetValueUInt64()).ToHexStr());
+    });
+    addFunction("isValueNull", [conflict](Napi::CallbackInfo const& info) -> Napi::Value {
+        auto val = GetConflictValue(info, conflict->GetChange(info));
+        if (!val.IsValid())
+            return info.Env().Undefined();
+
+        return Napi::Boolean::New(info.Env(), val.IsNull());
+    });
+    addFunction("getValueInteger", [conflict](Napi::CallbackInfo const& info) -> Napi::Value {
+        auto val = GetConflictValue(info, conflict->GetChange(info));
+        if (!val.IsValid())
+            return info.Env().Undefined();
+
+        if (val.IsNull())
+            return info.Env().Null();
+
+        return Napi::Number::New(info.Env(), static_cast<double>(val.GetValueInt64()));
+    });
+    addFunction("getValueDouble", [conflict](Napi::CallbackInfo const& info) -> Napi::Value {
+        auto val = GetConflictValue(info, conflict->GetChange(info));
+        if (!val.IsValid())
+            return info.Env().Undefined();
+
+        if (val.IsNull())
+            return info.Env().Null();
+
+        return Napi::Number::New(info.Env(), val.GetValueDouble());
+    });
+    addFunction("dump", [conflict](Napi::CallbackInfo const& info) -> void {
+        conflict->GetChange(info).Dump(*conflict->m_db, false, 1);
+    });
+    addFunction("setLastError", [conflict](Napi::CallbackInfo const& info) -> void {
+        conflict->GetChange(info);
+        if (info.Length() != 1 || !info[0].IsString())
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "setLastError() Expect a string type arg", DgnDbStatus::BadArg);
+
+        *conflict->m_lastErrorMessage = info[0].As<Napi::String>().Utf8Value();
+    });
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Napi::Value JsChangesetConflictArgs::CallHandler(Napi::Function handler, Napi::Object receiver, DgnDbR db, ChangeSet::ConflictCause cause, Changes::Change const& change, Utf8StringR lastErrorMessage, Utf8CP contextName, Napi::Value contextValue) {
+    auto env = handler.Env();
+    auto args = Napi::Object::New(env);
+    for (auto const& function : m_functions)
+        args.Set(function.first, function.second.Value());
+
+    args.Set("cause", Napi::Number::New(env, (int) cause));
+    args.Set("opcode", Napi::Number::New(env, (int) change.GetOpcode()));
+    args.Set("indirect", Napi::Boolean::New(env, change.IsIndirect()));
+    args.Set("tableName", Napi::String::New(env, change.GetTableName()));
+    args.Set("columnCount", Napi::Number::New(env, change.GetColumnCount()));
+    args.Set(contextName, contextValue);
+
+    struct ConflictBinding {
+        Conflict& m_conflict;
+        ConflictBinding(Conflict& conflict, DgnDbR db, Changes::Change const& change, Utf8StringR lastErrorMessage, Napi::Object args) : m_conflict(conflict) {
+            m_conflict.m_db = &db;
+            m_conflict.m_change = &change;
+            m_conflict.m_lastErrorMessage = &lastErrorMessage;
+            m_conflict.m_jsArgs = args;
+        }
+        ~ConflictBinding() { m_conflict = Conflict(); }
+    } binding(*m_conflict, db, change, lastErrorMessage, args);
+
+    return handler.Call(receiver, {args});
+}
+
+//---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 ChangeSet::ConflictResolution LocalChangeSet::_OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter) {
@@ -140,174 +332,32 @@ ChangeSet::ConflictResolution LocalChangeSet::_OnConflict(ChangeSet::ConflictCau
         return ChangeSet::ConflictResolution::Abort;
     }
 
-    const auto jsDgnDb = jsIModelDb->Value();
-    const auto env = jsDgnDb.Env();
-    const auto onRebaseLocalTxnConflict = m_dgndb.GetJsTxns().Get("_onRebaseLocalTxnConflict").As<Napi::Function>();
-
+    const auto env = jsIModelDb->Env();
+    Napi::HandleScope scope(env);
+    const auto jsTxns = m_dgndb.GetJsTxns();
+    const auto onRebaseLocalTxnConflict = jsTxns.Get("_onRebaseLocalTxnConflict");
     if (!onRebaseLocalTxnConflict.IsFunction()) {
-        THROW_JS_DGN_DB_EXCEPTION(jsDgnDb.Env(), "_onRebaseLocalTxnConflict() does not exists", DgnDbStatus::BadArg);
+        THROW_JS_DGN_DB_EXCEPTION(env, "_onRebaseLocalTxnConflict() does not exists", DgnDbStatus::BadArg);
     }
-    auto arg = Napi::Object::New(env);
-    arg.Set("cause", Napi::Number::New(env, (int)cause));
-    arg.Set("opcode", Napi::Number::New(env, (int)iter.GetOpcode()));
-    arg.Set("indirect", Napi::Boolean::New(env, iter.IsIndirect()));
-    arg.Set("tableName", Napi::String::New(env, iter.GetTableName()));
-    arg.Set("columnCount", Napi::Number::New(env, iter.GetColumnCount()));
-    arg.Set("getForeignKeyConflicts", Napi::Function::New(env, [&](const Napi::CallbackInfo&) -> Napi::Value {
-        return Napi::Number::New(env, iter.GetForeignKeyConflicts());
-    }));
 
     auto txnInfo = Napi::Object::New(env);
     txnInfo.Set("id", Napi::String::New(env, m_id.GetValue() == 0 ? "0x0" : BeInt64Id(m_id.GetValue()).ToHexStr()));
     txnInfo.Set("descr", Napi::String::New(env, m_descr));
     txnInfo.Set("type" , Napi::String::New(env, m_type == TxnType::Data? "Data" : "Schema"));
 
-    arg.Set("txn", txnInfo);
-    arg.Set("getColumnNames", Napi::Function::New(env, [&](const Napi::CallbackInfo&) -> Napi::Value {
-        auto array = Napi::Array::New(env);
-        bvector<Utf8String> columns;
-        if (m_dgndb.GetColumns(columns, iter.GetTableName().c_str())) {
-            for(int i = 0; i < static_cast<int>(columns.size()); ++i)
-                array.Set(i, Napi::String::New(env, columns[i].c_str()));
-        }
-        return array;
-    }));
-    arg.Set("getPrimaryKeyColumns", Napi::Function::New(env, [&](const Napi::CallbackInfo&) -> Napi::Value {
-        auto array = Napi::Array::New(env);
-        int k = -1;
-        for (int i = 0; i < iter.GetPrimaryKeyColumnCount(); ++i){
-            if (iter.IsPrimaryKeyColumn(i)) {
-                array.Set(++k, Napi::Number::New(env, i));
-            }
-        }
-        return array;
-    }));
-    arg.Set("getValueType", Napi::Function::New(env, [&](const Napi::CallbackInfo& info) -> Napi::Value {
-        REQUIRE_ARGUMENT_INTEGER(0, columnIdx);
-        REQUIRE_ARGUMENT_INTEGER(1, stage);
-        if ((columnIdx < 0 && columnIdx >= iter.GetColumnCount()) || (stage !=0 && stage != 1))
-            return env.Undefined();
+    if (nullptr == m_jsConflictArgs)
+        m_jsConflictArgs = std::make_shared<JsChangesetConflictArgs>(env);
 
-        auto val = iter.GetValue(columnIdx, (Changes::Change::Stage)stage);
-        if (!val.IsValid())
-            return env.Undefined();
-
-        return Napi::Number::New(env, (int)val.GetValueType());
-    }));
-    arg.Set("getValueBinary", Napi::Function::New(env, [&](const Napi::CallbackInfo& info) -> Napi::Value {
-        REQUIRE_ARGUMENT_INTEGER(0, columnIdx);
-        REQUIRE_ARGUMENT_INTEGER(1, stage);
-        if ((columnIdx < 0 && columnIdx >= iter.GetColumnCount()) || (stage !=0 && stage != 1))
-            return env.Undefined();
-
-        auto val = iter.GetValue(columnIdx, (Changes::Change::Stage)stage);
-        if (!val.IsValid())
-            return env.Undefined();
-
-        if (val.IsNull())
-            return env.Null();
-
-        auto nBytes = val.GetValueBytes();
-        auto blob = Napi::Uint8Array::New(env, nBytes); // Napi::Buffer<uint8_t>::New(env, nBytes);
-        memcpy(blob.Data(), val.GetValueBlob(), nBytes);
-        return blob;
-    }));
-    arg.Set("getValueText", Napi::Function::New(env, [&](const Napi::CallbackInfo& info) -> Napi::Value {
-        REQUIRE_ARGUMENT_INTEGER(0, columnIdx);
-        REQUIRE_ARGUMENT_INTEGER(1, stage);
-        if ((columnIdx < 0 && columnIdx >= iter.GetColumnCount()) || (stage !=0 && stage != 1))
-            return env.Undefined();
-
-        auto val = iter.GetValue(columnIdx, (Changes::Change::Stage)stage);
-        if (!val.IsValid())
-            return env.Undefined();
-
-        if (val.IsNull())
-            return env.Null();
-
-        return Napi::String::New(env, val.GetValueText());
-    }));
-    arg.Set("getValueId", Napi::Function::New(env, [&](const Napi::CallbackInfo& info) -> Napi::Value {
-        REQUIRE_ARGUMENT_INTEGER(0, columnIdx);
-        REQUIRE_ARGUMENT_INTEGER(1, stage);
-        if ((columnIdx < 0 && columnIdx >= iter.GetColumnCount()) || (stage !=0 && stage != 1))
-            return env.Undefined();
-
-        auto val = iter.GetValue(columnIdx, (Changes::Change::Stage)stage);
-        if (!val.IsValid())
-            return env.Undefined();
-
-        if (val.IsNull())
-            return env.Null();
-
-        return Napi::String::New(env, val.GetValueUInt64() == 0 ? "0x0" : BeInt64Id(val.GetValueUInt64()).ToHexStr());
-    }));
-    arg.Set("isValueNull", Napi::Function::New(env, [&](const Napi::CallbackInfo& info) -> Napi::Value {
-        REQUIRE_ARGUMENT_INTEGER(0, columnIdx);
-        REQUIRE_ARGUMENT_INTEGER(1, stage);
-        auto val = iter.GetValue(columnIdx, (Changes::Change::Stage)stage);
-        if (!val.IsValid())
-            return env.Undefined();
-
-        if (val.IsNull())
-            return env.Null();
-
-        return Napi::Boolean::New(env, val.IsNull());
-    }));
-    arg.Set("getValueInteger", Napi::Function::New(env, [&](const Napi::CallbackInfo& info) -> Napi::Value {
-        REQUIRE_ARGUMENT_INTEGER(0, columnIdx);
-        REQUIRE_ARGUMENT_INTEGER(1, stage);
-        if ((columnIdx < 0 && columnIdx >= iter.GetColumnCount()) || (stage !=0 && stage != 1))
-            return env.Undefined();
-
-        auto val = iter.GetValue(columnIdx, (Changes::Change::Stage)stage);
-        if (!val.IsValid())
-            return env.Undefined();
-
-        if (val.IsNull())
-            return env.Null();
-
-        return Napi::Number::New(env, static_cast<double>(val.GetValueInt64()));
-    }));
-    arg.Set("getValueDouble", Napi::Function::New(env, [&](const Napi::CallbackInfo& info) -> Napi::Value {
-        REQUIRE_ARGUMENT_INTEGER(0, columnIdx);
-        REQUIRE_ARGUMENT_INTEGER(1, stage);
-        if ((columnIdx < 0 && columnIdx >= iter.GetColumnCount()) || (stage !=0 && stage != 1))
-            return env.Undefined();
-
-        auto val = iter.GetValue(columnIdx, (Changes::Change::Stage)stage);
-        if (!val.IsValid())
-            return env.Undefined();
-
-        if (val.IsNull())
-            return env.Null();
-
-        return Napi::Number::New(env, val.GetValueDouble());
-    }));
-    arg.Set("dump", Napi::Function::New(env, [&](const Napi::CallbackInfo&) -> void {
-        iter.Dump(m_dgndb, false, 1);
-    }));
-    arg.Set("setLastError", Napi::Function::New(env, [&](const Napi::CallbackInfo& info) -> void {
-        if (info.Length() != 1)
-            THROW_JS_DGN_DB_EXCEPTION(jsDgnDb.Env(), "setLastError() Expect a string type arg", DgnDbStatus::BadArg);
-
-        auto val = info[0];
-        if (!val.IsString())
-            THROW_JS_DGN_DB_EXCEPTION(jsDgnDb.Env(), "setLastError() Expect a string type arg", DgnDbStatus::BadArg);
-
-        m_lastErrorMessage = val.As<Napi::String>().Utf8Value();
-    }));
-
-    const auto resJsVal = onRebaseLocalTxnConflict.Call(m_dgndb.GetJsTxns(), {arg});
+    const auto resJsVal = m_jsConflictArgs->CallHandler(onRebaseLocalTxnConflict.As<Napi::Function>(), jsTxns, m_dgndb, cause, iter, m_lastErrorMessage, "txn", txnInfo);
     if (resJsVal.IsUndefined())
-        THROW_JS_DGN_DB_EXCEPTION(jsDgnDb.Env(), "_onRebaseLocalTxnConflict must return a resolution", DgnDbStatus::BadArg);
+        THROW_JS_DGN_DB_EXCEPTION(env, "_onRebaseLocalTxnConflict must return a resolution", DgnDbStatus::BadArg);
 
     if (!resJsVal.IsNumber())
-        THROW_JS_DGN_DB_EXCEPTION(jsDgnDb.Env(), "_onRebaseLocalTxnConflict did not return a number", DgnDbStatus::BadArg);
+        THROW_JS_DGN_DB_EXCEPTION(env, "_onRebaseLocalTxnConflict did not return a number", DgnDbStatus::BadArg);
 
     const auto resolution = (ChangeSet::ConflictResolution)resJsVal.As<Napi::Number>().Int32Value();
     if (resolution != ChangeSet::ConflictResolution::Abort  && resolution != ChangeSet::ConflictResolution::Replace && resolution != ChangeSet::ConflictResolution::Skip )
-        THROW_JS_DGN_DB_EXCEPTION(jsDgnDb.Env(), "_onRebaseLocalTxnConflict returned unsupported value for conflict resolution", DgnDbStatus::BadArg);
+        THROW_JS_DGN_DB_EXCEPTION(env, "_onRebaseLocalTxnConflict returned unsupported value for conflict resolution", DgnDbStatus::BadArg);
 
     return resolution;
 }
@@ -335,159 +385,27 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
         return ChangeSet::ConflictResolution::Abort;
     }
 
-const auto jsIModelDb = m_dgndb->GetJsIModelDb();
+    const auto jsIModelDb = m_dgndb->GetJsIModelDb();
     if (nullptr != jsIModelDb) {
+        const auto env = jsIModelDb->Env();
+        Napi::HandleScope scope(env);
         const auto jsDgnDb = jsIModelDb->Value();
-        const auto env = jsDgnDb.Env();
-        const auto onChangesetConflictFunc = jsDgnDb.Get("onChangesetConflict").As<Napi::Function>();
+        const auto onChangesetConflict = jsDgnDb.Get("onChangesetConflict");
+        if (onChangesetConflict.IsFunction()) {
+            if (nullptr == m_jsConflictArgs)
+                m_jsConflictArgs = std::make_shared<JsChangesetConflictArgs>(env);
 
-        if (onChangesetConflictFunc.IsFunction()) {
-            auto arg = Napi::Object::New(env);
-            arg.Set("cause", Napi::Number::New(env, (int)cause));
-            arg.Set("opcode", Napi::Number::New(env, (int)iter.GetOpcode()));
-            arg.Set("indirect", Napi::Boolean::New(env, iter.IsIndirect()));
-            arg.Set("tableName", Napi::String::New(env, iter.GetTableName()));
-            arg.Set("columnCount", Napi::Number::New(env, iter.GetColumnCount()));
-            arg.Set("changesetFile", Napi::String::New(env, GetFiles().front().GetNameUtf8()));
-            arg.Set("getForeignKeyConflicts", Napi::Function::New(env, [&](const Napi::CallbackInfo&) -> Napi::Value {
-                return Napi::Number::New(env, iter.GetForeignKeyConflicts());
-            }));
-            arg.Set("getPrimaryKeyColumns", Napi::Function::New(env, [&](const Napi::CallbackInfo&) -> Napi::Value {
-                auto array = Napi::Array::New(env);
-                int k = -1;
-                for (int i = 0; i < iter.GetPrimaryKeyColumnCount(); ++i){
-                    if (iter.IsPrimaryKeyColumn(i)) {
-                        array.Set(++k, Napi::Number::New(env, i));
-                    }
-                }
-                return array;
-            }));
-           arg.Set("getValueType", Napi::Function::New(env, [&](const Napi::CallbackInfo& info) -> Napi::Value {
-                REQUIRE_ARGUMENT_INTEGER(0, columnIdx);
-                REQUIRE_ARGUMENT_INTEGER(1, stage);
-                if ((columnIdx < 0 && columnIdx >= iter.GetColumnCount()) || (stage !=0 && stage != 1))
-                    return env.Undefined();
-
-                auto val = iter.GetValue(columnIdx, (Changes::Change::Stage)stage);
-                if (!val.IsValid())
-                    return env.Undefined();
-
-                return Napi::Number::New(env, (int)val.GetValueType());
-            }));
-            arg.Set("getValueBinary", Napi::Function::New(env, [&](const Napi::CallbackInfo& info) -> Napi::Value {
-                REQUIRE_ARGUMENT_INTEGER(0, columnIdx);
-                REQUIRE_ARGUMENT_INTEGER(1, stage);
-                if ((columnIdx < 0 && columnIdx >= iter.GetColumnCount()) || (stage !=0 && stage != 1))
-                    return env.Undefined();
-
-                auto val = iter.GetValue(columnIdx, (Changes::Change::Stage)stage);
-                if (!val.IsValid())
-                    return env.Undefined();
-
-                if (val.IsNull())
-                    return env.Null();
-
-                auto nBytes = val.GetValueBytes();
-                auto blob = Napi::Uint8Array::New(env, nBytes);
-                memcpy(blob.Data(), val.GetValueBlob(), nBytes);
-                return blob;
-            }));
-            arg.Set("getValueText", Napi::Function::New(env, [&](const Napi::CallbackInfo& info) -> Napi::Value {
-                REQUIRE_ARGUMENT_INTEGER(0, columnIdx);
-                REQUIRE_ARGUMENT_INTEGER(1, stage);
-                if ((columnIdx < 0 && columnIdx >= iter.GetColumnCount()) || (stage !=0 && stage != 1))
-                    return env.Undefined();
-
-                auto val = iter.GetValue(columnIdx, (Changes::Change::Stage)stage);
-                if (!val.IsValid())
-                    return env.Undefined();
-
-                if (val.IsNull())
-                    return env.Null();
-
-                return Napi::String::New(env, val.GetValueText());
-            }));
-            arg.Set("getValueId", Napi::Function::New(env, [&](const Napi::CallbackInfo& info) -> Napi::Value {
-                REQUIRE_ARGUMENT_INTEGER(0, columnIdx);
-                REQUIRE_ARGUMENT_INTEGER(1, stage);
-                if ((columnIdx < 0 && columnIdx >= iter.GetColumnCount()) || (stage !=0 && stage != 1))
-                    return env.Undefined();
-
-                auto val = iter.GetValue(columnIdx, (Changes::Change::Stage)stage);
-                if (!val.IsValid())
-                    return env.Undefined();
-
-                if (val.IsNull())
-                    return env.Null();
-
-                return Napi::String::New(env, val.GetValueUInt64() == 0 ? "0x0" : BeInt64Id(val.GetValueUInt64()).ToHexStr());
-            }));
-            arg.Set("isValueNull", Napi::Function::New(env, [&](const Napi::CallbackInfo& info) -> Napi::Value {
-                REQUIRE_ARGUMENT_INTEGER(0, columnIdx);
-                REQUIRE_ARGUMENT_INTEGER(1, stage);
-                auto val = iter.GetValue(columnIdx, (Changes::Change::Stage)stage);
-                if (!val.IsValid())
-                    return env.Undefined();
-
-                if (val.IsNull())
-                    return env.Null();
-
-                return Napi::Boolean::New(env, val.IsNull());
-            }));
-            arg.Set("getValueInteger", Napi::Function::New(env, [&](const Napi::CallbackInfo& info) -> Napi::Value {
-                REQUIRE_ARGUMENT_INTEGER(0, columnIdx);
-                REQUIRE_ARGUMENT_INTEGER(1, stage);
-                if ((columnIdx < 0 && columnIdx >= iter.GetColumnCount()) || (stage !=0 && stage != 1))
-                    return env.Undefined();
-
-                auto val = iter.GetValue(columnIdx, (Changes::Change::Stage)stage);
-                if (!val.IsValid())
-                    return env.Undefined();
-
-                if (val.IsNull())
-                    return env.Null();
-
-                return Napi::Number::New(env, static_cast<double>(val.GetValueInt64()));
-            }));
-            arg.Set("getValueDouble", Napi::Function::New(env, [&](const Napi::CallbackInfo& info) -> Napi::Value {
-                REQUIRE_ARGUMENT_INTEGER(0, columnIdx);
-                REQUIRE_ARGUMENT_INTEGER(1, stage);
-                if ((columnIdx < 0 && columnIdx >= iter.GetColumnCount()) || (stage !=0 && stage != 1))
-                    return env.Undefined();
-
-                auto val = iter.GetValue(columnIdx, (Changes::Change::Stage)stage);
-                if (!val.IsValid())
-                    return env.Undefined();
-
-                if (val.IsNull())
-                    return env.Null();
-
-                return Napi::Number::New(env, val.GetValueDouble());
-            }));
-            arg.Set("dump", Napi::Function::New(env, [&](const Napi::CallbackInfo&) -> void {
-                iter.Dump(*m_dgndb, false, 1);
-            }));
-            arg.Set("setLastError", Napi::Function::New(env, [&](const Napi::CallbackInfo& info) -> void {
-                if (info.Length() != 1)
-                    THROW_JS_DGN_DB_EXCEPTION(jsDgnDb.Env(), "setLastError() Expect a string type arg", DgnDbStatus::BadArg);
-
-                auto val = info[0];
-                if (!val.IsString())
-                    THROW_JS_DGN_DB_EXCEPTION(jsDgnDb.Env(), "setLastError() Expect a string type arg", DgnDbStatus::BadArg);
-
-                m_lastErrorMessage = val.As<Napi::String>().Utf8Value();
-            }));
-
-            const auto resolutionJsVal = onChangesetConflictFunc.Call(jsDgnDb, {arg});
+            const auto changesetFile = Napi::String::New(env, GetFiles().front().GetNameUtf8());
+            const auto resolutionJsVal = m_jsConflictArgs->CallHandler(onChangesetConflict.As<Napi::Function>(), jsDgnDb, *m_dgndb, cause, iter, m_lastErrorMessage, "changesetFile", changesetFile);
 
             // if handler return undefined we revert to native handler.
             if (!resolutionJsVal.IsUndefined()) {
                 if (!resolutionJsVal.IsNumber())
-                    THROW_JS_DGN_DB_EXCEPTION(jsDgnDb.Env(), "onChangesetConflict did not return a number", DgnDbStatus::BadArg);
+                    THROW_JS_DGN_DB_EXCEPTION(env, "onChangesetConflict did not return a number", DgnDbStatus::BadArg);
 
                 const auto resolution = (ChangeSet::ConflictResolution)resolutionJsVal.As<Napi::Number>().Int32Value();
                 if (resolution != ChangeSet::ConflictResolution::Abort  && resolution != ChangeSet::ConflictResolution::Replace && resolution != ChangeSet::ConflictResolution::Skip )
-                    THROW_JS_DGN_DB_EXCEPTION(jsDgnDb.Env(), "onChangesetConflict returned unsupported value for conflict resolution", DgnDbStatus::BadArg);
+                    THROW_JS_DGN_DB_EXCEPTION(env, "onChangesetConflict returned unsupported value for conflict resolution", DgnDbStatus::BadArg);
 
                 return resolution;
             }
