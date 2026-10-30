@@ -288,6 +288,7 @@ struct CacheEntry {
   int nRef;                       /* Current number of client refs */
   int iEnc;                       /* Encryption index, if any */
   i64 iLruTick;                   /* Logic clock when last added to LRU list */
+  int nByte;                      /* Size of block as downloaded, in bytes */
   CacheEntry *pHashNext;          /* Hash collision list */
   CacheEntry *pLruPrev;           /* Previous entry in LRU list */
   CacheEntry *pLruNext;           /* Next entry in LRU list */
@@ -341,6 +342,7 @@ void *bcvMallocRc(int *pRc, i64 nByte);
 char *bcvStrdupRc(int *pRc, const char *z);
 
 i64 sqlite_timestamp(void);
+i64 bcv_timestamp(void);
 
 int bcv_isdigit(char c);
 int bcv_isspace(char c);

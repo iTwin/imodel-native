@@ -7,6 +7,8 @@
 #include "SQLite/sqlite3.h"
 #include <BeSQLite/CloudSqlite.h>
 #include <Bentley/SHA1.h>
+#include "CloudSqliteQueryStats.h"
+#include <chrono>
 
 // cspell:ignore bcvfs itwindb nrequest isdaemon ncleanup ifnot bcvconfig blockno npin
 
@@ -16,6 +18,173 @@ int besqlite_bcv_custom_init();
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE
+
+namespace {
+struct QueryStatsConnection {
+    sqlite3* m_db;
+    int64_t m_blockSize = 0;
+    bool m_registered = false;
+    bool m_leased = false;
+
+    explicit QueryStatsConnection(sqlite3* db) : m_db(db) {}
+
+    int Initialize() {
+        if (!m_db)
+            return SQLITE_ABORT;
+        if (m_registered)
+            return SQLITE_OK;
+        Statement stmt;
+        auto rc = sqlite3_prepare_v2(m_db, "PRAGMA main.bcv_blocksize", -1, &stmt.GetStmtR(), nullptr);
+        if (rc != SQLITE_OK)
+            return rc;
+        rc = sqlite3_step(stmt.GetStmtR());
+        if (rc != SQLITE_ROW)
+            return rc == SQLITE_DONE ? SQLITE_NOTFOUND : rc;
+        m_blockSize = stmt.GetValueInt64(0);
+        if (m_blockSize <= 0)
+            return SQLITE_NOTFOUND;
+        stmt.Finalize();
+        if (!m_db)
+            return SQLITE_ABORT;
+        rc = sqlite3_bcvfs_register_vtab(m_db);
+        m_registered = rc == SQLITE_OK;
+        return rc;
+    }
+};
+
+struct QueryStatsAppData : Db::AppData {
+    std::shared_ptr<QueryStatsConnection> m_connection;
+    explicit QueryStatsAppData(sqlite3* db) : m_connection(std::make_shared<QueryStatsConnection>(db)) {}
+    ~QueryStatsAppData() { m_connection->m_db = nullptr; }
+};
+}
+
+struct CloudSqliteTiming::Impl {
+    std::shared_ptr<QueryStatsConnection> m_connection;
+    CloudSqliteQueryStats m_before;
+    CloudSqliteQueryStats m_delta;
+    bool m_valid = false;
+    bool m_leased = false;
+    std::chrono::steady_clock::time_point m_scopeStart;
+    std::chrono::steady_clock::time_point m_start;
+    std::chrono::steady_clock::duration m_elapsed{};
+    std::chrono::steady_clock::duration m_snapshotOverhead{};
+    unsigned m_depth = 0;
+};
+
+static thread_local CloudSqliteTiming::Impl* s_cloudQueryTiming = nullptr;
+
+CloudSqliteTiming::CloudSqliteTiming() = default;
+CloudSqliteTiming::~CloudSqliteTiming() = default;
+
+void CloudSqliteTiming::Reset(bool enabled) {
+    // A JS logging callback can reset collection while a native scope is
+    // suspended. That scope retains its old state until it unwinds.
+    m_impl = enabled ? std::make_shared<Impl>() : nullptr;
+}
+
+bool CloudSqliteTiming::TryGet(double& downloadTime, double& executionTime, uint64_t& downloadBlocks, uint64_t& downloadBlockSize) const {
+    if (!m_impl || m_impl->m_depth || !m_impl->m_valid)
+        return false;
+    auto activeMs = std::chrono::duration<double, std::milli>(m_impl->m_elapsed).count();
+    auto waitMs = m_impl->m_delta.m_waitUs / 1000.0;
+    if (waitMs < 0 || waitMs > activeMs)
+        return false;
+    downloadTime = waitMs;
+    executionTime = activeMs - waitMs;
+    downloadBlocks = static_cast<uint64_t>(m_impl->m_delta.m_blocks);
+    downloadBlockSize = static_cast<uint64_t>(m_impl->m_connection->m_blockSize);
+    return true;
+}
+
+CloudSqliteTiming::Scope::Scope(CloudSqliteTiming& timing, Db const* db) : m_impl(timing.m_impl) {
+    Start(db);
+}
+
+CloudSqliteTiming::Scope::Scope(Db const& db) {
+    if (!s_cloudQueryTiming || !s_cloudQueryTiming->m_valid)
+        return;
+    // The enclosing snapshot already covers this handle.
+    if (s_cloudQueryTiming->m_connection->m_db == db.GetSqlDb())
+        return;
+    m_impl = std::make_shared<Impl>();
+    m_includeInParent = true;
+    Start(&db);
+}
+
+void CloudSqliteTiming::Scope::Start(Db const* db) {
+    if (!m_impl)
+        return;
+    auto& impl = *m_impl;
+    if (impl.m_depth++ == 0) {
+        impl.m_scopeStart = std::chrono::steady_clock::now();
+        impl.m_elapsed = {};
+        impl.m_snapshotOverhead = {};
+        impl.m_delta = {};
+        impl.m_valid = db && db->IsDbOpen();
+        if (impl.m_valid) {
+            static Db::AppData::Key key;
+            impl.m_connection = db->ObtainAppData(key, [db]() { return new QueryStatsAppData(db->GetSqlDb()); })->m_connection;
+            auto& connection = *impl.m_connection;
+            if (connection.m_leased || connection.Initialize() != SQLITE_OK) {
+                impl.m_valid = false;
+            } else {
+                connection.m_leased = impl.m_leased = true;
+                if (!connection.m_db || CloudSqliteQueryStats::Read(connection.m_db, impl.m_before) != SQLITE_OK)
+                    impl.m_valid = false;
+            }
+        }
+        impl.m_start = std::chrono::steady_clock::now();
+    }
+    m_previous = s_cloudQueryTiming;
+    s_cloudQueryTiming = &impl;
+    m_active = true;
+}
+
+CloudSqliteTiming::Scope::~Scope() { Finish(); }
+
+void CloudSqliteTiming::Scope::Finish() {
+    if (!m_active)
+        return;
+    auto& impl = *m_impl;
+    if (--impl.m_depth == 0) {
+        impl.m_elapsed = std::chrono::steady_clock::now() - impl.m_start - impl.m_snapshotOverhead;
+        if (impl.m_valid) {
+            CloudSqliteQueryStats after, delta;
+            if (!impl.m_connection->m_db ||
+                CloudSqliteQueryStats::Read(impl.m_connection->m_db, after) != SQLITE_OK ||
+                !CloudSqliteQueryStats::Delta(impl.m_before, after, delta) ||
+                !impl.m_delta.Accumulate(delta))
+                impl.m_valid = false;
+        }
+        if (impl.m_leased) {
+            impl.m_connection->m_leased = impl.m_leased = false;
+        }
+        if (m_includeInParent) {
+            auto& parent = *static_cast<Impl*>(m_previous);
+            // The parent wall clock already includes this work. Merge only downloads,
+            // excluding the additional snapshots from its execution remainder.
+            parent.m_snapshotOverhead += std::chrono::steady_clock::now() - impl.m_scopeStart - impl.m_elapsed;
+            if (!impl.m_valid || impl.m_connection->m_blockSize != parent.m_connection->m_blockSize ||
+                !parent.m_delta.Accumulate(impl.m_delta))
+                parent.m_valid = false;
+        }
+    }
+    s_cloudQueryTiming = static_cast<Impl*>(m_previous);
+    m_active = false;
+}
+
+CloudSqliteTiming::Suspension::Suspension() : m_previous(s_cloudQueryTiming) {
+    s_cloudQueryTiming = nullptr;
+    // Upstream counters cannot exclude callbacks inside an unfinished download.
+    // Do not report a misleading split or query statistics during a callback.
+    if (m_previous)
+        static_cast<Impl*>(m_previous)->m_valid = false;
+}
+
+CloudSqliteTiming::Suspension::~Suspension() {
+    s_cloudQueryTiming = static_cast<Impl*>(m_previous);
+}
 
 // default for "nRequests" to SQLite apis (number of simultaneous HTTP connections). 6 is the maximum from Chrome.
 static const int DEFAULT_MAX_HTTP_CONNECTIONS = 6;
@@ -483,4 +652,3 @@ CloudResult CloudUtil::DownloadDatabase(Utf8StringCR dbName, Utf8StringCR localN
     auto stat = (DbResult)sqlite3_bcv_download(m_handle, dbName.c_str(), localName.c_str());
     return CloudResult(stat, sqlite3_bcv_errmsg(m_handle));
 }
-

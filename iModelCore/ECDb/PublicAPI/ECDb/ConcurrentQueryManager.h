@@ -285,6 +285,7 @@ struct ECSqlRequest : public QueryRequest{
         bool m_abbreviateBlobs;
         bool m_suppressLogErrors;
         bool m_includeMetaData;
+        bool m_collectCloudSqliteStats = false;
         bool m_convertClassIdsToClassNames;
         bool m_doNotConvertClassIdsToClassNamesWhenAliased;
         ECSqlValueFormat m_valueFmt;
@@ -300,6 +301,7 @@ struct ECSqlRequest : public QueryRequest{
         bool GetAbbreviateBlobs() const {return m_abbreviateBlobs; }
         bool GetSuppressLogErrors() const {return m_suppressLogErrors; }
         bool GetIncludeMetaData() const {return m_includeMetaData; }
+        bool GetCollectCloudSqliteStats() const { return m_collectCloudSqliteStats; }
         bool GetConvertClassIdsToClassNames() const {return m_convertClassIdsToClassNames; }
         bool GetDoNotConvertClassIdsToClassNamesWhenAliased() const { return m_doNotConvertClassIdsToClassNamesWhenAliased; }
         QueryLimit const& GetLimit() const {return m_limit;}
@@ -309,6 +311,7 @@ struct ECSqlRequest : public QueryRequest{
         ECSqlRequest& SetAbbreviateBlobs(bool abbreviateBlobs) { m_abbreviateBlobs = abbreviateBlobs; return *this;}
         ECSqlRequest& SetSuppressLogErrors(bool suppressLogErrors) { m_suppressLogErrors = suppressLogErrors; return *this;}
         ECSqlRequest& SetIncludeMetaData(bool includeMetaData) { m_includeMetaData = includeMetaData; return *this;}
+        ECSqlRequest& SetCollectCloudSqliteStats(bool enabled) { m_collectCloudSqliteStats = enabled; return *this; }
         ECSqlRequest& SetConvertClassIdsToClassNames(bool convertClassIdsToClassNames) { m_convertClassIdsToClassNames = convertClassIdsToClassNames; return *this;}
         ECSqlRequest& SetArgs(BeJsConst args) { m_args.FromJs(args); return *this;}
         ECSqlRequest& SetArgs(ECSqlParams const& args) { m_args = args; return *this;}
@@ -360,23 +363,35 @@ struct QueryResponse : std::enable_shared_from_this<QueryResponse> {
             static constexpr auto kMemUsed = "memUsed";
             static constexpr auto kPrepareTime = "prepareTime";
             std::chrono::microseconds m_cpuTime;
-            std::chrono::milliseconds m_totalTime;
+            std::chrono::duration<double, std::milli> m_totalTime;
             std::chrono::milliseconds m_timeLimit;
-            std::chrono::milliseconds m_prepareTime;
+            std::chrono::duration<double, std::milli> m_prepareTime;
             uint32_t m_memLimit;
             uint32_t m_memUsed;
             bool m_resumed = false;
+            std::string m_cloudSqliteTimingState;
+            double m_downloadTime = 0;
+            double m_executionTime = 0;
+            uint64_t m_downloadBlocks = 0;
+            uint64_t m_downloadBlockSize = 0;
         public:
             Stats():m_cpuTime(0ms),m_totalTime(0ms), m_timeLimit(0ms),m_prepareTime(0),m_memLimit(0), m_memUsed(0){}
-            Stats(std::chrono::microseconds cpuTime, std::chrono::milliseconds totalTime, uint32_t memUsed, QueryQuota const& quota, std::chrono::milliseconds prepareTime, bool resumed = false):
+            Stats(std::chrono::microseconds cpuTime, std::chrono::duration<double, std::milli> totalTime, uint32_t memUsed, QueryQuota const& quota, std::chrono::duration<double, std::milli> prepareTime, bool resumed = false):
                 m_cpuTime(cpuTime), m_totalTime(totalTime),
                 m_timeLimit(std::chrono::duration_cast<std::chrono::milliseconds>(quota.MaxTimeAllowed())), m_prepareTime(prepareTime),
                 m_memLimit(quota.MaxMemoryAllowed()),m_memUsed(memUsed),m_resumed(resumed){}
             virtual ~Stats(){}
             std::chrono::microseconds CpuTime() const { return m_cpuTime;}
-            std::chrono::milliseconds TotalTime() const { return m_totalTime;}
+            std::chrono::milliseconds TotalTime() const { return std::chrono::duration_cast<std::chrono::milliseconds>(m_totalTime);}
             std::chrono::milliseconds TimeLimit() const { return m_timeLimit;}
-            std::chrono::milliseconds PrepareTime() const { return m_prepareTime;}
+            std::chrono::milliseconds PrepareTime() const { return std::chrono::duration_cast<std::chrono::milliseconds>(m_prepareTime);}
+            void SetCloudSqliteTiming(Utf8CP state, double downloadTime = 0, double executionTime = 0, uint64_t downloadBlocks = 0, uint64_t downloadBlockSize = 0) {
+                m_cloudSqliteTimingState = state;
+                m_downloadTime = downloadTime;
+                m_executionTime = executionTime;
+                m_downloadBlocks = downloadBlocks;
+                m_downloadBlockSize = downloadBlockSize;
+            }
             uint32_t MemLimit() const { return m_memLimit;}
             uint32_t MemUsed() const { return m_memUsed;}
             bool Resumed() const { return m_resumed; }
@@ -412,6 +427,9 @@ struct QueryResponse : std::enable_shared_from_this<QueryResponse> {
         Status GetStatus() const noexcept {return m_status;}
         std::string const& GetError() const noexcept {return m_error;}
         Stats const& GetStats() const { return m_stats; }
+        void SetCloudSqliteTiming(Utf8CP state, double downloadTime = 0, double executionTime = 0, uint64_t downloadBlocks = 0, uint64_t downloadBlockSize = 0) {
+            m_stats.SetCloudSqliteTiming(state, downloadTime, executionTime, downloadBlocks, downloadBlockSize);
+        }
         bool IsDone() const noexcept { return m_status == Status::Done;}
         bool IsPartial() const noexcept { return m_status == Status::Partial;}
         bool IsSuccess() const noexcept { return m_status == Status::Done || m_status == Status::Partial;}

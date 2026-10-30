@@ -7,8 +7,146 @@
 #include <Bentley/BeDirectoryIterator.h>
 #include <BeSQLite/Profiler.h>
 #include <BeSQLite/VirtualTab.h>
+#include <BeSQLite/CloudSqlite.h>
+#include "../../CloudSqliteQueryStats.h"
 #include <thread>
+#include <stdexcept>
 using namespace MemorySize;
+
+TEST_F(BeSQliteTestFixture, CloudStatsSnapshotsUseMicrosecondsAndPreserveWarmCacheZeros)
+    {
+    auto db = Create("cloud_stats_snapshots.db");
+    ASSERT_EQ(BE_SQLITE_OK, db->ExecuteDdl("CREATE TABLE bcv_stat(name TEXT,value INTEGER)"));
+    ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql(
+        "INSERT INTO bcv_stat VALUES ('nqueryus',4294967303),('nqueryblock',12),('nquerybyte',49152),('other',9)"));
+    CloudSqliteQueryStats before, after, delta;
+    ASSERT_EQ(SQLITE_OK, CloudSqliteQueryStats::Read(db->GetSqlDb(), before));
+    ASSERT_EQ(SQLITE_OK, CloudSqliteQueryStats::Read(db->GetSqlDb(), after));
+    ASSERT_TRUE(CloudSqliteQueryStats::Delta(before, after, delta));
+    EXPECT_EQ(0, delta.m_waitUs);
+    EXPECT_EQ(0, delta.m_blocks);
+    EXPECT_EQ(0, delta.m_bytes);
+    ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql(
+        "UPDATE bcv_stat SET value=value+CASE name WHEN 'nqueryus' THEN 1250 WHEN 'nqueryblock' THEN 2 ELSE 8192 END"));
+    ASSERT_EQ(SQLITE_OK, CloudSqliteQueryStats::Read(db->GetSqlDb(), after));
+    ASSERT_TRUE(CloudSqliteQueryStats::Delta(before, after, delta));
+    EXPECT_EQ(1250, delta.m_waitUs);
+    EXPECT_EQ(2, delta.m_blocks);
+    EXPECT_EQ(8192, delta.m_bytes);
+    }
+
+TEST_F(BeSQliteTestFixture, CloudStatsSnapshotsRejectLegacyMissingAndMalformedCounters)
+    {
+    auto db = Create("cloud_stats_legacy.db");
+    ASSERT_EQ(BE_SQLITE_OK, db->ExecuteDdl("CREATE TABLE bcv_stat(name TEXT,value)"));
+    ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql(
+        "INSERT INTO bcv_stat VALUES ('nqueryms',0),('nqueryblock',0),('nquerybyte',0)"));
+    CloudSqliteQueryStats snapshot;
+    EXPECT_EQ(SQLITE_NOTFOUND, CloudSqliteQueryStats::Read(db->GetSqlDb(), snapshot));
+    ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql("UPDATE bcv_stat SET name='nqueryus' WHERE name='nqueryms'"));
+    EXPECT_EQ(SQLITE_OK, CloudSqliteQueryStats::Read(db->GetSqlDb(), snapshot));
+    ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql("INSERT INTO bcv_stat VALUES ('nqueryus',0)"));
+    EXPECT_EQ(SQLITE_CORRUPT, CloudSqliteQueryStats::Read(db->GetSqlDb(), snapshot));
+    ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql("DELETE FROM bcv_stat WHERE name='nqueryus'"));
+    ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql("INSERT INTO bcv_stat VALUES ('nqueryus',-1)"));
+    EXPECT_EQ(SQLITE_CORRUPT, CloudSqliteQueryStats::Read(db->GetSqlDb(), snapshot));
+    ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql("UPDATE bcv_stat SET value='invalid' WHERE name='nqueryus'"));
+    EXPECT_EQ(SQLITE_CORRUPT, CloudSqliteQueryStats::Read(db->GetSqlDb(), snapshot));
+    ASSERT_EQ(BE_SQLITE_OK, db->ExecuteDdl("DROP TABLE bcv_stat"));
+    EXPECT_EQ(SQLITE_ERROR, CloudSqliteQueryStats::Read(db->GetSqlDb(), snapshot));
+    }
+
+TEST(CloudSqliteQueryTiming, StatsDeltasRejectCounterResets)
+    {
+    CloudSqliteQueryStats before{100, 4, 4096}, after{125, 6, 8192}, delta;
+    ASSERT_TRUE(CloudSqliteQueryStats::Delta(before, after, delta));
+    EXPECT_EQ(25, delta.m_waitUs);
+    EXPECT_EQ(2, delta.m_blocks);
+    EXPECT_EQ(4096, delta.m_bytes);
+    EXPECT_FALSE(CloudSqliteQueryStats::Delta(before, {99, 6, 8192}, delta));
+    EXPECT_FALSE(CloudSqliteQueryStats::Delta(before, {125, 3, 8192}, delta));
+    EXPECT_FALSE(CloudSqliteQueryStats::Delta(before, {125, 6, 4095}, delta));
+    }
+
+TEST(CloudSqliteQueryTiming, AccumulatesConnectionDeltasWithoutOverflow)
+    {
+    CloudSqliteQueryStats worker, schema;
+    ASSERT_TRUE(CloudSqliteQueryStats::Delta({100, 4, 16384}, {125, 6, 24576}, worker));
+    ASSERT_TRUE(CloudSqliteQueryStats::Delta({200, 8, 32768}, {250, 9, 36864}, schema));
+    ASSERT_TRUE(worker.Accumulate(schema));
+    EXPECT_EQ(75, worker.m_waitUs);
+    EXPECT_EQ(3, worker.m_blocks);
+    EXPECT_EQ(12288, worker.m_bytes);
+    auto max = std::numeric_limits<int64_t>::max();
+    EXPECT_FALSE(worker.Accumulate({max, 0, 0}));
+    EXPECT_FALSE(worker.Accumulate({0, max, 0}));
+    EXPECT_FALSE(worker.Accumulate({0, 0, max}));
+    EXPECT_EQ(75, worker.m_waitUs);
+    EXPECT_EQ(3, worker.m_blocks);
+    EXPECT_EQ(12288, worker.m_bytes);
+    }
+
+TEST(CloudSqliteQueryTiming, ResetWhileSuspendedKeepsActiveScopeStateAlive)
+    {
+    CloudSqliteTiming timing;
+    timing.Reset(true);
+    double download, execution;
+    uint64_t blocks, blockSize;
+    {
+    CloudSqliteTiming::Scope outer(timing);
+    {
+    CloudSqliteTiming::Suspension applicationCallback;
+    timing.Reset(false);
+    EXPECT_FALSE(timing.TryGet(download, execution, blocks, blockSize));
+    timing.Reset(true);
+    CloudSqliteTiming::Scope reentrantCall(timing);
+    }
+    // The suspended logger restores the original collector, not the reset
+    // accumulator. Finishing that retired scope must not corrupt the new one.
+    outer.Finish();
+    }
+    {
+    CloudSqliteTiming::Scope nextCall(timing);
+    timing.Reset(false);
+    }
+    EXPECT_FALSE(timing.TryGet(download, execution, blocks, blockSize));
+    }
+
+TEST(CloudSqliteQueryTiming, ResetDuringCallbackPreservesOriginalException)
+    {
+    CloudSqliteTiming timing;
+    timing.Reset(true);
+    try {
+        CloudSqliteTiming::Scope active(timing);
+        CloudSqliteTiming::Suspension applicationCallback;
+        timing.Reset(false);
+        throw std::runtime_error("original callback failure");
+    } catch (std::runtime_error const& error) {
+        EXPECT_STREQ("original callback failure", error.what());
+    }
+    timing.Reset(true);
+    CloudSqliteTiming::Scope nextCall(timing);
+    }
+
+TEST(CloudSqliteQueryTiming, DisabledAndLocalScopesHaveNoCloudResult)
+    {
+    CloudSqliteTiming timing;
+    double download, execution;
+    uint64_t blocks, blockSize;
+    {
+    CloudSqliteTiming::Scope disabled(timing);
+    }
+    EXPECT_FALSE(timing.TryGet(download, execution, blocks, blockSize));
+    timing.Reset(true);
+    {
+    CloudSqliteTiming::Scope outer(timing);
+    CloudSqliteTiming::Scope nested(timing);
+    CloudSqliteTiming::Suspension applicationCallback;
+    }
+    EXPECT_FALSE(timing.TryGet(download, execution, blocks, blockSize));
+    timing.Reset(false);
+    EXPECT_FALSE(timing.TryGet(download, execution, blocks, blockSize));
+    }
 
 #define MEM_THRESHOLD (100 * MEG)
 
@@ -325,6 +463,26 @@ struct DisableAsserts {
     DisableAsserts() { BeTest::SetFailOnAssert(false); }
     ~DisableAsserts() { BeTest::SetFailOnAssert(true); }
 };
+
+TEST_F(BeSQliteTestFixture, CloudTimingScopeSurvivesReentrantDatabaseClose) {
+    auto db = Create("timing_reentrant_close.db");
+    ASSERT_NE(nullptr, db);
+    CloudSqliteTiming timing;
+    timing.Reset(true);
+    {
+        CloudSqliteTiming::Scope nativeCall(timing, db.get());
+        {
+            CloudSqliteTiming::Suspension applicationCallback;
+            double download, execution;
+            uint64_t blocks, blockSize;
+            EXPECT_FALSE(timing.TryGet(download, execution, blocks, blockSize));
+            timing.Reset(false);
+            db->CloseDb();
+            db.reset();
+        }
+        nativeCall.Finish();
+    }
+}
 
 TEST_F(BeSQliteTestFixture, sqlite_stmt) {
     auto db1 = Create("first.db");

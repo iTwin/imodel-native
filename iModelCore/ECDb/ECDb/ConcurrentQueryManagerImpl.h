@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include <ECDb/ConcurrentQueryManager.h>
+#include <BeSQLite/CloudSqlite.h>
 #include "ECSqlRowRenderer.h"
 #include <queue>
 #include <map>
@@ -290,7 +291,9 @@ struct RunnableRequestBase {
         uint32_t m_executorId;
         uint32_t m_connId;
         std::atomic_bool m_interrupted;
-        std::chrono::milliseconds m_prepareTime;
+        std::chrono::steady_clock::duration m_prepareTime;
+        CloudSqliteTiming m_cloudTiming;
+        std::unique_ptr<CloudSqliteTiming::Scope> m_cloudTimingScope;
         bool m_resumed = false;
         std::optional<std::string> m_argsKey;
         std::optional<std::chrono::steady_clock::time_point> m_cursorAffinityWaitStarted;
@@ -312,7 +315,13 @@ struct RunnableRequestBase {
         void SetResponse(QueryResponse::Ptr response);
         void StageResponse(QueryResponse::Ptr response);
         void PublishPendingResponse();
-        void SetPrepareTime(std::chrono::milliseconds time) { m_prepareTime = time; }
+        void SetPrepareTime(std::chrono::steady_clock::duration time) { m_prepareTime = time; }
+        void BeginCloudSqliteTiming(Db const& db) {
+            if (GetRequest().GetKind() == QueryRequest::Kind::ECSql && GetRequest().GetAsConst<ECSqlRequest>().GetCollectCloudSqliteStats()) {
+                m_cloudTiming.Reset(true);
+                m_cloudTimingScope = std::make_unique<CloudSqliteTiming::Scope>(m_cloudTiming, &db);
+            }
+        }
         void SetResumed(bool resumed) { m_resumed = resumed; }
         std::string const& GetArgsKey() {
             if (!m_argsKey)
@@ -334,6 +343,7 @@ struct RunnableRequestBase {
         uint32_t GetConnectionId() const {return m_connId; }
         void SetExecutorContext(uint32_t executorId, uint32_t connId) { m_executorId = executorId;  m_connId = connId;}
         std::chrono::milliseconds GetTotalTime() const { return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - m_submittedOn);}
+        std::chrono::duration<double, std::milli> GetTotalTimeForStats() const { return std::chrono::steady_clock::now() - m_submittedOn; }
         // As the logic evidently suggests that this method is used to find the time diff between when the method is called and when the request was dequeued. But that means if the request is not yet dequeued, it should return 0.
         std::chrono::microseconds GetCpuTime() const { return m_isDequeued ? std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - m_dequeuedOn) : std::chrono::microseconds::zero();} 
         QueryResponse::Ptr CreateErrorResponse(QueryResponse::Status status, std::string error) const;
