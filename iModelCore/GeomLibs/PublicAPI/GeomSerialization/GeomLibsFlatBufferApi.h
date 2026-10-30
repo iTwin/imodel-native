@@ -16,6 +16,7 @@
 //#include <Bentley/BeConsole.h>
 #include <Geom/GeomApi.h>
 #include "GeomLibsSerialization.h"
+#include "flatbuffers/flatbuffers.h"
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
@@ -29,6 +30,20 @@ public:
 // Test if the bytes have the signature for BentleyGeomFlatBuffer.
 static BGFBIMPEXP bool IsFlatBufferFormat(bvector<Byte> &buffer);
 static BGFBIMPEXP bool IsFlatBufferFormat(Byte const *buffer, size_t bufferSize);
+
+// Use instead of flatbuffers::GetRoot for flatbuffer verification and retrieval.
+template <typename T>
+static T const* GetVerifiedRoot(Byte const* buffer, size_t bufferSize)
+    {
+    if (nullptr == buffer || 0 == bufferSize || bufferSize >= FLATBUFFERS_MAX_BUFFER_SIZE)
+        return nullptr;
+
+    flatbuffers::Verifier verifier(buffer, bufferSize);
+    if (!verifier.VerifyBuffer<T>())
+        return nullptr;
+
+    return flatbuffers::GetRoot<T>(buffer);
+    }
 
 // Convert flatbuffer bytes to geometry instance. If bytes represent an array of geometries, return nullptr.
 static BGFBIMPEXP IGeometryPtr BytesToGeometry(bvector<Byte> const &buffer, bool applyValidation = true);

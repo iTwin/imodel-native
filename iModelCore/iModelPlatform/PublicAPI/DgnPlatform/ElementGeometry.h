@@ -302,7 +302,7 @@ struct GeometryStreamIO
         static Header const* GetHeader(Operation const& egOp) {return (OpCode::Header == egOp.m_opCode ? (Header const*)egOp.m_data : nullptr);}
 
         // Instantiate BRep from flatbuffer representation.
-        DGNPLATFORM_EXPORT static IBRepEntityPtr ReadBRepEntity(uint8_t const*);
+        DGNPLATFORM_EXPORT static IBRepEntityPtr ReadBRepEntity(uint8_t const* data, size_t dataSize);
 
         bool Get(Operation const&, DPoint2dCP&, int& nPts, int8_t& boundary) const;
         bool Get(Operation const&, DPoint3dCP&, int& nPts, int8_t& boundary) const;

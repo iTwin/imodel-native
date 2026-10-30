@@ -1230,7 +1230,7 @@ void GeometryStreamIO::Writer::Append(CurveVectorCR curves)
         return;
         }
 
-    Append(Operation(OpCode::CurveVector, (uint32_t) buffer.size(), &buffer.front()));
+    Append(Operation(OpCode::CurveVector, (uint32_t) buffer.size(), buffer.data()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1248,7 +1248,7 @@ void GeometryStreamIO::Writer::Append(ICurvePrimitiveCR curvePrimitive)
         return;
         }
 
-    Append(Operation(OpCode::CurvePrimitive, (uint32_t) buffer.size(), &buffer.front()));
+    Append(Operation(OpCode::CurvePrimitive, (uint32_t) buffer.size(), buffer.data()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1266,7 +1266,7 @@ void GeometryStreamIO::Writer::Append(PolyfaceQueryCR meshData)
         return;
         }
 
-    Append(Operation(OpCode::Polyface, (uint32_t) buffer.size(), &buffer.front()));
+    Append(Operation(OpCode::Polyface, (uint32_t) buffer.size(), buffer.data()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1284,7 +1284,7 @@ void GeometryStreamIO::Writer::Append(ISolidPrimitiveCR solid)
         return;
         }
 
-    Append(Operation(OpCode::SolidPrimitive, (uint32_t) buffer.size(), &buffer.front()));
+    Append(Operation(OpCode::SolidPrimitive, (uint32_t) buffer.size(), buffer.data()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1302,7 +1302,7 @@ void GeometryStreamIO::Writer::Append(MSBsplineSurfaceCR surface)
         return;
         }
 
-    Append(Operation(OpCode::BsplineSurface, (uint32_t) buffer.size(), &buffer.front()));
+    Append(Operation(OpCode::BsplineSurface, (uint32_t) buffer.size(), buffer.data()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1575,16 +1575,24 @@ void GeometryStreamIO::Writer::Append(GeometryParamsCR elParams, bool ignoreSubC
             GradientSymbCR    gradient = *elParams.GetGradient();
             bvector<uint32_t> keyColors;
             bvector<double>   keyValues;
+            uint32_t          keys = gradient.GetNKeys();
 
-            for (uint32_t i=0; i < gradient.GetNKeys(); ++i)
+            if (0 != keys)
                 {
-                double   keyValue;
-                ColorDef keyColor;
+                keyColors.reserve(keys);
+                keyValues.reserve(keys);
 
-                gradient.GetKey(keyColor, keyValue, i);
+                for (uint32_t i = 0; i < keys; ++i)
+                    {
+                    double   keyValue;
+                    ColorDef keyColor;
 
-                keyColors.push_back(keyColor.GetValue());
-                keyValues.push_back(keyValue);
+                    if (SUCCESS == gradient.GetKey(keyColor, keyValue, i))
+                        {
+                        keyColors.push_back(keyColor.GetValue());
+                        keyValues.push_back(keyValue);
+                        }
+                    }
                 }
 
             auto colors = fbb.CreateVector(keyColors);
@@ -1776,7 +1784,7 @@ void GeometryStreamIO::Writer::Append(TextStringCR text)
     if (SUCCESS != TextStringPersistence::EncodeAsFlatBuf(data, text, m_db, TextStringPersistence::FlatBufEncodeOptions::IncludeGlyphLayoutData))
         return;
 
-    Append(Operation(OpCode::TextString, (uint32_t)data.size(), &data[0]));
+    Append(Operation(OpCode::TextString, (uint32_t)data.size(), data.data()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1806,16 +1814,31 @@ void GeometryStreamIO::Writer::Append(ImageGraphicCR img)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+template <typename T>
+static T const* GetVerifiedRoot(GeometryStreamIO::Operation const& operation)
+    {
+    return BentleyGeometryFlatBuffer::GetVerifiedRoot<T>(operation.m_data, operation.m_dataSize);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 bool GeometryStreamIO::Reader::Get(Operation const& egOp, DPoint2dCP& pts, int& nPts, int8_t& boundary) const
     {
     if (OpCode::PointPrimitive2d != egOp.m_opCode)
         return false;
 
-    auto ppfb = flatbuffers::GetRoot<FB::PointPrimitive2d>(egOp.m_data);
+    auto ppfb = GetVerifiedRoot<FB::PointPrimitive2d>(egOp);
+    if (nullptr == ppfb)
+        return false;
+
+    auto coords = ppfb->coords();
+    if (nullptr == coords)
+        return false;
 
     boundary = (int8_t) ppfb->boundary();
-    nPts = (int) ppfb->coords()->Length();
-    pts = (DPoint2dCP) ppfb->coords()->Data();
+    nPts = (int) coords->size();
+    pts = (DPoint2dCP) coords->data();
 
     return true;
     }
@@ -1828,11 +1851,17 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, DPoint3dCP& pts, int& 
     if (OpCode::PointPrimitive != egOp.m_opCode)
         return false;
 
-    auto ppfb = flatbuffers::GetRoot<FB::PointPrimitive>(egOp.m_data);
+    auto ppfb = GetVerifiedRoot<FB::PointPrimitive>(egOp);
+    if (nullptr == ppfb)
+        return false;
+
+    auto coords = ppfb->coords();
+    if (nullptr == coords)
+        return false;
 
     boundary = (int8_t) ppfb->boundary();
-    nPts = (int) ppfb->coords()->Length();
-    pts = (DPoint3dCP) ppfb->coords()->Data();
+    nPts = (int) coords->size();
+    pts = (DPoint3dCP) coords->data();
 
     return true;
     }
@@ -1845,12 +1874,15 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, DRange3dR range) const
     if (OpCode::SubGraphicRange != egOp.m_opCode)
         return false;
 
-    auto ppfb = flatbuffers::GetRoot<FB::PointPrimitive>(egOp.m_data);
-
-    if (ppfb->coords()->Length() < 2) // NOTE: 6 points were erroneously stored originally, so use < not = check...
+    auto ppfb = GetVerifiedRoot<FB::PointPrimitive>(egOp);
+    if (nullptr == ppfb)
         return false;
 
-    memcpy(&range, (DPoint3dCP) ppfb->coords()->Data(), sizeof(range));
+    auto coords = ppfb->coords();
+    if (nullptr == coords || coords->size() < 2) // NOTE: 6 points were erroneously stored originally, so use < not = check...
+        return false;
+
+    memcpy(&range, coords->data(), sizeof(range));
 
     return true;
     }
@@ -1863,9 +1895,17 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, DEllipse3dR arc, int8_
     if (OpCode::ArcPrimitive != egOp.m_opCode)
         return false;
 
-    auto ppfb = flatbuffers::GetRoot<FB::ArcPrimitive>(egOp.m_data);
+    auto ppfb = GetVerifiedRoot<FB::ArcPrimitive>(egOp);
+    if (nullptr == ppfb)
+        return false;
 
-    arc.InitFromVectors(*((DPoint3dCP) ppfb->center()), *((DVec3dCP) ppfb->vector0()), *((DVec3dCP) ppfb->vector90()), ppfb->start(), ppfb->sweep());
+    auto center     = (DPoint3dCP) ppfb->center();
+    auto vector0    = (DVec3dCP) ppfb->vector0();
+    auto vector90   = (DVec3dCP) ppfb->vector90();
+    if (nullptr == center || nullptr == vector0 || nullptr == vector90)
+        return false;
+
+    arc.InitFromVectors(*center, *vector0, *vector90, ppfb->start(), ppfb->sweep());
     boundary = (int8_t) ppfb->boundary();
 
     return true;
@@ -2016,21 +2056,29 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, IBRepEntityPtr& entity
     if (OpCode::ParasolidBRep != egOp.m_opCode)
         return false;
 
-    entity = ReadBRepEntity(egOp.m_data);
+    entity = ReadBRepEntity(egOp.m_data, egOp.m_dataSize);
     return entity.IsValid();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-IBRepEntityPtr GeometryStreamIO::Reader::ReadBRepEntity(uint8_t const* data)
+IBRepEntityPtr GeometryStreamIO::Reader::ReadBRepEntity(uint8_t const* data, size_t dataSize)
     {
     IBRepEntityPtr entity;
 
-    auto ppfb = flatbuffers::GetRoot<FB::BRepData>(data);
+    auto ppfb = GetVerifiedRoot<FB::BRepData>(data, dataSize);
+    if (nullptr == ppfb)
+        return nullptr;
+
+    auto entityData         = ppfb->entityData();
+    auto entityTransform    = (TransformCP) ppfb->entityTransform();
+    if (nullptr == entityData)
+        return nullptr;
 
     // NOTE: It's possible to check ppfb->brepType() to avoid calling restore in order to check type...
-    if (SUCCESS != T_HOST.GetBRepGeometryAdmin()._RestoreEntityFromMemory(entity, ppfb->entityData()->Data(), ppfb->entityData()->Length(), *((TransformCP) ppfb->entityTransform())))
+    if (SUCCESS != T_HOST.GetBRepGeometryAdmin()._RestoreEntityFromMemory(entity, entityData->data(), entityData->size(),
+                                                                          (nullptr != entityTransform ? *entityTransform : Transform::FromIdentity())))
         return nullptr;
 
     auto fbSymbology = ppfb->symbology();
@@ -2038,8 +2086,9 @@ IBRepEntityPtr GeometryStreamIO::Reader::ReadBRepEntity(uint8_t const* data)
         return entity;
 
     T_FaceAttachmentsVec faceAttachmentsVec;
+    faceAttachmentsVec.reserve(fbSymbology->size());
 
-    for (flatbuffers::uoffset_t iSymb = 0; iSymb < fbSymbology->Length(); iSymb++)
+    for (flatbuffers::uoffset_t iSymb = 0; iSymb < fbSymbology->size(); iSymb++)
         {
         FB::FaceSymbology const* fbSymb = fbSymbology->Get(iSymb);
         FaceAttachment attachment;
@@ -2063,8 +2112,9 @@ IBRepEntityPtr GeometryStreamIO::Reader::ReadBRepEntity(uint8_t const* data)
 
     // Support for older BRep that didn't have face attachment index attrib and add the attributes now...
     T_FaceIndexToAttachmentIndexVec faceIndexAttVec;
+    faceIndexAttVec.reserve(fbSymbologyIndex->size());
 
-    for (flatbuffers::uoffset_t iSymbIndex = 0; iSymbIndex < fbSymbologyIndex->Length(); iSymbIndex++)
+    for (flatbuffers::uoffset_t iSymbIndex = 0; iSymbIndex < fbSymbologyIndex->size(); iSymbIndex++)
         {
         FB::FaceSymbologyIndex const* fbSymbIndex = fbSymbologyIndex->Get(iSymbIndex);
         FaceIndexToAttachmentIndex faceAttIndex;
@@ -2088,7 +2138,9 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, DgnGeometryPartId& geo
     if (OpCode::GeometryPartInstance != egOp.m_opCode)
         return false;
 
-    auto ppfb = flatbuffers::GetRoot<FB::GeometryPart>(egOp.m_data);
+    auto ppfb = GetVerifiedRoot<FB::GeometryPart>(egOp);
+    if (nullptr == ppfb)
+        return false;
 
     geomPart = DgnGeometryPartId((uint64_t)ppfb->geomPartId());
 
@@ -2115,7 +2167,9 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
         {
         case OpCode::BasicSymbology:
             {
-            auto ppfb = flatbuffers::GetRoot<FB::BasicSymbology>(egOp.m_data);
+            auto ppfb = GetVerifiedRoot<FB::BasicSymbology>(egOp);
+            if (nullptr == ppfb)
+                return false;
 
             DgnSubCategoryId subCategoryId((uint64_t)ppfb->subCategoryId());
 
@@ -2205,7 +2259,9 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
 
         case OpCode::AreaFill:
             {
-            auto ppfb = flatbuffers::GetRoot<FB::AreaFill>(egOp.m_data);
+            auto ppfb = GetVerifiedRoot<FB::AreaFill>(egOp);
+            if (nullptr == ppfb)
+                return false;
 
             FillDisplay fillDisplay = (FillDisplay) ppfb->fill();
 
@@ -2261,20 +2317,26 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
                     gradientPtr->SetTint(ppfb->tint());
                     gradientPtr->SetAngle(ppfb->angle());
 
-                    uint32_t nColors = ppfb->colors()->Length();
-                    uint32_t const* colors = (uint32_t const*) ppfb->colors()->Data();
-                    bvector<ColorDef> keyColors;
+                    auto colors = ppfb->colors();
+                    auto values = ppfb->values();
+                    if (nullptr != colors && nullptr != values)
+                        {
+                        uint32_t nColors = std::min(colors->size(), values->size());
+                        if (0 != nColors)
+                            {
+                            bvector<ColorDef> keyColors;
+                            keyColors.reserve(nColors);
+                            for (uint32_t i = 0; i < nColors; i++)
+                                keyColors.push_back(ColorDef(colors->Get(i)));
+                            gradientPtr->SetKeys(nColors, keyColors.data(), values->data());
+                            }
+                        }
 
-                    for (uint32_t iColor=0; iColor < nColors; ++iColor)
-                        keyColors.push_back(ColorDef(colors[iColor]));
-
-                    gradientPtr->SetKeys((uint32_t) keyColors.size(), &keyColors.front(), (double const*) ppfb->values()->Data());
-
-                    if (0 != ppfb->thematicSettings())
+                    auto fbThematicSettings = ppfb->thematicSettings();
+                    if (nullptr != fbThematicSettings)
                         {
                         BeAssert (mode == GradientSymb::Mode::Thematic);
                         auto    thematicSettings = new ThematicGradientSettings();
-                        auto    fbThematicSettings = ppfb->thematicSettings();
 
                         thematicSettings->SetStepCount(fbThematicSettings->stepCount());
                         thematicSettings->SetMarginColor(ColorDef(fbThematicSettings->marginColor()));
@@ -2296,7 +2358,10 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
 
         case OpCode::Pattern:
             {
-            auto ppfb = flatbuffers::GetRoot<FB::AreaPattern>(egOp.m_data);
+            auto ppfb = GetVerifiedRoot<FB::AreaPattern>(egOp);
+            if (nullptr == ppfb)
+                return false;
+
             PatternParamsPtr pattern = PatternParams::Create();
 
             if (ppfb->has_origin())
@@ -2321,22 +2386,36 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
             pattern->SetSnappable(TO_BOOL(ppfb->snappable()));
             pattern->SetSymbolId(DgnGeometryPartId((uint64_t) ppfb->symbolId()));
 
-            if (ppfb->has_defLine())
+            auto fbDefLineOffsets = ppfb->defLine();
+            if (nullptr != fbDefLineOffsets)
                 {
-                flatbuffers::Vector<flatbuffers::Offset<FB::DwgHatchDefLine>> const* fbDefLineOffsets = ppfb->defLine();
                 bvector<DwgHatchDefLine> defLines;
+                defLines.reserve(fbDefLineOffsets->size());
 
                 for (auto const& fbDefLine : *fbDefLineOffsets)
                     {
+                    if (nullptr == fbDefLine)
+                        continue;
+
+                    auto through   = (DPoint2dCP) fbDefLine->through();
+                    auto offset    = (DPoint2dCP) fbDefLine->offset();
+                    auto dashes    = fbDefLine->dashes();
+
+                    if (nullptr == through || nullptr == offset)
+                        continue;
+
                     DwgHatchDefLine line;
 
                     line.m_angle   = fbDefLine->angle();
-                    line.m_through = *((DPoint2dCP) fbDefLine->through());
-                    line.m_offset  = *((DPoint2dCP) fbDefLine->offset());
-                    line.m_nDashes = static_cast<short>(fbDefLine->dashes()->Length());
+                    line.m_through = *through;
+                    line.m_offset  = *offset;
+                    if (nullptr != dashes)
+                        line.m_nDashes = static_cast<short>(std::min(dashes->size(), (flatbuffers::uoffset_t) MAX_DWG_HATCH_LINE_DASHES));
+                    else
+                        line.m_nDashes = 0;
 
                     if (0 != line.m_nDashes)
-                        memcpy(line.m_dashes, fbDefLine->dashes()->Data(), line.m_nDashes * sizeof(double));
+                        memcpy(line.m_dashes, dashes->data(), line.m_nDashes * sizeof(double));
 
                     defLines.push_back(line);
                     }
@@ -2355,7 +2434,9 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
 
         case OpCode::Material:
             {
-            auto ppfb = flatbuffers::GetRoot<FB::Material>(egOp.m_data);
+            auto ppfb = GetVerifiedRoot<FB::Material>(egOp);
+            if (nullptr == ppfb)
+                return false;
 
             // NEEDSWORK_WIP_MATERIAL - Set geometry specific material settings of GeometryParams...
             if (ppfb->has_trans2x3())
@@ -2383,7 +2464,9 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
 
         case OpCode::LineStyleModifiers:
             {
-            auto ppfb = flatbuffers::GetRoot<FB::LineStyleModifiers>(egOp.m_data);
+            auto ppfb = GetVerifiedRoot<FB::LineStyleModifiers>(egOp);
+            if (nullptr == ppfb)
+                return false;
 
             DgnStyleId styleId;
             LineStyleInfoCP   currentLsInfo = elParams.GetLineStyle();
@@ -2441,7 +2524,10 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, ImageGraphicPtr& img) 
     if (OpCode::Image != egOp.m_opCode)
         return false;
 
-    auto ppfb = flatbuffers::GetRoot<FB::Image>(egOp.m_data);
+    auto ppfb = GetVerifiedRoot<FB::Image>(egOp);
+    if (nullptr == ppfb)
+        return false;
+
     if (!ppfb->has_textureId())
         return false;
 
@@ -2677,7 +2763,10 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
         {
         if ((GeometryStreamIO::OpCode::BasicSymbology == egOp.m_opCode) && importer.HasSubCategoryFilter())
             {
-            DgnSubCategoryId subCategoryId((uint64_t)flatbuffers::GetRoot<FB::BasicSymbology>(egOp.m_data)->subCategoryId());
+            auto ppfb = GetVerifiedRoot<FB::BasicSymbology>(egOp);
+            if (nullptr == ppfb)
+                return DgnDbStatus::ValidationFailed;
+            DgnSubCategoryId subCategoryId((uint64_t) ppfb->subCategoryId());
             isFilteringBySubCategory = subCategoryId.IsValid() && importer.IsSubCategoryFiltered(subCategoryId); // !IsValid indicates the default SubCategory which is never filtered
             }
 
@@ -2690,7 +2779,9 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
                 continue; // Appended by Reset() above.
             case GeometryStreamIO::OpCode::BasicSymbology:
                 {
-                auto ppfb = flatbuffers::GetRoot<FB::BasicSymbology>(egOp.m_data);
+                auto ppfb = GetVerifiedRoot<FB::BasicSymbology>(egOp);
+                if (nullptr == ppfb)
+                    return DgnDbStatus::ValidationFailed;
 
                 DgnSubCategoryId subCategoryId((uint64_t)ppfb->subCategoryId());
                 DgnSubCategoryId remappedSubCategoryId = (subCategoryId.IsValid() ? importer.FindSubCategory(subCategoryId) : DgnSubCategoryId());
@@ -2713,7 +2804,9 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
 
             case GeometryStreamIO::OpCode::GeometryPartInstance:
                 {
-                auto ppfb = flatbuffers::GetRoot<FB::GeometryPart>(egOp.m_data);
+                auto ppfb = GetVerifiedRoot<FB::GeometryPart>(egOp);
+                if (nullptr == ppfb)
+                    return DgnDbStatus::ValidationFailed;
 
                 DgnGeometryPartId remappedGeometryPartId = importer.RemapGeometryPartId(DgnGeometryPartId((uint64_t) ppfb->geomPartId())); // Trigger deep-copy if necessary
                 BeAssert(remappedGeometryPartId.IsValid() && "Unable to deep-copy geompart!");
@@ -2729,7 +2822,9 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
 
             case OpCode::Pattern:
                 {
-                auto ppfb = flatbuffers::GetRoot<FB::AreaPattern>(egOp.m_data);
+                auto ppfb = GetVerifiedRoot<FB::AreaPattern>(egOp);
+                if (nullptr == ppfb)
+                    return DgnDbStatus::ValidationFailed;
 
                 if (!ppfb->has_symbolId())
                     {
@@ -2752,7 +2847,10 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
 
             case GeometryStreamIO::OpCode::Material:
                 {
-                auto fbSymb = flatbuffers::GetRoot<FB::Material>(egOp.m_data);
+                auto fbSymb = GetVerifiedRoot<FB::Material>(egOp);
+                if (nullptr == fbSymb)
+                    return DgnDbStatus::ValidationFailed;
+
                 RenderMaterialId materialId((uint64_t)fbSymb->materialId());
                 RenderMaterialId remappedMaterialId = (materialId.IsValid() ? importer.RemapRenderMaterialId(materialId) : RenderMaterialId());
                 BeAssert((materialId.IsValid() == remappedMaterialId.IsValid()) && "Unable to deep-copy material");
@@ -2766,7 +2864,9 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
 
             case GeometryStreamIO::OpCode::ParasolidBRep:
                 {
-                auto ppfb = flatbuffers::GetRoot<FB::BRepData>(egOp.m_data);
+                auto ppfb = GetVerifiedRoot<FB::BRepData>(egOp);
+                if (nullptr == ppfb)
+                    return DgnDbStatus::ValidationFailed;
 
                 auto fbSymbology = ppfb->symbology();
                 if (nullptr == fbSymbology)
@@ -2776,8 +2876,9 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
                     }
 
                 bvector<FB::FaceSymbology> remappedFaceSymbVec;
+                remappedFaceSymbVec.reserve(fbSymbology->size());
 
-                for (flatbuffers::uoffset_t iSymb = 0; iSymb < fbSymbology->Length(); iSymb++)
+                for (flatbuffers::uoffset_t iSymb = 0; iSymb < fbSymbology->size(); iSymb++)
                     {
                     FB::FaceSymbology const* fbSymb = fbSymbology->Get(iSymb);
 
@@ -2801,11 +2902,11 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
 
                 FlatBufferBuilder remappedfbb;
                 uint8_t* remappedEntityBuf = nullptr;
-                auto remappedEntityData = remappedfbb.CreateUninitializedVector(ppfb->entityData()->Length(), &remappedEntityBuf);
+                auto remappedEntityData = remappedfbb.CreateUninitializedVector(ppfb->entityData()->size(), &remappedEntityBuf);
                 BeAssert(nullptr != remappedEntityBuf && "Unable to deep-copy b-rep data!");
-                memcpy(remappedEntityBuf, ppfb->entityData()->Data(), ppfb->entityData()->Length());
+                memcpy(remappedEntityBuf, ppfb->entityData()->data(), ppfb->entityData()->size());
                 auto remappedFaceSymb = remappedfbb.CreateVectorOfStructs(remappedFaceSymbVec.data(), remappedFaceSymbVec.size());
-                auto remappedFaceSymbIndex = ppfb->has_symbologyIndex() ? remappedfbb.CreateVectorOfStructs((FB::FaceSymbologyIndex const*) ppfb->symbologyIndex()->Data(), ppfb->symbologyIndex()->Length()) : 0;
+                auto remappedFaceSymbIndex = ppfb->has_symbologyIndex() ? remappedfbb.CreateVectorOfStructs((FB::FaceSymbologyIndex const*) ppfb->symbologyIndex()->data(), ppfb->symbologyIndex()->size()) : 0;
                 auto mloc = FB::CreateBRepData(remappedfbb, ppfb->entityTransform(), ppfb->brepType(), remappedEntityData, remappedFaceSymb, remappedFaceSymbIndex);
                 remappedfbb.Finish(mloc);
                 writer.Append(Operation(OpCode::ParasolidBRep, (uint32_t) remappedfbb.GetSize(), remappedfbb.GetBufferPointer()));
@@ -2829,7 +2930,10 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
 
             case GeometryStreamIO::OpCode::Image:
                 {
-                auto fbImg = flatbuffers::GetRoot<FB::Image>(egOp.m_data);
+                auto fbImg = GetVerifiedRoot<FB::Image>(egOp);
+                if (nullptr == fbImg)
+                    return DgnDbStatus::ValidationFailed;
+
                 if (!fbImg->has_textureId())
                     {
                     writer.Append(egOp);
@@ -2863,7 +2967,7 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
             }
         }
 
-    dest.SaveData(&writer.m_buffer.front(), (uint32_t) writer.m_buffer.size());
+    dest.SaveData(writer.m_buffer.data(), (uint32_t) writer.m_buffer.size());
 
     return DgnDbStatus::Success;
     }
@@ -2881,32 +2985,38 @@ void DefinitionElementUsageInfo::ScanGeometryStream(GeometryStreamCR geometryStr
             case GeometryStreamIO::OpCode::BasicSymbology:
                 if (!m_subCategoryIds.empty() || !m_lineStyleIds.empty())
                     {
-                    auto basicSymbologyFB = flatbuffers::GetRoot<FB::BasicSymbology>(entry.m_data);
-                    DgnSubCategoryId subCategoryId(static_cast<uint64_t>(basicSymbologyFB->subCategoryId()));
-                    if (subCategoryId.IsValid() && m_subCategoryIds.Contains(subCategoryId))
-                        m_usedIds.insert(subCategoryId);
+                    auto basicSymbologyFB = GetVerifiedRoot<FB::BasicSymbology>(entry);
+                    if (nullptr != basicSymbologyFB)
+                        {
+                        DgnSubCategoryId subCategoryId(static_cast<uint64_t>(basicSymbologyFB->subCategoryId()));
+                        if (subCategoryId.IsValid() && m_subCategoryIds.Contains(subCategoryId))
+                            m_usedIds.insert(subCategoryId);
 
-                    DgnStyleId lineStyleId(static_cast<uint64_t>(basicSymbologyFB->lineStyleId()));
-                    if (lineStyleId.IsValid() && m_lineStyleIds.Contains(lineStyleId))
-                        m_usedIds.insert(lineStyleId);
+                        DgnStyleId lineStyleId(static_cast<uint64_t>(basicSymbologyFB->lineStyleId()));
+                        if (lineStyleId.IsValid() && m_lineStyleIds.Contains(lineStyleId))
+                            m_usedIds.insert(lineStyleId);
+                        }
                     }
                 break;
 
             case GeometryStreamIO::OpCode::GeometryPartInstance:
                 if (!m_geometryPartIds.empty())
                     {
-                    auto geometryPartFB = flatbuffers::GetRoot<FB::GeometryPart>(entry.m_data);
-                    DgnGeometryPartId geometryPartId(static_cast<uint64_t>(geometryPartFB->geomPartId()));
-                    if (geometryPartId.IsValid() && m_geometryPartIds.Contains(geometryPartId))
-                        m_usedIds.insert(geometryPartId);
+                    auto geometryPartFB = GetVerifiedRoot<FB::GeometryPart>(entry);
+                    if (nullptr != geometryPartFB)
+                        {
+                        DgnGeometryPartId geometryPartId(static_cast<uint64_t>(geometryPartFB->geomPartId()));
+                        if (geometryPartId.IsValid() && m_geometryPartIds.Contains(geometryPartId))
+                            m_usedIds.insert(geometryPartId);
+                        }
                     }
                 break;
 
             case GeometryStreamIO::OpCode::Pattern:
                 if (!m_geometryPartIds.empty())
                     {
-                    auto areaPatternFB = flatbuffers::GetRoot<FB::AreaPattern>(entry.m_data);
-                    if (areaPatternFB->has_symbolId())
+                    auto areaPatternFB = GetVerifiedRoot<FB::AreaPattern>(entry);
+                    if (nullptr != areaPatternFB)
                         {
                         DgnGeometryPartId geometryPartId(static_cast<uint64_t>(areaPatternFB->symbolId()));
                         if (geometryPartId.IsValid() && m_geometryPartIds.Contains(geometryPartId))
@@ -2918,29 +3028,35 @@ void DefinitionElementUsageInfo::ScanGeometryStream(GeometryStreamCR geometryStr
             case GeometryStreamIO::OpCode::Material:
                 if (!m_renderMaterialIds.empty())
                     {
-                    auto materialFB = flatbuffers::GetRoot<FB::Material>(entry.m_data);
-                    RenderMaterialId renderMaterialId(static_cast<uint64_t>(materialFB->materialId()));
-                    if (renderMaterialId.IsValid() && m_renderMaterialIds.Contains(renderMaterialId))
-                        m_usedIds.insert(renderMaterialId);
+                    auto materialFB = GetVerifiedRoot<FB::Material>(entry);
+                    if (nullptr != materialFB)
+                        {
+                        RenderMaterialId renderMaterialId(static_cast<uint64_t>(materialFB->materialId()));
+                        if (renderMaterialId.IsValid() && m_renderMaterialIds.Contains(renderMaterialId))
+                            m_usedIds.insert(renderMaterialId);
+                        }
                     }
                 break;
 
             case GeometryStreamIO::OpCode::ParasolidBRep:
                 if (!m_renderMaterialIds.empty())
                     {
-                    auto brepFB = flatbuffers::GetRoot<FB::BRepData>(entry.m_data);
-                    auto fbSymbology = brepFB->symbology();
-                    if (nullptr != fbSymbology)
+                    auto brepFB = GetVerifiedRoot<FB::BRepData>(entry);
+                    if (nullptr != brepFB)
                         {
-                        for (flatbuffers::uoffset_t iSymb = 0; iSymb < fbSymbology->Length(); iSymb++)
+                        auto fbSymbology = brepFB->symbology();
+                        if (nullptr != fbSymbology)
                             {
-                            FB::FaceSymbology const* faceSymbologyFB = fbSymbology->Get(iSymb);
-
-                            if (faceSymbologyFB->useMaterial())
+                            for (flatbuffers::uoffset_t iSymb = 0; iSymb < fbSymbology->size(); iSymb++)
                                 {
-                                RenderMaterialId renderMaterialId(static_cast<uint64_t>(faceSymbologyFB->materialId()));
-                                if (renderMaterialId.IsValid() && m_renderMaterialIds.Contains(renderMaterialId))
-                                    m_usedIds.insert(renderMaterialId);
+                                FB::FaceSymbology const* faceSymbologyFB = fbSymbology->Get(iSymb);
+
+                                if (faceSymbologyFB->useMaterial())
+                                    {
+                                    RenderMaterialId renderMaterialId(static_cast<uint64_t>(faceSymbologyFB->materialId()));
+                                    if (renderMaterialId.IsValid() && m_renderMaterialIds.Contains(renderMaterialId))
+                                        m_usedIds.insert(renderMaterialId);
+                                    }
                                 }
                             }
                         }
@@ -2950,8 +3066,8 @@ void DefinitionElementUsageInfo::ScanGeometryStream(GeometryStreamCR geometryStr
             case GeometryStreamIO::OpCode::Image:
                 if (!m_textureIds.empty())
                     {
-                    auto imageFB = flatbuffers::GetRoot<FB::Image>(entry.m_data);
-                    if (imageFB->has_textureId())
+                    auto imageFB = GetVerifiedRoot<FB::Image>(entry);
+                    if (nullptr != imageFB)
                         {
                         DgnTextureId textureId(static_cast<uint64_t>(imageFB->textureId()));
                         if (textureId.IsValid() && m_textureIds.Contains(textureId))
@@ -3442,8 +3558,8 @@ bool GeometryStreamIO::Collection::HasSymbologyChanges(Render::GeometryParamsCR 
             case GeometryStreamIO::OpCode::ParasolidBRep:
                 {
                 // Don't instance BReps with face-attached materials.
-                auto ppfb = flatbuffers::GetRoot<FB::BRepData>(entry.m_data);
-                if (ppfb->has_symbology() && ppfb->symbology()->Length() > 0)
+                auto ppfb = GetVerifiedRoot<FB::BRepData>(entry);
+                if (nullptr != ppfb && ppfb->has_symbology() && ppfb->symbology()->size() > 0)
                     return true;
 
                 break;
@@ -4622,22 +4738,25 @@ GeometryCollection::Iterator::EntryType GeometryCollection::Iterator::GetEntryTy
 
         case GeometryStreamIO::OpCode::PointPrimitive:
             {
-            auto ppfb = flatbuffers::GetRoot<FB::PointPrimitive>(m_egOp.m_data);
-
+            auto ppfb = GetVerifiedRoot<FB::PointPrimitive>(m_egOp);
+            if (nullptr == ppfb)
+                return EntryType::Unknown;
             return (FB::BoundaryType_Closed == ppfb->boundary() ? EntryType::CurveVector : EntryType::CurvePrimitive);
             }
 
         case GeometryStreamIO::OpCode::PointPrimitive2d:
             {
-            auto ppfb = flatbuffers::GetRoot<FB::PointPrimitive2d>(m_egOp.m_data);
-
+            auto ppfb = GetVerifiedRoot<FB::PointPrimitive2d>(m_egOp);
+            if (nullptr == ppfb)
+                return EntryType::Unknown;
             return (FB::BoundaryType_Closed == ppfb->boundary() ? EntryType::CurveVector : EntryType::CurvePrimitive);
             }
 
         case GeometryStreamIO::OpCode::ArcPrimitive:
             {
-            auto ppfb = flatbuffers::GetRoot<FB::ArcPrimitive>(m_egOp.m_data);
-
+            auto ppfb = GetVerifiedRoot<FB::ArcPrimitive>(m_egOp);
+            if (nullptr == ppfb)
+                return EntryType::Unknown;
             return (FB::BoundaryType_Closed == ppfb->boundary() ? EntryType::CurveVector : EntryType::CurvePrimitive);
             }
 
@@ -4679,23 +4798,23 @@ bool GeometryCollection::Iterator::IsCurve() const
         {
         case GeometryStreamIO::OpCode::PointPrimitive:
             {
-            auto ppfb = flatbuffers::GetRoot<FB::PointPrimitive>(m_egOp.m_data);
+            auto ppfb = GetVerifiedRoot<FB::PointPrimitive>(m_egOp);
 
-            return (FB::BoundaryType_Open == ppfb->boundary());
+            return (nullptr != ppfb && FB::BoundaryType_Open == ppfb->boundary());
             }
 
         case GeometryStreamIO::OpCode::PointPrimitive2d:
             {
-            auto ppfb = flatbuffers::GetRoot<FB::PointPrimitive2d>(m_egOp.m_data);
+            auto ppfb = GetVerifiedRoot<FB::PointPrimitive2d>(m_egOp);
 
-            return (FB::BoundaryType_Open == ppfb->boundary());
+            return (nullptr != ppfb && FB::BoundaryType_Open == ppfb->boundary());
             }
 
         case GeometryStreamIO::OpCode::ArcPrimitive:
             {
-            auto ppfb = flatbuffers::GetRoot<FB::ArcPrimitive>(m_egOp.m_data);
+            auto ppfb = GetVerifiedRoot<FB::ArcPrimitive>(m_egOp);
 
-            return (FB::BoundaryType_Open == ppfb->boundary());
+            return (nullptr != ppfb && FB::BoundaryType_Open == ppfb->boundary());
             }
 
         case GeometryStreamIO::OpCode::CurvePrimitive:
@@ -4724,23 +4843,23 @@ bool GeometryCollection::Iterator::IsSurface() const
         {
         case GeometryStreamIO::OpCode::PointPrimitive:
             {
-            auto ppfb = flatbuffers::GetRoot<FB::PointPrimitive>(m_egOp.m_data);
+            auto ppfb = GetVerifiedRoot<FB::PointPrimitive>(m_egOp);
 
-            return (FB::BoundaryType_Closed == ppfb->boundary());
+            return (nullptr != ppfb && FB::BoundaryType_Closed == ppfb->boundary());
             }
 
         case GeometryStreamIO::OpCode::PointPrimitive2d:
             {
-            auto ppfb = flatbuffers::GetRoot<FB::PointPrimitive2d>(m_egOp.m_data);
+            auto ppfb = GetVerifiedRoot<FB::PointPrimitive2d>(m_egOp);
 
-            return (FB::BoundaryType_Closed == ppfb->boundary());
+            return (nullptr != ppfb && FB::BoundaryType_Closed == ppfb->boundary());
             }
 
         case GeometryStreamIO::OpCode::ArcPrimitive:
             {
-            auto ppfb = flatbuffers::GetRoot<FB::ArcPrimitive>(m_egOp.m_data);
+            auto ppfb = GetVerifiedRoot<FB::ArcPrimitive>(m_egOp);
 
-            return (FB::BoundaryType_Closed == ppfb->boundary());
+            return (nullptr != ppfb && FB::BoundaryType_Closed == ppfb->boundary());
             }
 
         case GeometryStreamIO::OpCode::CurvePrimitive:
@@ -4776,9 +4895,9 @@ bool GeometryCollection::Iterator::IsSurface() const
 
         case GeometryStreamIO::OpCode::ParasolidBRep:
             {
-            auto ppfb = flatbuffers::GetRoot<FB::BRepData>(m_egOp.m_data);
+            auto ppfb = GetVerifiedRoot<FB::BRepData>(m_egOp);
 
-            return (IBRepEntity::EntityType::Sheet == ((IBRepEntity::EntityType) ppfb->brepType()));
+            return (nullptr != ppfb && IBRepEntity::EntityType::Sheet == ((IBRepEntity::EntityType) ppfb->brepType()));
             }
 
         default:
@@ -4809,9 +4928,9 @@ bool GeometryCollection::Iterator::IsSolid() const
 
         case GeometryStreamIO::OpCode::ParasolidBRep:
             {
-            auto ppfb = flatbuffers::GetRoot<FB::BRepData>(m_egOp.m_data);
+            auto ppfb = GetVerifiedRoot<FB::BRepData>(m_egOp);
 
-            return (IBRepEntity::EntityType::Solid == ((IBRepEntity::EntityType) ppfb->brepType()));
+            return (nullptr != ppfb && IBRepEntity::EntityType::Solid == ((IBRepEntity::EntityType) ppfb->brepType()));
             }
 
         default:
@@ -4999,7 +5118,10 @@ void GeometryCollection::ToJson(BeJsValue output, BeJsConst opts) const
 
             case GeometryStreamIO::OpCode::BasicSymbology:
                 {
-                auto ppfb = flatbuffers::GetRoot<FB::BasicSymbology>(egOp.m_data);
+                auto ppfb = GetVerifiedRoot<FB::BasicSymbology>(egOp);
+                if (nullptr == ppfb)
+                    break;
+
                 auto value = output.appendObject()["appearance"]; // NOTE: A null "appearance" indicates a reset to default sub-category appearance...
                 value.SetEmptyObject();
                 DgnSubCategoryId subCategoryId((uint64_t)ppfb->subCategoryId());
@@ -5037,8 +5159,12 @@ void GeometryCollection::ToJson(BeJsValue output, BeJsConst opts) const
 
             case GeometryStreamIO::OpCode::LineStyleModifiers:
                 {
+                auto ppfb = GetVerifiedRoot<FB::LineStyleModifiers>(egOp);
+                if (nullptr == ppfb)
+                    break;
+
                 auto value = output.appendObject()["styleMod"];
-                auto ppfb = flatbuffers::GetRoot<FB::LineStyleModifiers>(egOp.m_data);
+
                 uint32_t modifiers = ppfb->modifiers();
 
                 if (0 != (STYLEMOD_SCALE & modifiers) && 0.0 != ppfb->scale())
@@ -5084,7 +5210,10 @@ void GeometryCollection::ToJson(BeJsValue output, BeJsConst opts) const
 
             case GeometryStreamIO::OpCode::AreaFill:
                 {
-                auto ppfb = flatbuffers::GetRoot<FB::AreaFill>(egOp.m_data);
+                auto ppfb = GetVerifiedRoot<FB::AreaFill>(egOp);
+                if (nullptr == ppfb)
+                    break;
+
                 auto value = output.appendValue()["fill"];
 
                 value["display"] = ppfb->fill();
@@ -5111,19 +5240,25 @@ void GeometryCollection::ToJson(BeJsValue output, BeJsConst opts) const
                         gradientPtr->SetTint(ppfb->tint());
                         gradientPtr->SetAngle(ppfb->angle());
 
-                        uint32_t nColors = ppfb->colors()->Length();
-                        uint32_t const* colors = (uint32_t const*) ppfb->colors()->Data();
-                        bvector<ColorDef> keyColors;
+                        auto colors = ppfb->colors();
+                        auto values = ppfb->values();
+                        if (nullptr != colors && nullptr != values)
+                            {
+                            uint32_t nColors = std::min(colors->size(), values->size());
+                            if (0 != nColors)
+                                {
+                                bvector<ColorDef> keyColors;
+                                keyColors.reserve(nColors);
+                                for (uint32_t i = 0; i < nColors; i++)
+                                    keyColors.push_back(ColorDef(colors->Get(i)));
+                                gradientPtr->SetKeys(nColors, keyColors.data(), values->data());
+                                }
+                            }
 
-                        for (uint32_t iColor=0; iColor < nColors; ++iColor)
-                            keyColors.push_back(ColorDef(colors[iColor]));
-
-                        gradientPtr->SetKeys((uint32_t) keyColors.size(), &keyColors.front(), (double const*) ppfb->values()->Data());
-
-                        if (GradientSymb::Mode::Thematic == gradientPtr->GetMode() && 0 != ppfb->thematicSettings())
+                        auto fbThematicSettings = ppfb->thematicSettings();
+                        if (GradientSymb::Mode::Thematic == gradientPtr->GetMode() && nullptr != fbThematicSettings)
                             {
                             auto    thematicSettings = new ThematicGradientSettings();
-                            auto    fbThematicSettings = ppfb->thematicSettings();
 
                             thematicSettings->SetStepCount(fbThematicSettings->stepCount());
                             thematicSettings->SetMarginColor(ColorDef(fbThematicSettings->marginColor()));
@@ -5142,7 +5277,10 @@ void GeometryCollection::ToJson(BeJsValue output, BeJsConst opts) const
 
             case GeometryStreamIO::OpCode::Pattern:
                 {
-                auto ppfb = flatbuffers::GetRoot<FB::AreaPattern>(egOp.m_data);
+                auto ppfb = GetVerifiedRoot<FB::AreaPattern>(egOp);
+                if (nullptr == ppfb)
+                    break;
+
                 PatternParamsPtr pattern = PatternParams::Create();
 
                 if (ppfb->has_origin())
@@ -5167,22 +5305,36 @@ void GeometryCollection::ToJson(BeJsValue output, BeJsConst opts) const
                 pattern->SetSnappable(TO_BOOL(ppfb->snappable()));
                 pattern->SetSymbolId(DgnGeometryPartId((uint64_t) ppfb->symbolId()));
 
-                if (ppfb->has_defLine())
+                auto fbDefLineOffsets = ppfb->defLine();
+                if (nullptr != fbDefLineOffsets)
                     {
-                    flatbuffers::Vector<flatbuffers::Offset<FB::DwgHatchDefLine>> const* fbDefLineOffsets = ppfb->defLine();
                     bvector<DwgHatchDefLine> defLines;
+                    defLines.reserve(fbDefLineOffsets->size());
 
                     for (auto const& fbDefLine : *fbDefLineOffsets)
                         {
+                        if (nullptr == fbDefLine)
+                            continue;
+
+                        auto through   = (DPoint2dCP) fbDefLine->through();
+                        auto offset    = (DPoint2dCP) fbDefLine->offset();
+                        auto dashes    = fbDefLine->dashes();
+
+                        if (nullptr == through || nullptr == offset)
+                            continue;
+
                         DwgHatchDefLine line;
 
                         line.m_angle   = fbDefLine->angle();
-                        line.m_through = *((DPoint2dCP) fbDefLine->through());
-                        line.m_offset  = *((DPoint2dCP) fbDefLine->offset());
-                        line.m_nDashes = static_cast<short>(fbDefLine->dashes()->Length());
+                        line.m_through = *through;
+                        line.m_offset  = *offset;
+                        if (nullptr != dashes)
+                            line.m_nDashes = static_cast<short>(std::min(dashes->size(), (flatbuffers::uoffset_t) MAX_DWG_HATCH_LINE_DASHES));
+                        else
+                            line.m_nDashes = 0;
 
                         if (0 != line.m_nDashes)
-                            memcpy(line.m_dashes, fbDefLine->dashes()->Data(), line.m_nDashes * sizeof(double));
+                            memcpy(line.m_dashes, dashes->data(), line.m_nDashes * sizeof(double));
 
                         defLines.push_back(line);
                         }
@@ -5196,7 +5348,10 @@ void GeometryCollection::ToJson(BeJsValue output, BeJsConst opts) const
 
             case GeometryStreamIO::OpCode::Material:
                 {
-                auto ppfb = flatbuffers::GetRoot<FB::Material>(egOp.m_data);
+                auto ppfb = GetVerifiedRoot<FB::Material>(egOp);
+                if (nullptr == ppfb)
+                    break;
+
                 auto value = output.appendObject()["material"];
                 value.SetEmptyObject();
 
@@ -5226,7 +5381,10 @@ void GeometryCollection::ToJson(BeJsValue output, BeJsConst opts) const
 
             case GeometryStreamIO::OpCode::GeometryPartInstance:
                 {
-                auto ppfb = flatbuffers::GetRoot<FB::GeometryPart>(egOp.m_data);
+                auto ppfb = GetVerifiedRoot<FB::GeometryPart>(egOp);
+                if (nullptr == ppfb)
+                    break;
+
                 auto value = output.appendValue()["geomPart"];
 
                 DgnGeometryPartId partId = DgnGeometryPartId((uint64_t)ppfb->geomPartId());
@@ -5303,24 +5461,26 @@ void GeometryCollection::ToJson(BeJsValue output, BeJsConst opts) const
 
             case GeometryStreamIO::OpCode::ParasolidBRep:
                 {
-                auto ppfb = flatbuffers::GetRoot<FB::BRepData>(egOp.m_data);
+                auto ppfb = GetVerifiedRoot<FB::BRepData>(egOp);
+                if (nullptr == ppfb)
+                    break;
+
                 auto value = output.appendValue()["brep"];
                 value.SetEmptyObject();
-                if (wantBRepData)
+                if (wantBRepData && ppfb->has_entityData())
                     {
                     Utf8String  brepStr;
 
-                    Base64Utilities::Encode(brepStr, ppfb->entityData()->Data(), ppfb->entityData()->Length(), JsValueRef::base64Header);
+                    Base64Utilities::Encode(brepStr, ppfb->entityData()->data(), ppfb->entityData()->size(), JsValueRef::base64Header);
                     value["data"] = brepStr.c_str();
                     }
 
                 if (0 != ppfb->brepType())
                     value["type"] = ppfb->brepType();
 
-                Transform  entityTransform = *((TransformCP) ppfb->entityTransform());
-
-                if (!entityTransform.IsIdentity())
-                    BeJsGeomUtils::TransformToJson(value["transform"], entityTransform);
+                auto entityTransform = (TransformCP) ppfb->entityTransform();
+                if (nullptr != entityTransform && !entityTransform->IsIdentity())
+                    BeJsGeomUtils::TransformToJson(value["transform"], *entityTransform);
 
                 auto fbSymbology = ppfb->symbology();
                 if (nullptr != fbSymbology)
@@ -5329,7 +5489,7 @@ void GeometryCollection::ToJson(BeJsValue output, BeJsConst opts) const
                     if (!ppfb->has_symbologyIndex())
                         {
                         auto array = value["faceSymbology"];
-                        for (flatbuffers::uoffset_t iSymb = 0; iSymb < fbSymbology->Length(); iSymb++)
+                        for (flatbuffers::uoffset_t iSymb = 0; iSymb < fbSymbology->size(); iSymb++)
                             {
                             FB::FaceSymbology const* fbSymb = fbSymbology->Get(iSymb);
                             auto faceValue = array.appendValue();
@@ -5442,7 +5602,7 @@ GeometryStreamEntryId GeometryBuilder::GetGeometryStreamEntryId() const
     {
     GeometryStreamEntryId entryId;
 
-    GeometryStreamIO::Collection collection(&m_writer.m_buffer.front(), (uint32_t) m_writer.m_buffer.size());
+    GeometryStreamIO::Collection collection(m_writer.m_buffer.data(), m_writer.m_buffer.size());
 
     for (auto const& egOp : collection)
         {
@@ -5450,9 +5610,9 @@ GeometryStreamEntryId GeometryBuilder::GetGeometryStreamEntryId() const
             {
             case GeometryStreamIO::OpCode::GeometryPartInstance:
                 {
-                auto ppfb = flatbuffers::GetRoot<FB::GeometryPart>(egOp.m_data);
+                auto ppfb = GetVerifiedRoot<FB::GeometryPart>(egOp);
 
-                entryId.SetGeometryPartId(DgnGeometryPartId((uint64_t)ppfb->geomPartId()));
+                entryId.SetGeometryPartId(DgnGeometryPartId((uint64_t) (nullptr != ppfb ? ppfb->geomPartId() : 0)));
                 entryId.IncrementIndex();
                 break;
                 }
@@ -6513,7 +6673,9 @@ GeometryBuilderPtr GeometryBuilder::CreateGeometryPart(GeometryStreamCR stream, 
                     }
 
                 // Can't change sub-category in GeometryPart's GeometryStream, only preserve sub-category appearance overrides.
-                auto ppfb = flatbuffers::GetRoot<FB::BasicSymbology>(egOp.m_data);
+                auto ppfb = GetVerifiedRoot<FB::BasicSymbology>(egOp);
+                if (nullptr == ppfb)
+                    break;
 
                 if (0 == ppfb->subCategoryId())
                     {

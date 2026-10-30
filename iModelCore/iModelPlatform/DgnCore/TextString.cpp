@@ -506,7 +506,7 @@ BentleyStatus TextStringPersistence::EncodeAsFlatBuf(bvector<Byte>& buffer, Text
 
     encoder.Finish(textOffset);
     buffer.resize(encoder.GetSize());
-    memcpy(&buffer[0], encoder.GetBufferPointer(), encoder.GetSize());
+    memcpy(buffer.data(), encoder.GetBufferPointer(), encoder.GetSize());
 
     return SUCCESS;
     }
@@ -579,6 +579,13 @@ BentleyStatus TextStringPersistence::DecodeFromFlatBuf(TextStringR text, FB::Tex
 //---------------------------------------------------------------------------------------
 BentleyStatus TextStringPersistence::DecodeFromFlatBuf(TextStringR text, Byte const* buffer, size_t numBytes)
     {
-    FB::TextString const* fbText = GetRoot<FB::TextString>(buffer);
+    flatbuffers::Verifier verifier(buffer, numBytes);
+    if (!verifier.VerifyBuffer<FB::TextString>())
+        return ERROR;
+
+    auto fbText = flatbuffers::GetRoot<FB::TextString>(buffer);
+    if (nullptr == fbText)
+        return ERROR;
+
     return DecodeFromFlatBuf(text, *fbText);
     }
