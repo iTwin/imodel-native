@@ -495,70 +495,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareBooleanFactorExp(NativeSqlBuilder::List& na
     return ECSqlStatus::Success;
     }
 
-//-----------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-ECSqlStatus ECSqlExpPreparer::PrepareCastExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, CastExp const& exp)
-    {
-    if (exp.IsV2())
-        return PrepareCastExpV2(nativeSqlSnippets, ctx, exp);
-
-    ValueExp const* castOperand = exp.GetCastOperand();
-    if (!exp.NeedsCasting())
-        return PrepareValueExp(nativeSqlSnippets, ctx, *castOperand);
-
-    if (!castOperand->IsParameterExp() && castOperand->GetTypeInfo().IsNull())
-        return PrepareNullCastExp(nativeSqlSnippets, ctx, exp);
-
-    NativeSqlBuilder::List operandNativeSqlSnippets;
-    const ECSqlStatus stat = PrepareValueExp(operandNativeSqlSnippets, ctx, *castOperand);
-    if (!stat.IsSuccess())
-        return stat;
-
-    if (operandNativeSqlSnippets.empty())
-        {
-        BeAssert(false && "Preparing CAST operand did not return a SQLite SQL expression.");
-        return ECSqlStatus::Error;
-        }
-
-    if (!exp.GetTypeInfo().IsPrimitive())
-        {
-        ctx.Issues().ReportV(
-            IssueSeverity::Error,
-            IssueCategory::BusinessProperties,
-            IssueType::ECSQL,
-            ECDbIssueId::ECDb_0510,
-            "Invalid ECSQL expression '%s': Only primitive types are supported as CAST target type",
-            exp.ToECSql().c_str()
-        );
-        return ECSqlStatus::InvalidECSql;
-        }
-
-    const PrimitiveType targetType = exp.GetTypeInfo().GetPrimitiveType();
-
-    for (size_t i = 0; i < operandNativeSqlSnippets.size(); i++)
-        {
-        NativeSqlBuilder nativeSqlBuilder;
-        if (exp.HasParentheses())
-            nativeSqlBuilder.AppendParenLeft();
-
-        Utf8String castExpSnippet;
-        if (SUCCESS != PrepareCastExpForPrimitive(castExpSnippet, targetType, operandNativeSqlSnippets[i].GetSql()))
-            return ECSqlStatus::Error;
-
-        nativeSqlBuilder.Append(castExpSnippet);
-
-        if (exp.HasParentheses())
-            nativeSqlBuilder.AppendParenRight();
-
-        nativeSqlSnippets.push_back(nativeSqlBuilder);
-        }
-
-    return ECSqlStatus::Success;
-    }
-
-
 namespace
 {
 //---------------------------------------------------------------------------------------
@@ -722,7 +658,7 @@ Utf8String JoinSnippets(NativeSqlBuilder::List const& snippets)
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareCastExpV2ToString(Utf8StringR sql, ECSqlPrepareContext& ctx, CastExp const& exp, NativeSqlBuilder::List const& operandSnippets)
+ECSqlStatus ECSqlExpPreparer::PrepareCastExpToString(Utf8StringR sql, ECSqlPrepareContext& ctx, CastExp const& exp, NativeSqlBuilder::List const& operandSnippets)
     {
     ECSqlTypeInfo const& sourceType = exp.GetCastOperand()->GetTypeInfo();
     Utf8StringCR first = operandSnippets[0].GetSql();
@@ -823,7 +759,7 @@ static bool NeedsNumericStorageCast(ValueExp const& operand, PrimitiveType targe
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareCastExpV2(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, CastExp const& exp)
+ECSqlStatus ECSqlExpPreparer::PrepareCastExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, CastExp const& exp)
     {
     ValueExp const* castOperand = exp.GetCastOperand();
     const bool isParameter = castOperand->IsParameterExp();
@@ -899,8 +835,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareCastExpV2(NativeSqlBuilder::List& nativeSql
                 break;
         }
 
-    // parameters are bound with the target type already
-    if (isParameter || targetType.IsStruct() || targetType.IsArray())
+    // Enum parameters still need membership validation after binding.
+    if ((isParameter && !targetType.IsEnum()) || targetType.IsStruct() || targetType.IsArray())
         return passThrough();
 
     BeAssert(targetType.IsPrimitive());
@@ -909,7 +845,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareCastExpV2(NativeSqlBuilder::List& nativeSql
 
     if (targetPrimType == PRIMITIVETYPE_String && targetEnum == nullptr)
         {
-        stat = PrepareCastExpV2ToString(sql, ctx, exp, operandSnippets);
+        stat = PrepareCastExpToString(sql, ctx, exp, operandSnippets);
         if (!stat.IsSuccess())
             return stat;
 
@@ -941,7 +877,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareCastExpV2(NativeSqlBuilder::List& nativeSql
 
     if (targetEnum != nullptr)
         {
-        if (sourceType == targetType)
+        if (sourceType == targetType && !isParameter)
             return passThrough();
 
         if (SUCCESS != PrepareCastExpForPrimitive(sql, targetPrimType, first))
@@ -1070,7 +1006,7 @@ BentleyStatus ECSqlExpPreparer::PrepareCastExpForPrimitive(Utf8StringR sqlSnippe
                 castFormat = "CAST(%s AS BLOB)";
                 break;
             case PRIMITIVETYPE_Boolean:
-                castFormat = "CASE WHEN %s <> 0 THEN 1 ELSE 0 END";
+                castFormat = "(%s <> 0)";
                 break;
             case PRIMITIVETYPE_DateTime:
                 castFormat = "CAST(%s AS TIMESTAMP)";
@@ -3097,26 +3033,40 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExp(NativeSqlBuilder::List& nativeSqlS
             case Exp::Type::TypeList:
                 return PrepareTypeListExp(nativeSqlSnippets, ctx, exp.GetAs<TypeListExp>());
             case Exp::Type::CommonTablePropertyName:{
-                NativeSqlBuilder builder;
                 auto& ctp = exp.GetAs<CommonTablePropertyNameExp>();
                 auto  ctpName = ctp.GetBlockNameExp();
-                if (ctpName != nullptr) {
-                    if (!ctpName->GetAlias().empty()) {
-                        builder.Append(ctpName->GetAlias());
-                    } else {
-                        builder.Append(ctpName->GetName());
+                const int columnCount = exp.GetTypeInfo().IsPoint() ? (exp.GetTypeInfo().GetPrimitiveType() == PRIMITIVETYPE_Point2d ? 2 : 3) : 1;
+                for (int i = 0; i < columnCount; ++i) {
+                    NativeSqlBuilder builder;
+                    if (ctpName != nullptr) {
+                        builder.Append(ctpName->GetAlias().empty() ? ctpName->GetName() : ctpName->GetAlias());
+                        builder.AppendDot();
                     }
-                    builder.AppendDot();
-                }
-                builder.Append(ctp.GetName());
-                if (exp.GetParent() != nullptr) {
-                    if (exp.GetParent()->GetType() == Exp::Type::DerivedProperty) {
+                    if (columnCount == 1)
+                        builder.Append(ctp.GetName());
+                    else
+                        {
+                        auto const* block = ctp.GetTarget().FindParent(Exp::Type::CommonTableBlock);
+                        if (block == nullptr)
+                            {
+                            BeAssert(false && "A CTE property must belong to a common table block.");
+                            return ECSqlStatus::Error;
+                            }
+                        builder.AppendEscaped(block->GetAs<CommonTableBlockExp>().GetPointColumnName(ctp.GetName(), i));
+                        }
+                    if (exp.GetParent() != nullptr && exp.GetParent()->GetType() == Exp::Type::DerivedProperty) {
                         auto& nestedAlias = exp.GetParent()->GetAs<DerivedPropertyExp>().GetNestedAlias();
                         if (!nestedAlias.empty())
-                            builder.AppendSpace().Append(exp.GetParent()->GetAs<DerivedPropertyExp>().GetNestedAlias());
+                            {
+                            builder.AppendSpace();
+                            if (columnCount == 1)
+                                builder.Append(nestedAlias);
+                            else
+                                builder.AppendEscaped(Utf8PrintfString("%s_%d", nestedAlias.c_str(), i));
+                            }
                     }
+                    nativeSqlSnippets.push_back(builder);
                 }
-                nativeSqlSnippets.push_back(builder);
                 return ECSqlStatus::Success;
             }
             case Exp::Type::WindowFunction:

@@ -620,124 +620,33 @@ Exp::FinalizeParseStatus CastExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
     {
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         {
-        OptionExp const* castV2Option = OptionsExp::FindLocalOrInheritedOption(OptionsExp::CAST_V2, *this);
-        m_isV2 = castV2Option != nullptr && castV2Option->asBool();
-        }
-
-    if (m_isV2)
-        return FinalizeV2(ctx, mode);
-
-    if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
-        {
-        if (m_isPostfix)
-            {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0750,
-                "The '::' cast operator requires the ECSQL option CAST_V2 (e.g. 'SELECT 1::INTEGER OPTIONS CAST_V2'): '%s'.", ToECSql().c_str());
+        if (SUCCESS != ResolveTargetType(ctx))
             return FinalizeParseStatus::Error;
-            }
 
-        //if operands are parameters set the target exp in those expressions
-        if (GetCastOperand()->IsParameterExp())
-            {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0060,
-                "Parameters are not supported in a CAST expression ('%s').", ToECSql().c_str());
-            return FinalizeParseStatus::Error;
-            }
-
-        if (m_castTargetSchemaName.empty())
-            {
-            ECN::PrimitiveType targetType;
-            if (ExpHelper::ToPrimitiveType(targetType, GetCastTargetPrimitiveType()) != SUCCESS)
-                {
-                if (GetSpecialTarget(GetCastTargetPrimitiveType()) != SpecialTarget::None)
-                    {
-                    ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0750,
-                        "CAST target type '%s' requires the ECSQL option CAST_V2: '%s'.", GetCastTargetPrimitiveType().c_str(), ToECSql().c_str());
-                    return FinalizeParseStatus::Error;
-                    }
-
-                ctx.Issues().ReportV(
-                    IssueSeverity::Error,
-                    IssueCategory::BusinessProperties,
-                    IssueType::ECSQL,
-                    ECDbIssueId::ECDb_0267,
-                    "Invalid CAST target type '%s'. Valid target types are the EC primitive types, a fully qualified EC struct type or arrays of those.",
-                    GetCastTargetPrimitiveType().c_str()
-                );
-                return FinalizeParseStatus::Error;
-                }
-
-            SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(targetType, m_castTargetIsArray));
-            return FinalizeParseStatus::NotCompleted;
-            }
-
-        //WIP: Need to change the grammar to allow specifying cast targets from other table spaces
-        ECEnumerationCP targetEnumType = ctx.Schemas().GetEnumeration(m_castTargetSchemaName, GetCastTargetTypeName(), SchemaLookupMode::AutoDetect);
-        if (targetEnumType != nullptr)
-            {
-            SetTypeInfo(ECSqlTypeInfo::CreateEnum(*targetEnumType, m_castTargetIsArray));
-            return FinalizeParseStatus::NotCompleted;
-            }
-
-        ECClassCP targetClassType = ctx.Schemas().GetClass(m_castTargetSchemaName, GetCastTargetTypeName(), SchemaLookupMode::AutoDetect);
-        if (targetClassType == nullptr)
-            {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0269,
-                "Invalid CAST target type '%s.%s'. The type does not exist.", m_castTargetSchemaName.c_str(), GetCastTargetTypeName().c_str());
-            return FinalizeParseStatus::Error;
-            }
-
-        if (!targetClassType->IsStructClass())
-            {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0270,
-                "Invalid CAST target type '%s.%s'. Only enumeration and struct types are supported.", m_castTargetSchemaName.c_str(), GetCastTargetTypeName().c_str());
-            return FinalizeParseStatus::Error;
-            }
-
-        SetTypeInfo(ECSqlTypeInfo::CreateStruct(*targetClassType->GetStructClassCP(), m_castTargetIsArray));
         return FinalizeParseStatus::NotCompleted;
         }
 
-    ECSqlTypeInfo const& castOperandTypeInfo = GetCastOperand()->GetTypeInfo();
-    if (castOperandTypeInfo.IsNull()) //NULL can always be cast
+    if (GetCastOperand()->IsParameterExp())
         return FinalizeParseStatus::Completed;
 
-    if (!castOperandTypeInfo.IsPrimitive())
+    ECSqlTypeInfo const& sourceType = GetCastOperand()->GetTypeInfo();
+    if (sourceType.IsUnset() || sourceType.GetKind() == ECSqlTypeInfo::Kind::Varies)
         {
-        ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0272,
-            "CAST expects operand to be a primitive value expression or the null constant.");
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0751,
+            "Cannot determine the type of the CAST operand in '%s'.", ToECSql().c_str());
         return FinalizeParseStatus::Error;
         }
 
-    ECSqlTypeInfo const& targetTypeInfo = GetTypeInfo();
-    if (!targetTypeInfo.IsPrimitive())
+    if (!IsSupportedConversion(sourceType, GetTypeInfo(), m_specialTarget))
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0273,
-            "Invalid target type in CAST expression '%s'. Non-primitive target type can only be used when casting NULL.", ToECSql().c_str());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0751,
+            "Casting from '%s' to '%s' is not supported: '%s'.", TypeToString(sourceType).c_str(), TypeToString(GetTypeInfo()).c_str(), ToECSql().c_str());
         return FinalizeParseStatus::Error;
         }
 
-    if (castOperandTypeInfo.GetPrimitiveType() != targetTypeInfo.GetPrimitiveType())
-        {
-        //primitives can be cast except for points because they map to multiple columns
-        std::vector<ECSqlTypeInfo const*> typeInfos {&targetTypeInfo, &castOperandTypeInfo};
-        for (ECSqlTypeInfo const* typeInfo : typeInfos)
-            {
-            if (typeInfo->IsPoint())
-                {
-                ctx.Issues().ReportV(
-                    IssueSeverity::Error,
-                    IssueCategory::BusinessProperties,
-                    IssueType::ECSQL,
-                    ECDbIssueId::ECDb_0274,
-                    "Casting from '%s' to '%s' is not supported",
-                    ExpHelper::ToString(castOperandTypeInfo.GetPrimitiveType()),
-                    ExpHelper::ToString(targetTypeInfo.GetPrimitiveType())
-                );
-                return FinalizeParseStatus::Error;
-                }
-            }
-        }
+    // nav::Id projects the referenced instance id, which is a NavId
+    if (sourceType.IsNavigation() && m_specialTarget == SpecialTarget::IdFamily && GetTypeInfo().GetExtendedTypeName().EqualsIAscii(EXTENDEDTYPENAME_Id))
+        SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_Long, m_castTargetIsArray, EXTENDEDTYPENAME_NavId));
 
     return FinalizeParseStatus::Completed;
     }
@@ -820,12 +729,12 @@ Utf8String CastExp::TypeToString(ECSqlTypeInfo const& typeInfo)
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus CastExp::ResolveTargetType(ECSqlParseContext& ctx, bool allowSpecialTargets)
+BentleyStatus CastExp::ResolveTargetType(ECSqlParseContext& ctx)
     {
     if (m_castTargetSchemaName.empty())
         {
         Utf8CP extendedTypeName = nullptr;
-        m_specialTarget = allowSpecialTargets ? GetSpecialTarget(m_castTargetTypeName, &extendedTypeName) : SpecialTarget::None;
+        m_specialTarget = GetSpecialTarget(m_castTargetTypeName, &extendedTypeName);
         switch (m_specialTarget)
             {
                 case SpecialTarget::IdFamily:
@@ -913,7 +822,7 @@ bool CastExp::_TryDetermineParameterExpType(ECSqlParseContext& ctx, ParameterExp
     {
     // Only a direct parameter operand gets its type from the cast. Parameters nested deeper
     // (e.g. in arithmetic or functions) keep the regular inference of their own parents.
-    if (!m_isV2 || GetCastOperand() != &parameterExp)
+    if (GetCastOperand() != &parameterExp)
         return false;
 
     parameterExp.SetExplicitTypeInfo(GetParameterInputType());
@@ -924,7 +833,7 @@ bool CastExp::_TryDetermineParameterExpType(ECSqlParseContext& ctx, ParameterExp
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool CastExp::IsSupportedV2Conversion(ECSqlTypeInfo const& source, ECSqlTypeInfo const& target, SpecialTarget specialTarget)
+bool CastExp::IsSupportedConversion(ECSqlTypeInfo const& source, ECSqlTypeInfo const& target, SpecialTarget specialTarget)
     {
     if (source.IsNull())
         return true;
@@ -968,45 +877,6 @@ bool CastExp::IsSupportedV2Conversion(ECSqlTypeInfo const& source, ECSqlTypeInfo
         return source.IsString();
 
     return true;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-Exp::FinalizeParseStatus CastExp::FinalizeV2(ECSqlParseContext& ctx, FinalizeParseMode mode)
-    {
-    if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
-        {
-        if (SUCCESS != ResolveTargetType(ctx, true))
-            return FinalizeParseStatus::Error;
-
-        return FinalizeParseStatus::NotCompleted;
-        }
-
-    // A direct parameter operand gets its type from this expression in _TryDetermineParameterExpType
-    if (GetCastOperand()->IsParameterExp())
-        return FinalizeParseStatus::Completed;
-
-    ECSqlTypeInfo const& sourceType = GetCastOperand()->GetTypeInfo();
-    if (sourceType.IsUnset() || sourceType.GetKind() == ECSqlTypeInfo::Kind::Varies)
-        {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0751,
-            "Cannot determine the type of the CAST operand in '%s'.", ToECSql().c_str());
-        return FinalizeParseStatus::Error;
-        }
-
-    if (!IsSupportedV2Conversion(sourceType, GetTypeInfo(), m_specialTarget))
-        {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0751,
-            "Casting from '%s' to '%s' is not supported: '%s'.", TypeToString(sourceType).c_str(), TypeToString(GetTypeInfo()).c_str(), ToECSql().c_str());
-        return FinalizeParseStatus::Error;
-        }
-
-    // nav::Id projects the referenced instance id, which is a NavId
-    if (sourceType.IsNavigation() && m_specialTarget == SpecialTarget::IdFamily && GetTypeInfo().GetExtendedTypeName().EqualsIAscii(EXTENDEDTYPENAME_Id))
-        SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_Long, m_castTargetIsArray, EXTENDEDTYPENAME_NavId));
-
-    return FinalizeParseStatus::Completed;
     }
 
 //-----------------------------------------------------------------------------------------

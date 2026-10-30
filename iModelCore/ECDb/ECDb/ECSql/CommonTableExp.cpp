@@ -140,6 +140,17 @@ ECSqlTypeInfo CommonTableBlockExp::FindType (Utf8StringCR col) const {
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+Utf8String CommonTableBlockExp::GetPointColumnName(Utf8StringCR name, int coordinate) const {
+    Utf8String prefix("_ecsql_point_");
+    // Keep generated coordinate names separate from every user-declared column name.
+    while (std::any_of(m_columnList.begin(), m_columnList.end(), [&] (Utf8StringCR column) { return column.StartsWithIAscii(prefix.c_str()); }))
+        prefix.append("_");
+    return Utf8PrintfString("%s%s_%d", prefix.c_str(), name.c_str(), coordinate);
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 void CommonTableBlockExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
     //! ITWINJS_PARSE_TREE: CommonTableBlockExp

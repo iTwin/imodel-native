@@ -13,6 +13,13 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 BentleyStatus OptionsExp::AddOptionExp(std::unique_ptr<OptionExp> optionExp, IssueDataSource const& issues)
     {
     Utf8CP name = optionExp->GetName();
+    if (BeStringUtilities::StricmpAscii(name, "CAST_V2") == 0)
+        {
+        issues.Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0750,
+            "The ECSQL option CAST_V2 has been removed. Extended casting is always enabled; remove the CAST_V2 option.");
+        return ERROR;
+        }
+
     if (m_optionsByName.find(name) != m_optionsByName.end())
         {
         issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0548, "Multiple options with same name ('%s') are not supported.", name);

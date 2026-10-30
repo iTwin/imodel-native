@@ -3509,8 +3509,6 @@ TEST_F(ECSqlStatementTestFixture, DateTimeCast)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
     stmt.Finalize();
 
-    //casts strip away the date time info as it is not part of the actual value. Same when inserting a DateTime object into a non-DateTime property.
-    //when retrieving those values, DateTime::Info is expected to be DateTime::Kind::Unspecified
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT DateOnly,DtUtc,CAST(DateOnly AS TEXT), CAST(DtUtc AS TEXT), CAST(DateOnly AS REAL), CAST(DtUtc AS REAL), CAST(DateOnly AS Date), CAST(DtUtc AS TimeStamp), S FROM ecsql.P WHERE ECInstanceId=?"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId())) << stmt.GetECSql();
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
@@ -3520,7 +3518,11 @@ TEST_F(ECSqlStatementTestFixture, DateTimeCast)
     EXPECT_TRUE(expectedDateOnly.Equals(stmt.GetValueDateTime(0))) << "Select clause item 0: Expected: " << expectedDateOnly.ToString().c_str() << " Actual: " << stmt.GetValueDateTime(0).ToString().c_str();
     EXPECT_TRUE(expectedDtUtc.Equals(stmt.GetValueDateTime(1))) << "Select clause item 1: Expected: " << expectedDtUtc.ToString().c_str() << " Actual: " << stmt.GetValueDateTime(1).ToString().c_str();
 
-    for (int i = 2; i < stmt.GetColumnCount(); i++)
+    EXPECT_STREQ(expectedDateOnly.ToString().c_str(), stmt.GetValueText(2));
+    EXPECT_STREQ(expectedDtUtc.ToString().c_str(), stmt.GetValueText(3));
+    EXPECT_TRUE(expectedDateOnly.Equals(stmt.GetValueDateTime(6)));
+
+    for (int i : {4, 5, 7, 8})
         {
         DateTime actual = stmt.GetValueDateTime(i);
 
@@ -14064,14 +14066,14 @@ TEST_F(ECSqlStatementTestFixture, IsCoreSelectTests) {
 }
 
 //---------------------------------------------------------------------------------------
-// CAST_V2 test helpers
+// Extended cast test helpers
 //---------------------------------------------------------------------------------------
-struct CastV2Helper final
+struct ExtendedCastHelper final
     {
     ECDbR m_ecdb;
     TestIssueListener m_listener;
-    explicit CastV2Helper(ECDbR ecdb) : m_ecdb(ecdb) { m_ecdb.AddIssueListener(m_listener); }
-    ~CastV2Helper() { m_ecdb.RemoveIssueListener(); }
+    explicit ExtendedCastHelper(ECDbR ecdb) : m_ecdb(ecdb) { m_ecdb.AddIssueListener(m_listener); }
+    ~ExtendedCastHelper() { m_ecdb.RemoveIssueListener(); }
     Utf8String LastIssue() const { return m_listener.GetLastMessage(); }
 
     ECSqlStatus PrepareStatus(Utf8CP ecsql) const
@@ -14105,81 +14107,112 @@ struct CastV2Helper final
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, CastV2_Gate)
+TEST_F(ECSqlStatementTestFixture, ExtendedCast_DefaultAndRemovedOption)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("castv2gate.ecdb"));
-    CastV2Helper h(m_ecdb);
+    ASSERT_EQ(SUCCESS, SetupECDb("extendedcastgate.ecdb"));
+    ExtendedCastHelper h(m_ecdb);
 
-    // '::' requires CAST_V2
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, h.PrepareStatus("SELECT 1::INTEGER")) << h.LastIssue();
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, h.PrepareStatus("SELECT 1::INTEGER OPTIONS CAST_V2=false")) << h.LastIssue();
-    EXPECT_EQ(ECSqlStatus::Success, h.PrepareStatus("SELECT 1::INTEGER OPTIONS CAST_V2")) << h.LastIssue();
-    EXPECT_EQ(ECSqlStatus::Success, h.PrepareStatus("SELECT 1::INTEGER OPTIONS CAST_V2=true")) << h.LastIssue();
-    EXPECT_EQ(ECSqlStatus::Success, h.PrepareStatus("SELECT 1::INTEGER ECSQLOPTIONS CAST_V2")) << h.LastIssue();
+    EXPECT_EQ(ECSqlStatus::Success, h.PrepareStatus("SELECT 1::INTEGER")) << h.LastIssue();
 
-    // special targets and parameter casts require CAST_V2
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, h.PrepareStatus("SELECT CAST(1 AS Id)")) << h.LastIssue();
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, h.PrepareStatus("SELECT CAST(1 AS ClassName)")) << h.LastIssue();
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, h.PrepareStatus("SELECT CAST(? AS INTEGER)")) << h.LastIssue();
-    EXPECT_EQ(ECSqlStatus::Success, h.PrepareStatus("SELECT CAST(? AS INTEGER) OPTIONS CAST_V2")) << h.LastIssue();
+    for (Utf8CP ecsql : {"SELECT 1 OPTIONS CAST_V2", "SELECT 1 OPTIONS CAST_V2=true",
+                         "SELECT 1 OPTIONS CAST_V2=false", "SELECT 1 ECSQLOPTIONS cast_v2",
+                         "WITH c(v) AS (SELECT 1 OPTIONS CAST_V2) SELECT v FROM c"})
+        {
+        EXPECT_EQ(ECSqlStatus::InvalidECSql, h.PrepareStatus(ecsql)) << ecsql;
+        EXPECT_TRUE(h.LastIssue().Contains("CAST_V2 has been removed")) << h.LastIssue();
+        }
 
-    // legacy CAST unchanged
+    EXPECT_EQ(ECSqlStatus::Success, h.PrepareStatus("SELECT CAST(1 AS Id)")) << h.LastIssue();
+    EXPECT_EQ(ECSqlStatus::Success, h.PrepareStatus("SELECT CAST(1 AS ClassName)")) << h.LastIssue();
+    EXPECT_EQ(ECSqlStatus::Success, h.PrepareStatus("SELECT CAST(? AS INTEGER)")) << h.LastIssue();
+
     EXPECT_STREQ("7", h.Text("SELECT CAST(7.9 AS INTEGER)").c_str());
-    EXPECT_STREQ("1", h.Text("SELECT CAST(TRUE AS TEXT)").c_str());
+    EXPECT_STREQ("true", h.Text("SELECT CAST(TRUE AS TEXT)").c_str());
 
     // special names are not globally reserved
     EXPECT_STREQ("1", h.Text("SELECT 1 Json").c_str());
     EXPECT_STREQ("1", h.Text("SELECT 1 ClassName").c_str());
 
-    // DML has no CAST_V2 scope
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, h.PrepareStatus("UPDATE meta.ECSchemaDef SET Name = 'x'::TEXT WHERE 1=0")) << h.LastIssue();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, CastV2_SyntaxAndPrimitives)
+TEST_F(ECSqlStatementTestFixture, ExtendedCast_Dml)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("castv2syntax.ecdb"));
-    CastV2Helper h(m_ecdb);
+    ASSERT_EQ(SUCCESS, SetupECDb("extendedcastdml.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="Item"><ECProperty propertyName="Value" typeName="string" /></ECEntityClass>
+        </ECSchema>)xml")));
 
-    EXPECT_STREQ("3", h.Text("SELECT 1 + '2'::INTEGER OPTIONS CAST_V2").c_str());
-    EXPECT_STREQ("-5", h.Text("SELECT -'5'::INTEGER OPTIONS CAST_V2").c_str());
-    EXPECT_STREQ("7", h.Text("SELECT 7.9::INTEGER::TEXT OPTIONS CAST_V2").c_str());
-    EXPECT_STREQ("12", h.Text("SELECT (5 + 7)::LONG OPTIONS CAST_V2").c_str());
-    EXPECT_STREQ("12", h.Text("SELECT CAST((5 + 7) AS LONG) OPTIONS CAST_V2").c_str());
-    EXPECT_STREQ("4", h.Text("SELECT (SELECT 4)::INTEGER OPTIONS CAST_V2").c_str());
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Item(Value) VALUES(CAST(TRUE AS TEXT))"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+    ExtendedCastHelper h(m_ecdb);
+    EXPECT_STREQ("true", h.Text("SELECT Value FROM ts.Item").c_str());
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Item SET Value = ?::TEXT"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "updated", IECSqlBinder::MakeCopy::Yes));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+    EXPECT_STREQ("updated", h.Text("SELECT Value FROM ts.Item").c_str());
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "DELETE FROM ts.Item WHERE Value = 'updated'::TEXT"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    EXPECT_STREQ("0", h.Text("SELECT COUNT(*) FROM ts.Item").c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, ExtendedCast_SyntaxAndPrimitives)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("extendedcastsyntax.ecdb"));
+    ExtendedCastHelper h(m_ecdb);
+
+    EXPECT_STREQ("3", h.Text("SELECT 1 + '2'::INTEGER").c_str());
+    EXPECT_STREQ("-5", h.Text("SELECT -'5'::INTEGER").c_str());
+    EXPECT_STREQ("7", h.Text("SELECT 7.9::INTEGER::TEXT").c_str());
+    EXPECT_STREQ("12", h.Text("SELECT (5 + 7)::LONG").c_str());
+    EXPECT_STREQ("12", h.Text("SELECT CAST((5 + 7) AS LONG)").c_str());
+    EXPECT_STREQ("4", h.Text("SELECT (SELECT 4)::INTEGER").c_str());
 
     // computed numeric values are cast even when ECSQL already types them as the target
-    EXPECT_STREQ("2.5", h.Text("SELECT (2 + 3)::DOUBLE / 2 OPTIONS CAST_V2").c_str());
-    EXPECT_STREQ("2.5", h.Text("SELECT CAST((2 + 3) AS DOUBLE) / 2 OPTIONS CAST_V2").c_str());
-    EXPECT_STREQ("2.5", h.Text("SELECT (SELECT 5)::DOUBLE / 2 OPTIONS CAST_V2").c_str());
-    EXPECT_STREQ("2", h.Text("SELECT (5.0 / 2)::INTEGER OPTIONS CAST_V2").c_str());
+    EXPECT_STREQ("2.5", h.Text("SELECT (2 + 3)::DOUBLE / 2").c_str());
+    EXPECT_STREQ("2.5", h.Text("SELECT CAST((2 + 3) AS DOUBLE) / 2").c_str());
+    EXPECT_STREQ("2.5", h.Text("SELECT (SELECT 5)::DOUBLE / 2").c_str());
+    EXPECT_STREQ("2", h.Text("SELECT (5.0 / 2)::INTEGER").c_str());
 
     // boolean
-    EXPECT_STREQ("true", h.Text("SELECT TRUE::TEXT OPTIONS CAST_V2").c_str());
-    EXPECT_STREQ("false", h.Text("SELECT FALSE::TEXT OPTIONS CAST_V2").c_str());
-    EXPECT_STREQ("1", h.Text("SELECT 'TRUE'::BOOLEAN OPTIONS CAST_V2").c_str());
-    EXPECT_STREQ("0", h.Text("SELECT 'false'::BOOLEAN OPTIONS CAST_V2").c_str());
-    EXPECT_STREQ("<null>", h.Text("SELECT 'maybe'::BOOLEAN OPTIONS CAST_V2").c_str());
+    EXPECT_STREQ("true", h.Text("SELECT TRUE::TEXT").c_str());
+    EXPECT_STREQ("false", h.Text("SELECT FALSE::TEXT").c_str());
+    EXPECT_STREQ("1", h.Text("SELECT 'TRUE'::BOOLEAN").c_str());
+    EXPECT_STREQ("0", h.Text("SELECT 'false'::BOOLEAN").c_str());
+    EXPECT_STREQ("<null>", h.Text("SELECT 'maybe'::BOOLEAN").c_str());
+    EXPECT_STREQ("<null>", h.Text("SELECT CAST(NULL AS INT)::BOOLEAN").c_str());
+    EXPECT_STREQ("<null>", h.Text("SELECT (1/0)::BOOLEAN").c_str());
+    EXPECT_STREQ("<null>", h.Text("SELECT v::BOOLEAN FROM (SELECT CAST(NULL AS INT) v)").c_str());
+    EXPECT_STREQ("0", h.Text("SELECT 0::BOOLEAN").c_str());
+    EXPECT_STREQ("1", h.Text("SELECT (-0.5)::BOOLEAN").c_str());
 
     // Json
-    EXPECT_STREQ("<null>", h.Text("SELECT '{bad'::Json OPTIONS CAST_V2").c_str());
-    EXPECT_STRNE("<null>", h.Text("SELECT '{\"a\":1}'::Json OPTIONS CAST_V2").c_str());
-    EXPECT_STRNE("<null>", h.Text("SELECT 'null'::Json OPTIONS CAST_V2").c_str());
+    EXPECT_STREQ("<null>", h.Text("SELECT '{bad'::Json").c_str());
+    EXPECT_STRNE("<null>", h.Text("SELECT '{\"a\":1}'::Json").c_str());
+    EXPECT_STRNE("<null>", h.Text("SELECT 'null'::Json").c_str());
         {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT '[1,2]'::Json OPTIONS CAST_V2"));
-        EXPECT_STREQ("Json", CastV2Helper::ExtendedType(stmt, 0).c_str());
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT '[1,2]'::Json"));
+        EXPECT_STREQ("Json", ExtendedCastHelper::ExtendedType(stmt, 0).c_str());
         EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType());
         }
 
     // Guid
         {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT '407bfa18-944d-11ee-b9d1-0242ac120002'::Guid, 'zzz'::Guid, '407bfa18-944d-11ee-b9d1-0242ac120002'::Guid::TEXT OPTIONS CAST_V2"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT '407bfa18-944d-11ee-b9d1-0242ac120002'::Guid, 'zzz'::Guid, '407bfa18-944d-11ee-b9d1-0242ac120002'::Guid::TEXT"));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        EXPECT_STREQ("BeGuid", CastV2Helper::ExtendedType(stmt, 0).c_str());
+        EXPECT_STREQ("BeGuid", ExtendedCastHelper::ExtendedType(stmt, 0).c_str());
         EXPECT_EQ(PRIMITIVETYPE_Binary, stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType());
         EXPECT_TRUE(stmt.GetValueGuid(0).IsValid());
         EXPECT_STREQ("407bfa18-944d-11ee-b9d1-0242ac120002", stmt.GetValueGuid(0).ToString().c_str());
@@ -14190,7 +14223,7 @@ TEST_F(ECSqlStatementTestFixture, CastV2_SyntaxAndPrimitives)
     // DateTime
         {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT '2020-01-02T03:04:05'::DateTime, 'not a date'::DateTime, '2020-01-02T03:04:05'::DateTime::TEXT OPTIONS CAST_V2"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT '2020-01-02T03:04:05'::DateTime, 'not a date'::DateTime, '2020-01-02T03:04:05'::DateTime::TEXT"));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         DateTime dt = stmt.GetValueDateTime(0);
         EXPECT_EQ(2020, dt.GetYear());
@@ -14202,7 +14235,7 @@ TEST_F(ECSqlStatementTestFixture, CastV2_SyntaxAndPrimitives)
     // text -> point
         {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT '{\"X\":1.5,\"Y\":-2}'::Point2d, '{\"X\":1}'::Point2d, 'garbage'::Point3d, '{\"x\":1,\"y\":2,\"z\":3}'::Point3d OPTIONS CAST_V2"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT '{\"X\":1.5,\"Y\":-2}'::Point2d, '{\"X\":1}'::Point2d, 'garbage'::Point3d, '{\"x\":1,\"y\":2,\"z\":3}'::Point3d"));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         EXPECT_TRUE(stmt.GetValuePoint2d(0).AlmostEqual(DPoint2d::From(1.5, -2)));
         EXPECT_TRUE(stmt.IsValueNull(1));
@@ -14211,8 +14244,8 @@ TEST_F(ECSqlStatementTestFixture, CastV2_SyntaxAndPrimitives)
         }
 
     // point casts through derived tables keep all coordinate columns aligned
-    for (Utf8CP ecsql : {"SELECT * FROM (SELECT 'a' s, '{\"X\":1,\"Y\":2,\"Z\":3}'::Point3d p, 5 n) OPTIONS CAST_V2",
-                         "SELECT q.s, q.p, q.n FROM (SELECT 'a' s, '{\"X\":1,\"Y\":2,\"Z\":3}'::Point3d p, 5 n) q OPTIONS CAST_V2"})
+    for (Utf8CP ecsql : {"SELECT * FROM (SELECT 'a' s, '{\"X\":1,\"Y\":2,\"Z\":3}'::Point3d p, 5 n)",
+                         "SELECT q.s, q.p, q.n FROM (SELECT 'a' s, '{\"X\":1,\"Y\":2,\"Z\":3}'::Point3d p, 5 n) q"})
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql)) << ecsql << h.LastIssue();
@@ -14224,30 +14257,30 @@ TEST_F(ECSqlStatementTestFixture, CastV2_SyntaxAndPrimitives)
         }
 
     // unsupported pairs and unknown targets
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, h.PrepareStatus("SELECT 1.5::Id OPTIONS CAST_V2")) << h.LastIssue();
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, h.PrepareStatus("SELECT 1::NoSuchType OPTIONS CAST_V2")) << h.LastIssue();
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, h.PrepareStatus("SELECT NULL::NoSuchType OPTIONS CAST_V2")) << h.LastIssue();
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, h.PrepareStatus("SELECT 1::ts.NoSuchType OPTIONS CAST_V2")) << h.LastIssue();
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, h.PrepareStatus("SELECT 1.5::Id")) << h.LastIssue();
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, h.PrepareStatus("SELECT 1::NoSuchType")) << h.LastIssue();
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, h.PrepareStatus("SELECT NULL::NoSuchType")) << h.LastIssue();
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, h.PrepareStatus("SELECT 1::ts.NoSuchType")) << h.LastIssue();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, CastV2_IdAndClassName)
+TEST_F(ECSqlStatementTestFixture, ExtendedCast_IdAndClassName)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("castv2id.ecdb"));
-    CastV2Helper h(m_ecdb);
+    ASSERT_EQ(SUCCESS, SetupECDb("extendedcastid.ecdb"));
+    ExtendedCastHelper h(m_ecdb);
 
     std::vector<Utf8CP> idTargets {"Id", "ClassId", "SourceId", "SourceClassId", "TargetId", "TargetClassId", "NavId", "NavRelClassId"};
     for (Utf8CP target : idTargets)
         {
-        Utf8PrintfString ecsql("SELECT 21::%s, '0x15'::%s, '21'::%s, 'abc'::%s, NULL::%s OPTIONS CAST_V2", target, target, target, target, target);
+        Utf8PrintfString ecsql("SELECT 21::%s, '0x15'::%s, '21'::%s, 'abc'::%s, NULL::%s", target, target, target, target, target);
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str())) << ecsql;
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << ecsql;
         for (int i = 0; i < 5; ++i)
             {
-            EXPECT_STREQ(target, CastV2Helper::ExtendedType(stmt, i).c_str()) << ecsql << " col " << i;
+            EXPECT_STREQ(target, ExtendedCastHelper::ExtendedType(stmt, i).c_str()) << ecsql << " col " << i;
             EXPECT_EQ(PRIMITIVETYPE_Long, stmt.GetColumnInfo(i).GetDataType().GetPrimitiveType()) << ecsql << " col " << i;
             }
         EXPECT_EQ(21, stmt.GetValueInt64(0)) << ecsql;
@@ -14258,15 +14291,15 @@ TEST_F(ECSqlStatementTestFixture, CastV2_IdAndClassName)
         }
 
     // 64-bit Ids beyond JS safe integer range
-    EXPECT_STREQ("18446744073709551615", h.Text("SELECT '0xffffffffffffffff'::Id::TEXT OPTIONS CAST_V2").c_str()) ;
-    EXPECT_STREQ("<null>", h.Text("SELECT '0x1ffffffffffffffff'::Id OPTIONS CAST_V2").c_str());
-    EXPECT_STREQ("<null>", h.Text("SELECT '12abc'::Id OPTIONS CAST_V2").c_str());
-    EXPECT_STREQ("<null>", h.Text("SELECT ''::Id OPTIONS CAST_V2").c_str());
+    EXPECT_STREQ("18446744073709551615", h.Text("SELECT '0xffffffffffffffff'::Id::TEXT").c_str()) ;
+    EXPECT_STREQ("<null>", h.Text("SELECT '0x1ffffffffffffffff'::Id").c_str());
+    EXPECT_STREQ("<null>", h.Text("SELECT '12abc'::Id").c_str());
+    EXPECT_STREQ("<null>", h.Text("SELECT ''::Id").c_str());
 
     // ClassName
     ECClassCP schemaDef = m_ecdb.Schemas().GetClass("ECDbMeta", "ECSchemaDef");
     ASSERT_NE(nullptr, schemaDef);
-    Utf8PrintfString classNameSql("SELECT %s::ClassName, '%s'::ClassName, 999999::ClassName OPTIONS CAST_V2", schemaDef->GetId().ToString().c_str(), schemaDef->GetId().ToHexStr().c_str());
+    Utf8PrintfString classNameSql("SELECT %s::ClassName, '%s'::ClassName, 999999::ClassName", schemaDef->GetId().ToString().c_str(), schemaDef->GetId().ToHexStr().c_str());
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, classNameSql.c_str())) << classNameSql;
@@ -14276,20 +14309,20 @@ TEST_F(ECSqlStatementTestFixture, CastV2_IdAndClassName)
         EXPECT_STREQ("ECDbMeta:ECSchemaDef", stmt.GetValueText(1));
         EXPECT_TRUE(stmt.IsValueNull(2));
         }
-    EXPECT_STREQ("ECDbMeta:ECSchemaDef", h.Text("SELECT ECClassId::ClassName FROM meta.ECSchemaDef LIMIT 1 OPTIONS CAST_V2").c_str());
+    EXPECT_STREQ("ECDbMeta:ECSchemaDef", h.Text("SELECT ECClassId::ClassName FROM meta.ECSchemaDef LIMIT 1").c_str());
 
     // type propagation through query boundaries
     std::vector<Utf8CP> propagation {
-        "SELECT v FROM (SELECT 21::Id v) OPTIONS CAST_V2",
-        "SELECT q.v FROM (SELECT * FROM (SELECT 21::Id v)) q OPTIONS CAST_V2",
-        "SELECT (SELECT 21::Id) OPTIONS CAST_V2",
-        "SELECT 21::Id OPTIONS CAST_V2 UNION ALL SELECT NULL",
+        "SELECT v FROM (SELECT 21::Id v)",
+        "SELECT q.v FROM (SELECT * FROM (SELECT 21::Id v)) q",
+        "SELECT (SELECT 21::Id)",
+        "SELECT 21::Id UNION ALL SELECT NULL",
         };
     for (Utf8CP ecsql : propagation)
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql)) << ecsql << h.LastIssue();
-        EXPECT_STREQ("Id", CastV2Helper::ExtendedType(stmt, 0).c_str()) << ecsql;
+        EXPECT_STREQ("Id", ExtendedCastHelper::ExtendedType(stmt, 0).c_str()) << ecsql;
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << ecsql;
         EXPECT_EQ(21, stmt.GetValueInt64(0)) << ecsql;
         }
@@ -14298,20 +14331,28 @@ TEST_F(ECSqlStatementTestFixture, CastV2_IdAndClassName)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, CastV2_Parameters)
+TEST_F(ECSqlStatementTestFixture, ExtendedCast_Parameters)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("castv2params.ecdb"));
+    ASSERT_EQ(SUCCESS, SetupECDb("extendedcastparams.ecdb"));
 
         {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ?::INTEGER + 1 OPTIONS CAST_V2"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ?::INTEGER::BOOLEAN"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindNull(1));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_TRUE(stmt.IsValueNull(0));
+        }
+
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ?::INTEGER + 1"));
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, 41));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         EXPECT_EQ(42, stmt.GetValueInt(0));
         }
         {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ?::Point2d OPTIONS CAST_V2"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ?::Point2d"));
         EXPECT_NE(ECSqlStatus::Success, stmt.BindInt(1, 1)) << "binder type comes from the cast";
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint2d(1, DPoint2d::From(3, 4)));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
@@ -14319,17 +14360,17 @@ TEST_F(ECSqlStatementTestFixture, CastV2_Parameters)
         }
         {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT :p::Id, CAST(:p AS Id), :p OPTIONS CAST_V2"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT :p::Id, CAST(:p AS Id), :p"));
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(stmt.GetParameterIndex("p"), BeInt64Id(0x1234)));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        EXPECT_STREQ("Id", CastV2Helper::ExtendedType(stmt, 0).c_str());
+        EXPECT_STREQ("Id", ExtendedCastHelper::ExtendedType(stmt, 0).c_str());
         EXPECT_EQ(0x1234, stmt.GetValueInt64(0));
         EXPECT_EQ(0x1234, stmt.GetValueInt64(1));
         EXPECT_EQ(0x1234, stmt.GetValueInt64(2));
         }
         {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT (?::TEXT)::Point2d OPTIONS CAST_V2"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT (?::TEXT)::Point2d"));
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "{\"X\":5,\"Y\":6}", IECSqlBinder::MakeCopy::Yes));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         EXPECT_TRUE(stmt.GetValuePoint2d(0).AlmostEqual(DPoint2d::From(5, 6)));
@@ -14337,22 +14378,22 @@ TEST_F(ECSqlStatementTestFixture, CastV2_Parameters)
         {
         // parameter inside a subquery is typed by its own cast, not the outer one
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT (SELECT ?::Id)::TEXT OPTIONS CAST_V2"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT (SELECT ?::Id)::TEXT"));
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, BeInt64Id(77)));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         EXPECT_STREQ("77", stmt.GetValueText(0));
         }
 
     ECSqlStatement conflict;
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, conflict.Prepare(m_ecdb, "SELECT :p::Id, :p::Point2d OPTIONS CAST_V2"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, conflict.Prepare(m_ecdb, "SELECT :p::Id, :p::Point2d"));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, CastV2_ECDataToText)
+TEST_F(ECSqlStatementTestFixture, ExtendedCast_ECDataToText)
     {
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("castv2ecdata.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("extendedcastecdata.ecdb", SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
               <ECEnumeration typeName="Color" backingTypeName="int" isStrict="true">
                   <ECEnumerator name="Red" value="1" />
@@ -14360,6 +14401,9 @@ TEST_F(ECSqlStatementTestFixture, CastV2_ECDataToText)
               </ECEnumeration>
               <ECEnumeration typeName="LooseColor" backingTypeName="int" isStrict="false">
                   <ECEnumerator name="Red" value="1" />
+              </ECEnumeration>
+              <ECEnumeration typeName="Label" backingTypeName="string" isStrict="true">
+                  <ECEnumerator name="Red" value="red" />
               </ECEnumeration>
               <ECStructClass typeName="Inner">
                     <ECProperty propertyName="I" typeName="int" />
@@ -14422,10 +14466,10 @@ TEST_F(ECSqlStatementTestFixture, CastV2_ECDataToText)
         }
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT P2D::TEXT, P3D::TEXT, B::TEXT, Bin::TEXT, S::TEXT, IntArr::TEXT, Parent::TEXT, Parent::Id, Parent.Id::Long FROM ts.Child ORDER BY ECInstanceId OPTIONS CAST_V2"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT P2D::TEXT, P3D::TEXT, B::TEXT, Bin::TEXT, S::TEXT, IntArr::TEXT, Parent::TEXT, Parent::Id, Parent.Id::Long FROM ts.Child ORDER BY ECInstanceId"));
     for (int i = 0; i < 7; ++i)
         EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(i).GetDataType().GetPrimitiveType()) << i;
-    EXPECT_STREQ("NavId", CastV2Helper::ExtendedType(stmt, 7).c_str());
+    EXPECT_STREQ("NavId", ExtendedCastHelper::ExtendedType(stmt, 7).c_str());
 
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     EXPECT_STREQ(R"({"X":1.0,"Y":2.0})", stmt.GetValueText(0));
@@ -14445,67 +14489,110 @@ TEST_F(ECSqlStatementTestFixture, CastV2_ECDataToText)
     stmt.Finalize();
 
     // enums
-    CastV2Helper h(m_ecdb);
-    EXPECT_STREQ("1", h.Text("SELECT 1::ts.Color OPTIONS CAST_V2").c_str());
-    EXPECT_STREQ("<null>", h.Text("SELECT 5::ts.Color OPTIONS CAST_V2").c_str());
+    ExtendedCastHelper h(m_ecdb);
+    EXPECT_STREQ("1", h.Text("SELECT 1::ts.Color").c_str());
+    EXPECT_STREQ("<null>", h.Text("SELECT 5::ts.Color").c_str());
     // strict integer enums validate the original value, not a lossy integer conversion of it
-    EXPECT_STREQ("2", h.Text("SELECT '2'::ts.Color OPTIONS CAST_V2").c_str());
-    EXPECT_STREQ("2", h.Text("SELECT 2.0::ts.Color OPTIONS CAST_V2").c_str());
-    EXPECT_STREQ("<null>", h.Text("SELECT 1.7::ts.Color OPTIONS CAST_V2").c_str());
-    EXPECT_STREQ("<null>", h.Text("SELECT 'abc'::ts.Color OPTIONS CAST_V2").c_str());
-    EXPECT_STREQ("<null>", h.Text("SELECT '1x'::ts.Color OPTIONS CAST_V2").c_str());
-    EXPECT_STREQ("5", h.Text("SELECT 5::ts.LooseColor OPTIONS CAST_V2").c_str());
-    EXPECT_STREQ("5", h.Text("SELECT CAST(5 AS ts.Color)").c_str()) << "legacy enum cast is not strict";
+    EXPECT_STREQ("2", h.Text("SELECT '2'::ts.Color").c_str());
+    EXPECT_STREQ("2", h.Text("SELECT 2.0::ts.Color").c_str());
+    EXPECT_STREQ("<null>", h.Text("SELECT 1.7::ts.Color").c_str());
+    EXPECT_STREQ("<null>", h.Text("SELECT 'abc'::ts.Color").c_str());
+    EXPECT_STREQ("<null>", h.Text("SELECT '1x'::ts.Color").c_str());
+    EXPECT_STREQ("5", h.Text("SELECT 5::ts.LooseColor").c_str());
+    EXPECT_STREQ("<null>", h.Text("SELECT CAST(5 AS ts.Color)").c_str());
+    EXPECT_STREQ("<null>", h.Text("SELECT ('1' || CHAR(0) || 'junk')::ts.Color").c_str());
+    EXPECT_STREQ("<null>", h.Text("SELECT ('red' || CHAR(0) || 'junk')::ts.Label").c_str());
+
+    for (Utf8CP type : {"Color", "Label"})
+        {
+        ECSqlStatement enumStmt;
+        ASSERT_EQ(ECSqlStatus::Success, enumStmt.Prepare(m_ecdb, Utf8PrintfString("SELECT CAST(? AS ts.%s)", type).c_str()));
+        for (int input : {0, 1, 2})
+            {
+            enumStmt.Reset();
+            enumStmt.ClearBindings();
+            if (input == 0)
+                {
+                ASSERT_EQ(ECSqlStatus::Success, enumStmt.BindNull(1));
+                }
+            else if (0 == strcmp(type, "Color"))
+                {
+                ASSERT_EQ(ECSqlStatus::Success, enumStmt.BindInt(1, input == 1 ? 1 : 5));
+                }
+            else
+                {
+                ASSERT_EQ(ECSqlStatus::Success, enumStmt.BindText(1, input == 1 ? "red" : "invalid", IECSqlBinder::MakeCopy::No));
+                }
+            ASSERT_EQ(BE_SQLITE_ROW, enumStmt.Step());
+            EXPECT_EQ(input != 1, enumStmt.IsValueNull(0)) << type << " input " << input;
+            if (input == 1)
+                {
+                EXPECT_STREQ(0 == strcmp(type, "Color") ? "1" : "red", enumStmt.GetValueText(0));
+                }
+            }
+        }
 
     // struct array to text
-    EXPECT_STREQ(R"([{"I":1},{"P":{"X":2.0,"Y":3.0}}])", h.Text("SELECT SArr::TEXT FROM ts.Child ORDER BY ECInstanceId OPTIONS CAST_V2").c_str());
+    EXPECT_STREQ(R"([{"I":1},{"P":{"X":2.0,"Y":3.0}}])", h.Text("SELECT SArr::TEXT FROM ts.Child ORDER BY ECInstanceId").c_str());
 
     // struct/point to text through a derived table
-    EXPECT_STREQ(R"({"X":1.0,"Y":2.0})", h.Text("SELECT t FROM (SELECT P2D::TEXT t FROM ts.Child WHERE P2D IS NOT NULL) OPTIONS CAST_V2").c_str());
+    EXPECT_STREQ(R"({"X":1.0,"Y":2.0})", h.Text("SELECT t FROM (SELECT P2D::TEXT t FROM ts.Child WHERE P2D IS NOT NULL)").c_str());
 
     // unsupported
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, h.PrepareStatus("SELECT P2D::Point3d FROM ts.Child OPTIONS CAST_V2")) << h.LastIssue();
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, h.PrepareStatus("SELECT S::INTEGER FROM ts.Child OPTIONS CAST_V2")) << h.LastIssue();
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, h.PrepareStatus("SELECT IntArr::INTEGER FROM ts.Child OPTIONS CAST_V2")) << h.LastIssue();
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, h.PrepareStatus("SELECT Parent::ClassName FROM ts.Child OPTIONS CAST_V2")) << h.LastIssue();
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, h.PrepareStatus("SELECT P2D::Point3d FROM ts.Child")) << h.LastIssue();
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, h.PrepareStatus("SELECT S::INTEGER FROM ts.Child")) << h.LastIssue();
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, h.PrepareStatus("SELECT IntArr::INTEGER FROM ts.Child")) << h.LastIssue();
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, h.PrepareStatus("SELECT Parent::ClassName FROM ts.Child")) << h.LastIssue();
     // a navigation value only converts to the Id of the referenced instance
     for (Utf8CP target : {"ClassId", "SourceId", "SourceClassId", "TargetId", "TargetClassId", "NavRelClassId"})
-        EXPECT_EQ(ECSqlStatus::InvalidECSql, h.PrepareStatus(Utf8PrintfString("SELECT Parent::%s FROM ts.Child OPTIONS CAST_V2", target).c_str())) << target;
-    EXPECT_EQ(ECSqlStatus::Success, h.PrepareStatus("SELECT Parent::NavId, Parent.RelECClassId::NavRelClassId FROM ts.Child OPTIONS CAST_V2")) << h.LastIssue();
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, h.PrepareStatus("SELECT '{}'::ts.Inner OPTIONS CAST_V2")) << h.LastIssue();
+        EXPECT_EQ(ECSqlStatus::InvalidECSql, h.PrepareStatus(Utf8PrintfString("SELECT Parent::%s FROM ts.Child", target).c_str())) << target;
+    EXPECT_EQ(ECSqlStatus::Success, h.PrepareStatus("SELECT Parent::NavId, Parent.RelECClassId::NavRelClassId FROM ts.Child")) << h.LastIssue();
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, h.PrepareStatus("SELECT '{}'::ts.Inner")) << h.LastIssue();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, CastV2_CompoundAndScalarSubquery)
+TEST_F(ECSqlStatementTestFixture, ExtendedCast_CompoundAndScalarSubquery)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("castv2compound.ecdb"));
-    CastV2Helper h(m_ecdb);
+    ASSERT_EQ(SUCCESS, SetupECDb("extendedcastcompound.ecdb"));
+    ExtendedCastHelper h(m_ecdb);
 
     // branches combining different extended types must be cast to the same type
-    for (Utf8CP ecsql : {"SELECT 1::Id OPTIONS CAST_V2 UNION SELECT 2::ClassId OPTIONS CAST_V2",
-                         "SELECT 1::Id OPTIONS CAST_V2 UNION ALL SELECT 2",
-                         "SELECT 1 UNION ALL SELECT 2::Id OPTIONS CAST_V2",
-                         "SELECT NULL UNION ALL SELECT 1::Id OPTIONS CAST_V2 UNION ALL SELECT 2::ClassId OPTIONS CAST_V2",
-                         "SELECT '[1]'::Json OPTIONS CAST_V2 UNION ALL SELECT 'x'"})
+    for (Utf8CP ecsql : {"SELECT 1::Id UNION SELECT 2::ClassId",
+                         "SELECT 1::Id UNION ALL SELECT 2",
+                         "SELECT 1 UNION ALL SELECT 2::Id",
+                         "SELECT (SELECT 1::Id) UNION ALL SELECT 2",
+                         "SELECT 1 UNION ALL SELECT (SELECT 2::Id)",
+                         "SELECT v FROM (SELECT 1::Id v) UNION ALL SELECT 2",
+                         "SELECT 1 UNION ALL SELECT v FROM (SELECT 2::Id v)",
+                         "WITH c(v) AS (SELECT 1::Id) SELECT v FROM c UNION ALL SELECT 2",
+                         "WITH c(v) AS (SELECT 2::Id) SELECT 1 UNION ALL SELECT v FROM c",
+                         "SELECT v FROM (SELECT NULL v UNION ALL SELECT 1::Id) UNION ALL SELECT 2",
+                         "SELECT 1 UNION ALL SELECT (SELECT NULL UNION ALL SELECT 2::Id)",
+                         "SELECT NULL UNION ALL SELECT 1::Id UNION ALL SELECT 2::ClassId",
+                         "SELECT '[1]'::Json UNION ALL SELECT 'x'"})
         {
         EXPECT_EQ(ECSqlStatus::InvalidECSql, h.PrepareStatus(ecsql)) << ecsql;
         EXPECT_TRUE(h.LastIssue().Contains("have different types")) << ecsql << " " << h.LastIssue();
         }
 
-    for (Utf8CP ecsql : {"SELECT 1::Id OPTIONS CAST_V2 UNION ALL SELECT 2::Id OPTIONS CAST_V2",
-                         "SELECT 1::Id OPTIONS CAST_V2 UNION ALL SELECT ECInstanceId FROM meta.ECSchemaDef"})
+    for (Utf8CP ecsql : {"SELECT 1::Id UNION ALL SELECT 2::Id",
+                         "SELECT (SELECT 1::Id) UNION ALL SELECT (SELECT 2::Id)",
+                         "SELECT v FROM (SELECT 1::Id v) UNION ALL SELECT 2::Id",
+                         "WITH c(v) AS (SELECT 1::Id) SELECT v FROM c UNION ALL SELECT 2::Id",
+                         "SELECT 1::Id UNION ALL SELECT ECInstanceId FROM meta.ECSchemaDef"})
         EXPECT_EQ(ECSqlStatus::Success, h.PrepareStatus(ecsql)) << ecsql << h.LastIssue();
 
-    // a leading NULL takes the type of the typed CAST_V2 branch
-    for (Utf8CP ecsql : {"SELECT NULL v UNION ALL SELECT 21::Id OPTIONS CAST_V2",
-                         "SELECT NULL v UNION ALL SELECT NULL UNION ALL SELECT 21::Id OPTIONS CAST_V2",
-                         "SELECT q.v FROM (SELECT NULL v UNION ALL SELECT 21::Id OPTIONS CAST_V2) q"})
+    // a leading NULL takes the type of the typed extended cast branch
+    for (Utf8CP ecsql : {"SELECT NULL v UNION ALL SELECT 21::Id",
+                         "SELECT NULL v UNION ALL SELECT (SELECT 21::Id)",
+                         "SELECT NULL v UNION ALL SELECT NULL UNION ALL SELECT 21::Id",
+                         "SELECT q.v FROM (SELECT NULL v UNION ALL SELECT 21::Id) q"})
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql)) << ecsql << h.LastIssue();
-        EXPECT_STREQ("Id", CastV2Helper::ExtendedType(stmt, 0).c_str()) << ecsql;
+        EXPECT_STREQ("Id", ExtendedCastHelper::ExtendedType(stmt, 0).c_str()) << ecsql;
         bool sawValue = false;
         while (BE_SQLITE_ROW == stmt.Step())
             {
@@ -14521,7 +14608,7 @@ TEST_F(ECSqlStatementTestFixture, CastV2_CompoundAndScalarSubquery)
     // a leading NULL also works for multi-column point results
         {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT NULL p, 1 n UNION ALL SELECT '{\"X\":1,\"Y\":2}'::Point2d, 2 OPTIONS CAST_V2")) << h.LastIssue();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT NULL p, 1 n UNION ALL SELECT '{\"X\":1,\"Y\":2}'::Point2d, 2")) << h.LastIssue();
         ASSERT_EQ(2, stmt.GetColumnCount());
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         EXPECT_TRUE(stmt.IsValueNull(0));
@@ -14531,57 +14618,73 @@ TEST_F(ECSqlStatementTestFixture, CastV2_CompoundAndScalarSubquery)
         EXPECT_EQ(2, stmt.GetValueInt(1));
         }
 
-    // legacy compound typing is unchanged without CAST_V2 branches
+    // Compound typing without explicit casts is unchanged.
     EXPECT_EQ(ECSqlStatus::Success, h.PrepareStatus("SELECT ECInstanceId FROM meta.ECSchemaDef UNION ALL SELECT ECClassId FROM meta.ECSchemaDef")) << h.LastIssue();
+    EXPECT_EQ(ECSqlStatus::Success, h.PrepareStatus("SELECT (SELECT ECInstanceId FROM meta.ECSchemaDef WHERE 1::INT=1 LIMIT 1) UNION ALL SELECT ECClassId FROM meta.ECSchemaDef")) << h.LastIssue();
 
     // scalar subqueries cannot return multi-column point values
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, h.PrepareStatus("SELECT (SELECT '{\"X\":1,\"Y\":2}'::Point2d) OPTIONS CAST_V2"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, h.PrepareStatus("SELECT (SELECT '{\"X\":1,\"Y\":2}'::Point2d)"));
     EXPECT_TRUE(h.LastIssue().Contains("scalar subquery cannot return a Point2d or Point3d")) << h.LastIssue();
-    EXPECT_STREQ("{\"X\":1.0,\"Y\":2.0}", h.Text("SELECT (SELECT '{\"X\":1,\"Y\":2}'::Point2d::TEXT) OPTIONS CAST_V2").c_str());
+    EXPECT_STREQ("{\"X\":1.0,\"Y\":2.0}", h.Text("SELECT (SELECT '{\"X\":1,\"Y\":2}'::Point2d::TEXT)").c_str());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, CastV2_CteWhereAndPredicates)
+TEST_F(ECSqlStatementTestFixture, ExtendedCast_CteWhereAndPredicates)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("castv2contexts.ecdb"));
-    CastV2Helper h(m_ecdb);
+    ASSERT_EQ(SUCCESS, SetupECDb("extendedcastcontexts.ecdb"));
+    ExtendedCastHelper h(m_ecdb);
 
-    // CTE: the cast result type survives the CTE boundary; the option applies to the CTE body lexically
-    for (Utf8CP ecsql : {"WITH c(v) AS (SELECT 21::Id OPTIONS CAST_V2) SELECT v FROM c",
-                         "WITH c AS (SELECT 21::Id v OPTIONS CAST_V2) SELECT v FROM c",
-                         "WITH c(v) AS (SELECT 21) SELECT v::Id FROM c OPTIONS CAST_V2",
-                         "WITH c(v) AS (SELECT '0x15'::Id OPTIONS CAST_V2), d(w) AS (SELECT v FROM c) SELECT w FROM d"})
+    // The cast result type survives the CTE boundary.
+    for (Utf8CP ecsql : {"WITH c(v) AS (SELECT 21::Id) SELECT v FROM c",
+                         "WITH c AS (SELECT 21::Id v) SELECT v FROM c",
+                         "WITH c(v) AS (SELECT 21) SELECT v::Id FROM c",
+                         "WITH c(v) AS (SELECT '0x15'::Id), d(w) AS (SELECT v FROM c) SELECT w FROM d"})
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql)) << ecsql << h.LastIssue();
-        EXPECT_STREQ("Id", CastV2Helper::ExtendedType(stmt, 0).c_str()) << ecsql;
+        EXPECT_STREQ("Id", ExtendedCastHelper::ExtendedType(stmt, 0).c_str()) << ecsql;
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << ecsql;
         EXPECT_EQ(BeInt64Id(21), stmt.GetValueId<BeInt64Id>(0)) << ecsql;
         }
-    EXPECT_STREQ("ECDbMeta:ECClassDef", h.Text("WITH c(v) AS (SELECT ECClassId::ClassName FROM meta.ECClassDef WHERE Name='ECClassDef' OPTIONS CAST_V2) SELECT v FROM c").c_str());
-    EXPECT_STREQ("21", h.Text("WITH c(v) AS (SELECT 21::Id OPTIONS CAST_V2) SELECT v::TEXT FROM c OPTIONS CAST_V2").c_str());
-    EXPECT_STREQ("3", h.Text("WITH RECURSIVE c(n) AS (SELECT 1::LONG OPTIONS CAST_V2 UNION ALL SELECT n + 1 FROM c WHERE n < 3) SELECT COUNT(*) FROM c").c_str());
-    // an outer option does not enable casts inside a CTE body
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, h.PrepareStatus("WITH c(v) AS (SELECT 21::Id) SELECT v FROM c OPTIONS CAST_V2"));
-    EXPECT_TRUE(h.LastIssue().Contains("CAST_V2")) << h.LastIssue();
+    EXPECT_STREQ("ECDbMeta:ECClassDef", h.Text("WITH c(v) AS (SELECT ECClassId::ClassName FROM meta.ECClassDef WHERE Name='ECClassDef') SELECT v FROM c").c_str());
+    EXPECT_STREQ("21", h.Text("WITH c(v) AS (SELECT 21::Id) SELECT v::TEXT FROM c").c_str());
+    EXPECT_STREQ("3", h.Text("WITH RECURSIVE c(n) AS (SELECT 1::LONG UNION ALL SELECT n + 1 FROM c WHERE n < 3) SELECT COUNT(*) FROM c").c_str());
+
+    for (Utf8CP ecsql : {
+        R"(WITH c(s,p,q,n) AS (SELECT 'a','{"X":1,"Y":2}'::Point2d,'{"X":3,"Y":4,"Z":5}'::Point3d,7) SELECT * FROM c)",
+        R"(WITH c(s,p,p_0,_ecsql_point_p_0) AS (SELECT 'a','{"X":1,"Y":2}'::Point2d,'{"X":3,"Y":4,"Z":5}'::Point3d,7) SELECT * FROM c)",
+        R"(WITH c(s,p,q,n) AS (SELECT 'a','{"X":1,"Y":2}'::Point2d,'{"X":3,"Y":4,"Z":5}'::Point3d,7) SELECT t.s,t.p,t.q,t.n FROM c t)",
+        R"(WITH c(s,p,q,n) AS (SELECT 'a','{"X":1,"Y":2}'::Point2d,'{"X":3,"Y":4,"Z":5}'::Point3d,7),d(a,b,c,e) AS (SELECT * FROM c) SELECT * FROM d)"})
+        {
+        ECSqlStatement pointStmt;
+        ASSERT_EQ(ECSqlStatus::Success, pointStmt.Prepare(m_ecdb, ecsql)) << ecsql << h.LastIssue();
+        ASSERT_EQ(4, pointStmt.GetColumnCount());
+        ASSERT_EQ(BE_SQLITE_ROW, pointStmt.Step());
+        EXPECT_STREQ("a", pointStmt.GetValueText(0));
+        EXPECT_TRUE(pointStmt.GetValuePoint2d(1).AlmostEqual(DPoint2d::From(1, 2)));
+        EXPECT_TRUE(pointStmt.GetValuePoint3d(2).AlmostEqual(DPoint3d::From(3, 4, 5)));
+        EXPECT_EQ(7, pointStmt.GetValueInt(3));
+        ASSERT_EQ(BE_SQLITE_DONE, pointStmt.Step());
+        }
+    EXPECT_STREQ(R"({"X":1.0,"Y":2.0})", h.Text(R"(WITH c(p) AS (SELECT '{"X":1,"Y":2}'::Point2d) SELECT p::TEXT FROM c)").c_str());
 
     // WHERE clause and comparison predicates
     const Utf8String all = h.Text("SELECT COUNT(*) FROM meta.ECClassDef");
-    EXPECT_STREQ("1", h.Text("SELECT COUNT(*) FROM meta.ECClassDef WHERE ECInstanceId::TEXT = '1' OPTIONS CAST_V2").c_str());
-    EXPECT_STREQ("1", h.Text("SELECT COUNT(*) FROM meta.ECClassDef WHERE ECInstanceId = '0x1'::Id OPTIONS CAST_V2").c_str());
-    EXPECT_STREQ("1", h.Text("SELECT COUNT(*) FROM meta.ECClassDef c WHERE c.ECInstanceId::ClassName = 'ECDbMeta:ECClassDef' OPTIONS CAST_V2").c_str());
-    EXPECT_STREQ(all.c_str(), h.Text("SELECT COUNT(*) FROM meta.ECClassDef c WHERE c.ECClassId::ClassName = 'ECDbMeta:ECClassDef' OPTIONS CAST_V2").c_str());
-    EXPECT_STREQ("0", h.Text("SELECT COUNT(*) FROM meta.ECClassDef c WHERE c.ECInstanceId::ClassName = 'ffo:ss' OPTIONS CAST_V2").c_str());
-    EXPECT_STREQ(all.c_str(), h.Text("SELECT COUNT(*) FROM meta.ECClassDef WHERE ECInstanceId::ClassName <> 'x:y' OPTIONS CAST_V2").c_str());
-    EXPECT_STREQ("1", h.Text("SELECT COUNT(*) FROM meta.ECClassDef WHERE ECInstanceId::ClassName IN ('ECDbMeta:ECClassDef', 'x:y') OPTIONS CAST_V2").c_str());
-    EXPECT_STREQ("3", h.Text("SELECT COUNT(*) FROM meta.ECClassDef WHERE ECInstanceId::LONG BETWEEN 1 AND 3 OPTIONS CAST_V2").c_str());
-    EXPECT_STREQ("1", h.Text("SELECT COUNT(*) FROM meta.ECClassDef WHERE ECInstanceId IN (SELECT 1::Id) OPTIONS CAST_V2").c_str());
-    EXPECT_STREQ(all.c_str(), h.Text("SELECT COUNT(*) FROM meta.ECClassDef WHERE EXISTS (SELECT 1 FROM meta.ECSchemaDef WHERE '1'::INTEGER = 1) OPTIONS CAST_V2").c_str());
+    EXPECT_STREQ("1", h.Text("SELECT COUNT(*) FROM meta.ECClassDef WHERE ECInstanceId::TEXT = '1'").c_str());
+    EXPECT_STREQ("1", h.Text("SELECT COUNT(*) FROM meta.ECClassDef WHERE ECInstanceId = '0x1'::Id").c_str());
+    EXPECT_STREQ("1", h.Text("SELECT COUNT(*) FROM meta.ECClassDef c WHERE c.ECInstanceId::ClassName = 'ECDbMeta:ECClassDef'").c_str());
+    EXPECT_STREQ(all.c_str(), h.Text("SELECT COUNT(*) FROM meta.ECClassDef c WHERE c.ECClassId::ClassName = 'ECDbMeta:ECClassDef'").c_str());
+    EXPECT_STREQ("0", h.Text("SELECT COUNT(*) FROM meta.ECClassDef c WHERE c.ECInstanceId::ClassName = 'ffo:ss'").c_str());
+    EXPECT_STREQ(all.c_str(), h.Text("SELECT COUNT(*) FROM meta.ECClassDef WHERE ECInstanceId::ClassName <> 'x:y'").c_str());
+    EXPECT_STREQ("1", h.Text("SELECT COUNT(*) FROM meta.ECClassDef WHERE ECInstanceId::ClassName IN ('ECDbMeta:ECClassDef', 'x:y')").c_str());
+    EXPECT_STREQ("3", h.Text("SELECT COUNT(*) FROM meta.ECClassDef WHERE ECInstanceId::LONG BETWEEN 1 AND 3").c_str());
+    EXPECT_STREQ("1", h.Text("SELECT COUNT(*) FROM meta.ECClassDef WHERE ECInstanceId IN (SELECT 1::Id)").c_str());
+    EXPECT_STREQ(all.c_str(), h.Text("SELECT COUNT(*) FROM meta.ECClassDef WHERE EXISTS (SELECT 1 FROM meta.ECSchemaDef WHERE '1'::INTEGER = 1)").c_str());
         {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT COUNT(*) FROM meta.ECClassDef c WHERE c.ECInstanceId = ?::Id AND c.ECInstanceId::ClassName = :n OPTIONS CAST_V2")) << h.LastIssue();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT COUNT(*) FROM meta.ECClassDef c WHERE c.ECInstanceId = ?::Id AND c.ECInstanceId::ClassName = :n")) << h.LastIssue();
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, m_ecdb.Schemas().GetClassId("ECDbMeta", "ECClassDef")));
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(2, "ECDbMeta:ECClassDef", IECSqlBinder::MakeCopy::No));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
@@ -14589,25 +14692,31 @@ TEST_F(ECSqlStatementTestFixture, CastV2_CteWhereAndPredicates)
         }
 
     // boolean predicates
-    EXPECT_STREQ(all.c_str(), h.Text("SELECT COUNT(*) FROM meta.ECClassDef WHERE 'true'::BOOLEAN OPTIONS CAST_V2").c_str());
-    EXPECT_STREQ("0", h.Text("SELECT COUNT(*) FROM meta.ECClassDef WHERE 'false'::BOOLEAN OPTIONS CAST_V2").c_str());
-    EXPECT_STREQ(all.c_str(), h.Text("SELECT COUNT(*) FROM meta.ECClassDef WHERE 'TRUE'::BOOLEAN = TRUE OPTIONS CAST_V2").c_str());
-    EXPECT_STREQ(all.c_str(), h.Text("SELECT COUNT(*) FROM meta.ECClassDef WHERE NOT 'false'::BOOLEAN OPTIONS CAST_V2").c_str());
-    EXPECT_STREQ(all.c_str(), h.Text("SELECT COUNT(*) FROM meta.ECClassDef WHERE 'maybe'::BOOLEAN IS NULL OPTIONS CAST_V2").c_str());
-    EXPECT_STREQ("y", h.Text("SELECT IIF(1::Id = 1, 'y', 'n') OPTIONS CAST_V2").c_str());
-    EXPECT_STREQ("y", h.Text("SELECT CASE WHEN '1'::INTEGER > 0 AND 'a'::TEXT = 'a' THEN 'y' ELSE 'n' END OPTIONS CAST_V2").c_str());
-
-    // WHERE casts are gated as well
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, h.PrepareStatus("SELECT COUNT(*) FROM meta.ECClassDef WHERE ECInstanceId::TEXT = '1'"));
+    EXPECT_STREQ(all.c_str(), h.Text("SELECT COUNT(*) FROM meta.ECClassDef WHERE 'true'::BOOLEAN").c_str());
+    EXPECT_STREQ("0", h.Text("SELECT COUNT(*) FROM meta.ECClassDef WHERE 'false'::BOOLEAN").c_str());
+    EXPECT_STREQ(all.c_str(), h.Text("SELECT COUNT(*) FROM meta.ECClassDef WHERE 'TRUE'::BOOLEAN = TRUE").c_str());
+    EXPECT_STREQ(all.c_str(), h.Text("SELECT COUNT(*) FROM meta.ECClassDef WHERE NOT 'false'::BOOLEAN").c_str());
+    EXPECT_STREQ(all.c_str(), h.Text("SELECT COUNT(*) FROM meta.ECClassDef WHERE 'maybe'::BOOLEAN IS NULL").c_str());
+    EXPECT_STREQ("y", h.Text("SELECT IIF(1::Id = 1, 'y', 'n')").c_str());
+    EXPECT_STREQ("y", h.Text("SELECT CASE WHEN '1'::INTEGER > 0 AND 'a'::TEXT = 'a' THEN 'y' ELSE 'n' END").c_str());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, CastV2_InternalFunctionAndMalformedInput)
+TEST_F(ECSqlStatementTestFixture, ExtendedCast_InternalFunctionAndMalformedInput)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("castv2hardening.ecdb"));
-    CastV2Helper h(m_ecdb);
+    ASSERT_EQ(SUCCESS, SetupECDb("extendedcasthardening.ecdb"));
+    ExtendedCastHelper h(m_ecdb);
+
+    for (Utf8CP ecsql : {
+        "SELECT ('12' || CHAR(0) || 'junk')::Id",
+        "SELECT ('{}' || CHAR(0) || 'junk')::Json",
+        "SELECT ('407bfa18-944d-11ee-b9d1-0242ac120002' || CHAR(0) || 'junk')::Guid",
+        "SELECT ('true' || CHAR(0) || 'junk')::BOOLEAN",
+        "SELECT ('2020-01-02T03:04:05' || CHAR(0) || 'junk')::DateTime",
+        R"(SELECT ('{"X":1,"Y":2}' || CHAR(0) || 'junk')::Point2d)"})
+        EXPECT_STREQ("<null>", h.Text(ecsql).c_str()) << ecsql;
 
     // the internal conversion function cannot be called from ECSQL
     for (Utf8CP ecsql : {"SELECT _ecsql_cast('id', '0x15')",
@@ -14640,7 +14749,7 @@ TEST_F(ECSqlStatementTestFixture, CastV2_InternalFunctionAndMalformedInput)
     for (Utf8CP target : {"Json", "Point2d"})
         {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT ?::TEXT::%s OPTIONS CAST_V2", target).c_str())) << target << h.LastIssue();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT ?::TEXT::%s", target).c_str())) << target << h.LastIssue();
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, 0 == strcmp(target, "Json") ? deep.c_str() : deepObj.c_str(), IECSqlBinder::MakeCopy::No));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << target;
         EXPECT_TRUE(stmt.IsValueNull(0)) << target;
@@ -14653,7 +14762,7 @@ TEST_F(ECSqlStatementTestFixture, CastV2_InternalFunctionAndMalformedInput)
         deepValid.append("]");
         {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ?::TEXT::Json OPTIONS CAST_V2")) << h.LastIssue();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ?::TEXT::Json")) << h.LastIssue();
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, deepValid.c_str(), IECSqlBinder::MakeCopy::No));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         EXPECT_FALSE(stmt.IsValueNull(0));
@@ -14664,9 +14773,9 @@ TEST_F(ECSqlStatementTestFixture, CastV2_InternalFunctionAndMalformedInput)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ECSqlStatementTestFixture, CastV2_CachedLayoutsAndPoints)
+TEST_F(ECSqlStatementTestFixture, ExtendedCast_CachedLayoutsAndPoints)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("CastV2_CachedLayoutsAndPoints.ecdb"));
+    ASSERT_EQ(SUCCESS, SetupECDb("ExtendedCast_CachedLayoutsAndPoints.ecdb"));
 
     // more distinct layouts than the per-thread cache holds, visited twice so evicted entries are re-parsed
     Statement arrStmt;
@@ -14692,9 +14801,9 @@ TEST_F(ECSqlStatementTestFixture, CastV2_CachedLayoutsAndPoints)
         }
 
     // the parsed point is reused across coordinates but must follow the input text and dimension
-    CastV2Helper h(m_ecdb);
+    ExtendedCastHelper h(m_ecdb);
     ECSqlStatement ptStmt;
-    ASSERT_EQ(ECSqlStatus::Success, ptStmt.Prepare(m_ecdb, "SELECT ?::TEXT::Point2d, ?::TEXT::Point3d OPTIONS CAST_V2")) << h.LastIssue();
+    ASSERT_EQ(ECSqlStatus::Success, ptStmt.Prepare(m_ecdb, "SELECT ?::TEXT::Point2d, ?::TEXT::Point3d")) << h.LastIssue();
     struct Case { Utf8CP m_text; bool m_valid2d; bool m_valid3d; };
     for (Case const& c : {Case{"{\"X\":1,\"Y\":2}", true, false}, Case{"{\"X\":1,\"Y\":2,\"Z\":3}", true, true},
                           Case{"{\"X\":1}", false, false}, Case{"{\"X\":4,\"Y\":5,\"Z\":6}", true, true}, Case{"{\"X\":4,\"Y\":5,\"Z\":6}", true, true}})
