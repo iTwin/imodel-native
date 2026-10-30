@@ -5,7 +5,31 @@ This document including important changes to syntax or file format.
 | Module  | Version   |
 | ------- | --------- |
 | Profile | `4.0.0.5` |
-| ECSQL   | `2.0.4.2` |
+| ECSQL   | `2.0.6.0` |
+
+## `10/29/2026`: Extended casting is the default
+* ECSql version change `2.0.5.0` -> `2.0.6.0`.
+* Extended casting applies to both `CAST(...)` and `::` without an option, including CTEs, compound queries, subqueries, `INSERT` values, `UPDATE` assignments, and `DELETE` predicates.
+* `CAST_V2` has been removed. Remove it (including `CAST_V2=true` and `CAST_V2=false`) from existing statements. Its use now fails to prepare with `ECDb_0750`; there is no legacy-casting option.
+* Existing `CAST(...)` expressions now use the extended conversions: Boolean-to-TEXT returns `true`/`false`, DateTime-to-TEXT returns ISO-8601, Binary-to-TEXT returns Base64, and strict enumeration casts return `NULL` for values outside the enumeration.
+* Update consumers of these text results. For numeric Boolean or Julian day results, cast to `INTEGER` or `DOUBLE` respectively. Select Binary values directly when raw bytes are needed.
+* Compound-query columns containing a cast require matching extended types across typed branches. Cast branches to a common type when combining an Id cast with a plain integer or another Id type. Queries without explicit casts keep their existing compound-query typing.
+
+## `10/23/2026`: Extended casting with `OPTIONS CAST_V2`
+* ECSql version change `2.0.4.2` -> `2.0.5.0`.
+* Opt-in with `OPTIONS CAST_V2` (or `ECSQLOPTIONS CAST_V2`). Without it, `CAST(...)` is unchanged and the new syntax is rejected (`ECDb_0750`). `CAST_V2=false` disables it.
+* Added PostgreSQL-style postfix casts `<expr>::<type>`. They bind tighter than unary and binary operators and can be chained: `'7.9'::REAL::INTEGER`. `CAST(<expr> AS <type>)` gets the same extended behavior.
+* Parameters can be cast, which gives them their binding type: `?::INTEGER`, `CAST(:p AS INTEGER)`, `:p::Id`. All casts of a named parameter must agree (`ECDb_0752`).
+* Id targets `Id`, `ClassId`, `SourceId`, `SourceClassId`, `TargetId`, `TargetClassId`, `NavId` and `NavRelClassId` tag an integer, or decimal/`0x` hex text, as an id. Invalid text returns `NULL`. Example: `SELECT '0x15'::Id OPTIONS CAST_V2`.
+* `::ClassName` converts a class id to `Schema:Class`, or `NULL` for an unknown class: `SELECT ECClassId::ClassName FROM bis.Element OPTIONS CAST_V2`.
+* EC values convert to TEXT: points, structs, arrays and navigation properties become JSON. Boolean becomes `true`/`false`, DateTime becomes ISO-8601, Binary becomes Base64, a Guid becomes a GUID string and an IGeometry becomes iModel JSON.
+* TEXT converts to `Point2d`/`Point3d`, `Json` (validated), `Guid`, `BOOLEAN` and `DATETIME`. Invalid input returns `NULL`.
+* A strict enumeration returns `NULL` for values that aren't enumerators. Navigation values only convert to `TEXT`, `Id`, `NavId` and `LONG`.
+* `NULL::<type>` keeps its type. Cast types propagate through derived tables, CTEs and scalar subqueries.
+* Behavior change within the option's scope: existing `CAST(...)` expressions follow the extended rules. For example, `CAST(TRUE AS TEXT)` returns `true` instead of `1`.
+* `UNION`/`EXCEPT`/`INTERSECT` columns with a `CAST_V2` cast require the same extended type in all branches (`ECDb_0755`). A scalar subquery returning a point is rejected (`ECDb_0756`).
+* Internal SQL function `_ecsql_cast` performs the conversions. It cannot be called from ECSQL (`ECDb_0757`).
+* The iModelJs native addon exposes the exact extended type name of a result column through `ECSqlColumnInfo.getExtendedTypeName()`.
 
 ## `10/13/2026`: `IdSet` accepts ids with the high bit set
 * The `IdSet` virtual table now accepts valid ids at or above `0x8000000000000000`, such as element ids reserved by schema synchronization (`0xfffff6…`). Previously, binding such ids failed with `IdSet vtab: The element with index N is invalid`, and `id = ?` / `id IN (...)` filters on `IdSet` returned no rows for them.

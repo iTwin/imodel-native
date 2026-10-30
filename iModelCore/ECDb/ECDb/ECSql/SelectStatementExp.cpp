@@ -5,6 +5,7 @@
 #include "ECDbPch.h"
 #include "SelectStatementExp.h"
 #include "ExpHelper.h"
+#include "ValueExp.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -1365,7 +1366,16 @@ Exp::FinalizeParseStatus SubqueryValueExp::_FinalizeParsing(ECSqlParseContext& c
         return FinalizeParseStatus::Error;
         }
 
-    SetTypeInfo(selectClauseExp->GetChildren().Get<DerivedPropertyExp>(0)->GetExpression()->GetTypeInfo());
+    ECSqlTypeInfo const& typeInfo = selectClauseExp->GetChildren().Get<DerivedPropertyExp>(0)->GetExpression()->GetTypeInfo();
+    if (typeInfo.IsPoint())
+        {
+        // a point spans several SQLite columns which a scalar subquery cannot return
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0756,
+            "A scalar subquery cannot return a Point2d or Point3d value. Serialize it inside the subquery instead, e.g. 'value::TEXT': %s.", ToECSql().c_str());
+        return FinalizeParseStatus::Error;
+        }
+
+    SetTypeInfo(typeInfo);
     return FinalizeParseStatus::Completed;
     }
 
@@ -1483,6 +1493,128 @@ Utf8CP SelectStatementExp::OperatorToString(CompoundOperator op)
                 return nullptr;
         }
     }
+
+//-----------------------------------------------------------------------------------------
+// For columns where any branch is a cast result: all typed branches must carry the same
+// extended type (e.g. Id vs ClassId), and a NULL literal in the first branch, which defines
+// the result type, adopts the typed branches' type.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SelectStatementExp::ReconcileCastBranchTypes(ECSqlParseContext& ctx) const
+    {
+    std::vector<SelectClauseExp const*> selections;
+    for (SingleSelectStatementExp const* singleSelectExp : GetFlatListOfStatements())
+        {
+        if (singleSelectExp != nullptr && singleSelectExp->GetSelection() != nullptr)
+            selections.push_back(singleSelectExp->GetSelection());
+        }
+
+    if (selections.size() < 2)
+        return SUCCESS;
+
+    auto extendedTypeOf = [] (ECSqlTypeInfo const& t) -> Utf8String
+        {
+        return (t.IsPrimitive() || t.GetKind() == ECSqlTypeInfo::Kind::PrimitiveArray) ? t.GetExtendedTypeName() : Utf8String();
+        };
+
+    std::set<ValueExp const*> visited;
+    std::function<bool(ValueExp const&)> isCastResult;
+    auto columnHasCast = [&] (DerivedPropertyExp const& property)
+        {
+        Exp const* selection = property.GetParent();
+        Exp const* query = property.FindParent(Exp::Type::Select);
+        if (selection == nullptr || selection->GetType() != Exp::Type::Selection || query == nullptr)
+            return isCastResult(*property.GetExpression());
+
+        size_t column = 0;
+        for (Exp const* child : selection->GetChildren())
+            {
+            if (child == &property)
+                break;
+            ++column;
+            }
+
+        for (SingleSelectStatementExp const* statement : query->GetAs<SelectStatementExp>().GetFlatListOfStatements())
+            {
+            auto const* selected = statement->GetSelection()->GetChildren().Get<DerivedPropertyExp>(column);
+            if (selected != nullptr && isCastResult(*selected->GetExpression()))
+                return true;
+            }
+        return false;
+        };
+    isCastResult = [&] (ValueExp const& value)
+        {
+        // Recursive CTE references can lead back to a column already being inspected.
+        if (!visited.insert(&value).second)
+            return false;
+        switch (value.GetType())
+            {
+            case Exp::Type::Cast:
+                return true;
+            case Exp::Type::PropertyName:
+                {
+                auto const* ref = value.GetAs<PropertyNameExp>().GetPropertyRef();
+                return ref != nullptr && columnHasCast(ref->LinkedTo());
+                }
+            case Exp::Type::CommonTablePropertyName:
+                return columnHasCast(value.GetAs<CommonTablePropertyNameExp>().GetTarget());
+            case Exp::Type::SubqueryValue:
+                return columnHasCast(*value.GetAs<SubqueryValueExp>().GetQuery()->GetSelection()->GetChildren().Get<DerivedPropertyExp>(0));
+            default:
+                return false;
+            }
+        };
+
+    const size_t columnCount = selections[0]->GetChildrenCount();
+    for (size_t col = 0; col < columnCount; ++col)
+        {
+        bool hasCast = false;
+        ValueExp const* reference = nullptr;
+        for (SelectClauseExp const* selection : selections)
+            {
+            ValueExp const* exp = selection->GetChildren().Get<DerivedPropertyExp>(col)->GetExpression();
+            if (!hasCast)
+                {
+                visited.clear();
+                hasCast = isCastResult(*exp);
+                }
+
+            if (reference == nullptr && !exp->GetTypeInfo().IsNull())
+                reference = exp;
+            }
+
+        if (!hasCast || reference == nullptr)
+            continue;
+
+        ECSqlTypeInfo const& referenceType = reference->GetTypeInfo();
+        for (SelectClauseExp const* selection : selections)
+            {
+            ValueExp const* exp = selection->GetChildren().Get<DerivedPropertyExp>(col)->GetExpression();
+            ECSqlTypeInfo const& typeInfo = exp->GetTypeInfo();
+            if (typeInfo.IsNull() || exp == reference)
+                continue;
+
+            if (!extendedTypeOf(typeInfo).EqualsIAscii(extendedTypeOf(referenceType)))
+                {
+                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0755,
+                    "Expressions %s (%s) and %s (%s) of UNION/EXCEPT/INTERSECT have different types. Cast them to the same type.",
+                    reference->ToECSql().c_str(), CastExp::TypeToString(referenceType).c_str(), exp->ToECSql().c_str(), CastExp::TypeToString(typeInfo).c_str());
+                return ERROR;
+                }
+            }
+
+        ValueExp const* first = selections[0]->GetChildren().Get<DerivedPropertyExp>(col)->GetExpression();
+        if (referenceType.IsPrimitive() && first->GetType() == Exp::Type::LiteralValue && first->GetTypeInfo().IsNull())
+            {
+            LiteralValueExp const& nullLiteral = first->GetAs<LiteralValueExp>();
+            if (nullLiteral.IsNullLiteral())
+                const_cast<LiteralValueExp&>(nullLiteral).AdoptTypeForNullLiteral(referenceType); // tree is still being finalized
+            }
+        }
+
+    return SUCCESS;
+    }
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1531,6 +1663,9 @@ Exp::FinalizeParseStatus SelectStatementExp::_FinalizeParsing(ECSqlParseContext&
                 return FinalizeParseStatus::Error;
                 }
             }
+
+        if (SUCCESS != ReconcileCastBranchTypes(parseContext))
+            return FinalizeParseStatus::Error;
         }
 
     return FinalizeParseStatus::Completed;
@@ -1567,4 +1702,3 @@ void HavingExp::_ToJson(BeJsValue val, JsonFormat const& fmt) const {
 }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
-

@@ -4426,6 +4426,7 @@ struct NativeECSqlColumnInfo : BeObjectWrap<NativeECSqlColumnInfo>
                 InstanceMethod("getRootClassName", &NativeECSqlColumnInfo::GetRootClassName),
                 InstanceMethod("getRootClassAlias", &NativeECSqlColumnInfo::GetRootClassAlias),
                 InstanceMethod("isDynamicProp", &NativeECSqlColumnInfo::IsDynamicProp),
+                InstanceMethod("getExtendedTypeName", &NativeECSqlColumnInfo::GetExtendedTypeName),
             });
 
             exports.Set("ECSqlColumnInfo", t);
@@ -4540,6 +4541,23 @@ struct NativeECSqlColumnInfo : BeObjectWrap<NativeECSqlColumnInfo>
                 THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlColumnInfo does not represent a property.", IModelJsNativeErrorKey::NotFound);
 
             return toJsString(Env(), prop->GetName());
+            }
+        Napi::Value GetExtendedTypeName(NapiInfoCR info)
+            {
+            if (m_colInfo == nullptr)
+                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlColumnInfo is not initialized.", IModelJsNativeErrorKey::NotInitialized);
+
+            ECPropertyCP prop = m_colInfo->GetProperty();
+            Utf8String extendedTypeName;
+            if (prop != nullptr && prop->GetIsPrimitive() && prop->GetAsPrimitiveProperty()->HasExtendedType())
+                extendedTypeName = prop->GetAsPrimitiveProperty()->GetExtendedTypeName();
+            else if (prop != nullptr && prop->GetIsPrimitiveArray() && prop->GetAsPrimitiveArrayProperty()->HasExtendedType())
+                extendedTypeName = prop->GetAsPrimitiveArrayProperty()->GetExtendedTypeName();
+
+            if (extendedTypeName.empty())
+                return Env().Undefined();
+
+            return Napi::String::New(Env(), extendedTypeName.c_str());
             }
         Napi::Value IsDynamicProp(NapiInfoCR info)
             {

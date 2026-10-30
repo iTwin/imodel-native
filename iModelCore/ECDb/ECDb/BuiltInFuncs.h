@@ -14,6 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 #define SQLFUNC_GuidToStr "GuidToStr"
 #define SQLFUNC_IdToHex "IdToHex"
 #define SQLFUNC_HexToId "HexToId"
+#define SQLFUNC_ECSqlCast "_ecsql_cast"
 #define SQLFUNC_ClassName "ec_classname"
 #define SQLFUNC_ClassId "ec_classid"
 #define SQLFUNC_InstanceOf "ec_instanceof"
@@ -97,6 +98,36 @@ struct StrToGuid final : ScalarFunction
         ~StrToGuid() {}
         static StrToGuid& GetSingleton();
     };
+//=======================================================================================
+//! Internal conversion function used by ECSQL cast lowering: _ecsql_cast(op, args...)
+//! Invalid input values yield NULL. Not meant to be called directly in ECSQL.
+// @bsiclass
+//=======================================================================================
+struct ECSqlCastFunc final : ScalarFunction
+    {
+    private:
+        ECSqlCastFunc() : ScalarFunction(SQLFUNC_ECSqlCast, -1, DbValueType::NullVal) {}
+        void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
+
+    public:
+        ~ECSqlCastFunc() {}
+        static ECSqlCastFunc& GetSingleton();
+
+        //! Layout codes describing how SQL values or internal array JSON are rendered by struct_text/arr_text
+        static constexpr Utf8CP LayoutInt() { return "int"; }
+        static constexpr Utf8CP LayoutLong() { return "long"; }
+        static constexpr Utf8CP LayoutId() { return "id"; }
+        static constexpr Utf8CP LayoutDouble() { return "dbl"; }
+        static constexpr Utf8CP LayoutBool() { return "bool"; }
+        static constexpr Utf8CP LayoutString() { return "str"; }
+        static constexpr Utf8CP LayoutBinary() { return "bin"; }
+        static constexpr Utf8CP LayoutGuid() { return "guid"; }
+        static constexpr Utf8CP LayoutGeometry() { return "geom"; }
+        static constexpr Utf8CP LayoutPoint2d() { return "p2"; }
+        static constexpr Utf8CP LayoutPoint3d() { return "p3"; }
+        static Utf8CP LayoutDateTime(DateTime::Info const&);
+    };
+
 //=======================================================================================
 //! S GuidToStr(B)
 // @bsiclass
