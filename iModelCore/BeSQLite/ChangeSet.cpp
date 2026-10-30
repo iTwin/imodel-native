@@ -807,7 +807,7 @@ void Changes::Change::DumpCurrentValuesOfChangedColumns(Db const& db) const
 
         Utf8String oldVal = stmt.GetDbValue(0).Format(1);
 
-        LOG.infov(Utf8PrintfString("%s.%s was %s", tableName, columnNames[i].c_str(), oldVal.c_str()).c_str());
+        LOGCHANGESET.infov("%s.%s was %s", tableName, columnNames[i].c_str(), oldVal.c_str());
         }
     }
 

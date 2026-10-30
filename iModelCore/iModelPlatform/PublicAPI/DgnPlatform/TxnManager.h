@@ -11,6 +11,7 @@
 #include <ECDb/ECInstanceId.h>
 #include <functional>
 #include <memory>
+#include <vector>
 
 DGNPLATFORM_TYPEDEFS(TxnMonitor)
 
@@ -1097,17 +1098,17 @@ public:
 };
 
 //=======================================================================================
-//! The argument object passed to a JavaScript changeset conflict handler.
-//! It is created on the first conflict and reused for the later conflicts of the same apply.
-//! Its functions read the conflict currently being handled and throw once the handler call has returned.
+//! Creates the argument objects passed to a JavaScript changeset conflict handler.
+//! The functions are created on the first conflict and shared by the argument objects of all later conflicts of the same apply.
+//! Each conflict gets its own argument object, whose functions only work while the handler for that conflict runs.
 // @bsiclass
 //=======================================================================================
 struct JsChangesetConflictArgs {
     struct Conflict;
 private:
     std::shared_ptr<Conflict> m_conflict;
-    Napi::ObjectReference m_jsObject;
-    Napi::Object GetJsObject(Napi::Env);
+    std::vector<std::pair<Utf8CP, Napi::FunctionReference>> m_functions;
+    void CreateFunctions(Napi::Env);
 
 public:
     //! Call `handler` for the conflict on `change`. Must be called inside a Napi::HandleScope.
