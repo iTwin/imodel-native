@@ -576,6 +576,86 @@ struct BulkDeleteElementsResult
     DgnElementIdSet  failedIds;
     };
 
+//=======================================================================================
+//! An ElementAspect that DgnElements::DeleteElementAspects did not delete.
+// @bsiclass
+//=======================================================================================
+struct BulkDeleteElementAspectsFailure
+    {
+    BeSQLite::EC::ECInstanceId aspectId;
+    DgnDbStatus status = DgnDbStatus::Success;
+    Utf8String message;
+    };
+
+//=======================================================================================
+//! Result of DgnElements::DeleteElementAspects.
+// @bsiclass
+//=======================================================================================
+struct BulkDeleteElementAspectsResult
+    {
+    //! BE_SQLITE_OK unless the aspects could not be looked up, in which case nothing was written.
+    BeSQLite::DbResult sqlStatus = BeSQLite::DbResult::BE_SQLITE_OK;
+    //! The aspects that were not deleted. Invalid ids are ignored and are not reported.
+    bvector<BulkDeleteElementAspectsFailure> failures;
+    };
+
+//=======================================================================================
+//! An ElementAspect written by BulkElementAspectWriter::UpdateElement.
+// @bsiclass
+//=======================================================================================
+struct BulkElementAspectWrite
+    {
+    //! The properties of the aspect. The aspect is written with the class of this instance.
+    ECN::IECInstancePtr instance;
+    //! Unique aspects only: the class used to find the owner's existing aspect, which is replaced if it is of another class.
+    //! If null, the class of instance is used.
+    ECN::ECClassCP keyClass = nullptr;
+    //! Multi aspects: the id of the aspect to update, or an invalid id to insert a new aspect.
+    //! Unique aspects: the existing aspect of the owner is updated if it is of the class of instance, otherwise the instance is
+    //! inserted. If valid, this is the id used to update it, otherwise the id of the existing aspect is used.
+    //! On output: the id of the written aspect.
+    BeSQLite::EC::ECInstanceId aspectId;
+    //! On output: the result of writing the aspect.
+    DgnDbStatus status = DgnDbStatus::Success;
+    };
+
+//=======================================================================================
+//! Writes many ElementAspects of an element with the update of that element, the same way as DgnElement::GenericUniqueAspect
+//! and DgnElement::GenericMultiAspect write them, but without creating an aspect object for each of them. Use one writer for
+//! all the elements of a bulk operation, so that the per-class information is computed once.
+//! Implemented in DgnCore/BulkElementAspectWriter.cpp
+// @bsiclass
+//=======================================================================================
+class BulkElementAspectWriter
+    {
+    struct Impl;
+    struct WriterAppData;
+    Impl* m_impl;
+
+    BulkElementAspectWriter(BulkElementAspectWriter const&) = delete;
+    BulkElementAspectWriter& operator=(BulkElementAspectWriter const&) = delete;
+
+    static BeSQLite::EC::ECInstanceUpdater* GetUpdater(DgnDbR db, ECN::ECClassCR aspectClass);
+
+public:
+    //! @param[in] db The DgnDb to write to
+    DGNPLATFORM_EXPORT explicit BulkElementAspectWriter(DgnDbR db);
+    DGNPLATFORM_EXPORT ~BulkElementAspectWriter();
+
+    //! Whether existing aspects of the given class are loaded as generic aspects, i.e. the class has no registered C++ aspect handler
+    //! and no ClassHasHandler custom attribute. DgnElement::GenericUniqueAspect::GetAspectP and DgnElement::GenericMultiAspect::GetAspectP
+    //! return nullptr for aspects of other classes.
+    DGNPLATFORM_EXPORT bool IsGenericAspectClass(ECN::ECClassCR aspectClass);
+
+    //! Updates elementEdit (see DgnElement::Update) and writes the aspects while the element is updated, at the point where
+    //! the element's DgnElement::Aspect objects are written.
+    //! @param[in] elementEdit An editable copy of the owning element. Other aspects added to it are written by the same update.
+    //! @param[in, out] writes The aspects to write, in order. The status and aspectId of each are set when the element is updated.
+    //!   writes must not be modified until this returns.
+    //! @return The status of the update of the element. If it is not DgnDbStatus::Success, the aspects were not written.
+    DGNPLATFORM_EXPORT DgnDbStatus UpdateElement(DgnElementR elementEdit, bvector<BulkElementAspectWrite>& writes);
+    };
+
 class BulkElementDeletion
     {
     DgnDbR m_dgndb;
@@ -915,6 +995,7 @@ public:
         DGNPLATFORM_EXPORT DropMe _OnInserted(DgnElementCR el) override final;
         DGNPLATFORM_EXPORT DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original, bool isOriginal) override final;
         friend struct MultiAspectMux;
+        DgnDbStatus m_lastWriteStatus = DgnDbStatus::Success;
 
     protected:
         BeSQLite::EC::ECInstanceId m_instanceId;
@@ -989,6 +1070,10 @@ public:
         //! Prepare to delete this aspect.
         //! @note The aspect will not actually be deleted in the Db until you call DgnElements::Update on the aspect's host element.
         void Delete() {m_changeType = ChangeType::Delete;}
+
+        //! Get the status of the last time this aspect's pending change was written to the Db, when its host element was inserted or updated.
+        //! @note The insert or update of the host element does not fail when writing one of its aspects fails, so check this to detect such failures.
+        DgnDbStatus GetLastWriteStatus() const {return m_lastWriteStatus;}
 
         //! Get the Id of the ECClass for this aspect
         DGNPLATFORM_EXPORT DgnClassId GetECClassId(DgnDbR) const;
@@ -3960,6 +4045,7 @@ struct DgnElements : DgnDbTable
     friend struct GeometricElement;
     friend struct ElementAutoHandledPropertiesECInstanceAdapter;
     friend class BulkElementDeletion;
+    friend class BulkElementAspectWriter;
 
 private:
     // THIS MUST NOT BE EXPORTED, AS IT BYPASSES THE ECCRUDWRITETOKEN
@@ -4185,6 +4271,20 @@ public:
     //! @return A result object containing the status of the bulk delete operation and any element IDs that could not be deleted.
     //! @note This function can only be safely invoked from the client thread.
     DGNPLATFORM_EXPORT BulkDeleteElementsResult DeleteElements(const DgnElementIdSet& elementIds, bool skipFKConstraintValidations = false);
+
+    //! Bulk-delete a set of ElementAspects from this DgnDb.
+    //! Implemented in DgnCore/BulkElementAspectDeletion.cpp
+    //!
+    //! The aspects are looked up with a single query. Each owning element is updated once (see DgnElement::Update), then the
+    //! aspects of each ECClass are deleted with a single statement. Aspects of a class that has a registered C++ aspect handler
+    //! are instead deleted through that handler, by the update of their owning element.
+    //! @param[in] aspectIds The ids of the ElementUniqueAspects and ElementMultiAspects to delete. Invalid and duplicate ids are ignored.
+    //! @return The aspects that were not deleted, with the reason. If the owning element cannot be updated, none of its aspects are deleted.
+    //! @note This method does not call the JavaScript ElementAspect handlers; the caller is responsible for that.
+    //! @note This method does not open a transaction of its own. If an aspect cannot be deleted after its owner was updated,
+    //!   the owner's update is not rolled back.
+    //! @note This function can only be safely invoked from the client thread.
+    DGNPLATFORM_EXPORT BulkDeleteElementAspectsResult DeleteElementAspects(bvector<BeSQLite::EC::ECInstanceId> const& aspectIds);
 
     //! Delete a DgnElement from this DgnDb by DgnElementId.
     //! @return DgnDbStatus::Success if the element was deleted, error status otherwise.
