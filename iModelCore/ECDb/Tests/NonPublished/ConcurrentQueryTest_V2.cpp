@@ -21,6 +21,7 @@ USING_NAMESPACE_BENTLEY_EC
 #include <cstdlib>
 #include <limits>
 #include <random>
+#include <stdexcept>
 BEGIN_ECDBUNITTESTS_NAMESPACE
 using namespace std::chrono_literals;
 
@@ -72,6 +73,223 @@ struct ConcurrentQueryFixture : ECDbTestFixture {
         return SUCCESS;
     }
 };
+TEST_F(ConcurrentQueryFixture, RequestDecodingPreservesTypedOptionsAndDefaults) {
+    BeJsDocument input(R"json({
+        "query":"SELECT ?","cursorId":"reader","usePrimaryConn":true,
+        "priority":7,"delay":25,"restartToken":"restart",
+        "quota":{"time":12,"memory":64000},"limit":{"count":5,"offset":2},
+        "includeMetaData":false,"abbreviateBlobs":true,"suppressLogErrors":true,
+        "convertClassIdsToClassNames":true,"doNotConvertClassIdsToClassNamesWhenAliased":false,
+        "valueFormat":1
+    })json");
+    input["kind"] = static_cast<int>(QueryRequest::Kind::ECSql);
+    ECSqlParams args;
+    args.BindInt(1, 42);
+    args.ToJs(input["args"]);
+    auto request = QueryRequest::Deserialize(input);
+    auto const& ecsql = request->GetAsConst<ECSqlRequest>();
+    EXPECT_EQ("SELECT ?", ecsql.GetQuery());
+    EXPECT_EQ("reader", ecsql.GetCursorId());
+    EXPECT_EQ(1, ecsql.GetArgs().Count());
+    EXPECT_TRUE(request->UsePrimaryConnection());
+    EXPECT_EQ(7, request->GetPriority());
+    EXPECT_EQ(25ms, request->GetDelay());
+    EXPECT_EQ("restart", request->GetRestartToken());
+    EXPECT_EQ(12s, request->GetQuota().MaxTimeAllowed());
+    EXPECT_EQ(64000, request->GetQuota().MaxMemoryAllowed());
+    EXPECT_EQ(5, ecsql.GetLimit().GetCount());
+    EXPECT_EQ(2, ecsql.GetLimit().GetOffset());
+    EXPECT_FALSE(ecsql.GetIncludeMetaData());
+    EXPECT_TRUE(ecsql.GetAbbreviateBlobs());
+    EXPECT_TRUE(ecsql.GetSuppressLogErrors());
+    EXPECT_TRUE(ecsql.GetConvertClassIdsToClassNames());
+    EXPECT_FALSE(ecsql.GetDoNotConvertClassIdsToClassNamesWhenAliased());
+    EXPECT_EQ(ECSqlRequest::ECSqlValueFormat::JsNames, ecsql.GetValueFormat());
+
+    BeJsDocument invalid(R"json({
+        "kind":1,"query":42,"usePrimaryConn":"true","includeMetaData":null,
+        "abbreviateBlobs":1,"valueFormat":"1","limit":false,"quota":false
+    })json");
+    auto defaults = QueryRequest::Deserialize(invalid);
+    auto const& defaultECSql = defaults->GetAsConst<ECSqlRequest>();
+    EXPECT_TRUE(defaultECSql.GetQuery().empty());
+    EXPECT_FALSE(defaults->UsePrimaryConnection());
+    EXPECT_TRUE(defaultECSql.GetIncludeMetaData());
+    EXPECT_FALSE(defaultECSql.GetAbbreviateBlobs());
+    EXPECT_EQ(ECSqlRequest::ECSqlValueFormat::ECSqlNames, defaultECSql.GetValueFormat());
+    EXPECT_EQ(-1, defaultECSql.GetLimit().GetCount());
+    EXPECT_EQ(-1, defaultECSql.GetLimit().GetOffset());
+    invalid["kind"] = "1";
+    bool rejected = false;
+    try {
+        QueryRequest::Deserialize(invalid);
+    } catch (std::runtime_error const&) {
+        rejected = true;
+    }
+    EXPECT_TRUE(rejected);
+}
+
+TEST_F(ConcurrentQueryFixture, BoundedJsonWriterPreservesValuesAndLimitsEscapedOutput) {
+    rapidjson::Document row;
+    row.Parse(R"json([null,true,false,-1,4294967295,-9223372036854775808,18446744073709551615,1.25,{"text":"quote\"\n\u0001\u00e9","array":[1,2]}])json");
+    ASSERT_FALSE(row.HasParseError());
+    rapidjson::StringBuffer expected;
+    rapidjson::Writer<rapidjson::StringBuffer> reference(expected);
+    ASSERT_TRUE(row.Accept(reference));
+    for (size_t budget : {0, 1, 16, 64, 256, 1024}) {
+        rapidjson::StringBuffer json;
+        BoundedECSqlJsonWriter writer(json, budget);
+        const bool written = row.Accept(writer);
+        EXPECT_LE(json.GetSize(), budget);
+        EXPECT_EQ(!written, writer.LimitExceeded());
+        if (written)
+            EXPECT_STREQ(expected.GetString(), json.GetString());
+        if (budget == 1024)
+            EXPECT_TRUE(written);
+    }
+
+    rapidjson::StringBuffer json;
+    json.Put('[');
+    BoundedECSqlJsonWriter writer(json, 128);
+    ASSERT_TRUE(writer.StartArray());
+    const std::string escaped(100, '\x01');
+    EXPECT_FALSE(writer.String(escaped.c_str()));
+    EXPECT_TRUE(writer.LimitExceeded());
+    EXPECT_STREQ("[[", json.GetString()); // Rejected before reserving/writing the expanded string.
+}
+
+TEST_F(ConcurrentQueryFixture, BoundedJsonWriterLimitsCumulativeOutputAndDistinguishesNonJsonValues) {
+    rapidjson::StringBuffer json;
+    BoundedECSqlJsonWriter writer(json, 128);
+    ASSERT_TRUE(writer.StartArray());
+    int rows = 0;
+    while (rows < 1000 && writer.Int(rows))
+        ++rows;
+    EXPECT_GT(rows, 0);
+    EXPECT_LT(rows, 1000);
+    EXPECT_TRUE(writer.LimitExceeded());
+    EXPECT_LE(json.GetSize(), 128);
+
+    rapidjson::StringBuffer nonJson;
+    BoundedECSqlJsonWriter nonJsonWriter(nonJson, 128);
+    EXPECT_FALSE(nonJsonWriter.Double(std::numeric_limits<double>::infinity()));
+    EXPECT_FALSE(nonJsonWriter.LimitExceeded());
+}
+
+TEST_F(ConcurrentQueryFixture, LeasedStatementsSurviveEvictionAndResetOnReturn) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("LeasedStatementsSurviveEviction.ecdb"));
+    auto config = ConcurrentQueryMgr::Config::Get();
+    config.SetStatementCacheSizePerWorker(1);
+    ConcurrentQueryMgr::Config::Reset(config);
+    ECSqlStatus status;
+    std::string error;
+    auto outer = ConcurrentQueryMgr::LeaseStatement(m_ecdb, "SELECT ?", false, status, error);
+    ASSERT_NE(nullptr, outer) << error;
+    const auto outerId = outer->GetStatementId();
+    ASSERT_EQ(ECSqlStatus::Success, outer->GetStatement()->BindInt(1, 11));
+    ASSERT_EQ(BE_SQLITE_ROW, outer->GetStatement()->Step());
+    EXPECT_EQ(11, outer->GetStatement()->GetValueInt(0));
+
+    auto inner = ConcurrentQueryMgr::LeaseStatement(m_ecdb, "SELECT ?", false, status, error);
+    ASSERT_NE(nullptr, inner) << error;
+    EXPECT_NE(outerId, inner->GetStatementId());
+    ASSERT_EQ(ECSqlStatus::Success, inner->GetStatement()->BindInt(1, 22));
+    ASSERT_EQ(BE_SQLITE_ROW, inner->GetStatement()->Step());
+    EXPECT_EQ(22, inner->GetStatement()->GetValueInt(0));
+    inner->Release();
+    auto other = ConcurrentQueryMgr::LeaseStatement(m_ecdb, "SELECT 3", false, status, error);
+    ASSERT_NE(nullptr, other) << error;
+    other->Release(); // Evicts the returned inner statement, not the active outer one.
+    EXPECT_EQ(11, outer->GetStatement()->GetValueInt(0));
+    EXPECT_EQ(BE_SQLITE_DONE, outer->GetStatement()->Step());
+    outer->Release();
+
+    auto reused = ConcurrentQueryMgr::LeaseStatement(m_ecdb, "SELECT ?", false, status, error);
+    ASSERT_NE(nullptr, reused) << error;
+    EXPECT_EQ(outerId, reused->GetStatementId());
+    ASSERT_EQ(BE_SQLITE_ROW, reused->GetStatement()->Step());
+    EXPECT_TRUE(reused->GetStatement()->IsValueNull(0));
+    reused->Release();
+    reused = ConcurrentQueryMgr::LeaseStatement(m_ecdb, "SELECT ?", false, status, error);
+    ASSERT_NE(nullptr, reused) << error;
+    ASSERT_EQ(ECSqlStatus::Success, reused->GetStatement()->BindInt(1, 33));
+    ASSERT_EQ(BE_SQLITE_ROW, reused->GetStatement()->Step());
+    EXPECT_EQ(33, reused->GetStatement()->GetValueInt(0));
+}
+
+TEST_F(ConcurrentQueryFixture, ShutdownAndCloseInvalidateLeasedStatementsAndAdaptors) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ShutdownInvalidatesLeasedStatements.ecdb"));
+    ECSqlStatus status;
+    std::string error;
+    auto lease = ConcurrentQueryMgr::LeaseStatement(m_ecdb, "SELECT 1", false, status, error);
+    ASSERT_NE(nullptr, lease) << error;
+    const auto firstId = lease->GetStatementId();
+    ASSERT_NE(nullptr, lease->ConfigureRowAdaptor(JsReadOptions()));
+    ASSERT_EQ(BE_SQLITE_ROW, lease->GetStatement()->Step());
+    ConcurrentQueryMgr::Shutdown(m_ecdb);
+    EXPECT_EQ(nullptr, lease->GetStatement());
+    EXPECT_EQ(nullptr, lease->GetRowAdaptor());
+    lease->Release();
+    lease->Release();
+
+    lease = ConcurrentQueryMgr::LeaseStatement(m_ecdb, "SELECT 1", false, status, error);
+    ASSERT_NE(nullptr, lease) << error;
+    EXPECT_NE(firstId, lease->GetStatementId());
+    ASSERT_NE(nullptr, lease->ConfigureRowAdaptor(JsReadOptions()));
+    ASSERT_EQ(BE_SQLITE_ROW, lease->GetStatement()->Step());
+    m_ecdb.CloseDb();
+    EXPECT_EQ(nullptr, lease->GetStatement());
+    EXPECT_EQ(nullptr, lease->GetRowAdaptor());
+    lease->Release();
+}
+
+TEST_F(ConcurrentQueryFixture, AutoShutdownIsLimitedToReadOnlyWorkerConnections) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("AutoShutdownPrimaryConnectionGate.ecdb"));
+    {
+        ConnectionCache connections(m_ecdb, 1);
+        EXPECT_FALSE(connections.TryBlockPrimaryConnectionForShutdown());
+    }
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(Db::OpenMode::Readonly)));
+    {
+        ConnectionCache connections(m_ecdb, 1);
+        EXPECT_TRUE(connections.TryBlockPrimaryConnectionForShutdown());
+        EXPECT_EQ(nullptr, connections.TryGetSyncConnection());
+    }
+    {
+        RunnableRequestQueue queue(m_ecdb);
+        ConnectionCache connections(m_ecdb, 1);
+        auto conn = connections.TryGetSyncConnection();
+        ASSERT_NE(nullptr, conn);
+        auto query = ECSqlRequest::MakeRequest("SELECT 1");
+        query->SetUsePrimaryConnection(true);
+        auto request = std::make_unique<RunnableRequestWithPromise>(
+            queue, std::move(query), ConcurrentQueryMgr::Config::Get().GetQuota(), 1);
+        auto result = request->GetFuture();
+        conn->Execute([](QueryAdaptorCache& cache, RunnableRequestBase& runnable) {
+            QueryHelper::Execute(cache, runnable);
+        }, std::move(request));
+        ASSERT_EQ(QueryResponse::Status::Done, result.Get()->GetStatus());
+        EXPECT_FALSE(connections.TryBlockPrimaryConnectionForShutdown());
+    }
+}
+
+TEST_F(ConcurrentQueryFixture, AutoShutdownAndPrimaryConnectionCreationAreMutuallyExclusive) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("AutoShutdownPrimaryConnectionRace.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(Db::OpenMode::Readonly)));
+    for (int i = 0; i < 50; ++i) {
+        ConnectionCache connections(m_ecdb, 1);
+        std::promise<void> start;
+        auto ready = start.get_future();
+        auto shutdown = std::async(std::launch::async, [&] {
+            ready.wait();
+            return connections.TryBlockPrimaryConnectionForShutdown();
+        });
+        start.set_value();
+        auto conn = connections.TryGetSyncConnection();
+        EXPECT_EQ(conn == nullptr, shutdown.get());
+    }
+}
+
 TEST_F(ConcurrentQueryFixture, HexIdRenderingMatchesBeId) {
     auto check = [](uint64_t rawId) {
         BeInt64Id id(rawId);

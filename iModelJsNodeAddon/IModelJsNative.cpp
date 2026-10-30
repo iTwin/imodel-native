@@ -389,6 +389,256 @@ template<typename T_Db> struct SQLiteOps {
 };
 
 //=======================================================================================
+// Synchronous row reader over a statement leased from the db's ConcurrentQuery primary
+// connection cache. Used by withQueryReader; the statement returns to the cache on dispose.
+//! @bsiclass
+//=======================================================================================
+struct ECSqlBatchReader : BeObjectWrap<ECSqlBatchReader> {
+private:
+    DEFINE_CONSTRUCTOR
+    std::unique_ptr<ECSqlStatementLease> m_lease;
+    // Reading ahead is only safe when the db cannot be written while rows are held by the caller.
+    bool m_readAhead = false;
+    // BE_SQLITE_ROW until the statement reports DONE or an error. Later batches return the stored status without
+    // stepping again, so a finished statement is never restarted.
+    DbResult m_status = BE_SQLITE_ROW;
+    static constexpr size_t BatchJsonBytes = 1024 * 1024;
+    static constexpr size_t MaxJsonBytes = 8 * BatchJsonBytes;
+
+    // Bits of the rowFlags argument of prepareECSqlBatchReader.
+    enum RowFlags : uint32_t {
+        AbbreviateBlobs = 1 << 0,
+        ClassIdsToClassNames = 1 << 1,
+        UseJsName = 1 << 2,
+        DoNotConvertClassIdsToClassNamesWhenAliased = 1 << 3,
+    };
+
+    ECSqlStatement* GetStatement() const { return m_lease == nullptr ? nullptr : m_lease->GetStatement(); }
+
+    void Release() {
+        if (m_lease != nullptr) {
+            m_lease->Release();
+            m_lease.reset();
+        }
+    }
+
+    static DbResult ToDbResult(ECSqlStatus status) {
+        if (status.IsSuccess())
+            return BE_SQLITE_OK;
+        return status.IsSQLiteError() ? status.GetSQLiteError() : BE_SQLITE_ERROR;
+    }
+
+    // Binds `args`, a flat array of [key, type, value, ...] triples where key is the parameter index or name as a
+    // string and type is an ECSqlParams::ECSqlParam::Type. Canonicalize integer and long values to preserve
+    // ECSqlParams' numeric conversions instead of N-API's wrapping or safe-integer limits.
+    static bool BindArgs(Napi::Array args, ECSqlStatement& stmt, std::string& err) {
+        using Type = ECSqlParams::ECSqlParam::Type;
+        const uint32_t len = args.Length();
+        for (uint32_t i = 0; i + 2 < len; i += 3) {
+            Napi::Value keyVal = args.Get(i);
+            Napi::Value typeVal = args.Get(i + 1);
+            Napi::Value value = args.Get(i + 2);
+            if (!keyVal.IsString() || !typeVal.IsNumber()) {
+                err = "invalid query argument";
+                return false;
+            }
+            std::string key = keyVal.As<Napi::String>().Utf8Value();
+            const Type type = (Type) typeVal.As<Napi::Number>().Int32Value();
+            if (type == Type::Integer || type == Type::Long) {
+                BeJsDocument canonical;
+                canonical.From(BeJsConst(value));
+                if (!ECSqlParams::TryBindParameter(stmt, key, type, canonical, err))
+                    return false;
+            } else if (!ECSqlParams::TryBindParameter(stmt, key, type, BeJsConst(value), err))
+                return false;
+        }
+        return true;
+    }
+
+    void AppendNapiRow(Napi::Env env, Napi::Array& rows, ECSqlStatement& stmt) {
+        BeJsNapiObject holder(env);
+        BeJsValue rowJson = holder["data"];
+        auto adaptor = m_lease->GetRowAdaptor();
+        if (adaptor == nullptr || adaptor->RenderRowAsArray(rowJson, ECSqlStatementRow(stmt)) != SUCCESS)
+            THROW_JS_BE_SQLITE_EXCEPTION(env, "Failed to render row", BE_SQLITE_ERROR);
+        rows.Set(rows.Length(), Napi::Object(holder).Get("data"));
+    }
+
+    // Steps up to maxRows rows (one on a writable db). Returns the rows as one JSON array string, or as an array of
+    // rows created through N-API when renderAsJson is false or a row exceeds the serialization budget or holds a
+    // value JSON cannot represent (e.g. Infinity). Direct rendering ends the batch after that row.
+    // Returns the DbResult as a number when no row was stepped: BE_SQLITE_DONE or the failing status.
+    Napi::Value NextBatch(Napi::Env env, int32_t maxRows, bool renderAsJson) {
+        if (m_status != BE_SQLITE_ROW)
+            return Napi::Number::New(env, (int) m_status);
+
+        auto stmt = GetStatement();
+        if (stmt == nullptr)
+            return Napi::Number::New(env, (int) BE_SQLITE_ERROR);
+
+        const int32_t batchSize = m_readAhead && renderAsJson ? maxRows : 1;
+        int32_t i = 0;
+        if (renderAsJson) {
+            rapidjson::StringBuffer json;
+            uint32_t jsonRows = 0;
+            for (; i < batchSize; ++i) {
+                DbResult rc = stmt->Step();
+                if (rc != BE_SQLITE_ROW) {
+                    m_status = rc;
+                    break;
+                }
+                const size_t rowStart = json.GetSize();
+                json.Put(jsonRows == 0 ? '[' : ',');
+                if (m_lease->WriteRowAsJson(json, MaxJsonBytes - 1) != ECSqlStatementLease::JsonRowResult::Success) {
+                    // Keep the completed rows and render the current row without building a combined JSON string.
+                    json.Pop(json.GetSize() - rowStart);
+                    Napi::Array rows = Napi::Array::New(env);
+                    if (jsonRows > 0) {
+                        json.Put(']');
+                        Napi::Array parsed = NapiValueRef::Parse(Napi::String::New(env, json.GetString(), json.GetSize())).As<Napi::Array>();
+                        for (uint32_t r = 0; r < jsonRows; ++r)
+                            rows.Set(r, parsed.Get(r));
+                    }
+                    AppendNapiRow(env, rows, *stmt);
+                    return rows;
+                }
+                ++jsonRows;
+                if (json.GetSize() >= BatchJsonBytes)
+                    break;
+            }
+            if (jsonRows == 0)
+                return Napi::Number::New(env, (int) m_status);
+            json.Put(']');
+            return Napi::String::New(env, json.GetString(), json.GetSize());
+        }
+
+        Napi::Array rows = Napi::Array::New(env);
+        for (; i < batchSize; ++i) {
+            DbResult rc = stmt->Step();
+            if (rc != BE_SQLITE_ROW) {
+                m_status = rc;
+                break;
+            }
+            AppendNapiRow(env, rows, *stmt);
+        }
+        if (rows.Length() == 0)
+            return Napi::Number::New(env, (int) m_status);
+        return rows;
+    }
+
+public:
+    ECSqlBatchReader(NapiInfoCR info) : BeObjectWrap<ECSqlBatchReader>(info) {}
+    ~ECSqlBatchReader() { SetInDestructor(); Release(); }
+
+    static void Init(Napi::Env& env, Napi::Object exports) {
+        Napi::HandleScope scope(env);
+        Napi::Function t = DefineClass(env, "ECSqlBatchReader", {
+            InstanceMethod("stepBatch", &ECSqlBatchReader::StepBatch),
+            InstanceMethod("getMetadata", &ECSqlBatchReader::GetMetadata),
+            InstanceMethod("getStatementId", &ECSqlBatchReader::GetStatementId),
+            InstanceMethod("dispose", &ECSqlBatchReader::Dispose),
+        });
+        exports.Set("ECSqlBatchReader", t);
+        SET_CONSTRUCTOR(t);
+    }
+
+    // JS args: (ecsql: string, args: any[] | undefined, rowFlags: number, maxRows: number, out: any[], logErrors?: boolean)
+    // Leases and binds the statement. On a read-only db with maxRows > 0 the first batch is stepped too, saving a call;
+    // on a writable db stepping waits for the first stepBatch call so rows reflect writes made before it. Nor is it
+    // stepped when a column is dynamic (e.g. $->prop), as stepping changes the metadata of such columns.
+    // Sets out[0] to the first batch (as returned by stepBatch, or undefined when not stepped), out[1] to the
+    // statement id, and out[2] to whether a column is dynamic, in which case metadata must not be cached.
+    static Napi::Value Prepare(NapiInfoCR info, ECDbCR ecdb) {
+        REQUIRE_ARGUMENT_STRING(0, ecsql);
+        REQUIRE_ARGUMENT_INTEGER(2, rowFlags);
+        REQUIRE_ARGUMENT_INTEGER(3, maxRows);
+        REQUIRE_ARGUMENT_ARRAY(4, out);
+        OPTIONAL_ARGUMENT_BOOL(5, logErrors, true);
+
+        ECSqlStatus status;
+        std::string error;
+        std::unique_ptr<ECSqlStatementLease> lease;
+        try {
+            lease = ConcurrentQueryMgr::LeaseStatement(ecdb, ecsql.c_str(), logErrors, status, error);
+        } catch (std::exception const& ex) {
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), ex.what(), BE_SQLITE_ERROR);
+        }
+        if (lease == nullptr || lease->GetStatement() == nullptr) {
+            if (error.empty())
+                error = Utf8PrintfString("Failed to prepare ECSql statement: %s", ecsql.c_str());
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), error.c_str(), ToDbResult(status));
+        }
+
+        if (info[1].IsArray()) {
+            std::string bindError;
+            if (!BindArgs(info[1].As<Napi::Array>(), *lease->GetStatement(), bindError)) {
+                lease->Release();
+                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), Utf8PrintfString("Failed to bind parameters: %s", bindError.c_str()).c_str(), IModelJsNativeErrorKey::BadArg);
+            }
+        }
+
+        JsReadOptions options;
+        options.SetAbbreviateBlobs((rowFlags & AbbreviateBlobs) != 0)
+            .SetConvertClassIdsToClassNames((rowFlags & ClassIdsToClassNames) != 0)
+            .SetUseJsNames((rowFlags & UseJsName) != 0)
+            .SetDoNotConvertClassIdsToClassNamesWhenAliased((rowFlags & DoNotConvertClassIdsToClassNamesWhenAliased) != 0);
+        if (lease->ConfigureRowAdaptor(options) == nullptr)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Statement lease is invalidated", BE_SQLITE_ERROR);
+
+        Napi::Object obj = Constructor().New({});
+        auto reader = ECSqlBatchReader::Unwrap(obj);
+        reader->m_lease = std::move(lease);
+        struct PrepareGuard {
+            ECSqlBatchReader* m_reader;
+            ~PrepareGuard() { if (m_reader != nullptr) m_reader->Release(); }
+        } guard{reader};
+        reader->m_readAhead = ecdb.IsReadonly();
+        auto& stmt = *reader->m_lease->GetStatement();
+        bool hasDynamicColumn = false;
+        for (int i = 0, count = stmt.GetColumnCount(); i < count && !hasDynamicColumn; ++i)
+            hasDynamicColumn = stmt.GetColumnInfo(i).IsDynamic();
+
+        const bool stepNow = reader->m_readAhead && maxRows > 0 && !hasDynamicColumn;
+        out.Set((uint32_t) 0, stepNow ? reader->NextBatch(info.Env(), maxRows, true) : info.Env().Undefined());
+        out.Set((uint32_t) 1, Napi::Number::New(info.Env(), (double) reader->m_lease->GetStatementId()));
+        out.Set((uint32_t) 2, Napi::Boolean::New(info.Env(), hasDynamicColumn));
+        guard.m_reader = nullptr;
+        return obj;
+    }
+
+    // JS args: (maxRows: number, renderAsJson?: boolean). See NextBatch for the result. On a writable db at most one
+    // row is stepped per call, so the caller never holds rows stepped ahead of writes it makes between calls. JSON
+    // rows hold null (not undefined) for null cells and base64 strings for blobs; the caller normalizes both.
+    Napi::Value StepBatch(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_INTEGER(0, maxRows);
+        OPTIONAL_ARGUMENT_BOOL(1, renderAsJson, true);
+        if (maxRows < 1)
+            THROW_JS_TYPE_EXCEPTION("maxRows must be greater than 0");
+        return NextBatch(info.Env(), maxRows, renderAsJson);
+    }
+
+    Napi::Value GetMetadata(NapiInfoCR info) {
+        auto stmt = GetStatement();
+        auto adaptor = m_lease == nullptr ? nullptr : m_lease->GetRowAdaptor();
+        if (stmt == nullptr || adaptor == nullptr)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlStatement is not prepared.", IModelJsNativeErrorKey::BadArg);
+
+        BeJsNapiObject out(info.Env());
+        BeJsValue metaJson = out["meta"];
+        ECSqlRowProperty::List props;
+        adaptor->GetMetaData(props, *stmt);
+        props.ToJs(metaJson);
+        return Napi::Object(out).Get("meta");
+    }
+
+    Napi::Value GetStatementId(NapiInfoCR info) {
+        return Napi::Number::New(info.Env(), (double) (m_lease == nullptr ? 0 : m_lease->GetStatementId()));
+    }
+
+    void Dispose(NapiInfoCR) { Release(); }
+};
+
+//=======================================================================================
 // Projects the ECDb class into JS
 //! @bsiclass
 //=======================================================================================
@@ -455,6 +705,7 @@ public:
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to detach file", rc);
         }
     }
+    Napi::Value PrepareECSqlBatchReader(NapiInfoCR info) { return ECSqlBatchReader::Prepare(info, GetOpenedDb(info)); }
     void ConcurrentQueryExecute(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, requestObj);
         REQUIRE_ARGUMENT_FUNCTION(1, callback);
@@ -673,6 +924,7 @@ public:
             InstanceMethod("detachDb", &NativeECDb::DetachDb),
             InstanceMethod("closeDb", &NativeECDb::CloseDb),
             InstanceMethod("concurrentQueryExecute", &NativeECDb::ConcurrentQueryExecute),
+            InstanceMethod("prepareECSqlBatchReader", &NativeECDb::PrepareECSqlBatchReader),
             InstanceMethod("concurrentQueryResetConfig", &NativeECDb::ConcurrentQueryResetConfig),
             InstanceMethod("concurrentQueryShutdown", &NativeECDb::ConcurrentQueryShutdown),
             InstanceMethod("createDb", &NativeECDb::CreateDb),
@@ -3076,6 +3328,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to detach file", rc);
         }
     }
+    Napi::Value PrepareECSqlBatchReader(NapiInfoCR info) { return ECSqlBatchReader::Prepare(info, GetOpenedDb(info)); }
     void ConcurrentQueryExecute(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, requestObj);
         REQUIRE_ARGUMENT_FUNCTION(1, callback);
@@ -3332,6 +3585,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("computeProjectExtents", &NativeDgnDb::ComputeProjectExtents),
             InstanceMethod("computeRangesForText", &NativeDgnDb::ComputeRangesForText),
             InstanceMethod("concurrentQueryExecute", &NativeDgnDb::ConcurrentQueryExecute),
+            InstanceMethod("prepareECSqlBatchReader", &NativeDgnDb::PrepareECSqlBatchReader),
             InstanceMethod("concurrentQueryResetConfig", &NativeDgnDb::ConcurrentQueryResetConfig),
             InstanceMethod("concurrentQueryShutdown", &NativeDgnDb::ConcurrentQueryShutdown),
             InstanceMethod("createBRepGeometry", &NativeDgnDb::CreateBRepGeometry),
@@ -8247,6 +8501,7 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports) {
     NativeChangeUnifier::Init(env, exports);
     NativeChangedElementsECDb::Init(env, exports);
     NativeECSqlStatement::Init(env, exports);
+    ECSqlBatchReader::Init(env, exports);
     NativeECSqlBinder::Init(env, exports);
     NativeECSqlValue::Init(env, exports);
     NativeECSqlColumnInfo::Init(env, exports);

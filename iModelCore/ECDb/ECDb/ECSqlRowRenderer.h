@@ -11,11 +11,60 @@
 #include <algorithm>
 #include <charconv>
 #include <cmath>
+#include <cstring>
 #include <set>
 #include <utility>
 #include <vector>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
+// Check before RapidJSON reserves output (strings reserve for worst-case escaping).
+// Keep its StringBuffer writer so small rows retain the optimized serialization path.
+struct BoundedECSqlJsonWriter final {
+private:
+    using Writer = rapidjson::Writer<rapidjson::StringBuffer, rapidjson::UTF8<>, rapidjson::UTF8<>,
+        rapidjson::CrtAllocator, rapidjson::kWriteNoFlags>;
+    rapidjson::StringBuffer& m_json;
+    size_t m_maxBytes;
+    bool m_limitExceeded = false;
+    Writer m_writer;
+
+    bool CanWrite(size_t bytes) {
+        if (m_json.GetSize() > m_maxBytes || bytes > m_maxBytes - m_json.GetSize()) {
+            m_limitExceeded = true;
+            return false;
+        }
+        return true;
+    }
+
+public:
+    BoundedECSqlJsonWriter(rapidjson::StringBuffer& json, size_t maxBytes)
+        : m_json(json), m_maxBytes(maxBytes), m_writer(json) {}
+    bool LimitExceeded() const { return m_limitExceeded; }
+    // Covers RapidJSON's largest numeric reservation (25 bytes) and the value prefix.
+    bool Null() { return CanWrite(32) && m_writer.Null(); }
+    bool Bool(bool value) { return CanWrite(32) && m_writer.Bool(value); }
+    bool Int(int value) { return CanWrite(32) && m_writer.Int(value); }
+    bool Uint(unsigned value) { return CanWrite(32) && m_writer.Uint(value); }
+    bool Int64(int64_t value) { return CanWrite(32) && m_writer.Int64(value); }
+    bool Uint64(uint64_t value) { return CanWrite(32) && m_writer.Uint64(value); }
+    bool Double(double value) { return CanWrite(32) && m_writer.Double(value); }
+    bool String(Utf8CP value, rapidjson::SizeType length, bool copy = false) {
+        // Include the prefix and quotes; divide before multiplying to avoid overflow.
+        if (!CanWrite(3) || length > (m_maxBytes - m_json.GetSize() - 3) / 6) {
+            m_limitExceeded = true;
+            return false;
+        }
+        return m_writer.String(value, length, copy);
+    }
+    bool String(Utf8CP value) { return String(value, static_cast<rapidjson::SizeType>(std::strlen(value))); }
+    bool Key(Utf8CP value, rapidjson::SizeType length, bool copy = false) { return String(value, length, copy); }
+    bool Key(Utf8CP value) { return String(value); }
+    bool StartObject() { return CanWrite(2) && m_writer.StartObject(); }
+    bool EndObject(rapidjson::SizeType count = 0) { return CanWrite(1) && m_writer.EndObject(count); }
+    bool StartArray() { return CanWrite(2) && m_writer.StartArray(); }
+    bool EndArray(rapidjson::SizeType count = 0) { return CanWrite(1) && m_writer.EndArray(count); }
+};
 
 struct ECSqlLongRenderer final {
     enum class Mode { Number, Id, ClassName };
