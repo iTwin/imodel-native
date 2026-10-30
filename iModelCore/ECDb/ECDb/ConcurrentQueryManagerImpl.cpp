@@ -2317,21 +2317,26 @@ ECSqlRowAdaptor* ECSqlStatementLease::GetRowAdaptor() const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-bool ECSqlStatementLease::WriteRowAsJson(rapidjson::StringBuffer& json) {
+ECSqlStatementLease::JsonRowResult ECSqlStatementLease::WriteRowAsJson(rapidjson::StringBuffer& json, size_t maxBytes) {
     auto stmt = GetStatement();
     if (stmt == nullptr)
-        return false;
+        return JsonRowResult::RequiresDirectRendering;
     auto& adaptor = m_entry->GetJsonAdaptor();
     auto& renderer = m_entry->GetRowRenderer();
-    rapidjson::Writer<rapidjson::StringBuffer, rapidjson::UTF8<>, rapidjson::UTF8<>, rapidjson::CrtAllocator, rapidjson::kWriteNoFlags> writer(json);
-    if (renderer.CanRender(adaptor))
-        return renderer.WriteRow(writer, *stmt, adaptor);
-
-    alignas(std::max_align_t) char rowBuffer[4096];
-    rapidjson::MemoryPoolAllocator<> rowAllocator(rowBuffer, sizeof(rowBuffer));
-    rapidjson::Document rowDoc(&rowAllocator);
-    BeJsValue rowJson(rowDoc);
-    return adaptor.RenderRowAsArray(rowJson, ECSqlStatementRow(*stmt)) == SUCCESS && rowDoc.Accept(writer);
+    BoundedECSqlJsonWriter writer(json, maxBytes);
+    bool written;
+    if (renderer.CanRender(adaptor)) {
+        written = renderer.WriteRow(writer, *stmt, adaptor);
+    } else {
+        alignas(std::max_align_t) char rowBuffer[4096];
+        rapidjson::MemoryPoolAllocator<> rowAllocator(rowBuffer, sizeof(rowBuffer));
+        rapidjson::Document rowDoc(&rowAllocator);
+        BeJsValue rowJson(rowDoc);
+        written = adaptor.RenderRowAsArray(rowJson, ECSqlStatementRow(*stmt)) == SUCCESS && rowDoc.Accept(writer);
+    }
+    if (writer.LimitExceeded())
+        return JsonRowResult::SizeLimitExceeded;
+    return written ? JsonRowResult::Success : JsonRowResult::RequiresDirectRendering;
 }
 
 //---------------------------------------------------------------------------------------

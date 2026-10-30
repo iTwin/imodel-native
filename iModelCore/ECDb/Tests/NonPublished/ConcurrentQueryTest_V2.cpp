@@ -129,6 +129,53 @@ TEST_F(ConcurrentQueryFixture, RequestDecodingPreservesTypedOptionsAndDefaults) 
     EXPECT_TRUE(rejected);
 }
 
+TEST_F(ConcurrentQueryFixture, BoundedJsonWriterPreservesValuesAndLimitsEscapedOutput) {
+    rapidjson::Document row;
+    row.Parse(R"json([null,true,false,-1,4294967295,-9223372036854775808,18446744073709551615,1.25,{"text":"quote\"\n\u0001\u00e9","array":[1,2]}])json");
+    ASSERT_FALSE(row.HasParseError());
+    rapidjson::StringBuffer expected;
+    rapidjson::Writer<rapidjson::StringBuffer> reference(expected);
+    ASSERT_TRUE(row.Accept(reference));
+    for (size_t budget : {0, 1, 16, 64, 256, 1024}) {
+        rapidjson::StringBuffer json;
+        BoundedECSqlJsonWriter writer(json, budget);
+        const bool written = row.Accept(writer);
+        EXPECT_LE(json.GetSize(), budget);
+        EXPECT_EQ(!written, writer.LimitExceeded());
+        if (written)
+            EXPECT_STREQ(expected.GetString(), json.GetString());
+        if (budget == 1024)
+            EXPECT_TRUE(written);
+    }
+
+    rapidjson::StringBuffer json;
+    json.Put('[');
+    BoundedECSqlJsonWriter writer(json, 128);
+    ASSERT_TRUE(writer.StartArray());
+    const std::string escaped(100, '\x01');
+    EXPECT_FALSE(writer.String(escaped.c_str()));
+    EXPECT_TRUE(writer.LimitExceeded());
+    EXPECT_STREQ("[[", json.GetString()); // Rejected before reserving/writing the expanded string.
+}
+
+TEST_F(ConcurrentQueryFixture, BoundedJsonWriterLimitsCumulativeOutputAndDistinguishesNonJsonValues) {
+    rapidjson::StringBuffer json;
+    BoundedECSqlJsonWriter writer(json, 128);
+    ASSERT_TRUE(writer.StartArray());
+    int rows = 0;
+    while (rows < 1000 && writer.Int(rows))
+        ++rows;
+    EXPECT_GT(rows, 0);
+    EXPECT_LT(rows, 1000);
+    EXPECT_TRUE(writer.LimitExceeded());
+    EXPECT_LE(json.GetSize(), 128);
+
+    rapidjson::StringBuffer nonJson;
+    BoundedECSqlJsonWriter nonJsonWriter(nonJson, 128);
+    EXPECT_FALSE(nonJsonWriter.Double(std::numeric_limits<double>::infinity()));
+    EXPECT_FALSE(nonJsonWriter.LimitExceeded());
+}
+
 TEST_F(ConcurrentQueryFixture, LeasedStatementsSurviveEvictionAndResetOnReturn) {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("LeasedStatementsSurviveEviction.ecdb"));
     auto config = ConcurrentQueryMgr::Config::Get();

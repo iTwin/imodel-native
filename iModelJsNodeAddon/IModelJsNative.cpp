@@ -402,6 +402,8 @@ private:
     // BE_SQLITE_ROW until the statement reports DONE or an error. Later batches return the stored status without
     // stepping again, so a finished statement is never restarted.
     DbResult m_status = BE_SQLITE_ROW;
+    static constexpr size_t BatchJsonBytes = 1024 * 1024;
+    static constexpr size_t MaxJsonBytes = 8 * BatchJsonBytes;
 
     // Bits of the rowFlags argument of prepareECSqlBatchReader.
     enum RowFlags : uint32_t {
@@ -463,8 +465,9 @@ private:
     }
 
     // Steps up to maxRows rows (one on a writable db). Returns the rows as one JSON array string, or as an array of
-    // rows created through N-API when renderAsJson is false or a row holds a value JSON cannot represent (e.g.
-    // Infinity). Returns the DbResult as a number when no row was stepped: BE_SQLITE_DONE or the failing status.
+    // rows created through N-API when renderAsJson is false or a row exceeds the serialization budget or holds a
+    // value JSON cannot represent (e.g. Infinity). Direct rendering ends the batch after that row.
+    // Returns the DbResult as a number when no row was stepped: BE_SQLITE_DONE or the failing status.
     Napi::Value NextBatch(Napi::Env env, int32_t maxRows, bool renderAsJson) {
         if (m_status != BE_SQLITE_ROW)
             return Napi::Number::New(env, (int) m_status);
@@ -473,7 +476,7 @@ private:
         if (stmt == nullptr)
             return Napi::Number::New(env, (int) BE_SQLITE_ERROR);
 
-        const int32_t batchSize = m_readAhead ? maxRows : 1;
+        const int32_t batchSize = m_readAhead && renderAsJson ? maxRows : 1;
         int32_t i = 0;
         if (renderAsJson) {
             rapidjson::StringBuffer json;
@@ -486,8 +489,8 @@ private:
                 }
                 const size_t rowStart = json.GetSize();
                 json.Put(jsonRows == 0 ? '[' : ',');
-                if (!m_lease->WriteRowAsJson(json)) {
-                    // Rare: finish this batch through N-API, starting with the row on the cursor.
+                if (m_lease->WriteRowAsJson(json, MaxJsonBytes - 1) != ECSqlStatementLease::JsonRowResult::Success) {
+                    // Keep the completed rows and render the current row without building a combined JSON string.
                     json.Pop(json.GetSize() - rowStart);
                     Napi::Array rows = Napi::Array::New(env);
                     if (jsonRows > 0) {
@@ -497,17 +500,11 @@ private:
                             rows.Set(r, parsed.Get(r));
                     }
                     AppendNapiRow(env, rows, *stmt);
-                    for (++i; i < batchSize; ++i) {
-                        rc = stmt->Step();
-                        if (rc != BE_SQLITE_ROW) {
-                            m_status = rc;
-                            break;
-                        }
-                        AppendNapiRow(env, rows, *stmt);
-                    }
                     return rows;
                 }
                 ++jsonRows;
+                if (json.GetSize() >= BatchJsonBytes)
+                    break;
             }
             if (jsonRows == 0)
                 return Napi::Number::New(env, (int) m_status);

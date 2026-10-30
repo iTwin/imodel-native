@@ -506,8 +506,10 @@ struct ECSqlStatementLease final {
         ECDB_EXPORT ECSqlRowAdaptor* ConfigureRowAdaptor(JsReadOptions const&);
         //! Returns the adaptor, or nullptr if the lease was released or invalidated.
         ECDB_EXPORT ECSqlRowAdaptor* GetRowAdaptor() const;
-        //! Appends the current row as strict JSON; on false (e.g. Infinity), discard partial output and render directly.
-        ECDB_EXPORT bool WriteRowAsJson(rapidjson::StringBuffer&);
+        enum class JsonRowResult { Success, RequiresDirectRendering, SizeLimitExceeded };
+        //! Appends strict JSON without reserving output beyond maxBytes (including existing buffer contents).
+        //! On any non-success result, discard partial output and render the current row directly.
+        ECDB_EXPORT JsonRowResult WriteRowAsJson(rapidjson::StringBuffer&, size_t maxBytes);
         ECDB_EXPORT void Release();
 };
 

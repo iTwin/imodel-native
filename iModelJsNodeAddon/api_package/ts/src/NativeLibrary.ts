@@ -996,7 +996,9 @@ export declare namespace IModelJsNative {
      * of writes made between calls.
      * Returns the rows as a JSON array string when `renderAsJson` is true (the default): null cells are `null` and blobs
      * are base64 strings. Returns an array of rows created cell by cell when `renderAsJson` is false or a row holds a
-     * value JSON cannot represent (e.g. `Infinity`): null cells are `undefined` and blobs are `Uint8Array`.
+     * value JSON cannot represent (e.g. `Infinity`), or exceeds the JSON serialization budget: directly rendered
+     * rows have `undefined` null cells and `Uint8Array` blobs. Batches can end early at a byte budget or after a
+     * directly rendered row; a short batch does not mean end of results. With `renderAsJson: false`, returns one row.
      * Returns a `DbResult` when no row was stepped: `BE_SQLITE_DONE` or the failing status. Once the statement is done
      * or has failed, every later call returns that status without stepping, so rows stepped before a failure are
      * returned first.
