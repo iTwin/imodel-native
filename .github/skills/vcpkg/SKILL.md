@@ -22,7 +22,8 @@ vcpkg (bootstrap)
               └─► vcpkg_install_pugixml
                     └─► vcpkg_install_openssl
                           └─► vcpkg_install_curl
-                                └─► vcpkg_install_crashpad
+                                └─► vcpkg_install_freetype2
+                                      └─► vcpkg_install_crashpad
 ```
 
 Each link is a separate Part with its own `vcpkg_install_<consumer>.mke` that calls
@@ -280,6 +281,13 @@ likely be draft/WIP at this stage) until **after** the PR has passed its Copilot
 remove the vendored code in a separate standalone commit within that same PR. Deleting the
 vendored source up front produces too many modified files for Copilot to review, and the review
 may not run at all.
+
+After creating the PR, add an **unresolved inline PR review comment** on a source-code line:
+"Do not merge: delete the vendor directory after this PR is otherwise ready to merge."
+Name the actual vendor directory in the comment. Keep the conversation unresolved to block an
+accidental merge; a PR-description note or a committed TODO is not a substitute. When the PR is
+otherwise ready to merge, delete the vendored source in the standalone commit described above,
+then resolve the comment only after verifying that the directory has been deleted.
 
 ---
 
