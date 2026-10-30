@@ -2168,19 +2168,30 @@ bool BentleyGeometryFlatBuffer::IsFlatBufferFormat(Byte const *buffer, size_t bu
     return nullptr != fbStart;
     }
 
+template <typename T>
+static T const* GetVerifiedRoot(Byte const* data, size_t dataSize)
+    {
+    if (nullptr == data || 0 == dataSize || dataSize >= FLATBUFFERS_MAX_BUFFER_SIZE)
+        return nullptr;
+
+    flatbuffers::Verifier verifier(data, dataSize);
+    if (!verifier.VerifyBuffer<T>())
+        return nullptr;
+
+    return flatbuffers::GetRoot<T>(data);
+    }
+
 template <typename PtrType, typename ReaderMethodType>
 PtrType BytesToXXXSafe(Byte const *buffer, size_t bufferSize, bool applyValidation, ReaderMethodType readerMethod)
     {
-    if (nullptr == buffer)
+    if (nullptr == buffer || 0 == bufferSize)
         return nullptr;
     Byte const *fbStart = GetFBStart(buffer, bufferSize);
     if (nullptr == fbStart)
         return nullptr;
-    auto fbRoot = flatbuffers::GetRoot<BGFB::VariantGeometry>(fbStart);
+    bufferSize -= s_prefixBufferSize; // we know this doesn't underflow
+    auto fbRoot = GetVerifiedRoot<BGFB::VariantGeometry>(fbStart, bufferSize);
     if (nullptr == fbRoot)
-        return nullptr;
-    auto myVerifier = flatbuffers::Verifier(fbStart, bufferSize - s_prefixBufferSize);
-    if (!fbRoot->Verify(myVerifier))
         return nullptr;
     if (fbRoot->has_geometry_type() && fbRoot->has_geometry())
         {
@@ -2241,19 +2252,17 @@ bool applyValidation,
 bvector<IGeometryPtr> *invalidGeometry
 )
     {
+    dest.clear ();
+    if (invalidGeometry)
+        invalidGeometry->clear ();
     if (buffer.size() == 0)
         return false;
     Byte* fbStart = GetFBStart(buffer);
     if (nullptr == fbStart)
         return false;
-    dest.clear ();
-    if (invalidGeometry)
-        invalidGeometry->clear ();
-    auto fbRoot = flatbuffers::GetRoot<BGFB::VariantGeometry>(fbStart);
+    size_t bufferSize = buffer.size() - s_prefixBufferSize; // we know this doesn't underflow
+    auto fbRoot = GetVerifiedRoot<BGFB::VariantGeometry>(fbStart, bufferSize);
     if (nullptr == fbRoot)
-        return false;
-    auto myVerifier = flatbuffers::Verifier(fbStart, buffer.size() - s_prefixBufferSize);
-    if (!fbRoot->Verify(myVerifier))
         return false;
     if (fbRoot->has_geometry_type() && fbRoot->has_geometry())
         {
@@ -2278,11 +2287,9 @@ bool applyValidation
     Byte const *fbStart = GetFBStart(buffer, bufferSize);
     if (nullptr == fbStart)
         return false;
-    auto fbRoot = flatbuffers::GetRoot<BGFB::VariantGeometry>(fbStart);
+    bufferSize -= s_prefixBufferSize; // we know this doesn't underflow
+    auto fbRoot = GetVerifiedRoot<BGFB::VariantGeometry>(fbStart, bufferSize);
     if (nullptr == fbRoot)
-        return false;
-    auto myVerifier = flatbuffers::Verifier(fbStart, bufferSize - s_prefixBufferSize);
-    if (!fbRoot->Verify(myVerifier))
         return false;
     if (fbRoot->has_geometry_type() && fbRoot->has_geometry())
         {
