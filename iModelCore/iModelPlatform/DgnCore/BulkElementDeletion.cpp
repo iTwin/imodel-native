@@ -792,8 +792,11 @@ bool BulkElementDeletion::FireAllCallbacks()
 
             if (isSubModelRoot)
                 {
-                model->_OnDeleteNotify();
-                model->_OnDeleted();
+                if (auto subModel = getCachedModel(DgnModelId(elementId.GetValue())); subModel.IsValid())
+                    {
+                    subModel->_OnDeleteNotify();
+                    subModel->_OnDeleted();
+                    }
                 }
             }
 
@@ -1078,12 +1081,20 @@ DbResult BulkElementDeletion::DeleteLinkTableRelationships() const
 
     if (m_subModelRootExists)
         {
+        // Deleted sub-models may be referenced by surviving ModelSelectors.
         const auto stat = m_dgndb.TryExecuteSql("DELETE FROM " BIS_TABLE(BIS_REL_ModelSelectorRefersToModels) " WHERE TargetId IN (SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " WHERE IsSubModelRoot = 1)");
         if (stat != BE_SQLITE_OK)
             {
-            LOG.errorv("BulkElementDeletion: Sub-model root deletion failed: %s", BeSQLiteLib::GetLogError(stat).c_str());
+            LOG.errorv("BulkElementDeletion: ModelSelectorRefersToModels TargetId deletion failed: %s", BeSQLiteLib::GetLogError(stat).c_str());
             return stat;
             }
+        }
+
+    // Deleted ModelSelector elements own their rows regardless of whether any sub-model is in the set.
+    if (const auto stat = m_dgndb.TryExecuteSql("DELETE FROM " BIS_TABLE(BIS_REL_ModelSelectorRefersToModels) " WHERE SourceId IN (SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) ")"); stat != BE_SQLITE_OK)
+        {
+        LOG.errorv("BulkElementDeletion: ModelSelectorRefersToModels SourceId deletion failed: %s", BeSQLiteLib::GetLogError(stat).c_str());
+        return stat;
         }
 
     return BE_SQLITE_OK;
@@ -1122,15 +1133,12 @@ BulkDeleteElementsResult BulkElementDeletion::Execute()
         };
     const Utf8String savedCacheSize   = queryPragma("cache_size", "-2000");
     const Utf8String savedSynchronous = queryPragma("synchronous", "1"); // 1 == NORMAL
-    const Utf8String savedTempStore   = queryPragma("temp_store", "0");  // 0 == DEFAULT
 
-    m_dgndb.TryExecuteSql("PRAGMA temp_store = MEMORY");
     m_dgndb.TryExecuteSql("PRAGMA synchronous = OFF");
     m_dgndb.TryExecuteSql("PRAGMA cache_size = -131072");
 
     auto cleanup = [&]() {
         m_dgndb.Elements().SetBulkOperation(false);
-        m_dgndb.TryExecuteSql(SqlPrintfString("PRAGMA temp_store = %s", savedTempStore.c_str()));
         m_dgndb.TryExecuteSql(SqlPrintfString("PRAGMA synchronous = %s", savedSynchronous.c_str()));
         m_dgndb.TryExecuteSql(SqlPrintfString("PRAGMA cache_size = %s", savedCacheSize.c_str()));
     };
@@ -1190,7 +1198,7 @@ BulkDeleteElementsResult BulkElementDeletion::Execute()
 
     // Fire the pre and post delete callbacks at once
     if (!FireAllCallbacks())
-        return failPurging(BE_SQLITE_OK);
+        return failPurging(BE_SQLITE_ERROR);
 
     // Execute the actual SQL DELETE. Any failure here is fatal for the whole operation: part of the delete set may already
     // have been removed, so the caller must abandon the enclosing txn.
