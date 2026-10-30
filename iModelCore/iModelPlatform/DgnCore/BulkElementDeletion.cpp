@@ -3,46 +3,67 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
+#include <algorithm>
+#include <unordered_set>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 #define TEMP_ELEMENT_DELETION "ElementsToDelete"
 
+//=======================================================================================
+//! ON DELETE action of a SQLite foreign key that references bis_Element.Id.
+// @bsiclass
+//=======================================================================================
+enum class FkAction
+    {
+    Cascade,  //!< ON DELETE CASCADE: the referencing row is deleted along with the element.
+    SetNull,  //!< ON DELETE SET NULL: the referencing column is nulled.
+    Blocking, //!< ON DELETE NO ACTION / RESTRICT / SET DEFAULT: a surviving referencing row must block the delete.
+    };
+
+//=======================================================================================
+//! A SQLite foreign key that references bis_Element.Id.
+// @bsiclass
+//=======================================================================================
+struct FkConstraint
+    {
+    Utf8String m_tableName;        // referencing table
+    Utf8String m_fromColumn;       // referencing column
+    Utf8String m_elementIdColumn;  // column of the referencing table that identifies the element ("Id" for bis_Element, "ElementId" for joined-table-per-class tables); empty if the table is not an element table
+    };
+
+using FkConstraintMap = std::map<FkAction, std::vector<FkConstraint>>;
+
+//=======================================================================================
+//! Restores ChangeTracker mode.
+// @bsiclass
+//=======================================================================================
+struct ScopedTxnMode
+    {
+    TxnManagerR m_txns;
+    ChangeTracker::Mode m_saved;
+    ScopedTxnMode(TxnManagerR txns, ChangeTracker::Mode mode) : m_txns(txns), m_saved(txns.GetMode()) { m_txns.SetMode(mode); }
+    ~ScopedTxnMode() { m_txns.SetMode(m_saved); }
+    };
+
 class BulkElementDeletion
     {
-    using FkAction = DgnElements::FkOnDeleteAction;
-    using FkConstraint = DgnElements::ElementFkConstraint;
-
     DgnDbR m_dgndb;
-    DgnElements::ElementFkConstraintMap const& m_fkConstraints;
-    DgnElementIdSet m_originalElementIds;
+    FkConstraintMap m_fkConstraints;
+    DgnElementIdSet const& m_originalElementIds;
     std::vector<BulkDeleteFailure> m_failures;
-    std::unordered_map<uint64_t, size_t> m_failureIndex; // elementId -> index into m_failures
+    std::unordered_set<uint64_t> m_failureIds; // elements already present in m_failures
 
+    // Records a blocking element once. An element referenced through several FKs (or both referenced and in use as a
+    // definition) keeps the first reason found; FK checks run before the definition-usage check.
     void AddFailure(DgnElementId id, BulkDeleteFailureReason reason, Utf8String detail = "")
         {
-        const auto [it, inserted] = m_failureIndex.try_emplace(id.GetValue(), m_failures.size());
-        if (inserted)
-            {
+        if (m_failureIds.insert(id.GetValue()).second)
             m_failures.push_back({ id, reason, std::move(detail) });
-            return;
-            }
-
-        auto& existing = m_failures[it->second];
-        if (static_cast<int>(reason) < static_cast<int>(existing.reason))
-            {
-            existing.reason = reason;
-            existing.detail = std::move(detail);
-            }
         }
 
     bool m_geometricElementsExist = false;
     bool m_subModelRootExists = false;
-    bool m_prunedInRound = false;
-
-    BulkDeleteMode m_mode = BulkDeleteMode::RemoveFKViolators;
-
-    bool IsFailFastModeEnabled() const { return m_mode == BulkDeleteMode::FailFast; }
 
     static bool IsStructurallyHandled(FkConstraint const& fk)
         {
@@ -57,13 +78,24 @@ class BulkElementDeletion
         return it == m_fkConstraints.end() ? s_empty : it->second;
         }
 
+    // Invoke fn(fk) for every FK whose ON DELETE action blocks deletion, skipping the structurally handled ones.
+    template <typename Fn> void ForEachBlockingFk(Fn&& fn) const
+        {
+        for (const auto& fk : GetFks(FkAction::Blocking))
+            if (!IsStructurallyHandled(fk))
+                fn(fk);
+        }
+
+    BeSQLite::DbResult LoadFkConstraints();
+
     // Create temporary tables for bulk deletion
     BeSQLite::DbResult CreateTempTables() const;
     BeSQLite::DbResult ExpandElementIdList();
 
+    BeSQLite::DbResult FindProtectedElements();
+    BeSQLite::DbResult FindReadOnlyDomainElements();
     BeSQLite::DbResult FindConstraintViolators();
     BeSQLite::DbResult FindInUseDefinitionElements();
-    BeSQLite::DbResult PruneViolators();
     void CollectFkViolations();
 
     bool FireAllCallbacks();
@@ -71,14 +103,73 @@ class BulkElementDeletion
     BeSQLite::DbResult ExecuteDeletion();
 
 public:
-    BulkElementDeletion(DgnDbR dgndb, DgnElements::ElementFkConstraintMap const& fkConstraints, const DgnElementIdSet& originalElementIds, BulkDeleteMode mode) 
-        :   m_dgndb(dgndb), 
-            m_fkConstraints(fkConstraints),
-            m_originalElementIds(originalElementIds), 
-            m_mode(mode) {}
+    BulkElementDeletion(DgnDbR dgndb, const DgnElementIdSet& originalElementIds)
+        :   m_dgndb(dgndb),
+            m_originalElementIds(originalElementIds) {}
 
     BulkDeleteElementsResult Execute();
     };
+
+/*---------------------------------------------------------------------------------**//**
+* Reads every SQLite FK that targets bis_Element.Id.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult BulkElementDeletion::LoadFkConstraints()
+    {
+    static const auto toAction = [](Utf8CP sql) -> FkAction
+        {
+        Utf8String s(sql);
+        if (s.EqualsIAscii("CASCADE"))
+            return FkAction::Cascade;
+        if (s.EqualsIAscii("SET NULL"))
+            return FkAction::SetNull;
+        return FkAction::Blocking; // NO ACTION, RESTRICT, SET DEFAULT
+        };
+
+    Statement stmt;
+    const auto rc = stmt.Prepare(m_dgndb,
+        "SELECT m.name, f.\"from\", f.on_delete, "
+            "CASE WHEN m.name = '" BIS_TABLE(BIS_CLASS_Element) "' THEN 'Id' "
+                 "WHEN EXISTS (SELECT 1 FROM pragma_table_info(m.name) c WHERE c.name = 'ElementId' AND c.pk = 1) THEN 'ElementId' "
+                 "ELSE NULL END "
+        "FROM main.sqlite_master m, pragma_foreign_key_list(m.name) f "
+        "WHERE m.type = 'table' AND f.\"table\" = '" BIS_TABLE(BIS_CLASS_Element) "' COLLATE NOCASE "
+        "ORDER BY m.name, f.\"from\"");
+    if (BE_SQLITE_OK != rc)
+        {
+        LOG.errorv("BulkElementDeletion: failed to prepare FK query: %s", BeSQLiteLib::GetLogError(rc).c_str());
+        return rc;
+        }
+
+    FkConstraintMap constraints;
+    DbResult stepRc;
+    while (BE_SQLITE_ROW == (stepRc = stmt.Step()))
+        {
+        FkConstraint fk;
+        fk.m_tableName  = stmt.GetValueText(0);
+        fk.m_fromColumn = stmt.GetValueText(1);
+        if (!stmt.IsColumnNull(3))
+            fk.m_elementIdColumn = stmt.GetValueText(3);
+
+        constraints[toAction(stmt.GetValueText(2))].push_back(std::move(fk));
+        }
+
+    if (BE_SQLITE_DONE != stepRc)
+        {
+        LOG.errorv("BulkElementDeletion: failed to read FK constraints: %s", BeSQLiteLib::GetLogError(stepRc).c_str());
+        return stepRc;
+        }
+
+    // An empty result means the FK query itself is broken since we are looking at bis_Element.
+    if (constraints.empty())
+        {
+        LOG.error("BulkElementDeletion: no foreign keys referencing bis_Element were found; refusing to delete");
+        return BE_SQLITE_ERROR;
+        }
+
+    m_fkConstraints = std::move(constraints);
+    return BE_SQLITE_OK;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -89,18 +180,8 @@ DbResult BulkElementDeletion::CreateTempTables() const
         // Create the temp table if needed; subsequent calls reuse it after clearing stale entries.
         "CREATE TABLE IF NOT EXISTS " TEMP_TABLE(TEMP_ELEMENT_DELETION) " ("
             "ElementId              INTEGER PRIMARY KEY, "
-            "LogicalParentId        INTEGER, "
             "IsSubModelRoot         INTEGER NOT NULL DEFAULT 0, "
-            "Depth                  INTEGER NOT NULL DEFAULT 0, "
-            "IsViolator             INTEGER NOT NULL DEFAULT 0, "
-            "BlockedById            INTEGER, "
             "ECClassId              INTEGER)",
-
-        // Set up indexes for faster lookups
-        "CREATE INDEX IF NOT EXISTS idx_etd_logicalParent ON " TEMP_ELEMENT_DELETION " (LogicalParentId)",
-        
-        // Partial index to accelerate IsViolator=1 scans (PruneViolators, deleteAllViolators).
-        "CREATE INDEX IF NOT EXISTS idx_etd_violator ON " TEMP_ELEMENT_DELETION " (IsViolator) WHERE IsViolator = 1",
 
         // Partial index to accelerate IsSubModelRoot=1 scans (DeleteLinkTableRelationships, ExecuteDeletion).
         "CREATE INDEX IF NOT EXISTS idx_etd_submodelroot ON " TEMP_ELEMENT_DELETION " (IsSubModelRoot) WHERE IsSubModelRoot = 1",
@@ -125,40 +206,27 @@ DbResult BulkElementDeletion::CreateTempTables() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult BulkElementDeletion::ExpandElementIdList()
     {
+    // Closure of the requested ids over the two structural relationships: children (bis_Element.ParentId) and the contents of 
+    // sub-models whose modeled element is in the set.
     constexpr auto expandSql = 
-    "WITH RECURSIVE fullSet(id, logicalParentId, isSubModelRoot, depth, classId) AS ("
-        "SELECT e.Id, "
-            "e.ParentId, "
-            "CASE WHEN m.Id IS NOT NULL THEN 1 ELSE 0 END, "
-            "0, "
-            "e.ECClassId "
+    "WITH RECURSIVE fullSet(id, classId) AS ("
+        "SELECT e.Id, e.ECClassId "
         "FROM bis_Element e "
-        "LEFT JOIN bis_Model m ON m.ModeledElementId = e.Id "
         "WHERE InVirtualSet(?, e.Id) "
         "UNION "
-        "SELECT e.Id,"
-            "e.ParentId, "
-            "CASE WHEN m.Id IS NOT NULL THEN 1 ELSE 0 END, "
-            "f.depth + 1, "
-            "e.ECClassId "
+        // Children of elements in the set.
+        "SELECT e.Id, e.ECClassId "
         "FROM bis_Element e "
         "INNER JOIN fullSet f ON e.ParentId = f.id "
-        "LEFT JOIN bis_Model m ON m.ModeledElementId = e.Id "
         "UNION "
-        // Elements contained in a sub-model whose root is being deleted.
-        // Their logical parent is the modeled-element (sub-model root), not their SQLite ParentId.
-        "SELECT e.Id,"
-            "sm.ModeledElementId, "
-            "CASE WHEN m.Id IS NOT NULL THEN 1 ELSE 0 END, "
-            "f.depth + 1, "
-            "e.ECClassId "
+        // Elements contained in a sub-model whose root is in the set.
+        "SELECT e.Id, e.ECClassId "
         "FROM bis_Element e "
-        "INNER JOIN bis_Model sm ON sm.Id = e.ModelId "
-        "INNER JOIN fullSet f ON sm.ModeledElementId = f.id "
-        "LEFT JOIN bis_Model m ON m.ModeledElementId = e.Id "
+        "INNER JOIN bis_Model cm ON cm.Id = e.ModelId "
+        "INNER JOIN fullSet f ON cm.ModeledElementId = f.id "
     ") "
-    "INSERT OR IGNORE INTO " TEMP_TABLE(TEMP_ELEMENT_DELETION) " (ElementId, LogicalParentId, IsSubModelRoot, Depth, ECClassId) "
-    "SELECT id, logicalParentId, isSubModelRoot, depth, classId "
+    "INSERT OR IGNORE INTO " TEMP_TABLE(TEMP_ELEMENT_DELETION) " (ElementId, ECClassId) "
+    "SELECT id, classId "
     "FROM fullSet";
 
     const auto expandStmt = m_dgndb.GetCachedStatement(expandSql);
@@ -174,6 +242,16 @@ DbResult BulkElementDeletion::ExpandElementIdList()
         return stat;
         }
 
+    // Flag sub-model roots in the expanded set
+    if (const auto stat = m_dgndb.TryExecuteSql(
+            "UPDATE " TEMP_TABLE(TEMP_ELEMENT_DELETION) " SET IsSubModelRoot = 1 "
+            "WHERE ElementId IN (SELECT ModeledElementId FROM " BIS_TABLE(BIS_CLASS_Model) " NOT INDEXED)"); stat != BE_SQLITE_OK)
+        {
+        LOG.errorv("BulkElementDeletion: Failed to flag sub-model roots: %s", BeSQLiteLib::GetLogError(stat).c_str());
+        return stat;
+        }
+    m_subModelRootExists = m_dgndb.GetModifiedRowCount() > 0;
+
     // Check if any geometric elements are in the delete set to conditionally optimize the spatial index cleanup.
     const auto geomCheckStmt = m_dgndb.GetCachedStatement(
         "SELECT 1 FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " t "
@@ -182,11 +260,32 @@ DbResult BulkElementDeletion::ExpandElementIdList()
     if (geomCheckStmt.IsValid() && geomCheckStmt->Step() == BE_SQLITE_ROW)
         m_geometricElementsExist = true;
 
-    // Check if any sub-model roots are in the delete set; ExecuteDeletion/DeleteLinkTableRelationships need bis_Model cleanup in that case.
-    const auto subModelCheckStmt = m_dgndb.GetCachedStatement(
-        "SELECT 1 FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " WHERE IsSubModelRoot = 1 LIMIT 1");
-    if (subModelCheckStmt.IsValid() && subModelCheckStmt->Step() == BE_SQLITE_ROW)
-        m_subModelRootExists = true;
+    return BE_SQLITE_OK;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* The handful of elements every iModel must keep. Bulk deletion does not so the check is made here on the expanded set.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult BulkElementDeletion::FindProtectedElements()
+    {
+    auto stmt = m_dgndb.GetCachedStatement("SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " WHERE ElementId IN (?, ?, ?)");
+    if (stmt.IsNull())
+        {
+        LOG.error("BulkElementDeletion: Failed to prepare protected element check");
+        return BE_SQLITE_ERROR;
+        }
+
+    stmt->BindId(1, DgnElements::GetRootSubjectId());
+    stmt->BindId(2, m_dgndb.Elements().GetDictionaryPartitionId());
+    stmt->BindId(3, m_dgndb.Elements().GetRealityDataSourcesPartitionId());
+
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        const auto id = stmt->GetValueId<DgnElementId>(0);
+        AddFailure(id, BulkDeleteFailureReason::ProtectedElement);
+        LOG.errorv("BulkElementDeletion: protected element %s is in the delete set", id.ToHexStr().c_str());
+        }
 
     return BE_SQLITE_OK;
     }
@@ -194,56 +293,59 @@ DbResult BulkElementDeletion::ExpandElementIdList()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult BulkElementDeletion::PruneViolators()
+DbResult BulkElementDeletion::FindReadOnlyDomainElements()
     {
-    // Requested ids being pruned that are not themselves direct violators (BlockedById == ElementId) were taken down by a
-    // relative; report them with the id of the direct violator so the caller can pair them with its ReferencedByForeignKey /
-    // DefinitionInUse entry. Error path only.
-    auto collectStmt = m_dgndb.GetCachedStatement(
-        "SELECT ElementId, BlockedById FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " "
-        "WHERE IsViolator = 1 AND BlockedById IS NOT ElementId AND InVirtualSet(?, ElementId)");
-    if (collectStmt.IsNull())
+    const auto& domains = m_dgndb.Domains().GetDomains();
+    if (std::none_of(domains.begin(), domains.end(), [](DgnDomainCP d) { return d->IsReadonly(); }))
+        return BE_SQLITE_OK;
+
+    auto classStmt = m_dgndb.GetCachedStatement("SELECT DISTINCT ECClassId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION));
+    if (classStmt.IsNull())
         {
-        LOG.error("BulkElementDeletion: Failed to collect constraint violators");
+        LOG.error("BulkElementDeletion: Failed to prepare read-only domain check");
         return BE_SQLITE_ERROR;
         }
-    collectStmt->BindVirtualSet(1, m_originalElementIds);
-    while (BE_SQLITE_ROW == collectStmt->Step())
-        AddFailure(collectStmt->GetValueId<DgnElementId>(0), BulkDeleteFailureReason::BlockedByRelative, collectStmt->GetValueId<DgnElementId>(1).ToHexStr());
 
-    if (IsFailFastModeEnabled())
+    std::vector<std::pair<DgnClassId, Utf8String>> readOnlyClasses;
+    while (BE_SQLITE_ROW == classStmt->Step())
         {
-        if (const auto stat = m_dgndb.TryExecuteSql("UPDATE " TEMP_TABLE(TEMP_ELEMENT_DELETION) " SET IsViolator = 2 WHERE IsViolator = 1"); stat != BE_SQLITE_OK)
-            {
-            LOG.errorv("BulkElementDeletion: Failed to stamp reported violators: %s", BeSQLiteLib::GetLogError(stat).c_str());
-            return stat;
-            }
+        const auto classId = classStmt->GetValueId<DgnClassId>(0);
+        const auto handler = dgn_ElementHandler::Element::FindHandler(m_dgndb, classId);
+        if (nullptr != handler && handler->GetDomain().IsReadonly())
+            readOnlyClasses.emplace_back(classId, handler->GetDomain().GetDomainName());
+        }
+
+    if (readOnlyClasses.empty())
         return BE_SQLITE_OK;
-        }
 
-    constexpr auto deleteAllViolators = "DELETE FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " WHERE IsViolator = 1";
-    if (const auto stat = m_dgndb.TryExecuteSql(deleteAllViolators); stat != BE_SQLITE_OK)
+    auto elemStmt = m_dgndb.GetCachedStatement("SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " WHERE ECClassId = ?");
+    if (elemStmt.IsNull())
         {
-        LOG.errorv("BulkElementDeletion: Failed to delete all constraint violators: %s", BeSQLiteLib::GetLogError(stat).c_str());
-        return stat;
+        LOG.error("BulkElementDeletion: Failed to prepare read-only domain element query");
+        return BE_SQLITE_ERROR;
         }
 
-    if (m_dgndb.GetModifiedRowCount() > 0)
-        m_prunedInRound = true;
+    for (const auto& [classId, domainName] : readOnlyClasses)
+        {
+        elemStmt->Reset();
+        elemStmt->ClearBindings();
+        elemStmt->BindId(1, classId);
+        while (BE_SQLITE_ROW == elemStmt->Step())
+            AddFailure(elemStmt->GetValueId<DgnElementId>(0), BulkDeleteFailureReason::ReadOnlyDomain, domainName);
+        }
 
+    LOG.errorv("BulkElementDeletion: %zu ECClass(es) in the delete set belong to a read-only domain", readOnlyClasses.size());
     return BE_SQLITE_OK;
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Error path only: for every blocking FK, record each delete-set element that a surviving row still points at.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BulkElementDeletion::CollectFkViolations()
     {
-    for (const auto& fk : GetFks(FkAction::NoAction))
+    ForEachBlockingFk([&](FkConstraint const& fk)
         {
-        if (IsStructurallyHandled(fk))
-            continue;
-
         const Utf8String sql = fk.m_elementIdColumn.empty()
             ? SqlPrintfString("SELECT DISTINCT t.ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " t JOIN [%s] r ON r.[%s] = t.ElementId",
                                 fk.m_tableName.c_str(), fk.m_fromColumn.c_str()).GetUtf8CP()
@@ -253,12 +355,12 @@ void BulkElementDeletion::CollectFkViolations()
 
         auto stmt = m_dgndb.GetCachedStatement(sql.c_str());
         if (stmt.IsNull())
-            continue;
+            return;
 
         const Utf8String tableAndColumn = fk.m_tableName + "." + fk.m_fromColumn;
         while (BE_SQLITE_ROW == stmt->Step())
             AddFailure(stmt->GetValueId<DgnElementId>(0), BulkDeleteFailureReason::ReferencedByForeignKey, tableAndColumn);
-        }
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -266,97 +368,66 @@ void BulkElementDeletion::CollectFkViolations()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult BulkElementDeletion::FindConstraintViolators()
     {
-    // A delete-set element `t` is a direct violator if some row `r` of the referencing table points at it and `r` is not itself being deleted.
+    // A delete-set element is a direct violator if some row `r` of a referencing table points at it and `r` is not itself being deleted.
     // "r is being deleted" can only be established when the referencing row *is* an element (m_elementIdColumn set).
-    Utf8String predicates;
-    for (const auto& fk : GetFks(FkAction::NoAction))
+    constexpr int kSmallTableRows = 1000;
+    std::map<Utf8String, int> rowsByTable; // bounded row count per referencing table (several FKs may share a table)
+
+    auto boundedRowCount = [&](Utf8StringCR tableName) -> int
         {
-        if (IsStructurallyHandled(fk))
-            continue;
+        if (const auto it = rowsByTable.find(tableName); it != rowsByTable.end())
+            return it->second;
 
-        if (!predicates.empty())
-            predicates.append(" OR ");
+        int rows = kSmallTableRows + 1; // fail safe: treat as large
+        auto stmt = m_dgndb.GetCachedStatement(SqlPrintfString("SELECT COUNT(*) FROM (SELECT 1 FROM [%s] LIMIT %d)", tableName.c_str(), kSmallTableRows + 1));
+        if (stmt.IsValid() && BE_SQLITE_ROW == stmt->Step())
+            rows = stmt->GetValueInt(0);
 
-        if (fk.m_elementIdColumn.empty())
-            predicates.append(SqlPrintfString(
-                "EXISTS (SELECT 1 FROM [%s] r WHERE r.[%s] = t.ElementId)",
-                fk.m_tableName.c_str(), fk.m_fromColumn.c_str()));
-        else
-            predicates.append(SqlPrintfString(
-                "EXISTS (SELECT 1 FROM [%s] r "
-                        "LEFT JOIN " TEMP_TABLE(TEMP_ELEMENT_DELETION) " td ON td.ElementId = r.[%s] "
-                        "WHERE r.[%s] = t.ElementId AND td.ElementId IS NULL)",
-                fk.m_tableName.c_str(), fk.m_elementIdColumn.c_str(), fk.m_fromColumn.c_str()));
-        }
+        rowsByTable[tableName] = rows;
+        return rows;
+        };
 
-    if (predicates.empty())
-        return BE_SQLITE_OK; // no NO ACTION FKs to bis_Element at all
-
-    const Utf8String guardSql = "SELECT 1 FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " t WHERE " + predicates + " LIMIT 1";
-    auto guardStmt = m_dgndb.GetCachedStatement(guardSql.c_str());
-    if (guardStmt.IsNull())
+    bool violatorsExist = false;
+    DbResult stat = BE_SQLITE_OK;
+    ForEachBlockingFk([&](FkConstraint const& fk)
         {
-        LOG.error("BulkElementDeletion: Constraint violator guard check failed");
-        return BE_SQLITE_ERROR;
-        }
+        if (violatorsExist || stat != BE_SQLITE_OK)
+            return;
 
-    if (const auto stat = guardStmt->Step(); BE_SQLITE_ROW != stat)
+        const int rows = boundedRowCount(fk.m_tableName);
+        if (rows == 0)
+            return;
+
+        Utf8CP indexHint = rows <= kSmallTableRows ? " NOT INDEXED" : "";
+        const Utf8String sql = fk.m_elementIdColumn.empty()
+            ? SqlPrintfString("SELECT 1 FROM [%s] r%s WHERE r.[%s] IN (SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) ") LIMIT 1",
+                                fk.m_tableName.c_str(), indexHint, fk.m_fromColumn.c_str()).GetUtf8CP()
+            : SqlPrintfString("SELECT 1 FROM [%s] r%s WHERE r.[%s] IN (SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) ") "
+                                "AND r.[%s] NOT IN (SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) ") LIMIT 1",
+                                fk.m_tableName.c_str(), indexHint, fk.m_fromColumn.c_str(), fk.m_elementIdColumn.c_str()).GetUtf8CP();
+
+        auto stmt = m_dgndb.GetCachedStatement(sql.c_str());
+        if (stmt.IsNull())
+            {
+            LOG.errorv("BulkElementDeletion: Constraint violator guard check could not be prepared for %s.%s", fk.m_tableName.c_str(), fk.m_fromColumn.c_str());
+            stat = BE_SQLITE_ERROR;
+            return;
+            }
+
+        if (BE_SQLITE_ROW == stmt->Step())
+            violatorsExist = true;
+        });
+
+    if (stat != BE_SQLITE_OK)
+        return stat;
+
+    if (!violatorsExist)
         return BE_SQLITE_OK;
 
-    // Violators exist, so we are on the error path.
+    // Violators exist, so we are on the error path: gather the full report for the caller.
     CollectFkViolations();
-
-    if (IsFailFastModeEnabled())
-        LOG.errorv("BulkElementDeletion: %zu element(s) in the delete set are still referenced via foreign keys from elements outside the set", m_failures.size());
-
-    const Utf8String findViolators =
-        "WITH "
-        // directViolators: elements in the delete set that are directly referenced by a surviving row via a NO ACTION
-        "directViolators AS ("
-            "SELECT DISTINCT t.ElementId "
-            "FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " t "
-            "WHERE " + predicates +
-        "), "
-        // ancestors: walk UP the LogicalParentId chain for each direct violator, collecting all ancestor rows still in the delete set.
-        // The walk terminates when LogicalParentId is NULL or points outside the delete set. violatorId is carried along for diagnostics.
-        "ancestors(id, logicalParentId, violatorId) AS ("
-            "SELECT t.ElementId, t.LogicalParentId, t.ElementId "
-            "FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " t "
-            "WHERE t.ElementId IN (SELECT ElementId FROM directViolators) "
-            "UNION ALL "
-            "SELECT t.ElementId, t.LogicalParentId, a.violatorId "
-            "FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " t "
-            "INNER JOIN ancestors a ON t.ElementId = a.logicalParentId"
-        "), "
-        // subtreeRoots: the topmost element from the ancestor walk - i.e. the element whose logical parent is either NULL or is outside the delete set.
-        // This is the root of the subtree that must be fully pruned. If several violators share a root, any one of them is a valid explanation.
-        "subtreeRoots AS ("
-            "SELECT a.id, MIN(a.violatorId) AS violatorId FROM ancestors a "
-            "LEFT JOIN " TEMP_TABLE(TEMP_ELEMENT_DELETION) " p ON p.ElementId = a.logicalParentId "
-            "WHERE a.logicalParentId IS NULL OR p.ElementId IS NULL "
-            "GROUP BY a.id"
-        "), "
-        // subtree: walk DOWN from each subtree root, collecting the root and all of its logical descendants that are in the delete set.
-        "subtree(id, violatorId) AS ("
-            "SELECT id, violatorId FROM subtreeRoots "
-            "UNION ALL "
-            "SELECT t.ElementId, s.violatorId "
-            "FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " t "
-            "INNER JOIN subtree s ON t.LogicalParentId = s.id"
-        ") "
-        // Mark the entire subtree as violators so PruneViolators() can remove them in one pass. Direct violators keep BlockedById == ElementId.
-        "UPDATE " TEMP_TABLE(TEMP_ELEMENT_DELETION) " SET IsViolator = 1, "
-            "BlockedById = CASE WHEN ElementId IN (SELECT ElementId FROM directViolators) THEN ElementId ELSE s.violatorId END "
-        "FROM (SELECT id, MIN(violatorId) AS violatorId FROM subtree GROUP BY id) s "
-        "WHERE " TEMP_TABLE(TEMP_ELEMENT_DELETION) ".ElementId = s.id";
-
-    if (const auto stat = m_dgndb.TryExecuteSql(findViolators.c_str()); stat != BE_SQLITE_OK)
-        {
-        LOG.errorv("BulkElementDeletion: Failed to find constraint violators: %s", BeSQLiteLib::GetLogError(stat).c_str());
-        return stat;
-        }
-
-    return PruneViolators();
+    LOG.errorv("BulkElementDeletion: %zu element(s) in the delete set are still referenced via foreign keys from elements outside the set", m_failures.size());
+    return BE_SQLITE_OK;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -392,17 +463,21 @@ DbResult BulkElementDeletion::FindInUseDefinitionElements()
     if (definitionIds.empty())
         return BE_SQLITE_OK;
 
-    // Exclude intra-set usages from the usage check: elements referencing
-    // each other inside the delete set are fine since all will be deleted.
-    auto excludeIds = std::make_shared<BeSQLite::IdSet<BeInt64Id>>();
-    auto allIdsStmt = m_dgndb.GetCachedStatement("SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION));
+    // Exclude intra-set usages from the usage check: elements referencing each other inside the delete set are fine since all
+    // will be deleted. The exclusion set has to be the *whole* expanded set (not just the definitions): a category used only by
+    // elements that are themselves being deleted must not block the operation.
+    auto allIdsStmt = m_dgndb.GetCachedStatement("SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " ORDER BY ElementId");
     if (!allIdsStmt.IsValid())
         {
         LOG.error("BulkElementDeletion: Failed to query delete set for definition usage check");
         return BE_SQLITE_ERROR;
         }
+
+    BeIdSet allIds;
     while (BE_SQLITE_ROW == allIdsStmt->Step())
-        excludeIds->insert(allIdsStmt->GetValueId<BeInt64Id>(0));
+        allIds.insert(allIds.end(), allIdsStmt->GetValueId<BeInt64Id>(0));
+
+    auto excludeIds = std::make_shared<BeSQLite::IdSet<BeInt64Id>>(std::move(allIds));
 
     auto usageInfo = DefinitionElementUsageInfo::Create(m_dgndb, definitionIds, excludeIds);
     if (!usageInfo.IsValid())
@@ -421,42 +496,8 @@ DbResult BulkElementDeletion::FindInUseDefinitionElements()
     for (const auto& id : inUse)
         AddFailure(id, BulkDeleteFailureReason::DefinitionInUse);
 
-    if (IsFailFastModeEnabled())
-        LOG.errorv("BulkElementDeletion: %zu DefinitionElement(s) in the delete set are still in use by elements outside the set", inUse.size());
-
-    constexpr auto findDependents = 
-        "WITH RECURSIVE ancestry(id, logicalParentId, violatorId) AS ("
-            // Seed: every in-use definition element that is in the delete set.
-            "SELECT ElementId, LogicalParentId, ElementId "
-            "FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " "
-            "WHERE InVirtualSet(?, ElementId) "
-
-            "UNION ALL "
-
-            // Recurse upward: the logical parent of the current element (if still in the
-            // delete set), so we reach the topmost ancestor that owns the in-use definition.
-            "SELECT t.ElementId, t.LogicalParentId, a.violatorId "
-            "FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " t "
-            "INNER JOIN ancestry a ON t.ElementId = a.logicalParentId"
-        ") "
-        "UPDATE " TEMP_TABLE(TEMP_ELEMENT_DELETION) " SET IsViolator = 1, BlockedById = s.violatorId "
-        "FROM (SELECT id, MIN(violatorId) AS violatorId FROM ancestry GROUP BY id) s "
-        "WHERE " TEMP_TABLE(TEMP_ELEMENT_DELETION) ".ElementId = s.id AND " TEMP_TABLE(TEMP_ELEMENT_DELETION) ".IsViolator = 0";
-
-    const auto findDependentsStmt = m_dgndb.GetCachedStatement(findDependents);
-    if (!findDependentsStmt.IsValid())
-        {
-        LOG.error("BulkElementDeletion: Failed to query for dependent elements");
-        return BE_SQLITE_ERROR;
-        }
-    findDependentsStmt->BindVirtualSet(1, inUse);
-    if (const auto stat = findDependentsStmt->Step(); stat != BE_SQLITE_DONE)
-        {
-        LOG.errorv("BulkElementDeletion: Failed to prune in-use definition elements: %s", BeSQLiteLib::GetLogError(stat).c_str());
-        return stat;
-        }
-
-    return PruneViolators();
+    LOG.errorv("BulkElementDeletion: %zu DefinitionElement(s) in the delete set are still in use by elements outside the set", inUse.size());
+    return BE_SQLITE_OK;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -481,31 +522,45 @@ bool BulkElementDeletion::FireAllCallbacks()
             }
         }
 
+    // A JS array that outlives the per-row HandleScope. Created lazily on first Push so empty batches cost nothing.
+    struct JsArrayRef
+        {
+        Napi::Reference<Napi::Array> ref;
+        uint32_t count = 0;
+
+        bool IsEmpty() const { return ref.IsEmpty(); }
+        Napi::Array Value() const { return ref.Value(); }
+        void Push(Napi::Env env, Napi::Value value)
+            {
+            if (ref.IsEmpty())
+                ref = Napi::Reference<Napi::Array>::New(Napi::Array::New(env), 1);
+            ref.Value().Set(count++, value);
+            }
+        };
+
     struct NapiElementDeletionBatch
         {
-        Napi::Object jsClass;
-        Napi::Array  arr;
-        uint32_t     count = 0;
+        Napi::ObjectReference jsClass;
+        JsArrayRef            arr;
         };
     struct NapiModelDeletionBatch
         {
-        Napi::Object jsClass;
-        Napi::Array  deletedModelIdsArr;
-        uint32_t     deletedModelCount = 0;
-        std::unordered_map<uint64_t, std::pair<Napi::Array, uint32_t>> elementsByModel; // modelId → (elementIds[], count)
+        Napi::ObjectReference jsClass;
+        JsArrayRef            deletedModelIds;
+        std::unordered_map<uint64_t, JsArrayRef> elementsByModel; // modelId -> elementIds[]
         };
 
     // Resolve a numeric ECClassId to the corresponding JS class object.
-    auto resolveJsClass = [&](DgnClassId classId) -> Napi::Object
+    auto resolveJsClass = [&](DgnClassId classId) -> Napi::ObjectReference
         {
         auto ecClass = m_dgndb.Schemas().GetClass(classId);
         if (!ecClass)
-            return Napi::Object();
+            return Napi::ObjectReference();
         auto cv = getJsClassFn.Call(jsDgnDb, {m_dgndb.ToJsString(ecClass->GetFullName())});
-        return cv.IsObject() ? cv.As<Napi::Object>() : Napi::Object();
+        return cv.IsObject() ? Napi::Persistent(cv.As<Napi::Object>()) : Napi::ObjectReference();
         };
 
-    // Per-element metadata is joined in here (read-only, after pruning) rather than written into the temp table up front.
+    // Per-element metadata is joined in here (read-only, after validation) rather than written into the temp table up front.
     // ParentId / ParentClassId are reported only when the parent is NOT itself in the delete set (tp.ElementId IS NULL).
     const auto stmt = m_dgndb.GetCachedStatement(
         "SELECT t.ElementId, t.ECClassId, e.ModelId, "
@@ -514,11 +569,10 @@ bool BulkElementDeletion::FireAllCallbacks()
             "t.IsSubModelRoot, e.FederationGuid, subm.ECClassId, cm.ECClassId "
         "FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " t "
         "JOIN " BIS_TABLE(BIS_CLASS_Element) " e ON e.Id = t.ElementId "
-        "JOIN " BIS_TABLE(BIS_CLASS_Model) " cm ON cm.Id = e.ModelId "
+        "LEFT JOIN " BIS_TABLE(BIS_CLASS_Model) " cm ON cm.Id = e.ModelId "
         "LEFT JOIN " BIS_TABLE(BIS_CLASS_Model) " subm ON subm.ModeledElementId = e.Id "
         "LEFT JOIN " BIS_TABLE(BIS_CLASS_Element) " pe ON pe.Id = e.ParentId "
-        "LEFT JOIN " TEMP_TABLE(TEMP_ELEMENT_DELETION) " tp ON tp.ElementId = e.ParentId "
-        "ORDER BY t.ElementId");
+        "LEFT JOIN " TEMP_TABLE(TEMP_ELEMENT_DELETION) " tp ON tp.ElementId = e.ParentId");
     if (!stmt.IsValid())
         {
         LOG.error("BulkElementDeletion: Failed to prepare FireAllCallbacks statement");
@@ -564,40 +618,37 @@ bool BulkElementDeletion::FireAllCallbacks()
 
         if (jsAvailable)
             {
+            Napi::HandleScope rowScope(env);
+
+            const Utf8String elementIdHex = elementId.ToHexStr();
+            const Napi::String jsElementId = Napi::String::New(env, elementIdHex); // reused by every batch below
+
             auto& elemBatch = batchByClass[classId];
             if (elemBatch.jsClass.IsEmpty())
-                {
                 elemBatch.jsClass = resolveJsClass(classId);
-                if (!elemBatch.jsClass.IsEmpty())
-                    elemBatch.arr = Napi::Array::New(env);
-                }
             if (!elemBatch.jsClass.IsEmpty())
                 {
                 BeJsNapiObject arg(env);
-                arg["id"]    = elementId.ToHexStr();
+                static_cast<Napi::Object>(arg).Set("id", jsElementId);
                 arg["model"] = modelId.ToHexStr();
                 if (federationGuid.IsValid())
                     arg["federationGuid"] = federationGuid.ToString();
                 if (isSubModelRoot)
-                    arg["subModelId"] = elementId.ToHexStr();
-                elemBatch.arr.Set(elemBatch.count++, static_cast<Napi::Object>(arg));
+                    static_cast<Napi::Object>(arg).Set("subModelId", jsElementId);
+                elemBatch.arr.Push(env, static_cast<Napi::Object>(arg));
                 }
 
             if (parentId.IsValid() && parentClassId.IsValid())
                 {
                 auto& childBatch = batchByParentClass[parentClassId];
                 if (childBatch.jsClass.IsEmpty())
-                    {
                     childBatch.jsClass = resolveJsClass(parentClassId);
-                    if (!childBatch.jsClass.IsEmpty())
-                        childBatch.arr = Napi::Array::New(env);
-                    }
                 if (!childBatch.jsClass.IsEmpty())
                     {
                     BeJsNapiObject arg(env);
                     arg["parentId"] = parentId.ToHexStr();
-                    arg["childId"]  = elementId.ToHexStr();
-                    childBatch.arr.Set(childBatch.count++, static_cast<Napi::Object>(arg));
+                    static_cast<Napi::Object>(arg).Set("childId", jsElementId);
+                    childBatch.arr.Push(env, static_cast<Napi::Object>(arg));
                     }
                 }
 
@@ -607,11 +658,7 @@ bool BulkElementDeletion::FireAllCallbacks()
                 if (modelBatch.jsClass.IsEmpty())
                     modelBatch.jsClass = resolveJsClass(subModelClassId);
                 if (!modelBatch.jsClass.IsEmpty())
-                    {
-                    if (modelBatch.deletedModelIdsArr.IsEmpty())
-                        modelBatch.deletedModelIdsArr = Napi::Array::New(env);
-                    modelBatch.deletedModelIdsArr.Set(modelBatch.deletedModelCount++, Napi::String::New(env, elementId.ToHexStr()));
-                    }
+                    modelBatch.deletedModelIds.Push(env, jsElementId);
                 }
 
             if (containingModelClassId.IsValid())
@@ -620,12 +667,7 @@ bool BulkElementDeletion::FireAllCallbacks()
                 if (modelBatch.jsClass.IsEmpty())
                     modelBatch.jsClass = resolveJsClass(containingModelClassId);
                 if (!modelBatch.jsClass.IsEmpty())
-                    {
-                    auto& [modelArr, modelCount] = modelBatch.elementsByModel[modelId.GetValue()];
-                    if (modelArr.IsEmpty())
-                        modelArr = Napi::Array::New(env);
-                    modelArr.Set(modelCount++, Napi::String::New(env, elementId.ToHexStr()));
-                    }
+                    modelBatch.elementsByModel[modelId.GetValue()].Push(env, jsElementId);
                 }
             }
 
@@ -652,8 +694,7 @@ bool BulkElementDeletion::FireAllCallbacks()
         if (parentId.IsValid())
             {
             // Only fire child callbacks for parents that are NOT also being deleted.
-            // ParentId in the temp table is already set to NULL for parents in the delete set
-            // but we double-check here via the cache.
+            // The SELECT above already yields NULL for parentId when the parent is in the delete set; loadedParents just avoids repeated pool lookups.
             auto it = loadedParents.find(parentId.GetValue());
             if (it == loadedParents.end())
                 {
@@ -676,24 +717,24 @@ bool BulkElementDeletion::FireAllCallbacks()
 
     for (auto& [classId, batch] : batchByClass)
         {
-        if (batch.jsClass.IsEmpty())
+        if (batch.jsClass.IsEmpty() || batch.arr.IsEmpty())
             continue;
         // Pass the element list to the JS class to fire higher-level change events for all deleted elements of this class at once.
         BeJsNapiObject batchArg(env);
         static_cast<Napi::Object>(batchArg).Set("iModel", jsDgnDb);
-        static_cast<Napi::Object>(batchArg).Set("elements", batch.arr);
-        DgnDb::CallJsFunction(batch.jsClass, "onBulkDeleted", {static_cast<Napi::Object>(batchArg)});
+        static_cast<Napi::Object>(batchArg).Set("elements", batch.arr.Value());
+        DgnDb::CallJsFunction(batch.jsClass.Value(), "onBulkDeleted", {static_cast<Napi::Object>(batchArg)});
         }
 
     for (auto& [parentClassId, batch] : batchByParentClass)
         {
-        if (batch.jsClass.IsEmpty())
+        if (batch.jsClass.IsEmpty() || batch.arr.IsEmpty())
             continue;
         // Pass parent and child element lists so JS can update child-list caches on surviving parent elements.
         BeJsNapiObject batchArg(env);
         static_cast<Napi::Object>(batchArg).Set("iModel", jsDgnDb);
-        static_cast<Napi::Object>(batchArg).Set("elements", batch.arr);
-        DgnDb::CallJsFunction(batch.jsClass, "onBulkChildDeleted", {static_cast<Napi::Object>(batchArg)});
+        static_cast<Napi::Object>(batchArg).Set("elements", batch.arr.Value());
+        DgnDb::CallJsFunction(batch.jsClass.Value(), "onBulkChildDeleted", {static_cast<Napi::Object>(batchArg)});
         }
 
     for (auto& [classId, batch] : modelClassBatches)
@@ -703,25 +744,25 @@ bool BulkElementDeletion::FireAllCallbacks()
 
         BeJsNapiObject arg(env);
 
-        if (batch.deletedModelCount > 0)
-            static_cast<Napi::Object>(arg).Set("deletedModelIds", batch.deletedModelIdsArr);
+        if (!batch.deletedModelIds.IsEmpty())
+            static_cast<Napi::Object>(arg).Set("deletedModelIds", batch.deletedModelIds.Value());
 
         if (!batch.elementsByModel.empty())
             {
             auto outerArr = Napi::Array::New(env, batch.elementsByModel.size());
             uint32_t i = 0;
-            for (auto& [modelIdVal, pair] : batch.elementsByModel)
+            for (auto& [modelIdVal, elementIds] : batch.elementsByModel)
                 {
                 BeJsNapiObject entry(env);
                 entry["id"] = DgnModelId(modelIdVal).ToHexStr();
-                static_cast<Napi::Object>(entry).Set("elementIds", pair.first);
+                static_cast<Napi::Object>(entry).Set("elementIds", elementIds.Value());
                 outerArr.Set(i++, static_cast<Napi::Object>(entry));
                 }
             static_cast<Napi::Object>(arg).Set("deletedElementsByModel", outerArr);
             }
 
         static_cast<Napi::Object>(arg).Set("iModel", jsDgnDb);
-        DgnDb::CallJsFunction(batch.jsClass, "onBulkModelEvents", {static_cast<Napi::Object>(arg)});
+        DgnDb::CallJsFunction(batch.jsClass.Value(), "onBulkModelEvents", {static_cast<Napi::Object>(arg)});
         }
 
     return true;
@@ -732,15 +773,21 @@ bool BulkElementDeletion::FireAllCallbacks()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult BulkElementDeletion::ExecuteDeletion()
     {
+    auto isEmptyTable = [&](Utf8StringCR tableName) -> bool
+        {
+        auto stmt = m_dgndb.GetCachedStatement(SqlPrintfString("SELECT 1 FROM [%s] LIMIT 1", tableName.c_str()));
+        return stmt.IsValid() && BE_SQLITE_ROW != stmt->Step();
+        };
+
     // Explicitly execute ON DELETE CASCADE and ON DELETE SET NULL FK actions for all tables that reference bis_Element.
     {
-    const auto changeMode = m_dgndb.Txns().GetMode();
-
-    m_dgndb.Txns().SetMode(ChangeTracker::Mode::Indirect);  // The cascade changes should be tracked as indirect changes
+    ScopedTxnMode indirect(m_dgndb.Txns(), ChangeTracker::Mode::Indirect); // cascade changes are tracked as indirect; restored on every exit path
 
     for (const auto& fk : GetFks(FkAction::Cascade))
         {
         if (IsStructurallyHandled(fk)) // bis_Element.ParentId: children are already in the delete set
+            continue;
+        if (isEmptyTable(fk.m_tableName))
             continue;
 
         const auto stat = m_dgndb.TryExecuteSql(SqlPrintfString(
@@ -755,6 +802,9 @@ DbResult BulkElementDeletion::ExecuteDeletion()
 
     for (const auto& fk : GetFks(FkAction::SetNull))
         {
+        if (isEmptyTable(fk.m_tableName))
+            continue;
+
         const auto stat = m_dgndb.TryExecuteSql(SqlPrintfString(
             "UPDATE [%s] SET [%s] = NULL WHERE [%s] IN (SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) ")",
             fk.m_tableName.c_str(), fk.m_fromColumn.c_str(), fk.m_fromColumn.c_str()));
@@ -764,39 +814,24 @@ DbResult BulkElementDeletion::ExecuteDeletion()
             return stat;
             }
         }
-    m_dgndb.Txns().SetMode(changeMode); // restore original transaction mode
     }
 
-    bool fkDisabled = false;
-    bool fkEnabled = false;
-    if (BE_SQLITE_OK == m_dgndb.QueryForeignKeyEnforcement(fkEnabled) && fkEnabled)
-        fkDisabled = (BE_SQLITE_OK == m_dgndb.SetForeignKeyEnforcement(false));
-
-    auto reset = [&]() {
-        if (fkDisabled && BE_SQLITE_OK != m_dgndb.SetForeignKeyEnforcement(true))
-            LOG.error("BulkElementDeletion: failed to restore foreign key enforcement");
-        m_dgndb.EndPurgeOperation();
-        m_dgndb.TryExecuteSql("PRAGMA synchronous = NORMAL");
-        m_dgndb.TryExecuteSql("PRAGMA cache_size = -2000");
-        m_dgndb.TryExecuteSql("PRAGMA defer_foreign_keys = false");
+    auto restoreFkState = [&]() {
+        if (m_subModelRootExists)
+            m_dgndb.TryExecuteSql("PRAGMA defer_foreign_keys = false");
     };
-
-    // Prep the db and handlers for a bulk delete
-    m_dgndb.BeginPurgeOperation();
-    m_dgndb.TryExecuteSql("PRAGMA synchronous = OFF");
-    m_dgndb.TryExecuteSql("PRAGMA cache_size = -131072");
 
     if (m_geometricElementsExist)
         m_dgndb.TryExecuteSql("DELETE FROM " DGN_VTABLE_SpatialIndex " WHERE ElementId IN (SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) ")");
 
     // Only needed while FKs are enforced: bis_Model.ModeledElementId (NO ACTION) points at sub-model roots that leave bis_Element before bis_Model.
-    if (m_subModelRootExists && !fkDisabled)
+    if (m_subModelRootExists)
         m_dgndb.TryExecuteSql("PRAGMA defer_foreign_keys = true");
 
     if (const auto stat = m_dgndb.TryExecuteSql("DELETE FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id IN (SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) ")"); stat != BE_SQLITE_OK)
         {
         LOG.errorv("BulkElementDeletion: Element deletion failed: %s", BeSQLiteLib::GetLogError(stat).c_str());
-        reset();
+        restoreFkState();
         return stat;
         }
 
@@ -805,12 +840,37 @@ DbResult BulkElementDeletion::ExecuteDeletion()
         if (const auto stat = m_dgndb.TryExecuteSql("DELETE FROM " BIS_TABLE(BIS_CLASS_Model) " WHERE Id IN (SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " WHERE IsSubModelRoot = 1)"); stat != BE_SQLITE_OK)
             {
             LOG.errorv("BulkElementDeletion: Sub-model root deletion failed: %s", BeSQLiteLib::GetLogError(stat).c_str());
-            reset();
+            restoreFkState();
             return stat;
+            }
+
+        // Do a manual foreign key check for the models to maintain integrity
+        struct DeferredFkCheck
+            {
+            Utf8CP sql;
+            Utf8CP what;
+            };
+        static const DeferredFkCheck s_checks[] = {
+            { "SELECT 1 FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE ModelId IN (SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " WHERE IsSubModelRoot = 1) LIMIT 1",
+              "surviving element(s) still belong to a deleted model" },
+            { "SELECT 1 FROM " BIS_TABLE(BIS_CLASS_Model) " WHERE ParentModelId IN (SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " WHERE IsSubModelRoot = 1) LIMIT 1",
+              "surviving sub-model(s) still have a deleted parent model" },
+            { "SELECT 1 FROM " BIS_TABLE(BIS_CLASS_Model) " m WHERE NOT EXISTS (SELECT 1 FROM " BIS_TABLE(BIS_CLASS_Element) " e WHERE e.Id = m.ModeledElementId) LIMIT 1",
+              "surviving model(s) whose modeled element was deleted" },
+        };
+        for (const auto& check : s_checks)
+            {
+            auto stmt = m_dgndb.GetCachedStatement(check.sql);
+            if (!stmt.IsValid() || BE_SQLITE_ROW == stmt->Step())
+                {
+                LOG.errorv("BulkElementDeletion: integrity check failed: %s", check.what);
+                restoreFkState();
+                return BE_SQLITE_CONSTRAINT_FOREIGNKEY;
+                }
             }
         }
 
-    reset();
+    restoreFkState();
     return BE_SQLITE_OK;
     }
 
@@ -854,27 +914,45 @@ DbResult BulkElementDeletion::DeleteLinkTableRelationships() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BulkDeleteElementsResult BulkElementDeletion::Execute()
     {
-    // Bulk Element Deletion algorithm:
+    // Bulk Element Deletion algorithm (all or nothing):
     //
-    //  1. CreateTempTables      – set up temp.ElementsToDelete scratch space.
-    //  2. ExpandElementIdList   – recursively pull in children and sub-model members.
-    //  3. ANALYZE               – give SQLite fresh statistics for the temp table so the
+    //  1. LoadFkConstraints     – read every FK that targets bis_Element.Id from the SQLite schema.
+    //  2. CreateTempTables      – set up temp.ElementsToDelete scratch space.
+    //  3. ExpandElementIdList   – recursively pull in children and sub-model members.
+    //  4. ANALYZE               – give SQLite fresh statistics for the temp table so the
     //                             query planner makes good choices in later steps.
-    //  4. FindConstraintViolators       – elements still referenced via NO ACTION FKs to bis_Element
-    //  5. FindInUseDefinitionElements   – DefinitionElements still used by elements outside the set.
-    //          (4 and 5 are repeated until a round prunes nothing, since pruning can expose new violators.)
-    //  6. FireAllCallbacks      – dispatch C++ and JS pre-/post-delete notifications in bulk.
-    //  7. ExecuteDeletion       – emulate CASCADE / SET NULL FKs (from the cache), then bulk DELETE from bis_Element
-    //                             (and bis_Model for sub-model roots).
-    //  8. DeleteLinkTableRelationships – clean up link-table rows for deleted endpoints.
+    //  5. FindProtectedElements         – root Subject and the built-in partitions can never be deleted.
+    //  6. FindReadOnlyDomainElements    – elements whose handler belongs to a read-only DgnDomain.
+    //  7. FindConstraintViolators       – elements still referenced via NO ACTION / RESTRICT FKs to bis_Element
+    //  8. FindInUseDefinitionElements   – DefinitionElements still used by elements outside the set.
+    //          If 5-8 found anything, nothing has been modified yet: return ConstraintViolation with the report.
+    //  9. FireAllCallbacks      – dispatch C++ and JS pre-/post-delete notifications in bulk (purge operation active).
+    // 10. ExecuteDeletion       – emulate CASCADE / SET NULL FKs, then bulk DELETE from bis_Element (FK enforcement off)
+    //                             and bis_Model for sub-model roots.
+    // 11. DeleteLinkTableRelationships – clean up link-table rows for deleted endpoints.
 
     DgnDb::VerifyClientThread();
 
+    auto queryPragma = [&](Utf8CP pragma, Utf8CP fallback) -> Utf8String
+        {
+        Statement stmt;
+        if (BE_SQLITE_OK == stmt.Prepare(m_dgndb, SqlPrintfString("PRAGMA %s", pragma)) && BE_SQLITE_ROW == stmt.Step())
+            return stmt.GetValueText(0);
+        return fallback;
+        };
+    const Utf8String savedCacheSize   = queryPragma("cache_size", "-2000");
+    const Utf8String savedSynchronous = queryPragma("synchronous", "1"); // 1 == NORMAL
+    const Utf8String savedTempStore   = queryPragma("temp_store", "0");  // 0 == DEFAULT
+
     m_dgndb.TryExecuteSql("PRAGMA temp_store = MEMORY");
+    m_dgndb.TryExecuteSql("PRAGMA synchronous = OFF");
+    m_dgndb.TryExecuteSql("PRAGMA cache_size = -131072");
 
     auto cleanup = [&]() {
-        m_dgndb.TryExecuteSql("PRAGMA temp_store = DEFAULT");
         m_dgndb.Elements().SetBulkOperation(false);
+        m_dgndb.TryExecuteSql(SqlPrintfString("PRAGMA temp_store = %s", savedTempStore.c_str()));
+        m_dgndb.TryExecuteSql(SqlPrintfString("PRAGMA synchronous = %s", savedSynchronous.c_str()));
+        m_dgndb.TryExecuteSql(SqlPrintfString("PRAGMA cache_size = %s", savedCacheSize.c_str()));
     };
 
     // Internal failure
@@ -882,6 +960,9 @@ BulkDeleteElementsResult BulkElementDeletion::Execute()
         cleanup();
         return { BulkDeleteElementsStatus::DeletionFailed, stat };
     };
+
+    if (const auto stat = LoadFkConstraints(); stat != BE_SQLITE_OK)
+        return fail(stat);
 
     if (const auto stat = CreateTempTables(); stat != BE_SQLITE_OK)
         return fail(stat);
@@ -894,62 +975,65 @@ BulkDeleteElementsResult BulkElementDeletion::Execute()
     m_dgndb.TryExecuteSql("ANALYZE " TEMP_TABLE(TEMP_ELEMENT_DELETION));
     m_dgndb.Elements().SetBulkOperation(true);
 
-    // Handle transitive fk violations which will only get exposed after the dependent element is pruned.
-    // The intra-set checks will have ignored it till then.
-    for (;;)
-        {
-        m_prunedInRound = false;
+    // Validate the whole delete set before touching anything.
+    // The FK and definition-usage checks treat references from *inside* the set as fine, so only direct violators are
+    // reported; the caller may discover further ones after removing these from the request.
+    if (const auto stat = FindProtectedElements(); stat != BE_SQLITE_OK)
+        return fail(stat);
 
-        if (const auto stat = FindConstraintViolators(); stat != BE_SQLITE_OK)
-            return fail(stat);
+    if (const auto stat = FindReadOnlyDomainElements(); stat != BE_SQLITE_OK)
+        return fail(stat);
 
-        if (const auto stat = FindInUseDefinitionElements(); stat != BE_SQLITE_OK)
-            return fail(stat);
+    if (const auto stat = FindConstraintViolators(); stat != BE_SQLITE_OK)
+        return fail(stat);
 
-        if (!m_prunedInRound)
-            break;
-        }
+    if (const auto stat = FindInUseDefinitionElements(); stat != BE_SQLITE_OK)
+        return fail(stat);
 
-    // FailFast: nothing has been modified yet, so bail out and report exactly what blocks the operation.
-    if (IsFailFastModeEnabled() && !m_failures.empty())
+    // Nothing has been modified yet, so bail out and report exactly what blocks the operation.
+    if (!m_failures.empty())
         {
         cleanup();
         return { BulkDeleteElementsStatus::ConstraintViolation, BE_SQLITE_OK, std::move(m_failures) };
         }
 
+    // From here on the purge operation is active.
+    // Bulk deletion is a purge, and has already verified the definitions are unused.
+    m_dgndb.BeginPurgeOperation();
+    auto failPurging = [&](DbResult stat) -> BulkDeleteElementsResult {
+        m_dgndb.EndPurgeOperation();
+        return fail(stat);
+    };
+
     // Fire the pre and post delete callbacks at once
     if (!FireAllCallbacks())
-        return fail(BE_SQLITE_OK);
+        return failPurging(BE_SQLITE_OK);
 
     // Execute the actual SQL DELETE. Any failure here is fatal for the whole operation: part of the delete set may already
     // have been removed, so the caller must abandon the enclosing txn.
     if (const auto stat = ExecuteDeletion(); stat != BE_SQLITE_OK)
-        return fail(stat);
+        return failPurging(stat);
 
     // Clean up link-table relationships
     if (const auto stat = DeleteLinkTableRelationships(); stat != BE_SQLITE_OK)
-        return fail(stat);
+        return failPurging(stat);
+
+    m_dgndb.EndPurgeOperation();
 
     cleanup();
-
-    // Success only when every requested element was deleted; PartialSuccess when some were skipped due to constraints.
-    const auto status = m_failures.empty() ? BulkDeleteElementsStatus::Success : BulkDeleteElementsStatus::PartialSuccess;
-    return { status, BE_SQLITE_OK, std::move(m_failures) };
+    return { BulkDeleteElementsStatus::Success, BE_SQLITE_OK };
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BulkDeleteElementsResult DgnElements::DeleteElements(const DgnElementIdSet& elementIds, BulkDeleteMode mode)
+BulkDeleteElementsResult DgnElements::DeleteElements(const DgnElementIdSet& elementIds)
     {
     DgnDb::VerifyClientThread();
     if (elementIds.empty())
         return { BulkDeleteElementsStatus::Success, BE_SQLITE_OK };
 
-    // Expected to populate once per DgnDb (reset by ClearECCaches)
-    CacheFkConstraints();
-
-    return BulkElementDeletion(m_dgndb, GetFkConstraints(), elementIds, mode).Execute();
+    return BulkElementDeletion(m_dgndb, elementIds).Execute();
     }
 
 END_BENTLEY_DGN_NAMESPACE

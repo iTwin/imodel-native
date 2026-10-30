@@ -549,26 +549,11 @@ public:
 };
 
 //=======================================================================================
-//! Controls how DgnElements::DeleteElements treats elements that cannot be deleted
-//=======================================================================================
-enum class BulkDeleteMode : int
-    {
-    //! Default. Best effort but slowest. Elements that are still referenced, together with their logical ancestors and descendants inside
-    //! the delete set, are removed from the delete set and everything else is deleted.
-    //! Returns BulkDeleteElementsStatus::PartialSuccess with the requested ids that were skipped in BulkDeleteElementsResult::failures.
-    RemoveFKViolators = 0,
-    //! Validate the whole delete set first; if any element is still referenced, delete nothing and return
-    //! BulkDeleteElementsStatus::ConstraintViolation with the offending elements in BulkDeleteElementsResult::failures.
-    FailFast = 1,
-    };
-
-//=======================================================================================
 //! Indicates the status of the bulk-delete operation.
 //! On Success the operation completed normally and all elements were deleted successfully.
-//! On PartialSuccess (with BulkDeleteMode::RemoveFKViolators only) the operation completed normally, but deletion of one
-//!     or more elements was skipped due to constraint violations.
-//! On ConstraintViolation (BulkDeleteMode::FailFast only) nothing was deleted because one or more elements are still
-//!     referenced from outside the delete set.
+//! On ConstraintViolation nothing was deleted because one or more elements in the (expanded) delete set must not be
+//!     deleted: still referenced from outside the set, a protected element, or owned by a read-only domain.
+//!     The offending elements are listed in BulkDeleteElementsResult::failures.
 //! On DeletionFailed an internal error occurred. The iModel may have been partially modified; the caller must
 //!     abandon the current transaction. The element lists in the result are empty.
 // @bsiclass
@@ -576,23 +561,25 @@ enum class BulkDeleteMode : int
 enum class BulkDeleteElementsStatus : int
     {
     Success             = 0,
-    PartialSuccess      = 1,
-    ConstraintViolation = 2,
-    DeletionFailed      = 3,
+    ConstraintViolation = 1,
+    DeletionFailed      = 2,
     };
 
 //=======================================================================================
 //! Why an element could not be deleted by DgnElements::DeleteElements.
-//! ReferencedByForeignKey: A row outside the delete set references it via a NO ACTION / RESTRICT FK.
+//! ReferencedByForeignKey: A row outside the delete set references it via a NO ACTION / RESTRICT / SET DEFAULT FK.
 //! DefinitionInUse: It is a DefinitionElement still used by elements outside the delete set.
-//! BlockedByRelative: it was skipped because a logical ancestor/descendant in the delete set failed.
+//! ProtectedElement: It is one of the elements every iModel must keep (the root Subject and the partitions that model
+//!     the built-in RepositoryModel, DictionaryModel and RealityDataSources models).
+//! ReadOnlyDomain: Its ECClass is handled by a DgnDomain registered as read-only.
 // @bsiclass
 //=======================================================================================
 enum class BulkDeleteFailureReason : int
     {
     ReferencedByForeignKey = 0,
     DefinitionInUse        = 1,
-    BlockedByRelative      = 2,
+    ProtectedElement       = 2,
+    ReadOnlyDomain         = 3,
     };
 
 //=======================================================================================
@@ -603,8 +590,8 @@ struct BulkDeleteFailure
     DgnElementId elementId;
     BulkDeleteFailureReason reason = BulkDeleteFailureReason::ReferencedByForeignKey;
     //! ReferencedByForeignKey: the referencing "table.column", e.g. "bis_GeometricElement3d.CategoryId".
-    //! BlockedByRelative: hex id of the direct violator that caused this element to be skipped.
-    //! DefinitionInUse: empty.
+    //! ReadOnlyDomain: the domain name.
+    //! DefinitionInUse, ProtectedElement: empty.
     Utf8String detail;
     };
 
@@ -617,7 +604,7 @@ struct BulkDeleteElementsResult
     BulkDeleteElementsStatus status = BulkDeleteElementsStatus::Success;
     BeSQLite::DbResult sqlDeleteStatus = BeSQLite::DbResult::BE_SQLITE_OK; //!< Only meaningful when status == DeletionFailed.
 
-    //! Every element in the delete set that could not be deleted, with the reason (PartialSuccess / ConstraintViolation) with a max cap of 100 entries.
+    //! Every element in the (expanded) delete set that blocks the deletion, with the reason. Only populated on ConstraintViolation.
     //! Empty on Success and DeletionFailed.
     std::vector<BulkDeleteFailure> failures;
     };
@@ -4030,37 +4017,6 @@ private:
     // *** WIP_SCHEMA_IMPORT - temporary work-around needed because ECClass objects are deleted when a schema is imported
     void ClearECCaches();
 
-    //! ON DELETE action of a SQLite foreign key that references bis_Element.Id.
-    enum class FkOnDeleteAction
-        {
-        Cascade,
-        SetNull,
-        NoAction,
-        Restrict,
-        SetDefault,
-        };
-
-    //! A SQLite foreign key (in any table, including bis_Element itself) that references bis_Element.Id.
-    struct ElementFkConstraint
-        {
-        Utf8String m_tableName;        // referencing table
-        Utf8String m_fromColumn;       // referencing column
-        Utf8String m_elementIdColumn;  // column of the referencing table that identifies the element ("Id" for bis_Element, "ElementId" for joined-table-per-class tables)
-        };
-
-    using ElementFkConstraintMap = std::map<FkOnDeleteAction, std::vector<ElementFkConstraint>>;
-
-    //! Lazily-populated cache of all FKs referencing bis_Element, keyed by ON DELETE action.
-    //! Invalidated by ClearECCaches().
-    mutable std::optional<ElementFkConstraintMap> m_fkConstraints;
-
-    //! Populate m_fkConstraints from the SQLite schema if not already populated.
-    void CacheFkConstraints() const;
-
-    //! Returns the cached FK constraints.
-    //! Requires CacheFkConstraints() to have been called.
-    ElementFkConstraintMap const& GetFkConstraints() const { BeAssert(m_fkConstraints.has_value()); return m_fkConstraints.value(); }
-
     void SetBulkOperation(const bool isBulk) { m_isBulkOperation = isBulk; }
     bool IsBulkOperation() const { return m_isBulkOperation; }
 
@@ -4217,20 +4173,15 @@ public:
     //!
     //! @param[in] elementIds The set of element IDs to delete.  May contain IDs of any element type.
     //!   Invalid IDs are ignored.  The set may include parent elements whose children are not
-    //!   explicitly listed; those children will be pulled in automatically.
-    //! @param[in] mode How to treat elements that are still referenced from outside the delete set. See BulkDeleteMode.
-    //!   ON DELETE CASCADE and ON DELETE SET NULL actions are handled automatically regardless of mode.
-    //! @return A result object containing the status of the bulk delete operation and any element IDs that could not be deleted.
+    //!   explicitly listed; those children (and the contents of any sub-models) will be pulled in automatically.
+    //!   The caller is responsible for passing a closed set: every element that references something in the set via a
+    //!   NO ACTION / RESTRICT foreign key, or uses a DefinitionElement in the set, must itself be in the set.
+    //!   ON DELETE CASCADE and ON DELETE SET NULL actions are handled automatically.
+    //! @return A result object containing the status of the bulk delete operation and, on ConstraintViolation, the elements that block it.
     //! @note This method does not open a transaction of its own. On DeletionFailed the iModel may be partially
-    //!   modified and the caller must abandon the current transaction.
+    //!   modified and the caller must abandon the current transaction. On ConstraintViolation nothing was modified.
     //! @note This function can only be safely invoked from the client thread.
-    DGNPLATFORM_EXPORT BulkDeleteElementsResult DeleteElements(const DgnElementIdSet& elementIds, BulkDeleteMode mode = BulkDeleteMode::RemoveFKViolators);
-
-    //! @deprecated Use DeleteElements(elementIds, BulkDeleteMode).
-    BulkDeleteElementsResult DeleteElements(const DgnElementIdSet& elementIds, bool skipFKConstraintValidations)
-        {
-        return DeleteElements(elementIds, skipFKConstraintValidations ? BulkDeleteMode::FailFast : BulkDeleteMode::RemoveFKViolators);
-        }
+    DGNPLATFORM_EXPORT BulkDeleteElementsResult DeleteElements(const DgnElementIdSet& elementIds);
 
     //! Delete a DgnElement from this DgnDb by DgnElementId.
     //! @return DgnDbStatus::Success if the element was deleted, error status otherwise.

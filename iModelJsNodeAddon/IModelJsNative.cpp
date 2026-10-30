@@ -1918,8 +1918,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             THROW_JS_TYPE_EXCEPTION("Invalid argument given to deleteElements");
         }
 
-        const auto deleteOptions = ARGUMENT_IS_PRESENT(1) ? info[1].As<Napi::Object>() : Env().Undefined();
-        const auto result = JsInterop::DeleteElements(db, info[0].As<Napi::Array>(), deleteOptions);
+        const auto result = JsInterop::DeleteElements(db, info[0].As<Napi::Array>());
 
         auto ret = Napi::Object::New(Env());
         ret.Set("status", Napi::Number::New(Env(), static_cast<int>(result.status)));
