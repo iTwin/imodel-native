@@ -1815,25 +1815,9 @@ void GeometryStreamIO::Writer::Append(ImageGraphicCR img)
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <typename T>
-static T const* GetVerifiedRoot(uint8_t const* data, size_t dataSize)
-    {
-    if (nullptr == data || 0 == dataSize || dataSize >= FLATBUFFERS_MAX_BUFFER_SIZE)
-        return nullptr;
-
-    flatbuffers::Verifier verifier(data, dataSize);
-    if (!verifier.VerifyBuffer<T>())
-        return nullptr;
-
-    return flatbuffers::GetRoot<T>(data);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-template <typename T>
 static T const* GetVerifiedRoot(GeometryStreamIO::Operation const& operation)
     {
-    return GetVerifiedRoot<T>(operation.m_data, operation.m_dataSize);
+    return BentleyGeometryFlatBuffer::GetVerifiedRoot<T>(operation.m_data, operation.m_dataSize);
     }
 
 /*---------------------------------------------------------------------------------**//**

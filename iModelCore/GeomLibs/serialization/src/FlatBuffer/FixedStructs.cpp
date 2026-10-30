@@ -2168,29 +2168,16 @@ bool BentleyGeometryFlatBuffer::IsFlatBufferFormat(Byte const *buffer, size_t bu
     return nullptr != fbStart;
     }
 
-template <typename T>
-static T const* GetVerifiedRoot(Byte const* data, size_t dataSize)
-    {
-    if (nullptr == data || 0 == dataSize || dataSize >= FLATBUFFERS_MAX_BUFFER_SIZE)
-        return nullptr;
-
-    flatbuffers::Verifier verifier(data, dataSize);
-    if (!verifier.VerifyBuffer<T>())
-        return nullptr;
-
-    return flatbuffers::GetRoot<T>(data);
-    }
-
 template <typename PtrType, typename ReaderMethodType>
 PtrType BytesToXXXSafe(Byte const *buffer, size_t bufferSize, bool applyValidation, ReaderMethodType readerMethod)
     {
-    if (nullptr == buffer || 0 == bufferSize)
+    if (nullptr == buffer)
         return nullptr;
     Byte const *fbStart = GetFBStart(buffer, bufferSize);
     if (nullptr == fbStart)
         return nullptr;
     bufferSize -= s_prefixBufferSize; // we know this doesn't underflow
-    auto fbRoot = GetVerifiedRoot<BGFB::VariantGeometry>(fbStart, bufferSize);
+    auto fbRoot = BentleyGeometryFlatBuffer::GetVerifiedRoot<BGFB::VariantGeometry>(fbStart, bufferSize);
     if (nullptr == fbRoot)
         return nullptr;
     if (fbRoot->has_geometry_type() && fbRoot->has_geometry())
@@ -2255,9 +2242,7 @@ bvector<IGeometryPtr> *invalidGeometry
     dest.clear ();
     if (invalidGeometry)
         invalidGeometry->clear ();
-    if (buffer.size() == 0)
-        return false;
-    Byte* fbStart = GetFBStart(buffer);
+    Byte const* fbStart = GetFBStart(buffer);
     if (nullptr == fbStart)
         return false;
     size_t bufferSize = buffer.size() - s_prefixBufferSize; // we know this doesn't underflow
@@ -2284,7 +2269,7 @@ bool applyValidation
     {
     if (nullptr == buffer)
         return false;
-    Byte const *fbStart = GetFBStart(buffer, bufferSize);
+    Byte const* fbStart = GetFBStart(buffer, bufferSize);
     if (nullptr == fbStart)
         return false;
     bufferSize -= s_prefixBufferSize; // we know this doesn't underflow
