@@ -12,10 +12,11 @@
 # functions.  Deriving the list from the headers means a curl version bump needs no manual .def
 # maintenance (unlike the hand-maintained OpenSSL .def).
 #
-# Usage: makeCurlDef.py <curl_include_dir> <output.def> [stale_output ...]
+# Usage: makeCurlDef.py <curl_include_dir> <output.def> <archive.lib> [stale_output ...]
 #   <curl_include_dir>  directory containing curl.h, easy.h, multi.h, ... (vcpkg include/curl)
+#   <archive.lib>       linked archive whose content hash is embedded in the .def
 #   <stale_output>      file (e.g. the previously linked iTwinCurl.dll) to delete when the export
-#                       list changes, since bmake's DLL rule does not treat the .def as a
+#                       list or archive changes, since bmake's DLL rule does not treat the .def as a
 #                       prerequisite and would otherwise leave a DLL with the old exports in place
 #---------------------------------------------------------------------------------------------
 import sys
@@ -23,15 +24,19 @@ import os
 import re
 import glob
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from make_def import write_def
+
 
 def main():
-    if len(sys.argv) < 3:
-        sys.stderr.write("Usage: makeCurlDef.py <curl_include_dir> <output.def> [stale_output ...]\n")
+    if len(sys.argv) < 4:
+        sys.stderr.write("Usage: makeCurlDef.py <curl_include_dir> <output.def> <archive.lib> [stale_output ...]\n")
         return 1
 
     include_dir = sys.argv[1]
     out_def = sys.argv[2]
-    stale_outputs = sys.argv[3:]
+    archive_path = sys.argv[3]
+    stale_outputs = sys.argv[4:]
 
     headers = sorted(glob.glob(os.path.join(include_dir, "*.h")))
     if not headers:
@@ -59,32 +64,7 @@ def main():
         sys.stderr.write("error: no CURL_EXTERN exports found under %s\n" % include_dir)
         return 1
 
-    lines = ["EXPORTS"] + ["    %s" % name for name in sorted(names)]
-    data = "".join("%s\r\n" % line for line in lines).encode("utf-8")
-
-    # This runs on every build, so leave an unchanged .def alone rather than re-stamping its
-    # timestamp and forcing a needless re-link of iTwinCurl.dll.
-    if os.path.exists(out_def):
-        with open(out_def, "rb") as f:
-            if f.read() == data:
-                return 0
-
-    # The export list changed, so anything previously linked from the old .def is stale. Delete
-    # those outputs *before* committing the new .def: on Windows the delete can fail while the
-    # DLL is still loaded by another process, and leaving the old .def in place means the next
-    # build again sees a changed export list and retries the deletion.
-    for stale in stale_outputs:
-        if os.path.exists(stale):
-            try:
-                os.remove(stale)
-            except OSError as ex:
-                sys.stderr.write("error: cannot delete stale output %s: %s\n" % (stale, ex))
-                return 1
-
-    with open(out_def, "wb") as f:
-        f.write(data)
-
-    return 0
+    return write_def(names, archive_path, out_def, stale_outputs)
 
 
 if __name__ == "__main__":
