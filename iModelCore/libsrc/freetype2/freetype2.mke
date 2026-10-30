@@ -101,14 +101,14 @@ always:
     #
     #   The .def is regenerated on every build because its content comes from the vcpkg-installed
     #   headers, whose timestamps are not a reliable prerequisite (a binary-cache hit can restore
-    #   older ones). makeFreetypeDef.py rewrites the file only when the export list actually
-    #   changes, so an unchanged .def does not force a re-link. The dlmlink machinery consumes
-    #   DLM_MODULE_DEF as a linker option rather than as a prerequisite of the DLL, so when the
-    #   export list does change we hand makeFreetypeDef.py the previously linked DLL to delete;
-    #   that forces exactly this one DLL (and its import lib) to be re-linked from the new .def.
+    #   older ones). makeFreetypeDef.py embeds the linked archive's SHA-256 and rewrites the file
+    #   only when the exports or archive contents change. The dlmlink machinery consumes
+    #   DLM_MODULE_DEF as a linker option rather than as a prerequisite of the DLL, so changed
+    #   inputs cause makeFreetypeDef.py to delete the previously linked DLL before writing the .def.
+    #   This forces a re-link even when the restored archive's timestamp predates the DLL.
     #----------------------------------------------------------------------------------
     always:
-        $(BBPYTHONCMD) $(freetype2Dir)makeFreetypeDef.py "$(vcpkgIncludeDir)freetype" "$(o)$(appName).def" "$(o)$(shlibprefix)$(appName)$(shlibext)"
+        $(BBPYTHONCMD) $(freetype2Dir)makeFreetypeDef.py "$(vcpkgIncludeDir)freetype" "$(o)$(appName).def" "$(vcpkgFreetype)" "$(o)$(shlibprefix)$(appName)$(shlibext)"
 
     DLM_NAME                    = $(appName)
     DLM_OBJECT_FILES            = $(vcpkgFreetype)
