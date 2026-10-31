@@ -1543,7 +1543,7 @@ public:
     BE_SQLITE_EXPORT SqlPrintfString(Utf8CP fmt, ...);
     BE_SQLITE_EXPORT ~SqlPrintfString();
     operator Utf8CP(){return m_str;}
-    Utf8CP GetUtf8CP() {return m_str;}
+    Utf8CP GetUtf8CP() const {return m_str;}
 };
 
 //=======================================================================================

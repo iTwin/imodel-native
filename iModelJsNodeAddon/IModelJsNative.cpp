@@ -1918,18 +1918,28 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             THROW_JS_TYPE_EXCEPTION("Invalid argument given to deleteElements");
         }
 
-        const auto deleteOptions = ARGUMENT_IS_PRESENT(1) ? info[1].As<Napi::Object>() : Env().Undefined();
-        const auto result = JsInterop::DeleteElements(db, info[0].As<Napi::Array>(), deleteOptions);
+        const auto result = JsInterop::DeleteElements(db, info[0].As<Napi::Array>());
 
         auto ret = Napi::Object::New(Env());
         ret.Set("status", Napi::Number::New(Env(), static_cast<int>(result.status)));
         ret.Set("sqlDeleteStatus", Napi::Number::New(Env(), static_cast<int>(result.sqlDeleteStatus)));
 
-        uint32_t index = 0;
-        auto failedArr = Napi::Array::New(Env(), result.failedIds.size());
-        for (const auto& elemId : result.failedIds)
-            failedArr.Set(index++, Napi::String::New(Env(), elemId.ToHexStr().c_str()));
-        ret.Set("failedIds", failedArr);
+        uint32_t fIndex = 0;
+        auto failuresArr = Napi::Array::New(Env(), result.failures.size());
+        auto failedIdsArr = Napi::Array::New(Env(), result.failures.size()); // deprecated, kept for compatibility with older itwinjs-core
+        for (const auto& f : result.failures) {
+            const auto idStr = Napi::String::New(Env(), f.elementId.ToHexStr());
+            BeJsNapiObject entry(Env());
+            static_cast<Napi::Object>(entry).Set("elementId", idStr);
+            entry["reason"] = static_cast<int>(f.reason);
+            if (!f.detail.empty())
+                entry["detail"] = f.detail;
+            failuresArr.Set(fIndex, static_cast<Napi::Object>(entry));
+            failedIdsArr.Set(fIndex, idStr);
+            ++fIndex;
+        }
+        ret.Set("failures", failuresArr);
+        ret.Set("failedIds", failedIdsArr);
 
         return ret;
     }
