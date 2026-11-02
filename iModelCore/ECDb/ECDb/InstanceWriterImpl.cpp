@@ -1279,8 +1279,17 @@ void Impl::CaptureUniqueConstraintConflict(Options const& options, ClassMapCR cl
     auto& ecdb = m_cache.GetECDb();
     auto rootClassMap = GetTableRootClassMap(ecdb, classMap);
     std::vector<SingleColumnDataPropertyMap const*> leaves;
-    if (!FindLeafPropertyMapsForColumns(*rootClassMap, columnNames, leaves))
+    if (!FindLeafPropertyMapsForColumns(classMap, columnNames, leaves))
         return;
+
+    // A derived class can add properties in shared columns that the table root does not expose.
+    // Retain the root lookup for inherited constraints only when it maps these same property paths.
+    auto lookupClassMap = &classMap;
+    std::vector<SingleColumnDataPropertyMap const*> rootLeaves;
+    if (FindLeafPropertyMapsForColumns(*rootClassMap, columnNames, rootLeaves)
+        && std::equal(leaves.begin(), leaves.end(), rootLeaves.begin(), rootLeaves.end(),
+            [](auto leaf, auto rootLeaf) { return leaf->GetAccessString().EqualsIAscii(rootLeaf->GetAccessString()); }))
+        lookupClassMap = rootClassMap;
 
     m_conflictDetail.SetEmptyObject();
     m_conflictDetail["kind"] = "UniqueConstraint";
@@ -1298,7 +1307,7 @@ void Impl::CaptureUniqueConstraintConflict(Options const& options, ClassMapCR cl
     }
 
     Utf8String ecsql("SELECT [ECInstanceId], [ECClassId] FROM ");
-    ecsql.append(rootClassMap->GetClass().GetECSqlName()).append(" WHERE ");
+    ecsql.append(lookupClassMap->GetClass().GetECSqlName()).append(" WHERE ");
     for (size_t i = 0; i < leaves.size(); ++i) {
         if (i > 0)
             ecsql.append(" AND ");
