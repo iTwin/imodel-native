@@ -1027,33 +1027,16 @@ DbResult BulkElementDeletion::ExecuteDeletion()
             return stat;
             }
 
-        // Do a manual foreign key check for the models to maintain integrity
-        struct DeferredFkCheck
+		// Get the count of deferred foreign key violations before we reset the pragma
+        const auto fkStat = m_dgndb.QueryDeferredForeignKeyDbStatus();
+        restoreFkState();
+        if (fkStat != BE_SQLITE_OK)	// FK violations exist, fail right away
             {
-            Utf8CP sql;
-            Utf8CP what;
-            };
-        static const DeferredFkCheck s_checks[] = {
-            { "SELECT 1 FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE ModelId IN (SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " WHERE IsSubModelRoot = 1) LIMIT 1",
-              "surviving element(s) still belong to a deleted model" },
-            { "SELECT 1 FROM " BIS_TABLE(BIS_CLASS_Model) " WHERE ParentModelId IN (SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " WHERE IsSubModelRoot = 1) LIMIT 1",
-              "surviving sub-model(s) still have a deleted parent model" },
-            { "SELECT 1 FROM " BIS_TABLE(BIS_CLASS_Model) " m WHERE NOT EXISTS (SELECT 1 FROM " BIS_TABLE(BIS_CLASS_Element) " e WHERE e.Id = m.ModeledElementId) LIMIT 1",
-              "surviving model(s) whose modeled element was deleted" },
-        };
-        for (const auto& check : s_checks)
-            {
-            auto stmt = m_dgndb.GetCachedStatement(check.sql);
-            if (!stmt.IsValid() || BE_SQLITE_ROW == stmt->Step())
-                {
-                LOG.errorv("BulkElementDeletion: integrity check failed: %s", check.what);
-                restoreFkState();
-                return BE_SQLITE_CONSTRAINT_FOREIGNKEY;
-                }
+            LOG.errorv("BulkElementDeletion: deferred FK integrity check failed: %s", BeSQLiteLib::GetLogError(fkStat).c_str());
+            return fkStat;
             }
         }
 
-    restoreFkState();
     return BE_SQLITE_OK;
     }
 

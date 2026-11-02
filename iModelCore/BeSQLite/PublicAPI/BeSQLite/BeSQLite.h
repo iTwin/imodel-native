@@ -3359,6 +3359,9 @@ public:
     BE_SQLITE_EXPORT DbResult QueryForeignKeyEnforcement(bool& enabled) const;
     //! Enable or disable SQLite foreign key enforcement on this connection.
     BE_SQLITE_EXPORT DbResult SetForeignKeyEnforcement(bool enabled) const;
+    //! Check for foreign key violations which have been deferred to commit in the current transaction.
+    //! @return BE_SQLITE_OK if none are pending, else BE_SQLITE_CONSTRAINT_FOREIGNKEY.
+    BE_SQLITE_EXPORT DbResult QueryDeferredForeignKeyDbStatus() const;
     BE_SQLITE_EXPORT DbBuffer Serialize(const char *zSchema = nullptr) const;
 
     BE_SQLITE_EXPORT static DbResult Deserialize(DbBuffer& buffer, DbR db, DbDeserializeOptions opts = DbDeserializeOptions::FreeOnClose, const char *zSchema = nullptr, std::function<void(DbR)> beforeDefaultTxnStarts = nullptr);
