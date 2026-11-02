@@ -531,6 +531,9 @@ public:
     //! @param[in] name The name of the domain to find.
     DGNPLATFORM_EXPORT DgnDomainCP FindDomain(Utf8CP name) const;
 
+    //! Get all domains registered with this DgnDb.
+    DomainList const& GetDomains() const { return m_domains; }
+
     //! Get the local (within this DgnDb) DgnClassId for the specified handler.
     DGNPLATFORM_EXPORT DgnClassId GetClassId(DgnDomain::Handler& handler);
 
