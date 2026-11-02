@@ -16,6 +16,9 @@ using namespace std::chrono_literals;
 typedef uint32_t TaskId;
 struct ECDb;
 struct ECSqlStatement;
+struct ECSqlStatus;
+struct ECSqlRowAdaptor;
+struct JsReadOptions;
 
 //=======================================================================================
 // @bsiclass
@@ -256,6 +259,7 @@ class ECSqlParams final {
         ECDB_EXPORT void FromJs(BeJsConst val);
         ECDB_EXPORT std::vector<std::string> GetKeys() const;
         ECDB_EXPORT bool TryBindTo(ECSqlStatement& stmt, std::string& err) const;
+        ECDB_EXPORT static bool TryBindParameter(ECSqlStatement& stmt, std::string const& name, ECSqlParam::Type type, BeJsConst value, std::string& err);
         ECDB_EXPORT std::string GetCacheKey() const;
 };
 
@@ -476,6 +480,39 @@ struct BlobIOResponse : public QueryResponse {
         ECDB_EXPORT void virtual ToJs(BeJsValue& v, bool includeData) const override;
 };
 
+struct CachedQueryAdaptor;
+
+//=======================================================================================
+//! A primary-connection ECSqlStatement leased from the ConcurrentQuery statement cache so it can be
+//! stepped synchronously on the thread that owns the primary connection. Releasing or destroying the
+//! lease resets the statement and returns it to the cache. While leased, the statement is never handed
+//! to another caller. Shutting down the ConcurrentQueryMgr (e.g. ECDb::ClearECDbCache or closing the db)
+//! finalizes the statement, after which GetStatement() returns nullptr.
+// @bsiclass
+//=======================================================================================
+struct ECSqlStatementLease final {
+    private:
+        std::shared_ptr<CachedQueryAdaptor> m_entry;
+        ECSqlStatementLease(ECSqlStatementLease const&) = delete;
+        ECSqlStatementLease& operator=(ECSqlStatementLease const&) = delete;
+    public:
+        explicit ECSqlStatementLease(std::shared_ptr<CachedQueryAdaptor> entry) : m_entry(std::move(entry)) {}
+        ECDB_EXPORT ~ECSqlStatementLease();
+        //! Returns the leased statement, or nullptr if the lease was released or invalidated.
+        ECDB_EXPORT ECSqlStatement* GetStatement() const;
+        //! Unique id of the prepared statement; changes whenever the cache prepares a new statement.
+        ECDB_EXPORT uint64_t GetStatementId() const;
+        //! Configures the cached adaptor and renderer for this lease. Returns nullptr for an invalidated lease.
+        ECDB_EXPORT ECSqlRowAdaptor* ConfigureRowAdaptor(JsReadOptions const&);
+        //! Returns the adaptor, or nullptr if the lease was released or invalidated.
+        ECDB_EXPORT ECSqlRowAdaptor* GetRowAdaptor() const;
+        enum class JsonRowResult { Success, RequiresDirectRendering, SizeLimitExceeded };
+        //! Appends strict JSON without reserving output beyond maxBytes (including existing buffer contents).
+        //! On any non-success result, discard partial output and render the current row directly.
+        ECDB_EXPORT JsonRowResult WriteRowAsJson(rapidjson::StringBuffer&, size_t maxBytes);
+        ECDB_EXPORT void Release();
+};
+
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
@@ -567,6 +604,7 @@ struct ConcurrentQueryMgr final {
         //! ordering deadlock with the primary connection. Kept for backward-compatible config
         //! serialization only; calling it has no effect on behavior.
         Config& SetDoNotUsePrimaryConnToPrepare(bool doNotUsePrimaryConnToPrepare) { m_doNotUsePrimaryConnToPrepare = doNotUsePrimaryConnToPrepare; return *this;}
+        //! Applies only to read-only managers that have not used the primary connection for queries or statement leases.
         Config& SetAutoShutdownWhenIdleForSeconds(std::chrono::seconds autoShutdownWhenIdleForSeconds) { m_autoShutdownWhenIdleForSeconds = autoShutdownWhenIdleForSeconds; return *this;}
         Config& SetStatementCacheSizePerWorker(uint32_t statementCacheSizePerWorker) { m_statementCacheSizePerWorker = statementCacheSizePerWorker; return *this;}
 
@@ -598,6 +636,9 @@ struct ConcurrentQueryMgr final {
         // change config
         ECDB_EXPORT static void WithInstance(ECDb const&, std::function<void(ConcurrentQueryMgr&)>);
         ECDB_EXPORT static void Shutdown(ECDbCR ecdb);
+        //! Leases a cached primary-connection statement for synchronous stepping on the thread that owns the
+        //! primary connection. Returns nullptr and sets @p status and @p error if the ECSQL cannot be prepared.
+        ECDB_EXPORT static std::unique_ptr<ECSqlStatementLease> LeaseStatement(ECDbCR ecdb, Utf8CP ecsql, bool logErrors, ECSqlStatus& status, std::string& error);
 };
 
 //=======================================================================================
