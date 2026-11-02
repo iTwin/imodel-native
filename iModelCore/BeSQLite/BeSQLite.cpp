@@ -6739,6 +6739,21 @@ DbResult Db::SetForeignKeyEnforcement(bool enabled) const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+DbResult Db::QueryDeferredForeignKeyDbStatus() const {
+    if (!m_dbFile)
+        return BE_SQLITE_ERROR_NOTOPEN;
+
+    int currentValue = 0;
+    int highWater = 0; // unused
+    const auto rc = static_cast<DbResult>(sqlite3_db_status(GetSqlDb(), SQLITE_DBSTATUS_DEFERRED_FKS, &currentValue, &highWater, 0));
+    if (rc == BE_SQLITE_OK)
+        return currentValue == 0 ? BE_SQLITE_OK : BE_SQLITE_CONSTRAINT_FOREIGNKEY;
+    return rc;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 DbResult DbFile::SetBusyTimeout(int ms) {
     // sqlite will clear any existing busy handler as their can be only one per connection.
     if (m_retry.IsValid())
