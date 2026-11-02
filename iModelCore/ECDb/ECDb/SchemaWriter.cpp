@@ -2336,29 +2336,29 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, PropertyChange& propert
         return ERROR;
         }
 
-    // Widening array bounds should be allowed (old min occurs > new min occurs)
+    // Narrowing of array bounds should not be allowed (old min occurs < new min occurs)
     if (propertyChange.ArrayMinOccurs().IsChanged())
         {
         const auto& minChange = propertyChange.ArrayMinOccurs();
-        const bool isWidened = !minChange.GetOld().IsNull() && !minChange.GetNew().IsNull() && minChange.GetOld().Value() > minChange.GetNew().Value();
-        if (!isWidened)
+        const bool isNarrowed = !minChange.GetOld().IsNull() && !minChange.GetNew().IsNull() && minChange.GetOld().Value() < minChange.GetNew().Value();
+        if (isNarrowed)
             {
             ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0338,
-                "ECSchema Upgrade failed. ECProperty %s.%s: Increasing 'MinOccurs' for an Array ECProperty is not supported. Only decreasing 'MinOccurs' is allowed.",
+                "ECSchema Upgrade failed. ECProperty %s.%s: Narrowing of array bounds by increasing 'MinOccurs' for an Array ECProperty is not supported.",
                 oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
             return ERROR;
             }
         }
 
-    // Widening array bounds should be allowed (old max occurs < new max occurs)
+    // Narrowing of array bounds should not be allowed (old max occurs > new max occurs)
     if (propertyChange.ArrayMaxOccurs().IsChanged())
         {
         const auto& maxChange = propertyChange.ArrayMaxOccurs();
-        const bool isWidened = !maxChange.GetOld().IsNull() && !maxChange.GetNew().IsNull() && maxChange.GetOld().Value() < maxChange.GetNew().Value();
-        if (!isWidened)
+        const bool isNarrowed = !maxChange.GetOld().IsNull() && !maxChange.GetNew().IsNull() && maxChange.GetOld().Value() > maxChange.GetNew().Value();
+        if (isNarrowed)
             {
             ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0338,
-                "ECSchema Upgrade failed. ECProperty %s.%s: Decreasing 'MaxOccurs' for an Array ECProperty is not supported. Only increasing 'MaxOccurs' is allowed.",
+                "ECSchema Upgrade failed. ECProperty %s.%s: Narrowing of array bounds by decreasing 'MaxOccurs' for an Array ECProperty is not supported.",
                 oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
             return ERROR;
             }
