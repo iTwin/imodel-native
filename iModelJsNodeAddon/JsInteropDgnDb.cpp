@@ -733,7 +733,7 @@ void JsInterop::DeleteElement(DgnDbR dgndb, Utf8StringCR eidStr) {
         THROW_JS_DGN_DB_EXCEPTION(Env(), "error deleting element", stat);
 }
 
-BulkDeleteElementsResult JsInterop::DeleteElements(DgnDbR dgndb, Napi::Array elementIds, Napi::Value deleteOptionsObj) {
+BulkDeleteElementsResult JsInterop::DeleteElements(DgnDbR dgndb, Napi::Array elementIds) {
     DgnElementIdSet elementIdSet;
     for (auto i = 0U; i < elementIds.Length(); ++i) {
         Napi::Value arrayItem = elementIds[i];
@@ -744,10 +744,6 @@ BulkDeleteElementsResult JsInterop::DeleteElements(DgnDbR dgndb, Napi::Array ele
                 elementIdSet.insert(DgnElementId(val.GetValue()));
         }
     }
-
-    BeJsConst deleteOptionsJson(deleteOptionsObj);
-    if (deleteOptionsJson.isObject())
-        return dgndb.Elements().DeleteElements(elementIdSet, deleteOptionsJson.Get(json_skipFKConstraintValidations()).asBool());
 
     return dgndb.Elements().DeleteElements(elementIdSet);
 }

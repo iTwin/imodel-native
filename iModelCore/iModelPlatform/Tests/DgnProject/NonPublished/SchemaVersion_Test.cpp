@@ -325,6 +325,34 @@ TEST_F(SchemaVersionTestFixture, ImportDomainSchemas)
     status = m_db->Elements().Delete(elId);
     EXPECT_TRUE(status == DgnDbStatus::ReadOnlyDomain);
 
+    /*
+    * Bulk deletion must enforce the same policy
+    */
+    {
+    PhysicalElementPtr bisEl = GenericPhysicalObject::Create(*GetDefaultPhysicalModel(), GetDefaultCategoryId());
+    DgnElementCPtr bisCEl = bisEl->Insert();
+    ASSERT_TRUE(bisCEl.IsValid());
+    const DgnElementId bisElId = bisCEl->GetElementId();
+    bisEl = nullptr;
+    bisCEl = nullptr;
+
+    m_db->Elements().ClearCache(); // make sure the read-only element is evaluated from the table, not via a loaded instance
+
+    DgnElementIdSet toDelete;
+    toDelete.insert(elId);
+    toDelete.insert(bisElId);
+    const auto bulkDeletionResult = m_db->Elements().DeleteElements(toDelete);
+    EXPECT_EQ(BulkDeleteElementsStatus::ConstraintViolation, bulkDeletionResult.status);
+    EXPECT_EQ(BE_SQLITE_OK, bulkDeletionResult.sqlDeleteStatus);
+    ASSERT_EQ(1, bulkDeletionResult.failures.size());
+    EXPECT_EQ(elId, bulkDeletionResult.failures[0].elementId);
+    EXPECT_EQ(BulkDeleteFailureReason::ReadOnlyDomain, bulkDeletionResult.failures[0].reason);
+    EXPECT_STREQ(SCHEMA_VERSION_TEST_SCHEMA_NAME, bulkDeletionResult.failures[0].detail.c_str());
+
+    EXPECT_TRUE(m_db->Elements().GetElement(elId).IsValid());
+    EXPECT_TRUE(m_db->Elements().GetElement(bisElId).IsValid());
+    }
+
     el = nullptr;
     cEl = nullptr;
     CloseDb();
