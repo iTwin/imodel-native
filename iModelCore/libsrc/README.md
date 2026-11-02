@@ -13,7 +13,7 @@ Libraries built in `iModelCore/libsrc/`.
 | `curl` | c-ares (macOS/Linux only) | 1.34.8 | Yes |
 | `facebook` | Facebook Folly | 57.0 | No |
 | `flatbuffers` | FlatBuffers | 1.12.0 | No |
-| `freetype2` | FreeType | 2.13.3 | No |
+| `freetype2` | FreeType | 2.14.3 | Yes |
 | `google_re2` | Google RE2 | SONAME 9 | No |
 | `icu4c` | ICU4C | 78.1 | No |
 | `ios-cmake` | ios-cmake | unknown | No |
