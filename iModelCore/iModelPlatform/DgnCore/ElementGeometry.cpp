@@ -1814,21 +1814,12 @@ void GeometryStreamIO::Writer::Append(ImageGraphicCR img)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template <typename T>
-static T const* GetVerifiedRoot(GeometryStreamIO::Operation const& operation)
-    {
-    return BentleyGeometryFlatBuffer::GetVerifiedRoot<T>(operation.m_data, operation.m_dataSize);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 bool GeometryStreamIO::Reader::Get(Operation const& egOp, DPoint2dCP& pts, int& nPts, int8_t& boundary) const
     {
     if (OpCode::PointPrimitive2d != egOp.m_opCode)
         return false;
 
-    auto ppfb = GetVerifiedRoot<FB::PointPrimitive2d>(egOp);
+    auto ppfb = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::PointPrimitive2d>(egOp.m_data, egOp.m_dataSize);
     if (nullptr == ppfb)
         return false;
 
@@ -1851,7 +1842,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, DPoint3dCP& pts, int& 
     if (OpCode::PointPrimitive != egOp.m_opCode)
         return false;
 
-    auto ppfb = GetVerifiedRoot<FB::PointPrimitive>(egOp);
+    auto ppfb = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::PointPrimitive>(egOp.m_data, egOp.m_dataSize);
     if (nullptr == ppfb)
         return false;
 
@@ -1874,7 +1865,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, DRange3dR range) const
     if (OpCode::SubGraphicRange != egOp.m_opCode)
         return false;
 
-    auto ppfb = GetVerifiedRoot<FB::PointPrimitive>(egOp);
+    auto ppfb = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::PointPrimitive>(egOp.m_data, egOp.m_dataSize);
     if (nullptr == ppfb)
         return false;
 
@@ -1895,7 +1886,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, DEllipse3dR arc, int8_
     if (OpCode::ArcPrimitive != egOp.m_opCode)
         return false;
 
-    auto ppfb = GetVerifiedRoot<FB::ArcPrimitive>(egOp);
+    auto ppfb = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::ArcPrimitive>(egOp.m_data, egOp.m_dataSize);
     if (nullptr == ppfb)
         return false;
 
@@ -2067,7 +2058,7 @@ IBRepEntityPtr GeometryStreamIO::Reader::ReadBRepEntity(uint8_t const* data, siz
     {
     IBRepEntityPtr entity;
 
-    auto ppfb = GetVerifiedRoot<FB::BRepData>(data, dataSize);
+    auto ppfb = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::BRepData>(data, dataSize);
     if (nullptr == ppfb)
         return nullptr;
 
@@ -2138,7 +2129,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, DgnGeometryPartId& geo
     if (OpCode::GeometryPartInstance != egOp.m_opCode)
         return false;
 
-    auto ppfb = GetVerifiedRoot<FB::GeometryPart>(egOp);
+    auto ppfb = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::GeometryPart>(egOp.m_data, egOp.m_dataSize);
     if (nullptr == ppfb)
         return false;
 
@@ -2167,7 +2158,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
         {
         case OpCode::BasicSymbology:
             {
-            auto ppfb = GetVerifiedRoot<FB::BasicSymbology>(egOp);
+            auto ppfb = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::BasicSymbology>(egOp.m_data, egOp.m_dataSize);
             if (nullptr == ppfb)
                 return false;
 
@@ -2259,7 +2250,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
 
         case OpCode::AreaFill:
             {
-            auto ppfb = GetVerifiedRoot<FB::AreaFill>(egOp);
+            auto ppfb = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::AreaFill>(egOp.m_data, egOp.m_dataSize);
             if (nullptr == ppfb)
                 return false;
 
@@ -2342,7 +2333,9 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
                         thematicSettings->SetMarginColor(ColorDef(fbThematicSettings->marginColor()));
                         thematicSettings->SetMode((ThematicGradientSettings::Mode) fbThematicSettings->mode());
                         thematicSettings->SetColorScheme((ThematicGradientSettings::ColorScheme) fbThematicSettings->colorScheme());
-                        thematicSettings->SetRange(*((DRange1dCP) fbThematicSettings->range()));
+                        auto range = (DRange1dCP) fbThematicSettings->range();
+                        if (nullptr != range)
+                            thematicSettings->SetRange(*range);
                         gradientPtr->SetThematicSettings(*thematicSettings);
                         }
 
@@ -2358,7 +2351,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
 
         case OpCode::Pattern:
             {
-            auto ppfb = GetVerifiedRoot<FB::AreaPattern>(egOp);
+            auto ppfb = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::AreaPattern>(egOp.m_data, egOp.m_dataSize);
             if (nullptr == ppfb)
                 return false;
 
@@ -2434,7 +2427,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
 
         case OpCode::Material:
             {
-            auto ppfb = GetVerifiedRoot<FB::Material>(egOp);
+            auto ppfb = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::Material>(egOp.m_data, egOp.m_dataSize);
             if (nullptr == ppfb)
                 return false;
 
@@ -2464,7 +2457,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
 
         case OpCode::LineStyleModifiers:
             {
-            auto ppfb = GetVerifiedRoot<FB::LineStyleModifiers>(egOp);
+            auto ppfb = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::LineStyleModifiers>(egOp.m_data, egOp.m_dataSize);
             if (nullptr == ppfb)
                 return false;
 
@@ -2524,7 +2517,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, ImageGraphicPtr& img) 
     if (OpCode::Image != egOp.m_opCode)
         return false;
 
-    auto ppfb = GetVerifiedRoot<FB::Image>(egOp);
+    auto ppfb = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::Image>(egOp.m_data, egOp.m_dataSize);
     if (nullptr == ppfb)
         return false;
 
@@ -2763,7 +2756,7 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
         {
         if ((GeometryStreamIO::OpCode::BasicSymbology == egOp.m_opCode) && importer.HasSubCategoryFilter())
             {
-            auto ppfb = GetVerifiedRoot<FB::BasicSymbology>(egOp);
+            auto ppfb = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::BasicSymbology>(egOp.m_data, egOp.m_dataSize);
             if (nullptr == ppfb)
                 return DgnDbStatus::ValidationFailed;
             DgnSubCategoryId subCategoryId((uint64_t) ppfb->subCategoryId());
@@ -2779,7 +2772,7 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
                 continue; // Appended by Reset() above.
             case GeometryStreamIO::OpCode::BasicSymbology:
                 {
-                auto ppfb = GetVerifiedRoot<FB::BasicSymbology>(egOp);
+                auto ppfb = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::BasicSymbology>(egOp.m_data, egOp.m_dataSize);
                 if (nullptr == ppfb)
                     return DgnDbStatus::ValidationFailed;
 
@@ -2804,7 +2797,7 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
 
             case GeometryStreamIO::OpCode::GeometryPartInstance:
                 {
-                auto ppfb = GetVerifiedRoot<FB::GeometryPart>(egOp);
+                auto ppfb = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::GeometryPart>(egOp.m_data, egOp.m_dataSize);
                 if (nullptr == ppfb)
                     return DgnDbStatus::ValidationFailed;
 
@@ -2822,7 +2815,7 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
 
             case OpCode::Pattern:
                 {
-                auto ppfb = GetVerifiedRoot<FB::AreaPattern>(egOp);
+                auto ppfb = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::AreaPattern>(egOp.m_data, egOp.m_dataSize);
                 if (nullptr == ppfb)
                     return DgnDbStatus::ValidationFailed;
 
@@ -2847,7 +2840,7 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
 
             case GeometryStreamIO::OpCode::Material:
                 {
-                auto fbSymb = GetVerifiedRoot<FB::Material>(egOp);
+                auto fbSymb = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::Material>(egOp.m_data, egOp.m_dataSize);
                 if (nullptr == fbSymb)
                     return DgnDbStatus::ValidationFailed;
 
@@ -2864,8 +2857,12 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
 
             case GeometryStreamIO::OpCode::ParasolidBRep:
                 {
-                auto ppfb = GetVerifiedRoot<FB::BRepData>(egOp);
+                auto ppfb = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::BRepData>(egOp.m_data, egOp.m_dataSize);
                 if (nullptr == ppfb)
+                    return DgnDbStatus::ValidationFailed;
+
+                auto entityData = ppfb->entityData();
+                if (nullptr == entityData)
                     return DgnDbStatus::ValidationFailed;
 
                 auto fbSymbology = ppfb->symbology();
@@ -2902,9 +2899,9 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
 
                 FlatBufferBuilder remappedfbb;
                 uint8_t* remappedEntityBuf = nullptr;
-                auto remappedEntityData = remappedfbb.CreateUninitializedVector(ppfb->entityData()->size(), &remappedEntityBuf);
+                auto remappedEntityData = remappedfbb.CreateUninitializedVector(entityData->size(), &remappedEntityBuf);
                 BeAssert(nullptr != remappedEntityBuf && "Unable to deep-copy b-rep data!");
-                memcpy(remappedEntityBuf, ppfb->entityData()->data(), ppfb->entityData()->size());
+                memcpy(remappedEntityBuf, entityData->data(), entityData->size());
                 auto remappedFaceSymb = remappedfbb.CreateVectorOfStructs(remappedFaceSymbVec.data(), remappedFaceSymbVec.size());
                 auto remappedFaceSymbIndex = ppfb->has_symbologyIndex() ? remappedfbb.CreateVectorOfStructs((FB::FaceSymbologyIndex const*) ppfb->symbologyIndex()->data(), ppfb->symbologyIndex()->size()) : 0;
                 auto mloc = FB::CreateBRepData(remappedfbb, ppfb->entityTransform(), ppfb->brepType(), remappedEntityData, remappedFaceSymb, remappedFaceSymbIndex);
@@ -2917,7 +2914,7 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
                 {
                 TextStringPtr text = TextString::Create(importer.GetSourceDb());
                 if (SUCCESS != TextStringPersistence::DecodeFromFlatBuf(*text, egOp.m_data, egOp.m_dataSize))
-                    break;
+                    return DgnDbStatus::ValidationFailed;
 
                 FontId srcFontId = text->GetStyle().GetFont();
                 FontId dstFontId = importer.RemapFont(srcFontId);
@@ -2930,7 +2927,7 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
 
             case GeometryStreamIO::OpCode::Image:
                 {
-                auto fbImg = GetVerifiedRoot<FB::Image>(egOp);
+                auto fbImg = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::Image>(egOp.m_data, egOp.m_dataSize);
                 if (nullptr == fbImg)
                     return DgnDbStatus::ValidationFailed;
 
@@ -2985,7 +2982,7 @@ void DefinitionElementUsageInfo::ScanGeometryStream(GeometryStreamCR geometryStr
             case GeometryStreamIO::OpCode::BasicSymbology:
                 if (!m_subCategoryIds.empty() || !m_lineStyleIds.empty())
                     {
-                    auto basicSymbologyFB = GetVerifiedRoot<FB::BasicSymbology>(entry);
+                    auto basicSymbologyFB = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::BasicSymbology>(entry.m_data, entry.m_dataSize);
                     if (nullptr != basicSymbologyFB)
                         {
                         DgnSubCategoryId subCategoryId(static_cast<uint64_t>(basicSymbologyFB->subCategoryId()));
@@ -3002,7 +2999,7 @@ void DefinitionElementUsageInfo::ScanGeometryStream(GeometryStreamCR geometryStr
             case GeometryStreamIO::OpCode::GeometryPartInstance:
                 if (!m_geometryPartIds.empty())
                     {
-                    auto geometryPartFB = GetVerifiedRoot<FB::GeometryPart>(entry);
+                    auto geometryPartFB = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::GeometryPart>(entry.m_data, entry.m_dataSize);
                     if (nullptr != geometryPartFB)
                         {
                         DgnGeometryPartId geometryPartId(static_cast<uint64_t>(geometryPartFB->geomPartId()));
@@ -3015,7 +3012,7 @@ void DefinitionElementUsageInfo::ScanGeometryStream(GeometryStreamCR geometryStr
             case GeometryStreamIO::OpCode::Pattern:
                 if (!m_geometryPartIds.empty())
                     {
-                    auto areaPatternFB = GetVerifiedRoot<FB::AreaPattern>(entry);
+                    auto areaPatternFB = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::AreaPattern>(entry.m_data, entry.m_dataSize);
                     if (nullptr != areaPatternFB)
                         {
                         DgnGeometryPartId geometryPartId(static_cast<uint64_t>(areaPatternFB->symbolId()));
@@ -3028,7 +3025,7 @@ void DefinitionElementUsageInfo::ScanGeometryStream(GeometryStreamCR geometryStr
             case GeometryStreamIO::OpCode::Material:
                 if (!m_renderMaterialIds.empty())
                     {
-                    auto materialFB = GetVerifiedRoot<FB::Material>(entry);
+                    auto materialFB = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::Material>(entry.m_data, entry.m_dataSize);
                     if (nullptr != materialFB)
                         {
                         RenderMaterialId renderMaterialId(static_cast<uint64_t>(materialFB->materialId()));
@@ -3041,7 +3038,7 @@ void DefinitionElementUsageInfo::ScanGeometryStream(GeometryStreamCR geometryStr
             case GeometryStreamIO::OpCode::ParasolidBRep:
                 if (!m_renderMaterialIds.empty())
                     {
-                    auto brepFB = GetVerifiedRoot<FB::BRepData>(entry);
+                    auto brepFB = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::BRepData>(entry.m_data, entry.m_dataSize);
                     if (nullptr != brepFB)
                         {
                         auto fbSymbology = brepFB->symbology();
@@ -3066,7 +3063,7 @@ void DefinitionElementUsageInfo::ScanGeometryStream(GeometryStreamCR geometryStr
             case GeometryStreamIO::OpCode::Image:
                 if (!m_textureIds.empty())
                     {
-                    auto imageFB = GetVerifiedRoot<FB::Image>(entry);
+                    auto imageFB = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::Image>(entry.m_data, entry.m_dataSize);
                     if (nullptr != imageFB)
                         {
                         DgnTextureId textureId(static_cast<uint64_t>(imageFB->textureId()));
@@ -3558,7 +3555,7 @@ bool GeometryStreamIO::Collection::HasSymbologyChanges(Render::GeometryParamsCR 
             case GeometryStreamIO::OpCode::ParasolidBRep:
                 {
                 // Don't instance BReps with face-attached materials.
-                auto ppfb = GetVerifiedRoot<FB::BRepData>(entry);
+                auto ppfb = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::BRepData>(entry.m_data, entry.m_dataSize);
                 if (nullptr != ppfb && ppfb->has_symbology() && ppfb->symbology()->size() > 0)
                     return true;
 
@@ -4738,7 +4735,7 @@ GeometryCollection::Iterator::EntryType GeometryCollection::Iterator::GetEntryTy
 
         case GeometryStreamIO::OpCode::PointPrimitive:
             {
-            auto ppfb = GetVerifiedRoot<FB::PointPrimitive>(m_egOp);
+            auto ppfb = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::PointPrimitive>(m_egOp.m_data, m_egOp.m_dataSize);
             if (nullptr == ppfb)
                 return EntryType::Unknown;
             return (FB::BoundaryType_Closed == ppfb->boundary() ? EntryType::CurveVector : EntryType::CurvePrimitive);
@@ -4746,7 +4743,7 @@ GeometryCollection::Iterator::EntryType GeometryCollection::Iterator::GetEntryTy
 
         case GeometryStreamIO::OpCode::PointPrimitive2d:
             {
-            auto ppfb = GetVerifiedRoot<FB::PointPrimitive2d>(m_egOp);
+            auto ppfb = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::PointPrimitive2d>(m_egOp.m_data, m_egOp.m_dataSize);
             if (nullptr == ppfb)
                 return EntryType::Unknown;
             return (FB::BoundaryType_Closed == ppfb->boundary() ? EntryType::CurveVector : EntryType::CurvePrimitive);
@@ -4754,7 +4751,7 @@ GeometryCollection::Iterator::EntryType GeometryCollection::Iterator::GetEntryTy
 
         case GeometryStreamIO::OpCode::ArcPrimitive:
             {
-            auto ppfb = GetVerifiedRoot<FB::ArcPrimitive>(m_egOp);
+            auto ppfb = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::ArcPrimitive>(m_egOp.m_data, m_egOp.m_dataSize);
             if (nullptr == ppfb)
                 return EntryType::Unknown;
             return (FB::BoundaryType_Closed == ppfb->boundary() ? EntryType::CurveVector : EntryType::CurvePrimitive);
@@ -4798,21 +4795,21 @@ bool GeometryCollection::Iterator::IsCurve() const
         {
         case GeometryStreamIO::OpCode::PointPrimitive:
             {
-            auto ppfb = GetVerifiedRoot<FB::PointPrimitive>(m_egOp);
+            auto ppfb = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::PointPrimitive>(m_egOp.m_data, m_egOp.m_dataSize);
 
             return (nullptr != ppfb && FB::BoundaryType_Open == ppfb->boundary());
             }
 
         case GeometryStreamIO::OpCode::PointPrimitive2d:
             {
-            auto ppfb = GetVerifiedRoot<FB::PointPrimitive2d>(m_egOp);
+            auto ppfb = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::PointPrimitive2d>(m_egOp.m_data, m_egOp.m_dataSize);
 
             return (nullptr != ppfb && FB::BoundaryType_Open == ppfb->boundary());
             }
 
         case GeometryStreamIO::OpCode::ArcPrimitive:
             {
-            auto ppfb = GetVerifiedRoot<FB::ArcPrimitive>(m_egOp);
+            auto ppfb = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::ArcPrimitive>(m_egOp.m_data, m_egOp.m_dataSize);
 
             return (nullptr != ppfb && FB::BoundaryType_Open == ppfb->boundary());
             }
@@ -4843,21 +4840,21 @@ bool GeometryCollection::Iterator::IsSurface() const
         {
         case GeometryStreamIO::OpCode::PointPrimitive:
             {
-            auto ppfb = GetVerifiedRoot<FB::PointPrimitive>(m_egOp);
+            auto ppfb = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::PointPrimitive>(m_egOp.m_data, m_egOp.m_dataSize);
 
             return (nullptr != ppfb && FB::BoundaryType_Closed == ppfb->boundary());
             }
 
         case GeometryStreamIO::OpCode::PointPrimitive2d:
             {
-            auto ppfb = GetVerifiedRoot<FB::PointPrimitive2d>(m_egOp);
+            auto ppfb = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::PointPrimitive2d>(m_egOp.m_data, m_egOp.m_dataSize);
 
             return (nullptr != ppfb && FB::BoundaryType_Closed == ppfb->boundary());
             }
 
         case GeometryStreamIO::OpCode::ArcPrimitive:
             {
-            auto ppfb = GetVerifiedRoot<FB::ArcPrimitive>(m_egOp);
+            auto ppfb = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::ArcPrimitive>(m_egOp.m_data, m_egOp.m_dataSize);
 
             return (nullptr != ppfb && FB::BoundaryType_Closed == ppfb->boundary());
             }
@@ -4895,7 +4892,7 @@ bool GeometryCollection::Iterator::IsSurface() const
 
         case GeometryStreamIO::OpCode::ParasolidBRep:
             {
-            auto ppfb = GetVerifiedRoot<FB::BRepData>(m_egOp);
+            auto ppfb = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::BRepData>(m_egOp.m_data, m_egOp.m_dataSize);
 
             return (nullptr != ppfb && IBRepEntity::EntityType::Sheet == ((IBRepEntity::EntityType) ppfb->brepType()));
             }
@@ -4928,7 +4925,7 @@ bool GeometryCollection::Iterator::IsSolid() const
 
         case GeometryStreamIO::OpCode::ParasolidBRep:
             {
-            auto ppfb = GetVerifiedRoot<FB::BRepData>(m_egOp);
+            auto ppfb = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::BRepData>(m_egOp.m_data, m_egOp.m_dataSize);
 
             return (nullptr != ppfb && IBRepEntity::EntityType::Solid == ((IBRepEntity::EntityType) ppfb->brepType()));
             }
@@ -5118,7 +5115,7 @@ void GeometryCollection::ToJson(BeJsValue output, BeJsConst opts) const
 
             case GeometryStreamIO::OpCode::BasicSymbology:
                 {
-                auto ppfb = GetVerifiedRoot<FB::BasicSymbology>(egOp);
+                auto ppfb = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::BasicSymbology>(egOp.m_data, egOp.m_dataSize);
                 if (nullptr == ppfb)
                     break;
 
@@ -5159,7 +5156,7 @@ void GeometryCollection::ToJson(BeJsValue output, BeJsConst opts) const
 
             case GeometryStreamIO::OpCode::LineStyleModifiers:
                 {
-                auto ppfb = GetVerifiedRoot<FB::LineStyleModifiers>(egOp);
+                auto ppfb = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::LineStyleModifiers>(egOp.m_data, egOp.m_dataSize);
                 if (nullptr == ppfb)
                     break;
 
@@ -5210,7 +5207,7 @@ void GeometryCollection::ToJson(BeJsValue output, BeJsConst opts) const
 
             case GeometryStreamIO::OpCode::AreaFill:
                 {
-                auto ppfb = GetVerifiedRoot<FB::AreaFill>(egOp);
+                auto ppfb = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::AreaFill>(egOp.m_data, egOp.m_dataSize);
                 if (nullptr == ppfb)
                     break;
 
@@ -5264,7 +5261,9 @@ void GeometryCollection::ToJson(BeJsValue output, BeJsConst opts) const
                             thematicSettings->SetMarginColor(ColorDef(fbThematicSettings->marginColor()));
                             thematicSettings->SetMode((ThematicGradientSettings::Mode) fbThematicSettings->mode());
                             thematicSettings->SetColorScheme((ThematicGradientSettings::ColorScheme) fbThematicSettings->colorScheme());
-                            thematicSettings->SetRange(*((DRange1dCP) fbThematicSettings->range()));
+                            auto range = (DRange1dCP) fbThematicSettings->range();
+                            if (nullptr != range)
+                                thematicSettings->SetRange(*range);
                             gradientPtr->SetThematicSettings(*thematicSettings);
                             }
 
@@ -5277,7 +5276,7 @@ void GeometryCollection::ToJson(BeJsValue output, BeJsConst opts) const
 
             case GeometryStreamIO::OpCode::Pattern:
                 {
-                auto ppfb = GetVerifiedRoot<FB::AreaPattern>(egOp);
+                auto ppfb = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::AreaPattern>(egOp.m_data, egOp.m_dataSize);
                 if (nullptr == ppfb)
                     break;
 
@@ -5348,7 +5347,7 @@ void GeometryCollection::ToJson(BeJsValue output, BeJsConst opts) const
 
             case GeometryStreamIO::OpCode::Material:
                 {
-                auto ppfb = GetVerifiedRoot<FB::Material>(egOp);
+                auto ppfb = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::Material>(egOp.m_data, egOp.m_dataSize);
                 if (nullptr == ppfb)
                     break;
 
@@ -5381,7 +5380,7 @@ void GeometryCollection::ToJson(BeJsValue output, BeJsConst opts) const
 
             case GeometryStreamIO::OpCode::GeometryPartInstance:
                 {
-                auto ppfb = GetVerifiedRoot<FB::GeometryPart>(egOp);
+                auto ppfb = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::GeometryPart>(egOp.m_data, egOp.m_dataSize);
                 if (nullptr == ppfb)
                     break;
 
@@ -5461,7 +5460,7 @@ void GeometryCollection::ToJson(BeJsValue output, BeJsConst opts) const
 
             case GeometryStreamIO::OpCode::ParasolidBRep:
                 {
-                auto ppfb = GetVerifiedRoot<FB::BRepData>(egOp);
+                auto ppfb = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::BRepData>(egOp.m_data, egOp.m_dataSize);
                 if (nullptr == ppfb)
                     break;
 
@@ -5610,7 +5609,7 @@ GeometryStreamEntryId GeometryBuilder::GetGeometryStreamEntryId() const
             {
             case GeometryStreamIO::OpCode::GeometryPartInstance:
                 {
-                auto ppfb = GetVerifiedRoot<FB::GeometryPart>(egOp);
+                auto ppfb = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::GeometryPart>(egOp.m_data, egOp.m_dataSize);
 
                 entryId.SetGeometryPartId(DgnGeometryPartId((uint64_t) (nullptr != ppfb ? ppfb->geomPartId() : 0)));
                 entryId.IncrementIndex();
@@ -6673,7 +6672,7 @@ GeometryBuilderPtr GeometryBuilder::CreateGeometryPart(GeometryStreamCR stream, 
                     }
 
                 // Can't change sub-category in GeometryPart's GeometryStream, only preserve sub-category appearance overrides.
-                auto ppfb = GetVerifiedRoot<FB::BasicSymbology>(egOp);
+                auto ppfb = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::BasicSymbology>(egOp.m_data, egOp.m_dataSize);
                 if (nullptr == ppfb)
                     break;
 

@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <DgnPlatformInternal/DgnCore/TextStringPersistence.h>
+#include <GeomSerialization/GeomLibsFlatBufferApi.h>
 
 template<typename T> static bool isEnumFlagSet(T testBit, T options) { return 0 != ((int)options & (int)testBit); }
 
@@ -556,7 +557,8 @@ BentleyStatus TextStringPersistence::DecodeFromFlatBuf(TextStringR text, FB::Tex
 
     // some converters store both the textstring and the glyph layout information so that visual fidelity with a source application is guaranteed.
     // However, if a fallback font is being used, that information isn't valid.
-    if (!font.IsFallback() && fbText.has_range() && fbText.has_glyphIds() && fbText.has_glyphOrigins() && fbText.glyphIds()->size()>0  && fbText.glyphOrigins()->size()>0) {
+    if (!font.IsFallback() && fbText.has_range() && fbText.has_glyphIds() && fbText.has_glyphOrigins() &&
+        fbText.glyphIds()->size() > 0 && fbText.glyphIds()->size() == fbText.glyphOrigins()->size()) {
         text.m_range = *reinterpret_cast<DRange2dCP>(fbText.range());
         FaceStyle faceStyle = FontManager::FaceStyleFromBoldItalic(text.m_style.m_isBold, text.m_style.m_isItalic);
 
@@ -579,11 +581,7 @@ BentleyStatus TextStringPersistence::DecodeFromFlatBuf(TextStringR text, FB::Tex
 //---------------------------------------------------------------------------------------
 BentleyStatus TextStringPersistence::DecodeFromFlatBuf(TextStringR text, Byte const* buffer, size_t numBytes)
     {
-    flatbuffers::Verifier verifier(buffer, numBytes);
-    if (!verifier.VerifyBuffer<FB::TextString>())
-        return ERROR;
-
-    auto fbText = flatbuffers::GetRoot<FB::TextString>(buffer);
+    auto fbText = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::TextString>(buffer, numBytes);
     if (nullptr == fbText)
         return ERROR;
 
