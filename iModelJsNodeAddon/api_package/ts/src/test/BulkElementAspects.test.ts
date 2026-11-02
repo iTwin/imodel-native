@@ -644,7 +644,8 @@ describe("bulk element aspects", () => {
       db.setIModelDb(mock.mockJsDb);
 
       expect(() => db.deleteElementAspects(inserted.ids)).to.throw(`aspect ${inserted.ids[1]} can no longer be deleted after the onDelete handlers`);
-      expect(mock.aspectCalls("onDeleted")).to.deep.equal([]);
+      // only the single-aspect delete made by the handler calls onDeleted
+      expect(mock.aspectCalls("onDeleted").map((c) => c.arg.aspectId)).to.deep.equal([inserted.ids[1]]);
       expect(queryAspects().filter((r) => r.element === e1).map((r) => r.id)).to.deep.equal([inserted.ids[0], inserted.ids[2]]);
     });
   });
