@@ -675,6 +675,23 @@ void JsInterop::UpdateProjectExtents(DgnDbR dgndb, BeJsConst newExtents) {
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void JsInterop::UpdateIModelProps(DgnDbR dgndb, BeJsConst props) {
+    GeoCoordinates::BaseGCSPtr newGCS;
+    auto gcsJson = props[json_geographicCoordinateSystem()];
+    if (!gcsJson.isNull()) {
+        newGCS = GeoCoordinates::BaseGCS::CreateGCS();
+        if (!newGCS.IsValid())
+            THROW_JS_DGN_DB_EXCEPTION(Env(), "Could not create geographic coordinate system", DgnDbStatus::BadRequest);
+
+        Utf8String errorFacingMessage;
+        if (SUCCESS != newGCS->FromJson(gcsJson, errorFacingMessage) || !newGCS->IsValid()) {
+            Utf8String message("Invalid geographic coordinate system");
+            if (!errorFacingMessage.empty())
+                message.append(": ").append(errorFacingMessage);
+
+            THROW_JS_DGN_DB_EXCEPTION(Env(), message.c_str(), DgnDbStatus::BadArg);
+        }
+    }
+
     auto& geolocation = dgndb.GeoLocation();
     auto extJson = props[json_projectExtents()];
     if (!extJson.isNull()) {
@@ -693,16 +710,8 @@ void JsInterop::UpdateIModelProps(DgnDbR dgndb, BeJsConst props) {
         geolocation.SetEcefLocation(ecef);
     }
 
-    auto gcsJson = props[json_geographicCoordinateSystem()];
-    if (!gcsJson.isNull()) {
-        GeoCoordinates::BaseGCSPtr newGCS = GeoCoordinates::BaseGCS::CreateGCS();
-
-        if (newGCS.IsValid()) {
-            Utf8String errorFacingMessage;
-            if (SUCCESS == newGCS->FromJson(gcsJson, errorFacingMessage))
-                geolocation.SetGCS(newGCS.get());
-        }
-    }
+    if (newGCS.IsValid())
+        geolocation.SetGCS(newGCS.get());
 
     geolocation.Save();
 }

@@ -6,9 +6,9 @@ import { assert, expect } from "chai";
 import { spawnSync } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
-import { OpenMode } from "@itwin/core-bentley";
+import { IModelStatus, OpenMode } from "@itwin/core-bentley";
 import { GeoCoordStatus } from "@itwin/core-common";
-import { Point3d } from "@itwin/core-geometry";
+import { Point3d, Range3d } from "@itwin/core-geometry";
 import { getLocalBuildOfAddonPath, getOutputDir, iModelJsNative } from "./utils";
 
 const verticalDatumDictionary = JSON.stringify({
@@ -359,19 +359,260 @@ describe("GeoServices", () => {
     }
   });
 
-  it("uses the fallback id when the named vertical coordinate reference system is unknown", () => {
+  it("rejects invalid GCS updates without changing geolocation or persisted properties", () => {
+    const iModelPath = path.join(getOutputDir(), "InvalidGcsUpdate.bim");
+    fs.rmSync(iModelPath, { force: true });
+    const iModelDb = new iModelJsNative.DgnDb();
+    try {
+      iModelDb.createIModel(iModelPath, { rootSubject: { name: "Invalid GCS update" } });
+      const initialGcs = {
+        horizontalCRS: { id: "LL84" },
+        verticalCRS: { id: "GEOID" as const, crsName: "EGM96 height" },
+      };
+      iModelDb.updateIModelProps({
+        rootSubject: { name: "ignored" },
+        geographicCoordinateSystem: initialGcs,
+      });
+      iModelDb.saveChanges();
+      const originalProps = iModelDb.getIModelProps();
+      const property = (name: string) => iModelDb.queryFileProperty({ namespace: "dgn_Db", name }, true);
+      const originalUnits = property("Units");
+      const originalGcs = iModelDb.queryFileProperty({ namespace: "dgn_Db", name: "DgnGCS" }, false);
+      const originalVerticalCrs = property("DgnGCSVerticalCRS");
+      assert.isString(originalUnits);
+      assert.instanceOf(originalGcs, Uint8Array);
+      assert.isString(originalVerticalCrs);
+
+      for (const geographicCoordinateSystem of [
+        {},
+        { horizontalCRS: { id: "Unknown horizontal CRS" } },
+        { horizontalCRS: { id: "LL84" }, verticalCRS: { id: "GEOID" as const, crsName: "Unknown test height" } },
+        { horizontalCRS: { id: "LL84" }, verticalCRS: { id: "GEOID" as const, epsg: 999999 } },
+      ]) {
+        expect(() => iModelDb.updateIModelProps({
+          rootSubject: { name: "ignored" },
+          geographicCoordinateSystem,
+          projectExtents: { low: { x: -100, y: -200, z: -300 }, high: { x: 400, y: 500, z: 600 } },
+          globalOrigin: { x: 100, y: 200, z: 300 },
+          ecefLocation: { origin: { x: 400, y: 500, z: 600 }, orientation: { yaw: 0, pitch: 0, roll: 0 } },
+        })).to.throw(/Invalid geographic coordinate system: .+/).with.property("errorNumber", IModelStatus.BadArg);
+        expect(iModelDb.getIModelProps()).to.deep.equal(originalProps);
+        expect(property("Units")).to.equal(originalUnits);
+        expect(iModelDb.queryFileProperty({ namespace: "dgn_Db", name: "DgnGCS" }, false)).to.deep.equal(originalGcs);
+        expect(property("DgnGCSVerticalCRS")).to.equal(originalVerticalCrs);
+        iModelDb.saveChanges();
+        iModelDb.closeFile();
+        iModelDb.openIModel(iModelPath, OpenMode.ReadWrite);
+        expect(iModelDb.getIModelProps()).to.deep.equal(originalProps);
+        expect(property("Units")).to.equal(originalUnits);
+        expect(iModelDb.queryFileProperty({ namespace: "dgn_Db", name: "DgnGCS" }, false)).to.deep.equal(originalGcs);
+        expect(property("DgnGCSVerticalCRS")).to.equal(originalVerticalCrs);
+      }
+    } finally {
+      iModelDb.closeFile();
+      fs.rmSync(iModelPath, { force: true });
+    }
+  });
+
+  it("persists intentional GCS replacements with other geolocation updates", () => {
+    const iModelPath = path.join(getOutputDir(), "ValidGcsUpdate.bim");
+    fs.rmSync(iModelPath, { force: true });
+    const iModelDb = new iModelJsNative.DgnDb();
+    try {
+      iModelDb.createIModel(iModelPath, { rootSubject: { name: "Valid GCS update" } });
+      for (const verticalCRS of [
+        { id: "GEOID" as const, crsName: "EGM96 height" },
+        { id: "ELLIPSOID" as const },
+      ]) {
+        const projectExtents = { low: { x: -100, y: -200, z: -300 }, high: { x: 400, y: 500, z: 600 } };
+        const globalOrigin = { x: 100, y: 200, z: 300 };
+        const ecefLocation = { origin: { x: 400, y: 500, z: 600 }, orientation: { yaw: 0, pitch: 0, roll: 0 } };
+        iModelDb.updateIModelProps({
+          rootSubject: { name: "ignored" },
+          geographicCoordinateSystem: { horizontalCRS: { id: "LL84" }, verticalCRS },
+          projectExtents, globalOrigin, ecefLocation,
+        });
+        const storedUnits = iModelDb.queryFileProperty({ namespace: "dgn_Db", name: "Units" }, true);
+        if (typeof storedUnits !== "string")
+          assert.fail("Expected the geolocation Units file property to exist as a string");
+        const units = JSON.parse(storedUnits);
+        expect(Point3d.fromJSON(units.globalOrigin).isAlmostEqual(Point3d.fromJSON(globalOrigin))).to.be.true;
+        expect(Point3d.fromJSON(units.ecefLocation.origin).isAlmostEqual(Point3d.fromJSON(ecefLocation.origin))).to.be.true;
+        const updatedProps = iModelDb.getIModelProps();
+        expect(Range3d.fromJSON(updatedProps.projectExtents).isAlmostEqual(Range3d.fromJSON(projectExtents))).to.be.true;
+        expect(Point3d.fromJSON(updatedProps.globalOrigin).isAlmostEqual(Point3d.fromJSON(globalOrigin))).to.be.true;
+        assert.isDefined(updatedProps.ecefLocation);
+        expect(updatedProps.geographicCoordinateSystem?.verticalCRS?.id).to.equal(verticalCRS.id);
+        iModelDb.saveChanges();
+        iModelDb.closeFile();
+        iModelDb.openIModel(iModelPath, OpenMode.ReadWrite);
+        expect(iModelDb.getIModelProps()).to.deep.equal(updatedProps);
+      }
+    } finally {
+      iModelDb.closeFile();
+      fs.rmSync(iModelPath, { force: true });
+    }
+  });
+
+  it("does not publish rejected custom vertical transforms before the saved GCS is loaded", () => {
+    const workspacePath = path.join(getOutputDir(), "GeoServices.itwin-workspace");
+    const iModelPath = path.join(getOutputDir(), "RejectedCustomVerticalTransform.bim");
+    fs.rmSync(iModelPath, { force: true });
+    const geographicCoordinateSystem = {
+      horizontalCRS: {
+        id: "RejectedUpdateLL",
+        datumId: "WGS84",
+        unit: "Degree" as const,
+        projection: { method: "None" as const },
+        extent: { southWest: { latitude: -1, longitude: -1 }, northEast: { latitude: 1, longitude: 1 } },
+      },
+      verticalCRS: {
+        id: "GEOID" as const,
+        crsName: "Rejected update test height",
+        datumName: "Rejected update test height",
+        type: "GEOID",
+        units: "meter",
+        extent: { southWest: { latitude: -90, longitude: -180 }, northEast: { latitude: 90, longitude: 180 } },
+        transforms: [{ target: "WGS84", verticalOffset: { offset: 10, units: "meter" } }],
+      },
+    };
+    const iModelDb = new iModelJsNative.DgnDb();
+    try {
+      iModelDb.createIModel(iModelPath, { rootSubject: { name: "Rejected custom vertical transform" } });
+      iModelDb.updateIModelProps({
+        rootSubject: { name: "ignored" },
+        geographicCoordinateSystem,
+        projectExtents: { low: { x: -0.5, y: -0.5, z: 0 }, high: { x: 0.5, y: 0.5, z: 100 } },
+      });
+      const unitsProperty = { namespace: "dgn_Db", name: "Units" };
+      const unitsString = iModelDb.queryFileProperty(unitsProperty, true);
+      if (typeof unitsString !== "string")
+        assert.fail("Expected the geolocation Units file property to exist as a string");
+      const units = JSON.parse(unitsString);
+      // Exercise lazy GCS loading with no saved ECEF in each fresh process.
+      delete units.ecefLocation;
+      iModelDb.saveFileProperty(unitsProperty, JSON.stringify(units), undefined);
+      iModelDb.saveChanges();
+      iModelDb.closeFile();
+
+      const rejectedVerticalCRS = {
+        ...geographicCoordinateSystem.verticalCRS,
+        transforms: [{ target: "WGS84", verticalOffset: { offset: 1000, units: "meter" } }],
+      };
+      // Older Windows x64 lld-link delay-load thunks corrupt the first napi_create_double argument.
+      // Prime numeric error creation without loading the saved GCS; remove after iTwin/itwinjs-backlog#2530 is fixed.
+      // Note: the openIModel call below is there purely to trigger the delay-load workaround; it does not actually open
+      // a valid iModel.
+      const delayLoadWorkaround = `
+        if (process.platform === "win32" && process.arch === "x64") {
+          const warmupDb = new addon.DgnDb();
+          try {
+            assert.throws(() => warmupDb.openIModel("", OpenMode.ReadWrite),
+              "Temporary N-API delay-load warm-up; remove after iTwin/itwinjs-backlog#2530 is fixed");
+          } finally {
+            warmupDb.closeFile();
+          }
+        }
+      `;
+      const script = `
+        const assert = require("node:assert/strict");
+        const addon = require(process.argv[1]);
+        const { IModelStatus, OpenMode } = require("@itwin/core-bentley");
+        ${delayLoadWorkaround}
+        assert.equal(addon.addGcsWorkspaceDb(process.argv[2], undefined, 10000), true);
+        const db = new addon.DgnDb();
+        try {
+          db.openIModel(process.argv[3], OpenMode.ReadWrite);
+          const units = db.queryFileProperty({ namespace: "dgn_Db", name: "Units" }, true);
+          assert.equal(JSON.parse(units).ecefLocation, undefined);
+          const vertical = db.queryFileProperty({ namespace: "dgn_Db", name: "DgnGCSVerticalCRS" }, true);
+          const gcs = db.queryFileProperty({ namespace: "dgn_Db", name: "DgnGCS" }, false);
+          assert.throws(() => db.updateIModelProps({
+            rootSubject: { name: "ignored" },
+            projectExtents: { low: { x: -1, y: -1, z: 0 }, high: { x: 1, y: 1, z: 100 } },
+            geographicCoordinateSystem: JSON.parse(process.argv[4]),
+          }), (error) => error.errorNumber === IModelStatus.BadArg && /Invalid geographic coordinate system/.test(error.message));
+          assert.equal(db.queryFileProperty({ namespace: "dgn_Db", name: "Units" }, true), units);
+          assert.equal(db.queryFileProperty({ namespace: "dgn_Db", name: "DgnGCSVerticalCRS" }, true), vertical);
+          assert.deepEqual(db.queryFileProperty({ namespace: "dgn_Db", name: "DgnGCS" }, false), gcs);
+          const response = db.getGeoCoordinatesFromIModelCoordinates({
+            target: JSON.stringify({ horizontalCRS: { id: "LL84" }, verticalCRS: { id: "ELLIPSOID", crsName: "WGS84" } }),
+            iModelCoords: [{ x: 0, y: 0, z: 100 }],
+          });
+          assert.equal(response.geoCoords.length, 1);
+          assert.equal(response.geoCoords[0].s, 0);
+          assert.ok(Math.abs(response.geoCoords[0].p[2] - 110) < 1e-8, JSON.stringify(response));
+        } finally {
+          db.closeFile();
+        }
+      `;
+      for (const [label, replacement] of [
+        ["invalid additional transform", {
+          horizontalCRS: geographicCoordinateSystem.horizontalCRS,
+          verticalCRS: rejectedVerticalCRS,
+          additionalTransform: {},
+        }],
+        ["invalid vertical transform", {
+          horizontalCRS: geographicCoordinateSystem.horizontalCRS,
+          verticalCRS: { ...rejectedVerticalCRS, transforms: [...rejectedVerticalCRS.transforms, { target: "WGS84", verticalOffset: {} }] },
+        }],
+        ["invalid vertical transform path", {
+          horizontalCRS: geographicCoordinateSystem.horizontalCRS,
+          verticalCRS: { ...rejectedVerticalCRS, transformPaths: [{ target: "WGS84", path: ["Wrong source", "WGS84"] }] },
+        }],
+        ["non-overlapping vertical extent", {
+          horizontalCRS: geographicCoordinateSystem.horizontalCRS,
+          verticalCRS: {
+            ...rejectedVerticalCRS,
+            extent: { southWest: { latitude: 20, longitude: 20 }, northEast: { latitude: 30, longitude: 30 } },
+          },
+        }],
+      ] as const) {
+        const result = spawnSync(process.execPath, ["-e", script, getLocalBuildOfAddonPath(), workspacePath, iModelPath, JSON.stringify(replacement)], {
+          encoding: "utf8", timeout: 60000,
+        });
+        expect(result.status, `${label}: ${result.error?.message ?? ""}\n${result.stderr}\n${result.stdout}`).to.equal(0);
+      }
+    } finally {
+      iModelDb.closeFile();
+      fs.rmSync(iModelPath, { force: true });
+    }
+  });
+
+  it("rejects an unknown or invalid named vertical coordinate reference system instead of using the fallback id", () => {
+    for (const verticalCRS of [
+      { crsName: "Unknown test height", id: "GEOID" },
+      { crsName: "", id: "GEOID" },
+      { epsg: 999999, id: "GEOID" },
+      { epsg: 0, id: "GEOID" },
+      { epsg: -1, id: "GEOID" },
+      { epsg: "5773", id: "GEOID" },
+      { crsName: "Unknown test height", epsg: 999999, id: "GEOID" },
+    ]) {
+      const response = iModelJsNative.GeoServices.getGeographicCRSInterpretation({
+        format: "JSON",
+        geographicCRSDef: JSON.stringify({ horizontalCRS: { id: "LL84" }, verticalCRS }),
+      });
+
+      expect(response.status, JSON.stringify(verticalCRS)).to.not.equal(0);
+      expect(response.geographicCRS, JSON.stringify(verticalCRS)).to.be.undefined;
+    }
+  });
+
+  it("omits epsg from a vertical coordinate reference system that has no EPSG code", () => {
     const response = iModelJsNative.GeoServices.getGeographicCRSInterpretation({
       format: "JSON",
       geographicCRSDef: JSON.stringify({
         horizontalCRS: { id: "LL84" },
-        verticalCRS: { crsName: "Unknown test height", id: "GEOID" },
+        verticalCRS: { crsName: "NAVD88 height", id: "NAVD88" },
       }),
     });
 
     expect(response.status).to.equal(0);
-    const verticalCRS = (response.geographicCRS as { verticalCRS?: { id?: string } } | undefined)?.verticalCRS;
+    const verticalCRS = (response.geographicCRS as { verticalCRS?: { crsName?: string, epsg?: number } } | undefined)?.verticalCRS;
     assert.isDefined(verticalCRS);
-    expect(verticalCRS.id).to.equal("GEOID");
+    expect(verticalCRS.crsName).to.equal("NAVD88 height");
+    expect(verticalCRS).to.not.have.property("epsg");
   });
 
   it("filters vertical coordinate reference systems by point", () => {
