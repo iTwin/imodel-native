@@ -2336,12 +2336,12 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, PropertyChange& propert
         return ERROR;
         }
 
-    // Narrowing of array bounds should not be allowed (old min occurs < new min occurs)
+    // Widening of array bounds should be allowed (old min occurs > new min occurs)
     if (propertyChange.ArrayMinOccurs().IsChanged())
         {
         const auto& minChange = propertyChange.ArrayMinOccurs();
-        const bool isNarrowed = !minChange.GetOld().IsNull() && !minChange.GetNew().IsNull() && minChange.GetOld().Value() < minChange.GetNew().Value();
-        if (isNarrowed)
+        const bool isWidened = !minChange.GetOld().IsNull() && !minChange.GetNew().IsNull() && minChange.GetOld().Value() > minChange.GetNew().Value();
+        if (!isWidened)
             {
             ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0338,
                 "ECSchema Upgrade failed. ECProperty %s.%s: Narrowing of array bounds by increasing 'MinOccurs' for an Array ECProperty is not supported.",
@@ -2350,12 +2350,12 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, PropertyChange& propert
             }
         }
 
-    // Narrowing of array bounds should not be allowed (old max occurs > new max occurs)
+    // Widening of array bounds should be allowed (old max occurs < new max occurs)
     if (propertyChange.ArrayMaxOccurs().IsChanged())
         {
         const auto& maxChange = propertyChange.ArrayMaxOccurs();
-        const bool isNarrowed = !maxChange.GetOld().IsNull() && !maxChange.GetNew().IsNull() && maxChange.GetOld().Value() > maxChange.GetNew().Value();
-        if (isNarrowed)
+        const bool isWidened = !maxChange.GetOld().IsNull() && !maxChange.GetNew().IsNull() && maxChange.GetOld().Value() < maxChange.GetNew().Value();
+        if (!isWidened)
             {
             ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0338,
                 "ECSchema Upgrade failed. ECProperty %s.%s: Narrowing of array bounds by decreasing 'MaxOccurs' for an Array ECProperty is not supported.",
