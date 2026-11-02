@@ -6,7 +6,7 @@ import { DbResult, Id64, Id64String, IModelStatus } from "@itwin/core-bentley";
 import type { ElementAspectProps, SubjectProps } from "@itwin/core-common";
 import { expect } from "chai";
 import { openDgnDb } from ".";
-import { BulkElementAspectsMode, BulkElementAspectsStatus, IModelJsNative } from "../NativeLibrary";
+import { BulkElementAspectFailureReason, BulkElementAspectsStatus, IModelJsNative } from "../NativeLibrary";
 import { copyFile, dbFileName, iModelJsNative } from "./utils";
 
 const testSchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -245,8 +245,10 @@ describe("bulk element aspects", () => {
       expect(findAspect(again.ids[0])!.strProp).to.equal("third");
     });
 
-    it("reports per-row failures and still inserts the valid rows", () => {
+    it("validates every row, and writes nothing and calls no handlers if any row is invalid", () => {
       const e1 = insertOwner();
+      const mock = makeMockJsDb();
+      db.setIModelDb(mock.mockJsDb);
       const props: any[] = [
         multiProps(e1, "ok1"),
         multiProps("0", "invalidOwner"),
@@ -259,28 +261,26 @@ describe("bulk element aspects", () => {
       ];
 
       const result = db.insertElementAspects(props);
-      expect(result.status).to.equal(BulkElementAspectsStatus.PartialSuccess);
-      expect(result.failures.map((f) => f.index)).to.deep.equal([1, 2, 3, 4, 5, 6]);
-      expect(result.failures.map((f) => f.status)).to.deep.equal([
-        IModelStatus.InvalidId,
-        IModelStatus.MissingId,
-        IModelStatus.BadSchema,
-        IModelStatus.WrongClass,
-        IModelStatus.BadArg,
-        IModelStatus.BadArg,
+      expect(result.status).to.equal(BulkElementAspectsStatus.ValidationFailed);
+      expect(result.failures.map((f) => [f.index, f.reason, f.detail])).to.deep.equal([
+        [1, BulkElementAspectFailureReason.InvalidId, "invalid owning element id"],
+        [2, BulkElementAspectFailureReason.ElementNotFound, "0xffffff0"],
+        [3, BulkElementAspectFailureReason.ClassNotFound, "BulkAspectTest:DoesNotExist"],
+        [4, BulkElementAspectFailureReason.NotAnAspectClass, "BisCore:Subject"],
+        [5, BulkElementAspectFailureReason.InvalidProps, "aspect props must be an object"],
+        [6, BulkElementAspectFailureReason.InvalidProps, "aspect props must have a classFullName"],
       ]);
-      result.failures.forEach((f) => expect(f.message).to.be.a("string").and.not.empty);
-
-      expect(Id64.isValidId64(result.ids[0])).to.be.true;
-      expect(Id64.isValidId64(result.ids[7])).to.be.true;
-      [1, 2, 3, 4, 5, 6].forEach((i) => expect(result.ids[i]).to.equal("0"));
-      expect(queryAspects().filter((r) => r.element === e1).map((r) => r.strProp).sort()).to.deep.equal(["ok1", "ok2"]);
+      result.failures.forEach((f) => expect(f.id).to.be.undefined);
+      expect(result.ids).to.deep.equal([]);
+      expect(mock.calls).to.deep.equal([]);
+      expect(queryAspects().filter((r) => r.element === e1)).to.deep.equal([]);
     });
 
-    it("all rows failing reports Failed, and an empty array reports Success", () => {
+    it("all rows failing reports ValidationFailed, and an empty array reports Success", () => {
       const all = db.insertElementAspects([multiProps("0", "a"), multiProps("0", "b")]);
-      expect(all.status).to.equal(BulkElementAspectsStatus.Failed);
+      expect(all.status).to.equal(BulkElementAspectsStatus.ValidationFailed);
       expect(all.failures.length).to.equal(2);
+      expect(all.ids).to.deep.equal([]);
 
       const empty = db.insertElementAspects([]);
       expect(empty.status).to.equal(BulkElementAspectsStatus.Success);
@@ -306,7 +306,7 @@ describe("bulk element aspects", () => {
       expect(findAspect(result.ids[1])).to.deep.include({ element: e1, strProp: "u1" });
     });
 
-    it("reports aspects that cannot be written, still writing the owner's other aspects", () => {
+    it("throws at the first aspect that cannot be written, calling no post-insert handlers", () => {
       const e1 = insertOwner();
       const e2 = insertOwner();
       expect(db.insertElementAspects([uniqueProps(e2, "o2", undefined, otherUniqueClass)]).status).to.equal(BulkElementAspectsStatus.Success);
@@ -314,28 +314,24 @@ describe("bulk element aspects", () => {
       db.setIModelDb(mock.mockJsDb);
 
       withFailingAspectWrites("bis_ElementMultiAspect", "UPDATE", otherMultiClass, () => {
-        withFailingAspectWrites("bis_ElementUniqueAspect", "UPDATE", otherUniqueClass, () => {
-          const result = db.insertElementAspects([
-            multiProps(e1, "m1"),
-            multiProps(e1, "om1", undefined, otherMultiClass), // new multi aspect
-            uniqueProps(e1, "ou1", undefined, otherUniqueClass), // new unique aspect
-            uniqueProps(e2, "o2-new", undefined, otherUniqueClass), // upsert of an existing unique aspect
-            uniqueProps(e1, "u1"),
-          ]);
-          expect(result.status).to.equal(BulkElementAspectsStatus.PartialSuccess);
-          expect(result.failures.map((f) => [f.index, f.status])).to.deep.equal([
-            [1, IModelStatus.WriteError],
-            [2, IModelStatus.WriteError],
-            [3, IModelStatus.WriteError],
-          ]);
-          expect(result.ids.map((id) => Id64.isValidId64(id))).to.deep.equal([true, false, false, false, true]);
-        });
+        expect(() => db.insertElementAspects([
+          multiProps(e1, "m1"),
+          multiProps(e1, "om1", undefined, otherMultiClass), // new multi aspect
+          uniqueProps(e2, "o2-new", undefined, otherUniqueClass),
+          uniqueProps(e1, "u1"),
+        ])).to.throw(/insertElementAspects: unable to write the aspect at index 1/);
       });
 
-      expect(mock.aspectCalls("onInserted").map((c) => c.arg.props.strProp)).to.deep.equal(["m1", "u1"]);
-      // Nothing is rolled back, so the failed new aspects may be left without their properties; the existing unique aspect is unchanged.
-      const aspects = queryAspects().filter((r) => (r.element === e1 || r.element === e2) && r.strProp !== undefined).map((r) => `${r.className}:${r.strProp}`).sort();
-      expect(aspects).to.deep.equal([`${multiClass}:m1`, `${otherUniqueClass}:o2`, `${uniqueClass}:u1`].sort());
+      expect(mock.aspectCalls("onInsert").length).to.equal(4);
+      expect(mock.aspectCalls("onInserted")).to.deep.equal([]);
+    });
+
+    it("throws if an existing unique aspect cannot be upserted", () => {
+      const e1 = insertOwner();
+      expect(db.insertElementAspects([uniqueProps(e1, "o1", undefined, otherUniqueClass)]).status).to.equal(BulkElementAspectsStatus.Success);
+      withFailingAspectWrites("bis_ElementUniqueAspect", "UPDATE", otherUniqueClass, () => {
+        expect(() => db.insertElementAspects([uniqueProps(e1, "o1-new", undefined, otherUniqueClass)])).to.throw(/unable to write the aspect at index 0/);
+      });
     });
   });
 
@@ -366,12 +362,13 @@ describe("bulk element aspects", () => {
       expect(findAspect(inserted.ids[3])).to.deep.include({ strProp: "o2-new" });
     });
 
-    it("reports per-row failures; a failing row does not affect rows of other owners", () => {
+    it("validates every row, and writes nothing if any row is invalid or not found", () => {
       const e1 = insertOwner();
       const e2 = insertOwner();
       const e3 = insertOwner();
       const inserted = db.insertElementAspects([multiProps(e1, "m1"), uniqueProps(e2, "u2")]);
       expect(inserted.status).to.equal(BulkElementAspectsStatus.Success);
+      const before = queryAspects();
 
       const result = db.updateElementAspects([
         { ...multiProps(e1, "m1-new"), id: inserted.ids[0] },
@@ -381,16 +378,14 @@ describe("bulk element aspects", () => {
         uniqueProps("0xffffff0", "missingOwner"),
         uniqueProps(e2, "u2-new"),
       ]);
-      expect(result.status).to.equal(BulkElementAspectsStatus.PartialSuccess);
-      expect(result.failures.map((f) => [f.index, f.status])).to.deep.equal([
-        [1, IModelStatus.InvalidId],
-        [2, IModelStatus.NotFound],
-        [3, IModelStatus.NotFound],
-        [4, IModelStatus.MissingId],
+      expect(result.status).to.equal(BulkElementAspectsStatus.ValidationFailed);
+      expect(result.failures).to.deep.equal([
+        { index: 1, reason: BulkElementAspectFailureReason.InvalidId, detail: "invalid aspect id" },
+        { index: 2, id: "0xffffff0", reason: BulkElementAspectFailureReason.AspectNotFound },
+        { index: 3, reason: BulkElementAspectFailureReason.AspectNotFound, detail: "the element has no aspect of this class" },
+        { index: 4, reason: BulkElementAspectFailureReason.ElementNotFound, detail: "0xffffff0" },
       ]);
-
-      expect(findAspect(inserted.ids[0])!.strProp).to.equal("m1-new");
-      expect(findAspect(inserted.ids[1])!.strProp).to.equal("u2-new");
+      expect(queryAspects()).to.deep.equal(before);
     });
 
     it("ignores every spelling of element, so an aspect cannot be moved to another owner", () => {
@@ -420,13 +415,13 @@ describe("bulk element aspects", () => {
         { ...multiProps(e1, "m2-moved"), id: inserted.ids[1] },
         { ...multiProps(e1, "m1-new"), id: inserted.ids[0] },
       ]);
-      expect(result.status).to.equal(BulkElementAspectsStatus.PartialSuccess);
-      expect(result.failures).to.deep.equal([{ index: 0, status: IModelStatus.NotFound, message: "aspect not found on the owning element" }]);
+      expect(result.status).to.equal(BulkElementAspectsStatus.ValidationFailed);
+      expect(result.failures).to.deep.equal([{ index: 0, id: inserted.ids[1], reason: BulkElementAspectFailureReason.AspectNotFound, detail: `the aspect is not owned by element ${e1}` }]);
       expect(findAspect(inserted.ids[1])).to.deep.include({ element: e2, strProp: "m2" });
-      expect(findAspect(inserted.ids[0])).to.deep.include({ element: e1, strProp: "m1-new" });
+      expect(findAspect(inserted.ids[0])).to.deep.include({ element: e1, strProp: "m1" });
     });
 
-    it("reports aspects that cannot be written; the other aspects of the same owner are still written", () => {
+    it("throws at the first aspect that cannot be written, calling no post-update handlers", () => {
       const e1 = insertOwner();
       const inserted = db.insertElementAspects([multiProps(e1, "m1"), multiProps(e1, "om1", undefined, otherMultiClass), uniqueProps(e1, "u1")]);
       expect(inserted.status).to.equal(BulkElementAspectsStatus.Success);
@@ -434,19 +429,15 @@ describe("bulk element aspects", () => {
       db.setIModelDb(mock.mockJsDb);
 
       withFailingAspectWrites("bis_ElementMultiAspect", "UPDATE", otherMultiClass, () => {
-        const result = db.updateElementAspects([
+        expect(() => db.updateElementAspects([
           { ...multiProps(e1, "m1-new"), id: inserted.ids[0] },
           { ...multiProps(e1, "om1-new", undefined, otherMultiClass), id: inserted.ids[1] },
           uniqueProps(e1, "u1-new"),
-        ]);
-        expect(result.status).to.equal(BulkElementAspectsStatus.PartialSuccess);
-        expect(result.failures.map((f) => [f.index, f.status])).to.deep.equal([[1, IModelStatus.WriteError]]);
+        ])).to.throw(/updateElementAspects: unable to write the aspect at index 1/);
       });
 
-      expect(mock.aspectCalls("onUpdated").map((c) => c.arg.props.strProp)).to.deep.equal(["m1-new", "u1-new"]);
-      expect(findAspect(inserted.ids[0])!.strProp).to.equal("m1-new");
-      expect(findAspect(inserted.ids[1])!.strProp).to.equal("om1");
-      expect(findAspect(inserted.ids[2])!.strProp).to.equal("u1-new");
+      expect(mock.aspectCalls("onUpdate").length).to.equal(3);
+      expect(mock.aspectCalls("onUpdated")).to.deep.equal([]);
     });
 
     it("applies rows that name the same aspect in order", () => {
@@ -538,10 +529,13 @@ describe("bulk element aspects", () => {
       expect(findAspect(inserted.ids[1])!.strProp).to.equal("m1a-new");
     });
 
-    it("reports per-row failures for invalid, missing and non-aspect ids, and deletes duplicates once", () => {
+    it("validates every id, and deletes nothing and calls no handlers if any id is invalid or not found", () => {
       const e1 = insertOwner();
       const inserted = db.insertElementAspects([multiProps(e1, "m1"), multiProps(e1, "m2")]);
       expect(inserted.status).to.equal(BulkElementAspectsStatus.Success);
+      const mock = makeMockJsDb();
+      db.setIModelDb(mock.mockJsDb);
+      const before = queryAspects();
 
       const result = db.deleteElementAspects([
         inserted.ids[0],
@@ -551,20 +545,39 @@ describe("bulk element aspects", () => {
         inserted.ids[0], // duplicate
         42 as any,
       ]);
-      expect(result.status).to.equal(BulkElementAspectsStatus.PartialSuccess);
-      expect(result.failures.map((f) => [f.index, f.status])).to.deep.equal([
-        [1, IModelStatus.InvalidId],
-        [2, IModelStatus.NotFound],
-        [3, IModelStatus.NotFound],
-        [5, IModelStatus.BadArg],
+      expect(result.status).to.equal(BulkElementAspectsStatus.ValidationFailed);
+      expect(result.failures).to.deep.equal([
+        { index: 1, reason: BulkElementAspectFailureReason.InvalidId, detail: "not an id" },
+        { index: 2, id: "0xffffff0", reason: BulkElementAspectFailureReason.AspectNotFound },
+        { index: 3, id: e1, reason: BulkElementAspectFailureReason.AspectNotFound },
+        { index: 5, reason: BulkElementAspectFailureReason.InvalidId, detail: "aspect id must be a string" },
       ]);
-      expect(queryAspects().filter((r) => r.element === e1).map((r) => r.id)).to.deep.equal([inserted.ids[1]]);
+      expect(mock.calls).to.deep.equal([]);
+      expect(queryAspects()).to.deep.equal(before);
 
       const empty = db.deleteElementAspects([]);
       expect(empty.status).to.equal(BulkElementAspectsStatus.Success);
     });
 
-    it("reports aspects that cannot be deleted; the other aspects of the same owner are still deleted", () => {
+    it("deletes a duplicated id once and reports every index of a missing duplicated id", () => {
+      const e1 = insertOwner();
+      const inserted = db.insertElementAspects([multiProps(e1, "m1"), multiProps(e1, "m2")]);
+      expect(inserted.status).to.equal(BulkElementAspectsStatus.Success);
+
+      const missing = db.deleteElementAspects([inserted.ids[0], "0xffffff0", "0xffffff0"]);
+      expect(missing.failures.map((f) => [f.index, f.id, f.reason])).to.deep.equal([
+        [1, "0xffffff0", BulkElementAspectFailureReason.AspectNotFound],
+        [2, "0xffffff0", BulkElementAspectFailureReason.AspectNotFound],
+      ]);
+
+      const mock = makeMockJsDb();
+      db.setIModelDb(mock.mockJsDb);
+      expect(db.deleteElementAspects([inserted.ids[0], inserted.ids[0]])).to.deep.equal({ status: BulkElementAspectsStatus.Success, failures: [] });
+      expect(mock.aspectCalls("onDeleted").length).to.equal(1);
+      expect(queryAspects().filter((r) => r.element === e1).map((r) => r.id)).to.deep.equal([inserted.ids[1]]);
+    });
+
+    it("throws if the aspects cannot be deleted, calling no post-delete handlers", () => {
       const e1 = insertOwner();
       const inserted = db.insertElementAspects([multiProps(e1, "m1"), multiProps(e1, "om1", undefined, otherMultiClass), uniqueProps(e1, "u1")]);
       expect(inserted.status).to.equal(BulkElementAspectsStatus.Success);
@@ -572,13 +585,11 @@ describe("bulk element aspects", () => {
       db.setIModelDb(mock.mockJsDb);
 
       withFailingAspectWrites("bis_ElementMultiAspect", "DELETE", otherMultiClass, () => {
-        const result = db.deleteElementAspects(inserted.ids);
-        expect(result.status).to.equal(BulkElementAspectsStatus.PartialSuccess);
-        expect(result.failures.map((f) => [f.index, f.status])).to.deep.equal([[1, IModelStatus.WriteError]]);
+        expect(() => db.deleteElementAspects(inserted.ids)).to.throw(/deleteElementAspects: unable to delete the aspects/);
       });
 
-      expect(mock.aspectCalls("onDeleted").map((c) => c.arg.aspectId)).to.deep.equal([inserted.ids[0], inserted.ids[2]]);
-      expect(queryAspects().filter((r) => r.element === e1).map((r) => r.id)).to.deep.equal([inserted.ids[1]]);
+      expect(mock.aspectCalls("onDelete").length).to.equal(3);
+      expect(mock.aspectCalls("onDeleted")).to.deep.equal([]);
     });
 
     it("deletes the aspects of many owners and updates each owner once", () => {
@@ -617,7 +628,7 @@ describe("bulk element aspects", () => {
       expect(findAspect(inserted.ids[2])!.strProp).to.equal("m2-new");
     });
 
-    it("reports aspects removed by a pre-delete handler as not found", () => {
+    it("throws if a pre-delete handler removes one of the aspects", () => {
       const e1 = insertOwner();
       const inserted = db.insertElementAspects([multiProps(e1, "m1"), multiProps(e1, "m2"), multiProps(e1, "m3")]);
       expect(inserted.status).to.equal(BulkElementAspectsStatus.Success);
@@ -632,10 +643,9 @@ describe("bulk element aspects", () => {
       });
       db.setIModelDb(mock.mockJsDb);
 
-      const result = db.deleteElementAspects(inserted.ids);
-      expect(result.status).to.equal(BulkElementAspectsStatus.PartialSuccess);
-      expect(result.failures.map((f) => [f.index, f.status])).to.deep.equal([[1, IModelStatus.NotFound]]);
-      expect(queryAspects().filter((r) => r.element === e1)).to.deep.equal([]);
+      expect(() => db.deleteElementAspects(inserted.ids)).to.throw(`aspect ${inserted.ids[1]} can no longer be deleted after the onDelete handlers`);
+      expect(mock.aspectCalls("onDeleted")).to.deep.equal([]);
+      expect(queryAspects().filter((r) => r.element === e1).map((r) => r.id)).to.deep.equal([inserted.ids[0], inserted.ids[2]]);
     });
   });
 
@@ -767,123 +777,10 @@ describe("bulk element aspects", () => {
     });
   });
 
-  describe("FailFast mode", () => {
-    const failFast = { mode: BulkElementAspectsMode.FailFast };
-
-    it("insert writes nothing and calls no handlers if any row is invalid", () => {
-      const e1 = insertOwner();
-      const mock = makeMockJsDb();
-      db.setIModelDb(mock.mockJsDb);
-      const before = queryAspects();
-
-      const result = db.insertElementAspects([multiProps(e1, "ok"), multiProps("0", "invalidOwner"), { ...uniqueProps(e1, "badClass"), classFullName: "BulkAspectTest:DoesNotExist" }], failFast);
-      expect(result.status).to.equal(BulkElementAspectsStatus.ValidationFailed);
-      expect(result.failures.map((f) => [f.index, f.status])).to.deep.equal([[1, IModelStatus.InvalidId], [2, IModelStatus.BadSchema]]);
-      expect(result.ids).to.deep.equal(["0", "0", "0"]);
-      expect(mock.calls).to.deep.equal([]);
-      expect(queryAspects()).to.deep.equal(before);
-    });
-
-    it("update writes nothing and calls no handlers if any row is invalid or not found", () => {
-      const e1 = insertOwner();
-      const e2 = insertOwner();
-      const inserted = db.insertElementAspects([multiProps(e1, "m1"), uniqueProps(e2, "u2")]);
-      expect(inserted.status).to.equal(BulkElementAspectsStatus.Success);
-      const mock = makeMockJsDb();
-      db.setIModelDb(mock.mockJsDb);
-      const before = queryAspects();
-
-      const result = db.updateElementAspects([
-        { ...multiProps(e1, "m1-new"), id: inserted.ids[0] },
-        uniqueProps(e2, "u2-new"),
-        { ...multiProps(e2, "wrongOwner"), id: inserted.ids[0] },
-        { ...multiProps(e1, "missing"), id: "0xffffff0" },
-      ], failFast);
-      expect(result.status).to.equal(BulkElementAspectsStatus.ValidationFailed);
-      expect(result.failures.map((f) => [f.index, f.status])).to.deep.equal([[2, IModelStatus.NotFound], [3, IModelStatus.NotFound]]);
-      expect(mock.calls).to.deep.equal([]);
-      expect(queryAspects()).to.deep.equal(before);
-    });
-
-    it("delete writes nothing and calls no handlers if any id is invalid or not found", () => {
-      const e1 = insertOwner();
-      const inserted = db.insertElementAspects([multiProps(e1, "m1"), uniqueProps(e1, "u1")]);
-      expect(inserted.status).to.equal(BulkElementAspectsStatus.Success);
-      const mock = makeMockJsDb();
-      db.setIModelDb(mock.mockJsDb);
-      const before = queryAspects();
-
-      const result = db.deleteElementAspects([inserted.ids[0], "0xffffff0", "bad", inserted.ids[1]], failFast);
-      expect(result.status).to.equal(BulkElementAspectsStatus.ValidationFailed);
-      expect(result.failures.map((f) => [f.index, f.status])).to.deep.equal([[1, IModelStatus.NotFound], [2, IModelStatus.InvalidId]]);
-      expect(mock.calls).to.deep.equal([]);
-      expect(queryAspects()).to.deep.equal(before);
-    });
-
-    it("behaves like BestEffort when every row is valid", () => {
-      const e1 = insertOwner();
-      const e2 = insertOwner();
-      const mock = makeMockJsDb();
-      db.setIModelDb(mock.mockJsDb);
-
-      const inserted = db.insertElementAspects([multiProps(e1, "m1"), uniqueProps(e2, "u2")], failFast);
-      expect(inserted.status).to.equal(BulkElementAspectsStatus.Success);
-      expect(inserted.failures).to.deep.equal([]);
-      inserted.ids.forEach((id) => expect(Id64.isValidId64(id)).to.be.true);
-
-      const updated = db.updateElementAspects([{ ...multiProps(e1, "m1-new"), id: inserted.ids[0] }, uniqueProps(e2, "u2-new")], failFast);
-      expect(updated.status).to.equal(BulkElementAspectsStatus.Success);
-      expect(findAspect(inserted.ids[0])!.strProp).to.equal("m1-new");
-      expect(findAspect(inserted.ids[1])!.strProp).to.equal("u2-new");
-
-      const deleted = db.deleteElementAspects(inserted.ids, failFast);
-      expect(deleted.status).to.equal(BulkElementAspectsStatus.Success);
-      expect(inserted.ids.map((id) => findAspect(id))).to.deep.equal([undefined, undefined]);
-      expect(mock.aspectCalls("onInserted").length).to.equal(2);
-      expect(mock.aspectCalls("onUpdated").length).to.equal(2);
-      expect(mock.aspectCalls("onDeleted").length).to.equal(2);
-    });
-
-    it("an empty array reports Success", () => {
-      expect(db.insertElementAspects([], failFast).status).to.equal(BulkElementAspectsStatus.Success);
-      expect(db.updateElementAspects([], failFast).status).to.equal(BulkElementAspectsStatus.Success);
-      expect(db.deleteElementAspects([], failFast).status).to.equal(BulkElementAspectsStatus.Success);
-    });
-
-    it("failures while writing are still reported per row, with the other rows written", () => {
-      const e1 = insertOwner();
-      const inserted = db.insertElementAspects([multiProps(e1, "m1"), multiProps(e1, "om1", undefined, otherMultiClass)]);
-      expect(inserted.status).to.equal(BulkElementAspectsStatus.Success);
-
-      withFailingAspectWrites("bis_ElementMultiAspect", "DELETE", otherMultiClass, () => {
-        const result = db.deleteElementAspects(inserted.ids, failFast);
-        expect(result.status).to.equal(BulkElementAspectsStatus.PartialSuccess);
-        expect(result.failures.map((f) => [f.index, f.status])).to.deep.equal([[1, IModelStatus.WriteError]]);
-      });
-      expect(queryAspects().filter((r) => r.element === e1).map((r) => r.id)).to.deep.equal([inserted.ids[1]]);
-    });
-
-    it("BestEffort is the default", () => {
-      const e1 = insertOwner();
-      const rows = () => [multiProps(e1, "ok"), multiProps("0", "invalidOwner")];
-      for (const options of [undefined, {}, { mode: undefined }, { mode: BulkElementAspectsMode.BestEffort }]) {
-        const result = db.insertElementAspects(rows(), options);
-        expect(result.status).to.equal(BulkElementAspectsStatus.PartialSuccess);
-        expect(Id64.isValidId64(result.ids[0])).to.be.true;
-      }
-    });
-
-    it("throws for an invalid mode or options", () => {
-      const e1 = insertOwner();
-      for (const options of [{ mode: 2 }, { mode: -1 }, { mode: 0.5 }, { mode: "1" }, { mode: null }, 5, "FailFast"] as any[]) {
-        expect(() => db.insertElementAspects([multiProps(e1, "a")], options)).to.throw(TypeError);
-        expect(() => db.updateElementAspects([uniqueProps(e1, "a")], options)).to.throw(TypeError);
-        expect(() => db.deleteElementAspects(["0x1"], options)).to.throw(TypeError);
-      }
-      expect(queryAspects().filter((r) => r.element === e1)).to.deep.equal([]);
-    });
+  it("an empty array reports Success", () => {
+    for (const result of [db.insertElementAspects([]), db.updateElementAspects([]), db.deleteElementAspects([])])
+      expect(result).to.deep.include({ status: BulkElementAspectsStatus.Success, failures: [] });
   });
-
   it("bulk operations can be undone and redone", () => {
     const e1 = insertOwner();
     const e2 = insertOwner();

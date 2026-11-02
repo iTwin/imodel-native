@@ -610,14 +610,51 @@ struct BulkDeleteElementsResult
     };
 
 //=======================================================================================
-//! An ElementAspect that DgnElements::DeleteElementAspects did not delete.
+//! Indicates the status of a bulk ElementAspect operation. Mirrors BulkDeleteElementsStatus.
+//! On Success every aspect was written.
+//! On ValidationFailed nothing was written because one or more aspects are invalid. They are listed in the failures of the result.
+//! On WriteFailed an internal error occurred while writing. The iModel may have been partially modified; the caller must
+//!     abandon the current transaction. The failures of the result are empty.
 // @bsiclass
 //=======================================================================================
-struct BulkDeleteElementAspectsFailure
+enum class BulkElementAspectsStatus : int
+    {
+    Success          = 0,
+    ValidationFailed = 1,
+    WriteFailed      = 2,
+    };
+
+//=======================================================================================
+//! Why an ElementAspect could not be written by a bulk ElementAspect operation.
+//! InvalidProps: The aspect props are not an object, have no classFullName, or their properties cannot be converted.
+//! InvalidId: The id of the aspect or of its owning element is malformed or invalid.
+//! ClassNotFound: The aspect class is not in the iModel.
+//! NotAnAspectClass: The class is not an ElementUniqueAspect or an ElementMultiAspect.
+//! ElementNotFound: The owning element does not exist.
+//! AspectNotFound: The aspect to update or delete does not exist, is not owned by the given element, or cannot be modified
+//!     as a generic aspect because its class has a handler.
+// @bsiclass
+//=======================================================================================
+enum class BulkElementAspectFailureReason : int
+    {
+    InvalidProps     = 0,
+    InvalidId        = 1,
+    ClassNotFound    = 2,
+    NotAnAspectClass = 3,
+    ElementNotFound  = 4,
+    AspectNotFound   = 5,
+    };
+
+//=======================================================================================
+//! An ElementAspect that DgnElements::DeleteElementAspects cannot delete, and why.
+// @bsiclass
+//=======================================================================================
+struct BulkDeleteElementAspectFailure
     {
     BeSQLite::EC::ECInstanceId aspectId;
-    DgnDbStatus status = DgnDbStatus::Success;
-    Utf8String message;
+    BulkElementAspectFailureReason reason = BulkElementAspectFailureReason::AspectNotFound;
+    //! Additional information, or empty.
+    Utf8String detail;
     };
 
 //=======================================================================================
@@ -626,10 +663,14 @@ struct BulkDeleteElementAspectsFailure
 //=======================================================================================
 struct BulkDeleteElementAspectsResult
     {
-    //! BE_SQLITE_OK unless the aspects could not be looked up, in which case nothing was written.
+    BulkElementAspectsStatus status = BulkElementAspectsStatus::Success;
+    //! Only meaningful when status == WriteFailed: the status of the write that failed.
+    DgnDbStatus writeStatus = DgnDbStatus::Success;
+    //! Only meaningful when status == WriteFailed: the SQLite result of the statement that failed, or BE_SQLITE_OK if the failure
+    //! was not a SQLite error (e.g. the update of an owning element was rejected).
     BeSQLite::DbResult sqlStatus = BeSQLite::DbResult::BE_SQLITE_OK;
-    //! The aspects that were not deleted. Invalid ids are ignored and are not reported.
-    bvector<BulkDeleteElementAspectsFailure> failures;
+    //! Every aspect that cannot be deleted, with the reason. Each aspect appears once. Only populated on ValidationFailed.
+    bvector<BulkDeleteElementAspectFailure> failures;
     };
 
 //=======================================================================================
@@ -4272,14 +4313,15 @@ public:
     //! Bulk-delete a set of ElementAspects from this DgnDb.
     //! Implemented in DgnCore/BulkElementAspectDeletion.cpp
     //!
-    //! The aspects are looked up with a single query. Each owning element is updated once (see DgnElement::Update), then the
-    //! aspects of each ECClass are deleted with a single statement. Aspects of a class that has a registered C++ aspect handler
-    //! are instead deleted through that handler, by the update of their owning element.
-    //! @param[in] aspectIds The ids of the ElementUniqueAspects and ElementMultiAspects to delete. Invalid and duplicate ids are ignored.
-    //! @return The aspects that were not deleted, with the reason. If the owning element cannot be updated, none of its aspects are deleted.
+    //! The operation is all-or-nothing, like DeleteElements. The aspects are looked up with a single query and all of them are
+    //! validated before anything is written. If any of them cannot be deleted, nothing is written and the result is ValidationFailed.
+    //! Otherwise each owning element is updated once (see DgnElement::Update), then the aspects of each ECClass are deleted with a
+    //! single statement. Aspects of a class that has a registered C++ aspect handler are instead deleted through that handler,
+    //! by the update of their owning element. The first write that fails stops the operation and the result is WriteFailed.
+    //! @param[in] aspectIds The ids of the ElementUniqueAspects and ElementMultiAspects to delete. Duplicate ids are deleted once.
     //! @note This method does not call the JavaScript ElementAspect handlers; the caller is responsible for that.
-    //! @note This method does not open a transaction of its own. If an aspect cannot be deleted after its owner was updated,
-    //!   the owner's update is not rolled back.
+    //! @note This method does not open a transaction of its own. On WriteFailed the iModel may be partially modified and the
+    //!   caller must abandon the current transaction.
     //! @note This function can only be safely invoked from the client thread.
     DGNPLATFORM_EXPORT BulkDeleteElementAspectsResult DeleteElementAspects(bvector<BeSQLite::EC::ECInstanceId> const& aspectIds);
 

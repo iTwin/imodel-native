@@ -21,18 +21,34 @@ class BulkElementAspectDeletion
         bool m_failed = false;
         };
 
+    struct OwnerGroup
+        {
+        DgnElementCPtr m_owner;
+        bvector<size_t> m_rows;
+        };
+
     DgnDbR m_dgndb;
     bvector<ECInstanceId> const& m_aspectIds;
     bvector<Row> m_rows;
     std::map<DgnClassId, bool> m_hasCustomHandler;
     BulkDeleteElementAspectsResult m_result;
 
-    void Fail(Row& row, DgnDbStatus status, Utf8CP message)
+    void Fail(Row& row, BulkElementAspectFailureReason reason, Utf8StringCR detail)
         {
         if (row.m_failed)
             return;
         row.m_failed = true;
-        m_result.failures.push_back({row.m_id, status, message});
+        m_result.status = BulkElementAspectsStatus::ValidationFailed;
+        m_result.failures.push_back({row.m_id, reason, detail});
+        }
+
+    BulkDeleteElementAspectsResult& WriteFailed(DgnDbStatus status, BeSQLite::DbResult sqlStatus)
+        {
+        m_result.status = BulkElementAspectsStatus::WriteFailed;
+        m_result.writeStatus = status;
+        m_result.sqlStatus = sqlStatus;
+        m_result.failures.clear();
+        return m_result;
         }
 
     template<typename T_Ids> static bool BindIdSet(ECSqlStatement& stmt, int index, T_Ids const& ids)
@@ -48,7 +64,7 @@ class BulkElementAspectDeletion
 
     bool HasCustomHandler(DgnClassId classId);
     BeSQLite::DbResult Resolve();
-    void DeleteInstances(ECClassCR aspectClass, bvector<size_t> const& rowIndices);
+    BeSQLite::DbResult DeleteInstances(ECClassCR aspectClass, bvector<size_t> const& rowIndices);
 
 public:
     BulkElementAspectDeletion(DgnDbR dgndb, bvector<ECInstanceId> const& aspectIds) : m_dgndb(dgndb), m_aspectIds(aspectIds) {}
@@ -73,15 +89,27 @@ bool BulkElementAspectDeletion::HasCustomHandler(DgnClassId classId)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Finds the class and owning element of each aspect with a single query. Invalid and duplicate ids are dropped.
+* Finds the class and owning element of each aspect with a single query. Duplicate ids are dropped; invalid ids are failures.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLite::DbResult BulkElementAspectDeletion::Resolve()
     {
     std::map<ECInstanceId, size_t> rowById;
+    bool invalidIdReported = false;
     for (auto const& id : m_aspectIds)
         {
-        if (!id.IsValid() || rowById.end() != rowById.find(id))
+        if (!id.IsValid())
+            {
+            if (!invalidIdReported)
+                {
+                invalidIdReported = true;
+                m_result.status = BulkElementAspectsStatus::ValidationFailed;
+                m_result.failures.push_back({id, BulkElementAspectFailureReason::InvalidId, Utf8String()});
+                }
+            continue;
+            }
+
+        if (rowById.end() != rowById.find(id))
             continue;
         rowById[id] = m_rows.size();
         m_rows.push_back(Row());
@@ -140,67 +168,65 @@ BeSQLite::DbResult BulkElementAspectDeletion::Resolve()
 * Deletes the given aspects of one class with a single statement.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BulkElementAspectDeletion::DeleteInstances(ECClassCR aspectClass, bvector<size_t> const& rowIndices)
+BeSQLite::DbResult BulkElementAspectDeletion::DeleteInstances(ECClassCR aspectClass, bvector<size_t> const& rowIndices)
     {
     Utf8PrintfString ecsql("DELETE FROM %s WHERE ECInstanceId IN (SELECT id FROM IdSet(?))", aspectClass.GetECSqlName().c_str());
     CachedECSqlStatementPtr stmt = m_dgndb.GetNonSelectPreparedECSqlStatement(ecsql.c_str(), m_dgndb.GetECCrudWriteToken());
-
-    bool ok = stmt.IsValid();
-    if (ok)
+    if (!stmt.IsValid())
         {
-        bvector<ECInstanceId> ids;
-        for (auto r : rowIndices)
-            ids.push_back(m_rows[r].m_id);
+        LOG.errorv("BulkElementAspectDeletion: Failed to prepare the delete for class '%s'", aspectClass.GetFullName());
+        return BE_SQLITE_ERROR;
+        }
 
-        ok = BindIdSet(*stmt, 1, ids);
-        if (ok)
-            {
-            BeSQLite::DbResult stat = stmt->Step();
-            ok = (BE_SQLITE_DONE == stat);
-            if (!ok)
-                LOG.errorv("BulkElementAspectDeletion: Failed to delete aspects of class '%s': %s", aspectClass.GetFullName(), BeSQLiteLib::GetLogError(stat).c_str());
-            }
+    bvector<ECInstanceId> ids;
+    for (auto r : rowIndices)
+        ids.push_back(m_rows[r].m_id);
 
-        stmt->Reset();
-        stmt->ClearBindings();
+    BeSQLite::DbResult stat = BE_SQLITE_ERROR;
+    if (!BindIdSet(*stmt, 1, ids))
+        {
+        LOG.errorv("BulkElementAspectDeletion: Failed to bind the ids for class '%s'", aspectClass.GetFullName());
         }
     else
         {
-        LOG.errorv("BulkElementAspectDeletion: Failed to prepare the delete for class '%s'", aspectClass.GetFullName());
+        stat = stmt->Step();
+        if (BE_SQLITE_DONE == stat)
+            stat = BE_SQLITE_OK;
+        else
+            LOG.errorv("BulkElementAspectDeletion: Failed to delete aspects of class '%s': %s", aspectClass.GetFullName(), BeSQLiteLib::GetLogError(stat).c_str());
         }
 
-    if (!ok)
-        {
-        for (auto r : rowIndices)
-            Fail(m_rows[r], DgnDbStatus::WriteError, "unable to delete aspect");
-        }
+    stmt->Reset();
+    stmt->ClearBindings();
+    return stat;
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Validates every aspect, then writes. Nothing is written if any aspect fails validation.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 BulkDeleteElementAspectsResult BulkElementAspectDeletion::Execute()
     {
-    m_result.sqlStatus = Resolve();
-    if (BE_SQLITE_OK != m_result.sqlStatus)
-        return std::move(m_result);
+    BeSQLite::DbResult lookupStatus = Resolve();
+    if (BE_SQLITE_OK != lookupStatus)
+        return std::move(WriteFailed(DgnDbStatus::SQLiteError, lookupStatus));
 
-    // Group the aspects by owning element, in the order in which the owners first appear
-    bvector<std::pair<DgnElementId, bvector<size_t>>> ownerGroups;
+    // Validation pass: group the aspects by owning element, in the order in which the owners first appear
+    bvector<OwnerGroup> ownerGroups;
     std::map<DgnElementId, size_t> groupIndex;
     for (size_t i = 0; i < m_rows.size(); ++i)
         {
         auto& row = m_rows[i];
         if (!row.m_classId.IsValid())
             {
-            Fail(row, DgnDbStatus::NotFound, "aspect not found");
+            Fail(row, BulkElementAspectFailureReason::AspectNotFound, Utf8String());
             continue;
             }
 
         row.m_class = m_dgndb.Schemas().GetClass(row.m_classId);
         if (nullptr == row.m_class)
             {
-            Fail(row, DgnDbStatus::BadSchema, "aspect class not found");
+            Fail(row, BulkElementAspectFailureReason::ClassNotFound, Utf8PrintfString("class id %s", row.m_classId.ToHexStr().c_str()));
             continue;
             }
 
@@ -208,40 +234,41 @@ BulkDeleteElementAspectsResult BulkElementAspectDeletion::Execute()
         if (groupIndex.end() == found)
             {
             found = groupIndex.emplace(row.m_ownerId, ownerGroups.size()).first;
-            ownerGroups.push_back(std::make_pair(row.m_ownerId, bvector<size_t>()));
+            ownerGroups.push_back(OwnerGroup());
+            ownerGroups.back().m_owner = m_dgndb.Elements().GetElement(row.m_ownerId);
             }
-        ownerGroups[found->second].second.push_back(i);
+
+        auto& group = ownerGroups[found->second];
+        if (!group.m_owner.IsValid())
+            {
+            Fail(row, BulkElementAspectFailureReason::ElementNotFound, row.m_ownerId.ToHexStr());
+            continue;
+            }
+        group.m_rows.push_back(i);
         }
 
-    // Update each owning element once. Aspects with a custom handler are deleted by that update, the same as DgnElement::Aspect::Delete.
-    // The other aspects are deleted afterwards, one statement per class.
+    if (BulkElementAspectsStatus::Success != m_result.status)
+        return std::move(m_result);
+
+    // Write pass: update each owning element once. Aspects with a custom handler are deleted by that update, the same as
+    // DgnElement::Aspect::Delete. The other aspects are deleted afterwards, one statement per class. The first failure stops the operation.
     std::map<DgnClassId, bvector<size_t>> pendingByClass;
     for (auto const& group : ownerGroups)
         {
-        DgnElementCPtr owner = m_dgndb.Elements().GetElement(group.first);
-        if (!owner.IsValid())
-            {
-            for (auto r : group.second)
-                Fail(m_rows[r], DgnDbStatus::MissingId, "owning element not found");
-            continue;
-            }
-
-        DgnElementPtr elementEdit = owner->CopyForEdit();
+        DgnElementPtr elementEdit = group.m_owner->CopyForEdit();
         if (!elementEdit.IsValid())
             {
-            for (auto r : group.second)
-                Fail(m_rows[r], DgnDbStatus::WriteError, "unable to edit owning element");
-            continue;
+            LOG.errorv("BulkElementAspectDeletion: Unable to edit owning element %s", group.m_owner->GetElementId().ToHexStr().c_str());
+            return std::move(WriteFailed(DgnDbStatus::WriteError, BE_SQLITE_OK));
             }
 
-        bvector<size_t> generic;
-        std::map<size_t, RefCountedPtr<DgnElement::Aspect>> handled;
-        for (auto r : group.second)
+        bvector<RefCountedPtr<DgnElement::Aspect>> handled;
+        for (auto r : group.m_rows)
             {
             auto& row = m_rows[r];
             if (!HasCustomHandler(row.m_classId))
                 {
-                generic.push_back(r);
+                pendingByClass[row.m_classId].push_back(r);
                 continue;
                 }
 
@@ -250,42 +277,38 @@ BulkDeleteElementAspectsResult BulkElementAspectDeletion::Execute()
                 : static_cast<DgnElement::Aspect*>(DgnElement::UniqueAspect::GetAspectP(*elementEdit, *row.m_class));
             if (nullptr == aspect)
                 {
-                Fail(row, DgnDbStatus::NotFound, "aspect not found");
-                continue;
+                LOG.errorv("BulkElementAspectDeletion: Unable to load aspect %s through its handler", row.m_id.ToHexStr().c_str());
+                return std::move(WriteFailed(DgnDbStatus::NotFound, BE_SQLITE_OK));
                 }
             aspect->Delete();
-            handled[r] = aspect;
+            handled.push_back(aspect);
             }
-
-        if (generic.empty() && handled.empty())
-            continue;
 
         DgnDbStatus stat = elementEdit->Update();
         if (DgnDbStatus::Success != stat)
             {
-            for (auto r : group.second)
-                Fail(m_rows[r], stat, "unable to update owning element");
-            continue;
+            LOG.errorv("BulkElementAspectDeletion: Unable to update owning element %s", group.m_owner->GetElementId().ToHexStr().c_str());
+            return std::move(WriteFailed(stat, BE_SQLITE_OK));
             }
 
         // The update of the owner succeeds even when one of its aspects cannot be deleted, so check each aspect.
-        for (auto const& entry : handled)
+        for (auto const& aspect : handled)
             {
-            DgnDbStatus writeStatus = entry.second->GetLastWriteStatus();
+            DgnDbStatus writeStatus = aspect->GetLastWriteStatus();
             if (DgnDbStatus::Success != writeStatus)
-                Fail(m_rows[entry.first], writeStatus, "unable to delete aspect");
+                return std::move(WriteFailed(writeStatus, BE_SQLITE_OK));
             }
-
-        for (auto r : generic)
-            pendingByClass[m_rows[r].m_classId].push_back(r);
         }
 
     for (auto const& entry : pendingByClass)
-        DeleteInstances(*m_rows[entry.second.front()].m_class, entry.second);
+        {
+        BeSQLite::DbResult stat = DeleteInstances(*m_rows[entry.second.front()].m_class, entry.second);
+        if (BE_SQLITE_OK != stat)
+            return std::move(WriteFailed(DgnDbStatus::SQLiteError, stat));
+        }
 
     return std::move(m_result);
     }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
