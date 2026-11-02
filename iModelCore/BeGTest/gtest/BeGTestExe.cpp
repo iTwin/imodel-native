@@ -347,7 +347,7 @@ static void runUmdh(BeGTestHost& host, GtestOptions options)
     bool spawnRet;
     DWORD retCode;
 
-    RUN_ALL_TESTS();
+    (void) RUN_ALL_TESTS();
 
     BeFileName outdirName;
     host.GetOutputRoot(outdirName);
@@ -391,7 +391,7 @@ static void runUmdh(BeGTestHost& host, GtestOptions options)
     spawnRet = SpawnProcessWin32(strCommand, retCode);
 
     for (int i = 0; i < 5; i++)
-        RUN_ALL_TESTS();
+        (void) RUN_ALL_TESTS();
 
     // Set the path comparison at the same level as the output root
     BeFileName pathComparison(outdirName);

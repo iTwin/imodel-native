@@ -10,7 +10,7 @@ import * as fs from "fs-extra";
 import * as os from "os";
 import * as path from "path";
 import { openDgnDb } from ".";
-import { IModelJsNative, SchemaWriteStatus } from "../NativeLibrary";
+import { BulkDeleteElementsStatus, BulkDeleteFailureReason, IModelJsNative, SchemaWriteStatus } from "../NativeLibrary";
 import { copyFile, dbFileName, getAssetsDir, getOutputDir, iModelJsNative } from "./utils";
 
 // Crash reporting is gated by this env variable on supported platforms.
@@ -1688,5 +1688,236 @@ describe("basic tests", () => {
       expect(stmt.step()).equals(DbResult.BE_SQLITE_CONSTRAINT_UNIQUE);
     });
     db.closeFile();
+  });
+});
+
+describe("bulk element deletion", () => {
+  let db: IModelJsNative.DgnDb;
+  let physicalModelId: Id64String;
+  let spatialCategoryId: Id64String;
+
+  const executeSql = (sql: string, expected: DbResult = DbResult.BE_SQLITE_DONE) => {
+    const stmt = new iModelJsNative.SqliteStatement();
+    stmt.prepare(db, sql);
+    try {
+      expect(stmt.step(), sql).equals(expected);
+    } finally {
+      stmt.dispose();
+    }
+  };
+
+  const queryOne = <T>(ecsql: string, read: (stmt: IModelJsNative.ECSqlStatement) => T): T | undefined => {
+    const stmt = new iModelJsNative.ECSqlStatement();
+    stmt.prepare(db, ecsql);
+    try {
+      return stmt.step() === DbResult.BE_SQLITE_ROW ? read(stmt) : undefined;
+    } finally {
+      stmt.dispose();
+    }
+  };
+
+  const elementExists = (id: Id64String) =>
+    undefined !== queryOne(`SELECT 1 FROM bis.Element WHERE ECInstanceId=${id}`, () => true);
+
+  const modelExists = (id: Id64String) =>
+    undefined !== queryOne(`SELECT 1 FROM bis.Model WHERE ECInstanceId=${id}`, () => true);
+
+  const insertPhysicalObject = (modelId: Id64String = physicalModelId, parentId?: Id64String): Id64String => {
+    const props: PhysicalElementProps = {
+      classFullName: "Generic:PhysicalObject",
+      model: modelId,
+      category: spatialCategoryId,
+      code: Code.createEmpty(),
+      placement: { origin: [0, 0, 0], angles: { yaw: 0, pitch: 0, roll: 0 } },
+      geom: [{ box: { origin: [0, 0, 0], baseX: 1, baseY: 1, height: 1 } }],
+    };
+    if (parentId)
+      props.parent = { id: parentId, relClassName: "BisCore:PhysicalElementAssemblesElements" };
+    const id = db.insertElement(props);
+    assert.isTrue(Id64.isValidId64(id));
+    return id;
+  };
+
+  /** Create a PhysicalPartition under the root Subject plus the PhysicalModel it breaks down into. */
+  const insertPhysicalPartitionAndModel = (name: string): { partitionId: Id64String, modelId: Id64String } => {
+    const codeSpecId = queryOne("SELECT ECInstanceId FROM bis.CodeSpec WHERE Name='bis:InformationPartitionElement'", (s) => s.getValue(0).getId());
+    assert.isDefined(codeSpecId);
+    const partitionId = db.insertElement({
+      classFullName: "BisCore:PhysicalPartition",
+      model: IModel.repositoryModelId,
+      parent: { id: IModel.rootSubjectId, relClassName: "BisCore:SubjectOwnsPartitionElements" },
+      code: { spec: codeSpecId, scope: IModel.rootSubjectId, value: name },
+    });
+    const modelId = db.insertModel({
+      classFullName: "BisCore:PhysicalModel",
+      modeledElement: { id: partitionId },
+    });
+    assert.equal(modelId, partitionId, "a sub-model shares the id of its modeled element");
+    return { partitionId, modelId };
+  };
+
+  /** Decimal form of an Id64 for use inside raw SQL text. */
+  const dec = (id: Id64String) => BigInt(id).toString();
+
+  before(() => {
+    db = openDgnDb(copyFile("bulkDelete.bim", dbFileName), { schemaLockHeld: true });
+    physicalModelId = queryOne("SELECT ECInstanceId FROM bis.PhysicalModel LIMIT 1", (s) => s.getValue(0).getId())!;
+    spatialCategoryId = queryOne("SELECT ECInstanceId FROM bis.SpatialCategory LIMIT 1", (s) => s.getValue(0).getId())!;
+    assert.isDefined(physicalModelId);
+    assert.isDefined(spatialCategoryId);
+  });
+
+  afterEach(() => {
+    // Every test leaves the txn dirty on purpose (or has already verified the happy path); throw it all away.
+    executeSql("DROP TRIGGER IF EXISTS temp.bulkDeleteTest", DbResult.BE_SQLITE_DONE);
+    executeSql("DROP TABLE IF EXISTS test_BlockingFk", DbResult.BE_SQLITE_DONE);
+    db.abandonChanges();
+  });
+
+  after(() => {
+    db.closeFile();
+  });
+
+  it("deletes the requested elements, their children and sub-model contents", () => {
+    const parentId = insertPhysicalObject();
+    const childId = insertPhysicalObject(physicalModelId, parentId);
+    const { partitionId, modelId } = insertPhysicalPartitionAndModel("bulkDelete-happy-path");
+    const inSubModelId = insertPhysicalObject(modelId);
+    const survivorId = insertPhysicalObject();
+
+    const result = db.deleteElements([parentId, partitionId]);
+    expect(result.status).equals(BulkDeleteElementsStatus.Success);
+    expect(result.sqlDeleteStatus).equals(DbResult.BE_SQLITE_OK);
+    expect(result.failures).to.be.empty;
+
+    for (const id of [parentId, childId, partitionId, inSubModelId])
+      expect(elementExists(id), id).to.be.false;
+    expect(modelExists(modelId)).to.be.false;
+    expect(elementExists(survivorId)).to.be.true;
+  });
+
+  it("refuses to delete protected elements without modifying anything", () => {
+    const victimId = insertPhysicalObject();
+
+    const result = db.deleteElements([IModel.rootSubjectId, IModel.dictionaryId, victimId]);
+    expect(result.status).equals(BulkDeleteElementsStatus.ConstraintViolation);
+    expect(result.sqlDeleteStatus).equals(DbResult.BE_SQLITE_OK);
+
+    const byId = new Map(result.failures.map((f) => [f.elementId, f]));
+    expect(byId.get(IModel.rootSubjectId)?.reason).equals(BulkDeleteFailureReason.ProtectedElement);
+    expect(byId.get(IModel.dictionaryId)?.reason).equals(BulkDeleteFailureReason.ProtectedElement);
+    expect(byId.has(victimId), "only the violators are reported").to.be.false;
+
+    // All-or-nothing: the otherwise deletable element must still be there.
+    expect(elementExists(victimId)).to.be.true;
+    expect(elementExists(IModel.rootSubjectId)).to.be.true;
+  });
+
+  it("refuses to delete a definition still referenced from outside the set", () => {
+    const userId = insertPhysicalObject(); // references spatialCategoryId via bis_GeometricElement3d.CategoryId (NO ACTION)
+    const defaultSubCategoryId = queryOne(
+      `SELECT ECInstanceId FROM bis.SubCategory WHERE Parent.Id=${spatialCategoryId}`, (s) => s.getValue(0).getId());
+    assert.isDefined(defaultSubCategoryId);
+
+    const result = db.deleteElements([spatialCategoryId]);
+    expect(result.status).equals(BulkDeleteElementsStatus.ConstraintViolation);
+
+    const byId = new Map(result.failures.map((f) => [f.elementId, f]));
+    // The category is caught by the FK pass, which runs first, so that reason wins even though it is also a used definition.
+    expect(byId.get(spatialCategoryId)?.reason).equals(BulkDeleteFailureReason.ReferencedByForeignKey);
+    expect(byId.get(spatialCategoryId)?.detail).equals("bis_GeometricElement3d.CategoryId");
+    // The default SubCategory is a child and therefore part of the expanded set. Nothing points at it through an FK,
+    // but surviving geometry streams draw on it, so the definition-usage pass reports it.
+    expect(byId.get(defaultSubCategoryId)?.reason).equals(BulkDeleteFailureReason.DefinitionInUse);
+    expect(byId.size).equals(2);
+
+    expect(elementExists(spatialCategoryId)).to.be.true;
+    expect(elementExists(defaultSubCategoryId)).to.be.true;
+    expect(elementExists(userId)).to.be.true;
+  });
+
+  it("treats RESTRICT / SET DEFAULT foreign keys as blocking", () => {
+    const victimId = insertPhysicalObject();
+    const victimSetDefaultId = insertPhysicalObject();
+    const cleanVictimId = insertPhysicalObject();
+    executeSql(
+      "CREATE TABLE test_BlockingFk(Id INTEGER PRIMARY KEY, " +
+      "RestrictRef INTEGER REFERENCES bis_Element(Id) ON DELETE RESTRICT, " +
+      "SetDefaultRef INTEGER REFERENCES bis_Element(Id) ON DELETE SET DEFAULT)"); // no DEFAULT clause: a non-NULL default would itself have to be a valid element id
+    executeSql(`INSERT INTO test_BlockingFk(RestrictRef) VALUES(${dec(victimId)})`);
+    executeSql(`INSERT INTO test_BlockingFk(SetDefaultRef) VALUES(${dec(victimSetDefaultId)})`);
+
+    const result = db.deleteElements([victimId, victimSetDefaultId, cleanVictimId]);
+    expect(result.status).equals(BulkDeleteElementsStatus.ConstraintViolation);
+
+    const byId = new Map(result.failures.map((f) => [f.elementId, f]));
+    expect(byId.get(victimId)?.reason).equals(BulkDeleteFailureReason.ReferencedByForeignKey);
+    expect(byId.get(victimId)?.detail).equals("test_BlockingFk.RestrictRef");
+    expect(byId.get(victimSetDefaultId)?.reason).equals(BulkDeleteFailureReason.ReferencedByForeignKey);
+    expect(byId.get(victimSetDefaultId)?.detail).equals("test_BlockingFk.SetDefaultRef");
+    expect(byId.has(cleanVictimId)).to.be.false;
+
+    for (const id of [victimId, victimSetDefaultId, cleanVictimId])
+      expect(elementExists(id), id).to.be.true;
+
+    // Once the referencing rows are gone the same request succeeds.
+    executeSql("DELETE FROM test_BlockingFk");
+    expect(db.deleteElements([victimId, victimSetDefaultId, cleanVictimId]).status).equals(BulkDeleteElementsStatus.Success);
+  });
+
+  // The DELETE runs with foreign key enforcement ON, so SQLite itself rejects a dangling reference at the end of the statement.
+  // The one exception is the sub-model case, where bis_Element and bis_Model must be deleted in two statements under
+  // PRAGMA defer_foreign_keys; there the operation re-checks the deferred FKs explicitly. Simulate a slip in both regimes with a
+  // TEMP trigger that writes a dangling reference while the DELETE is executing.
+  describe("Verify FK Integrity", () => {
+    it("fails the operation when a surviving row still references a deleted element", () => {
+      const victimId = insertPhysicalObject();
+      const survivorId = insertPhysicalObject();
+
+      // bis_Element.CodeScopeId -> bis_Element.Id is a NO ACTION FK. Point the survivor at the victim as it is deleted.
+      executeSql(
+        `CREATE TEMP TRIGGER bulkDeleteTest AFTER DELETE ON bis_Element WHEN OLD.Id=${dec(victimId)} ` +
+        `BEGIN UPDATE bis_Element SET CodeScopeId=OLD.Id WHERE Id=${dec(survivorId)}; END`);
+
+      const result = db.deleteElements([victimId]);
+      expect(result.status).equals(BulkDeleteElementsStatus.DeletionFailed);
+      expect(result.sqlDeleteStatus).equals(DbResult.BE_SQLITE_CONSTRAINT_FOREIGNKEY);
+      expect(result.failures, "DeletionFailed carries no per-element report").to.be.empty;
+
+      // The caller is required to abandon the txn; doing so restores the victim and the survivor's original scope.
+      db.abandonChanges();
+      expect(elementExists(victimId)).to.be.false; // insert was in the same txn
+      expect(elementExists(survivorId)).to.be.false;
+    });
+
+    it("fails the operation when a surviving element still belongs to a deleted model", () => {
+      const { partitionId, modelId } = insertPhysicalPartitionAndModel("bulkDelete-model");
+      insertPhysicalObject(modelId);
+      const survivorId = insertPhysicalObject(); // lives in physicalModelId, not in the delete set
+
+      // bis_Element.ModelId -> bis_Model.Id is checked deferred in the sub-model case; the operation must still catch it itself.
+      executeSql(
+        `CREATE TEMP TRIGGER bulkDeleteTest AFTER DELETE ON bis_Model WHEN OLD.Id=${dec(modelId)} ` +
+        `BEGIN UPDATE bis_Element SET ModelId=OLD.Id WHERE Id=${dec(survivorId)}; END`);
+
+      const result = db.deleteElements([partitionId]);
+      expect(result.status).equals(BulkDeleteElementsStatus.DeletionFailed);
+      expect(result.sqlDeleteStatus).equals(DbResult.BE_SQLITE_CONSTRAINT_FOREIGNKEY);
+      expect(result.failures).to.be.empty;
+
+      db.abandonChanges();
+    });
+
+    it("does not fire for a clean delete", () => {
+      // Control: an identical trigger that never matches must leave the happy path untouched.
+      const victimId = insertPhysicalObject();
+      executeSql(
+        `CREATE TEMP TRIGGER bulkDeleteTest AFTER DELETE ON bis_Element WHEN OLD.Id=-1 ` +
+        `BEGIN UPDATE bis_Element SET CodeScopeId=OLD.Id WHERE Id=-1; END`);
+
+      const result = db.deleteElements([victimId]);
+      expect(result.status).equals(BulkDeleteElementsStatus.Success);
+      expect(elementExists(victimId)).to.be.false;
+    });
   });
 });

@@ -501,7 +501,6 @@ struct JsInterop {
     BE_JSON_NAME(writeable)
     BE_JSON_NAME(yesNo)
     BE_JSON_NAME(uncompressedSize)
-    BE_JSON_NAME(skipFKConstraintValidations)
 
 #define JSON_NAME(__val__) JsInterop::json_##__val__()
 
@@ -527,7 +526,7 @@ public:
     static void ChangeElementParent(DgnDbR db, Napi::Object props);
     static void ChangeElementModel(DgnDbR db, Napi::Object props);
     static void DeleteElement(DgnDbR db, Utf8StringCR eidStr);
-    static BulkDeleteElementsResult DeleteElements(DgnDbR dgndb, Napi::Array elementIds, Napi::Value deleteOptionsObj);
+    static BulkDeleteElementsResult DeleteElements(DgnDbR dgndb, Napi::Array elementIds);
     static DgnDbStatus SimplifyElementGeometry(DgnDbR db, Napi::Object simplifyArgs);
     static InlineGeometryPartsResult InlineGeometryParts(DgnDbR db);
     static Napi::String InsertElementAspect(DgnDbR db, Napi::Object aspectProps);

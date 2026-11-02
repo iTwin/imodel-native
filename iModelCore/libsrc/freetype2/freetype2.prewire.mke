@@ -1,0 +1,49 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+# freetype2.prewire.mke - Stage FreeType public headers and license notice from the vcpkg build
+# so the PublicAPI part's VendorAPI/VendorNotices bindings are satisfied at the PublicAPI stage.
+#
+# Headers no longer come from a checked-in vendor/ tree; vcpkg owns the FreeType source. The vcpkg
+# install is performed by the vcpkg_install_freetype2 part (vcpkg.PartFile.xml) before this mke
+# runs, so include/ft2build.h, include/freetype/ and the license are already present.
+#---------------------------------------------------------------------------------------------
+%include mdl.mki
+
+freetype2Dir = $(_MakeFilePath)
+libsrcDir    = $(freetype2Dir)../
+
+o             = $(OutputRootDir)build/iTwinFreetype2-prewire/
+stagedInclude = $(o)include/
+
+%include $(libsrcDir)vcpkg.mki
+
+# PublicAPI is always built as Static (see freetype2.PartFile.xml), so this always reads the
+# static install root.
+vcpkgInstallRoot = $(OutputRootDir)vcpkg_installed/freetype2/
+vcpkgTripletDir  = $(vcpkgInstallRoot)$(vcpkgTriplet)/
+vcpkgIncludeDir  = $(vcpkgTripletDir)include/
+
+always:
+    !~@mkdir $(o)
+    !~@mkdir $(stagedInclude)
+
+#--------------------------------------------------------------------------------------
+#   Deliver headers. Consumers add VendorAPI/freetype2/ to their include path and use
+#   #include <ft2build.h>, which in turn includes <freetype/...>. vcpkg's include/ directory
+#   also holds the zlib headers of FreeType's zlib dependency, so rather than exposing it
+#   directly, stage a directory containing only ft2build.h and freetype/ and point
+#   VendorAPI/freetype2 at that. VendorAPI/freetype2 stays a directory link, as it was when it
+#   pointed at the checked-in vendor/include tree.
+#--------------------------------------------------------------------------------------
+always:
+    ~linkfile "$(stagedInclude)ft2build.h=$(vcpkgIncludeDir)ft2build.h"
+    ~linkdir "$(stagedInclude)freetype=$(vcpkgIncludeDir)freetype/"
+    ~linkdir "$(BuildContext)VendorAPI/freetype2=$(stagedInclude)"
+
+#--------------------------------------------------------------------------------------
+#   Deliver license file from vcpkg (FreeType's LICENSE.TXT, FTL.TXT and GPLv2.TXT).
+#--------------------------------------------------------------------------------------
+always:
+    ~linkfile "$(BuildContext)Delivery/freetype2-license.txt=$(vcpkgTripletDir)share/freetype/copyright"

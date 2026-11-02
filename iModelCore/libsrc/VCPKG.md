@@ -33,6 +33,13 @@ To add a new library:
 
 > **When migrating an existing (previously vendored) library to vcpkg:** the vendored source deletion belongs in the **same** PR as the vcpkg wiring, but do **not** delete it up front. Keep the vendored source in place (the PR will likely be draft/WIP at this stage) until **after** the PR has passed its Copilot review, then delete the vendored code in a separate standalone commit within that same PR. Deleting the vendored source up front produces too many modified files for Copilot to review, and the review may not run at all.
 
+After creating the PR, add an **unresolved inline PR review comment** on a source-code line:
+"Do not merge: delete the vendor directory after this PR is otherwise ready to merge."
+Name the actual vendor directory in the comment. Keep the conversation unresolved to block an
+accidental merge; a PR-description note or a committed TODO is not a substitute. When the PR is
+otherwise ready to merge, delete the vendored source in the standalone commit described above,
+then resolve the comment only after verifying that the directory has been deleted.
+
 ### Apple deployment targets
 
 Every `arm64-osx.cmake` and `arm64-ios.cmake` overlay triplet must set
@@ -209,9 +216,36 @@ This avoids accidental use of the bundled root when `vcvars` or Developer Comman
 
 - Each subdirectory with a `vcpkg.json` manifest declares its vcpkg dependencies and version pins.
 - `vcpkg_run_install.sh` (macOS/Linux) and `vcpkg_run_install.ps1` (Windows) wrap `vcpkg install`, directing output to `$OutRoot/vcpkg_installed/<consumer>/`.
-- All `vcpkg install` calls are driven by a sequential chain of parts in [vcpkg.PartFile.xml](vcpkg.PartFile.xml) (`vcpkg_install_compress` → `vcpkg_install_png` → `vcpkg_install_pugixml` → `vcpkg_install_openssl` → `vcpkg_install_curl` → `vcpkg_install_crashpad`), each blocked on the previous one completing. This prevents concurrent `vcpkg` processes from colliding on shared state.
-- Consumer `.mke` files (e.g. `Zlib.mke`, `BeOpenSSL.mke`, `png.mke`, `pugixml.mke`, `BeCurl.mke`) depend on their corresponding chain part and only consume the already-installed outputs — they do not call `vcpkg_run_install` themselves.
+- All `vcpkg install` calls are driven by a sequential chain of parts in [vcpkg.PartFile.xml](vcpkg.PartFile.xml) (`vcpkg_install_compress` → `vcpkg_install_png` → `vcpkg_install_pugixml` → `vcpkg_install_openssl` → `vcpkg_install_curl` → `vcpkg_install_freetype2` → `vcpkg_install_crashpad`), each blocked on the previous one completing. This prevents concurrent `vcpkg` processes from colliding on shared state.
+- Consumer `.mke` files (e.g. `Zlib.mke`, `BeOpenSSL.mke`, `png.mke`, `pugixml.mke`, `BeCurl.mke`, `freetype2.mke`) depend on their corresponding chain part and only consume the already-installed outputs — they do not call `vcpkg_run_install` themselves.
 - **Binary cache resolution.** The install wrappers honor the `VCPKG_BINARY_SOURCES` environment variable. When it is **unset** (the default), vcpkg falls back to a **local** `files` archive cache under the per-user cache directory (see [Cache locations and environment overrides](#cache-locations-and-environment-overrides)), so a second build on the same machine restores instead of recompiling. When it is **set**, that value takes over completely — e.g. Bentley CI points it at an internal shared binary cache to publish/restore binaries across agents, and you can point it at your own vcpkg-supported backend. Setting it to `clear` disables all caching.
+
+### Windows DLL regression test
+
+The DLL relinking fix is Windows-only, but the Python regression test can sanity-check `.def`
+generation and stale-DLL invalidation on **any platform**, including macOS and Linux. It uses
+temporary files and simulates DLL-deletion failures; it does not build or load a real DLL.
+
+The [curl](curl/makeCurlDef.py) and [FreeType](freetype2/makeFreetypeDef.py) export generators
+keep their library-specific header parsing and delegate to the shared [make_def.py](make_def.py)
+helper. It embeds the linked archive's SHA-256 in the generated `.def`, preserves unchanged
+files, and deletes stale DLLs before writing changed output. This forces a re-link even if a
+restored archive has an older timestamp and preserves retry behavior if deletion fails. Reuse
+this helper for other Windows DLL export generators rather than duplicating that workflow.
+
+[test_make_def.py](test_make_def.py) checks both generators using temporary fixtures. It covers
+archive changes with older timestamps, unchanged-content no-op runs, export changes, missing
+archives, retrying after a stale DLL cannot be deleted, and command-line execution from an
+unrelated working directory. Run it from the repository root:
+
+```sh
+python3 -B -m unittest discover -s iModelCore/libsrc -p test_make_def.py -v
+```
+
+The test uses only Python's standard library and does not require vcpkg, BentleyBuild, or a
+Windows host. On Windows, use `python` instead of `python3` if needed. Success ends with `OK`.
+It is a manual regression check, not currently wired into CI, and does not replace a Windows
+DLL build.
 
 ### Mend source scans
 

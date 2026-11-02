@@ -6312,6 +6312,7 @@ public:
 class VerticalDatumInfo : public RefCountedBase
 {
     friend class VerticalDatum;
+    friend class BaseGCS;
 
 private:
     // prevent copy
@@ -6340,6 +6341,7 @@ private:
     }
 
     void AddTransform(VerticalTransformPtr& transform);
+    void RegisterTransforms();
 
 public:
     ~VerticalDatumInfo();
@@ -6347,18 +6349,29 @@ public:
     BASEGEOCOORD_EXPORTED bool operator== (const VerticalDatumInfo& other) const;
 
     /*---------------------------------------------------------------------------------**//**
-    * Creates a VerticalDatumInfo object from a JSON representation. 
+    * Creates a VerticalDatumInfo object from a JSON representation without adding it to the
+    * dictionary or registering its transforms.
     * The method will not auto-complete the definition using the dictionary definitions and
     * all required properties must be present.
     * @param[in]    jsonVerticalCRS  the JSON representation of the VerticalDatumInfo.
-    * @param[in]    addToDictionary  if true the new VerticalDatumInfo will be added to the
-    *                                VerticalDatumDictionary, if false it will not be added.
     * @param[out]   status            SUCCESS if a valid VerticalDatumInfo was created, or an
     *                                error code otherwise.
     * @return   a valid VerticalDatumInfoPtr on success, a VerticalDatumInfoPtr set to nullptr on failure.
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/    
-    BASEGEOCOORD_EXPORTED static VerticalDatumInfoPtr CreateFromJson(BeJsConst jsonVerticalCRS, bool addToDictionary, StatusInt& status);
+    BASEGEOCOORD_EXPORTED static VerticalDatumInfoPtr CreateFromJson(BeJsConst jsonVerticalCRS, StatusInt& status);
+
+    /*---------------------------------------------------------------------------------**//**
+    * Creates a VerticalDatumInfo object from a complete JSON representation, registers its
+    * transforms, and adds it to the VerticalDatumDictionary.
+    * Transforms are registered only after the complete definition has been parsed successfully.
+    * @param[in]    jsonVerticalCRS  the JSON representation of the VerticalDatumInfo.
+    * @param[out]   status          SUCCESS if creation and dictionary insertion succeeded,
+    *                              or an error code otherwise.
+    * @return   the created VerticalDatumInfoPtr, or nullptr if parsing failed.
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    BASEGEOCOORD_EXPORTED static VerticalDatumInfoPtr CreateAndRegisterFromJson(BeJsConst jsonVerticalCRS, StatusInt& status);
 
     BASEGEOCOORD_EXPORTED StatusInt ToJson(BeJsValue jsonValue) const;
 

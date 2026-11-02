@@ -13,13 +13,13 @@ Libraries built in `iModelCore/libsrc/`.
 | `curl` | c-ares (macOS/Linux only) | 1.34.8 | Yes |
 | `facebook` | Facebook Folly | 57.0 | No |
 | `flatbuffers` | FlatBuffers | 1.12.0 | No |
-| `freetype2` | FreeType | 2.13.3 | No |
+| `freetype2` | FreeType | 2.14.3 | Yes |
 | `google_re2` | Google RE2 | SONAME 9 | No |
 | `icu4c` | ICU4C | 78.1 | No |
 | `ios-cmake` | ios-cmake | unknown | No |
 | `libjpegturbo` | libjpeg-turbo | 3.1.2 | No |
 | `libxml2` | libxml2 | 2.13.5 | No |
-| `openssl` | OpenSSL | 3.6.5 | Yes |
+| `openssl` | OpenSSL | 3.5.9 | Yes |
 | `png` | libpng | 1.6.58 | Yes |
 | `proxyres` | proxyres | unknown | No |
 | `pugixml` | pugixml | 1.15 | Yes |

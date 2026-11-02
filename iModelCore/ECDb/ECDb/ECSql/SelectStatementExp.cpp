@@ -983,7 +983,7 @@ Exp::FinalizeParseStatus SingleSelectStatementExp::_FinalizeParsing(ECSqlParseCo
                     {
                     parent = cur->FindParent(Exp::Type::SingleSelect);
                     cur = parent == nullptr ? nullptr : parent->GetAsCP<SingleSelectStatementExp>();
-                    if (cur != nullptr)
+                    if (cur != nullptr && !cur->IsRowConstructor())
                         {
                         cur->GetFrom()->FindRangeClassRefs(m_rangeClassRefExpCache, RangeClassInfo::Scope::Inherited);
                         }

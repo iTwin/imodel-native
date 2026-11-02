@@ -283,6 +283,8 @@ $(CoreObjs)BulkElementAspectDeletion$(oext) :       $(DgnCoreDir)BulkElementAspe
 
 $(CoreObjs)BulkElementAspectWriter$(oext) :         $(DgnCoreDir)BulkElementAspectWriter.cpp $(iModelPlatformAPISrc)DgnElement.h ${MultiCompileDepends}
 
+$(CoreObjs)BulkElementDeletion$(oext) :             $(DgnCoreDir)BulkElementDeletion.cpp ${MultiCompileDepends}
+
 #----------------------------------------------------------------------
 #   DgnGeoCoord
 #----------------------------------------------------------------------

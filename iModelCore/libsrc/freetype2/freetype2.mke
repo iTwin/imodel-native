@@ -2,154 +2,138 @@
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #  See LICENSE.md in the repository root for full copyright notice.
 #---------------------------------------------------------------------------------------------
-# Ignore warnings in third-party code.
+# freetype2.mke - Build FreeType via vcpkg and deliver it as iTwinFreetype2.
+#
+# FreeType is no longer compiled file-by-file from a checked-in source tree. vcpkg builds it
+# (static triplet on every platform; see ../vcpkg.mki and ./vcpkg.json) and this makefile
+# re-packages the result into the deliverables downstream code expects:
+#
+#   * Static delivery (all platforms): vcpkg produces a single freetype archive, so it is
+#     delivered directly under the iTwinFreetype2 name. zlib is NOT merged in -- BeZlib provides
+#     those symbols at the final link.
+#   * Dynamic delivery (Windows only): re-link iTwinFreetype2.dll + its import library from
+#     vcpkg's static freetype.lib, applying an export .def generated from FreeType's public
+#     headers (the static Windows build does not define DLL_EXPORT, so the archive carries no
+#     dllexport information).
+#
+# Headers and the license notice are staged by freetype2.prewire.mke.
+#---------------------------------------------------------------------------------------------
+
 IS_THIRD_PARTY_LIBRARY = 1
-BUILD_NO_STACK_CHECK = 1   # Don't want to modify third party code, but hopefully these get fixed in a future version.
-
-#----------------------------------------------------------------------------------------------------------------------------------------------------
-# Freetyoe2 has some debug code that doesn't compile; prevent our MKI files downstream from defining DEBUG.
-%if ($[@findstring GCC, $(BUILD_TOOLSET)] != " ") || ($[@findstring LINUX_CLANG, $(BUILD_TOOLSET)] != " ")
-    # Export/make visible all functions in this library.
-    GCC_DEFAULT_VISIBILITY = default
-%endif
-
-#%if $(TARGET_PLATFORM) == "MacOS"
-    DONT_DEFINE_DEBUG = 1
-#%endif
 
 %include mdl.mki
 
 %if defined(iTwinNativeThirdParty)
-  appName = freetype2
+    appName = freetype2
 %else
-  appName = iTwinFreetype2
+    appName = iTwinFreetype2
 %endif
 
-CCompPDBName    = $(appName)
-o               = $(OutBuildDir)$(appName)/
+freetype2Dir = $(_MakeFilePath)
+libsrcDir    = $(freetype2Dir)../
 
+o = $(OutBuildDir)$(appName)/
 
-%if !defined (BMAKE_DELETE_ALL_TARGETS)
-    $(o):
-        !~@mkdir $@
+#--------------------------------------------------------------------------------------
+#   Determine vcpkg triplet from TARGET_PROCESSOR_ARCHITECTURE
+#--------------------------------------------------------------------------------------
+# This library's triplets set no explicit -RTC flags, so no veracode overlay triplet is
+# needed and vcpkgUseVeracodeTriplet is intentionally left undefined.
+%include $(libsrcDir)vcpkg.mki
+
+# The vcpkg install chain always runs static-only, so the packages always live under the
+# static OutputRootDir. Static builds of this part share that root directly; dynamic builds
+# (whose OutputRootDir omits the "static/" segment) must redirect to the same static location.
+%if defined (CREATE_STATIC_LIBRARIES)
+vcpkgInstallRoot = $(OutputRootDir)vcpkg_installed/freetype2/
+%else
+vcpkgInstallRoot = $(OutputRootDir)static/vcpkg_installed/freetype2/
+%endif
+vcpkgTripletDir  = $(vcpkgInstallRoot)$(vcpkgTriplet)/
+vcpkgIncludeDir  = $(vcpkgTripletDir)include/
+vcpkgLibDir      = $(vcpkgTripletDir)lib/
+vcpkgDbgLibDir   = $(vcpkgTripletDir)debug/lib/
+
+always:
+    !~@mkdir $(o)
+
+#--------------------------------------------------------------------------------------
+#   Resolve the vcpkg-produced static archive. FreeType's CMakeLists.txt sets
+#   CMAKE_DEBUG_POSTFIX to "d" on every platform, so the debug archive is freetyped.
+#   The Windows debug archive is built against the debug CRT but uses no debug-CRT-only
+#   functionality, so it links into our release-CRT DEBUG builds as-is (see the vcpkg skill's
+#   "Windows DEBUG" section); no release-only or CRT fix-up is needed.
+#--------------------------------------------------------------------------------------
+%if defined (DEBUG)
+    freetypeStem = freetyped
+%else
+    freetypeStem = freetype
 %endif
 
-nameToDefine = FT2_BUILD_LIBRARY
-%include cdefapnd.mki
+%if $(TARGET_PLATFORM) == "Windows"
+    freetypeLibName = $(freetypeStem).lib
+%else
+    freetypeLibName = lib$(freetypeStem).a
+%endif
 
-nameToDefine = DLL_EXPORT
-%include cdefapnd.mki
+%if defined (DEBUG)
+    vcpkgFreetype = $(vcpkgDbgLibDir)$(freetypeLibName)
+%else
+    vcpkgFreetype = $(vcpkgLibDir)$(freetypeLibName)
+%endif
 
-# Don't use zlib source delivered with freetype2
-nameToDefine = FT_CONFIG_OPTION_SYSTEM_ZLIB
-%include cdefapnd.mki
+#--------------------------------------------------------------------------------------
+#   Produce the iTwinFreetype2 deliverable.
+#--------------------------------------------------------------------------------------
+%if defined (CREATE_STATIC_LIBRARIES)
 
-# Ensure zlib.h can be included from ftgzip.c using angle brackets
-dirToSearch = $(BuildContext)VendorAPI/zlib/
-%include cincapnd.mki
+    always:
+        ~linkfile "$(BuildContext)Delivery/$(stlibprefix)$(appName)$(stlibext)=$(vcpkgFreetype)"
 
-#----------------------------------------------------------------------------------------------------------------------------------------------------
-# Do this so we don't have to modify the library's source.
-dirToSearch = $(_MakeFilePath)vendor/include/
-%include cincapnd.mki
+%else
 
-#----------------------------------------------------------------------------------------------------------------------------------------------------
-$(BuildContext)VendorAPI/freetype2 : $(_MakeFilePath)vendor/include
-    $(LinkFirstDepToFirstTargetAsDirectory)
+    #----------------------------------------------------------------------------------
+    #   Dynamic delivery (Windows only): generate an export .def from FreeType's public headers,
+    #   then re-link iTwinFreetype2.dll + import lib from the vcpkg static freetype.lib. Reuses
+    #   the standard dlmlink machinery (via linkLibrary.mki) so versioning, signing, the import
+    #   library, and BuildContext delivery behave as before. link.exe pulls the exported objects
+    #   out of the static .lib as directed by the .def.
+    #
+    #   The .def is regenerated on every build because its content comes from the vcpkg-installed
+    #   headers, whose timestamps are not a reliable prerequisite (a binary-cache hit can restore
+    #   older ones). makeFreetypeDef.py embeds the linked archive's SHA-256 and rewrites the file
+    #   only when the exports or archive contents change. The dlmlink machinery consumes
+    #   DLM_MODULE_DEF as a linker option rather than as a prerequisite of the DLL, so changed
+    #   inputs cause makeFreetypeDef.py to delete the previously linked DLL before writing the .def.
+    #   This forces a re-link even when the restored archive's timestamp predates the DLL.
+    #----------------------------------------------------------------------------------
+    always:
+        $(BBPYTHONCMD) $(freetype2Dir)makeFreetypeDef.py "$(vcpkgIncludeDir)freetype" "$(o)$(appName).def" "$(vcpkgFreetype)" "$(o)$(shlibprefix)$(appName)$(shlibext)"
 
-#----------------------------------------------------------------------------------------------------------------------------------------------------
-MultiCompileDepends = $(_MakeFileSpec)
-%include MultiCppCompileRule.mki
+    DLM_NAME                    = $(appName)
+    DLM_OBJECT_FILES            = $(vcpkgFreetype)
+    DLM_EXPORT_OBJS             = $(DLM_OBJECT_FILES)
+    DLM_OBJECT_DEST             = $(o)
+    DLM_DEST                    = $(o)
+    DLM_EXPORT_DEST             = $(o)
+    DLM_NOENTRY                 = 1
+    DLM_NO_BENTLEY_LIB          = 1
+    DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+    DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+    DLM_CREATE_LIB_CONTEXT_LINK = 1
+    DLM_MODULE_DEF              = $(o)$(appName).def
 
-# This list of compilands must correlate to the modules selected in include/config/ftmodule.h.
+    # BeZlib resolves FreeType's zlib references (the vcpkg zlib archive is not linked).
+    LINKER_LIBRARIES = $(ContextSubPartsStaticLibs)$(libprefix)BeZlib$(libext)
 
-$(o)autofit$(oext) : $(BaseDir)vendor/src/autofit/autofit.c ${CommonDependencies}
+    # DLM_NOENTRY suppresses the Bentley DLL entry-point object that would normally carry
+    # /DEFAULTLIB directives into the link, so list the CRT import libs explicitly (mirrors
+    # BeCurl.mke). Listing the release CRT explicitly also keeps the debug archive's
+    # /DEFAULTLIB:MSVCRTD from pulling the debug CRT into DEBUG builds.
+    LINKER_LIBRARIES + $(cRuntime)
+    LINKER_LIBRARIES + vcruntime.lib
+    LINKER_LIBRARIES + ucrt.lib
 
-$(o)bdf$(oext) : $(BaseDir)vendor/src/bdf/bdf.c ${CommonDependencies}
+    %include $(sharedMki)linkLibrary.mki
 
-$(o)cff$(oext) : $(BaseDir)vendor/src/cff/cff.c ${CommonDependencies}
-
-$(o)ftbase$(oext) : $(BaseDir)vendor/src/base/ftbase.c ${CommonDependencies}
-
-$(o)ftbitmap$(oext) : $(BaseDir)vendor/src/base/ftbitmap.c ${CommonDependencies}
-
-$(o)ftcache$(oext) : $(BaseDir)vendor/src/cache/ftcache.c ${CommonDependencies}
-
-$(o)ftcid$(oext) : $(BaseDir)vendor/src/base/ftcid.c ${CommonDependencies}
-
-$(o)ftglyph$(oext) : $(BaseDir)vendor/src/base/ftglyph.c ${CommonDependencies}
-
-$(o)ftgzip$(oext) : $(BaseDir)vendor/src/gzip/ftgzip.c ${CommonDependencies}
-
-$(o)ftinit$(oext) : $(BaseDir)vendor/src/base/ftinit.c ${CommonDependencies}
-
-$(o)ftlzw$(oext) : $(BaseDir)vendor/src/lzw/ftlzw.c ${CommonDependencies}
-
-$(o)ftmm$(oext) : $(BaseDir)vendor/src/base/ftmm.c ${CommonDependencies}
-
-$(o)ftstroke$(oext) : $(BaseDir)vendor/src/base/ftstroke.c ${CommonDependencies}
-
-$(o)ftsvg$(oext) : $(BaseDir)vendor/src/svg/ftsvg.c ${CommonDependencies}
-
-$(o)ftsynth$(oext) : $(BaseDir)vendor/src/base/ftsynth.c ${CommonDependencies}
-
-$(o)ftsystem$(oext) : $(BaseDir)vendor/src/base/ftsystem.c ${CommonDependencies}
-
-$(o)fttype1$(oext) : $(BaseDir)vendor/src/base/fttype1.c ${CommonDependencies}
-
-$(o)pcf$(oext) : $(BaseDir)vendor/src/pcf/pcf.c ${CommonDependencies}
-
-$(o)pfr$(oext) : $(BaseDir)vendor/src/pfr/pfr.c ${CommonDependencies}
-
-$(o)psaux$(oext) : $(BaseDir)vendor/src/psaux/psaux.c ${CommonDependencies}
-
-$(o)pshinter$(oext) : $(BaseDir)vendor/src/pshinter/pshinter.c ${CommonDependencies}
-
-$(o)psnames$(oext) : $(BaseDir)vendor/src/psnames/psnames.c ${CommonDependencies}
-
-$(o)raster$(oext) : $(BaseDir)vendor/src/raster/raster.c ${CommonDependencies}
-
-$(o)sfnt$(oext) : $(BaseDir)vendor/src/sfnt/sfnt.c ${CommonDependencies}
-
-$(o)smooth$(oext) : $(BaseDir)vendor/src/smooth/smooth.c ${CommonDependencies}
-
-$(o)truetype$(oext) : $(BaseDir)vendor/src/truetype/truetype.c ${CommonDependencies}
-
-$(o)type1$(oext) : $(BaseDir)vendor/src/type1/type1.c ${CommonDependencies}
-
-$(o)type1cid$(oext) : $(BaseDir)vendor/src/cid/type1cid.c ${CommonDependencies}
-
-$(o)type42$(oext) : $(BaseDir)vendor/src/type42/type42.c ${CommonDependencies}
-
-$(o)winfnt$(oext) : $(BaseDir)vendor/src/winfonts/winfnt.c ${CommonDependencies}
-
-$(o)ftsdfrend$(oext) : $(BaseDir)vendor/src/sdf/ftsdfrend.c ${CommonDependencies}
-
-$(o)ftbsdf$(oext) : $(BaseDir)vendor/src/sdf/ftbsdf.c ${CommonDependencies}
-
-$(o)ftsdf$(oext) : $(BaseDir)vendor/src/sdf/ftsdf.c ${CommonDependencies}
-
-$(o)ftdebug$(oext) : $(BaseDir)vendor/src/base/ftdebug.c ${CommonDependencies}
-
-$(o)ftsdfcommon$(oext) : $(BaseDir)vendor/src/sdf/ftsdfcommon.c ${CommonDependencies}
-
-#................................................
-%include MultiCppCompileGo.mki
-objs +% $(MultiCompileObjectList)
-
-#----------------------------------------------------------------------------------------------------------------------------------------------------
-DLM_CONTEXT_LOCATION = $(BuildContext)Delivery/
-DLM_CREATE_LIB_CONTEXT_LINK = 1
-DLM_DEST = $(o)
-DLM_EXPORT_DEST = $(o)
-DLM_EXPORT_OBJS = $(objs)
-DLM_LIB_CONTEXT_LOCATION = $(BuildContext)Delivery/
-DLM_NAME = $(appName)
-DLM_NO_BENTLEY_LIB = 1
-DLM_NOENTRY = 1
-DLM_OBJECT_DEST = $(o)
-DLM_OBJECT_FILES = $(objs)
-
-LINKER_LIBRARIES = $(ContextSubPartsStaticLibs)$(libprefix)BeZlib$(libext)
-
-%include $(sharedMki)linkLibrary.mki
+%endif

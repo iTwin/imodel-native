@@ -393,8 +393,32 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         }
 
         Statement stmt;
-        Utf8CP statNames[] = { "nlock", "ncache", "cachesize", "memory_used", "memory_highwater", "memory_manifest", "memory_client_array", "memory_client_manifest" };
-        Utf8CP jsNames[] = { "lockedCacheslots", "populatedCacheslots", "totalCacheslots", "memoryUsed", "memoryHighwater", "memoryManifest", "memoryClientArray", "memoryClientManifest" };
+        Utf8CP statNames[] = {
+            "nlock",
+            "ncache",
+            "cachesize",
+            "memory_used",
+            "memory_highwater",
+            "memory_manifest",
+            "memory_client_array",
+            "memory_client_manifest",
+            "nqueryblock",
+            "nquerybyte",
+            "nqueryms",
+        };
+        Utf8CP jsNames[] = {
+            "lockedCacheslots",
+            "populatedCacheslots",
+            "totalCacheslots",
+            "memoryUsed",
+            "memoryHighwater",
+            "memoryManifest",
+            "memoryClientArray",
+            "memoryClientManifest",
+            "onDemandBlocksDownloaded",
+            "onDemandBytesDownloaded",
+            "onDemandDownloadTimeMs",
+        };
         BeAssert (sizeof(statNames) == sizeof(jsNames));
         auto rc = stmt.Prepare(m_containerDb, "SELECT value FROM bcv_stat where name = ?");
         BeAssert (rc == BE_SQLITE_OK);
