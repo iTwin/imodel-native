@@ -7867,6 +7867,75 @@ public:
         return toJsString(Env(), targetId);
         }
 
+    // Sets an EC property's JSON member to null when it is missing. If the member is a struct object, does the same for its missing struct members.
+    // Uses JS null rather than BeJsValue::SetNull, which writes undefined and is dropped by JSON.stringify.
+    static void SetMissingPropertyToNull(Napi::Object json, ECN::ECPropertyCR ecProperty)
+        {
+        Utf8String memberName(ecProperty.GetName());
+        ECN::ECJsonUtilities::LowerFirstChar(memberName); // matches JsonEcInstanceWriter::MemberNameCasing::LowerFirstChar used by DgnElement::_ToJson
+        if (!json.Has(memberName.c_str()))
+            {
+            json.Set(memberName.c_str(), json.Env().Null());
+            return;
+            }
+
+        ECN::StructECPropertyCP structProperty = ecProperty.GetAsStructProperty();
+        Napi::Value member = json.Get(memberName.c_str());
+        if (nullptr == structProperty || !member.IsObject() || member.IsArray())
+            return;
+
+        Napi::Object structJson = member.As<Napi::Object>();
+        for (ECN::ECPropertyCP structMember : structProperty->GetType().GetProperties(true))
+            SetMissingPropertyToNull(structJson, *structMember);
+        }
+
+    // Adds a clearing value for each member that DgnElement::ToJson omits when it is empty, so that updating an existing element with the
+    // result clears that member instead of keeping its old value. Each value is one the current update path (_FromJson) already treats as a clear.
+    static void AddExplicitClears(Napi::Env env, Napi::Object json, DgnElementCR element)
+        {
+        if (!json.Has(DgnElement::json_parent()))
+            json.Set(DgnElement::json_parent(), env.Null());
+
+        if (!json.Has(DgnElement::json_userLabel()))
+            json.Set(DgnElement::json_userLabel(), env.Null());
+
+        // _FromJson ignores a null jsonProperties, but replaces the stored value with an empty object.
+        if (!json.Has(DgnElement::json_jsonProperties()))
+            json.Set(DgnElement::json_jsonProperties(), Napi::Object::New(env));
+
+        // Auto-handled EC properties: _ToJson omits null values, empty arrays and empty structs.
+        ECN::ECClassCP elementClass = element.GetElementClass();
+        if (nullptr != elementClass)
+            {
+            for (ECN::ECPropertyCP ecProperty : elementClass->GetProperties(true))
+                {
+                if (ECN::ECJsonSystemNames::IsTopLevelSystemMember(ecProperty->GetName()))
+                    continue;
+
+                ElementECPropertyAccessor const accessor(element, ecProperty->GetName().c_str());
+                if (accessor.IsValid() && accessor.IsAutoHandled())
+                    SetMissingPropertyToNull(json, *ecProperty);
+                }
+            }
+
+        GeometricElementCP geometricElement = dynamic_cast<GeometricElementCP>(&element);
+        if (nullptr == geometricElement)
+            return;
+
+        if (!json.Has(GeometricElement::json_typeDefinition()))
+            json.Set(GeometricElement::json_typeDefinition(), env.Null());
+
+        // An empty placement object makes _FromJson store NULL origin, angles and bounding box.
+        if (!json.Has(GeometricElement::json_placement()))
+            json.Set(GeometricElement::json_placement(), Napi::Object::New(env));
+
+        // An empty geomBinary makes _FromJson store a NULL geometry stream and take the bounding box from the placement JSON.
+        // An empty "geom" array is rejected, and an empty builder entryArray makes _FromJson skip the placement.
+        GeometrySourceCP geometrySource = element.ToGeometrySource();
+        if (nullptr != geometrySource && !geometrySource->GetGeometryStream().HasGeometry() && !json.Has(GeometricElement::json_geomBinary()))
+            json.Set(GeometricElement::json_geomBinary(), Napi::Uint8Array::New(env, 0));
+        }
+
     Napi::Value CloneElement(NapiInfoCR info)
         {
         if (nullptr == m_importContext)
@@ -7874,10 +7943,12 @@ public:
 
         REQUIRE_ARGUMENT_STRING_ID(0, sourceIdStr, DgnElementId, sourceElementId);
         bool binaryGeometry = false;
+        bool explicitClears = false;
         if (!ARGUMENT_IS_EMPTY(1))
             {
             Napi::Object cloneOptions = info[1].As<Napi::Object>();
             binaryGeometry = cloneOptions.Get("binaryGeometry").ToBoolean();
+            explicitClears = cloneOptions.Get("explicitClears").ToBoolean();
             }
 
         DgnElementCPtr sourceElement = m_importContext->GetSourceDb().Elements().GetElement(sourceElementId);
@@ -7933,6 +8004,9 @@ public:
 
         if ((nullptr != geometryStream) && binaryGeometry)
             val["geomBinary"].SetBinary(geometryStream->GetData(), geometryStream->GetSize());
+
+        if (explicitClears)
+            AddExplicitClears(Env(), val, *targetElement);
 
         return val;
         }
