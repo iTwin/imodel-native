@@ -12,7 +12,7 @@ import { IModelJsNative } from "../NativeLibrary";
 import { copyFile, dbFileName, getOutputDir, iModelJsNative } from "./utils";
 
 const testSchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="CloneTest" alias="ct" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+<ECSchema schemaName="CloneTest" alias="ct" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
   <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
   <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
   <ECCustomAttributes>
@@ -210,8 +210,8 @@ describe("ImportContext.cloneElement explicitClears", () => {
   });
 
   after(() => {
-    sourceDb.closeFile();
-    targetDb.closeFile();
+    sourceDb?.closeFile();
+    targetDb?.closeFile();
   });
 
   it("clears the members of a 3d element that are empty in the source", () => {
