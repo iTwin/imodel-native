@@ -2738,7 +2738,7 @@ void GeometryStreamIO::Iterator::ToNext()
         {
         // Align data size to common buffer bounds
         egOpSize = m_dataSize - m_dataOffset;
-        dataSize = egOpSize - sizeof (opCode) - sizeof (dataSize);
+        dataSize = (uint32_t) (egOpSize - sizeof (opCode) - sizeof (dataSize));
         }
 
     m_egOp = Operation((OpCode) (opCode), dataSize, data);
@@ -4991,7 +4991,7 @@ void GeometryCollection::Iterator::ToNext()
             {
             // Align data size to common buffer bounds
             egOpSize = m_dataSize - m_dataOffset;
-            dataSize = egOpSize - sizeof (opCode) - sizeof (dataSize);
+            dataSize = (uint32_t) (egOpSize - sizeof (opCode) - sizeof (dataSize));
             }
 
         m_egOp = GeometryStreamIO::Operation((GeometryStreamIO::OpCode) (opCode), dataSize, data);
