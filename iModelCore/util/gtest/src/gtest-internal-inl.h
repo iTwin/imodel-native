@@ -113,7 +113,7 @@ GTEST_API_ bool ParseFlag(const char* str, const char* flag, int32_t* value);
 // given --gtest_random_seed flag value.
 inline int GetRandomSeedFromFlag(int32_t random_seed_flag) {
   const unsigned int raw_seed =
-      (random_seed_flag == 0) ? static_cast<unsigned int>(GetTimeInMillis())
+      (random_seed_flag == 0) ? static_cast<unsigned int>(GetTimeInMillis() & 0xFFFFFFFF)
                               : static_cast<unsigned int>(random_seed_flag);
 
   // Normalizes the actual seed to range [1, kMaxRandomSeed] such that
