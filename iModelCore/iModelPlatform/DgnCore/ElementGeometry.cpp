@@ -2720,7 +2720,8 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometricPrimitivePtr&
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryStreamIO::Iterator::ToNext()
     {
-    if (m_dataOffset >= m_dataSize)
+    // The rest of the common buffer should be enough also to read next OpCode and chunk data size & pointer
+    if ((m_dataOffset + sizeof (uint32_t) + sizeof (uint32_t)) >= m_dataSize)
         {
         m_data = nullptr;
         m_dataOffset = 0;
@@ -2732,6 +2733,13 @@ void GeometryStreamIO::Iterator::ToNext()
     uint32_t        dataSize = *((uint32_t const*) (m_data + sizeof (opCode)));
     uint8_t const*  data = (0 != dataSize ? (uint8_t const*) (m_data + sizeof (opCode) + sizeof (dataSize)) : nullptr);
     size_t          egOpSize = sizeof (opCode) + sizeof (dataSize) + dataSize;
+
+    if ((m_dataOffset + egOpSize) > m_dataSize)
+        {
+        // Align data size to common buffer bounds
+        egOpSize = m_dataSize - m_dataOffset;
+        dataSize = egOpSize - sizeof (opCode) - sizeof (dataSize);
+        }
 
     m_egOp = Operation((OpCode) (opCode), dataSize, data);
     m_data += egOpSize;
@@ -4958,7 +4966,8 @@ void GeometryCollection::Iterator::ToNext()
     {
     do
         {
-        if (m_dataOffset >= m_dataSize)
+        // The rest of the common buffer should be enough also to read next OpCode and chunk data size & pointer
+        if ((m_dataOffset + sizeof (uint32_t) + sizeof (uint32_t)) >= m_dataSize)
             {
             m_state->m_geomStreamEntryId.SetActive(false);
             m_data = nullptr;
@@ -4977,6 +4986,13 @@ void GeometryCollection::Iterator::ToNext()
         uint32_t        dataSize = *((uint32_t const*) (m_data + sizeof (opCode)));
         uint8_t const*  data = (0 != dataSize ? (uint8_t const*) (m_data + sizeof (opCode) + sizeof (dataSize)) : nullptr);
         size_t          egOpSize = sizeof (opCode) + sizeof (dataSize) + dataSize;
+
+        if ((m_dataOffset + egOpSize) > m_dataSize)
+            {
+            // Align data size to common buffer bounds
+            egOpSize = m_dataSize - m_dataOffset;
+            dataSize = egOpSize - sizeof (opCode) - sizeof (dataSize);
+            }
 
         m_egOp = GeometryStreamIO::Operation((GeometryStreamIO::OpCode) (opCode), dataSize, data);
         m_data += egOpSize;
