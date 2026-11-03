@@ -7873,7 +7873,7 @@ public:
         {
         Utf8String memberName(ecProperty.GetName());
         ECN::ECJsonUtilities::LowerFirstChar(memberName); // matches JsonEcInstanceWriter::MemberNameCasing::LowerFirstChar used by DgnElement::_ToJson
-        if (!json.Has(memberName.c_str()))
+        if (!json.HasOwnProperty(memberName.c_str()))
             {
             json.Set(memberName.c_str(), json.Env().Null());
             return;
@@ -7893,14 +7893,14 @@ public:
     // result clears that member instead of keeping its old value. Each value is one the current update path (_FromJson) already treats as a clear.
     static void AddExplicitClears(Napi::Env env, Napi::Object json, DgnElementCR element)
         {
-        if (!json.Has(DgnElement::json_parent()))
+        if (!json.HasOwnProperty(DgnElement::json_parent()))
             json.Set(DgnElement::json_parent(), env.Null());
 
-        if (!json.Has(DgnElement::json_userLabel()))
+        if (!json.HasOwnProperty(DgnElement::json_userLabel()))
             json.Set(DgnElement::json_userLabel(), env.Null());
 
         // _FromJson ignores a null jsonProperties, but replaces the stored value with an empty object.
-        if (!json.Has(DgnElement::json_jsonProperties()))
+        if (!json.HasOwnProperty(DgnElement::json_jsonProperties()))
             json.Set(DgnElement::json_jsonProperties(), Napi::Object::New(env));
 
         // Auto-handled EC properties: _ToJson omits null values, empty arrays and empty structs.
@@ -7922,17 +7922,17 @@ public:
         if (nullptr == geometricElement)
             return;
 
-        if (!json.Has(GeometricElement::json_typeDefinition()))
+        if (!json.HasOwnProperty(GeometricElement::json_typeDefinition()))
             json.Set(GeometricElement::json_typeDefinition(), env.Null());
 
         // An empty placement object makes _FromJson store NULL origin, angles and bounding box.
-        if (!json.Has(GeometricElement::json_placement()))
+        if (!json.HasOwnProperty(GeometricElement::json_placement()))
             json.Set(GeometricElement::json_placement(), Napi::Object::New(env));
 
         // An empty geomBinary makes _FromJson store a NULL geometry stream and take the bounding box from the placement JSON.
         // An empty "geom" array is rejected, and an empty builder entryArray makes _FromJson skip the placement.
         GeometrySourceCP geometrySource = element.ToGeometrySource();
-        if (nullptr != geometrySource && !geometrySource->GetGeometryStream().HasGeometry() && !json.Has(GeometricElement::json_geomBinary()))
+        if (nullptr != geometrySource && !geometrySource->GetGeometryStream().HasGeometry() && !json.HasOwnProperty(GeometricElement::json_geomBinary()))
             json.Set(GeometricElement::json_geomBinary(), Napi::Uint8Array::New(env, 0));
         }
 

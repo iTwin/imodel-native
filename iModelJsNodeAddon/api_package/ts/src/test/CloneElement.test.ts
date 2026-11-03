@@ -31,6 +31,7 @@ const testSchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
   <ECEntityClass typeName="TestPhysicalElement">
     <BaseClass>bis:PhysicalElement</BaseClass>
     <ECProperty propertyName="StringProp" typeName="string"/>
+    <ECProperty propertyName="Constructor" typeName="string"/>
     <ECProperty propertyName="PointProp" typeName="point3d"/>
     <ECStructProperty propertyName="InfoProp" typeName="Info"/>
     <ECArrayProperty propertyName="TagsProp" typeName="string" minOccurs="0" maxOccurs="unbounded"/>
@@ -127,6 +128,7 @@ describe("ImportContext.cloneElement explicitClears", () => {
     placement: { origin: [1, 2, 3], angles: { yaw: 10, pitch: 20, roll: 30 } },
     geom: [{ box: { origin: [0, 0, 0], baseX: 1, baseY: 1, height: 1 } }],
     stringProp: "value",
+    constructor: "ctor",
     pointProp: { x: 1, y: 2, z: 3 },
     infoProp: { name: "info", count: 3 },
     tagsProp: ["a", "b"],
@@ -227,6 +229,7 @@ describe("ImportContext.cloneElement explicitClears", () => {
     const before = getElement(targetDb, targetId);
     for (const member of ["parent", "userLabel", "jsonProperties", "typeDefinition", "placement", "stringProp", "pointProp", "tagsProp", "infosProp", "refProp"])
       expect(before, member).to.have.property(member);
+    expect(before.constructor).to.equal("ctor");
     expect(before.infoProp).to.deep.equal({ name: "info", count: 3 });
     expect(queryNullColumns(targetDb, targetId, true)).to.deep.equal({ geometryStream: false, origin: false, angles: false, bbox: false });
 
@@ -234,6 +237,8 @@ describe("ImportContext.cloneElement explicitClears", () => {
     // The markers must be real JS null, not undefined, so that they survive serialization.
     for (const member of ["parent", "userLabel", "typeDefinition", "stringProp", "pointProp", "tagsProp", "infosProp", "refProp"])
       expect(props[member], member).to.be.null;
+    // A property whose JSON name matches an inherited JS member (Object.prototype.constructor) must still be cleared.
+    expect(props).to.have.own.property("constructor", null);
     expect(props.jsonProperties).to.deep.equal({});
     expect(props.placement).to.deep.equal({});
     expect(props.infoProp).to.deep.equal({ name: "kept", count: null });
@@ -243,6 +248,7 @@ describe("ImportContext.cloneElement explicitClears", () => {
     const after = getElement(targetDb, targetId);
     for (const member of ["parent", "userLabel", "typeDefinition", "placement", "stringProp", "pointProp", "tagsProp", "infosProp", "refProp"])
       expect(after, member).not.to.have.property(member);
+    expect(after).not.to.have.own.property("constructor");
     expect(after.jsonProperties ?? {}).to.deep.equal({});
     expect(after.infoProp).to.deep.equal({ name: "kept" });
     expect(queryNullColumns(targetDb, targetId, true)).to.deep.equal({ geometryStream: true, origin: true, angles: true, bbox: true });
