@@ -8,6 +8,7 @@
 #include "IModelJsNative.h"
 #include "CsvImporter.h"
 #include <Bentley/Base64Utilities.h>
+#include <BeRapidJson/BeRapidJson.h>
 #include <Bentley/Desktop/FileSystem.h>
 #include <GeomSerialization/GeomSerializationApi.h>
 #include <ECDb/ChangedIdsIterator.h>
@@ -19,6 +20,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <exception>
 #include <limits>
 #include <string>
 #include <tuple>
@@ -510,12 +512,26 @@ void JsInterop::ConcurrentQueryExecute(ECDbCR ecdb, Napi::Object requestObj, Nap
                     }
                     else if (value->GetKind() == QueryResponse::Kind::ECSql) {
                         auto& resp = value->GetAsConst<ECSqlResponse>();
-                        resp.ToJs(beJsResp, false);
-                        if (!resp.asJsonString().empty()) {
-                            auto parse = Env().Global().Get("JSON").As<Napi::Object>().Get("parse").As<Napi::Function>();
-                            auto rows = Napi::String::New(Env(), resp.asJsonString());
-                            jsResp[ECSqlResponse::JData] = parse({ rows });
+                        // Build metadata and stats without creating each field through N-API.
+                        rapidjson::Document response;
+                        BeJsValue responseValue(response);
+                        resp.ToJs(responseValue, false);
+                        rapidjson::StringBuffer json;
+                        rapidjson::Writer<rapidjson::StringBuffer> writer(json);
+                        writer.StartObject();
+                        // Avoid GetObject(): windows.h defines it as a macro.
+                        for (auto it = response.MemberBegin(); it != response.MemberEnd(); ++it) {
+                            if (!writer.Key(it->name.GetString(), it->name.GetStringLength()) || !it->value.Accept(writer))
+                                THROW_JS_BE_SQLITE_EXCEPTION(Env(), "Failed to serialize query response", BE_SQLITE_ERROR);
                         }
+                        if (!resp.asJsonString().empty()) {
+                            writer.Key(ECSqlResponse::JData);
+                            // Rows are already serialized by the query renderer; do not parse or marshal them again.
+                            if (!writer.RawValue(resp.asJsonString().c_str(), resp.asJsonString().size(), rapidjson::kArrayType))
+                                THROW_JS_BE_SQLITE_EXCEPTION(Env(), "Failed to serialize query rows", BE_SQLITE_ERROR);
+                        }
+                        writer.EndObject();
+                        jsResp = NapiValueRef::Parse(Env(), json.GetString()).As<Napi::Object>();
                     }
                     else if (value->GetKind() == QueryResponse::Kind::BlobIO) {
                         auto& resp = value->GetAsConst<BlobIOResponse>();
@@ -1494,6 +1510,143 @@ Napi::Value SqliteChangesetReader::SerializeValue(Napi::Env env, DbValue&value) 
         }
     }
     return env.Undefined();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+static Napi::Object CreateChangesetConflictArgs(Napi::Env env, BeSQLite::ChangeStream::ConflictCause cause, BeSQLite::Changes::Change const& change) {
+    auto args = Napi::Object::New(env);
+    args.Set("cause", Napi::Number::New(env, (int)cause));
+    if (cause == BeSQLite::ChangeStream::ConflictCause::ForeignKey) {
+        args.Set("foreignKeyConflicts", Napi::Number::New(env, change.GetForeignKeyConflicts()));
+        return args;
+    }
+
+    args.Set("opcode", Napi::Number::New(env, (int)change.GetOpcode()));
+    args.Set("indirect", Napi::Boolean::New(env, change.IsIndirect()));
+    args.Set("tableName", Napi::String::New(env, change.GetTableName()));
+    args.Set("columnCount", Napi::Number::New(env, change.GetColumnCount()));
+    auto primaryKeyColumns = Napi::Array::New(env);
+    for (int col = 0; col < change.GetColumnCount(); ++col) {
+        if (change.IsPrimaryKeyColumn(col))
+            primaryKeyColumns.Set(primaryKeyColumns.Length(), Napi::Number::New(env, col));
+    }
+    args.Set("primaryKeyColumns", primaryKeyColumns);
+
+    return args;
+}
+
+// With no local changes, prefer incoming rows, skip missing rows and constraint conflicts,
+// and abort on foreign-key violations.
+static BeSQLite::ChangeStream::ConflictResolution ResolveChangesetConflictWithoutLocalChanges(BeSQLite::ChangeStream::ConflictCause cause, BeSQLite::Changes::Change const& change) {
+    using ConflictCause = BeSQLite::ChangeStream::ConflictCause;
+    using ConflictResolution = BeSQLite::ChangeStream::ConflictResolution;
+    NativeLogging::CategoryLogger logger("BeSQLite");
+    if (change.GetTableName().EqualsIAscii("sqlite_stat1") && (cause == ConflictCause::Data || cause == ConflictCause::Conflict)) {
+        logger.warning("sqlite_stat1 conflict - resolved by replacing the existing row with the incoming row");
+        return ConflictResolution::Replace;
+    }
+
+    if (cause == ConflictCause::Data && !change.IsIndirect())
+        logger.warningv("UPDATE/DELETE before values do not match in table '%s' or a CASCADE action was triggered", change.GetTableName().c_str());
+
+    if (cause == ConflictCause::Conflict)
+        logger.warningv("PRIMARY KEY INSERT CONFLICT in table '%s' - resolved by replacing the existing row with the incoming row", change.GetTableName().c_str());
+
+    if (cause == ConflictCause::ForeignKey) {
+        logger.errorv("Detected %d foreign key conflicts in changeset. Aborting apply.", change.GetForeignKeyConflicts());
+        return ConflictResolution::Abort;
+    }
+
+    if (cause == ConflictCause::NotFound)
+        return ConflictResolution::Skip;
+
+    if (cause == ConflictCause::Constraint) {
+        logger.warningv("Constraint conflict in table '%s' handled by rejecting the incoming change", change.GetTableName().c_str());
+        return ConflictResolution::Skip;
+    }
+
+    return ConflictResolution::Replace;
+}
+
+//! Apply row-level changes from a raw SQLite changeset, without DDL or header validation.
+//! Apply flags and conflict handling are independent; conflicts abort by default.
+void JsInterop::ApplyChangeset(BeSQLite::DbR db, NapiInfoCR info) {
+    REQUIRE_ARGUMENT_STRING(0, pathname);
+    enum ApplyFlags { Invert = 0x01, IgnoreNoop = 0x02, FkNoAction = 0x04, NoUpdateLoop = 0x08 };
+    OPTIONAL_ARGUMENT_INTEGER(1, flags, 0);
+    if (!ARGUMENT_IS_EMPTY(1) &&
+        (info[1].As<Napi::Number>().DoubleValue() != flags || flags < 0 || (flags & ~(Invert | IgnoreNoop | FkNoAction | NoUpdateLoop)) != 0))
+        THROW_JS_TYPE_EXCEPTION("Invalid applyChangeset flags");
+
+    auto conflictHandler = info.Length() > 2 ? info[2] : info.Env().Undefined();
+    bool noLocalChanges = false;
+    if (!conflictHandler.IsUndefined() && !conflictHandler.IsFunction()) {
+        if (!conflictHandler.IsNumber() ||
+            (conflictHandler.As<Napi::Number>().DoubleValue() != 0 && conflictHandler.As<Napi::Number>().DoubleValue() != 1))
+            THROW_JS_TYPE_EXCEPTION("Expected AbortOnAnyConflict, NoLocalChanges, or a conflict handler function");
+        noLocalChanges = conflictHandler.As<Napi::Number>().Int32Value() == 1;
+    }
+
+    BeFileName filePath(pathname.c_str(), BentleyCharEncoding::Utf8);
+    BeSQLite::ChangeSet changeSet;
+    auto stat = changeSet.Read(pathname);
+    if (stat != BE_SQLITE_OK)
+        JsInterop::throwSqlResult("error reading changeset file", filePath.GetNameUtf8().c_str(), stat);
+
+    // On failure, we simply throw - it is up to the caller to decide whether to abandon or save
+    // any changes applied so far.
+    auto applyArgs = BeSQLite::ApplyChangesArgs::Default()
+        .SetInvert((flags & Invert) != 0)
+        .SetIgnoreNoop((flags & IgnoreNoop) != 0)
+        .SetFkNoAction((flags & FkNoAction) != 0)
+        .SetNoUpdateLoop((flags & NoUpdateLoop) != 0)
+        .SetAbortOnAnyConflict(!noLocalChanges && !conflictHandler.IsFunction());
+    std::exception_ptr callbackError;
+    if (noLocalChanges) {
+        applyArgs.SetConflictHandler(ResolveChangesetConflictWithoutLocalChanges);
+    } else if (conflictHandler.IsFunction()) {
+        applyArgs.SetConflictHandler([&](BeSQLite::ChangeStream::ConflictCause cause, BeSQLite::Changes::Change change) {
+            using ConflictResolution = BeSQLite::ChangeStream::ConflictResolution;
+            try {
+                Napi::HandleScope scope(info.Env());
+                auto args = CreateChangesetConflictArgs(info.Env(), cause, change);
+                auto result = conflictHandler.As<Napi::Function>().Call({args});
+                if (info.Env().IsExceptionPending())
+                    return ConflictResolution::Abort;
+                if (!result.IsNumber())
+                    throw Napi::TypeError::New(info.Env(), "Conflict handler must return Skip, Replace, or Abort");
+                auto resolution = result.As<Napi::Number>().DoubleValue();
+                if (resolution != (int)ConflictResolution::Skip && resolution != (int)ConflictResolution::Replace && resolution != (int)ConflictResolution::Abort)
+                    throw Napi::TypeError::New(info.Env(), "Conflict handler returned an invalid resolution");
+                if (resolution == (int)ConflictResolution::Replace &&
+                    cause != BeSQLite::ChangeStream::ConflictCause::Data && cause != BeSQLite::ChangeStream::ConflictCause::Conflict)
+                    throw Napi::TypeError::New(info.Env(), "Replace is valid only for data and primary-key insert conflicts");
+                return (ConflictResolution)(int)resolution;
+            } catch (...) {
+                // Finish the SQLite apply before propagating any callback exception.
+                callbackError = std::current_exception();
+                return ConflictResolution::Abort;
+            }
+        });
+    }
+    stat = changeSet.ApplyChanges(db, applyArgs);
+    if (callbackError) {
+        try {
+            std::rethrow_exception(callbackError);
+        } catch (Napi::Error const&) {
+            throw;
+        } catch (std::exception const& error) {
+            throw Napi::Error::New(info.Env(), error.what());
+        } catch (...) {
+            throw Napi::Error::New(info.Env(), "Unexpected native exception in changeset conflict handler");
+        }
+    }
+    if (info.Env().IsExceptionPending())
+        return;
+    if (stat != BE_SQLITE_OK)
+        BeNapi::ThrowJsException(info.Env(), "error applying changeset", (int)stat, IModelJsNativeErrorKeyHelper::GetITwinError(IModelJsNativeErrorKey::ChangesetError));
 }
 
 //---------------------------------------------------------------------------------------

@@ -14,7 +14,7 @@ import type { NativeCloudSqlite } from "./NativeCloudSqlite";
  */
 
 import type {
-  BentleyStatus, DbOpcode, DbResult, GuidString, Id64Array, Id64String, IModelStatus, LogLevel, OpenMode
+  BentleyStatus, DbConflictCause, DbConflictResolution, DbOpcode, DbResult, GuidString, Id64Array, Id64String, IModelStatus, LogLevel, OpenMode
 } from "@itwin/core-bentley";
 import type {
   BRepGeometryCreate, ChangesetIndexAndId, CodeProps, CodeSpecProperties, FontType as CoreFontType, PerStatementHealthStats as CorePerStatementHealthStats, TxnProps as CoreTxnProps, CreateEmptyStandaloneIModelProps, DbRequest, DbResponse, ElementAspectProps,
@@ -335,6 +335,19 @@ export declare namespace IModelJsNative {
   }
   interface IConcurrentQueryManager {
     concurrentQueryExecute(request: DbRequest, onResponse: ConcurrentQuery.OnResponse): void;
+    /** Leases a statement from the primary connection's concurrent query statement cache and binds `args`, if any.
+     * Throws if the statement cannot be prepared or bound.
+     * @param args Flat `[key, type, value, ...]` triples: `key` is the parameter index or name as a string, `type` and
+     * `value` are as serialized by `QueryBinder`.
+     * @param rowFlags Row rendering options: 1 = abbreviateBlobs, 2 = classIdsToClassNames, 4 = useJsName,
+     * 8 = doNotConvertClassIdsToClassNamesWhenAliased.
+     * @param maxRows On a read-only db, the size of the first batch, stepped by this call; 0 defers stepping.
+     * A writable db never steps here, so rows reflect writes made before the first `stepBatch` call. Nor does a
+     * statement with a dynamic column (e.g. `$->prop`), as stepping changes the metadata of such columns.
+     * @param out Receives the first batch (as returned by `stepBatch`, or `undefined` when not stepped) at index 0,
+     * the statement id at index 1, and at index 2 whether a column is dynamic, in which case metadata must not be cached.
+     */
+    prepareECSqlBatchReader(ecsql: string, args: any[] | undefined, rowFlags: number, maxRows: number, out: any[], logErrors?: boolean): ECSqlBatchReader;
     concurrentQueryResetConfig(config?: QueryConfig): QueryConfig;
     concurrentQueryShutdown(): void;
   }
@@ -695,6 +708,7 @@ export declare namespace IModelJsNative {
     public computeProjectExtents(wantFullExtents: boolean, wantOutlierIds: boolean): { extents: Range3dProps, fullExtents?: Range3dProps, outliers?: Id64Array };
     public computeRangesForText(chars: string, fontId: FontId, bold: boolean, italic: boolean, widthFactor: number, height: number): TextLayoutRangesProps;
     public concurrentQueryExecute(request: DbRequest, onResponse: ConcurrentQuery.OnResponse): void;
+    public prepareECSqlBatchReader(ecsql: string, args: any[] | undefined, rowFlags: number, maxRows: number, out: any[], logErrors?: boolean): ECSqlBatchReader;
     public concurrentQueryResetConfig(config?: QueryConfig): QueryConfig;
     public concurrentQueryShutdown(): void;
     public createBRepGeometry(createProps: BRepGeometryCreate): IModelStatus;
@@ -997,6 +1011,7 @@ export declare namespace IModelJsNative {
     /** @not-used-by-itwinjs-core */
     public static enableSharedCache(enable: boolean): DbResult;
     public concurrentQueryExecute(request: DbRequest, onResponse: ConcurrentQuery.OnResponse): void;
+    public prepareECSqlBatchReader(ecsql: string, args: any[] | undefined, rowFlags: number, maxRows: number, out: any[], logErrors?: boolean): ECSqlBatchReader;
     public concurrentQueryResetConfig(config?: QueryConfig): QueryConfig;
     public concurrentQueryShutdown(): void;
     public attachDb(filename: string, alias: string): void;
@@ -1016,6 +1031,30 @@ export declare namespace IModelJsNative {
     public getChangedElements(startChangesetId: string, endChangesetId: string): ErrorStatusOrResult<IModelStatus, any>;
     public isProcessed(changesetId: string): boolean;
     public cleanCaches(): void;
+  }
+
+  /** Synchronous reader over a statement leased from the concurrent query primary connection cache.
+   * The statement is returned to the cache by `dispose()`; a statement invalidated by cache clear or db close
+   * fails to step.
+   */
+  class ECSqlBatchReader {
+    private constructor();
+    /** Steps up to `maxRows` rows. On a writable db at most one row is stepped per call, so rows are never read ahead
+     * of writes made between calls.
+     * Returns the rows as a JSON array string when `renderAsJson` is true (the default): null cells are `null` and blobs
+     * are base64 strings. Returns an array of rows created cell by cell when `renderAsJson` is false or a row holds a
+     * value JSON cannot represent (e.g. `Infinity`), or exceeds the JSON serialization budget: directly rendered
+     * rows have `undefined` null cells and `Uint8Array` blobs. Batches can end early at a byte budget or after a
+     * directly rendered row; a short batch does not mean end of results. With `renderAsJson: false`, returns one row.
+     * Returns a `DbResult` when no row was stepped: `BE_SQLITE_DONE` or the failing status. Once the statement is done
+     * or has failed, every later call returns that status without stepping, so rows stepped before a failure are
+     * returned first.
+     */
+    public stepBatch(maxRows: number, renderAsJson?: boolean): string | any[] | DbResult;
+    public getMetadata(): any;
+    /** Identifies the prepared statement; it changes whenever the cache prepares the ECSql again. */
+    public getStatementId(): number;
+    public dispose(): void;
   }
 
   class ECSqlStatement {
@@ -1149,6 +1188,29 @@ export declare namespace IModelJsNative {
   /** Parameters for creating a new SQLiteDb */
   type SQLiteDbCreateParams = SQLiteDbOpenOrCreateParams & PageSize;
 
+  /** Copied metadata describing a row conflict. */
+  interface SQLiteChangesetRowConflictArgs {
+    readonly cause: DbConflictCause.Data | DbConflictCause.NotFound | DbConflictCause.Conflict | DbConflictCause.Constraint;
+    readonly opcode: DbOpcode;
+    readonly indirect: boolean;
+    readonly tableName: string;
+    readonly columnCount: number;
+    readonly primaryKeyColumns: readonly number[];
+  }
+
+  /** A foreign-key conflict has no associated row. */
+  interface SQLiteChangesetForeignKeyConflictArgs {
+    readonly cause: DbConflictCause.ForeignKey;
+    readonly foreignKeyConflicts: number;
+  }
+
+  type SQLiteChangesetConflictArgs = SQLiteChangesetRowConflictArgs | SQLiteChangesetForeignKeyConflictArgs;
+  /** May query the database, but must not modify it (including through prepared statements), close it,
+   * change its transaction, or recursively apply another changeset to it.
+   * Replace is valid only for Data and Conflict.
+   */
+  type SQLiteChangesetConflictHandler = (args: SQLiteChangesetConflictArgs) => DbConflictResolution;
+
   class SQLiteDb implements SQLiteOps {
     constructor();
     public readonly cloudContainer?: CloudContainer;
@@ -1159,9 +1221,16 @@ export declare namespace IModelJsNative {
      * changesets. Unlike DgnDb.applyChangeset, this does *not* validate any changeset header
      * (parentId/changesetId) against the current state of the db, and it does *not* support DDL/schema
      * changes (raw sqlite changesets cannot represent them) - it simply applies the row-level changes.
-     * Any conflict encountered while applying causes the entire apply to fail and throw.
+     * By default any conflict causes the apply to fail and throw.
+     * @param flags Bitmask: Invert=1, IgnoreNoop=2, FkNoAction=4, NoUpdateLoop=8. Defaults to 0.
+     * @param conflictHandler 0 (default) aborts on any conflict. 1 uses the generic iModel policy for
+     * a database without local changes: skip NotFound and Constraint, replace Data and Conflict,
+     * and abort on ForeignKey. Alternatively, supply a synchronous handler returning a DbConflictResolution.
+     * Indirect Data conflicts are replaced without warnings except for sqlite_stat1 conflicts.
+     * Conflict (primary-key insert) resolutions always log a warning, including indirect changes.
+     * Flags are independent of conflict handling; foreign-key actions are suppressed only with FkNoAction.
      */
-    public applyChangeset(changesetFile: LocalFileName): void;
+    public applyChangeset(changesetFile: LocalFileName, flags?: number, conflictHandler?: 0 | 1 | SQLiteChangesetConflictHandler): void;
     public closeDb(): void;
     /**
      * Write out the changes captured since startChangeTracking() was called, to a changeset file holding
@@ -1785,6 +1854,20 @@ export declare namespace IModelJsNative {
 
   interface CloneElementOptions {
     binaryGeometry?: boolean;
+    /** If true, the cloned props also hold a clearing value for each member that is empty on the source element, so that updating an
+     * existing target element with them clears that member rather than keeping its old value. Default is false, which leaves the
+     * returned props unchanged.
+     * Each member is set only when the normal output omits it:
+     * - `parent`, `userLabel`, and (for geometric elements) `typeDefinition` are set to `null`.
+     * - `jsonProperties` is set to `{}`.
+     * - Auto-handled EC properties with no value (null, empty array, or empty struct) are set to `null`. Members missing from a struct
+     *   value are set to `null` too.
+     * - For a geometric element with no geometry, `geomBinary` is set to an empty Uint8Array, even if `binaryGeometry` is false.
+     * - For a geometric element with no placement origin, `placement` is set to `{}`, which stores a null origin, rotation and bounding box.
+     * @note A `parent`, `typeDefinition` or navigation property whose target element is not in the import context's remap table is
+     * also cleared, because cloning drops references it cannot remap.
+     */
+    explicitClears?: boolean;
   }
 
   interface ChangedInstanceOpsProps {
