@@ -1,6 +1,6 @@
 ---
 name: vcpkg
-description: Authoritative guide for vcpkg library integration in imodel-native. USE FOR adding a new vcpkg-managed library, migrating an existing library to vcpkg, updating a vcpkg-managed library version, or diagnosing a failing Mend source scan. Covers the sequential install chain, PartFile wiring, mke patterns, triplet selection, version pinning, and Mend source-scan configuration (`vcpkg-mend.json`).
+description: Authoritative guide for vcpkg library integration in imodel-native. USE FOR adding a new vcpkg-managed library, migrating an existing library to vcpkg, updating a vcpkg-managed library version, maintaining shared iTwinNativeThirdParty builds or NuGet packaging, or diagnosing a failing Mend source scan. Covers the sequential install chain, PartFile wiring, mke patterns, triplet selection, version pinning, and Mend source-scan configuration (`vcpkg-mend.json`).
 ---
 
 # vcpkg Integration in imodel-native
@@ -219,6 +219,23 @@ would race against the static one on the shared vcpkg git repo.
 
 If a separate prewire/PublicAPI part also needs the install, give it the same
 `LibType="Static"` SubPart (see `BeOpenSSL.PartFile.xml` for the `__PublicAPI` example).
+
+#### Shared iTwinNativeThirdParty variants
+
+Curl, OpenSSL, and FreeType also expose explicit `ThirdParty` parts consumed by
+iTwinNativeThirdParty packaging wrappers. See
+[Shared Builds for iTwinNativeThirdParty](../../../iModelCore/libsrc/VCPKG.md#shared-builds-for-itwinnativethirdparty)
+for the part names and output naming contract.
+
+- Preserve both native-addon and third-party variants when editing shared definitions; reuse the
+  existing `.mke` implementation and retain legacy third-party names and `B02` bindings.
+- Keep vcpkg installs and install-dependent prewire/PublicAPI dependencies static-only, even for
+  dynamic library variants.
+- Treat dependency bindings as package contents. Third-party Curl uses static `Zlib`, not the
+  aggregate `Compress`; keep native Curl's `Compress` dependency out of the shared helper.
+- Validate both dependency graphs and their build flavors. After packaging changes, compare a
+  clean build's staged payload with published NuGets and check architectures and relevant symbols;
+  do not claim consumer-link or generated-package validation from those checks alone.
 
 ### 5. Write the consumer `.mke`
 
