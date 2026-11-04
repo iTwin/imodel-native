@@ -73,12 +73,6 @@ export enum BulkDeleteFailureReason {
 export interface BulkDeleteFailure {
   elementId: Id64String;
   reason: BulkDeleteFailureReason;
-  /**
-   * `ReferencedByForeignKey`: the referencing `table.column`, e.g. `bis_GeometricElement3d.CategoryId`.
-   * `ReadOnlyDomain`: the domain name.
-   * Otherwise absent.
-   */
-  detail?: string;
 }
 
 /**

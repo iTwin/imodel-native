@@ -1825,7 +1825,6 @@ describe("bulk element deletion", () => {
     const byId = new Map(result.failures.map((f) => [f.elementId, f]));
     // The category is caught by the FK pass, which runs first, so that reason wins even though it is also a used definition.
     expect(byId.get(spatialCategoryId)?.reason).equals(BulkDeleteFailureReason.ReferencedByForeignKey);
-    expect(byId.get(spatialCategoryId)?.detail).equals("bis_GeometricElement3d.CategoryId");
     // The default SubCategory is a child and therefore part of the expanded set. Nothing points at it through an FK,
     // but surviving geometry streams draw on it, so the definition-usage pass reports it.
     expect(byId.get(defaultSubCategoryId)?.reason).equals(BulkDeleteFailureReason.DefinitionInUse);
@@ -1852,9 +1851,7 @@ describe("bulk element deletion", () => {
 
     const byId = new Map(result.failures.map((f) => [f.elementId, f]));
     expect(byId.get(victimId)?.reason).equals(BulkDeleteFailureReason.ReferencedByForeignKey);
-    expect(byId.get(victimId)?.detail).equals("test_BlockingFk.RestrictRef");
     expect(byId.get(victimSetDefaultId)?.reason).equals(BulkDeleteFailureReason.ReferencedByForeignKey);
-    expect(byId.get(victimSetDefaultId)?.detail).equals("test_BlockingFk.SetDefaultRef");
     expect(byId.has(cleanVictimId)).to.be.false;
 
     for (const id of [victimId, victimSetDefaultId, cleanVictimId])
