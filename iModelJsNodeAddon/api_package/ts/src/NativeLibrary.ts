@@ -40,9 +40,45 @@ import type { LowAndHighXYZProps, Range2dProps, Range3dProps, XAndY } from "@itw
  * @internal
  */
 export enum BulkDeleteElementsStatus {
+  /** All requested elements were deleted. */
   Success = 0,
-  PartialSuccess = 1,
+  /** Nothing was deleted because some elements in the (expanded) delete set are still referenced from outside the set; see `failures` for the violators. */
+  ConstraintViolation = 1,
+  /** An internal error occurred. The iModel may be partially modified; the caller must abandon the current txn. `failures` will be empty. */
   DeletionFailed = 2,
+}
+
+/**
+ * Why an element could not be deleted by `deleteElements`.
+ * @internal
+ */
+export enum BulkDeleteFailureReason {
+  /**
+   * A row outside the delete set references it via a NO ACTION / RESTRICT / SET DEFAULT foreign key.
+   * Reported for any element in the expanded delete set (not only requested ids) since this is what must be fixed before retrying.
+   */
+  ReferencedByForeignKey = 0,
+  /** It is a DefinitionElement still used by elements outside the delete set. */
+  DefinitionInUse = 1,
+  /** It is one of the elements every iModel must keep: the root Subject, the DictionaryModel partition or the RealityDataSources partition. */
+  ProtectedElement = 2,
+  /** Its handler belongs to a read-only DgnDomain. */
+  ReadOnlyDomain = 3,
+}
+
+/**
+ * One element that blocks the bulk deletion, and why.
+ * @internal
+ */
+export interface BulkDeleteFailure {
+  elementId: Id64String;
+  reason: BulkDeleteFailureReason;
+  /**
+   * `ReferencedByForeignKey`: the referencing `table.column`, e.g. `bis_GeometricElement3d.CategoryId`.
+   * `ReadOnlyDomain`: the domain name.
+   * Otherwise absent.
+   */
+  detail?: string;
 }
 
 /**
@@ -51,7 +87,15 @@ export enum BulkDeleteElementsStatus {
  */
 export interface BulkDeleteElementsResult {
   status: BulkDeleteElementsStatus;
+  /** Only meaningful when `status === DeletionFailed`. */
   sqlDeleteStatus: DbResult;
+  /**
+   * Elements that block the deletion, with the reason. Only populated on `ConstraintViolation`.
+   * Each element appears at most once: if it qualifies for several reasons the first one found wins
+   * Empty on `Success` and `DeletionFailed`.
+   */
+  failures: BulkDeleteFailure[];
+  /** @deprecated Use `failures` for a more detailed failure report. */
   failedIds: Id64Array;
 }
 
@@ -291,6 +335,19 @@ export declare namespace IModelJsNative {
   }
   interface IConcurrentQueryManager {
     concurrentQueryExecute(request: DbRequest, onResponse: ConcurrentQuery.OnResponse): void;
+    /** Leases a statement from the primary connection's concurrent query statement cache and binds `args`, if any.
+     * Throws if the statement cannot be prepared or bound.
+     * @param args Flat `[key, type, value, ...]` triples: `key` is the parameter index or name as a string, `type` and
+     * `value` are as serialized by `QueryBinder`.
+     * @param rowFlags Row rendering options: 1 = abbreviateBlobs, 2 = classIdsToClassNames, 4 = useJsName,
+     * 8 = doNotConvertClassIdsToClassNamesWhenAliased.
+     * @param maxRows On a read-only db, the size of the first batch, stepped by this call; 0 defers stepping.
+     * A writable db never steps here, so rows reflect writes made before the first `stepBatch` call. Nor does a
+     * statement with a dynamic column (e.g. `$->prop`), as stepping changes the metadata of such columns.
+     * @param out Receives the first batch (as returned by `stepBatch`, or `undefined` when not stepped) at index 0,
+     * the statement id at index 1, and at index 2 whether a column is dynamic, in which case metadata must not be cached.
+     */
+    prepareECSqlBatchReader(ecsql: string, args: any[] | undefined, rowFlags: number, maxRows: number, out: any[], logErrors?: boolean): ECSqlBatchReader;
     concurrentQueryResetConfig(config?: QueryConfig): QueryConfig;
     concurrentQueryShutdown(): void;
   }
@@ -651,6 +708,7 @@ export declare namespace IModelJsNative {
     public computeProjectExtents(wantFullExtents: boolean, wantOutlierIds: boolean): { extents: Range3dProps, fullExtents?: Range3dProps, outliers?: Id64Array };
     public computeRangesForText(chars: string, fontId: FontId, bold: boolean, italic: boolean, widthFactor: number, height: number): TextLayoutRangesProps;
     public concurrentQueryExecute(request: DbRequest, onResponse: ConcurrentQuery.OnResponse): void;
+    public prepareECSqlBatchReader(ecsql: string, args: any[] | undefined, rowFlags: number, maxRows: number, out: any[], logErrors?: boolean): ECSqlBatchReader;
     public concurrentQueryResetConfig(config?: QueryConfig): QueryConfig;
     public concurrentQueryShutdown(): void;
     public createBRepGeometry(createProps: BRepGeometryCreate): IModelStatus;
@@ -659,7 +717,7 @@ export declare namespace IModelJsNative {
     public createIModel(fileName: string, props: CreateEmptyStandaloneIModelProps): void;
     public deleteAllTxns(): void;
     public deleteElement(elemIdJson: string): void;
-    public deleteElements(elementIds: Id64Array, deleteOptions?: { skipFKConstraintValidations?: boolean }): BulkDeleteElementsResult;
+    public deleteElements(elementIds: Id64Array): BulkDeleteElementsResult;
     public deleteElementAspect(aspectIdJson: string): void;
     public deleteLinkTableRelationship(props: RelationshipProps): DbResult;
     public deleteLinkTableRelationships(props: ReadonlyArray<RelationshipProps>): DbResult;
@@ -822,6 +880,9 @@ export declare namespace IModelJsNative {
     public changeElementModel(props: { id: Id64String, modelId: Id64String }): void;
     public updateElementAspect(aspectProps: ElementAspectProps): void;
     public updateElementGeometryCache(props: ElementGeometryCacheRequestProps): Promise<ElementGeometryCacheResponseProps>;
+    /** Throws for an invalid geographic coordinate system before changing any geolocation properties.
+     * Custom vertical transforms are registered only after the entire replacement definition is valid.
+     */
     public updateIModelProps(props: IModelProps): void;
     public updateLinkTableRelationship(props: RelationshipProps): DbResult;
     public updateModel(modelProps: ModelProps): void;
@@ -950,6 +1011,7 @@ export declare namespace IModelJsNative {
     /** @not-used-by-itwinjs-core */
     public static enableSharedCache(enable: boolean): DbResult;
     public concurrentQueryExecute(request: DbRequest, onResponse: ConcurrentQuery.OnResponse): void;
+    public prepareECSqlBatchReader(ecsql: string, args: any[] | undefined, rowFlags: number, maxRows: number, out: any[], logErrors?: boolean): ECSqlBatchReader;
     public concurrentQueryResetConfig(config?: QueryConfig): QueryConfig;
     public concurrentQueryShutdown(): void;
     public attachDb(filename: string, alias: string): void;
@@ -969,6 +1031,30 @@ export declare namespace IModelJsNative {
     public getChangedElements(startChangesetId: string, endChangesetId: string): ErrorStatusOrResult<IModelStatus, any>;
     public isProcessed(changesetId: string): boolean;
     public cleanCaches(): void;
+  }
+
+  /** Synchronous reader over a statement leased from the concurrent query primary connection cache.
+   * The statement is returned to the cache by `dispose()`; a statement invalidated by cache clear or db close
+   * fails to step.
+   */
+  class ECSqlBatchReader {
+    private constructor();
+    /** Steps up to `maxRows` rows. On a writable db at most one row is stepped per call, so rows are never read ahead
+     * of writes made between calls.
+     * Returns the rows as a JSON array string when `renderAsJson` is true (the default): null cells are `null` and blobs
+     * are base64 strings. Returns an array of rows created cell by cell when `renderAsJson` is false or a row holds a
+     * value JSON cannot represent (e.g. `Infinity`), or exceeds the JSON serialization budget: directly rendered
+     * rows have `undefined` null cells and `Uint8Array` blobs. Batches can end early at a byte budget or after a
+     * directly rendered row; a short batch does not mean end of results. With `renderAsJson: false`, returns one row.
+     * Returns a `DbResult` when no row was stepped: `BE_SQLITE_DONE` or the failing status. Once the statement is done
+     * or has failed, every later call returns that status without stepping, so rows stepped before a failure are
+     * returned first.
+     */
+    public stepBatch(maxRows: number, renderAsJson?: boolean): string | any[] | DbResult;
+    public getMetadata(): any;
+    /** Identifies the prepared statement; it changes whenever the cache prepares the ECSql again. */
+    public getStatementId(): number;
+    public dispose(): void;
   }
 
   class ECSqlStatement {
