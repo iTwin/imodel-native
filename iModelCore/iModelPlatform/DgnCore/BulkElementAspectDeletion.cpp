@@ -33,13 +33,16 @@ class BulkElementAspectDeletion
     std::map<DgnClassId, bool> m_hasCustomHandler;
     BulkDeleteElementAspectsResult m_result;
 
+    // Records a blocking aspect once. The detail is diagnostic only, so it is logged rather than returned.
     void Fail(Row& row, BulkElementAspectFailureReason reason, Utf8StringCR detail)
         {
         if (row.m_failed)
             return;
         row.m_failed = true;
         m_result.status = BulkElementAspectsStatus::ValidationFailed;
-        m_result.failures.push_back({row.m_id, reason, detail});
+        m_result.failures.push_back({row.m_id, reason});
+        LOG.debugv("BulkElementAspectDeletion: cannot delete aspect %s (reason %d)%s%s", row.m_id.ToHexStr().c_str(), static_cast<int>(reason),
+            detail.empty() ? "" : ": ", detail.c_str());
         }
 
     BulkDeleteElementAspectsResult& WriteFailed(DgnDbStatus status, BeSQLite::DbResult sqlStatus)
@@ -104,7 +107,8 @@ BeSQLite::DbResult BulkElementAspectDeletion::Resolve()
                 {
                 invalidIdReported = true;
                 m_result.status = BulkElementAspectsStatus::ValidationFailed;
-                m_result.failures.push_back({id, BulkElementAspectFailureReason::InvalidId, Utf8String()});
+                m_result.failures.push_back({id, BulkElementAspectFailureReason::InvalidId});
+                LOG.debugv("BulkElementAspectDeletion: cannot delete aspect %s (reason %d)", id.ToHexStr().c_str(), static_cast<int>(BulkElementAspectFailureReason::InvalidId));
                 }
             continue;
             }

@@ -21,15 +21,19 @@ struct BulkAspectFailures {
     struct Entry {
         FailureReason m_reason;
         ECInstanceId m_id;
-        Utf8String m_detail;
     };
     std::map<uint32_t, Entry> m_failures;
 
-    // Only the first failure of a row is recorded.
-    void Fail(uint32_t index, FailureReason reason, Utf8StringCR detail = Utf8String(), ECInstanceId id = ECInstanceId()) { m_failures.emplace(index, Entry{reason, id, detail}); }
+    // Only the first failure of a row is recorded. The detail is diagnostic only, so it is logged rather than returned.
+    void Fail(uint32_t index, FailureReason reason, Utf8StringCR detail = Utf8String(), ECInstanceId id = ECInstanceId()) {
+        if (!m_failures.emplace(index, Entry{reason, id}).second)
+            return;
+        JsInterop::GetNativeLogger().debugv("Bulk ElementAspect operation: row %u is invalid (reason %d)%s%s", index, (int) reason,
+            detail.empty() ? "" : ": ", detail.c_str());
+    }
     bool IsEmpty() const { return m_failures.empty(); }
 
-    // Builds { status, failures: [{ index, id?, reason, detail? }] }, mirroring the result of deleteElements.
+    // Builds { status, failures: [{ index, id?, reason }] }, mirroring the result of deleteElements.
     Napi::Object ToJs(Napi::Env env) const {
         auto status = m_failures.empty() ? BulkElementAspectsStatus::Success : BulkElementAspectsStatus::ValidationFailed;
         auto result = Napi::Object::New(env);
@@ -42,8 +46,6 @@ struct BulkAspectFailures {
             if (failure.second.m_id.IsValid())
                 obj.Set("id", Napi::String::New(env, failure.second.m_id.ToHexStr().c_str()));
             obj.Set("reason", Napi::Number::New(env, (int) failure.second.m_reason));
-            if (!failure.second.m_detail.empty())
-                obj.Set("detail", Napi::String::New(env, failure.second.m_detail.c_str()));
             failures.Set(i++, obj);
         }
         result.Set("failures", failures);

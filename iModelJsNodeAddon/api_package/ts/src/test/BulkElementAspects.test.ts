@@ -262,15 +262,14 @@ describe("bulk element aspects", () => {
 
       const result = db.insertElementAspects(props);
       expect(result.status).to.equal(BulkElementAspectsStatus.ValidationFailed);
-      expect(result.failures.map((f) => [f.index, f.reason, f.detail])).to.deep.equal([
-        [1, BulkElementAspectFailureReason.InvalidId, "invalid owning element id"],
-        [2, BulkElementAspectFailureReason.ElementNotFound, "0xffffff0"],
-        [3, BulkElementAspectFailureReason.ClassNotFound, "BulkAspectTest:DoesNotExist"],
-        [4, BulkElementAspectFailureReason.NotAnAspectClass, "BisCore:Subject"],
-        [5, BulkElementAspectFailureReason.InvalidProps, "aspect props must be an object"],
-        [6, BulkElementAspectFailureReason.InvalidProps, "aspect props must have a classFullName"],
+      expect(result.failures).to.deep.equal([
+        { index: 1, reason: BulkElementAspectFailureReason.InvalidId },
+        { index: 2, reason: BulkElementAspectFailureReason.ElementNotFound },
+        { index: 3, reason: BulkElementAspectFailureReason.ClassNotFound },
+        { index: 4, reason: BulkElementAspectFailureReason.NotAnAspectClass },
+        { index: 5, reason: BulkElementAspectFailureReason.InvalidProps },
+        { index: 6, reason: BulkElementAspectFailureReason.InvalidProps },
       ]);
-      result.failures.forEach((f) => expect(f.id).to.be.undefined);
       expect(result.ids).to.deep.equal([]);
       expect(mock.calls).to.deep.equal([]);
       expect(queryAspects().filter((r) => r.element === e1)).to.deep.equal([]);
@@ -380,10 +379,10 @@ describe("bulk element aspects", () => {
       ]);
       expect(result.status).to.equal(BulkElementAspectsStatus.ValidationFailed);
       expect(result.failures).to.deep.equal([
-        { index: 1, reason: BulkElementAspectFailureReason.InvalidId, detail: "invalid aspect id" },
+        { index: 1, reason: BulkElementAspectFailureReason.InvalidId },
         { index: 2, id: "0xffffff0", reason: BulkElementAspectFailureReason.AspectNotFound },
-        { index: 3, reason: BulkElementAspectFailureReason.AspectNotFound, detail: "the element has no aspect of this class" },
-        { index: 4, reason: BulkElementAspectFailureReason.ElementNotFound, detail: "0xffffff0" },
+        { index: 3, reason: BulkElementAspectFailureReason.AspectNotFound },
+        { index: 4, reason: BulkElementAspectFailureReason.ElementNotFound },
       ]);
       expect(queryAspects()).to.deep.equal(before);
     });
@@ -416,7 +415,7 @@ describe("bulk element aspects", () => {
         { ...multiProps(e1, "m1-new"), id: inserted.ids[0] },
       ]);
       expect(result.status).to.equal(BulkElementAspectsStatus.ValidationFailed);
-      expect(result.failures).to.deep.equal([{ index: 0, id: inserted.ids[1], reason: BulkElementAspectFailureReason.AspectNotFound, detail: `the aspect is not owned by element ${e1}` }]);
+      expect(result.failures).to.deep.equal([{ index: 0, id: inserted.ids[1], reason: BulkElementAspectFailureReason.AspectNotFound }]);
       expect(findAspect(inserted.ids[1])).to.deep.include({ element: e2, strProp: "m2" });
       expect(findAspect(inserted.ids[0])).to.deep.include({ element: e1, strProp: "m1" });
     });
@@ -547,10 +546,10 @@ describe("bulk element aspects", () => {
       ]);
       expect(result.status).to.equal(BulkElementAspectsStatus.ValidationFailed);
       expect(result.failures).to.deep.equal([
-        { index: 1, reason: BulkElementAspectFailureReason.InvalidId, detail: "not an id" },
+        { index: 1, reason: BulkElementAspectFailureReason.InvalidId },
         { index: 2, id: "0xffffff0", reason: BulkElementAspectFailureReason.AspectNotFound },
         { index: 3, id: e1, reason: BulkElementAspectFailureReason.AspectNotFound },
-        { index: 5, reason: BulkElementAspectFailureReason.InvalidId, detail: "aspect id must be a string" },
+        { index: 5, reason: BulkElementAspectFailureReason.InvalidId },
       ]);
       expect(mock.calls).to.deep.equal([]);
       expect(queryAspects()).to.deep.equal(before);

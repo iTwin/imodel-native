@@ -141,14 +141,6 @@ export interface BulkElementAspectFailure {
   /** The id of the aspect, when known and valid. */
   id?: Id64String;
   reason: BulkElementAspectFailureReason;
-  /**
-   * `InvalidProps`, `InvalidId`: what is wrong.
-   * `ClassNotFound`, `NotAnAspectClass`: the class name (or id).
-   * `ElementNotFound`: the id of the owning element.
-   * `AspectNotFound`: why the aspect is not found, if it exists.
-   * Otherwise absent.
-   */
-  detail?: string;
 }
 
 /**

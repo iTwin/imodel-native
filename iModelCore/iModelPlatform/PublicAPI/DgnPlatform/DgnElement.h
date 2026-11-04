@@ -653,8 +653,6 @@ struct BulkDeleteElementAspectFailure
     {
     BeSQLite::EC::ECInstanceId aspectId;
     BulkElementAspectFailureReason reason = BulkElementAspectFailureReason::AspectNotFound;
-    //! Additional information, or empty.
-    Utf8String detail;
     };
 
 //=======================================================================================
