@@ -14,7 +14,7 @@ import type { NativeCloudSqlite } from "./NativeCloudSqlite";
  */
 
 import type {
-  BentleyStatus, DbOpcode, DbResult, GuidString, Id64Array, Id64String, IModelStatus, LogLevel, OpenMode
+  BentleyStatus, DbConflictCause, DbConflictResolution, DbOpcode, DbResult, GuidString, Id64Array, Id64String, IModelStatus, LogLevel, OpenMode
 } from "@itwin/core-bentley";
 import type {
   BRepGeometryCreate, ChangesetIndexAndId, CodeProps, CodeSpecProperties, FontType as CoreFontType, PerStatementHealthStats as CorePerStatementHealthStats, TxnProps as CoreTxnProps, CreateEmptyStandaloneIModelProps, DbRequest, DbResponse, ElementAspectProps,
@@ -1149,6 +1149,29 @@ export declare namespace IModelJsNative {
   /** Parameters for creating a new SQLiteDb */
   type SQLiteDbCreateParams = SQLiteDbOpenOrCreateParams & PageSize;
 
+  /** Copied metadata describing a row conflict. */
+  interface SQLiteChangesetRowConflictArgs {
+    readonly cause: DbConflictCause.Data | DbConflictCause.NotFound | DbConflictCause.Conflict | DbConflictCause.Constraint;
+    readonly opcode: DbOpcode;
+    readonly indirect: boolean;
+    readonly tableName: string;
+    readonly columnCount: number;
+    readonly primaryKeyColumns: readonly number[];
+  }
+
+  /** A foreign-key conflict has no associated row. */
+  interface SQLiteChangesetForeignKeyConflictArgs {
+    readonly cause: DbConflictCause.ForeignKey;
+    readonly foreignKeyConflicts: number;
+  }
+
+  type SQLiteChangesetConflictArgs = SQLiteChangesetRowConflictArgs | SQLiteChangesetForeignKeyConflictArgs;
+  /** May query the database, but must not modify it (including through prepared statements), close it,
+   * change its transaction, or recursively apply another changeset to it.
+   * Replace is valid only for Data and Conflict.
+   */
+  type SQLiteChangesetConflictHandler = (args: SQLiteChangesetConflictArgs) => DbConflictResolution;
+
   class SQLiteDb implements SQLiteOps {
     constructor();
     public readonly cloudContainer?: CloudContainer;
@@ -1159,9 +1182,16 @@ export declare namespace IModelJsNative {
      * changesets. Unlike DgnDb.applyChangeset, this does *not* validate any changeset header
      * (parentId/changesetId) against the current state of the db, and it does *not* support DDL/schema
      * changes (raw sqlite changesets cannot represent them) - it simply applies the row-level changes.
-     * Any conflict encountered while applying causes the entire apply to fail and throw.
+     * By default any conflict causes the apply to fail and throw.
+     * @param flags Bitmask: Invert=1, IgnoreNoop=2, FkNoAction=4, NoUpdateLoop=8. Defaults to 0.
+     * @param conflictHandler 0 (default) aborts on any conflict. 1 uses the generic iModel policy for
+     * a database without local changes: skip NotFound and Constraint, replace Data and Conflict,
+     * and abort on ForeignKey. Alternatively, supply a synchronous handler returning a DbConflictResolution.
+     * Indirect Data conflicts are replaced without warnings except for sqlite_stat1 conflicts.
+     * Conflict (primary-key insert) resolutions always log a warning, including indirect changes.
+     * Flags are independent of conflict handling; foreign-key actions are suppressed only with FkNoAction.
      */
-    public applyChangeset(changesetFile: LocalFileName): void;
+    public applyChangeset(changesetFile: LocalFileName, flags?: number, conflictHandler?: 0 | 1 | SQLiteChangesetConflictHandler): void;
     public closeDb(): void;
     /**
      * Write out the changes captured since startChangeTracking() was called, to a changeset file holding
