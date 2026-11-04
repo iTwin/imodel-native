@@ -2711,6 +2711,44 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
     return BE_SQLITE_OK;
 }
 
+//---------------------------------------------------------------------------------------
+// Index DDL quotes names with [] or "", depending on the software that wrote it.
+//---------------------------------------------------------------------------------------
+static Utf8String UnquoteIndexName(Utf8StringCR nameToken)
+    {
+    if (nameToken.size() < 2)
+        return nameToken;
+
+    if (nameToken[0] == '[')
+        return nameToken.substr(1, nameToken.size() - 2);
+
+    if (nameToken[0] != '"')
+        return nameToken;
+
+    Utf8String name = nameToken.substr(1, nameToken.size() - 2);
+    name.ReplaceAll("\"\"", "\"");
+    return name;
+    }
+
+//---------------------------------------------------------------------------------------
+// Keep in sync with DbSchemaPersistenceManager::NormalizeDdlForComparison in ECDb.
+//---------------------------------------------------------------------------------------
+static bool IsSameIndexDdl(Utf8StringCR lhs, Utf8StringCR rhs)
+    {
+    auto normalize = [] (Utf8StringCR ddl)
+        {
+        Utf8String normalizedDdl(ddl);
+        normalizedDdl.ReplaceAll(", ", ",");
+        normalizedDdl.ReplaceAll("  ", " ");
+        normalizedDdl.ReplaceAll("[", "");
+        normalizedDdl.ReplaceAll("]", "");
+        normalizedDdl.ReplaceAll("\"", "");
+        return normalizedDdl;
+        };
+
+    return normalize(lhs).EqualsIAscii(normalize(rhs));
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * This removes unchanged indexes from DDL. There is already a fix in to remove it from where
 * these unchanged indexes get added on ECDb side. But following fixes issue with existing
@@ -2731,7 +2769,6 @@ BentleyStatus TxnManager::PatchSlowDdlChanges(Utf8StringR patchedDDL, Utf8String
      **/
     const auto kStmtDelimiter = ";";
     const auto kIdentDelimiter = " ";
-    const auto kQuotedLiteralStart = '[';
 
     bmap<Utf8String, Utf8String> dropIndexes;
     bmap<Utf8String, Utf8String> createIndexes;
@@ -2780,8 +2817,7 @@ BentleyStatus TxnManager::PatchSlowDdlChanges(Utf8StringR patchedDDL, Utf8String
                 BeAssert(false && "Should find index name");
                 return ERROR;
                 }
-            Utf8String& nameToken = sqlTokens[index];
-            Utf8String indexName = nameToken[0] == kQuotedLiteralStart ? nameToken.substr(1, nameToken.size() - 2) : nameToken;
+            Utf8String indexName = UnquoteIndexName(sqlTokens[index]);
             if (drop)
                 {
                 // record drop index
@@ -2792,7 +2828,7 @@ BentleyStatus TxnManager::PatchSlowDdlChanges(Utf8StringR patchedDDL, Utf8String
                 // check if we have exact match against sqlite_master index definition for given index name.
                 const auto iter = currentIndexes.find(indexName);
                 const bool hasExistingIndex = iter != currentIndexes.end();
-                const bool indexIsUnchanged = hasExistingIndex &&  (*iter).second == sql;
+                const bool indexIsUnchanged = hasExistingIndex && IsSameIndexDdl((*iter).second, sql);
                 if (indexIsUnchanged)
                     {
                     // make sure not to drop the index nor create it.
@@ -2808,7 +2844,7 @@ BentleyStatus TxnManager::PatchSlowDdlChanges(Utf8StringR patchedDDL, Utf8String
                         // ensure we have drop statement for this index
                         if (dropIndexes.find(indexName) == dropIndexes.end())
                             {
-                            dropIndexes[indexName].Sprintf("DROP INDEX IF EXISTS [%s]", indexName.c_str());
+                            dropIndexes[indexName] = SqlPrintfString("DROP INDEX IF EXISTS \"%w\"", indexName.c_str()).GetUtf8CP();
                             }
                         }
                     }

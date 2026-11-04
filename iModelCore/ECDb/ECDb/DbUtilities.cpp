@@ -105,6 +105,15 @@ BentleyStatus DbUtilities::GetTableSpaces(std::vector<Utf8String>& tableSpaces, 
 // @bsimethod
 //---------------------------------------------------------------------------------------
 //static
+Utf8String DbUtilities::QuoteIdentifier(Utf8StringCR name)
+    {
+    return Utf8String(SqlPrintfString("\"%w\"", name.c_str()).GetUtf8CP());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+//static
 bool DbUtilities::IsSafeSqlIdentifier(Utf8StringCR name)
     {
     if (name.empty() || (name[0] >= '0' && name[0] <= '9'))

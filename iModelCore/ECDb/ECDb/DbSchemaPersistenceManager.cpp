@@ -114,7 +114,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateTable(ECDbCR ecdb, DbTable const
         }
 
     Utf8String ddl("CREATE TABLE ");
-    ddl.append("[").append(table.GetName()).append("](");
+    ddl.append(DbUtilities::QuoteIdentifier(table.GetName())).append("(");
 
     bool isFirstCol = true;
     for (DbColumn const* col : table.GetColumns())
@@ -165,7 +165,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateTable(ECDbCR ecdb, DbTable const
         }
     ddl.append(")");
 
-    if (ecdb.GetImpl().ExecuteSingleDDLStatement(ddl.c_str()) != BE_SQLITE_OK)
+    if (ecdb.GetImpl().ExecuteDDL(ddl.c_str()) != BE_SQLITE_OK)
         {
         ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0223,
             "Failed to create table %s: %s [%s]", table.GetName().c_str(), ecdb.GetLastError().c_str(), ddl.c_str());
@@ -238,8 +238,8 @@ BentleyStatus DbSchemaPersistenceManager::AlterTable(ECDbCR ecdb, DbTable const&
     if (columnsToAdd.empty())
         return SUCCESS;
     
-    Utf8String alterDdlTemplate;
-    alterDdlTemplate.Sprintf("ALTER TABLE [%s] ADD COLUMN ", table.GetName().c_str());
+    Utf8String alterDdlTemplate("ALTER TABLE ");
+    alterDdlTemplate.append(DbUtilities::QuoteIdentifier(table.GetName())).append(" ADD COLUMN ");
     for (DbColumn const* columnToAdd : columnsToAdd)
         {
         BeAssert(&table == &columnToAdd->GetTable());
@@ -278,7 +278,7 @@ BentleyStatus DbSchemaPersistenceManager::AlterTable(ECDbCR ecdb, DbTable const&
                 return ERROR;
             }
 
-        if (BE_SQLITE_OK != ecdb.GetImpl().ExecuteSingleDDLStatement(ddl.c_str()))
+        if (BE_SQLITE_OK != ecdb.GetImpl().ExecuteDDL(ddl.c_str()))
             {
             ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0226,
                 "Failed to add new column %s. Error message: %s", ddl.c_str(), ecdb.GetLastError().c_str());
@@ -289,9 +289,8 @@ BentleyStatus DbSchemaPersistenceManager::AlterTable(ECDbCR ecdb, DbTable const&
     // Columns dropped one by one and if it any fail we continue with the next one.
     for (auto const& colName : columnsToDelete)
         {
-        Utf8String dropDdl;
-        dropDdl.Sprintf("ALTER TABLE [%s] DROP COLUMN [%s]", table.GetName().c_str(), colName.c_str());
-        if (BE_SQLITE_OK != ecdb.GetImpl().ExecuteSingleDDLStatement(dropDdl.c_str()))
+        SqlPrintfString dropDdl("ALTER TABLE \"%w\" DROP COLUMN \"%w\"", table.GetName().c_str(), colName.c_str());
+        if (BE_SQLITE_OK != ecdb.GetImpl().ExecuteDDL(dropDdl))
             {
             ecdb.GetImpl().Issues().ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0228,
                 "Failed to drop column %s from table %s. Error message: %s", colName.c_str(), table.GetName().c_str(), ecdb.GetLastError().c_str());
@@ -351,7 +350,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateIndex(ECDbCR ecdb, DbIndex const
         return ERROR;
         }
 
-    if (BE_SQLITE_OK != ecdb.GetImpl().ExecuteSingleDDLStatement(ddl.c_str()))
+    if (BE_SQLITE_OK != ecdb.GetImpl().ExecuteDDL(ddl.c_str()))
         {
         ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0227,
             "Failed to create index %s on table %s. Error: %s [%s]", index.GetName().c_str(), index.GetTable().GetName().c_str(), ecdb.GetLastError().c_str(), ddl.c_str());
@@ -383,7 +382,7 @@ BentleyStatus DbSchemaPersistenceManager::BuildCreateIndexDdl(Utf8StringR ddl, U
     Utf8String columnsDdl;
     AppendColumnNamesToDdl(columnsDdl, index.GetColumns());
 
-    ddl.append("INDEX [").append(index.GetName()).append("] ON [").append(tableName).append("](").append(columnsDdl).append(")");
+    ddl.append("INDEX ").append(DbUtilities::QuoteIdentifier(index.GetName())).append(" ON ").append(DbUtilities::QuoteIdentifier(tableName)).append("(").append(columnsDdl).append(")");
     comparableIndexDef.append(tableName).append("(").append(columnsDdl).append(")");
 
     Utf8String whereClause;
@@ -449,7 +448,7 @@ BentleyStatus DbSchemaPersistenceManager::GenerateIndexWhereClause(Utf8StringR w
             if (!isFirstCol)
                 notNullWhereExp.append(" AND ");
 
-            notNullWhereExp.append("[").append(indexCol->GetName()).append("] IS NOT NULL");
+            notNullWhereExp.append(DbUtilities::QuoteIdentifier(indexCol->GetName())).append(" IS NOT NULL");
             isFirstCol = false;
             }
 
@@ -537,7 +536,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateTriggers(ECDbCR ecdb, DbTable co
         if (SUCCESS != BuildCreateTriggerDdl(expectedDdl, *trigger))
             return ERROR;
 
-        const Utf8String normalizedExpectedDdl = NormalizeTriggerDdlForComparison(expectedDdl);
+        const Utf8String normalizedExpectedDdl = NormalizeDdlForComparison(expectedDdl);
         Utf8String existingDdl;
         const auto queryRc = QueryTriggerDdl(existingDdl, ecdb, *trigger);
         if (queryRc == BE_SQLITE_ROW)
@@ -549,11 +548,10 @@ BentleyStatus DbSchemaPersistenceManager::CreateTriggers(ECDbCR ecdb, DbTable co
                 return ERROR;
                 }
 
-            if (NormalizeTriggerDdlForComparison(existingDdl) == normalizedExpectedDdl)
+            if (NormalizeDdlForComparison(existingDdl) == normalizedExpectedDdl)
                 continue;
 
-            SqlPrintfString dropTriggerSql("DROP TRIGGER [%s]", trigger->GetName().c_str());
-            if (!ecdb.IsSingleStatement(dropTriggerSql) || ecdb.ExecuteSql(dropTriggerSql) != BE_SQLITE_OK)
+            if (ecdb.ExecuteSql(SqlPrintfString("DROP TRIGGER \"%w\"", trigger->GetName().c_str())) != BE_SQLITE_OK)
                 {
                 ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0230,
                     "Failed to replace trigger %s on table %s. Error: %s", trigger->GetName().c_str(), trigger->GetTable().GetName().c_str(), ecdb.GetLastError().c_str());
@@ -565,7 +563,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateTriggers(ECDbCR ecdb, DbTable co
             return ERROR;
             }
 
-        if (!ecdb.IsSingleStatement(expectedDdl.c_str()) || ecdb.ExecuteSql(expectedDdl.c_str()) != BE_SQLITE_OK)
+        if (ecdb.ExecuteSql(expectedDdl.c_str()) != BE_SQLITE_OK)
             {
             ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0230,
                 "Failed to create trigger %s on table %s. Error: %s", trigger->GetName().c_str(), trigger->GetTable().GetName().c_str(), ecdb.GetLastError().c_str());
@@ -582,7 +580,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateTriggers(ECDbCR ecdb, DbTable co
 //static
 BentleyStatus DbSchemaPersistenceManager::BuildCreateTriggerDdl(Utf8StringR ddl, DbTrigger const& trigger)
     {
-    ddl.assign("CREATE TRIGGER [").append(trigger.GetName()).append("] ");
+    ddl.assign("CREATE TRIGGER ").append(DbUtilities::QuoteIdentifier(trigger.GetName())).append(" ");
 
     switch (trigger.GetType())
         {
@@ -596,24 +594,25 @@ BentleyStatus DbSchemaPersistenceManager::BuildCreateTriggerDdl(Utf8StringR ddl,
                 return ERROR;
         }
 
-    ddl.append(" UPDATE ON [").append(trigger.GetTable().GetName()).append("] WHEN ");
+    ddl.append(" UPDATE ON ").append(DbUtilities::QuoteIdentifier(trigger.GetTable().GetName())).append(" WHEN ");
     ddl.append(trigger.GetCondition()).append(" ").append(trigger.GetBody());
     return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
-// Trigger DDL has historically varied in identifier quoting and whitespace. Keep those
-// equivalent forms intact so opening an older file does not rewrite its physical schema.
+// Index and trigger DDL has historically varied in identifier quoting ([], "" or none) and
+// whitespace. Treat those forms as equal so an older file keeps its indexes and triggers.
 // @bsimethod
 //---------------------------------------------------------------------------------------
 //static
-Utf8String DbSchemaPersistenceManager::NormalizeTriggerDdlForComparison(Utf8StringCR ddl)
+Utf8String DbSchemaPersistenceManager::NormalizeDdlForComparison(Utf8StringCR ddl)
     {
     Utf8String normalizedDdl(ddl);
     normalizedDdl.ReplaceAll(", ", ",");
     normalizedDdl.ReplaceAll("  ", " ");
     normalizedDdl.ReplaceAll("[", "");
     normalizedDdl.ReplaceAll("]", "");
+    normalizedDdl.ReplaceAll("\"", "");
     return normalizedDdl;
     }
 
@@ -640,7 +639,7 @@ DbResult DbSchemaPersistenceManager::QueryTriggerDdl(Utf8StringR ddl, ECDbCR ecd
 //static
 BentleyStatus DbSchemaPersistenceManager::AppendColumnDdl(Utf8StringR ddl, DbColumn const& col)
     {
-    ddl.append("[").append(col.GetName()).append("] ");
+    ddl.append(DbUtilities::QuoteIdentifier(col.GetName())).append(" ");
     Utf8CP typeStr = DbColumn::TypeToSql(col.GetType());
     if (typeStr == nullptr)
         return ERROR;
@@ -685,7 +684,7 @@ void DbSchemaPersistenceManager::AppendColumnNamesToDdl(Utf8StringR ddl, std::ve
         if (!isFirstCol)
             ddl.append(", ");
 
-        ddl.append("[").append(col->GetName()).append("]");
+        ddl.append(DbUtilities::QuoteIdentifier(col->GetName()));
 
         isFirstCol = false;
         }
@@ -730,7 +729,7 @@ BentleyStatus DbSchemaPersistenceManager::AppendForeignKeyToColumnDdl(Utf8String
 //static
 void DbSchemaPersistenceManager::DoAppendForeignKeyDdl(Utf8StringR ddl, ForeignKeyDbConstraint const& fkConstraint)
     {
-    ddl.append(" REFERENCES [").append(fkConstraint.GetReferencedTable().GetName()).append("](");
+    ddl.append(" REFERENCES ").append(DbUtilities::QuoteIdentifier(fkConstraint.GetReferencedTable().GetName())).append("(");
     AppendColumnNamesToDdl(ddl, fkConstraint.GetReferencedTableColumns());
     ddl.append(")");
 

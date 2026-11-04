@@ -59,7 +59,6 @@ private:
 
     static BentleyStatus CreateTriggers(ECDbCR, DbTable const&, bool failIfExists);
     static BentleyStatus BuildCreateTriggerDdl(Utf8StringR, DbTrigger const&);
-    static Utf8String NormalizeTriggerDdlForComparison(Utf8StringCR);
     static DbResult QueryTriggerDdl(Utf8StringR, ECDbCR, DbTrigger const&);
 
     static BentleyStatus AppendColumnDdl(Utf8StringR ddl, DbColumn const&);
@@ -78,6 +77,7 @@ public:
     static BentleyStatus CreateIndex(ECDbCR, DbIndex const&, Utf8StringCR ddl);
 
     static BentleyStatus BuildCreateIndexDdl(Utf8StringR ddl, Utf8StringR comparableIndexDef, ECDbCR, DbIndex const&);
+    static Utf8String NormalizeDdlForComparison(Utf8StringCR);
 
     static CreateOrUpdateTableResult CreateOrUpdateTable(ECDbCR, DbTable const&);
     static BentleyStatus RepopulateClassHierarchyCacheTable(ECDbCR);

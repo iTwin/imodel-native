@@ -258,7 +258,7 @@ TEST_F(SchemaSyncTestFixture, FullSchemaSyncWorkflow)
             ASSERT_EQ(BE_SQLITE_OK, b1->PullMergePush("b1 imports TestSchema1"));
 
             ASSERT_TRUE(b1->TableExists("ts_Pipe1"));
-            ASSERT_STRCASEEQ(GetIndexDDL(*b1, "idx_pipe1_p1").c_str(), "CREATE INDEX [idx_pipe1_p1] ON [ts_Pipe1]([p1])");
+            ASSERT_STRCASEEQ(GetIndexDDL(*b1, "idx_pipe1_p1").c_str(), "CREATE INDEX \"idx_pipe1_p1\" ON \"ts_Pipe1\"(\"p1\")");
             CheckHashes(*b1, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             }
     );
@@ -293,7 +293,7 @@ TEST_F(SchemaSyncTestFixture, FullSchemaSyncWorkflow)
             ASSERT_NE(pipe1, nullptr);
             ASSERT_EQ(pipe1->GetPropertyCount(), 2);
             ASSERT_TRUE(b2->TableExists("ts_Pipe1"));
-            ASSERT_STRCASEEQ(GetIndexDDL(*b2, "idx_pipe1_p1").c_str(), "CREATE INDEX [idx_pipe1_p1] ON [ts_Pipe1]([p1])");
+            ASSERT_STRCASEEQ(GetIndexDDL(*b2, "idx_pipe1_p1").c_str(), "CREATE INDEX \"idx_pipe1_p1\" ON \"ts_Pipe1\"(\"p1\")");
             CheckHashes(*b2, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             ASSERT_TRUE(ForeignkeyCheck(*b2));
             }
@@ -340,7 +340,7 @@ TEST_F(SchemaSyncTestFixture, FullSchemaSyncWorkflow)
             ASSERT_EQ(BE_SQLITE_OK, b2->PullMergePush("b2 updates TestSchema1"));
 
             ASSERT_TRUE(b2->TableExists("ts_Pipe1"));
-            ASSERT_STRCASEEQ(GetIndexDDL(*b2, "idx_pipe1_p1").c_str(), "CREATE INDEX [idx_pipe1_p1] ON [ts_Pipe1]([p1], [p2])");
+            ASSERT_STRCASEEQ(GetIndexDDL(*b2, "idx_pipe1_p1").c_str(), "CREATE INDEX \"idx_pipe1_p1\" ON \"ts_Pipe1\"(\"p1\", \"p2\")");
             CheckHashes(*b2, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
             }
     );
@@ -374,7 +374,7 @@ TEST_F(SchemaSyncTestFixture, FullSchemaSyncWorkflow)
             ASSERT_NE(pipe1, nullptr);
             ASSERT_EQ(pipe1->GetPropertyCount(), 4);
             ASSERT_TRUE(b1->TableExists("ts_Pipe1"));
-            ASSERT_STRCASEEQ(GetIndexDDL(*b1, "idx_pipe1_p1").c_str(), "CREATE INDEX [idx_pipe1_p1] ON [ts_Pipe1]([p1], [p2])");
+            ASSERT_STRCASEEQ(GetIndexDDL(*b1, "idx_pipe1_p1").c_str(), "CREATE INDEX \"idx_pipe1_p1\" ON \"ts_Pipe1\"(\"p1\", \"p2\")");
             CheckHashes(*b1, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
             ASSERT_TRUE(ForeignkeyCheck(*b1));
             }
@@ -391,7 +391,7 @@ TEST_F(SchemaSyncTestFixture, FullSchemaSyncWorkflow)
             ASSERT_NE(pipe1, nullptr);
             ASSERT_EQ(pipe1->GetPropertyCount(), 4);
             ASSERT_TRUE(b3->TableExists("ts_Pipe1"));
-            ASSERT_STRCASEEQ(GetIndexDDL(*b3, "idx_pipe1_p1").c_str(), "CREATE INDEX [idx_pipe1_p1] ON [ts_Pipe1]([p1], [p2])");
+            ASSERT_STRCASEEQ(GetIndexDDL(*b3, "idx_pipe1_p1").c_str(), "CREATE INDEX \"idx_pipe1_p1\" ON \"ts_Pipe1\"(\"p1\", \"p2\")");
             EXPECT_STREQ(SCHEMA2_HASH_ECDB_SCHEMA, GetSchemaHash(*b3).c_str());
             EXPECT_STREQ(SCHEMA2_HASH_ECDB_MAP, GetMapHash(*b3).c_str());
             EXPECT_STREQ(SCHEMA2_HASH_SQLITE_SCHEMA, GetDbSchemaHash(*b3).c_str());

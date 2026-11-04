@@ -2998,12 +2998,6 @@ public:
     //! Identical to ExecuteSql, but does not log errors nor check implicit transactions
     BE_SQLITE_EXPORT DbResult TryExecuteSql(Utf8CP sql, int (*callback)(void*,int,char**,char**)=0, void* arg=0, char** errmsg=0) const;
 
-    //! Checks that @p sql holds exactly one statement. Only whitespace and semicolons may follow it.
-    //! Use this before passing SQL built from external names to ExecuteSql or ExecuteDdl, which run every statement in the string.
-    //! The first statement gets prepared, so it must come from trusted SQL. Preparing a PRAGMA can apply it.
-    //! @return false if @p sql holds more than one statement or fails to prepare
-    BE_SQLITE_EXPORT bool IsSingleStatement(Utf8CP sql) const;
-
     //! return a string that describes the query plan for the specified SQL, or an error message if the SQL is invalid
     BE_SQLITE_EXPORT Utf8String ExplainQuery(Utf8CP sql, bool plan=true) const;
 

@@ -1967,27 +1967,6 @@ DbResult Db::TryExecuteSql(Utf8CP sql, int (*callback)(void*,int,CharP*,CharP*),
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Db::IsSingleStatement(Utf8CP sql) const
-    {
-    // Only the first statement gets prepared. Preparing applies some PRAGMAs (e.g. writable_schema) right away, so the tail is checked as text.
-    sqlite3_stmt* stmt = nullptr;
-    Utf8CP tail = nullptr;
-    if (SQLITE_OK != sqlite3_prepare_v2(GetSqlDb(), sql, -1, &stmt, &tail) || stmt == nullptr)
-        return false;
-
-    sqlite3_finalize(stmt);
-    for (; tail != nullptr && *tail != 0; ++tail)
-        {
-        if (strchr("; \t\n\f\r", *tail) == nullptr)
-            return false;
-        }
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String Db::ExplainQuery(Utf8CP sql, bool explainPlan) const {return m_dbFile->ExplainQuery(sql, explainPlan, false);}
 
 /*---------------------------------------------------------------------------------**//**

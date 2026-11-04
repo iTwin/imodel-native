@@ -490,14 +490,14 @@ Utf8String IndexInfo::ToDdl() const
     if (m_isUnique)
         ddl.append("UNIQUE ");
 
-    ddl.append("INDEX [").append(m_name).append("] ON [").append(m_table).append("](");
+    ddl.append("INDEX \"").append(m_name).append("\" ON \"").append(m_table).append("\"(");
     bool isFirstColumn = true;
     for (Utf8StringCR column : m_indexColumns)
         {
         if (!isFirstColumn)
             ddl.append(", ");
 
-        ddl.append("[").append(column).append("]");
+        ddl.append("\"").append(column).append("\"");
         isFirstColumn = false;
         }
 
@@ -555,7 +555,7 @@ IndexInfo::WhereClause&  IndexInfo::WhereClause::AppendNotNullFilter(std::vector
         if (!isFirstCol)
             m_whereClause.append(" AND ");
 
-        m_whereClause.append("[").append(indexColumn).append("] IS NOT NULL");
+        m_whereClause.append("\"").append(indexColumn).append("\" IS NOT NULL");
         isFirstCol = false;
         }
 

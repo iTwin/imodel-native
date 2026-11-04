@@ -108,6 +108,9 @@ public:
     //! This rejects every character that could end a quoted identifier or string literal.
     static bool IsSafeSqlIdentifier(Utf8StringCR name);
 
+    //! Returns @p name as a double-quoted SQL identifier. Embedded double quotes get doubled, so any name stays one identifier.
+    static Utf8String QuoteIdentifier(Utf8StringCR name);
+
     static bool TableSpaceExists(ECDbCR ecdb, Utf8CP tableSpace);
     static BentleyStatus GetTableSpaces(std::vector<Utf8String>& tableSpaces, ECDbCR ecdb, bool onlyAttachedTableSpaces = false);
     static Utf8String GetAttachedFilePath(ECDbCR, Utf8CP tableSpace);

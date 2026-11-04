@@ -3894,9 +3894,10 @@ TEST_F(DbMappingTestFixture, CustomAttributeSqlIdentifiersAreValidated)
 //---------------------------------------------------------------------------------------
 // @bsiMethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(DbMappingTestFixture, ExistingIndexNameIsNotValidatedAgain)
+TEST_F(DbMappingTestFixture, ExistingIndexWithUnusualNameSurvivesSchemaUpdate)
     {
-    // Files written before identifier validation may hold index names it would reject. Updating their schema must keep working.
+    // Files written before identifier validation may hold index names it would reject. Updating their schema must keep working,
+    // and recreating such an index must quote its name correctly.
     Utf8CP schemaTemplate = R"xml(<?xml version='1.0' encoding='utf-8'?>
         <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
@@ -3912,29 +3913,105 @@ TEST_F(DbMappingTestFixture, ExistingIndexNameIsNotValidatedAgain)
                                 <IsUnique>False</IsUnique>
                                 <Properties>
                                     <string>Identifier</string>
+                                    %s
                                 </Properties>
                             </DbIndex>
                         </Indexes>
                     </DbIndexList>
                 </ECCustomAttributes>
                 <ECProperty propertyName="Identifier" typeName="string" />
-                %s
+                <ECProperty propertyName="Name" typeName="string" />
             </ECEntityClass>
         </ECSchema>)xml";
 
     ASSERT_EQ(SUCCESS, SetupECDb("existing_index_name.ecdb", SchemaItem(Utf8PrintfString(schemaTemplate, "01.00.00", "ix_ts_TestClass_Identifier", ""))));
     ASSERT_TRUE(GetHelper().IndexExists("ix_ts_TestClass_Identifier"));
 
-    // Rename the index to a name the current validation rejects, as an older file could hold it
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("UPDATE main.ec_Index SET Name='ix-legacy' WHERE Name='ix_ts_TestClass_Identifier'"));
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("UPDATE main.ec_CustomAttribute SET Instance=REPLACE(Instance, 'ix_ts_TestClass_Identifier', 'ix-legacy')"));
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("DROP INDEX ix_ts_TestClass_Identifier; CREATE INDEX [ix-legacy] ON ts_TestClass(Identifier)"));
+    // Rename the index to a name the current validation rejects and brackets cannot quote, as an older file could hold it
+    Utf8CP legacyName = "ix]\"legacy";
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("UPDATE main.ec_Index SET Name='ix]\"legacy' WHERE Name='ix_ts_TestClass_Identifier'"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("UPDATE main.ec_CustomAttribute SET Instance=REPLACE(Instance, 'ix_ts_TestClass_Identifier', 'ix]\"legacy')"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("DROP INDEX ix_ts_TestClass_Identifier; CREATE INDEX \"ix]\"\"legacy\" ON ts_TestClass(Identifier)"));
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
 
-    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(Utf8PrintfString(schemaTemplate, "01.00.01", "ix-legacy", R"xml(<ECProperty propertyName="Name" typeName="string" />)xml"))));
-    EXPECT_TRUE(GetHelper().IndexExists("ix-legacy"));
+    // Adding a column to the index drops and recreates it under its existing name
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(Utf8PrintfString(schemaTemplate, "01.00.01", legacyName, "<string>Name</string>"))));
+    const Utf8String ddl = GetHelper().GetIndexDdl(legacyName);
+    EXPECT_TRUE(ddl.StartsWith(R"(CREATE INDEX "ix]""legacy" ON "ts_TestClass"("Identifier", "Name"))")) << ddl.c_str();
     EXPECT_FALSE(GetHelper().IndexExists("ix_ts_TestClass_Identifier"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, BracketQuotedIndexAndTriggerAreKept)
+    {
+    // Older software quoted names with [] instead of "". Those indexes and triggers match the current definition and must not be rebuilt.
+    Utf8CP schemaTemplate = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+            <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
+            <ECEntityClass typeName="Stamped">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ClassHasCurrentTimeStampProperty xmlns="CoreCustomAttributes.01.00">
+                        <PropertyName>LastMod</PropertyName>
+                    </ClassHasCurrentTimeStampProperty>
+                    <DbIndexList xmlns="ECDbMap.02.00.00">
+                        <Indexes>
+                            <DbIndex>
+                                <Name>ix_ts_Stamped_Name</Name>
+                                <IsUnique>False</IsUnique>
+                                <Properties>
+                                    <string>Name</string>
+                                </Properties>
+                            </DbIndex>
+                        </Indexes>
+                    </DbIndexList>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Name" typeName="string" />
+                <ECProperty propertyName="LastMod" typeName="dateTime" readOnly="True" />
+                %s
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ASSERT_EQ(SUCCESS, SetupECDb("bracket_quoted_ddl.ecdb", SchemaItem(Utf8PrintfString(schemaTemplate, "01.00.00", ""))));
+
+    auto toBracketQuoting = [] (Utf8StringCR ddl)
+        {
+        Utf8String converted;
+        bool isOpen = false;
+        for (Utf8Char c : ddl)
+            {
+            if (c != '"')
+                {
+                converted.push_back(c);
+                continue;
+                }
+
+            converted.push_back(isOpen ? ']' : '[');
+            isOpen = !isOpen;
+            }
+        return converted;
+        };
+
+    Utf8CP indexName = "ix_ts_Stamped_Name";
+    Utf8CP triggerName = "ts_Stamped_CurrentTimeStamp";
+    const Utf8String indexDdl = toBracketQuoting(GetHelper().GetIndexDdl(indexName));
+    const Utf8String triggerDdl = toBracketQuoting(GetHelper().GetDdl(triggerName, nullptr, "trigger"));
+    ASSERT_TRUE(indexDdl.StartsWith("CREATE INDEX [ix_ts_Stamped_Name] ON [ts_Stamped]([Name])")) << indexDdl.c_str();
+    ASSERT_TRUE(triggerDdl.StartsWith("CREATE TRIGGER [ts_Stamped_CurrentTimeStamp] AFTER UPDATE ON [ts_Stamped]")) << triggerDdl.c_str();
+
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(Utf8PrintfString("DROP INDEX %s; %s; DROP TRIGGER %s; %s", indexName, indexDdl.c_str(), triggerName, triggerDdl.c_str()).c_str()));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(Utf8PrintfString(schemaTemplate, "01.00.01", R"xml(<ECProperty propertyName="Code" typeName="string" />)xml"))));
+    EXPECT_STREQ(indexDdl.c_str(), GetHelper().GetIndexDdl(indexName).c_str());
+    EXPECT_STREQ(triggerDdl.c_str(), GetHelper().GetDdl(triggerName, nullptr, "trigger").c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -4790,7 +4867,7 @@ TEST_F(DbMappingTestFixture, ShareColumnsCAAndPerColumnConstraints)
         {
         columnDdl.ToLower();
 
-        if (!columnDdl.StartsWithI("[sc") || columnDdl.StartsWithI("sc"))
+        if (!columnDdl.StartsWithI("\"sc") || columnDdl.StartsWithI("sc"))
             continue;
 
         ASSERT_TRUE(columnDdl.find("not null") == columnDdl.npos) << columnDdl.c_str();
@@ -8208,9 +8285,9 @@ TEST_F(DbMappingTestFixture, PropertyMapCAColumnNameCollation)
     Utf8String tsBaseDdl = GetHelper().GetDdl("ts3_Base");
     ASSERT_FALSE(tsBaseDdl.empty());
 
-    ASSERT_TRUE(tsBaseDdl.ContainsI("[P_Base] INTEGER UNIQUE COLLATE NOCASE,")) << tsBaseDdl.c_str();
-    ASSERT_TRUE(tsBaseDdl.ContainsI("[P_Sub1] INTEGER UNIQUE COLLATE NOCASE,")) << tsBaseDdl.c_str();
-    ASSERT_TRUE(tsBaseDdl.ContainsI("[P_Sub2] INTEGER UNIQUE COLLATE NOCASE")) << tsBaseDdl.c_str();
+    ASSERT_TRUE(tsBaseDdl.ContainsI("\"P_Base\" INTEGER UNIQUE COLLATE NOCASE,")) << tsBaseDdl.c_str();
+    ASSERT_TRUE(tsBaseDdl.ContainsI("\"P_Sub1\" INTEGER UNIQUE COLLATE NOCASE,")) << tsBaseDdl.c_str();
+    ASSERT_TRUE(tsBaseDdl.ContainsI("\"P_Sub2\" INTEGER UNIQUE COLLATE NOCASE")) << tsBaseDdl.c_str();
 
 
     actualColNames.clear();
@@ -8223,7 +8300,7 @@ TEST_F(DbMappingTestFixture, PropertyMapCAColumnNameCollation)
     Utf8String tsSub2SubDdl = GetHelper().GetDdl("ts3_Sub2Sub");
     ASSERT_FALSE(tsSub2SubDdl.empty());
 
-    ASSERT_TRUE(tsSub2SubDdl.ContainsI("[P_Sub2sub] INTEGER UNIQUE COLLATE NOCASE,")) << tsSub2SubDdl.c_str();
+    ASSERT_TRUE(tsSub2SubDdl.ContainsI("\"P_Sub2sub\" INTEGER UNIQUE COLLATE NOCASE,")) << tsSub2SubDdl.c_str();
 
     actualColNames.clear();
     ASSERT_TRUE(m_ecdb.GetColumns(actualColNames, "ts3_Sub2Sub2"));
@@ -8235,7 +8312,7 @@ TEST_F(DbMappingTestFixture, PropertyMapCAColumnNameCollation)
     Utf8String tsSub2Sub2Ddl = GetHelper().GetDdl("ts3_Sub2Sub2");
     ASSERT_FALSE(tsSub2Sub2Ddl.empty());
 
-    ASSERT_TRUE(tsSub2Sub2Ddl.ContainsI("[P_Sub2sub2] INTEGER UNIQUE COLLATE NOCASE,")) << tsSub2Sub2Ddl.c_str();
+    ASSERT_TRUE(tsSub2Sub2Ddl.ContainsI("\"P_Sub2sub2\" INTEGER UNIQUE COLLATE NOCASE,")) << tsSub2Sub2Ddl.c_str();
     }
 
 //---------------------------------------------------------------------------------------
@@ -8359,9 +8436,9 @@ TEST_F(DbMappingTestFixture, PropertyMapCAIsNullableIsUnique)
 
 
     Utf8String tsBaseDdl = GetHelper().GetDdl("ts_Base");
-    ASSERT_TRUE(tsBaseDdl.ContainsI("[P_Base] INTEGER NOT NULL UNIQUE,")) << tsBaseDdl.c_str();
-    ASSERT_TRUE(tsBaseDdl.ContainsI("[P_Sub1] INTEGER UNIQUE,")) << tsBaseDdl.c_str();
-    ASSERT_TRUE(tsBaseDdl.ContainsI("[P_Sub2] INTEGER UNIQUE")) << tsBaseDdl.c_str();
+    ASSERT_TRUE(tsBaseDdl.ContainsI("\"P_Base\" INTEGER NOT NULL UNIQUE,")) << tsBaseDdl.c_str();
+    ASSERT_TRUE(tsBaseDdl.ContainsI("\"P_Sub1\" INTEGER UNIQUE,")) << tsBaseDdl.c_str();
+    ASSERT_TRUE(tsBaseDdl.ContainsI("\"P_Sub2\" INTEGER UNIQUE")) << tsBaseDdl.c_str();
 
 
     actualColNames.clear();
@@ -8373,8 +8450,8 @@ TEST_F(DbMappingTestFixture, PropertyMapCAIsNullableIsUnique)
     ASSERT_STRCASEEQ("P_Sub2subsub", actualColNames[3].c_str()) << "ts_Sub2Sub";
 
     Utf8String tsSub2SubDdl = GetHelper().GetDdl("ts_Sub2Sub");
-    ASSERT_TRUE(tsSub2SubDdl.ContainsI("[P_Sub2sub] INTEGER NOT NULL UNIQUE,")) << tsSub2SubDdl.c_str();
-    ASSERT_TRUE(tsSub2SubDdl.ContainsI("[P_Sub2subsub] INTEGER UNIQUE,")) << tsSub2SubDdl.c_str();
+    ASSERT_TRUE(tsSub2SubDdl.ContainsI("\"P_Sub2sub\" INTEGER NOT NULL UNIQUE,")) << tsSub2SubDdl.c_str();
+    ASSERT_TRUE(tsSub2SubDdl.ContainsI("\"P_Sub2subsub\" INTEGER UNIQUE,")) << tsSub2SubDdl.c_str();
 
     actualColNames.clear();
     ASSERT_TRUE(m_ecdb.GetColumns(actualColNames, "ts_Sub2Sub2"));
@@ -8385,8 +8462,8 @@ TEST_F(DbMappingTestFixture, PropertyMapCAIsNullableIsUnique)
     ASSERT_STRCASEEQ("js2", actualColNames[3].c_str()) << "ts_Sub2Sub2";
 
     Utf8String tsSub2Sub2Ddl = GetHelper().GetDdl("ts_Sub2Sub2");
-    ASSERT_TRUE(tsSub2Sub2Ddl.ContainsI("[js1] BLOB,")) << tsSub2Sub2Ddl.c_str();
-    ASSERT_TRUE(tsSub2Sub2Ddl.ContainsI("[js2] BLOB,")) << tsSub2Sub2Ddl.c_str();
+    ASSERT_TRUE(tsSub2Sub2Ddl.ContainsI("\"js1\" BLOB,")) << tsSub2Sub2Ddl.c_str();
+    ASSERT_TRUE(tsSub2Sub2Ddl.ContainsI("\"js2\" BLOB,")) << tsSub2Sub2Ddl.c_str();
 
     actualColNames.clear();
     ASSERT_TRUE(m_ecdb.GetColumns(actualColNames, "ts_Sub2Sub2_Overflow"));
@@ -8395,7 +8472,7 @@ TEST_F(DbMappingTestFixture, PropertyMapCAIsNullableIsUnique)
     ASSERT_STRCASEEQ("ECClassId", actualColNames[1].c_str()) << "ts_Sub2Sub2_Overflow";
 
     Utf8String tsSub2Sub2_OverflowDdl = GetHelper().GetDdl("ts_Sub2Sub2_Overflow");
-    ASSERT_TRUE(tsSub2Sub2_OverflowDdl.ContainsI("[os1] BLOB,")) << tsSub2Sub2_OverflowDdl.c_str();
+    ASSERT_TRUE(tsSub2Sub2_OverflowDdl.ContainsI("\"os1\" BLOB,")) << tsSub2Sub2_OverflowDdl.c_str();
 
 
     }

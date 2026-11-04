@@ -2496,47 +2496,6 @@ TEST_F(BeSQLiteDbTests, GetColumnsQuotesTableName)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(BeSQLiteDbTests, IsSingleStatement)
-    {
-    SetupDb(L"isSingleStatement.db");
-    ASSERT_TRUE(m_db.IsDbOpen());
-    ASSERT_EQ(BE_SQLITE_OK, m_db.CreateTable("TestTable1", "id INTEGER PRIMARY KEY, name TEXT"));
-
-    EXPECT_TRUE(m_db.IsSingleStatement("CREATE TABLE [x](id INTEGER)"));
-    EXPECT_TRUE(m_db.IsSingleStatement("CREATE TABLE [x](id INTEGER);"));
-    EXPECT_TRUE(m_db.IsSingleStatement("CREATE TABLE [x](id INTEGER) ;\r\n ;; "));
-    EXPECT_TRUE(m_db.IsSingleStatement("CREATE TRIGGER [trg] AFTER INSERT ON TestTable1 BEGIN UPDATE TestTable1 SET name='a' WHERE id=new.id; UPDATE TestTable1 SET name='b' WHERE id=new.id; END"));
-
-    EXPECT_FALSE(m_db.IsSingleStatement("CREATE TABLE [x](id INTEGER); CREATE TABLE pwned(x)"));
-    EXPECT_FALSE(m_db.IsSingleStatement("CREATE TABLE [x]; CREATE TABLE pwned(x); --](id INTEGER)"));
-    EXPECT_FALSE(m_db.IsSingleStatement("CREATE TABLE ([x](id INTEGER)"));
-    EXPECT_FALSE(m_db.IsSingleStatement(""));
-    EXPECT_FALSE(m_db.IsSingleStatement(" -- only a comment"));
-    EXPECT_FALSE(m_db.IsSingleStatement("CREATE TABLE [x](id INTEGER); -- trailing comment"));
-
-    // Preparing a PRAGMA can apply it, so a rejected tail must not get prepared
-    auto getPragmaValue = [&] (Utf8CP pragma)
-        {
-        Statement stmt;
-        EXPECT_EQ(BE_SQLITE_OK, stmt.Prepare(m_db, SqlPrintfString("PRAGMA %s", pragma)));
-        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
-        return stmt.GetValueInt(0);
-        };
-    ASSERT_EQ(0, getPragmaValue("ignore_check_constraints"));
-    ASSERT_EQ(0, getPragmaValue("writable_schema"));
-    EXPECT_FALSE(m_db.IsSingleStatement("CREATE TABLE [x](id INTEGER); PRAGMA ignore_check_constraints=ON"));
-    EXPECT_FALSE(m_db.IsSingleStatement("CREATE TABLE [x](id INTEGER); PRAGMA writable_schema=ON"));
-    EXPECT_EQ(0, getPragmaValue("ignore_check_constraints"));
-    EXPECT_EQ(0, getPragmaValue("writable_schema"));
-
-    EXPECT_FALSE(m_db.TableExists("x"));
-    EXPECT_FALSE(m_db.TableExists("pwned"));
-    m_db.CloseDb();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
 TEST_F (BeSQLiteDbTests, SaveCreationDate)
 {
     bool result=false;

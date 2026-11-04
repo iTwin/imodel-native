@@ -570,41 +570,41 @@ void SqlTypeDetector::SetupRegex(DbCR conn, bool useDataCRUD) {
     opts.set_log_errors(true);
 
     m_alterTableRegEx = std::make_unique<RE2>(
-        R"(^\s*ALTER\s+TABLE\s+(\[?\w+\]?\s*\.\s*)?(\[?\w+\]?))", opts);
+        R"re(^\s*ALTER\s+TABLE\s+([\["]?\w+[\]"]?\s*\.\s*)?([\["]?\w+[\]"]?))re", opts);
     m_dropTableRegEx = std::make_unique<RE2>(
-        R"(^\s*DROP\s+TABLE\s+(IF\s+EXISTS)?\s+(\[?\w+\]?\s*\.\s*)?(\[?\w+\]?))", opts);
+        R"re(^\s*DROP\s+TABLE\s+(IF\s+EXISTS)?\s+([\["]?\w+[\]"]?\s*\.\s*)?([\["]?\w+[\]"]?))re", opts);
     m_dropIndexRegEx = std::make_unique<RE2>(
-        R"(^\s*DROP\s+INDEX\s+(IF\s+EXISTS)?\s+(\[?\w+\]?\s*\.\s*)?(\[?\w+\]?))", opts);
+        R"re(^\s*DROP\s+INDEX\s+(IF\s+EXISTS)?\s+([\["]?\w+[\]"]?\s*\.\s*)?([\["]?\w+[\]"]?))re", opts);
     m_createTableRegEx = std::make_unique<RE2>(
-        R"(^\s*CREATE\s+((TEMP|TEMPORARY)\s*)?TABLE\s+(IF\s+NOT\s+EXISTS)?\s*(\[?\w+\]?\s*\.\s*)?(\[?\w+\]?))", opts);
+        R"re(^\s*CREATE\s+((TEMP|TEMPORARY)\s*)?TABLE\s+(IF\s+NOT\s+EXISTS)?\s*([\["]?\w+[\]"]?\s*\.\s*)?([\["]?\w+[\]"]?))re", opts);
     m_createIndexRegEx = std::make_unique<RE2>(
-        R"(^\s*CREATE\s+((UNIQUE)\s*)?INDEX\s+(IF\s+NOT\s+EXISTS)?\s*(\[?\w+\]?\s*\.\s*)?(\[?\w+\]?))", opts);
+        R"re(^\s*CREATE\s+((UNIQUE)\s*)?INDEX\s+(IF\s+NOT\s+EXISTS)?\s*([\["]?\w+[\]"]?\s*\.\s*)?([\["]?\w+[\]"]?))re", opts);
     m_createViewRegEx = std::make_unique<RE2>(
-        R"(^\s*CREATE\s+((TEMP|TEMPORARY)\s*)?VIEW\s+(IF\s+NOT\s+EXISTS)?\s*(\[?\w+\]?\s*\.\s*)?(\[?\w+\]?))", opts);
+        R"re(^\s*CREATE\s+((TEMP|TEMPORARY)\s*)?VIEW\s+(IF\s+NOT\s+EXISTS)?\s*([\["]?\w+[\]"]?\s*\.\s*)?([\["]?\w+[\]"]?))re", opts);
     m_pragmaRegEx = std::make_unique<RE2>(
-        R"(^\s*PRAGMA\s+(\[?\w+\]?\s*\.\s*)?(\[?\w+\]?))", opts);
+        R"re(^\s*PRAGMA\s+([\["]?\w+[\]"]?\s*\.\s*)?([\["]?\w+[\]"]?))re", opts);
     m_insertRegEx = std::make_unique<RE2>(
-        R"(^\s*INSERT\s+(INTO)?\s*(\[?\w+\]?\s*\.\s*)?(\[?\w+\]?))", opts);
+        R"re(^\s*INSERT\s+(INTO)?\s*([\["]?\w+[\]"]?\s*\.\s*)?([\["]?\w+[\]"]?))re", opts);
     m_deleteRegEx = std::make_unique<RE2>(
-        R"(^\s*DELETE\s+(FROM)?\s*(\[?\w+\]?\s*\.\s*)?(\[?\w+\]?))", opts);
+        R"re(^\s*DELETE\s+(FROM)?\s*([\["]?\w+[\]"]?\s*\.\s*)?([\["]?\w+[\]"]?))re", opts);
     m_updateRegEx = std::make_unique<RE2>(
-        R"(^\s*UPDATE\s+(INTO)?\s*(\[?\w+\]?\s*\.\s*)?(\[?\w+\]?))", opts);
+        R"re(^\s*UPDATE\s+(INTO)?\s*([\["]?\w+[\]"]?\s*\.\s*)?([\["]?\w+[\]"]?))re", opts);
 
     const auto dataTables = Join(GetDataTables(conn), "|");
     m_dataInsertRegEx = std::make_unique<RE2>(
-        SqlPrintfString(R"(^\s*INSERT\s+(INTO)?\s*(\[?\w+\]?\s*\.\s*)?(\[?(%s)\]?))", dataTables.c_str()).GetUtf8CP(), opts);
+        SqlPrintfString(R"re(^\s*INSERT\s+(INTO)?\s*([\["]?\w+[\]"]?\s*\.\s*)?([\["]?(%s)[\]"]?))re", dataTables.c_str()).GetUtf8CP(), opts);
     m_dataDeleteRegEx = std::make_unique<RE2>(
-        SqlPrintfString(R"(^\s*DELETE\s+(FROM)?\s*(\[?\w+\]?\s*\.\s*)?(\[?(%s)\]?))", dataTables.c_str()).GetUtf8CP(), opts);
+        SqlPrintfString(R"re(^\s*DELETE\s+(FROM)?\s*([\["]?\w+[\]"]?\s*\.\s*)?([\["]?(%s)[\]"]?))re", dataTables.c_str()).GetUtf8CP(), opts);
     m_dataUpdateRegEx = std::make_unique<RE2>(
-        SqlPrintfString(R"(^\s*UPDATE\s+(INTO)?\s*(\[?\w+\]?\s*\.\s*)?(\[?(%s)\]?))", dataTables.c_str()).GetUtf8CP(), opts);
+        SqlPrintfString(R"re(^\s*UPDATE\s+(INTO)?\s*([\["]?\w+[\]"]?\s*\.\s*)?([\["]?(%s)[\]"]?))re", dataTables.c_str()).GetUtf8CP(), opts);
 
     const auto sysTables = Join(GetSystemTables(conn), "|");
     m_sysInsertRegEx = std::make_unique<RE2>(
-        SqlPrintfString(R"(^\s*INSERT\s+(INTO)?\s*(\[?\w+\]?\s*\.\s*)?(\[?(%s)\]?))", sysTables.c_str()).GetUtf8CP(), opts);
+        SqlPrintfString(R"re(^\s*INSERT\s+(INTO)?\s*([\["]?\w+[\]"]?\s*\.\s*)?([\["]?(%s)[\]"]?))re", sysTables.c_str()).GetUtf8CP(), opts);
     m_sysDeleteRegEx = std::make_unique<RE2>(
-        SqlPrintfString(R"(^\s*DELETE\s+(FROM)?\s*(\[?\w+\]?\s*\.\s*)?(\[?(%s)\]?))", sysTables.c_str()).GetUtf8CP(), opts);
+        SqlPrintfString(R"re(^\s*DELETE\s+(FROM)?\s*([\["]?\w+[\]"]?\s*\.\s*)?([\["]?(%s)[\]"]?))re", sysTables.c_str()).GetUtf8CP(), opts);
     m_sysUpdateRegEx = std::make_unique<RE2>(
-        SqlPrintfString(R"(^\s*UPDATE\s+(INTO)?\s*(\[?\w+\]?\s*\.\s*)?(\[?(%s)\]?))", sysTables.c_str()).GetUtf8CP(), opts);
+        SqlPrintfString(R"re(^\s*UPDATE\s+(INTO)?\s*([\["]?\w+[\]"]?\s*\.\s*)?([\["]?(%s)[\]"]?))re", sysTables.c_str()).GetUtf8CP(), opts);
 
     BeAssert(m_alterTableRegEx->ok());
     BeAssert(m_dropTableRegEx->ok());
