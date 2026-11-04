@@ -2336,13 +2336,33 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, PropertyChange& propert
         return ERROR;
         }
 
-    if (propertyChange.ArrayMaxOccurs().IsChanged() || propertyChange.ArrayMinOccurs().IsChanged())
+    // Widening of array bounds should be allowed (old min occurs > new min occurs)
+    if (propertyChange.ArrayMinOccurs().IsChanged())
+        {
+        const auto& minChange = propertyChange.ArrayMinOccurs();
+        const bool isWidened = !minChange.GetOld().IsNull() && !minChange.GetNew().IsNull() && minChange.GetOld().Value() > minChange.GetNew().Value();
+        if (!isWidened)
             {
             ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0338,
-                "ECSchema Upgrade failed. ECProperty %s.%s: Changing 'MinOccurs' or 'MaxOccurs' for an Array ECProperty is not supported.",
+                "ECSchema Upgrade failed. ECProperty %s.%s: Narrowing of array bounds by increasing 'MinOccurs' for an Array ECProperty is not supported.",
                 oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
             return ERROR;
             }
+        }
+
+    // Widening of array bounds should be allowed (old max occurs < new max occurs)
+    if (propertyChange.ArrayMaxOccurs().IsChanged())
+        {
+        const auto& maxChange = propertyChange.ArrayMaxOccurs();
+        const bool isWidened = !maxChange.GetOld().IsNull() && !maxChange.GetNew().IsNull() && maxChange.GetOld().Value() < maxChange.GetNew().Value();
+        if (!isWidened)
+            {
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0338,
+                "ECSchema Upgrade failed. ECProperty %s.%s: Narrowing of array bounds by decreasing 'MaxOccurs' for an Array ECProperty is not supported.",
+                oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
+            return ERROR;
+            }
+        }
 
     if (propertyChange.NavigationRelationship().IsChanged())
             {
@@ -2440,6 +2460,19 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, PropertyChange& propert
             sqlUpdateBuilder.AddSetToNull(kExtendedTypeName);
         else
             sqlUpdateBuilder.AddSetExp(kExtendedTypeName, propertyChange.ExtendedTypeName().GetNew().Value().c_str());
+        }
+
+    if (propertyChange.ArrayMinOccurs().IsChanged())
+        sqlUpdateBuilder.AddSetExp("ArrayMinOccurs", static_cast<int64_t>(propertyChange.ArrayMinOccurs().GetNew().Value()));
+
+    if (propertyChange.ArrayMaxOccurs().IsChanged())
+        {
+        constexpr Utf8CP kArrayMaxOccurs = "ArrayMaxOccurs";
+        ArrayECPropertyCP newArrayProp = newProperty.GetAsArrayProperty();
+        if (newArrayProp == nullptr || newArrayProp->IsStoredMaxOccursUnbounded())
+            sqlUpdateBuilder.AddSetToNull(kArrayMaxOccurs);
+        else
+            sqlUpdateBuilder.AddSetExp(kArrayMaxOccurs, static_cast<int64_t>(newArrayProp->GetStoredMaxOccurs()));
         }
 
     if (propertyChange.DisplayLabel().IsChanged())

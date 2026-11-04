@@ -18,8 +18,9 @@ void JsLogger::logToJs(Utf8CP category, SEVERITY sev, Utf8CP msg)
                    (sev == LOG_WARNING) ? "logWarning" :
                    "logError";
 
-    auto method = m_loggerObj.Get(fname).As<Napi::Function>();
     auto env = m_loggerObj.Env();
+    Napi::HandleScope scope(env);
+    auto method = m_loggerObj.Get(fname).As<Napi::Function>();
     if (method != env.Undefined())
         method({toJsString(env, category), toJsString(env, msg)});
     }
