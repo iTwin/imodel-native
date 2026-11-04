@@ -1824,6 +1824,20 @@ export declare namespace IModelJsNative {
 
   interface CloneElementOptions {
     binaryGeometry?: boolean;
+    /** If true, the cloned props also hold a clearing value for each member that is empty on the source element, so that updating an
+     * existing target element with them clears that member rather than keeping its old value. Default is false, which leaves the
+     * returned props unchanged.
+     * Each member is set only when the normal output omits it:
+     * - `parent`, `userLabel`, and (for geometric elements) `typeDefinition` are set to `null`.
+     * - `jsonProperties` is set to `{}`.
+     * - Auto-handled EC properties with no value (null, empty array, or empty struct) are set to `null`. Members missing from a struct
+     *   value are set to `null` too.
+     * - For a geometric element with no geometry, `geomBinary` is set to an empty Uint8Array, even if `binaryGeometry` is false.
+     * - For a geometric element with no placement origin, `placement` is set to `{}`, which stores a null origin, rotation and bounding box.
+     * @note A `parent`, `typeDefinition` or navigation property whose target element is not in the import context's remap table is
+     * also cleared, because cloning drops references it cannot remap.
+     */
+    explicitClears?: boolean;
   }
 
   interface ChangedInstanceOpsProps {
