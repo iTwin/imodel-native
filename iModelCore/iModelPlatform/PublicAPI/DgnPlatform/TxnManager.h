@@ -10,6 +10,7 @@
 #include <BeSQLite/ChangesetFile.h>
 #include <ECDb/ECInstanceId.h>
 #include <functional>
+#include <memory>
 
 DGNPLATFORM_TYPEDEFS(TxnMonitor)
 
@@ -1095,6 +1096,9 @@ public:
     DGNPLATFORM_EXPORT static Utf8String ComputeChangesetId(Utf8StringCR parentRevId, BeFileNameCR changesetFile, Napi::Env env);
 };
 
+// Defined in ChangesetTxns.cpp, so code using the changeset readers below does not depend on Node-API.
+struct JsChangesetConflictArgs;
+
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
@@ -1103,6 +1107,7 @@ private:
     DGNPLATFORM_EXPORT BeSQLite::ChangeSet::ConflictResolution _OnConflict(BeSQLite::ChangeSet::ConflictCause, BeSQLite::Changes::Change iter) override;
     DgnDb* m_dgndb;
     Utf8String m_lastErrorMessage;
+    std::shared_ptr<JsChangesetConflictArgs> m_jsConflictArgs; // created on the first conflict passed to JavaScript
 
 public:
     ChangesetFileReader(BeFileNameCR pathname, DgnDb* dgndb = nullptr) : BeSQLite::ChangesetFileReaderBase({pathname}, dgndb), m_dgndb(dgndb) {}
@@ -1121,6 +1126,7 @@ private:
     TxnManager::TxnId m_id;
     TxnType m_type;
     Utf8String m_descr;
+    std::shared_ptr<JsChangesetConflictArgs> m_jsConflictArgs; // created on the first conflict passed to JavaScript
     bool m_ecChangesSupersedeBriefcase = false;
     BeSQLite::ChangeGroup m_supersedingRows;
     bool m_hasSupersedingRows = false;
