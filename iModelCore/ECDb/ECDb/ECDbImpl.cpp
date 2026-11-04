@@ -250,6 +250,19 @@ DbResult ECDb::Impl::ExecuteDDL(Utf8CP ddl) const {
     // track data and DDL changes.
     return m_ecdb.ExecuteDdl(ddl);
 }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDb::Impl::ExecuteSingleDDLStatement(Utf8CP ddl) const {
+    if (!m_ecdb.IsSingleStatement(ddl)) {
+        LOG.errorv("Refused to execute DDL because it does not prepare as exactly one statement: %s", ddl);
+        return BE_SQLITE_ERROR;
+    }
+
+    return ExecuteDDL(ddl);
+}
+
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------

@@ -80,14 +80,32 @@ BentleyStatus ClassMappingInfo::InitializeFromSchema()
             return ERROR;
 
         if (!tableName.IsNull())
+            {
+            if (!DbUtilities::IsSafeSqlIdentifier(tableName.Value()))
+                {
+                m_ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0750,
+                    "Failed to map ECClass %s. The TableName '%s' in its ClassMap custom attribute is invalid. It may only contain letters, digits and underscores and must not start with a digit.", m_ecClass.GetFullName(), tableName.Value().c_str());
+                return ERROR;
+                }
+
             m_tableName.assign(tableName.Value());
+            }
 
         Nullable<Utf8String> idColName;
         if (SUCCESS != classMapCA.TryGetECInstanceIdColumn(idColName))
             return ERROR;
 
         if (!idColName.IsNull())
+            {
+            if (!DbUtilities::IsSafeSqlIdentifier(idColName.Value()))
+                {
+                m_ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0750,
+                    "Failed to map ECClass %s. The ECInstanceIdColumn '%s' in its ClassMap custom attribute is invalid. It may only contain letters, digits and underscores and must not start with a digit.", m_ecClass.GetFullName(), idColName.Value().c_str());
+                return ERROR;
+                }
+
             m_ecInstanceIdColumnName.assign(idColName.Value());
+            }
         }
 
     //do some validation on the input from the schema

@@ -103,6 +103,11 @@ public:
         return TId((uint64_t) id);
         }
 
+    //! Checks a table, column or index name supplied by a schema before ECDb embeds it into SQL.
+    //! Accepts ASCII letters, digits, underscores and non-ASCII UTF-8 bytes, and must not start with a digit.
+    //! This rejects every character that could end a quoted identifier or string literal.
+    static bool IsSafeSqlIdentifier(Utf8StringCR name);
+
     static bool TableSpaceExists(ECDbCR ecdb, Utf8CP tableSpace);
     static BentleyStatus GetTableSpaces(std::vector<Utf8String>& tableSpaces, ECDbCR ecdb, bool onlyAttachedTableSpaces = false);
     static Utf8String GetAttachedFilePath(ECDbCR, Utf8CP tableSpace);

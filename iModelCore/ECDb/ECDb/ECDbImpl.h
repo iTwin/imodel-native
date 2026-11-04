@@ -241,6 +241,8 @@ public:
     BeGuid GetId() const  {return m_id; }
     IdFactory& GetIdFactory() const;
     DbResult ExecuteDDL(Utf8CP) const;
+    //! Like ExecuteDDL, but fails if the DDL holds more than one statement. Use it for DDL built from table, column or index names.
+    DbResult ExecuteSingleDDLStatement(Utf8CP) const;
     DbResult AttachDbAsSQLite(Utf8CP dbFileName, Utf8CP tableSpaceName) const;
     PragmaManager& GetPragmaManager() const;
 

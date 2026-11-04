@@ -740,6 +740,14 @@ BentleyStatus DbMappingManager::Classes::MapIndexes(SchemaImportContext& importC
     for (auto& indexCA : indexCAs)
         {
         auto indexName = indexCA.GetName();
+        if (!DbUtilities::IsSafeSqlIdentifier(indexName))
+            {
+            importCtx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0750,
+                "Failed to map ECClass %s. The index name '%s' in its DbIndexList custom attribute is invalid. It may only contain letters, digits and underscores and must not start with a digit.",
+                classMap.GetClass().GetFullName(), indexName.c_str());
+            return ERROR;
+            }
+
         auto isSystemIndex = systemIndexes.find(indexName) != systemIndexes.end();
 
         // Special case: Older imodels ( <= 4.0.0.2) do not have a common unique index on the base TPH table to handle all the derived classes at once.
@@ -785,7 +793,7 @@ BentleyStatus DbMappingManager::Classes::MapIndexes(SchemaImportContext& importC
             const auto foundIndex = *itr;
             table.RemoveIndexDef(foundIndex);
 
-            if (BE_SQLITE_OK != importCtx.GetECDb().GetImpl().ExecuteDDL(SqlPrintfString("DROP INDEX IF EXISTS [%s]", foundIndex.c_str())))
+            if (BE_SQLITE_OK != importCtx.GetECDb().GetImpl().ExecuteSingleDDLStatement(SqlPrintfString("DROP INDEX IF EXISTS [%s]", foundIndex.c_str())))
                 return ERROR;
 
             if (BE_SQLITE_OK != importCtx.GetECDb().ExecuteSql(SqlPrintfString("DELETE FROM main." TABLE_Index " WHERE Name = '%s'", foundIndex.c_str())))
@@ -992,7 +1000,17 @@ BentleyStatus DbMappingManager::Classes::DetermineColumnInfoForPrimitiveProperty
             }
 
         if (!colNameFromCA.IsNull())
+            {
+            if (!DbUtilities::IsSafeSqlIdentifier(colNameFromCA.Value()))
+                {
+                issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0750,
+                    "Failed to map ECClass '%s': The ColumnName '%s' in the PropertyMap custom attribute of its ECProperty '%s' is invalid. It may only contain letters, digits and underscores and must not start with a digit.",
+                    ecProp.GetClass().GetFullName(), colNameFromCA.Value().c_str(), ecProp.GetName().c_str());
+                return ERROR;
+                }
+
             columnName.assign(colNameFromCA.Value());
+            }
 
         Nullable<bool> isNullableFromCA;
         if (SUCCESS != customPropMap.TryGetIsNullable(isNullableFromCA))

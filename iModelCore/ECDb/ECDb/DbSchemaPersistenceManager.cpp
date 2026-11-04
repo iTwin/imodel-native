@@ -165,7 +165,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateTable(ECDbCR ecdb, DbTable const
         }
     ddl.append(")");
 
-    if (ecdb.GetImpl().ExecuteDDL(ddl.c_str()) != BE_SQLITE_OK)
+    if (ecdb.GetImpl().ExecuteSingleDDLStatement(ddl.c_str()) != BE_SQLITE_OK)
         {
         ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0223,
             "Failed to create table %s: %s [%s]", table.GetName().c_str(), ecdb.GetLastError().c_str(), ddl.c_str());
@@ -278,7 +278,7 @@ BentleyStatus DbSchemaPersistenceManager::AlterTable(ECDbCR ecdb, DbTable const&
                 return ERROR;
             }
 
-        if (BE_SQLITE_OK != ecdb.GetImpl().ExecuteDDL(ddl.c_str()))
+        if (BE_SQLITE_OK != ecdb.GetImpl().ExecuteSingleDDLStatement(ddl.c_str()))
             {
             ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0226,
                 "Failed to add new column %s. Error message: %s", ddl.c_str(), ecdb.GetLastError().c_str());
@@ -291,7 +291,7 @@ BentleyStatus DbSchemaPersistenceManager::AlterTable(ECDbCR ecdb, DbTable const&
         {
         Utf8String dropDdl;
         dropDdl.Sprintf("ALTER TABLE [%s] DROP COLUMN [%s]", table.GetName().c_str(), colName.c_str());
-        if (BE_SQLITE_OK != ecdb.GetImpl().ExecuteDDL(dropDdl.c_str()))
+        if (BE_SQLITE_OK != ecdb.GetImpl().ExecuteSingleDDLStatement(dropDdl.c_str()))
             {
             ecdb.GetImpl().Issues().ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0228,
                 "Failed to drop column %s from table %s. Error message: %s", colName.c_str(), table.GetName().c_str(), ecdb.GetLastError().c_str());
@@ -351,7 +351,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateIndex(ECDbCR ecdb, DbIndex const
         return ERROR;
         }
 
-    if (BE_SQLITE_OK != ecdb.GetImpl().ExecuteDDL(ddl.c_str()))
+    if (BE_SQLITE_OK != ecdb.GetImpl().ExecuteSingleDDLStatement(ddl.c_str()))
         {
         ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0227,
             "Failed to create index %s on table %s. Error: %s [%s]", index.GetName().c_str(), index.GetTable().GetName().c_str(), ecdb.GetLastError().c_str(), ddl.c_str());
@@ -552,7 +552,8 @@ BentleyStatus DbSchemaPersistenceManager::CreateTriggers(ECDbCR ecdb, DbTable co
             if (NormalizeTriggerDdlForComparison(existingDdl) == normalizedExpectedDdl)
                 continue;
 
-            if (ecdb.ExecuteSql(SqlPrintfString("DROP TRIGGER [%s]", trigger->GetName().c_str())) != BE_SQLITE_OK)
+            SqlPrintfString dropTriggerSql("DROP TRIGGER [%s]", trigger->GetName().c_str());
+            if (!ecdb.IsSingleStatement(dropTriggerSql) || ecdb.ExecuteSql(dropTriggerSql) != BE_SQLITE_OK)
                 {
                 ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0230,
                     "Failed to replace trigger %s on table %s. Error: %s", trigger->GetName().c_str(), trigger->GetTable().GetName().c_str(), ecdb.GetLastError().c_str());
@@ -564,7 +565,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateTriggers(ECDbCR ecdb, DbTable co
             return ERROR;
             }
 
-        if (ecdb.ExecuteSql(expectedDdl.c_str()) != BE_SQLITE_OK)
+        if (!ecdb.IsSingleStatement(expectedDdl.c_str()) || ecdb.ExecuteSql(expectedDdl.c_str()) != BE_SQLITE_OK)
             {
             ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0230,
                 "Failed to create trigger %s on table %s. Error: %s", trigger->GetName().c_str(), trigger->GetTable().GetName().c_str(), ecdb.GetLastError().c_str());
@@ -766,10 +767,12 @@ BentleyStatus DbSchemaPersistenceManager::RunPragmaTableInfo(std::vector<SqliteC
 
     colInfos.clear();
 
-    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(Utf8PrintfString("PRAGMA [%s].table_info('%s')", tableSpace, tableName.c_str()).c_str());
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement("SELECT cid, name, type, \"notnull\", dflt_value, pk FROM pragma_table_info(?1, ?2)");
     if (stmt == nullptr)
         return ERROR;
 
+    stmt->BindText(1, tableName, Statement::MakeCopy::No);
+    stmt->BindText(2, tableSpace, Statement::MakeCopy::No);
     while (stmt->Step() == BE_SQLITE_ROW)
         {
         BeAssert(BeStringUtilities::StricmpAscii(stmt->GetColumnName(1), "name") == 0);

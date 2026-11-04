@@ -2463,6 +2463,54 @@ TEST_F (BeSQLiteDbTests, GetColumn)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+TEST_F(BeSQLiteDbTests, GetColumnsBindsTableName)
+    {
+    SetupDb(L"getColumnsBindsTableName.db");
+    ASSERT_TRUE(m_db.IsDbOpen());
+    ASSERT_EQ(BE_SQLITE_OK, m_db.CreateTable("TestTable1", "id NUMERIC, name TEXT"));
+
+    bvector<Utf8String> columns;
+    ASSERT_TRUE(m_db.GetColumns(columns, "main.TestTable1"));
+    ASSERT_EQ(2, columns.size());
+    EXPECT_STREQ("id", columns[0].c_str());
+    EXPECT_STREQ("name", columns[1].c_str());
+
+    ASSERT_TRUE(m_db.GetColumns(columns, "TestTable1]); CREATE TABLE pwned(x); --"));
+    EXPECT_TRUE(columns.empty());
+    EXPECT_FALSE(m_db.TableExists("pwned"));
+
+    EXPECT_FALSE(m_db.GetColumns(columns, "nosuchdb.TestTable1"));
+    m_db.CloseDb();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(BeSQLiteDbTests, IsSingleStatement)
+    {
+    SetupDb(L"isSingleStatement.db");
+    ASSERT_TRUE(m_db.IsDbOpen());
+    ASSERT_EQ(BE_SQLITE_OK, m_db.CreateTable("TestTable1", "id INTEGER PRIMARY KEY, name TEXT"));
+
+    EXPECT_TRUE(m_db.IsSingleStatement("CREATE TABLE [x](id INTEGER)"));
+    EXPECT_TRUE(m_db.IsSingleStatement("CREATE TABLE [x](id INTEGER);"));
+    EXPECT_TRUE(m_db.IsSingleStatement("CREATE TABLE [x](id INTEGER); -- trailing comment\n ; /* block */ "));
+    EXPECT_TRUE(m_db.IsSingleStatement("CREATE TRIGGER [trg] AFTER INSERT ON TestTable1 BEGIN UPDATE TestTable1 SET name='a' WHERE id=new.id; UPDATE TestTable1 SET name='b' WHERE id=new.id; END"));
+
+    EXPECT_FALSE(m_db.IsSingleStatement("CREATE TABLE [x](id INTEGER); CREATE TABLE pwned(x)"));
+    EXPECT_FALSE(m_db.IsSingleStatement("CREATE TABLE [x]; CREATE TABLE pwned(x); --](id INTEGER)"));
+    EXPECT_FALSE(m_db.IsSingleStatement("CREATE TABLE ([x](id INTEGER)"));
+    EXPECT_FALSE(m_db.IsSingleStatement(""));
+    EXPECT_FALSE(m_db.IsSingleStatement(" -- only a comment"));
+
+    EXPECT_FALSE(m_db.TableExists("x"));
+    EXPECT_FALSE(m_db.TableExists("pwned"));
+    m_db.CloseDb();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 TEST_F (BeSQLiteDbTests, SaveCreationDate)
 {
     bool result=false;

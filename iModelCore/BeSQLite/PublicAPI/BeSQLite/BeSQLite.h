@@ -2988,8 +2988,8 @@ public:
     BE_SQLITE_EXPORT DbResult DetachDb(Utf8CP alias) const;
     BE_SQLITE_EXPORT std::vector<AttachFileInfo> GetAttachedDbs() const;
 
-    //! Execute a single SQL statement on this Db.
-    //! This merely binds, steps, and finalizes the statement. It is no more efficient than performing those steps individually,
+    //! Execute SQL on this Db. If @p sql holds several statements separated by semicolons, all of them run.
+    //! This merely prepares, steps, and finalizes each statement. It is no more efficient than performing those steps individually,
     //! but is more convenient.
     //! This method also enforces logs the statement and error if the statement fails. Use TryExecuteSql if you consider failures to be non-exceptional.
     //! @see sqlite3_exec
@@ -2997,6 +2997,11 @@ public:
 
     //! Identical to ExecuteSql, but does not log errors nor check implicit transactions
     BE_SQLITE_EXPORT DbResult TryExecuteSql(Utf8CP sql, int (*callback)(void*,int,char**,char**)=0, void* arg=0, char** errmsg=0) const;
+
+    //! Checks that @p sql holds exactly one statement. Whitespace, comments and semicolons may follow it.
+    //! Use this before passing SQL built from external names to ExecuteSql or ExecuteDdl, which run every statement in the string.
+    //! @return false if @p sql holds more than one statement or fails to prepare
+    BE_SQLITE_EXPORT bool IsSingleStatement(Utf8CP sql) const;
 
     //! return a string that describes the query plan for the specified SQL, or an error message if the SQL is invalid
     BE_SQLITE_EXPORT Utf8String ExplainQuery(Utf8CP sql, bool plan=true) const;

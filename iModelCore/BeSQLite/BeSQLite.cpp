@@ -1967,6 +1967,34 @@ DbResult Db::TryExecuteSql(Utf8CP sql, int (*callback)(void*,int,CharP*,CharP*),
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool Db::IsSingleStatement(Utf8CP sql) const
+    {
+    // Same loop sqlite3_exec uses: a prepare that yields no statement means only whitespace or comments were consumed.
+    int statementCount = 0;
+    Utf8CP remaining = sql;
+    while (remaining != nullptr && *remaining != 0)
+        {
+        sqlite3_stmt* stmt = nullptr;
+        Utf8CP tail = nullptr;
+        if (SQLITE_OK != sqlite3_prepare_v2(GetSqlDb(), remaining, -1, &stmt, &tail))
+            return false;
+
+        if (stmt != nullptr)
+            {
+            sqlite3_finalize(stmt);
+            if (++statementCount > 1)
+                return false;
+            }
+
+        remaining = tail;
+        }
+
+    return statementCount == 1;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String Db::ExplainQuery(Utf8CP sql, bool explainPlan) const {return m_dbFile->ExplainQuery(sql, explainPlan, false);}
 
 /*---------------------------------------------------------------------------------**//**
@@ -3277,28 +3305,25 @@ bool Db::GetColumns(bvector<Utf8String>& columns, Utf8CP tableName) const
     columns.clear();
 
     Statement stmt;
-    DbResult status;
+    DbResult status = stmt.Prepare(*this, "SELECT name FROM pragma_table_info(?1, ?2)");
+    if (status != BE_SQLITE_OK)
+        return false;
 
     const char* dotPosition = strchr(tableName, '.');
     if (dotPosition != nullptr)
     {
-        Utf8String tablespace(tableName, dotPosition - tableName);
-        Utf8String actualTableName(dotPosition + 1);
-
-        status = stmt.Prepare(*this, SqlPrintfString("PRAGMA %s.table_info([%s])", tablespace.c_str(), actualTableName.c_str()));
+        stmt.BindText(1, dotPosition + 1, Statement::MakeCopy::Yes);
+        stmt.BindText(2, tableName, Statement::MakeCopy::Yes, (int) (dotPosition - tableName));
     }
     else
     {
-        status = stmt.Prepare(*this, SqlPrintfString("PRAGMA table_info([%s])", tableName));
+        stmt.BindText(1, tableName, Statement::MakeCopy::No);
     }
 
-    if (status != BE_SQLITE_OK)
-        return false;
+    while ((status = stmt.Step()) == BE_SQLITE_ROW)
+        columns.push_back(stmt.GetValueText(0));
 
-    while (stmt.Step() == BE_SQLITE_ROW)
-        columns.push_back(stmt.GetValueText(1));
-
-    return true;
+    return status == BE_SQLITE_DONE;
 }
 
 
