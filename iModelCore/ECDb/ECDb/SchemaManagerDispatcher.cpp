@@ -2470,11 +2470,20 @@ BentleyStatus MainSchemaManager::PurgeOrphanTables(SchemaImportContext& ctx) con
         ctx.GetOptions(), SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade);
     for (Utf8StringCR name : tablesToDrop)
         {
+        // Names come from ec_Table and may predate identifier validation, so the statement gets checked instead.
+        SqlPrintfString dropTableSql("DROP TABLE [%s]", name.c_str());
+        if (!m_ecdb.IsSingleStatement(dropTableSql))
+            {
+            LOG.errorv("Refused to drop table because the statement does not prepare as exactly one statement: %s", dropTableSql.GetUtf8CP());
+            return ERROR;
+            }
+
         // The upgrade path owns the resulting schema changeset, so its DROP has to be tracked just
         // like CREATE TABLE and ALTER TABLE. Other callers retain the existing arbitrary-DDL refusal.
+        // DropTable runs "DROP TABLE <arg>", so passing the bracketed name runs the statement checked above.
         const auto rc = isDataTransformUpgrade
-            ? m_ecdb.GetImpl().ExecuteSingleDDLStatement(SqlPrintfString("DROP TABLE [%s]", name.c_str()).GetUtf8CP())
-            : m_ecdb.DropTable(name.c_str());
+            ? m_ecdb.GetImpl().ExecuteDDL(dropTableSql)
+            : m_ecdb.DropTable(SqlPrintfString("[%s]", name.c_str()));
         if (rc != BE_SQLITE_OK)
             {
             BeAssert(false && "failed to drop a table");

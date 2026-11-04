@@ -3894,6 +3894,52 @@ TEST_F(DbMappingTestFixture, CustomAttributeSqlIdentifiersAreValidated)
 //---------------------------------------------------------------------------------------
 // @bsiMethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, ExistingIndexNameIsNotValidatedAgain)
+    {
+    // Files written before identifier validation may hold index names it would reject. Updating their schema must keep working.
+    Utf8CP schemaTemplate = R"xml(<?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+            <ECEntityClass typeName="TestClass">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <DbIndexList xmlns="ECDbMap.02.00.00">
+                        <Indexes>
+                            <DbIndex>
+                                <Name>%s</Name>
+                                <IsUnique>False</IsUnique>
+                                <Properties>
+                                    <string>Identifier</string>
+                                </Properties>
+                            </DbIndex>
+                        </Indexes>
+                    </DbIndexList>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Identifier" typeName="string" />
+                %s
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ASSERT_EQ(SUCCESS, SetupECDb("existing_index_name.ecdb", SchemaItem(Utf8PrintfString(schemaTemplate, "01.00.00", "ix_ts_TestClass_Identifier", ""))));
+    ASSERT_TRUE(GetHelper().IndexExists("ix_ts_TestClass_Identifier"));
+
+    // Rename the index to a name the current validation rejects, as an older file could hold it
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("UPDATE main.ec_Index SET Name='ix-legacy' WHERE Name='ix_ts_TestClass_Identifier'"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("UPDATE main.ec_CustomAttribute SET Instance=REPLACE(Instance, 'ix_ts_TestClass_Identifier', 'ix-legacy')"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("DROP INDEX ix_ts_TestClass_Identifier; CREATE INDEX [ix-legacy] ON ts_TestClass(Identifier)"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(Utf8PrintfString(schemaTemplate, "01.00.01", "ix-legacy", R"xml(<ECProperty propertyName="Name" typeName="string" />)xml"))));
+    EXPECT_TRUE(GetHelper().IndexExists("ix-legacy"));
+    EXPECT_FALSE(GetHelper().IndexExists("ix_ts_TestClass_Identifier"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, ECPropertyCATests)
     {
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
