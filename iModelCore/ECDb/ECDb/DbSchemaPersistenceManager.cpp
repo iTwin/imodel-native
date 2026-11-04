@@ -767,12 +767,11 @@ BentleyStatus DbSchemaPersistenceManager::RunPragmaTableInfo(std::vector<SqliteC
 
     colInfos.clear();
 
-    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement("SELECT cid, name, type, \"notnull\", dflt_value, pk FROM pragma_table_info(?1, ?2)");
+    // The table-valued pragma_table_info() can be shadowed by a table of that name, so this uses the PRAGMA statement.
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(SqlPrintfString("PRAGMA \"%w\".table_info(\"%w\")", tableSpace, tableName.c_str()).GetUtf8CP());
     if (stmt == nullptr)
         return ERROR;
 
-    stmt->BindText(1, tableName, Statement::MakeCopy::No);
-    stmt->BindText(2, tableSpace, Statement::MakeCopy::No);
     while (stmt->Step() == BE_SQLITE_ROW)
         {
         BeAssert(BeStringUtilities::StricmpAscii(stmt->GetColumnName(1), "name") == 0);

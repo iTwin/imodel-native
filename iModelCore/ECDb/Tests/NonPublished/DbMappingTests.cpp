@@ -3786,6 +3786,8 @@ TEST_F(DbMappingTestFixture, CustomAttributeSqlIdentifiersAreValidated)
         </ECSchema>)xml";
 
     expectAccepted("identifiers_existingtable.ecdb", Utf8PrintfString(schemaTemplate, "te_Gadget", "Id", "Label"), createExistingTableSql);
+    // A table with this name shadows the table-valued pragma_table_info()
+    expectAccepted("identifiers_existingtable_shadow.ecdb", Utf8PrintfString(schemaTemplate, "te_Gadget", "Id", "Label"), Utf8PrintfString("%s; CREATE TABLE pragma_table_info(x)", createExistingTableSql).c_str());
     expectRejected("identifiers_existingtable_tablename.ecdb", Utf8PrintfString(schemaTemplate, quotePayload, "Id", "Label"), createExistingTableSql);
     expectRejected("identifiers_existingtable_idcolumn.ecdb", Utf8PrintfString(schemaTemplate, "te_Gadget", bracketPayload, "Label"), createExistingTableSql);
     expectRejected("identifiers_existingtable_columnname.ecdb", Utf8PrintfString(schemaTemplate, "te_Gadget", "Id", bracketPayload), createExistingTableSql);
