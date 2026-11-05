@@ -105,35 +105,6 @@ BentleyStatus DbUtilities::GetTableSpaces(std::vector<Utf8String>& tableSpaces, 
 // @bsimethod
 //---------------------------------------------------------------------------------------
 //static
-Utf8String DbUtilities::QuoteIdentifier(Utf8StringCR name)
-    {
-    return Utf8String(SqlPrintfString("\"%w\"", name.c_str()).GetUtf8CP());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-//static
-bool DbUtilities::IsSafeSqlIdentifier(Utf8StringCR name)
-    {
-    if (name.empty() || (name[0] >= '0' && name[0] <= '9'))
-        return false;
-
-    for (Utf8Char c : name)
-        {
-        const bool isAsciiAlphaNumeric = (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_';
-        const bool isNonAsciiUtf8Byte = (static_cast<unsigned char>(c) & 0x80) != 0;
-        if (!isAsciiAlphaNumeric && !isNonAsciiUtf8Byte)
-            return false;
-        }
-
-    return true;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-//static
 bool DbUtilities::TableSpaceExists(ECDbCR ecdb, Utf8CP tableSpace)
     {
     BeAssert(!Utf8String::IsNullOrEmpty(tableSpace));

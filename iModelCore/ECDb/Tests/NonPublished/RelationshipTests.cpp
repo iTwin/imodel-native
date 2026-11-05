@@ -2262,10 +2262,10 @@ TEST_F(RelationshipMappingTestFixture, NotNullConstraintsOnFkColumns)
     Utf8String ddl = GetHelper().GetDdl("ts_B");
     ASSERT_FALSE(ddl.empty());
 
-    ASSERT_TRUE(ddl.ContainsI("\"AId_Rel0NId\" INTEGER,")) << "relationship classes with nav props> Actual DDL: " << ddl.c_str();
-    ASSERT_TRUE(ddl.ContainsI("\"AId_Rel1NId\" INTEGER NOT NULL,")) << "relationship classes with nav props> Actual DDL: " << ddl.c_str();
-    ASSERT_TRUE(ddl.ContainsI("\"AId_RelN0Id\" INTEGER,")) << "relationship classes with nav props> Actual DDL: " << ddl.c_str();
-    ASSERT_TRUE(ddl.ContainsI("\"AId_RelN1Id\" INTEGER NOT NULL,")) << "relationship classes with nav props> Actual DDL: " << ddl.c_str();
+    ASSERT_TRUE(ddl.ContainsI("[AId_Rel0NId] INTEGER,")) << "relationship classes with nav props> Actual DDL: " << ddl.c_str();
+    ASSERT_TRUE(ddl.ContainsI("[AId_Rel1NId] INTEGER NOT NULL,")) << "relationship classes with nav props> Actual DDL: " << ddl.c_str();
+    ASSERT_TRUE(ddl.ContainsI("[AId_RelN0Id] INTEGER,")) << "relationship classes with nav props> Actual DDL: " << ddl.c_str();
+    ASSERT_TRUE(ddl.ContainsI("[AId_RelN1Id] INTEGER NOT NULL,")) << "relationship classes with nav props> Actual DDL: " << ddl.c_str();
 
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("notnullconstraintsonfkcolumns.ecdb", SchemaItem(
@@ -2335,10 +2335,10 @@ TEST_F(RelationshipMappingTestFixture, NotNullConstraintsOnFkColumns)
     ddl = GetHelper().GetDdl("ts_B");
     ASSERT_FALSE(ddl.empty());
 
-    ASSERT_TRUE(ddl.ContainsI("\"A1Id\" INTEGER NOT NULL,")) << "relationship classes with custom fk names> Actual DDL: " << ddl.c_str();
-    ASSERT_TRUE(ddl.ContainsI("\"A2Id\" INTEGER,")) << "relationship classes with custom fk names> Actual DDL: " << ddl.c_str();
-    ASSERT_TRUE(ddl.ContainsI("\"A3Id\" INTEGER,")) << "relationship classes with custom fk names> Actual DDL: " << ddl.c_str();
-    ASSERT_TRUE(ddl.ContainsI("\"A4Id\" INTEGER NOT NULL,")) << "relationship classes with custom fk names> Actual DDL: " << ddl.c_str();
+    ASSERT_TRUE(ddl.ContainsI("[A1Id] INTEGER NOT NULL,")) << "relationship classes with custom fk names> Actual DDL: " << ddl.c_str();
+    ASSERT_TRUE(ddl.ContainsI("[A2Id] INTEGER,")) << "relationship classes with custom fk names> Actual DDL: " << ddl.c_str();
+    ASSERT_TRUE(ddl.ContainsI("[A3Id] INTEGER,")) << "relationship classes with custom fk names> Actual DDL: " << ddl.c_str();
+    ASSERT_TRUE(ddl.ContainsI("[A4Id] INTEGER NOT NULL,")) << "relationship classes with custom fk names> Actual DDL: " << ddl.c_str();
 
 
 
@@ -2378,7 +2378,7 @@ TEST_F(RelationshipMappingTestFixture, NotNullConstraintsOnFkColumns)
     ddl = GetHelper().GetDdl("ts_B");
     ASSERT_FALSE(ddl.empty());
 
-    ASSERT_TRUE(ddl.ContainsI("\"AId\" INTEGER,")) << "(1,1) rel with dropped NOT NULL constraint> Actual DDL: " << ddl.c_str();
+    ASSERT_TRUE(ddl.ContainsI("[AId] INTEGER,")) << "(1,1) rel with dropped NOT NULL constraint> Actual DDL: " << ddl.c_str();
 
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("notnullconstraintsonfkcolumns.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
@@ -2416,7 +2416,7 @@ TEST_F(RelationshipMappingTestFixture, NotNullConstraintsOnFkColumns)
 
     ddl = GetHelper().GetDdl("ts_Base");
     ASSERT_FALSE(ddl.empty());
-    ASSERT_TRUE(ddl.ContainsI("\"AId\" INTEGER,")) << "Logical FK> Actual DDL: " << ddl.c_str();
+    ASSERT_TRUE(ddl.ContainsI("[AId] INTEGER,")) << "Logical FK> Actual DDL: " << ddl.c_str();
 
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("notnullconstraintsonfkcolumns.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
@@ -2454,7 +2454,7 @@ TEST_F(RelationshipMappingTestFixture, NotNullConstraintsOnFkColumns)
 
     ddl = GetHelper().GetDdl("ts_Base");
     ASSERT_FALSE(ddl.empty());
-    ASSERT_TRUE(ddl.ContainsI("\"AId\" INTEGER,")) << "Logical FK with dropped not null constraint> Actual DDL: " << ddl.c_str();
+    ASSERT_TRUE(ddl.ContainsI("[AId] INTEGER,")) << "Logical FK with dropped not null constraint> Actual DDL: " << ddl.c_str();
     }
 
 

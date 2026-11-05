@@ -81,7 +81,7 @@ BentleyStatus ClassMappingInfo::InitializeFromSchema()
 
         if (!tableName.IsNull())
             {
-            if (!DbUtilities::IsSafeSqlIdentifier(tableName.Value()))
+            if (!ECNameValidation::IsValidName(tableName.Value().c_str()))
                 {
                 m_ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0750,
                     "Failed to map ECClass %s. The TableName '%s' in its ClassMap custom attribute is invalid. It may only contain letters, digits and underscores and must not start with a digit.", m_ecClass.GetFullName(), tableName.Value().c_str());
@@ -97,7 +97,7 @@ BentleyStatus ClassMappingInfo::InitializeFromSchema()
 
         if (!idColName.IsNull())
             {
-            if (!DbUtilities::IsSafeSqlIdentifier(idColName.Value()))
+            if (!ECNameValidation::IsValidName(idColName.Value().c_str()))
                 {
                 m_ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0750,
                     "Failed to map ECClass %s. The ECInstanceIdColumn '%s' in its ClassMap custom attribute is invalid. It may only contain letters, digits and underscores and must not start with a digit.", m_ecClass.GetFullName(), idColName.Value().c_str());

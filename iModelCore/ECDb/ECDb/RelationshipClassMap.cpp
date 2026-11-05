@@ -1142,7 +1142,7 @@ ClassMappingStatus RelationshipClassLinkTableMap::CreateConstraintPropMaps(Schem
     {
     auto validateColumnName = [&] (Utf8StringCR name, Utf8CP caPropertyName)
         {
-        if (name.empty() || DbUtilities::IsSafeSqlIdentifier(name))
+        if (name.empty() || ECNameValidation::IsValidName(name.c_str()))
             return true;
 
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0750,

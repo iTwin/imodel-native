@@ -2263,7 +2263,7 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
             auto physicalIndex = physicalIndexes.find(index.GetName());
             if (physicalIndex != physicalIndexes.end() && !physicalIndex->second.empty())
                 {
-                if (!DbSchemaPersistenceManager::NormalizeDdlForComparison(physicalIndex->second).EqualsIAscii(DbSchemaPersistenceManager::NormalizeDdlForComparison(ddl)))
+                if (!physicalIndex->second.EqualsIAscii(ddl))
                     {
                     LOG.debugv("Schema Import> Recreating index '%s'. The index definition has changed.", index.GetName().c_str());
                     if (!ctx.IsSemanticRebasing())
@@ -2274,7 +2274,7 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
                         }
 
                     // Drop the existing index as its defintion has modified and need to be recreated.
-                    if (BE_SQLITE_OK != m_ecdb.GetImpl().ExecuteDDL(SqlPrintfString("DROP INDEX IF EXISTS \"%w\"", index.GetName().c_str())))
+                    if (BE_SQLITE_OK != m_ecdb.GetImpl().ExecuteDDL(SqlPrintfString("DROP INDEX IF EXISTS [%s]", index.GetName().c_str())))
                         return ERROR;
 
                     if (SUCCESS != DbSchemaPersistenceManager::CreateIndex(m_ecdb, index, ddl))
@@ -2294,7 +2294,7 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
             else
                 {
                 // This is for safety.
-                if (BE_SQLITE_OK != m_ecdb.GetImpl().ExecuteDDL(SqlPrintfString("DROP INDEX IF EXISTS \"%w\"", index.GetName().c_str())))
+                if (BE_SQLITE_OK != m_ecdb.GetImpl().ExecuteDDL(SqlPrintfString("DROP INDEX IF EXISTS [%s]", index.GetName().c_str())))
                     return ERROR;
 
                 LOG.debugv("Schema Import> Creating Index '%s'.", index.GetName().c_str());
@@ -2336,7 +2336,7 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
         for (auto const& physicalIndex : physicalIndexes)
             {
             LOG.debugv("Schema Import> Dropping index '%s'. It is not part of the current mapped schema.", physicalIndex.first.c_str());
-            if (BE_SQLITE_OK != m_ecdb.GetImpl().ExecuteDDL(SqlPrintfString("DROP INDEX IF EXISTS \"%w\"", physicalIndex.first.c_str())))
+            if (BE_SQLITE_OK != m_ecdb.GetImpl().ExecuteDDL(SqlPrintfString("DROP INDEX IF EXISTS [%s]", physicalIndex.first.c_str())))
                 return ERROR;
             }
         }
@@ -2472,10 +2472,9 @@ BentleyStatus MainSchemaManager::PurgeOrphanTables(SchemaImportContext& ctx) con
         {
         // The upgrade path owns the resulting schema changeset, so its DROP has to be tracked just
         // like CREATE TABLE and ALTER TABLE. Other callers retain the existing arbitrary-DDL refusal.
-        const Utf8String quotedName = DbUtilities::QuoteIdentifier(name);
         const auto rc = isDataTransformUpgrade
-            ? m_ecdb.GetImpl().ExecuteDDL(SqlPrintfString("DROP TABLE %s", quotedName.c_str()))
-            : m_ecdb.DropTable(quotedName.c_str());
+            ? m_ecdb.GetImpl().ExecuteDDL(SqlPrintfString("DROP TABLE [%s]", name.c_str()).GetUtf8CP())
+            : m_ecdb.DropTable(name.c_str());
         if (rc != BE_SQLITE_OK)
             {
             BeAssert(false && "failed to drop a table");

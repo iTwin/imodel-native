@@ -883,8 +883,8 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
             ASSERT_FALSE(ddl.ContainsI(relClassIdColumnName)) << "Table: " << tableName << " Column: " << relClassIdColumnName;
         else
             {
-            Utf8String columnDdl("\"");
-            columnDdl.append(relClassIdColumnName).append("\" INTEGER");
+            Utf8String columnDdl("[");
+            columnDdl.append(relClassIdColumnName).append("] INTEGER");
             if (expectedNotNull)
                 columnDdl.append(" NOT NULL");
 

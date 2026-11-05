@@ -3293,10 +3293,10 @@ bool Db::GetColumns(bvector<Utf8String>& columns, Utf8CP tableName) const
     if (status != BE_SQLITE_OK)
         return false;
 
-    while ((status = stmt.Step()) == BE_SQLITE_ROW)
+    while (stmt.Step() == BE_SQLITE_ROW)
         columns.push_back(stmt.GetValueText(1));
 
-    return status == BE_SQLITE_DONE;
+    return true;
 }
 
 

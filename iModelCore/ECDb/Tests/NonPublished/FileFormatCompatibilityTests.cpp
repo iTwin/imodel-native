@@ -1603,7 +1603,7 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_UpgradedFile)
                 EXPECT_STREQ("CREATE TABLE ec_Schema(Id INTEGER PRIMARY KEY,Name TEXT UNIQUE NOT NULL COLLATE NOCASE,DisplayLabel TEXT,Description TEXT,Alias TEXT UNIQUE NOT NULL COLLATE NOCASE,VersionDigit1 INTEGER NOT NULL,VersionDigit2 INTEGER NOT NULL,VersionDigit3 INTEGER NOT NULL, OriginalECXmlVersionMajor INTEGER, OriginalECXmlVersionMinor INTEGER)",
                              actualDdl);
             else if (BeStringUtilities::StricmpAscii(benchmarkName,"ix_bis_EmbeddedFileLink_Name") == 0)    // Special case : Partial index condition was added to upgraded profile version (4002) for index "ix_bis_EmbeddedFileLink_Name"
-                EXPECT_STREQ("CREATE INDEX \"ix_bis_EmbeddedFileLink_Name\" ON \"bis_InformationReferenceElement\"(\"js1\") WHERE ECClassId=583", actualDdl);
+                EXPECT_STREQ("CREATE INDEX [ix_bis_EmbeddedFileLink_Name] ON [bis_InformationReferenceElement]([js1]) WHERE ECClassId=583", actualDdl);
             else
                 EXPECT_STREQ(benchmarkDdl, actualDdl) << "DB object in upgraded file has different DDL than in benchmark file: " << benchmarkName;
 

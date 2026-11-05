@@ -1531,7 +1531,15 @@ public:
     };
 
 //=======================================================================================
-//! Wraps sqlite3_mprintf. Adds convenience that destructor frees memory.
+//! Formats SQL text with sqlite3_mprintf and frees it on destruction.
+//! Besides standard printf conversions it supports SQL escaping, each safe only inside its own quotes:
+//! - '%q' doubles single quotes, for a value inside a string literal. The format supplies the quotes.
+//! - %Q does the same and adds the quotes itself. A null pointer becomes NULL.
+//! - "%w" doubles double quotes, for a name inside a double-quoted identifier. The format supplies the quotes.
+//! Use '%q' for values and "%w" for names; each quote style means something different to SQLite, even when escaping makes both safe.
+//! %s inserts text unchanged; use it only for trusted text. No conversion makes a name safe inside [...].
+//! Prefer binding values as parameters. Utf8PrintfString and Utf8String::Sprintf do not support these conversions.
+//! See "Writing SQL" in the repository README.
 // @bsiclass
 //=======================================================================================
 struct SqlPrintfString final

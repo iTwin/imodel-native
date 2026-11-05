@@ -308,17 +308,13 @@ BentleyStatus DerivedDbStructures::AddCurrentTimeStampTriggers(MainSchemaManager
             Utf8String triggerName;
             triggerName.Sprintf("%s_CurrentTimeStamp", table->GetName().c_str());
 
-            const Utf8String quotedTable = DbUtilities::QuoteIdentifier(table->GetName());
-            const Utf8String quotedColumn = DbUtilities::QuoteIdentifier(column->GetName());
-            const Utf8String quotedInstanceIdColumn = DbUtilities::QuoteIdentifier(instanceIdColumn->GetName());
-
             Utf8String body;
-            body.Sprintf("BEGIN UPDATE %s SET %s=" CURRENTIMESTAMP_SQLEXP " WHERE %s=new.%s; END",
-                         quotedTable.c_str(), quotedColumn.c_str(), quotedInstanceIdColumn.c_str(), quotedInstanceIdColumn.c_str());
+            body.Sprintf("BEGIN UPDATE [%s] SET [%s]=" CURRENTIMESTAMP_SQLEXP " WHERE [%s]=new.[%s]; END",
+                         table->GetName().c_str(), column->GetName().c_str(), instanceIdColumn->GetName().c_str(), instanceIdColumn->GetName().c_str());
 
             Utf8String whenCondition;
-            whenCondition.Sprintf("old.%s=new.%s AND old.%s!=" CURRENTIMESTAMP_SQLEXP,
-                                  quotedColumn.c_str(), quotedColumn.c_str(), quotedColumn.c_str());
+            whenCondition.Sprintf("old.[%s]=new.[%s] AND old.[%s]!=" CURRENTIMESTAMP_SQLEXP,
+                                  column->GetName().c_str(), column->GetName().c_str(), column->GetName().c_str());
 
             // AddTrigger is a no-op if a trigger of that name is already on the table.
             if (SUCCESS != const_cast<DbTable*>(table)->AddTrigger(triggerName, DbTrigger::Type::After, whenCondition, body))

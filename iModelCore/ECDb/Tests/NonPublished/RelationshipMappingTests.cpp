@@ -1082,8 +1082,8 @@ TEST_F(RelationshipMappingTestFixture, IdenticalFKRelsWithDifferentConstraints)
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDbForCurrentTest());
     ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schemaXml));
 
-    EXPECT_STREQ(GetHelper().GetDdl("ts_BaseTPH").c_str(), "CREATE TABLE \"ts_BaseTPH\"(\"Id\" INTEGER PRIMARY KEY, \"ECClassId\" INTEGER NOT NULL, \"ps1\" BLOB, \"ps2\" BLOB, \"ps3\" BLOB, \"NavPropId\" INTEGER, "
-        "FOREIGN KEY(\"NavPropId\") REFERENCES \"ts_BaseTPH\"(\"Id\") ON DELETE RESTRICT, FOREIGN KEY(\"NavPropId\") REFERENCES \"ts_BaseTPH\"(\"Id\") ON DELETE CASCADE)");
+    EXPECT_STREQ(GetHelper().GetDdl("ts_BaseTPH").c_str(), "CREATE TABLE [ts_BaseTPH]([Id] INTEGER PRIMARY KEY, [ECClassId] INTEGER NOT NULL, [ps1] BLOB, [ps2] BLOB, [ps3] BLOB, [NavPropId] INTEGER, "
+        "FOREIGN KEY([NavPropId]) REFERENCES [ts_BaseTPH]([Id]) ON DELETE RESTRICT, FOREIGN KEY([NavPropId]) REFERENCES [ts_BaseTPH]([Id]) ON DELETE CASCADE)");
     }
 
 //---------------------------------------------------------------------------------------

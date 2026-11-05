@@ -743,7 +743,7 @@ BentleyStatus DbMappingManager::Classes::MapIndexes(SchemaImportContext& importC
         {
         auto indexName = indexCA.GetName();
         // Names of indexes that already exist were accepted by an earlier import and are not checked again.
-        if (existingIndexes.find(indexName) == existingIndexes.end() && !DbUtilities::IsSafeSqlIdentifier(indexName))
+        if (existingIndexes.find(indexName) == existingIndexes.end() && !ECNameValidation::IsValidName(indexName.c_str()))
             {
             importCtx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0750,
                 "Failed to map ECClass %s. The index name '%s' in its DbIndexList custom attribute is invalid. It may only contain letters, digits and underscores and must not start with a digit.",
@@ -796,7 +796,7 @@ BentleyStatus DbMappingManager::Classes::MapIndexes(SchemaImportContext& importC
             const auto foundIndex = *itr;
             table.RemoveIndexDef(foundIndex);
 
-            if (BE_SQLITE_OK != importCtx.GetECDb().GetImpl().ExecuteDDL(SqlPrintfString("DROP INDEX IF EXISTS \"%w\"", foundIndex.c_str())))
+            if (BE_SQLITE_OK != importCtx.GetECDb().GetImpl().ExecuteDDL(SqlPrintfString("DROP INDEX IF EXISTS [%s]", foundIndex.c_str())))
                 return ERROR;
 
             if (BE_SQLITE_OK != importCtx.GetECDb().ExecuteSql(SqlPrintfString("DELETE FROM main." TABLE_Index " WHERE Name = '%s'", foundIndex.c_str())))
@@ -1004,7 +1004,7 @@ BentleyStatus DbMappingManager::Classes::DetermineColumnInfoForPrimitiveProperty
 
         if (!colNameFromCA.IsNull())
             {
-            if (!DbUtilities::IsSafeSqlIdentifier(colNameFromCA.Value()))
+            if (!ECNameValidation::IsValidName(colNameFromCA.Value().c_str()))
                 {
                 issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0750,
                     "Failed to map ECClass '%s': The ColumnName '%s' in the PropertyMap custom attribute of its ECProperty '%s' is invalid. It may only contain letters, digits and underscores and must not start with a digit.",
