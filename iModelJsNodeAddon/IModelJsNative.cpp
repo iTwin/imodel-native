@@ -78,6 +78,7 @@ struct FileProps {
 
 template<typename T_Db> struct SQLiteOps {
     virtual T_Db* _GetMyDb() = 0;
+    virtual void _CheckCanModify(NapiInfoCR) {}
 
     static FileProps getEmbedFileProps(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, optObj);
@@ -115,6 +116,7 @@ template<typename T_Db> struct SQLiteOps {
     }
 
     T_Db& GetWritableDb(NapiInfoCR info) {
+        _CheckCanModify(info);
         auto& db = GetOpenedDb(info);
         if (db.IsReadonly())
             THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db is not open for write", DgnDbStatus::NotOpenForWrite);
@@ -123,6 +125,7 @@ template<typename T_Db> struct SQLiteOps {
     }
 
     void EmbedFile(NapiInfoCR info) {
+        _CheckCanModify(info);
         Db& db = GetOpenedDb(info);
         auto props = getEmbedFileArg(info);
         DbResult stat;
@@ -164,6 +167,7 @@ template<typename T_Db> struct SQLiteOps {
     }
 
     void ReplaceEmbeddedFile(NapiInfoCR info) {
+        _CheckCanModify(info);
         Db& db = GetOpenedDb(info);
         auto props = getEmbedFileArg(info);
         auto stat = db.EmbeddedFiles().Replace(props.m_name.c_str(), props.m_localFileName.c_str(), &props.m_date);
@@ -173,6 +177,7 @@ template<typename T_Db> struct SQLiteOps {
     }
 
     void RemoveEmbeddedFile(NapiInfoCR info) {
+        _CheckCanModify(info);
         Db& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_STRING(0, name);
         auto stat = db.EmbeddedFiles().Remove(name.c_str());
@@ -214,6 +219,7 @@ template<typename T_Db> struct SQLiteOps {
 
     // save a property to the be_prop table
     void SaveFileProperty(NapiInfoCR info) {
+        _CheckCanModify(info);
         if (info.Length() < 2)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "saveFileProperty requires 2 arguments", IModelJsNativeErrorKey::BadArg);
 
@@ -272,6 +278,7 @@ template<typename T_Db> struct SQLiteOps {
     }
 
     void EmbedFontFile(NapiInfoCR info) {
+        _CheckCanModify(info);
         REQUIRE_ARGUMENT_INTEGER(0, id);
         REQUIRE_ARGUMENT_ANY_OBJ(1, facesObj);
         REQUIRE_ARGUMENT_ANY_OBJ(2, dataObj);
@@ -333,6 +340,7 @@ template<typename T_Db> struct SQLiteOps {
     }
 
     void Vacuum(NapiInfoCR info) {
+        _CheckCanModify(info);
         Db& db = GetOpenedDb(info);
         int pageSize = 0;
         Utf8String into;
@@ -348,12 +356,14 @@ template<typename T_Db> struct SQLiteOps {
     }
 
     void Analyze(NapiInfoCR info) {
+        _CheckCanModify(info);
         Db& db = GetOpenedDb(info);
         if (const auto status = db.Analyze(); status != BE_SQLITE_OK)
             JsInterop::throwSqlResult("error analyzing", db.GetDbFileName(), status);
     }
 
     void EnableWalMode(Napi::CallbackInfo const& info) {
+        _CheckCanModify(info);
         Db& db = GetOpenedDb(info);
         OPTIONAL_ARGUMENT_BOOL(0, yesNo, true);
         auto status = db.EnableWalMode(yesNo);
@@ -362,6 +372,7 @@ template<typename T_Db> struct SQLiteOps {
     }
 
     void SetAutoCheckpointThreshold(Napi::CallbackInfo const& info) {
+        _CheckCanModify(info);
         Db& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_INTEGER(0, frames);
         auto status = db.SetAutoCheckpointThreshold(frames);
@@ -369,6 +380,7 @@ template<typename T_Db> struct SQLiteOps {
             JsInterop::throwSqlResult("error setting autoCheckpoint threshold", db.GetDbFileName(), status);
     }
     void PerformCheckpoint(Napi::CallbackInfo const& info) {
+        _CheckCanModify(info);
         Db& db = GetOpenedDb(info);
         OPTIONAL_ARGUMENT_INTEGER(0, mode, 3);
         DbResult status = db.PerformCheckpoint((WalCheckpointMode)mode);
@@ -377,6 +389,7 @@ template<typename T_Db> struct SQLiteOps {
     }
 
     void RestartDefaultTxn(NapiInfoCR info) {
+        _CheckCanModify(info);
         GetOpenedDb(info).RestartDefaultTxn();
     }
 
@@ -1018,7 +1031,12 @@ private:
     DEFINE_CONSTRUCTOR
     Db m_db;
     RefCountedPtr<SQLiteDbChangeTracker> m_changeTracker;
+    bool m_inApplyChangeset = false;
     Db* _GetMyDb() override { return &m_db; }
+    void _CheckCanModify(NapiInfoCR info) override {
+        if (m_inApplyChangeset)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "cannot modify or close database while applying a changeset", IModelJsNativeErrorKey::BadArg);
+    }
 
 public:
     SQLiteDb(NapiInfoCR info) : Napi::ObjectWrap<SQLiteDb>(info) {}
@@ -1046,6 +1064,7 @@ public:
     }
 
     void CreateDb(NapiInfoCR info) {
+        _CheckCanModify(info);
         REQUIRE_ARGUMENT_STRING(0, dbName);
         Db::CreateParams params;
         addContainerParams(Value(), dbName, params, info[1]);
@@ -1063,6 +1082,7 @@ public:
     }
 
     void OpenDb(NapiInfoCR info) {
+        _CheckCanModify(info);
         REQUIRE_ARGUMENT_STRING(0, dbName);
         Db::OpenParams params(Db::OpenMode::Readonly);
         if (info[1].IsObject()) {
@@ -1088,10 +1108,11 @@ public:
         }
     }
 
-    void CloseDb(NapiInfoCR info) { CloseDbIfOpen(false);}
-    void Dispose(NapiInfoCR info) { CloseDbIfOpen(false);}
+    void CloseDb(NapiInfoCR info) { _CheckCanModify(info); CloseDbIfOpen(false);}
+    void Dispose(NapiInfoCR info) { _CheckCanModify(info); CloseDbIfOpen(false);}
 
     void SaveChanges(NapiInfoCR info) {
+        _CheckCanModify(info);
         auto& db = GetOpenedDb(info);
         DbResult status = db.SaveChanges();
         if (status != BE_SQLITE_OK)
@@ -1099,6 +1120,7 @@ public:
     }
 
     void AbandonChanges(NapiInfoCR info) {
+        _CheckCanModify(info);
         auto& db = GetOpenedDb(info);
         DbResult status = db.AbandonChanges();
         if (status != BE_SQLITE_OK)
@@ -1161,28 +1183,11 @@ public:
             JsInterop::throwSqlResult("error writing changeset file", filePath.GetNameUtf8().c_str(), stat);
     }
 
-    //! Apply a raw sqlite changeset file (the plain, uncompressed byte stream produced by the
-    //! sqlite session extension - *not* the same format used for iModel changesets) to this
-    //! SQLiteDb. Unlike DgnDb.applyChangeset, this does *not* validate any changeset header
-    //! (parentId/changesetId) against the current state of the db, and it does *not* support
-    //! DDL/schema changes (raw sqlite changesets cannot represent them) - it simply applies the
-    //! row-level changes. Any conflict encountered while applying causes the entire apply to fail.
     void ApplyChangeset(NapiInfoCR info) {
         auto& db = GetWritableDb(info);
-        REQUIRE_ARGUMENT_STRING(0, pathname);
-
-        BeFileName filePath(pathname.c_str(), BentleyCharEncoding::Utf8);
-        BeSQLite::ChangeSet changeSet;
-        auto stat = changeSet.Read(pathname);
-        if (stat != BE_SQLITE_OK)
-            JsInterop::throwSqlResult("error reading changeset file", filePath.GetNameUtf8().c_str(), stat);
-
-        // On failure, we simply throw - it is up to the caller to decide whether to abandon or save
-        // any changes applied so far.
-        auto applyArgs = BeSQLite::ApplyChangesArgs::Default().SetAbortOnAnyConflict(true);
-        stat = changeSet.ApplyChanges(db, applyArgs);
-        if (stat != BE_SQLITE_OK)
-            BeNapi::ThrowJsException(info.Env(), "error applying changeset", (int)stat, IModelJsNativeErrorKeyHelper::GetITwinError(IModelJsNativeErrorKey::ChangesetError));
+        SQLiteDbScopeGuard applying([this]() { m_inApplyChangeset = false; });
+        m_inApplyChangeset = true;
+        JsInterop::ApplyChangeset(db, info);
     }
 
     static void Init(Napi::Env env, Napi::Object exports) {
@@ -7865,6 +7870,75 @@ public:
         return toJsString(Env(), targetId);
         }
 
+    // Sets an EC property's JSON member to null when it is missing. If the member is a struct object, does the same for its missing struct members.
+    // Uses JS null rather than BeJsValue::SetNull, which writes undefined and is dropped by JSON.stringify.
+    static void SetMissingPropertyToNull(Napi::Object json, ECN::ECPropertyCR ecProperty)
+        {
+        Utf8String memberName(ecProperty.GetName());
+        ECN::ECJsonUtilities::LowerFirstChar(memberName); // matches JsonEcInstanceWriter::MemberNameCasing::LowerFirstChar used by DgnElement::_ToJson
+        if (!json.HasOwnProperty(memberName.c_str()))
+            {
+            json.Set(memberName.c_str(), json.Env().Null());
+            return;
+            }
+
+        ECN::StructECPropertyCP structProperty = ecProperty.GetAsStructProperty();
+        Napi::Value member = json.Get(memberName.c_str());
+        if (nullptr == structProperty || !member.IsObject() || member.IsArray())
+            return;
+
+        Napi::Object structJson = member.As<Napi::Object>();
+        for (ECN::ECPropertyCP structMember : structProperty->GetType().GetProperties(true))
+            SetMissingPropertyToNull(structJson, *structMember);
+        }
+
+    // Adds a clearing value for each member that DgnElement::ToJson omits when it is empty, so that updating an existing element with the
+    // result clears that member instead of keeping its old value. Each value is one the current update path (_FromJson) already treats as a clear.
+    static void AddExplicitClears(Napi::Env env, Napi::Object json, DgnElementCR element)
+        {
+        if (!json.HasOwnProperty(DgnElement::json_parent()))
+            json.Set(DgnElement::json_parent(), env.Null());
+
+        if (!json.HasOwnProperty(DgnElement::json_userLabel()))
+            json.Set(DgnElement::json_userLabel(), env.Null());
+
+        // _FromJson ignores a null jsonProperties, but replaces the stored value with an empty object.
+        if (!json.HasOwnProperty(DgnElement::json_jsonProperties()))
+            json.Set(DgnElement::json_jsonProperties(), Napi::Object::New(env));
+
+        // Auto-handled EC properties: _ToJson omits null values, empty arrays and empty structs.
+        ECN::ECClassCP elementClass = element.GetElementClass();
+        if (nullptr != elementClass)
+            {
+            for (ECN::ECPropertyCP ecProperty : elementClass->GetProperties(true))
+                {
+                if (ECN::ECJsonSystemNames::IsTopLevelSystemMember(ecProperty->GetName()))
+                    continue;
+
+                ElementECPropertyAccessor const accessor(element, ecProperty->GetName().c_str());
+                if (accessor.IsValid() && accessor.IsAutoHandled())
+                    SetMissingPropertyToNull(json, *ecProperty);
+                }
+            }
+
+        GeometricElementCP geometricElement = dynamic_cast<GeometricElementCP>(&element);
+        if (nullptr == geometricElement)
+            return;
+
+        if (!json.HasOwnProperty(GeometricElement::json_typeDefinition()))
+            json.Set(GeometricElement::json_typeDefinition(), env.Null());
+
+        // An empty placement object makes _FromJson store NULL origin, angles and bounding box.
+        if (!json.HasOwnProperty(GeometricElement::json_placement()))
+            json.Set(GeometricElement::json_placement(), Napi::Object::New(env));
+
+        // An empty geomBinary makes _FromJson store a NULL geometry stream and take the bounding box from the placement JSON.
+        // An empty "geom" array is rejected, and an empty builder entryArray makes _FromJson skip the placement.
+        GeometrySourceCP geometrySource = element.ToGeometrySource();
+        if (nullptr != geometrySource && !geometrySource->GetGeometryStream().HasGeometry() && !json.HasOwnProperty(GeometricElement::json_geomBinary()))
+            json.Set(GeometricElement::json_geomBinary(), Napi::Uint8Array::New(env, 0));
+        }
+
     Napi::Value CloneElement(NapiInfoCR info)
         {
         if (nullptr == m_importContext)
@@ -7872,10 +7946,12 @@ public:
 
         REQUIRE_ARGUMENT_STRING_ID(0, sourceIdStr, DgnElementId, sourceElementId);
         bool binaryGeometry = false;
+        bool explicitClears = false;
         if (!ARGUMENT_IS_EMPTY(1))
             {
             Napi::Object cloneOptions = info[1].As<Napi::Object>();
             binaryGeometry = cloneOptions.Get("binaryGeometry").ToBoolean();
+            explicitClears = cloneOptions.Get("explicitClears").ToBoolean();
             }
 
         DgnElementCPtr sourceElement = m_importContext->GetSourceDb().Elements().GetElement(sourceElementId);
@@ -7931,6 +8007,9 @@ public:
 
         if ((nullptr != geometryStream) && binaryGeometry)
             val["geomBinary"].SetBinary(geometryStream->GetData(), geometryStream->GetSize());
+
+        if (explicitClears)
+            AddExplicitClears(Env(), val, *targetElement);
 
         return val;
         }
