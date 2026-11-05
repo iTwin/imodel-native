@@ -4089,6 +4089,8 @@ void DbFunction::Context::SetResultText(Utf8CP val, int length, CopyData doCopy)
 void DbFunction::Context::SetResultZeroblob(int length){sqlite3_result_zeroblob((sqlite3_context*)this, length);}
 void DbFunction::Context::SetResultValue(DbValue val){sqlite3_result_value((sqlite3_context*)this, val.GetSqlValueP());}
 void* DbFunction::Context::GetAggregateContext(int nBytes) {return sqlite3_aggregate_context((sqlite3_context*)this, nBytes);}
+void* DbFunction::Context::GetAuxData(int arg) {return sqlite3_get_auxdata((sqlite3_context*)this, arg);}
+void DbFunction::Context::SetAuxData(int arg, void* data, void(*destroy)(void*)) {sqlite3_set_auxdata((sqlite3_context*)this, arg, data, destroy);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

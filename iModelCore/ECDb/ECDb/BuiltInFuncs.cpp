@@ -1418,99 +1418,73 @@ bool TryParseLayout(rapidjson::Document& layout, Utf8CP text)
     return !layout.Parse<rapidjson::kParseIterativeFlag>(text).HasParseError() && IsValidLayout(layout, 0);
     }
 
-//---------------------------------------------------------------------------------------
-// Layouts are constant per statement, so parsed layouts are cached per thread instead of
-// being re-parsed on every row. Returns nullptr if the layout is invalid.
-// @bsimethod
-//---------------------------------------------------------------------------------------
-rapidjson::Value const* GetCachedLayout(DbValue const& v)
+//=======================================================================================
+// The layout argument (argument 0) of struct_text and arr_text. Layouts are SQL literals, so
+// the parsed layout is kept in SQLite auxdata and parsed once per statement execution
+// instead of once per row.
+// @bsiclass
+//=======================================================================================
+struct CastLayout final
     {
-    if (v.IsNull() || v.GetValueType() != DbValueType::TextVal)
-        return nullptr;
+    private:
+        DbFunction::Context& m_ctx;
+        std::unique_ptr<rapidjson::Document> m_parsed;
+        rapidjson::Value const* m_layout = nullptr;
 
-    struct Entry
-        {
-        Utf8String m_text;
-        std::unique_ptr<rapidjson::Document> m_layout; // nullptr if invalid
-        };
+        static void Free(void* layout) { delete static_cast<rapidjson::Document*>(layout); }
 
-    static constexpr size_t s_maxEntries = 16;
-    thread_local std::vector<Entry> s_cache;
-    thread_local size_t s_next = 0;
+    public:
+        CastLayout(DbFunction::Context& ctx, DbValue const& v) : m_ctx(ctx)
+            {
+            m_layout = static_cast<rapidjson::Document const*>(ctx.GetAuxData(0));
+            if (m_layout != nullptr || v.IsNull() || v.GetValueType() != DbValueType::TextVal)
+                return;
 
-    Utf8CP text = v.GetValueText();
-    for (Entry const& e : s_cache)
-        {
-        if (e.m_text.Equals(text))
-            return e.m_layout.get();
-        }
+            auto parsed = std::make_unique<rapidjson::Document>();
+            if (!TryParseLayout(*parsed, v.GetValueText()))
+                return;
 
-    auto layout = std::make_unique<rapidjson::Document>();
-    if (!TryParseLayout(*layout, text))
-        layout = nullptr;
+            m_parsed = std::move(parsed);
+            m_layout = m_parsed.get();
+            }
 
-    Entry entry {Utf8String(text), std::move(layout)};
-    rapidjson::Value const* result = entry.m_layout.get();
-    if (s_cache.size() < s_maxEntries)
-        s_cache.push_back(std::move(entry));
-    else
-        {
-        s_cache[s_next] = std::move(entry);
-        s_next = (s_next + 1) % s_maxEntries;
-        }
+        // SQLite may free auxdata right away, so the layout is only handed over once it is no longer used.
+        ~CastLayout()
+            {
+            if (m_parsed != nullptr)
+                m_ctx.SetAuxData(0, m_parsed.release(), Free);
+            }
 
-    return result;
-    }
+        //! Returns nullptr if the layout is invalid
+        rapidjson::Value const* Get() const { return m_layout; }
+    };
 
 //---------------------------------------------------------------------------------------
-// text_pt is called once per coordinate with the same text, so the last parsed point is
-// cached per thread. Returns false if the text is not a valid point of the given dimension.
+// Returns false if the text is not a valid point of the given dimension.
 // @bsimethod
 //---------------------------------------------------------------------------------------
 bool ParsePointText(Utf8CP text, int dims, double (&coords)[3])
     {
-    thread_local Utf8String s_text;
-    thread_local int s_dims = 0;
-    thread_local bool s_valid = false;
-    thread_local double s_coords[3] = {0, 0, 0};
-
-    if (s_dims == dims && s_text.Equals(text))
-        {
-        std::copy(std::begin(s_coords), std::end(s_coords), std::begin(coords));
-        return s_valid;
-        }
-
-    bool valid = false;
-    double parsed[3] = {0, 0, 0};
     rapidjson::Document doc;
-    if (!doc.Parse<rapidjson::kParseIterativeFlag>(text).HasParseError() && doc.IsObject())
+    if (doc.Parse<rapidjson::kParseIterativeFlag>(text).HasParseError() || !doc.IsObject())
+        return false;
+
+    // the whole point is invalid if any required coordinate is invalid
+    static Utf8CP const s_upper[] = {"X", "Y", "Z"};
+    static Utf8CP const s_lower[] = {"x", "y", "z"};
+    for (int i = 0; i < dims; i++)
         {
-        // the whole point is invalid if any required coordinate is invalid
-        static Utf8CP const s_upper[] = {"X", "Y", "Z"};
-        static Utf8CP const s_lower[] = {"x", "y", "z"};
-        valid = true;
-        for (int i = 0; i < dims; i++)
-            {
-            auto it = doc.FindMember(s_upper[i]);
-            if (it == doc.MemberEnd())
-                it = doc.FindMember(s_lower[i]);
+        auto it = doc.FindMember(s_upper[i]);
+        if (it == doc.MemberEnd())
+            it = doc.FindMember(s_lower[i]);
 
-            if (it == doc.MemberEnd() || !it->value.IsNumber() || !std::isfinite(it->value.GetDouble()))
-                {
-                valid = false;
-                break;
-                }
+        if (it == doc.MemberEnd() || !it->value.IsNumber() || !std::isfinite(it->value.GetDouble()))
+            return false;
 
-            parsed[i] = it->value.GetDouble();
-            }
+        coords[i] = it->value.GetDouble();
         }
 
-    s_text.assign(text);
-    s_dims = dims;
-    s_valid = valid;
-    std::copy(std::begin(parsed), std::end(parsed), std::begin(s_coords));
-    std::copy(std::begin(parsed), std::end(parsed), std::begin(coords));
-    return valid;
+    return true;
     }
 }
 
@@ -1601,9 +1575,8 @@ void ECSqlCastFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
 //---------------------------------------------------------------------------------------
 void ECSqlCastFunc::ComputeStructText(Context& ctx, int nArgs, DbValue* args)
     {
-    DbValue const& v = args[0];
-    rapidjson::Value const* layout = GetCachedLayout(v);
-    if (layout == nullptr)
+    CastLayout layout(ctx, args[0]);
+    if (layout.Get() == nullptr)
         {
         ctx.SetResultError(SQLFUNC_ECSqlCast ": invalid struct layout.");
         return;
@@ -1613,7 +1586,7 @@ void ECSqlCastFunc::ComputeStructText(Context& ctx, int nArgs, DbValue* args)
     JsonWriter w(buf);
     ColumnRenderer renderer(args, nArgs, 1);
     bool isNull = false;
-    if (!renderer.Render(w, isNull, *layout, false, nullptr) || renderer.GetPosition() != nArgs)
+    if (!renderer.Render(w, isNull, *layout.Get(), false, nullptr) || renderer.GetPosition() != nArgs)
         {
         ctx.SetResultError(SQLFUNC_ECSqlCast ": struct value does not match its layout.");
         return;
@@ -1698,8 +1671,8 @@ void ECSqlCastFunc::ComputeNavigationText(Context& ctx, int nArgs, DbValue* args
 //---------------------------------------------------------------------------------------
 void ECSqlCastFunc::ComputeArrayText(Context& ctx, int nArgs, DbValue* args)
     {
-    rapidjson::Value const* layout = GetCachedLayout(args[0]);
-    if (layout == nullptr)
+    CastLayout layout(ctx, args[0]);
+    if (layout.Get() == nullptr)
         {
         ctx.SetResultError(SQLFUNC_ECSqlCast ": invalid array layout.");
         return;
@@ -1714,7 +1687,7 @@ void ECSqlCastFunc::ComputeArrayText(Context& ctx, int nArgs, DbValue* args)
 
     rapidjson::StringBuffer buf;
     JsonWriter w(buf);
-    if (!ColumnRenderer::RenderArray(w, *layout, arr.GetValueText()))
+    if (!ColumnRenderer::RenderArray(w, *layout.Get(), arr.GetValueText()))
         {
         ctx.SetResultNull();
         return;

@@ -14802,6 +14802,17 @@ TEST_F(ECSqlStatementTestFixture, ExtendedCast_ChangingLayoutsAndPoints)
             }
         }
 
+    // A layout parsed for the first row is reused for the later rows of the same execution.
+    Statement rowsStmt;
+    ASSERT_EQ(BE_SQLITE_OK, rowsStmt.Prepare(m_ecdb, "SELECT _ecsql_cast_arr_text('\"long\"', column2) FROM (VALUES (1,'[1]'),(2,NULL),(3,'[2,null,3]')) ORDER BY column1"));
+    ASSERT_EQ(BE_SQLITE_ROW, rowsStmt.Step());
+    EXPECT_STREQ("[1]", rowsStmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_ROW, rowsStmt.Step());
+    EXPECT_TRUE(rowsStmt.IsColumnNull(0));
+    ASSERT_EQ(BE_SQLITE_ROW, rowsStmt.Step());
+    EXPECT_STREQ("[2,null,3]", rowsStmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_DONE, rowsStmt.Step());
+
     // Rebinding the same statement must follow the input text and dimension.
     ExtendedCastHelper h(m_ecdb);
     ECSqlStatement ptStmt;
