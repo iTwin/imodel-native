@@ -950,6 +950,20 @@ BentleyStatus ECSqlParser::ParseColumnRef(std::unique_ptr<ValueExp>& exp, OSQLPa
                 }
 
                 auto rhsPropExp = rhsExp->GetAsCP<PropertyNameExp>();
+                PropertyPath const& targetPath = rhsPropExp->GetResolvedPropertyPath();
+                for (size_t i = 0; i < targetPath.Size(); ++i) {
+                    if (!ECNameValidation::IsValidName(targetPath[i].GetName().c_str())) {
+                        Issues().ReportV(
+                            IssueSeverity::Error,
+                            IssueCategory::BusinessProperties,
+                            IssueType::ECSQL,
+                            ECDbIssueId::ECDb_0752,
+                            "Invalid instance property path '%s'. Property names may only contain letters, digits and underscores and must not start with a digit.",
+                            targetPath.ToString().c_str());
+                        return ERROR;
+                    }
+                }
+
                 exp = std::make_unique<ExtractPropertyValueExp>(lhsPropExp->GetResolvedPropertyPath(), rhsPropExp->GetResolvedPropertyPath(), isOptionalProp);
                 return SUCCESS;
             }

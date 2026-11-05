@@ -11332,10 +11332,16 @@ TEST_F(ECSqlStatementTestFixture, NamesAndValuesStayInsideGeneratedSql)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("NamesAndValuesStayInsideGeneratedSql.ecdb", SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
                 <ECEnumeration typeName="Notes" backingTypeName="string" isStrict="true">
                     <ECEnumerator name="Quoted" value="it's" />
                 </ECEnumeration>
                 <ECEntityClass typeName="TestClass">
+                    <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.02.00.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                    </ECCustomAttributes>
                     <ECProperty propertyName="Note" typeName="Notes" />
                 </ECEntityClass>
             </ECSchema>)xml")));
@@ -11344,12 +11350,27 @@ TEST_F(ECSqlStatementTestFixture, NamesAndValuesStayInsideGeneratedSql)
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.TestClass(Note) VALUES (ts.Notes.Quoted)"));
     ASSERT_EQ(JsonValue("[{\"cnt\": 1}]"), GetHelper().ExecuteSelectECSql("SELECT COUNT(*) cnt FROM ts.TestClass WHERE Note = 'it''s'"));
 
-    // Instance property paths are escaped inside the generated string literals
+    // With a physical ECClassId column, $-> paths go into a class_props(...) join that finds the classes having those properties
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT $->[it's] FROM ts.TestClass"));
-    const DbResult rc = stmt.Step();
-    EXPECT_TRUE(rc == BE_SQLITE_ROW || rc == BE_SQLITE_DONE) << rc;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT $->Note FROM ts.TestClass"));
+    EXPECT_TRUE(Utf8String(stmt.GetNativeSql()).Contains("class_props(")) << stmt.GetNativeSql();
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    EXPECT_FALSE(stmt.IsValueNull(0));
+    }
+
+    // class_props binds the property names it receives
+    {
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT class_id FROM class_props(?)"));
+    stmt.BindText(1, R"json(["Note"])json", Statement::MakeCopy::No);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    EXPECT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "TestClass"), stmt.GetValueId<ECClassId>(0));
+
+    stmt.Reset();
+    stmt.ClearBindings();
+    stmt.BindText(1, R"json(["it's"])json", Statement::MakeCopy::No);
+    EXPECT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
 
     TestIssueListener issueListener;
@@ -11363,6 +11384,9 @@ TEST_F(ECSqlStatementTestFixture, NamesAndValuesStayInsideGeneratedSql)
             [&] (ReportedIssue const& issue) { return Utf8String(issue.id.m_issueId).Equals(expectedIssueId); });
         EXPECT_TRUE(hasExpectedIssue) << ecsql << ": " << issueListener.GetLastMessage().c_str();
         };
+
+    // $-> paths name EC properties
+    expectRejected("SELECT $->[it's] FROM ts.TestClass", "ECDb_0752");
 
     // ']' would end the [...] that the generated SQL puts names into
     expectRejected("SELECT ECInstanceId [a]]b] FROM ts.TestClass", "ECDb_0471");
