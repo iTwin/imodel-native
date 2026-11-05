@@ -435,7 +435,6 @@ struct SelectStatementExp final : QueryExp
 
         static Utf8CP OperatorToString(CompoundOperator);
         virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& parseContext, FinalizeParseMode parseMode) override;
-        BentleyStatus ReconcileCastBranchTypes(ECSqlParseContext&) const;
     public:
         explicit SelectStatementExp(std::unique_ptr<SingleSelectStatementExp>);
         SelectStatementExp(std::unique_ptr<SingleSelectStatementExp> lhs, CompoundOperator, bool isAll, std::unique_ptr<SelectStatementExp> rhs);

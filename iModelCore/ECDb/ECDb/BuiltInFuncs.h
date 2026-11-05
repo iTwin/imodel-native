@@ -99,19 +99,38 @@ struct StrToGuid final : ScalarFunction
         static StrToGuid& GetSingleton();
     };
 //=======================================================================================
-//! Internal conversion function used by ECSQL cast lowering: _ecsql_cast(op, args...)
-//! Invalid input values yield NULL. Not meant to be called directly in ECSQL.
+//! Internal conversion functions used by ECSQL cast lowering.
 // @bsiclass
 //=======================================================================================
 struct ECSqlCastFunc final : ScalarFunction
     {
     private:
-        ECSqlCastFunc() : ScalarFunction(SQLFUNC_ECSqlCast, -1, DbValueType::NullVal) {}
+        using Compute = void (*)(Context&, int, DbValue*);
+        Compute m_compute;
+        bool m_parsesText;
+        bool m_handlesNull;
+        ECSqlCastFunc(Utf8CP name, int nArgs, Compute compute, bool parsesText = false, bool handlesNull = false)
+            : ScalarFunction(name, nArgs, DbValueType::NullVal), m_compute(compute), m_parsesText(parsesText), m_handlesNull(handlesNull) {}
         void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
+        static void ComputeStructText(Context&, int, DbValue*);
+        static void ComputePointText(Context&, int, DbValue*);
+        static void ComputeNavigationText(Context&, int, DbValue*);
+        static void ComputeArrayText(Context&, int, DbValue*);
+        static void ComputeId(Context&, int, DbValue*);
+        static void ComputeJson(Context&, int, DbValue*);
+        static void ComputeGuid(Context&, int, DbValue*);
+        static void ComputeBase64(Context&, int, DbValue*);
+        static void ComputeBooleanText(Context&, int, DbValue*);
+        static void ComputeTextBoolean(Context&, int, DbValue*);
+        static void ComputeDateTimeText(Context&, int, DbValue*);
+        static void ComputeTextDateTime(Context&, int, DbValue*);
+        static void ComputeGeometryText(Context&, int, DbValue*);
+        static void ComputeTextPoint(Context&, int, DbValue*);
+        static void ComputeEnum(Context&, int, DbValue*);
 
     public:
         ~ECSqlCastFunc() {}
-        static ECSqlCastFunc& GetSingleton();
+        static bvector<ECSqlCastFunc*> const& GetFunctions();
 
         //! Layout codes describing how SQL values or internal array JSON are rendered by struct_text/arr_text
         static constexpr Utf8CP LayoutInt() { return "int"; }

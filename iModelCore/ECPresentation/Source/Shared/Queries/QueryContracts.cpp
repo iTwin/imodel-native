@@ -162,8 +162,9 @@ static Utf8String CreateRelatedInstanceInfoClause(bvector<RelatedClassPath> cons
             uint64_t fallbackClassId = relatedInstanceClass.GetTargetClass().GetClass().GetId().GetValue();
             clause.append("{");
             clause.append("\"Alias\":\"").append(relatedInstanceClass.GetTargetClass().GetAlias()).append("\",");
-            clause.append("\"ECClassId\":' || CAST(IFNULL([").append(relatedInstanceClass.GetTargetClass().GetAlias()).append("].[ECClassId], ").append(std::to_string(fallbackClassId).c_str()).append(") AS TEXT) || ',");
-            clause.append("\"ECInstanceId\":' || CAST(IFNULL([").append(relatedInstanceClass.GetTargetClass().GetAlias()).append("].[ECInstanceId], 0) AS TEXT) || '");
+            // Ids cast to TEXT are hexadecimal, so cast through LONG to emit JSON numbers
+            clause.append("\"ECClassId\":' || CAST(CAST(IFNULL([").append(relatedInstanceClass.GetTargetClass().GetAlias()).append("].[ECClassId], ").append(std::to_string(fallbackClassId).c_str()).append(") AS LONG) AS TEXT) || ',");
+            clause.append("\"ECInstanceId\":' || CAST(CAST(IFNULL([").append(relatedInstanceClass.GetTargetClass().GetAlias()).append("].[ECInstanceId], 0) AS LONG) AS TEXT) || '");
             clause.append("}");
             }
         }

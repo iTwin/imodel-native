@@ -1988,11 +1988,12 @@ static Utf8String BuildPathInfoSelectClause(RelatedClassPathCR path, bvector<boo
         bool selectTargetClassIdPolymorphically = stepsPolymorphism[i];
 
         clause.append("{");
-        clause.append("\"RelId\":' || CAST(").append(CreateECClassIdSelectClause(step.GetRelationship(), selectRelationshipIdPolymorphically)).append(" AS TEXT) || ',");
+        // Ids cast to TEXT are hexadecimal, so cast through LONG to emit JSON numbers
+        clause.append("\"RelId\":' || CAST(CAST(").append(CreateECClassIdSelectClause(step.GetRelationship(), selectRelationshipIdPolymorphically)).append(" AS LONG) AS TEXT) || ',");
         clause.append("\"IsRelFwd\":").append(step.IsForwardRelationship() ? "true" : "false").append(",");
         clause.append("\"IsTgtOptional\":true").append(",");
         clause.append("\"IsTgtPoly\":").append(selectTargetClassIdPolymorphically ? "false" : "true").append(",");
-        clause.append("\"TgtClassId\":' || CAST(").append(CreateECClassIdSelectClause(step.GetTargetClass(), selectTargetClassIdPolymorphically)).append(" AS TEXT) || ',");
+        clause.append("\"TgtClassId\":' || CAST(CAST(").append(CreateECClassIdSelectClause(step.GetTargetClass(), selectTargetClassIdPolymorphically)).append(" AS LONG) AS TEXT) || ',");
         clause.append("\"Filter\":").append(targetInstanceFilterSelector);
         clause.append("}");
         }

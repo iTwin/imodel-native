@@ -280,7 +280,6 @@ struct LiteralValueExp final : ValueExp
     {
     private:
         Utf8String m_rawValue;
-        bool m_isNullLiteral = false;
 
         LiteralValueExp(Utf8CP value, ECSqlTypeInfo const&);
 
@@ -295,9 +294,6 @@ struct LiteralValueExp final : ValueExp
         static BentleyStatus Create(std::unique_ptr<ValueExp>&, ECSqlParseContext&, Utf8CP value, ECSqlTypeInfo const&);
 
         Utf8StringCR GetRawValue() const { return m_rawValue; }
-        //! True for the NULL literal, even after it adopted the type of a typed counterpart (e.g. in a compound select)
-        bool IsNullLiteral() const { return m_isNullLiteral; }
-        void AdoptTypeForNullLiteral(ECSqlTypeInfo const& typeInfo) { BeAssert(m_isNullLiteral); SetTypeInfo(typeInfo); }
 
         BentleyStatus TryParse(ECN::ECValue&) const;
 

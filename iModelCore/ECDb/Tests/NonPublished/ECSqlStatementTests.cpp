@@ -14107,20 +14107,12 @@ struct ExtendedCastHelper final
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, ExtendedCast_DefaultAndRemovedOption)
+TEST_F(ECSqlStatementTestFixture, ExtendedCast_SyntaxAndSpecialNames)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("extendedcastgate.ecdb"));
+    ASSERT_EQ(SUCCESS, SetupECDb("ExtendedCast_SyntaxAndSpecialNames.ecdb"));
     ExtendedCastHelper h(m_ecdb);
 
     EXPECT_EQ(ECSqlStatus::Success, h.PrepareStatus("SELECT 1::INTEGER")) << h.LastIssue();
-
-    for (Utf8CP ecsql : {"SELECT 1 OPTIONS CAST_V2", "SELECT 1 OPTIONS CAST_V2=true",
-                         "SELECT 1 OPTIONS CAST_V2=false", "SELECT 1 ECSQLOPTIONS cast_v2",
-                         "WITH c(v) AS (SELECT 1 OPTIONS CAST_V2) SELECT v FROM c"})
-        {
-        EXPECT_EQ(ECSqlStatus::InvalidECSql, h.PrepareStatus(ecsql)) << ecsql;
-        EXPECT_TRUE(h.LastIssue().Contains("CAST_V2 has been removed")) << h.LastIssue();
-        }
 
     EXPECT_EQ(ECSqlStatus::Success, h.PrepareStatus("SELECT CAST(1 AS Id)")) << h.LastIssue();
     EXPECT_EQ(ECSqlStatus::Success, h.PrepareStatus("SELECT CAST(1 AS ClassName)")) << h.LastIssue();
@@ -14141,7 +14133,7 @@ TEST_F(ECSqlStatementTestFixture, ExtendedCast_DefaultAndRemovedOption)
 TEST_F(ECSqlStatementTestFixture, ExtendedCast_Dml)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("extendedcastdml.ecdb", SchemaItem(
-        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEntityClass typeName="Item"><ECProperty propertyName="Value" typeName="string" /></ECEntityClass>
         </ECSchema>)xml")));
 
@@ -14182,6 +14174,8 @@ TEST_F(ECSqlStatementTestFixture, ExtendedCast_SyntaxAndPrimitives)
     EXPECT_STREQ("2.5", h.Text("SELECT (2 + 3)::DOUBLE / 2").c_str());
     EXPECT_STREQ("2.5", h.Text("SELECT CAST((2 + 3) AS DOUBLE) / 2").c_str());
     EXPECT_STREQ("2.5", h.Text("SELECT (SELECT 5)::DOUBLE / 2").c_str());
+    EXPECT_STREQ("2.5", h.Text("SELECT CAST(v AS DOUBLE) / 2 FROM (SELECT 2 + 3 v)").c_str());
+    EXPECT_STREQ("2.5", h.Text("WITH c(v) AS (SELECT 2 + 3) SELECT v::DOUBLE / 2 FROM c").c_str());
     EXPECT_STREQ("2", h.Text("SELECT (5.0 / 2)::INTEGER").c_str());
 
     // boolean
@@ -14291,7 +14285,10 @@ TEST_F(ECSqlStatementTestFixture, ExtendedCast_IdAndClassName)
         }
 
     // 64-bit Ids beyond JS safe integer range
-    EXPECT_STREQ("18446744073709551615", h.Text("SELECT '0xffffffffffffffff'::Id::TEXT").c_str()) ;
+    EXPECT_STREQ("0xffffffffffffffff", h.Text("SELECT '0xffffffffffffffff'::Id::TEXT").c_str());
+    EXPECT_STREQ("0x15", h.Text("SELECT 21::Id::TEXT").c_str());
+    EXPECT_STREQ("21", h.Text("SELECT 21::LONG::TEXT").c_str());
+    EXPECT_STREQ("21", h.Text("SELECT 21::Id::LONG::TEXT").c_str());
     EXPECT_STREQ("<null>", h.Text("SELECT '0x1ffffffffffffffff'::Id").c_str());
     EXPECT_STREQ("<null>", h.Text("SELECT '12abc'::Id").c_str());
     EXPECT_STREQ("<null>", h.Text("SELECT ''::Id").c_str());
@@ -14394,7 +14391,7 @@ TEST_F(ECSqlStatementTestFixture, ExtendedCast_Parameters)
 TEST_F(ECSqlStatementTestFixture, ExtendedCast_ECDataToText)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("extendedcastecdata.ecdb", SchemaItem(
-        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
               <ECEnumeration typeName="Color" backingTypeName="int" isStrict="true">
                   <ECEnumerator name="Red" value="1" />
                   <ECEnumerator name="Green" value="2" />
@@ -14558,7 +14555,7 @@ TEST_F(ECSqlStatementTestFixture, ExtendedCast_CompoundAndScalarSubquery)
     ASSERT_EQ(SUCCESS, SetupECDb("extendedcastcompound.ecdb"));
     ExtendedCastHelper h(m_ecdb);
 
-    // branches combining different extended types must be cast to the same type
+    // Extended types do not add cast-specific restrictions to compound queries.
     for (Utf8CP ecsql : {"SELECT 1::Id UNION SELECT 2::ClassId",
                          "SELECT 1::Id UNION ALL SELECT 2",
                          "SELECT 1 UNION ALL SELECT 2::Id",
@@ -14573,8 +14570,7 @@ TEST_F(ECSqlStatementTestFixture, ExtendedCast_CompoundAndScalarSubquery)
                          "SELECT NULL UNION ALL SELECT 1::Id UNION ALL SELECT 2::ClassId",
                          "SELECT '[1]'::Json UNION ALL SELECT 'x'"})
         {
-        EXPECT_EQ(ECSqlStatus::InvalidECSql, h.PrepareStatus(ecsql)) << ecsql;
-        EXPECT_TRUE(h.LastIssue().Contains("have different types")) << ecsql << " " << h.LastIssue();
+        EXPECT_EQ(ECSqlStatus::Success, h.PrepareStatus(ecsql)) << ecsql << " " << h.LastIssue();
         }
 
     for (Utf8CP ecsql : {"SELECT 1::Id UNION ALL SELECT 2::Id",
@@ -14584,11 +14580,10 @@ TEST_F(ECSqlStatementTestFixture, ExtendedCast_CompoundAndScalarSubquery)
                          "SELECT 1::Id UNION ALL SELECT ECInstanceId FROM meta.ECSchemaDef"})
         EXPECT_EQ(ECSqlStatus::Success, h.PrepareStatus(ecsql)) << ecsql << h.LastIssue();
 
-    // a leading NULL takes the type of the typed extended cast branch
-    for (Utf8CP ecsql : {"SELECT NULL v UNION ALL SELECT 21::Id",
-                         "SELECT NULL v UNION ALL SELECT (SELECT 21::Id)",
-                         "SELECT NULL v UNION ALL SELECT NULL UNION ALL SELECT 21::Id",
-                         "SELECT q.v FROM (SELECT NULL v UNION ALL SELECT 21::Id) q"})
+    // The first branch determines the result's extended type.
+    for (Utf8CP ecsql : {"SELECT 21::Id v UNION ALL SELECT 22::ClassId",
+                         "SELECT 21::Id v UNION ALL SELECT 22",
+                         "SELECT q.v FROM (SELECT 21::Id v UNION ALL SELECT 22::ClassId) q"})
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql)) << ecsql << h.LastIssue();
@@ -14598,17 +14593,17 @@ TEST_F(ECSqlStatementTestFixture, ExtendedCast_CompoundAndScalarSubquery)
             {
             if (!stmt.IsValueNull(0))
                 {
-                EXPECT_EQ(BeInt64Id(21), stmt.GetValueId<BeInt64Id>(0)) << ecsql;
+                EXPECT_TRUE(stmt.GetValueInt64(0) == 21 || stmt.GetValueInt64(0) == 22) << ecsql;
                 sawValue = true;
                 }
             }
         EXPECT_TRUE(sawValue) << ecsql;
         }
 
-    // a leading NULL also works for multi-column point results
+    // NULL point casts retain their multi-column type.
         {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT NULL p, 1 n UNION ALL SELECT '{\"X\":1,\"Y\":2}'::Point2d, 2")) << h.LastIssue();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT NULL::Point2d p, 1 n UNION ALL SELECT '{\"X\":1,\"Y\":2}'::Point2d, 2")) << h.LastIssue();
         ASSERT_EQ(2, stmt.GetColumnCount());
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         EXPECT_TRUE(stmt.IsValueNull(0));
@@ -14621,6 +14616,16 @@ TEST_F(ECSqlStatementTestFixture, ExtendedCast_CompoundAndScalarSubquery)
     // Compound typing without explicit casts is unchanged.
     EXPECT_EQ(ECSqlStatus::Success, h.PrepareStatus("SELECT ECInstanceId FROM meta.ECSchemaDef UNION ALL SELECT ECClassId FROM meta.ECSchemaDef")) << h.LastIssue();
     EXPECT_EQ(ECSqlStatus::Success, h.PrepareStatus("SELECT (SELECT ECInstanceId FROM meta.ECSchemaDef WHERE 1::INT=1 LIMIT 1) UNION ALL SELECT ECClassId FROM meta.ECSchemaDef")) << h.LastIssue();
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT CAST(NULL AS TEXT) v UNION ALL SELECT '[1]'::Json")) << h.LastIssue();
+        EXPECT_TRUE(ExtendedCastHelper::ExtendedType(stmt, 0).empty());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_TRUE(stmt.IsValueNull(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_STREQ("[1]", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
 
     // scalar subqueries cannot return multi-column point values
     EXPECT_EQ(ECSqlStatus::InvalidECSql, h.PrepareStatus("SELECT (SELECT '{\"X\":1,\"Y\":2}'::Point2d)"));
@@ -14649,7 +14654,7 @@ TEST_F(ECSqlStatementTestFixture, ExtendedCast_CteWhereAndPredicates)
         EXPECT_EQ(BeInt64Id(21), stmt.GetValueId<BeInt64Id>(0)) << ecsql;
         }
     EXPECT_STREQ("ECDbMeta:ECClassDef", h.Text("WITH c(v) AS (SELECT ECClassId::ClassName FROM meta.ECClassDef WHERE Name='ECClassDef') SELECT v FROM c").c_str());
-    EXPECT_STREQ("21", h.Text("WITH c(v) AS (SELECT 21::Id) SELECT v::TEXT FROM c").c_str());
+    EXPECT_STREQ("0x15", h.Text("WITH c(v) AS (SELECT 21::Id) SELECT v::TEXT FROM c").c_str());
     EXPECT_STREQ("3", h.Text("WITH RECURSIVE c(n) AS (SELECT 1::LONG UNION ALL SELECT n + 1 FROM c WHERE n < 3) SELECT COUNT(*) FROM c").c_str());
 
     for (Utf8CP ecsql : {
@@ -14672,7 +14677,7 @@ TEST_F(ECSqlStatementTestFixture, ExtendedCast_CteWhereAndPredicates)
 
     // WHERE clause and comparison predicates
     const Utf8String all = h.Text("SELECT COUNT(*) FROM meta.ECClassDef");
-    EXPECT_STREQ("1", h.Text("SELECT COUNT(*) FROM meta.ECClassDef WHERE ECInstanceId::TEXT = '1'").c_str());
+    EXPECT_STREQ("1", h.Text("SELECT COUNT(*) FROM meta.ECClassDef WHERE ECInstanceId::TEXT = '0x1'").c_str());
     EXPECT_STREQ("1", h.Text("SELECT COUNT(*) FROM meta.ECClassDef WHERE ECInstanceId = '0x1'::Id").c_str());
     EXPECT_STREQ("1", h.Text("SELECT COUNT(*) FROM meta.ECClassDef c WHERE c.ECInstanceId::ClassName = 'ECDbMeta:ECClassDef'").c_str());
     EXPECT_STREQ(all.c_str(), h.Text("SELECT COUNT(*) FROM meta.ECClassDef c WHERE c.ECClassId::ClassName = 'ECDbMeta:ECClassDef'").c_str());
@@ -14719,21 +14724,25 @@ TEST_F(ECSqlStatementTestFixture, ExtendedCast_InternalFunctionAndMalformedInput
         EXPECT_STREQ("<null>", h.Text(ecsql).c_str()) << ecsql;
 
     // the internal conversion function cannot be called from ECSQL
-    for (Utf8CP ecsql : {"SELECT _ecsql_cast('id', '0x15')",
-                         "SELECT _ECSQL_CAST('struct_text', '{\"m\":[1]}', 1)",
-                         "SELECT 1 FROM meta.ECClassDef WHERE _ecsql_cast('json', Name) IS NULL"})
+    for (Utf8CP ecsql : {"SELECT _ecsql_cast_id('0x15')",
+                         "SELECT _ECSQL_CAST_STRUCT_TEXT('{\"m\":[1]}', 1)",
+                         "SELECT 1 FROM meta.ECClassDef WHERE _ecsql_cast_json(Name) IS NULL"})
         {
         EXPECT_EQ(ECSqlStatus::InvalidECSql, h.PrepareStatus(ecsql)) << ecsql;
         EXPECT_TRUE(h.LastIssue().Contains("internal")) << ecsql << " " << h.LastIssue();
         }
 
     // malformed layouts are rejected by the SQL function itself
-    for (Utf8CP sql : {"SELECT _ecsql_cast('struct_text', '{\"m\":[1]}', 1)",
-                       "SELECT _ecsql_cast('struct_text', '{\"m\":[[1,2]]}', 1)",
-                       "SELECT _ecsql_cast('struct_text', '{\"m\":[[\"a\"]]}', 1)",
-                       "SELECT _ecsql_cast('struct_text', '{\"m\":5}', 1)",
-                       "SELECT _ecsql_cast('arr_text', '[]', '[1]')",
-                       "SELECT _ecsql_cast('arr_text', '{\"x\":1}', '[1]')"})
+    for (Utf8CP sql : {"SELECT _ecsql_cast_struct_text('{\"m\":[1]}', 1)",
+                       "SELECT _ecsql_cast_struct_text('{\"m\":[[1,2]]}', 1)",
+                       "SELECT _ecsql_cast_struct_text('{\"m\":[[\"a\"]]}', 1)",
+                       "SELECT _ecsql_cast_struct_text('{\"m\":5}', 1)",
+                       "SELECT _ecsql_cast_arr_text('[]', '[1]')",
+                       "SELECT _ecsql_cast_arr_text('{\"x\":1}', '[1]')",
+                       "SELECT _ecsql_cast_struct_text(NULL, 1)",
+                       "SELECT _ecsql_cast_arr_text(NULL, '[1]')",
+                       "SELECT _ecsql_cast_pt_text(1)",
+                       "SELECT _ecsql_cast_nav_text(1, 2, 3)"})
         {
         Statement stmt;
         ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, sql)) << sql;
@@ -14773,34 +14782,27 @@ TEST_F(ECSqlStatementTestFixture, ExtendedCast_InternalFunctionAndMalformedInput
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ECSqlStatementTestFixture, ExtendedCast_CachedLayoutsAndPoints)
+TEST_F(ECSqlStatementTestFixture, ExtendedCast_ChangingLayoutsAndPoints)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ExtendedCast_CachedLayoutsAndPoints.ecdb"));
+    ASSERT_EQ(SUCCESS, SetupECDb("ExtendedCast_ChangingLayoutsAndPoints.ecdb"));
 
-    // more distinct layouts than the per-thread cache holds, visited twice so evicted entries are re-parsed
     Statement arrStmt;
-    ASSERT_EQ(BE_SQLITE_OK, arrStmt.Prepare(m_ecdb, "SELECT _ecsql_cast('arr_text', ?, '[1,null,2]')"));
-    for (int pass = 0; pass < 2; pass++)
+    ASSERT_EQ(BE_SQLITE_OK, arrStmt.Prepare(m_ecdb, "SELECT _ecsql_cast_arr_text(?, '[1,null,2]')"));
+    for (Utf8CP layout : {"\"long\"", "[\"long\"]", " \"long\"", "\"long\""})
         {
-        for (int i = 0; i < 40; i++)
+        arrStmt.Reset();
+        arrStmt.ClearBindings();
+        ASSERT_EQ(BE_SQLITE_OK, arrStmt.BindText(1, layout, Statement::MakeCopy::Yes));
+        if (layout[0] == '[')
+            EXPECT_NE(BE_SQLITE_ROW, arrStmt.Step()) << layout;
+        else
             {
-            const bool valid = (i % 3) != 0;
-            Utf8String layout(i, ' ');
-            layout.append(valid ? "\"long\"" : "[\"long\"]");
-            arrStmt.Reset();
-            arrStmt.ClearBindings();
-            ASSERT_EQ(BE_SQLITE_OK, arrStmt.BindText(1, layout.c_str(), Statement::MakeCopy::Yes));
-            if (valid)
-                {
-                ASSERT_EQ(BE_SQLITE_ROW, arrStmt.Step()) << i;
-                EXPECT_STREQ("[1,null,2]", arrStmt.GetValueText(0)) << i;
-                }
-            else
-                EXPECT_NE(BE_SQLITE_ROW, arrStmt.Step()) << i;
+            ASSERT_EQ(BE_SQLITE_ROW, arrStmt.Step()) << layout;
+            EXPECT_STREQ("[1,null,2]", arrStmt.GetValueText(0)) << layout;
             }
         }
 
-    // the parsed point is reused across coordinates but must follow the input text and dimension
+    // Rebinding the same statement must follow the input text and dimension.
     ExtendedCastHelper h(m_ecdb);
     ECSqlStatement ptStmt;
     ASSERT_EQ(ECSqlStatus::Success, ptStmt.Prepare(m_ecdb, "SELECT ?::TEXT::Point2d, ?::TEXT::Point3d")) << h.LastIssue();

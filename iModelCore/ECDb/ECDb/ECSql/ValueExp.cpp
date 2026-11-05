@@ -1176,7 +1176,7 @@ Exp::FinalizeParseStatus FunctionCallExp::_FinalizeParsing(ECSqlParseContext& ct
         return FinalizeParseStatus::NotCompleted;
         }
 
-    if (m_functionName.EqualsIAscii(SQLFUNC_ECSqlCast))
+    if (m_functionName.StartsWithIAscii(SQLFUNC_ECSqlCast))
         {
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0757,
             "Function '%s' is internal to ECDb and cannot be called from ECSQL.", m_functionName.c_str());
@@ -1644,7 +1644,7 @@ BentleyStatus LiteralValueExp::Create(std::unique_ptr<ValueExp>& exp, ECSqlParse
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-LiteralValueExp::LiteralValueExp(Utf8CP value, ECSqlTypeInfo const& typeInfo) : ValueExp(Type::LiteralValue, true), m_rawValue(value), m_isNullLiteral(typeInfo.IsNull()) { SetTypeInfo(typeInfo); }
+LiteralValueExp::LiteralValueExp(Utf8CP value, ECSqlTypeInfo const& typeInfo) : ValueExp(Type::LiteralValue, true), m_rawValue(value) { SetTypeInfo(typeInfo); }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -1732,7 +1732,7 @@ void LiteralValueExp::_ToJson(BeJsValue val , JsonFormat const&) const  {
     val.SetEmptyObject();
     val["id"] = "LiteralValueExp";
     ECSqlTypeInfo const& typeInfo = GetTypeInfo();
-    if (typeInfo.IsNull() || m_isNullLiteral) {
+    if (typeInfo.IsNull()) {
         val["kind"] = "NULL";
         return;
     } else if (typeInfo.IsPrimitive()) {
@@ -1775,7 +1775,7 @@ void LiteralValueExp::_ToECSql(ECSqlRenderContext& ctx) const
         ctx.AppendToECSql("(");
 
     ECSqlTypeInfo const& typeInfo = GetTypeInfo();
-    if (typeInfo.IsNull() || m_isNullLiteral)
+    if (typeInfo.IsNull())
         {
         ctx.AppendToECSql("NULL");
         if (HasParentheses())

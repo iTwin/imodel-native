@@ -310,16 +310,6 @@ BentleyStatus ECSqlParser::ParseSingleSelectStatement(std::unique_ptr<SingleSele
         return SUCCESS;
     }
 
-    if (tableExpNode->count() == 1) {
-        // SELECT without FROM clause but with an ECSQLOPTIONS clause
-        std::unique_ptr<OptionsExp> optionsExp = nullptr;
-        if (SUCCESS != ParseOptECSqlOptionsClause(optionsExp, tableExpNode->getChild(0)))
-            return ERROR;
-
-        exp = std::make_unique<SingleSelectStatementExp>(opt_all_distinct,std::move(selectClauseExp), nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, std::move(optionsExp));
-        return SUCCESS;
-    }
-
     BeAssert(tableExpNode->count() == 8);
     std::unique_ptr<FromExp> fromExp = nullptr;
     if (SUCCESS != ParseFromClause(fromExp, tableExpNode->getChild(0)))

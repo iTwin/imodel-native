@@ -649,7 +649,11 @@ Utf8String JoinSnippets(NativeSqlBuilder::List const& snippets)
     {
     Utf8String sql;
     for (NativeSqlBuilder const& snippet : snippets)
-        sql.append(",").append(snippet.GetSql());
+        {
+        if (!sql.empty())
+            sql.append(",");
+        sql.append(snippet.GetSql());
+        }
     return sql;
     }
 }
@@ -673,7 +677,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareCastExpToString(Utf8StringR sql, ECSqlPrepa
         if (operandSnippets.size() > 2)
             return ECSqlStatus::Error;
 
-        sql.Sprintf(SQLFUNC_ECSqlCast "('nav_text'%s)", JoinSnippets(operandSnippets).c_str());
+        sql.Sprintf(SQLFUNC_ECSqlCast "_nav_text(%s)", JoinSnippets(operandSnippets).c_str());
         return ECSqlStatus::Success;
         }
 
@@ -690,20 +694,20 @@ ECSqlStatus ECSqlExpPreparer::PrepareCastExpToString(Utf8StringR sql, ECSqlPrepa
             return ECSqlStatus::InvalidECSql;
             }
 
-        sql.Sprintf(SQLFUNC_ECSqlCast "('struct_text',%s%s)", ToSqlLiteral(layout).c_str(), JoinSnippets(operandSnippets).c_str());
+        sql.Sprintf(SQLFUNC_ECSqlCast "_struct_text(%s,%s)", ToSqlLiteral(layout).c_str(), JoinSnippets(operandSnippets).c_str());
         return ECSqlStatus::Success;
         }
 
     if (sourceType.IsArray())
         {
-        sql.Sprintf(SQLFUNC_ECSqlCast "('arr_text',%s,%s)", ToSqlLiteral(GetArrayElementLayout(sourceType)).c_str(), first.c_str());
+        sql.Sprintf(SQLFUNC_ECSqlCast "_arr_text(%s,%s)", ToSqlLiteral(GetArrayElementLayout(sourceType)).c_str(), first.c_str());
         return ECSqlStatus::Success;
         }
 
     BeAssert(sourceType.IsPrimitive());
     if (sourceType.IsPoint())
         {
-        sql.Sprintf(SQLFUNC_ECSqlCast "('pt_text'%s)", JoinSnippets(operandSnippets).c_str());
+        sql.Sprintf(SQLFUNC_ECSqlCast "_pt_text(%s)", JoinSnippets(operandSnippets).c_str());
         return ECSqlStatus::Success;
         }
 
@@ -713,24 +717,24 @@ ECSqlStatus ECSqlExpPreparer::PrepareCastExpToString(Utf8StringR sql, ECSqlPrepa
                 sql = first;
                 break;
             case PRIMITIVETYPE_DateTime:
-                sql.Sprintf(SQLFUNC_ECSqlCast "('dt_text',%s,'%s')", first.c_str(), ECSqlCastFunc::LayoutDateTime(sourceType.GetDateTimeInfo()));
+                sql.Sprintf(SQLFUNC_ECSqlCast "_dt_text(%s,'%s')", first.c_str(), ECSqlCastFunc::LayoutDateTime(sourceType.GetDateTimeInfo()));
                 break;
             case PRIMITIVETYPE_Boolean:
-                sql.Sprintf(SQLFUNC_ECSqlCast "('bool_text',%s)", first.c_str());
+                sql.Sprintf(SQLFUNC_ECSqlCast "_bool_text(%s)", first.c_str());
                 break;
             case PRIMITIVETYPE_Binary:
                 if (sourceType.GetExtendedTypeName().EqualsIAscii(EXTENDEDTYPENAME_BeGuid))
-                    sql.Sprintf(SQLFUNC_ECSqlCast "('guid_text',%s)", first.c_str());
+                    sql.Sprintf(SQLFUNC_GuidToStr "(%s)", first.c_str());
                 else
-                    sql.Sprintf(SQLFUNC_ECSqlCast "('base64',%s)", first.c_str());
+                    sql.Sprintf(SQLFUNC_ECSqlCast "_base64(%s)", first.c_str());
                 break;
             case PRIMITIVETYPE_IGeometry:
-                sql.Sprintf(SQLFUNC_ECSqlCast "('geom_text',%s)", first.c_str());
+                sql.Sprintf(SQLFUNC_ECSqlCast "_geom_text(%s)", first.c_str());
                 break;
             case PRIMITIVETYPE_Long:
                 // Ids are unsigned 64-bit values stored as signed SQLite integers
                 if (CastExp::GetSpecialTarget(sourceType.GetExtendedTypeName()) == CastExp::SpecialTarget::IdFamily)
-                    sql.Sprintf(SQLFUNC_ECSqlCast "('id_text',%s)", first.c_str());
+                    sql.Sprintf(SQLFUNC_IdToHex "(%s)", first.c_str());
                 else
                     sql.Sprintf("CAST(%s AS TEXT)", first.c_str());
                 break;
@@ -743,16 +747,13 @@ ECSqlStatus ECSqlExpPreparer::PrepareCastExpToString(Utf8StringR sql, ECSqlPrepa
     }
 
 //-----------------------------------------------------------------------------------------
-// ECSQL types computed numeric expressions (e.g. 2+3) as Double while SQLite may evaluate them
-// as INTEGER, so a same-type numeric cast can only be skipped for property columns.
+// Computed values, including derived-table and CTE columns, can have a different
+// SQLite storage type from their ECSQL type.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-static bool NeedsNumericStorageCast(ValueExp const& operand, PrimitiveType targetType)
+static bool NeedsNumericStorageCast(PrimitiveType targetType)
     {
-    if (targetType != PRIMITIVETYPE_Double && targetType != PRIMITIVETYPE_Integer && targetType != PRIMITIVETYPE_Long)
-        return false;
-
-    return operand.GetType() != Exp::Type::PropertyName;
+    return targetType == PRIMITIVETYPE_Double || targetType == PRIMITIVETYPE_Integer || targetType == PRIMITIVETYPE_Long;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -804,7 +805,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareCastExp(NativeSqlBuilder::List& nativeSqlSn
         {
             case CastExp::SpecialTarget::IdFamily:
                 if (sourceType.IsString())
-                    sql.Sprintf(SQLFUNC_ECSqlCast "('id',%s)", first.c_str());
+                    sql.Sprintf(SQLFUNC_ECSqlCast "_id(%s)", first.c_str());
                 else
                     sql = first; //integers, parameters, and the Id of a navigation value
                 pushSnippet(sql);
@@ -812,14 +813,14 @@ ECSqlStatus ECSqlExpPreparer::PrepareCastExp(NativeSqlBuilder::List& nativeSqlSn
 
             case CastExp::SpecialTarget::ClassName:
                 if (sourceType.IsString())
-                    sql.Sprintf(SQLFUNC_ClassName "(" SQLFUNC_ECSqlCast "('id',%s),0)", first.c_str());
+                    sql.Sprintf(SQLFUNC_ClassName "(" SQLFUNC_ECSqlCast "_id(%s),0)", first.c_str());
                 else
                     sql.Sprintf(SQLFUNC_ClassName "(%s,0)", first.c_str());
                 pushSnippet(sql);
                 return ECSqlStatus::Success;
 
             case CastExp::SpecialTarget::Json:
-                sql.Sprintf(SQLFUNC_ECSqlCast "('json',%s)", first.c_str());
+                sql.Sprintf(SQLFUNC_ECSqlCast "_json(%s)", first.c_str());
                 pushSnippet(sql);
                 return ECSqlStatus::Success;
 
@@ -827,7 +828,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareCastExp(NativeSqlBuilder::List& nativeSqlSn
                 if (isParameter)
                     sql = first;
                 else
-                    sql.Sprintf(SQLFUNC_ECSqlCast "('guid',%s)", first.c_str());
+                    sql.Sprintf(SQLFUNC_ECSqlCast "_guid(%s)", first.c_str());
                 pushSnippet(sql);
                 return ECSqlStatus::Success;
 
@@ -869,7 +870,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareCastExp(NativeSqlBuilder::List& nativeSqlSn
         const int dims = targetPrimType == PRIMITIVETYPE_Point2d ? 2 : 3;
         for (int i = 0; i < dims; i++)
             {
-            sql.Sprintf(SQLFUNC_ECSqlCast "('text_pt',%s,%d,%d)", first.c_str(), i, dims);
+            sql.Sprintf(SQLFUNC_ECSqlCast "_text_pt(%s,%d,%d)", first.c_str(), i, dims);
             pushSnippet(sql);
             }
         return ECSqlStatus::Success;
@@ -898,7 +899,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareCastExp(NativeSqlBuilder::List& nativeSqlSn
                     values.append(",").append(ToSqlLiteral(enumerator->GetString()));
                 }
 
-            sql = Utf8PrintfString(SQLFUNC_ECSqlCast "('enum',%s%s)", sql.c_str(), values.c_str());
+            sql = Utf8PrintfString(SQLFUNC_ECSqlCast "_enum(%s%s)", sql.c_str(), values.c_str());
             }
 
         pushSnippet(sql);
@@ -906,10 +907,10 @@ ECSqlStatus ECSqlExpPreparer::PrepareCastExp(NativeSqlBuilder::List& nativeSqlSn
         }
 
     if (targetPrimType == PRIMITIVETYPE_Boolean && sourceType.IsString())
-        sql.Sprintf(SQLFUNC_ECSqlCast "('text_bool',%s)", first.c_str());
+        sql.Sprintf(SQLFUNC_ECSqlCast "_text_bool(%s)", first.c_str());
     else if (targetPrimType == PRIMITIVETYPE_DateTime && sourceType.IsString())
-        sql.Sprintf(SQLFUNC_ECSqlCast "('text_dt',%s)", first.c_str());
-    else if (sourceType.IsPrimitive() && !sourceType.IsEnum() && sourceType.GetPrimitiveType() == targetPrimType && !NeedsNumericStorageCast(*castOperand, targetPrimType))
+        sql.Sprintf(SQLFUNC_ECSqlCast "_text_dt(%s)", first.c_str());
+    else if (sourceType.IsPrimitive() && !sourceType.IsEnum() && sourceType.GetPrimitiveType() == targetPrimType && !NeedsNumericStorageCast(targetPrimType))
         sql = first;
     else if (SUCCESS != PrepareCastExpForPrimitive(sql, targetPrimType, first))
         return ECSqlStatus::Error;
@@ -1404,18 +1405,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareLiteralValueExp(NativeSqlBuilder::List& nat
         {
         // BeAssert(false && "NULL exp should never be called indirectly but always in context of its RHS exp");
         return PrepareNullExp(nativeSqlSnippets, ctx, exp, 1);
-        }
-
-    if (exp.IsNullLiteral())
-        {
-        // NULL literal that adopted a typed counterpart's type: emit one NULL per SQLite column of that type
-        size_t columnCount = 1;
-        if (typeInfo.IsPrimitive() && typeInfo.GetPrimitiveType() == PRIMITIVETYPE_Point2d)
-            columnCount = 2;
-        else if (typeInfo.IsPrimitive() && typeInfo.GetPrimitiveType() == PRIMITIVETYPE_Point3d)
-            columnCount = 3;
-
-        return PrepareNullExp(nativeSqlSnippets, ctx, exp, columnCount);
         }
 
     Utf8StringCR expRawValue = exp.GetRawValue();

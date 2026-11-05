@@ -737,11 +737,6 @@ limit_offset_clause:
     ;
 table_exp:
         { $$ = SQL_NEW_RULE; }
-        | ecsqloptions_clause
-        {
-            $$ = SQL_NEW_RULE;
-            $$->append($1);
-        }
         | from_clause opt_where_clause opt_group_by_clause opt_having_clause opt_window_clause opt_order_by_clause opt_limit_offset_clause opt_ecsqloptions_clause
         {
             $$ = SQL_NEW_RULE;
