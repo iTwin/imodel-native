@@ -375,9 +375,9 @@ i64 sqlite_timestamp(void){
 */
 i64 bcv_timestamp(void){
 #ifdef __WIN32__
-  static LARGE_INTEGER freq = {{0, 0}};
+  LARGE_INTEGER freq;
   LARGE_INTEGER now;
-  if( freq.QuadPart==0 ) QueryPerformanceFrequency(&freq);
+  QueryPerformanceFrequency(&freq);
   QueryPerformanceCounter(&now);
   return (i64)((now.QuadPart / freq.QuadPart) * 1000000
              + ((now.QuadPart % freq.QuadPart) * 1000000) / freq.QuadPart);

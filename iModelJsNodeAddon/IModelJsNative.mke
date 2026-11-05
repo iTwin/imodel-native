@@ -69,7 +69,7 @@ $(o)IModelJsNative$(oext) : $(baseDir)IModelJsNative.cpp $(baseDir)IModelJsNativ
 
 $(o)JsLogger$(oext) : $(baseDir)JsLogger.cpp $(baseDir)IModelJsNative.h $(baseDir)JsLogger.h ${MultiCompileDepends}
 
-$(o)JsCloudSqlite$(oext) : $(baseDir)JsCloudSqlite.cpp ${MultiCompileDepends}
+$(o)JsCloudSqlite$(oext) : $(baseDir)JsCloudSqlite.cpp $(baseDir)../iModelCore/BeSQLite/CloudSqliteQueryStats.h ${MultiCompileDepends}
 
 $(o)TestUtils$(oext) : $(baseDir)TestUtils.cpp ${MultiCompileDepends}
 

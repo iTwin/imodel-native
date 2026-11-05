@@ -44,6 +44,7 @@ struct QueryStatsConnection {
         if (m_blockSize <= 0)
             return SQLITE_NOTFOUND;
         stmt.Finalize();
+        // SQLite tracing callbacks can invalidate the connection while the pragma runs.
         if (!m_db)
             return SQLITE_ABORT;
         rc = sqlite3_bcvfs_register_vtab(m_db);

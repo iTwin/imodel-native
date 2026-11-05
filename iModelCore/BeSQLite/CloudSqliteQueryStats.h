@@ -16,6 +16,33 @@ struct CloudSqliteQueryStats {
     int64_t m_blocks = 0;
     int64_t m_bytes = 0;
 
+    static int ReadDownloadTimeMs(sqlite3* db, Utf8StringR out) {
+        Statement stmt;
+        auto rc = sqlite3_prepare_v2(db,
+            "SELECT name,value FROM main.bcv_stat WHERE name IN ('nqueryus','nqueryms') "
+            "ORDER BY CASE name WHEN 'nqueryus' THEN 0 ELSE 1 END LIMIT 1",
+            -1, &stmt.GetStmtR(), nullptr);
+        if (rc != SQLITE_OK)
+            return rc;
+        rc = sqlite3_step(stmt.GetStmtR());
+        if (rc != SQLITE_ROW)
+            return rc == SQLITE_DONE ? SQLITE_NOTFOUND : rc;
+        if (sqlite3_column_type(stmt.GetStmtR(), 1) != SQLITE_INTEGER)
+            return SQLITE_CORRUPT;
+        auto value = stmt.GetValueUInt64(1);
+        if (strcmp(stmt.GetValueText(0), "nqueryus") == 0)
+            value /= 1000;
+        if (value == 0) {
+            out = "0x0";
+        } else {
+            Utf8Char buffer[19];
+            if (BeStringUtilities::FormatUInt64(buffer, sizeof(buffer), value, HexFormatOptions::IncludePrefix) == 0)
+                return SQLITE_ERROR;
+            out = buffer;
+        }
+        return SQLITE_OK;
+    }
+
     static int Read(sqlite3* db, CloudSqliteQueryStats& out) {
         Statement stmt;
         auto rc = sqlite3_prepare_v2(db,
