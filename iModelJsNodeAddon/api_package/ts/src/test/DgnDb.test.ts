@@ -416,6 +416,50 @@ describe("basic tests", () => {
   });
 
   // verify that throwing javascript exceptions from C++ works
+  it("openIModelAsync", async () => {
+    const seedUri = path.join(getAssetsDir(), "test.bim");
+    const iModelDb = new iModelJsNative.DgnDb();
+    const opening = iModelDb.openIModelAsync(seedUri, OpenMode.Readonly);
+    expect(iModelDb.isOpen()).to.be.false;
+    expect(() => iModelDb.openIModel(seedUri, OpenMode.Readonly)).to.throw("in progress");
+    expect(() => iModelDb.openIModelAsync(seedUri, OpenMode.Readonly)).to.throw("in progress");
+    await opening;
+    expect(iModelDb.isOpen()).to.be.true;
+    expect(iModelDb.isReadonly()).to.be.true;
+    assert.isTrue(iModelDb.isSubClassOf("BisCore:GeometricElement3d", "BisCore:GeometricElement"));
+    iModelDb.closeFile();
+    expect(iModelDb.isOpen()).to.be.false;
+  });
+
+  it("openIModelAsync rejects write mode and missing files", async () => {
+    const seedUri = path.join(getAssetsDir(), "test.bim");
+    const iModelDb = new iModelJsNative.DgnDb() as any;
+    expect(() => iModelDb.openIModelAsync(seedUri, OpenMode.ReadWrite)).to.throw("read-only");
+    expect(iModelDb.isOpen()).to.be.false;
+
+    const missing = path.join(getOutputDir(), "does-not-exist.bim");
+    let syncError: any;
+    try {
+      iModelDb.openIModel(missing, OpenMode.Readonly);
+    } catch (err: any) {
+      syncError = err;
+    }
+    expect(syncError).to.not.be.undefined;
+
+    let asyncError: any;
+    try {
+      await iModelDb.openIModelAsync(missing, OpenMode.Readonly);
+    } catch (err: any) {
+      asyncError = err;
+    }
+    // the sync and async opens report the same error
+    expect(asyncError).to.not.be.undefined;
+    expect(asyncError.message).to.equal(syncError.message);
+    expect(asyncError.errorNumber).to.equal(syncError.errorNumber);
+    expect(asyncError.iTwinErrorId).to.deep.equal(syncError.iTwinErrorId);
+    expect(iModelDb.isOpen()).to.be.false;
+  });
+
   it("testExceptions", () => {
     // first try a function
     expect(() => (iModelJsNative as any).addFontWorkspace()).to.throw("Argument 0");
