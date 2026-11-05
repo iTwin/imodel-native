@@ -589,10 +589,6 @@ struct BulkDeleteFailure
     {
     DgnElementId elementId;
     BulkDeleteFailureReason reason = BulkDeleteFailureReason::ReferencedByForeignKey;
-    //! ReferencedByForeignKey: the referencing "table.column", e.g. "bis_GeometricElement3d.CategoryId".
-    //! ReadOnlyDomain: the domain name.
-    //! DefinitionInUse, ProtectedElement: empty.
-    Utf8String detail;
     };
 
 //=======================================================================================
