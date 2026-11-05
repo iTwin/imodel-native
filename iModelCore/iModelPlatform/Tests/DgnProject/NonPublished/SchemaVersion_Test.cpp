@@ -347,7 +347,6 @@ TEST_F(SchemaVersionTestFixture, ImportDomainSchemas)
     ASSERT_EQ(1, bulkDeletionResult.failures.size());
     EXPECT_EQ(elId, bulkDeletionResult.failures[0].elementId);
     EXPECT_EQ(BulkDeleteFailureReason::ReadOnlyDomain, bulkDeletionResult.failures[0].reason);
-    EXPECT_STREQ(SCHEMA_VERSION_TEST_SCHEMA_NAME, bulkDeletionResult.failures[0].detail.c_str());
 
     EXPECT_TRUE(m_db->Elements().GetElement(elId).IsValid());
     EXPECT_TRUE(m_db->Elements().GetElement(bisElId).IsValid());

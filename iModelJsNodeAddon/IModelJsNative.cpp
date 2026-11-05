@@ -2189,8 +2189,6 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             BeJsNapiObject entry(Env());
             static_cast<Napi::Object>(entry).Set("elementId", idStr);
             entry["reason"] = static_cast<int>(f.reason);
-            if (!f.detail.empty())
-                entry["detail"] = f.detail;
             failuresArr.Set(fIndex, static_cast<Napi::Object>(entry));
             failedIdsArr.Set(fIndex, idStr);
             ++fIndex;
