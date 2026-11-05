@@ -78,6 +78,7 @@ struct FileProps {
 
 template<typename T_Db> struct SQLiteOps {
     virtual T_Db* _GetMyDb() = 0;
+    virtual void _CheckCanModify(NapiInfoCR) {}
 
     static FileProps getEmbedFileProps(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, optObj);
@@ -115,6 +116,7 @@ template<typename T_Db> struct SQLiteOps {
     }
 
     T_Db& GetWritableDb(NapiInfoCR info) {
+        _CheckCanModify(info);
         auto& db = GetOpenedDb(info);
         if (db.IsReadonly())
             THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db is not open for write", DgnDbStatus::NotOpenForWrite);
@@ -123,6 +125,7 @@ template<typename T_Db> struct SQLiteOps {
     }
 
     void EmbedFile(NapiInfoCR info) {
+        _CheckCanModify(info);
         Db& db = GetOpenedDb(info);
         auto props = getEmbedFileArg(info);
         DbResult stat;
@@ -164,6 +167,7 @@ template<typename T_Db> struct SQLiteOps {
     }
 
     void ReplaceEmbeddedFile(NapiInfoCR info) {
+        _CheckCanModify(info);
         Db& db = GetOpenedDb(info);
         auto props = getEmbedFileArg(info);
         auto stat = db.EmbeddedFiles().Replace(props.m_name.c_str(), props.m_localFileName.c_str(), &props.m_date);
@@ -173,6 +177,7 @@ template<typename T_Db> struct SQLiteOps {
     }
 
     void RemoveEmbeddedFile(NapiInfoCR info) {
+        _CheckCanModify(info);
         Db& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_STRING(0, name);
         auto stat = db.EmbeddedFiles().Remove(name.c_str());
@@ -214,6 +219,7 @@ template<typename T_Db> struct SQLiteOps {
 
     // save a property to the be_prop table
     void SaveFileProperty(NapiInfoCR info) {
+        _CheckCanModify(info);
         if (info.Length() < 2)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "saveFileProperty requires 2 arguments", IModelJsNativeErrorKey::BadArg);
 
@@ -272,6 +278,7 @@ template<typename T_Db> struct SQLiteOps {
     }
 
     void EmbedFontFile(NapiInfoCR info) {
+        _CheckCanModify(info);
         REQUIRE_ARGUMENT_INTEGER(0, id);
         REQUIRE_ARGUMENT_ANY_OBJ(1, facesObj);
         REQUIRE_ARGUMENT_ANY_OBJ(2, dataObj);
@@ -333,6 +340,7 @@ template<typename T_Db> struct SQLiteOps {
     }
 
     void Vacuum(NapiInfoCR info) {
+        _CheckCanModify(info);
         Db& db = GetOpenedDb(info);
         int pageSize = 0;
         Utf8String into;
@@ -348,12 +356,14 @@ template<typename T_Db> struct SQLiteOps {
     }
 
     void Analyze(NapiInfoCR info) {
+        _CheckCanModify(info);
         Db& db = GetOpenedDb(info);
         if (const auto status = db.Analyze(); status != BE_SQLITE_OK)
             JsInterop::throwSqlResult("error analyzing", db.GetDbFileName(), status);
     }
 
     void EnableWalMode(Napi::CallbackInfo const& info) {
+        _CheckCanModify(info);
         Db& db = GetOpenedDb(info);
         OPTIONAL_ARGUMENT_BOOL(0, yesNo, true);
         auto status = db.EnableWalMode(yesNo);
@@ -362,6 +372,7 @@ template<typename T_Db> struct SQLiteOps {
     }
 
     void SetAutoCheckpointThreshold(Napi::CallbackInfo const& info) {
+        _CheckCanModify(info);
         Db& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_INTEGER(0, frames);
         auto status = db.SetAutoCheckpointThreshold(frames);
@@ -369,6 +380,7 @@ template<typename T_Db> struct SQLiteOps {
             JsInterop::throwSqlResult("error setting autoCheckpoint threshold", db.GetDbFileName(), status);
     }
     void PerformCheckpoint(Napi::CallbackInfo const& info) {
+        _CheckCanModify(info);
         Db& db = GetOpenedDb(info);
         OPTIONAL_ARGUMENT_INTEGER(0, mode, 3);
         DbResult status = db.PerformCheckpoint((WalCheckpointMode)mode);
@@ -377,6 +389,7 @@ template<typename T_Db> struct SQLiteOps {
     }
 
     void RestartDefaultTxn(NapiInfoCR info) {
+        _CheckCanModify(info);
         GetOpenedDb(info).RestartDefaultTxn();
     }
 
@@ -766,7 +779,12 @@ private:
     DEFINE_CONSTRUCTOR
     Db m_db;
     RefCountedPtr<SQLiteDbChangeTracker> m_changeTracker;
+    bool m_inApplyChangeset = false;
     Db* _GetMyDb() override { return &m_db; }
+    void _CheckCanModify(NapiInfoCR info) override {
+        if (m_inApplyChangeset)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "cannot modify or close database while applying a changeset", IModelJsNativeErrorKey::BadArg);
+    }
 
 public:
     SQLiteDb(NapiInfoCR info) : Napi::ObjectWrap<SQLiteDb>(info) {}
@@ -794,6 +812,7 @@ public:
     }
 
     void CreateDb(NapiInfoCR info) {
+        _CheckCanModify(info);
         REQUIRE_ARGUMENT_STRING(0, dbName);
         Db::CreateParams params;
         addContainerParams(Value(), dbName, params, info[1]);
@@ -811,6 +830,7 @@ public:
     }
 
     void OpenDb(NapiInfoCR info) {
+        _CheckCanModify(info);
         REQUIRE_ARGUMENT_STRING(0, dbName);
         Db::OpenParams params(Db::OpenMode::Readonly);
         if (info[1].IsObject()) {
@@ -836,10 +856,11 @@ public:
         }
     }
 
-    void CloseDb(NapiInfoCR info) { CloseDbIfOpen(false);}
-    void Dispose(NapiInfoCR info) { CloseDbIfOpen(false);}
+    void CloseDb(NapiInfoCR info) { _CheckCanModify(info); CloseDbIfOpen(false);}
+    void Dispose(NapiInfoCR info) { _CheckCanModify(info); CloseDbIfOpen(false);}
 
     void SaveChanges(NapiInfoCR info) {
+        _CheckCanModify(info);
         auto& db = GetOpenedDb(info);
         DbResult status = db.SaveChanges();
         if (status != BE_SQLITE_OK)
@@ -847,6 +868,7 @@ public:
     }
 
     void AbandonChanges(NapiInfoCR info) {
+        _CheckCanModify(info);
         auto& db = GetOpenedDb(info);
         DbResult status = db.AbandonChanges();
         if (status != BE_SQLITE_OK)
@@ -909,28 +931,11 @@ public:
             JsInterop::throwSqlResult("error writing changeset file", filePath.GetNameUtf8().c_str(), stat);
     }
 
-    //! Apply a raw sqlite changeset file (the plain, uncompressed byte stream produced by the
-    //! sqlite session extension - *not* the same format used for iModel changesets) to this
-    //! SQLiteDb. Unlike DgnDb.applyChangeset, this does *not* validate any changeset header
-    //! (parentId/changesetId) against the current state of the db, and it does *not* support
-    //! DDL/schema changes (raw sqlite changesets cannot represent them) - it simply applies the
-    //! row-level changes. Any conflict encountered while applying causes the entire apply to fail.
     void ApplyChangeset(NapiInfoCR info) {
         auto& db = GetWritableDb(info);
-        REQUIRE_ARGUMENT_STRING(0, pathname);
-
-        BeFileName filePath(pathname.c_str(), BentleyCharEncoding::Utf8);
-        BeSQLite::ChangeSet changeSet;
-        auto stat = changeSet.Read(pathname);
-        if (stat != BE_SQLITE_OK)
-            JsInterop::throwSqlResult("error reading changeset file", filePath.GetNameUtf8().c_str(), stat);
-
-        // On failure, we simply throw - it is up to the caller to decide whether to abandon or save
-        // any changes applied so far.
-        auto applyArgs = BeSQLite::ApplyChangesArgs::Default().SetAbortOnAnyConflict(true);
-        stat = changeSet.ApplyChanges(db, applyArgs);
-        if (stat != BE_SQLITE_OK)
-            BeNapi::ThrowJsException(info.Env(), "error applying changeset", (int)stat, IModelJsNativeErrorKeyHelper::GetITwinError(IModelJsNativeErrorKey::ChangesetError));
+        SQLiteDbScopeGuard applying([this]() { m_inApplyChangeset = false; });
+        m_inApplyChangeset = true;
+        JsInterop::ApplyChangeset(db, info);
     }
 
     static void Init(Napi::Env env, Napi::Object exports) {
