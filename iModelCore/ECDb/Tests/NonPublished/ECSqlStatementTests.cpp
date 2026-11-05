@@ -11388,9 +11388,25 @@ TEST_F(ECSqlStatementTestFixture, NamesAndValuesStayInsideGeneratedSql)
     // $-> paths name EC properties
     expectRejected("SELECT $->[it's] FROM ts.TestClass", "ECDb_0752");
 
-    // ']' would end the [...] that the generated SQL puts names into
-    expectRejected("SELECT ECInstanceId [a]]b] FROM ts.TestClass", "ECDb_0471");
-    expectRejected("SELECT ECInstanceId \"a]b\" FROM ts.TestClass", "ECDb_0471");
+    // ']' would end the [...] that the generated SQL puts aliases into
+    expectRejected("SELECT ECInstanceId [a]]b] FROM ts.TestClass", "ECDb_0753");
+    expectRejected("SELECT ECInstanceId \"a]b\" FROM ts.TestClass", "ECDb_0753");
+    expectRejected("SELECT 1 FROM ts.TestClass [t]]x]", "ECDb_0753");
+    expectRejected("SELECT 1 FROM (SELECT 1) [s]]x]", "ECDb_0753");
+    expectRejected("SELECT 1 FROM meta.ECClassDef c JOIN meta.ECPropertyDef p USING meta.ClassOwnsLocalProperties [r]]x]", "ECDb_0753");
+
+    // Other characters are fine inside [...]
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT [t x].ECInstanceId [a b] FROM ts.TestClass [t x]")) << issueListener.GetLastMessage().c_str();
+    EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+    }
+
+    // ECSQLOPTIONS values may be quoted names. They are never written into SQL, so ']' is allowed there.
+    {
+    ECSqlStatement stmt;
+    EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 FROM ts.TestClass ECSQLOPTIONS myopt=\"a]b\"")) << issueListener.GetLastMessage().c_str();
+    }
 
     // These names are written into the generated SQL without quotes
     expectRejected("WITH [my cte](a) AS (SELECT 1) SELECT a FROM [my cte]", "ECDb_0751");

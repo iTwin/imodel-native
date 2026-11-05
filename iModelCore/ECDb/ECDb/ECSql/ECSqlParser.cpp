@@ -403,6 +403,20 @@ BentleyStatus ECSqlParser::ParseSelection(std::unique_ptr<SelectClauseExp>& exp,
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECSqlParser::ValidateAlias(Utf8StringCR alias) const
+    {
+    // Aliases are written into SQLite SQL inside [...], which has no escape for ']'
+    if (alias.find(']') == Utf8String::npos)
+        return SUCCESS;
+
+    Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0753,
+        "Invalid alias '%s'. Aliases must not contain ']'.", alias.c_str());
+    return ERROR;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECSqlParser::ParseDerivedColumn(std::unique_ptr<DerivedPropertyExp>& exp, OSQLParseNode const* parseNode) const
     {
     exp = nullptr;
@@ -417,16 +431,19 @@ BentleyStatus ECSqlParser::ParseDerivedColumn(std::unique_ptr<DerivedPropertyExp
     OSQLParseNode const* first = parseNode->getChild(0);
     OSQLParseNode const* opt_as_clause = parseNode->getChild(1);
 
-    std::unique_ptr<ValueExp> valExp = nullptr;
-    BentleyStatus stat = ParseValueExp(valExp, first);
-    if (stat != SUCCESS)
-        return stat;
-
     Utf8String columnAlias;
     if (opt_as_clause->count() > 0)
         columnAlias = opt_as_clause->getChild(1)->getTokenValue();
     else
         columnAlias = opt_as_clause->getTokenValue();
+
+    if (SUCCESS != ValidateAlias(columnAlias))
+        return ERROR;
+
+    std::unique_ptr<ValueExp> valExp = nullptr;
+    BentleyStatus stat = ParseValueExp(valExp, first);
+    if (stat != SUCCESS)
+        return stat;
 
     exp = std::make_unique<DerivedPropertyExp>(std::move(valExp), columnAlias.c_str());
     return SUCCESS;
@@ -1648,7 +1665,13 @@ BentleyStatus ECSqlParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, OSQL
         OSQLParseNode const* range_variable = parseNode->getChild(2/*range_variable*/);
         Utf8CP alias = nullptr;
         if (range_variable->count() > 0)
-            alias = range_variable->getChild(1/*SQL_TOKEN_NAME*/)->getTokenValue().c_str();
+            {
+            Utf8StringCR aliasToken = range_variable->getChild(1/*SQL_TOKEN_NAME*/)->getTokenValue();
+            if (SUCCESS != ValidateAlias(aliasToken))
+                return ERROR;
+
+            alias = aliasToken.c_str();
+            }
 
         exp = std::make_unique<SubqueryRefExp>(std::move(subqueryExp), alias, polymorphicConst);
         return SUCCESS;
@@ -1758,6 +1781,9 @@ BentleyStatus ECSqlParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, OSQL
                     BeAssert(false && "Range column not supported");
                     return ERROR;
                     }
+
+                if (SUCCESS != ValidateAlias(table_alias->getTokenValue()))
+                    return ERROR;
 
                 if (!table_alias->getTokenValue().empty())
                     rangeClassRef->SetAlias(table_alias->getTokenValue());
@@ -2232,6 +2258,9 @@ BentleyStatus ECSqlParser::ParseTableNodeRef(std::unique_ptr<ClassRefExp>& exp, 
             BeAssert(false && "Range column not supported");
             return ERROR;
             }
+
+        if (SUCCESS != ValidateAlias(table_alias->getTokenValue()))
+            return ERROR;
 
         if (!table_alias->getTokenValue().empty())
             rangeClassRef->SetAlias(table_alias->getTokenValue());

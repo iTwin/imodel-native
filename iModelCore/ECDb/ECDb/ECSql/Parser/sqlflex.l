@@ -445,13 +445,6 @@ sal_Int32 gatherString(yyscan_t yyscanner, sal_Char delim, sal_Int32 nTyp)
                 switch(nTyp)
                 {
                 case 0:
-                    // ECSQL names are written into SQLite SQL inside [...], which has no escape for ']'
-                    if (sBuffer.find(']') != Utf8String::npos)
-                        {
-                        YY_FATAL_ERROR("Names must not contain ']'");
-                        return SQL_TOKEN_INVALIDSYMBOL;
-                        }
-
                     SQL_NEW_NODE(sBuffer, SQL_NODE_NAME);
                     return SQL_TOKEN_NAME;
                 case 1:
