@@ -76,10 +76,32 @@ class BulkElementDeletion
 
     // Records a blocking element once. An element referenced through several FKs (or both referenced and in use as a
     // definition) keeps the first reason found; FK checks run before the definition-usage check.
-    void AddFailure(DgnElementId id, BulkDeleteFailureReason reason, Utf8String detail = "")
+    void AddFailure(DgnElementId id, BulkDeleteFailureReason reason, Utf8StringCR detail = "")
         {
-        if (m_failureIds.insert(id.GetValue()).second)
-            m_failures.push_back({ id, reason, std::move(detail) });
+        if (!m_failureIds.insert(id.GetValue()).second)
+            return;
+
+        m_failures.push_back({ id, reason });
+
+        const Utf8String idStr = id.ToHexStr();
+        switch (reason)
+            {
+            case BulkDeleteFailureReason::ProtectedElement:
+                LOG.debugv("BulkElementDeletion: cannot delete element %s: it is a protected element (root subject or built-in partition)", idStr.c_str());
+                break;
+            case BulkDeleteFailureReason::ReadOnlyDomain:
+                LOG.debugv("BulkElementDeletion: cannot delete element %s: its class belongs to read-only domain '%s'", idStr.c_str(), detail.c_str());
+                break;
+            case BulkDeleteFailureReason::ReferencedByForeignKey:
+                LOG.debugv("BulkElementDeletion: cannot delete element %s: it is still referenced by a surviving row via foreign key %s", idStr.c_str(), detail.c_str());
+                break;
+            case BulkDeleteFailureReason::DefinitionInUse:
+                LOG.debugv("BulkElementDeletion: cannot delete definition element %s: it is still used by elements outside the delete set", idStr.c_str());
+                break;
+            default:
+                LOG.debugv("BulkElementDeletion: cannot delete element %s (reason %d)", idStr.c_str(), static_cast<int>(reason));
+                break;
+            }
         }
 
     bool m_geometricElementsExist = false;
@@ -388,9 +410,7 @@ DbResult BulkElementDeletion::FindProtectedElements()
 
     while (BE_SQLITE_ROW == stmt->Step())
         {
-        const auto id = stmt->GetValueId<DgnElementId>(0);
-        AddFailure(id, BulkDeleteFailureReason::ProtectedElement);
-        LOG.errorv("BulkElementDeletion: protected element %s is in the delete set", id.ToHexStr().c_str());
+        AddFailure(stmt->GetValueId<DgnElementId>(0), BulkDeleteFailureReason::ProtectedElement);
         }
 
     return BE_SQLITE_OK;

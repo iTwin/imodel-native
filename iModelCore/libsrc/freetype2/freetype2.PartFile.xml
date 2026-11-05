@@ -17,7 +17,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="Freetype2Library" BentleyBuildMakeFile="freetype2.mke">
+    <Part Name="LibraryDependencies">
         <!-- LibType="Static": the vcpkg install (and thus the prewire that stages headers from it) runs static-only,
              writing under the static OutputRootDir. Pulling PublicAPI as Static forces the prewire to run in the static
              flavor too, so its $(OutputRootDir) matches the install root even when this part is built dynamic
@@ -27,10 +27,30 @@
              and dynamic builds. -->
         <SubPart PartName="vcpkg_install_freetype2" PartFile="iModelCore/libsrc/vcpkg" LibType="Static"/>
         <SubPart LibType="Static" PartName="Zlib" PartFile="iModelCore\libsrc\compress\Zlib"/>
+    </Part>
+
+    <Part Name="Freetype2Library" BentleyBuildMakeFile="freetype2.mke">
+        <SubPart PartName="LibraryDependencies"/>
         <Bindings>
             <Libs>Delivery/$(libprefix)iTwinFreetype2$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)iTwinFreetype2$(shlibext)</Assemblies>
         </Bindings>
+    </Part>
+
+    <Part Name="Freetype2LibraryThirdParty" BentleyBuildMakeFile="freetype2.mke" ApiNumber="B02" BentleyBuildMakeOptions="-diTwinNativeThirdParty=true">
+        <SubPart PartName="LibraryDependencies"/>
+        <Bindings>
+            <Libs>Delivery/$(libprefix)freetype2$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)freetype2$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="Freetype2LibraryThirdPartyDynamic" ExcludePlatforms="Android*,iOS*,Linux*,MacOS*">
+        <SubPart PartName="Freetype2LibraryThirdParty" LibType="Dynamic"/>
+    </Part>
+
+    <Part Name="Freetype2LibraryThirdPartyStatic">
+        <SubPart PartName="Freetype2LibraryThirdParty" LibType="Static"/>
     </Part>
 
     <Part Name="Freetype2LibraryDynamic" ExcludePlatforms="Android*,iOS*,Linux*,MacOS*">
