@@ -959,6 +959,19 @@ struct JsCloudPrefetch : Napi::ObjectWrap<JsCloudPrefetch> {
                 m_maxRequests = std::min(30, args[JSON_NAME(nRequests)].asInt(m_maxRequests));
                 m_minRequests = std::min(30, args[JSON_NAME(minRequests)].asInt(m_minRequests));
                 m_timeout = args[JSON_NAME(timeout)].asInt(m_timeout);
+                auto blocksVal = args[JSON_NAME(blocks)];
+                if (blocksVal.isArray()) {
+                    bvector<uint32_t> blocks;
+                    blocksVal.ForEachArrayMember([&](BeJsValue::ArrayIndex, BeJsConst block) {
+                        blocks.push_back((uint32_t) block.asUInt());
+                        return false;
+                    });
+                    if (!blocks.empty()) {
+                        rc = m_prefetch.SetBlocks(blocks);
+                        if (rc != BE_SQLITE_OK)
+                            THROW_JS_BE_SQLITE_EXCEPTION(Env(), "error setting prefetch blocks", rc);
+                    }
+                }
             }
             m_jsPrefetch.Reset(jsObj.Value(), 1);
             // set up notification if the container is being disconnected (e.g. on exit) to stop this prefetch

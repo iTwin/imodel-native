@@ -389,6 +389,16 @@ DbResult CloudPrefetch::Init(CloudContainer& container, Utf8StringCR dbName) {
 }
 
 /**
+ * Restrict a prefetch operation to a list of block indices, instead of walking the database sequentially from block 0.
+ * Up to nRequest of the listed blocks that are not already cached are downloaded in parallel by each Run.
+ */
+DbResult CloudPrefetch::SetBlocks(bvector<uint32_t> const& blocks) {
+    if (m_prefetch == nullptr)
+        return BE_SQLITE_MISUSE;
+    return (DbResult) sqlite3_bcvfs_prefetch_blocks(m_prefetch, (int) blocks.size(), blocks.data());
+}
+
+/**
  * destroy a prefetch object and abandon any outstanding requests
  */
 void CloudPrefetch::Stop() {

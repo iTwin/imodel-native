@@ -3896,12 +3896,18 @@ int bcvSendMsg(BCV_SOCKET_TYPE fd, BcvMessage *pMsg){
       bcvBufferMsgString(&rc, &buf, pMsg->u.prefetch.zAuth);
       bcvBufferAppendU32(&rc, &buf, pMsg->u.prefetch.nRequest);
       bcvBufferAppendU32(&rc, &buf, pMsg->u.prefetch.nMs);
+      if( pMsg->u.prefetch.nBlk>0 ){
+        bcvBufferMsgU32Array(&rc, &buf, 
+            pMsg->u.prefetch.aBlk, pMsg->u.prefetch.nBlk
+        );
+      }
       break;
     case BCV_MESSAGE_PREFETCH_REPLY: 
       bcvBufferAppendU32(&rc, &buf, pMsg->u.prefetch_r.errCode);
       bcvBufferMsgString(&rc, &buf, pMsg->u.prefetch_r.zErrMsg);
       bcvBufferAppendU32(&rc, &buf, pMsg->u.prefetch_r.nOnDemand);
       bcvBufferAppendU32(&rc, &buf, pMsg->u.prefetch_r.nOutstanding);
+      bcvBufferAppendU32(&rc, &buf, pMsg->u.prefetch_r.bBlockList);
       break;
 
     default:
@@ -4065,12 +4071,19 @@ int bcvRecvMsg(
             pMsg->u.prefetch.zAuth = bcvMsgGetString(&aBody);
             pMsg->u.prefetch.nRequest = bcvMsgGetU32(&aBody);
             pMsg->u.prefetch.nMs = bcvMsgGetU32(&aBody);
+            if( (aBody - (u8*)&pMsg[1])<nByte ){
+              u32 *pn = &pMsg->u.prefetch.nBlk;
+              pMsg->u.prefetch.aBlk = bcvMsgGetU32Array(&aBody, pn);
+            }
             break;
           case BCV_MESSAGE_PREFETCH_REPLY: 
             pMsg->u.prefetch_r.errCode = bcvMsgGetU32(&aBody);
             pMsg->u.prefetch_r.zErrMsg = bcvMsgGetString(&aBody);
             pMsg->u.prefetch_r.nOnDemand = bcvMsgGetU32(&aBody);
             pMsg->u.prefetch_r.nOutstanding = bcvMsgGetU32(&aBody);
+            if( (aBody - (u8*)&pMsg[1])<nByte ){
+              pMsg->u.prefetch_r.bBlockList = bcvMsgGetU32(&aBody);
+            }
             break;
 
           default:
