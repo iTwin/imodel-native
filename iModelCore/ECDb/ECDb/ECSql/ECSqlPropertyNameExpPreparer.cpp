@@ -415,16 +415,21 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef(NativeSqlBuilder:
                 }
             default: {
                 if (exp.IsPropertyFromCommonTableBlockWithColumns()) {
-                    NativeSqlBuilder sqlSnippet;
                     auto& ctb = exp.GetClassRefExp()->GetAs<CommonTableBlockNameExp>();
-                    if (!ctb.GetAlias().empty()) {
-                        sqlSnippet.Append(ctb.GetAlias());
-                    } else {
-                        sqlSnippet.Append(ctb.GetName());
-                    }
-                    sqlSnippet.AppendDot();
-                    sqlSnippet.Append(exp.GetResolvedPropertyPath().Last().GetName());
-                    nativeSqlSnippets.push_back(sqlSnippet);
+                    ECSqlTypeInfo const& type = exp.GetTypeInfo();
+                    const int columnCount = type.IsPoint() ? (type.GetPrimitiveType() == PRIMITIVETYPE_Point2d ? 2 : 3) : 1;
+                    for (int i = 0; i < columnCount; ++i)
+                        {
+                        NativeSqlBuilder sqlSnippet;
+                        sqlSnippet.Append(ctb.GetAlias().empty() ? ctb.GetName() : ctb.GetAlias());
+                        sqlSnippet.AppendDot();
+                        Utf8StringCR name = exp.GetResolvedPropertyPath().Last().GetName();
+                        if (columnCount == 1)
+                            sqlSnippet.Append(name);
+                        else
+                            sqlSnippet.AppendEscaped(ctb.GetBlock()->GetPointColumnName(name, i));
+                        nativeSqlSnippets.push_back(sqlSnippet);
+                        }
                 } else {
                     //Here we presume any primitive value expression which must have a alias.
                     Utf8String alias = referencedDerivedPropertyExp.GetColumnAlias();
@@ -434,9 +439,29 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef(NativeSqlBuilder:
                     if (alias.empty())
                         return ECSqlStatus::Error;
 
-                    NativeSqlBuilder sqlSnippet;
-                    sqlSnippet.AppendEscaped(alias);
-                    nativeSqlSnippets.push_back(sqlSnippet);
+                    // point values (e.g. text-to-point casts) span several columns which the select preparer suffixes with _<n>
+                    ECSqlTypeInfo const& refType = referencedValueExp->GetTypeInfo();
+                    int columnCount = 1;
+                    if (refType.IsPrimitive() && refType.GetPrimitiveType() == PRIMITIVETYPE_Point2d)
+                        columnCount = 2;
+                    else if (refType.IsPrimitive() && refType.GetPrimitiveType() == PRIMITIVETYPE_Point3d)
+                        columnCount = 3;
+
+                    if (columnCount == 1)
+                        {
+                        NativeSqlBuilder sqlSnippet;
+                        sqlSnippet.AppendEscaped(alias);
+                        nativeSqlSnippets.push_back(sqlSnippet);
+                        }
+                    else
+                        {
+                        for (int i = 0; i < columnCount; ++i)
+                            {
+                            NativeSqlBuilder sqlSnippet;
+                            sqlSnippet.AppendEscaped(Utf8PrintfString("%s_%d", alias.c_str(), i));
+                            nativeSqlSnippets.push_back(sqlSnippet);
+                            }
+                        }
                 }
                 break;
             }

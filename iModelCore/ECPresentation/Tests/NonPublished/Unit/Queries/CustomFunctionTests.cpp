@@ -1206,7 +1206,7 @@ TEST_F(CustomFunctionTests, AggregateJsonArray)
     IECInstancePtr gadget2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *gadgetClass);
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
-    Utf8CP query = "SELECT " FUNCTION_NAME_AggregateJsonArray "('[{\"ECInstanceId\": ' || CAST(ECInstanceId AS TEXT) || '}]') "
+    Utf8CP query = "SELECT " FUNCTION_NAME_AggregateJsonArray "('[{\"ECInstanceId\": ' || CAST(CAST(ECInstanceId AS LONG) AS TEXT) || '}]') "
                    "  FROM RET.Gadget ";
 
     ECSqlStatement stmt;
