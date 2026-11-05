@@ -80,6 +80,39 @@ and that manifest directory's `vcpkg-configuration.json` pins the registry basel
 consumer requires its own configuration because its dependency graph and required baseline may
 differ.
 
+## Shared Builds for iTwinNativeThirdParty
+
+The Curl, OpenSSL, and FreeType PartFiles also provide explicit `ThirdParty` variants for
+iTwinNativeThirdParty. Its packaging wrappers reference these parts in imodel-native rather than
+maintaining separate build implementations. Each variant reuses its library's existing `.mke`
+with `BentleyBuildMakeOptions="-diTwinNativeThirdParty=true"` to select the legacy output name:
+
+| PartFile | Third-party library part | Native output stem | Third-party output stem |
+| -------- | ------------------------ | ------------------ | ----------------------- |
+| [curl/BeCurl.PartFile.xml](curl/BeCurl.PartFile.xml) | `LibraryThirdParty` | `iTwinCurl` | `BeCurl` |
+| [openssl/BeOpenSSL.PartFile.xml](openssl/BeOpenSSL.PartFile.xml) | `LibraryThirdParty` | `iTwinOpenSSL` | `BeOpenSSL` |
+| [freetype2/freetype2.PartFile.xml](freetype2/freetype2.PartFile.xml) | `Freetype2LibraryThirdParty` | `iTwinFreetype2` | `freetype2` |
+
+Preserve the static/dynamic aggregate parts, legacy output names, and `ApiNumber="B02"` on the
+third-party library parts; their Windows shared-library bindings use that suffix. The default
+native parts retain their existing output names and dependency behavior. Shared dependency helpers
+keep the vcpkg installs and install-dependent prewires/PublicAPI parts static-only, including when
+the consuming library is dynamic.
+
+Dependency bindings also determine what is delivered into a NuGet package, not just what is
+needed to compile or link. In particular, native Curl's `Library` depends on the aggregate
+`Compress`, but `LibraryThirdParty` depends only on static `Zlib` from
+[compress/Zlib.PartFile.xml](compress/Zlib.PartFile.xml). Do not move `Compress` into Curl's
+shared `LibraryDependencies` helper: that would add unrelated LZMA/Snappy libraries, headers, and
+notices to the Curl package. The vcpkg install chain orders builds; it is not itself a declaration
+that every earlier consumer's outputs belong in the package.
+
+When changing these definitions, check both native and third-party dependency graphs, including
+static/dynamic selection and source-build strategy coverage. After packaging changes, compare a
+clean build's staged libraries, headers, and notices against the published NuGet payload. Verify
+archive architectures and relevant public symbols as well; those checks do not replace consumer
+link tests or validation of generated NuGet metadata.
+
 ## Setup
 
 > **Note**: If you do not have a recent enough version of `cmake`, vcpkg will automatically download and install one the first time it is needed. That download now lands in the **persistent, per-user cache** (see [Cache locations and environment overrides](#cache-locations-and-environment-overrides)), so it happens **once** and survives clean and TMR builds rather than being re-downloaded under `$OutRoot` each time. It is still *strongly* recommended that you install a recent enough `cmake` yourself, both to avoid that one-time download and to control the version. Presently that means version 4.3.2 or later, but that could change in the future. To see the version vcpkg would otherwise use, look under `<base>/downloads/<platform-key>/tools/` for a `cmake-<version>-<vcpkg platform>` directory — e.g. `${XDG_CACHE_HOME:-$HOME/.cache}/Bentley/vcpkg/downloads/arm64-osx/tools/` on macOS/Linux or `%LOCALAPPDATA%\Bentley\vcpkg\downloads\x64-windows\tools\` on Windows. If one is present, you don't have the required version installed and should install one at least as recent as the one there.

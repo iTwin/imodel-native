@@ -9698,7 +9698,7 @@ TEST_F(SchemaUpgradeTestFixture, ModifyECProperties)
         "       <ECProperty propertyName='ExtendedProperty' typeName='string' extendedTypeName='URL' />"
         "   </ECEntityClass>"
         "</ECSchema>";
-    AssertSchemaUpdate(modifiedECPropertyArrayMixOccurs, filePath, {false, false}, "Modifying ECPropertyArray minOccurs");
+    AssertSchemaUpdate(modifiedECPropertyArrayMixOccurs, filePath, {false, false}, "Modifying ECPropertyArray minOccurs (increase is narrowing)");
 
     Utf8CP modifiedECArrayPropertyMaxOccurs =
         //SchemaItem with Modified ECArrayProperty MaxOccurs
@@ -9715,7 +9715,7 @@ TEST_F(SchemaUpgradeTestFixture, ModifyECProperties)
         "       <ECProperty propertyName='ExtendedProperty' typeName='string' extendedTypeName='URL' />"
         "   </ECEntityClass>"
         "</ECSchema>";
-    AssertSchemaUpdate(modifiedECArrayPropertyMaxOccurs, filePath, {false, false}, "Modifying ECPropertyArray maxOccurs");
+    AssertSchemaUpdate(modifiedECArrayPropertyMaxOccurs, filePath, {true, true}, "Modifying ECPropertyArray maxOccurs (increase is widening)");
 
     Utf8CP modifiedExtendedType =
         //SchemaItem with Modifed Extended Type
@@ -9733,6 +9733,143 @@ TEST_F(SchemaUpgradeTestFixture, ModifyECProperties)
         "   </ECEntityClass>"
         "</ECSchema>";
     AssertSchemaUpdate(modifiedExtendedType, filePath, {true, true}, "Modifying extendedTypeName");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, ModifyArrayPropertyBounds)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "   <ECStructClass typeName='MyStruct' modifier='None'>"
+        "       <ECProperty propertyName='Val' typeName='int' />"
+        "   </ECStructClass>"
+        "   <ECEntityClass typeName='TestClass' modifier='None' >"
+        "       <ECArrayProperty propertyName='PrimArray' typeName='string' minOccurs='2' maxOccurs='5' />"
+        "       <ECStructArrayProperty propertyName='StructArray' typeName='MyStruct' minOccurs='2' maxOccurs='5' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemaupdate_arraybounds.ecdb", schemaItem));
+    BeFileName filePath(m_ecdb.GetDbFileName());
+    m_ecdb.CloseDb();
+
+    auto generateSchema = [](Utf8CP primBounds, Utf8CP structBounds)
+        {
+        Utf8String xml;
+        xml.Sprintf(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+            "   <ECStructClass typeName='MyStruct' modifier='None'>"
+            "       <ECProperty propertyName='Val' typeName='int' />"
+            "   </ECStructClass>"
+            "   <ECEntityClass typeName='TestClass' modifier='None' >"
+            "       <ECArrayProperty propertyName='PrimArray' typeName='string' %s />"
+            "       <ECStructArrayProperty propertyName='StructArray' typeName='MyStruct' %s />"
+            "   </ECEntityClass>"
+            "</ECSchema>", primBounds, structBounds);
+        return xml;
+        };
+
+    // Widening: decrease minOccurs
+    AssertSchemaUpdate(generateSchema("minOccurs='1' maxOccurs='5'", "minOccurs='2' maxOccurs='5'").c_str(), filePath, {true, true}, "Decreasing minOccurs on primitive array is a minor change");
+    AssertSchemaUpdate(generateSchema("minOccurs='2' maxOccurs='5'", "minOccurs='0' maxOccurs='5'").c_str(), filePath, {true, true}, "Decreasing minOccurs on struct array is a minor change");
+
+    // Widening: increase maxOccurs
+    AssertSchemaUpdate(generateSchema("minOccurs='2' maxOccurs='10'", "minOccurs='2' maxOccurs='5'").c_str(), filePath, {true, true}, "Increasing maxOccurs on primitive array is a minor change");
+    AssertSchemaUpdate(generateSchema("minOccurs='2' maxOccurs='5'", "minOccurs='2' maxOccurs='100'").c_str(), filePath, {true, true}, "Increasing maxOccurs on struct array is a minor change");
+
+    // Widening: bounded -> unbounded maxOccurs
+    AssertSchemaUpdate(generateSchema("minOccurs='2' maxOccurs='unbounded'", "minOccurs='2' maxOccurs='5'").c_str(), filePath, {true, true}, "Changing maxOccurs to unbounded on primitive array is a minor change");
+    AssertSchemaUpdate(generateSchema("minOccurs='2' maxOccurs='5'", "minOccurs='2' maxOccurs='unbounded'").c_str(), filePath, {true, true}, "Changing maxOccurs to unbounded on struct array is a minor change");
+
+    // Widening both at once
+    AssertSchemaUpdate(generateSchema("minOccurs='0' maxOccurs='unbounded'", "minOccurs='0' maxOccurs='unbounded'").c_str(), filePath, {true, true}, "Widening both bounds at once is a minor change");
+
+    // Expected error messages. Min is validated before max, so if both bounds are narrowed the MinOccurs error is reported.
+    auto minNarrowedError = [](Utf8CP propName)
+        {
+        return Utf8PrintfString("ECSchema Upgrade failed. ECProperty TestSchema:TestClass.%s: Narrowing of array bounds by increasing 'MinOccurs' for an Array ECProperty is not supported.", propName);
+        };
+    auto maxNarrowedError = [](Utf8CP propName)
+        {
+        return Utf8PrintfString("ECSchema Upgrade failed. ECProperty TestSchema:TestClass.%s: Narrowing of array bounds by decreasing 'MaxOccurs' for an Array ECProperty is not supported.", propName);
+        };
+
+    // Narrowing: increase minOccurs
+    AssertSchemaUpdate(generateSchema("minOccurs='3' maxOccurs='5'", "minOccurs='2' maxOccurs='5'").c_str(), filePath, {false, false}, "Increasing minOccurs on primitive array is not supported", minNarrowedError("PrimArray").c_str());
+    AssertSchemaUpdate(generateSchema("minOccurs='2' maxOccurs='5'", "minOccurs='3' maxOccurs='5'").c_str(), filePath, {false, false}, "Increasing minOccurs on struct array is not supported", minNarrowedError("StructArray").c_str());
+
+    // Narrowing: decrease maxOccurs
+    AssertSchemaUpdate(generateSchema("minOccurs='2' maxOccurs='4'", "minOccurs='2' maxOccurs='5'").c_str(), filePath, {false, false}, "Decreasing maxOccurs on primitive array is not supported", maxNarrowedError("PrimArray").c_str());
+    AssertSchemaUpdate(generateSchema("minOccurs='2' maxOccurs='5'", "minOccurs='2' maxOccurs='4'").c_str(), filePath, {false, false}, "Decreasing maxOccurs on struct array is not supported", maxNarrowedError("StructArray").c_str());
+
+    // Narrowing both bounds of the same property (min is checked first)
+    AssertSchemaUpdate(generateSchema("minOccurs='3' maxOccurs='4'", "minOccurs='2' maxOccurs='5'").c_str(), filePath, {false, false}, "Narrowing both bounds on primitive array is not supported", minNarrowedError("PrimArray").c_str());
+    AssertSchemaUpdate(generateSchema("minOccurs='2' maxOccurs='5'", "minOccurs='3' maxOccurs='4'").c_str(), filePath, {false, false}, "Narrowing both bounds on struct array is not supported", minNarrowedError("StructArray").c_str());
+
+    // Mixed: min widened, max narrowed -> must fail on max
+    AssertSchemaUpdate(generateSchema("minOccurs='0' maxOccurs='4'", "minOccurs='2' maxOccurs='5'").c_str(), filePath, {false, false}, "Widening minOccurs while narrowing maxOccurs is not supported", maxNarrowedError("PrimArray").c_str());
+
+    // Mixed: min narrowed, max widened -> must fail on min
+    AssertSchemaUpdate(generateSchema("minOccurs='3' maxOccurs='10'", "minOccurs='2' maxOccurs='5'").c_str(), filePath, {false, false}, "Narrowing minOccurs while widening maxOccurs is not supported", minNarrowedError("PrimArray").c_str());
+    AssertSchemaUpdate(generateSchema("minOccurs='2' maxOccurs='5'", "minOccurs='3' maxOccurs='unbounded'").c_str(), filePath, {false, false}, "Narrowing minOccurs while making maxOccurs unbounded is not supported", minNarrowedError("StructArray").c_str());
+
+    // Narrowing: unbounded -> bounded maxOccurs
+    {
+    SchemaItem unboundedSeed(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "   <ECStructClass typeName='MyStruct' modifier='None'>"
+        "       <ECProperty propertyName='Val' typeName='int' />"
+        "   </ECStructClass>"
+        "   <ECEntityClass typeName='TestClass' modifier='None' >"
+        "       <ECArrayProperty propertyName='PrimArray' typeName='string' minOccurs='0' maxOccurs='unbounded' />"
+        "       <ECStructArrayProperty propertyName='StructArray' typeName='MyStruct' minOccurs='0' maxOccurs='unbounded' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemaupdate_arraybounds_unbounded.ecdb", unboundedSeed));
+    BeFileName unboundedFilePath(m_ecdb.GetDbFileName());
+    m_ecdb.CloseDb();
+
+    AssertSchemaUpdate(generateSchema("minOccurs='0' maxOccurs='100'", "minOccurs='0' maxOccurs='unbounded'").c_str(), unboundedFilePath, {false, false}, "Changing maxOccurs from unbounded to bounded on primitive array is not supported", maxNarrowedError("PrimArray").c_str());
+    AssertSchemaUpdate(generateSchema("minOccurs='0' maxOccurs='unbounded'", "minOccurs='0' maxOccurs='100'").c_str(), unboundedFilePath, {false, false}, "Changing maxOccurs from unbounded to bounded on struct array is not supported", maxNarrowedError("StructArray").c_str());
+    }
+
+    // Verify the widened values were persisted
+    ECDb ecdb;
+    ASSERT_EQ(BE_SQLITE_OK, CloneECDb(ecdb, "schemaupdate_arraybounds_verify.ecdb", filePath));
+    ASSERT_EQ(SUCCESS, TestHelper(ecdb).ImportSchema(SchemaItem(generateSchema("minOccurs='0' maxOccurs='unbounded'", "minOccurs='1' maxOccurs='20'"))));
+    ecdb.SaveChanges();
+
+    ECClassCP testClass = ecdb.Schemas().GetClass("TestSchema", "TestClass");
+    ASSERT_TRUE(testClass != nullptr);
+
+    ArrayECPropertyCP primArray = testClass->GetPropertyP("PrimArray")->GetAsArrayProperty();
+    ASSERT_TRUE(primArray != nullptr);
+    EXPECT_EQ(0U, primArray->GetMinOccurs());
+    EXPECT_TRUE(primArray->IsStoredMaxOccursUnbounded());
+
+    ArrayECPropertyCP structArray = testClass->GetPropertyP("StructArray")->GetAsArrayProperty();
+    ASSERT_TRUE(structArray != nullptr);
+    EXPECT_EQ(1U, structArray->GetMinOccurs());
+    EXPECT_EQ(20U, structArray->GetStoredMaxOccurs());
+
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT ArrayMinOccurs, ArrayMaxOccurs FROM ec_Property WHERE Name='PrimArray'"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    EXPECT_EQ(0, stmt.GetValueInt(0));
+    EXPECT_TRUE(stmt.IsColumnNull(1)) << "Unbounded maxOccurs must be persisted as NULL";
+    stmt.Finalize();
+
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT ArrayMinOccurs, ArrayMaxOccurs FROM ec_Property WHERE Name='StructArray'"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    EXPECT_EQ(1, stmt.GetValueInt(0));
+    EXPECT_EQ(20, stmt.GetValueInt(1));
+    stmt.Finalize();
     }
 
 //---------------------------------------------------------------------------------------
