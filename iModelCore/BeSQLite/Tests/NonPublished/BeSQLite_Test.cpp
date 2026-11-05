@@ -541,6 +541,10 @@ struct CloudTimingVfsTest : BeSQliteTestFixture {
         ASSERT_EQ(BE_SQLITE_OK, seed->ExecuteSql(
             "INSERT INTO timing_payload VALUES(randomblob(65536)),(randomblob(65536)),(randomblob(65536))"));
         ASSERT_EQ(BE_SQLITE_OK, seed->SaveChanges());
+        sqlite3_file* seedFile = nullptr;
+        ASSERT_EQ(SQLITE_OK, sqlite3_file_control(seed->GetSqlDb(), "main", SQLITE_FCNTL_FILE_POINTER, &seedFile));
+        ASSERT_EQ(SQLITE_OK, seedFile->pMethods->xFileSize(seedFile, &m_fileSize));
+        ASSERT_GT(m_fileSize, 4 * s_blockSize);
         Utf8String seedName = seed->GetDbFileName();
         seed->CloseDb();
         sqlite3_bcv* upload = nullptr;
@@ -562,15 +566,13 @@ struct CloudTimingVfsTest : BeSQliteTestFixture {
                 return *token ? SQLITE_OK : SQLITE_NOMEM;
             }));
         ASSERT_EQ(SQLITE_OK, sqlite3_bcvfs_attach(m_cache.m_vfs, "timing-test", "", "stats", "stats", 0, nullptr));
-        auto params = Db::OpenParams(Db::OpenMode::Readonly, DefaultTxn::No);
+        auto params = Db::OpenParams(Db::OpenMode::Readonly);
         params.m_skipFileCheck = params.m_fromContainer = true;
         params.AddQueryParam(("vfs=" + cacheName).c_str());
         ASSERT_EQ(BE_SQLITE_OK, m_worker.OpenBeSQLiteDb("/stats/stats.db", params));
         ASSERT_EQ(BE_SQLITE_OK, m_schema.OpenBeSQLiteDb("/stats/stats.db", params));
         ASSERT_EQ(SQLITE_OK, sqlite3_file_control(m_worker.GetSqlDb(), "main", SQLITE_FCNTL_FILE_POINTER, &m_workerFile));
         ASSERT_EQ(SQLITE_OK, sqlite3_file_control(m_schema.GetSqlDb(), "main", SQLITE_FCNTL_FILE_POINTER, &m_schemaFile));
-        ASSERT_EQ(SQLITE_OK, m_workerFile->pMethods->xFileSize(m_workerFile, &m_fileSize));
-        ASSERT_GT(m_fileSize, 4 * s_blockSize);
         ASSERT_EQ(SQLITE_OK, sqlite3_bcvfs_prefetch_new(m_cache.m_vfs, "stats", "stats.db", &m_prefetch));
     }
 
@@ -719,6 +721,7 @@ TEST_F(BeSQliteTestFixture, CloudStatsSnapshotsUseMicrosecondsAndPreserveWarmCac
     EXPECT_EQ(1250, delta.m_waitUs);
     EXPECT_EQ(2, delta.m_blocks);
     EXPECT_EQ(8192, delta.m_bytes);
+    ASSERT_EQ(BE_SQLITE_OK, db->SaveChanges());
     }
 
 TEST_F(BeSQliteTestFixture, CloudStatsSnapshotsRejectLegacyMissingAndMalformedCounters)
@@ -741,6 +744,7 @@ TEST_F(BeSQliteTestFixture, CloudStatsSnapshotsRejectLegacyMissingAndMalformedCo
     EXPECT_EQ(SQLITE_CORRUPT, CloudSqliteQueryStats::Read(db->GetSqlDb(), snapshot));
     ASSERT_EQ(BE_SQLITE_OK, db->ExecuteDdl("DROP TABLE bcv_stat"));
     EXPECT_EQ(SQLITE_ERROR, CloudSqliteQueryStats::Read(db->GetSqlDb(), snapshot));
+    ASSERT_EQ(BE_SQLITE_OK, db->SaveChanges());
     }
 
 TEST_F(BeSQliteTestFixture, CloudDownloadTimeAdapterPreservesMillisecondHexContract)
@@ -765,6 +769,7 @@ TEST_F(BeSQliteTestFixture, CloudDownloadTimeAdapterPreservesMillisecondHexContr
     EXPECT_STREQ("0x1", value.c_str());
     ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql("UPDATE bcv_stat SET value='invalid' WHERE name='nqueryus'"));
     EXPECT_EQ(SQLITE_CORRUPT, CloudSqliteQueryStats::ReadDownloadTimeMs(db->GetSqlDb(), value));
+    ASSERT_EQ(BE_SQLITE_OK, db->SaveChanges());
     }
 
 TEST_F(BeSQliteTestFixture, CloudTimingScopeSurvivesReentrantDatabaseClose) {
