@@ -6,6 +6,17 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+DPoint3d const& PointECSqlField::GetCoordinates() const
+    {
+    if (!m_coordinates)
+        {
+        auto& stmt = GetSqliteStatement();
+        m_coordinates = DPoint3d::From(stmt.GetValueDouble(m_xColumnIndex),
+            stmt.GetValueDouble(m_yColumnIndex), IsPoint3d() ? stmt.GetValueDouble(m_zColumnIndex) : 0.0);
+        }
+    return *m_coordinates;
+    }
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -14,11 +25,14 @@ bool PointECSqlField::_IsNull() const
     //To be consistent with the ECSQL parser which translates "MyPoint IS NULL" to "MyPoint.X IS NULL *AND* MyPoint.Y IS NULL"
     //this method uses the same semantics.
     auto& stmt = GetSqliteStatement();
-    const auto coordXValue = stmt.GetValueDouble(m_xColumnIndex);
-    const auto coordYValue = stmt.GetValueDouble(m_yColumnIndex);
-    const auto coordZValue = stmt.GetValueDouble(m_zColumnIndex);
-    return (stmt.IsColumnNull(m_xColumnIndex) || std::isinf(coordXValue) || std::isnan(coordXValue) || stmt.IsColumnNull(m_yColumnIndex) || std::isinf(coordYValue) || std::isnan(coordYValue)
-        || (IsPoint3d() && (stmt.IsColumnNull(m_zColumnIndex) || std::isinf(coordZValue) || std::isnan(coordZValue))));
+    auto const& coordinates = GetCoordinates();
+    if(stmt.IsColumnNull(m_xColumnIndex) || IECSqlValueHelper::IsNullCoord(coordinates.x) || stmt.IsColumnNull(m_yColumnIndex) || IECSqlValueHelper::IsNullCoord(coordinates.y))
+        return true;
+    if(!IsPoint3d())
+        return false;
+    if(stmt.IsColumnNull(m_zColumnIndex) || IECSqlValueHelper::IsNullCoord(coordinates.z))
+        return true;
+    return false;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -32,8 +46,8 @@ DPoint2d PointECSqlField::_GetPoint2d() const
         return NoopECSqlValue::GetSingleton().GetPoint2d();
         }
 
-    return DPoint2d::From(GetSqliteStatement().GetValueDouble(m_xColumnIndex),
-                          GetSqliteStatement().GetValueDouble(m_yColumnIndex));
+    auto const& coordinates = GetCoordinates();
+    return DPoint2d::From(coordinates.x, coordinates.y);
     }
 
 
@@ -48,9 +62,7 @@ DPoint3d PointECSqlField::_GetPoint3d() const
         return NoopECSqlValue::GetSingleton().GetPoint3d();
         }
 
-    return DPoint3d::From(GetSqliteStatement().GetValueDouble(m_xColumnIndex),
-                          GetSqliteStatement().GetValueDouble(m_yColumnIndex),
-                          GetSqliteStatement().GetValueDouble(m_zColumnIndex));
+    return GetCoordinates();
     }
 
 

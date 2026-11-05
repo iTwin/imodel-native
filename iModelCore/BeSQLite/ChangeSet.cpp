@@ -97,18 +97,27 @@ void DdlChanges::AddDDL(Utf8CP ddl)
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<Utf8String>  DdlChanges::GetDDLs() const {
-    const auto kStmtDelimiter = ";";
-    bvector<Utf8String> individualSQLs;
-    BeStringUtilities::Split(ToString().c_str(), kStmtDelimiter, individualSQLs);
+    Utf8String const ddl = ToString();
+    bvector<Utf8String> statements;
+    size_t start = 0;
+    for (size_t end = ddl.find(';'); end != Utf8String::npos; end = ddl.find(';', end + 1)) {
+        Utf8String statement = ddl.substr(start, end - start + 1);
+        // A semicolon inside a trigger, quoted value, or comment does not end the statement.
+        if (!sqlite3_complete(statement.c_str()))
+            continue;
 
-    auto it = individualSQLs.begin();
-    while(it != individualSQLs.end()) {
-        if (it->Trim().empty())
-            it = individualSQLs.erase(it);
-        else
-            ++it;
+        statement.pop_back(); // AddDDL supplies the separator when statements are regrouped.
+        // Preserve whitespace: a newline may terminate a SQL line comment.
+        if (!Utf8String(statement).Trim().empty())
+            statements.push_back(std::move(statement));
+        start = end + 1;
     }
-    return individualSQLs;
+
+    // Existing changesets may omit the final semicolon. Keep incomplete SQL too, so execution reports it.
+    Utf8String remainder = ddl.substr(start);
+    if (!Utf8String(remainder).Trim().empty())
+        statements.push_back(std::move(remainder));
+    return statements;
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -686,6 +695,9 @@ Utf8String Changes::Change::FormatChange(Db const& db, Utf8CP tableName, DbOpcod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Changes::Change::Dump(Db const& db, bool isPatchSet, bset<Utf8String>& tablesSeen, int detailLevel) const
     {
+    if (!LOGCHANGESET.isSeverityEnabled(NativeLogging::LOG_INFO))
+        return;
+
     Utf8CP tableName;
     int nCols,indirect;
     DbOpcode opcode;
@@ -709,6 +721,9 @@ void Changes::Change::Dump(Db const& db, bool isPatchSet, bset<Utf8String>& tabl
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ChangeStream::Dump(Utf8CP label, Db const& db, bool isPatchSet, int detailLevel) const {
+    if (!LOGCHANGESET.isSeverityEnabled(NativeLogging::LOG_INFO))
+        return;
+
     if (label)
         LOGCHANGESET.infov("%s", label);
 
@@ -757,12 +772,12 @@ void Changes::Change::DumpCurrentValuesOfChangedColumns(Db const& db) const
     int npcols = 0;
     GetPrimaryKeyColumns(&pcols, &npcols);
 
-    if (!pcols)
+    if (!pcols || (int) columnNames.size() < npcols)
         return;
 
     int64_t pk = 0;
     int pki = 0;
-    for (int i = 0; i <= npcols; ++i)
+    for (int i = 0; i < npcols; ++i)
         {
         if (pcols[i] == 0)
             continue;
@@ -772,7 +787,7 @@ void Changes::Change::DumpCurrentValuesOfChangedColumns(Db const& db) const
         break;
         }
 
-    for (int i = 0; i <= npcols; ++i)
+    for (int i = 0; i < npcols; ++i)
         {
         if (pcols[i] > 0)
             continue;
@@ -792,7 +807,7 @@ void Changes::Change::DumpCurrentValuesOfChangedColumns(Db const& db) const
 
         Utf8String oldVal = stmt.GetDbValue(0).Format(1);
 
-        LOG.infov(Utf8PrintfString("%s.%s was %s", tableName, columnNames[i].c_str(), oldVal.c_str()).c_str());
+        LOGCHANGESET.infov("%s.%s was %s", tableName, columnNames[i].c_str(), oldVal.c_str());
         }
     }
 
@@ -916,6 +931,8 @@ DbResult ChangeStream::ApplyChanges(DbR db, ApplyChangesArgs const& args) const
         flags |= SQLITE_CHANGESETAPPLY_IGNORENOOP;
     if(args.GetFkNoAction())
         flags |= SQLITE_CHANGESETAPPLY_FKNOACTION;
+    if(args.GetNoUpdateLoop())
+        flags |= SQLITE_CHANGESETAPPLY_NOUPDATELOOP;
     auto reader = _GetReader();
     m_args = &args;
 

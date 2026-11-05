@@ -14,6 +14,7 @@
 #include FT_OUTLINE_H
 #include FT_SFNT_NAMES_H
 #include FT_TRUETYPE_IDS_H
+#include <cmath>
 
 #if !defined (BENTLEY_WIN32)
     #define TT_POLYGON_TYPE 24

@@ -766,14 +766,14 @@ void XmlCAToJson::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
         return;
         }
 
-    Json::Value caJson;
+    BeJsDocument caJson;
     if (SUCCESS != JsonEcInstanceWriter::WriteInstanceToJson(caJson, *deserializedCa, nullptr, false))
         {
         ctx.SetResultError("SQL function " SQLFUNC_XmlCAToJson " failed: unable to serialize instance to json.");
         return;
         }
 
-    Utf8String strVal = caJson.ToString();
+    Utf8String strVal = caJson.Stringify();
     const int len = (int) strlen(strVal.c_str());
     ctx.SetResultText(strVal.c_str(), len, Context::CopyData::Yes);
     }

@@ -23,8 +23,8 @@ TEST_F(PerformanceJsonInserter, InsertJsonCppUsingPresistanceAPI)
     jsonInputFile.AppendToPath(L"ECDb");
     jsonInputFile.AppendToPath(L"JsonTestClass.json");
 
-    // Parse JSON value using JsonCpp
-    Json::Value jsonInput;
+    // Parse JSON value using BeJsDocument
+    BeJsDocument jsonInput;
     TestUtilities::ReadFile(jsonInput, jsonInputFile);
     ECClassCP documentClass = m_ecdb.Schemas().GetClass("JsonTests", "Document");
     ASSERT_TRUE(documentClass != nullptr);
@@ -32,7 +32,7 @@ TEST_F(PerformanceJsonInserter, InsertJsonCppUsingPresistanceAPI)
     const int repetitionCount = 1000;
 
     //----------------------------------------------------------------------------------- 
-    // Insert using JsonCpp
+    // Insert using BeJsDocument
     //-----------------------------------------------------------------------------------
     StopWatch timer(true);
     for (int i = 0; i < repetitionCount; i++)
@@ -66,13 +66,13 @@ TEST_F(PerformanceJsonInserter, InsertRapidJsonUsingPresistanceAPI)
     jsonInputFile.AppendToPath(L"ECDb");
     jsonInputFile.AppendToPath(L"JsonTestClass.json");
 
-    // Parse JSON value using JsonCpp
-    Json::Value jsonInput;
-    TestUtilities::ReadFile(jsonInput, jsonInputFile);
+    // Parse JSON value using BeJsDocument then round-trip to RapidJson
+    BeJsDocument beJsonInput;
+    TestUtilities::ReadFile(beJsonInput, jsonInputFile);
 
     // Parse JSON value using RapidJson
     rapidjson::Document rapidJsonInput;
-    ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(rapidJsonInput, Json::FastWriter().write(jsonInput)));
+    ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(rapidJsonInput, beJsonInput.Stringify()));
 
     ECClassCP documentClass = m_ecdb.Schemas().GetClass("JsonTests", "Document");
     ASSERT_TRUE(documentClass != nullptr);

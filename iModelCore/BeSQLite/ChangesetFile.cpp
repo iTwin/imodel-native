@@ -4,8 +4,11 @@
 *--------------------------------------------------------------------------------------------*/
 #include <BeSQLite/ChangesetFile.h>
 #include <Bentley/Logging.h>
-#include <Bentley/ScopedArray.h>
+#include <algorithm>
+#include <cstring>
+#include <limits>
 #include <map>
+#include <new>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 
@@ -32,6 +35,57 @@ void UIntToByteArray(Byte bytes[], uint32_t size) {
 //---------------------------------------------------------------------------------------
 uint32_t ByteArrayToUInt(Byte bytes[]) {
     return (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | (bytes[3]);
+}
+
+//---------------------------------------------------------------------------------------
+// Reads the length-prefixed prefix from the start of a decompressed changeset stream.
+// The stream contents are untrusted: the declared size is validated, the buffer is
+// grown only as data actually arrives, and the string is built with an explicit length
+// so a prefix without a NUL terminator can never cause reads past the buffer.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+static BentleyStatus ReadPrefixFromStream(LzmaDecoder& lzmaDecoder, Utf8StringR prefix) {
+    prefix.clear();
+
+    Byte sizeBytes[4];
+    int readSizeBytes = 4;
+    ZipErrors zipStatus = lzmaDecoder.DecompressNextPage(sizeBytes, &readSizeBytes);
+    if (zipStatus != ZIP_SUCCESS || readSizeBytes != 4) {
+        LOG.error("Changeset is corrupt: could not read size of the changeset prefix");
+        return ERROR;
+    }
+
+    const uint32_t size = ByteArrayToUInt(sizeBytes);
+    if (size == 0)
+        return SUCCESS;
+
+    if (size > (uint32_t) std::numeric_limits<int>::max()) {
+        LOG.errorv("Changeset is corrupt: invalid changeset prefix size %u", (unsigned) size);
+        return ERROR;
+    }
+
+    const size_t maxChunkSize = 64 * 1024;
+    bvector<Byte> prefixBytes;
+    while (prefixBytes.size() < size) {
+        const size_t offset = prefixBytes.size();
+        const size_t chunkSize = std::min<size_t>(size - offset, maxChunkSize);
+        prefixBytes.resize(offset + chunkSize);
+
+        int readSize = (int) chunkSize;
+        zipStatus = lzmaDecoder.DecompressNextPage(prefixBytes.data() + offset, &readSize);
+        if (zipStatus != ZIP_SUCCESS || readSize <= 0 || (size_t) readSize > chunkSize) {
+            LOG.errorv("Changeset is corrupt: changeset prefix is truncated (expected %u bytes, read %u)", (unsigned) size, (unsigned) offset);
+            prefix.clear();
+            return ERROR;
+        }
+
+        prefixBytes.resize(offset + readSize);
+    }
+
+    // Writers include the NUL terminator in the size; stop at the first NUL but never read past the buffer.
+    Utf8CP prefixChars = reinterpret_cast<Utf8CP>(prefixBytes.data());
+    prefix.assign(prefixChars, strnlen(prefixChars, prefixBytes.size()));
+    return SUCCESS;
 }
 
 //=======================================================================================
@@ -93,9 +147,9 @@ DbResult ChangesetFileWriter::StartOutput() {
     }
 
     ChangesetLzmaHeader header;
-    uint32_t bytesWritten;
+    uint32_t bytesWritten = 0;
     ZipErrors zipStatus = m_outLzmaFileStream->_Write(&header, sizeof(header), bytesWritten);
-    if (zipStatus != ZIP_SUCCESS) {
+    if (zipStatus != ZIP_SUCCESS || bytesWritten != sizeof(header)) {
         BeAssert(false);
         return BE_SQLITE_ERROR;
     }
@@ -105,6 +159,7 @@ DbResult ChangesetFileWriter::StartOutput() {
         BeAssert(false);
         return BE_SQLITE_ERROR;
     }
+    m_compressionStarted = true;
 
     return WritePrefix();
 }
@@ -112,14 +167,37 @@ DbResult ChangesetFileWriter::StartOutput() {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void ChangesetFileWriter::FinishOutput() {
+DbResult ChangesetFileWriter::Finish() {
     if (m_outLzmaFileStream == nullptr)
-        return;
+        return m_outputStatus;
 
-    m_lzmaEncoder.FinishCompress();
+    if (m_compressionStarted) {
+        try {
+            FlushInput();
+        } catch (std::bad_alloc const&) {
+            m_outputStatus = BE_SQLITE_NOMEM;
+        }
+        if (m_lzmaEncoder.FinishCompress() != ZIP_SUCCESS && m_outputStatus == BE_SQLITE_OK)
+            m_outputStatus = BE_SQLITE_ERROR;
+        m_compressionStarted = false;
+    }
 
+    m_pendingInput.clear();
     delete m_outLzmaFileStream;
     m_outLzmaFileStream = nullptr;
+    return m_outputStatus;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult ChangesetFileWriter::FlushInput() {
+    if (m_outputStatus == BE_SQLITE_OK && !m_pendingInput.empty()) {
+        if (m_lzmaEncoder.CompressNextPage(m_pendingInput.data(), m_pendingInput.size()) != ZIP_SUCCESS)
+            m_outputStatus = BE_SQLITE_ERROR;
+    }
+    m_pendingInput.clear();
+    return m_outputStatus;
 }
 
 //---------------------------------------------------------------------------------------
@@ -131,8 +209,30 @@ DbResult ChangesetFileWriter::_Append(Byte const* pData, int nData) {
         return BE_SQLITE_ERROR;
     }
 
-    ZipErrors zipErrors = m_lzmaEncoder.CompressNextPage(pData, nData);
-    return (zipErrors == ZIP_SUCCESS) ? BE_SQLITE_OK : BE_SQLITE_ERROR;
+    if (m_outputStatus != BE_SQLITE_OK)
+        return m_outputStatus;
+    if (nData == 0)
+        return BE_SQLITE_OK;
+    if (nData < 0 || pData == nullptr)
+        return m_outputStatus = BE_SQLITE_ERROR;
+
+    static size_t const inputBufferSize = 256 * 1024;
+    size_t inputSize = static_cast<size_t>(nData);
+    if (!m_bufferInput || inputSize >= inputBufferSize) {
+        if (FlushInput() != BE_SQLITE_OK)
+            return m_outputStatus;
+        // Large records already amortize initialization and can be encoded without an input copy.
+        if (m_lzmaEncoder.CompressNextPage(pData, inputSize) != ZIP_SUCCESS)
+            m_outputStatus = BE_SQLITE_ERROR;
+        return m_outputStatus;
+    }
+
+    if (m_pendingInput.size() + inputSize > inputBufferSize && FlushInput() != BE_SQLITE_OK)
+        return m_outputStatus;
+
+    m_pendingInput.reserve(inputBufferSize);
+    m_pendingInput.insert(m_pendingInput.end(), pData, pData + inputSize);
+    return m_pendingInput.size() == inputBufferSize ? FlushInput() : BE_SQLITE_OK;
 }
 
 //---------------------------------------------------------------------------------------
@@ -154,22 +254,17 @@ DbResult ChangesetFileWriter::WritePrefix() {
     Byte sizeBytes[4];
     UIntToByteArray(sizeBytes, size);
 
-    ZipErrors zipErrors = m_lzmaEncoder.CompressNextPage(sizeBytes, 4);
-    if (zipErrors != ZIP_SUCCESS)
-        return BE_SQLITE_ERROR;
+    DbResult result = _Append(sizeBytes, sizeof(sizeBytes));
+    if (result != BE_SQLITE_OK || size == 0)
+        return result;
 
-    if (size == 0)
-        return BE_SQLITE_OK;
-
-    zipErrors = m_lzmaEncoder.CompressNextPage(m_prefix.c_str(), size);
-    return (zipErrors == ZIP_SUCCESS) ? BE_SQLITE_OK : BE_SQLITE_ERROR;
+    return _Append(reinterpret_cast<Byte const*>(m_prefix.c_str()), static_cast<int>(size));
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ChangesetFileWriter::ChangesetFileWriter(BeFileNameCR pathname, bool containsEcSchemaChanges, DdlChangesCR ddlChanges, Db const *dgnDb, BeSQLite::LzmaEncoder::LzmaParams const &lzmaParams) : m_pathname(pathname), m_prefix(""), m_db(dgnDb), m_outLzmaFileStream(nullptr), m_lzmaEncoder(lzmaParams) {
-    m_prefix = "";
+ChangesetFileWriter::ChangesetFileWriter(BeFileNameCR pathname, bool containsEcSchemaChanges, DdlChangesCR ddlChanges, Db const *dgnDb, BeSQLite::LzmaEncoder::LzmaParams const &lzmaParams) : m_lzmaEncoder(lzmaParams), m_pathname(pathname), m_outLzmaFileStream(nullptr), m_prefix(""), m_db(dgnDb), m_bufferInput(!lzmaParams.GetSupportRandomAccess()) {
     if (!containsEcSchemaChanges && ddlChanges._IsEmpty())
         return;
 
@@ -185,12 +280,16 @@ ChangesetFileWriter::ChangesetFileWriter(BeFileNameCR pathname, bool containsEcS
 // @bsimethod
 //---------------------------------------------------------------------------------------
 DbResult ChangesetFileWriter::Initialize() {
-    if (m_outLzmaFileStream != nullptr) {
+    if (m_initialized) {
         BeAssert(false && "Call initialize only once");
         return BE_SQLITE_ERROR;
     }
 
-    return StartOutput();
+    m_initialized = true;
+    m_outputStatus = StartOutput();
+    if (m_outputStatus != BE_SQLITE_OK)
+        Finish();
+    return m_outputStatus;
 }
 
 //---------------------------------------------------------------------------------------
@@ -289,34 +388,7 @@ DbResult ChangesetFileReaderBase::Reader::GetSchemaChanges(bool& containsSchemaC
 // @bsimethod
 //---------------------------------------------------------------------------------------
 BeSQLite::DbResult ChangesetFileReaderBase::Reader::ReadPrefix() {
-    Byte sizeBytes[4];
-    int readSizeBytes = 4;
-    ZipErrors zipErrors = m_lzmaDecoder.DecompressNextPage((Byte*)sizeBytes, &readSizeBytes);
-    if (zipErrors != ZIP_SUCCESS || readSizeBytes != 4) {
-        BeAssert(false && "Couldn't read size of the schema changes");
-        return BE_SQLITE_ERROR;
-    }
-
-    int size = (int)ByteArrayToUInt(sizeBytes);
-    if (size == 0)
-        return BE_SQLITE_OK;
-
-    ScopedArray<Byte> prefixBytes(size);
-    int bytesRead = 0;
-    while (bytesRead < size) {
-        int readSize = size - bytesRead;
-        zipErrors = m_lzmaDecoder.DecompressNextPage((Byte*)prefixBytes.GetData() + bytesRead, &readSize);
-        if (zipErrors != ZIP_SUCCESS) {
-            BeAssert(false && "Error reading revision prefix stream");
-            return BE_SQLITE_ERROR;
-        }
-
-        bytesRead += readSize;
-    }
-    BeAssert(bytesRead == size);
-
-    m_prefix = (Utf8CP)prefixBytes.GetData();
-    return BE_SQLITE_OK;
+    return (SUCCESS == ReadPrefixFromStream(m_lzmaDecoder, m_prefix)) ? BE_SQLITE_OK : BE_SQLITE_ERROR;
 }
 
 //---------------------------------------------------------------------------------------
@@ -358,33 +430,7 @@ Utf8String RevisionUtility::GetChangesetId(BeFileName changesetFile) {
 }
 
 BentleyStatus RevisionUtility::ReadChangesetPrefix(BeSQLite::LzmaDecoder& lzmaDecoder, Utf8StringR prefix) {
-    Byte sizeBytes[4];
-    int readSizeBytes = 4;
-    ZipErrors zipStatus = lzmaDecoder.DecompressNextPage((Byte*)sizeBytes, &readSizeBytes);
-    if (zipStatus != ZIP_SUCCESS || readSizeBytes != 4) {
-        BeAssert(false && "Couldn't read size of the schema changes");
-        return ERROR;
-    }
-
-    const int size = (int)ByteArrayToUInt(sizeBytes);
-    if (size > 0) {
-        ScopedArray<Byte> prefixBytes(size);
-        int bytesRead = 0;
-        while (bytesRead < size) {
-            int readSize = size - bytesRead;
-            zipStatus = lzmaDecoder.DecompressNextPage((Byte*)prefixBytes.GetData() + bytesRead, &readSize);
-            if (zipStatus != ZIP_SUCCESS) {
-                BeAssert(false && "Error reading revision prefix stream");
-                return ERROR;
-            }
-
-            bytesRead += readSize;
-        }
-        BeAssert(bytesRead == size);
-        prefix = (Utf8CP)prefixBytes.GetData();
-    }
-
-    return SUCCESS;
+    return ReadPrefixFromStream(lzmaDecoder, prefix);
 }
 
 BentleyStatus RevisionUtility::OpenChangesetForReading(BeSQLite::LzmaDecoder& lzmaDecoder, BlockFilesLzmaInStream& inLzmaFileStream)
@@ -664,35 +710,10 @@ BentleyStatus RevisionUtility::RecompressRevision(Utf8CP sourceFile, Utf8CP targ
         return ERROR;
         }
 
-    Byte sizeBytes[4];
-    int readSizeBytes = 4;
-    zipStatus = lzmaDecoder.DecompressNextPage((Byte*)sizeBytes, &readSizeBytes);
-    if (zipStatus != ZIP_SUCCESS || readSizeBytes != 4)
-        {
-        BeAssert(false && "Couldn't read size of the schema changes");
-        return ERROR;
-        }
     Utf8String prefix;
-    const int prefixSizeRead = (int)ByteArrayToUInt(sizeBytes);
-    if (prefixSizeRead > 0)
-        {
-        ScopedArray<Byte> prefixBytes(prefixSizeRead);
-        int bytesRead = 0;
-        while (bytesRead < prefixSizeRead)
-            {
-            int readSize = prefixSizeRead - bytesRead;
-            zipStatus = lzmaDecoder.DecompressNextPage((Byte*)prefixBytes.GetData() + bytesRead, &readSize);
-            if (zipStatus != ZIP_SUCCESS)
-                {
-                BeAssert(false && "Error reading revision prefix stream");
-                return ERROR;
-                }
+    if (ReadPrefixFromStream(lzmaDecoder, prefix) != SUCCESS)
+        return ERROR;
 
-            bytesRead += readSize;
-            }
-        BeAssert(bytesRead == prefixSizeRead);
-        prefix = (Utf8CP)prefixBytes.GetData();
-        }
     // write ========================================================================
     BeSQLite::LzmaEncoder lzmaEncoder(params);
     BeFileLzmaOutStream outLzmaFileStream;
@@ -719,19 +740,9 @@ BentleyStatus RevisionUtility::RecompressRevision(Utf8CP sourceFile, Utf8CP targ
         return ERROR;
         }
 
-    uint32_t prefixSizeWrite = prefix.empty() ? 0 : (uint32_t)prefix.SizeInBytes();
-    UIntToByteArray(sizeBytes, prefixSizeWrite);
-
-    zipStatus = lzmaEncoder.CompressNextPage(sizeBytes, 4);
-    if (zipStatus != ZIP_SUCCESS)
+    if (RevisionUtility::WritePrefix(lzmaEncoder, prefix) != SUCCESS)
         return ERROR;
 
-    if (prefixSizeWrite > 0)
-        {
-        zipStatus = lzmaEncoder.CompressNextPage(prefix.c_str(), prefixSizeWrite);
-        if (zipStatus != ZIP_SUCCESS)
-            return ERROR;
-        }
     const int kMaxDecompressBytes = 1024 * 64;
     int decompressBytesRead;
     Byte buffer[kMaxDecompressBytes];
@@ -742,7 +753,7 @@ BentleyStatus RevisionUtility::RecompressRevision(Utf8CP sourceFile, Utf8CP targ
         if (zipStatus != ZIP_SUCCESS)
             return ERROR;
 
-        if (decompressBytesRead > 0 && lzmaEncoder.CompressNextPage(buffer, decompressBytesRead) != ZIP_SUCCESS )
+        if (decompressBytesRead > 0 && lzmaEncoder.CompressNextPage(buffer, static_cast<size_t>(decompressBytesRead)) != ZIP_SUCCESS )
             return ERROR;
 
         } while (zipStatus == ZIP_SUCCESS && decompressBytesRead > 0);

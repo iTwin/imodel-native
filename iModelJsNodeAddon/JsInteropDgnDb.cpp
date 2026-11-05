@@ -458,9 +458,11 @@ struct SetNapiObjOnElement {
 /*---------------------------------------------------------------------------------**/ /**
 @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void callJsPreHandler(DgnDbR db, DgnClassId classId, Utf8CP methodName, Napi::Object obj)  {
+static void callJsPreHandler(DgnDbR db, DgnClassId classId, Utf8CP methodName, Napi::Object obj, Napi::Value optionsObj) {
     auto arg = Napi::Object::New(obj.Env());
     arg.Set("props", obj);
+    if (!optionsObj.IsUndefined())
+        arg.Set("options", optionsObj);
     db.CallJsHandlerMethod(classId, methodName, arg);
 }
 
@@ -469,10 +471,9 @@ static void callJsPreHandler(DgnDbR db, DgnClassId classId, Utf8CP methodName, N
 +---------------+---------------+---------------+---------------+---------------+------*/
 Napi::String JsInterop::InsertElement(DgnDbR dgndb, Napi::Object obj, Napi::Value optionsObj) {
     BeJsConst inJson(obj);
-    BeJsConst inOptionsJson(optionsObj);
 
     auto classId = ECJsonUtilities::GetClassIdFromClassNameJson(inJson[DgnElement::json_classFullName()], dgndb.GetClassLocater());
-    callJsPreHandler(dgndb, classId, "onInsert", obj);
+    callJsPreHandler(dgndb, classId, "onInsert", obj, optionsObj);
 
     try {
         DgnElement::CreateParams params(dgndb, inJson);
@@ -494,6 +495,7 @@ Napi::String JsInterop::InsertElement(DgnDbR dgndb, Napi::Object obj, Napi::Valu
             el->SetFederationGuid(BeGuid(true));
 
         // if the option "forceUseId" is set, attempt to insert the element preserving that id - used by transformer.
+        BeJsConst inOptionsJson(optionsObj);
         if (inOptionsJson.isObject() && inOptionsJson.Get(json_forceUseId()).asBool()) {
             if (!inJson.isStringMember(json_id())) {
                 THROW_JS_DGN_DB_EXCEPTION(Env(), "invalid argument, the id is required if forcing its usage", DgnDbStatus::BadArg)
@@ -534,7 +536,7 @@ void JsInterop::UpdateElement(DgnDbR dgndb, Napi::Object obj) {
         elProps[DgnElement::json_classFullName()] = el->GetElementClass()->GetFullName();
         elProps[DgnElement::json_model()] = el->GetModelId();
 
-        callJsPreHandler(dgndb, el->GetElementClassId(), "onUpdate", obj);
+        callJsPreHandler(dgndb, el->GetElementClassId(), "onUpdate", obj, obj.Env().Undefined());
         el->FromJson(elProps);
 
         SetNapiObjOnElement _v(*el, &obj);
@@ -544,6 +546,44 @@ void JsInterop::UpdateElement(DgnDbR dgndb, Napi::Object obj) {
     } catch (std::logic_error const& err) {
         THROW_JS_DGN_DB_EXCEPTION(Env(), err.what(), DgnDbStatus::BadArg);
     }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void JsInterop::ChangeElementParent(DgnDbR dgndb, Napi::Object obj) {
+    BeJsConst props(obj);
+
+    DgnElementId elementId = props[DgnElement::json_id()].GetId64<DgnElementId>();
+    if (!elementId.IsValid())
+        throwInvalidId();
+
+    DgnElementId newParentId = props["parentId"].GetId64<DgnElementId>();
+    if (!newParentId.IsValid())
+        throwInvalidId();
+
+    DgnDbStatus status = dgndb.Elements().ChangeElementParent(elementId, newParentId);
+    if (DgnDbStatus::Success != status)
+        throwDgnDbStatus(status);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void JsInterop::ChangeElementModel(DgnDbR dgndb, Napi::Object obj) {
+    BeJsConst props(obj);
+
+    DgnElementId elementId = props[DgnElement::json_id()].GetId64<DgnElementId>();
+    if (!elementId.IsValid())
+        throwInvalidId();
+
+    DgnModelId newModelId = props["modelId"].GetId64<DgnModelId>();
+    if (!newModelId.IsValid())
+        throwInvalidId();
+
+    DgnDbStatus status = dgndb.Elements().ChangeElementModel(elementId, newModelId);
+    if (DgnDbStatus::Success != status)
+        throwDgnDbStatus(status);
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -635,6 +675,23 @@ void JsInterop::UpdateProjectExtents(DgnDbR dgndb, BeJsConst newExtents) {
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void JsInterop::UpdateIModelProps(DgnDbR dgndb, BeJsConst props) {
+    GeoCoordinates::BaseGCSPtr newGCS;
+    auto gcsJson = props[json_geographicCoordinateSystem()];
+    if (!gcsJson.isNull()) {
+        newGCS = GeoCoordinates::BaseGCS::CreateGCS();
+        if (!newGCS.IsValid())
+            THROW_JS_DGN_DB_EXCEPTION(Env(), "Could not create geographic coordinate system", DgnDbStatus::BadRequest);
+
+        Utf8String errorFacingMessage;
+        if (SUCCESS != newGCS->FromJson(gcsJson, errorFacingMessage) || !newGCS->IsValid()) {
+            Utf8String message("Invalid geographic coordinate system");
+            if (!errorFacingMessage.empty())
+                message.append(": ").append(errorFacingMessage);
+
+            THROW_JS_DGN_DB_EXCEPTION(Env(), message.c_str(), DgnDbStatus::BadArg);
+        }
+    }
+
     auto& geolocation = dgndb.GeoLocation();
     auto extJson = props[json_projectExtents()];
     if (!extJson.isNull()) {
@@ -653,16 +710,8 @@ void JsInterop::UpdateIModelProps(DgnDbR dgndb, BeJsConst props) {
         geolocation.SetEcefLocation(ecef);
     }
 
-    auto gcsJson = props[json_geographicCoordinateSystem()];
-    if (!gcsJson.isNull()) {
-        GeoCoordinates::BaseGCSPtr newGCS = GeoCoordinates::BaseGCS::CreateGCS();
-
-        if (newGCS.IsValid()) {
-            Utf8String errorFacingMessage;
-            if (SUCCESS == newGCS->FromJson(gcsJson, errorFacingMessage))
-                geolocation.SetGCS(newGCS.get());
-        }
-    }
+    if (newGCS.IsValid())
+        geolocation.SetGCS(newGCS.get());
 
     geolocation.Save();
 }
@@ -682,6 +731,21 @@ void JsInterop::DeleteElement(DgnDbR dgndb, Utf8StringCR eidStr) {
     auto stat =  elPersist->Delete();
     if (stat != DgnDbStatus::Success)
         THROW_JS_DGN_DB_EXCEPTION(Env(), "error deleting element", stat);
+}
+
+BulkDeleteElementsResult JsInterop::DeleteElements(DgnDbR dgndb, Napi::Array elementIds) {
+    DgnElementIdSet elementIdSet;
+    for (auto i = 0U; i < elementIds.Length(); ++i) {
+        Napi::Value arrayItem = elementIds[i];
+
+        if (arrayItem.IsString()) {
+            auto val = BeInt64Id::FromString(arrayItem.As<Napi::String>().Utf8Value().c_str());
+            if (val.IsValid())
+                elementIdSet.insert(DgnElementId(val.GetValue()));
+        }
+    }
+
+    return dgndb.Elements().DeleteElements(elementIdSet);
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1322,12 +1386,7 @@ void JsInterop::GetIModelProps(BeJsValue val, DgnDbCR dgndb, Utf8StringCR when) 
     if (gcs != nullptr && gcs->IsValid())
         {
         // Here is the definition in old style JSON format.
-        Json::Value CRSOld;
-        gcs->ToJson(CRSOld, true);
-
-        // Convert old style Json value to new style
-        BeJsDocument theDoc(CRSOld.toStyledString());
-        val[json_geographicCoordinateSystem()].From(theDoc);
+        gcs->ToJson(val[json_geographicCoordinateSystem()], true);
 
         // Invalidate current EcefLocation in case it exists (this will force to recompute it using the new gcs)
         EcefLocation invalidLocation;
@@ -1390,7 +1449,7 @@ static void populateGeoCoordResult(BeJsValue result, bvector<DPoint3d> const& po
     {
     for (size_t i = 0; i < points.size(); i++)
         {
-        auto outputPointWithStatus = result[static_cast<Json::ArrayIndex>(i)];
+        auto outputPointWithStatus = result[static_cast<BeJsValue::ArrayIndex>(i)];
         auto outputPoint = outputPointWithStatus["p"];
 
         outputPoint[0] = points[i].x;

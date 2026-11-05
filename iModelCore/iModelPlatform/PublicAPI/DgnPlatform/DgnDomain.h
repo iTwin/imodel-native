@@ -164,6 +164,9 @@ enum class SchemaStatus
     SchemaUpgradeRecommended,
     SchemaIsDynamic,
     LockCallbackNotSet,
+    //! The import would destroy existing instances or property values. Added at the end so the
+    //! numeric value of every other member stays where it was.
+    DataDeletionRequired,
     };
 
 struct DgnDomains;
@@ -527,6 +530,9 @@ public:
     //! Look up a domain by name.
     //! @param[in] name The name of the domain to find.
     DGNPLATFORM_EXPORT DgnDomainCP FindDomain(Utf8CP name) const;
+
+    //! Get all domains registered with this DgnDb.
+    DomainList const& GetDomains() const { return m_domains; }
 
     //! Get the local (within this DgnDb) DgnClassId for the specified handler.
     DGNPLATFORM_EXPORT DgnClassId GetClassId(DgnDomain::Handler& handler);

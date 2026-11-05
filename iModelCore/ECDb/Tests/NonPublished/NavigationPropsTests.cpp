@@ -26,6 +26,11 @@ struct ECSqlNavigationPropertyTestFixture : ECDbTestFixture
             }
     };
 
+struct ECSqlNavigationPropertyExtendedTests : ECSqlNavigationPropertyTestFixture
+    {
+    ECDB_EXTENDED_TIER_GATE(ECSqlNavigationPropertyTestFixture)
+    };
+
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -2155,6 +2160,94 @@ TEST_F(ECSqlNavigationPropertyTestFixture, Null)
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlNavigationPropertyTestFixture, OmitRelECClassIdWhenNotUsed)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("OmitRelECClassIdWhenNotUsed.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+            <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />
+            <ECEntityClass typeName='Element' modifier='Abstract'>
+                <ECCustomAttributes>
+                    <ClassMap xmlns='ECDbMap.02.00'>
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName='Code' typeName='string' />
+                <ECNavigationProperty propertyName='Parent' relationshipName='ElementOwnsChildElements' direction='Backward' >
+                    <ECCustomAttributes>
+                        <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>
+                    </ECCustomAttributes>
+                </ECNavigationProperty>
+            </ECEntityClass>
+            
+            <ECEntityClass typeName='SubElement'>
+                <BaseClass>Element</BaseClass>
+            </ECEntityClass>
+
+            <ECRelationshipClass typeName='ElementOwnsChildElements' strength='Embedding' modifier='Abstract'>
+                <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Parent'>
+                    <Class class ='Element' />
+                </Source>
+                <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Child'>
+                    <Class class ='Element' />
+                </Target>
+            </ECRelationshipClass>
+
+            <ECRelationshipClass typeName='ElementOwnsSubElements' strength='Embedding' modifier='Sealed'>
+                <BaseClass>ElementOwnsChildElements</BaseClass>
+                <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Owner'>
+                    <Class class ='Element' />
+                </Source>
+                <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Owned'>
+                    <Class class ='SubElement' />
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml")));
+
+    auto checkNavProp = [](const ECSqlStatement& stmt, Utf8StringCR label, const bool relECClassIdExpected)
+        {
+        const Utf8String nativeSql = stmt.GetNativeSql();
+        EXPECT_TRUE(nativeSql.find("ParentId") != Utf8String::npos) << label << ": must reference ParentId. Native SQL: " << nativeSql;
+        EXPECT_EQ(relECClassIdExpected, nativeSql.find("ParentRelECClassId") != Utf8String::npos) << label << " failed ParentRelECClassId check (expected " << relECClassIdExpected << "). Native SQL: " << nativeSql;
+        };
+
+    for (const auto& [testCaseNumber, testCaseName, ecSql, relECClassIdExpected] : std::vector<std::tuple<int, Utf8String, Utf8String, bool>>{
+        { 1, "WHERE Parent IS NULL", R"sql(SELECT 1 FROM ts.SubElement WHERE Parent IS NULL)sql", false },
+        { 2, "WHERE Parent IS NOT NULL", R"sql(SELECT ECInstanceId FROM ts.SubElement WHERE Parent IS NOT NULL)sql", false },
+        { 3, "WHERE Parent.Id IS NULL", R"sql(SELECT ECInstanceId FROM ts.SubElement WHERE Parent.Id IS NULL)sql", false },
+        { 4, "EXISTS subquery WHERE Parent IS NULL", R"sql(SELECT count(1) FROM ts.SubElement e WHERE EXISTS (SELECT 1 FROM ts.SubElement c WHERE c.Parent IS NULL AND c.ECInstanceId = e.ECInstanceId))sql", false },
+        { 5, "ORDER BY Parent", R"sql(SELECT ECInstanceId FROM ts.SubElement ORDER BY Parent.Id)sql", false },
+        { 6, "GROUP BY Parent", R"sql(SELECT ECInstanceId FROM ts.SubElement GROUP BY Parent.Id)sql", false },
+        { 7, "HAVING Parent", R"sql(SELECT ECInstanceId FROM ts.SubElement GROUP BY Parent.Id HAVING Parent IS NOT NULL)sql", false },
+        { 8, "WHERE Parent = ?", R"sql(SELECT ECInstanceId FROM ts.SubElement WHERE Parent = ?)sql", true },
+        { 9, "WHERE Parent.RelECClassId IS NULL", R"sql(SELECT ECInstanceId FROM ts.SubElement WHERE Parent.RelECClassId IS NULL)sql", true },
+        { 10, "SELECT Parent", R"sql(SELECT Parent FROM ts.SubElement)sql", true },
+        { 11, "SELECT Parent.RelECClassId", R"sql(SELECT Parent.RelECClassId FROM ts.SubElement)sql", true },
+        { 12, "WHERE Parent.RelECClassId = ?", R"sql(SELECT ECInstanceId FROM ts.SubElement WHERE Parent.RelECClassId = ?)sql", true },
+        { 13, "Named parameter test", R"sql(SELECT ECInstanceId FROM ts.SubElement WHERE Parent = :p)sql", true },
+        { 14, "Nav prop equality", R"sql(SELECT e1.ECInstanceId FROM ts.SubElement e1 JOIN ts.SubElement e2 ON e1.ECInstanceId = e2.ECInstanceId WHERE e1.Parent = e2.Parent)sql", true },
+        { 15, "Join on Parent with IS NULL", R"sql(SELECT e1.ECInstanceId FROM ts.SubElement e1 JOIN ts.SubElement e2 ON e1.ECInstanceId = e2.ECInstanceId WHERE e1.Parent IS NULL)sql", false },
+        { 16, "Join on Parent with binder", R"sql(SELECT e1.ECInstanceId FROM ts.SubElement e1 JOIN ts.SubElement e2 ON e1.ECInstanceId = e2.ECInstanceId AND e1.Parent = ?)sql", true },
+        { 17, "CTE", R"sql(WITH cte(id) AS (SELECT ECInstanceId FROM ts.SubElement WHERE Parent IS NULL) SELECT id FROM cte)sql", false },
+        { 18, "CTE with binder", R"sql(WITH cte(id) AS (SELECT ECInstanceId FROM ts.SubElement WHERE Parent = ?) SELECT id FROM cte)sql", true },
+        { 19, "Union with nav prop in second branch", R"sql(
+            SELECT ECInstanceId FROM ts.SubElement WHERE Parent IS NULL
+                UNION ALL
+            SELECT ECInstanceId FROM ts.SubElement WHERE Parent IS NOT NULL)sql", false },
+        { 20, "Union with nav prop with binder", R"sql(
+            SELECT ECInstanceId FROM ts.SubElement WHERE Parent IS NULL
+                UNION ALL
+            SELECT ECInstanceId FROM ts.SubElement WHERE Parent = ?)sql", true },
+        })
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecSql.c_str())) << "Test case " << testCaseNumber << ": " << testCaseName << " failed.";
+        checkNavProp(stmt, testCaseName, relECClassIdExpected);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlNavigationPropertyTestFixture, CRUD)
     {
     const int rowCount = 3;
@@ -2568,7 +2661,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, JsonAdapter)
 
     JsonECSqlSelectAdapter selAdapter(selStmt);
     ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
-    Json::Value json;
+    BeJsDocument json;
     ASSERT_EQ(SUCCESS, selAdapter.GetRow(json));
 
     ECInstanceId id = ECJsonUtilities::JsonToId<ECInstanceId>(json[ECJsonUtilities::json_id()]);
@@ -2578,13 +2671,13 @@ TEST_F(ECSqlNavigationPropertyTestFixture, JsonAdapter)
     //Model1
     ASSERT_EQ(modelKey.GetInstanceId(), selStmt.GetValueNavigation<ECInstanceId>(2)) << "Model1 via plain ECSQL";
 
-    Json::Value const& modelJson = json["Model1"];
+    BeJsConst modelJson = json["Model1"];
     ASSERT_FALSE(modelJson.isNull()) << "Model1 is not expected to be null in the read ECInstance";
-    Json::Value const& modelIdJson = modelJson[ECJsonUtilities::json_navId()];
+    BeJsConst modelIdJson = modelJson[ECJsonUtilities::json_navId()];
     ASSERT_FALSE(modelIdJson.isNull()) << "Model1.Id is not expected to be null in the read ECInstance";
     ASSERT_STRCASEEQ(modelKey.GetInstanceId().ToHexStr().c_str(), modelIdJson.asCString());
 
-    Json::Value const& modelRelClassNameJson = modelJson[ECJsonUtilities::json_navRelClassName()];
+    BeJsConst modelRelClassNameJson = modelJson[ECJsonUtilities::json_navRelClassName()];
     ASSERT_FALSE(modelRelClassNameJson.isNull()) << "Model1.RelECClassId is not expected to be null in the read ECInstance";
     ASSERT_STREQ("np.ParentHasChildren1", modelRelClassNameJson.asCString());
     }
@@ -2595,13 +2688,13 @@ TEST_F(ECSqlNavigationPropertyTestFixture, JsonAdapter)
     ASSERT_EQ(modelKey.GetInstanceId(), selStmt.GetValueNavigation<ECInstanceId>(3, &relClassId)) << "Model2.Id via plain ECSQL";
     ASSERT_EQ(m_ecdb.Schemas().GetClassId("np", "ParentHasChildren2"), relClassId) << "Model2.RelECClassId via plain ECSQL";
 
-    Json::Value const& modelJson = json["Model2"];
+    BeJsConst modelJson = json["Model2"];
     ASSERT_FALSE(modelJson.isNull()) << "Model2 is not expected to be null in the read ECInstance";
-    Json::Value const& modelIdJson = modelJson[ECJsonUtilities::json_navId()];
+    BeJsConst modelIdJson = modelJson[ECJsonUtilities::json_navId()];
     ASSERT_FALSE(modelIdJson.isNull()) << "Model2.Id is not expected to be null in the read ECInstance";
     ASSERT_STRCASEEQ(modelKey.GetInstanceId().ToHexStr().c_str(), modelIdJson.asCString());
 
-    Json::Value const& modelRelClassNameJson = modelJson[ECJsonUtilities::json_navRelClassName()];
+    BeJsConst modelRelClassNameJson = modelJson[ECJsonUtilities::json_navRelClassName()];
     ASSERT_FALSE(modelRelClassNameJson.isNull()) << "Model2.RelECClassId is not expected to be null in the read ECInstance";
     ASSERT_STREQ("np.ParentHasChildren2", modelRelClassNameJson.asCString());
     }
@@ -2832,7 +2925,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, JoinedTable)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlNavigationPropertyTestFixture, MultiplicityPermutations)
+TEST_F(ECSqlNavigationPropertyExtendedTests, MultiplicityPermutations)
     {
     enum class Multiplicity { Zero, One, GreaterThanOne, Many };
     std::array<Multiplicity, 4> multiplicities = { Multiplicity::Zero, Multiplicity::One, Multiplicity::GreaterThanOne, Multiplicity::Many };

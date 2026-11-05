@@ -7,7 +7,6 @@
 #include <filesystem>
 
 #include "SampleGeometry.h"
-#include <BeJsonCpp/BeJsonUtilities.h>
 #include <GeomSerialization/GeomSerializationApi.h>
 
 bool writeGeometryToFile
@@ -243,15 +242,15 @@ TEST(IModelJson, BlockedPolyface)
         DPoint3d::From(0, 0, 0),
         DVec3d::From(2, 0, 0),
         DVec3d::From(1, 2, 0)), 4, 5, false, false);
-    auto json3 = Json::Value();
-    auto json4 = Json::Value();
-    Check::True (IModelJson::TryGeometryToIModelJsonValue(BeJsValue(json3), *IGeometry::Create (fixedMesh3)), "fixedmesh3 to json");
-    Check::True (IModelJson::TryGeometryToIModelJsonValue(BeJsValue(json4), *IGeometry::Create(fixedMesh4)), "fixedmesh4 to json");
+    BeJsDocument json3;
+    BeJsDocument json4;
+    Check::True (IModelJson::TryGeometryToIModelJsonValue(json3, *IGeometry::Create (fixedMesh3)), "fixedmesh3 to json");
+    Check::True (IModelJson::TryGeometryToIModelJsonValue(json4, *IGeometry::Create(fixedMesh4)), "fixedmesh4 to json");
     fixedMesh3->ConvertToVariableSizeSignedOneBasedIndexedFaceLoops();
     fixedMesh4->ConvertToVariableSizeSignedOneBasedIndexedFaceLoops();
     bvector<IGeometryPtr> indexed3, indexed4;
-    Check::True (IModelJson::TryIModelJsonValueToGeometry (BeJsValue(json3), indexed3), "json3 to geometry");
-    Check::True(IModelJson::TryIModelJsonValueToGeometry(BeJsValue(json4), indexed4), "json4 to geometry");
+    Check::True (IModelJson::TryIModelJsonValueToGeometry (json3, indexed3), "json3 to geometry");
+    Check::True(IModelJson::TryIModelJsonValueToGeometry(json4, indexed4), "json4 to geometry");
 
     Check::ClearGeometry("IModelJson.BlockedPolyface");
     }
@@ -272,21 +271,26 @@ TEST(Cone, AnnulusJSON)
         DgnConeDetail(centerA, centerB, matrix,
             1.0, 0.5, false
         ));
-    auto jsonA = Json::Value();
-    Check::True(IModelJson::TryGeometryToIModelJsonValue(BeJsValue(jsonA), *IGeometry::Create(coneA)));
+    BeJsDocument jsonA;
+    Check::True(IModelJson::TryGeometryToIModelJsonValue(jsonA, *IGeometry::Create(coneA)));
     bvector<IGeometryPtr> geometryB;
-    Check::True(IModelJson::TryIModelJsonValueToGeometry(BeJsValue(jsonA), geometryB));
-    auto jsonB = Json::Value();
-    Check::True(IModelJson::TryGeometryToIModelJsonValue(BeJsValue(jsonB), geometryB));
+    Check::True(IModelJson::TryIModelJsonValueToGeometry(jsonA, geometryB));
+    BeJsDocument jsonB;
+    Check::True(IModelJson::TryGeometryToIModelJsonValue(jsonB, geometryB));
     Check::SaveTransformed(*coneA);
     for (auto &g : geometryB)
         Check::SaveTransformed(g);
     Check::ClearGeometry("Cone.AnnulusJSON");
     }
 
-bool testIsAlmostEqual(BeJsConst a, BeJsConst b)
+// BeJsConst has no numeric constructor, so the doubles are materialized into BeJsDocuments
+// here rather than at each call site.
+bool testIsAlmostEqual(double a, double b)
     {
-    return a.isAlmostEqual (b);
+    BeJsDocument docA, docB;
+    docA = a;
+    docB = b;
+    return docA.isAlmostEqual (docB);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -300,15 +304,15 @@ TEST(BeJs,isAlmostEqual)
         for (double x0 = 1.0e-10; x0 < 1.0e20; x0 *= 10.0)
             {
             double x = sign * x0;
-            Check::True (testIsAlmostEqual (BeJsConst (x), BeJsConst (x)));
-            Check::True(testIsAlmostEqual(BeJsConst(x), BeJsConst(x - e0)));
-            Check::True(testIsAlmostEqual(BeJsConst(x), BeJsConst(x + e0)));
+            Check::True (testIsAlmostEqual (x, x));
+            Check::True(testIsAlmostEqual(x, x - e0));
+            Check::True(testIsAlmostEqual(x, x + e0));
 
-            Check::True(testIsAlmostEqual(BeJsConst(x), BeJsConst(x * (1.0 - e0))));
-            Check::True(testIsAlmostEqual(BeJsConst(x), BeJsConst(x * (1.0 + e0))));
+            Check::True(testIsAlmostEqual(x, x * (1.0 - e0)));
+            Check::True(testIsAlmostEqual(x, x * (1.0 + e0)));
 
-            Check::False(testIsAlmostEqual (BeJsConst (x), BeJsConst (x * (1.0 + e1) + sign * e1)));
-            Check::False(testIsAlmostEqual(BeJsConst(x), BeJsConst(x * (1.0 - e1) - sign * e1)));
+            Check::False(testIsAlmostEqual (x, x * (1.0 + e1) + sign * e1));
+            Check::False(testIsAlmostEqual(x, x * (1.0 - e1) - sign * e1));
             }
         }
     }
@@ -316,40 +320,46 @@ TEST(Serialization, ExpectedClosure)
     {
     auto meshA = CreatePolyface_ExtrudedL(0, 0, 3, 4, 2, 6, 2);
     Check::True(meshA->IsClosedByEdgePairing(), "verify closure");
-    for (uint32_t closure : {0, 1, 2, 0, 2, 1})
+    for (uint32_t closure : { 0, 1, 2 })
         {
+        // verify closure flag is preserved during de/serialization
         Check::StartScope("closure case", (size_t)closure);
         meshA->SetExpectedClosure(closure);
         Check::Int(closure, meshA->GetExpectedClosure());
-        {
-        auto jsonA = Json::Value();
-        Check::True(IModelJson::TryGeometryToIModelJsonValue(BeJsValue(jsonA), *IGeometry::Create(meshA)), "geomery to json");
-        bvector<IGeometryPtr> geometryB;
-        Check::True(IModelJson::TryIModelJsonValueToGeometry(BeJsValue(jsonA), geometryB), "json to geometry");
-        if (Check::Size(1, geometryB.size()), "singleton from json")
+        if (true)
             {
-            auto meshB = geometryB[0]->GetAsPolyfaceHeader ();
-            if (Check::True(meshB.IsValid()), "singleton mesh")
+            BeJsDocument jsonA;
+            Check::True(IModelJson::TryGeometryToIModelJsonValue(jsonA, *IGeometry::Create(meshA)), "geometry to json");
+            bvector<IGeometryPtr> geometryB;
+            if (Check::True(IModelJson::TryIModelJsonValueToGeometry(jsonA, geometryB), "json to geometry"))
                 {
-                Check::Int(closure, meshB->GetExpectedClosure(), "expectdClosure json");
+                if (Check::Size(1, geometryB.size()), "singleton from json")
+                    {
+                    auto meshB = geometryB[0]->GetAsPolyfaceHeader ();
+                    if (Check::True(meshB.IsValid()), "singleton mesh")
+                        {
+                        Check::Int(closure, meshB->GetExpectedClosure(), "expectedClosure json");
+                        }
+                    }
                 }
             }
-        }
-
-        {
-        bvector<Byte> bytes;
-        BentleyGeometryFlatBuffer::GeometryToBytes(*IGeometry::Create(meshA), bytes);
-        bvector<IGeometryPtr> geometryC;
-        BentleyGeometryFlatBuffer::BytesToVectorOfGeometrySafe(bytes, geometryC);
-        if (Check::Size(1, geometryC.size()), "singleton from flatbuffer")
+        if (true)
             {
-            auto meshC = geometryC[0]->GetAsPolyfaceHeader();
-            if (Check::True(meshC.IsValid()), "singleton mesh")
+            bvector<Byte> bytes;
+            BentleyGeometryFlatBuffer::GeometryToBytes(*IGeometry::Create(meshA), bytes);
+            bvector<IGeometryPtr> geometryC;
+            if (Check::True(BentleyGeometryFlatBuffer::BytesToVectorOfGeometrySafe(bytes, geometryC), "flatbuffer to geometry"))
                 {
-                Check::Int(closure, meshC->GetExpectedClosure(), "expectdClosure fb");
+                if (Check::Size(1, geometryC.size()), "singleton from flatbuffer")
+                    {
+                    auto meshC = geometryC[0]->GetAsPolyfaceHeader();
+                    if (Check::True(meshC.IsValid()), "singleton mesh")
+                        {
+                        Check::Int(closure, meshC->GetExpectedClosure(), "expectedClosure fb");
+                        }
+                    }
                 }
             }
-        }
         Check::EndScope();
         }
     }
@@ -473,11 +483,11 @@ PolyfaceHeaderPtr RoundTripMeshQueryCarrier(PolyfaceHeaderPtr & meshA)
 
 PolyfaceHeaderPtr RoundTripMeshIMJS(PolyfaceHeaderPtr & meshA)
     {
-    auto jsonA = Json::Value();
-    Check::True(IModelJson::TryGeometryToIModelJsonValue(BeJsValue(jsonA),
+    BeJsDocument jsonA;
+    Check::True(IModelJson::TryGeometryToIModelJsonValue(jsonA,
             *IGeometry::Create(meshA)), "geomery to json");
     bvector<IGeometryPtr> geometryB;
-    if (Check::True(IModelJson::TryIModelJsonValueToGeometry(BeJsValue(jsonA), geometryB), "json to geometry"))
+    if (Check::True(IModelJson::TryIModelJsonValueToGeometry(jsonA, geometryB), "json to geometry"))
         {
         auto meshB = geometryB.front()->GetAsPolyfaceHeader();
         Check::True(meshB.IsValid () && meshB->IsSameStructureAndGeometry(*meshA,

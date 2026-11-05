@@ -196,7 +196,7 @@ ConvexClipPlaneSet ClipPlanesPrimitive::FromJsonConvexPlaneSet(BeJsConst val)
     ConvexClipPlaneSet set;
     if (val.isArray())
         {
-        for (Json::ArrayIndex i=0; i<val.size(); ++i)
+        for (BeJsValue::ArrayIndex i=0; i<val.size(); ++i)
             set.push_back(FromJsonPlane(val[(int)i]));
         }
 
@@ -218,7 +218,7 @@ void ClipPlanesPrimitive::ToJsonPlaneSet(BeJsValue val, ClipPlaneSetCR planeSet)
 ClipPlaneSetP ClipPlanesPrimitive::FromJsonPlaneSet(BeJsConst val)
     {
     ClipPlaneSetP clipPlaneSet = new ClipPlaneSet();
-    for (Json::ArrayIndex j = 0; j < val.size(); ++j)
+    for (BeJsValue::ArrayIndex j = 0; j < val.size(); ++j)
         clipPlaneSet->push_back(FromJsonConvexPlaneSet(val[j]));
 
     return clipPlaneSet;
@@ -776,7 +776,7 @@ static ClipPrimitivePtr FromJson(BeJsConst val)
     if (!ptsVal.isArray())
         return nullptr;
 
-    for (Json::ArrayIndex i=0; i<ptsVal.size(); ++i)
+    for (BeJsValue::ArrayIndex i=0; i<ptsVal.size(); ++i)
         {
         DPoint2d pt;
         BeJsGeomUtils::DPoint2dFromJson(pt, ptsVal[(int)i]);
@@ -819,7 +819,7 @@ void _ToJson(BeJsValue out) const override
 
     auto ptsVal = val["points"];
     for (size_t i=0; i<m_points.size(); ++i)
-        BeJsGeomUtils::DPoint2dToJson(ptsVal[(Json::ArrayIndex)i], m_points[i]);
+        BeJsGeomUtils::DPoint2dToJson(ptsVal[(BeJsValue::ArrayIndex)i], m_points[i]);
 
     if (!m_transformFromClip.IsIdentity())
         BeJsGeomUtils::TransformToJson(val["trans"], m_transformFromClip);

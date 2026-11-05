@@ -15,6 +15,20 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
+//! Determines how strict DbMapValidator is.
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+enum class DbMapValidationMode
+    {
+    //! Full validation. Any detected inconsistency fails the operation.
+    SchemaImport,
+    //! Used when replaying already accepted timeline changes (changeset apply).
+    //! Missing entity data-property maps and orphan ec_CustomAttribute rows are reported as warnings for
+    //! compatibility with existing files. Loaded property maps and physical structures are validated strictly.
+    ChangesetApply
+    };
+
+//=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct TableSpaceSchemaManager
@@ -103,9 +117,9 @@ struct VirtualSchemaManager : ECN::IECSchemaLocater {
         mutable uint64_t m_idSeq;
         ECDbCR m_ecdb;
         mutable ECN::ECSchemaCachePtr m_cache;
-        mutable bmap<Utf8String, ECN::ECSchemaCP> m_schemas;
+        mutable bmap<Utf8String, ECN::ECSchemaCP, CompareIUtf8Ascii> m_schemas;
         virtual ECN::ECSchemaPtr _LocateSchema(ECN::SchemaKeyR key, ECN::SchemaMatchType matchType, ECN::ECSchemaReadContextR schemaContext) override;
-        BentleyStatus AddAndValidateVirtualSchema(Utf8StringCR schemaXml, bool validate) const;
+        BentleyStatus AddAndValidateVirtualSchema(Utf8StringCR schemaXml, bool validate, bool createConversionContext) const;
         uint64_t GetNextId() const;
         void SetVirtualTypeIds (ECN::ECSchemaR schema) const;
         void AddECDbVirtualSchema() const;
@@ -122,6 +136,7 @@ struct VirtualSchemaManager : ECN::IECSchemaLocater {
         // The numberOfClasses parameter gives us the exact number of classes found which can be used for more personalized error message
         ECN::ECClassCP FindClass(Utf8StringCR className, size_t& numberOfClasses) const;
         BentleyStatus Add(Utf8StringCR schemaXml) const;
+        BentleyStatus AddBuiltIn(Utf8StringCR schemaXml) const;
         Utf8String GetDescription() const override {
             return Utf8PrintfString("ECDb:VirtualSchemaManager %s", m_ecdb.GetDbFileName());
         }
@@ -203,7 +218,8 @@ private:
     BentleyStatus CheckForSelectWildCardLimit() const;
     BentleyStatus CanCreateOrUpdateRequiredTables() const;
     BentleyStatus FindIndexes(std::vector<DbIndex const*>& indexes) const;
-    BentleyStatus LoadIndexesSQL(std::map<Utf8String, Utf8String, CompareIUtf8Ascii>& sqliteIndexes) const;
+    BentleyStatus LoadPhysicalIndexes(std::map<Utf8String, Utf8String, CompareIUtf8Ascii>& physicalIndexes) const;
+    bool IsIndexPersistedUnchanged(DbIndex const&) const;
 
     std::set<ClassMap const*> GetRelationshipConstraintClassMaps(SchemaImportContext&, ECN::ECRelationshipConstraintCR) const;
     BentleyStatus GetRelationshipConstraintClassMaps(SchemaImportContext&, std::set<ClassMap const*>&, ECN::ECClassCR, bool recursive) const;
@@ -235,7 +251,12 @@ public:
     SchemaChangeEvent& OnBeforeSchemaChanges() const { return m_onBeforeSchemaChanged;}
     SchemaChangeEvent& OnAfterSchemaChanges() const { return m_onAfterSchemaCHanged;};
     ECDbSystemSchemaHelper const& GetSystemSchemaHelper() const { return m_systemSchemaHelper; }
-    BentleyStatus UpdateDbSchema(bool doNotTrackDDLChanges) const;
+    //! Syncs the sqlite schema (tables/indexes) with the ec_* meta tables and validates the resulting map.
+    //! @param[in] doNotTrackDDLChanges if true, DDL changes are not tracked
+    //! @param[in] validationMode use DbMapValidationMode::ChangesetApply when replaying already accepted
+    //! timeline changes so that historical inconsistencies do not fail the apply.
+    BentleyStatus UpdateDbSchema(bool doNotTrackDDLChanges, DbMapValidationMode validationMode) const;
+    BentleyStatus ValidatePersistedMappings(SchemaManager::SchemaImportOptions, bool continueAfterError = false) const;
     };
 
 //=======================================================================================

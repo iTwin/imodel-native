@@ -2317,3 +2317,34 @@ TEST(Spiral, IFCExample)
 
     Check::ClearGeometry ("Spiral.IFCExample");
     }
+
+TEST(Spiral, CloseApproach)
+    {
+    auto seg = ICurvePrimitive::CreateLine(DPoint3d::From(20, -40), DPoint3d::From(130, 30));
+    auto spiral = ICurvePrimitive::CreateSpiralBearingRadiusBearingRadius(DSpiral2dBase::TransitionType_Clothoid, 0, 0, Angle::FromDegrees(120).Radians(), 50, Transform::FromIdentity(), 0, 1);
+    if (Check::True(spiral.IsValid(), "created spiral"))
+        {
+        Check::SaveTransformed(*seg);
+        Check::SaveTransformed(*spiral);
+        auto pointsOnSpiral = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_None);
+        auto pointsOnSegment = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_None);
+        CurveCurve::CloseApproach(*pointsOnSpiral, *pointsOnSegment, spiral.get(), seg.get(), 1e200);
+        Check::Size(pointsOnSpiral->size(), pointsOnSegment->size(), "same number of points on each curve");
+        auto numApproaches = std::min(pointsOnSpiral->size(), pointsOnSegment->size());
+        for (size_t i = 0; i < numApproaches; ++i)
+            {
+            DPoint3d p0, p1;
+            pointsOnSpiral->at(i)->GetStartPoint(p0);
+            pointsOnSegment->at(i)->GetStartPoint(p1);
+            if (p0.AlmostEqualXY(p1)) // intersection between geometries
+                Check::SaveTransformedMarker(p0, -5);
+            else // close approach between geometries
+                Check::SaveTransformed(DSegment3d::From(p0, p1));
+            }
+        CurveLocationDetail detailA, detailB;
+        bool found = CurveCurve::ClosestApproach(detailA, detailB, spiral.get(), seg.get());
+        if (Check::True(found, "found closest approach"))
+            Check::Near(4.8129491110127436, detailA.point.DistanceXY(detailB.point), "closest approach has expected distance");
+        }
+    Check::ClearGeometry("Spiral.CloseApproach");
+    }

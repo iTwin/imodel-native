@@ -239,6 +239,8 @@ struct MainSchemaManager;
 struct SchemaImportContext final
     {
     private:
+        static constexpr size_t MAX_MAPPING_DECISIONS = 100;
+
         bset<ECN::ECClassId> m_classMapsToSave;
         bset<Utf8CP, CompareIUtf8Ascii> m_builtinSchemaNames;
         ClassMapLoadContext m_loadContext;
@@ -248,7 +250,9 @@ struct SchemaImportContext final
         SchemaPolicies m_schemaPolicies;
         TransformData m_transformData;
         RemapManager m_remapManager;
+        bvector<Utf8String> m_mappingDecisions;
         bool m_semanticRebasing;
+        bool m_dataDeletionRefused = false;
 
     public:
         SchemaImportContext(ECDbCR ecdb, SchemaManager::SchemaImportOptions options, bool semanticRebasing = false)
@@ -260,6 +264,14 @@ struct SchemaImportContext final
         bool AllowDataTransform();
         bool ClassMapNeedsSaving(ECN::ECClassId classId) const { return m_classMapsToSave.find(classId) != m_classMapsToSave.end(); }
         bool IsSemanticRebasing() const { return m_semanticRebasing; }
+        bool MaintainsDataTables() const { return !Enum::Contains(m_options, SchemaManager::SchemaImportOptions::DoNotCreateOrUpdateDataTables); }
+        //! An import that owns no data tables cannot delete instances, so schema changes that destroy
+        //! data are refused and the caller has to take the upgrade path. An opt-out flag would go here.
+        bool AllowsDataDestroyingChanges() const { return MaintainsDataTables(); }
+        //! Set where such a change is refused, so the failure reaches the caller as
+        //! ERROR_DATA_DELETION_REQUIRED rather than a plain ERROR it cannot branch on.
+        void SetDataDeletionRefused() { m_dataDeletionRefused = true; }
+        bool WasDataDeletionRefused() const { return m_dataDeletionRefused; }
         bset<Utf8CP, CompareIUtf8Ascii> const& GetBuiltinSchemaNames() const { return m_builtinSchemaNames; }
         ClassMapLoadContext& GetClassMapLoadContext() { return m_loadContext; }
         ECDbCR GetECDb() const { return m_ecdb; }
@@ -272,6 +284,17 @@ struct SchemaImportContext final
         SchemaPolicies& GetSchemaPoliciesR() { return m_schemaPolicies; }
         TransformData& GetDataTransform() {return m_transformData; }
         void AddClassMapForSaving(ECN::ECClassId classId) { m_classMapsToSave.insert(classId); }
+
+        //! Records a column mapping decision for failure diagnostics. Only the most recent MAX_MAPPING_DECISIONS entries are kept.
+        void AddMappingDecision(Utf8String&& decision)
+            {
+            if (m_mappingDecisions.size() >= MAX_MAPPING_DECISIONS)
+                m_mappingDecisions.erase(m_mappingDecisions.begin());
+            m_mappingDecisions.push_back(std::move(decision));
+            }
+        //! Reports an aggregate summary of the remapping work plus the most recent column mapping decisions through Issues().
+        //! Called when the mapping phase of a schema import fails, to aid diagnosing failures from logs alone.
+        void ReportMappingFailureDiagnostics() const;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

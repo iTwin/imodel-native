@@ -34,4 +34,7 @@ NEWFILES_DIR = $(CURRENTTESTRUNNER_RUN_DIR)/NewFiles
 # Root folder to which all pulled test runners are copied and run
 TESTRUNNERS_SANDBOXDIR = $(CURRENTTESTRUNNER_RUN_DIR)/pulledtestrunners
 
-TESTRUNNER_EXE = iModelEvolutionTests.exe
+TESTRUNNER_EXE = iModelEvolutionTests$(exeext)
+
+# Full path of the current test runner executable
+CURRENTTESTRUNNER_EXE = $(CURRENTTESTRUNNER_DIR)/$(TESTRUNNER_EXE)

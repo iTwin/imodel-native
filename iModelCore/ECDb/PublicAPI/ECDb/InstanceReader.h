@@ -10,7 +10,6 @@
 #include <ECDb/ECSqlStatement.h>
 #include <ECDb/SchemaManager.h>
 #include <list>
-#include <json/json.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 

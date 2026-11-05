@@ -775,11 +775,15 @@ BentleyStatus SchemaPersistenceHelper::SerializeKoqPresentationFormats(Utf8Strin
 //---------------------------------------------------------------------------------------
 Utf8String SchemaPersistenceHelper::SerializeNumericSpec(Formatting::NumericFormatSpecCR spec)
     {
-    Json::Value json;
+    BeJsDocument json;
     if (!spec.ToJson(json, false))
         return Utf8String();
 
-    return json.ToString();
+    // StringifyLegacy, not Stringify: this text is PERSISTED in ec_Format and is hashed by
+    // PRAGMA checksum(ecdb_schema), which SchemaSync compares ACROSS briefcases, so it must stay
+    // byte-identical to what JsonCpp wrote. It differs in both key order and double spelling
+    // (e.g. roundFactor 0.3 was written as "0.29999999999999999"). See BeJsConst::StringifyLegacy.
+    return json.StringifyLegacy();
     }
 
 //---------------------------------------------------------------------------------------
@@ -787,11 +791,15 @@ Utf8String SchemaPersistenceHelper::SerializeNumericSpec(Formatting::NumericForm
 //---------------------------------------------------------------------------------------
 Utf8String SchemaPersistenceHelper::SerializeCompositeSpecWithoutUnits(Formatting::CompositeValueSpecCR spec)
     {
-    Json::Value json;
+    BeJsDocument json;
     if (!spec.ToJson(json, false, true))
         return Utf8String();
 
-    return json.ToString();
+    // StringifyLegacy, not Stringify: this text is PERSISTED in ec_Format and is hashed by
+    // PRAGMA checksum(ecdb_schema), which SchemaSync compares ACROSS briefcases, so it must stay
+    // byte-identical to what JsonCpp wrote. It differs in both key order and double spelling
+    // (e.g. roundFactor 0.3 was written as "0.29999999999999999"). See BeJsConst::StringifyLegacy.
+    return json.StringifyLegacy();
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

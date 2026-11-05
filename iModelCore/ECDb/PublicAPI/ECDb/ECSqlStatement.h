@@ -10,7 +10,6 @@
 #include <ECDb/IECSqlBinder.h>
 #include <ECDb/SchemaManager.h>
 #include <list>
-#include <json/json.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
@@ -687,7 +686,7 @@ struct ECSqlParseTreeFormatter final
         //!                                   {"Exp":"<exp as string>",
         //!                                   "Children": [....]},
         //!                                   ...]}
-        ECDB_EXPORT static BentleyStatus ParseAndFormatECSqlExpTree(Json::Value& expTree, Utf8StringR ecsqlFromExpTree, ECDbCR, Utf8CP ecsql);
+        ECDB_EXPORT static BentleyStatus ParseAndFormatECSqlExpTree(BeJsValue expTree, Utf8StringR ecsqlFromExpTree, ECDbCR, Utf8CP ecsql);
     };
 
 #endif
@@ -698,6 +697,11 @@ struct IJsSerializable {
     public:
         ECDB_EXPORT virtual void ToJs(BeJsValue&) const = 0;
         ECDB_EXPORT std::string Stringify(StringifyFormat format = StringifyFormat::Default) const;
+        // Note: making the destructor virtual is required for proper cleanup of derived classes.
+        // However, making it pure virtual is functionally equivalent given the pure virtual ToJs
+        // method above, and making it pure virtual would require an empty implementation in a cpp
+        // file to provide a definition, since it is required by the subclass destructors.
+        virtual ~IJsSerializable() {}
 };
 
 //=======================================================================================
@@ -828,6 +832,7 @@ struct JsReadOptions final {
 //! @bsiclass
 //=======================================================================================
 struct ECSqlRowAdaptor {
+    friend struct PreparedECSqlRowRenderer;
     using CustomHandler = std::function<PropertyHandlerResult(BeJsValue out, IECSqlValue const& val)>;
     using SkipPropertyHandler = std::function<bool(ECN::ECPropertyCR)>;
 private:

@@ -19,8 +19,8 @@ DPoint4d m_coff[2][MAX_BEZIER_CURVE_ORDER];
 int m_order;
 RuledBezier (DPoint4dCP coffA, DPoint4dCP coffB, int n)
     {
-    memcpy (m_coff[0], coffA, n * sizeof (DPoint4d));
-    memcpy (m_coff[1], coffB, n * sizeof (DPoint4d));
+    BeStringUtilities::Memcpy (m_coff[0], sizeof m_coff[0], coffA, n * sizeof (DPoint4d));
+    BeStringUtilities::Memcpy (m_coff[1], sizeof m_coff[1], coffB, n * sizeof (DPoint4d));
     m_order = n;
     }
 

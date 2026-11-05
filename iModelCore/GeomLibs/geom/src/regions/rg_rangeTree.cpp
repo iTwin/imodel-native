@@ -319,10 +319,8 @@ int         axis
     double       maxMinDist = -1.0e200, minDist;
     int          minSize;
 
-
-    qsort (pSplitEntries, count, sizeof(NodeTest), (axis==X_AXIS)
-                ? (int (*)(const void *,const void *))compareXRange
-                : (int (*)(const void *,const void *))compareYRange);
+    auto cmp = (axis == X_AXIS) ? compareXRange : compareYRange;
+    std::sort(pSplitEntries, pSplitEntries + count, [cmp](const NodeTest& a, const NodeTest& b) { return cmp(&a, &b) < 0; });
 
     minSize = count/3;
     pLastEntry = pSplitEntries + count;

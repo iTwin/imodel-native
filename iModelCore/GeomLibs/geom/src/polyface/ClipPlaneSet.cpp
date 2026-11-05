@@ -51,7 +51,7 @@ static bool testRayIntersections (double& tNear, DPoint3dCR origin, DVec3dCR dir
 +---------------+---------------+---------------+---------------+---------------+------*/
 ConvexClipPlaneSet::ConvexClipPlaneSet (ClipPlaneCP planes, size_t n) : T_ClipPlanes (n)
     {
-    memcpy (&front(), planes, n * sizeof (ClipPlane));
+    BeStringUtilities::Memcpy (&front(), n * sizeof (ClipPlane), planes, n * sizeof (ClipPlane));
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -201,7 +201,7 @@ int EXP_LVL7 CS_bins (csFILE *strm,long32_t start,long32_t eofPos,int rs,Const v
 		rd_cnt = CS_fread (buff,1,(unsigned)rs,strm);
 		if (rd_cnt != (size_t)rs)
 		{
-			if (ferror (strm)) CS_erpt (cs_IOERR);
+			if (CS_ferror (strm)) CS_erpt (cs_IOERR);
 			else			   CS_erpt (cs_INV_FILE);
 			goto error;
 		}
@@ -263,7 +263,7 @@ int EXP_LVL7 CS_bins (csFILE *strm,long32_t start,long32_t eofPos,int rs,Const v
 				rd_cnt = CS_fread (buff,1,(unsigned)rs,strm);
 				if (rd_cnt != (size_t)rs)
 				{
-					if (ferror (strm)) CS_erpt (cs_IOERR);
+					if (CS_ferror (strm)) CS_erpt (cs_IOERR);
 					else               CS_erpt (cs_INV_FILE);
 					goto error;
 				}
@@ -894,7 +894,7 @@ int EXP_LVL7 CS_ips (csFILE *strm,short rs,long32_t eofPos,int (*comp)(Const voi
 	rd_cnt = CS_fread (buff,1,buf_siz,strm);
 	if (rd_cnt != buf_siz)
 	{
-		if (ferror (strm)) CS_erpt (cs_IOERR);
+		if (CS_ferror (strm)) CS_erpt (cs_IOERR);
 		else               CS_erpt (cs_INV_FILE);
 		goto error;
 	}
@@ -912,7 +912,7 @@ int EXP_LVL7 CS_ips (csFILE *strm,short rs,long32_t eofPos,int (*comp)(Const voi
 	wr_cnt = CS_fwrite (buff,1,buf_siz,strm);
 	if (wr_cnt != buf_siz)
 	{
-		if (ferror (strm)) CS_erpt (cs_IOERR);
+		if (CS_ferror (strm)) CS_erpt (cs_IOERR);
 		else               CS_erpt (cs_DISK_FULL);
 		goto error;
 	}

@@ -426,7 +426,7 @@ SchemaReadStatus ECFormat::ReadCompositeUnitXml(pugi::xml_node unitNode, ECSchem
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus ECFormat::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
+SchemaWriteStatus ECFormat::WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
     {
     if (ecXmlVersion < ECVersion::V3_2)
         return SchemaWriteStatus::Success;

@@ -50,8 +50,6 @@ struct EXPORT_VTABLE_ATTRIBUTE Model : GraphicalModel2d
 protected:
     ModelCP _ToSheetModel() const override final {return this;}
 
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
-
 public:
     //! construct a new SheetModel
     explicit Model(CreateParams const& params) : T_Super(params) {}
@@ -66,10 +64,8 @@ public:
     //! Find the first SheetViewDefinition that displays the specified sheet model.
     DGNPLATFORM_EXPORT static DgnElementId FindFirstViewOfSheet(DgnDbR db, DgnModelId sheetModelId);
 
-    //! Get the sheet size.
-    DPoint2d GetSheetSize() const;
-
-    //! Get the sheet extents.
+    //! Get the sheet extents from the modeled element's Width and Height properties (meters).
+    //! @return a null range if the modeled element is missing or either property is absent, null, not a double, not finite, or not positive.
     DGNPLATFORM_EXPORT AxisAlignedBox3d GetSheetExtents() const;
 
     //! Get the sheet attachment IDs.

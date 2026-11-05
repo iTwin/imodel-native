@@ -159,6 +159,7 @@ void PerformanceElementsCRUDTestFixture::SetUpTestDgnDb(WCharCP destFileName, Ut
         ASSERT_TRUE(m_db->IsDbOpen());
         ApplyPragmas(*m_db);
         CreateElementsAndInsert(initialInstanceCount, testClassName, "InitialInstances");
+        m_db->SaveChanges();
         m_db->ExecuteSql("analyze");
         m_db->CloseDb();
         }
@@ -414,21 +415,21 @@ Dgn::PhysicalElementPtr PerformanceElementsCRUDTestFixture::CreatePerfElement(Ut
 std::function<PhysicalElementPtr(void)> PerformanceElementsCRUDTestFixture::CreatePerfElementMethod(Utf8CP className, DgnModelR targetModel, DgnCategoryId catId, DgnElementId parent, DgnClassId dgnClassId) const
     {
     if (0 == strcmp(className, PERF_TEST_PERFELEMENT_CLASS_NAME))
-        return [&] () { return PerfElement::Create(*m_db, targetModel.GetModelId(), catId, parent, dgnClassId); };
+        return [&, catId, parent, dgnClassId] () { return PerfElement::Create(*m_db, targetModel.GetModelId(), catId, parent, dgnClassId); };
     if (0 == strcmp(className, PERF_TEST_PERFELEMENTSUB1_CLASS_NAME))
-        return [&] () { return PerfElementSub1::Create(*m_db, targetModel.GetModelId(), catId, parent, dgnClassId); };
+        return [&, catId, parent, dgnClassId] () { return PerfElementSub1::Create(*m_db, targetModel.GetModelId(), catId, parent, dgnClassId); };
     if (0 == strcmp(className, PERF_TEST_PERFELEMENTSUB2_CLASS_NAME))
-        return [&] () { return  PerfElementSub2::Create(*m_db, targetModel.GetModelId(), catId, parent, dgnClassId); };
+        return [&, catId, parent, dgnClassId] () { return  PerfElementSub2::Create(*m_db, targetModel.GetModelId(), catId, parent, dgnClassId); };
     if (0 == strcmp(className, PERF_TEST_PERFELEMENTSUB3_CLASS_NAME))
-        return [&] () { return PerfElementSub3::Create(*m_db, targetModel.GetModelId(), catId, parent, dgnClassId); };
+        return [&, catId, parent, dgnClassId] () { return PerfElementSub3::Create(*m_db, targetModel.GetModelId(), catId, parent, dgnClassId); };
     if (0 == strcmp(className, PERF_TEST_PERFELEMENTCHBASE_CLASS_NAME))
-        return [&] () { return PerfElementCHBase::Create(*m_db, targetModel.GetModelId(), catId); };
+        return [&, catId, parent, dgnClassId] () { return PerfElementCHBase::Create(*m_db, targetModel.GetModelId(), catId); };
     if (0 == strcmp(className, PERF_TEST_PERFELEMENTCHSUB1_CLASS_NAME))
-        return [&] () { return PerfElementCHSub1::Create(*m_db, targetModel.GetModelId(), catId); };
+        return [&, catId, parent, dgnClassId] () { return PerfElementCHSub1::Create(*m_db, targetModel.GetModelId(), catId); };
     if (0 == strcmp(className, PERF_TEST_PERFELEMENTCHSUB2_CLASS_NAME))
-        return [&] () { return PerfElementCHSub2::Create(*m_db, targetModel.GetModelId(), catId); };
+        return [&, catId, parent, dgnClassId] () { return PerfElementCHSub2::Create(*m_db, targetModel.GetModelId(), catId); };
     if (0 == strcmp(className, PERF_TEST_PERFELEMENTCHSUB3_CLASS_NAME))
-        return [&] () { return PerfElementCHSub3::Create(*m_db, targetModel.GetModelId(), catId); };
+        return [&, catId, parent, dgnClassId] () { return PerfElementCHSub3::Create(*m_db, targetModel.GetModelId(), catId); };
     return nullptr;
     }
 //---------------------------------------------------------------------------------------

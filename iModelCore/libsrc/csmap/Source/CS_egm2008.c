@@ -175,6 +175,10 @@ struct cs_Egm2008_* CSnewEgm2008(const char* filePath, double density)
     CS_fseek(__This->strm, 0, SEEK_END);
     filesize = CS_ftell(__This->strm);
     CS_fseek(__This->strm, 0, SEEK_SET);
+#ifdef GEOCOORD_ENHANCEMENT
+    CS_fclose(__This->strm);
+    __This->strm = NULL;
+#endif
 
     __This->elementCount = elementssize / __This->elementSize;
     __This->recordSize = __This->elementCount * __This->elementSize + __This->rowHeaderSize + __This->rowTailSize;
@@ -334,7 +338,7 @@ int CScalcEgm2008(struct cs_Egm2008_* __This, double* geoidHgt, const double ll[
             }
             /* We do our own buffering, turn stream buffering off. */
 #if !defined(GEOCOORD_ENHANCEMENT)
-			setvbuf (__This->strm,NULL,_IONBF,0);
+            setvbuf(__This->strm, NULL, _IONBF, 0);
 #else
 			CS_setvbuf (__This->strm,NULL,_IONBF,0);
 #endif
@@ -385,6 +389,10 @@ int CScalcEgm2008(struct cs_Egm2008_* __This, double* geoidHgt, const double ll[
             CS_erpt(cs_IOERR);
             goto error;
         }
+#ifdef GEOCOORD_ENHANCEMENT
+        CS_fclose(__This->strm);
+        __This->strm = NULL;
+#endif
     }
 
     /* Extract the grid cell. */

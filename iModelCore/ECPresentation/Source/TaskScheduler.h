@@ -7,6 +7,7 @@
 #include <folly/BeFolly.h>
 #include <folly/futures/SharedPromise.h>
 #include <numeric>
+#include <deque>
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 

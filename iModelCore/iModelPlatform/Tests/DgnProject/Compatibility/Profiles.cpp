@@ -5,10 +5,13 @@
 #pragma once
 
 #include "CompatibilityTests.h"
+#include "CompatibilityTestFixture.h"
 #include "Profiles.h"
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <Bentley/BeDirectoryIterator.h>
 #include <Bentley/BeTest.h>
+#include <algorithm>
+#include <map>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -22,6 +25,10 @@ USING_NAMESPACE_BENTLEY_DGN
 Profile::Profile(ProfileType type, Utf8CP nameSpace, Utf8CP name) : m_type(type), m_versionPropertySpec("SchemaVersion", nameSpace), m_name(name)
     {
     BeTest::GetHost().GetOutputRoot(m_profileOutFolder);
+    // Concurrently running shards clone and modify the same seed files, so each shard gets its own output folder.
+    if (TestSharding::IsSharded())
+        m_profileOutFolder.AppendToPath(WPrintfString(L"shard%d", TestSharding::GetShardIndex()).c_str());
+
     m_profileOutFolder.AppendToPath(WString(m_name, BentleyCharEncoding::Utf8).c_str());
 
     BeFileName baseFolder;
@@ -105,6 +112,11 @@ std::vector<TestFile> Profile::GetAllVersionsOfTestFile(BeFileNameCR rootFolder,
         if (filePath.IsDirectory())
             continue;
 
+        // skip SQLite side car files that may be left next to a seed file
+        const WString ext = filePath.GetExtension();
+        if (ext.EndsWithI(L"-shm") || ext.EndsWithI(L"-wal") || ext.EndsWithI(L"-journal"))
+            continue;
+
         BeFileName profileVersionFolderName = filePath.GetDirectoryName();
         //just get folder name without path
         if (profileVersionFolderName.EndsWith(L"/") || profileVersionFolderName.EndsWith(L"\\"))
@@ -168,6 +180,70 @@ std::vector<TestFile> Profile::GetAllVersionsOfTestFile(BeFileNameCR rootFolder,
         }
 
     return testFiles;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+std::vector<TestFile> Profile::GetAllVersionsOfAllTestFiles(bool logFoundFiles) const
+    {
+    std::vector<TestFile> testFiles = GetAllVersionsOfTestFile(m_profileCreatedDataFolder, L"*.*", logFoundFiles);
+    std::vector<TestFile> pulledDataTestFiles = GetAllVersionsOfTestFile(m_profilePulledTestDataFolder, L"*.*", logFoundFiles);
+    testFiles.insert(testFiles.end(), pulledDataTestFiles.begin(), pulledDataTestFiles.end());
+    return testFiles;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+std::vector<TestFile> Profile::GetTestFilesBucket(size_t bucket, size_t bucketCount) const
+    {
+    BeAssert(bucketCount > 0 && bucket < bucketCount);
+    std::vector<TestFile> allFiles = GetAllVersionsOfAllTestFiles(bucket == 0);
+    if (!TestOptimizations::IsEnabled())
+        return bucket == 0 ? allFiles : std::vector<TestFile>();
+
+    // sort by seed path so that the bucket assignment does not depend on the order in which the file system enumerates the files
+    std::sort(allFiles.begin(), allFiles.end(), [](const TestFile& lhs, const TestFile& rhs) { return lhs.GetSeedPath().GetNameUtf8() < rhs.GetSeedPath().GetNameUtf8(); });
+
+    std::vector<TestFile> bucketFiles;
+    for (size_t i = bucket; i < allFiles.size(); i += bucketCount)
+        bucketFiles.push_back(allFiles[i]);
+
+    return bucketFiles;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+std::vector<TestFile> Profile::GetOldTestFilesToUpgrade(Utf8CP testFileName) const
+    {
+    std::vector<TestFile> newestSeeds;
+    std::map<Utf8String, size_t> indexByTarget;
+    for (TestFile const& testFile : GetAllVersionsOfTestFile(m_profilePulledTestDataFolder, testFileName, false))
+        {
+        if (testFile.GetAge() != ProfileState::Age::Older)
+            continue; // only older files can be upgraded
+
+        // Without optimizations every older seed is upgraded (original behavior), even if several of them end up at the same target path
+        if (!TestOptimizations::IsEnabled())
+            {
+            newestSeeds.push_back(testFile);
+            continue;
+            }
+
+        const Utf8String target = GetPathForNewUpgradedTestFile(testFile).GetNameUtf8();
+        auto it = indexByTarget.find(target);
+        if (it == indexByTarget.end())
+            {
+            indexByTarget[target] = newestSeeds.size();
+            newestSeeds.push_back(testFile);
+            }
+        else if (newestSeeds[it->second] < testFile)
+            newestSeeds[it->second] = testFile;
+        }
+
+    return newestSeeds;
     }
 
 //---------------------------------------------------------------------------------------
@@ -413,4 +489,14 @@ Utf8String TestFile::ToString() const
         versionString.Sprintf(PROFILE_NAME_BEDB " %s", m_bedbVersion.ToString().c_str());
 
     return Utf8PrintfString("%s | Pre-Test Version: %s, upgraded: %s | %s | Seed: %s ", m_name.c_str(), versionString.c_str(), IsUpgraded() ? "yes" : "no", m_path.GetNameUtf8().c_str(), m_seedPath.GetNameUtf8().c_str());
+    }
+
+bool TestFile::operator<(TestFile const& other) const
+    {
+    int comp = m_dgndbVersion.CompareTo(other.m_dgndbVersion);
+    if (comp == 0)
+        comp = m_ecdbVersion.CompareTo(other.m_ecdbVersion);
+    if (comp == 0)
+        comp = m_bedbVersion.CompareTo(other.m_bedbVersion);
+    return comp < 0;
     }

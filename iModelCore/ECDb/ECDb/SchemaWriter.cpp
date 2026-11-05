@@ -2316,6 +2316,15 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, PropertyChange& propert
             ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0336, errorMessage.c_str());
             return ERROR;
             }
+
+        if (!ctx.ImportCtx().AllowsDataDestroyingChanges())
+            {
+            ctx.ImportCtx().SetDataDeletionRefused();
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0336,
+                "ECSchema Upgrade failed. ECProperty: '%s.%s'. Changing the type can make existing values unreadable and requires the schema upgrade path.",
+                oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
+            return ERROR;
+            }
         }
 
     if (propertyChange.IsStruct().IsChanged() || propertyChange.IsStructArray().IsChanged() || propertyChange.IsPrimitive().IsChanged() ||
@@ -2327,13 +2336,33 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, PropertyChange& propert
         return ERROR;
         }
 
-    if (propertyChange.ArrayMaxOccurs().IsChanged() || propertyChange.ArrayMinOccurs().IsChanged())
+    // Widening of array bounds should be allowed (old min occurs > new min occurs)
+    if (propertyChange.ArrayMinOccurs().IsChanged())
+        {
+        const auto& minChange = propertyChange.ArrayMinOccurs();
+        const bool isWidened = !minChange.GetOld().IsNull() && !minChange.GetNew().IsNull() && minChange.GetOld().Value() > minChange.GetNew().Value();
+        if (!isWidened)
             {
             ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0338,
-                "ECSchema Upgrade failed. ECProperty %s.%s: Changing 'MinOccurs' or 'MaxOccurs' for an Array ECProperty is not supported.",
+                "ECSchema Upgrade failed. ECProperty %s.%s: Narrowing of array bounds by increasing 'MinOccurs' for an Array ECProperty is not supported.",
                 oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
             return ERROR;
             }
+        }
+
+    // Widening of array bounds should be allowed (old max occurs < new max occurs)
+    if (propertyChange.ArrayMaxOccurs().IsChanged())
+        {
+        const auto& maxChange = propertyChange.ArrayMaxOccurs();
+        const bool isWidened = !maxChange.GetOld().IsNull() && !maxChange.GetNew().IsNull() && maxChange.GetOld().Value() < maxChange.GetNew().Value();
+        if (!isWidened)
+            {
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0338,
+                "ECSchema Upgrade failed. ECProperty %s.%s: Narrowing of array bounds by decreasing 'MaxOccurs' for an Array ECProperty is not supported.",
+                oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
+            return ERROR;
+            }
+        }
 
     if (propertyChange.NavigationRelationship().IsChanged())
             {
@@ -2431,6 +2460,19 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, PropertyChange& propert
             sqlUpdateBuilder.AddSetToNull(kExtendedTypeName);
         else
             sqlUpdateBuilder.AddSetExp(kExtendedTypeName, propertyChange.ExtendedTypeName().GetNew().Value().c_str());
+        }
+
+    if (propertyChange.ArrayMinOccurs().IsChanged())
+        sqlUpdateBuilder.AddSetExp("ArrayMinOccurs", static_cast<int64_t>(propertyChange.ArrayMinOccurs().GetNew().Value()));
+
+    if (propertyChange.ArrayMaxOccurs().IsChanged())
+        {
+        constexpr Utf8CP kArrayMaxOccurs = "ArrayMaxOccurs";
+        ArrayECPropertyCP newArrayProp = newProperty.GetAsArrayProperty();
+        if (newArrayProp == nullptr || newArrayProp->IsStoredMaxOccursUnbounded())
+            sqlUpdateBuilder.AddSetToNull(kArrayMaxOccurs);
+        else
+            sqlUpdateBuilder.AddSetExp(kArrayMaxOccurs, static_cast<int64_t>(newArrayProp->GetStoredMaxOccurs()));
         }
 
     if (propertyChange.DisplayLabel().IsChanged())
@@ -3625,6 +3667,15 @@ BentleyStatus SchemaWriter::DeleteClass(Context& ctx, ClassChange& classChange, 
         return ERROR;
         }
 
+    if (deletedClassMap->GetMapStrategy().GetStrategy() != MapStrategy::NotMapped && !ctx.ImportCtx().AllowsDataDestroyingChanges())
+        {
+        ctx.ImportCtx().SetDataDeletionRefused();
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0687,
+            "ECSchema Upgrade failed. ECSchema %s: Deleting ECClass '%s' destroys its instances, which a schema update cannot do while schema sync is enabled. Use the schema upgrade path, which holds an exclusive schema lock.",
+            deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
+        return ERROR;
+        }
+
     //Delete all instances
     bool purgeECInstances = deletedClassMap->GetMapStrategy().IsTablePerHierarchy();
     if (purgeECInstances)
@@ -3832,6 +3883,15 @@ BentleyStatus SchemaWriter::DeleteProperty(Context& ctx, PropertyChange& propert
 
             if(sharedColumnFound)
                 {
+                if (!ctx.ImportCtx().AllowsDataDestroyingChanges())
+                    {
+                    ctx.ImportCtx().SetDataDeletionRefused();
+                    ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0688,
+                        "ECSchema Upgrade failed. ECClass %s: Deleting ECProperty '%s' clears the data in its shared column, which a schema update cannot do while schema sync is enabled. Use the schema upgrade path, which holds an exclusive schema lock.",
+                        ecClass.GetFullName(), deletedProperty.GetName().c_str());
+                    return ERROR;
+                    }
+
                 Utf8String ecsql;
                 ecsql.Sprintf("UPDATE %s SET [%s]=NULL", ecClass.GetECSqlName().c_str(), deletedProperty.GetName().c_str());
                 ECSqlStatement stmt;

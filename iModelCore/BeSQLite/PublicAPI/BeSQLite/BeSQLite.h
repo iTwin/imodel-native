@@ -266,7 +266,10 @@ public:
     static uint32_t const FirstValidBriefcaseId() {return 2;}
     //! the last valid briefcaseId
     // NOTE: The 10 largest valid BeBriefcaseIds will not be assigned by iModelHub, so are available to identify special kinds of iModels.
-    static uint32_t const LastValidBriefcaseId() {return MaxRepo() - 10;}
+    static uint32_t const LastValidBriefcaseId() {return MaxRepo() - 11;}
+    //! Reserved briefcase id used for Element IDs allocated by SchemaSync.
+    //! Never assigned by iModelHub. Must stay in sync with TypeScript `BriefcaseIdValue.SchemaSyncElementReserved`.
+    static uint32_t const SchemaSyncElementReserved() {return MaxRepo() - 10;}
     //! An illegal value
     static uint32_t const Illegal() {return (uint32_t)0xffffffff;}
 
@@ -608,6 +611,7 @@ enum DbResult
     BE_SQLITE_ERROR_CouldNotAcquireLocksOrCodes = (BE_SQLITE_IOERR | (21<<24)), //!< Error acquiring locks or codes
     BE_SQLITE_ERROR_SchemaUpgradeRecommended    = (BE_SQLITE_IOERR | (22<<24)), //!< Recommended that the schemas found in the database be upgraded
     BE_SQLITE_ERROR_DataTransformRequired       = (BE_SQLITE_IOERR | (23<<24)), //!< Schema update need to update data.
+    BE_SQLITE_ERROR_DataDeletionRequired        = (BE_SQLITE_IOERR | (24<<24)), //!< Schema update needs to remove data (classes/properties)
 
     BE_SQLITE_ERROR_NOTOPEN                     = (BE_SQLITE_ERROR | (1<<24)),  //!< Db not open
     BE_SQLITE_ERROR_PropagateChangesFailed      = (BE_SQLITE_ERROR | (2<<24)),  //!< Error propagating changes during commit
@@ -701,6 +705,9 @@ public:
     //! Return result code as static string e.g. SQLITE_ROW -> "SQLITE_ROW"
     BE_SQLITE_EXPORT static Utf8CP GetErrorName(DbResult rc);
 
+    //! Convert a SQLite statement state to a descriptive string.
+    BE_SQLITE_EXPORT static Utf8CP GetStatementStateString(StatementState state);
+
     //! Return a log message (ErrorString, GetErrorName) for a DbResult
     BE_SQLITE_EXPORT static Utf8String GetLogError(DbResult rc);
 
@@ -710,6 +717,17 @@ public:
 
     BE_SQLITE_EXPORT static bool ZlibCompress(bvector<Byte>& compressedBuffer, const bvector<Byte>& sourceBuffer);
     BE_SQLITE_EXPORT static bool ZlibDecompress(bvector<Byte>& uncompressedBuffer, const bvector<Byte>& compressedBuffer, unsigned long uncompressSize);
+
+    //! Enable or disable the monotone-clock VFS shim.
+    //! When enabled, a VFS shim named "besqlite_monotone" is registered as the default
+    //! SQLite VFS. It overrides xCurrentTime and xCurrentTimeInt64 to guarantee that
+    //! every call returns a strictly increasing value: if the system clock has not
+    //! advanced since the previous call the returned time is incremented by 1 ms.
+    //! This is useful in tests where SQLite's millisecond-resolution clock would
+    //! otherwise return identical timestamps for rapid successive operations.
+    //! Call with enable=false to unregister the shim and restore the previous default VFS.
+    //! @note Must be called after BeSQLiteLib::Initialize().
+    BE_SQLITE_EXPORT static void EnableMonotoneClock(bool enable);
 };
 
 //=======================================================================================
@@ -1525,7 +1543,7 @@ public:
     BE_SQLITE_EXPORT SqlPrintfString(Utf8CP fmt, ...);
     BE_SQLITE_EXPORT ~SqlPrintfString();
     operator Utf8CP(){return m_str;}
-    Utf8CP GetUtf8CP() {return m_str;}
+    Utf8CP GetUtf8CP() const {return m_str;}
 };
 
 //=======================================================================================
@@ -3337,6 +3355,13 @@ public:
     //! Opens the specified database, performs a sqlite integrity check, and closes it. Returns BE_SQLITE_OK if the check was successful, otherwise BE_SQLITE_CORRUPT or other chained errors if there was a failure.
     BE_SQLITE_EXPORT static DbResult CheckDbIntegrity(BeFileNameCR dbFileName);
     BE_SQLITE_EXPORT DbResult SetBusyTimeout(int ms);
+    //! Query whether SQLite enforces foreign key constraints on this connection.
+    BE_SQLITE_EXPORT DbResult QueryForeignKeyEnforcement(bool& enabled) const;
+    //! Enable or disable SQLite foreign key enforcement on this connection.
+    BE_SQLITE_EXPORT DbResult SetForeignKeyEnforcement(bool enabled) const;
+    //! Check for foreign key violations which have been deferred to commit in the current transaction.
+    //! @return BE_SQLITE_OK if none are pending, else BE_SQLITE_CONSTRAINT_FOREIGNKEY.
+    BE_SQLITE_EXPORT DbResult QueryDeferredForeignKeyDbStatus() const;
     BE_SQLITE_EXPORT DbBuffer Serialize(const char *zSchema = nullptr) const;
 
     BE_SQLITE_EXPORT static DbResult Deserialize(DbBuffer& buffer, DbR db, DbDeserializeOptions opts = DbDeserializeOptions::FreeOnClose, const char *zSchema = nullptr, std::function<void(DbR)> beforeDefaultTxnStarts = nullptr);

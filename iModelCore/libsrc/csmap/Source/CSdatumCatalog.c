@@ -586,7 +586,7 @@ int CSwriteDatumCatalog (struct csDatumCatalog_ *__This,Const char *path)
 	extern char csErrnam [];
 
 	char *cp;
-	FILE *catFstr;
+	csFILE *catFstr;
 	struct csDatumCatalogEntry_* entryPtr;
 	char newDir [csMAXPATH];
 	char baseDir [csMAXPATH];
@@ -622,7 +622,7 @@ int CSwriteDatumCatalog (struct csDatumCatalog_ *__This,Const char *path)
 	for (entryPtr = __This->listHead;entryPtr != NULL;entryPtr = entryPtr->next)
 	{
 		CSwriteDatumCatalogEntry (entryPtr,catFstr,baseDir);
-		if (ferror (catFstr))
+		if (CS_ferror (catFstr))
 		{
 			CS_stncp (csErrnam,newDir,MAXPATH);
 			CS_erpt (cs_IOERR);

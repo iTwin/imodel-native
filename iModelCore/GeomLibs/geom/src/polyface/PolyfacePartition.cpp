@@ -100,7 +100,7 @@ bvector<PolyfaceHeaderPtr> &submeshArray
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-bool PolyfaceQuery::PartitionReadIndicesByNormal(DVec3dCR vector, bvector<bvector<ptrdiff_t>> &readIndices, double sideFaceRadiansTolerance)
+bool PolyfaceQuery::PartitionReadIndicesByNormal(DVec3dCR vector, bvector<bvector<ptrdiff_t>> &readIndices, double sideFaceRadiansTolerance) const
     {
     const int forwardIndex = 0;
     const int reverseIndex = 1;

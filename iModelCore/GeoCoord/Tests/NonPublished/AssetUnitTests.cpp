@@ -72,8 +72,8 @@ TEST_F(AssetUnitTests, PersistenceRoundTrip)
       ]
       })";
 
-    Json::Value valueIn(Json::objectValue);
-    ASSERT_TRUE(Json::Reader::Parse(jsonData, valueIn));
+    BeJsDocument valueIn(jsonData);
+    ASSERT_FALSE(valueIn.hasParseError());
         
     AssetPtr expectedAsset = std::make_shared<Asset>();
     ASSERT_EQ(SUCCESS, expectedAsset->FromJson(valueIn));
@@ -85,7 +85,7 @@ TEST_F(AssetUnitTests, PersistenceRoundTrip)
     ASSERT_STREQ("2.0", expectedAsset->GetPackages()[1].GetVersion().c_str());
     ASSERT_STREQ("Version 2", expectedAsset->GetPackages()[1].GetDescription().c_str());
 
-    Json::Value valueOut(Json::objectValue);
+    BeJsDocument valueOut;
     expectedAsset->ToJson(valueOut);
 
     AssetPtr actualAsset = std::make_shared<Asset>();

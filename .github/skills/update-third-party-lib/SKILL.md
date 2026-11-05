@@ -50,6 +50,8 @@ When copying vendor source, rename files to match existing conventions (e.g. `.c
 
 ### 1. Prepare: Get the vendor source
 
+Before switching branches, read the library's top-level `README.md` under `iModelCore/libsrc/` if it exists. Its library-specific instructions are mandatory and may modify or supplement this workflow. Read it while still on `main`, because Bentley-maintained instructions do not belong on `libsrc-Vendor`.
+
 Download the exact release archive from the upstream project. Note the exact URL - you'll need it for the commit message.
 
 ### 2. Update libsrc-Vendor
@@ -94,7 +96,26 @@ git add .
 git commit  # or let the merge auto-commit if clean
 ```
 
+### 4a. Update the version in libsrc/README.md
+
+`iModelCore/libsrc/README.md` contains a table listing every third-party library and its version. Update the `Version` cell for the library you're updating to the new version. This is a Bentley file, so like every other Bentley change it is authored on `libsrc-Main` (not `libsrc-Vendor`); it will reach `main` via the PR branch merge in step 5.
+
+     | Directory | Library | Version | vcpkg? |
+     |-----------|---------|---------|--------|
+     | `compress/snappy` | Google Snappy | 1.2.2 | No |
+
+Match the existing version format for that row (some entries include extra detail like a sub-library version, revision number, or SONAME).
+
+Commit the change on `libsrc-Main` so it's included in the step 5 merge (a merge only picks up committed content):
+
+```bash
+git add iModelCore/libsrc/README.md
+git commit -m "Update <library> version in libsrc/README.md"
+```
+
 ### 5. Create PR branch and merge libsrc-Main
+
+Before building, revisit the library's top-level `README.md` and verify that all of its integration and NuGet license metadata instructions have been completed.
 
 ```bash
 git checkout main
@@ -130,3 +151,5 @@ Snappy had never been on `libsrc-Vendor` before (it was committed directly to ma
 1. **Vendor files** (on `libsrc-Vendor`): `snappy.cpp`, `snappy-internal.h`, `snappy-stubs-internal.h`, `snappy-sinksource.cpp`, `snappy-stubs-internal.cpp`, `snappy-notice.txt` - all raw from upstream, `.cc` renamed to `.cpp`
 2. **Bentley files** (on PR branch / main only): `config.h` (hand-written replacement for CMake config), `snappy.mke` (Bentley build), 3-line `#include` append at end of `snappy.cpp` to fold compilation units for bmake
 3. Conflicts were add/add (new to vendor branch), resolved by taking `--theirs` (vendor version)
+
+(Note: `iModelCore/libsrc/README.md` did not exist at the time of this snappy update, so there was no version-table bump for it. For any update today, remember to update that table per step 4a.)

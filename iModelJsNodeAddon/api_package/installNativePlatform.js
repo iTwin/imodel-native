@@ -18,7 +18,7 @@ const supportedPlatforms = [
   {
     name: "linux",
     description: "Linux",
-    architectures: ["x64"]
+    architectures: ["x64", "arm64"]
   },
   {
     name: "darwin",

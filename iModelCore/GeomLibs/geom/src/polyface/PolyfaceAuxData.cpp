@@ -69,7 +69,7 @@ void PolyfaceAuxData::Transform(TransformCR transform)
         {
         for (auto& channelData :  channel->GetData())
             {
-            double*     pData = const_cast<double*> (channelData->GetValues().data());
+            double*     pData = channelData->GetValues().data();
             size_t      dataSize = channelData->GetValues().size();
 
             switch (channel->GetDataType())
@@ -78,9 +78,10 @@ void PolyfaceAuxData::Transform(TransformCR transform)
                 case PolyfaceAuxChannel::DataType::Covector:
                 case PolyfaceAuxChannel::DataType::Point:
                     {
-                    for (size_t i=0; i<dataSize; i += 3)
+                    size_t numPoints = dataSize / 3; // truncates partial point
+                    for (size_t i=0; i<numPoints; i++)
                         {
-                        DPoint3dP    point = reinterpret_cast <DPoint3dP> (pData + i);
+                        DPoint3dP    point = reinterpret_cast <DPoint3dP> (pData + 3 * i);
 
                         switch(channel->GetDataType())
                             {

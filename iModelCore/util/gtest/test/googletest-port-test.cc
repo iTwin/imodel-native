@@ -288,15 +288,15 @@ TEST(FormatCompilerIndependentFileLocationTest, FormatsUknownFileAndLine) {
     defined(GTEST_OS_OPENBSD) || defined(GTEST_OS_GNU_HURD)
 void* ThreadFunc(void* data) {
   internal::Mutex* mutex = static_cast<internal::Mutex*>(data);
-  mutex->Lock();
-  mutex->Unlock();
+  mutex->lock();
+  mutex->unlock();
   return nullptr;
 }
 
 TEST(GetThreadCountTest, ReturnsCorrectValue) {
   size_t starting_count;
   size_t thread_count_after_create;
-  size_t thread_count_after_join;
+  size_t thread_count_after_join = 0;
 
   // We can't guarantee that no other thread was created or destroyed between
   // any two calls to GetThreadCount(). We make multiple attempts, hoping that
@@ -308,7 +308,7 @@ TEST(GetThreadCountTest, ReturnsCorrectValue) {
 
     internal::Mutex mutex;
     {
-      internal::MutexLock lock(&mutex);
+      internal::MutexLock lock(mutex);
       pthread_attr_t attr;
       ASSERT_EQ(0, pthread_attr_init(&attr));
       ASSERT_EQ(0, pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE));
@@ -316,9 +316,9 @@ TEST(GetThreadCountTest, ReturnsCorrectValue) {
       const int status = pthread_create(&thread_id, &attr, &ThreadFunc, &mutex);
       ASSERT_EQ(0, pthread_attr_destroy(&attr));
       ASSERT_EQ(0, status);
-    }
 
-    thread_count_after_create = GetThreadCount();
+      thread_count_after_create = GetThreadCount();
+    }
 
     void* dummy;
     ASSERT_EQ(0, pthread_join(thread_id, &dummy));
@@ -1028,7 +1028,9 @@ TEST(MutexDeathTest, AssertHeldShouldAssertWhenNotLocked) {
   EXPECT_DEATH_IF_SUPPORTED(
       {
         Mutex m;
-        { MutexLock lock(&m); }
+        {
+          MutexLock lock(m);
+        }
         m.AssertHeld();
       },
       "thread .*hold");
@@ -1036,13 +1038,13 @@ TEST(MutexDeathTest, AssertHeldShouldAssertWhenNotLocked) {
 
 TEST(MutexTest, AssertHeldShouldNotAssertWhenLocked) {
   Mutex m;
-  MutexLock lock(&m);
+  MutexLock lock(m);
   m.AssertHeld();
 }
 
 class AtomicCounterWithMutex {
  public:
-  explicit AtomicCounterWithMutex(Mutex* mutex)
+  explicit AtomicCounterWithMutex(Mutex& mutex)
       : value_(0), mutex_(mutex), random_(42) {}
 
   void Increment() {
@@ -1083,7 +1085,7 @@ class AtomicCounterWithMutex {
 
  private:
   volatile int value_;
-  Mutex* const mutex_;  // Protects value_.
+  Mutex& mutex_;  // Protects value_.
   Random random_;
 };
 
@@ -1094,7 +1096,7 @@ void CountingThreadFunc(pair<AtomicCounterWithMutex*, int> param) {
 // Tests that the mutex only lets one thread at a time to lock it.
 TEST(MutexTest, OnlyOneThreadCanLockAtATime) {
   Mutex mutex;
-  AtomicCounterWithMutex locked_counter(&mutex);
+  AtomicCounterWithMutex locked_counter(mutex);
 
   typedef ThreadWithParam<pair<AtomicCounterWithMutex*, int> > ThreadType;
   const int kCycleCount = 20;

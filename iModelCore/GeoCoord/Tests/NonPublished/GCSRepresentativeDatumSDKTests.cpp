@@ -113,7 +113,7 @@ TEST_F(GCSRepresentativeDatumSDKTests, DatumTransformtoJsonThenBack)
         printf("Processing Datum: %s\n", theKeyname.c_str());
         if (currentDatum != nullptr && currentDatum->IsValid())
         {
-            Json::Value result;
+            BeJsDocument result;
 
             if (SUCCESS == currentDatum->ToJson(result, true))
             {
@@ -121,7 +121,7 @@ TEST_F(GCSRepresentativeDatumSDKTests, DatumTransformtoJsonThenBack)
                 result["id"] = "XYZ";
 
                 // Transform to string (for debug purposes)
-                Utf8String resultString = result.toStyledString();
+                Utf8String resultString = result.Stringify();
 
                 GeoCoordinates::DatumP resultDatum = GeoCoordinates::Datum::CreateDatum();
 

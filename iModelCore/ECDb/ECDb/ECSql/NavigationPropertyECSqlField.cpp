@@ -24,14 +24,7 @@ void NavigationPropertyECSqlField::SetMembers(std::unique_ptr<ECSqlField> idFiel
 //---------------------------------------------------------------------------------------
 IECSqlValue const& NavigationPropertyECSqlField::_GetStructMemberValue(Utf8CP memberName) const
     {
-    if (BeStringUtilities::StricmpAscii(memberName, ECDBSYS_PROP_NavPropId) == 0)
-        return *m_idField;
-
-    if (BeStringUtilities::StricmpAscii(memberName, ECDBSYS_PROP_NavPropRelECClassId) == 0)
-        return *m_relClassIdField;
-
-    LOG.errorv("Member name '%s' passed to navigation property IECSqlValue[Utf8CP] does not exist.", memberName);
-    return NoopECSqlValue::GetSingleton()[memberName];
+    return IECSqlValueHelper::GetNavMemberValue(memberName, m_idField.get(), m_relClassIdField.get());
     }
 
 //---------------------------------------------------------------------------------------
@@ -192,18 +185,7 @@ void NavigationPropertyECSqlField::IteratorState::_MoveToNext(bool onInitializin
 //+---------------+---------------+---------------+---------------+---------------+------
 IECSqlValue const& NavigationPropertyECSqlField::IteratorState::_GetCurrent() const
     {
-    switch (m_state)
-        {
-            case State::Id:
-                return *m_field.m_idField;
-
-            case State::RelECClassId:
-                return *m_field.m_relClassIdField;
-
-            default:
-                BeAssert(false);
-                return NoopECSqlValue::GetSingleton();
-        }
+    return IECSqlValueHelper::GetNavIterCurrentByStateIndex((uint8_t) m_state, m_field.m_idField.get(), m_field.m_relClassIdField.get());
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

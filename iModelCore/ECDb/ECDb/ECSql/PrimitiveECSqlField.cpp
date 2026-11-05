@@ -3,7 +3,6 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include <GeomSerialization/GeomSerializationApi.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -79,24 +78,8 @@ uint64_t PrimitiveECSqlField::_GetDateTimeJulianDaysMsec(DateTime::Info& metadat
 IGeometryPtr PrimitiveECSqlField::_GetGeometry() const
     {
     int blobSize = -1;
-    Byte const* blob = static_cast<Byte const*> (_GetBlob(&blobSize));
-    if (blob == nullptr)
-        return nullptr;
-
-    BeAssert(blobSize > 0);
-    const size_t blobSizeU = (size_t) blobSize;
-    bvector<Byte> byteVec;
-    byteVec.reserve(blobSizeU);
-    byteVec.assign(blob, blob + blobSizeU);
-    if (!BentleyGeometryFlatBuffer::IsFlatBufferFormat(byteVec))
-        {
-        LOG.error("Cannot retrieve Geometry value. The geometry is not persisted in the Bentley Geometry FlatBuffer format.");
-        return nullptr;
-        }
-
-    IGeometryPtr geom = BentleyGeometryFlatBuffer::BytesToGeometry(byteVec);
-    BeAssert(geom != nullptr);
-    return geom;
+    void const* blob = _GetBlob(&blobSize);
+    return IECSqlValueHelper::GeometryFromBlob(blob, blobSize);
     }
 
 //**** No-op implementations

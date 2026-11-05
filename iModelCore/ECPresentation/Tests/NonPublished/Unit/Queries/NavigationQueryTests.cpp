@@ -76,13 +76,13 @@ TEST_F(IdsFilteringHelperTests, CreatesSqlNotInClauseWhenSetIsNotEmptyButSmaller
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(IdsFilteringHelperTests, CreatesInVirtualSetClauseWhenSetLargerThan100Items)
+TEST_F(IdsFilteringHelperTests, CreatesIdSetClauseWhenSetLargerThan100Items)
     {
     bvector<BeInt64Id> ids;
     for (uint64_t i = 0; i < 101; ++i)
         ids.push_back(BeInt64Id(i + 1));
     ValuesFilteringHelper helper(ids);
-    EXPECT_STREQ("InVirtualSet(?, test_id)", helper.CreateWhereClause("test_id").c_str());
+    EXPECT_STREQ("test_id IN (SELECT id FROM IdSet(?))", helper.CreateWhereClause("test_id").c_str());
     BoundQueryValuesList bindings = helper.CreateBoundValues();
     ASSERT_EQ(1, bindings.size());
     }
@@ -90,13 +90,13 @@ TEST_F(IdsFilteringHelperTests, CreatesInVirtualSetClauseWhenSetLargerThan100Ite
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(IdsFilteringHelperTests, CreatesNotInVirtualSetClauseWhenSetLargerThan100ItemsAndClauseIsInversed)
+TEST_F(IdsFilteringHelperTests, CreatesNotInIdSetClauseWhenSetLargerThan100ItemsAndClauseIsInversed)
     {
     bvector<BeInt64Id> ids;
     for (uint64_t i = 0; i < 101; ++i)
         ids.push_back(BeInt64Id(i + 1));
     ValuesFilteringHelper helper(ids);
-    EXPECT_STREQ("NOT InVirtualSet(?, test_id)", helper.CreateWhereClause("test_id", true).c_str());
+    EXPECT_STREQ("test_id NOT IN (SELECT id FROM IdSet(?))", helper.CreateWhereClause("test_id", true).c_str());
     BoundQueryValuesList bindings = helper.CreateBoundValues();
     ASSERT_EQ(1, bindings.size());
     }

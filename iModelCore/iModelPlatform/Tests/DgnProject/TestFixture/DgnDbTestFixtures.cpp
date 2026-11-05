@@ -245,16 +245,6 @@ PhysicalModelPtr DgnDbTestFixture::GetDefaultPhysicalModel()
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-bool DgnDbTestFixture::JsonDeepEqual(Json::Value const& a, Json::Value const& b) const
-    {
-    auto astr = a.ToString();
-    auto bstr = b.ToString();
-    return astr == bstr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
 bool DgnDbTestFixture::JsonDeepEqual(BeJsDocument const& a, BeJsDocument const& b) const
     {
     return a.isExactEqual(b);

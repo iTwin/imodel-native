@@ -496,7 +496,7 @@ ClipVectorPtr ClipVector::FromJson(BeJsConst json)
         return nullptr;
 
     ClipVectorPtr clip = new ClipVector();
-    for (Json::ArrayIndex i = 0; i<json.size(); ++i)
+    for (BeJsValue::ArrayIndex i = 0; i<json.size(); ++i)
         {
         auto primitive = ClipPrimitive::FromJson(json[i]);
         if (primitive.IsValid())

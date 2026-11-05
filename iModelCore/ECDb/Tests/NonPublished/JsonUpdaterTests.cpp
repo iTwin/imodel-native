@@ -269,15 +269,15 @@ TEST_F(JsonUpdaterTests, Options)
 
         for (Utf8StringCR testJson : testJsons)
             {
-            Json::Value json;
-            ASSERT_TRUE(Json::Reader::Parse(testJson, json)) << testJson;
+            BeJsDocument json;
+            ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(json, testJson)) << testJson;
 
             DbResult expectedRes = BE_SQLITE_OK;
             if (options.GetSystemPropertiesOption() == JsonUpdater::SystemPropertiesOption::Fail && (json.isMember(ECJsonUtilities::json_className()) || json.isMember(ECJsonUtilities::json_id())))
                 expectedRes = BE_SQLITE_ERROR;
 
             Savepoint sp(m_ecdb, "sp");
-            ASSERT_EQ(expectedRes, noReadonlyPropsClassUpdater.Update(noReadonlyPropsKey.GetInstanceId(), json)) << ToString(options) << " JSON: " << json.ToString();
+            ASSERT_EQ(expectedRes, noReadonlyPropsClassUpdater.Update(noReadonlyPropsKey.GetInstanceId(), json)) << ToString(options) << " JSON: " << json.Stringify();
 
             if (expectedRes == BE_SQLITE_OK)
                 {
@@ -323,15 +323,15 @@ TEST_F(JsonUpdaterTests, Options)
 
         for (Utf8StringCR testJson : testJsons)
             {
-            Json::Value json;
-            ASSERT_TRUE(Json::Reader::Parse(testJson, json)) << testJson;
+            BeJsDocument json;
+            ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(json, testJson)) << testJson;
 
             DbResult expectedRes = BE_SQLITE_OK;
             if (options.GetSystemPropertiesOption() == JsonUpdater::SystemPropertiesOption::Fail && (json.isMember(ECJsonUtilities::json_className()) || json.isMember(ECJsonUtilities::json_id())))
                 expectedRes = BE_SQLITE_ERROR;
 
             Savepoint sp(m_ecdb, "sp");
-            ASSERT_EQ(expectedRes, readonlyPropsClassUpdater.Update(readonlyPropsKey.GetInstanceId(), json)) << ToString(options) << " JSON: " << json.ToString();
+            ASSERT_EQ(expectedRes, readonlyPropsClassUpdater.Update(readonlyPropsKey.GetInstanceId(), json)) << ToString(options) << " JSON: " << json.Stringify();
 
             if (expectedRes == BE_SQLITE_OK)
                 {
@@ -399,7 +399,7 @@ TEST_F(JsonUpdaterTests, UpdateNavPropAndFkRelationship)
     ASSERT_FALSE(fkRelUpdater.IsValid()) << "FK relationships are never updatable - already on ECSQL level";
 
     //Update nav prop
-    auto validateNavProp = [] (ECDbCR ecdb, ECInstanceId id, JsonValueCR newJson)
+    auto validateNavProp = [] (ECDbCR ecdb, ECInstanceId id, BeJsConst newJson)
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Parent.Id, Parent.RelECClassId FROM ts.Child WHERE ECInstanceId=?"));
@@ -408,45 +408,45 @@ TEST_F(JsonUpdaterTests, UpdateNavPropAndFkRelationship)
 
         if (newJson.size() == 0 || !newJson.isMember("parent"))
             {
-            ASSERT_TRUE(stmt.IsValueNull(0)) << "JsonUpdater initialized with class -> all missing members are nulled out | " << newJson.ToString();
-            ASSERT_TRUE(stmt.IsValueNull(1)) << "JsonUpdater initialized with class -> all missing members are nulled out | " << newJson.ToString();
+            ASSERT_TRUE(stmt.IsValueNull(0)) << "JsonUpdater initialized with class -> all missing members are nulled out | " << newJson.Stringify();
+            ASSERT_TRUE(stmt.IsValueNull(1)) << "JsonUpdater initialized with class -> all missing members are nulled out | " << newJson.Stringify();
             return;
             }
 
-        JsonValueCR navPropJson = newJson["parent"];
+        BeJsConst navPropJson = newJson["parent"];
         if (navPropJson.isNull())
             {
-            ASSERT_TRUE(stmt.IsValueNull(0)) << "Parent set to null in JSON -> UPDATE must null it out | " << newJson.ToString();
-            ASSERT_TRUE(stmt.IsValueNull(1)) << "Parent set to null in JSON -> UPDATE must null it out | " << newJson.ToString();
+            ASSERT_TRUE(stmt.IsValueNull(0)) << "Parent set to null in JSON -> UPDATE must null it out | " << newJson.Stringify();
+            ASSERT_TRUE(stmt.IsValueNull(1)) << "Parent set to null in JSON -> UPDATE must null it out | " << newJson.Stringify();
             return;
             }
 
         if (navPropJson.isMember(ECJsonUtilities::json_navId()))
             {
-            JsonValueCR navIdJson = navPropJson[ECJsonUtilities::json_navId()];
+            BeJsConst navIdJson = navPropJson[ECJsonUtilities::json_navId()];
             if (navIdJson.isNull())
-                ASSERT_TRUE(stmt.IsValueNull(0)) << "Parent.Id set to null in JSON -> UPDATE must null it out | " << newJson.ToString();
+                ASSERT_TRUE(stmt.IsValueNull(0)) << "Parent.Id set to null in JSON -> UPDATE must null it out | " << newJson.Stringify();
             else
-                ASSERT_STREQ(navIdJson.asCString(), stmt.GetValueId<ECInstanceId>(0).ToHexStr().c_str()) << "Parent.Id | " << newJson.ToString();
+                ASSERT_STREQ(navIdJson.asCString(), stmt.GetValueId<ECInstanceId>(0).ToHexStr().c_str()) << "Parent.Id | " << newJson.Stringify();
 
             if (navPropJson.isMember(ECJsonUtilities::json_navRelClassName()))
                 {
-                JsonValueCR navRelClassNameJson = navPropJson[ECJsonUtilities::json_navRelClassName()];
+                BeJsConst navRelClassNameJson = navPropJson[ECJsonUtilities::json_navRelClassName()];
                 if (navRelClassNameJson.isNull())
-                    ASSERT_TRUE(stmt.IsValueNull(1)) << "Parent.RelECClassId set to null in JSON -> UPDATE nulls out RelClassId it out | " << newJson.ToString();
+                    ASSERT_TRUE(stmt.IsValueNull(1)) << "Parent.RelECClassId set to null in JSON -> UPDATE nulls out RelClassId it out | " << newJson.Stringify();
                 else
                     {
                     ECClassId expectedRelClassId = ECJsonUtilities::GetClassIdFromClassNameJson(navRelClassNameJson, ecdb.GetClassLocater());
-                    ASSERT_EQ(expectedRelClassId, stmt.GetValueId<ECClassId>(1)) << "Parent.RelECClassId | " << newJson.ToString();
+                    ASSERT_EQ(expectedRelClassId, stmt.GetValueId<ECClassId>(1)) << "Parent.RelECClassId | " << newJson.Stringify();
                     }
                 }
             else
-                ASSERT_TRUE(stmt.IsValueNull(1)) << "Parent.RelECClassId missing JSON -> UPDATE nulls it out | " << newJson.ToString();
+                ASSERT_TRUE(stmt.IsValueNull(1)) << "Parent.RelECClassId missing JSON -> UPDATE nulls it out | " << newJson.Stringify();
             }
         else
             {
-            ASSERT_TRUE(stmt.IsValueNull(0)) << "Parent.Id missing JSON -> UPDATE nulls it out | " << newJson.ToString();
-            ASSERT_TRUE(stmt.IsValueNull(1)) << "Parent.Id is null -> RelClassId returned is null too | " << newJson.ToString();
+            ASSERT_TRUE(stmt.IsValueNull(0)) << "Parent.Id missing JSON -> UPDATE nulls it out | " << newJson.Stringify();
+            ASSERT_TRUE(stmt.IsValueNull(1)) << "Parent.Id is null -> RelClassId returned is null too | " << newJson.Stringify();
             }
 
         };
@@ -459,7 +459,7 @@ TEST_F(JsonUpdaterTests, UpdateNavPropAndFkRelationship)
     Savepoint sp(m_ecdb, "sp", false);
 
     Utf8String jsonStr;
-    Json::Value json;
+    BeJsDocument json;
     rapidjson::Document rapidJson;
 
     std::map<Utf8String, DbResult> testJsons {
@@ -481,11 +481,11 @@ TEST_F(JsonUpdaterTests, UpdateNavPropAndFkRelationship)
         Utf8StringCR jsonStr = testItem.first;
         DbResult expectedResult = testItem.second;
 
-        Json::Value json;
-        ASSERT_TRUE(Json::Reader::Parse(jsonStr, json)) << jsonStr.c_str();
+        BeJsDocument json;
+        ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(json, jsonStr)) << jsonStr.c_str();
 
         Savepoint sp(m_ecdb, "sp");
-        ASSERT_EQ(expectedResult, navPropUpdater.Update(child1Key.GetInstanceId(), json)) << jsonStr.c_str();
+        ASSERT_EQ(expectedResult, navPropUpdater.Update(child1Key.GetInstanceId(), BeJsConst(json))) << jsonStr.c_str();
         if (expectedResult != BE_SQLITE_OK)
             {
             sp.Cancel();
@@ -543,7 +543,7 @@ TEST_F(JsonUpdaterTests, UpdateLinkTableRelationship)
 
 
 
-    auto validate = [] (ECDbCR ecdb, ECInstanceId relId, JsonValueCR expectedPropJson)
+    auto validate = [] (ECDbCR ecdb, ECInstanceId relId, BeJsConst expectedPropJson)
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT [Order], Something FROM ts.LinkTableRel WHERE ECInstanceId=?"));
@@ -552,20 +552,20 @@ TEST_F(JsonUpdaterTests, UpdateLinkTableRelationship)
 
         if (expectedPropJson.isNull() || expectedPropJson.size() == 0)
             {
-            ASSERT_TRUE(stmt.IsValueNull(0)) << expectedPropJson.ToString().c_str();
-            ASSERT_TRUE(stmt.IsValueNull(1)) << expectedPropJson.ToString().c_str();
+            ASSERT_TRUE(stmt.IsValueNull(0)) << expectedPropJson.Stringify().c_str();
+            ASSERT_TRUE(stmt.IsValueNull(1)) << expectedPropJson.Stringify().c_str();
             return;
             }
 
         if (expectedPropJson.isMember("order") && !expectedPropJson["order"].isNull())
-            ASSERT_EQ(expectedPropJson["order"].asInt(), stmt.GetValueInt(0)) << expectedPropJson.ToString().c_str();
+            ASSERT_EQ(expectedPropJson["order"].asInt(), stmt.GetValueInt(0)) << expectedPropJson.Stringify().c_str();
         else
-            ASSERT_TRUE(stmt.IsValueNull(0)) << "Order | " << expectedPropJson.ToString().c_str();
+            ASSERT_TRUE(stmt.IsValueNull(0)) << "Order | " << expectedPropJson.Stringify().c_str();
 
         if (expectedPropJson.isMember("something") && !expectedPropJson["something"].isNull())
-            ASSERT_STREQ(expectedPropJson["something"].asCString(), stmt.GetValueText(1)) << expectedPropJson.ToString().c_str();
+            ASSERT_STREQ(expectedPropJson["something"].asCString(), stmt.GetValueText(1)) << expectedPropJson.Stringify().c_str();
         else
-            ASSERT_TRUE(stmt.IsValueNull(1)) << "Something | " << expectedPropJson.ToString().c_str();
+            ASSERT_TRUE(stmt.IsValueNull(1)) << "Something | " << expectedPropJson.Stringify().c_str();
         };
 
     JsonUpdater updater(m_ecdb, *relClass, nullptr);
@@ -574,7 +574,7 @@ TEST_F(JsonUpdaterTests, UpdateLinkTableRelationship)
     Savepoint sp(m_ecdb, "sp", false);
 
     Utf8String jsonStr;
-    Json::Value json;
+    BeJsDocument json;
     rapidjson::Document rapidJson;
     std::map<Utf8CP, DbResult> testData {
             {R"json({ "order" : 11 })json", BE_SQLITE_OK},
@@ -589,13 +589,13 @@ TEST_F(JsonUpdaterTests, UpdateLinkTableRelationship)
     for (std::pair<Utf8CP, DbResult> const& kvPair : testData)
         {
         Utf8CP jsonStr = kvPair.first;
-        Json::Value json;
-        ASSERT_TRUE(Json::Reader::Parse(jsonStr, json)) << jsonStr;
+        BeJsDocument json;
+        ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(json, jsonStr)) << jsonStr;
 
         Savepoint sp(m_ecdb, "sp");
 
         const DbResult expectedRes = kvPair.second;
-        ASSERT_EQ(expectedRes, updater.Update(linkTableRelKey.GetInstanceId(), json)) << "JSON: " << jsonStr;
+        ASSERT_EQ(expectedRes, updater.Update(linkTableRelKey.GetInstanceId(), BeJsConst(json))) << "JSON: " << jsonStr;
         if (expectedRes != BE_SQLITE_OK)
             {
             ASSERT_EQ(BE_SQLITE_OK, sp.Cancel());
@@ -670,21 +670,22 @@ TEST_F(JsonUpdaterTests, UpdateRelationshipProperty)
     ECClassCP relClass = m_ecdb.Schemas().GetClass("test", "AHasA");
     ASSERT_TRUE(relClass != nullptr);
     JsonReader reader(m_ecdb, *relClass);
-    Json::Value relationshipJson;
+    BeJsDocument relationshipJson;
     ASSERT_EQ(SUCCESS, reader.Read(relationshipJson, relInstanceId));
-    ASSERT_STREQ("good morning", relationshipJson["Name"].asCString()) << relationshipJson.ToString().c_str();
+    ASSERT_STREQ("good morning", relationshipJson["Name"].asCString()) << relationshipJson.Stringify().c_str();
 
     // Update relationship properties
     JsonUpdater updater(m_ecdb, *relClass, nullptr);
     ASSERT_TRUE(updater.IsValid());
 
     /*
-    * Update relationship properties via Json::Value API
+    * Update relationship properties via BeJsDocument API
     */
     Utf8CP expectedVal = "good afternoon";
-    relationshipJson.clear();
+    relationshipJson.SetNull();
+    relationshipJson.toObject();
     relationshipJson["Name"] = expectedVal;
-    ASSERT_EQ(BE_SQLITE_OK, updater.Update(relInstanceId, relationshipJson));
+    ASSERT_EQ(BE_SQLITE_OK, updater.Update(relInstanceId, BeJsConst(relationshipJson)));
 
     ECSqlStatement checkStmt;
     ASSERT_EQ(ECSqlStatus::Success, checkStmt.Prepare(m_ecdb, "SELECT NULL FROM ts.AHasA WHERE ECInstanceId=? AND Name=?"));
@@ -754,30 +755,30 @@ TEST_F(JsonUpdaterTests, UpdateReadonlyProperties)
     ASSERT_TRUE(readonlyPropsAreUpdatableUpdater.IsValid()) << "JsonUpdater with JsonUpdater::ReadonlyPropertiesOption::Update";
 
     JsonReader reader(m_ecdb,*ecClass);
-    Json::Value json;
+    BeJsDocument json;
     ASSERT_EQ(SUCCESS, reader.Read(json, key.GetInstanceId()));
     ASSERT_EQ(100, json["P1"].asInt());
     ASSERT_STREQ("JsonTest", json["P2"].asCString());
     ASSERT_DOUBLE_EQ(1000.10, json["P3"].asDouble());
 
     /*
-    * Update class properties via Json::Value API
+    * Update class properties via BeJsDocument API
     */
     Utf8CP expectedVal = "Json API";
     json["P1"] = 200;
     json["P2"] = expectedVal;
     json["P3"] = 2000.20;
-    ASSERT_TRUE(json.isMember(ECJsonUtilities::json_id()) && json.isMember(ECJsonUtilities::json_className())) << json.ToString().c_str();
+    ASSERT_TRUE(json.isMember(ECJsonUtilities::json_id()) && json.isMember(ECJsonUtilities::json_className())) << json.Stringify().c_str();
 
-    ASSERT_EQ(BE_SQLITE_ERROR, ignoreReadonlyPropsUpdater.Update(key.GetInstanceId(), json)) << "because of system props";
-    ASSERT_EQ(BE_SQLITE_ERROR, readonlyPropsAreUpdatableUpdater.Update(key.GetInstanceId(), json)) << "Contains system props: " << json.ToString();
+    ASSERT_EQ(BE_SQLITE_ERROR, ignoreReadonlyPropsUpdater.Update(key.GetInstanceId(), BeJsConst(json))) << "because of system props";
+    ASSERT_EQ(BE_SQLITE_ERROR, readonlyPropsAreUpdatableUpdater.Update(key.GetInstanceId(), BeJsConst(json))) << "Contains system props: " << json.Stringify();
 
 
     json.removeMember(ECJsonUtilities::json_id());
     json.removeMember(ECJsonUtilities::json_className());
     
     Savepoint sp(m_ecdb, "sp");
-    ASSERT_EQ(BE_SQLITE_OK, ignoreReadonlyPropsUpdater.Update(key.GetInstanceId(), json)) << "system props have been removed.";
+    ASSERT_EQ(BE_SQLITE_OK, ignoreReadonlyPropsUpdater.Update(key.GetInstanceId(), BeJsConst(json))) << "system props have been removed.";
 
     ECSqlStatement checkStmt;
     ASSERT_EQ(ECSqlStatus::Success, checkStmt.Prepare(m_ecdb, "SELECT NULL FROM ts.A WHERE ECInstanceId=? AND P1=? AND P2=? AND P3=?"));
@@ -792,7 +793,7 @@ TEST_F(JsonUpdaterTests, UpdateReadonlyProperties)
     ASSERT_EQ(BE_SQLITE_OK, sp.Cancel());
 
     ASSERT_EQ(BE_SQLITE_OK, sp.Begin());
-    ASSERT_EQ(BE_SQLITE_OK, readonlyPropsAreUpdatableUpdater.Update(key.GetInstanceId(), json));
+    ASSERT_EQ(BE_SQLITE_OK, readonlyPropsAreUpdatableUpdater.Update(key.GetInstanceId(), BeJsConst(json)));
 
     ASSERT_EQ(ECSqlStatus::Success, checkStmt.BindId(1, key.GetInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, checkStmt.BindInt(2, 200));
@@ -869,8 +870,8 @@ TEST_F(JsonUpdaterTests, CommonGeometryJsonSerialization)
                         }
                        )json");
 
-    Json::Value expectedJsonCppValue;
-    ASSERT_TRUE(Json::Reader::Parse(expectedJson, expectedJsonCppValue));
+    BeJsDocument expectedJsonCppValue;
+    ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJsonCppValue, expectedJson));
 
     rapidjson::Document expectedRapidJsonValue;
     ASSERT_FALSE(expectedRapidJsonValue.Parse<0>(expectedJson.c_str()).HasParseError());
@@ -881,9 +882,9 @@ TEST_F(JsonUpdaterTests, CommonGeometryJsonSerialization)
     ECInstanceKey rapidJsonInstanceKey;
     ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(rapidJsonInstanceKey, expectedRapidJsonValue));
 
-    // Insert using JsonCpp API
+    // Insert using BeJsDocument API
     ECInstanceKey jsonCppInstanceKey;
-    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(jsonCppInstanceKey, expectedJsonCppValue));
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(jsonCppInstanceKey, BeJsConst(expectedJsonCppValue)));
 
     m_ecdb.SaveChanges();
 
@@ -893,14 +894,14 @@ TEST_F(JsonUpdaterTests, CommonGeometryJsonSerialization)
 
     for (ECInstanceId id : {rapidJsonInstanceKey.GetInstanceId(), jsonCppInstanceKey.GetInstanceId()})
         {
-        Json::Value actualJson;
+        BeJsDocument actualJson;
         ASSERT_EQ(SUCCESS, reader.Read(actualJson, id));
         ASSERT_TRUE(actualJson.isObject()) << id.ToString().c_str();
         for (int coordIx = 0; coordIx < 3; coordIx++)
             {
-            ASSERT_DOUBLE_EQ(expectedJsonCppValue["Center"]["Coordinate"]["xyz"][coordIx].asDouble(), actualJson["Center"]["Coordinate"]["xyz"][coordIx].asDouble()) << id.ToString().c_str() << " Actual Json: " << actualJson.ToString().c_str();
-            ASSERT_DOUBLE_EQ(expectedJsonCppValue["LLP"]["Coordinate"]["xyz"][coordIx].asDouble(), actualJson["LLP"]["Coordinate"]["xyz"][coordIx].asDouble()) << id.ToString().c_str() << " Actual Json: " << actualJson["Center"]["Coordinate"]["xyz"].ToString().c_str();
-            ASSERT_DOUBLE_EQ(expectedJsonCppValue["URP"]["Coordinate"]["xyz"][coordIx].asDouble(), actualJson["URP"]["Coordinate"]["xyz"][coordIx].asDouble()) << id.ToString().c_str() << " Actual Json: " << actualJson["Center"]["Coordinate"]["xyz"].ToString().c_str();
+            ASSERT_DOUBLE_EQ(expectedJsonCppValue["Center"]["Coordinate"]["xyz"][coordIx].asDouble(), actualJson["Center"]["Coordinate"]["xyz"][coordIx].asDouble()) << id.ToString().c_str() << " Actual Json: " << actualJson.Stringify().c_str();
+            ASSERT_DOUBLE_EQ(expectedJsonCppValue["LLP"]["Coordinate"]["xyz"][coordIx].asDouble(), actualJson["LLP"]["Coordinate"]["xyz"][coordIx].asDouble()) << id.ToString().c_str() << " Actual Json: " << BeJsConst(actualJson["Center"]["Coordinate"]["xyz"]).Stringify().c_str();
+            ASSERT_DOUBLE_EQ(expectedJsonCppValue["URP"]["Coordinate"]["xyz"][coordIx].asDouble(), actualJson["URP"]["Coordinate"]["xyz"][coordIx].asDouble()) << id.ToString().c_str() << " Actual Json: " << BeJsConst(actualJson["Center"]["Coordinate"]["xyz"]).Stringify().c_str();
             }
 
         for (int i = 0; i < (int) expectedJsonCppValue["Location"]["Polygon"]["Point"].size(); i++)
@@ -933,10 +934,11 @@ TEST_F(JsonUpdaterTests, ReadonlyProperties)
 
     //Insert test instance
     ECInstanceKey key;
-    Json::Value properties;
+    BeJsDocument properties;
+    properties.toObject();
     properties["Num"] = oldNum;
     JsonInserter inserter(m_ecdb, *ecClass, nullptr);
-    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(key, properties));
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(key, BeJsConst(properties)));
 
     //Update test instance
     properties["Num"] = newNum;
@@ -954,7 +956,7 @@ TEST_F(JsonUpdaterTests, ReadonlyProperties)
     {
     JsonUpdater updater(m_ecdb, *ecClass, nullptr, JsonUpdater::Options(JsonUpdater::ReadonlyPropertiesOption::Update));
     ASSERT_TRUE(updater.IsValid());
-    ASSERT_EQ(BE_SQLITE_OK, updater.Update(key.GetInstanceId(), properties));
+    ASSERT_EQ(BE_SQLITE_OK, updater.Update(key.GetInstanceId(), BeJsConst(properties)));
 
     ASSERT_EQ(ECSqlStatus::Success, validateStmt.BindId(1, key.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, validateStmt.Step());

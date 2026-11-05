@@ -6,6 +6,7 @@
 
 #include <Geom/BRepEntity.h>
 #include <Bentley/Nullable.h>
+#include <deque>
 
 //=======================================================================================
 //! NOTE: Most of the types in this header are implementation details, exposed strictly

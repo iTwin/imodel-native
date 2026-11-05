@@ -7,6 +7,7 @@
 
 // need mutex for std::call_once
 #include <mutex>
+#include <optional>
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 typedef struct PlacementOriginZX const &PlacementOriginZXCR;
@@ -115,7 +116,7 @@ BeDirectReader (ICGFactory &factory) : m_factory (factory){}
 GEOMAPI_VIRTUAL bool IsCGType (TSource const &source, Utf8CP name) = 0;
 GEOMAPI_VIRTUAL bool ReadTagDPoint3d (TSource const &source, CharCP name, DPoint3dR value) = 0;
 GEOMAPI_VIRTUAL bool ReadTagTransform (TSource const &source, CharCP name, TransformR value) = 0;
-GEOMAPI_VIRTUAL bool ReadTagPlacementOriginZX (Json::Value const &source, CharCP name, PlacementOriginZX &value) = 0;
+GEOMAPI_VIRTUAL bool ReadTagPlacementOriginZX (TSource const &source, CharCP name, PlacementOriginZX &value) = 0;
 GEOMAPI_VIRTUAL bool ReadTagdouble (TSource const &source, CharCP name, double &value) = 0;
 GEOMAPI_VIRTUAL bool ReadTagint (TSource const &source, CharCP name, int &value) = 0;
 GEOMAPI_VIRTUAL bool ReadTagAngle (TSource const &source, CharCP name, Angle &value) = 0;
@@ -152,49 +153,50 @@ GEOMAPI_VIRTUAL bool ReadTag_AnyICurvePrimitive (TSource const &source, CharCP n
 
 GEOMAPI_VIRTUAL bool ReadTagLoopType (TSource const &source, CharCP name, LoopType value) = 0;
 
-GEOMAPI_VIRTUAL bool ReadTag_AnyGeometry (Json::Value const &source, IGeometryPtr &value) = 0;
-GEOMAPI_VIRTUAL bool ReadTag_AnyGeometry (Json::Value const &source, CharCP name, IGeometryPtr &value) = 0;
+GEOMAPI_VIRTUAL bool ReadTag_AnyGeometry (TSource const &source, IGeometryPtr &value) = 0;
+GEOMAPI_VIRTUAL bool ReadTag_AnyGeometry (TSource const &source, CharCP name, IGeometryPtr &value) = 0;
 #include "nativeCGDirectReaderH.h"
 };
 
-// hmph . .  isArray() on null value returns true. . .
-static bool IsNonNullArray (Json::Value const &value)
+// With BeJsConst, isArray() already returns false for null.
+static bool IsNonNullArray (BeJsConst value)
     {
-    return !value.isNull () && value.isArray ();
+    return value.isArray ();
     }
 // look up both names (short first!!!) and return
-static Json::Value const &TryFindArray (Json::Value const &source, Utf8CP longName, Utf8CP shortName)
+static BeJsConst TryFindArray (BeJsConst source, Utf8CP longName, Utf8CP shortName)
     {
-    Json::Value const &target1 = source[shortName];
+    BeJsConst target1 = source[shortName];
     if (IsNonNullArray (target1))
         return target1;
-    Json::Value const &target2 = source[longName];
+    BeJsConst target2 = source[longName];
     if (IsNonNullArray (target2))
         return target2;
-    return Json::Value::GetNull();
+    return BeJsDocument::Null();
     }
 
 // Case insensetive property lookup ...
-bool FindProperty (Json::Value const &source, CharCP targetName, Json::Value &value)
+static std::optional<BeJsConst> FindProperty (BeJsConst source, CharCP targetName)
     {
-    for (Json::Value::iterator iter = source.begin(); iter != source.end(); iter++)
+    std::optional<BeJsConst> found;
+    source.ForEachProperty ([&] (Utf8CP childName, BeJsConst child)
         {
-        Utf8CP childName = iter.memberName();
         if (0 == BeStringUtilities::Stricmp (targetName, childName))
             {
-            value = *iter;
-            return true;
+            found.emplace (child);
+            return true; // stop
             }
-        }
-    return false;
+        return false;
+        });
+    return found;
     }
 
 
-struct BeJsonToCGReaderImplementation : BeDirectReader<Json::Value>
+struct BeJsonToCGReaderImplementation : BeDirectReader<BeJsConst>
 {
 Transform m_placement;
 
-typedef bool (BeDirectReader<Json::Value>::*ParseMethod)(Json::Value const &, IGeometryPtr &);
+typedef bool (BeDirectReader<BeJsConst>::*ParseMethod)(BeJsConst const &, IGeometryPtr &);
 typedef bmap <Utf8String, ParseMethod> ParseDictionary;
 
 static ParseDictionary s_parseTable;
@@ -305,9 +307,9 @@ bool CurrentElementNameMatch (CharCP nameA, CharCP nameB)
     }
 #endif
 // ASSUME input is confirmed as an array.
-bool TryGetDoubleAtArrayPosition (Json::Value const &source, int i, double &value)
+bool TryGetDoubleAtArrayPosition (BeJsConst source, int i, double &value)
     {
-    if (i >= 0 && source.size () > (size_t)i && source[i].isNumeric ())
+    if (i >= 0 && source.size () > (uint32_t)i && source[i].isNumeric ())
         {
         value = source[i].asDouble ();
         return true;
@@ -315,15 +317,15 @@ bool TryGetDoubleAtArrayPosition (Json::Value const &source, int i, double &valu
     return false;
     }
 
-bool ReadDPoint3d (Json::Value const &source, DPoint3dR value)
+bool ReadDPoint3d (BeJsConst source, DPoint3dR value)
     {
     if (IsNonNullArray (source)
         && source.size () == 3
         )
         {
-        Json::Value const &xValue = source[0];
-        Json::Value const &yValue = source[1];
-        Json::Value const &zValue = source[2];
+        BeJsConst xValue = source[0u];
+        BeJsConst yValue = source[1];
+        BeJsConst zValue = source[2];
         if (xValue.isNumeric () && yValue.isNumeric () && zValue.isNumeric ())
             {
             value.Init (xValue.asDouble (), yValue.asDouble (), zValue.asDouble ());
@@ -333,15 +335,15 @@ bool ReadDPoint3d (Json::Value const &source, DPoint3dR value)
     return false;
     }
 
-bool ReadDVector3d (Json::Value const &source, DVec3dR value)
+bool ReadDVector3d (BeJsConst source, DVec3dR value)
     {
     if (IsNonNullArray (source)
         && source.size () == 3
         )
         {
-        Json::Value const &xValue = source[0];
-        Json::Value const &yValue = source[1];
-        Json::Value const &zValue = source[2];
+        BeJsConst xValue = source[0u];
+        BeJsConst yValue = source[1];
+        BeJsConst zValue = source[2];
         if (xValue.isNumeric () && yValue.isNumeric () && zValue.isNumeric ())
             {
             value.Init (xValue.asDouble (), yValue.asDouble (), zValue.asDouble ());
@@ -352,14 +354,14 @@ bool ReadDVector3d (Json::Value const &source, DVec3dR value)
     }
 
 
-bool ReadDPoint2d (Json::Value const &source, DPoint2dR value)
+bool ReadDPoint2d (BeJsConst source, DPoint2dR value)
     {
     if (IsNonNullArray (source)
         && source.size () == 2
         )
         {
-        Json::Value const &xValue = source[0];
-        Json::Value const &yValue = source[1];
+        BeJsConst xValue = source[0u];
+        BeJsConst yValue = source[1];
         if (xValue.isNumeric () && yValue.isNumeric ())
             {
             value.Init (xValue.asDouble (), yValue.asDouble ());
@@ -369,68 +371,65 @@ bool ReadDPoint2d (Json::Value const &source, DPoint2dR value)
     return false;
     }
 
-bool ReadTagDPoint3d (Json::Value const &source, CharCP name, DPoint3dR value) override
+bool ReadTagDPoint3d (BeJsConst const &source, CharCP name, DPoint3dR value) override
     {
-    Json::Value target;
-    return   FindProperty (source, name, target)
-          && ReadDPoint3d (target, value);
+    auto target = FindProperty (source, name);
+    return target && ReadDPoint3d (*target, value);
     }
 
-bool ReadTagDPoint2d (Json::Value const &source, CharCP name, DPoint2dR value) override
+bool ReadTagDPoint2d (BeJsConst const &source, CharCP name, DPoint2dR value) override
     {
-    Json::Value target;
-    return   FindProperty (source, name, target)
-          && ReadDPoint2d (target, value);
+    auto target = FindProperty (source, name);
+    return target && ReadDPoint2d (*target, value);
     }
 
-bool ReadTagDVector3d(Json::Value const &source, CharCP name, DVec3dR value) override
+bool ReadTagDVector3d(BeJsConst const &source, CharCP name, DVec3dR value) override
     {
-    Json::Value target;
-    return   FindProperty (source, name, target)
-          && ReadDVector3d (target, value);
+    auto target = FindProperty (source, name);
+    return target && ReadDVector3d (*target, value);
     }
 
 
 
-bool ReadTagTransform (Json::Value const &source, CharCP name, TransformR value) override
+bool ReadTagTransform (BeJsConst const &source, CharCP name, TransformR value) override
     {
-    Json::Value target;
-    if (FindProperty (source, name, target)
-        &&IsNonNullArray (target)
-        && target.size () == 12
+    auto target = FindProperty (source, name);
+    if (target
+        && IsNonNullArray (*target)
+        && target->size () == 12
         )
         {
-        return TryGetDoubleAtArrayPosition (target,  0, value.form3d[0][0])
-            && TryGetDoubleAtArrayPosition (target,  1, value.form3d[0][1])
-            && TryGetDoubleAtArrayPosition (target,  2, value.form3d[0][2])
-            && TryGetDoubleAtArrayPosition (target,  3, value.form3d[0][3])
-            && TryGetDoubleAtArrayPosition (target,  4, value.form3d[1][0])
-            && TryGetDoubleAtArrayPosition (target,  5, value.form3d[1][1])
-            && TryGetDoubleAtArrayPosition (target,  6, value.form3d[1][2])
-            && TryGetDoubleAtArrayPosition (target,  7, value.form3d[1][3])
-            && TryGetDoubleAtArrayPosition (target,  8, value.form3d[2][0])
-            && TryGetDoubleAtArrayPosition (target,  9, value.form3d[2][1])
-            && TryGetDoubleAtArrayPosition (target, 10, value.form3d[2][2])
-            && TryGetDoubleAtArrayPosition (target, 11, value.form3d[2][3]);
+        return TryGetDoubleAtArrayPosition (*target,  0, value.form3d[0][0])
+            && TryGetDoubleAtArrayPosition (*target,  1, value.form3d[0][1])
+            && TryGetDoubleAtArrayPosition (*target,  2, value.form3d[0][2])
+            && TryGetDoubleAtArrayPosition (*target,  3, value.form3d[0][3])
+            && TryGetDoubleAtArrayPosition (*target,  4, value.form3d[1][0])
+            && TryGetDoubleAtArrayPosition (*target,  5, value.form3d[1][1])
+            && TryGetDoubleAtArrayPosition (*target,  6, value.form3d[1][2])
+            && TryGetDoubleAtArrayPosition (*target,  7, value.form3d[1][3])
+            && TryGetDoubleAtArrayPosition (*target,  8, value.form3d[2][0])
+            && TryGetDoubleAtArrayPosition (*target,  9, value.form3d[2][1])
+            && TryGetDoubleAtArrayPosition (*target, 10, value.form3d[2][2])
+            && TryGetDoubleAtArrayPosition (*target, 11, value.form3d[2][3]);
         }
     return false;
     }
 
-bool ReadTagLoopType (Json::Value const &source, CharCP name, LoopType value) override
+bool ReadTagLoopType (BeJsConst const &source, CharCP name, LoopType value) override
     {
     return false;
     }
 
-bool ReadListOfDPoint3d (Json::Value const &source, CharCP listName, CharCP shortListName, bvector<DPoint3d> &values) override
+bool ReadListOfDPoint3d (BeJsConst const &source, CharCP listName, CharCP shortListName, bvector<DPoint3d> &values) override
     {
-    Json::Value const target = TryFindArray (source, listName, shortListName);
+    BeJsConst target = TryFindArray (source, listName, shortListName);
     if (IsNonNullArray (target))
         {
-        int n = target.size ();
+        int n = (int)target.size ();
         DPoint3d xyz;
         for (int i = 0; i < n; i++)
             {
-            Json::Value const &entry = target[i];
+            BeJsConst entry = target[i];
             if (ReadDPoint3d (entry, xyz))
                 values.push_back (xyz);
             else
@@ -441,17 +440,17 @@ bool ReadListOfDPoint3d (Json::Value const &source, CharCP listName, CharCP shor
       return false;
     }
 
-bool ReadListOfint (Json::Value const &source, CharCP listName, CharCP shortListName, bvector<int> &values) override
+bool ReadListOfint (BeJsConst const &source, CharCP listName, CharCP shortListName, bvector<int> &values) override
     {
-    Json::Value const target = TryFindArray (source, listName, shortListName);
+    BeJsConst target = TryFindArray (source, listName, shortListName);
     if (IsNonNullArray (target))
         {
-        int n = target.size ();
+        int n = (int)target.size ();
         for (int i = 0; i < n; i++)
             {
-            Json::Value const &entry = target[i];
+            BeJsConst entry = target[i];
 
-            if (entry.isInt ())
+            if (entry.isNumeric ())
                 values.push_back (entry.asInt ());
             else
                 return false;
@@ -461,15 +460,15 @@ bool ReadListOfint (Json::Value const &source, CharCP listName, CharCP shortList
     return false;
     }
 
-bool ReadListOfdouble (Json::Value const &source, CharCP listName, CharCP shortListName, bvector<double> &values) override
+bool ReadListOfdouble (BeJsConst const &source, CharCP listName, CharCP shortListName, bvector<double> &values) override
     {
-    Json::Value const target = TryFindArray (source, listName, shortListName);
+    BeJsConst target = TryFindArray (source, listName, shortListName);
     if (IsNonNullArray (target))
         {
-        int n = target.size ();
+        int n = (int)target.size ();
         for (int i = 0; i < n; i++)
             {
-            Json::Value const &entry = target[i];
+            BeJsConst entry = target[i];
 
             if (entry.isNumeric ())
                 values.push_back (entry.asDouble ());
@@ -481,16 +480,16 @@ bool ReadListOfdouble (Json::Value const &source, CharCP listName, CharCP shortL
     return false;
     }
 
-bool ReadListOfDPoint2d (Json::Value const &source, CharCP listName, CharCP shortListName, bvector<DPoint2d> &values) override
+bool ReadListOfDPoint2d (BeJsConst const &source, CharCP listName, CharCP shortListName, bvector<DPoint2d> &values) override
     {
-    Json::Value const target = TryFindArray (source, listName, shortListName);
+    BeJsConst target = TryFindArray (source, listName, shortListName);
     if (IsNonNullArray (target))
         {
-        int n = target.size ();
+        int n = (int)target.size ();
         DPoint2d xy;
         for (int i = 0; i < n; i++)
             {
-            Json::Value const &entry = target[i];
+            BeJsConst entry = target[i];
             if (ReadDPoint2d (entry, xy))
                 values.push_back (xy);
             else
@@ -503,16 +502,16 @@ bool ReadListOfDPoint2d (Json::Value const &source, CharCP listName, CharCP shor
 
 
 //=======================================================================================
-bool ReadListOfDVector3d (Json::Value const &source, CharCP listName, CharCP shortListName, bvector<DVector3d> &values) override
+bool ReadListOfDVector3d (BeJsConst const &source, CharCP listName, CharCP shortListName, bvector<DVector3d> &values) override
     {
-    Json::Value const target = TryFindArray (source, listName, shortListName);
+    BeJsConst target = TryFindArray (source, listName, shortListName);
     if (IsNonNullArray (target))
         {
-        int n = target.size ();
+        int n = (int)target.size ();
         DVector3d xyz;
         for (int i = 0; i < n; i++)
             {
-            Json::Value const &entry = target[i];
+            BeJsConst entry = target[i];
             if (ReadDVector3d (entry, xyz))
                 values.push_back (xyz);
             else
@@ -525,18 +524,18 @@ bool ReadListOfDVector3d (Json::Value const &source, CharCP listName, CharCP sho
 
 
 //=======================================================================================
-bool ReadListOfISurfacePatch (Json::Value const &source, CharCP listName, CharCP shortListName, bvector<IGeometryPtr> &values) override
+bool ReadListOfISurfacePatch (BeJsConst const &source, CharCP listName, CharCP shortListName, bvector<IGeometryPtr> &values) override
     {
     BeAssert(false);
     return false;
     }
 
-bool ReadListOf_AnyCurveVector (Json::Value const &source, CharCP listName, CharCP shortListName, bvector<CurveVectorPtr> &values) override
+bool ReadListOf_AnyCurveVector (BeJsConst const &source, CharCP listName, CharCP shortListName, bvector<CurveVectorPtr> &values) override
     {
-    Json::Value const target = TryFindArray (source, listName, shortListName);
+    BeJsConst target = TryFindArray (source, listName, shortListName);
     if (IsNonNullArray (target))
         {
-        int n = target.size ();
+        int n = (int)target.size ();
         for (int i = 0; i < n; i++)
             {
             CurveVectorPtr childGeometry;
@@ -550,12 +549,12 @@ bool ReadListOf_AnyCurveVector (Json::Value const &source, CharCP listName, Char
     }
 
 
-bool ReadListOf_AnyICurvePrimitive (Json::Value const &source, CharCP listName, CharCP shortListName, bvector<ICurvePrimitivePtr> &values) override
+bool ReadListOf_AnyICurvePrimitive (BeJsConst const &source, CharCP listName, CharCP shortListName, bvector<ICurvePrimitivePtr> &values) override
     {
-    Json::Value const target = TryFindArray (source, listName, shortListName);
+    BeJsConst target = TryFindArray (source, listName, shortListName);
     if (IsNonNullArray (target))
         {
-        int n = target.size ();
+        int n = (int)target.size ();
         for (int i = 0; i < n; i++)
             {
             ICurvePrimitivePtr childGeometry;
@@ -568,23 +567,23 @@ bool ReadListOf_AnyICurvePrimitive (Json::Value const &source, CharCP listName, 
     return false;
     }
 
-bool ReadListOf_AnyICurveChain (Json::Value const &source, CharCP listName, CharCP shortListName, bvector<CurveVectorPtr> &values) override
+bool ReadListOf_AnyICurveChain (BeJsConst const &source, CharCP listName, CharCP shortListName, bvector<CurveVectorPtr> &values) override
     {
     return ReadListOf_AnyCurveVector (source, listName, shortListName, values);
     }
 
-bool ReadListOfICurve (Json::Value const &source, CharCP listName, CharCP shortListName, bvector<IGeometryPtr> &values) override
+bool ReadListOfICurve (BeJsConst const &source, CharCP listName, CharCP shortListName, bvector<IGeometryPtr> &values) override
     {
     BeAssert(false);
     return false;
     }
 
-bool ReadListOfICurveChain (Json::Value const &source, CharCP listName, CharCP shortListName, bvector<IGeometryPtr> &values) override
+bool ReadListOfICurveChain (BeJsConst const &source, CharCP listName, CharCP shortListName, bvector<IGeometryPtr> &values) override
     {
-    Json::Value const target = TryFindArray (source, listName, shortListName);
+    BeJsConst target = TryFindArray (source, listName, shortListName);
     if (IsNonNullArray (target))
         {
-        int n = target.size ();
+        int n = (int)target.size ();
         for (int i = 0; i < n; i++)
             {
             IGeometryPtr childGeometry;
@@ -599,17 +598,17 @@ bool ReadListOfICurveChain (Json::Value const &source, CharCP listName, CharCP s
     }
 
 
-bool ReadListOfISolid (Json::Value const &source, CharCP listName, CharCP shortListName, bvector<IGeometryPtr> &values) override
+bool ReadListOfISolid (BeJsConst const &source, CharCP listName, CharCP shortListName, bvector<IGeometryPtr> &values) override
     {
     BeAssert(false);
     return false;
     }
-bool ReadListOfISurface (Json::Value const &source, CharCP listName, CharCP shortListName, bvector<IGeometryPtr> &values) override
+bool ReadListOfISurface (BeJsConst const &source, CharCP listName, CharCP shortListName, bvector<IGeometryPtr> &values) override
     {
     BeAssert(false);
     return false;
     }
-bool ReadListOfIPoint (Json::Value const &source, CharCP listName, CharCP shortListName, bvector<IGeometryPtr> &values) override
+bool ReadListOfIPoint (BeJsConst const &source, CharCP listName, CharCP shortListName, bvector<IGeometryPtr> &values) override
     {
     BeAssert(false);
     return false;
@@ -619,12 +618,12 @@ bool ReadListOfIPoint (Json::Value const &source, CharCP listName, CharCP shortL
 
 
 
-bool ReadListOfIGeometry (Json::Value const &source, CharCP listName, CharCP shortListName, bvector<IGeometryPtr> &values) override
+bool ReadListOfIGeometry (BeJsConst const &source, CharCP listName, CharCP shortListName, bvector<IGeometryPtr> &values) override
     {
-    Json::Value const target = TryFindArray (source, listName, shortListName);
+    BeJsConst target = TryFindArray (source, listName, shortListName);
     if (IsNonNullArray (target))
         {
-        int n = target.size ();
+        int n = (int)target.size ();
         for (int i = 0; i < n; i++)
             {
             IGeometryPtr childGeometry;
@@ -642,7 +641,7 @@ bool ReadListOfIGeometry (Json::Value const &source, CharCP listName, CharCP sho
 
 
 
-bool ReadListOfISinglePoint (Json::Value const &source, CharCP listName, CharCP shortListName, bvector<IGeometryPtr> &values) override
+bool ReadListOfISinglePoint (BeJsConst const &source, CharCP listName, CharCP shortListName, bvector<IGeometryPtr> &values) override
     {
     BeAssert(false);
     return false;
@@ -653,71 +652,64 @@ bool ReadListOfISinglePoint (Json::Value const &source, CharCP listName, CharCP 
 
 
 //=======================================================================================
-bool ReadTagString (Json::Value const &source, CharCP name, Utf8StringR value) override
+bool ReadTagString (BeJsConst const &source, CharCP name, Utf8StringR value) override
     {
-    Json::Value target;
-    if (FindProperty (source, name, target)
-       && target.isString ()
-       )
+    auto target = FindProperty (source, name);
+    if (target && target->isString ())
         {
-        value = target.asString ();
+        value = target->asString ();
         return true;
         }
     return false;
     }
 
 
-bool ReadTagbool(Json::Value const &source, CharCP name, bool &value) override
+bool ReadTagbool(BeJsConst const &source, CharCP name, bool &value) override
     {
-    Json::Value target;
+    auto target = FindProperty (source, name);
     value = false;
-    if (FindProperty (source, name, target)
-       && target.isBool ()
-       )
+    if (target && target->isBool ())
         {
-        value = target.asBool ();
+        value = target->asBool ();
         return true;
         }
     return false;
     }
 
-bool ReadTagdouble(Json::Value const &source, CharCP name, double &value) override
+bool ReadTagdouble(BeJsConst const &source, CharCP name, double &value) override
     {
-    Json::Value target;
+    auto target = FindProperty (source, name);
     value = 0.0;
-    if (FindProperty (source, name, target)
-       && target.isNumeric ())
+    if (target && target->isNumeric ())
         {
-        value = target.asDouble ();
+        value = target->asDouble ();
         return true;
         }
     return false;
     }
 
-bool ReadTagint(Json::Value const &source, CharCP name, int &value) override
+bool ReadTagint(BeJsConst const &source, CharCP name, int &value) override
     {
-    Json::Value target;
+    auto target = FindProperty (source, name);
     value = 0;
-    if (FindProperty (source, name, target)
-       && target.isInt ())
+    if (target && target->isNumeric ())
         {
-        value = target.asInt ();
+        value = target->asInt ();
         return true;
         }
     return false;
     }
 
-bool ReadTagPlacementOriginZX (Json::Value const &source, CharCP name, PlacementOriginZX &value) override
+bool ReadTagPlacementOriginZX (BeJsConst const &source, CharCP name, PlacementOriginZX &value) override
     {
-    Json::Value target;
-    if (FindProperty (source, name, target)
-       && target.isObject ())
+    auto target = FindProperty (source, name);
+    if (target && target->isObject ())
         {
         DPoint3d origin;
         DVec3d vectorX, vectorZ;
-        bool bCenter = ReadTagDPoint3d (target, "origin", origin);
-        bool bVectorZ = ReadTagDPoint3d (target, "vectorZ", vectorZ);
-        bool bVectorX = ReadTagDPoint3d (target, "vectorX", vectorX);
+        bool bCenter = ReadTagDPoint3d (*target, "origin", origin);
+        bool bVectorZ = ReadTagDPoint3d (*target, "vectorZ", vectorZ);
+        bool bVectorX = ReadTagDPoint3d (*target, "vectorX", vectorX);
         if (bCenter && bVectorX && bVectorZ)
             {
             value.InitOriginVectorZVectorX (origin, vectorZ, vectorX);
@@ -728,7 +720,7 @@ bool ReadTagPlacementOriginZX (Json::Value const &source, CharCP name, Placement
     return false;
     }
 
-bool ReadTagAngle (Json::Value const &source, CharCP name, Angle &value) override
+bool ReadTagAngle (BeJsConst const &source, CharCP name, Angle &value) override
     {
     double degrees;
     if (ReadTagdouble (source, name, degrees))
@@ -839,18 +831,18 @@ bool ReadExtendedObject(IGeometryPtr &geometry)
     }
 #endif
 
-bool ReadTag_AnyGeometry (Json::Value const &source, IGeometryPtr &value) override
+bool ReadTag_AnyGeometry (BeJsConst const &source, IGeometryPtr &value) override
     {
     return ReadTag_AnyIGeometry (source, value);
     }
 
-bool ReadTag_AnyGeometry (Json::Value const &source, CharCP name, IGeometryPtr &value) override
+bool ReadTag_AnyGeometry (BeJsConst const &source, CharCP name, IGeometryPtr &value) override
     {
     if (nullptr == name)
         return ReadTag_AnyIGeometry (source, value);
-    Json::Value target;
-    return   FindProperty (source, name, target)
-          && ReadTag_AnyIGeometry (target, value);
+    auto target = FindProperty (source, name);
+    return target
+          && ReadTag_AnyIGeometry (*target, value);
     }
 
 static bool IsAnySurface (IGeometryCR value)
@@ -909,38 +901,38 @@ static bool IsAnyCurveChain (IGeometryCR value)
     return stat;
     }
 
-bool ReadTag_AnySurface (Json::Value const &source, CharCP name, IGeometryPtr &value) override
+bool ReadTag_AnySurface (BeJsConst const &source, CharCP name, IGeometryPtr &value) override
     {
     return ReadTag_AnyGeometry (source, name,value)
         && IsAnySurface (*value);
     }
 
-bool ReadTag_AnyCurve (Json::Value const &source, CharCP name, IGeometryPtr &value) override
+bool ReadTag_AnyCurve (BeJsConst const &source, CharCP name, IGeometryPtr &value) override
     {
     return ReadTag_AnyGeometry (source, name,value)
         && IsAnyCurve (*value);
     }
 
-bool ReadTag_AnyParametricSurface (Json::Value const &source, CharCP name, IGeometryPtr &value) override
+bool ReadTag_AnyParametricSurface (BeJsConst const &source, CharCP name, IGeometryPtr &value) override
     {
     return ReadTag_AnyGeometry (source, name,value)
         && IsParametricSurface (*value);
     }
 
-bool ReadTag_AnyCurveChain (Json::Value const &source, CharCP name, IGeometryPtr &value) override
+bool ReadTag_AnyCurveChain (BeJsConst const &source, CharCP name, IGeometryPtr &value) override
     {
     return ReadTag_AnyGeometry (source, name,value)
         && IsAnyCurveChain (*value);
     }
 
-bool ReadTag_AnyCurveChain (Json::Value const &source, IGeometryPtr &value)
+bool ReadTag_AnyCurveChain (BeJsConst const &source, IGeometryPtr &value)
     {
     return ReadTag_AnyGeometry (source, value)
         && IsAnyCurveChain (*value);
     }
 
 
-bool ReadTag_AnyICurvePrimitive (Json::Value const &source, ICurvePrimitivePtr &value) override
+bool ReadTag_AnyICurvePrimitive (BeJsConst const &source, ICurvePrimitivePtr &value) override
     {
     IGeometryPtr geometry;
     if (ReadTag_AnyGeometry (source,geometry))
@@ -959,7 +951,7 @@ bool ReadTag_AnyICurvePrimitive (Json::Value const &source, ICurvePrimitivePtr &
     return false;
     }
 
-bool ReadTag_AnyCurveVector (Json::Value const &source, CharCP name, CurveVectorPtr &value) override
+bool ReadTag_AnyCurveVector (BeJsConst const &source, CharCP name, CurveVectorPtr &value) override
     {
     IGeometryPtr geometry;
     if (ReadTag_AnyGeometry (source, name,geometry))
@@ -979,7 +971,7 @@ bool ReadTag_AnyCurveVector (Json::Value const &source, CharCP name, CurveVector
     return false;
     }
 
-bool ReadTag_AnyICurvePrimitive (Json::Value const &source, CharCP name, ICurvePrimitivePtr &value) override
+bool ReadTag_AnyICurvePrimitive (BeJsConst const &source, CharCP name, ICurvePrimitivePtr &value) override
     {
     return false;
     }
@@ -1026,7 +1018,7 @@ int NumUndefined ()
 //
    "Type" : "ParityRegion",
    "loops" : [[prim,prim],[prim,prim]]
-bool ReadParityRegion(Json::Value const &value, IGeometryPtr &result)
+bool ReadParityRegion(BeJsConst const &value, IGeometryPtr &result)
     {
     result = nullptr;
     if (IsCGType (value, "ParityRegion"))
@@ -1042,52 +1034,57 @@ bool ReadParityRegion(Json::Value const &value, IGeometryPtr &result)
     }
 #endif
 #ifdef abc
-bool HasNamedValue (Json::Value const &value, Utf8CP name)
+bool HasNamedValue (BeJsConst const &value, Utf8CP name)
     {
     if (value.isObject ())
         {
-        for (Json::Value::iterator iter = value.begin(); iter != value.end(); iter++)
+        bool found = false;
+        value.ForEachProperty ([&] (Utf8CP childName, BeJsConst)
             {
-            Utf8CP childName = iter.memberName();
-            if (0 == stricmp (name, childName))
-                return true;
-            }
+            if (0 == BeStringUtilities::Stricmp (name, childName))
+                { found = true; return true; }
+            return false;
+            });
+        return found;
         }
     return false;
     }
 #endif
-Utf8CP HasNamedString (Json::Value const &value, Utf8StringCR name)
+Utf8CP HasNamedString (BeJsConst const &value, Utf8StringCR name)
     {
+    Utf8CP result = nullptr;
     if (value.isObject ())
         {
-        for (Json::Value::iterator iter = value.begin(); iter != value.end(); iter++)
+        value.ForEachProperty ([&] (Utf8CP childName, BeJsConst child)
             {
-            Utf8CP childName = iter.memberName();
             if (0 == name.CompareToI (childName))
                 {
-                Json::Value &childValue = *iter;
-                if (childValue.isString ())
-                    return childValue.asCString ();
+                if (child.isString ())
+                    result = child.asCString ();
+                return true;
                 }
-            }
+            return false;
+            });
         }
-    return nullptr;
+    return result;
     }
 
-bool IsCGType (Json::Value const &value, Utf8CP targetTypeName) override
+bool IsCGType (BeJsConst const &value, Utf8CP targetTypeName) override
     {
 #ifdef CGTypeAppearsAsTypeProperty
     if (value.isObject ())
         {
-        for (Json::Value::iterator iter = value.begin(); iter != value.end(); iter++)
+        bool matched = false;
+        value.ForEachProperty ([&] (Utf8CP childName, BeJsConst child)
             {
-            Utf8CP childName = iter.memberName();
             if (0 == s_jsonKey_type.CompareToI (childName))
                 {
-                Json::Value &childValue = *iter;
-                return 0 == BeStringUtilities::Stricmp (targetTypeName, childValue.asCString ());
+                matched = (0 == BeStringUtilities::Stricmp (targetTypeName, child.asCString ()));
+                return true;
                 }
-            }
+            return false;
+            });
+        return matched;
         }
     return false;
 #else
@@ -1095,25 +1092,28 @@ bool IsCGType (Json::Value const &value, Utf8CP targetTypeName) override
 #endif
     }
 
-bool ReadTag_AnyIGeometry (Json::Value const &value, IGeometryPtr &result)
+bool ReadTag_AnyIGeometry (BeJsConst const &value, IGeometryPtr &result)
     {
     // expect a property name to be in the parse table . .
     // Return immediately when one is found . .
     if (value.isObject ())
         {
-        for (Json::Value::iterator iter = value.begin(); iter != value.end(); iter++)
+        bool found = false;
+        value.ForEachProperty ([&] (Utf8CP childName, BeJsConst memberValue)
             {
-            ParseMethod parseMethod = FindParseMethod (iter.memberName());
+            ParseMethod parseMethod = FindParseMethod (childName);
             if (parseMethod != nullptr)
                 {
-                Json::Value &memberValue = *iter;
-                return (this->*parseMethod) (memberValue, result);
+                found = (this->*parseMethod) (memberValue, result);
+                return true; // stop iterating
                 }
-            }
+            return false;
+            });
+        return found;
         }
     return false;
     }
-public: bool ReadTag_Action (JsonValueCR source)
+public: bool ReadTag_Action (BeJsConst source)
     {
     DVec3d vector;
     if (ReadTagDVector3d(source, "moveOrigin", vector))
@@ -1135,7 +1135,7 @@ public: IGeometryPtr ApplyState (IGeometryPtr g)
         g->TryTransformInPlace (m_placement);
     return g;
     }
-public: bool TryParse (JsonValueCR source, bvector<IGeometryPtr> &geometry, BeExtendedDataGeometryMap &extendedData)
+public: bool TryParse (BeJsConst source, bvector<IGeometryPtr> &geometry, BeExtendedDataGeometryMap &extendedData)
     {
     IGeometryPtr result;
     if (source.isObject ())
@@ -1157,7 +1157,7 @@ public: bool TryParse (JsonValueCR source, bvector<IGeometryPtr> &geometry, BeEx
         }
     else if (source.isArray ())
         {
-        int n = source.size ();
+        int n = (int)source.size ();
         for (int i = 0; i < n; i++)
             {
             TryParse (source[i], geometry, extendedData);
@@ -1176,7 +1176,7 @@ int BeJsonToCGReaderImplementation::s_defaultDebug = 10;
 
 bool BentleyGeometryJson::TryJsonValueToGeometry
 (
-JsonValueCR source,
+BeJsConst source,
 bvector<IGeometryPtr> &geometry
 )
     {
@@ -1196,11 +1196,24 @@ bvector<IGeometryPtr> &geometry
 )
     {
     geometry.clear ();
-    Json::Value value;
-    Json::Reader::Parse (string, value, false);
-    if (value.isNull ())
+    // Match JsonCpp's reader behavior, which this entry point previously used. BeJsDocument::Parse
+    // now supplies kParseFullPrecisionFlag itself, but the LENIENCY flags are the reason this site
+    // still parses explicitly:
+    //  - comments / trailing commas: JsonCpp accepted both, and this is public API that reads
+    //    geometry authored elsewhere (e.g. ECJsonUtilities), so keep accepting them.
+    //    GeomLibs' own Dodecahedron.imjs test asset has a trailing comma.
+    //  - kParseFullPrecisionFlag is repeated here so this call site stays correct on its own terms
+    //    rather than depending on BeJsDocument's default. JsonCpp parsed doubles with strtod;
+    //    RapidJson's default parser can be an ULP off, which perturbs geometry (e.g. skew axis
+    //    vectors) enough to fail exact structure/geometry comparisons.
+    rapidjson::Document rawDoc;
+    rawDoc.Parse<rapidjson::kParseFullPrecisionFlag | rapidjson::kParseCommentsFlag | rapidjson::kParseTrailingCommasFlag> (string.c_str ());
+    if (rawDoc.HasParseError ())
         return false;
-    return TryJsonValueToGeometry (value, geometry);
+    BeJsDocument doc (std::move (rawDoc));
+    if (doc.isNull ())
+        return false;
+    return TryJsonValueToGeometry (doc, geometry);
     }
 
 

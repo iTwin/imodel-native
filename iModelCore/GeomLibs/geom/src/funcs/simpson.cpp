@@ -1340,9 +1340,9 @@ BSIVectorIntegrand &integrand
             x0, f0, x2, f2, x4, f4, x6, f6, x8, f8, g01,
             absTol, relTol, 0);
         if (pIntegral)
-            memcpy (pIntegral, params.globalSum, params.numFunc * sizeof (double));
+            BeStringUtilities::Memcpy (pIntegral, params.numFunc * sizeof(double), params.globalSum, params.numFunc * sizeof (double));
         if (pError)
-            memcpy (pError, params.globalError, params.numFunc * sizeof (double));
+            BeStringUtilities::Memcpy (pError, params.numFunc * sizeof(double), params.globalError, params.numFunc * sizeof (double));
         if (pCount)
             *pCount = params.count;
         }
@@ -1484,9 +1484,9 @@ int             numFunc             /* => number of functions being integrated *
             x0, f0, x2, f2, x4, f4, x6, f6, x8, f8, g01,
             absTol, relTol, 0);
         if (pIntegral)
-            memcpy (pIntegral, params.g, numFunc * sizeof (double));
+            BeStringUtilities::Memcpy (pIntegral, numFunc * sizeof(double), params.g, numFunc * sizeof (double));
         if (pError)
-            memcpy (pError, params.error, numFunc * sizeof (double));
+            BeStringUtilities::Memcpy (pError, numFunc * sizeof(double), params.error, numFunc * sizeof (double));
         if (pCount)
             *pCount = params.count;
         }

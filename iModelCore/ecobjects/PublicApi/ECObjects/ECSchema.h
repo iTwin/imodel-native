@@ -5,6 +5,8 @@
 #pragma once
 
 #include <cstddef>
+#include <iterator>
+#include <memory>
 #include <ECObjects/ECInstance.h>
 #include <ECObjects/ECObjects.h>
 #include <ECObjects/CalculatedProperty.h>
@@ -97,7 +99,7 @@ protected:
     ECObjectsStatus SetSupplementedCustomAttribute(IECInstanceR customAttributeInstance);
 
     CustomAttributeReadStatus ReadCustomAttributes(pugi::xml_node containerNode, ECSchemaReadContextR context);
-    SchemaWriteStatus WriteCustomAttributes(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion = ECVersion::Latest) const;
+    SchemaWriteStatus WriteCustomAttributes(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion = ECVersion::Latest) const;
     void WriteFilteredCustomAttributes(BeJsValue& parentNode, bool(*skipClassPredicate)(Utf8CP)) const;
     void WriteCustomAttributes(BeJsValue& parentNode) const;
     //! Only copies primary ones, not consolidated ones. Does not check if the container's ECSchema references the requisite ECSchema(s). @see SupplementedSchemaBuilder::SetMergedCustomAttribute
@@ -330,11 +332,11 @@ protected:
     SchemaReadStatus                    ReadMinMaxXml(pugi::xml_node propertyNode);
 
     virtual SchemaReadStatus            _ReadXml (pugi::xml_node propertyNode, ECSchemaReadContextR schemaContext);
-    virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion);
-    SchemaWriteStatus                   _WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, ECVersion ecXmlVersion, bvector<bpair<Utf8CP, Utf8CP>>* attributes=nullptr, bool writeType=true);
+    virtual SchemaWriteStatus           _WriteXml (BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion);
+    SchemaWriteStatus                   _WriteXml (BePugiXmlWriterR xmlWriter, Utf8CP elementName, ECVersion ecXmlVersion, bvector<bpair<Utf8CP, Utf8CP>>* attributes=nullptr, bool writeType=true);
 
     virtual bool           _ToJson(BeJsValue outValue, bool isInherited) const;
-    bool                   _ToJson(BeJsValue outValue, bool isInherited, bvector<bpair<Utf8String, Json::Value>> attributes) const;
+    bool                   _ToJson(BeJsValue outValue, bool isInherited, BeJsConst additionalAttributes) const;
 
     virtual Utf8String                  _GetTypeNameForXml(ECVersion ecXmlVersion) const { return GetTypeName(); }
     void                                _AdjustMinMaxAfterTypeChange();
@@ -574,7 +576,7 @@ private:
     PrimitiveECProperty(ECClassCR ecClass) : ECProperty(ecClass), m_primitiveType(PRIMITIVETYPE_String), m_enumeration(nullptr) {};
 protected:
     SchemaReadStatus _ReadXml(pugi::xml_node propertyNode, ECSchemaReadContextR schemaContext) override;
-    SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
+    SchemaWriteStatus _WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
 
     bool _ToJson(BeJsValue outValue, bool isInherited) const override;
 
@@ -631,7 +633,7 @@ private:
 
 protected:
     SchemaReadStatus _ReadXml(pugi::xml_node propertyNode, ECSchemaReadContextR schemaContext) override;
-    SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
+    SchemaWriteStatus _WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
 
     bool _ToJson(BeJsValue outValue, bool isInherited) const override;
 
@@ -674,7 +676,7 @@ protected:
     ECObjectsStatus                     SetMaxOccurs(Utf8StringCR maxOccurs);
 
     SchemaReadStatus            _ReadXml (pugi::xml_node propertyNode, ECSchemaReadContextR schemaContext) override;
-    SchemaWriteStatus           _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
+    SchemaWriteStatus           _WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
 
     bool                        _IsArray () const override {return true;}
     ArrayECPropertyCP           _GetAsArrayPropertyCP() const override {return this;}
@@ -831,7 +833,7 @@ protected:
 
 protected:
     SchemaReadStatus _ReadXml(pugi::xml_node propertyNode, ECSchemaReadContextR schemaContext) override;
-    SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
+    SchemaWriteStatus _WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
     bool _ToJson(BeJsValue outValue, bool isInherited) const override;
 
     bool _IsNavigation() const override {return true;}
@@ -1064,7 +1066,7 @@ private:
     ECObjectsStatus SetTypeName(Utf8CP typeName);
 
     SchemaReadStatus ReadXml(pugi::xml_node enumerationNode, ECSchemaReadContextR context);
-    SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
+    SchemaWriteStatus WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
 
     bool ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVersion) const;
 
@@ -1167,7 +1169,7 @@ private:
     bool Verify() const;
 
     SchemaReadStatus ReadXml(pugi::xml_node kindOfQuantityNode, ECSchemaReadContextR context);
-    SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
+    SchemaWriteStatus WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
 
     bool ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVersion) const;
 
@@ -1284,7 +1286,7 @@ public:
     //! @param[out] outValue                Json object containing the schema child Json if successfully written.
     //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
     ECOBJECTS_EXPORT bool ToJson(BeJsValue outValue, bool includeSchemaVersion = true) const { return ToJson(outValue, true, includeSchemaVersion); };
-    ECOBJECTS_EXPORT Json::Value GetPresentationFormatsJson() const; //!< Return Json array of allowable presentation formats.
+    ECOBJECTS_EXPORT void GetPresentationFormatsJson(BeJsValue out) const; //!< Populate @p out with a JSON array of allowable presentation format names.
     //! Given an old EC3.1 persistence FUS descriptor as well as the semi-colon separated string of
     //! presentation FUS descriptors in the format: {unitName}({formatName}), it will extract and convert
     //! the persistence unit to a new unit name. If the persistence FUS has a format, it will be added to the end of the
@@ -1339,7 +1341,7 @@ private:
     ~PropertyCategory() {};
 
     SchemaReadStatus ReadXml(pugi::xml_node propertyCategoryNode, ECSchemaReadContextR context);
-    SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
+    SchemaWriteStatus WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
 
     bool ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVersion) const;
 
@@ -1514,7 +1516,7 @@ private:
     ECObjectsStatus FixArrayPropertyOverrides();
     ECObjectsStatus CanPropertyBeOverridden(ECPropertyCR baseProperty, ECPropertyCR newProperty, Utf8StringR errMsg) const;
     ECObjectsStatus CopyPropertyForSupplementation(ECPropertyP& destProperty, ECPropertyCP sourceProperty, bool copyCustomAttributes);
-    ECObjectsStatus CopyProperty(ECPropertyP& destProperty, ECPropertyCP sourceProperty, Utf8CP destPropertyName, bool copyCustomAttributes, bool andAddProperty = true, bool copyReferences = false);
+    ECObjectsStatus CopyProperty(ECPropertyP& destProperty, ECPropertyCP sourceProperty, Utf8CP destPropertyName, bool copyCustomAttributes, bool andAddProperty = true, bool copyReferences = false, bool resolveConflicts = false);
 
     void OnBaseClassPropertyRemoved(ECPropertyCR baseProperty);
     void OnBaseClassPropertyChanged(ECPropertyCR baseProperty, ECPropertyCP newBaseProperty);
@@ -1557,11 +1559,11 @@ protected:
     SchemaReadStatus _ReadBaseClassFromXml (pugi::xml_node childNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema);
     SchemaReadStatus _ReadPropertyFromXmlAndAddToClass(ECPropertyP ecProperty, pugi::xml_node childNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, Utf8CP childNodeName);
 
-    virtual SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
-    SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion, Utf8CP elementName, bmap<Utf8CP, Utf8CP>* additionalAttributes, bool doElementEnd) const;
+    virtual SchemaWriteStatus _WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
+    SchemaWriteStatus _WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion, Utf8CP elementName, bmap<Utf8CP, Utf8CP>* additionalAttributes, bool doElementEnd) const;
 
     virtual bool _ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties) const;
-    bool _ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties, bvector<bpair<Utf8String, Json::Value>> attributes) const;
+    bool _ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties, BeJsConst additionalAttributes) const;
 
     virtual bool _Validate() const = 0;
 
@@ -1821,7 +1823,7 @@ protected:
     ECEntityClass(ECSchemaCR schema) : ECClass(ECClassType::Entity, schema) {}
     virtual ~ECEntityClass() {}
 
-    SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
+    SchemaWriteStatus _WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
     bool _ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties) const override;
     CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::EntityClass;}
     ECObjectsStatus _AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false, bool validate = true) override;
@@ -1876,7 +1878,7 @@ private:
 
 protected:
     SchemaReadStatus _ReadXmlAttributes(pugi::xml_node classNode) override;
-    SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
+    SchemaWriteStatus _WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
     bool _ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties) const override;
     CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::CustomAttributeClass;}
 
@@ -1914,7 +1916,7 @@ private:
     bool _Validate() const override {return true;}
 
 protected:
-    SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
+    SchemaWriteStatus _WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
     CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::StructClass;}
 };
 
@@ -2014,7 +2016,7 @@ private:
     ECObjectsStatus SetAbstractConstraint(ECClassCR abstractConstraint);
     ECObjectsStatus SetAbstractConstraint(Utf8CP value, bool validate);
 
-    SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, Utf8CP elementName, ECVersion ecXmlVersion) const;
+    SchemaWriteStatus WriteXml(BePugiXmlWriterR xmlWriter, Utf8CP elementName, ECVersion ecXmlVersion) const;
     SchemaReadStatus ReadXml(pugi::xml_node constraintNode, ECSchemaReadContextR schemaContext);
 
     bool ToJson(BeJsValue outValue);
@@ -2142,7 +2144,7 @@ public:
     //! Copies this constraint to the destination
     //! @param[out] toRelationshipConstraint The relationship constraint to copy to
     //! @param[in] copyReferences If false, a shallow copy of the source relationship constraint will be made meaning it will not copy over any constraint classes or abstract constraint that does not live within the target schema. Instead it will create a schema reference back to the source schema if necessary.
-    ECOBJECTS_EXPORT ECObjectsStatus CopyTo(ECRelationshipConstraintR toRelationshipConstraint, bool copyReferences = false);
+    ECOBJECTS_EXPORT ECObjectsStatus CopyTo(ECRelationshipConstraintR toRelationshipConstraint, bool copyReferences = false, bool resolveConflicts = false);
 
     //! Returns whether the relationship is ordered on this constraint.
     ECOBJECTS_EXPORT bool GetIsOrdered() const;
@@ -2191,7 +2193,7 @@ private:
     bool ValidateStrengthDirectionConstraint(ECRelatedInstanceDirection value, bool compareValue = true) const;
 
 protected:
-    SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
+    SchemaWriteStatus _WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
     bool _ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties) const override;
     SchemaReadStatus _ReadXmlAttributes(pugi::xml_node classNode) override;
     SchemaReadStatus _ReadXmlContents(pugi::xml_node classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, bvector<NavigationECPropertyP>& navigationProperties) override;
@@ -3368,7 +3370,7 @@ public:
     ECOBJECTS_EXPORT ECAppData& GetAppData() const;
 
     //! Used for debugging purposes.
-    //! @param[in] showMessages Controls whether messages are displayed during BeXml operations. Defaults to true.
+    //! @param[in] showMessages Controls whether messages are displayed during XML operations. Defaults to true.
     //! @param[in] doAssert Controls whether asserts should be tested or not.  Defaults to true.
     ECOBJECTS_EXPORT static void SetErrorHandling (bool showMessages, bool doAssert);
 
@@ -3907,8 +3909,8 @@ public:
     //! @return A status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then the file pointed to by ecSchemaXmlFile will contain the serialized schema.  Otherwise, the file will be unmodified
     ECOBJECTS_EXPORT SchemaWriteStatus WriteToXmlFile(WCharCP ecSchemaXmlFile, ECVersion ecXmlVersion = ECVersion::Latest, bool utf16 = false) const;
 
-    //! Writes a schema to a Json::Value
-    //! @param[out] ecSchemaJsonValue Json::Value the schema is serialized to on success.
+    //! Writes a schema to a JSON value
+    //! @param[out] ecSchemaJsonValue the JSON value the schema is serialized to on success.
     //! @return A status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then the Json value will contain the serialized schema.
     ECOBJECTS_EXPORT bool WriteToJsonValue(BeJsValue ecSchemaJsonValue) const;
 
@@ -3932,7 +3934,10 @@ public:
     //! @param[in]  copyReferences If true the method will copy types from the source schema into the target schema, if they do not already exist. If false, there will be a schema reference created to the source schema if necessary.
     //! @param[in]  newName  If not nullptr, this name will be used as the new name instead of the original name
     //! @param[in]  skipValidation If true, the method will skip validation of the copied class
-    ECOBJECTS_EXPORT ECObjectsStatus CopyClass(ECClassP& targetClass, ECClassCR sourceClass, bool copyReferences = false, Utf8CP newName = nullptr, bool skipValidation = false);
+    //! @param[in]  resolveConflicts If true, properties whose name conflicts with an incompatible property in the target base class hierarchy
+    //!             are copied under a unique name (and a RenamedPropertiesMapping custom attribute is added) instead of failing the copy.
+    //!             This can happen when base classes are resolved against a schema context whose content differs from the source's references.
+    ECOBJECTS_EXPORT ECObjectsStatus CopyClass(ECClassP& targetClass, ECClassCR sourceClass, bool copyReferences = false, Utf8CP newName = nullptr, bool skipValidation = false, bool resolveConflicts = false);
 
     //! Gets the needed referenced schema item from this schema or it's references, copies it, or adds the reference.  The end result is that the output refForCopy is
     //! the correct object reference needed for a copy operation.
@@ -3947,7 +3952,7 @@ public:
     ECObjectsStatus GetOrCopyReferencedItemForCopy(const Item & itemWithRef, RefItem *& refForCopy, RefItem const* startingRef, bool copyReferences, ECSchemaElementType refItemType, RefItem *(ECSchema::*getItemP)(Utf8CP), ECObjectsStatus(ECSchema::*copyItem)(RefItem *&, const RefItem &, bool, Utf8CP));
 
     // Specializations because they are used often or are referenced outside of ECSchema
-    ECObjectsStatus GetOrCopyReferencedClassForCopy(ECClassCR classWithRef, ECClassP& refForCopy, ECClassCP startingRef, bool copyReferences, bool skipValidation = false);
+    ECObjectsStatus GetOrCopyReferencedClassForCopy(ECClassCR classWithRef, ECClassP& refForCopy, ECClassCP startingRef, bool copyReferences, bool skipValidation = false, bool resolveConflicts = false);
     ECObjectsStatus GetOrCopyReferencedEnumerationForCopy(ECClassCR classWithRef, ECEnumerationP& refForCopy, ECEnumerationCP startingRef, bool copyReferences);
     ECObjectsStatus GetOrCopyReferencedKindOfQuantityForCopy(ECClassCR classWithRef, KindOfQuantityP& refForCopy, KindOfQuantityCP startingRef, bool copyReferences);
     ECObjectsStatus GetOrCopyReferencedPropertyCategoryForCopy(ECClassCR classWithRef, PropertyCategoryP& refForCopy, PropertyCategoryCP startingRef, bool copyReferences);
@@ -4006,7 +4011,10 @@ public:
     //! @param schemaOut If successful, will contain a copy of this schema
     //! @param schemaContext If not nullptr, will be used to locate referenced schemas of the schema.  If nullptr, references will not be copied
     //! @param[out] schemaOut   If successful, will contain a copy of this schema
-    ECOBJECTS_EXPORT ECObjectsStatus CopySchema(ECSchemaPtr& schemaOut, ECSchemaReadContextP schemaContext = nullptr, bool skipValidation = false) const;
+    //! @param skipValidation If true, the method will skip validation of the copied classes
+    //! @param resolveConflicts If true, property conflicts against base classes resolved from the schema context are handled by renaming
+    //!        the copied property instead of failing the copy. See CopyClass for details.
+    ECOBJECTS_EXPORT ECObjectsStatus CopySchema(ECSchemaPtr& schemaOut, ECSchemaReadContextP schemaContext = nullptr, bool skipValidation = false, bool resolveConflicts = false) const;
 
     //! Get the IECCustomAttributeContainer holding this schema's custom attributes
     IECCustomAttributeContainer& GetCustomAttributeContainer() {return *this;}

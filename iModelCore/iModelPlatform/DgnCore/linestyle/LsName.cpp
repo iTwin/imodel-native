@@ -128,7 +128,7 @@ void LsDefinition::SetHWStyle (LsComponentId componentIDIn)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LsDefinition::Init(Utf8CP name, Json::Value& lsDefinition, DgnStyleId styleId)
+void LsDefinition::Init(Utf8CP name, BeJsConst lsDefinition, DgnStyleId styleId)
     {
     m_isDirty           = false;
     m_lsComp            = NULL;
@@ -157,7 +157,7 @@ void LsDefinition::Destroy(LsDefinitionP def) { delete def; }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-LsDefinition::LsDefinition (Utf8CP name, DgnDbR project, Json::Value& lsDefinition, DgnStyleId styleId)
+LsDefinition::LsDefinition (Utf8CP name, DgnDbR project, BeJsConst lsDefinition, DgnStyleId styleId)
     {
     Init (name, lsDefinition, styleId);
     LsComponentId compId = GetComponentId(lsDefinition);
@@ -765,8 +765,8 @@ BentleyStatus       LsCache::Load ()
         Utf8String name(ls.GetName());
         Utf8String  data (ls.GetData());
 
-        Json::Value  jsonObj (Json::objectValue);
-        if (!Json::Reader::Parse(data, jsonObj))
+        BeJsDocument  jsonObj (data);
+        if (jsonObj.hasParseError())
             {
             BeAssert(false && "Invalid line style data - LsCache::Load() aborted");
             return ERROR;
@@ -929,7 +929,7 @@ Utf8CP  name
 //---------------------------------------------------------------------------------------
 LsDefinition* LsDefinition::Clone()
     {
-    Json::Value jsonObj(Json::objectValue);
+    BeJsDocument jsonObj;
     LsDefinition::InitializeJsonObject(jsonObj, GetLocation()->GetComponentId(), GetAttributes(), m_unitDef);
 
     LsDefinition* retval = new LsDefinition(_GetName(), *GetLocation()->GetDgnDb(), jsonObj, m_styleId);

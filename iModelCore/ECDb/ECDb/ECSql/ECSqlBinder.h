@@ -152,6 +152,10 @@ struct ECSqlParameterMap final
         ECSqlBinder* AddBinder(ECSqlPrepareContext&, ParameterExp const&);
         ECSqlStatus OnBeforeFirstStep();
 
+        //! @return true if any binder needs OnBeforeFirstStep to be called. Lets the step path skip the
+        //! per-step statement-state probe entirely when no binder requires the first-step callback.
+        bool HasBindersToCallOnBeforeStep() const { return !m_bindersToCallOnStep.empty(); }
+
         //Bindings in SQLite have already been cleared at this point. The method
         //allows subclasses to clean-up additional resources tied to binding parameters
         void OnClearBindings();

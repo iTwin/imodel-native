@@ -27,10 +27,9 @@ stages:
     variables:
       BB_V: '-v 4'
       BB_ARCH: x64
-      PY_EXE: py -3
       BB_OUT_ROOT: $(Build.BinariesDirectory)
       BB_SRC_ROOT: $(Agent.BuildDirectory)/bbsrc
-      BB: $(BB_SRC_ROOT)/BentleyBuild/BentleyBuild.py
+      BB: $(BB_SRC_ROOT)/BentleyBuild
       STRATEGY: 'iModelCore;SkipPull_imodel-native-internal'
       BB_ARGS: '-p ECObjects-PerformanceGtest -f iModelCore/ECObjects/ECObjects -r imodel-native -s $(STRATEGY) -a $(BB_ARCH) --srcroot=$(BB_SRC_ROOT) --outputroot=$(BB_OUT_ROOT)'
 
@@ -51,12 +50,12 @@ stages:
             otherRepo: imodel-native-internal
             nativePR: 'main'
 
-        - script: $(PY_EXE) $(BB) $(BB_ARGS) pull
+        - script: uv run --directory $(BB) BentleyBuild.py $(BB_ARGS) pull
           displayName: Pull
           env:
             AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
 
-        - script: $(PY_EXE) $(BB) $(BB_ARGS) build
+        - script: uv run --directory $(BB) BentleyBuild.py $(BB_ARGS) build
           displayName: Build
           env:
             AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)

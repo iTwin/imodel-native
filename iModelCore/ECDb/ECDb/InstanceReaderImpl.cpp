@@ -163,9 +163,10 @@ InstanceReader::Impl::~Impl() {}
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 RowRender::Document& RowRender::ClearAndGetCachedJsonDocument() const {
-    m_allocator.Clear();
-    m_cachedJsonDoc.RemoveAllMembers();
+    // SetObject() must run before the pool is released: it destroys the existing members, which live
+    // in that pool. Clearing first would leave it walking freed memory.
     m_cachedJsonDoc.SetObject();
+    m_allocator.Clear();
     return m_cachedJsonDoc;
 }
 
@@ -173,9 +174,8 @@ RowRender::Document& RowRender::ClearAndGetCachedJsonDocument() const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 void RowRender::Reset() {
-    m_allocator.Clear();
-    m_cachedJsonDoc.RemoveAllMembers();
     m_cachedJsonDoc.SetObject();
+    m_allocator.Clear();
     m_instanceKey = ECInstanceKey();
     m_accessString.clear();
 }
@@ -231,6 +231,10 @@ void Reader::Clear() const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 void Reader::InvalidateSeekPos(ECInstanceKey const& key){
+    // Mutates m_seekPos (and its row render cache) exactly like Seek()/Clear(), so it needs the same
+    // lock. Callers never hold m_mutex, and the lock is released before any sqlite step, so this
+    // cannot reintroduce the primary-sqlite/ECDb lock cycle.
+    BeMutexHolder holder(m_mutex);
     if (!key.IsValid()) {
         m_seekPos.Reset();
     }

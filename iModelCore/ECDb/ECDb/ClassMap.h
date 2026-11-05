@@ -114,7 +114,7 @@ struct ClassMap
         std::unique_ptr<TablePerHierarchyHelper> m_tphHelper;
         bvector<ECN::ECPropertyCP> m_failedToLoadProperties;
         ObjectState m_state;
-        BentleyStatus CreateCurrentTimeStampTrigger(ECN::PrimitiveECPropertyCR);
+        BentleyStatus ApplyCurrentTimeStampColumnConstraints(ECN::PrimitiveECPropertyCR);
         BentleyStatus AddOrUpdateTableList(DataPropertyMap const& propertyThatIsNotYetAdded);
         BentleyStatus CopyModifiedBasePropertyMaps(SchemaImportContext& ctx );
     protected:

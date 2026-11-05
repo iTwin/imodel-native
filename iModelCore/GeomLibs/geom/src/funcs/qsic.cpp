@@ -322,33 +322,13 @@ const QSIC_RayArray     *pArray
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static int     jmdlQSICRA_compareRayTheta
-
-(
-const QSIC_Ray *pRay0,
-const QSIC_Ray *pRay1
-)
-    {
-    if (pRay0->theta < pRay1->theta)
-        return -1;
-
-    if (pRay0->theta > pRay1->theta)
-        return 1;
-
-    return 0;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 static void    jmdlQSICRA_sort
 
 (
 QSIC_RayArray    *pArray
 )
     {
-    qsort (pArray->ray, pArray->numRay, sizeof(QSIC_Ray),
-            (int (*)(const void *,const void *))jmdlQSICRA_compareRayTheta);
+    std::sort(pArray->ray, pArray->ray + pArray->numRay, [](const QSIC_Ray& a, const QSIC_Ray& b) { return a.theta < b.theta; });
     }
 
 /*---------------------------------------------------------------------------------**//**

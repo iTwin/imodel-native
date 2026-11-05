@@ -40,6 +40,7 @@ struct DgnProjectProperty
     static ProjectProperty Extents()         {return ProjectProperty("Extents");}
     static ProjectProperty Units()           {return ProjectProperty("Units");}
     static ProjectProperty DgnGCS()          {return ProjectProperty("DgnGCS");}
+    static ProjectProperty DgnGCSVerticalCRS() {return ProjectProperty("DgnGCSVerticalCRS");}
     static ProjectProperty LastSchemaUpgradeInPhase() { return ProjectProperty("LastSchemaUpgradeInPhase"); }
 };
 

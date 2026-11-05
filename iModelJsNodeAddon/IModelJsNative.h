@@ -60,16 +60,28 @@ USING_NAMESPACE_BENTLEY_EC
     }
 
 #define REQUIRE_ARGUMENT_ANY_OBJ(i, var)\
-    if (ARGUMENT_IS_NOT_PRESENT(i)) {\
+    if (ARGUMENT_IS_NOT_PRESENT(i) || !info[i].IsObject()) {\
         THROW_JS_TYPE_EXCEPTION("Argument " #i " must be an object")\
     }\
     Napi::Object var = info[i].As<Napi::Object>();
 
 #define REQUIRE_ARGUMENT_ANY_OBJ_ASYNC(i, var, deferred)\
-    if (ARGUMENT_IS_NOT_PRESENT(i)) {\
+    if (ARGUMENT_IS_NOT_PRESENT(i) || !info[i].IsObject()) {\
         REJECT_DEFERRED_AND_RETURN(deferred, "Argument " #i " must be an object")\
     }\
     Napi::Object var = info[i].As<Napi::Object>();
+
+#define REQUIRE_ARGUMENT_ARRAY(i, var)\
+    if (ARGUMENT_IS_NOT_PRESENT(i) || !info[i].IsArray()) {\
+        THROW_JS_TYPE_EXCEPTION("Argument " #i " must be an array")\
+    }\
+    Napi::Array var = info[i].As<Napi::Array>();
+
+#define REQUIRE_ARGUMENT_ANY_VALUE(i, var)\
+    if (ARGUMENT_IS_NOT_PRESENT(i)) {\
+        THROW_JS_TYPE_EXCEPTION("Argument " #i " must be defined")\
+    }\
+    Napi::Value var = info[i];
 
 #define REQUIRE_ARGUMENT_OBJ(i, T, var)\
     if (ARGUMENT_IS_NOT_PRESENT(i) || !T::InstanceOf(info[i])) {\
@@ -473,6 +485,7 @@ struct JsInterop {
     BE_JSON_NAME(showOnlyFinished)
     BE_JSON_NAME(size)
     BE_JSON_NAME(skipFileCheck)
+    BE_JSON_NAME(skipWriteLockCheck)
     BE_JSON_NAME(startFromId)
     BE_JSON_NAME(state)
     BE_JSON_NAME(storageType)
@@ -510,7 +523,10 @@ public:
     static DgnDbStatus GetElement(BeJsValue results, DgnDbR db, Napi::Object);
     static Napi::String InsertElement(DgnDbR db, Napi::Object props, Napi::Value options);
     static void UpdateElement(DgnDbR db, Napi::Object);
+    static void ChangeElementParent(DgnDbR db, Napi::Object props);
+    static void ChangeElementModel(DgnDbR db, Napi::Object props);
     static void DeleteElement(DgnDbR db, Utf8StringCR eidStr);
+    static BulkDeleteElementsResult DeleteElements(DgnDbR dgndb, Napi::Array elementIds);
     static DgnDbStatus SimplifyElementGeometry(DgnDbR db, Napi::Object simplifyArgs);
     static InlineGeometryPartsResult InlineGeometryParts(DgnDbR db);
     static Napi::String InsertElementAspect(DgnDbR db, Napi::Object aspectProps);
@@ -548,11 +564,14 @@ public:
     static Napi::Value InsertInstance(ECDbR db, NapiInfoCR info);
     static Napi::Value UpdateInstance(ECDbR db, NapiInfoCR info);
     static Napi::Value DeleteInstance(ECDbR db, NapiInfoCR info);
+    static Napi::Value ImportCSVData(ECDbR db, NapiInfoCR info);
+    static Napi::Value ImportCSVFile(ECDbR db, NapiInfoCR info);
     static Napi::Value PatchJsonProperties(NapiInfoCR info);
     static Napi::Value ResolveInstanceKey(DgnDbR db, NapiInfoCR info);
     static Napi::Value ConvertOrUpdateGeometrySource(DgnDbR db, NapiInfoCR info);
     static Napi::Value ConvertOrUpdateGeometryPart(DgnDbR db, NapiInfoCR info);
     static void ClearECDbCache(ECDbR db, NapiInfoCR info);
+    static void ApplyChangeset(BeSQLite::DbR db, NapiInfoCR info);
 
     static DbResult DropSchemas(ECDbR ecdb, bvector<Utf8String>& schemaNames);
 
@@ -582,7 +601,7 @@ public:
     static void SetMaxTileCacheSize(uint64_t maxBytes);
 
     [[noreturn]] static void ThrowJsException(Utf8CP msg);
-    static Json::Value ExecuteTest(DgnDbR, Utf8StringCR testName, Utf8StringCR params);
+    static BeJsDocument ExecuteTest(DgnDbR, Utf8StringCR testName, Utf8StringCR params);
     static NativeLogging::CategoryLogger GetNativeLogger();
 
     static Napi::Env& Env() { static Napi::Env s_env(nullptr); return s_env; }
@@ -600,14 +619,14 @@ public:
     static void RemoveCrashReportDgnDb(Dgn::DgnDbR);
 
     static void SetCrashReportProperty(Utf8CP key, Utf8CP value)
-    #if defined (USING_GOOGLE_BREAKPAD) || defined (BENTLEYCONFIG_CRASHPAD)
+    #if defined (BENTLEYCONFIG_CRASHPAD)
         ;
     #else
         {}
     #endif
 
     static std::map<std::string, std::string> GetCrashReportProperties()
-    #if defined (USING_GOOGLE_BREAKPAD) || defined (BENTLEYCONFIG_CRASHPAD)
+    #if defined (BENTLEYCONFIG_CRASHPAD)
         ;
     #else
         {
@@ -619,11 +638,11 @@ public:
     static void MaintainCrashDumpDir(int& maxNativeCrashTxtFileNo, CrashReportingConfig const&);
     static std::map<std::string,std::string> GetCrashReportPropertiesFromConfig(CrashReportingConfig const&);
 
-    static void InitializeCrashReporting(CrashReportingConfig const&)
-#if defined (USING_GOOGLE_BREAKPAD) || defined (BENTLEYCONFIG_CRASHPAD)
+    static bool InitializeCrashReporting(CrashReportingConfig const&)
+#if defined (BENTLEYCONFIG_CRASHPAD)
         ;
 #else
-        {}
+        { return true; }
 #endif
 
     static void WriteFullElementDependencyGraphToFile(DgnDbR db, Utf8StringCR dotFileName);
@@ -638,18 +657,32 @@ struct CRSListResponseProps
     Utf8String m_description;
     bool m_deprecated;
     DRange2d m_crsExtent;
+    Utf8String m_unit;
+    };
+
+struct VerticalCRSListResponseProps
+    {
+    Utf8String m_crsName;
+    Utf8String m_id;
+    int m_epsg = 0;
+    Utf8String m_description;
+    bool m_deprecated;
+    Utf8String m_type;
+    Utf8String m_unit;
+    DRange2d m_extent;
     };
 
 struct GeoServicesInterop
 {
     static BentleyStatus GetGeographicCRSInterpretation(BeJsValue, BeJsConst);
-    static bvector<CRSListResponseProps> GetListOfCRS(DRange2dCP extent, bool includeWorld);
+    static bvector<CRSListResponseProps> GetListOfCRS(DRange2dCP extent, bool includeWorld, Utf8CP unitFilter = nullptr);
+    static StatusInt GetListOfVerticalCRS(bvector<VerticalCRSListResponseProps>& results, BeJsConst props, Utf8StringR errorMessage);
 };
 
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct NativeChangeset {
+struct SqliteChangesetReader {
     private:
 
         bool m_invert;
@@ -674,7 +707,7 @@ struct NativeChangeset {
         bool IsValidPrimaryKeyColumnIndex(int col) { return HasRow() && (col>=0 && col< m_primaryKeyColumnCount); }
 
     public:
-        NativeChangeset():m_primaryKeyColumns(nullptr), m_tableName(nullptr), m_currentChange(nullptr, false), m_invert(false){}
+        SqliteChangesetReader():m_primaryKeyColumns(nullptr), m_tableName(nullptr), m_currentChange(nullptr, false), m_invert(false){}
         void OpenFile(Napi::Env env, Utf8StringCR changesetFile, bool invert);
         void OpenChangeStream(Napi::Env env, std::unique_ptr<ChangeStream>, bool invert);
         void OpenGroup(Napi::Env env, T_Utf8StringVector const& changesetFiles, Db const& db, bool invert);

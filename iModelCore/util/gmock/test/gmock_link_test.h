@@ -186,6 +186,7 @@ using testing::SetErrnoAndReturn;
 #endif
 
 #if GTEST_HAS_EXCEPTIONS
+using testing::Rethrow;
 using testing::Throw;
 #endif
 
@@ -326,7 +327,7 @@ TEST(LinkTest, TestInvoke) {
   InvokeHelper test_invoke_helper;
 
   EXPECT_CALL(mock, VoidFromString(_))
-      .WillOnce(Invoke(&InvokeHelper::StaticVoidFromString))
+      .WillOnce(&InvokeHelper::StaticVoidFromString)
       .WillOnce(Invoke(&test_invoke_helper, &InvokeHelper::VoidFromString));
   mock.VoidFromString(nullptr);
   mock.VoidFromString(nullptr);
@@ -337,10 +338,12 @@ TEST(LinkTest, TestInvokeWithoutArgs) {
   Mock mock;
   InvokeHelper test_invoke_helper;
 
+  GTEST_DISABLE_DEPRECATED_PUSH_()
   EXPECT_CALL(mock, VoidFromString(_))
-      .WillOnce(InvokeWithoutArgs(&InvokeHelper::StaticVoidFromVoid))
+      .WillOnce(&InvokeHelper::StaticVoidFromVoid)
       .WillOnce(
           InvokeWithoutArgs(&test_invoke_helper, &InvokeHelper::VoidFromVoid));
+  GTEST_DISABLE_DEPRECATED_POP_()
   mock.VoidFromString(nullptr);
   mock.VoidFromString(nullptr);
 }
@@ -359,7 +362,7 @@ TEST(LinkTest, TestWithArg) {
   Mock mock;
 
   EXPECT_CALL(mock, VoidFromString(_))
-      .WillOnce(WithArg<0>(Invoke(&InvokeHelper::StaticVoidFromString)));
+      .WillOnce(WithArg<0>(&InvokeHelper::StaticVoidFromString));
   mock.VoidFromString(nullptr);
 }
 
@@ -368,7 +371,7 @@ TEST(LinkTest, TestWithArgs) {
   Mock mock;
 
   EXPECT_CALL(mock, VoidFromString(_))
-      .WillOnce(WithArgs<0>(Invoke(&InvokeHelper::StaticVoidFromString)));
+      .WillOnce(WithArgs<0>(&InvokeHelper::StaticVoidFromString));
   mock.VoidFromString(nullptr);
 }
 
@@ -414,6 +417,14 @@ TEST(LinkTest, TestThrow) {
   Mock mock;
 
   EXPECT_CALL(mock, VoidFromString(_)).WillOnce(Throw(42));
+  EXPECT_THROW(mock.VoidFromString(nullptr), int);
+}
+// Tests the linkage of the Rethrow action.
+TEST(LinkTest, TestRethrow) {
+  Mock mock;
+
+  EXPECT_CALL(mock, VoidFromString(_))
+      .WillOnce(Rethrow(std::make_exception_ptr(42)));
   EXPECT_THROW(mock.VoidFromString(nullptr), int);
 }
 #endif  // GTEST_HAS_EXCEPTIONS

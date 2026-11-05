@@ -6,6 +6,7 @@
 
 #include <ECPresentation/ECPresentation.h>
 #include <ECPresentation/Diagnostics.h>
+#include <Bentley/LocalState.h>
 
 ECPRESENTATION_TYPEDEFS(ECPresentationManager)
 

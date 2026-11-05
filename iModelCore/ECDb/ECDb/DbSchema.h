@@ -475,9 +475,9 @@ private:
     DbTable(DbTable const&) = delete;
     DbTable& operator=(DbTable const&) = delete;
     DbColumn* AddColumn(DbColumnId, Utf8StringCR name, DbColumn::Type type, int position, DbColumn::Kind kind, PersistenceType persType);
-    static Utf8CP GetSharedColumnNamePrefix(Type);
 
 public:
+    static Utf8CP GetSharedColumnNamePrefix(Type);
     DbTable(DbTableId id, Utf8StringCR name, DbTableSpace const&, Type, ECN::ECClassId exclusiveRootClass, DbTable const* parentTable);
     ~DbTable() {}
 
@@ -612,7 +612,6 @@ private:
     DbTable* LoadTable(Utf8StringCR name) const;
     DbTable* LoadTable(DbTableId) const;
     BentleyStatus LoadColumns(DbTable&) const;
-    BentleyStatus LoadTableForeignKeyListFromSqliteSchema(DbTable& table) const;
     BentleyStatus InsertTable(DbTable const&) const;
     BentleyStatus InsertColumn(DbColumn const&, int columnOrdinal, int primaryKeyOrdinal) const;
     BentleyStatus UpdateColumn(DbColumn const&, int columnOrdinal, int primaryKeyOrdinal) const;

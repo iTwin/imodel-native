@@ -4,7 +4,8 @@
 *--------------------------------------------------------------------------------------------*/
 
 #include "UnitsPCH.h"
-#include <BeJsonCpp/BeJsonUtilities.h>
+#include <cmath>
+
 
 using namespace std;
 

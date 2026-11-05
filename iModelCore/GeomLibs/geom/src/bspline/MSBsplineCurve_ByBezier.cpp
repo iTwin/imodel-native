@@ -661,6 +661,21 @@ bool extendLinestring,
 DMatrix4dCP matrix
 ) const
     {
+    return AddLinestringIntersectionsXY(curveAPoints, curveAFractions, linestringPoints, linestringFractions, linestring, extendLinestring, extendLinestring, matrix);
+    }
+
+void MSBsplineCurve::AddLinestringIntersectionsXY
+(
+bvector<DPoint3d> *curveAPoints,
+bvector<double> *curveAFractions,
+bvector<DPoint3d> *linestringPoints,
+bvector<double> *linestringFractions,
+bvector<DPoint3d> const &linestring,
+bool extendLinestring0,
+bool extendLinestring1,
+DMatrix4dCP matrix
+) const
+    {
     BCurveSegment segmentA, segmentAXY;
     double  fractionA[MAX_BEZIER_CURVE_ORDER];
     double  fractionB[MAX_BEZIER_CURVE_ORDER];
@@ -675,13 +690,9 @@ DMatrix4dCP matrix
         {
         if (segmentA.IsNullU ())
             continue;
-//        DPoint4dP poles = segmentA.GetPoleP ();
         size_t order = (int)GetOrder ();
         if (NULL != matrix)
-            {
             segmentAXY.CopyFrom (segmentA, matrix);
-//            poles = segmentAXY.GetPoleP ();
-            }
 
         for (size_t iB = 1; iB < numB; iB++)
             {
@@ -696,8 +707,8 @@ DMatrix4dCP matrix
                     numIntersection, MAX_BEZIER_CURVE_ORDER,
                     NULL == matrix ? segmentA.GetPoleP () : segmentAXY.GetPoleP (),
                     order, segmentBH,
-                    extendLinestring && iB == 1,      // extend backwards from erste segment.
-                    extendLinestring && iB + 1 == numB  // extend forwards from last segment.
+                    extendLinestring0 && iB == 1,      // extend backwards from first segment.
+                    extendLinestring1 && iB + 1 == numB  // extend forwards from last segment.
                     );
 
             // overwrite transformed evaluations if needed ..
@@ -1790,6 +1801,13 @@ void MSBsplineCurve::AddLineIntersectionsXY (bvector<DPoint3d> *curvePoints, bve
                                              bvector<DPoint3d> *linePoints, bvector<double> *lineFractions,
                                         DSegment3dCR segment, bool extendSegment, DMatrix4dCP matrix) const
     {
+    return AddLineIntersectionsXY(curvePoints, curveFractions, linePoints, lineFractions, segment, extendSegment, extendSegment, matrix);
+    }
+
+void MSBsplineCurve::AddLineIntersectionsXY (bvector<DPoint3d> *curvePoints, bvector<double> *curveFractions,
+                                             bvector<DPoint3d> *linePoints, bvector<double> *lineFractions,
+                                        DSegment3dCR segment, bool extendSegment0, bool extendSegment1, DMatrix4dCP matrix) const
+    {
     bvector<DPoint3d>curveWorkPoint;
     bvector<double>curveWorkFraction;
     DPoint3d lineWorkPoint;
@@ -1806,7 +1824,8 @@ void MSBsplineCurve::AddLineIntersectionsXY (bvector<DPoint3d> *curvePoints, bve
             {
             if (segment.ProjectPointXY (lineWorkPoint, lineWorkFraction, curveWorkPoint[i]))
                 {
-                if (extendSegment || (lineWorkFraction >= 0.0 && lineWorkFraction <= 1.0))
+                // TODO: use tolerance? See CurveCurveProcessor::ValidEdgeFractionWithinLinestring()
+                if ((lineWorkFraction >= 0.0 && lineWorkFraction <= 1.0) || (extendSegment0 && lineWorkFraction < 1.0) || (extendSegment1 && lineWorkFraction > 0.0))
                     {
                     if (NULL != curvePoints)
                         curvePoints->push_back (curveWorkPoint[i]);
@@ -1852,7 +1871,8 @@ void MSBsplineCurve::AddLineIntersectionsXY (bvector<DPoint3d> *curvePoints, bve
                 matrix->Multiply (&transformedWorkPoint, &curveWorkPoint[i], NULL, 1);
                 if (segmentXYZW.ProjectPointUnboundedCartesianXYW (closestLinePoint, lineWorkFraction, transformedWorkPoint))
                     {
-                    if (extendSegment || (lineWorkFraction >= 0.0 && lineWorkFraction <= 1.0))
+                    // TODO: use tolerance? See CurveCurveProcessor::ValidEdgeFractionWithinLinestring()
+                    if ((lineWorkFraction >= 0.0 && lineWorkFraction <= 1.0) || (extendSegment0 && lineWorkFraction < 1.0) || (extendSegment1 && lineWorkFraction > 0.0))
                         {
                         segment.FractionParameterToPoint (lineWorkPoint, lineWorkFraction);
                         if (NULL != curvePoints)

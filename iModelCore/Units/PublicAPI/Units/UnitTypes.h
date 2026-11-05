@@ -4,8 +4,9 @@
 *--------------------------------------------------------------------------------------------*/
 
 #pragma once
-#include <BeJsonCpp/BeJsonUtilities.h>
+
 #include <Units/Units.h>
+#include <BeRapidJson/BeJsValue.h>
 #include <type_traits>
 
 BEGIN_BENTLEY_UNITS_NAMESPACE

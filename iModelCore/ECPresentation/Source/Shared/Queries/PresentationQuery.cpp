@@ -109,7 +109,14 @@ bool BoundQueryId::_Equals(BoundQueryValue const& other) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSqlStatus BoundQueryIdSet::_Bind(ECSqlStatement& stmt, uint32_t index) const
     {
-    return stmt.BindVirtualSet((int)index, m_set);
+    IECSqlBinder& binder = stmt.GetBinder((int)index);
+    for (BeInt64Id id : *m_set)
+        {
+        ECSqlStatus status = binder.AddArrayElement().BindId(id);
+        if (!status.IsSuccess())
+            return status;
+        }
+    return ECSqlStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -155,11 +162,19 @@ protected:
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct VirtualSetIdsHandler : VirtualSetHandler
+struct VirtualSetIdsHandler : FilteredValuesHandler
 {
 private:
     bvector<BeInt64Id> m_ids;
 protected:
+    Utf8String _GetWhereClause(Utf8CP valueSelector, bool inverse) const override
+        {
+        Utf8String clause(valueSelector);
+        if (inverse)
+            clause.append(" NOT");
+        clause.append(" IN (SELECT id FROM IdSet(?))");
+        return clause;
+        }
     void _Accept(BeInt64Id id) override {m_ids.push_back(id);}
     void _Accept(ECValue) override {DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, "Binding a non-ID value using VirtualSetIdsHandler");}
     BoundQueryValuesList _GetBoundValues() override {return {std::make_shared<BoundQueryIdSet>(m_ids)};}

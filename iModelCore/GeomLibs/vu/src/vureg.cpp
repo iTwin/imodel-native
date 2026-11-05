@@ -68,27 +68,6 @@ VuMask  mask            /* => mask to install in each upedge ( and clear in down
         }
     }
 
-static int  s_downwardExtremumMaskForSorting;
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-static int vureg_compareLexicalUV
-(
-const VuP * node0PP,
-const VuP * node1PP
-)
-    {
-    int result = vu_compareLexicalUV( node0PP, node1PP, NULL);
-    if ( ( result == 0 ) && (*node0PP != *node1PP) )
-        {
-        if (VU_GETMASK ( *node0PP, s_downwardExtremumMaskForSorting ) )
-            return -1;
-        if (VU_GETMASK ( *node1PP, s_downwardExtremumMaskForSorting ) )
-            return 1;
-        }
-    return result;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -169,8 +148,21 @@ VuP                 faceP   /* => OPTIONAL face.  If NULL, mark entire graph. */
         END_VU_SET_LOOP ( currP, rsP->graphP );
         }
 
-    s_downwardExtremumMaskForSorting = rsP->downwardExtremumMask;
-    vu_arraySort0 (rsP->minArrayP, vureg_compareLexicalUV);
+    VuMask downwardExtremumMaskForSorting = rsP->downwardExtremumMask;
+    auto vureg_compareLexicalUV = [downwardExtremumMaskForSorting](VuP const& node0P, VuP const& node1P) -> bool
+        {
+        int result = vu_compareLexicalUV(&node0P, &node1P, NULL);
+        if ((result == 0) && (node0P != node1P))
+            {
+            bool node0IsDownward = 0 != VU_GETMASK(node0P, downwardExtremumMaskForSorting);
+            bool node1IsDownward = 0 != VU_GETMASK(node1P, downwardExtremumMaskForSorting);
+            if (node0IsDownward != node1IsDownward)
+                return node0IsDownward;
+            }
+        return result < 0;
+        };
+
+    std::sort(rsP->minArrayP->data(), rsP->minArrayP->data() + rsP->minArrayP->size(), vureg_compareLexicalUV);
     return count;
     }
 

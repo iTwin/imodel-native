@@ -13,11 +13,24 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 void DumpSchemasToFile(bvector<ECSchemaCP> const& schemas, Utf8CP directory, Utf8CP subdir)
     {
-    for (auto schema: schemas)
+    // Dump the full closure including referenced schemas, so the dump can be reloaded elsewhere.
+    bvector<ECSchemaCP> allSchemas;
+    bset<Utf8CP, CompareIUtf8Ascii> seenNames;
+    bvector<ECSchemaCP> worklist(schemas);
+    while (!worklist.empty())
         {
-        if(schema == nullptr)
+        ECSchemaCP schema = worklist.back();
+        worklist.pop_back();
+        if (schema == nullptr || !seenNames.insert(schema->GetName().c_str()).second)
             continue;
 
+        allSchemas.push_back(schema);
+        for (auto const& ref : schema->GetReferencedSchemas())
+            worklist.push_back(ref.second.get());
+        }
+
+    for (auto schema: allSchemas)
+        {
         BeFileName fileName;
         fileName.AppendUtf8(directory);
         WString wSubdir(subdir, BentleyCharEncoding::Utf8);
@@ -28,7 +41,17 @@ void DumpSchemasToFile(bvector<ECSchemaCP> const& schemas, Utf8CP directory, Utf
         fileName.append(L".ecschema.xml");
         if(fileName.DoesPathExist())
             fileName.BeDeleteFile();
-        schema->WriteToXmlFile(fileName.c_str());
+
+        // Serialize at the schema's own ECVersion. Requesting a newer version than the schema's
+        // own makes SchemaXmlWriter::Serialize abort before anything is written, which used to
+        // leave 0-byte files behind without any log message.
+        const auto status = schema->WriteToXmlFile(fileName.c_str(), schema->GetECVersion());
+        if (SchemaWriteStatus::Success != status)
+            {
+            LOG.errorv("Failed to dump schema '%s' to '%s' (SchemaWriteStatus=%d). Removing the incomplete file.",
+                schema->GetFullSchemaName().c_str(), fileName.GetNameUtf8().c_str(), (int)status);
+            fileName.BeDeleteFile();
+            }
         }
     };
 
@@ -310,10 +333,6 @@ ECObjectsStatus SchemaMerger::MergeSchemas(SchemaMergeResult& result, bvector<EC
     if (rawRight.empty())
         return ECObjectsStatus::Success;
 
-    status = fillSchemasToResult("right", right);
-    if (status != ECObjectsStatus::Success)
-        return status;
-
     SchemaComparer comparer;
     SchemaComparer::Options comparerOptions = SchemaComparer::Options(SchemaComparer::DetailLevel::NoSchemaElements, SchemaComparer::DetailLevel::NoSchemaElements);
     SchemaDiff diff;
@@ -327,15 +346,47 @@ ECObjectsStatus SchemaMerger::MergeSchemas(SchemaMergeResult& result, bvector<EC
         return ECObjectsStatus::Error;
         }
 
-    for (auto schemaChange : diff.Changes())
+    // Hydrate the incoming schemas into the result in a single pass that walks them in
+    // merged-dependency order. We drive this off `right` (already dependency-sorted above),
+    // which contains exactly the schemas we hydrate: New schemas (right-only) and Modified
+    // schemas (in both). Left-only (Deleted) schemas are not in `right`; they were already
+    // copied at final content by fillSchemasToResult("left") and need no merging.
+    //
+    // Dependency order is what makes both ordering constraints hold at once:
+    //  - A New schema is copied only after every schema it references is already present at
+    //    its final/merged content, so CopySchema resolves each reference (by name, against
+    //    the result's read context) to the up-to-date copy. This is the bug that broke when
+    //    a New schema referenced a newer version of a schema existing on the left: the
+    //    Modified reference is merged in-place before the New schema is copied.
+    //  - A Modified schema that adds a new reference to a New schema finds that New schema
+    //    already hydrated, because the New schema precedes it in dependency order.
+    for (ECSchemaCP rightSchema : right)
         {
-        if (!schemaChange->IsChanged())
-            continue;
+        SchemaChange* schemaChange = diff.GetSchemaChange(rightSchema->GetName());
+        if (schemaChange == nullptr || !schemaChange->IsChanged())
+            continue; // unchanged - nothing to hydrate
 
         auto opCode = schemaChange->GetOpCode();
-        if (opCode == ECChange::OpCode::Deleted || opCode == ECChange::OpCode::New)
-            continue; // skip schemas missing on one side as this was already handled above
+        if (opCode == ECChange::OpCode::New)
+            {
+            if (result.ContainsSchema(schemaChange->GetChangeName()))
+                continue; // already brought in as a referenced schema while copying an earlier new schema
 
+            ECSchemaPtr copiedSchema;
+            auto copyStatus = rightSchema->CopySchema(copiedSchema, !doNotMergeReferences ? result.GetSchemaReadContext().get() : nullptr, options.GetSkipValidation(), options.GetRenamePropertyOnConflict());
+            if (copyStatus != ECObjectsStatus::Success || !copiedSchema.IsValid())
+                {
+                result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0025,
+                    "Schema '%s' from right side failed to be copied.", rightSchema->GetFullSchemaName().c_str());
+                return copyStatus != ECObjectsStatus::Success ? copyStatus : ECObjectsStatus::Error;
+                }
+
+            copiedSchema->SetOriginalECXmlVersion(rightSchema->GetOriginalECXmlVersionMajor(), rightSchema->GetOriginalECXmlVersionMinor());
+            result.GetSchemaCache().AddSchema(*copiedSchema);
+            continue;
+            }
+
+        // Modified (in both). Merge the right schema into the left copy in the result in-place.
         Utf8CP schemaName = schemaChange->GetChangeName(); // naming not intuitive, but the most reliable way to extract the schema name
         ECSchemaP leftSchema = result.GetSchema(schemaName);
 
@@ -346,7 +397,6 @@ ECObjectsStatus SchemaMerger::MergeSchemas(SchemaMergeResult& result, bvector<EC
             continue;
             }
 
-        ECSchemaCP rightSchema = FindSchemaByName(right, schemaName);
         auto stat = MergeSchema(result, leftSchema, rightSchema, schemaChange, options);
         if(stat != ECObjectsStatus::Success)
             return stat;
@@ -496,7 +546,7 @@ ECObjectsStatus SchemaMerger::MergeSchema(SchemaMergeResult& result, ECSchemaP l
                     {
                     ECSchemaPtr rightReferencedSchema = it->second;
                     ECSchemaPtr copiedSchema;
-                    auto copyStatus = rightReferencedSchema->CopySchema(copiedSchema, result.GetSchemaReadContext().get(), options.GetSkipValidation());
+                    auto copyStatus = rightReferencedSchema->CopySchema(copiedSchema, result.GetSchemaReadContext().get(), options.GetSkipValidation(), options.GetRenamePropertyOnConflict());
                     if (copyStatus != ECObjectsStatus::Success)
                         {
                         result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0025,
@@ -567,7 +617,7 @@ ECObjectsStatus SchemaMerger::MergeSchema(SchemaMergeResult& result, ECSchemaP l
             }
 
         ECClassP createdClass;
-        status = left->CopyClass(createdClass, *newClass, true, className.c_str(), options.GetSkipValidation());
+        status = left->CopyClass(createdClass, *newClass, true, className.c_str(), options.GetSkipValidation(), options.GetRenamePropertyOnConflict());
         if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
           {
           result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0029,

@@ -782,6 +782,18 @@ public:
                                  bvector<DPoint3d> *linePoints, bvector<double> *lineFractions,
                                  DSegment3dCR segment, bool extendSegment, DMatrix4dCP matrix) const;
 
+    //! Compute intersections with line segment, as viewed in xy plane.
+    //! @param [out] curvePoints points on curve
+    //! @param [out] curveFractions fractions on curve
+    //! @param [out] linePoints points on line
+    //! @param [out] lineFractions fractions on line.
+    //! @param [in] segment line segment to intersect
+    //! @param [in] extendSegment0 true to consider the line extended at its start.
+    //! @param [in] extendSegment1 true to consider the line extended at its end.
+    //! @param [in] matrix (optional) matrix to apply to both the curve and segment to get to as-viewed coordinates for xy calculations.
+    GEOMDLLIMPEXP void AddLineIntersectionsXY (bvector<DPoint3d> *curvePoints, bvector<double> *curveFractions,
+                                 bvector<DPoint3d> *linePoints, bvector<double> *lineFractions,
+                                 DSegment3dCR segment, bool extendSegment0, bool extendSegment1, DMatrix4dCP matrix) const;
 
     //! Compute intersections with a linestring, as viewed in xy plane.
     //! @param [out] curveAPoints points on curve
@@ -813,6 +825,22 @@ public:
                     DMatrix4dCP matrix
                     ) const;
 
+    //! Compute intersections with a linestring, as viewed in xy plane.
+    //! @param [out] curveAPoints points on curve
+    //! @param [out] curveAFractions fractions on curve
+    //! @param [out] curveBPoints points on linestring
+    //! @param [out] curveBFractions fractions on linestring.
+    //! @param [in] linestring LineString to intersect
+    //! @param [in] extendLinestring0 true to extend the start of the linestring.
+    //! @param [in] extendLinestring1 true to extend the end of the linestring.
+    //! @param [in] matrix (optional) matrix to apply to both the curve and linestring to get to as-viewed coordinates for xy calculations.
+    GEOMDLLIMPEXP void AddLinestringIntersectionsXY (
+                    bvector<DPoint3d> *curveAPoints,  bvector<double> *curveAFractions,
+                    bvector<DPoint3d> *curveBPoints,  bvector<double> *curveBFractions,
+                    bvector<DPoint3d> const &linestring,
+                    bool extendLinestring0, bool extendLinestring1,
+                    DMatrix4dCP matrix
+                    ) const;
 
     //! Compute intersections with ellipse, as viewed in xy plane.
     //! @param [out] curvePoints points on curve
@@ -826,7 +854,7 @@ public:
                                  bvector<DPoint3d> *ellipsePoints, bvector<double> *ellipseFractions,
                                  DEllipse3dCR arc, bool extendConic, DMatrix4dCP matrix) const;
 
-    //! Compute intersections with ellipse, as viewed in xy plane.
+    //! Compute intersections with another curve, as viewed in xy plane.
     //! @param [out] curveAPoints points on instances curve
     //! @param [out] curveAFractions fractions on instance curve
     //! @param [out] curveBPoints points on second curve
@@ -837,8 +865,7 @@ public:
                                  bvector<DPoint3d> *curveBPoints, bvector<double> *curveBFractions,
                                  MSBsplineCurveCR curveB, DMatrix4dCP matrix) const;
 
-
-    //! Compute intersections with ellipse, as viewed in xy plane.
+    //! Compute intersections with another curve, as viewed in xy plane.
     //! @param [out] curveAPoints points on instances curve
     //! @param [out] curveAFractions fractions on instance curve
     //! @param [out] curveAOverlapFractions intervals of fractional overlap on instance curve
@@ -851,7 +878,6 @@ public:
             bvector<DPoint3d> *curveAPoints, bvector<double> *curveAFractions, bvector<DSegment1d> *curveAOverlapFractions,
             bvector<DPoint3d> *curveBPoints, bvector<double> *curveBFractions, bvector<DSegment1d> *curveBOverlapFractions,
             MSBsplineCurveCR curveB, DMatrix4dCP matrix) const;
-
 
     //! Find full 3d cusps.
     //! @param [out] points array to receive xyz of cusps.

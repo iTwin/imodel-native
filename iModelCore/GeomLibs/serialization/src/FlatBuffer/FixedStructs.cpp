@@ -6,6 +6,7 @@
 #include "serializationPCH.h"
 #include <GeomSerialization/GeomLibsFlatBufferApi.h>
 #include "allcg_generated.h"
+#include <cmath>
 #define  BGFB Bentley::Geometry::FB
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
@@ -523,7 +524,14 @@ flatbuffers::Offset<BGFB::VariantGeometry> WriteAsFBVariantGeometry (ISolidPrimi
             DgnBoxDetail detail;
             if (parent.TryGetDgnBoxDetail (detail))
                 {
-                auto fbData = BGFB::CreateDgnBox (m_fbb, (BGFB::DgnBoxDetail*)&detail); // YES -- hard case of compatible structure layouts
+                BGFB::DgnBoxDetail fbDetail (
+                    detail.m_baseOrigin.x, detail.m_baseOrigin.y, detail.m_baseOrigin.z,
+                    detail.m_topOrigin.x, detail.m_topOrigin.y, detail.m_topOrigin.z,
+                    detail.m_vectorX.x, detail.m_vectorX.y, detail.m_vectorX.z,
+                    detail.m_vectorY.x, detail.m_vectorY.y, detail.m_vectorY.z,
+                    detail.m_baseX, detail.m_baseY, detail.m_topX, detail.m_topY,
+                    detail.m_capped);
+                auto fbData = BGFB::CreateDgnBox (m_fbb, &fbDetail);
                 return BGFB::CreateVariantGeometry
                     (
                     m_fbb,
@@ -537,7 +545,14 @@ flatbuffers::Offset<BGFB::VariantGeometry> WriteAsFBVariantGeometry (ISolidPrimi
             DgnConeDetail detail;
             if (parent.TryGetDgnConeDetail (detail))
                 {
-                auto fbData = BGFB::CreateDgnCone (m_fbb, (BGFB::DgnConeDetail*)&detail); // YES -- hard case of compatible structure layouts
+                BGFB::DgnConeDetail fbDetail (
+                    detail.m_centerA.x, detail.m_centerA.y, detail.m_centerA.z,
+                    detail.m_centerB.x, detail.m_centerB.y, detail.m_centerB.z,
+                    detail.m_vector0.x, detail.m_vector0.y, detail.m_vector0.z,
+                    detail.m_vector90.x, detail.m_vector90.y, detail.m_vector90.z,
+                    detail.m_radiusA, detail.m_radiusB,
+                    detail.m_capped);
+                auto fbData = BGFB::CreateDgnCone (m_fbb, &fbDetail);
                 return BGFB::CreateVariantGeometry
                     (
                     m_fbb,
@@ -551,7 +566,13 @@ flatbuffers::Offset<BGFB::VariantGeometry> WriteAsFBVariantGeometry (ISolidPrimi
             DgnTorusPipeDetail detail;
             if (parent.TryGetDgnTorusPipeDetail (detail))
                 {
-                auto fbData = BGFB::CreateDgnTorusPipe (m_fbb, (BGFB::DgnTorusPipeDetail*)&detail); // YES -- hard case of compatible structure layouts
+                BGFB::DgnTorusPipeDetail fbDetail (
+                    detail.m_center.x, detail.m_center.y, detail.m_center.z,
+                    detail.m_vectorX.x, detail.m_vectorX.y, detail.m_vectorX.z,
+                    detail.m_vectorY.x, detail.m_vectorY.y, detail.m_vectorY.z,
+                    detail.m_majorRadius, detail.m_minorRadius, detail.m_sweepAngle,
+                    detail.m_capped);
+                auto fbData = BGFB::CreateDgnTorusPipe (m_fbb, &fbDetail);
                 return BGFB::CreateVariantGeometry
                     (
                     m_fbb,
@@ -565,7 +586,12 @@ flatbuffers::Offset<BGFB::VariantGeometry> WriteAsFBVariantGeometry (ISolidPrimi
             DgnSphereDetail detail;
             if (parent.TryGetDgnSphereDetail (detail))
                 {
-                auto fbData = BGFB::CreateDgnSphere (m_fbb, (BGFB::DgnSphereDetail*)&detail); // YES -- hard case of compatible structure layouts
+                BGFB::DTransform3d fbTransform (
+                    detail.m_localToWorld.form3d[0][0], detail.m_localToWorld.form3d[0][1], detail.m_localToWorld.form3d[0][2], detail.m_localToWorld.form3d[0][3],
+                    detail.m_localToWorld.form3d[1][0], detail.m_localToWorld.form3d[1][1], detail.m_localToWorld.form3d[1][2], detail.m_localToWorld.form3d[1][3],
+                    detail.m_localToWorld.form3d[2][0], detail.m_localToWorld.form3d[2][1], detail.m_localToWorld.form3d[2][2], detail.m_localToWorld.form3d[2][3]);
+                BGFB::DgnSphereDetail fbDetail (fbTransform, detail.m_startLatitude, detail.m_latitudeSweep, detail.m_capped);
+                auto fbData = BGFB::CreateDgnSphere (m_fbb, &fbDetail);
                 return BGFB::CreateVariantGeometry
                     (
                     m_fbb,
@@ -698,12 +724,13 @@ flatbuffers::Offset<BGFB::VariantGeometry> WriteAsVariantGeometry (bvector<IGeom
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-flatbuffers::Offset<BGFB::PolyfaceAuxChannelData> WriteAsFBPolyfaceAuxChannelData (PolyfaceAuxChannel::DataP pData)
+flatbuffers::Offset<BGFB::PolyfaceAuxChannelData> WriteAsFBPolyfaceAuxChannelData (PolyfaceAuxChannel::DataP pData, size_t blockSize)
     {
     if (nullptr == pData)
         return 0;
 
-    auto        valuesOffset = WriteOptionalVector<double, double, 1> (pData->GetValues());
+    size_t      numValues = pData->GetValueCount() - (pData->GetValueCount() % blockSize);
+    auto        valuesOffset = WriteOptionalVector<double, double, 1> (pData->GetValues().data(), numValues);
     BGFB::PolyfaceAuxChannelDataBuilder builder (m_fbb);
     builder.add_input (pData->GetInput());
     builder.add_values(valuesOffset);
@@ -718,10 +745,11 @@ flatbuffers::Offset<BGFB::PolyfaceAuxChannel> WriteAsFBPolyfaceAuxChannel(Polyfa
     if (nullptr == pChannel)
         return 0;
 
-    bvector<flatbuffers::Offset<BGFB::PolyfaceAuxChannelData>> fbDataVector;
+    size_t  blockSize = pChannel->GetBlockSize();
 
+    bvector<flatbuffers::Offset<BGFB::PolyfaceAuxChannelData>> fbDataVector;
     for (auto const& data : pChannel->GetData())
-        fbDataVector.push_back(WriteAsFBPolyfaceAuxChannelData(data.get()));
+        fbDataVector.push_back(WriteAsFBPolyfaceAuxChannelData(data.get(), blockSize));
 
     auto    fbName = m_fbb.CreateString(pChannel->GetName());
     auto    fbInputName = m_fbb.CreateString(pChannel->GetInputName());
@@ -797,7 +825,6 @@ flatbuffers::Offset<BGFB::Polyface> WriteAsFBPolyfaceDirect(PolyfaceQueryCR pare
     bool    twoSided  = parent.GetTwoSided ();
     uint32_t expectedClosure = parent.GetExpectedClosure();
 
-    // ASSUME: Polyface/AuxData index arrays are parallel
     const flatbuffers::Offset<flatbuffers::Vector<double>> point = WriteOptionalVector<DPoint3d, double, 3>(parent.GetPointCP (), parent.GetPointCount ());
     const flatbuffers::Offset<flatbuffers::Vector<double>> param = WriteOptionalVector<DPoint2d, double, 2>(parent.GetParamCP (), parent.GetParamCount ());
     const flatbuffers::Offset<flatbuffers::Vector<double>> normal = WriteOptionalVector<DVec3d, double, 3>(parent.GetNormalCP (), parent.GetNormalCount ());
@@ -926,12 +953,11 @@ void FinishAndGetBuffer (flatbuffers::Offset<BGFB::VariantGeometry> g, bvector<B
     buffer.resize(buffer.size () + m_fbb.GetSize());
     Byte *fbDest = GetFBStart (buffer);
     if (nullptr != fbDest)
-        memcpy(fbDest, m_fbb.GetBufferPointer(), m_fbb.GetSize());
+        BeStringUtilities::Memcpy(fbDest, m_fbb.GetSize(), m_fbb.GetBufferPointer(), m_fbb.GetSize());
     else
       buffer.clear ();
     }
-
-    };
+};
 
 
 void BentleyGeometryFlatBuffer::GeometryToBytes (IGeometryCR geometry, bvector<Byte>& buffer)
@@ -1231,7 +1257,8 @@ static PolyfaceAuxDataPtr ReadPolyfaceAuxData(const BGFB::Polyface* fbPolyface, 
     else
         {
         indices.resize(fbAuxIndices->size());
-        memcpy(indices.data(), fbAuxIndices->GetStructFromOffset(0), fbAuxIndices->size() * sizeof(int32_t));
+        BeStringUtilities::Memcpy(indices.data(), fbAuxIndices->size() * sizeof(int32_t),
+            fbAuxIndices->GetStructFromOffset(0), fbAuxIndices->size() * sizeof(int32_t));
         }
     if (indices.size() != fbPointIndices->size())
         return nullptr;
@@ -1247,9 +1274,11 @@ static PolyfaceAuxDataPtr ReadPolyfaceAuxData(const BGFB::Polyface* fbPolyface, 
             {
             auto            fbChannelData = fbChannelDataVector->Get(j);
             auto            fbChannelDataValues = fbChannelData->values();
-            bvector<double> values(fbChannelDataValues->Length());
 
-            memcpy (values.data(), fbChannelDataValues->GetStructFromOffset(0), fbChannelDataValues->Length() * sizeof(double));
+            size_t numValues = fbChannelDataValues->Length() - (fbChannelDataValues->Length() % PolyfaceAuxChannel::GetBlockSize((PolyfaceAuxChannel::DataType) fbChannel->dataType()));
+            bvector<double> values(numValues);
+
+            BeStringUtilities::Memcpy (values.data(), numValues * sizeof(double), fbChannelDataValues->GetStructFromOffset(0), numValues * sizeof(double));
             channelDataVector.push_back(new PolyfaceAuxChannel::Data(fbChannelData->input(), std::move(values)));
             }
         channels.push_back(new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType(fbChannel->dataType()), fbChannel->name()->c_str(), fbChannel->inputName()->c_str(), std::move(channelDataVector)));
@@ -1262,7 +1291,7 @@ template <typename MemberType>
 static void ReadBVector(bvector<MemberType> &dest, const MemberType *source, size_t n)
     {
     dest.resize(n);
-    memcpy(&dest[0], source, n * sizeof(MemberType));
+    BeStringUtilities::Memcpy(&dest[0], n * sizeof(MemberType), source, n * sizeof(MemberType));
     }
 
 template <typename MemberType, typename ScalarType>
@@ -1271,7 +1300,7 @@ static void ReadBVector(bvector<MemberType> &dest, uint32_t numPerMember, const 
     dest.resize(n / numPerMember);
     if (n < numPerMember)
         return;
-    memcpy((ScalarType*) &dest[0], source, n * sizeof(ScalarType));
+    BeStringUtilities::Memcpy((ScalarType*) &dest[0], n * sizeof(ScalarType), source, n * sizeof(ScalarType));
     }
 
 // read from fb into taggedDataDest (which is assumed empty/initialized)
@@ -1296,7 +1325,7 @@ static void LoadBlockedVector (BlockedVectorType dest, StructType const*source, 
     {
     dest.SetActive (true);
     dest.resize (n);
-    memcpy (&dest[0], source, n * sizeof (StructType));
+    BeStringUtilities::Memcpy (&dest[0], n * sizeof (StructType), source, n * sizeof (StructType));
     }
 
 static PolyfaceHeaderPtr ReadPolyfaceHeader (const BGFB::VariantGeometry * fbGeometry)
@@ -2147,11 +2176,9 @@ PtrType BytesToXXXSafe(Byte const *buffer, size_t bufferSize, bool applyValidati
     Byte const *fbStart = GetFBStart(buffer, bufferSize);
     if (nullptr == fbStart)
         return nullptr;
-    auto fbRoot = flatbuffers::GetRoot<BGFB::VariantGeometry>(fbStart);
+    bufferSize -= s_prefixBufferSize; // we know this doesn't underflow
+    auto fbRoot = BentleyGeometryFlatBuffer::GetVerifiedRoot<BGFB::VariantGeometry>(fbStart, bufferSize);
     if (nullptr == fbRoot)
-        return nullptr;
-    auto myVerifier = flatbuffers::Verifier(fbStart, bufferSize - s_prefixBufferSize);
-    if (!fbRoot->Verify(myVerifier))
         return nullptr;
     if (fbRoot->has_geometry_type() && fbRoot->has_geometry())
         {
@@ -2212,19 +2239,15 @@ bool applyValidation,
 bvector<IGeometryPtr> *invalidGeometry
 )
     {
-    if (buffer.size() == 0)
-        return false;
-    Byte* fbStart = GetFBStart(buffer);
-    if (nullptr == fbStart)
-        return false;
     dest.clear ();
     if (invalidGeometry)
         invalidGeometry->clear ();
-    auto fbRoot = flatbuffers::GetRoot<BGFB::VariantGeometry>(fbStart);
-    if (nullptr == fbRoot)
+    Byte const* fbStart = GetFBStart(buffer);
+    if (nullptr == fbStart)
         return false;
-    auto myVerifier = flatbuffers::Verifier(fbStart, buffer.size() - s_prefixBufferSize);
-    if (!fbRoot->Verify(myVerifier))
+    size_t bufferSize = buffer.size() - s_prefixBufferSize; // we know this doesn't underflow
+    auto fbRoot = GetVerifiedRoot<BGFB::VariantGeometry>(fbStart, bufferSize);
+    if (nullptr == fbRoot)
         return false;
     if (fbRoot->has_geometry_type() && fbRoot->has_geometry())
         {
@@ -2246,14 +2269,12 @@ bool applyValidation
     {
     if (nullptr == buffer)
         return false;
-    Byte const *fbStart = GetFBStart(buffer, bufferSize);
+    Byte const* fbStart = GetFBStart(buffer, bufferSize);
     if (nullptr == fbStart)
         return false;
-    auto fbRoot = flatbuffers::GetRoot<BGFB::VariantGeometry>(fbStart);
+    bufferSize -= s_prefixBufferSize; // we know this doesn't underflow
+    auto fbRoot = GetVerifiedRoot<BGFB::VariantGeometry>(fbStart, bufferSize);
     if (nullptr == fbRoot)
-        return false;
-    auto myVerifier = flatbuffers::Verifier(fbStart, bufferSize - s_prefixBufferSize);
-    if (!fbRoot->Verify(myVerifier))
         return false;
     if (fbRoot->has_geometry_type() && fbRoot->has_geometry())
         {

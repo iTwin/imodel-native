@@ -36,6 +36,7 @@
 #include <stdlib.h>
 
 #include <algorithm>
+#include <iterator>
 #include <string>
 
 #include "gtest/gtest-spi.h"
@@ -149,7 +150,7 @@ TEST(LoggingTest, InterleavingLoggingAndAssertions) {
   static const int a[4] = {3, 9, 2, 6};
 
   printf("(expecting 2 failures on (3) >= (a[i]))\n");
-  for (int i = 0; i < static_cast<int>(sizeof(a) / sizeof(*a)); i++) {
+  for (int i = 0; i < static_cast<int>(std::size(a)); i++) {
     printf("i == %d\n", i);
     EXPECT_GE(3, a[i]);
   }
@@ -1006,6 +1007,12 @@ class TestSuiteThatFailsToSetUp : public testing::Test {
   static void SetUpTestSuite() { EXPECT_TRUE(false); }
 };
 TEST_F(TestSuiteThatFailsToSetUp, ShouldNotRun) { std::abort(); }
+
+class TestSuiteThatSkipsInSetUp : public testing::Test {
+ public:
+  static void SetUpTestSuite() { GTEST_SKIP() << "Skip entire test suite"; }
+};
+TEST_F(TestSuiteThatSkipsInSetUp, ShouldNotRun) { std::abort(); }
 
 // The main function.
 //

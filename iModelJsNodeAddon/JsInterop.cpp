@@ -6,7 +6,9 @@
 #include <windows.h>
 #endif
 #include "IModelJsNative.h"
+#include "CsvImporter.h"
 #include <Bentley/Base64Utilities.h>
+#include <BeRapidJson/BeRapidJson.h>
 #include <Bentley/Desktop/FileSystem.h>
 #include <GeomSerialization/GeomSerializationApi.h>
 #include <ECDb/ChangedIdsIterator.h>
@@ -15,7 +17,12 @@
     #include <Visualization/Visualization.h>
 #endif
 #include <DgnPlatform/EntityIdsChangeGroup.h>
+#include <algorithm>
 #include <chrono>
+#include <cmath>
+#include <exception>
+#include <limits>
+#include <string>
 #include <tuple>
 
 #if defined (BENTLEYCONFIG_PARASOLID)
@@ -489,75 +496,107 @@ Napi::Object JsInterop::ConcurrentQueryResetConfig(Napi::Env env, Napi::Object c
 // @bsimethod
 //---------------------------------------------------------------------------------------
 void JsInterop::ConcurrentQueryExecute(ECDbCR ecdb, Napi::Object requestObj, Napi::Function callback) {
-    ConcurrentQueryMgr::WithInstance(ecdb, [&](ConcurrentQueryMgr& mgr) -> void {
-        BeJsValue beJsReq(requestObj);
-        auto request = QueryRequest::Deserialize(beJsReq);
-        if (request->UsePrimaryConnection()) {
-            mgr.Enqueue(std::move(request), [&](QueryResponse::Ptr value) {
-                auto jsResp = Napi::Object::New(Env());
-                auto beJsResp = BeJsValue(jsResp);
-                if (value->GetKind() == QueryResponse::Kind::NoResult) {
-                    value->ToJs(beJsResp, false);
-                }
-                else if (value->GetKind() == QueryResponse::Kind::ECSql) {
-                    auto& resp = value->GetAsConst<ECSqlResponse>();
-                    resp.ToJs(beJsResp, false);
-                    if (!resp.asJsonString().empty()) {
-                        auto parse = Env().Global().Get("JSON").As<Napi::Object>().Get("parse").As<Napi::Function>();
-                        auto rows = Napi::String::New(Env(), resp.asJsonString());
-                        jsResp[ECSqlResponse::JData] = parse({ rows });
-                    }
-                }
-                else if (value->GetKind() == QueryResponse::Kind::BlobIO) {
-                    auto& resp = value->GetAsConst<BlobIOResponse>();
-                    if (resp.GetLength() > 0) {
-                        resp.ToJs(beJsResp, false);
-                        auto blob = Napi::Uint8Array::New(Env(), resp.GetLength());
-                        memcpy(blob.Data(), resp.GetData(), resp.GetLength());
-                        jsResp[BlobIOResponse::JData] = blob;
-                    }
-                }
-                else {
-                    THROW_JS_IMODEL_NATIVE_EXCEPTION(Env(), "concurrent query: unsupported response type", IModelJsNativeErrorKey::BadArg);
-                }
-                callback.Call({ jsResp });
-            });
-            return;
-        }
-        auto threadSafeFunc = Napi::ThreadSafeFunction::New(requestObj.Env(), callback, "concurrent_query", 0, 1);
-        mgr.Enqueue(std::move(request), [=](QueryResponse::Ptr value) {
-            if(threadSafeFunc.BlockingCall (
-                [=]( Napi::Env env, Napi::Function jsCallback) {
-                    auto jsResp = Napi::Object::New(env);
+    // The whole native operation is guarded: WithInstance throws for a closed db and Deserialize throws
+    // for malformed/unsupported requests. Letting either escape into the N-API layer would call
+    // std::terminate and take down the process.
+    try {
+        ConcurrentQueryMgr::WithInstance(ecdb, [&](ConcurrentQueryMgr& mgr) -> void {
+            BeJsValue beJsReq(requestObj);
+            QueryRequest::Ptr request = QueryRequest::Deserialize(beJsReq);
+            if (request->UsePrimaryConnection()) {
+                mgr.Enqueue(std::move(request), [&](QueryResponse::Ptr value) {
+                    auto jsResp = Napi::Object::New(Env());
                     auto beJsResp = BeJsValue(jsResp);
-                    if (value->GetKind() ==  QueryResponse::Kind::NoResult) {
+                    if (value->GetKind() == QueryResponse::Kind::NoResult) {
                         value->ToJs(beJsResp, false);
-                    } else if (value->GetKind() ==  QueryResponse::Kind::ECSql) {
+                    }
+                    else if (value->GetKind() == QueryResponse::Kind::ECSql) {
                         auto& resp = value->GetAsConst<ECSqlResponse>();
-                        resp.ToJs(beJsResp, false);
-                        if (!resp.asJsonString().empty()) {
-                            auto parse = env.Global().Get("JSON").As<Napi::Object>().Get("parse").As<Napi::Function>();
-                            auto rows = Napi::String::New(env, resp.asJsonString());
-                            jsResp[ECSqlResponse::JData] = parse({rows});
+                        // Build metadata and stats without creating each field through N-API.
+                        rapidjson::Document response;
+                        BeJsValue responseValue(response);
+                        resp.ToJs(responseValue, false);
+                        rapidjson::StringBuffer json;
+                        rapidjson::Writer<rapidjson::StringBuffer> writer(json);
+                        writer.StartObject();
+                        // Avoid GetObject(): windows.h defines it as a macro.
+                        for (auto it = response.MemberBegin(); it != response.MemberEnd(); ++it) {
+                            if (!writer.Key(it->name.GetString(), it->name.GetStringLength()) || !it->value.Accept(writer))
+                                THROW_JS_BE_SQLITE_EXCEPTION(Env(), "Failed to serialize query response", BE_SQLITE_ERROR);
                         }
-                    } else if (value->GetKind() ==  QueryResponse::Kind::BlobIO) {
+                        if (!resp.asJsonString().empty()) {
+                            writer.Key(ECSqlResponse::JData);
+                            // Rows are already serialized by the query renderer; do not parse or marshal them again.
+                            if (!writer.RawValue(resp.asJsonString().c_str(), resp.asJsonString().size(), rapidjson::kArrayType))
+                                THROW_JS_BE_SQLITE_EXCEPTION(Env(), "Failed to serialize query rows", BE_SQLITE_ERROR);
+                        }
+                        writer.EndObject();
+                        jsResp = NapiValueRef::Parse(Env(), json.GetString()).As<Napi::Object>();
+                    }
+                    else if (value->GetKind() == QueryResponse::Kind::BlobIO) {
                         auto& resp = value->GetAsConst<BlobIOResponse>();
                         if (resp.GetLength() > 0) {
                             resp.ToJs(beJsResp, false);
-                            auto blob = Napi::Uint8Array::New(env, resp.GetLength());
+                            auto blob = Napi::Uint8Array::New(Env(), resp.GetLength());
                             memcpy(blob.Data(), resp.GetData(), resp.GetLength());
                             jsResp[BlobIOResponse::JData] = blob;
                         }
-                    } else {
-                        THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "concurrent query: unsupported response type", IModelJsNativeErrorKey::BadArg);
                     }
-                    jsCallback.Call({jsResp});
-            }) != napi_ok) {
-                // do nothing
+                    else {
+                        THROW_JS_IMODEL_NATIVE_EXCEPTION(Env(), "concurrent query: unsupported response type", IModelJsNativeErrorKey::BadArg);
+                    }
+                    callback.Call({ jsResp });
+                });
+                return;
             }
-            const_cast<Napi::ThreadSafeFunction&>(threadSafeFunc).Release();
+            auto threadSafeFunc = Napi::ThreadSafeFunction::New(requestObj.Env(), callback, "concurrent_query", 0, 1);
+            mgr.Enqueue(std::move(request), [=](QueryResponse::Ptr value) {
+                if(threadSafeFunc.BlockingCall (
+                    [=]( Napi::Env env, Napi::Function jsCallback) {
+                        // this runs from the thread safe function, which N-API invokes through a plain
+                        // C callback, so nothing may be thrown out of here. Turn any failure into a
+                        // pending JS exception instead of letting it reach std::terminate.
+                        try {
+                            auto jsResp = Napi::Object::New(env);
+                            auto beJsResp = BeJsValue(jsResp);
+                            if (value->GetKind() ==  QueryResponse::Kind::NoResult) {
+                                value->ToJs(beJsResp, false);
+                            } else if (value->GetKind() ==  QueryResponse::Kind::ECSql) {
+                                auto& resp = value->GetAsConst<ECSqlResponse>();
+                                resp.ToJs(beJsResp, false);
+                                if (!resp.asJsonString().empty()) {
+                                    auto parse = env.Global().Get("JSON").As<Napi::Object>().Get("parse").As<Napi::Function>();
+                                    auto rows = Napi::String::New(env, resp.asJsonString());
+                                    jsResp[ECSqlResponse::JData] = parse({rows});
+                                }
+                            } else if (value->GetKind() ==  QueryResponse::Kind::BlobIO) {
+                                auto& resp = value->GetAsConst<BlobIOResponse>();
+                                if (resp.GetLength() > 0) {
+                                    resp.ToJs(beJsResp, false);
+                                    auto blob = Napi::Uint8Array::New(env, resp.GetLength());
+                                    memcpy(blob.Data(), resp.GetData(), resp.GetLength());
+                                    jsResp[BlobIOResponse::JData] = blob;
+                                }
+                            } else {
+                                THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "concurrent query: unsupported response type", IModelJsNativeErrorKey::BadArg);
+                            }
+                            jsCallback.Call({jsResp});
+                        } catch (Napi::Error const& err) {
+                            err.ThrowAsJavaScriptException();
+                        } catch (std::exception const& ex) {
+                            Napi::Error::New(env, ex.what()).ThrowAsJavaScriptException();
+                        }
+                }) != napi_ok) {
+                    // do nothing
+                }
+                const_cast<Napi::ThreadSafeFunction&>(threadSafeFunc).Release();
+            });
         });
-    });
+    } catch (Napi::Error const&) {
+        throw; // a JS exception must keep propagating so N-API can turn it back into a JS throw
+    } catch (std::exception const& ex) {
+        THROW_JS_IMODEL_NATIVE_EXCEPTION(Env(), ex.what(), IModelJsNativeErrorKey::BadArg);
+    }
 }
 
 //---------------------------------------------------------------------------------------
@@ -613,91 +652,44 @@ ChangesetStatus JsInterop::DumpChangeSet(DgnDbR dgndb, BeJsConst changeSet)
 //---------------------------------------------------------------------------------------
 DgnDbStatus JsInterop::ExtractChangedInstanceIdsFromChangeSets(BeJsValue jsonOut, DgnDbR db, const bvector<BeFileName>& changeSetFiles)
     {
-    Json::Value elementJson(Json::ValueType::objectValue);
-    Json::Value elementInsertIds(Json::ValueType::arrayValue);
-    Json::Value elementUpdateIds(Json::ValueType::arrayValue);
-    Json::Value elementDeleteIds(Json::ValueType::arrayValue);
-
-    Json::Value aspectJson(Json::ValueType::objectValue);
-    Json::Value aspectInsertIds(Json::ValueType::arrayValue);
-    Json::Value aspectUpdateIds(Json::ValueType::arrayValue);
-    Json::Value aspectDeleteIds(Json::ValueType::arrayValue);
-
-    Json::Value modelJson(Json::ValueType::objectValue);
-    Json::Value modelInsertIds(Json::ValueType::arrayValue);
-    Json::Value modelUpdateIds(Json::ValueType::arrayValue);
-    Json::Value modelDeleteIds(Json::ValueType::arrayValue);
-
-    Json::Value relationshipJson(Json::ValueType::objectValue);
-    Json::Value relationshipInsertIds(Json::ValueType::arrayValue);
-    Json::Value relationshipUpdateIds(Json::ValueType::arrayValue);
-    Json::Value relationshipDeleteIds(Json::ValueType::arrayValue);
-
-    Json::Value codeSpecJson(Json::ValueType::objectValue);
-    Json::Value codeSpecInsertIds(Json::ValueType::arrayValue);
-    Json::Value codeSpecUpdateIds(Json::ValueType::arrayValue);
-    Json::Value codeSpecDeleteIds(Json::ValueType::arrayValue);
-
-    Json::Value fontJson(Json::ValueType::objectValue);
-    Json::Value fontInsertIds(Json::ValueType::arrayValue);
-    Json::Value fontUpdateIds(Json::ValueType::arrayValue);
-    Json::Value fontDeleteIds(Json::ValueType::arrayValue);
-
     EntityIdsChangeGroup entityIdsChangeGroup;
     entityIdsChangeGroup.ExtractChangedInstanceIdsFromChangeSets(db, changeSetFiles);
-    for (auto& opsAndJsonIds : {
-        std::tie(entityIdsChangeGroup.elementOps, elementInsertIds, elementUpdateIds, elementDeleteIds),
-        std::tie(entityIdsChangeGroup.aspectOps, aspectInsertIds, aspectUpdateIds, aspectDeleteIds),
-        std::tie(entityIdsChangeGroup.modelOps, modelInsertIds, modelUpdateIds, modelDeleteIds),
-        std::tie(entityIdsChangeGroup.relationshipOps, relationshipInsertIds, relationshipUpdateIds, relationshipDeleteIds),
-        std::tie(entityIdsChangeGroup.codeSpecOps, codeSpecInsertIds, codeSpecUpdateIds, codeSpecDeleteIds),
-        std::tie(entityIdsChangeGroup.fontOps, fontInsertIds, fontUpdateIds, fontDeleteIds)
-    })
+
+    auto addCategory = [&](Utf8CP categoryName, auto const& opMap)
         {
-        // can replace this all in C++17 with a destructuring assignment in the loop decl
-        const auto& opMap = std::get<0>(opsAndJsonIds);
-        auto& insertIds = std::get<1>(opsAndJsonIds);
-        auto& updateIds = std::get<2>(opsAndJsonIds);
-        auto& deleteIds = std::get<3>(opsAndJsonIds);
-        for (const auto& entry : opMap)
+        bvector<Utf8String> insertIds, updateIds, deleteIds;
+        for (auto const& entry : opMap)
             {
-            const auto& id = entry.first;
-            const auto& op = entry.second;
-            if (op == DbOpcode::Insert) insertIds.append(id.ToHexStr());
-            if (op == DbOpcode::Update) updateIds.append(id.ToHexStr());
-            if (op == DbOpcode::Delete) deleteIds.append(id.ToHexStr());
+            if (entry.second == DbOpcode::Insert) insertIds.push_back(entry.first.ToHexStr());
+            if (entry.second == DbOpcode::Update) updateIds.push_back(entry.first.ToHexStr());
+            if (entry.second == DbOpcode::Delete) deleteIds.push_back(entry.first.ToHexStr());
             }
-        }
 
-    if (elementInsertIds.size() > 0) elementJson["insert"] = elementInsertIds;
-    if (elementUpdateIds.size() > 0) elementJson["update"] = elementUpdateIds;
-    if (elementDeleteIds.size() > 0) elementJson["delete"] = elementDeleteIds;
-    if (!elementJson.empty()) jsonOut["element"].From(elementJson);
+        if (insertIds.empty() && updateIds.empty() && deleteIds.empty())
+            return;
 
-    if (aspectInsertIds.size() > 0) aspectJson["insert"] = aspectInsertIds;
-    if (aspectUpdateIds.size() > 0) aspectJson["update"] = aspectUpdateIds;
-    if (aspectDeleteIds.size() > 0) aspectJson["delete"] = aspectDeleteIds;
-    if (!aspectJson.empty()) jsonOut["aspect"].From(aspectJson);
+        auto category = jsonOut[categoryName];
+        auto addIds = [&](Utf8CP key, bvector<Utf8String> const& ids)
+            {
+            if (ids.empty())
+                return;
+            auto arr = category[key];
+            arr.toArray();
+            for (auto const& id : ids)
+                arr.appendValue() = id;
+            };
 
-    if (modelInsertIds.size() > 0) modelJson["insert"] = modelInsertIds;
-    if (modelUpdateIds.size() > 0) modelJson["update"] = modelUpdateIds;
-    if (modelDeleteIds.size() > 0) modelJson["delete"] = modelDeleteIds;
-    if (!modelJson.empty()) jsonOut["model"].From(modelJson);
+        addIds("insert", insertIds);
+        addIds("update", updateIds);
+        addIds("delete", deleteIds);
+        };
 
-    if (relationshipInsertIds.size() > 0) relationshipJson["insert"] = relationshipInsertIds;
-    if (relationshipUpdateIds.size() > 0) relationshipJson["update"] = relationshipUpdateIds;
-    if (relationshipDeleteIds.size() > 0) relationshipJson["delete"] = relationshipDeleteIds;
-    if (!relationshipJson.empty()) jsonOut["relationship"].From(relationshipJson);
-
-    if (codeSpecInsertIds.size() > 0) codeSpecJson["insert"] = codeSpecInsertIds;
-    if (codeSpecUpdateIds.size() > 0) codeSpecJson["update"] = codeSpecUpdateIds;
-    if (codeSpecDeleteIds.size() > 0) codeSpecJson["delete"] = codeSpecDeleteIds;
-    if (!codeSpecJson.empty()) jsonOut["codeSpec"].From(codeSpecJson);
-
-    if (fontInsertIds.size() > 0) fontJson["insert"] = fontInsertIds;
-    if (fontUpdateIds.size() > 0) fontJson["update"] = fontUpdateIds;
-    if (fontDeleteIds.size() > 0) fontJson["delete"] = fontDeleteIds;
-    if (!fontJson.empty()) jsonOut["font"].From(fontJson);
+    addCategory("element", entityIdsChangeGroup.elementOps);
+    addCategory("aspect", entityIdsChangeGroup.aspectOps);
+    addCategory("model", entityIdsChangeGroup.modelOps);
+    addCategory("relationship", entityIdsChangeGroup.relationshipOps);
+    addCategory("codeSpec", entityIdsChangeGroup.codeSpecOps);
+    addCategory("font", entityIdsChangeGroup.fontOps);
 
     return DgnDbStatus::Success;
     }
@@ -904,11 +896,14 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
     JsInterop::AddFallbackSchemaLocaters(finalLocater, schemaContext);
     
     // We want to manually add all schema folders here so when we later try and lookup schemas, the right paths are always consistently available
-    for(auto it = schemaSources.rbegin(); it != schemaSources.rend(); ++it)
+    if (sourceType == SchemaSourceType::File)
         {
-        BeFileName schemaFile(it->c_str(), BentleyCharEncoding::Utf8);
-        BeFileName schemaDirectory (BeFileName::DevAndDir, schemaFile.GetWCharCP());
-        schemaContext->AddSchemaPath(schemaDirectory, true); // We always add the last path we used to the top in the priority list, if it does not exist yet
+        for(auto it = schemaSources.rbegin(); it != schemaSources.rend(); ++it)
+            {
+            BeFileName schemaFile(it->c_str(), BentleyCharEncoding::Utf8);
+            BeFileName schemaDirectory (BeFileName::DevAndDir, schemaFile.GetWCharCP());
+            schemaContext->AddSchemaPath(schemaDirectory, true); // We always add the last path we used to the top in the priority list, if it does not exist yet
+            }
         }
 
     bvector<ECSchemaCP> schemas;
@@ -1064,6 +1059,125 @@ Napi::Value JsInterop::DeleteInstance(ECDbR db, NapiInfoCR info) {
         THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), repo.GetLastError().c_str(), rc);
     }
     return Napi::Value::From(info.Env(), db.GetModifiedRowCount() > 0);;
+}
+
+namespace {
+bool parseCSVImportMapping(Napi::Array const& mapping, bvector<CsvImportMapping>& nativeMapping, Utf8StringR error) {
+    if (0 == mapping.Length()) {
+        error = "mapping must not be empty";
+        return false;
+    }
+
+    bset<uint32_t> seenColumnIndexes;
+    nativeMapping.reserve(mapping.Length());
+    for (uint32_t mappingIndex = 0; mappingIndex < mapping.Length(); ++mappingIndex) {
+        const auto value = mapping.Get(mappingIndex);
+        if (!value.IsObject()) {
+            error = "mapping must contain only objects";
+            return false;
+        }
+
+        const auto entry = value.As<Napi::Object>();
+        const auto columnIndexValue = entry.Get("columnIndex");
+        const auto propertyName = entry.Get("propertyName");
+        if (!columnIndexValue.IsNumber() || !propertyName.IsString()) {
+            error = "each mapping entry must contain a numeric columnIndex and string propertyName";
+            return false;
+        }
+
+        const double columnIndexNumber = columnIndexValue.As<Napi::Number>().DoubleValue();
+        if (columnIndexNumber < 0 || columnIndexNumber >= std::numeric_limits<uint32_t>::max() || std::floor(columnIndexNumber) != columnIndexNumber) {
+            error = "mapping columnIndex values must be non-negative integers";
+            return false;
+        }
+
+        const uint32_t columnIndex = static_cast<uint32_t>(columnIndexNumber);
+        if (!seenColumnIndexes.insert(columnIndex).second) {
+            error = "mapping must not contain duplicate columnIndex values";
+            return false;
+        }
+
+        nativeMapping.push_back({columnIndex, propertyName.As<Napi::String>().Utf8Value()});
+    }
+    return true;
+}
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Napi::Value JsInterop::ImportCSVData(ECDbR db, NapiInfoCR info) {
+    REQUIRE_ARGUMENT_STRING(0, className);
+    REQUIRE_ARGUMENT_ANY_OBJ(1, serializedRows);
+    REQUIRE_ARGUMENT_ARRAY(2, mapping);
+    OPTIONAL_ARGUMENT_ANY_OBJ(3, options, Napi::Object::New(info.Env()));
+
+    if (!serializedRows.IsTypedArray() || serializedRows.As<Napi::TypedArray>().TypedArrayType() != napi_uint8_array)
+        THROW_JS_TYPE_EXCEPTION("serializedRows must be a Uint8Array")
+    const auto bytes = serializedRows.As<Napi::Uint8Array>();
+
+    CsvImportOptions nativeOptions;
+    const auto nullValueOption = options.Get("nullValue");
+    if (!nullValueOption.IsUndefined()) {
+        if (!nullValueOption.IsString())
+            THROW_JS_TYPE_EXCEPTION("options.nullValue must be a string")
+        nativeOptions.m_nullValue = nullValueOption.As<Napi::String>().Utf8Value();
+        if (nativeOptions.m_nullValue->find('\0') != Utf8String::npos)
+            THROW_JS_TYPE_EXCEPTION("options.nullValue must not contain NUL")
+    }
+
+    bvector<CsvImportMapping> nativeMapping;
+    Utf8String mappingError;
+    if (!parseCSVImportMapping(mapping, nativeMapping, mappingError))
+        THROW_JS_TYPE_EXCEPTION(mappingError.c_str())
+
+    try {
+        const auto rowCount = CsvImporter::ImportData(db, className, bytes.Data(), bytes.ByteLength(), nativeMapping, nativeOptions);
+        return Napi::Number::New(info.Env(), static_cast<double>(rowCount));
+    } catch (CsvImportError const& error) {
+        if (BE_SQLITE_OK != error.GetSQLiteError())
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), error.what(), error.GetSQLiteError())
+        THROW_JS_TYPE_EXCEPTION(error.what())
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Napi::Value JsInterop::ImportCSVFile(ECDbR db, NapiInfoCR info) {
+    REQUIRE_ARGUMENT_STRING(0, className);
+    REQUIRE_ARGUMENT_STRING(1, csvFilePath);
+    REQUIRE_ARGUMENT_ARRAY(2, mapping);
+    OPTIONAL_ARGUMENT_ANY_OBJ(3, options, Napi::Object::New(info.Env()));
+
+    const auto hasHeaderValue = options.Get("hasHeader");
+    if (!hasHeaderValue.IsUndefined() && !hasHeaderValue.IsBoolean())
+        THROW_JS_TYPE_EXCEPTION("options.hasHeader must be a boolean")
+    CsvImportOptions nativeOptions;
+    nativeOptions.m_hasHeader = !hasHeaderValue.IsUndefined() && hasHeaderValue.As<Napi::Boolean>().Value();
+
+    const auto nullValueOption = options.Get("nullValue");
+    if (!nullValueOption.IsUndefined()) {
+        if (!nullValueOption.IsString())
+            THROW_JS_TYPE_EXCEPTION("options.nullValue must be a string")
+        nativeOptions.m_nullValue = nullValueOption.As<Napi::String>().Utf8Value();
+        if (nativeOptions.m_nullValue->find('\0') != Utf8String::npos)
+            THROW_JS_TYPE_EXCEPTION("options.nullValue must not contain NUL")
+    }
+
+    bvector<CsvImportMapping> nativeMapping;
+    Utf8String mappingError;
+    if (!parseCSVImportMapping(mapping, nativeMapping, mappingError))
+        THROW_JS_TYPE_EXCEPTION(mappingError.c_str())
+
+    try {
+        const auto rowCount = CsvImporter::ImportFile(db, className, csvFilePath, nativeMapping, nativeOptions);
+        return Napi::Number::New(info.Env(), static_cast<double>(rowCount));
+    } catch (CsvImportError const& error) {
+        if (BE_SQLITE_OK != error.GetSQLiteError())
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), error.what(), error.GetSQLiteError())
+        THROW_JS_TYPE_EXCEPTION(error.what())
+    }
 }
 
 //---------------------------------------------------------------------------------------
@@ -1372,7 +1486,7 @@ void StrSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Napi::Value NativeChangeset::SerializeValue(Napi::Env env, DbValue&value) {
+Napi::Value SqliteChangesetReader::SerializeValue(Napi::Env env, DbValue&value) {
     if (!value.IsValid()) {
         return env.Undefined();
     }
@@ -1401,7 +1515,144 @@ Napi::Value NativeChangeset::SerializeValue(Napi::Env env, DbValue&value) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void NativeChangeset::OpenFile(Napi::Env env, Utf8StringCR changesetFile, bool invert) {
+static Napi::Object CreateChangesetConflictArgs(Napi::Env env, BeSQLite::ChangeStream::ConflictCause cause, BeSQLite::Changes::Change const& change) {
+    auto args = Napi::Object::New(env);
+    args.Set("cause", Napi::Number::New(env, (int)cause));
+    if (cause == BeSQLite::ChangeStream::ConflictCause::ForeignKey) {
+        args.Set("foreignKeyConflicts", Napi::Number::New(env, change.GetForeignKeyConflicts()));
+        return args;
+    }
+
+    args.Set("opcode", Napi::Number::New(env, (int)change.GetOpcode()));
+    args.Set("indirect", Napi::Boolean::New(env, change.IsIndirect()));
+    args.Set("tableName", Napi::String::New(env, change.GetTableName()));
+    args.Set("columnCount", Napi::Number::New(env, change.GetColumnCount()));
+    auto primaryKeyColumns = Napi::Array::New(env);
+    for (int col = 0; col < change.GetColumnCount(); ++col) {
+        if (change.IsPrimaryKeyColumn(col))
+            primaryKeyColumns.Set(primaryKeyColumns.Length(), Napi::Number::New(env, col));
+    }
+    args.Set("primaryKeyColumns", primaryKeyColumns);
+
+    return args;
+}
+
+// With no local changes, prefer incoming rows, skip missing rows and constraint conflicts,
+// and abort on foreign-key violations.
+static BeSQLite::ChangeStream::ConflictResolution ResolveChangesetConflictWithoutLocalChanges(BeSQLite::ChangeStream::ConflictCause cause, BeSQLite::Changes::Change const& change) {
+    using ConflictCause = BeSQLite::ChangeStream::ConflictCause;
+    using ConflictResolution = BeSQLite::ChangeStream::ConflictResolution;
+    NativeLogging::CategoryLogger logger("BeSQLite");
+    if (change.GetTableName().EqualsIAscii("sqlite_stat1") && (cause == ConflictCause::Data || cause == ConflictCause::Conflict)) {
+        logger.warning("sqlite_stat1 conflict - resolved by replacing the existing row with the incoming row");
+        return ConflictResolution::Replace;
+    }
+
+    if (cause == ConflictCause::Data && !change.IsIndirect())
+        logger.warningv("UPDATE/DELETE before values do not match in table '%s' or a CASCADE action was triggered", change.GetTableName().c_str());
+
+    if (cause == ConflictCause::Conflict)
+        logger.warningv("PRIMARY KEY INSERT CONFLICT in table '%s' - resolved by replacing the existing row with the incoming row", change.GetTableName().c_str());
+
+    if (cause == ConflictCause::ForeignKey) {
+        logger.errorv("Detected %d foreign key conflicts in changeset. Aborting apply.", change.GetForeignKeyConflicts());
+        return ConflictResolution::Abort;
+    }
+
+    if (cause == ConflictCause::NotFound)
+        return ConflictResolution::Skip;
+
+    if (cause == ConflictCause::Constraint) {
+        logger.warningv("Constraint conflict in table '%s' handled by rejecting the incoming change", change.GetTableName().c_str());
+        return ConflictResolution::Skip;
+    }
+
+    return ConflictResolution::Replace;
+}
+
+//! Apply row-level changes from a raw SQLite changeset, without DDL or header validation.
+//! Apply flags and conflict handling are independent; conflicts abort by default.
+void JsInterop::ApplyChangeset(BeSQLite::DbR db, NapiInfoCR info) {
+    REQUIRE_ARGUMENT_STRING(0, pathname);
+    enum ApplyFlags { Invert = 0x01, IgnoreNoop = 0x02, FkNoAction = 0x04, NoUpdateLoop = 0x08 };
+    OPTIONAL_ARGUMENT_INTEGER(1, flags, 0);
+    if (!ARGUMENT_IS_EMPTY(1) &&
+        (info[1].As<Napi::Number>().DoubleValue() != flags || flags < 0 || (flags & ~(Invert | IgnoreNoop | FkNoAction | NoUpdateLoop)) != 0))
+        THROW_JS_TYPE_EXCEPTION("Invalid applyChangeset flags");
+
+    auto conflictHandler = info.Length() > 2 ? info[2] : info.Env().Undefined();
+    bool noLocalChanges = false;
+    if (!conflictHandler.IsUndefined() && !conflictHandler.IsFunction()) {
+        if (!conflictHandler.IsNumber() ||
+            (conflictHandler.As<Napi::Number>().DoubleValue() != 0 && conflictHandler.As<Napi::Number>().DoubleValue() != 1))
+            THROW_JS_TYPE_EXCEPTION("Expected AbortOnAnyConflict, NoLocalChanges, or a conflict handler function");
+        noLocalChanges = conflictHandler.As<Napi::Number>().Int32Value() == 1;
+    }
+
+    BeFileName filePath(pathname.c_str(), BentleyCharEncoding::Utf8);
+    BeSQLite::ChangeSet changeSet;
+    auto stat = changeSet.Read(pathname);
+    if (stat != BE_SQLITE_OK)
+        JsInterop::throwSqlResult("error reading changeset file", filePath.GetNameUtf8().c_str(), stat);
+
+    // On failure, we simply throw - it is up to the caller to decide whether to abandon or save
+    // any changes applied so far.
+    auto applyArgs = BeSQLite::ApplyChangesArgs::Default()
+        .SetInvert((flags & Invert) != 0)
+        .SetIgnoreNoop((flags & IgnoreNoop) != 0)
+        .SetFkNoAction((flags & FkNoAction) != 0)
+        .SetNoUpdateLoop((flags & NoUpdateLoop) != 0)
+        .SetAbortOnAnyConflict(!noLocalChanges && !conflictHandler.IsFunction());
+    std::exception_ptr callbackError;
+    if (noLocalChanges) {
+        applyArgs.SetConflictHandler(ResolveChangesetConflictWithoutLocalChanges);
+    } else if (conflictHandler.IsFunction()) {
+        applyArgs.SetConflictHandler([&](BeSQLite::ChangeStream::ConflictCause cause, BeSQLite::Changes::Change change) {
+            using ConflictResolution = BeSQLite::ChangeStream::ConflictResolution;
+            try {
+                Napi::HandleScope scope(info.Env());
+                auto args = CreateChangesetConflictArgs(info.Env(), cause, change);
+                auto result = conflictHandler.As<Napi::Function>().Call({args});
+                if (info.Env().IsExceptionPending())
+                    return ConflictResolution::Abort;
+                if (!result.IsNumber())
+                    throw Napi::TypeError::New(info.Env(), "Conflict handler must return Skip, Replace, or Abort");
+                auto resolution = result.As<Napi::Number>().DoubleValue();
+                if (resolution != (int)ConflictResolution::Skip && resolution != (int)ConflictResolution::Replace && resolution != (int)ConflictResolution::Abort)
+                    throw Napi::TypeError::New(info.Env(), "Conflict handler returned an invalid resolution");
+                if (resolution == (int)ConflictResolution::Replace &&
+                    cause != BeSQLite::ChangeStream::ConflictCause::Data && cause != BeSQLite::ChangeStream::ConflictCause::Conflict)
+                    throw Napi::TypeError::New(info.Env(), "Replace is valid only for data and primary-key insert conflicts");
+                return (ConflictResolution)(int)resolution;
+            } catch (...) {
+                // Finish the SQLite apply before propagating any callback exception.
+                callbackError = std::current_exception();
+                return ConflictResolution::Abort;
+            }
+        });
+    }
+    stat = changeSet.ApplyChanges(db, applyArgs);
+    if (callbackError) {
+        try {
+            std::rethrow_exception(callbackError);
+        } catch (Napi::Error const&) {
+            throw;
+        } catch (std::exception const& error) {
+            throw Napi::Error::New(info.Env(), error.what());
+        } catch (...) {
+            throw Napi::Error::New(info.Env(), "Unexpected native exception in changeset conflict handler");
+        }
+    }
+    if (info.Env().IsExceptionPending())
+        return;
+    if (stat != BE_SQLITE_OK)
+        BeNapi::ThrowJsException(info.Env(), "error applying changeset", (int)stat, IModelJsNativeErrorKeyHelper::GetITwinError(IModelJsNativeErrorKey::ChangesetError));
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void SqliteChangesetReader::OpenFile(Napi::Env env, Utf8StringCR changesetFile, bool invert) {
     BeFileName input;
     input.AppendUtf8(changesetFile.c_str());
 
@@ -1421,7 +1672,7 @@ void NativeChangeset::OpenFile(Napi::Env env, Utf8StringCR changesetFile, bool i
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void NativeChangeset::OpenChangeStream(Napi::Env env, std::unique_ptr<ChangeStream> changeStream, bool invert) {
+void SqliteChangesetReader::OpenChangeStream(Napi::Env env, std::unique_ptr<ChangeStream> changeStream, bool invert) {
     if (m_changeStream != nullptr) {
         THROW_JS_BE_SQLITE_EXCEPTION(env, "openChangeStream(): reader is already in open state.", BE_SQLITE_ERROR);
     }
@@ -1437,9 +1688,10 @@ void NativeChangeset::OpenChangeStream(Napi::Env env, std::unique_ptr<ChangeStre
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void NativeChangeset::OpenGroup(Napi::Env env, T_Utf8StringVector const& changesetFiles, Db const& db, bool invert) {
+void SqliteChangesetReader::OpenGroup(Napi::Env env, T_Utf8StringVector const& changesetFiles, Db const& db, bool invert) {
     m_changeGroup = std::make_unique<ChangeGroup>(db);
     DdlChanges ddlGroup;
+    bset<Utf8String> checkedTables;
     for(auto& changesetFile : changesetFiles) {
         BeFileName inputFile(changesetFile);
         if (!inputFile.DoesPathExist()) {
@@ -1447,6 +1699,25 @@ void NativeChangeset::OpenGroup(Napi::Env env, T_Utf8StringVector const& changes
         }
 
         ChangesetFileReader reader(inputFile);
+        Changes changes(reader, false);
+        for (auto change = changes.begin(); change.IsValid(); ++change) {
+            Utf8CP tableName;
+            int columnCount;
+            DbOpcode opcode;
+            int indirect;
+            if (BE_SQLITE_OK != change.GetOperation(&tableName, &columnCount, &opcode, &indirect))
+                THROW_JS_BE_SQLITE_EXCEPTION(env, "openGroup(): unable to read changeset", BE_SQLITE_ERROR);
+
+            if (checkedTables.insert(tableName).second) {
+                bvector<Utf8String> columns;
+                if (!db.GetColumns(columns, tableName) || columns.empty())
+                    THROW_JS_BE_SQLITE_EXCEPTION(env, SqlPrintfString("openGroup(): changeset table %s does not exist in the provided db", tableName), BE_SQLITE_SCHEMA);
+
+                if (columns.size() < static_cast<size_t>(columnCount))
+                    THROW_JS_BE_SQLITE_EXCEPTION(env, SqlPrintfString("openGroup(): changeset table %s has fewer columns than the changeset", tableName), BE_SQLITE_SCHEMA);
+            }
+        }
+
         bool containsSchemaChanges;
         DdlChanges ddlChanges;
         if (BE_SQLITE_OK != reader.MakeReader()->GetSchemaChanges(containsSchemaChanges, ddlChanges)){
@@ -1470,7 +1741,7 @@ void NativeChangeset::OpenGroup(Napi::Env env, T_Utf8StringVector const& changes
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void NativeChangeset::WriteToFile(Napi::Env env, Utf8String const& fileName, bool containChanges, bool override) {
+void SqliteChangesetReader::WriteToFile(Napi::Env env, Utf8String const& fileName, bool containChanges, bool override) {
     const auto kStmtDelimiter = ";";
     BeFileName outputFile(fileName);
     DdlChanges ddlChanges;
@@ -1497,13 +1768,20 @@ void NativeChangeset::WriteToFile(Napi::Env env, Utf8String const& fileName, boo
     }
 
     if(m_changeGroup){
-        writer.FromChangeGroup(*m_changeGroup);
+        if (BE_SQLITE_OK != writer.FromChangeGroup(*m_changeGroup)) {
+            THROW_JS_BE_SQLITE_EXCEPTION(env, "writeToFile(): unable to write changeset", BE_SQLITE_ERROR);
+        }
     } else if (m_changeStream) {
         ChangeGroup changeGroup;
         m_changeStream->AddToChangeGroup(changeGroup);
-        writer.FromChangeGroup(changeGroup);
+        if (BE_SQLITE_OK != writer.FromChangeGroup(changeGroup)) {
+            THROW_JS_BE_SQLITE_EXCEPTION(env, "writeToFile(): unable to write changeset", BE_SQLITE_ERROR);
+        }
     } else {
         THROW_JS_BE_SQLITE_EXCEPTION(env, "writeToFile(): no changeset to write", BE_SQLITE_ERROR);
+    }
+    if (BE_SQLITE_OK != writer.Finish()) {
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "writeToFile(): unable to finish changeset writer", BE_SQLITE_ERROR);
     }
     if (!outputFile.DoesPathExist()) {
         THROW_JS_BE_SQLITE_EXCEPTION(env, "writeToFile(): unable to write changeset file", BE_SQLITE_ERROR);
@@ -1512,7 +1790,7 @@ void NativeChangeset::WriteToFile(Napi::Env env, Utf8String const& fileName, boo
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void NativeChangeset::Close(Napi::Env env) {
+void SqliteChangesetReader::Close(Napi::Env env) {
     m_currentChange = Changes::Change(nullptr, false);
     m_changes = nullptr;
     m_changeStream = nullptr;
@@ -1524,7 +1802,7 @@ void NativeChangeset::Close(Napi::Env env) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void NativeChangeset::Reset(Napi::Env env) {
+void SqliteChangesetReader::Reset(Napi::Env env) {
     m_currentChange = Changes::Change(nullptr, false);
     m_changes = nullptr;
 }
@@ -1532,7 +1810,7 @@ void NativeChangeset::Reset(Napi::Env env) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Napi::Value NativeChangeset::Step(Napi::Env env) {
+Napi::Value SqliteChangesetReader::Step(Napi::Env env) {
     if (!IsOpen()) {
         THROW_JS_BE_SQLITE_EXCEPTION(env, "step(): no changeset opened.", BE_SQLITE_ERROR);
     }
@@ -1570,7 +1848,7 @@ Napi::Value NativeChangeset::Step(Napi::Env env) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Napi::Value NativeChangeset::GetTableName(Napi::Env env) {
+Napi::Value SqliteChangesetReader::GetTableName(Napi::Env env) {
     if (!HasRow()) {
         THROW_JS_BE_SQLITE_EXCEPTION(env, "getTableName(): there is no current row.", BE_SQLITE_ERROR);
     }
@@ -1581,7 +1859,7 @@ Napi::Value NativeChangeset::GetTableName(Napi::Env env) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Napi::Value NativeChangeset::GetOpCode(Napi::Env env) {
+Napi::Value SqliteChangesetReader::GetOpCode(Napi::Env env) {
     if (!HasRow()) {
         THROW_JS_BE_SQLITE_EXCEPTION(env, "getOpCode(): there is no current row.", BE_SQLITE_ERROR);
     }
@@ -1592,7 +1870,7 @@ Napi::Value NativeChangeset::GetOpCode(Napi::Env env) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Napi::Value NativeChangeset::IsIndirectChange(Napi::Env env) {
+Napi::Value SqliteChangesetReader::IsIndirectChange(Napi::Env env) {
     if (!HasRow()) {
         THROW_JS_BE_SQLITE_EXCEPTION(env, "isIndirectChange(): there is no current row.", BE_SQLITE_ERROR);
     }
@@ -1603,7 +1881,7 @@ Napi::Value NativeChangeset::IsIndirectChange(Napi::Env env) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Napi::Value NativeChangeset::GetColumnCount(Napi::Env env) {
+Napi::Value SqliteChangesetReader::GetColumnCount(Napi::Env env) {
     if (!HasRow()) {
         THROW_JS_BE_SQLITE_EXCEPTION(env, "getColumnCount(): there is no current row.", BE_SQLITE_ERROR);
     }
@@ -1614,14 +1892,14 @@ Napi::Value NativeChangeset::GetColumnCount(Napi::Env env) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Napi::Value NativeChangeset::GetHasRow(Napi::Env env) {
+Napi::Value SqliteChangesetReader::GetHasRow(Napi::Env env) {
     return Napi::Boolean::New(env, HasRow());
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Napi::Value NativeChangeset::GetColumnValueInteger(Napi::Env env, int col, int target){
+Napi::Value SqliteChangesetReader::GetColumnValueInteger(Napi::Env env, int col, int target){
     if (!HasRow() || !(col >= 0 && col < m_columnCount) || (target != 0 && target != 1)) {
         return env.Undefined();
     }
@@ -1649,7 +1927,7 @@ Napi::Value NativeChangeset::GetColumnValueInteger(Napi::Env env, int col, int t
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Napi::Value NativeChangeset::GetColumnValueId(Napi::Env env, int col, int target){
+Napi::Value SqliteChangesetReader::GetColumnValueId(Napi::Env env, int col, int target){
     if (!HasRow() || !(col >= 0 && col < m_columnCount) || (target != 0 && target != 1)) {
         return env.Undefined();
     }
@@ -1677,7 +1955,7 @@ Napi::Value NativeChangeset::GetColumnValueId(Napi::Env env, int col, int target
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Napi::Value NativeChangeset::GetColumnValueDouble(Napi::Env env, int col, int target){
+Napi::Value SqliteChangesetReader::GetColumnValueDouble(Napi::Env env, int col, int target){
     if (!HasRow() || !(col >= 0 && col < m_columnCount) || (target != 0 && target != 1)) {
         return env.Undefined();
     }
@@ -1705,7 +1983,7 @@ Napi::Value NativeChangeset::GetColumnValueDouble(Napi::Env env, int col, int ta
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Napi::Value NativeChangeset::GetColumnValueText(Napi::Env env, int col, int target) {
+Napi::Value SqliteChangesetReader::GetColumnValueText(Napi::Env env, int col, int target) {
     if (!HasRow() || !(col >= 0 && col < m_columnCount) || (target != 0 && target != 1)) {
         return env.Undefined();
     }
@@ -1732,7 +2010,7 @@ Napi::Value NativeChangeset::GetColumnValueText(Napi::Env env, int col, int targ
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Napi::Value NativeChangeset::GetColumnValueBinary(Napi::Env env, int col, int target) {
+Napi::Value SqliteChangesetReader::GetColumnValueBinary(Napi::Env env, int col, int target) {
     if (!HasRow() || !(col >= 0 && col < m_columnCount) || (target != 0 && target != 1)) {
         return env.Undefined();
     }
@@ -1758,7 +2036,7 @@ Napi::Value NativeChangeset::GetColumnValueBinary(Napi::Env env, int col, int ta
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Napi::Value NativeChangeset::IsColumnValueNull(Napi::Env env, int col, int target) {
+Napi::Value SqliteChangesetReader::IsColumnValueNull(Napi::Env env, int col, int target) {
     if (!HasRow() || !(col >= 0 && col < m_columnCount) || (target != 0 && target != 1)) {
         return env.Undefined();
     }
@@ -1781,7 +2059,7 @@ Napi::Value NativeChangeset::IsColumnValueNull(Napi::Env env, int col, int targe
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Napi::Value NativeChangeset::GetColumnValueType(Napi::Env env, int col, int target) {
+Napi::Value SqliteChangesetReader::GetColumnValueType(Napi::Env env, int col, int target) {
     if (!HasRow() || !(col >= 0 && col < m_columnCount) || (target != 0 && target != 1)) {
         return env.Undefined();
     }
@@ -1803,7 +2081,7 @@ Napi::Value NativeChangeset::GetColumnValueType(Napi::Env env, int col, int targ
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Napi::Value NativeChangeset::GetDdlChanges(Napi::Env env) {
+Napi::Value SqliteChangesetReader::GetDdlChanges(Napi::Env env) {
     if (!IsOpen()) {
         THROW_JS_BE_SQLITE_EXCEPTION(env, "getDdlChanges(): no changeset opened.", BE_SQLITE_ERROR);
     }
@@ -1817,7 +2095,7 @@ Napi::Value NativeChangeset::GetDdlChanges(Napi::Env env) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Napi::Value NativeChangeset::GetColumnValue(Napi::Env env, int col, int target) {
+Napi::Value SqliteChangesetReader::GetColumnValue(Napi::Env env, int col, int target) {
     if (!HasRow() || !(col >= 0 && col < m_columnCount) || (target != 0 && target != 1)) {
         return env.Undefined();
     }
@@ -1840,7 +2118,7 @@ Napi::Value NativeChangeset::GetColumnValue(Napi::Env env, int col, int target) 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Napi::Value NativeChangeset::GetPrimaryKeyColumnIndexes(Napi::Env env) {
+Napi::Value SqliteChangesetReader::GetPrimaryKeyColumnIndexes(Napi::Env env) {
     if (!HasRow()) {
         THROW_JS_BE_SQLITE_EXCEPTION(env, "getPrimaryKeyColumnIndexes(): there is no current row.",  BE_SQLITE_ERROR);
     }
@@ -1858,7 +2136,7 @@ Napi::Value NativeChangeset::GetPrimaryKeyColumnIndexes(Napi::Env env) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Napi::Value NativeChangeset::GetRow(Napi::Env env, int target) {
+Napi::Value SqliteChangesetReader::GetRow(Napi::Env env, int target) {
     if (!HasRow()) {
         THROW_JS_BE_SQLITE_EXCEPTION(env, "getRow(): there is no current row.",  BE_SQLITE_ERROR);
     }
@@ -1880,7 +2158,7 @@ Napi::Value NativeChangeset::GetRow(Napi::Env env, int target) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Napi::Value NativeChangeset::GetPrimaryKeys(Napi::Env env) {
+Napi::Value SqliteChangesetReader::GetPrimaryKeys(Napi::Env env) {
     if (!HasRow()) {
         THROW_JS_BE_SQLITE_EXCEPTION(env, "getPrimaryKeys(): there is no current row.",  BE_SQLITE_ERROR);
     }

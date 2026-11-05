@@ -20,6 +20,7 @@
 #include <folly/BeFolly.h>
 #include "SchemaUtil.h"
 #include "JsLogger.h"
+#include <cmath>
 
 // cspell:ignore napi strbuf propsize
 
@@ -77,6 +78,7 @@ struct FileProps {
 
 template<typename T_Db> struct SQLiteOps {
     virtual T_Db* _GetMyDb() = 0;
+    virtual void _CheckCanModify(NapiInfoCR) {}
 
     static FileProps getEmbedFileProps(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, optObj);
@@ -108,12 +110,13 @@ template<typename T_Db> struct SQLiteOps {
     T_Db& GetOpenedDb(NapiInfoCR info) {
         auto* db = _GetMyDb();
         if (db == nullptr || !db->IsDbOpen())
-           THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db is not open", DgnDbStatus::NotOpen);
+           THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db not open", DgnDbStatus::NotOpen);
 
         return *db;
     }
 
     T_Db& GetWritableDb(NapiInfoCR info) {
+        _CheckCanModify(info);
         auto& db = GetOpenedDb(info);
         if (db.IsReadonly())
             THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db is not open for write", DgnDbStatus::NotOpenForWrite);
@@ -122,6 +125,7 @@ template<typename T_Db> struct SQLiteOps {
     }
 
     void EmbedFile(NapiInfoCR info) {
+        _CheckCanModify(info);
         Db& db = GetOpenedDb(info);
         auto props = getEmbedFileArg(info);
         DbResult stat;
@@ -163,6 +167,7 @@ template<typename T_Db> struct SQLiteOps {
     }
 
     void ReplaceEmbeddedFile(NapiInfoCR info) {
+        _CheckCanModify(info);
         Db& db = GetOpenedDb(info);
         auto props = getEmbedFileArg(info);
         auto stat = db.EmbeddedFiles().Replace(props.m_name.c_str(), props.m_localFileName.c_str(), &props.m_date);
@@ -172,6 +177,7 @@ template<typename T_Db> struct SQLiteOps {
     }
 
     void RemoveEmbeddedFile(NapiInfoCR info) {
+        _CheckCanModify(info);
         Db& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_STRING(0, name);
         auto stat = db.EmbeddedFiles().Remove(name.c_str());
@@ -213,6 +219,7 @@ template<typename T_Db> struct SQLiteOps {
 
     // save a property to the be_prop table
     void SaveFileProperty(NapiInfoCR info) {
+        _CheckCanModify(info);
         if (info.Length() < 2)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "saveFileProperty requires 2 arguments", IModelJsNativeErrorKey::BadArg);
 
@@ -271,6 +278,7 @@ template<typename T_Db> struct SQLiteOps {
     }
 
     void EmbedFontFile(NapiInfoCR info) {
+        _CheckCanModify(info);
         REQUIRE_ARGUMENT_INTEGER(0, id);
         REQUIRE_ARGUMENT_ANY_OBJ(1, facesObj);
         REQUIRE_ARGUMENT_ANY_OBJ(2, dataObj);
@@ -299,7 +307,7 @@ template<typename T_Db> struct SQLiteOps {
         auto db = &GetOpenedDb(info);
         if (db == nullptr)
             {
-            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db is not open", DgnDbStatus::NotOpen);
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db not open", DgnDbStatus::NotOpen);
             return;
             }
         auto dgnDb = dynamic_cast<DgnDbP>(db);
@@ -332,6 +340,7 @@ template<typename T_Db> struct SQLiteOps {
     }
 
     void Vacuum(NapiInfoCR info) {
+        _CheckCanModify(info);
         Db& db = GetOpenedDb(info);
         int pageSize = 0;
         Utf8String into;
@@ -347,12 +356,14 @@ template<typename T_Db> struct SQLiteOps {
     }
 
     void Analyze(NapiInfoCR info) {
+        _CheckCanModify(info);
         Db& db = GetOpenedDb(info);
         if (const auto status = db.Analyze(); status != BE_SQLITE_OK)
             JsInterop::throwSqlResult("error analyzing", db.GetDbFileName(), status);
     }
 
     void EnableWalMode(Napi::CallbackInfo const& info) {
+        _CheckCanModify(info);
         Db& db = GetOpenedDb(info);
         OPTIONAL_ARGUMENT_BOOL(0, yesNo, true);
         auto status = db.EnableWalMode(yesNo);
@@ -361,6 +372,7 @@ template<typename T_Db> struct SQLiteOps {
     }
 
     void SetAutoCheckpointThreshold(Napi::CallbackInfo const& info) {
+        _CheckCanModify(info);
         Db& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_INTEGER(0, frames);
         auto status = db.SetAutoCheckpointThreshold(frames);
@@ -368,6 +380,7 @@ template<typename T_Db> struct SQLiteOps {
             JsInterop::throwSqlResult("error setting autoCheckpoint threshold", db.GetDbFileName(), status);
     }
     void PerformCheckpoint(Napi::CallbackInfo const& info) {
+        _CheckCanModify(info);
         Db& db = GetOpenedDb(info);
         OPTIONAL_ARGUMENT_INTEGER(0, mode, 3);
         DbResult status = db.PerformCheckpoint((WalCheckpointMode)mode);
@@ -376,6 +389,7 @@ template<typename T_Db> struct SQLiteOps {
     }
 
     void RestartDefaultTxn(NapiInfoCR info) {
+        _CheckCanModify(info);
         GetOpenedDb(info).RestartDefaultTxn();
     }
 
@@ -385,6 +399,256 @@ template<typename T_Db> struct SQLiteOps {
     Napi::Value GetLastError(NapiInfoCR info) {
         return Napi::String::New(info.Env(), GetOpenedDb(info).GetLastError().c_str());
     }
+};
+
+//=======================================================================================
+// Synchronous row reader over a statement leased from the db's ConcurrentQuery primary
+// connection cache. Used by withQueryReader; the statement returns to the cache on dispose.
+//! @bsiclass
+//=======================================================================================
+struct ECSqlBatchReader : BeObjectWrap<ECSqlBatchReader> {
+private:
+    DEFINE_CONSTRUCTOR
+    std::unique_ptr<ECSqlStatementLease> m_lease;
+    // Reading ahead is only safe when the db cannot be written while rows are held by the caller.
+    bool m_readAhead = false;
+    // BE_SQLITE_ROW until the statement reports DONE or an error. Later batches return the stored status without
+    // stepping again, so a finished statement is never restarted.
+    DbResult m_status = BE_SQLITE_ROW;
+    static constexpr size_t BatchJsonBytes = 1024 * 1024;
+    static constexpr size_t MaxJsonBytes = 8 * BatchJsonBytes;
+
+    // Bits of the rowFlags argument of prepareECSqlBatchReader.
+    enum RowFlags : uint32_t {
+        AbbreviateBlobs = 1 << 0,
+        ClassIdsToClassNames = 1 << 1,
+        UseJsName = 1 << 2,
+        DoNotConvertClassIdsToClassNamesWhenAliased = 1 << 3,
+    };
+
+    ECSqlStatement* GetStatement() const { return m_lease == nullptr ? nullptr : m_lease->GetStatement(); }
+
+    void Release() {
+        if (m_lease != nullptr) {
+            m_lease->Release();
+            m_lease.reset();
+        }
+    }
+
+    static DbResult ToDbResult(ECSqlStatus status) {
+        if (status.IsSuccess())
+            return BE_SQLITE_OK;
+        return status.IsSQLiteError() ? status.GetSQLiteError() : BE_SQLITE_ERROR;
+    }
+
+    // Binds `args`, a flat array of [key, type, value, ...] triples where key is the parameter index or name as a
+    // string and type is an ECSqlParams::ECSqlParam::Type. Canonicalize integer and long values to preserve
+    // ECSqlParams' numeric conversions instead of N-API's wrapping or safe-integer limits.
+    static bool BindArgs(Napi::Array args, ECSqlStatement& stmt, std::string& err) {
+        using Type = ECSqlParams::ECSqlParam::Type;
+        const uint32_t len = args.Length();
+        for (uint32_t i = 0; i + 2 < len; i += 3) {
+            Napi::Value keyVal = args.Get(i);
+            Napi::Value typeVal = args.Get(i + 1);
+            Napi::Value value = args.Get(i + 2);
+            if (!keyVal.IsString() || !typeVal.IsNumber()) {
+                err = "invalid query argument";
+                return false;
+            }
+            std::string key = keyVal.As<Napi::String>().Utf8Value();
+            const Type type = (Type) typeVal.As<Napi::Number>().Int32Value();
+            if (type == Type::Integer || type == Type::Long) {
+                BeJsDocument canonical;
+                canonical.From(BeJsConst(value));
+                if (!ECSqlParams::TryBindParameter(stmt, key, type, canonical, err))
+                    return false;
+            } else if (!ECSqlParams::TryBindParameter(stmt, key, type, BeJsConst(value), err))
+                return false;
+        }
+        return true;
+    }
+
+    void AppendNapiRow(Napi::Env env, Napi::Array& rows, ECSqlStatement& stmt) {
+        BeJsNapiObject holder(env);
+        BeJsValue rowJson = holder["data"];
+        auto adaptor = m_lease->GetRowAdaptor();
+        if (adaptor == nullptr || adaptor->RenderRowAsArray(rowJson, ECSqlStatementRow(stmt)) != SUCCESS)
+            THROW_JS_BE_SQLITE_EXCEPTION(env, "Failed to render row", BE_SQLITE_ERROR);
+        rows.Set(rows.Length(), Napi::Object(holder).Get("data"));
+    }
+
+    // Steps up to maxRows rows (one on a writable db). Returns the rows as one JSON array string, or as an array of
+    // rows created through N-API when renderAsJson is false or a row exceeds the serialization budget or holds a
+    // value JSON cannot represent (e.g. Infinity). Direct rendering ends the batch after that row.
+    // Returns the DbResult as a number when no row was stepped: BE_SQLITE_DONE or the failing status.
+    Napi::Value NextBatch(Napi::Env env, int32_t maxRows, bool renderAsJson) {
+        if (m_status != BE_SQLITE_ROW)
+            return Napi::Number::New(env, (int) m_status);
+
+        auto stmt = GetStatement();
+        if (stmt == nullptr)
+            return Napi::Number::New(env, (int) BE_SQLITE_ERROR);
+
+        const int32_t batchSize = m_readAhead && renderAsJson ? maxRows : 1;
+        int32_t i = 0;
+        if (renderAsJson) {
+            rapidjson::StringBuffer json;
+            uint32_t jsonRows = 0;
+            for (; i < batchSize; ++i) {
+                DbResult rc = stmt->Step();
+                if (rc != BE_SQLITE_ROW) {
+                    m_status = rc;
+                    break;
+                }
+                const size_t rowStart = json.GetSize();
+                json.Put(jsonRows == 0 ? '[' : ',');
+                if (m_lease->WriteRowAsJson(json, MaxJsonBytes - 1) != ECSqlStatementLease::JsonRowResult::Success) {
+                    // Keep the completed rows and render the current row without building a combined JSON string.
+                    json.Pop(json.GetSize() - rowStart);
+                    Napi::Array rows = Napi::Array::New(env);
+                    if (jsonRows > 0) {
+                        json.Put(']');
+                        Napi::Array parsed = NapiValueRef::Parse(Napi::String::New(env, json.GetString(), json.GetSize())).As<Napi::Array>();
+                        for (uint32_t r = 0; r < jsonRows; ++r)
+                            rows.Set(r, parsed.Get(r));
+                    }
+                    AppendNapiRow(env, rows, *stmt);
+                    return rows;
+                }
+                ++jsonRows;
+                if (json.GetSize() >= BatchJsonBytes)
+                    break;
+            }
+            if (jsonRows == 0)
+                return Napi::Number::New(env, (int) m_status);
+            json.Put(']');
+            return Napi::String::New(env, json.GetString(), json.GetSize());
+        }
+
+        Napi::Array rows = Napi::Array::New(env);
+        for (; i < batchSize; ++i) {
+            DbResult rc = stmt->Step();
+            if (rc != BE_SQLITE_ROW) {
+                m_status = rc;
+                break;
+            }
+            AppendNapiRow(env, rows, *stmt);
+        }
+        if (rows.Length() == 0)
+            return Napi::Number::New(env, (int) m_status);
+        return rows;
+    }
+
+public:
+    ECSqlBatchReader(NapiInfoCR info) : BeObjectWrap<ECSqlBatchReader>(info) {}
+    ~ECSqlBatchReader() { SetInDestructor(); Release(); }
+
+    static void Init(Napi::Env& env, Napi::Object exports) {
+        Napi::HandleScope scope(env);
+        Napi::Function t = DefineClass(env, "ECSqlBatchReader", {
+            InstanceMethod("stepBatch", &ECSqlBatchReader::StepBatch),
+            InstanceMethod("getMetadata", &ECSqlBatchReader::GetMetadata),
+            InstanceMethod("getStatementId", &ECSqlBatchReader::GetStatementId),
+            InstanceMethod("dispose", &ECSqlBatchReader::Dispose),
+        });
+        exports.Set("ECSqlBatchReader", t);
+        SET_CONSTRUCTOR(t);
+    }
+
+    // JS args: (ecsql: string, args: any[] | undefined, rowFlags: number, maxRows: number, out: any[], logErrors?: boolean)
+    // Leases and binds the statement. On a read-only db with maxRows > 0 the first batch is stepped too, saving a call;
+    // on a writable db stepping waits for the first stepBatch call so rows reflect writes made before it. Nor is it
+    // stepped when a column is dynamic (e.g. $->prop), as stepping changes the metadata of such columns.
+    // Sets out[0] to the first batch (as returned by stepBatch, or undefined when not stepped), out[1] to the
+    // statement id, and out[2] to whether a column is dynamic, in which case metadata must not be cached.
+    static Napi::Value Prepare(NapiInfoCR info, ECDbCR ecdb) {
+        REQUIRE_ARGUMENT_STRING(0, ecsql);
+        REQUIRE_ARGUMENT_INTEGER(2, rowFlags);
+        REQUIRE_ARGUMENT_INTEGER(3, maxRows);
+        REQUIRE_ARGUMENT_ARRAY(4, out);
+        OPTIONAL_ARGUMENT_BOOL(5, logErrors, true);
+
+        ECSqlStatus status;
+        std::string error;
+        std::unique_ptr<ECSqlStatementLease> lease;
+        try {
+            lease = ConcurrentQueryMgr::LeaseStatement(ecdb, ecsql.c_str(), logErrors, status, error);
+        } catch (std::exception const& ex) {
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), ex.what(), BE_SQLITE_ERROR);
+        }
+        if (lease == nullptr || lease->GetStatement() == nullptr) {
+            if (error.empty())
+                error = Utf8PrintfString("Failed to prepare ECSql statement: %s", ecsql.c_str());
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), error.c_str(), ToDbResult(status));
+        }
+
+        if (info[1].IsArray()) {
+            std::string bindError;
+            if (!BindArgs(info[1].As<Napi::Array>(), *lease->GetStatement(), bindError)) {
+                lease->Release();
+                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), Utf8PrintfString("Failed to bind parameters: %s", bindError.c_str()).c_str(), IModelJsNativeErrorKey::BadArg);
+            }
+        }
+
+        JsReadOptions options;
+        options.SetAbbreviateBlobs((rowFlags & AbbreviateBlobs) != 0)
+            .SetConvertClassIdsToClassNames((rowFlags & ClassIdsToClassNames) != 0)
+            .SetUseJsNames((rowFlags & UseJsName) != 0)
+            .SetDoNotConvertClassIdsToClassNamesWhenAliased((rowFlags & DoNotConvertClassIdsToClassNamesWhenAliased) != 0);
+        if (lease->ConfigureRowAdaptor(options) == nullptr)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Statement lease is invalidated", BE_SQLITE_ERROR);
+
+        Napi::Object obj = Constructor().New({});
+        auto reader = ECSqlBatchReader::Unwrap(obj);
+        reader->m_lease = std::move(lease);
+        struct PrepareGuard {
+            ECSqlBatchReader* m_reader;
+            ~PrepareGuard() { if (m_reader != nullptr) m_reader->Release(); }
+        } guard{reader};
+        reader->m_readAhead = ecdb.IsReadonly();
+        auto& stmt = *reader->m_lease->GetStatement();
+        bool hasDynamicColumn = false;
+        for (int i = 0, count = stmt.GetColumnCount(); i < count && !hasDynamicColumn; ++i)
+            hasDynamicColumn = stmt.GetColumnInfo(i).IsDynamic();
+
+        const bool stepNow = reader->m_readAhead && maxRows > 0 && !hasDynamicColumn;
+        out.Set((uint32_t) 0, stepNow ? reader->NextBatch(info.Env(), maxRows, true) : info.Env().Undefined());
+        out.Set((uint32_t) 1, Napi::Number::New(info.Env(), (double) reader->m_lease->GetStatementId()));
+        out.Set((uint32_t) 2, Napi::Boolean::New(info.Env(), hasDynamicColumn));
+        guard.m_reader = nullptr;
+        return obj;
+    }
+
+    // JS args: (maxRows: number, renderAsJson?: boolean). See NextBatch for the result. On a writable db at most one
+    // row is stepped per call, so the caller never holds rows stepped ahead of writes it makes between calls. JSON
+    // rows hold null (not undefined) for null cells and base64 strings for blobs; the caller normalizes both.
+    Napi::Value StepBatch(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_INTEGER(0, maxRows);
+        OPTIONAL_ARGUMENT_BOOL(1, renderAsJson, true);
+        if (maxRows < 1)
+            THROW_JS_TYPE_EXCEPTION("maxRows must be greater than 0");
+        return NextBatch(info.Env(), maxRows, renderAsJson);
+    }
+
+    Napi::Value GetMetadata(NapiInfoCR info) {
+        auto stmt = GetStatement();
+        auto adaptor = m_lease == nullptr ? nullptr : m_lease->GetRowAdaptor();
+        if (stmt == nullptr || adaptor == nullptr)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlStatement is not prepared.", IModelJsNativeErrorKey::BadArg);
+
+        BeJsNapiObject out(info.Env());
+        BeJsValue metaJson = out["meta"];
+        ECSqlRowProperty::List props;
+        adaptor->GetMetaData(props, *stmt);
+        props.ToJs(metaJson);
+        return Napi::Object(out).Get("meta");
+    }
+
+    Napi::Value GetStatementId(NapiInfoCR info) {
+        return Napi::Number::New(info.Env(), (double) (m_lease == nullptr ? 0 : m_lease->GetStatementId()));
+    }
+
+    void Dispose(NapiInfoCR) { Release(); }
 };
 
 //=======================================================================================
@@ -454,10 +718,11 @@ public:
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to detach file", rc);
         }
     }
+    Napi::Value PrepareECSqlBatchReader(NapiInfoCR info) { return ECSqlBatchReader::Prepare(info, GetOpenedDb(info)); }
     void ConcurrentQueryExecute(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, requestObj);
         REQUIRE_ARGUMENT_FUNCTION(1, callback);
-        JsInterop::ConcurrentQueryExecute(m_ecdb, requestObj, callback);
+        JsInterop::ConcurrentQueryExecute(GetOpenedDb(info), requestObj, callback);
     }
     void ClearECDbCache(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
@@ -481,6 +746,14 @@ public:
     Napi::Value DeleteInstance(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
         return JsInterop::DeleteInstance(db, info);
+    }
+    Napi::Value ImportCSVData(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        return JsInterop::ImportCSVData(db, info);
+    }
+    Napi::Value ImportCSVFile(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        return JsInterop::ImportCSVFile(db, info);
     }
     Napi::Value ConcurrentQueryResetConfig(NapiInfoCR info) {
         if (info.Length() > 0 && info[0].IsObject()) {
@@ -610,33 +883,46 @@ public:
         return obj;
     }
 
-    void SchemaSyncPull(NapiInfoCR info) {
+    void SchemaSyncOverwrite(NapiInfoCR info) {
         OPTIONAL_ARGUMENT_STRING(0, schemaSyncDbUriStr);
         auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
         LastErrorListener lastError(m_ecdb);
-        auto rc = m_ecdb.Schemas().GetSchemaSync().Pull(syncDbUri);
+        auto rc = m_ecdb.Schemas().GetSchemaSync().OverwriteSyncDb(syncDbUri);
         if (rc != SchemaSync::Status::OK) {
             if (lastError.HasError()) {
                 THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
             } else {
-                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to pull changes from channel: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to overwrite schema sync db: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
+            }
+        }
+    }
+    void SchemaSyncRepair(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING(0, schemaSyncDbUriStr);
+        REQUIRE_ARGUMENT_INTEGER(1, repairScope);
+        auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
+        const auto scope = static_cast<SchemaSync::RepairScope>(repairScope);
+        LastErrorListener lastError(m_ecdb);
+        auto rc = m_ecdb.Schemas().GetSchemaSync().RepairSyncDb(syncDbUri, scope);
+        if (rc != SchemaSync::Status::OK) {
+            if (lastError.HasError()) {
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
+            } else {
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to repair schema sync db: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
+            }
+        }
+    }
+    void SchemaSyncUpdateDbSchema(NapiInfoCR info) {
+        LastErrorListener lastError(m_ecdb);
+        auto rc = m_ecdb.Schemas().GetSchemaSync().UpdateDbSchema();
+        if (rc != SchemaSync::Status::OK) {
+            if (lastError.HasError()) {
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
+            } else {
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), "fail to update the db schema from the ec_ tables", rc);
             }
         }
     }
 
-    void SchemaSyncPush(NapiInfoCR info) {
-        OPTIONAL_ARGUMENT_STRING(0, schemaSyncDbUriStr);
-        auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
-        LastErrorListener lastError(m_ecdb);
-        auto rc = m_ecdb.Schemas().GetSchemaSync().Push(syncDbUri);
-        if (rc != SchemaSync::Status::OK) {
-            if (lastError.HasError()) {
-                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
-            } else {
-                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to push changes from channel: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
-            }
-        }
-    }
     static Napi::Value EnableSharedCache(NapiInfoCR info) {
         REQUIRE_ARGUMENT_BOOL(0, enabled);
         DbResult r = BeSQLiteLib::EnableSharedCache(enabled);
@@ -651,6 +937,7 @@ public:
             InstanceMethod("detachDb", &NativeECDb::DetachDb),
             InstanceMethod("closeDb", &NativeECDb::CloseDb),
             InstanceMethod("concurrentQueryExecute", &NativeECDb::ConcurrentQueryExecute),
+            InstanceMethod("prepareECSqlBatchReader", &NativeECDb::PrepareECSqlBatchReader),
             InstanceMethod("concurrentQueryResetConfig", &NativeECDb::ConcurrentQueryResetConfig),
             InstanceMethod("concurrentQueryShutdown", &NativeECDb::ConcurrentQueryShutdown),
             InstanceMethod("createDb", &NativeECDb::CreateDb),
@@ -664,8 +951,9 @@ public:
             InstanceMethod("isOpen", &NativeECDb::IsOpen),
             InstanceMethod("schemaSyncSetDefaultUri", &NativeECDb::SchemaSyncSetDefaultUri),
             InstanceMethod("schemaSyncGetDefaultUri", &NativeECDb::SchemaSyncGetDefaultUri),
-            InstanceMethod("schemaSyncPull", &NativeECDb::SchemaSyncPull),
-            InstanceMethod("schemaSyncPush", &NativeECDb::SchemaSyncPush),
+            InstanceMethod("schemaSyncOverwrite", &NativeECDb::SchemaSyncOverwrite),
+            InstanceMethod("schemaSyncRepair", &NativeECDb::SchemaSyncRepair),
+            InstanceMethod("schemaSyncUpdateDbSchema", &NativeECDb::SchemaSyncUpdateDbSchema),
             InstanceMethod("schemaSyncInit", &NativeECDb::SchemaSyncInit),
             InstanceMethod("schemaSyncEnabled", &NativeECDb::SchemaSyncEnabled),
             InstanceMethod("schemaSyncGetLocalDbInfo", &NativeECDb::SchemaSyncGetLocalDbInfo),
@@ -675,6 +963,8 @@ public:
             InstanceMethod("insertInstance", &NativeECDb::InsertInstance),
             InstanceMethod("updateInstance", &NativeECDb::UpdateInstance),
             InstanceMethod("deleteInstance", &NativeECDb::DeleteInstance),
+            InstanceMethod("importCSVData", &NativeECDb::ImportCSVData),
+            InstanceMethod("importCSVFile", &NativeECDb::ImportCSVFile),
             InstanceMethod("saveChanges", &NativeECDb::SaveChanges),
             InstanceMethod("clearECDbCache", &NativeECDb::ClearECDbCache),
             StaticMethod("enableSharedCache", &NativeECDb::EnableSharedCache),
@@ -685,8 +975,11 @@ public:
     }
 };
 
-/** Add the container to the openParms, if the argument is a container object */
-static void addContainerParams(Napi::Object db, Utf8StringR dbName, Db::OpenParams& params, Napi::Value arg) {
+/** Add the container to the openParams, if the argument is a container object.
+ * @param skipWriteLockCheck If true, bypasses the write lock requirement for opening in ReadWrite mode.
+ *        This is used for cloud briefcases that make local-only writes (no upload) against a read-only container.
+ */
+static void addContainerParams(Napi::Object db, Utf8StringR dbName, Db::OpenParams& params, Napi::Value arg, bool skipWriteLockCheck = false) {
     auto jsContainer = getJsCloudContainer(arg);
     if (!jsContainer.IsObject()) { // did they supply a container argument?
         db.Set(JSON_NAME(cloudContainer), db.Env().Undefined());
@@ -696,10 +989,37 @@ static void addContainerParams(Napi::Object db, Utf8StringR dbName, Db::OpenPara
     db.Set(JSON_NAME(cloudContainer), jsContainer);
 
     auto container = getCloudContainer(jsContainer);
-    if (!params.IsReadonly() && !container->m_writeLockHeld)
-        THROW_JS_IMODEL_NATIVE_EXCEPTION(arg.Env(), "cannot open for database for write - container write lock not held", IModelJsNativeErrorKey::LockNotHeld);
+    if (!skipWriteLockCheck && !params.IsReadonly() && !container->m_writeLockHeld)
+        THROW_JS_IMODEL_NATIVE_EXCEPTION(arg.Env(), "cannot open database for write - container write lock not held", IModelJsNativeErrorKey::LockNotHeld);
 
     dbName = params.SetFromContainer(dbName.c_str(), container);
+};
+
+//=======================================================================================
+// A minimal RAII scope guard that invokes a callback when it goes out of scope, including
+// while the stack is unwinding from a thrown exception. Used to keep persistent tracker and
+// transaction state consistent across operations that may throw partway through.
+//=======================================================================================
+struct SQLiteDbScopeGuard {
+private:
+    std::function<void()> m_onExit;
+public:
+    explicit SQLiteDbScopeGuard(std::function<void()> onExit) : m_onExit(std::move(onExit)) {}
+    ~SQLiteDbScopeGuard() { if (m_onExit) m_onExit(); }
+    void Dismiss() { m_onExit = nullptr; }
+    SQLiteDbScopeGuard(SQLiteDbScopeGuard const&) = delete;
+    SQLiteDbScopeGuard& operator=(SQLiteDbScopeGuard const&) = delete;
+};
+
+//=======================================================================================
+// A ChangeTracker used only to capture DDL/data changes on a generic SQLiteDb, so they
+// can be written out to an iModel-format changeset file for testing purposes.
+//! @bsiclass
+//=======================================================================================
+struct SQLiteDbChangeTracker : BeSQLite::ChangeTracker {
+    SQLiteDbChangeTracker(BeSQLite::DbR db) : BeSQLite::ChangeTracker("SQLiteDb") { SetDb(&db); }
+    OnCommitStatus _OnCommit(bool, Utf8CP) override { return OnCommitStatus::Commit; }
+    BeSQLite::DdlChangesCR GetDdlChanges() const { return m_ddlChanges; }
 };
 
 //=======================================================================================
@@ -710,7 +1030,13 @@ struct SQLiteDb : Napi::ObjectWrap<SQLiteDb>, SQLiteOps<Db> {
 private:
     DEFINE_CONSTRUCTOR
     Db m_db;
+    RefCountedPtr<SQLiteDbChangeTracker> m_changeTracker;
+    bool m_inApplyChangeset = false;
     Db* _GetMyDb() override { return &m_db; }
+    void _CheckCanModify(NapiInfoCR info) override {
+        if (m_inApplyChangeset)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "cannot modify or close database while applying a changeset", IModelJsNativeErrorKey::BadArg);
+    }
 
 public:
     SQLiteDb(NapiInfoCR info) : Napi::ObjectWrap<SQLiteDb>(info) {}
@@ -738,6 +1064,7 @@ public:
     }
 
     void CreateDb(NapiInfoCR info) {
+        _CheckCanModify(info);
         REQUIRE_ARGUMENT_STRING(0, dbName);
         Db::CreateParams params;
         addContainerParams(Value(), dbName, params, info[1]);
@@ -755,6 +1082,7 @@ public:
     }
 
     void OpenDb(NapiInfoCR info) {
+        _CheckCanModify(info);
         REQUIRE_ARGUMENT_STRING(0, dbName);
         Db::OpenParams params(Db::OpenMode::Readonly);
         if (info[1].IsObject()) {
@@ -780,10 +1108,11 @@ public:
         }
     }
 
-    void CloseDb(NapiInfoCR info) { CloseDbIfOpen(false);}
-    void Dispose(NapiInfoCR info) { CloseDbIfOpen(false);}
+    void CloseDb(NapiInfoCR info) { _CheckCanModify(info); CloseDbIfOpen(false);}
+    void Dispose(NapiInfoCR info) { _CheckCanModify(info); CloseDbIfOpen(false);}
 
     void SaveChanges(NapiInfoCR info) {
+        _CheckCanModify(info);
         auto& db = GetOpenedDb(info);
         DbResult status = db.SaveChanges();
         if (status != BE_SQLITE_OK)
@@ -791,21 +1120,88 @@ public:
     }
 
     void AbandonChanges(NapiInfoCR info) {
+        _CheckCanModify(info);
         auto& db = GetOpenedDb(info);
         DbResult status = db.AbandonChanges();
         if (status != BE_SQLITE_OK)
             JsInterop::throwSqlResult("error in abandonChanges", db.GetDbFileName(), status);
     }
 
+    //! Begin capturing DDL/data changes made to this SQLiteDb. Used only to produce test
+    //! changeset files - not part of any product workflow.
+    void StartChangeTracking(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        if (m_changeTracker.IsNull())
+            m_changeTracker = new SQLiteDbChangeTracker(db);
+        // Db::ExecuteDdl only records DDL into the tracker registered via SetChangeTracker (db.m_dbFile->m_tracker) -
+        // the session extension used for row-level changes attaches directly via ChangeTracker::SetDb/CreateSession,
+        // but DDL capture requires this explicit registration too.
+        db.SetChangeTracker(m_changeTracker.get());
+        m_changeTracker->Restart();
+    }
+
+    //! Execute a DDL statement (e.g. CREATE/ALTER/DROP TABLE) so that, if change tracking is
+    //! active, the DDL is captured by the tracker. This is required because DDL is never
+    //! captured by the SQLite session extension used for row-level (DML) changes.
+    void ExecuteDdl(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        REQUIRE_ARGUMENT_STRING(0, ddl);
+        auto stat = db.ExecuteDdl(ddl.c_str());
+        if (stat != BE_SQLITE_OK)
+            JsInterop::throwSqlResult("error executing ddl", db.GetDbFileName(), stat);
+    }
+
+    //! Write out the changes captured since startChangeTracking() was called, to a changeset
+    //! file holding the raw sqlite changeset (the plain, uncompressed byte stream produced by
+    //! the sqlite session extension) - this is *not* the same format used for iModel changesets.
+    //! Raw sqlite changesets cannot represent DDL/schema changes, so this throws if any DDL was
+    //! captured since startChangeTracking() was called.
+    void CreateChangeset(NapiInfoCR info) {
+        GetWritableDb(info);
+        REQUIRE_ARGUMENT_STRING(0, pathname);
+        if (m_changeTracker.IsNull())
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "change tracking was not started", IModelJsNativeErrorKey::BadArg);
+
+        // Consistently end tracking whether we succeed or throw below. EnableTracking(false) suspends
+        // the session, so if a write fails and we returned without ending, a caller that fixes the
+        // output path and retries without calling startChangeTracking() again would silently omit all
+        // subsequent changes. Ending on every path makes startChangeTracking() a required precondition.
+        SQLiteDbScopeGuard endTracking([this]() { m_changeTracker->EndTracking(); });
+
+        m_changeTracker->EnableTracking(false);
+        if (m_changeTracker->HasDdlChanges())
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "raw sqlite changesets cannot capture DDL/schema changes", IModelJsNativeErrorKey::BadArg);
+
+        BeFileName filePath(pathname.c_str(), BentleyCharEncoding::Utf8);
+        BeSQLite::ChangeSet changeSet;
+        auto stat = changeSet.FromChangeTrack(*m_changeTracker);
+        if (stat != BE_SQLITE_OK)
+            JsInterop::throwSqlResult("error creating changeset", filePath.GetNameUtf8().c_str(), stat);
+
+        stat = changeSet.Write(pathname);
+        if (stat != BE_SQLITE_OK)
+            JsInterop::throwSqlResult("error writing changeset file", filePath.GetNameUtf8().c_str(), stat);
+    }
+
+    void ApplyChangeset(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        SQLiteDbScopeGuard applying([this]() { m_inApplyChangeset = false; });
+        m_inApplyChangeset = true;
+        JsInterop::ApplyChangeset(db, info);
+    }
+
     static void Init(Napi::Env env, Napi::Object exports) {
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, "SQLiteDb", {
             InstanceMethod("abandonChanges", &SQLiteDb::AbandonChanges),
+            InstanceMethod("applyChangeset", &SQLiteDb::ApplyChangeset),
             InstanceMethod("closeDb", &SQLiteDb::CloseDb),
+            InstanceMethod("createChangeset", &SQLiteDb::CreateChangeset),
             InstanceMethod("createDb", &SQLiteDb::CreateDb),
             InstanceMethod("dispose", &SQLiteDb::Dispose),
             InstanceMethod("embedFile", &SQLiteDb::EmbedFile),
             InstanceMethod("embedFontFile", &SQLiteDb::EmbedFontFile),
+            InstanceMethod("executeDdl", &SQLiteDb::ExecuteDdl),
             InstanceMethod("extractEmbeddedFile", &SQLiteDb::ExtractEmbeddedFile),
             InstanceMethod("getFilePath", &SQLiteDb::GetFilePath),
             InstanceMethod("getLastInsertRowId", &SQLiteDb::GetLastInsertRowId),
@@ -821,6 +1217,7 @@ public:
             InstanceMethod("restartDefaultTxn", &SQLiteDb::RestartDefaultTxn),
             InstanceMethod("saveChanges", &SQLiteDb::SaveChanges),
             InstanceMethod("saveFileProperty", &SQLiteDb::SaveFileProperty),
+            InstanceMethod("startChangeTracking", &SQLiteDb::StartChangeTracking),
             InstanceMethod("vacuum", &SQLiteDb::Vacuum),
             InstanceMethod("analyze", &SQLiteDb::Analyze),
             InstanceMethod("enableWalMode", &SQLiteDb::EnableWalMode),
@@ -1189,13 +1586,15 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
 
 
         BeJsConst props(info[3]);
+        bool skipWriteLockCheck = false;
         if (props.isObject()) {
             auto tempFileBase = props[JSON_NAME(tempFileBase)];
             if (tempFileBase.isString())
                 openParams.m_tempfileBase = tempFileBase.asString();
+            skipWriteLockCheck = props[JSON_NAME(skipWriteLockCheck)].asBool(false);
         }
 
-        addContainerParams(Value(), dbName, openParams, info[4]);
+        addContainerParams(Value(), dbName, openParams, info[4], skipWriteLockCheck);
 
         if (!openParams.IsReadonly()) {
             // 20 sec to retain previous behaviour.
@@ -1499,7 +1898,8 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     }
     Napi::Value CancelTo(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, txnIdHexStr);
-        return Napi::Number::New(Env(), (int) GetOpenedDb(info).Txns().CancelTo(TxnIdFromString(txnIdHexStr)));
+        OPTIONAL_ARGUMENT_BOOL(1, allowCrossSessions, false);
+        return Napi::Number::New(Env(), (int) GetOpenedDb(info).Txns().CancelTo(TxnIdFromString(txnIdHexStr), allowCrossSessions));
     }
     Napi::Value ReverseTxns(NapiInfoCR info) {
         REQUIRE_ARGUMENT_NUMBER(0, numTxns );
@@ -1722,7 +2122,14 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         auto& db = GetOpenedDb(info);
         OPTIONAL_ARGUMENT_STRING(0, when);
         BeJsNapiObject props(Env());
-        JsInterop::GetIModelProps(props, db, when);
+        try
+            {
+            JsInterop::GetIModelProps(props, db, when);
+            }
+        catch (std::exception const& e)
+            {
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), e.what(), DgnDbStatus::ReadError);
+            }
         return props;
     }
 
@@ -1744,10 +2151,52 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         JsInterop::UpdateElement(db, elemProps);
     }
 
+    void ChangeElementParent(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        REQUIRE_ARGUMENT_ANY_OBJ(0, props);
+        JsInterop::ChangeElementParent(db, props);
+    }
+
+    void ChangeElementModel(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        REQUIRE_ARGUMENT_ANY_OBJ(0, props);
+        JsInterop::ChangeElementModel(db, props);
+    }
+
     void DeleteElement(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_STRING(0, elemIdStr);
         JsInterop::DeleteElement(db, elemIdStr);
+    }
+
+    Napi::Value DeleteElements(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        if (ARGUMENT_IS_NOT_PRESENT(0) || !info[0].IsArray()) {
+            THROW_JS_TYPE_EXCEPTION("Invalid argument given to deleteElements");
+        }
+
+        const auto result = JsInterop::DeleteElements(db, info[0].As<Napi::Array>());
+
+        auto ret = Napi::Object::New(Env());
+        ret.Set("status", Napi::Number::New(Env(), static_cast<int>(result.status)));
+        ret.Set("sqlDeleteStatus", Napi::Number::New(Env(), static_cast<int>(result.sqlDeleteStatus)));
+
+        uint32_t fIndex = 0;
+        auto failuresArr = Napi::Array::New(Env(), result.failures.size());
+        auto failedIdsArr = Napi::Array::New(Env(), result.failures.size()); // deprecated, kept for compatibility with older itwinjs-core
+        for (const auto& f : result.failures) {
+            const auto idStr = Napi::String::New(Env(), f.elementId.ToHexStr());
+            BeJsNapiObject entry(Env());
+            static_cast<Napi::Object>(entry).Set("elementId", idStr);
+            entry["reason"] = static_cast<int>(f.reason);
+            failuresArr.Set(fIndex, static_cast<Napi::Object>(entry));
+            failedIdsArr.Set(fIndex, idStr);
+            ++fIndex;
+        }
+        ret.Set("failures", failuresArr);
+        ret.Set("failedIds", failedIdsArr);
+
+        return ret;
     }
 
     Napi::Value QueryDefinitionElementUsage(NapiInfoCR info)
@@ -2207,32 +2656,49 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         return obj;
     }
 
-    void SchemaSyncPull(NapiInfoCR info) {
+    void SchemaSyncOverwrite(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
         OPTIONAL_ARGUMENT_STRING(0, schemaSyncDbUriStr);
         auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
         LastErrorListener lastError(GetOpenedDb(info));
-        auto rc = db.PullSchemaChanges(syncDbUri);
+        auto rc = db.Schemas().GetSchemaSync().OverwriteSyncDb(syncDbUri);
         if (rc != SchemaSync::Status::OK) {
             if (lastError.HasError()) {
                 THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
             } else {
-                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to pull changes to schema sync db: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to overwrite schema sync db: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
             }
         }
     }
 
-    void SchemaSyncPush(NapiInfoCR info) {
+    void SchemaSyncRepair(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
-        OPTIONAL_ARGUMENT_STRING(0, schemaSyncDbUriStr);
+        REQUIRE_ARGUMENT_STRING(0, schemaSyncDbUriStr);
+        REQUIRE_ARGUMENT_INTEGER(1, repairScope);
         auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
-        LastErrorListener lastError(GetOpenedDb(info));
-        auto rc = db.Schemas().GetSchemaSync().Push(syncDbUri);
+        const auto scope = static_cast<SchemaSync::RepairScope>(repairScope);
+        LastErrorListener lastError(db);
+        auto rc = db.Schemas().GetSchemaSync().RepairSyncDb(syncDbUri, scope);
         if (rc != SchemaSync::Status::OK) {
             if (lastError.HasError()) {
                 THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
             } else {
-                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to push changes to schema sync db: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to repair schema sync db: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
+            }
+        }
+    }
+
+    // Materialize the physical tables and indexes the ec_ rows imply after a merge. Applying the
+    // tracked DDL is best effort because another briefcase may already have created those objects.
+    void SchemaSyncUpdateDbSchema(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        LastErrorListener lastError(db);
+        auto rc = db.Schemas().GetSchemaSync().UpdateDbSchema();
+        if (rc != SchemaSync::Status::OK) {
+            if (lastError.HasError()) {
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
+            } else {
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), "fail to update the db schema from the ec_ tables", rc);
             }
         }
     }
@@ -2292,7 +2758,6 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaFileNames);
         OPTIONAL_ARGUMENT_ANY_OBJ(1, jsOpts, Napi::Object::New(Env()));
-        ECSchemaReadContextPtr customContext = nullptr;
 
         JsInterop::SchemaImportOptions options;
         const auto maybeEcSchemaContextVal = jsOpts.Get(JsInterop::json_ecSchemaXmlContext());
@@ -2325,10 +2790,17 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaFileNames);
         OPTIONAL_ARGUMENT_ANY_OBJ(1, jsOpts, Napi::Object::New(Env()));
         JsInterop::SchemaImportOptions options;
+        const auto maybeEcSchemaContextVal = jsOpts.Get(JsInterop::json_ecSchemaXmlContext());
         options.m_schemaLockHeld = jsOpts.Get(JsInterop::json_schemaLockHeld()).ToBoolean();
         auto jsSyncDbUri = jsOpts.Get(JsInterop::json_schemaSyncDbUri());
         if (jsSyncDbUri.IsString())
             options.m_schemaSyncDbUri = jsSyncDbUri.ToString().Utf8Value();
+        if (!maybeEcSchemaContextVal.IsUndefined())
+            {
+            if (!NativeECSchemaXmlContext::HasInstance(maybeEcSchemaContextVal))
+                THROW_JS_TYPE_EXCEPTION("if SchemaImportOptions.ecSchemaXmlContext is defined, it must be an object of type NativeECSchemaXmlContext")
+            options.m_customSchemaContext = NativeECSchemaXmlContext::Unwrap(maybeEcSchemaContextVal.As<Napi::Object>())->GetContext();
+            }
 
         LastErrorListener lastError(db);
         DbResult result = JsInterop::ImportSchemas(db, schemaFileNames, SchemaSourceType::XmlString, options);
@@ -2820,13 +3292,17 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         REQUIRE_ARGUMENT_ANY_OBJ(0, changeset);
         REQUIRE_ARGUMENT_BOOL(1, fastForward);
 
+        bool noUpdateLoop = false;
+        if (info.Length() > 2 && info[2].IsBoolean())
+            noUpdateLoop = info[2].As<Napi::Boolean>().Value();
+
         auto revision = JsInterop::GetChangesetProps(db.GetDbGuid().ToString(), changeset);
         auto currentId = db.Txns().GetParentChangesetId();
         ChangesetStatus stat =  ChangesetStatus::Success;
         if (revision->GetParentId() == currentId)  // merge
-            stat = db.Txns().MergeChangeset(*revision, fastForward);
+            stat = db.Txns().MergeChangeset(*revision, fastForward, noUpdateLoop);
         else if (revision->GetChangesetId() == currentId) //reverse
-            db.Txns().ReverseChangeset(*revision);
+            db.Txns().ReverseChangeset(*revision, noUpdateLoop);
         if (ChangesetStatus::Success != stat)
             BeNapi::ThrowJsException(info.Env(), "error applying changeset", (int)stat, IModelJsNativeErrorKeyHelper::GetITwinError(IModelJsNativeErrorKey::ChangesetError));
     }
@@ -2865,6 +3341,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to detach file", rc);
         }
     }
+    Napi::Value PrepareECSqlBatchReader(NapiInfoCR info) { return ECSqlBatchReader::Prepare(info, GetOpenedDb(info)); }
     void ConcurrentQueryExecute(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, requestObj);
         REQUIRE_ARGUMENT_FUNCTION(1, callback);
@@ -2928,13 +3405,14 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     }
 
     Napi::Value PullMergeReverseLocalChanges(NapiInfoCR info) {
+        OPTIONAL_ARGUMENT_BOOL(0, captureInstanceChanges, false);
         auto& db = GetWritableDb(info);
-        auto txns = db.Txns().PullMergeReverseLocalChanges();
-        auto array = Napi::Array::New(Env(), txns.size());        
+        
+        auto txns = db.Txns().PullMergeReverseLocalChanges(captureInstanceChanges);
+        auto array = Napi::Array::New(Env(), txns.size());
         for (size_t i = 0; i < txns.size(); ++i) {
             array[i] = Napi::String::New(Env(), BeInt64Id(txns[i].GetValue()).ToHexStr().c_str());
         }
-
         return array;
     }
 
@@ -3091,7 +3569,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         {
         REQUIRE_ARGUMENT_STRING(0, testName);
         REQUIRE_ARGUMENT_STRING(1, params);
-        return toJsString(Env(), JsInterop::ExecuteTest(GetOpenedDb(info), testName, params).ToString());
+        return toJsString(Env(), JsInterop::ExecuteTest(GetOpenedDb(info), testName, params).Stringify());
         }
 
     //  Create projections
@@ -3120,6 +3598,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("computeProjectExtents", &NativeDgnDb::ComputeProjectExtents),
             InstanceMethod("computeRangesForText", &NativeDgnDb::ComputeRangesForText),
             InstanceMethod("concurrentQueryExecute", &NativeDgnDb::ConcurrentQueryExecute),
+            InstanceMethod("prepareECSqlBatchReader", &NativeDgnDb::PrepareECSqlBatchReader),
             InstanceMethod("concurrentQueryResetConfig", &NativeDgnDb::ConcurrentQueryResetConfig),
             InstanceMethod("concurrentQueryShutdown", &NativeDgnDb::ConcurrentQueryShutdown),
             InstanceMethod("createBRepGeometry", &NativeDgnDb::CreateBRepGeometry),
@@ -3128,6 +3607,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("createIModel", &NativeDgnDb::CreateIModel),
             InstanceMethod("deleteAllTxns", &NativeDgnDb::DeleteAllTxns),
             InstanceMethod("deleteElement", &NativeDgnDb::DeleteElement),
+            InstanceMethod("deleteElements", &NativeDgnDb::DeleteElements),
             InstanceMethod("deleteElementAspect", &NativeDgnDb::DeleteElementAspect),
             InstanceMethod("deleteLinkTableRelationship", &NativeDgnDb::DeleteLinkTableRelationship),
             InstanceMethod("deleteLinkTableRelationships", &NativeDgnDb::DeleteLinkTableRelationships),
@@ -3266,13 +3746,16 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("stopProfiler", &NativeDgnDb::StopProfiler),
             InstanceMethod("schemaSyncSetDefaultUri", &NativeDgnDb::SchemaSyncSetDefaultUri),
             InstanceMethod("schemaSyncGetDefaultUri", &NativeDgnDb::SchemaSyncGetDefaultUri),
-            InstanceMethod("schemaSyncPull", &NativeDgnDb::SchemaSyncPull),
-            InstanceMethod("schemaSyncPush", &NativeDgnDb::SchemaSyncPush),
+            InstanceMethod("schemaSyncOverwrite", &NativeDgnDb::SchemaSyncOverwrite),
+            InstanceMethod("schemaSyncRepair", &NativeDgnDb::SchemaSyncRepair),
+            InstanceMethod("schemaSyncUpdateDbSchema", &NativeDgnDb::SchemaSyncUpdateDbSchema),
             InstanceMethod("schemaSyncInit", &NativeDgnDb::SchemaSyncInit),
             InstanceMethod("schemaSyncEnabled", &NativeDgnDb::SchemaSyncEnabled),
             InstanceMethod("schemaSyncGetLocalDbInfo", &NativeDgnDb::SchemaSyncGetLocalDbInfo),
             InstanceMethod("schemaSyncGetSyncDbInfo", &NativeDgnDb::SchemaSyncGetSyncDbInfo),
             InstanceMethod("updateElement", &NativeDgnDb::UpdateElement),
+            InstanceMethod("changeElementParent", &NativeDgnDb::ChangeElementParent),
+            InstanceMethod("changeElementModel", &NativeDgnDb::ChangeElementModel),
             InstanceMethod("updateElementAspect", &NativeDgnDb::UpdateElementAspect),
             InstanceMethod("updateElementGeometryCache", &NativeDgnDb::UpdateElementGeometryCache),
             InstanceMethod("updateIModelProps", &NativeDgnDb::UpdateIModelProps),
@@ -3362,7 +3845,16 @@ struct NativeGeoServices : BeObjectWrap<NativeGeoServices>
             BeJsGeomUtils::DRange2dFromJson(extentRange, info[0].As<Napi::Object>());
 
         bool includeWorld = ARGUMENT_IS_BOOL(1) ? info[1].As<Napi::Boolean>().Value() : false;
-        bvector<CRSListResponseProps> listOfCRS = GeoServicesInterop::GetListOfCRS(extentIsValid ? &extentRange : nullptr, includeWorld );
+        
+        Utf8CP unitFilter = nullptr;
+        Utf8String unitFilterStr;
+        if (ARGUMENT_IS_STRING(2))
+            {
+            unitFilterStr = info[2].As<Napi::String>().Utf8Value();
+            unitFilter = unitFilterStr.c_str();
+            }
+
+        bvector<CRSListResponseProps> listOfCRS = GeoServicesInterop::GetListOfCRS(extentIsValid ? &extentRange : nullptr, includeWorld, unitFilter);
 
         uint32_t index = 0;
         auto ret = Napi::Array::New(info.Env(), listOfCRS.size());
@@ -3371,12 +3863,63 @@ struct NativeGeoServices : BeObjectWrap<NativeGeoServices>
             auto gcsDefinition = Napi::Object::New(info.Env());
             gcsDefinition.Set(Napi::String::New(info.Env(), "name"), Napi::String::New(info.Env(), gcs.m_name.c_str()));
             gcsDefinition.Set(Napi::String::New(info.Env(), "description"), Napi::String::New(info.Env(), gcs.m_description.c_str()));
+            gcsDefinition.Set(Napi::String::New(info.Env(), "unit"),  Napi::String::New(info.Env(), gcs.m_unit.c_str()));
+            
             gcsDefinition.Set(("deprecated"), gcs.m_deprecated);
             Napi::Object crsExtent = Napi::Object::New(info.Env());
             BeJsGeomUtils::DRange2dToJson(crsExtent, gcs.m_crsExtent);
             gcsDefinition.Set("crsExtent", crsExtent);
+            
 
             ret.Set(index++, gcsDefinition);
+            }
+
+        return ret;
+        }
+
+    static Napi::Value GetAvailableCRSUnitNames(NapiInfoCR info)
+        {
+        T_Utf8StringVector unitNames = GeoCoordinates::BaseGCS::GetSupportedJsonUnitNames();
+
+        uint32_t index = 0;
+        auto ret = Napi::Array::New(info.Env(), unitNames.size());
+        for (auto const& unitName : unitNames)
+            ret.Set(index++, Napi::String::New(info.Env(), unitName.c_str()));
+
+        return ret;
+        }
+
+    static Napi::Value GetListOfVerticalCRS(NapiInfoCR info)
+        {
+        OPTIONAL_ARGUMENT_ANY_OBJ(0, props, Napi::Object::New(info.Env()));
+
+        bvector<VerticalCRSListResponseProps> list;
+        Utf8String errorMessage;
+        StatusInt status = GeoServicesInterop::GetListOfVerticalCRS(list, props, errorMessage);
+        if (SUCCESS != status)
+            {
+            if (errorMessage.empty())
+                errorMessage.Sprintf("unable to query vertical coordinate reference systems (status %d)", status);
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), errorMessage.c_str(), IModelJsNativeErrorKey::BadArg);
+            }
+
+        auto ret = Napi::Array::New(info.Env(), list.size());
+        uint32_t index = 0;
+        for (auto const& verticalCrs : list)
+            {
+            auto definition = Napi::Object::New(info.Env());
+            definition.Set("crsName", verticalCrs.m_crsName.c_str());
+            definition.Set("id", verticalCrs.m_id.c_str());
+            if (verticalCrs.m_epsg > 0)
+                definition.Set("epsg", verticalCrs.m_epsg);
+            definition.Set("description", verticalCrs.m_description.c_str());
+            definition.Set("deprecated", verticalCrs.m_deprecated);
+            definition.Set("type", verticalCrs.m_type.c_str());
+            definition.Set("unit", verticalCrs.m_unit.c_str());
+            Napi::Object verticalExtent = Napi::Object::New(info.Env());
+            BeJsGeomUtils::DRange2dToJson(verticalExtent, verticalCrs.m_extent);
+            definition.Set("extent", verticalExtent);
+            ret.Set(index++, definition);
             }
 
         return ret;
@@ -3388,11 +3931,12 @@ struct NativeGeoServices : BeObjectWrap<NativeGeoServices>
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, "GeoServices", {
             StaticMethod("getGeographicCRSInterpretation", &NativeGeoServices::GetGeographicCRSInterpretation),
-            StaticMethod("getListOfCRS", &NativeGeoServices::GetListOfCRS)
+            StaticMethod("getListOfCRS", &NativeGeoServices::GetListOfCRS),
+            StaticMethod("getListOfVerticalCRS", &NativeGeoServices::GetListOfVerticalCRS),
+            StaticMethod("getAvailableUnitNames", &NativeGeoServices::GetAvailableCRSUnitNames)
         });
 
         exports.Set("GeoServices", t);
-
         SET_CONSTRUCTOR(t);
         }
     };
@@ -3405,122 +3949,6 @@ DgnDb* extractDgnDbFromNapiValue(Napi::Value value)
     auto nativeDb = Napi::ObjectWrap<NativeDgnDb>::Unwrap(value.As<Napi::Object>());
     return nullptr != nativeDb && nativeDb->IsOpen() ? &nativeDb->GetDgnDb() : nullptr;
     }
-
-//=======================================================================================
-//  RevisionUtility class into JS
-//! @bsiclass
-//=======================================================================================
-struct NativeRevisionUtility : BeObjectWrap<NativeRevisionUtility>
-    {
-    private:
-        DEFINE_CONSTRUCTOR
-
-    public:
-        NativeRevisionUtility(NapiInfoCR info) : BeObjectWrap<NativeRevisionUtility>(info) {}
-        ~NativeRevisionUtility() {SetInDestructor();}
-
-    // Check if val is really a NativeRevisionUtility peer object
-    static bool InstanceOf(Napi::Value val) {
-        if (!val.IsObject())
-            return false;
-
-        Napi::HandleScope scope(val.Env());
-        return val.As<Napi::Object>().InstanceOf(Constructor().Value());
-    }
-
-    static Napi::Value RecompressRevision(NapiInfoCR info)
-        {
-        REQUIRE_ARGUMENT_STRING(0, sourceChangeSetFile);
-        REQUIRE_ARGUMENT_STRING(1, targetChangeSetFile);
-        OPTIONAL_ARGUMENT_STRING(2, lzmaProperties);
-        LzmaEncoder::LzmaParams params;
-        if (!lzmaProperties.empty())
-            params.FromJson(BeJsDocument(lzmaProperties));
-
-        BentleyStatus status = RevisionUtility::RecompressRevision(sourceChangeSetFile.c_str(), targetChangeSetFile.c_str(), params);
-        return Napi::Number::New(info.Env(), (int)status);
-        }
-    static Napi::Value DisassembleRevision(NapiInfoCR info)
-        {
-        REQUIRE_ARGUMENT_STRING(0, sourceFile);
-        REQUIRE_ARGUMENT_STRING(1, targetDir);
-        BentleyStatus status = RevisionUtility::DisassembleRevision(sourceFile.c_str(), targetDir.c_str());
-        return Napi::Number::New(info.Env(), (int)status);
-        }
-    static Napi::Value AssembleRevision(NapiInfoCR info)
-        {
-        REQUIRE_ARGUMENT_STRING(0, outputChangesetFile);
-        REQUIRE_ARGUMENT_STRING(1, rawChangesetFile);
-        OPTIONAL_ARGUMENT_STRING(2, prefixFile);
-        OPTIONAL_ARGUMENT_STRING(3, lzmaProperties);
-        LzmaEncoder::LzmaParams params;
-        if (!lzmaProperties.empty())
-            params.FromJson(BeJsDocument(lzmaProperties));
-
-        BentleyStatus status = RevisionUtility::AssembleRevision(prefixFile.c_str(), rawChangesetFile.c_str(), outputChangesetFile.c_str(), params);
-        return Napi::Number::New(info.Env(), (int)status);
-        }
-    static Napi::Value NormalizeLzmaParams(NapiInfoCR info)
-        {
-        OPTIONAL_ARGUMENT_STRING(0, lzmaProperties);
-        LzmaEncoder::LzmaParams params;
-        if (!lzmaProperties.empty())
-            params.FromJson(BeJsDocument(lzmaProperties));
-
-        BeJsDocument out;
-        params.ToJson(out);
-        return Napi::String::New(info.Env(), out.Stringify().c_str());
-        }
-    static Napi::Value ComputeStatistics(NapiInfoCR info)
-        {
-        REQUIRE_ARGUMENT_STRING(0, changesetFile);
-        REQUIRE_ARGUMENT_BOOL(1, addPrefix);
-        BeJsDocument out;
-        if (SUCCESS != RevisionUtility::ComputeStatistics(changesetFile.c_str(), addPrefix, out))
-            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Failed to compute statistics", IModelJsNativeErrorKey::BadArg);
-
-        return Napi::String::New(info.Env(), out.Stringify().c_str());
-        }
-    static Napi::Value GetUncompressSize(NapiInfoCR info)
-        {
-        REQUIRE_ARGUMENT_STRING(0, changesetFile);
-        uint32_t compressSize, uncompressSize, prefixSize;
-        if (SUCCESS != RevisionUtility::GetUncompressSize(changesetFile.c_str(), compressSize, uncompressSize, prefixSize))
-            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Failed to get uncompress size", IModelJsNativeErrorKey::CompressionError);
-
-        BeJsDocument out;
-        out["compressSize"] = compressSize;
-        out["uncompressSize"] = uncompressSize;
-        out["prefixSize"] = prefixSize;
-        return Napi::String::New(info.Env(), out.Stringify().c_str());
-        }
-    static Napi::Value DumpChangesetToDb(NapiInfoCR info)
-        {
-        REQUIRE_ARGUMENT_STRING(0, changesetFile);
-        REQUIRE_ARGUMENT_STRING(1, sqliteFile);
-        REQUIRE_ARGUMENT_BOOL(2, includeCols);
-
-        BentleyStatus status = RevisionUtility::DumpChangesetToDb(changesetFile.c_str(), sqliteFile.c_str(), includeCols);
-        return Napi::Number::New(info.Env(), (int)status);
-        }
-    static void Init(Napi::Env env, Napi::Object exports)
-        {
-        Napi::HandleScope scope(env);
-        Napi::Function t = DefineClass(env, "RevisionUtility", {
-            StaticMethod("recompressRevision", &NativeRevisionUtility::RecompressRevision),
-            StaticMethod("disassembleRevision", &NativeRevisionUtility::DisassembleRevision),
-            StaticMethod("assembleRevision", &NativeRevisionUtility::AssembleRevision),
-            StaticMethod("normalizeLzmaParams", &NativeRevisionUtility::NormalizeLzmaParams),
-            StaticMethod("computeStatistics", &NativeRevisionUtility::ComputeStatistics),
-            StaticMethod("getUncompressSize", &NativeRevisionUtility::GetUncompressSize),
-            StaticMethod("dumpChangesetToDb", &NativeRevisionUtility::DumpChangesetToDb),
-        });
-
-        exports.Set("RevisionUtility", t);
-
-        SET_CONSTRUCTOR(t)
-        }
-    };
 
 //=======================================================================================
 //  Projects the SchemaUtility class into JS.
@@ -3793,6 +4221,10 @@ struct NativeChangedElementsECDb : BeObjectWrap<NativeChangedElementsECDb>
 // Projects the IECSqlBinder interface into JS.
 //! @bsiclass
 //=======================================================================================
+struct ECSqlBinderLifetime {
+    bool m_isValid = true;
+};
+
 struct NativeECSqlBinder : BeObjectWrap<NativeECSqlBinder>
     {
 private:
@@ -3800,6 +4232,7 @@ private:
     IECSqlBinder* m_binder = nullptr;
     ECDb const* m_ecdb = nullptr;
     ECSqlStatement* m_ecSqlStatement = nullptr;
+    std::shared_ptr<ECSqlBinderLifetime> m_lifetime;
 
     static DbResult ToDbResult(ECSqlStatus status)
         {
@@ -3812,11 +4245,16 @@ private:
         return BE_SQLITE_ERROR;
         }
 
+    bool IsBinderValid() const
+        {
+        return m_binder != nullptr && m_lifetime != nullptr && m_lifetime->m_isValid;
+        }
+
 public:
     NativeECSqlBinder(NapiInfoCR info) : BeObjectWrap<NativeECSqlBinder>(info)
         {
-        if (info.Length() < 2 || info.Length() > 3)
-            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder constructor expects either two or three arguments.", IModelJsNativeErrorKey::BadArg);
+        if (info.Length() != 4)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder constructor expects four arguments.", IModelJsNativeErrorKey::BadArg);
 
         m_binder = info[0].As<Napi::External<IECSqlBinder>>().Data();
         if (m_binder == nullptr)
@@ -3827,6 +4265,11 @@ public:
             THROW_JS_TYPE_EXCEPTION("Invalid second arg for NativeECSqlBinder constructor. ECDb must not be nullptr");
 
         m_ecSqlStatement = info[2].As<Napi::External<ECSqlStatement>>().Data();
+        auto lifetime = info[3].As<Napi::External<std::shared_ptr<ECSqlBinderLifetime>>>().Data();
+        if (lifetime == nullptr || *lifetime == nullptr)
+            THROW_JS_TYPE_EXCEPTION("Invalid fourth arg for NativeECSqlBinder constructor. Binder lifetime must not be nullptr");
+
+        m_lifetime = *lifetime;
         }
 
     ~NativeECSqlBinder() {SetInDestructor();}
@@ -3867,14 +4310,18 @@ public:
         SET_CONSTRUCTOR(t);
         }
 
-    static Napi::Object New(Napi::Env const& env, IECSqlBinder& binder, ECDbCR ecdb, const ECSqlStatement* ecSqlStatement = nullptr)
+    static Napi::Object New(Napi::Env const& env, IECSqlBinder& binder, ECDbCR ecdb, ECSqlStatement const* ecSqlStatement, std::shared_ptr<ECSqlBinderLifetime> const& lifetime)
         {
-        return Constructor().New({Napi::External<IECSqlBinder>::New(env, &binder), Napi::External<ECDb>::New(env, const_cast<ECDb*>(&ecdb)), Napi::External<ECSqlStatement>::New(env, const_cast<ECSqlStatement*>(ecSqlStatement))});
+        auto lifetimeArg = Napi::External<std::shared_ptr<ECSqlBinderLifetime>>::New(
+            env,
+            new std::shared_ptr<ECSqlBinderLifetime>(lifetime),
+            [](Napi::Env, std::shared_ptr<ECSqlBinderLifetime>* value) { delete value; });
+        return Constructor().New({Napi::External<IECSqlBinder>::New(env, &binder), Napi::External<ECDb>::New(env, const_cast<ECDb*>(&ecdb)), Napi::External<ECSqlStatement>::New(env, const_cast<ECSqlStatement*>(ecSqlStatement)), lifetimeArg});
         }
 
     Napi::Value BindNull(NapiInfoCR info)
         {
-        if (m_binder == nullptr)
+        if (!IsBinderValid())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         ECSqlStatus stat = m_binder->BindNull();
@@ -3883,7 +4330,7 @@ public:
 
     Napi::Value BindBlob(NapiInfoCR info)
         {
-        if (m_binder == nullptr)
+        if (!IsBinderValid())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         if (info.Length() == 0)
@@ -3923,7 +4370,7 @@ public:
 
     Napi::Value BindBoolean(NapiInfoCR info)
         {
-        if (m_binder == nullptr)
+        if (!IsBinderValid())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         Napi::Value boolVal;
@@ -3936,7 +4383,7 @@ public:
 
     Napi::Value BindDateTime(NapiInfoCR info)
         {
-        if (m_binder == nullptr)
+        if (!IsBinderValid())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         REQUIRE_ARGUMENT_STRING(0, isoString);
@@ -3951,7 +4398,7 @@ public:
 
     Napi::Value BindDouble(NapiInfoCR info)
         {
-        if (m_binder == nullptr)
+        if (!IsBinderValid())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         REQUIRE_ARGUMENT_NUMBER(0, val);
@@ -3961,7 +4408,7 @@ public:
 
     Napi::Value BindGuid(NapiInfoCR info)
         {
-        if (m_binder == nullptr)
+        if (!IsBinderValid())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         REQUIRE_ARGUMENT_STRING(0, guidString);
@@ -3975,7 +4422,7 @@ public:
 
     Napi::Value BindId(NapiInfoCR info)
         {
-        if (m_binder == nullptr)
+        if (!IsBinderValid())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         REQUIRE_ARGUMENT_STRING(0, hexString);
@@ -3989,7 +4436,7 @@ public:
 
     Napi::Value BindIdSet(NapiInfoCR info)
         {
-        if (m_binder == nullptr)
+        if (!IsBinderValid())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
         if (info.Length() == 0)
             THROW_JS_TYPE_EXCEPTION("BindVirtualSet requires an argument");
@@ -4036,7 +4483,7 @@ public:
 
     Napi::Value BindInteger(NapiInfoCR info)
         {
-        if (m_binder == nullptr)
+        if (!IsBinderValid())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         if (info.Length() == 0)
@@ -4083,7 +4530,7 @@ public:
 
     Napi::Value BindPoint2d(NapiInfoCR info)
         {
-        if (m_binder == nullptr)
+        if (!IsBinderValid())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         REQUIRE_ARGUMENT_NUMBER(0, x);
@@ -4094,7 +4541,7 @@ public:
 
     Napi::Value BindPoint3d(NapiInfoCR info)
         {
-        if (m_binder == nullptr)
+        if (!IsBinderValid())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         REQUIRE_ARGUMENT_NUMBER(0, x);
@@ -4106,7 +4553,7 @@ public:
 
     Napi::Value BindString(NapiInfoCR info)
         {
-        if (m_binder == nullptr)
+        if (!IsBinderValid())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         REQUIRE_ARGUMENT_STRING(0, val);
@@ -4116,7 +4563,7 @@ public:
 
     Napi::Value BindNavigation(NapiInfoCR info)
         {
-        if (m_binder == nullptr || m_ecdb == nullptr)
+        if (!IsBinderValid() || m_ecdb == nullptr)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         REQUIRE_ARGUMENT_STRING(0, navIdHexStr);
@@ -4159,21 +4606,21 @@ public:
 
     Napi::Value BindMember(NapiInfoCR info)
         {
-        if (m_binder == nullptr || m_ecdb == nullptr)
+        if (!IsBinderValid() || m_ecdb == nullptr)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         REQUIRE_ARGUMENT_STRING(0, memberName);
         IECSqlBinder& memberBinder = m_binder->operator[](memberName.c_str());
-        return New(info.Env(), memberBinder, *m_ecdb);
+        return New(info.Env(), memberBinder, *m_ecdb, m_ecSqlStatement, m_lifetime);
         }
 
     Napi::Value AddArrayElement(NapiInfoCR info)
         {
-        if (m_binder == nullptr || m_ecdb == nullptr)
+        if (!IsBinderValid() || m_ecdb == nullptr)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         IECSqlBinder& elementBinder = m_binder->AddArrayElement();
-        return New(info.Env(), elementBinder, *m_ecdb);
+        return New(info.Env(), elementBinder, *m_ecdb, m_ecSqlStatement, m_lifetime);
         }
     };
 
@@ -4852,50 +5299,50 @@ Napi::Value NativeECSqlValue::GetArrayIterator(NapiInfoCR info)
 // Projects the changeset reader into JS.
 //! @bsiclass
 //=======================================================================================
-struct NativeChangesetReader : BeObjectWrap<NativeChangesetReader>
+struct NativeSqliteChangesetReader : BeObjectWrap<NativeSqliteChangesetReader>
 {
 private:
     DEFINE_CONSTRUCTOR;
-    NativeChangeset m_changeset;
+    SqliteChangesetReader m_changeset;
 
 
 public:
-    NativeChangesetReader(NapiInfoCR info) : BeObjectWrap<NativeChangesetReader>(info){}
-    ~NativeChangesetReader() {SetInDestructor();}
+    NativeSqliteChangesetReader(NapiInfoCR info) : BeObjectWrap<NativeSqliteChangesetReader>(info){}
+    ~NativeSqliteChangesetReader() {SetInDestructor();}
 
     //  Create projections
     static void Init(Napi::Env& env, Napi::Object exports)       {
         Napi::HandleScope scope(env);
-        Napi::Function t = DefineClass(env, "ChangesetReader", {
-          InstanceMethod("close", &NativeChangesetReader::Close),
-          InstanceMethod("getColumnCount", &NativeChangesetReader::GetColumnCount),
-          InstanceMethod("getColumnValue", &NativeChangesetReader::GetColumnValue),
-          InstanceMethod("getColumnValueBinary", &NativeChangesetReader::GetColumnValueBinary),
-          InstanceMethod("getColumnValueDouble", &NativeChangesetReader::GetColumnValueDouble),
-          InstanceMethod("getColumnValueId", &NativeChangesetReader::GetColumnValueId),
-          InstanceMethod("getColumnValueInteger", &NativeChangesetReader::GetColumnValueInteger),
-          InstanceMethod("getColumnValueText", &NativeChangesetReader::GetColumnValueText),
-          InstanceMethod("getColumnValueType", &NativeChangesetReader::GetColumnValueType),
-          InstanceMethod("getDdlChanges", &NativeChangesetReader::GetDdlChanges),
-          InstanceMethod("getOpCode", &NativeChangesetReader::GetOpCode),
-          InstanceMethod("getPrimaryKeys", &NativeChangesetReader::GetPrimaryKeys),
-          InstanceMethod("getRow", &NativeChangesetReader::GetRow),
-          InstanceMethod("getTableName", &NativeChangesetReader::GetTableName),
-          InstanceMethod("hasRow", &NativeChangesetReader::HasRow),
-          InstanceMethod("isColumnValueNull", &NativeChangesetReader::IsColumnValueNull),
-          InstanceMethod("isIndirectChange", &NativeChangesetReader::IsIndirectChange),
-          InstanceMethod("getPrimaryKeyColumnIndexes", &NativeChangesetReader::GetPrimaryKeyColumnIndexes),
-          InstanceMethod("openFile", &NativeChangesetReader::OpenFile),
-          InstanceMethod("openGroup", &NativeChangesetReader::OpenGroup),
-          InstanceMethod("writeToFile", &NativeChangesetReader::WriteToFile),
-          InstanceMethod("openLocalChanges", &NativeChangesetReader::OpenLocalChanges),
-          InstanceMethod("openInMemoryChanges", &NativeChangesetReader::OpenInMemoryChanges),
-          InstanceMethod("openTxn", &NativeChangesetReader::OpenTxn),
-          InstanceMethod("reset", &NativeChangesetReader::Reset),
-          InstanceMethod("step", &NativeChangesetReader::Step),
+        Napi::Function t = DefineClass(env, "SqliteChangesetReader", {
+          InstanceMethod("close", &NativeSqliteChangesetReader::Close),
+          InstanceMethod("getColumnCount", &NativeSqliteChangesetReader::GetColumnCount),
+          InstanceMethod("getColumnValue", &NativeSqliteChangesetReader::GetColumnValue),
+          InstanceMethod("getColumnValueBinary", &NativeSqliteChangesetReader::GetColumnValueBinary),
+          InstanceMethod("getColumnValueDouble", &NativeSqliteChangesetReader::GetColumnValueDouble),
+          InstanceMethod("getColumnValueId", &NativeSqliteChangesetReader::GetColumnValueId),
+          InstanceMethod("getColumnValueInteger", &NativeSqliteChangesetReader::GetColumnValueInteger),
+          InstanceMethod("getColumnValueText", &NativeSqliteChangesetReader::GetColumnValueText),
+          InstanceMethod("getColumnValueType", &NativeSqliteChangesetReader::GetColumnValueType),
+          InstanceMethod("getDdlChanges", &NativeSqliteChangesetReader::GetDdlChanges),
+          InstanceMethod("getOpCode", &NativeSqliteChangesetReader::GetOpCode),
+          InstanceMethod("getPrimaryKeys", &NativeSqliteChangesetReader::GetPrimaryKeys),
+          InstanceMethod("getRow", &NativeSqliteChangesetReader::GetRow),
+          InstanceMethod("getTableName", &NativeSqliteChangesetReader::GetTableName),
+          InstanceMethod("hasRow", &NativeSqliteChangesetReader::HasRow),
+          InstanceMethod("isColumnValueNull", &NativeSqliteChangesetReader::IsColumnValueNull),
+          InstanceMethod("isIndirectChange", &NativeSqliteChangesetReader::IsIndirectChange),
+          InstanceMethod("getPrimaryKeyColumnIndexes", &NativeSqliteChangesetReader::GetPrimaryKeyColumnIndexes),
+          InstanceMethod("openFile", &NativeSqliteChangesetReader::OpenFile),
+          InstanceMethod("openGroup", &NativeSqliteChangesetReader::OpenGroup),
+          InstanceMethod("writeToFile", &NativeSqliteChangesetReader::WriteToFile),
+          InstanceMethod("openLocalChanges", &NativeSqliteChangesetReader::OpenLocalChanges),
+          InstanceMethod("openInMemoryChanges", &NativeSqliteChangesetReader::OpenInMemoryChanges),
+          InstanceMethod("openTxn", &NativeSqliteChangesetReader::OpenTxn),
+          InstanceMethod("reset", &NativeSqliteChangesetReader::Reset),
+          InstanceMethod("step", &NativeSqliteChangesetReader::Step),
         });
 
-        exports.Set("ChangesetReader", t);
+        exports.Set("SqliteChangesetReader", t);
         SET_CONSTRUCTOR(t);
         }
     Napi::Value GetPrimaryKeyColumnIndexes(NapiInfoCR info)
@@ -4987,23 +5434,26 @@ public:
         REQUIRE_ARGUMENT_ANY_OBJ(1, dbObj);
         REQUIRE_ARGUMENT_BOOL(2, invert);
 
-        ECDb* ecdb = nullptr;
+        Db* db = nullptr;
         if (NativeDgnDb::InstanceOf(dbObj)) {
             NativeDgnDb* addonDgndb = NativeDgnDb::Unwrap(dbObj);
-            ecdb = &addonDgndb->GetDgnDb();
+            db = &addonDgndb->GetDgnDb();
 
         } else if (NativeECDb::InstanceOf(dbObj)) {
             NativeECDb* addonECDb = NativeECDb::Unwrap(dbObj);
-            ecdb = &addonECDb->GetECDb();
+            db = &addonECDb->GetECDb();
 
+        } else if (SQLiteDb::InstanceOf(dbObj)) {
+            SQLiteDb* sqliteDb = SQLiteDb::Unwrap(dbObj);
+            db = &sqliteDb->GetDb();
         } else {
-            THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb or NativeECDb object");
+            THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb, NativeECDb, or SQLiteDb object");
         }
 
-        if (!ecdb || !ecdb->IsDbOpen())
-            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Provided db is not open", DgnDbStatus::NotOpen);
+        if (!db || !db->IsDbOpen())
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db not open", DgnDbStatus::NotOpen);
 
-        m_changeset.OpenGroup(Env(), fileNames, *ecdb, invert);
+        m_changeset.OpenGroup(Env(), fileNames, *db, invert);
         }
     void WriteToFile(NapiInfoCR info)
         {
@@ -5017,9 +5467,12 @@ public:
         REQUIRE_ARGUMENT_ANY_OBJ(0, dbObj);
         REQUIRE_ARGUMENT_BOOL(1, includeInMemoryChanges);
         REQUIRE_ARGUMENT_BOOL(2, invert);
+        if(!NativeDgnDb::InstanceOf(dbObj))
+            THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb object");
         NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
-        if (!nativeDgnDb->IsOpen())
-            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Provided db is not open", DgnDbStatus::NotOpen);
+        
+        if (!nativeDgnDb || !nativeDgnDb->IsOpen())
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db not open", DgnDbStatus::NotOpen);
 
         auto changeset = nativeDgnDb->GetDgnDb().Txns().CreateChangesetFromLocalChanges(includeInMemoryChanges);
         if (changeset == nullptr)
@@ -5031,9 +5484,12 @@ public:
         {
         REQUIRE_ARGUMENT_ANY_OBJ(0, dbObj);
         REQUIRE_ARGUMENT_BOOL(1, invert);
+        if(!NativeDgnDb::InstanceOf(dbObj))
+            THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb object");
         NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
-        if (!nativeDgnDb->IsOpen())
-            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Provided db is not open", DgnDbStatus::NotOpen);
+
+        if (!nativeDgnDb || !nativeDgnDb->IsOpen())
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db not open", DgnDbStatus::NotOpen);
 
         auto changeset = nativeDgnDb->GetDgnDb().Txns().CreateChangesetFromInMemoryChanges();
         if (changeset == nullptr)
@@ -5046,9 +5502,12 @@ public:
         REQUIRE_ARGUMENT_ANY_OBJ(0, dbObj);
         REQUIRE_ARGUMENT_STRING(1, idStr);
         REQUIRE_ARGUMENT_BOOL(2, invert);
+        if(!NativeDgnDb::InstanceOf(dbObj))
+            THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb object");
         NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
-        if (!nativeDgnDb->IsOpen())
-            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Provided db is not open", DgnDbStatus::NotOpen);
+
+        if (!nativeDgnDb || !nativeDgnDb->IsOpen())
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db not open", DgnDbStatus::NotOpen);
 
         BeInt64Id id;
         if (SUCCESS != BeInt64Id::FromString(id, idStr.c_str())) {
@@ -5085,6 +5544,552 @@ public:
 };
 
 //=======================================================================================
+// Projects the ChangesetReader class into JS.
+//! @bsiclass
+//=======================================================================================
+struct NativeChangesetReader : BeObjectWrap<NativeChangesetReader>
+{
+private:
+    DEFINE_CONSTRUCTOR;
+    ChangesetReader m_reader;
+
+    ECDb* ExtractECDb(NapiInfoCR info, Napi::Object dbObj)
+        {
+        ECDb* ecdb = nullptr;
+        if (NativeDgnDb::InstanceOf(dbObj))
+            ecdb = &NativeDgnDb::Unwrap(dbObj)->GetDgnDb();
+        else if (NativeECDb::InstanceOf(dbObj))
+            ecdb = &NativeECDb::Unwrap(dbObj)->GetECDb();
+        else
+            THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb or NativeECDb object");
+        if (!ecdb || !ecdb->IsDbOpen())
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db not open", DgnDbStatus::NotOpen);
+        return ecdb;
+        }
+
+    ChangesetReader::PropertyFilter GetPropertyFilter(NapiInfoCR info, int modeInt)
+        {
+        if (modeInt < 0 || modeInt > 3)
+            THROW_JS_TYPE_EXCEPTION("Invalid mode. Expected 0 (All_Properties), 1 (Bis_Element_Properties), 2 (Instance_Key), or 3 (Instance_Key_And_Identifiers)");
+        return static_cast<ChangesetReader::PropertyFilter>(modeInt);
+        }
+
+    size_t ParseSpillThreshold(NapiInfoCR info, int argIndex)
+        {
+        if (ARGUMENT_IS_NOT_NUMBER(argIndex))
+            THROW_JS_TYPE_EXCEPTION("spillThresholdBytes must be a number");
+        double val = info[argIndex].As<Napi::Number>().DoubleValue();
+        if (std::isnan(val))
+            THROW_JS_TYPE_EXCEPTION("spillThresholdBytes must not be NaN");
+        if (std::isinf(val))
+            THROW_JS_TYPE_EXCEPTION("spillThresholdBytes must not be infinite");
+        if (val < 0)
+            THROW_JS_TYPE_EXCEPTION("spillThresholdBytes must be a non-negative number");
+        if (val != std::floor(val))
+            THROW_JS_TYPE_EXCEPTION("spillThresholdBytes must be an integer (no decimal part)");
+        const double kUpperBound = static_cast<double>(std::numeric_limits<size_t>::max());
+        if (val >= kUpperBound) // This depends on the node add on binary (32 bit or 64 bit)
+            THROW_JS_TYPE_EXCEPTION("spillThresholdBytes exceeds the maximum allowed value");
+        return static_cast<size_t>(val);
+        }
+
+    // Builds the ChangesetRowMetadata object for the current reader row.
+    // The row objects are built with Napi directly rather than through BeJsValue, which does a member lookup and a heap
+    // allocation per write; the values and member order are the same.
+    Napi::Value BuildRowMetadata(Napi::Env env)
+        {
+        Utf8String tableName;
+        if (m_reader.GetTableName(tableName) != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "GetTableName() failed", IModelJsNativeErrorKey::ChangesetError);
+        DbOpcode opcode;
+        if (m_reader.GetOpcode(opcode) != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "GetOpcode() failed", IModelJsNativeErrorKey::ChangesetError);
+        bool isIndirectChange;
+        if (m_reader.IsIndirectChange(isIndirectChange) != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "IsIndirectChange() failed", IModelJsNativeErrorKey::ChangesetError);
+        bool isECTable;
+        if (m_reader.IsECTable(isECTable) != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "IsECTable() failed", IModelJsNativeErrorKey::ChangesetError);
+        Napi::Object metadata = Napi::Object::New(env);
+        metadata.Set("tableName", Napi::String::New(env, tableName.c_str()));
+        metadata.Set("opCode", Napi::Number::New(env, static_cast<int>(opcode)));
+        metadata.Set("isIndirectChange", Napi::Boolean::New(env, isIndirectChange));
+        metadata.Set("isECTable", Napi::Boolean::New(env, isECTable));
+        return metadata;
+        }
+
+    // Builds a ChangesetRowValue for the given stage, or returns undefined when that stage has no columns.
+    Napi::Value BuildRowValue(Napi::Env env, ECSqlRowAdaptor& adaptor, Changes::Change::Stage stage)
+        {
+        if (m_reader.GetColumnCount(stage) == 0)
+            return env.Undefined();
+        BeJsNapiObject data(env);
+        if (adaptor.RenderRowAsObject(data, ChangesetRow(m_reader, stage)) != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "Failed to render row", IModelJsNativeErrorKey::ChangesetError);
+        Utf8String instanceKey;
+        if (m_reader.GetInstanceKey(stage, instanceKey) != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "Failed to get instance key", IModelJsNativeErrorKey::ChangesetError);
+        const auto* names = m_reader.GetChangeFetchedPropertyNames();
+        if (names == nullptr)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "Failed to get change fetched property names", IModelJsNativeErrorKey::ChangesetError);
+        Napi::Array changeFetchedPropNames = Napi::Array::New(env);
+        uint32_t idx = 0;
+        for (auto const& name : *names)
+            changeFetchedPropNames.Set(idx++, Napi::String::New(env, name.c_str()));
+        Napi::Object rv = Napi::Object::New(env);
+        rv.Set("data", static_cast<Napi::Object>(data));
+        rv.Set("key", Napi::String::New(env, instanceKey.c_str()));
+        rv.Set("changeFetchedPropNames", changeFetchedPropNames);
+        return rv;
+        }
+
+public:
+    NativeChangesetReader(NapiInfoCR info) : BeObjectWrap<NativeChangesetReader>(info) {}
+    ~NativeChangesetReader() { SetInDestructor(); }
+    ChangesetReader& GetReader() { return m_reader; }
+
+    // Check if val is really a NativeChangesetReader peer object
+    static bool InstanceOf(Napi::Value val)
+        {
+        if (!val.IsObject())
+            return false;
+
+        Napi::HandleScope scope(val.Env());
+        return val.As<Napi::Object>().InstanceOf(Constructor().Value());
+        }
+
+    static void Init(Napi::Env& env, Napi::Object exports)
+        {
+        Napi::HandleScope scope(env);
+        Napi::Function t = DefineClass(env, "ChangesetReader", {
+            InstanceMethod("openFile",            &NativeChangesetReader::OpenFile),
+            InstanceMethod("openGroup",           &NativeChangesetReader::OpenGroup),
+            InstanceMethod("openLocalChanges",    &NativeChangesetReader::OpenLocalChanges),
+            InstanceMethod("openInMemoryChanges", &NativeChangesetReader::OpenInMemoryChanges),
+            InstanceMethod("openTxn",             &NativeChangesetReader::OpenTxn),
+            InstanceMethod("close",               &NativeChangesetReader::Close),
+            InstanceMethod("step",                &NativeChangesetReader::Step),
+            InstanceMethod("setTableNameFilters",   &NativeChangesetReader::SetTableNameFilters),
+            InstanceMethod("setOpCodeFilters",      &NativeChangesetReader::SetOpCodeFilters),
+            InstanceMethod("setClassNameFilters",   &NativeChangesetReader::SetClassNameFilters),
+            InstanceMethod("clearTableNameFilters", &NativeChangesetReader::ClearTableNameFilters),
+            InstanceMethod("clearOpCodeFilters",   &NativeChangesetReader::ClearOpCodeFilters),
+            InstanceMethod("clearClassNameFilters", &NativeChangesetReader::ClearClassNameFilters),
+            InstanceMethod("enableStrictMode",      &NativeChangesetReader::EnableStrictMode),
+            InstanceMethod("disableStrictMode",     &NativeChangesetReader::DisableStrictMode),
+
+        });
+        exports.Set("ChangesetReader", t);
+        SET_CONSTRUCTOR(t);
+        }
+
+    void OpenFile(NapiInfoCR info)
+        {
+        REQUIRE_ARGUMENT_ANY_OBJ(0, dbObj);
+        ECDb* ecdb = ExtractECDb(info, dbObj);
+        REQUIRE_ARGUMENT_STRING(1, fileName);
+        REQUIRE_ARGUMENT_BOOL(2, invert);
+        REQUIRE_ARGUMENT_INTEGER(3, propFilterInt);
+        DbResult rc = m_reader.OpenChangesetFile(*ecdb, fileName, invert, GetPropertyFilter(info, propFilterInt));
+        if (rc != BE_SQLITE_OK)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "openFile() failed", rc);
+        }
+
+    void OpenGroup(NapiInfoCR info)
+        {
+        REQUIRE_ARGUMENT_ANY_OBJ(0, dbObj);
+        ECDb* ecdb = ExtractECDb(info, dbObj);
+        REQUIRE_ARGUMENT_STRING_ARRAY(1, fileNames);
+        REQUIRE_ARGUMENT_BOOL(2, invert);
+        REQUIRE_ARGUMENT_INTEGER(3, propFilterInt);
+        size_t spillThresholdBytes = ParseSpillThreshold(info, 4);
+        DbResult rc = m_reader.OpenChangeGroup(*ecdb, fileNames, invert, GetPropertyFilter(info, propFilterInt), spillThresholdBytes);
+        if (rc != BE_SQLITE_OK)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "openGroup() failed", rc);
+        }
+
+    void OpenLocalChanges(NapiInfoCR info)
+        {
+        REQUIRE_ARGUMENT_ANY_OBJ(0, dbObj);
+        REQUIRE_ARGUMENT_BOOL(1, includeInMemoryChanges);
+        REQUIRE_ARGUMENT_BOOL(2, invert);
+        REQUIRE_ARGUMENT_INTEGER(3, propFilterInt);
+        size_t spillThresholdBytes = ParseSpillThreshold(info, 4);
+        if(!NativeDgnDb::InstanceOf(dbObj))
+            THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb object");
+        NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
+        if (!nativeDgnDb || !nativeDgnDb->IsOpen())
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db not open", DgnDbStatus::NotOpen);
+        auto changeset = nativeDgnDb->GetDgnDb().Txns().CreateChangesetFromLocalChanges(includeInMemoryChanges);
+        if (changeset == nullptr)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "no local changes", IModelJsNativeErrorKey::ChangesetError);
+        DbResult rc = m_reader.OpenInMemoryChangeset(nativeDgnDb->GetDgnDb(), std::move(changeset), invert, GetPropertyFilter(info, propFilterInt), spillThresholdBytes);
+        if (rc != BE_SQLITE_OK)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "openLocalChanges() failed", rc);
+        }
+
+    void OpenInMemoryChanges(NapiInfoCR info)
+        {
+        REQUIRE_ARGUMENT_ANY_OBJ(0, dbObj);
+        REQUIRE_ARGUMENT_BOOL(1, invert);
+        REQUIRE_ARGUMENT_INTEGER(2, propFilterInt);
+        size_t spillThresholdBytes = ParseSpillThreshold(info, 3);
+        if(!NativeDgnDb::InstanceOf(dbObj))
+            THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb object");
+        NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
+        if (!nativeDgnDb || !nativeDgnDb->IsOpen())
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db not open", DgnDbStatus::NotOpen);
+        auto changeset = nativeDgnDb->GetDgnDb().Txns().CreateChangesetFromInMemoryChanges();
+        if (changeset == nullptr)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "no in-memory changes", IModelJsNativeErrorKey::ChangesetError);
+        DbResult rc = m_reader.OpenInMemoryChangeset(nativeDgnDb->GetDgnDb(), std::move(changeset), invert, GetPropertyFilter(info, propFilterInt), spillThresholdBytes);
+        if (rc != BE_SQLITE_OK)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "openInMemoryChanges() failed", rc);
+        }
+
+    void OpenTxn(NapiInfoCR info)
+        {
+        REQUIRE_ARGUMENT_ANY_OBJ(0, dbObj);
+        REQUIRE_ARGUMENT_STRING(1, idStr);
+        REQUIRE_ARGUMENT_BOOL(2, invert);
+        REQUIRE_ARGUMENT_INTEGER(3, propFilterInt);
+        size_t spillThresholdBytes = ParseSpillThreshold(info, 4);
+        if(!NativeDgnDb::InstanceOf(dbObj))
+            THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb object");
+        NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
+        if (!nativeDgnDb || !nativeDgnDb->IsOpen())
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db not open", DgnDbStatus::NotOpen);
+        BeInt64Id id;
+        if (SUCCESS != BeInt64Id::FromString(id, idStr.c_str()))
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "expect txnId to be a hex string", IModelJsNativeErrorKey::BadArg);
+        auto changeset = nativeDgnDb->GetDgnDb().Txns().OpenLocalTxn(TxnManager::TxnId(id.GetValueUnchecked()));
+        if (changeset == nullptr)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), SqlPrintfString("no local change with id: %s", idStr.c_str()).GetUtf8CP(), IModelJsNativeErrorKey::ChangesetError);
+        DbResult rc = m_reader.OpenInMemoryChangeset(nativeDgnDb->GetDgnDb(), std::move(changeset), invert, GetPropertyFilter(info, propFilterInt), spillThresholdBytes);
+        if (rc != BE_SQLITE_OK)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "openTxn() failed", rc);
+        }
+
+    void Close(NapiInfoCR info)
+        {
+        if(m_reader.Close() != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "close() failed", IModelJsNativeErrorKey::ChangesetError);
+        }
+
+    Napi::Value Step(NapiInfoCR info)
+        {
+        REQUIRE_ARGUMENT_INTEGER(0, numOfRows);
+        REQUIRE_ARGUMENT_ANY_OBJ(1, optObj);
+
+        if (numOfRows <= 0)
+            THROW_JS_TYPE_EXCEPTION("numOfRows must be a positive integer");
+
+        ECDb const* ecdb = m_reader.GetECDb();
+        if (nullptr == ecdb)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "no ECDb associated", IModelJsNativeErrorKey::BadArg);
+
+        BeJsValue opts(optObj);
+        ECSqlRowAdaptor adaptor(*ecdb);
+        adaptor.GetOptions().FromJson(opts);
+
+        Napi::Array result = Napi::Array::New(Env());
+        uint32_t count = 0;
+
+        for (int i = 0; i < numOfRows; ++i)
+            {
+            DbResult rc = m_reader.Step();
+            if (rc == BE_SQLITE_DONE)
+                break;
+            if (rc != BE_SQLITE_ROW)
+                THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "step() failed", rc);
+
+            Napi::Object rowData = Napi::Object::New(Env());
+            rowData.Set("metadata", BuildRowMetadata(Env()));
+            rowData.Set("oldValues", BuildRowValue(Env(), adaptor, Changes::Change::Stage::Old));
+            rowData.Set("newValues", BuildRowValue(Env(), adaptor, Changes::Change::Stage::New));
+            result[count++] = rowData;
+            }
+
+        return result;
+        }
+    void SetTableNameFilters(NapiInfoCR info)
+        {
+        REQUIRE_ARGUMENT_STRING_ARRAY(0, tableNames);
+        BentleyStatus rc = m_reader.SetTableFilters(tableNames);
+        if (rc != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "setTableNameFilters() failed, possible reason can be that no change stream is open", IModelJsNativeErrorKey::NotOpen);
+        }
+    void SetOpCodeFilters(NapiInfoCR info)
+        {
+        REQUIRE_ARGUMENT_STRING_ARRAY(0, ops);
+        std::vector<DbOpcode> opCodesVec;
+        for (auto const& op : ops)
+            {
+                if(op.EqualsIAscii("Inserted"))
+                    opCodesVec.push_back(DbOpcode::Insert);
+                else if(op.EqualsIAscii("Updated"))
+                    opCodesVec.push_back(DbOpcode::Update);
+                else if(op.EqualsIAscii("Deleted"))
+                    opCodesVec.push_back(DbOpcode::Delete);
+                else {
+                    Utf8String error;
+                    error.Sprintf("Invalid opcode filter: %s. Valid values are: Inserted, Updated, Deleted.", op.c_str());
+                    THROW_JS_TYPE_EXCEPTION(error.c_str());
+                }
+            }
+        BentleyStatus rc = m_reader.SetOpcodeFilters(opCodesVec);
+        if (rc != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "setOpCodeFilters() failed, possible reason can be that no change stream is open", IModelJsNativeErrorKey::NotOpen);
+        }
+    void SetClassNameFilters(NapiInfoCR info)
+        {
+        REQUIRE_ARGUMENT_STRING_ARRAY(0, classNames);
+        BentleyStatus rc = m_reader.SetECClassNameFilters(classNames);
+        if (rc != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "setClassNameFilters() failed, possible reason can be that no change stream is open", IModelJsNativeErrorKey::NotOpen);
+        }
+    void ClearTableNameFilters(NapiInfoCR info)
+        {
+        BentleyStatus rc = m_reader.ClearTableFilters();
+        if (rc != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "clearTableNameFilters() failed, possible reason can be that no change stream is open", IModelJsNativeErrorKey::NotOpen);
+        }
+    void ClearOpCodeFilters(NapiInfoCR info)
+        {
+        BentleyStatus rc = m_reader.ClearOpcodeFilters();
+        if (rc != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "clearOpCodeFilters() failed, possible reason can be that no change stream is open", IModelJsNativeErrorKey::NotOpen);
+        }
+    void ClearClassNameFilters(NapiInfoCR info)
+        {
+        BentleyStatus rc = m_reader.ClearECClassNameFilters();
+        if (rc != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "clearClassNameFilters() failed, possible reason can be that no change stream is open", IModelJsNativeErrorKey::NotOpen);
+        }
+    void EnableStrictMode(NapiInfoCR info)
+        {
+        BentleyStatus rc = m_reader.EnableStrictMode();
+        if (rc != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "enableStrictMode() failed, possible reason can be that no change stream is open", IModelJsNativeErrorKey::NotOpen);
+        }
+    void DisableStrictMode(NapiInfoCR info)
+        {
+        BentleyStatus rc = m_reader.DisableStrictMode();
+        if (rc != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "disableStrictMode() failed, possible reason can be that no change stream is open", IModelJsNativeErrorKey::NotOpen);
+        }
+};
+
+//=======================================================================================
+// Projects the ChangeUnifier class into JS. Merges the rows of one or more ChangesetReaders
+// into one instance per (root ECClassId, ECInstanceId, stage) entirely in native code.
+//! @bsiclass
+//=======================================================================================
+struct NativeChangeUnifier : BeObjectWrap<NativeChangeUnifier>
+{
+private:
+    DEFINE_CONSTRUCTOR;
+    std::unique_ptr<ChangeUnifier> m_unifier;
+
+    //=======================================================================================
+    // Builds the JavaScript object of one merged instance directly from the unifier's events. Produces the same
+    // values as writing through BeJsNapiObject (null becomes undefined, integers become numbers), but sets each
+    // member once, fills arrays by index, and converts each string of the unifier's string table once per step() call.
+    //=======================================================================================
+    struct InstanceWriter final : ChangeUnifier::IInstanceWriter
+        {
+    private:
+        struct Container { Napi::Value m_value; bool m_isArray; uint32_t m_count; };
+        Napi::Env m_env;
+        std::vector<napi_value> m_strings; // by string id; napi_values are only valid during the current call
+        std::vector<Container> m_containers;
+        Napi::Value m_key;
+        Napi::Value m_result;
+        size_t m_valueBytes = 0; // bytes of the strings and binary values written so far
+
+        Napi::Value ToJsString(Utf8CP text, size_t length, uint32_t stringId)
+            {
+            if (stringId == 0)
+                return Napi::String::New(m_env, text, length);
+            if (stringId >= m_strings.size())
+                m_strings.resize(stringId + 1, nullptr);
+            if (m_strings[stringId] == nullptr)
+                m_strings[stringId] = Napi::String::New(m_env, text, length);
+            return Napi::Value(m_env, m_strings[stringId]);
+            }
+
+        void Put(Napi::Value value)
+            {
+            if (m_containers.empty())
+                {
+                m_result = value;
+                return;
+                }
+            Container& top = m_containers.back();
+            if (top.m_isArray)
+                top.m_value.As<Napi::Array>().Set(top.m_count++, value);
+            else
+                top.m_value.As<Napi::Object>().Set(m_key, value);
+            }
+
+    public:
+        explicit InstanceWriter(Napi::Env env) : m_env(env) {}
+        Napi::Value TakeResult() { Napi::Value result = m_result; m_result = Napi::Value(); return result; }
+        size_t GetValueBytes() const { return m_valueBytes; }
+        void StartObject() override
+            {
+            Napi::Object obj = Napi::Object::New(m_env);
+            Put(obj);
+            m_containers.push_back({obj, false, 0});
+            }
+        void Key(Utf8CP name, size_t length, uint32_t stringId) override { m_key = ToJsString(name, length, stringId); }
+        void EndObject() override { m_containers.pop_back(); }
+        void StartArray() override
+            {
+            Napi::Array array = Napi::Array::New(m_env);
+            Put(array);
+            m_containers.push_back({array, true, 0});
+            }
+        void EndArray() override { m_containers.pop_back(); }
+        void Null() override { Put(m_env.Undefined()); }
+        void Bool(bool value) override { Put(Napi::Value::From(m_env, value)); }
+        void Int64(int64_t value) override { Put(Napi::Value::From(m_env, value)); }
+        void UInt64(uint64_t value) override { Put(Napi::Value::From(m_env, static_cast<int64_t>(value))); }
+        void Double(double value) override { Put(Napi::Value::From(m_env, value)); }
+        void String(Utf8CP value, size_t length, uint32_t stringId) override
+            {
+            m_valueBytes += length;
+            Put(ToJsString(value, length, stringId));
+            }
+        void Binary(Byte const* data, size_t size) override
+            {
+            m_valueBytes += size;
+            auto array = Napi::Uint8Array::New(m_env, size);
+            std::copy(data, data + size, array.Data());
+            Put(array);
+            }
+        };
+
+    static ChangeUnifier::Options ParseOptions(NapiInfoCR info)
+        {
+        ChangeUnifier::Options options;
+        if (ARGUMENT_IS_NOT_PRESENT(0) || info[0].IsUndefined() || info[0].IsNull())
+            return options;
+        if (!info[0].IsObject())
+            THROW_JS_TYPE_EXCEPTION("ChangeUnifier: options must be an object");
+        Napi::Object optObj = info[0].As<Napi::Object>();
+
+        Napi::Value propNames = optObj.Get("propNames");
+        if (!propNames.IsUndefined())
+            {
+            if (!propNames.IsArray())
+                THROW_JS_TYPE_EXCEPTION("ChangeUnifier: propNames must be an array of strings");
+            Napi::Array arr = propNames.As<Napi::Array>();
+            for (uint32_t i = 0; i < arr.Length(); ++i)
+                {
+                Napi::Value name = arr.Get(i);
+                if (!name.IsString())
+                    THROW_JS_TYPE_EXCEPTION("ChangeUnifier: propNames must be an array of strings");
+                options.m_propNames.push_back(Utf8String(name.As<Napi::String>().Utf8Value().c_str()));
+                }
+            }
+
+        Napi::Value budget = optObj.Get("memoryBudgetBytes");
+        if (!budget.IsUndefined())
+            {
+            if (!budget.IsNumber())
+                THROW_JS_TYPE_EXCEPTION("ChangeUnifier: memoryBudgetBytes must be a number");
+            double val = budget.As<Napi::Number>().DoubleValue();
+            if (std::isnan(val) || std::isinf(val) || val < 0 || val != std::floor(val))
+                THROW_JS_TYPE_EXCEPTION("ChangeUnifier: memoryBudgetBytes must be a non-negative integer");
+            if (val > 9007199254740991.0) // Number.MAX_SAFE_INTEGER
+                THROW_JS_TYPE_EXCEPTION("ChangeUnifier: memoryBudgetBytes exceeds the maximum allowed value");
+            options.m_memoryBudgetBytes = static_cast<uint64_t>(val);
+            }
+        return options;
+        }
+
+    void ThrowOnFailure(Napi::Env env, Utf8CP operation, DbResult rc)
+        {
+        Utf8String msg(operation);
+        Utf8StringCR lastError = m_unifier->GetLastError();
+        if (!lastError.empty())
+            msg.append(": ").append(lastError);
+        THROW_JS_BE_SQLITE_EXCEPTION(env, msg.c_str(), rc);
+        }
+
+public:
+    NativeChangeUnifier(NapiInfoCR info) : BeObjectWrap<NativeChangeUnifier>(info)
+        {
+        m_unifier = std::make_unique<ChangeUnifier>(ParseOptions(info));
+        }
+    ~NativeChangeUnifier() { SetInDestructor(); }
+
+    static void Init(Napi::Env& env, Napi::Object exports)
+        {
+        Napi::HandleScope scope(env);
+        Napi::Function t = DefineClass(env, "ChangeUnifier", {
+            InstanceMethod("appendFrom", &NativeChangeUnifier::AppendFrom),
+            InstanceMethod("step",       &NativeChangeUnifier::Step),
+            InstanceMethod("close",      &NativeChangeUnifier::Close),
+        });
+        exports.Set("ChangeUnifier", t);
+        SET_CONSTRUCTOR(t);
+        }
+
+    void AppendFrom(NapiInfoCR info)
+        {
+        REQUIRE_ARGUMENT_ANY_OBJ(0, readerObj);
+        if (!NativeChangesetReader::InstanceOf(readerObj))
+            THROW_JS_TYPE_EXCEPTION("ChangeUnifier: reader must be a native ChangesetReader object");
+        REQUIRE_ARGUMENT_ANY_OBJ(1, optObj);
+        NativeChangesetReader* nativeReader = NativeChangesetReader::Unwrap(readerObj);
+        if (nativeReader == nullptr)
+            THROW_JS_TYPE_EXCEPTION("ChangeUnifier: invalid ChangesetReader object");
+
+        JsReadOptions rowOptions;
+        rowOptions.FromJson(BeJsValue(optObj));
+        DbResult rc = m_unifier->AppendFrom(nativeReader->GetReader(), rowOptions);
+        if (rc != BE_SQLITE_OK)
+            ThrowOnFailure(info.Env(), "ChangeUnifier: appendFrom() failed", rc);
+        }
+
+    // A batch stops early once its strings and binary values reach this size, so that maxInstances large
+    // instances (e.g. unabbreviated geometry streams) cannot allocate an unbounded amount of JavaScript memory.
+    static constexpr size_t MaxBatchValueBytes = 16 * 1024 * 1024;
+
+    Napi::Value Step(NapiInfoCR info)
+        {
+        // Checked as a double: Int32Value() would truncate fractions and wrap large values.
+        const double maxArg = ARGUMENT_IS_NUMBER(0) ? info[0].As<Napi::Number>().DoubleValue() : 0.0;
+        if (!std::isfinite(maxArg) || maxArg < 1 || maxArg != std::floor(maxArg))
+            THROW_JS_TYPE_EXCEPTION("ChangeUnifier: maxInstances must be a positive integer");
+        const int32_t maxInstances = maxArg > std::numeric_limits<int32_t>::max() ? std::numeric_limits<int32_t>::max() : static_cast<int32_t>(maxArg);
+
+        Napi::Array result = Napi::Array::New(Env());
+        uint32_t count = 0;
+        InstanceWriter writer(Env());
+        for (int32_t i = 0; i < maxInstances; ++i)
+            {
+            DbResult rc = m_unifier->Step(writer);
+            if (rc == BE_SQLITE_DONE)
+                break;
+            if (rc != BE_SQLITE_ROW)
+                ThrowOnFailure(info.Env(), "ChangeUnifier: step() failed", rc);
+            result.Set(count++, writer.TakeResult());
+            if (writer.GetValueBytes() >= MaxBatchValueBytes)
+                break;
+            }
+        return result;
+        }
+
+    void Close(NapiInfoCR info)
+        {
+        m_unifier->Close();
+        }
+};
+
+//=======================================================================================
 // Projects the ECSqlStatement class into JS.
 //! @bsiclass
 //=======================================================================================
@@ -5092,6 +6097,7 @@ struct NativeECSqlStatement : BeObjectWrap<NativeECSqlStatement> {
 private:
     DEFINE_CONSTRUCTOR;
     ECSqlStatement m_stmt;
+    std::shared_ptr<ECSqlBinderLifetime> m_binderLifetime;
 
     struct IssueListener : BentleyApi::ECN::IIssueListener {
         mutable Utf8String m_lastIssue;
@@ -5106,9 +6112,65 @@ private:
         }
     };
 
+    // Tracks the NativeECSqlStatements prepared against an ECDb so that they can be finalized
+    // *before* the db is closed. Otherwise Db::CloseDb force-finalizes the underlying
+    // sqlite3_stmt, leaving this statement holding a dangling pointer that crashes on any
+    // subsequent use or on finalization.
+    struct StatementRegistry : ECDb::AppData {
+        static ECDb::AppData::Key& GetKey() { static ECDb::AppData::Key s_key; return s_key; }
+
+        bset<NativeECSqlStatement*> m_statements;
+
+        ~StatementRegistry() {
+            auto statements = m_statements; // OnDbClose unregisters, mutating m_statements
+            for (auto statement : statements)
+                statement->OnDbClose();
+        }
+
+        static StatementRegistry* Get(ECDbCR db) {
+            auto appData = db.FindOrAddAppData(GetKey(), []() { return new StatementRegistry(); });
+            return static_cast<StatementRegistry*>(appData.get());
+        }
+    };
+
+    ECDb const* m_ecdb = nullptr;
+
+    void Register(ECDbCR ecdb) {
+        Unregister();
+        if (auto registry = StatementRegistry::Get(ecdb); nullptr != registry) {
+            registry->m_statements.insert(this);
+            m_ecdb = &ecdb;
+        }
+    }
+
+    void Unregister() {
+        if (nullptr == m_ecdb)
+            return;
+
+        // the db is still open here, so its appdata (and therefore the registry) is still alive
+        if (auto appData = m_ecdb->FindAppData(StatementRegistry::GetKey()); appData.IsValid())
+            static_cast<StatementRegistry*>(appData.get())->m_statements.erase(this);
+
+        m_ecdb = nullptr;
+    }
+
+    void InvalidateBinders() {
+        if (m_binderLifetime != nullptr)
+            m_binderLifetime->m_isValid = false;
+
+        m_binderLifetime.reset();
+    }
+
 public:
     NativeECSqlStatement(NapiInfoCR info) : BeObjectWrap<NativeECSqlStatement>(info) {}
-    ~NativeECSqlStatement() { SetInDestructor(); }
+    ~NativeECSqlStatement() { SetInDestructor(); InvalidateBinders(); Unregister(); m_stmt.Finalize(); }
+
+    // called while the db is still open, so finalizing here is safe
+    void OnDbClose() {
+        m_ecdb = nullptr;
+        InvalidateBinders();
+        m_stmt.Finalize();
+    }
 
     //  Create projections
     static void Init(Napi::Env& env, Napi::Object exports) {
@@ -5153,13 +6215,30 @@ public:
         }
 
         if (!ecdb || !ecdb->IsDbOpen())
-            return CreateErrorObject0(BE_SQLITE_ERROR_NOTOPEN, "Cannot query a closed Db", Env());
+            return CreateErrorObject0(BE_SQLITE_ERROR_NOTOPEN, "db not open", Env());
 
         REQUIRE_ARGUMENT_STRING(1, ecsql);
         OPTIONAL_ARGUMENT_BOOL(2,logErrors, true);
         IssueListener listener(*ecdb);
 
+        if (m_stmt.IsPrepared()) {
+            // The native statement rejects a second Prepare and stays prepared and usable, so its
+            // registration and binder lifetime must survive the failure. Tearing them down here
+            // would leave a live statement that the db no longer finalizes on close, and binders
+            // without a lifetime.
+            ECSqlStatus status = m_stmt.Prepare(*ecdb, ecsql.c_str(), logErrors);
+            BeAssert(!status.IsSuccess() && "Preparing an already prepared ECSqlStatement is expected to fail");
+            return CreateErrorObject0(ToDbResult(status), !status.IsSuccess() ? listener.m_lastIssue.c_str() : nullptr, Env());
+        }
+
+        InvalidateBinders();
+        Unregister();
         ECSqlStatus status = m_stmt.Prepare(*ecdb, ecsql.c_str(), logErrors);
+        if (status.IsSuccess()) {
+            m_binderLifetime = std::make_shared<ECSqlBinderLifetime>();
+            Register(*ecdb);
+        }
+
         return CreateErrorObject0(ToDbResult(status), !status.IsSuccess() ? listener.m_lastIssue.c_str() : nullptr, Env());
     }
 
@@ -5172,6 +6251,8 @@ public:
     }
 
     void Dispose(NapiInfoCR info) {
+        InvalidateBinders();
+        Unregister();
         m_stmt.Finalize();
     }
 
@@ -5201,7 +6282,7 @@ public:
             paramIndex = m_stmt.GetParameterIndex(paramArg.ToString().Utf8Value().c_str());
 
         IECSqlBinder& binder = m_stmt.GetBinder(paramIndex);
-        return NativeECSqlBinder::New(info.Env(), binder, *m_stmt.GetECDb(), &m_stmt);
+        return NativeECSqlBinder::New(info.Env(), binder, *m_stmt.GetECDb(), &m_stmt, m_binderLifetime);
     }
 
     Napi::Value Step(NapiInfoCR info) {
@@ -5303,10 +6384,7 @@ public:
         REQUIRE_ARGUMENT_ANY_OBJ(0, argsObj);
         BeJsValue args(argsObj);
 
-        Json::Value jsonArgs;
-        BeJsValue jsArgs(jsonArgs);
-        jsArgs.From(args);
-        ECSqlParams params(jsonArgs);
+        ECSqlParams params(args);
         if(params.IsEmpty())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "no parameters to bind", IModelJsNativeErrorKey::BadArg);
         std::string errMsg;
@@ -5501,7 +6579,7 @@ public:
         }
 
         if (!db || !db->IsDbOpen())
-          THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Cannot query a closed Db", IModelJsNativeErrorKey::NotOpen);
+          THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "db not open", IModelJsNativeErrorKey::NotOpen);
 
         REQUIRE_ARGUMENT_STRING(1, sql);
         OPTIONAL_ARGUMENT_BOOL(2,logErrors, true);
@@ -5997,7 +7075,7 @@ struct GetTileTreeWorker : TileWorker
 {
 private:
     // Output
-    Json::Value m_result;
+    BeJsDocument m_result;
 
     void Execute() final
         {
@@ -6560,7 +7638,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         REQUIRE_ARGUMENT_STRING(0, ruleSetId);
         REQUIRE_ARGUMENT_STRING(1, variableId);
         REQUIRE_ARGUMENT_STRING(2, variableType);
-        REQUIRE_ARGUMENT_ANY_OBJ(3, value);
+        REQUIRE_ARGUMENT_ANY_VALUE(3, value);
         ECPresentationResult result = ECPresentationUtils::SetRulesetVariableValue(*m_presentationManager, ruleSetId, variableId, variableType, value);
         return CreateReturnValue(std::move(result));
         }
@@ -6792,6 +7870,75 @@ public:
         return toJsString(Env(), targetId);
         }
 
+    // Sets an EC property's JSON member to null when it is missing. If the member is a struct object, does the same for its missing struct members.
+    // Uses JS null rather than BeJsValue::SetNull, which writes undefined and is dropped by JSON.stringify.
+    static void SetMissingPropertyToNull(Napi::Object json, ECN::ECPropertyCR ecProperty)
+        {
+        Utf8String memberName(ecProperty.GetName());
+        ECN::ECJsonUtilities::LowerFirstChar(memberName); // matches JsonEcInstanceWriter::MemberNameCasing::LowerFirstChar used by DgnElement::_ToJson
+        if (!json.HasOwnProperty(memberName.c_str()))
+            {
+            json.Set(memberName.c_str(), json.Env().Null());
+            return;
+            }
+
+        ECN::StructECPropertyCP structProperty = ecProperty.GetAsStructProperty();
+        Napi::Value member = json.Get(memberName.c_str());
+        if (nullptr == structProperty || !member.IsObject() || member.IsArray())
+            return;
+
+        Napi::Object structJson = member.As<Napi::Object>();
+        for (ECN::ECPropertyCP structMember : structProperty->GetType().GetProperties(true))
+            SetMissingPropertyToNull(structJson, *structMember);
+        }
+
+    // Adds a clearing value for each member that DgnElement::ToJson omits when it is empty, so that updating an existing element with the
+    // result clears that member instead of keeping its old value. Each value is one the current update path (_FromJson) already treats as a clear.
+    static void AddExplicitClears(Napi::Env env, Napi::Object json, DgnElementCR element)
+        {
+        if (!json.HasOwnProperty(DgnElement::json_parent()))
+            json.Set(DgnElement::json_parent(), env.Null());
+
+        if (!json.HasOwnProperty(DgnElement::json_userLabel()))
+            json.Set(DgnElement::json_userLabel(), env.Null());
+
+        // _FromJson ignores a null jsonProperties, but replaces the stored value with an empty object.
+        if (!json.HasOwnProperty(DgnElement::json_jsonProperties()))
+            json.Set(DgnElement::json_jsonProperties(), Napi::Object::New(env));
+
+        // Auto-handled EC properties: _ToJson omits null values, empty arrays and empty structs.
+        ECN::ECClassCP elementClass = element.GetElementClass();
+        if (nullptr != elementClass)
+            {
+            for (ECN::ECPropertyCP ecProperty : elementClass->GetProperties(true))
+                {
+                if (ECN::ECJsonSystemNames::IsTopLevelSystemMember(ecProperty->GetName()))
+                    continue;
+
+                ElementECPropertyAccessor const accessor(element, ecProperty->GetName().c_str());
+                if (accessor.IsValid() && accessor.IsAutoHandled())
+                    SetMissingPropertyToNull(json, *ecProperty);
+                }
+            }
+
+        GeometricElementCP geometricElement = dynamic_cast<GeometricElementCP>(&element);
+        if (nullptr == geometricElement)
+            return;
+
+        if (!json.HasOwnProperty(GeometricElement::json_typeDefinition()))
+            json.Set(GeometricElement::json_typeDefinition(), env.Null());
+
+        // An empty placement object makes _FromJson store NULL origin, angles and bounding box.
+        if (!json.HasOwnProperty(GeometricElement::json_placement()))
+            json.Set(GeometricElement::json_placement(), Napi::Object::New(env));
+
+        // An empty geomBinary makes _FromJson store a NULL geometry stream and take the bounding box from the placement JSON.
+        // An empty "geom" array is rejected, and an empty builder entryArray makes _FromJson skip the placement.
+        GeometrySourceCP geometrySource = element.ToGeometrySource();
+        if (nullptr != geometrySource && !geometrySource->GetGeometryStream().HasGeometry() && !json.HasOwnProperty(GeometricElement::json_geomBinary()))
+            json.Set(GeometricElement::json_geomBinary(), Napi::Uint8Array::New(env, 0));
+        }
+
     Napi::Value CloneElement(NapiInfoCR info)
         {
         if (nullptr == m_importContext)
@@ -6799,10 +7946,12 @@ public:
 
         REQUIRE_ARGUMENT_STRING_ID(0, sourceIdStr, DgnElementId, sourceElementId);
         bool binaryGeometry = false;
+        bool explicitClears = false;
         if (!ARGUMENT_IS_EMPTY(1))
             {
             Napi::Object cloneOptions = info[1].As<Napi::Object>();
             binaryGeometry = cloneOptions.Get("binaryGeometry").ToBoolean();
+            explicitClears = cloneOptions.Get("explicitClears").ToBoolean();
             }
 
         DgnElementCPtr sourceElement = m_importContext->GetSourceDb().Elements().GetElement(sourceElementId);
@@ -6858,6 +8007,9 @@ public:
 
         if ((nullptr != geometryStream) && binaryGeometry)
             val["geomBinary"].SetBinary(geometryStream->GetData(), geometryStream->GetSize());
+
+        if (explicitClears)
+            AddExplicitClears(Env(), val, *targetElement);
 
         return val;
         }
@@ -7189,7 +8341,8 @@ static void setCrashReporting(NapiInfoCR info)
     ccfg.m_uploadUrl                = stringMember(obj, "uploadUrl");
 #endif
     ccfg.m_needsVectorExceptionHandler = true;
-    JsInterop::InitializeCrashReporting(ccfg);
+    if (!JsInterop::InitializeCrashReporting(ccfg))
+        THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Failed to initialize crash reporting.", IModelJsNativeErrorKey::NotInitialized);
 
     s_crashReportingInitialized = true;
     }
@@ -7278,6 +8431,19 @@ static Napi::Value queryConcurrency(NapiInfoCR info)
         }
 
     return Napi::Number::New(info.Env(), static_cast<int>(concurrency));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Enable or disable the monotone-clock SQLite VFS shim.
+* When enabled every call to SQLite's time functions returns a strictly increasing
+* value, preventing test failures caused by the millisecond-resolution system clock
+* returning identical timestamps for rapid successive operations.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static void enableMonotoneClock(NapiInfoCR info)
+    {
+    REQUIRE_ARGUMENT_BOOL(0, enable);
+    BeSQLiteLib::EnableMonotoneClock(enable);
     }
 
 static Napi::Value getTrueTypeFontMetadata(NapiInfoCR info) {
@@ -7415,12 +8581,14 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports) {
     NativeBlobIo::Init(env, exports);
     NativeDgnDb::Init(env, exports);
     NativeGeoServices::Init(env, exports);
-    NativeRevisionUtility::Init(env, exports);
     NativeSchemaUtility::Init(env, exports);
     NativeECDb::Init(env, exports);
+    NativeSqliteChangesetReader::Init(env, exports);
     NativeChangesetReader::Init(env, exports);
+    NativeChangeUnifier::Init(env, exports);
     NativeChangedElementsECDb::Init(env, exports);
     NativeECSqlStatement::Init(env, exports);
+    ECSqlBatchReader::Init(env, exports);
     NativeECSqlBinder::Init(env, exports);
     NativeECSqlValue::Init(env, exports);
     NativeECSqlColumnInfo::Init(env, exports);
@@ -7445,6 +8613,7 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports) {
         Napi::PropertyDescriptor::Function(env, exports, "clearLogLevelCache", &clearLogLevelCache),
         Napi::PropertyDescriptor::Function(env, exports, "computeSchemaChecksum", &computeSchemaChecksum),
         Napi::PropertyDescriptor::Function(env, exports, "enableLocalGcsFiles", &enableLocalGcsFiles),
+        Napi::PropertyDescriptor::Function(env, exports, "enableMonotoneClock", &enableMonotoneClock),
         Napi::PropertyDescriptor::Function(env, exports, "getCrashReportProperties", &getCrashReportProperties),
         Napi::PropertyDescriptor::Function(env, exports, "getTileVersionInfo", &getTileVersionInfo),
         Napi::PropertyDescriptor::Function(env, exports, "queryConcurrency", &queryConcurrency),

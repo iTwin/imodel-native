@@ -1380,7 +1380,11 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
     ECObjectsStatus status = obtainKindOfQuantity(schema, prop, newKOQ, instance, newUnit, newDisplayUnit, persistenceUnitChanged, newKOQName.c_str(), context);
     if (ECObjectsStatus::Success != status)
         {
-        LOG.errorv("Failed to create KindOfQuantity '%s' for property '%s.%s'", newKOQName.c_str(), prop->GetClass().GetFullName(), prop->GetName().c_str());
+        context->Issues().ReportV(
+            IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::InvalidInputData, ECIssueId::EC_0064,
+            "Failed to create KindOfQuantity '%s' for property '%s.%s'",
+            newKOQName.c_str(), prop->GetClass().GetFullName(), prop->GetName().c_str()
+        );
         container.RemoveCustomAttribute(instance.GetClass().GetSchema().GetName(), instance.GetClass().GetName());
         return status;
         }

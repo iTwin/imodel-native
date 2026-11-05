@@ -401,7 +401,7 @@ Material::CreateParams::CreateParams(MaterialKeyCR key, RenderingAssetCR asset, 
     {
 // #define DEBUG_JSON_CONTENT
 #if defined(DEBUG_JSON_CONTENT)
-    Utf8String string = Json::FastWriter().write(asset);
+    Utf8String string = asset.Stringify();
     UNUSED_VARIABLE(string);
 #endif
 

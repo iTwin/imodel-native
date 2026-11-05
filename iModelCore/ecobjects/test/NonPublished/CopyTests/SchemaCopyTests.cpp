@@ -5,7 +5,7 @@
 
 #include "../../ECObjectsTestPCH.h"
 #include "../../TestFixture/TestFixture.h"
-#include "BeXml/BeXml.h"
+#include <pugixml/src/BePugiXml.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -27,7 +27,7 @@ struct SchemaCopyTest : CopyTestFixture
         void CopySchema() { CopySchema(m_targetSchema); }
         void CopySchema(ECSchemaPtr& targetSchema);
 
-        void ValidateElementOrder(bvector<Utf8String> expectedTypeNames, BeXmlNodeP root);
+        void ValidateElementOrder(bvector<Utf8String> expectedTypeNames, BePugiXmlNode root);
     };
 
 //---------------------------------------------------------------------------------------
@@ -66,9 +66,9 @@ void SchemaCopyTest::CopySchema(ECSchemaPtr& targetSchema)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void SchemaCopyTest::ValidateElementOrder(bvector<Utf8String> expectedTypeNames, BeXmlNodeP root)
+void SchemaCopyTest::ValidateElementOrder(bvector<Utf8String> expectedTypeNames, BePugiXmlNode root)
     {
-    BeXmlNodeP currentNode = root->GetFirstChild();
+    BePugiXmlNode currentNode = root->GetFirstChild();
     for(auto expectedTypeName : expectedTypeNames)
         {
         if(currentNode == nullptr)
@@ -77,7 +77,7 @@ void SchemaCopyTest::ValidateElementOrder(bvector<Utf8String> expectedTypeNames,
             }
 
         Utf8String nodeTypeName;
-        EXPECT_EQ(BeXmlStatus::BEXML_Success, currentNode->GetAttributeStringValue(nodeTypeName, "typeName"));
+        EXPECT_EQ(BEPUGIXML_Success, currentNode->GetAttributeStringValue(nodeTypeName, "typeName"));
         EXPECT_EQ(expectedTypeName, nodeTypeName);
 
         currentNode = currentNode->GetNextSibling();
@@ -1241,13 +1241,13 @@ TEST_F(SchemaCopyTest, TestCopySchemaNotPreserveElementOrder)
     ECSchemaPtr copySchema;
     EC_EXPECT_SUCCESS(schema->CopySchema(copySchema));
 
-    WString ecSchemaXmlString;
+    Utf8String ecSchemaXmlString;
     ASSERT_EQ(SchemaWriteStatus::Success, copySchema->WriteToXmlString(ecSchemaXmlString, ECVersion::V3_0));
 
-    size_t stringByteCount = ecSchemaXmlString.length() * sizeof(Utf8Char);
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, ecSchemaXmlString.c_str(), stringByteCount);
-    ASSERT_EQ(BEXML_Success, xmlStatus);
+    size_t stringByteCount = ecSchemaXmlString.length();
+    BePugiXmlStatus xmlStatus;
+    BePugiXmlDomPtr xmlDom = BePugiXmlDom::CreateAndReadFromString(xmlStatus, ecSchemaXmlString.c_str(), stringByteCount);
+    ASSERT_EQ(BEPUGIXML_Success, xmlStatus);
 
     // Enumerations(DEF) are serialized first, then classes(ABC, GHI)
     bvector<Utf8String> typeNames = {"DEF", "ABC", "GHI"};
@@ -1295,13 +1295,13 @@ TEST_F(SchemaCopyTest, TestCopySchemaNotPreserveOrderWithBaseClassAndRelationshi
     ECSchemaPtr copySchema;
     EC_EXPECT_SUCCESS(schema->CopySchema(copySchema));
 
-    WString ecSchemaXmlString;
+    Utf8String ecSchemaXmlString;
     EXPECT_EQ(SchemaWriteStatus::Success, copySchema->WriteToXmlString(ecSchemaXmlString, ECVersion::V3_0));
 
-    size_t stringByteCount = ecSchemaXmlString.length() * sizeof(Utf8Char);
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, ecSchemaXmlString.c_str(), stringByteCount);
-    EXPECT_EQ(BEXML_Success, xmlStatus);
+    size_t stringByteCount = ecSchemaXmlString.length();
+    BePugiXmlStatus xmlStatus;
+    BePugiXmlDomPtr xmlDom = BePugiXmlDom::CreateAndReadFromString(xmlStatus, ecSchemaXmlString.c_str(), stringByteCount);
+    EXPECT_EQ(BEPUGIXML_Success, xmlStatus);
 
     // First Enumeration(PQR), then classes alphabetically(ABC, DEF, GHI). As MNO is the base class of ABC and
     // JKL has a constraint in DEF, those two classes are written before the class they depend in.

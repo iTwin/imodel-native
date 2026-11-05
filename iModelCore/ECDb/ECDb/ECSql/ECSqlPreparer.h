@@ -39,6 +39,7 @@ struct ECSqlExpPreparer final
         static void RemovePropertyRefs(ECSqlPrepareContext&, ClassRefExp const&, ClassMap const&);
         // query options
         static bool QueryOptionExperimentalFeaturesEnabled(ECDbCR db, ExpCR exp);
+        static bool QueryOptionNavRelClassIdFallback(ExpCR exp);
         static unsigned int QueryOptionsInstanceFlags(ExpCR exp);
 
     public:
@@ -107,6 +108,7 @@ struct ECSqlExpPreparer final
         static ECSqlStatus PrepareExtractInstanceExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ExtractInstanceValueExp const& exp);
         static ECSqlStatus PrepareNavValueCreationFuncExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, NavValueCreationFuncExp const& exp);
         static BooleanSqlOperator DetermineCompoundLogicalOpForCompoundExpressions(BooleanSqlOperator);
+        static bool IsNavPropRelECClassIdNeeded(SingleSelectStatementExp const&, RangeClassRefExp const&, Utf8StringCR navPropAccessString);
 
     };
 

@@ -8,6 +8,7 @@
 #if defined(BENTLEY_WIN32) || defined(BENTLEY_WINRT)
 #include <windows.h>
 #include <Psapi.h>
+#include <cmath>
 #endif
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE

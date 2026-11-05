@@ -338,8 +338,9 @@ DVec3dR       tangent,
 double          param
 ) const;
 
-//! Return teh vector from start point to end point.
+//! Return the vector from start point to end point.
 DVec3d VectorStartToEnd () const;
+
 //!
 //! @param [out] pt returned point.
 //! @param [in] index index of point to return.

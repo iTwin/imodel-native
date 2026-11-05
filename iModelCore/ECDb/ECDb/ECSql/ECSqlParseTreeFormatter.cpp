@@ -73,12 +73,12 @@ BentleyStatus ECSqlParseTreeFormatter::ParseAndFormatECSqlParseNodeTree(Utf8Stri
     return SUCCESS;
     }
 
-void GenerateExpTree(Json::Value& expTree, Exp const& exp);
+void GenerateExpTree(BeJsValue expTree, Exp const& exp);
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus ECSqlParseTreeFormatter::ParseAndFormatECSqlExpTree(Json::Value& expTree, Utf8StringR ecsqlFromExpTree, ECDbCR ecdb, Utf8CP ecsql)
+BentleyStatus ECSqlParseTreeFormatter::ParseAndFormatECSqlExpTree(BeJsValue expTree, Utf8StringR ecsqlFromExpTree, ECDbCR ecdb, Utf8CP ecsql)
     {
     if (Utf8String::IsNullOrEmpty(ecsql))
         return ERROR;
@@ -96,21 +96,20 @@ BentleyStatus ECSqlParseTreeFormatter::ParseAndFormatECSqlExpTree(Json::Value& e
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void GenerateExpTree(Json::Value& expTree, Exp const& exp)
+void GenerateExpTree(BeJsValue expTree, Exp const& exp)
     {
-    expTree = Json::Value(Json::objectValue);
-    expTree["Exp"] = Json::Value(exp.ToString());
+    expTree.SetEmptyObject();
+    expTree["Exp"] = exp.ToString();
 
     if (exp.GetChildrenCount() == 0)
         return;
 
-    Json::Value& children = expTree["Children"] = Json::Value(Json::arrayValue);
+    auto children = expTree["Children"];
+    children.SetEmptyArray();
     for (Exp const* childExp : exp.GetChildren())
         {
         BeAssert(childExp != nullptr);
-        Json::Value child;
-        GenerateExpTree(child, *childExp);
-        children.append(child);
+        GenerateExpTree(children.appendValue(), *childExp);
         }
     }
 

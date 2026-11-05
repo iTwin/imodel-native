@@ -7,7 +7,7 @@
 #include <Bentley/Bentley.h>
 #include <Bentley/bvector.h>
 #include "ExportMacros.h"
-#include <BeJsonCpp/BeJsonUtilities.h>
+#include <BeRapidJson/BeJsValue.h>
 
 BEGIN_BENTLEY_NAMESPACE
 
@@ -30,8 +30,8 @@ struct Package
         //! Get description
         Utf8StringCR GetDescription() const { return m_description; }
 
-        BASEGEOCOORD_EXPORTED void ToJson(JsonValueR) const;
-        BASEGEOCOORD_EXPORTED BentleyStatus FromJson(JsonValueCR);
+        BASEGEOCOORD_EXPORTED void ToJson(BeJsValue) const;
+        BASEGEOCOORD_EXPORTED BentleyStatus FromJson(BeJsConst);
     };
 
 //=======================================================================================
@@ -60,8 +60,8 @@ struct Asset
         //! Get packages
         bvector<Package> const& GetPackages() const { return m_packages; }
 
-        BASEGEOCOORD_EXPORTED void ToJson(JsonValueR) const;
-        BASEGEOCOORD_EXPORTED BentleyStatus FromJson(JsonValueCR);
+        BASEGEOCOORD_EXPORTED void ToJson(BeJsValue) const;
+        BASEGEOCOORD_EXPORTED BentleyStatus FromJson(BeJsConst);
     };
 
 } // ends GeoCoordinates namespace

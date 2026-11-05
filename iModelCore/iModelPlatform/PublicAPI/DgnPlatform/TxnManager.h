@@ -10,6 +10,7 @@
 #include <BeSQLite/ChangesetFile.h>
 #include <ECDb/ECInstanceId.h>
 #include <functional>
+#include <memory>
 
 DGNPLATFORM_TYPEDEFS(TxnMonitor)
 
@@ -446,6 +447,7 @@ private:
     void OnBeforeUndoRedo(bool isUndo);
     void OnUndoRedo(TxnAction action);
     void OnRollback(BeSQLite::ChangeStreamCR);
+    void CaptureInstanceChanges(TxnId txnId);
 
     void OnValidateChanges(BeSQLite::ChangeStreamCR);
     BeSQLite::DbResult SaveTxn(BeSQLite::ChangeSetCR changeset, Utf8CP operation, TxnType);
@@ -453,8 +455,16 @@ private:
     BeSQLite::ZipErrors ReadChanges(BeSQLite::ChangeSet& changeset, TxnId rowId);
     BeSQLite::DbResult ReadDataChanges(BeSQLite::ChangeSet&, TxnId rowid, TxnAction);
 
+    // File-based txn storage
+    bool IsFileBasedTxnEnabled() const;
+    BentleyStatus EnsureTxnDirectory() const;
+    BeSQLite::DbResult WriteTxnToFile(TxnId txnId, BeSQLite::ChangeSetCR changeset, Byte* outChecksum);
+    BeSQLite::DbResult ReadTxnFromFile(TxnId txnId, Byte const* expectedChecksum, BeSQLite::ChangeSet& changeset);
+    void DeleteTxnFile(TxnId txnId);
+    bool ValidateFileBasedTxns() const;
+
     BeSQLite::DbResult ApplyTxnChanges(TxnId, TxnAction, bool skipSchemaChanges = false);
-    BeSQLite::DbResult ApplyChanges(BeSQLite::ChangeStreamCR, TxnAction txnAction, bool containsSchemaChanges, bool invert = false, bool fastForward = false);
+    BeSQLite::DbResult ApplyChanges(BeSQLite::ChangeStreamCR, TxnAction txnAction, bool containsSchemaChanges, bool invert = false, bool fastForward = false, bool noUpdateLoop = false);
     BeSQLite::DbResult ApplyDdlChanges(BeSQLite::DdlChangesCR);
 
     void OnBeginApplyChanges();
@@ -472,7 +482,7 @@ private:
     void ClearSavedChangesetValues();
     void WriteChangesToFile(BeFileNameCR pathname, BeSQLite::DdlChangesCR ddlChanges, BeSQLite::ChangeGroupCR dataChangeGroup);
     ChangesetStatus MergeDdlChanges(ChangesetPropsCR revision, ChangesetFileReader& revisionReader);
-    ChangesetStatus MergeDataChanges(ChangesetPropsCR revision, ChangesetFileReader& revisionReader, bool containsSchemaChanges, bool fastForward);
+    ChangesetStatus MergeDataChanges(ChangesetPropsCR revision, ChangesetFileReader& revisionReader, bool containsSchemaChanges, bool fastForward, bool noUpdateLoop = false);
     ChangesetStatus ProcessRevisions(bvector<ChangesetPropsCP> const &revisions, RevisionProcessOption processOptions);
 
     TxnTable* FindTxnTable(Utf8CP tableName) const;
@@ -498,9 +508,9 @@ public:
     DGNPLATFORM_EXPORT ChangesetPropsPtr StartCreateChangeset(Utf8CP extension = nullptr);
     DGNPLATFORM_EXPORT void FinishCreateChangeset(int32_t changesetIndex, bool keepFile = false);
     DGNPLATFORM_EXPORT void StopCreateChangeset(bool keepFile);
-    DGNPLATFORM_EXPORT ChangesetStatus MergeChangeset(ChangesetPropsCR revision, bool fastforward);
+    DGNPLATFORM_EXPORT ChangesetStatus MergeChangeset(ChangesetPropsCR revision, bool fastforward, bool noUpdateLoop = false);
     DGNPLATFORM_EXPORT void RevertTimelineChanges(std::vector<ChangesetPropsPtr> changesets, bool skipSchemaChanges);
-    DGNPLATFORM_EXPORT void ReverseChangeset(ChangesetPropsCR revision);
+    DGNPLATFORM_EXPORT void ReverseChangeset(ChangesetPropsCR revision, bool noUpdateLoop = false);
     DGNPLATFORM_EXPORT std::unique_ptr<BeSQLite::ChangeSet> CreateChangesetFromLocalChanges(bool includeInMemoryChanges);
     DGNPLATFORM_EXPORT std::unique_ptr<BeSQLite::ChangeSet> CreateChangesetFromInMemoryChanges();
     DGNPLATFORM_EXPORT void ForEachLocalChange(std::function<void(BeSQLite::EC::ECInstanceKey const&, BeSQLite::DbOpcode)>, bvector<Utf8String> const&, bool includeInMemoryChanges = false);
@@ -529,7 +539,7 @@ public:
     DGNPLATFORM_EXPORT void PullMergeRebaseUpdateTxn();
     DGNPLATFORM_EXPORT void PullMergeRebaseReinstateTxn();
     DGNPLATFORM_EXPORT void PullMergeRebaseEnd();
-    DGNPLATFORM_EXPORT std::vector<TxnManager::TxnId> PullMergeReverseLocalChanges();
+    DGNPLATFORM_EXPORT std::vector<TxnManager::TxnId> PullMergeReverseLocalChanges(bool captureInstanceChanges = false);
     DGNPLATFORM_EXPORT std::vector<TxnManager::TxnId> PullMergeRebaseBegin();
     DGNPLATFORM_EXPORT PullMergeStage PullMergeGetStage() const;
     DGNPLATFORM_EXPORT void Stash(BeFileNameCR pathname, Utf8StringCR description, Utf8StringCR iModelId, BeJsValue out);
@@ -629,6 +639,9 @@ public:
 
     DGNPLATFORM_EXPORT TxnId GetLastTxnId();
 
+    //! Get the file path for a file-based transaction's .txn file.
+    DGNPLATFORM_EXPORT BeFileName GetTxnFilePath(TxnId txnId) const;
+
     /** For readonly connections, new Txns may be added from other writeable connections while this session is active.
      * Since we always hold a SQLite transaction (the DefaultTxn) open, this session will not see any of
      * those changes unless/until we explicitly close-and-restart the DefaultTxn.
@@ -691,16 +704,17 @@ public:
 
     //! Reverse all changes back to a previously saved TxnId.
     //! @param[in] txnId a TxnId obtained from a previous call to GetCurrentTxnId.
-    //! @param[in] allowCrossSessions if No, don't reverse any Txns older than the beginning of the current session.
+    //! @param[in] allowCrossSessions also reverse Txns older than the beginning of the current session. A schema
+    //! Txn starts a new session, so this is the only way to back one out. Every Txn in the table is local and unpushed.
     //! @return DgnDbStatus::Success if the transactions were reversed, error status otherwise.
     //! @see  GetCurrentTxnId CancelTo
-    DGNPLATFORM_EXPORT DgnDbStatus ReverseTo(TxnId txnId);
+    DGNPLATFORM_EXPORT DgnDbStatus ReverseTo(TxnId txnId, bool allowCrossSessions = false);
 
     //! Reverse and then cancel (make non-reinstatable) all changes back to a previous TxnId.
     //! @param[in] txnId a TxnId obtained from a previous call to GetCurrentTxnId.
-    //! @param[in] allowCrossSessions if No, don't cancel any Txns older than the beginning of the current session.
+    //! @param[in] allowCrossSessions also cancel Txns older than the beginning of the current session.
     //! @return DgnDbStatus::Success if the transactions were reversed and cleared, error status otherwise.
-    DGNPLATFORM_EXPORT DgnDbStatus CancelTo(TxnId txnId);
+    DGNPLATFORM_EXPORT DgnDbStatus CancelTo(TxnId txnId, bool allowCrossSessions = false);
 
     //! Reinstate the most recently reversed transaction. Since at any time multiple transactions can be reversed, it
     //! may take multiple calls to this method to reinstate all reversed operations.
@@ -1082,6 +1096,9 @@ public:
     DGNPLATFORM_EXPORT static Utf8String ComputeChangesetId(Utf8StringCR parentRevId, BeFileNameCR changesetFile, Napi::Env env);
 };
 
+// Defined in ChangesetTxns.cpp, so code using the changeset readers below does not depend on Node-API.
+struct JsChangesetConflictArgs;
+
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
@@ -1090,6 +1107,7 @@ private:
     DGNPLATFORM_EXPORT BeSQLite::ChangeSet::ConflictResolution _OnConflict(BeSQLite::ChangeSet::ConflictCause, BeSQLite::Changes::Change iter) override;
     DgnDb* m_dgndb;
     Utf8String m_lastErrorMessage;
+    std::shared_ptr<JsChangesetConflictArgs> m_jsConflictArgs; // created on the first conflict passed to JavaScript
 
 public:
     ChangesetFileReader(BeFileNameCR pathname, DgnDb* dgndb = nullptr) : BeSQLite::ChangesetFileReaderBase({pathname}, dgndb), m_dgndb(dgndb) {}
@@ -1108,12 +1126,22 @@ private:
     TxnManager::TxnId m_id;
     TxnType m_type;
     Utf8String m_descr;
+    std::shared_ptr<JsChangesetConflictArgs> m_jsConflictArgs; // created on the first conflict passed to JavaScript
+    bool m_ecChangesSupersedeBriefcase = false;
+    BeSQLite::ChangeGroup m_supersedingRows;
+    bool m_hasSupersedingRows = false;
 
 public:
        LocalChangeSet(DgnDbR db, TxnManager::TxnId id, TxnType type, Utf8StringCR description)
             :m_dgndb(db), m_id(id), m_type(type), m_descr(description){}
         Utf8StringCR GetLastErrorMessage() const { return m_lastErrorMessage; }
     void ClearLastErrorMessage() { m_lastErrorMessage.clear(); }
+    //! Work out, before replaying, whether this txn's ec_ rows supersede the ones the briefcase now
+    //! holds. Both sides carry the schema sync data version they were produced against, and the sync
+    //! db serializes imports, so the higher version is the one that saw the other's result.
+    void DetermineSchemaSyncPrecedence();
+    //! Write the superseding rows an insert conflict had to leave alone. Call after ApplyChanges.
+    BeSQLite::DbResult ApplySupersedingRows();
 };
 
 END_BENTLEY_DGN_NAMESPACE

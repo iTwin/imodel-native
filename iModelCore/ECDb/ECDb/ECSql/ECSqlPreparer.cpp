@@ -3,6 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
+#include <string>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -671,6 +672,67 @@ BentleyStatus ECSqlExpPreparer::PrepareCastExpForPrimitive(Utf8StringR sqlSnippe
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+bool ECSqlExpPreparer::IsNavPropRelECClassIdNeeded(const SingleSelectStatementExp& selectExp, const RangeClassRefExp& classRefExp, Utf8StringCR navPropAccessString)
+    {
+    Utf8PrintfString relClassIdAccessString("%s.%s", navPropAccessString.c_str(), ECDBSYS_PROP_NavPropRelECClassId);
+
+    for (const auto propExp : selectExp.Find(Exp::Type::PropertyName, true))
+        {
+        const auto propNameExp = propExp->GetAsCP<PropertyNameExp>();
+        if (propNameExp->IsPropertyRef() || propNameExp->IsVirtualProperty())
+            continue;
+        if (propNameExp->GetClassRefExp() != &classRefExp)
+            continue;
+
+        const auto propMap = propNameExp->GetPropertyMap();
+        if (propMap == nullptr)
+            continue;
+
+        // The RelECClassId is referenced explicitly with the Navigation Property
+        if (propMap->GetType() == PropertyMap::Type::NavigationRelECClassId && propMap->GetAccessString().EqualsIAscii(relClassIdAccessString.c_str()))
+            return true;
+
+        // The Navigation Property is used in its entirety, so RelECClassId must be present.
+        if (propMap->GetType() == PropertyMap::Type::Navigation && propMap->GetAccessString().EqualsIAscii(navPropAccessString.c_str()))
+            {
+            auto parent = propNameExp->GetParent();
+            while (parent != nullptr && 
+                    parent->GetType() != Exp::Type::BinaryBoolean &&
+                    parent->GetType() != Exp::Type::Selection &&
+                    parent->GetType() != Exp::Type::Where &&
+                    parent->GetType() != Exp::Type::SingleSelect)
+                parent = parent->GetParent();
+
+            if (parent != nullptr && parent->GetType() == Exp::Type::BinaryBoolean)
+                {
+                const auto& boolExp = parent->GetAs<BinaryBooleanExp>();
+                // Check both operands. If either side is a parameter or a Navigation-typed expression, RelECClassId must be present.
+                const auto lhsExp = boolExp.GetLeftOperand();
+                const auto rhsExp = boolExp.GetRightOperand();
+
+                auto needsRelClassId = [](const ComputedExp* operand)
+                    {
+                    if (operand == nullptr)
+                        return false;
+                    // Binder will provide both Id and RelECClassId
+                    if (operand->IsParameterExp() || operand->Contains(Exp::Type::Parameter))
+                        return true;
+                    // A navigation operand will expand to include both Id and RelECClassId
+                    return (operand->GetTypeInfo().GetKind() == ECSqlTypeInfo::Kind::Navigation);
+                    };
+
+                if (needsRelClassId(lhsExp) || needsRelClassId(rhsExp))
+                    return true;
+                }
+            }
+        }
+
+    return false;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 //static
 void ECSqlExpPreparer::RemovePropertyRefs(ECSqlPrepareContext& ctx, ClassRefExp const& exp, ClassMap const& classMap)
     {
@@ -687,8 +749,25 @@ void ECSqlExpPreparer::RemovePropertyRefs(ECSqlPrepareContext& ctx, ClassRefExp 
             continue;
 
         const RangeClassRefExp* classRefExp = propertyNameExp->GetClassRefExp();
-        if (&exp == classRefExp)
-            ctx.GetSelectionOptionsR().AddProperty(*propertyNameExp->GetPropertyMap());
+
+        if (&exp != classRefExp)
+            continue;
+
+        const auto propMap = propertyNameExp->GetPropertyMap();
+        if (propMap == nullptr)
+            continue; //nothing to add to the selection options if the exp has no backing property map
+
+        if (propMap->GetType() == PropertyMap::Type::Navigation && propertyNameExp->FindParent(Exp::Type::Selection) == nullptr)
+            {
+            // Only omit RelECClassId from the view if it is not actually needed anywhere in the query
+            auto rangeClassRefExp = dynamic_cast<RangeClassRefExp const*>(&exp);
+            if (rangeClassRefExp != nullptr && IsNavPropRelECClassIdNeeded(*parentExp, *rangeClassRefExp, propMap->GetAccessString()))
+                ctx.GetSelectionOptionsR().AddProperty(*propMap);
+            else
+                ctx.GetSelectionOptionsR().AddProperty(propMap->GetAs<NavigationPropertyMap>().GetIdPropertyMap());
+            }
+        else
+            ctx.GetSelectionOptionsR().AddProperty(*propMap);
         }
     }
 
@@ -826,6 +905,37 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassRefExp(NativeSqlBuilder::List& nativeS
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareTableValuedFunctionExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, TableValuedFunctionExp const& exp) {
+    // Gate on the resolved virtual class rather than the raw function name, so that an
+    // application registered function that happens to be called 'Relations' is not affected.
+    ECN::ECClassCP tvfClass = exp.GetClass();
+    bool const isRelations = tvfClass != nullptr && tvfClass->GetName().EqualsIAscii("Relations")
+        && tvfClass->GetSchema().GetName().EqualsIAscii("ECVLib");
+    if (isRelations)
+        {
+        if (!QueryOptionExperimentalFeaturesEnabled(ctx.GetECDb(), exp))
+            {
+            ctx.Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECSQL,
+                ECDbIssueId::ECDb_0744,
+                "ECVLib.Relations() is an experimental feature and is disabled by default. Enable it with: PRAGMA experimental_features_enabled=true or use ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES");
+            return ECSqlStatus::InvalidECSql;
+            }
+
+        size_t const argCount = exp.GetFunctionExp()->GetChildrenCount();
+        if (argCount < 2 || argCount > 3)
+            {
+            ctx.Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue,
+                ECDbIssueId::ECDb_0749,
+                "ECVLib.Relations() expects two or three arguments.");
+            return ECSqlStatus::InvalidECSql;
+            }
+        }
+
     NativeSqlBuilder builder;
     builder.Append(exp.GetFunctionExp()->GetFunctionName());
     builder.AppendParenLeft();
@@ -853,6 +963,12 @@ ECSqlStatus ECSqlExpPreparer::PrepareTableValuedFunctionExp(NativeSqlBuilder::Li
         }
         builder.Append(valueSnippets.front());
     }
+    if (isRelations && QueryOptionNavRelClassIdFallback(exp))
+        {
+        if (exp.GetFunctionExp()->GetChildrenCount() == 2)
+            builder.AppendComma().Append("'both'");
+        builder.AppendComma().Append("1");
+        }
     builder.AppendParenRight();
     if (!exp.GetAlias().empty()) {
         builder.AppendSpace().Append(exp.GetAlias());
@@ -1014,6 +1130,27 @@ ECSqlStatus ECSqlExpPreparer::PrepareCrossJoinExp(ECSqlPrepareContext& ctx, Cros
     r = PrepareClassRefExp(sqlBuilder, ctx, exp.GetToClassRef());
     if (!r.IsSuccess())
         return r;
+
+    if (exp.GetJoinCondition() != nullptr)
+        {
+        JoinConditionExp const& joinCondition = *exp.GetJoinCondition();
+        sqlBuilder.Append(" ON ");
+
+        NativeSqlBuilder::List sqlSnippets;
+        r = PrepareBooleanExp(sqlSnippets, ctx, *joinCondition.GetSearchCondition());
+        if (!r.IsSuccess())
+            return r;
+
+        bool isFirstSnippet = true;
+        for (NativeSqlBuilder const& sqlSnippet : sqlSnippets)
+            {
+            if (!isFirstSnippet)
+                sqlBuilder.Append("AND ");
+
+            sqlBuilder.Append(sqlSnippet).AppendSpace();
+            isFirstSnippet = false;
+            }
+        }
 
     return ECSqlStatus::Success;
     }
@@ -2398,6 +2535,17 @@ bool ECSqlExpPreparer::QueryOptionExperimentalFeaturesEnabled(ECDbCR db, ExpCR e
         OptionsExp::ENABLE_EXPERIMENTAL_FEATURES,
         [](OptionExp const& opt) { return opt.asBool(); },
         [&db]() { return db.GetECSqlConfig().GetExperimentalFeaturesEnabled(); });
+    }
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ECSqlExpPreparer::QueryOptionNavRelClassIdFallback(ExpCR exp)
+    {
+    return OptionsExp::FindLocalOrInheritedOption<bool>(
+        exp,
+        OptionsExp::NAV_REL_CLASSID_FALLBACK,
+        [](OptionExp const& opt) { return opt.asBool(); },
+        []() { return false; });
     }
 //-----------------------------------------------------------------------------------------
 // @bsimethod

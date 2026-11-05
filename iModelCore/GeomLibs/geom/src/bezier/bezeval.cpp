@@ -998,7 +998,8 @@ int         numCopy,
 int         numComponent
 )
     {
-    memcpy (pDest + iDest * numComponent,
+    BeStringUtilities::Memcpy (pDest + iDest * numComponent,
+            numCopy * numComponent * sizeof(double),
             pSource + iSource * numComponent,
             numCopy * numComponent * sizeof (double));
     }

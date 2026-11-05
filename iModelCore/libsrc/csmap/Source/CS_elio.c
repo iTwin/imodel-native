@@ -120,22 +120,18 @@ int EXP_LVL5 CS_eldel (struct cs_Eldef_ *eldef)
 	return deletionStatus;
 }
 
+#ifdef GEOCOORD_ENHANCEMENT
 /**********************************************************************
-**	flag = CS_elupd (eldef,crypt);
+**	bool = CS_elHasValidProps (eldef);
 **
 **	struct cs_Eldef_ *eldef;	a pointer to the ellipsoid definition structure which
-**								is to be written to the Ellipsoid Dictionary.
-**	int crypt;					if TRUE, the ellipsoid entry is encrypted
-**								before it is written.
-**	int flag;					returns TRUE if the indicated ellipsoid previously
-**								existed and was simply updated, returns FALSE if the
-**								ellipsoid had to be added as a new ellipsoid, returns
-**								-1 if the update process failed.
+**								is to be validated.
 **
-**	If the Ellipsoid Dictionary does not already contain an entry
-**	with the indicated key name, the entry is added.
+**  Only mathematical properties such as polar and equatorial radius
+**  as well as flattening and eccentricity are validated.
+**  If the properties are not valid then 0 is returned and 1 otherwise.
 **********************************************************************/
-int EXP_LVL5 CS_elupd (struct cs_Eldef_ *eldef,int crypt)
+int	EXP_LVL5 CS_elHasValidProps(struct cs_Eldef_ *eldef)
 {
 	extern char csErrnam [];
 
@@ -153,8 +149,100 @@ int EXP_LVL5 CS_elupd (struct cs_Eldef_ *eldef,int crypt)
 	double my_flat;
 	double my_ecent;
 
+	/* Check the definition for basic validity. */
+	if (eldef->e_rad < cs_ERadMin || eldef->e_rad > cs_ERadMax ||
+		eldef->p_rad < cs_PRadMin || eldef->p_rad > cs_PRadMax)
+	{
+		CS_stncp (csErrnam,eldef->key_nm,MAXPATH);
+		CS_erpt (cs_ELDEF_INV);
+
+		return 0;
+	}
+
+	/* Check/Calculate the flattening and/or the eccentricity.
+	   If the provided values are zero or less, we assume that
+	   the calling module wants us to calculate the values.
+
+	   Note, at this point, we know that neither e_rad or p_rad
+	   is zero. */
+	my_flat = cs_One - (eldef->p_rad / eldef->e_rad);
+	if (my_flat < 0.0)
+	{
+		CS_stncp (csErrnam,eldef->key_nm,MAXPATH);
+		CS_erpt (cs_ELDEF_INV);
+
+		return 0;
+	}
+	else if (my_flat < 1.0e-07)
+	{
+		eldef->p_rad = eldef->e_rad;
+		eldef->flat = cs_Zero;
+		eldef->ecent = cs_Zero;
+	}
+	else
+	{
+		my_ecent = sqrt (cs_Two * my_flat - (my_flat * my_flat));
+
+		if (eldef->flat  <= 0.0) eldef->flat  = my_flat;
+		if (eldef->ecent <= 0.0) eldef->ecent = my_ecent;
+
+		if (fabs (my_flat - eldef->flat) > 1.0E-08 ||
+			fabs (my_ecent - eldef->ecent) > 1.0E-08 ||
+			my_ecent > cs_EccentMax)
+		{
+			CS_stncp (csErrnam,eldef->key_nm,MAXPATH);
+			CS_erpt (cs_ELDEF_INV);
+			
+			return 0;
+		}
+	}
+
+	return 1;
+}
+#endif
+
+/**********************************************************************
+**	flag = CS_elupd (eldef,crypt);
+**
+**	struct cs_Eldef_ *eldef;	a pointer to the ellipsoid definition structure which
+**								is to be written to the Ellipsoid Dictionary.
+**	int crypt;					if TRUE, the ellipsoid entry is encrypted
+**								before it is written.
+**	int flag;					returns TRUE if the indicated ellipsoid previously
+**								existed and was simply updated, returns FALSE if the
+**								ellipsoid had to be added as a new ellipsoid, returns
+**								-1 if the update process failed.
+**
+**	If the Ellipsoid Dictionary does not already contain an entry
+**	with the indicated key name, the entry is added.
+**********************************************************************/
+int EXP_LVL5 CS_elupd (struct cs_Eldef_ *eldef,int crypt)
+{
+
+	extern char csErrnam [];
+
+	extern char *cs_ElKeyNames;
+
+#ifndef GEOCOORD_ENHANCEMENT
+	extern double cs_Zero;			/* 0.0 */
+	extern double cs_One;			/* 1.0 */
+	extern double cs_Two;			/* 2.0 */
+	extern double cs_ERadMin;		/* 1.0 */
+	extern double cs_ERadMax;		/* 100 million */
+	extern double cs_PRadMin;		/* 0.75 */
+	extern double cs_PRadMax;		/* 100 million */
+	extern double cs_EccentMax;		/* 0.2 */
+
+	double my_flat;
+	double my_ecent;
+#endif
+
 	int updateStatus = -1;
  
+#ifdef GEOCOORD_ENHANCEMENT
+	if (!CS_elHasValidProps(eldef))
+		return -1; 
+#else
 	/* Check the definition for basic validity. */
 	if (eldef->e_rad < cs_ERadMin || eldef->e_rad > cs_ERadMax ||
 		eldef->p_rad < cs_PRadMin || eldef->p_rad > cs_PRadMax)
@@ -202,7 +290,7 @@ int EXP_LVL5 CS_elupd (struct cs_Eldef_ *eldef,int crypt)
 			return -1;
 		}
 	}
-
+#endif
 
 	updateStatus = CS_elUpdate(eldef, crypt);
 	if (updateStatus < 0)
@@ -315,6 +403,8 @@ int EXP_LVL3 CS_eldefAll (struct cs_Eldef_ **pDefArray[])
 
 struct cs_Eldef_ * EXP_LVL5 CS_eldef2 (Const char *el_nam, char* pszDirPath)
 {
+#ifndef GEOCOORD_ENHANCEMENT
+
 	extern char csErrnam [];
 
 	extern double cs_One;			/* 1.0 */
@@ -326,8 +416,9 @@ struct cs_Eldef_ * EXP_LVL5 CS_eldef2 (Const char *el_nam, char* pszDirPath)
 	extern double cs_PRadMax;		/* 100 million */
 	extern double cs_EccentMax;		/* 0.2 */
 
-	double my_ecent;
 	double my_flat;
+	double my_ecent;
+#endif
 
 	struct cs_Eldef_* el_ptr = NULL;
 	int isUsrDef = FALSE;
@@ -336,6 +427,10 @@ struct cs_Eldef_ * EXP_LVL5 CS_eldef2 (Const char *el_nam, char* pszDirPath)
 	if (NULL == el_ptr || TRUE == isUsrDef)
 		return el_ptr;
 
+#ifdef GEOCOORD_ENHANCEMENT
+	if (!CS_elHasValidProps(el_ptr))
+		goto error;
+#else
 	/* Check the ellipsoid definition for valitity. */
 	if (el_ptr->e_rad < cs_ERadMin || el_ptr->e_rad > cs_ERadMax ||
 		el_ptr->p_rad < cs_PRadMin || el_ptr->p_rad > cs_PRadMax)
@@ -374,6 +469,7 @@ struct cs_Eldef_ * EXP_LVL5 CS_eldef2 (Const char *el_nam, char* pszDirPath)
 			goto error;
 		}
 	}
+#endif
 
 	/* Return a pointer to the malloc'ed ellipsoid definition to the
 	   user. */

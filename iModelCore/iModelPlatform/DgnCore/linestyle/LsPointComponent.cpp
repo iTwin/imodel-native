@@ -532,7 +532,7 @@ int             strokeNo
 +---------------+---------------+---------------+---------------+---------------+------*/
 LsPointComponent* LsPointComponent::LoadLinePoint(LsComponentReader*reader)
     {
-    Json::Value     jsonValue;
+    BeJsDocument     jsonValue;
     reader->GetJsonValue(jsonValue);
 
     LsPointComponentP compPtr;

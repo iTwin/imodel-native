@@ -2494,7 +2494,13 @@ double        *pResidual
     xx[iMin] = 1.0;
     for (i = iMin + 1; i < HDIM; i++)
         xx[i] = yy[i - 1];
-    memcpy (pX, xx, sizeof(DPoint4d));
+    if (pX)
+        {
+        pX->x = xx[0];
+        pX->y = xx[1];
+        pX->z = xx[2];
+        pX->w = xx[3];
+        }
     *pResidual = A.coff[lastColumn][lastColumn];
     return true;
     }

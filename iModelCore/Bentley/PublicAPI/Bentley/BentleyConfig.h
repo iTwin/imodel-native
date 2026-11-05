@@ -30,6 +30,7 @@
         #define BENTLEYCONFIG_GRAPHICS_OPENGL
         #define BENTLEYCONFIG_VIRTUAL_MEMORY   //  Assume the OS swapping is better than anything we would do
         #define BENTLEYCONFIG_DISPLAY_FAKE_QV
+        #define BENTLEYCONFIG_CRASHPAD
     #endif
 
 #elif defined (ANDROID)
@@ -48,6 +49,7 @@
     #define BENTLEYCONFIG_GRAPHICS_DIRECTX
     #define BENTLEYCONFIG_GRAPHICS_HAVE_BACKING_STORE
     #define BENTLEYCONFIG_VIRTUAL_MEMORY 
+    #define BENTLEYCONFIG_CRASHPAD
 
     //  BENTLEYCONFIG_SUPPORTS_SYSTEM_MOUSE is defined if the system supports a real mouse
     //  and DgnView is known to support the mouse properly on the system.

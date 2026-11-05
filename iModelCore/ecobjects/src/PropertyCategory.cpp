@@ -92,7 +92,7 @@ SchemaReadStatus PropertyCategory::ReadXml(pugi::xml_node propertyCategoryNode, 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus PropertyCategory::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
+SchemaWriteStatus PropertyCategory::WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
     {
     if (ecXmlVersion < ECVersion::V3_1)
         return SchemaWriteStatus::Success;

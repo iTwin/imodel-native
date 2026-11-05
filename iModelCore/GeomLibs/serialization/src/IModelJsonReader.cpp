@@ -1269,9 +1269,14 @@ CurveVectorPtr tryValueToCurveVector (BeJsConst value)
     if (value.isNull ())
         return nullptr;
     CurveVectorPtr cv;
+
+    bool isInner = false;
+    derefBool(value, "isInner", isInner, false);
+    CurveVector::BoundaryType loopType = isInner ? CurveVector::BOUNDARY_TYPE_Inner : CurveVector::BOUNDARY_TYPE_Outer;
+
     if (tryArrayToCurveVectorMembers (value["path"], cv, CurveVector::BOUNDARY_TYPE_Open))
         return cv;
-    if (tryArrayToCurveVectorMembers (value["loop"], cv, CurveVector::BOUNDARY_TYPE_Outer))
+    if (tryArrayToCurveVectorMembers (value["loop"], cv, loopType))
         return cv;
     if (tryArrayToCurveVectorMembers (value["parityRegion"], cv, CurveVector::BOUNDARY_TYPE_ParityRegion))
         return cv;

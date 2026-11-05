@@ -137,7 +137,7 @@ struct BeJsGeomUtils {
     static DRange3d ToDRange3d(BeJsConst inValue) {
         DRange3d range = DRange3d::NullRange();
         if (inValue.isArray()) { // if it's an array, just extend range by all points.
-            for (Json::ArrayIndex i = 0; i < inValue.size(); ++i)
+            for (BeJsConst::ArrayIndex i = 0; i < inValue.size(); ++i)
                 range.Extend(ToDPoint3d(inValue[i]));
             return range;
         }
@@ -251,7 +251,7 @@ struct BeJsGeomUtils {
 
     static void DPoint3dVectorToJson(BeJsValue outValue, bvector<DPoint3d> const& points) {
         auto size = points.size();
-        for (Json::ArrayIndex i = 0; i < size; ++i) {
+        for (BeJsValue::ArrayIndex i = 0; i < size; ++i) {
             DPoint3dToJson(outValue[i], points[i]);
         }
     }

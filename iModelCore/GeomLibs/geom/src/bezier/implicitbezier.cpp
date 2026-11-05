@@ -798,7 +798,7 @@ double relTol
         xyTol = tolerancePoint.y;
     wTol = tolerancePoint.w;
 
-    memcpy (pDest, pSource, order * sizeof (DPoint4d));
+    BeStringUtilities::Memcpy (pDest, order * sizeof (DPoint4d), pSource, order * sizeof (DPoint4d));
     while (order > 2)
         {
         // First look at leading coefficients in relative sense only.

@@ -17,6 +17,9 @@ size_t                  PolyfaceVectors::_GetColorCount       ()     const
     }
 size_t                  PolyfaceVectors::_GetFaceCount        ()     const  {return m_faceData.size(); }
 size_t                  PolyfaceVectors::_GetPointIndexCount  ()     const  {return m_pointIndex.size ();}
+size_t                  PolyfaceVectors::_GetNormalIndexCount ()     const  {return m_normalIndex.size ();}
+size_t                  PolyfaceVectors::_GetParamIndexCount  ()     const  {return m_paramIndex.size ();}
+size_t                  PolyfaceVectors::_GetColorIndexCount  ()     const  {return m_colorIndex.size ();}
 size_t                  PolyfaceVectors::_GetFaceIndexCount  ()      const  {return m_faceIndex.size ();}
 size_t                  PolyfaceVectors::_GetEdgeChainCount  ()      const  {return m_edgeChain.size ();}
 DPoint3dCP              PolyfaceVectors::_GetPointCP ()              const  {return m_point.GetCP();}
@@ -25,7 +28,7 @@ DPoint2dCP              PolyfaceVectors::_GetParamCP ()              const  {ret
 FacetFaceDataCP         PolyfaceVectors::_GetFaceDataCP ()           const  {return m_faceData.GetCP(); }
 PolyfaceEdgeChainCP     PolyfaceVectors::_GetEdgeChainCP ()          const  {return m_edgeChain.GetCP(); }
 PolyfaceAuxDataCPtr     PolyfaceVectors::_GetAuxDataCP()             const  {return m_auxData; }
-uint32_t const*         PolyfaceVectors::_GetIntColorCP ()           const  {return (uint32_t const*)m_intColor.GetCP();}
+uint32_t const*         PolyfaceVectors::_GetIntColorCP ()           const  {return m_intColor.GetCP();}
 
 /** For Color, Param, and normal indices, resolveToDefaults allows caller to request using
 PointIndex (or other default decision) if respective index is same as PointIndex. */
@@ -41,7 +44,7 @@ uint32_t                PolyfaceVectors::_GetMeshStyle()             const  {ret
 uint32_t                PolyfaceVectors::_GetExpectedClosure()       const { return m_expectedClosure; }
 
 TaggedNumericData const *PolyfaceVectors::_GetNumericTagsCP() const {return &m_numericTags;}
-void PolyfaceVectors::_SetNumericTags(TaggedNumericData const & source) {m_numericTags = source;}
+void PolyfaceVectors::_SetNumericTags(TaggedNumericData const & source) const {m_numericTags = source;}
 
 PolyfaceVectors* PolyfaceVectors::_AsPolyfaceVectorsP () const { return const_cast <PolyfaceVectors*> (this);}
 void    PolyfaceVectors::SetTwoSided (bool twoSided)        { m_twoSided = twoSided; }

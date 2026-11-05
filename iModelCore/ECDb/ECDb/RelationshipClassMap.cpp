@@ -485,6 +485,25 @@ std::unique_ptr<ForeignKeyPartitionView> ForeignKeyPartitionView::Create(TableSp
             return nullptr;
         }
 
+    CachedStatementPtr navClassStmt = schemaManager.GetECDb().GetImpl().GetCachedSqliteStatement(Utf8PrintfString(
+        "SELECT DISTINCT P.NavigationRelationshipClassId, P.ClassId FROM [%s].ec_Property P "
+        "JOIN [%s].ec_PropertyPath PP ON PP.RootPropertyId=P.Id "
+        "JOIN [%s].ec_PropertyMap PM ON PM.PropertyPathId=PP.Id "
+        "WHERE PM.ColumnId=?1 "
+        "AND SUBSTR(PP.AccessString, INSTR(PP.AccessString, '.') + 1)='Id'",
+        tableSpace, tableSpace, tableSpace).c_str());
+    if (navClassStmt != nullptr)
+        {
+        for (std::unique_ptr<Partition> const& partition : partitionView->m_partitions)
+            {
+            navClassStmt->Reset();
+            navClassStmt->ClearBindings();
+            navClassStmt->BindId(1, partition->GetNavigationColumns().GetIdColumn().GetId());
+            while (navClassStmt->Step() == BE_SQLITE_ROW)
+                partition->AddNavigationProperty(navClassStmt->GetValueId<ECClassId>(0), navClassStmt->GetValueId<ECClassId>(1));
+            }
+        }
+
     if (partitionView->UpdateFromECClassIdColumn() != SUCCESS)
         return nullptr;
 
@@ -828,6 +847,45 @@ ForeignKeyPartitionView::Partition::Partition(ForeignKeyPartitionView const& fkI
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+void ForeignKeyPartitionView::Partition::AddNavigationProperty(ECN::ECClassId relationshipClassId, ECN::ECClassId declaringClassId)
+    {
+    auto const descriptor = std::make_pair(relationshipClassId, declaringClassId);
+    if (std::find(m_navigationProperties.begin(), m_navigationProperties.end(), descriptor) == m_navigationProperties.end())
+        m_navigationProperties.push_back(descriptor);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+bool ForeignKeyPartitionView::Partition::TryGetNavigationFallback(ECN::ECClassId& relationshipClassId, bvector<ECN::ECClassId>& declaringClassIds,
+                                                                  ECRelationshipClassCR queriedRelationship, bool polymorphic) const
+    {
+    relationshipClassId = ECN::ECClassId();
+    declaringClassIds.clear();
+
+    for (auto const& descriptor : m_navigationProperties)
+        {
+        ECClassCP declaredClass = m_fkInfo.m_schemaManager.GetClass(descriptor.first);
+        ECRelationshipClassCP declaredRelationship = declaredClass == nullptr ? nullptr : declaredClass->GetRelationshipClassCP();
+        bool const qualifies = declaredRelationship != nullptr &&
+            (polymorphic ? declaredRelationship->Is(&queriedRelationship) : descriptor.first == queriedRelationship.GetId());
+        if (!qualifies)
+            continue;
+
+        if (relationshipClassId.IsValid() && relationshipClassId != descriptor.first)
+            return false;
+
+        relationshipClassId = descriptor.first;
+        if (std::find(declaringClassIds.begin(), declaringClassIds.end(), descriptor.second) == declaringClassIds.end())
+            declaringClassIds.push_back(descriptor.second);
+        }
+
+    return relationshipClassId.IsValid() && !declaringClassIds.empty();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 std::unique_ptr<ForeignKeyPartitionView::Partition> ForeignKeyPartitionView::Partition::Create(ForeignKeyPartitionView const& info, DbColumn const& navId, DbColumn const& navRelECClassId)
     {
     DbTable const& table = navId.GetTable();
@@ -930,20 +988,6 @@ ClassMappingStatus RelationshipClassLinkTableMap::_Map(ClassMappingContext& ctx)
         return ClassMappingStatus::Error;
         }
 
-    DbTable const* sourceTable = *sourceTables.begin();
-    DbTable const* targetTable = *targetTables.begin();
-
-    bool createFkConstraints = true; // default
-    if (ca.IsValid())
-        {
-        Nullable<bool> createFkConstraintsVal;
-        if (SUCCESS != ca.TryGetCreateForeignKeyConstraints(createFkConstraintsVal))
-            return ClassMappingStatus::Error;
-
-        if (!createFkConstraintsVal.IsNull())
-            createFkConstraints = createFkConstraintsVal.Value();
-        }
-
     //**** Constraint columns and prop maps
     bool addSourceECClassIdColumnToTable = false;
     DetermineConstraintClassIdColumnHandling(addSourceECClassIdColumnToTable, sourceConstraint);
@@ -958,20 +1002,8 @@ ClassMappingStatus RelationshipClassLinkTableMap::_Map(ClassMappingContext& ctx)
     if (stat != ClassMappingStatus::Success)
         return stat;
 
-
-    //only create constraints on TPH root or if not TPH and not existing table
-    if (createFkConstraints && GetPrimaryTable().GetType() != DbTable::Type::Existing && (!GetMapStrategy().IsTablePerHierarchy() || GetTphHelper()->DetermineTphRootClassId() == GetClass().GetId()))
-        {
-        //Create FK from Source-Primary to LinkTable
-        DbColumn const* fkColumn = &GetSourceECInstanceIdPropMap()->FindDataPropertyMap(GetPrimaryTable())->GetColumn();
-        DbColumn const* referencedColumn = sourceTable->FindFirst(DbColumn::Kind::ECInstanceId);
-        GetPrimaryTable().AddForeignKeyConstraint(*fkColumn, *referencedColumn, ForeignKeyDbConstraint::ActionType::Cascade, ForeignKeyDbConstraint::ActionType::NotSpecified);
-
-        //Create FK from Target-Primary to LinkTable
-        fkColumn = &GetTargetECInstanceIdPropMap()->FindDataPropertyMap(GetPrimaryTable())->GetColumn();
-        referencedColumn = targetTable->FindFirst(DbColumn::Kind::ECInstanceId);
-        GetPrimaryTable().AddForeignKeyConstraint(*fkColumn, *referencedColumn, ForeignKeyDbConstraint::ActionType::Cascade, ForeignKeyDbConstraint::ActionType::NotSpecified);
-        }
+    // The link table's foreign keys to the source and target tables are added by
+    // DerivedDbStructures, which reads the same LinkTableRelationshipMap custom attribute.
 
     Nullable<bool> allowDuplicateRelationships;
     if (ca.IsValid())

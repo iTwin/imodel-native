@@ -6,7 +6,9 @@
 #define __ECPRESENTATIONPCH_H__
 
 // external includes
+#include <deque>
 #include <memory>
+#include <string>
 #include <Bentley/Bentley.h>
 #include <Bentley/BeNumerical.h>
 #include <Bentley/BeDebugLog.h>

@@ -95,6 +95,9 @@ public:
     bool GetRenameSchemaItemOnConflict() const { return m_json[SCHEMAMERGER_RENAMESCHEMAITEMONCONFLICT].asBool(false); }
 
     //! Setting this flag makes the merger automatically rename properties on a name conflict.
+    //! This also applies when copying new (right-only) schemas or classes into the result: a property that
+    //! conflicts with an incompatible base class property (resolved from the merged references) is copied
+    //! under a unique name instead of failing the copy.
     //! Defaults to false
     void SetRenamePropertyOnConflict(bool flag) { m_json[SCHEMAMERGER_RENAMEPROPERTYONCONFLICT] = flag; }
     bool GetRenamePropertyOnConflict() const { return m_json[SCHEMAMERGER_RENAMEPROPERTYONCONFLICT].asBool(false); }

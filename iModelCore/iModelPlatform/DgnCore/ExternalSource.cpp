@@ -741,7 +741,11 @@ ExternalSourceAttachment::PlacementProperties ExternalSourceAttachment::GetPlace
         pprops.scale.Zero();
 
     auto json = GetJsonProperties(json_externalSourceAttachment());
-    JsonUtils::TransformFromJson(pprops.transform, Json::Value::From(json[json_transform()].Stringify()));
+    auto transformJson = json[json_transform()];
+    // A missing or malformed transform yields an all-zero transform, matching the prior JsonCpp behavior.
+    pprops.transform = Transform::FromRowValues(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+    if (transformJson.isArray())
+        BeJsGeomUtils::TransformFromJson(pprops.transform, transformJson);
 
     return pprops;
     }

@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include "ECSqlField.h"
+#include <optional>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -16,8 +17,16 @@ private:
     int m_xColumnIndex;
     int m_yColumnIndex;
     int m_zColumnIndex;
+    mutable std::optional<DPoint3d> m_coordinates;
 
     bool _IsNull() const override;
+    DPoint3d const& GetCoordinates() const;
+    ECSqlStatus _OnAfterStep() override { m_coordinates.reset(); return ECSqlStatus::Success; }
+    ECSqlStatus _OnAfterReset() override {
+        m_coordinates.reset();
+        SetDynamicColumnInfo(ECSqlColumnInfo());
+        return ECSqlStatus::Success;
+    }
 
     void const* _GetBlob(int* blobSize) const override;
     bool _GetBoolean() const override;
@@ -41,7 +50,7 @@ private:
 
 public:
     PointECSqlField(ECSqlSelectPreparedStatement& stmt, ECSqlColumnInfo const& colInfo, int xColumnIndex, int yColumnIndex, int zColumnIndex)
-        : ECSqlField(stmt, colInfo, false, false), m_xColumnIndex(xColumnIndex), m_yColumnIndex(yColumnIndex), m_zColumnIndex(zColumnIndex)
+        : ECSqlField(stmt, colInfo, true, true), m_xColumnIndex(xColumnIndex), m_yColumnIndex(yColumnIndex), m_zColumnIndex(zColumnIndex)
         {}
     PointECSqlField(ECSqlSelectPreparedStatement& stmt, ECSqlColumnInfo const& colInfo, int xColumnIndex, int yColumnIndex) : PointECSqlField (stmt, colInfo, xColumnIndex, yColumnIndex, -1) {}
     ~PointECSqlField() {}

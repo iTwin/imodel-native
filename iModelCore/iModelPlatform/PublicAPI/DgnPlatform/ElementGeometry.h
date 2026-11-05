@@ -302,7 +302,7 @@ struct GeometryStreamIO
         static Header const* GetHeader(Operation const& egOp) {return (OpCode::Header == egOp.m_opCode ? (Header const*)egOp.m_data : nullptr);}
 
         // Instantiate BRep from flatbuffer representation.
-        DGNPLATFORM_EXPORT static IBRepEntityPtr ReadBRepEntity(uint8_t const*);
+        DGNPLATFORM_EXPORT static IBRepEntityPtr ReadBRepEntity(uint8_t const* data, size_t dataSize);
 
         bool Get(Operation const&, DPoint2dCP&, int& nPts, int8_t& boundary) const;
         bool Get(Operation const&, DPoint3dCP&, int& nPts, int8_t& boundary) const;
@@ -559,9 +559,9 @@ public:
     //! @note It is up to the caller to keep the GeometrySource in memory by holding onto a DgnElementPtr, etc. until done iterating.
     DGNPLATFORM_EXPORT GeometryCollection(GeometrySourceCR source);
 
-    //! Create a Json::Value that represents the GeometryStream from this GeometryCollection.
+    //! Create a BeJsValue that represents the GeometryStream from this GeometryCollection.
     //! @param[in] opts options for customizing the value.
-    DGNPLATFORM_EXPORT void ToJson(BeJsValue out, BeJsConst opts=Json::Value()) const;
+    DGNPLATFORM_EXPORT void ToJson(BeJsValue out, BeJsConst opts=BeJsDocument::Null()) const;
 
 }; // GeometryCollection
 

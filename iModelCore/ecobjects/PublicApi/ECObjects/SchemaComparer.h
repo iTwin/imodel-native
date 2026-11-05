@@ -889,7 +889,7 @@ public:
         for (size_t i = 0; i < Changes().Count(); i++)
             {
             SchemaChange& change = m_changes[i];
-            if (schemaName.Equals(change.GetChangeName()))
+            if (schemaName.EqualsI(change.GetChangeName())) // schema names are case-insensitive
                 return &change;
             }
 
