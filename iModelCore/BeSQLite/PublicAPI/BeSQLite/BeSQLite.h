@@ -2988,7 +2988,7 @@ public:
     //! SQLite does not allow a database to be attached if there is a transaction open. If the Db has an open transaction, it is committed before
     //! the ATTACH sql statement is executed and restarted afterwards.
     //! @param[in] filename The name of the file holding the SQLite database to be attached.
-    //! @param[in] alias The alias by which the database is attached.
+    //! @param[in] alias The alias by which the database is attached. It may only contain letters, digits and underscores and must not start with a digit.
     BE_SQLITE_EXPORT DbResult AttachDb(Utf8CP filename, Utf8CP alias) const;
 
     //! Detach a previously attached database. This method is necessary for the same reason AttachDb is necessary.

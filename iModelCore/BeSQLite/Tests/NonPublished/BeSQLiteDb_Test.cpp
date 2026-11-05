@@ -1324,6 +1324,32 @@ TEST_F(BeSQLiteDbTests, AttachDb)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(BeSQLiteDbTests, AttachDbAndVacuumIntoTreatInputsAsData)
+    {
+    SetupDb(L"AttachInputs.db");
+
+    // A path with a quote stays one string literal
+    BeFileName quotedPath = getDbFilePath(L"it's.db");
+    if (quotedPath.DoesPathExist())
+        quotedPath.BeDeleteFile();
+
+    ASSERT_EQ(BE_SQLITE_OK, m_db.VacuumInto(quotedPath.GetNameUtf8().c_str()));
+    ASSERT_TRUE(quotedPath.DoesPathExist());
+    ASSERT_EQ(BE_SQLITE_OK, m_db.AttachDb(quotedPath.GetNameUtf8().c_str(), "quoted"));
+    EXPECT_EQ(BE_SQLITE_OK, m_db.DetachDb("quoted"));
+
+    // Aliases must be plain identifiers
+    EXPECT_EQ(BE_SQLITE_ERROR, m_db.AttachDb(quotedPath.GetNameUtf8().c_str(), "x; CREATE TABLE pwned(a)"));
+    EXPECT_EQ(BE_SQLITE_ERROR, m_db.AttachDb(quotedPath.GetNameUtf8().c_str(), "a]b"));
+    EXPECT_EQ(BE_SQLITE_ERROR, m_db.AttachDb(quotedPath.GetNameUtf8().c_str(), "1abc"));
+    EXPECT_EQ(BE_SQLITE_ERROR, m_db.DetachDb("main; CREATE TABLE pwned(a)"));
+    EXPECT_FALSE(m_db.TableExists("pwned"));
+    m_db.CloseDb();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(BeSQLiteDbTests, RenameAndDropTable)
 {
     SetupDb(L"RenameAndDropTable.db");

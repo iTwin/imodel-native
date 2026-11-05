@@ -799,7 +799,12 @@ BentleyStatus DbMappingManager::Classes::MapIndexes(SchemaImportContext& importC
             if (BE_SQLITE_OK != importCtx.GetECDb().GetImpl().ExecuteDDL(SqlPrintfString("DROP INDEX IF EXISTS [%s]", foundIndex.c_str())))
                 return ERROR;
 
-            if (BE_SQLITE_OK != importCtx.GetECDb().ExecuteSql(SqlPrintfString("DELETE FROM main." TABLE_Index " WHERE Name = '%s'", foundIndex.c_str())))
+            CachedStatementPtr deleteIndexStmt = importCtx.GetECDb().GetImpl().GetCachedSqliteStatement("DELETE FROM main." TABLE_Index " WHERE Name=?");
+            if (deleteIndexStmt == nullptr)
+                return ERROR;
+
+            deleteIndexStmt->BindText(1, foundIndex, Statement::MakeCopy::No);
+            if (BE_SQLITE_DONE != deleteIndexStmt->Step())
                 return ERROR;
             }
         }

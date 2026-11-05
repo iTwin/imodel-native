@@ -11328,6 +11328,58 @@ TEST_F(ECSqlStatementTestFixture, EnumeratorNames)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, NamesAndValuesStayInsideGeneratedSql)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("NamesAndValuesStayInsideGeneratedSql.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECEnumeration typeName="Notes" backingTypeName="string" isStrict="true">
+                    <ECEnumerator name="Quoted" value="it's" />
+                </ECEnumeration>
+                <ECEntityClass typeName="TestClass">
+                    <ECProperty propertyName="Note" typeName="Notes" />
+                </ECEntityClass>
+            </ECSchema>)xml")));
+
+    // String enumerator values are escaped like string literals
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.TestClass(Note) VALUES (ts.Notes.Quoted)"));
+    ASSERT_EQ(JsonValue("[{\"cnt\": 1}]"), GetHelper().ExecuteSelectECSql("SELECT COUNT(*) cnt FROM ts.TestClass WHERE Note = 'it''s'"));
+
+    // Instance property paths are escaped inside the generated string literals
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT $->[it's] FROM ts.TestClass"));
+    const DbResult rc = stmt.Step();
+    EXPECT_TRUE(rc == BE_SQLITE_ROW || rc == BE_SQLITE_DONE) << rc;
+    }
+
+    TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
+    auto expectRejected = [&] (Utf8CP ecsql, Utf8CP expectedIssueId)
+        {
+        issueListener.ClearIssues();
+        ECSqlStatement stmt;
+        EXPECT_NE(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql)) << ecsql;
+        const bool hasExpectedIssue = std::any_of(issueListener.m_issues.begin(), issueListener.m_issues.end(),
+            [&] (ReportedIssue const& issue) { return Utf8String(issue.id.m_issueId).Equals(expectedIssueId); });
+        EXPECT_TRUE(hasExpectedIssue) << ecsql << ": " << issueListener.GetLastMessage().c_str();
+        };
+
+    // ']' would end the [...] that the generated SQL puts names into
+    expectRejected("SELECT ECInstanceId [a]]b] FROM ts.TestClass", "ECDb_0471");
+    expectRejected("SELECT ECInstanceId \"a]b\" FROM ts.TestClass", "ECDb_0471");
+
+    // These names are written into the generated SQL without quotes
+    expectRejected("WITH [my cte](a) AS (SELECT 1) SELECT a FROM [my cte]", "ECDb_0751");
+    expectRejected("WITH cte([a b]) AS (SELECT 1) SELECT * FROM cte", "ECDb_0751");
+    expectRejected("SELECT [abs x](1) FROM ts.TestClass", "ECDb_0751");
+    expectRejected("SELECT MAX(ECInstanceId) OVER [w x] FROM ts.TestClass WINDOW [w x] AS (ORDER BY ECInstanceId)", "ECDb_0751");
+    expectRejected("SELECT * FROM json1.json_each('[]') [s x]", "ECDb_0751");
+    m_ecdb.RemoveIssueListener();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, ORedEnumerators)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ORedEnumerators.ecdb", SchemaItem(

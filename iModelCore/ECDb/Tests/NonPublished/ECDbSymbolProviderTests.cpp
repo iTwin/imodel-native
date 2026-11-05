@@ -719,4 +719,22 @@ TEST_F(ECDbExpressionSymbolContextTests, GetRelatedValue_3args_ReturnsRelatedIns
     ASSERT_STREQ("test label", value.GetUtf8CP());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsitest
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbExpressionSymbolContextTests, HasRelatedInstance_LambdaTextIsNotUsedAsFormat)
+    {
+    ECClassCP classA = m_ecdb.Schemas().GetClass("TestSchema", "ClassA");
+    IECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
+    ECInstanceInserter(m_ecdb, *classA, nullptr).Insert(*instanceA);
+
+    ECDbExpressionSymbolContext ecdbContext(m_ecdb);
+    ExpressionContextPtr exprContext = CreateInstanceContext(*instanceA);
+
+    // The lambda is copied into a query that later serves as a printf format. Its '%s' must not read missing arguments.
+    ECValue value;
+    if (EvaluateECExpression(value, "this.HasRelatedInstance(\"TestSchema:ClassB\", b => b.label = \"%s%s%s%s%s%s\")", *exprContext))
+        EXPECT_TRUE(value.IsBoolean());
+    }
+
 END_ECDBUNITTESTS_NAMESPACE

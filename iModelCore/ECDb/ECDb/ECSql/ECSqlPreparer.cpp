@@ -85,6 +85,31 @@ ECSqlStatus ECSqlPreparer::Prepare(Utf8StringR nativeSql, ECSqlPrepareContext& c
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
+ECSqlStatus ECSqlExpPreparer::AppendUnquotedName(NativeSqlBuilder& builder, ECSqlPrepareContext& ctx, Utf8StringCR name)
+    {
+    // ECSQL accepts quoted names with any characters. Unquoted in SQLite SQL, such a name could change the statement.
+    bool isPlainIdentifier = !name.empty() && !(name[0] >= '0' && name[0] <= '9') && name[0] != '$';
+    for (size_t i = 0; isPlainIdentifier && i < name.size(); ++i)
+        {
+        const unsigned char c = static_cast<unsigned char>(name[i]);
+        isPlainIdentifier = (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_' || c == '$' || c >= 0x80;
+        }
+
+    if (!isPlainIdentifier)
+        {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0751,
+            "Invalid name '%s'. Names of functions, common table expressions and their columns, windows and table-valued function aliases may only contain letters, digits and underscores.", name.c_str());
+        return ECSqlStatus::InvalidECSql;
+        }
+
+    builder.Append(name);
+    return ECSqlStatus::Success;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
 ECSqlStatus ECSqlExpPreparer::PrepareAllOrAnyExp(ECSqlPrepareContext& ctx, AllOrAnyExp const& exp)
     {
     const BooleanSqlOperator op = exp.GetOperator();
@@ -883,10 +908,14 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassRefExp(NativeSqlBuilder::List& nativeS
             case Exp::Type::CommonTableBlockName:  {
                 NativeSqlBuilder builder;
                 auto& ctb = exp.GetAs<CommonTableBlockNameExp>();
-                builder.Append(ctb.GetName());
+                ECSqlStatus nameStatus = AppendUnquotedName(builder, ctx, ctb.GetName());
+                if (!nameStatus.IsSuccess())
+                    return nameStatus;
                 // append alias to cte reference
                 if (!ctb.GetAlias().empty()) {
-                    builder.AppendSpace().Append(ctb.GetAlias());
+                    nameStatus = AppendUnquotedName(builder.AppendSpace(), ctx, ctb.GetAlias());
+                    if (!nameStatus.IsSuccess())
+                        return nameStatus;
                 }
                 nativeSqlSnippets.push_back(builder);
                 return ECSqlStatus::Success;
@@ -937,7 +966,10 @@ ECSqlStatus ECSqlExpPreparer::PrepareTableValuedFunctionExp(NativeSqlBuilder::Li
         }
 
     NativeSqlBuilder builder;
-    builder.Append(exp.GetFunctionExp()->GetFunctionName());
+    ECSqlStatus nameStatus = AppendUnquotedName(builder, ctx, exp.GetFunctionExp()->GetFunctionName());
+    if (!nameStatus.IsSuccess())
+        return nameStatus;
+
     builder.AppendParenLeft();
     for (auto i =0; i < exp.GetFunctionExp()->GetChildrenCount(); ++i) {
         auto arg = exp.GetFunctionExp()->GetArgument(i);
@@ -971,7 +1003,9 @@ ECSqlStatus ECSqlExpPreparer::PrepareTableValuedFunctionExp(NativeSqlBuilder::Li
         }
     builder.AppendParenRight();
     if (!exp.GetAlias().empty()) {
-        builder.AppendSpace().Append(exp.GetAlias());
+        ECSqlStatus aliasStatus = AppendUnquotedName(builder.AppendSpace(), ctx, exp.GetAlias());
+        if (!aliasStatus.IsSuccess())
+            return aliasStatus;
     }
     nativeSqlSnippets.push_back(builder);
     return ECSqlStatus::Success;
@@ -1014,7 +1048,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareEnumValueExp(NativeSqlBuilder::List& native
     if (enumerator.IsInteger())
         nativeSqlBuilder.AppendFormatted("%" PRId32, enumerator.GetInteger());
     else if (enumerator.IsString())
-        nativeSqlBuilder.AppendQuoted(enumerator.GetString().c_str());
+        nativeSqlBuilder.AppendQuoted(LiteralValueExp::EscapeStringLiteral(enumerator.GetString()).c_str());
     else
         {
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0513,
@@ -1581,7 +1615,11 @@ ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp(NativeSqlBuilder::List& nat
         nativeSql.Append("JULIANDAY(").Append(functionName).AppendParenRight();
         }
     else
-        nativeSql.Append(functionName);
+        {
+        ECSqlStatus nameStatus = AppendUnquotedName(nativeSql, ctx, functionName);
+        if (!nameStatus.IsSuccess())
+            return nameStatus;
+        }
 
     if (!exp.IsGetter())
         {
@@ -2080,8 +2118,12 @@ ECSqlStatus ECSqlExpPreparer::PrepareWindowDefinitionListExp(NativeSqlBuilder::L
 //static`
 ECSqlStatus ECSqlExpPreparer::PrepareWindowDefinitionExp(NativeSqlBuilder& nativeSqlBuilder, ECSqlPrepareContext& ctx, WindowDefinitionExp const& exp)
     {
-    nativeSqlBuilder.Append(exp.GetWindowName()).Append(" AS ");
-    ECSqlStatus status = PrepareWindowSpecification(nativeSqlBuilder, ctx, *exp.GetWindowSpecification());
+    ECSqlStatus status = AppendUnquotedName(nativeSqlBuilder, ctx, exp.GetWindowName());
+    if (!status.IsSuccess())
+        return status;
+
+    nativeSqlBuilder.Append(" AS ");
+    status = PrepareWindowSpecification(nativeSqlBuilder, ctx, *exp.GetWindowSpecification());
     if (!status.IsSuccess())
         return status;
 
@@ -2124,7 +2166,10 @@ ECSqlStatus ECSqlExpPreparer::PrepareWindowFunctionExp(NativeSqlBuilder::List& n
     else if (exp.GetWindowName().size() != 0)
         {
         nativeSqlBuilder.AppendSpace();
-        nativeSqlBuilder.Append(exp.GetWindowName());
+        status = AppendUnquotedName(nativeSqlBuilder, ctx, exp.GetWindowName());
+        if (!status.IsSuccess())
+            return status;
+
         nativeSqlSnippets.push_back(nativeSqlBuilder);
         return ECSqlStatus::Success;
         }
@@ -2241,7 +2286,10 @@ ECSqlStatus ECSqlExpPreparer::PrepareWindowSpecification(NativeSqlBuilder& nativ
     bool isFirstWindowSpecificationClause = true;
     if (exp.GetWindowName().size() != 0)
         {
-        nativeSqlBuilder.Append(exp.GetWindowName());
+        status = AppendUnquotedName(nativeSqlBuilder, ctx, exp.GetWindowName());
+        if (!status.IsSuccess())
+            return status;
+
         isFirstWindowSpecificationClause = false;
         }
     if (WindowPartitionColumnReferenceListExp const * e = exp.GetPartitionBy())
@@ -2583,7 +2631,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareExtractPropertyExp(NativeSqlBuilder::List& 
     builder.AppendFormatted("extract_prop(%s,%s,'%s',0x%x%s)",
         classIdSql.front().GetSql().c_str(),
         instanceIdSql.front().GetSql().c_str(),
-        exp.GetTargetPath().ToString().c_str(),
+        LiteralValueExp::EscapeStringLiteral(exp.GetTargetPath().ToString()).c_str(),
         flags,
         exp.GetSqlAnchor([&](Utf8CP name) {
             return ctx.GetAnchors().CreateAnchor(name);
@@ -2662,19 +2710,22 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExp(NativeSqlBuilder::List& nativeSqlS
                 auto& ctp = exp.GetAs<CommonTablePropertyNameExp>();
                 auto  ctpName = ctp.GetBlockNameExp();
                 if (ctpName != nullptr) {
-                    if (!ctpName->GetAlias().empty()) {
-                        builder.Append(ctpName->GetAlias());
-                    } else {
-                        builder.Append(ctpName->GetName());
-                    }
+                    ECSqlStatus nameStatus = AppendUnquotedName(builder, ctx, ctpName->GetAlias().empty() ? ctpName->GetName() : ctpName->GetAlias());
+                    if (!nameStatus.IsSuccess())
+                        return nameStatus;
                     builder.AppendDot();
                 }
-                builder.Append(ctp.GetName());
+                ECSqlStatus nameStatus = AppendUnquotedName(builder, ctx, ctp.GetName());
+                if (!nameStatus.IsSuccess())
+                    return nameStatus;
                 if (exp.GetParent() != nullptr) {
                     if (exp.GetParent()->GetType() == Exp::Type::DerivedProperty) {
                         auto& nestedAlias = exp.GetParent()->GetAs<DerivedPropertyExp>().GetNestedAlias();
-                        if (!nestedAlias.empty())
-                            builder.AppendSpace().Append(exp.GetParent()->GetAs<DerivedPropertyExp>().GetNestedAlias());
+                        if (!nestedAlias.empty()) {
+                            nameStatus = AppendUnquotedName(builder.AppendSpace(), ctx, nestedAlias);
+                            if (!nameStatus.IsSuccess())
+                                return nameStatus;
+                        }
                     }
                 }
                 nativeSqlSnippets.push_back(builder);
