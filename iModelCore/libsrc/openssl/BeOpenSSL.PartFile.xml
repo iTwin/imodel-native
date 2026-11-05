@@ -20,12 +20,16 @@
     </Part>
 
     <!-- NOTE: Graphite uses "G" as a library suffix to disambiguate from Vancouver libraries -->
-    <Part Name="__Library" BentleyBuildMakeFile="BeOpenSSL.mke">
+    <Part Name="LibraryDependencies">
         <!-- __PublicAPI delivers headers; LibType="Static" ensures the static chain
             completes before this part runs. Both static and dynamic consumer mke
             files read from the static install root — no second vcpkg invocation. -->
         <SubPart PartName="__PublicAPI" LibType="Static"/>
         <SubPart PartName="vcpkg_install_openssl" PartFile="iModelCore/libsrc/vcpkg" LibType="Static"/>
+    </Part>
+
+    <Part Name="__Library" BentleyBuildMakeFile="BeOpenSSL.mke">
+        <SubPart PartName="LibraryDependencies"/>
         <Bindings>
             <Libs IfNotPresent="Continue">Delivery/$(stlibprefix)iTwinOpenSSL$(stlibdebugext)</Libs>
             <Libs>Delivery/$(libprefix)iTwinOpenSSL$(libext)</Libs>
@@ -35,6 +39,23 @@
 
     <Part Name="Library">
         <SubPart PartName="__Library"/>
+    </Part>
+
+    <Part Name="LibraryThirdParty" BentleyBuildMakeFile="BeOpenSSL.mke" ApiNumber="B02" BentleyBuildMakeOptions="-diTwinNativeThirdParty=true">
+        <SubPart PartName="LibraryDependencies"/>
+        <Bindings>
+            <Libs IfNotPresent="Continue">Delivery/$(stlibprefix)BeOpenSSL$(stlibdebugext)</Libs>
+            <Libs>Delivery/$(libprefix)BeOpenSSL$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)BeOpenSSL$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="LibraryThirdPartyDynamic" ExcludePlatforms="Android*,iOS*,Linux*,MacOS*">
+        <SubPart PartName="LibraryThirdParty" LibType="Dynamic"/>
+    </Part>
+
+    <Part Name="LibraryThirdPartyStatic">
+        <SubPart PartName="LibraryThirdParty" LibType="Static"/>
     </Part>
 
     <Part Name="LibraryDynamic" ExcludePlatforms="Android*,iOS*,Linux*,MacOS*">
