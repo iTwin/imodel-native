@@ -14138,19 +14138,19 @@ TEST_F(ECSqlStatementTestFixture, ExtendedCast_Dml)
         </ECSchema>)xml")));
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Item(Value) VALUES(CAST(TRUE AS TEXT))"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Item([Value]) VALUES(CAST(TRUE AS TEXT))"));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
     ExtendedCastHelper h(m_ecdb);
-    EXPECT_STREQ("true", h.Text("SELECT Value FROM ts.Item").c_str());
+    EXPECT_STREQ("true", h.Text("SELECT [Value] FROM ts.Item").c_str());
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Item SET Value = ?::TEXT"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Item SET [Value] = ?::TEXT"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "updated", IECSqlBinder::MakeCopy::Yes));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
-    EXPECT_STREQ("updated", h.Text("SELECT Value FROM ts.Item").c_str());
+    EXPECT_STREQ("updated", h.Text("SELECT [Value] FROM ts.Item").c_str());
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "DELETE FROM ts.Item WHERE Value = 'updated'::TEXT"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "DELETE FROM ts.Item WHERE [Value] = 'updated'::TEXT"));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     EXPECT_STREQ("0", h.Text("SELECT COUNT(*) FROM ts.Item").c_str());
     }
@@ -14378,7 +14378,7 @@ TEST_F(ECSqlStatementTestFixture, ExtendedCast_Parameters)
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT (SELECT ?::Id)::TEXT"));
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, BeInt64Id(77)));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        EXPECT_STREQ("77", stmt.GetValueText(0));
+        EXPECT_STREQ("0x4d", stmt.GetValueText(0));
         }
 
     ECSqlStatement conflict;
