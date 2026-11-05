@@ -23,3 +23,8 @@ Libraries built in `iModelCore/libsrc/`.
 | `proxyres` | proxyres | unknown | No |
 | `pugixml` | pugixml | 1.15 | Yes |
 | `rapidjson` | RapidJSON | 1.1.0 | No |
+
+Only the vcpkg consumers built by iTwinNativeThirdParty require iOS ARM64 Simulator support:
+`compress` (zlib/minizip), `png` (libpng), `openssl`, `curl` (libcurl), and `freetype2` (FreeType).
+See [iOS ARM64 Simulator support](VCPKG.md#ios-arm64-simulator-support) for the triplets and
+install-chain details. Other imodel-native libraries do not require simulator support for this build.
