@@ -9,8 +9,6 @@ using namespace std;
 
 BEGIN_BENTLEY_UNITS_NAMESPACE
 
-UnitNameMappings * UnitNameMappings::s_mappings = nullptr;
-
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
@@ -25,8 +23,7 @@ UnitNameMappings::UnitNameMappings()
 // static
 UnitNameMappings* UnitNameMappings::GetMappings()
     {
-    if (nullptr == s_mappings)
-        s_mappings = new UnitNameMappings();
+    static UnitNameMappings* s_mappings = new UnitNameMappings();
     return s_mappings;
     }
 
