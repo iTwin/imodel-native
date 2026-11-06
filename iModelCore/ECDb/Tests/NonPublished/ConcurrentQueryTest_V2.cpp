@@ -88,7 +88,7 @@ TEST_F(ConcurrentQueryFixture, CloudTimingLocalSuccessAndPreparationFailure) {
                     EXPECT_FALSE(stats.isMember("downloadTime"));
                     EXPECT_FALSE(stats.isMember("executionTime"));
                     EXPECT_FALSE(stats.isMember("downloadBlocks"));
-                    EXPECT_FALSE(stats.isMember("downloadBlockSize"));
+                    EXPECT_FALSE(stats.isMember("downloadBytes"));
                     if (collect)
                         EXPECT_STREQ("unavailable", stats["cloudSqliteTimingState"].asCString());
                     else
@@ -115,23 +115,25 @@ TEST_F(ConcurrentQueryFixture, CloudTimingKnownUnexecutedRequest) {
     EXPECT_FALSE(stats.isMember("downloadTime"));
     EXPECT_FALSE(stats.isMember("executionTime"));
     EXPECT_FALSE(stats.isMember("downloadBlocks"));
-    EXPECT_FALSE(stats.isMember("downloadBlockSize"));
+    EXPECT_FALSE(stats.isMember("downloadBytes"));
 }
 
-TEST_F(ConcurrentQueryFixture, CloudTimingMeasuredSerializationIncludesAcquisitionsAndWarmCacheBlockSize) {
+TEST_F(ConcurrentQueryFixture, CloudTimingMeasuredSerializationIncludesAcquisitionsAndWarmCacheZeros) {
     QueryResponse::Stats source(123us, 1250us, 0, QueryQuota(), 250us);
     BeJsDocument stats;
-    source.SetCloudSqliteTiming("measured", 0.025, 0.125, 2, 4 * 1024 * 1024);
+    source.SetCloudSqliteTiming("measured", 0.025, 0.125, 2, 8192);
     source.ToJs(stats);
     EXPECT_DOUBLE_EQ(0.025, stats["downloadTime"].asDouble());
     EXPECT_DOUBLE_EQ(2, stats["downloadBlocks"].asDouble());
-    source.SetCloudSqliteTiming("measured", 0, 0.125, 0, 4 * 1024 * 1024);
+    EXPECT_DOUBLE_EQ(8192, stats["downloadBytes"].asDouble());
+    source.SetCloudSqliteTiming("measured", 0, 0.125, 0, 0);
     source.ToJs(stats);
     EXPECT_STREQ("measured", stats["cloudSqliteTimingState"].asCString());
     EXPECT_DOUBLE_EQ(0, stats["downloadTime"].asDouble());
     EXPECT_DOUBLE_EQ(0.125, stats["executionTime"].asDouble());
     EXPECT_DOUBLE_EQ(0, stats["downloadBlocks"].asDouble());
-    EXPECT_DOUBLE_EQ(4 * 1024 * 1024, stats["downloadBlockSize"].asDouble());
+    ASSERT_TRUE(stats.isMember("downloadBytes"));
+    EXPECT_DOUBLE_EQ(0, stats["downloadBytes"].asDouble());
 }
 
 TEST_F(ConcurrentQueryFixture, TimingSerializationPreservesSubMilliseconds) {

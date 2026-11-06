@@ -55,13 +55,13 @@ TEST(CloudSqliteQueryTiming, ResetWhileSuspendedKeepsActiveScopeStateAlive)
     CloudSqliteTiming timing;
     timing.Reset(true);
     double download, execution;
-    uint64_t blocks, blockSize;
+    uint64_t blocks, bytes;
     {
     CloudSqliteTiming::Scope outer(timing);
     {
     CloudSqliteTiming::Suspension applicationCallback;
     timing.Reset(false);
-    EXPECT_FALSE(timing.TryGet(download, execution, blocks, blockSize));
+    EXPECT_FALSE(timing.TryGet(download, execution, blocks, bytes));
     timing.Reset(true);
     CloudSqliteTiming::Scope reentrantCall(timing);
     }
@@ -73,7 +73,7 @@ TEST(CloudSqliteQueryTiming, ResetWhileSuspendedKeepsActiveScopeStateAlive)
     CloudSqliteTiming::Scope nextCall(timing);
     timing.Reset(false);
     }
-    EXPECT_FALSE(timing.TryGet(download, execution, blocks, blockSize));
+    EXPECT_FALSE(timing.TryGet(download, execution, blocks, bytes));
     }
 
 TEST(CloudSqliteQueryTiming, ResetDuringCallbackPreservesOriginalException)
@@ -96,20 +96,20 @@ TEST(CloudSqliteQueryTiming, DisabledAndLocalScopesHaveNoCloudResult)
     {
     CloudSqliteTiming timing;
     double download, execution;
-    uint64_t blocks, blockSize;
+    uint64_t blocks, bytes;
     {
     CloudSqliteTiming::Scope disabled(timing);
     }
-    EXPECT_FALSE(timing.TryGet(download, execution, blocks, blockSize));
+    EXPECT_FALSE(timing.TryGet(download, execution, blocks, bytes));
     timing.Reset(true);
     {
     CloudSqliteTiming::Scope outer(timing);
     CloudSqliteTiming::Scope nested(timing);
     CloudSqliteTiming::Suspension applicationCallback;
     }
-    EXPECT_FALSE(timing.TryGet(download, execution, blocks, blockSize));
+    EXPECT_FALSE(timing.TryGet(download, execution, blocks, bytes));
     timing.Reset(false);
-    EXPECT_FALSE(timing.TryGet(download, execution, blocks, blockSize));
+    EXPECT_FALSE(timing.TryGet(download, execution, blocks, bytes));
     }
 
 #define MEM_THRESHOLD (100 * MEG)
@@ -428,6 +428,8 @@ struct DisableAsserts {
     ~DisableAsserts() { BeTest::SetFailOnAssert(true); }
 };
 
+// iTwinSQLite intentionally does not export its private SQLite/BCV C APIs on Windows.
+#if !defined(BENTLEY_WIN32)
 // Only object storage is simulated. Reads, cache sharing, prefetch, counters,
 // virtual tables, and timing scopes all use the production Cloud SQLite VFS.
 struct sqlite3_bcv_container {
@@ -609,15 +611,16 @@ struct CloudTimingVfsTest : BeSQliteTestFixture {
 TEST_F(CloudTimingVfsTest, MeasuredColdAndWarmQueriesUseRealCounters) {
     CloudSqliteTiming timing;
     double download, execution;
-    uint64_t blocks, blockSize;
+    uint64_t blocks, bytes;
     timing.Reset(true);
     {
         CloudSqliteTiming::Scope page(timing, &m_worker);
         ASSERT_EQ(BE_SQLITE_OK, m_worker.ExecuteSql("SELECT sum(length(hex(value))) FROM timing_payload"));
     }
-    ASSERT_TRUE(timing.TryGet(download, execution, blocks, blockSize));
+    ASSERT_TRUE(timing.TryGet(download, execution, blocks, bytes));
     EXPECT_GT(blocks, 0);
-    EXPECT_EQ(s_blockSize, blockSize);
+    // Uploaded blocks are padded to the block size and this fixture does not encrypt them.
+    EXPECT_EQ(blocks * s_blockSize, bytes);
     EXPECT_GE(download, 0);
     EXPECT_GE(execution, 0);
     std::this_thread::sleep_for(std::chrono::milliseconds(250));
@@ -628,10 +631,10 @@ TEST_F(CloudTimingVfsTest, MeasuredColdAndWarmQueriesUseRealCounters) {
         ASSERT_EQ(BE_SQLITE_OK, m_worker.ExecuteSql("SELECT sum(length(hex(value))) FROM timing_payload"));
     }
     auto activeMs = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - activeStart).count();
-    ASSERT_TRUE(timing.TryGet(download, execution, blocks, blockSize));
+    ASSERT_TRUE(timing.TryGet(download, execution, blocks, bytes));
     EXPECT_EQ(0, blocks);
     EXPECT_EQ(0, download);
-    EXPECT_EQ(s_blockSize, blockSize);
+    EXPECT_EQ(0, bytes);
     EXPECT_LE(execution, activeMs);
 }
 
@@ -649,10 +652,10 @@ TEST_F(CloudTimingVfsTest, SchemaSourceScopeMergesRealAcquisitionsWithoutDoubleC
     }
     auto activeMs = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start).count();
     double download, execution;
-    uint64_t blocks, blockSize;
-    ASSERT_TRUE(timing.TryGet(download, execution, blocks, blockSize));
+    uint64_t blocks, bytes;
+    ASSERT_TRUE(timing.TryGet(download, execution, blocks, bytes));
     EXPECT_EQ(2, blocks);
-    EXPECT_EQ(s_blockSize, blockSize);
+    EXPECT_EQ(2 * s_blockSize, bytes);
     EXPECT_GE(download, 0);
     EXPECT_GE(execution, 0);
     EXPECT_LE(download + execution, activeMs);
@@ -691,14 +694,15 @@ TEST_F(CloudTimingVfsTest, SuccessfulSharedDownloadAndPrefetchWaitsCountOnce) {
         ASSERT_TRUE(loaderRc == SQLITE_OK || (prefetch && loaderRc == SQLITE_DONE));
         ASSERT_EQ(SQLITE_OK, readerRc);
         double download, execution;
-        uint64_t blocks, blockSize;
-        ASSERT_TRUE(timing.TryGet(download, execution, blocks, blockSize));
+        uint64_t blocks, bytes;
+        ASSERT_TRUE(timing.TryGet(download, execution, blocks, bytes));
         EXPECT_EQ(1, blocks);
-        EXPECT_EQ(s_blockSize, blockSize);
+        EXPECT_EQ(s_blockSize, bytes);
         EXPECT_GT(download, 0);
         EXPECT_GE(execution, 0);
     }
 }
+#endif
 
 TEST_F(BeSQliteTestFixture, CloudStatsSnapshotsUseMicrosecondsAndPreserveWarmCacheZeros)
     {
@@ -747,31 +751,6 @@ TEST_F(BeSQliteTestFixture, CloudStatsSnapshotsRejectLegacyMissingAndMalformedCo
     ASSERT_EQ(BE_SQLITE_OK, db->SaveChanges());
     }
 
-TEST_F(BeSQliteTestFixture, CloudDownloadTimeAdapterPreservesMillisecondHexContract)
-    {
-    auto db = Create("cloud_stats_adapter.db");
-    ASSERT_NE(nullptr, db);
-    ASSERT_EQ(BE_SQLITE_OK, db->ExecuteDdl("CREATE TABLE bcv_stat(name TEXT,value)"));
-    Utf8String value;
-    EXPECT_EQ(SQLITE_NOTFOUND, CloudSqliteQueryStats::ReadDownloadTimeMs(db->GetSqlDb(), value));
-    for (auto name : {"nqueryus", "nqueryms"}) {
-        bool microseconds = strcmp(name, "nqueryus") == 0;
-        for (auto millis : {0ULL, 1ULL, 4294967303ULL}) {
-            ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql("DELETE FROM bcv_stat"));
-            ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql(SqlPrintfString(
-                "INSERT INTO bcv_stat VALUES ('%s',%llu)", name, microseconds ? millis * 1000 + 999 : millis)));
-            ASSERT_EQ(SQLITE_OK, CloudSqliteQueryStats::ReadDownloadTimeMs(db->GetSqlDb(), value));
-            EXPECT_STREQ(millis == 0 ? "0x0" : millis == 1 ? "0x1" : "0x100000007", value.c_str());
-        }
-    }
-    ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql("INSERT INTO bcv_stat VALUES ('nqueryus',1250)"));
-    ASSERT_EQ(SQLITE_OK, CloudSqliteQueryStats::ReadDownloadTimeMs(db->GetSqlDb(), value));
-    EXPECT_STREQ("0x1", value.c_str());
-    ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql("UPDATE bcv_stat SET value='invalid' WHERE name='nqueryus'"));
-    EXPECT_EQ(SQLITE_CORRUPT, CloudSqliteQueryStats::ReadDownloadTimeMs(db->GetSqlDb(), value));
-    ASSERT_EQ(BE_SQLITE_OK, db->SaveChanges());
-    }
-
 TEST_F(BeSQliteTestFixture, CloudTimingScopeSurvivesReentrantDatabaseClose) {
     auto db = Create("timing_reentrant_close.db");
     ASSERT_NE(nullptr, db);
@@ -782,8 +761,8 @@ TEST_F(BeSQliteTestFixture, CloudTimingScopeSurvivesReentrantDatabaseClose) {
         {
             CloudSqliteTiming::Suspension applicationCallback;
             double download, execution;
-            uint64_t blocks, blockSize;
-            EXPECT_FALSE(timing.TryGet(download, execution, blocks, blockSize));
+            uint64_t blocks, bytes;
+            EXPECT_FALSE(timing.TryGet(download, execution, blocks, bytes));
             timing.Reset(false);
             db->CloseDb();
             db.reset();

@@ -334,7 +334,7 @@ struct RunnableRequestBase {
         virtual ~RunnableRequestBase(){}
         QueryRequest const& GetRequest() const {return *m_request;}
         uint32_t GetId() const {return m_id; }
-        void SetResponse(QueryResponse::Ptr response);
+        ECDB_EXPORT void SetResponse(QueryResponse::Ptr response);
         void StageResponse(QueryResponse::Ptr response);
         void PublishPendingResponse();
         void SetPrepareTime(std::chrono::steady_clock::duration time) { m_prepareTime = time; }
@@ -369,7 +369,7 @@ struct RunnableRequestBase {
         // As the logic evidently suggests that this method is used to find the time diff between when the method is called and when the request was dequeued. But that means if the request is not yet dequeued, it should return 0.
         std::chrono::microseconds GetCpuTime() const { return m_isDequeued ? std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - m_dequeuedOn) : std::chrono::microseconds::zero();} 
         QueryResponse::Ptr CreateErrorResponse(QueryResponse::Status status, std::string error) const;
-        QueryResponse::Ptr CreateTimeoutResponse() const;
+        ECDB_EXPORT QueryResponse::Ptr CreateTimeoutResponse() const;
         QueryResponse::Ptr CreateCancelResponse() const;
         QueryResponse::Ptr CreateBlobIOResponse(std::vector<uint8_t>& meta, bool done, uint32_t rawBlobSize) const;
         QueryResponse::Ptr CreateShutDownResponse() const;

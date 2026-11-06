@@ -9,6 +9,7 @@
 #include <Bentley/SHA1.h>
 #include "CloudSqliteQueryStats.h"
 #include <chrono>
+#include <cstring>
 
 // cspell:ignore bcvfs itwindb nrequest isdaemon ncleanup ifnot bcvconfig blockno npin
 
@@ -22,7 +23,6 @@ USING_NAMESPACE_BENTLEY_SQLITE
 namespace {
 struct QueryStatsConnection {
     sqlite3* m_db;
-    int64_t m_blockSize = 0;
     bool m_registered = false;
     bool m_leased = false;
 
@@ -40,8 +40,8 @@ struct QueryStatsConnection {
         rc = sqlite3_step(stmt.GetStmtR());
         if (rc != SQLITE_ROW)
             return rc == SQLITE_DONE ? SQLITE_NOTFOUND : rc;
-        m_blockSize = stmt.GetValueInt64(0);
-        if (m_blockSize <= 0)
+        // A positive block size identifies a Cloud SQLite main database.
+        if (stmt.GetValueInt64(0) <= 0)
             return SQLITE_NOTFOUND;
         stmt.Finalize();
         // SQLite tracing callbacks can invalidate the connection while the pragma runs.
@@ -58,6 +58,47 @@ struct QueryStatsAppData : Db::AppData {
     explicit QueryStatsAppData(sqlite3* db) : m_connection(std::make_shared<QueryStatsConnection>(db)) {}
     ~QueryStatsAppData() { m_connection->m_db = nullptr; }
 };
+}
+
+int CloudSqliteQueryStats::Read(sqlite3* db, CloudSqliteQueryStats& out) {
+    Statement stmt;
+    auto rc = sqlite3_prepare_v2(db,
+        "SELECT name,value FROM main.bcv_stat WHERE name IN ('nqueryus','nqueryblock','nquerybyte')",
+        -1, &stmt.GetStmtR(), nullptr);
+    if (rc != SQLITE_OK)
+        return rc;
+
+    CloudSqliteQueryStats snapshot;
+    unsigned seen = 0;
+    while ((rc = sqlite3_step(stmt.GetStmtR())) == SQLITE_ROW) {
+        auto name = stmt.GetValueText(0);
+        if (!name)
+            return SQLITE_NOMEM;
+        unsigned bit = 0;
+        int64_t* value = nullptr;
+        if (strcmp(name, "nqueryus") == 0) {
+            bit = 1;
+            value = &snapshot.m_waitUs;
+        } else if (strcmp(name, "nqueryblock") == 0) {
+            bit = 2;
+            value = &snapshot.m_blocks;
+        } else if (strcmp(name, "nquerybyte") == 0) {
+            bit = 4;
+            value = &snapshot.m_bytes;
+        }
+        if (!value || (seen & bit) || sqlite3_column_type(stmt.GetStmtR(), 1) != SQLITE_INTEGER)
+            return SQLITE_CORRUPT;
+        *value = stmt.GetValueInt64(1);
+        if (*value < 0)
+            return SQLITE_CORRUPT;
+        seen |= bit;
+    }
+    if (rc != SQLITE_DONE)
+        return rc;
+    if (seen != 7)
+        return SQLITE_NOTFOUND; // Older daemons only supply nqueryms.
+    out = snapshot;
+    return SQLITE_OK;
 }
 
 struct CloudSqliteTiming::Impl {
@@ -84,7 +125,7 @@ void CloudSqliteTiming::Reset(bool enabled) {
     m_impl = enabled ? std::make_shared<Impl>() : nullptr;
 }
 
-bool CloudSqliteTiming::TryGet(double& downloadTime, double& executionTime, uint64_t& downloadBlocks, uint64_t& downloadBlockSize) const {
+bool CloudSqliteTiming::TryGet(double& downloadTime, double& executionTime, uint64_t& downloadBlocks, uint64_t& downloadBytes) const {
     if (!m_impl || m_impl->m_depth || !m_impl->m_valid)
         return false;
     auto activeMs = std::chrono::duration<double, std::milli>(m_impl->m_elapsed).count();
@@ -94,7 +135,7 @@ bool CloudSqliteTiming::TryGet(double& downloadTime, double& executionTime, uint
     downloadTime = waitMs;
     executionTime = activeMs - waitMs;
     downloadBlocks = static_cast<uint64_t>(m_impl->m_delta.m_blocks);
-    downloadBlockSize = static_cast<uint64_t>(m_impl->m_connection->m_blockSize);
+    downloadBytes = static_cast<uint64_t>(m_impl->m_delta.m_bytes);
     return true;
 }
 
@@ -166,8 +207,7 @@ void CloudSqliteTiming::Scope::Finish() {
             // The parent wall clock already includes this work. Merge only downloads,
             // excluding the additional snapshots from its execution remainder.
             parent.m_snapshotOverhead += std::chrono::steady_clock::now() - impl.m_scopeStart - impl.m_elapsed;
-            if (!impl.m_valid || impl.m_connection->m_blockSize != parent.m_connection->m_blockSize ||
-                !parent.m_delta.Accumulate(impl.m_delta))
+            if (!impl.m_valid || !parent.m_delta.Accumulate(impl.m_delta))
                 parent.m_valid = false;
         }
     }

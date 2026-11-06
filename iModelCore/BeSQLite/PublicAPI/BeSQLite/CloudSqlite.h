@@ -27,7 +27,7 @@ struct CloudSqliteTiming : NonCopyableClass {
     BE_SQLITE_EXPORT CloudSqliteTiming();
     BE_SQLITE_EXPORT ~CloudSqliteTiming();
     BE_SQLITE_EXPORT void Reset(bool enabled);
-    BE_SQLITE_EXPORT bool TryGet(double& downloadTime, double& executionTime, uint64_t& downloadBlocks, uint64_t& downloadBlockSize) const;
+    BE_SQLITE_EXPORT bool TryGet(double& downloadTime, double& executionTime, uint64_t& downloadBlocks, uint64_t& downloadBytes) const;
 
     struct Scope : NonCopyableClass {
         std::shared_ptr<Impl> m_impl;

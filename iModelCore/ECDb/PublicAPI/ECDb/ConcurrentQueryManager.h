@@ -377,7 +377,7 @@ struct QueryResponse : std::enable_shared_from_this<QueryResponse> {
             double m_downloadTime = 0;
             double m_executionTime = 0;
             uint64_t m_downloadBlocks = 0;
-            uint64_t m_downloadBlockSize = 0;
+            uint64_t m_downloadBytes = 0;
         public:
             Stats():m_cpuTime(0ms),m_totalTime(0ms), m_timeLimit(0ms),m_prepareTime(0),m_memLimit(0), m_memUsed(0){}
             Stats(std::chrono::microseconds cpuTime, std::chrono::duration<double, std::milli> totalTime, uint32_t memUsed, QueryQuota const& quota, std::chrono::duration<double, std::milli> prepareTime, bool resumed = false):
@@ -389,12 +389,12 @@ struct QueryResponse : std::enable_shared_from_this<QueryResponse> {
             std::chrono::milliseconds TotalTime() const { return std::chrono::duration_cast<std::chrono::milliseconds>(m_totalTime);}
             std::chrono::milliseconds TimeLimit() const { return m_timeLimit;}
             std::chrono::milliseconds PrepareTime() const { return std::chrono::duration_cast<std::chrono::milliseconds>(m_prepareTime);}
-            void SetCloudSqliteTiming(Utf8CP state, double downloadTime = 0, double executionTime = 0, uint64_t downloadBlocks = 0, uint64_t downloadBlockSize = 0) {
+            void SetCloudSqliteTiming(Utf8CP state, double downloadTime = 0, double executionTime = 0, uint64_t downloadBlocks = 0, uint64_t downloadBytes = 0) {
                 m_cloudSqliteTimingState = state;
                 m_downloadTime = downloadTime;
                 m_executionTime = executionTime;
                 m_downloadBlocks = downloadBlocks;
-                m_downloadBlockSize = downloadBlockSize;
+                m_downloadBytes = downloadBytes;
             }
             uint32_t MemLimit() const { return m_memLimit;}
             uint32_t MemUsed() const { return m_memUsed;}
@@ -431,8 +431,8 @@ struct QueryResponse : std::enable_shared_from_this<QueryResponse> {
         Status GetStatus() const noexcept {return m_status;}
         std::string const& GetError() const noexcept {return m_error;}
         Stats const& GetStats() const { return m_stats; }
-        void SetCloudSqliteTiming(Utf8CP state, double downloadTime = 0, double executionTime = 0, uint64_t downloadBlocks = 0, uint64_t downloadBlockSize = 0) {
-            m_stats.SetCloudSqliteTiming(state, downloadTime, executionTime, downloadBlocks, downloadBlockSize);
+        void SetCloudSqliteTiming(Utf8CP state, double downloadTime = 0, double executionTime = 0, uint64_t downloadBlocks = 0, uint64_t downloadBytes = 0) {
+            m_stats.SetCloudSqliteTiming(state, downloadTime, executionTime, downloadBlocks, downloadBytes);
         }
         bool IsDone() const noexcept { return m_status == Status::Done;}
         bool IsPartial() const noexcept { return m_status == Status::Partial;}

@@ -6,7 +6,6 @@
 
 #include <BeSQLite/BeSQLite.h>
 #include "SQLite/sqlite3.h"
-#include <cstring>
 #include <limits>
 
 BEGIN_BENTLEY_SQLITE_NAMESPACE
@@ -16,73 +15,7 @@ struct CloudSqliteQueryStats {
     int64_t m_blocks = 0;
     int64_t m_bytes = 0;
 
-    static int ReadDownloadTimeMs(sqlite3* db, Utf8StringR out) {
-        Statement stmt;
-        auto rc = sqlite3_prepare_v2(db,
-            "SELECT name,value FROM main.bcv_stat WHERE name IN ('nqueryus','nqueryms') "
-            "ORDER BY CASE name WHEN 'nqueryus' THEN 0 ELSE 1 END LIMIT 1",
-            -1, &stmt.GetStmtR(), nullptr);
-        if (rc != SQLITE_OK)
-            return rc;
-        rc = sqlite3_step(stmt.GetStmtR());
-        if (rc != SQLITE_ROW)
-            return rc == SQLITE_DONE ? SQLITE_NOTFOUND : rc;
-        if (sqlite3_column_type(stmt.GetStmtR(), 1) != SQLITE_INTEGER)
-            return SQLITE_CORRUPT;
-        auto value = stmt.GetValueUInt64(1);
-        if (strcmp(stmt.GetValueText(0), "nqueryus") == 0)
-            value /= 1000;
-        if (value == 0) {
-            out = "0x0";
-        } else {
-            Utf8Char buffer[19];
-            if (BeStringUtilities::FormatUInt64(buffer, sizeof(buffer), value, HexFormatOptions::IncludePrefix) == 0)
-                return SQLITE_ERROR;
-            out = buffer;
-        }
-        return SQLITE_OK;
-    }
-
-    static int Read(sqlite3* db, CloudSqliteQueryStats& out) {
-        Statement stmt;
-        auto rc = sqlite3_prepare_v2(db,
-            "SELECT name,value FROM main.bcv_stat WHERE name IN ('nqueryus','nqueryblock','nquerybyte')",
-            -1, &stmt.GetStmtR(), nullptr);
-        if (rc != SQLITE_OK)
-            return rc;
-
-        CloudSqliteQueryStats snapshot;
-        unsigned seen = 0;
-        while ((rc = sqlite3_step(stmt.GetStmtR())) == SQLITE_ROW) {
-            auto name = stmt.GetValueText(0);
-            if (!name)
-                return SQLITE_NOMEM;
-            unsigned bit = 0;
-            int64_t* value = nullptr;
-            if (strcmp(name, "nqueryus") == 0) {
-                bit = 1;
-                value = &snapshot.m_waitUs;
-            } else if (strcmp(name, "nqueryblock") == 0) {
-                bit = 2;
-                value = &snapshot.m_blocks;
-            } else if (strcmp(name, "nquerybyte") == 0) {
-                bit = 4;
-                value = &snapshot.m_bytes;
-            }
-            if (!value || (seen & bit) || sqlite3_column_type(stmt.GetStmtR(), 1) != SQLITE_INTEGER)
-                return SQLITE_CORRUPT;
-            *value = stmt.GetValueInt64(1);
-            if (*value < 0)
-                return SQLITE_CORRUPT;
-            seen |= bit;
-        }
-        if (rc != SQLITE_DONE)
-            return rc;
-        if (seen != 7)
-            return SQLITE_NOTFOUND; // Older daemons only supply nqueryms.
-        out = snapshot;
-        return SQLITE_OK;
-    }
+    static BE_SQLITE_EXPORT int Read(sqlite3* db, CloudSqliteQueryStats& out);
 
     static bool Delta(CloudSqliteQueryStats const& before, CloudSqliteQueryStats const& after, CloudSqliteQueryStats& out) {
         if (before.m_waitUs < 0 || before.m_blocks < 0 || before.m_bytes < 0 ||

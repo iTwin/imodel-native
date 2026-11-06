@@ -1455,9 +1455,9 @@ void RunnableRequestBase::StageResponse(QueryResponse::Ptr response) {
         } else {
             m_cloudTimingScope->Finish();
             double downloadTime, executionTime;
-            uint64_t downloadBlocks, downloadBlockSize;
-            if (m_cloudTiming.TryGet(downloadTime, executionTime, downloadBlocks, downloadBlockSize))
-                response->SetCloudSqliteTiming("measured", downloadTime, executionTime, downloadBlocks, downloadBlockSize);
+            uint64_t downloadBlocks, downloadBytes;
+            if (m_cloudTiming.TryGet(downloadTime, executionTime, downloadBlocks, downloadBytes))
+                response->SetCloudSqliteTiming("measured", downloadTime, executionTime, downloadBlocks, downloadBytes);
             else
                 response->SetCloudSqliteTiming("unavailable");
         }
@@ -2266,7 +2266,7 @@ void QueryResponse::Stats::ToJs(BeJsValue& v) const {
             v["downloadTime"] = m_downloadTime;
             v["executionTime"] = m_executionTime;
             v["downloadBlocks"] = m_downloadBlocks;
-            v["downloadBlockSize"] = m_downloadBlockSize;
+            v["downloadBytes"] = m_downloadBytes;
         }
     }
 }
