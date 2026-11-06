@@ -10,7 +10,7 @@ set(VCPKG_LIBRARY_LINKAGE static)
 set(VCPKG_CMAKE_SYSTEM_NAME iOS)
 set(VCPKG_OSX_ARCHITECTURES arm64)
 set(VCPKG_OSX_SYSROOT iphoneos)
-set(VCPKG_OSX_DEPLOYMENT_TARGET 13.0)
+set(VCPKG_OSX_DEPLOYMENT_TARGET 17.0)
 
 # No visibility flags are needed here. FreeType's CMake build already compiles with hidden
 # visibility (C_VISIBILITY_PRESET hidden) on non-Windows targets, and its public FT_* API is
