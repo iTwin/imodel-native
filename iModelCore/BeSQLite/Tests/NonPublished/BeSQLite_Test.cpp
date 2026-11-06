@@ -7,8 +7,110 @@
 #include <Bentley/BeDirectoryIterator.h>
 #include <BeSQLite/Profiler.h>
 #include <BeSQLite/VirtualTab.h>
+#include <BeSQLite/CloudSqlite.h>
+#include "../../CloudSqliteQueryStats.h"
+#include "../../SQLite/bcvmodule.h"
+#include "../../SQLite/bcvutil.h"
+#include "../../SQLite/blockcachevfs.h"
+#include <condition_variable>
+#include <map>
+#include <mutex>
+#include <vector>
 #include <thread>
+#include <stdexcept>
 using namespace MemorySize;
+
+TEST(CloudSqliteQueryTiming, StatsDeltasRejectCounterResets)
+    {
+    CloudSqliteQueryStats before{100, 4, 4096}, after{125, 6, 8192}, delta;
+    ASSERT_TRUE(CloudSqliteQueryStats::Delta(before, after, delta));
+    EXPECT_EQ(25, delta.m_waitUs);
+    EXPECT_EQ(2, delta.m_blocks);
+    EXPECT_EQ(4096, delta.m_bytes);
+    EXPECT_FALSE(CloudSqliteQueryStats::Delta(before, {99, 6, 8192}, delta));
+    EXPECT_FALSE(CloudSqliteQueryStats::Delta(before, {125, 3, 8192}, delta));
+    EXPECT_FALSE(CloudSqliteQueryStats::Delta(before, {125, 6, 4095}, delta));
+    }
+
+TEST(CloudSqliteQueryTiming, AccumulatesConnectionDeltasWithoutOverflow)
+    {
+    CloudSqliteQueryStats worker, schema;
+    ASSERT_TRUE(CloudSqliteQueryStats::Delta({100, 4, 16384}, {125, 6, 24576}, worker));
+    ASSERT_TRUE(CloudSqliteQueryStats::Delta({200, 8, 32768}, {250, 9, 36864}, schema));
+    ASSERT_TRUE(worker.Accumulate(schema));
+    EXPECT_EQ(75, worker.m_waitUs);
+    EXPECT_EQ(3, worker.m_blocks);
+    EXPECT_EQ(12288, worker.m_bytes);
+    auto max = std::numeric_limits<int64_t>::max();
+    EXPECT_FALSE(worker.Accumulate({max, 0, 0}));
+    EXPECT_FALSE(worker.Accumulate({0, max, 0}));
+    EXPECT_FALSE(worker.Accumulate({0, 0, max}));
+    EXPECT_EQ(75, worker.m_waitUs);
+    EXPECT_EQ(3, worker.m_blocks);
+    EXPECT_EQ(12288, worker.m_bytes);
+    }
+
+TEST(CloudSqliteQueryTiming, ResetWhileSuspendedKeepsActiveScopeStateAlive)
+    {
+    CloudSqliteTiming timing;
+    timing.Reset(true);
+    double download, execution;
+    uint64_t blocks, bytes;
+    {
+    CloudSqliteTiming::Scope outer(timing);
+    {
+    CloudSqliteTiming::Suspension applicationCallback;
+    timing.Reset(false);
+    EXPECT_FALSE(timing.TryGet(download, execution, blocks, bytes));
+    timing.Reset(true);
+    CloudSqliteTiming::Scope reentrantCall(timing);
+    }
+    // The suspended logger restores the original collector, not the reset
+    // accumulator. Finishing that retired scope must not corrupt the new one.
+    outer.Finish();
+    }
+    {
+    CloudSqliteTiming::Scope nextCall(timing);
+    timing.Reset(false);
+    }
+    EXPECT_FALSE(timing.TryGet(download, execution, blocks, bytes));
+    }
+
+TEST(CloudSqliteQueryTiming, ResetDuringCallbackPreservesOriginalException)
+    {
+    CloudSqliteTiming timing;
+    timing.Reset(true);
+    try {
+        CloudSqliteTiming::Scope active(timing);
+        CloudSqliteTiming::Suspension applicationCallback;
+        timing.Reset(false);
+        throw std::runtime_error("original callback failure");
+    } catch (std::runtime_error const& error) {
+        EXPECT_STREQ("original callback failure", error.what());
+    }
+    timing.Reset(true);
+    CloudSqliteTiming::Scope nextCall(timing);
+    }
+
+TEST(CloudSqliteQueryTiming, DisabledAndLocalScopesHaveNoCloudResult)
+    {
+    CloudSqliteTiming timing;
+    double download, execution;
+    uint64_t blocks, bytes;
+    {
+    CloudSqliteTiming::Scope disabled(timing);
+    }
+    EXPECT_FALSE(timing.TryGet(download, execution, blocks, bytes));
+    timing.Reset(true);
+    {
+    CloudSqliteTiming::Scope outer(timing);
+    CloudSqliteTiming::Scope nested(timing);
+    CloudSqliteTiming::Suspension applicationCallback;
+    }
+    EXPECT_FALSE(timing.TryGet(download, execution, blocks, bytes));
+    timing.Reset(false);
+    EXPECT_FALSE(timing.TryGet(download, execution, blocks, bytes));
+    }
 
 #define MEM_THRESHOLD (100 * MEG)
 
@@ -325,6 +427,349 @@ struct DisableAsserts {
     DisableAsserts() { BeTest::SetFailOnAssert(false); }
     ~DisableAsserts() { BeTest::SetFailOnAssert(true); }
 };
+
+// iTwinSQLite intentionally does not export its private SQLite/BCV C APIs on Windows.
+#if !defined(BENTLEY_WIN32)
+// Only object storage is simulated. Reads, cache sharing, prefetch, counters,
+// virtual tables, and timing scopes all use the production Cloud SQLite VFS.
+struct sqlite3_bcv_container {
+    std::map<Utf8String, std::vector<unsigned char>> m_objects;
+    std::mutex m_mutex;
+    std::condition_variable m_gate;
+    bool m_holdNextFetch = false;
+    bool m_fetchStarted = false;
+    bool m_released = false;
+
+    static sqlite3_bcv_container& Get() {
+        static sqlite3_bcv_container store;
+        return store;
+    }
+
+    void HoldNextFetch() {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        m_holdNextFetch = true;
+        m_fetchStarted = m_released = false;
+    }
+
+    bool WaitForFetch() {
+        std::unique_lock<std::mutex> lock(m_mutex);
+        return m_gate.wait_for(lock, std::chrono::seconds(5), [this]() { return m_fetchStarted; });
+    }
+
+    void ReleaseFetch() {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        m_released = true;
+        m_gate.notify_all();
+    }
+
+    static int Open(void*, char const**, char const*, char const*, char const*, sqlite3_bcv_container** out, char**) {
+        *out = &Get();
+        return SQLITE_OK;
+    }
+
+    static void Close(sqlite3_bcv_container*) {}
+
+    static void Fetch(sqlite3_bcv_container* store, sqlite3_bcv_job* job, char const* name, int, void const*, int) {
+        std::unique_lock<std::mutex> lock(store->m_mutex);
+        auto entry = store->m_objects.find(name);
+        if (entry == store->m_objects.end()) {
+            sqlite3_bcv_job_error(job, 404, "Test cloud object not found");
+            return;
+        }
+        if (store->m_holdNextFetch) {
+            store->m_holdNextFetch = false;
+            store->m_fetchStarted = true;
+            store->m_gate.notify_all();
+            if (!store->m_gate.wait_for(lock, std::chrono::seconds(10), [store]() { return store->m_released; })) {
+                sqlite3_bcv_job_error(job, SQLITE_BUSY, "Timed out releasing test cloud fetch");
+                return;
+            }
+        }
+        sqlite3_bcv_job_result(job, entry->second.data(), static_cast<int>(entry->second.size()));
+        sqlite3_bcv_job_etag(job, "test-version");
+    }
+
+    static void Put(sqlite3_bcv_container* store, sqlite3_bcv_job* job, char const* name,
+        unsigned char const* data, int size, char const*) {
+        std::lock_guard<std::mutex> lock(store->m_mutex);
+        store->m_objects[name] = std::vector<unsigned char>(data, data + size);
+        sqlite3_bcv_job_etag(job, "test-version");
+    }
+
+    static void Delete(sqlite3_bcv_container* store, sqlite3_bcv_job*, char const* name, char const*) {
+        std::lock_guard<std::mutex> lock(store->m_mutex);
+        store->m_objects.erase(name);
+    }
+
+    static void List(sqlite3_bcv_container* store, sqlite3_bcv_job* job) {
+        std::lock_guard<std::mutex> lock(store->m_mutex);
+        for (auto const& entry : store->m_objects)
+            sqlite3_bcv_job_result(job, reinterpret_cast<unsigned char const*>(entry.first.c_str()), -1);
+    }
+
+    static void Create(sqlite3_bcv_container*, sqlite3_bcv_job*) {}
+    static void Destroy(sqlite3_bcv_container* store, sqlite3_bcv_job*) {
+        std::lock_guard<std::mutex> lock(store->m_mutex);
+        store->m_objects.clear();
+    }
+};
+
+struct CloudTimingVfsTest : BeSQliteTestFixture {
+    static constexpr int s_blockSize = 4096;
+    CloudCache m_cache;
+    Db m_worker, m_schema;
+    sqlite3_file* m_workerFile = nullptr;
+    sqlite3_file* m_schemaFile = nullptr;
+    sqlite3_int64 m_fileSize = 0;
+    sqlite3_prefetch* m_prefetch = nullptr;
+
+    void SetUp() override {
+        sqlite3_bcv_module module = {
+            sqlite3_bcv_container::Open, sqlite3_bcv_container::Close, sqlite3_bcv_container::Fetch,
+            sqlite3_bcv_container::Put, sqlite3_bcv_container::Delete, sqlite3_bcv_container::List,
+            sqlite3_bcv_container::Create, sqlite3_bcv_container::Destroy
+        };
+        static int registered = sqlite3_bcv_create_module("timing-test", &module, nullptr);
+        ASSERT_EQ(SQLITE_OK, registered);
+        auto& store = sqlite3_bcv_container::Get();
+        {
+            std::lock_guard<std::mutex> lock(store.m_mutex);
+            store.m_objects.clear();
+            store.m_holdNextFetch = false;
+        }
+        auto seed = Create("cloud_timing_vfs.db");
+        ASSERT_NE(nullptr, seed);
+        ASSERT_EQ(BE_SQLITE_OK, seed->ExecuteDdl("CREATE TABLE timing_payload(value BLOB)"));
+        ASSERT_EQ(BE_SQLITE_OK, seed->ExecuteSql(
+            "INSERT INTO timing_payload VALUES(randomblob(65536)),(randomblob(65536)),(randomblob(65536))"));
+        ASSERT_EQ(BE_SQLITE_OK, seed->SaveChanges());
+        sqlite3_file* seedFile = nullptr;
+        ASSERT_EQ(SQLITE_OK, sqlite3_file_control(seed->GetSqlDb(), "main", SQLITE_FCNTL_FILE_POINTER, &seedFile));
+        ASSERT_EQ(SQLITE_OK, seedFile->pMethods->xFileSize(seedFile, &m_fileSize));
+        ASSERT_GT(m_fileSize, 4 * s_blockSize);
+        Utf8String seedName = seed->GetDbFileName();
+        seed->CloseDb();
+        sqlite3_bcv* upload = nullptr;
+        ASSERT_EQ(SQLITE_OK, sqlite3_bcv_open("timing-test", "", "", "stats", &upload));
+        auto createRc = sqlite3_bcv_create(upload, 16, s_blockSize);
+        auto uploadRc = createRc == SQLITE_OK ? sqlite3_bcv_upload(upload, seedName.c_str(), "stats.db") : createRc;
+        sqlite3_bcv_close(upload);
+        ASSERT_EQ(SQLITE_OK, uploadRc);
+
+        BeFileName root;
+        BeTest::GetHost().GetOutputRoot(root);
+        Utf8String cacheName = "cloud-timing-" + BeGuid(true).ToString();
+        root.AppendUtf8(cacheName.c_str());
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(root.GetName()));
+        ASSERT_TRUE(m_cache.InitCache(cacheName, root.GetNameUtf8(), 16 * MEG).IsSuccess());
+        ASSERT_EQ(SQLITE_OK, sqlite3_bcvfs_auth_callback(m_cache.m_vfs, nullptr,
+            [](void*, char const*, char const*, char const*, char** token) {
+                *token = sqlite3_mprintf("");
+                return *token ? SQLITE_OK : SQLITE_NOMEM;
+            }));
+        ASSERT_EQ(SQLITE_OK, sqlite3_bcvfs_attach(m_cache.m_vfs, "timing-test", "", "stats", "stats", 0, nullptr));
+        auto params = Db::OpenParams(Db::OpenMode::Readonly);
+        params.m_skipFileCheck = params.m_fromContainer = true;
+        params.AddQueryParam(("vfs=" + cacheName).c_str());
+        ASSERT_EQ(BE_SQLITE_OK, m_worker.OpenBeSQLiteDb("/stats/stats.db", params));
+        ASSERT_EQ(BE_SQLITE_OK, m_schema.OpenBeSQLiteDb("/stats/stats.db", params));
+        ASSERT_EQ(SQLITE_OK, sqlite3_file_control(m_worker.GetSqlDb(), "main", SQLITE_FCNTL_FILE_POINTER, &m_workerFile));
+        ASSERT_EQ(SQLITE_OK, sqlite3_file_control(m_schema.GetSqlDb(), "main", SQLITE_FCNTL_FILE_POINTER, &m_schemaFile));
+        ASSERT_EQ(SQLITE_OK, sqlite3_bcvfs_prefetch_new(m_cache.m_vfs, "stats", "stats.db", &m_prefetch));
+    }
+
+    void TearDown() override {
+        sqlite3_bcv_container::Get().ReleaseFetch();
+        if (m_prefetch)
+            sqlite3_bcvfs_prefetch_destroy(m_prefetch);
+        m_worker.CloseDb();
+        m_schema.CloseDb();
+        m_cache.Destroy();
+    }
+
+    sqlite3_int64 LastFullBlock() const { return (m_fileSize / s_blockSize - 1) * s_blockSize; }
+
+    static int ReadBlock(sqlite3_file* file, sqlite3_int64 offset) {
+        unsigned char bytes[s_blockSize];
+        return file->pMethods->xRead(file, bytes, sizeof(bytes), offset);
+    }
+
+    bool WaitForDemand(sqlite3_int64 expected) {
+        auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+        while (std::chrono::steady_clock::now() < deadline) {
+            sqlite3_int64 demand = 0;
+            if (sqlite3_bcvfs_prefetch_status(m_prefetch, SQLITE_BCVFS_PFS_NDEMAND, &demand) != SQLITE_OK)
+                return false;
+            if (demand == expected)
+                return true;
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+        return false;
+    }
+};
+
+TEST_F(CloudTimingVfsTest, MeasuredColdAndWarmQueriesUseRealCounters) {
+    CloudSqliteTiming timing;
+    double download, execution;
+    uint64_t blocks, bytes;
+    timing.Reset(true);
+    {
+        CloudSqliteTiming::Scope page(timing, &m_worker);
+        ASSERT_EQ(BE_SQLITE_OK, m_worker.ExecuteSql("SELECT sum(length(hex(value))) FROM timing_payload"));
+    }
+    ASSERT_TRUE(timing.TryGet(download, execution, blocks, bytes));
+    EXPECT_GT(blocks, 0);
+    // Uploaded blocks are padded to the block size and this fixture does not encrypt them.
+    EXPECT_EQ(blocks * s_blockSize, bytes);
+    EXPECT_GE(download, 0);
+    EXPECT_GE(execution, 0);
+    std::this_thread::sleep_for(std::chrono::milliseconds(250));
+    timing.Reset(true);
+    auto activeStart = std::chrono::steady_clock::now();
+    {
+        CloudSqliteTiming::Scope nextPage(timing, &m_worker);
+        ASSERT_EQ(BE_SQLITE_OK, m_worker.ExecuteSql("SELECT sum(length(hex(value))) FROM timing_payload"));
+    }
+    auto activeMs = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - activeStart).count();
+    ASSERT_TRUE(timing.TryGet(download, execution, blocks, bytes));
+    EXPECT_EQ(0, blocks);
+    EXPECT_EQ(0, download);
+    EXPECT_EQ(0, bytes);
+    EXPECT_LE(execution, activeMs);
+}
+
+TEST_F(CloudTimingVfsTest, SchemaSourceScopeMergesRealAcquisitionsWithoutDoubleCountingElapsed) {
+    CloudSqliteTiming timing;
+    timing.Reset(true);
+    auto start = std::chrono::steady_clock::now();
+    {
+        CloudSqliteTiming::Scope worker(timing, &m_worker);
+        ASSERT_EQ(SQLITE_OK, ReadBlock(m_workerFile, LastFullBlock()));
+        {
+            CloudSqliteTiming::Scope schema(m_schema);
+            ASSERT_EQ(SQLITE_OK, ReadBlock(m_schemaFile, LastFullBlock() - s_blockSize));
+        }
+    }
+    auto activeMs = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start).count();
+    double download, execution;
+    uint64_t blocks, bytes;
+    ASSERT_TRUE(timing.TryGet(download, execution, blocks, bytes));
+    EXPECT_EQ(2, blocks);
+    EXPECT_EQ(2 * s_blockSize, bytes);
+    EXPECT_GE(download, 0);
+    EXPECT_GE(execution, 0);
+    EXPECT_LE(download + execution, activeMs);
+}
+
+TEST_F(CloudTimingVfsTest, SuccessfulSharedDownloadAndPrefetchWaitsCountOnce) {
+    for (bool prefetch : {false, true}) {
+        // Leave exactly the last block cold so prefetch and the reader target the same acquisition.
+        auto offset = LastFullBlock();
+        if (prefetch) {
+            // The first pass used the last block; choose a different still-cold block.
+            offset -= s_blockSize;
+            for (sqlite3_int64 pos = 0; pos < offset; pos += s_blockSize)
+                ASSERT_EQ(SQLITE_OK, ReadBlock(m_workerFile, pos));
+        }
+        auto& store = sqlite3_bcv_container::Get();
+        store.HoldNextFetch();
+        int loaderRc = SQLITE_ERROR;
+        std::thread loader([&]() {
+            loaderRc = prefetch ? sqlite3_bcvfs_prefetch_run(m_prefetch, 1, 1000) : ReadBlock(m_workerFile, offset);
+        });
+        bool started = store.WaitForFetch();
+        CloudSqliteTiming timing;
+        timing.Reset(true);
+        int readerRc = SQLITE_ERROR;
+        std::thread reader([&]() {
+            CloudSqliteTiming::Scope request(timing, &m_schema);
+            readerRc = ReadBlock(m_schemaFile, offset);
+        });
+        bool waiting = started && WaitForDemand(prefetch ? 1 : 2);
+        store.ReleaseFetch();
+        loader.join();
+        reader.join();
+        ASSERT_TRUE(started);
+        ASSERT_TRUE(waiting);
+        ASSERT_TRUE(loaderRc == SQLITE_OK || (prefetch && loaderRc == SQLITE_DONE));
+        ASSERT_EQ(SQLITE_OK, readerRc);
+        double download, execution;
+        uint64_t blocks, bytes;
+        ASSERT_TRUE(timing.TryGet(download, execution, blocks, bytes));
+        EXPECT_EQ(1, blocks);
+        EXPECT_EQ(s_blockSize, bytes);
+        EXPECT_GT(download, 0);
+        EXPECT_GE(execution, 0);
+    }
+}
+#endif
+
+TEST_F(BeSQliteTestFixture, CloudStatsSnapshotsUseMicrosecondsAndPreserveWarmCacheZeros)
+    {
+    auto db = Create("cloud_stats_snapshots.db");
+    ASSERT_NE(nullptr, db);
+    ASSERT_EQ(BE_SQLITE_OK, db->ExecuteDdl("CREATE TABLE bcv_stat(name TEXT,value INTEGER)"));
+    ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql(
+        "INSERT INTO bcv_stat VALUES ('nqueryus',4294967303),('nqueryblock',12),('nquerybyte',49152),('other',9)"));
+    CloudSqliteQueryStats before, after, delta;
+    ASSERT_EQ(SQLITE_OK, CloudSqliteQueryStats::Read(db->GetSqlDb(), before));
+    ASSERT_EQ(SQLITE_OK, CloudSqliteQueryStats::Read(db->GetSqlDb(), after));
+    ASSERT_TRUE(CloudSqliteQueryStats::Delta(before, after, delta));
+    EXPECT_EQ(0, delta.m_waitUs);
+    EXPECT_EQ(0, delta.m_blocks);
+    EXPECT_EQ(0, delta.m_bytes);
+    ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql(
+        "UPDATE bcv_stat SET value=value+CASE name WHEN 'nqueryus' THEN 1250 WHEN 'nqueryblock' THEN 2 ELSE 8192 END"));
+    ASSERT_EQ(SQLITE_OK, CloudSqliteQueryStats::Read(db->GetSqlDb(), after));
+    ASSERT_TRUE(CloudSqliteQueryStats::Delta(before, after, delta));
+    EXPECT_EQ(1250, delta.m_waitUs);
+    EXPECT_EQ(2, delta.m_blocks);
+    EXPECT_EQ(8192, delta.m_bytes);
+    ASSERT_EQ(BE_SQLITE_OK, db->SaveChanges());
+    }
+
+TEST_F(BeSQliteTestFixture, CloudStatsSnapshotsRejectLegacyMissingAndMalformedCounters)
+    {
+    auto db = Create("cloud_stats_legacy.db");
+    ASSERT_NE(nullptr, db);
+    ASSERT_EQ(BE_SQLITE_OK, db->ExecuteDdl("CREATE TABLE bcv_stat(name TEXT,value)"));
+    ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql(
+        "INSERT INTO bcv_stat VALUES ('nqueryms',0),('nqueryblock',0),('nquerybyte',0)"));
+    CloudSqliteQueryStats snapshot;
+    EXPECT_EQ(SQLITE_NOTFOUND, CloudSqliteQueryStats::Read(db->GetSqlDb(), snapshot));
+    ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql("UPDATE bcv_stat SET name='nqueryus' WHERE name='nqueryms'"));
+    EXPECT_EQ(SQLITE_OK, CloudSqliteQueryStats::Read(db->GetSqlDb(), snapshot));
+    ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql("INSERT INTO bcv_stat VALUES ('nqueryus',0)"));
+    EXPECT_EQ(SQLITE_CORRUPT, CloudSqliteQueryStats::Read(db->GetSqlDb(), snapshot));
+    ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql("DELETE FROM bcv_stat WHERE name='nqueryus'"));
+    ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql("INSERT INTO bcv_stat VALUES ('nqueryus',-1)"));
+    EXPECT_EQ(SQLITE_CORRUPT, CloudSqliteQueryStats::Read(db->GetSqlDb(), snapshot));
+    ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql("UPDATE bcv_stat SET value='invalid' WHERE name='nqueryus'"));
+    EXPECT_EQ(SQLITE_CORRUPT, CloudSqliteQueryStats::Read(db->GetSqlDb(), snapshot));
+    ASSERT_EQ(BE_SQLITE_OK, db->ExecuteDdl("DROP TABLE bcv_stat"));
+    EXPECT_EQ(SQLITE_ERROR, CloudSqliteQueryStats::Read(db->GetSqlDb(), snapshot));
+    ASSERT_EQ(BE_SQLITE_OK, db->SaveChanges());
+    }
+
+TEST_F(BeSQliteTestFixture, CloudTimingScopeSurvivesReentrantDatabaseClose) {
+    auto db = Create("timing_reentrant_close.db");
+    ASSERT_NE(nullptr, db);
+    CloudSqliteTiming timing;
+    timing.Reset(true);
+    {
+        CloudSqliteTiming::Scope nativeCall(timing, db.get());
+        {
+            CloudSqliteTiming::Suspension applicationCallback;
+            double download, execution;
+            uint64_t blocks, bytes;
+            EXPECT_FALSE(timing.TryGet(download, execution, blocks, bytes));
+            timing.Reset(false);
+            db->CloseDb();
+            db.reset();
+        }
+        nativeCall.Finish();
+    }
+}
 
 TEST_F(BeSQliteTestFixture, sqlite_stmt) {
     auto db1 = Create("first.db");
