@@ -93,6 +93,72 @@ export interface BulkDeleteElementsResult {
   failedIds: Id64Array;
 }
 
+/**
+ * Status of `insertElementAspects`, `updateElementAspects` and `deleteElementAspects`. Mirrors `BulkDeleteElementsStatus`.
+ * These operations are all-or-nothing: every aspect is validated before anything is written. An internal error while writing
+ * throws instead of returning a status; the iModel may then be partially modified and the caller must abandon the current txn.
+ * @internal
+ */
+export enum BulkElementAspectsStatus {
+  /** Every aspect was written (or the input was empty). */
+  Success = 0,
+  /** Nothing was written and no handlers were called, because some aspects are invalid; see `failures`. */
+  ValidationFailed = 1,
+}
+
+/**
+ * Why an aspect could not be written by `insertElementAspects`, `updateElementAspects` or `deleteElementAspects`.
+ * @internal
+ */
+export enum BulkElementAspectFailureReason {
+  /** The props are not an object, have no `classFullName`, or their properties cannot be converted to the aspect class. */
+  InvalidProps = 0,
+  /** The id of the aspect or of its owning element is malformed or invalid. */
+  InvalidId = 1,
+  /** The aspect class is not in the iModel. */
+  ClassNotFound = 2,
+  /** The class is not an `ElementUniqueAspect` or an `ElementMultiAspect`. */
+  NotAnAspectClass = 3,
+  /** The owning element does not exist. */
+  ElementNotFound = 4,
+  /** The aspect does not exist, is not owned by the given element, or cannot be updated as a generic aspect because its class has a handler. */
+  AspectNotFound = 5,
+}
+
+/**
+ * One aspect that blocks a bulk ElementAspect operation, and why.
+ * @internal
+ */
+export interface BulkElementAspectFailure {
+  /** Index of the props or id in the input array. */
+  index: number;
+  /** The id of the aspect, when known and valid. */
+  id?: Id64String;
+  reason: BulkElementAspectFailureReason;
+}
+
+/**
+ * Result of `insertElementAspects`, `updateElementAspects` and `deleteElementAspects`.
+ * @note Exceptions thrown by the JavaScript `onInsert`/`onUpdate`/`onDelete` (or `onBulkXXX`) handlers abort the whole call before anything is written.
+ * @internal
+ */
+export interface BulkElementAspectsResult {
+  status: BulkElementAspectsStatus;
+  /**
+   * The aspects that block the operation, with the reason, in ascending index order. Each input entry appears at most once.
+   * Only populated on `ValidationFailed`.
+   */
+  failures: BulkElementAspectFailure[];
+}
+
+/**
+ * Result of `insertElementAspects`.
+ * @internal
+ */
+export interface BulkInsertElementAspectsResult extends BulkElementAspectsResult {
+  /** On `Success`, the id of the aspect written for each input props, in order. Empty on `ValidationFailed`. */
+  ids: Id64String[];
+}
 /** Logger categories used by the native addon
  * @internal
  */
@@ -713,6 +779,7 @@ export declare namespace IModelJsNative {
     public deleteElement(elemIdJson: string): void;
     public deleteElements(elementIds: Id64Array): BulkDeleteElementsResult;
     public deleteElementAspect(aspectIdJson: string): void;
+    public deleteElementAspects(aspectIds: Id64Array): BulkElementAspectsResult;
     public deleteLinkTableRelationship(props: RelationshipProps): DbResult;
     public deleteLinkTableRelationships(props: ReadonlyArray<RelationshipProps>): DbResult;
     public deleteLocalValue(name: string): void;
@@ -798,6 +865,7 @@ export declare namespace IModelJsNative {
     public insertCodeSpec(name: string, jsonProperties: CodeSpecProperties): Id64String;
     public insertElement(elemProps: ElementProps, options?: { forceUseId?: boolean }): Id64String;
     public insertElementAspect(aspectProps: ElementAspectProps): Id64String;
+    public insertElementAspects(aspectProps: ReadonlyArray<ElementAspectProps>): BulkInsertElementAspectsResult;
     public insertLinkTableRelationship(props: RelationshipProps): Id64String;
     public insertModel(modelProps: ModelProps): Id64String;
     public isChangeCacheAttached(): boolean;
@@ -873,6 +941,7 @@ export declare namespace IModelJsNative {
     public changeElementParent(props: { id: Id64String, parentId: Id64String }): void;
     public changeElementModel(props: { id: Id64String, modelId: Id64String }): void;
     public updateElementAspect(aspectProps: ElementAspectProps): void;
+    public updateElementAspects(aspectProps: ReadonlyArray<ElementAspectProps>): BulkElementAspectsResult;
     public updateElementGeometryCache(props: ElementGeometryCacheRequestProps): Promise<ElementGeometryCacheResponseProps>;
     /** Throws for an invalid geographic coordinate system before changing any geolocation properties.
      * Custom vertical transforms are registered only after the entire replacement definition is valid.
