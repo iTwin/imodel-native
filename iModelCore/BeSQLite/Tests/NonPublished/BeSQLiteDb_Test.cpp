@@ -1324,6 +1324,32 @@ TEST_F(BeSQLiteDbTests, AttachDb)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(BeSQLiteDbTests, AttachDbAndVacuumIntoTreatInputsAsData)
+    {
+    SetupDb(L"AttachInputs.db");
+
+    // A path with a quote stays one string literal
+    BeFileName quotedPath = getDbFilePath(L"it's.db");
+    if (quotedPath.DoesPathExist())
+        quotedPath.BeDeleteFile();
+
+    ASSERT_EQ(BE_SQLITE_OK, m_db.VacuumInto(quotedPath.GetNameUtf8().c_str()));
+    ASSERT_TRUE(quotedPath.DoesPathExist());
+    ASSERT_EQ(BE_SQLITE_OK, m_db.AttachDb(quotedPath.GetNameUtf8().c_str(), "quoted"));
+    EXPECT_EQ(BE_SQLITE_OK, m_db.DetachDb("quoted"));
+
+    // Aliases must be plain identifiers
+    EXPECT_EQ(BE_SQLITE_ERROR, m_db.AttachDb(quotedPath.GetNameUtf8().c_str(), "x; CREATE TABLE pwned(a)"));
+    EXPECT_EQ(BE_SQLITE_ERROR, m_db.AttachDb(quotedPath.GetNameUtf8().c_str(), "a]b"));
+    EXPECT_EQ(BE_SQLITE_ERROR, m_db.AttachDb(quotedPath.GetNameUtf8().c_str(), "1abc"));
+    EXPECT_EQ(BE_SQLITE_ERROR, m_db.DetachDb("main; CREATE TABLE pwned(a)"));
+    EXPECT_FALSE(m_db.TableExists("pwned"));
+    m_db.CloseDb();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(BeSQLiteDbTests, RenameAndDropTable)
 {
     SetupDb(L"RenameAndDropTable.db");
@@ -2459,6 +2485,39 @@ TEST_F (BeSQLiteDbTests, GetColumn)
     EXPECT_EQ (BE_SQLITE_OK, m_db.AbandonChanges ());
     m_db.CloseDb ();
 }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(BeSQLiteDbTests, GetColumnsQuotesTableName)
+    {
+    SetupDb(L"getColumnsQuotesTableName.db");
+    ASSERT_TRUE(m_db.IsDbOpen());
+    ASSERT_EQ(BE_SQLITE_OK, m_db.CreateTable("TestTable1", "id NUMERIC, name TEXT"));
+
+    bvector<Utf8String> columns;
+    ASSERT_TRUE(m_db.GetColumns(columns, "main.TestTable1"));
+    ASSERT_EQ(2, columns.size());
+    EXPECT_STREQ("id", columns[0].c_str());
+    EXPECT_STREQ("name", columns[1].c_str());
+
+    ASSERT_TRUE(m_db.GetColumns(columns, "TestTable1]); CREATE TABLE pwned(x); --"));
+    EXPECT_TRUE(columns.empty());
+    EXPECT_FALSE(m_db.TableExists("pwned"));
+
+    EXPECT_FALSE(m_db.GetColumns(columns, "nosuchdb.TestTable1"));
+
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("CREATE TABLE \"we\"\"ird\"(a INTEGER)"));
+    ASSERT_TRUE(m_db.GetColumns(columns, "main.we\"ird"));
+    ASSERT_EQ(1, columns.size());
+    EXPECT_STREQ("a", columns[0].c_str());
+
+    // A table with this name shadows the table-valued pragma_table_info()
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("CREATE TABLE pragma_table_info(x)"));
+    ASSERT_TRUE(m_db.GetColumns(columns, "TestTable1"));
+    EXPECT_EQ(2, columns.size());
+    m_db.CloseDb();
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
