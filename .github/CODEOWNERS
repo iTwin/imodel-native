@@ -9,7 +9,7 @@
 # High-risk changes need explicit specialist review; this file cannot enforce risk tiers.
 
 # Fallback / repository governance.
-# TODO: reconcile itwinjs-core-admins membership with #1919 in itwinjs-backlog.
+# TODO: confirm current itwinjs-core-admins membership and review availability.
 # Fallback owners resolve coverage gaps; membership does not imply subsystem expertise.
 *                                               @iTwin/itwinjs-core-admins
 .github/workflows                               @iTwin/itwinjs-core-admins
