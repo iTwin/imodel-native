@@ -26,8 +26,10 @@ IS_THIRD_PARTY_LIBRARY = 1
 
 %if defined(iTwinNativeThirdParty)
     appName = BeCurl
+    defOptions = --library-name BeCurlB02
 %else
     appName = iTwinCurl
+    defOptions =
 %endif
 
 curlDir   = $(_MakeFilePath)
@@ -138,7 +140,7 @@ libcaresName = libcares.a
     #   This forces a re-link even when the restored archive's timestamp predates the DLL.
     #----------------------------------------------------------------------------------
     always:
-        $(BBPYTHONCMD) $(curlDir)makeCurlDef.py "$(vcpkgIncludeDir)curl" "$(o)$(appName).def" "$(vcpkgCurl)" "$(o)$(shlibprefix)$(appName)$(shlibext)"
+        $(BBPYTHONCMD) $(curlDir)makeCurlDef.py "$(vcpkgIncludeDir)curl" "$(o)$(appName).def" "$(vcpkgCurl)" "$(o)$(shlibprefix)$(appName)$(shlibext)" $(defOptions)
 
     curlModuleDef = $(o)$(appName).def
 

@@ -12,31 +12,33 @@
 # functions.  Deriving the list from the headers means a curl version bump needs no manual .def
 # maintenance (unlike the hand-maintained OpenSSL .def).
 #
-# Usage: makeCurlDef.py <curl_include_dir> <output.def> <archive.lib> [stale_output ...]
+# Usage: makeCurlDef.py <curl_include_dir> <output.def> <archive.lib> [stale_output ...] [--library-name NAME]
 #   <curl_include_dir>  directory containing curl.h, easy.h, multi.h, ... (vcpkg include/curl)
 #   <archive.lib>       linked archive whose content hash is embedded in the .def
 #   <stale_output>      file (e.g. the previously linked iTwinCurl.dll) to delete when the export
 #                       list or archive changes, since bmake's DLL rule does not treat the .def as a
 #                       prerequisite and would otherwise leave a DLL with the old exports in place
+#   --library-name      optional LIBRARY directive, will by omitted if not specified
 #---------------------------------------------------------------------------------------------
 import sys
 import os
 import re
 import glob
+import argparse
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from make_def import write_def
 
 
 def main():
-    if len(sys.argv) < 4:
-        sys.stderr.write("Usage: makeCurlDef.py <curl_include_dir> <output.def> <archive.lib> [stale_output ...]\n")
-        return 1
-
-    include_dir = sys.argv[1]
-    out_def = sys.argv[2]
-    archive_path = sys.argv[3]
-    stale_outputs = sys.argv[4:]
+    parser = argparse.ArgumentParser(description="Generate curl's Windows module-definition file.")
+    parser.add_argument("include_dir")
+    parser.add_argument("out_def")
+    parser.add_argument("archive_path")
+    parser.add_argument("stale_outputs", nargs="*")
+    parser.add_argument("--library-name", help="emit a LIBRARY directive with this name")
+    args = parser.parse_args()
+    include_dir = args.include_dir
 
     headers = sorted(glob.glob(os.path.join(include_dir, "*.h")))
     if not headers:
@@ -64,7 +66,7 @@ def main():
         sys.stderr.write("error: no CURL_EXTERN exports found under %s\n" % include_dir)
         return 1
 
-    return write_def(names, archive_path, out_def, stale_outputs)
+    return write_def(names, args.archive_path, args.out_def, args.stale_outputs, library_name=args.library_name)
 
 
 if __name__ == "__main__":
