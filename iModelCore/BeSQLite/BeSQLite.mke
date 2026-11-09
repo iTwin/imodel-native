@@ -84,6 +84,8 @@ $(o)BeLzma$(oext) : $(baseDir)BeLzma.cpp $(baseDir)/PublicAPI/BeSQLite/BeLzma.h 
 
 $(o)BeBriefcaseBasedIdSequence$(oext) : $(baseDir)BeBriefcaseBasedIdSequence.cpp $(baseDir)/PublicAPI/BeSQLite/BeBriefcaseBasedIdSequence.h ${MultiCompileDepends}
 
+$(o)ScopedPolicy$(oext) : $(baseDir)ScopedPolicy.cpp $(baseDir)/PublicAPI/BeSQLite/ScopedPolicy.h $(baseDir)ScopedPolicyInternal.h $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h ${MultiCompileDepends}
+
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)
 

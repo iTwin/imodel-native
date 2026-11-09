@@ -9,6 +9,7 @@
 #define SQLITE_ENABLE_PREUPDATE_HOOK 1
 
 #include "SQLite/sqlite3.h"
+#include "ScopedPolicyInternal.h"
 
 #define STREAM_PAGE_BYTE_SIZE 64 * 1024
 #define LOG (NativeLogging::CategoryLogger("BeSQLite"))
@@ -323,6 +324,7 @@ DbResult ChangeTracker::DifferenceToDb(Utf8StringP errMsgOut, BeFileNameCR baseF
         {
         Utf8CP tableName = tablesStmt.GetValueText(0);
         char* errMsg = nullptr;
+        ForbidAuthorizerIgnore forbidIgnore(m_db->GetSqlDb());
         result = (DbResult) sqlite3session_diff(GetSqlSession(), "base", tableName, &errMsg);
         if (BE_SQLITE_OK != result)
             {
@@ -853,6 +855,7 @@ int ChangeStream::FilterChangeCallback(void* pCtx, SqlChangesetIterP iter) {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult ChangeStream::FromChangeTrack(ChangeTracker& session, ChangeSet::SetType setType) {
+    ForbidAuthorizerIgnore forbidIgnore(session.GetDb() ? session.GetDb()->GetSqlDb() : nullptr);
     if (ChangeSet::SetType::Full == setType)
         return (DbResult)sqlite3session_changeset_strm(session.GetSqlSession(), AppendCallback, this);
 
@@ -914,6 +917,7 @@ DbResult ChangeStream::ApplyChanges(DbR db, bool invert, bool ignoreNoop, bool f
     if(fkNoAction)
         flags |= SQLITE_CHANGESETAPPLY_FKNOACTION;
     auto reader = _GetReader();
+    ForbidAuthorizerIgnore forbidIgnore(db.GetSqlDb());
     DbResult result = (DbResult) sqlite3changeset_apply_v3_strm(db.GetSqlDb(), Changes::Reader::ReadCallback, (void*) reader.get(), FilterChangeCallback, ConflictCallback, (void*) this,
         nullptr,  nullptr, flags);
     return result;
@@ -936,6 +940,7 @@ DbResult ChangeStream::ApplyChanges(DbR db, ApplyChangesArgs const& args) const
     auto reader = _GetReader();
     m_args = &args;
 
+    ForbidAuthorizerIgnore forbidIgnore(db.GetSqlDb());
     DbResult result = (DbResult) sqlite3changeset_apply_v3_strm(
         db.GetSqlDb(),
         Changes::Reader::ReadCallback,
