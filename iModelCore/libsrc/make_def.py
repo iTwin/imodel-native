@@ -3,7 +3,7 @@ import os
 import sys
 
 
-def write_def(names, archive_path, out_def, stale_outputs):
+def write_def(names, archive_path, out_def, stale_outputs, library_name=None):
     archive_hash = hashlib.sha256()
     try:
         with open(archive_path, "rb") as archive:
@@ -13,7 +13,12 @@ def write_def(names, archive_path, out_def, stale_outputs):
         sys.stderr.write("error: cannot read archive %s: %s\n" % (archive_path, ex))
         return 1
 
-    lines = ["; Archive SHA-256: %s" % archive_hash.hexdigest(), "EXPORTS"] + ["    %s" % name for name in sorted(names)]
+    lines = ["; Archive SHA-256: %s" % archive_hash.hexdigest()]
+
+    if library_name is not None:
+        lines.append("LIBRARY %s" % library_name)
+
+    lines += ["EXPORTS"] + ["    %s" % name for name in sorted(names)]
     data = "".join("%s\r\n" % line for line in lines).encode("utf-8")
 
     # This runs on every build, so leave an unchanged .def alone rather than re-stamping its
