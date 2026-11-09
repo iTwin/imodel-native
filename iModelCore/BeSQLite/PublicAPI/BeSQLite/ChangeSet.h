@@ -473,7 +473,6 @@ struct DdlChanges : ChangeSet {
 struct ChangeTracker : RefCountedBase {
     friend struct Db;
     friend struct DbFile;
-    friend struct ChangeStream;
 
 private:
     DbResult RecordDbSchemaChange(Utf8CP ddl);

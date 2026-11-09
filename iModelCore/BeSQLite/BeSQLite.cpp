@@ -8,7 +8,6 @@
 #define SQLITE_ENABLE_NORMALIZE 1
 #include <BeSQLite/ChangeSet.h>
 #include <BeSQLite/BeLzma.h>
-#include <BeSQLite/ScopedPolicy.h>
 #include "SQLite/sqlite3.h"
 #include <Bentley/BeFileName.h>
 #include <Bentley/BeAssert.h>
@@ -3341,7 +3340,6 @@ DbTxnState DbFile::GetTxnState(Utf8CP schema) const {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbFile::~DbFile() {
-    DetachPolicies(); // guards that outlive the connection become inert
     if (nullptr == m_sqlDb)
         return;
 
@@ -4218,11 +4216,6 @@ Utf8CP Db::InterpretDbResult(DbResult result)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult BlobIO::Open(DbR db, Utf8CP tableName, Utf8CP columnName, uint64_t row, bool writable, Utf8CP dbName)
     {
-    // Blob handles never compile SQL, so the authorizer is not consulted; check the active ScopedPolicy directly.
-    DbResult policyResult = ScopedPolicy::CheckBlobAccess(db, dbName, tableName, columnName, writable);
-    if (BE_SQLITE_OK != policyResult)
-        return policyResult;
-
     return (DbResult) sqlite3_blob_open(db.GetSqlDb(), dbName ? dbName : "main", tableName, columnName, row, writable, &m_blob);
     }
 

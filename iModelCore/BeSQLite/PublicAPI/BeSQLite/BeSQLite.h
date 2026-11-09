@@ -2412,7 +2412,6 @@ struct DbFile : NonCopyableClass
     friend struct Db;
     friend struct Statement;
     friend struct Savepoint;
-    friend struct ScopedPolicy;
 
 protected:
     typedef RefCountedPtr<struct ChangeTracker> ChangeTrackerPtr;
@@ -2447,10 +2446,8 @@ protected:
     mutable std::function<DbProgressAction()> m_progressHandler;
     DbTxns m_txns;
     std::unique_ptr<ScalarFunction> m_regexFunc, m_regexExtractFunc, m_base36Func;
-    struct ScopedPolicy* m_policy = nullptr; // innermost active authorization policy
     explicit DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode, std::optional<int> busyTimeout);
     ~DbFile();
-    void DetachPolicies();
 
     DbResult SetBusyTimeout(int ms);
     DbResult StartSavepoint(Savepoint&, BeSQLiteTxnMode);
