@@ -26,11 +26,11 @@
 # Backend / data runtime.
 # Cross-repo scope: core/backend, runtime APIs, ECSQL, and the JS/native boundary.
 # Preserve narrower data and schema expertise instead of one universal approval pool.
-/iModelCore/Bentley/                            @bbastings @khanaffan
+/iModelCore/Bentley/                            @bbastings @khanaffan @tcobbs-bentley @DanRod1999
 /iModelCore/BeSQLite/                           @khanaffan @kring @rschili
 /iModelCore/ECDb/                               @khanaffan @rschili @RohitPtnkr1996
 /iModelCore/iModelPlatform/                     @khanaffan @bbastings @RohitPtnkr1996 @rschili
-/iModelJsNodeAddon/                             @khanaffan @bbastings
+/iModelJsNodeAddon/                             @khanaffan @bbastings @wgoehrig @DanRod1999
 
 # Schemas / quantities.
 # Cross-repo scope: core/ecschema-*, core/quantity, and schema tooling.
