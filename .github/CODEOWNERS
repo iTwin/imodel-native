@@ -37,7 +37,6 @@
 
 # Geometry / geospatial.
 # Cross-repo scope: core/geometry; keep specialist distinctions within this bucket.
-# TODO: confirm @dassaf4 and @saeeedtorabi's review commitments after reassignment.
 /iModelCore/GeoCoord/                           @AlainRobertAtBentley @bbastings @tcobbs-bentley
 /iModelCore/GeomLibs/                           @bbastings @dassaf4 @saeeedtorabi
 
