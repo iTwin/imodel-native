@@ -17,6 +17,7 @@
 #define DEFAULT_DONOT_USE_PRIMARY_CONN_TO_PREPARE   false
 #define DEFAULT_IGNORE_DELAY                        true
 #define DEFAULT_IGNORE_PRIORITY                     false
+#define DEFAULT_MAX_IDSET_COUNT                     1000000
 #define DEFAULT_MONITOR_POLL_INTERVAL               5000 // ms
 #define DEFAULT_PROGRESS_OP_COUNT                   5000
 #define DEFAULT_QUERY_DELAY_MAX_TIME                std::chrono::seconds(10)

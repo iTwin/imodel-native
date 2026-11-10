@@ -363,6 +363,8 @@ export declare namespace IModelJsNative {
     maxCursorsPerWorker?: number;
     /** Positive integer idle timeout in seconds for parked cursors. Defaults to 30. */
     cursorIdleTimeout?: number;
+    /** Maximum number of Ids an IdSet query parameter may hold; larger sets fail to bind. Positive integer, defaults to 1,000,000. */
+    maxIdSetCount?: number;
   }
 
   interface TileContent {
