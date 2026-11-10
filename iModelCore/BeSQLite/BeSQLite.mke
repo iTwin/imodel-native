@@ -70,7 +70,7 @@ $(o)TempFile$(oext) : $(baseDir)TempFile.cpp $(baseDir)/PublicAPI/BeSQLite/TempF
 
 $(o)ChangeSet$(oext) : $(baseDir)ChangeSet.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h  $(baseDir)/PublicAPI/BeSQLite/ChangeSet.h ${MultiCompileDepends}
 
-$(o)CloudSqlite$(oext) : $(baseDir)CloudSqlite.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h  $(baseDir)/PublicAPI/BeSQLite/ChangeSet.h ${MultiCompileDepends}
+$(o)CloudSqlite$(oext) : $(baseDir)CloudSqlite.cpp $(baseDir)CloudSqliteQueryStats.h $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h $(baseDir)/PublicAPI/BeSQLite/CloudSqlite.h $(baseDir)/PublicAPI/BeSQLite/ChangeSet.h $(SQLiteDir)blockcachevfs.h ${MultiCompileDepends}
 
 $(o)ChangesetFile$(oext) : $(baseDir)ChangesetFile.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h  $(baseDir)/PublicAPI/BeSQLite/ChangesetFile.h ${MultiCompileDepends}
 
