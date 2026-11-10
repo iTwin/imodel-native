@@ -3517,7 +3517,7 @@ TEST_F(ConcurrentQueryFixture, IdSetParamLimit) {
         std::string err;
         EXPECT_TRUE(params.GetParam(1).TryGetValueIdSet(ids, err)) << entry.first << ": " << err;
         EXPECT_EQ(entry.second, ids.size()) << entry.first;
-        EXPECT_TRUE(ids.Contains(BeInt64Id(std::numeric_limits<uint64_t>::max()))) << entry.first;
+        EXPECT_NE(ids.end(), ids.find(BeInt64Id(std::numeric_limits<uint64_t>::max()))) << entry.first;
     }
 
     // The limit can be overridden.
