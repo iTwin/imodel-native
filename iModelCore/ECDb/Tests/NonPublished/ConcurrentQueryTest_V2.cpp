@@ -3502,6 +3502,24 @@ TEST_F(ConcurrentQueryFixture, IdSetParamLimit) {
             expectBindingFailed(ecsql, idSet, "not a valid Id set string");
     }
 
+    // Values at UINT64_MAX count as one Id each and expand to exactly that many.
+    for (Utf8CP idSet : {"18446744073709551615", "-1"}) {
+        expectRows(queries[0], idSet, 1);
+        expectRows(queries[1], idSet, 0);
+    }
+    expectRows(queries[0], "18446744073709551614-18446744073709551615", 2);
+    expectRows(queries[0], "-2--1", 2);
+    expectRows(queries[1], "-2--1,1-2", 2);
+    for (auto const& entry : std::vector<std::pair<Utf8CP, size_t>>{{"18446744073709551615", 1}, {"-1", 1}, {"-2--1", 2}}) {
+        BeJsDocument args(Utf8PrintfString(R"json({"1":{"type":3,"value":"%s"}})json", entry.first).c_str());
+        ECSqlParams params(args);
+        BeIdSet ids;
+        std::string err;
+        EXPECT_TRUE(params.GetParam(1).TryGetValueIdSet(ids, err)) << entry.first << ": " << err;
+        EXPECT_EQ(entry.second, ids.size()) << entry.first;
+        EXPECT_TRUE(ids.Contains(BeInt64Id(std::numeric_limits<uint64_t>::max()))) << entry.first;
+    }
+
     // The limit can be overridden.
     BeJsDocument json(R"json({"maxIdSetCount":3})json");
     config = ConcurrentQueryMgr::Config::From(json);
