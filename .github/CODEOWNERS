@@ -1,21 +1,18 @@
-# Domain-based review ownership, aligned with itwinjs-core.
-# Cross-repo team rosters and review availability still need confirmation.
-#
-# Consolidate with itwinjs-core through qualified cross-repo domain teams.
-# The sections below are responsibility buckets, not confirmed new GitHub teams.
-# Until rosters are agreed, preserve the remaining per-path owners.
-#
-# GitHub semantics: last matching rule wins; owners on one line are alternatives.
-# High-risk changes need explicit specialist review; this file cannot enforce risk tiers.
+# This CODEOWNERS file follows the format of GitHub's CODEOWNERS.
+# Documentation: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
 
-# Fallback / repository governance.
+# These owners will be the default owners for everything in
+# the repo. Unless a later match takes precedence,
+# @iTwin/itwinjs-core-admins will be requested for
+# review when someone opens a pull request.
 # TODO: confirm current itwinjs-core-admins membership and review availability.
-# Fallback owners resolve coverage gaps; membership does not imply subsystem expertise.
 *                                               @iTwin/itwinjs-core-admins
 .github/workflows                               @iTwin/itwinjs-core-admins
 .github/CODEOWNERS                              @iTwin/itwinjs-core-admins
-.gitattributes                                 @iTwin/itwinjs-core-admins
 .gitignore                                     @iTwin/itwinjs-core-admins
+
+# These are owners for specific files in the repository.
+# Each line is a file pattern followed by one or more owners.
 
 # Build / release / third-party dependencies.
 # Cross-repo scope: JS build tooling and pipelines; native build and dependencies.
@@ -38,18 +35,14 @@
 /iModelCore/ecobjects/                          @cammac1803 @rschili @RohitPtnkr1996
 /iModelCore/Units/                              @bbastings @rschili @RohitPtnkr1996
 
-# Geometry / geospatial / BRep.
+# Geometry / geospatial.
 # Cross-repo scope: core/geometry; keep specialist distinctions within this bucket.
 # TODO: confirm @dassaf4 and @saeeedtorabi's review commitments after reassignment.
-/iModelCore/BRepCore/                           @bbastings @dassaf4
 /iModelCore/GeoCoord/                           @AlainRobertAtBentley @bbastings @tcobbs-bentley
 /iModelCore/GeomLibs/                           @bbastings @dassaf4 @saeeedtorabi
 
-# Visualization / tiles.
-# More-specific overrides MUST follow the general iModelPlatform rule above.
-# Do not substitute the display team until native review competence is confirmed.
-# TODO: establish a qualified backup for tile review.
-/iModelCore/iModelPlatform/**/*Tile*.*           @markschlosseratbentley
+# Rendering.
+# This override must follow the general iModelPlatform rule above.
 /iModelCore/iModelPlatform/**/*Render*.*         @markschlosseratbentley @bbastings
 
 # Presentation: an existing cross-repo team; reuse it.
