@@ -17,7 +17,7 @@
 # Build / release / third-party dependencies.
 # Cross-repo scope: JS build tooling and pipelines; native build and dependencies.
 # TODO: confirm @naveedkhan8067's review commitment after reassignment.
-/build/                                        @DanRod1999 @naveedkhan8067
+/build/                                        @DanRod1999 @naveedkhan8067 @tcobbs-bentley
 /iModelCore/libsrc/                             @DanRod1999 @tcobbs-bentley @iTwin/itwinjs-core-admins
 
 # Backend / data runtime.
