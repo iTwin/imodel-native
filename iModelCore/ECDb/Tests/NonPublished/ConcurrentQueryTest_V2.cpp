@@ -3424,10 +3424,10 @@ TEST_F(ConcurrentQueryFixture, IdSetCountWithoutExpanding) {
         roundTrip.insert(BeInt64Id(id));
     EXPECT_TRUE(count(roundTrip.ToCompactString().c_str(), roundTrip.size(), n));
     EXPECT_EQ(roundTrip.size(), n);
-    EXPECT_TRUE(count(roundTrip.ToReadableString().c_str(), roundTrip.size(), n));
+    EXPECT_TRUE(count(roundTrip.ToString().c_str(), roundTrip.size(), n));
     EXPECT_EQ(roundTrip.size(), n);
     EXPECT_FALSE(count(roundTrip.ToCompactString().c_str(), roundTrip.size() - 1, n));
-    EXPECT_FALSE(count(roundTrip.ToReadableString().c_str(), roundTrip.size() - 1, n));
+    EXPECT_FALSE(count(roundTrip.ToString().c_str(), roundTrip.size() - 1, n));
 
     // Exceeding the limit, compact and readable.
     for (Utf8CP str : {"+1*5", "+1+1+1+1+1", "+1*4+1", "1-5", "5-1", "1,2,3,4,5", "1-4,9"}) {
