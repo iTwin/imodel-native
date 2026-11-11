@@ -2387,7 +2387,8 @@ TEST_F(RevisionTestFixture, CheckHealthStatsWithSchemaChanges) {
         { revisions[2]->GetChangesetId(), { 0, 1097, 51, 0, 11 } },
     };
 
-    auto changesets = m_db->Txns().GetAllChangesetHealthStatistics()["changesets"];
+    BeJsDocument healthStats = m_db->Txns().GetAllChangesetHealthStatistics();
+    auto changesets = healthStats["changesets"];
     ASSERT_TRUE(changesets.isArray());
     ASSERT_EQ(revisions.size(), changesets.size());
 
@@ -2488,7 +2489,8 @@ TEST_F(RevisionTestFixture, CheckHealthStatsWithElementCRUD) {
     EXPECT_TRUE(m_db->Elements().GetElement(testElementId).IsNull());
     MergeSchemaRevision(*revision);
 
-    const auto insertChangeset = m_db->Txns().GetAllChangesetHealthStatistics()["changesets"];
+    BeJsDocument insertStats = m_db->Txns().GetAllChangesetHealthStatistics();
+    const auto insertChangeset = insertStats["changesets"];
     EXPECT_EQ(insertChangeset.size(), 1);
     insertChangeset.ForEachArrayMember([&](BeJsValue::ArrayIndex, BeJsConst changeset) {
         EXPECT_STREQ(changeset["changeset_id"].asString().c_str(), revision->GetChangesetId().c_str());
@@ -2522,7 +2524,8 @@ TEST_F(RevisionTestFixture, CheckHealthStatsWithElementCRUD) {
     EXPECT_TRUE(m_db->Elements().GetElement(testElementId).IsValid());
     MergeSchemaRevision(*revision);
     
-    const auto updateChangeset = m_db->Txns().GetAllChangesetHealthStatistics()["changesets"];
+    BeJsDocument updateStats = m_db->Txns().GetAllChangesetHealthStatistics();
+    const auto updateChangeset = updateStats["changesets"];
     EXPECT_EQ(updateChangeset.size(), 1);
     updateChangeset.ForEachArrayMember([&](BeJsValue::ArrayIndex, BeJsConst changeset) {
         EXPECT_STREQ(changeset["changeset_id"].asString().c_str(), revision->GetChangesetId().c_str());
@@ -2553,7 +2556,8 @@ TEST_F(RevisionTestFixture, CheckHealthStatsWithElementCRUD) {
     EXPECT_TRUE(m_db->Elements().GetElement(testElementId).IsValid());
     MergeSchemaRevision(*revision);
     
-    const auto deleteChangeset = m_db->Txns().GetAllChangesetHealthStatistics()["changesets"];
+    BeJsDocument deleteStats = m_db->Txns().GetAllChangesetHealthStatistics();
+    const auto deleteChangeset = deleteStats["changesets"];
     EXPECT_EQ(deleteChangeset.size(), 1);
     deleteChangeset.ForEachArrayMember([&](BeJsValue::ArrayIndex, BeJsConst changeset) {
         EXPECT_STREQ(changeset["changeset_id"].asString().c_str(), revision->GetChangesetId().c_str());
