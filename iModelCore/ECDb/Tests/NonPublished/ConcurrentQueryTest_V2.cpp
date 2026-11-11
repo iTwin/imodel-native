@@ -375,7 +375,7 @@ TEST_F(ConcurrentQueryFixture, ConcurrentECSqlRejectsUnsafeFunctions) {
     for (bool primary : {false, true}) {
         expectDenied("SELECT hex(sha3_query('SELECT 1'))", primary, "not supported in ECSQL");
         expectDenied("SELECT fts3_tokenizer('simple')", primary, "not supported in ECSQL");
-        expectDenied("SELECT hex([sha3_query ]('SELECT 1'))", primary, "unsupported characters");
+        expectDenied("SELECT hex([sha3_query ]('SELECT 1'))", primary, "may only contain letters");
         expectDenied("SELECT [fts3_tokenizer/**/]('simple')", primary, "not supported in ECSQL");
 
         auto allowed = ECSqlRequest::MakeRequest("SELECT hex(sha3('still available'))");

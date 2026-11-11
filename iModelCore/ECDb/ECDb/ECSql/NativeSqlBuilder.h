@@ -46,8 +46,10 @@ struct NativeSqlBuilder final
         NativeSqlBuilder& AppendFormatted(Utf8CP format, ...);
         NativeSqlBuilder& AppendFullyQualified(Utf8CP qualifier, Utf8CP identifier);
         NativeSqlBuilder& AppendFullyQualified(Utf8StringCR qualifier, Utf8StringCR identifier);
+        //! [...] has no escape for ']'. The ECSQL parser rejects aliases that contain it, see ECSqlParser::ValidateAlias.
         NativeSqlBuilder& AppendEscaped(Utf8StringCR identifier) { return Append("[").Append(identifier).Append("]"); }
         NativeSqlBuilder& AppendEscaped(Utf8CP identifier) { return Append("[").Append(identifier).Append("]"); }
+        //! Callers escape single quotes first, see LiteralValueExp::EscapeStringLiteral.
         NativeSqlBuilder& AppendQuoted(Utf8CP stringLiteral) { return Append("'").Append(stringLiteral).Append("'"); }
         NativeSqlBuilder& Append(ECN::ECClassId id);
         NativeSqlBuilder& AppendSpace() { return Append(" "); }

@@ -43,6 +43,10 @@ struct ECSqlExpPreparer final
         static unsigned int QueryOptionsInstanceFlags(ExpCR exp);
 
     public:
+        //! Fails for names SQLite would not read as a plain identifier.
+        static ECSqlStatus ValidateUnquotedName(ECSqlPrepareContext&, Utf8StringCR name);
+        //! Appends a name that the generated SQL holds without quotes, after checking it with ValidateUnquotedName.
+        static ECSqlStatus AppendUnquotedName(NativeSqlBuilder&, ECSqlPrepareContext&, Utf8StringCR name);
         static ECSqlStatus PrepareAllOrAnyExp(ECSqlPrepareContext&, AllOrAnyExp const&);
         static ECSqlStatus InsertSubquery(ECSqlPrepareContext&, AllOrAnyExp const&, SelectStatementExp const&, SqlCompareListType const&, BooleanSqlOperator const&);
         static ECSqlStatus PrepareBetweenRangeValueExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, BetweenRangeValueExp const&);

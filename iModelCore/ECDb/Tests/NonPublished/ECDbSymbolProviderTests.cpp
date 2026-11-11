@@ -719,4 +719,34 @@ TEST_F(ECDbExpressionSymbolContextTests, GetRelatedValue_3args_ReturnsRelatedIns
     ASSERT_STREQ("test label", value.GetUtf8CP());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsitest
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbExpressionSymbolContextTests, HasRelatedInstance_LambdaTextIsNotUsedAsFormat)
+    {
+    ECClassCP classA = m_ecdb.Schemas().GetClass("TestSchema", "ClassA");
+    IECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
+    ECInstanceInserter(m_ecdb, *classA, nullptr).Insert(*instanceA);
+
+    ECDbExpressionSymbolContext ecdbContext(m_ecdb);
+    ExpressionContextPtr exprContext = CreateInstanceContext(*instanceA);
+
+    // The lambda is copied into a query that later serves as a printf format, so its '%s' has to reach ECSQL unchanged.
+    // ECSQL reads the double-quoted string as a property name, fails to resolve it and reports the name.
+    TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
+    BeTest::SetFailOnAssert(false);
+    ECValue value;
+    const bool evaluated = EvaluateECExpression(value, "this.HasRelatedInstance(\"TestSchema:ClassB\", b => b.label = \"%s%s%s%s%s%s\")", *exprContext);
+    BeTest::SetFailOnAssert(true);
+    m_ecdb.RemoveIssueListener();
+
+    ASSERT_TRUE(evaluated);
+    ASSERT_TRUE(value.IsBoolean());
+    EXPECT_FALSE(value.GetBoolean());
+    const bool reportedUnformattedText = std::any_of(issueListener.m_issues.begin(), issueListener.m_issues.end(),
+        [] (ReportedIssue const& issue) { return issue.message.Contains("%s%s%s%s%s%s"); });
+    EXPECT_TRUE(reportedUnformattedText) << issueListener.GetLastMessage().c_str();
+    }
+
 END_ECDBUNITTESTS_NAMESPACE
