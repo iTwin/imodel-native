@@ -520,6 +520,30 @@ TEST_F(ECSqlStatementTestFixture, DisableFunction) {
     assertFunc("SELECT randomblob(1923)", "randomblob", "randomblob");
     assertFunc("SELECT randomblob(1923)", "randomblob", "RANDOMBLOB");
 }
+
+TEST_F(ECSqlStatementTestFixture, UnsafeSqlFunctionsAreNotSupported) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("unsafeSqlFunctionsAreNotSupported.ecdb"));
+
+    ECSqlStatement ecsql;
+    for (Utf8CP query : {
+        "SELECT sha3_query('SELECT 1')",
+        "SELECT SHA3_QUERY('SELECT 1')",
+        "SELECT [sha3_query]('SELECT 1')",
+        "SELECT \"fts3_tokenizer\"('simple')",
+        "SELECT `fts3_tokenizer`('simple')",
+        "SELECT [sha3_query ]('SELECT 1')",
+        "SELECT [fts3_tokenizer/**/]('simple')",
+    }) {
+        EXPECT_EQ(ECSqlStatus::InvalidECSql, ecsql.Prepare(m_ecdb, query)) << query;
+        ecsql.Finalize();
+    }
+    EXPECT_EQ(ECSqlStatus::Success, ecsql.Prepare(m_ecdb, "SELECT sha3('still available')"));
+
+    Statement sql;
+    ASSERT_EQ(BE_SQLITE_OK, sql.Prepare(m_ecdb, "SELECT sha3_query('SELECT 1')"));
+    EXPECT_EQ(BE_SQLITE_ROW, sql.Step());
+}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 * ECSqlStatementTestFixture.BugFix

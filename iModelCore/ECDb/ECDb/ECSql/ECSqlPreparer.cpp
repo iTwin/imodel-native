@@ -1585,6 +1585,23 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
 ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, FunctionCallExp const& exp)
     {
     Utf8StringCR functionName = exp.GetSqliteFunctionName();
+    auto isNameStart = [](unsigned char c) { return c == '_' || c >= 0x80 || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'); };
+    auto isNameChar = [isNameStart](unsigned char c) { return isNameStart(c) || (c >= '0' && c <= '9'); };
+    bool isValidName = !functionName.empty() && isNameStart(static_cast<unsigned char>(functionName.front()));
+    for (size_t i = 1; isValidName && i < functionName.size(); ++i)
+        isValidName = isNameChar(static_cast<unsigned char>(functionName[i]));
+    if (!isValidName) {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0524,
+            "Failed to prepare function with name '%s': Function name contains unsupported characters.", functionName.c_str());
+        return ECSqlStatus::InvalidECSql;
+    }
+
+    // These SQLite helpers cross the SQL/process boundary and must not be exposed through ECSQL.
+    if (functionName.EqualsIAscii("sha3_query") || functionName.EqualsIAscii("fts3_tokenizer")) {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0524,
+            "Failed to prepare function with name '%s': Function is not supported in ECSQL.", functionName.c_str());
+        return ECSqlStatus::InvalidECSql;
+    }
     if (ctx.GetECDb().GetECSqlConfig().GetDisableFunctions().Exists(functionName)) {
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0524,
             "Failed to prepare function with name '%s': Function is disabled by application.", functionName.c_str());
