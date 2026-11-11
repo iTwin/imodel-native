@@ -85,7 +85,7 @@ ECSqlStatus ECSqlPreparer::Prepare(Utf8StringR nativeSql, ECSqlPrepareContext& c
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::AppendUnquotedName(NativeSqlBuilder& builder, ECSqlPrepareContext& ctx, Utf8StringCR name)
+ECSqlStatus ECSqlExpPreparer::ValidateUnquotedName(ECSqlPrepareContext& ctx, Utf8StringCR name)
     {
     // ECSQL accepts quoted names with any characters. Unquoted in SQLite SQL, such a name could change the statement.
     bool isPlainIdentifier = !name.empty() && !(name[0] >= '0' && name[0] <= '9') && name[0] != '$';
@@ -102,8 +102,20 @@ ECSqlStatus ECSqlExpPreparer::AppendUnquotedName(NativeSqlBuilder& builder, ECSq
         return ECSqlStatus::InvalidECSql;
         }
 
-    builder.Append(name);
     return ECSqlStatus::Success;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+ECSqlStatus ECSqlExpPreparer::AppendUnquotedName(NativeSqlBuilder& builder, ECSqlPrepareContext& ctx, Utf8StringCR name)
+    {
+    ECSqlStatus status = ValidateUnquotedName(ctx, name);
+    if (status.IsSuccess())
+        builder.Append(name);
+
+    return status;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -1585,16 +1597,9 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
 ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, FunctionCallExp const& exp)
     {
     Utf8StringCR functionName = exp.GetSqliteFunctionName();
-    auto isNameStart = [](unsigned char c) { return c == '_' || c >= 0x80 || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'); };
-    auto isNameChar = [isNameStart](unsigned char c) { return isNameStart(c) || (c >= '0' && c <= '9'); };
-    bool isValidName = !functionName.empty() && isNameStart(static_cast<unsigned char>(functionName.front()));
-    for (size_t i = 1; isValidName && i < functionName.size(); ++i)
-        isValidName = isNameChar(static_cast<unsigned char>(functionName[i]));
-    if (!isValidName) {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0524,
-            "Failed to prepare function with name '%s': Function name contains unsupported characters.", functionName.c_str());
-        return ECSqlStatus::InvalidECSql;
-    }
+    ECSqlStatus nameStatus = ValidateUnquotedName(ctx, functionName);
+    if (!nameStatus.IsSuccess())
+        return nameStatus;
 
     // These SQLite helpers cross the SQL/process boundary and must not be exposed through ECSQL.
     if (functionName.EqualsIAscii("sha3_query") || functionName.EqualsIAscii("fts3_tokenizer")) {

@@ -11435,7 +11435,7 @@ TEST_F(ECSqlStatementTestFixture, NamesAndValuesStayInsideGeneratedSql)
     // These names are written into the generated SQL without quotes
     expectRejected("WITH [my cte](a) AS (SELECT 1) SELECT a FROM [my cte]", "ECDb_0751");
     expectRejected("WITH cte([a b]) AS (SELECT 1) SELECT * FROM cte", "ECDb_0751");
-    expectRejected("SELECT [abs x](1) FROM ts.TestClass", "ECDb_0524");
+    expectRejected("SELECT [abs x](1) FROM ts.TestClass", "ECDb_0751");
     expectRejected("SELECT MAX(ECInstanceId) OVER [w x] FROM ts.TestClass WINDOW [w x] AS (ORDER BY ECInstanceId)", "ECDb_0751");
     expectRejected("SELECT * FROM json1.json_each('[]') [s x]", "ECDb_0751");
     m_ecdb.RemoveIssueListener();
