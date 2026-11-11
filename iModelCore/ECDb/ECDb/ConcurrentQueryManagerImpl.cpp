@@ -2789,8 +2789,15 @@ std::string ECSqlParams::GetCacheKey() const {
 void ECSqlParams::FromJs(BeJsConst val) {
     m_params.clear();
     val.ForEachProperty([&](Utf8CP name, BeJsConst param) {
-        if (param.isMember(JType) && param.isMember(JValue))
-            m_params[name] = ECSqlParam(name, (ECSqlParam::Type)param[JType].asInt(), param[JValue]);
+        if (!param.isMember(JType))
+            return false;
+
+        // Under N-API, isMember is false for a null value, so Null params are matched by type
+        auto const type = (ECSqlParam::Type)param[JType].asInt();
+        if (type == ECSqlParam::Type::Null)
+            m_params[name] = ECSqlParam(name);
+        else if (param.isMember(JValue))
+            m_params[name] = ECSqlParam(name, type, param[JValue]);
 
         return false;
     });

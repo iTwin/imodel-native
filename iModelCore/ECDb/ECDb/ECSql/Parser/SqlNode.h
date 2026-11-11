@@ -323,6 +323,7 @@ namespace connectivity
                 window_partition_column_reference,
                 window_partition_column_reference_list,
                 window_specification,
+                postfix_cast_spec,
                 rule_count,
                 UNKNOWN_RULE            // ID indicating that a node is no rule with a matching Rule-enum value (see getKnownRuleID)
                 };

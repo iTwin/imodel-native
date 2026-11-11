@@ -1365,7 +1365,16 @@ Exp::FinalizeParseStatus SubqueryValueExp::_FinalizeParsing(ECSqlParseContext& c
         return FinalizeParseStatus::Error;
         }
 
-    SetTypeInfo(selectClauseExp->GetChildren().Get<DerivedPropertyExp>(0)->GetExpression()->GetTypeInfo());
+    ECSqlTypeInfo const& typeInfo = selectClauseExp->GetChildren().Get<DerivedPropertyExp>(0)->GetExpression()->GetTypeInfo();
+    if (typeInfo.IsPoint())
+        {
+        // a point spans several SQLite columns which a scalar subquery cannot return
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0756,
+            "A scalar subquery cannot return a Point2d or Point3d value. Serialize it inside the subquery instead, e.g. 'value::TEXT': %s.", ToECSql().c_str());
+        return FinalizeParseStatus::Error;
+        }
+
+    SetTypeInfo(typeInfo);
     return FinalizeParseStatus::Completed;
     }
 

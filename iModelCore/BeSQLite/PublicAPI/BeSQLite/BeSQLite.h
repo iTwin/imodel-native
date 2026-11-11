@@ -1240,6 +1240,8 @@ public:
         BE_SQLITE_EXPORT void SetResultZeroblob(int length);                          //!< see sqlite3_result_zeroblob
         BE_SQLITE_EXPORT void SetResultValue(DbValue);                                //!< see sqlite3_result_value
         BE_SQLITE_EXPORT void* GetAggregateContext(int nbytes);
+        BE_SQLITE_EXPORT void* GetAuxData(int arg);                                   //!< see sqlite3_get_auxdata
+        BE_SQLITE_EXPORT void SetAuxData(int arg, void* data, void(*destroy)(void*)); //!< see sqlite3_set_auxdata
         };
 
 private:
