@@ -1632,11 +1632,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp(NativeSqlBuilder::List& nat
         nativeSql.Append("JULIANDAY(").Append(functionName).AppendParenRight();
         }
     else
-        {
-        ECSqlStatus nameStatus = AppendUnquotedName(nativeSql, ctx, functionName);
-        if (!nameStatus.IsSuccess())
-            return nameStatus;
-        }
+        nativeSql.Append(functionName);
 
     if (!exp.IsGetter())
         {
