@@ -1580,6 +1580,13 @@ SchemaImportResult MainSchemaManager::MapSchemas(SchemaImportContext& ctx, bvect
     }
 #endif
 
+    // Instances of a class need a row in each overflow table it maps a property to. Insert any
+    // that are missing before the data transform: it moves remapped values into these rows, and
+    // would otherwise clear values that it found no row to move into.
+    if (ctx.MaintainsDataTables() && BE_SQLITE_OK != UpgradeExistingECInstancesWithNewPropertiesMapToOverflowTable(m_ecdb, nullptr)){
+        return failedToMap();
+    }
+
     if (!ctx.GetDataTransform().IsEmpty()) {
         if (!ctx.AllowDataTransform()) {
             ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0590, "Import ECSchema failed. Data transform is required which is rejected by default unless explicitly allowed.");
@@ -1593,10 +1600,6 @@ SchemaImportResult MainSchemaManager::MapSchemas(SchemaImportContext& ctx, bvect
         if (BE_SQLITE_OK != ctx.GetDataTransform().Execute(m_ecdb)) {
             return failedToMap();
         }
-    }
-
-    if (ctx.MaintainsDataTables() && BE_SQLITE_OK != UpgradeExistingECInstancesWithNewPropertiesMapToOverflowTable(m_ecdb, nullptr)){
-        return failedToMap();
     }
 
     // Persisted mappings must be reloaded after mapping and data transforms complete.
@@ -2685,6 +2688,17 @@ BentleyStatus MainSchemaManager::SaveDbSchema(SchemaImportContext& ctx) const
             {
             Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0290,
                 "Failed to save mapping for ECClass %s: %s", classMap.GetClass().GetFullName(), m_ecdb.GetLastError().c_str());
+            return ERROR;
+            }
+        }
+
+    for (auto& kvPair : m_classMapDictionary)
+        {
+        ClassMap& classMap = *kvPair.second;
+        if (SUCCESS != classMap.SaveUnpersistedInheritedPropertyMaps())
+            {
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0290,
+                "Failed to save the inherited property maps of ECClass %s: %s", classMap.GetClass().GetFullName(), m_ecdb.GetLastError().c_str());
             return ERROR;
             }
         }

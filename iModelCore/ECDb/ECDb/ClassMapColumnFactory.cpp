@@ -580,7 +580,9 @@ DbColumn* ClassMapColumnFactory::Allocate(SchemaImportContext& ctx, ECN::ECPrope
         {
         if (IsCompatible(*column, type, param))
             {
-            if (!ctx.RemapManager().IsColumnFreed(*column))
+            // A freed column cannot be reused, unless a base class maps the same property to it: then
+            // the column is not free at all, and the class has to share it to read the base class's values.
+            if (!ctx.RemapManager().IsColumnFreed(*column) || IsColumnOfBaseClassProperty(accessString, *column))
                 {
                 // If the current property as a whole was decided to go to the overflow table, do
                 // not reuse a registered column from the primary/joined table. Doing so would
@@ -602,7 +604,8 @@ DbColumn* ClassMapColumnFactory::Allocate(SchemaImportContext& ctx, ECN::ECPrope
                         {
                         Utf8String rootPropertyName = accessString.substr(0, dotPos);
                         ECN::ECPropertyCP rootProperty = m_classMap.GetClass().GetPropertyP(rootPropertyName, /*includeBaseClasses=*/false);
-                        refuseReuseBecausePropertyGoesToOverflow = rootProperty != nullptr;
+                        // An override follows the mapping of the property it overrides, as an inherited property does.
+                        refuseReuseBecausePropertyGoesToOverflow = rootProperty != nullptr && !IsColumnOfBaseClassProperty(accessString, *column);
                         }
                     }
 
@@ -647,6 +650,40 @@ DbTable* ClassMapColumnFactory::GetEffectiveTable(SchemaImportContext& ctx) cons
 //@bsimethod
 //-----------------------------------------------------------------------------------------
 bool ClassMapColumnFactory::IsColumnInUse(DbColumn const& column) const { return GetColumnMaps()->IsColumnInUse(column); }
+
+//------------------------------------------------------------------------------------------
+// A property that a class inherits or overrides from a TablePerHierarchy base class is read
+// through the base class's map too, so the class must map it to the same column. Returns
+// true if a base class maps @p accessString, which may name a member such as "Name.Member",
+// to @p column.
+//@bsimethod
+//-----------------------------------------------------------------------------------------
+bool ClassMapColumnFactory::IsColumnOfBaseClassProperty(Utf8StringCR accessString, DbColumn const& column) const
+    {
+    if (DbMappingManager::Classes::GetPropertyMapInheritanceMode(m_classMap.GetMapStrategy()) != DbMappingManager::Classes::PropertyMapInheritanceMode::Clone)
+        return false;
+
+    for (ECN::ECClassCP baseClass : m_classMap.GetClass().GetBaseClasses())
+        {
+        ClassMap const* baseClassMap = m_classMap.GetSchemaManager().GetClassMap(*baseClass);
+        if (baseClassMap == nullptr || !baseClassMap->GetMapStrategy().IsTablePerHierarchy())
+            continue;
+
+        PropertyMap const* basePropertyMap = baseClassMap->GetPropertyMaps().Find(accessString.c_str());
+        if (basePropertyMap == nullptr || !basePropertyMap->IsData())
+            continue;
+
+        GetColumnsPropertyMapVisitor columnsVisitor;
+        basePropertyMap->AcceptVisitor(columnsVisitor);
+        for (DbColumn const* baseColumn : columnsVisitor.GetColumns())
+            {
+            if (baseColumn == &column)
+                return true;
+            }
+        }
+
+    return false;
+    }
 //------------------------------------------------------------------------------------------
 //@bsimethod
 //-----------------------------------------------------------------------------------------

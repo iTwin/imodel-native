@@ -1142,30 +1142,37 @@ DbResult IntegrityChecker::CheckMissingChildRows(std::function<bool(Utf8CP, ECIn
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult IntegrityChecker::CheckDivergedPropMaps(std::function<bool(ECN::ECClassId, Utf8CP, ECN::ECClassId, Utf8CP, Utf8CP, Utf8CP, Utf8CP)> callback)
 	{
+	// Maps are matched by access string, not by property path: an override added to a class by a later schema
+	// import is persisted with its own property path, while its base class keeps the path of the overridden
+	// property. The CROSS JOINs keep SQLite from looking up base maps by access string alone, which is slow
+	// for property names that many classes share.
 	Statement stmt;
 	auto rc = stmt.Prepare(m_conn, R"(
         WITH RECURSIVE [tableRoot]([id], [rootId]) AS (
                 SELECT [Id], [Id] FROM [ec_Table] WHERE [ParentTableId] IS NULL
                 UNION ALL
-            SELECT [t].[Id], [r].[rootId] FROM [ec_Table] [t] JOIN [tableRoot] [r] ON [t].[ParentTableId] = [r].[id])
-        SELECT DISTINCT [derivedPm].[ClassId], [basePm].[ClassId], [pp].[AccessString],
-                [derivedTable].[Name] || '.' || [derivedCol].[Name],
-                [baseTable].[Name] || '.' || [baseCol].[Name]
-            FROM [ec_PropertyMap] [derivedPm]
-                JOIN [ec_cache_ClassHierarchy] [ch] ON [ch].[ClassId] = [derivedPm].[ClassId] AND [ch].[BaseClassId] <> [derivedPm].[ClassId]
-                JOIN [ec_PropertyMap] [basePm] ON [basePm].[ClassId] = [ch].[BaseClassId] AND [basePm].[PropertyPathId] = [derivedPm].[PropertyPathId] AND [basePm].[ColumnId] <> [derivedPm].[ColumnId]
-                JOIN [ec_PropertyPath] [pp] ON [pp].[Id] = [derivedPm].[PropertyPathId]
+            SELECT [t].[Id], [r].[rootId] FROM [ec_Table] [t] JOIN [tableRoot] [r] ON [t].[ParentTableId] = [r].[id]),
+        [propMap]([ClassId], [AccessString], [ColumnId]) AS MATERIALIZED (
+            SELECT [pm].[ClassId], [pp].[AccessString], [pm].[ColumnId]
+                FROM [ec_PropertyMap] [pm]
+                    JOIN [ec_PropertyPath] [pp] ON [pp].[Id] = [pm].[PropertyPathId]
                     JOIN [ec_Property] [rootProp] ON [rootProp].[Id] = [pp].[RootPropertyId]
                     JOIN [ec_Class] [rootClass] ON [rootClass].[Id] = [rootProp].[ClassId]
                     JOIN [ec_Schema] [rootSchema] ON [rootSchema].[Id] = [rootClass].[SchemaId]
+                WHERE [rootSchema].[Name] <> 'ECDbSystem')
+        SELECT DISTINCT [derivedPm].[ClassId], [basePm].[ClassId], [derivedPm].[AccessString],
+                [derivedTable].[Name] || '.' || [derivedCol].[Name],
+                [baseTable].[Name] || '.' || [baseCol].[Name]
+            FROM [propMap] [derivedPm]
+                CROSS JOIN [ec_cache_ClassHierarchy] [ch] ON [ch].[ClassId] = [derivedPm].[ClassId] AND [ch].[BaseClassId] <> [derivedPm].[ClassId]
+                CROSS JOIN [propMap] [basePm] ON [basePm].[ClassId] = [ch].[BaseClassId] AND [basePm].[AccessString] = [derivedPm].[AccessString] AND [basePm].[ColumnId] <> [derivedPm].[ColumnId]
                 JOIN [ec_Column] [derivedCol] ON [derivedCol].[Id] = [derivedPm].[ColumnId]
                 JOIN [ec_Column] [baseCol] ON [baseCol].[Id] = [basePm].[ColumnId]
                 JOIN [ec_Table] [derivedTable] ON [derivedTable].[Id] = [derivedCol].[TableId]
                 JOIN [ec_Table] [baseTable] ON [baseTable].[Id] = [baseCol].[TableId]
                 JOIN [tableRoot] [derivedRoot] ON [derivedRoot].[id] = [derivedCol].[TableId]
                 JOIN [tableRoot] [baseRoot] ON [baseRoot].[id] = [baseCol].[TableId] AND [baseRoot].[rootId] = [derivedRoot].[rootId]
-            WHERE [rootSchema].[Name] <> 'ECDbSystem'
-            ORDER BY [derivedPm].[ClassId], [basePm].[ClassId], [pp].[AccessString];)");
+            ORDER BY [derivedPm].[ClassId], [basePm].[ClassId], [derivedPm].[AccessString];)");
 
 	if (rc != BE_SQLITE_OK)
 		{
