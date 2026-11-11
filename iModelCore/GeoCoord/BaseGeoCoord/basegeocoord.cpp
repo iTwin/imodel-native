@@ -25685,7 +25685,10 @@ bvector<GeodeticTransformPathCP> const & Datum::GetAdditionalGeodeticTransformPa
                 if (nullptr != currentDatum)
                     {
                     if (excludeDeprecated && currentDatum->IsDeprecated())
+                        {
+                        currentDatum->Destroy();
                         continue;
+                        }
 
                     GeodeticTransformPathCP newPath = GeodeticTransformPath::Create(*this, *currentDatum);
                     if (nullptr != newPath)

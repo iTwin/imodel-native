@@ -1523,7 +1523,7 @@ static int nocaseCollatingFuncASCII(void *, int nLeft, const void *zLeft, int nR
 static int nocaseCollatingFuncLatin1(void *pCtx, int nLeft, const void *zLeft, int nRight, const void *zRight){
   UCollationResult res;
   UCollator *p = (UCollator*)pCtx;
-  UErrorCode status;
+  UErrorCode status = U_ZERO_ERROR;
   res = ucol_strcollUTF8(p, (Utf8CP)zLeft, nLeft, (Utf8CP)zRight, nRight, &status);
   switch( res ){
     case UCOL_LESS: return -1;

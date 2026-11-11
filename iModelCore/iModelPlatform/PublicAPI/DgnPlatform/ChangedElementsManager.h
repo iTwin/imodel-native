@@ -40,8 +40,8 @@ struct ChangedElementsManager final {
         bool        m_wantBriefcaseRoll;
         bool        m_wantRelationshipCaching;
         bool        m_wantChunkTraversal;
-        bool        m_wantBoundingBoxes;
-        int         m_relationshipCacheSize;
+        bool        m_wantBoundingBoxes = false;
+        int         m_relationshipCacheSize = VC_DEFAULT_RELATIONSHIP_CACHE_SIZE;
         BeFileName  m_tempLocation;
         Utf8String  m_rulesetDirectory;
         ECPresentationManager* m_presentationManager;
