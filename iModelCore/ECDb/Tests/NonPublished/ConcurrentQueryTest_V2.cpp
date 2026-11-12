@@ -3201,15 +3201,15 @@ TEST_F(ConcurrentQueryFixture, IdSetParamLimit) {
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, twoParams));
-    uint64_t budget = ECSqlParams::MaxIdSetCount;
     std::string err;
-    BeJsDocument first("\"1-600000\"");
-    BeJsDocument second("\"1-400001\"");
-    EXPECT_TRUE(ECSqlParams::TryBindParameter(stmt, "1", ECSqlParams::ECSqlParam::Type::IdSet, first, budget, err)) << err;
-    EXPECT_EQ(400000u, budget);
-    EXPECT_FALSE(ECSqlParams::TryBindParameter(stmt, "2", ECSqlParams::ECSqlParam::Type::IdSet, second, budget, err));
+    BeJsDocument atBudget(R"json({"1":{"type":3,"value":"1-600000"},"2":{"type":3,"value":"1-400000"}})json");
+    EXPECT_TRUE(ECSqlParams(atBudget).TryBindTo(stmt, err)) << err;
+    stmt.Reset();
+    stmt.ClearBindings();
+    BeJsDocument overBudget(R"json({"1":{"type":3,"value":"1-600000"},"2":{"type":3,"value":"1-400001"}})json");
+    EXPECT_FALSE(ECSqlParams(overBudget).TryBindTo(stmt, err));
     EXPECT_NE(std::string::npos, err.find("maximum of 1000000 Ids")) << err;
-    EXPECT_EQ(400000u, budget);
+    EXPECT_NE(std::string::npos, err.find("'2'")) << err;
 
     // Values at UINT64_MAX count as one Id each and expand to exactly that many.
     for (Utf8CP idSet : {"18446744073709551615", "-1"}) {

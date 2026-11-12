@@ -2640,81 +2640,16 @@ void ECSqlParams::FromJs(BeJsConst val) {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 bool ECSqlParams::TryBindTo(ECSqlStatement& stmt, std::string& err) const {
-<<<<<<< HEAD
     if (IsEmpty()) {
         return true;
     }
+    uint64_t idSetBudget = MaxIdSetCount;
     for(auto& kp : m_params) {
         auto& param = kp.second;
         int index = param.IsIndexed() ? param.GetIndex() : stmt.GetParameterIndex(param.GetName().c_str());
         if (index < 1) {
             if (param.IsIndexed())
                 err = "expecting binding index to be > 0";
-=======
-    uint64_t idSetBudget = MaxIdSetCount;
-    for (auto const& kp : m_params) {
-        auto const& param = kp.second;
-        if (!TryBindParameter(stmt, param.GetName(), param.GetType(), param.GetValue(), idSetBudget, err))
-            return false;
-    }
-    return true;
-}
-
-bool ECSqlParams::TryBindParameter(ECSqlStatement& stmt, std::string const& name, ECSqlParam::Type type, BeJsConst value, uint64_t& idSetBudget, std::string& err) {
-    const int parsedIndex = ParseParameterIndex(name.c_str());
-    const bool isIndexed = parsedIndex != -1;
-    int index = isIndexed ? parsedIndex : stmt.GetParameterIndex(name.c_str());
-    if (index < 1) {
-        if (isIndexed)
-            err = "expecting binding index to be > 0";
-        else
-            err = SqlPrintfString("fail to find param index for named param '%s'", name.c_str()).GetUtf8CP();
-        return false;
-    }
-    ECSqlStatus st;
-    switch(type) {
-        case ECSqlParam::Type::Boolean:
-            st = stmt.BindBoolean(index, value.asBool()); break;
-        case ECSqlParam::Type::Double:
-            st = stmt.BindDouble(index, value.asDouble()); break;
-        case ECSqlParam::Type::Id:
-            st = stmt.BindId(index, BeInt64Id::FromString(value.asCString())); break;
-        case ECSqlParam::Type::IdSet: {
-            uint64_t idCount;
-            if (!TryCountIdSet(value.asCString(), idCount, err)) {
-                err = SqlPrintfString("failed to bind param '%s': %s", name.c_str(), err.c_str()).GetUtf8CP();
-                return false;
-            }
-            if (idCount > idSetBudget) {
-                err = SqlPrintfString("failed to bind param '%s': IdSet parameters hold more than the maximum of %" PRIu64 " Ids", name.c_str(), MaxIdSetCount).GetUtf8CP();
-                return false;
-            }
-            idSetBudget -= idCount;
-            BeIdSet values;
-            values.FromString(value.asCString());
-            BinderInfo const& binderInfo = stmt.GetBinderInfo(index);
-            if(binderInfo.GetType() == BinderInfo::BinderType::VirtualSet) {
-                std::shared_ptr<IdSet<BeInt64Id>> idSet = std::make_shared<IdSet<BeInt64Id>>(std::move(values));
-                st = stmt.BindVirtualSet(index, idSet);
-            }
-            else if(binderInfo.GetType() == BinderInfo::BinderType::Array && binderInfo.IsForIdSet()) {
-                bool allElementsAdded = true;
-                IECSqlBinder& binder = stmt.GetBinder(index);
-                IdSet<BeInt64Id> set(std::move(values));
-                for(auto& ids: set) {
-                    if(!ids.IsValid()) {
-                        allElementsAdded = false;
-                        break;
-                    }
-                    st = binder.AddArrayElement().BindInt64((int64_t) ids.GetValue());
-                    if(!st.IsSuccess()) {
-                        allElementsAdded = false;
-                        break;
-                    }
-                }
-                st = allElementsAdded ? ECSqlStatus::Success : ECSqlStatus::Error;
-            }
->>>>>>> 04169fd (Limit Ids in concurrent query IdSet parameters (#1708))
             else
                 err = SqlPrintfString("fail to find param index for named param '%s'", param.GetName().c_str()).GetUtf8CP();
             return false;
@@ -2728,15 +2663,28 @@ bool ECSqlParams::TryBindParameter(ECSqlStatement& stmt, std::string const& name
             case ECSqlParam::Type::Id:
                 st = stmt.BindId(index, param.GetValueId());  break;
             case ECSqlParam::Type::IdSet: {
+                Utf8CP idSetStr = param.GetValue().asCString();
+                uint64_t idCount;
+                if (!TryCountIdSet(idSetStr, idCount, err)) {
+                    err = SqlPrintfString("failed to bind param '%s': %s", param.GetName().c_str(), err.c_str()).GetUtf8CP();
+                    return false;
+                }
+                if (idCount > idSetBudget) {
+                    err = SqlPrintfString("failed to bind param '%s': IdSet parameters hold more than the maximum of %" PRIu64 " Ids", param.GetName().c_str(), MaxIdSetCount).GetUtf8CP();
+                    return false;
+                }
+                idSetBudget -= idCount;
+                BeIdSet values;
+                values.FromString(idSetStr);
                 BinderInfo const& binderInfo = stmt.GetBinderInfo(index);
                 if(binderInfo.GetType() == BinderInfo::BinderType::VirtualSet) {
-                    std::shared_ptr<IdSet<BeInt64Id>> idSet = std::make_shared<IdSet<BeInt64Id>>(param.GetValueIdSet());
+                    std::shared_ptr<IdSet<BeInt64Id>> idSet = std::make_shared<IdSet<BeInt64Id>>(std::move(values));
                     st = stmt.BindVirtualSet(index, idSet);
                 }
                 else if(binderInfo.GetType() == BinderInfo::BinderType::Array && binderInfo.IsForIdSet()) {
                     bool allElementsAdded = true;
                     IECSqlBinder& binder = stmt.GetBinder(index);
-                    IdSet<BeInt64Id> set(param.GetValueIdSet());
+                    IdSet<BeInt64Id> set(std::move(values));
                     for(auto& ids: set) {
                         if(!ids.IsValid()) {
                             allElementsAdded = false;

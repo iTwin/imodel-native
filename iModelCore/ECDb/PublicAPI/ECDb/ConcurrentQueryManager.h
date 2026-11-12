@@ -259,17 +259,10 @@ class ECSqlParams final {
         ECDB_EXPORT void FromJs(BeJsConst val);
         ECDB_EXPORT std::vector<std::string> GetKeys() const;
         ECDB_EXPORT bool TryBindTo(ECSqlStatement& stmt, std::string& err) const;
-<<<<<<< HEAD
-=======
-        //! Binds one parameter. IdSet values are counted without being expanded, and fail to bind if they hold more than
-        //! @p idSetBudget Ids, which is reduced by the count on success. Share one budget, starting at MaxIdSetCount, across
-        //! all parameters of a statement.
-        ECDB_EXPORT static bool TryBindParameter(ECSqlStatement& stmt, std::string const& name, ECSqlParam::Type type, BeJsConst value, uint64_t& idSetBudget, std::string& err);
         //! Counts the Ids in a compact ("+1*3+2") or readable ("1-3,5") Id set string, as accepted by BeIdSet::FromString,
         //! without expanding it. Readable ranges are counted without removing duplicates. Returns false, with @p err set, if
         //! the string is malformed, or if the Ids it encodes or their count would overflow 64 bits.
         ECDB_EXPORT static bool TryCountIdSet(Utf8CP idSet, uint64_t& count, std::string& err);
->>>>>>> 04169fd (Limit Ids in concurrent query IdSet parameters (#1708))
         ECDB_EXPORT std::string GetCacheKey() const;
 };
 
