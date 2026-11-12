@@ -666,6 +666,8 @@ void SchemaUpdateTestFixture::VerifyIntegrity() const
         }
 
     // check_missing_child_rows is left out: it only looks at bis_Element.
+    // validate_persisted_mappings reloads the table definitions, which class maps already in the cache still point to.
+    m_ecdb.ClearECDbCache();
     ExpectNoRows("PRAGMA validate_persisted_mappings");
     }
 
