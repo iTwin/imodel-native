@@ -9,6 +9,14 @@ USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
+// The class every instance of the constraint derives from. A constraint can list several classes.
+//+---------------+---------------+---------------+---------------+---------------+------
+static ECClassCP GetCommonConstraintClass(ECRelationshipConstraintCR constraint) {
+	ECClassCP abstractConstraint = constraint.GetAbstractConstraint();
+	return abstractConstraint != nullptr ? abstractConstraint : constraint.GetConstraintClasses().front();
+}
+
+//---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult IntegrityChecker::GetNavigationProperties (std::map<ECClassId, std::vector<std::string>>& navProps) {
@@ -671,9 +679,9 @@ DbResult IntegrityChecker::CheckNavIds(std::function<bool(ECInstanceId, Utf8CP, 
 
             ECClassCP otherClass = nullptr;
             if (navPropCP->GetDirection() == ECN::ECRelatedInstanceDirection::Backward) {
-                otherClass = navPropCP->GetRelationshipClass()->GetSource().GetConstraintClasses().front();
+                otherClass = GetCommonConstraintClass(navPropCP->GetRelationshipClass()->GetSource());
             } else {
-				otherClass = navPropCP->GetRelationshipClass()->GetTarget().GetConstraintClasses().front();
+				otherClass = GetCommonConstraintClass(navPropCP->GetRelationshipClass()->GetTarget());
 			}
             LOG.infov("integrity_check(check_nav_ids) analyzing [class: %s] [nav_prop: %s]", classCP->GetFullName(), prop.c_str());
             std::string query = SqlPrintfString("SELECT s.ECInstanceId, s.%s.Id FROM %s s LEFT JOIN %s t ON s.%s.Id=t.ECInstanceId WHERE t.ECInstanceId IS NULL AND s.%s.Id IS NOT NULL",
@@ -820,7 +828,7 @@ DbResult IntegrityChecker::CheckLinkTableFkIds(std::function<bool(ECInstanceId, 
 
         auto relCP = classCP->GetRelationshipClassCP();
 		if ("source ids") {
-			auto sourceClassCP = relCP->GetSource().GetConstraintClasses().front();
+			auto sourceClassCP = GetCommonConstraintClass(relCP->GetSource());
 			LOG.infov("integrity_check(check_link_table_source_and_target_ids) analyzing [relationship: %s] [prop: SourceECInstanceId]", classCP->GetFullName());
 			std::string query = SqlPrintfString("SELECT R.ECInstanceId, R.SourceECInstanceId FROM %s R LEFT JOIN %s O ON O.ECInstanceId = R.SourceECInstanceId WHERE O.ECInstanceId IS NULL",
 				relCP->GetECSqlName().c_str(),
@@ -846,7 +854,7 @@ DbResult IntegrityChecker::CheckLinkTableFkIds(std::function<bool(ECInstanceId, 
 		}
 
 		if ("target ids") {
-			auto targetClassCP = relCP->GetTarget().GetConstraintClasses().front();
+			auto targetClassCP = GetCommonConstraintClass(relCP->GetTarget());
 			LOG.infov("integrity_check(check_link_table_source_and_target_ids) analyzing [relationship: %s] [prop: TargetECInstanceId]", classCP->GetFullName());
 			std::string query = SqlPrintfString("SELECT R.ECInstanceId, R.TargetECInstanceId FROM %s R LEFT JOIN %s O ON O.ECInstanceId = R.TargetECInstanceId WHERE O.ECInstanceId IS NULL",
 				relCP->GetECSqlName().c_str(),

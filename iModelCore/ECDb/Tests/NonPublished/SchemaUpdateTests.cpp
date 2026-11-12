@@ -280,6 +280,17 @@ TEST_F(SchemaUpdateHarnessTests, ReportsChangedValues)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpdateHarnessTests, ReportsReferencingInstancesThatReferenceNothingDeleted)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    Utf8String failures = CaptureVerifyDataFailures(ExpectedDataChanges().DeleteReferencingInstancesOf("TestSchema:Valve"));
+    EXPECT_TRUE(Contains(failures, "DeleteReferencingInstancesOf declares nothing")) << failures.c_str();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaUpdateHarnessTests, ReportsAddedInstances)
     {
     ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));

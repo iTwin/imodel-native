@@ -112,7 +112,8 @@ Utf8String BuildSelectECSql(ECClassCR ecClass, bool onlyThisClass)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-std::map<Utf8String, Utf8String> ReadValues(ECSqlStatement const& stmt, JsonECSqlSelectAdapter const& adapter, ECClassCR ecClass)
+std::map<Utf8String, Utf8String> ReadValues(ECSqlStatement const& stmt, JsonECSqlSelectAdapter const& adapter, ECClassCR ecClass,
+    std::map<Utf8String, SchemaUpdateTestFixture::NavigationValue>* navigationValues = nullptr)
     {
     std::map<Utf8String, Utf8String> values;
     BeJsDocument row;
@@ -122,9 +123,9 @@ std::map<Utf8String, Utf8String> ReadValues(ECSqlStatement const& stmt, JsonECSq
         return values;
         }
 
+    int columnIndex = 2;
     if (ecClass.IsRelationshipClass())
         {
-        int columnIndex = 2;
         for (Utf8CP endName : s_relationshipEndNames)
             values[endName] = Utf8PrintfString("%" PRId64, stmt.GetValueInt64(columnIndex++));
         }
@@ -134,6 +135,16 @@ std::map<Utf8String, Utf8String> ReadValues(ECSqlStatement const& stmt, JsonECSq
         BeJsConst value = row[prop->GetName().c_str()];
         if (!value.isNull())
             values[prop->GetName()] = value.Stringify();
+
+        if (navigationValues != nullptr && prop->GetIsNavigation() && !stmt.IsValueNull(columnIndex))
+            {
+            ECClassId relClassId;
+            const ECInstanceId relatedId = stmt.GetValueNavigation<ECInstanceId>(columnIndex, &relClassId);
+            if (relatedId.IsValid())
+                (*navigationValues)[prop->GetName()] = SchemaUpdateTestFixture::NavigationValue{relatedId, relClassId};
+            }
+
+        columnIndex++;
         }
 
     return values;
@@ -301,49 +312,17 @@ struct ValueGenerator final
     };
 
 //---------------------------------------------------------------------------------------
-// Navigation properties are set in a second pass, so they can point to any inserted instance.
-//---------------------------------------------------------------------------------------
-BentleyStatus SetNavigationProperties(ECDbCR ecdb, bvector<InsertedInstance> const& inserted)
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+bool IsAllowedBy(ECRelationshipConstraintCR constraint, ECClassCR ecClass)
     {
-    for (size_t i = 0; i < inserted.size(); i++)
+    for (ECClassCP constraintClass : constraint.GetConstraintClasses())
         {
-        ECClassCR ecClass = *inserted[i].m_class;
-        for (ECPropertyCP prop : ecClass.GetProperties(true))
-            {
-            if (!prop->GetIsNavigation())
-                continue;
-
-            NavigationECPropertyCP navProp = prop->GetAsNavigationProperty();
-            ECRelationshipClassCP relClass = navProp->GetRelationshipClass();
-            ECRelationshipConstraintCR relatedEnd = navProp->GetDirection() == ECRelatedInstanceDirection::Forward ? relClass->GetTarget() : relClass->GetSource();
-            if (relatedEnd.GetConstraintClasses().empty())
-                continue;
-
-            ECClassCP relatedClass = relatedEnd.GetConstraintClasses().front();
-            bvector<ECInstanceId> candidates;
-            for (InsertedInstance const& candidate : inserted)
-                {
-                if (candidate.m_class->Is(relatedClass))
-                    candidates.push_back(candidate.m_id);
-                }
-
-            if (candidates.empty())
-                continue;
-
-            ECSqlStatement stmt;
-            Utf8PrintfString ecsql("UPDATE %s SET [%s]=? WHERE ECInstanceId=?", ecClass.GetECSqlName().c_str(), prop->GetName().c_str());
-            if (ECSqlStatus::Success != stmt.Prepare(ecdb, ecsql.c_str()) ||
-                ECSqlStatus::Success != stmt.GetBinder(1).BindNavigation(candidates[i % candidates.size()], relClass->GetId()) ||
-                ECSqlStatus::Success != stmt.BindId(2, inserted[i].m_id) ||
-                BE_SQLITE_DONE != stmt.Step())
-                {
-                ADD_FAILURE() << "Failed to set navigation property: " << ecsql.c_str();
-                return ERROR;
-                }
-            }
+        if (constraint.GetIsPolymorphic() ? ecClass.Is(constraintClass) : &ecClass == constraintClass)
+            return true;
         }
 
-    return SUCCESS;
+    return false;
     }
 
 //---------------------------------------------------------------------------------------
@@ -354,17 +333,95 @@ bvector<InsertedInstance> FindInstancesFor(ECRelationshipConstraintCR constraint
     bvector<InsertedInstance> matches;
     for (InsertedInstance const& candidate : inserted)
         {
-        for (ECClassCP constraintClass : constraint.GetConstraintClasses())
+        if (IsAllowedBy(constraint, *candidate.m_class))
+            matches.push_back(candidate);
+        }
+
+    return matches;
+    }
+
+//---------------------------------------------------------------------------------------
+// Instance k of a class with instanceCount instances gets this candidate. Candidates come in
+// blocks of instanceCount per class, so the instances of one class pick different classes.
+//---------------------------------------------------------------------------------------
+size_t GetCandidateIndex(size_t instanceIndex, size_t instanceCount, size_t candidateCount)
+    {
+    return (instanceIndex * (instanceCount + 1)) % candidateCount;
+    }
+
+//---------------------------------------------------------------------------------------
+// Index of every instance within its class, and the instance count per class.
+//---------------------------------------------------------------------------------------
+void GetIndexesWithinClass(bvector<size_t>& indexWithinClass, std::map<ECClassCP, size_t>& countPerClass, bvector<InsertedInstance> const& inserted)
+    {
+    indexWithinClass.clear();
+    countPerClass.clear();
+    for (InsertedInstance const& instance : inserted)
+        indexWithinClass.push_back(countPerClass[instance.m_class]++);
+    }
+
+//---------------------------------------------------------------------------------------
+// Concrete relationship classes of the navigation property's hierarchy that allow the class
+// holding the property, the root first.
+//---------------------------------------------------------------------------------------
+void CollectRelationshipClassesFor(bvector<ECRelationshipClassCP>& relClasses, ECRelationshipClassCR relClass, NavigationECPropertyCR navProp, ECClassCR holderClass)
+    {
+    ECRelationshipConstraintCR holderEnd = navProp.GetDirection() == ECRelatedInstanceDirection::Forward ? relClass.GetSource() : relClass.GetTarget();
+    if (IsConcreteClass(relClass) && IsAllowedBy(holderEnd, holderClass))
+        relClasses.push_back(&relClass);
+
+    for (ECClassCP derivedClass : relClass.GetDerivedClasses())
+        {
+        if (derivedClass->IsRelationshipClass())
+            CollectRelationshipClassesFor(relClasses, *derivedClass->GetRelationshipClassCP(), navProp, holderClass);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// Navigation properties are set in a second pass, so they can point to any inserted instance.
+//---------------------------------------------------------------------------------------
+BentleyStatus SetNavigationProperties(ECDbCR ecdb, bvector<InsertedInstance> const& inserted)
+    {
+    bvector<size_t> indexWithinClass;
+    std::map<ECClassCP, size_t> countPerClass;
+    GetIndexesWithinClass(indexWithinClass, countPerClass, inserted);
+
+    for (size_t i = 0; i < inserted.size(); i++)
+        {
+        ECClassCR ecClass = *inserted[i].m_class;
+        for (ECPropertyCP prop : ecClass.GetProperties(true))
             {
-            if (constraint.GetIsPolymorphic() ? candidate.m_class->Is(constraintClass) : candidate.m_class == constraintClass)
+            if (!prop->GetIsNavigation())
+                continue;
+
+            NavigationECPropertyCR navProp = *prop->GetAsNavigationProperty();
+            bvector<ECRelationshipClassCP> relClasses;
+            CollectRelationshipClassesFor(relClasses, *navProp.GetRelationshipClass(), navProp, ecClass);
+            if (relClasses.empty())
+                continue;
+
+            const size_t instanceIndex = indexWithinClass[i];
+            ECRelationshipClassCR relClass = *relClasses[instanceIndex % relClasses.size()];
+            ECRelationshipConstraintCR relatedEnd = navProp.GetDirection() == ECRelatedInstanceDirection::Forward ? relClass.GetTarget() : relClass.GetSource();
+            bvector<InsertedInstance> candidates = FindInstancesFor(relatedEnd, inserted);
+            if (candidates.empty())
+                continue;
+
+            ECInstanceId relatedId = candidates[GetCandidateIndex(instanceIndex, countPerClass[&ecClass], candidates.size())].m_id;
+            ECSqlStatement stmt;
+            Utf8PrintfString ecsql("UPDATE %s SET [%s]=? WHERE ECInstanceId=?", ecClass.GetECSqlName().c_str(), prop->GetName().c_str());
+            if (ECSqlStatus::Success != stmt.Prepare(ecdb, ecsql.c_str()) ||
+                ECSqlStatus::Success != stmt.GetBinder(1).BindNavigation(relatedId, relClass.GetId()) ||
+                ECSqlStatus::Success != stmt.BindId(2, inserted[i].m_id) ||
+                BE_SQLITE_DONE != stmt.Step())
                 {
-                matches.push_back(candidate);
-                break;
+                ADD_FAILURE() << "Failed to set navigation property: " << ecsql.c_str() << " " << ecdb.GetLastError().c_str();
+                return ERROR;
                 }
             }
         }
 
-    return matches;
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -407,8 +464,8 @@ BentleyStatus InsertLinkTableRelationships(ECDbCR ecdb, ECSchemaCR schema, int i
 
         for (int instanceIndex = 0; instanceIndex < instancesPerClass; instanceIndex++)
             {
-            InsertedInstance const& source = sources[instanceIndex % sources.size()];
-            InsertedInstance const& target = targets[instanceIndex % targets.size()];
+            InsertedInstance const& source = sources[GetCandidateIndex(instanceIndex, instancesPerClass, sources.size())];
+            InsertedInstance const& target = targets[GetCandidateIndex(instanceIndex, instancesPerClass, targets.size())];
             if (ECSqlStatus::Success != stmt.BindId(1, source.m_id) ||
                 ECSqlStatus::Success != stmt.BindId(2, source.m_class->GetId()) ||
                 ECSqlStatus::Success != stmt.BindId(3, target.m_id) ||
@@ -635,6 +692,17 @@ BentleyStatus SchemaUpdateTestFixture::SetupFromBaseline(SchemaUpdateBaseline co
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+void SchemaUpdateTestFixture::ChangeDataBeforeUpdate(Utf8CP ecsql)
+    {
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql(ecsql)) << ecsql << " " << m_ecdb.GetLastError().c_str();
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    m_dataBeforeUpdate.clear();
+    ReadData(m_dataBeforeUpdate);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaUpdateTestFixture::UpdateSchema(Utf8StringCR schemaXml, SchemaVersionChange versionChange, SchemaManager::SchemaImportOptions options)
     {
     ECSchemaCP persistedSchema = m_ecdb.Schemas().GetSchema(m_schemaName);
@@ -747,11 +815,41 @@ void SchemaUpdateTestFixture::VerifyData(ExpectedDataChanges const& expectedChan
     DataSnapshot dataAfterUpdate;
     ReadData(dataAfterUpdate);
 
+    std::set<ECInstanceId> deletedIds;
+    for (auto const& [instanceId, before] : m_dataBeforeUpdate)
+        {
+        if (expectedChanges.AreInstancesDeleted(before.m_className))
+            deletedIds.insert(instanceId);
+        }
+
+    auto referencesDeletedInstance = [&] (InstanceData const& instance)
+        {
+        for (auto const& entry : instance.m_navigationValues)
+            {
+            if (deletedIds.find(entry.second.m_id) != deletedIds.end())
+                return true;
+            }
+
+        for (Utf8CP endName : {"SourceECInstanceId", "TargetECInstanceId"})
+            {
+            auto valueIt = instance.m_values.find(endName);
+            if (valueIt != instance.m_values.end() && deletedIds.find(ECInstanceId((uint64_t) std::stoull(valueIt->second.c_str()))) != deletedIds.end())
+                return true;
+            }
+
+        return false;
+        };
+
+    std::set<Utf8String> classesWithDeletedReferencingInstances;
     for (auto const& [instanceId, before] : m_dataBeforeUpdate)
         {
         Utf8PrintfString context("%s %s", before.m_className.c_str(), instanceId.ToHexStr().c_str());
         auto afterIt = dataAfterUpdate.find(instanceId);
-        if (expectedChanges.AreInstancesDeleted(before.m_className))
+        const bool isReferencingInstanceDeleted = expectedChanges.AreReferencingInstancesDeleted(before.m_className) && referencesDeletedInstance(before);
+        if (isReferencingInstanceDeleted)
+            classesWithDeletedReferencingInstances.insert(before.m_className);
+
+        if (expectedChanges.AreInstancesDeleted(before.m_className) || isReferencingInstanceDeleted)
             {
             EXPECT_TRUE(afterIt == dataAfterUpdate.end()) << context.c_str() << " was expected to be deleted.";
             continue;
@@ -773,6 +871,12 @@ void SchemaUpdateTestFixture::VerifyData(ExpectedDataChanges const& expectedChan
             }
 
         CompareValues(context.c_str(), ProjectValues(before.m_values, *classAfterUpdate), after.m_values);
+        }
+
+    for (Utf8StringCR className : expectedChanges.GetClassesWithDeletedReferencingInstances())
+        {
+        if (classesWithDeletedReferencingInstances.find(className) == classesWithDeletedReferencingInstances.end())
+            ADD_FAILURE() << "No instance of " << className.c_str() << " points to a deleted instance, so DeleteReferencingInstancesOf declares nothing.";
         }
 
     for (auto const& [instanceId, after] : dataAfterUpdate)
@@ -811,7 +915,10 @@ void SchemaUpdateTestFixture::ReadData(DataSnapshot& snapshot) const
             const ECClassId classId = stmt.GetValueId<ECClassId>(1);
             EXPECT_EQ(ecClass->GetId(), classId) << ecsql.c_str() << " returned an instance of another class: " << instanceId.ToHexStr().c_str();
             EXPECT_TRUE(snapshot.find(instanceId) == snapshot.end()) << "Instance " << instanceId.ToHexStr().c_str() << " was returned by more than one ONLY query.";
-            snapshot[instanceId] = InstanceData{classId, ecClass->GetFullName(), ReadValues(stmt, adapter, *ecClass)};
+            InstanceData& instance = snapshot[instanceId];
+            instance.m_classId = classId;
+            instance.m_className = ecClass->GetFullName();
+            instance.m_values = ReadValues(stmt, adapter, *ecClass, &instance.m_navigationValues);
             }
         }
 
@@ -847,6 +954,89 @@ void SchemaUpdateTestFixture::ReadData(DataSnapshot& snapshot) const
             }
 
         EXPECT_EQ(expectedRowCount, rowCount) << ecsql.c_str();
+        }
+
+    VerifyForeignKeyRelationships(snapshot);
+    }
+
+//---------------------------------------------------------------------------------------
+// Every navigation property value is a row of its relationship class. Queries the relationship
+// classes mapped to navigation properties with ONLY and polymorphically and compares the rows
+// with the navigation property values in the snapshot.
+//---------------------------------------------------------------------------------------
+void SchemaUpdateTestFixture::VerifyForeignKeyRelationships(DataSnapshot const& snapshot) const
+    {
+    ECSchemaCP schema = m_ecdb.Schemas().GetSchema(m_schemaName);
+    ASSERT_TRUE(schema != nullptr);
+
+    auto getClassName = [&] (ECClassId classId)
+        {
+        ECClassCP ecClass = m_ecdb.Schemas().GetClass(classId);
+        return ecClass != nullptr ? Utf8String(ecClass->GetFullName()) : Utf8String(Utf8PrintfString("<unknown class %s>", classId.ToHexStr().c_str()));
+        };
+
+    auto formatRow = [&] (ECInstanceId id, ECClassId relClassId, ECInstanceId sourceId, ECClassId sourceClassId, ECInstanceId targetId, ECClassId targetClassId)
+        {
+        return Utf8PrintfString("%s %s, source %s %s, target %s %s", getClassName(relClassId).c_str(), id.ToHexStr().c_str(),
+            getClassName(sourceClassId).c_str(), sourceId.ToHexStr().c_str(), getClassName(targetClassId).c_str(), targetId.ToHexStr().c_str());
+        };
+
+    for (ECClassCP ecClass : schema->GetClasses())
+        {
+        if (!ecClass->IsRelationshipClass() || IsLinkTableRelationshipClass(*ecClass))
+            continue;
+
+        for (const bool onlyThisClass : {false, true})
+            {
+            if (onlyThisClass && !IsConcreteClass(*ecClass))
+                continue;
+
+            std::multiset<Utf8String> expectedRows;
+            for (auto const& [holderId, holder] : snapshot)
+                {
+                ECClassCP holderClass = m_ecdb.Schemas().GetClass(holder.m_classId);
+                if (holderClass == nullptr)
+                    continue;
+
+                for (auto const& [propertyName, navValue] : holder.m_navigationValues)
+                    {
+                    ECClassCP relClass = m_ecdb.Schemas().GetClass(navValue.m_relClassId);
+                    if (relClass == nullptr || (onlyThisClass ? relClass != ecClass : !relClass->Is(ecClass)))
+                        continue;
+
+                    ECPropertyCP prop = holderClass->GetPropertyP(propertyName.c_str());
+                    auto relatedIt = snapshot.find(navValue.m_id);
+                    const ECClassId relatedClassId = relatedIt != snapshot.end() ? relatedIt->second.m_classId : ECClassId();
+                    const bool holderIsSource = prop != nullptr && prop->GetIsNavigation() && prop->GetAsNavigationProperty()->GetDirection() == ECRelatedInstanceDirection::Forward;
+                    expectedRows.insert(holderIsSource ?
+                        formatRow(holderId, navValue.m_relClassId, holderId, holder.m_classId, navValue.m_id, relatedClassId) :
+                        formatRow(holderId, navValue.m_relClassId, navValue.m_id, relatedClassId, holderId, holder.m_classId));
+                    }
+                }
+
+            Utf8PrintfString ecsql("SELECT ECInstanceId,ECClassId,SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId FROM %s%s",
+                onlyThisClass ? "ONLY " : "", ecClass->GetECSqlName().c_str());
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str())) << ecsql.c_str();
+            std::multiset<Utf8String> actualRows;
+            while (BE_SQLITE_ROW == stmt.Step())
+                {
+                actualRows.insert(formatRow(stmt.GetValueId<ECInstanceId>(0), stmt.GetValueId<ECClassId>(1), stmt.GetValueId<ECInstanceId>(2),
+                    stmt.GetValueId<ECClassId>(3), stmt.GetValueId<ECInstanceId>(4), stmt.GetValueId<ECClassId>(5)));
+                }
+
+            for (Utf8StringCR row : expectedRows)
+                {
+                if (actualRows.count(row) != expectedRows.count(row))
+                    ADD_FAILURE() << ecsql.c_str() << " returned " << actualRows.count(row) << " times instead of " << expectedRows.count(row) << ": " << row.c_str();
+                }
+
+            for (Utf8StringCR row : actualRows)
+                {
+                if (expectedRows.count(row) == 0)
+                    ADD_FAILURE() << ecsql.c_str() << " returned a row no navigation property has: " << row.c_str();
+                }
+            }
         }
     }
 

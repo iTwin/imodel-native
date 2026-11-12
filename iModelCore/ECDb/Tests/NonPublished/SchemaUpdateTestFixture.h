@@ -17,6 +17,10 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //! The baseline is a single schema that only references standard schemas like ECDbMap.
 //! Supported: all primitive types, enumerations, structs, primitive and struct arrays, navigation
 //! properties and link table relationships. Arrays of enumerations get plain values that ignore the enumerators.
+//! Instance k of a class relates to candidate (k * (instancesPerClass + 1)) % candidateCount, so the
+//! instances of one class point to instances of different classes. Navigation properties cycle
+//! through the concrete relationship classes of their hierarchy that allow the instance, so derived
+//! relationship classes get instances too. Navigation properties with a NOT NULL column are not supported.
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct SchemaUpdateBaseline final
@@ -45,11 +49,18 @@ struct ExpectedDataChanges final
     {
     private:
         std::set<Utf8String> m_classesWithDeletedInstances;
+        std::set<Utf8String> m_classesWithDeletedReferencingInstances;
 
     public:
         //! @param[in] classFullName Class in the format {SchemaName}:{ClassName}, as it was before the update
         ExpectedDataChanges& DeleteInstancesOf(Utf8CP classFullName) { m_classesWithDeletedInstances.insert(classFullName); return *this; }
+        //! Instances of the class that point to an instance deleted through DeleteInstancesOf, through a navigation
+        //! property or as source or target of a link table relationship, are deleted too, e.g. by a cascading foreign key.
+        //! @param[in] classFullName Class in the format {SchemaName}:{ClassName}, as it was before the update
+        ExpectedDataChanges& DeleteReferencingInstancesOf(Utf8CP classFullName) { m_classesWithDeletedReferencingInstances.insert(classFullName); return *this; }
         bool AreInstancesDeleted(Utf8StringCR classFullName) const { return m_classesWithDeletedInstances.find(classFullName) != m_classesWithDeletedInstances.end(); }
+        bool AreReferencingInstancesDeleted(Utf8StringCR classFullName) const { return m_classesWithDeletedReferencingInstances.find(classFullName) != m_classesWithDeletedReferencingInstances.end(); }
+        std::set<Utf8String> const& GetClassesWithDeletedReferencingInstances() const { return m_classesWithDeletedReferencingInstances; }
     };
 
 enum class SchemaVersionChange
@@ -78,11 +89,19 @@ enum class SchemaVersionChange
 //! - each concrete class with ONLY and an explicit property list
 //! - each class, including abstract classes and mixins, polymorphically
 //! Classes are entity classes and link table relationship classes. Relationships mapped to
-//! navigation properties are covered by reading those properties.
+//! navigation properties are covered by reading those properties, and their relationship classes
+//! are queried with ONLY and polymorphically, which has to return a row per navigation property value.
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct SchemaUpdateTestFixture : ECDbTestFixture
     {
+    public:
+        struct NavigationValue final
+            {
+            ECInstanceId m_id;
+            ECN::ECClassId m_relClassId;
+            };
+
     protected:
         struct InstanceData final
             {
@@ -90,6 +109,8 @@ struct SchemaUpdateTestFixture : ECDbTestFixture
             Utf8String m_className;
             //! Property name to the property value as JSON. NULL values are left out.
             std::map<Utf8String, Utf8String> m_values;
+            //! Navigation property name to its value. NULL values are left out.
+            std::map<Utf8String, NavigationValue> m_navigationValues;
             };
 
         using DataSnapshot = std::map<ECInstanceId, InstanceData>;
@@ -104,6 +125,7 @@ struct SchemaUpdateTestFixture : ECDbTestFixture
         bool m_isRejectionReasonVerified = false;
 
         void ReadData(DataSnapshot&) const;
+        void VerifyForeignKeyRelationships(DataSnapshot const&) const;
         Utf8String GetPersistedSchemaXml() const;
         void VerifyIntegrity() const;
         void ExpectNoRows(Utf8CP ecsql) const;
@@ -114,6 +136,9 @@ struct SchemaUpdateTestFixture : ECDbTestFixture
     protected:
         //! Opens a copy of the baseline as m_ecdb and reads its data as the state before the update.
         BentleyStatus SetupFromBaseline(SchemaUpdateBaseline const&);
+
+        //! Runs an ECSQL statement that changes the baseline data for this test, then reads the data again as the state before the update.
+        void ChangeDataBeforeUpdate(Utf8CP ecsql);
 
         //! Imports the schema XML. The harness sets the schema version relative to the persisted one.
         //! VerifyPersistedSchemas is always added to the options, so an update that is accepted but not stored as imported fails.
