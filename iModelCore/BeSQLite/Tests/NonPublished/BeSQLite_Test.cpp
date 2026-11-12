@@ -80,6 +80,29 @@ TEST_F(BeIdSetTests, ToString)
     ExpectCompressed(MakeIdSet({0, 0x1, 0x4, 0x5abc}), "+1+3+5AB8");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BeIdSetTests, FromReadableStringAtMaxId)
+    {
+    auto expectIds = [](Utf8CP str, BeIdSet const& expected)
+        {
+        BeIdSet ids;
+        ids.FromString(str);
+        EXPECT_TRUE(ids == expected) << str << " Actual: " << ids.ToString().c_str();
+        };
+
+    // Ranges ending at UINT64_MAX must not wrap around and expand forever.
+    expectIds("18446744073709551615", MakeIdSet({0xffffffffffffffffULL}));
+    expectIds("-1", MakeIdSet({0xffffffffffffffffULL}));
+    expectIds("18446744073709551615-18446744073709551615", MakeIdSet({0xffffffffffffffffULL}));
+    expectIds("18446744073709551613-18446744073709551615", MakeIdSet({0xfffffffffffffffdULL, 0xfffffffffffffffeULL, 0xffffffffffffffffULL}));
+    expectIds("18446744073709551615-18446744073709551614,1", MakeIdSet({0x1ULL, 0xfffffffffffffffeULL, 0xffffffffffffffffULL}));
+
+    BeIdSet maxIds = MakeIdSet({0x1ULL, 0xfffffffffffffffeULL, 0xffffffffffffffffULL});
+    expectIds(maxIds.ToString().c_str(), maxIds);
+    }
+
     enum {
         TEST_DATA_SIZE = 160 * K,
     };
