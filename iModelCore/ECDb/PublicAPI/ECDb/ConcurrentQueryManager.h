@@ -215,16 +215,16 @@ class ECSqlParams final {
             ECDB_EXPORT DPoint2d GetValuePoint2d() const;
             ECDB_EXPORT DPoint3d GetValuePoint3d() const;
             ECDB_EXPORT bvector<Byte> GetValueBlob() const;
-            //! Throws std::runtime_error if the value is malformed or holds more Ids than ConcurrentQueryMgr::Config::GetMaxIdSetCount() allows.
+            //! Throws std::runtime_error if the value is malformed or holds more than ECSqlParams::MaxIdSetCount Ids.
             ECDB_EXPORT BeIdSet GetValueIdSet() const;
-            //! Returns false, with @p err set, if the value is malformed or holds more Ids than ConcurrentQueryMgr::Config::GetMaxIdSetCount() allows.
-            ECDB_EXPORT bool TryGetValueIdSet(BeIdSet& ids, std::string& err) const;
     };
     private:
         static constexpr auto JType = "type";
         static constexpr auto JValue = "value";
         std::map<std::string, ECSqlParam> m_params;
     public:
+        //! Maximum number of Ids that the IdSet parameters bound to one statement may hold in total.
+        static constexpr uint64_t MaxIdSetCount = 1000000;
         ECSqlParams(){}
         ECSqlParams(ECSqlParams && rhs): m_params(std::move(rhs.m_params)) {}
         ECSqlParams(const ECSqlParams& rhs): m_params(rhs.m_params) {}
@@ -262,11 +262,14 @@ class ECSqlParams final {
         ECDB_EXPORT void FromJs(BeJsConst val);
         ECDB_EXPORT std::vector<std::string> GetKeys() const;
         ECDB_EXPORT bool TryBindTo(ECSqlStatement& stmt, std::string& err) const;
-        ECDB_EXPORT static bool TryBindParameter(ECSqlStatement& stmt, std::string const& name, ECSqlParam::Type type, BeJsConst value, std::string& err);
+        //! Binds one parameter. IdSet values are counted without being expanded, and fail to bind if they hold more than
+        //! @p idSetBudget Ids, which is reduced by the count on success. Share one budget, starting at MaxIdSetCount, across
+        //! all parameters of a statement.
+        ECDB_EXPORT static bool TryBindParameter(ECSqlStatement& stmt, std::string const& name, ECSqlParam::Type type, BeJsConst value, uint64_t& idSetBudget, std::string& err);
         //! Counts the Ids in a compact ("+1*3+2") or readable ("1-3,5") Id set string, as accepted by BeIdSet::FromString,
-        //! without expanding it. Returns false, with @p err set, if the string is malformed, if the Ids it encodes would
-        //! overflow 64 bits, or if it holds more than @p maxCount Ids. Readable ranges are counted without removing duplicates.
-        ECDB_EXPORT static bool TryCountIdSet(Utf8CP idSet, uint64_t maxCount, uint64_t& count, std::string& err);
+        //! without expanding it. Readable ranges are counted without removing duplicates. Returns false, with @p err set, if
+        //! the string is malformed, or if the Ids it encodes or their count would overflow 64 bits.
+        ECDB_EXPORT static bool TryCountIdSet(Utf8CP idSet, uint64_t& count, std::string& err);
         ECDB_EXPORT std::string GetCacheKey() const;
 };
 
@@ -562,7 +565,6 @@ struct ConcurrentQueryMgr final {
          static constexpr auto JEnableCursors = "enableCursors";
          static constexpr auto JMaxCursorsPerWorker = "maxCursorsPerWorker";
          static constexpr auto JCursorIdleTimeout = "cursorIdleTimeout";
-         static constexpr auto JMaxIdSetCount = "maxIdSetCount";
      private:
          QueryQuota m_quota;
          uint32_t m_workerThreadCount;
@@ -584,7 +586,6 @@ struct ConcurrentQueryMgr final {
          bool m_enableCursors = true;
          int32_t m_maxCursorsPerWorker = -1;
          std::chrono::seconds m_cursorIdleTimeout = 30s;
-         uint32_t m_maxIdSetCount;
      public:
         ECDB_EXPORT Config();
         ECDB_EXPORT bool Equals(Config const& rhs) const;
@@ -609,9 +610,6 @@ struct ConcurrentQueryMgr final {
         Config& SetEnableCursors(bool enabled) { m_enableCursors = enabled; return *this; }
         Config& SetMaxCursorsPerWorker(int32_t count) { m_maxCursorsPerWorker = count; return *this; }
         Config& SetCursorIdleTimeout(std::chrono::seconds timeout) { m_cursorIdleTimeout = timeout; return *this; }
-        //! Maximum number of Ids an IdSet query parameter may hold. Larger sets fail to bind.
-        uint32_t GetMaxIdSetCount() const { return m_maxIdSetCount; }
-        Config& SetMaxIdSetCount(uint32_t count) { m_maxIdSetCount = count; return *this; }
         Config& SetProgressOpCount(uint32_t progressOpCount) { m_progressOpCount = progressOpCount; return *this;}
         Config& SetIgnoreDelay(bool ignoreDelay) {
             m_ignoreDelay = ignoreDelay;

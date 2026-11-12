@@ -3403,58 +3403,47 @@ TEST_F(ConcurrentQueryFixture, CancelAfterCompletionIsSafe) {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ConcurrentQueryFixture, IdSetCountWithoutExpanding) {
-    auto count = [](Utf8CP str, uint64_t maxCount, uint64_t& n) {
+    auto count = [](Utf8CP str, uint64_t& n) {
         std::string err;
-        const bool ok = ECSqlParams::TryCountIdSet(str, maxCount, n, err);
+        const bool ok = ECSqlParams::TryCountIdSet(str, n, err);
         EXPECT_EQ(ok, err.empty()) << str;
         return ok;
     };
     uint64_t n = 0;
     const uint64_t max = std::numeric_limits<uint64_t>::max();
 
-    // Within limit, including the exact limit.
     for (auto const& entry : std::vector<std::pair<Utf8CP, uint64_t>>{
             {"", 0}, {"+1", 1}, {"+1*3+2", 4}, {"+A*4", 4}, {"+0001*2", 2}, {"1", 1}, {"1-3,10", 4}, {"3-1", 3}, {"0-3", 4}, {"-1", 1},
-            {"+7FFFFF0000000001+10000000000+7FFFF60000000000", 3}, {"+FFFFFFFFFFFFFFFF", 1}, {"18446744073709551615", 1}}) {
-        EXPECT_TRUE(count(entry.first, 4, n)) << entry.first;
+            {"+7FFFFF0000000001+10000000000+7FFFF60000000000", 3}, {"+FFFFFFFFFFFFFFFF", 1}, {"18446744073709551615", 1}, {"+1*F4241", 1000001}}) {
+        EXPECT_TRUE(count(entry.first, n)) << entry.first;
         EXPECT_EQ(entry.second, n) << entry.first;
     }
     BeIdSet roundTrip;
     for (uint64_t id = 1; id <= 1000; id += (id % 7) + 1)
         roundTrip.insert(BeInt64Id(id));
-    EXPECT_TRUE(count(roundTrip.ToCompactString().c_str(), roundTrip.size(), n));
+    EXPECT_TRUE(count(roundTrip.ToCompactString().c_str(), n));
     EXPECT_EQ(roundTrip.size(), n);
-    EXPECT_TRUE(count(roundTrip.ToString().c_str(), roundTrip.size(), n));
+    EXPECT_TRUE(count(roundTrip.ToString().c_str(), n));
     EXPECT_EQ(roundTrip.size(), n);
-    EXPECT_FALSE(count(roundTrip.ToCompactString().c_str(), roundTrip.size() - 1, n));
-    EXPECT_FALSE(count(roundTrip.ToString().c_str(), roundTrip.size() - 1, n));
 
-    // Exceeding the limit, compact and readable.
-    for (Utf8CP str : {"+1*5", "+1+1+1+1+1", "+1*4+1", "1-5", "5-1", "1,2,3,4,5", "1-4,9"}) {
-        std::string err;
-        EXPECT_FALSE(ECSqlParams::TryCountIdSet(str, 4, n, err)) << str;
-        EXPECT_NE(std::string::npos, err.find("maximum of 4 Ids")) << str << ": " << err;
+    // Huge multipliers and ranges are counted without being expanded.
+    for (auto const& entry : std::vector<std::pair<Utf8CP, uint64_t>>{
+            {"+1*FFFFFFFF", 0xFFFFFFFFull}, {"1-4294967296", 4294967296ull}, {"+1*FFFFFFFFFFFFFFFF", max},
+            {"1-18446744073709551615", max}, {"0-18446744073709551614", max}}) {
+        EXPECT_TRUE(count(entry.first, n)) << entry.first;
+        EXPECT_EQ(entry.second, n) << entry.first;
     }
-    for (Utf8CP str : {"+1", "1"})
-        EXPECT_FALSE(count(str, 0, n)) << str;
 
-    // Huge multipliers and ranges are rejected without being expanded, even when the limit is the maximum.
-    for (Utf8CP str : {"+1*FFFFFFFFFFFFFFFF", "+1*FFFFFFFF", "1-18446744073709551615", "0-18446744073709551615", "1-4294967296"})
-        EXPECT_FALSE(count(str, DEFAULT_MAX_IDSET_COUNT, n)) << str;
-    EXPECT_FALSE(count("+1*FFFFFFFFFFFFFFFF+1", max, n));
-    EXPECT_FALSE(count("0-18446744073709551615,1", max, n));
-    EXPECT_TRUE(count("0-18446744073709551614", max, n));
-    EXPECT_EQ(max, n);
-
-    // Overflow of the cumulative Id or of a single number.
-    for (Utf8CP str : {"+FFFFFFFFFFFFFFFF+1", "+8000000000000000*2", "+2*8000000000000000", "+10000000000000000", "+1*10000000000000000",
+    // Overflow of the count, the cumulative Id, or a single number.
+    for (Utf8CP str : {"0-18446744073709551615", "0-18446744073709551614,1", "+1*FFFFFFFFFFFFFFFF+1", "+FFFFFFFFFFFFFFFF+1",
+                       "+8000000000000000*2", "+2*8000000000000000", "+10000000000000000", "+1*10000000000000000",
                        "18446744073709551616", "99999999999999999999-1"})
-        EXPECT_FALSE(count(str, max, n)) << str;
+        EXPECT_FALSE(count(str, n)) << str;
 
     // Malformed.
     for (Utf8CP str : {"+", "+0", "+1*0", "+1*", "+1+", "+1++2", "+1**2", "+1*2*3", "+a", "+1x", "+1,2", " +1", "+ 1",
                        "-", "1-", "-1-", "1--", "1,", ",1", "1,,2", "1 2", " 1", "1-2-3", "abc", "1;2", "0x10"})
-        EXPECT_FALSE(count(str, max, n)) << str;
+        EXPECT_FALSE(count(str, n)) << str;
 }
 
 //---------------------------------------------------------------------------------------
@@ -3462,31 +3451,32 @@ TEST_F(ConcurrentQueryFixture, IdSetCountWithoutExpanding) {
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ConcurrentQueryFixture, IdSetParamLimit) {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("idset_param_limit.ecdb"));
-    auto config = ConcurrentQueryMgr::Config::GetDefault();
-    ASSERT_EQ((uint32_t) DEFAULT_MAX_IDSET_COUNT, config.GetMaxIdSetCount());
-    ASSERT_EQ(1000000u, config.GetMaxIdSetCount());
-    ConcurrentQueryMgr::Config::Reset(config);
+    ASSERT_EQ(1000000u, ECSqlParams::MaxIdSetCount);
 
-    auto run = [&](Utf8CP ecsql, Utf8CP idSet) {
+    auto run = [&](Utf8CP ecsql, std::vector<Utf8CP> const& idSets) {
         BeJsDocument args;
-        args.Parse(Utf8PrintfString(R"json({"1":{"type":3,"value":"%s"}})json", idSet).c_str());
+        for (size_t i = 0; i < idSets.size(); ++i) {
+            auto arg = args[std::to_string(i + 1)];
+            arg["type"] = (int) ECSqlParams::ECSqlParam::Type::IdSet;
+            arg["value"] = idSets[i];
+        }
         QueryResponse::Ptr r;
         ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
             r = mgr.Enqueue(ECSqlRequest::MakeRequest(ecsql, ECSqlParams(args))).Get();
         });
         return r;
     };
-    auto expectRows = [&](Utf8CP ecsql, Utf8CP idSet, int expected) {
-        auto r = run(ecsql, idSet);
-        ASSERT_EQ(QueryResponse::Status::Done, r->GetStatus()) << ecsql << " " << idSet << ": " << r->GetError();
+    auto expectRows = [&](Utf8CP ecsql, std::vector<Utf8CP> const& idSets, int expected) {
+        auto r = run(ecsql, idSets);
+        ASSERT_EQ(QueryResponse::Status::Done, r->GetStatus()) << ecsql << " " << idSets[0] << ": " << r->GetError();
         BeJsDocument rows(r->GetAsConst<ECSqlResponse>().asJsonString());
-        EXPECT_EQ(expected, (int) rows.size()) << ecsql << " " << idSet;
+        EXPECT_EQ(expected, (int) rows.size()) << ecsql << " " << idSets[0];
     };
-    auto expectBindingFailed = [&](Utf8CP ecsql, Utf8CP idSet, Utf8CP message) {
-        auto r = run(ecsql, idSet);
-        ASSERT_EQ(QueryResponse::Status::Error_ECSql_BindingFailed, r->GetStatus()) << ecsql << " " << idSet;
+    auto expectBindingFailed = [&](Utf8CP ecsql, std::vector<Utf8CP> const& idSets, Utf8CP message, Utf8CP paramName = "'1'") {
+        auto r = run(ecsql, idSets);
+        ASSERT_EQ(QueryResponse::Status::Error_ECSql_BindingFailed, r->GetStatus()) << ecsql << " " << idSets[0];
         EXPECT_NE(std::string::npos, r->GetError().find(message)) << r->GetError();
-        EXPECT_NE(std::string::npos, r->GetError().find("'1'")) << r->GetError();
+        EXPECT_NE(std::string::npos, r->GetError().find(paramName)) << r->GetError();
     };
 
     // Covers both the IdSet virtual table (array binder) and InVirtualSet (virtual set binder).
@@ -3494,85 +3484,58 @@ TEST_F(ConcurrentQueryFixture, IdSetParamLimit) {
         "SELECT id FROM IdSet(?)",
         "WITH cnt(x) AS (VALUES(1) UNION SELECT x+1 FROM cnt WHERE x < 10) SELECT x FROM cnt WHERE InVirtualSet(?, x)"};
     for (Utf8CP ecsql : queries) {
-        expectRows(ecsql, "+1*3", 3);
-        expectRows(ecsql, "1-3", 3);
+        expectRows(ecsql, {"+1*3"}, 3);
+        expectRows(ecsql, {"1-3"}, 3);
         for (Utf8CP idSet : {"+1*FFFFFFFFFFFFFFFF", "+1*F4241", "1-18446744073709551615", "1-1000001"})
-            expectBindingFailed(ecsql, idSet, "maximum of 1000000 Ids");
-        for (Utf8CP idSet : {"+FFFFFFFFFFFFFFFF+1", "+1*", "1-"})
-            expectBindingFailed(ecsql, idSet, "not a valid Id set string");
+            expectBindingFailed(ecsql, {idSet}, "maximum of 1000000 Ids");
+        for (Utf8CP idSet : {"+FFFFFFFFFFFFFFFF+1", "+1*", "1-", "0-18446744073709551615"})
+            expectBindingFailed(ecsql, {idSet}, "not a valid Id set string");
     }
+    expectRows(queries[1], {"1-1000000"}, 10);
+
+    // The limit applies to the total across all IdSet parameters of a statement.
+    Utf8CP const twoParams = "WITH cnt(x) AS (VALUES(1) UNION SELECT x+1 FROM cnt WHERE x < 10) SELECT x FROM cnt WHERE InVirtualSet(?, x) OR InVirtualSet(?, x + 5)";
+    expectRows(twoParams, {"1-500000", "1-500000"}, 10);
+    expectRows(twoParams, {"+1*7A120", "1-500000"}, 10);
+    expectBindingFailed(twoParams, {"1-500000", "1-500001"}, "maximum of 1000000 Ids", "'2'");
+    expectBindingFailed(twoParams, {"+1*7A121", "+1*7A120"}, "maximum of 1000000 Ids", "'2'");
+    expectBindingFailed(twoParams, {"1-1000001", "1"}, "maximum of 1000000 Ids", "'1'");
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, twoParams));
+    uint64_t budget = ECSqlParams::MaxIdSetCount;
+    std::string err;
+    BeJsDocument first("\"1-600000\"");
+    BeJsDocument second("\"1-400001\"");
+    EXPECT_TRUE(ECSqlParams::TryBindParameter(stmt, "1", ECSqlParams::ECSqlParam::Type::IdSet, first, budget, err)) << err;
+    EXPECT_EQ(400000u, budget);
+    EXPECT_FALSE(ECSqlParams::TryBindParameter(stmt, "2", ECSqlParams::ECSqlParam::Type::IdSet, second, budget, err));
+    EXPECT_NE(std::string::npos, err.find("maximum of 1000000 Ids")) << err;
+    EXPECT_EQ(400000u, budget);
 
     // Values at UINT64_MAX count as one Id each and expand to exactly that many.
     for (Utf8CP idSet : {"18446744073709551615", "-1"}) {
-        expectRows(queries[0], idSet, 1);
-        expectRows(queries[1], idSet, 0);
+        expectRows(queries[0], {idSet}, 1);
+        expectRows(queries[1], {idSet}, 0);
     }
-    expectRows(queries[0], "18446744073709551614-18446744073709551615", 2);
-    expectRows(queries[0], "-2--1", 2);
-    expectRows(queries[1], "-2--1,1-2", 2);
+    expectRows(queries[0], {"18446744073709551614-18446744073709551615"}, 2);
+    expectRows(queries[0], {"-2--1"}, 2);
+    expectRows(queries[1], {"-2--1,1-2"}, 2);
     for (auto const& entry : std::vector<std::pair<Utf8CP, size_t>>{{"18446744073709551615", 1}, {"-1", 1}, {"-2--1", 2}}) {
         BeJsDocument args(Utf8PrintfString(R"json({"1":{"type":3,"value":"%s"}})json", entry.first).c_str());
         ECSqlParams params(args);
-        BeIdSet ids;
-        std::string err;
-        EXPECT_TRUE(params.GetParam(1).TryGetValueIdSet(ids, err)) << entry.first << ": " << err;
+        BeIdSet ids = params.GetParam(1).GetValueIdSet();
         EXPECT_EQ(entry.second, ids.size()) << entry.first;
         EXPECT_NE(ids.end(), ids.find(BeInt64Id(std::numeric_limits<uint64_t>::max()))) << entry.first;
     }
 
-    // The limit can be overridden.
-    BeJsDocument json(R"json({"maxIdSetCount":3})json");
-    config = ConcurrentQueryMgr::Config::From(json);
-    ASSERT_EQ(3u, config.GetMaxIdSetCount());
-    ConcurrentQueryMgr::Config::Reset(config);
-    for (Utf8CP ecsql : queries) {
-        expectRows(ecsql, "+1*3", 3);
-        expectRows(ecsql, "1,2,3", 3);
-        expectBindingFailed(ecsql, "+1*4", "maximum of 3 Ids");
-        expectBindingFailed(ecsql, "1-4", "maximum of 3 Ids");
+    for (Utf8CP idSet : {"+1*F4241", "1-1000001", "+1*"}) {
+        BeJsDocument args(Utf8PrintfString(R"json({"1":{"type":3,"value":"%s"}})json", idSet).c_str());
+        ECSqlParams params(args);
+        EXPECT_THROW(params.GetParam(1).GetValueIdSet(), std::runtime_error) << idSet;
     }
-
-    BeJsDocument args(R"json({"1":{"type":3,"value":"+1*4"}})json");
-    ECSqlParams params(args);
-    BeIdSet ids;
-    std::string err;
-    EXPECT_FALSE(params.GetParam(1).TryGetValueIdSet(ids, err));
-    EXPECT_TRUE(ids.empty());
-    EXPECT_THROW(params.GetParam(1).GetValueIdSet(), std::runtime_error);
-    config.SetMaxIdSetCount(4);
-    ConcurrentQueryMgr::Config::Reset(config);
-    EXPECT_TRUE(params.GetParam(1).TryGetValueIdSet(ids, err)) << err;
-    EXPECT_EQ(4u, ids.size());
-    EXPECT_EQ(4u, params.GetParam(1).GetValueIdSet().size());
-    ConcurrentQueryMgr::Config::Reset(std::nullopt);
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ConcurrentQueryFixture, IdSetParamLimitConfig) {
-    auto const env = ConcurrentQueryMgr::Config::GetFromEnv();
-    BeJsDocument val(R"json({"maxIdSetCount":25})json");
-    auto config = ConcurrentQueryMgr::Config::From(val);
-    EXPECT_EQ(25u, config.GetMaxIdSetCount());
-    EXPECT_FALSE(config.Equals(ConcurrentQueryMgr::Config::GetDefault()));
-    BeJsDocument serialized;
-    config.To(serialized);
-    EXPECT_EQ(25u, serialized["maxIdSetCount"].asUInt());
-    EXPECT_TRUE(config.Equals(ConcurrentQueryMgr::Config::From(serialized)));
-
-    BeJsDocument defaults;
-    ConcurrentQueryMgr::Config::GetDefault().To(defaults);
-    EXPECT_EQ(1000000u, defaults["maxIdSetCount"].asUInt());
-
-    BeJsDocument maxVal(R"json({"maxIdSetCount":4294967295})json");
-    EXPECT_EQ(std::numeric_limits<uint32_t>::max(), ConcurrentQueryMgr::Config::From(maxVal).GetMaxIdSetCount());
-
-    for (Utf8CP json : {R"json({"maxIdSetCount":0})json", R"json({"maxIdSetCount":-1})json", R"json({"maxIdSetCount":1.5})json",
-                        R"json({"maxIdSetCount":4294967296})json", R"json({"maxIdSetCount":"10"})json", R"json({"maxIdSetCount":null})json"}) {
-        BeJsDocument input(json);
-        EXPECT_EQ(env.GetMaxIdSetCount(), ConcurrentQueryMgr::Config::From(input).GetMaxIdSetCount()) << json;
-    }
+    BeJsDocument atLimit(R"json({"1":{"type":3,"value":"+1*F4240"}})json");
+    EXPECT_EQ(1000000u, ECSqlParams(atLimit).GetParam(1).GetValueIdSet().size());
 }
 
 END_ECDBUNITTESTS_NAMESPACE

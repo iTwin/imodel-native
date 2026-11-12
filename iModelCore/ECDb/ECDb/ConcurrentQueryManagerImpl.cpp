@@ -2699,24 +2699,17 @@ bvector<Byte> ECSqlParams::ECSqlParam::GetValueBlob() const {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 BeIdSet ECSqlParams::ECSqlParam::GetValueIdSet() const {
-    BeIdSet set;
-    std::string err;
-    if (!TryGetValueIdSet(set, err))
-        throw std::runtime_error(err);
-    return set;
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-bool ECSqlParams::ECSqlParam::TryGetValueIdSet(BeIdSet& ids, std::string& err) const {
     BeAssert(m_type == Type::IdSet);
     uint64_t count;
+    std::string err;
     Utf8CP str = m_val.asCString();
-    if (!TryCountIdSet(str, ConcurrentQueryMgr::Config::Get().GetMaxIdSetCount(), count, err))
-        return false;
-    ids.FromString(str);
-    return true;
+    if (!TryCountIdSet(str, count, err))
+        throw std::runtime_error(err);
+    if (count > MaxIdSetCount)
+        throw std::runtime_error(SqlPrintfString("IdSet parameter holds more than the maximum of %" PRIu64 " Ids", MaxIdSetCount).GetUtf8CP());
+    BeIdSet set;
+    set.FromString(str);
+    return set;
 }
 
 //---------------------------------------------------------------------------------------
@@ -2759,7 +2752,7 @@ static bool ParseIdSetDecimal(Utf8CP& p, uint64_t& value) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-bool ECSqlParams::TryCountIdSet(Utf8CP idSet, uint64_t maxCount, uint64_t& count, std::string& err) {
+bool ECSqlParams::TryCountIdSet(Utf8CP idSet, uint64_t& count, std::string& err) {
     count = 0;
     if (idSet == nullptr || *idSet == '\0')
         return true;
@@ -2768,14 +2761,12 @@ bool ECSqlParams::TryCountIdSet(Utf8CP idSet, uint64_t maxCount, uint64_t& count
         err = "IdSet parameter value is not a valid Id set string";
         return false;
     };
-    auto tooMany = [&]() {
-        err = SqlPrintfString("IdSet parameter holds more than the maximum of %" PRIu64 " Ids", maxCount).GetUtf8CP();
-        return false;
-    };
+    const uint64_t maxCount = std::numeric_limits<uint64_t>::max();
 
     Utf8CP p = idSet;
     if (*p == '+') {
         // Compact form: +increment[*multiplier]... where each run adds `multiplier` Ids, each `increment` past the previous.
+        // The count cannot overflow: each Id is at least 1 past the previous, and the last Id is checked below.
         uint64_t prev = 0;
         ++p;
         while (true) {
@@ -2787,9 +2778,7 @@ bool ECSqlParams::TryCountIdSet(Utf8CP idSet, uint64_t maxCount, uint64_t& count
                 if (!ParseIdSetHex(p, mult) || mult == 0)
                     return malformed();
             }
-            if (mult > maxCount - count)
-                return tooMany();
-            if (increment > (std::numeric_limits<uint64_t>::max() - prev) / mult)
+            if (increment > (maxCount - prev) / mult)
                 return malformed();
             prev += increment * mult;
             count += mult;
@@ -2815,7 +2804,7 @@ bool ECSqlParams::TryCountIdSet(Utf8CP idSet, uint64_t maxCount, uint64_t& count
             std::swap(first, last);
         // The range holds last - first + 1 Ids; compare without adding 1, which can overflow.
         if (last - first >= maxCount - count)
-            return tooMany();
+            return malformed();
         count += last - first + 1;
         if (*p == '\0')
             return true;
@@ -2919,15 +2908,16 @@ void ECSqlParams::FromJs(BeJsConst val) {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 bool ECSqlParams::TryBindTo(ECSqlStatement& stmt, std::string& err) const {
+    uint64_t idSetBudget = MaxIdSetCount;
     for (auto const& kp : m_params) {
         auto const& param = kp.second;
-        if (!TryBindParameter(stmt, param.GetName(), param.GetType(), param.GetValue(), err))
+        if (!TryBindParameter(stmt, param.GetName(), param.GetType(), param.GetValue(), idSetBudget, err))
             return false;
     }
     return true;
 }
 
-bool ECSqlParams::TryBindParameter(ECSqlStatement& stmt, std::string const& name, ECSqlParam::Type type, BeJsConst value, std::string& err) {
+bool ECSqlParams::TryBindParameter(ECSqlStatement& stmt, std::string const& name, ECSqlParam::Type type, BeJsConst value, uint64_t& idSetBudget, std::string& err) {
     const int parsedIndex = ParseParameterIndex(name.c_str());
     const bool isIndexed = parsedIndex != -1;
     int index = isIndexed ? parsedIndex : stmt.GetParameterIndex(name.c_str());
@@ -2948,10 +2938,15 @@ bool ECSqlParams::TryBindParameter(ECSqlStatement& stmt, std::string const& name
             st = stmt.BindId(index, BeInt64Id::FromString(value.asCString())); break;
         case ECSqlParam::Type::IdSet: {
             uint64_t idCount;
-            if (!TryCountIdSet(value.asCString(), ConcurrentQueryMgr::Config::Get().GetMaxIdSetCount(), idCount, err)) {
+            if (!TryCountIdSet(value.asCString(), idCount, err)) {
                 err = SqlPrintfString("failed to bind param '%s': %s", name.c_str(), err.c_str()).GetUtf8CP();
                 return false;
             }
+            if (idCount > idSetBudget) {
+                err = SqlPrintfString("failed to bind param '%s': IdSet parameters hold more than the maximum of %" PRIu64 " Ids", name.c_str(), MaxIdSetCount).GetUtf8CP();
+                return false;
+            }
+            idSetBudget -= idCount;
             BeIdSet values;
             values.FromString(value.asCString());
             BinderInfo const& binderInfo = stmt.GetBinderInfo(index);
@@ -3065,8 +3060,7 @@ ConcurrentQueryMgr::Config::Config():
     m_autoShutdownWhenIdleForSeconds(DEFAULT_SHUTDOWN_WHEN_IDLE_FOR_SECONDS),
     m_monitorPollInterval(std::chrono::milliseconds(DEFAULT_MONITOR_POLL_INTERVAL)),
     m_progressOpCount(DEFAULT_PROGRESS_OP_COUNT),
-    m_statementCacheSizePerWorker(DEFAULT_STATEMENT_CACHE_SIZE_PER_WORKER), m_memoryMapFileSize(0),
-    m_maxIdSetCount(DEFAULT_MAX_IDSET_COUNT){
+    m_statementCacheSizePerWorker(DEFAULT_STATEMENT_CACHE_SIZE_PER_WORKER), m_memoryMapFileSize(0){
 }
 
 //---------------------------------------------------------------------------------------
@@ -3106,8 +3100,6 @@ bool ConcurrentQueryMgr::Config::Equals(Config const& rhs) const {
         return false;
     if (m_enableCursors != rhs.GetEnableCursors() || m_maxCursorsPerWorker != rhs.GetMaxCursorsPerWorker() ||
         m_cursorIdleTimeout != rhs.GetCursorIdleTimeout())
-        return false;
-    if (m_maxIdSetCount != rhs.GetMaxIdSetCount())
         return false;
     return true;
 }
@@ -3159,7 +3151,6 @@ void ConcurrentQueryMgr::Config::To(BeJsValue val) const {
     val[Config::JEnableCursors] = GetEnableCursors();
     val[Config::JMaxCursorsPerWorker] = GetMaxCursorsPerWorker();
     val[Config::JCursorIdleTimeout] = static_cast<uint32_t>(GetCursorIdleTimeout().count());
-    val[Config::JMaxIdSetCount] = GetMaxIdSetCount();
     auto quota = val[Config::JQuota];
     m_quota.ToJs(quota);
 }
@@ -3262,13 +3253,6 @@ ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::From(BeJsValue val) {
             log_error("cursorIdleTimeout must be a positive integer number of seconds");
         else
             config.SetCursorIdleTimeout(std::chrono::seconds(static_cast<int64_t>(timeout)));
-    }
-    if (val.isMember(Config::JMaxIdSetCount)) {
-        const auto count = val.isNumericMember(Config::JMaxIdSetCount) ? val[Config::JMaxIdSetCount].asDouble() : 0.0;
-        if (!std::isfinite(count) || count < 1 || count > std::numeric_limits<uint32_t>::max() || std::floor(count) != count)
-            log_error("maxIdSetCount must be a positive integer no greater than 4294967295");
-        else
-            config.SetMaxIdSetCount(static_cast<uint32_t>(count));
     }
     return config;
 }
