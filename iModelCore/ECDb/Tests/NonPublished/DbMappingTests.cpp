@@ -3726,6 +3726,224 @@ TEST_F(DbMappingTestFixture, PropertyOverriding)
 //---------------------------------------------------------------------------------------
 // @bsiMethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, CustomAttributeSqlIdentifiersAreValidated)
+    {
+    // If embedded into SQL unchecked, these names would end the quoted identifier or string and add a statement.
+    Utf8CP bracketPayload = "x]; CREATE TABLE pwned(Id INTEGER); --";
+    Utf8CP quotePayload = "te_Gadget'); CREATE TABLE pwned(Id INTEGER); --";
+
+    TestIssueListener issueListener;
+    auto importSchema = [&] (Utf8CP fileName, Utf8StringCR schemaXml, Utf8CP setupSql)
+        {
+        EXPECT_EQ(BE_SQLITE_OK, SetupECDb(fileName));
+        if (setupSql != nullptr)
+            EXPECT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(setupSql));
+
+        issueListener.ClearIssues();
+        m_ecdb.AddIssueListener(issueListener);
+        const BentleyStatus status = ImportSchema(SchemaItem(schemaXml));
+        m_ecdb.RemoveIssueListener();
+        return status;
+        };
+
+    auto expectAccepted = [&] (Utf8CP fileName, Utf8StringCR schemaXml, Utf8CP setupSql = nullptr)
+        {
+        EXPECT_EQ(SUCCESS, importSchema(fileName, schemaXml, setupSql)) << issueListener.GetLastMessage().c_str();
+        };
+
+    auto expectRejected = [&] (Utf8CP fileName, Utf8StringCR schemaXml, Utf8CP setupSql = nullptr)
+        {
+        EXPECT_EQ(ERROR, importSchema(fileName, schemaXml, setupSql));
+        const bool rejectedForIdentifier = std::any_of(issueListener.m_issues.begin(), issueListener.m_issues.end(),
+            [] (ReportedIssue const& issue) { return Utf8String(issue.id.m_issueId).Equals("ECDb_0750"); });
+        EXPECT_TRUE(rejectedForIdentifier) << issueListener.GetLastMessage().c_str();
+        EXPECT_FALSE(m_ecdb.TableExists("pwned"));
+        };
+
+    // ClassMap.TableName, ClassMap.ECInstanceIdColumn and PropertyMap.ColumnName with MapStrategy ExistingTable
+    {
+    Utf8CP createExistingTableSql = "CREATE TABLE te_Gadget(Id INTEGER PRIMARY KEY, Label TEXT, Score INTEGER)";
+    Utf8CP schemaTemplate = R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestExisting" alias="te" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+        <ECEntityClass typeName="Gadget" modifier="Sealed">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>ExistingTable</MapStrategy>
+                    <TableName>%s</TableName>
+                    <ECInstanceIdColumn>%s</ECInstanceIdColumn>
+                </ClassMap>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Label" typeName="string">
+                <ECCustomAttributes>
+                    <PropertyMap xmlns="ECDbMap.02.00.00">
+                        <ColumnName>%s</ColumnName>
+                    </PropertyMap>
+                </ECCustomAttributes>
+            </ECProperty>
+            <ECProperty propertyName="Score" typeName="int"/>
+        </ECEntityClass>
+        </ECSchema>)xml";
+
+    expectAccepted("identifiers_existingtable.ecdb", Utf8PrintfString(schemaTemplate, "te_Gadget", "Id", "Label"), createExistingTableSql);
+    // A table with this name shadows the table-valued pragma_table_info()
+    expectAccepted("identifiers_existingtable_shadow.ecdb", Utf8PrintfString(schemaTemplate, "te_Gadget", "Id", "Label"), Utf8PrintfString("%s; CREATE TABLE pragma_table_info(x)", createExistingTableSql).c_str());
+    expectRejected("identifiers_existingtable_tablename.ecdb", Utf8PrintfString(schemaTemplate, quotePayload, "Id", "Label"), createExistingTableSql);
+    expectRejected("identifiers_existingtable_idcolumn.ecdb", Utf8PrintfString(schemaTemplate, "te_Gadget", bracketPayload, "Label"), createExistingTableSql);
+    expectRejected("identifiers_existingtable_columnname.ecdb", Utf8PrintfString(schemaTemplate, "te_Gadget", "Id", bracketPayload), createExistingTableSql);
+    }
+
+    // ClassMap.ECInstanceIdColumn on a table created by ECDb
+    {
+    Utf8CP schemaTemplate = R"xml(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="MyBaseClass">
+            <ECCustomAttributes>
+              <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+                <ECInstanceIdColumn>%s</ECInstanceIdColumn>
+              </ClassMap>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Base1" typeName="string" />
+          </ECEntityClass>
+          <ECEntityClass typeName="A">
+            <BaseClass>MyBaseClass</BaseClass>
+            <ECProperty propertyName="A1" typeName="string" />
+          </ECEntityClass>
+        </ECSchema>)xml";
+
+    expectAccepted("identifiers_idcolumn.ecdb", Utf8PrintfString(schemaTemplate, "CustomId"));
+    expectRejected("identifiers_idcolumn_payload.ecdb", Utf8PrintfString(schemaTemplate, bracketPayload));
+    expectRejected("identifiers_idcolumn_leadingdigit.ecdb", Utf8PrintfString(schemaTemplate, "1Id"));
+    }
+
+    // DbIndexList.DbIndex.Name
+    {
+    Utf8CP schemaTemplate = R"xml(<?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+            <ECEntityClass typeName="TestClass">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <DbIndexList xmlns="ECDbMap.02.00.00">
+                        <Indexes>
+                            <DbIndex>
+                                <Name>%s</Name>
+                                <IsUnique>False</IsUnique>
+                                <Properties>
+                                    <string>Identifier</string>
+                                </Properties>
+                            </DbIndex>
+                        </Indexes>
+                    </DbIndexList>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Identifier" typeName="string" />
+                <ECProperty propertyName="Name" typeName="string" />
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    expectAccepted("identifiers_index.ecdb", Utf8PrintfString(schemaTemplate, "ix_test_TestsClass_Identifier"));
+    EXPECT_TRUE(GetHelper().IndexExists("ix_test_TestsClass_Identifier"));
+    // Like all EC names, these only allow ASCII letters
+    expectRejected("identifiers_index_utf8.ecdb", Utf8PrintfString(schemaTemplate, "ix_Gr\xC3\xB6\xC3\x9F" "e"));
+    expectRejected("identifiers_index_payload.ecdb", Utf8PrintfString(schemaTemplate, bracketPayload));
+    expectRejected("identifiers_index_dot.ecdb", Utf8PrintfString(schemaTemplate, "main.ix_test"));
+    }
+
+    // LinkTableRelationshipMap.SourceECInstanceIdColumn and TargetECInstanceIdColumn
+    {
+    Utf8CP schemaTemplate = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.04" alias="ecdbmap" />
+            <ECEntityClass typeName="P">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.04">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="S" typeName="string" />
+            </ECEntityClass>
+            <ECRelationshipClass typeName="PRefersToPs" strength="referencing" modifier="None">
+                <ECCustomAttributes>
+                    <LinkTableRelationshipMap xmlns="ECDbMap.02.00.04">
+                        <SourceECInstanceIdColumn>%s</SourceECInstanceIdColumn>
+                        <TargetECInstanceIdColumn>%s</TargetECInstanceIdColumn>
+                        <CreateForeignKeyConstraints>False</CreateForeignKeyConstraints>
+                    </LinkTableRelationshipMap>
+                    <ClassMap xmlns="ECDbMap.02.00.04">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <Source multiplicity="(0..*)" roleLabel="1" polymorphic="true">
+                    <Class class="P"/>
+                </Source>
+                <Target multiplicity="(0..*)" roleLabel="2" polymorphic="true">
+                    <Class class="P"/>
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml";
+
+    expectAccepted("identifiers_linktable.ecdb", Utf8PrintfString(schemaTemplate, "MySourceId", "MyTargetId"));
+    expectRejected("identifiers_linktable_source.ecdb", Utf8PrintfString(schemaTemplate, bracketPayload, "MyTargetId"));
+    expectRejected("identifiers_linktable_target.ecdb", Utf8PrintfString(schemaTemplate, "MySourceId", bracketPayload));
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, ExistingIndexWithUnusualNameSurvivesSchemaUpdate)
+    {
+    // Files written before identifier validation may hold index names it would reject. Updating their schema must keep working.
+    Utf8CP schemaTemplate = R"xml(<?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+            <ECEntityClass typeName="TestClass">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <DbIndexList xmlns="ECDbMap.02.00.00">
+                        <Indexes>
+                            <DbIndex>
+                                <Name>%s</Name>
+                                <IsUnique>False</IsUnique>
+                                <Properties>
+                                    <string>Identifier</string>
+                                    %s
+                                </Properties>
+                            </DbIndex>
+                        </Indexes>
+                    </DbIndexList>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Identifier" typeName="string" />
+                <ECProperty propertyName="Name" typeName="string" />
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ASSERT_EQ(SUCCESS, SetupECDb("existing_index_name.ecdb", SchemaItem(Utf8PrintfString(schemaTemplate, "01.00.00", "ix_ts_TestClass_Identifier", ""))));
+    ASSERT_TRUE(GetHelper().IndexExists("ix_ts_TestClass_Identifier"));
+
+    // Rename the index to a name the current validation rejects, as an older file could hold it
+    Utf8CP legacyName = "ix-legacy";
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("UPDATE main.ec_Index SET Name='ix-legacy' WHERE Name='ix_ts_TestClass_Identifier'"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("UPDATE main.ec_CustomAttribute SET Instance=REPLACE(Instance, 'ix_ts_TestClass_Identifier', 'ix-legacy')"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("DROP INDEX ix_ts_TestClass_Identifier; CREATE INDEX [ix-legacy] ON [ts_TestClass]([Identifier])"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+
+    // Adding a column to the index drops and recreates it under its existing name
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(Utf8PrintfString(schemaTemplate, "01.00.01", legacyName, "<string>Name</string>"))));
+    const Utf8String ddl = GetHelper().GetIndexDdl(legacyName);
+    EXPECT_TRUE(ddl.StartsWith("CREATE INDEX [ix-legacy] ON [ts_TestClass]([Identifier], [Name])")) << ddl.c_str();
+    EXPECT_FALSE(GetHelper().IndexExists("ix_ts_TestClass_Identifier"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, ECPropertyCATests)
     {
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(

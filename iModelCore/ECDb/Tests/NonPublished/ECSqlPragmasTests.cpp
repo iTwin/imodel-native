@@ -473,6 +473,22 @@ TEST_F(ECSqlPragmasTestFixture, parse_tree){
         })*";
         ASSERT_STREQ(beautify(stmt.GetValueText(0)).c_str(), beautify(expectedJson).c_str());
     }
+
+    if ("ECSQL with [...] names can be passed in any quoting style") {
+        auto getParseTree = [&](Utf8CP quotedECSql) -> Utf8String {
+            ECSqlStatement stmt;
+            EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("PRAGMA parse_tree(%s) ECSQLOPTIONS enable_experimental_features", quotedECSql).GetUtf8CP())) << quotedECSql;
+            if (BE_SQLITE_ROW != stmt.Step())
+                return "";
+
+            return stmt.GetValueText(0);
+        };
+
+        Utf8String expected = getParseTree("'SELECT [a].[Name] FROM [ECDbMeta].[ECClassDef] [a] WHERE [a].[Name] = ''Element'''");
+        ASSERT_FALSE(expected.empty());
+        EXPECT_STREQ(expected.c_str(), getParseTree("\"SELECT [a].[Name] FROM [ECDbMeta].[ECClassDef] [a] WHERE [a].[Name] = 'Element'\"").c_str());
+        EXPECT_STREQ(expected.c_str(), getParseTree("`SELECT [a].[Name] FROM [ECDbMeta].[ECClassDef] [a] WHERE [a].[Name] = 'Element'`").c_str());
+    }
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -753,6 +769,11 @@ TEST_F(ECSqlPragmasTestFixture, sqlite_sql)
         std::make_pair("Parameterized ECSQL", "SELECT * FROM meta.ECClassDef WHERE Name=?"),
         std::make_pair("Complex ECSQL with joins", "SELECT a.Name, b.Name FROM meta.ECClassDef a JOIN meta.ECClassDef b ON a.Name=b.Name"),
         std::make_pair("CTE", "WITH el AS (SELECT ECInstanceId, ECClassId FROM meta.ECClassDef) SELECT * FROM el"),
+        std::make_pair("Bracketed names", "SELECT [a].[Name] FROM [ECDbMeta].[ECClassDef] [a] WHERE [a].[Name] = 'Element'"),
+        std::make_pair("Bracketed subquery", "SELECT [d].[a] FROM (SELECT [b].[Name] [a] FROM [ECDbMeta].[ECClassDef] [b]) [d]"),
+        std::make_pair("Bracketed CTE", "WITH RECURSIVE [c]([i]) AS (SELECT 1 UNION SELECT ([i] + 1) FROM [c] WHERE ([i] < 10) ORDER BY 1) SELECT [i] FROM [c]"),
+        std::make_pair("Bracketed relationship join", "SELECT 1 FROM [ECDbMeta].[ECClassDef] JOIN [ECDbMeta].[ECPropertyDef] USING [ECDbMeta].[ClassOwnsLocalProperties]"),
+        std::make_pair("Bracketed table-valued function", "SELECT [s].[key] FROM [json1].[json_tree]('{}') [s] WHERE ([s].[key] = 'gravity')"),
     })
         {
         // Prepare the ECSql directly to compare the Pragma results
