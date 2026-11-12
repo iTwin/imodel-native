@@ -3560,7 +3560,13 @@ TEST_F(ConcurrentQueryFixture, IdSetParamLimit) {
     for (Utf8CP idSet : {"+1*F4241", "1-1000001", "+1*"}) {
         BeJsDocument args(Utf8PrintfString(R"json({"1":{"type":3,"value":"%s"}})json", idSet).c_str());
         ECSqlParams params(args);
-        EXPECT_THROW(params.GetParam(1).GetValueIdSet(), std::runtime_error) << idSet;
+        bool rejected = false;
+        try {
+            params.GetParam(1).GetValueIdSet();
+        } catch (std::runtime_error const&) {
+            rejected = true;
+        }
+        EXPECT_TRUE(rejected) << idSet;
     }
     BeJsDocument atLimit(R"json({"1":{"type":3,"value":"+1*F4240"}})json");
     EXPECT_EQ(1000000u, ECSqlParams(atLimit).GetParam(1).GetValueIdSet().size());
