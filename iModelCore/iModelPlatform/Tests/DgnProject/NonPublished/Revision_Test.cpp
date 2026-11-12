@@ -2342,13 +2342,17 @@ TEST_F(RevisionTestFixture, PropertyCategoryReassignedAndOldCategoryDeleted)
         };
 
     importSchema("1.0.0", "OldCategory");
+#if defined (USE_GTEST)
     ASSERT_FALSE(HasFatalFailure());
+#endif
     ASSERT_TRUE(CreateRevision("-v1").IsValid());
     BackupTestFile();
     expectKeptIn("OldCategory", "v1");
 
     importSchema("1.0.1", "NewCategory");
+#if defined (USE_GTEST)
     ASSERT_FALSE(HasFatalFailure());
+#endif
     const auto v2 = CreateRevision("-v2");
     ASSERT_TRUE(v2.IsValid());
     expectKeptIn("NewCategory", "v2 imported");

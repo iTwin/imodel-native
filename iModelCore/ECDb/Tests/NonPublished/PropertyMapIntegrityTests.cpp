@@ -595,6 +595,18 @@ struct PropertyMapIntegrityTestFixture : public ECDbTestFixture
         PropertyCategoryCP actual = prop->GetCategory();
         EXPECT_STREQ(category, actual == nullptr ? nullptr : actual->GetName().c_str()) << context << ": category of " << className << "." << propertyName;
         }
+
+    //! Whether a helper the running test called has hit a fatal failure, so the test can stop.
+    //! gtest's failure state does not exist in the non-gtest BeTest configuration the mobile
+    //! builds use, where this always reads false.
+    static bool CurrentTestHasFatalFailure()
+        {
+#if defined (USE_GTEST)
+        return ::testing::Test::HasFatalFailure();
+#else
+        return false;
+#endif
+        }
     };
 
 //---------------------------------------------------------------------------------------
@@ -953,9 +965,9 @@ TEST_F(PropertyMapIntegrityTestFixture, BriefcaseThatPulledCategoryDeletionImpor
         Execute(db, "INSERT INTO ts.Item(Kept,Uncategorized,Other) VALUES('item kept','item uncategorized','item other')");
         Execute(db, "INSERT INTO ts.Leaf(Kept,Uncategorized,Other,LeafProp) VALUES('leaf kept','leaf uncategorized','leaf other','leaf prop')");
         });
-    ASSERT_FALSE(HasFatalFailure());
+    ASSERT_FALSE(CurrentTestHasFatalFailure());
     ImportAndPush(*b1, {b2.get()}, ReferencingSchema(1, newCategory, "Kept", "string", kept, "Uncategorized", "string", ""), "v2");
-    ASSERT_FALSE(HasFatalFailure());
+    ASSERT_FALSE(CurrentTestHasFatalFailure());
 
     ImportPushPull(*b2, {b1.get()}, ReferencingSchema(2, newCategory, "Kept", "string", kept, "Uncategorized", "string", "", "", Prop("Added", "string").c_str()), "v3");
     }
@@ -985,9 +997,9 @@ TEST_F(PropertyMapIntegrityTestFixture, BriefcaseThatLostPropertiesToCascadeImpo
         Execute(db, "INSERT INTO ts.Item(Kept,Other) VALUES('item kept','item other')");
         Execute(db, "INSERT INTO ts.Leaf(Kept,Other,LeafProp) VALUES('leaf kept','leaf other','leaf prop')");
         });
-    ASSERT_FALSE(HasFatalFailure());
+    ASSERT_FALSE(CurrentTestHasFatalFailure());
     ImportAndPush(*b1, {b2.get()}, schema(1, "NewCategory", ""), "v2");
-    ASSERT_FALSE(HasFatalFailure());
+    ASSERT_FALSE(CurrentTestHasFatalFailure());
 
     ImportPushPull(*b2, {b1.get()}, schema(2, "NewCategory", Prop("Added", "string")), "v3");
     }
@@ -1013,7 +1025,7 @@ TEST_F(PropertyMapIntegrityTestFixture, PropertyCategoryReassignedInLocalTxnThat
         Execute(db, "INSERT INTO ts.Item(Kept,Uncategorized,Other) VALUES('item kept','item uncategorized','item other')");
         Execute(db, "INSERT INTO ts.Leaf(Kept,Uncategorized,Other,LeafProp) VALUES('leaf kept','leaf uncategorized','leaf other','leaf prop')");
         });
-    ASSERT_FALSE(HasFatalFailure());
+    ASSERT_FALSE(CurrentTestHasFatalFailure());
 
     ASSERT_EQ(SchemaImportResult::OK, Import(*b2, ReferencingSchema(1, R"xml(<PropertyCategory typeName="NewCategory" priority="2"/>)xml",
         "Kept", "string", R"xml(category="NewCategory")xml", "Uncategorized", "string", ""), "v2, b2"));
@@ -1266,6 +1278,33 @@ TEST_F(PropertyMapIntegrityTestFixture, OverrideDeletedWhileOverflowPropertyOver
         [&](ECDbR db) { insert(db, "v3"); });
     }
 
+//---------------------------------------------------------------------------------------
+// Whether environment variable @p name is set, and its value in @p value if given.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+static bool ReadEnv(Utf8CP name, Utf8StringP value = nullptr)
+    {
+#if defined(BENTLEY_WIN32)
+    // Plain getenv is deprecated by MSVC
+    char* buffer = nullptr;
+    size_t count = 0;
+    if (_dupenv_s(&buffer, &count, name) != 0 || buffer == nullptr)
+        return false;
+
+    if (value != nullptr)
+        value->assign(buffer);
+    free(buffer);
+#else
+    char const* buffer = std::getenv(name);
+    if (buffer == nullptr)
+        return false;
+
+    if (value != nullptr)
+        value->assign(buffer);
+#endif
+    return true;
+    }
+
 //=======================================================================================
 // A plant-design dynamic schema that a seeded generator evolves with the changes connectors
 // make between syncs, and the values every instance must read. The values are worked out
@@ -1306,8 +1345,9 @@ struct SchemaEvolution final
         if (m_random == 0)
             m_random = 1;
         m_maxSharedColumns = Pick(3) == 0 ? 4 : 32;
-        if (Utf8CP maxShared = getenv("ECDB_PROPMAP_MAXSHARED"))
-            m_maxSharedColumns = atoi(maxShared);
+        Utf8String maxShared;
+        if (ReadEnv("ECDB_PROPMAP_MAXSHARED", &maxShared))
+            m_maxSharedColumns = atoi(maxShared.c_str());
         Declare("PlantBase", "", true, {{"Guid", "string"}});
         Declare("Item", "PlantBase", false, {{"Note", "string"}});
         Declare("Pump", "Item", false, {{"Flow", "double"}, {"Tag", "string"}, {"Hist", "Dims[]"}});
@@ -1606,7 +1646,7 @@ struct SchemaEvolution final
                 case 6: change = MoveDown(); break;
                 case 7: change = AddOverride(); break;
                 case 8: change = AddClass(); break;
-                default: change = getenv("ECDB_PROPMAP_NO_INSERT") != nullptr ? AddClass() : InsertBaseClass(); break;
+                default: change = ReadEnv("ECDB_PROPMAP_NO_INSERT") ? AddClass() : InsertBaseClass(); break;
                 }
             if (!change.empty())
                 return change;
@@ -1839,7 +1879,15 @@ struct SchemaEvolution final
         }
     };
 
-static int FailureCount() { return ::testing::UnitTest::GetInstance()->current_test_info()->result()->total_part_count(); }
+// gtest's failure state does not exist in the non-gtest BeTest configuration the mobile builds use, where this always reads 0.
+static int FailureCount()
+    {
+#if defined (USE_GTEST)
+    return ::testing::UnitTest::GetInstance()->current_test_info()->result()->total_part_count();
+#else
+    return 0;
+#endif
+    }
 
 
 //---------------------------------------------------------------------------------------
@@ -1860,14 +1908,26 @@ TEST_F(PropertyMapIntegrityTestFixture, RandomSchemaEvolution)
     {
     unsigned firstSeed = 1, lastSeed = 30;
     int steps = 10;
-    if (Utf8CP seeds = getenv("ECDB_PROPMAP_SEEDS"))
+    Utf8String setting;
+    if (ReadEnv("ECDB_PROPMAP_SEEDS", &setting))
         {
-        const int count = sscanf(seeds, "%u-%u", &firstSeed, &lastSeed);
-        if (count == 1)
-            lastSeed = firstSeed;
+        // first[-last]; sscanf is deprecated by MSVC
+        char* end = nullptr;
+        const unsigned long first = strtoul(setting.c_str(), &end, 10);
+        if (end != setting.c_str())
+            {
+            firstSeed = lastSeed = static_cast<unsigned>(first);
+            if (*end == '-')
+                {
+                char const* const lastStart = end + 1;
+                const unsigned long last = strtoul(lastStart, &end, 10);
+                if (end != lastStart)
+                    lastSeed = static_cast<unsigned>(last);
+                }
+            }
         }
-    if (Utf8CP stepCount = getenv("ECDB_PROPMAP_STEPS"))
-        steps = atoi(stepCount);
+    if (ReadEnv("ECDB_PROPMAP_STEPS", &setting))
+        steps = atoi(setting.c_str());
 
     int imported = 0, rejected = 0, failedSeeds = 0;
     for (unsigned seed = firstSeed; seed <= lastSeed; ++seed)
@@ -1936,7 +1996,7 @@ TEST_F(PropertyMapIntegrityTestFixture, RandomSchemaEvolution)
             ++failedSeeds;
             printf("[RandomSchemaEvolution] seed %u failed, %s\n", seed, log.c_str());
             }
-        else if (getenv("ECDB_PROPMAP_VERBOSE") != nullptr)
+        else if (ReadEnv("ECDB_PROPMAP_VERBOSE"))
             printf("[RandomSchemaEvolution] seed %u passed, %s\n", seed, log.c_str());
         }
     printf("[RandomSchemaEvolution] seeds %u-%u: %d imports, %d rejected, %d seeds failed\n", firstSeed, lastSeed, imported, rejected, failedSeeds);
