@@ -6278,8 +6278,13 @@ void BeIdSet::FromReadableString(Utf8StringCR str)
         else if (endRange < startRange)
             std::swap(startRange, endRange);
 
-        for (; startRange<=endRange; ++startRange)
+        // Stop on reaching endRange rather than testing startRange<=endRange, which never fails when endRange is UINT64_MAX.
+        for (;; ++startRange)
+            {
             insert((BeInt64Id) startRange);
+            if (startRange == endRange)
+                break;
+            }
 
         curr = strchr(curr, ',');
         if (curr == nullptr)
