@@ -12,7 +12,11 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //=======================================================================================
 //! Schema and data a group of schema update tests starts from.
 //! The fixture creates the ECDb file once per test run and fills every concrete entity class
-//! with generated instances. Every test starts from a copy of that file.
+//! and link table relationship class with generated instances. Every test starts from a copy of that file.
+//! Baselines are cached by name, so every baseline needs a unique name.
+//! The baseline is a single schema that only references standard schemas like ECDbMap.
+//! Supported: all primitive types, enumerations, structs, primitive and struct arrays, navigation
+//! properties and link table relationships. Arrays of enumerations get plain values that ignore the enumerators.
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct SchemaUpdateBaseline final
@@ -33,6 +37,8 @@ struct SchemaUpdateBaseline final
 //=======================================================================================
 //! Data changes a schema update is expected to cause. Everything not listed here has to read the
 //! same after the update, with properties the update deleted left out and properties it added read as NULL.
+//! If a test needs to declare another kind of change, add it here instead of working around
+//! VerifyData in the test.
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct ExpectedDataChanges final
@@ -57,9 +63,21 @@ enum class SchemaVersionChange
 //! Runs a schema update on a copy of a baseline and verifies all data in the file afterwards,
 //! not only the data of the classes the update touches.
 //!
+//! Usage, see SchemaUpdateTests.cpp for examples:
+//! - Derive a fixture per area with a static baseline. Keep baselines small, the update runs
+//!   against the whole schema. Add a new fixture rather than growing an unrelated baseline.
+//! - SetupFromBaseline, edit GetBaselineSchemaXml with ReplaceInClass, RemoveClass and
+//!   AppendToSchema, then UpdateSchema. Leave the version in the XML alone, UpdateSchema sets it.
+//! - Always end with VerifyData, also after a rejected update.
+//! - Assert only on observable results: accepted or rejected, data, persisted schema.
+//!   Never on tables or columns, so the tests stay valid when the mapping changes.
+//! - SchemaUpdateHarnessTests checks the harness itself. Run it after changing the harness.
+//!
 //! Data is read with plain ECSQL in two ways, which have to agree:
-//! - each concrete entity class with ONLY and an explicit property list
-//! - each entity class, including abstract classes and mixins, polymorphically
+//! - each concrete class with ONLY and an explicit property list
+//! - each class, including abstract classes and mixins, polymorphically
+//! Classes are entity classes and link table relationship classes. Relationships mapped to
+//! navigation properties are covered by reading those properties.
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct SchemaUpdateTestFixture : ECDbTestFixture
@@ -102,6 +120,7 @@ struct SchemaUpdateTestFixture : ECDbTestFixture
         //! Reopens the file and verifies all data against the state before the update, plus the expected changes.
         //! After a rejected update, also verifies that the persisted schema did not change.
         //! Runs the integrity checks and finally writes and reads back one new instance per concrete class.
+        //! The integrity checks include check_nav_ids, which reports navigation properties pointing to deleted instances.
         void VerifyData(ExpectedDataChanges const& = ExpectedDataChanges());
 
         Utf8String GetBaselineSchemaXml() const { return m_baseline != nullptr ? m_baseline->GetSchemaXml() : Utf8String(); }

@@ -3,6 +3,9 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "SchemaUpdateTestFixture.h"
+#if defined(USE_GTEST)
+#include <gtest/gtest-spi.h>
+#endif
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -11,8 +14,8 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 
 //=======================================================================================
 // Class hierarchy mapped like BisCore elements: TablePerHierarchy with joined tables, shared
-// columns and overflow, plus a mixin, a navigation property, structs, arrays and a class with
-// its own table.
+// columns and overflow, plus a mixin, a navigation property, a link table relationship, structs,
+// arrays, an enumeration, a geometry and a class with its own table.
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct ClassHierarchyUpdateTests : SchemaUpdateTestFixture
@@ -23,6 +26,11 @@ struct ClassHierarchyUpdateTests : SchemaUpdateTestFixture
 <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
     <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
     <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA" />
+    <ECEnumeration typeName="ValveKind" backingTypeName="int" isStrict="true">
+        <ECEnumerator name="Gate" value="1" />
+        <ECEnumerator name="Ball" value="2" />
+        <ECEnumerator name="Check" value="3" />
+    </ECEnumeration>
     <ECStructClass typeName="Segment">
         <ECProperty propertyName="SegmentLength" typeName="double" />
         <ECProperty propertyName="SegmentLabel" typeName="string" />
@@ -64,6 +72,7 @@ struct ClassHierarchyUpdateTests : SchemaUpdateTestFixture
         <BaseClass>PhysicalElement</BaseClass>
         <ECProperty propertyName="Pressure" typeName="double" />
         <ECProperty propertyName="ValveType" typeName="long" />
+        <ECProperty propertyName="Kind" typeName="ValveKind" />
         <ECNavigationProperty propertyName="AttachedPipe" relationshipName="PipeHasValves" direction="Backward" />
     </ECEntityClass>
     <ECEntityClass typeName="Sensor">
@@ -78,6 +87,7 @@ struct ClassHierarchyUpdateTests : SchemaUpdateTestFixture
         <ECProperty propertyName="PageCount" typeName="int" />
         <ECProperty propertyName="Anchor" typeName="point2d" />
         <ECStructProperty propertyName="Cover" typeName="Segment" />
+        <ECProperty propertyName="Footprint" typeName="Bentley.Geometry.Common.IGeometry" />
     </ECEntityClass>
     <ECEntityClass typeName="Note">
         <ECProperty propertyName="NoteText" typeName="string" />
@@ -90,6 +100,15 @@ struct ClassHierarchyUpdateTests : SchemaUpdateTestFixture
         <Target multiplicity="(0..*)" roleLabel="is attached to" polymorphic="false">
             <Class class="Valve" />
         </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="DocumentRefersToNotes" strength="referencing" modifier="None">
+        <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
+            <Class class="Document" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is referred to by" polymorphic="true">
+            <Class class="Note" />
+        </Target>
+        <ECProperty propertyName="Reason" typeName="string" />
     </ECRelationshipClass>
 </ECSchema>)xml");
         return s_baseline;
@@ -175,5 +194,87 @@ TEST_F(ClassHierarchyUpdateTests, DeletingPropertyOfClassWithOwnTableIsRejected)
 
     VerifyData();
     }
+
+#if defined(USE_GTEST)
+//=======================================================================================
+// Checks that the harness reports broken data. Each test breaks something on purpose and
+// expects VerifyData to report it.
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct SchemaUpdateHarnessTests : ClassHierarchyUpdateTests
+    {
+    //! Runs VerifyData and returns the failures it reported, without failing the test.
+    Utf8String CaptureVerifyDataFailures(ExpectedDataChanges const& expectedChanges = ExpectedDataChanges())
+        {
+        ::testing::TestPartResultArray failures;
+            {
+            ::testing::ScopedFakeTestPartResultReporter reporter(::testing::ScopedFakeTestPartResultReporter::INTERCEPT_ONLY_CURRENT_THREAD, &failures);
+            VerifyData(expectedChanges);
+            }
+
+        Utf8String messages;
+        for (int i = 0; i < failures.size(); i++)
+            messages.append(failures.GetTestPartResult(i).message()).append("\n");
+
+        return messages;
+        }
+
+    static bool Contains(Utf8StringCR messages, Utf8CP text) { return messages.find(text) != Utf8String::npos; }
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpdateHarnessTests, ReportsUndeclaredDeletedInstances)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    RemoveClass(schemaXml, "Sensor");
+    ASSERT_EQ(SUCCESS, UpdateSchema(schemaXml, SchemaVersionChange::Major));
+
+    Utf8String failures = CaptureVerifyDataFailures();
+    EXPECT_TRUE(Contains(failures, "TestSchema:Sensor") && Contains(failures, "is missing after the update")) << failures.c_str();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpdateHarnessTests, ReportsInstancesThatWereExpectedToBeDeleted)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    Utf8String failures = CaptureVerifyDataFailures(ExpectedDataChanges().DeleteInstancesOf("TestSchema:Note"));
+    EXPECT_TRUE(Contains(failures, "was expected to be deleted")) << failures.c_str();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpdateHarnessTests, ReportsChangedValues)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("UPDATE ts.Pipe SET Material='Changed'"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("UPDATE ts.DocumentRefersToNotes SET Reason='Changed'"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+
+    Utf8String failures = CaptureVerifyDataFailures();
+    EXPECT_TRUE(Contains(failures, "property Material")) << failures.c_str();
+    EXPECT_TRUE(Contains(failures, "property Reason")) << failures.c_str();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpdateHarnessTests, ReportsAddedInstances)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Note(NoteText, Priority) VALUES('Added', 1)"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+
+    Utf8String failures = CaptureVerifyDataFailures();
+    EXPECT_TRUE(Contains(failures, "appeared after the update")) << failures.c_str();
+    }
+#endif
 
 END_ECDBUNITTESTS_NAMESPACE

@@ -32,23 +32,48 @@ std::map<Utf8String, BaselineSeed>& GetBaselineSeeds()
     return s_seeds;
     }
 
+// Selected right after ECInstanceId and ECClassId for relationship classes.
+constexpr Utf8CP s_relationshipEndNames[] = {"SourceECInstanceId", "SourceECClassId", "TargetECInstanceId", "TargetECClassId"};
+
 //---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-bool IsConcreteEntityClass(ECClassCR ecClass)
+// Relationship classes no navigation property points to. Their instances live in a link table
+// and have their own ECInstanceIds. Only the schema itself is searched for navigation properties.
+//---------------------------------------------------------------------------------------
+bool IsLinkTableRelationshipClass(ECClassCR ecClass)
     {
-    return ecClass.IsEntityClass() && !ecClass.IsMixin() && ecClass.GetClassModifier() != ECClassModifier::Abstract;
+    ECRelationshipClassCP relClass = ecClass.GetRelationshipClassCP();
+    if (relClass == nullptr)
+        return false;
+
+    for (ECClassCP schemaClass : ecClass.GetSchema().GetClasses())
+        {
+        for (ECPropertyCP prop : schemaClass->GetProperties(false))
+            {
+            if (prop->GetIsNavigation() && relClass->Is(prop->GetAsNavigationProperty()->GetRelationshipClass()))
+                return false;
+            }
+        }
+
+    return true;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-bvector<ECClassCP> GetEntityClasses(ECSchemaCR schema)
+bool IsConcreteClass(ECClassCR ecClass)
+    {
+    return !ecClass.IsMixin() && ecClass.GetClassModifier() != ECClassModifier::Abstract;
+    }
+
+//---------------------------------------------------------------------------------------
+// Entity classes and link table relationship classes, the classes the harness inserts and reads.
+//---------------------------------------------------------------------------------------
+bvector<ECClassCP> GetDataClasses(ECSchemaCR schema)
     {
     bvector<ECClassCP> classes;
     for (ECClassCP ecClass : schema.GetClasses())
         {
-        if (ecClass->IsEntityClass())
+        if (ecClass->IsEntityClass() || IsLinkTableRelationshipClass(*ecClass))
             classes.push_back(ecClass);
         }
 
@@ -61,6 +86,12 @@ bvector<ECClassCP> GetEntityClasses(ECSchemaCR schema)
 Utf8String BuildSelectECSql(ECClassCR ecClass, bool onlyThisClass)
     {
     Utf8String ecsql("SELECT ECInstanceId, ECClassId");
+    if (ecClass.IsRelationshipClass())
+        {
+        for (Utf8CP endName : s_relationshipEndNames)
+            ecsql.append(",").append(endName);
+        }
+
     for (ECPropertyCP prop : ecClass.GetProperties(true))
         ecsql.append(",[").append(prop->GetName()).append("]");
 
@@ -71,7 +102,7 @@ Utf8String BuildSelectECSql(ECClassCR ecClass, bool onlyThisClass)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-std::map<Utf8String, Utf8String> ReadValues(JsonECSqlSelectAdapter const& adapter, ECClassCR ecClass)
+std::map<Utf8String, Utf8String> ReadValues(ECSqlStatement const& stmt, JsonECSqlSelectAdapter const& adapter, ECClassCR ecClass)
     {
     std::map<Utf8String, Utf8String> values;
     BeJsDocument row;
@@ -79,6 +110,13 @@ std::map<Utf8String, Utf8String> ReadValues(JsonECSqlSelectAdapter const& adapte
         {
         ADD_FAILURE() << "Failed to read row of " << ecClass.GetFullName();
         return values;
+        }
+
+    if (ecClass.IsRelationshipClass())
+        {
+        int columnIndex = 2;
+        for (Utf8CP endName : s_relationshipEndNames)
+            values[endName] = Utf8PrintfString("%" PRId64, stmt.GetValueInt64(columnIndex++));
         }
 
     for (ECPropertyCP prop : ecClass.GetProperties(true))
@@ -92,17 +130,26 @@ std::map<Utf8String, Utf8String> ReadValues(JsonECSqlSelectAdapter const& adapte
     }
 
 //---------------------------------------------------------------------------------------
-// Keeps only the values of properties the class has.
+// Keeps only the values of properties and relationship ends the class has.
 //---------------------------------------------------------------------------------------
 std::map<Utf8String, Utf8String> ProjectValues(std::map<Utf8String, Utf8String> const& values, ECClassCR ecClass)
     {
     std::map<Utf8String, Utf8String> projected;
-    for (ECPropertyCP prop : ecClass.GetProperties(true))
+    auto keepValue = [&](Utf8StringCR name)
         {
-        auto it = values.find(prop->GetName());
+        auto it = values.find(name);
         if (it != values.end())
             projected.insert(*it);
+        };
+
+    if (ecClass.IsRelationshipClass())
+        {
+        for (Utf8CP endName : s_relationshipEndNames)
+            keepValue(endName);
         }
+
+    for (ECPropertyCP prop : ecClass.GetProperties(true))
+        keepValue(prop->GetName());
 
     return projected;
     }
@@ -129,12 +176,29 @@ void CompareValues(Utf8CP context, std::map<Utf8String, Utf8String> const& expec
     }
 
 //=======================================================================================
-// Generates a different value for every primitive it binds.
+// Generates a different value for every primitive it binds. Enumeration properties cycle
+// through the enumerators instead.
 //=======================================================================================
 struct ValueGenerator final
     {
     private:
         uint64_t m_next = 1;
+        std::map<ECEnumerationCP, size_t> m_nextEnumeratorIndexes;
+
+        ECSqlStatus BindEnumerator(IECSqlBinder& binder, ECEnumerationCR enumeration)
+            {
+            if (enumeration.GetEnumeratorCount() == 0)
+                {
+                ADD_FAILURE() << "Enumeration " << enumeration.GetFullName().c_str() << " has no enumerators.";
+                return ECSqlStatus::Error;
+                }
+
+            size_t& nextIndex = m_nextEnumeratorIndexes[&enumeration];
+            auto it = enumeration.GetEnumerators().begin();
+            std::advance(it, nextIndex++ % enumeration.GetEnumeratorCount());
+            ECEnumeratorCP enumerator = *it;
+            return enumerator->IsInteger() ? binder.BindInt(enumerator->GetInteger()) : binder.BindText(enumerator->GetString().c_str(), IECSqlBinder::MakeCopy::Yes);
+            }
 
         ECSqlStatus BindPrimitive(IECSqlBinder& binder, PrimitiveType type)
             {
@@ -149,6 +213,11 @@ struct ValueGenerator final
                     return binder.BindDateTime(2451545.0 + (double) value, DateTime::Info::CreateForDateTime(DateTime::Kind::Unspecified));
                 case PRIMITIVETYPE_Double:
                     return binder.BindDouble((double) value + 0.5);
+                case PRIMITIVETYPE_IGeometry:
+                    {
+                    IGeometryPtr geometry = IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(0.0, 0.0, 0.0, (double) value, (double) value + 0.25, (double) value + 0.5)));
+                    return binder.BindGeometry(*geometry);
+                    }
                 case PRIMITIVETYPE_Integer:
                     return binder.BindInt((int) value);
                 case PRIMITIVETYPE_Long:
@@ -184,10 +253,7 @@ struct ValueGenerator final
                 {
                 PrimitiveECPropertyCP primitiveProp = prop.GetAsPrimitiveProperty();
                 if (primitiveProp->GetEnumeration() != nullptr)
-                    {
-                    ADD_FAILURE() << "The value generator does not support enumerations yet: " << prop.GetName().c_str();
-                    return ECSqlStatus::Error;
-                    }
+                    return BindEnumerator(binder, *primitiveProp->GetEnumeration());
 
                 return BindPrimitive(binder, primitiveProp->GetType());
                 }
@@ -271,16 +337,112 @@ BentleyStatus SetNavigationProperties(ECDbCR ecdb, bvector<InsertedInstance> con
     }
 
 //---------------------------------------------------------------------------------------
-// Inserts instances into every concrete entity class of the schema, with a different value for
-// every primitive, so swapped or shared columns cannot hide behind equal values.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+bvector<InsertedInstance> FindInstancesFor(ECRelationshipConstraintCR constraint, bvector<InsertedInstance> const& inserted)
+    {
+    bvector<InsertedInstance> matches;
+    for (InsertedInstance const& candidate : inserted)
+        {
+        for (ECClassCP constraintClass : constraint.GetConstraintClasses())
+            {
+            if (constraint.GetIsPolymorphic() ? candidate.m_class->Is(constraintClass) : candidate.m_class == constraintClass)
+                {
+                matches.push_back(candidate);
+                break;
+                }
+            }
+        }
+
+    return matches;
+    }
+
+//---------------------------------------------------------------------------------------
+// Relates the inserted entity instances through every concrete link table relationship class.
+//---------------------------------------------------------------------------------------
+BentleyStatus InsertLinkTableRelationships(ECDbCR ecdb, ECSchemaCR schema, int instancesPerClass, ValueGenerator& generator, bvector<InsertedInstance>& inserted)
+    {
+    bvector<InsertedInstance> insertedRelationships;
+    for (ECClassCP ecClass : GetDataClasses(schema))
+        {
+        if (!ecClass->IsRelationshipClass() || !IsConcreteClass(*ecClass))
+            continue;
+
+        ECRelationshipClassCR relClass = *ecClass->GetRelationshipClassCP();
+        bvector<InsertedInstance> sources = FindInstancesFor(relClass.GetSource(), inserted);
+        bvector<InsertedInstance> targets = FindInstancesFor(relClass.GetTarget(), inserted);
+        if (sources.empty() || targets.empty())
+            {
+            ADD_FAILURE() << "No instances to relate through " << ecClass->GetFullName();
+            return ERROR;
+            }
+
+        bvector<ECPropertyCP> props;
+        Utf8String propList, paramList;
+        for (ECPropertyCP prop : ecClass->GetProperties(true))
+            {
+            propList.append(",[").append(prop->GetName()).append("]");
+            paramList.append(",?");
+            props.push_back(prop);
+            }
+
+        Utf8PrintfString ecsql("INSERT INTO %s (SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId%s) VALUES (?,?,?,?%s)",
+            ecClass->GetECSqlName().c_str(), propList.c_str(), paramList.c_str());
+        ECSqlStatement stmt;
+        if (ECSqlStatus::Success != stmt.Prepare(ecdb, ecsql.c_str()))
+            {
+            ADD_FAILURE() << "Failed to prepare " << ecsql.c_str();
+            return ERROR;
+            }
+
+        for (int instanceIndex = 0; instanceIndex < instancesPerClass; instanceIndex++)
+            {
+            InsertedInstance const& source = sources[instanceIndex % sources.size()];
+            InsertedInstance const& target = targets[instanceIndex % targets.size()];
+            if (ECSqlStatus::Success != stmt.BindId(1, source.m_id) ||
+                ECSqlStatus::Success != stmt.BindId(2, source.m_class->GetId()) ||
+                ECSqlStatus::Success != stmt.BindId(3, target.m_id) ||
+                ECSqlStatus::Success != stmt.BindId(4, target.m_class->GetId()))
+                {
+                ADD_FAILURE() << "Failed to bind the relationship ends: " << ecsql.c_str();
+                return ERROR;
+                }
+
+            for (size_t propIndex = 0; propIndex < props.size(); propIndex++)
+                {
+                if (ECSqlStatus::Success != generator.Bind(stmt.GetBinder((int) propIndex + 5), *props[propIndex]))
+                    return ERROR;
+                }
+
+            ECInstanceKey key;
+            if (BE_SQLITE_DONE != stmt.Step(key))
+                {
+                ADD_FAILURE() << "Failed to insert: " << ecsql.c_str() << " " << ecdb.GetLastError().c_str();
+                return ERROR;
+                }
+
+            insertedRelationships.push_back({key.GetInstanceId(), ecClass});
+            stmt.Reset();
+            stmt.ClearBindings();
+            }
+        }
+
+    inserted.insert(inserted.end(), insertedRelationships.begin(), insertedRelationships.end());
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// Inserts instances into every concrete entity class and link table relationship class of the
+// schema, with a different value for every primitive, so swapped or shared columns cannot hide
+// behind equal values.
 //---------------------------------------------------------------------------------------
 BentleyStatus InsertGeneratedInstances(ECDbCR ecdb, ECSchemaCR schema, int instancesPerClass, bvector<InsertedInstance>& inserted)
     {
     ValueGenerator generator;
     bvector<InsertedInstance> insertedNow;
-    for (ECClassCP ecClass : GetEntityClasses(schema))
+    for (ECClassCP ecClass : GetDataClasses(schema))
         {
-        if (!IsConcreteEntityClass(*ecClass))
+        if (!ecClass->IsEntityClass() || !IsConcreteClass(*ecClass))
             continue;
 
         bvector<ECPropertyCP> props;
@@ -327,7 +489,8 @@ BentleyStatus InsertGeneratedInstances(ECDbCR ecdb, ECSchemaCR schema, int insta
             }
         }
 
-    if (SUCCESS != SetNavigationProperties(ecdb, insertedNow))
+    if (SUCCESS != SetNavigationProperties(ecdb, insertedNow) ||
+        SUCCESS != InsertLinkTableRelationships(ecdb, schema, instancesPerClass, generator, insertedNow))
         return ERROR;
 
     inserted.insert(inserted.end(), insertedNow.begin(), insertedNow.end());
@@ -572,18 +735,18 @@ void SchemaUpdateTestFixture::VerifyData(ExpectedDataChanges const& expectedChan
 
 //---------------------------------------------------------------------------------------
 // Reads all instances of the schema with ONLY queries into the snapshot, then checks that
-// polymorphic queries of every entity class return exactly the matching instances and values.
+// polymorphic queries of every data class return exactly the matching instances and values.
 //---------------------------------------------------------------------------------------
 void SchemaUpdateTestFixture::ReadData(DataSnapshot& snapshot) const
     {
     ECSchemaCP schema = m_ecdb.Schemas().GetSchema(m_schemaName);
     ASSERT_TRUE(schema != nullptr) << "Schema " << m_schemaName.c_str() << " not found.";
     const JsonECSqlSelectAdapter::FormatOptions formatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber);
-    bvector<ECClassCP> entityClasses = GetEntityClasses(*schema);
+    bvector<ECClassCP> dataClasses = GetDataClasses(*schema);
 
-    for (ECClassCP ecClass : entityClasses)
+    for (ECClassCP ecClass : dataClasses)
         {
-        if (!IsConcreteEntityClass(*ecClass))
+        if (!IsConcreteClass(*ecClass))
             continue;
 
         Utf8String ecsql = BuildSelectECSql(*ecClass, true);
@@ -596,11 +759,11 @@ void SchemaUpdateTestFixture::ReadData(DataSnapshot& snapshot) const
             const ECClassId classId = stmt.GetValueId<ECClassId>(1);
             EXPECT_EQ(ecClass->GetId(), classId) << ecsql.c_str() << " returned an instance of another class: " << instanceId.ToHexStr().c_str();
             EXPECT_TRUE(snapshot.find(instanceId) == snapshot.end()) << "Instance " << instanceId.ToHexStr().c_str() << " was returned by more than one ONLY query.";
-            snapshot[instanceId] = InstanceData{classId, ecClass->GetFullName(), ReadValues(adapter, *ecClass)};
+            snapshot[instanceId] = InstanceData{classId, ecClass->GetFullName(), ReadValues(stmt, adapter, *ecClass)};
             }
         }
 
-    for (ECClassCP ecClass : entityClasses)
+    for (ECClassCP ecClass : dataClasses)
         {
         Utf8String ecsql = BuildSelectECSql(*ecClass, false);
         ECSqlStatement stmt;
@@ -620,7 +783,7 @@ void SchemaUpdateTestFixture::ReadData(DataSnapshot& snapshot) const
                 }
 
             EXPECT_EQ(instanceIt->second.m_classId, stmt.GetValueId<ECClassId>(1)) << context.c_str();
-            CompareValues(context.c_str(), ProjectValues(instanceIt->second.m_values, *ecClass), ReadValues(adapter, *ecClass));
+            CompareValues(context.c_str(), ProjectValues(instanceIt->second.m_values, *ecClass), ReadValues(stmt, adapter, *ecClass));
             }
 
         size_t expectedRowCount = 0;
@@ -730,9 +893,11 @@ void SchemaUpdateTestFixture::VerifyWriteProbeInstances()
                 continue;
                 }
 
+            // Booleans and enumerators repeat by design.
             const bool isBoolean = (prop->GetIsPrimitive() && prop->GetAsPrimitiveProperty()->GetType() == PRIMITIVETYPE_Boolean) ||
                 (prop->GetIsPrimitiveArray() && prop->GetAsPrimitiveArrayProperty()->GetPrimitiveElementType() == PRIMITIVETYPE_Boolean);
-            if (isBoolean)
+            const bool isEnumeration = prop->GetIsPrimitive() && prop->GetAsPrimitiveProperty()->GetEnumeration() != nullptr;
+            if (isBoolean || isEnumeration)
                 continue;
 
             auto insertResult = propertyNameByValue.insert({valueIt->second, prop->GetName()});
