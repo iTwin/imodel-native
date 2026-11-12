@@ -357,6 +357,34 @@ TEST_F(ConcurrentQueryFixture, AutoShutdownIsLimitedToReadOnlyWorkerConnections)
     }
 }
 
+TEST_F(ConcurrentQueryFixture, ConcurrentECSqlRejectsUnsafeFunctions) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ConcurrentECSqlRejectsUnsafeFunctions.ecdb"));
+
+    Statement trusted;
+    ASSERT_EQ(BE_SQLITE_OK, trusted.Prepare(m_ecdb, "SELECT hex(sha3_query('SELECT 1'))"));
+    ASSERT_EQ(BE_SQLITE_ROW, trusted.Step());
+
+    ConcurrentQueryMgr mgr(m_ecdb);
+    auto expectDenied = [&](Utf8CP query, bool primary, Utf8CP expectedError) {
+        auto denied = ECSqlRequest::MakeRequest(query);
+        denied->SetUsePrimaryConnection(primary);
+        auto response = mgr.Enqueue(std::move(denied)).Get();
+        ASSERT_TRUE(response->IsError()) << response->GetError();
+        EXPECT_NE(std::string::npos, response->GetError().find(expectedError)) << response->GetError();
+    };
+    for (bool primary : {false, true}) {
+        expectDenied("SELECT hex(sha3_query('SELECT 1'))", primary, "not supported in ECSQL");
+        expectDenied("SELECT fts3_tokenizer('simple')", primary, "not supported in ECSQL");
+        expectDenied("SELECT hex([sha3_query ]('SELECT 1'))", primary, "may only contain letters");
+        expectDenied("SELECT [fts3_tokenizer/**/]('simple')", primary, "not supported in ECSQL");
+
+        auto allowed = ECSqlRequest::MakeRequest("SELECT hex(sha3('still available'))");
+        allowed->SetUsePrimaryConnection(primary);
+        auto allowedResponse = mgr.Enqueue(std::move(allowed)).Get();
+        EXPECT_EQ(QueryResponse::Status::Done, allowedResponse->GetStatus()) << allowedResponse->GetError();
+    }
+}
+
 TEST_F(ConcurrentQueryFixture, AutoShutdownAndPrimaryConnectionCreationAreMutuallyExclusive) {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("AutoShutdownPrimaryConnectionRace.ecdb"));
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(Db::OpenMode::Readonly)));

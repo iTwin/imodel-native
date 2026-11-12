@@ -26,7 +26,9 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
             // we only append property scope only if its different from tablevalued class name and not empty
             const auto classAlias = exp.GetClassRefExp()->GetId();
             if (!classAlias.empty() && !classAlias.EqualsIAscii(exp.GetVirtualProperty()->GetClass().GetName())) {
-                builder.Append(classAlias);
+                ECSqlStatus aliasStatus = ECSqlExpPreparer::AppendUnquotedName(builder, ctx, classAlias);
+                if (!aliasStatus.IsSuccess())
+                    return aliasStatus;
                 builder.AppendDot();
             }
         }
@@ -417,13 +419,13 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef(NativeSqlBuilder:
                 if (exp.IsPropertyFromCommonTableBlockWithColumns()) {
                     NativeSqlBuilder sqlSnippet;
                     auto& ctb = exp.GetClassRefExp()->GetAs<CommonTableBlockNameExp>();
-                    if (!ctb.GetAlias().empty()) {
-                        sqlSnippet.Append(ctb.GetAlias());
-                    } else {
-                        sqlSnippet.Append(ctb.GetName());
-                    }
+                    ECSqlStatus nameStatus = ECSqlExpPreparer::AppendUnquotedName(sqlSnippet, ctx, ctb.GetAlias().empty() ? ctb.GetName() : ctb.GetAlias());
+                    if (!nameStatus.IsSuccess())
+                        return nameStatus;
                     sqlSnippet.AppendDot();
-                    sqlSnippet.Append(exp.GetResolvedPropertyPath().Last().GetName());
+                    nameStatus = ECSqlExpPreparer::AppendUnquotedName(sqlSnippet, ctx, exp.GetResolvedPropertyPath().Last().GetName());
+                    if (!nameStatus.IsSuccess())
+                        return nameStatus;
                     nativeSqlSnippets.push_back(sqlSnippet);
                 } else {
                     //Here we presume any primitive value expression which must have a alias.

@@ -781,7 +781,8 @@ BentleyStatus DbSchemaPersistenceManager::RunPragmaTableInfo(std::vector<SqliteC
 
     colInfos.clear();
 
-    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(Utf8PrintfString("PRAGMA [%s].table_info('%s')", tableSpace, tableName.c_str()).c_str());
+    // The table-valued pragma_table_info() can be shadowed by a table of that name, so this uses the PRAGMA statement.
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(SqlPrintfString("PRAGMA \"%w\".table_info(\"%w\")", tableSpace, tableName.c_str()).GetUtf8CP());
     if (stmt == nullptr)
         return ERROR;
 
