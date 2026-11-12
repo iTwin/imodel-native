@@ -5868,6 +5868,19 @@ BentleyStatus SchemaWriter::VerifyPersistedSchemas(Context& ctx, bvector<ECSchem
     for (size_t i = 0; i < diff.Changes().Count(); i++)
         {
         SchemaChange& schemaChange = diff.Changes()[i];
+        // ECDb stores a schema reference by name. If the file holds a newer version of a referenced schema,
+        // the reference points to that version, see UpdateSchemaReferences.
+        for (size_t j = 0; j < schemaChange.References().Count(); j++)
+            {
+            StringChange& referenceChange = schemaChange.References()[j];
+            SchemaKey importedReference, persistedReference;
+            if (referenceChange.GetOpCode() == ECChange::OpCode::Modified &&
+                ECObjectsStatus::Success == SchemaKey::ParseSchemaFullName(importedReference, referenceChange.GetOld().Value().c_str()) &&
+                ECObjectsStatus::Success == SchemaKey::ParseSchemaFullName(persistedReference, referenceChange.GetNew().Value().c_str()) &&
+                importedReference.LessThan(persistedReference, SchemaMatchType::Exact))
+                referenceChange.Set(Nullable<Utf8String>(), Nullable<Utf8String>());
+            }
+
         if (!schemaChange.IsChanged())
             continue;
 

@@ -1495,6 +1495,74 @@ TEST_F(SchemaSyncImportTestFixture, ImportSchemasResolvesReferencesAgainstSyncDb
 // ---------------------------------------------------------------------------------------
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
+// VerifyPersistedSchemas runs inside the sync db import and compares against the schemas re-pointed at
+// the sync db. A reference the sync db holds in a newer version is therefore not a difference.
+TEST_F(SchemaSyncImportTestFixture, ImportSchemasVerifiesPersistedSchemasInSyncDb)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-entrypoint-verify-persisted");
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    ImportThroughSyncDb(*b1, syncDb, { MachinerySchema("01.00.00", false) }, { "Machinery" });
+    b1->PullMergePush("add Machinery 1.0.0");
+    b2->PullMergePush("pick up Machinery 1.0.0");
+    ImportThroughSyncDb(*b1, syncDb, { MachinerySchema("01.00.01", true) }, { "Machinery" });
+    ASSERT_STREQ("1.0.0", VersionOf(*b2, "Machinery").c_str());
+
+    auto& sync2 = b2->Schemas().GetSchemaSync();
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { TankSchema() }).Refs(), SchemaManager::SchemaImportOptions::VerifyPersistedSchemas));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    EXPECT_STREQ("1.0.1", VersionOf(*b2, "Machinery").c_str());
+
+    // Raising the upper multiplicity of a constraint currently skips the other changes to that
+    // constraint, so the new role label is not stored.
+    auto getRelationshipSchema = [] (Utf8CP version, Utf8CP targetMultiplicity, Utf8CP targetRoleLabel)
+        {
+        return SchemaItem(Utf8PrintfString(R"xml(<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="VerifyTest" alias="vt" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+    <ECEntityClass typeName="Parent">
+        <ECProperty propertyName="Name" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="Child">
+        <ECProperty propertyName="Name" typeName="string" />
+        <ECNavigationProperty propertyName="Parent" relationshipName="ParentHasChildren" direction="Backward" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ParentHasChildren" strength="referencing" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="has" polymorphic="false">
+            <Class class="Parent" />
+        </Source>
+        <Target multiplicity="%s" roleLabel="%s" polymorphic="false">
+            <Class class="Child" />
+        </Target>
+    </ECRelationshipClass>
+</ECSchema>)xml", version, targetMultiplicity, targetRoleLabel));
+        };
+
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { getRelationshipSchema("01.00.00", "(0..1)", "belongs to") }).Refs(), SchemaManager::SchemaImportOptions::VerifyPersistedSchemas));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+
+    // The issues are reported on the sync db connection, so they only show up in the log.
+    TestLogger logger;
+    {
+    LogCatcher logCatcher(logger);
+    EXPECT_EQ(SchemaSync::Status::ERROR, sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { getRelationshipSchema("01.00.01", "(0..*)", "is attached to") }).Refs(), SchemaManager::SchemaImportOptions::VerifyPersistedSchemas));
+    }
+    const bool isDifferenceLogged = std::any_of(logger.m_messages.begin(), logger.m_messages.end(), [] (auto const& entry)
+        {
+        return entry.second.Contains("ECSchema VerifyTest was not persisted as imported");
+        });
+    EXPECT_TRUE(isDifferenceLogged);
+
+    EXPECT_STREQ("1.0.0", VersionOf(*b2, "VerifyTest").c_str()) << "the briefcase was changed by a refused import";
+    syncDb.WithReadOnly([&](ECDbR sync) {
+        EXPECT_STREQ("1.0.0", VersionOf(sync, "VerifyTest").c_str()) << "the sync db was changed by a refused import";
+    });
+    }
+
+// ---------------------------------------------------------------------------------------
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaSyncImportTestFixture, ImportSchemasRefusesDataTransform)
     {
     ECDbHub hub;

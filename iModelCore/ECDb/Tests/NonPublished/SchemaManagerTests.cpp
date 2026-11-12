@@ -253,8 +253,9 @@ TEST_F(SchemaManagerTests, SchemaImportOptionsDoNotOverlap)
 TEST_F(SchemaManagerTests, VerifyPersistedSchemasFailsImportOfChangesThatAreNotStored)
     {
     // Raising the upper multiplicity of a constraint currently skips the other changes to that
-    // constraint, so the new role label is not stored. If that gets fixed, this test needs another
-    // change that the import accepts without storing it.
+    // constraint, so the new role label is not stored. The failing case needs such a bug to exist.
+    // Once this one is fixed, replace it with another change that the import accepts without storing it,
+    // or drop that part of the test if none is left.
     auto getSchemaXml = [] (Utf8CP version, Utf8CP targetMultiplicity, Utf8CP targetRoleLabel)
         {
         return Utf8PrintfString(R"xml(<?xml version="1.0" encoding="utf-8"?>
@@ -322,6 +323,60 @@ TEST_F(SchemaManagerTests, VerifyPersistedSchemasFailsImportOfChangesThatAreNotS
     const SchemaManager::SchemaImportOptions doNotFailAndVerify = SchemaManager::SchemaImportOptions::VerifyPersistedSchemas | SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications;
     EXPECT_EQ(SUCCESS, importAndGetPersistedRoleLabel(multiplicityAndRoleLabel, doNotFailAndVerify, roleLabel)) << issueListener.GetLastMessage().c_str();
     EXPECT_FALSE(hasDifferenceIssue());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaManagerTests, VerifyPersistedSchemasAcceptsReferenceToOlderSchemaVersion)
+    {
+    // The imported schema references an older version of a schema in the file. ECDb keeps the newer
+    // version and stores the reference to it, which the verification must not report.
+    auto getRefSchemaXml = [] (Utf8CP version, Utf8CP additionalItems)
+        {
+        return Utf8PrintfString(R"xml(<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="RefSchema" alias="rs" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+    <ECEntityClass typeName="Base">
+        <ECProperty propertyName="Code" typeName="string" />
+    </ECEntityClass>
+    %s
+</ECSchema>)xml", version, additionalItems);
+        };
+
+    auto getMainSchemaXml = [] (Utf8CP version, Utf8CP additionalProperties)
+        {
+        return Utf8PrintfString(R"xml(<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="MainSchema" alias="ms" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+    <ECSchemaReference name="RefSchema" version="01.00.00" alias="rs" />
+    <ECEntityClass typeName="Pipe">
+        <BaseClass>rs:Base</BaseClass>
+        <ECProperty propertyName="Diameter" typeName="double" />
+        %s
+    </ECEntityClass>
+</ECSchema>)xml", version, additionalProperties);
+        };
+
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("VerifyPersistedSchemasReferences.ecdb"));
+    ASSERT_EQ(SUCCESS, ImportSchemas({SchemaItem(getRefSchemaXml("01.00.00", "")), SchemaItem(getMainSchemaXml("01.00.00", ""))}, SchemaManager::SchemaImportOptions::VerifyPersistedSchemas));
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(getRefSchemaXml("01.00.01", R"xml(<ECEntityClass typeName="Other" />)xml")), SchemaManager::SchemaImportOptions::VerifyPersistedSchemas));
+
+    // Read without the ECDb as schema locater, so the reference resolves to RefSchema 1.0.0.
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr refSchema, mainSchema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(refSchema, getRefSchemaXml("01.00.00", "").c_str(), *context));
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(mainSchema, getMainSchemaXml("01.00.01", R"xml(<ECProperty propertyName="Material" typeName="string" />)xml").c_str(), *context));
+    ASSERT_STREQ("RefSchema.01.00.00", mainSchema->GetReferencedSchemas().begin()->second->GetFullSchemaName().c_str());
+
+    TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
+    EXPECT_TRUE(m_ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas(), SchemaManager::SchemaImportOptions::VerifyPersistedSchemas).IsOk()) << issueListener.GetLastMessage().c_str();
+    m_ecdb.RemoveIssueListener();
+
+    m_ecdb.ClearECDbCache();
+    ECSchemaCP persistedMainSchema = m_ecdb.Schemas().GetSchema("MainSchema");
+    ASSERT_TRUE(persistedMainSchema != nullptr);
+    EXPECT_EQ(1, persistedMainSchema->GetVersionMinor());
+    EXPECT_STREQ("RefSchema.01.00.01", persistedMainSchema->GetReferencedSchemas().begin()->second->GetFullSchemaName().c_str());
     }
 
 //---------------------------------------------------------------------------------------
