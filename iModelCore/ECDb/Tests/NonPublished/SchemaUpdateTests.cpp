@@ -191,6 +191,7 @@ TEST_F(ClassHierarchyUpdateTests, DeletingPropertyOfClassWithOwnTableIsRejected)
     Utf8String schemaXml = GetBaselineSchemaXml();
     ReplaceInClass(schemaXml, "Note", R"xml(<ECProperty propertyName="Priority" typeName="int" />)xml", "");
     ASSERT_EQ(ERROR, UpdateSchema(schemaXml, SchemaVersionChange::Major));
+    ExpectRejectionReason("ECDb_0386");
 
     VerifyData();
     }
@@ -203,13 +204,13 @@ TEST_F(ClassHierarchyUpdateTests, DeletingPropertyOfClassWithOwnTableIsRejected)
 //+===============+===============+===============+===============+===============+======
 struct SchemaUpdateHarnessTests : ClassHierarchyUpdateTests
     {
-    //! Runs VerifyData and returns the failures it reported, without failing the test.
-    Utf8String CaptureVerifyDataFailures(ExpectedDataChanges const& expectedChanges = ExpectedDataChanges())
+    //! Runs the check and returns the failures it reported, without failing the test.
+    static Utf8String CaptureFailures(std::function<void()> const& check)
         {
         ::testing::TestPartResultArray failures;
             {
             ::testing::ScopedFakeTestPartResultReporter reporter(::testing::ScopedFakeTestPartResultReporter::INTERCEPT_ONLY_CURRENT_THREAD, &failures);
-            VerifyData(expectedChanges);
+            check();
             }
 
         Utf8String messages;
@@ -217,6 +218,19 @@ struct SchemaUpdateHarnessTests : ClassHierarchyUpdateTests
             messages.append(failures.GetTestPartResult(i).message()).append("\n");
 
         return messages;
+        }
+
+    Utf8String CaptureVerifyDataFailures(ExpectedDataChanges const& expectedChanges = ExpectedDataChanges())
+        {
+        return CaptureFailures([&] () { VerifyData(expectedChanges); });
+        }
+
+    //! Deleting a property of a class with its own table is rejected with ECDb_0386.
+    void RejectUpdate()
+        {
+        Utf8String schemaXml = GetBaselineSchemaXml();
+        ReplaceInClass(schemaXml, "Note", R"xml(<ECProperty propertyName="Priority" typeName="int" />)xml", "");
+        ASSERT_EQ(ERROR, UpdateSchema(schemaXml, SchemaVersionChange::Major));
         }
 
     static bool Contains(Utf8StringCR messages, Utf8CP text) { return messages.find(text) != Utf8String::npos; }
@@ -274,6 +288,44 @@ TEST_F(SchemaUpdateHarnessTests, ReportsAddedInstances)
 
     Utf8String failures = CaptureVerifyDataFailures();
     EXPECT_TRUE(Contains(failures, "appeared after the update")) << failures.c_str();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpdateHarnessTests, ReportsRejectionWithoutReason)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+    RejectUpdate();
+
+    Utf8String failures = CaptureVerifyDataFailures();
+    EXPECT_TRUE(Contains(failures, "Call ExpectRejectionReason")) << failures.c_str();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpdateHarnessTests, ReportsWrongRejectionReason)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+    RejectUpdate();
+
+    Utf8String failures = CaptureFailures([&] () { ExpectRejectionReason("ECDb_0001"); });
+    EXPECT_TRUE(Contains(failures, "was not rejected with ECDb_0001") && Contains(failures, "ECDb_0386")) << failures.c_str();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpdateHarnessTests, ReportsAcceptedUpdateExpectedToBeRejected)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    ReplaceInClass(schemaXml, "Note", R"xml(<ECProperty propertyName="Priority" typeName="int" />)xml", R"xml(<ECProperty propertyName="Priority" typeName="int" displayLabel="Note priority" />)xml");
+    ASSERT_EQ(SUCCESS, UpdateSchema(schemaXml));
+
+    Utf8String failures = CaptureFailures([&] () { ExpectRejectionReason("ECDb_0386"); });
+    EXPECT_TRUE(Contains(failures, "was accepted")) << failures.c_str();
     }
 #endif
 

@@ -250,6 +250,83 @@ TEST_F(SchemaManagerTests, SchemaImportOptionsDoNotOverlap)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaManagerTests, VerifyPersistedSchemasFailsImportOfChangesThatAreNotStored)
+    {
+    // Raising the upper multiplicity of a constraint currently skips the other changes to that
+    // constraint, so the new role label is not stored. If that gets fixed, this test needs another
+    // change that the import accepts without storing it.
+    auto getSchemaXml = [] (Utf8CP version, Utf8CP targetMultiplicity, Utf8CP targetRoleLabel)
+        {
+        return Utf8PrintfString(R"xml(<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+    <ECEntityClass typeName="Parent">
+        <ECProperty propertyName="Name" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="Child">
+        <ECProperty propertyName="Name" typeName="string" />
+        <ECNavigationProperty propertyName="Parent" relationshipName="ParentHasChildren" direction="Backward" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ParentHasChildren" strength="referencing" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="has" polymorphic="false">
+            <Class class="Parent" />
+        </Source>
+        <Target multiplicity="%s" roleLabel="%s" polymorphic="false">
+            <Class class="Child" />
+        </Target>
+    </ECRelationshipClass>
+</ECSchema>)xml", version, targetMultiplicity, targetRoleLabel);
+        };
+
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("VerifyPersistedSchemas.ecdb"));
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(getSchemaXml("01.00.00", "(0..1)", "belongs to")), SchemaManager::SchemaImportOptions::VerifyPersistedSchemas));
+
+    TestIssueListener issueListener;
+    auto importAndGetPersistedRoleLabel = [&] (SchemaItem const& schema, SchemaManager::SchemaImportOptions options, Utf8StringR roleLabel)
+        {
+        issueListener.ClearIssues();
+        m_ecdb.AddIssueListener(issueListener);
+        Savepoint savepoint(m_ecdb, "VerifyPersistedSchemas");
+        const BentleyStatus status = GetHelper().ImportSchema(schema, options);
+        m_ecdb.RemoveIssueListener();
+        m_ecdb.ClearECDbCache();
+        ECClassCP relationship = m_ecdb.Schemas().GetClass("TestSchema", "ParentHasChildren");
+        if (relationship != nullptr && relationship->GetRelationshipClassCP() != nullptr)
+            roleLabel = relationship->GetRelationshipClassCP()->GetTarget().GetInvariantRoleLabel();
+        else
+            ADD_FAILURE() << "Relationship class not found after the import";
+        savepoint.Cancel();
+        m_ecdb.ClearECDbCache();
+        return status;
+        };
+
+    auto hasDifferenceIssue = [&] ()
+        {
+        return std::any_of(issueListener.m_issues.begin(), issueListener.m_issues.end(),
+            [] (ReportedIssue const& issue) { return Utf8String(issue.id.m_issueId).Equals("ECDb_0754"); });
+        };
+
+    Utf8String roleLabel;
+    const SchemaItem roleLabelOnly(getSchemaXml("01.00.01", "(0..1)", "is attached to"));
+    EXPECT_EQ(SUCCESS, importAndGetPersistedRoleLabel(roleLabelOnly, SchemaManager::SchemaImportOptions::VerifyPersistedSchemas, roleLabel)) << issueListener.GetLastMessage().c_str();
+    EXPECT_STREQ("is attached to", roleLabel.c_str());
+
+    const SchemaItem multiplicityAndRoleLabel(getSchemaXml("01.00.01", "(0..*)", "is attached to"));
+    EXPECT_EQ(SUCCESS, importAndGetPersistedRoleLabel(multiplicityAndRoleLabel, SchemaManager::SchemaImportOptions::None, roleLabel));
+    EXPECT_STREQ("belongs to", roleLabel.c_str()) << "The role label is expected to be dropped without the option";
+
+    EXPECT_EQ(ERROR, importAndGetPersistedRoleLabel(multiplicityAndRoleLabel, SchemaManager::SchemaImportOptions::VerifyPersistedSchemas, roleLabel));
+    EXPECT_TRUE(hasDifferenceIssue()) << issueListener.GetLastMessage().c_str();
+    EXPECT_TRUE(issueListener.GetLastMessage().Contains("RoleLabel")) << issueListener.GetLastMessage().c_str();
+
+    // DoNotFailForDeletionsOrModifications skips changes on purpose, so the verification does not run.
+    const SchemaManager::SchemaImportOptions doNotFailAndVerify = SchemaManager::SchemaImportOptions::VerifyPersistedSchemas | SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications;
+    EXPECT_EQ(SUCCESS, importAndGetPersistedRoleLabel(multiplicityAndRoleLabel, doNotFailAndVerify, roleLabel)) << issueListener.GetLastMessage().c_str();
+    EXPECT_FALSE(hasDifferenceIssue());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, DisallowMajorSchemaVersionImport)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("DisallowMajorSchemaVersionImport.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8' ?>"

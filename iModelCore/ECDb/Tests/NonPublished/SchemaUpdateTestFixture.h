@@ -68,6 +68,7 @@ enum class SchemaVersionChange
 //!   against the whole schema. Add a new fixture rather than growing an unrelated baseline.
 //! - SetupFromBaseline, edit GetBaselineSchemaXml with ReplaceInClass, RemoveClass and
 //!   AppendToSchema, then UpdateSchema. Leave the version in the XML alone, UpdateSchema sets it.
+//! - After a rejected update, state the reason with ExpectRejectionReason. VerifyData fails otherwise.
 //! - Always end with VerifyData, also after a rejected update.
 //! - Assert only on observable results: accepted or rejected, data, persisted schema.
 //!   Never on tables or columns, so the tests stay valid when the mapping changes.
@@ -99,6 +100,8 @@ struct SchemaUpdateTestFixture : ECDbTestFixture
         DataSnapshot m_dataBeforeUpdate;
         Utf8String m_schemaXmlBeforeUpdate;
         bool m_lastUpdateFailed = false;
+        std::vector<ReportedIssue> m_lastUpdateIssues;
+        bool m_isRejectionReasonVerified = false;
 
         void ReadData(DataSnapshot&) const;
         Utf8String GetPersistedSchemaXml() const;
@@ -113,9 +116,14 @@ struct SchemaUpdateTestFixture : ECDbTestFixture
         BentleyStatus SetupFromBaseline(SchemaUpdateBaseline const&);
 
         //! Imports the schema XML. The harness sets the schema version relative to the persisted one.
+        //! VerifyPersistedSchemas is always added to the options, so an update that is accepted but not stored as imported fails.
         //! @return SUCCESS if ECDb accepted the update, ERROR if it rejected it
         BentleyStatus UpdateSchema(Utf8StringCR schemaXml, SchemaVersionChange versionChange = SchemaVersionChange::Minor,
             SchemaManager::SchemaImportOptions options = SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade);
+
+        //! Checks that the last update was rejected and that ECDb reported the given issue, e.g. "ECDb_0386".
+        //! Required after every rejected update, so a test cannot pass because the update was rejected for another reason.
+        void ExpectRejectionReason(Utf8CP issueId);
 
         //! Reopens the file and verifies all data against the state before the update, plus the expected changes.
         //! After a rejected update, also verifies that the persisted schema did not change.

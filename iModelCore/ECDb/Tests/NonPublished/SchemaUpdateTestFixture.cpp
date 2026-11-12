@@ -24,6 +24,16 @@ struct InsertedInstance final
     };
 
 //---------------------------------------------------------------------------------------
+// Rejections are often expected, so their reasons are printed rather than reported as test failures.
+//---------------------------------------------------------------------------------------
+void PrintRejectionReasons(Utf8CP what, TestIssueListener const& issueListener)
+    {
+    printf("%s was rejected.\n", what);
+    for (ReportedIssue const& issue : issueListener.m_issues)
+        printf("    %s: %s\n", issue.id.m_issueId, issue.message.c_str());
+    }
+
+//---------------------------------------------------------------------------------------
 // Baselines are created once per test run and shared by all tests using them.
 //---------------------------------------------------------------------------------------
 std::map<Utf8String, BaselineSeed>& GetBaselineSeeds()
@@ -564,8 +574,13 @@ BentleyStatus CreateBaselineSeed(BaselineSeed& seed, SchemaUpdateBaseline const&
     if (BE_SQLITE_OK != ECDbTestFixture::CreateECDb(seedDb, fileName.c_str()))
         return ERROR;
 
-    if (SUCCESS != TestHelper(seedDb).ImportSchema(SchemaItem(baseline.GetSchemaXml()), SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade))
+    TestIssueListener issueListener;
+    seedDb.AddIssueListener(issueListener);
+    const BentleyStatus importStatus = TestHelper(seedDb).ImportSchema(SchemaItem(baseline.GetSchemaXml()), SchemaManager::SchemaImportOptions::VerifyPersistedSchemas);
+    seedDb.RemoveIssueListener();
+    if (SUCCESS != importStatus)
         {
+        PrintRejectionReasons("Import of the baseline schema", issueListener);
         ADD_FAILURE() << "Failed to import the schema of baseline " << baseline.GetName().c_str();
         return ERROR;
         }
@@ -668,11 +683,21 @@ BentleyStatus SchemaUpdateTestFixture::UpdateSchema(Utf8StringCR schemaXml, Sche
             break;
         }
 
+    // ECDb takes one issue listener at a time. If the test has its own, that one gets the issues.
+    TestIssueListener issueListener;
+    const bool isListening = SUCCESS == m_ecdb.AddIssueListener(issueListener);
     Savepoint savepoint(m_ecdb, "SchemaUpdate");
-    if (SUCCESS != m_ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas(), options))
+    const bool isImported = SUCCESS == m_ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas(), options | SchemaManager::SchemaImportOptions::VerifyPersistedSchemas);
+    if (isListening)
+        m_ecdb.RemoveIssueListener();
+
+    m_lastUpdateIssues = issueListener.m_issues;
+    m_isRejectionReasonVerified = false;
+    if (!isImported)
         {
         savepoint.Cancel();
         m_lastUpdateFailed = true;
+        PrintRejectionReasons("Schema update", issueListener);
         return ERROR;
         }
 
@@ -684,8 +709,35 @@ BentleyStatus SchemaUpdateTestFixture::UpdateSchema(Utf8StringCR schemaXml, Sche
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+void SchemaUpdateTestFixture::ExpectRejectionReason(Utf8CP issueId)
+    {
+    m_isRejectionReasonVerified = true;
+    if (!m_lastUpdateFailed)
+        {
+        ADD_FAILURE() << "The schema update was accepted, expected a rejection with " << issueId << ".";
+        return;
+        }
+
+    Utf8String reportedIssues;
+    for (ReportedIssue const& issue : m_lastUpdateIssues)
+        {
+        if (0 == strcmp(issueId, issue.id.m_issueId))
+            return;
+
+        reportedIssues.append("\n    ").append(issue.id.m_issueId).append(": ").append(issue.message);
+        }
+
+    ADD_FAILURE() << "The schema update was not rejected with " << issueId << ". Reported issues:" << reportedIssues.c_str();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 void SchemaUpdateTestFixture::VerifyData(ExpectedDataChanges const& expectedChanges)
     {
+    if (m_lastUpdateFailed && !m_isRejectionReasonVerified)
+        ADD_FAILURE() << "The schema update was rejected. Call ExpectRejectionReason before VerifyData to state why.";
+
     // Reopening drops all caches, like an application that opens the file after the update.
     ASSERT_EQ(BE_SQLITE_OK, ReopenWithExperimentalFeatures());
 
