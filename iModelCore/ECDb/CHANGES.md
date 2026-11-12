@@ -7,6 +7,14 @@ This document including important changes to syntax or file format.
 | Profile | `4.0.0.5` |
 | ECSQL   | `2.0.4.2` |
 
+## `11/12/2026`: Schema changesets are applied without foreign key actions
+* The new `ECDb::ApplySchemaChangeSet` applies the `ec_` rows of a changeset with `SQLITE_CHANGESETAPPLY_FKNOACTION`. `TxnManager` uses it whenever it merges, reverses, reinstates or reverts a changeset with schema changes. Foreign keys are still checked once the whole changeset has been applied.
+* Previously, `ON DELETE CASCADE` could fire while the `ec_` rows were applied. A changeset that moved properties to a new PropertyCategory, KindOfQuantity or ECEnumeration and deleted the old one could delete those properties, with their property maps, and leave their custom attributes behind as orphans.
+* `ec_cache_ClassHierarchy` and `ec_cache_ClassHasTables` are cleared before the `ec_` rows are applied and rebuilt afterwards. Their rows in a changeset are ignored.
+* Changeset health statistics leave out clearing and rebuilding the cache tables, so the statistics of a schema changeset no longer count `ec_cache_*` rows.
+* When it merges a changeset with schema changes, `TxnManager` now applies the data rows without foreign key actions, as it does for every other changeset. Previously, it applied them with foreign key actions if the changeset did not update or delete `ec_cache_*` rows. Rebasing local txns still applies data rows with foreign key actions.
+* Profile and ECSql versions are unchanged.
+
 ## `11/10/2026`: Schema imports keep inherited property maps consistent
 * A schema import saves the `ec_PropertyMap` rows that a class is missing for the properties it inherits, for example after an earlier import inserted a base class above it. An import can therefore add rows for classes the schema change does not touch. This also completes the maps of files that earlier imports left without those rows.
 * An import creates the missing overflow table rows of existing instances before it moves the values of remapped properties. Previously, a value that a remap moved to the overflow table was cleared when the instance had no overflow row yet.

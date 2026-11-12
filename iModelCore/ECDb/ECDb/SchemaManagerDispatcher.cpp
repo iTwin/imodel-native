@@ -2749,6 +2749,21 @@ BentleyStatus MainSchemaManager::RepopulateCacheTables() const
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+BentleyStatus MainSchemaManager::ClearCacheTables() const
+    {
+    BeMutexHolder lock(m_mutex);
+    if (SUCCESS != DbSchemaPersistenceManager::ClearCacheTables(m_ecdb))
+        {
+        LOG.error("Failed to clear ECDb's cache tables '" TABLE_ClassHierarchyCache "' and '" TABLE_ClassHasTablesCache "'.");
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 //static
 void MainSchemaManager::GatherRootClasses(
     ECClassCR ecclass,

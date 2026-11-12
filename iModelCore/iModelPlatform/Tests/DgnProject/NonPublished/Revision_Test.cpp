@@ -2267,6 +2267,132 @@ TEST_F(RevisionTestFixture, Revert_DeleteClassConstraintViolationInCacheTable)
     checkTestClassExists(false, "AnotherTestClass");
     }
 
+//---------------------------------------------------------------------------------------
+// A schema changeset moves Kept to a new PropertyCategory and deletes the old one. Merging
+// the changeset, and reverting it, must keep Kept and its property map. ec_Property.CategoryId
+// references ec_PropertyCategory with ON DELETE CASCADE, and in both directions a category
+// that Kept still references is deleted before the update to Kept is applied.
+// See https://github.com/iTwin/itwinjs-backlog/issues/2606
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, PropertyCategoryReassignedAndOldCategoryDeleted)
+    {
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"PropertyCategoryReassignedAndOldCategoryDeleted.bim");
+    EXPECT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Initialized db"));
+
+    auto context = ECN::ECSchemaReadContext::CreateContext();
+    context->AddSchemaLocater(m_db->GetSchemaLocater());
+
+    BeFileName searchDirs[2];
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(searchDirs[0]);
+    searchDirs[0].AppendToPath(L"ECSchemas");
+    searchDirs[1] = searchDirs[0];
+
+    context->AddFirstSchemaPaths({ searchDirs[0].AppendToPath(L"Dgn"), searchDirs[1].AppendToPath(L"Standard") });
+
+    auto importSchema = [&](Utf8CP version, Utf8CP category)
+        {
+        const Utf8PrintfString schemaXml(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECSchemaReference name="BisCore" version="1.0.0" alias="bis"/>
+                <ECSchemaReference name="CoreCustomAttributes" version="1.0.0" alias="CoreCA" />
+
+                <ECCustomAttributes>
+                    <DynamicSchema xmlns = 'CoreCustomAttributes.1.0.0' />
+                </ECCustomAttributes>
+
+                <PropertyCategory typeName="%s" priority="1" />
+                <ECEntityClass typeName="TestElement">
+                    <BaseClass>bis:PhysicalElement</BaseClass>
+                    <ECProperty propertyName="Kept" typeName="string" category="%s" />
+                </ECEntityClass>
+            </ECSchema>)xml", version, category, category);
+
+        ECSchemaPtr schema;
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *context));
+        ASSERT_EQ(SchemaStatus::Success, m_db->ImportSchemas({ schema.get() }, true));
+        ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges(version));
+        };
+
+    // Kept must be in @p category, the only category of the schema, and have its one map.
+    auto expectKeptIn = [&](Utf8CP category, Utf8CP step)
+        {
+        m_db->ClearECDbCache();
+        ECClassCP testElement = m_db->Schemas().GetClass("TestSchema", "TestElement");
+        ASSERT_NE(nullptr, testElement) << step;
+        ECPropertyCP kept = testElement->GetPropertyP("Kept", false);
+        ASSERT_NE(nullptr, kept) << step << ": Kept is gone";
+        ASSERT_NE(nullptr, kept->GetCategory()) << step;
+        EXPECT_STREQ(category, kept->GetCategory()->GetName().c_str()) << step;
+
+        Statement categories;
+        ASSERT_EQ(BE_SQLITE_OK, categories.Prepare(*m_db, "SELECT pc.Name FROM ec_PropertyCategory pc JOIN ec_Schema s ON s.Id=pc.SchemaId WHERE s.Name='TestSchema'"));
+        ASSERT_EQ(BE_SQLITE_ROW, categories.Step()) << step;
+        EXPECT_STREQ(category, categories.GetValueText(0)) << step;
+        EXPECT_EQ(BE_SQLITE_DONE, categories.Step()) << step << ": the other category is still there";
+
+        Statement maps;
+        ASSERT_EQ(BE_SQLITE_OK, maps.Prepare(*m_db, "SELECT COUNT(*) FROM ec_PropertyMap pm JOIN ec_PropertyPath pp ON pp.Id=pm.PropertyPathId "
+            "JOIN ec_Property p ON p.Id=pp.RootPropertyId JOIN ec_Class c ON c.Id=p.ClassId WHERE c.Name='TestElement' AND p.Name='Kept'"));
+        ASSERT_EQ(BE_SQLITE_ROW, maps.Step()) << step;
+        EXPECT_EQ(1, maps.GetValueInt(0)) << step << ": maps of Kept";
+
+        ECSqlStatement select;
+        EXPECT_EQ(ECSqlStatus::Success, select.Prepare(*m_db, "SELECT Kept FROM ts.TestElement")) << step;
+        };
+
+    importSchema("1.0.0", "OldCategory");
+    ASSERT_FALSE(HasFatalFailure());
+    ASSERT_TRUE(CreateRevision("-v1").IsValid());
+    BackupTestFile();
+    expectKeptIn("OldCategory", "v1");
+
+    importSchema("1.0.1", "NewCategory");
+    ASSERT_FALSE(HasFatalFailure());
+    const auto v2 = CreateRevision("-v2");
+    ASSERT_TRUE(v2.IsValid());
+    expectKeptIn("NewCategory", "v2 imported");
+
+    RestoreTestFile();
+    expectKeptIn("OldCategory", "restored");
+
+    EXPECT_EQ(ChangesetStatus::Success, m_db->Txns().PullMergeApply(*v2));
+    expectKeptIn("NewCategory", "v2 merged");
+
+    m_db->Txns().RevertTimelineChanges({ v2 }, false);
+    expectKeptIn("OldCategory", "v2 reverted");
+    }
+
+//---------------------------------------------------------------------------------------
+// Reverting a changeset without schema changes reverts its rows in one pass. There is no
+// schema pass to clear and rebuild the ec_cache_ tables, and no schema change is announced.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, RevertDataChangesetSkipsSchemaPass)
+    {
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"RevertDataChangesetSkipsSchemaPass.bim");
+    EXPECT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Initialized db"));
+    ASSERT_TRUE(CreateRevision("-initialize").IsValid());
+
+    const DgnElementId elementId = RevisionTestFixture::InsertPhysicalElement(*m_db, *m_defaultModel, m_defaultCategoryId, 1, 1, 1);
+    ASSERT_TRUE(elementId.IsValid());
+    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Inserted an element"));
+    const auto dataRevision = CreateRevision("-data");
+    ASSERT_TRUE(dataRevision.IsValid());
+    ASSERT_FALSE(dataRevision->ContainsEcChanges());
+    ASSERT_FALSE(dataRevision->ContainsDdlChanges(*m_db));
+
+    int schemaChangeEvents = 0;
+    BeEventScope listeners;
+    m_db->Schemas().OnBeforeSchemaChanges().AddListener(listeners, [&](ECDbCR, SchemaChangeType) { ++schemaChangeEvents; });
+    m_db->Schemas().OnAfterSchemaChanges().AddListener(listeners, [&](ECDbCR, SchemaChangeType) { ++schemaChangeEvents; });
+
+    m_db->Txns().RevertTimelineChanges({ dataRevision }, false);
+
+    EXPECT_EQ(0, schemaChangeEvents);
+    EXPECT_TRUE(m_db->Elements().GetElement(elementId).IsNull()) << "the inserted element was not reverted";
+    }
+
 TEST_F(RevisionTestFixture, CheckHealthStatsWithSchemaChanges) {
     SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"CheckHealthStatsWithSchemaChanges.bim");
     EXPECT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Initialized db"));
@@ -2381,10 +2507,11 @@ TEST_F(RevisionTestFixture, CheckHealthStatsWithSchemaChanges) {
         unsigned int sqlStatementCount;
     };
 
+    // A schema changeset's ec_cache_ rows are skipped and the cache is rebuilt instead, outside the measured scope.
     std::unordered_map<Utf8String, TestCase> revisionsData = {
         { revisions[0]->GetChangesetId(), { 5, 2, 0, 0, 7 } },
         { revisions[1]->GetChangesetId(), { 1, 1, 3, 0, 5 } },
-        { revisions[2]->GetChangesetId(), { 0, 1097, 51, 0, 11 } },
+        { revisions[2]->GetChangesetId(), { 0, 1, 43, 0, 7 } },
     };
 
     auto changesets = m_db->Txns().GetAllChangesetHealthStatistics()["changesets"];

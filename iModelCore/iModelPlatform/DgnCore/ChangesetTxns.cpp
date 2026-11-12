@@ -310,10 +310,8 @@ ChangeSet::ConflictResolution LocalChangeSet::_OnConflict(ChangeSet::ConflictCau
         if (cause == ChangeSet::ConflictCause::Data && !iter.IsIndirect())
             return m_ecChangesSupersedeBriefcase ? ChangeSet::ConflictResolution::Replace : ChangeSet::ConflictResolution::Skip;
 
-        // An insert conflict cannot take Replace here: it deletes the existing row first, nearly every
-        // ec_ foreign key is ON DELETE CASCADE, and cascades are deliberately live during rebase, so
-        // the delete would take that row's children and the insert would restore only the parent.
-        // A superseding row is written afterwards instead, by ApplySupersedingRows.
+        // An insert conflict keeps the row this briefcase holds. A superseding row is written once the
+        // whole txn has been applied, by ApplySupersedingRows.
         if (cause == ChangeSet::ConflictCause::Conflict) {
             if (iter.GetTableName().StartsWithIAscii("ec_") && ConflictingRowDiffers(m_dgndb, iter)) {
                 if (m_ecChangesSupersedeBriefcase && BE_SQLITE_OK == m_supersedingRows.AddChange(iter))
@@ -479,12 +477,8 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
 
         // Under schema sync, every briefcase gets its ec_ rows from the same authority, so a changeset
         // re-inserting rows this briefcase already holds is the ordinary case rather than a sign of
-        // trouble. Replace is the wrong answer for them: here it deletes the existing row before
-        // inserting the incoming one, and every ec_ child table is ON DELETE CASCADE - so with foreign
-        // key actions live it takes that row's children with it and the re-insert restores only the
-        // parent. TxnManager leaves actions live for a purely additive schema changeset, which is what
-        // an import produces. The branch below already skips these when there are local changes; a
-        // briefcase that has already pushed needs the same treatment, and gets it here.
+        // trouble, and the row this briefcase holds is kept. The branch below already skips these when
+        // there are local changes; a briefcase that has already pushed needs the same treatment, and gets it here.
         if (iter.GetTableName().StartsWithIAscii("ec_") && m_dgndb->Schemas().GetSchemaSync().IsEnabled()) {
             if (ConflictingRowDiffers(*m_dgndb, iter)) {
                 LOG.errorv("Schema sync: incoming row in %s differs from the one this briefcase holds under the same id. Keeping the existing row.", iter.GetTableName().c_str());

@@ -494,12 +494,6 @@ struct PropertyMapIntegrityTestFixture : public ECDbTestFixture
         db.RemoveIssueListener();
         PrintIssues(listener, context);
         EXPECT_EQ(BE_SQLITE_OK, rc) << context << ": pull/merge/push failed";
-        if (BE_SQLITE_OK != rc)
-            {
-            // TxnManager::ApplyChanges abandons a changeset that fails to apply, leaving the briefcase where it was.
-            db.AbandonChanges();
-            db.ClearECDbCache();
-            }
         for (auto const& issue : listener.m_issues)
             EXPECT_NE(ECN::IssueSeverity::Error, issue.severity) << context << ": " << issue.message.c_str();
         }
@@ -587,6 +581,20 @@ struct PropertyMapIntegrityTestFixture : public ECDbTestFixture
         ASSERT_TRUE(ImportPushPull(*b1, {b2.get()}, v1, "v1", {}, [&](ECDbR db) { Execute(db, insertItem); Execute(db, insertLeaf); }));
         ImportPushPull(*b1, {b2.get()}, v2, "v2");
         }
+
+    //! Fails unless @p className declares @p propertyName in @p category, or in no category if @p category is null.
+    static void ExpectCategory(ECDbR db, Utf8CP className, Utf8CP propertyName, Utf8CP category, Utf8CP context)
+        {
+        ECClassCP ecClass = db.Schemas().GetClass("TestSchema", className);
+        ECPropertyCP prop = ecClass == nullptr ? nullptr : ecClass->GetPropertyP(propertyName, false);
+        if (prop == nullptr)
+            {
+            ADD_FAILURE() << context << ": " << className << "." << propertyName << " is missing";
+            return;
+            }
+        PropertyCategoryCP actual = prop->GetCategory();
+        EXPECT_STREQ(category, actual == nullptr ? nullptr : actual->GetName().c_str()) << context << ": category of " << className << "." << propertyName;
+        }
     };
 
 //---------------------------------------------------------------------------------------
@@ -596,12 +604,10 @@ struct PropertyMapIntegrityTestFixture : public ECDbTestFixture
 // ON DELETE CASCADE of ec_Property.CategoryId must not delete properties, with their maps,
 // because the category row was deleted before the property rows were updated. A deleted
 // property would also leave its custom attribute behind as an orphan.
-// Disabled until applying a schema changeset no longer lets the cascade delete properties:
-// TxnManager::ApplySchemaChangesInOrder deletes rows before it updates the rows that still
-// reference them. Run with --gtest_also_run_disabled_tests.
+// See https://github.com/iTwin/itwinjs-backlog/issues/2606
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PropertyMapIntegrityTestFixture, DISABLED_PropertyCategoryReassignedAndOldCategoryDeleted)
+TEST_F(PropertyMapIntegrityTestFixture, PropertyCategoryReassignedAndOldCategoryDeleted)
     {
     RunReferencingSchemas(
         ReferencingSchema(0, R"xml(<PropertyCategory typeName="OldCategory" priority="1"/>)xml",
@@ -614,10 +620,10 @@ TEST_F(PropertyMapIntegrityTestFixture, DISABLED_PropertyCategoryReassignedAndOl
 
 //---------------------------------------------------------------------------------------
 // The same as PropertyCategoryReassignedAndOldCategoryDeleted for a KindOfQuantity, which
-// ec_Property.KindOfQuantityId references with ON DELETE CASCADE. Disabled for the same reason.
+// ec_Property.KindOfQuantityId references with ON DELETE CASCADE.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PropertyMapIntegrityTestFixture, DISABLED_KindOfQuantityReassignedAndOldKindOfQuantityDeleted)
+TEST_F(PropertyMapIntegrityTestFixture, KindOfQuantityReassignedAndOldKindOfQuantityDeleted)
     {
     RunReferencingSchemas(
         ReferencingSchema(0, R"xml(<KindOfQuantity typeName="OldKoq" persistenceUnit="u:M" relativeError="0.001"/>)xml",
@@ -631,10 +637,10 @@ TEST_F(PropertyMapIntegrityTestFixture, DISABLED_KindOfQuantityReassignedAndOldK
 //---------------------------------------------------------------------------------------
 // The same as PropertyCategoryReassignedAndOldCategoryDeleted for an ECEnumeration, which
 // ec_Property.EnumerationId references with ON DELETE CASCADE. Two properties move to the
-// new enumeration, one to the backing type. Disabled for the same reason.
+// new enumeration, one to the backing type.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PropertyMapIntegrityTestFixture, DISABLED_EnumerationReassignedAndOldEnumerationDeleted)
+TEST_F(PropertyMapIntegrityTestFixture, EnumerationReassignedAndOldEnumerationDeleted)
     {
     RunReferencingSchemas(
         ReferencingSchema(0, R"xml(<ECEnumeration typeName="OldEnum" backingTypeName="int" isStrict="false"><ECEnumerator name="One" value="1"/><ECEnumerator name="Two" value="2"/></ECEnumeration>)xml",
@@ -931,11 +937,10 @@ TEST_F(PropertyMapIntegrityTestFixture, IntermediateBaseClassInserted)
 //---------------------------------------------------------------------------------------
 // The briefcase that pulled the category change of PropertyCategoryReassignedAndOldCategoryDeleted
 // imports the next schema version, which adds a property, and pushes it. Both briefcases
-// must end up with healthy, identical schemas that read every value. Disabled while
-// PropertyCategoryReassignedAndOldCategoryDeleted is.
+// must end up with healthy, identical schemas that read every value.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PropertyMapIntegrityTestFixture, DISABLED_BriefcaseThatPulledCategoryDeletionImportsNextSchema)
+TEST_F(PropertyMapIntegrityTestFixture, BriefcaseThatPulledCategoryDeletionImportsNextSchema)
     {
     ECDbHub hub;
     auto b1 = hub.CreateBriefcase();
@@ -957,13 +962,13 @@ TEST_F(PropertyMapIntegrityTestFixture, DISABLED_BriefcaseThatPulledCategoryDele
 
 //---------------------------------------------------------------------------------------
 // BriefcaseThatPulledCategoryDeletionImportsNextSchema without the custom attribute whose
-// orphan makes the schema import fail: the briefcase that lost Kept and LeafProp to the
-// cascade imports the next schema version, which declares them again, and pushes it. Both
-// briefcases must end up with healthy, identical schemas that read every value. Disabled
-// while PropertyCategoryReassignedAndOldCategoryDeleted is.
+// orphan made the schema import fail: the briefcase that pulled the category change, where
+// the cascade used to delete Kept and LeafProp, imports the next schema version, which
+// declares them again, and pushes it. Both briefcases must end up with healthy, identical
+// schemas that read every value.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PropertyMapIntegrityTestFixture, DISABLED_BriefcaseThatLostPropertiesToCascadeImportsNextSchema)
+TEST_F(PropertyMapIntegrityTestFixture, BriefcaseThatLostPropertiesToCascadeImportsNextSchema)
     {
     ECDbHub hub;
     auto b1 = hub.CreateBriefcase();
@@ -985,6 +990,59 @@ TEST_F(PropertyMapIntegrityTestFixture, DISABLED_BriefcaseThatLostPropertiesToCa
     ASSERT_FALSE(HasFatalFailure());
 
     ImportPushPull(*b2, {b1.get()}, schema(2, "NewCategory", Prop("Added", "string")), "v3");
+    }
+
+//---------------------------------------------------------------------------------------
+// PropertyCategoryReassignedAndOldCategoryDeleted where the category change is a local txn
+// that has to be rebased: b2 imports the change, and before b2 pushes it, b1 pushes an
+// unrelated insert. b2 reverses its txn, merges the insert and reinstates its txn, which
+// deletes the old category row again. The reinstated txn must keep Kept, Uncategorized and
+// LeafProp, with their maps and the custom attribute of Kept, and b1 must get them from the
+// pushed txn. Both briefcases must end up with healthy, identical schemas that read every value.
+// See https://github.com/iTwin/itwinjs-backlog/issues/2606
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyMapIntegrityTestFixture, PropertyCategoryReassignedInLocalTxnThatIsRebased)
+    {
+    ECDbHub hub;
+    auto b1 = hub.CreateBriefcase();
+    auto b2 = hub.CreateBriefcase();
+    ImportAndPush(*b1, {b2.get()}, ReferencingSchema(0, R"xml(<PropertyCategory typeName="OldCategory" priority="1"/>)xml",
+        "Kept", "string", R"xml(category="OldCategory")xml", "Uncategorized", "string", R"xml(category="OldCategory")xml"), "v1", [](ECDbR db)
+        {
+        Execute(db, "INSERT INTO ts.Item(Kept,Uncategorized,Other) VALUES('item kept','item uncategorized','item other')");
+        Execute(db, "INSERT INTO ts.Leaf(Kept,Uncategorized,Other,LeafProp) VALUES('leaf kept','leaf uncategorized','leaf other','leaf prop')");
+        });
+    ASSERT_FALSE(HasFatalFailure());
+
+    ASSERT_EQ(SchemaImportResult::OK, Import(*b2, ReferencingSchema(1, R"xml(<PropertyCategory typeName="NewCategory" priority="2"/>)xml",
+        "Kept", "string", R"xml(category="NewCategory")xml", "Uncategorized", "string", ""), "v2, b2"));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+
+    Execute(*b1, "INSERT INTO ts.Item(Kept,Uncategorized,Other) VALUES('b1 kept','b1 uncategorized','b1 other')");
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    Sync(*b1, "insert, b1");
+    const auto expected = TakeSnapshot(*b1, "insert, b1");
+
+    Sync(*b2, "rebase, b2");
+    Sync(*b1, "pull, b1");
+    const auto verify = [&expected](ECDbR db, Utf8CP context)
+        {
+        ExpectHealthyPropertyMaps(db, context);
+        ExpectSameValues(expected, TakeSnapshot(db, context), context);
+        ExpectCategory(db, "Item", "Kept", "NewCategory", context);
+        ExpectCategory(db, "Item", "Uncategorized", nullptr, context);
+        ExpectCategory(db, "Leaf", "LeafProp", "NewCategory", context);
+        ECSchemaCP schema = db.Schemas().GetSchema("TestSchema", true);
+        ASSERT_NE(nullptr, schema) << context;
+        EXPECT_EQ(nullptr, schema->GetPropertyCategoryCP("OldCategory")) << context << ": OldCategory is still there";
+        ECClassCP item = schema->GetClassCP("Item");
+        ECPropertyCP kept = item == nullptr ? nullptr : item->GetPropertyP("Kept", false);
+        EXPECT_TRUE(kept != nullptr && kept->GetCustomAttribute("CoreCustomAttributes", "HiddenProperty").IsValid()) << context << ": Item.Kept lost its HiddenProperty custom attribute";
+        };
+    verify(*b2, "rebase, b2");
+    verify(*b1, "pull, b1");
+    SchemaSyncTestFixture::ExpectECTablesIdentical(*b1, *b2, "pull, b1");
     }
 
 //---------------------------------------------------------------------------------------
