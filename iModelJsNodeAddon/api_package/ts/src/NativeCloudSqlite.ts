@@ -123,6 +123,12 @@ export namespace NativeCloudSqlite {
      * @note this value is only present when running in daemon mode.
      */
     readonly memoryClientManifest?: string;
+    /** The number of blocks downloaded on demand by this connection. */
+    readonly onDemandBlocksDownloaded?: string;
+    /** The number of bytes downloaded on demand by this connection. */
+    readonly onDemandBytesDownloaded?: string;
+    /** The cumulative time spent downloading blocks on demand by this connection, in milliseconds. */
+    readonly onDemandDownloadTimeMs?: string;
   }
 
   /** Properties for accessing a CloudContainer */

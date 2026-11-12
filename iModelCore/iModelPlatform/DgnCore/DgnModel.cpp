@@ -10,6 +10,7 @@
 void DgnModel::CallJsPreHandler(Utf8CP methodName) const {
     auto jsDb = m_dgndb.GetJsIModelDb();
     if (jsDb && m_napiObj) {
+        Napi::HandleScope scope(m_napiObj->Env());
         auto arg = Napi::Object::New(m_napiObj->Env());
         arg.Set("props", *m_napiObj);
         m_dgndb.CallJsHandlerMethod(m_classId, methodName, arg);
@@ -22,6 +23,7 @@ void DgnModel::CallJsPreHandler(Utf8CP methodName) const {
 void DgnModel::CallJsPostHandler(Utf8CP methodName) const {
     auto jsDb = m_dgndb.GetJsIModelDb();
     if (jsDb) {
+        Napi::HandleScope scope(jsDb->Env());
         BeJsNapiObject arg(jsDb->Env());
         arg["id"] = m_modelId;
         m_dgndb.CallJsHandlerMethod(m_classId, methodName, arg);
@@ -34,6 +36,7 @@ void DgnModel::CallJsPostHandler(Utf8CP methodName) const {
 void DgnModel::CallJsElementPreHandler(DgnElementCR element, Utf8CP methodName) const {
     auto jsDb = m_dgndb.GetJsIModelDb();
     if (jsDb && element.m_napiObj) {
+        Napi::HandleScope scope(jsDb->Env());
         BeJsNapiObject arg(jsDb->Env());
         arg["id"] = m_modelId;
         ((Napi::Object)arg)["elementProps"] = *element.m_napiObj;
@@ -47,6 +50,7 @@ void DgnModel::CallJsElementPreHandler(DgnElementCR element, Utf8CP methodName) 
 void DgnModel::CallJsElementPostHandler(DgnElementId elementId, Utf8CP methodName) const {
     auto jsDb = m_dgndb.GetJsIModelDb();
     if (jsDb) {
+        Napi::HandleScope scope(jsDb->Env());
         BeJsNapiObject arg(jsDb->Env());
         arg["id"] = m_modelId;
         arg["elementId"] = elementId;
@@ -708,20 +712,6 @@ DocumentListModelPtr DocumentListModel::CreateAndInsert(DocumentPartitionCR mode
     {
     DocumentListModelPtr model = Create(modeledElement);
     return (model.IsValid() && (DgnDbStatus::Success == model->Insert())) ? model : nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DrawingModel::_OnInsert()
-    {
-    if (!GetDgnDb().Elements().Get<Drawing>(GetModeledElementId()).IsValid() && !GetDgnDb().Elements().Get<TemplateRecipe2d>(GetModeledElementId()).IsValid())
-        {
-        BeAssert(false && "A DrawingModel should be modeling a Drawing or TemplateRecipe2d element");
-        return DgnDbStatus::BadElement;
-        }
-
-    return T_Super::_OnInsert();
     }
 
 /*---------------------------------------------------------------------------------**//**

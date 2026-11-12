@@ -352,6 +352,9 @@ public:
     +---------------+---------------+---------------+---------------+---------------+------*/
     DGNPLATFORM_EXPORT static DgnGCSP FromProject(DgnDbR dgnProject);
 
+    //! @private
+    DGNPLATFORM_EXPORT static void InvalidateCache(DgnDbR project);
+
     /*---------------------------------------------------------------------------------**//**
     * Gets the Paper Scale for this GCS. The Paper scale affects the Cartesian coordinates and
     *  makes measurements unreliable. Its use is not recommended.

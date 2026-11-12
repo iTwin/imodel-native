@@ -235,6 +235,17 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstanceQueryFormatOld(
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8String EscapeFormatSpecifiers(Utf8StringCR text)
+    {
+    Utf8String escaped(text);
+    escaped.ReplaceAll("%", "%%");
+    return escaped;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* The returned query is later used as a printf format, so expression text in it has its '%' escaped.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 static ExpressionStatus CreateRelatedInstanceQueryFrom3Args(Utf8StringR query, EvaluationResultVector const& args)
     {
     for (size_t i = 0; i < 3; ++i)
@@ -290,8 +301,8 @@ static ExpressionStatus CreateRelatedInstanceQueryFrom3Args(Utf8StringR query, E
         "WHERE this." ECDBSYS_PROP_ECInstanceId "=? AND "
         "      this." ECDBSYS_PROP_ECInstanceId "=relationship.[%s] AND this." ECDBSYS_PROP_ECClassId "=relationship.[%s] AND "
         "      related." ECDBSYS_PROP_ECInstanceId "=relationship.[%s] AND related." ECDBSYS_PROP_ECClassId "=relationship.[%s]",
-        relationshipSchemaName.c_str(), relationshipClassName.c_str(),
-        relatedClassSchemaName.c_str(), relatedClassName.c_str(),
+        EscapeFormatSpecifiers(relationshipSchemaName).c_str(), EscapeFormatSpecifiers(relationshipClassName).c_str(),
+        EscapeFormatSpecifiers(relatedClassSchemaName).c_str(), EscapeFormatSpecifiers(relatedClassName).c_str(),
         thisInstanceIdColumnName, thisClassIdColumnName, relatedInstanceIdColumnName, relatedClassIdColumnName);
     return ExpressionStatus::Success;
     }
@@ -322,10 +333,11 @@ static ExpressionStatus CreateRelatedInstanceQueryFrom2Args(Utf8StringR query, E
         }
 
     LambdaNodeCR lambda = args[1].GetLambda()->GetNode();
-    query.append("SELECT [").append(lambda.GetSymbolName()).append("].[%s] ");
+    const Utf8String symbolName = EscapeFormatSpecifiers(lambda.GetSymbolName());
+    query.append("SELECT [").append(symbolName).append("].[%s] ");
     query.append("FROM %s AS this ");
-    query.append("JOIN [").append(relatedClassSchemaName).append("].[").append(relatedClassName).append("] AS [").append(lambda.GetSymbolName()).append("] ");
-    query.append("ON ").append(lambda.GetExpression().ToExpressionString()).append(" ");
+    query.append("JOIN [").append(EscapeFormatSpecifiers(relatedClassSchemaName)).append("].[").append(EscapeFormatSpecifiers(relatedClassName)).append("] AS [").append(symbolName).append("] ");
+    query.append("ON ").append(EscapeFormatSpecifiers(lambda.GetExpression().ToExpressionString())).append(" ");
     query.append("WHERE this." ECDBSYS_PROP_ECInstanceId " = ?");
 
     return ExpressionStatus::Success;

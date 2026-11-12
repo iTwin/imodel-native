@@ -125,7 +125,11 @@ elseif(VCPKG_TARGET_IS_LINUX)
     endif()
 
 elseif(VCPKG_TARGET_IS_OSX)
-    string(APPEND OPTIONS " target_os=\"mac\"")
+    string(APPEND OPTIONS
+        " target_os=\"mac\""
+        " mac_deployment_target=\"${VCPKG_OSX_DEPLOYMENT_TARGET}\""
+        " extra_cflags=\"-Wno-error=deprecated-declarations\""
+    )
 
 elseif(VCPKG_TARGET_IS_WINDOWS AND NOT VCPKG_TARGET_IS_MINGW)
     string(APPEND OPTIONS " target_os=\"win\"")

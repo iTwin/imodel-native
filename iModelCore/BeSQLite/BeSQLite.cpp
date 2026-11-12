@@ -1523,7 +1523,7 @@ static int nocaseCollatingFuncASCII(void *, int nLeft, const void *zLeft, int nR
 static int nocaseCollatingFuncLatin1(void *pCtx, int nLeft, const void *zLeft, int nRight, const void *zRight){
   UCollationResult res;
   UCollator *p = (UCollator*)pCtx;
-  UErrorCode status;
+  UErrorCode status = U_ZERO_ERROR;
   res = ucol_strcollUTF8(p, (Utf8CP)zLeft, nLeft, (Utf8CP)zRight, nRight, &status);
   switch( res ){
     case UCOL_LESS: return -1;
@@ -2771,13 +2771,36 @@ DbResult Db::CreateNewDb(Utf8CP inName, CreateParams const& params, BeGuid dbGui
 }
 
 /*---------------------------------------------------------------------------------**/ /**
+ * Attach aliases end up unquoted or inside [...] in SQL across BeSQLite and ECDb, so they have to be plain identifiers.
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+static bool isValidDbAlias(Utf8CP alias)
+    {
+    if (Utf8String::IsNullOrEmpty(alias) || (alias[0] >= '0' && alias[0] <= '9'))
+        return false;
+
+    for (Utf8CP c = alias; *c != 0; ++c)
+        {
+        if (!((*c >= 'A' && *c <= 'Z') || (*c >= 'a' && *c <= 'z') || (*c >= '0' && *c <= '9') || *c == '_'))
+            return false;
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**/ /**
  * @bsimethod
  +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Db::AttachDb(Utf8CP filename, Utf8CP alias) const {
+    if (!isValidDbAlias(alias)) {
+        LOG.errorv("AttachDb failed: invalid alias [%s]. It may only contain letters, digits and underscores and must not start with a digit.", alias);
+        return BE_SQLITE_ERROR;
+    }
+
     Savepoint* txn = GetSavepoint(0);
     bool wasActive = (txn != nullptr) && (BE_SQLITE_OK == txn->Commit(nullptr));
 
-    DbResult rc = (DbResult)sqlite3_exec(GetSqlDb(), SqlPrintfString("ATTACH \"%s\" AS %s", filename, alias), nullptr, nullptr, nullptr);
+    DbResult rc = (DbResult)sqlite3_exec(GetSqlDb(), SqlPrintfString("ATTACH '%q' AS %s", filename, alias), nullptr, nullptr, nullptr);
 
     if (rc != BE_SQLITE_OK) {
         BeAssert(false);
@@ -2799,6 +2822,12 @@ DbResult Db::AttachDb(Utf8CP filename, Utf8CP alias) const {
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Db::DetachDb(Utf8CP alias) const
     {
+    if (!isValidDbAlias(alias))
+        {
+        LOG.errorv("DetachDb failed: invalid alias [%s]", alias);
+        return BE_SQLITE_ERROR;
+        }
+
     Savepoint* txn = GetSavepoint(0);
     bool wasActive = (nullptr != txn) && (BE_SQLITE_OK == txn->Commit(nullptr));
 
@@ -3276,20 +3305,18 @@ bool Db::GetColumns(bvector<Utf8String>& columns, Utf8CP tableName) const
 {
     columns.clear();
 
+    // The table-valued pragma_table_info() can be shadowed by a table of that name, so this uses the PRAGMA statement.
     Statement stmt;
     DbResult status;
-
     const char* dotPosition = strchr(tableName, '.');
     if (dotPosition != nullptr)
     {
         Utf8String tablespace(tableName, dotPosition - tableName);
-        Utf8String actualTableName(dotPosition + 1);
-
-        status = stmt.Prepare(*this, SqlPrintfString("PRAGMA %s.table_info([%s])", tablespace.c_str(), actualTableName.c_str()));
+        status = stmt.Prepare(*this, SqlPrintfString("PRAGMA \"%w\".table_info(\"%w\")", tablespace.c_str(), dotPosition + 1));
     }
     else
     {
-        status = stmt.Prepare(*this, SqlPrintfString("PRAGMA table_info([%s])", tableName));
+        status = stmt.Prepare(*this, SqlPrintfString("PRAGMA table_info(\"%w\")", tableName));
     }
 
     if (status != BE_SQLITE_OK)
@@ -3648,7 +3675,7 @@ DbResult Db::DoOpenDb(Utf8CP inName, OpenParams const& params) {
     }
 
     if (!cloudSqliteLogId.empty()) {
-        rc = TryExecuteSql(SqlPrintfString("PRAGMA bcv_client=\"%s\"", cloudSqliteLogId.c_str()));
+        rc = TryExecuteSql(SqlPrintfString("PRAGMA bcv_client='%q'", cloudSqliteLogId.c_str()));
         BeAssert(rc == BE_SQLITE_OK);
     }
 
@@ -4300,14 +4327,21 @@ ZipErrors SnappyFromBlob::ReadNextChunk()
     m_blobOffset     += chunkSize;
     m_blobBytesLeft  -= chunkSize;
 
-    size_t uncompressSize;
-    bool bstat = snappy::GetUncompressedLength((char const*) m_blobData, chunkSize, &uncompressSize);
-    UNUSED_VARIABLE(bstat);
-    BeAssert(uncompressSize<=SNAPPY_UNCOMPRESSED_BUFFER_SIZE && uncompressSize>0);
-    BeAssert(bstat);
+    // the uncompressed length is read from the (untrusted) blob. RawUncompress writes that many bytes, so it must fit in our buffer.
+    size_t uncompressSize = 0;
+    if (!snappy::GetUncompressedLength((char const*) m_blobData, chunkSize, &uncompressSize) || 0 == uncompressSize || uncompressSize > SNAPPY_UNCOMPRESSED_BUFFER_SIZE)
+        {
+        m_blobBytesLeft = 0;
+        BeAssert(0);
+        return ZIP_ERROR_BLOB_READ_ERROR;
+        }
 
-    bstat = snappy::RawUncompress((char const*) m_blobData, chunkSize, (char*) m_uncompressed);
-    BeAssert(bstat);
+    if (!snappy::RawUncompress((char const*) m_blobData, chunkSize, (char*) m_uncompressed))
+        {
+        m_blobBytesLeft = 0;
+        BeAssert(0);
+        return ZIP_ERROR_BLOB_READ_ERROR;
+        }
 
     m_uncompressCurr = m_uncompressed;
     m_uncompressAvail = (uint16_t) uncompressSize;
@@ -4507,7 +4541,11 @@ void SnappyFromMemory::Init(void*blobBuffer, uint32_t blobBufferSize)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ZipErrors SnappyFromMemory::TransferFromBlob(void* data, uint32_t numBytes, int offset)
     {
-    //  Verify that it does not go beyond the end of the buffer
+    // m_blobOffset + m_blobBytesLeft is always the total size of the buffer passed to Init.
+    uint64_t blobSize = (uint64_t) m_blobOffset + m_blobBytesLeft;
+    if (nullptr == m_blobData || offset < 0 || (uint64_t) offset + numBytes > blobSize)
+        return ZIP_ERROR_BLOB_READ_ERROR;
+
     memcpy(data, m_blobData + offset, numBytes);
     return ZIP_SUCCESS;
     }
@@ -4530,7 +4568,13 @@ ZipErrors SnappyFromMemory::ReadNextChunk()
         return  ZIP_ERROR_BLOB_READ_ERROR;
         }
 
-    BeAssert(chunkSize <= m_blobBytesLeft);
+    // chunkSize includes its own 2-byte header
+    if (chunkSize <= 2 || chunkSize > m_blobBytesLeft)
+        {
+        m_blobBytesLeft = 0;
+        BeAssert(0);
+        return ZIP_ERROR_BLOB_READ_ERROR;
+        }
 
     m_blobOffset += 2;
     m_blobBytesLeft -= 2;
@@ -4541,14 +4585,21 @@ ZipErrors SnappyFromMemory::ReadNextChunk()
     m_blobOffset     += chunkSize;
     m_blobBytesLeft  -= chunkSize;
 
-    size_t uncompressSize;
-    bool bstat = snappy::GetUncompressedLength((char const*) currentData, chunkSize, &uncompressSize);
-    UNUSED_VARIABLE(bstat);
-    BeAssert(uncompressSize<=32*1024 && uncompressSize>0);
-    BeAssert(bstat);
+    // the uncompressed length is read from the (untrusted) blob. RawUncompress writes that many bytes, so it must fit in our buffer.
+    size_t uncompressSize = 0;
+    if (!snappy::GetUncompressedLength((char const*) currentData, chunkSize, &uncompressSize) || 0 == uncompressSize || uncompressSize > m_uncompressSize)
+        {
+        m_blobBytesLeft = 0;
+        BeAssert(0);
+        return ZIP_ERROR_BLOB_READ_ERROR;
+        }
 
-    bstat = snappy::RawUncompress((char const*) currentData, chunkSize, (char*) m_uncompressed);
-    BeAssert(bstat);
+    if (!snappy::RawUncompress((char const*) currentData, chunkSize, (char*) m_uncompressed))
+        {
+        m_blobBytesLeft = 0;
+        BeAssert(0);
+        return ZIP_ERROR_BLOB_READ_ERROR;
+        }
 
     m_uncompressCurr = m_uncompressed;
     m_uncompressAvail = (uint16_t) uncompressSize;
@@ -6254,8 +6305,13 @@ void BeIdSet::FromReadableString(Utf8StringCR str)
         else if (endRange < startRange)
             std::swap(startRange, endRange);
 
-        for (; startRange<=endRange; ++startRange)
+        // Stop on reaching endRange rather than testing startRange<=endRange, which never fails when endRange is UINT64_MAX.
+        for (;; ++startRange)
+            {
             insert((BeInt64Id) startRange);
+            if (startRange == endRange)
+                break;
+            }
 
         curr = strchr(curr, ',');
         if (curr == nullptr)
@@ -6715,6 +6771,21 @@ DbResult Db::SetForeignKeyEnforcement(bool enabled) const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+DbResult Db::QueryDeferredForeignKeyDbStatus() const {
+    if (!m_dbFile)
+        return BE_SQLITE_ERROR_NOTOPEN;
+
+    int currentValue = 0;
+    int highWater = 0; // unused
+    const auto rc = static_cast<DbResult>(sqlite3_db_status(GetSqlDb(), SQLITE_DBSTATUS_DEFERRED_FKS, &currentValue, &highWater, 0));
+    if (rc == BE_SQLITE_OK)
+        return currentValue == 0 ? BE_SQLITE_OK : BE_SQLITE_CONSTRAINT_FOREIGNKEY;
+    return rc;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 DbResult DbFile::SetBusyTimeout(int ms) {
     // sqlite will clear any existing busy handler as their can be only one per connection.
     if (m_retry.IsValid())
@@ -6784,7 +6855,7 @@ DbResult Db::Vacuum(int newPageSizeInBytes) {
 /** vacuum this database into a different destination file. */
 DbResult Db::VacuumInto(Utf8CP newFileName) {
     SuspendDefaultTxn noDefault(*this);
-    return TryExecuteSql(SqlPrintfString("vacuum into '%s'", newFileName));
+    return TryExecuteSql(SqlPrintfString("vacuum into '%q'", newFileName));
 }
 
 DbResult Db::Analyze() {

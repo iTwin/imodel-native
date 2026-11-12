@@ -6312,6 +6312,7 @@ public:
 class VerticalDatumInfo : public RefCountedBase
 {
     friend class VerticalDatum;
+    friend class BaseGCS;
 
 private:
     // prevent copy
@@ -6340,6 +6341,7 @@ private:
     }
 
     void AddTransform(VerticalTransformPtr& transform);
+    void RegisterTransforms();
 
 public:
     ~VerticalDatumInfo();
@@ -6347,18 +6349,29 @@ public:
     BASEGEOCOORD_EXPORTED bool operator== (const VerticalDatumInfo& other) const;
 
     /*---------------------------------------------------------------------------------**//**
-    * Creates a VerticalDatumInfo object from a JSON representation. 
+    * Creates a VerticalDatumInfo object from a JSON representation without adding it to the
+    * dictionary or registering its transforms.
     * The method will not auto-complete the definition using the dictionary definitions and
     * all required properties must be present.
     * @param[in]    jsonVerticalCRS  the JSON representation of the VerticalDatumInfo.
-    * @param[in]    addToDictionary  if true the new VerticalDatumInfo will be added to the
-    *                                VerticalDatumDictionary, if false it will not be added.
     * @param[out]   status            SUCCESS if a valid VerticalDatumInfo was created, or an
     *                                error code otherwise.
     * @return   a valid VerticalDatumInfoPtr on success, a VerticalDatumInfoPtr set to nullptr on failure.
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/    
-    BASEGEOCOORD_EXPORTED static VerticalDatumInfoPtr CreateFromJson(BeJsConst jsonVerticalCRS, bool addToDictionary, StatusInt& status);
+    BASEGEOCOORD_EXPORTED static VerticalDatumInfoPtr CreateFromJson(BeJsConst jsonVerticalCRS, StatusInt& status);
+
+    /*---------------------------------------------------------------------------------**//**
+    * Creates a VerticalDatumInfo object from a complete JSON representation, registers its
+    * transforms, and adds it to the VerticalDatumDictionary.
+    * Transforms are registered only after the complete definition has been parsed successfully.
+    * @param[in]    jsonVerticalCRS  the JSON representation of the VerticalDatumInfo.
+    * @param[out]   status          SUCCESS if creation and dictionary insertion succeeded,
+    *                              or an error code otherwise.
+    * @return   the created VerticalDatumInfoPtr, or nullptr if parsing failed.
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    BASEGEOCOORD_EXPORTED static VerticalDatumInfoPtr CreateAndRegisterFromJson(BeJsConst jsonVerticalCRS, StatusInt& status);
 
     BASEGEOCOORD_EXPORTED StatusInt ToJson(BeJsValue jsonValue) const;
 
@@ -6557,7 +6570,7 @@ BASEGEOCOORD_EXPORTED StatusInt AddVerticalDatumTransform(VerticalTransformPtr& 
 *               GEOCOORDERR_NoTransforms - no transforms were found
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt GetVerticalDatumTransforms(bvector<VerticalTransformPtr>& transforms, const Utf8String& from, const Utf8String& to, const GeoPoint* latLong);
+BASEGEOCOORD_EXPORTED StatusInt GetVerticalDatumTransforms(bvector<VerticalTransformPtr>& transforms, const Utf8String& from, const Utf8String& to, const GeoPoint* latLong);
 
 /*---------------------------------------------------------------------------------**//**
 * Check to see if two vertical datums are equivalent. Checks if the names are
@@ -6578,7 +6591,7 @@ bool VerticalDatumsAreEquivalent(const BaseGCS& gcs1, const BaseGCS& gcs2);
 *               GEOCOORDERR_CoordinateRange if the the input latLong is not valid
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt QueryVerticalDatumsAvailableAtPoint(bvector<Utf8String>& verticalDatums, const GeoPoint2d& latLong) const;
+BASEGEOCOORD_EXPORTED StatusInt QueryVerticalDatumsAvailableAtPoint(bvector<Utf8String>& verticalDatums, const GeoPoint2d& latLong) const;
 
 /*---------------------------------------------------------------------------------**//**
 * Given a region defined in WGS84, find all the Vertical Datums in the Vertical Datum
@@ -6593,7 +6606,7 @@ StatusInt QueryVerticalDatumsAvailableAtPoint(bvector<Utf8String>& verticalDatum
 *               GEOCOORDERR_CoordinateRange if the the input latLong is not valid
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt QueryVerticalDatumsAvailableForRange(bvector<Utf8String>& verticalDatums, const DRange2d& range, bool includeIntersecting) const;
+BASEGEOCOORD_EXPORTED StatusInt QueryVerticalDatumsAvailableForRange(bvector<Utf8String>& verticalDatums, const DRange2d& range, bool includeIntersecting) const;
 
 /*---------------------------------------------------------------------------------**//**
 * Get the names of  all the Vertical Datums in the Vertical Datum Dictionary.
@@ -6603,7 +6616,7 @@ StatusInt QueryVerticalDatumsAvailableForRange(bvector<Utf8String>& verticalDatu
 *               GEOCOORDERR_NoDictionary is no Vertical Datum Dictionary is available
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt QueryAllVerticalDatumsAvailable(bvector<Utf8String>& verticalDatums) const;
+BASEGEOCOORD_EXPORTED StatusInt QueryAllVerticalDatumsAvailable(bvector<Utf8String>& verticalDatums) const;
 
 /*---------------------------------------------------------------------------------**//**
 * Utility functions used when parsing the Vertical Datum dictionary json file.

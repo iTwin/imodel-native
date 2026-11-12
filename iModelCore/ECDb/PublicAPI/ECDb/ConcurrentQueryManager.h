@@ -16,6 +16,9 @@ using namespace std::chrono_literals;
 typedef uint32_t TaskId;
 struct ECDb;
 struct ECSqlStatement;
+struct ECSqlStatus;
+struct ECSqlRowAdaptor;
+struct JsReadOptions;
 
 //=======================================================================================
 // @bsiclass
@@ -212,6 +215,7 @@ class ECSqlParams final {
             ECDB_EXPORT DPoint2d GetValuePoint2d() const;
             ECDB_EXPORT DPoint3d GetValuePoint3d() const;
             ECDB_EXPORT bvector<Byte> GetValueBlob() const;
+            //! Throws std::runtime_error if the value is malformed or holds more than ECSqlParams::MaxIdSetCount Ids.
             ECDB_EXPORT BeIdSet GetValueIdSet() const;
     };
     private:
@@ -219,6 +223,8 @@ class ECSqlParams final {
         static constexpr auto JValue = "value";
         std::map<std::string, ECSqlParam> m_params;
     public:
+        //! Maximum number of Ids that the IdSet parameters bound to one statement may hold in total.
+        static constexpr uint64_t MaxIdSetCount = 1000000;
         ECSqlParams(){}
         ECSqlParams(ECSqlParams && rhs): m_params(std::move(rhs.m_params)) {}
         ECSqlParams(const ECSqlParams& rhs): m_params(rhs.m_params) {}
@@ -256,6 +262,15 @@ class ECSqlParams final {
         ECDB_EXPORT void FromJs(BeJsConst val);
         ECDB_EXPORT std::vector<std::string> GetKeys() const;
         ECDB_EXPORT bool TryBindTo(ECSqlStatement& stmt, std::string& err) const;
+        //! Binds one parameter. IdSet values are counted without being expanded, and fail to bind if they hold more than
+        //! @p idSetBudget Ids, which is reduced by the count on success. Share one budget, starting at MaxIdSetCount, across
+        //! all parameters of a statement.
+        ECDB_EXPORT static bool TryBindParameter(ECSqlStatement& stmt, std::string const& name, ECSqlParam::Type type, BeJsConst value, uint64_t& idSetBudget, std::string& err);
+        //! Counts the Ids in a compact ("+1*3+2") or readable ("1-3,5") Id set string, as accepted by BeIdSet::FromString,
+        //! without expanding it. Readable ranges are counted without removing duplicates. Returns false, with @p err set, if
+        //! the string is malformed, or if the Ids it encodes or their count would overflow 64 bits.
+        ECDB_EXPORT static bool TryCountIdSet(Utf8CP idSet, uint64_t& count, std::string& err);
+        ECDB_EXPORT std::string GetCacheKey() const;
 };
 
 //=======================================================================================
@@ -276,12 +291,15 @@ struct ECSqlRequest : public QueryRequest{
         static constexpr auto JConvertClassIdsToClassNames = "convertClassIdsToClassNames";
         static constexpr auto JLimit = "limit";
         static constexpr auto JValueFormat = "valueFormat";
+        static constexpr auto JCursorId = "cursorId";
         std::string m_query;
+        std::string m_cursorId;
         ECSqlParams m_args;
         QueryLimit m_limit;
         bool m_abbreviateBlobs;
         bool m_suppressLogErrors;
         bool m_includeMetaData;
+        bool m_collectCloudSqliteStats = false;
         bool m_convertClassIdsToClassNames;
         bool m_doNotConvertClassIdsToClassNamesWhenAliased;
         ECSqlValueFormat m_valueFmt;
@@ -290,11 +308,14 @@ struct ECSqlRequest : public QueryRequest{
             :QueryRequest(Kind::ECSql), m_query(query), m_args(std::move(args)),m_abbreviateBlobs(false), m_suppressLogErrors(false),m_includeMetaData(true), m_convertClassIdsToClassNames(false), m_doNotConvertClassIdsToClassNamesWhenAliased(true), m_valueFmt(ECSqlValueFormat::ECSqlNames){}
         virtual ~ECSqlRequest(){}
         std::string const& GetQuery() const { return m_query; }
+        std::string const& GetCursorId() const { return m_cursorId; }
+        ECSqlRequest& SetCursorId(std::string const& id) { m_cursorId = id; return *this; }
         ECSqlParams const& GetArgs() const { return  m_args; }
         ECSqlParams const& GetArgsR() { return  m_args; }
         bool GetAbbreviateBlobs() const {return m_abbreviateBlobs; }
         bool GetSuppressLogErrors() const {return m_suppressLogErrors; }
         bool GetIncludeMetaData() const {return m_includeMetaData; }
+        bool GetCollectCloudSqliteStats() const { return m_collectCloudSqliteStats; }
         bool GetConvertClassIdsToClassNames() const {return m_convertClassIdsToClassNames; }
         bool GetDoNotConvertClassIdsToClassNamesWhenAliased() const { return m_doNotConvertClassIdsToClassNamesWhenAliased; }
         QueryLimit const& GetLimit() const {return m_limit;}
@@ -304,6 +325,7 @@ struct ECSqlRequest : public QueryRequest{
         ECSqlRequest& SetAbbreviateBlobs(bool abbreviateBlobs) { m_abbreviateBlobs = abbreviateBlobs; return *this;}
         ECSqlRequest& SetSuppressLogErrors(bool suppressLogErrors) { m_suppressLogErrors = suppressLogErrors; return *this;}
         ECSqlRequest& SetIncludeMetaData(bool includeMetaData) { m_includeMetaData = includeMetaData; return *this;}
+        ECSqlRequest& SetCollectCloudSqliteStats(bool enabled) { m_collectCloudSqliteStats = enabled; return *this; }
         ECSqlRequest& SetConvertClassIdsToClassNames(bool convertClassIdsToClassNames) { m_convertClassIdsToClassNames = convertClassIdsToClassNames; return *this;}
         ECSqlRequest& SetArgs(BeJsConst args) { m_args.FromJs(args); return *this;}
         ECSqlRequest& SetArgs(ECSqlParams const& args) { m_args = args; return *this;}
@@ -355,24 +377,38 @@ struct QueryResponse : std::enable_shared_from_this<QueryResponse> {
             static constexpr auto kMemUsed = "memUsed";
             static constexpr auto kPrepareTime = "prepareTime";
             std::chrono::microseconds m_cpuTime;
-            std::chrono::milliseconds m_totalTime;
+            std::chrono::duration<double, std::milli> m_totalTime;
             std::chrono::milliseconds m_timeLimit;
-            std::chrono::milliseconds m_prepareTime;
+            std::chrono::duration<double, std::milli> m_prepareTime;
             uint32_t m_memLimit;
             uint32_t m_memUsed;
+            bool m_resumed = false;
+            std::string m_cloudSqliteTimingState;
+            double m_downloadTime = 0;
+            double m_executionTime = 0;
+            uint64_t m_downloadBlocks = 0;
+            uint64_t m_downloadBytes = 0;
         public:
             Stats():m_cpuTime(0ms),m_totalTime(0ms), m_timeLimit(0ms),m_prepareTime(0),m_memLimit(0), m_memUsed(0){}
-            Stats(std::chrono::microseconds cpuTime, std::chrono::milliseconds totalTime, uint32_t memUsed, QueryQuota const& quota, std::chrono::milliseconds prepareTime):
+            Stats(std::chrono::microseconds cpuTime, std::chrono::duration<double, std::milli> totalTime, uint32_t memUsed, QueryQuota const& quota, std::chrono::duration<double, std::milli> prepareTime, bool resumed = false):
                 m_cpuTime(cpuTime), m_totalTime(totalTime),
                 m_timeLimit(std::chrono::duration_cast<std::chrono::milliseconds>(quota.MaxTimeAllowed())), m_prepareTime(prepareTime),
-                m_memLimit(quota.MaxMemoryAllowed()),m_memUsed(memUsed){}
+                m_memLimit(quota.MaxMemoryAllowed()),m_memUsed(memUsed),m_resumed(resumed){}
             virtual ~Stats(){}
             std::chrono::microseconds CpuTime() const { return m_cpuTime;}
-            std::chrono::milliseconds TotalTime() const { return m_totalTime;}
+            std::chrono::milliseconds TotalTime() const { return std::chrono::duration_cast<std::chrono::milliseconds>(m_totalTime);}
             std::chrono::milliseconds TimeLimit() const { return m_timeLimit;}
-            std::chrono::milliseconds PrepareTime() const { return m_prepareTime;}
+            std::chrono::milliseconds PrepareTime() const { return std::chrono::duration_cast<std::chrono::milliseconds>(m_prepareTime);}
+            void SetCloudSqliteTiming(Utf8CP state, double downloadTime = 0, double executionTime = 0, uint64_t downloadBlocks = 0, uint64_t downloadBytes = 0) {
+                m_cloudSqliteTimingState = state;
+                m_downloadTime = downloadTime;
+                m_executionTime = executionTime;
+                m_downloadBlocks = downloadBlocks;
+                m_downloadBytes = downloadBytes;
+            }
             uint32_t MemLimit() const { return m_memLimit;}
             uint32_t MemUsed() const { return m_memUsed;}
+            bool Resumed() const { return m_resumed; }
             ECDB_EXPORT void ToJs(BeJsValue&) const;
     };
     enum class Status {
@@ -405,6 +441,9 @@ struct QueryResponse : std::enable_shared_from_this<QueryResponse> {
         Status GetStatus() const noexcept {return m_status;}
         std::string const& GetError() const noexcept {return m_error;}
         Stats const& GetStats() const { return m_stats; }
+        void SetCloudSqliteTiming(Utf8CP state, double downloadTime = 0, double executionTime = 0, uint64_t downloadBlocks = 0, uint64_t downloadBytes = 0) {
+            m_stats.SetCloudSqliteTiming(state, downloadTime, executionTime, downloadBlocks, downloadBytes);
+        }
         bool IsDone() const noexcept { return m_status == Status::Done;}
         bool IsPartial() const noexcept { return m_status == Status::Partial;}
         bool IsSuccess() const noexcept { return m_status == Status::Done || m_status == Status::Partial;}
@@ -469,6 +508,39 @@ struct BlobIOResponse : public QueryResponse {
         ECDB_EXPORT void virtual ToJs(BeJsValue& v, bool includeData) const override;
 };
 
+struct CachedQueryAdaptor;
+
+//=======================================================================================
+//! A primary-connection ECSqlStatement leased from the ConcurrentQuery statement cache so it can be
+//! stepped synchronously on the thread that owns the primary connection. Releasing or destroying the
+//! lease resets the statement and returns it to the cache. While leased, the statement is never handed
+//! to another caller. Shutting down the ConcurrentQueryMgr (e.g. ECDb::ClearECDbCache or closing the db)
+//! finalizes the statement, after which GetStatement() returns nullptr.
+// @bsiclass
+//=======================================================================================
+struct ECSqlStatementLease final {
+    private:
+        std::shared_ptr<CachedQueryAdaptor> m_entry;
+        ECSqlStatementLease(ECSqlStatementLease const&) = delete;
+        ECSqlStatementLease& operator=(ECSqlStatementLease const&) = delete;
+    public:
+        explicit ECSqlStatementLease(std::shared_ptr<CachedQueryAdaptor> entry) : m_entry(std::move(entry)) {}
+        ECDB_EXPORT ~ECSqlStatementLease();
+        //! Returns the leased statement, or nullptr if the lease was released or invalidated.
+        ECDB_EXPORT ECSqlStatement* GetStatement() const;
+        //! Unique id of the prepared statement; changes whenever the cache prepares a new statement.
+        ECDB_EXPORT uint64_t GetStatementId() const;
+        //! Configures the cached adaptor and renderer for this lease. Returns nullptr for an invalidated lease.
+        ECDB_EXPORT ECSqlRowAdaptor* ConfigureRowAdaptor(JsReadOptions const&);
+        //! Returns the adaptor, or nullptr if the lease was released or invalidated.
+        ECDB_EXPORT ECSqlRowAdaptor* GetRowAdaptor() const;
+        enum class JsonRowResult { Success, RequiresDirectRendering, SizeLimitExceeded };
+        //! Appends strict JSON without reserving output beyond maxBytes (including existing buffer contents).
+        //! On any non-success result, discard partial output and render the current row directly.
+        ECDB_EXPORT JsonRowResult WriteRowAsJson(rapidjson::StringBuffer&, size_t maxBytes);
+        ECDB_EXPORT void Release();
+};
+
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
@@ -488,7 +560,11 @@ struct ConcurrentQueryMgr final {
          static constexpr auto JStatementCacheSizePerWorker = "statementCacheSizePerWorker";
          static constexpr auto JMonitorPollInterval = "monitorPollInterval";
          static constexpr auto JMemoryMapFileSize = "memoryMapFileSize";
+         static constexpr auto JCacheSizeInKB = "cacheSizeInKB";
          static constexpr auto JProgressOpCount = "progressOpCount";
+         static constexpr auto JEnableCursors = "enableCursors";
+         static constexpr auto JMaxCursorsPerWorker = "maxCursorsPerWorker";
+         static constexpr auto JCursorIdleTimeout = "cursorIdleTimeout";
      private:
          QueryQuota m_quota;
          uint32_t m_workerThreadCount;
@@ -504,8 +580,12 @@ struct ConcurrentQueryMgr final {
          std::chrono::seconds m_autoShutdownWhenIdleForSeconds;
          static Config From(std::string const& json);
          uint32_t m_memoryMapFileSize;
+         std::optional<uint32_t> m_cacheSizeInKB;
          static Config s_config;
          uint32_t m_progressOpCount;
+         bool m_enableCursors = true;
+         int32_t m_maxCursorsPerWorker = -1;
+         std::chrono::seconds m_cursorIdleTimeout = 30s;
      public:
         ECDB_EXPORT Config();
         ECDB_EXPORT bool Equals(Config const& rhs) const;
@@ -521,6 +601,15 @@ struct ConcurrentQueryMgr final {
         uint32_t GetStatementCacheSizePerWorker() const { return m_statementCacheSizePerWorker; }
         std::chrono::seconds GetAutoShutdownWhenIdleForSeconds() const { return m_autoShutdownWhenIdleForSeconds; }
         uint32_t GetMemoryMapFileSize() const { return m_memoryMapFileSize; }
+        std::optional<uint32_t> GetCacheSizeInKB() const { return m_cacheSizeInKB; }
+        //! Sets the page-cache target in KiB for new secondary connections; the default is not overridden.
+        ECDB_EXPORT Config& SetCacheSizeInKB(uint32_t cacheSizeInKB);
+        bool GetEnableCursors() const { return m_enableCursors; }
+        int32_t GetMaxCursorsPerWorker() const { return m_maxCursorsPerWorker; }
+        std::chrono::seconds GetCursorIdleTimeout() const { return m_cursorIdleTimeout; }
+        Config& SetEnableCursors(bool enabled) { m_enableCursors = enabled; return *this; }
+        Config& SetMaxCursorsPerWorker(int32_t count) { m_maxCursorsPerWorker = count; return *this; }
+        Config& SetCursorIdleTimeout(std::chrono::seconds timeout) { m_cursorIdleTimeout = timeout; return *this; }
         Config& SetProgressOpCount(uint32_t progressOpCount) { m_progressOpCount = progressOpCount; return *this;}
         Config& SetIgnoreDelay(bool ignoreDelay) {
             m_ignoreDelay = ignoreDelay;
@@ -543,6 +632,7 @@ struct ConcurrentQueryMgr final {
         //! ordering deadlock with the primary connection. Kept for backward-compatible config
         //! serialization only; calling it has no effect on behavior.
         Config& SetDoNotUsePrimaryConnToPrepare(bool doNotUsePrimaryConnToPrepare) { m_doNotUsePrimaryConnToPrepare = doNotUsePrimaryConnToPrepare; return *this;}
+        //! Applies only to read-only managers that have not used the primary connection for queries or statement leases.
         Config& SetAutoShutdownWhenIdleForSeconds(std::chrono::seconds autoShutdownWhenIdleForSeconds) { m_autoShutdownWhenIdleForSeconds = autoShutdownWhenIdleForSeconds; return *this;}
         Config& SetStatementCacheSizePerWorker(uint32_t statementCacheSizePerWorker) { m_statementCacheSizePerWorker = statementCacheSizePerWorker; return *this;}
 
@@ -574,6 +664,9 @@ struct ConcurrentQueryMgr final {
         // change config
         ECDB_EXPORT static void WithInstance(ECDb const&, std::function<void(ConcurrentQueryMgr&)>);
         ECDB_EXPORT static void Shutdown(ECDbCR ecdb);
+        //! Leases a cached primary-connection statement for synchronous stepping on the thread that owns the
+        //! primary connection. Returns nullptr and sets @p status and @p error if the ECSQL cannot be prepared.
+        ECDB_EXPORT static std::unique_ptr<ECSqlStatementLease> LeaseStatement(ECDbCR ecdb, Utf8CP ecsql, bool logErrors, ECSqlStatus& status, std::string& error);
 };
 
 //=======================================================================================
@@ -609,6 +702,7 @@ struct ECSqlReader {
         BeJsDocument m_rows;
         ECSqlRowProperty::List m_columns;
         std::string m_ecsql;
+        std::string m_cursorId;
         bool m_done;
         BeJsConst::ArrayIndex m_it;
     private:
@@ -617,9 +711,9 @@ struct ECSqlReader {
         ECDB_EXPORT ECSqlReader(ConcurrentQueryMgr& mgr, std::string ecsql, ECSqlParams const& args = ECSqlParams());
         ECSqlParams const& GetArgs() const {return m_args;}
         ECSqlRowProperty::List const& GetColumns() const { return m_columns; }
+        //! Returns a view valid until the reader loads another batch or is destroyed.
         Row GetRow() const { return Row(m_rows[m_it],m_columns);}
         ECDB_EXPORT bool Next();
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
-

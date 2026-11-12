@@ -168,6 +168,69 @@ TEST_F(ECSqlPragmasTestFixture, validate_persisted_mappings)
     }
 
 //---------------------------------------------------------------------------------------
+TEST_F(ECSqlPragmasTestFixture, ValidateMappingsAfterDuplicateAccessStringIsRepaired)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("validate_repaired_duplicate_mapping.ecdb", SchemaItem(R"xml(
+        <ECSchema schemaName="DuplicateValidation" alias="dv" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="Entity">
+            <ECProperty propertyName="P1" typeName="string"/>
+            <ECProperty propertyName="P2" typeName="string"/>
+          </ECEntityClass>
+        </ECSchema>
+    )xml")));
+
+    auto validate = [this](bool expectDuplicate)
+        {
+        m_ecdb.ClearECDbCache();
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+            "PRAGMA validate_persisted_mappings OPTIONS enable_experimental_features"));
+        int issues = 0;
+        int duplicateIssues = 0;
+        DbResult rc;
+        while ((rc = stmt.Step()) == BE_SQLITE_ROW)
+            {
+            ++issues;
+            if (Utf8String(stmt.GetValueText(3)).Equals("ECDb_0116"))
+                {
+                ++duplicateIssues;
+                EXPECT_STREQ("Error", stmt.GetValueText(0));
+                EXPECT_TRUE(Utf8String(stmt.GetValueText(4)).Contains("DuplicateValidation:Entity"));
+                EXPECT_TRUE(Utf8String(stmt.GetValueText(4)).Contains("AccessString 'P1'"));
+                }
+            }
+        ASSERT_EQ(BE_SQLITE_DONE, rc);
+        EXPECT_EQ(expectDuplicate ? 1 : 0, duplicateIssues);
+        if (!expectDuplicate)
+            EXPECT_EQ(0, issues);
+        };
+
+    validate(false);
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(R"sql(
+        UPDATE ec_PropertyPath SET AccessString='P1'
+        WHERE RootPropertyId = (
+            SELECT p.Id FROM ec_Property p
+              JOIN ec_Class c ON c.Id=p.ClassId
+              JOIN ec_Schema s ON s.Id=c.SchemaId
+            WHERE s.Name='DuplicateValidation' AND c.Name='Entity' AND p.Name='P2')
+    )sql"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    validate(true);
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(R"sql(
+        UPDATE ec_PropertyPath SET AccessString='P2'
+        WHERE RootPropertyId = (
+            SELECT p.Id FROM ec_Property p
+              JOIN ec_Class c ON c.Id=p.ClassId
+              JOIN ec_Schema s ON s.Id=c.SchemaId
+            WHERE s.Name='DuplicateValidation' AND c.Name='Entity' AND p.Name='P2')
+    )sql"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    validate(false);
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    validate(false);
+    }
+
+//---------------------------------------------------------------------------------------
 // A pragma must execute its underlying logic against the data-source connection (the read-only
 // connection used to execute the statement), not the schema/parse connection. This mirrors regular
 // ECSQL, which prepares/steps against the data-source connection. In concurrent query the parse
@@ -409,6 +472,22 @@ TEST_F(ECSqlPragmasTestFixture, parse_tree){
             }
         })*";
         ASSERT_STREQ(beautify(stmt.GetValueText(0)).c_str(), beautify(expectedJson).c_str());
+    }
+
+    if ("ECSQL with [...] names can be passed in any quoting style") {
+        auto getParseTree = [&](Utf8CP quotedECSql) -> Utf8String {
+            ECSqlStatement stmt;
+            EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("PRAGMA parse_tree(%s) ECSQLOPTIONS enable_experimental_features", quotedECSql).GetUtf8CP())) << quotedECSql;
+            if (BE_SQLITE_ROW != stmt.Step())
+                return "";
+
+            return stmt.GetValueText(0);
+        };
+
+        Utf8String expected = getParseTree("'SELECT [a].[Name] FROM [ECDbMeta].[ECClassDef] [a] WHERE [a].[Name] = ''Element'''");
+        ASSERT_FALSE(expected.empty());
+        EXPECT_STREQ(expected.c_str(), getParseTree("\"SELECT [a].[Name] FROM [ECDbMeta].[ECClassDef] [a] WHERE [a].[Name] = 'Element'\"").c_str());
+        EXPECT_STREQ(expected.c_str(), getParseTree("`SELECT [a].[Name] FROM [ECDbMeta].[ECClassDef] [a] WHERE [a].[Name] = 'Element'`").c_str());
     }
 }
 //---------------------------------------------------------------------------------------
@@ -690,6 +769,11 @@ TEST_F(ECSqlPragmasTestFixture, sqlite_sql)
         std::make_pair("Parameterized ECSQL", "SELECT * FROM meta.ECClassDef WHERE Name=?"),
         std::make_pair("Complex ECSQL with joins", "SELECT a.Name, b.Name FROM meta.ECClassDef a JOIN meta.ECClassDef b ON a.Name=b.Name"),
         std::make_pair("CTE", "WITH el AS (SELECT ECInstanceId, ECClassId FROM meta.ECClassDef) SELECT * FROM el"),
+        std::make_pair("Bracketed names", "SELECT [a].[Name] FROM [ECDbMeta].[ECClassDef] [a] WHERE [a].[Name] = 'Element'"),
+        std::make_pair("Bracketed subquery", "SELECT [d].[a] FROM (SELECT [b].[Name] [a] FROM [ECDbMeta].[ECClassDef] [b]) [d]"),
+        std::make_pair("Bracketed CTE", "WITH RECURSIVE [c]([i]) AS (SELECT 1 UNION SELECT ([i] + 1) FROM [c] WHERE ([i] < 10) ORDER BY 1) SELECT [i] FROM [c]"),
+        std::make_pair("Bracketed relationship join", "SELECT 1 FROM [ECDbMeta].[ECClassDef] JOIN [ECDbMeta].[ECPropertyDef] USING [ECDbMeta].[ClassOwnsLocalProperties]"),
+        std::make_pair("Bracketed table-valued function", "SELECT [s].[key] FROM [json1].[json_tree]('{}') [s] WHERE ([s].[key] = 'gravity')"),
     })
         {
         // Prepare the ECSql directly to compare the Pragma results

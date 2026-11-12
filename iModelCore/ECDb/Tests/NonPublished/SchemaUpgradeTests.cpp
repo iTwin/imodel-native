@@ -321,6 +321,145 @@ TEST_F(SchemaUpgradeTestFixture, AddPropertyWithPropertyMapCAToSharedColumnHiera
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, ImportToleratesPhysicalColumnsWithoutECColumnRows) {
+    // Undoing a schema import (e.g. BriefcaseDb.discardChanges) reverts its ec_ rows but not the columns
+    // its DDL added. The table then has more columns than ec_Column describes. A later import must not fail
+    // on that, and must reuse those columns by name. See itwinjs-core#9826.
+    Utf8CP v1 = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+        <ECEntityClass typeName="Parent">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00"/>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Name" typeName="string"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="Sub">
+            <BaseClass>Parent</BaseClass>
+            <ECProperty propertyName="SubProp" typeName="string"/>
+        </ECEntityClass>
+    </ECSchema>)xml";
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("importToleratesOrphanColumns.ecdb", SchemaItem(v1)));
+
+    bvector<Utf8String> columnsBefore;
+    ASSERT_TRUE(m_ecdb.GetColumns(columnsBefore, "ts_Parent"));
+    ASSERT_TRUE(std::find(columnsBefore.begin(), columnsBefore.end(), "ps2") != columnsBefore.end());
+
+    // Leave ps3 and ps4 behind with no ec_Column rows, created the way ECDb creates shared columns,
+    // as an undone import that added them would.
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteDdl("ALTER TABLE [ts_Parent] ADD COLUMN [ps3] BLOB"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteDdl("ALTER TABLE [ts_Parent] ADD COLUMN [ps4] BLOB"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+
+    // An unrelated import validates every table and used to fail with ECDb_0133.
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="OtherSchema" alias="os" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"/>)xml")));
+
+    // A new property reuses the leftover ps3 instead of adding another column.
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+        <ECEntityClass typeName="Parent">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00"/>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Name" typeName="string"/>
+            <ECProperty propertyName="NewProp" typeName="string"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="Sub">
+            <BaseClass>Parent</BaseClass>
+            <ECProperty propertyName="SubProp" typeName="string"/>
+        </ECEntityClass>
+    </ECSchema>)xml")));
+
+    ASSERT_EQ(ExpectedColumn("ts_Parent", "ps3"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Parent", "NewProp")));
+    bvector<Utf8String> columnsAfter;
+    ASSERT_TRUE(m_ecdb.GetColumns(columnsAfter, "ts_Parent"));
+    ASSERT_EQ(columnsBefore.size() + 2, columnsAfter.size());
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Sub (Name, NewProp, SubProp) VALUES ('name', 'newPropValue', 'subProp')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+    EXPECT_EQ(JsonValue(R"json([{"NewProp":"newPropValue"}])json"), GetHelper().ExecuteSelectECSql("SELECT NewProp FROM ts.Parent"));
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, ImportFailsOnUnmappedColumnNotNamedLikeASharedColumn) {
+    // Only unmapped columns named like shared columns are tolerated; anything else is not left behind by ECDb.
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+        <ECEntityClass typeName="Parent">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00"/>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Name" typeName="string"/>
+        </ECEntityClass>
+    </ECSchema>)xml";
+    Utf8CP otherSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="OtherSchema" alias="os" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"/>)xml";
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("unmappedDedicatedColumn.ecdb", SchemaItem(schemaXml)));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteDdl("ALTER TABLE [ts_Parent] ADD COLUMN [Foo] INTEGER"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+
+    TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
+    ASSERT_EQ(ERROR, ImportSchema(SchemaItem(otherSchemaXml)));
+    ASSERT_FALSE(issueListener.m_issues.empty());
+    EXPECT_STREQ("DbTable 'ts_Parent' has physical column 'Foo' with no ec_Column row, which cannot be reused because it is not named like a shared column.", issueListener.m_issues[0].message.c_str());
+    m_ecdb.RemoveIssueListener();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, ImportFailsWhenMappedColumnIsMissingFromTable) {
+    // Extra physical columns are tolerated, but every column with an ec_Column row must exist in the table.
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("importFailsMissingMappedColumn.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+        <ECEntityClass typeName="Parent">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00"/>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Name" typeName="string"/>
+            <ECProperty propertyName="Code" typeName="string"/>
+        </ECEntityClass>
+    </ECSchema>)xml")));
+
+    ASSERT_EQ(ExpectedColumn("ts_Parent", "ps2"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Parent", "Code")));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteDdl("ALTER TABLE [ts_Parent] DROP COLUMN [ps2]"));
+    // Keep the column count equal so only the missing-column check can catch it.
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteDdl("ALTER TABLE [ts_Parent] ADD COLUMN [ps9]"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+
+    TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
+    ASSERT_EQ(ERROR, ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="OtherSchema" alias="os" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"/>)xml")));
+    ASSERT_FALSE(issueListener.m_issues.empty());
+    EXPECT_STREQ("Non-virtual DbTable 'ts_Parent' has non-virtual column 'ps2' which does not exist in the file.", issueListener.m_issues[0].message.c_str());
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaUpgradeTestFixture, CustomAttributeOrdinal){
     auto testCaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestCA" alias="tsca" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
@@ -9559,7 +9698,7 @@ TEST_F(SchemaUpgradeTestFixture, ModifyECProperties)
         "       <ECProperty propertyName='ExtendedProperty' typeName='string' extendedTypeName='URL' />"
         "   </ECEntityClass>"
         "</ECSchema>";
-    AssertSchemaUpdate(modifiedECPropertyArrayMixOccurs, filePath, {false, false}, "Modifying ECPropertyArray minOccurs");
+    AssertSchemaUpdate(modifiedECPropertyArrayMixOccurs, filePath, {false, false}, "Modifying ECPropertyArray minOccurs (increase is narrowing)");
 
     Utf8CP modifiedECArrayPropertyMaxOccurs =
         //SchemaItem with Modified ECArrayProperty MaxOccurs
@@ -9576,7 +9715,7 @@ TEST_F(SchemaUpgradeTestFixture, ModifyECProperties)
         "       <ECProperty propertyName='ExtendedProperty' typeName='string' extendedTypeName='URL' />"
         "   </ECEntityClass>"
         "</ECSchema>";
-    AssertSchemaUpdate(modifiedECArrayPropertyMaxOccurs, filePath, {false, false}, "Modifying ECPropertyArray maxOccurs");
+    AssertSchemaUpdate(modifiedECArrayPropertyMaxOccurs, filePath, {true, true}, "Modifying ECPropertyArray maxOccurs (increase is widening)");
 
     Utf8CP modifiedExtendedType =
         //SchemaItem with Modifed Extended Type
@@ -9594,6 +9733,143 @@ TEST_F(SchemaUpgradeTestFixture, ModifyECProperties)
         "   </ECEntityClass>"
         "</ECSchema>";
     AssertSchemaUpdate(modifiedExtendedType, filePath, {true, true}, "Modifying extendedTypeName");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, ModifyArrayPropertyBounds)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "   <ECStructClass typeName='MyStruct' modifier='None'>"
+        "       <ECProperty propertyName='Val' typeName='int' />"
+        "   </ECStructClass>"
+        "   <ECEntityClass typeName='TestClass' modifier='None' >"
+        "       <ECArrayProperty propertyName='PrimArray' typeName='string' minOccurs='2' maxOccurs='5' />"
+        "       <ECStructArrayProperty propertyName='StructArray' typeName='MyStruct' minOccurs='2' maxOccurs='5' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemaupdate_arraybounds.ecdb", schemaItem));
+    BeFileName filePath(m_ecdb.GetDbFileName());
+    m_ecdb.CloseDb();
+
+    auto generateSchema = [](Utf8CP primBounds, Utf8CP structBounds)
+        {
+        Utf8String xml;
+        xml.Sprintf(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+            "   <ECStructClass typeName='MyStruct' modifier='None'>"
+            "       <ECProperty propertyName='Val' typeName='int' />"
+            "   </ECStructClass>"
+            "   <ECEntityClass typeName='TestClass' modifier='None' >"
+            "       <ECArrayProperty propertyName='PrimArray' typeName='string' %s />"
+            "       <ECStructArrayProperty propertyName='StructArray' typeName='MyStruct' %s />"
+            "   </ECEntityClass>"
+            "</ECSchema>", primBounds, structBounds);
+        return xml;
+        };
+
+    // Widening: decrease minOccurs
+    AssertSchemaUpdate(generateSchema("minOccurs='1' maxOccurs='5'", "minOccurs='2' maxOccurs='5'").c_str(), filePath, {true, true}, "Decreasing minOccurs on primitive array is a minor change");
+    AssertSchemaUpdate(generateSchema("minOccurs='2' maxOccurs='5'", "minOccurs='0' maxOccurs='5'").c_str(), filePath, {true, true}, "Decreasing minOccurs on struct array is a minor change");
+
+    // Widening: increase maxOccurs
+    AssertSchemaUpdate(generateSchema("minOccurs='2' maxOccurs='10'", "minOccurs='2' maxOccurs='5'").c_str(), filePath, {true, true}, "Increasing maxOccurs on primitive array is a minor change");
+    AssertSchemaUpdate(generateSchema("minOccurs='2' maxOccurs='5'", "minOccurs='2' maxOccurs='100'").c_str(), filePath, {true, true}, "Increasing maxOccurs on struct array is a minor change");
+
+    // Widening: bounded -> unbounded maxOccurs
+    AssertSchemaUpdate(generateSchema("minOccurs='2' maxOccurs='unbounded'", "minOccurs='2' maxOccurs='5'").c_str(), filePath, {true, true}, "Changing maxOccurs to unbounded on primitive array is a minor change");
+    AssertSchemaUpdate(generateSchema("minOccurs='2' maxOccurs='5'", "minOccurs='2' maxOccurs='unbounded'").c_str(), filePath, {true, true}, "Changing maxOccurs to unbounded on struct array is a minor change");
+
+    // Widening both at once
+    AssertSchemaUpdate(generateSchema("minOccurs='0' maxOccurs='unbounded'", "minOccurs='0' maxOccurs='unbounded'").c_str(), filePath, {true, true}, "Widening both bounds at once is a minor change");
+
+    // Expected error messages. Min is validated before max, so if both bounds are narrowed the MinOccurs error is reported.
+    auto minNarrowedError = [](Utf8CP propName)
+        {
+        return Utf8PrintfString("ECSchema Upgrade failed. ECProperty TestSchema:TestClass.%s: Narrowing of array bounds by increasing 'MinOccurs' for an Array ECProperty is not supported.", propName);
+        };
+    auto maxNarrowedError = [](Utf8CP propName)
+        {
+        return Utf8PrintfString("ECSchema Upgrade failed. ECProperty TestSchema:TestClass.%s: Narrowing of array bounds by decreasing 'MaxOccurs' for an Array ECProperty is not supported.", propName);
+        };
+
+    // Narrowing: increase minOccurs
+    AssertSchemaUpdate(generateSchema("minOccurs='3' maxOccurs='5'", "minOccurs='2' maxOccurs='5'").c_str(), filePath, {false, false}, "Increasing minOccurs on primitive array is not supported", minNarrowedError("PrimArray").c_str());
+    AssertSchemaUpdate(generateSchema("minOccurs='2' maxOccurs='5'", "minOccurs='3' maxOccurs='5'").c_str(), filePath, {false, false}, "Increasing minOccurs on struct array is not supported", minNarrowedError("StructArray").c_str());
+
+    // Narrowing: decrease maxOccurs
+    AssertSchemaUpdate(generateSchema("minOccurs='2' maxOccurs='4'", "minOccurs='2' maxOccurs='5'").c_str(), filePath, {false, false}, "Decreasing maxOccurs on primitive array is not supported", maxNarrowedError("PrimArray").c_str());
+    AssertSchemaUpdate(generateSchema("minOccurs='2' maxOccurs='5'", "minOccurs='2' maxOccurs='4'").c_str(), filePath, {false, false}, "Decreasing maxOccurs on struct array is not supported", maxNarrowedError("StructArray").c_str());
+
+    // Narrowing both bounds of the same property (min is checked first)
+    AssertSchemaUpdate(generateSchema("minOccurs='3' maxOccurs='4'", "minOccurs='2' maxOccurs='5'").c_str(), filePath, {false, false}, "Narrowing both bounds on primitive array is not supported", minNarrowedError("PrimArray").c_str());
+    AssertSchemaUpdate(generateSchema("minOccurs='2' maxOccurs='5'", "minOccurs='3' maxOccurs='4'").c_str(), filePath, {false, false}, "Narrowing both bounds on struct array is not supported", minNarrowedError("StructArray").c_str());
+
+    // Mixed: min widened, max narrowed -> must fail on max
+    AssertSchemaUpdate(generateSchema("minOccurs='0' maxOccurs='4'", "minOccurs='2' maxOccurs='5'").c_str(), filePath, {false, false}, "Widening minOccurs while narrowing maxOccurs is not supported", maxNarrowedError("PrimArray").c_str());
+
+    // Mixed: min narrowed, max widened -> must fail on min
+    AssertSchemaUpdate(generateSchema("minOccurs='3' maxOccurs='10'", "minOccurs='2' maxOccurs='5'").c_str(), filePath, {false, false}, "Narrowing minOccurs while widening maxOccurs is not supported", minNarrowedError("PrimArray").c_str());
+    AssertSchemaUpdate(generateSchema("minOccurs='2' maxOccurs='5'", "minOccurs='3' maxOccurs='unbounded'").c_str(), filePath, {false, false}, "Narrowing minOccurs while making maxOccurs unbounded is not supported", minNarrowedError("StructArray").c_str());
+
+    // Narrowing: unbounded -> bounded maxOccurs
+    {
+    SchemaItem unboundedSeed(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "   <ECStructClass typeName='MyStruct' modifier='None'>"
+        "       <ECProperty propertyName='Val' typeName='int' />"
+        "   </ECStructClass>"
+        "   <ECEntityClass typeName='TestClass' modifier='None' >"
+        "       <ECArrayProperty propertyName='PrimArray' typeName='string' minOccurs='0' maxOccurs='unbounded' />"
+        "       <ECStructArrayProperty propertyName='StructArray' typeName='MyStruct' minOccurs='0' maxOccurs='unbounded' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemaupdate_arraybounds_unbounded.ecdb", unboundedSeed));
+    BeFileName unboundedFilePath(m_ecdb.GetDbFileName());
+    m_ecdb.CloseDb();
+
+    AssertSchemaUpdate(generateSchema("minOccurs='0' maxOccurs='100'", "minOccurs='0' maxOccurs='unbounded'").c_str(), unboundedFilePath, {false, false}, "Changing maxOccurs from unbounded to bounded on primitive array is not supported", maxNarrowedError("PrimArray").c_str());
+    AssertSchemaUpdate(generateSchema("minOccurs='0' maxOccurs='unbounded'", "minOccurs='0' maxOccurs='100'").c_str(), unboundedFilePath, {false, false}, "Changing maxOccurs from unbounded to bounded on struct array is not supported", maxNarrowedError("StructArray").c_str());
+    }
+
+    // Verify the widened values were persisted
+    ECDb ecdb;
+    ASSERT_EQ(BE_SQLITE_OK, CloneECDb(ecdb, "schemaupdate_arraybounds_verify.ecdb", filePath));
+    ASSERT_EQ(SUCCESS, TestHelper(ecdb).ImportSchema(SchemaItem(generateSchema("minOccurs='0' maxOccurs='unbounded'", "minOccurs='1' maxOccurs='20'"))));
+    ecdb.SaveChanges();
+
+    ECClassCP testClass = ecdb.Schemas().GetClass("TestSchema", "TestClass");
+    ASSERT_TRUE(testClass != nullptr);
+
+    ArrayECPropertyCP primArray = testClass->GetPropertyP("PrimArray")->GetAsArrayProperty();
+    ASSERT_TRUE(primArray != nullptr);
+    EXPECT_EQ(0U, primArray->GetMinOccurs());
+    EXPECT_TRUE(primArray->IsStoredMaxOccursUnbounded());
+
+    ArrayECPropertyCP structArray = testClass->GetPropertyP("StructArray")->GetAsArrayProperty();
+    ASSERT_TRUE(structArray != nullptr);
+    EXPECT_EQ(1U, structArray->GetMinOccurs());
+    EXPECT_EQ(20U, structArray->GetStoredMaxOccurs());
+
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT ArrayMinOccurs, ArrayMaxOccurs FROM ec_Property WHERE Name='PrimArray'"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    EXPECT_EQ(0, stmt.GetValueInt(0));
+    EXPECT_TRUE(stmt.IsColumnNull(1)) << "Unbounded maxOccurs must be persisted as NULL";
+    stmt.Finalize();
+
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT ArrayMinOccurs, ArrayMaxOccurs FROM ec_Property WHERE Name='StructArray'"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    EXPECT_EQ(1, stmt.GetValueInt(0));
+    EXPECT_EQ(20, stmt.GetValueInt(1));
+    stmt.Finalize();
     }
 
 //---------------------------------------------------------------------------------------

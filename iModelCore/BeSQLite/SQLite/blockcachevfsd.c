@@ -99,6 +99,12 @@ struct CommandSwitches {
 #define BCV_LOG_UPLOAD    0x08
 #define BCV_LOG_CACHE     0x10
 
+/*
+** Maximum number of entries from an array of integers (e.g. block ids)
+** to include in a single message log entry.
+*/
+#define BD_LOG_MAX_ARRAY  100
+
 
 static void fatal_sql_error(sqlite3 *db, const char *zMsg){
   fprintf(stderr, "FATAL: SQL error in %s (rc=%d) (errmsg=%s)\n", 
@@ -1105,6 +1111,18 @@ struct DClient {
 
   int pgsz;                       /* Page-size of connected database */
   sqlite3_file *pCloseFd;
+
+  /* Statistics for blocks downloaded on behalf of this client. Reported
+  ** by the "nqueryblock", "nquerybyte" and "nqueryus" rows of bcv_stat. */
+  i64 nQueryBlock;
+  i64 nQueryByte;
+  i64 nQueryUs;
+
+  /* If the READ message in pMsg is waiting on a block download, the
+  ** time the wait started. The download may have been started on behalf
+  ** of this client, some other client, or a prefetch. Or 0 if it is not
+  ** waiting on any download.  */
+  i64 iWaitStart;
 };
 
 struct DaemonCtx {
@@ -1305,16 +1323,31 @@ static void bdNewConnection(DaemonCtx *p){
 
 /*
 ** Return a string representation of the array of unsigned integers passed
-** via the two arguments. e.g. "1,2,3,4,5". It is the responsibility of the
-** caller to eventually free the returned buffer using sqlite3_free().
+** via the first two arguments. e.g. "1,2,3,4,5". It is the responsibility 
+** of the caller to eventually free the returned buffer using sqlite3_free().
+**
+** If the array contains more than nMax entries, then only the first nMax/2
+** and last nMax/2 entries are included in the output, separated by "...".
+** e.g. "1,2,...,9,10".
 */
-static char *bdArrayToString(u32 *aInt, int nInt){
-  char *zRet = 0;
+static char *bdArrayToString(u32 *aInt, int nInt, int nMax){
+  sqlite3_str *pStr = sqlite3_str_new(0);
   int ii;
-  for(ii=0; ii<nInt; ii++){
-    zRet = bcvMprintf("%z%s%d", zRet, zRet?",":"", (int)aInt[ii]);
+  if( nInt>nMax ){
+    int nHalf = nMax/2;
+    for(ii=0; ii<nHalf; ii++){
+      sqlite3_str_appendf(pStr, "%d,", (int)aInt[ii]);
+    }
+    sqlite3_str_appendall(pStr, "...");
+    for(ii=nInt-nHalf; ii<nInt; ii++){
+      sqlite3_str_appendf(pStr, ",%d", (int)aInt[ii]);
+    }
+  }else{
+    for(ii=0; ii<nInt; ii++){
+      sqlite3_str_appendf(pStr, "%s%d", ii?",":"", (int)aInt[ii]);
+    }
   }
-  return zRet;
+  return sqlite3_str_finish(pStr);
 }
 
 static void bdLogRecvMsg(DaemonCtx *p, DClient *pClient, BcvMessage *pMsg){
@@ -1349,7 +1382,9 @@ static void bdLogRecvMsg(DaemonCtx *p, DClient *pClient, BcvMessage *pMsg){
         break;
 
       case BCV_MESSAGE_READ: {
-        char *zArray = bdArrayToString(pMsg->u.read.aMru, pMsg->u.read.nMru);
+        char *zArray = bdArrayToString(
+            pMsg->u.read.aMru, pMsg->u.read.nMru, BD_LOG_MAX_ARRAY
+        );
         daemon_msg_log(p, "%d->D: READ(%d, [%s])", 
             pClient->iClientId, (int)pMsg->u.read.iBlk, zArray
         );
@@ -1358,7 +1393,9 @@ static void bdLogRecvMsg(DaemonCtx *p, DClient *pClient, BcvMessage *pMsg){
       }
 
       case BCV_MESSAGE_END: {
-        char *zArray = bdArrayToString(pMsg->u.end.aMru, pMsg->u.end.nMru);
+        char *zArray = bdArrayToString(
+            pMsg->u.end.aMru, pMsg->u.end.nMru, BD_LOG_MAX_ARRAY
+        );
         daemon_msg_log(p, "%d->D: END([%s])", pClient->iClientId, zArray);
         sqlite3_free(zArray);
         break;
@@ -1429,7 +1466,9 @@ static void bdLogSendMsg(DaemonCtx *p, DClient *pClient, BcvMessage *pMsg){
         );
         break;
       case BCV_MESSAGE_READ_REPLY: {
-        char *z = bdArrayToString(pMsg->u.read_r.aBlk, pMsg->u.read_r.nBlk);
+        char *z = bdArrayToString(
+            pMsg->u.read_r.aBlk, pMsg->u.read_r.nBlk, BD_LOG_MAX_ARRAY
+        );
         daemon_msg_log(p, "D->%d: READ_REPLY(%d, \"%s\", [%s])",
             pClient->iClientId,
             pMsg->u.read_r.errCode,
@@ -1831,9 +1870,26 @@ static void bcvProxyClientCount(
 **   memory_client_array:
 **     Memory used for arrays of block references held in the daemon on 
 **     behalf of clients.
+**
+** And three more rows specific to client pReq, the client that made the
+** request:
+**
+**   nqueryblock, nquerybyte, nqueryus:
+**     Number of blocks and bytes downloaded on behalf of pReq, and the
+**     total latency in us of those downloads. Blocks found in the cache
+**     are not included. Blocks that were already being downloaded on
+**     behalf of some other client or prefetch when pReq required them
+**     are included, but only the time pReq spent waiting for them is
+**     added to nqueryus.
 **  
 */
-static u8 *bdExtraVtabData(int *pRc, DaemonCtx *p, u8 *aData, int *pnData){
+static u8 *bdExtraVtabData(
+  int *pRc,
+  DaemonCtx *p,
+  DClient *pReq,
+  u8 *aData,
+  int *pnData
+){
   i64 nManifest = 0;
   i64 nArray = 0;
   DClient *pClient = 0;
@@ -1857,6 +1913,12 @@ static u8 *bdExtraVtabData(int *pRc, DaemonCtx *p, u8 *aData, int *pnData){
   bcvBufferAppendU64(pRc, &buf, (u64)nManifest);
   bcvBufferMsgString(pRc, &buf, "memory_client_array");
   bcvBufferAppendU64(pRc, &buf, (u64)nArray);
+  bcvBufferMsgString(pRc, &buf, "nqueryblock");
+  bcvBufferAppendU64(pRc, &buf, (u64)pReq->nQueryBlock);
+  bcvBufferMsgString(pRc, &buf, "nquerybyte");
+  bcvBufferAppendU64(pRc, &buf, (u64)pReq->nQueryByte);
+  bcvBufferMsgString(pRc, &buf, "nqueryus");
+  bcvBufferAppendU64(pRc, &buf, (u64)pReq->nQueryUs);
 
   *pnData = buf.nData;
   return buf.aData;
@@ -1888,7 +1950,7 @@ static void bdHandleVtab(
       zTab, zCont, zDb, bcvProxyClientCount, colUsed, &nData, &iVersion
   );
   if( 0==bcvStrcmp(zTab, "bcv_stat") ){
-    aData = bdExtraVtabData(&rc, p, aData, &nData);
+    aData = bdExtraVtabData(&rc, p, pClient, aData, &nData);
   }
 
   reply.u.vtab_r.aData = aData;
@@ -2059,6 +2121,7 @@ static void bdBlockDownloadCb(
 
   if( rc==SQLITE_OK ){
     pEntry->bValid = 1;
+    pEntry->nByte = nData;
     bcvfsLruAdd(&p->c, pEntry);
     if( pDLCtx->pKey==0 ) bdWriteBlock(&p->c, pEntry);
   }else{
@@ -2123,7 +2186,9 @@ static i64 bdFindMinTick(DaemonCtx *pCtx){
 }
 
 /*
-**
+** Search the hash table for a cache entry for block aName[] (nName bytes
+** in size) with encryption index iEnc. Return a pointer to it if found,
+** or NULL otherwise.
 */
 static CacheEntry *bdHashFind(
   BcvCommon *pCommon,             /* Hash tables to search */
@@ -2135,7 +2200,7 @@ static CacheEntry *bdHashFind(
     while( (pEntry = pEntry->pHashNext) ){
       if( pEntry->iEnc==iEnc 
        && pEntry->nName==nName 
-       && memcpy(pEntry->aName, aName, nName)
+       && memcmp(pEntry->aName, aName, nName)==0
       ){
         break;
       }
@@ -2180,6 +2245,7 @@ static void bdHandleReadMsg(DaemonCtx *p, DClient *pClient){
     bcvfsHashAdd(&p->c, pEntry);
 
     pDLCtx = bdFetchCtx(pClient, pEntry);
+    pClient->iWaitStart = bcv_timestamp();
     bcvfsBlockidToText(aName, nName, zName);
     bcvDispatchClientId(p->pDisp, pClient->zClientId);
     bcvDispatchLogmsg(p->pDisp, "demand %d of %s",iBlk,pClient->pManDb->zDName);
@@ -2188,6 +2254,7 @@ static void bdHandleReadMsg(DaemonCtx *p, DClient *pClient){
 
   }else if( pEntry->bValid==0 ){
     /* Case (2) - wait */
+    if( pClient->iWaitStart==0 ) pClient->iWaitStart = bcv_timestamp();
   }else{
     /* Case (3) - answer the READ message now */
     BcvMessage reply;
@@ -2198,6 +2265,14 @@ static void bdHandleReadMsg(DaemonCtx *p, DClient *pClient){
     /* Shift pEntry to the end of the LRU list */
     bcvfsLruRemoveIf(&p->c, pEntry);
     bcvfsLruAddIf(&p->c, pEntry);
+
+    /* If this client was waiting on a download, count the block now. */
+    if( pClient->iWaitStart ){
+      pClient->nQueryBlock++;
+      pClient->nQueryByte += pEntry->nByte;
+      pClient->nQueryUs += (bcv_timestamp() - pClient->iWaitStart);
+    }
+    pClient->iWaitStart = 0;
 
     memset(&reply, 0, sizeof(BcvMessage));
     reply.eType = BCV_MESSAGE_READ_REPLY;
@@ -2265,14 +2340,19 @@ static void bdPollCb(
   }
 
   if( rc==SQLITE_OK ){
+    /* bcvManifestUpdate() takes ownership of pMan, and may free it even
+    ** if successful (if it has to be expanded to accommodate local dbs).
+    ** If successful, the new manifest object is installed as pCont->pMan. */
     rc = bcvManifestUpdate(&p->c, pCont, pMan, &zErr);
+    pMan = (rc==SQLITE_OK ? pCont->pMan : 0);
   }
   pCont->eState = CONTAINER_STATE_NONE;
 
   /* Search for clients that currently have an open transaction on this
   ** container. If possible (if the db they have open has not changed),
-  ** upgrade such clients to the new manifest object. */
-  for(pIter=p->pClientList; pIter; pIter=pIter->pNext){
+  ** upgrade such clients to the new manifest object. Skip this if the
+  ** poll failed, as in that case there is no new manifest object.  */
+  for(pIter=p->pClientList; rc==SQLITE_OK && pIter; pIter=pIter->pNext){
     if( pIter->pMan && pIter->pCont==pCont ){
       ManifestDb *pOldDb = pIter->pManDb;
       int iOff = pOldDb - pIter->pMan->aDb;
@@ -2395,6 +2475,7 @@ static void bdHandleRead(
   ** Otherwise, return an error to the client.  */
   if( rc==SQLITE_OK ){
     pClient->pMsg = pMsg;
+    pClient->iWaitStart = 0;
   }else{
     bdReadReplyError(pClient, SQLITE_ERROR, 0);
     sqlite3_free(pMsg);
@@ -2540,6 +2621,7 @@ static void bdPrefetchCb(
 
   if( rc==SQLITE_OK ){
     pEntry->bValid = 1;
+    pEntry->nByte = nData;
     bcvfsLruAdd(&p->c, pEntry);
     if( pDLCtx->pKey==0 ) bdWriteBlock(&p->c, pEntry);
   }else{
@@ -2666,9 +2748,20 @@ static void bdHandleClientMessage(
         bdHandleRead(p, pClient, pMsg);
         *pbLogin = 1;
         break;
-      case BCV_MESSAGE_END:
+      case BCV_MESSAGE_END: {
+#ifdef TCP_QUICKACK
+        /* For all other message types this daemon process will send a reply
+        ** message to the client. But for END there is no reply message,
+        ** so set TCP_QUICKACK to encourage the system to send an ACK message
+        ** to the client immediately. If we do not do that there is a chance
+        ** that Nagle's algorithm slows older clients down. New clients do
+        ** not have this problem, as they set TCP_NODELAY.  */
+        int one = 1;
+        setsockopt(pClient->fd, IPPROTO_TCP, TCP_QUICKACK, &one, sizeof(one));
+#endif
         bdHandleEnd(p, pClient, pMsg);
         break;
+      }
       case BCV_MESSAGE_CMD:
         if( pMsg->u.cmd.eCmd==BCV_CMD_POLL ){
           pClient->pMsg = pMsg;

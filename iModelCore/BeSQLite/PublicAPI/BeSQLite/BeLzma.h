@@ -244,10 +244,10 @@ public:
     BE_SQLITE_EXPORT ZipErrors StartCompress(ILzmaOutputStream& outStream);
 
     //! Write the next page of data after compression
-    //! @param[out] pData Uncompressed buffer of data to be written after compression
-    //! @param[in,out] nData Size of buffer
-    //! @return ZIP_SUCCESS if successfully extracted data. Return appropriate error otherwise.
-    BE_SQLITE_EXPORT ZipErrors CompressNextPage(void const* pData, int nData);
+    //! @param[in] pData Uncompressed buffer of data to be written after compression
+    //! @param[in] nData Size of buffer
+    //! @return ZIP_SUCCESS if the data was compressed and written. Return appropriate error otherwise.
+    BE_SQLITE_EXPORT ZipErrors CompressNextPage(void const* pData, size_t nData);
 
     //! Finish incremental compression.
     BE_SQLITE_EXPORT ZipErrors FinishCompress();

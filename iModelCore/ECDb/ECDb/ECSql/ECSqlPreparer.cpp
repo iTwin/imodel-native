@@ -85,6 +85,43 @@ ECSqlStatus ECSqlPreparer::Prepare(Utf8StringR nativeSql, ECSqlPrepareContext& c
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
+ECSqlStatus ECSqlExpPreparer::ValidateUnquotedName(ECSqlPrepareContext& ctx, Utf8StringCR name)
+    {
+    // ECSQL accepts quoted names with any characters. Unquoted in SQLite SQL, such a name could change the statement.
+    bool isPlainIdentifier = !name.empty() && !(name[0] >= '0' && name[0] <= '9') && name[0] != '$';
+    for (size_t i = 0; isPlainIdentifier && i < name.size(); ++i)
+        {
+        const unsigned char c = static_cast<unsigned char>(name[i]);
+        isPlainIdentifier = (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_' || c == '$' || c >= 0x80;
+        }
+
+    if (!isPlainIdentifier)
+        {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0751,
+            "Invalid name '%s'. Names of functions, common table expressions and their columns, windows and table-valued function aliases may only contain letters, digits and underscores.", name.c_str());
+        return ECSqlStatus::InvalidECSql;
+        }
+
+    return ECSqlStatus::Success;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+ECSqlStatus ECSqlExpPreparer::AppendUnquotedName(NativeSqlBuilder& builder, ECSqlPrepareContext& ctx, Utf8StringCR name)
+    {
+    ECSqlStatus status = ValidateUnquotedName(ctx, name);
+    if (status.IsSuccess())
+        builder.Append(name);
+
+    return status;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
 ECSqlStatus ECSqlExpPreparer::PrepareAllOrAnyExp(ECSqlPrepareContext& ctx, AllOrAnyExp const& exp)
     {
     const BooleanSqlOperator op = exp.GetOperator();
@@ -883,10 +920,14 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassRefExp(NativeSqlBuilder::List& nativeS
             case Exp::Type::CommonTableBlockName:  {
                 NativeSqlBuilder builder;
                 auto& ctb = exp.GetAs<CommonTableBlockNameExp>();
-                builder.Append(ctb.GetName());
+                ECSqlStatus nameStatus = AppendUnquotedName(builder, ctx, ctb.GetName());
+                if (!nameStatus.IsSuccess())
+                    return nameStatus;
                 // append alias to cte reference
                 if (!ctb.GetAlias().empty()) {
-                    builder.AppendSpace().Append(ctb.GetAlias());
+                    nameStatus = AppendUnquotedName(builder.AppendSpace(), ctx, ctb.GetAlias());
+                    if (!nameStatus.IsSuccess())
+                        return nameStatus;
                 }
                 nativeSqlSnippets.push_back(builder);
                 return ECSqlStatus::Success;
@@ -905,8 +946,42 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassRefExp(NativeSqlBuilder::List& nativeS
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareTableValuedFunctionExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, TableValuedFunctionExp const& exp) {
+    // Gate on the resolved virtual class rather than the raw function name, so that an
+    // application registered function that happens to be called 'Relations' is not affected.
+    ECN::ECClassCP tvfClass = exp.GetClass();
+    bool const isRelations = tvfClass != nullptr && tvfClass->GetName().EqualsIAscii("Relations")
+        && tvfClass->GetSchema().GetName().EqualsIAscii("ECVLib");
+    if (isRelations)
+        {
+        if (!QueryOptionExperimentalFeaturesEnabled(ctx.GetECDb(), exp))
+            {
+            ctx.Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECSQL,
+                ECDbIssueId::ECDb_0744,
+                "ECVLib.Relations() is an experimental feature and is disabled by default. Enable it with: PRAGMA experimental_features_enabled=true or use ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES");
+            return ECSqlStatus::InvalidECSql;
+            }
+
+        size_t const argCount = exp.GetFunctionExp()->GetChildrenCount();
+        if (argCount < 2 || argCount > 3)
+            {
+            ctx.Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue,
+                ECDbIssueId::ECDb_0749,
+                "ECVLib.Relations() expects two or three arguments.");
+            return ECSqlStatus::InvalidECSql;
+            }
+        }
+
     NativeSqlBuilder builder;
-    builder.Append(exp.GetFunctionExp()->GetFunctionName());
+    ECSqlStatus nameStatus = AppendUnquotedName(builder, ctx, exp.GetFunctionExp()->GetFunctionName());
+    if (!nameStatus.IsSuccess())
+        return nameStatus;
+
     builder.AppendParenLeft();
     for (auto i =0; i < exp.GetFunctionExp()->GetChildrenCount(); ++i) {
         auto arg = exp.GetFunctionExp()->GetArgument(i);
@@ -932,9 +1007,17 @@ ECSqlStatus ECSqlExpPreparer::PrepareTableValuedFunctionExp(NativeSqlBuilder::Li
         }
         builder.Append(valueSnippets.front());
     }
+    if (isRelations && QueryOptionNavRelClassIdFallback(exp))
+        {
+        if (exp.GetFunctionExp()->GetChildrenCount() == 2)
+            builder.AppendComma().Append("'both'");
+        builder.AppendComma().Append("1");
+        }
     builder.AppendParenRight();
     if (!exp.GetAlias().empty()) {
-        builder.AppendSpace().Append(exp.GetAlias());
+        ECSqlStatus aliasStatus = AppendUnquotedName(builder.AppendSpace(), ctx, exp.GetAlias());
+        if (!aliasStatus.IsSuccess())
+            return aliasStatus;
     }
     nativeSqlSnippets.push_back(builder);
     return ECSqlStatus::Success;
@@ -977,7 +1060,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareEnumValueExp(NativeSqlBuilder::List& native
     if (enumerator.IsInteger())
         nativeSqlBuilder.AppendFormatted("%" PRId32, enumerator.GetInteger());
     else if (enumerator.IsString())
-        nativeSqlBuilder.AppendQuoted(enumerator.GetString().c_str());
+        nativeSqlBuilder.AppendQuoted(LiteralValueExp::EscapeStringLiteral(enumerator.GetString()).c_str());
     else
         {
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0513,
@@ -1514,6 +1597,16 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
 ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, FunctionCallExp const& exp)
     {
     Utf8StringCR functionName = exp.GetSqliteFunctionName();
+    ECSqlStatus nameStatus = ValidateUnquotedName(ctx, functionName);
+    if (!nameStatus.IsSuccess())
+        return nameStatus;
+
+    // These SQLite helpers cross the SQL/process boundary and must not be exposed through ECSQL.
+    if (functionName.EqualsIAscii("sha3_query") || functionName.EqualsIAscii("fts3_tokenizer")) {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0524,
+            "Failed to prepare function with name '%s': Function is not supported in ECSQL.", functionName.c_str());
+        return ECSqlStatus::InvalidECSql;
+    }
     if (ctx.GetECDb().GetECSqlConfig().GetDisableFunctions().Exists(functionName)) {
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0524,
             "Failed to prepare function with name '%s': Function is disabled by application.", functionName.c_str());
@@ -2043,8 +2136,12 @@ ECSqlStatus ECSqlExpPreparer::PrepareWindowDefinitionListExp(NativeSqlBuilder::L
 //static`
 ECSqlStatus ECSqlExpPreparer::PrepareWindowDefinitionExp(NativeSqlBuilder& nativeSqlBuilder, ECSqlPrepareContext& ctx, WindowDefinitionExp const& exp)
     {
-    nativeSqlBuilder.Append(exp.GetWindowName()).Append(" AS ");
-    ECSqlStatus status = PrepareWindowSpecification(nativeSqlBuilder, ctx, *exp.GetWindowSpecification());
+    ECSqlStatus status = AppendUnquotedName(nativeSqlBuilder, ctx, exp.GetWindowName());
+    if (!status.IsSuccess())
+        return status;
+
+    nativeSqlBuilder.Append(" AS ");
+    status = PrepareWindowSpecification(nativeSqlBuilder, ctx, *exp.GetWindowSpecification());
     if (!status.IsSuccess())
         return status;
 
@@ -2087,7 +2184,10 @@ ECSqlStatus ECSqlExpPreparer::PrepareWindowFunctionExp(NativeSqlBuilder::List& n
     else if (exp.GetWindowName().size() != 0)
         {
         nativeSqlBuilder.AppendSpace();
-        nativeSqlBuilder.Append(exp.GetWindowName());
+        status = AppendUnquotedName(nativeSqlBuilder, ctx, exp.GetWindowName());
+        if (!status.IsSuccess())
+            return status;
+
         nativeSqlSnippets.push_back(nativeSqlBuilder);
         return ECSqlStatus::Success;
         }
@@ -2204,7 +2304,10 @@ ECSqlStatus ECSqlExpPreparer::PrepareWindowSpecification(NativeSqlBuilder& nativ
     bool isFirstWindowSpecificationClause = true;
     if (exp.GetWindowName().size() != 0)
         {
-        nativeSqlBuilder.Append(exp.GetWindowName());
+        status = AppendUnquotedName(nativeSqlBuilder, ctx, exp.GetWindowName());
+        if (!status.IsSuccess())
+            return status;
+
         isFirstWindowSpecificationClause = false;
         }
     if (WindowPartitionColumnReferenceListExp const * e = exp.GetPartitionBy())
@@ -2502,6 +2605,17 @@ bool ECSqlExpPreparer::QueryOptionExperimentalFeaturesEnabled(ECDbCR db, ExpCR e
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+bool ECSqlExpPreparer::QueryOptionNavRelClassIdFallback(ExpCR exp)
+    {
+    return OptionsExp::FindLocalOrInheritedOption<bool>(
+        exp,
+        OptionsExp::NAV_REL_CLASSID_FALLBACK,
+        [](OptionExp const& opt) { return opt.asBool(); },
+        []() { return false; });
+    }
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 unsigned int ECSqlExpPreparer::QueryOptionsInstanceFlags(ExpCR exp)
     {
     const auto useJsPropName = OptionsExp::FindLocalOrInheritedOption<bool>(exp, OptionsExp::USE_JS_PROP_NAMES, [](OptionExp const& opt) { return opt.asBool(); }, []() { return false; });
@@ -2535,7 +2649,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareExtractPropertyExp(NativeSqlBuilder::List& 
     builder.AppendFormatted("extract_prop(%s,%s,'%s',0x%x%s)",
         classIdSql.front().GetSql().c_str(),
         instanceIdSql.front().GetSql().c_str(),
-        exp.GetTargetPath().ToString().c_str(),
+        LiteralValueExp::EscapeStringLiteral(exp.GetTargetPath().ToString()).c_str(),
         flags,
         exp.GetSqlAnchor([&](Utf8CP name) {
             return ctx.GetAnchors().CreateAnchor(name);
@@ -2614,19 +2728,22 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExp(NativeSqlBuilder::List& nativeSqlS
                 auto& ctp = exp.GetAs<CommonTablePropertyNameExp>();
                 auto  ctpName = ctp.GetBlockNameExp();
                 if (ctpName != nullptr) {
-                    if (!ctpName->GetAlias().empty()) {
-                        builder.Append(ctpName->GetAlias());
-                    } else {
-                        builder.Append(ctpName->GetName());
-                    }
+                    ECSqlStatus nameStatus = AppendUnquotedName(builder, ctx, ctpName->GetAlias().empty() ? ctpName->GetName() : ctpName->GetAlias());
+                    if (!nameStatus.IsSuccess())
+                        return nameStatus;
                     builder.AppendDot();
                 }
-                builder.Append(ctp.GetName());
+                ECSqlStatus nameStatus = AppendUnquotedName(builder, ctx, ctp.GetName());
+                if (!nameStatus.IsSuccess())
+                    return nameStatus;
                 if (exp.GetParent() != nullptr) {
                     if (exp.GetParent()->GetType() == Exp::Type::DerivedProperty) {
                         auto& nestedAlias = exp.GetParent()->GetAs<DerivedPropertyExp>().GetNestedAlias();
-                        if (!nestedAlias.empty())
-                            builder.AppendSpace().Append(exp.GetParent()->GetAs<DerivedPropertyExp>().GetNestedAlias());
+                        if (!nestedAlias.empty()) {
+                            nameStatus = AppendUnquotedName(builder.AppendSpace(), ctx, nestedAlias);
+                            if (!nameStatus.IsSuccess())
+                                return nameStatus;
+                        }
                     }
                 }
                 nativeSqlSnippets.push_back(builder);

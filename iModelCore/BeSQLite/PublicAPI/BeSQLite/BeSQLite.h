@@ -1531,7 +1531,15 @@ public:
     };
 
 //=======================================================================================
-//! Wraps sqlite3_mprintf. Adds convenience that destructor frees memory.
+//! Formats SQL text with sqlite3_mprintf and frees it on destruction.
+//! Besides standard printf conversions it supports SQL escaping, each safe only inside its own quotes:
+//! - '%q' doubles single quotes, for a value inside a string literal. The format supplies the quotes.
+//! - %Q does the same and adds the quotes itself. A null pointer becomes NULL.
+//! - "%w" doubles double quotes, for a name inside a double-quoted identifier. The format supplies the quotes.
+//! Use '%q' for values and "%w" for names; each quote style means something different to SQLite, even when escaping makes both safe.
+//! %s inserts text unchanged; use it only for trusted text. No conversion makes a name safe inside [...].
+//! Prefer binding values as parameters. Utf8PrintfString and Utf8String::Sprintf do not support these conversions.
+//! See "Writing SQL" in the repository README.
 // @bsiclass
 //=======================================================================================
 struct SqlPrintfString final
@@ -1543,7 +1551,7 @@ public:
     BE_SQLITE_EXPORT SqlPrintfString(Utf8CP fmt, ...);
     BE_SQLITE_EXPORT ~SqlPrintfString();
     operator Utf8CP(){return m_str;}
-    Utf8CP GetUtf8CP() {return m_str;}
+    Utf8CP GetUtf8CP() const {return m_str;}
 };
 
 //=======================================================================================
@@ -2980,7 +2988,7 @@ public:
     //! SQLite does not allow a database to be attached if there is a transaction open. If the Db has an open transaction, it is committed before
     //! the ATTACH sql statement is executed and restarted afterwards.
     //! @param[in] filename The name of the file holding the SQLite database to be attached.
-    //! @param[in] alias The alias by which the database is attached.
+    //! @param[in] alias The alias by which the database is attached. It may only contain letters, digits and underscores and must not start with a digit.
     BE_SQLITE_EXPORT DbResult AttachDb(Utf8CP filename, Utf8CP alias) const;
 
     //! Detach a previously attached database. This method is necessary for the same reason AttachDb is necessary.
@@ -2988,8 +2996,8 @@ public:
     BE_SQLITE_EXPORT DbResult DetachDb(Utf8CP alias) const;
     BE_SQLITE_EXPORT std::vector<AttachFileInfo> GetAttachedDbs() const;
 
-    //! Execute a single SQL statement on this Db.
-    //! This merely binds, steps, and finalizes the statement. It is no more efficient than performing those steps individually,
+    //! Execute SQL on this Db. If @p sql holds several statements separated by semicolons, all of them run.
+    //! This merely prepares, steps, and finalizes each statement. It is no more efficient than performing those steps individually,
     //! but is more convenient.
     //! This method also enforces logs the statement and error if the statement fails. Use TryExecuteSql if you consider failures to be non-exceptional.
     //! @see sqlite3_exec
@@ -3359,6 +3367,9 @@ public:
     BE_SQLITE_EXPORT DbResult QueryForeignKeyEnforcement(bool& enabled) const;
     //! Enable or disable SQLite foreign key enforcement on this connection.
     BE_SQLITE_EXPORT DbResult SetForeignKeyEnforcement(bool enabled) const;
+    //! Check for foreign key violations which have been deferred to commit in the current transaction.
+    //! @return BE_SQLITE_OK if none are pending, else BE_SQLITE_CONSTRAINT_FOREIGNKEY.
+    BE_SQLITE_EXPORT DbResult QueryDeferredForeignKeyDbStatus() const;
     BE_SQLITE_EXPORT DbBuffer Serialize(const char *zSchema = nullptr) const;
 
     BE_SQLITE_EXPORT static DbResult Deserialize(DbBuffer& buffer, DbR db, DbDeserializeOptions opts = DbDeserializeOptions::FreeOnClose, const char *zSchema = nullptr, std::function<void(DbR)> beforeDefaultTxnStarts = nullptr);

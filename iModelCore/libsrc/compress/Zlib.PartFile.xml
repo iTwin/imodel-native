@@ -29,26 +29,6 @@
             </Libs>
         </Bindings>
     </Part>
-    <Part Name="lzma18" BentleyBuildMakeFile="lzma18/lzma.mke">
-        <SubPart PartName="_prewire_VendorAPI" />
-        <Bindings>
-            <VendorAPI Domain="liblzma18" />
-            <Libs ProductDirectoryName="BeStaticLibDir" Required="false">
-                Delivery/$(stlibprefix)lzma18$(stlibext)
-                Delivery/$(stlibprefix)lzma18$(stlibdebugext)
-            </Libs>
-        </Bindings>
-    </Part>
-    <Part Name="lzma19" BentleyBuildMakeFile="lzma19/lzma.mke">
-        <SubPart PartName="_prewire_VendorAPI" />
-        <Bindings>
-            <VendorAPI Domain="liblzma19" />
-            <Libs ProductDirectoryName="BeStaticLibDir" Required="false">
-                Delivery/$(stlibprefix)lzma19$(stlibext)
-                Delivery/$(stlibprefix)lzma19$(stlibdebugext)
-            </Libs>
-        </Bindings>
-    </Part>	
     <Part Name="snappy" BentleyBuildMakeFile="snappy/snappy.mke">
         <SubPart PartName="_prewire_VendorAPI" />
         <Bindings>
@@ -73,7 +53,6 @@
         <Directories DirectoryListName="ForSdkSource" PartFile="CommonProductDirs" Repository="bsicommon"/>
         <Directories DirectoryListName="NugetSdkSourceOverride" PartFile="CommonProductDirs" Repository="bsicommon"/>
         <SubPart PartName="Compress" LibType="Static"/>
-        <SubPart PartName="lzma19" LibType="Static"/>
     </NuGetProduct>
 
 

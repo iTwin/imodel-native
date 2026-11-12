@@ -33,9 +33,16 @@ To add a new library:
 
 > **When migrating an existing (previously vendored) library to vcpkg:** the vendored source deletion belongs in the **same** PR as the vcpkg wiring, but do **not** delete it up front. Keep the vendored source in place (the PR will likely be draft/WIP at this stage) until **after** the PR has passed its Copilot review, then delete the vendored code in a separate standalone commit within that same PR. Deleting the vendored source up front produces too many modified files for Copilot to review, and the review may not run at all.
 
+After creating the PR, add an **unresolved inline PR review comment** on a source-code line:
+"Do not merge: delete the vendor directory after this PR is otherwise ready to merge."
+Name the actual vendor directory in the comment. Keep the conversation unresolved to block an
+accidental merge; a PR-description note or a committed TODO is not a substitute. When the PR is
+otherwise ready to merge, delete the vendored source in the standalone commit described above,
+then resolve the comment only after verifying that the directory has been deleted.
+
 ### Apple deployment targets
 
-Every `arm64-osx.cmake` and `arm64-ios.cmake` overlay triplet must set
+Every `arm64-osx.cmake`, `arm64-ios.cmake`, and `arm64-ios-simulator.cmake` overlay triplet must set or inherit
 `VCPKG_OSX_DEPLOYMENT_TARGET`. Keep its value aligned with BentleyBuild's effective
 `MACOS_DEPLOYMENT_TARGET` or `IOS_DEPLOYMENT_TARGET`, respectively. The public defaults are defined
 in [`$(SrcRoot)bsicommon/PublicSDK/ApplyToolSet_CLang.mki`](../../../bsicommon/PublicSDK/ApplyToolSet_CLang.mki);
@@ -43,6 +50,21 @@ build strategies may override them, so check the effective strategy value as wel
 deployment targets and need not equal the product's official OS support floor. Omitting the
 setting lets vcpkg build against the host SDK's deployment target, which can produce objects that
 cannot be linked into BentleyBuild outputs targeting an older OS.
+
+### Symbol visibility in static libraries
+
+Static libraries that are rolled into `imodeljs.node` must not expose third-party symbols that can
+collide with libraries already loaded by Node or an operating-system framework. When migrating a
+file-by-file build, preserve its effective symbol visibility in the vcpkg build. Adding
+`-fvisibility=hidden` to a triplet is not sufficient by itself: upstream build systems may annotate
+their public APIs with default visibility and override that flag.
+
+Audit each upstream library's visibility options and verify the resulting archive and final add-on
+with the platform symbol tools. On macOS, for example, `nm -m` should report embedded third-party
+definitions as `private external` in the archive and as non-external in `imodeljs.node`. Curl's
+`CURL_HIDDEN_SYMBOLS=ON` hides its private implementation but deliberately leaves its public API
+default-visible, so a fully private static curl build must disable that option while compiling with
+hidden visibility. Without this, macOS can bind the add-on's curl calls to Apple system libcurl.
 
 ### Windows triplets: clang vs MSVC
 
@@ -57,6 +79,61 @@ Versions are pinned per consumer graph: `vcpkg.json` uses `overrides` entries fo
 and that manifest directory's `vcpkg-configuration.json` pins the registry baseline commit. Each
 consumer requires its own configuration because its dependency graph and required baseline may
 differ.
+
+## Shared Builds for iTwinNativeThirdParty
+
+The Curl, OpenSSL, and FreeType PartFiles also provide explicit `ThirdParty` variants for
+iTwinNativeThirdParty. Its packaging wrappers reference these parts in imodel-native rather than
+maintaining separate build implementations. Each variant reuses its library's existing `.mke`
+with `BentleyBuildMakeOptions="-diTwinNativeThirdParty=true"` to select the legacy output name:
+
+| PartFile | Third-party library part | Native output stem | Third-party output stem |
+| -------- | ------------------------ | ------------------ | ----------------------- |
+| [curl/BeCurl.PartFile.xml](curl/BeCurl.PartFile.xml) | `LibraryThirdParty` | `iTwinCurl` | `BeCurl` |
+| [openssl/BeOpenSSL.PartFile.xml](openssl/BeOpenSSL.PartFile.xml) | `LibraryThirdParty` | `iTwinOpenSSL` | `BeOpenSSL` |
+| [freetype2/freetype2.PartFile.xml](freetype2/freetype2.PartFile.xml) | `Freetype2LibraryThirdParty` | `iTwinFreetype2` | `freetype2` |
+
+Preserve the static/dynamic aggregate parts, legacy output names, and `ApiNumber="B02"` on the
+third-party library parts; their Windows shared-library bindings use that suffix. The default
+native parts retain their existing output names and dependency behavior. Shared dependency helpers
+keep the vcpkg installs and install-dependent prewires/PublicAPI parts static-only, including when
+the consuming library is dynamic.
+
+Dependency bindings also determine what is delivered into a NuGet package, not just what is
+needed to compile or link. In particular, native Curl's `Library` depends on the aggregate
+`Compress`, but `LibraryThirdParty` depends only on static `Zlib` from
+[compress/Zlib.PartFile.xml](compress/Zlib.PartFile.xml). Do not move `Compress` into Curl's
+shared `LibraryDependencies` helper: that would add unrelated LZMA/Snappy libraries, headers, and
+notices to the Curl package. The vcpkg install chain orders builds; it is not itself a declaration
+that every earlier consumer's outputs belong in the package.
+
+When changing these definitions, check both native and third-party dependency graphs, including
+static/dynamic selection and source-build strategy coverage. After packaging changes, compare a
+clean build's staged libraries, headers, and notices against the published NuGet payload. Verify
+archive architectures and relevant public symbols as well; those checks do not replace consumer
+link tests or validation of generated NuGet metadata.
+
+### iOS ARM64 Simulator support
+
+Only the vcpkg consumers built by iTwinNativeThirdParty require iOS ARM64 Simulator support:
+
+| Consumer directory | Libraries |
+| ------------------ | --------- |
+| `compress` | zlib and minizip |
+| `png` | libpng |
+| `openssl` | OpenSSL |
+| `curl` | libcurl |
+| `freetype2` | FreeType |
+
+These five consumers provide `triplets/arm64-ios-simulator.cmake`. Each inherits its device
+triplet's settings, including the iOS 17.0 deployment target, and overrides `VCPKG_OSX_SYSROOT`
+with `iphonesimulator`. The shared `vcpkg.mki` selects this triplet for
+`TARGET_PROCESSOR_ARCHITECTURE=iOSARM64Simulator`.
+
+Pugixml and Crashpad do not require simulator triplets. The simulator install chain is
+`compress -> png -> openssl -> curl -> freetype2`: pugixml is excluded on this platform, and
+OpenSSL also depends directly on PNG so installs remain serialized when pugixml is skipped.
+Crashpad remains desktop-only. This requirement does not extend to other imodel-native libraries.
 
 ## Setup
 
@@ -194,9 +271,36 @@ This avoids accidental use of the bundled root when `vcvars` or Developer Comman
 
 - Each subdirectory with a `vcpkg.json` manifest declares its vcpkg dependencies and version pins.
 - `vcpkg_run_install.sh` (macOS/Linux) and `vcpkg_run_install.ps1` (Windows) wrap `vcpkg install`, directing output to `$OutRoot/vcpkg_installed/<consumer>/`.
-- All `vcpkg install` calls are driven by a sequential chain of parts in [vcpkg.PartFile.xml](vcpkg.PartFile.xml) (`vcpkg_install_compress` → `vcpkg_install_png` → `vcpkg_install_pugixml` → `vcpkg_install_openssl` → `vcpkg_install_curl` → `vcpkg_install_crashpad`), each blocked on the previous one completing. This prevents concurrent `vcpkg` processes from colliding on shared state.
-- Consumer `.mke` files (e.g. `Zlib.mke`, `BeOpenSSL.mke`, `png.mke`, `pugixml.mke`, `BeCurl.mke`) depend on their corresponding chain part and only consume the already-installed outputs — they do not call `vcpkg_run_install` themselves.
+- All `vcpkg install` calls are driven by a sequential chain of parts in [vcpkg.PartFile.xml](vcpkg.PartFile.xml) (`vcpkg_install_compress` → `vcpkg_install_png` → `vcpkg_install_pugixml` → `vcpkg_install_openssl` → `vcpkg_install_curl` → `vcpkg_install_freetype2` → `vcpkg_install_crashpad`), each blocked on the previous one completing. This prevents concurrent `vcpkg` processes from colliding on shared state.
+- Consumer `.mke` files (e.g. `Zlib.mke`, `BeOpenSSL.mke`, `png.mke`, `pugixml.mke`, `BeCurl.mke`, `freetype2.mke`) depend on their corresponding chain part and only consume the already-installed outputs — they do not call `vcpkg_run_install` themselves.
 - **Binary cache resolution.** The install wrappers honor the `VCPKG_BINARY_SOURCES` environment variable. When it is **unset** (the default), vcpkg falls back to a **local** `files` archive cache under the per-user cache directory (see [Cache locations and environment overrides](#cache-locations-and-environment-overrides)), so a second build on the same machine restores instead of recompiling. When it is **set**, that value takes over completely — e.g. Bentley CI points it at an internal shared binary cache to publish/restore binaries across agents, and you can point it at your own vcpkg-supported backend. Setting it to `clear` disables all caching.
+
+### Windows DLL regression test
+
+The DLL relinking fix is Windows-only, but the Python regression test can sanity-check `.def`
+generation and stale-DLL invalidation on **any platform**, including macOS and Linux. It uses
+temporary files and simulates DLL-deletion failures; it does not build or load a real DLL.
+
+The [curl](curl/makeCurlDef.py) and [FreeType](freetype2/makeFreetypeDef.py) export generators
+keep their library-specific header parsing and delegate to the shared [make_def.py](make_def.py)
+helper. It embeds the linked archive's SHA-256 in the generated `.def`, preserves unchanged
+files, and deletes stale DLLs before writing changed output. This forces a re-link even if a
+restored archive has an older timestamp and preserves retry behavior if deletion fails. Reuse
+this helper for other Windows DLL export generators rather than duplicating that workflow.
+
+[test_make_def.py](test_make_def.py) checks both generators using temporary fixtures. It covers
+archive changes with older timestamps, unchanged-content no-op runs, export changes, missing
+archives, retrying after a stale DLL cannot be deleted, and command-line execution from an
+unrelated working directory. Run it from the repository root:
+
+```sh
+python3 -B -m unittest discover -s iModelCore/libsrc -p test_make_def.py -v
+```
+
+The test uses only Python's standard library and does not require vcpkg, BentleyBuild, or a
+Windows host. On Windows, use `python` instead of `python3` if needed. Success ends with `OK`.
+It is a manual regression check, not currently wired into CI, and does not replace a Windows
+DLL build.
 
 ### Mend source scans
 

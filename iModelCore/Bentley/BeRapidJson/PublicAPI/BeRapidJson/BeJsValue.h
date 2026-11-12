@@ -17,16 +17,6 @@
 #include <Bentley/ByteStream.h>
 #include <Bentley/Base64Utilities.h>
 #include <BeRapidJson/BeRapidJson.h>
-// The BeJsValue <-> Json::Value bridge is OPT-IN. imodel-native does not use JsonCpp, so it
-// defines nothing and gets none of it. A downstream repository that still needs the bridge must
-// both define USE_JSONCPP and take a SubPart dependency on iModelCore/libsrc/jsoncpp/BeJsonCpp.
-//
-// This header is public and its definitions are inline, so USE_JSONCPP must be set consistently
-// for every part in a build: two parts that disagree get different BeJsConst/BeJsValue
-// definitions and an ODR violation.
-#ifdef USE_JSONCPP
-#include <json/json.h>
-#endif // USE_JSONCPP
 #include <algorithm>
 #include <cstdio>
 #include <cstring>
@@ -92,8 +82,7 @@ protected:
     typedef unsigned int ArrayIndex;
 
     enum ValueRefType {
-        JsonCpp,
-        RapidJson,
+        RapidJson = 1,
         Napi
     };
     virtual ValueRefType GetType() const = 0;
@@ -182,7 +171,7 @@ protected:
 };
 
 //=======================================================================================
-// A readonly JavaScript Value (like the JavaScript `const` keyword). This object holds a reference to either a JsonCpp, RapidJson, or a
+// A readonly JavaScript Value (like the JavaScript `const` keyword). This object holds a reference to either a RapidJson or a
 // Napi JavaScript object if running under Node, and can only be constructed by supplying an object of one of those types.
 // It is intended to be passed by value.
 // @bsiclass
@@ -197,9 +186,6 @@ protected:
 public:
     typedef unsigned int ArrayIndex;
 
-#ifdef USE_JSONCPP
-    BeJsConst(JsonValueCR);
-#endif
     BeJsConst(RapidJsonDocumentCR);
     BeJsConst(RapidJsonValueCR, rapidjson::MemoryPoolAllocator<>&);
     BeJsConst(Napi::Value);
@@ -435,7 +421,7 @@ public:
 };
 
 //=======================================================================================
-// A writeable JavaScript Value (like the JavaScript `let` keyword). This object holds a reference to either a JsonCpp, RapidJson, or a
+// A writeable JavaScript Value (like the JavaScript `let` keyword). This object holds a reference to either a RapidJson or a
 // Napi JavaScript object if running under Node, and can only be constructed by supplying an object of one of those types.
 // It is intended to be passed by value.
 // @bsiclass
@@ -449,9 +435,6 @@ public:
     BeJsValue& operator=(BeJsValue const& rhs) = delete; // this usually indicates a logic error. But if you really want this, use .From
 
     BeJsValue(RapidJsonDocumentR);
-#ifdef USE_JSONCPP
-    BeJsValue(JsonValueR);
-#endif
     BeJsValue(RapidJsonValueR, rapidjson::MemoryPoolAllocator<>&);
     BeJsValue(Napi::Value);
     BeJsValue(JsValueRef& val) : BeJsConst(val) {}
@@ -469,9 +452,6 @@ public:
     // @note this value must be an object
     // @note this can be less expensive for some implementations since a reference to the string can be stored in the returned object.
     BeJsValue operator[](BeJsStaticString const& key) { return BeJsValue(m_val->GetMember(key, true)); }
-#ifdef USE_JSONCPP
-    BeJsValue operator[](Json::StaticString const& key) { return BeJsValue(m_val->GetMember(key, true)); }
-#endif
     // get the value of a member of an object. If it doesn't exist, it is created.
     // @note this value must be an object
     BeJsValue operator[](Utf8CP name) { return BeJsValue(m_val->GetMember(name, false)); }
@@ -742,114 +722,6 @@ private:
         }
     }
 };
-
-#ifdef USE_JSONCPP
-//=======================================================================================
-// @bsiclass
-//=======================================================================================
-struct BeJsonCppValue : JsValueRef {
-    JsonValueR m_value;
-
-private:
-    JsonValueCR ConstValue() const { return *(JsonValueCP) &m_value; }
-    virtual ValueRefType GetType() const override { return ValueRefType::JsonCpp; }
-    virtual BeJsonCppValue& GetMember(Utf8CP name, bool staticString) override { return *new BeJsonCppValue(m_value.resolveReference(name, staticString)); }
-    virtual BeJsonCppValue const& GetConstMember(Utf8CP name) const override { return *new BeJsonCppValue(ConstValue()[name]); }
-    virtual BeJsonCppValue& GetArrayMember(ArrayIndex index) override { return *new BeJsonCppValue(m_value[index]); }
-    virtual BeJsonCppValue const& GetConstArrayMember(ArrayIndex index) const override { return *new BeJsonCppValue(ConstValue()[index]); }
-    virtual void SetNull() override { m_value = Json::Value(); }
-    virtual void removeIndex(ArrayIndex i) override { m_value.removeIndex(i); };
-    virtual void removeMember(Utf8CP name) override { m_value.removeMember(name); }
-    virtual bool isMember(Utf8CP name) const override { return m_value.isMember(name); }
-    virtual bool hasMember(Utf8CP name) const override { return m_value.hasMember(name); }
-    virtual bool isNull() const override { return m_value.isNull(); }
-    virtual bool isBool() const override { return m_value.isBool(); }
-    virtual bool isNumeric() const override { return m_value.isNumeric(); }
-    virtual bool isString() const override { return m_value.isString(); }
-    virtual bool isArray() const override { return m_value.type() == Json::ValueType::arrayValue; }
-    virtual bool isObject() const override { return m_value.type() == Json::ValueType::objectValue; }
-    virtual bool isDate() const override { return false; }
-    virtual bool isArrayBuffer() const override { return false; }
-    virtual bool isTypedArray() const override { return false; }
-    virtual bool isFunction() const override { return false; }
-    virtual bool isPromise() const override { return false; }
-    virtual bool isDataView() const override { return false; }
-    virtual bool isBuffer() const override { return false; }
-    virtual bool isExternal() const override { return false; }
-    virtual void toArray() override {
-        if (isNull())
-            m_value = Json::Value(Json::ValueType::arrayValue);
-    }
-    virtual void toObject() override {
-        if (isNull())
-            m_value = Json::Value(Json::ValueType::objectValue);
-    }
-    virtual uint32_t size() const override { return m_value.size(); }
-    virtual Utf8CP ToUtf8CP() const override { return m_value.asCString(); }
-    virtual Utf8String ToJsonString() const override { return isString() ? m_value.asCString() : ""; }
-    virtual void operator=(double value) override { m_value = value; }
-    virtual void operator=(bool value) override { m_value = value; }
-    virtual void operator=(int64_t value) override { m_value = Json::Value(value); }
-    virtual void operator=(uint64_t value) override { m_value = Json::Value(static_cast<Json::UInt64>(value)); }
-    virtual void operator=(int32_t value) override { m_value = value; }
-    virtual void operator=(uint32_t value) override { m_value = value; }
-    virtual void operator=(Utf8CP value) override { m_value = value; }
-    virtual double GetDouble(double defVal) const override { return m_value.asDouble(defVal); }
-    virtual bool GetBoolean(bool defVal) const override { return m_value.asBool(defVal); }
-    virtual int32_t GetInt(int32_t defVal) const override { return m_value.asInt(defVal); }
-    virtual uint32_t GetUInt(uint32_t defVal) const override { return m_value.asUInt(defVal); }
-    virtual int64_t GetInt64(int64_t defVal) const override { return m_value.asInt64(defVal); }
-    virtual uint64_t GetUInt64(uint64_t defVal) const override { return m_value.asUInt64(defVal); }
-    virtual NumericKind GetNumericKind() const override {
-        switch (m_value.type()) {
-            case Json::intValue: return NumericKind::Int64;
-            case Json::uintValue: return NumericKind::UInt64;
-            case Json::realValue: return NumericKind::Double;
-            default: return NumericKind::NotNumeric;
-        }
-    }
-    virtual bool ForEachProperty(std::function<bool(Utf8CP name, BeJsConst)> fn) const override {
-        if (m_value.isObject()) {
-            auto end = ConstValue().end();
-            for (Json::Value::const_iterator iter = ConstValue().begin(); iter != end; ++iter) {
-                if (fn(iter.memberName(), BeJsConst(*iter)))
-                    return true;
-            }
-        }
-        return false;
-    }
-    virtual bool ForEachArrayMember(std::function<bool(ArrayIndex, BeJsConst)> fn) const override {
-        if (m_value.isArray()) {
-            auto end = ConstValue().end();
-            ArrayIndex i = 0;
-            for (Json::Value::const_iterator iter = ConstValue().begin(); iter != end; ++iter) {
-                if (fn(i++, BeJsConst(*iter)))
-                    return true;
-            }
-        }
-        return false;
-    }
-    virtual bool ForEachArrayMemberValue(std::function<bool(ArrayIndex, BeJsValue)> fn) override {
-        if (m_value.isArray()) {
-            auto end = m_value.end();
-            ArrayIndex i = 0;
-            for (Json::Value::iterator iter = m_value.begin(); iter != end; ++iter) {
-                if (fn(i++, BeJsValue(*iter)))
-                    return true;
-            }
-        }
-        return false;
-    }
-
-    virtual Utf8String Stringify(StringifyFormat format = StringifyFormat::Default) const override { return format == StringifyFormat::Indented? m_value.toStyledString() : m_value.ToString(); }
-
-    explicit BeJsonCppValue(JsonValueR val) : m_value(val) {}
-    explicit BeJsonCppValue(JsonValueCR val) : m_value(const_cast<JsonValueR>(val)) {}
-    friend struct BeJsValue;
-    friend struct BeJsConst;
-};
-
-#endif // USE_JSONCPP
 
 //=======================================================================================
 // @bsiclass
@@ -1181,7 +1053,7 @@ public:
         }
 };
 
-// Format a double exactly the way Bentley's JsonCpp fork did. Mirrors valueToString(double) in
+// Format a double exactly the way Bentley's JsonCpp fork did. Mirrors valueToString(double) in old
 // iModelCore/libsrc/jsoncpp/src/lib_json/json_writer.cpp, quirks included: "%#.17g" then trailing
 // zeros trimmed back to a single one, which yields "1.0" for 1.0 but "1.50" for 1.5.
 // See BeJsConst::StringifyLegacy.
@@ -1323,11 +1195,6 @@ inline BeJsValue::BeJsValue(RapidJsonValueR val, rapidjson::MemoryPoolAllocator<
 
 inline BeJsConst::BeJsConst(RapidJsonDocumentCR val) : m_val(new BeRapidJsonValue(&val, const_cast<RapidJsonDocumentR>(val).GetAllocator())) {}
 inline BeJsConst::BeJsConst(RapidJsonValueCR val, rapidjson::MemoryPoolAllocator<>& alloc) : m_val(new BeRapidJsonValue(&val, alloc)) {}
-
-#ifdef USE_JSONCPP
-inline BeJsValue::BeJsValue(JsonValueR val) : BeJsConst(*new BeJsonCppValue(val)) {}
-inline BeJsConst::BeJsConst(JsonValueCR val) : m_val(new BeJsonCppValue(val)) {}
-#endif
 
 inline void BeJsConst::SaveTo(BeJsValue dest) const { dest.From(*this); }
 

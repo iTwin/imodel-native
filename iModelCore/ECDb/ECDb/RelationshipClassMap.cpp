@@ -485,6 +485,25 @@ std::unique_ptr<ForeignKeyPartitionView> ForeignKeyPartitionView::Create(TableSp
             return nullptr;
         }
 
+    CachedStatementPtr navClassStmt = schemaManager.GetECDb().GetImpl().GetCachedSqliteStatement(Utf8PrintfString(
+        "SELECT DISTINCT P.NavigationRelationshipClassId, P.ClassId FROM [%s].ec_Property P "
+        "JOIN [%s].ec_PropertyPath PP ON PP.RootPropertyId=P.Id "
+        "JOIN [%s].ec_PropertyMap PM ON PM.PropertyPathId=PP.Id "
+        "WHERE PM.ColumnId=?1 "
+        "AND SUBSTR(PP.AccessString, INSTR(PP.AccessString, '.') + 1)='Id'",
+        tableSpace, tableSpace, tableSpace).c_str());
+    if (navClassStmt != nullptr)
+        {
+        for (std::unique_ptr<Partition> const& partition : partitionView->m_partitions)
+            {
+            navClassStmt->Reset();
+            navClassStmt->ClearBindings();
+            navClassStmt->BindId(1, partition->GetNavigationColumns().GetIdColumn().GetId());
+            while (navClassStmt->Step() == BE_SQLITE_ROW)
+                partition->AddNavigationProperty(navClassStmt->GetValueId<ECClassId>(0), navClassStmt->GetValueId<ECClassId>(1));
+            }
+        }
+
     if (partitionView->UpdateFromECClassIdColumn() != SUCCESS)
         return nullptr;
 
@@ -828,6 +847,45 @@ ForeignKeyPartitionView::Partition::Partition(ForeignKeyPartitionView const& fkI
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+void ForeignKeyPartitionView::Partition::AddNavigationProperty(ECN::ECClassId relationshipClassId, ECN::ECClassId declaringClassId)
+    {
+    auto const descriptor = std::make_pair(relationshipClassId, declaringClassId);
+    if (std::find(m_navigationProperties.begin(), m_navigationProperties.end(), descriptor) == m_navigationProperties.end())
+        m_navigationProperties.push_back(descriptor);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+bool ForeignKeyPartitionView::Partition::TryGetNavigationFallback(ECN::ECClassId& relationshipClassId, bvector<ECN::ECClassId>& declaringClassIds,
+                                                                  ECRelationshipClassCR queriedRelationship, bool polymorphic) const
+    {
+    relationshipClassId = ECN::ECClassId();
+    declaringClassIds.clear();
+
+    for (auto const& descriptor : m_navigationProperties)
+        {
+        ECClassCP declaredClass = m_fkInfo.m_schemaManager.GetClass(descriptor.first);
+        ECRelationshipClassCP declaredRelationship = declaredClass == nullptr ? nullptr : declaredClass->GetRelationshipClassCP();
+        bool const qualifies = declaredRelationship != nullptr &&
+            (polymorphic ? declaredRelationship->Is(&queriedRelationship) : descriptor.first == queriedRelationship.GetId());
+        if (!qualifies)
+            continue;
+
+        if (relationshipClassId.IsValid() && relationshipClassId != descriptor.first)
+            return false;
+
+        relationshipClassId = descriptor.first;
+        if (std::find(declaringClassIds.begin(), declaringClassIds.end(), descriptor.second) == declaringClassIds.end())
+            declaringClassIds.push_back(descriptor.second);
+        }
+
+    return relationshipClassId.IsValid() && !declaringClassIds.empty();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 std::unique_ptr<ForeignKeyPartitionView::Partition> ForeignKeyPartitionView::Partition::Create(ForeignKeyPartitionView const& info, DbColumn const& navId, DbColumn const& navRelECClassId)
     {
     DbTable const& table = navId.GetTable();
@@ -1082,8 +1140,22 @@ DbColumn* RelationshipClassLinkTableMap::ConfigureForeignECClassIdKey(SchemaImpo
 ClassMappingStatus RelationshipClassLinkTableMap::CreateConstraintPropMaps(SchemaImportContext& ctx, LinkTableRelationshipMapCustomAttribute const& ca, bool addSourceECClassIdColumnToTable,
     bool addTargetECClassIdColumnToTable)
     {
+    auto validateColumnName = [&] (Utf8StringCR name, Utf8CP caPropertyName)
+        {
+        if (name.empty() || ECNameValidation::IsValidName(name.c_str()))
+            return true;
+
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0750,
+            "Failed to map ECRelationshipClass '%s': The %s '%s' in its LinkTableRelationshipMap custom attribute is invalid. It may only contain letters, digits and underscores and must not start with a digit.",
+            GetClass().GetFullName(), caPropertyName, name.c_str());
+        return false;
+        };
+
     //**** SourceECInstanceId prop map 
     Utf8String columnName = DetermineConstraintECInstanceIdColumnName(ca, ECRelationshipEnd_Source);
+    if (!validateColumnName(columnName, "SourceECInstanceIdColumn"))
+        return ClassMappingStatus::Error;
+
     if (columnName.empty() || GetPrimaryTable().FindColumn(columnName.c_str()) != nullptr && !GetMapStrategy().IsTablePerHierarchy() && GetMapStrategy().GetStrategy() != MapStrategy::ExistingTable)
         {
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0245,
@@ -1114,6 +1186,9 @@ ClassMappingStatus RelationshipClassLinkTableMap::CreateConstraintPropMaps(Schem
 
     //**** TargetECInstanceId prop map 
     columnName = DetermineConstraintECInstanceIdColumnName(ca, ECRelationshipEnd_Target);
+    if (!validateColumnName(columnName, "TargetECInstanceIdColumn"))
+        return ClassMappingStatus::Error;
+
     if (columnName.empty() || GetPrimaryTable().FindColumn(columnName.c_str()) != nullptr && !GetMapStrategy().IsTablePerHierarchy() && GetMapStrategy().GetStrategy() != MapStrategy::ExistingTable)
         {
         LOG.errorv("Failed to map ECRelationshipClass '%s': Table '%s' already contains " ECDBSYS_PROP_TargetECInstanceId " column named '%s'.",

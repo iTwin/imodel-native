@@ -31,6 +31,7 @@ typedef unsigned short u16;
 # include <sys/types.h> 
 # include <sys/socket.h> 
 # include <arpa/inet.h> 
+# include <netinet/tcp.h>
 # define BCV_SOCKET_TYPE int
 # define O_BINARY 0
 # define INVALID_SOCKET -1
@@ -180,13 +181,16 @@ struct ManifestDb {
 **   INSERT statement used for writing to the "manifest" table:
 **      REPLACE INTO manifest VALUES(?,?,?,?,?,?);
 **
-** aHash, nHash:
+** aHash, nHash, nHashEntry:
 **   aHash[] is a hash table array nHash entries in size containing
 **   CacheEntry structs, indexed by the block name of the block that
 **   the corresponding cache slot contains. The hash table contains
 **   any entry for each cache slot that (a) contains a valid block, or
 **   (b) is currently the target slot for an ongoing download of a new 
-**   block.
+**   block. nHashEntry is the number of entries currently in the hash
+**   table. bcvfsHashAdd() attempts to double the size of aHash[] if
+**   (nHashEntry*2 > nHash) after the new entry is added. aHash[] is
+**   never shrunk.
 **
 ** pUnused:
 **   Singly-linked list of CacheEntry structs for cache-file slots that
@@ -213,6 +217,7 @@ struct BcvCommon {
   CacheEntry *pLruLast;
   i64 iLruTick;
   int nHash;                      /* Number of hash buckets */
+  int nHashEntry;                 /* Number of entries in aHash[] */
   int nBlk;                       /* Number of blocks in cache file */
 
   /* Virtual table log object */
@@ -283,6 +288,7 @@ struct CacheEntry {
   int nRef;                       /* Current number of client refs */
   int iEnc;                       /* Encryption index, if any */
   i64 iLruTick;                   /* Logic clock when last added to LRU list */
+  int nByte;                      /* Size of block as downloaded, in bytes */
   CacheEntry *pHashNext;          /* Hash collision list */
   CacheEntry *pLruPrev;           /* Previous entry in LRU list */
   CacheEntry *pLruNext;           /* Next entry in LRU list */
@@ -336,6 +342,7 @@ void *bcvMallocRc(int *pRc, i64 nByte);
 char *bcvStrdupRc(int *pRc, const char *z);
 
 i64 sqlite_timestamp(void);
+i64 bcv_timestamp(void);
 
 int bcv_isdigit(char c);
 int bcv_isspace(char c);

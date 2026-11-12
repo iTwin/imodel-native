@@ -393,18 +393,53 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         }
 
         Statement stmt;
-        Utf8CP statNames[] = { "nlock", "ncache", "cachesize", "memory_used", "memory_highwater", "memory_manifest", "memory_client_array", "memory_client_manifest" };
-        Utf8CP jsNames[] = { "lockedCacheslots", "populatedCacheslots", "totalCacheslots", "memoryUsed", "memoryHighwater", "memoryManifest", "memoryClientArray", "memoryClientManifest" };
+        Utf8CP statNames[] = {
+            "nlock",
+            "ncache",
+            "cachesize",
+            "memory_used",
+            "memory_highwater",
+            "memory_manifest",
+            "memory_client_array",
+            "memory_client_manifest",
+            "nqueryblock",
+            "nquerybyte",
+            "nqueryus",
+        };
+        Utf8CP jsNames[] = {
+            "lockedCacheslots",
+            "populatedCacheslots",
+            "totalCacheslots",
+            "memoryUsed",
+            "memoryHighwater",
+            "memoryManifest",
+            "memoryClientArray",
+            "memoryClientManifest",
+            "onDemandBlocksDownloaded",
+            "onDemandBytesDownloaded",
+            "onDemandDownloadTimeMs",
+        };
         BeAssert (sizeof(statNames) == sizeof(jsNames));
         auto rc = stmt.Prepare(m_containerDb, "SELECT value FROM bcv_stat where name = ?");
         BeAssert (rc == BE_SQLITE_OK);
         UNUSED_VARIABLE(rc);
         BeJsNapiObject value(Env());
         for (int i = 0; i < sizeof(statNames) / sizeof(statNames[0]); i++) {
+            std::string statName = statNames[i];
             stmt.BindText(1, statNames[i], Statement::MakeCopy::No);
             auto result = stmt.Step();
+            uint64_t divisor = 1;
+            if (statName == "nqueryus") {
+                if (result == BE_SQLITE_ROW) {
+                    divisor = 1000; // onDemandDownloadTimeMs is reported in milliseconds.
+                } else {
+                    // Older daemons report nqueryms instead.
+                    stmt.Reset();
+                    stmt.BindText(1, "nqueryms", Statement::MakeCopy::No);
+                    result = stmt.Step();
+                }
+            }
             if (result != BE_SQLITE_ROW) {
-                std::string statName = statNames[i];
                 // The following two stats are only present in daemon mode. So if they do not exist,
                 // do not include them in the output.
                 if (statName != "memory_client_array" && statName != "memory_client_manifest") {
@@ -416,7 +451,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
                 // to convert the integer to a hex string, which we can then pass to JS and let JS
                 // convert to a number (or directly deal with the hex string).
                 // Note: the IdToHex function isn't attached to in the cloud container database.
-                uint64_t intValue = stmt.GetValueUInt64(0);
+                uint64_t intValue = stmt.GetValueUInt64(0) / divisor;
                 if (intValue == 0) {
                     // FormatUInt64 intentionally doesn't apply the "0x" prefix when the value is 0.
                     // So we just special case that here.

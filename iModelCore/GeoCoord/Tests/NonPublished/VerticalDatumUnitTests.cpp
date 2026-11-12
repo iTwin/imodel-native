@@ -5,11 +5,21 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 #include <Bentley/BeTest.h>
+#include <BeSQLite/BeSQLite.h>
 
 #include <GeoCoord/BaseGeoCoord.h>
 #include "GeoCoordTestCommon.h"
 
 using namespace ::testing;
+
+namespace
+{
+struct ScopedDisableLocalGcsFiles
+    {
+    ScopedDisableLocalGcsFiles() { GeoCoordinates::BaseGCS::EnableLocalGcsFiles(false); }
+    ~ScopedDisableLocalGcsFiles() { GeoCoordinates::BaseGCS::EnableLocalGcsFiles(true); }
+    };
+}
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -23,7 +33,141 @@ class VerticalDatumUnitTests : public ::testing::Test
 
         VerticalDatumUnitTests() {};
         ~VerticalDatumUnitTests() {};
+
+    protected:
+        static StatusInt AddPointApplicabilityDatum(Utf8CP name, bool regional, Utf8CP target = nullptr, bvector<Utf8String> const& preferredPath = {}, bool addToDictionary = true)
+            {
+            BeJsDocument json;
+            json["crsName"] = name;
+            json["datumName"] = name;
+            json["type"] = "GEOID";
+            json["units"] = "meter";
+            json["extent"]["southWest"]["latitude"] = regional ? -10.0 : -90.0;
+            json["extent"]["southWest"]["longitude"] = regional ? -20.0 : -180.0;
+            json["extent"]["northEast"]["latitude"] = regional ? 10.0 : 90.0;
+            json["extent"]["northEast"]["longitude"] = regional ? 20.0 : 180.0;
+            if (nullptr != target)
+                {
+                json["transforms"][0]["target"] = target;
+                json["transforms"][0]["nullTransform"].SetNull();
+                }
+            if (!preferredPath.empty())
+                {
+                json["transformPaths"][0]["target"] = preferredPath.back();
+                for (auto const& datumName : preferredPath)
+                    json["transformPaths"][0]["path"].appendValue() = datumName;
+                }
+
+            if (!addToDictionary)
+                {
+                auto gcs = GeoCoordinates::BaseGCS::CreateGCS("LL84");
+                Utf8String errorMessage;
+                return gcs->FromVerticalJson(json, errorMessage);
+                }
+
+            StatusInt status = ERROR;
+            auto datumInfo = GeoCoordinates::VerticalDatumInfo::CreateAndRegisterFromJson(json, status);
+            EXPECT_TRUE(datumInfo.IsValid());
+            return status;
+            }
+
+        static void CheckTransformPointApplicability(bvector<Utf8String> const& expectedPath)
+            {
+#if defined (USE_GTEST)
+            SCOPED_TRACE(expectedPath.front().c_str());
+#endif
+            auto checkPath = [&](const GeoPoint* point, bool applicable)
+                {
+                bvector<GeoCoordinates::VerticalTransformPtr> transforms;
+                StatusInt status = GeoCoordinates::VerticalDatumDictionary::Get()->GetVerticalDatumTransforms(
+                    transforms, expectedPath.front(), expectedPath.back(), point);
+                StatusInt expectedStatus = applicable ? SUCCESS : static_cast<StatusInt>(GeoCoordinates::GEOCOORDERR_NoTransforms);
+                EXPECT_EQ(status, expectedStatus);
+                ASSERT_EQ(transforms.size(), applicable ? expectedPath.size() - 1 : 0U);
+                for (size_t index = 0; index < transforms.size(); ++index)
+                    {
+                    ASSERT_TRUE(transforms[index].IsValid());
+                    EXPECT_TRUE(0 == transforms[index]->GetName().CompareToI(expectedPath[index]));
+                    EXPECT_TRUE(0 == transforms[index]->GetTarget().CompareToI(expectedPath[index + 1]));
+                    }
+                };
+
+            struct PointCase
+                {
+                Utf8CP label;
+                GeoPoint point;
+                bool applicable;
+                };
+            PointCase const cases[] =
+                {
+                {"inside", {0.0, 0.0, 0.0}, true},
+                {"southwest boundary", {-20.0, -10.0, 0.0}, true},
+                {"northeast boundary", {20.0, 10.0, 0.0}, true},
+                {"west of region", {-20.000001, 0.0, 0.0}, false},
+                {"east of region", {20.000001, 0.0, 0.0}, false},
+                {"south of region", {0.0, -10.000001, 0.0}, false},
+                {"north of region", {0.0, 10.000001, 0.0}, false},
+                };
+            for (auto const& testCase : cases)
+                {
+#if defined (USE_GTEST)
+                SCOPED_TRACE(testCase.label);
+#endif
+                checkPath(&testCase.point, testCase.applicable);
+                }
+
+#if defined (USE_GTEST)
+            SCOPED_TRACE("no point filter");
+#endif
+            checkPath(nullptr, true);
+            }
     };
+
+TEST_F(VerticalDatumUnitTests, VerticalDatumDirectTransformPointApplicability)
+{
+    ASSERT_EQ(AddPointApplicabilityDatum("Point applicability direct target", true), SUCCESS);
+    ASSERT_EQ(AddPointApplicabilityDatum("Point applicability direct source", false, "Point applicability direct target"), SUCCESS);
+    CheckTransformPointApplicability({"Point applicability direct source", "Point applicability direct target"});
+    CheckTransformPointApplicability({"Point applicability direct target", "Point applicability direct source"});
+}
+
+TEST_F(VerticalDatumUnitTests, VerticalDatumPredefinedTransformPathPointApplicability)
+{
+    bvector<Utf8String> path = {"Point applicability predefined source", "Point applicability predefined intermediate", "Point applicability predefined target"};
+    ASSERT_EQ(AddPointApplicabilityDatum(path[2].c_str(), false), SUCCESS);
+    ASSERT_EQ(AddPointApplicabilityDatum(path[1].c_str(), true, path[2].c_str()), SUCCESS);
+    ASSERT_EQ(AddPointApplicabilityDatum(path[0].c_str(), false, path[1].c_str(), path), SUCCESS);
+    CheckTransformPointApplicability(path);
+}
+
+TEST_F(VerticalDatumUnitTests, VerticalDatumReversePredefinedTransformPathPointApplicability)
+{
+    bvector<Utf8String> path = {"Point applicability reverse source", "Point applicability reverse intermediate", "Point applicability reverse target"};
+    ASSERT_EQ(AddPointApplicabilityDatum(path[2].c_str(), false), SUCCESS);
+    ASSERT_EQ(AddPointApplicabilityDatum(path[1].c_str(), true, path[2].c_str()), SUCCESS);
+    ASSERT_EQ(AddPointApplicabilityDatum(path[0].c_str(), false, path[1].c_str(), path), SUCCESS);
+    CheckTransformPointApplicability({path[2], path[1], path[0]});
+}
+
+TEST_F(VerticalDatumUnitTests, VerticalDatumRecursiveTransformPathPointApplicability)
+{
+    bvector<Utf8String> path = {"Point applicability recursive source", "Point applicability recursive intermediate", "Point applicability recursive target"};
+    ASSERT_EQ(AddPointApplicabilityDatum(path[2].c_str(), false), SUCCESS);
+    ASSERT_EQ(AddPointApplicabilityDatum(path[1].c_str(), true, path[2].c_str()), SUCCESS);
+    ASSERT_EQ(AddPointApplicabilityDatum(path[0].c_str(), false, path[1].c_str()), SUCCESS);
+    CheckTransformPointApplicability(path);
+}
+
+TEST_F(VerticalDatumUnitTests, VerticalDatumInlineSourceTransformPointApplicability)
+{
+    ASSERT_EQ(AddPointApplicabilityDatum("Point applicability inline target", true), SUCCESS);
+    ASSERT_EQ(AddPointApplicabilityDatum("Point applicability inline source", false, "Point applicability inline target", {}, false), SUCCESS);
+    StatusInt status = SUCCESS;
+    EXPECT_FALSE(GeoCoordinates::VerticalDatumDictionary::Get()->GetVerticalDatumInfoFromName("Point applicability inline source", status).IsValid());
+    EXPECT_NE(status, SUCCESS);
+    CheckTransformPointApplicability({"Point applicability inline source", "Point applicability inline target"});
+    CheckTransformPointApplicability({"Point applicability inline target", "Point applicability inline source"});
+}
 
 /*---------------------------------------------------------------------------------**//**
 * Basic construction and behavior checks for VerticalTransform.
@@ -108,6 +252,276 @@ TEST_F(VerticalDatumUnitTests, VerticalTransformGeoidGridFileTest)
     EXPECT_EQ(status, SUCCESS);
     EXPECT_EQ(elevationType, GeoCoordinates::VerticalTransform::ElevationType::Offset);
     EXPECT_NEAR(elevationOffset, 38.3, 0.5);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* An absolute grid path in a custom definition should remain a local file path.
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(VerticalDatumUnitTests, VerticalTransformGeoidGridAbsoluteFileTest)
+{
+    BeFileName gridPath(GeoCoordTestCommon::InitializedLibraryPath().c_str(), BentleyCharEncoding::Utf8);
+    gridPath.AppendToPath(L"WW15MGH.GRD");
+
+    BeJsDocument geoidJson;
+    geoidJson["target"] = "WGS84";
+    geoidJson["geoidSeparationGrid"]["direction"] = "Direct";
+    geoidJson["geoidSeparationGrid"]["format"] = "GRD";
+    geoidJson["geoidSeparationGrid"]["files"].appendValue() = gridPath.GetNameUtf8();
+
+    GeoCoordinates::VerticalTransformPtr geoidTransform =
+        GeoCoordinates::VerticalTransform::CreateFromJson(geoidJson, "Custom absolute grid height", "WGS84");
+    ASSERT_TRUE(geoidTransform.IsValid());
+
+    GeoPoint point = { 23.700523, 37.944210, 0.0 };
+    double elevationOffset = 0.0;
+    GeoCoordinates::VerticalTransform::ElevationType elevationType = GeoCoordinates::VerticalTransform::ElevationType::Fixed;
+    EXPECT_EQ(geoidTransform->GetElevation(elevationOffset, elevationType, point), SUCCESS);
+    EXPECT_EQ(elevationType, GeoCoordinates::VerticalTransform::ElevationType::Offset);
+    EXPECT_NEAR(elevationOffset, 38.3, 0.5);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* The vertical datum dictionary and its relative VERTCON grids should load from
+* base.itwin-workspace without local files.
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(VerticalDatumUnitTests, VerticalDatumDictionaryAndVertconGridFilesFromBaseWorkspaceTest)
+{
+    BeFileName dictionaryPath(GeoCoordTestCommon::InitializedLibraryPath().c_str(), BentleyCharEncoding::Utf8);
+    dictionaryPath.AppendToPath(L"VerticalDatumDefinitions.json");
+    BeFile dictionaryFile;
+    ASSERT_EQ(dictionaryFile.Open(dictionaryPath.GetName(), BeFileAccess::Read), BeFileStatus::Success);
+    bvector<Byte> dictionaryData;
+    ASSERT_EQ(dictionaryFile.ReadEntireFile(dictionaryData), BeFileStatus::Success);
+
+    bvector<Utf8String> gridFileNames = {
+        "VERTCONC.94",
+        "VERTCONE.94",
+        "VERTCONW.94",
+    };
+    BeFileName dataDirectory(GeoCoordTestCommon::InitializedLibraryPath().c_str(), BentleyCharEncoding::Utf8);
+    bvector<bvector<Byte>> gridData;
+    for (Utf8StringCR gridFileName : gridFileNames)
+        {
+        BeFileName gridPath(L"./Usa/Vertcon");
+        gridPath.AppendToPath(WString(gridFileName.c_str(), true).c_str());
+
+        BeFileName localGridPath(dataDirectory);
+        localGridPath.AppendToPath(gridPath);
+        BeFile gridFile;
+        ASSERT_EQ(gridFile.Open(localGridPath.GetName(), BeFileAccess::Read), BeFileStatus::Success);
+        gridData.emplace_back();
+        ASSERT_EQ(gridFile.ReadEntireFile(gridData.back()), BeFileStatus::Success);
+        }
+
+    bvector<Utf8String> dictionaryFileNames = {
+        "datum.dty",
+        "ellipsoid.dty",
+    };
+    bvector<bvector<Byte>> dictionaryFileData;
+    for (Utf8StringCR dictionaryFileName : dictionaryFileNames)
+        {
+        BeFileName localDictionaryPath(dataDirectory);
+        localDictionaryPath.AppendToPath(WString(dictionaryFileName.c_str(), true).c_str());
+        BeFile dictionaryResourceFile;
+        ASSERT_EQ(dictionaryResourceFile.Open(localDictionaryPath.GetName(), BeFileAccess::Read), BeFileStatus::Success);
+        dictionaryFileData.emplace_back();
+        ASSERT_EQ(dictionaryResourceFile.ReadEntireFile(dictionaryFileData.back()), BeFileStatus::Success);
+        }
+
+    BeFileName workspacePath;
+    BeTest::GetHost().GetTempDir(workspacePath);
+    workspacePath.AppendToPath(L"base.itwin-workspace");
+    if (BeFileName::DoesPathExist(workspacePath))
+        ASSERT_EQ(BeFileName::BeDeleteFile(workspacePath), BeFileNameStatus::Success);
+
+    BeSQLite::Db workspaceDb;
+    ASSERT_EQ(workspaceDb.CreateNewDb(workspacePath.GetNameUtf8().c_str()), BeSQLite::BE_SQLITE_OK);
+    ASSERT_EQ(workspaceDb.ExecuteSql("CREATE TABLE blobs(id TEXT PRIMARY KEY NOT NULL, value BLOB)"), BeSQLite::BE_SQLITE_OK);
+    {
+    BeSQLite::Statement insert;
+    ASSERT_EQ(insert.Prepare(workspaceDb, "INSERT INTO blobs(id,value) VALUES(?,?)"), BeSQLite::BE_SQLITE_OK);
+    ASSERT_EQ(insert.BindText(1, "VerticalDatumDefinitions.json", BeSQLite::Statement::MakeCopy::Yes), BeSQLite::BE_SQLITE_OK);
+    ASSERT_EQ(insert.BindBlob(2, dictionaryData.data(), (int)dictionaryData.size(), BeSQLite::Statement::MakeCopy::Yes), BeSQLite::BE_SQLITE_OK);
+    ASSERT_EQ(insert.Step(), BeSQLite::BE_SQLITE_DONE);
+
+    for (size_t index = 0; index < dictionaryFileNames.size(); ++index)
+        {
+        insert.Reset();
+        insert.ClearBindings();
+        ASSERT_EQ(insert.BindText(1, dictionaryFileNames[index], BeSQLite::Statement::MakeCopy::Yes), BeSQLite::BE_SQLITE_OK);
+        ASSERT_EQ(insert.BindBlob(2, dictionaryFileData[index].data(), (int)dictionaryFileData[index].size(), BeSQLite::Statement::MakeCopy::Yes), BeSQLite::BE_SQLITE_OK);
+        ASSERT_EQ(insert.Step(), BeSQLite::BE_SQLITE_DONE);
+        }
+
+    for (size_t index = 0; index < gridFileNames.size(); ++index)
+        {
+        insert.Reset();
+        insert.ClearBindings();
+        Utf8String resourceName = Utf8String("Usa/Vertcon/").append(gridFileNames[index]);
+        ASSERT_EQ(insert.BindText(1, resourceName, BeSQLite::Statement::MakeCopy::Yes), BeSQLite::BE_SQLITE_OK);
+        ASSERT_EQ(insert.BindBlob(2, gridData[index].data(), (int)gridData[index].size(), BeSQLite::Statement::MakeCopy::Yes), BeSQLite::BE_SQLITE_OK);
+        ASSERT_EQ(insert.Step(), BeSQLite::BE_SQLITE_DONE);
+        }
+    }
+    ASSERT_EQ(workspaceDb.SaveChanges(), BeSQLite::BE_SQLITE_OK);
+    workspaceDb.CloseDb();
+
+    GeoCoordinates::BaseGCSPtr sourceGCS = GeoCoordinates::BaseGCS::CreateGCS("LL83");
+    GeoCoordinates::BaseGCSPtr targetGCS = GeoCoordinates::BaseGCS::CreateGCS("LL83");
+    ASSERT_TRUE(sourceGCS.IsValid() && sourceGCS->IsValid());
+    ASSERT_TRUE(targetGCS.IsValid() && targetGCS->IsValid());
+
+    GeoCoordTestCommon::Shutdown();
+    {
+    ScopedDisableLocalGcsFiles disableLocalGcsFiles;
+    BeFileName workspaceDirectory = workspacePath.GetDirectoryName();
+    ASSERT_EQ(GeoCoordinates::BaseGCS::Initialize(workspaceDirectory.GetNameUtf8().c_str()), SUCCESS);
+    ASSERT_EQ(GeoCoordinates::VerticalDatumDictionary::Get()->GetStatus(), SUCCESS);
+    ASSERT_EQ(sourceGCS->SetVerticalDatumFromName("NAVD88 height"), SUCCESS);
+    ASSERT_EQ(targetGCS->SetVerticalDatumFromName("NGVD29 height"), SUCCESS);
+    DPoint3d inputPoint = { -100.0, 38.0, 0.0 };
+    DPoint3d resultPoint = DPoint3d::FromZero();
+    ASSERT_EQ(sourceGCS->CartesianFromCartesian(resultPoint, inputPoint, *targetGCS), REPROJECT_Success);
+    EXPECT_NEAR(resultPoint.z, -0.2763817, 1.0e-7);
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* Relative vertical grid paths should resolve through a registered workspace without
+* requiring the corresponding local grid files.
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(VerticalDatumUnitTests, VerticalTransformVertconGridFilesFromWorkspaceTest)
+{
+    bvector<Utf8String> gridFileNames = {
+        "VERTCONC.94",
+        "VERTCONE.94",
+        "VERTCONW.94",
+    };
+    BeJsDocument vertconJson;
+    vertconJson["target"] = "NGVD29 height";
+    vertconJson["vertOffsetGrid"]["direction"] = "Inverse";
+    vertconJson["vertOffsetGrid"]["format"] = "VERTCON";
+
+    BeFileName dataDirectory(GeoCoordTestCommon::InitializedLibraryPath().c_str(), BentleyCharEncoding::Utf8);
+    bvector<bvector<Byte>> gridData;
+    for (Utf8StringCR gridFileName : gridFileNames)
+        {
+        BeFileName gridPath(L"./Usa/Vertcon");
+        gridPath.AppendToPath(WString(gridFileName.c_str(), true).c_str());
+        vertconJson["vertOffsetGrid"]["files"].appendValue() = gridPath.GetNameUtf8();
+
+        BeFileName localGridPath(dataDirectory);
+        localGridPath.AppendToPath(gridPath);
+        BeFile gridFile;
+        ASSERT_EQ(gridFile.Open(localGridPath.GetName(), BeFileAccess::Read), BeFileStatus::Success);
+        gridData.emplace_back();
+        ASSERT_EQ(gridFile.ReadEntireFile(gridData.back()), BeFileStatus::Success);
+        }
+
+    GeoCoordinates::VerticalTransformPtr localVertconTransform =
+        GeoCoordinates::VerticalTransform::CreateFromJson(vertconJson, "NAVD88 workspace height", "NGVD29 height");
+    ASSERT_TRUE(localVertconTransform.IsValid());
+
+    GeoPoint point = { -100.0, 38.0, 0.0 };
+    double expectedElevationOffset = 0.0;
+    GeoCoordinates::VerticalTransform::ElevationType expectedElevationType = GeoCoordinates::VerticalTransform::ElevationType::Fixed;
+    ASSERT_EQ(localVertconTransform->GetElevation(expectedElevationOffset, expectedElevationType, point), SUCCESS);
+    ASSERT_EQ(expectedElevationType, GeoCoordinates::VerticalTransform::ElevationType::Offset);
+    EXPECT_NEAR(expectedElevationOffset, -0.2763817, 1.0e-7);
+
+    BeFileName workspacePath;
+    BeTest::GetHost().GetTempDir(workspacePath);
+    workspacePath.AppendToPath(L"VerticalVertconGridFromWorkspace.itwin-workspace");
+    if (BeFileName::DoesPathExist(workspacePath))
+        ASSERT_EQ(BeFileName::BeDeleteFile(workspacePath), BeFileNameStatus::Success);
+
+    BeSQLite::Db workspaceDb;
+    ASSERT_EQ(workspaceDb.CreateNewDb(workspacePath.GetNameUtf8().c_str()), BeSQLite::BE_SQLITE_OK);
+    ASSERT_EQ(workspaceDb.ExecuteSql("CREATE TABLE blobs(id TEXT PRIMARY KEY NOT NULL, value BLOB)"), BeSQLite::BE_SQLITE_OK);
+    {
+    BeSQLite::Statement insert;
+    ASSERT_EQ(insert.Prepare(workspaceDb, "INSERT INTO blobs(id,value) VALUES(?,?)"), BeSQLite::BE_SQLITE_OK);
+    for (size_t index = 0; index < gridFileNames.size(); ++index)
+        {
+        Utf8String resourceName = Utf8String("Usa/Vertcon/").append(gridFileNames[index]);
+        ASSERT_EQ(insert.BindText(1, resourceName, BeSQLite::Statement::MakeCopy::Yes), BeSQLite::BE_SQLITE_OK);
+        ASSERT_EQ(insert.BindBlob(2, gridData[index].data(), (int)gridData[index].size(), BeSQLite::Statement::MakeCopy::Yes), BeSQLite::BE_SQLITE_OK);
+        ASSERT_EQ(insert.Step(), BeSQLite::BE_SQLITE_DONE);
+        insert.Reset();
+        insert.ClearBindings();
+        }
+    }
+    ASSERT_EQ(workspaceDb.SaveChanges(), BeSQLite::BE_SQLITE_OK);
+    workspaceDb.CloseDb();
+    ASSERT_TRUE(GeoCoordinates::BaseGCS::AddWorkspaceDb(workspacePath.GetNameUtf8(), nullptr, 10000));
+
+    double elevationOffset = 0.0;
+    GeoCoordinates::VerticalTransform::ElevationType elevationType = GeoCoordinates::VerticalTransform::ElevationType::Fixed;
+    GeoCoordinates::VerticalTransformPtr workspaceVertconTransform =
+        GeoCoordinates::VerticalTransform::CreateFromJson(vertconJson, "NAVD88 workspace height", "NGVD29 height");
+    ASSERT_TRUE(workspaceVertconTransform.IsValid());
+
+    {
+    ScopedDisableLocalGcsFiles disableLocalGcsFiles;
+    ASSERT_EQ(workspaceVertconTransform->GetElevation(elevationOffset, elevationType, point), SUCCESS);
+    EXPECT_EQ(elevationType, GeoCoordinates::VerticalTransform::ElevationType::Offset);
+    EXPECT_NEAR(elevationOffset, expectedElevationOffset, 1.0e-10);
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* Registering a workspace should defer opening it until the vertical dictionary is accessed.
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(VerticalDatumUnitTests, VerticalDatumDictionaryFromLateWorkspaceTest)
+{
+    Utf8String dictionaryJson = R"json({
+        "version": 1,
+        "definitions": [{
+            "verticalCRS": {
+                "crsName": "Workspace test height",
+                "datumName": "Workspace test datum",
+                "type": "GEOID",
+                "units": "meter",
+                "extent": {
+                    "southWest": { "latitude": -90.0, "longitude": -180.0 },
+                    "northEast": { "latitude": 90.0, "longitude": 180.0 }
+                },
+                "transforms": [{ "target": "WGS84", "nullTransform": null }]
+            }
+        }]
+    })json";
+
+    BeFileName workspacePath;
+    BeTest::GetHost().GetTempDir(workspacePath);
+    workspacePath.AppendToPath(L"VerticalDatumDictionaryFromWorkspace.itwin-workspace");
+    if (BeFileName::DoesPathExist(workspacePath))
+        ASSERT_EQ(BeFileName::BeDeleteFile(workspacePath), BeFileNameStatus::Success);
+
+    GeoCoordTestCommon::Shutdown();
+    ScopedDisableLocalGcsFiles disableLocalGcsFiles;
+    BeFileName dataDirectory = workspacePath.GetDirectoryName();
+    ASSERT_EQ(GeoCoordinates::BaseGCS::Initialize(dataDirectory.GetNameUtf8().c_str()), SUCCESS);
+    ASSERT_EQ(GeoCoordinates::VerticalDatumDictionary::Get()->GetStatus(), GeoCoordinates::GeoCoordParse_MissingFile);
+    ASSERT_TRUE(GeoCoordinates::BaseGCS::AddWorkspaceDb(workspacePath.GetNameUtf8(), nullptr, 10001));
+
+    BeSQLite::Db workspaceDb;
+    ASSERT_EQ(workspaceDb.CreateNewDb(workspacePath.GetNameUtf8().c_str()), BeSQLite::BE_SQLITE_OK);
+    ASSERT_EQ(workspaceDb.ExecuteSql("CREATE TABLE blobs(id TEXT PRIMARY KEY NOT NULL, value BLOB)"), BeSQLite::BE_SQLITE_OK);
+
+    {
+    BeSQLite::Statement insert;
+    ASSERT_EQ(insert.Prepare(workspaceDb, "INSERT INTO blobs(id,value) VALUES(?,?)"), BeSQLite::BE_SQLITE_OK);
+    ASSERT_EQ(insert.BindText(1, "VerticalDatumDefinitions.json", BeSQLite::Statement::MakeCopy::Yes), BeSQLite::BE_SQLITE_OK);
+    ASSERT_EQ(insert.BindBlob(2, dictionaryJson.data(), (int)dictionaryJson.size(), BeSQLite::Statement::MakeCopy::Yes), BeSQLite::BE_SQLITE_OK);
+    ASSERT_EQ(insert.Step(), BeSQLite::BE_SQLITE_DONE);
+    }
+    ASSERT_EQ(workspaceDb.SaveChanges(), BeSQLite::BE_SQLITE_OK);
+    workspaceDb.CloseDb();
+
+    StatusInt status = ERROR;
+    GeoCoordinates::VerticalDatumInfoPtr datumInfo = GeoCoordinates::VerticalDatumDictionary::Get()->GetVerticalDatumInfoFromName("Workspace test height", status);
+    EXPECT_EQ(status, SUCCESS);
+    EXPECT_TRUE(datumInfo.IsValid());
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -290,6 +704,107 @@ TEST_F(VerticalDatumUnitTests, FromVerticalJsonAcceptsIncompleteDefinitionsByIde
 }
 
 /*---------------------------------------------------------------------------------**//**
+* BaseGCS::FromVerticalJson must fail when a requested crsName or epsg cannot be
+* resolved, even if a valid legacy id is also present. Silently degrading to the legacy
+* id would lose the requested identity without telling the caller.
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(VerticalDatumUnitTests, FromVerticalJsonRejectsUnresolvableIdentifiersDespiteLegacyId)
+{
+    struct Case
+        {
+        Utf8CP label;
+        Utf8CP json;
+        };
+    Case const cases[] =
+        {
+        {"unknown crsName", R"json({"crsName":"Unresolvable test height","id":"GEOID"})json"},
+        {"empty crsName", R"json({"crsName":"","id":"GEOID"})json"},
+        {"non-string crsName", R"json({"crsName":5773,"id":"GEOID"})json"},
+        {"unknown epsg", R"json({"epsg":999999,"id":"GEOID"})json"},
+        {"zero epsg", R"json({"epsg":0,"id":"GEOID"})json"},
+        {"negative epsg", R"json({"epsg":-1,"id":"GEOID"})json"},
+        {"non-numeric epsg", R"json({"epsg":"5773","id":"GEOID"})json"},
+        {"unknown crsName and epsg", R"json({"crsName":"Unresolvable test height","epsg":999999,"id":"GEOID"})json"},
+        };
+
+    for (auto const& testCase : cases)
+        {
+#if defined (USE_GTEST)
+        SCOPED_TRACE(testCase.label);
+#endif
+        BeJsDocument verticalJson(testCase.json);
+        ASSERT_FALSE(verticalJson.hasParseError());
+
+        GeoCoordinates::BaseGCSPtr gcs = GeoCoordinates::BaseGCS::CreateGCS("LL84");
+        ASSERT_TRUE(gcs.IsValid());
+        GeoCoordinates::VertDatumCode const codeBefore = gcs->GetVerticalDatumCode();
+        bool const hadValidVerticalDatum = gcs->HasValidVerticalDatum();
+        BeJsDocument verticalBefore;
+        ASSERT_EQ(gcs->ToVerticalJson(verticalBefore), SUCCESS);
+
+        Utf8String errorMessage;
+        EXPECT_NE(gcs->FromVerticalJson(verticalJson, errorMessage), SUCCESS);
+        EXPECT_FALSE(errorMessage.empty());
+        EXPECT_EQ(gcs->HasValidVerticalDatum(), hadValidVerticalDatum);
+        EXPECT_EQ(gcs->GetVerticalDatumCode(), codeBefore);
+        BeJsDocument verticalAfter;
+        ASSERT_EQ(gcs->ToVerticalJson(verticalAfter), SUCCESS);
+        EXPECT_EQ(verticalAfter.Stringify(), verticalBefore.Stringify());
+        }
+
+    // A datum without an EPSG code must not serialize a placeholder that would then be rejected on read.
+    {
+    BeJsDocument datumContent;
+    datumContent["crsName"]   = "NoEpsgTestHeight";
+    datumContent["type"]      = "GEOID";
+    datumContent["units"]     = "Meter";
+    datumContent["extent"]["southWest"]["latitude"]  = -90.0;
+    datumContent["extent"]["southWest"]["longitude"] = -180.0;
+    datumContent["extent"]["northEast"]["latitude"]  =  90.0;
+    datumContent["extent"]["northEast"]["longitude"] =  180.0;
+    datumContent["transforms"][0]["target"]       = "WGS84";
+    datumContent["transforms"][0]["nullTransform"].SetNull();
+
+    GeoCoordinates::BaseGCSPtr gcs = GeoCoordinates::BaseGCS::CreateGCS("LL84");
+    ASSERT_TRUE(gcs.IsValid());
+    Utf8String errorMessage;
+    ASSERT_EQ(gcs->FromVerticalJson(datumContent, errorMessage), SUCCESS);
+    BeJsDocument serialized;
+    serialized["epsg"] = 5773;
+    ASSERT_EQ(gcs->ToVerticalJson(serialized), SUCCESS);
+    EXPECT_FALSE(serialized.isMember("epsg"));
+
+    GeoCoordinates::BaseGCSPtr roundTrip = GeoCoordinates::BaseGCS::CreateGCS("LL84");
+    ASSERT_TRUE(roundTrip.IsValid());
+    EXPECT_EQ(roundTrip->FromVerticalJson(serialized, errorMessage), SUCCESS);
+    EXPECT_TRUE(roundTrip->HasValidVerticalDatum());
+    }
+
+    // An unresolvable crsName still succeeds when the epsg resolves, preserving the crsName/epsg/id precedence.
+    {
+    GeoCoordinates::BaseGCSPtr seedGcs = GeoCoordinates::BaseGCS::CreateGCS("LL84");
+    ASSERT_TRUE(seedGcs.IsValid());
+    ASSERT_EQ(seedGcs->SetVerticalDatumFromName("WGS84"), SUCCESS);
+    BeJsDocument knownVerticalJson;
+    ASSERT_EQ(seedGcs->ToVerticalJson(knownVerticalJson), SUCCESS);
+    ASSERT_TRUE(knownVerticalJson["epsg"].asInt() > 0);
+
+    BeJsDocument verticalJson;
+    verticalJson["crsName"] = "Unresolvable test height";
+    verticalJson["epsg"] = knownVerticalJson["epsg"].asInt();
+    verticalJson["id"] = "GEOID";
+    GeoCoordinates::BaseGCSPtr gcs = GeoCoordinates::BaseGCS::CreateGCS("LL84");
+    ASSERT_TRUE(gcs.IsValid());
+    Utf8String errorMessage;
+    EXPECT_EQ(gcs->FromVerticalJson(verticalJson, errorMessage), SUCCESS);
+    EXPECT_TRUE(gcs->HasValidVerticalDatum());
+    Utf8String name;
+    EXPECT_EQ(gcs->GetFullVerticalDatumName(name), SUCCESS);
+    EXPECT_STREQ(name.c_str(), knownVerticalJson["crsName"].asCString());
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
 * VerticalDatumInfo::CreateFromJson does not accept incomplete JSON definitions when
 * mandatory properties are absent, even if crsName/epsg/id are present.
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -302,7 +817,7 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoCreateFromJsonRejectsIncompleteD
 
     StatusInt status = SUCCESS;
     GeoCoordinates::VerticalDatumInfoPtr datumInfo =
-        GeoCoordinates::VerticalDatumInfo::CreateFromJson(jsonValue, false, status);
+        GeoCoordinates::VerticalDatumInfo::CreateFromJson(jsonValue, status);
 
     EXPECT_FALSE(datumInfo.IsValid());
     EXPECT_EQ(status, GeoCoordinates::GEOCOORDERR_UnknownDatumType);
@@ -315,7 +830,7 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoCreateFromJsonRejectsIncompleteD
 
     StatusInt status = SUCCESS;
     GeoCoordinates::VerticalDatumInfoPtr datumInfo =
-        GeoCoordinates::VerticalDatumInfo::CreateFromJson(jsonValue, false, status);
+        GeoCoordinates::VerticalDatumInfo::CreateFromJson(jsonValue, status);
 
     EXPECT_FALSE(datumInfo.IsValid());
     EXPECT_EQ(status, GeoCoordinates::GEOCOORDERR_NoCRSName);
@@ -328,7 +843,7 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoCreateFromJsonRejectsIncompleteD
 
     StatusInt status = SUCCESS;
     GeoCoordinates::VerticalDatumInfoPtr datumInfo =
-        GeoCoordinates::VerticalDatumInfo::CreateFromJson(jsonValue, false, status);
+        GeoCoordinates::VerticalDatumInfo::CreateFromJson(jsonValue, status);
 
     EXPECT_FALSE(datumInfo.IsValid());
     EXPECT_EQ(status, GeoCoordinates::GEOCOORDERR_NoCRSName);
@@ -362,7 +877,7 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoJsonRoundTripTest)
 
     StatusInt status = ERROR;
     GeoCoordinates::VerticalDatumInfoPtr datumInfo =
-        GeoCoordinates::VerticalDatumInfo::CreateFromJson(inputJson, false, status);
+        GeoCoordinates::VerticalDatumInfo::CreateFromJson(inputJson, status);
     ASSERT_TRUE(datumInfo.IsValid());
     EXPECT_EQ(status, SUCCESS);
 
@@ -423,7 +938,7 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoGettersTest)
 
     StatusInt status = ERROR;
     GeoCoordinates::VerticalDatumInfoPtr datumInfo =
-        GeoCoordinates::VerticalDatumInfo::CreateFromJson(inputJson, false, status);
+        GeoCoordinates::VerticalDatumInfo::CreateFromJson(inputJson, status);
     ASSERT_TRUE(datumInfo.IsValid());
     ASSERT_EQ(status, SUCCESS);
 
@@ -481,6 +996,123 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoGettersTest)
     EXPECT_TRUE(0 == targetNames[1].CompareToI("EGM96 height"));
 }
 
+TEST_F(VerticalDatumUnitTests, VerticalDatumInfoRejectsMalformedExtents)
+{
+    struct ExtentCase
+    {
+        Utf8CP label;
+        Utf8CP json;
+    };
+    ExtentCase const cases[] =
+    {
+        {"missing extent", R"json({})json"},
+        {"null extent", R"json({"extent":null})json"},
+        {"nonobject extent", R"json({"extent":[]})json"},
+        {"missing corners", R"json({"extent":{}})json"},
+        {"missing southwest", R"json({"extent":{"northEast":{"latitude":10,"longitude":20}}})json"},
+        {"missing northeast", R"json({"extent":{"southWest":{"latitude":-10,"longitude":-20}}})json"},
+        {"nonobject southwest", R"json({"extent":{"southWest":0,"northEast":{"latitude":10,"longitude":20}}})json"},
+        {"nonobject northeast", R"json({"extent":{"southWest":{"latitude":-10,"longitude":-20},"northEast":[]}})json"},
+        {"missing southwest latitude", R"json({"extent":{"southWest":{"longitude":-20},"northEast":{"latitude":10,"longitude":20}}})json"},
+        {"missing southwest longitude", R"json({"extent":{"southWest":{"latitude":-10},"northEast":{"latitude":10,"longitude":20}}})json"},
+        {"missing northeast latitude", R"json({"extent":{"southWest":{"latitude":-10,"longitude":-20},"northEast":{"longitude":20}}})json"},
+        {"missing northeast longitude", R"json({"extent":{"southWest":{"latitude":-10,"longitude":-20},"northEast":{"latitude":10}}})json"},
+        {"string southwest latitude", R"json({"extent":{"southWest":{"latitude":"-10","longitude":-20},"northEast":{"latitude":10,"longitude":20}}})json"},
+        {"string southwest longitude", R"json({"extent":{"southWest":{"latitude":-10,"longitude":"-20"},"northEast":{"latitude":10,"longitude":20}}})json"},
+        {"string northeast latitude", R"json({"extent":{"southWest":{"latitude":-10,"longitude":-20},"northEast":{"latitude":"10","longitude":20}}})json"},
+        {"string northeast longitude", R"json({"extent":{"southWest":{"latitude":-10,"longitude":-20},"northEast":{"latitude":10,"longitude":"20"}}})json"},
+        {"boolean latitude", R"json({"extent":{"southWest":{"latitude":false,"longitude":-20},"northEast":{"latitude":10,"longitude":20}}})json"},
+        {"null longitude", R"json({"extent":{"southWest":{"latitude":-10,"longitude":null},"northEast":{"latitude":10,"longitude":20}}})json"},
+        {"object latitude", R"json({"extent":{"southWest":{"latitude":-10,"longitude":-20},"northEast":{"latitude":{},"longitude":20}}})json"},
+        {"array longitude", R"json({"extent":{"southWest":{"latitude":-10,"longitude":-20},"northEast":{"latitude":10,"longitude":[]}}})json"},
+        {"inverted latitudes", R"json({"extent":{"southWest":{"latitude":10,"longitude":-20},"northEast":{"latitude":-10,"longitude":20}}})json"},
+        {"southwest latitude below minimum", R"json({"extent":{"southWest":{"latitude":-90.000001,"longitude":-20},"northEast":{"latitude":10,"longitude":20}}})json"},
+        {"southwest latitude above maximum", R"json({"extent":{"southWest":{"latitude":90.000001,"longitude":-20},"northEast":{"latitude":90,"longitude":20}}})json"},
+        {"northeast latitude below minimum", R"json({"extent":{"southWest":{"latitude":-90,"longitude":-20},"northEast":{"latitude":-90.000001,"longitude":20}}})json"},
+        {"northeast latitude above maximum", R"json({"extent":{"southWest":{"latitude":-10,"longitude":-20},"northEast":{"latitude":90.000001,"longitude":20}}})json"},
+        {"southwest longitude below minimum", R"json({"extent":{"southWest":{"latitude":-10,"longitude":-180.000001},"northEast":{"latitude":10,"longitude":20}}})json"},
+        {"southwest longitude above maximum", R"json({"extent":{"southWest":{"latitude":-10,"longitude":180.000001},"northEast":{"latitude":10,"longitude":180}}})json"},
+        {"northeast longitude below minimum", R"json({"extent":{"southWest":{"latitude":-10,"longitude":-180},"northEast":{"latitude":10,"longitude":-180.000001}}})json"},
+        {"northeast longitude above maximum", R"json({"extent":{"southWest":{"latitude":-10,"longitude":-20},"northEast":{"latitude":10,"longitude":180.000001}}})json"},
+    };
+
+    auto dictionary = GeoCoordinates::VerticalDatumDictionary::Get();
+    ASSERT_TRUE(dictionary.IsValid());
+    for (auto const& testCase : cases)
+    {
+#if defined (USE_GTEST)
+        SCOPED_TRACE(testCase.label);
+#endif
+        Utf8String name("Malformed extent ");
+        name.append(testCase.label);
+        BeJsDocument datumJson(testCase.json);
+        ASSERT_FALSE(datumJson.hasParseError());
+        datumJson["crsName"] = name;
+        datumJson["type"] = "GEOID";
+        datumJson["units"] = "Meter";
+        datumJson["transforms"][0]["target"] = "WGS84";
+        datumJson["transforms"][0]["nullTransform"].SetNull();
+
+        StatusInt status = SUCCESS;
+        auto datumInfo = GeoCoordinates::VerticalDatumInfo::CreateAndRegisterFromJson(datumJson, status);
+        EXPECT_FALSE(datumInfo.IsValid());
+        EXPECT_EQ(status, GeoCoordinates::GEOCOORDERR_CoordinateRange);
+        EXPECT_FALSE(dictionary->GetVerticalDatumInfoFromName(name, status).IsValid());
+        EXPECT_EQ(status, GeoCoordinates::GEOCOORDERR_CoordSysNotFound);
+        bvector<GeoCoordinates::VerticalTransformPtr> transforms;
+        EXPECT_EQ(dictionary->GetVerticalDatumTransforms(transforms, name, "WGS84", nullptr), GeoCoordinates::GEOCOORDERR_NoTransforms);
+        EXPECT_TRUE(transforms.empty());
+        transforms.clear();
+        EXPECT_EQ(dictionary->GetVerticalDatumTransforms(transforms, "WGS84", name, nullptr), GeoCoordinates::GEOCOORDERR_NoTransforms);
+        EXPECT_TRUE(transforms.empty());
+    }
+}
+
+TEST_F(VerticalDatumUnitTests, VerticalDatumInfoAcceptsValidExtentBoundaries)
+{
+    struct ExtentCase
+    {
+        Utf8CP name;
+        double west;
+        double south;
+        double east;
+        double north;
+    };
+    ExtentCase const cases[] =
+    {
+        {"Valid global extent", -180.0, -90.0, 180.0, 90.0},
+        {"Valid regional extent", -20.0, -10.0, 20.0, 10.0},
+        {"Valid point extent", 20.0, 10.0, 20.0, 10.0},
+        {"Valid antimeridian extent", 170.0, -10.0, -170.0, 10.0},
+    };
+
+    for (auto const& testCase : cases)
+    {
+#if defined (USE_GTEST)
+        SCOPED_TRACE(testCase.name);
+#endif
+        BeJsDocument datumJson;
+        datumJson["crsName"] = testCase.name;
+        datumJson["type"] = "GEOID";
+        datumJson["units"] = "Meter";
+        datumJson["extent"]["southWest"]["longitude"] = testCase.west;
+        datumJson["extent"]["southWest"]["latitude"] = testCase.south;
+        datumJson["extent"]["northEast"]["longitude"] = testCase.east;
+        datumJson["extent"]["northEast"]["latitude"] = testCase.north;
+
+        StatusInt status = ERROR;
+        auto datumInfo = GeoCoordinates::VerticalDatumInfo::CreateAndRegisterFromJson(datumJson, status);
+        EXPECT_EQ(status, SUCCESS);
+        ASSERT_TRUE(datumInfo.IsValid());
+        DRange2d extent;
+        datumInfo->GetExtent(extent);
+        EXPECT_DOUBLE_EQ(extent.low.x, testCase.west);
+        EXPECT_DOUBLE_EQ(extent.low.y, testCase.south);
+        EXPECT_DOUBLE_EQ(extent.high.x, testCase.east);
+        EXPECT_DOUBLE_EQ(extent.high.y, testCase.north);
+    }
+}
+
 /*---------------------------------------------------------------------------------**//**
 * VerticalDatumInfo::CreateFromJson must return GEOCOORDERR_NoTransforms and a null
 * pointer when the JSON contains a transforms entry that is structurally invalid:
@@ -511,7 +1143,7 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoInvalidTransformTest)
 
     StatusInt status = SUCCESS;
     GeoCoordinates::VerticalDatumInfoPtr datumInfo =
-        GeoCoordinates::VerticalDatumInfo::CreateFromJson(datumJson, false, status);
+        GeoCoordinates::VerticalDatumInfo::CreateFromJson(datumJson, status);
 
     EXPECT_FALSE(datumInfo.IsValid());
     EXPECT_EQ(status, GeoCoordinates::GEOCOORDERR_NoTransforms);
@@ -525,7 +1157,7 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoInvalidTransformTest)
 
     StatusInt status = SUCCESS;
     GeoCoordinates::VerticalDatumInfoPtr datumInfo =
-        GeoCoordinates::VerticalDatumInfo::CreateFromJson(datumJson, false, status);
+        GeoCoordinates::VerticalDatumInfo::CreateFromJson(datumJson, status);
 
     EXPECT_FALSE(datumInfo.IsValid());
     EXPECT_EQ(status, GeoCoordinates::GEOCOORDERR_NoTransforms);
@@ -540,7 +1172,7 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoInvalidTransformTest)
 
     StatusInt status = ERROR;
     GeoCoordinates::VerticalDatumInfoPtr datumInfo =
-        GeoCoordinates::VerticalDatumInfo::CreateFromJson(datumJson, false, status);
+        GeoCoordinates::VerticalDatumInfo::CreateFromJson(datumJson, status);
 
     EXPECT_TRUE(datumInfo.IsValid());
     EXPECT_EQ(status, SUCCESS);
@@ -579,7 +1211,7 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoInvalidTransformPathTest)
 
     StatusInt status = SUCCESS;
     GeoCoordinates::VerticalDatumInfoPtr datumInfo =
-        GeoCoordinates::VerticalDatumInfo::CreateFromJson(jsonValue, false, status);
+        GeoCoordinates::VerticalDatumInfo::CreateFromJson(jsonValue, status);
 
     EXPECT_FALSE(datumInfo.IsValid());
     EXPECT_EQ(status, GeoCoordinates::GEOCOORDERR_InvalidTransformPath);
@@ -595,7 +1227,7 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoInvalidTransformPathTest)
 
     StatusInt status = SUCCESS;
     GeoCoordinates::VerticalDatumInfoPtr datumInfo =
-        GeoCoordinates::VerticalDatumInfo::CreateFromJson(jsonValue, false, status);
+        GeoCoordinates::VerticalDatumInfo::CreateFromJson(jsonValue, status);
 
     EXPECT_FALSE(datumInfo.IsValid());
     EXPECT_EQ(status, GeoCoordinates::GEOCOORDERR_InvalidTransformPath);
@@ -611,7 +1243,7 @@ TEST_F(VerticalDatumUnitTests, VerticalDatumInfoInvalidTransformPathTest)
 
     StatusInt status = ERROR;
     GeoCoordinates::VerticalDatumInfoPtr datumInfo =
-        GeoCoordinates::VerticalDatumInfo::CreateFromJson(jsonValue, false, status);
+        GeoCoordinates::VerticalDatumInfo::CreateFromJson(jsonValue, status);
 
     EXPECT_TRUE(datumInfo.IsValid());
     EXPECT_EQ(status, SUCCESS);

@@ -108,7 +108,7 @@ struct IdSetModule : ECDbModule {
                     <ECProperty propertyName="id"  typeName="long" extendedTypeName="Id"/>
                 </ECEntityClass>
             </ECSchema>)xml"
-            ) {}
+            ) { m_hasBuiltInSchema = true; }
         DbResult Connect(DbVirtualTable*& out, Config& conf, int argc, const char* const* argv) final;
 };
 

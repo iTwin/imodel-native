@@ -159,7 +159,31 @@ BentleyStatus DbMapValidator::Initialize() const
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus DbMapValidator::CheckDuplicateDataPropertyMap() const {
-    // Depending on size this will take few second to run.
+    // Healthy mappings need no diagnostic column/table joins or string aggregation.
+    {
+        Statement probe;
+        auto rc = probe.Prepare(GetECDb(), R"(
+            SELECT 1
+                FROM [ec_PropertyMap] [pp]
+                    JOIN [ec_PropertyPath] [p] ON [p].[Id] = [pp].[PropertyPathId]
+                WHERE [p].[AccessString] != 'ECClassId' AND [p].[AccessString] != 'ECInstanceId'
+                GROUP BY [pp].[ClassId], [p].[AccessString]
+                HAVING COUNT(*) > 1
+                LIMIT 1;)");
+        if (rc != BE_SQLITE_OK) {
+            Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0114, "Failed to run duplicate data property check");
+            return ERROR;
+        }
+        rc = probe.Step();
+        if (rc == BE_SQLITE_DONE)
+            return SUCCESS;
+        if (rc != BE_SQLITE_ROW) {
+            Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0114, "Failed to run duplicate data property check");
+            return ERROR;
+        }
+    }
+
+    // The broader probe can include orphan mappings; retain the original diagnostic joins.
     Statement stmt;
     auto rc = stmt.Prepare(m_schemaImportContext.GetECDb(), R"(
         SELECT [pp].[ClassId], [p].[AccessString], group_concat([t].[Name] || '.' || [c].[Name], ', ')
@@ -175,24 +199,32 @@ BentleyStatus DbMapValidator::CheckDuplicateDataPropertyMap() const {
         return ERROR;
     }
 
-    const bool tolerateDuplicateDataPropertyMaps = m_mode == DbMapValidationMode::ChangesetApply;
-    const auto severity = tolerateDuplicateDataPropertyMaps ? IssueSeverity::Warning : IssueSeverity::Error;
     int duplicateCount = 0;
     while(stmt.Step() == BE_SQLITE_ROW) {
         const ECClassId classId = stmt.GetValueId<ECClassId>(0);
-        const Utf8String accessString = stmt.GetValueText(1);
-        const Utf8String duplicateCols = stmt.GetValueText(2);
         ECClassCP ecClass = GetECDb().Schemas().GetClass(classId);
         if (ecClass == nullptr) {
             Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0115, "Could not load ECClass for ECClassId %s from the file.", classId.ToString().c_str());
             return ERROR;
         }
-        Issues().ReportV(severity, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0116,
-            "Detected duplicate mapping for ECClass: %s. AccessString '%s' is mapped to '%s'.", ecClass->GetFullName(), accessString.c_str(), duplicateCols.c_str());
         ++duplicateCount;
+        if (m_mode == DbMapValidationMode::ChangesetApply && duplicateCount > MAX_DETAILED_WARNINGS)
+            continue;
+
+        Issues().ReportV(m_mode == DbMapValidationMode::ChangesetApply ? IssueSeverity::Warning : IssueSeverity::Error,
+            IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0116,
+            "Detected duplicate mapping for ECClass: %s. AccessString '%s' is mapped to '%s'.", ecClass->GetFullName(), stmt.GetValueText(1), stmt.GetValueText(2));
     }
 
-    return duplicateCount > 0 && !tolerateDuplicateDataPropertyMaps ? ERROR : SUCCESS;
+    if (m_mode != DbMapValidationMode::ChangesetApply)
+        return duplicateCount > 0 ? ERROR : SUCCESS;
+
+    if (duplicateCount > MAX_DETAILED_WARNINGS) {
+        Issues().ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0747,
+            "Detected %d duplicate mappings. Suppressed %d additional duplicate mapping warnings.", duplicateCount, duplicateCount - MAX_DETAILED_WARNINGS);
+    }
+
+    return SUCCESS;
 }
 
 //---------------------------------------------------------------------------------------
@@ -345,21 +377,18 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
                 return ERROR;
                 }
 
-            if (MaintainsDataTables() && m_schemaImportContext.IsSemanticRebasing())
-                {
-                if (nonVirtualColumnCount > (int) physicalColumns.size())
-                    {
-                    Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0126,
-                        "DbTable '%s' has %d non-virtual columns, but the physical table has only %d columns.", table.GetName().c_str(), nonVirtualColumnCount, (int) physicalColumns.size());
-                    return ERROR;
-                    }
-                }
-            else if (MaintainsDataTables() && nonVirtualColumnCount != (int) physicalColumns.size())
+            // Extra physical columns are tolerated if they are unused shared columns. Undoing a schema import
+            // reverts its ec_ rows but not the columns its DDL added, and UpdateTable reuses them by name.
+            // Every mapped column must still exist (ECDb_0137).
+            if (MaintainsDataTables() && nonVirtualColumnCount > (int) physicalColumns.size())
                 {
                 Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0126,
-                    "DbTable '%s' has %d non-virtual columns, but the physical table has %d columns.", table.GetName().c_str(), nonVirtualColumnCount, (int) physicalColumns.size());
+                    "DbTable '%s' has %d non-virtual columns, but the physical table has only %d columns.", table.GetName().c_str(), nonVirtualColumnCount, (int) physicalColumns.size());
                 return ERROR;
                 }
+
+            if (MaintainsDataTables() && !m_schemaImportContext.IsSemanticRebasing() && SUCCESS != ValidateUnmappedPhysicalColumns(table, physicalColumns, ECDbIssueId::ECDb_0126))
+                return ERROR;
 
             break;
             }
@@ -388,21 +417,16 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
                 return ERROR;
                 }
 
-            if (MaintainsDataTables() && m_schemaImportContext.IsSemanticRebasing())
-                {
-                if (nonVirtualColumnCount > (int) physicalColumns.size())
-                    {
-                    Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0130,
-                        "DbTable '%s' has %d non-virtual columns, but the physical table has only %d columns.", table.GetName().c_str(), nonVirtualColumnCount, (int) physicalColumns.size());
-                    return ERROR;
-                    }
-                }
-            else if (MaintainsDataTables() && nonVirtualColumnCount != (int) physicalColumns.size())
+            // Extra physical columns are tolerated, see the Joined case above.
+            if (MaintainsDataTables() && nonVirtualColumnCount > (int) physicalColumns.size())
                 {
                 Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0130,
-                    "DbTable '%s' has %d non-virtual columns, but the physical table has %d columns.", table.GetName().c_str(), nonVirtualColumnCount, (int) physicalColumns.size());
+                    "DbTable '%s' has %d non-virtual columns, but the physical table has only %d columns.", table.GetName().c_str(), nonVirtualColumnCount, (int) physicalColumns.size());
                 return ERROR;
                 }
+
+            if (MaintainsDataTables() && !m_schemaImportContext.IsSemanticRebasing() && SUCCESS != ValidateUnmappedPhysicalColumns(table, physicalColumns, ECDbIssueId::ECDb_0130))
+                return ERROR;
 
             break;
             }
@@ -423,21 +447,16 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
                 return ERROR;
                 }
 
-            if (MaintainsDataTables() && m_schemaImportContext.IsSemanticRebasing())
-                {
-                if (nonVirtualColumnCount > (int) physicalColumns.size())
-                    {
-                    Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0133,
-                        "DbTable '%s' has %d non-virtual columns, but the physical table has only %d columns.", table.GetName().c_str(), nonVirtualColumnCount, (int) physicalColumns.size());
-                    return ERROR;
-                    }
-                }
-            else if (MaintainsDataTables() && nonVirtualColumnCount != (int) physicalColumns.size())
+            // Extra physical columns are tolerated, see the Joined case above.
+            if (MaintainsDataTables() && nonVirtualColumnCount > (int) physicalColumns.size())
                 {
                 Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0133,
-                    "DbTable '%s' has %d non-virtual columns, but the physical table has %d columns.", table.GetName().c_str(), nonVirtualColumnCount, (int) physicalColumns.size());
+                    "DbTable '%s' has %d non-virtual columns, but the physical table has only %d columns.", table.GetName().c_str(), nonVirtualColumnCount, (int) physicalColumns.size());
                 return ERROR;
                 }
+
+            if (MaintainsDataTables() && !m_schemaImportContext.IsSemanticRebasing() && SUCCESS != ValidateUnmappedPhysicalColumns(table, physicalColumns, ECDbIssueId::ECDb_0133))
+                return ERROR;
 
             break;
             }
@@ -485,6 +504,37 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
         {
         if (SUCCESS != ValidateDbTrigger(*trigger))
             return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// A physical column that no ec_Column row describes is left behind when a schema import is undone,
+// because the undo does not reverse DDL. A later import reuses such a column by name, so only tolerate
+// columns named like the table's shared columns.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DbMapValidator::ValidateUnmappedPhysicalColumns(DbTable const& table, bvector<Utf8String> const& physicalColumns, ECN::IssueId const& issueId) const
+    {
+    bset<Utf8String, CompareIUtf8Ascii> mappedColumns;
+    for (DbColumn const* column : table.GetColumns())
+        mappedColumns.insert(column->GetName());
+
+    Utf8CP prefix = DbTable::GetSharedColumnNamePrefix(table.GetType());
+    const size_t prefixLen = strlen(prefix);
+    for (Utf8StringCR physicalColumn : physicalColumns)
+        {
+        if (mappedColumns.find(physicalColumn) != mappedColumns.end())
+            continue;
+
+        if (physicalColumn.size() <= prefixLen || !physicalColumn.StartsWithIAscii(prefix) ||
+            physicalColumn.find_first_not_of("0123456789", prefixLen) != Utf8String::npos)
+            {
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, issueId,
+                "DbTable '%s' has physical column '%s' with no ec_Column row, which cannot be reused because it is not named like a shared column.", table.GetName().c_str(), physicalColumn.c_str());
+            return ERROR;
+            }
         }
 
     return SUCCESS;
@@ -783,14 +833,21 @@ BentleyStatus DbMapValidator::ValidateDbMap() const
         classMaps.push_back(entry.second.get());
         }
 
+    int incompleteClassMapCount = 0;
     for (ClassMap const* classMap : classMaps)
         {
-        if (SUCCESS != ValidateClassMap(*classMap))
+        if (SUCCESS != ValidateClassMap(*classMap, incompleteClassMapCount))
             {
             result = ERROR;
             if (!m_continueAfterError)
-                return result;
+                break;
             }
+        }
+
+    if (incompleteClassMapCount > MAX_DETAILED_WARNINGS)
+        {
+        Issues().ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0748,
+            "Detected %d classes with incomplete property maps. Suppressed %d additional property map count warnings.", incompleteClassMapCount, incompleteClassMapCount - MAX_DETAILED_WARNINGS);
         }
 
     return result;
@@ -799,7 +856,7 @@ BentleyStatus DbMapValidator::ValidateDbMap() const
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus DbMapValidator::ValidateClassMap(ClassMap const& classMap) const
+BentleyStatus DbMapValidator::ValidateClassMap(ClassMap const& classMap, int& incompleteClassMapCount) const
     {
     if (SUCCESS != ValidateMapStrategy(classMap))
         return ERROR;
@@ -850,11 +907,21 @@ BentleyStatus DbMapValidator::ValidateClassMap(ClassMap const& classMap) const
                 {
                 // Changeset apply loads classes beyond those changed by the changeset. Tolerate incomplete
                 // data maps in existing files while keeping schema import and the loaded maps' validation strict.
-                const bool tolerateMissingDataPropertyMaps = m_mode == DbMapValidationMode::ChangesetApply && dataPropertyMapCount < propCount;
-                Issues().ReportV(tolerateMissingDataPropertyMaps ? IssueSeverity::Warning : IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0160,
-                    "The number of property maps for ECClass '%s' does not match the number of properties. Property maps: %d, properties: %d.", classMap.GetClass().GetFullName(), dataPropertyMapCount, propCount);
-                if (!tolerateMissingDataPropertyMaps)
+                if (m_mode == DbMapValidationMode::ChangesetApply && dataPropertyMapCount < propCount)
+                    {
+                    ++incompleteClassMapCount;
+                    if (incompleteClassMapCount <= MAX_DETAILED_WARNINGS)
+                        {
+                        Issues().ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0160,
+                            "The number of property maps for ECClass '%s' does not match the number of properties. Property maps: %d, properties: %d.", classMap.GetClass().GetFullName(), dataPropertyMapCount, propCount);
+                        }
+                    }
+                else
+                    {
+                    Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0160,
+                        "The number of property maps for ECClass '%s' does not match the number of properties. Property maps: %d, properties: %d.", classMap.GetClass().GetFullName(), dataPropertyMapCount, propCount);
                     return ERROR;
+                    }
                 }
             else
                 {

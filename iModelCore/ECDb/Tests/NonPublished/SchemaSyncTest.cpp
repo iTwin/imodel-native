@@ -17350,7 +17350,7 @@ TEST_F(SchemaSyncTestFixture, KindOfQuantity)
         EXPECT_STRCASEEQ(presFormats, actualPresentationFormats.c_str()) << name;
         };
 
-    const auto SCHEMA1_HASH_ECDB_SCHEMA = "bbc5192a04d438f21d12b8e00dcdb2aa9d10bff2a77d575a0cf2631c89714b89";
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "9f1e335f15c62d1dca121f6e2c974922a05d65c10bdb12ecf4032197ee840d41";
     Test(
         "import initial schema",
         [&]()
@@ -17443,7 +17443,7 @@ TEST_F(SchemaSyncTestFixture, KindOfQuantity)
             }
     );
 
-    const auto SCHEMA2_HASH_ECDB_SCHEMA = "4824c336317adb78b2b5982a69747eb45c85a9403558f706cb23797a87cef22b";
+    const auto SCHEMA2_HASH_ECDB_SCHEMA = "e7f708076579413604bfd5bf314552ef7d1be38a8a28c448fe55a49ea169a536";
     Test(
         "Adding a KOQ is supported",
         [&]()
@@ -17482,7 +17482,7 @@ TEST_F(SchemaSyncTestFixture, KindOfQuantity)
             }
     );
 
-    const auto SCHEMA3_HASH_ECDB_SCHEMA = "d983a74432cbfb37d895cf8c18312d27ae272c149a7fafcfaf13c8bb8c31b376";
+    const auto SCHEMA3_HASH_ECDB_SCHEMA = "ca2347901dfb8b3a301a55b33c89d074b199f563b2f51c2ef89609b0531cfb10";
     Test(
         "Modifying a KOQ is supported",
         [&]()
@@ -21331,7 +21331,7 @@ TEST_F(SchemaSyncTestFixture, Formats)
         "Import initial schema",
         [&]()
             {
-            const auto SCHEMA_HASH_ECDB_SCHEMA = "34dc4bb91fcad4e5af79ed77f376fb52cb0ec74959604a2dc07033d1ac84b4a7";
+            const auto SCHEMA_HASH_ECDB_SCHEMA = "23100d6b45774ea6b1fbbe6ea41b750bf7d59575b47d86aa22b1aa206e5ecf76";
             auto schema = SchemaItem(
                 R"xml(<?xml version="1.0" encoding="utf-8" ?>
                 <ECSchema schemaName="Schema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -21371,7 +21371,7 @@ TEST_F(SchemaSyncTestFixture, Formats)
         "Modify DisplayLabel, Description, NumericSpec",
         [&]()
             {
-            const auto SCHEMA_HASH_ECDB_SCHEMA = "8020466ec426bdc879a12d7f609420dcb077d96f8c52722801df16517b65daf1";
+            const auto SCHEMA_HASH_ECDB_SCHEMA = "618b0e04f2e7834365d26767cb23df0ec46f171342f94142a92487eac84cd4ca";
             auto schema = SchemaItem(
                 R"xml(<?xml version="1.0" encoding="utf-8" ?>
                 <ECSchema schemaName="Schema" alias="ts" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -21409,7 +21409,7 @@ TEST_F(SchemaSyncTestFixture, Formats)
     );
 
 
-    const auto SCHEMA1_HASH_ECDB_SCHEMA = "eede81a28bd8526cefb45d7a0a4ebbd38224cf9e1051881a5ce2eba6cefec9e6";
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "4ad9ee3ddcc99974e4315ac83185e4449629fa4e645d12c8a01ad3251ea26b2e";
     Test(
         "remove optional attributes from num spec",
         [&]()
@@ -21467,7 +21467,7 @@ TEST_F(SchemaSyncTestFixture, Formats)
         "start with format that already has a composite",
         [&]()
             {
-            const auto SCHEMA_HASH_ECDB_SCHEMA = "2e9cdfe66964a9f42365ea0efd584aa03308fd69b685a0e587d30cf0d70081e7";
+            const auto SCHEMA_HASH_ECDB_SCHEMA = "f284b779b08e616d9a06875c202c1b9b82cc43fe045e796b642c95f097dbbcc4";
             auto schema = SchemaItem(
                 R"xml(<?xml version="1.0" encoding="utf-8" ?>
                 <ECSchema schemaName="Schema" alias="ts" version="2.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -21498,7 +21498,7 @@ TEST_F(SchemaSyncTestFixture, Formats)
             }
     );
 
-    const auto SCHEMA2_HASH_ECDB_SCHEMA = "bec320205815b1f00f38073577170a05d1813a344024ff83ab9326c715985410";
+    const auto SCHEMA2_HASH_ECDB_SCHEMA = "ee4939355b71d3834f66efeae476259ce70ddeef481cfbb49f6d8b15e6ee904e";
     Test(
         "Modify CompSpec except for units",
         [&]()

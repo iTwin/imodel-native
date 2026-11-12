@@ -264,6 +264,20 @@ DgnGCS* DgnGeoLocation::GetDgnGCS() const
     return m_gcs;
     }
 
+void DgnGeoLocation::InvalidateGCS()
+    {
+    if (!m_GCSHasBeenSet)
+        {
+        m_gcs = nullptr;
+        m_hasCheckedForGCS = false;
+        m_ecefLocation = EcefLocation();
+        }
+
+    auto geoServices = T_HOST.GetGeoCoordinationAdmin()._GetServices();
+    if (geoServices != nullptr)
+        geoServices->InvalidateGCS(m_dgndb);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/

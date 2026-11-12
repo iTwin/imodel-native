@@ -501,7 +501,6 @@ struct JsInterop {
     BE_JSON_NAME(writeable)
     BE_JSON_NAME(yesNo)
     BE_JSON_NAME(uncompressedSize)
-    BE_JSON_NAME(skipFKConstraintValidations)
 
 #define JSON_NAME(__val__) JsInterop::json_##__val__()
 
@@ -527,7 +526,7 @@ public:
     static void ChangeElementParent(DgnDbR db, Napi::Object props);
     static void ChangeElementModel(DgnDbR db, Napi::Object props);
     static void DeleteElement(DgnDbR db, Utf8StringCR eidStr);
-    static BulkDeleteElementsResult DeleteElements(DgnDbR dgndb, Napi::Array elementIds, Napi::Value deleteOptionsObj);
+    static BulkDeleteElementsResult DeleteElements(DgnDbR dgndb, Napi::Array elementIds);
     static DgnDbStatus SimplifyElementGeometry(DgnDbR db, Napi::Object simplifyArgs);
     static InlineGeometryPartsResult InlineGeometryParts(DgnDbR db);
     static Napi::String InsertElementAspect(DgnDbR db, Napi::Object aspectProps);
@@ -572,6 +571,7 @@ public:
     static Napi::Value ConvertOrUpdateGeometrySource(DgnDbR db, NapiInfoCR info);
     static Napi::Value ConvertOrUpdateGeometryPart(DgnDbR db, NapiInfoCR info);
     static void ClearECDbCache(ECDbR db, NapiInfoCR info);
+    static void ApplyChangeset(BeSQLite::DbR db, NapiInfoCR info);
 
     static DbResult DropSchemas(ECDbR ecdb, bvector<Utf8String>& schemaNames);
 
@@ -660,10 +660,23 @@ struct CRSListResponseProps
     Utf8String m_unit;
     };
 
+struct VerticalCRSListResponseProps
+    {
+    Utf8String m_crsName;
+    Utf8String m_id;
+    int m_epsg = 0;
+    Utf8String m_description;
+    bool m_deprecated;
+    Utf8String m_type;
+    Utf8String m_unit;
+    DRange2d m_extent;
+    };
+
 struct GeoServicesInterop
 {
     static BentleyStatus GetGeographicCRSInterpretation(BeJsValue, BeJsConst);
     static bvector<CRSListResponseProps> GetListOfCRS(DRange2dCP extent, bool includeWorld, Utf8CP unitFilter = nullptr);
+    static StatusInt GetListOfVerticalCRS(bvector<VerticalCRSListResponseProps>& results, BeJsConst props, Utf8StringR errorMessage);
 };
 
 //=======================================================================================

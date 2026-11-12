@@ -139,13 +139,21 @@ BentleyStatus PngData::DoRead(Image& image)
         return ERROR;
         }
         
-    // Fill in the outputs.
-    image.SetSize(pngReader.GetWidth(), pngReader.GetHeight());
-    image.GetByteStreamR().Resize(pngReader.GetHeight() * bytesPerRow);
+    // Fill in the outputs. Compute the required size in 64 bits to guard against overflow from untrusted PNG dimensions.
+    int height = pngReader.GetHeight();
+    if (height <= 0 || bytesPerRow <= 0 || nullptr == rowPointers)
+        return ERROR;
+
+    uint64_t imageSize = static_cast<uint64_t>(height) * static_cast<uint64_t>(bytesPerRow);
+    if (imageSize > UINT32_MAX)
+        return ERROR;
+
+    image.SetSize(pngReader.GetWidth(), height);
+    image.GetByteStreamR().Resize(static_cast<uint32_t>(imageSize));
 
     Byte* out = image.GetByteStreamR().GetDataP();
-    for (int line=0; line < pngReader.GetHeight(); ++line)
-        memcpy(out + line*bytesPerRow, rowPointers[line], bytesPerRow);
+    for (int line=0; line < height; ++line)
+        memcpy(out + static_cast<size_t>(line) * static_cast<size_t>(bytesPerRow), rowPointers[line], bytesPerRow);
 
     return SUCCESS;
     }
@@ -302,7 +310,15 @@ void Image::ReadJpeg(uint8_t const* srcData, uint32_t srcLen, Format targetForma
         return;
         }
 
-    m_image.Resize(m_width * m_height * 4);
+    // Compute the required size in 64 bits; the dimensions come from untrusted JPEG data and the product can overflow uint32_t.
+    uint64_t imageSize = static_cast<uint64_t>(m_width) * static_cast<uint64_t>(m_height) * 4;
+    if (0 == imageSize || imageSize > UINT32_MAX)
+        {
+        Invalidate();
+        return;
+        }
+
+    m_image.Resize(static_cast<uint32_t>(imageSize));
 
     BeJpegPixelType fmt = m_format == Format::Rgb ? BE_JPEG_PIXELTYPE_Rgb : BE_JPEG_PIXELTYPE_RgbA;
     if (SUCCESS != reader.Decompress(m_image.GetDataP(), m_image.GetSize(), srcData, srcLen, fmt, bottomUp==Image::BottomUp::Yes ? BeJpegBottomUp::Yes : BeJpegBottomUp::No))

@@ -675,6 +675,23 @@ void JsInterop::UpdateProjectExtents(DgnDbR dgndb, BeJsConst newExtents) {
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void JsInterop::UpdateIModelProps(DgnDbR dgndb, BeJsConst props) {
+    GeoCoordinates::BaseGCSPtr newGCS;
+    auto gcsJson = props[json_geographicCoordinateSystem()];
+    if (!gcsJson.isNull()) {
+        newGCS = GeoCoordinates::BaseGCS::CreateGCS();
+        if (!newGCS.IsValid())
+            THROW_JS_DGN_DB_EXCEPTION(Env(), "Could not create geographic coordinate system", DgnDbStatus::BadRequest);
+
+        Utf8String errorFacingMessage;
+        if (SUCCESS != newGCS->FromJson(gcsJson, errorFacingMessage) || !newGCS->IsValid()) {
+            Utf8String message("Invalid geographic coordinate system");
+            if (!errorFacingMessage.empty())
+                message.append(": ").append(errorFacingMessage);
+
+            THROW_JS_DGN_DB_EXCEPTION(Env(), message.c_str(), DgnDbStatus::BadArg);
+        }
+    }
+
     auto& geolocation = dgndb.GeoLocation();
     auto extJson = props[json_projectExtents()];
     if (!extJson.isNull()) {
@@ -693,16 +710,8 @@ void JsInterop::UpdateIModelProps(DgnDbR dgndb, BeJsConst props) {
         geolocation.SetEcefLocation(ecef);
     }
 
-    auto gcsJson = props[json_geographicCoordinateSystem()];
-    if (!gcsJson.isNull()) {
-        GeoCoordinates::BaseGCSPtr newGCS = GeoCoordinates::BaseGCS::CreateGCS();
-
-        if (newGCS.IsValid()) {
-            Utf8String errorFacingMessage;
-            if (SUCCESS == newGCS->FromJson(gcsJson, errorFacingMessage))
-                geolocation.SetGCS(newGCS.get());
-        }
-    }
+    if (newGCS.IsValid())
+        geolocation.SetGCS(newGCS.get());
 
     geolocation.Save();
 }
@@ -724,7 +733,7 @@ void JsInterop::DeleteElement(DgnDbR dgndb, Utf8StringCR eidStr) {
         THROW_JS_DGN_DB_EXCEPTION(Env(), "error deleting element", stat);
 }
 
-BulkDeleteElementsResult JsInterop::DeleteElements(DgnDbR dgndb, Napi::Array elementIds, Napi::Value deleteOptionsObj) {
+BulkDeleteElementsResult JsInterop::DeleteElements(DgnDbR dgndb, Napi::Array elementIds) {
     DgnElementIdSet elementIdSet;
     for (auto i = 0U; i < elementIds.Length(); ++i) {
         Napi::Value arrayItem = elementIds[i];
@@ -735,10 +744,6 @@ BulkDeleteElementsResult JsInterop::DeleteElements(DgnDbR dgndb, Napi::Array ele
                 elementIdSet.insert(DgnElementId(val.GetValue()));
         }
     }
-
-    BeJsConst deleteOptionsJson(deleteOptionsObj);
-    if (deleteOptionsJson.isObject())
-        return dgndb.Elements().DeleteElements(elementIdSet, deleteOptionsJson.Get(json_skipFKConstraintValidations()).asBool());
 
     return dgndb.Elements().DeleteElements(elementIdSet);
 }

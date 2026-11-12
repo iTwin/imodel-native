@@ -154,6 +154,13 @@ private:
                                       std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
                                       std::vector<Utf8String>* changedProps);
 
+    //! Emits a navigation value with only its Id member, read from @p columnValues.
+    //! Skips when the Id column is not in @p dbTable or not in the changeset. Never queries the DB.
+    static void CreateNavIdOnly(ECDbCR conn, PropertyMap const&,
+                                ColumnValueMap const&, DbTable const&,
+                                std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
+                                std::vector<Utf8String>* changedProps);
+
     //! Creates a fixed-value IECSqlValue from a statically known id.  Always succeeds.
     static void CreateFixedId(ECDbCR conn, PropertyMap const&, BeInt64Id,
                               std::unique_ptr<IECSqlValue>& out);
@@ -161,13 +168,6 @@ private:
     // ------------------------------------------------------------------
     // High-level resolution helpers used by Create()
     // ------------------------------------------------------------------
-
-    //! Tries to resolve classMap + classId from the column values map's class-id entry.
-    //! Returns true and populates @p outClassId on success.
-    static bool TryResolveClassIdFromChangeset(DbTable const& dbTable,
-                                                ColumnValueMap const& columnValues,
-                                                ECDbCR conn,
-                                                ECClassId& outClassId);
 
     //! Tries to resolve classMap + classId via a live DB seek on the first PK column.
     //! Returns false immediately when the ECClassId column is virtual.
@@ -209,14 +209,19 @@ private:
 
     // ------------------------------------------------------------------
 public:
-    //! Resolves the ClassMap, ECClassId, and whether the class id came from the changeset
-    //! for a single changeset row.  Tries the changeset first, then a live DB seek,
-    //! then falls back to the table's root ClassMap.
-    //! Returns SUCCESS and populates all three out params on success; ERROR otherwise.
-    static BentleyStatus ResolveClassId(ECDbCR conn, DbTable const& tbl,
-                                        ColumnValueMap const& columnValues,
-                                        ECClassId& resolvedClassIdOut,
-                                        bool& classIdFromChangesetOut);
+    //! Reads the ECClassId from the row's own column values.
+    //! Returns true and populates @p outClassId if the changeset carries it.
+    static bool TryResolveClassIdFromChangeset(DbTable const& dbTable,
+                                                ColumnValueMap const& columnValues,
+                                                ECDbCR conn,
+                                                ECClassId& outClassId);
+
+    //! Resolves the ECClassId of a row whose column values don't carry it: a DB seek on the primary key,
+    //! else the table's root class. Both stages of a row get the same answer.
+    //! Returns SUCCESS and populates @p outClassId on success; ERROR otherwise.
+    static BentleyStatus ResolveClassIdFromDb(ECDbCR conn, DbTable const& tbl,
+                                              ColumnValueMap const& columnValues,
+                                              ECClassId& outClassId);
 
     //! Builds the IECSqlValue fields for one changeset row.
     //! If @p changedProps is non-null it is filled with the access paths of all properties
@@ -228,6 +233,7 @@ public:
                                 ECClassId resolvedClassId, bool classIdFromChangeset,
                                 std::vector<std::unique_ptr<IECSqlValue>>& fields,
                                 ChangesetReader::PropertyFilter propertyFilter,
+                                DbOpcode opcode,
                                 std::vector<Utf8String>* changedProps);
 };
 

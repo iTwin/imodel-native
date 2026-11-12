@@ -275,7 +275,7 @@ always:
 ```
 iModelConsole
 └── iModelPlatformDLL
-    ├── ECDbLibrary → BeSQLite, ECObjects, GeomLibs, BeJsonCpp, google_re2
+  ├── ECDbLibrary → BeSQLite, ECObjects, GeomLibs, google_re2
     ├── ECPresentation → ECDb, ECObjects
     ├── GeoCoord
     ├── Bentley → BeIcu4cLibrary, BeOpenSSL, BeLibxml2, BeCurl

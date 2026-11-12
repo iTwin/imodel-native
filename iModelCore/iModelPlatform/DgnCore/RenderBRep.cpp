@@ -16,7 +16,7 @@ IBRepEntityCPtr BRepHandle::ObtainEntity() const
     if (m_flatBufferData.empty())
         return nullptr;
 
-    m_entity = GeometryStreamIO::Reader::ReadBRepEntity(m_flatBufferData.data());
+    m_entity = GeometryStreamIO::Reader::ReadBRepEntity(m_flatBufferData.data(), m_flatBufferData.size());
     m_flatBufferData.clear();
     return m_entity;
     }
@@ -287,7 +287,7 @@ BRepHandlePtr BRepService::GetBRepHandle(BRepHandleIdCR id, IBRepDataSupplierCR 
         if (metadata.IsValid())
             return new BRepHandle(id, metadata.Value(), data, *this);
 
-        auto entity = GeometryStreamIO::Reader::ReadBRepEntity(data.m_bytes);
+        auto entity = GeometryStreamIO::Reader::ReadBRepEntity(data.m_bytes, data.m_size);
         if (entity.IsNull())
             return nullptr;
 

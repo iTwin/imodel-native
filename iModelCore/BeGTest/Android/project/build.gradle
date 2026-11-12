@@ -18,3 +18,35 @@ allprojects {
     }
 }
 
+def logMemory = { String phase ->
+    def runtime = Runtime.getRuntime()
+    def jvm = java.lang.management.ManagementFactory.getRuntimeMXBean()
+    def operatingSystem = java.lang.management.ManagementFactory.getOperatingSystemMXBean()
+    def memoryOptions = jvm.inputArguments.findAll {
+        it.startsWith('-Xmx') || it.startsWith('-Xms') ||
+            it.startsWith('-XX:MaxMetaspaceSize=') || it.startsWith('-XX:MaxDirectMemorySize=')
+    }
+    logger.lifecycle("[JUnit Gradle diagnostics] time=${java.time.Instant.now()} project=${rootDir} phase=${phase} jvm=${jvm.name}")
+    logger.lifecycle("[JUnit Gradle diagnostics] java=${System.getProperty('java.version')} gradle=${gradle.gradleVersion} maxWorkers=${gradle.startParameter.maxWorkerCount} memoryOptions=${memoryOptions}")
+    logger.lifecycle("[JUnit Gradle diagnostics] bytes: heapUsed=${runtime.totalMemory() - runtime.freeMemory()} heapCommitted=${runtime.totalMemory()} heapMax=${runtime.maxMemory()}")
+    if (operatingSystem instanceof com.sun.management.OperatingSystemMXBean) {
+        logger.lifecycle("[JUnit Gradle diagnostics] bytes: hostMemoryFree=${operatingSystem.freeMemorySize} hostMemoryTotal=${operatingSystem.totalMemorySize} swapFree=${operatingSystem.freeSwapSpaceSize} swapTotal=${operatingSystem.totalSwapSpaceSize} processCommittedVirtual=${operatingSystem.committedVirtualMemorySize}")
+    }
+}
+
+if (System.getenv('BENTLEY_ANDROID_GRADLE_DIAGNOSTICS') == '1') {
+    logMemory('configuration')
+
+    gradle.taskGraph.beforeTask { task ->
+        if (task.name.startsWith('package')) {
+            logMemory("before ${task.path}")
+        }
+    }
+
+    gradle.taskGraph.afterTask { task, state ->
+        if (task.name.startsWith('package')) {
+            logMemory("after ${task.path} failed=${state.failure != null}")
+        }
+    }
+}
+

@@ -2,7 +2,7 @@
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #  See LICENSE.md in the repository root for full copyright notice.
 #---------------------------------------------------------------------------------------------
-# Export/make visible all functions in JsonCpp
+# Preserve the exported SDK symbols.
 GCC_DEFAULT_VISIBILITY=default
 
 # Ignore warnings in third-party code.
@@ -22,11 +22,6 @@ o                   = $(OutputRootDir)build/$(appName)/
 always:
     !~@mkdir $(o)
 
-# Make 7z single threaded on everything other than Windows.
-%if $(TARGET_PLATFORM) != "Windows"
-    cDefs + -D_7ZIP_ST
-%endif
-
 # disable checking of assignment to smaller data types. lzma does this a lot.
 # VERACODE - requires default runtime checks (e.g. cannot explicitly set any -RTC options).
 %if !defined(IS_VERACODE_BUILD)
@@ -36,7 +31,11 @@ always:
 MultiCompileDepends     = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
+$(o)7zStream$(oext)     : $(baseDir)7zStream.c ${MultiCompileDepends}
+
 $(o)Alloc$(oext)        : $(baseDir)Alloc.c ${MultiCompileDepends}
+
+$(o)CpuArch$(oext)      : $(baseDir)CpuArch.c ${MultiCompileDepends}
 
 $(o)LzmaLib$(oext)      : $(baseDir)LzmaLib.c ${MultiCompileDepends}
 
@@ -50,13 +49,15 @@ $(o)Lzma2Dec$(oext)     : $(baseDir)Lzma2Dec.c ${MultiCompileDepends}
 
 $(o)LzFind$(oext)       : $(baseDir)LzFind.c ${MultiCompileDepends}
 
-%if $(TARGET_PLATFORM) == "Windows"
-    $(o)MtCoder$(oext)      : $(baseDir)MtCoder.c ${MultiCompileDepends}
+$(o)LzFindOpt$(oext)    : $(baseDir)LzFindOpt.c ${MultiCompileDepends}
 
-    $(o)LzFindMt$(oext)     : $(baseDir)LzFindMt.c ${MultiCompileDepends}
+$(o)MtCoder$(oext)      : $(baseDir)MtCoder.c ${MultiCompileDepends}
 
-    $(o)Threads$(oext)      : $(baseDir)Threads.c ${MultiCompileDepends}
-%endif
+$(o)MtDec$(oext)        : $(baseDir)MtDec.c ${MultiCompileDepends}
+
+$(o)LzFindMt$(oext)     : $(baseDir)LzFindMt.c ${MultiCompileDepends}
+
+$(o)Threads$(oext)      : $(baseDir)Threads.c ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 

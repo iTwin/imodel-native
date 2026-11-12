@@ -590,6 +590,8 @@ PropertyMap const* PropertyNameExp::GetPropertyMap() const
                 }
             return nullptr; // This block returns nullptr for proper alias referencing if the cte block has columns
             }
+        case Exp::Type::TableValuedFunction:
+            return nullptr; // table-valued function columns are virtual and have no backing property map
         default:
                 BeAssert(false && "Unhandled ClassRefExp subtype. This code needs to be adjusted.");
                 break;

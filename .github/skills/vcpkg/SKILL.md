@@ -1,6 +1,6 @@
 ---
 name: vcpkg
-description: Authoritative guide for vcpkg library integration in imodel-native. USE FOR adding a new vcpkg-managed library, migrating an existing library to vcpkg, updating a vcpkg-managed library version, or diagnosing a failing Mend source scan. Covers the sequential install chain, PartFile wiring, mke patterns, triplet selection, version pinning, and Mend source-scan configuration (`vcpkg-mend.json`).
+description: Authoritative guide for vcpkg library integration in imodel-native. USE FOR adding a new vcpkg-managed library, migrating an existing library to vcpkg, updating a vcpkg-managed library version, maintaining shared iTwinNativeThirdParty builds or NuGet packaging, or diagnosing a failing Mend source scan. Covers the sequential install chain, PartFile wiring, mke patterns, triplet selection, version pinning, and Mend source-scan configuration (`vcpkg-mend.json`).
 ---
 
 # vcpkg Integration in imodel-native
@@ -22,7 +22,8 @@ vcpkg (bootstrap)
               └─► vcpkg_install_pugixml
                     └─► vcpkg_install_openssl
                           └─► vcpkg_install_curl
-                                └─► vcpkg_install_crashpad
+                                └─► vcpkg_install_freetype2
+                                      └─► vcpkg_install_crashpad
 ```
 
 Each link is a separate Part with its own `vcpkg_install_<consumer>.mke` that calls
@@ -54,6 +55,13 @@ defined in [`$(SrcRoot)bsicommon/PublicSDK/ApplyToolSet_CLang.mki`](../../../../
 but build strategies may override them. Mirror the effective build value, not the product's
 official OS support floor. Omitting this setting lets vcpkg inherit the host SDK's deployment
 target and can produce objects that are too new to link into BentleyBuild outputs.
+
+For static libraries rolled into `imodeljs.node`, preserve the previous build's effective symbol
+visibility and verify both the vcpkg archive and final add-on. Do not assume
+`-fvisibility=hidden` is sufficient: upstream public-API annotations may restore default
+visibility. Audit library-specific visibility options; curl, for example, requires
+`CURL_HIDDEN_SYMBOLS=OFF` so its public API inherits the triplet's hidden visibility instead of
+binding to another curl already loaded in the process.
 
 > **Check whether the library links cleanly into Windows DEBUG builds.** Some libraries fail to
 > link into Windows DEBUG unless their debug artifact is made release-CRT-compatible — either by
@@ -212,6 +220,23 @@ would race against the static one on the shared vcpkg git repo.
 If a separate prewire/PublicAPI part also needs the install, give it the same
 `LibType="Static"` SubPart (see `BeOpenSSL.PartFile.xml` for the `__PublicAPI` example).
 
+#### Shared iTwinNativeThirdParty variants
+
+Curl, OpenSSL, and FreeType also expose explicit `ThirdParty` parts consumed by
+iTwinNativeThirdParty packaging wrappers. See
+[Shared Builds for iTwinNativeThirdParty](../../../iModelCore/libsrc/VCPKG.md#shared-builds-for-itwinnativethirdparty)
+for the part names and output naming contract.
+
+- Preserve both native-addon and third-party variants when editing shared definitions; reuse the
+  existing `.mke` implementation and retain legacy third-party names and `B02` bindings.
+- Keep vcpkg installs and install-dependent prewire/PublicAPI dependencies static-only, even for
+  dynamic library variants.
+- Treat dependency bindings as package contents. Third-party Curl uses static `Zlib`, not the
+  aggregate `Compress`; keep native Curl's `Compress` dependency out of the shared helper.
+- Validate both dependency graphs and their build flavors. After packaging changes, compare a
+  clean build's staged payload with published NuGets and check architectures and relevant symbols;
+  do not claim consumer-link or generated-package validation from those checks alone.
+
 ### 5. Write the consumer `.mke`
 
 Include `vcpkg.mki` to get `vcpkgTriplet`, then set `vcpkgInstallRoot`.
@@ -273,6 +298,13 @@ likely be draft/WIP at this stage) until **after** the PR has passed its Copilot
 remove the vendored code in a separate standalone commit within that same PR. Deleting the
 vendored source up front produces too many modified files for Copilot to review, and the review
 may not run at all.
+
+After creating the PR, add an **unresolved inline PR review comment** on a source-code line:
+"Do not merge: delete the vendor directory after this PR is otherwise ready to merge."
+Name the actual vendor directory in the comment. Keep the conversation unresolved to block an
+accidental merge; a PR-description note or a committed TODO is not a substitute. When the PR is
+otherwise ready to merge, delete the vendored source in the standalone commit described above,
+then resolve the comment only after verifying that the directory has been deleted.
 
 ---
 

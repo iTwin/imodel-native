@@ -186,6 +186,13 @@ struct BcvfsFile {
   CacheEntry *pEntry;
   int rc;
 
+  /* Statistics for blocks downloaded by queries on this connection.
+  ** Reported by the "nqueryblock", "nquerybyte" and "nqueryus" rows of
+  ** the bcv_stat table. Used in direct (non-daemon) mode only. */
+  i64 nQueryBlock;
+  i64 nQueryByte;
+  i64 nQueryUs;
+
   BcvfsFile *pNextFile;
 };
 
@@ -620,6 +627,10 @@ static void bcvfsFetchBlockCb(
   if( rc==SQLITE_OK ){
     i64 iOff = (pFile->pEntry->iPos * pFile->pFs->c.szBlk);
     rc = bcvWritefile(pFile->pCacheFile, aData, nData, iOff);
+    if( rc==SQLITE_OK ){
+      pFile->nQueryByte += nData;
+      pFile->pEntry->nByte = nData;
+    }
   }else{
     /* TODO: log the error somehow */
   }
@@ -641,6 +652,7 @@ static int bcvfsFetchBlock(
   sqlite3_bcvfs *pFs = pFile->pFs;
   int rc = SQLITE_OK;
   char aName[BCV_MAX_FSNAMEBYTES];
+  i64 iStart = 0;
 
   pFile->pEntry = pEntry;
   pFile->rc = SQLITE_OK;
@@ -657,9 +669,14 @@ static int bcvfsFetchBlock(
     rc = bcvDispatchFetch(pDisp,pBcv,aName,0,0,(void*)pFile,bcvfsFetchBlockCb);
   }
   if( rc==SQLITE_OK ){
+    iStart = bcv_timestamp();
     rc = bcvDispatchRunAll(pDisp);
   }
   rc = (rc==SQLITE_OK ? pFile->rc : rc);
+  if( rc==SQLITE_OK ){
+    pFile->nQueryBlock++;
+    pFile->nQueryUs += (bcv_timestamp() - iStart);
+  }
 
   ENTER_VFS_MUTEX; {
     pFs->nOnDemand--;
@@ -924,13 +941,47 @@ CacheEntry *bcvfsHashFind(BcvCommon *p, const u8 *pBlk, int nBlk){
 }
 
 /*
+** Attempt to double the size of the hash table. If the allocation fails,
+** leave the hash table as it is - it is still usable, just less efficient.
+*/
+static void bcvfsHashGrow(BcvCommon *p){
+  i64 nNew = (i64)p->nHash * 2;
+  CacheEntry **aNew = 0;
+  int ii;
+
+  if( nNew>0x40000000 ) return;
+  aNew = (CacheEntry**)sqlite3_malloc64(sizeof(CacheEntry*)*nNew);
+  if( aNew==0 ) return;
+  memset(aNew, 0, sizeof(CacheEntry*)*nNew);
+
+  for(ii=0; ii<p->nHash; ii++){
+    CacheEntry *pEntry;
+    while( (pEntry = p->aHash[ii]) ){
+      u32 iHash = bcvfsBlockHash(pEntry->aName, pEntry->nName) % nNew;
+      p->aHash[ii] = pEntry->pHashNext;
+      pEntry->pHashNext = aNew[iHash];
+      aNew[iHash] = pEntry;
+    }
+  }
+
+  sqlite3_free(p->aHash);
+  p->aHash = aNew;
+  p->nHash = (int)nNew;
+}
+
+/*
 ** Add the entry passed as the second argument to the hash table. This
 ** function assumes that the entry is not already in the hash table.
 */
 void bcvfsHashAdd(BcvCommon *p, CacheEntry *pEntry){
-  u32 iHash = bcvfsBlockHash(pEntry->aName, pEntry->nName) % p->nHash;
+  u32 iHash;
+  if( (i64)(p->nHashEntry+1)*2 > p->nHash ){
+    bcvfsHashGrow(p);
+  }
+  iHash = bcvfsBlockHash(pEntry->aName, pEntry->nName) % p->nHash;
   pEntry->pHashNext = p->aHash[iHash];
   p->aHash[iHash] = pEntry;
+  p->nHashEntry++;
 }
 
 /*
@@ -943,6 +994,7 @@ void bcvfsHashRemove(BcvCommon *p, CacheEntry *pEntry){
   for(pp=&p->aHash[iHash]; *pp; pp=&(*pp)->pHashNext){
     if( *pp==pEntry ){
       *pp = pEntry->pHashNext;
+      p->nHashEntry--;
       break;
     }
   }
@@ -1288,6 +1340,7 @@ static void bcvfsContainerReleaseBcv(
 
 static int bcvfsFindBlockForIO(
   sqlite3_bcvfs *pFs,
+  BcvfsFile *pFile,               /* File to update nQuery* stats for, or 0 */
   ManifestDb *pManDb,
   int nNameBytes,
   int iBlk,                       /* Block of file to find (0 indexed) */
@@ -1296,6 +1349,7 @@ static int bcvfsFindBlockForIO(
   BcvCommon *pCommon = &pFs->c;
   CacheEntry *pEntry = 0;
   int rc = SQLITE_OK;
+  i64 iWaitStart = 0;             /* Time this call started waiting (case 2) */
 
   CHECK_VFS_MUTEX;
 
@@ -1310,6 +1364,12 @@ static int bcvfsFindBlockForIO(
     **
     ** This loop usually only runs once (exits via the "break" at the
     ** end of it). The exception is case 2 above.
+    **
+    ** If case 2 is encountered and the download eventually succeeds, the
+    ** block is counted by pFile's nQuery* statistics as if pFile had
+    ** downloaded it itself, along with the time spent waiting. If the
+    ** download fails, the wait is not counted, and this call usually goes
+    ** on to start its own download (case 3).
     */
     while( 1 ){
       u8 *pBlk = &pManDb->aBlkLocal[nNameBytes * iBlk];
@@ -1320,6 +1380,7 @@ static int bcvfsFindBlockForIO(
           /* Case 2. Wait a while and then try again. Eventually, either the
           ** block will be fully downloaded or the entry removed from the
           ** hash table.  */
+          if( iWaitStart==0 ) iWaitStart = bcv_timestamp();
           pFs->nOnDemand++;
           bcvfsMutexCondWait(&pFs->mutex);
           pFs->nOnDemand--;
@@ -1329,6 +1390,11 @@ static int bcvfsFindBlockForIO(
         ** the entry from the LRU list. If nRef!=0, then some other thread is
         ** also using this cache entry - so it won't be on the LRU list. */
         bcvfsLruRemoveIf(pCommon, pEntry);
+        if( iWaitStart && pFile ){
+          pFile->nQueryBlock++;
+          pFile->nQueryByte += pEntry->nByte;
+          pFile->nQueryUs += (bcv_timestamp() - iWaitStart);
+        }
       }else{
         /* Case 3. The block was not found in the cache. Instead, find a 
         ** slot in the cache file that the block can be downloaded to.  */
@@ -1474,7 +1540,9 @@ static int bcvfsReadWriteDatabase(
     rc = bcvfsGetManifestRef(pFile, ioerr);
     if( rc==SQLITE_OK ){
       int nName = NAMEBYTES(pFile->pMan);
-      rc = bcvfsFindBlockForIO(pFs, pFile->pManDb, nName, iBlk, &pEntry);
+      rc = bcvfsFindBlockForIO(
+          pFs, pFile, pFile->pManDb, nName, iBlk, &pEntry
+      );
     }
     if( rc==SQLITE_OK && pEntry->bValid==0 && iBlk<pFile->pManDb->nBlkOrig ){
       assert( iBlk<pFile->pManDb->nBlkLocal || bWrite );
@@ -3131,8 +3199,11 @@ static BCV_SOCKET_TYPE bcvConnectSocket(
     if( bcv_socket_is_valid(s)==0 ){
       rc = BCVFS_CANTOPEN;
     }else{
+      const int optval = 1;
       assert( addr.sin_addr.s_addr!=INADDR_NONE );
-      if( connect(s, (struct sockaddr*)&addr, sizeof(addr))<0 ){
+      if( setsockopt(s, IPPROTO_TCP, TCP_NODELAY, &optval, sizeof(optval))<0
+       || connect(s, (struct sockaddr*)&addr, sizeof(addr))<0
+      ){
         rc = BCVFS_CANTOPEN;
         bcv_close_socket(s);
       }
@@ -3571,6 +3642,7 @@ static int no_blocks_leaked(BcvCommon *p){
     u8 *aBit = (u8*)malloc(nByte);
     memset(aBit, 0, nByte);
     int nTotal = 0;
+    int nHashEntry = 0;
 
     for(pEntry=p->pUnused; pEntry; pEntry=pEntry->pHashNext){
       int iElem = pEntry->iPos / 8;
@@ -3584,8 +3656,10 @@ static int no_blocks_leaked(BcvCommon *p){
         int iBit = pEntry->iPos & 0x07;
         aBit[iElem] = aBit[iElem] | (1 << iBit);
         nTotal++;
+        nHashEntry++;
       }
     }
+    assert( nHashEntry==p->nHashEntry );
 
     for(ii=0; ii<p->nBlk; ii++){
       int iElem = ii / 8;
@@ -5528,6 +5602,7 @@ static void bcvfsPrefetchCb(
 
     if( p->rc==SQLITE_OK ){
       pEntry->bValid = 1;
+      pEntry->nByte = nData;
     }else{
       assert( pEntry->nRef==1 );
       bcvfsHashRemove(&pFs->c, pEntry);
@@ -5559,7 +5634,7 @@ void bcvfsPrefetchRun(
 
       ENTER_VFS_MUTEX; {
         if( 0==bcvfsHashFind(&pFs->c, pBlk, nNameBytes) ){
-          rc = bcvfsFindBlockForIO(pFs, pManDb, nNameBytes, iBlk, &pEntry);
+          rc = bcvfsFindBlockForIO(pFs, 0, pManDb, nNameBytes, iBlk, &pEntry);
         }
       } LEAVE_VFS_MUTEX;
 
@@ -6805,6 +6880,19 @@ static int bcvReadonlyVtabFilter(
             colUsed, &pCur->data.nData, &pCur->iVersion
         );
       } LEAVE_VFS_MUTEX;
+      if( bcvStrcmp(pTab->zMod, "bcv_stat")==0 ){
+        BcvBuffer buf;
+        buf.aData = (u8*)pCur->data.aData;
+        buf.nData = buf.nAlloc = pCur->data.nData;
+        bcvBufferMsgString(&rc, &buf, "nqueryblock");
+        bcvBufferAppendU64(&rc, &buf, (u64)pFile->nQueryBlock);
+        bcvBufferMsgString(&rc, &buf, "nquerybyte");
+        bcvBufferAppendU64(&rc, &buf, (u64)pFile->nQueryByte);
+        bcvBufferMsgString(&rc, &buf, "nqueryus");
+        bcvBufferAppendU64(&rc, &buf, (u64)pFile->nQueryUs);
+        pCur->data.aData = buf.aData;
+        pCur->data.nData = buf.nData;
+      }
       pCur->pFreeData = (void*)pCur->data.aData;
     }
     if( rc==SQLITE_OK ){
@@ -7863,5 +7951,3 @@ int sqlite3_bcvfs_register_vtab(sqlite3 *db){
   }
   return rc;
 }
-
-

@@ -72,9 +72,14 @@ ECSchemaPtr VirtualSchemaManager::_LocateSchema(SchemaKeyR key, SchemaMatchType 
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus VirtualSchemaManager::AddAndValidateVirtualSchema(Utf8StringCR schemaXml, bool validate) const{
+BentleyStatus VirtualSchemaManager::AddAndValidateVirtualSchema(Utf8StringCR schemaXml, bool validate, bool createConversionContext) const{
    // BeMutexHolder lock(m_ecdb.GetImpl().GetMutex());
-    auto readerContext = ECSchemaReadContext::CreateContext();
+    struct BuiltInSchemaReadContext final : ECSchemaReadContext {
+        BuiltInSchemaReadContext() : ECSchemaReadContext(nullptr, false, false) {}
+    };
+    ECSchemaReadContextPtr readerContext = createConversionContext
+        ? ECSchemaReadContext::CreateContext()
+        : new BuiltInSchemaReadContext();
     readerContext->AddSchemaLocater(const_cast<VirtualSchemaManager&>(*this));
     ECSchemaPtr schema;
     if (ECN::ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *readerContext) != SchemaReadStatus::Success) {
@@ -87,6 +92,45 @@ BentleyStatus VirtualSchemaManager::AddAndValidateVirtualSchema(Utf8StringCR sch
             return ERROR;
         }
     }
+
+    // If a schema with the same name already exists, merge the classes into it. This allows
+    // several virtual table modules to contribute classes to one shared virtual schema.
+    auto existingIt = m_schemas.find(schema->GetName());
+    if (existingIt != m_schemas.end()) {
+        auto& existingSchema = *const_cast<ECN::ECSchemaP>(existingIt->second);
+        if (existingSchema.GetVersionRead() != schema->GetVersionRead()
+            || existingSchema.GetVersionWrite() != schema->GetVersionWrite()
+            || existingSchema.GetVersionMinor() != schema->GetVersionMinor()) {
+            LOG.errorv("Virtual schema '%s' is already registered with version %" PRIu32 ".%" PRIu32 ".%" PRIu32
+                       " but was registered again with version %" PRIu32 ".%" PRIu32 ".%" PRIu32
+                       ". All registrations of a virtual schema must use the same version.",
+                       schema->GetName().c_str(),
+                       existingSchema.GetVersionRead(), existingSchema.GetVersionWrite(), existingSchema.GetVersionMinor(),
+                       schema->GetVersionRead(), schema->GetVersionWrite(), schema->GetVersionMinor());
+            return ERROR;
+        }
+
+        for (auto sourceClass : schema->GetClasses()) {
+            if (existingSchema.GetClassCP(sourceClass->GetName().c_str()) != nullptr) {
+                LOG.errorv("Virtual schema '%s' already contains a class named '%s'. Virtual class names must be unique within a virtual schema.",
+                           schema->GetName().c_str(), sourceClass->GetName().c_str());
+                return ERROR;
+            }
+
+            ECN::ECClassP copiedClass = nullptr;
+            if (ECN::ECObjectsStatus::Success != existingSchema.CopyClass(copiedClass, *sourceClass, true)) {
+                LOG.errorv("Failed to merge virtual class '%s' into the already registered virtual schema '%s'.",
+                           sourceClass->GetName().c_str(), schema->GetName().c_str());
+                return ERROR;
+            }
+
+            copiedClass->SetId(ECN::ECClassId(GetNextId()));
+            for (auto& prop : copiedClass->GetProperties(false))
+                const_cast<ECN::ECPropertyP>(prop)->SetId(ECN::ECPropertyId(GetNextId()));
+        }
+        return SUCCESS;
+    }
+
     SetVirtualTypeIds(*schema);
     // schema.SetImmutable(true);
     m_cache->AddSchema(*schema);
@@ -128,7 +172,8 @@ void VirtualSchemaManager::AddECDbVirtualSchema() const{
             <ECCustomAttributeClass typeName="VirtualSchema" modifier="Sealed" appliesTo="Schema"/>
             <ECCustomAttributeClass typeName="AnyPrimitiveType" modifier="Sealed" appliesTo="PrimitiveProperty"/>
         </ECSchema>)xml";
-    if (AddAndValidateVirtualSchema(schemaXml, false) != SUCCESS) {
+    // Embedded schemas need no legacy conversion or conversion-schema filesystem searches.
+    if (AddAndValidateVirtualSchema(schemaXml, false, false) != SUCCESS) {
         throw std::runtime_error("unable to load ECDbVirtual schema");
     }
 }
@@ -172,7 +217,7 @@ void VirtualSchemaManager::AddSystemVirtualSchemas() const{
                 <ECProperty propertyName="path" typeName="string"/>
             </ECEntityClass>
         </ECSchema>)xml";
-    if (Add(schemaXml) != SUCCESS) {
+    if (AddAndValidateVirtualSchema(schemaXml, true, false) != SUCCESS) {
         throw std::runtime_error("unable to load json1 schema");
     }
 }
@@ -270,7 +315,14 @@ ECClassCP VirtualSchemaManager::FindClass(Utf8StringCR className, size_t& number
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus VirtualSchemaManager::Add(Utf8StringCR schemaXml) const{
-    return AddAndValidateVirtualSchema(schemaXml, true);
+    return AddAndValidateVirtualSchema(schemaXml, true, true);
+}
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus VirtualSchemaManager::AddBuiltIn(Utf8StringCR schemaXml) const{
+    return AddAndValidateVirtualSchema(schemaXml, true, false);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -991,7 +1043,14 @@ Nullable<ECDerivedClassesList> TableSpaceSchemaManager::GetAllDerivedClasses(ECN
         return nullptr;
         }
 
-    return Nullable<ECDerivedClassesList>(m_reader.GetAllDerivedClasses(id));
+    ECDerivedClassesList derivedClasses;
+    if (SUCCESS != m_reader.GetAllDerivedClasses(derivedClasses, id))
+        {
+        LOG.errorv("SchemaManager::GetAllDerivedClasses failed for ECClass %s. Its subclasses could not be loaded.", baseClass.GetFullName());
+        return nullptr;
+        }
+
+    return Nullable<ECDerivedClassesList>(derivedClasses);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2731,7 +2790,9 @@ void MainSchemaManager::GatherRootClasses(
 //---------------------------------------------------------------------------------------
 DbResult ECDbModule::_OnRegister() {
     auto& vm = GetECDb().Schemas().Main().GetVirtualSchemaManager();
-    if (SUCCESS != vm.Add(m_ecSchema)) {
+    // Only internal modules (see friends of ECDbModule) set this; names do not establish trust.
+    const BentleyStatus status = m_hasBuiltInSchema ? vm.AddBuiltIn(m_ecSchema) : vm.Add(m_ecSchema);
+    if (SUCCESS != status) {
         return BE_SQLITE_ERROR;
     }
     return BE_SQLITE_OK;

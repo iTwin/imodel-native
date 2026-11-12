@@ -78,7 +78,7 @@ bvector<ECN::ECClassCP> ClassViews::FindViewClasses(ECDbCR conn) {
 bool ClassViews::CheckViews(ECDbCR conn) {
     int invalidViews = 0;
     auto dbViews = FindViewClasses(conn);
-    for (auto viewClass : FindViewClasses(conn)) {
+    for (auto viewClass : dbViews) {
         if (!IsValid(*viewClass, conn)) {
             ++invalidViews;
         }
