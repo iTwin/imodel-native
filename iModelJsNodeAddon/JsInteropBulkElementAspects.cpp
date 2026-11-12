@@ -681,8 +681,8 @@ Napi::Object JsInterop::UpdateElementAspects(DgnDbR db, Napi::Array propsArray) 
 * Delete many ElementAspects by id. Same phases and all-or-nothing behavior as InsertElementAspects. Ids are resolved with a single
 * query; each owning element is updated once and the aspects of each class are deleted with a single statement
 * (DgnElements::DeleteElementAspects). Duplicate ids are deleted once, and the JS handlers are called once for them.
-* Malformed ids, and aspects that are not found, are validation failures. An aspect that can no longer be deleted after the
-* pre-delete handlers ran (e.g. a handler deleted it) throws.
+* Like DgnElements::DeleteElements, ids that do not identify an aspect are ignored; malformed ids are validation failures.
+* An aspect that can no longer be deleted after the pre-delete handlers ran (e.g. a handler deleted it) throws.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 Napi::Object JsInterop::DeleteElementAspects(DgnDbR db, Napi::Array aspectIds) {
@@ -732,7 +732,11 @@ Napi::Object JsInterop::DeleteElementAspects(DgnDbR db, Napi::Array aspectIds) {
             failures.Fail(index, reason, detail, row.m_id);
     };
 
-    if (!rows.empty()) {
+    // Sets m_found, m_classId and m_ownerId of every row with a single query.
+    auto lookUpRows = [&]() {
+        if (rows.empty())
+            return;
+
         CachedECSqlStatementPtr statement = db.GetPreparedECSqlStatement(
             "SELECT ECInstanceId,ECClassId,Element.Id FROM " BIS_SCHEMA(BIS_CLASS_ElementUniqueAspect) " WHERE ECInstanceId IN (SELECT id FROM IdSet(?)) UNION ALL "
             "SELECT ECInstanceId,ECClassId,Element.Id FROM " BIS_SCHEMA(BIS_CLASS_ElementMultiAspect)  " WHERE ECInstanceId IN (SELECT id FROM IdSet(?))");
@@ -740,8 +744,10 @@ Napi::Object JsInterop::DeleteElementAspects(DgnDbR db, Napi::Array aspectIds) {
             throwBulkAspectSqlError(env, functionName, BE_SQLITE_ERROR, "unable to prepare the aspect lookup");
 
         bvector<ECInstanceId> ids;
-        for (auto const& row : rows)
+        for (auto& row : rows) {
+            row.m_found = false;
             ids.push_back(row.m_id);
+        }
         if (!bindBulkAspectIdSet(*statement, 1, ids) || !bindBulkAspectIdSet(*statement, 2, ids))
             throwBulkAspectSqlError(env, functionName, BE_SQLITE_ERROR, "unable to bind the aspect ids");
 
@@ -760,15 +766,23 @@ Napi::Object JsInterop::DeleteElementAspects(DgnDbR db, Napi::Array aspectIds) {
             throwBulkAspectSqlError(env, functionName, stat, "unable to look up the aspects");
         statement->Reset();
         statement->ClearBindings();
+    };
+
+    lookUpRows();
+
+    // Like DgnElements::DeleteElements, ids that do not identify an aspect are ignored.
+    bvector<DeleteRow> foundRows;
+    for (auto& row : rows) {
+        if (row.m_found)
+            foundRows.push_back(std::move(row));
     }
+    rows = std::move(foundRows);
+    rowById.clear();
+    for (size_t i = 0; i < rows.size(); ++i)
+        rowById[rows[i].m_id] = i;
 
     std::map<DgnElementId, DgnElementCPtr> owners;
     for (auto& row : rows) {
-        if (!row.m_found) {
-            failRow(row, FailureReason::AspectNotFound, Utf8String());
-            continue;
-        }
-
         if (nullptr == db.Schemas().GetClass(row.m_classId)) {
             failRow(row, FailureReason::ClassNotFound, Utf8PrintfString("class id %s", row.m_classId.ToHexStr().c_str()));
             continue;
@@ -800,8 +814,15 @@ Napi::Object JsInterop::DeleteElementAspects(DgnDbR db, Napi::Array aspectIds) {
     hooks.Call(hookCalls, "onBulkDelete", "onDelete");
 
     // Phase 3: update each owning element once, then delete the aspects of each class with one statement (see DgnElements::DeleteElementAspects).
-    // The aspects are validated again, because the pre-delete handlers may have changed them.
+    // The aspects are validated again, because the pre-delete handlers may have changed them. DeleteElementAspects ignores ids that
+    // are no longer aspects, so an aspect that a handler removed is detected here.
     if (!rows.empty()) {
+        lookUpRows();
+        for (auto const& row : rows) {
+            if (!row.m_found)
+                throwBulkAspectWriteError(env, functionName, DgnDbStatus::NotFound, Utf8PrintfString("aspect %s can no longer be deleted after the onDelete handlers", row.m_id.ToHexStr().c_str()));
+        }
+
         bvector<ECInstanceId> ids;
         for (auto const& row : rows)
             ids.push_back(row.m_id);

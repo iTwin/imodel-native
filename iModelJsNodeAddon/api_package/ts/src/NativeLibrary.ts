@@ -121,7 +121,9 @@ export enum BulkElementAspectFailureReason {
   NotAnAspectClass = 3,
   /** The owning element does not exist. */
   ElementNotFound = 4,
-  /** The aspect does not exist, is not owned by the given element, or cannot be updated as a generic aspect because its class has a handler. */
+  /** The aspect to update does not exist, is not owned by the given element, or cannot be updated as a generic aspect because its class has a handler.
+   * Not used by `deleteElementAspects`, which ignores ids that do not identify an aspect, like `deleteElements`.
+   */
   AspectNotFound = 5,
 }
 

@@ -528,7 +528,7 @@ describe("bulk element aspects", () => {
       expect(findAspect(inserted.ids[1])!.strProp).to.equal("m1a-new");
     });
 
-    it("validates every id, and deletes nothing and calls no handlers if any id is invalid or not found", () => {
+    it("validates every id, and deletes nothing and calls no handlers if any id is invalid", () => {
       const e1 = insertOwner();
       const inserted = db.insertElementAspects([multiProps(e1, "m1"), multiProps(e1, "m2")]);
       expect(inserted.status).to.equal(BulkElementAspectsStatus.Success);
@@ -540,16 +540,13 @@ describe("bulk element aspects", () => {
         inserted.ids[0],
         "not an id",
         "0xffffff0",
-        e1, // an element, not an aspect
         inserted.ids[0], // duplicate
         42 as any,
       ]);
       expect(result.status).to.equal(BulkElementAspectsStatus.ValidationFailed);
       expect(result.failures).to.deep.equal([
         { index: 1, reason: BulkElementAspectFailureReason.InvalidId },
-        { index: 2, id: "0xffffff0", reason: BulkElementAspectFailureReason.AspectNotFound },
-        { index: 3, id: e1, reason: BulkElementAspectFailureReason.AspectNotFound },
-        { index: 5, reason: BulkElementAspectFailureReason.InvalidId },
+        { index: 4, reason: BulkElementAspectFailureReason.InvalidId },
       ]);
       expect(mock.calls).to.deep.equal([]);
       expect(queryAspects()).to.deep.equal(before);
@@ -558,16 +555,32 @@ describe("bulk element aspects", () => {
       expect(empty.status).to.equal(BulkElementAspectsStatus.Success);
     });
 
-    it("deletes a duplicated id once and reports every index of a missing duplicated id", () => {
+    it("ignores ids that do not identify an aspect, like deleteElements", () => {
       const e1 = insertOwner();
       const inserted = db.insertElementAspects([multiProps(e1, "m1"), multiProps(e1, "m2")]);
       expect(inserted.status).to.equal(BulkElementAspectsStatus.Success);
+      const mock = makeMockJsDb();
+      db.setIModelDb(mock.mockJsDb);
 
-      const missing = db.deleteElementAspects([inserted.ids[0], "0xffffff0", "0xffffff0"]);
-      expect(missing.failures.map((f) => [f.index, f.id, f.reason])).to.deep.equal([
-        [1, "0xffffff0", BulkElementAspectFailureReason.AspectNotFound],
-        [2, "0xffffff0", BulkElementAspectFailureReason.AspectNotFound],
-      ]);
+      // a missing id (twice), and an element id, which is not an aspect
+      const result = db.deleteElementAspects(["0xffffff0", inserted.ids[0], "0xffffff0", e1]);
+      expect(result).to.deep.equal({ status: BulkElementAspectsStatus.Success, failures: [] });
+      expect(mock.aspectCalls("onDelete").map((c) => c.arg.aspectId)).to.deep.equal([inserted.ids[0]]);
+      expect(mock.aspectCalls("onDeleted").map((c) => c.arg.aspectId)).to.deep.equal([inserted.ids[0]]);
+      expect(queryAspects().filter((r) => r.element === e1).map((r) => r.id)).to.deep.equal([inserted.ids[1]]);
+      expect(() => db.getElement({ id: e1 })).to.not.throw();
+
+      // only ids that are not aspects: nothing to do
+      mock.calls.length = 0;
+      expect(db.deleteElementAspects(["0xffffff0", inserted.ids[0]])).to.deep.equal({ status: BulkElementAspectsStatus.Success, failures: [] });
+      expect(mock.calls).to.deep.equal([]);
+      expect(queryAspects().filter((r) => r.element === e1).map((r) => r.id)).to.deep.equal([inserted.ids[1]]);
+    });
+
+    it("deletes a duplicated id once", () => {
+      const e1 = insertOwner();
+      const inserted = db.insertElementAspects([multiProps(e1, "m1"), multiProps(e1, "m2")]);
+      expect(inserted.status).to.equal(BulkElementAspectsStatus.Success);
 
       const mock = makeMockJsDb();
       db.setIModelDb(mock.mockJsDb);

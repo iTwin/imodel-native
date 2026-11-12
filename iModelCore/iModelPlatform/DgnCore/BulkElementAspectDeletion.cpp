@@ -222,10 +222,7 @@ BulkDeleteElementAspectsResult BulkElementAspectDeletion::Execute()
         {
         auto& row = m_rows[i];
         if (!row.m_classId.IsValid())
-            {
-            Fail(row, BulkElementAspectFailureReason::AspectNotFound, Utf8String());
-            continue;
-            }
+            continue; // Like DeleteElements, ids that do not identify an aspect are ignored.
 
         row.m_class = m_dgndb.Schemas().GetClass(row.m_classId);
         if (nullptr == row.m_class)

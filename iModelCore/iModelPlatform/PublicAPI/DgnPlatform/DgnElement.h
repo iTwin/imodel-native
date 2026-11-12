@@ -629,8 +629,8 @@ enum class BulkElementAspectsStatus : int
 //! ClassNotFound: The aspect class is not in the iModel.
 //! NotAnAspectClass: The class is not an ElementUniqueAspect or an ElementMultiAspect.
 //! ElementNotFound: The owning element does not exist.
-//! AspectNotFound: The aspect to update or delete does not exist, is not owned by the given element, or cannot be modified
-//!     as a generic aspect because its class has a handler.
+//! AspectNotFound: The aspect to update does not exist, is not owned by the given element, or cannot be modified
+//!     as a generic aspect because its class has a handler. Not used by deletes, which ignore ids that do not identify an aspect.
 // @bsiclass
 //=======================================================================================
 enum class BulkElementAspectFailureReason : int
@@ -4315,6 +4315,7 @@ public:
     //! single statement. Aspects of a class that has a registered C++ aspect handler are instead deleted through that handler,
     //! by the update of their owning element. The first write that fails stops the operation and the result is WriteFailed.
     //! @param[in] aspectIds The ids of the ElementUniqueAspects and ElementMultiAspects to delete. Duplicate ids are deleted once.
+    //!   Like DeleteElements, ids that do not identify an aspect are ignored.
     //! @note This method does not call the JavaScript ElementAspect handlers; the caller is responsible for that.
     //! @note This method does not open a transaction of its own. On WriteFailed the iModel may be partially modified and the
     //!   caller must abandon the current transaction.
