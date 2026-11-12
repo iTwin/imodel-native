@@ -4311,9 +4311,10 @@ public:
     //!
     //! The operation is all-or-nothing, like DeleteElements. The aspects are looked up with a single query and all of them are
     //! validated before anything is written. If any of them cannot be deleted, nothing is written and the result is ValidationFailed.
-    //! Otherwise each owning element is updated once (see DgnElement::Update), then the aspects of each ECClass are deleted with a
-    //! single statement. Aspects of a class that has a registered C++ aspect handler are instead deleted through that handler,
-    //! by the update of their owning element. The first write that fails stops the operation and the result is WriteFailed.
+    //! Otherwise each owning element is updated once (see DgnElement::Update), and that update deletes its aspects, at the same point
+    //! as DgnElement::Aspect::Delete: after the element's onUpdated callback and before the model's and parent's notifications. The
+    //! aspects of an element are deleted with a single statement per ECClass, except that aspects of a class that has a registered
+    //! C++ aspect handler are deleted through that handler. The first write that fails stops the operation and the result is WriteFailed.
     //! @param[in] aspectIds The ids of the ElementUniqueAspects and ElementMultiAspects to delete. Duplicate ids are deleted once.
     //!   Like DeleteElements, ids that do not identify an aspect are ignored.
     //! @note This method does not call the JavaScript ElementAspect handlers; the caller is responsible for that.

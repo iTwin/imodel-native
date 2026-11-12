@@ -113,7 +113,7 @@ export enum BulkElementAspectsStatus {
 export enum BulkElementAspectFailureReason {
   /** The props are not an object, have no `classFullName`, or their properties cannot be converted to the aspect class. */
   InvalidProps = 0,
-  /** The id of the aspect or of its owning element is malformed or invalid. */
+  /** The id of the aspect or of its owning element is not a valid Id64 string, as tested by `Id64.isValidId64`. */
   InvalidId = 1,
   /** The aspect class is not in the iModel. */
   ClassNotFound = 2,
@@ -121,7 +121,8 @@ export enum BulkElementAspectFailureReason {
   NotAnAspectClass = 3,
   /** The owning element does not exist. */
   ElementNotFound = 4,
-  /** The aspect to update does not exist, is not owned by the given element, or cannot be updated as a generic aspect because its class has a handler.
+  /** The aspect to update does not exist, is not owned by the given element, is not of the given class or a subclass of it, or cannot be
+   * updated as a generic aspect because its class has a handler.
    * Not used by `deleteElementAspects`, which ignores ids that do not identify an aspect, like `deleteElements`.
    */
   AspectNotFound = 5,

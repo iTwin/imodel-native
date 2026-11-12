@@ -69,6 +69,21 @@ struct BulkAspectFailures {
     Utf8PrintfString msg("%s: %s: rc=%d, %s", functionName, detail.c_str(), (int) result, BeSQLiteLib::GetLogError(result).c_str());
     THROW_JS_BE_SQLITE_EXCEPTION(env, msg.c_str(), result);
 }
+
+/*---------------------------------------------------------------------------------**//**
+* Parses an id string as strictly as Id64.isValidId64: "0x" followed by lowercase hexadecimal digits without leading zeros.
+* BeInt64Id::FromString alone accepts a numeric prefix (e.g. "0x1234garbage") and wraps values that do not fit in 64 bits, so the
+* parsed id must format back to the same string. Returns an invalid id otherwise.
++---------------+---------------+---------------+---------------+---------------+------*/
+static BeInt64Id parseBulkAspectId(Utf8StringCR idString) {
+    BeInt64Id id = BeInt64Id::FromString(idString.c_str());
+    return (id.IsValid() && id.ToHexStr() == idString) ? id : BeInt64Id();
+}
+
+static BeInt64Id parseBulkAspectId(BeJsConst val) {
+    return val.isString() ? parseBulkAspectId(val.asString()) : BeInt64Id();
+}
+
 //=======================================================================================
 // Calls JS handler methods for aspects, resolving each JS class only once.
 // If the JS class has the bulk method (e.g. "onBulkInsert") it is called once with
@@ -191,19 +206,20 @@ static bool resolveBulkAspectPropsRow(BulkAspectPropsRow& row, DgnDbR db, Napi::
     row.m_props = propsVal.As<Napi::Object>();
     BeJsConst props(row.m_props);
 
-    DgnElement::RelatedElement relatedElement;
-    relatedElement.FromJson(db, props["element"]);
-    if (!relatedElement.IsValid()) {
+    // The owner is given by element.id (RelatedElementProps). It is parsed strictly, so that e.g. "0x1234garbage" is not taken as 0x1234.
+    auto elementProps = props["element"];
+    DgnElementId ownerId((elementProps.isObject() ? parseBulkAspectId(elementProps[ECJsonUtilities::json_navId()]) : BeInt64Id()).GetValue());
+    if (!ownerId.IsValid()) {
         failures.Fail(index, FailureReason::InvalidId, "invalid owning element id");
         return false;
     }
 
-    auto owner = owners.find(relatedElement.m_id);
+    auto owner = owners.find(ownerId);
     if (owners.end() == owner)
-        owner = owners.emplace(relatedElement.m_id, db.Elements().GetElement(relatedElement.m_id)).first;
+        owner = owners.emplace(ownerId, db.Elements().GetElement(ownerId)).first;
 
     if (!owner->second.IsValid()) {
-        failures.Fail(index, FailureReason::ElementNotFound, relatedElement.m_id.ToHexStr());
+        failures.Fail(index, FailureReason::ElementNotFound, ownerId.ToHexStr());
         return false;
     }
     row.m_owner = owner->second;
@@ -271,32 +287,63 @@ static bool bindBulkAspectIdSet(ECSqlStatement& stmt, int index, T_Ids const& id
     return true;
 }
 
+/*---------------------------------------------------------------------------------**//**
+* Runs a query whose only parameter is an IdSet(?), calling onRow for each row. Throws on a SQLite error.
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T_Ids, typename T_OnRow>
+static void queryBulkAspectIdSet(DgnDbR db, Napi::Env env, Utf8CP functionName, Utf8StringCR ecsql, T_Ids const& ids, T_OnRow onRow) {
+    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(ecsql.c_str());
+    if (!stmt.IsValid())
+        throwBulkAspectSqlError(env, functionName, BE_SQLITE_ERROR, Utf8PrintfString("unable to prepare %s", ecsql.c_str()));
+    if (!bindBulkAspectIdSet(*stmt, 1, ids))
+        throwBulkAspectSqlError(env, functionName, BE_SQLITE_ERROR, Utf8PrintfString("unable to bind the ids of %s", ecsql.c_str()));
+
+    DbResult stat;
+    while (BE_SQLITE_ROW == (stat = stmt->Step()))
+        onRow(*stmt);
+    if (BE_SQLITE_DONE != stat)
+        throwBulkAspectSqlError(env, functionName, stat, Utf8PrintfString("unable to step %s", ecsql.c_str()));
+    stmt->Reset();
+    stmt->ClearBindings();
+}
+
 //=======================================================================================
-// An existing aspect to update. Rows of updateElementAspects that name the same aspect (multi: class and id; unique: owner and
-// class) share one, so their props are applied in order and the aspect is written once.
+// A stored aspect: its id, actual class and owning element.
 //=======================================================================================
-struct BulkAspectLoad {
-    ECClassCP m_class = nullptr; // the class given in the props
-    bool m_isMulti = false;
+struct BulkStoredAspect {
+    ECInstanceId m_id;
+    ECClassId m_classId;
     DgnElementId m_ownerId;
-    ECInstanceId m_aspectId; // multi: given in the props; unique: set when loaded
+};
+
+//=======================================================================================
+// An aspect to update. Rows of updateElementAspects that name the same stored aspect, through its own class or through a base
+// class, share one, so that their props are applied in order and the aspect is written once.
+//=======================================================================================
+struct BulkAspectUpdateTarget {
+    ECInstanceId m_aspectId;
+    ECClassCP m_class = nullptr; // the actual class of the aspect
     IECInstancePtr m_instance; // set when loaded
 };
 
 /*---------------------------------------------------------------------------------**//**
-* Loads the aspects with one query per class, getting the same instances as GenericMultiAspect::_LoadProperties and
-* GenericUniqueAspect::_LoadProperties. An aspect that is not found is left without an instance. Throws on a SQLite error.
+* Loads the aspects with one query per actual class, getting the same instances as GenericMultiAspect::_LoadProperties and
+* GenericUniqueAspect::_LoadProperties. The aspects are selected from their actual class rather than from a base class given in the
+* props, so that every property is loaded and writing the instance does not clear the properties of the derived class. An aspect that
+* is not found is left without an instance. Throws on a SQLite error.
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void loadBulkAspectsForUpdate(DgnDbR db, Napi::Env env, bvector<BulkAspectLoad>& loads) {
-    std::map<ECClassId, bvector<size_t>> multiByClass, uniqueByClass;
-    for (size_t i = 0; i < loads.size(); ++i)
-        (loads[i].m_isMulti ? multiByClass : uniqueByClass)[loads[i].m_class->GetId()].push_back(i);
+static void loadBulkAspectUpdateTargets(DgnDbR db, Napi::Env env, bvector<BulkAspectUpdateTarget>& targets) {
+    std::map<ECClassId, std::map<ECInstanceId, size_t>> targetsByClass;
+    for (size_t i = 0; i < targets.size(); ++i) {
+        targets[i].m_instance = nullptr;
+        targetsByClass[targets[i].m_class->GetId()][targets[i].m_aspectId] = i;
+    }
 
-    // Selects the aspects of a class by id and sets their instances. The class may be a base class of the aspects (polymorphic select).
-    auto selectInstances = [&](ECClassCR cls, std::map<ECInstanceId, size_t> const& loadById) {
+    for (auto const& entry : targetsByClass) {
+        ECClassCR cls = *targets[entry.second.begin()->second].m_class;
         bvector<ECInstanceId> ids;
-        for (auto const& entry : loadById)
-            ids.push_back(entry.first);
+        for (auto const& target : entry.second)
+            ids.push_back(target.first);
 
         Utf8PrintfString ecsql("SELECT * FROM %s WHERE ECInstanceId IN (SELECT id FROM IdSet(?))", cls.GetECSqlName().c_str());
         CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(ecsql.c_str());
@@ -310,63 +357,14 @@ static void loadBulkAspectsForUpdate(DgnDbR db, Napi::Env env, bvector<BulkAspec
         while (BE_SQLITE_ROW == (stat = stmt->Step())) {
             ECInstanceId id;
             adapter.GetInstanceId(id);
-            auto found = loadById.find(id);
-            if (loadById.end() != found)
-                loads[found->second].m_instance = adapter.GetInstance();
+            auto found = entry.second.find(id);
+            if (entry.second.end() != found)
+                targets[found->second].m_instance = adapter.GetInstance();
         }
         if (BE_SQLITE_DONE != stat)
             throwBulkAspectSqlError(env, "updateElementAspects", stat, Utf8PrintfString("unable to select the aspects of %s", cls.GetFullName()));
         stmt->Reset();
         stmt->ClearBindings();
-    };
-
-    // Multi aspects: SELECT * FROM [class] WHERE ECInstanceId=?
-    for (auto const& entry : multiByClass) {
-        std::map<ECInstanceId, size_t> loadById;
-        for (auto i : entry.second)
-            loadById[loads[i].m_aspectId] = i;
-        selectInstances(*loads[entry.second.front()].m_class, loadById);
-    }
-
-    // Unique aspects: find the actual class of the owner's aspect of the class (or of a subclass), then SELECT * FROM [actual class]
-    for (auto const& entry : uniqueByClass) {
-        ECClassCR keyClass = *loads[entry.second.front()].m_class;
-        std::map<DgnElementId, size_t> loadByOwner;
-        for (auto i : entry.second)
-            loadByOwner[loads[i].m_ownerId] = i;
-
-        bvector<DgnElementId> ownerIds;
-        for (auto const& owner : loadByOwner)
-            ownerIds.push_back(owner.first);
-
-        Utf8PrintfString ecsql("SELECT ECInstanceId,ECClassId,Element.Id FROM %s WHERE Element.Id IN (SELECT id FROM IdSet(?))", keyClass.GetECSqlName().c_str());
-        CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(ecsql.c_str());
-        if (!stmt.IsValid())
-            throwBulkAspectSqlError(env, "updateElementAspects", BE_SQLITE_ERROR, Utf8PrintfString("unable to prepare the select of %s", keyClass.GetFullName()));
-        if (!bindBulkAspectIdSet(*stmt, 1, ownerIds))
-            throwBulkAspectSqlError(env, "updateElementAspects", BE_SQLITE_ERROR, "unable to bind the owning element ids");
-
-        std::map<ECClassId, std::map<ECInstanceId, size_t>> loadByActualClass;
-        DbResult stat;
-        while (BE_SQLITE_ROW == (stat = stmt->Step())) {
-            auto found = loadByOwner.find(stmt->GetValueId<DgnElementId>(2));
-            if (loadByOwner.end() == found || loads[found->second].m_aspectId.IsValid())
-                continue;
-            auto& load = loads[found->second];
-            load.m_aspectId = stmt->GetValueId<ECInstanceId>(0);
-            loadByActualClass[stmt->GetValueId<ECClassId>(1)][load.m_aspectId] = found->second;
-        }
-        if (BE_SQLITE_DONE != stat)
-            throwBulkAspectSqlError(env, "updateElementAspects", stat, Utf8PrintfString("unable to select the aspects of %s", keyClass.GetFullName()));
-        stmt->Reset();
-        stmt->ClearBindings();
-
-        for (auto const& actual : loadByActualClass) {
-            ECClassCP actualClass = db.Schemas().GetClass(actual.first);
-            if (nullptr == actualClass)
-                throwBulkAspectWriteError(env, "updateElementAspects", DgnDbStatus::BadSchema, Utf8PrintfString("aspect class %s not found", actual.first.ToHexStr().c_str()));
-            selectInstances(*actualClass, actual.second);
-        }
     }
 }
 
@@ -506,9 +504,12 @@ Napi::Object JsInterop::InsertElementAspects(DgnDbR db, Napi::Array propsArray) 
 
 /*---------------------------------------------------------------------------------**//**
 * Update many ElementAspects. Same phases and all-or-nothing behavior as InsertElementAspects. Properties not present in the props
-* are left unchanged. Aspects that are not found, that are not owned by the given element, or whose class has a handler (so they
-* cannot be modified as generic aspects) are validation failures. Rows that name the same aspect are applied in order and the aspect
-* is written once. Props that cannot be applied after the pre-update handlers ran (e.g. a handler modified them) throw.
+* are left unchanged. A row may name an aspect through a base class of its actual class; only the properties of the class given in
+* the props are applied. Aspects that are not found, that are not owned by the given element, or whose class has a handler (either the
+* class given in the props or the actual class, so they cannot be modified as generic aspects) are validation failures. Rows that name
+* the same stored aspect are applied in order and the aspect is written once.
+* Like updateElementAspect, the aspects are loaded after the pre-update handlers ran. An aspect that a handler deleted, or props that
+* can no longer be applied (e.g. a handler modified them), throw.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 Napi::Object JsInterop::UpdateElementAspects(DgnDbR db, Napi::Array propsArray) {
@@ -518,13 +519,14 @@ Napi::Object JsInterop::UpdateElementAspects(DgnDbR db, Napi::Array propsArray) 
     BulkAspectFailures failures;
 
     struct UpdateRow : BulkAspectPropsRow {
-        ECInstanceId m_aspectId;
-        size_t m_loadIndex = 0;
+        ECInstanceId m_aspectId; // multi: given in the props
+        size_t m_targetIndex = 0;
     };
 
     // Phase 1: validate every row
     bvector<UpdateRow> candidates;
     bvector<ECInstanceId> multiIds;
+    std::map<ECClassId, bvector<DgnElementId>> uniqueOwnersByClass;
     std::map<DgnElementId, DgnElementCPtr> owners;
     for (uint32_t i = 0; i < count; ++i) {
         UpdateRow row;
@@ -532,93 +534,100 @@ Napi::Object JsInterop::UpdateElementAspects(DgnDbR db, Napi::Array propsArray) 
             continue;
 
         if (row.m_isMulti) {
-            row.m_aspectId = BeJsConst(row.m_props)[DgnElement::json_id()].GetId64<ECInstanceId>();
+            row.m_aspectId = ECInstanceId(parseBulkAspectId(BeJsConst(row.m_props)[DgnElement::json_id()]).GetValue());
             if (!row.m_aspectId.IsValid()) {
                 failures.Fail(i, FailureReason::InvalidId, "invalid aspect id");
                 continue;
             }
             multiIds.push_back(row.m_aspectId);
+        } else {
+            uniqueOwnersByClass[row.m_class->GetId()].push_back(row.m_owner->GetElementId());
         }
-
-        // Validate the props on a scratch instance so that an invalid row cannot leave a partially modified aspect behind.
-        auto scratch = row.m_class->GetDefaultStandaloneEnabler()->CreateInstance();
-        if (!scratch.IsValid() || SUCCESS != bulkAspectJsonToInstance(db, *scratch, row, true)) {
-            failures.Fail(i, FailureReason::InvalidProps, "invalid aspect properties", row.m_aspectId);
-            continue;
-        }
-
         candidates.push_back(row);
     }
 
-    // Multi aspects are loaded by id alone, so look up their owners and only update those owned by the given element.
-    std::map<ECInstanceId, DgnElementId> multiOwners;
+    // Find the stored aspects with their actual classes and owners: multi aspects by id with one query, and unique aspects by owner
+    // with one query per class given in the props, which may be a base class of the aspect.
+    std::map<ECInstanceId, BulkStoredAspect> multiAspects;
     if (!multiIds.empty()) {
-        CachedECSqlStatementPtr statement = db.GetPreparedECSqlStatement(
-            "SELECT ECInstanceId,Element.Id FROM " BIS_SCHEMA(BIS_CLASS_ElementMultiAspect) " WHERE ECInstanceId IN (SELECT id FROM IdSet(?))");
-        if (!statement.IsValid())
-            throwBulkAspectSqlError(env, functionName, BE_SQLITE_ERROR, "unable to prepare the aspect lookup");
-        if (!bindBulkAspectIdSet(*statement, 1, multiIds))
-            throwBulkAspectSqlError(env, functionName, BE_SQLITE_ERROR, "unable to bind the aspect ids");
-
-        DbResult stat;
-        while (BE_SQLITE_ROW == (stat = statement->Step()))
-            multiOwners[statement->GetValueId<ECInstanceId>(0)] = statement->GetValueId<DgnElementId>(1);
-        if (BE_SQLITE_DONE != stat)
-            throwBulkAspectSqlError(env, functionName, stat, "unable to look up the aspects");
-        statement->Reset();
-        statement->ClearBindings();
+        queryBulkAspectIdSet(db, env, functionName,
+            "SELECT ECInstanceId,ECClassId,Element.Id FROM " BIS_SCHEMA(BIS_CLASS_ElementMultiAspect) " WHERE ECInstanceId IN (SELECT id FROM IdSet(?))",
+            multiIds, [&](ECSqlStatement& stmt) {
+                ECInstanceId id = stmt.GetValueId<ECInstanceId>(0);
+                multiAspects[id] = BulkStoredAspect{id, stmt.GetValueId<ECClassId>(1), stmt.GetValueId<DgnElementId>(2)};
+            });
     }
 
-    // Find the aspects to update. Rows that name the same aspect (multi: class and id; unique: owner and class) share one load.
+    std::map<std::pair<ECClassId, DgnElementId>, BulkStoredAspect> uniqueAspects;
+    for (auto const& entry : uniqueOwnersByClass) {
+        ECClassId keyClassId = entry.first;
+        Utf8PrintfString ecsql("SELECT ECInstanceId,ECClassId,Element.Id FROM %s WHERE Element.Id IN (SELECT id FROM IdSet(?))",
+            db.Schemas().GetClass(keyClassId)->GetECSqlName().c_str());
+        queryBulkAspectIdSet(db, env, functionName, ecsql, entry.second, [&](ECSqlStatement& stmt) {
+            DgnElementId ownerId = stmt.GetValueId<DgnElementId>(2);
+            uniqueAspects.emplace(std::make_pair(keyClassId, ownerId), BulkStoredAspect{stmt.GetValueId<ECInstanceId>(0), stmt.GetValueId<ECClassId>(1), ownerId});
+        });
+    }
+
+    // Validate each row against its stored aspect. Rows that name the same stored aspect share one target.
     BulkElementAspectWriter writer(db);
-    bvector<UpdateRow> loadRows;
-    bvector<BulkAspectLoad> loaded;
-    std::map<std::tuple<bool, uint64_t, uint64_t>, size_t> loadIndices;
+    bvector<UpdateRow> rows;
+    bvector<BulkAspectUpdateTarget> targets;
+    std::map<ECInstanceId, size_t> targetById;
     for (auto& row : candidates) {
         DgnElementId ownerId = row.m_owner->GetElementId();
+        BulkStoredAspect const* stored = nullptr;
         if (row.m_isMulti) {
-            auto found = multiOwners.find(row.m_aspectId);
-            if (multiOwners.end() == found) {
-                failures.Fail(row.m_index, FailureReason::AspectNotFound, Utf8String(), row.m_aspectId);
-                continue;
-            }
-            if (found->second != ownerId) {
-                failures.Fail(row.m_index, FailureReason::AspectNotFound, Utf8PrintfString("the aspect is not owned by element %s", ownerId.ToHexStr().c_str()), row.m_aspectId);
-                continue;
-            }
+            auto found = multiAspects.find(row.m_aspectId);
+            if (multiAspects.end() != found)
+                stored = &found->second;
+        } else {
+            auto found = uniqueAspects.find(std::make_pair(row.m_class->GetId(), ownerId));
+            if (uniqueAspects.end() != found)
+                stored = &found->second;
         }
 
-        // Aspects of classes with a handler cannot be modified as generic aspects
-        if (!writer.IsGenericAspectClass(*row.m_class)) {
-            failures.Fail(row.m_index, FailureReason::AspectNotFound, Utf8PrintfString("aspects of class %s have a handler and cannot be updated as generic aspects", row.m_class->GetFullName()), row.m_aspectId);
-            continue;
-        }
-
-        size_t loadIndex = loaded.size();
-        auto loadKey = row.m_isMulti ?
-            std::make_tuple(true, row.m_class->GetId().GetValue(), row.m_aspectId.GetValue()) :
-            std::make_tuple(false, ownerId.GetValue(), row.m_class->GetId().GetValue());
-        auto inserted = loadIndices.emplace(loadKey, loadIndex);
-        if (inserted.second) {
-            BulkAspectLoad aspect;
-            aspect.m_class = row.m_class;
-            aspect.m_isMulti = row.m_isMulti;
-            aspect.m_ownerId = ownerId;
-            aspect.m_aspectId = row.m_aspectId;
-            loaded.push_back(aspect);
-        }
-        row.m_loadIndex = inserted.first->second;
-        loadRows.push_back(row);
-    }
-
-    loadBulkAspectsForUpdate(db, env, loaded);
-
-    bvector<UpdateRow> rows;
-    for (auto& row : loadRows) {
-        if (!loaded[row.m_loadIndex].m_instance.IsValid()) {
+        if (nullptr == stored) {
             failures.Fail(row.m_index, FailureReason::AspectNotFound, row.m_isMulti ? Utf8String() : Utf8String("the element has no aspect of this class"), row.m_aspectId);
             continue;
         }
+        if (stored->m_ownerId != ownerId) {
+            failures.Fail(row.m_index, FailureReason::AspectNotFound, Utf8PrintfString("the aspect is not owned by element %s", ownerId.ToHexStr().c_str()), row.m_aspectId);
+            continue;
+        }
+
+        ECClassCP actualClass = db.Schemas().GetClass(stored->m_classId);
+        if (nullptr == actualClass) {
+            failures.Fail(row.m_index, FailureReason::ClassNotFound, Utf8PrintfString("class id %s", stored->m_classId.ToHexStr().c_str()), row.m_aspectId);
+            continue;
+        }
+        if (!actualClass->Is(row.m_class)) {
+            failures.Fail(row.m_index, FailureReason::AspectNotFound, Utf8PrintfString("the aspect is of class %s", actualClass->GetFullName()), row.m_aspectId);
+            continue;
+        }
+
+        // Aspects of classes with a handler cannot be modified as generic aspects. The actual class may have a handler even when
+        // the class given in the props does not.
+        if (!writer.IsGenericAspectClass(*row.m_class) || !writer.IsGenericAspectClass(*actualClass)) {
+            failures.Fail(row.m_index, FailureReason::AspectNotFound, Utf8PrintfString("aspects of class %s have a handler and cannot be updated as generic aspects", actualClass->GetFullName()), row.m_aspectId);
+            continue;
+        }
+
+        // Validate the props on a scratch instance of the actual class, so that an invalid row cannot leave a partially modified aspect
+        // behind. The actual class is concrete, even when the class given in the props is abstract.
+        auto scratch = actualClass->GetDefaultStandaloneEnabler()->CreateInstance();
+        if (!scratch.IsValid() || SUCCESS != bulkAspectJsonToInstance(db, *scratch, row, true)) {
+            failures.Fail(row.m_index, FailureReason::InvalidProps, "invalid aspect properties", row.m_aspectId);
+            continue;
+        }
+
+        auto target = targetById.emplace(stored->m_id, targets.size());
+        if (target.second) {
+            targets.push_back(BulkAspectUpdateTarget());
+            targets.back().m_aspectId = stored->m_id;
+            targets.back().m_class = actualClass;
+        }
+        row.m_targetIndex = target.first->second;
         rows.push_back(row);
     }
 
@@ -632,7 +641,16 @@ Napi::Object JsInterop::UpdateElementAspects(DgnDbR db, Napi::Array propsArray) 
         hookCalls.push_back(std::make_pair(row.m_classId, row.m_hookArg));
     hooks.Call(hookCalls, "onBulkUpdate", "onUpdate");
 
-    // Phase 3: write, grouped by owning element
+    // Phase 3: like updateElementAspect, load the aspects after the pre-update handlers, which may have changed or deleted them.
+    // Writing an aspect that a handler deleted would update no row and succeed silently, so it throws instead.
+    loadBulkAspectUpdateTargets(db, env, targets);
+    for (auto const& row : rows) {
+        auto const& target = targets[row.m_targetIndex];
+        if (!target.m_instance.IsValid())
+            throwBulkAspectWriteError(env, functionName, DgnDbStatus::NotFound, Utf8PrintfString("aspect %s can no longer be updated after the onUpdate handlers", target.m_aspectId.ToHexStr().c_str()));
+    }
+
+    // Write, grouped by owning element
     auto ownerGroups = groupBulkAspectRowsByOwner(rows, [](UpdateRow const& row) { return row.m_owner->GetElementId(); });
     for (auto const& group : ownerGroups) {
         auto const& rowIndices = group.second;
@@ -641,18 +659,17 @@ Napi::Object JsInterop::UpdateElementAspects(DgnDbR db, Napi::Array propsArray) 
             throwBulkAspectWriteError(env, functionName, DgnDbStatus::WriteError, Utf8PrintfString("unable to edit element %s", group.first.ToHexStr().c_str()));
 
         bvector<BulkElementAspectWrite> writes;
-        std::map<size_t, size_t> writeByLoad;
+        std::map<size_t, size_t> writeByTarget;
         for (auto r : rowIndices) {
             auto& row = rows[r];
-            auto& load = loaded[row.m_loadIndex];
-            if (SUCCESS != bulkAspectJsonToInstance(db, *load.m_instance, row, true))
+            auto& target = targets[row.m_targetIndex];
+            if (SUCCESS != bulkAspectJsonToInstance(db, *target.m_instance, row, true))
                 throwBulkAspectWriteError(env, functionName, DgnDbStatus::BadRequest, Utf8PrintfString("the props at index %u cannot be applied after the onUpdate handlers", row.m_index));
 
-            if (writeByLoad.emplace(row.m_loadIndex, writes.size()).second) {
+            if (writeByTarget.emplace(row.m_targetIndex, writes.size()).second) {
                 writes.push_back(BulkElementAspectWrite());
-                writes.back().instance = load.m_instance;
-                writes.back().keyClass = load.m_isMulti ? nullptr : load.m_class;
-                writes.back().aspectId = load.m_aspectId;
+                writes.back().instance = target.m_instance;
+                writes.back().aspectId = target.m_aspectId;
             }
         }
 
@@ -662,7 +679,7 @@ Napi::Object JsInterop::UpdateElementAspects(DgnDbR db, Napi::Array propsArray) 
 
         // The update of the owner succeeds even when one of its aspects cannot be written, so check each aspect.
         for (auto r : rowIndices) {
-            DgnDbStatus writeStatus = writes[writeByLoad[rows[r].m_loadIndex]].status;
+            DgnDbStatus writeStatus = writes[writeByTarget[rows[r].m_targetIndex]].status;
             if (DgnDbStatus::Success != writeStatus)
                 throwBulkAspectWriteError(env, functionName, writeStatus, Utf8PrintfString("unable to write the aspect at index %u", rows[r].m_index));
         }
@@ -679,7 +696,7 @@ Napi::Object JsInterop::UpdateElementAspects(DgnDbR db, Napi::Array propsArray) 
 
 /*---------------------------------------------------------------------------------**//**
 * Delete many ElementAspects by id. Same phases and all-or-nothing behavior as InsertElementAspects. Ids are resolved with a single
-* query; each owning element is updated once and the aspects of each class are deleted with a single statement
+* query; each owning element is updated once, and that update deletes its aspects with one statement per class
 * (DgnElements::DeleteElementAspects). Duplicate ids are deleted once, and the JS handlers are called once for them.
 * Like DgnElements::DeleteElements, ids that do not identify an aspect are ignored; malformed ids are validation failures.
 * An aspect that can no longer be deleted after the pre-delete handlers ran (e.g. a handler deleted it) throws.
@@ -712,7 +729,7 @@ Napi::Object JsInterop::DeleteElementAspects(DgnDbR db, Napi::Array aspectIds) {
         }
 
         Utf8String idString = val.As<Napi::String>().Utf8Value();
-        ECInstanceId aspectId(BeInt64Id::FromString(idString.c_str()).GetValue());
+        ECInstanceId aspectId(parseBulkAspectId(idString).GetValue());
         if (!aspectId.IsValid()) {
             failures.Fail(i, FailureReason::InvalidId, idString);
             continue;
@@ -813,7 +830,7 @@ Napi::Object JsInterop::DeleteElementAspects(DgnDbR db, Napi::Array aspectIds) {
         hookCalls.push_back(std::make_pair(row.m_classId, row.m_hookArg));
     hooks.Call(hookCalls, "onBulkDelete", "onDelete");
 
-    // Phase 3: update each owning element once, then delete the aspects of each class with one statement (see DgnElements::DeleteElementAspects).
+    // Phase 3: update each owning element once, which deletes its aspects with one statement per class (see DgnElements::DeleteElementAspects).
     // The aspects are validated again, because the pre-delete handlers may have changed them. DeleteElementAspects ignores ids that
     // are no longer aspects, so an aspect that a handler removed is detected here.
     if (!rows.empty()) {
