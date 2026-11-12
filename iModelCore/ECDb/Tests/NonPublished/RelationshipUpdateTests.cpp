@@ -736,11 +736,12 @@ TEST_F(RelationshipUpdateTests, DISABLED_DeleteClassWhoseInstancesAreReferencedB
     }
 
 //---------------------------------------------------------------------------------------
-// Both relationships that use Note are deleted in the same import, but ECDb checks the class against
-// the relationship constraints stored before the import.
+// Both relationships that use Note are deleted in the same import.
+// Disabled: ECDb deletes classes in alphabetical order and checks each one against the relationship
+// constraints stored at that point. Note comes before NoteAnnotatesElement, so the import fails with ECDb_0380.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(RelationshipUpdateTests, DeletingClassTogetherWithItsLinkTableRelationshipsIsRejected)
+TEST_F(RelationshipUpdateTests, DISABLED_DeleteClassTogetherWithItsLinkTableRelationships)
     {
     ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
 
@@ -748,7 +749,10 @@ TEST_F(RelationshipUpdateTests, DeletingClassTogetherWithItsLinkTableRelationshi
     RemoveClass(schemaXml, "Note");
     RemoveClass(schemaXml, "DocumentRefersToNotes");
     RemoveClass(schemaXml, "NoteAnnotatesElement");
-    ExpectRejected(schemaXml, "ECDb_0380", SchemaVersionChange::Major);
+    ExpectAccepted(schemaXml, SchemaVersionChange::Major, ExpectedDataChanges()
+        .DeleteInstancesOf("TestSchema:Note")
+        .DeleteInstancesOf("TestSchema:DocumentRefersToNotes")
+        .DeleteInstancesOf("TestSchema:NoteAnnotatesElement"));
     }
 
 //***************************************************************************************
@@ -756,11 +760,11 @@ TEST_F(RelationshipUpdateTests, DeletingClassTogetherWithItsLinkTableRelationshi
 //***************************************************************************************
 
 //---------------------------------------------------------------------------------------
-// The schema allows several notes per element afterwards, but the unique index built for the old
-// multiplicity stays and rejects a second note.
+// The schema allows several notes per element afterwards.
+// Disabled: the unique index built for the old multiplicity stays and rejects a second note.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(RelationshipUpdateTests, IncreaseUpperMultiplicityOfLinkTableRelationship)
+TEST_F(RelationshipUpdateTests, DISABLED_IncreaseUpperMultiplicityOfLinkTableRelationship)
     {
     ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
 
@@ -770,21 +774,30 @@ TEST_F(RelationshipUpdateTests, IncreaseUpperMultiplicityOfLinkTableRelationship
 
     ECInstanceKey annotatedElement = SelectKey("SELECT TargetECInstanceId, TargetECClassId FROM ts.NoteAnnotatesElement ORDER BY ECInstanceId LIMIT 1");
     ECInstanceKey otherNote = SelectKey("SELECT ECInstanceId, ECClassId FROM ts.Note WHERE ECInstanceId<>(SELECT SourceECInstanceId FROM ts.NoteAnnotatesElement ORDER BY ECInstanceId LIMIT 1) LIMIT 1");
-    EXPECT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, InsertLinkTableRelationship("ts.NoteAnnotatesElement", otherNote, annotatedElement));
+    EXPECT_EQ(BE_SQLITE_DONE, InsertLinkTableRelationship("ts.NoteAnnotatesElement", otherNote, annotatedElement));
     }
 
 //---------------------------------------------------------------------------------------
-// The foreign key column of a 1:1 relationship has a unique index, which a 1:N relationship must not have.
-// ECDb keeps the index and the mapping check rejects the import.
+// The schema allows several nameplates per element afterwards.
+// Disabled: the foreign key column keeps the unique index built for the 1:1 relationship, and the
+// mapping check rejects the import with ECDb_0219.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(RelationshipUpdateTests, IncreasingUpperMultiplicityOfOneToOneForeignKeyIsRejected)
+TEST_F(RelationshipUpdateTests, DISABLED_IncreaseUpperMultiplicityOfOneToOneForeignKey)
     {
     ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
 
     Utf8String schemaXml = GetBaselineSchemaXml();
     ReplaceInClass(schemaXml, "ElementHasNameplate", R"xml(<Target multiplicity="(0..1)")xml", R"xml(<Target multiplicity="(0..*)")xml");
-    ExpectRejected(schemaXml, "ECDb_0219");
+    ExpectAccepted(schemaXml);
+
+    ECSqlStatement select;
+    ASSERT_EQ(ECSqlStatus::Success, select.Prepare(m_ecdb, "SELECT Element.Id, Element.RelECClassId FROM ts.Nameplate WHERE Element.Id IS NOT NULL ORDER BY ECInstanceId LIMIT 1"));
+    ASSERT_EQ(BE_SQLITE_ROW, select.Step());
+    ECSqlStatement insert;
+    ASSERT_EQ(ECSqlStatus::Success, insert.Prepare(m_ecdb, "INSERT INTO ts.Nameplate(SerialNumber, Element) VALUES('second nameplate', ?)"));
+    insert.BindNavigationValue(1, select.GetValueId<ECInstanceId>(0), select.GetValueId<ECClassId>(1));
+    EXPECT_EQ(BE_SQLITE_DONE, insert.Step());
     }
 
 //---------------------------------------------------------------------------------------
@@ -928,16 +941,17 @@ TEST_F(RelationshipUpdateTests, DISABLED_ReplaceConstraintClassesWithBaseClass)
     }
 
 //---------------------------------------------------------------------------------------
-// ECDb does not store the new abstract constraint, so the check of the persisted schema rejects the import.
+// Disabled: ECDb does not store the new abstract constraint, so the check of the persisted schema
+// rejects the import with ECDb_0754.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(RelationshipUpdateTests, ChangedAbstractConstraintIsNotStored)
+TEST_F(RelationshipUpdateTests, DISABLED_ChangeAbstractConstraint)
     {
     ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
 
     Utf8String schemaXml = GetBaselineSchemaXml();
     ReplaceInClass(schemaXml, "InstrumentUsesDocuments", R"xml(abstractConstraint="PhysicalElement")xml", R"xml(abstractConstraint="Element")xml");
-    ExpectRejected(schemaXml, "ECDb_0754");
+    ExpectAccepted(schemaXml);
     }
 
 //---------------------------------------------------------------------------------------
@@ -972,17 +986,17 @@ TEST_F(RelationshipUpdateTests, ChangeRoleLabels)
     }
 
 //---------------------------------------------------------------------------------------
-// After a multiplicity change ECDb skips the other changes on the same constraint, so the check of
-// the persisted schema rejects the import.
+// Disabled: after a multiplicity change ECDb skips the other changes on the same constraint, so the
+// check of the persisted schema rejects the import with ECDb_0754.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(RelationshipUpdateTests, RoleLabelChangedTogetherWithMultiplicityIsNotStored)
+TEST_F(RelationshipUpdateTests, DISABLED_ChangeRoleLabelTogetherWithMultiplicity)
     {
     ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
 
     Utf8String schemaXml = GetBaselineSchemaXml();
     ReplaceInClass(schemaXml, "NoteAnnotatesElement", R"xml(<Source multiplicity="(0..1)" roleLabel="annotates")xml", R"xml(<Source multiplicity="(0..*)" roleLabel="comments on")xml");
-    ExpectRejected(schemaXml, "ECDb_0754");
+    ExpectAccepted(schemaXml);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1319,8 +1333,9 @@ TEST_F(RelationshipUpdateTests, AddingLinkTableRelationshipMapIsRejected)
     }
 
 //---------------------------------------------------------------------------------------
-// AllowDuplicateRelationships is the only LinkTableRelationshipMap value that may change. ECDb
-// ignores it, so duplicates stay rejected.
+// AllowDuplicateRelationships is the only LinkTableRelationshipMap value that may change.
+// ElementRefersToElements is mapped TablePerHierarchy, which ignores the flag also when the class is
+// first mapped, so duplicates stay rejected.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(RelationshipUpdateTests, SetAllowDuplicateRelationships)
