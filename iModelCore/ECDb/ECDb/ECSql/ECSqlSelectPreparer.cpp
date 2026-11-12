@@ -34,7 +34,9 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, CommonTableEx
         }
         // render block
         auto blockExp = blocks[i];
-        builder.Append(blockExp->GetName());
+        ECSqlStatus nameStatus = ECSqlExpPreparer::AppendUnquotedName(builder, ctx, blockExp->GetName());
+        if (!nameStatus.IsSuccess())
+            return nameStatus;
         auto &cols = blockExp->GetColumns();
         if(cols.size() != 0)
             builder.AppendParenLeft();
@@ -42,7 +44,9 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, CommonTableEx
             if (j>0) {
                 builder.AppendComma();
             }
-            builder.Append(cols[j]);
+            nameStatus = ECSqlExpPreparer::AppendUnquotedName(builder, ctx, cols[j]);
+            if (!nameStatus.IsSuccess())
+                return nameStatus;
         }
         if(cols.size()!=0)
             builder.AppendParenRight();

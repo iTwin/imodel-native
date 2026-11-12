@@ -1523,7 +1523,7 @@ static int nocaseCollatingFuncASCII(void *, int nLeft, const void *zLeft, int nR
 static int nocaseCollatingFuncLatin1(void *pCtx, int nLeft, const void *zLeft, int nRight, const void *zRight){
   UCollationResult res;
   UCollator *p = (UCollator*)pCtx;
-  UErrorCode status;
+  UErrorCode status = U_ZERO_ERROR;
   res = ucol_strcollUTF8(p, (Utf8CP)zLeft, nLeft, (Utf8CP)zRight, nRight, &status);
   switch( res ){
     case UCOL_LESS: return -1;
@@ -2771,13 +2771,36 @@ DbResult Db::CreateNewDb(Utf8CP inName, CreateParams const& params, BeGuid dbGui
 }
 
 /*---------------------------------------------------------------------------------**/ /**
+ * Attach aliases end up unquoted or inside [...] in SQL across BeSQLite and ECDb, so they have to be plain identifiers.
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+static bool isValidDbAlias(Utf8CP alias)
+    {
+    if (Utf8String::IsNullOrEmpty(alias) || (alias[0] >= '0' && alias[0] <= '9'))
+        return false;
+
+    for (Utf8CP c = alias; *c != 0; ++c)
+        {
+        if (!((*c >= 'A' && *c <= 'Z') || (*c >= 'a' && *c <= 'z') || (*c >= '0' && *c <= '9') || *c == '_'))
+            return false;
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**/ /**
  * @bsimethod
  +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Db::AttachDb(Utf8CP filename, Utf8CP alias) const {
+    if (!isValidDbAlias(alias)) {
+        LOG.errorv("AttachDb failed: invalid alias [%s]. It may only contain letters, digits and underscores and must not start with a digit.", alias);
+        return BE_SQLITE_ERROR;
+    }
+
     Savepoint* txn = GetSavepoint(0);
     bool wasActive = (txn != nullptr) && (BE_SQLITE_OK == txn->Commit(nullptr));
 
-    DbResult rc = (DbResult)sqlite3_exec(GetSqlDb(), SqlPrintfString("ATTACH \"%s\" AS %s", filename, alias), nullptr, nullptr, nullptr);
+    DbResult rc = (DbResult)sqlite3_exec(GetSqlDb(), SqlPrintfString("ATTACH '%q' AS %s", filename, alias), nullptr, nullptr, nullptr);
 
     if (rc != BE_SQLITE_OK) {
         BeAssert(false);
@@ -2799,6 +2822,12 @@ DbResult Db::AttachDb(Utf8CP filename, Utf8CP alias) const {
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Db::DetachDb(Utf8CP alias) const
     {
+    if (!isValidDbAlias(alias))
+        {
+        LOG.errorv("DetachDb failed: invalid alias [%s]", alias);
+        return BE_SQLITE_ERROR;
+        }
+
     Savepoint* txn = GetSavepoint(0);
     bool wasActive = (nullptr != txn) && (BE_SQLITE_OK == txn->Commit(nullptr));
 
@@ -3276,20 +3305,18 @@ bool Db::GetColumns(bvector<Utf8String>& columns, Utf8CP tableName) const
 {
     columns.clear();
 
+    // The table-valued pragma_table_info() can be shadowed by a table of that name, so this uses the PRAGMA statement.
     Statement stmt;
     DbResult status;
-
     const char* dotPosition = strchr(tableName, '.');
     if (dotPosition != nullptr)
     {
         Utf8String tablespace(tableName, dotPosition - tableName);
-        Utf8String actualTableName(dotPosition + 1);
-
-        status = stmt.Prepare(*this, SqlPrintfString("PRAGMA %s.table_info([%s])", tablespace.c_str(), actualTableName.c_str()));
+        status = stmt.Prepare(*this, SqlPrintfString("PRAGMA \"%w\".table_info(\"%w\")", tablespace.c_str(), dotPosition + 1));
     }
     else
     {
-        status = stmt.Prepare(*this, SqlPrintfString("PRAGMA table_info([%s])", tableName));
+        status = stmt.Prepare(*this, SqlPrintfString("PRAGMA table_info(\"%w\")", tableName));
     }
 
     if (status != BE_SQLITE_OK)
@@ -3648,7 +3675,7 @@ DbResult Db::DoOpenDb(Utf8CP inName, OpenParams const& params) {
     }
 
     if (!cloudSqliteLogId.empty()) {
-        rc = TryExecuteSql(SqlPrintfString("PRAGMA bcv_client=\"%s\"", cloudSqliteLogId.c_str()));
+        rc = TryExecuteSql(SqlPrintfString("PRAGMA bcv_client='%q'", cloudSqliteLogId.c_str()));
         BeAssert(rc == BE_SQLITE_OK);
     }
 
@@ -6278,8 +6305,13 @@ void BeIdSet::FromReadableString(Utf8StringCR str)
         else if (endRange < startRange)
             std::swap(startRange, endRange);
 
-        for (; startRange<=endRange; ++startRange)
+        // Stop on reaching endRange rather than testing startRange<=endRange, which never fails when endRange is UINT64_MAX.
+        for (;; ++startRange)
+            {
             insert((BeInt64Id) startRange);
+            if (startRange == endRange)
+                break;
+            }
 
         curr = strchr(curr, ',');
         if (curr == nullptr)
@@ -6823,7 +6855,7 @@ DbResult Db::Vacuum(int newPageSizeInBytes) {
 /** vacuum this database into a different destination file. */
 DbResult Db::VacuumInto(Utf8CP newFileName) {
     SuspendDefaultTxn noDefault(*this);
-    return TryExecuteSql(SqlPrintfString("vacuum into '%s'", newFileName));
+    return TryExecuteSql(SqlPrintfString("vacuum into '%q'", newFileName));
 }
 
 DbResult Db::Analyze() {

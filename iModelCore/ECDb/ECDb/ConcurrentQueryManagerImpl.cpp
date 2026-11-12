@@ -182,6 +182,7 @@ std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGet(Utf8CP ecsql, ECSq
                 // attached table space (the schema-source connection has none) or for genuinely invalid
                 // ECSQL; both are retried against the worker's own connection below, which reports
                 // errors normally.
+                CloudSqliteTiming::Scope schemaTiming(schemaDb);
                 status = newCachedAdaptor->GetStatement().Prepare(schemaDb.Schemas(), m_conn.GetDb(), ecsql, false);
             }
             preparedAgainstSchemaSource = status == ECSqlStatus::Success;
@@ -1062,7 +1063,7 @@ QueryResponse::Ptr RunnableRequestBase::CreateErrorResponse(QueryResponse::Statu
     }
     return std::make_shared<QueryResponse>(
         ECSqlResponse::Kind::NoResult,
-        QueryResponse::Stats(GetCpuTime(), GetTotalTime(), 0, m_quota, m_prepareTime),
+        QueryResponse::Stats(GetCpuTime(), GetTotalTimeForStats(), 0, m_quota, m_prepareTime),
         status,
         error
         );
@@ -1073,7 +1074,7 @@ QueryResponse::Ptr RunnableRequestBase::CreateErrorResponse(QueryResponse::Statu
 QueryResponse::Ptr RunnableRequestBase::CreateTimeoutResponse() const {
     return std::make_shared<QueryResponse>(
         ECSqlResponse::Kind::NoResult,
-        QueryResponse::Stats(GetCpuTime(), GetTotalTime(), 0, m_quota, m_prepareTime),
+        QueryResponse::Stats(GetCpuTime(), GetTotalTimeForStats(), 0, m_quota, m_prepareTime),
         QueryResponse::Status::Timeout,
         ""
         );
@@ -1084,7 +1085,7 @@ QueryResponse::Ptr RunnableRequestBase::CreateTimeoutResponse() const {
 QueryResponse::Ptr RunnableRequestBase::CreateCancelResponse() const {
     return std::make_shared<QueryResponse>(
         ECSqlResponse::Kind::NoResult,
-        QueryResponse::Stats( GetCpuTime(), GetTotalTime(), 0, m_quota, m_prepareTime),
+        QueryResponse::Stats( GetCpuTime(), GetTotalTimeForStats(), 0, m_quota, m_prepareTime),
         QueryResponse::Status::Cancel,
         ""
         );
@@ -1095,7 +1096,7 @@ QueryResponse::Ptr RunnableRequestBase::CreateCancelResponse() const {
 QueryResponse::Ptr RunnableRequestBase::CreateBlobIOResponse(std::vector<uint8_t>& buffer, bool done, uint32_t blobSize) const {
     const auto memUsed = (uint32_t)buffer.size();
     return std::make_shared<BlobIOResponse>(
-        QueryResponse::Stats(GetCpuTime(), GetTotalTime(), memUsed, m_quota, m_prepareTime),
+        QueryResponse::Stats(GetCpuTime(), GetTotalTimeForStats(), memUsed, m_quota, m_prepareTime),
         done? QueryResponse::Status::Done:QueryResponse::Status::Partial,
         "",
         buffer,
@@ -1108,7 +1109,7 @@ QueryResponse::Ptr RunnableRequestBase::CreateBlobIOResponse(std::vector<uint8_t
 QueryResponse::Ptr RunnableRequestBase::CreateECSqlResponse(std::string& resultJson, ECSqlRowProperty::List& meta, uint32_t rowCount, bool done) const {
     const auto memUsed = (uint32_t)(resultJson.size());
     return std::make_shared<ECSqlResponse>(
-        QueryResponse::Stats(GetCpuTime(), GetTotalTime(), memUsed,m_quota, m_prepareTime, m_resumed),
+        QueryResponse::Stats(GetCpuTime(), GetTotalTimeForStats(), memUsed,m_quota, m_prepareTime, m_resumed),
         done? QueryResponse::Status::Done:QueryResponse::Status::Partial,
         "",
         resultJson,
@@ -1122,7 +1123,7 @@ QueryResponse::Ptr RunnableRequestBase::CreateECSqlResponse(std::string& resultJ
 QueryResponse::Ptr RunnableRequestBase::CreateShutDownResponse() const {
     return std::make_shared<QueryResponse>(
         QueryResponse::Kind::NoResult,
-        QueryResponse::Stats( GetCpuTime(), GetTotalTime(), 0, m_quota, m_prepareTime),
+        QueryResponse::Stats( GetCpuTime(), GetTotalTimeForStats(), 0, m_quota, m_prepareTime),
         QueryResponse::Status::ShuttingDown,
         ""
         );
@@ -1448,6 +1449,19 @@ bool RunnableRequestQueue::CancelRequest(uint32_t id) {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 void RunnableRequestBase::StageResponse(QueryResponse::Ptr response) {
+    if (GetRequest().GetKind() == QueryRequest::Kind::ECSql && GetRequest().GetAsConst<ECSqlRequest>().GetCollectCloudSqliteStats()) {
+        if (!m_cloudTimingScope) {
+            response->SetCloudSqliteTiming("notExecuted");
+        } else {
+            m_cloudTimingScope->Finish();
+            double downloadTime, executionTime;
+            uint64_t downloadBlocks, downloadBytes;
+            if (m_cloudTiming.TryGet(downloadTime, executionTime, downloadBlocks, downloadBytes))
+                response->SetCloudSqliteTiming("measured", downloadTime, executionTime, downloadBlocks, downloadBytes);
+            else
+                response->SetCloudSqliteTiming("unavailable");
+        }
+    }
     // Mark completed before parking/releasing the connection so concurrent restarts do not
     // interrupt an already-finished request, then publish once the connection is idle.
     if (m_isCompleted.exchange(true))
@@ -1945,6 +1959,8 @@ void QueryHelper::Execute(QueryAdaptorCache& adaptorCache, RunnableRequestBase& 
         QueryHelper::ReadBlob(conn, runnableRequest);
     } else if (runnableRequest.GetRequest().GetKind() == QueryRequest::Kind::ECSql) {
         auto& request = runnableRequest.GetRequest().GetAsConst<ECSqlRequest>();
+        auto& connection = adaptorCache.GetConnection();
+        runnableRequest.BeginCloudSqliteTiming(request.UsePrimaryConnection() ? connection.GetPrimaryDb() : connection.GetDb());
         std::string sql = QueryHelper::FormatQuery(request.GetQuery().c_str());
         ECSqlStatus status;
         std::string err;
@@ -1955,7 +1971,7 @@ void QueryHelper::Execute(QueryAdaptorCache& adaptorCache, RunnableRequestBase& 
         auto const& argsKey = adaptorCache.CanPark() ? runnableRequest.GetArgsKey() : emptyArgs;
         const auto prepareTimeStart = std::chrono::steady_clock::now();
         auto recordPrepareTime = [&]() {
-            runnableRequest.SetPrepareTime(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - prepareTimeStart));
+            runnableRequest.SetPrepareTime(std::chrono::steady_clock::now() - prepareTimeStart);
         };
 
         auto adaptor = adaptorCache.TryGet(sql.c_str(), request, argsKey, resumed, status, err, runnableRequest.GetQueue(), isShutDownInProgress);
@@ -2238,12 +2254,21 @@ BeJsDocument ECSqlReader::Row::ToJson(Format fmt) const {
 void QueryResponse::Stats::ToJs(BeJsValue& v) const {
     v.toObject();
     v[kCpuTime] = (int64_t)m_cpuTime.count();
-    v[kTotalTime] = (int64_t)m_totalTime.count();
+    v[kTotalTime] = m_totalTime.count();
     v[kTimeLimit] = (int64_t)m_timeLimit.count();
     v[kMemLimit] = m_memLimit;
     v[kMemUsed] = m_memUsed;
-    v[kPrepareTime] = (int64_t)m_prepareTime.count();
+    v[kPrepareTime] = m_prepareTime.count();
     v["resumed"] = m_resumed;
+    if (!m_cloudSqliteTimingState.empty()) {
+        v["cloudSqliteTimingState"] = m_cloudSqliteTimingState;
+        if (m_cloudSqliteTimingState == "measured") {
+            v["downloadTime"] = m_downloadTime;
+            v["executionTime"] = m_executionTime;
+            v["downloadBlocks"] = m_downloadBlocks;
+            v["downloadBytes"] = m_downloadBytes;
+        }
+    }
 }
 
 //---------------------------------------------------------------------------------------
@@ -2500,6 +2525,8 @@ void BlobIORequest::FromJs(BeJsConst const& val) {
 //---------------------------------------------------------------------------------------
 void ECSqlRequest::FromJs(BeJsConst const& val) {
     QueryRequest::FromJs(val);
+    if (val.isBoolMember("collectCloudSqliteStats"))
+        m_collectCloudSqliteStats = val["collectCloudSqliteStats"].asBool();
     if (GetKind() != QueryRequest::Kind::ECSql) {
         throw std::runtime_error("expecting ECSqlRequest");
     }
@@ -2673,9 +2700,117 @@ bvector<Byte> ECSqlParams::ECSqlParam::GetValueBlob() const {
 //---------------------------------------------------------------------------------------
 BeIdSet ECSqlParams::ECSqlParam::GetValueIdSet() const {
     BeAssert(m_type == Type::IdSet);
+    uint64_t count;
+    std::string err;
+    Utf8CP str = m_val.asCString();
+    if (!TryCountIdSet(str, count, err))
+        throw std::runtime_error(err);
+    if (count > MaxIdSetCount)
+        throw std::runtime_error(SqlPrintfString("IdSet parameter holds more than the maximum of %" PRIu64 " Ids", MaxIdSetCount).GetUtf8CP());
     BeIdSet set;
-    set.FromString(m_val.asCString());
+    set.FromString(str);
     return set;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+static bool ParseIdSetHex(Utf8CP& p, uint64_t& value) {
+    // Uppercase only, as in BeIdSet::FromCompactString.
+    value = 0;
+    Utf8CP start = p;
+    for (; (*p >= '0' && *p <= '9') || (*p >= 'A' && *p <= 'F'); ++p) {
+        if ((value >> 60) != 0)
+            return false;
+        value = (value << 4) | static_cast<uint64_t>(*p >= 'A' ? *p - 'A' + 10 : *p - '0');
+    }
+    return p != start;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+static bool ParseIdSetDecimal(Utf8CP& p, uint64_t& value) {
+    // A leading '-' wraps, as strtoull does in BeIdSet::FromReadableString. BeIdSet::ToReadableString
+    // writes Ids with the high bit set as negative numbers.
+    const bool negative = *p == '-';
+    if (negative)
+        ++p;
+    value = 0;
+    Utf8CP start = p;
+    for (; *p >= '0' && *p <= '9'; ++p) {
+        const uint64_t digit = static_cast<uint64_t>(*p - '0');
+        if (value > (std::numeric_limits<uint64_t>::max() - digit) / 10)
+            return false;
+        value = value * 10 + digit;
+    }
+    if (negative)
+        value = 0 - value;
+    return p != start;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+bool ECSqlParams::TryCountIdSet(Utf8CP idSet, uint64_t& count, std::string& err) {
+    count = 0;
+    if (idSet == nullptr || *idSet == '\0')
+        return true;
+
+    auto malformed = [&]() {
+        err = "IdSet parameter value is not a valid Id set string";
+        return false;
+    };
+    const uint64_t maxCount = std::numeric_limits<uint64_t>::max();
+
+    Utf8CP p = idSet;
+    if (*p == '+') {
+        // Compact form: +increment[*multiplier]... where each run adds `multiplier` Ids, each `increment` past the previous.
+        // The count cannot overflow: each Id is at least 1 past the previous, and the last Id is checked below.
+        uint64_t prev = 0;
+        ++p;
+        while (true) {
+            uint64_t increment, mult = 1;
+            if (!ParseIdSetHex(p, increment) || increment == 0)
+                return malformed();
+            if (*p == '*') {
+                ++p;
+                if (!ParseIdSetHex(p, mult) || mult == 0)
+                    return malformed();
+            }
+            if (increment > (maxCount - prev) / mult)
+                return malformed();
+            prev += increment * mult;
+            count += mult;
+            if (*p == '\0')
+                return true;
+            if (*p++ != '+')
+                return malformed();
+        }
+    }
+
+    // Readable form: comma separated values and inclusive ranges, e.g. 1-3,5.
+    while (true) {
+        uint64_t first, last;
+        if (!ParseIdSetDecimal(p, first))
+            return malformed();
+        last = first;
+        if (*p == '-') {
+            ++p;
+            if (!ParseIdSetDecimal(p, last))
+                return malformed();
+        }
+        if (last < first)
+            std::swap(first, last);
+        // The range holds last - first + 1 Ids; compare without adding 1, which can overflow.
+        if (last - first >= maxCount - count)
+            return malformed();
+        count += last - first + 1;
+        if (*p == '\0')
+            return true;
+        if (*p++ != ',')
+            return malformed();
+    }
 }
 
 //---------------------------------------------------------------------------------------
@@ -2773,15 +2908,16 @@ void ECSqlParams::FromJs(BeJsConst val) {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 bool ECSqlParams::TryBindTo(ECSqlStatement& stmt, std::string& err) const {
+    uint64_t idSetBudget = MaxIdSetCount;
     for (auto const& kp : m_params) {
         auto const& param = kp.second;
-        if (!TryBindParameter(stmt, param.GetName(), param.GetType(), param.GetValue(), err))
+        if (!TryBindParameter(stmt, param.GetName(), param.GetType(), param.GetValue(), idSetBudget, err))
             return false;
     }
     return true;
 }
 
-bool ECSqlParams::TryBindParameter(ECSqlStatement& stmt, std::string const& name, ECSqlParam::Type type, BeJsConst value, std::string& err) {
+bool ECSqlParams::TryBindParameter(ECSqlStatement& stmt, std::string const& name, ECSqlParam::Type type, BeJsConst value, uint64_t& idSetBudget, std::string& err) {
     const int parsedIndex = ParseParameterIndex(name.c_str());
     const bool isIndexed = parsedIndex != -1;
     int index = isIndexed ? parsedIndex : stmt.GetParameterIndex(name.c_str());
@@ -2801,6 +2937,16 @@ bool ECSqlParams::TryBindParameter(ECSqlStatement& stmt, std::string const& name
         case ECSqlParam::Type::Id:
             st = stmt.BindId(index, BeInt64Id::FromString(value.asCString())); break;
         case ECSqlParam::Type::IdSet: {
+            uint64_t idCount;
+            if (!TryCountIdSet(value.asCString(), idCount, err)) {
+                err = SqlPrintfString("failed to bind param '%s': %s", name.c_str(), err.c_str()).GetUtf8CP();
+                return false;
+            }
+            if (idCount > idSetBudget) {
+                err = SqlPrintfString("failed to bind param '%s': IdSet parameters hold more than the maximum of %" PRIu64 " Ids", name.c_str(), MaxIdSetCount).GetUtf8CP();
+                return false;
+            }
+            idSetBudget -= idCount;
             BeIdSet values;
             values.FromString(value.asCString());
             BinderInfo const& binderInfo = stmt.GetBinderInfo(index);

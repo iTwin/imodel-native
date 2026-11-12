@@ -315,6 +315,8 @@ private:
     bool IsCategorySelectorUsed(DgnElementId) const;
     bool IsModelSelectorUsed(DgnElementId) const;
     bool IsDisplayStyleUsed(DgnElementId) const;
+    bool IsSheetPrototypeUsed(DgnElementId) const;
+    bool IsSheetBorderPrototypeUsed(DgnElementId) const;
     bool IsViewDefinitionUsed(DgnViewId) const;
 
 public:
