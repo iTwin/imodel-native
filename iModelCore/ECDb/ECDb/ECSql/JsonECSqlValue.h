@@ -55,8 +55,6 @@ struct JsonECSqlValue final : public IECSqlValue, IECSqlValueIterable
             StructIteratorState(JsonECSqlValue const& val, ECN::ECPropertyIterableCR structMemberPropertyIterable);
             };
 
-        static rapidjson::Value const* s_nullJson;
-
         ECDbCR m_ecdb;
         rapidjson::Value const& m_json;
         ECSqlColumnInfo m_columnInfo;

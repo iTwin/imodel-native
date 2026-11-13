@@ -44,11 +44,7 @@ BentleyStatus            CustomStructSerializerManager::AddCustomSerializer(Utf8
 +---------------+---------------+---------------+---------------+---------------+------*/
 CustomStructSerializerManagerR                   CustomStructSerializerManager::GetManager()
     {
-    static CustomStructSerializerManagerP   s_serializerManager = NULL;
-
-    if (NULL == s_serializerManager)
-        s_serializerManager = new CustomStructSerializerManager();
-
+    static CustomStructSerializerManagerP s_serializerManager = new CustomStructSerializerManager();
     return *s_serializerManager;
     }
 
@@ -3722,11 +3718,7 @@ BentleyStatus            CustomAttributeDeserializerManager::AddCustomDeserializ
 +---------------+---------------+---------------+---------------+---------------+------*/
 CustomAttributeDeserializerManagerR                   CustomAttributeDeserializerManager::GetManager()
     {
-    static CustomAttributeDeserializerManagerP   s_deserializerManager = NULL;
-
-    if (NULL == s_deserializerManager)
-        s_deserializerManager = new CustomAttributeDeserializerManager();
-
+    static CustomAttributeDeserializerManagerP s_deserializerManager = new CustomAttributeDeserializerManager();
     return *s_deserializerManager;
     }
 
