@@ -16,7 +16,6 @@ struct NoopECSqlBinder final : public IECSqlBinder
     {
     private:
         ECSqlStatus m_errorStatus;
-        static NoopECSqlBinder* s_singleton;
         BinderInfo m_binderInfo;
 
         NoopECSqlBinder() : m_errorStatus(ECSqlStatus::Error), m_binderInfo(BinderInfo::BinderType::Noop) {}
@@ -56,8 +55,6 @@ struct NoopECSqlValue final : public IECSqlValue, IECSqlValueIterable
     {
     private:
         ECSqlColumnInfo m_dummyColumnInfo;
-
-        static NoopECSqlValue const* s_singleton;
 
         NoopECSqlValue() : IECSqlValue() {}
         ~NoopECSqlValue() {}

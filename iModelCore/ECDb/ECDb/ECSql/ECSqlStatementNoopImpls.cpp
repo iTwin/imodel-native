@@ -11,26 +11,11 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod
 //---------------------------------------------------------------------------------------
 //static
-NoopECSqlBinder* NoopECSqlBinder::s_singleton = nullptr;
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-//static
 NoopECSqlBinder& NoopECSqlBinder::Get()
     {
-    if (s_singleton == nullptr)
-        s_singleton = new NoopECSqlBinder();
-
+    static NoopECSqlBinder* s_singleton = new NoopECSqlBinder();
     return *s_singleton;
     }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-//static
-NoopECSqlValue const* NoopECSqlValue::s_singleton = nullptr;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -38,9 +23,7 @@ NoopECSqlValue const* NoopECSqlValue::s_singleton = nullptr;
 //static
 NoopECSqlValue const& NoopECSqlValue::GetSingleton()
     {
-    if (s_singleton == nullptr)
-        s_singleton = new NoopECSqlValue();
-
+    static NoopECSqlValue const* s_singleton = new NoopECSqlValue();
     return *s_singleton;
     }
 

@@ -4947,6 +4947,41 @@ TEST_F(ChangeSummaryTestFixtureV1, PropertiesWithRegularColumns)
     EXPECT_EQ(19, valIter.QueryCount());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangeSummaryTestFixtureV1, IsChangedInstanceIsRegisteredPerECDb)
+    {
+    ECDb firstDb, secondDb;
+    ASSERT_EQ(BE_SQLITE_OK, CreateECDb(firstDb, "ischangedinstance_first.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, CreateECDb(secondDb, "ischangedinstance_second.ecdb"));
 
+    auto isFunctionRegistered = [] (ECDbCR ecdb)
+        {
+        Statement stmt;
+        return BE_SQLITE_OK == stmt.TryPrepare(ecdb, "SELECT IsChangedInstance(NULL, 1, 1)");
+        };
+
+    EXPECT_FALSE(isFunctionRegistered(firstDb));
+    EXPECT_FALSE(isFunctionRegistered(secondDb));
+
+    auto firstSummary = std::make_unique<ChangeSummary>(firstDb);
+    auto secondSummary = std::make_unique<ChangeSummary>(secondDb);
+    auto secondSummaryOnSameDb = std::make_unique<ChangeSummary>(secondDb);
+    EXPECT_TRUE(isFunctionRegistered(firstDb));
+    EXPECT_TRUE(isFunctionRegistered(secondDb));
+
+    // Unregistering happens per ECDb, once its last summary is gone
+    secondSummary.reset();
+    EXPECT_TRUE(isFunctionRegistered(firstDb));
+    EXPECT_TRUE(isFunctionRegistered(secondDb));
+
+    secondSummaryOnSameDb.reset();
+    EXPECT_TRUE(isFunctionRegistered(firstDb));
+    EXPECT_FALSE(isFunctionRegistered(secondDb));
+
+    firstSummary.reset();
+    EXPECT_FALSE(isFunctionRegistered(firstDb));
+    }
 
 END_ECDBUNITTESTS_NAMESPACE

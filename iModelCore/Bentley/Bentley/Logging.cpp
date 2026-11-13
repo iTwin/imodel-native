@@ -31,9 +31,7 @@ static Utf8CP getSeverityText(SEVERITY sev) {
 }
 
 ConsoleLogger& ConsoleLogger::GetLogger() {
-    static ConsoleLogger* s_consoleLogger = nullptr;
-    if (nullptr == s_consoleLogger)
-        s_consoleLogger = new ConsoleLogger();
+    static ConsoleLogger* s_consoleLogger = new ConsoleLogger();
     return *s_consoleLogger;
 }
 
