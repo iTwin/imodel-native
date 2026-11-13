@@ -3331,7 +3331,10 @@ TEST_F(SchemaRemapTestFixture, RemappingSiblingPropertiesPreservesUnchangedOverr
 
     const auto remappedGuidColumn = GetHelper().GetPropertyMapColumn(AccessString("OpmRemap", "Device", "GUID"));
     ASSERT_TRUE(remappedGuidColumn.Exists());
-    EXPECT_TRUE(originalGuidColumn.GetTableName() != remappedGuidColumn.GetTableName() || originalGuidColumn.GetName() != remappedGuidColumn.GetName());
+    // NamedItem overrides GUID of PlantBase. Even though the import freed its column, the override must keep it:
+    // reads through PlantBase use that column.
+    EXPECT_STREQ(originalGuidColumn.GetTableName().c_str(), remappedGuidColumn.GetTableName().c_str());
+    EXPECT_STREQ(originalGuidColumn.GetName().c_str(), remappedGuidColumn.GetName().c_str());
     const auto remappedItemTagColumn = GetHelper().GetPropertyMapColumn(AccessString("OpmRemap", "Valve", "ItemTag"));
     ASSERT_TRUE(remappedItemTagColumn.Exists());
     EXPECT_TRUE(originalItemTagColumn.GetTableName() != remappedItemTagColumn.GetTableName() || originalItemTagColumn.GetName() != remappedItemTagColumn.GetName());

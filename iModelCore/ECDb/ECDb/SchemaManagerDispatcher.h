@@ -245,6 +245,7 @@ public:
     DropSchemaResult DropSchema(Utf8StringCR name, SchemaImportToken const* token, bool logIssue) const;
     DropSchemaResult DropSchemas(bvector<Utf8String> schemaNames, SchemaImportToken const* token, bool logIssue) const;
     BentleyStatus RepopulateCacheTables() const;
+    BentleyStatus ClearCacheTables() const;
     DbResult UpgradeECInstances() const { return UpgradeExistingECInstancesWithNewPropertiesMapToOverflowTable(GetECDb()); }
     BentleyStatus CreateClassViews() const;
     BentleyStatus CreateClassViews(bvector<ECN::ECClassId> const& ecclassids) const;
@@ -255,7 +256,8 @@ public:
     //! @param[in] doNotTrackDDLChanges if true, DDL changes are not tracked
     //! @param[in] validationMode use DbMapValidationMode::ChangesetApply when replaying already accepted
     //! timeline changes so that historical inconsistencies do not fail the apply.
-    BentleyStatus UpdateDbSchema(bool doNotTrackDDLChanges, DbMapValidationMode validationMode) const;
+    //! @param[in] repopulateCacheTables false if the caller has already rebuilt the ec_cache_ tables from the current ec_ rows
+    BentleyStatus UpdateDbSchema(bool doNotTrackDDLChanges, DbMapValidationMode validationMode, bool repopulateCacheTables = true) const;
     BentleyStatus ValidatePersistedMappings(SchemaManager::SchemaImportOptions, bool continueAfterError = false) const;
     };
 

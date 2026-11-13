@@ -13,7 +13,7 @@ Utf8String ECSchemaOwnershipClaimAppData::s_key = "ecdb.owned_by";
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MainSchemaManager::UpdateDbSchema(bool doNotTrackDDLChanges, DbMapValidationMode validationMode) const{
+BentleyStatus MainSchemaManager::UpdateDbSchema(bool doNotTrackDDLChanges, DbMapValidationMode validationMode, bool repopulateCacheTables) const{
     ECDB_PERF_LOG_SCOPE("Updating sqlite schema");
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin MainSchemaManager::UpdateDbSchema");
 
@@ -25,7 +25,7 @@ BentleyStatus MainSchemaManager::UpdateDbSchema(bool doNotTrackDDLChanges, DbMap
     m_ecdb.ClearECDbCache();
     m_ecdb.GetImpl().RefreshProfileVersion();
 
-    if (SUCCESS != mainDisp.RepopulateCacheTables()) {
+    if (repopulateCacheTables && SUCCESS != mainDisp.RepopulateCacheTables()) {
         return ERROR;
     }
 
@@ -1580,6 +1580,13 @@ SchemaImportResult MainSchemaManager::MapSchemas(SchemaImportContext& ctx, bvect
     }
 #endif
 
+    // Instances of a class need a row in each overflow table it maps a property to. Insert any
+    // that are missing before the data transform: it moves remapped values into these rows, and
+    // would otherwise clear values that it found no row to move into.
+    if (ctx.MaintainsDataTables() && BE_SQLITE_OK != UpgradeExistingECInstancesWithNewPropertiesMapToOverflowTable(m_ecdb, nullptr)){
+        return failedToMap();
+    }
+
     if (!ctx.GetDataTransform().IsEmpty()) {
         if (!ctx.AllowDataTransform()) {
             ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0590, "Import ECSchema failed. Data transform is required which is rejected by default unless explicitly allowed.");
@@ -1593,10 +1600,6 @@ SchemaImportResult MainSchemaManager::MapSchemas(SchemaImportContext& ctx, bvect
         if (BE_SQLITE_OK != ctx.GetDataTransform().Execute(m_ecdb)) {
             return failedToMap();
         }
-    }
-
-    if (ctx.MaintainsDataTables() && BE_SQLITE_OK != UpgradeExistingECInstancesWithNewPropertiesMapToOverflowTable(m_ecdb, nullptr)){
-        return failedToMap();
     }
 
     // Persisted mappings must be reloaded after mapping and data transforms complete.
@@ -2689,6 +2692,17 @@ BentleyStatus MainSchemaManager::SaveDbSchema(SchemaImportContext& ctx) const
             }
         }
 
+    for (auto& kvPair : m_classMapDictionary)
+        {
+        ClassMap& classMap = *kvPair.second;
+        if (SUCCESS != classMap.SaveUnpersistedInheritedPropertyMaps())
+            {
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0290,
+                "Failed to save the inherited property maps of ECClass %s: %s", classMap.GetClass().GetFullName(), m_ecdb.GetLastError().c_str());
+            return ERROR;
+            }
+        }
+
     m_lightweightCache.Clear();
     return SUCCESS;
     }
@@ -2726,6 +2740,21 @@ BentleyStatus MainSchemaManager::RepopulateCacheTables() const
     if (SUCCESS != DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(m_ecdb))
         {
         LOG.error("Failed to repopulate ECDb's cache table '" TABLE_ClassHasTablesCache "'.");
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BentleyStatus MainSchemaManager::ClearCacheTables() const
+    {
+    BeMutexHolder lock(m_mutex);
+    if (SUCCESS != DbSchemaPersistenceManager::ClearCacheTables(m_ecdb))
+        {
+        LOG.error("Failed to clear ECDb's cache tables '" TABLE_ClassHierarchyCache "' and '" TABLE_ClassHasTablesCache "'.");
         return ERROR;
         }
 

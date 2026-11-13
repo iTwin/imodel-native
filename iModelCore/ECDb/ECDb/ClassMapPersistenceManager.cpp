@@ -447,6 +447,7 @@ BentleyStatus DbClassMapLoadContext::Load(DbClassMapLoadContext& loadContext, Cl
 BentleyStatus DbClassMapLoadContext::ReadPropertyMaps(DbClassMapLoadContext& ctx, ECDbCR ecdb, TableSpaceSchemaManager const& schemaManager, ECClassId classId)
     {
     ctx.m_columnByAccessString.clear();
+    ctx.m_mappedPropertyNames.clear();
     CachedStatementPtr stmt = nullptr;
     if (schemaManager.IsMain())
         stmt = ecdb.GetImpl().GetCachedSqliteStatement("SELECT T.Name, C.Name, A.AccessString"
@@ -498,6 +499,9 @@ BentleyStatus DbClassMapLoadContext::ReadPropertyMaps(DbClassMapLoadContext& ctx
             }
 
         ctx.m_columnByAccessString[accessString].push_back(column);
+        // A compound property, such as a struct, persists a map per member, with the access string "Name.Member".
+        Utf8CP dot = strchr(accessString, '.');
+        ctx.m_mappedPropertyNames.insert(dot == nullptr ? Utf8String(accessString) : Utf8String(accessString, dot - accessString));
         }
 
     return SUCCESS;
