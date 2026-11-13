@@ -14,7 +14,7 @@ namespace
 struct BaselineSeed final
     {
     BeFileName m_filePath;
-    Utf8String m_schemaName;
+    bvector<Utf8String> m_schemaNames;
     };
 
 struct InsertedInstance final
@@ -78,13 +78,16 @@ bool IsConcreteClass(ECClassCR ecClass)
 //---------------------------------------------------------------------------------------
 // Entity classes and link table relationship classes, the classes the harness inserts and reads.
 //---------------------------------------------------------------------------------------
-bvector<ECClassCP> GetDataClasses(ECSchemaCR schema)
+bvector<ECClassCP> GetDataClasses(bvector<ECSchemaCP> const& schemas)
     {
     bvector<ECClassCP> classes;
-    for (ECClassCP ecClass : schema.GetClasses())
+    for (ECSchemaCP schema : schemas)
         {
-        if (ecClass->IsEntityClass() || IsLinkTableRelationshipClass(*ecClass))
-            classes.push_back(ecClass);
+        for (ECClassCP ecClass : schema->GetClasses())
+            {
+            if (ecClass->IsEntityClass() || IsLinkTableRelationshipClass(*ecClass))
+                classes.push_back(ecClass);
+            }
         }
 
     return classes;
@@ -427,10 +430,10 @@ BentleyStatus SetNavigationProperties(ECDbCR ecdb, bvector<InsertedInstance> con
 //---------------------------------------------------------------------------------------
 // Relates the inserted entity instances through every concrete link table relationship class.
 //---------------------------------------------------------------------------------------
-BentleyStatus InsertLinkTableRelationships(ECDbCR ecdb, ECSchemaCR schema, int instancesPerClass, ValueGenerator& generator, bvector<InsertedInstance>& inserted)
+BentleyStatus InsertLinkTableRelationships(ECDbCR ecdb, bvector<ECSchemaCP> const& schemas, int instancesPerClass, ValueGenerator& generator, bvector<InsertedInstance>& inserted)
     {
     bvector<InsertedInstance> insertedRelationships;
-    for (ECClassCP ecClass : GetDataClasses(schema))
+    for (ECClassCP ecClass : GetDataClasses(schemas))
         {
         if (!ecClass->IsRelationshipClass() || !IsConcreteClass(*ecClass))
             continue;
@@ -500,14 +503,14 @@ BentleyStatus InsertLinkTableRelationships(ECDbCR ecdb, ECSchemaCR schema, int i
 
 //---------------------------------------------------------------------------------------
 // Inserts instances into every concrete entity class and link table relationship class of the
-// schema, with a different value for every primitive, so swapped or shared columns cannot hide
+// schemas, with a different value for every primitive, so swapped or shared columns cannot hide
 // behind equal values.
 //---------------------------------------------------------------------------------------
-BentleyStatus InsertGeneratedInstances(ECDbCR ecdb, ECSchemaCR schema, int instancesPerClass, bvector<InsertedInstance>& inserted)
+BentleyStatus InsertGeneratedInstances(ECDbCR ecdb, bvector<ECSchemaCP> const& schemas, int instancesPerClass, bvector<InsertedInstance>& inserted)
     {
     ValueGenerator generator;
     bvector<InsertedInstance> insertedNow;
-    for (ECClassCP ecClass : GetDataClasses(schema))
+    for (ECClassCP ecClass : GetDataClasses(schemas))
         {
         if (!ecClass->IsEntityClass() || !IsConcreteClass(*ecClass))
             continue;
@@ -557,7 +560,7 @@ BentleyStatus InsertGeneratedInstances(ECDbCR ecdb, ECSchemaCR schema, int insta
         }
 
     if (SUCCESS != SetNavigationProperties(ecdb, insertedNow) ||
-        SUCCESS != InsertLinkTableRelationships(ecdb, schema, instancesPerClass, generator, insertedNow))
+        SUCCESS != InsertLinkTableRelationships(ecdb, schemas, instancesPerClass, generator, insertedNow))
         return ERROR;
 
     inserted.insert(inserted.end(), insertedNow.begin(), insertedNow.end());
@@ -619,11 +622,18 @@ bool FindClassElement(size_t& elementStart, size_t& elementEnd, Utf8StringCR sch
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus CreateBaselineSeed(BaselineSeed& seed, SchemaUpdateBaseline const& baseline)
     {
-    seed.m_schemaName = GetSchemaNameFromXml(baseline.GetSchemaXml());
-    if (seed.m_schemaName.empty())
+    std::vector<SchemaItem> schemaItems;
+    for (Utf8StringCR schemaXml : baseline.GetSchemaXmls())
         {
-        ADD_FAILURE() << "Baseline " << baseline.GetName().c_str() << " has no schemaName attribute.";
-        return ERROR;
+        Utf8String schemaName = GetSchemaNameFromXml(schemaXml);
+        if (schemaName.empty())
+            {
+            ADD_FAILURE() << "A schema of baseline " << baseline.GetName().c_str() << " has no schemaName attribute.";
+            return ERROR;
+            }
+
+        seed.m_schemaNames.push_back(schemaName);
+        schemaItems.push_back(SchemaItem(schemaXml));
         }
 
     ECDb seedDb;
@@ -633,7 +643,7 @@ BentleyStatus CreateBaselineSeed(BaselineSeed& seed, SchemaUpdateBaseline const&
 
     TestIssueListener issueListener;
     seedDb.AddIssueListener(issueListener);
-    const BentleyStatus importStatus = TestHelper(seedDb).ImportSchema(SchemaItem(baseline.GetSchemaXml()), SchemaManager::SchemaImportOptions::VerifyPersistedSchemas);
+    const BentleyStatus importStatus = TestHelper(seedDb).ImportSchemas(schemaItems, SchemaManager::SchemaImportOptions::VerifyPersistedSchemas);
     seedDb.RemoveIssueListener();
     if (SUCCESS != importStatus)
         {
@@ -642,9 +652,21 @@ BentleyStatus CreateBaselineSeed(BaselineSeed& seed, SchemaUpdateBaseline const&
         return ERROR;
         }
 
-    ECSchemaCP schema = seedDb.Schemas().GetSchema(seed.m_schemaName);
+    bvector<ECSchemaCP> schemas;
+    for (Utf8StringCR schemaName : seed.m_schemaNames)
+        {
+        ECSchemaCP schema = seedDb.Schemas().GetSchema(schemaName);
+        if (schema == nullptr)
+            {
+            ADD_FAILURE() << "Schema " << schemaName.c_str() << " of baseline " << baseline.GetName().c_str() << " not found after the import.";
+            return ERROR;
+            }
+
+        schemas.push_back(schema);
+        }
+
     bvector<InsertedInstance> inserted;
-    if (schema == nullptr || SUCCESS != InsertGeneratedInstances(seedDb, *schema, baseline.GetInstancesPerClass(), inserted))
+    if (SUCCESS != InsertGeneratedInstances(seedDb, schemas, baseline.GetInstancesPerClass(), inserted))
         return ERROR;
 
     if (BE_SQLITE_OK != seedDb.SaveChanges())
@@ -674,7 +696,7 @@ BentleyStatus SchemaUpdateTestFixture::SetupFromBaseline(SchemaUpdateBaseline co
         }
 
     m_baseline = &baseline;
-    m_schemaName = seedIt->second.m_schemaName;
+    m_schemaNames = seedIt->second.m_schemaNames;
     m_lastUpdateFailed = false;
 
     Utf8PrintfString fileName("%s_%s.ecdb", BeTest::GetNameOfCurrentTestCase(), BeTest::GetNameOfCurrentTest());
@@ -703,19 +725,51 @@ void SchemaUpdateTestFixture::ChangeDataBeforeUpdate(Utf8CP ecsql)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaUpdateTestFixture::UpdateSchema(Utf8StringCR schemaXml, SchemaVersionChange versionChange, SchemaManager::SchemaImportOptions options)
+BentleyStatus SchemaUpdateTestFixture::ApplyVersionChange(ECSchemaR schema, SchemaVersionChange versionChange) const
     {
-    ECSchemaCP persistedSchema = m_ecdb.Schemas().GetSchema(m_schemaName);
+    if (versionChange == SchemaVersionChange::AsInXml)
+        return SUCCESS;
+
+    ECSchemaCP persistedSchema = m_ecdb.Schemas().GetSchema(schema.GetName());
     if (persistedSchema == nullptr)
         {
-        ADD_FAILURE() << "Schema " << m_schemaName.c_str() << " not found.";
+        ADD_FAILURE() << "Schema " << schema.GetName().c_str() << " is not in the file. Use SchemaVersionChange::AsInXml for new schemas.";
         return ERROR;
         }
 
-    m_schemaXmlBeforeUpdate = GetPersistedSchemaXml();
     const uint32_t persistedRead = persistedSchema->GetVersionRead();
     const uint32_t persistedWrite = persistedSchema->GetVersionWrite();
     const uint32_t persistedMinor = persistedSchema->GetVersionMinor();
+    switch (versionChange)
+        {
+        case SchemaVersionChange::None:
+            schema.SetVersionRead(persistedRead);
+            schema.SetVersionWrite(persistedWrite);
+            schema.SetVersionMinor(persistedMinor);
+            break;
+        case SchemaVersionChange::Minor:
+            schema.SetVersionRead(persistedRead);
+            schema.SetVersionWrite(persistedWrite);
+            schema.SetVersionMinor(persistedMinor + 1);
+            break;
+        case SchemaVersionChange::Major:
+            schema.SetVersionRead(persistedRead + 1);
+            schema.SetVersionWrite(0);
+            schema.SetVersionMinor(0);
+            break;
+        default:
+            break;
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaUpdateTestFixture::UpdateSchemas(bvector<SchemaToImport> const& schemas, SchemaManager::SchemaImportOptions options)
+    {
+    m_schemaXmlBeforeUpdate = GetPersistedSchemaXml();
 
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     BeFileName ecdbSchemaSearchPath;
@@ -724,31 +778,25 @@ BentleyStatus SchemaUpdateTestFixture::UpdateSchema(Utf8StringCR schemaXml, Sche
     context->AddSchemaPath(ecdbSchemaSearchPath);
     context->AddSchemaLocater(m_ecdb.GetSchemaLocater());
 
-    ECSchemaPtr schema;
-    if (SchemaReadStatus::Success != ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *context))
+    // The context cache keeps the schemas alive.
+    bvector<ECSchemaP> readSchemas;
+    for (SchemaToImport const& schemaToImport : schemas)
         {
-        // An invalid test, not a rejected update.
-        ADD_FAILURE() << "Failed to read the updated schema XML.";
-        return ERROR;
+        ECSchemaPtr schema;
+        if (SchemaReadStatus::Success != ECSchema::ReadFromXmlString(schema, schemaToImport.m_schemaXml.c_str(), *context))
+            {
+            // An invalid test, not a rejected update.
+            ADD_FAILURE() << "Failed to read the updated schema XML of " << GetSchemaNameFromXml(schemaToImport.m_schemaXml).c_str() << ".";
+            return ERROR;
+            }
+
+        readSchemas.push_back(schema.get());
         }
 
-    switch (versionChange)
+    for (size_t i = 0; i < readSchemas.size(); i++)
         {
-        case SchemaVersionChange::None:
-            schema->SetVersionRead(persistedRead);
-            schema->SetVersionWrite(persistedWrite);
-            schema->SetVersionMinor(persistedMinor);
-            break;
-        case SchemaVersionChange::Minor:
-            schema->SetVersionRead(persistedRead);
-            schema->SetVersionWrite(persistedWrite);
-            schema->SetVersionMinor(persistedMinor + 1);
-            break;
-        case SchemaVersionChange::Major:
-            schema->SetVersionRead(persistedRead + 1);
-            schema->SetVersionWrite(0);
-            schema->SetVersionMinor(0);
-            break;
+        if (SUCCESS != ApplyVersionChange(*readSchemas[i], schemas[i].m_versionChange))
+            return ERROR;
         }
 
     // ECDb takes one issue listener at a time. If the test has its own, that one gets the issues.
@@ -771,6 +819,12 @@ BentleyStatus SchemaUpdateTestFixture::UpdateSchema(Utf8StringCR schemaXml, Sche
 
     savepoint.Commit();
     m_lastUpdateFailed = false;
+    for (ECSchemaP schema : readSchemas)
+        {
+        if (std::find(m_schemaNames.begin(), m_schemaNames.end(), schema->GetName()) == m_schemaNames.end())
+            m_schemaNames.push_back(schema->GetName());
+        }
+
     return BE_SQLITE_OK == m_ecdb.SaveChanges() ? SUCCESS : ERROR;
     }
 
@@ -890,15 +944,15 @@ void SchemaUpdateTestFixture::VerifyData(ExpectedDataChanges const& expectedChan
     }
 
 //---------------------------------------------------------------------------------------
-// Reads all instances of the schema with ONLY queries into the snapshot, then checks that
+// Reads all instances of the schemas with ONLY queries into the snapshot, then checks that
 // polymorphic queries of every data class return exactly the matching instances and values.
 //---------------------------------------------------------------------------------------
 void SchemaUpdateTestFixture::ReadData(DataSnapshot& snapshot) const
     {
-    ECSchemaCP schema = m_ecdb.Schemas().GetSchema(m_schemaName);
-    ASSERT_TRUE(schema != nullptr) << "Schema " << m_schemaName.c_str() << " not found.";
+    bvector<ECSchemaCP> schemas = GetSchemas();
+    ASSERT_EQ(m_schemaNames.size(), schemas.size());
     const JsonECSqlSelectAdapter::FormatOptions formatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber);
-    bvector<ECClassCP> dataClasses = GetDataClasses(*schema);
+    bvector<ECClassCP> dataClasses = GetDataClasses(schemas);
 
     for (ECClassCP ecClass : dataClasses)
         {
@@ -966,9 +1020,6 @@ void SchemaUpdateTestFixture::ReadData(DataSnapshot& snapshot) const
 //---------------------------------------------------------------------------------------
 void SchemaUpdateTestFixture::VerifyForeignKeyRelationships(DataSnapshot const& snapshot) const
     {
-    ECSchemaCP schema = m_ecdb.Schemas().GetSchema(m_schemaName);
-    ASSERT_TRUE(schema != nullptr);
-
     auto getClassName = [&] (ECClassId classId)
         {
         ECClassCP ecClass = m_ecdb.Schemas().GetClass(classId);
@@ -981,11 +1032,18 @@ void SchemaUpdateTestFixture::VerifyForeignKeyRelationships(DataSnapshot const& 
             getClassName(sourceClassId).c_str(), sourceId.ToHexStr().c_str(), getClassName(targetClassId).c_str(), targetId.ToHexStr().c_str());
         };
 
-    for (ECClassCP ecClass : schema->GetClasses())
+    bvector<ECClassCP> foreignKeyRelationshipClasses;
+    for (ECSchemaCP schema : GetSchemas())
         {
-        if (!ecClass->IsRelationshipClass() || IsLinkTableRelationshipClass(*ecClass))
-            continue;
+        for (ECClassCP ecClass : schema->GetClasses())
+            {
+            if (ecClass->IsRelationshipClass() && !IsLinkTableRelationshipClass(*ecClass))
+                foreignKeyRelationshipClasses.push_back(ecClass);
+            }
+        }
 
+    for (ECClassCP ecClass : foreignKeyRelationshipClasses)
+        {
         for (const bool onlyThisClass : {false, true})
             {
             if (onlyThisClass && !IsConcreteClass(*ecClass))
@@ -1045,12 +1103,68 @@ void SchemaUpdateTestFixture::VerifyForeignKeyRelationships(DataSnapshot const& 
 //+---------------+---------------+---------------+---------------+---------------+------
 Utf8String SchemaUpdateTestFixture::GetPersistedSchemaXml() const
     {
-    ECSchemaCP schema = m_ecdb.Schemas().GetSchema(m_schemaName);
-    Utf8String xml;
-    if (schema == nullptr || SchemaWriteStatus::Success != schema->WriteToXmlString(xml))
-        ADD_FAILURE() << "Failed to serialize persisted schema " << m_schemaName.c_str();
+    Utf8String allSchemasXml;
+    for (Utf8StringCR schemaName : m_schemaNames)
+        {
+        ECSchemaCP schema = m_ecdb.Schemas().GetSchema(schemaName);
+        Utf8String xml;
+        if (schema == nullptr || SchemaWriteStatus::Success != schema->WriteToXmlString(xml))
+            ADD_FAILURE() << "Failed to serialize persisted schema " << schemaName.c_str();
 
-    return xml;
+        allSchemasXml.append(xml);
+        }
+
+    return allSchemasXml;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+bvector<ECSchemaCP> SchemaUpdateTestFixture::GetSchemas() const
+    {
+    bvector<ECSchemaCP> schemas;
+    for (Utf8StringCR schemaName : m_schemaNames)
+        {
+        ECSchemaCP schema = m_ecdb.Schemas().GetSchema(schemaName);
+        if (schema == nullptr)
+            {
+            ADD_FAILURE() << "Schema " << schemaName.c_str() << " not found.";
+            continue;
+            }
+
+        schemas.push_back(schema);
+        }
+
+    return schemas;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String SchemaUpdateTestFixture::GetBaselineSchemaXml() const
+    {
+    if (m_baseline == nullptr || m_baseline->GetSchemaXmls().empty())
+        return Utf8String();
+
+    return m_baseline->GetSchemaXmls().back();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String SchemaUpdateTestFixture::GetBaselineSchemaXml(Utf8CP schemaName) const
+    {
+    if (m_baseline != nullptr)
+        {
+        for (Utf8StringCR schemaXml : m_baseline->GetSchemaXmls())
+            {
+            if (GetSchemaNameFromXml(schemaXml).Equals(schemaName))
+                return schemaXml;
+            }
+        }
+
+    ADD_FAILURE() << "The baseline has no schema " << schemaName << ".";
+    return Utf8String();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1105,10 +1219,8 @@ void SchemaUpdateTestFixture::VerifyWriteProbe()
 //+---------------+---------------+---------------+---------------+---------------+------
 void SchemaUpdateTestFixture::VerifyWriteProbeInstances()
     {
-    ECSchemaCP schema = m_ecdb.Schemas().GetSchema(m_schemaName);
-    ASSERT_TRUE(schema != nullptr);
     bvector<InsertedInstance> inserted;
-    ASSERT_EQ(SUCCESS, InsertGeneratedInstances(m_ecdb, *schema, 1, inserted)) << "Write probe failed to insert.";
+    ASSERT_EQ(SUCCESS, InsertGeneratedInstances(m_ecdb, GetSchemas(), 1, inserted)) << "Write probe failed to insert.";
 
     DataSnapshot data;
     ReadData(data);

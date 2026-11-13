@@ -73,6 +73,39 @@ struct SchemaUpdateHarnessTests : SchemaUpdateTestFixture
         return s_baseline;
         }
 
+    //! A referenced schema with data and a schema deriving from it.
+    static SchemaUpdateBaseline const& GetBaselineWithReferencedSchema()
+        {
+        static SchemaUpdateBaseline s_baseline("SchemaUpdateHarnessWithReference", bvector<Utf8String>{R"xml(<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="HarnessBase" alias="hb" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+    <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+    <ECEntityClass typeName="Element" modifier="Abstract">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+            <ShareColumns xmlns="ECDbMap.02.00.00">
+                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+            </ShareColumns>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Code" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="Marker">
+        <BaseClass>Element</BaseClass>
+        <ECProperty propertyName="Label" typeName="string" />
+    </ECEntityClass>
+</ECSchema>)xml",
+R"xml(<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+    <ECSchemaReference name="HarnessBase" version="01.00.00" alias="hb" />
+    <ECEntityClass typeName="Pipe">
+        <BaseClass>hb:Element</BaseClass>
+        <ECProperty propertyName="Material" typeName="string" />
+    </ECEntityClass>
+</ECSchema>)xml"});
+        return s_baseline;
+        }
+
     //! Runs the check and returns the failures it reported, without failing the test.
     static Utf8String CaptureFailures(std::function<void()> const& check)
         {
@@ -144,6 +177,21 @@ TEST_F(SchemaUpdateHarnessTests, ReportsChangedValues)
     Utf8String failures = CaptureVerifyDataFailures();
     EXPECT_TRUE(Contains(failures, "property Material")) << failures.c_str();
     EXPECT_TRUE(Contains(failures, "property Reason")) << failures.c_str();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpdateHarnessTests, ReportsChangedValuesInReferencedSchema)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaselineWithReferencedSchema()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("UPDATE hb.Marker SET Label='Changed'"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("UPDATE ts.Pipe SET Code='Changed'"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+
+    Utf8String failures = CaptureVerifyDataFailures();
+    EXPECT_TRUE(Contains(failures, "HarnessBase:Marker") && Contains(failures, "property Label")) << failures.c_str();
+    EXPECT_TRUE(Contains(failures, "TestSchema:Pipe") && Contains(failures, "property Code")) << failures.c_str();
     }
 
 //---------------------------------------------------------------------------------------

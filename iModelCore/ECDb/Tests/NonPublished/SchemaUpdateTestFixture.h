@@ -10,11 +10,13 @@
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 //=======================================================================================
-//! Schema and data a group of schema update tests starts from.
+//! Schemas and data a group of schema update tests starts from.
 //! The fixture creates the ECDb file once per test run and fills every concrete entity class
 //! and link table relationship class with generated instances. Every test starts from a copy of that file.
 //! Baselines are cached by name, so every baseline needs a unique name.
-//! The baseline is a single schema that only references standard schemas like ECDbMap.
+//! A baseline has one or more schemas. A schema may reference standard schemas like ECDbMap and the
+//! baseline schemas listed before it. The data of all baseline schemas is generated and verified.
+//! A navigation property has to be in the same schema as its relationship class.
 //! Supported: all primitive types, enumerations, structs, primitive and struct arrays, navigation
 //! properties and link table relationships. Arrays of enumerations get plain values that ignore the enumerators.
 //! Instance k of a class relates to candidate (k * (instancesPerClass + 1)) % candidateCount, so the
@@ -27,14 +29,16 @@ struct SchemaUpdateBaseline final
     {
     private:
         Utf8String m_name;
-        Utf8String m_schemaXml;
+        bvector<Utf8String> m_schemaXmls;
         int m_instancesPerClass;
 
     public:
-        SchemaUpdateBaseline(Utf8CP name, Utf8CP schemaXml, int instancesPerClass = 3) : m_name(name), m_schemaXml(schemaXml), m_instancesPerClass(instancesPerClass) {}
+        SchemaUpdateBaseline(Utf8CP name, Utf8CP schemaXml, int instancesPerClass = 3) : m_name(name), m_schemaXmls({schemaXml}), m_instancesPerClass(instancesPerClass) {}
+        //! @param[in] schemaXmls Referenced schemas first
+        SchemaUpdateBaseline(Utf8CP name, bvector<Utf8String> const& schemaXmls, int instancesPerClass = 3) : m_name(name), m_schemaXmls(schemaXmls), m_instancesPerClass(instancesPerClass) {}
 
         Utf8StringCR GetName() const { return m_name; }
-        Utf8StringCR GetSchemaXml() const { return m_schemaXml; }
+        bvector<Utf8String> const& GetSchemaXmls() const { return m_schemaXmls; }
         int GetInstancesPerClass() const { return m_instancesPerClass; }
     };
 
@@ -67,7 +71,17 @@ enum class SchemaVersionChange
     {
     None,
     Minor,
-    Major
+    Major,
+    //! Keeps the version in the XML. Required for schemas the file does not have yet.
+    AsInXml
+    };
+
+//! A schema an update imports.
+struct SchemaToImport final
+    {
+    Utf8String m_schemaXml;
+    //! Relative to the persisted version of the schema
+    SchemaVersionChange m_versionChange = SchemaVersionChange::Minor;
     };
 
 //=======================================================================================
@@ -79,6 +93,7 @@ enum class SchemaVersionChange
 //!   against the whole schema. Add a new fixture rather than growing an unrelated baseline.
 //! - SetupFromBaseline, edit GetBaselineSchemaXml with ReplaceInClass, RemoveClass and
 //!   AppendToSchema, then UpdateSchema. Leave the version in the XML alone, UpdateSchema sets it.
+//!   UpdateSchemas imports several schemas at once.
 //! - After a rejected update, state the reason with ExpectRejectionReason. VerifyData fails otherwise.
 //! - Always end with VerifyData, also after a rejected update.
 //! - Assert only on observable results: accepted or rejected, data, persisted schema.
@@ -117,13 +132,16 @@ struct SchemaUpdateTestFixture : ECDbTestFixture
 
     private:
         SchemaUpdateBaseline const* m_baseline = nullptr;
-        Utf8String m_schemaName;
+        //! Schemas whose data and persisted XML the fixture verifies: the baseline schemas and the ones updates added
+        bvector<Utf8String> m_schemaNames;
         DataSnapshot m_dataBeforeUpdate;
         Utf8String m_schemaXmlBeforeUpdate;
         bool m_lastUpdateFailed = false;
         std::vector<ReportedIssue> m_lastUpdateIssues;
         bool m_isRejectionReasonVerified = false;
 
+        bvector<ECN::ECSchemaCP> GetSchemas() const;
+        BentleyStatus ApplyVersionChange(ECN::ECSchemaR, SchemaVersionChange) const;
         void ReadData(DataSnapshot&) const;
         void VerifyForeignKeyRelationships(DataSnapshot const&) const;
         Utf8String GetPersistedSchemaXml() const;
@@ -144,11 +162,22 @@ struct SchemaUpdateTestFixture : ECDbTestFixture
         //! VerifyPersistedSchemas is always added to the options, so an update that is accepted but not stored as imported fails.
         //! @return SUCCESS if ECDb accepted the update, ERROR if it rejected it
         BentleyStatus UpdateSchema(Utf8StringCR schemaXml, SchemaVersionChange versionChange = SchemaVersionChange::Minor,
+            SchemaManager::SchemaImportOptions options = SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade)
+            {
+            return UpdateSchemas({{schemaXml, versionChange}}, options);
+            }
+
+        //! Imports several schemas in one call, like UpdateSchema. List referenced schemas first.
+        //! The versions are set after all schemas are read, so references between them have to match the versions in the XML.
+        BentleyStatus UpdateSchemas(bvector<SchemaToImport> const& schemas,
             SchemaManager::SchemaImportOptions options = SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade);
 
         //! Checks that the last update was rejected and that ECDb reported the given issue, e.g. "ECDb_0386".
         //! Required after every rejected update, so a test cannot pass because the update was rejected for another reason.
         void ExpectRejectionReason(Utf8CP issueId);
+
+        //! Issues ECDb reported during the last update, also infos.
+        std::vector<ReportedIssue> const& GetLastUpdateIssues() const { return m_lastUpdateIssues; }
 
         //! Reopens the file and verifies all data against the state before the update, plus the expected changes.
         //! After a rejected update, also verifies that the persisted schema did not change.
@@ -156,7 +185,9 @@ struct SchemaUpdateTestFixture : ECDbTestFixture
         //! The integrity checks include check_nav_ids, which reports navigation properties pointing to deleted instances.
         void VerifyData(ExpectedDataChanges const& = ExpectedDataChanges());
 
-        Utf8String GetBaselineSchemaXml() const { return m_baseline != nullptr ? m_baseline->GetSchemaXml() : Utf8String(); }
+        //! XML of the last baseline schema
+        Utf8String GetBaselineSchemaXml() const;
+        Utf8String GetBaselineSchemaXml(Utf8CP schemaName) const;
 
         //! Replaces the only occurrence of @p oldText within the XML element of the given class.
         static void ReplaceInClass(Utf8StringR schemaXml, Utf8CP className, Utf8CP oldText, Utf8CP newText);
