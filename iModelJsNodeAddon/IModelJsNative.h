@@ -417,6 +417,7 @@ struct JsInterop {
     BE_JSON_NAME(alias)
     BE_JSON_NAME(baseUri)
     BE_JSON_NAME(blob)
+    BE_JSON_NAME(blocks)
     BE_JSON_NAME(blockSize)
     BE_JSON_NAME(briefcaseId)
     BE_JSON_NAME(cacheSize)

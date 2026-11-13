@@ -168,6 +168,12 @@ export namespace NativeCloudSqlite {
     timeout?: number;
     /** The number of prefetch requests to issue while there is foreground activity. Default is 3. */
     minRequests?: number;
+    /**
+     * If supplied, prefetch only these block indices (in order) rather than the whole database from block 0.
+     * Requires a daemon that supports block-list prefetch when running in daemon mode.
+     * @internal
+     */
+    blocks?: number[];
   }
 
   export interface CleanDeletedBlocksOptions {
