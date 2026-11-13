@@ -25,7 +25,7 @@
 /iModelCore/Bentley/                            @bbastings @khanaffan @tcobbs-bentley @DanRod1999
 /iModelCore/BeSQLite/                           @khanaffan @kring @rschili
 /iModelCore/ECDb/                               @khanaffan @rschili @RohitPtnkr1996
-/iModelCore/iModelPlatform/                     @khanaffan @bbastings @RohitPtnkr1996 @rschili
+/iModelCore/iModelPlatform/                     @khanaffan @bbastings @RohitPtnkr1996 @rschili @tcobbs-bentley
 /iModelJsNodeAddon/                             @khanaffan @bbastings @wgoehrig @DanRod1999 @grigasp
 
 # Schemas / quantities.
