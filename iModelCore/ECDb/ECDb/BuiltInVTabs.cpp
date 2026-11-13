@@ -60,6 +60,7 @@ DbResult ClassPropsModule::ClassPropsVirtualTable::ClassPropsCursor::Filter(int 
         int propCount = 0;
         if (json.isArray()) {
             Utf8String propList;
+            bvector<Utf8String> propNames;
             json.ForEachArrayMemberValue([&](int idx, BeJsValue val) {
                 if (!val.isString()) {
                     propList.clear();
@@ -67,7 +68,8 @@ DbResult ClassPropsModule::ClassPropsVirtualTable::ClassPropsCursor::Filter(int 
                 }
                 if (idx > 0)
                     propList.append(",");
-                propList.append("'").append(val.asCString()).append("'");
+                propList.append("?");
+                propNames.push_back(val.asCString());
                 ++propCount;
                 return false;
             });
@@ -88,6 +90,9 @@ DbResult ClassPropsModule::ClassPropsVirtualTable::ClassPropsCursor::Filter(int 
                 GetTable().SetError("ContainsProps vtab: unable to prepare sql stmt");
                 return BE_SQLITE_ERROR;
             }
+            for (size_t propIndex = 0; propIndex < propNames.size(); ++propIndex)
+                stmt.BindText((int) propIndex + 1, propNames[propIndex], BeSQLite::Statement::MakeCopy::No);
+
             while(stmt.Step() == BE_SQLITE_ROW) {
                 m_classIds.insert(stmt.GetValueId<ECClassId>(0));
             }

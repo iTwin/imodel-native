@@ -357,6 +357,34 @@ TEST_F(ConcurrentQueryFixture, AutoShutdownIsLimitedToReadOnlyWorkerConnections)
     }
 }
 
+TEST_F(ConcurrentQueryFixture, ConcurrentECSqlRejectsUnsafeFunctions) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ConcurrentECSqlRejectsUnsafeFunctions.ecdb"));
+
+    Statement trusted;
+    ASSERT_EQ(BE_SQLITE_OK, trusted.Prepare(m_ecdb, "SELECT hex(sha3_query('SELECT 1'))"));
+    ASSERT_EQ(BE_SQLITE_ROW, trusted.Step());
+
+    ConcurrentQueryMgr mgr(m_ecdb);
+    auto expectDenied = [&](Utf8CP query, bool primary, Utf8CP expectedError) {
+        auto denied = ECSqlRequest::MakeRequest(query);
+        denied->SetUsePrimaryConnection(primary);
+        auto response = mgr.Enqueue(std::move(denied)).Get();
+        ASSERT_TRUE(response->IsError()) << response->GetError();
+        EXPECT_NE(std::string::npos, response->GetError().find(expectedError)) << response->GetError();
+    };
+    for (bool primary : {false, true}) {
+        expectDenied("SELECT hex(sha3_query('SELECT 1'))", primary, "not supported in ECSQL");
+        expectDenied("SELECT fts3_tokenizer('simple')", primary, "not supported in ECSQL");
+        expectDenied("SELECT hex([sha3_query ]('SELECT 1'))", primary, "may only contain letters");
+        expectDenied("SELECT [fts3_tokenizer/**/]('simple')", primary, "not supported in ECSQL");
+
+        auto allowed = ECSqlRequest::MakeRequest("SELECT hex(sha3('still available'))");
+        allowed->SetUsePrimaryConnection(primary);
+        auto allowedResponse = mgr.Enqueue(std::move(allowed)).Get();
+        EXPECT_EQ(QueryResponse::Status::Done, allowedResponse->GetStatus()) << allowedResponse->GetError();
+    }
+}
+
 TEST_F(ConcurrentQueryFixture, AutoShutdownAndPrimaryConnectionCreationAreMutuallyExclusive) {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("AutoShutdownPrimaryConnectionRace.ecdb"));
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(Db::OpenMode::Readonly)));
@@ -3397,6 +3425,151 @@ TEST_F(ConcurrentQueryFixture, CancelAfterCompletionIsSafe) {
         std::this_thread::sleep_for(std::chrono::milliseconds(20));
         future.Cancel();
     });
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ConcurrentQueryFixture, IdSetCountWithoutExpanding) {
+    auto count = [](Utf8CP str, uint64_t& n) {
+        std::string err;
+        const bool ok = ECSqlParams::TryCountIdSet(str, n, err);
+        EXPECT_EQ(ok, err.empty()) << str;
+        return ok;
+    };
+    uint64_t n = 0;
+    const uint64_t max = std::numeric_limits<uint64_t>::max();
+
+    for (auto const& entry : std::vector<std::pair<Utf8CP, uint64_t>>{
+            {"", 0}, {"+1", 1}, {"+1*3+2", 4}, {"+A*4", 4}, {"+0001*2", 2}, {"1", 1}, {"1-3,10", 4}, {"3-1", 3}, {"0-3", 4}, {"-1", 1},
+            {"+7FFFFF0000000001+10000000000+7FFFF60000000000", 3}, {"+FFFFFFFFFFFFFFFF", 1}, {"18446744073709551615", 1}, {"+1*F4241", 1000001}}) {
+        EXPECT_TRUE(count(entry.first, n)) << entry.first;
+        EXPECT_EQ(entry.second, n) << entry.first;
+    }
+    BeIdSet roundTrip;
+    for (uint64_t id = 1; id <= 1000; id += (id % 7) + 1)
+        roundTrip.insert(BeInt64Id(id));
+    EXPECT_TRUE(count(roundTrip.ToCompactString().c_str(), n));
+    EXPECT_EQ(roundTrip.size(), n);
+    EXPECT_TRUE(count(roundTrip.ToString().c_str(), n));
+    EXPECT_EQ(roundTrip.size(), n);
+
+    // Huge multipliers and ranges are counted without being expanded.
+    for (auto const& entry : std::vector<std::pair<Utf8CP, uint64_t>>{
+            {"+1*FFFFFFFF", 0xFFFFFFFFull}, {"1-4294967296", 4294967296ull}, {"+1*FFFFFFFFFFFFFFFF", max},
+            {"1-18446744073709551615", max}, {"0-18446744073709551614", max}}) {
+        EXPECT_TRUE(count(entry.first, n)) << entry.first;
+        EXPECT_EQ(entry.second, n) << entry.first;
+    }
+
+    // Overflow of the count, the cumulative Id, or a single number.
+    for (Utf8CP str : {"0-18446744073709551615", "0-18446744073709551614,1", "+1*FFFFFFFFFFFFFFFF+1", "+FFFFFFFFFFFFFFFF+1",
+                       "+8000000000000000*2", "+2*8000000000000000", "+10000000000000000", "+1*10000000000000000",
+                       "18446744073709551616", "99999999999999999999-1"})
+        EXPECT_FALSE(count(str, n)) << str;
+
+    // Malformed.
+    for (Utf8CP str : {"+", "+0", "+1*0", "+1*", "+1+", "+1++2", "+1**2", "+1*2*3", "+a", "+1x", "+1,2", " +1", "+ 1",
+                       "-", "1-", "-1-", "1--", "1,", ",1", "1,,2", "1 2", " 1", "1-2-3", "abc", "1;2", "0x10"})
+        EXPECT_FALSE(count(str, n)) << str;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ConcurrentQueryFixture, IdSetParamLimit) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("idset_param_limit.ecdb"));
+    ASSERT_EQ(1000000u, ECSqlParams::MaxIdSetCount);
+
+    auto run = [&](Utf8CP ecsql, std::vector<Utf8CP> const& idSets) {
+        BeJsDocument args;
+        for (size_t i = 0; i < idSets.size(); ++i) {
+            auto arg = args[std::to_string(i + 1)];
+            arg["type"] = (int) ECSqlParams::ECSqlParam::Type::IdSet;
+            arg["value"] = idSets[i];
+        }
+        QueryResponse::Ptr r;
+        ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
+            r = mgr.Enqueue(ECSqlRequest::MakeRequest(ecsql, ECSqlParams(args))).Get();
+        });
+        return r;
+    };
+    auto expectRows = [&](Utf8CP ecsql, std::vector<Utf8CP> const& idSets, int expected) {
+        auto r = run(ecsql, idSets);
+        ASSERT_EQ(QueryResponse::Status::Done, r->GetStatus()) << ecsql << " " << idSets[0] << ": " << r->GetError();
+        BeJsDocument rows(r->GetAsConst<ECSqlResponse>().asJsonString());
+        EXPECT_EQ(expected, (int) rows.size()) << ecsql << " " << idSets[0];
+    };
+    auto expectBindingFailed = [&](Utf8CP ecsql, std::vector<Utf8CP> const& idSets, Utf8CP message, Utf8CP paramName = "'1'") {
+        auto r = run(ecsql, idSets);
+        ASSERT_EQ(QueryResponse::Status::Error_ECSql_BindingFailed, r->GetStatus()) << ecsql << " " << idSets[0];
+        EXPECT_NE(std::string::npos, r->GetError().find(message)) << r->GetError();
+        EXPECT_NE(std::string::npos, r->GetError().find(paramName)) << r->GetError();
+    };
+
+    // Covers both the IdSet virtual table (array binder) and InVirtualSet (virtual set binder).
+    Utf8CP const queries[] = {
+        "SELECT id FROM IdSet(?)",
+        "WITH cnt(x) AS (VALUES(1) UNION SELECT x+1 FROM cnt WHERE x < 10) SELECT x FROM cnt WHERE InVirtualSet(?, x)"};
+    for (Utf8CP ecsql : queries) {
+        expectRows(ecsql, {"+1*3"}, 3);
+        expectRows(ecsql, {"1-3"}, 3);
+        for (Utf8CP idSet : {"+1*FFFFFFFFFFFFFFFF", "+1*F4241", "1-18446744073709551615", "1-1000001"})
+            expectBindingFailed(ecsql, {idSet}, "maximum of 1000000 Ids");
+        for (Utf8CP idSet : {"+FFFFFFFFFFFFFFFF+1", "+1*", "1-", "0-18446744073709551615"})
+            expectBindingFailed(ecsql, {idSet}, "not a valid Id set string");
+    }
+    expectRows(queries[1], {"1-1000000"}, 10);
+
+    // The limit applies to the total across all IdSet parameters of a statement.
+    Utf8CP const twoParams = "WITH cnt(x) AS (VALUES(1) UNION SELECT x+1 FROM cnt WHERE x < 10) SELECT x FROM cnt WHERE InVirtualSet(?, x) OR InVirtualSet(?, x + 5)";
+    expectRows(twoParams, {"1-500000", "1-500000"}, 10);
+    expectRows(twoParams, {"+1*7A120", "1-500000"}, 10);
+    expectBindingFailed(twoParams, {"1-500000", "1-500001"}, "maximum of 1000000 Ids", "'2'");
+    expectBindingFailed(twoParams, {"+1*7A121", "+1*7A120"}, "maximum of 1000000 Ids", "'2'");
+    expectBindingFailed(twoParams, {"1-1000001", "1"}, "maximum of 1000000 Ids", "'1'");
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, twoParams));
+    uint64_t budget = ECSqlParams::MaxIdSetCount;
+    std::string err;
+    BeJsDocument first("\"1-600000\"");
+    BeJsDocument second("\"1-400001\"");
+    EXPECT_TRUE(ECSqlParams::TryBindParameter(stmt, "1", ECSqlParams::ECSqlParam::Type::IdSet, first, budget, err)) << err;
+    EXPECT_EQ(400000u, budget);
+    EXPECT_FALSE(ECSqlParams::TryBindParameter(stmt, "2", ECSqlParams::ECSqlParam::Type::IdSet, second, budget, err));
+    EXPECT_NE(std::string::npos, err.find("maximum of 1000000 Ids")) << err;
+    EXPECT_EQ(400000u, budget);
+
+    // Values at UINT64_MAX count as one Id each and expand to exactly that many.
+    for (Utf8CP idSet : {"18446744073709551615", "-1"}) {
+        expectRows(queries[0], {idSet}, 1);
+        expectRows(queries[1], {idSet}, 0);
+    }
+    expectRows(queries[0], {"18446744073709551614-18446744073709551615"}, 2);
+    expectRows(queries[0], {"-2--1"}, 2);
+    expectRows(queries[1], {"-2--1,1-2"}, 2);
+    for (auto const& entry : std::vector<std::pair<Utf8CP, size_t>>{{"18446744073709551615", 1}, {"-1", 1}, {"-2--1", 2}}) {
+        BeJsDocument args(Utf8PrintfString(R"json({"1":{"type":3,"value":"%s"}})json", entry.first).c_str());
+        ECSqlParams params(args);
+        BeIdSet ids = params.GetParam(1).GetValueIdSet();
+        EXPECT_EQ(entry.second, ids.size()) << entry.first;
+        EXPECT_NE(ids.end(), ids.find(BeInt64Id(std::numeric_limits<uint64_t>::max()))) << entry.first;
+    }
+
+    for (Utf8CP idSet : {"+1*F4241", "1-1000001", "+1*"}) {
+        BeJsDocument args(Utf8PrintfString(R"json({"1":{"type":3,"value":"%s"}})json", idSet).c_str());
+        ECSqlParams params(args);
+        bool rejected = false;
+        try {
+            params.GetParam(1).GetValueIdSet();
+        } catch (std::runtime_error const&) {
+            rejected = true;
+        }
+        EXPECT_TRUE(rejected) << idSet;
+    }
+    BeJsDocument atLimit(R"json({"1":{"type":3,"value":"+1*F4240"}})json");
+    EXPECT_EQ(1000000u, ECSqlParams(atLimit).GetParam(1).GetValueIdSet().size());
 }
 
 END_ECDBUNITTESTS_NAMESPACE

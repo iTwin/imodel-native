@@ -520,6 +520,30 @@ TEST_F(ECSqlStatementTestFixture, DisableFunction) {
     assertFunc("SELECT randomblob(1923)", "randomblob", "randomblob");
     assertFunc("SELECT randomblob(1923)", "randomblob", "RANDOMBLOB");
 }
+
+TEST_F(ECSqlStatementTestFixture, UnsafeSqlFunctionsAreNotSupported) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("unsafeSqlFunctionsAreNotSupported.ecdb"));
+
+    ECSqlStatement ecsql;
+    for (Utf8CP query : {
+        "SELECT sha3_query('SELECT 1')",
+        "SELECT SHA3_QUERY('SELECT 1')",
+        "SELECT [sha3_query]('SELECT 1')",
+        "SELECT \"fts3_tokenizer\"('simple')",
+        "SELECT `fts3_tokenizer`('simple')",
+        "SELECT [sha3_query ]('SELECT 1')",
+        "SELECT [fts3_tokenizer/**/]('simple')",
+    }) {
+        EXPECT_EQ(ECSqlStatus::InvalidECSql, ecsql.Prepare(m_ecdb, query)) << query;
+        ecsql.Finalize();
+    }
+    EXPECT_EQ(ECSqlStatus::Success, ecsql.Prepare(m_ecdb, "SELECT sha3('still available')"));
+
+    Statement sql;
+    ASSERT_EQ(BE_SQLITE_OK, sql.Prepare(m_ecdb, "SELECT sha3_query('SELECT 1')"));
+    EXPECT_EQ(BE_SQLITE_ROW, sql.Step());
+}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 * ECSqlStatementTestFixture.BugFix
@@ -11323,6 +11347,98 @@ TEST_F(ECSqlStatementTestFixture, EnumeratorNames)
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("UPDATE ts.TestClass SET Domain = ts.Domains.Net WHERE Domain = ts.Domains.Edu"));
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.TestClass WHERE Color = ts.Colors.Yellow"));
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.TestClass WHERE Domain = ts.Domains.Net"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, NamesAndValuesStayInsideGeneratedSql)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("NamesAndValuesStayInsideGeneratedSql.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+                <ECEnumeration typeName="Notes" backingTypeName="string" isStrict="true">
+                    <ECEnumerator name="Quoted" value="it's" />
+                </ECEnumeration>
+                <ECEntityClass typeName="TestClass">
+                    <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.02.00.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="Note" typeName="Notes" />
+                </ECEntityClass>
+            </ECSchema>)xml")));
+
+    // String enumerator values are escaped like string literals
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.TestClass(Note) VALUES (ts.Notes.Quoted)"));
+    ASSERT_EQ(JsonValue("[{\"cnt\": 1}]"), GetHelper().ExecuteSelectECSql("SELECT COUNT(*) cnt FROM ts.TestClass WHERE Note = 'it''s'"));
+
+    // With a physical ECClassId column, $-> paths go into a class_props(...) join that finds the classes having those properties
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT $->Note FROM ts.TestClass"));
+    EXPECT_TRUE(Utf8String(stmt.GetNativeSql()).Contains("class_props(")) << stmt.GetNativeSql();
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    EXPECT_FALSE(stmt.IsValueNull(0));
+    }
+
+    // class_props binds the property names it receives
+    {
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT class_id FROM class_props(?)"));
+    stmt.BindText(1, R"json(["Note"])json", Statement::MakeCopy::No);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    EXPECT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "TestClass"), stmt.GetValueId<ECClassId>(0));
+
+    stmt.Reset();
+    stmt.ClearBindings();
+    stmt.BindText(1, R"json(["it's"])json", Statement::MakeCopy::No);
+    EXPECT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
+    auto expectRejected = [&] (Utf8CP ecsql, Utf8CP expectedIssueId)
+        {
+        issueListener.ClearIssues();
+        ECSqlStatement stmt;
+        EXPECT_NE(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql)) << ecsql;
+        const bool hasExpectedIssue = std::any_of(issueListener.m_issues.begin(), issueListener.m_issues.end(),
+            [&] (ReportedIssue const& issue) { return Utf8String(issue.id.m_issueId).Equals(expectedIssueId); });
+        EXPECT_TRUE(hasExpectedIssue) << ecsql << ": " << issueListener.GetLastMessage().c_str();
+        };
+
+    // $-> paths name EC properties
+    expectRejected("SELECT $->[it's] FROM ts.TestClass", "ECDb_0752");
+
+    // ']' would end the [...] that the generated SQL puts aliases into
+    expectRejected("SELECT ECInstanceId [a]]b] FROM ts.TestClass", "ECDb_0753");
+    expectRejected("SELECT ECInstanceId \"a]b\" FROM ts.TestClass", "ECDb_0753");
+    expectRejected("SELECT 1 FROM ts.TestClass [t]]x]", "ECDb_0753");
+    expectRejected("SELECT 1 FROM (SELECT 1) [s]]x]", "ECDb_0753");
+    expectRejected("SELECT 1 FROM meta.ECClassDef c JOIN meta.ECPropertyDef p USING meta.ClassOwnsLocalProperties [r]]x]", "ECDb_0753");
+
+    // Other characters are fine inside [...]
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT [t x].ECInstanceId [a b] FROM ts.TestClass [t x]")) << issueListener.GetLastMessage().c_str();
+    EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+    }
+
+    // ECSQLOPTIONS values may be quoted names. They are never written into SQL, so ']' is allowed there.
+    {
+    ECSqlStatement stmt;
+    EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 FROM ts.TestClass ECSQLOPTIONS myopt=\"a]b\"")) << issueListener.GetLastMessage().c_str();
+    }
+
+    // These names are written into the generated SQL without quotes
+    expectRejected("WITH [my cte](a) AS (SELECT 1) SELECT a FROM [my cte]", "ECDb_0751");
+    expectRejected("WITH cte([a b]) AS (SELECT 1) SELECT * FROM cte", "ECDb_0751");
+    expectRejected("SELECT [abs x](1) FROM ts.TestClass", "ECDb_0751");
+    expectRejected("SELECT MAX(ECInstanceId) OVER [w x] FROM ts.TestClass WINDOW [w x] AS (ORDER BY ECInstanceId)", "ECDb_0751");
+    expectRejected("SELECT * FROM json1.json_each('[]') [s x]", "ECDb_0751");
+    m_ecdb.RemoveIssueListener();
     }
 
 //---------------------------------------------------------------------------------------
