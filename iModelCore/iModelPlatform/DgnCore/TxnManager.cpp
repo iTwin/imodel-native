@@ -2509,6 +2509,7 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
             schemaApplyArgs.SetConflictHandler(fastForwardConflictHandler);
         }
 
+        bool cacheTablesRebuilt = false;
         if(!m_dgndb.IsReadonly()) {
             const auto result = [&]() {
                 auto _v = pmConf.IsRebasingLocalChanges() ? nullptr : std::make_unique<DisableTracking>(*this);
@@ -2532,12 +2533,13 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
                 scope.Stop();
                 return result;
             }
+            cacheTablesRebuilt = true;
         }
 
         scope.Pause();
         m_dgndb.Schemas().OnAfterSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
             if (action == TxnAction::Merge) {
-                const auto result = m_dgndb.AfterSchemaChangeSetApplied();
+                const auto result = m_dgndb.AfterSchemaChangeSetApplied(!cacheTablesRebuilt);
                 if (result != BE_SQLITE_OK) {
                     LOG.errorv("ApplyChanges failed schema changes: %s", BeSQLiteLib::GetErrorName(result));
                     m_dgndb.AbandonChanges();

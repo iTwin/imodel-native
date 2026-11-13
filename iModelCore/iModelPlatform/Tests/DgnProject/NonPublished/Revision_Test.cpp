@@ -2397,6 +2397,171 @@ TEST_F(RevisionTestFixture, RevertDataChangesetSkipsSchemaPass)
     EXPECT_TRUE(m_db->Elements().GetElement(elementId).IsNull()) << "the inserted element was not reverted";
     }
 
+namespace {
+Utf8CP const kAllMixins = "PhysicalElement:0 M1:1 M2:2 M3:3 | cached: M1 M2 M3";
+Utf8CP const kMixinsWithoutM2 = "PhysicalElement:0 M1:1 M3:2 | cached: M1 M3";
+
+//---------------------------------------------------------------------------------------
+// Imports TestSchema at @p version. TestElement derives from bis:PhysicalElement and then
+// from @p mixins, in that order. The mixins have no properties, so they can be removed.
+//---------------------------------------------------------------------------------------
+void ImportMixinTestSchema(DgnDbR db, Utf8CP version, std::vector<Utf8CP> const& mixins)
+    {
+    Utf8String mixinClasses;
+    for (Utf8CP mixin : { "M1", "M2", "M3" })
+        {
+        mixinClasses.append(Utf8PrintfString(R"xml(
+                <ECEntityClass typeName="%s" modifier="Abstract">
+                    <ECCustomAttributes>
+                        <IsMixin xmlns="CoreCustomAttributes.1.0.0">
+                            <AppliesToEntityClass>bis:PhysicalElement</AppliesToEntityClass>
+                        </IsMixin>
+                    </ECCustomAttributes>
+                </ECEntityClass>)xml", mixin));
+        }
+
+    Utf8String baseClasses;
+    for (Utf8CP mixin : mixins)
+        baseClasses.append(Utf8PrintfString("<BaseClass>%s</BaseClass>", mixin));
+
+    const Utf8PrintfString schemaXml(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECSchemaReference name="BisCore" version="1.0.0" alias="bis"/>
+                <ECSchemaReference name="CoreCustomAttributes" version="1.0.0" alias="CoreCA" />
+
+                <ECCustomAttributes>
+                    <DynamicSchema xmlns = 'CoreCustomAttributes.1.0.0' />
+                </ECCustomAttributes>
+                %s
+                <ECEntityClass typeName="TestElement">
+                    <BaseClass>bis:PhysicalElement</BaseClass>
+                    %s
+                </ECEntityClass>
+            </ECSchema>)xml", version, mixinClasses.c_str(), baseClasses.c_str());
+
+    auto context = ECN::ECSchemaReadContext::CreateContext();
+    context->AddSchemaLocater(db.GetSchemaLocater());
+    ECSchemaPtr schema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *context));
+    ASSERT_EQ(SchemaStatus::Success, db.ImportSchemas({ schema.get() }, true));
+    ASSERT_EQ(BE_SQLITE_OK, db.SaveChanges(version));
+    }
+
+//---------------------------------------------------------------------------------------
+// The base classes of TestElement with their ec_ClassHasBaseClasses ordinals, then the
+// TestSchema classes ec_cache_ClassHierarchy lists as its bases.
+//---------------------------------------------------------------------------------------
+Utf8String DumpTestElementBaseClasses(DgnDbR db)
+    {
+    db.ClearECDbCache();
+    ECClassCP testElement = db.Schemas().GetClass("TestSchema", "TestElement");
+    if (testElement == nullptr)
+        return "TestElement not found";
+
+    Utf8String dump;
+    Statement bases;
+    EXPECT_EQ(BE_SQLITE_OK, bases.Prepare(db, "SELECT b.Name, h.Ordinal FROM ec_ClassHasBaseClasses h JOIN ec_Class b ON b.Id=h.BaseClassId WHERE h.ClassId=? ORDER BY h.Ordinal"));
+    bases.BindId(1, testElement->GetId());
+    while (BE_SQLITE_ROW == bases.Step())
+        dump.append(Utf8PrintfString("%s:%d ", bases.GetValueText(0), bases.GetValueInt(1)));
+
+    dump.append("| cached:");
+    Statement cached;
+    EXPECT_EQ(BE_SQLITE_OK, cached.Prepare(db, "SELECT b.Name FROM ec_cache_ClassHierarchy ch JOIN ec_Class b ON b.Id=ch.BaseClassId "
+        "WHERE ch.ClassId=?1 AND b.Id<>?1 AND b.SchemaId=?2 ORDER BY b.Name"));
+    cached.BindId(1, testElement->GetId());
+    cached.BindId(2, testElement->GetSchema().GetId());
+    while (BE_SQLITE_ROW == cached.Step())
+        dump.append(" ").append(cached.GetValueText(0));
+
+    return dump;
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// Removing M2 from the middle of TestElement's mixins deletes its ec_ClassHasBaseClasses rows
+// and inserts them again, so M3 moves to M2's (ClassId,Ordinal). Merging the changeset, and
+// reverting it, relies on SQLite deferring and retrying the unique index conflicts. The merge
+// rebuilds the ec_cache_ tables once.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, MiddleMixinRemovalMergedAndReverted)
+    {
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"MiddleMixinRemovalMergedAndReverted.bim");
+    EXPECT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Initialized db"));
+
+    ImportMixinTestSchema(*m_db, "1.0.0", { "M1", "M2", "M3" });
+#if defined (USE_GTEST)
+    ASSERT_FALSE(HasFatalFailure());
+#endif
+    ASSERT_TRUE(CreateRevision("-v1").IsValid());
+    BackupTestFile();
+    EXPECT_STREQ(kAllMixins, DumpTestElementBaseClasses(*m_db).c_str());
+
+    ImportMixinTestSchema(*m_db, "1.0.1", { "M1", "M3" });
+#if defined (USE_GTEST)
+    ASSERT_FALSE(HasFatalFailure());
+#endif
+    const auto v2 = CreateRevision("-v2");
+    ASSERT_TRUE(v2.IsValid());
+    EXPECT_STREQ(kMixinsWithoutM2, DumpTestElementBaseClasses(*m_db).c_str());
+
+    RestoreTestFile();
+    EXPECT_STREQ(kAllMixins, DumpTestElementBaseClasses(*m_db).c_str());
+
+    int cacheRebuilds = 0;
+    auto stopCounting = m_db->GetTraceStmtEvent().AddListener([&](TraceContext const&, Utf8CP sql)
+        {
+        if (sql != nullptr && Utf8String(sql).StartsWith("INSERT INTO main.ec_cache_ClassHasTables"))
+            ++cacheRebuilds;
+        });
+    m_db->ConfigTraceEvents(DbTrace::Stmt, true);
+    EXPECT_EQ(ChangesetStatus::Success, m_db->Txns().PullMergeApply(*v2));
+    stopCounting();
+    m_db->ConfigTraceEvents(DbTrace::Stmt, false);
+    EXPECT_EQ(1, cacheRebuilds) << "ec_cache_ClassHasTables must be rebuilt once per merged schema changeset";
+    EXPECT_STREQ(kMixinsWithoutM2, DumpTestElementBaseClasses(*m_db).c_str());
+
+    m_db->Txns().RevertTimelineChanges({ v2 }, false);
+    EXPECT_STREQ(kAllMixins, DumpTestElementBaseClasses(*m_db).c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// The same removal as a local txn. Pulling an incoming changeset reverses the txn, which puts
+// M2 and M3 back at their old ordinals, and then reinstates it, which shifts M3 down again.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, MiddleMixinRemovalRebasedAsLocalTxn)
+    {
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"MiddleMixinRemovalRebasedAsLocalTxn.bim");
+    EXPECT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Initialized db"));
+
+    ImportMixinTestSchema(*m_db, "1.0.0", { "M1", "M2", "M3" });
+#if defined (USE_GTEST)
+    ASSERT_FALSE(HasFatalFailure());
+#endif
+    ASSERT_TRUE(CreateRevision("-v1").IsValid());
+    BackupTestFile();
+
+    const DgnElementId elementId = RevisionTestFixture::InsertPhysicalElement(*m_db, *m_defaultModel, m_defaultCategoryId, 1, 1, 1);
+    ASSERT_TRUE(elementId.IsValid());
+    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Inserted an element"));
+    const auto incoming = CreateRevision("-incoming");
+    ASSERT_TRUE(incoming.IsValid());
+
+    RestoreTestFile();
+    ImportMixinTestSchema(*m_db, "1.0.1", { "M1", "M3" });
+#if defined (USE_GTEST)
+    ASSERT_FALSE(HasFatalFailure());
+#endif
+    EXPECT_STREQ(kMixinsWithoutM2, DumpTestElementBaseClasses(*m_db).c_str());
+
+    EXPECT_EQ(ChangesetStatus::Success, m_db->Txns().PullMergeApply(*incoming));
+    EXPECT_STREQ(kMixinsWithoutM2, DumpTestElementBaseClasses(*m_db).c_str());
+    EXPECT_TRUE(m_db->Elements().GetElement(elementId).IsValid()) << "the incoming element was not merged";
+    EXPECT_TRUE(m_db->Txns().HasPendingTxns()) << "the local schema change is no longer pending";
+    }
+
 TEST_F(RevisionTestFixture, CheckHealthStatsWithSchemaChanges) {
     SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"CheckHealthStatsWithSchemaChanges.bim");
     EXPECT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Initialized db"));

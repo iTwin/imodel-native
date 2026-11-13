@@ -110,12 +110,12 @@ DbResult ECDb::_OnDbOpened(OpenParams const& params)
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::_AfterSchemaChangeSetApplied() const
+DbResult ECDb::_AfterSchemaChangeSetApplied(bool rebuildCacheTables) const
     {
     // Applying a changeset replays already accepted timeline changes, so historical inconsistencies written by
     // older software (orphan ec_CustomAttribute rows) must not fail the apply. The sqlite schema which was just
     // updated above is still validated. See https://github.com/iTwin/itwinjs-backlog/issues/2331
-    auto rc = GetImpl().Schemas().Main().UpdateDbSchema(true, DbMapValidationMode::ChangesetApply);
+    auto rc = GetImpl().Schemas().Main().UpdateDbSchema(true, DbMapValidationMode::ChangesetApply, rebuildCacheTables);
     if (rc != SUCCESS)
         return BE_SQLITE_ERROR;
 

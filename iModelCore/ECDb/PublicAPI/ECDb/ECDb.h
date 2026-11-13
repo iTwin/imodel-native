@@ -267,7 +267,7 @@ protected:
     ECDB_EXPORT DbResult _OnDbDetached(Utf8CP dbAlias) const override;
     ECDB_EXPORT int _OnAddFunction(DbFunction&) const override;
     ECDB_EXPORT void _OnRemoveFunction(DbFunction&) const override;
-    ECDB_EXPORT virtual DbResult _AfterSchemaChangeSetApplied() const;
+    ECDB_EXPORT virtual DbResult _AfterSchemaChangeSetApplied(bool rebuildCacheTables) const;
     ECDB_EXPORT virtual DbResult _AfterDataChangeSetApplied(bool schemaChanged, bool deferInstanceUpgrade);
     ECDB_EXPORT virtual bool _IsLevelWithTimeline();
 
@@ -550,7 +550,10 @@ public:
     ECDB_EXPORT void AddECDbCacheClearListener(IECDbCacheClearListener&);
     ECDB_EXPORT void RemoveECDbCacheClearListener(IECDbCacheClearListener&);
 
-    BeSQLite::DbResult AfterSchemaChangeSetApplied() const { return _AfterSchemaChangeSetApplied(); }
+    //! Brings the tables, indexes and triggers in line with the ec_ rows of a schema changeset that was just applied.
+    //! @param[in] rebuildCacheTables Pass false right after ApplySchemaChangeSet, which has already rebuilt the
+    //! ec_cache_ tables. Rebuilding them reads all of ec_PropertyMap, which is slow on a large file.
+    BeSQLite::DbResult AfterSchemaChangeSetApplied(bool rebuildCacheTables = true) const { return _AfterSchemaChangeSetApplied(rebuildCacheTables); }
     //! Applies the schema part of a changeset (the ec_ rows and the be_Prop schema version rows) with
     //! SQLITE_CHANGESETAPPLY_FKNOACTION, so deleting a parent row (class, category, enumeration, ...) cannot
     //! cascade into a row that the same changeset moves to another parent. Foreign keys are still checked

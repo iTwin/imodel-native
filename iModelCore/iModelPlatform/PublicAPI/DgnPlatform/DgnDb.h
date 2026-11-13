@@ -252,7 +252,7 @@ protected:
     DGNPLATFORM_EXPORT void _OnBeforeSetBriefcaseId(BeSQLite::BeBriefcaseId newId) override;
     DGNPLATFORM_EXPORT void _OnAfterSetBriefcaseId() override;
 
-    DGNPLATFORM_EXPORT BeSQLite::DbResult _AfterSchemaChangeSetApplied() const override;
+    DGNPLATFORM_EXPORT BeSQLite::DbResult _AfterSchemaChangeSetApplied(bool rebuildCacheTables) const override;
     DGNPLATFORM_EXPORT BeSQLite::DbResult _AfterDataChangeSetApplied(bool schemaChanged, bool deferInstanceUpgrade) override;
     DGNPLATFORM_EXPORT bool _IsLevelWithTimeline() override;
 

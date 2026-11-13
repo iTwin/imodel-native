@@ -1598,7 +1598,7 @@ static DbResult ApplyOneChangeset(ECDbChangeSet& changeset, ECDbR db, bool inver
         return rc;
 
     if (isMerge) {
-        rc = db.AfterSchemaChangeSetApplied();
+        rc = db.AfterSchemaChangeSetApplied(/*rebuildCacheTables*/ false);
         if (rc != BE_SQLITE_OK) {
             printf("[mockhub] AfterSchemaChangeSetApplied failed on '%s': %s (%s)\n", changeset.GetOperation().c_str(),
                 BeSQLiteLib::GetErrorName(rc), db.GetLastError().c_str());
