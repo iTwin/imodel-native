@@ -252,10 +252,7 @@ BentleyStatus DbMapSaveContext::TryGetPropertyPathId(PropertyPathId& id, ECN::EC
 
 namespace
     {
-    static std::vector<Utf8String> classIdList;
-    Utf8String GetClassIdListAsString() { return BeStringUtilities::Join(classIdList, ","); }
-
-    void CollectAllBaseClassIds(const TableSpaceSchemaManager& schemaManager, const ECClassId& classId)
+    void CollectAllBaseClassIds(const TableSpaceSchemaManager& schemaManager, const ECClassId& classId, std::vector<Utf8String>& classIdList)
         {
         auto stmt = schemaManager.GetECDb().GetImpl().GetCachedSqliteStatement(Utf8PrintfString("SELECT BaseClassId FROM [%s]." TABLE_ClassHierarchyCache " WHERE ClassId=?", schemaManager.GetTableSpace().GetName().c_str()).c_str());
         if (stmt == nullptr)
@@ -273,19 +270,20 @@ namespace
             }
         }
 
-    bool IsMappingUnknownInBaseOrConstraintClasses(const TableSpaceSchemaManager& schemaManager, ECClassCR ecClass)
+    // Fills classIdList with the ids of the base classes and relationship constraint classes that were checked
+    bool IsMappingUnknownInBaseOrConstraintClasses(const TableSpaceSchemaManager& schemaManager, ECClassCR ecClass, std::vector<Utf8String>& classIdList)
         {
         classIdList.clear();
         // Check if the class has any base class with unknown mapping
-        CollectAllBaseClassIds(schemaManager, ecClass.GetId());
+        CollectAllBaseClassIds(schemaManager, ecClass.GetId(), classIdList);
         
         // Check if the class has any relationship constraint class with unknown mapping
         if (const auto relClass = ecClass.GetRelationshipClassCP())
             {
             for (const auto constraintClass : relClass->GetSource().GetConstraintClasses())
-                CollectAllBaseClassIds(schemaManager, constraintClass->GetId());
+                CollectAllBaseClassIds(schemaManager, constraintClass->GetId(), classIdList);
             for (auto& constraintClass : relClass->GetTarget().GetConstraintClasses())
-                CollectAllBaseClassIds(schemaManager, constraintClass->GetId());
+                CollectAllBaseClassIds(schemaManager, constraintClass->GetId(), classIdList);
             }
 
         const auto stmt = schemaManager.GetECDb().GetImpl().GetCachedSqliteStatement(Utf8PrintfString(
@@ -366,7 +364,8 @@ BentleyStatus DbClassMapLoadContext::Load(DbClassMapLoadContext& loadContext, Cl
 
     if (isNewerECXmlVersion)
         {
-        if (isMappingUnknown || IsMappingUnknownInBaseOrConstraintClasses(schemaManager, ecClass))
+        std::vector<Utf8String> checkedClassIds;
+        if (isMappingUnknown || IsMappingUnknownInBaseOrConstraintClasses(schemaManager, ecClass, checkedClassIds))
             {
             loadContext.m_mapStrategyExtInfo = MapStrategyExtendedInfo(MapStrategy::UnsupportedByECVersion);
     
@@ -378,7 +377,7 @@ BentleyStatus DbClassMapLoadContext::Load(DbClassMapLoadContext& loadContext, Cl
 
         // Check if the class has any navigation properties in which the other end class possibly has an unknown mapping strategy
         const auto tblspaceName = schemaManager.GetTableSpace().GetName();
-        const auto classIdList = GetClassIdListAsString();
+        const auto classIdList = BeStringUtilities::Join(checkedClassIds, ",");
 
         const auto relConstraintCheckStmt = ecdb.GetImpl().GetCachedSqliteStatement(Utf8PrintfString(
             "SELECT rcc.ClassId AS ConstraintClassId, p.Name "
@@ -391,11 +390,12 @@ BentleyStatus DbClassMapLoadContext::Load(DbClassMapLoadContext& loadContext, Cl
         if (!relConstraintCheckStmt.IsValid())
             return ERROR;
 
+        std::vector<Utf8String> constraintCheckedClassIds;
         while (relConstraintCheckStmt->Step() == BE_SQLITE_ROW)
             {            
             if (const auto constraintClass = schemaManager.GetClass(relConstraintCheckStmt->GetValueId<ECClassId>(0)); constraintClass != nullptr)
                 {
-                if (IsMappingUnknownInBaseOrConstraintClasses(schemaManager, *constraintClass))
+                if (IsMappingUnknownInBaseOrConstraintClasses(schemaManager, *constraintClass, constraintCheckedClassIds))
                     loadContext.AddPropertyToIgnoreList(relConstraintCheckStmt->GetValueText(1));
                 }
             }
