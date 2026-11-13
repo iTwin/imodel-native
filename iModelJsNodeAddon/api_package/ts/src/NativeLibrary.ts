@@ -126,6 +126,10 @@ export enum BulkElementAspectFailureReason {
    * Not used by `deleteElementAspects`, which ignores ids that do not identify an aspect, like `deleteElements`.
    */
   AspectNotFound = 5,
+  /** The unique aspect to update is given by a base class, and the element has more than one unique aspect of that class or its subclasses.
+   * Give the class of the aspect instead.
+   */
+  AmbiguousAspect = 6,
 }
 
 /**
@@ -136,7 +140,7 @@ export interface BulkElementAspectFailure {
   /** Index of the props or id in the input array. */
   index: number;
   /** The id of the aspect, when known and valid. */
-  id?: Id64String;
+  aspectId?: Id64String;
   reason: BulkElementAspectFailureReason;
 }
 

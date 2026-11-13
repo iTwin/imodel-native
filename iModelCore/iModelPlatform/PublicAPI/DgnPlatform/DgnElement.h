@@ -631,6 +631,8 @@ enum class BulkElementAspectsStatus : int
 //! ElementNotFound: The owning element does not exist.
 //! AspectNotFound: The aspect to update does not exist, is not owned by the given element, or cannot be modified
 //!     as a generic aspect because its class has a handler. Not used by deletes, which ignore ids that do not identify an aspect.
+//! AmbiguousAspect: The unique aspect to update is given by a base class, and the element has more than one unique aspect of
+//!     that class or its subclasses.
 // @bsiclass
 //=======================================================================================
 enum class BulkElementAspectFailureReason : int
@@ -641,6 +643,7 @@ enum class BulkElementAspectFailureReason : int
     NotAnAspectClass = 3,
     ElementNotFound  = 4,
     AspectNotFound   = 5,
+    AmbiguousAspect  = 6,
     };
 
 //=======================================================================================
@@ -670,60 +673,17 @@ struct BulkDeleteElementAspectsResult
     };
 
 //=======================================================================================
-//! An ElementAspect written by BulkElementAspectWriter::UpdateElement.
+//! An ElementAspect that DgnElements::DeleteElementAspects is about to delete.
 // @bsiclass
 //=======================================================================================
-struct BulkElementAspectWrite
+struct BulkDeleteElementAspect
     {
-    //! The properties of the aspect. The aspect is written with the class of this instance.
-    ECN::IECInstancePtr instance;
-    //! Unique aspects only: the class used to find the owner's existing aspect, which is replaced if it is of another class.
-    //! If null, the class of instance is used.
-    ECN::ECClassCP keyClass = nullptr;
-    //! Multi aspects: the id of the aspect to update, or an invalid id to insert a new aspect.
-    //! Unique aspects: the existing aspect of the owner is updated if it is of the class of instance, otherwise the instance is
-    //! inserted. If valid, this is the id used to update it, otherwise the id of the existing aspect is used.
-    //! On output: the id of the written aspect.
     BeSQLite::EC::ECInstanceId aspectId;
-    //! On output: the result of writing the aspect.
-    DgnDbStatus status = DgnDbStatus::Success;
-    };
-
-//=======================================================================================
-//! Writes many ElementAspects of an element with the update of that element, the same way as DgnElement::GenericUniqueAspect
-//! and DgnElement::GenericMultiAspect write them, but without creating an aspect object for each of them. Use one writer for
-//! all the elements of a bulk operation, so that the per-class information is computed once.
-//! Implemented in DgnCore/BulkElementAspectWriter.cpp
-// @bsiclass
-//=======================================================================================
-class BulkElementAspectWriter
-    {
-    struct Impl;
-    struct WriterAppData;
-    Impl* m_impl;
-
-    BulkElementAspectWriter(BulkElementAspectWriter const&) = delete;
-    BulkElementAspectWriter& operator=(BulkElementAspectWriter const&) = delete;
-
-    static BeSQLite::EC::ECInstanceUpdater* GetUpdater(DgnDbR db, ECN::ECClassCR aspectClass);
-
-public:
-    //! @param[in] db The DgnDb to write to
-    DGNPLATFORM_EXPORT explicit BulkElementAspectWriter(DgnDbR db);
-    DGNPLATFORM_EXPORT ~BulkElementAspectWriter();
-
-    //! Whether existing aspects of the given class are loaded as generic aspects, i.e. the class has no registered C++ aspect handler
-    //! and no ClassHasHandler custom attribute. DgnElement::GenericUniqueAspect::GetAspectP and DgnElement::GenericMultiAspect::GetAspectP
-    //! return nullptr for aspects of other classes.
-    DGNPLATFORM_EXPORT bool IsGenericAspectClass(ECN::ECClassCR aspectClass);
-
-    //! Updates elementEdit (see DgnElement::Update) and writes the aspects while the element is updated, at the point where
-    //! the element's DgnElement::Aspect objects are written.
-    //! @param[in] elementEdit An editable copy of the owning element. Other aspects added to it are written by the same update.
-    //! @param[in, out] writes The aspects to write, in order. The status and aspectId of each are set when the element is updated.
-    //!   writes must not be modified until this returns.
-    //! @return The status of the update of the element. If it is not DgnDbStatus::Success, the aspects were not written.
-    DGNPLATFORM_EXPORT DgnDbStatus UpdateElement(DgnElementR elementEdit, bvector<BulkElementAspectWrite>& writes);
+    DgnClassId classId;
+    //! The owning element
+    DgnElementId elementId;
+    //! The model of the owning element
+    DgnModelId modelId;
     };
 
 #define DGNELEMENT_DECLARE_MEMBERS(__ECClassName__,__superclass__) \
@@ -4081,7 +4041,6 @@ struct DgnElements : DgnDbTable
     friend struct GeometricElement;
     friend struct ElementAutoHandledPropertiesECInstanceAdapter;
     friend class BulkElementDeletion;
-    friend class BulkElementAspectWriter;
 
 private:
     // THIS MUST NOT BE EXPORTED, AS IT BYPASSES THE ECCRUDWRITETOKEN
@@ -4311,17 +4270,22 @@ public:
     //!
     //! The operation is all-or-nothing, like DeleteElements. The aspects are looked up with a single query and all of them are
     //! validated before anything is written. If any of them cannot be deleted, nothing is written and the result is ValidationFailed.
-    //! Otherwise each owning element is updated once (see DgnElement::Update), and that update deletes its aspects, at the same point
-    //! as DgnElement::Aspect::Delete: after the element's onUpdated callback and before the model's and parent's notifications. The
-    //! aspects of an element are deleted with a single statement per ECClass, except that aspects of a class that has a registered
-    //! C++ aspect handler are deleted through that handler. The first write that fails stops the operation and the result is WriteFailed.
+    //! Otherwise onDelete is called, then each owning element is updated once (see DgnElement::Update), and that update deletes its
+    //! aspects, at the same point as DgnElement::Aspect::Delete: after the element's onUpdated callback and before the model's and
+    //! parent's notifications. The aspects of an element are deleted with a single statement per ECClass, except that aspects of a
+    //! class that has a registered C++ aspect handler are deleted through that handler. The first write that fails stops the operation
+    //! and the result is WriteFailed. That includes an aspect or owning element that onDelete removed, which is WriteFailed with
+    //! DgnDbStatus::NotFound.
     //! @param[in] aspectIds The ids of the ElementUniqueAspects and ElementMultiAspects to delete. Duplicate ids are deleted once.
     //!   Like DeleteElements, ids that do not identify an aspect are ignored.
-    //! @note This method does not call the JavaScript ElementAspect handlers; the caller is responsible for that.
+    //! @param[in] onDelete Optional. Called once with every aspect to delete, in the order of aspectIds, after they were validated and
+    //!   before anything is written. Not called if there is nothing to delete or validation fails. If it throws, nothing is written.
+    //! @note This method does not call the JavaScript ElementAspect handlers; the caller is responsible for that, e.g. from onDelete.
     //! @note This method does not open a transaction of its own. On WriteFailed the iModel may be partially modified and the
     //!   caller must abandon the current transaction.
     //! @note This function can only be safely invoked from the client thread.
-    DGNPLATFORM_EXPORT BulkDeleteElementAspectsResult DeleteElementAspects(bvector<BeSQLite::EC::ECInstanceId> const& aspectIds);
+    DGNPLATFORM_EXPORT BulkDeleteElementAspectsResult DeleteElementAspects(bvector<BeSQLite::EC::ECInstanceId> const& aspectIds,
+        std::function<void(bvector<BulkDeleteElementAspect> const&)> const& onDelete = nullptr);
 
     //! Delete a DgnElement from this DgnDb by DgnElementId.
     //! @return DgnDbStatus::Success if the element was deleted, error status otherwise.

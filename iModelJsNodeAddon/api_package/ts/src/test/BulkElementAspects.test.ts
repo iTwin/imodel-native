@@ -437,7 +437,7 @@ describe("bulk element aspects", () => {
       expect(result.status).to.equal(BulkElementAspectsStatus.ValidationFailed);
       expect(result.failures).to.deep.equal([
         { index: 1, reason: BulkElementAspectFailureReason.InvalidId },
-        { index: 2, id: "0xffffff0", reason: BulkElementAspectFailureReason.AspectNotFound },
+        { index: 2, aspectId: "0xffffff0", reason: BulkElementAspectFailureReason.AspectNotFound },
         { index: 3, reason: BulkElementAspectFailureReason.AspectNotFound },
         { index: 4, reason: BulkElementAspectFailureReason.ElementNotFound },
       ]);
@@ -472,7 +472,7 @@ describe("bulk element aspects", () => {
         { ...multiProps(e1, "m1-new"), id: inserted.ids[0] },
       ]);
       expect(result.status).to.equal(BulkElementAspectsStatus.ValidationFailed);
-      expect(result.failures).to.deep.equal([{ index: 0, id: inserted.ids[1], reason: BulkElementAspectFailureReason.AspectNotFound }]);
+      expect(result.failures).to.deep.equal([{ index: 0, aspectId: inserted.ids[1], reason: BulkElementAspectFailureReason.AspectNotFound }]);
       expect(findAspect(inserted.ids[1])).to.deep.include({ element: e2, strProp: "m2" });
       expect(findAspect(inserted.ids[0])).to.deep.include({ element: e1, strProp: "m1" });
     });
@@ -619,8 +619,8 @@ describe("bulk element aspects", () => {
       ]);
       expect(result.status).to.equal(BulkElementAspectsStatus.ValidationFailed);
       expect(result.failures).to.deep.equal([
-        { index: 0, id: inserted.ids[0], reason: BulkElementAspectFailureReason.AspectNotFound },
-        { index: 1, id: inserted.ids[0], reason: BulkElementAspectFailureReason.AspectNotFound },
+        { index: 0, aspectId: inserted.ids[0], reason: BulkElementAspectFailureReason.AspectNotFound },
+        { index: 1, aspectId: inserted.ids[0], reason: BulkElementAspectFailureReason.AspectNotFound },
         { index: 2, reason: BulkElementAspectFailureReason.AspectNotFound },
       ]);
       expect(queryAspects()).to.deep.equal(before);
@@ -638,6 +638,37 @@ describe("bulk element aspects", () => {
       expect(result.status).to.equal(BulkElementAspectsStatus.Success);
       expect(readAspect(concreteMultiClass, inserted.ids[0], ["strProp"])).to.deep.equal({ className: concreteMultiClass, strProp: "m1-new" });
       expect(readAspect(concreteUniqueClass, inserted.ids[1], ["strProp"])).to.deep.equal({ className: concreteUniqueClass, strProp: "u1-new" });
+    });
+
+    it("rejects a unique aspect named through a base class that matches more than one aspect of the element", () => {
+      const e1 = insertOwner();
+      const base = db.insertElementAspects([uniqueProps(e1, "u-base")]);
+      expect(base.status).to.equal(BulkElementAspectsStatus.Success);
+      const derived = db.insertElementAspects([uniqueProps(e1, "u-derived", undefined, derivedUniqueClass)]);
+      expect(derived.status).to.equal(BulkElementAspectsStatus.Success);
+      const e2 = insertOwner();
+      expect(db.insertElementAspects([uniqueProps(e2, "u2")]).status).to.equal(BulkElementAspectsStatus.Success);
+      const before = queryAspects();
+      expect(readAspect(uniqueClass, base.ids[0], ["strProp"])).to.deep.equal({ className: uniqueClass, strProp: "u-base" });
+      expect(readAspect(uniqueClass, derived.ids[0], ["strProp"])).to.deep.equal({ className: derivedUniqueClass, strProp: "u-derived" });
+      const mock = makeMockJsDb();
+      db.setIModelDb(mock.mockJsDb);
+
+      const result = db.updateElementAspects([
+        uniqueProps(e2, "u2-new"),
+        uniqueProps(e1, "u-new"),
+        uniqueProps(e1, "u-derived-new", undefined, derivedUniqueClass),
+      ]);
+      expect(result.status).to.equal(BulkElementAspectsStatus.ValidationFailed);
+      expect(result.failures).to.deep.equal([{ index: 1, reason: BulkElementAspectFailureReason.AmbiguousAspect }]);
+      expect(mock.calls).to.deep.equal([]);
+      expect(queryAspects()).to.deep.equal(before);
+      expect(readAspect(uniqueClass, derived.ids[0], ["strProp"])).to.deep.equal({ className: derivedUniqueClass, strProp: "u-derived" });
+
+      // Naming the class of the aspect is not ambiguous
+      expect(db.updateElementAspects([uniqueProps(e1, "u-derived-new", undefined, derivedUniqueClass)]).status).to.equal(BulkElementAspectsStatus.Success);
+      expect(readAspect(uniqueClass, derived.ids[0], ["strProp"])).to.deep.equal({ className: derivedUniqueClass, strProp: "u-derived-new" });
+      expect(readAspect(uniqueClass, base.ids[0], ["strProp"])).to.deep.equal({ className: uniqueClass, strProp: "u-base" });
     });
 
     it("loads the aspects after the pre-update handlers, keeping their changes to properties that the rows do not set", () => {
@@ -838,10 +869,50 @@ describe("bulk element aspects", () => {
       });
       db.setIModelDb(mock.mockJsDb);
 
-      expect(() => db.deleteElementAspects(inserted.ids)).to.throw(`aspect ${inserted.ids[1]} can no longer be deleted after the onDelete handlers`);
+      // The missing aspect is detected by the delete itself, so the other aspects may have been deleted: the caller must abandon the changes.
+      expect(() => db.deleteElementAspects(inserted.ids)).to.throw(/can no longer be deleted after the onDelete handlers/);
       // only the single-aspect delete made by the handler calls onDeleted
       expect(mock.aspectCalls("onDeleted").map((c) => c.arg.aspectId)).to.deep.equal([inserted.ids[1]]);
-      expect(queryAspects().filter((r) => r.element === e1).map((r) => r.id)).to.deep.equal([inserted.ids[0], inserted.ids[2]]);
+    });
+
+    it("throws if a pre-delete handler deletes the owning element", () => {
+      const e1 = insertOwner();
+      const e2 = insertOwner();
+      const inserted = db.insertElementAspects([multiProps(e1, "m1"), multiProps(e2, "m2")]);
+      expect(inserted.status).to.equal(BulkElementAspectsStatus.Success);
+      let deleted = false;
+      const mock = makeMockJsDb({
+        onCall: (call) => {
+          if (!deleted && call.method === "onDelete") {
+            deleted = true;
+            db.deleteElement(e2);
+          }
+        },
+      });
+      db.setIModelDb(mock.mockJsDb);
+
+      expect(() => db.deleteElementAspects(inserted.ids)).to.throw(/can no longer be deleted after the onDelete handlers/);
+      expect(mock.aspectCalls("onDeleted")).to.deep.equal([]);
+    });
+
+    it("keeps the changes that a pre-delete handler makes to the owning element", () => {
+      const e1 = insertOwner();
+      const inserted = db.insertElementAspects([multiProps(e1, "m1"), uniqueProps(e1, "u1")]);
+      expect(inserted.status).to.equal(BulkElementAspectsStatus.Success);
+      let updated = false;
+      const mock = makeMockJsDb({
+        onCall: (call) => {
+          if (!updated && call.method === "onDelete") {
+            updated = true;
+            db.updateElement({ id: e1, userLabel: "changed by onDelete" });
+          }
+        },
+      });
+      db.setIModelDb(mock.mockJsDb);
+
+      expect(db.deleteElementAspects(inserted.ids)).to.deep.equal({ status: BulkElementAspectsStatus.Success, failures: [] });
+      expect(queryAspects().filter((r) => r.element === e1)).to.deep.equal([]);
+      expect(db.getElement({ id: e1 }).userLabel).to.equal("changed by onDelete");
     });
 
     it("rejects ids that are not valid Id64Strings, even when a lenient parser would read an id from them", () => {

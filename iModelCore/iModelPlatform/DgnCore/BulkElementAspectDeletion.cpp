@@ -23,12 +23,14 @@ class BulkElementAspectDeletion
 
     struct OwnerGroup
         {
+        DgnElementId m_ownerId;
         DgnElementCPtr m_owner;
         bvector<size_t> m_rows;
         };
 
     DgnDbR m_dgndb;
     bvector<ECInstanceId> const& m_aspectIds;
+    std::function<void(bvector<BulkDeleteElementAspect> const&)> const& m_onDelete;
     bvector<Row> m_rows;
     std::map<DgnClassId, bool> m_hasCustomHandler;
     BulkDeleteElementAspectsResult m_result;
@@ -67,7 +69,7 @@ class BulkElementAspectDeletion
 
     bool HasCustomHandler(DgnClassId classId);
     BeSQLite::DbResult Resolve();
-    BeSQLite::DbResult DeleteInstances(ECClassCR aspectClass, bvector<size_t> const& rowIndices);
+    BeSQLite::DbResult DeleteInstances(ECClassCR aspectClass, bvector<size_t> const& rowIndices, bool& missing);
 
     //=======================================================================================
     // Deletes the aspects of an owning element that have no custom handler, one statement per class, when the element is updated:
@@ -80,9 +82,10 @@ class BulkElementAspectDeletion
         BulkElementAspectDeletion& m_deletion;
         std::map<DgnClassId, bvector<size_t>> const& m_rowsByClass;
         BeSQLite::DbResult& m_status;
+        bool& m_missing;
 
-        DeleterAppData(BulkElementAspectDeletion& deletion, std::map<DgnClassId, bvector<size_t>> const& rowsByClass, BeSQLite::DbResult& status)
-            : m_deletion(deletion), m_rowsByClass(rowsByClass), m_status(status) {}
+        DeleterAppData(BulkElementAspectDeletion& deletion, std::map<DgnClassId, bvector<size_t>> const& rowsByClass, BeSQLite::DbResult& status, bool& missing)
+            : m_deletion(deletion), m_rowsByClass(rowsByClass), m_status(status), m_missing(missing) {}
 
         DropMe _OnInserted(DgnElementCR) override { return DropMe::Yes; }
         DropMe _OnDeleted(DgnElementCR) override { return DropMe::Yes; }
@@ -93,8 +96,8 @@ class BulkElementAspectDeletion
 
             for (auto const& entry : m_rowsByClass)
                 {
-                m_status = m_deletion.DeleteInstances(*m_deletion.m_rows[entry.second.front()].m_class, entry.second);
-                if (BE_SQLITE_OK != m_status)
+                m_status = m_deletion.DeleteInstances(*m_deletion.m_rows[entry.second.front()].m_class, entry.second, m_missing);
+                if (BE_SQLITE_OK != m_status || m_missing)
                     break;
                 }
             return DropMe::Yes;
@@ -102,7 +105,8 @@ class BulkElementAspectDeletion
         };
 
 public:
-    BulkElementAspectDeletion(DgnDbR dgndb, bvector<ECInstanceId> const& aspectIds) : m_dgndb(dgndb), m_aspectIds(aspectIds) {}
+    BulkElementAspectDeletion(DgnDbR dgndb, bvector<ECInstanceId> const& aspectIds, std::function<void(bvector<BulkDeleteElementAspect> const&)> const& onDelete)
+        : m_dgndb(dgndb), m_aspectIds(aspectIds), m_onDelete(onDelete) {}
     BulkDeleteElementAspectsResult Execute();
     };
 
@@ -201,10 +205,11 @@ BeSQLite::DbResult BulkElementAspectDeletion::Resolve()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Deletes the given aspects of one class with a single statement.
+* Deletes the given aspects of one class with a single statement. Sets missing if fewer aspects were deleted than given, e.g. because
+* onDelete removed some of them.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult BulkElementAspectDeletion::DeleteInstances(ECClassCR aspectClass, bvector<size_t> const& rowIndices)
+BeSQLite::DbResult BulkElementAspectDeletion::DeleteInstances(ECClassCR aspectClass, bvector<size_t> const& rowIndices, bool& missing)
     {
     Utf8PrintfString ecsql("DELETE FROM %s WHERE ECInstanceId IN (SELECT id FROM IdSet(?))", aspectClass.GetECSqlName().c_str());
     CachedECSqlStatementPtr stmt = m_dgndb.GetNonSelectPreparedECSqlStatement(ecsql.c_str(), m_dgndb.GetECCrudWriteToken());
@@ -227,7 +232,16 @@ BeSQLite::DbResult BulkElementAspectDeletion::DeleteInstances(ECClassCR aspectCl
         {
         stat = stmt->Step();
         if (BE_SQLITE_DONE == stat)
+            {
             stat = BE_SQLITE_OK;
+            // An ECSQL DELETE of an aspect class is a single statement on its primary table, so this counts the deleted aspects.
+            int deleted = m_dgndb.GetModifiedRowCount();
+            if (deleted != (int) ids.size())
+                {
+                missing = true;
+                LOG.errorv("BulkElementAspectDeletion: Deleted %d of %d aspects of class '%s'; the others no longer exist", deleted, (int) ids.size(), aspectClass.GetFullName());
+                }
+            }
         else
             LOG.errorv("BulkElementAspectDeletion: Failed to delete aspects of class '%s': %s", aspectClass.GetFullName(), BeSQLiteLib::GetLogError(stat).c_str());
         }
@@ -268,6 +282,7 @@ BulkDeleteElementAspectsResult BulkElementAspectDeletion::Execute()
             {
             found = groupIndex.emplace(row.m_ownerId, ownerGroups.size()).first;
             ownerGroups.push_back(OwnerGroup());
+            ownerGroups.back().m_ownerId = row.m_ownerId;
             ownerGroups.back().m_owner = m_dgndb.Elements().GetElement(row.m_ownerId);
             }
 
@@ -283,16 +298,40 @@ BulkDeleteElementAspectsResult BulkElementAspectDeletion::Execute()
     if (BulkElementAspectsStatus::Success != m_result.status)
         return std::move(m_result);
 
+    if (m_onDelete)
+        {
+        bvector<BulkDeleteElementAspect> aspects;
+        for (auto const& row : m_rows)
+            {
+            if (row.m_classId.IsValid())
+                aspects.push_back({row.m_id, row.m_classId, row.m_ownerId, ownerGroups[groupIndex[row.m_ownerId]].m_owner->GetModelId()});
+            }
+        if (!aspects.empty())
+            m_onDelete(aspects);
+        }
+
     // Write pass: update each owning element once. Like DgnElement::Aspect::Delete, the aspects are deleted by that update, at the point
     // where the element's AppData is notified: after the element's onUpdated callback, and before the model's onUpdatedElement and the
     // parent's onChildUpdated callbacks. Aspects with a custom handler are deleted through it; the other aspects of the element are
-    // deleted with one statement per class. The first failure stops the operation.
-    for (auto const& group : ownerGroups)
+    // deleted with one statement per class. The first failure stops the operation, including an aspect or owning element that onDelete
+    // removed.
+    for (auto& group : ownerGroups)
         {
+        if (group.m_rows.empty())
+            continue;
+
+        // Load the owner again, since onDelete may have modified or deleted it
+        group.m_owner = m_dgndb.Elements().GetElement(group.m_ownerId);
+        if (!group.m_owner.IsValid())
+            {
+            LOG.errorv("BulkElementAspectDeletion: Owning element %s no longer exists", group.m_ownerId.ToHexStr().c_str());
+            return std::move(WriteFailed(DgnDbStatus::NotFound, BE_SQLITE_OK));
+            }
+
         DgnElementPtr elementEdit = group.m_owner->CopyForEdit();
         if (!elementEdit.IsValid())
             {
-            LOG.errorv("BulkElementAspectDeletion: Unable to edit owning element %s", group.m_owner->GetElementId().ToHexStr().c_str());
+            LOG.errorv("BulkElementAspectDeletion: Unable to edit owning element %s", group.m_ownerId.ToHexStr().c_str());
             return std::move(WriteFailed(DgnDbStatus::WriteError, BE_SQLITE_OK));
             }
 
@@ -320,19 +359,22 @@ BulkDeleteElementAspectsResult BulkElementAspectDeletion::Execute()
             }
 
         BeSQLite::DbResult deleteStatus = BE_SQLITE_OK;
+        bool missing = false;
         if (!genericByClass.empty())
-            elementEdit->AddAppData(DeleterAppData::GetKey(), new DeleterAppData(*this, genericByClass, deleteStatus));
+            elementEdit->AddAppData(DeleterAppData::GetKey(), new DeleterAppData(*this, genericByClass, deleteStatus, missing));
 
         DgnDbStatus stat = elementEdit->Update();
         if (DgnDbStatus::Success != stat)
             {
             elementEdit->DropAppData(DeleterAppData::GetKey());
-            LOG.errorv("BulkElementAspectDeletion: Unable to update owning element %s", group.m_owner->GetElementId().ToHexStr().c_str());
+            LOG.errorv("BulkElementAspectDeletion: Unable to update owning element %s", group.m_ownerId.ToHexStr().c_str());
             return std::move(WriteFailed(stat, BE_SQLITE_OK));
             }
 
         if (BE_SQLITE_OK != deleteStatus)
             return std::move(WriteFailed(DgnDbStatus::SQLiteError, deleteStatus));
+        if (missing)
+            return std::move(WriteFailed(DgnDbStatus::NotFound, BE_SQLITE_OK));
 
         // The update of the owner succeeds even when one of its aspects cannot be deleted, so check each aspect.
         for (auto const& aspect : handled)
@@ -348,9 +390,9 @@ BulkDeleteElementAspectsResult BulkElementAspectDeletion::Execute()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BulkDeleteElementAspectsResult DgnElements::DeleteElementAspects(bvector<ECInstanceId> const& aspectIds)
+BulkDeleteElementAspectsResult DgnElements::DeleteElementAspects(bvector<ECInstanceId> const& aspectIds, std::function<void(bvector<BulkDeleteElementAspect> const&)> const& onDelete)
     {
-    return BulkElementAspectDeletion(m_dgndb, aspectIds).Execute();
+    return BulkElementAspectDeletion(m_dgndb, aspectIds, onDelete).Execute();
     }
 
 END_BENTLEY_DGN_NAMESPACE
