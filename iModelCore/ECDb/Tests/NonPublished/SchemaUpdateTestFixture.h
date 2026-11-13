@@ -74,7 +74,7 @@ enum class SchemaVersionChange
 //! Runs a schema update on a copy of a baseline and verifies all data in the file afterwards,
 //! not only the data of the classes the update touches.
 //!
-//! Usage, see SchemaUpdateTests.cpp for examples:
+//! Usage, see ClassHierarchyUpdateTests.cpp for examples:
 //! - Derive a fixture per area with a static baseline. Keep baselines small, the update runs
 //!   against the whole schema. Add a new fixture rather than growing an unrelated baseline.
 //! - SetupFromBaseline, edit GetBaselineSchemaXml with ReplaceInClass, RemoveClass and
