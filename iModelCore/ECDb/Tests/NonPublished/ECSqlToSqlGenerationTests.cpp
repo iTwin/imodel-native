@@ -134,7 +134,7 @@ TEST_F(ECSqlToSqlGenerationTests, IndexOnSharedColumnIsUsedBySQLite)
     Statement sqlStmt;
     ASSERT_EQ(BE_SQLITE_OK, sqlStmt.Prepare(m_ecdb, SqlPrintfString("EXPLAIN QUERY PLAN %s", ecsqlStmt.GetNativeSql())));
     ASSERT_EQ(BE_SQLITE_ROW, sqlStmt.Step());
-    ASSERT_STREQ("SEARCH main.ts_Parent USING INDEX ix_parent_ps3 (ps3=?)", sqlStmt.GetValueText(detailColumn));
+    ASSERT_STREQ("SEARCH main.ts_Parent USING INDEX ix_parent_ps1ps2 (ps1=? AND ps2=?)", sqlStmt.GetValueText(detailColumn));
     ASSERT_EQ(BE_SQLITE_DONE, sqlStmt.Step());
     }
     }
