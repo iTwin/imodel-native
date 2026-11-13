@@ -35,8 +35,6 @@ bool operator()(Utf8String s1, Utf8String s2) const
 struct UnitNameMappings
 {
 private:
-    static UnitNameMappings * s_mappings;
-
     bmap<Utf8String, Utf8String, less_str> m_oldNameNewNameMapping; // key: oldName value: newName
     bmap<Utf8String, Utf8String, less_str> m_newNameOldNameMapping; // key: newName value: oldName
     bmap<Utf8String, Utf8String, less_str> m_newNameECNameMapping; // key: newName value: ECName
