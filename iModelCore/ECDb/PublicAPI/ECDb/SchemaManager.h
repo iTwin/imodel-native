@@ -36,6 +36,7 @@ enum class SchemaImportOptions
     AllowDataTransformDuringSchemaUpgrade       = 1 << 4,   //! The allow schema upgrade to transform data if needed.
     AllowMajorSchemaUpgradeForDynamicSchemas    = 1 << 5,   //! If specified, schema upgrades where the major version has changed are only supported for dynamic schemas. Takes precedence over DisallowMajorSchemaUpgrade.
     DoNotCreateOrUpdateDataTables               = 1 << 6,   //! Maintain only the ec_ tables. For a file that holds metadata and no data, such as the schema sync db.
+    VerifyPersistedSchemas                      = 1 << 7,   //! After writing the schemas, read them back from the file and fail the import if they differ from the imported ones. Has no effect with DoNotFailForDeletionsOrModifications, which skips changes on purpose.
     };
 
 //=======================================================================================
