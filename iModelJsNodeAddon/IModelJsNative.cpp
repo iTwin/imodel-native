@@ -13,6 +13,7 @@
 #include <DgnPlatform/FenceContext.h>
 #include <DgnPlatform/MeasureGeom.h>
 #include <DgnPlatform/ChangedElementsManager.h>
+#include <DgnPlatform/Annotations/LegacyTextAnnotationJson.h>
 #include "SignalTestUtility.h"
 #include "presentation/ECPresentationUtils.h"
 #include "presentation/UpdateRecordsHandler.h"
@@ -1799,6 +1800,23 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
 
         BeJsNapiObject result(Env());
         JsInterop::ComputeRangeForText(result, db, text, FontId(static_cast<uint64_t>(fontId)), emphasis, widthFactor, height);
+        return result;
+    }
+
+    Napi::Value ReadLegacyTextAnnotation(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        REQUIRE_ARGUMENT_STRING(0, elementIdStr);
+
+        DgnElementId elementId(BeInt64Id::FromString(elementIdStr.c_str()).GetValueUnchecked());
+        BeJsNapiObject result(Env());
+        Utf8String errorMessage;
+        DgnDbStatus status = LegacyTextAnnotationJson::Read(result, db, elementId, &errorMessage);
+        if (DgnDbStatus::NotFound == status)
+            return Env().Undefined();
+
+        if (DgnDbStatus::Success != status)
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), errorMessage.empty() ? "error reading legacy text annotation" : errorMessage.c_str(), status);
+
         return result;
     }
 
@@ -3719,6 +3737,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("queryPreviousTxnId", &NativeDgnDb::QueryPreviousTxnId),
             InstanceMethod("queryTextureData", &NativeDgnDb::QueryTextureData),
             InstanceMethod("readFontMap", &NativeDgnDb::ReadFontMap),
+            InstanceMethod("readLegacyTextAnnotation", &NativeDgnDb::ReadLegacyTextAnnotation),
             InstanceMethod("reinstateTxn", &NativeDgnDb::ReinstateTxn),
             InstanceMethod("getNextReinstateTxnRange", &NativeDgnDb::GetNextReinstateTxnRange),
             InstanceMethod("removeEmbeddedFile", &NativeDgnDb::RemoveEmbeddedFile),
