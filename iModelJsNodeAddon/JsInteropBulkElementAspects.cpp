@@ -364,7 +364,8 @@ static bvector<std::pair<DgnElementId, bvector<size_t>>> groupBulkAspectRowsByOw
 * not written and no post-insert handlers are called. Like an exception thrown by a JS handler during or after the writes, this leaves
 * the rows already written in the Txn, so the caller must abandon the changes.
 * Unique aspects are upserted: when the same (element, class) appears more than once the last row wins, and all of those rows get the
-* id of the resulting aspect.
+* id of the resulting aspect. Unique aspects of the same owning element whose classes differ but are related by inheritance are a
+* ConflictingAspects failure, because writing one may replace the other.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 Napi::Object JsInterop::InsertElementAspects(DgnDbR db, Napi::Array propsArray) {
@@ -394,6 +395,34 @@ Napi::Object JsInterop::InsertElementAspects(DgnDbR db, Napi::Array propsArray) 
         rows.push_back(row);
     }
 
+    // Writing a unique aspect replaces the element's stored unique aspect of its class or of a subclass, and the aspects of an owner
+    // are not written in input order. So unique aspects of the same owner whose classes differ but are related by inheritance could
+    // replace each other unpredictably; reject them.
+    for (auto const& group : groupBulkAspectRowsByOwner(rows, [](InsertRow const& row) { return row.m_owner->GetElementId(); })) {
+        std::map<DgnClassId, std::pair<ECClassCP, bvector<uint32_t>>> uniqueRowsByClass;
+        for (auto r : group.second) {
+            auto const& row = rows[r];
+            if (row.m_isMulti)
+                continue;
+            auto& entry = uniqueRowsByClass[row.m_classId];
+            entry.first = row.m_class;
+            entry.second.push_back(row.m_index);
+        }
+        for (auto a = uniqueRowsByClass.begin(); a != uniqueRowsByClass.end(); ++a) {
+            for (auto b = std::next(a); b != uniqueRowsByClass.end(); ++b) {
+                ECClassCP classA = a->second.first;
+                ECClassCP classB = b->second.first;
+                if (!classA->Is(classB) && !classB->Is(classA))
+                    continue;
+                Utf8PrintfString detail("element %s has unique aspects of the related classes %s and %s", group.first.ToHexStr().c_str(), classA->GetFullName(), classB->GetFullName());
+                for (auto index : a->second.second)
+                    failures.Fail(index, FailureReason::ConflictingAspects, detail);
+                for (auto index : b->second.second)
+                    failures.Fail(index, FailureReason::ConflictingAspects, detail);
+            }
+        }
+    }
+
     if (!failures.IsEmpty()) {
         auto result = failures.ToJs(env);
         result.Set("ids", Napi::Array::New(env, 0));
@@ -412,7 +441,11 @@ Napi::Object JsInterop::InsertElementAspects(DgnDbR db, Napi::Array propsArray) 
     auto ownerGroups = groupBulkAspectRowsByOwner(rows, [](InsertRow const& row) { return row.m_owner->GetElementId(); });
     for (auto const& group : ownerGroups) {
         auto const& rowIndices = group.second;
-        DgnElementPtr elementEdit = rows[rowIndices.front()].m_owner->CopyForEdit();
+        // Load the owner again, since the pre-handlers and the callbacks of the owners written before it may have changed it.
+        DgnElementCPtr owner = db.Elements().GetElement(group.first);
+        if (!owner.IsValid())
+            throwBulkAspectWriteError(env, functionName, DgnDbStatus::NotFound, Utf8PrintfString("element %s no longer exists", group.first.ToHexStr().c_str()));
+        DgnElementPtr elementEdit = owner->CopyForEdit();
         if (!elementEdit.IsValid())
             throwBulkAspectWriteError(env, functionName, DgnDbStatus::WriteError, Utf8PrintfString("unable to edit element %s", group.first.ToHexStr().c_str()));
 
@@ -613,24 +646,29 @@ Napi::Object JsInterop::UpdateElementAspects(DgnDbR db, Napi::Array propsArray) 
     auto ownerGroups = groupBulkAspectRowsByOwner(rows, [](UpdateRow const& row) { return row.m_owner->GetElementId(); });
     for (auto const& group : ownerGroups) {
         auto const& rowIndices = group.second;
-        DgnElementPtr elementEdit = rows[rowIndices.front()].m_owner->CopyForEdit();
+        // Load the owner again, since the pre-handlers and the callbacks of the owners written before it may have changed it.
+        DgnElementCPtr owner = db.Elements().GetElement(group.first);
+        if (!owner.IsValid())
+            throwBulkAspectWriteError(env, functionName, DgnDbStatus::NotFound, Utf8PrintfString("element %s no longer exists", group.first.ToHexStr().c_str()));
+        DgnElementPtr elementEdit = owner->CopyForEdit();
         if (!elementEdit.IsValid())
             throwBulkAspectWriteError(env, functionName, DgnDbStatus::WriteError, Utf8PrintfString("unable to edit element %s", group.first.ToHexStr().c_str()));
 
-        bvector<DgnElement::Aspect*> aspects(rowIndices.size(), nullptr);
+        // Keep references to the aspects: the update of the owner releases the AppData that owns them, before their status is checked.
+        bvector<RefCountedPtr<DgnElement::Aspect>> aspects(rowIndices.size());
         for (size_t i = 0; i < rowIndices.size(); ++i) {
             auto& row = rows[rowIndices[i]];
             IECInstanceP instance = nullptr;
             if (row.m_isMulti) {
                 instance = DgnElement::GenericMultiAspect::GetAspectP(*elementEdit, *row.m_actualClass, row.m_storedId);
                 if (nullptr != instance)
-                    aspects[i] = DgnElement::MultiAspect::GetAspectP(*elementEdit, *row.m_actualClass, row.m_storedId);
+                    aspects[i] = static_cast<DgnElement::Aspect*>(DgnElement::MultiAspect::GetAspectP(*elementEdit, *row.m_actualClass, row.m_storedId));
             } else {
                 instance = DgnElement::GenericUniqueAspect::GetAspectP(*elementEdit, *row.m_actualClass);
                 if (nullptr != instance)
-                    aspects[i] = DgnElement::UniqueAspect::GetAspectP(*elementEdit, *row.m_actualClass);
+                    aspects[i] = static_cast<DgnElement::Aspect*>(DgnElement::UniqueAspect::GetAspectP(*elementEdit, *row.m_actualClass));
             }
-            if (nullptr == instance || nullptr == aspects[i])
+            if (nullptr == instance || !aspects[i].IsValid())
                 throwBulkAspectWriteError(env, functionName, DgnDbStatus::NotFound, Utf8PrintfString("aspect %s can no longer be updated after the onUpdate handlers", row.m_storedId.ToHexStr().c_str()));
 
             if (SUCCESS != bulkAspectJsonToInstance(db, *instance, row, true))

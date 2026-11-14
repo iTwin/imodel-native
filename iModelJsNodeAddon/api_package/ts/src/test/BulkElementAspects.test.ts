@@ -215,6 +215,25 @@ describe("bulk element aspects", () => {
     }
   }
 
+  /** Mock handlers where the first `preMethod` call changes the label of e1, and then the onUpdated of e1 during the bulk write changes the label of e2. */
+  function changeOwnersInHandlers(preMethod: string, e1: Id64String, e2: Id64String) {
+    let preHandlerDone = false;
+    let writing = false;
+    let changedE2 = false;
+    return makeMockJsDb({
+      onCall: (call) => {
+        if (!preHandlerDone && call.method === preMethod) {
+          preHandlerDone = true;
+          db.updateElement({ id: e1, userLabel: `${preMethod} changed e1` });
+          writing = true;
+        } else if (writing && !changedE2 && call.className === "BisCore:Subject" && call.method === "onUpdated" && call.arg.id === e1) {
+          changedE2 = true;
+          db.updateElement({ id: e2, userLabel: "onUpdated of e1 changed e2" });
+        }
+      },
+    });
+  }
+
   describe("insertElementAspects", () => {
     it("inserts unique and multi aspects of several classes on several owners", () => {
       const e1 = insertOwner();
@@ -388,6 +407,61 @@ describe("bulk element aspects", () => {
       withFailingAspectWrites("bis_ElementUniqueAspect", "UPDATE", otherUniqueClass, () => {
         expect(() => db.insertElementAspects([uniqueProps(e1, "o1-new", undefined, otherUniqueClass)])).to.throw(/unable to write the aspect at index 0/);
       });
+    });
+
+    it("rejects unique aspects of classes related by inheritance on the same owner, since writing one could replace the other", () => {
+      const e1 = insertOwner();
+      const e2 = insertOwner();
+      const existing = db.insertElementAspects([uniqueProps(e2, "u2-derived", undefined, derivedUniqueClass)]);
+      expect(existing.status).to.equal(BulkElementAspectsStatus.Success);
+      const before = queryAspects();
+      const mock = makeMockJsDb();
+      db.setIModelDb(mock.mockJsDb);
+
+      const result = db.insertElementAspects([
+        uniqueProps(e1, "u1-derived", undefined, derivedUniqueClass),
+        uniqueProps(e1, "o1", undefined, otherUniqueClass),
+        uniqueProps(e1, "u1"),
+        uniqueProps(e2, "u2"),
+        uniqueProps(e2, "u2-derived-new", undefined, derivedUniqueClass),
+        multiProps(e1, "m1"),
+        multiProps(e1, "m1-derived", undefined, derivedMultiClass),
+      ]);
+      expect(result.status).to.equal(BulkElementAspectsStatus.ValidationFailed);
+      expect(result.failures).to.deep.equal([0, 2, 3, 4].map((index) => ({ index, reason: BulkElementAspectFailureReason.ConflictingAspects })));
+      expect(result.ids).to.deep.equal([]);
+      expect(mock.calls).to.deep.equal([]);
+      expect(queryAspects()).to.deep.equal(before);
+      expect(readAspect(uniqueClass, existing.ids[0], ["strProp"])).to.deep.equal({ className: derivedUniqueClass, strProp: "u2-derived" });
+
+      // Related unique classes on different owners, and multi aspects of related classes on one owner, do not conflict
+      const e3 = insertOwner();
+      const props = [
+        uniqueProps(e1, "u1-derived", undefined, derivedUniqueClass),
+        uniqueProps(e3, "u3"),
+        multiProps(e1, "m1"),
+        multiProps(e1, "m1-derived", undefined, derivedMultiClass),
+      ];
+      const inserted = db.insertElementAspects(props);
+      expect(inserted.status).to.equal(BulkElementAspectsStatus.Success);
+      expect(readAspect(uniqueClass, inserted.ids[0], ["strProp"])).to.deep.equal({ className: derivedUniqueClass, strProp: "u1-derived" });
+      expect(readAspect(uniqueClass, inserted.ids[1], ["strProp"])).to.deep.equal({ className: uniqueClass, strProp: "u3" });
+      expect(readAspect(multiClass, inserted.ids[2], ["strProp"])).to.deep.equal({ className: multiClass, strProp: "m1" });
+      expect(readAspect(multiClass, inserted.ids[3], ["strProp"])).to.deep.equal({ className: derivedMultiClass, strProp: "m1-derived" });
+    });
+
+    it("keeps the changes that the pre-insert handlers and the callbacks of earlier owners make to an owning element", () => {
+      const e1 = insertOwner();
+      const e2 = insertOwner();
+      const mock = changeOwnersInHandlers("onInsert", e1, e2);
+      db.setIModelDb(mock.mockJsDb);
+
+      const result = db.insertElementAspects([uniqueProps(e1, "u1"), multiProps(e2, "m2")]);
+      expect(result.status).to.equal(BulkElementAspectsStatus.Success);
+      expect(db.getElement({ id: e1 }).userLabel).to.equal("onInsert changed e1");
+      expect(db.getElement({ id: e2 }).userLabel).to.equal("onUpdated of e1 changed e2");
+      expect(findAspect(result.ids[0])).to.deep.include({ element: e1, strProp: "u1" });
+      expect(findAspect(result.ids[1])).to.deep.include({ element: e2, strProp: "m2" });
     });
   });
 
@@ -710,6 +784,22 @@ describe("bulk element aspects", () => {
         .to.throw(`aspect ${inserted.ids[1]} can no longer be updated after the onUpdate handlers`);
       expect(mock.aspectCalls("onUpdated")).to.deep.equal([]);
       expect(findAspect(inserted.ids[0])!.strProp).to.equal("m1");
+    });
+
+    it("keeps the changes that the pre-update handlers and the callbacks of earlier owners make to an owning element", () => {
+      const e1 = insertOwner();
+      const e2 = insertOwner();
+      const inserted = db.insertElementAspects([uniqueProps(e1, "u1"), multiProps(e2, "m2")]);
+      expect(inserted.status).to.equal(BulkElementAspectsStatus.Success);
+      const mock = changeOwnersInHandlers("onUpdate", e1, e2);
+      db.setIModelDb(mock.mockJsDb);
+
+      const result = db.updateElementAspects([uniqueProps(e1, "u1-new"), { ...multiProps(e2, "m2-new"), id: inserted.ids[1] }]);
+      expect(result.status).to.equal(BulkElementAspectsStatus.Success);
+      expect(db.getElement({ id: e1 }).userLabel).to.equal("onUpdate changed e1");
+      expect(db.getElement({ id: e2 }).userLabel).to.equal("onUpdated of e1 changed e2");
+      expect(findAspect(inserted.ids[0])!.strProp).to.equal("u1-new");
+      expect(findAspect(inserted.ids[1])!.strProp).to.equal("m2-new");
     });
   });
 

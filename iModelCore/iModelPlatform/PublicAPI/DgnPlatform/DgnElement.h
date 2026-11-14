@@ -633,6 +633,8 @@ enum class BulkElementAspectsStatus : int
 //!     as a generic aspect because its class has a handler. Not used by deletes, which ignore ids that do not identify an aspect.
 //! AmbiguousAspect: The unique aspect to update is given by a base class, and the element has more than one unique aspect of
 //!     that class or its subclasses.
+//! ConflictingAspects: The unique aspects to insert on the same element include classes that differ but are related by inheritance,
+//!     so writing one could replace the other.
 // @bsiclass
 //=======================================================================================
 enum class BulkElementAspectFailureReason : int
@@ -644,6 +646,7 @@ enum class BulkElementAspectFailureReason : int
     ElementNotFound  = 4,
     AspectNotFound   = 5,
     AmbiguousAspect  = 6,
+    ConflictingAspects = 7,
     };
 
 //=======================================================================================
