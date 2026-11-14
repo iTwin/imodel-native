@@ -652,6 +652,109 @@ export declare namespace IModelJsNative {
 
   enum TextEmphasis { None = 0, Bold = 1, Italic = 2, BoldItalic = Bold | Italic }
 
+  /** A color in a legacy text annotation. `value` uses the same 0xTTBBGGRR encoding as `ColorDef.tbgr` from `@itwin/core-common`. */
+  export type LegacyTextAnnotationColor = { type: "byCategory" } | { type: "rgba", value: number } | { type: "viewBackground" };
+
+  /** Effective text style of a legacy run, with all referenced AnnotationTextStyle elements and overrides already merged.
+   * Lengths are meters in annotation-local coordinates.
+   */
+  export interface LegacyTextAnnotationTextStyle {
+    color: LegacyTextAnnotationColor;
+    /** Omitted when the legacy style specifies no font, or when the font is missing from the font table (reported as a `missingFont` issue). */
+    font?: { name: string, type: "truetype" | "rsc" | "shx" };
+    height: number;
+    lineSpacingFactor: number;
+    widthFactor: number;
+    isBold: boolean;
+    isItalic: boolean;
+    isUnderlined: boolean;
+    stackedFractionScale: number;
+    stackedFractionType: "horizontal" | "diagonal";
+    subScriptOffsetFactor: number;
+    subScriptScale: number;
+    superScriptOffsetFactor: number;
+    superScriptScale: number;
+  }
+
+  export type LegacyTextAnnotationRun =
+    { type: "text", content: string, subSuperScript: "none" | "sub" | "super", style: LegacyTextAnnotationTextStyle } |
+    { type: "fraction", numerator: string, denominator: string, style: LegacyTextAnnotationTextStyle } |
+    { type: "lineBreak", style: LegacyTextAnnotationTextStyle };
+
+  export interface LegacyTextAnnotationTextBlock {
+    /** Wrap width in meters; 0 means no wrapping. */
+    documentWidth: number;
+    justification: "left" | "center" | "right";
+    paragraphs: Array<{ runs: LegacyTextAnnotationRun[] }>;
+  }
+
+  /** Effective frame style, with the referenced AnnotationFrameStyle element and overrides already merged. */
+  export interface LegacyTextAnnotationFrame {
+    type: "invisibleBox" | "box" | "circle" | "ellipse";
+    /** Factor of the first run's text height. */
+    horizontalPadding: number;
+    /** Factor of the first run's text height. */
+    verticalPadding: number;
+    isFillEnabled: boolean;
+    fillColor: LegacyTextAnnotationColor;
+    /** 0 (opaque) to 1 (fully transparent). */
+    fillTransparency: number;
+    isStrokeEnabled: boolean;
+    isStrokeCloud: boolean;
+    strokeColor: LegacyTextAnnotationColor;
+    /** Line weight index. */
+    strokeWeight: number;
+    cloudBulgeFactor: number;
+    /** Factor of the first run's text height. */
+    cloudDiameterFactor: number;
+  }
+
+  /** Effective leader style, with the referenced AnnotationLeaderStyle element and overrides already merged. */
+  export interface LegacyTextAnnotationLeader {
+    /** Attachment point on the frame. Boxes use 0-7 counter-clockwise from right-middle; circles and ellipses use 0-3 (right, top, left, bottom). */
+    sourceAttachment: { type: "byId", id: number };
+    /** Meters in annotation-local coordinates. */
+    targetPoint: [number, number, number];
+    lineType: "none" | "straight" | "curved";
+    lineColor: LegacyTextAnnotationColor;
+    /** Line weight index. */
+    lineWeight: number;
+    terminatorType: "none" | "openArrow" | "closedArrow";
+    terminatorColor: LegacyTextAnnotationColor;
+    /** Line weight index. */
+    terminatorWeight: number;
+    /** Factor of the text height. */
+    terminatorScaleFactor: number;
+  }
+
+  /** Ranges computed by the legacy layout engine, in meters in annotation-local coordinates. */
+  export interface LegacyTextAnnotationLayout {
+    textRange: { low: [number, number], high: [number, number] };
+    /** Present only when the annotation has a frame and its style could be loaded. */
+    frameRange?: { low: [number, number], high: [number, number] };
+    /** One point per leader, in the same order as `leaders`; empty when there is no frame or the frame could not be laid out. */
+    leaderSourcePoints: Array<[number, number, number]>;
+  }
+
+  export interface LegacyTextAnnotationIssue {
+    code: "missingTextStyle" | "missingFrameStyle" | "missingLeaderStyle" | "missingFont" | "unknownRunType" | "layoutFailed" | "invalidValue";
+    message: string;
+    /** JSON path of the affected content, e.g. `textBlock.paragraphs[0].runs[1]`. */
+    path?: string;
+  }
+
+  /** The content of a deprecated `BisCore:TextAnnotationData` aspect, decoded with all style elements resolved, so it contains no element IDs. */
+  export interface LegacyTextAnnotationJson {
+    version: 1;
+    textBlock?: LegacyTextAnnotationTextBlock;
+    frame?: LegacyTextAnnotationFrame;
+    leaders: LegacyTextAnnotationLeader[];
+    /** Omitted when there is no text, or when a text style could not be loaded (reported as a `layoutFailed` issue). */
+    layout?: LegacyTextAnnotationLayout;
+    /** Content that could not be decoded or resolved faithfully. */
+    issues: LegacyTextAnnotationIssue[];
+  }
+
   type NoCaseCollation = "ASCII" | "Latin1";
 
   /** The native object for a Briefcase. */
@@ -834,6 +937,11 @@ export declare namespace IModelJsNative {
     public queryPreviousTxnId(txnId: TxnIdString): TxnIdString;
     public queryTextureData(opts: TextureLoadProps): Promise<TextureData | undefined>;
     public readFontMap(): { fonts: FontProps[] };
+    /** Decode the deprecated `BisCore:TextAnnotationData` aspect of an element.
+     * @returns undefined if the element has no such aspect or its blob is empty.
+     * @throws if the blob is corrupt or was written by a newer version.
+     */
+    public readLegacyTextAnnotation(elementId: Id64String): LegacyTextAnnotationJson | undefined;
     public reinstateTxn(): IModelStatus;
     public getNextReinstateTxnRange(): { firstTxnId: TxnIdString, lastTxnId: TxnIdString };
     public removeEmbeddedFile(name: string): void;
