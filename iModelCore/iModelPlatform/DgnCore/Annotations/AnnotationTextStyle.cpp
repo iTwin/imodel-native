@@ -160,6 +160,34 @@ void AnnotationTextStyle::_CopyFrom(DgnElementCR src, CopyFromOptions const& opt
     }
 
 //---------------------------------------------------------------------------------------
+// Description is a custom-handled property, so the base class does not read or write it.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void AnnotationTextStyle::_ToJson(BeJsValue out, BeJsConst opts) const
+    {
+    T_Super::_ToJson(out, opts);
+    if (!m_description.empty())
+        out[json_description()] = m_description;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void AnnotationTextStyle::_FromJson(BeJsConst props)
+    {
+    T_Super::_FromJson(props);
+
+    if (props.hasMember(json_description())) // support partial update, only update m_description if member present
+        {
+        auto description = props[json_description()];
+        if (description.isString())
+            m_description = description.asString();
+        else
+            m_description.clear(); // allow undefined to clear an existing value
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 void AnnotationTextStyle::_RemapIds(DgnImportContext& context)
