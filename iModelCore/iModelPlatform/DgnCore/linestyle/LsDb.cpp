@@ -565,7 +565,8 @@ DgnStyleId DgnImportContext::_RemapLineStyleId(DgnStyleId sourceId)
 
     
     dest = LineStyleElement::ImportLineStyle(sourceId, *this);
-    AddLineStyleId(sourceId, dest);
+    if (dest.IsValid())
+        AddLineStyleId(sourceId, dest);
 
     return dest;
     }
@@ -597,8 +598,6 @@ void DgnImportContext::AddLineStyleComponentId(LsComponentId sourceId, LsCompone
 //---------------------------------------------------------------------------------------
 DgnStyleId LineStyleElement::ImportLineStyle(DgnStyleId srcStyleId, DgnImportContext& importer)
     {
-    //  See if we already have a line style with the same code in the destination Db.
-    //  If so, we'll map the source line style to it.  
     LineStyleElementCPtr srcStyle = LineStyleElement::Get(importer.GetSourceDb(), srcStyleId);
     BeAssert(srcStyle.IsValid());
     if (!srcStyle.IsValid())
@@ -607,7 +606,20 @@ DgnStyleId LineStyleElement::ImportLineStyle(DgnStyleId srcStyleId, DgnImportCon
         return DgnStyleId();
         }
 
-    DgnStyleId dstStyleId = QueryId(importer.GetDestinationDb(), srcStyle->GetName().c_str());
+    //  The line style belongs in the copy of its source model. Use the DictionaryModel only if that model has not been remapped.
+    DgnModelId dstModelId = importer.FindModelId(srcStyle->GetModelId());
+    if (!dstModelId.IsValid())
+        dstModelId = DgnModel::DictionaryId();
+
+    //  The source model may be remapped before its copy is inserted (e.g. a partition imported before its sub-model).
+    //  Don't substitute a line style from another model; the caller can remap again once the model exists.
+    DefinitionModelPtr dstModel = importer.GetDestinationDb().Models().Get<DefinitionModel>(dstModelId);
+    if (!dstModel.IsValid())
+        return DgnStyleId();
+
+    //  See if we already have a line style with the same code in the destination model.
+    //  If so, we'll map the source line style to it.
+    DgnStyleId dstStyleId = QueryId(*dstModel, srcStyle->GetName().c_str());
     if (dstStyleId.IsValid())
         {
         //  *** TBD: Check if the line style definitions match. If not, rename and remap
@@ -631,7 +643,7 @@ DgnStyleId LineStyleElement::ImportLineStyle(DgnStyleId srcStyleId, DgnImportCon
         return DgnStyleId();
         }
 
-    BentleyStatus result = importer.GetDestinationDb().LineStyles().Insert(dstStyleId, name.c_str(), compId, LsDefinition::GetAttributes(jsonObj), LsDefinition::GetUnitDef(jsonObj));
+    BentleyStatus result = importer.GetDestinationDb().LineStyles().Insert(dstStyleId, dstModelId, name.c_str(), nullptr, compId, LsDefinition::GetAttributes(jsonObj), LsDefinition::GetUnitDef(jsonObj));
     return (result == BSISUCCESS) ? dstStyleId : DgnStyleId();
     }
 
@@ -658,12 +670,13 @@ DgnElementPtr LineStyleElement::_CloneForImport(DgnDbStatus* status, DgnModelR d
       return newElem;
     LsComponentId compId = LsDefinition::GetComponentId (jsonObj);
     
-    DgnStyleId dstStyleId = QueryId(context.GetDestinationDb(), this->GetName().c_str());
+    DgnDbR destDb = context.GetDestinationDb();
+    DgnStyleId dstStyleId(destDb.Elements().QueryElementIdByCode(CreateCode(destDb, destModel.GetModelId(), this->GetName())).GetValueUnchecked());
     if (dstStyleId.IsValid())
         {
-        // If Line style element already exists in destinationDb, get component Id from existing element
+        // If Line style element already exists in the destination model, get component Id from existing element
         // else import new component Id and set it to the new element
-        LineStyleElementCPtr dstElem = LineStyleElement::Get(context.GetDestinationDb(), dstStyleId);
+        LineStyleElementCPtr dstElem = LineStyleElement::Get(destDb, dstStyleId);
         Utf8String  dstData (dstElem->GetData());
 
         BeJsDocument  dstJsonObj(dstData);

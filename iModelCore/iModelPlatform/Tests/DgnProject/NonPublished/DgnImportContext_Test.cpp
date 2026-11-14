@@ -8,6 +8,7 @@
 #include "../TestFixture/DgnDbTestFixtures.h"
 #include <DgnPlatform/DgnMaterial.h>
 #include <DgnPlatform/DgnTexture.h>
+#include <DgnPlatform/LineStyle.h>
 #include <DgnPlatform/Annotations/TextAnnotationElement.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -686,6 +687,318 @@ TEST_F(ImportTest, ImportMaterialCopiesTextureWhenNoTextureRemappingIsSeeded)
     ASSERT_EQ(destTextureCountBefore + 1, countTextures(*destDb)) << "the source Texture should have been automatically copied to the destination Db";
     ASSERT_EQ(DgnTexture::QueryTextureId(destDb->GetDictionaryModel(), "MaterialWithPatternMap"), destTextureId) << "The materials pattern map should point to the copied texture.";
     ASSERT_TRUE(DgnTexture::Get(*destDb, destTextureId).IsValid());
+
+    destDb->SaveChanges();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+static LsComponentId insertLineCodeComponent(DgnDbR db, double strokeLength)
+    {
+    double phase = 0.0;
+    uint32_t options = 0;
+    uint32_t maxIterate = 1;
+    BeJsDocument json;
+    json["phase"] = phase;
+    json["options"] = options;
+    json["maxIter"] = maxIterate;
+    auto strokes = json["strokes"];
+    strokes.SetEmptyArray();
+    auto entry = strokes.appendObject();
+    entry["length"] = strokeLength;
+    entry["orgWidth"] = 0.0;
+    entry["endWidth"] = 0.0;
+    int32_t strokeMode = LCSTROKE_DASH;
+    entry["strokeMode"] = strokeMode;
+    entry["widthMode"] = LCWIDTH_FULL;
+    entry["capMode"] = LCCAP_CLOSED;
+
+    LsComponentId componentId;
+    if (LINESTYLE_STATUS_Success != LsComponent::AddComponentAsJsonProperty(componentId, db, LsComponentType::LineCode, json))
+        return LsComponentId();
+
+    return componentId;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+static DgnStyleId insertLineStyle(DgnDbR db, DgnModelId modelId, Utf8CP name, LsComponentId componentId)
+    {
+    DgnStyleId styleId;
+    if (SUCCESS != db.LineStyles().Insert(styleId, modelId, name, nullptr, componentId, 0, 0.0))
+        return DgnStyleId();
+
+    return styleId;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+static LsComponentId getLineStyleComponentId(DgnDbR db, DgnStyleId styleId)
+    {
+    LineStyleElementCPtr style = LineStyleElement::Get(db, styleId);
+    if (!style.IsValid())
+        return LsComponentId();
+
+    Utf8String data(style->GetData());
+    BeJsDocument json(data);
+    if (json.hasParseError())
+        return LsComponentId();
+
+    return LsDefinition::GetComponentId(json);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+static bool isSameComponent(LsComponentId a, LsComponentId b)
+    {
+    return a.IsValid() && b.IsValid() && a.GetType() == b.GetType() && a.GetValue() == b.GetValue();
+    }
+
+//---------------------------------------------------------------------------------------
+// Returns the length of the single stroke of the LineCode component used by a line style, or -1 if it can't be read.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+static double getLineStyleStrokeLength(DgnDbR db, DgnStyleId styleId)
+    {
+    LsComponentPtr component = db.LineStyles().GetLsComponent(getLineStyleComponentId(db, styleId));
+    LsStrokePatternComponent const* strokePattern = dynamic_cast<LsStrokePatternComponent const*>(component.get());
+    if (nullptr == strokePattern || 1 != strokePattern->GetNumberStrokes())
+        return -1.0;
+
+    return strokePattern->GetStrokeCP(0)->GetLength();
+    }
+
+//=======================================================================================
+// Two line styles named "Shared", one in the DictionaryModel and one in another DefinitionModel,
+// each using its own LineCode component.
+// @bsiclass
+//=======================================================================================
+struct SameNamedLineStyles
+    {
+    static constexpr Utf8CP Name() { return "Shared"; }
+    static constexpr double DictionaryStrokeLength() { return 1.0; }
+    static constexpr double OtherStrokeLength() { return 2.0; }
+
+    DefinitionModelPtr m_otherModel;
+    LsComponentId m_dictionaryComponentId;
+    LsComponentId m_otherComponentId;
+    DgnStyleId m_dictionaryStyleId;
+    DgnStyleId m_otherStyleId;
+
+    bool IsValid() const
+        {
+        return m_otherModel.IsValid() && m_dictionaryComponentId.IsValid() && m_otherComponentId.IsValid()
+            && !isSameComponent(m_dictionaryComponentId, m_otherComponentId)
+            && m_dictionaryStyleId.IsValid() && m_otherStyleId.IsValid() && m_dictionaryStyleId != m_otherStyleId;
+        }
+
+    static SameNamedLineStyles Insert(DgnDbR db)
+        {
+        SameNamedLineStyles styles;
+        styles.m_otherModel = DgnDbTestUtils::InsertDefinitionModel(db, "OtherDefinitions");
+        styles.m_dictionaryComponentId = insertLineCodeComponent(db, DictionaryStrokeLength());
+        styles.m_otherComponentId = insertLineCodeComponent(db, OtherStrokeLength());
+        styles.m_dictionaryStyleId = insertLineStyle(db, DgnModel::DictionaryId(), Name(), styles.m_dictionaryComponentId);
+        if (styles.m_otherModel.IsValid())
+            styles.m_otherStyleId = insertLineStyle(db, styles.m_otherModel->GetModelId(), Name(), styles.m_otherComponentId);
+
+        return styles;
+        }
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ImportTest, RemapLineStyleIdKeepsSameNamedLineStylesInTheirDefinitionModels)
+{
+    SetupSeedProject();
+    DgnDbR sourceDb = *m_db;
+    SameNamedLineStyles source = SameNamedLineStyles::Insert(sourceDb);
+    ASSERT_TRUE(source.IsValid());
+    sourceDb.SaveChanges();
+
+    DgnDbPtr destDb = openCopyOfDb(L"3dMetricGeneralcc.bim");
+    ASSERT_TRUE(destDb.IsValid());
+    DefinitionModelPtr destOtherModel = DgnDbTestUtils::InsertDefinitionModel(*destDb, "OtherDefinitions");
+    ASSERT_TRUE(destOtherModel.IsValid());
+    size_t destStyleCountBefore = LineStyleElement::QueryCount(*destDb);
+
+    DgnImportContext importContext(sourceDb, *destDb);
+    importContext.AddModelId(source.m_otherModel->GetModelId(), destOtherModel->GetModelId());
+
+    // Remap the style in the other DefinitionModel first, so it gets the first chance to claim the name.
+    DgnStyleId destOtherStyleId = importContext.RemapLineStyleId(source.m_otherStyleId);
+    DgnStyleId destDictionaryStyleId = importContext.RemapLineStyleId(source.m_dictionaryStyleId);
+    ASSERT_TRUE(destOtherStyleId.IsValid());
+    ASSERT_TRUE(destDictionaryStyleId.IsValid());
+    ASSERT_NE(destOtherStyleId, destDictionaryStyleId) << "Same-named line styles from different models must not be merged";
+    EXPECT_EQ(destStyleCountBefore + 2, LineStyleElement::QueryCount(*destDb));
+
+    LineStyleElementCPtr destOtherStyle = LineStyleElement::Get(*destDb, destOtherStyleId);
+    ASSERT_TRUE(destOtherStyle.IsValid());
+    EXPECT_EQ(destOtherModel->GetModelId(), destOtherStyle->GetModelId());
+    EXPECT_STREQ(SameNamedLineStyles::Name(), destOtherStyle->GetName().c_str());
+    EXPECT_EQ(destOtherStyleId, LineStyleElement::QueryId(*destOtherModel, SameNamedLineStyles::Name()));
+
+    LineStyleElementCPtr destDictionaryStyle = LineStyleElement::Get(*destDb, destDictionaryStyleId);
+    ASSERT_TRUE(destDictionaryStyle.IsValid());
+    EXPECT_EQ(DgnModel::DictionaryId(), destDictionaryStyle->GetModelId());
+    EXPECT_STREQ(SameNamedLineStyles::Name(), destDictionaryStyle->GetName().c_str());
+    EXPECT_EQ(destDictionaryStyleId, LineStyleElement::QueryId(*destDb, SameNamedLineStyles::Name()));
+
+    // Each copy uses a copy of its own source component.
+    EXPECT_FALSE(isSameComponent(getLineStyleComponentId(*destDb, destOtherStyleId), getLineStyleComponentId(*destDb, destDictionaryStyleId)));
+    EXPECT_DOUBLE_EQ(SameNamedLineStyles::OtherStrokeLength(), getLineStyleStrokeLength(*destDb, destOtherStyleId));
+    EXPECT_DOUBLE_EQ(SameNamedLineStyles::DictionaryStrokeLength(), getLineStyleStrokeLength(*destDb, destDictionaryStyleId));
+
+    // The mappings are recorded, so remapping again does not insert anything.
+    EXPECT_EQ(destOtherStyleId, importContext.FindLineStyleId(source.m_otherStyleId));
+    EXPECT_EQ(destDictionaryStyleId, importContext.FindLineStyleId(source.m_dictionaryStyleId));
+    EXPECT_EQ(destOtherStyleId, importContext.RemapLineStyleId(source.m_otherStyleId));
+    EXPECT_EQ(destDictionaryStyleId, importContext.RemapLineStyleId(source.m_dictionaryStyleId));
+    EXPECT_EQ(destStyleCountBefore + 2, LineStyleElement::QueryCount(*destDb));
+
+    destDb->SaveChanges();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ImportTest, RemapLineStyleIdReusesSameNamedLineStyleInDestinationModel)
+{
+    SetupSeedProject();
+    DgnDbR sourceDb = *m_db;
+    SameNamedLineStyles source = SameNamedLineStyles::Insert(sourceDb);
+    ASSERT_TRUE(source.IsValid());
+    sourceDb.SaveChanges();
+
+    DgnDbPtr destDb = openCopyOfDb(L"3dMetricGeneralcc.bim");
+    ASSERT_TRUE(destDb.IsValid());
+    DefinitionModelPtr destOtherModel = DgnDbTestUtils::InsertDefinitionModel(*destDb, "OtherDefinitions");
+    ASSERT_TRUE(destOtherModel.IsValid());
+    LsComponentId existingComponentId = insertLineCodeComponent(*destDb, 3.0);
+    ASSERT_TRUE(existingComponentId.IsValid());
+    DgnStyleId existingStyleId = insertLineStyle(*destDb, destOtherModel->GetModelId(), SameNamedLineStyles::Name(), existingComponentId);
+    ASSERT_TRUE(existingStyleId.IsValid());
+    size_t destStyleCountBefore = LineStyleElement::QueryCount(*destDb);
+
+    DgnImportContext importContext(sourceDb, *destDb);
+    importContext.AddModelId(source.m_otherModel->GetModelId(), destOtherModel->GetModelId());
+
+    EXPECT_EQ(existingStyleId, importContext.RemapLineStyleId(source.m_otherStyleId)) << "A same-coded line style in the destination model should be reused";
+    EXPECT_EQ(existingStyleId, importContext.FindLineStyleId(source.m_otherStyleId));
+    EXPECT_EQ(destStyleCountBefore, LineStyleElement::QueryCount(*destDb));
+    EXPECT_FALSE(LineStyleElement::QueryId(*destDb, SameNamedLineStyles::Name()).IsValid()) << "Nothing should have been inserted into the DictionaryModel";
+
+    destDb->SaveChanges();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ImportTest, RemapLineStyleIdUsesDictionaryModelWhenSourceModelIsNotRemapped)
+{
+    SetupSeedProject();
+    DgnDbR sourceDb = *m_db;
+    SameNamedLineStyles source = SameNamedLineStyles::Insert(sourceDb);
+    ASSERT_TRUE(source.IsValid());
+    sourceDb.SaveChanges();
+
+    DgnDbPtr destDb = openCopyOfDb(L"3dMetricGeneralcc.bim");
+    ASSERT_TRUE(destDb.IsValid());
+    size_t destStyleCountBefore = LineStyleElement::QueryCount(*destDb);
+
+    DgnImportContext importContext(sourceDb, *destDb);
+    ASSERT_FALSE(importContext.FindModelId(source.m_otherModel->GetModelId()).IsValid());
+
+    DgnStyleId destStyleId = importContext.RemapLineStyleId(source.m_otherStyleId);
+    ASSERT_TRUE(destStyleId.IsValid());
+    EXPECT_EQ(destStyleId, LineStyleElement::QueryId(*destDb, SameNamedLineStyles::Name()));
+    EXPECT_EQ(destStyleCountBefore + 1, LineStyleElement::QueryCount(*destDb));
+    EXPECT_DOUBLE_EQ(SameNamedLineStyles::OtherStrokeLength(), getLineStyleStrokeLength(*destDb, destStyleId));
+
+    destDb->SaveChanges();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ImportTest, RemapLineStyleIdFailsUntilRemappedDestinationModelExists)
+{
+    SetupSeedProject();
+    DgnDbR sourceDb = *m_db;
+    SameNamedLineStyles source = SameNamedLineStyles::Insert(sourceDb);
+    ASSERT_TRUE(source.IsValid());
+    sourceDb.SaveChanges();
+
+    DgnDbPtr destDb = openCopyOfDb(L"3dMetricGeneralcc.bim");
+    ASSERT_TRUE(destDb.IsValid());
+    DefinitionPartitionCPtr destPartition = DefinitionPartition::CreateAndInsert(*destDb->Elements().GetRootSubject(), "OtherDefinitions");
+    ASSERT_TRUE(destPartition.IsValid());
+    DgnModelId destOtherModelId(destPartition->GetElementId().GetValue());
+    size_t destStyleCountBefore = LineStyleElement::QueryCount(*destDb);
+
+    DgnImportContext importContext(sourceDb, *destDb);
+    importContext.AddModelId(source.m_otherModel->GetModelId(), destOtherModelId);
+
+    // The partition has been copied but its DefinitionModel has not been inserted yet.
+    EXPECT_FALSE(importContext.RemapLineStyleId(source.m_otherStyleId).IsValid());
+    EXPECT_FALSE(importContext.FindLineStyleId(source.m_otherStyleId).IsValid()) << "No mapping should be recorded";
+    EXPECT_EQ(destStyleCountBefore, LineStyleElement::QueryCount(*destDb));
+    EXPECT_FALSE(LineStyleElement::QueryId(*destDb, SameNamedLineStyles::Name()).IsValid()) << "The DictionaryModel must not be used instead";
+
+    DefinitionModelPtr destOtherModel = DefinitionModel::CreateAndInsert(*destPartition);
+    ASSERT_TRUE(destOtherModel.IsValid());
+    ASSERT_EQ(destOtherModelId, destOtherModel->GetModelId());
+
+    DgnStyleId destStyleId = importContext.RemapLineStyleId(source.m_otherStyleId);
+    ASSERT_TRUE(destStyleId.IsValid());
+    EXPECT_EQ(destStyleId, LineStyleElement::QueryId(*destOtherModel, SameNamedLineStyles::Name()));
+    EXPECT_EQ(destStyleId, importContext.FindLineStyleId(source.m_otherStyleId));
+    EXPECT_EQ(destStyleCountBefore + 1, LineStyleElement::QueryCount(*destDb));
+
+    destDb->SaveChanges();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ImportTest, ImportLineStyleElementIgnoresSameNamedLineStyleInOtherModel)
+{
+    SetupSeedProject();
+    DgnDbR sourceDb = *m_db;
+    SameNamedLineStyles source = SameNamedLineStyles::Insert(sourceDb);
+    ASSERT_TRUE(source.IsValid());
+    sourceDb.SaveChanges();
+    LineStyleElementCPtr sourceOtherStyle = LineStyleElement::Get(sourceDb, source.m_otherStyleId);
+    ASSERT_TRUE(sourceOtherStyle.IsValid());
+
+    DgnDbPtr destDb = openCopyOfDb(L"3dMetricGeneralcc.bim");
+    ASSERT_TRUE(destDb.IsValid());
+    DefinitionModelPtr destOtherModel = DgnDbTestUtils::InsertDefinitionModel(*destDb, "OtherDefinitions");
+    ASSERT_TRUE(destOtherModel.IsValid());
+    LsComponentId destDictionaryComponentId = insertLineCodeComponent(*destDb, 3.0);
+    ASSERT_TRUE(destDictionaryComponentId.IsValid());
+    ASSERT_TRUE(insertLineStyle(*destDb, DgnModel::DictionaryId(), SameNamedLineStyles::Name(), destDictionaryComponentId).IsValid());
+
+    DgnImportContext importContext(sourceDb, *destDb);
+    importContext.AddModelId(source.m_otherModel->GetModelId(), destOtherModel->GetModelId());
+
+    DgnDbStatus status;
+    DgnElementCPtr destElement = sourceOtherStyle->Import(&status, *destOtherModel, importContext);
+    ASSERT_EQ(DgnDbStatus::Success, status);
+    ASSERT_TRUE(destElement.IsValid());
+    EXPECT_EQ(destOtherModel->GetModelId(), destElement->GetModelId());
+    DgnStyleId destStyleId(destElement->GetElementId().GetValue());
+    EXPECT_EQ(destStyleId, LineStyleElement::QueryId(*destOtherModel, SameNamedLineStyles::Name()));
+
+    // The copy must use a copy of its own component, not the component of the DictionaryModel's style.
+    EXPECT_FALSE(isSameComponent(destDictionaryComponentId, getLineStyleComponentId(*destDb, destStyleId)));
+    EXPECT_DOUBLE_EQ(SameNamedLineStyles::OtherStrokeLength(), getLineStyleStrokeLength(*destDb, destStyleId));
 
     destDb->SaveChanges();
 }
