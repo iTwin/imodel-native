@@ -2267,6 +2267,165 @@ TEST_F(PropertyTypeUpdateTests, StructMemberTypeChangeWithoutMajorVersionIsRejec
     }
 
 //***************************************************************************************
+// Matrix 3.3: editing a reused struct definition. Extent is used inline (Gadget.Size, flattened
+// columns) and as a struct array (Gadget.Sizes, one JSON column).
+//***************************************************************************************
+
+//! Removes every "name":<scalar> member from a JSON text, together with one adjacent comma.
+static Utf8String RemoveJsonMember(Utf8StringCR json, Utf8CP name)
+    {
+    Utf8String result = json;
+    const Utf8String key = Utf8PrintfString("\"%s\":", name);
+    size_t position = 0;
+    while ((position = result.find(key)) != Utf8String::npos)
+        {
+        size_t valueEnd = position + key.size();
+        while (valueEnd < result.size() && result[valueEnd] != ',' && result[valueEnd] != '}')
+            valueEnd++;
+
+        size_t eraseStart = position;
+        size_t eraseEnd = valueEnd;
+        if (eraseEnd < result.size() && result[eraseEnd] == ',')
+            eraseEnd++;
+        else if (eraseStart > 0 && result[eraseStart - 1] == ',')
+            eraseStart--;
+        result.erase(eraseStart, eraseEnd - eraseStart);
+        }
+    return result;
+    }
+
+//---------------------------------------------------------------------------------------
+// 3.3 add member. Existing rows (inline columns and JSON elements) have no value for it.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyTypeUpdateTests, AddStructMember_ExistingValuesHaveNoMember)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    ReplaceElement(schemaXml, R"xml(<ECStructClass typeName="Extent">)xml", "</ECStructClass>",
+        R"xml(<ECStructClass typeName="Extent">
+                    <ECProperty propertyName="Width" typeName="double" />
+                    <ECProperty propertyName="Height" typeName="double" />
+                    <ECProperty propertyName="Depth" typeName="double" />
+                </ECStructClass>)xml");
+    ExpectAccepted(schemaXml);
+
+    ECPropertyCP depth = GetProperty("Extent", "Depth");
+    ASSERT_TRUE(depth != nullptr);
+    EXPECT_EQ(PRIMITIVETYPE_Double, depth->GetAsPrimitiveProperty()->GetType());
+    }
+
+//---------------------------------------------------------------------------------------
+// 3.3 delete member. Needs gate G, so a minor version is rejected.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyTypeUpdateTests, DeletingStructMemberWithoutMajorVersionIsRejected)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    ReplaceElement(schemaXml, R"xml(<ECStructClass typeName="Extent">)xml", "</ECStructClass>",
+        R"xml(<ECStructClass typeName="Extent">
+                    <ECProperty propertyName="Width" typeName="double" />
+                </ECStructClass>)xml");
+    ExpectRejected(schemaXml, "ECDb_0384");
+    }
+
+//---------------------------------------------------------------------------------------
+// 3.3 delete member. With a major version it is accepted. The member disappears from both use
+// sites on read. The matrix says the use-site ec_PropertyPath row for Size.Height survives
+// (orphaned), recorded here.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyTypeUpdateTests, DeleteStructMember_UseSitePropertyPathIsOrphaned)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    ReplaceElement(schemaXml, R"xml(<ECStructClass typeName="Extent">)xml", "</ECStructClass>",
+        R"xml(<ECStructClass typeName="Extent">
+                    <ECProperty propertyName="Width" typeName="double" />
+                </ECStructClass>)xml");
+    auto withoutHeight = [] (Utf8StringCR json) { return RemoveJsonMember(json, "Height"); };
+    ExpectAccepted(schemaXml, SchemaVersionChange::Major,
+        ExpectedDataChanges().ConvertValuesOf("TestSchema:Gadget", "Size", withoutHeight).ConvertValuesOf("TestSchema:Gadget", "Sizes", withoutHeight));
+
+    EXPECT_TRUE(GetProperty("Extent", "Height") == nullptr);
+
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT COUNT(*) FROM ec_PropertyPath WHERE AccessString='Size.Height'"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    EXPECT_EQ(1, stmt.GetValueInt(0)) << "Matrix 3.3: the property path of the deleted member is expected to survive.";
+    }
+
+//---------------------------------------------------------------------------------------
+// 3.3 delete member with DoNotFail. The matrix says the deletion is skipped (Info ECDb_0641),
+// so Height stays in the persisted struct and the data is unchanged.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyTypeUpdateTests, DeletingStructMemberWithDoNotFailKeepsMember)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    ReplaceElement(schemaXml, R"xml(<ECStructClass typeName="Extent">)xml", "</ECStructClass>",
+        R"xml(<ECStructClass typeName="Extent">
+                    <ECProperty propertyName="Width" typeName="double" />
+                </ECStructClass>)xml");
+    ExpectAccepted(schemaXml, SchemaVersionChange::Minor, ExpectedDataChanges(), DoNotFail());
+
+    EXPECT_TRUE(GetProperty("Extent", "Height") != nullptr);
+    }
+
+//---------------------------------------------------------------------------------------
+// 3.3 delete then re-add the member. Unproven in the matrix: does the re-added member reuse the
+// orphaned column and show the stale values again? Both imports must succeed; what the rows show
+// afterwards is logged, not asserted.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyTypeUpdateTests, ReAddDeletedStructMember_StaleValuesObserved)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    Utf8String withoutHeight = GetBaselineSchemaXml();
+    ReplaceElement(withoutHeight, R"xml(<ECStructClass typeName="Extent">)xml", "</ECStructClass>",
+        R"xml(<ECStructClass typeName="Extent">
+                    <ECProperty propertyName="Width" typeName="double" />
+                </ECStructClass>)xml");
+    ASSERT_EQ(SUCCESS, UpdateSchema(withoutHeight, SchemaVersionChange::Major, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+
+    Utf8String withHeightAgain = GetBaselineSchemaXml();
+    ASSERT_EQ(SUCCESS, UpdateSchema(withHeightAgain, SchemaVersionChange::Minor, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT COUNT(*) FROM ts.Gadget WHERE Size.Height IS NOT NULL"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    GTEST_LOG_(INFO) << "Gadget rows showing a Size.Height after delete and re-add: " << stmt.GetValueInt(0);
+    }
+
+//---------------------------------------------------------------------------------------
+// 3.3 member label, category and range annotations are metadata.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyTypeUpdateTests, ChangeStructMemberLabelCategoryAndRange)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    ReplaceElement(schemaXml, R"xml(<ECStructClass typeName="Extent">)xml", "</ECStructClass>",
+        R"xml(<ECStructClass typeName="Extent">
+                    <ECProperty propertyName="Width" typeName="double" displayLabel="Breadth" category="Dimensions" minimumValue="0" maximumValue="100" />
+                    <ECProperty propertyName="Height" typeName="double" />
+                </ECStructClass>)xml");
+    ExpectAccepted(schemaXml);
+
+    ECPropertyCP width = GetProperty("Extent", "Width");
+    ASSERT_TRUE(width != nullptr);
+    EXPECT_STREQ("Breadth", width->GetDisplayLabel().c_str());
+    }
+
+//***************************************************************************************
 // Batch A: gaps from the matrix cross-check. Primitive <-> enumeration with a different
 // backing type (T05, T06, T08), enumeration <-> enumeration (T09, T11, T12), the reverse
 // directions of the kind changes (T20-T23), array bounds (A01-A04), unit defaults made
