@@ -237,7 +237,6 @@ The imodel-native backend detects the system proxy configuration on Windows, mac
 
 ## Further documentation
 
-- [docs/debugging-and-profiling.md](docs/debugging-and-profiling.md): debuggers, CPU and memory profiling, binary size, clangd
 - [iModelCore/iModelPlatform/iModelConsole/README.md](iModelCore/iModelPlatform/iModelConsole/README.md): interactive console, shows the SQL generated for ECSQL
 - [iModelCore/ECDb/ECDb/ECSql/Parser/README.md](iModelCore/ECDb/ECDb/ECSql/Parser/README.md): changing the ECSQL grammar
 - [iModelCore/ECDb/ProfileVersion.md](iModelCore/ECDb/ProfileVersion.md): changing the ECDb profile version
