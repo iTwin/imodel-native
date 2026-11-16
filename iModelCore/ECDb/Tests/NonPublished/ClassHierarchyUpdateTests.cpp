@@ -191,6 +191,49 @@ TEST_F(ClassHierarchyUpdateTests, InsertBaseClassAndMovePropertyToIt)
     }
 
 //---------------------------------------------------------------------------------------
+// Pipe inherits Length from the inserted base class, so ECSQL with $-> has to find it on existing pipes.
+// The harness reads data without $->, so this test checks it separately. In a hierarchy without shared columns
+// this fails, see MappingCustomAttributeUpdateTests.DISABLED_InsertBaseClassWithNewProperty.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ClassHierarchyUpdateTests, InsertBaseClassWithNewProperty)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    AppendToSchema(schemaXml, R"xml(
+    <ECEntityClass typeName="LinearElement" modifier="Abstract">
+        <BaseClass>PhysicalElement</BaseClass>
+        <ECProperty propertyName="Length" typeName="double" />
+    </ECEntityClass>
+)xml");
+    ReplaceInClass(schemaXml, "Pipe", "<BaseClass>PhysicalElement</BaseClass>", "<BaseClass>LinearElement</BaseClass>");
+    ExpectAccepted(schemaXml);
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Pipe SET Length = 1.5"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT COUNT(*) FROM ts.Pipe"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    const int pipeCount = stmt.GetValueInt(0);
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT $->Length FROM ts.Pipe"));
+    int rowCount = 0;
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        ++rowCount;
+        EXPECT_EQ(1.5, stmt.GetValueDouble(0));
+        }
+
+    EXPECT_LT(0, pipeCount);
+    EXPECT_EQ(pipeCount, rowCount);
+    m_ecdb.AbandonChanges();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ClassHierarchyUpdateTests, DeletePropertyFromDerivedClass)
