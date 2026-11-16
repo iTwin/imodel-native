@@ -224,7 +224,7 @@ struct ValueGenerator final
             return enumerator->IsInteger() ? binder.BindInt(enumerator->GetInteger()) : binder.BindText(enumerator->GetString().c_str(), IECSqlBinder::MakeCopy::Yes);
             }
 
-        ECSqlStatus BindPrimitive(IECSqlBinder& binder, PrimitiveType type)
+        ECSqlStatus BindPrimitive(IECSqlBinder& binder, PrimitiveType type, DateTime::Info const& dateTimeInfo = DateTime::Info::CreateForDateTime(DateTime::Kind::Unspecified))
             {
             const uint64_t value = m_next++;
             switch (type)
@@ -234,7 +234,11 @@ struct ValueGenerator final
                 case PRIMITIVETYPE_Boolean:
                     return binder.BindBoolean(value % 2 == 0);
                 case PRIMITIVETYPE_DateTime:
-                    return binder.BindDateTime(2451545.0 + (double) value, DateTime::Info::CreateForDateTime(DateTime::Kind::Unspecified));
+                    {
+                    // Whole days for date-only properties, ECDb rejects a time of day there.
+                    const double julianDay = dateTimeInfo.GetComponent() == DateTime::Component::Date ? 2451544.5 + (double) value : 2451545.25 + (double) value;
+                    return binder.BindDateTime(julianDay, dateTimeInfo);
+                    }
                 case PRIMITIVETYPE_Double:
                     return binder.BindDouble((double) value + 0.5);
                 case PRIMITIVETYPE_IGeometry:
@@ -278,6 +282,14 @@ struct ValueGenerator final
                 PrimitiveECPropertyCP primitiveProp = prop.GetAsPrimitiveProperty();
                 if (primitiveProp->GetEnumeration() != nullptr)
                     return BindEnumerator(binder, *primitiveProp->GetEnumeration());
+
+                if (primitiveProp->GetType() == PRIMITIVETYPE_DateTime)
+                    {
+                    // ECDb rejects values whose DateTimeInfo does not match the property's. Local cannot be bound at all.
+                    DateTime::Info dateTimeInfo = DateTime::Info::CreateForDateTime(DateTime::Kind::Unspecified);
+                    CoreCustomAttributeHelper::GetDateTimeInfo(dateTimeInfo, prop);
+                    return BindPrimitive(binder, PRIMITIVETYPE_DateTime, dateTimeInfo);
+                    }
 
                 return BindPrimitive(binder, primitiveProp->GetType());
                 }
@@ -924,7 +936,9 @@ void SchemaUpdateTestFixture::VerifyData(ExpectedDataChanges const& expectedChan
             continue;
             }
 
-        CompareValues(context.c_str(), ProjectValues(before.m_values, *classAfterUpdate), after.m_values);
+        std::map<Utf8String, Utf8String> expectedValues = ProjectValues(before.m_values, *classAfterUpdate);
+        expectedChanges.ConvertValues(expectedValues, *classAfterUpdate);
+        CompareValues(context.c_str(), expectedValues, after.m_values);
         }
 
     for (Utf8StringCR className : expectedChanges.GetClassesWithDeletedReferencingInstances())
@@ -1275,6 +1289,29 @@ DbResult SchemaUpdateTestFixture::ReopenWithExperimentalFeatures()
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+void ExpectedDataChanges::ConvertValues(std::map<Utf8String, Utf8String>& values, ECClassCR instanceClass) const
+    {
+    for (ConvertedProperty const& converted : m_convertedProperties)
+        {
+        ECClassCP convertedClass = instanceClass.GetSchema().LookupClass(converted.m_classFullName.c_str(), true);
+        if (convertedClass == nullptr || !instanceClass.Is(convertedClass))
+            continue;
+
+        auto valueIt = values.find(converted.m_propertyName);
+        if (valueIt == values.end())
+            continue;
+
+        Utf8String convertedValue = converted.m_converter(valueIt->second);
+        if (convertedValue.empty())
+            values.erase(valueIt);
+        else
+            valueIt->second = convertedValue;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 void SchemaUpdateTestFixture::ReplaceInClass(Utf8StringR schemaXml, Utf8CP className, Utf8CP oldText, Utf8CP newText)
     {
     size_t elementStart, elementEnd;
@@ -1285,6 +1322,21 @@ void SchemaUpdateTestFixture::ReplaceInClass(Utf8StringR schemaXml, Utf8CP class
     if (position == Utf8String::npos || position >= elementEnd || schemaXml.find(oldText, position + 1) < elementEnd)
         {
         ADD_FAILURE() << "Expected exactly one occurrence of '" << oldText << "' in class " << className << ".";
+        return;
+        }
+
+    schemaXml.replace(position, strlen(oldText), newText);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void SchemaUpdateTestFixture::ReplaceInSchema(Utf8StringR schemaXml, Utf8CP oldText, Utf8CP newText)
+    {
+    size_t position = schemaXml.find(oldText);
+    if (position == Utf8String::npos || schemaXml.find(oldText, position + 1) != Utf8String::npos)
+        {
+        ADD_FAILURE() << "Expected exactly one occurrence of '" << oldText << "' in the schema XML.";
         return;
         }
 

@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include "ECDbPublishedTests.h"
+#include <functional>
 #include <map>
 #include <set>
 
@@ -51,9 +52,21 @@ struct SchemaUpdateBaseline final
 //+===============+===============+===============+===============+===============+======
 struct ExpectedDataChanges final
     {
+    public:
+        //! Maps the JSON of a value before the update to the JSON expected after it. An empty result means NULL.
+        using ValueConverter = std::function<Utf8String(Utf8StringCR valueBeforeUpdate)>;
+
     private:
+        struct ConvertedProperty final
+            {
+            Utf8String m_classFullName;
+            Utf8String m_propertyName;
+            ValueConverter m_converter;
+            };
+
         std::set<Utf8String> m_classesWithDeletedInstances;
         std::set<Utf8String> m_classesWithDeletedReferencingInstances;
+        std::vector<ConvertedProperty> m_convertedProperties;
 
     public:
         //! @param[in] classFullName Class in the format {SchemaName}:{ClassName}, as it was before the update
@@ -62,9 +75,15 @@ struct ExpectedDataChanges final
         //! property or as source or target of a link table relationship, are deleted too, e.g. by a cascading foreign key.
         //! @param[in] classFullName Class in the format {SchemaName}:{ClassName}, as it was before the update
         ExpectedDataChanges& DeleteReferencingInstancesOf(Utf8CP classFullName) { m_classesWithDeletedReferencingInstances.insert(classFullName); return *this; }
+        //! The update changes how the values of a property read, e.g. because the property changed its type.
+        //! Applies to instances of the class and its subclasses.
+        //! @param[in] classFullName Class in the format {SchemaName}:{ClassName}, as it was before the update
+        ExpectedDataChanges& ConvertValuesOf(Utf8CP classFullName, Utf8CP propertyName, ValueConverter converter) { m_convertedProperties.push_back({classFullName, propertyName, converter}); return *this; }
         bool AreInstancesDeleted(Utf8StringCR classFullName) const { return m_classesWithDeletedInstances.find(classFullName) != m_classesWithDeletedInstances.end(); }
         bool AreReferencingInstancesDeleted(Utf8StringCR classFullName) const { return m_classesWithDeletedReferencingInstances.find(classFullName) != m_classesWithDeletedReferencingInstances.end(); }
         std::set<Utf8String> const& GetClassesWithDeletedReferencingInstances() const { return m_classesWithDeletedReferencingInstances; }
+        //! Applies the registered converters to the values of an instance of @p instanceClass.
+        void ConvertValues(std::map<Utf8String, Utf8String>& values, ECN::ECClassCR instanceClass) const;
     };
 
 enum class SchemaVersionChange
@@ -191,6 +210,9 @@ struct SchemaUpdateTestFixture : ECDbTestFixture
 
         //! Replaces the only occurrence of @p oldText within the XML element of the given class.
         static void ReplaceInClass(Utf8StringR schemaXml, Utf8CP className, Utf8CP oldText, Utf8CP newText);
+        //! Replaces the only occurrence of @p oldText anywhere in the schema XML. For schema items that are not
+        //! classes, like enumerations, KindOfQuantities, units and formats.
+        static void ReplaceInSchema(Utf8StringR schemaXml, Utf8CP oldText, Utf8CP newText);
         //! Removes the XML element of the given class.
         static void RemoveClass(Utf8StringR schemaXml, Utf8CP className);
         //! Adds schema items, e.g. new classes, at the end of the schema.
