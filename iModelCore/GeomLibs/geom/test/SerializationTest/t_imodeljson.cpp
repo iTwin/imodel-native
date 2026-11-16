@@ -576,9 +576,14 @@ TEST(Serialization, BlockedPolyface)
         indices.push_back(1 + 2 * i + 3);
         indices.push_back(1 + 2 * i + 1);
         }
+
+    auto invalidPolyface = PolyfaceHeader::CreateIndexedMesh(2, points, indices);
+    Check::False(invalidPolyface.IsValid(), "Expect invalid polyface for numPerFace = 2");
+
     auto polyface = PolyfaceHeader::CreateIndexedMesh(4, points, indices);
     auto g = IGeometry::Create (polyface);
     DoRoundTrip(g, false, 0);
     DoRoundTrip (g, false, 1);
     Check::SaveTransformed (*polyface);
+    Check::ClearGeometry("Serialization.BlockedPolyface");
     }
