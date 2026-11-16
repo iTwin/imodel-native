@@ -5,6 +5,7 @@
 #include "SchemaUpdateTestFixture.h"
 #include <BeRapidJson/BeJsValue.h>
 #include <Bentley/Base64Utilities.h>
+#include <GeomSerialization/GeomSerializationApi.h>
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -183,6 +184,23 @@ struct PropertyTypeUpdateTests : SchemaUpdateTestFixture
 
     static SchemaManager::SchemaImportOptions DoNotFail() { return SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications; }
 
+    //! The options every iModel schema import uses (DgnDomains::DoImportSchemas), plus the data transform flag DgnDb sets when the schema lock is held.
+    static SchemaManager::SchemaImportOptions IModelImportOptions()
+        {
+        return SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas
+            | SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade;
+        }
+
+    //! Marks the schema as dynamic. SchemaWriter checks the flag on the incoming schema, so adding it in the same import counts.
+    static void MakeDynamic(Utf8StringR schemaXml)
+        {
+        ReplaceInSchema(schemaXml, R"xml(<ECSchemaReference name="SchemaUpgradeCustomAttributes" version="01.00.00" alias="SchemaUpgradeCA" />)xml",
+            R"xml(<ECSchemaReference name="SchemaUpgradeCustomAttributes" version="01.00.00" alias="SchemaUpgradeCA" />
+                <ECCustomAttributes>
+                    <DynamicSchema xmlns="CoreCustomAttributes.01.00.03" />
+                </ECCustomAttributes>)xml");
+        }
+
     //! Replaces the type of a property. The property element must start with <ECProperty propertyName="X" typeName="old".
     static void ChangePropertyType(Utf8StringR schemaXml, Utf8CP className, Utf8CP propertyName, Utf8CP oldType, Utf8CP newType)
         {
@@ -258,7 +276,11 @@ struct PropertyTypeUpdateTests : SchemaUpdateTestFixture
 
     // What SQLite makes of the old bytes when ECDb reads them under the new type.
     static Utf8String StringReadAsInteger(Utf8StringCR json) { Utf8String converted = StringAsInteger(json); return converted == json ? ToJson((int64_t) 0) : converted; }
+    // SQLite converts text to a number by its numeric prefix, so "true" reads as 0 and only "1" (or any other non-zero number) as true.
+    static Utf8String StringReadAsBoolean(Utf8StringCR json) { return StringReadAsInteger(json) == ToJson((int64_t) 0) ? "false" : "true"; }
     static Utf8String DoubleReadAsInteger(Utf8StringCR json) { return ToJson((int64_t) std::stod(json.c_str())); }
+    // sqlite3_column_int keeps the low 32 bits of a stored 64-bit integer.
+    static Utf8String LongReadAsInteger(Utf8StringCR json) { return ToJson((int64_t) (int32_t) std::stoll(json.c_str())); }
     // Inline struct value rendered as {"Height":9.5,"Width":8.5}: the Width number is read as an int, the fraction is dropped.
     static Utf8String StructWidthReadAsInteger(Utf8StringCR json)
         {
@@ -274,6 +296,43 @@ struct PropertyTypeUpdateTests : SchemaUpdateTestFixture
         return json.substr(0, numberStart) + ToJson((int64_t) width) + json.substr(numberStart + numberLength);
         }
     static Utf8String StringReadAsBinary(Utf8StringCR json) { Utf8String text = Unquote(json); Utf8String base64; Base64Utilities::Encode(base64, (Byte const*) text.c_str(), text.size()); return ToJson(("encoding=base64;" + base64).c_str()); }
+    // The JSON adapter renders a blob as "encoding=base64;<base64>".
+    static Utf8String BinaryToBase64Json(Byte const* bytes, size_t size) { Utf8String base64; Base64Utilities::Encode(base64, bytes, size); return ToJson(("encoding=base64;" + base64).c_str()); }
+    static bvector<Byte> Base64JsonToBinary(Utf8StringCR json)
+        {
+        Utf8String text = Unquote(json);
+        const Utf8CP prefix = "encoding=base64;";
+        if (text.StartsWith(prefix))
+            text = text.substr(strlen(prefix));
+        bvector<Byte> bytes;
+        Base64Utilities::Decode(bytes, text);
+        return bytes;
+        }
+    // sqlite3_column_text hands the blob bytes out as they are. Only valid for blobs that hold UTF-8 text without NUL bytes.
+    static Utf8String BinaryReadAsString(Utf8StringCR json) { bvector<Byte> bytes = Base64JsonToBinary(json); return ToJson(Utf8String((Utf8CP) bytes.data(), bytes.size()).c_str()); }
+    // IGeometry is stored as a flatbuffer blob. Read as binary, that blob is rendered as base64.
+    static Utf8String GeometryReadAsBinary(Utf8StringCR json)
+        {
+        BeJsDocument geometryJson;
+        geometryJson.Parse(json);
+        IGeometryPtr geometry = ECJsonUtilities::JsonToIGeometry(geometryJson);
+        if (geometry == nullptr)
+            return json;
+        bvector<Byte> bytes;
+        BentleyGeometryFlatBuffer::GeometryToBytes(*geometry, bytes);
+        return BinaryToBase64Json(bytes.data(), bytes.size());
+        }
+    // A blob that holds a geometry flatbuffer, read as IGeometry, is rendered as geometry JSON.
+    static Utf8String BinaryReadAsGeometry(Utf8StringCR json)
+        {
+        bvector<Byte> bytes = Base64JsonToBinary(json);
+        IGeometryPtr geometry = BentleyGeometryFlatBuffer::BytesToGeometrySafe(bytes.data(), bytes.size(), true);
+        if (geometry == nullptr)
+            return json;
+        BeJsDocument geometryJson;
+        ECJsonUtilities::IGeometryToJson(geometryJson, *geometry);
+        return geometryJson.Stringify();
+        }
     static Utf8String IntegerReadAsDateTime(Utf8StringCR json)
         {
         DateTime dateTime;
@@ -309,6 +368,43 @@ struct PropertyTypeUpdateTests : SchemaUpdateTestFixture
         ASSERT_FALSE(updates.empty());
         for (Utf8StringCR update : updates)
             ChangeDataBeforeUpdate(update.c_str());
+        }
+
+    //! Overwrites Widget.Payload of every instance with the given bytes. ECSQL has no blob literal, so this binds
+    //! the blobs directly and then re-reads the baseline data the same way ChangeDataBeforeUpdate does.
+    void SeedWidgetPayloads(std::function<bvector<Byte>(int)> payloadOf)
+        {
+        bvector<ECInstanceId> ids;
+            {
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ts.Widget ORDER BY ECInstanceId"));
+            while (BE_SQLITE_ROW == stmt.Step())
+                ids.push_back(stmt.GetValueId<ECInstanceId>(0));
+            }
+        ASSERT_FALSE(ids.empty());
+
+        ECSqlStatement update;
+        ASSERT_EQ(ECSqlStatus::Success, update.Prepare(m_ecdb, "UPDATE ts.Widget SET Payload = ? WHERE ECInstanceId = ?"));
+        for (size_t i = 0; i < ids.size(); i++)
+            {
+            const bvector<Byte> payload = payloadOf((int) i);
+            ASSERT_EQ(ECSqlStatus::Success, update.BindBlob(1, payload.data(), (int) payload.size(), IECSqlBinder::MakeCopy::Yes));
+            ASSERT_EQ(ECSqlStatus::Success, update.BindId(2, ids[i]));
+            ASSERT_EQ(BE_SQLITE_DONE, update.Step());
+            update.Reset();
+            update.ClearBindings();
+            }
+        // A no-op statement so the fixture commits and snapshots the data again.
+        ChangeDataBeforeUpdate("UPDATE ts.Widget SET Code = Code");
+        }
+
+    static bvector<Byte> TextBytes(Utf8StringCR text) { return bvector<Byte>((Byte const*) text.c_str(), (Byte const*) text.c_str() + text.size()); }
+    static bvector<Byte> LineGeometryBytes(int index)
+        {
+        IGeometryPtr geometry = IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(0.0, 0.0, 0.0, (double) index, (double) index + 1.0, (double) index + 2.0)));
+        bvector<Byte> bytes;
+        BentleyGeometryFlatBuffer::GeometryToBytes(*geometry, bytes);
+        return bytes;
         }
 
     // dateTime values are stored as julian days. Text read under a dateTime type is converted by SQLite to its numeric prefix.
@@ -468,6 +564,33 @@ TEST_F(PropertyTypeUpdateTests, NarrowDoubleToInt_FractionDropped)
     }
 
 //---------------------------------------------------------------------------------------
+// T01. Records current behaviour (D2): long to int is accepted. The baseline values fit in 32
+// bits, so they read the same; a larger value would be read by its low 32 bits.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyTypeUpdateTests, NarrowLongToInt)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    ChangePropertyType(schemaXml, "Widget", "BigCount", "long", "int");
+    ExpectAccepted(schemaXml, SchemaVersionChange::Major, ExpectedDataChanges().ConvertValuesOf("TestSchema:Widget", "BigCount", LongReadAsInteger));
+    }
+
+//---------------------------------------------------------------------------------------
+// T01. Records current behaviour (D2): double to long is accepted, the fraction is dropped on read.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyTypeUpdateTests, NarrowDoubleToLong_FractionDropped)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    ChangePropertyType(schemaXml, "Widget", "Weight", "double", "long");
+    ExpectAccepted(schemaXml, SchemaVersionChange::Major, ExpectedDataChanges().ConvertValuesOf("TestSchema:Widget", "Weight", DoubleReadAsInteger));
+    }
+
+//---------------------------------------------------------------------------------------
 // T01. Records current behaviour (D2): int to dateTime is accepted, the ints are read as
 // julian days, i.e. dates around 4713 BC. The existing test
 // MajorSchemaUpgradeVerifyDataAfterTypeChange asserts the same result.
@@ -494,6 +617,65 @@ TEST_F(PropertyTypeUpdateTests, ConvertStringToBinary_ReadAsUtf8Bytes)
     Utf8String schemaXml = GetBaselineSchemaXml();
     ChangePropertyType(schemaXml, "Widget", "Name", "string", "binary");
     ExpectAccepted(schemaXml, SchemaVersionChange::Major, ExpectedDataChanges().ConvertValuesOf("TestSchema:Widget", "Name", StringReadAsBinary));
+    }
+
+//---------------------------------------------------------------------------------------
+// T01. Records current behaviour (D2): binary to string is accepted, the blob bytes are handed
+// out as text. Payloads are seeded with UTF-8 text so the result is readable; the generated
+// 8-byte integer payloads would contain NUL bytes and read as truncated garbage.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyTypeUpdateTests, ConvertBinaryToString_ReadAsText)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+    SeedWidgetPayloads([] (int index) { return TextBytes(Utf8PrintfString("Payload %d", index)); });
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    ChangePropertyType(schemaXml, "Widget", "Payload", "binary", "string");
+    ExpectAccepted(schemaXml, SchemaVersionChange::Major, ExpectedDataChanges().ConvertValuesOf("TestSchema:Widget", "Payload", BinaryReadAsString));
+    }
+
+//---------------------------------------------------------------------------------------
+// T01. Records current behaviour (D2): string to boolean is accepted. SQLite converts the text
+// by its numeric prefix: "1" reads as true, "0" as false and "true" as false too.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyTypeUpdateTests, ConvertStringToBoolean_TextTrueReadsAsFalse)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+    SeedWidgetNames([] (int index) { static Utf8CP const s_names[] = {"1", "0", "true"}; return Utf8String(s_names[index % 3]); });
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    ChangePropertyType(schemaXml, "Widget", "Name", "string", "boolean");
+    ExpectAccepted(schemaXml, SchemaVersionChange::Major, ExpectedDataChanges().ConvertValuesOf("TestSchema:Widget", "Name", StringReadAsBoolean));
+    }
+
+//---------------------------------------------------------------------------------------
+// T01. IGeometry to binary is lossless: the stored flatbuffer is read as the blob it is.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyTypeUpdateTests, ConvertIGeometryToBinary_ReadAsFlatBuffer)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    ChangePropertyType(schemaXml, "Widget", "Shape", "Bentley.Geometry.Common.IGeometry", "binary");
+    ExpectAccepted(schemaXml, SchemaVersionChange::Major, ExpectedDataChanges().ConvertValuesOf("TestSchema:Widget", "Shape", GeometryReadAsBinary));
+    }
+
+//---------------------------------------------------------------------------------------
+// T01. Binary to IGeometry is fine ONLY when every stored blob is a geometry flatbuffer, so
+// the payloads are seeded with one. The generated 8-byte payloads would make the read fail.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyTypeUpdateTests, ConvertBinaryHoldingFlatBuffersToIGeometry)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+    SeedWidgetPayloads(LineGeometryBytes);
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    ChangePropertyType(schemaXml, "Widget", "Payload", "binary", "Bentley.Geometry.Common.IGeometry");
+    ExpectAccepted(schemaXml, SchemaVersionChange::Major, ExpectedDataChanges().ConvertValuesOf("TestSchema:Widget", "Payload", BinaryReadAsGeometry));
     }
 
 //---------------------------------------------------------------------------------------
@@ -1251,7 +1433,7 @@ TEST_F(PropertyTypeUpdateTests, ReplacingKindOfQuantityWithOtherPersistenceUnitI
 // P28. AllowUnitChange is the explicit opt-in. Values are not converted, by design.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PropertyTypeUpdateTests, ReplaceKindOfQuantityPersistenceUnitWithAllowUnitChange)
+TEST_F(PropertyTypeUpdateTests, ReplaceKindOfQuantityInPropertyPersistenceUnitWithAllowUnitChange)
     {
     ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
 
@@ -2589,7 +2771,7 @@ TEST_F(PropertyTypeUpdateTests, MovingPropertyToBaseClassWithOtherTypeWithoutDat
     ExpectRejected(schemaXml, "ECDb_0590", SchemaVersionChange::Major, SchemaManager::SchemaImportOptions::None);
     }
 
-// E03. Renaming an unreferenced enumeration is a delete + add (no identity-preserving rename). Predicted: accepted with Major.
+// E03. Renaming an unreferenced enumeration is a delete + add (no identity-preserving rename).
 TEST_F(PropertyTypeUpdateTests, RenameUnreferencedEnumeration)
     {
     ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
@@ -2609,7 +2791,7 @@ TEST_F(PropertyTypeUpdateTests, RenameReferencedEnumeration_Accepted)
     ExpectAccepted(schemaXml, SchemaVersionChange::Major);
     }
 
-// K09. Renaming an unreferenced KindOfQuantity (LengthInFeet). Predicted: accepted with Major.
+// K09. Renaming an unreferenced KindOfQuantity (LengthInFeet).
 TEST_F(PropertyTypeUpdateTests, RenameUnreferencedKindOfQuantity)
     {
     ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
@@ -2629,7 +2811,7 @@ TEST_F(PropertyTypeUpdateTests, RenameReferencedKindOfQuantity_Accepted)
     ExpectAccepted(schemaXml, SchemaVersionChange::Major);
     }
 
-// K03. Renaming an unreferenced property category (Metadata). Predicted: accepted with Major (delete + add).
+// K03. Renaming an unreferenced property category (Metadata).
 TEST_F(PropertyTypeUpdateTests, RenameUnreferencedPropertyCategory)
     {
     ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
@@ -2658,7 +2840,7 @@ TEST_F(PropertyTypeUpdateTests, RenameUnreferencedFormatIsRejected)
     ExpectRejected(schemaXml, "ECDb_0421", SchemaVersionChange::Major);
     }
 
-// E09. Removing isStrict lets the parser default it to true, which is the forbidden non-strict -> strict change (ECDb_0399, same as E07).
+// E09. Removing isStrict lets the parser default it to true, which is the forbidden non-strict -> strict change (ECDb_0399, same as E08).
 TEST_F(PropertyTypeUpdateTests, RemoveIsStrictFromNonStrictEnumerationIsRejected)
     {
     ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
@@ -2677,7 +2859,7 @@ TEST_F(PropertyTypeUpdateTests, ChangeEnumeratorValueKindIsRejected)
     ExpectRejected(schemaXml, "ECDb_0400", SchemaVersionChange::Major);
     }
 
-// E20. Reordering enumerators is not tracked as a change. Predicted: accepted.
+// E20. Reordering enumerators is not tracked as a change.
 TEST_F(PropertyTypeUpdateTests, ReorderEnumerators)
     {
     ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
@@ -2698,7 +2880,7 @@ TEST_F(PropertyTypeUpdateTests, AddConstantAndInvertedUnit)
     ExpectAccepted(schemaXml, SchemaVersionChange::Minor);
     }
 
-// U28. A constant becomes a plain unit of the same name. Predicted: rejected ECDb_0419.
+// U28. A constant becomes a plain unit of the same name.
 TEST_F(PropertyTypeUpdateTests, ChangeConstantToUnitIsRejected)
     {
     ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
@@ -2708,7 +2890,7 @@ TEST_F(PropertyTypeUpdateTests, ChangeConstantToUnitIsRejected)
     ExpectRejected(schemaXml, "ECDb_0419", SchemaVersionChange::Major);
     }
 
-// U29. Changing the unit an inverted unit inverts. Predicted: rejected ECDb_0419.
+// U29. Changing the unit an inverted unit inverts.
 TEST_F(PropertyTypeUpdateTests, ChangeInvertedUnitInvertsUnitIsRejected)
     {
     ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
@@ -2717,7 +2899,7 @@ TEST_F(PropertyTypeUpdateTests, ChangeInvertedUnitInvertsUnitIsRejected)
     ExpectRejected(schemaXml, "ECDb_0419", SchemaVersionChange::Major);
     }
 
-// U30. An inverted unit becomes a non-inverted unit of the same name. Predicted: rejected ECDb_0419.
+// U30. An inverted unit becomes a non-inverted unit of the same name.
 TEST_F(PropertyTypeUpdateTests, ChangeInvertedUnitToUnitIsRejected)
     {
     ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
@@ -2727,7 +2909,7 @@ TEST_F(PropertyTypeUpdateTests, ChangeInvertedUnitToUnitIsRejected)
     ExpectRejected(schemaXml, "ECDb_0419", SchemaVersionChange::Major);
     }
 
-// F06 / F11 / F18 / F19. Several numeric-spec settings on an existing format in one update. Predicted: accepted.
+// F06 / F11 / F18 / F19. Several numeric-spec settings on an existing format in one update.
 // If rejected, split the settings to see which one is refused.
 TEST_F(PropertyTypeUpdateTests, ChangeNumericSpecSettingsOfFormat)
     {
@@ -2738,8 +2920,10 @@ TEST_F(PropertyTypeUpdateTests, ChangeNumericSpecSettingsOfFormat)
     ExpectAccepted(schemaXml, SchemaVersionChange::Minor);
     }
 
-// F32. ratioType is neither compared nor read by the importer, so the update is expected to be accepted and ignored.
-// If VerifyPersistedSchemas fails, the change is accepted but not stored.
+// F08 + F32. type="ratio" needs ratioType, so this is a presentation type change (F08, accepted) combined with
+// the ratioType facet (F32). The matrix says ratioType is neither compared nor read from ECXML 3.2: if this fails in
+// ECObjects, F32 cannot be exercised through a schema update at all; if VerifyPersistedSchemas fails, the change is
+// accepted but not stored.
 TEST_F(PropertyTypeUpdateTests, ChangeFormatRatioType)
     {
     ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
@@ -2749,7 +2933,7 @@ TEST_F(PropertyTypeUpdateTests, ChangeFormatRatioType)
     ExpectAccepted(schemaXml, SchemaVersionChange::Major);
     }
 
-// F33-F35. Azimuth settings on an existing format. Predicted: accepted. F36-F40 (revolutionUnit, N/S/E/W labels) are not covered.
+// F33-F35. Azimuth settings on an existing format.
 TEST_F(PropertyTypeUpdateTests, ChangeFormatAzimuthSettings)
     {
     ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
@@ -2759,7 +2943,7 @@ TEST_F(PropertyTypeUpdateTests, ChangeFormatAzimuthSettings)
     ExpectAccepted(schemaXml, SchemaVersionChange::Minor);
     }
 
-// F24. Changing the unit of the first composite slot (m -> km keeps the required large-to-small order). Predicted: rejected ECDb_0424.
+// F24. Changing the unit of the first composite slot (m -> km keeps the required large-to-small order).
 TEST_F(PropertyTypeUpdateTests, ChangeCompositeSlotUnitIsRejected)
     {
     ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
@@ -2768,7 +2952,7 @@ TEST_F(PropertyTypeUpdateTests, ChangeCompositeSlotUnitIsRejected)
     ExpectRejected(schemaXml, "ECDb_0424", SchemaVersionChange::Major);
     }
 
-// F25. Removing a composite slot. Predicted: rejected ECDb_0424.
+// F25. Removing a composite slot.
 TEST_F(PropertyTypeUpdateTests, RemoveCompositeSlotIsRejected)
     {
     ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
@@ -2777,13 +2961,204 @@ TEST_F(PropertyTypeUpdateTests, RemoveCompositeSlotIsRejected)
     ExpectRejected(schemaXml, "ECDb_0424", SchemaVersionChange::Major);
     }
 
-// F26. A composite slot label change is not detected: accepted. Records current behaviour (D2).
-TEST_F(PropertyTypeUpdateTests, ChangeCompositeSlotLabel_Accepted)
+// F28. The label of the middle composite slot is metadata, like the major slot label (F27, ChangeFormatCompositeUnitLabel).
+TEST_F(PropertyTypeUpdateTests, ChangeCompositeMiddleSlotLabel)
     {
     ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
     Utf8String schemaXml = ImportBaselinePlus(ThreeUnitCompositeFormatXml());
     ReplaceInSchema(schemaXml, R"xml(<Unit label="cm">u:CM</Unit>)xml", R"xml(<Unit label="centi">u:CM</Unit>)xml");
-    ExpectAccepted(schemaXml, SchemaVersionChange::Major);
+    ExpectAccepted(schemaXml);
+    }
+
+// F31. Not testable through ECXML: ECObjects requires composite units in descending order (m, cm, mm) and
+// refuses to read a schema whose slots are reordered ("failed to create composite value spec"), so a reorder
+// never reaches SchemaWriter. Any order change that is still valid is a unit change of each slot (F23-F26).
+
+// K13. The property-level AllowUnitChange opt-in does not apply to the KoQ definition: changing the KoQ's own
+// persistence unit is rejected even when every property using it carries a matching AllowUnitChange.
+TEST_F(PropertyTypeUpdateTests, ChangingKindOfQuantityPersistenceUnitIsRejectedDespiteAllowUnitChange)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    ReplaceInSchema(schemaXml, R"xml(typeName="Length" persistenceUnit="u:M")xml", R"xml(typeName="Length" persistenceUnit="u:FT")xml");
+    ReplaceInClass(schemaXml, "Sensor", R"xml(<ECProperty propertyName="Span" typeName="double" kindOfQuantity="Length" />)xml",
+        R"xml(<ECProperty propertyName="Span" typeName="double" kindOfQuantity="Length">
+            <ECCustomAttributes>
+                <AllowUnitChange xmlns="SchemaUpgradeCustomAttributes.01.00.00">
+                    <From>u:M</From>
+                    <To>u:FT</To>
+                </AllowUnitChange>
+            </ECCustomAttributes>
+        </ECProperty>)xml");
+    ExpectRejected(schemaXml, "ECDb_0391", SchemaVersionChange::Major);
+    }
+
+// P24. Removing extendedTypeName="Id" again: the longs render as plain numbers once more. Nothing was rewritten.
+TEST_F(PropertyTypeUpdateTests, RemoveIdExtendedTypeName_ValuesRenderedAsNumbersAgain)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+    Utf8String withId = GetBaselineSchemaXml();
+    ReplaceInClass(withId, "Widget", R"xml(propertyName="BigCount" typeName="long")xml", R"xml(propertyName="BigCount" typeName="long" extendedTypeName="Id")xml");
+    ASSERT_EQ(SUCCESS, UpdateSchema(withId));
+
+    Utf8String backXml = GetBaselineSchemaXml();
+    ASSERT_EQ(SUCCESS, UpdateSchema(backXml));
+    VerifyData();
+    }
+
+// P26 on a primitive array. Assigns a unit meaning to the stored array elements, no rescaling.
+TEST_F(PropertyTypeUpdateTests, AddKindOfQuantityToArrayProperty)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    ReplaceInClass(schemaXml, "Gadget", R"xml(<ECArrayProperty propertyName="Counts" typeName="int" />)xml", R"xml(<ECArrayProperty propertyName="Counts" typeName="int" kindOfQuantity="Length" />)xml");
+    ExpectAccepted(schemaXml);
+    }
+
+// E11 / E14. Adding a string enumerator is accepted; changing a string enumerator value is rejected like an
+// integer one (E13), with its own issue id: ECDb_0401 for strings, ECDb_0400 for integers.
+TEST_F(PropertyTypeUpdateTests, AddStringEnumerator)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    ReplaceInSchema(schemaXml, R"xml(<ECEnumerator name="Blue" value="blue" />)xml", R"xml(<ECEnumerator name="Blue" value="blue" /><ECEnumerator name="Green" value="green" />)xml");
+    ExpectAccepted(schemaXml);
+    }
+
+TEST_F(PropertyTypeUpdateTests, ChangingStringEnumeratorValueIsRejected)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    ReplaceInSchema(schemaXml, R"xml(<ECEnumerator name="Blue" value="blue" />)xml", R"xml(<ECEnumerator name="Blue" value="navy" />)xml");
+    ExpectRejected(schemaXml, "ECDb_0401", SchemaVersionChange::Major);
+    }
+
+//***************************************************************************************
+// Import paths that matter for iModels (Rob's I2, I7). DgnDomains::DoImportSchemas always adds
+// DisallowMajorSchemaUpgrade and AllowMajorSchemaUpgradeForDynamicSchemas, so in an iModel the
+// only way through gate G is the DynamicSchema custom attribute. The schema sync db imports with
+// DoNotCreateOrUpdateDataTables, which refuses anything that can make stored values unreadable.
+//***************************************************************************************
+
+//---------------------------------------------------------------------------------------
+// T01 / I2 / S08. With the iModel options a read version bump does not help a non-dynamic schema.
+// The import is vetoed at the schema level (ECDb_0427, "major schema version changes are
+// disabled") before the writer looks at the property. This is the situation every BIS domain
+// schema is in.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyTypeUpdateTests, TypeChangeWithIModelOptionsIsRejectedForNonDynamicSchema)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    ChangePropertyType(schemaXml, "Widget", "Count", "int", "double");
+    ExpectRejected(schemaXml, "ECDb_0427", SchemaVersionChange::Major, IModelImportOptions());
+    }
+
+//---------------------------------------------------------------------------------------
+// T01 / I2. Same without a read version bump, which is what a connector would actually send:
+// the schema-level veto does not fire, the type change itself is rejected (ECDb_0336).
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyTypeUpdateTests, TypeChangeWithIModelOptionsAndMinorVersionIsRejectedForNonDynamicSchema)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    ChangePropertyType(schemaXml, "Widget", "Count", "int", "double");
+    ExpectRejected(schemaXml, "ECDb_0336", SchemaVersionChange::Minor, IModelImportOptions());
+    }
+
+//---------------------------------------------------------------------------------------
+// T01 / I2. A dynamic schema gets the type change through with the iModel options and without
+// a read version bump. The data effect is the same as on the plain ECDb route.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyTypeUpdateTests, TypeChangeInDynamicSchemaWithIModelOptions)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    MakeDynamic(schemaXml);
+    ChangePropertyType(schemaXml, "Widget", "Count", "int", "double");
+    ExpectAccepted(schemaXml, SchemaVersionChange::Minor, ExpectedDataChanges().ConvertValuesOf("TestSchema:Widget", "Count", IntegerAsDouble), IModelImportOptions());
+    }
+
+//---------------------------------------------------------------------------------------
+// T01 / I2. The lossy case through the dynamic route: the customer scenario is reachable in an iModel.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyTypeUpdateTests, LossyTypeChangeInDynamicSchemaWithIModelOptions_ReadAsWrongDate)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+    SeedWidgetNames([] (int index) { return Utf8PrintfString("2020-03-%02dT10:30:00.000Z", 10 + index); });
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    MakeDynamic(schemaXml);
+    ChangePropertyType(schemaXml, "Widget", "Name", "string", "dateTime");
+    ExpectAccepted(schemaXml, SchemaVersionChange::Minor, ExpectedDataChanges().ConvertValuesOf("TestSchema:Widget", "Name", StringReadAsDateTime), IModelImportOptions());
+    }
+
+//---------------------------------------------------------------------------------------
+// E02 / I2. Enumeration deletion through the dynamic route.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyTypeUpdateTests, DeleteEnumerationInDynamicSchemaWithIModelOptions)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    MakeDynamic(schemaXml);
+    RemoveStatusEnumeration(schemaXml);
+    ChangePropertyType(schemaXml, "Gadget", "State", "Status", "int");
+    ExpectAccepted(schemaXml, SchemaVersionChange::Minor, ExpectedDataChanges(), IModelImportOptions());
+    EXPECT_TRUE(GetEnumeration("Status") == nullptr);
+    }
+
+//---------------------------------------------------------------------------------------
+// K08 / I2. KindOfQuantity deletion through the dynamic route.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyTypeUpdateTests, DeleteKindOfQuantityInDynamicSchemaWithIModelOptions)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    MakeDynamic(schemaXml);
+    ReplaceInSchema(schemaXml, R"xml(<KindOfQuantity typeName="LengthInFeet" persistenceUnit="u:FT" relativeError="0.001" presentationUnits="f:DefaultRealU(4)[u:FT]" />)xml", "");
+    ExpectAccepted(schemaXml, SchemaVersionChange::Minor, ExpectedDataChanges(), IModelImportOptions());
+    EXPECT_TRUE(GetKindOfQuantity("LengthInFeet") == nullptr);
+    }
+
+//---------------------------------------------------------------------------------------
+// E12 / I2. The dynamic route does not open gates that G does not open: enumerator deletion stays rejected.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyTypeUpdateTests, DeletingEnumeratorInDynamicSchemaIsRejected)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    MakeDynamic(schemaXml);
+    ReplaceInSchema(schemaXml, R"xml(<ECEnumerator name="Retired" value="2" />)xml", "");
+    ExpectRejected(schemaXml, "ECDb_0402", SchemaVersionChange::Minor, IModelImportOptions());
+    }
+
+//---------------------------------------------------------------------------------------
+// T01 / I7. With DoNotCreateOrUpdateDataTables (schema sync db) an otherwise legal type change is
+// refused, because the import cannot take responsibility for values that become unreadable.
+// SchemaWriter reports a second ECDb_0336 and sets the data deletion refused flag.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyTypeUpdateTests, TypeChangeWithDoNotCreateOrUpdateDataTablesIsRejected)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    ChangePropertyType(schemaXml, "Widget", "Count", "int", "long");
+    ExpectRejected(schemaXml, "ECDb_0336", SchemaVersionChange::Major,
+        SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::DoNotCreateOrUpdateDataTables);
     }
 
 
