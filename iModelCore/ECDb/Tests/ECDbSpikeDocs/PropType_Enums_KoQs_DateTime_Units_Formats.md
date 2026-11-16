@@ -134,6 +134,20 @@ All tests are in PropertyTypeUpdateTests.cpp and pass. "Read as" means how the u
 | A04 | Decrease `maxOccurs`, or bound an unbounded array | **Rejected** `0338` | `DecreasingArrayMaxOccursIsRejected`, `BoundingUnboundedArrayIsRejected` |
 | T / P12 | Type change combined with moving a property to a base class | Accepted with a data transform; **rejected `0590` without** `AllowDataTransformDuringSchemaUpgrade` | `MovePropertyToBaseClassWithOtherType`, `…WithoutDataTransformIsRejected` |
 
+### 7a. Editing a reused struct definition (matrix 3.3)
+
+Setup: `Extent` struct class is used inline (`Gadget.Size`, flattened columns) and as a struct array (`Gadget.Sizes`, one JSON column).
+
+| Change to `Extent` | Result | Existing data | Test |
+|---|---|---|---|
+| Add member `Depth` | Accepted (Minor) | Unchanged; old rows and JSON elements have no value for it | `AddStructMember_ExistingValuesHaveNoMember` |
+| Delete member `Height`, Minor | **Rejected** `0384` | n/a | `DeletingStructMemberWithoutMajorVersionIsRejected` |
+| Delete member `Height`, Major | Accepted | `Height` no longer shown in `Size` or `Sizes`. **The `ec_PropertyPath` row `Size.Height` survives (orphaned)**, as the matrix predicted. | `DeleteStructMember_UseSitePropertyPathIsOrphaned` |
+| Delete member `Height`, DoNotFail | Accepted, **deletion skipped**: `Height` stays in the schema, data unchanged | Unchanged | `DeletingStructMemberWithDoNotFailKeepsMember` |
+| Delete, then re-add `Height` | Both imports accepted | Whether the re-added member shows the stale values is **logged, not asserted** (matrix: unproven). Check the test output. | `ReAddDeletedStructMember_StaleValuesObserved` |
+| Member label, category, min/max | Accepted | Unchanged | `ChangeStructMemberLabelCategoryAndRange` |
+| Member type change | See section 1: rejected without Major (`0336`). The accepted-with-Major tests are still disabled. | n/a | `StructMemberTypeChangeWithoutMajorVersionIsRejected` |
+
 ## 8. Import paths (Rob's I2 and I7)
 
 | Scenario | Result | Test |
