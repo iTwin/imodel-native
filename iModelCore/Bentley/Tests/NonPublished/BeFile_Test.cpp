@@ -367,7 +367,8 @@ TEST_F(BeFileTests, WriteAllLarge)
 
     EXPECT_TRUE(status == BeFileStatus::Success) << "Failed to write to file, last error: " << static_cast<int>(status) << ", file: " << filePath;
     EXPECT_GE(fileSize, chunkSize) << "Failed to write bytes count specified, file size: " << fileSize << ", file: " << filePath;
-    m_file.Close();    
+    m_file.Close();
+    fileName.BeDeleteFile();
     }
 
 //---------------------------------------------------------------------------------------

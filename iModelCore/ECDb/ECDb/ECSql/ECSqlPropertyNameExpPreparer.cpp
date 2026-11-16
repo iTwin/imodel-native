@@ -26,7 +26,9 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
             // we only append property scope only if its different from tablevalued class name and not empty
             const auto classAlias = exp.GetClassRefExp()->GetId();
             if (!classAlias.empty() && !classAlias.EqualsIAscii(exp.GetVirtualProperty()->GetClass().GetName())) {
-                builder.Append(classAlias);
+                ECSqlStatus aliasStatus = ECSqlExpPreparer::AppendUnquotedName(builder, ctx, classAlias);
+                if (!aliasStatus.IsSuccess())
+                    return aliasStatus;
                 builder.AppendDot();
             }
         }
@@ -421,12 +423,16 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef(NativeSqlBuilder:
                     for (int i = 0; i < columnCount; ++i)
                         {
                         NativeSqlBuilder sqlSnippet;
-                        sqlSnippet.Append(ctb.GetAlias().empty() ? ctb.GetName() : ctb.GetAlias());
+                        ECSqlStatus nameStatus = ECSqlExpPreparer::AppendUnquotedName(sqlSnippet, ctx, ctb.GetAlias().empty() ? ctb.GetName() : ctb.GetAlias());
+                        if (!nameStatus.IsSuccess())
+                            return nameStatus;
                         sqlSnippet.AppendDot();
                         Utf8StringCR name = exp.GetResolvedPropertyPath().Last().GetName();
-                        if (columnCount == 1)
-                            sqlSnippet.Append(name);
-                        else
+                        if (columnCount == 1) {
+                            nameStatus = ECSqlExpPreparer::AppendUnquotedName(sqlSnippet, ctx, name);
+                            if (!nameStatus.IsSuccess())
+                                return nameStatus;
+                        } else
                             sqlSnippet.AppendEscaped(ctb.GetBlock()->GetPointColumnName(name, i));
                         nativeSqlSnippets.push_back(sqlSnippet);
                         }

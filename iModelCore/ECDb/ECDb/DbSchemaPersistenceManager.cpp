@@ -65,6 +65,21 @@ BentleyStatus DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(ECDb
 // @bsimethod
 //---------------------------------------------------------------------------------------
 //static
+BentleyStatus DbSchemaPersistenceManager::ClearCacheTables(ECDbCR ecdb)
+    {
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("DELETE FROM main." TABLE_ClassHierarchyCache))
+        return ERROR;
+
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("DELETE FROM main." TABLE_ClassHasTablesCache))
+        return ERROR;
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+//static
 DbSchemaPersistenceManager::CreateOrUpdateTableResult DbSchemaPersistenceManager::CreateOrUpdateTable(ECDbCR ecdb, DbTable const& table)
     {
     if (table.GetType() == DbTable::Type::Virtual || table.GetType() == DbTable::Type::Existing)
@@ -766,7 +781,8 @@ BentleyStatus DbSchemaPersistenceManager::RunPragmaTableInfo(std::vector<SqliteC
 
     colInfos.clear();
 
-    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(Utf8PrintfString("PRAGMA [%s].table_info('%s')", tableSpace, tableName.c_str()).c_str());
+    // The table-valued pragma_table_info() can be shadowed by a table of that name, so this uses the PRAGMA statement.
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(SqlPrintfString("PRAGMA \"%w\".table_info(\"%w\")", tableSpace, tableName.c_str()).GetUtf8CP());
     if (stmt == nullptr)
         return ERROR;
 

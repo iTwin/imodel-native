@@ -34,7 +34,9 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, CommonTableEx
         }
         // render block
         auto blockExp = blocks[i];
-        builder.Append(blockExp->GetName());
+        ECSqlStatus nameStatus = ECSqlExpPreparer::AppendUnquotedName(builder, ctx, blockExp->GetName());
+        if (!nameStatus.IsSuccess())
+            return nameStatus;
         auto &cols = blockExp->GetColumns();
         if(cols.size() != 0)
             builder.AppendParenLeft();
@@ -43,9 +45,11 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, CommonTableEx
                 builder.AppendComma();
             }
             auto const& type = blockExp->GetQuery()->GetSelection()->GetChildren().Get<DerivedPropertyExp>(j)->GetExpression()->GetTypeInfo();
-            if (!type.IsPoint())
-                builder.Append(cols[j]);
-            else
+            if (!type.IsPoint()) {
+                nameStatus = ECSqlExpPreparer::AppendUnquotedName(builder, ctx, cols[j]);
+                if (!nameStatus.IsSuccess())
+                    return nameStatus;
+            } else
                 {
                 const int dimensions = type.GetPrimitiveType() == PRIMITIVETYPE_Point2d ? 2 : 3;
                 for (int coordinate = 0; coordinate < dimensions; ++coordinate)

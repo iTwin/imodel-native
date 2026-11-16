@@ -84,9 +84,10 @@ void LsComponent::SaveToJson(BeJsValue result) const
 //--------------+------------------------------------------------------------------------
 void LsComponent::GetNextComponentNumber (uint32_t& id, DgnDbR project, BeSQLite::PropertySpec spec)
     {
-    SqlPrintfString sql("SELECT  max(Id) from " BEDB_TABLE_Property " where Namespace='%s' and Name='%s'", spec.GetNamespace(), spec.GetName());
     Statement stmt;
-    stmt.Prepare(project, sql.GetUtf8CP());
+    stmt.Prepare(project, "SELECT max(Id) from " BEDB_TABLE_Property " where Namespace=? and Name=?");
+    stmt.BindText(1, spec.GetNamespace(), Statement::MakeCopy::No);
+    stmt.BindText(2, spec.GetName(), Statement::MakeCopy::No);
     DbResult result = stmt.Step();
     if (BE_SQLITE_DONE != result && BE_SQLITE_ROW != result)
         {

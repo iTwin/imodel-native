@@ -31,7 +31,7 @@
              install root; they do not run vcpkg themselves. -->
         <SubPart PartName="vcpkg_install_compress" LibType="Static"/>
     </Part>
-    <Part Name="vcpkg_install_pugixml" BentleyBuildMakeFile="vcpkg_install_pugixml.mke">
+     <Part Name="vcpkg_install_pugixml" BentleyBuildMakeFile="vcpkg_install_pugixml.mke" ExcludePlatforms="iOSARM64Simulator">
         <!-- LibType="Static": the chain always runs static-only.  Dynamic consumers depend on
              their chain part with LibType="Static" and read the packages from the static
              install root; they do not run vcpkg themselves. -->
@@ -42,6 +42,7 @@
              their chain part with LibType="Static" and read the packages from the static
              install root; they do not run vcpkg themselves. -->
         <SubPart PartName="vcpkg_install_pugixml" LibType="Static"/>
+          <SubPart PartName="vcpkg_install_png" LibType="Static"/>
     </Part>
     <!-- curl builds on every platform, so it is inserted before crashpad (desktop-only): a chain
          link must depend on a predecessor that exists on the same platforms, and openssl is built

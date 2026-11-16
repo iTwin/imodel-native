@@ -1,36 +1,49 @@
-# This CODEOWNERS file follows the format of Github's CODEOWNERS
-#   Documentation for reference, https://help.github.com/en/github/creating-cloning-and-archiving-repositories/about-code-owners
+# This CODEOWNERS file follows the format of GitHub's CODEOWNERS.
+# Documentation: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
 
 # These owners will be the default owners for everything in
 # the repo. Unless a later match takes precedence,
 # @iTwin/itwinjs-core-admins will be requested for
 # review when someone opens a pull request.
-*                         @iTwin/itwinjs-core-admins
+# TODO: confirm current itwinjs-core-admins membership and review availability.
+*                                               @iTwin/itwinjs-core-admins
+.github/workflows                               @iTwin/itwinjs-core-admins
+.github/CODEOWNERS                              @iTwin/itwinjs-core-admins
+.gitignore                                     @iTwin/itwinjs-core-admins
 
-.github/workflows          @iTwin/itwinjs-core-admins
-.github/CODEOWNERS        @iTwin/itwinjs-core-admins
+# These are owners for specific files in the repository.
+# Each line is a file pattern followed by one or more owners.
 
-.gitattributes            @iTwin/itwinjs-core-admins
-.gitignore                @iTwin/itwinjs-core-admins
+# Build / release / third-party dependencies.
+# Cross-repo scope: JS build tooling and pipelines; native build and dependencies.
+/build/                                        @DanRod1999 @naveedkhan8067 @tcobbs-bentley
+/iModelCore/libsrc/                             @DanRod1999 @tcobbs-bentley @iTwin/itwinjs-core-admins
 
-# These are owners for specific files in the repository
-# Each line is a file pattern followed by one or more owners
+# Backend / data runtime.
+# Cross-repo scope: core/backend, runtime APIs, ECSQL, and the JS/native boundary.
+# Preserve narrower data and schema expertise instead of one universal approval pool.
+/iModelCore/Bentley/                            @bbastings @khanaffan @tcobbs-bentley @DanRod1999
+/iModelCore/BeSQLite/                           @khanaffan @kring @rschili
+/iModelCore/ECDb/                               @khanaffan @rschili @RohitPtnkr1996
+/iModelCore/iModelPlatform/                     @khanaffan @bbastings @RohitPtnkr1996 @rschili @tcobbs-bentley
+/iModelJsNodeAddon/                             @khanaffan @bbastings @wgoehrig @DanRod1999 @grigasp
 
-/build/                                      @calebmshafer @DanRod1999 @naveedkhan8067
-/iModelCore/Bentley/                         @bbastings @pmconne @khanaffan
-/iModelCore/BeSQLite/                        @pmconne @khanaffan @kring @rschili
-/iModelCore/BRepCore/                        @pmconne @bbastings @dassaf4
-/iModelCore/ECDb/                            @khanaffan @pmconne @calebmshafer @rschili @RohitPtnkr1996
-/iModelCore/ecobjects/                       @calebmshafer @cammac1803 @rschili @RohitPtnkr1996
-/iModelCore/ECPresentation/                  @iTwin/itwinjs-core-presentation
-/iModelCore/GeoCoord/                        @pmconne @AlainRobertAtBentley @bbastings
-/iModelCore/GeomLibs/                        @bbastings @dassaf4 @saeeedtorabi
-/iModelCore/iModelPlatform/                  @pmconne @khanaffan @bbastings
-/iModelCore/Units/                           @calebmshafer @bbastings @rschili @RohitPtnkr1996
-/iModelCore/iModelPlatform/**/*Tile*.*       @pmconne @markschlosseratbentley
-/iModelCore/iModelPlatform/**/*Render*.*     @pmconne @markschlosseratbentley @bbastings
-/iModelCore/libsrc/                          @DanRod1999 @tcobbs-bentley @iTwin/itwinjs-core-admins
+# Schemas / quantities.
+# Cross-repo scope: core/ecschema-*, core/quantity, and schema tooling.
+# Schema/storage compatibility changes also need the relevant runtime expertise.
+/iModelCore/ecobjects/                          @cammac1803 @rschili @RohitPtnkr1996
+/iModelCore/Units/                              @bbastings @rschili @RohitPtnkr1996
 
-/iModelJsNodeAddon/                          @pmconne @khanaffan @calebmshafer @bbastings
-/iModelJsNodeAddon/presentation/             @iTwin/itwinjs-core-presentation
+# Geometry / geospatial.
+# Cross-repo scope: core/geometry; keep specialist distinctions within this bucket.
+/iModelCore/GeoCoord/                           @AlainRobertAtBentley @bbastings @tcobbs-bentley
+/iModelCore/GeomLibs/                           @bbastings @dassaf4 @saeeedtorabi
 
+# Rendering.
+# This override must follow the general iModelPlatform rule above.
+/iModelCore/iModelPlatform/**/*Render*.*         @markschlosseratbentley @bbastings
+
+# Presentation: an existing cross-repo team; reuse it.
+# The addon override MUST follow the general iModelJsNodeAddon rule above.
+/iModelCore/ECPresentation/                     @iTwin/itwinjs-core-presentation
+/iModelJsNodeAddon/presentation/                @iTwin/itwinjs-core-presentation

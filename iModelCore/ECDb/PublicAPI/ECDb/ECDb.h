@@ -267,7 +267,7 @@ protected:
     ECDB_EXPORT DbResult _OnDbDetached(Utf8CP dbAlias) const override;
     ECDB_EXPORT int _OnAddFunction(DbFunction&) const override;
     ECDB_EXPORT void _OnRemoveFunction(DbFunction&) const override;
-    ECDB_EXPORT virtual DbResult _AfterSchemaChangeSetApplied() const;
+    ECDB_EXPORT virtual DbResult _AfterSchemaChangeSetApplied(bool rebuildCacheTables) const;
     ECDB_EXPORT virtual DbResult _AfterDataChangeSetApplied(bool schemaChanged, bool deferInstanceUpgrade);
     ECDB_EXPORT virtual bool _IsLevelWithTimeline();
 
@@ -550,7 +550,23 @@ public:
     ECDB_EXPORT void AddECDbCacheClearListener(IECDbCacheClearListener&);
     ECDB_EXPORT void RemoveECDbCacheClearListener(IECDbCacheClearListener&);
 
-    BeSQLite::DbResult AfterSchemaChangeSetApplied() const { return _AfterSchemaChangeSetApplied(); }
+    //! Brings the tables, indexes and triggers in line with the ec_ rows of a schema changeset that was just applied.
+    //! @param[in] rebuildCacheTables Pass false right after ApplySchemaChangeSet, which has already rebuilt the
+    //! ec_cache_ tables. Rebuilding them reads all of ec_PropertyMap, which is slow on a large file.
+    BeSQLite::DbResult AfterSchemaChangeSetApplied(bool rebuildCacheTables = true) const { return _AfterSchemaChangeSetApplied(rebuildCacheTables); }
+    //! Applies the schema part of a changeset (the ec_ rows and the be_Prop schema version rows) with
+    //! SQLITE_CHANGESETAPPLY_FKNOACTION, so deleting a parent row (class, category, enumeration, ...) cannot
+    //! cascade into a row that the same changeset moves to another parent. Foreign keys are still checked
+    //! once the whole changeset has been applied. The ec_cache_ tables hold derived data: they are cleared
+    //! first, their rows in the changeset are skipped, and they are rebuilt from the other ec_ tables afterwards.
+    //! The caller applies the data rows afterwards, e.g. with ApplyChangesArgs::ApplyOnlyDataChanges.
+    //! @param[in] changeset Changeset to apply
+    //! @param[in] args Invert, ignore-noop, no-update-loop and the conflict handler are used as given.
+    //! The change filter and the FK action flag are replaced.
+    //! @param[in] onCacheRewrite Optional. Called with true right before and with false right after each step that
+    //! rewrites the ec_cache_ tables, so a caller can keep that work out of its own instrumentation.
+    //! @return BE_SQLITE_OK on success. On failure the caller must abandon the changes.
+    ECDB_EXPORT BeSQLite::DbResult ApplySchemaChangeSet(BeSQLite::ChangeStreamCR changeset, BeSQLite::ApplyChangesArgs args, std::function<void(bool)> const& onCacheRewrite = nullptr);
     //! @param[in] deferInstanceUpgrade the caller will run UpgradeECInstances itself once it is done. A pull
     //! applies several changesets and then replays the local txns, and only the caller knows when the file
     //! holds every row that may need an overflow row.

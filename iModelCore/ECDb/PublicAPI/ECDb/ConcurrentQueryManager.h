@@ -215,6 +215,7 @@ class ECSqlParams final {
             ECDB_EXPORT DPoint2d GetValuePoint2d() const;
             ECDB_EXPORT DPoint3d GetValuePoint3d() const;
             ECDB_EXPORT bvector<Byte> GetValueBlob() const;
+            //! Throws std::runtime_error if the value is malformed or holds more than ECSqlParams::MaxIdSetCount Ids.
             ECDB_EXPORT BeIdSet GetValueIdSet() const;
     };
     private:
@@ -222,6 +223,8 @@ class ECSqlParams final {
         static constexpr auto JValue = "value";
         std::map<std::string, ECSqlParam> m_params;
     public:
+        //! Maximum number of Ids that the IdSet parameters bound to one statement may hold in total.
+        static constexpr uint64_t MaxIdSetCount = 1000000;
         ECSqlParams(){}
         ECSqlParams(ECSqlParams && rhs): m_params(std::move(rhs.m_params)) {}
         ECSqlParams(const ECSqlParams& rhs): m_params(rhs.m_params) {}
@@ -259,7 +262,14 @@ class ECSqlParams final {
         ECDB_EXPORT void FromJs(BeJsConst val);
         ECDB_EXPORT std::vector<std::string> GetKeys() const;
         ECDB_EXPORT bool TryBindTo(ECSqlStatement& stmt, std::string& err) const;
-        ECDB_EXPORT static bool TryBindParameter(ECSqlStatement& stmt, std::string const& name, ECSqlParam::Type type, BeJsConst value, std::string& err);
+        //! Binds one parameter. IdSet values are counted without being expanded, and fail to bind if they hold more than
+        //! @p idSetBudget Ids, which is reduced by the count on success. Share one budget, starting at MaxIdSetCount, across
+        //! all parameters of a statement.
+        ECDB_EXPORT static bool TryBindParameter(ECSqlStatement& stmt, std::string const& name, ECSqlParam::Type type, BeJsConst value, uint64_t& idSetBudget, std::string& err);
+        //! Counts the Ids in a compact ("+1*3+2") or readable ("1-3,5") Id set string, as accepted by BeIdSet::FromString,
+        //! without expanding it. Readable ranges are counted without removing duplicates. Returns false, with @p err set, if
+        //! the string is malformed, or if the Ids it encodes or their count would overflow 64 bits.
+        ECDB_EXPORT static bool TryCountIdSet(Utf8CP idSet, uint64_t& count, std::string& err);
         ECDB_EXPORT std::string GetCacheKey() const;
 };
 
@@ -289,6 +299,7 @@ struct ECSqlRequest : public QueryRequest{
         bool m_abbreviateBlobs;
         bool m_suppressLogErrors;
         bool m_includeMetaData;
+        bool m_collectCloudSqliteStats = false;
         bool m_convertClassIdsToClassNames;
         bool m_doNotConvertClassIdsToClassNamesWhenAliased;
         ECSqlValueFormat m_valueFmt;
@@ -304,6 +315,7 @@ struct ECSqlRequest : public QueryRequest{
         bool GetAbbreviateBlobs() const {return m_abbreviateBlobs; }
         bool GetSuppressLogErrors() const {return m_suppressLogErrors; }
         bool GetIncludeMetaData() const {return m_includeMetaData; }
+        bool GetCollectCloudSqliteStats() const { return m_collectCloudSqliteStats; }
         bool GetConvertClassIdsToClassNames() const {return m_convertClassIdsToClassNames; }
         bool GetDoNotConvertClassIdsToClassNamesWhenAliased() const { return m_doNotConvertClassIdsToClassNamesWhenAliased; }
         QueryLimit const& GetLimit() const {return m_limit;}
@@ -313,6 +325,7 @@ struct ECSqlRequest : public QueryRequest{
         ECSqlRequest& SetAbbreviateBlobs(bool abbreviateBlobs) { m_abbreviateBlobs = abbreviateBlobs; return *this;}
         ECSqlRequest& SetSuppressLogErrors(bool suppressLogErrors) { m_suppressLogErrors = suppressLogErrors; return *this;}
         ECSqlRequest& SetIncludeMetaData(bool includeMetaData) { m_includeMetaData = includeMetaData; return *this;}
+        ECSqlRequest& SetCollectCloudSqliteStats(bool enabled) { m_collectCloudSqliteStats = enabled; return *this; }
         ECSqlRequest& SetConvertClassIdsToClassNames(bool convertClassIdsToClassNames) { m_convertClassIdsToClassNames = convertClassIdsToClassNames; return *this;}
         ECSqlRequest& SetArgs(BeJsConst args) { m_args.FromJs(args); return *this;}
         ECSqlRequest& SetArgs(ECSqlParams const& args) { m_args = args; return *this;}
@@ -364,23 +377,35 @@ struct QueryResponse : std::enable_shared_from_this<QueryResponse> {
             static constexpr auto kMemUsed = "memUsed";
             static constexpr auto kPrepareTime = "prepareTime";
             std::chrono::microseconds m_cpuTime;
-            std::chrono::milliseconds m_totalTime;
+            std::chrono::duration<double, std::milli> m_totalTime;
             std::chrono::milliseconds m_timeLimit;
-            std::chrono::milliseconds m_prepareTime;
+            std::chrono::duration<double, std::milli> m_prepareTime;
             uint32_t m_memLimit;
             uint32_t m_memUsed;
             bool m_resumed = false;
+            std::string m_cloudSqliteTimingState;
+            double m_downloadTime = 0;
+            double m_executionTime = 0;
+            uint64_t m_downloadBlocks = 0;
+            uint64_t m_downloadBytes = 0;
         public:
             Stats():m_cpuTime(0ms),m_totalTime(0ms), m_timeLimit(0ms),m_prepareTime(0),m_memLimit(0), m_memUsed(0){}
-            Stats(std::chrono::microseconds cpuTime, std::chrono::milliseconds totalTime, uint32_t memUsed, QueryQuota const& quota, std::chrono::milliseconds prepareTime, bool resumed = false):
+            Stats(std::chrono::microseconds cpuTime, std::chrono::duration<double, std::milli> totalTime, uint32_t memUsed, QueryQuota const& quota, std::chrono::duration<double, std::milli> prepareTime, bool resumed = false):
                 m_cpuTime(cpuTime), m_totalTime(totalTime),
                 m_timeLimit(std::chrono::duration_cast<std::chrono::milliseconds>(quota.MaxTimeAllowed())), m_prepareTime(prepareTime),
                 m_memLimit(quota.MaxMemoryAllowed()),m_memUsed(memUsed),m_resumed(resumed){}
             virtual ~Stats(){}
             std::chrono::microseconds CpuTime() const { return m_cpuTime;}
-            std::chrono::milliseconds TotalTime() const { return m_totalTime;}
+            std::chrono::milliseconds TotalTime() const { return std::chrono::duration_cast<std::chrono::milliseconds>(m_totalTime);}
             std::chrono::milliseconds TimeLimit() const { return m_timeLimit;}
-            std::chrono::milliseconds PrepareTime() const { return m_prepareTime;}
+            std::chrono::milliseconds PrepareTime() const { return std::chrono::duration_cast<std::chrono::milliseconds>(m_prepareTime);}
+            void SetCloudSqliteTiming(Utf8CP state, double downloadTime = 0, double executionTime = 0, uint64_t downloadBlocks = 0, uint64_t downloadBytes = 0) {
+                m_cloudSqliteTimingState = state;
+                m_downloadTime = downloadTime;
+                m_executionTime = executionTime;
+                m_downloadBlocks = downloadBlocks;
+                m_downloadBytes = downloadBytes;
+            }
             uint32_t MemLimit() const { return m_memLimit;}
             uint32_t MemUsed() const { return m_memUsed;}
             bool Resumed() const { return m_resumed; }
@@ -416,6 +441,9 @@ struct QueryResponse : std::enable_shared_from_this<QueryResponse> {
         Status GetStatus() const noexcept {return m_status;}
         std::string const& GetError() const noexcept {return m_error;}
         Stats const& GetStats() const { return m_stats; }
+        void SetCloudSqliteTiming(Utf8CP state, double downloadTime = 0, double executionTime = 0, uint64_t downloadBlocks = 0, uint64_t downloadBytes = 0) {
+            m_stats.SetCloudSqliteTiming(state, downloadTime, executionTime, downloadBlocks, downloadBytes);
+        }
         bool IsDone() const noexcept { return m_status == Status::Done;}
         bool IsPartial() const noexcept { return m_status == Status::Partial;}
         bool IsSuccess() const noexcept { return m_status == Status::Done || m_status == Status::Partial;}

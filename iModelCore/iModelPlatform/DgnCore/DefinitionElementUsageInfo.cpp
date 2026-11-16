@@ -172,6 +172,24 @@ void DefinitionElementUsageInfo::Initialize(BeSQLite::IdSet<DgnElementId> const&
             continue;
             }
 
+        // Look for specific ECClass types that require explicit usage checks
+        ECN::ECClassCP ecClass = element->GetElementClass();
+        if (nullptr != ecClass && ecClass->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_SheetPrototype))
+            {
+            m_otherDefinitionElementIds.insert(elementId);
+            if (IsSheetPrototypeUsed(elementId))
+                m_usedIds.insert(elementId);
+            continue;
+            }
+
+        if (nullptr != ecClass && ecClass->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_SheetBorderPrototype))
+            {
+            m_otherDefinitionElementIds.insert(elementId);
+            if (IsSheetBorderPrototypeUsed(elementId))
+                m_usedIds.insert(elementId);
+            continue;
+            }
+
         m_otherDefinitionElementIds.insert(elementId); // unknown or unhandled Element Class
         }
     }
@@ -259,6 +277,38 @@ bool DefinitionElementUsageInfo::IsDisplayStyleUsed(DgnElementId displayStyleId)
     sql.append(" LIMIT 1");
     CachedECSqlStatementPtr statement = m_db.GetPreparedECSqlStatement(sql.c_str());
     statement->BindId(1, displayStyleId);
+    if (m_excludeIds)
+        statement->BindVirtualSet(2, m_excludeIds);
+    return BE_SQLITE_ROW == statement->Step();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DefinitionElementUsageInfo::IsSheetPrototypeUsed(DgnElementId prototypeId) const
+    {
+    Utf8String sql = "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_Sheet) " WHERE SheetPrototype.Id=?";
+    if (m_excludeIds)
+        sql.append(" AND NOT InVirtualSet(?, ECInstanceId)");
+    sql.append(" LIMIT 1");
+    CachedECSqlStatementPtr statement = m_db.GetPreparedECSqlStatement(sql.c_str());
+    statement->BindId(1, prototypeId);
+    if (m_excludeIds)
+        statement->BindVirtualSet(2, m_excludeIds);
+    return BE_SQLITE_ROW == statement->Step();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DefinitionElementUsageInfo::IsSheetBorderPrototypeUsed(DgnElementId borderId) const
+    {
+    Utf8String sql = "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_SheetPrototype) " WHERE Border.Id=?";
+    if (m_excludeIds)
+        sql.append(" AND NOT InVirtualSet(?, ECInstanceId)");
+    sql.append(" LIMIT 1");
+    CachedECSqlStatementPtr statement = m_db.GetPreparedECSqlStatement(sql.c_str());
+    statement->BindId(1, borderId);
     if (m_excludeIds)
         statement->BindVirtualSet(2, m_excludeIds);
     return BE_SQLITE_ROW == statement->Step();

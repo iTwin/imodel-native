@@ -706,6 +706,7 @@ BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Con
         }
         if (selectCtx.HasInstanceProps() && addPropFilter) {
             auto instancePropFilter = selectCtx.MakeInstancePropsJsonArrayString();
+            instancePropFilter.ReplaceAll("'", "''");
             viewSql.AppendFormatted(" INNER JOIN %s('%s') __INST_PROP ON __INST_PROP.class_id = [%s].ECClassId ", ClassPropsModule::NAME, instancePropFilter.c_str(), contextTable.GetName().c_str());
         }
     }

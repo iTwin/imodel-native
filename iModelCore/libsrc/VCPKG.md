@@ -42,7 +42,7 @@ then resolve the comment only after verifying that the directory has been delete
 
 ### Apple deployment targets
 
-Every `arm64-osx.cmake` and `arm64-ios.cmake` overlay triplet must set
+Every `arm64-osx.cmake`, `arm64-ios.cmake`, and `arm64-ios-simulator.cmake` overlay triplet must set or inherit
 `VCPKG_OSX_DEPLOYMENT_TARGET`. Keep its value aligned with BentleyBuild's effective
 `MACOS_DEPLOYMENT_TARGET` or `IOS_DEPLOYMENT_TARGET`, respectively. The public defaults are defined
 in [`$(SrcRoot)bsicommon/PublicSDK/ApplyToolSet_CLang.mki`](../../../bsicommon/PublicSDK/ApplyToolSet_CLang.mki);
@@ -112,6 +112,28 @@ static/dynamic selection and source-build strategy coverage. After packaging cha
 clean build's staged libraries, headers, and notices against the published NuGet payload. Verify
 archive architectures and relevant public symbols as well; those checks do not replace consumer
 link tests or validation of generated NuGet metadata.
+
+### iOS ARM64 Simulator support
+
+Only the vcpkg consumers built by iTwinNativeThirdParty require iOS ARM64 Simulator support:
+
+| Consumer directory | Libraries |
+| ------------------ | --------- |
+| `compress` | zlib and minizip |
+| `png` | libpng |
+| `openssl` | OpenSSL |
+| `curl` | libcurl |
+| `freetype2` | FreeType |
+
+These five consumers provide `triplets/arm64-ios-simulator.cmake`. Each inherits its device
+triplet's settings, including the iOS 17.0 deployment target, and overrides `VCPKG_OSX_SYSROOT`
+with `iphonesimulator`. The shared `vcpkg.mki` selects this triplet for
+`TARGET_PROCESSOR_ARCHITECTURE=iOSARM64Simulator`.
+
+Pugixml and Crashpad do not require simulator triplets. The simulator install chain is
+`compress -> png -> openssl -> curl -> freetype2`: pugixml is excluded on this platform, and
+OpenSSL also depends directly on PNG so installs remain serialized when pugixml is skipped.
+Crashpad remains desktop-only. This requirement does not extend to other imodel-native libraries.
 
 ## Setup
 

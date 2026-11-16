@@ -169,6 +169,16 @@ A test belongs in the extended tier when it covers one more permutation of behav
 
 `IModelEvolutionTests` (`iModelCore/iModelPlatform/Tests/DgnProject/Compatibility/`) checks that today's code still reads files written by older versions. It is deliberately outside the normal build graph - it pulls historical test runners and files from an internal NuGet feed and runs every runner against every file. It has its own build strategy, `iModelEvolutionTests`, and no scheduled pipeline.
 
+## Writing SQL inside the codebase
+
+Treat schemas (especially their custom attributes) and anything passed in through the Node addon or a public API as untrusted. Contents of an opened file (`ec_*` tables, `sqlite_master`) and changesets are trusted. These rules apply to SQLite SQL and ECSQL alike.
+
+- **Values**: bind them as parameters. If the statement can't take parameters, embed them with `'%q'` (or `%Q`) through `SqlPrintfString`. Never embed a value with `'%s'`.
+- **Names from untrusted input**: a good default move is to reject anything that isn't a valid EC name (`ECNameValidation::IsValidName`) where the input enters, before it reaches SQL. Names derived from schema, class, property and alias names are already valid EC names.
+- **Generated DDL** quotes names with `[...]`; SQLite stores DDL text as written, and ECDb compares that text to decide whether an index or trigger needs rebuilding. Changing DDL text can cause expensive rebuilds.
+- **Avoid `"..."` in DDL.** Our SQLite build reads a double-quoted name that matches no column as a string literal, so a typo becomes a constant without an error. `"%w"` is fine in statements that are never stored, such as `PRAGMA table_info`.
+- `ExecuteSql` runs every statement in the string; `Statement::Prepare` compiles only the first one.
+
 ## The Node addon
 
 `iModelJsNodeAddon/` wraps the C++ libraries as the `@bentley/imodeljs-native` npm package. Building it needs a strategy that includes it, such as `iModelCore+iModelJsNodeAddon.Dev`.

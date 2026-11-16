@@ -5340,8 +5340,8 @@ DgnGCSP         DgnGCS::FromProject(DgnDbR project)
     ScopedArray<Byte> buffer(propSize);
     project.QueryProperty(buffer.GetData(), propSize, DgnProjectProperty::DgnGCS());
 
-    auto gcs = FromGeoCoordType66AppData((short const*)buffer.GetData(), project);
-    if (NULL == gcs)
+    DgnGCSPtr gcs = FromGeoCoordType66AppData((short const*)buffer.GetData(), project);
+    if (gcs.IsNull())
         {
         project.AddAppData(NotFoundAppData::GetKey(), new NotFoundAppData());
         return NULL;
@@ -5374,7 +5374,7 @@ DgnGCSP         DgnGCS::FromProject(DgnDbR project)
     gcs->m_globalOrigin = project.GeoLocation().GetGlobalOrigin();
 
     project.AddAppData(DgnGCSAppData::GetKey(), new DgnGCSAppData(*gcs));
-    return gcs;
+    return gcs.get();
     }
 
 void DgnGCS::InvalidateCache(DgnDbR project)

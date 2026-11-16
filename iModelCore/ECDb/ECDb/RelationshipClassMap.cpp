@@ -1140,8 +1140,22 @@ DbColumn* RelationshipClassLinkTableMap::ConfigureForeignECClassIdKey(SchemaImpo
 ClassMappingStatus RelationshipClassLinkTableMap::CreateConstraintPropMaps(SchemaImportContext& ctx, LinkTableRelationshipMapCustomAttribute const& ca, bool addSourceECClassIdColumnToTable,
     bool addTargetECClassIdColumnToTable)
     {
+    auto validateColumnName = [&] (Utf8StringCR name, Utf8CP caPropertyName)
+        {
+        if (name.empty() || ECNameValidation::IsValidName(name.c_str()))
+            return true;
+
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0750,
+            "Failed to map ECRelationshipClass '%s': The %s '%s' in its LinkTableRelationshipMap custom attribute is invalid. It may only contain letters, digits and underscores and must not start with a digit.",
+            GetClass().GetFullName(), caPropertyName, name.c_str());
+        return false;
+        };
+
     //**** SourceECInstanceId prop map 
     Utf8String columnName = DetermineConstraintECInstanceIdColumnName(ca, ECRelationshipEnd_Source);
+    if (!validateColumnName(columnName, "SourceECInstanceIdColumn"))
+        return ClassMappingStatus::Error;
+
     if (columnName.empty() || GetPrimaryTable().FindColumn(columnName.c_str()) != nullptr && !GetMapStrategy().IsTablePerHierarchy() && GetMapStrategy().GetStrategy() != MapStrategy::ExistingTable)
         {
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0245,
@@ -1172,6 +1186,9 @@ ClassMappingStatus RelationshipClassLinkTableMap::CreateConstraintPropMaps(Schem
 
     //**** TargetECInstanceId prop map 
     columnName = DetermineConstraintECInstanceIdColumnName(ca, ECRelationshipEnd_Target);
+    if (!validateColumnName(columnName, "TargetECInstanceIdColumn"))
+        return ClassMappingStatus::Error;
+
     if (columnName.empty() || GetPrimaryTable().FindColumn(columnName.c_str()) != nullptr && !GetMapStrategy().IsTablePerHierarchy() && GetMapStrategy().GetStrategy() != MapStrategy::ExistingTable)
         {
         LOG.errorv("Failed to map ECRelationshipClass '%s': Table '%s' already contains " ECDBSYS_PROP_TargetECInstanceId " column named '%s'.",

@@ -100,6 +100,22 @@ class MakeDefTests(unittest.TestCase):
                 self.assertEqual(0, result.returncode, result.stderr)
                 self.assertIn(hashlib.sha256(archive.read_bytes()).hexdigest().encode(), output.read_bytes())
 
+    def test_library_name_argument(self):
+        for script, declaration in self.GENERATORS:
+            with self.subTest(generator=script), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                (root / "api.h").write_text(declaration, encoding="utf-8")
+                archive = root / "input.lib"
+                archive.write_bytes(b"archive")
+                output = root / "output.def"
+                result = subprocess.run(
+                    [sys.executable, "-B", str(Path(__file__).resolve().parent / script),
+                     str(root), str(output), str(archive), "--library-name", "StubLibName"],
+                    capture_output=True, text=True,
+                )
+                self.assertEqual(0, result.returncode, result.stderr)
+                self.assertIn("LIBRARY StubLibName", output.read_text(encoding="utf-8").splitlines())
+
 
 if __name__ == "__main__":
     unittest.main()

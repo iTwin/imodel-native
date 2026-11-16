@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #include "JsLogger.h"
 #include "IModelJsNative.h"
+#include <BeSQLite/CloudSqlite.h>
 
 using namespace IModelJsNative;
 
@@ -12,6 +13,7 @@ void JsLogger::logToJs(Utf8CP category, SEVERITY sev, Utf8CP msg)
     {
     if (m_loggerObj.IsEmpty())
         return;
+    BentleyApi::BeSQLite::CloudSqliteTiming::Suspension timing;
 
     Utf8CP fname = (sev == LOG_TRACE) ?   "logTrace" :
                    (sev == LOG_INFO) ?    "logInfo" :

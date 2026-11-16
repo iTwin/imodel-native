@@ -12,17 +12,19 @@
 # those functions.  Deriving the list from the headers means a FreeType version bump needs no
 # manual .def maintenance.
 #
-# Usage: makeFreetypeDef.py <freetype_include_dir> <output.def> <archive.lib> [stale_output ...]
+# Usage: makeFreetypeDef.py <freetype_include_dir> <output.def> <archive.lib> [stale_output ...] [--library-name NAME]
 #   <freetype_include_dir>  directory containing freetype.h, ftglyph.h, ... (vcpkg include/freetype)
 #   <archive.lib>           linked archive whose content hash is embedded in the .def
 #   <stale_output>          file (e.g. the previously linked iTwinFreetype2.dll) to delete when the
 #                           exports or archive change, since bmake does not treat the .def as a
 #                           prerequisite and would otherwise leave a DLL with the old exports in place
+#   --library-name          optional LIBRARY directive, will by omitted if not specified
 #---------------------------------------------------------------------------------------------
 import sys
 import os
 import re
 import glob
+import argparse
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from make_def import write_def
@@ -33,14 +35,14 @@ EXCLUDED_HEADERS = {"ftmac.h"}
 
 
 def main():
-    if len(sys.argv) < 4:
-        sys.stderr.write("Usage: makeFreetypeDef.py <freetype_include_dir> <output.def> <archive.lib> [stale_output ...]\n")
-        return 1
-
-    include_dir = sys.argv[1]
-    out_def = sys.argv[2]
-    archive_path = sys.argv[3]
-    stale_outputs = sys.argv[4:]
+    parser = argparse.ArgumentParser(description="Generate FreeType's Windows module-definition file.")
+    parser.add_argument("include_dir")
+    parser.add_argument("out_def")
+    parser.add_argument("archive_path")
+    parser.add_argument("stale_outputs", nargs="*")
+    parser.add_argument("--library-name", help="emit a LIBRARY directive with this name")
+    args = parser.parse_args()
+    include_dir = args.include_dir
 
     # Only the top-level public headers declare API functions; config/ only defines the macros.
     headers = sorted(h for h in glob.glob(os.path.join(include_dir, "*.h"))
@@ -68,7 +70,7 @@ def main():
         sys.stderr.write("error: no FT_EXPORT functions found under %s\n" % include_dir)
         return 1
 
-    return write_def(names, archive_path, out_def, stale_outputs)
+    return write_def(names, args.archive_path, args.out_def, args.stale_outputs, library_name=args.library_name)
 
 
 if __name__ == "__main__":

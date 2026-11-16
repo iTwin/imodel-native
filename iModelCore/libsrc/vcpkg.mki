@@ -14,6 +14,8 @@
     %error MacOSX64 is not a supported platform.
 %elif $(TARGET_PROCESSOR_ARCHITECTURE) == "iOSARM64"
     vcpkgTriplet = arm64-ios
+%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "iOSARM64Simulator"
+    vcpkgTriplet = arm64-ios-simulator
 %elif $(TARGET_PROCESSOR_ARCHITECTURE) == "AndroidARM64"
     vcpkgTriplet = arm64-android
 %elif $(TARGET_PROCESSOR_ARCHITECTURE) == "AndroidX64"

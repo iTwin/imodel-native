@@ -1113,10 +1113,16 @@ struct DClient {
   sqlite3_file *pCloseFd;
 
   /* Statistics for blocks downloaded on behalf of this client. Reported
-  ** by the "nqueryblock", "nquerybyte" and "nqueryms" rows of bcv_stat. */
+  ** by the "nqueryblock", "nquerybyte" and "nqueryus" rows of bcv_stat. */
   i64 nQueryBlock;
   i64 nQueryByte;
-  i64 nQueryMs;
+  i64 nQueryUs;
+
+  /* If the READ message in pMsg is waiting on a block download, the
+  ** time the wait started. The download may have been started on behalf
+  ** of this client, some other client, or a prefetch. Or 0 if it is not
+  ** waiting on any download.  */
+  i64 iWaitStart;
 };
 
 struct DaemonCtx {
@@ -1139,7 +1145,6 @@ struct FetchCtx {
   CacheEntry *pEntry;             /* Cache entry to populate (if any) */
   Container *pCont;
   BcvIntKey *pKey;
-  i64 iStart;                     /* Time request was dispatched (ms) */
 };
 
 static void daemon_usage(char *argv0){
@@ -1869,11 +1874,13 @@ static void bcvProxyClientCount(
 ** And three more rows specific to client pReq, the client that made the
 ** request:
 **
-**   nqueryblock, nquerybyte, nqueryms:
+**   nqueryblock, nquerybyte, nqueryus:
 **     Number of blocks and bytes downloaded on behalf of pReq, and the
-**     total latency in ms of those downloads. Blocks found in the cache,
-**     or already being downloaded on behalf of some other client, are
-**     not included.
+**     total latency in us of those downloads. Blocks found in the cache
+**     are not included. Blocks that were already being downloaded on
+**     behalf of some other client or prefetch when pReq required them
+**     are included, but only the time pReq spent waiting for them is
+**     added to nqueryus.
 **  
 */
 static u8 *bdExtraVtabData(
@@ -1910,8 +1917,8 @@ static u8 *bdExtraVtabData(
   bcvBufferAppendU64(pRc, &buf, (u64)pReq->nQueryBlock);
   bcvBufferMsgString(pRc, &buf, "nquerybyte");
   bcvBufferAppendU64(pRc, &buf, (u64)pReq->nQueryByte);
-  bcvBufferMsgString(pRc, &buf, "nqueryms");
-  bcvBufferAppendU64(pRc, &buf, (u64)pReq->nQueryMs);
+  bcvBufferMsgString(pRc, &buf, "nqueryus");
+  bcvBufferAppendU64(pRc, &buf, (u64)pReq->nQueryUs);
 
   *pnData = buf.nData;
   return buf.aData;
@@ -2114,13 +2121,9 @@ static void bdBlockDownloadCb(
 
   if( rc==SQLITE_OK ){
     pEntry->bValid = 1;
+    pEntry->nByte = nData;
     bcvfsLruAdd(&p->c, pEntry);
     if( pDLCtx->pKey==0 ) bdWriteBlock(&p->c, pEntry);
-    if( pClient ){
-      pClient->nQueryBlock++;
-      pClient->nQueryByte += nData;
-      pClient->nQueryMs += (sqlite_timestamp() - pDLCtx->iStart);
-    }
   }else{
     /* An error has occurred. Unless it has already disconnected (pClient==0),
     ** send an error reply to the client that initiated this request. Then
@@ -2242,7 +2245,7 @@ static void bdHandleReadMsg(DaemonCtx *p, DClient *pClient){
     bcvfsHashAdd(&p->c, pEntry);
 
     pDLCtx = bdFetchCtx(pClient, pEntry);
-    pDLCtx->iStart = sqlite_timestamp();
+    pClient->iWaitStart = bcv_timestamp();
     bcvfsBlockidToText(aName, nName, zName);
     bcvDispatchClientId(p->pDisp, pClient->zClientId);
     bcvDispatchLogmsg(p->pDisp, "demand %d of %s",iBlk,pClient->pManDb->zDName);
@@ -2251,6 +2254,7 @@ static void bdHandleReadMsg(DaemonCtx *p, DClient *pClient){
 
   }else if( pEntry->bValid==0 ){
     /* Case (2) - wait */
+    if( pClient->iWaitStart==0 ) pClient->iWaitStart = bcv_timestamp();
   }else{
     /* Case (3) - answer the READ message now */
     BcvMessage reply;
@@ -2261,6 +2265,14 @@ static void bdHandleReadMsg(DaemonCtx *p, DClient *pClient){
     /* Shift pEntry to the end of the LRU list */
     bcvfsLruRemoveIf(&p->c, pEntry);
     bcvfsLruAddIf(&p->c, pEntry);
+
+    /* If this client was waiting on a download, count the block now. */
+    if( pClient->iWaitStart ){
+      pClient->nQueryBlock++;
+      pClient->nQueryByte += pEntry->nByte;
+      pClient->nQueryUs += (bcv_timestamp() - pClient->iWaitStart);
+    }
+    pClient->iWaitStart = 0;
 
     memset(&reply, 0, sizeof(BcvMessage));
     reply.eType = BCV_MESSAGE_READ_REPLY;
@@ -2463,6 +2475,7 @@ static void bdHandleRead(
   ** Otherwise, return an error to the client.  */
   if( rc==SQLITE_OK ){
     pClient->pMsg = pMsg;
+    pClient->iWaitStart = 0;
   }else{
     bdReadReplyError(pClient, SQLITE_ERROR, 0);
     sqlite3_free(pMsg);
@@ -2608,6 +2621,7 @@ static void bdPrefetchCb(
 
   if( rc==SQLITE_OK ){
     pEntry->bValid = 1;
+    pEntry->nByte = nData;
     bcvfsLruAdd(&p->c, pEntry);
     if( pDLCtx->pKey==0 ) bdWriteBlock(&p->c, pEntry);
   }else{

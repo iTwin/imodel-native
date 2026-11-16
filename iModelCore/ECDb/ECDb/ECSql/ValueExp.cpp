@@ -632,14 +632,14 @@ Exp::FinalizeParseStatus CastExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
     ECSqlTypeInfo const& sourceType = GetCastOperand()->GetTypeInfo();
     if (sourceType.IsUnset() || sourceType.GetKind() == ECSqlTypeInfo::Kind::Varies)
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0751,
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0754,
             "Cannot determine the type of the CAST operand in '%s'.", ToECSql().c_str());
         return FinalizeParseStatus::Error;
         }
 
     if (!IsSupportedConversion(sourceType, GetTypeInfo(), m_specialTarget))
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0751,
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0754,
             "Casting from '%s' to '%s' is not supported: '%s'.", TypeToString(sourceType).c_str(), TypeToString(GetTypeInfo()).c_str(), ToECSql().c_str());
         return FinalizeParseStatus::Error;
         }

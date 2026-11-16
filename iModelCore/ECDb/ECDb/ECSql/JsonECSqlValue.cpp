@@ -17,12 +17,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-//static
-rapidjson::Value const* JsonECSqlValue::s_nullJson = nullptr;
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
 JsonECSqlValue::JsonECSqlValue(ECDbCR ecdb, rapidjson::Value const& json, ECSqlColumnInfo const& columnInfo)
     : IECSqlValue(), m_ecdb(ecdb), m_json(json), m_columnInfo(columnInfo) {}
 
@@ -416,9 +410,7 @@ Utf8CP JsonECSqlValue::GetPrimitiveGetMethodName(ECN::PrimitiveType getMethodTyp
 //static
 rapidjson::Value const& JsonECSqlValue::GetNullJson()
     {
-    if (s_nullJson == nullptr)
-        s_nullJson = new rapidjson::Value(rapidjson::kNullType);
-
+    static rapidjson::Value const* s_nullJson = new rapidjson::Value(rapidjson::kNullType);
     return *s_nullJson;
     }
 
