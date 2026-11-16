@@ -15,6 +15,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <map>
+#include <mutex>
 #include <string>
 #include <utility>
 #ifndef ITWIN_DAEMON
@@ -81,10 +82,17 @@ static sqlite3_mutex *s_envMutex = nullptr;
 static sqlite3_mutex *s_proxyMapMutex = nullptr;
 static sqlite3_mutex *s_initMutex = nullptr;
 
-static const void initProxyResMutexes() {
-    s_envMutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
-    s_proxyMapMutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
-    s_initMutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
+// CloudUtil::Initialize may run more than once, and concurrently, so allocate the mutexes only once.
+// This must not throw: in the daemon, SQLite's C code calls it as SQLITE_BCV_CUSTOM_INIT.
+static void initProxyResMutexes() {
+    static std::once_flag s_once;
+    std::call_once(s_once, [] {
+        s_envMutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
+        s_proxyMapMutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
+        s_initMutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
+        if (nullptr == s_envMutex || nullptr == s_proxyMapMutex || nullptr == s_initMutex)
+            logError("Failed to allocate proxy resolution mutexes; proxy settings may be ignored.");
+    });
 }
 
 static const std::string& getEnvProxy() {
