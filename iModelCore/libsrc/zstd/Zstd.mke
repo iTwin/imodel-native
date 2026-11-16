@@ -1,0 +1,42 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+# Zstd.mke - Deliver zstd, built by vcpkg, as the static library BeZstd.
+#---------------------------------------------------------------------------------------------
+
+%include mdl.mki
+
+appName     = BeZstd
+libsrcDir   = $(_MakeFilePath)../
+
+%include $(libsrcDir)vcpkg.mki
+
+#--------------------------------------------------------------------------------------
+#   vcpkg install is performed by the vcpkg_install_zstd part (vcpkg.PartFile.xml) before
+#   this mke runs. zstd is only built as a static library, so OutputRootDir is the static one.
+#--------------------------------------------------------------------------------------
+vcpkgInstallRoot    = $(OutputRootDir)vcpkg_installed/zstd/
+vcpkgTripletDir     = $(vcpkgInstallRoot)$(vcpkgTriplet)/
+vcpkgIncludeDir     = $(vcpkgTripletDir)include/
+vcpkgLibDir         = $(vcpkgTripletDir)lib/
+vcpkgDbgLibDir      = $(vcpkgTripletDir)debug/lib/
+
+%if $(TARGET_PLATFORM) == "Windows"
+    # Windows always links the release archive: the Windows triplets force VCPKG_BUILD_TYPE
+    # release because bmake links the release CRT even in DEBUG builds.
+    vcpkgZstd = $(vcpkgLibDir)$(stlibprefix)zstd$(stlibext)
+%elif defined (DEBUG)
+    vcpkgZstd = $(vcpkgDbgLibDir)$(stlibprefix)zstd$(stlibext)
+%else
+    vcpkgZstd = $(vcpkgLibDir)$(stlibprefix)zstd$(stlibext)
+%endif
+
+#--------------------------------------------------------------------------------------
+#   Deliver the headers (zstd.h, zstd_errors.h, zdict.h) as VendorAPI/zstd, the library as
+#   BeZstd, and the license. zstd is dual licensed; Bentley uses it under BSD-3-Clause.
+#--------------------------------------------------------------------------------------
+always:
+    ~linkdir "$(BuildContext)VendorAPI/zstd=$(vcpkgIncludeDir)"
+    ~linkfile "$(BuildContext)Delivery/$(stlibprefix)$(appName)$(stlibext)=$(vcpkgZstd)"
+    ~linkfile "$(BuildContext)Delivery/zstd-license.txt=$(vcpkgTripletDir)share/zstd/copyright"
