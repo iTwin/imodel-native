@@ -378,8 +378,8 @@ void DgnDb::_OnAfterSetBriefcaseId() {
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-DbResult DgnDb::_AfterSchemaChangeSetApplied() const {
-    DbResult result = T_Super::_AfterSchemaChangeSetApplied();
+DbResult DgnDb::_AfterSchemaChangeSetApplied(bool rebuildCacheTables) const {
+    DbResult result = T_Super::_AfterSchemaChangeSetApplied(rebuildCacheTables);
     if (result != BE_SQLITE_OK)
         return result;
     Domains().SyncWithSchemas();

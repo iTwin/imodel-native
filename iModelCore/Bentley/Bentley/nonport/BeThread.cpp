@@ -52,8 +52,6 @@ USING_NAMESPACE_BENTLEY
 #error unknown runtime
 #endif
 
-BeMutex* s_systemCS;
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -276,8 +274,7 @@ void BeDuration::Sleep()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BeSystemMutexHolder::StartupInitializeSystemMutex()
     {
-    if (nullptr == s_systemCS)
-        s_systemCS = new BeMutex();
+    GetSystemMutex();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -285,7 +282,7 @@ void BeSystemMutexHolder::StartupInitializeSystemMutex()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeMutex& BeSystemMutexHolder::GetSystemMutex()
     {
-    StartupInitializeSystemMutex();
+    static BeMutex* s_systemCS = new BeMutex();
     return *s_systemCS;
     }
 

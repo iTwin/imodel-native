@@ -14,8 +14,28 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-int ChangeSummary::s_count = 0;
-IsChangedInstanceSqlFunction* ChangeSummary::s_isChangedInstanceSqlFunction = nullptr;
+namespace
+    {
+    //=======================================================================================
+    // Process-wide bookkeeping for live ChangeSummary instances.
+    // IsChangedInstance is registered on each ECDb that has at least one live ChangeSummary.
+    // The function holds no state (the ChangeSummary is passed as its first argument), so all
+    // ECDbs share one instance. It is never deleted, so no connection can hold a dangling pointer to it.
+    //=======================================================================================
+    struct ChangeSummaryRegistry final
+        {
+        BeMutex m_mutex;
+        IsChangedInstanceSqlFunction m_isChangedInstanceFunction;
+        bmap<ECDb const*, int> m_summaryCountPerDb;
+        int m_liveSummaryCount = 0;
+        };
+
+    ChangeSummaryRegistry& GetChangeSummaryRegistry()
+        {
+        static ChangeSummaryRegistry* s_registry = new ChangeSummaryRegistry();
+        return *s_registry;
+        }
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -945,9 +965,15 @@ ECN::ECClassId ChangeExtractor::GetRelEndClassIdFromRelClass(ECN::ECRelationship
 //---------------------------------------------------------------------------------------
 ChangeSummary::ChangeSummary(ECDbCR ecdb) : m_ecdb(ecdb)
     {
-    if (s_count == 0)
-        RegisterSqlFunctions(m_ecdb);
-    s_count++;
+    ChangeSummaryRegistry& registry = GetChangeSummaryRegistry();
+    BeMutexHolder lock(registry.m_mutex);
+    if (++registry.m_summaryCountPerDb[&m_ecdb] == 1)
+        {
+        int status = m_ecdb.AddFunction(registry.m_isChangedInstanceFunction);
+        UNUSED_VARIABLE(status);
+        BeAssert(status == 0);
+        }
+    registry.m_liveSummaryCount++;
     }
 
 //---------------------------------------------------------------------------------------
@@ -958,7 +984,14 @@ void ChangeSummary::Initialize()
     if (IsValid())
         return;
 
-    m_instancesTable = new InstancesTable(*this, s_count);
+    int tableNameSuffix;
+        {
+        ChangeSummaryRegistry& registry = GetChangeSummaryRegistry();
+        BeMutexHolder lock(registry.m_mutex);
+        tableNameSuffix = registry.m_liveSummaryCount;
+        }
+
+    m_instancesTable = new InstancesTable(*this, tableNameSuffix);
     m_instancesTable->Initialize();
 
     m_valuesTable = new ValuesTable(*m_instancesTable);
@@ -994,9 +1027,18 @@ void ChangeSummary::Free()
 //---------------------------------------------------------------------------------------
 ChangeSummary::~ChangeSummary()
     {
-    s_count--;
-    if (s_count == 0)
-        UnregisterSqlFunctions(m_ecdb);
+        {
+        ChangeSummaryRegistry& registry = GetChangeSummaryRegistry();
+        BeMutexHolder lock(registry.m_mutex);
+        registry.m_liveSummaryCount--;
+        auto summaryCountIt = registry.m_summaryCountPerDb.find(&m_ecdb);
+        if (summaryCountIt != registry.m_summaryCountPerDb.end() && --summaryCountIt->second == 0)
+            {
+            m_ecdb.RemoveFunction(registry.m_isChangedInstanceFunction);
+            registry.m_summaryCountPerDb.erase(summaryCountIt);
+            }
+        }
+
     Free();
     }
 
@@ -1440,35 +1482,6 @@ void ChangeSummary::QueryByClass(bmap<ECInstanceId, ChangeSummary::Instance>& ch
         {
         changes[entry.GetInstanceId()] = entry.GetInstance();
         }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-// static
-void ChangeSummary::RegisterSqlFunctions(ECDbCR ecdb)
-    {
-    if (s_isChangedInstanceSqlFunction)
-        return;
-
-    s_isChangedInstanceSqlFunction = new IsChangedInstanceSqlFunction();
-    int status = ecdb.AddFunction(*s_isChangedInstanceSqlFunction);
-    UNUSED_VARIABLE(status);
-    BeAssert(status == 0);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-// static
-void ChangeSummary::UnregisterSqlFunctions(ECDbCR ecdb)
-    {
-    if (!s_isChangedInstanceSqlFunction)
-        return;
-
-    ecdb.RemoveFunction(*s_isChangedInstanceSqlFunction);
-    delete s_isChangedInstanceSqlFunction;
-    s_isChangedInstanceSqlFunction = nullptr;
     }
 
 //---------------------------------------------------------------------------------------

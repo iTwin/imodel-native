@@ -268,16 +268,11 @@ private:
     ValuesTable* m_valuesTable;
     ChangeExtractor* m_changeExtractor;
 
-    static int s_count;
-    static IsChangedInstanceSqlFunction* s_isChangedInstanceSqlFunction;
-
     //not copyable
     ChangeSummary(ChangeSummary const&) = delete;
     ChangeSummary& operator=(ChangeSummary const&) = delete;
 
     void Initialize();
-    static void RegisterSqlFunctions(ECDbCR);
-    static void UnregisterSqlFunctions(ECDbCR);
     Utf8String FormatInstanceIdStr(ECInstanceId) const;
     Utf8String FormatClassIdStr(ECN::ECClassId) const;
 

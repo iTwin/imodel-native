@@ -678,10 +678,13 @@ int DefinitionGetAll(TCsMapStruct* *pAllDefs[],
 		goto error;
 	}
 
-	pFirstEntry = &allDefs[0];
+	if (allDefs.size() > 0)
+	{
+		pFirstEntry = &allDefs[0];
 
-	memset(*pAllDefs, 0x0, arraySize);
-	memcpy(*pAllDefs, pFirstEntry, arraySize);
+		memset(*pAllDefs, 0x0, arraySize);
+		memcpy(*pAllDefs, pFirstEntry, arraySize);
+	}
 
 	return (int)allDefs.size();
 

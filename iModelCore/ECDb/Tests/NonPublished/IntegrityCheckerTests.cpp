@@ -1038,6 +1038,87 @@ TEST_F(IntegrityCheckerFixture, check_diverged_prop_maps_property_override) {
 }
 
 //---------------------------------------------------------------------------------------
+// An override that a later schema import adds to a class is mapped through its own property
+// path, while the base class keeps the path of the overridden property. Before the column
+// factory reused the base class' column for such an override, the import could map it to a
+// new column, so the class read and wrote a different column than queries through its base.
+// That divergence must be reported although the class and its base use different paths.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(IntegrityCheckerFixture, check_diverged_prop_maps_override_added_by_later_import) {
+    Utf8CP const schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="01.00.%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+        <ECEntityClass typeName="Parent">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00.00"/>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Name" typeName="string"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="Sub">
+            <BaseClass>Parent</BaseClass>
+            %s
+            <ECProperty propertyName="SubProp" typeName="string"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="SubSub">
+            <BaseClass>Sub</BaseClass>
+        </ECEntityClass>
+    </ECSchema>)xml";
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("check_diverged_prop_maps_later_override.ecdb", SchemaItem(Utf8PrintfString(schemaXml, "00", "").c_str())));
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(Utf8PrintfString(schemaXml, "01", R"xml(<ECProperty propertyName="Name" typeName="string"/>)xml").c_str())));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
+
+    const auto getPathRootClass = [&](Utf8CP className) {
+        Statement stmt;
+        EXPECT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, R"sql(
+            SELECT rootClass.Name FROM ec_PropertyMap pm
+                JOIN ec_PropertyPath pp ON pp.Id = pm.PropertyPathId
+                JOIN ec_Property rootProp ON rootProp.Id = pp.RootPropertyId
+                JOIN ec_Class rootClass ON rootClass.Id = rootProp.ClassId
+                WHERE pm.ClassId = (SELECT Id FROM ec_Class WHERE Name = ?) AND pp.AccessString = 'Name')sql"));
+        stmt.BindText(1, className, Statement::MakeCopy::No);
+        return BE_SQLITE_ROW == stmt.Step() ? Utf8String(stmt.GetValueText(0)) : Utf8String();
+    };
+    ASSERT_STREQ("Parent", getPathRootClass("Parent").c_str());
+    ASSERT_STREQ("Sub", getPathRootClass("Sub").c_str()) << "Sub must map the override it gained in the second import through its own property path";
+
+    const Utf8String baseColumn = GetMappedColumn(m_ecdb, "Parent", "Name");
+    ASSERT_STREQ(baseColumn.c_str(), GetMappedColumn(m_ecdb, "Sub", "Name").c_str());
+    ASSERT_STREQ(baseColumn.c_str(), GetMappedColumn(m_ecdb, "SubSub", "Name").c_str());
+    ASSERT_STREQ(ParseJSON("[]").c_str(), RunPropertyMapDivergenceCheck(m_ecdb).c_str()) << "an override with its own property path that uses the base class' column is not a divergence";
+
+    // Move Sub's map of the override to another column, as the import did before the fix.
+    const Utf8String divergedColumn = GetMappedColumn(m_ecdb, "Sub", "SubProp");
+    ASSERT_EQ(BE_SQLITE_OK, DivergePropertyMap(m_ecdb, "Sub", "Sub", "Name", "SubProp"));
+
+    const auto expectedJSON = Utf8PrintfString(R"json(
+        [
+            {
+                "sno": 1,
+                "derivedClassName": "TestSchema:Sub",
+                "baseClassName": "TestSchema:Parent",
+                "propertyName": "Name",
+                "baseColumn": "%s",
+                "divergedColumn": "%s"
+            },
+            {
+                "sno": 2,
+                "derivedClassName": "TestSchema:SubSub",
+                "baseClassName": "TestSchema:Sub",
+                "propertyName": "Name",
+                "baseColumn": "%s",
+                "divergedColumn": "%s"
+            }
+        ]
+    )json", baseColumn.c_str(), divergedColumn.c_str(), divergedColumn.c_str(), baseColumn.c_str());
+    ASSERT_STREQ(ParseJSON(expectedJSON.c_str()).c_str(), RunPropertyMapDivergenceCheck(m_ecdb).c_str()) << "a divergence on an override with its own property path must be reported";
+    m_ecdb.AbandonChanges();
+}
+
+//---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(IntegrityCheckerFixture, check_diverged_prop_maps_no_false_positives) {

@@ -457,6 +457,11 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
 
         if (m_propertyMaps.Insert(propMap) != SUCCESS)
             return ERROR;
+
+        // A class loaded after its base class gained the property in a schema import, such as a base class
+        // inserted above it, has no map of its own for it yet.
+        if (!dbCtx.HasPropertyMap(property->GetName()))
+            m_unpersistedInheritedProperties.push_back(property);
         }
 
     return SUCCESS;
@@ -530,6 +535,43 @@ BentleyStatus ClassMap::CopyModifiedBasePropertyMaps(SchemaImportContext& ctx){
      }
     return SUCCESS;
 }
+//---------------------------------------------------------------------------------------
+// Schema imports find the instances whose values a remap moves through the persisted maps of
+// each class, so an inherited property map copied from the base class needs a row too.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BentleyStatus ClassMap::SaveUnpersistedInheritedPropertyMaps()
+    {
+    if (m_unpersistedInheritedProperties.empty())
+        return SUCCESS;
+
+    DbMapSaveContext saveCtx(m_ecdb);
+    saveCtx.BeginSaving(*this);
+    DbClassMapSaveContext classMapContext(saveCtx);
+    SavePropertyMapVisitor saveVisitor(classMapContext, SavePropertyMapVisitor::Action::SkipIfExists);
+    BentleyStatus status = SUCCESS;
+    for (ECPropertyCP property : m_unpersistedInheritedProperties)
+        {
+        PropertyMap const* propMap = m_propertyMaps.Find(property->GetName().c_str());
+        if (propMap == nullptr || !propMap->IsData())
+            continue;
+
+        // A navigation property map is complete only once its relationship is mapped, and is saved then.
+        if (propMap->GetType() == PropertyMap::Type::Navigation && !propMap->GetAs<NavigationPropertyMap>().IsComplete())
+            continue;
+
+        if (SUCCESS != propMap->AcceptVisitor(saveVisitor))
+            {
+            status = ERROR;
+            break;
+            }
+        }
+
+    saveCtx.EndSaving(*this);
+    m_unpersistedInheritedProperties.clear();
+    return status;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------

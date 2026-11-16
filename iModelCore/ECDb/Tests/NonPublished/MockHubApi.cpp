@@ -1409,14 +1409,9 @@ ChangeStream::ConflictResolution ECDbChangeSet::_OnConflict(ConflictCause cause,
 
     if (cause == ChangeSet::ConflictCause::Conflict) {
         if (0 == ::strncmp(tableName, "ec_", 3) && m_ecdb != nullptr && m_ecdb->Schemas().GetSchemaSync().IsEnabled()) {
-            // Replace would DELETE the existing row before re-inserting it, and every ec_ child table
-            // is ON DELETE CASCADE - so the delete takes the row's children with it and the re-insert
-            // restores only the parent. This harness never passes fkNoAction, so actions are always
-            // live here; production turns them off for a schema changeset that updates or deletes
-            // ec_cache_ rows, which an additive import does not produce.
             // Under schema sync the rows arriving here are normally ones this briefcase already holds,
-            // because every briefcase gets its ids from the same authority. A differing row from a
-            // superseding txn is written afterwards instead, by ApplySupersedingRows.
+            // because every briefcase gets its ids from the same authority, so the row in place is kept.
+            // A differing row from a superseding txn is written afterwards instead, by ApplySupersedingRows.
             if (briefcase != nullptr && briefcase->IsReplayingLocalChangesets() && m_ecChangesSupersedeBriefcase &&
                 ConflictingRowDiffers(const_cast<ECDb&>(*m_ecdb), iter) && BE_SQLITE_OK == m_supersedingRows.AddChange(iter))
                 m_hasSupersedingRows = true;
@@ -1585,66 +1580,12 @@ struct PrintChangeSet {
 };
 
 /*---------------------------------------------------------------------------------**//**
-* Applies the ec_ part of a changeset in effective opcode order - deletes, then updates, then
-* inserts. A ChangeGroup scrambles operation order within a table, so on an inverted apply an
-* insert can land ahead of the delete that frees its unique name and the conflict handler skips
-* over the collision. Ported from TxnManager's ApplySchemaChangesInOrder; sqlite flips opcodes
-* while inverting, so the raw order has to be the mirror of the wanted one.
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-static DbResult ApplySchemaChangesInOrder(ECDbChangeSet& changeset, ECDbR db, ApplyChangesArgs args) {
-    const bool invert = args.GetInvert();
-
-    ChangeGroup groups[3]; // [0]=Delete, [1]=Update, [2]=Insert
-    for (auto change : Changes(changeset, false)) {
-        if (!ApplyChangesArgs::IsSchemaChange(change))
-            continue;
-        auto rc = BE_SQLITE_OK;
-        switch (change.GetOpcode()) {
-            case DbOpcode::Delete: rc = groups[0].AddChange(change); break;
-            case DbOpcode::Update: rc = groups[1].AddChange(change); break;
-            case DbOpcode::Insert: rc = groups[2].AddChange(change); break;
-            default: break;
-        }
-        if (rc != BE_SQLITE_OK)
-            return rc;
-    }
-
-    const int order[] = { invert ? 2 : 0, 1, invert ? 0 : 2 };
-
-    ChangeSet ordered;
-    for (int idx : order) {
-        ChangeSet part;
-        auto rc = part.FromChangeGroup(groups[idx]);
-        if (rc != BE_SQLITE_OK)
-            return rc;
-        if (part._IsEmpty())
-            continue;
-        // ReadFrom concatenates raw bytes; ConcatenateWith would run it through a ChangeGroup again.
-        auto reader = part._GetReader();
-        rc = ordered.ReadFrom(*reader);
-        if (rc != BE_SQLITE_OK)
-            return rc;
-    }
-
-    if (ordered._IsEmpty())
-        return BE_SQLITE_OK;
-
-    // ordered is a plain ChangeSet whose own _OnConflict aborts, so hand conflicts back to the
-    // original stream and keep its ec_ rules.
-    args.SetConflictHandler([&changeset](ChangeStream::ConflictCause cause, Changes::Change change) {
-        return changeset.OnConflict(cause, change);
-    });
-    return ordered.ApplyChanges(db, args);
-}
-
-/*---------------------------------------------------------------------------------**//**
-* Applies one changeset the way TxnManager::ApplyChanges does: schema rows first and in opcode
-* order, then the post-schema hook, then the data rows. A briefcase rebuilds its tables from the
-* ec_ rows a changeset carries, so the hook has to run between the two passes or the data rows
-* arrive at a table that does not exist yet and are dropped. That holds even when the changeset
-* also carries DDL, since applying it is best effort. Merge only, matching TxnManager gating it on
-* TxnAction::Merge: the reverse pass leaves the tables alone, the reinstate pass does not.
+* Applies one changeset the way TxnManager::ApplyChanges does: schema rows first, through
+* ECDb::ApplySchemaChangeSet, then the post-schema hook, then the data rows. A briefcase rebuilds
+* its tables from the ec_ rows a changeset carries, so the hook has to run between the two passes
+* or the data rows arrive at a table that does not exist yet and are dropped. That holds even when
+* the changeset also carries DDL, since applying it is best effort. Merge only, matching TxnManager
+* gating it on TxnAction::Merge: the reverse pass leaves the tables alone, the reinstate pass does not.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DbResult ApplyOneChangeset(ECDbChangeSet& changeset, ECDbR db, bool invert, bool isMerge) {
@@ -1652,12 +1593,12 @@ static DbResult ApplyOneChangeset(ECDbChangeSet& changeset, ECDbR db, bool inver
     if (!changeset.HasSchemaChanges())
         return changeset.ApplyChanges(db, args());
 
-    auto rc = ApplySchemaChangesInOrder(changeset, db, args().ApplyOnlySchemaChanges());
+    auto rc = db.ApplySchemaChangeSet(changeset, args());
     if (rc != BE_SQLITE_OK)
         return rc;
 
     if (isMerge) {
-        rc = db.AfterSchemaChangeSetApplied();
+        rc = db.AfterSchemaChangeSetApplied(/*rebuildCacheTables*/ false);
         if (rc != BE_SQLITE_OK) {
             printf("[mockhub] AfterSchemaChangeSetApplied failed on '%s': %s (%s)\n", changeset.GetOperation().c_str(),
                 BeSQLiteLib::GetErrorName(rc), db.GetLastError().c_str());
@@ -1695,12 +1636,20 @@ DbResult TrackedECDb::RebaseOntoIncoming(std::vector<ECDbChangeSet*> const& inco
     auto localChangesets = m_tracker->TakeLocalChangesets();
     m_tracker->EnableTracking(false);
 
+    // A failed step leaves behind the rows it applied, since BeSQLite applies without a savepoint, and can leave the
+    // ec_cache_ tables empty. Abandon it, as TxnManager does, so a later SaveChanges cannot commit it.
+    auto abandon = [&](DbResult rc) {
+        AbandonChanges();
+        ClearECDbCache();
+        return rc;
+    };
+
     for (auto it = localChangesets.rbegin(); it != localChangesets.rend(); ++it) {
         (*it)->SetECDb(*this);
         auto rc = ApplyOneChangeset(**it, *this, true, false);
         if (rc != BE_SQLITE_OK) {
             ReportRebaseFailure(*this, "reverse", **it, rc);
-            return rc;
+            return abandon(rc);
         }
     }
 
@@ -1718,7 +1667,7 @@ DbResult TrackedECDb::RebaseOntoIncoming(std::vector<ECDbChangeSet*> const& inco
         auto rc = ApplyOneChangeset(*changesetToApply, *this, false, kIsMerge);
         if (rc != BE_SQLITE_OK) {
             ReportRebaseFailure(*this, "apply incoming", *changesetToApply, rc);
-            return rc;
+            return abandon(rc);
         }
     }
 
@@ -1733,7 +1682,7 @@ DbResult TrackedECDb::RebaseOntoIncoming(std::vector<ECDbChangeSet*> const& inco
     auto rc = AfterDataChangeSetApplied(incomingChangedSchema, kDeferInstanceUpgrade);
     if (rc != BE_SQLITE_OK) {
         printf("[mockhub] rebase failed in AfterDataChangeSetApplied: %s (%s)\n", BeSQLiteLib::GetErrorName(rc), GetLastError().c_str());
-        return rc;
+        return abandon(rc);
     }
 
     m_tracker->EnableTracking(true);
@@ -1742,10 +1691,7 @@ DbResult TrackedECDb::RebaseOntoIncoming(std::vector<ECDbChangeSet*> const& inco
         local->SetECDb(*this);
         local->DetermineSchemaSyncPrecedence();
         // TxnManager::PullMergeRebaseReinstateTxn passes TxnAction::Merge here, so a reinstated local
-        // schema txn gets the post-schema hook as well. The incoming pass repopulated the ec_cache_
-        // tables while these rows were reversed out, so without it a class this briefcase imported
-        // itself comes back with no ec_cache_ClassHasTables row - its storage description then has no
-        // horizontal partition and the first ECSql against it dereferences an empty vector.
+        // schema txn gets the post-schema hook as well.
         const auto kReinstateIsMerge = true;
         rc = ApplyOneChangeset(*local, *this, false, kReinstateIsMerge);
         if (rc == BE_SQLITE_OK)
@@ -1757,7 +1703,7 @@ DbResult TrackedECDb::RebaseOntoIncoming(std::vector<ECDbChangeSet*> const& inco
         if (rc != BE_SQLITE_OK) {
             ReportRebaseFailure(*this, "replay local", *local, rc);
             m_replayingLocalChangesets = false;
-            return rc;
+            return abandon(rc);
         }
     }
     m_replayingLocalChangesets = false;
@@ -1768,12 +1714,12 @@ DbResult TrackedECDb::RebaseOntoIncoming(std::vector<ECDbChangeSet*> const& inco
     if (incomingChangedSchema) {
         if (SUCCESS != Schemas().UpgradeECInstances()) {
             printf("[mockhub] rebase failed to upgrade instances after replaying local changesets\n");
-            return BE_SQLITE_ERROR;
+            return abandon(BE_SQLITE_ERROR);
         }
         rc = SaveChanges("upgrade instances after rebase");
         if (rc != BE_SQLITE_OK) {
             printf("[mockhub] rebase failed to save the upgraded instances: %s\n", BeSQLiteLib::GetErrorName(rc));
-            return rc;
+            return abandon(rc);
         }
     }
     return BE_SQLITE_OK;

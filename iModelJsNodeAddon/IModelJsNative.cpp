@@ -447,6 +447,7 @@ private:
     static bool BindArgs(Napi::Array args, ECSqlStatement& stmt, std::string& err) {
         using Type = ECSqlParams::ECSqlParam::Type;
         const uint32_t len = args.Length();
+        uint64_t idSetBudget = ECSqlParams::MaxIdSetCount;
         for (uint32_t i = 0; i + 2 < len; i += 3) {
             Napi::Value keyVal = args.Get(i);
             Napi::Value typeVal = args.Get(i + 1);
@@ -460,9 +461,9 @@ private:
             if (type == Type::Integer || type == Type::Long) {
                 BeJsDocument canonical;
                 canonical.From(BeJsConst(value));
-                if (!ECSqlParams::TryBindParameter(stmt, key, type, canonical, err))
+                if (!ECSqlParams::TryBindParameter(stmt, key, type, canonical, idSetBudget, err))
                     return false;
-            } else if (!ECSqlParams::TryBindParameter(stmt, key, type, BeJsConst(value), err))
+            } else if (!ECSqlParams::TryBindParameter(stmt, key, type, BeJsConst(value), idSetBudget, err))
                 return false;
         }
         return true;

@@ -395,9 +395,13 @@ ECObjectsStatus ECSchemaValidator::AllClassValidator(ECClassCR ecClass)
 
         if (isModel && nullptr == prop->GetBaseProperty())
             {
-            static bmap<Utf8String, bvector<Utf8String>> exceptions;
-            exceptions["Raster:RasterModel"] = { "Clip" };
-            exceptions["ScalableMesh:ScalableMeshModel"] = { "SmModelClips", "SmGroundCoverages", "SmModelClipVectors" };
+            static const bmap<Utf8String, bvector<Utf8String>> exceptions = []()
+                {
+                bmap<Utf8String, bvector<Utf8String>> entries;
+                entries["Raster:RasterModel"] = { "Clip" };
+                entries["ScalableMesh:ScalableMeshModel"] = { "SmModelClips", "SmGroundCoverages", "SmModelClipVectors" };
+                return entries;
+                }();
 
             auto modelException = exceptions.find(ecClass.GetFullName());
             if (modelException != exceptions.end() && std::any_of(modelException->second.begin(), modelException->second.end(), [prop](Utf8StringCR propName) { return propName.Equals(prop->GetName()); }))
@@ -543,16 +547,20 @@ ECObjectsStatus ECSchemaValidator::AllClassValidator(ECClassCR ecClass)
 
 ECObjectsStatus CheckForModelBaseClasses(ECClassCR baseClass, ECClassCR entity)
     {
-    static bmap<Utf8String, bvector<Utf8String>> notSubClassable;
-    notSubClassable["SpatialLocationModel"] = { "RoadRailAlignment:AlignmentModel", "RoadRailAlignment:AlignmentModel", "RoadRailAlignment:HorizontalAlignmentModel" };
-    notSubClassable["PhysicalModel"] = { "BuildingPhysical:BuildingPhysicalModel", "StructuralPhysical:StructuralPhysicalModel" };
-    notSubClassable["DefinitionModel"] = { "BisCore:DictionaryModel", "BisCore:RepositoryModel",
-        "BuildingPhysical:BuildingTypeDefinitionModel",
-        "RoadRailAlignment:ConfigurationModel", "RoadRailAlignment:RoadRailCategoryModel",
-        "RoadRailPhysical:RailwayStandardsModel" };
-    notSubClassable["InformationRecordModel"] = {};
-    notSubClassable["DocumentListModel"] = {};
-    notSubClassable["LinkModel"] = {};
+    static const bmap<Utf8String, bvector<Utf8String>> notSubClassable = []()
+        {
+        bmap<Utf8String, bvector<Utf8String>> entries;
+        entries["SpatialLocationModel"] = { "RoadRailAlignment:AlignmentModel", "RoadRailAlignment:AlignmentModel", "RoadRailAlignment:HorizontalAlignmentModel" };
+        entries["PhysicalModel"] = { "BuildingPhysical:BuildingPhysicalModel", "StructuralPhysical:StructuralPhysicalModel" };
+        entries["DefinitionModel"] = { "BisCore:DictionaryModel", "BisCore:RepositoryModel",
+            "BuildingPhysical:BuildingTypeDefinitionModel",
+            "RoadRailAlignment:ConfigurationModel", "RoadRailAlignment:RoadRailCategoryModel",
+            "RoadRailPhysical:RailwayStandardsModel" };
+        entries["InformationRecordModel"] = {};
+        entries["DocumentListModel"] = {};
+        entries["LinkModel"] = {};
+        return entries;
+        }();
 
     if (baseClass.GetSchema().GetName().Equals(BISCORE_SCHEMA_NAME))
         {
