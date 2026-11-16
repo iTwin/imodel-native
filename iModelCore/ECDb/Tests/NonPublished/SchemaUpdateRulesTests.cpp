@@ -635,6 +635,22 @@ TEST_F(SchemaUpdateRulesTests, DeletingBaseClassOfReferencingSchemaIsRejected)
     }
 
 //---------------------------------------------------------------------------------------
+// DynamicPipe derives from Pipe. The import does not include Dynamic, so the incoming Pipe has no subclasses.
+// Disabled: the update is rejected, but ECDb reports no issue. SchemaWriter accepts the change because it only
+// checks the subclasses in the imported schemas. Mapping then fails to load DynamicPipe, because its base class
+// is sealed, and returns an error that is only logged.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpdateRulesTests, DISABLED_SealingBaseClassOfReferencingSchemaIsRejected)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml("TestSchema");
+    ReplaceInClass(schemaXml, "Pipe", R"xml(typeName="Pipe">)xml", R"xml(typeName="Pipe" modifier="Sealed">)xml");
+    ExpectRejected(schemaXml, "ECDb_0362");
+    }
+
+//---------------------------------------------------------------------------------------
 // Two versions of a referenced schema end up in one import when the schemas were read against different
 // versions of it, e.g. one from the file and one from the application. Schemas in the file reference other
 // schemas by name, so importing the newer version would serve both.
