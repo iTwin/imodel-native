@@ -1197,9 +1197,6 @@ private:
     +---------------+---------------+---------------+---------------+---------------+--*/
     void HandleLikeToken(NodeCR node)
         {
-        if (m_previousToken != TOKEN_StringConst)
-            WrapPreviousNode("CAST(", "AS TEXT)");
-
         Append("LIKE");
         }
 

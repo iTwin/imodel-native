@@ -201,7 +201,8 @@ extern int SQLyydebug;
     SQL_GREAT = 402,               /* SQL_GREAT  */
     SQL_EQUAL = 403,               /* SQL_EQUAL  */
     SQL_CONCAT = 404,              /* SQL_CONCAT  */
-    SQL_TOKEN_INVALIDSYMBOL = 405  /* SQL_TOKEN_INVALIDSYMBOL  */
+    SQL_DOUBLE_COLON = 405,        /* SQL_DOUBLE_COLON  */
+    SQL_TOKEN_INVALIDSYMBOL = 406  /* SQL_TOKEN_INVALIDSYMBOL  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif

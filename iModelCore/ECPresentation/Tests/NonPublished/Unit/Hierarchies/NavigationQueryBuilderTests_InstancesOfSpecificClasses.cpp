@@ -458,7 +458,7 @@ TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_InstanceFilter_L
         ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
             ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
             .From(selectClass)
-            .Where("CAST([this].[Name] AS TEXT) LIKE 'Test' ESCAPE \'\\\'", BoundQueryValuesList()));
+            .Where("[this].[Name] LIKE 'Test' ESCAPE \'\\\'", BoundQueryValuesList()));
         query->OrderBy(GetECInstanceNodesOrderByClause().c_str());
         return query;
         });

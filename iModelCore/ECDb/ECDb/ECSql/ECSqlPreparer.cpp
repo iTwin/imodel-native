@@ -532,6 +532,266 @@ ECSqlStatus ECSqlExpPreparer::PrepareBooleanFactorExp(NativeSqlBuilder::List& na
     return ECSqlStatus::Success;
     }
 
+namespace
+{
+//---------------------------------------------------------------------------------------
+// Layout strings describe EC values to the _ecsql_cast SQL function (see ECSqlCastFunc)
+//---------------------------------------------------------------------------------------
+Utf8CP GetPrimitiveLayout(PrimitiveType primType, Utf8StringCR extendedTypeName, DateTime::Info const* dtInfo)
+    {
+    switch (primType)
+        {
+            case PRIMITIVETYPE_Integer:
+                return ECSqlCastFunc::LayoutInt();
+            case PRIMITIVETYPE_Long:
+                return CastExp::GetSpecialTarget(extendedTypeName) == CastExp::SpecialTarget::IdFamily ? ECSqlCastFunc::LayoutId() : ECSqlCastFunc::LayoutLong();
+            case PRIMITIVETYPE_Double:
+                return ECSqlCastFunc::LayoutDouble();
+            case PRIMITIVETYPE_Boolean:
+                return ECSqlCastFunc::LayoutBool();
+            case PRIMITIVETYPE_String:
+                return ECSqlCastFunc::LayoutString();
+            case PRIMITIVETYPE_Binary:
+                return extendedTypeName.EqualsIAscii(EXTENDEDTYPENAME_BeGuid) ? ECSqlCastFunc::LayoutGuid() : ECSqlCastFunc::LayoutBinary();
+            case PRIMITIVETYPE_IGeometry:
+                return ECSqlCastFunc::LayoutGeometry();
+            case PRIMITIVETYPE_Point2d:
+                return ECSqlCastFunc::LayoutPoint2d();
+            case PRIMITIVETYPE_Point3d:
+                return ECSqlCastFunc::LayoutPoint3d();
+            case PRIMITIVETYPE_DateTime:
+                return ECSqlCastFunc::LayoutDateTime(dtInfo != nullptr ? *dtInfo : DateTime::Info());
+            default:
+                BeAssert(false && "Unhandled primitive type");
+                return ECSqlCastFunc::LayoutString();
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void AppendStructLayout(Utf8StringR layout, int& columnCount, ECStructClassCR structType);
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void AppendPropertyLayout(Utf8StringR layout, int& columnCount, ECPropertyCR prop)
+    {
+    if (prop.GetIsPrimitive())
+        {
+        PrimitiveECPropertyCR primProp = *prop.GetAsPrimitiveProperty();
+        DateTime::Info dtInfo;
+        if (primProp.GetType() == PRIMITIVETYPE_DateTime)
+            CoreCustomAttributeHelper::GetDateTimeInfo(dtInfo, prop);
+
+        layout.append("\"").append(GetPrimitiveLayout(primProp.GetType(), primProp.GetExtendedTypeName(), &dtInfo)).append("\"");
+        columnCount += primProp.GetType() == PRIMITIVETYPE_Point2d ? 2 : (primProp.GetType() == PRIMITIVETYPE_Point3d ? 3 : 1);
+        return;
+        }
+
+    if (prop.GetIsStruct())
+        {
+        AppendStructLayout(layout, columnCount, prop.GetAsStructProperty()->GetType());
+        return;
+        }
+
+    columnCount++;
+    if (prop.GetIsPrimitiveArray())
+        {
+        PrimitiveArrayECPropertyCR arrayProp = *prop.GetAsPrimitiveArrayProperty();
+        DateTime::Info dtInfo;
+        if (arrayProp.GetPrimitiveElementType() == PRIMITIVETYPE_DateTime)
+            CoreCustomAttributeHelper::GetDateTimeInfo(dtInfo, prop);
+
+        layout.append("{\"a\":\"").append(GetPrimitiveLayout(arrayProp.GetPrimitiveElementType(), arrayProp.GetExtendedTypeName(), &dtInfo)).append("\"}");
+        return;
+        }
+
+    if (prop.GetIsStructArray())
+        {
+        int dummy = 0;
+        layout.append("{\"a\":");
+        AppendStructLayout(layout, dummy, prop.GetAsStructArrayProperty()->GetStructElementType());
+        layout.append("}");
+        return;
+        }
+
+    BeAssert(false && "Unexpected struct member property kind");
+    layout.append("\"str\"");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void AppendStructLayout(Utf8StringR layout, int& columnCount, ECStructClassCR structType)
+    {
+    layout.append("{\"m\":[");
+    bool isFirst = true;
+    // Same member order as used when preparing struct values (see PrepareNullCastExp)
+    for (ECPropertyCP prop : structType.GetProperties(true))
+        {
+        if (!isFirst)
+            layout.append(",");
+
+        layout.append("[\"").append(prop->GetName()).append("\",");
+        AppendPropertyLayout(layout, columnCount, *prop);
+        layout.append("]");
+        isFirst = false;
+        }
+    layout.append("]}");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Utf8String GetArrayElementLayout(ECSqlTypeInfo const& arrayType)
+    {
+    if (arrayType.GetKind() == ECSqlTypeInfo::Kind::StructArray)
+        {
+        Utf8String layout;
+        int dummy = 0;
+        AppendStructLayout(layout, dummy, arrayType.GetStructType());
+        return layout;
+        }
+
+    const PrimitiveType elemType = arrayType.GetPrimitiveType();
+    DateTime::Info dtInfo;
+    if (elemType == PRIMITIVETYPE_DateTime)
+        dtInfo = arrayType.GetDateTimeInfo();
+
+    return Utf8PrintfString("\"%s\"", GetPrimitiveLayout(elemType, arrayType.GetExtendedTypeName(), &dtInfo));
+    }
+
+//---------------------------------------------------------------------------------------
+// The SQLite storage type of a column mapped to a class property matches its ECSQL type.
+// Computed values, including subquery, CTE and compound select columns, can hold any storage type.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+bool IsMappedPropertyColumn(ValueExp const& exp)
+    {
+    if (exp.GetType() != Exp::Type::PropertyName)
+        return false;
+
+    // same dispatch as ECSqlPropertyNameExpPreparer::Prepare
+    PropertyNameExp const& propNameExp = exp.GetAs<PropertyNameExp>();
+    RangeClassRefExp const* classRef = propNameExp.GetClassRefExp();
+    return !propNameExp.IsPropertyRef() && !propNameExp.IsVirtualProperty() && classRef != nullptr && classRef->GetType() == Exp::Type::ClassName;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Utf8String JoinSnippets(NativeSqlBuilder::List const& snippets)
+    {
+    Utf8String sql;
+    for (NativeSqlBuilder const& snippet : snippets)
+        {
+        if (!sql.empty())
+            sql.append(",");
+        sql.append(snippet.GetSql());
+        }
+    return sql;
+    }
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+ECSqlStatus ECSqlExpPreparer::PrepareCastExpToString(Utf8StringR sql, ECSqlPrepareContext& ctx, CastExp const& exp, NativeSqlBuilder::List const& operandSnippets)
+    {
+    ECSqlTypeInfo const& sourceType = exp.GetCastOperand()->GetTypeInfo();
+    Utf8StringCR first = operandSnippets[0].GetSql();
+    if (exp.GetCastOperand()->IsParameterExp())
+        {
+        sql = first;
+        return ECSqlStatus::Success;
+        }
+
+    if (sourceType.IsNavigation())
+        {
+        if (operandSnippets.size() > 2)
+            return ECSqlStatus::Error;
+
+        sql.Sprintf(SQLFUNC_ECSqlCast "_nav_text(%s)", JoinSnippets(operandSnippets).c_str());
+        return ECSqlStatus::Success;
+        }
+
+    if (sourceType.IsStruct())
+        {
+        Utf8String layout;
+        int columnCount = 0;
+        AppendStructLayout(layout, columnCount, sourceType.GetStructType());
+        if (columnCount != (int) operandSnippets.size())
+            {
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0757,
+                "Cannot convert struct value to TEXT in '%s': the struct value has an unexpected number of SQL columns (%d instead of %d).",
+                exp.ToECSql().c_str(), (int) operandSnippets.size(), columnCount);
+            return ECSqlStatus::InvalidECSql;
+            }
+
+        sql.Sprintf(SQLFUNC_ECSqlCast "_struct_text('%s',%s)", LiteralValueExp::EscapeStringLiteral(layout).c_str(), JoinSnippets(operandSnippets).c_str());
+        return ECSqlStatus::Success;
+        }
+
+    if (sourceType.IsArray())
+        {
+        sql.Sprintf(SQLFUNC_ECSqlCast "_arr_text('%s',%s)", LiteralValueExp::EscapeStringLiteral(GetArrayElementLayout(sourceType)).c_str(), first.c_str());
+        return ECSqlStatus::Success;
+        }
+
+    BeAssert(sourceType.IsPrimitive());
+    if (sourceType.IsPoint())
+        {
+        sql.Sprintf(SQLFUNC_ECSqlCast "_pt_text(%s)", JoinSnippets(operandSnippets).c_str());
+        return ECSqlStatus::Success;
+        }
+
+    switch (sourceType.GetPrimitiveType())
+        {
+            case PRIMITIVETYPE_String:
+                sql = first;
+                break;
+            case PRIMITIVETYPE_DateTime:
+                sql.Sprintf(SQLFUNC_ECSqlCast "_dt_text(%s,'%s')", first.c_str(), ECSqlCastFunc::LayoutDateTime(sourceType.GetDateTimeInfo()));
+                break;
+            case PRIMITIVETYPE_Boolean:
+                sql.Sprintf(SQLFUNC_ECSqlCast "_bool_text(%s)", first.c_str());
+                break;
+            case PRIMITIVETYPE_Binary:
+                if (sourceType.GetExtendedTypeName().EqualsIAscii(EXTENDEDTYPENAME_BeGuid))
+                    sql.Sprintf(SQLFUNC_GuidToStr "(%s)", first.c_str());
+                else
+                    sql.Sprintf(SQLFUNC_ECSqlCast "_base64(%s)", first.c_str());
+                break;
+            case PRIMITIVETYPE_IGeometry:
+                sql.Sprintf(SQLFUNC_ECSqlCast "_geom_text(%s)", first.c_str());
+                break;
+            case PRIMITIVETYPE_Long:
+                // Ids are unsigned 64-bit values stored as signed SQLite integers
+                if (CastExp::GetSpecialTarget(sourceType.GetExtendedTypeName()) == CastExp::SpecialTarget::IdFamily)
+                    sql.Sprintf(SQLFUNC_IdToHex "(%s)", first.c_str());
+                else
+                    sql.Sprintf("CAST(%s AS TEXT)", first.c_str());
+                break;
+            default:
+                sql.Sprintf("CAST(%s AS TEXT)", first.c_str());
+                break;
+        }
+
+    return ECSqlStatus::Success;
+    }
+
+//-----------------------------------------------------------------------------------------
+// Computed values, including derived-table and CTE columns, can have a different
+// SQLite storage type from their ECSQL type.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+static bool NeedsNumericStorageCast(PrimitiveType targetType)
+    {
+    return targetType == PRIMITIVETYPE_Double || targetType == PRIMITIVETYPE_Integer || targetType == PRIMITIVETYPE_Long;
+    }
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -539,56 +799,175 @@ ECSqlStatus ECSqlExpPreparer::PrepareBooleanFactorExp(NativeSqlBuilder::List& na
 ECSqlStatus ECSqlExpPreparer::PrepareCastExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, CastExp const& exp)
     {
     ValueExp const* castOperand = exp.GetCastOperand();
-    if (!exp.NeedsCasting())
-        return PrepareValueExp(nativeSqlSnippets, ctx, *castOperand);
+    const bool isParameter = castOperand->IsParameterExp();
+    ECSqlTypeInfo const& sourceType = castOperand->GetTypeInfo();
+    ECSqlTypeInfo const& targetType = exp.GetTypeInfo();
 
-    if (!castOperand->IsParameterExp() && castOperand->GetTypeInfo().IsNull())
+    if (!isParameter && sourceType.IsNull())
         return PrepareNullCastExp(nativeSqlSnippets, ctx, exp);
 
-    NativeSqlBuilder::List operandNativeSqlSnippets;
-    const ECSqlStatus stat = PrepareValueExp(operandNativeSqlSnippets, ctx, *castOperand);
+    NativeSqlBuilder::List operandSnippets;
+    ECSqlStatus stat = PrepareValueExp(operandSnippets, ctx, *castOperand);
     if (!stat.IsSuccess())
         return stat;
 
-    if (operandNativeSqlSnippets.empty())
+    if (operandSnippets.empty())
         {
         BeAssert(false && "Preparing CAST operand did not return a SQLite SQL expression.");
         return ECSqlStatus::Error;
         }
 
-    if (!exp.GetTypeInfo().IsPrimitive())
+    auto pushSnippet = [&nativeSqlSnippets, &exp] (Utf8StringCR sql)
         {
-        ctx.Issues().ReportV(
-            IssueSeverity::Error,
-            IssueCategory::BusinessProperties,
-            IssueType::ECSQL,
-            ECDbIssueId::ECDb_0510,
-            "Invalid ECSQL expression '%s': Only primitive types are supported as CAST target type",
-            exp.ToECSql().c_str()
-        );
-        return ECSqlStatus::InvalidECSql;
+        NativeSqlBuilder builder;
+        if (exp.HasParentheses())
+            builder.AppendParenLeft();
+        builder.Append(sql);
+        if (exp.HasParentheses())
+            builder.AppendParenRight();
+        nativeSqlSnippets.push_back(builder);
+        };
+
+    auto passThrough = [&operandSnippets, &pushSnippet] ()
+        {
+        for (NativeSqlBuilder const& snippet : operandSnippets)
+            pushSnippet(snippet.GetSql());
+        return ECSqlStatus::Success;
+        };
+
+    Utf8StringCR first = operandSnippets[0].GetSql();
+    Utf8String sql;
+    // Computed values can be text or integral reals even when typed as integers (e.g. compound selects), so they are converted.
+    const bool convertToId = !isParameter && (sourceType.IsString() || !IsMappedPropertyColumn(*castOperand));
+    switch (exp.GetSpecialTarget())
+        {
+            case CastExp::SpecialTarget::IdFamily:
+                if (convertToId)
+                    sql.Sprintf(SQLFUNC_ECSqlCast "_id(%s)", first.c_str());
+                else
+                    sql = first; //mapped integer columns, parameters, and the Id column of a mapped navigation property
+                pushSnippet(sql);
+                return ECSqlStatus::Success;
+
+            case CastExp::SpecialTarget::ClassName:
+                if (convertToId)
+                    sql.Sprintf(SQLFUNC_ClassName "(" SQLFUNC_ECSqlCast "_id(%s),0)", first.c_str());
+                else
+                    sql.Sprintf(SQLFUNC_ClassName "(%s,0)", first.c_str());
+                pushSnippet(sql);
+                return ECSqlStatus::Success;
+
+            case CastExp::SpecialTarget::Json:
+                sql.Sprintf(SQLFUNC_ECSqlCast "_json(%s)", first.c_str());
+                pushSnippet(sql);
+                return ECSqlStatus::Success;
+
+            case CastExp::SpecialTarget::Guid:
+                if (isParameter)
+                    sql = first;
+                else
+                    sql.Sprintf(SQLFUNC_ECSqlCast "_guid(%s)", first.c_str());
+                pushSnippet(sql);
+                return ECSqlStatus::Success;
+
+            default:
+                break;
         }
 
-    const PrimitiveType targetType = exp.GetTypeInfo().GetPrimitiveType();
+    const bool isDateOnlyTarget = targetType.IsDateTime() && targetType.GetDateTimeInfo().IsValid() && targetType.GetDateTimeInfo().GetComponent() == DateTime::Component::Date;
+    // Enum parameters still need membership validation and DATE parameters truncation after binding.
+    if ((isParameter && !targetType.IsEnum() && !isDateOnlyTarget) || targetType.IsStruct() || targetType.IsArray())
+        return passThrough();
 
-    for (size_t i = 0; i < operandNativeSqlSnippets.size(); i++)
+    BeAssert(targetType.IsPrimitive());
+    const PrimitiveType targetPrimType = targetType.GetPrimitiveType();
+    ECEnumerationCP targetEnum = targetType.GetEnumerationType();
+
+    if (targetPrimType == PRIMITIVETYPE_String && targetEnum == nullptr)
         {
-        NativeSqlBuilder nativeSqlBuilder;
-        if (exp.HasParentheses())
-            nativeSqlBuilder.AppendParenLeft();
+        stat = PrepareCastExpToString(sql, ctx, exp, operandSnippets);
+        if (!stat.IsSuccess())
+            return stat;
 
-        Utf8String castExpSnippet;
-        if (SUCCESS != PrepareCastExpForPrimitive(castExpSnippet, targetType, operandNativeSqlSnippets[i].GetSql()))
+        pushSnippet(sql);
+        return ECSqlStatus::Success;
+        }
+
+    if (sourceType.IsNavigation())
+        {
+        BeAssert(targetPrimType == PRIMITIVETYPE_Long);
+        pushSnippet(first);
+        return ECSqlStatus::Success;
+        }
+
+    if (targetType.IsPoint())
+        {
+        if (sourceType.IsPoint())
+            return passThrough();
+
+        BeAssert(sourceType.IsString());
+        const int dims = targetPrimType == PRIMITIVETYPE_Point2d ? 2 : 3;
+        for (int i = 0; i < dims; i++)
+            {
+            sql.Sprintf(SQLFUNC_ECSqlCast "_text_pt(%s,%d,%d)", first.c_str(), i, dims);
+            pushSnippet(sql);
+            }
+        return ECSqlStatus::Success;
+        }
+
+    if (targetEnum != nullptr)
+        {
+        if (sourceType == targetType && !isParameter)
+            return passThrough();
+
+        if (!targetEnum->GetIsStrict())
+            {
+            if (SUCCESS != PrepareCastExpForPrimitive(sql, targetPrimType, first))
+                return ECSqlStatus::Error;
+
+            pushSnippet(sql);
+            return ECSqlStatus::Success;
+            }
+
+        // integer enums validate the original value so that e.g. 'abc' or 1.7 do not match after a lossy integer conversion
+        Utf8String operand;
+        if (targetPrimType == PRIMITIVETYPE_Integer)
+            operand = first;
+        else if (SUCCESS != PrepareCastExpForPrimitive(operand, targetPrimType, first))
             return ECSqlStatus::Error;
 
-        nativeSqlBuilder.Append(castExpSnippet);
+        // a single JSON array argument, as enumerations can have more enumerators than SQLite allows function arguments
+        rapidjson::StringBuffer enumerators;
+        rapidjson::Writer<rapidjson::StringBuffer> writer(enumerators);
+        writer.StartArray();
+        for (ECEnumeratorCP enumerator : targetEnum->GetEnumerators())
+            {
+            if (enumerator->IsInteger())
+                writer.Int(enumerator->GetInteger());
+            else
+                writer.String(enumerator->GetString().c_str(), (rapidjson::SizeType) enumerator->GetString().size());
+            }
+        writer.EndArray();
 
-        if (exp.HasParentheses())
-            nativeSqlBuilder.AppendParenRight();
-
-        nativeSqlSnippets.push_back(nativeSqlBuilder);
+        sql.Sprintf(SQLFUNC_ECSqlCast "_enum(%s,'%s')", operand.c_str(), LiteralValueExp::EscapeStringLiteral(enumerators.GetString()).c_str());
+        pushSnippet(sql);
+        return ECSqlStatus::Success;
         }
 
+    if (targetPrimType == PRIMITIVETYPE_Boolean && sourceType.IsString())
+        sql.Sprintf(SQLFUNC_ECSqlCast "_text_bool(%s)", first.c_str());
+    else if (targetPrimType == PRIMITIVETYPE_DateTime && sourceType.IsString())
+        sql.Sprintf(SQLFUNC_ECSqlCast "_text_dt(%s)", first.c_str());
+    else if (sourceType.IsPrimitive() && !sourceType.IsEnum() && sourceType.GetPrimitiveType() == targetPrimType && !NeedsNumericStorageCast(targetPrimType))
+        sql = first;
+    else if (SUCCESS != PrepareCastExpForPrimitive(sql, targetPrimType, first))
+        return ECSqlStatus::Error;
+
+    // DATE drops the time of day: the julian day of the preceding midnight
+    if (isDateOnlyTarget)
+        sql = Utf8PrintfString("(floor(%s - 0.5) + 0.5)", sql.c_str());
+
+    pushSnippet(sql);
     return ECSqlStatus::Success;
     }
 
@@ -680,7 +1059,7 @@ BentleyStatus ECSqlExpPreparer::PrepareCastExpForPrimitive(Utf8StringR sqlSnippe
                 castFormat = "CAST(%s AS BLOB)";
                 break;
             case PRIMITIVETYPE_Boolean:
-                castFormat = "CASE WHEN %s <> 0 THEN 1 ELSE 0 END";
+                castFormat = "(%s <> 0)";
                 break;
             case PRIMITIVETYPE_DateTime:
                 castFormat = "CAST(%s AS TIMESTAMP)";
@@ -1605,6 +1984,11 @@ ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp(NativeSqlBuilder::List& nat
     if (functionName.EqualsIAscii("sha3_query") || functionName.EqualsIAscii("fts3_tokenizer")) {
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0524,
             "Failed to prepare function with name '%s': Function is not supported in ECSQL.", functionName.c_str());
+        return ECSqlStatus::InvalidECSql;
+    }
+    if (functionName.StartsWithIAscii(SQLFUNC_ECSqlCast)) {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0524,
+            "Failed to prepare function with name '%s': Function is internal to ECDb and is not supported in ECSQL.", functionName.c_str());
         return ECSqlStatus::InvalidECSql;
     }
     if (ctx.GetECDb().GetECSqlConfig().GetDisableFunctions().Exists(functionName)) {
@@ -2724,29 +3108,46 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExp(NativeSqlBuilder::List& nativeSqlS
             case Exp::Type::TypeList:
                 return PrepareTypeListExp(nativeSqlSnippets, ctx, exp.GetAs<TypeListExp>());
             case Exp::Type::CommonTablePropertyName:{
-                NativeSqlBuilder builder;
                 auto& ctp = exp.GetAs<CommonTablePropertyNameExp>();
                 auto  ctpName = ctp.GetBlockNameExp();
-                if (ctpName != nullptr) {
-                    ECSqlStatus nameStatus = AppendUnquotedName(builder, ctx, ctpName->GetAlias().empty() ? ctpName->GetName() : ctpName->GetAlias());
-                    if (!nameStatus.IsSuccess())
-                        return nameStatus;
-                    builder.AppendDot();
-                }
-                ECSqlStatus nameStatus = AppendUnquotedName(builder, ctx, ctp.GetName());
-                if (!nameStatus.IsSuccess())
-                    return nameStatus;
-                if (exp.GetParent() != nullptr) {
-                    if (exp.GetParent()->GetType() == Exp::Type::DerivedProperty) {
-                        auto& nestedAlias = exp.GetParent()->GetAs<DerivedPropertyExp>().GetNestedAlias();
-                        if (!nestedAlias.empty()) {
-                            nameStatus = AppendUnquotedName(builder.AppendSpace(), ctx, nestedAlias);
-                            if (!nameStatus.IsSuccess())
-                                return nameStatus;
-                        }
+                const int columnCount = exp.GetTypeInfo().IsPoint() ? (exp.GetTypeInfo().GetPrimitiveType() == PRIMITIVETYPE_Point2d ? 2 : 3) : 1;
+                for (int i = 0; i < columnCount; ++i) {
+                    NativeSqlBuilder builder;
+                    if (ctpName != nullptr) {
+                        ECSqlStatus nameStatus = AppendUnquotedName(builder, ctx, ctpName->GetAlias().empty() ? ctpName->GetName() : ctpName->GetAlias());
+                        if (!nameStatus.IsSuccess())
+                            return nameStatus;
+                        builder.AppendDot();
                     }
+                    if (columnCount == 1) {
+                        ECSqlStatus nameStatus = AppendUnquotedName(builder, ctx, ctp.GetName());
+                        if (!nameStatus.IsSuccess())
+                            return nameStatus;
+                    } else
+                        {
+                        auto const* block = ctp.GetTarget().FindParent(Exp::Type::CommonTableBlock);
+                        if (block == nullptr)
+                            {
+                            BeAssert(false && "A CTE property must belong to a common table block.");
+                            return ECSqlStatus::Error;
+                            }
+                        builder.AppendEscaped(block->GetAs<CommonTableBlockExp>().GetPointColumnName(ctp.GetName(), i));
+                        }
+                    if (exp.GetParent() != nullptr && exp.GetParent()->GetType() == Exp::Type::DerivedProperty) {
+                        auto& nestedAlias = exp.GetParent()->GetAs<DerivedPropertyExp>().GetNestedAlias();
+                        if (!nestedAlias.empty())
+                            {
+                            builder.AppendSpace();
+                            if (columnCount == 1) {
+                                ECSqlStatus nameStatus = AppendUnquotedName(builder, ctx, nestedAlias);
+                                if (!nameStatus.IsSuccess())
+                                    return nameStatus;
+                            } else
+                                builder.AppendEscaped(Utf8PrintfString("%s_%d", nestedAlias.c_str(), i));
+                            }
+                    }
+                    nativeSqlSnippets.push_back(builder);
                 }
-                nativeSqlSnippets.push_back(builder);
                 return ECSqlStatus::Success;
             }
             case Exp::Type::WindowFunction:

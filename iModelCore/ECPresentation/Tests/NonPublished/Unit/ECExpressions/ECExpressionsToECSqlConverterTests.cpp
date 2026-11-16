@@ -84,7 +84,7 @@ TEST_F(ECExpressionsToECSqlConverterTests, HexInteger)
 TEST_F(ECExpressionsToECSqlConverterTests, LikeOperatorSpecialCase)
     {
     auto clause = m_helper.ConvertToECSql("this.Test ~ \"aaa\"", nullptr, nullptr);
-    ASSERT_STREQ("CAST([this].[Test] AS TEXT) LIKE 'aaa' ESCAPE \'\\\'", clause.GetClause().c_str());
+    ASSERT_STREQ("[this].[Test] LIKE 'aaa' ESCAPE \'\\\'", clause.GetClause().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -93,7 +93,7 @@ TEST_F(ECExpressionsToECSqlConverterTests, LikeOperatorSpecialCase)
 TEST_F(ECExpressionsToECSqlConverterTests, LikeOperatorSpecialCase_WithFunction)
     {
     auto clause = m_helper.ConvertToECSql("LOWER(this.Test) ~ \"aaa\"", nullptr, nullptr);
-    ASSERT_STREQ("CAST(LOWER([this].[Test]) AS TEXT) LIKE 'aaa' ESCAPE \'\\\'", clause.GetClause().c_str());
+    ASSERT_STREQ("LOWER([this].[Test]) LIKE 'aaa' ESCAPE \'\\\'", clause.GetClause().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

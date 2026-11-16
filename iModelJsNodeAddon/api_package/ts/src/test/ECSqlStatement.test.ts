@@ -100,6 +100,28 @@ describe("ECSqlStatement", () => {
     }
   });
 
+  // Under N-API a null value looked like a missing one, so bindParams dropped Null params:
+  // a binder of only Null params threw "no parameters to bind", and in a mixed binder the
+  // previously bound value was kept.
+  it("binds Null params with bindParams", () => {
+    db = createECDb(outDir, "bindparams-null.ecdb");
+    assert.equal(stmt.prepare(db, "SELECT ?, ?").status, DbResult.BE_SQLITE_OK);
+    const bindAndStep = (args: object) => {
+      stmt.getBinder(1).bindInteger(1);
+      stmt.getBinder(2).bindInteger(2);
+      const { status, message } = stmt.bindParams(args);
+      assert.isOk(status, message);
+      assert.equal(stmt.step(), DbResult.BE_SQLITE_ROW);
+      const row = [stmt.getValue(0).isNull(), stmt.getValue(1).isNull()];
+      stmt.reset();
+      return row;
+    };
+
+    const nullParam = { type: QueryParamType.Null, value: null };
+    assert.deepEqual(bindAndStep({ 1: nullParam, 2: nullParam }), [true, true]);
+    assert.deepEqual(bindAndStep({ 1: nullParam, 2: { type: QueryParamType.Integer, value: 3 } }), [true, false]);
+  });
+
   it("returns a stepped lease immediately when preparing the output throws", () => {
     const fileName = "batch-reader-prepare-failure.ecdb";
     db = createECDb(outDir, fileName);

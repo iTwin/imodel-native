@@ -61,6 +61,7 @@ struct CommonTableBlockExp: RangeClassRefExp {
         Utf8StringCR GetName() const { return m_name; }
         ECSqlTypeInfo FindType(Utf8StringCR cl) const;
         std::vector<Utf8String> const &GetColumns() const { return m_columnList; }
+        Utf8String GetPointColumnName(Utf8StringCR name, int coordinate) const;
 };
 
 //=======================================================================================

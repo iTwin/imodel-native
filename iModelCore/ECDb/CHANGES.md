@@ -5,7 +5,23 @@ This document including important changes to syntax or file format.
 | Module  | Version   |
 | ------- | --------- |
 | Profile | `4.0.0.5` |
-| ECSQL   | `2.0.4.2` |
+| ECSQL   | `2.1.0.0` |
+
+## `11/04/2026`: Extended ECSQL casting
+* ECSql version change `2.0.4.2` -> `2.1.0.0` for the changed runtime result formats.
+* Added PostgreSQL-style postfix casts `<expr>::<type>`, equivalent to `CAST(<expr> AS <type>)`. Postfix casts bind tighter than unary and binary operators and can be chained: `'7.9'::REAL::INTEGER`.
+* Existing `CAST(...)` expressions now use the extended conversions: Boolean-to-TEXT returns `true`/`false`, DateTime-to-TEXT returns ISO-8601, Binary-to-TEXT returns Base64, Guid-to-TEXT returns a GUID string, IGeometry-to-TEXT returns iModel JSON, Id-to-TEXT returns hexadecimal, and strict enumeration casts return `NULL` for values outside the enumeration.
+* Casting `NULL` to `BOOLEAN` returns `NULL` instead of `0`. TEXT-to-`BOOLEAN` accepts `true`/`false` and numeric text, so `'false'` returns `false` instead of `true`, and other text returns `NULL`. TEXT-to-`TIMESTAMP` parses ISO-8601 instead of returning the leading number (`'2020-01-02'` returned `2020`). `CAST(<expr> AS DATE)` drops the time of day.
+* Update consumers of these text results. For numeric Boolean or Julian day results, cast to `INTEGER` or `DOUBLE` respectively. For decimal Id text using SQLite's signed integer representation, cast through `LONG`: `ECInstanceId::LONG::TEXT`. Select Binary values directly when raw bytes are needed.
+* Parameters can be cast, which gives them their binding type: `?::INTEGER`, `CAST(:p AS INTEGER)`, `:p::Id`. All casts of a named parameter must agree (`ECDb_0755`).
+* Id targets `Id`, `ClassId`, `SourceId`, `SourceClassId`, `TargetId`, `TargetClassId`, `NavId` and `NavRelClassId` tag an integer, or decimal/`0x` hex text, as an id. Invalid text returns `NULL`. Example: `SELECT '0x15'::Id`. Casting an Id to TEXT returns hexadecimal, consistent with ECSQL's other Id representations.
+* `::ClassName` converts a class id to `Schema:Class`, or `NULL` for an unknown class: `SELECT ECClassId::ClassName FROM bis.Element`.
+* EC values convert to TEXT: points, structs, arrays and navigation properties become JSON. Boolean becomes `true`/`false`, DateTime becomes ISO-8601, Binary becomes Base64, a Guid becomes a GUID string and an IGeometry becomes iModel JSON.
+* TEXT converts to `Point2d`/`Point3d`, `Json` (validated), `Guid`, `BOOLEAN` and `DATETIME`. Invalid input returns `NULL`.
+* A strict enumeration returns `NULL` for values that aren't enumerators. Navigation values only convert to `TEXT`, `Id`, `NavId` and `LONG`.
+* `NULL::<type>` keeps its type. Cast types propagate through derived tables, CTEs and scalar subqueries.
+* A scalar subquery returning a point is rejected (`ECDb_0756`).
+* Internal SQL functions prefixed `_ecsql_cast_` perform the conversions. They cannot be called from ECSQL (`ECDb_0524`).
 
 ## `11/12/2026`: Schema changesets are applied without foreign key actions
 * The new `ECDb::ApplySchemaChangeSet` applies the `ec_` rows of a changeset with `SQLITE_CHANGESETAPPLY_FKNOACTION`. `TxnManager` uses it whenever it merges, reverses, reinstates or reverts a changeset with schema changes. Foreign keys are still checked once the whole changeset has been applied.

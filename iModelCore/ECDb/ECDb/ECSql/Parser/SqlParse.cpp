@@ -298,6 +298,7 @@ namespace connectivity
                             {OSQLParseNode::window_partition_column_reference, "window_partition_column_reference"},
                             {OSQLParseNode::window_partition_column_reference_list, "window_partition_column_reference_list"},
                             {OSQLParseNode::window_specification, "window_specification"},
+                            {OSQLParseNode::postfix_cast_spec, "postfix_cast_spec"},
                     };
                 size_t nRuleMapCount = sizeof(aRuleDescriptions) / sizeof(aRuleDescriptions[0]);
                 OSL_ENSURE(nRuleMapCount == size_t(OSQLParseNode::rule_count), "OSQLParser::OSQLParser: added a new rule? Adjust this map!");

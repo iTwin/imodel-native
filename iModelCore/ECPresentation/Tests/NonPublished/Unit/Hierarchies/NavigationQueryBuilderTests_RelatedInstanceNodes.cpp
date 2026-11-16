@@ -640,7 +640,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_InstanceFilter_LikeOpe
             .From(selectClass)
             .Join(RelatedClass(*classB, SelectClass<ECRelationshipClass>(*relAB, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAB, 0)), false, SelectClass<ECClass>(*classA, "related", true), false))
             .Where("[related].[ECInstanceId] IN (?)", { std::make_shared<BoundQueryId>(ECInstanceId((uint64_t)123)) })
-            .Where("CAST([this].[Prop] AS TEXT) LIKE 'Test' ESCAPE \'\\\'", BoundQueryValuesList()));
+            .Where("[this].[Prop] LIKE 'Test' ESCAPE \'\\\'", BoundQueryValuesList()));
         query->OrderBy(GetECInstanceNodesOrderByClause().c_str());
         query->GetNavigationResultParameters().GetNavNodeExtendedDataR().SetRelationshipDirection(ECRelatedInstanceDirection::Forward);
         query->GetNavigationResultParameters().GetUsedRelationshipClasses().insert(relAB);

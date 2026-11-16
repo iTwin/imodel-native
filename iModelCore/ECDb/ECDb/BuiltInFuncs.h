@@ -14,6 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 #define SQLFUNC_GuidToStr "GuidToStr"
 #define SQLFUNC_IdToHex "IdToHex"
 #define SQLFUNC_HexToId "HexToId"
+#define SQLFUNC_ECSqlCast "_ecsql_cast"
 #define SQLFUNC_ClassName "ec_classname"
 #define SQLFUNC_ClassId "ec_classid"
 #define SQLFUNC_InstanceOf "ec_instanceof"
@@ -97,6 +98,55 @@ struct StrToGuid final : ScalarFunction
         ~StrToGuid() {}
         static StrToGuid& GetSingleton();
     };
+//=======================================================================================
+//! Internal conversion functions used by ECSQL cast lowering.
+// @bsiclass
+//=======================================================================================
+struct ECSqlCastFunc final : ScalarFunction
+    {
+    private:
+        using Compute = void (*)(Context&, int, DbValue*);
+        Compute m_compute;
+        bool m_parsesText;
+        bool m_handlesNull;
+        ECSqlCastFunc(Utf8CP name, int nArgs, Compute compute, bool parsesText = false, bool handlesNull = false)
+            : ScalarFunction(name, nArgs, DbValueType::NullVal), m_compute(compute), m_parsesText(parsesText), m_handlesNull(handlesNull) {}
+        void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
+        static void ComputeStructText(Context&, int, DbValue*);
+        static void ComputePointText(Context&, int, DbValue*);
+        static void ComputeNavigationText(Context&, int, DbValue*);
+        static void ComputeArrayText(Context&, int, DbValue*);
+        static void ComputeId(Context&, int, DbValue*);
+        static void ComputeJson(Context&, int, DbValue*);
+        static void ComputeGuid(Context&, int, DbValue*);
+        static void ComputeBase64(Context&, int, DbValue*);
+        static void ComputeBooleanText(Context&, int, DbValue*);
+        static void ComputeTextBoolean(Context&, int, DbValue*);
+        static void ComputeDateTimeText(Context&, int, DbValue*);
+        static void ComputeTextDateTime(Context&, int, DbValue*);
+        static void ComputeGeometryText(Context&, int, DbValue*);
+        static void ComputeTextPoint(Context&, int, DbValue*);
+        static void ComputeEnum(Context&, int, DbValue*);
+
+    public:
+        ~ECSqlCastFunc() {}
+        static bvector<ECSqlCastFunc*> const& GetFunctions();
+
+        //! Layout codes describing how SQL values or internal array JSON are rendered by struct_text/arr_text
+        static constexpr Utf8CP LayoutInt() { return "int"; }
+        static constexpr Utf8CP LayoutLong() { return "long"; }
+        static constexpr Utf8CP LayoutId() { return "id"; }
+        static constexpr Utf8CP LayoutDouble() { return "dbl"; }
+        static constexpr Utf8CP LayoutBool() { return "bool"; }
+        static constexpr Utf8CP LayoutString() { return "str"; }
+        static constexpr Utf8CP LayoutBinary() { return "bin"; }
+        static constexpr Utf8CP LayoutGuid() { return "guid"; }
+        static constexpr Utf8CP LayoutGeometry() { return "geom"; }
+        static constexpr Utf8CP LayoutPoint2d() { return "p2"; }
+        static constexpr Utf8CP LayoutPoint3d() { return "p3"; }
+        static Utf8CP LayoutDateTime(DateTime::Info const&);
+    };
+
 //=======================================================================================
 //! S GuidToStr(B)
 // @bsiclass

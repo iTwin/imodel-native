@@ -274,6 +274,7 @@ WINDOW              {SQL_NEW_KEYWORD(SQL_TOKEN_WINDOW);  }
 "!="                { SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_NOTEQUAL);return SQL_NOTEQUAL;}
 "||"                { SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_CONCAT);return SQL_CONCAT;}
 "->"                { SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_ARROW);return SQL_ARROW;}
+"::"                { SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_PUNCTUATION);return SQL_DOUBLE_COLON;}
 
 "~"                 { SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_BITWISE_NOT);return SQL_BITWISE_NOT;}
 "|"                 { SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_BITWISE_OR);return SQL_BITWISE_OR;}

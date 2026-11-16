@@ -3,6 +3,8 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
+#include <GeomSerialization/GeomSerializationApi.h>
+#include <GeomSerialization/GeomLibsJsonSerialization.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -866,5 +868,1184 @@ void SupportInstanceQueryFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* 
 
     ctx.SetResultInt(0);
 }
+
+//************************************************************************************
+// ECSqlCastFunc
+//************************************************************************************
+namespace
+{
+using JsonWriter = rapidjson::Writer<rapidjson::StringBuffer>;
+
+//---------------------------------------------------------------------------------------
+// Parses a complete decimal or 0x-prefixed hexadecimal unsigned 64 bit integer. No sign, whitespace or trailing characters.
+//---------------------------------------------------------------------------------------
+bool ParseIdText(uint64_t& id, Utf8CP str)
+    {
+    if (Utf8String::IsNullOrEmpty(str))
+        return false;
+
+    int base = 10;
+    Utf8CP digits = str;
+    if (str[0] == '0' && (str[1] == 'x' || str[1] == 'X'))
+        {
+        base = 16;
+        digits = str + 2;
+        }
+
+    if (*digits == '\0')
+        return false;
+
+    uint64_t val = 0;
+    for (Utf8CP p = digits; *p != '\0'; ++p)
+        {
+        int d;
+        const char c = *p;
+        if (c >= '0' && c <= '9')
+            d = c - '0';
+        else if (base == 16 && c >= 'a' && c <= 'f')
+            d = c - 'a' + 10;
+        else if (base == 16 && c >= 'A' && c <= 'F')
+            d = c - 'A' + 10;
+        else
+            return false;
+
+        if (val > (UINT64_MAX - (uint64_t) d) / (uint64_t) base)
+            return false; //overflow
+
+        val = val * base + d;
+        }
+
+    id = val;
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void WriteId(JsonWriter& w, uint64_t id)
+    {
+    Utf8Char buf[19];
+    BeStringUtilities::FormatUInt64(buf, 19, id, HexFormatOptions::IncludePrefix);
+    w.String(buf);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+bool ParseDateTimeLayout(DateTime::Info& info, Utf8CP code)
+    {
+    if (0 == strcmp(code, "dtU")) info = DateTime::Info::CreateForDateTime(DateTime::Kind::Utc);
+    else if (0 == strcmp(code, "dtL")) info = DateTime::Info::CreateForDateTime(DateTime::Kind::Local);
+    else if (0 == strcmp(code, "dtN")) info = DateTime::Info::CreateForDateTime(DateTime::Kind::Unspecified);
+    else if (0 == strcmp(code, "dtD")) info = DateTime::Info::CreateForDate();
+    else if (0 == strcmp(code, "dtT")) info = DateTime::Info::CreateForTimeOfDay();
+    else return false;
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+bool JulianDayToText(Utf8StringR str, double jd, DateTime::Info const& info)
+    {
+    if (!std::isfinite(jd))
+        return false;
+
+    DateTime dt = DateTime::FromJulianDay(jd, info);
+    if (!dt.IsValid())
+        return false;
+
+    str = dt.ToString();
+    return !str.empty();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+bool GeometryBlobToJson(Utf8StringR json, void const* blob, int blobSize)
+    {
+    if (blob == nullptr || blobSize <= 0)
+        return false;
+
+    IGeometryPtr geom = BentleyGeometryFlatBuffer::BytesToGeometrySafe((Byte const*) blob, (size_t) blobSize, true);
+    if (geom == nullptr)
+        return false;
+
+    return IModelJson::TryGeometryToIModelJsonString(json, *geom) && !json.empty();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+bool GuidBlobToText(Utf8StringR str, void const* blob, int blobSize)
+    {
+    if (blob == nullptr || blobSize != (int) sizeof(BeGuid))
+        return false;
+
+    BeGuid guid;
+    memcpy(&guid, blob, sizeof(BeGuid));
+    str = guid.ToString();
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+bool IsFinitePoint(double const* coords, int dims)
+    {
+    for (int i = 0; i < dims; i++)
+        {
+        if (!std::isfinite(coords[i]))
+            return false;
+        }
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void WritePoint(JsonWriter& w, double const* coords, int dims)
+    {
+    static Utf8CP const s_names[] = {"X", "Y", "Z"};
+    w.StartObject();
+    for (int i = 0; i < dims; i++)
+        {
+        w.Key(s_names[i]);
+        w.Double(coords[i]);
+        }
+    w.EndObject();
+    }
+
+//=======================================================================================
+// Parsed layout argument of struct_text and arr_text (see ECSqlCastFunc::Layout*)
+// @bsiclass
+//=======================================================================================
+struct CastLayout final
+    {
+    enum class Kind { Struct, Array, Integer, Id, Double, Bool, String, Binary, Guid, Geometry, Point2d, Point3d, DateTime };
+
+    Kind m_kind = Kind::Struct;
+    DateTime::Info m_dateTimeInfo;
+    Utf8String m_memberName;
+    bvector<CastLayout> m_children; //struct members, or the element of an array
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+bool ParseLayoutCode(CastLayout& layout, Utf8CP code)
+    {
+    static std::pair<Utf8CP, CastLayout::Kind> const s_codes[] = {
+        {ECSqlCastFunc::LayoutInt(), CastLayout::Kind::Integer},
+        {ECSqlCastFunc::LayoutLong(), CastLayout::Kind::Integer},
+        {ECSqlCastFunc::LayoutId(), CastLayout::Kind::Id},
+        {ECSqlCastFunc::LayoutDouble(), CastLayout::Kind::Double},
+        {ECSqlCastFunc::LayoutBool(), CastLayout::Kind::Bool},
+        {ECSqlCastFunc::LayoutString(), CastLayout::Kind::String},
+        {ECSqlCastFunc::LayoutBinary(), CastLayout::Kind::Binary},
+        {ECSqlCastFunc::LayoutGuid(), CastLayout::Kind::Guid},
+        {ECSqlCastFunc::LayoutGeometry(), CastLayout::Kind::Geometry},
+        {ECSqlCastFunc::LayoutPoint2d(), CastLayout::Kind::Point2d},
+        {ECSqlCastFunc::LayoutPoint3d(), CastLayout::Kind::Point3d}};
+
+    for (auto const& entry : s_codes)
+        {
+        if (0 == strcmp(code, entry.first))
+            {
+            layout.m_kind = entry.second;
+            return true;
+            }
+        }
+
+    layout.m_kind = CastLayout::Kind::DateTime;
+    return ParseDateTimeLayout(layout.m_dateTimeInfo, code);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+bool ParseLayout(CastLayout& layout, RapidJsonValueCR json, int depth)
+    {
+    // layouts are generated by ECDb; the depth limit only guards against malformed input
+    if (depth > 64)
+        return false;
+
+    if (json.IsString())
+        return ParseLayoutCode(layout, json.GetString());
+
+    if (!json.IsObject())
+        return false;
+
+    auto arr = json.FindMember("a");
+    if (arr != json.MemberEnd())
+        {
+        layout.m_kind = CastLayout::Kind::Array;
+        layout.m_children.resize(1);
+        return ParseLayout(layout.m_children[0], arr->value, depth + 1);
+        }
+
+    auto members = json.FindMember("m");
+    if (members == json.MemberEnd() || !members->value.IsArray())
+        return false;
+
+    layout.m_kind = CastLayout::Kind::Struct;
+    layout.m_children.resize(members->value.Size());
+    for (rapidjson::SizeType i = 0; i < members->value.Size(); i++)
+        {
+        RapidJsonValueCR member = members->value[i];
+        if (!member.IsArray() || member.Size() != 2 || !member[0].IsString())
+            return false;
+
+        CastLayout& child = layout.m_children[i];
+        child.m_memberName.assign(member[0].GetString(), member[0].GetStringLength());
+        if (!ParseLayout(child, member[1], depth + 1))
+            return false;
+        }
+
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+bool ParseCastLayout(CastLayout& layout, Utf8CP json)
+    {
+    rapidjson::Document doc;
+    return !doc.Parse<rapidjson::kParseIterativeFlag>(json).HasParseError() && ParseLayout(layout, doc, 0);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+bool ParseArrayJson(rapidjson::Document& doc, Utf8CP json)
+    {
+    return !doc.Parse<rapidjson::kParseIterativeFlag>(json).HasParseError() && doc.IsArray();
+    }
+
+void RenderElement(JsonWriter&, CastLayout const&, RapidJsonValueCR element);
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void RenderElements(JsonWriter& w, CastLayout const& elementLayout, RapidJsonValueCR elements)
+    {
+    w.StartArray();
+    for (RapidJsonValueCR element : elements.GetArray())
+        RenderElement(w, elementLayout, element);
+    w.EndArray();
+    }
+
+//---------------------------------------------------------------------------------------
+// Renders an element of the internal JSON array representation
+//---------------------------------------------------------------------------------------
+void RenderElement(JsonWriter& w, CastLayout const& layout, RapidJsonValueCR element)
+    {
+    switch (layout.m_kind)
+        {
+            case CastLayout::Kind::Struct:
+                if (element.IsObject())
+                    {
+                    w.StartObject();
+                    for (CastLayout const& member : layout.m_children)
+                        {
+                        auto it = element.FindMember(member.m_memberName.c_str());
+                        if (it == element.MemberEnd() || it->value.IsNull())
+                            continue;
+
+                        w.Key(member.m_memberName.c_str(), (rapidjson::SizeType) member.m_memberName.size());
+                        RenderElement(w, member, it->value);
+                        }
+                    w.EndObject();
+                    return;
+                    }
+                break;
+
+            case CastLayout::Kind::Array:
+                if (element.IsArray())
+                    {
+                    RenderElements(w, layout.m_children[0], element);
+                    return;
+                    }
+                break;
+
+            case CastLayout::Kind::Point2d:
+            case CastLayout::Kind::Point3d:
+                {
+                static Utf8CP const s_names[] = {"x", "y", "z"};
+                const int dims = layout.m_kind == CastLayout::Kind::Point2d ? 2 : 3;
+                double coords[3];
+                int i = 0;
+                for (; i < dims && element.IsObject(); i++)
+                    {
+                    auto it = element.FindMember(s_names[i]);
+                    if (it == element.MemberEnd() || !it->value.IsNumber())
+                        break;
+                    coords[i] = it->value.GetDouble();
+                    }
+
+                if (i == dims)
+                    {
+                    WritePoint(w, coords, dims);
+                    return;
+                    }
+                break;
+                }
+
+            case CastLayout::Kind::Id:
+                if (element.IsUint64())
+                    {
+                    WriteId(w, element.GetUint64());
+                    return;
+                    }
+                if (element.IsInt64())
+                    {
+                    WriteId(w, (uint64_t) element.GetInt64());
+                    return;
+                    }
+                break;
+
+            case CastLayout::Kind::Guid:
+            case CastLayout::Kind::Geometry:
+                if (element.IsString())
+                    {
+                    bvector<Byte> bytes;
+                    Base64Utilities::Decode(bytes, element.GetString(), (size_t) element.GetStringLength());
+                    Utf8String str;
+                    if (layout.m_kind == CastLayout::Kind::Guid && GuidBlobToText(str, bytes.data(), (int) bytes.size()))
+                        {
+                        w.String(str.c_str());
+                        return;
+                        }
+                    if (layout.m_kind == CastLayout::Kind::Geometry && GeometryBlobToJson(str, bytes.data(), (int) bytes.size()))
+                        {
+                        w.RawValue(str.c_str(), str.size(), rapidjson::kObjectType);
+                        return;
+                        }
+                    }
+                break;
+
+            case CastLayout::Kind::DateTime:
+                {
+                if (element.IsString())
+                    {
+                    w.String(element.GetString(), element.GetStringLength());
+                    return;
+                    }
+
+                Utf8String str;
+                if (element.IsNumber() && JulianDayToText(str, element.GetDouble(), layout.m_dateTimeInfo))
+                    {
+                    w.String(str.c_str());
+                    return;
+                    }
+                break;
+                }
+
+            default:
+                //int, long, double, bool, string, binary (base64 string) are stored in their JSON representation already
+                if (!element.IsObject() && !element.IsArray())
+                    {
+                    element.Accept(w);
+                    return;
+                    }
+                break;
+        }
+
+    w.Null();
+    }
+
+//=======================================================================================
+// Renders the SQL values of a struct as described by its layout
+//=======================================================================================
+struct ColumnRenderer final
+    {
+    private:
+        DbValue* m_args;
+        int m_nArgs;
+        int m_pos;
+
+    public:
+        ColumnRenderer(DbValue* args, int nArgs, int startPos) : m_args(args), m_nArgs(nArgs), m_pos(startPos) {}
+        int GetPosition() const { return m_pos; }
+
+        //! Renders the value at the current position, preceded by the member name if not nullptr. Returns false on arity mismatch.
+        //! isNull is set to true if the value is NULL (and nothing was written).
+        bool Render(JsonWriter& w, bool& isNull, CastLayout const& layout, Utf8StringCP memberName);
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+bool ColumnRenderer::Render(JsonWriter& w, bool& isNull, CastLayout const& layout, Utf8StringCP memberName)
+    {
+    isNull = true;
+    auto beginValue = [&w, &isNull, memberName] ()
+        {
+        isNull = false;
+        if (memberName != nullptr)
+            w.Key(memberName->c_str(), (rapidjson::SizeType) memberName->size());
+        };
+
+    if (layout.m_kind == CastLayout::Kind::Struct)
+        {
+        //rendered into a separate buffer, as structs without non-null members are omitted
+        rapidjson::StringBuffer buf;
+        JsonWriter sw(buf);
+        sw.StartObject();
+        bool anyMember = false;
+        for (CastLayout const& member : layout.m_children)
+            {
+            bool memberIsNull = true;
+            if (!Render(sw, memberIsNull, member, &member.m_memberName))
+                return false;
+
+            anyMember |= !memberIsNull;
+            }
+        sw.EndObject();
+        if (anyMember)
+            {
+            beginValue();
+            w.RawValue(buf.GetString(), buf.GetSize(), rapidjson::kObjectType);
+            }
+        return true;
+        }
+
+    if (layout.m_kind == CastLayout::Kind::Point2d || layout.m_kind == CastLayout::Kind::Point3d)
+        {
+        const int dims = layout.m_kind == CastLayout::Kind::Point2d ? 2 : 3;
+        if (m_pos + dims > m_nArgs)
+            return false;
+
+        double coords[3];
+        bool anyNull = false;
+        for (int i = 0; i < dims; i++)
+            {
+            DbValue const& c = m_args[m_pos + i];
+            anyNull |= c.IsNull();
+            coords[i] = c.GetValueDouble();
+            }
+
+        m_pos += dims;
+        if (!anyNull && IsFinitePoint(coords, dims))
+            {
+            beginValue();
+            WritePoint(w, coords, dims);
+            }
+        return true;
+        }
+
+    if (m_pos >= m_nArgs)
+        return false;
+
+    DbValue const& v = m_args[m_pos++];
+    if (v.IsNull())
+        return true;
+
+    Utf8String str;
+    switch (layout.m_kind)
+        {
+            case CastLayout::Kind::Array:
+                {
+                rapidjson::Document doc;
+                if (v.GetValueType() == DbValueType::TextVal && ParseArrayJson(doc, v.GetValueText()))
+                    {
+                    beginValue();
+                    RenderElements(w, layout.m_children[0], doc);
+                    }
+                return true;
+                }
+            case CastLayout::Kind::Integer:
+                beginValue();
+                w.Int64(v.GetValueInt64());
+                return true;
+            case CastLayout::Kind::Id:
+                beginValue();
+                WriteId(w, v.GetValueUInt64());
+                return true;
+            case CastLayout::Kind::Double:
+                {
+                const double d = v.GetValueDouble();
+                if (std::isfinite(d))
+                    {
+                    beginValue();
+                    w.Double(d);
+                    }
+                return true;
+                }
+            case CastLayout::Kind::Bool:
+                beginValue();
+                w.Bool(v.GetValueInt64() != 0);
+                return true;
+            case CastLayout::Kind::String:
+                {
+                // text can contain NUL characters
+                Utf8CP text = v.GetValueText();
+                beginValue();
+                w.String(text, (rapidjson::SizeType) v.GetValueBytes());
+                return true;
+                }
+            case CastLayout::Kind::Binary:
+                Base64Utilities::Encode(str, (Byte const*) v.GetValueBlob(), (size_t) v.GetValueBytes());
+                beginValue();
+                w.String(str.c_str());
+                return true;
+            case CastLayout::Kind::Guid:
+                if (GuidBlobToText(str, v.GetValueBlob(), v.GetValueBytes()))
+                    {
+                    beginValue();
+                    w.String(str.c_str());
+                    }
+                return true;
+            case CastLayout::Kind::Geometry:
+                if (GeometryBlobToJson(str, v.GetValueBlob(), v.GetValueBytes()))
+                    {
+                    beginValue();
+                    w.RawValue(str.c_str(), str.size(), rapidjson::kObjectType);
+                    }
+                return true;
+            case CastLayout::Kind::DateTime:
+                if (v.GetValueType() == DbValueType::TextVal)
+                    {
+                    Utf8CP text = v.GetValueText();
+                    str.assign(text, (size_t) v.GetValueBytes());
+                    }
+                else if (!JulianDayToText(str, v.GetValueDouble(), layout.m_dateTimeInfo))
+                    return true;
+
+                beginValue();
+                w.String(str.c_str(), (rapidjson::SizeType) str.size());
+                return true;
+            default:
+                BeAssert(false && "Unhandled cast layout kind");
+                return false;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void SetResultText(DbFunction::Context& ctx, Utf8CP str, size_t len)
+    {
+    ctx.SetResultText(str, (int) len, DbFunction::Context::CopyData::Yes);
+    }
+
+//=======================================================================================
+// A literal function argument (layout, enumerators). SQLite keeps the parsed value in its
+// auxdata, so it is parsed once per statement execution instead of once per row.
+// @bsiclass
+//=======================================================================================
+template<typename T>
+struct CachedArg final
+    {
+    private:
+        DbFunction::Context& m_ctx;
+        int m_argIndex;
+        std::unique_ptr<T> m_parsed;
+        T const* m_value = nullptr;
+
+        static void Free(void* value) { delete static_cast<T*>(value); }
+
+    public:
+        CachedArg(DbFunction::Context& ctx, DbValue* args, int argIndex, bool (*parse)(T&, Utf8CP)) : m_ctx(ctx), m_argIndex(argIndex)
+            {
+            m_value = static_cast<T const*>(ctx.GetAuxData(argIndex));
+            DbValue const& v = args[argIndex];
+            if (m_value != nullptr || v.GetValueType() != DbValueType::TextVal)
+                return;
+
+            auto parsed = std::make_unique<T>();
+            if (!parse(*parsed, v.GetValueText()))
+                return;
+
+            m_parsed = std::move(parsed);
+            m_value = m_parsed.get();
+            }
+
+        // SQLite may free auxdata right away, so the value is only handed over once it is no longer used.
+        ~CachedArg()
+            {
+            if (m_parsed != nullptr)
+                m_ctx.SetAuxData(m_argIndex, m_parsed.release(), Free);
+            }
+
+        //! Returns nullptr if the argument is invalid
+        T const* Get() const { return m_value; }
+    };
+
+//---------------------------------------------------------------------------------------
+// Returns false if the text is not a valid point of the given dimension.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+bool ParsePointText(Utf8CP text, int dims, double (&coords)[3])
+    {
+    rapidjson::Document doc;
+    if (doc.Parse<rapidjson::kParseIterativeFlag>(text).HasParseError() || !doc.IsObject())
+        return false;
+
+    // the whole point is invalid if any required coordinate is invalid
+    static Utf8CP const s_upper[] = {"X", "Y", "Z"};
+    static Utf8CP const s_lower[] = {"x", "y", "z"};
+    for (int i = 0; i < dims; i++)
+        {
+        auto it = doc.FindMember(s_upper[i]);
+        if (it == doc.MemberEnd())
+            it = doc.FindMember(s_lower[i]);
+
+        if (it == doc.MemberEnd() || !it->value.IsNumber() || !std::isfinite(it->value.GetDouble()))
+            return false;
+
+        coords[i] = it->value.GetDouble();
+        }
+
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// Returns false if the value is not an integer within the int64 range
+//---------------------------------------------------------------------------------------
+bool DoubleToInt64(int64_t& value, double d)
+    {
+    if (!std::isfinite(d) || d != std::trunc(d) || std::fabs(d) >= 9.2e18)
+        return false;
+
+    value = (int64_t) d;
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// Accepts integers, integral reals and decimal integer text. Other values are not truncated to integers.
+//---------------------------------------------------------------------------------------
+bool TryGetInteger(int64_t& value, DbValue const& v)
+    {
+    switch (v.GetValueType())
+        {
+            case DbValueType::IntegerVal:
+                value = v.GetValueInt64();
+                return true;
+            case DbValueType::FloatVal:
+                return DoubleToInt64(value, v.GetValueDouble());
+            case DbValueType::TextVal:
+                {
+                Utf8String str(v.GetValueText());
+                str.Trim();
+                if (str.empty())
+                    return false;
+
+                char* end = nullptr;
+                errno = 0;
+                value = strtoll(str.c_str(), &end, 10);
+                return *end == '\0' && errno == 0;
+                }
+            default:
+                return false;
+        }
+    }
+
+//=======================================================================================
+// Enumerator values of a strict enumeration (the JSON array argument of _ecsql_cast_enum), sorted for lookups
+// @bsiclass
+//=======================================================================================
+struct EnumeratorSet final
+    {
+    bvector<int64_t> m_integers;
+    bvector<Utf8String> m_strings;
+
+    bool ContainsString(Utf8CP str) const
+        {
+        auto it = std::lower_bound(m_strings.begin(), m_strings.end(), str, [] (Utf8StringCR enumerator, Utf8CP value) { return enumerator.compare(value) < 0; });
+        return it != m_strings.end() && 0 == it->compare(str);
+        }
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+bool ParseEnumeratorSet(EnumeratorSet& set, Utf8CP json)
+    {
+    rapidjson::Document doc;
+    if (doc.Parse<rapidjson::kParseIterativeFlag>(json).HasParseError() || !doc.IsArray())
+        return false;
+
+    for (RapidJsonValueCR enumerator : doc.GetArray())
+        {
+        if (enumerator.IsInt64())
+            set.m_integers.push_back(enumerator.GetInt64());
+        else if (enumerator.IsString())
+            set.m_strings.push_back(Utf8String(enumerator.GetString(), enumerator.GetStringLength()));
+        else
+            return false;
+        }
+
+    if (!set.m_integers.empty() && !set.m_strings.empty())
+        return false;
+
+    std::sort(set.m_integers.begin(), set.m_integers.end());
+    std::sort(set.m_strings.begin(), set.m_strings.end());
+    return true;
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+//static
+bvector<ECSqlCastFunc*> const& ECSqlCastFunc::GetFunctions()
+    {
+    static ECSqlCastFunc s_structText(SQLFUNC_ECSqlCast "_struct_text", -1, ComputeStructText, false, true);
+    static ECSqlCastFunc s_pointText(SQLFUNC_ECSqlCast "_pt_text", -1, ComputePointText, false, true);
+    static ECSqlCastFunc s_navigationText(SQLFUNC_ECSqlCast "_nav_text", -1, ComputeNavigationText, false, true);
+    static ECSqlCastFunc s_arrayText(SQLFUNC_ECSqlCast "_arr_text", 2, ComputeArrayText, false, true);
+    static ECSqlCastFunc s_id(SQLFUNC_ECSqlCast "_id", 1, ComputeId, true);
+    static ECSqlCastFunc s_json(SQLFUNC_ECSqlCast "_json", 1, ComputeJson, true);
+    static ECSqlCastFunc s_guid(SQLFUNC_ECSqlCast "_guid", 1, ComputeGuid, true);
+    static ECSqlCastFunc s_base64(SQLFUNC_ECSqlCast "_base64", 1, ComputeBase64);
+    static ECSqlCastFunc s_booleanText(SQLFUNC_ECSqlCast "_bool_text", 1, ComputeBooleanText);
+    static ECSqlCastFunc s_textBoolean(SQLFUNC_ECSqlCast "_text_bool", 1, ComputeTextBoolean, true);
+    static ECSqlCastFunc s_dateTimeText(SQLFUNC_ECSqlCast "_dt_text", 2, ComputeDateTimeText);
+    static ECSqlCastFunc s_textDateTime(SQLFUNC_ECSqlCast "_text_dt", 1, ComputeTextDateTime, true);
+    static ECSqlCastFunc s_geometryText(SQLFUNC_ECSqlCast "_geom_text", 1, ComputeGeometryText);
+    static ECSqlCastFunc s_textPoint(SQLFUNC_ECSqlCast "_text_pt", 3, ComputeTextPoint, true);
+    static ECSqlCastFunc s_enum(SQLFUNC_ECSqlCast "_enum", 2, ComputeEnum, true);
+    static bvector<ECSqlCastFunc*> const s_functions {
+        &s_structText, &s_pointText, &s_navigationText, &s_arrayText, &s_id, &s_json, &s_guid,
+        &s_base64, &s_booleanText, &s_textBoolean, &s_dateTimeText, &s_textDateTime,
+        &s_geometryText, &s_textPoint, &s_enum
+        };
+    return s_functions;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+//static
+Utf8CP ECSqlCastFunc::LayoutDateTime(DateTime::Info const& info)
+    {
+    if (!info.IsValid())
+        return "dtN";
+
+    switch (info.GetComponent())
+        {
+            case DateTime::Component::Date:
+                return "dtD";
+            case DateTime::Component::TimeOfDay:
+                return "dtT";
+            default:
+                break;
+        }
+
+    switch (info.GetKind())
+        {
+            case DateTime::Kind::Utc:
+                return "dtU";
+            case DateTime::Kind::Local:
+                return "dtL";
+            default:
+                return "dtN";
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void ECSqlCastFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
+    {
+    if (nArgs < 1)
+        {
+        SetInputError(ctx);
+        return;
+        }
+
+    DbValue const& value = args[0];
+    if ((!m_handlesNull && value.IsNull()) ||
+        (m_parsesText && value.GetValueType() == DbValueType::TextVal &&
+         memchr(value.GetValueText(), '\0', value.GetValueBytes()) != nullptr))
+        {
+        ctx.SetResultNull();
+        return;
+        }
+
+    m_compute(ctx, nArgs, args);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void ECSqlCastFunc::ComputeStructText(Context& ctx, int nArgs, DbValue* args)
+    {
+    CachedArg<CastLayout> layout(ctx, args, 0, ParseCastLayout);
+    if (layout.Get() == nullptr)
+        {
+        ctx.SetResultError(SQLFUNC_ECSqlCast ": invalid struct layout.");
+        return;
+        }
+
+    rapidjson::StringBuffer buf;
+    JsonWriter w(buf);
+    ColumnRenderer renderer(args, nArgs, 1);
+    bool isNull = true;
+    if (!renderer.Render(w, isNull, *layout.Get(), nullptr) || renderer.GetPosition() != nArgs)
+        {
+        ctx.SetResultError(SQLFUNC_ECSqlCast ": struct value does not match its layout.");
+        return;
+        }
+
+    if (isNull)
+        ctx.SetResultNull();
+    else
+        SetResultText(ctx, buf.GetString(), buf.GetSize());
+    return;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void ECSqlCastFunc::ComputePointText(Context& ctx, int nArgs, DbValue* args)
+    {
+    const int dims = nArgs;
+    if (dims != 2 && dims != 3)
+        {
+        ctx.SetResultError(SQLFUNC_ECSqlCast ": pt_text expects 2 or 3 coordinates.");
+        return;
+        }
+
+    double coords[3];
+    for (int i = 0; i < dims; i++)
+        {
+        if (args[i].IsNull())
+            {
+            ctx.SetResultNull();
+            return;
+            }
+        coords[i] = args[i].GetValueDouble();
+        }
+
+    if (!IsFinitePoint(coords, dims))
+        {
+        ctx.SetResultNull();
+        return;
+        }
+
+    rapidjson::StringBuffer buf;
+    JsonWriter w(buf);
+    WritePoint(w, coords, dims);
+    SetResultText(ctx, buf.GetString(), buf.GetSize());
+    return;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void ECSqlCastFunc::ComputeNavigationText(Context& ctx, int nArgs, DbValue* args)
+    {
+    if (nArgs != 1 && nArgs != 2)
+        {
+        ctx.SetResultError(SQLFUNC_ECSqlCast ": nav_text expects an id and an optional relationship class id.");
+        return;
+        }
+    DbValue const& v = args[0];
+    if (v.IsNull())
+        {
+        ctx.SetResultNull();
+        return;
+        }
+
+    rapidjson::StringBuffer buf;
+    JsonWriter w(buf);
+    w.StartObject();
+    w.Key("Id");
+    WriteId(w, v.GetValueUInt64());
+    if (nArgs > 1 && !args[1].IsNull())
+        {
+        w.Key("RelECClassId");
+        WriteId(w, args[1].GetValueUInt64());
+        }
+    w.EndObject();
+    SetResultText(ctx, buf.GetString(), buf.GetSize());
+    return;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void ECSqlCastFunc::ComputeArrayText(Context& ctx, int nArgs, DbValue* args)
+    {
+    CachedArg<CastLayout> layout(ctx, args, 0, ParseCastLayout);
+    if (layout.Get() == nullptr)
+        {
+        ctx.SetResultError(SQLFUNC_ECSqlCast ": invalid array layout.");
+        return;
+        }
+
+    DbValue const& arr = args[1];
+    rapidjson::Document doc;
+    if (arr.GetValueType() != DbValueType::TextVal || !ParseArrayJson(doc, arr.GetValueText()))
+        {
+        ctx.SetResultNull();
+        return;
+        }
+
+    rapidjson::StringBuffer buf;
+    JsonWriter w(buf);
+    RenderElements(w, *layout.Get(), doc);
+    SetResultText(ctx, buf.GetString(), buf.GetSize());
+    return;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void ECSqlCastFunc::ComputeId(Context& ctx, int nArgs, DbValue* args)
+    {
+    DbValue const& v = args[0];
+    const DbValueType type = v.GetValueType();
+    int64_t intValue = 0;
+    uint64_t id = 0;
+    if (type == DbValueType::IntegerVal)
+        ctx.SetResultInt64(v.GetValueInt64());
+    else if (type == DbValueType::FloatVal && DoubleToInt64(intValue, v.GetValueDouble()))
+        ctx.SetResultInt64(intValue);
+    else if (type == DbValueType::TextVal && ParseIdText(id, v.GetValueText()))
+        ctx.SetResultInt64((int64_t) id);
+    else
+        ctx.SetResultNull();
+    return;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void ECSqlCastFunc::ComputeJson(Context& ctx, int nArgs, DbValue* args)
+    {
+    DbValue const& v = args[0];
+    const DbValueType type = v.GetValueType();
+    if (type != DbValueType::TextVal)
+        {
+        ctx.SetResultNull();
+        return;
+        }
+
+    rapidjson::Reader reader;
+    rapidjson::BaseReaderHandler<> handler;
+    rapidjson::StringStream stream(v.GetValueText());
+    if (reader.Parse<rapidjson::kParseIterativeFlag>(stream, handler).IsError())
+        ctx.SetResultNull();
+    else
+        ctx.SetResultValue(v);
+    return;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void ECSqlCastFunc::ComputeGuid(Context& ctx, int nArgs, DbValue* args)
+    {
+    DbValue const& v = args[0];
+    const DbValueType type = v.GetValueType();
+    if (type == DbValueType::BlobVal && v.GetValueBytes() == (int) sizeof(BeGuid))
+        {
+        ctx.SetResultValue(v);
+        return;
+        }
+
+    static_cast<ScalarFunction&>(StrToGuid::GetSingleton())._ComputeScalar(ctx, nArgs, args);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void ECSqlCastFunc::ComputeBase64(Context& ctx, int nArgs, DbValue* args)
+    {
+    DbValue const& v = args[0];
+    const DbValueType type = v.GetValueType();
+    if (type != DbValueType::BlobVal)
+        {
+        ctx.SetResultValue(v);
+        return;
+        }
+
+    Utf8String base64;
+    Base64Utilities::Encode(base64, (Byte const*) v.GetValueBlob(), (size_t) v.GetValueBytes());
+    SetResultText(ctx, base64.c_str(), base64.size());
+    return;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void ECSqlCastFunc::ComputeBooleanText(Context& ctx, int nArgs, DbValue* args)
+    {
+    DbValue const& v = args[0];
+    const DbValueType type = v.GetValueType();
+    if (type == DbValueType::TextVal)
+        {
+        ctx.SetResultValue(v);
+        return;
+        }
+
+    Utf8CP str = v.GetValueDouble() != 0.0 ? "true" : "false";
+    SetResultText(ctx, str, strlen(str));
+    return;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void ECSqlCastFunc::ComputeTextBoolean(Context& ctx, int nArgs, DbValue* args)
+    {
+    DbValue const& v = args[0];
+    const DbValueType type = v.GetValueType();
+    if (type == DbValueType::IntegerVal || type == DbValueType::FloatVal)
+        {
+        ctx.SetResultInt(v.GetValueDouble() != 0.0 ? 1 : 0);
+        return;
+        }
+
+    if (type != DbValueType::TextVal)
+        {
+        ctx.SetResultNull();
+        return;
+        }
+
+    Utf8String str(v.GetValueText());
+    str.Trim();
+    if (str.EqualsIAscii("true"))
+        ctx.SetResultInt(1);
+    else if (str.EqualsIAscii("false"))
+        ctx.SetResultInt(0);
+    else
+        {
+        // numeric text keeps the legacy semantics (non-zero is true), anything else is invalid
+        char* end = nullptr;
+        const double d = str.empty() ? 0.0 : strtod(str.c_str(), &end);
+        if (str.empty() || end == nullptr || *end != '\0' || !std::isfinite(d))
+            ctx.SetResultNull();
+        else
+            ctx.SetResultInt(d != 0.0 ? 1 : 0);
+        }
+    return;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void ECSqlCastFunc::ComputeDateTimeText(Context& ctx, int nArgs, DbValue* args)
+    {
+    DbValue const& v = args[0];
+    const DbValueType type = v.GetValueType();
+    if (type == DbValueType::TextVal)
+        {
+        ctx.SetResultValue(v);
+        return;
+        }
+
+    DateTime::Info info = DateTime::Info::CreateForDateTime(DateTime::Kind::Unspecified);
+    if (args[1].GetValueType() == DbValueType::TextVal)
+        ParseDateTimeLayout(info, args[1].GetValueText());
+
+    Utf8String str;
+    if (type != DbValueType::BlobVal && JulianDayToText(str, v.GetValueDouble(), info))
+        SetResultText(ctx, str.c_str(), str.size());
+    else
+        ctx.SetResultNull();
+    return;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void ECSqlCastFunc::ComputeTextDateTime(Context& ctx, int nArgs, DbValue* args)
+    {
+    DbValue const& v = args[0];
+    const DbValueType type = v.GetValueType();
+    if (type == DbValueType::IntegerVal || type == DbValueType::FloatVal)
+        {
+        ctx.SetResultValue(v);
+        return;
+        }
+
+    if (type != DbValueType::TextVal)
+        {
+        ctx.SetResultNull();
+        return;
+        }
+
+    DateTime dt = DateTime::FromString(v.GetValueText());
+    double jd = 0;
+    if (!dt.IsValid() || dt.ToJulianDay(jd) != SUCCESS)
+        ctx.SetResultNull();
+    else
+        ctx.SetResultDouble(jd);
+    return;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void ECSqlCastFunc::ComputeGeometryText(Context& ctx, int nArgs, DbValue* args)
+    {
+    DbValue const& v = args[0];
+    const DbValueType type = v.GetValueType();
+    Utf8String json;
+    if (type == DbValueType::BlobVal && GeometryBlobToJson(json, v.GetValueBlob(), v.GetValueBytes()))
+        SetResultText(ctx, json.c_str(), json.size());
+    else
+        ctx.SetResultNull();
+    return;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void ECSqlCastFunc::ComputeTextPoint(Context& ctx, int nArgs, DbValue* args)
+    {
+    DbValue const& v = args[0];
+    const DbValueType type = v.GetValueType();
+    if (type != DbValueType::TextVal)
+        {
+        ctx.SetResultNull();
+        return;
+        }
+
+    const int index = args[1].GetValueInt();
+    const int dims = args[2].GetValueInt();
+    double coords[3];
+    if (index < 0 || index >= dims || dims < 2 || dims > 3 || !ParsePointText(v.GetValueText(), dims, coords))
+        {
+        ctx.SetResultNull();
+        return;
+        }
+
+    ctx.SetResultDouble(coords[index]);
+    return;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void ECSqlCastFunc::ComputeEnum(Context& ctx, int nArgs, DbValue* args)
+    {
+    CachedArg<EnumeratorSet> enumerators(ctx, args, 1, ParseEnumeratorSet);
+    if (enumerators.Get() == nullptr)
+        {
+        ctx.SetResultError(SQLFUNC_ECSqlCast ": invalid enumerator list.");
+        return;
+        }
+
+    DbValue const& v = args[0];
+    EnumeratorSet const& set = *enumerators.Get();
+    int64_t intValue = 0;
+    if (!set.m_strings.empty())
+        {
+        if (v.GetValueType() == DbValueType::TextVal && set.ContainsString(v.GetValueText()))
+            ctx.SetResultValue(v);
+        else
+            ctx.SetResultNull();
+        }
+    else if (TryGetInteger(intValue, v) && std::binary_search(set.m_integers.begin(), set.m_integers.end(), intValue))
+        ctx.SetResultInt64(intValue);
+    else
+        ctx.SetResultNull();
+    return;
+    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

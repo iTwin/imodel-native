@@ -691,9 +691,9 @@ TEST_F(ECSqlSelectPrepareTests, Cast)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT CAST (Dt AS STRING) FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT CAST (L AS STRING) FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT CAST (S AS STRING) FROM ecsql.PSA"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT CAST (P2D AS STRING) FROM ecsql.PSA"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT CAST (P3D AS STRING) FROM ecsql.PSA"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT CAST (PStructProp AS STRING) FROM ecsql.PSA"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT CAST (P2D AS STRING) FROM ecsql.PSA"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT CAST (P3D AS STRING) FROM ecsql.PSA"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT CAST (PStructProp AS STRING) FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT CAST (L AS TEXT) FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT CAST (NULL AS STRING) FROM ecsql.PSA"));
     // EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT CAST (NULL AS STRING[]) FROM ecsql.PSA"));
@@ -703,7 +703,7 @@ TEST_F(ECSqlSelectPrepareTests, Cast)
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT CAST (L AS POINT2D) FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT CAST (I AS POINT2D) FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT CAST (D AS POINT2D) FROM ecsql.PSA"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT CAST (S AS POINT2D) FROM ecsql.PSA"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT CAST (S AS POINT2D) FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT CAST (PStructProp AS POINT2D) FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT CAST (NULL AS POINT2D) FROM ecsql.PSA"));
     // EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT CAST (NULL AS POINT2D[]) FROM ecsql.PSA"));
@@ -713,7 +713,7 @@ TEST_F(ECSqlSelectPrepareTests, Cast)
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT CAST (L AS POINT3D) FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT CAST (I AS POINT3D) FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT CAST (D AS POINT3D) FROM ecsql.PSA"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT CAST (S AS POINT3D) FROM ecsql.PSA"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT CAST (S AS POINT3D) FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT CAST (PStructProp AS POINT3D) FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT CAST (NULL AS POINT3D) FROM ecsql.PSA"));
     // EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT CAST (NULL AS POINT3D[]) FROM ecsql.PSA"));
@@ -723,7 +723,7 @@ TEST_F(ECSqlSelectPrepareTests, Cast)
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT CAST (100000123 AS POINT3D) FROM ecsql.PSA"));
 
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT CAST (L AS ecsql.PStruct) FROM ecsql.PSA"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT CAST (PStructProp AS ecsql.PStruct) FROM ecsql.PSA"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT CAST (PStructProp AS ecsql.PStruct) FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT CAST (PStruct_Array AS PStruct[]) FROM ecsql.PSA")) << "For structs and arrays only CAST (NULL as <>) is supported";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT CAST (NULL AS ecsql.PStruct) FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT CAST (NULL AS [ecsql].[PStruct]) FROM ecsql.PSA"));
@@ -744,7 +744,7 @@ TEST_F(ECSqlSelectPrepareTests, Cast)
     // EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT CAST (NULL AS IGeometry[]) FROM ecsql.PSA"));
     // EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT CAST (Geometry_Array AS IGeometry[]) FROM ecsql.PASpatial")) << "For arrays only CAST (NULL as Type[]) is supported";
 
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT CAST (? AS INT) FROM ecsql.PSA")) << "not yet supported";
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT CAST (? AS INT) FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT CAST (I AS ?) FROM ecsql.PSA")) << "not yet supported";
     }
 
