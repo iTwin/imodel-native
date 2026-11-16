@@ -309,6 +309,11 @@ iModelJsNodeAddonPRG
 | Stale PCH | Delete `<OutRoot>/<arch>/build/<Part>/*.pch` and rebuild. |
 | Stale MultiCompile markers | Delete `*.o`, `*.time`, `*.opt`, `*.rsp` in `<OutRoot>/<arch>/build/<Part>/`. |
 | Symlink conflict (`cacert.pem already linked to...`) | `rm -f <OutRoot>/<arch>/BuildContexts/<Part>/SubParts/Files/<file>` |
+| `BBMake: file [.../SubParts_StaticLibs.a] may be incomplete` | Delete the archives with `rm $(find $OutRoot/LinuxX64/static/build/ -name 'SubParts_StaticLibs.a')` and build again. |
+| `bb pull` hangs at `Pulling Default Tool parts` | The `az` CLI lacks the `azure-devops` extension or it is outdated: `az extension add --name azure-devops`, or `az upgrade`. |
+| Compiler output appears as `b'...'` lines full of escape codes | bb prints clang's colored output as Python bytes literals. Pipe bb's output through a filter that decodes such lines (`ast.literal_eval(line).decode()`). |
+| Tests fail on number or date formatting | Non-US locale. Set `LC_NUMERIC` and `LC_TIME` to `en_US.UTF-8`. |
+| Results look wrong after `bb rebuild` of single parts | Partial rebuilds can leave stale output. Do a clean build of the product: `bb -p <Product> -s iModelCore -f <PartFile> build --tmrbuild --noprompt`. |
 | Node addon not loading | Set `imodeljsDir` to `itwinjs-core` and ensure addon strategy/paths are correct. |
 | Strategy cache stale | Delete `src/bbcache/strategy.cache`. |
 | `Cannot find Part <X>` | Grep `<Part Name=` in the PartFile.xml to confirm exact name. |

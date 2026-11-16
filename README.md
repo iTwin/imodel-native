@@ -80,7 +80,7 @@ imodel-native/
 
 ## Building
 
-The build is driven by **BentleyBuild** (`bb`), an orchestrator that resolves parts across repositories. `imodel-native` does not build on its own - it needs `imodel-native-internal` (build strategies, third-party sources) checked out beside it, plus the toolchain. Getting to that first successful build is covered by the bootstrap guide on the internal wiki; this section assumes you are past it.
+The build is driven by **BentleyBuild** (`bb`), an orchestrator that resolves parts across repositories. `imodel-native` does not build on its own - it needs `imodel-native-internal` (build strategies, third-party sources) checked out beside it, plus the toolchain. Getting to that first successful build is covered by `docs/getting-started.md` in `imodel-native-internal` (Bentley-internal); this section assumes you are past it.
 
 ### Environment
 
@@ -93,6 +93,11 @@ The build is driven by **BentleyBuild** (`bb`), an orchestrator that resolves pa
 | `BuildStrategy` | which parts get built. `iModelCore` for the C++ libraries and their tests; `iModelCore+iModelJsNodeAddon.Dev` to also produce the Node addon |
 | `BuildArchitecture` | `LinuxX64`, `Winx64`, `MacOSARM64`, the Android and iOS variants - `bb -h` lists them all |
 | `BB_PRIMARY_REPO` | `imodel-native-internal` |
+| `DEBUG`, `LLVM_DEBUG` | a debug build; `LLVM_DEBUG=1` adds debug symbols on Linux, macOS and Android |
+| `NDEBUG`, `PRG` | an optimized release build, set both instead of `DEBUG` |
+| `LLVM_DIR` | the LLVM installation. Linux finds LLVM 18, 16 or 13 under `/usr/lib/llvm-<version>`; set it for anything else (`/usr` on Fedora) |
+
+On machines with a non-US locale, set `LC_NUMERIC` and `LC_TIME` to `en_US.UTF-8`, or some tests fail. `GTEST_BRIEF=1` makes test runs print only failures.
 
 ### Commands
 
@@ -114,6 +119,19 @@ bb -p Units-Gtest -s iModelCore -f iModelCore/Units/Units build
 
 Output lands in `$OutRoot/<BuildArchitecture>/Product/<Product>/`.
 
+### Rebuilding single parts
+
+`bb rebuild` (`bb re`) rebuilds named parts, which is much faster than a full build while iterating. A part is `<PartFile>:<Part>`; the part file is the `.PartFile.xml` nearest to the source you changed, and `*` matches all of its parts:
+
+```sh
+bb re iModelPlatform:*                 # all parts of iModelPlatform.PartFile.xml
+bb re iModelPlatform:iModelPlatformDLL # one part
+bb re -D iModelPlatform:*              # also rebuild everything that depends on it
+bb re -c -D iModelPlatform:*           # clean first
+```
+
+A failed build prints the exact `bb re` command for the part that failed. Rebuilding dependents with `-D` is sometimes needed to get working debug symbols. Partial rebuilds can leave stale output behind; when results look wrong, fall back to a clean build of the product you need, for example `bb -p ECDb-Gtest -s iModelCore -f iModelCore/ECDb/ECDb build --tmrbuild --noprompt`.
+
 ## Tests
 
 Each module owns a GoogleTest executable, built as its own product.
@@ -130,7 +148,17 @@ Each module owns a GoogleTest executable, built as its own product.
 | `ECPresentation-Gtest` | `ECPresentationTest` | `iModelCore/ECPresentation/Tests/` |
 | `iModelPlatform-Gtest` | `iModelPlatformTest` | `iModelCore/iModelPlatform/Tests/DgnProject/` |
 
-There are matching `-Performance` products for ECDb, ECObjects and iModelPlatform, a `GeoCoord-ExtensiveGTest`, and an `ECPresentation` stress product. None of them run in a normal build.
+There are performance test products, a `GeoCoord-ExtensiveGTest`, and an `ECPresentation` stress product. None of them run in a normal build. The performance products build like the others:
+
+| Product | Part file (`-f`) |
+|---|---|
+| `ECDb-Gtest-Performance` | `iModelCore/ECDb/ECDb` |
+| `ECObjects-PerformanceGtest` | `iModelCore/ecobjects/ECObjects` |
+| `iModelPlatform-Gtest-Performance` | `iModelCore/iModelPlatform/iModelPlatform` |
+| `ECPresentation-Gtest-Performance` | `iModelCore/ECPresentation/ECPresentation` |
+| `Units-Gtest-Performance` | `iModelCore/Units/Units` |
+
+`.vscode/launch.json` has entries to run the first four.
 
 Build one and run it:
 
@@ -204,6 +232,19 @@ npm test
 ## System Proxies
 
 The imodel-native backend detects the system proxy configuration on Windows, macOS, and iOS, and it automatically uses this when doing SQLite downloads from remote servers. This includes support for Proxy Auto-Config (PAC) scripts. None of this is supported on the Linux and Android backends.
+
+[iModelCore/BeSQLite/ProxiesAndCertificates.md](iModelCore/BeSQLite/ProxiesAndCertificates.md) covers transparent proxies, certificate trust and how to test them.
+
+## Further documentation
+
+- [docs/debugging-and-profiling.md](docs/debugging-and-profiling.md): debuggers, CPU and memory profiling, binary size, clangd
+- [iModelCore/iModelPlatform/iModelConsole/README.md](iModelCore/iModelPlatform/iModelConsole/README.md): interactive console, shows the SQL generated for ECSQL
+- [iModelCore/ECDb/ECDb/ECSql/Parser/README.md](iModelCore/ECDb/ECDb/ECSql/Parser/README.md): changing the ECSQL grammar
+- [iModelCore/ECDb/ProfileVersion.md](iModelCore/ECDb/ProfileVersion.md): changing the ECDb profile version
+- [iModelCore/ECDb/CHANGES.md](iModelCore/ECDb/CHANGES.md): ECSQL and file format changes
+- [iModelCore/BeSQLite/SQLite/README.md](iModelCore/BeSQLite/SQLite/README.md): updating SQLite and CloudSqlite
+- [iModelCore/libsrc/README.md](iModelCore/libsrc/README.md) and [VCPKG.md](iModelCore/libsrc/VCPKG.md): third-party libraries
+- [schemas/BisSchemas/README.md](schemas/BisSchemas/README.md): which BIS schema versions the build delivers
 
 ## Related Repositories
 
