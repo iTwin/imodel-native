@@ -663,20 +663,19 @@ Utf8String GetArrayElementLayout(ECSqlTypeInfo const& arrayType)
     }
 
 //---------------------------------------------------------------------------------------
+// The SQLite storage type of a column mapped to a class property matches its ECSQL type.
+// Computed values, including subquery, CTE and compound select columns, can hold any storage type.
 // @bsimethod
 //---------------------------------------------------------------------------------------
-Utf8String ToSqlLiteral(Utf8StringCR str)
+bool IsMappedPropertyColumn(ValueExp const& exp)
     {
-    Utf8String literal("'");
-    for (Utf8Char c : str)
-        {
-        if (c == '\'')
-            literal.append("''");
-        else
-            literal.push_back(c);
-        }
-    literal.append("'");
-    return literal;
+    if (exp.GetType() != Exp::Type::PropertyName)
+        return false;
+
+    // same dispatch as ECSqlPropertyNameExpPreparer::Prepare
+    PropertyNameExp const& propNameExp = exp.GetAs<PropertyNameExp>();
+    RangeClassRefExp const* classRef = propNameExp.GetClassRefExp();
+    return !propNameExp.IsPropertyRef() && !propNameExp.IsVirtualProperty() && classRef != nullptr && classRef->GetType() == Exp::Type::ClassName;
     }
 
 //---------------------------------------------------------------------------------------
@@ -725,19 +724,19 @@ ECSqlStatus ECSqlExpPreparer::PrepareCastExpToString(Utf8StringR sql, ECSqlPrepa
         AppendStructLayout(layout, columnCount, sourceType.GetStructType());
         if (columnCount != (int) operandSnippets.size())
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0758,
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0757,
                 "Cannot convert struct value to TEXT in '%s': the struct value has an unexpected number of SQL columns (%d instead of %d).",
                 exp.ToECSql().c_str(), (int) operandSnippets.size(), columnCount);
             return ECSqlStatus::InvalidECSql;
             }
 
-        sql.Sprintf(SQLFUNC_ECSqlCast "_struct_text(%s,%s)", ToSqlLiteral(layout).c_str(), JoinSnippets(operandSnippets).c_str());
+        sql.Sprintf(SQLFUNC_ECSqlCast "_struct_text('%s',%s)", LiteralValueExp::EscapeStringLiteral(layout).c_str(), JoinSnippets(operandSnippets).c_str());
         return ECSqlStatus::Success;
         }
 
     if (sourceType.IsArray())
         {
-        sql.Sprintf(SQLFUNC_ECSqlCast "_arr_text(%s,%s)", ToSqlLiteral(GetArrayElementLayout(sourceType)).c_str(), first.c_str());
+        sql.Sprintf(SQLFUNC_ECSqlCast "_arr_text('%s',%s)", LiteralValueExp::EscapeStringLiteral(GetArrayElementLayout(sourceType)).c_str(), first.c_str());
         return ECSqlStatus::Success;
         }
 
@@ -838,18 +837,20 @@ ECSqlStatus ECSqlExpPreparer::PrepareCastExp(NativeSqlBuilder::List& nativeSqlSn
 
     Utf8StringCR first = operandSnippets[0].GetSql();
     Utf8String sql;
+    // Computed values can be text or integral reals even when typed as integers (e.g. compound selects), so they are converted.
+    const bool convertToId = !isParameter && (sourceType.IsString() || !IsMappedPropertyColumn(*castOperand));
     switch (exp.GetSpecialTarget())
         {
             case CastExp::SpecialTarget::IdFamily:
-                if (sourceType.IsString())
+                if (convertToId)
                     sql.Sprintf(SQLFUNC_ECSqlCast "_id(%s)", first.c_str());
                 else
-                    sql = first; //integers, parameters, and the Id of a navigation value
+                    sql = first; //mapped integer columns, parameters, and the Id column of a mapped navigation property
                 pushSnippet(sql);
                 return ECSqlStatus::Success;
 
             case CastExp::SpecialTarget::ClassName:
-                if (sourceType.IsString())
+                if (convertToId)
                     sql.Sprintf(SQLFUNC_ClassName "(" SQLFUNC_ECSqlCast "_id(%s),0)", first.c_str());
                 else
                     sql.Sprintf(SQLFUNC_ClassName "(%s,0)", first.c_str());
@@ -873,8 +874,9 @@ ECSqlStatus ECSqlExpPreparer::PrepareCastExp(NativeSqlBuilder::List& nativeSqlSn
                 break;
         }
 
-    // Enum parameters still need membership validation after binding.
-    if ((isParameter && !targetType.IsEnum()) || targetType.IsStruct() || targetType.IsArray())
+    const bool isDateOnlyTarget = targetType.IsDateTime() && targetType.GetDateTimeInfo().IsValid() && targetType.GetDateTimeInfo().GetComponent() == DateTime::Component::Date;
+    // Enum parameters still need membership validation and DATE parameters truncation after binding.
+    if ((isParameter && !targetType.IsEnum() && !isDateOnlyTarget) || targetType.IsStruct() || targetType.IsArray())
         return passThrough();
 
     BeAssert(targetType.IsPrimitive());
@@ -918,27 +920,36 @@ ECSqlStatus ECSqlExpPreparer::PrepareCastExp(NativeSqlBuilder::List& nativeSqlSn
         if (sourceType == targetType && !isParameter)
             return passThrough();
 
-        if (SUCCESS != PrepareCastExpForPrimitive(sql, targetPrimType, first))
-            return ECSqlStatus::Error;
-
-        if (targetEnum->GetIsStrict())
+        if (!targetEnum->GetIsStrict())
             {
-            // integer enums validate the original value so that e.g. 'abc' or 1.7 do not match after a lossy integer conversion
-            if (targetPrimType == PRIMITIVETYPE_Integer)
-                sql = first;
+            if (SUCCESS != PrepareCastExpForPrimitive(sql, targetPrimType, first))
+                return ECSqlStatus::Error;
 
-            Utf8String values;
-            for (ECEnumeratorCP enumerator : targetEnum->GetEnumerators())
-                {
-                if (enumerator->IsInteger())
-                    values.append(",").append(Utf8PrintfString("%d", enumerator->GetInteger()));
-                else
-                    values.append(",").append(ToSqlLiteral(enumerator->GetString()));
-                }
-
-            sql = Utf8PrintfString(SQLFUNC_ECSqlCast "_enum(%s%s)", sql.c_str(), values.c_str());
+            pushSnippet(sql);
+            return ECSqlStatus::Success;
             }
 
+        // integer enums validate the original value so that e.g. 'abc' or 1.7 do not match after a lossy integer conversion
+        Utf8String operand;
+        if (targetPrimType == PRIMITIVETYPE_Integer)
+            operand = first;
+        else if (SUCCESS != PrepareCastExpForPrimitive(operand, targetPrimType, first))
+            return ECSqlStatus::Error;
+
+        // a single JSON array argument, as enumerations can have more enumerators than SQLite allows function arguments
+        rapidjson::StringBuffer enumerators;
+        rapidjson::Writer<rapidjson::StringBuffer> writer(enumerators);
+        writer.StartArray();
+        for (ECEnumeratorCP enumerator : targetEnum->GetEnumerators())
+            {
+            if (enumerator->IsInteger())
+                writer.Int(enumerator->GetInteger());
+            else
+                writer.String(enumerator->GetString().c_str(), (rapidjson::SizeType) enumerator->GetString().size());
+            }
+        writer.EndArray();
+
+        sql.Sprintf(SQLFUNC_ECSqlCast "_enum(%s,'%s')", operand.c_str(), LiteralValueExp::EscapeStringLiteral(enumerators.GetString()).c_str());
         pushSnippet(sql);
         return ECSqlStatus::Success;
         }
@@ -951,6 +962,10 @@ ECSqlStatus ECSqlExpPreparer::PrepareCastExp(NativeSqlBuilder::List& nativeSqlSn
         sql = first;
     else if (SUCCESS != PrepareCastExpForPrimitive(sql, targetPrimType, first))
         return ECSqlStatus::Error;
+
+    // DATE drops the time of day: the julian day of the preceding midnight
+    if (isDateOnlyTarget)
+        sql = Utf8PrintfString("(floor(%s - 0.5) + 0.5)", sql.c_str());
 
     pushSnippet(sql);
     return ECSqlStatus::Success;
@@ -1969,6 +1984,11 @@ ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp(NativeSqlBuilder::List& nat
     if (functionName.EqualsIAscii("sha3_query") || functionName.EqualsIAscii("fts3_tokenizer")) {
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0524,
             "Failed to prepare function with name '%s': Function is not supported in ECSQL.", functionName.c_str());
+        return ECSqlStatus::InvalidECSql;
+    }
+    if (functionName.StartsWithIAscii(SQLFUNC_ECSqlCast)) {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0524,
+            "Failed to prepare function with name '%s': Function is internal to ECDb and is not supported in ECSQL.", functionName.c_str());
         return ECSqlStatus::InvalidECSql;
     }
     if (ctx.GetECDb().GetECSqlConfig().GetDisableFunctions().Exists(functionName)) {

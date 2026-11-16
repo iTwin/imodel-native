@@ -14342,6 +14342,17 @@ TEST_F(ECSqlStatementTestFixture, ExtendedCast_SyntaxAndPrimitives)
         EXPECT_TRUE(Utf8String(stmt.GetValueText(2)).StartsWith("2020-01-02T03:04:05")) << stmt.GetValueText(2);
         }
 
+    // DATE drops the time of day
+    EXPECT_STREQ("y", h.Text("SELECT IIF(CAST('2020-01-02T03:04:05' AS DATE) = DATE '2020-01-02', 'y', 'n')").c_str());
+    EXPECT_STREQ("y", h.Text("SELECT IIF(CAST(TIMESTAMP '2020-01-02T23:59:59' AS DATE) = DATE '2020-01-02', 'y', 'n')").c_str());
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT IIF(CAST(? AS DATE) = DATE '2020-01-02', 'y', 'n')")) << h.LastIssue();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindDateTime(1, DateTime(DateTime::Kind::Unspecified, 2020, 1, 2, 3, 4, 5)));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_STREQ("y", stmt.GetValueText(0));
+        }
+
     // text -> point
         {
         ECSqlStatement stmt;
@@ -14438,6 +14449,26 @@ TEST_F(ECSqlStatementTestFixture, ExtendedCast_IdAndClassName)
         EXPECT_STREQ("Id", ExtendedCastHelper::ExtendedType(stmt, 0).c_str()) << ecsql;
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << ecsql;
         EXPECT_EQ(21, stmt.GetValueInt64(0)) << ecsql;
+        }
+
+    // computed values typed as integers can hold text or integral reals, so they are converted too
+        {
+        Utf8PrintfString ecsql("SELECT v::Id, v::ClassName FROM (SELECT 1 v UNION ALL SELECT '%s' UNION ALL SELECT %s.0 UNION ALL SELECT 1.5)",
+                               schemaDef->GetId().ToHexStr().c_str(), schemaDef->GetId().ToString().c_str());
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str())) << ecsql << h.LastIssue();
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_EQ(1, stmt.GetValueInt64(0));
+        for (int i = 0; i < 2; ++i)
+            {
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+            EXPECT_EQ((int64_t) schemaDef->GetId().GetValue(), stmt.GetValueInt64(0)) << "row " << i + 2;
+            EXPECT_STREQ("ECDbMeta:ECSchemaDef", stmt.GetValueText(1)) << "row " << i + 2;
+            }
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_TRUE(stmt.IsValueNull(0));
+        EXPECT_TRUE(stmt.IsValueNull(1));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         }
     }
 
@@ -14666,6 +14697,36 @@ TEST_F(ECSqlStatementTestFixture, ExtendedCast_ECDataToText)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, ExtendedCast_StrictEnumerations)
+    {
+    // more enumerators than SQLite allows function arguments
+    Utf8String enumerators;
+    for (int i = 1; i <= 1500; ++i)
+        enumerators.append(Utf8PrintfString("<ECEnumerator name=\"E%d\" value=\"%d\" />", i, i));
+
+    Utf8PrintfString schemaXml(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEnumeration typeName="Big" backingTypeName="int" isStrict="true">%s</ECEnumeration>
+            <ECEnumeration typeName="Quoted" backingTypeName="string" isStrict="true">
+                <ECEnumerator name="Apostrophe" value="it's" />
+                <ECEnumerator name="Backslash" value="a\b" />
+            </ECEnumeration>
+        </ECSchema>)xml", enumerators.c_str());
+    ASSERT_EQ(SUCCESS, SetupECDb("extendedcastenums.ecdb", SchemaItem(schemaXml)));
+    ExtendedCastHelper h(m_ecdb);
+
+    EXPECT_STREQ("1", h.Text("SELECT 1::ts.Big").c_str());
+    EXPECT_STREQ("1500", h.Text("SELECT 1500::ts.Big").c_str());
+    EXPECT_STREQ("<null>", h.Text("SELECT 1501::ts.Big").c_str());
+
+    // enumerator values are escaped in the generated SQL
+    EXPECT_STREQ("it's", h.Text("SELECT 'it''s'::ts.Quoted").c_str());
+    EXPECT_STREQ("a\\b", h.Text("SELECT 'a\\b'::ts.Quoted").c_str());
+    EXPECT_STREQ("<null>", h.Text("SELECT 'its'::ts.Quoted").c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, ExtendedCast_CompoundAndScalarSubquery)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("extendedcastcompound.ecdb"));
@@ -14858,11 +14919,24 @@ TEST_F(ECSqlStatementTestFixture, ExtendedCast_InternalFunctionAndMalformedInput
                        "SELECT _ecsql_cast_struct_text(NULL, 1)",
                        "SELECT _ecsql_cast_arr_text(NULL, '[1]')",
                        "SELECT _ecsql_cast_pt_text(1)",
-                       "SELECT _ecsql_cast_nav_text(1, 2, 3)"})
+                       "SELECT _ecsql_cast_nav_text(1, 2, 3)",
+                       "SELECT _ecsql_cast_enum(1, '[1,')",
+                       "SELECT _ecsql_cast_enum(1, '{}')",
+                       "SELECT _ecsql_cast_enum(1, '[1,\"a\"]')",
+                       "SELECT _ecsql_cast_enum(1, '[1.5]')",
+                       "SELECT _ecsql_cast_enum(1, NULL)"})
         {
         Statement stmt;
         ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, sql)) << sql;
         EXPECT_NE(BE_SQLITE_ROW, stmt.Step()) << sql;
+        }
+
+    // string struct members can contain NUL characters
+        {
+        Statement stmt;
+        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT _ecsql_cast_struct_text('{\"m\":[[\"s\",\"str\"]]}', 'a' || CHAR(0) || 'b')"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_STREQ(R"({"s":"a\u0000b"})", stmt.GetValueText(0));
         }
 
     // deeply nested JSON input is handled without recursion

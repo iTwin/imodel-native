@@ -639,7 +639,7 @@ Exp::FinalizeParseStatus CastExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
 
     if (!IsSupportedConversion(sourceType, GetTypeInfo(), m_specialTarget))
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0754,
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0274,
             "Casting from '%s' to '%s' is not supported: '%s'.", TypeToString(sourceType).c_str(), TypeToString(GetTypeInfo()).c_str(), ToECSql().c_str());
         return FinalizeParseStatus::Error;
         }
@@ -1174,13 +1174,6 @@ Exp::FinalizeParseStatus FunctionCallExp::_FinalizeParsing(ECSqlParseContext& ct
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         {
         return FinalizeParseStatus::NotCompleted;
-        }
-
-    if (m_functionName.StartsWithIAscii(SQLFUNC_ECSqlCast))
-        {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0757,
-            "Function '%s' is internal to ECDb and cannot be called from ECSQL.", m_functionName.c_str());
-        return FinalizeParseStatus::Error;
         }
 
     DetermineReturnType(ctx.GetECDb());
