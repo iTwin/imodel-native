@@ -120,6 +120,15 @@ describe("Names that are members of Object.prototype", () => {
       }
     }
 
+    function newElementProps(): PhysicalElementProps {
+      return {
+        classFullName: "PrototypeNames:__proto__",
+        model: firstId("SELECT ECInstanceId FROM bis.PhysicalModel LIMIT 1"),
+        category: firstId("SELECT ECInstanceId FROM bis.SpatialCategory LIMIT 1"),
+        code: Code.createEmpty(),
+      };
+    }
+
     it("returns class metadata with all properties as own properties", () => {
       const metaData = db.getECClassMetaData("PrototypeNames", "__proto__");
       expect(metaData.error).to.be.undefined;
@@ -133,10 +142,7 @@ describe("Names that are members of Object.prototype", () => {
     it("inserts and loads element properties as own properties", () => {
       // Parsing JSON text makes `__proto__` an own key, and spreading keeps it as one.
       const props: PhysicalElementProps = {
-        classFullName: "PrototypeNames:__proto__",
-        model: firstId("SELECT ECInstanceId FROM bis.PhysicalModel LIMIT 1"),
-        category: firstId("SELECT ECInstanceId FROM bis.SpatialCategory LIMIT 1"),
-        code: Code.createEmpty(),
+        ...newElementProps(),
         ...JSON.parse(`{ "__proto__": "first", "constructor": "second" }`),
       };
       const id = db.insertElement(props);
@@ -153,10 +159,7 @@ describe("Names that are members of Object.prototype", () => {
         public get degrees() { return 90; }
       }
       const props: PhysicalElementProps = {
-        classFullName: "PrototypeNames:__proto__",
-        model: firstId("SELECT ECInstanceId FROM bis.PhysicalModel LIMIT 1"),
-        category: firstId("SELECT ECInstanceId FROM bis.SpatialCategory LIMIT 1"),
-        code: Code.createEmpty(),
+        ...newElementProps(),
         placement: { origin: [0, 0, 0], angles: { yaw: new AngleWithGetter() } },
       };
       const id = db.insertElement(props);
@@ -166,12 +169,7 @@ describe("Names that are members of Object.prototype", () => {
     });
 
     it("updates an element from frozen props", () => {
-      const id = db.insertElement({
-        classFullName: "PrototypeNames:__proto__",
-        model: firstId("SELECT ECInstanceId FROM bis.PhysicalModel LIMIT 1"),
-        category: firstId("SELECT ECInstanceId FROM bis.SpatialCategory LIMIT 1"),
-        code: Code.createEmpty(),
-      });
+      const id = db.insertElement(newElementProps());
 
       // updateElement writes classFullName and model into the props it receives. On a frozen object these writes are ignored.
       const props = { ...db.getElement({ id }), userLabel: "frozen" };

@@ -73,7 +73,7 @@ protected:
     virtual void removeMember(Utf8CP name) override { GetObject().Delete(name); }
     virtual bool hasMember(Utf8CP name) const override {
         auto obj = GetObject();
-        return obj.Has(name) && !IsInheritedFromObjectPrototype(obj, name, obj.Get(name));
+        return obj.HasOwnProperty(name) || (obj.Has(name) && !IsPlainObject(obj));
     }
     virtual bool isMember(Utf8CP name) const override {
         auto obj = GetObject();
