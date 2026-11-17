@@ -78,23 +78,29 @@ if (process.env.IMODELJS_NATIVE_OVERRIDE !== undefined) {
   // We have to run npm install in a temp directory. If we try to run it in the current directory,
   // it will fight over a (file?) lock that the parent npm install holds.
   // Note that we have to copy the current package.json to the temp directory, or else npm install will object.
-  const installDir = path.join(os.tmpdir(), `install-imodeljs-native@${version}`);
-  try { fs.mkdirSync(installDir); } catch (err) { }
-  fs.copyFileSync(path.join(__dirname, "package.json"), path.join(installDir, "package.json"));
-
   // We will then copy the results of the install from the temp directory into sub-directories below this one.
   function installNativePackage() {
     checkSupportedPlatform();
 
-  // This platform is supported. Try to install the appropriate addon package.
-  const cmdLine = `npm install --no-save @bentley/imodeljs-${process.platform}-${process.arch}@${version}`;
+    // mkdtempSync always creates a new, uniquely named directory owned by the current user, so a directory
+    // pre-created by another user in a shared temp folder can never be reused.
+    const installDir = fs.mkdtempSync(path.join(os.tmpdir(), `install-imodeljs-native@${version}-`));
+    fs.copyFileSync(path.join(__dirname, "package.json"), path.join(installDir, "package.json"));
+
+    // This platform is supported. Try to install the appropriate addon package.
+    // The addon package is a prebuilt binary and never needs lifecycle scripts to run.
+    const cmdLine = `npm install --no-save --ignore-scripts @bentley/imodeljs-${process.platform}-${process.arch}@${version}`;
     console.log(cmdLine);
     exec(cmdLine, { cwd: installDir }, (error, stdout, stderr) => {
-      if (error)
-        throw error;
-      console.log(stdout);
-      console.log(stderr);
-      copyFolderRecursiveSync(path.join(installDir, "node_modules", "@bentley"), __dirname);
+      try {
+        if (error)
+          throw error;
+        console.log(stdout);
+        console.log(stderr);
+        copyFolderRecursiveSync(path.join(installDir, "node_modules", "@bentley"), __dirname);
+      } finally {
+        fs.rmSync(installDir, { recursive: true, force: true });
+      }
     });
   }
 
