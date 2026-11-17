@@ -85,23 +85,30 @@ if (process.env.IMODELJS_NATIVE_OVERRIDE !== undefined) {
     // mkdtempSync always creates a new, uniquely named directory owned by the current user, so a directory
     // pre-created by another user in a shared temp folder can never be reused.
     const installDir = fs.mkdtempSync(path.join(os.tmpdir(), `install-imodeljs-native@${version}-`));
-    fs.copyFileSync(path.join(__dirname, "package.json"), path.join(installDir, "package.json"));
+    const removeInstallDir = () => fs.rmSync(installDir, { recursive: true, force: true });
 
-    // This platform is supported. Try to install the appropriate addon package.
-    // The addon package is a prebuilt binary and never needs lifecycle scripts to run.
-    const cmdLine = `npm install --no-save --ignore-scripts @bentley/imodeljs-${process.platform}-${process.arch}@${version}`;
-    console.log(cmdLine);
-    exec(cmdLine, { cwd: installDir }, (error, stdout, stderr) => {
-      try {
-        if (error)
-          throw error;
-        console.log(stdout);
-        console.log(stderr);
-        copyFolderRecursiveSync(path.join(installDir, "node_modules", "@bentley"), __dirname);
-      } finally {
-        fs.rmSync(installDir, { recursive: true, force: true });
-      }
-    });
+    try {
+      fs.copyFileSync(path.join(__dirname, "package.json"), path.join(installDir, "package.json"));
+
+      // This platform is supported. Try to install the appropriate addon package.
+      // The addon package is a prebuilt binary and never needs lifecycle scripts to run.
+      const cmdLine = `npm install --no-save --ignore-scripts @bentley/imodeljs-${process.platform}-${process.arch}@${version}`;
+      console.log(cmdLine);
+      exec(cmdLine, { cwd: installDir }, (error, stdout, stderr) => {
+        try {
+          if (error)
+            throw error;
+          console.log(stdout);
+          console.log(stderr);
+          copyFolderRecursiveSync(path.join(installDir, "node_modules", "@bentley"), __dirname);
+        } finally {
+          removeInstallDir();
+        }
+      });
+    } catch (err) {
+      removeInstallDir();
+      throw err;
+    }
   }
 
   installNativePackage();
