@@ -382,7 +382,10 @@ inline bool NapiValueRef::IsPlainObject(Napi::Object obj) {
 inline NapiValueRef& NapiValueRef::GetObjectMember(Utf8CP member, bool constVal) const {
     auto obj = GetObject();
     auto val = obj.Get(member);
-    bool shadowsInheritedMember = !IsBlank(val) && !obj.HasOwnProperty(member) && IsPlainObject(obj);
+    // Everything a plain object inherits from Object.prototype is a function, except "__proto__". Checking that first keeps
+    // the HasOwnProperty call off the common path.
+    bool shadowsInheritedMember = !IsBlank(val) && (val.IsFunction() || 0 == strcmp(member, "__proto__"))
+        && !obj.HasOwnProperty(member) && IsPlainObject(obj);
     if (shadowsInheritedMember)
         val = obj.Env().Undefined();
     if (constVal && (val.IsEmpty() || val.IsUndefined()))
