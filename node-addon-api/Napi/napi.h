@@ -55,6 +55,7 @@ protected:
         return m_napiVal.As<Napi::Array>();
     }
     static bool IsPlainObject(Napi::Object obj);
+    static bool IsInheritedFromObjectPrototype(Napi::Object obj, Utf8CP name, Napi::Value val);
     NapiValueRef& GetObjectMember(Utf8CP member, bool constVal) const;
     NapiValueRef& GetArrayMember(ArrayIndex index, bool constVal) const;
     virtual NapiValueRef* AsNapiValueRef() override {return this;}
@@ -72,11 +73,12 @@ protected:
     virtual void removeMember(Utf8CP name) override { GetObject().Delete(name); }
     virtual bool hasMember(Utf8CP name) const override {
         auto obj = GetObject();
-        return obj.HasOwnProperty(name) || (obj.Has(name) && !IsPlainObject(obj));
+        return obj.Has(name) && !IsInheritedFromObjectPrototype(obj, name, obj.Get(name));
     }
     virtual bool isMember(Utf8CP name) const override {
         auto obj = GetObject();
-        return !IsBlank(obj.Get(name)) && (obj.HasOwnProperty(name) || !IsPlainObject(obj));
+        auto val = obj.Get(name);
+        return !IsBlank(val) && !IsInheritedFromObjectPrototype(obj, name, val);
     }
     virtual bool isNull() const override { return IsBlank(m_napiVal); }
     virtual bool isBool() const override { return m_napiVal.IsBoolean(); }
@@ -379,13 +381,17 @@ inline bool NapiValueRef::IsPlainObject(Napi::Object obj) {
     return Napi::Value(env, prototypeOfPrototype).IsNull();
 }
 
+// True when `val`, read from obj[name], comes from Object.prototype and `obj` is a plain object, so the member counts as absent.
+inline bool NapiValueRef::IsInheritedFromObjectPrototype(Napi::Object obj, Utf8CP name, Napi::Value val) {
+    // Everything a plain object inherits from Object.prototype is a function, except "__proto__". Checking that first keeps
+    // the HasOwnProperty call off the common path.
+    return !IsBlank(val) && (val.IsFunction() || 0 == strcmp(name, "__proto__")) && !obj.HasOwnProperty(name) && IsPlainObject(obj);
+}
+
 inline NapiValueRef& NapiValueRef::GetObjectMember(Utf8CP member, bool constVal) const {
     auto obj = GetObject();
     auto val = obj.Get(member);
-    // Everything a plain object inherits from Object.prototype is a function, except "__proto__". Checking that first keeps
-    // the HasOwnProperty call off the common path.
-    bool shadowsInheritedMember = !IsBlank(val) && (val.IsFunction() || 0 == strcmp(member, "__proto__"))
-        && !obj.HasOwnProperty(member) && IsPlainObject(obj);
+    bool shadowsInheritedMember = IsInheritedFromObjectPrototype(obj, member, val);
     if (shadowsInheritedMember)
         val = obj.Env().Undefined();
     if (constVal && (val.IsEmpty() || val.IsUndefined()))

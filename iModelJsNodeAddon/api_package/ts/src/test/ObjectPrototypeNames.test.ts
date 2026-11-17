@@ -91,6 +91,7 @@ describe("Names that are members of Object.prototype", () => {
           <ECEntityClass typeName="__proto__">
             <BaseClass>bis:PhysicalElement</BaseClass>
             <ECProperty propertyName="__proto__" typeName="string"/>
+            <ECProperty propertyName="constructor" typeName="string"/>
           </ECEntityClass>
           <ECEntityClass typeName="constructor"><BaseClass>__proto__</BaseClass></ECEntityClass>
           <ECStructClass typeName="toString"/>
@@ -118,6 +119,33 @@ describe("Names that are members of Object.prototype", () => {
         stmt.dispose();
       }
     }
+
+    it("returns class metadata with all properties as own properties", () => {
+      const metaData = db.getECClassMetaData("PrototypeNames", "__proto__");
+      expect(metaData.error).to.be.undefined;
+
+      const properties: object = JSON.parse(metaData.result!).properties;
+      expect(Object.getPrototypeOf(properties)).to.equal(Object.prototype);
+      expect(Object.keys(properties).sort()).to.deep.equal(["__proto__", "constructor"]);
+      expect(Object.getOwnPropertyDescriptor(properties, "__proto__")?.value).to.have.property("primitiveType");
+    });
+
+    it("inserts and loads element properties as own properties", () => {
+      // Parsing JSON text makes `__proto__` an own key, and spreading keeps it as one.
+      const props: PhysicalElementProps = {
+        classFullName: "PrototypeNames:__proto__",
+        model: firstId("SELECT ECInstanceId FROM bis.PhysicalModel LIMIT 1"),
+        category: firstId("SELECT ECInstanceId FROM bis.SpatialCategory LIMIT 1"),
+        code: Code.createEmpty(),
+        ...JSON.parse(`{ "__proto__": "first", "constructor": "second" }`),
+      };
+      const id = db.insertElement(props);
+
+      const element = db.getElement({ id });
+      expect(Object.getPrototypeOf(element)).to.equal(Object.prototype);
+      expect(Object.getOwnPropertyDescriptor(element, "__proto__")?.value).to.equal("first");
+      expect(Object.getOwnPropertyDescriptor(element, "constructor")?.value).to.equal("second");
+    });
 
     it("reads members that a class instance inherits from its class", () => {
       // Angles are read through their "degrees" member. Here it is a getter on the class, as on core-geometry's Angle.
