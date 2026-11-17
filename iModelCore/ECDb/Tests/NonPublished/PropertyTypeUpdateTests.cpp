@@ -3320,5 +3320,118 @@ TEST_F(PropertyTypeUpdateTests, TypeChangeWithDoNotCreateOrUpdateDataTablesIsRej
         SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::DoNotCreateOrUpdateDataTables);
     }
 
+//***************************************************************************************
+// How the type-change results look to API consumers.
+// VerifyData only covers the JSON adapter reading every row back.
+// The tests below look at the same rows through other modes like statement metadata, 
+// raw value access, filters, ordering, aggregates and writes.
+//***************************************************************************************
+
+//---------------------------------------------------------------------------------------
+// Stored: ISO 8601 text in a column without affinity. After the change ECDb reads the column
+// as julian days. SQLite converts text to a number by its numeric prefix ("2020-03-10..." -> 2020)
+// and, in comparisons, orders every TEXT value above every REAL value.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyTypeUpdateTests, ApiView_StringToDateTime)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+    SeedWidgetNames([] (int index) { return Utf8PrintfString("2020-03-%02dT10:30:00.000Z", 10 + index); });
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    ChangePropertyType(schemaXml, "Widget", "Name", "string", "dateTime");
+    ExpectAccepted(schemaXml, SchemaVersionChange::Major, ExpectedDataChanges().ConvertValuesOf("TestSchema:Widget", "Name", StringReadAsDateTime));
+
+    auto countRows = [&] (Utf8CP ecsql, std::function<void(ECSqlStatement&)> bind = nullptr)
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql)) << ecsql;
+        if (bind)
+            bind(stmt);
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step()) << ecsql;
+        return stmt.GetValueInt(0);
+        };
+    const int rowCount = countRows("SELECT COUNT(*) FROM ts.Widget");
+    ASSERT_GT(rowCount, 0);
+
+    // 1. Statement metadata
+    ECInstanceId firstId;
+    Utf8String firstStoredText;
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, Name FROM ts.Widget ORDER BY ECInstanceId"));
+        ASSERT_TRUE(stmt.GetColumnInfo(1).GetDataType().IsPrimitive());
+        EXPECT_EQ(PRIMITIVETYPE_DateTime, stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType());
+
+        // 2. Raw value access on the same row through the typed getter and through the text getter.
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        firstId = stmt.GetValueId<ECInstanceId>(0);
+        EXPECT_FALSE(stmt.IsValueNull(1)) << "The stored text is not NULL, it is just not a julian day.";
+        DateTime asDateTime = stmt.GetValueDateTime(1);
+        EXPECT_TRUE(asDateTime.IsValid());
+        EXPECT_NE(2020, asDateTime.GetYear()) << "The ISO text is not parsed; its numeric prefix 2020 is taken as a julian day.";
+        EXPECT_STREQ(asDateTime.ToString().c_str(), "-4707-06-05T12:00:00.000");
+        Utf8CP asText = stmt.GetValueText(1);
+        firstStoredText = asText != nullptr ? asText : "";
+        EXPECT_STREQ(asText != nullptr ? asText : "<nullptr>", "2020-03-10T10:30:00.000Z");
+        }
+
+    // 3. Filters
+    EXPECT_EQ(0, countRows("SELECT COUNT(*) FROM ts.Widget WHERE Name = ?", [] (ECSqlStatement& stmt)
+        {
+        DateTime seeded(DateTime::Kind::Unspecified, 2020, 3, 10, 10, 30, 0, 0);
+        EXPECT_EQ(ECSqlStatus::Success, stmt.BindDateTime(1, seeded));
+        }));
+    // Range filters: TEXT sorts above REAL in SQLite, so ">" matches everything and "<" nothing, whatever the date.
+    const int afterCount = countRows("SELECT COUNT(*) FROM ts.Widget WHERE Name > TIMESTAMP '2099-01-01T00:00:00Z'");
+    const int beforeCount = countRows("SELECT COUNT(*) FROM ts.Widget WHERE Name < TIMESTAMP '1900-01-01T00:00:00Z'");
+    EXPECT_EQ(rowCount, afterCount) << "every stored text compares greater than any julian day.";
+    EXPECT_EQ(0, beforeCount);
+
+    // 4. Ordering. Lexical order of the ISO text happens to be chronological, so ORDER BY looks right by accident.
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Name FROM ts.Widget ORDER BY Name DESC"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_STREQ("-4707-06-05T12:00:00.000", stmt.GetValueDateTime(0).ToString().c_str());
+        ASSERT_TRUE(stmt.GetValueText(0) != nullptr);
+        EXPECT_STREQ("2020-03-12T10:30:00.000Z", stmt.GetValueText(0));
+        }
+
+    // 5. Aggregates. MIN/MAX pick by the same TEXT ordering and hand back text, read as a julian day again.
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT MIN(Name), MAX(Name), COUNT(Name) FROM ts.Widget"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_EQ(rowCount, stmt.GetValueInt(2)) << "COUNT(Name) still counts the text values as non-NULL.";
+        EXPECT_STREQ("2020-03-10T10:30:00.000Z", stmt.GetValueText(0));
+        EXPECT_STREQ("2020-03-12T10:30:00.000Z", stmt.GetValueText(1));
+        // The three stored texts are different, but all read as julian day 2020, so MIN and MAX are indistinguishable as dateTimes.
+        EXPECT_STREQ("-4707-06-05T12:00:00.000", stmt.GetValueDateTime(0).ToString().c_str());
+        EXPECT_STREQ(stmt.GetValueDateTime(0).ToString().c_str(), stmt.GetValueDateTime(1).ToString().c_str());
+        }
+
+    // 6. Writes. A new value goes in as a julian day and reads back correctly. The table now mixes
+    // TEXT rows (old) and REAL rows (new), and only the new row is reachable by a dateTime filter.
+    DateTime written(DateTime::Kind::Unspecified, 2021, 6, 1, 12, 0, 0, 0);
+        {
+        ECSqlStatement update;
+        ASSERT_EQ(ECSqlStatus::Success, update.Prepare(m_ecdb, "UPDATE ts.Widget SET Name = ? WHERE ECInstanceId = ?"));
+        ASSERT_EQ(ECSqlStatus::Success, update.BindDateTime(1, written));
+        ASSERT_EQ(ECSqlStatus::Success, update.BindId(2, firstId));
+        ASSERT_EQ(BE_SQLITE_DONE, update.Step());5
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Name FROM ts.Widget WHERE ECInstanceId = ?"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, firstId));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_STREQ(written.ToString().c_str(), stmt.GetValueDateTime(0).ToString().c_str());
+        }
+    EXPECT_EQ(1, countRows("SELECT COUNT(*) FROM ts.Widget WHERE Name = ?", [&] (ECSqlStatement& stmt) { EXPECT_EQ(ECSqlStatus::Success, stmt.BindDateTime(1, written)); }));
+    EXPECT_EQ(1, countRows("SELECT COUNT(*) FROM ts.Widget WHERE Name < TIMESTAMP '2099-01-01T00:00:00Z'")) << "Only the rewritten row is a REAL and takes part in date comparisons.";
+    EXPECT_EQ(rowCount - 1, countRows("SELECT COUNT(*) FROM ts.Widget WHERE Name > TIMESTAMP '2099-01-01T00:00:00Z'")) << "The untouched TEXT rows still sort above every date.";
+    }
+
 
 END_ECDBUNITTESTS_NAMESPACE
