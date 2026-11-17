@@ -108,18 +108,18 @@ describe("Names that are members of Object.prototype", () => {
       expect(Object.getOwnPropertyDescriptor(items, "constructor")?.value).to.have.property("baseClass", "PrototypeNames.__proto__");
     });
 
-    it("reads members that a class instance inherits from its class", () => {
-      const firstId = (ecsql: string) => {
-        const stmt = new iModelJsNative.ECSqlStatement();
-        try {
-          stmt.prepare(db, ecsql);
-          expect(stmt.step()).to.equal(DbResult.BE_SQLITE_ROW);
-          return stmt.getValue(0).getId();
-        } finally {
-          stmt.dispose();
-        }
-      };
+    function firstId(ecsql: string) {
+      const stmt = new iModelJsNative.ECSqlStatement();
+      try {
+        stmt.prepare(db, ecsql);
+        expect(stmt.step()).to.equal(DbResult.BE_SQLITE_ROW);
+        return stmt.getValue(0).getId();
+      } finally {
+        stmt.dispose();
+      }
+    }
 
+    it("reads members that a class instance inherits from its class", () => {
       // Angles are read through their "degrees" member. Here it is a getter on the class, as on core-geometry's Angle.
       class AngleWithGetter {
         public get degrees() { return 90; }
@@ -135,6 +135,20 @@ describe("Names that are members of Object.prototype", () => {
 
       const element = db.getElement({ id }) as PhysicalElementProps;
       expect(element.placement?.angles.yaw).to.be.closeTo(90, 1e-10);
+    });
+
+    it("updates an element from frozen props", () => {
+      const id = db.insertElement({
+        classFullName: "PrototypeNames:__proto__",
+        model: firstId("SELECT ECInstanceId FROM bis.PhysicalModel LIMIT 1"),
+        category: firstId("SELECT ECInstanceId FROM bis.SpatialCategory LIMIT 1"),
+        code: Code.createEmpty(),
+      });
+
+      // updateElement writes classFullName and model into the props it receives. On a frozen object these writes are ignored.
+      const props = { ...db.getElement({ id }), userLabel: "frozen" };
+      db.updateElement(Object.freeze(props));
+      expect(db.getElement({ id }).userLabel).to.equal("frozen");
     });
   });
 });

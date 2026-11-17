@@ -237,10 +237,14 @@ struct NapiMemberRef : NapiValueRef {
 private:
     std::string m_name; // usually this doesn't cost much because member names are short, so short-string-optimization works
     mutable Napi::Object m_obj;
+    bool m_shadowsInheritedMember = false;
     void SetValue(Napi::Value val) const {
         m_napiVal = val;
-        // Defines an own data property the way JSON.parse does. A plain Set would call the inherited "__proto__" setter.
-        m_obj.DefineProperty(Napi::PropertyDescriptor::Value(m_name, val, static_cast<napi_property_attributes>(napi_writable | napi_enumerable | napi_configurable)));
+        // A plain Set would call the inherited "__proto__" setter. Define an own data property instead, the way JSON.parse does.
+        if (m_shadowsInheritedMember)
+            m_obj.DefineProperty(Napi::PropertyDescriptor::Value(m_name, val, static_cast<napi_property_attributes>(napi_writable | napi_enumerable | napi_configurable)));
+        else
+            m_obj.Set(m_name, val);
     }
     virtual void SetEmptyNapiObject() const override {
         BeAssert(IsBlank(m_napiVal) && "Must be blank");
@@ -262,7 +266,7 @@ private:
         std::copy(data, data + size, array.Data());
         SetValue(array);
     }
-    NapiMemberRef(Napi::Object obj, std::string const& name, Napi::Value val) : m_obj(obj), m_name(name), NapiValueRef(val) {}
+    NapiMemberRef(Napi::Object obj, std::string const& name, Napi::Value val, bool shadowsInheritedMember = false) : m_obj(obj), m_name(name), m_shadowsInheritedMember(shadowsInheritedMember), NapiValueRef(val) {}
     friend struct NapiValueRef;
 };
 
@@ -361,23 +365,29 @@ public:
 // Member names often come from data, such as property names. A plain object only holds data in its own properties:
 // otherwise "__proto__" or "constructor" would resolve to members of Object.prototype, and writes through them would
 // land there. Instances of other classes keep their inherited members, so getters defined on the class still read as data.
+// Plain objects sit directly on Object.prototype, whose own prototype is null. This holds for the Object.prototype of any realm.
 inline bool NapiValueRef::IsPlainObject(Napi::Object obj) {
+    auto env = obj.Env();
     napi_value prototype;
-    if (napi_ok != napi_get_prototype(obj.Env(), obj, &prototype))
+    if (napi_ok != napi_get_prototype(env, obj, &prototype) || Napi::Value(env, prototype).IsNull())
         return true;
 
-    Napi::Value prototypeVal(obj.Env(), prototype);
-    return prototypeVal.IsNull() || prototypeVal.StrictEquals(obj.Env().Global().Get("Object").As<Napi::Object>().Get("prototype"));
+    napi_value prototypeOfPrototype;
+    if (napi_ok != napi_get_prototype(env, prototype, &prototypeOfPrototype))
+        return true;
+
+    return Napi::Value(env, prototypeOfPrototype).IsNull();
 }
 
 inline NapiValueRef& NapiValueRef::GetObjectMember(Utf8CP member, bool constVal) const {
     auto obj = GetObject();
     auto val = obj.Get(member);
-    if (!IsBlank(val) && !obj.HasOwnProperty(member) && IsPlainObject(obj))
+    bool shadowsInheritedMember = !IsBlank(val) && !obj.HasOwnProperty(member) && IsPlainObject(obj);
+    if (shadowsInheritedMember)
         val = obj.Env().Undefined();
     if (constVal && (val.IsEmpty() || val.IsUndefined()))
         return *new NapiNullRef(obj.Env());
-    return *new NapiMemberRef(GetObject(), member, val);
+    return *new NapiMemberRef(obj, member, val, shadowsInheritedMember);
 }
 inline NapiValueRef& NapiValueRef::GetArrayMember(ArrayIndex index, bool constVal) const {
     auto arr = GetArray();
