@@ -54,6 +54,7 @@ protected:
             SetEmptyNapiArray();
         return m_napiVal.As<Napi::Array>();
     }
+    static bool IsPlainObject(Napi::Object obj);
     NapiValueRef& GetObjectMember(Utf8CP member, bool constVal) const;
     NapiValueRef& GetArrayMember(ArrayIndex index, bool constVal) const;
     virtual NapiValueRef* AsNapiValueRef() override {return this;}
@@ -69,10 +70,13 @@ protected:
             splice.As<Napi::Function>().Call(array, {Napi::Number::New(array.Env(), i), Napi::Number::New(array.Env(), 1)});
     }
     virtual void removeMember(Utf8CP name) override { GetObject().Delete(name); }
-    virtual bool hasMember(Utf8CP name) const override { return GetObject().Has(name); }
+    virtual bool hasMember(Utf8CP name) const override {
+        auto obj = GetObject();
+        return obj.HasOwnProperty(name) || (obj.Has(name) && !IsPlainObject(obj));
+    }
     virtual bool isMember(Utf8CP name) const override {
         auto obj = GetObject();
-        return obj.Has(name) && !IsBlank(obj.Get(name));
+        return !IsBlank(obj.Get(name)) && (obj.HasOwnProperty(name) || !IsPlainObject(obj));
     }
     virtual bool isNull() const override { return IsBlank(m_napiVal); }
     virtual bool isBool() const override { return m_napiVal.IsBoolean(); }
@@ -235,7 +239,8 @@ private:
     mutable Napi::Object m_obj;
     void SetValue(Napi::Value val) const {
         m_napiVal = val;
-        m_obj.Set(m_name, val);
+        // Defines an own data property the way JSON.parse does. A plain Set would call the inherited "__proto__" setter.
+        m_obj.DefineProperty(Napi::PropertyDescriptor::Value(m_name, val, static_cast<napi_property_attributes>(napi_writable | napi_enumerable | napi_configurable)));
     }
     virtual void SetEmptyNapiObject() const override {
         BeAssert(IsBlank(m_napiVal) && "Must be blank");
@@ -353,9 +358,23 @@ public:
     }
 };
 
+// Member names often come from data, such as property names. A plain object only holds data in its own properties:
+// otherwise "__proto__" or "constructor" would resolve to members of Object.prototype, and writes through them would
+// land there. Instances of other classes keep their inherited members, so getters defined on the class still read as data.
+inline bool NapiValueRef::IsPlainObject(Napi::Object obj) {
+    napi_value prototype;
+    if (napi_ok != napi_get_prototype(obj.Env(), obj, &prototype))
+        return true;
+
+    Napi::Value prototypeVal(obj.Env(), prototype);
+    return prototypeVal.IsNull() || prototypeVal.StrictEquals(obj.Env().Global().Get("Object").As<Napi::Object>().Get("prototype"));
+}
+
 inline NapiValueRef& NapiValueRef::GetObjectMember(Utf8CP member, bool constVal) const {
     auto obj = GetObject();
     auto val = obj.Get(member);
+    if (!IsBlank(val) && !obj.HasOwnProperty(member) && IsPlainObject(obj))
+        val = obj.Env().Undefined();
     if (constVal && (val.IsEmpty() || val.IsUndefined()))
         return *new NapiNullRef(obj.Env());
     return *new NapiMemberRef(GetObject(), member, val);
