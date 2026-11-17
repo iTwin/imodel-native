@@ -65,6 +65,21 @@ BentleyStatus DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(ECDb
 // @bsimethod
 //---------------------------------------------------------------------------------------
 //static
+BentleyStatus DbSchemaPersistenceManager::ClearCacheTables(ECDbCR ecdb)
+    {
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("DELETE FROM main." TABLE_ClassHierarchyCache))
+        return ERROR;
+
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("DELETE FROM main." TABLE_ClassHasTablesCache))
+        return ERROR;
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+//static
 DbSchemaPersistenceManager::CreateOrUpdateTableResult DbSchemaPersistenceManager::CreateOrUpdateTable(ECDbCR ecdb, DbTable const& table)
     {
     if (table.GetType() == DbTable::Type::Virtual || table.GetType() == DbTable::Type::Existing)
