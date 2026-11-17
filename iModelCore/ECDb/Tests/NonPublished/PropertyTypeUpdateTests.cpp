@@ -5,6 +5,7 @@
 #include "SchemaUpdateTestFixture.h"
 #include <BeRapidJson/BeJsValue.h>
 #include <Bentley/Base64Utilities.h>
+#include <ECDb/JsonAdapter.h>
 #include <GeomSerialization/GeomSerializationApi.h>
 
 USING_NAMESPACE_BENTLEY_EC
@@ -3370,10 +3371,10 @@ TEST_F(PropertyTypeUpdateTests, ApiView_StringToDateTime)
         DateTime asDateTime = stmt.GetValueDateTime(1);
         EXPECT_TRUE(asDateTime.IsValid());
         EXPECT_NE(2020, asDateTime.GetYear()) << "The ISO text is not parsed; its numeric prefix 2020 is taken as a julian day.";
-        EXPECT_STREQ(asDateTime.ToString().c_str(), "-4707-06-05T12:00:00.000");
+        EXPECT_STREQ("-4707-06-05T12:00:00.000", asDateTime.ToString().c_str());
         Utf8CP asText = stmt.GetValueText(1);
         firstStoredText = asText != nullptr ? asText : "";
-        EXPECT_STREQ(asText != nullptr ? asText : "<nullptr>", "2020-03-10T10:30:00.000Z");
+        EXPECT_STREQ("2020-03-10T10:30:00.000Z", asText != nullptr ? asText : "<nullptr>");
         }
 
     // 3. Filters
@@ -3419,7 +3420,7 @@ TEST_F(PropertyTypeUpdateTests, ApiView_StringToDateTime)
         ASSERT_EQ(ECSqlStatus::Success, update.Prepare(m_ecdb, "UPDATE ts.Widget SET Name = ? WHERE ECInstanceId = ?"));
         ASSERT_EQ(ECSqlStatus::Success, update.BindDateTime(1, written));
         ASSERT_EQ(ECSqlStatus::Success, update.BindId(2, firstId));
-        ASSERT_EQ(BE_SQLITE_DONE, update.Step());5
+        ASSERT_EQ(BE_SQLITE_DONE, update.Step());
         }
         {
         ECSqlStatement stmt;
@@ -3431,6 +3432,118 @@ TEST_F(PropertyTypeUpdateTests, ApiView_StringToDateTime)
     EXPECT_EQ(1, countRows("SELECT COUNT(*) FROM ts.Widget WHERE Name = ?", [&] (ECSqlStatement& stmt) { EXPECT_EQ(ECSqlStatus::Success, stmt.BindDateTime(1, written)); }));
     EXPECT_EQ(1, countRows("SELECT COUNT(*) FROM ts.Widget WHERE Name < TIMESTAMP '2099-01-01T00:00:00Z'")) << "Only the rewritten row is a REAL and takes part in date comparisons.";
     EXPECT_EQ(rowCount - 1, countRows("SELECT COUNT(*) FROM ts.Widget WHERE Name > TIMESTAMP '2099-01-01T00:00:00Z'")) << "The untouched TEXT rows still sort above every date.";
+
+    // 7. Bind surface. BindText on the now-dateTime parameter is accepted and ECDb converts the ISO text to a
+    // julian day (2459580.5 for 2022-01-01), exactly like BindDateTime. So the typed binder does not create
+    // new legacy TEXT rows; only raw SQL, the old-schema client (changeset test) and pre-existing rows do.
+        {
+        ECSqlStatement update;
+        ASSERT_EQ(ECSqlStatus::Success, update.Prepare(m_ecdb, "UPDATE ts.Widget SET Name = ? WHERE ECInstanceId = ?"));
+        EXPECT_EQ(ECSqlStatus::Success, update.BindText(1, "2022-01-01T00:00:00.000Z", IECSqlBinder::MakeCopy::No)) << "Text can be bound to a dateTime parameter.";
+        ASSERT_EQ(ECSqlStatus::Success, update.BindId(2, firstId));
+        ASSERT_EQ(BE_SQLITE_DONE, update.Step());
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Name FROM ts.Widget WHERE ECInstanceId = ?"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, firstId));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_STREQ("2459580.5", stmt.GetValueText(0)) << "The bound ISO text was converted to a julian day, not stored as text.";
+        EXPECT_EQ(2022, stmt.GetValueDateTime(0).GetYear()) << "So it reads back as the right date.";
+        }
+
+    // 8. JSON bind route (the N-API insert/update path). The ISO text is parsed as a dateTime and stored
+    // as a julian day, the same as BindText.
+        {
+        ECSqlStatement update;
+        ASSERT_EQ(ECSqlStatus::Success, update.Prepare(m_ecdb, "UPDATE ts.Widget SET Name = ? WHERE ECInstanceId = ?"));
+        ECPropertyCP nameProperty = GetProperty("Widget", "Name");
+        ASSERT_TRUE(nameProperty != nullptr);
+        BeJsDocument json;
+        json.Parse(R"("2020-03-10T10:30:00.000Z")");
+        ASSERT_EQ(ECSqlStatus::Success, JsonECSqlBinder::BindValue(update.GetBinder(1), json, *nameProperty, m_ecdb.GetClassLocater()));
+        ASSERT_EQ(ECSqlStatus::Success, update.BindId(2, firstId));
+        ASSERT_EQ(BE_SQLITE_DONE, update.Step());
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Name FROM ts.Widget WHERE ECInstanceId = ?"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, firstId));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_EQ(2020, stmt.GetValueDateTime(0).GetYear()) << "The same ISO text that read as julian day 2020 is a real 2020 date once it has gone through the JSON binder.";
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// Second conversion class for the API view: numeric text under an int property. Unlike the
+// dateTime case, SQLite's INTEGER column affinity does not apply (shared columns have none), so the
+// stored TEXT stays TEXT: "42" = 42 is false, ORDER BY is lexical, SUM() coerces by numeric prefix,
+// and a non-numeric text reads as 0 without being NULL.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyTypeUpdateTests, ApiView_StringToInt)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+    // Index 0 -> "9", 1 -> "10", 2 -> "abc": lexical order (10 < 9 < abc) differs from numeric order.
+    SeedWidgetNames([] (int index) { return index == 2 ? Utf8String("abc") : Utf8PrintfString("%d", 9 + index); });
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    ChangePropertyType(schemaXml, "Widget", "Name", "string", "int");
+    ExpectAccepted(schemaXml, SchemaVersionChange::Major, ExpectedDataChanges().ConvertValuesOf("TestSchema:Widget", "Name", StringReadAsInteger));
+
+    auto scalarInt = [&] (Utf8CP ecsql, std::function<void(ECSqlStatement&)> bind = nullptr)
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql)) << ecsql;
+        if (bind)
+            bind(stmt);
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step()) << ecsql;
+        return stmt.GetValueInt(0);
+        };
+
+    // Metadata and raw access.
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Name FROM ts.Widget ORDER BY ECInstanceId"));
+        EXPECT_EQ(PRIMITIVETYPE_Integer, stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_EQ(9, stmt.GetValueInt(0));
+        EXPECT_STREQ("9", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_EQ(10, stmt.GetValueInt(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_FALSE(stmt.IsValueNull(0)) << "'abc' is not NULL.";
+        EXPECT_EQ(0, stmt.GetValueInt(0)) << "'abc' has no numeric prefix and reads as 0.";
+        EXPECT_STREQ("abc", stmt.GetValueText(0));
+        }
+
+    // Filters: a bound integer never equals the stored TEXT.
+    EXPECT_EQ(0, scalarInt("SELECT COUNT(*) FROM ts.Widget WHERE Name = ?", [] (ECSqlStatement& stmt) { EXPECT_EQ(ECSqlStatus::Success, stmt.BindInt(1, 9)); }))
+        << "'9' (TEXT) is not equal to 9 (INTEGER); no affinity converts it.";
+    EXPECT_EQ(3, scalarInt("SELECT COUNT(*) FROM ts.Widget WHERE Name > 1000")) << "Every TEXT sorts above every number.";
+
+    // Ordering is lexical: "10" < "9" < "abc".
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Name FROM ts.Widget ORDER BY Name"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_EQ(10, stmt.GetValueInt(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_EQ(9, stmt.GetValueInt(0));
+        }
+
+    // Aggregates: SUM coerces each TEXT by its numeric prefix ('abc' -> 0).
+    EXPECT_EQ(19, scalarInt("SELECT SUM(Name) FROM ts.Widget"));
+    EXPECT_EQ(3, scalarInt("SELECT COUNT(Name) FROM ts.Widget"));
+
+    // Writes: the new value is INTEGER and is the only row an integer filter can reach.
+        {
+        ECSqlStatement update;
+        ASSERT_EQ(ECSqlStatus::Success, update.Prepare(m_ecdb, "UPDATE ts.Widget SET Name = 9 WHERE Name = '9'"));
+        ASSERT_EQ(BE_SQLITE_DONE, update.Step());
+        }
+    EXPECT_EQ(1, scalarInt("SELECT COUNT(*) FROM ts.Widget WHERE Name = 9"));
+    EXPECT_EQ(2, scalarInt("SELECT COUNT(*) FROM ts.Widget WHERE Name > 1000")) << "The two untouched TEXT rows still sort above every number.";
     }
 
 
