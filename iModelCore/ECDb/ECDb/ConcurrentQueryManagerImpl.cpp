@@ -2436,9 +2436,117 @@ bvector<Byte> ECSqlParams::ECSqlParam::GetValueBlob() const {
 //---------------------------------------------------------------------------------------
 BeIdSet ECSqlParams::ECSqlParam::GetValueIdSet() const {
     BeAssert(m_type == Type::IdSet);
+    uint64_t count;
+    std::string err;
+    Utf8CP str = m_val.asCString();
+    if (!TryCountIdSet(str, count, err))
+        throw std::runtime_error(err);
+    if (count > MaxIdSetCount)
+        throw std::runtime_error(SqlPrintfString("IdSet parameter holds more than the maximum of %" PRIu64 " Ids", MaxIdSetCount).GetUtf8CP());
     BeIdSet set;
-    set.FromString(m_val.asCString());
+    set.FromString(str);
     return set;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+static bool ParseIdSetHex(Utf8CP& p, uint64_t& value) {
+    // Uppercase only, as in BeIdSet::FromCompactString.
+    value = 0;
+    Utf8CP start = p;
+    for (; (*p >= '0' && *p <= '9') || (*p >= 'A' && *p <= 'F'); ++p) {
+        if ((value >> 60) != 0)
+            return false;
+        value = (value << 4) | static_cast<uint64_t>(*p >= 'A' ? *p - 'A' + 10 : *p - '0');
+    }
+    return p != start;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+static bool ParseIdSetDecimal(Utf8CP& p, uint64_t& value) {
+    // A leading '-' wraps, as strtoull does in BeIdSet::FromReadableString. BeIdSet::ToReadableString
+    // writes Ids with the high bit set as negative numbers.
+    const bool negative = *p == '-';
+    if (negative)
+        ++p;
+    value = 0;
+    Utf8CP start = p;
+    for (; *p >= '0' && *p <= '9'; ++p) {
+        const uint64_t digit = static_cast<uint64_t>(*p - '0');
+        if (value > (std::numeric_limits<uint64_t>::max() - digit) / 10)
+            return false;
+        value = value * 10 + digit;
+    }
+    if (negative)
+        value = 0 - value;
+    return p != start;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+bool ECSqlParams::TryCountIdSet(Utf8CP idSet, uint64_t& count, std::string& err) {
+    count = 0;
+    if (idSet == nullptr || *idSet == '\0')
+        return true;
+
+    auto malformed = [&]() {
+        err = "IdSet parameter value is not a valid Id set string";
+        return false;
+    };
+    const uint64_t maxCount = std::numeric_limits<uint64_t>::max();
+
+    Utf8CP p = idSet;
+    if (*p == '+') {
+        // Compact form: +increment[*multiplier]... where each run adds `multiplier` Ids, each `increment` past the previous.
+        // The count cannot overflow: each Id is at least 1 past the previous, and the last Id is checked below.
+        uint64_t prev = 0;
+        ++p;
+        while (true) {
+            uint64_t increment, mult = 1;
+            if (!ParseIdSetHex(p, increment) || increment == 0)
+                return malformed();
+            if (*p == '*') {
+                ++p;
+                if (!ParseIdSetHex(p, mult) || mult == 0)
+                    return malformed();
+            }
+            if (increment > (maxCount - prev) / mult)
+                return malformed();
+            prev += increment * mult;
+            count += mult;
+            if (*p == '\0')
+                return true;
+            if (*p++ != '+')
+                return malformed();
+        }
+    }
+
+    // Readable form: comma separated values and inclusive ranges, e.g. 1-3,5.
+    while (true) {
+        uint64_t first, last;
+        if (!ParseIdSetDecimal(p, first))
+            return malformed();
+        last = first;
+        if (*p == '-') {
+            ++p;
+            if (!ParseIdSetDecimal(p, last))
+                return malformed();
+        }
+        if (last < first)
+            std::swap(first, last);
+        // The range holds last - first + 1 Ids; compare without adding 1, which can overflow.
+        if (last - first >= maxCount - count)
+            return malformed();
+        count += last - first + 1;
+        if (*p == '\0')
+            return true;
+        if (*p++ != ',')
+            return malformed();
+    }
 }
 
 //---------------------------------------------------------------------------------------
@@ -2535,6 +2643,7 @@ bool ECSqlParams::TryBindTo(ECSqlStatement& stmt, std::string& err) const {
     if (IsEmpty()) {
         return true;
     }
+    uint64_t idSetBudget = MaxIdSetCount;
     for(auto& kp : m_params) {
         auto& param = kp.second;
         int index = param.IsIndexed() ? param.GetIndex() : stmt.GetParameterIndex(param.GetName().c_str());
@@ -2554,15 +2663,28 @@ bool ECSqlParams::TryBindTo(ECSqlStatement& stmt, std::string& err) const {
             case ECSqlParam::Type::Id:
                 st = stmt.BindId(index, param.GetValueId());  break;
             case ECSqlParam::Type::IdSet: {
+                Utf8CP idSetStr = param.GetValue().asCString();
+                uint64_t idCount;
+                if (!TryCountIdSet(idSetStr, idCount, err)) {
+                    err = SqlPrintfString("failed to bind param '%s': %s", param.GetName().c_str(), err.c_str()).GetUtf8CP();
+                    return false;
+                }
+                if (idCount > idSetBudget) {
+                    err = SqlPrintfString("failed to bind param '%s': IdSet parameters hold more than the maximum of %" PRIu64 " Ids", param.GetName().c_str(), MaxIdSetCount).GetUtf8CP();
+                    return false;
+                }
+                idSetBudget -= idCount;
+                BeIdSet values;
+                values.FromString(idSetStr);
                 BinderInfo const& binderInfo = stmt.GetBinderInfo(index);
                 if(binderInfo.GetType() == BinderInfo::BinderType::VirtualSet) {
-                    std::shared_ptr<IdSet<BeInt64Id>> idSet = std::make_shared<IdSet<BeInt64Id>>(param.GetValueIdSet());
+                    std::shared_ptr<IdSet<BeInt64Id>> idSet = std::make_shared<IdSet<BeInt64Id>>(std::move(values));
                     st = stmt.BindVirtualSet(index, idSet);
                 }
                 else if(binderInfo.GetType() == BinderInfo::BinderType::Array && binderInfo.IsForIdSet()) {
                     bool allElementsAdded = true;
                     IECSqlBinder& binder = stmt.GetBinder(index);
-                    IdSet<BeInt64Id> set(param.GetValueIdSet());
+                    IdSet<BeInt64Id> set(std::move(values));
                     for(auto& ids: set) {
                         if(!ids.IsValid()) {
                             allElementsAdded = false;
