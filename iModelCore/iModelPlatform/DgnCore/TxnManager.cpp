@@ -227,77 +227,6 @@ struct ModelChangesScope {
     ~ModelChangesScope() { m_mgr.ClearModelChanges(); }
 };
 
-/*----------------------------------------------------------------------------------**//**
- * Apply schema changes in opcode-priority order to avoid constraint violations.
- * ChangeGroup (used by FilterIfElse) scrambles operation order within tables.
- * During reverse/invert, an INSERT can land before a necessary DELETE, violating
- * unique constraints that the conflict handler then incorrectly skips over.
- *
- * Fix: separate schema changes into per-opcode ChangeGroups, then raw-concatenate
- * them (via ReadFrom, NOT ConcatenateWith which uses ChangeGroup internally and would
- * re-scramble) in the right order and apply as a single changeset. A single ApplyChanges
- * call ensures SQLite's internal defer_foreign_keys covers all intermediate FK states.
- *
- * Within a single opcode type, order doesn't matter for constraint satisfaction.
- * @bsimethod
- +---------------+---------------+---------------+---------------+---------------+------*/
-static DbResult ApplySchemaChangesInOrder(ChangeStreamCR changeset, DbR db, ApplyChangesArgs baseArgs) {
-    const bool invert = baseArgs.GetInvert();
-
-    // Separate schema changes by original opcode into 3 groups.
-    // Iterate non-inverted to see original opcodes.
-    ChangeGroup groups[3]; // [0]=Delete, [1]=Update, [2]=Insert
-    for (auto change : Changes(changeset, false)) {
-        if (!ApplyChangesArgs::IsSchemaChange(change))
-            continue;
-        auto rc = BE_SQLITE_OK;
-        switch (change.GetOpcode()) {
-            case DbOpcode::Delete: rc = groups[0].AddChange(change); break;
-            case DbOpcode::Update: rc = groups[1].AddChange(change); break;
-            case DbOpcode::Insert: rc = groups[2].AddChange(change); break;
-            default: break;
-        }
-        if (rc != BE_SQLITE_OK)
-            return rc;
-    }
-
-    // Build a single ordered changeset: effective DELETEs first, UPDATEs second, INSERTs last.
-    // When inverting, sqlite flips opcodes during apply (INSERT<->DELETE), so the raw
-    // (original) order must be INSERT->UPDATE->DELETE to achieve the desired effective order.
-    // Use ReadFrom for raw byte concatenation — ConcatenateWith uses ChangeGroup internally
-    // which would re-scramble the carefully ordered operations.
-    const int order[] = {invert ? 2 : 0, 1, invert ? 0 : 2};
-
-    ChangeSet ordered;
-    for (int idx : order) {
-        ChangeSet part;
-        auto rc = part.FromChangeGroup(groups[idx]);
-        if (rc != BE_SQLITE_OK)
-            return rc;
-        if (part._IsEmpty())
-            continue;
-        auto reader = part._GetReader();
-        rc = ordered.ReadFrom(*reader);
-        if (rc != BE_SQLITE_OK)
-            return rc;
-    }
-
-    if (ordered._IsEmpty())
-        return BE_SQLITE_OK;
-
-    // We're applying on a locally-built ChangeSet whose _OnConflict just aborts.
-    // Delegate conflict handling to the original stream's _OnConflict when no explicit
-    // handler was set, preserving ChangesetFileReader's custom ec_ table handling.
-    if (!baseArgs.HasConflictHandler()) {
-        auto& stream = const_cast<ChangeStream&>(changeset);
-        baseArgs.SetConflictHandler([&stream](ChangeStream::ConflictCause cause, Changes::Change change) {
-            return stream.OnConflict(cause, change);
-        });
-    }
-
-    return ordered.ApplyChanges(db, baseArgs);
-}
-
 END_UNNAMED_NAMESPACE
 
 #define FILE_BASED_TXN_PROP "fileBasedTxns"
@@ -2077,22 +2006,6 @@ void TxnManager::ReverseChangeset(ChangesetPropsCR changeset, bool noUpdateLoop)
         m_dgndb.ThrowException("unable to save changes", (int) ChangesetStatus::SQLiteError);
 }
 
-namespace
-    {
-    bool IsCacheTableNameInChangeset(const Changes& changes)
-        {
-        for (const auto& change: changes)
-            {
-            if (change.GetOpcode() == DbOpcode::Insert)  // we only care about update/delete operations
-                continue;
-            
-            if (const auto tableName = change.GetTableName(); !tableName.empty() && 0 == strncmp(tableName.c_str(), "ec_cache_", 9))
-                return true;
-            }
-        return false;
-        }
-    }
-
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2162,12 +2075,18 @@ void TxnManager::RevertTimelineChanges(std::vector<ChangesetPropsPtr> changesetP
             return ChangeStream::ConflictResolution::Replace;
         };
 
+        // Same gate as MergeChangeset. A changeset without schema changes is applied in one pass, and there is
+        // no schema pass to clear and rebuild the ec_cache_ tables.
+        const bool containsSchemaChanges = changesetProp->ContainsDdlChanges(m_dgndb) || changesetProp->ContainsEcChanges();
+
         auto dataApplyArgs = ApplyChangesArgs::Default()
             .SetInvert(invert)
             .SetIgnoreNoop(true)
             .SetFkNoAction(true)
-            .ApplyOnlyDataChanges()
             .SetConflictHandler(revertConflictHandler);
+
+        if (containsSchemaChanges || skipSchemaChanges)
+            dataApplyArgs.ApplyOnlyDataChanges();
 
         auto rc = changeStream.ApplyChanges(m_dgndb, dataApplyArgs);
         if (rc != BE_SQLITE_OK) {
@@ -2178,15 +2097,13 @@ void TxnManager::RevertTimelineChanges(std::vector<ChangesetPropsPtr> changesetP
                 m_dgndb.ThrowException(changeStream.GetLastErrorMessage().c_str(), rc);
         }
 
-        if (!skipSchemaChanges){
+        if (containsSchemaChanges && !skipSchemaChanges){
             auto schemaApplyArgs = ApplyChangesArgs::Default()
                 .SetInvert(invert)
-                .SetIgnoreNoop(true)
-                .SetFkNoAction(IsCacheTableNameInChangeset(changeStream.GetChanges()))
-                .ApplyOnlySchemaChanges();
+                .SetIgnoreNoop(true);
 
             m_dgndb.Schemas().OnBeforeSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
-            rc = ApplySchemaChangesInOrder(changeStream, m_dgndb, schemaApplyArgs);
+            rc = m_dgndb.ApplySchemaChangeSet(changeStream, schemaApplyArgs);
             if (rc != BE_SQLITE_OK) {
                 m_dgndb.AbandonChanges();
                 m_dgndb.Schemas().OnAfterSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
@@ -2566,8 +2483,8 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
     if (pmConf.InProgress()) {
         TXN_DEBUG("<< ApplyChanges() action=%s invert=%s fastForward=%s during rebase", TxnActionToString(action), invert ? "true" : "false", fastForward ? "true" : "false");
     }
-    // we want cascade delete to work during rebase.
-    bool fkNoAction = !pmConf.IsRebasingLocalChanges();
+    // we want cascade delete to work for data rows during rebase. Schema rows never use FK actions, see ECDb::ApplySchemaChangeSet.
+    const bool fkNoAction = !pmConf.IsRebasingLocalChanges();
     const bool ignoreNoop = pmConf.IsRebasingLocalChanges();
     bool fastForwardEncounteredMergeConflict = false;
     auto fastForwardConflictHandler = [&fastForwardEncounteredMergeConflict](ChangeStream::ConflictCause _, Changes::Change change) {
@@ -2582,28 +2499,28 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
     // apply schema part of changeset before data changes if schema changes are present
     if (containsSchemaChanges)
         {
-        // If the SQLITE_CHANGESETAPPLY_FKNOACTION flag is set, we need to check if the cache tables have been tracked in the changeset.
-        // If the cache tables are not tracked, we should set the flag to false to allow cascades and avoid any possible FK constraint violations.
-        if (fkNoAction)
-            fkNoAction = IsCacheTableNameInChangeset(Changes(changeset, false));
-
         m_dgndb.Schemas().OnBeforeSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
         auto schemaApplyArgs = ApplyChangesArgs::Default()
             .SetInvert(invert)
             .SetIgnoreNoop(true)
-            .SetFkNoAction(fkNoAction)
-            .SetNoUpdateLoop(noUpdateLoop)
-            .ApplyOnlySchemaChanges();
+            .SetNoUpdateLoop(noUpdateLoop);
 
         if (fastForward) {
             schemaApplyArgs.SetConflictHandler(fastForwardConflictHandler);
         }
 
+        bool cacheTablesRebuilt = false;
         if(!m_dgndb.IsReadonly()) {
             const auto result = [&]() {
                 auto _v = pmConf.IsRebasingLocalChanges() ? nullptr : std::make_unique<DisableTracking>(*this);
                 UNUSED_VARIABLE(_v);
-                return ApplySchemaChangesInOrder(changeset, m_dgndb, schemaApplyArgs);
+                // Health stats describe the changeset's own rows, so leave out the ec_cache_ rewrite, like AfterSchemaChangeSetApplied.
+                return m_dgndb.ApplySchemaChangeSet(changeset, schemaApplyArgs, [&scope](bool rewriting) {
+                    if (rewriting)
+                        scope.Pause();
+                    else
+                        scope.Resume();
+                });
             }();
             if (result != BE_SQLITE_OK) {
                 if (fastForwardEncounteredMergeConflict)
@@ -2616,12 +2533,13 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
                 scope.Stop();
                 return result;
             }
+            cacheTablesRebuilt = true;
         }
 
         scope.Pause();
         m_dgndb.Schemas().OnAfterSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
             if (action == TxnAction::Merge) {
-                const auto result = m_dgndb.AfterSchemaChangeSetApplied();
+                const auto result = m_dgndb.AfterSchemaChangeSetApplied(!cacheTablesRebuilt);
                 if (result != BE_SQLITE_OK) {
                     LOG.errorv("ApplyChanges failed schema changes: %s", BeSQLiteLib::GetErrorName(result));
                     m_dgndb.AbandonChanges();

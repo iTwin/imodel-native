@@ -127,6 +127,7 @@ struct ClassMapColumnFactory final
         DbTable* GetOrCreateOverflowTable(SchemaImportContext&) const;
         DbColumn* ReuseOrCreateSharedColumn(SchemaImportContext&) const;
         bool IsColumnUsedByAnyDerivedClass(DbColumn const&, SchemaImportContext&) const;
+        bool IsColumnOfBaseClassProperty(Utf8StringCR accessString, DbColumn const&) const;
         ColumnMaps* GetColumnMaps() const;
         DbColumn* RegisterColumnMap(Utf8StringCR accessString, DbColumn* column) const;
         bool IsCompatible(DbColumn const&, DbColumn::Type, DbColumn::CreateParams const&) const;
