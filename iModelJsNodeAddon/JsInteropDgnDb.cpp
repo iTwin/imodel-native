@@ -748,197 +748,286 @@ BulkDeleteElementsResult JsInterop::DeleteElements(DgnDbR dgndb, Napi::Array ele
     return dgndb.Elements().DeleteElements(elementIdSet);
 }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Napi::String JsInterop::InsertElementAspect(DgnDbR db, Napi::Object obj) {
-    BeJsConst aspectProps(obj);
+//=======================================================================================
+// Shared code for insertElementAspects, updateElementAspects and deleteElementAspects.
+// Each function processes its input in order and throws on the first problem. Aspects processed before the problem
+// stay written, so the caller must abandon the transaction when one of these functions throws.
+//=======================================================================================
+namespace {
+struct AspectBatch {
+    DgnDbR m_db;
+    Napi::Env m_env;
+    Utf8CP m_functionName;
+    bvector<DgnElementId> m_owners;
+    bset<DgnElementId> m_ownerSet;
+    bvector<std::pair<DgnClassId, Napi::Object>> m_hookArgs;
 
-    DgnElement::RelatedElement relatedElement;
-    relatedElement.FromJson(db, aspectProps[json_element()]);
-    if (!relatedElement.IsValid())
-        throwInvalidId();
+    AspectBatch(DgnDbR db, Napi::Env env, Utf8CP functionName) : m_db(db), m_env(env), m_functionName(functionName) {}
 
-    DgnElementCPtr element = db.Elements().GetElement(relatedElement.m_id);
-    if (!element.IsValid())
-        throwMissingId();
+    [[noreturn]] void Fail(DgnDbStatus status, Utf8StringCR detail) {
+        Utf8PrintfString msg("%s: %s", m_functionName, detail.c_str());
+        JsInterop::GetNativeLogger().error(msg.c_str());
+        THROW_JS_DGN_DB_EXCEPTION(m_env, msg.c_str(), status);
+    }
 
-    DgnClassId aspectClassId = ECJsonUtilities::GetClassIdFromClassNameJson(aspectProps[DgnElement::json_classFullName()], db.GetClassLocater());
-    if (!aspectClassId.IsValid())
-        throwWrongClass();
+    [[noreturn]] void FailSql(DbResult rc, Utf8StringCR detail) {
+        Utf8PrintfString msg("%s: %s", m_functionName, detail.c_str());
+        JsInterop::GetNativeLogger().error(msg.c_str());
+        THROW_JS_BE_SQLITE_EXCEPTION(m_env, msg.c_str(), rc);
+    }
 
-    ECClassCP aspectClass = db.Schemas().GetClass(aspectClassId);
-    if (nullptr == aspectClass)
-        throwBadSchema();
+    // Accepts only the form produced by Id64: "0x" followed by lowercase hex digits without leading zeros.
+    static BeInt64Id ParseId(Napi::Value val) {
+        if (!val.IsString())
+            return BeInt64Id();
+        Utf8String str = val.As<Napi::String>().Utf8Value();
+        BeInt64Id id = BeInt64Id::FromString(str.c_str());
+        return (id.IsValid() && id.ToHexStr() == str) ? id : BeInt64Id();
+    }
 
-    bool isMultiAspect = aspectClass->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementMultiAspect);
+    // Like the JSON conversion of the single-aspect functions these replace, accepts a decimal or hex string (e.g. an id)
+    // for a long property of the aspect. The writer accepts only numbers.
+    static void AcceptStringLongs(InstanceWriter::Options& options) {
+        options.SetCustomBindHandler([](ECPropertyCR prop, IECSqlBinder& binder, BeJsConst, BeJsConst val, ECSqlStatus& status) {
+            PrimitiveECPropertyCP prim = prop.GetAsPrimitiveProperty();
+            if (!val.isString() || nullptr == prim || PRIMITIVETYPE_Long != prim->GetType() || !prop.GetClass().Is(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementAspect))
+                return PropertyHandlerResult::Continue;
+            status = binder.BindInt64(val.asInt64());
+            return PropertyHandlerResult::Handled;
+        });
+    }
 
-    StandaloneECInstancePtr aspectEcProps = aspectClass->GetDefaultStandaloneEnabler()->CreateInstance();
-    if (!aspectEcProps.IsValid())
-        throwBadRequest();
+    Napi::Object GetProps(Napi::Array input, uint32_t i) {
+        Napi::Value val = input[i];
+        if (!val.IsObject())
+            Fail(DgnDbStatus::BadArg, Utf8PrintfString("props[%u] is not an object", i));
+        return val.As<Napi::Object>();
+    }
 
-    std::function<bool(Utf8CP)> shouldConvertProperty = [aspectClass](Utf8CP propName)
-        {
-        if (0 == strcmp(propName, DgnElement::json_classFullName())) return false;
-        return nullptr != aspectClass->GetPropertyP(propName);
-        };
-    if (BentleyStatus::SUCCESS != ECN::JsonECInstanceConverter::JsonToECInstance(*aspectEcProps, aspectProps, db.GetClassLocater(), shouldConvertProperty))
-        throwBadRequest();
+    ECClassCR GetAspectClass(BeJsConst props, uint32_t i) {
+        DgnClassId classId = ECJsonUtilities::GetClassIdFromClassNameJson(props[DgnElement::json_classFullName()], m_db.GetClassLocater());
+        ECClassCP aspectClass = classId.IsValid() ? m_db.Schemas().GetClass(classId) : nullptr;
+        if (nullptr == aspectClass || !(aspectClass->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementMultiAspect) || aspectClass->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementUniqueAspect)))
+            Fail(DgnDbStatus::WrongClass, Utf8PrintfString("props[%u].classFullName is not an ElementMultiAspect or ElementUniqueAspect class", i));
+        return *aspectClass;
+    }
 
-    DgnElementPtr elementEdit = element->CopyForEdit();
-    if (!elementEdit.IsValid())
-        throwWriteError();
+    DgnElementCPtr GetOwner(DgnElementId elementId, uint32_t i) {
+        if (!elementId.IsValid())
+            Fail(DgnDbStatus::InvalidId, Utf8PrintfString("props[%u].element is not a valid element id", i));
+        DgnElementCPtr element = m_db.Elements().GetElement(elementId);
+        if (!element.IsValid())
+            Fail(DgnDbStatus::NotFound, Utf8PrintfString("owning element %s of input %u does not exist", elementId.ToHexStr().c_str(), i));
+        return element;
+    }
 
-    BeJsNapiObject arg(obj.Env());
-    ((Napi::Object)arg).Set("props", obj);
-    arg[DgnElement::json_model()] = element->GetModelId();
-    db.CallJsHandlerMethod(aspectClassId, "onInsert", arg);
+    // Returns the key of the unique aspect of aspectClass (or a subclass) on the element, or an invalid key.
+    ECInstanceKey FindUniqueAspect(ECClassCR aspectClass, DgnElementId elementId) {
+        CachedECSqlStatementPtr stmt = m_db.GetPreparedECSqlStatement(Utf8PrintfString("SELECT ECInstanceId,ECClassId FROM %s WHERE Element.Id=?", aspectClass.GetECSqlName().c_str()).c_str());
+        if (!stmt.IsValid())
+            Fail(DgnDbStatus::SQLiteError, Utf8PrintfString("failed to prepare the lookup of %s", aspectClass.GetFullName()));
+        stmt->BindId(1, elementId);
+        if (BE_SQLITE_ROW != stmt->Step())
+            return ECInstanceKey();
+        return ECInstanceKey(stmt->GetValueId<ECClassId>(1), stmt->GetValueId<ECInstanceId>(0));
+    }
 
-    DgnDbStatus stat;
-    RefCountedCPtr<DgnElement::Aspect> createdAspectPtr
-        = isMultiAspect
-        ? static_cast<RefCountedCPtr<DgnElement::Aspect>>(DgnElement::GenericMultiAspect::AddAspect(*elementEdit, *aspectEcProps, &stat))
-        : static_cast<RefCountedCPtr<DgnElement::Aspect>>(DgnElement::GenericUniqueAspect::SetAspect(*elementEdit, *aspectEcProps, nullptr, &stat));
+    Napi::Object MakeHookArg(DgnElementCR owner) {
+        auto arg = Napi::Object::New(m_env);
+        arg.Set(DgnElement::json_model(), Napi::String::New(m_env, owner.GetModelId().ToHexStr().c_str()));
+        return arg;
+    }
 
-    if (DgnDbStatus::Success != stat)
-        throwDgnDbStatus(stat);
+    // Records the aspect so that its owner is updated once and its post-hook is called by Finish.
+    void Processed(DgnElementId ownerId, DgnClassId classId, Napi::Object hookArg) {
+        if (m_ownerSet.insert(ownerId).second)
+            m_owners.push_back(ownerId);
+        m_hookArgs.push_back(std::make_pair(classId, hookArg));
+    }
 
-    BeAssert(createdAspectPtr != nullptr);
+    // Updates each owning element once, which records the aspect changes in the txn (e.g. LastMod) and calls the element handlers.
+    // Then calls the JS post-hooks in input order.
+    void Finish(Utf8CP postHook) {
+        for (auto ownerId : m_owners) {
+            DgnElementCPtr owner = m_db.Elements().GetElement(ownerId);
+            DgnElementPtr ownerEdit = owner.IsValid() ? owner->CopyForEdit() : nullptr;
+            if (!ownerEdit.IsValid())
+                Fail(DgnDbStatus::NotFound, Utf8PrintfString("owning element %s no longer exists", ownerId.ToHexStr().c_str()));
+            DgnDbStatus stat = ownerEdit->Update();
+            if (DgnDbStatus::Success != stat)
+                Fail(stat, Utf8PrintfString("failed to update owning element %s", ownerId.ToHexStr().c_str()));
+        }
+        for (auto& hook : m_hookArgs)
+            m_db.CallJsHandlerMethod(hook.first, postHook, hook.second);
+    }
+};
 
-    stat = elementEdit->Update();
-    if (DgnDbStatus::Success != stat)
-        throwDgnDbStatus(stat);
-
-    db.CallJsHandlerMethod(aspectClassId, "onInserted", arg);
-
-    return Napi::String::New(obj.Env(), createdAspectPtr->GetAspectInstanceId().ToHexStr());
+// Copies the own properties of obj except those in skip.
+Napi::Object copyProps(Napi::Object obj, std::initializer_list<Utf8CP> skip) {
+    auto copy = Napi::Object::New(obj.Env());
+    Napi::Array names = obj.GetPropertyNames();
+    for (uint32_t i = 0; i < names.Length(); ++i) {
+        Utf8String name = names.Get(i).ToString().Utf8Value();
+        if (std::none_of(skip.begin(), skip.end(), [&](Utf8CP s) { return name.Equals(s); }))
+            copy.Set(name.c_str(), obj.Get(name.c_str()));
+    }
+    return copy;
+}
 }
 
 /*---------------------------------------------------------------------------------**//**
+* Inserts each aspect. Inserting a unique aspect replaces the one of the same class (or a subclass) on the element;
+* when the existing aspect has exactly the same class, the new aspect keeps its id.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsInterop::UpdateElementAspect(DgnDbR db, Napi::Object obj) {
-    BeJsConst aspectProps(obj);
+Napi::Array JsInterop::InsertElementAspects(DgnDbR db, Napi::Array input) {
+    AspectBatch batch(db, input.Env(), "insertElementAspects");
+    auto& writer = db.GetInstanceWriter();
+    auto ids = Napi::Array::New(input.Env(), input.Length());
+    for (uint32_t i = 0; i < input.Length(); ++i) {
+        Napi::Object obj = batch.GetProps(input, i);
+        BeJsConst props(obj);
+        ECClassCR aspectClass = batch.GetAspectClass(props, i);
+        DgnElement::RelatedElement related;
+        related.FromJson(db, props[json_element()]);
+        DgnElementCPtr owner = batch.GetOwner(related.m_id, i);
 
-    DgnElement::RelatedElement relatedElement;
-    relatedElement.FromJson(db, aspectProps[json_element()]);
-    if (!relatedElement.IsValid())
-        throwInvalidId();
+        auto hookArg = batch.MakeHookArg(*owner);
+        hookArg.Set("props", obj);
+        db.CallJsHandlerMethod(aspectClass.GetId(), "onInsert", hookArg);
 
-    DgnElementCPtr element = db.Elements().GetElement(relatedElement.m_id);
-    if (!element.IsValid())
-        throwMissingId();
-
-    DgnClassId aspectClassId = ECJsonUtilities::GetClassIdFromClassNameJson(aspectProps[DgnElement::json_classFullName()], db.GetClassLocater());
-    if (!aspectClassId.IsValid())
-        throwWrongClass();
-
-    ECClassCP aspectClass = db.Schemas().GetClass(aspectClassId);
-    if (nullptr == aspectClass)
-        throwBadSchema();
-
-    DgnElementPtr elementEdit = element->CopyForEdit();
-    if (!elementEdit.IsValid())
-        throwWriteError();
-
-    BeJsNapiObject arg(obj.Env());
-    ((Napi::Object)arg).Set("props", obj);
-    arg[DgnElement::json_model()] = element->GetModelId();
-    db.CallJsHandlerMethod(aspectClassId, "onUpdate", arg);
-
-    IECInstanceP aspect;
-    bool isMultiAspect = aspectClass->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementMultiAspect);
-    if (isMultiAspect)
-        {
-        ECInstanceId aspectId = aspectProps[DgnElement::json_id()].GetId64<ECInstanceId>();
-        aspect = DgnElement::GenericMultiAspect::GetAspectP(*elementEdit, *aspectClass, aspectId);
-        }
-    else
-        {
-        aspect = DgnElement::GenericUniqueAspect::GetAspectP(*elementEdit, *aspectClass);
+        InstanceWriter::InsertOptions options;
+        options.UseJsNames(true);
+        AspectBatch::AcceptStringLongs(options);
+        bool isUnique = aspectClass.Is(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementUniqueAspect);
+        if (isUnique) {
+            ECInstanceKey existing = batch.FindUniqueAspect(aspectClass, owner->GetElementId());
+            if (existing.IsValid()) {
+                DbResult rc = writer.Delete(existing, InstanceWriter::DeleteOptions());
+                if (BE_SQLITE_DONE != rc)
+                    batch.FailSql(rc, Utf8PrintfString("failed to replace aspect %s: %s", existing.GetInstanceId().ToHexStr().c_str(), writer.GetLastError().c_str()));
+                if (existing.GetClassId() == aspectClass.GetId())
+                    options.UseInstanceId(existing.GetInstanceId());
+            }
         }
 
-    if (nullptr == aspect)
-        throwNotFound();
+        // The writer binds a null relationship class unless the props supply one.
+        Napi::Object row = obj;
+        if (!related.m_relClassId.IsValid()) {
+            row = copyProps(obj, {json_element()});
+            auto element = Napi::Object::New(input.Env());
+            element.Set("id", Napi::String::New(input.Env(), related.m_id.ToHexStr().c_str()));
+            element.Set("relClassName", isUnique ? BIS_ECSCHEMA_NAME "." BIS_REL_ElementOwnsUniqueAspect : BIS_ECSCHEMA_NAME "." BIS_REL_ElementOwnsMultiAspects);
+            row.Set(json_element(), element);
+        }
 
-    std::function<bool(Utf8CP)> shouldConvertProperty = [aspectClass](Utf8CP propName)
-        {
-        if ((0 == strcmp(propName, DgnElement::json_classFullName())) || (0 == strcmp(propName, json_element()))) return false;
-        return nullptr != aspectClass->GetPropertyP(propName);
-        };
-    if (BentleyStatus::SUCCESS != ECN::JsonECInstanceConverter::JsonToECInstance(*aspect, aspectProps, db.GetClassLocater(), shouldConvertProperty))
-        throwBadRequest();
+        ECInstanceKey key;
+        DbResult rc = writer.Insert(BeJsConst(row), options, key);
+        if (BE_SQLITE_DONE != rc)
+            batch.FailSql(rc, Utf8PrintfString("failed to insert props[%u]: %s", i, writer.GetLastError().c_str()));
 
-    auto stat = elementEdit->Update();
-    if (DgnDbStatus::Success != stat)
-        throwDgnDbStatus(stat);
-
-    db.CallJsHandlerMethod(aspectClassId, "onUpdated", arg);
+        ids.Set(i, Napi::String::New(input.Env(), key.GetInstanceId().ToHexStr().c_str()));
+        batch.Processed(owner->GetElementId(), aspectClass.GetId(), hookArg);
+    }
+    batch.Finish("onInserted");
+    return ids;
 }
 
 /*---------------------------------------------------------------------------------**//**
+* Updates each aspect. Only the properties in the props are changed. A multi aspect is identified by its id, and a
+* unique aspect by its element and class (or a base class). The owning element cannot be changed.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsInterop::DeleteElementAspect(DgnDbR db, Utf8StringCR aspectIdStr)   {
-    ECInstanceId aspectId(BeInt64Id::FromString(aspectIdStr.c_str()).GetValue());
-    if (!aspectId.IsValid())
-        throwInvalidId();
+void JsInterop::UpdateElementAspects(DgnDbR db, Napi::Array input) {
+    AspectBatch batch(db, input.Env(), "updateElementAspects");
+    auto& writer = db.GetInstanceWriter();
+    for (uint32_t i = 0; i < input.Length(); ++i) {
+        Napi::Object obj = batch.GetProps(input, i);
+        BeJsConst props(obj);
+        ECClassCR aspectClass = batch.GetAspectClass(props, i);
+        DgnElement::RelatedElement related;
+        related.FromJson(db, props[json_element()]);
+        DgnElementCPtr owner = batch.GetOwner(related.m_id, i);
 
-    CachedECSqlStatementPtr statement = db.GetPreparedECSqlStatement(
-        "SELECT ECClassId,Element.Id FROM " BIS_SCHEMA(BIS_CLASS_ElementUniqueAspect) " WHERE ECInstanceId=? UNION "
-        "SELECT ECClassId,Element.Id FROM " BIS_SCHEMA(BIS_CLASS_ElementMultiAspect)  " WHERE ECInstanceId=?");
-    if (!statement.IsValid())
-        throwSqlError();
-
-    statement->BindId(1, aspectId);
-    statement->BindId(2, aspectId);
-    if (BE_SQLITE_ROW != statement->Step())
-        throwNotFound();
-
-    DgnClassId aspectClassId = statement->GetValueId<DgnClassId>(0);
-    DgnElementId elementId = statement->GetValueId<DgnElementId>(1);
-
-    ECClassCP aspectClass = db.Schemas().GetClass(aspectClassId);
-    if (nullptr == aspectClass)
-        throwBadSchema();
-
-    bool isMultiAspect = aspectClass->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementMultiAspect);
-
-    DgnElementCPtr element = db.Elements().GetElement(elementId);
-    if (!element.IsValid())
-        throwMissingId();
-
-    DgnElementPtr elementEdit = element->CopyForEdit();
-    if (!elementEdit.IsValid())
-        throwWriteError();
-
-    BeJsNapiObject arg(db.GetJsIModelDb()->Env());
-    arg["aspectId"] = aspectId;
-    arg[DgnElement::json_model()] = element->GetModelId();
-    db.CallJsHandlerMethod(aspectClassId, "onDelete", arg);
-
-    if (isMultiAspect)
-        {
-        DgnElement::MultiAspect* aspect = DgnElement::MultiAspect::GetAspectP(*elementEdit, *aspectClass, aspectId);
-        if (nullptr == aspect)
-            throwNotFound();
-
-        aspect->Delete();
+        ECInstanceKey stored;
+        if (aspectClass.Is(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementMultiAspect)) {
+            ECInstanceId aspectId(AspectBatch::ParseId(obj.Get(DgnElement::json_id())).GetValueUnchecked());
+            if (!aspectId.IsValid())
+                batch.Fail(DgnDbStatus::InvalidId, Utf8PrintfString("props[%u].id is not a valid aspect id", i));
+            CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(Utf8PrintfString("SELECT ECClassId,Element.Id FROM %s WHERE ECInstanceId=?", aspectClass.GetECSqlName().c_str()).c_str());
+            if (!stmt.IsValid())
+                batch.Fail(DgnDbStatus::SQLiteError, Utf8PrintfString("failed to prepare the lookup of %s", aspectClass.GetFullName()));
+            stmt->BindId(1, aspectId);
+            if (BE_SQLITE_ROW == stmt->Step() && stmt->GetValueId<DgnElementId>(1) == owner->GetElementId())
+                stored = ECInstanceKey(stmt->GetValueId<ECClassId>(0), aspectId);
+        } else {
+            stored = batch.FindUniqueAspect(aspectClass, owner->GetElementId());
         }
-    else
-        {
-        DgnElement::UniqueAspect* aspect = DgnElement::UniqueAspect::GetAspectP(*elementEdit, *aspectClass);
-        if (nullptr == aspect)
-            throwNotFound();
+        if (!stored.IsValid())
+            batch.Fail(DgnDbStatus::NotFound, Utf8PrintfString("the aspect of props[%u] does not exist on element %s", i, owner->GetElementId().ToHexStr().c_str()));
 
-        aspect->Delete();
-        }
+        auto hookArg = batch.MakeHookArg(*owner);
+        hookArg.Set("props", obj);
+        db.CallJsHandlerMethod(aspectClass.GetId(), "onUpdate", hookArg);
 
-    auto stat = elementEdit->Update();
-    if (DgnDbStatus::Success != stat)
-        throwDgnDbStatus(stat);
+        // Write the stored aspect with its actual class, so that the incremental update keeps the properties that are not in the props.
+        ECClassCP storedClass = db.Schemas().GetClass(stored.GetClassId());
+        if (nullptr == storedClass)
+            batch.Fail(DgnDbStatus::BadSchema, Utf8PrintfString("the class of aspect %s is not found", stored.GetInstanceId().ToHexStr().c_str()));
+        Napi::Object row = copyProps(obj, {json_element(), DgnElement::json_id(), DgnElement::json_classFullName(), "className"});
+        row.Set(DgnElement::json_id(), Napi::String::New(input.Env(), stored.GetInstanceId().ToHexStr().c_str()));
+        row.Set(DgnElement::json_classFullName(), Napi::String::New(input.Env(), storedClass->GetFullName()));
 
-    db.CallJsHandlerMethod(aspectClassId, "onDeleted", arg);
+        InstanceWriter::UpdateOptions options;
+        options.UseJsNames(true);
+        options.UseIncrementalUpdate(true);
+        AspectBatch::AcceptStringLongs(options);
+        DbResult rc = writer.Update(BeJsConst(row), options);
+        if (BE_SQLITE_DONE != rc)
+            batch.FailSql(rc, Utf8PrintfString("failed to update props[%u]: %s", i, writer.GetLastError().c_str()));
+
+        batch.Processed(owner->GetElementId(), aspectClass.GetId(), hookArg);
+    }
+    batch.Finish("onUpdated");
+}
+
+/*---------------------------------------------------------------------------------**//**
+* Deletes each aspect. Throws if an id does not identify an existing aspect, including an id that was already deleted
+* earlier in the same call.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void JsInterop::DeleteElementAspects(DgnDbR db, Napi::Array input) {
+    AspectBatch batch(db, input.Env(), "deleteElementAspects");
+    auto& writer = db.GetInstanceWriter();
+    for (uint32_t i = 0; i < input.Length(); ++i) {
+        ECInstanceId aspectId(AspectBatch::ParseId(input[i]).GetValueUnchecked());
+        if (!aspectId.IsValid())
+            batch.Fail(DgnDbStatus::InvalidId, Utf8PrintfString("ids[%u] is not a valid aspect id", i));
+
+        CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(
+            "SELECT ECClassId,Element.Id FROM " BIS_SCHEMA(BIS_CLASS_ElementUniqueAspect) " WHERE ECInstanceId=? UNION ALL "
+            "SELECT ECClassId,Element.Id FROM " BIS_SCHEMA(BIS_CLASS_ElementMultiAspect) " WHERE ECInstanceId=?");
+        if (!stmt.IsValid())
+            batch.Fail(DgnDbStatus::SQLiteError, "failed to prepare the aspect lookup");
+        stmt->BindId(1, aspectId);
+        stmt->BindId(2, aspectId);
+        if (BE_SQLITE_ROW != stmt->Step())
+            batch.Fail(DgnDbStatus::NotFound, Utf8PrintfString("aspect %s of ids[%u] does not exist", aspectId.ToHexStr().c_str(), i));
+        DgnClassId classId = stmt->GetValueId<DgnClassId>(0);
+        DgnElementCPtr owner = batch.GetOwner(stmt->GetValueId<DgnElementId>(1), i);
+
+        auto hookArg = batch.MakeHookArg(*owner);
+        hookArg.Set("aspectId", Napi::String::New(input.Env(), aspectId.ToHexStr().c_str()));
+        hookArg.Set("element", Napi::String::New(input.Env(), owner->GetElementId().ToHexStr().c_str()));
+        db.CallJsHandlerMethod(classId, "onDelete", hookArg);
+
+        DbResult rc = writer.Delete(ECInstanceKey(classId, aspectId), InstanceWriter::DeleteOptions());
+        if (BE_SQLITE_DONE != rc)
+            batch.FailSql(rc, Utf8PrintfString("failed to delete aspect %s: %s", aspectId.ToHexStr().c_str(), writer.GetLastError().c_str()));
+
+        batch.Processed(owner->GetElementId(), classId, hookArg);
+    }
+    batch.Finish("onDeleted");
 }
 
 /*---------------------------------------------------------------------------------**//**

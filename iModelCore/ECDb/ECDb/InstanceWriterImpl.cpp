@@ -415,8 +415,10 @@ ECSqlStatus Impl::BindPrimitive(BindContext& ctx, PrimitiveType type, IECSqlBind
         }
         return binder.BindInt64(val.asInt64());
     } else if (type == ECN::PRIMITIVETYPE_Binary) {
+        // N-API values report isBinary() only for typed arrays and ArrayBuffers, but GetBinary() also decodes "encoding=base64;" strings.
+        const bool isBinary = val.isBinary() || (val.isString() && 0 == strncmp(val.asCString(), JsValueRef::base64Header, JsValueRef::base64HeaderLen));
 
-        if (ExtendedTypeHelper::GetExtendedType(extendType) == ExtendedTypeHelper::ExtendedType::BeGuid && val.isString() && !val.isBinary()) {
+        if (ExtendedTypeHelper::GetExtendedType(extendType) == ExtendedTypeHelper::ExtendedType::BeGuid && val.isString() && !isBinary) {
             BeGuid guid;
             if (guid.FromString(val.asCString()) != SUCCESS) {
                 ctx.SetError("Failed to parse guid from string: %s", val.asCString());
@@ -437,7 +439,7 @@ ECSqlStatus Impl::BindPrimitive(BindContext& ctx, PrimitiveType type, IECSqlBind
             });
         }
 
-        if (!val.isBinary()) {
+        if (!isBinary) {
             ctx.SetError("Expected binary/base64 for property %s, got %s", propertyName, val.Stringify().c_str());
             return ECSqlStatus(BE_SQLITE_ERROR);
         }

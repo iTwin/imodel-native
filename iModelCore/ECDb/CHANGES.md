@@ -7,6 +7,11 @@ This document including important changes to syntax or file format.
 | Profile | `4.0.0.5` |
 | ECSQL   | `2.0.4.2` |
 
+## `11/18/2026`: `InstanceWriter` accepts base64 strings for binary properties from JavaScript
+* `InstanceWriter` now accepts `"encoding=base64;..."` strings for binary properties, including `BeGuid` properties, when the instance comes from JavaScript through N-API. Previously, these strings were accepted only from native JSON documents. Instances from JavaScript failed with `Expected binary/base64 for property ...`, and `BeGuid` properties failed with `Failed to parse guid from string`.
+* GeometryStream properties are unchanged.
+* ECSql version is unchanged.
+
 ## `10/13/2026`: `IdSet` accepts ids with the high bit set
 * The `IdSet` virtual table now accepts valid ids at or above `0x8000000000000000`, such as element ids reserved by schema synchronization (`0xfffff6…`). Previously, binding such ids failed with `IdSet vtab: The element with index N is invalid`, and `id = ?` / `id IN (...)` filters on `IdSet` returned no rows for them.
 * Applies to ids bound through `ECSqlStatement` array binding, concurrent query `BindIdSet`, and JSON arrays passed as text.
