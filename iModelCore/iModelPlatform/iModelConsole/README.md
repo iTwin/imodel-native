@@ -2,6 +2,8 @@
 
 An interactive command-line tool for iModel, ECDb and BeSQLite files: open a file, run ECSQL and SQL, inspect schemas, and see the SQL an ECSQL statement is translated to.
 
+It works on local files only and is unrelated to the web-based iModel Console, which connects to iModelHub.
+
 ## Building
 
 Use the `iModelConsole` strategy:

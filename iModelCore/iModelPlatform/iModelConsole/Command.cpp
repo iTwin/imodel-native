@@ -1998,9 +1998,11 @@ Utf8String MetadataCommand::GetPropertyTypeName(ECN::ECPropertyCR prop)
 //---------------------------------------------------------------------------------------
 Utf8String ParseCommand::_GetUsage() const
     {
-    return " .parse [sql|exp|token] <ecsql> Parses ECSQL. Options: sql (default): the resulting SQL is displayed.\r\n"
+    return " .parse [sql|exp|token|json|normalize] <ecsql> Parses ECSQL. Options: sql (default): the resulting SQL is displayed.\r\n"
         COMMAND_USAGE_IDENT                "                       exp: the parsed expression tree is displayed.\r\n"
-        COMMAND_USAGE_IDENT                "                       token: the parsed raw token tree is displayed.\r\n";
+        COMMAND_USAGE_IDENT                "                       token: the parsed raw token tree is displayed.\r\n"
+        COMMAND_USAGE_IDENT                "                       json: the parse tree is displayed as JSON.\r\n"
+        COMMAND_USAGE_IDENT                "                       normalize: the normalized ECSQL is displayed.\r\n";
     }
 
 //---------------------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 # Proxies and certificates
 
-CloudSqlite downloads iModel and workspace data from cloud storage with libcurl. `BeSQLiteCurlHandleConfig.cpp` configures each curl handle: the system proxy (see [README](../../README.md#system-proxies)) and the TLS options described here.
+CloudSqlite downloads iModel and workspace data from cloud storage with libcurl. `BeSQLiteCurlHandleConfig.cpp` sets the system proxy (see [README](../../README.md#system-proxies)) and the TLS options below on each curl handle.
 
 ## Transparent proxies
 
@@ -53,7 +53,7 @@ The connection should still succeed.
 
 ## Debugging TLS on Windows
 
-Show the issuer of a server certificate in PowerShell. Behind a transparent proxy the issuer is the proxy's certificate:
+Show the issuer of a server certificate in Windows PowerShell 5.x (the snippet does not work reliably in PowerShell 7). Behind a transparent proxy the issuer is the proxy's certificate:
 
 ```powershell
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; $req = [Net.HttpWebRequest]::Create("https://www.itwinjs.org"); try { $req.GetResponse().Close() } catch { $_.Exception.InnerException }; $req.ServicePoint.Certificate | Format-List Subject, Issuer
