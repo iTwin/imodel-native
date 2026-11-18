@@ -7,7 +7,6 @@
 #include <ECObjects/ECContext.h>
 #include <ECObjects/IssueReporter.h>
 #include <unordered_set>
-#include <map>
 #include <string>
 
 namespace std
@@ -256,12 +255,9 @@ struct StandardValueInfo
     {
     friend struct StandardValuesConverter;
 private: 
-    bmap<int, Utf8String> m_valuesMap;      // used when m_type is PRIMITIVETYPE_Integer
-    std::map<Utf8String, Utf8String, CompareIUtf8Ascii> m_stringValuesMap;  // used when m_type is PRIMITIVETYPE_String
-    PrimitiveType m_type = PrimitiveType::PRIMITIVETYPE_Integer;
+    bmap<int, Utf8String> m_valuesMap;
+    PrimitiveType m_type = PrimitiveType::PRIMITIVETYPE_Integer;   // backing type of the enumeration to create (int or string)
     bool m_mustBeFromList = true;
-
-    size_t GetValueCount() const { return m_type == PrimitiveType::PRIMITIVETYPE_String ? m_stringValuesMap.size() : m_valuesMap.size(); }
 
 public:
     bool Equals(const StandardValueInfo& sd) const;

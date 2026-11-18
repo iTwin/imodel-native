@@ -12041,7 +12041,7 @@ TEST_F(SchemaUpgradeTestFixture, StandardValuesOnStringPropertyConvertedToNonStr
     // Existing iModel: the converter used to drop the StandardValues, leaving a plain string property
     SchemaItem seedSchema(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
         "  <ECEntityClass typeName='Foo'>"
         "    <ECProperty propertyName='WorkPackage' typeName='string' />"
         "  </ECEntityClass>"
