@@ -83,7 +83,14 @@ if (process.env.IMODELJS_NATIVE_OVERRIDE !== undefined) {
     checkSupportedPlatform();
 
     // mkdtempSync always creates a new, uniquely named directory owned by the current user, so a directory
-    // pre-created by another user in a shared temp folder can never be reused.
+    // pre-created by another user in a shared temp folder can never be reused. On POSIX it uses mkdtemp(3),
+    // which creates the directory with mode 0700 (umask can only restrict further), so other users cannot
+    // write into it after creation; the sticky bit on shared temp dirs (e.g. /tmp) prevents them from
+    // renaming or deleting it. On Windows the directory inherits its ACLs from %TEMP%, which defaults to
+    // the user's own %LOCALAPPDATA%\Temp; that folder grants access only to the user, SYSTEM, and
+    // Administrators, so other non-admin users cannot read, write, rename, or delete the directory.
+    // These guarantees assume TMPDIR/%TEMP% has not been redirected to a world-writable location; env
+    // vars are part of the user's own security context, so we treat that as out of scope here.
     const installDir = fs.mkdtempSync(path.join(os.tmpdir(), `install-imodeljs-native@${version}-`));
     const removeInstallDir = () => fs.rmSync(installDir, { recursive: true, force: true });
 
