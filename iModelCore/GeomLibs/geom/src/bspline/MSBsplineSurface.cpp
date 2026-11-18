@@ -2430,9 +2430,6 @@ bool MSBsplineSurface::IsValidGeometry(GeometryValidatorPtr &validator) const
     int numUKnots = GetIntNumUKnots ();
     int numVKnots = GetIntNumVKnots();
 
-    // int uOrder = GetIntUOrder ();
-    // int vOrder = GetIntVOrder();
-
     int numPoles = numUPoles * numVPoles;
     if (poles == nullptr)
         return false;
@@ -2455,14 +2452,10 @@ bool MSBsplineSurface::IsValidGeometry(GeometryValidatorPtr &validator) const
     if (weights != nullptr && !validator->IsValidGeometry(weights, numPoles, s_minWeight, s_maxWeight))
         return false;
 
-    // enforce non-decreasing knots:
-    for (int k0 = 0; k0 + 1 < numUKnots; k0++)
-        if (uKnots[k0] > uKnots[k0 + 1])
-            return false;
-
-    for (int k0 = 0; k0 + 1 < numVKnots; k0++)
-        if (vKnots[k0] > vKnots[k0 + 1])
-            return false;
+    // require nondecreasing knots and nontrivial range
+    bool checkExteriorKnots = false; // unexpected exterior knots are not invalid
+    if (!AreUKnotsValid(checkExteriorKnots) || !AreVKnotsValid(checkExteriorKnots))
+        return false;
 
     return true;
     }

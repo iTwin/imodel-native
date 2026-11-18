@@ -10,6 +10,34 @@ This document including important changes to syntax or file format.
 ## `11/18/2026`: `InstanceWriter` accepts base64 strings for binary properties from JavaScript
 * `InstanceWriter` now accepts `"encoding=base64;..."` strings for binary properties, including `BeGuid` properties, when the instance comes from JavaScript through N-API. Previously, these strings were accepted only from native JSON documents. Instances from JavaScript failed with `Expected binary/base64 for property ...`, and `BeGuid` properties failed with `Failed to parse guid from string`.
 * GeometryStream properties are unchanged.
+* Profile and ECSql versions are unchanged.
+
+## `11/16/2026`: ECSQL grammar is free of bison conflicts
+* `sqlbison.y` no longer has shift/reduce or reduce/reduce conflicts or other bison warnings. It declares `%expect 0`, and `BuildECSqlParser.sh`/`.bat` run bison with `-Wall`, so a new conflict is reported when the parser is regenerated.
+* A parenthesized operand can now start a comparison or predicate, for example `WHERE (I) = 1`, `WHERE (P2D.X) >= (P3D.X)`, `WHERE (I) IN (1, 2)` or `CASE WHEN (I) = 1 THEN ...`. These statements were previously rejected with a syntax error.
+* A value expression that starts with a parenthesized term is now accepted as a `CASE WHEN` or `IIF` condition, for example `CASE WHEN I + 1 THEN ...`.
+* The native SQL can contain redundant parentheses, for example `([Foo].[I]) IS NULL` for `(I) IS NULL`. The results are unchanged.
+* Profile and ECSql versions are unchanged.
+
+## `11/12/2026`: Schema changesets are applied without foreign key actions
+* The new `ECDb::ApplySchemaChangeSet` applies the `ec_` rows of a changeset with `SQLITE_CHANGESETAPPLY_FKNOACTION`. `TxnManager` uses it whenever it merges, reverses, reinstates or reverts a changeset with schema changes. Foreign keys are still checked once the whole changeset has been applied.
+* Previously, `ON DELETE CASCADE` could fire while the `ec_` rows were applied. A changeset that moved properties to a new PropertyCategory, KindOfQuantity or ECEnumeration and deleted the old one could delete those properties, with their property maps, and leave their custom attributes behind as orphans.
+* `ec_cache_ClassHierarchy` and `ec_cache_ClassHasTables` are cleared before the `ec_` rows are applied and rebuilt afterwards. Their rows in a changeset are ignored.
+* `ECDb::AfterSchemaChangeSetApplied` takes a `rebuildCacheTables` argument, which defaults to `true`. `TxnManager` passes `false` after `ApplySchemaChangeSet`, so a merge rebuilds the cache tables once instead of twice.
+* Changeset health statistics leave out clearing and rebuilding the cache tables, so the statistics of a schema changeset no longer count `ec_cache_*` rows.
+* When it merges a changeset with schema changes, `TxnManager` now applies the data rows without foreign key actions, as it does for every other changeset. Previously, it applied them with foreign key actions if the changeset did not update or delete `ec_cache_*` rows. Rebasing local txns still applies data rows with foreign key actions.
+* Profile and ECSql versions are unchanged.
+
+## `11/10/2026`: Schema imports keep inherited property maps consistent
+* A schema import saves the `ec_PropertyMap` rows that a class is missing for the properties it inherits, for example after an earlier import inserted a base class above it. An import can therefore add rows for classes the schema change does not touch. This also completes the maps of files that earlier imports left without those rows.
+* An import creates the missing overflow table rows of existing instances before it moves the values of remapped properties. Previously, a value that a remap moved to the overflow table was cleared when the instance had no overflow row yet.
+* When an import adds or removes an override, the class keeps the property in the column of the overridden base class property, also when the import frees columns. Previously, the class could map it to a column of its own, and ECSql that reads the class itself (for example `FROM ONLY`) returned different values than ECSql that reads it through a base class.
+* Profile and ECSql versions are unchanged.
+
+## `11/10/2026`: `check_diverged_prop_maps` matches property maps by access string
+* `PRAGMA integrity_check(check_diverged_prop_maps)` now compares a class's property maps with the maps of its base classes by access string instead of by property path.
+* An override that a later schema import adds to a class is mapped through its own property path, while the base class keeps the path of the overridden property. Divergences on such overrides were not reported before. ECSql that reads or writes the class itself (for example `FROM ONLY`) uses a different column than ECSql that reads it through a base class.
+* The check can report rows for files it previously reported as clean. The result columns are unchanged.
 * ECSql version is unchanged.
 
 ## `10/13/2026`: `IdSet` accepts ids with the high bit set

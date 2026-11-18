@@ -315,8 +315,9 @@ PolyfaceHeaderPtr PolyfaceHeader::CreateFixedBlockIndexed (int numPerBlock)
 +--------------------------------------------------------------------------------------*/
 PolyfaceHeaderPtr PolyfaceHeader::CreateIndexedMesh (int numPerFace, bvector<DPoint3d> const &points, bvector<int> const &indexData)
     {
-    auto mesh =
-        numPerFace > 1 ? CreateFixedBlockIndexed (numPerFace) : CreateVariableSizeIndexed ();
+    auto mesh = numPerFace > 1 ? CreateFixedBlockIndexed(numPerFace) : CreateVariableSizeIndexed();
+    if (!mesh.IsValid())
+        return nullptr;
 
     auto &meshPoint = mesh->Point ();
     auto &meshPointIndex = mesh->PointIndex ();
@@ -337,6 +338,9 @@ PolyfaceHeaderPtr PolyfaceHeader::CreateIndexedMesh (int numPerFace, bvector<DPo
 PolyfaceHeaderPtr PolyfaceHeader::CreateIndexedMeshSwap(int numPerFace, bvector<DPoint3d>& points, bvector<int>& pointIndices)
     {
     auto mesh = numPerFace > 1 ? CreateFixedBlockIndexed(numPerFace) : CreateVariableSizeIndexed();
+    if (!mesh.IsValid())
+        return nullptr;
+
     mesh->Point().swap(points);
     mesh->PointIndex().swap(pointIndices);
     mesh->Point().SetActive(true);

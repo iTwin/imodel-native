@@ -113,6 +113,8 @@ struct ClassMap
         mutable std::unique_ptr<ClassMapColumnFactory> m_columnFactory;
         std::unique_ptr<TablePerHierarchyHelper> m_tphHelper;
         bvector<ECN::ECPropertyCP> m_failedToLoadProperties;
+        //! Inherited properties loaded as copies of the base class maps that the class has no map of its own for
+        bvector<ECN::ECPropertyCP> m_unpersistedInheritedProperties;
         ObjectState m_state;
         BentleyStatus ApplyCurrentTimeStampColumnConstraints(ECN::PrimitiveECPropertyCR);
         BentleyStatus AddOrUpdateTableList(DataPropertyMap const& propertyThatIsNotYetAdded);
@@ -133,6 +135,9 @@ struct ClassMap
         ClassMap(ECDb const& ecdb, TableSpaceSchemaManager const& manager, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrat) : ClassMap(ecdb, manager, Type::Class, ecClass, mapStrat) {}
         virtual ~ClassMap() {}
         void Modified() { if (m_state == ObjectState::Persisted) m_state = ObjectState::Modified; }
+        //! Persists the inherited property maps that were loaded as copies of the base class maps
+        //! without a map of the class's own. Call once the tables they use are saved.
+        BentleyStatus SaveUnpersistedInheritedPropertyMaps();
 
         //! Called when loading an existing class map from the ECDb file
         BentleyStatus Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& dbLoadCtx) { return _Load(ctx, dbLoadCtx); }
