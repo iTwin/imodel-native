@@ -91,11 +91,15 @@ echo "Using flex  $FLEX_VER at $FLEX"
 #   -PSQLyy     prefix all yy symbols with SQLyy
 #   -L          suppress #line directives
 # ---------------------------------------------------------------------------
+# Run from the parser directory with relative paths: bison derives the header
+# guard (YY_SQLYY_SQLBISON_H_INCLUDED) from the --defines path.
+cd "$PARSE_DIR"
+
 echo ""
 echo "Compiling Lexical Analyzer ..."
 "$FLEX" -i -8 -PSQLyy -L \
-    -o "$PARSE_DIR/SqlFlex.cpp" \
-    "$PARSE_DIR/sqlflex.l"
+    -o SqlFlex.cpp \
+    sqlflex.l
 
 # ---------------------------------------------------------------------------
 # Compile Parser  (mirrors: win_bison -k -l -pSQLyy -bSql -o ... --defines=...)
@@ -103,22 +107,19 @@ echo "Compiling Lexical Analyzer ..."
 #   -pSQLyy               prefix all yy symbols with SQLyy
 #   -bSql                 file-prefix (not needed when -o/--defines are explicit,
 #                         but kept for parity with the .bat)
-#   -Wno-conflicts-sr     silence the grammar's known shift/reduce conflicts
-#   -Wno-conflicts-rr     silence the grammar's known reduce/reduce conflicts
+#   -Wall                 report all grammar warnings
 # Note: -k (report conflicts as errors) was a very old flag; modern bison
 #       ignores it, so it is omitted here.
-# Note: this is an inherited (OpenOffice/LibreOffice) SQL grammar whose many
-#       shift/reduce and reduce/reduce conflicts are resolved by bison's default
-#       rules and are expected. They cannot be declared away with %expect /
-#       %expect-rr (%expect-rr is GLR-only, and %expect makes the reduce/reduce
-#       conflicts a hard error on this LALR parser), so the warnings are
-#       suppressed here without altering the generated parser tables.
+# Note: the grammar is conflict-free and declares %expect 0, so any new
+#       shift/reduce or reduce/reduce conflict fails the generation. Resolve it
+#       in the grammar (restructure the rules, or %prec for a deliberate
+#       shift/reduce choice) instead of suppressing the diagnostic.
 # ---------------------------------------------------------------------------
 echo "Compiling Parser ..."
-"$BISON" -l -pSQLyy -bSql -Wno-conflicts-sr -Wno-conflicts-rr \
-    -o "$PARSE_DIR/SqlBison.cpp" \
-    --defines="$PARSE_DIR/SqlBison.h" \
-    "$PARSE_DIR/sqlbison.y"
+"$BISON" -l -pSQLyy -bSql -Wall \
+    -o SqlBison.cpp \
+    --defines=SqlBison.h \
+    sqlbison.y
 
 echo ""
 echo "Done. Generated files:"
