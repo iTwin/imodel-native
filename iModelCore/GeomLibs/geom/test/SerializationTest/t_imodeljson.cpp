@@ -512,14 +512,49 @@ TEST(Serialization, TaggedNumericDataOnPolyface)
 
 TEST(Serialization, TrimmedBSurface)
     {
-    auto meshA = PolyfaceHeader::CreateRegularPolyhedron(1, 0);
-    auto meshA1 = RoundTripMeshIMJS(meshA);
-    auto meshB = meshA->Clone();
-    meshB->SetNumericTags(TaggedNumericData(-1000, 0));
-    Check::False(meshB->IsSameStructureAndGeometry(*meshA, 0.0), "Detect tagged data");
-    Check::True(meshB->IsSameStructureAndGeometry(*meshB, 0.0), "Identity with tagged data");
-    auto meshB1 = RoundTripMeshFB(meshB);
-    auto meshB2 = RoundTripMeshQueryCarrier(meshB);
+    BeFileName fullPathRoot;
+    BeTest::GetHost().GetDocumentsRoot(fullPathRoot);
+    fullPathRoot.AppendToPath(L"GeomLibsTestData").AppendToPath(L"BSpline");
+
+    bvector<IGeometryPtr> inputs;
+
+    // open, bilinear, numPolesU = 7, uKnots empty (uniform), numPolesV = 2, vKnots = 0001 (invalid: trivial knot range)
+    BeFileName invalidPathName(fullPathRoot);
+    invalidPathName.AppendToPath(BeFileName(L"bsurf-trimmed-invalid-knots.imjs"));
+    Check::False(GTestFileOps::JsonFileToGeometry(invalidPathName, inputs), "Expect parse & validate to fail on invalid bsurf data");
+
+    // open, uOrder = 3, numPolesU = 7, uKnots = 0000 0.3 0.6 1111 (overclamped at 0 and 1), vOrder = 2, numPolesV = 2, vKnots empty (uniform)
+    BeFileName overclampedPathName(fullPathRoot);
+    overclampedPathName.AppendToPath(BeFileName(L"bsurf-trimmed-overclamped-knots.imjs"));
+    if (Check::True(GTestFileOps::JsonFileToGeometry(overclampedPathName, inputs), "Expect parse & validate to succeed on overclamped bsurf data") &&
+        Check::Size(inputs.size(), 1, "Have one input"))
+        {
+        auto bsurf = inputs[0]->GetAsMSBsplineSurface();
+        if (Check::True(bsurf.IsValid(), "input is valid"))
+            Check::SaveTransformed(bsurf);
+        }
+
+    // open, uOrder = 3, numPolesU = 7, uKnots = -7 -5 0 0.2 0.4 0.6 0.8 1 1 3 (unclamped), vOrder = 2, numPolesV = 2, vKnots empty (uniform)
+    BeFileName unclampedPathName(fullPathRoot);
+    unclampedPathName.AppendToPath(BeFileName(L"bsurf-trimmed-unclamped-knots.imjs"));
+    if (Check::True(GTestFileOps::JsonFileToGeometry(unclampedPathName, inputs), "Expect parse & validate to succeed on unclamped bsurf data") &&
+        Check::Size(inputs.size(), 1, "Have one input"))
+        {
+        auto bsurf = inputs[0]->GetAsMSBsplineSurface();
+        if (Check::True(bsurf.IsValid(), "input is valid"))
+            Check::SaveTransformed(bsurf);
+        }
+
+    BeFileName validPathName(fullPathRoot);
+    validPathName.AppendToPath(BeFileName(L"bsurf-trimmed-valid-knots.imjs"));     // in meters
+    if (Check::True(GTestFileOps::JsonFileToGeometry(validPathName, inputs), "Expect parse & validate to succeed on valid bsurf data") &&
+        Check::Size(inputs.size(), 1, "Have one input"))
+        {
+        auto bsurf = inputs[0]->GetAsMSBsplineSurface();
+        if (Check::True(bsurf.IsValid(), "input is valid"))
+            Check::SaveTransformed(bsurf);
+        }
+    Check::ClearGeometry("Serialization.TrimmedBSurface");
     }
 
 
@@ -541,9 +576,14 @@ TEST(Serialization, BlockedPolyface)
         indices.push_back(1 + 2 * i + 3);
         indices.push_back(1 + 2 * i + 1);
         }
+
+    auto invalidPolyface = PolyfaceHeader::CreateIndexedMesh(2, points, indices);
+    Check::False(invalidPolyface.IsValid(), "Expect invalid polyface for numPerFace = 2");
+
     auto polyface = PolyfaceHeader::CreateIndexedMesh(4, points, indices);
     auto g = IGeometry::Create (polyface);
     DoRoundTrip(g, false, 0);
     DoRoundTrip (g, false, 1);
     Check::SaveTransformed (*polyface);
+    Check::ClearGeometry("Serialization.BlockedPolyface");
     }
