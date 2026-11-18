@@ -13,9 +13,7 @@
 #include "GeoCoordTestCommon.h"
 #include <memory>
 
-#if defined(CREATE_STATIC_LIBRARIES)
 #include <csmap/cs_map.h>
-#endif
 
 using namespace ::testing;
 
@@ -34,7 +32,6 @@ class BaseGCSUnitTests : public ::testing::Test
         ~BaseGCSUnitTests() {};
     };
 
-#if defined(CREATE_STATIC_LIBRARIES)
 TEST_F(BaseGCSUnitTests, Wgs84LookupTracksActiveDictionaries)
 {
     BeFileName directory;
@@ -130,7 +127,6 @@ TEST_F(BaseGCSUnitTests, FormattedCsmapOutputForwardsArguments)
     checkFormatting();
     EXPECT_EQ(BeFileNameStatus::Success, BeFileName::BeDeleteFile(path));
 }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * Initial test for Json support

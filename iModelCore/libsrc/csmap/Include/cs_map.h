@@ -6839,7 +6839,7 @@ int CS_fgetc(csFILE* stream);
 int CS_fputc(int character, csFILE* stream);
 char* CS_fgets(char* str, int num, csFILE* stream);
 int CS_fputs(const char* str, csFILE* stream);
-int CS_fprintf(csFILE* stream, const char* format, ...);
+BASEGEOCOORD_EXPORTED int CS_fprintf(csFILE* stream, const char* format, ...);
 int CS_truncate(csFILE* stream, long writePosition);
 int	gcs_access(Const char* path, int mode);
 BASEGEOCOORD_EXPORTED csFILE* CS_fopen(const char* filename, const char* mode);
