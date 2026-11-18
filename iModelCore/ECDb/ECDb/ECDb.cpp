@@ -110,13 +110,54 @@ DbResult ECDb::_OnDbOpened(OpenParams const& params)
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::_AfterSchemaChangeSetApplied() const
+DbResult ECDb::_AfterSchemaChangeSetApplied(bool rebuildCacheTables) const
     {
     // Applying a changeset replays already accepted timeline changes, so historical inconsistencies written by
     // older software (orphan ec_CustomAttribute rows) must not fail the apply. The sqlite schema which was just
     // updated above is still validated. See https://github.com/iTwin/itwinjs-backlog/issues/2331
-    auto rc = GetImpl().Schemas().Main().UpdateDbSchema(true, DbMapValidationMode::ChangesetApply);
+    auto rc = GetImpl().Schemas().Main().UpdateDbSchema(true, DbMapValidationMode::ChangesetApply, rebuildCacheTables);
     if (rc != SUCCESS)
+        return BE_SQLITE_ERROR;
+
+    return BE_SQLITE_OK;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDb::ApplySchemaChangeSet(ChangeStreamCR changeset, ApplyChangesArgs args, std::function<void(bool)> const& onCacheRewrite)
+    {
+    MainSchemaManager const& mainSchemaManager = GetImpl().Schemas().Main();
+    auto rewriteCache = [&onCacheRewrite](auto&& step)
+        {
+        if (onCacheRewrite)
+            onCacheRewrite(true);
+
+        const BentleyStatus status = step();
+        if (onCacheRewrite)
+            onCacheRewrite(false);
+
+        return status;
+        };
+
+    // The changeset may not carry the cache rows that reference a deleted ec_Class row. Left in place,
+    // such a row would fail the deferred FK check because FK actions are off.
+    if (SUCCESS != rewriteCache([&] { return mainSchemaManager.ClearCacheTables(); }))
+        return BE_SQLITE_ERROR;
+
+    args.SetFkNoAction(true).SetFilterChange([](Changes::Change const& change)
+        {
+        if (!ApplyChangesArgs::IsSchemaChange(change) || change.GetTableName().StartsWithIAscii("ec_cache_"))
+            return ChangeStream::FilterChangeAction::Skip;
+
+        return ChangeStream::FilterChangeAction::Accept;
+        });
+
+    const DbResult rc = changeset.ApplyChanges(*this, args);
+    if (BE_SQLITE_OK != rc)
+        return rc;
+
+    if (SUCCESS != rewriteCache([&] { return mainSchemaManager.RepopulateCacheTables(); }))
         return BE_SQLITE_ERROR;
 
     return BE_SQLITE_OK;
