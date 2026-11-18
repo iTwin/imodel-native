@@ -7,6 +7,13 @@ This document including important changes to syntax or file format.
 | Profile | `4.0.0.5` |
 | ECSQL   | `2.0.4.2` |
 
+## `11/16/2026`: ECSQL grammar is free of bison conflicts
+* `sqlbison.y` no longer has shift/reduce or reduce/reduce conflicts or other bison warnings. It declares `%expect 0`, and `BuildECSqlParser.sh`/`.bat` run bison with `-Wall`, so a new conflict is reported when the parser is regenerated.
+* A parenthesized operand can now start a comparison or predicate, for example `WHERE (I) = 1`, `WHERE (P2D.X) >= (P3D.X)`, `WHERE (I) IN (1, 2)` or `CASE WHEN (I) = 1 THEN ...`. These statements were previously rejected with a syntax error.
+* A value expression that starts with a parenthesized term is now accepted as a `CASE WHEN` or `IIF` condition, for example `CASE WHEN I + 1 THEN ...`.
+* The native SQL can contain redundant parentheses, for example `([Foo].[I]) IS NULL` for `(I) IS NULL`. The results are unchanged.
+* Profile and ECSql versions are unchanged.
+
 ## `11/12/2026`: Schema changesets are applied without foreign key actions
 * The new `ECDb::ApplySchemaChangeSet` applies the `ec_` rows of a changeset with `SQLITE_CHANGESETAPPLY_FKNOACTION`. `TxnManager` uses it whenever it merges, reverses, reinstates or reverts a changeset with schema changes. Foreign keys are still checked once the whole changeset has been applied.
 * Previously, `ON DELETE CASCADE` could fire while the `ec_` rows were applied. A changeset that moved properties to a new PropertyCategory, KindOfQuantity or ECEnumeration and deleted the old one could delete those properties, with their property maps, and leave their custom attributes behind as orphans.

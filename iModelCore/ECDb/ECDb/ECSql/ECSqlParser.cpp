@@ -363,19 +363,6 @@ BentleyStatus ECSqlParser::ParseSelection(std::unique_ptr<SelectClauseExp>& exp,
     {
     exp = nullptr;
 
-    if (SQL_ISRULE(parseNode, selection))
-        {
-        OSQLParseNode const* n = parseNode->getChild(0);
-        if (Exp::IsAsteriskToken(n->getTokenValue()))
-            {
-            PropertyPath pp;
-            pp.Push(Exp::ASTERISK_TOKEN);
-            exp = std::make_unique<SelectClauseExp>();
-            exp->AddProperty(std::make_unique<DerivedPropertyExp>(std::make_unique<PropertyNameExp>(std::move(pp)), nullptr));
-            return SUCCESS;
-            }
-        }
-
     if (!SQL_ISRULE(parseNode, scalar_exp_commalist))
         {
         BeAssert(false && "Wrong grammar");
