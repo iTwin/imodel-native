@@ -11996,6 +11996,114 @@ TEST_F(SchemaUpgradeTestFixture, ModifyEnumType_IntToString)
     }
 
 //---------------------------------------------------------------------------------------
+// Reads an EC2 schema, runs the standard ECSchemaConverter and returns the result as EC3 XML.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+static bool ConvertEC2SchemaToEC3Xml(Utf8StringR ec3Xml, Utf8CP ec2Xml)
+    {
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    if (SchemaReadStatus::Success != ECSchema::ReadFromXmlString(schema, ec2Xml, *context) || !schema.IsValid())
+        return false;
+    if (!ECSchemaConverter::Convert(*schema, *context))
+        return false;
+    return SchemaWriteStatus::Success == schema->WriteToXmlString(ec3Xml, ECVersion::Latest);
+    }
+
+static Utf8String BuildStandardValuesEC2Schema(Utf8CP mustBeFromList)
+    {
+    Utf8String mustBeFromListXml = nullptr == mustBeFromList ? Utf8String() : Utf8PrintfString("<MustBeFromList>%s</MustBeFromList>", mustBeFromList);
+    return Utf8PrintfString(
+        "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='01.01' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "  <ECSchemaReference name='EditorCustomAttributes' version='01.00' prefix='beca' />"
+        "  <ECClass typeName='Foo' isDomainClass='True'>"
+        "    <ECProperty propertyName='WorkPackage' typeName='string'>"
+        "      <ECCustomAttributes>"
+        "        <StandardValues xmlns='EditorCustomAttributes.01.00'>"
+        "          %s"
+        "          <ValueMap>"
+        "            <ValueMap><Value>6001</Value><DisplayString>Label 1</DisplayString></ValueMap>"
+        "            <ValueMap><Value>6002</Value><DisplayString>Label 2</DisplayString></ValueMap>"
+        "          </ValueMap>"
+        "        </StandardValues>"
+        "      </ECCustomAttributes>"
+        "    </ECProperty>"
+        "  </ECClass>"
+        "</ECSchema>", mustBeFromListXml.c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, StandardValuesOnStringPropertyConvertedToNonStrictEnum)
+    {
+    // Existing iModel: the converter used to drop the StandardValues, leaving a plain string property
+    SchemaItem seedSchema(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECEntityClass typeName='Foo'>"
+        "    <ECProperty propertyName='WorkPackage' typeName='string' />"
+        "  </ECEntityClass>"
+        "</ECSchema>");
+    ASSERT_EQ(SUCCESS, SetupECDb("standardvaluesstring.ecdb", seedSchema));
+
+    ECInstanceKey knownValueKey, unknownValueKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(knownValueKey, "INSERT INTO ts.Foo(WorkPackage) VALUES('6001')"));
+    // Not strict, so values that are not in the list are legal and must survive the update
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(unknownValueKey, "INSERT INTO ts.Foo(WorkPackage) VALUES('9999')"));
+    m_ecdb.SaveChanges();
+    BeFileName seedPath(m_ecdb.GetDbFileName());
+    m_ecdb.CloseDb();
+
+    // The EC converter turns the StandardValues into a string enumeration.
+    Utf8String updatedSchemaXml;
+    ASSERT_TRUE(ConvertEC2SchemaToEC3Xml(updatedSchemaXml, BuildStandardValuesEC2Schema("False").c_str()));
+    ASSERT_TRUE(updatedSchemaXml.Contains("isStrict=\"false\"")) << updatedSchemaXml.c_str();
+
+    for (Utf8CP mustBeFromList : {"True", (Utf8CP) nullptr})
+        {
+        Utf8String variantXml;
+        ASSERT_TRUE(ConvertEC2SchemaToEC3Xml(variantXml, BuildStandardValuesEC2Schema(mustBeFromList).c_str()));
+        EXPECT_STREQ(updatedSchemaXml.c_str(), variantXml.c_str()) << "MustBeFromList=" << (mustBeFromList ? mustBeFromList : "<omitted>") << " must yield the same non-strict string enumeration";
+        }
+
+    m_updatedDbs.clear();
+    AssertSchemaUpdate(updatedSchemaXml.c_str(), seedPath, {true, true}, "StandardValues converted to a non-strict string enumeration");
+    ASSERT_EQ(2U, m_updatedDbs.size());
+
+    for (Utf8StringCR dbPath : m_updatedDbs)
+        {
+        ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
+
+        ECClassCP foo = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
+        ASSERT_TRUE(foo != nullptr);
+        PrimitiveECPropertyCP prop = foo->GetPropertyP("WorkPackage")->GetAsPrimitiveProperty();
+        ASSERT_TRUE(prop != nullptr);
+
+        ECEnumerationCP ecEnum = prop->GetEnumeration();
+        ASSERT_TRUE(ecEnum != nullptr) << "The property must be typed by the converted enumeration after the schema update";
+        EXPECT_EQ(PRIMITIVETYPE_String, ecEnum->GetType());
+        EXPECT_FALSE(ecEnum->GetIsStrict());
+        ASSERT_EQ(2U, ecEnum->GetEnumeratorCount());
+        ASSERT_TRUE(ecEnum->FindEnumerator("6001") != nullptr);
+        ASSERT_TRUE(ecEnum->FindEnumerator("6002") != nullptr);
+        EXPECT_STREQ("Label 1", ecEnum->FindEnumerator("6001")->GetDisplayLabel().c_str());
+        EXPECT_STREQ("Label 2", ecEnum->FindEnumerator("6002")->GetDisplayLabel().c_str());
+
+        // The stored values are unchanged, including the one that is not part of the enumeration
+        EXPECT_EQ(JsonValue(R"json([{"WorkPackage":"6001"},{"WorkPackage":"9999"}])json"), GetHelper().ExecuteSelectECSql("SELECT WorkPackage FROM ts.Foo ORDER BY ECInstanceId"));
+
+        // Data can still be written after the update
+        ECInstanceKey newKey;
+        EXPECT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(newKey, "INSERT INTO ts.Foo(WorkPackage) VALUES('6002')"));
+
+        m_ecdb.AbandonChanges();
+        m_ecdb.CloseDb();
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaUpgradeTestFixture, RemoveExistingEnum)

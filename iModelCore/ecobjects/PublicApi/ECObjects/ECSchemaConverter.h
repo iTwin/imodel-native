@@ -7,6 +7,7 @@
 #include <ECObjects/ECContext.h>
 #include <ECObjects/IssueReporter.h>
 #include <unordered_set>
+#include <map>
 #include <string>
 
 namespace std
@@ -255,8 +256,12 @@ struct StandardValueInfo
     {
     friend struct StandardValuesConverter;
 private: 
-    bmap<int, Utf8String> m_valuesMap;
-    bool m_mustBeFromList;
+    bmap<int, Utf8String> m_valuesMap;      // used when m_type is PRIMITIVETYPE_Integer
+    std::map<Utf8String, Utf8String, CompareIUtf8Ascii> m_stringValuesMap;  // used when m_type is PRIMITIVETYPE_String
+    PrimitiveType m_type = PrimitiveType::PRIMITIVETYPE_Integer;
+    bool m_mustBeFromList = true;
+
+    size_t GetValueCount() const { return m_type == PrimitiveType::PRIMITIVETYPE_String ? m_stringValuesMap.size() : m_valuesMap.size(); }
 
 public:
     bool Equals(const StandardValueInfo& sd) const;
@@ -271,9 +276,10 @@ public:
     //--------------------------------------------------------------------------------------
     // Extracts Standard Values Instance data from the instance
     //! @param[in]  instance    The instance of StandValues customattribute
-    //! @param[out] sdInfo      Extracted data 
+    //! @param[out] sdInfo      Extracted data
+    //! @param[in] type         Backing type of enumeration to build (int/string).
     //---------------+---------------+---------------+---------------+---------------+------
-    static ECObjectsStatus ExtractInstanceData(IECInstanceR instance, StandardValueInfo& sdInfo);
+    static ECObjectsStatus ExtractInstanceData(IECInstanceR instance, StandardValueInfo& sdInfo, PrimitiveType type = PrimitiveType::PRIMITIVETYPE_Integer);
     };
 
 //+===============+===============+===============+===============+===============+======

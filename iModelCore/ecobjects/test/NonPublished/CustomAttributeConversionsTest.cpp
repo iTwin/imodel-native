@@ -2566,6 +2566,479 @@ TEST_F(StandardValueToEnumConversionTest, DroppedWhenAppliedToUnsupportedType)
     ASSERT_TRUE(schema->GetReferencedSchemas().end() == schema->GetReferencedSchemas().Find(SchemaKey("EditorCustomAttributes", 1, 0), SchemaMatchType::Latest));
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(StandardValueToEnumConversionTest, StringPropertyConvertedToStringEnumeration)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version='1.0' encoding='UTF-8'?>
+        <ECSchema schemaName="TestSchema" version="1.0" nameSpacePrefix="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="EditorCustomAttributes" version="01.00" prefix="beca" />
+            <ECClass typeName="TestClass" isDomainClass="True">
+                <ECProperty propertyName="StringProp" typeName="string">
+                    <ECCustomAttributes>
+                        <StandardValues xmlns="EditorCustomAttributes.01.00">
+                            <MustBeFromList>False</MustBeFromList>
+                            <ValueMap>
+                                <ValueMap><Value>6001</Value><DisplayString>String Label 1</DisplayString></ValueMap>
+                                <ValueMap><Value>6002</Value><DisplayString>String Label 2</DisplayString></ValueMap>
+                            </ValueMap>
+                        </StandardValues>
+                    </ECCustomAttributes>
+                </ECProperty>
+                <ECArrayProperty propertyName="StringArrayProp" typeName="string" minOccurs="0" maxOccurs="unbounded">
+                    <ECCustomAttributes>
+                        <StandardValues xmlns="EditorCustomAttributes.01.00">
+                            <MustBeFromList>False</MustBeFromList>
+                            <ValueMap>
+                                <ValueMap><Value>6001</Value><DisplayString>String Array Label 1</DisplayString></ValueMap>
+                                <ValueMap><Value>6002</Value><DisplayString>String Array Label 2</DisplayString></ValueMap>
+                            </ValueMap>
+                        </StandardValues>
+                    </ECCustomAttributes>
+                </ECArrayProperty>
+                <ECProperty propertyName="IntProp" typeName="int">
+                    <ECCustomAttributes>
+                        <StandardValues xmlns="EditorCustomAttributes.01.00">
+                            <MustBeFromList>False</MustBeFromList>
+                            <ValueMap>
+                                <ValueMap><Value>6001</Value><DisplayString>Int Display 1</DisplayString></ValueMap>
+                                <ValueMap><Value>6002</Value><DisplayString>Int Display 2</DisplayString></ValueMap>
+                            </ValueMap>
+                        </StandardValues>
+                    </ECCustomAttributes>
+                </ECProperty>
+                <ECArrayProperty propertyName="IntArrayProp" typeName="int" minOccurs="0" maxOccurs="unbounded">
+                    <ECCustomAttributes>
+                        <StandardValues xmlns="EditorCustomAttributes.01.00">
+                            <MustBeFromList>False</MustBeFromList>
+                            <ValueMap>
+                                <ValueMap><Value>6001</Value><DisplayString>Int Array Label 1</DisplayString></ValueMap>
+                                <ValueMap><Value>6002</Value><DisplayString>Int Array Label 2</DisplayString></ValueMap>
+                            </ValueMap>
+                        </StandardValues>
+                    </ECCustomAttributes>
+                </ECArrayProperty>
+            </ECClass>
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(ECSchemaConverter::Convert(*schema.get(), *context.get())) << "Schema conversion failed";
+
+    ECClassCP testClass = schema->GetClassCP("TestClass");
+    ASSERT_NE(nullptr, testClass);
+
+    auto verifyStringEnum = [](ECEnumerationCP ecEnum, std::pair<Utf8String, Utf8String> expectedValues)
+        {
+        ASSERT_NE(nullptr, ecEnum) << "String property lost its StandardValues display strings";
+        EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_String, ecEnum->GetType());
+        EXPECT_FALSE(ecEnum->GetIsStrict());
+        ASSERT_EQ(2, ecEnum->GetEnumeratorCount());
+
+        ECEnumeratorCP e1 = ecEnum->FindEnumerator("6001");
+        ECEnumeratorCP e2 = ecEnum->FindEnumerator("6002");
+        ASSERT_NE(nullptr, e1);
+        ASSERT_NE(nullptr, e2);
+        EXPECT_STREQ(expectedValues.first.c_str(), e1->GetDisplayLabel().c_str());
+        EXPECT_STREQ(expectedValues.second.c_str(), e2->GetDisplayLabel().c_str());
+        };
+
+    ECPropertyP strProp = testClass->GetPropertyP("StringProp");
+    ASSERT_NE(nullptr, strProp);
+    verifyStringEnum(strProp->GetAsPrimitiveProperty()->GetEnumeration(), {"String Label 1", "String Label 2"});
+    EXPECT_FALSE(strProp->GetCustomAttributeLocal("EditorCustomAttributes", "StandardValues").IsValid()) << "StandardValues should have been removed after conversion";
+
+    ECPropertyP arrProp = testClass->GetPropertyP("StringArrayProp");
+    ASSERT_NE(nullptr, arrProp);
+    verifyStringEnum(arrProp->GetAsPrimitiveArrayProperty()->GetEnumeration(), {"String Array Label 1", "String Array Label 2"});
+
+    // The int properties with identical values must get their own int enumerations; string and int never share one
+    ECEnumerationCP intEnum = testClass->GetPropertyP("IntProp")->GetAsPrimitiveProperty()->GetEnumeration();
+    ASSERT_NE(nullptr, intEnum);
+    EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_Integer, intEnum->GetType());
+    EXPECT_NE(intEnum, strProp->GetAsPrimitiveProperty()->GetEnumeration());
+
+    ECEnumerationCP intArrayEnum = testClass->GetPropertyP("IntArrayProp")->GetAsPrimitiveArrayProperty()->GetEnumeration();
+    ASSERT_NE(nullptr, intArrayEnum);
+    EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_Integer, intArrayEnum->GetType());
+    EXPECT_NE(intArrayEnum, strProp->GetAsPrimitiveProperty()->GetEnumeration());
+
+    // Labels differ for every property, so none of the (non-strict) enumerations can be shared.
+    EXPECT_EQ(4, schema->GetEnumerationCount()) << "Expected one enumeration per property because the labels differ";
+
+    for (Utf8CP propName : {"StringProp", "StringArrayProp", "IntProp", "IntArrayProp"})
+        EXPECT_FALSE(testClass->GetPropertyP(propName)->GetCustomAttributeLocal("EditorCustomAttributes", "StandardValues").IsValid()) << "StandardValues should have been removed from " << propName;
+    }
+
+//=======================================================================================
+// Helpers for building StandardValues schemas
+//=======================================================================================
+namespace
+    {
+    Utf8String StdValuesCA(Utf8CP mustBeFromList, std::initializer_list<std::pair<int, Utf8CP>> values)
+        {
+        Utf8String xml("<ECCustomAttributes><StandardValues xmlns=\"EditorCustomAttributes.01.00\">");
+        if (nullptr != mustBeFromList)
+            xml.append("<MustBeFromList>").append(mustBeFromList).append("</MustBeFromList>");
+        xml.append("<ValueMap>");
+        for (auto const& v : values)
+            xml.append(Utf8PrintfString("<ValueMap><Value>%d</Value><DisplayString>%s</DisplayString></ValueMap>", v.first, v.second));
+        xml.append("</ValueMap></StandardValues></ECCustomAttributes>");
+        return xml;
+        }
+
+    Utf8String PropXml(Utf8CP name, Utf8CP typeName, bool isArray, Utf8StringCR ca)
+        {
+        if (isArray)
+            return Utf8PrintfString("<ECArrayProperty propertyName=\"%s\" typeName=\"%s\" minOccurs=\"0\" maxOccurs=\"unbounded\">%s</ECArrayProperty>", name, typeName, ca.c_str());
+        return Utf8PrintfString("<ECProperty propertyName=\"%s\" typeName=\"%s\">%s</ECProperty>", name, typeName, ca.c_str());
+        }
+
+    Utf8String ClassXml(Utf8CP name, Utf8CP baseClass, Utf8StringCR properties)
+        {
+        Utf8String xml = Utf8PrintfString("<ECClass typeName=\"%s\" isDomainClass=\"True\">", name);
+        if (nullptr != baseClass)
+            xml.append("<BaseClass>").append(baseClass).append("</BaseClass>");
+        xml.append(properties).append("</ECClass>");
+        return xml;
+        }
+
+    Utf8String SchemaXml(Utf8StringCR classes)
+        {
+        return Utf8String("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+            "<ECSchema schemaName=\"test\" version=\"1.0\" nameSpacePrefix=\"ts\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+            "<ECSchemaReference name=\"EditorCustomAttributes\" version=\"01.00\" prefix=\"beca\" />") + classes + "</ECSchema>";
+        }
+
+    ECEnumerationCP GetEnum(ECSchemaCR schema, Utf8CP className, Utf8CP propName)
+        {
+        ECClassCP ecClass = schema.GetClassCP(className);
+        ECPropertyCP prop = nullptr != ecClass ? ecClass->GetPropertyP(propName) : nullptr;
+        if (nullptr == prop)
+            return nullptr;
+        if (prop->GetIsPrimitive())
+            return prop->GetAsPrimitiveProperty()->GetEnumeration();
+        return prop->GetAsPrimitiveArrayProperty()->GetEnumeration();
+        }
+
+    ECSchemaPtr ReadAndConvert(Utf8StringCR xml)
+        {
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        if (SchemaReadStatus::Success != ECSchema::ReadFromXmlString(schema, xml.c_str(), *context) || !schema.IsValid())
+            return nullptr;
+        if (!ECSchemaConverter::Convert(*schema.get(), *context.get()))
+            return nullptr;
+        return schema;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// String enumerations are always non-strict, irrespective of MustBeFromList.
+// Identical value sets therefore share a single enumeration.
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(StandardValueToEnumConversionTest, StringEnumerationsAreAlwaysNonStrict)
+    {
+    Utf8String props =
+        PropXml("StrictProp", "string", false, StdValuesCA("True", {{6001, "L1"}, {6002, "L2"}})) +
+        PropXml("DefaultProp", "string", false, StdValuesCA(nullptr, {{6001, "L1"}, {6002, "L2"}})) +
+        PropXml("StrictArrayProp", "string", true, StdValuesCA("True", {{6001, "L1"}, {6002, "L2"}})) +
+        PropXml("NonStrictProp", "string", false, StdValuesCA("False", {{6001, "L1"}, {6002, "L2"}})) +
+        PropXml("IntStrictProp", "int", false, StdValuesCA("True", {{6001, "L1"}, {6002, "L2"}}));
+    ECSchemaPtr schema = ReadAndConvert(SchemaXml(ClassXml("TestClass", nullptr, props)));
+    ASSERT_TRUE(schema.IsValid());
+
+    ECEnumerationCP stringEnum = GetEnum(*schema, "TestClass", "StrictProp");
+    ASSERT_NE(nullptr, stringEnum);
+    EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_String, stringEnum->GetType());
+    EXPECT_FALSE(stringEnum->GetIsStrict()) << "MustBeFromList=True must still yield a non-strict string enumeration";
+
+    for (Utf8CP propName : {"DefaultProp", "StrictArrayProp", "NonStrictProp"})
+        EXPECT_EQ(stringEnum, GetEnum(*schema, "TestClass", propName)) << propName << " must share the single non-strict string enumeration";
+
+    // Int conversion is unchanged: MustBeFromList=True still gives a strict int enumeration
+    ECEnumerationCP intEnum = GetEnum(*schema, "TestClass", "IntStrictProp");
+    ASSERT_NE(nullptr, intEnum);
+    EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_Integer, intEnum->GetType());
+    EXPECT_TRUE(intEnum->GetIsStrict());
+
+    EXPECT_EQ(2u, schema->GetEnumerationCount());
+    }
+
+//---------------------------------------------------------------------------------------
+// Non-strict string enumerations merge non-conflicting values; a conflicting label creates a new enumeration.
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(StandardValueToEnumConversionTest, NonStrictStringEnumerationsAreMergedOrSplit)
+    {
+    Utf8String classes =
+        ClassXml("A", nullptr, PropXml("P", "string", false, StdValuesCA("False", {{6001, "L1"}, {6002, "L2"}}))) +
+        ClassXml("B", nullptr, PropXml("P", "string", false, StdValuesCA("False", {{6002, "L2"}, {6003, "L3"}}))) +
+        ClassXml("C", nullptr, PropXml("P", "string", false, StdValuesCA("False", {{6001, "Conflicting"}, {6004, "L4"}})));
+    ECSchemaPtr schema = ReadAndConvert(SchemaXml(classes));
+    ASSERT_TRUE(schema.IsValid());
+
+    ECEnumerationCP merged = GetEnum(*schema, "A", "P");
+    ASSERT_NE(nullptr, merged);
+    EXPECT_EQ(merged, GetEnum(*schema, "B", "P")) << "Non-conflicting values are merged into the existing enumeration";
+    EXPECT_EQ(3, merged->GetEnumeratorCount());
+    EXPECT_NE(nullptr, merged->FindEnumerator("6003"));
+
+    ECEnumerationCP separate = GetEnum(*schema, "C", "P");
+    ASSERT_NE(nullptr, separate);
+    EXPECT_NE(merged, separate) << "A value with a different label must not be merged";
+    EXPECT_EQ(2, separate->GetEnumeratorCount());
+    EXPECT_EQ(3, merged->GetEnumeratorCount()) << "A failed merge must leave the existing enumeration untouched";
+    EXPECT_EQ(2, schema->GetEnumerationCount());
+    }
+
+//---------------------------------------------------------------------------------------
+// A derived string property with StandardValues shares its base property's enumeration.
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(StandardValueToEnumConversionTest, DerivedStringPropertySharesBaseEnumeration)
+    {
+    Utf8String classes =
+        ClassXml("Base", nullptr, PropXml("P", "string", false, StdValuesCA("False", {{6001, "L1"}, {6002, "L2"}}))) +
+        ClassXml("Subset", "Base", PropXml("P", "string", false, StdValuesCA("False", {{6001, "L1"}}))) +
+        ClassXml("Extended", "Base", PropXml("P", "string", false, StdValuesCA("False", {{6002, "L2"}, {6003, "L3"}})));
+    ECSchemaPtr schema = ReadAndConvert(SchemaXml(classes));
+    ASSERT_TRUE(schema.IsValid());
+
+    ECEnumerationCP baseEnum = GetEnum(*schema, "Base", "P");
+    ASSERT_NE(nullptr, baseEnum);
+    EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_String, baseEnum->GetType());
+    EXPECT_EQ(baseEnum, GetEnum(*schema, "Subset", "P"));
+    EXPECT_EQ(baseEnum, GetEnum(*schema, "Extended", "P"));
+    EXPECT_EQ(1, schema->GetEnumerationCount());
+    EXPECT_EQ(3, baseEnum->GetEnumeratorCount()) << "The non-conflicting derived value is merged into the base enumeration";
+    }
+
+//---------------------------------------------------------------------------------------
+// Zero and negative values must survive the integer to string conversion.
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(StandardValueToEnumConversionTest, StringEnumerationKeepsZeroAndNegativeValues)
+    {
+    ECSchemaPtr schema = ReadAndConvert(SchemaXml(ClassXml("A", nullptr,
+        PropXml("P", "string", false, StdValuesCA("False", {{-1, "Minus one"}, {0, "Zero"}, {6001, "L1"}})))));
+    ASSERT_TRUE(schema.IsValid());
+
+    ECEnumerationCP ecEnum = GetEnum(*schema, "A", "P");
+    ASSERT_NE(nullptr, ecEnum);
+    EXPECT_STREQ("A_P", ecEnum->GetName().c_str());
+    ASSERT_EQ(3u, ecEnum->GetEnumeratorCount());
+    ASSERT_NE(nullptr, ecEnum->FindEnumerator("-1"));
+    ASSERT_NE(nullptr, ecEnum->FindEnumerator("0"));
+    EXPECT_STREQ("Minus one", ecEnum->FindEnumerator("-1")->GetDisplayLabel().c_str());
+    EXPECT_STREQ("Zero", ecEnum->FindEnumerator("0")->GetDisplayLabel().c_str());
+
+    // Enumerator names follow the integer convention <EnumName><Value>, encoded where necessary
+    EXPECT_STREQ("A_P__x002D__1", ecEnum->FindEnumerator("-1")->GetName().c_str());
+    EXPECT_STREQ("A_P0", ecEnum->FindEnumerator("0")->GetName().c_str());
+    EXPECT_STREQ("A_P6001", ecEnum->FindEnumerator("6001")->GetName().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// Labels that differ only by case are not a conflict; the first label wins and the
+// enumeration is shared (values are compared case-insensitively as well).
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(StandardValueToEnumConversionTest, StringLabelsDifferingOnlyByCaseAreNotAConflict)
+    {
+    Utf8String classes =
+        ClassXml("Base", nullptr, PropXml("P", "string", false, StdValuesCA("False", {{6001, "Label One"}, {6002, "Label Two"}}))) +
+        ClassXml("Derived", "Base", PropXml("P", "string", false, StdValuesCA("False", {{6001, "LABEL ONE"}, {6003, "Label Three"}}))) +
+        ClassXml("Other", nullptr, PropXml("P", "string", false, StdValuesCA("False", {{6001, "label one"}, {6002, "LABEL TWO"}})));
+    ECSchemaPtr schema = ReadAndConvert(SchemaXml(classes));
+    ASSERT_TRUE(schema.IsValid());
+
+    ECEnumerationCP baseEnum = GetEnum(*schema, "Base", "P");
+    ASSERT_NE(nullptr, baseEnum);
+    EXPECT_EQ(baseEnum, GetEnum(*schema, "Derived", "P")) << "Derived label differing only by case must merge into the base enumeration";
+    EXPECT_EQ(baseEnum, GetEnum(*schema, "Other", "P")) << "Unrelated class with case-only label differences must reuse the enumeration";
+    EXPECT_EQ(1u, schema->GetEnumerationCount());
+    ASSERT_EQ(3u, baseEnum->GetEnumeratorCount());
+    EXPECT_STREQ("Label One", baseEnum->FindEnumerator("6001")->GetDisplayLabel().c_str()) << "First label wins";
+    }
+
+//---------------------------------------------------------------------------------------
+// A derived property that overrides a string base property with an int type is renamed by the
+// EC2 schema reader (resolveConflicts is always on for EC2). Because property custom attributes
+// are attached in a second pass by name, the renamed property ends up without a StandardValues CA.
+// The converter must still convert the string base property and leave the renamed int property alone.
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(StandardValueToEnumConversionTest, DerivedPropertyWithDifferentPrimitiveTypeDoesNotBreakBaseConversion)
+    {
+    Utf8String classes =
+        ClassXml("Base", nullptr, PropXml("P", "string", false, StdValuesCA("False", {{6001, "L1"}}))) +
+        ClassXml("Derived", "Base", PropXml("P", "int", false, StdValuesCA("False", {{6001, "L1"}})));
+    ECSchemaPtr schema = ReadAndConvert(SchemaXml(classes));
+    ASSERT_TRUE(schema.IsValid());
+
+    ECEnumerationCP baseEnum = GetEnum(*schema, "Base", "P");
+    ASSERT_NE(nullptr, baseEnum);
+    EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_String, baseEnum->GetType());
+    EXPECT_FALSE(baseEnum->GetIsStrict());
+    EXPECT_EQ(1u, baseEnum->GetEnumeratorCount());
+
+    ECClassCP derived = schema->GetClassCP("Derived");
+    ASSERT_NE(nullptr, derived);
+    ASSERT_EQ(1u, derived->GetPropertyCount(false));
+    ECPropertyCP renamed = *derived->GetProperties(false).begin();
+    EXPECT_FALSE(renamed->GetName().Equals("P")) << "The conflicting int override must have been renamed by the reader";
+    ASSERT_TRUE(renamed->GetIsPrimitive());
+    EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_Integer, renamed->GetAsPrimitiveProperty()->GetType());
+    EXPECT_EQ(nullptr, renamed->GetAsPrimitiveProperty()->GetEnumeration()) << "Renamed property carries no StandardValues, so it must stay a plain int";
+    EXPECT_FALSE(renamed->GetCustomAttributeLocal("EditorCustomAttributes", "StandardValues").IsValid());
+
+    // The inherited base property is the one typed by the enumeration
+    EXPECT_EQ(baseEnum, GetEnum(*schema, "Derived", "P"));
+    EXPECT_EQ(1u, schema->GetEnumerationCount());
+    }
+
+//---------------------------------------------------------------------------------------
+// StandardValues on an EC3 schema must not be merged into a hand-authored string enumeration;
+// only enumerations named by the converter (<Class>_<Prop>[_N]) may be extended.
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(StandardValueToEnumConversionTest, HandAuthoredStringEnumerationIsNotExtendedByMerge)
+    {
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, SchemaXml(ClassXml("A", nullptr,
+        PropXml("P", "string", false, StdValuesCA("False", {{6001, "L1"}})))).c_str(), *context));
+    ASSERT_TRUE(schema.IsValid());
+
+    // Simulate an EC3 schema that already contains a non-strict string enumeration not created by the converter
+    ECEnumerationP authored = nullptr;
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEnumeration(authored, "Authored", PrimitiveType::PRIMITIVETYPE_String));
+    authored->SetIsStrict(false);
+    ECEnumeratorP png = nullptr;
+    ASSERT_EQ(ECObjectsStatus::Success, authored->CreateEnumerator(png, "Png", "Png"));
+    png->SetDisplayLabel("PNG");
+
+    ASSERT_TRUE(ECSchemaConverter::Convert(*schema.get(), *context.get()));
+
+    EXPECT_EQ(1u, authored->GetEnumeratorCount()) << "Hand-authored enumeration must not receive StandardValues enumerators";
+
+    ECEnumerationCP converted = GetEnum(*schema, "A", "P");
+    ASSERT_NE(nullptr, converted);
+    EXPECT_NE(static_cast<ECEnumerationCP>(authored), converted);
+    EXPECT_STREQ("A_P", converted->GetName().c_str());
+    EXPECT_EQ(2u, schema->GetEnumerationCount());
+    }
+
+//---------------------------------------------------------------------------------------
+// The converter-generated-name check must cope with underscores in class and property names
+// and with the _<N> suffix, so that such enumerations are still merged into.
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(StandardValueToEnumConversionTest, StringEnumerationsWithUnderscoredNamesAreStillMerged)
+    {
+    Utf8String classes =
+        ClassXml("My_Class", nullptr, PropXml("Work_Package_1", "string", false, StdValuesCA("False", {{6001, "L1"}, {6002, "L2"}}))) +
+        ClassXml("Other", nullptr, PropXml("P", "string", false, StdValuesCA("False", {{6002, "L2"}, {6003, "L3"}})));
+    ECSchemaPtr schema = ReadAndConvert(SchemaXml(classes));
+    ASSERT_TRUE(schema.IsValid());
+
+    ECEnumerationCP merged = GetEnum(*schema, "My_Class", "Work_Package_1");
+    ASSERT_NE(nullptr, merged);
+    EXPECT_STREQ("My_Class_Work_Package_1", merged->GetName().c_str());
+    EXPECT_EQ(merged, GetEnum(*schema, "Other", "P")) << "Enumeration named <Class>_<Prop> with underscores must be recognized as converter generated";
+    EXPECT_EQ(3u, merged->GetEnumeratorCount());
+    EXPECT_EQ(1u, schema->GetEnumerationCount());
+    }
+
+//---------------------------------------------------------------------------------------
+// If converting a property fails after FindEnumeration returned an enumeration that other
+// properties already use, that enumeration must survive.
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(StandardValueToEnumConversionTest, FailedStringConversionDoesNotDeleteSharedEnumeration)
+    {
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    Utf8String classes =
+        ClassXml("A", nullptr, PropXml("P", "string", false, StdValuesCA("False", {{6001, "L1"}}))) +
+        ClassXml("B", nullptr, PropXml("P", "string", false, StdValuesCA("False", {{6001, "L1"}})));
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, SchemaXml(classes).c_str(), *context));
+    ASSERT_TRUE(schema.IsValid());
+
+    // B.P is already typed by an unrelated string enumeration, so converting it must fail
+    ECEnumerationP unrelated = nullptr;
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEnumeration(unrelated, "Unrelated", PrimitiveType::PRIMITIVETYPE_String));
+    unrelated->SetIsStrict(false);
+    ECEnumeratorP x = nullptr;
+    ASSERT_EQ(ECObjectsStatus::Success, unrelated->CreateEnumerator(x, "X", "X"));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->GetClassP("B")->GetPropertyP("P")->GetAsPrimitivePropertyP()->SetType(*unrelated));
+
+    ECSchemaConverter::Convert(*schema.get(), *context.get());
+
+    ECEnumerationCP sharedEnum = schema->GetEnumerationCP("A_P");
+    ASSERT_NE(nullptr, sharedEnum) << "Enumeration used by A.P must not be deleted because B.P failed to convert";
+    EXPECT_EQ(sharedEnum, GetEnum(*schema, "A", "P"));
+    EXPECT_EQ(static_cast<ECEnumerationCP>(unrelated), GetEnum(*schema, "B", "P"));
+    EXPECT_EQ(2u, schema->GetEnumerationCount());
+    }
+
+//---------------------------------------------------------------------------------------
+// Converting an already converted schema must not change it.
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(StandardValueToEnumConversionTest, StringConversionIsIdempotent)
+    {
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, SchemaXml(ClassXml("A", nullptr,
+        PropXml("P", "string", false, StdValuesCA("False", {{6001, "L1"}})))).c_str(), *context));
+    ASSERT_TRUE(ECSchemaConverter::Convert(*schema.get(), *context.get()));
+    ECEnumerationCP first = GetEnum(*schema, "A", "P");
+    ASSERT_NE(nullptr, first);
+
+    ASSERT_TRUE(ECSchemaConverter::Convert(*schema.get(), *context.get()));
+    EXPECT_EQ(first, GetEnum(*schema, "A", "P"));
+    EXPECT_EQ(1, schema->GetEnumerationCount());
+    EXPECT_EQ(1, first->GetEnumeratorCount());
+    }
+
+//---------------------------------------------------------------------------------------
+// Int and string properties with identical values and labels never share an enumeration,
+// whatever MustBeFromList says. (For strings the enumeration is always non-strict.)
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(StandardValueToEnumConversionTest, IntAndStringEnumerationsAreNeverShared)
+    {
+    for (Utf8CP strictness : {"True", "False"})
+        {
+        Utf8String classes =
+            ClassXml("A", nullptr, PropXml("P", "int", false, StdValuesCA(strictness, {{6001, "L1"}, {6002, "L2"}}))) +
+            ClassXml("B", nullptr, PropXml("P", "string", false, StdValuesCA(strictness, {{6001, "L1"}, {6002, "L2"}}))) +
+            ClassXml("C", nullptr, PropXml("P", "int", true, StdValuesCA(strictness, {{6001, "L1"}, {6002, "L2"}}))) +
+            ClassXml("D", nullptr, PropXml("P", "string", true, StdValuesCA(strictness, {{6001, "L1"}, {6002, "L2"}})));
+        ECSchemaPtr schema = ReadAndConvert(SchemaXml(classes));
+        ASSERT_TRUE(schema.IsValid()) << "MustBeFromList=" << strictness;
+
+        ECEnumerationCP intEnum = GetEnum(*schema, "A", "P");
+        ECEnumerationCP stringEnum = GetEnum(*schema, "B", "P");
+        ASSERT_NE(nullptr, intEnum) << "MustBeFromList=" << strictness;
+        ASSERT_NE(nullptr, stringEnum) << "MustBeFromList=" << strictness;
+        EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_Integer, intEnum->GetType());
+        EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_String, stringEnum->GetType());
+        EXPECT_NE(intEnum, stringEnum);
+
+        // Arrays share with the scalar of the same backing type, never with the other type
+        EXPECT_EQ(intEnum, GetEnum(*schema, "C", "P")) << "MustBeFromList=" << strictness;
+        EXPECT_EQ(stringEnum, GetEnum(*schema, "D", "P")) << "MustBeFromList=" << strictness;
+        EXPECT_EQ(2, schema->GetEnumerationCount()) << "MustBeFromList=" << strictness;
+        }
+    }
+
 Utf8String StandardCustomAttributeConversionTests::GetDateTimeInfoValue(IECInstancePtr instancePtr, Utf8CP name)
     {
     ECValue value;
