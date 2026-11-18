@@ -496,10 +496,10 @@ bool MSBsplineCurve::IsValidGeometry (GeometryValidatorPtr &validator) const
     static double s_maxWeight = 1.0e5;
     if (weights != nullptr && !validator->IsValidGeometry(weights, numPoles, s_minWeight, s_maxWeight))
         return false;
-    // enforce non-decreasing knots:
-    for (int k0 = 0; k0 + 1 < numKnots; k0++)
-        if (knots[k0] > knots[k0 + 1])
-            return false;
+    // require nondecreasing knots and nontrivial range
+    bool checkExteriorKnots = false; // unexpected exterior knots are not invalid
+    if (!AreKnotsValid(checkExteriorKnots))
+        return false;
     return true;
     }
 
