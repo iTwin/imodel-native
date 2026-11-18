@@ -78,7 +78,7 @@ struct _csFile {
     virtual int putc(int character) = 0;
     virtual int puts(const char* str) = 0;
     virtual int truncate(long writePosition) = 0;
-    virtual int printf(Utf8CP format...) = 0;
+    virtual int vprintf(Utf8CP format, va_list args) = 0;
     virtual ~_csFile() {}
     };
 
@@ -12378,7 +12378,7 @@ struct WorkspaceResource : _csFile {
     virtual int puts(const char* str) override { return readonly(); }
     virtual size_t write(const void* ptr, size_t size, size_t count) override { return readonly(); }
     virtual int truncate(long writePosition) override { return readonly(); }
-    virtual int printf(Utf8CP format...) override { return readonly(); }
+    virtual int vprintf(Utf8CP format, va_list args) override { return readonly(); }
 };
 
 //=======================================================================================
@@ -24916,6 +24916,24 @@ DatumCP             Datum::CreateDatum (Utf8CP keyName)
     return new Datum (keyName);
     }
 
+static DatumCP GetWgs84Datum()
+    {
+    static DatumCP datum = nullptr;
+    if (nullptr == datum)
+        {
+        DatumCP candidate = Datum::CreateDatum("WGS84");
+        if (nullptr == candidate)
+            return nullptr;
+        if (!candidate->IsValid())
+            {
+            candidate->Destroy();
+            return nullptr;
+            }
+        datum = candidate;
+        }
+    return datum;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -25418,9 +25436,7 @@ StatusInt         Datum::ToJson(BeJsValue jsonValue, bool expandEllipsoid, bool 
         return ERROR;
 
     // Now we need to obtain the geodetic transformation to WGS84
-    static DatumCP wgs84Datum = nullptr;
-    if (nullptr == wgs84Datum)
-        wgs84Datum = Datum::CreateDatum("WGS84");
+    DatumCP wgs84Datum = GetWgs84Datum();
 
     if (wgs84Datum == nullptr)
         return ERROR;
@@ -25986,9 +26002,7 @@ bool            Datum::IsWGS84Coincident () const
         return true;
 
     // Now we need to obtain the geodetic transformation to WGS84
-    static DatumCP wgs84Datum = nullptr;
-    if (nullptr == wgs84Datum)
-        wgs84Datum = Datum::CreateDatum("WGS84");
+    DatumCP wgs84Datum = GetWgs84Datum();
 
     if (nullptr == wgs84Datum || !wgs84Datum->IsValid())
         return false; // Can only occur if dictionary files absent
@@ -26786,9 +26800,7 @@ bool            Datum::IsEquivalent (DatumCR compareTo, bool looselyCompare) con
     // Now we obtain the DatumTransform to WGS84 for both
 
     // Now we need to obtain the geodetic transformation to WGS84
-    static DatumCP wgs84Datum = nullptr;
-    if (nullptr == wgs84Datum)
-        wgs84Datum = Datum::CreateDatum("WGS84");
+    DatumCP wgs84Datum = GetWgs84Datum();
 
     if (wgs84Datum == nullptr)
         return false;
@@ -29893,9 +29905,7 @@ GeodeticTransformPathP         GeodeticTransformPath::CreateToWgs84
     if (!BaseGCS::IsLibraryInitialized())
         return NULL;
 
-    static DatumCP wgs84Datum = nullptr;
-    if (nullptr == wgs84Datum)
-        wgs84Datum = Datum::CreateDatum("WGS84");
+    DatumCP wgs84Datum = GetWgs84Datum();
     if (nullptr == wgs84Datum)
         return nullptr;
 
@@ -30791,9 +30801,7 @@ struct AssetDirFile : _csFile {
 #endif
 #endif
     }
-    virtual int printf(Utf8CP format...) override {
-        va_list args;
-        va_start(args, format);
+    virtual int vprintf(Utf8CP format, va_list args) override {
         return vfprintf(m_file, format, args);
     }
     virtual ~AssetDirFile() {}
@@ -30822,7 +30830,9 @@ int CS_truncate(_csFile* stream, long writePosition) { return stream->truncate(w
 int CS_fprintf(_csFile* stream, Utf8CP format...) {
     va_list args;
     va_start(args, format);
-    return stream->printf(format, args);
+    int result = stream->vprintf(format, args);
+    va_end(args);
+    return result;
 }
 cs_Time_ CS_fileModTime(Utf8CP filePath) {
     auto row = BentleyApi::GeoCoordinates::GeoCoordWorkspaces::GetRow(filePath);

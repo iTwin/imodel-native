@@ -11,6 +11,12 @@
 #include <GeoCoord/BaseGeoTiffKeysList.h>
 
 #include "GeoCoordTestCommon.h"
+#include <cstdlib>
+#include <memory>
+
+#if defined(CREATE_STATIC_LIBRARIES)
+#include <csmap/cs_map.h>
+#endif
 
 using namespace ::testing;
 
@@ -28,6 +34,83 @@ class BaseGCSUnitTests : public ::testing::Test
         BaseGCSUnitTests() {};
         ~BaseGCSUnitTests() {};
     };
+
+#if GTEST_HAS_DEATH_TEST && defined(CREATE_STATIC_LIBRARIES)
+TEST_F(BaseGCSUnitTests, Wgs84CacheRecoversAfterMissingDictionary)
+{
+    BeFileName directory;
+    BeTest::GetHost().GetTempDir(directory);
+    directory.AppendToPath(L"Wgs84CacheRecovery");
+    auto checkRecovery = [&]()
+        {
+        auto destroyDatum = [](Datum const* datum) { datum->Destroy(); };
+        std::unique_ptr<Datum const, decltype(destroyDatum)> datum(Datum::CreateDatum("WGS84"), destroyDatum);
+        ASSERT_NE(nullptr, datum.get());
+        ASSERT_TRUE(datum->IsValid());
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(directory));
+        auto writeDictionary = [&](Utf8CP resource, bvector<Byte> const& data)
+            {
+            BeFileName target(directory);
+            target.AppendToPath(WString(resource, BentleyCharEncoding::Utf8).c_str());
+            BeFile file;
+            ASSERT_EQ(BeFileStatus::Success, file.Create(target));
+            uint32_t written;
+            ASSERT_EQ(BeFileStatus::Success, file.Write(&written, data.data(), static_cast<uint32_t>(data.size())));
+            ASSERT_EQ(data.size(), written);
+            };
+        bmap<Utf8String, bvector<Byte>> dictionaries;
+        for (Utf8CP resource : {"coordsys.dty", "ellipsoid.dty", "GeodeticTransform.dty", "GeodeticPath.dty", "datum.dty"})
+            {
+            Utf8String path("assets/");
+            path.append(resource);
+            std::unique_ptr<csFILE, decltype(&CS_fclose)> file(CS_fopen(path.c_str(), "rb"), CS_fclose);
+            ASSERT_NE(nullptr, file.get());
+            ASSERT_EQ(0, CS_fseek(file.get(), 0, SEEK_END));
+            long size = CS_ftell(file.get());
+            ASSERT_GT(size, 0);
+            ASSERT_EQ(0, CS_fseek(file.get(), 0, SEEK_SET));
+            auto& data = dictionaries[resource];
+            data.resize(static_cast<size_t>(size));
+            ASSERT_EQ(data.size(), CS_fread(data.data(), 1, data.size(), file.get()));
+            if (0 != strcmp(resource, "datum.dty"))
+                {
+                writeDictionary(resource, data);
+                ASSERT_FALSE(HasFatalFailure());
+                }
+            }
+        GeoCoordTestCommon::Shutdown();
+        ASSERT_EQ(SUCCESS, BaseGCS::Initialize(directory.GetNameUtf8().c_str()));
+        auto checkPath = [&](bool available)
+            {
+            auto path = GeodeticTransformPath::CreateToWgs84(*datum);
+            EXPECT_EQ(available, nullptr != path);
+            if (nullptr != path)
+                path->Destroy();
+            };
+        BeJsDocument json;
+        for (int attempt = 0; attempt < 2; ++attempt)
+            {
+            EXPECT_NE(SUCCESS, datum->ToJson(json));
+            checkPath(false);
+            }
+        writeDictionary("datum.dty", dictionaries["datum.dty"]);
+        ASSERT_FALSE(HasFatalFailure());
+        EXPECT_EQ(SUCCESS, datum->ToJson(json));
+        checkPath(true);
+        };
+    // Re-exec so earlier tests cannot populate the successful-lookup cache.
+    auto previousStyle = ::testing::FLAGS_gtest_death_test_style;
+    ::testing::FLAGS_gtest_death_test_style = "threadsafe";
+    EXPECT_EXIT(
+        {
+        checkRecovery();
+        GeoCoordTestCommon::Shutdown();
+        std::exit(HasFailure() ? EXIT_FAILURE : EXIT_SUCCESS);
+        }, ::testing::ExitedWithCode(0), "");
+    ::testing::FLAGS_gtest_death_test_style = previousStyle;
+    EXPECT_EQ(BeFileNameStatus::Success, BeFileName::EmptyAndRemoveDirectory(directory));
+}
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * Initial test for Json support
