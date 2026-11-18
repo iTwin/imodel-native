@@ -12072,12 +12072,25 @@ TEST_F(SchemaUpgradeTestFixture, StandardValuesOnStringPropertyConvertedToNonStr
     AssertSchemaUpdate(updatedSchemaXml.c_str(), seedPath, {true, true}, "StandardValues converted to a non-strict string enumeration");
     ASSERT_EQ(2U, m_updatedDbs.size());
 
+    // Try it with only the DisallowMajorSchemaUpgrade flag
+        {
+        ECDb restrictedDb;
+        ASSERT_EQ(BE_SQLITE_OK, CloneECDb(restrictedDb, "schemaupgrade_minorbump_nodatatransform.ecdb", seedPath));
+        ASSERT_EQ(SUCCESS, TestHelper(restrictedDb).ImportSchema(SchemaItem(updatedSchemaXml), SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade))
+            << "A minor version bump without AllowDataTransformDuringSchemaUpgrade must be enough to re-type the string property";
+        m_updatedDbs.push_back((Utf8String) restrictedDb.GetDbFileName());
+        restrictedDb.SaveChanges();
+        restrictedDb.CloseDb();
+        }
+    ASSERT_EQ(3U, m_updatedDbs.size());
+
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
         ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
 
         ECClassCP foo = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
         ASSERT_TRUE(foo != nullptr);
+        EXPECT_STREQ("TestSchema.01.00.01", foo->GetSchema().GetFullSchemaName().c_str()) << dbPath.c_str();
         PrimitiveECPropertyCP prop = foo->GetPropertyP("WorkPackage")->GetAsPrimitiveProperty();
         ASSERT_TRUE(prop != nullptr);
 
