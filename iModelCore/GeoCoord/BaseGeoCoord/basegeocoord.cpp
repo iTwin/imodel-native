@@ -26,6 +26,7 @@
 #include <pugixml/src/BePugiXml.h>
 #include <algorithm>
 #include <cctype>
+#include <memory>
 
 // cs_wkt requires __CPP__ to be defined and the class TrcWktElement to be defined (what's up with that?)
 #define __CPP__
@@ -24916,21 +24917,13 @@ DatumCP             Datum::CreateDatum (Utf8CP keyName)
     return new Datum (keyName);
     }
 
-static DatumCP GetWgs84Datum()
+using ScopedDatum = std::unique_ptr<Datum const, void (*)(DatumCP)>;
+
+static ScopedDatum CreateWgs84Datum()
     {
-    static DatumCP datum = nullptr;
-    if (nullptr == datum)
-        {
-        DatumCP candidate = Datum::CreateDatum("WGS84");
-        if (nullptr == candidate)
-            return nullptr;
-        if (!candidate->IsValid())
-            {
-            candidate->Destroy();
-            return nullptr;
-            }
-        datum = candidate;
-        }
+    ScopedDatum datum(Datum::CreateDatum("WGS84"), [](DatumCP value) { value->Destroy(); });
+    if (nullptr != datum && !datum->IsValid())
+        datum.reset();
     return datum;
     }
 
@@ -25436,7 +25429,7 @@ StatusInt         Datum::ToJson(BeJsValue jsonValue, bool expandEllipsoid, bool 
         return ERROR;
 
     // Now we need to obtain the geodetic transformation to WGS84
-    DatumCP wgs84Datum = GetWgs84Datum();
+    auto wgs84Datum = CreateWgs84Datum();
 
     if (wgs84Datum == nullptr)
         return ERROR;
@@ -26002,7 +25995,7 @@ bool            Datum::IsWGS84Coincident () const
         return true;
 
     // Now we need to obtain the geodetic transformation to WGS84
-    DatumCP wgs84Datum = GetWgs84Datum();
+    auto wgs84Datum = CreateWgs84Datum();
 
     if (nullptr == wgs84Datum || !wgs84Datum->IsValid())
         return false; // Can only occur if dictionary files absent
@@ -26798,12 +26791,6 @@ bool            Datum::IsEquivalent (DatumCR compareTo, bool looselyCompare) con
         return false;
 
     // Now we obtain the DatumTransform to WGS84 for both
-
-    // Now we need to obtain the geodetic transformation to WGS84
-    DatumCP wgs84Datum = GetWgs84Datum();
-
-    if (wgs84Datum == nullptr)
-        return false;
 
     // This call forces extraction of geodetic transforms from system dictionary
     if (nullptr != GetGeodeticTransformPathToWGS84() && nullptr != compareTo.GetGeodeticTransformPathToWGS84() &&
@@ -29905,7 +29892,7 @@ GeodeticTransformPathP         GeodeticTransformPath::CreateToWgs84
     if (!BaseGCS::IsLibraryInitialized())
         return NULL;
 
-    DatumCP wgs84Datum = GetWgs84Datum();
+    auto wgs84Datum = CreateWgs84Datum();
     if (nullptr == wgs84Datum)
         return nullptr;
 

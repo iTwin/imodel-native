@@ -11,7 +11,6 @@
 #include <GeoCoord/BaseGeoTiffKeysList.h>
 
 #include "GeoCoordTestCommon.h"
-#include <cstdlib>
 #include <memory>
 
 #if defined(CREATE_STATIC_LIBRARIES)
@@ -35,12 +34,13 @@ class BaseGCSUnitTests : public ::testing::Test
         ~BaseGCSUnitTests() {};
     };
 
-#if GTEST_HAS_DEATH_TEST && defined(CREATE_STATIC_LIBRARIES)
-TEST_F(BaseGCSUnitTests, Wgs84CacheRecoversAfterMissingDictionary)
+#if defined(CREATE_STATIC_LIBRARIES)
+TEST_F(BaseGCSUnitTests, Wgs84LookupTracksActiveDictionaries)
 {
     BeFileName directory;
     BeTest::GetHost().GetTempDir(directory);
-    directory.AppendToPath(L"Wgs84CacheRecovery");
+    directory.AppendToPath(L"Wgs84LookupResources");
+    bool createdDirectory = false;
     auto checkRecovery = [&]()
         {
         auto destroyDatum = [](Datum const* datum) { datum->Destroy(); };
@@ -48,6 +48,7 @@ TEST_F(BaseGCSUnitTests, Wgs84CacheRecoversAfterMissingDictionary)
         ASSERT_NE(nullptr, datum.get());
         ASSERT_TRUE(datum->IsValid());
         ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(directory));
+        createdDirectory = true;
         auto writeDictionary = [&](Utf8CP resource, bvector<Byte> const& data)
             {
             BeFileName target(directory);
@@ -78,6 +79,8 @@ TEST_F(BaseGCSUnitTests, Wgs84CacheRecoversAfterMissingDictionary)
                 ASSERT_FALSE(HasFatalFailure());
                 }
             }
+        BeJsDocument json;
+        ASSERT_EQ(SUCCESS, datum->ToJson(json));
         GeoCoordTestCommon::Shutdown();
         ASSERT_EQ(SUCCESS, BaseGCS::Initialize(directory.GetNameUtf8().c_str()));
         auto checkPath = [&](bool available)
@@ -87,28 +90,45 @@ TEST_F(BaseGCSUnitTests, Wgs84CacheRecoversAfterMissingDictionary)
             if (nullptr != path)
                 path->Destroy();
             };
-        BeJsDocument json;
         for (int attempt = 0; attempt < 2; ++attempt)
             {
             EXPECT_NE(SUCCESS, datum->ToJson(json));
             checkPath(false);
             }
+        EXPECT_TRUE(datum->IsEquivalent(*datum, false));
         writeDictionary("datum.dty", dictionaries["datum.dty"]);
         ASSERT_FALSE(HasFatalFailure());
         EXPECT_EQ(SUCCESS, datum->ToJson(json));
         checkPath(true);
         };
-    // Re-exec so earlier tests cannot populate the successful-lookup cache.
-    auto previousStyle = ::testing::FLAGS_gtest_death_test_style;
-    ::testing::FLAGS_gtest_death_test_style = "threadsafe";
-    EXPECT_EXIT(
+    checkRecovery();
+    GeoCoordTestCommon::Shutdown();
+    if (createdDirectory)
+        EXPECT_EQ(BeFileNameStatus::Success, BeFileName::EmptyAndRemoveDirectory(directory));
+}
+
+TEST_F(BaseGCSUnitTests, FormattedCsmapOutputForwardsArguments)
+{
+    BeFileName path;
+    BeTest::GetHost().GetTempDir(path);
+    path.AppendToPath(L"CsmapFormattedOutput.txt");
+    auto checkFormatting = [&]()
         {
-        checkRecovery();
-        GeoCoordTestCommon::Shutdown();
-        std::exit(HasFailure() ? EXIT_FAILURE : EXIT_SUCCESS);
-        }, ::testing::ExitedWithCode(0), "");
-    ::testing::FLAGS_gtest_death_test_style = previousStyle;
-    EXPECT_EQ(BeFileNameStatus::Success, BeFileName::EmptyAndRemoveDirectory(directory));
+        Utf8CP expected = "alpha,beta\n";
+        {
+        std::unique_ptr<csFILE, decltype(&CS_fclose)> file(CS_fopen(path.GetNameUtf8().c_str(), "wb"), CS_fclose);
+        ASSERT_NE(nullptr, file.get());
+        EXPECT_EQ(static_cast<int>(strlen(expected)), CS_fprintf(file.get(), "%s,%s\n", "alpha", "beta"));
+        }
+        BeFile file;
+        ASSERT_EQ(BeFileStatus::Success, file.Open(path, BeFileAccess::Read));
+        bvector<Byte> data;
+        ASSERT_EQ(BeFileStatus::Success, file.ReadEntireFile(data));
+        ASSERT_EQ(strlen(expected), data.size());
+        EXPECT_EQ(Utf8String(expected), Utf8String(reinterpret_cast<Utf8CP>(data.data()), data.size()));
+        };
+    checkFormatting();
+    EXPECT_EQ(BeFileNameStatus::Success, BeFileName::BeDeleteFile(path));
 }
 #endif
 
