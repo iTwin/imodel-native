@@ -26018,8 +26018,13 @@ bool            Datum::IsWGS84Coincident () const
     if (nullptr == wgs84Datum || !wgs84Datum->IsValid())
         return false; // Can only occur if dictionary files absent
 
+    CSDatum* datum = GetCSDatum();
+    CSDatum* wgs84CsDatum = wgs84Datum->GetCSDatum();
+    if (nullptr == datum || nullptr == wgs84CsDatum)
+        return false;
+
     // We do a datum compare
-    if (DatumEquivalent(*(GetCSDatum()), *(wgs84Datum->GetCSDatum()), true, true, false))
+    if (DatumEquivalent(*datum, *wgs84CsDatum, true, true, false))
         return true;
 
     // This call forces extraction of geodetic transforms from system dictionary

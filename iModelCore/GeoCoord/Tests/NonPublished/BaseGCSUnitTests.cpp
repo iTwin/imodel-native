@@ -144,6 +144,64 @@ TEST_F(BaseGCSUnitTests, Wgs84LookupTracksActiveDictionaries)
         EXPECT_EQ(BeFileNameStatus::Success, BeFileName::EmptyAndRemoveDirectory(directory));
 }
 
+TEST_F(BaseGCSUnitTests, Wgs84CoincidenceHandlesPartialEllipsoidDictionary)
+{
+    BeFileName directory;
+    BeTest::GetHost().GetTempDir(directory);
+    ASSERT_EQ(BeSQLite::BE_SQLITE_OK, BeSQLite::BeSQLiteLib::Initialize(directory));
+    directory.AppendToPath(L"Wgs84CoincidenceResources");
+    bool createdDirectory = false;
+    auto checkCoincidence = [&]()
+        {
+        auto destroyDatum = [](Datum const* datum) { datum->Destroy(); };
+        std::unique_ptr<Datum const, decltype(destroyDatum)> definition(Datum::CreateDatum("WGS84"), destroyDatum);
+        ASSERT_NE(nullptr, definition.get());
+        ASSERT_TRUE(definition->IsValid());
+        std::unique_ptr<Datum, decltype(destroyDatum)> datum(definition->Clone(), destroyDatum);
+        ASSERT_NE(nullptr, datum.get());
+        ASSERT_TRUE(datum->IsValid());
+        ASSERT_EQ(SUCCESS, datum->SetName("Wgs84CoincidenceTest"));
+        ASSERT_TRUE(datum->IsWGS84Coincident());
+        ASSERT_NE(nullptr, datum->GetCSDatum());
+
+        cs_magic_t header;
+        {
+        std::unique_ptr<csFILE, decltype(&CS_fclose)> file(CS_fopen("assets/ellipsoid.dty", "rb"), CS_fclose);
+        ASSERT_NE(nullptr, file.get());
+        ASSERT_EQ(sizeof(header), CS_fread(&header, 1, sizeof(header), file.get()));
+        }
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(directory));
+        createdDirectory = true;
+        BeFileName workspacePath(directory);
+        workspacePath.AppendToPath(L"EmptyEllipsoidDictionary.itwin-workspace");
+        {
+        BeSQLite::Db db;
+        ASSERT_EQ(BeSQLite::BE_SQLITE_OK, db.CreateNewDb(workspacePath.GetNameUtf8().c_str()));
+        ASSERT_EQ(BeSQLite::BE_SQLITE_OK, db.ExecuteSql("CREATE TABLE blobs(id TEXT PRIMARY KEY NOT NULL, value BLOB)"));
+        {
+        BeSQLite::Statement insert;
+        ASSERT_EQ(BeSQLite::BE_SQLITE_OK, insert.Prepare(db, "INSERT INTO blobs VALUES('ellipsoid.dty', ?)"));
+        ASSERT_EQ(BeSQLite::BE_SQLITE_OK, insert.BindBlob(1, &header, sizeof(header), BeSQLite::Statement::MakeCopy::Yes));
+        ASSERT_EQ(BeSQLite::BE_SQLITE_DONE, insert.Step());
+        }
+        ASSERT_EQ(BeSQLite::BE_SQLITE_OK, db.SaveChanges());
+        }
+        ASSERT_TRUE(BaseGCS::AddWorkspaceDb(workspacePath.GetNameUtf8(), nullptr, 10000));
+        std::unique_ptr<Datum, decltype(destroyDatum)> unavailable(definition->Clone(), destroyDatum);
+        ASSERT_NE(nullptr, unavailable.get());
+        ASSERT_TRUE(unavailable->IsValid());
+        ASSERT_EQ(nullptr, unavailable->GetCSDatum());
+        EXPECT_FALSE(datum->IsWGS84Coincident());
+
+        ASSERT_EQ(SUCCESS, unavailable->SetName("Wgs84CoincidenceTest"));
+        EXPECT_FALSE(unavailable->IsWGS84Coincident());
+        };
+    checkCoincidence();
+    GeoCoordTestCommon::Shutdown();
+    if (createdDirectory)
+        EXPECT_EQ(BeFileNameStatus::Success, BeFileName::EmptyAndRemoveDirectory(directory));
+}
+
 TEST_F(BaseGCSUnitTests, FormattedCsmapOutputForwardsArguments)
 {
     BeFileName path;
