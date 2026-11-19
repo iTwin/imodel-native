@@ -612,6 +612,20 @@ TEST_F(ClassHierarchyUpdateTests, DeletingClassWithoutMajorVersionIsRejected)
     }
 
 //---------------------------------------------------------------------------------------
+// ECDb sees a deletion plus an addition: the instances of Sensor are deleted, Detector starts empty.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ClassHierarchyUpdateTests, RenameClassWithReadVersionIncrement)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    ReplaceInClass(schemaXml, "Sensor", R"xml(typeName="Sensor")xml", R"xml(typeName="Detector")xml");
+    ASSERT_EQ(SUCCESS, UpdateSchema(schemaXml, SchemaVersionChange::Major));
+    VerifyData(ExpectedDataChanges().DeleteInstancesOf("TestSchema:Sensor"));
+    }
+
+//---------------------------------------------------------------------------------------
 // Origin uses three shared columns. All subclasses lose it.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------

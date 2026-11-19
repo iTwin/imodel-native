@@ -355,6 +355,78 @@ TEST_F(SchemaUpdateRulesTests, MakeSchemaDynamicAndDeletePropertyWithIModelOptio
     }
 
 //***************************************************************************************
+// Renames. ECDb matches schema items by name, so a rename arrives as a deletion plus an addition.
+// The deletion follows the rules of major changes and the stored values go with it.
+//***************************************************************************************
+
+//---------------------------------------------------------------------------------------
+// The values of Material are lost, PipeMaterial reads NULL.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpdateRulesTests, RenamePropertyWithReadVersionIncrement)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml("TestSchema");
+    ReplaceInClass(schemaXml, "Pipe", R"xml(propertyName="Material")xml", R"xml(propertyName="PipeMaterial")xml");
+    ExpectAccepted(schemaXml, SchemaVersionChange::Major);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpdateRulesTests, RenamingPropertyWithoutReadVersionIncrementIsRejected)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml("TestSchema");
+    ReplaceInClass(schemaXml, "Pipe", R"xml(propertyName="Material")xml", R"xml(propertyName="PipeMaterial")xml");
+    ExpectRejected(schemaXml, "ECDb_0384");
+    }
+
+//---------------------------------------------------------------------------------------
+// Note has a table of its own. Its properties cannot be deleted, so they cannot be renamed either.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpdateRulesTests, RenamingPropertyInColumnOfItsOwnIsRejected)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml("TestSchema");
+    ReplaceInClass(schemaXml, "Note", R"xml(propertyName="Text")xml", R"xml(propertyName="Body")xml");
+    ExpectRejected(schemaXml, "ECDb_0386", SchemaVersionChange::Major);
+    }
+
+//---------------------------------------------------------------------------------------
+// What a connector gets when the source renames a property: accepted without notice, the values of Vendor are lost
+// and Supplier reads NULL.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpdateRulesTests, RenamePropertyOfDynamicSchemaWithIModelOptions)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml("Dynamic");
+    ReplaceInClass(schemaXml, "DynamicPipe", R"xml(propertyName="Vendor")xml", R"xml(propertyName="Supplier")xml");
+    ExpectAccepted(schemaXml, SchemaVersionChange::Minor, GetIModelImportOptions());
+    }
+
+//---------------------------------------------------------------------------------------
+// What a connector gets when the source renames a class: accepted without notice, the instances of DynamicPipe
+// are deleted and DynamicTube starts empty.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpdateRulesTests, RenameClassOfDynamicSchemaWithIModelOptions)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml("Dynamic");
+    ReplaceInClass(schemaXml, "DynamicPipe", R"xml(typeName="DynamicPipe")xml", R"xml(typeName="DynamicTube")xml");
+    EXPECT_EQ(SUCCESS, UpdateSchema(schemaXml, SchemaVersionChange::Minor, GetIModelImportOptions()));
+    VerifyData(ExpectedDataChanges().DeleteInstancesOf("Dynamic:DynamicPipe"));
+    }
+
+//***************************************************************************************
 // Data transforms
 //***************************************************************************************
 

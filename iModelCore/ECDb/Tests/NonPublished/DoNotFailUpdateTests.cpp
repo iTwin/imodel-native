@@ -263,6 +263,23 @@ TEST_F(DoNotFailUpdateTests, DeletingPropertyWithoutReadVersionIncrementIsSkippe
     }
 
 //---------------------------------------------------------------------------------------
+// The deletion of Material is skipped and PipeMaterial is added, so Pipe ends up with both.
+// Material keeps its values, PipeMaterial reads NULL.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DoNotFailUpdateTests, RenamingPropertyKeepsTheOldOne)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml("Domain");
+    ReplaceInClass(schemaXml, "Pipe", R"xml(propertyName="Material")xml", R"xml(propertyName="PipeMaterial")xml");
+    ExpectSkipped(schemaXml, "ECDb_0641");
+
+    EXPECT_TRUE(GetPersistedProperty("Domain", "Pipe", "Material") != nullptr);
+    EXPECT_TRUE(GetPersistedProperty("Domain", "Pipe", "PipeMaterial") != nullptr);
+    }
+
+//---------------------------------------------------------------------------------------
 // The option does not protect dynamic schemas: iModel imports allow major changes to them.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
