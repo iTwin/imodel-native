@@ -105,6 +105,14 @@ BaseGCSPtr BaseGCS::s_LL84GCS(nullptr);
 VerticalDatumDictionaryPtr  VerticalDatumDictionary::s_verticalDatumDictionary = nullptr;
 static bool s_verticalDatumDictionaryNeedsRefresh = false;
 
+using ScopedDatum = std::unique_ptr<Datum const, void (*)(DatumCP)>;
+
+static ScopedDatum& Wgs84DatumCache()
+    {
+    static ScopedDatum datum(nullptr, [](DatumCP value) { value->Destroy(); });
+    return datum;
+    }
+
 bool operator& (const WKTOptionsFlags& lhs, const WKTOptionsFlags& rhs) { return static_cast<uint32_t>(lhs) & static_cast<uint32_t>(rhs); }
 WKTOptionsFlags operator| (const WKTOptionsFlags& lhs, const WKTOptionsFlags& rhs) { return static_cast<WKTOptionsFlags>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs)); }
 
@@ -12307,6 +12315,7 @@ struct WorkspaceDb : RefCountedBase, NonCopyableClass {
         if (m_container) {
             // set up a listener for the container being disconnected and remove this entry (closes Db)
             m_container->m_onDisconnect.AddOnce([&](CloudContainerP) {
+                Wgs84DatumCache().reset();
                 s_verticalDatumDictionaryNeedsRefresh = true;
                 s_workspaceDbs.remove_if([&](WorkspaceDbPtr const& other) { return other.get() == this; });
             });
@@ -12446,7 +12455,11 @@ struct GeoCoordWorkspaces {
 };
 
 static bool s_loadLocalFiles = true;
-void BaseGCS::EnableLocalGcsFiles(bool yesNo) { s_loadLocalFiles = yesNo; }
+void BaseGCS::EnableLocalGcsFiles(bool yesNo) {
+    if (s_loadLocalFiles != yesNo)
+        Wgs84DatumCache().reset();
+    s_loadLocalFiles = yesNo;
+}
 
 /** Add a new entry to the list of gcs WorkspaceDbs */
 bool BaseGCS::AddWorkspaceDb(Utf8String dbName, CloudContainerP container, int priority) {
@@ -12459,11 +12472,13 @@ bool BaseGCS::AddWorkspaceDb(Utf8String dbName, CloudContainerP container, int p
     for (auto it=s_workspaceDbs.begin(); it != s_workspaceDbs.end(); ++it) {
         if (priority > (*it)->m_priority) {
             s_workspaceDbs.emplace(it, newDb);
+            Wgs84DatumCache().reset();
             s_verticalDatumDictionaryNeedsRefresh = true;
             return true;
         }
     }
     s_workspaceDbs.emplace_back(newDb);
+    Wgs84DatumCache().reset();
     s_verticalDatumDictionaryNeedsRefresh = true;
     return true;
 }
@@ -12506,6 +12521,7 @@ StatusInt BaseGCS::Initialize(Utf8CP dataDirectory) {
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BaseGCS::Shutdown() {
+    Wgs84DatumCache().reset();
     s_LL84GCS = nullptr;
     VerticalDatumDictionary::Uninitialize();
     CS_geoidCls();
@@ -24917,14 +24933,16 @@ DatumCP             Datum::CreateDatum (Utf8CP keyName)
     return new Datum (keyName);
     }
 
-using ScopedDatum = std::unique_ptr<Datum const, void (*)(DatumCP)>;
-
-static ScopedDatum CreateWgs84Datum()
+static DatumCP GetWgs84Datum()
     {
-    ScopedDatum datum(Datum::CreateDatum("WGS84"), [](DatumCP value) { value->Destroy(); });
-    if (nullptr != datum && !datum->IsValid())
-        datum.reset();
-    return datum;
+    auto& datum = Wgs84DatumCache();
+    if (nullptr == datum)
+        {
+        datum.reset(Datum::CreateDatum("WGS84"));
+        if (nullptr != datum && !datum->IsValid())
+            datum.reset();
+        }
+    return datum.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -25429,7 +25447,7 @@ StatusInt         Datum::ToJson(BeJsValue jsonValue, bool expandEllipsoid, bool 
         return ERROR;
 
     // Now we need to obtain the geodetic transformation to WGS84
-    auto wgs84Datum = CreateWgs84Datum();
+    DatumCP wgs84Datum = GetWgs84Datum();
 
     if (wgs84Datum == nullptr)
         return ERROR;
@@ -25995,7 +26013,7 @@ bool            Datum::IsWGS84Coincident () const
         return true;
 
     // Now we need to obtain the geodetic transformation to WGS84
-    auto wgs84Datum = CreateWgs84Datum();
+    DatumCP wgs84Datum = GetWgs84Datum();
 
     if (nullptr == wgs84Datum || !wgs84Datum->IsValid())
         return false; // Can only occur if dictionary files absent
@@ -29892,7 +29910,7 @@ GeodeticTransformPathP         GeodeticTransformPath::CreateToWgs84
     if (!BaseGCS::IsLibraryInitialized())
         return NULL;
 
-    auto wgs84Datum = CreateWgs84Datum();
+    DatumCP wgs84Datum = GetWgs84Datum();
     if (nullptr == wgs84Datum)
         return nullptr;
 

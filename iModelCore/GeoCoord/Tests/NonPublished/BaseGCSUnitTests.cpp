@@ -7,6 +7,7 @@
 #include <Bentley/BeTest.h>
 #include <Bentley/BeFileName.h>
 #include <Bentley/Desktop/FileSystem.h>
+#include <BeSQLite/BeSQLite.h>
 #include <GeoCoord/BaseGeoCoord.h>
 #include <GeoCoord/BaseGeoTiffKeysList.h>
 
@@ -36,6 +37,7 @@ TEST_F(BaseGCSUnitTests, Wgs84LookupTracksActiveDictionaries)
 {
     BeFileName directory;
     BeTest::GetHost().GetTempDir(directory);
+    ASSERT_EQ(BeSQLite::BE_SQLITE_OK, BeSQLite::BeSQLiteLib::Initialize(directory));
     directory.AppendToPath(L"Wgs84LookupResources");
     bool createdDirectory = false;
     auto checkRecovery = [&]()
@@ -97,6 +99,44 @@ TEST_F(BaseGCSUnitTests, Wgs84LookupTracksActiveDictionaries)
         ASSERT_FALSE(HasFatalFailure());
         EXPECT_EQ(SUCCESS, datum->ToJson(json));
         checkPath(true);
+
+        BeFileName datumPath(directory);
+        datumPath.AppendToPath(L"datum.dty");
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeDeleteFile(datumPath));
+        {
+        std::unique_ptr<Datum const, decltype(destroyDatum)> unavailable(Datum::CreateDatum("WGS84"), destroyDatum);
+        ASSERT_NE(nullptr, unavailable.get());
+        ASSERT_FALSE(unavailable->IsValid());
+        }
+        EXPECT_EQ(SUCCESS, datum->ToJson(json));
+        checkPath(true);
+
+        BaseGCS::EnableLocalGcsFiles(false);
+        checkPath(false);
+        BaseGCS::EnableLocalGcsFiles(true);
+        writeDictionary("datum.dty", dictionaries["datum.dty"]);
+        ASSERT_FALSE(HasFatalFailure());
+        ASSERT_EQ(SUCCESS, datum->ToJson(json));
+        checkPath(true);
+
+        BeFileName workspacePath(directory);
+        workspacePath.AppendToPath(L"EmptyDatumDictionary.itwin-workspace");
+        {
+        BeSQLite::Db db;
+        ASSERT_EQ(BeSQLite::BE_SQLITE_OK, db.CreateNewDb(workspacePath.GetNameUtf8().c_str()));
+        ASSERT_EQ(BeSQLite::BE_SQLITE_OK, db.ExecuteSql("CREATE TABLE blobs(id TEXT PRIMARY KEY NOT NULL, value BLOB)"));
+        {
+        BeSQLite::Statement insert;
+        ASSERT_EQ(BeSQLite::BE_SQLITE_OK, insert.Prepare(db, "INSERT INTO blobs VALUES('datum.dty', ?)"));
+        ASSERT_EQ(BeSQLite::BE_SQLITE_OK, insert.BindBlob(1, dictionaries["datum.dty"].data(), sizeof(cs_magic_t), BeSQLite::Statement::MakeCopy::Yes));
+        ASSERT_EQ(BeSQLite::BE_SQLITE_DONE, insert.Step());
+        }
+        ASSERT_EQ(BeSQLite::BE_SQLITE_OK, db.SaveChanges());
+        }
+        ASSERT_TRUE(BaseGCS::AddWorkspaceDb(workspacePath.GetNameUtf8(), nullptr, 10000));
+        EXPECT_NE(SUCCESS, datum->ToJson(json));
+        checkPath(false);
+        EXPECT_TRUE(datum->IsEquivalent(*datum, false));
         };
     checkRecovery();
     GeoCoordTestCommon::Shutdown();
