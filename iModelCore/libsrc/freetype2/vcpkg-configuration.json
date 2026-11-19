@@ -1,7 +1,11 @@
 {
   "default-registry": {
     "kind": "git",
+<<<<<<< HEAD
     "baseline": "81de6771512413aaf89ea77add5ad1fda126b9d0",
+=======
+    "baseline": "98d7375b79be7551ac3db6fbe668a08da9b1cac5",
+>>>>>>> 72a9ce5 (Update zlib and minizip to 1.4 to resolve CVEs (#1720))
     "repository": "https://github.com/microsoft/vcpkg"
   }
 }
