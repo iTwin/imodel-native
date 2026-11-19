@@ -321,7 +321,8 @@ ZipErrors MemoryLzmaInStream::_Read(void* data, uint32_t size, uint32_t& actuall
 
     actuallyRead = std::min(size, m_size - m_offset);
 
-    memcpy(data, (Byte const*) m_data + m_offset, actuallyRead);
+    if (actuallyRead > 0)
+        memcpy(data, (Byte const*) m_data + m_offset, actuallyRead);
     m_offset += actuallyRead;
 
     actuallyRead += readFromHeader;

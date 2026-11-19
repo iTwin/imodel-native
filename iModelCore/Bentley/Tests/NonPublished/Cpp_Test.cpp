@@ -7,6 +7,7 @@
 #include <Bentley/BeStringUtilities.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <Bentley/BeThread.h>
+#include <atomic>
 #include <vector>
 #include <memory>
 #include <complex>
@@ -82,7 +83,7 @@ using namespace std::placeholders; //for _1, _2, _3...
 //  --------------------------------------------------------------------------------------
 static int                  g_rw_value;
 static ting::shared_mutex   g_rw_value_mutex;
-static bool                 g_rw_stop;
+static std::atomic<bool>    g_rw_stop;
 static int                  g_rw_timesRead;
 static std::mutex           g_rw_timesRead_mutex;
 
@@ -146,7 +147,7 @@ static void test_shared_mutex()
     //  Wait for the writer to finish.
     w1.join();  // !!! "...the programmer must ensure that the destructor [on a thread] is never executed while the thread is still joinable." (http://www.open-std.org/Jtc1/sc22/wg21/docs/papers/2008/n2802.html)
     // Tell the readers to stop looping
-    g_rw_stop = true;   // C++11 guarantees atomic assignment (I think!)
+    g_rw_stop = true;
     //  Wait for readers to exit
     r1.join();
     r2.join();
