@@ -1,0 +1,1 @@
+[{"bsurf":{"orderU":2,"orderV":2,"uKnots":[], "vKnots":[0,0,0,1],"points":[[[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0]],[[0,2],[1,2],[2,2],[3,2],[4,2],[5,2],[6,2]]], "uvBoundaries":{"parityRegion":[{"loop":[{"arc":{"center":[0.5,0.5],"vectorX":[0.25,0.0],"vectorY":[0.0,0.25],"sweepStartEnd":[0.0,360.0]}}]}]}}}]

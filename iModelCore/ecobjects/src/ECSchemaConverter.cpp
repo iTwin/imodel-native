@@ -586,9 +586,59 @@ ECObjectsStatus ECDbClassMapConverter::Convert(ECSchemaR schema, IECCustomAttrib
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+static ECEnumeratorCP findEnumeratorForValue(ECEnumerationCR ecEnum, int value)
+    {
+    if (PrimitiveType::PRIMITIVETYPE_String == ecEnum.GetType())
+        return ecEnum.FindEnumerator(Utf8PrintfString("%d", value).c_str());
+    return ecEnum.FindEnumerator(value);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+static ECObjectsStatus createEnumeratorForValue(ECEnumeratorP& enumerator, ECEnumerationR ecEnum, int value, Utf8StringCR displayLabel)
+    {
+    Utf8String name = ECEnumerator::DetermineName(ecEnum.GetName(), nullptr, &value);
+    ECObjectsStatus status = PrimitiveType::PRIMITIVETYPE_String == ecEnum.GetType() ? ecEnum.CreateEnumerator(enumerator, name, Utf8PrintfString("%d", value).c_str()) : ecEnum.CreateEnumerator(enumerator, name, value);
+    if (ECObjectsStatus::Success != status)
+        return status;
+    if (nullptr == enumerator)
+        return ECObjectsStatus::Error;
+
+    enumerator->SetDisplayLabel(displayLabel.c_str());
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// Returns false if the enumerator value cannot be represented as an int (e.g. a hand-authored string enumerator).
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+static bool tryGetEnumeratorIntValue(ECEnumeratorCR enumerator, int& value)
+    {
+    if (enumerator.IsInteger())
+        {
+        value = enumerator.GetInteger();
+        return true;
+        }
+
+    Utf8StringCR str = enumerator.GetString();
+    char* end = nullptr;
+    long parsed = strtol(str.c_str(), &end, 10);
+    if (str.empty() || nullptr == end || '\0' != *end || parsed < INT_MIN || parsed > INT_MAX)
+        return false;
+
+    value = (int) parsed;
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 bool StandardValueInfo::Equals(const StandardValueInfo& sd) const
     {
     //let them be equal even if mustBeFromList is different
+    if (m_type != sd.m_type)
+        return false;
     if (m_valuesMap.size() != sd.m_valuesMap.size())
         return false;
     for (auto const& pair : m_valuesMap)
@@ -610,11 +660,16 @@ bool StandardValueInfo::Equals(ECEnumerationCP ecEnum) const
     {
     if (m_mustBeFromList == false || m_mustBeFromList != ecEnum->GetIsStrict())
         return false;
+    if (m_type != ecEnum->GetType())
+        return false;
     if ((size_t) (m_valuesMap.size()) != ecEnum->GetEnumeratorCount())
         return false;
     for (auto const& enumerator : ecEnum->GetEnumerators())
         {
-        auto it = m_valuesMap.find(enumerator->GetInteger());
+        int value;
+        if (!tryGetEnumeratorIntValue(*enumerator, value))
+            return false;
+        auto it = m_valuesMap.find(value);
         if (it == m_valuesMap.end())
             return false;
         if (0 != BeStringUtilities::Stricmp(it->second.c_str(), enumerator->GetDisplayLabel().c_str()))
@@ -629,11 +684,13 @@ bool StandardValueInfo::Equals(ECEnumerationCP ecEnum) const
 // Determines if ECEnumeration contains SVI's enumerators without unnecessary conversion
 bool StandardValueInfo::ContainedBy(ECEnumerationCP ecEnum) const
     {
+    if (m_type != ecEnum->GetType())
+        return false;
     if ((size_t) (m_valuesMap.size()) > ecEnum->GetEnumeratorCount())
         return false;
     for (auto const& valuePair : m_valuesMap)
         {
-        auto const pair = ecEnum->FindEnumerator(valuePair.first);
+        auto const pair = findEnumeratorForValue(*ecEnum, valuePair.first);
         if (nullptr == pair)
             return false;
         if (0 != BeStringUtilities::Stricmp(valuePair.second.c_str(), pair->GetDisplayLabel().c_str()))
@@ -647,6 +704,8 @@ bool StandardValueInfo::ContainedBy(ECEnumerationCP ecEnum) const
 //+---------------+---------------+---------------+---------------+---------------+------
 bool StandardValueInfo::Contains(const StandardValueInfo& sd) const
     {
+    if (m_type != sd.m_type)
+        return false;
     for (auto const& pair : sd.m_valuesMap)
         {
         auto it = m_valuesMap.find(pair.first);
@@ -662,8 +721,13 @@ bool StandardValueInfo::Contains(const StandardValueInfo& sd) const
 StandardValueInfo::StandardValueInfo(ECEnumerationP& ecEnum)
     {
     m_mustBeFromList = ecEnum->GetIsStrict();
+    m_type = ecEnum->GetType();
     for (auto const& enumerator : ecEnum->GetEnumerators())
-        m_valuesMap[enumerator->GetInteger()] = enumerator->GetDisplayLabel();
+        {
+        int value;
+        if (tryGetEnumeratorIntValue(*enumerator, value))
+            m_valuesMap[value] = enumerator->GetDisplayLabel();
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -672,15 +736,21 @@ StandardValueInfo::StandardValueInfo(ECEnumerationP& ecEnum)
 StandardValueInfo::StandardValueInfo(ECEnumerationCR ecEnum)
     {
     m_mustBeFromList = ecEnum.GetIsStrict();
+    m_type = ecEnum.GetType();
     for (auto const& enumerator : ecEnum.GetEnumerators())
-        m_valuesMap[enumerator->GetInteger()] = enumerator->GetDisplayLabel();
+        {
+        int value;
+        if (tryGetEnumeratorIntValue(*enumerator, value))
+            m_valuesMap[value] = enumerator->GetDisplayLabel();
+        }
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus StandardValueInfo::ExtractInstanceData(IECInstanceR instance, StandardValueInfo& sdInfo)
+ECObjectsStatus StandardValueInfo::ExtractInstanceData(IECInstanceR instance, StandardValueInfo& sdInfo, PrimitiveType type)
     {
+    sdInfo.m_type = type;
     sdInfo.m_mustBeFromList = true; //default is true
     ECValue value;
     if (ECObjectsStatus::Success == instance.GetValue(value, "MustBeFromList")
@@ -688,6 +758,12 @@ ECObjectsStatus StandardValueInfo::ExtractInstanceData(IECInstanceR instance, St
         {
         sdInfo.m_mustBeFromList = value.GetBoolean();
         }
+
+    // String properties always become non-strict enumerations, regardless of MustBeFromList.
+    // ECDb rejects changing an existing string property to a *strict* enumeration but allows a non-strict one of the same
+    // primitive type, so this is the only form that can be applied to already converted iModels via a schema update.
+    if (PrimitiveType::PRIMITIVETYPE_String == type)
+        sdInfo.m_mustBeFromList = false;
 
     Utf8String accessString = "ValueMap";
     ECObjectsStatus status;
@@ -731,7 +807,7 @@ ECObjectsStatus StandardValuesConverter::Merge(ECPropertyP prop, StandardValueIn
         return ECObjectsStatus::Success;
 
     StandardValueInfo localInfo;
-    StandardValueInfo::ExtractInstanceData(*currentInstance, localInfo);
+    StandardValueInfo::ExtractInstanceData(*currentInstance, localInfo, sdInfo->m_type);
 
     // They are the same, no reason to try and merge
     if (sdInfo->Equals(localInfo))
@@ -754,9 +830,10 @@ ECObjectsStatus StandardValuesConverter::Merge(ECPropertyP prop, StandardValueIn
 
     for (auto const& pair : nonConflictingValues)
         {
-        ECEnumeratorP enumerator;
-        enumeration->CreateEnumerator(enumerator, ECEnumerator::DetermineName(enumeration->GetName(), nullptr, &pair.first), pair.first);
-        enumerator->SetDisplayLabel(pair.second.c_str());
+        ECEnumeratorP enumerator = nullptr;
+        ECObjectsStatus status = createEnumeratorForValue(enumerator, *enumeration, pair.first, pair.second);
+        if (ECObjectsStatus::Success != status)
+            return status;
 
         // Add it to the sdInfo so that subsequent classes can be compared against it.
         sdInfo->m_valuesMap[pair.first] = pair.second;
@@ -765,15 +842,22 @@ ECObjectsStatus StandardValuesConverter::Merge(ECPropertyP prop, StandardValueIn
     return ECObjectsStatus::Success;
     }
 
-bool isIntOrIntArray (ECPropertyP prop)
+static bool tryGetPrimitiveType(ECPropertyP prop, PrimitiveType& primType)
     {
     if (!prop->GetIsPrimitive() && !prop->GetIsPrimitiveArray())
         return false;
-    
+
     PrimitiveArrayECPropertyP primArrProp = prop->GetAsPrimitiveArrayPropertyP();
     PrimitiveECPropertyP primProp = prop->GetAsPrimitivePropertyP();
-    PrimitiveType primType = (nullptr == primArrProp) ? primProp->GetType() : primArrProp->GetType();
-    return PrimitiveType::PRIMITIVETYPE_Integer == primType;
+    primType = (nullptr == primArrProp) ? primProp->GetType() : primArrProp->GetType();
+    return true;
+    }
+
+// Properties already typed by an enumeration report the enumeration's backing type, so this also works for converted properties.
+static bool isConvertibleType(ECPropertyP prop, PrimitiveType& primType)
+    {
+    return tryGetPrimitiveType(prop, primType) &&
+        (PrimitiveType::PRIMITIVETYPE_Integer == primType || PrimitiveType::PRIMITIVETYPE_String == primType);
     }
 
 //---------------------------------------------------------------------------------------
@@ -786,10 +870,18 @@ ECObjectsStatus StandardValuesConverter::ConvertToEnum(ECClassP rootClass, ECCla
     ECPropertyP prop = currentClass->GetPropertyP(propName, false);
     if (nullptr != prop)
         {
-        if (!isIntOrIntArray(prop))
+        PrimitiveType propType;
+        if (!isConvertibleType(prop, propType))
             {
-            LOG.errorv("Failed to convert to enumeration because the derived property %s.%s is not a primitive property but the base property from class %s is.",
+            LOG.errorv("Failed to convert to enumeration because the derived property %s.%s is not an int or string primitive (or array) property but the base property from class %s is.",
                        currentClass->GetFullName(), propName, rootClass->GetFullName());
+            return ECObjectsStatus::DataTypeMismatch;
+            }
+
+        if (propType != sdInfo.m_type)
+            {
+            LOG.errorv("Failed to convert to enumeration because the derived property %s.%s has primitive type %s but the base property from class %s has primitive type %s.",
+                       currentClass->GetFullName(), propName, SchemaParseUtils::PrimitiveTypeToString(propType), rootClass->GetFullName(), SchemaParseUtils::PrimitiveTypeToString(sdInfo.m_type));
             return ECObjectsStatus::DataTypeMismatch;
             }
 
@@ -808,7 +900,7 @@ ECObjectsStatus StandardValuesConverter::ConvertToEnum(ECClassP rootClass, ECCla
                 return ECObjectsStatus::Success;
 
             StandardValueInfo localInfo;
-            StandardValueInfo::ExtractInstanceData(*currentInstance, localInfo);
+            StandardValueInfo::ExtractInstanceData(*currentInstance, localInfo, sdInfo.m_type);
             // Check if the localInfo is just a subset before testing if it should be strict.
             // This is to get around the issue where a derived property has less standard values, but all of the ones it has are the same as the base class.
             // Therefore, we just set the derived property to the base property's Enumeration.
@@ -890,19 +982,28 @@ ECObjectsStatus StandardValuesConverter::Convert(ECSchemaR schema, IECCustomAttr
     {
     //are standard values even added to ecclass or ecschema?
     ECPropertyP prop = dynamic_cast<ECPropertyP> (&container);
-    if (nullptr == prop || !isIntOrIntArray(prop))
+    PrimitiveType propType = PrimitiveType::PRIMITIVETYPE_Integer;
+    if (nullptr == prop || !isConvertibleType(prop, propType))
         {
-        LOG.warningv("StandardValues custom attribute applied to a container which is not an int or int array property.  Removing Custom Attribute from %s and skipping.", container.GetContainerName().c_str());
+        LOG.warningv("StandardValues custom attribute applied to a container which is not an int, string or an array of those. Removing Custom Attribute from %s and skipping.", container.GetContainerName().c_str());
         container.RemoveCustomAttribute(BECA_SCHEMANAME, STANDARDVALUES_CUSTOMATTRIBUTE);
         return ECObjectsStatus::Success;
         }
 
     ECObjectsStatus status;
     StandardValueInfo sdInfo;
-    if (ECObjectsStatus::Success != (status = StandardValueInfo::ExtractInstanceData(instance, sdInfo)))
+    if (ECObjectsStatus::Success != (status = StandardValueInfo::ExtractInstanceData(instance, sdInfo, propType)))
         {
         LOG.errorv("Unable to extract '%s' Standard Value. Status %d", prop->GetName().c_str(), status);
         return status;
+        }
+
+    if (PrimitiveType::PRIMITIVETYPE_String == propType)
+        {
+        ECValue mustBeFromList;
+        if (ECObjectsStatus::Success == instance.GetValue(mustBeFromList, "MustBeFromList") && !mustBeFromList.IsNull() && mustBeFromList.IsBoolean() && mustBeFromList.GetBoolean())
+            LOG.warningv("StandardValues on string property %s has MustBeFromList=True, but string enumerations are always created non-strict so that already converted iModels can pick up the display strings via a schema update.",
+                container.GetContainerName().c_str());
         }
 
     // Probably is not the best way to do this, but need to check if the property has been previously converted.
@@ -927,8 +1028,11 @@ ECObjectsStatus StandardValuesConverter::Convert(ECSchemaR schema, IECCustomAttr
         sdInfo.m_mustBeFromList = false;
 
     bvector<ECClassP> rootClasses;
-    ECEnumerationP enumeration;
-    if (ECObjectsStatus::Success != FindEnumeration(schema, enumeration, sdInfo))
+    ECEnumerationP enumeration = nullptr;
+    bool createdEnumeration = false;
+
+    const bool reuseExistingEnumeration = sdInfo.m_type != PrimitiveType::PRIMITIVETYPE_String;
+    if (!reuseExistingEnumeration || ECObjectsStatus::Success != FindEnumeration(schema, enumeration, sdInfo))
         {
         Utf8String enumName = CreateEnumerationName(rootClasses, prop);
         status = CreateEnumeration(enumeration, rootClasses[0]->GetSchemaR(), enumName.c_str(), sdInfo);
@@ -945,6 +1049,13 @@ ECObjectsStatus StandardValuesConverter::Convert(ECSchemaR schema, IECCustomAttr
                 return ECObjectsStatus::NamedItemAlreadyExists;
                 }
             }
+
+        if (ECObjectsStatus::Success != status || nullptr == enumeration)
+            {
+            LOG.errorv("Failed to create enumeration '%s' for property '%s.%s'. Status %d", enumName.c_str(), rootClasses[0]->GetName().c_str(), prop->GetName().c_str(), status);
+            return ECObjectsStatus::Success == status ? ECObjectsStatus::Error : status;
+            }
+        createdEnumeration = true;
         }
     else
         ECSchemaConverter::FindRootBaseClasses(prop, rootClasses);
@@ -953,7 +1064,9 @@ ECObjectsStatus StandardValuesConverter::Convert(ECSchemaR schema, IECCustomAttr
     if (ECObjectsStatus::Success != status)
         {
         LOG.errorv("Failed to convert StandardValues to ECEnumeration on property %s.%s.", rootClasses[0]->GetName().c_str(), prop->GetName().c_str());
-        schema.DeleteEnumeration(*enumeration);
+        // Only remove the enumeration if this call created it.
+        if (createdEnumeration)
+            rootClasses[0]->GetSchemaR().DeleteEnumeration(*enumeration);
         return status;
         }
 
@@ -998,11 +1111,12 @@ ECObjectsStatus StandardValuesConverter::MergeEnumeration(ECEnumerationP& enumer
     {
     for (auto const& pair : sdInfo.m_valuesMap)
         {
-        ECEnumeratorP enumerator = enumeration->FindEnumerator(pair.first);
+        ECEnumeratorCP enumerator = findEnumeratorForValue(*enumeration, pair.first);
         if (enumerator == nullptr)
             {
-            enumeration->CreateEnumerator(enumerator, ECEnumerator::DetermineName(enumeration->GetName(), nullptr, &pair.first), pair.first);
-            enumerator->SetDisplayLabel(pair.second.c_str());
+            ECEnumeratorP newEnumerator = nullptr;
+            if (ECObjectsStatus::Success != createEnumeratorForValue(newEnumerator, *enumeration, pair.first, pair.second))
+                return ECObjectsStatus::Error;
             }
         else if (enumerator->GetInvariantDisplayLabel() != pair.second)
             return ECObjectsStatus::Error;
@@ -1018,7 +1132,7 @@ ECObjectsStatus StandardValuesConverter::FindEnumeration(ECSchemaR schema, ECEnu
     {
     for (auto ecEnum : schema.GetEnumerations())
         {
-        if ((PrimitiveType::PRIMITIVETYPE_Integer != ecEnum->GetType())
+        if ((sdInfo.m_type != ecEnum->GetType())
             || (sdInfo.m_mustBeFromList != ecEnum->GetIsStrict()))
             continue;
 
@@ -1027,7 +1141,8 @@ ECObjectsStatus StandardValuesConverter::FindEnumeration(ECSchemaR schema, ECEnu
             enumeration = ecEnum;
             return ECObjectsStatus::Success;
             }
-        else if (!sdInfo.m_mustBeFromList && ECObjectsStatus::Success == MergeEnumeration(ecEnum, sdInfo))
+
+        if (!sdInfo.m_mustBeFromList && ECObjectsStatus::Success == MergeEnumeration(ecEnum, sdInfo))
             {
             enumeration = ecEnum;
             return ECObjectsStatus::Success;
@@ -1042,20 +1157,17 @@ ECObjectsStatus StandardValuesConverter::FindEnumeration(ECSchemaR schema, ECEnu
 //+---------------+---------------+---------------+---------------+---------------+------
 ECObjectsStatus StandardValuesConverter::CreateEnumeration(ECEnumerationP& enumeration, ECSchemaR schema, Utf8CP enumName, StandardValueInfo& sdInfo)
     {
-    ECObjectsStatus status = schema.CreateEnumeration(enumeration, enumName, PrimitiveType::PRIMITIVETYPE_Integer);
+    ECObjectsStatus status = schema.CreateEnumeration(enumeration, enumName, sdInfo.m_type);
     if (ECObjectsStatus::Success != status)
         return status;
 
     enumeration->SetIsStrict(sdInfo.m_mustBeFromList);
-    ECEnumeratorP enumerator;
-
     for (auto const& pair : sdInfo.m_valuesMap)
         {
-        status = enumeration->CreateEnumerator(enumerator, ECEnumerator::DetermineName(enumeration->GetName(), nullptr, &pair.first), pair.first);
+        ECEnumeratorP enumerator = nullptr;
+        status = createEnumeratorForValue(enumerator, *enumeration, pair.first, pair.second);
         if (ECObjectsStatus::Success != status)
             return status;
-
-        enumerator->SetDisplayLabel(pair.second.c_str());
         }
     return ECObjectsStatus::Success;
     }
