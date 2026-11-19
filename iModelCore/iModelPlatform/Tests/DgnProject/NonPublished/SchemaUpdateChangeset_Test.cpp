@@ -1133,9 +1133,9 @@ TEST_F(SchemaUpdateChangesetFixture, BaseClassInsertion_BriefcaseBReadsSameAsA)
     }
 
 //---------------------------------------------------------------------------------------
-// B inserts a row under the old schema and has not pushed when A's data transform arrives. Without
-// semantic rebase (opt-in in JS), PullMergeApply reinstates the local txn as recorded, with the columns
-// of the old mapping. The value must still read as Count on B, and on A after B pushes.
+// B inserts a row under the old schema and has not pushed when A's data transform arrives. Hub locks keep
+// this from happening in normal use, nothing else does. PullMergeApply reinstates the local txn as recorded,
+// with the columns of the old mapping. The value must still read as Count on B, and on A after B pushes.
 // Currently the local value lands in the column Count left and reads NULL on both briefcases.
 // @bsimethod
 //---------------------------------------------------------------------------------------
