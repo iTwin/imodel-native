@@ -1248,12 +1248,10 @@ TEST_F(RelationshipUpdateTests, MovingNavigationPropertyToBaseClassIsRejected)
     }
 
 //---------------------------------------------------------------------------------------
-// Sensor keeps its navigation property as an override. Other physical elements inherit it and read NULL.
-// Disabled: the import moves the property of Sensor to new columns, clears the old ones and copies no
-// values, so the navigation values of all sensors are lost.
+// Sensor keeps its navigation property as an override and keeps its values. Other physical elements inherit it and read NULL.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(RelationshipUpdateTests, DISABLED_AddNavigationPropertyToBaseClass)
+TEST_F(RelationshipUpdateTests, AddNavigationPropertyToBaseClass)
     {
     ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
 

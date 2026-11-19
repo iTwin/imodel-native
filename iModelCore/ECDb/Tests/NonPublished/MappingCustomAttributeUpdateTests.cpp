@@ -113,6 +113,55 @@ struct MappingCustomAttributeUpdateTests : SchemaUpdateTestFixture
         return updatedXml;
         }
 
+    //! XML of one DbIndex. Pass nullptr for isUnique or where to leave them out.
+    static Utf8String DbIndexXml(Utf8CP name, Utf8CP isUnique, std::vector<Utf8CP> const& propertyNames, Utf8CP where = nullptr)
+        {
+        Utf8String xml;
+        xml.append("<DbIndex><Name>").append(name).append("</Name>");
+        if (isUnique != nullptr)
+            xml.append("<IsUnique>").append(isUnique).append("</IsUnique>");
+
+        xml.append("<Properties>");
+        for (Utf8CP propertyName : propertyNames)
+            xml.append("<string>").append(propertyName).append("</string>");
+
+        xml.append("</Properties>");
+        if (where != nullptr)
+            xml.append("<Where>").append(where).append("</Where>");
+
+        return xml.append("</DbIndex>");
+        }
+
+    //! Baseline schema with a DbIndexList on Markup or Comment.
+    Utf8String WithIndexes(Utf8CP className, Utf8StringCR dbIndexesXml) const
+        {
+        Utf8String schemaXml = GetBaselineSchemaXml();
+        Utf8PrintfString indexListXml(R"xml(<DbIndexList xmlns="ECDbMap.02.00.00"><Indexes>%s</Indexes></DbIndexList>)xml", dbIndexesXml.c_str());
+        if (0 == strcmp(className, "Markup"))
+            ReplaceInClass(schemaXml, "Markup", "</ClassMap>", Utf8PrintfString("</ClassMap>\n            %s", indexListXml.c_str()).c_str());
+        else
+            ReplaceInClass(schemaXml, className, "<BaseClass>", Utf8PrintfString("<ECCustomAttributes>%s</ECCustomAttributes>\n        <BaseClass>", indexListXml.c_str()).c_str());
+
+        return schemaXml;
+        }
+
+    //! Inserts a comment with the Text and Author of an existing comment and returns the result of the insert.
+    DbResult InsertCommentLikeExistingOne()
+        {
+        ECSqlStatement select;
+        EXPECT_EQ(ECSqlStatus::Success, select.Prepare(m_ecdb, "SELECT Text, Author FROM ts.Comment ORDER BY ECInstanceId LIMIT 1"));
+        EXPECT_EQ(BE_SQLITE_ROW, select.Step());
+        ECSqlStatement insert;
+        EXPECT_EQ(ECSqlStatus::Success, insert.Prepare(m_ecdb, "INSERT INTO ts.Comment (Text, Author) VALUES (?, ?)"));
+        insert.BindText(1, select.GetValueText(0), IECSqlBinder::MakeCopy::Yes);
+        insert.BindText(2, select.GetValueText(1), IECSqlBinder::MakeCopy::Yes);
+        const DbResult result = insert.Step();
+        insert.Finalize();
+        select.Finalize();
+        m_ecdb.AbandonChanges();
+        return result;
+        }
+
     //! Adds a property to Comment and a new subclass of Annotation.
     static Utf8String ExtendAnnotationHierarchy(Utf8StringCR schemaXml)
         {
@@ -331,6 +380,145 @@ TEST_F(MappingCustomAttributeUpdateTests, AddingUniquePropertyMapIsRejected)
     }
 
 //***************************************************************************************
+// DbIndexList
+// New indexes and changed index properties are allowed on existing classes. ECDb builds them on the
+// existing rows, so a unique index fails when the data has duplicates.
+//***************************************************************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(MappingCustomAttributeUpdateTests, AddIndex)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+    ExpectAccepted(WithIndexes("Markup", DbIndexXml("ix_markup_text", "False", {"Text"})));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(MappingCustomAttributeUpdateTests, AddUniqueIndex)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+    EXPECT_EQ(BE_SQLITE_DONE, InsertCommentLikeExistingOne());
+
+    ExpectAccepted(WithIndexes("Comment", DbIndexXml("uix_comment_text_author", "True", {"Text", "Author"})));
+    EXPECT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, InsertCommentLikeExistingOne());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(MappingCustomAttributeUpdateTests, AddingUniqueIndexOnDuplicateValuesIsRejected)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+    ChangeDataBeforeUpdate("UPDATE ts.Markup SET Text = 'Draft'");
+    ExpectRejected(WithIndexes("Markup", DbIndexXml("uix_markup_text", "True", {"Text"})), "ECDb_0227", SchemaVersionChange::Minor);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(MappingCustomAttributeUpdateTests, AddPropertyToIndex)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+    ExpectAccepted(WithIndexes("Comment", DbIndexXml("ix_comment", "False", {"Text"})));
+    ExpectAccepted(WithIndexes("Comment", DbIndexXml("ix_comment", "False", {"Text", "Author"})));
+    }
+
+//---------------------------------------------------------------------------------------
+// Every comment gets the same Text, so the unique index holds only together with Author.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(MappingCustomAttributeUpdateTests, RemovingPropertyFromUniqueIndexOnDuplicateValuesIsRejected)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+    ExpectAccepted(WithIndexes("Comment", DbIndexXml("uix_comment", "True", {"Text", "Author"})));
+
+    ChangeDataBeforeUpdate("UPDATE ts.Comment SET Text = 'Draft'");
+    ExpectRejected(WithIndexes("Comment", DbIndexXml("uix_comment", "True", {"Text"})), "ECDb_0227", SchemaVersionChange::Minor);
+    }
+
+//---------------------------------------------------------------------------------------
+// Rejected although the data has no duplicates.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(MappingCustomAttributeUpdateTests, MakingIndexUniqueIsRejected)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+    ExpectAccepted(WithIndexes("Markup", DbIndexXml("ix_markup_text", "False", {"Text"})));
+    ExpectRejected(WithIndexes("Markup", DbIndexXml("ix_markup_text", "True", {"Text"})), "ECDb_0354", SchemaVersionChange::Minor);
+    }
+
+//---------------------------------------------------------------------------------------
+// Rejected although a non-unique index fits any data.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(MappingCustomAttributeUpdateTests, MakingIndexNonUniqueIsRejected)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+    ExpectAccepted(WithIndexes("Markup", DbIndexXml("uix_markup_text", "True", {"Text"})));
+    ExpectRejected(WithIndexes("Markup", DbIndexXml("uix_markup_text", "False", {"Text"})), "ECDb_0354", SchemaVersionChange::Minor);
+    }
+
+//---------------------------------------------------------------------------------------
+// IsUnique defaults to false. Setting it where it was left out counts as a new value, which ECDb accepts,
+// while changing it from False to True is rejected.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(MappingCustomAttributeUpdateTests, SetIsUniqueOnIndexWithoutIt)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+    ExpectAccepted(WithIndexes("Comment", DbIndexXml("ix_comment", nullptr, {"Text", "Author"})));
+    EXPECT_EQ(BE_SQLITE_DONE, InsertCommentLikeExistingOne());
+
+    ExpectAccepted(WithIndexes("Comment", DbIndexXml("ix_comment", "True", {"Text", "Author"})));
+    EXPECT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, InsertCommentLikeExistingOne());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(MappingCustomAttributeUpdateTests, SettingIsUniqueOnIndexWithoutItOnDuplicateValuesIsRejected)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+    ExpectAccepted(WithIndexes("Comment", DbIndexXml("ix_comment", nullptr, {"Text"})));
+
+    ChangeDataBeforeUpdate("UPDATE ts.Comment SET Text = 'Draft'");
+    ExpectRejected(WithIndexes("Comment", DbIndexXml("ix_comment", "True", {"Text"})), "ECDb_0227", SchemaVersionChange::Minor);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(MappingCustomAttributeUpdateTests, SetWhereOnIndexWithoutIt)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+    ExpectAccepted(WithIndexes("Markup", DbIndexXml("ix_markup_text", "False", {"Text"})));
+    ExpectAccepted(WithIndexes("Markup", DbIndexXml("ix_markup_text", "False", {"Text"}, "IndexedColumnsAreNotNull")));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(MappingCustomAttributeUpdateTests, RemovingIndexIsRejected)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+    ExpectAccepted(WithIndexes("Comment", DbIndexXml("ix_comment_text", "False", {"Text"}).append(DbIndexXml("ix_comment_author", "False", {"Author"}))));
+    ExpectRejected(WithIndexes("Comment", DbIndexXml("ix_comment_text", "False", {"Text"})), "ECDb_0354", SchemaVersionChange::Minor);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(MappingCustomAttributeUpdateTests, RenamingIndexIsRejected)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+    ExpectAccepted(WithIndexes("Comment", DbIndexXml("ix_comment_text", "False", {"Text"})));
+    ExpectRejected(WithIndexes("Comment", DbIndexXml("ix_comment_body", "False", {"Text"})), "ECDb_0354", SchemaVersionChange::Minor);
+    }
+
+//***************************************************************************************
 // Custom attributes on new classes and properties
 //***************************************************************************************
 
@@ -445,11 +633,9 @@ TEST_F(MappingCustomAttributeUpdateTests, AddingUniquePropertyIsRejected)
 //---------------------------------------------------------------------------------------
 // Comment inherits Subject from the inserted base class, so ECSQL with $-> has to find it on existing comments.
 // The harness reads data without $->, so this test checks it separately.
-// Disabled: the update stores no property map for Subject on Comment. $-> looks properties up in the stored
-// property maps, so it skips all comments, while plain ECSQL and $ return Subject.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(MappingCustomAttributeUpdateTests, DISABLED_InsertBaseClassWithNewProperty)
+TEST_F(MappingCustomAttributeUpdateTests, InsertBaseClassWithNewProperty)
     {
     ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
 

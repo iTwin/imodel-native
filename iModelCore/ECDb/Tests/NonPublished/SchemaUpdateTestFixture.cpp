@@ -206,7 +206,7 @@ void CompareValues(Utf8CP context, std::map<Utf8String, Utf8String> const& expec
 struct ValueGenerator final
     {
     private:
-        uint64_t m_next = 1;
+        uint64_t m_next;
         std::map<ECEnumerationCP, size_t> m_nextEnumeratorIndexes;
 
         ECSqlStatus BindEnumerator(IECSqlBinder& binder, ECEnumerationCR enumeration)
@@ -275,6 +275,8 @@ struct ValueGenerator final
             }
 
     public:
+        explicit ValueGenerator(uint64_t firstValue) : m_next(firstValue) {}
+
         ECSqlStatus Bind(IECSqlBinder& binder, ECPropertyCR prop)
             {
             if (prop.GetIsPrimitive())
@@ -516,11 +518,11 @@ BentleyStatus InsertLinkTableRelationships(ECDbCR ecdb, bvector<ECSchemaCP> cons
 //---------------------------------------------------------------------------------------
 // Inserts instances into every concrete entity class and link table relationship class of the
 // schemas, with a different value for every primitive, so swapped or shared columns cannot hide
-// behind equal values.
+// behind equal values. Values count up from @p firstValue.
 //---------------------------------------------------------------------------------------
-BentleyStatus InsertGeneratedInstances(ECDbCR ecdb, bvector<ECSchemaCP> const& schemas, int instancesPerClass, bvector<InsertedInstance>& inserted)
+BentleyStatus InsertGeneratedInstances(ECDbCR ecdb, bvector<ECSchemaCP> const& schemas, int instancesPerClass, uint64_t firstValue, bvector<InsertedInstance>& inserted)
     {
-    ValueGenerator generator;
+    ValueGenerator generator(firstValue);
     bvector<InsertedInstance> insertedNow;
     for (ECClassCP ecClass : GetDataClasses(schemas))
         {
@@ -678,7 +680,7 @@ BentleyStatus CreateBaselineSeed(BaselineSeed& seed, SchemaUpdateBaseline const&
         }
 
     bvector<InsertedInstance> inserted;
-    if (SUCCESS != InsertGeneratedInstances(seedDb, schemas, baseline.GetInstancesPerClass(), inserted))
+    if (SUCCESS != InsertGeneratedInstances(seedDb, schemas, baseline.GetInstancesPerClass(), 1, inserted))
         return ERROR;
 
     if (BE_SQLITE_OK != seedDb.SaveChanges())
@@ -1233,8 +1235,9 @@ void SchemaUpdateTestFixture::VerifyWriteProbe()
 //+---------------+---------------+---------------+---------------+---------------+------
 void SchemaUpdateTestFixture::VerifyWriteProbeInstances()
     {
+    // Values from their own range, so they do not collide with baseline values in unique indexes.
     bvector<InsertedInstance> inserted;
-    ASSERT_EQ(SUCCESS, InsertGeneratedInstances(m_ecdb, GetSchemas(), 1, inserted)) << "Write probe failed to insert.";
+    ASSERT_EQ(SUCCESS, InsertGeneratedInstances(m_ecdb, GetSchemas(), 1, 100000, inserted)) << "Write probe failed to insert.";
 
     DataSnapshot data;
     ReadData(data);
