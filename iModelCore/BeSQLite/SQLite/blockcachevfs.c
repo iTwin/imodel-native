@@ -128,6 +128,12 @@ struct BcvProxyFile {
   ** fdProxy is INVALID_SOCKET while disconnected. */
   u64 iSession;
   int bPoison;
+  u32 iDbVersion;
+  int bShmUnlinked;
+  u64 localDev;
+  u64 localIno;
+  u64 shmDev;
+  u64 shmIno;
 };
 
 /* Reconnect timing. Each attempt has BCV_RECONNECT_TIMEOUT_MS to connect
@@ -861,6 +867,10 @@ static int bcvfsClose(sqlite3_file *pFd){
     pFile->pFs->nRef--;
   } LEAVE_VFS_MUTEX;
 
+  pFile->lockMask = 0;
+  bcvKVStoreFree(&pFile->kv);
+  bcvfsProxyCloseTransactionIf(pFile);
+
   bcv_close_socket(pFile->p.fdProxy);
   pFile->p.fdProxy = INVALID_SOCKET;
   sqlite3_free(pFile->p.zStorage);
@@ -869,9 +879,6 @@ static int bcvfsClose(sqlite3_file *pFd){
   sqlite3_free(pFile->p.zAuth);
   bcvIntEncryptionKeyFree(pFile->p.pKey);
 
-  pFile->lockMask = 0;
-  bcvKVStoreFree(&pFile->kv);
-  bcvfsProxyCloseTransactionIf(pFile);
   bcvCloseLocal(pFile->pCacheFile);
   bcvfsCloseFile(pFile->pFile);
   bcvfsFreeLocalPath(pFile->zLocalPath);
@@ -1733,7 +1740,59 @@ static BcvMessage *bcvExchangeMessage(
 }
 
 static int bcvfsProxyConnect(sqlite3_bcvfs*, const char*, const char*, int,
-    BCV_SOCKET_TYPE*, BcvMessage**, int, u64, int);
+    BCV_SOCKET_TYPE*, BcvMessage**, u32, u64, int);
+
+static int bcvStatFileId(const char *zPath, u64 *piDev, u64 *piIno){
+#ifdef __WIN32__
+  BY_HANDLE_FILE_INFORMATION info;
+  HANDLE h = CreateFileA(zPath, 0,
+      FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+      0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0
+  );
+  if( h==INVALID_HANDLE_VALUE ) return -1;
+  if( !GetFileInformationByHandle(h, &info) ){
+    CloseHandle(h);
+    return -1;
+  }
+  CloseHandle(h);
+  *piDev = (u64)info.dwVolumeSerialNumber;
+  *piIno = ((u64)info.nFileIndexHigh << 32) | (u64)info.nFileIndexLow;
+  return 0;
+#else
+  struct stat st;
+  if( stat(zPath, &st)!=0 ) return -1;
+  *piDev = (u64)st.st_dev;
+  *piIno = (u64)st.st_ino;
+  return 0;
+#endif
+}
+
+/*
+** Check whether the local proxy database file or its -shm file has been
+** unlinked or replaced since bcvfsOpen() opened pFile->pFile. SQLite's WAL
+** layer keeps its original -shm mapping for the lifetime of the connection,
+** so once unlinked it can no longer observe WalIndexHdr invalidations
+** written to a recreated -shm file.
+*/
+static void bcvfsProxyCheckLocalShm(BcvfsFile *pFile){
+  if( pFile->zLocalPath && pFile->p.bShmUnlinked==0 ){
+    u64 iDev = 0, iIno = 0;
+    char *zShm = sqlite3_mprintf("%s-shm", pFile->zLocalPath);
+    if( zShm==0
+     || bcvStatFileId(pFile->zLocalPath, &iDev, &iIno)!=0
+     || iDev!=pFile->p.localDev || iIno!=pFile->p.localIno
+    ){
+      pFile->p.bShmUnlinked = 1;
+    }else if( pFile->p.shmIno!=0 || pFile->p.shmDev!=0 ){
+      if( bcvStatFileId(zShm, &iDev, &iIno)!=0
+       || iDev!=pFile->p.shmDev || iIno!=pFile->p.shmIno
+      ){
+        pFile->p.bShmUnlinked = 1;
+      }
+    }
+    sqlite3_free(zShm);
+  }
+}
 
 /*
 ** Fetch (or refresh) the local cache encryption key for a secure container
@@ -1818,22 +1877,27 @@ static int bcvfsProxyReconnect(BcvfsFile *pFile){
 
   bcv_close_socket(pFile->p.fdProxy);
   pFile->p.fdProxy = INVALID_SOCKET;
+  bcvfsProxyCheckLocalShm(pFile);
 
   for(iAttempt=0; iAttempt<BCV_RECONNECT_ATTEMPTS; iAttempt++){
     BCV_SOCKET_TYPE s = INVALID_SOCKET;
     BcvMessage *pReply = 0;
     int bRefused = 0;
+    int bSentLockVer = pFile->p.bShmUnlinked;
+    u32 helloFlags = (bWantResume ? BCV_HELLO_WANTRESUME : 0)
+        | (bSentLockVer ? BCV_HELLO_LOCKVERSION : 0);
     if( iAttempt>0 ){
       sqlite3_sleep(msBackoff);
       msBackoff *= 2;
     }
     rc = bcvfsProxyConnect(pFs, pFile->pPath->zContainer, 
-        pFile->pPath->zDatabase, 0, &s, &pReply, bWantResume, iResume,
+        pFile->pPath->zDatabase, 0, &s, &pReply, helloFlags, iResume,
         BCV_RECONNECT_TIMEOUT_MS
     );
     if( rc==SQLITE_OK ){
       if( pReply ){
         BcvHelloReply *pHello = &pReply->u.hello_r;
+        bcvfsProxyCheckLocalShm(pFile);
         rc = pHello->errCode;
         if( rc==SQLITE_OK 
          && (pHello->iDbId!=pFile->iFileDbId
@@ -1841,14 +1905,27 @@ static int bcvfsProxyReconnect(BcvfsFile *pFile){
           || bcvStrcmp(pHello->zStorage, pFile->p.zStorage)
           || bcvStrcmp(pHello->zAccount, pFile->p.zAccount)
           || bcvStrcmp(pHello->zContainer, pFile->p.zContainer)
-          || (pHello->bEncrypted!=0)!=(pFile->p.pKey!=0))
+          || (pHello->bEncrypted!=0)!=(pFile->p.pKey!=0)
+          || (pFile->p.bShmUnlinked && pFile->pPath->zDatabase
+           && (pHello->iDbVersion==0 || pHello->iDbVersion!=pFile->p.iDbVersion)))
         ){
-          /* The container or database has been replaced since it was opened. */
+          /* The container or database has been replaced since it was opened,
+          ** or the local -shm file was unlinked across a database version
+          ** change so SQLite's page cache cannot be invalidated safely. */
           rc = SQLITE_IOERR;
+        }
+        if( rc==SQLITE_OK && !bSentLockVer && pFile->p.bShmUnlinked ){
+          rc = SQLITE_IOERR;
+          sqlite3_free(pReply);
+          bcv_close_socket(s);
+          continue;
         }
         if( rc!=SQLITE_OK ){
           bRefused = 1;
         }else{
+          if( !pFile->p.bShmUnlinked && pHello->iDbVersion ){
+            pFile->p.iDbVersion = pHello->iDbVersion;
+          }
           pFile->p.iSession = iResume = pHello->iSession;
           bResumed = (bWantResume && pHello->bResumed!=0);
           if( pFile->p.pMap && !bResumed ){
@@ -2797,6 +2874,7 @@ int bcvfsCreateLocalDb(
   BcvCommon *p,
   const char *zCont,
   const char *zDb,
+  int bInitHdr,
   sqlite3_file **ppFd
 ){
   sqlite3_file *pFd = 0;
@@ -2819,7 +2897,13 @@ int bcvfsCreateLocalDb(
   if( rc==SQLITE_OK ){
     rc = pFd->pMethods->xShmMap(pFd, 0, 32*1024, 1, (volatile void**)&aMap); 
     if( rc==SQLITE_OK ){
-      bcvfsEmptyWalIndexHdr(aMap);
+      const BcvfsWalIndexHdr *pHdr = (const BcvfsWalIndexHdr*)aMap;
+      if( bInitHdr
+       || pHdr->isInit==0
+       || memcmp(&pHdr[0], &pHdr[1], sizeof(*pHdr))
+      ){
+        bcvfsEmptyWalIndexHdr(aMap);
+      }
     }
   }
 
@@ -3026,6 +3110,9 @@ int bcvManifestUpdate(
               pWrapper->bUnlock = 1;
               if( pCommon->bDaemon ){
                 bcvfsEmptyWalIndexHdr(aMap);
+                if( pNewDb && pNewDb->iDbId==pOldDb->iDbId ){
+                  pNewDb->bShmInit = 1;
+                }
               }else{
                 memset(aMap, 0, 24);
                 rc = bcvfsWalNonEmpty(pCommon, zWal, &bFail);
@@ -3042,6 +3129,7 @@ int bcvManifestUpdate(
       }
     }else{
       assert( pNewDb->nBlkLocalAlloc==0 );
+      pNewDb->bShmInit = pOldDb->bShmInit;
       if( pOldDb->nBlkLocalAlloc ){
         pNewDb->aBlkLocal = (u8*)bcvMallocRc(&rc, nName*pOldDb->nBlkLocalAlloc);
         if( rc==SQLITE_OK ){
@@ -3525,7 +3613,7 @@ static int bcvfsProxyConnect(
   int bPrefetch,                  /* True for prefetch connection */
   BCV_SOCKET_TYPE *pS,            /* OUT: Open socket */
   BcvMessage **ppReply,           /* OUT: HELLO_REPLY message */
-  int bWantResume,                /* True to adopt parked iResume txn */
+  u32 helloFlags,                 /* Extra BCV_HELLO_* flags */
   u64 iResume,                    /* Previous session id, or 0 */
   int msTimeout                   /* Socket timeout left set if >0, or 0 */
 ){
@@ -3542,8 +3630,7 @@ static int bcvfsProxyConnect(
     hello.u.hello.zDatabase = zDb;
     hello.u.hello.bPrefetch = bPrefetch;
     if( zDb && !bPrefetch ){
-      hello.u.hello.bCanResume = BCV_HELLO_CANRESUME
-          | (bWantResume ? BCV_HELLO_WANTRESUME : 0);
+      hello.u.hello.bCanResume = BCV_HELLO_CANRESUME | helloFlags;
       hello.u.hello.iResume = iResume;
     }
     pReply = bcvExchangeMessage(&rc, s, &hello);
@@ -3580,6 +3667,7 @@ static int bcvfsOpenProxy(
       pFile->p.zContainer = bcvStrdupRc(&rc, pReply->u.hello_r.zContainer);
       pFile->p.szBlk = pReply->u.hello_r.szBlk;
       pFile->p.iSession = pReply->u.hello_r.iSession;
+      pFile->p.iDbVersion = pReply->u.hello_r.iDbVersion;
       pFile->iFileDbId = pReply->u.hello_r.iDbId;
 
       if( rc==SQLITE_OK && pReply->u.hello_r.bEncrypted ){
@@ -3719,6 +3807,14 @@ static int bcvfsOpen(
           *pOutFlags = fout;
           if( rc==SQLITE_OK && bIsMain ){
             rc = bcvOpenLocal(pFs->zCacheFile, 0, bDaemon, &pRet->pCacheFile);
+          }
+          if( rc==SQLITE_OK && bDaemon && bIsMain ){
+            char *zShm = sqlite3_mprintf("%s-shm", zLocal);
+            bcvStatFileId(zLocal, &pRet->p.localDev, &pRet->p.localIno);
+            if( zShm ){
+              bcvStatFileId(zShm, &pRet->p.shmDev, &pRet->p.shmIno);
+              sqlite3_free(zShm);
+            }
           }
           pRet->pPath = pPath;
           pRet->zLocalPath = zLocal;

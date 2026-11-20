@@ -3787,11 +3787,19 @@ int bcv_socket_connect(
       struct pollfd pfd;
       int soerr = -1;
       socklen_t len = sizeof(soerr);
-      if( errno!=EINPROGRESS ) return -1;
-      memset(&pfd, 0, sizeof(pfd));
-      pfd.fd = s;
-      pfd.events = POLLOUT;
-      if( poll(&pfd, 1, msTimeout)<=0 ) return -1;
+      i64 iDeadline;
+      int prc;
+      if( errno!=EINPROGRESS && errno!=EINTR ) return -1;
+      iDeadline = bcv_timestamp() + (i64)msTimeout * 1000;
+      do {
+        i64 iRem = (iDeadline - bcv_timestamp() + 999) / 1000;
+        if( iRem<=0 ) return -1;
+        memset(&pfd, 0, sizeof(pfd));
+        pfd.fd = s;
+        pfd.events = POLLOUT;
+        prc = poll(&pfd, 1, (int)iRem);
+      }while( prc<0 && errno==EINTR );
+      if( prc<=0 ) return -1;
       if( getsockopt(s, SOL_SOCKET, SO_ERROR, &soerr, &len)<0
        || soerr!=0
       ){
@@ -3835,7 +3843,9 @@ int bcv_socket_is_broken(BCV_SOCKET_TYPE s){
   res = WSAPoll(&p, 1, 0);
 #else
   p.events = POLLIN;
-  res = poll(&p, 1, 0);
+  do {
+    res = poll(&p, 1, 0);
+  }while( res<0 && errno==EINTR );
 #endif
   return (res!=0);
 }
@@ -3850,10 +3860,26 @@ void bcv_socket_init(){
 }
 
 static int bcvDefaultRecv(BCV_SOCKET_TYPE fd, void *aRead, int nRead){
-  return recv(fd, aRead, nRead, 0);
+  int res;
+#ifdef __WIN32__
+  res = recv(fd, aRead, nRead, 0);
+#else
+  do {
+    res = recv(fd, aRead, nRead, 0);
+  }while( res<0 && errno==EINTR );
+#endif
+  return res;
 }
 static int bcvDefaultSend(BCV_SOCKET_TYPE fd, void *aSend, int nSend){
-  return send(fd, aSend, nSend, MSG_NOSIGNAL);
+  int res;
+#ifdef __WIN32__
+  res = send(fd, aSend, nSend, MSG_NOSIGNAL);
+#else
+  do {
+    res = send(fd, aSend, nSend, MSG_NOSIGNAL);
+  }while( res<0 && errno==EINTR );
+#endif
+  return res;
 }
 
 static struct BcvSocketAPI {
@@ -3993,9 +4019,10 @@ int bcvSendMsg(BCV_SOCKET_TYPE fd, BcvMessage *pMsg){
       bcvBufferAppendU64(&rc, &buf, (u64)pMsg->u.hello_r.iDbId);
       bcvBufferAppendU32(&rc, &buf, pMsg->u.hello_r.szBlk);
       bcvBufferAppendU32(&rc, &buf, pMsg->u.hello_r.bEncrypted);
-      if( pMsg->u.hello_r.iSession ){
+      if( pMsg->u.hello_r.iSession || pMsg->u.hello_r.iDbVersion ){
         bcvBufferAppendU64(&rc, &buf, pMsg->u.hello_r.iSession);
         bcvBufferAppendU32(&rc, &buf, pMsg->u.hello_r.bResumed);
+        bcvBufferAppendU32(&rc, &buf, pMsg->u.hello_r.iDbVersion);
       }
       break;
     case BCV_MESSAGE_READ: 
@@ -4169,6 +4196,9 @@ int bcvRecvMsg(
             if( ((u8*)&pMsg[1] + nByte - aBody)>=12 ){
               pMsg->u.hello_r.iSession = bcvMsgGetU64(&aBody);
               pMsg->u.hello_r.bResumed = bcvMsgGetU32(&aBody);
+            }
+            if( ((u8*)&pMsg[1] + nByte - aBody)>=4 ){
+              pMsg->u.hello_r.iDbVersion = bcvMsgGetU32(&aBody);
             }
             break;
           }

@@ -14,6 +14,7 @@
 
 static volatile sig_atomic_t gStop = 0;
 static void onTerm(int sig){ (void)sig; gStop = 1; }
+static void onUsr1(int sig){ (void)sig; }
 
 static const char *KEY = "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
 static int xAuth(void *p, const char *a, const char *b, const char *c, char **pz){
@@ -30,21 +31,24 @@ static int xAuth(void *p, const char *a, const char *b, const char *c, char **pz
 }
 static double now(void){ struct timespec t; clock_gettime(CLOCK_MONOTONIC,&t); return t.tv_sec+t.tv_nsec/1e9; }
 
-/* aId: if non-NULL and bReplay, read these ids; else pick random ids and
-** record them into aId (if non-NULL). */
-static int readRows(sqlite3_stmt *pStmt, int n, int *pnBad, double *pMaxMs, int *aId, int bReplay){
+static int gMaxId = 40000;
+static const char *gRowPrefix = "";
+
+/* aId: if non-NULL and bReplay, read these ids; else if iBase>=0 read
+** iBase..iBase+n-1; else pick random ids and record them into aId. */
+static int readRows(sqlite3_stmt *pStmt, int n, int *pnBad, double *pMaxMs, int *aId, int bReplay, int iBase){
   int i, rc = SQLITE_OK;
   for(i=0; i<n; i++){
-    int id = (aId && bReplay) ? aId[i] : rand() % 40000;
+    int id = (aId && bReplay) ? aId[i] : (iBase>=0 ? (iBase + i) % gMaxId : rand() % gMaxId);
     if( aId && !bReplay ) aId[i] = id;
     double t0 = now(), ms;
     sqlite3_bind_int(pStmt, 1, id);
     rc = sqlite3_step(pStmt);
     if( rc==SQLITE_ROW ){
-      char s[16]; unsigned char h[32]; int k;
+      char s[64]; unsigned char h[32]; int k;
       const unsigned char *v = sqlite3_column_blob(pStmt, 0);
       int nv = sqlite3_column_bytes(pStmt, 0);
-      snprintf(s, sizeof(s), "%d", id);
+      snprintf(s, sizeof(s), "%s%d", gRowPrefix, id);
       SHA256((unsigned char*)s, strlen(s), h);
       if( nv!=32*30 ){ (*pnBad)++; }
       else for(k=0; k<30; k++) if( memcmp(&v[k*32], h, 32) ){ (*pnBad)++; break; }
@@ -68,29 +72,76 @@ int main(int argc, char **argv){
   int nIter = atoi(argv[2]), nRow = atoi(argv[3]), sleepMs = atoi(argv[4]);
   int bStat = argc>5;
   int bRepeat = getenv("REPEAT")!=0;
+  int bFixedHalf = getenv("FIXED_FIRST_HALF")!=0;
   int bChurn = getenv("CHURN")!=0;
   int bSecure = getenv("SECURE")!=0;
   int bAttachOnly = getenv("ATTACH_ONLY")!=0;
+  int bPollOnly = getenv("POLL_ONLY")!=0;
+  int bUploadV2 = getenv("UPLOAD_V2")!=0;
   int bRootOnly = getenv("ROOT_ONLY")!=0;
   int idleMs = getenv("IDLE_SLEEP") ? atoi(getenv("IDLE_SLEEP")) : 0;
+  const char *zCont = getenv("CONT") ? getenv("CONT") : "cont1";
   const char *zMod = getenv("MODULE") ? getenv("MODULE") : "azure?emulator=127.0.0.1:10000";
   int attachFlags = SQLITE_BCV_ATTACH_IFNOT | (bSecure ? SQLITE_BCV_ATTACH_SECURE : 0);
   int *aId = calloc(nRow>0?nRow:1, sizeof(int));
   int nOk = 0, nErr = 0, nBadTotal = 0;
+  char zUri[128], zContUri[128], zRootSql[192];
+  struct sigaction sa;
+  memset(&sa, 0, sizeof(sa));
+  sa.sa_handler = onUsr1;
+  sigemptyset(&sa.sa_mask);
+  sigaction(SIGUSR1, &sa, 0);
+  if( getenv("MAX_ID") ) gMaxId = atoi(getenv("MAX_ID"));
+  if( getenv("ROW_PREFIX") ) gRowPrefix = getenv("ROW_PREFIX");
   setvbuf(stdout, 0, _IOLBF, 0);
   srand(getpid());
   rc = sqlite3_bcvfs_create(zDir, "bcv", &pFs, &zErr);
-  if( rc ){ printf("create: %d %s\n", rc, zErr); return 1; }
+  if( rc ){ printf("create: %d %s\n", rc, zErr); sqlite3_free(zErr); free(aId); return 1; }
   sqlite3_bcvfs_auth_callback(pFs, 0, xAuth);
-  rc = sqlite3_bcvfs_attach(pFs, zMod, "devstoreaccount1", "cont1", 0, attachFlags, &zErr);
-  if( rc ){ printf("attach: %d %s\n", rc, zErr); return 1; }
+  if( bPollOnly ){
+    rc = sqlite3_bcvfs_poll(pFs, zCont, &zErr);
+    if( rc ){ printf("poll: %d %s\n", rc, zErr ? zErr : ""); sqlite3_free(zErr); }
+    free(aId);
+    sqlite3_bcvfs_destroy(pFs);
+    return (rc ? 1 : 0);
+  }
+  rc = sqlite3_bcvfs_attach(pFs, zMod, "devstoreaccount1", zCont, 0, attachFlags, &zErr);
+  if( rc ){ printf("attach: %d %s\n", rc, zErr); sqlite3_free(zErr); free(aId); sqlite3_bcvfs_destroy(pFs); return 1; }
+  if( bUploadV2 ){
+    /* Modify test.db in-place via local-mode VFS upload so iDbId stays 1
+    ** while ManifestDb.iVersion increments to 2. */
+    sqlite3_stmt *pUpd = 0;
+    snprintf(zUri, sizeof(zUri), "file:/%s/test.db", zCont);
+    rc = sqlite3_open_v2(zUri, &db, SQLITE_OPEN_READWRITE|SQLITE_OPEN_URI, "bcv");
+    if( rc==SQLITE_OK ) rc = sqlite3_exec(db, "BEGIN", 0, 0, 0);
+    if( rc==SQLITE_OK ) rc = sqlite3_prepare_v2(db, "UPDATE t SET v=? WHERE id=?", -1, &pUpd, 0);
+    for(it=0; rc==SQLITE_OK && it<gMaxId; it++){
+      char s[64]; unsigned char h[32], blob[32*30]; int k;
+      snprintf(s, sizeof(s), "v2:%d", it);
+      SHA256((unsigned char*)s, strlen(s), h);
+      for(k=0; k<30; k++) memcpy(&blob[k*32], h, 32);
+      sqlite3_bind_blob(pUpd, 1, blob, sizeof(blob), SQLITE_TRANSIENT);
+      sqlite3_bind_int(pUpd, 2, it);
+      rc = (sqlite3_step(pUpd)==SQLITE_DONE ? SQLITE_OK : SQLITE_ERROR);
+      sqlite3_reset(pUpd);
+    }
+    sqlite3_finalize(pUpd);
+    if( rc==SQLITE_OK ) rc = sqlite3_exec(db, "COMMIT", 0, 0, 0);
+    sqlite3_close(db); db = 0;
+    if( rc==SQLITE_OK ) rc = sqlite3_bcvfs_upload(pFs, zCont, 0, 0, &zErr);
+    if( rc ){ printf("upload_v2: %d %s\n", rc, zErr ? zErr : ""); sqlite3_free(zErr); }
+    free(aId);
+    sqlite3_bcvfs_destroy(pFs);
+    return (rc ? 1 : 0);
+  }
   if( bAttachOnly ){
     free(aId);
     sqlite3_bcvfs_destroy(pFs);
     return 0;
   }
-  rc = sqlite3_open_v2("file:/cont1/test.db", &db, SQLITE_OPEN_READONLY|SQLITE_OPEN_URI, "bcv");
-  if( rc ){ printf("open: %d %s\n", rc, sqlite3_errmsg(db)); return 1; }
+  snprintf(zUri, sizeof(zUri), "file:/%s/test.db", zCont);
+  rc = sqlite3_open_v2(zUri, &db, SQLITE_OPEN_READONLY|SQLITE_OPEN_URI, "bcv");
+  if( rc ){ printf("open: %d %s\n", rc, sqlite3_errmsg(db)); sqlite3_close(db); free(aId); sqlite3_bcvfs_destroy(pFs); return 1; }
   sqlite3_bcvfs_register_vtab(db);
   sqlite3_exec(db, "PRAGMA bcv_client = 'test-client'", 0, 0, 0);
   if( bStat ){
@@ -99,13 +150,15 @@ int main(int argc, char **argv){
     sqlite3_exec(db, "PRAGMA temp_store=FILE; CREATE TEMP TABLE _t(x); PRAGMA temp.bcv_client='ignored';", 0, 0, 0);
 
     /* Also hold open "/" (without PRAGMA bcv_client, matching CloudCache::m_cloudDb)
-    ** and "/cont1" metadata handles across proxy disconnects. */
+    ** and "/<cont>" metadata handles across proxy disconnects. */
     rc = sqlite3_open_v2("file:/", &dbRoot, SQLITE_OPEN_READONLY|SQLITE_OPEN_URI, "bcv");
     if( rc ){ printf("open root: %d %s\n", rc, sqlite3_errmsg(dbRoot)); return 1; }
     sqlite3_bcvfs_register_vtab(dbRoot);
-    sqlite3_prepare_v2(dbRoot, "SELECT count(*) FROM bcv_container WHERE container='cont1'", -1, &pRootStat, 0);
+    snprintf(zRootSql, sizeof(zRootSql), "SELECT count(*) FROM bcv_container WHERE container='%s'", zCont);
+    sqlite3_prepare_v2(dbRoot, zRootSql, -1, &pRootStat, 0);
 
-    rc = sqlite3_open_v2("file:/cont1", &dbCont, SQLITE_OPEN_READONLY|SQLITE_OPEN_URI, "bcv");
+    snprintf(zContUri, sizeof(zContUri), "file:/%s", zCont);
+    rc = sqlite3_open_v2(zContUri, &dbCont, SQLITE_OPEN_READONLY|SQLITE_OPEN_URI, "bcv");
     if( rc ){ printf("open cont: %d %s\n", rc, sqlite3_errmsg(dbCont)); return 1; }
     sqlite3_bcvfs_register_vtab(dbCont);
     sqlite3_exec(dbCont, "PRAGMA bcv_client = 'cont-client'", 0, 0, 0);
@@ -162,9 +215,9 @@ int main(int argc, char **argv){
   for(it=0; it<nIter; it++){
     int nBad = 0; double maxMs = 0, t0 = now();
     rc = sqlite3_exec(db, "BEGIN", 0, 0, 0);
-    if( rc==SQLITE_OK ) rc = readRows(pStmt, nRow, &nBad, &maxMs, aId, 0);
+    if( rc==SQLITE_OK ) rc = readRows(pStmt, nRow, &nBad, &maxMs, aId, 0, bFixedHalf ? 0 : -1);
     if( rc==SQLITE_OK && sleepMs ) usleep(sleepMs*1000);
-    if( rc==SQLITE_OK ) rc = readRows(pStmt, nRow, &nBad, &maxMs, aId, bRepeat);
+    if( rc==SQLITE_OK ) rc = readRows(pStmt, nRow, &nBad, &maxMs, aId, bRepeat, bFixedHalf ? (it * nRow + gMaxId / 2) : -1);
     if( rc==SQLITE_OK && pStat ){
       rc = sqlite3_step(pStat); if( rc==SQLITE_ROW || rc==SQLITE_DONE ) rc = SQLITE_OK;
       sqlite3_reset(pStat);

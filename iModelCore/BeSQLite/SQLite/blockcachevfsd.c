@@ -1140,6 +1140,7 @@ struct DClient {
   int bCanResume;
   u64 iSession;
   int bClosing;
+  int iLockVersion;
 };
 
 /*
@@ -1156,6 +1157,7 @@ struct DParked {
   i64 iExpire;                    /* bcv_timestamp() expiry time (us) */
   Container *pCont;
   i64 iDbId;
+  int iLockVersion;
   Manifest *pMan;
   ManifestDb *pManDb;
   CacheEntry **apRef;
@@ -1595,6 +1597,7 @@ static int bdParkClient(DaemonCtx *p, DClient *pClient){
   pPark->iExpire = bcv_timestamp() + (i64)p->cmd.nResumeTimeout*1000000;
   pPark->pCont = pClient->pCont;
   pPark->iDbId = pClient->iDbId;
+  pPark->iLockVersion = pClient->iLockVersion;
   pPark->pMan = pClient->pMan;
   pPark->pManDb = pClient->pManDb;
   pPark->apRef = pClient->apRef;
@@ -2180,12 +2183,16 @@ static void bdHandleHello(
     }
 
     if( pCont ){
-      int rc = bcvfsCreateLocalDb(&p->c, zCont, zDb, &pClient->pCloseFd);
+      int rc = bcvfsCreateLocalDb(
+          &p->c, zCont, zDb, pDb->bShmInit==0, &pClient->pCloseFd
+      );
       if( rc!=SQLITE_OK ){
         zErr = bcvMprintf(
             "failed to create database files: /%s/%s", zCont, zDb
         );
         pCont = 0;
+      }else{
+        pDb->bShmInit = 1;
       }
     }
   }
@@ -2197,27 +2204,36 @@ static void bdHandleHello(
     reply.u.hello_r.zErrMsg = zErr;
   }else{
     pClient->pCont = pCont;
-    if( pDb ) pClient->iDbId = pDb->iDbId;
+    if( pDb ){
+      pClient->iDbId = pDb->iDbId;
+      if( pMsg->u.hello.bCanResume & BCV_HELLO_LOCKVERSION ){
+        pClient->iLockVersion = pDb->iVersion;
+      }
+    }
     pCont->nClient++;
     if( (pMsg->u.hello.bCanResume & BCV_HELLO_CANRESUME)
      && p->cmd.nResumeTimeout>0
     ){
       int bWant = (pMsg->u.hello.bCanResume & BCV_HELLO_WANTRESUME)!=0;
       pClient->bCanResume = 1;
-      while( pClient->iSession==0 ){
-        sqlite3_randomness(sizeof(pClient->iSession), &pClient->iSession);
-      }
-      reply.u.hello_r.iSession = pClient->iSession;
       if( pMsg->u.hello.iResume ){
         DParked *pPark;
         bdSupersedeClient(p, pClient, pMsg->u.hello.iResume, bWant);
         pPark = bdUnparkSession(p, pMsg->u.hello.iResume, pCont);
         if( bWant && pPark
          && pPark->iDbId==pClient->iDbId
+         && (pClient->iLockVersion==0
+          || pPark->pManDb->iVersion==pClient->iLockVersion)
          && pClient->prefetch.bPrefetch==0
         ){
-          /* Adopt the parked transaction. The new connection already
-          ** holds a pCont->nClient reference, so drop the parked one. */
+          /* Adopt the parked transaction and keep its session id so a
+          ** retry if HELLO_REPLY is lost can still find and resume it.
+          ** The new connection already holds a pCont->nClient reference,
+          ** so drop the parked one. */
+          pClient->iSession = pPark->iSession;
+          if( pPark->iLockVersion ){
+            pClient->iLockVersion = pPark->iLockVersion;
+          }
           pClient->pMan = pPark->pMan;
           pClient->pManDb = pPark->pManDb;
           pClient->apRef = pPark->apRef;
@@ -2238,12 +2254,17 @@ static void bdHandleHello(
           }
         }
       }
+      while( pClient->iSession==0 ){
+        sqlite3_randomness(sizeof(pClient->iSession), &pClient->iSession);
+      }
+      reply.u.hello_r.iSession = pClient->iSession;
     }
     reply.u.hello_r.szBlk = pCont->pMan->szBlk;
     reply.u.hello_r.zStorage = pCont->zStorage;
     reply.u.hello_r.zAccount = pCont->zAccount;
     reply.u.hello_r.zContainer = pCont->zContainer;
     reply.u.hello_r.iDbId = pClient->iDbId;
+    reply.u.hello_r.iDbVersion = pDb ? (u32)pDb->iVersion : 0;
     reply.u.hello_r.szBlk = pCont->pMan->szBlk;
     reply.u.hello_r.bEncrypted = (pCont->pKey!=0);
   }
@@ -2658,14 +2679,17 @@ static void bdProcessMRUList(
   int nMru
 ){
   CacheEntry **apRef = pClient->apRef;
+  int nBlk = pClient->pManDb->nBlkLocal;
   int ii;
   for(ii=nMru-1; ii>=0; ii--){
-    CacheEntry *pEntry = apRef[ aMru[ii] ];
-    assert( (int)aMru[ii]<pClient->pManDb->nBlkLocal && pEntry );
-    assert( pEntry->bValid && pEntry->bDirty==0 );
+    u32 iBlk = aMru[ii];
+    if( iBlk<(u32)nBlk && apRef[iBlk] ){
+      CacheEntry *pEntry = apRef[iBlk];
+      assert( pEntry->bValid && pEntry->bDirty==0 );
 
-    bcvfsLruRemoveIf(&p->c, pEntry);
-    bcvfsLruAddIf(&p->c, pEntry);
+      bcvfsLruRemoveIf(&p->c, pEntry);
+      bcvfsLruAddIf(&p->c, pEntry);
+    }
   }
 }
 
@@ -2690,6 +2714,9 @@ static void bdHandleRead(
     if( pDb==0 ){
       zErr = sqlite3_mprintf("database has been deleted");
       rc = SQLITE_ERROR;
+    }else if( pClient->iLockVersion && pDb->iVersion!=pClient->iLockVersion ){
+      zErr = sqlite3_mprintf("database has been modified");
+      rc = SQLITE_IOERR;
     }else{
       int nByte = pDb->nBlkLocal * sizeof(CacheEntry*);
       bcvManifestRef(pMan);
@@ -2710,7 +2737,8 @@ static void bdHandleRead(
     pClient->pMsg = pMsg;
     pClient->iWaitStart = 0;
   }else{
-    bdReadReplyError(pClient, SQLITE_ERROR, 0);
+    bdReadReplyError(pClient, rc, zErr);
+    sqlite3_free(zErr);
     sqlite3_free(pMsg);
   }
 }

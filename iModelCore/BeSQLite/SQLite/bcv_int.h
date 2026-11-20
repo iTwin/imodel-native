@@ -159,6 +159,7 @@ struct ManifestDb {
   i64 iParentId;                  /* Id of parent database, if any */
   char zDName[BCV_DBNAME_SIZE];   /* Database display name */
   int iVersion;                   /* Database version */
+  int bShmInit;                   /* True once daemon initialized -shm hdr */
 
   /* Original block array (as it exists or existed in cloud storage). */
   u8 *aBlkOrig;
@@ -421,7 +422,7 @@ void bcvfsLruAddIf(BcvCommon *p, CacheEntry *pEntry);
 int bcvfsNameToBlockid(Manifest *p, const char *zName, u8 *aBlk);
 u8 *bcvEmptyKV(int *pRc, int *pnData);
 
-int bcvfsCreateLocalDb(BcvCommon*, const char*, const char*, sqlite3_file**);
+int bcvfsCreateLocalDb(BcvCommon*, const char*, const char*, int, sqlite3_file**);
 
 /*
 ** Below here should be eventually moved back to blockcachevfsd. 
@@ -562,8 +563,9 @@ typedef struct BcvVtabReply BcvVtabReply;
 typedef struct BcvPrefetchMsg BcvPrefetchMsg;
 typedef struct BcvPrefetchReply BcvPrefetchReply;
 
-#define BCV_HELLO_CANRESUME  0x01
-#define BCV_HELLO_WANTRESUME 0x02
+#define BCV_HELLO_CANRESUME   0x01
+#define BCV_HELLO_WANTRESUME  0x02
+#define BCV_HELLO_LOCKVERSION 0x04
 
 struct BcvHelloMsg {
   const char *zContainer;
@@ -571,7 +573,9 @@ struct BcvHelloMsg {
   int bPrefetch;
   /* Optional trailing fields. BCV_HELLO_CANRESUME announces support for
   ** session resume; BCV_HELLO_WANTRESUME asks to adopt iResume's open
-  ** read transaction (without it, any parked/live iResume is discarded). */
+  ** read transaction (without it, any parked/live iResume is discarded);
+  ** BCV_HELLO_LOCKVERSION pins the connection to the current database
+  ** version when the client's local -shm file was unlinked. */
   u32 bCanResume;                 /* Mask of BCV_HELLO_* flags */
   u64 iResume;                    /* Previous session id, or 0 */
 };
@@ -586,10 +590,10 @@ struct BcvHelloReply {
   i64 iDbId;                      /* Database id */
   u32 szBlk;                      /* Block size in bytes */
   u32 bEncrypted;                 /* True for encrypted databases */
-  /* Optional trailing fields. Both are 0 if the daemon does not support
-  ** session resume. */
+  /* Optional trailing fields (all 0 on an older daemon). */
   u64 iSession;                   /* Id to pass as HELLO.iResume later */
   u32 bResumed;                   /* True if HELLO.iResume was resumed */
+  u32 iDbVersion;                 /* ManifestDb.iVersion, or 0 */
 };
 
 struct BcvPassMsg {
