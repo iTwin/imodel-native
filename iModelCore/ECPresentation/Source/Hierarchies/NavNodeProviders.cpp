@@ -4505,3 +4505,11 @@ CachedStatementPtr FilteredNodesProvider::_GetNodesStatement() const
 
     return stmt;
     }
+
+// Explicitly instantiate so out-of-line members (e.g. OnCreated, called from inline Create methods
+// in the header) are always emitted. Newer clang (Xcode 27) otherwise inlines and discards the
+// implicit instantiations, causing undefined symbols in consumers such as the unit test executables.
+// Note: the new clang behavior is correct; the fact that it worked before was relying on undefined behavior.
+BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
+template struct CachingNavNodesProviderBase<NodesCreatingMultiNavNodesProvider>;
+END_BENTLEY_ECPRESENTATION_NAMESPACE
