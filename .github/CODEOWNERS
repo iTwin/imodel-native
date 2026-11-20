@@ -19,6 +19,10 @@
 /build/                                        @DanRod1999 @naveedkhan8067 @tcobbs-bentley
 /iModelCore/libsrc/                             @DanRod1999 @tcobbs-bentley @iTwin/itwinjs-core-admins
 
+# Agent instructions and skills.
+/AGENTS.md                                      @rschili @khanaffan @tcobbs-bentley
+/.github/skills/                                @tcobbs-bentley @DanRod1999 @rschili
+
 # Backend / data runtime.
 # Cross-repo scope: core/backend, runtime APIs, ECSQL, and the JS/native boundary.
 # Preserve narrower data and schema expertise instead of one universal approval pool.
