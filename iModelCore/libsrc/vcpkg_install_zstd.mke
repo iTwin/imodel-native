@@ -1,0 +1,23 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+# vcpkg_install_zstd.mke - Run vcpkg install for the zstd manifest (Zstandard).
+# This mke is part of the sequential vcpkg install chain in vcpkg.PartFile.xml so that
+# only one vcpkg process runs at a time. Runs after vcpkg_install_freetype2.
+#---------------------------------------------------------------------------------------------
+
+%include mdl.mki
+
+zstdDir     = $(_MakeFilePath)zstd
+installRoot = $(OutputRootDir)vcpkg_installed/zstd
+
+# The zstd triplets set no -RTC flags, so veracode builds need no separate triplet.
+%include $(_MakeFilePath)vcpkg.mki
+
+always:
+%if defined (winNT)
+    powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$(_MakeFilePath)vcpkg_run_install.ps1" "$(zstdDir)" "$(installRoot)" "$(vcpkgTriplet)"
+%else
+    $(_MakeFilePath)vcpkg_run_install.sh $(zstdDir) $(installRoot) $(vcpkgTriplet)
+%endif
