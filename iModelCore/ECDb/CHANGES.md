@@ -7,6 +7,20 @@ This document including important changes to syntax or file format.
 | Profile | `4.0.0.5` |
 | ECSQL   | `2.0.4.2` |
 
+## `11/20/2026`: `InstanceWriter` accepts strings for longs and keeps omitted struct members on incremental update
+* `InstanceWriter` now accepts a string that is entirely a decimal or `"0x"` hex integer for a `long` property at any depth, including in structs and arrays. A JavaScript number cannot hold every 64-bit value exactly, for example an id. Any other string is still rejected with `Expected long for property ...`; `JsonECInstanceConverter` would silently write 0 or the leading digits.
+* An incremental update now keeps the members of a struct property that the instance does not supply, at every depth, like `JsonECInstanceConverter`. Previously, it set them to null. Arrays are still replaced, and a `null` member or struct still clears it. This also applies to `InstanceRepository::Update`, which uses incremental updates.
+* Profile and ECSql versions are unchanged.
+
+## `11/19/2026`: `InstanceWriter` keeps `null` struct array elements
+* `InstanceWriter` now writes a `null` entry in a struct array as a null element. Previously, it skipped the entry, so `[{a}, null, {c}]` was stored as `[{a}, {c}]` and later elements moved to a lower index. This matches how `null` entries in primitive arrays are written and how the `ECInstance` based write path handles struct arrays.
+* Profile and ECSql versions are unchanged.
+
+## `11/18/2026`: `InstanceWriter` accepts base64 strings for binary properties from JavaScript
+* `InstanceWriter` now accepts `"encoding=base64;..."` strings for binary properties, including `BeGuid` properties, when the instance comes from JavaScript through N-API. Previously, these strings were accepted only from native JSON documents. Instances from JavaScript failed with `Expected binary/base64 for property ...`, and `BeGuid` properties failed with `Failed to parse guid from string`.
+* GeometryStream properties are unchanged.
+* Profile and ECSql versions are unchanged.
+
 ## `11/16/2026`: ECSQL grammar is free of bison conflicts
 * `sqlbison.y` no longer has shift/reduce or reduce/reduce conflicts or other bison warnings. It declares `%expect 0`, and `BuildECSqlParser.sh`/`.bat` run bison with `-Wall`, so a new conflict is reported when the parser is regenerated.
 * A parenthesized operand can now start a comparison or predicate, for example `WHERE (I) = 1`, `WHERE (P2D.X) >= (P3D.X)`, `WHERE (I) IN (1, 2)` or `CASE WHEN (I) = 1 THEN ...`. These statements were previously rejected with a syntax error.
