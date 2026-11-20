@@ -125,6 +125,8 @@ struct SchemaToImport final
 //! Classes are entity classes and link table relationship classes. Relationships mapped to
 //! navigation properties are covered by reading those properties, and their relationship classes
 //! are queried with ONLY and polymorphically, which has to return a row per navigation property value.
+//! View classes (ECDbMap:QueryView) and relationship classes with a view class as constraint store no
+//! data and are left out; tests query them themselves.
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct SchemaUpdateTestFixture : ECDbTestFixture

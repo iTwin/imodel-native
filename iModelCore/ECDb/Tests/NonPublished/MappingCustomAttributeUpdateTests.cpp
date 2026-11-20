@@ -672,4 +672,312 @@ TEST_F(MappingCustomAttributeUpdateTests, InsertBaseClassWithNewProperty)
     m_ecdb.AbandonChanges();
     }
 
+//=======================================================================================
+// ECDbMap:QueryView and ECDbMap:ForeignKeyView. View classes take their rows from an ECSQL query
+// over other classes and store no data, so the harness leaves them out and the tests query them.
+// ECDb accepts changes to the query of an existing view and rejects adding or removing QueryView
+// and every ForeignKeyView change on existing classes with ECDb_0354.
+// ECDb checks all view classes after every import, so an update that breaks a view query fails.
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct ViewUpdateTests : SchemaUpdateTestFixture
+    {
+    //! PumpView is a view over Pump. Pump keeps its properties in shared columns, so they can be deleted.
+    //! PumpSummary is a plain abstract class that could become a view.
+    static SchemaUpdateBaseline const& GetBaseline()
+        {
+        static SchemaUpdateBaseline s_baseline("QueryViews", R"xml(<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+    <ECSchemaReference name="ECDbMap" version="02.00.04" alias="ecdbmap" />
+    <ECEntityClass typeName="Equipment" modifier="Abstract">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00.04">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+            <ShareColumns xmlns="ECDbMap.02.00.04">
+                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+            </ShareColumns>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Code" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="Pump">
+        <BaseClass>Equipment</BaseClass>
+        <ECProperty propertyName="Tag" typeName="string" />
+        <ECProperty propertyName="Power" typeName="double" />
+    </ECEntityClass>
+    <ECEntityClass typeName="PumpView" modifier="Abstract">
+        <ECCustomAttributes>
+            <QueryView xmlns="ECDbMap.02.00.04">
+                <Query>SELECT ECInstanceId, ECClassId, Tag FROM ts.Pump</Query>
+            </QueryView>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Tag" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="PumpSummary" modifier="Abstract">
+        <ECProperty propertyName="Tag" typeName="string" />
+    </ECEntityClass>
+</ECSchema>)xml");
+        return s_baseline;
+        }
+
+    //! OwnedPump and ListedPump are views over Pump with a navigation property to Person.
+    //! Only the relationship of OwnedPump has ForeignKeyView.
+    static SchemaUpdateBaseline const& GetForeignKeyViewBaseline()
+        {
+        static SchemaUpdateBaseline s_baseline("ForeignKeyViews", R"xml(<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+    <ECSchemaReference name="ECDbMap" version="02.00.04" alias="ecdbmap" />
+    <ECEntityClass typeName="Person">
+        <ECProperty propertyName="Name" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="Pump">
+        <ECProperty propertyName="Tag" typeName="string" />
+        <ECNavigationProperty propertyName="Owner" relationshipName="PersonOwnsPump" direction="Backward" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="PersonOwnsPump" strength="referencing" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="false">
+            <Class class="Person" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="false">
+            <Class class="Pump" />
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="OwnedPump" modifier="Abstract">
+        <ECCustomAttributes>
+            <QueryView xmlns="ECDbMap.02.00.04">
+                <Query>SELECT ECInstanceId, ECClassId, Tag, Owner FROM ts.Pump</Query>
+            </QueryView>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Tag" typeName="string" />
+        <ECNavigationProperty propertyName="Owner" relationshipName="PersonOwnsOwnedPump" direction="Backward" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="PersonOwnsOwnedPump" strength="referencing" modifier="Abstract">
+        <ECCustomAttributes>
+            <ForeignKeyView xmlns="ECDbMap.02.00.04" />
+        </ECCustomAttributes>
+        <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="false">
+            <Class class="Person" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="false">
+            <Class class="OwnedPump" />
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="ListedPump" modifier="Abstract">
+        <ECCustomAttributes>
+            <QueryView xmlns="ECDbMap.02.00.04">
+                <Query>SELECT ECInstanceId, ECClassId, Tag, Owner FROM ts.Pump</Query>
+            </QueryView>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Tag" typeName="string" />
+        <ECNavigationProperty propertyName="Owner" relationshipName="PersonListsPump" direction="Backward" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="PersonListsPump" strength="referencing" modifier="Abstract">
+        <Source multiplicity="(0..1)" roleLabel="lists" polymorphic="false">
+            <Class class="Person" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is listed by" polymorphic="false">
+            <Class class="ListedPump" />
+        </Target>
+    </ECRelationshipClass>
+</ECSchema>)xml");
+        return s_baseline;
+        }
+
+    //! Expects the update to be accepted, then verifies all data.
+    void ExpectAccepted(Utf8StringCR schemaXml, SchemaVersionChange versionChange = SchemaVersionChange::Minor)
+        {
+        EXPECT_EQ(SUCCESS, UpdateSchema(schemaXml, versionChange));
+        VerifyData();
+        }
+
+    //! Expects the update to be rejected with the given issue, then verifies that nothing changed.
+    void ExpectRejected(Utf8StringCR schemaXml, Utf8CP issueId = "ECDb_0354", SchemaVersionChange versionChange = SchemaVersionChange::Minor)
+        {
+        EXPECT_EQ(ERROR, UpdateSchema(schemaXml, versionChange));
+        ExpectRejectionReason(issueId);
+        VerifyData();
+        }
+
+    //! Expects every row of the view to be the pump with the same ECInstanceId and Tag, and returns the row count.
+    int ReadPumpView(Utf8CP viewClassName)
+        {
+        ECSqlStatement stmt;
+        Utf8PrintfString ecsql("SELECT v.ECInstanceId, v.Tag, p.Tag FROM ts.%s v LEFT JOIN ts.Pump p ON p.ECInstanceId = v.ECInstanceId", viewClassName);
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str())) << ecsql.c_str() << " " << m_ecdb.GetLastError().c_str();
+        int rowCount = 0;
+        while (BE_SQLITE_ROW == stmt.Step())
+            {
+            ++rowCount;
+            EXPECT_FALSE(stmt.IsValueNull(2)) << viewClassName << " returned a row that is no pump: " << stmt.GetValueId<ECInstanceId>(0).ToHexStr().c_str();
+            EXPECT_STREQ(stmt.GetValueText(2), stmt.GetValueText(1)) << viewClassName;
+            }
+
+        return rowCount;
+        }
+
+    int CountRows(Utf8CP ecsql)
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql)) << ecsql;
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step()) << ecsql;
+        return stmt.GetValueInt(0);
+        }
+    };
+
+//***************************************************************************************
+// QueryView
+//***************************************************************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ViewUpdateTests, ChangeViewQuery)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+    ASSERT_EQ(CountRows("SELECT COUNT(*) FROM ts.Pump"), ReadPumpView("PumpView"));
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    ReplaceInClass(schemaXml, "PumpView", "FROM ts.Pump</Query>", "FROM ts.Pump ORDER BY ECInstanceId LIMIT 1</Query>");
+    ExpectAccepted(schemaXml);
+
+    EXPECT_EQ(1, ReadPumpView("PumpView"));
+    }
+
+//---------------------------------------------------------------------------------------
+// The view class and its query get the new property in the same update.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ViewUpdateTests, AddPropertyToView)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    ReplaceInClass(schemaXml, "PumpView", "ECClassId, Tag FROM", "ECClassId, Tag, Power FROM");
+    ReplaceInClass(schemaXml, "PumpView", R"xml(<ECProperty propertyName="Tag" typeName="string" />)xml", R"xml(<ECProperty propertyName="Tag" typeName="string" />
+        <ECProperty propertyName="Power" typeName="double" />)xml");
+    ExpectAccepted(schemaXml);
+
+    EXPECT_EQ(CountRows("SELECT COUNT(*) FROM ts.Pump"), CountRows("SELECT COUNT(*) FROM ts.PumpView v JOIN ts.Pump p ON p.ECInstanceId = v.ECInstanceId AND p.Power = v.Power"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ViewUpdateTests, AddViewClass)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    AppendToSchema(schemaXml, R"xml(
+    <ECEntityClass typeName="FirstPump" modifier="Abstract">
+        <ECCustomAttributes>
+            <QueryView xmlns="ECDbMap.02.00.04">
+                <Query>SELECT ECInstanceId, ECClassId, Tag FROM ts.Pump ORDER BY ECInstanceId LIMIT 1</Query>
+            </QueryView>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Tag" typeName="string" />
+    </ECEntityClass>
+)xml");
+    ExpectAccepted(schemaXml);
+
+    EXPECT_EQ(1, ReadPumpView("FirstPump"));
+    }
+
+//---------------------------------------------------------------------------------------
+// A view stores no data, so deleting it only needs the rules of class deletion.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ViewUpdateTests, DeleteViewClass)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    RemoveClass(schemaXml, "PumpView");
+    ExpectAccepted(schemaXml, SchemaVersionChange::Major);
+
+    ECSqlStatement stmt;
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT Tag FROM ts.PumpView"));
+    }
+
+//---------------------------------------------------------------------------------------
+// Rejected although PumpSummary stores no data and its properties match the query.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ViewUpdateTests, MakingClassViewIsRejected)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    ReplaceInClass(schemaXml, "PumpSummary", R"xml(<ECProperty propertyName="Tag" typeName="string" />)xml", R"xml(<ECCustomAttributes>
+            <QueryView xmlns="ECDbMap.02.00.04">
+                <Query>SELECT ECInstanceId, ECClassId, Tag FROM ts.Pump</Query>
+            </QueryView>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Tag" typeName="string" />)xml");
+    ExpectRejected(schemaXml);
+    }
+
+//---------------------------------------------------------------------------------------
+// Rejected although the view stores no data.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ViewUpdateTests, RemovingQueryViewIsRejected)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    ReplaceInClass(schemaXml, "PumpView", R"xml(<QueryView xmlns="ECDbMap.02.00.04">
+                <Query>SELECT ECInstanceId, ECClassId, Tag FROM ts.Pump</Query>
+            </QueryView>)xml", "");
+    ExpectRejected(schemaXml);
+    }
+
+//---------------------------------------------------------------------------------------
+// Deleting Tag is a valid major change for Pump, but the query of PumpView uses it.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ViewUpdateTests, DeletingPropertyUsedByViewIsRejected)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    ReplaceInClass(schemaXml, "Pump", R"xml(<ECProperty propertyName="Tag" typeName="string" />)xml", "");
+    ExpectRejected(schemaXml, "ECDb_0706", SchemaVersionChange::Major);
+    }
+
+//***************************************************************************************
+// ForeignKeyView
+//***************************************************************************************
+
+//---------------------------------------------------------------------------------------
+// Rejected although the relationship stores no data.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ViewUpdateTests, AddingForeignKeyViewIsRejected)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetForeignKeyViewBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    ReplaceInClass(schemaXml, "PersonListsPump", R"xml(<Source multiplicity="(0..1)" roleLabel="lists" polymorphic="false">)xml", R"xml(<ECCustomAttributes>
+            <ForeignKeyView xmlns="ECDbMap.02.00.04" />
+        </ECCustomAttributes>
+        <Source multiplicity="(0..1)" roleLabel="lists" polymorphic="false">)xml");
+    ExpectRejected(schemaXml);
+    }
+
+//---------------------------------------------------------------------------------------
+// Rejected although the relationship stores no data.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ViewUpdateTests, RemovingForeignKeyViewIsRejected)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetForeignKeyViewBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    ReplaceInClass(schemaXml, "PersonOwnsOwnedPump", R"xml(<ECCustomAttributes>
+            <ForeignKeyView xmlns="ECDbMap.02.00.04" />
+        </ECCustomAttributes>)xml", "");
+    ExpectRejected(schemaXml);
+    }
+
 END_ECDBUNITTESTS_NAMESPACE

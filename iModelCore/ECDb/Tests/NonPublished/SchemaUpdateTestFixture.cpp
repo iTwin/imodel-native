@@ -76,7 +76,37 @@ bool IsConcreteClass(ECClassCR ecClass)
     }
 
 //---------------------------------------------------------------------------------------
+// Classes with ECDbMap:QueryView. Their rows come from a query over other classes, so they store no data.
+//---------------------------------------------------------------------------------------
+bool IsViewClass(ECClassCR ecClass)
+    {
+    return ecClass.GetCustomAttributeLocal("ECDbMap", "QueryView").IsValid();
+    }
+
+//---------------------------------------------------------------------------------------
+// Relationship classes with a view class as constraint. Their rows come from the view, so they store no data.
+//---------------------------------------------------------------------------------------
+bool IsRelationshipToViewClass(ECClassCR ecClass)
+    {
+    ECRelationshipClassCP relClass = ecClass.GetRelationshipClassCP();
+    if (relClass == nullptr)
+        return false;
+
+    for (ECRelationshipConstraintCP constraint : {&relClass->GetSource(), &relClass->GetTarget()})
+        {
+        for (ECClassCP constraintClass : constraint->GetConstraintClasses())
+            {
+            if (IsViewClass(*constraintClass))
+                return true;
+            }
+        }
+
+    return false;
+    }
+
+//---------------------------------------------------------------------------------------
 // Entity classes and link table relationship classes, the classes the harness inserts and reads.
+// View classes are left out, tests query them themselves.
 //---------------------------------------------------------------------------------------
 bvector<ECClassCP> GetDataClasses(bvector<ECSchemaCP> const& schemas)
     {
@@ -85,6 +115,9 @@ bvector<ECClassCP> GetDataClasses(bvector<ECSchemaCP> const& schemas)
         {
         for (ECClassCP ecClass : schema->GetClasses())
             {
+            if (IsViewClass(*ecClass) || IsRelationshipToViewClass(*ecClass))
+                continue;
+
             if (ecClass->IsEntityClass() || IsLinkTableRelationshipClass(*ecClass))
                 classes.push_back(ecClass);
             }
@@ -1053,7 +1086,7 @@ void SchemaUpdateTestFixture::VerifyForeignKeyRelationships(DataSnapshot const& 
         {
         for (ECClassCP ecClass : schema->GetClasses())
             {
-            if (ecClass->IsRelationshipClass() && !IsLinkTableRelationshipClass(*ecClass))
+            if (ecClass->IsRelationshipClass() && !IsLinkTableRelationshipClass(*ecClass) && !IsRelationshipToViewClass(*ecClass))
                 foreignKeyRelationshipClasses.push_back(ecClass);
             }
         }

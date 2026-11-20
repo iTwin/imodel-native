@@ -192,8 +192,8 @@ TEST_F(ClassHierarchyUpdateTests, InsertBaseClassAndMovePropertyToIt)
 
 //---------------------------------------------------------------------------------------
 // Pipe inherits Length from the inserted base class, so ECSQL with $-> has to find it on existing pipes.
-// The harness reads data without $->, so this test checks it separately. In a hierarchy without shared columns
-// this fails, see MappingCustomAttributeUpdateTests.DISABLED_InsertBaseClassWithNewProperty.
+// The harness reads data without $->, so this test checks it separately. For a hierarchy without shared columns
+// see MappingCustomAttributeUpdateTests.InsertBaseClassWithNewProperty.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ClassHierarchyUpdateTests, InsertBaseClassWithNewProperty)
