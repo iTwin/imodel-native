@@ -2986,9 +2986,17 @@ TEST_F(PropertyTypeUpdateTests, RenameReferencedPropertyCategory_Accepted)
     {
     ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
     Utf8String schemaXml = GetBaselineSchemaXml();
+    ExpectAccepted(schemaXml, SchemaVersionChange::Major);
+    }
+
+// K03. Deleting a property category has no version check, so a rename needs no read version increment either.
+TEST_F(PropertyTypeUpdateTests, RenameReferencedPropertyCategoryWithoutReadVersionIncrement)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+    Utf8String schemaXml = GetBaselineSchemaXml();
     ReplaceInSchema(schemaXml, R"xml(<PropertyCategory typeName="Dimensions")xml", R"xml(<PropertyCategory typeName="Sizes")xml");
     ReplaceInClass(schemaXml, "Sensor", R"xml(category="Dimensions")xml", R"xml(category="Sizes")xml");
-    ExpectAccepted(schemaXml, SchemaVersionChange::Major);
+    ExpectAccepted(schemaXml);
     }
 
 // F03. Renaming a Format is a delete + add and formats cannot be deleted: rejected with ECDb_0421, even unreferenced.
@@ -3080,27 +3088,37 @@ TEST_F(PropertyTypeUpdateTests, ChangeNumericSpecSettingsOfFormat)
     ExpectAccepted(schemaXml, SchemaVersionChange::Minor);
     }
 
-// F08 + F32. type="ratio" needs ratioType, so this is a presentation type change (F08, accepted) combined with
-// the ratioType facet (F32). The matrix says ratioType is neither compared nor read from ECXML 3.2: if this fails in
-// ECObjects, F32 cannot be exercised through a schema update at all; if VerifyPersistedSchemas fails, the change is
-// accepted but not stored.
-TEST_F(PropertyTypeUpdateTests, ChangeFormatRatioType)
+// F08 + F32. The presentation type change (F08) is stored. ECFormat::ReadXml does not read ratioType, so it is
+// dropped before ECDb sees it, and VerifyPersistedSchemas cannot notice because SchemaComparer does not compare it.
+TEST_F(PropertyTypeUpdateTests, ChangeFormatRatioType_RatioTypeIsDroppedByXmlReader)
     {
     ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
     Utf8String schemaXml = GetBaselineSchemaXml();
     ReplaceInSchema(schemaXml, R"xml(<Format typeName="UnusedFormat" type="decimal" precision="2" />)xml",
         R"xml(<Format typeName="UnusedFormat" type="ratio" ratioType="OneToN" precision="2" />)xml");
     ExpectAccepted(schemaXml, SchemaVersionChange::Major);
+
+    ECFormatCP format = m_ecdb.Schemas().GetFormat("TestSchema", "UnusedFormat");
+    ASSERT_NE(nullptr, format);
+    ASSERT_NE(nullptr, format->GetNumericSpec());
+    EXPECT_EQ(Formatting::PresentationType::Ratio, format->GetNumericSpec()->GetPresentationType());
+    EXPECT_EQ(Formatting::RatioType::ValueBased, format->GetNumericSpec()->GetRatioType()) << "ratioType is not read from ECXml";
     }
 
-// F33-F35. Azimuth settings on an existing format.
-TEST_F(PropertyTypeUpdateTests, ChangeFormatAzimuthSettings)
+// F33-F35. Azimuth settings are not part of ECXml: ECFormat::ReadXml ignores them and nothing is stored.
+TEST_F(PropertyTypeUpdateTests, ChangeFormatAzimuthSettings_IgnoredByXmlReader)
     {
     ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
     Utf8String schemaXml = GetBaselineSchemaXml();
     ReplaceInSchema(schemaXml, R"xml(<Format typeName="UnusedFormat" type="decimal" precision="2" />)xml",
         R"xml(<Format typeName="UnusedFormat" type="decimal" precision="2" azimuthBase="90" azimuthBaseUnit="u:ARC_DEG" azimuthCounterClockwise="true" />)xml");
     ExpectAccepted(schemaXml, SchemaVersionChange::Minor);
+
+    ECFormatCP format = m_ecdb.Schemas().GetFormat("TestSchema", "UnusedFormat");
+    ASSERT_NE(nullptr, format);
+    ASSERT_NE(nullptr, format->GetNumericSpec());
+    EXPECT_FALSE(format->GetNumericSpec()->HasAzimuthBase()) << "azimuth settings are not read from ECXml";
+    EXPECT_FALSE(format->GetNumericSpec()->GetAzimuthCounterClockwise());
     }
 
 // F24. Changing the unit of the first composite slot (m -> km keeps the required large-to-small order).

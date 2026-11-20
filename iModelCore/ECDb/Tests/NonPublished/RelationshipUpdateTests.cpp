@@ -986,6 +986,33 @@ TEST_F(RelationshipUpdateTests, ChangeRoleLabels)
     }
 
 //---------------------------------------------------------------------------------------
+// R16. Adds a custom attribute class and puts an instance of it on a constraint of an existing relationship.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(RelationshipUpdateTests, AddCustomAttributeToConstraint)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    ReplaceInClass(schemaXml, "DocumentRefersToNotes", R"xml(<Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">)xml", R"xml(<Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
+            <ECCustomAttributes>
+                <ConstraintNote xmlns="TestSchema.01.00.00">
+                    <Text>Documents only</Text>
+                </ConstraintNote>
+            </ECCustomAttributes>)xml");
+    AppendToSchema(schemaXml, R"xml(
+    <ECCustomAttributeClass typeName="ConstraintNote" appliesTo="AnyRelationshipConstraint">
+        <ECProperty propertyName="Text" typeName="string" />
+    </ECCustomAttributeClass>
+)xml");
+    ExpectAccepted(schemaXml);
+
+    ECClassCP relClass = m_ecdb.Schemas().GetClass("TestSchema", "DocumentRefersToNotes");
+    ASSERT_TRUE(relClass != nullptr && relClass->IsRelationshipClass());
+    EXPECT_TRUE(relClass->GetRelationshipClassCP()->GetSource().GetCustomAttribute("TestSchema", "ConstraintNote").IsValid());
+    }
+
+//---------------------------------------------------------------------------------------
 // Disabled: after a multiplicity change ECDb skips the other changes on the same constraint, so the
 // check of the persisted schema rejects the import with ECDb_0754.
 // @bsimethod

@@ -1133,6 +1133,80 @@ TEST_F(SchemaUpdateChangesetFixture, BaseClassInsertion_BriefcaseBReadsSameAsA)
     }
 
 //---------------------------------------------------------------------------------------
+// C24. TestElement and SiblingElement get the new mixin IHasNote, which takes over Note. The two classes stored
+// Note in different columns. B applies the schema changeset and reads the same as A, also through the mixin.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaUpdateChangesetFixture, MixinAddition_BriefcaseBReadsSameAsA)
+    {
+    Utf8CP before = R"xml(
+        <ECEntityClass typeName="TestBase">
+            <BaseClass>bis:DefinitionElement</BaseClass>
+            <ECProperty propertyName="Name" typeName="string" />
+        </ECEntityClass>
+        <ECEntityClass typeName="TestElement">
+            <BaseClass>TestBase</BaseClass>
+            <ECProperty propertyName="Count" typeName="int" />
+            <ECProperty propertyName="Note" typeName="string" />
+        </ECEntityClass>
+        <ECEntityClass typeName="SiblingElement">
+            <BaseClass>TestBase</BaseClass>
+            <ECProperty propertyName="Size" typeName="int" />
+            <ECProperty propertyName="Note" typeName="string" />
+        </ECEntityClass>)xml";
+    Utf8CP after = R"xml(
+        <ECEntityClass typeName="TestBase">
+            <BaseClass>bis:DefinitionElement</BaseClass>
+            <ECProperty propertyName="Name" typeName="string" />
+        </ECEntityClass>
+        <ECEntityClass typeName="IHasNote" modifier="Abstract">
+            <ECCustomAttributes>
+                <IsMixin xmlns="CoreCustomAttributes.01.00.03">
+                    <AppliesToEntityClass>TestBase</AppliesToEntityClass>
+                </IsMixin>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Note" typeName="string" />
+            <ECProperty propertyName="Rating" typeName="int" />
+        </ECEntityClass>
+        <ECEntityClass typeName="TestElement">
+            <BaseClass>TestBase</BaseClass>
+            <BaseClass>IHasNote</BaseClass>
+            <ECProperty propertyName="Count" typeName="int" />
+        </ECEntityClass>
+        <ECEntityClass typeName="SiblingElement">
+            <BaseClass>TestBase</BaseClass>
+            <BaseClass>IHasNote</BaseClass>
+            <ECProperty propertyName="Size" typeName="int" />
+        </ECEntityClass>)xml";
+
+    ASSERT_TRUE(SetUpBaseline(L"SchemaUpdateChangeset_MixinAddition.bim", TestSchemaXml("01.00.00", false, before)).IsValid());
+    InsertElementOf("TestElement", {{"Name", ECValue("a")}, {"Count", ECValue(1)}, {"Note", ECValue("note a")}});
+    InsertElementOf("TestElement", {{"Name", ECValue("b")}, {"Count", ECValue(2)}, {"Note", ECValue("note b")}});
+    InsertElementOf("SiblingElement", {{"Name", ECValue("s")}, {"Size", ECValue(7)}, {"Note", ECValue("note s")}});
+    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Data"));
+    ChangesetPropsPtr dataChangeset = CreateRevision("-data");
+    ASSERT_TRUE(dataChangeset.IsValid());
+
+    ImportSchemaXml(TestSchemaXml("01.00.01", false, after), "Add IHasNote");
+    ChangesetPropsPtr schemaChangeset = CreateRevision("-addmixin");
+    ASSERT_TRUE(schemaChangeset.IsValid());
+
+    auto verify = [&] (Utf8CP briefcase)
+        {
+        ExpectRows({"a | 1 | note a | <null>", "b | 2 | note b | <null>"}, ReadRows("SELECT Name, [Count], Note, Rating FROM ts.TestElement ORDER BY Name"), briefcase);
+        ExpectRows({"s | 7 | note s | <null>"}, ReadRows("SELECT Name, Size, Note, Rating FROM ts.SiblingElement ORDER BY Name"), briefcase);
+        ExpectRows({"note a", "note b", "note s"}, ReadRows("SELECT Note FROM ts.IHasNote ORDER BY Note"), briefcase);
+        ExpectIntegrity(briefcase);
+        };
+    verify("A");
+
+    RestoreTestFile();
+    ApplyChangeset(*dataChangeset);
+    ApplyChangeset(*schemaChangeset);
+    verify("B");
+    }
+
+//---------------------------------------------------------------------------------------
 // B inserts a row under the old schema and has not pushed when A's data transform arrives. Hub locks keep
 // this from happening in normal use, nothing else does. PullMergeApply reinstates the local txn as recorded,
 // with the columns of the old mapping. The value must still read as Count on B, and on A after B pushes.

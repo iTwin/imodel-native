@@ -1196,6 +1196,9 @@ void SchemaUpdateTestFixture::VerifyIntegrity() const
             continue;
 
         Utf8String check = stmt.GetValueText(1);
+        if (m_skippedIntegrityChecks.find(check) != m_skippedIntegrityChecks.end())
+            continue;
+
         ADD_FAILURE() << "Integrity check " << check.c_str() << " failed.";
         ExpectNoRows(Utf8PrintfString("PRAGMA integrity_check(%s)", check.c_str()).c_str());
         }

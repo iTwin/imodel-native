@@ -158,6 +158,7 @@ struct SchemaUpdateTestFixture : ECDbTestFixture
         bool m_lastUpdateFailed = false;
         std::vector<ReportedIssue> m_lastUpdateIssues;
         bool m_isRejectionReasonVerified = false;
+        std::set<Utf8String> m_skippedIntegrityChecks;
 
         bvector<ECN::ECSchemaCP> GetSchemas() const;
         BentleyStatus ApplyVersionChange(ECN::ECSchemaR, SchemaVersionChange) const;
@@ -197,6 +198,10 @@ struct SchemaUpdateTestFixture : ECDbTestFixture
 
         //! Issues ECDb reported during the last update, also infos.
         std::vector<ReportedIssue> const& GetLastUpdateIssues() const { return m_lastUpdateIssues; }
+
+        //! Leaves an integrity check out of VerifyData, e.g. check_ec_profile for a test that needs a schema named
+        //! BisCore, which makes that check expect the iModel triggers.
+        void SkipIntegrityCheck(Utf8CP checkName) { m_skippedIntegrityChecks.insert(checkName); }
 
         //! Reopens the file and verifies all data against the state before the update, plus the expected changes.
         //! After a rejected update, also verifies that the persisted schema did not change.

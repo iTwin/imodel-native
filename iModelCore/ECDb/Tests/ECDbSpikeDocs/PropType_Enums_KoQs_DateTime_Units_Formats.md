@@ -117,7 +117,7 @@ All tests are in PropertyTypeUpdateTests.cpp and pass. "Read as" means how the u
 | F20, F23–F26 | Composite added, or a unit slot changed or removed | **Rejected** `0424` | `AddingFormatCompositeIsRejected`, `ChangingFormatCompositeUnitIsRejected`, `Change/RemoveComposite*IsRejected` |
 | F22, F27, F28 | Composite spacer, slot labels | Accepted | `ChangeFormatCompositeSpacer`, `…UnitLabel`, `ChangeCompositeMiddleSlotLabel` |
 | F31 | Reorder composite slots | **Not reachable**: ECObjects refuses to read an out-of-order composite | comment only |
-| F32–F35 | `ratioType`, azimuth settings | Accepted and verified persisted (`VerifyPersistedSchemas`) | `ChangeFormatRatioType`, `ChangeFormatAzimuthSettings` |
+| F32–F35 | `ratioType`, azimuth settings | Not read from ECXml, so nothing reaches ECDb. `SchemaComparer` does not compare them either, so `VerifyPersistedSchemas` passes regardless. `type="ratio"` itself is F08 and stored. | `ChangeFormatRatioType_RatioTypeIsDroppedByXmlReader`, `ChangeFormatAzimuthSettings_IgnoredByXmlReader` |
 
 ## 7. Other property facets and array bounds
 

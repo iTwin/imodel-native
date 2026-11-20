@@ -106,6 +106,67 @@ R"xml(<?xml version="1.0" encoding="utf-8"?>
         return s_baseline;
         }
 
+    //! Relationship ends that list two classes under an abstract constraint, for a navigation property and a link table.
+    static SchemaUpdateBaseline const& GetBaselineWithMultiClassConstraints()
+        {
+        static SchemaUpdateBaseline s_baseline("SchemaUpdateHarnessMultiClassConstraints", R"xml(<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+    <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+    <ECEntityClass typeName="Element" modifier="Abstract">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+            <ShareColumns xmlns="ECDbMap.02.00.00">
+                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+            </ShareColumns>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Code" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="Pipe">
+        <BaseClass>Element</BaseClass>
+        <ECProperty propertyName="Material" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="Pump">
+        <BaseClass>Element</BaseClass>
+        <ECProperty propertyName="Power" typeName="double" />
+    </ECEntityClass>
+    <ECEntityClass typeName="Valve">
+        <BaseClass>Element</BaseClass>
+        <ECNavigationProperty propertyName="Supplier" relationshipName="SupplierFeedsValves" direction="Backward" />
+    </ECEntityClass>
+    <ECEntityClass typeName="Note">
+        <ECProperty propertyName="NoteText" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="SupplierFeedsValves" strength="referencing" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="feeds" polymorphic="false" abstractConstraint="Element">
+            <Class class="Pipe" />
+            <Class class="Pump" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is fed by" polymorphic="false">
+            <Class class="Valve" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="SupplierRefersToNotes" strength="referencing" modifier="Sealed">
+        <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="false" abstractConstraint="Element">
+            <Class class="Pipe" />
+            <Class class="Pump" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is referred to by" polymorphic="false">
+            <Class class="Note" />
+        </Target>
+    </ECRelationshipClass>
+</ECSchema>)xml");
+        return s_baseline;
+        }
+
+    int CountRows(Utf8CP ecsql) const
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql)) << ecsql;
+        return BE_SQLITE_ROW == stmt.Step() ? stmt.GetValueInt(0) : -1;
+        }
+
     //! Runs the check and returns the failures it reported, without failing the test.
     static Utf8String CaptureFailures(std::function<void()> const& check)
         {
@@ -254,6 +315,34 @@ TEST_F(SchemaUpdateHarnessTests, ReportsAcceptedUpdateExpectedToBeRejected)
 
     Utf8String failures = CaptureFailures([&] () { ExpectRejectionReason("ECDb_0386"); });
     EXPECT_TRUE(Contains(failures, "was accepted")) << failures.c_str();
+    }
+
+//---------------------------------------------------------------------------------------
+// The integrity checks for navigation and link table ids have to look up the ids in every class of the
+// referenced constraint, not only in the first one.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpdateHarnessTests, AcceptsIdsOfEveryConstraintClass)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaselineWithMultiClassConstraints()));
+    ASSERT_LT(0, CountRows("SELECT COUNT(*) FROM ts.Valve v JOIN ts.Pump p ON v.Supplier.Id=p.ECInstanceId")) << "The baseline needs navigation values pointing to the second constraint class.";
+    ASSERT_LT(0, CountRows("SELECT COUNT(*) FROM ts.SupplierRefersToNotes r JOIN ts.Pump p ON r.SourceECInstanceId=p.ECInstanceId")) << "The baseline needs relationships from the second constraint class.";
+
+    Utf8String failures = CaptureVerifyDataFailures();
+    EXPECT_TRUE(failures.empty()) << failures.c_str();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpdateHarnessTests, ReportsNavigationIdsPointingToNothing)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaselineWithMultiClassConstraints()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("UPDATE ts.Valve SET Supplier.Id=2147483647 WHERE Supplier.Id IS NOT NULL"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+
+    Utf8String failures = CaptureVerifyDataFailures();
+    EXPECT_TRUE(Contains(failures, "check_nav_ids")) << failures.c_str();
     }
 #endif
 

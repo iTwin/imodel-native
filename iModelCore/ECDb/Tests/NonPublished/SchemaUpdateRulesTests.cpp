@@ -185,6 +185,50 @@ R"xml(<?xml version="1.0" encoding="utf-8"?>
         return baseXml;
         }
 
+    //! Base with a schema policy custom attribute from ECDbSchemaPolicies.
+    Utf8String BaseWithSchemaPolicy(Utf8CP policyXml) const
+        {
+        Utf8String baseXml = GetBaselineSchemaXml("Base");
+        ReplaceInSchema(baseXml, R"xml(<ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />)xml", Utf8PrintfString(R"xml(<ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+    <ECSchemaReference name="ECDbSchemaPolicies" version="01.00.00" alias="ecdbpol" />
+    <ECCustomAttributes>
+        %s
+    </ECCustomAttributes>)xml", policyXml).c_str());
+        return baseXml;
+        }
+
+    //! Imports a schema named BisCore with the ReservedPropertyNames custom attribute class, together with Base,
+    //! which reserves @p propertyName on Element. ECDb reads the policy only from a schema of that name.
+    BentleyStatus ReservePropertyNameOnElement(Utf8CP propertyName)
+        {
+        SkipIntegrityCheck("check_ec_profile");
+        Utf8String bisCoreXml(R"xml(<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="BisCore" alias="bis" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+    <ECCustomAttributeClass typeName="ReservedPropertyNames" modifier="Sealed" appliesTo="EntityClass, RelationshipClass">
+        <ECArrayProperty propertyName="PropertyNames" typeName="string" minOccurs="0" maxOccurs="unbounded" />
+    </ECCustomAttributeClass>
+</ECSchema>)xml");
+        Utf8String baseXml = GetBaselineSchemaXml("Base");
+        ReplaceInSchema(baseXml, R"xml(<ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />)xml", R"xml(<ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+    <ECSchemaReference name="BisCore" version="01.00.00" alias="bis" />)xml");
+        ReplaceInClass(baseXml, "Element", "<JoinedTablePerDirectSubclass xmlns=\"ECDbMap.02.00.00\" />", Utf8PrintfString(R"xml(<JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00.00" />
+            <ReservedPropertyNames xmlns="BisCore.01.00.00">
+                <PropertyNames>
+                    <string>%s</string>
+                </PropertyNames>
+            </ReservedPropertyNames>)xml", propertyName).c_str());
+        return UpdateSchemas({{bisCoreXml, SchemaVersionChange::AsInXml}, {baseXml, SchemaVersionChange::Minor}});
+        }
+
+    //! Adds a property Length to TestSchema:Pipe.
+    Utf8String AddLengthToPipe() const
+        {
+        Utf8String schemaXml = GetBaselineSchemaXml("TestSchema");
+        ReplaceInClass(schemaXml, "Pipe", R"xml(<ECProperty propertyName="Material" typeName="string" />)xml", R"xml(<ECProperty propertyName="Material" typeName="string" />
+        <ECProperty propertyName="Length" typeName="double" />)xml");
+        return schemaXml;
+        }
+
     //! Adds a property Status to Base:PhysicalElement.
     Utf8String AddStatusToPhysicalElement() const
         {
@@ -771,13 +815,7 @@ TEST_F(SchemaUpdateRulesTests, AddingRootClassAfterPolicyOptInIsRejected)
     {
     ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
 
-    Utf8String baseXml = GetBaselineSchemaXml("Base");
-    ReplaceInSchema(baseXml, R"xml(<ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />)xml", R"xml(<ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
-    <ECSchemaReference name="ECDbSchemaPolicies" version="01.00.00" alias="ecdbpol" />
-    <ECCustomAttributes>
-        <NoAdditionalRootEntityClasses xmlns="ECDbSchemaPolicies.01.00.00" />
-    </ECCustomAttributes>)xml");
-    ASSERT_EQ(SUCCESS, UpdateSchema(baseXml));
+    ASSERT_EQ(SUCCESS, UpdateSchema(BaseWithSchemaPolicy(R"xml(<NoAdditionalRootEntityClasses xmlns="ECDbSchemaPolicies.01.00.00" />)xml")));
     VerifyData();
 
     Utf8String schemaXml = GetBaselineSchemaXml("TestSchema");
@@ -787,6 +825,268 @@ TEST_F(SchemaUpdateRulesTests, AddingRootClassAfterPolicyOptInIsRejected)
     </ECEntityClass>
 )xml");
     ExpectRejected(schemaXml, "ECDb_0268");
+    }
+
+//---------------------------------------------------------------------------------------
+// Base opts in to NoAdditionalLinkTables after TestSchema already has the link table ElementRefersToNotes.
+// Only link tables added afterwards are checked.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpdateRulesTests, AddingLinkTableAfterPolicyOptInIsRejected)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    ASSERT_EQ(SUCCESS, UpdateSchema(BaseWithSchemaPolicy(R"xml(<NoAdditionalLinkTables xmlns="ECDbSchemaPolicies.01.00.00" />)xml")));
+    VerifyData();
+
+    Utf8String schemaXml = GetBaselineSchemaXml("TestSchema");
+    AppendToSchema(schemaXml, R"xml(
+    <ECRelationshipClass typeName="NoteMentionsElements" strength="referencing" modifier="Sealed">
+        <Source multiplicity="(0..*)" roleLabel="mentions" polymorphic="true">
+            <Class class="Note" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is mentioned by" polymorphic="true">
+            <Class class="bs:Element" />
+        </Target>
+    </ECRelationshipClass>
+)xml");
+    ExpectRejected(schemaXml, "ECDb_0271");
+    }
+
+//---------------------------------------------------------------------------------------
+// Base opts in to NoAdditionalForeignKeyConstraints, then TestSchema adds a navigation property with a
+// ForeignKeyConstraint.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpdateRulesTests, AddingForeignKeyConstraintAfterPolicyOptInIsRejected)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    ASSERT_EQ(SUCCESS, UpdateSchema(BaseWithSchemaPolicy(R"xml(<NoAdditionalForeignKeyConstraints xmlns="ECDbSchemaPolicies.01.00.00" />)xml")));
+    VerifyData();
+
+    Utf8String schemaXml = GetBaselineSchemaXml("TestSchema");
+    ReplaceInSchema(schemaXml, R"xml(<ECSchemaReference name="Base" version="01.00.00" alias="bs" />)xml", R"xml(<ECSchemaReference name="Base" version="01.00.00" alias="bs" />
+    <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />)xml");
+    ReplaceInClass(schemaXml, "Valve", R"xml(<ECProperty propertyName="Pressure" typeName="double" />)xml", R"xml(<ECProperty propertyName="Pressure" typeName="double" />
+        <ECNavigationProperty propertyName="Note" relationshipName="ValveHasNote" direction="Forward">
+            <ECCustomAttributes>
+                <ForeignKeyConstraint xmlns="ECDbMap.02.00.00" />
+            </ECCustomAttributes>
+        </ECNavigationProperty>)xml");
+    AppendToSchema(schemaXml, R"xml(
+    <ECRelationshipClass typeName="ValveHasNote" strength="referencing" modifier="Sealed">
+        <Source multiplicity="(0..*)" roleLabel="has" polymorphic="true">
+            <Class class="Valve" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is note of" polymorphic="true">
+            <Class class="Note" />
+        </Target>
+    </ECRelationshipClass>
+)xml");
+    ExpectRejected(schemaXml, "ECDb_0275");
+    }
+
+//---------------------------------------------------------------------------------------
+// X14. Element reserves Material, which TestSchema:Pipe already has. The policy only checks the classes an
+// import adds or changes, so Pipe keeps Material and its values.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpdateRulesTests, ReservePropertyNameThatSubclassAlreadyHas)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    EXPECT_EQ(SUCCESS, ReservePropertyNameOnElement("Material"));
+    VerifyData();
+    }
+
+//---------------------------------------------------------------------------------------
+// X14. After Element reserves Material, any change to Pipe is rejected, even one that has nothing to do with Material.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpdateRulesTests, ChangingSubclassThatHasReservedPropertyNameIsRejected)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    ASSERT_EQ(SUCCESS, ReservePropertyNameOnElement("Material"));
+    VerifyData();
+
+    ExpectRejected(AddLengthToPipe(), "ECDb_0442");
+    }
+
+//***************************************************************************************
+// Single rows
+//***************************************************************************************
+
+//---------------------------------------------------------------------------------------
+// C08. A struct class cannot be deleted, also when no property uses it and the read version is incremented.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpdateRulesTests, DeletingUnusedStructClassIsRejected)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml("TestSchema");
+    AppendToSchema(schemaXml, R"xml(
+    <ECStructClass typeName="Dimensions">
+        <ECProperty propertyName="Width" typeName="double" />
+    </ECStructClass>
+)xml");
+    ASSERT_EQ(SUCCESS, UpdateSchema(schemaXml));
+    VerifyData();
+
+    ExpectRejected(GetBaselineSchemaXml("TestSchema"), "ECDb_0379", SchemaVersionChange::Major);
+    }
+
+//---------------------------------------------------------------------------------------
+// P31. A 1:1 relationship between notes allows the navigation property in either direction.
+// Flipping it would make the stored ids point the other way.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpdateRulesTests, ChangingNavigationPropertyDirectionIsRejected)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml("TestSchema");
+    ReplaceInClass(schemaXml, "Note", R"xml(<ECProperty propertyName="Text" typeName="string" />)xml", R"xml(<ECProperty propertyName="Text" typeName="string" />
+        <ECNavigationProperty propertyName="Linked" relationshipName="NoteLinksNote" direction="Backward" />)xml");
+    AppendToSchema(schemaXml, R"xml(
+    <ECRelationshipClass typeName="NoteLinksNote" strength="referencing" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="links" polymorphic="true">
+            <Class class="Note" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is linked by" polymorphic="true">
+            <Class class="Note" />
+        </Target>
+    </ECRelationshipClass>
+)xml");
+    ASSERT_EQ(SUCCESS, UpdateSchema(schemaXml));
+    VerifyData();
+
+    ReplaceInClass(schemaXml, "Note", R"xml(direction="Backward")xml", R"xml(direction="Forward")xml");
+    ExpectRejected(schemaXml, "ECDb_0340");
+    }
+
+//---------------------------------------------------------------------------------------
+// C26. Tagged is added as an abstract class without base classes, then made a mixin.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpdateRulesTests, MakingClassMixinIsRejected)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml("TestSchema");
+    AppendToSchema(schemaXml, R"xml(
+    <ECEntityClass typeName="Tagged" modifier="Abstract">
+        <ECProperty propertyName="Tag" typeName="string" />
+    </ECEntityClass>
+)xml");
+    ASSERT_EQ(SUCCESS, UpdateSchema(schemaXml));
+    VerifyData();
+
+    ReplaceInClass(schemaXml, "Tagged", R"xml(<ECProperty propertyName="Tag" typeName="string" />)xml", R"xml(<ECCustomAttributes>
+            <IsMixin xmlns="CoreCustomAttributes.01.00.00">
+                <AppliesToEntityClass>bs:Element</AppliesToEntityClass>
+            </IsMixin>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Tag" typeName="string" />)xml");
+    ExpectRejected(schemaXml, "ECDb_0354");
+    }
+
+//---------------------------------------------------------------------------------------
+// C27. An unused mixin is added, then turned into a regular abstract class.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpdateRulesTests, RemovingIsMixinFromUnusedMixinIsRejected)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml("TestSchema");
+    AppendToSchema(schemaXml, R"xml(
+    <ECEntityClass typeName="ITagged" modifier="Abstract">
+        <ECCustomAttributes>
+            <IsMixin xmlns="CoreCustomAttributes.01.00.00">
+                <AppliesToEntityClass>bs:Element</AppliesToEntityClass>
+            </IsMixin>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Tag" typeName="string" />
+    </ECEntityClass>
+)xml");
+    ASSERT_EQ(SUCCESS, UpdateSchema(schemaXml));
+    VerifyData();
+
+    ReplaceInClass(schemaXml, "ITagged", R"xml(<ECCustomAttributes>
+            <IsMixin xmlns="CoreCustomAttributes.01.00.00">
+                <AppliesToEntityClass>bs:Element</AppliesToEntityClass>
+            </IsMixin>
+        </ECCustomAttributes>)xml", "");
+    ExpectRejected(schemaXml, "ECDb_0354");
+    }
+
+//***************************************************************************************
+// ClassHasCurrentTimeStampProperty (X09). ECDb gives the property's column a current timestamp default and a
+// trigger that sets it on every update. Note has a table of its own, so LastMod gets a column of its own.
+//***************************************************************************************
+
+//---------------------------------------------------------------------------------------
+// SQLite cannot add a column with a non-constant default to an existing table.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpdateRulesTests, AddingCurrentTimeStampPropertyToClassWithTableIsRejected)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml("TestSchema");
+    ReplaceInClass(schemaXml, "Note", R"xml(<ECProperty propertyName="Text" typeName="string" />)xml", R"xml(<ECCustomAttributes>
+            <ClassHasCurrentTimeStampProperty xmlns="CoreCustomAttributes.01.00.00">
+                <PropertyName>LastMod</PropertyName>
+            </ClassHasCurrentTimeStampProperty>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Text" typeName="string" />
+        <ECProperty propertyName="LastMod" typeName="dateTime" readOnly="True" />)xml");
+    ExpectRejected(schemaXml, "ECDb_0226");
+    }
+
+//---------------------------------------------------------------------------------------
+// LastMod exists with values, then gets the custom attribute. Updating a note afterwards has to set LastMod to the
+// current time, like for a class that had the custom attribute from the start.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpdateRulesTests, AddCurrentTimeStampCustomAttributeToExistingProperty)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml("TestSchema");
+    ReplaceInClass(schemaXml, "Note", R"xml(<ECProperty propertyName="Text" typeName="string" />)xml", R"xml(<ECProperty propertyName="Text" typeName="string" />
+        <ECProperty propertyName="LastMod" typeName="dateTime" />)xml");
+    ASSERT_EQ(SUCCESS, UpdateSchema(schemaXml));
+    VerifyData();
+    ChangeDataBeforeUpdate("UPDATE ts.Note SET LastMod=TIMESTAMP '2000-01-01T00:00:00'");
+
+    ReplaceInClass(schemaXml, "Note", R"xml(<ECProperty propertyName="Text" typeName="string" />
+        <ECProperty propertyName="LastMod" typeName="dateTime" />)xml", R"xml(<ECCustomAttributes>
+            <ClassHasCurrentTimeStampProperty xmlns="CoreCustomAttributes.01.00.00">
+                <PropertyName>LastMod</PropertyName>
+            </ClassHasCurrentTimeStampProperty>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Text" typeName="string" />
+        <ECProperty propertyName="LastMod" typeName="dateTime" readOnly="True" />)xml");
+    ExpectAccepted(schemaXml);
+
+    ECSqlStatement select;
+    ASSERT_EQ(ECSqlStatus::Success, select.Prepare(m_ecdb, "SELECT ECInstanceId FROM ts.Note ORDER BY ECInstanceId LIMIT 1"));
+    ASSERT_EQ(BE_SQLITE_ROW, select.Step());
+    ECInstanceId noteId = select.GetValueId<ECInstanceId>(0);
+    ECSqlStatement update;
+    ASSERT_EQ(ECSqlStatus::Success, update.Prepare(m_ecdb, "UPDATE ts.Note SET Text='changed' WHERE ECInstanceId=?"));
+    update.BindId(1, noteId);
+    ASSERT_EQ(BE_SQLITE_DONE, update.Step());
+
+    ECSqlStatement lastMod;
+    ASSERT_EQ(ECSqlStatus::Success, lastMod.Prepare(m_ecdb, "SELECT LastMod FROM ts.Note WHERE ECInstanceId=?"));
+    lastMod.BindId(1, noteId);
+    ASSERT_EQ(BE_SQLITE_ROW, lastMod.Step());
+    EXPECT_STRNE("2000-01-01T00:00:00.000", lastMod.GetValueDateTime(0).ToString().c_str()) << "The update did not set LastMod.";
     }
 
 END_ECDBUNITTESTS_NAMESPACE
