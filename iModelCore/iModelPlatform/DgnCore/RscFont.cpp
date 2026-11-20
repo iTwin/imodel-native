@@ -587,7 +587,7 @@ BentleyStatus RscFont::ReadFontHeader(bvector<Byte>& buffer) {
         return ERROR;
 
     auto rscFontHeader = rscFontData->header();
-    if (nullptr == rscFontHeader)
+    if (nullptr == rscFontHeader || rscFontHeader->size() < sizeof(RscFontHeader))
         return ERROR;
 
     buffer.assign(rscFontHeader->begin(), rscFontHeader->end());
@@ -620,7 +620,7 @@ BentleyStatus RscFont::ReadFractionMap(bvector<Byte>& buffer) {
         return ERROR;
 
     auto rscFontFractionMap = rscFontData->fractionMap();
-    if (nullptr == rscFontFractionMap)
+    if (nullptr == rscFontFractionMap || rscFontFractionMap->size() < sizeof(RscFontFraction))
         return ERROR;
 
     buffer.assign(rscFontFractionMap->begin(), rscFontFractionMap->end());
@@ -631,12 +631,15 @@ BentleyStatus RscFont::ReadFractionMap(bvector<Byte>& buffer) {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 BentleyStatus RscFont::ReadGlyphData(bvector<Byte>& buffer, size_t offset, size_t size) {
+    if (size < sizeof(RscGlyphData))
+        return ERROR;
+
     auto rscFontData = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::DgnRscFont>(GetReader().m_reader->FillAndGetDataP(), GetReader().m_reader->GetNumBytes());
     if (nullptr == rscFontData)
         return ERROR;
 
     auto rscFontGlyphData = rscFontData->glyphData();
-    if (nullptr == rscFontGlyphData || offset >= rscFontGlyphData->size() || (offset + size) > rscFontGlyphData->size())
+    if (nullptr == rscFontGlyphData || (offset + size) > (size_t) rscFontGlyphData->size())
         return ERROR;
 
     buffer.assign(rscFontGlyphData->begin() + offset, rscFontGlyphData->begin() + offset + size);
@@ -652,7 +655,7 @@ BentleyStatus RscFont::ReadGlyphDataOffsets(bvector<Byte>& buffer) {
         return ERROR;
 
     auto rscFontGlyphDataOffsets = rscFontData->glyphDataOffsets();
-    if (nullptr == rscFontGlyphDataOffsets)
+    if (nullptr == rscFontGlyphDataOffsets || rscFontGlyphDataOffsets->size() < sizeof(RscGlyphDataOffset))
         return ERROR;
 
     buffer.assign(rscFontGlyphDataOffsets->begin(), rscFontGlyphDataOffsets->end());
@@ -668,7 +671,7 @@ BentleyStatus RscFont::ReadGlyphHeaders(bvector<Byte>& buffer) {
         return ERROR;
 
     auto rscFontGlyphHeaders = rscFontData->glyphHeaders();
-    if (nullptr == rscFontGlyphHeaders)
+    if (nullptr == rscFontGlyphHeaders || rscFontGlyphHeaders->size() < sizeof(RscGlyphHeader))
         return ERROR;
 
     buffer.assign(rscFontGlyphHeaders->begin(), rscFontGlyphHeaders->end());
