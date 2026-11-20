@@ -24,17 +24,21 @@
 #   securerestart  daemon restart + re-attach on a secure container (new key)
 #   secureauth     daemon restart + expired SAS 403 during PASS key refresh
 #   autoexit       -autoexit daemon with a client killed mid-transaction
-#   stale          client reads ROWS ids, sleeps, re-reads the SAME ids (tiny
-#                  page cache => each page re-read via xRead). Mid-sleep, cut
-#                  while a churn client full-scans to evict unpinned slots.
+#   stale          pause the reader, cut its socket, wait for a churn scan and
+#                  slot writes, then release it to reread the same ids
 # env: ITER ROWS SLEEP T(fault time, s) BH(blackhole secs) DARGS(extra daemon args)
 #      HALF_OPEN_SECS  CHURN_CLIENT(client binary used for churn; default CLIENT)
 #      RUNROOT(parent dir for run directories; default ${TMPDIR:-/tmp})
-# The client must already be able to attach container cont1 (see setup.sh).
 set -u
 HERE=$(cd "$(dirname "$0")" && pwd)
+if [[ ${1:-} != --fixture ]]; then
+  if (( $# < 3 || $# > 4 )); then echo "usage: $0 DAEMON CLIENT SCENARIO [CACHESIZE]" >&2; exit 2; fi
+  exec "$HERE/setup.sh" "$@"
+fi
+fixture=$2; shift 2
 D=$1; C=$2; SC=$3; CS=${4:-64M}; export HALF_OPEN_SECS=${HALF_OPEN_SECS:-3}
-export AZURITE_PORT=${AZURITE_PORT:-10099}
+AZURITE_PORT=$("$HERE/setup.sh" --port "$fixture") || exit 1
+export MODULE="azure?emulator=127.0.0.1:$AZURITE_PORT" CONT=cont1
 W=$(mktemp -d "${RUNROOT:-${TMPDIR:-/tmp}}/bcv-reconnect-run.XXXX") || exit 1
 [ -n "$W" ] && [ -d "$W" ] || exit 1
 mkdir -p "$W/dir" || exit 1
@@ -44,7 +48,7 @@ export SYN_BLACKHOLE=$W/syn_blackhole
 DP=$((22500 + RANDOM % 400)); PP=$((DP + 500))
 [ "$SC" = autoexit ] && DARGS="${DARGS:-} -autoexit -resumetimeout 1"
 BCV_KEY='Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=='
-BCV_SW=(-module "azure?emulator=127.0.0.1:$AZURITE_PORT" -user devstoreaccount1 -auth "$BCV_KEY")
+BCV_SW=(-module "$MODULE" -user devstoreaccount1 -auth "$BCV_KEY")
 VCONT=
 make_versioned_cont(){
   VCONT="cont-${SC}-$$-$RANDOM"
@@ -82,16 +86,33 @@ start_daemon(){
     echo -n "127.0.0.1:$PP" > "$W/dir/portnumber.bcv"
   fi
 }
+wipe_local_dir(){
+  rm -r -- "${W:?}/dir" && mkdir -- "$W/dir"
+}
+stop_children(){
+  local pid
+  for pid in $(jobs -pr); do kill "$pid" 2>/dev/null || :; done
+  wait
+}
+trap stop_children EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 start_daemon
 python3 "$HERE/proxy.py" $PP $DP >"$W/proxy.log" 2>&1 & PPID_=$!
-sleep 0.5
+for _ in $(seq 100); do
+  grep -Fqx "proxy $PP->$DP pid $PPID_" "$W/proxy.log" && break
+  kill -0 "$PPID_" 2>/dev/null || break
+  sleep .05
+done
+if ! grep -Fqx "proxy $PP->$DP pid $PPID_" "$W/proxy.log"; then
+  cat "$W/proxy.log" >&2
+  exit 1
+fi
 NCLI=1; [ "$SC" = cutmany ] && NCLI=8
 SEC=0; case $SC in securecut|securerestart|secureauth) SEC=1 ;; esac
-CP=(); CHP=; SIGP=
+CP=(); SIGP=
 if [ "$SC" = stale ]; then
-  REPEAT=1 PCACHE=${PCACHE:-10} $C "$W/dir" ${ITER:-3} ${ROWS:-200} ${SLEEP:-4000} >"$W/client1.log" 2>&1 & CP+=($!)
-  sleep 1.5
-  CHURN=1 ${CHURN_CLIENT:-$C} "$W/dir" 1000000 0 0 >"$W/churn.log" 2>&1 & CHP=$!
+  STALE_RELEASE="$W/release" REPEAT=1 PCACHE=${PCACHE:-10} "$C" "$W/dir" "${ITER:-3}" "${ROWS:-8}" "${SLEEP:-0}" >"$W/client1.log" 2>&1 & CP+=($!)
 elif [ "$SC" = autoexit ]; then
   $C "$W/dir" 1 40 10000 >"$W/client1.log" 2>&1 & CP+=($!)
 elif [ "$SC" = idlecut ]; then
@@ -110,7 +131,7 @@ elif [ "$SC" = eintr ]; then
   $C "$W/dir" ${ITER:-40} ${ROWS:-40} ${SLEEP:-120} stat >"$W/client1.log" 2>&1 & CP+=($!)
   ( sleep 0.25; while kill -0 "${CP[0]}" 2>/dev/null; do kill -USR1 "${CP[0]}" 2>/dev/null || break; sleep 0.005; done ) & SIGP=$!
 elif [ "$SC" = secureauth ]; then
-  eval "$(python3 - <<'PY'
+  tokens=$(python3 - <<'PY'
 import base64, datetime, hashlib, hmac, urllib.parse
 key = base64.b64decode('Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==')
 now = datetime.datetime.now(datetime.timezone.utc)
@@ -119,10 +140,12 @@ def sas(sec):
     sts = f'rl\n\n{se}\n/blob/devstoreaccount1/cont1\n\n\n\n2020-10-02\nc\n\n\n\n\n\n'
     sig = urllib.parse.quote(base64.b64encode(hmac.new(key, sts.encode(), hashlib.sha256).digest()).decode(), safe='')
     return f'sv=2020-10-02&sr=c&sp=rl&se={urllib.parse.quote(se, safe="")}&sig={sig}'
-print(f"SAS_SHORT='{sas(3)}'")
-print(f"SAS_LONG='{sas(3600)}'")
+print(sas(3))
+print(sas(3600))
 PY
-)"
+) || exit 1
+  SAS_SHORT=${tokens%%$'\n'*}
+  SAS_LONG=${tokens#*$'\n'}
   touch "$W/use_short_sas"
   T=${T:-1.2}
   MODULE="azure?emulator=127.0.0.1:$AZURITE_PORT&sas=1" USE_SHORT_SAS_FILE="$W/use_short_sas" \
@@ -139,11 +162,39 @@ else
     fi
   done
 fi
-sleep ${T:-2.5}
-cut_line=$(wc -l < "$W/daemon.log")
+run_stale_fault(){
+  local deadline=$((SECONDS+15)) reader cut_line disconnected
+  while ! grep -Fxq STALE_READER_PAUSED "$W/client1.log"; do
+    if (( SECONDS >= deadline )) || ! kill -0 "${CP[0]}" 2>/dev/null; then
+      echo "Reader did not reach transaction barrier" >&2; return 1
+    fi
+    sleep .05
+  done
+  # There is exactly one database HELLO before churn starts; ATTACH uses a separate socket.
+  reader=$(awk '/->D: HELLO\("cont1","test\.db"\)/ {print $(NF-1)}' "$W/daemon.log")
+  [[ $reader =~ ^[0-9]+-\>D:$ ]] || { echo "Ambiguous reader connection: $reader" >&2; return 1; }
+  cut_line=$(wc -l < "$W/daemon.log") || return 1
+  kill -USR1 "$PPID_" || return 1
+  deadline=$((SECONDS+10))
+  while :; do
+    disconnected=$(awk -v start="$cut_line" -v msg=": $reader disconnect.." \
+      'NR>start && index($0,msg){print NR; exit}' "$W/daemon.log") || return 1
+    [[ -n $disconnected ]] && break
+    if (( SECONDS >= deadline )); then echo "No disconnect for $reader after cut" >&2; return 1; fi
+    sleep .05
+  done
+  CHURN=1 timeout -k 2s 20s "${CHURN_CLIENT:-$C}" "$W/dir" 1 0 0 >"$W/churn.log" 2>&1 || return 1
+  pcw=$(awk -v start="$disconnected" 'NR>start && /writing .* to cache slot/{n++} END{print n+0}' "$W/daemon.log") || return 1
+  (( pcw >= 32 )) || { echo "Insufficient churn before reader release: $pcw writes" >&2; return 1; }
+}
+if [[ $SC != stale ]]; then sleep "${T:-2.5}"; fi
 rc=0
 case $SC in
-  cut|cutmany|stale|securecut|idlecut) kill -USR1 $PPID_ ;;
+  stale)
+    run_stale_fault || rc=1
+    touch "$W/release" || rc=1
+    ;;
+  cut|cutmany|securecut|idlecut) kill -USR1 $PPID_ ;;
   hellodrop) kill -QUIT $PPID_ ;;
   halfcut) kill -USR2 $PPID_ ;;
   clientcut) kill -HUP $PPID_ ;;
@@ -169,7 +220,7 @@ case $SC in
     ;;
   wiperestart)
     touch "$BLACKHOLE"; kill -9 $DPID; wait $DPID 2>/dev/null
-    rm -rf "${W:?}/dir"/*
+    wipe_local_dir || exit 1
     start_daemon direct
     ATTACH_ONLY=1 $C "$W/dir" 0 0 0 >>"$W/attach.log" 2>&1 || rc=$?
     echo -n "127.0.0.1:$PP" > "$W/dir/portnumber.bcv"
@@ -182,7 +233,7 @@ case $SC in
     else
       recreate_v2_cont || rc=$?
     fi
-    rm -rf "${W:?}/dir"/*
+    wipe_local_dir || exit 1
     start_daemon direct
     CONT="$VCONT" ATTACH_ONLY=1 $C "$W/dir" 0 0 0 >>"$W/attach.log" 2>&1 || rc=$?
     echo -n "127.0.0.1:$PP" > "$W/dir/portnumber.bcv"
@@ -228,17 +279,10 @@ case $SC in
 esac
 for p in "${CP[@]}"; do wait $p || rc=$?; done
 [ -n "$SIGP" ] && { kill $SIGP 2>/dev/null; wait $SIGP 2>/dev/null; }
-if [ -n "$CHP" ]; then
-  kill -TERM $CHP 2>/dev/null; wait $CHP || rc=$?
-  pcw=$(tail -n +$((cut_line + 1)) "$W/daemon.log" | awk '
-    /disconnect\.\./ { d=1 }
-    d && /CMD\(client\)/ { exit }
-    d && /writing .* to cache slot/ { n++ }
-    END { print n+0 }
-  ')
-  [ "$pcw" -ge 32 ] || { echo "INSUFFICIENT_POST_CUT_PRE_REREAD_WRITES ($pcw)" >&2; rc=1; }
+if [[ $SC == stale ]] && ! grep -Fxq STALE_READER_RELEASED "$W/client1.log"; then
+  echo "Reader did not acknowledge release" >&2; rc=1
 fi
-kill $PPID_ $DPID 2>/dev/null; wait 2>/dev/null
+stop_children
 [ -n "$VCONT" ] && ASAN_OPTIONS=detect_leaks=0 $D destroy "${BCV_SW[@]}" "$VCONT" >>"$W/attach.log" 2>&1 || true
 echo "== $SC ($(basename "${D##* }")/$(basename "${C##* }")) workdir=$W exit=$rc"
 for f in "$W"/client*.log; do

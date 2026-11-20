@@ -12,6 +12,7 @@ set -euo pipefail
 HERE=$(cd "$(dirname "$0")" && pwd)
 SQLITE_DIR=$(cd "$HERE/../.." && pwd)
 OUT=$(mkdir -p "$1" && cd "$1" && pwd); TAG=$2; REF=${3:-}
+[[ $TAG =~ ^[A-Za-z0-9._-]+$ ]] || { echo "Invalid build tag: $TAG" >&2; exit 2; }
 CURL_INCLUDE=${CURL_INCLUDE:-/usr/include}
 LIBCURL=${LIBCURL:--lcurl}
 CFLAGS="-O1 -g -w"
@@ -19,7 +20,7 @@ CFLAGS="-O1 -g -w"
 
 SRC=$SQLITE_DIR
 if [ -n "$REF" ]; then
-  SRC=$OUT/src-$TAG; rm -rf "$SRC"; mkdir -p "$SRC"
+  SRC=$(mktemp -d "$OUT/src-$TAG.XXXXXXXX")
   cp "$SQLITE_DIR"/*.c "$SQLITE_DIR"/*.h "$SRC"/
   REPO=$(git -C "$SQLITE_DIR" rev-parse --show-toplevel)
   REL=${SQLITE_DIR#"$REPO"/}

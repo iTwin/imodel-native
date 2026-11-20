@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <signal.h>
 #include <unistd.h>
 #include <time.h>
@@ -30,6 +31,20 @@ static int xAuth(void *p, const char *a, const char *b, const char *c, char **pz
   return SQLITE_OK;
 }
 static double now(void){ struct timespec t; clock_gettime(CLOCK_MONOTONIC,&t); return t.tv_sec+t.tv_nsec/1e9; }
+
+static int waitForStaleRelease(const char *zRelease){
+  double deadline = now() + 60;
+  puts("STALE_READER_PAUSED");
+  while( access(zRelease, F_OK)!=0 ){
+    if( errno!=ENOENT || now()>=deadline ){
+      fprintf(stderr, "stale reader did not receive release: %s\n", zRelease);
+      return SQLITE_ERROR;
+    }
+    usleep(10000);
+  }
+  puts("STALE_READER_RELEASED");
+  return SQLITE_OK;
+}
 
 static int gMaxId = 40000;
 static const char *gRowPrefix = "";
@@ -119,17 +134,15 @@ int main(int argc, char **argv){
   int bReopenOnIoerr = getenv("REOPEN_ON_IOERR")!=0;
   int idleMs = getenv("IDLE_SLEEP") ? atoi(getenv("IDLE_SLEEP")) : 0;
   const char *zCont = getenv("CONT") ? getenv("CONT") : "cont1";
-  const char *zAzPort = getenv("AZURITE_PORT") ? getenv("AZURITE_PORT") : "10099";
-  char zDefaultMod[128];
-  const char *zMod = 0;
+  const char *zMod = getenv("MODULE");
+  const char *zRelease = getenv("STALE_RELEASE");
   int attachFlags = SQLITE_BCV_ATTACH_IFNOT | (bSecure ? SQLITE_BCV_ATTACH_SECURE : 0);
   int *aId = calloc(nRow>0?nRow:1, sizeof(int));
   int nOk = 0, nErr = 0, nBadTotal = 0, nReopen = 0;
   sqlite3_int64 aPrevQStat[3] = {0, 0, 0};
   char zUri[128], zContUri[128], zRootSql[192], zPfxBuf[64];
   struct sigaction sa;
-  snprintf(zDefaultMod, sizeof(zDefaultMod), "azure?emulator=127.0.0.1:%s", zAzPort);
-  zMod = getenv("MODULE") ? getenv("MODULE") : zDefaultMod;
+  if( !zMod ){ fprintf(stderr, "Missing fixture MODULE; use run.sh\n"); free(aId); return 1; }
   memset(&sa, 0, sizeof(sa));
   sa.sa_handler = onUsr1;
   sigemptyset(&sa.sa_mask);
@@ -265,7 +278,12 @@ int main(int argc, char **argv){
     if( pQStat ) checkQueryStats(pQStat, aPrevQStat, &nBad);
     rc = sqlite3_exec(db, "BEGIN", 0, 0, 0);
     if( rc==SQLITE_OK ) rc = readRows(pStmt, nRow, &nBad, &maxMs, aId, 0, bFixedHalf ? 0 : -1);
-    if( rc==SQLITE_OK && sleepMs ) usleep(sleepMs*1000);
+    if( rc==SQLITE_OK && it==0 && zRelease ){
+      rc = waitForStaleRelease(zRelease);
+      if( rc!=SQLITE_OK ) nBad++;
+    }else if( rc==SQLITE_OK && sleepMs ){
+      usleep(sleepMs*1000);
+    }
     if( rc==SQLITE_OK ) rc = readRows(pStmt, nRow, &nBad, &maxMs, aId, bRepeat, bFixedHalf ? (it * nRow + gMaxId / 2) : -1);
     if( rc==SQLITE_OK && pStat ){
       rc = sqlite3_step(pStat); if( rc==SQLITE_ROW || rc==SQLITE_DONE ) rc = SQLITE_OK;

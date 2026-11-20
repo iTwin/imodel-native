@@ -8,24 +8,28 @@ reads.
 
 ## Run
 
-Requires gcc, OpenSSL and libcurl (headers + library), python3, and docker
-(for Azurite) on Linux.
+Requires gcc, OpenSSL and libcurl (headers + library), python3, and a local
+Unix-socket Docker daemon (for Azurite) on Linux.
 
 ```bash
 cd iModelCore/BeSQLite/SQLite/test/bcv-reconnect
-OUT=/tmp/bcv-reconnect                      # build + scratch dir
+OUT=$(mktemp -d)                             # private build + scratch dir
 ASAN=1 ./build.sh $OUT new                  # working tree (ASan/UBSan)
 ./build.sh $OUT base origin/main            # optional baseline to compare
-./setup.sh $OUT                             # Azurite + test db in container cont1
 RUNROOT=$OUT ./matrix.sh $OUT/bcvd_new $OUT/client_new   # exit 0 == all pass
 ```
 
 If curl headers are not in `/usr/include`, set `CURL_INCLUDE=<dir>` and
-`LIBCURL=<path to libcurl.so>`. To stop Azurite afterwards:
-`docker stop azurite-bcv-reconnect`.
+`LIBCURL=<path to libcurl.so>`.
 
 `run.sh DAEMON CLIENT SCENARIO [CACHESIZE]` runs a single scenario and keeps
 its logs (`daemon.log`, `client*.log`, `proxy.log`) in the printed workdir.
+Both entry points start a disposable Azurite instance with a Docker-assigned
+loopback port, seed `cont1/test.db` there, and stop only the container ID they
+started. The matrix shares that fixture across its scenarios. Neither entry
+point needs a pre-existing emulator, fixed port, or separate setup command.
+`bash fixture-test.sh` checks that ambiguous endpoint metadata is rejected
+and cleanup targets only the newly created ID, without using Docker.
 
 ## Scenarios
 
@@ -50,7 +54,7 @@ its logs (`daemon.log`, `client*.log`, `proxy.log`) in the printed workdir.
 | autoexit | `-autoexit` daemon with client killed mid-transaction | parked session expires cleanly, exit 0, 0 leaks |
 | expiry | halfcut with `-resumetimeout 1` | 1 failed transaction, then recovery |
 | noresume | cut with `-resumetimeout 0` | 1 failed transaction, then recovery |
-| stale / stalenoresume | cut during a read transaction while another client evicts the 2 MB cache (resumed and `-resumetimeout 0`) | never any wrong rows |
+| stale / stalenoresume | cut a paused reader, then scan through a 2 MB cache | same rows after resume; with resume disabled, one I/O error and subsequent transactions succeed |
 
 `stale` is the data-integrity check. Without this change, a client whose
 connection drops mid read-transaction keeps reading the cache slots it mapped
@@ -58,3 +62,10 @@ before the drop. The daemon released those slots' pins when it saw the
 disconnect and may already have reused them for other blocks, so the client
 returns **wrong rows with no error**. Against `origin/main` it reports
 `bad_rows=8` in some runs.
+
+The reader pauses inside its first transaction after reading the selected
+rows. The harness waits for the daemon to log that reader's disconnect,
+completes a separate full scan and counts at least 32 logged slot writes,
+then releases the reader to reread those same rows. This establishes ordering
+and cache pressure, not that any particular slot was overwritten or that
+every possible disconnect is safe.
