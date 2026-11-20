@@ -532,6 +532,7 @@ void bcvContainerClose(BcvContainer*);
 
 int bcv_socket_is_valid(BCV_SOCKET_TYPE s);
 void bcv_close_socket(BCV_SOCKET_TYPE s);
+int bcv_socket_connect(BCV_SOCKET_TYPE s, const struct sockaddr*, int, int);
 void bcv_socket_timeout(BCV_SOCKET_TYPE s, int ms);
 int bcv_socket_is_broken(BCV_SOCKET_TYPE s);
 void bcv_socket_init();
@@ -561,14 +562,18 @@ typedef struct BcvVtabReply BcvVtabReply;
 typedef struct BcvPrefetchMsg BcvPrefetchMsg;
 typedef struct BcvPrefetchReply BcvPrefetchReply;
 
+#define BCV_HELLO_CANRESUME  0x01
+#define BCV_HELLO_WANTRESUME 0x02
+
 struct BcvHelloMsg {
   const char *zContainer;
   const char *zDatabase;
   int bPrefetch;
-  /* Optional trailing fields. A client that sends them can reconnect and
-  ** resume an open read transaction (see bdParkClient() in the daemon). */
-  u32 bCanResume;                 /* True if client supports session resume */
-  u64 iResume;                    /* Session to resume, or 0 */
+  /* Optional trailing fields. BCV_HELLO_CANRESUME announces support for
+  ** session resume; BCV_HELLO_WANTRESUME asks to adopt iResume's open
+  ** read transaction (without it, any parked/live iResume is discarded). */
+  u32 bCanResume;                 /* Mask of BCV_HELLO_* flags */
+  u64 iResume;                    /* Previous session id, or 0 */
 };
 
 struct BcvHelloReply {

@@ -3739,8 +3739,74 @@ void bcv_close_socket(BCV_SOCKET_TYPE s){
 }
 
 /*
+** Connect socket s to pAddr. If msTimeout>0, wait at most msTimeout
+** milliseconds for the TCP handshake to complete. Return 0 on success
+** or -1 on error.
+*/
+int bcv_socket_connect(
+  BCV_SOCKET_TYPE s,
+  const struct sockaddr *pAddr,
+  int nAddr,
+  int msTimeout
+){
+  if( msTimeout<=0 ){
+    return connect(s, pAddr, nAddr);
+  }
+#ifdef __WIN32__
+  {
+    u_long nb = 1;
+    if( ioctlsocket(s, FIONBIO, &nb)!=0 ) return -1;
+    if( connect(s, pAddr, nAddr)!=0 ){
+      fd_set wfds, efds;
+      struct timeval tv;
+      int err = WSAGetLastError();
+      int soerr = -1;
+      int len = (int)sizeof(soerr);
+      if( err!=WSAEWOULDBLOCK ) return -1;
+      FD_ZERO(&wfds); FD_SET(s, &wfds);
+      FD_ZERO(&efds); FD_SET(s, &efds);
+      tv.tv_sec = msTimeout / 1000;
+      tv.tv_usec = (msTimeout % 1000) * 1000;
+      if( select(0, 0, &wfds, &efds, &tv)<=0 ) return -1;
+      if( FD_ISSET(s, &efds) || !FD_ISSET(s, &wfds) ) return -1;
+      if( getsockopt(s, SOL_SOCKET, SO_ERROR, (char*)&soerr, &len)!=0
+       || soerr!=0
+      ){
+        return -1;
+      }
+    }
+    nb = 0;
+    if( ioctlsocket(s, FIONBIO, &nb)!=0 ) return -1;
+    return 0;
+  }
+#else
+  {
+    int flags = fcntl(s, F_GETFL, 0);
+    if( flags<0 || fcntl(s, F_SETFL, flags|O_NONBLOCK)<0 ) return -1;
+    if( connect(s, pAddr, nAddr)<0 ){
+      struct pollfd pfd;
+      int soerr = -1;
+      socklen_t len = sizeof(soerr);
+      if( errno!=EINPROGRESS ) return -1;
+      memset(&pfd, 0, sizeof(pfd));
+      pfd.fd = s;
+      pfd.events = POLLOUT;
+      if( poll(&pfd, 1, msTimeout)<=0 ) return -1;
+      if( getsockopt(s, SOL_SOCKET, SO_ERROR, &soerr, &len)<0
+       || soerr!=0
+      ){
+        return -1;
+      }
+    }
+    if( fcntl(s, F_SETFL, flags)<0 ) return -1;
+    return 0;
+  }
+#endif
+}
+
+/*
 ** Set the send and receive timeouts of socket s to ms milliseconds, or
-** clear them if ms==0. On Linux the send timeout also bounds connect().
+** clear them if ms==0.
 */
 void bcv_socket_timeout(BCV_SOCKET_TYPE s, int ms){
 #ifdef __WIN32__
@@ -4081,7 +4147,7 @@ int bcvRecvMsg(
             if( (aBody - (u8*)&pMsg[1])<nByte ){
               pMsg->u.hello.bPrefetch = bcvMsgGetU32(&aBody);
             }
-            if( (aBody - (u8*)&pMsg[1])<nByte ){
+            if( ((u8*)&pMsg[1] + nByte - aBody)>=12 ){
               pMsg->u.hello.bCanResume = bcvMsgGetU32(&aBody);
               pMsg->u.hello.iResume = bcvMsgGetU64(&aBody);
             }
@@ -4097,7 +4163,7 @@ int bcvRecvMsg(
             pMsg->u.hello_r.iDbId = (i64)bcvMsgGetU64(&aBody);
             pMsg->u.hello_r.szBlk = bcvMsgGetU32(&aBody);
             pMsg->u.hello_r.bEncrypted = bcvMsgGetU32(&aBody);
-            if( (aBody - (u8*)&pMsg[1])<nByte ){
+            if( ((u8*)&pMsg[1] + nByte - aBody)>=12 ){
               pMsg->u.hello_r.iSession = bcvMsgGetU64(&aBody);
               pMsg->u.hello_r.bResumed = bcvMsgGetU32(&aBody);
             }

@@ -18,17 +18,20 @@ FAILED=()
 
 check(){  # name max_err_per_client expected_clients -- run.sh args...
   local name=$1 maxerr=$2 ncli=$3; shift 4
-  local out; out=$("$HERE/run.sh" "$@" 2>&1)
-  local sums; sums=$(grep -E '^SUMMARY ok=' <<<"$out" | grep -v churn)
-  local n; n=$(grep -c . <<<"$sums")
+  local out rc=0; out=$("$HERE/run.sh" "$@" 2>&1) || rc=$?
+  local sums; sums=$(grep -E '^SUMMARY ok=' <<<"$out" | grep -v churn || true)
+  local n=0; [ -n "$sums" ] && n=$(grep -c . <<<"$sums")
   local why=""
+  [ "$rc" -eq 0 ] || why="$why exit=$rc;"
   [ "$n" -eq "$ncli" ] || why="$why expected $ncli SUMMARY lines, got $n;"
-  while read -r _ ok err bad; do
-    ok=${ok#ok=}; err=${err#err=}; bad=${bad#bad_rows=}
-    [ "${bad:-1}" -eq 0 ] || why="$why bad_rows=$bad;"
-    [ "${err:-1}" -le "$maxerr" ] || why="$why err=$err>$maxerr;"
-    [ "${ok:-0}" -gt 0 ] || why="$why ok=0;"
-  done <<<"$sums"
+  if [ -n "$sums" ]; then
+    while read -r _ ok err bad; do
+      ok=${ok#ok=}; err=${err#err=}; bad=${bad#bad_rows=}
+      [ "${bad:-1}" -eq 0 ] || why="$why bad_rows=$bad;"
+      [ "${err:-1}" -le "$maxerr" ] || why="$why err=$err>$maxerr;"
+      [ "${ok:-0}" -gt 0 ] || why="$why ok=0;"
+    done <<<"$sums"
+  fi
   grep -q '^SANITIZER' <<<"$out" && why="$why sanitizer report;"
   if [ -z "$why" ]; then
     echo "PASS $name: $(tr '\n' ' ' <<<"$sums")"
@@ -37,9 +40,11 @@ check(){  # name max_err_per_client expected_clients -- run.sh args...
   fi
 }
 
-for sc in none cut halfcut clientcut blackhole; do check $sc 0 1 -- "$D" "$C" $sc; done
+for sc in none cut halfcut clientcut blackhole securecut; do check $sc 0 1 -- "$D" "$C" $sc; done
 check cutmany 0 8 -- "$D" "$C" cutmany
 check restart 1 1 -- "$D" "$C" restart
+check securerestart 1 1 -- "$D" "$C" securerestart
+T=1 check autoexit 0 1 -- "$D" "$C" autoexit
 HALF_OPEN_SECS=4 DARGS="-resumetimeout 1" check expiry 1 1 -- "$D" "$C" halfcut
 DARGS="-resumetimeout 0" check noresume 1 1 -- "$D" "$C" cut
 for i in $(seq "${STALE_RUNS:-4}"); do

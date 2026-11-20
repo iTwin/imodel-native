@@ -1134,9 +1134,12 @@ struct DClient {
   i64 iWaitStart;
 
   /* Session resume. bCanResume is set if the client sent the optional
-  ** HELLO.bCanResume field. iSession is the id sent to it in HELLO_REPLY. */
+  ** BCV_HELLO_CANRESUME flag. iSession is the id sent to it in HELLO_REPLY.
+  ** bClosing marks a client whose send() failed or that was superseded, to
+  ** be disconnected at the end of the main-loop iteration.  */
   int bCanResume;
   u64 iSession;
+  int bClosing;
 };
 
 /*
@@ -1713,20 +1716,23 @@ static void bdDisconnectClient(
 }
 
 static void bdSendMsg(DaemonCtx *p, DClient *pClient, BcvMessage *pMsg){
-  int rc;
-  bdLogSendMsg(p, pClient, pMsg);
-  rc = bcvSendMsg(pClient->fd, pMsg);
-  if( rc!=SQLITE_OK ){
-    /* Callers continue to use pClient after this returns, so it must not
-    ** be freed here. Shut the socket down instead - the main loop sees it
-    ** become readable (EOF) and disconnects the client from there.  */
-    daemon_msg_log(p, "%d->D: send() failure", pClient->iClientId);
-    shutdown(pClient->fd, 2);
+  if( pClient->bClosing==0 ){
+    int rc;
+    bdLogSendMsg(p, pClient, pMsg);
+    rc = bcvSendMsg(pClient->fd, pMsg);
+    if( rc!=SQLITE_OK ){
+      /* Callers continue to use pClient after this returns, so it must not
+      ** be freed here. Mark it for disconnect at the end of the main-loop
+      ** iteration instead.  */
+      daemon_msg_log(p, "%d->D: send() failure", pClient->iClientId);
+      pClient->bClosing = 1;
+    }
   }
 }
 
 static DClient *bdFetchClient(FetchCtx *pDLCtx){
-  return pDLCtx->pClient->fd==INVALID_SOCKET ? 0 : pDLCtx->pClient;
+  DClient *pClient = pDLCtx->pClient;
+  return (pClient->fd==INVALID_SOCKET || pClient->bClosing) ? 0 : pClient;
 }
 
 static void bdBlockDownloadFree(FetchCtx *p){
@@ -1974,6 +1980,7 @@ static void bcvProxyClientCount(
   int *pnReader
 ){
   DClient *pClient = 0;
+  DParked *pPark = 0;
   DaemonCtx *p = 0;
   int nClient = 0;
   int nPrefetch = 0;
@@ -1981,13 +1988,22 @@ static void bcvProxyClientCount(
 
   p = (DaemonCtx*)&((u8*)pCommon)[-offsetof(DaemonCtx, c)];
   for(pClient=p->pClientList; pClient; pClient=pClient->pNext){
-    if( pClient->pCont==pCont && pClient->iDbId==iDbId ){
+    if( pClient->bClosing==0
+     && pClient->pCont==pCont
+     && pClient->iDbId==iDbId
+    ){
       if( pClient->prefetch.bPrefetch ){
         nPrefetch++;
       }else{
         nClient++;
         if( pClient->apRef ) nReader++;
       }
+    }
+  }
+  for(pPark=p->pParkedList; pPark; pPark=pPark->pNext){
+    if( pPark->pCont==pCont && pPark->iDbId==iDbId ){
+      nClient++;
+      if( pPark->apRef ) nReader++;
     }
   }
 
@@ -2032,12 +2048,14 @@ static u8 *bdExtraVtabData(
   i64 nManifest = 0;
   i64 nArray = 0;
   DClient *pClient = 0;
+  DParked *pPark = 0;
 
   BcvBuffer buf;
   buf.aData = aData;
   buf.nData = buf.nAlloc = *pnData;
 
   for(pClient = p->pClientList; pClient; pClient=pClient->pNext){
+    if( pClient->bClosing ) continue;
     if( pClient->pMan && pClient->pMan!=pClient->pCont->pMan ){
       assert( pClient->pMan->nRef>=1 );
       nManifest += bcvManifestSize(pClient->pMan) / pClient->pMan->nRef;
@@ -2045,6 +2063,16 @@ static u8 *bdExtraVtabData(
     if( pClient->apRef ){
       assert( pClient->pManDb );
       nArray += (pClient->pManDb->nBlkLocal * sizeof(CacheEntry*));
+    }
+  }
+  for(pPark = p->pParkedList; pPark; pPark=pPark->pNext){
+    if( pPark->pMan && pPark->pMan!=pPark->pCont->pMan ){
+      assert( pPark->pMan->nRef>=1 );
+      nManifest += bcvManifestSize(pPark->pMan) / pPark->pMan->nRef;
+    }
+    if( pPark->apRef ){
+      assert( pPark->pManDb );
+      nArray += (pPark->pManDb->nBlkLocal * sizeof(CacheEntry*));
     }
   }
 
@@ -2102,15 +2130,18 @@ static void bdHandleVtab(
 }
 
 /*
-** A client is attempting to resume session iSession. If the connection
-** that owns that session is still in pClientList (i.e. the daemon has not
-** yet seen it hang up - possible if a proxy between the client and daemon
-** closed only the client side), park its transaction now and shut the
-** socket down. The client only resumes after it has given up on the old
-** connection, so nothing further will be read from it. The DClient itself
-** is disconnected and freed by the main loop when it sees the EOF.
+** A client is reconnecting from previous session iSession. If the old
+** connection is still in pClientList (e.g. a proxy between the client and
+** daemon closed only the client side), optionally park its transaction
+** (when bPark is true) and mark the old DClient for disconnect at the end
+** of the main-loop iteration.
 */
-static void bdSupersedeClient(DaemonCtx *p, DClient *pNew, u64 iSession){
+static void bdSupersedeClient(
+  DaemonCtx *p,
+  DClient *pNew,
+  u64 iSession,
+  int bPark
+){
   DClient *pOld;
   for(pOld=p->pClientList; pOld; pOld=pOld->pNext){
     if( pOld!=pNew && pOld->iSession==iSession ){
@@ -2119,9 +2150,9 @@ static void bdSupersedeClient(DaemonCtx *p, DClient *pNew, u64 iSession){
       );
       sqlite3_free(pOld->pMsg);
       pOld->pMsg = 0;
-      bdParkClient(p, pOld);
+      if( bPark ) bdParkClient(p, pOld);
       pOld->iSession = 0;
-      shutdown(pOld->fd, 2);
+      pOld->bClosing = 1;
       break;
     }
   }
@@ -2171,7 +2202,10 @@ static void bdHandleHello(
     pClient->pCont = pCont;
     if( pDb ) pClient->iDbId = pDb->iDbId;
     pCont->nClient++;
-    if( pMsg->u.hello.bCanResume && p->cmd.nResumeTimeout>0 ){
+    if( (pMsg->u.hello.bCanResume & BCV_HELLO_CANRESUME)
+     && p->cmd.nResumeTimeout>0
+    ){
+      int bWant = (pMsg->u.hello.bCanResume & BCV_HELLO_WANTRESUME)!=0;
       pClient->bCanResume = 1;
       while( pClient->iSession==0 ){
         sqlite3_randomness(sizeof(pClient->iSession), &pClient->iSession);
@@ -2179,9 +2213,10 @@ static void bdHandleHello(
       reply.u.hello_r.iSession = pClient->iSession;
       if( pMsg->u.hello.iResume ){
         DParked *pPark;
-        bdSupersedeClient(p, pClient, pMsg->u.hello.iResume);
+        bdSupersedeClient(p, pClient, pMsg->u.hello.iResume, bWant);
         pPark = bdUnparkSession(p, pMsg->u.hello.iResume);
-        if( pPark && pPark->pCont==pCont && pPark->iDbId==pClient->iDbId
+        if( bWant && pPark && pPark->pCont==pCont
+         && pPark->iDbId==pClient->iDbId
          && pClient->prefetch.bPrefetch==0
         ){
           /* Adopt the parked transaction. The new connection already
@@ -2197,9 +2232,15 @@ static void bdHandleHello(
           );
         }else{
           if( pPark ) bdFreeParked(pPark);
-          daemon_event_log(p, "client %d failed to resume session %llx",
-              pClient->iClientId, (unsigned long long)pMsg->u.hello.iResume
-          );
+          if( bWant ){
+            daemon_event_log(p, "client %d failed to resume session %llx",
+                pClient->iClientId, (unsigned long long)pMsg->u.hello.iResume
+            );
+          }else if( pPark ){
+            daemon_event_log(p, "client %d discarded parked session %llx",
+                pClient->iClientId, (unsigned long long)pMsg->u.hello.iResume
+            );
+          }
         }
       }
     }
@@ -2718,6 +2759,7 @@ static void bdPassCb(
   DaemonCtx *p = pDLCtx->pCtx;
 
   bdBlockDownloadFree(pDLCtx);
+  if( pClient==0 ) return;
 
   memset(&reply, 0, sizeof(reply));
   reply.eType = BCV_MESSAGE_PASS_REPLY;
@@ -3023,7 +3065,7 @@ static void bdMainloop(DaemonCtx *p){
     i = 1;
     for(pClient=p->pClientList; pClient; pClient=pNextClient){
       pNextClient = pClient->pNext;
-      if( aWait[i].revents ){
+      if( pClient->bClosing==0 && aWait[i].revents ){
         bdHandleClientMessage(p, pClient, &bClient);
       }
       i++;
@@ -3038,7 +3080,7 @@ static void bdMainloop(DaemonCtx *p){
     for(pClient=p->pClientList; pClient; pClient=pNextClient){
       BcvMessage *pMsg = pClient->pMsg;
       pNextClient = pClient->pNext;
-      if( pMsg ){
+      if( pMsg && pClient->bClosing==0 ){
         assert( pMsg->eType==BCV_MESSAGE_READ
              || pMsg->eType==BCV_MESSAGE_CMD
              || pMsg->eType==BCV_MESSAGE_ATTACH
@@ -3052,9 +3094,17 @@ static void bdMainloop(DaemonCtx *p){
       }
     }
 
+    /* Disconnect any clients whose send() failed or that were superseded. */
+    for(pClient=p->pClientList; pClient; pClient=pNextClient){
+      pNextClient = pClient->pNext;
+      if( pClient->bClosing ){
+        bdDisconnectClient(p, pClient, "closed");
+      }
+    }
+
     /* Check if it is time to bail out (due to -autoexit option) */ 
     sqlite3_free(aWait);
-    if( p->cmd.bAutoexit && bClient && p->pClientList==0 ){
+    if( p->cmd.bAutoexit && bClient && p->pClientList==0 && p->pParkedList==0 ){
       break;
     }
   }
@@ -3090,6 +3140,7 @@ static void bdWritePortNumber(DaemonCtx *pCtx, const char *zDir){
 }
 
 static void bdCleanup(DaemonCtx *p){
+  bdExpireParked(p, 1);
   bcvCommonDestroy(&p->c);
   bcvCloseLocal(p->pCacheFile);
   bcvDispatchFree(p->pDisp);

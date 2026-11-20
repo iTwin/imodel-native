@@ -54,6 +54,9 @@ int main(int argc, char **argv){
   int bStat = argc>5;
   int bRepeat = getenv("REPEAT")!=0;
   int bChurn = getenv("CHURN")!=0;
+  int bSecure = getenv("SECURE")!=0;
+  int bAttachOnly = getenv("ATTACH_ONLY")!=0;
+  int attachFlags = SQLITE_BCV_ATTACH_IFNOT | (bSecure ? SQLITE_BCV_ATTACH_SECURE : 0);
   int *aId = calloc(nRow>0?nRow:1, sizeof(int));
   int nOk = 0, nErr = 0, nBadTotal = 0;
   setvbuf(stdout, 0, _IOLBF, 0);
@@ -61,11 +64,17 @@ int main(int argc, char **argv){
   rc = sqlite3_bcvfs_create(zDir, "bcv", &pFs, &zErr);
   if( rc ){ printf("create: %d %s\n", rc, zErr); return 1; }
   sqlite3_bcvfs_auth_callback(pFs, 0, xAuth);
-  rc = sqlite3_bcvfs_attach(pFs, "azure?emulator=127.0.0.1:10000", "devstoreaccount1", "cont1", 0, SQLITE_BCV_ATTACH_IFNOT, &zErr);
+  rc = sqlite3_bcvfs_attach(pFs, "azure?emulator=127.0.0.1:10000", "devstoreaccount1", "cont1", 0, attachFlags, &zErr);
   if( rc ){ printf("attach: %d %s\n", rc, zErr); return 1; }
+  if( bAttachOnly ){
+    free(aId);
+    sqlite3_bcvfs_destroy(pFs);
+    return 0;
+  }
   rc = sqlite3_open_v2("file:/cont1/test.db", &db, SQLITE_OPEN_READONLY|SQLITE_OPEN_URI, "bcv");
   if( rc ){ printf("open: %d %s\n", rc, sqlite3_errmsg(db)); return 1; }
   sqlite3_bcvfs_register_vtab(db);
+  sqlite3_exec(db, "PRAGMA bcv_client = 'test-client'", 0, 0, 0);
   if( getenv("PCACHE") ){
     char *z = sqlite3_mprintf("PRAGMA cache_size=%s", getenv("PCACHE"));
     sqlite3_exec(db, z, 0, 0, 0); sqlite3_free(z);

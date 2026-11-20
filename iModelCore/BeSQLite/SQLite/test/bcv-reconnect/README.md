@@ -36,7 +36,10 @@ its logs (`daemon.log`, `client*.log`, `proxy.log`) in the printed workdir.
 | halfcut | daemon side closed, client side open 3 s | all succeed (one slow read) |
 | clientcut | client side RST, daemon side open 3 s | all succeed (old connection superseded) |
 | blackhole | cut, then new connections hang 3 s | all succeed (one slow read) |
+| securecut | cut on a `SQLITE_BCV_ATTACH_SECURE` (AES-128-CTR) container | all succeed (session resumed) |
 | restart | daemon SIGKILL + restart | 1 failed transaction, then recovery |
+| securerestart | daemon restart + re-attach on a secure container (new key) | 1 failed transaction, key refreshed, then recovery |
+| autoexit | `-autoexit` daemon with client killed mid-transaction | parked session expires cleanly, exit 0, 0 leaks |
 | expiry | halfcut with `-resumetimeout 1` | 1 failed transaction, then recovery |
 | noresume | cut with `-resumetimeout 0` | 1 failed transaction, then recovery |
 | stale | cut during a read transaction while another client evicts the 2 MB cache | never any wrong rows |
