@@ -362,6 +362,8 @@ $(CoreObjs)AnnotationTextBlockLayout$(oext) :       $(AnnotationsSrc)AnnotationT
 
 $(CoreObjs)AnnotationTextStyle$(oext) :             $(AnnotationsSrc)AnnotationTextStyle.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
 
+$(CoreObjs)LegacyTextAnnotationJson$(oext) :        $(AnnotationsSrc)LegacyTextAnnotationJson.cpp $(AnnotationsHeaders) $(AnnotationsApi)LegacyTextAnnotationJson.h $(AnnotationsApi)TextAnnotationElement.h $(AnnotationsPrivateApi)AnnotationLeaderPersistence.h ${MultiCompileDepends}
+
 $(CoreObjs)TextAnnotation$(oext) :                  $(AnnotationsSrc)TextAnnotation.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
 
 $(CoreObjs)TextAnnotationDraw$(oext) :              $(AnnotationsSrc)TextAnnotationDraw.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
