@@ -31,7 +31,8 @@ c.commit()
 EOF
 
 # create fails if cont1 already exists (re-runs); upload below fails loudly if
-# the container is genuinely unusable.
-"$BCVD" create "${SW[@]}" -blocksize 64K cont1 || true
-"$BCVD" upload "${SW[@]}" -container cont1 "$OUT/test.db" test.db
-"$BCVD" list "${SW[@]}" cont1
+# the container is genuinely unusable. Disable LSan for these one-shot CLI
+# subcommands (upstream parse_switches is not freed in create/upload/list).
+ASAN_OPTIONS=detect_leaks=0 "$BCVD" create "${SW[@]}" -blocksize 64K cont1 || true
+ASAN_OPTIONS=detect_leaks=0 "$BCVD" upload "${SW[@]}" -container cont1 "$OUT/test.db" test.db
+ASAN_OPTIONS=detect_leaks=0 "$BCVD" list "${SW[@]}" cont1

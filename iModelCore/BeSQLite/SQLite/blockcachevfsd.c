@@ -1153,7 +1153,7 @@ struct DClient {
 typedef struct DParked DParked;
 struct DParked {
   u64 iSession;
-  i64 iExpire;                    /* sqlite_timestamp() expiry time (ms) */
+  i64 iExpire;                    /* bcv_timestamp() expiry time (us) */
   Container *pCont;
   i64 iDbId;
   Manifest *pMan;
@@ -1592,7 +1592,7 @@ static int bdParkClient(DaemonCtx *p, DClient *pClient){
   }
   pPark = (DParked*)bdMallocZero(sizeof(DParked));
   pPark->iSession = pClient->iSession;
-  pPark->iExpire = sqlite_timestamp() + (i64)p->cmd.nResumeTimeout*1000;
+  pPark->iExpire = bcv_timestamp() + (i64)p->cmd.nResumeTimeout*1000000;
   pPark->pCont = pClient->pCont;
   pPark->iDbId = pClient->iDbId;
   pPark->pMan = pClient->pMan;
@@ -1618,7 +1618,7 @@ static int bdParkClient(DaemonCtx *p, DClient *pClient){
 */
 static void bdExpireParked(DaemonCtx *p, int bAll){
   DParked **pp = &p->pParkedList;
-  i64 iNow = sqlite_timestamp();
+  i64 iNow = bcv_timestamp();
   while( *pp ){
     DParked *pPark = *pp;
     if( bAll || pPark->iExpire<=iNow ){

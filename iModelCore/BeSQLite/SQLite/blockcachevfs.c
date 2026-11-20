@@ -1814,6 +1814,8 @@ static int bcvfsProxyReconnect(BcvfsFile *pFile){
   int iAttempt;
   int msBackoff = BCV_RECONNECT_BACKOFF_MS;
 
+  if( pFile->pPath==0 ) return SQLITE_IOERR;
+
   bcv_close_socket(pFile->p.fdProxy);
   pFile->p.fdProxy = INVALID_SOCKET;
 
@@ -1859,7 +1861,10 @@ static int bcvfsProxyReconnect(BcvfsFile *pFile){
         assert( pFile->pPath->zContainer==0 );
         assert( pFile->p.pMap==0 && pFile->p.pKey==0 );
       }
-      if( rc==SQLITE_OK && pFile->zClientId ){
+      if( rc==SQLITE_OK && (pFile->zClientId || pReply==0) ){
+        /* Also send BCV_CMD_CLIENT on "/" when zClientId is NULL so that
+        ** reconnecting verifies daemon reachability within the timeout
+        ** before clearing SO_RCVTIMEO/SO_SNDTIMEO. */
         BcvMessage msg;
         BcvMessage *pFinal = 0;
         memset(&msg, 0, sizeof(msg));
@@ -1877,6 +1882,17 @@ static int bcvfsProxyReconnect(BcvfsFile *pFile){
       sqlite3_free(pReply);
       bcv_close_socket(s);
       if( rc==SQLITE_OK || bRefused ) break;
+    }
+  }
+
+  if( rc==SQLITE_OK && !bResumed && pFile->pCacheFile ){
+    /* Reopen cachefile.bcv in case the cache directory was recreated across
+    ** a daemon restart while this handle remained open. */
+    sqlite3_file *pNewCache = 0;
+    rc = bcvOpenLocal(pFs->zCacheFile, 0, 1, &pNewCache);
+    if( rc==SQLITE_OK ){
+      bcvCloseLocal(pFile->pCacheFile);
+      pFile->pCacheFile = pNewCache;
     }
   }
 
@@ -3260,7 +3276,7 @@ static int bcvfsFileControl(sqlite3_file *pFd, int op, void *pArg){
 
   switch( op ){
     case SQLITE_FCNTL_PRAGMA: {
-      rc = bcvfsPragma(pFile, pArg);
+      if( pFile->pPath ) rc = bcvfsPragma(pFile, pArg);
       break;
     }
     case SQLITE_FCNTL_PDB: {

@@ -10,6 +10,7 @@
 #   clientcut      client side RST now, daemon side kept open HALF_OPEN_SECS
 #                  (client reconnects before the daemon sees old connection die)
 #   restart        daemon killed with SIGKILL and restarted
+#   wiperestart    daemon SIGKILL + cache directory wiped + restarted + re-attached
 #   blackhole      cut, then new connections accepted but never served for BH s
 #   securecut      cut on a SQLITE_BCV_ATTACH_SECURE (AES-128-CTR) container
 #   securerestart  daemon restart + re-attach on a secure container (new key)
@@ -88,6 +89,14 @@ case $SC in
   halfcut) kill -USR2 $PPID_ ;;
   clientcut) kill -HUP $PPID_ ;;
   restart) kill -9 $DPID; sleep 0.5; start_daemon ;;
+  wiperestart)
+    touch "$BLACKHOLE"; kill -9 $DPID; wait $DPID 2>/dev/null
+    rm -rf "$W/dir"/*
+    start_daemon direct
+    ATTACH_ONLY=1 $C "$W/dir" 0 0 0 >>"$W/attach.log" 2>&1 || rc=$?
+    echo -n "127.0.0.1:$PP" > "$W/dir/portnumber.bcv"
+    rm -f "$BLACKHOLE"
+    ;;
   securerestart)
     touch "$BLACKHOLE"; kill -9 $DPID; wait $DPID 2>/dev/null
     start_daemon direct
@@ -123,13 +132,19 @@ case $SC in
     ;;
 esac
 for p in "${CP[@]}"; do wait $p || rc=$?; done
-[ -n "$CHP" ] && { kill $CHP 2>/dev/null; wait $CHP 2>/dev/null; }
+if [ -n "$CHP" ]; then
+  kill -TERM $CHP 2>/dev/null; wait $CHP || rc=$?
+  pcw=$(awk '/disconnect\.\./{d=1} d && /writing .* to cache slot/{n++} END{print n+0}' "$W/daemon.log")
+  [ "$pcw" -gt 0 ] || { echo "NO_POST_CUT_CHURN_WRITES" >&2; rc=1; }
+fi
 kill $PPID_ $DPID 2>/dev/null; wait 2>/dev/null
 echo "== $SC ($(basename "${D##* }")/$(basename "${C##* }")) workdir=$W exit=$rc"
 for f in "$W"/client*.log; do
   grep -E 'ERR|MISMATCH|create|attach|open' "$f" | sed 's/^iter [0-9]* //' | sort | uniq -c | sort -rn | head -3
   grep SUMMARY "$f"
 done
+[ -f "$W/churn.log" ] && grep SUMMARY "$W/churn.log"
+[ "$SC" = stale ] && echo "post_cut_writes=${pcw:-0}"
 grep -h 'slow read' "$W"/client*.log | head -2
 grep -hoE 'parked session|resumed session|failed to resume|discarded parked|expired parked|supersedes|\(http=403\)' "$W/daemon.log" | sort | uniq -c
 if grep -qE 'AddressSanitizer|runtime error|daemon leaked' "$W"/*.log; then echo "SANITIZER: report in $W"; fi

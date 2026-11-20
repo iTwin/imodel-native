@@ -5,11 +5,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 #include <unistd.h>
 #include <time.h>
 #include <openssl/sha.h>
 #include "sqlite3.h"
 #include "blockcachevfs.h"
+
+static volatile sig_atomic_t gStop = 0;
+static void onTerm(int sig){ (void)sig; gStop = 1; }
 
 static const char *KEY = "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
 static int xAuth(void *p, const char *a, const char *b, const char *c, char **pz){
@@ -67,6 +71,7 @@ int main(int argc, char **argv){
   int bChurn = getenv("CHURN")!=0;
   int bSecure = getenv("SECURE")!=0;
   int bAttachOnly = getenv("ATTACH_ONLY")!=0;
+  int bRootOnly = getenv("ROOT_ONLY")!=0;
   int idleMs = getenv("IDLE_SLEEP") ? atoi(getenv("IDLE_SLEEP")) : 0;
   const char *zMod = getenv("MODULE") ? getenv("MODULE") : "azure?emulator=127.0.0.1:10000";
   int attachFlags = SQLITE_BCV_ATTACH_IFNOT | (bSecure ? SQLITE_BCV_ATTACH_SECURE : 0);
@@ -89,12 +94,15 @@ int main(int argc, char **argv){
   sqlite3_bcvfs_register_vtab(db);
   sqlite3_exec(db, "PRAGMA bcv_client = 'test-client'", 0, 0, 0);
   if( bStat ){
-    /* Also hold open "/" and "/cont1" metadata handles (like CloudCache::m_cloudDb)
-    ** to exercise virtual-table queries across proxy disconnects. */
+    /* Exercise PRAGMA bcv_client on a disk-backed temp passthrough file
+    ** (pPath==NULL, no proxy socket). */
+    sqlite3_exec(db, "PRAGMA temp_store=FILE; CREATE TEMP TABLE _t(x); PRAGMA temp.bcv_client='ignored';", 0, 0, 0);
+
+    /* Also hold open "/" (without PRAGMA bcv_client, matching CloudCache::m_cloudDb)
+    ** and "/cont1" metadata handles across proxy disconnects. */
     rc = sqlite3_open_v2("file:/", &dbRoot, SQLITE_OPEN_READONLY|SQLITE_OPEN_URI, "bcv");
     if( rc ){ printf("open root: %d %s\n", rc, sqlite3_errmsg(dbRoot)); return 1; }
     sqlite3_bcvfs_register_vtab(dbRoot);
-    sqlite3_exec(dbRoot, "PRAGMA bcv_client = 'root-client'", 0, 0, 0);
     sqlite3_prepare_v2(dbRoot, "SELECT count(*) FROM bcv_container WHERE container='cont1'", -1, &pRootStat, 0);
 
     rc = sqlite3_open_v2("file:/cont1", &dbCont, SQLITE_OPEN_READONLY|SQLITE_OPEN_URI, "bcv");
@@ -103,23 +111,51 @@ int main(int argc, char **argv){
     sqlite3_exec(dbCont, "PRAGMA bcv_client = 'cont-client'", 0, 0, 0);
     sqlite3_prepare_v2(dbCont, "SELECT count(*) FROM bcv_database WHERE database='test.db'", -1, &pContStat, 0);
   }
+  if( bRootOnly ){
+    for(it=0; it<nIter; it++){
+      double t0 = now(), ms;
+      int r2 = sqlite3_step(pRootStat);
+      if( r2!=SQLITE_ROW ){
+        printf("iter %d ERR rc=%d (%s)\n", it, r2, sqlite3_errmsg(dbRoot));
+        nErr++;
+      }else{
+        if( sqlite3_column_int(pRootStat, 0)!=1 ) nBadTotal++;
+        nOk++;
+      }
+      sqlite3_reset(pRootStat);
+      ms = (now()-t0)*1000;
+      if( ms>500 ) printf("iter %d slow read %.0f ms\n", it, ms);
+      if( sleepMs ) usleep(sleepMs*1000);
+    }
+    printf("SUMMARY ok=%d err=%d bad_rows=%d\n", nOk, nErr, nBadTotal);
+    free(aId);
+    sqlite3_finalize(pRootStat); sqlite3_finalize(pContStat);
+    sqlite3_close(db); sqlite3_close(dbRoot); sqlite3_close(dbCont);
+    sqlite3_bcvfs_destroy(pFs);
+    return (nBadTotal ? 3 : 0);
+  }
   if( getenv("PCACHE") ){
     char *z = sqlite3_mprintf("PRAGMA cache_size=%s", getenv("PCACHE"));
     sqlite3_exec(db, z, 0, 0, 0); sqlite3_free(z);
   }
   if( bChurn ){
-    /* Evict as much of the daemon cache as possible, forever (until killed
-    ** or nIter scans). Errors are counted but not fatal. */
+    /* Evict as much of the daemon cache as possible, until SIGTERM or
+    ** nIter scans. Errors are counted, but at least one scan must succeed. */
     sqlite3_stmt *pScan = 0;
+    signal(SIGTERM, onTerm);
     sqlite3_prepare_v2(db, "SELECT count(*), sum(length(v)) FROM t", -1, &pScan, 0);
-    for(it=0; it<nIter; it++){
+    for(it=0; it<nIter && !gStop; it++){
       rc = sqlite3_step(pScan);
       if( rc!=SQLITE_ROW ){ nErr++; printf("churn %d ERR rc=%d (%s)\n", it, rc, sqlite3_errmsg(db)); }
       else nOk++;
       sqlite3_reset(pScan);
     }
     printf("SUMMARY churn ok=%d err=%d\n", nOk, nErr);
-    return 0;
+    sqlite3_finalize(pScan);
+    free(aId);
+    sqlite3_close(db);
+    sqlite3_bcvfs_destroy(pFs);
+    return (nOk>0 ? 0 : 2);
   }
   sqlite3_prepare_v2(db, "SELECT v FROM t WHERE id=?", -1, &pStmt, 0);
   if( bStat ) sqlite3_prepare_v2(db, "SELECT value FROM bcv_stat WHERE name='nclient'", -1, &pStat, 0);

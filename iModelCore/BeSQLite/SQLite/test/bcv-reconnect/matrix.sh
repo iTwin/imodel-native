@@ -49,14 +49,17 @@ check cut           0 40 1 "resumed session"   -- "$D" "$C" cut
 check halfcut       0 40 1 "resumed session"   -- "$D" "$C" halfcut
 check clientcut     0 40 1 "supersedes"        -- "$D" "$C" clientcut
 check blackhole     0 40 1 "slow read"         -- "$D" "$C" blackhole
+ROOT_ONLY=1 check rootblackhole 0 40 1 "slow read" -- "$D" "$C" blackhole
 check securecut     0 40 1 "resumed session"   -- "$D" "$C" securecut
 check secureauth    0  4 1 "\(http=403\)"      -- "$D" "$C" secureauth
 check cutmany       0 40 8 "8 resumed session" -- "$D" "$C" cutmany
 check restart       1 40 1 "ERR rc="           -- "$D" "$C" restart
+check wiperestart   1 40 1 "ERR rc="           -- "$D" "$C" wiperestart
 check securerestart 1 40 1 "failed to resume"  -- "$D" "$C" securerestart
 T=1 check autoexit  0  1 1 "expired parked"    -- "$D" "$C" autoexit
 HALF_OPEN_SECS=4 DARGS="-resumetimeout 1" check expiry 1 40 1 "expired parked" -- "$D" "$C" halfcut
 DARGS="-resumetimeout 0" check noresume 1 40 1 "ERR rc=" -- "$D" "$C" cut
+ROWS=8 T=3 DARGS="-resumetimeout 0" CHURN_CLIENT=${CHURN_CLIENT:-$C} check stalenoresume 2 3 1 "ERR rc=" -- "$D" "$C" stale 2M
 for i in $(seq "${STALE_RUNS:-4}"); do
   ROWS=8 T=3 CHURN_CLIENT=${CHURN_CLIENT:-$C} check "stale#$i" 3 3 1 "parked session" -- "$D" "$C" stale 2M
 done
