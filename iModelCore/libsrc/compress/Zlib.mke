@@ -73,19 +73,20 @@ always:
 #   Merge both vcpkg-built static libs into a single BeZlib archive.
 #--------------------------------------------------------------------------------------
 BeZlibOut = $(o)$(stlibprefix)$(appName)$(stlibext)
-# On Windows both libraries get an "s" static suffix and a "d" debug postfix.
+# On Windows (MSVC) both libraries get a "lib" name prefix (since zlib 1.4), an "s" static
+# suffix and a "d" debug postfix, e.g. libzsd.lib.
 %if defined (DEBUG)
     %if $(TARGET_PLATFORM) == "Windows"
-        vcpkgZlib = $(vcpkgDbgLibDir)$(stlibprefix)zsd$(stlibext)
-        vcpkgMinizip = $(vcpkgDbgLibDir)$(stlibprefix)minizipsd$(stlibext)
+        vcpkgZlib = $(vcpkgDbgLibDir)$(stlibprefix)libzsd$(stlibext)
+        vcpkgMinizip = $(vcpkgDbgLibDir)$(stlibprefix)libminizipsd$(stlibext)
     %else
         vcpkgZlib = $(vcpkgDbgLibDir)$(stlibprefix)z$(stlibext)
         vcpkgMinizip = $(vcpkgDbgLibDir)$(stlibprefix)minizip$(stlibext)
     %endif
 %else
     %if $(TARGET_PLATFORM) == "Windows"
-        vcpkgZlib = $(vcpkgLibDir)$(stlibprefix)zs$(stlibext)
-        vcpkgMinizip = $(vcpkgLibDir)$(stlibprefix)minizips$(stlibext)
+        vcpkgZlib = $(vcpkgLibDir)$(stlibprefix)libzs$(stlibext)
+        vcpkgMinizip = $(vcpkgLibDir)$(stlibprefix)libminizips$(stlibext)
     %else
         vcpkgZlib = $(vcpkgLibDir)$(stlibprefix)z$(stlibext)
         vcpkgMinizip = $(vcpkgLibDir)$(stlibprefix)minizip$(stlibext)

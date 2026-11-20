@@ -4,15 +4,15 @@
   "dependencies": [
     {
       "name": "zlib",
-      "version>=": "1.3.2"
+      "version>=": "1.4"
     },
     {
       "name": "minizip",
-      "version>=": "1.3.2"
+      "version>=": "1.4"
     }
   ],
   "overrides": [
-    { "name": "zlib", "version": "1.3.2#3" },
-    { "name": "minizip", "version": "1.3.2" }
+    { "name": "zlib", "version": "1.4" },
+    { "name": "minizip", "version": "1.4" }
   ]
 }

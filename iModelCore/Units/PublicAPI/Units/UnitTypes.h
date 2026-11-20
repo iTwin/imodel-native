@@ -7,6 +7,7 @@
 
 #include <Units/Units.h>
 #include <BeRapidJson/BeJsValue.h>
+#include <atomic>
 #include <type_traits>
 
 BEGIN_BENTLEY_UNITS_NAMESPACE
@@ -120,7 +121,7 @@ private:
     double      m_offset = 0.0;
 
 
-    mutable bool m_evaluated = false;
+    mutable std::atomic<bool> m_evaluated {false};
     Expression* m_symbolExpression;
 
     BeMutex& GetMutex() const { return m_mutex; }
