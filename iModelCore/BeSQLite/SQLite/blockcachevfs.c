@@ -1830,43 +1830,49 @@ static int bcvfsProxyReconnect(BcvfsFile *pFile){
         BCV_RECONNECT_TIMEOUT_MS
     );
     if( rc==SQLITE_OK ){
-      BcvHelloReply *pHello = &pReply->u.hello_r;
-      rc = pHello->errCode;
-      if( rc==SQLITE_OK 
-       && (pHello->iDbId!=pFile->iFileDbId
-        || (int)pHello->szBlk!=pFile->p.szBlk
-        || bcvStrcmp(pHello->zStorage, pFile->p.zStorage)
-        || bcvStrcmp(pHello->zAccount, pFile->p.zAccount)
-        || bcvStrcmp(pHello->zContainer, pFile->p.zContainer)
-        || (pHello->bEncrypted!=0)!=(pFile->p.pKey!=0))
-      ){
-        /* The container or database has been replaced since it was opened. */
-        rc = SQLITE_IOERR;
-      }
-      if( rc!=SQLITE_OK ){
-        bRefused = 1;
+      if( pReply ){
+        BcvHelloReply *pHello = &pReply->u.hello_r;
+        rc = pHello->errCode;
+        if( rc==SQLITE_OK 
+         && (pHello->iDbId!=pFile->iFileDbId
+          || (int)pHello->szBlk!=pFile->p.szBlk
+          || bcvStrcmp(pHello->zStorage, pFile->p.zStorage)
+          || bcvStrcmp(pHello->zAccount, pFile->p.zAccount)
+          || bcvStrcmp(pHello->zContainer, pFile->p.zContainer)
+          || (pHello->bEncrypted!=0)!=(pFile->p.pKey!=0))
+        ){
+          /* The container or database has been replaced since it was opened. */
+          rc = SQLITE_IOERR;
+        }
+        if( rc!=SQLITE_OK ){
+          bRefused = 1;
+        }else{
+          pFile->p.iSession = iResume = pHello->iSession;
+          bResumed = (bWantResume && pHello->bResumed!=0);
+          if( pFile->p.pMap && !bResumed ){
+            bcvfsProxyPoison(pFile);
+            bWantResume = 0;
+          }
+        }
       }else{
-        pFile->p.iSession = iResume = pHello->iSession;
-        bResumed = (bWantResume && pHello->bResumed!=0);
-        if( pFile->p.pMap && !bResumed ){
-          bcvfsProxyPoison(pFile);
-          bWantResume = 0;
-        }
-        if( pFile->zClientId ){
-          BcvMessage msg;
-          BcvMessage *pFinal = 0;
-          memset(&msg, 0, sizeof(msg));
-          msg.eType = BCV_MESSAGE_CMD;
-          msg.u.cmd.zAuth = pFile->zClientId;
-          msg.u.cmd.eCmd = BCV_CMD_CLIENT;
-          pFinal = bcvExchangeMessage(&rc, s, &msg);
-          sqlite3_free(pFinal);
-        }
-        if( rc==SQLITE_OK ){
-          bcv_socket_timeout(s, 0);
-          pFile->p.fdProxy = s;
-          s = INVALID_SOCKET;
-        }
+        /* Root "/" metadata handle: no container, no HELLO exchange. */
+        assert( pFile->pPath->zContainer==0 );
+        assert( pFile->p.pMap==0 && pFile->p.pKey==0 );
+      }
+      if( rc==SQLITE_OK && pFile->zClientId ){
+        BcvMessage msg;
+        BcvMessage *pFinal = 0;
+        memset(&msg, 0, sizeof(msg));
+        msg.eType = BCV_MESSAGE_CMD;
+        msg.u.cmd.zAuth = pFile->zClientId;
+        msg.u.cmd.eCmd = BCV_CMD_CLIENT;
+        pFinal = bcvExchangeMessage(&rc, s, &msg);
+        sqlite3_free(pFinal);
+      }
+      if( rc==SQLITE_OK ){
+        bcv_socket_timeout(s, 0);
+        pFile->p.fdProxy = s;
+        s = INVALID_SOCKET;
       }
       sqlite3_free(pReply);
       bcv_close_socket(s);
@@ -1919,6 +1925,11 @@ static BcvMessage *bcvfsProxyExchange(
       }
       if( pSend->eType==BCV_MESSAGE_READ ){
         pSend->u.read.nMru = 0;
+        pSend->u.read.zAuth = bcvfsProxyGetAuth(&rc, pFile);
+        if( rc!=SQLITE_OK ){
+          *pRc = rc;
+          return 0;
+        }
       }
     }
     pReply = bcvExchangeMessage(&rc, pFile->p.fdProxy, pSend);
@@ -3174,6 +3185,9 @@ static int bcvfsPoll(BcvfsFile *pFile, char **pzErr){
 
   /* Cannot do a poll if there is an open read or write transaction on 
   ** the file.  Return early if this is the case. */
+  if( pFile->pPath==0 || pFile->pPath->zContainer==0 ){
+    return SQLITE_ERROR;
+  }
   if( pFile->lockMask || 0==sqlite3_get_autocommit(db) ){
     return SQLITE_BUSY;
   }
@@ -3463,6 +3477,7 @@ static BCV_SOCKET_TYPE bcvConnectSocketTimeout(
       ){
         rc = BCVFS_CANTOPEN;
         bcv_close_socket(s);
+        s = INVALID_SOCKET;
       }
     }
     if( pzErr && rc!=SQLITE_OK ){
@@ -3695,6 +3710,8 @@ static int bcvfsOpen(
         }
       }else{
         pRet->pFile = 0;
+        pRet->pPath = pPath;
+        pPath = 0;
       }
     }
     sqlite3_free(pPath);

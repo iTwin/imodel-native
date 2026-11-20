@@ -13,7 +13,16 @@
 
 static const char *KEY = "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
 static int xAuth(void *p, const char *a, const char *b, const char *c, char **pz){
-  *pz = sqlite3_mprintf("%s", KEY); return SQLITE_OK;
+  const char *zShortFile = getenv("USE_SHORT_SAS_FILE");
+  const char *zShort = getenv("SAS_SHORT");
+  const char *zLong = getenv("SAS_LONG");
+  if( zShort && zLong ){
+    int bShort = (zShortFile && access(zShortFile, F_OK)==0);
+    *pz = sqlite3_mprintf("%s", bShort ? zShort : zLong);
+  }else{
+    *pz = sqlite3_mprintf("%s", KEY);
+  }
+  return SQLITE_OK;
 }
 static double now(void){ struct timespec t; clock_gettime(CLOCK_MONOTONIC,&t); return t.tv_sec+t.tv_nsec/1e9; }
 
@@ -47,7 +56,9 @@ static int readRows(sqlite3_stmt *pStmt, int n, int *pnBad, double *pMaxMs, int 
 }
 
 int main(int argc, char **argv){
-  sqlite3_bcvfs *pFs = 0; sqlite3 *db = 0; sqlite3_stmt *pStmt = 0, *pStat = 0;
+  sqlite3_bcvfs *pFs = 0;
+  sqlite3 *db = 0, *dbRoot = 0, *dbCont = 0;
+  sqlite3_stmt *pStmt = 0, *pStat = 0, *pRootStat = 0, *pContStat = 0;
   char *zErr = 0; int rc, it;
   const char *zDir = argv[1];
   int nIter = atoi(argv[2]), nRow = atoi(argv[3]), sleepMs = atoi(argv[4]);
@@ -56,6 +67,8 @@ int main(int argc, char **argv){
   int bChurn = getenv("CHURN")!=0;
   int bSecure = getenv("SECURE")!=0;
   int bAttachOnly = getenv("ATTACH_ONLY")!=0;
+  int idleMs = getenv("IDLE_SLEEP") ? atoi(getenv("IDLE_SLEEP")) : 0;
+  const char *zMod = getenv("MODULE") ? getenv("MODULE") : "azure?emulator=127.0.0.1:10000";
   int attachFlags = SQLITE_BCV_ATTACH_IFNOT | (bSecure ? SQLITE_BCV_ATTACH_SECURE : 0);
   int *aId = calloc(nRow>0?nRow:1, sizeof(int));
   int nOk = 0, nErr = 0, nBadTotal = 0;
@@ -64,7 +77,7 @@ int main(int argc, char **argv){
   rc = sqlite3_bcvfs_create(zDir, "bcv", &pFs, &zErr);
   if( rc ){ printf("create: %d %s\n", rc, zErr); return 1; }
   sqlite3_bcvfs_auth_callback(pFs, 0, xAuth);
-  rc = sqlite3_bcvfs_attach(pFs, "azure?emulator=127.0.0.1:10000", "devstoreaccount1", "cont1", 0, attachFlags, &zErr);
+  rc = sqlite3_bcvfs_attach(pFs, zMod, "devstoreaccount1", "cont1", 0, attachFlags, &zErr);
   if( rc ){ printf("attach: %d %s\n", rc, zErr); return 1; }
   if( bAttachOnly ){
     free(aId);
@@ -75,6 +88,21 @@ int main(int argc, char **argv){
   if( rc ){ printf("open: %d %s\n", rc, sqlite3_errmsg(db)); return 1; }
   sqlite3_bcvfs_register_vtab(db);
   sqlite3_exec(db, "PRAGMA bcv_client = 'test-client'", 0, 0, 0);
+  if( bStat ){
+    /* Also hold open "/" and "/cont1" metadata handles (like CloudCache::m_cloudDb)
+    ** to exercise virtual-table queries across proxy disconnects. */
+    rc = sqlite3_open_v2("file:/", &dbRoot, SQLITE_OPEN_READONLY|SQLITE_OPEN_URI, "bcv");
+    if( rc ){ printf("open root: %d %s\n", rc, sqlite3_errmsg(dbRoot)); return 1; }
+    sqlite3_bcvfs_register_vtab(dbRoot);
+    sqlite3_exec(dbRoot, "PRAGMA bcv_client = 'root-client'", 0, 0, 0);
+    sqlite3_prepare_v2(dbRoot, "SELECT count(*) FROM bcv_container WHERE container='cont1'", -1, &pRootStat, 0);
+
+    rc = sqlite3_open_v2("file:/cont1", &dbCont, SQLITE_OPEN_READONLY|SQLITE_OPEN_URI, "bcv");
+    if( rc ){ printf("open cont: %d %s\n", rc, sqlite3_errmsg(dbCont)); return 1; }
+    sqlite3_bcvfs_register_vtab(dbCont);
+    sqlite3_exec(dbCont, "PRAGMA bcv_client = 'cont-client'", 0, 0, 0);
+    sqlite3_prepare_v2(dbCont, "SELECT count(*) FROM bcv_database WHERE database='test.db'", -1, &pContStat, 0);
+  }
   if( getenv("PCACHE") ){
     char *z = sqlite3_mprintf("PRAGMA cache_size=%s", getenv("PCACHE"));
     sqlite3_exec(db, z, 0, 0, 0); sqlite3_free(z);
@@ -112,12 +140,26 @@ int main(int argc, char **argv){
       nOk++;
     }
     sqlite3_exec(db, "COMMIT", 0, 0, 0);
+    if( rc==SQLITE_OK && pRootStat ){
+      int r2 = sqlite3_step(pRootStat);
+      if( r2!=SQLITE_ROW || sqlite3_column_int(pRootStat, 0)!=1 ) nBad++;
+      sqlite3_reset(pRootStat);
+    }
+    if( rc==SQLITE_OK && pContStat ){
+      int r2 = sqlite3_step(pContStat);
+      if( r2!=SQLITE_ROW || sqlite3_column_int(pContStat, 0)!=1 ) nBad++;
+      sqlite3_reset(pContStat);
+    }
     nBadTotal += nBad;
     if( nBad ) printf("iter %d MISMATCH bad=%d\n", it, nBad);
     if( maxMs>500 ) printf("iter %d slow read %.0f ms (iter %.0f ms)\n", it, maxMs, (now()-t0)*1000);
+    if( idleMs && it+1<nIter ) usleep(idleMs*1000);
   }
   printf("SUMMARY ok=%d err=%d bad_rows=%d\n", nOk, nErr, nBadTotal);
-  sqlite3_finalize(pStmt); sqlite3_finalize(pStat); sqlite3_close(db);
+  free(aId);
+  sqlite3_finalize(pStmt); sqlite3_finalize(pStat);
+  sqlite3_finalize(pRootStat); sqlite3_finalize(pContStat);
+  sqlite3_close(db); sqlite3_close(dbRoot); sqlite3_close(dbCont);
   sqlite3_bcvfs_destroy(pFs);
   return (nBadTotal ? 3 : 0);
 }

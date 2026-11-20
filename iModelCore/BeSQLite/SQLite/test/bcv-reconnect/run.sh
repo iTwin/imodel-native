@@ -13,6 +13,7 @@
 #   blackhole      cut, then new connections accepted but never served for BH s
 #   securecut      cut on a SQLITE_BCV_ATTACH_SECURE (AES-128-CTR) container
 #   securerestart  daemon restart + re-attach on a secure container (new key)
+#   secureauth     daemon restart + expired SAS 403 during PASS key refresh
 #   autoexit       -autoexit daemon with a client killed mid-transaction
 #   stale          client reads ROWS ids, sleeps, re-reads the SAME ids (tiny
 #                  page cache => each page re-read via xRead). Mid-sleep, cut
@@ -44,7 +45,7 @@ start_daemon
 python3 "$HERE/proxy.py" $PP $DP >"$W/proxy.log" 2>&1 & PPID_=$!
 sleep 0.5
 NCLI=1; [ "$SC" = cutmany ] && NCLI=8
-SEC=0; case $SC in securecut|securerestart) SEC=1 ;; esac
+SEC=0; case $SC in securecut|securerestart|secureauth) SEC=1 ;; esac
 CP=(); CHP=
 if [ "$SC" = stale ]; then
   REPEAT=1 PCACHE=${PCACHE:-10} $C "$W/dir" ${ITER:-3} ${ROWS:-200} ${SLEEP:-4000} >"$W/client1.log" 2>&1 & CP+=($!)
@@ -52,6 +53,25 @@ if [ "$SC" = stale ]; then
   CHURN=1 ${CHURN_CLIENT:-$C} "$W/dir" 1000000 0 0 >"$W/churn.log" 2>&1 & CHP=$!
 elif [ "$SC" = autoexit ]; then
   $C "$W/dir" 1 40 10000 >"$W/client1.log" 2>&1 & CP+=($!)
+elif [ "$SC" = secureauth ]; then
+  eval "$(python3 - <<'PY'
+import base64, datetime, hashlib, hmac, urllib.parse
+key = base64.b64decode('Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==')
+now = datetime.datetime.now(datetime.timezone.utc)
+def sas(sec):
+    se = (now + datetime.timedelta(seconds=sec)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    sts = f'rl\n\n{se}\n/blob/devstoreaccount1/cont1\n\n\n\n2020-10-02\nc\n\n\n\n\n\n'
+    sig = urllib.parse.quote(base64.b64encode(hmac.new(key, sts.encode(), hashlib.sha256).digest()).decode(), safe='')
+    return f'sv=2020-10-02&sr=c&sp=rl&se={urllib.parse.quote(se, safe="")}&sig={sig}'
+print(f"SAS_SHORT='{sas(3)}'")
+print(f"SAS_LONG='{sas(3600)}'")
+PY
+)"
+  touch "$W/use_short_sas"
+  T=${T:-1.2}
+  MODULE="azure?emulator=127.0.0.1:10000&sas=1" USE_SHORT_SAS_FILE="$W/use_short_sas" \
+    SAS_SHORT="$SAS_SHORT" SAS_LONG="$SAS_LONG" SECURE=1 IDLE_SLEEP=3200 \
+    $C "$W/dir" ${ITER:-4} ${ROWS:-40} 0 stat >"$W/client1.log" 2>&1 & CP+=($!)
 else
   for i in $(seq $NCLI); do
     if [ "$SEC" = 1 ]; then
@@ -72,6 +92,16 @@ case $SC in
     touch "$BLACKHOLE"; kill -9 $DPID; wait $DPID 2>/dev/null
     start_daemon direct
     SECURE=1 ATTACH_ONLY=1 $C "$W/dir" 0 0 0 >>"$W/attach.log" 2>&1 || rc=$?
+    echo -n "127.0.0.1:$PP" > "$W/dir/portnumber.bcv"
+    rm -f "$BLACKHOLE"
+    ;;
+  secureauth)
+    touch "$BLACKHOLE"; kill -9 $DPID; wait $DPID 2>/dev/null
+    rm -f "$W/use_short_sas"
+    sleep 2.2
+    start_daemon direct
+    MODULE="azure?emulator=127.0.0.1:10000&sas=1" SAS_SHORT="$SAS_LONG" SAS_LONG="$SAS_LONG" \
+      SECURE=1 ATTACH_ONLY=1 $C "$W/dir" 0 0 0 >>"$W/attach.log" 2>&1 || rc=$?
     echo -n "127.0.0.1:$PP" > "$W/dir/portnumber.bcv"
     rm -f "$BLACKHOLE"
     ;;
@@ -101,6 +131,6 @@ for f in "$W"/client*.log; do
   grep SUMMARY "$f"
 done
 grep -h 'slow read' "$W"/client*.log | head -2
-grep -hoE 'parked session|resumed session|failed to resume|discarded parked|expired parked|supersedes' "$W/daemon.log" | sort | uniq -c
+grep -hoE 'parked session|resumed session|failed to resume|discarded parked|expired parked|supersedes|\(http=403\)' "$W/daemon.log" | sort | uniq -c
 if grep -qE 'AddressSanitizer|runtime error|daemon leaked' "$W"/*.log; then echo "SANITIZER: report in $W"; fi
 exit $rc

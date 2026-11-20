@@ -1607,9 +1607,8 @@ static int bdParkClient(DaemonCtx *p, DClient *pClient){
   pClient->pManDb = 0;
   pClient->apRef = 0;
 
-  daemon_event_log(p, "parked session %llx of client %d (timeout %ds)",
-      (unsigned long long)pPark->iSession, pClient->iClientId,
-      p->cmd.nResumeTimeout
+  daemon_event_log(p, "parked session of client %d (timeout %ds)",
+      pClient->iClientId, p->cmd.nResumeTimeout
   );
   return 1;
 }
@@ -1624,9 +1623,7 @@ static void bdExpireParked(DaemonCtx *p, int bAll){
     DParked *pPark = *pp;
     if( bAll || pPark->iExpire<=iNow ){
       *pp = pPark->pNext;
-      daemon_event_log(p, "expired parked session %llx",
-          (unsigned long long)pPark->iSession
-      );
+      daemon_event_log(p, "expired parked session");
       bdFreeParked(pPark);
     }else{
       pp = &pPark->pNext;
@@ -1635,13 +1632,13 @@ static void bdExpireParked(DaemonCtx *p, int bAll){
 }
 
 /*
-** Remove the parked session with id iSession from the parked list and
-** return it. Or return NULL if there is no such session.
+** Remove the parked session with id iSession on container pCont from the
+** parked list and return it. Or return NULL if there is no such session.
 */
-static DParked *bdUnparkSession(DaemonCtx *p, u64 iSession){
+static DParked *bdUnparkSession(DaemonCtx *p, u64 iSession, Container *pCont){
   DParked **pp;
   for(pp=&p->pParkedList; *pp; pp=&(*pp)->pNext){
-    if( (*pp)->iSession==iSession ){
+    if( (*pp)->iSession==iSession && (*pp)->pCont==pCont ){
       DParked *pRet = *pp;
       *pp = pRet->pNext;
       return pRet;
@@ -2144,7 +2141,7 @@ static void bdSupersedeClient(
 ){
   DClient *pOld;
   for(pOld=p->pClientList; pOld; pOld=pOld->pNext){
-    if( pOld!=pNew && pOld->iSession==iSession ){
+    if( pOld!=pNew && pOld->iSession==iSession && pOld->pCont==pNew->pCont ){
       daemon_event_log(p, "client %d supersedes client %d",
           pNew->iClientId, pOld->iClientId
       );
@@ -2214,8 +2211,8 @@ static void bdHandleHello(
       if( pMsg->u.hello.iResume ){
         DParked *pPark;
         bdSupersedeClient(p, pClient, pMsg->u.hello.iResume, bWant);
-        pPark = bdUnparkSession(p, pMsg->u.hello.iResume);
-        if( bWant && pPark && pPark->pCont==pCont
+        pPark = bdUnparkSession(p, pMsg->u.hello.iResume, pCont);
+        if( bWant && pPark
          && pPark->iDbId==pClient->iDbId
          && pClient->prefetch.bPrefetch==0
         ){
@@ -2227,18 +2224,16 @@ static void bdHandleHello(
           pCont->nClient--;
           sqlite3_free(pPark);
           reply.u.hello_r.bResumed = 1;
-          daemon_event_log(p, "client %d resumed session %llx",
-              pClient->iClientId, (unsigned long long)pMsg->u.hello.iResume
-          );
+          daemon_event_log(p, "client %d resumed session", pClient->iClientId);
         }else{
           if( pPark ) bdFreeParked(pPark);
           if( bWant ){
-            daemon_event_log(p, "client %d failed to resume session %llx",
-                pClient->iClientId, (unsigned long long)pMsg->u.hello.iResume
+            daemon_event_log(p, "client %d failed to resume session",
+                pClient->iClientId
             );
           }else if( pPark ){
-            daemon_event_log(p, "client %d discarded parked session %llx",
-                pClient->iClientId, (unsigned long long)pMsg->u.hello.iResume
+            daemon_event_log(p, "client %d discarded parked session",
+                pClient->iClientId
             );
           }
         }

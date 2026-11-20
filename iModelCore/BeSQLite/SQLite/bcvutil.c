@@ -4018,11 +4018,14 @@ int bcvSendMsg(BCV_SOCKET_TYPE fd, BcvMessage *pMsg){
     case BCV_MESSAGE_PASS: 
       bcvBufferMsgString(&rc, &buf, pMsg->u.cmd.zAuth);
       break;
-    case BCV_MESSAGE_PASS_REPLY: 
+    case BCV_MESSAGE_PASS_REPLY: {
+      static const u8 aZero[BCV_LOCAL_KEYSIZE] = {0};
+      const u8 *aKey = pMsg->u.pass_r.aKey ? pMsg->u.pass_r.aKey : aZero;
       bcvBufferAppendU32(&rc, &buf, pMsg->u.pass_r.errCode);
       bcvBufferMsgString(&rc, &buf, pMsg->u.pass_r.zErrMsg);
-      bcvBufferAppendRc(&rc, &buf, pMsg->u.pass_r.aKey, BCV_LOCAL_KEYSIZE);
+      bcvBufferAppendRc(&rc, &buf, aKey, BCV_LOCAL_KEYSIZE);
       break;
+    }
     case BCV_MESSAGE_PREFETCH: 
       bcvBufferMsgString(&rc, &buf, pMsg->u.prefetch.zAuth);
       bcvBufferAppendU32(&rc, &buf, pMsg->u.prefetch.nRequest);
