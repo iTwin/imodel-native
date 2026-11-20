@@ -23,6 +23,7 @@ const testSchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
   </ECEntityClass>
   <ECStructClass typeName="TestStruct">
     <ECProperty propertyName="Label" typeName="string"/>
+    <ECProperty propertyName="Num" typeName="long"/>
   </ECStructClass>
   <ECEntityClass typeName="TestMultiAspect">
     <BaseClass>bis:ElementMultiAspect</BaseClass>
@@ -32,6 +33,8 @@ const testSchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
     <ECProperty propertyName="BinProp" typeName="binary"/>
     <ECProperty propertyName="GuidProp" typeName="binary" extendedTypeName="BeGuid"/>
     <ECStructArrayProperty propertyName="StructArr" typeName="TestStruct"/>
+    <ECStructProperty propertyName="StructProp" typeName="TestStruct"/>
+    <ECArrayProperty propertyName="LongArr" typeName="long"/>
   </ECEntityClass>
   <ECEntityClass typeName="DerivedMultiAspect">
     <BaseClass>TestMultiAspect</BaseClass>
@@ -50,6 +53,8 @@ interface TestAspectProps extends ElementAspectProps {
   derivedProp?: string;
   longProp?: number | string;
   structArr?: Array<{ label: string } | null>;
+  structProp?: { label?: string, num?: number | string };
+  longArr?: Array<number | string>;
 }
 
 interface HookCall {
@@ -280,6 +285,38 @@ describe("bulk element aspects", () => {
       stmt.dispose();
       expect(labels).to.deep.equal(["a", null, "c"]);
     });
+
+    it("accepts strings for longs in structs and arrays, and with incremental keeps the struct members that are not in the props", () => {
+      const e1 = insertOwner();
+      const read = (aspectId: Id64String) => {
+        const stmt = new iModelJsNative.ECSqlStatement();
+        expect(stmt.prepare(db, "SELECT StructProp.Label, StructProp.Num, LongArr FROM bat.TestMultiAspect WHERE ECInstanceId=?").status).to.equal(DbResult.BE_SQLITE_OK);
+        stmt.getBinder(1).bindId(aspectId);
+        expect(stmt.step()).to.equal(DbResult.BE_SQLITE_ROW);
+        const longArr: number[] = [];
+        const elements = stmt.getValue(2).getArrayIterator();
+        while (elements.moveNext())
+          longArr.push(elements.getCurrent().getInt64());
+        const value = { label: stmt.getValue(0).getString(), num: stmt.getValue(1).getInt64(), longArr };
+        stmt.dispose();
+        return value;
+      };
+      const [id] = db.insertElementAspects([{ ...multiProps(e1, "m"), structProp: { label: "a", num: "0x2d" }, longArr: ["0x1", "-5", 7] } as TestAspectProps]);
+      expect(read(id)).to.deep.equal({ label: "a", num: 45, longArr: [1, -5, 7] });
+      db.updateElementAspects([{ ...multiProps(e1, "m"), id, structProp: { label: "b" } } as TestAspectProps], true);
+      expect(read(id)).to.deep.equal({ label: "b", num: 45, longArr: [1, -5, 7] });
+    });
+
+    it("ignores the EC name Element for the owner, like the single-aspect functions", () => {
+      const e1 = insertOwner();
+      const e2 = insertOwner();
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      const [id] = db.insertElementAspects([{ ...multiProps(e1, "m"), element: { id: e1, relClassName: "BisCore:ElementOwnsMultiAspects" }, Element: { id: e2 } } as TestAspectProps]);
+      expect(readAspect(id)).to.deep.include({ element: e1, relClassName: "BisCore:ElementOwnsMultiAspects" });
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      db.updateElementAspects([{ ...multiProps(e1, "m-new"), id, Element: { id: e2 } } as TestAspectProps]);
+      expect(readAspect(id)).to.deep.include({ element: e1, strProp: "m-new" });
+    });
   });
 
   describe("updateElementAspects", () => {
@@ -328,10 +365,31 @@ describe("bulk element aspects", () => {
       expect(readAspect(multiId)).to.deep.include({ strProp: "m1" }); // nothing is written, but the pre-handlers ran, so the caller must abandon the txn
       db.abandonChanges();
 
-      expect(() => db.updateElementAspects([{ ...multiProps(e2, "x"), id: multiId }])).to.throw(/the aspect of props\[0\] does not exist/);
+      expect(() => db.updateElementAspects([{ ...multiProps(e1, "x"), id: e2 }])).to.throw(/the aspect of props\[0\] does not exist/);
       expect(() => db.updateElementAspects([multiProps(e1, "x")])).to.throw(/props\[0\]\.id is not a valid aspect id/);
       expect(() => db.updateElementAspects([{ ...multiProps(e1, "x"), id: `${multiId}garbage` }])).to.throw(/props\[0\]\.id is not a valid aspect id/);
       expect(readAspect(multiId)).to.deep.include({ strProp: "m1" });
+    });
+
+    it("keeps a multi aspect on its owner and updates the element in the props when they differ, like the single-aspect update", () => {
+      const e1 = insertOwner();
+      const e2 = insertOwner();
+      const [multiId] = db.insertElementAspects([multiProps(e1, "m1", 1)]);
+      db.saveChanges();
+      const before = lastMod(e2);
+      for (const start = Date.now(); Date.now() - start < 5;) {
+        // wait, so that LastMod can change
+      }
+      db.updateElementAspects([{ ...multiProps(e2, "m1-new"), id: multiId }], true);
+      expect(readAspect(multiId)).to.deep.include({ element: e1, strProp: "m1-new", intProp: 1 });
+      expect(lastMod(e2)).to.not.equal(before);
+    });
+
+    it("throws for an aspect with a native handler, like the single-aspect update", () => {
+      const e1 = insertOwner();
+      const props = { classFullName: "BisCore:TextAnnotationData", element: { id: e1 } };
+      db.insertElementAspects([props]);
+      expect(() => db.updateElementAspects([props])).to.throw(/updateElementAspects: the aspect of props\[0\] has a native handler/);
     });
   });
 
@@ -414,6 +472,25 @@ describe("bulk element aspects", () => {
       db.setIModelDb(makeMockJsDb("onDelete").mockJsDb);
       expect(() => db.deleteElementAspects([id])).to.throw("onDelete rejected");
       expect(readAspect(id)).to.deep.include({ strProp: "m1" });
+    });
+
+    it("throws if a pre-handler deletes an aspect to be updated or deleted", () => {
+      const e1 = insertOwner();
+      const ids = db.insertElementAspects([multiProps(e1, "m1"), multiProps(e1, "m2")]);
+      db.saveChanges();
+      // The handler of the second aspect deletes the first one, which has already been found.
+      const deleteFirstFrom = (method: string) => makeMockJsDb(undefined, (c) => {
+        if (c.method === method && (c.arg.aspectId ?? c.arg.props?.id) === ids[1])
+          db.deleteElementAspects([ids[0]]);
+      }).mockJsDb;
+
+      db.setIModelDb(deleteFirstFrom("onUpdate"));
+      expect(() => db.updateElementAspects([{ ...multiProps(e1, "x"), id: ids[0] }, { ...multiProps(e1, "y"), id: ids[1] }]))
+        .to.throw(new RegExp(`updateElementAspects: aspect ${ids[0]} of props\\[0\\] no longer exists`));
+      db.abandonChanges();
+
+      db.setIModelDb(deleteFirstFrom("onDelete"));
+      expect(() => db.deleteElementAspects([ids[0], ids[1]])).to.throw(new RegExp(`deleteElementAspects: aspect ${ids[0]} of ids\\[0\\] no longer exists`));
     });
   });
 
