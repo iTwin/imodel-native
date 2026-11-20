@@ -5,6 +5,7 @@
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnRscFontStructures.h>
 #include <DgnPlatform/DgnFont.fb.h>
+#include <GeomSerialization/GeomLibsFlatBufferApi.h>
 
 using namespace flatbuffers;
 
@@ -166,13 +167,16 @@ CurveVectorPtr RscGlyph::GetCurveVector() const {
     if (0 == m_glyphDataOffset.size)
         return currentPath; // EDL -- really?  How is this going to flow through?
 
+    if (m_glyphDataOffset.size < 0 || m_glyphDataOffset.offset < 0)
+        return nullptr;
+
     bvector<Byte> glyphDataBuffer;
     glyphDataBuffer.reserve(m_glyphDataOffset.size);
     if (SUCCESS != m_font.ReadGlyphData(glyphDataBuffer, (size_t)m_glyphDataOffset.offset, (size_t)m_glyphDataOffset.size))
         return nullptr;
 
-    RscGlyphData const* glyphData = (RscGlyphData const*)&glyphDataBuffer[0];
-    if (0 == glyphData->numElems)
+    RscGlyphData const* glyphData = (RscGlyphData const*)glyphDataBuffer.data();
+    if (glyphData->numElems <= 0)
         return nullptr;
 
     bool hasPolys = false;
@@ -187,7 +191,7 @@ CurveVectorPtr RscGlyph::GetCurveVector() const {
         for (; glyphPoint < glyphEnd; ++glyphPoint)
             tPts.push_back(DPoint2d::From(glyphPoint->x * m_ascenderScaleFactor, glyphPoint->y * m_ascenderScaleFactor));
 
-        if (fixDirection(&tPts[0], nPts, (RscGlyphElementType)curr->type))
+        if (fixDirection(tPts.data(), nPts, (RscGlyphElementType)curr->type))
             continue;
         currentPath->Add(ICurvePrimitive::CreateLineString(tPts, 0.0));
 
@@ -248,9 +252,9 @@ void RscFont::LoadGlyphs() {
     if (SUCCESS != ReadGlyphDataOffsets(glyphOffsetsBuffer))
         return;
 
-    RscFontHeader const& fontHeader = *(RscFontHeader const*)&fontHeaderBuffer[0];
-    RscGlyphHeader const* glyphHeaders = (RscGlyphHeader const*)&glyphHeadersBuffer[0];
-    RscGlyphDataOffset const* glyphOffsets = (RscGlyphDataOffset const*)&glyphOffsetsBuffer[0];
+    RscFontHeader const& fontHeader = *(RscFontHeader const*)fontHeaderBuffer.data();
+    RscGlyphHeader const* glyphHeaders = (RscGlyphHeader const*)glyphHeadersBuffer.data();
+    RscGlyphDataOffset const* glyphOffsets = (RscGlyphDataOffset const*)glyphOffsetsBuffer.data();
 
     RscFontVec ascender = fontHeader.ascender;
     RscFontVec descender = fontHeader.descender;
@@ -294,7 +298,7 @@ RscFont::T_Id RscFont::FindFractionGlyphCode(uint8_t numerator, uint8_t denomina
         if (SUCCESS != ReadFontHeader(fontHeaderBuffer))
             return 0;
 
-        RscFontHeader& fontHeader = *reinterpret_cast<RscFontHeader*>(&fontHeaderBuffer[0]);
+        RscFontHeader& fontHeader = *reinterpret_cast<RscFontHeader*>(fontHeaderBuffer.data());
         if (0 == fontHeader.fractMap)
             return 0;
 
@@ -302,7 +306,7 @@ RscFont::T_Id RscFont::FindFractionGlyphCode(uint8_t numerator, uint8_t denomina
         if (SUCCESS != ReadFractionMap(fractionsBuffer))
             return 0;
 
-        RscFontFraction const* fractions = (RscFontFraction const*)&fractionsBuffer[0];
+        RscFontFraction const* fractions = (RscFontFraction const*)fractionsBuffer.data();
         for (size_t iFract = 0; iFract < MAX_FRACTION_MAP_COUNT; ++iFract) {
             if (0 == fractions[iFract].denominator)
                 break;
@@ -443,7 +447,7 @@ RscFont::T_Id RscFont::Ucs4CharToFontChar(uint32_t ucs4Char, CharCP codePageStri
     if (1 == localeBuffer.size())
         return (0x00ff & (T_Id)localeBuffer[0]);
 
-    return *(T_Id const*)&localeBuffer[0];
+    return *(T_Id const*)localeBuffer.data();
 }
 
 //---------------------------------------------------------------------------------------
@@ -578,33 +582,48 @@ BentleyStatus RscFont::LayoutGlyphs(GlyphLayoutResultR result, GlyphLayoutContex
 // @bsimethod
 //---------------------------------------------------------------------------------------
 BentleyStatus RscFont::ReadFontHeader(bvector<Byte>& buffer) {
-    auto const* rscFontData = GetRoot<FB::DgnRscFont>(GetReader().m_reader->FillAndGetDataP());
+    auto rscFontData = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::DgnRscFont>(GetReader().m_reader->FillAndGetDataP(), GetReader().m_reader->GetNumBytes());
     if (nullptr == rscFontData)
         return ERROR;
 
-    buffer.clear();
-    ByteCP start = rscFontData->header()->Data();
-    ByteCP end = start + rscFontData->header()->size();
-    std::copy(start, end, std::back_inserter(buffer));
+    auto rscFontHeader = rscFontData->header();
+    if (nullptr == rscFontHeader || rscFontHeader->size() < sizeof(RscFontHeader))
+        return ERROR;
+
+    buffer.assign(rscFontHeader->begin(), rscFontHeader->end());
     return SUCCESS;
 }
 
-bool RscFont::IsRscFontData(uint8_t const* data) {
-    return nullptr != data && nullptr != GetRoot<FB::DgnRscFont>(data);
+bool RscFont::IsRscFontData(uint8_t const* data, size_t dataSize) {
+    auto rscFontData = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::DgnRscFont>(data, dataSize);
+    if (nullptr == rscFontData)
+        return false;
+
+    // Verify also necessary font data
+    auto rscFontHeader = rscFontData->header();
+    auto rscFontGlyphData = rscFontData->glyphData();
+    auto rscFontGlyphHeaders = rscFontData->glyphHeaders();
+    auto rscFontGlyphDataOffsets = rscFontData->glyphDataOffsets();
+
+    return (nullptr != rscFontHeader && rscFontHeader->size() >= sizeof(RscFontHeader) &&
+            nullptr != rscFontGlyphData && rscFontGlyphData->size() >= sizeof(RscGlyphData) &&
+            nullptr != rscFontGlyphHeaders && rscFontGlyphHeaders->size() >= sizeof(RscGlyphHeader) &&
+            nullptr != rscFontGlyphDataOffsets && rscFontGlyphDataOffsets->size() >=sizeof(RscGlyphDataOffset));
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 BentleyStatus RscFont::ReadFractionMap(bvector<Byte>& buffer) {
-    auto const* rscFontData = GetRoot<FB::DgnRscFont>(GetReader().m_reader->FillAndGetDataP());
+    auto rscFontData = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::DgnRscFont>(GetReader().m_reader->FillAndGetDataP(), GetReader().m_reader->GetNumBytes());
     if (nullptr == rscFontData)
         return ERROR;
 
-    buffer.clear();
-    ByteCP start = rscFontData->fractionMap()->Data();
-    ByteCP end = start + rscFontData->fractionMap()->size();
-    std::copy(start, end, std::back_inserter(buffer));
+    auto rscFontFractionMap = rscFontData->fractionMap();
+    if (nullptr == rscFontFractionMap || rscFontFractionMap->size() < sizeof(RscFontFraction))
+        return ERROR;
+
+    buffer.assign(rscFontFractionMap->begin(), rscFontFractionMap->end());
     return SUCCESS;
 }
 
@@ -612,14 +631,18 @@ BentleyStatus RscFont::ReadFractionMap(bvector<Byte>& buffer) {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 BentleyStatus RscFont::ReadGlyphData(bvector<Byte>& buffer, size_t offset, size_t size) {
-    auto const* rscFontData = GetRoot<FB::DgnRscFont>(GetReader().m_reader->FillAndGetDataP());
+    if (size < sizeof(RscGlyphData))
+        return ERROR;
+
+    auto rscFontData = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::DgnRscFont>(GetReader().m_reader->FillAndGetDataP(), GetReader().m_reader->GetNumBytes());
     if (nullptr == rscFontData)
         return ERROR;
 
-    buffer.clear();
-    ByteCP start = rscFontData->glyphData()->Data() + offset;
-    ByteCP end = start + size;
-    std::copy(start, end, std::back_inserter(buffer));
+    auto rscFontGlyphData = rscFontData->glyphData();
+    if (nullptr == rscFontGlyphData || (offset + size) > (size_t) rscFontGlyphData->size())
+        return ERROR;
+
+    buffer.assign(rscFontGlyphData->begin() + offset, rscFontGlyphData->begin() + offset + size);
     return SUCCESS;
 }
 
@@ -627,14 +650,15 @@ BentleyStatus RscFont::ReadGlyphData(bvector<Byte>& buffer, size_t offset, size_
 // @bsimethod
 //---------------------------------------------------------------------------------------
 BentleyStatus RscFont::ReadGlyphDataOffsets(bvector<Byte>& buffer) {
-    auto const* rscFontData = GetRoot<FB::DgnRscFont>(GetReader().m_reader->FillAndGetDataP());
+    auto rscFontData = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::DgnRscFont>(GetReader().m_reader->FillAndGetDataP(), GetReader().m_reader->GetNumBytes());
     if (nullptr == rscFontData)
         return ERROR;
 
-    buffer.clear();
-    ByteCP start = rscFontData->glyphDataOffsets()->Data();
-    ByteCP end = start + rscFontData->glyphDataOffsets()->size();
-    std::copy(start, end, std::back_inserter(buffer));
+    auto rscFontGlyphDataOffsets = rscFontData->glyphDataOffsets();
+    if (nullptr == rscFontGlyphDataOffsets || rscFontGlyphDataOffsets->size() < sizeof(RscGlyphDataOffset))
+        return ERROR;
+
+    buffer.assign(rscFontGlyphDataOffsets->begin(), rscFontGlyphDataOffsets->end());
     return SUCCESS;
 }
 
@@ -642,13 +666,14 @@ BentleyStatus RscFont::ReadGlyphDataOffsets(bvector<Byte>& buffer) {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 BentleyStatus RscFont::ReadGlyphHeaders(bvector<Byte>& buffer) {
-    auto const* rscFontData = GetRoot<FB::DgnRscFont>(GetReader().m_reader->FillAndGetDataP());
+    auto rscFontData = BentleyGeometryFlatBuffer::GetVerifiedRoot<FB::DgnRscFont>(GetReader().m_reader->FillAndGetDataP(), GetReader().m_reader->GetNumBytes());
     if (nullptr == rscFontData)
         return ERROR;
 
-    buffer.clear();
-    ByteCP start = rscFontData->glyphHeaders()->Data();
-    ByteCP end = start + rscFontData->glyphHeaders()->size();
-    std::copy(start, end, std::back_inserter(buffer));
+    auto rscFontGlyphHeaders = rscFontData->glyphHeaders();
+    if (nullptr == rscFontGlyphHeaders || rscFontGlyphHeaders->size() < sizeof(RscGlyphHeader))
+        return ERROR;
+
+    buffer.assign(rscFontGlyphHeaders->begin(), rscFontGlyphHeaders->end());
     return SUCCESS;
 }
