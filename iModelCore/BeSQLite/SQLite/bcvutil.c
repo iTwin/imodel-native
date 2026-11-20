@@ -3738,6 +3738,42 @@ void bcv_close_socket(BCV_SOCKET_TYPE s){
   }
 }
 
+/*
+** Set the send and receive timeouts of socket s to ms milliseconds, or
+** clear them if ms==0. On Linux the send timeout also bounds connect().
+*/
+void bcv_socket_timeout(BCV_SOCKET_TYPE s, int ms){
+#ifdef __WIN32__
+  DWORD tv = (DWORD)ms;
+#else
+  struct timeval tv;
+  tv.tv_sec = ms / 1000;
+  tv.tv_usec = (ms % 1000) * 1000;
+#endif
+  setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof(tv));
+  setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, (const char*)&tv, sizeof(tv));
+}
+
+/*
+** Return true if socket s, on which the caller is not expecting any data,
+** has been closed or reset by the peer (or has unexpected data pending,
+** which is treated the same way). This does not block.
+*/
+int bcv_socket_is_broken(BCV_SOCKET_TYPE s){
+  struct pollfd p;
+  int res;
+  memset(&p, 0, sizeof(p));
+  p.fd = s;
+#ifdef __WIN32__
+  p.events = POLLRDNORM;
+  res = WSAPoll(&p, 1, 0);
+#else
+  p.events = POLLIN;
+  res = poll(&p, 1, 0);
+#endif
+  return (res!=0);
+}
+
 void bcv_socket_init(){
 #ifdef __WIN32__
   WORD v;
@@ -3877,6 +3913,10 @@ int bcvSendMsg(BCV_SOCKET_TYPE fd, BcvMessage *pMsg){
       bcvBufferMsgString(&rc, &buf, pMsg->u.hello.zContainer);
       bcvBufferMsgString(&rc, &buf, pMsg->u.hello.zDatabase);
       bcvBufferAppendU32(&rc, &buf, pMsg->u.hello.bPrefetch);
+      if( pMsg->u.hello.bCanResume ){
+        bcvBufferAppendU32(&rc, &buf, pMsg->u.hello.bCanResume);
+        bcvBufferAppendU64(&rc, &buf, pMsg->u.hello.iResume);
+      }
       break;
     case BCV_MESSAGE_HELLO_REPLY:
       bcvBufferAppendU32(&rc, &buf, pMsg->u.hello_r.errCode);
@@ -3887,6 +3927,10 @@ int bcvSendMsg(BCV_SOCKET_TYPE fd, BcvMessage *pMsg){
       bcvBufferAppendU64(&rc, &buf, (u64)pMsg->u.hello_r.iDbId);
       bcvBufferAppendU32(&rc, &buf, pMsg->u.hello_r.szBlk);
       bcvBufferAppendU32(&rc, &buf, pMsg->u.hello_r.bEncrypted);
+      if( pMsg->u.hello_r.iSession ){
+        bcvBufferAppendU64(&rc, &buf, pMsg->u.hello_r.iSession);
+        bcvBufferAppendU32(&rc, &buf, pMsg->u.hello_r.bResumed);
+      }
       break;
     case BCV_MESSAGE_READ: 
       bcvBufferAppendU32(&rc, &buf, pMsg->u.read.iBlk);
@@ -4037,6 +4081,10 @@ int bcvRecvMsg(
             if( (aBody - (u8*)&pMsg[1])<nByte ){
               pMsg->u.hello.bPrefetch = bcvMsgGetU32(&aBody);
             }
+            if( (aBody - (u8*)&pMsg[1])<nByte ){
+              pMsg->u.hello.bCanResume = bcvMsgGetU32(&aBody);
+              pMsg->u.hello.iResume = bcvMsgGetU64(&aBody);
+            }
             break;
           }
 
@@ -4049,6 +4097,10 @@ int bcvRecvMsg(
             pMsg->u.hello_r.iDbId = (i64)bcvMsgGetU64(&aBody);
             pMsg->u.hello_r.szBlk = bcvMsgGetU32(&aBody);
             pMsg->u.hello_r.bEncrypted = bcvMsgGetU32(&aBody);
+            if( (aBody - (u8*)&pMsg[1])<nByte ){
+              pMsg->u.hello_r.iSession = bcvMsgGetU64(&aBody);
+              pMsg->u.hello_r.bResumed = bcvMsgGetU32(&aBody);
+            }
             break;
           }
 

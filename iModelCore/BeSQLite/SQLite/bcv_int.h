@@ -32,6 +32,8 @@ typedef unsigned short u16;
 # include <sys/socket.h> 
 # include <arpa/inet.h> 
 # include <netinet/tcp.h>
+# include <poll.h>
+# include <sys/time.h>
 # define BCV_SOCKET_TYPE int
 # define O_BINARY 0
 # define INVALID_SOCKET -1
@@ -88,6 +90,10 @@ typedef unsigned short u16;
 #define BCV_DEFAULT_NAMEBYTES        16
 #define BCV_DEFAULT_BLOCKSIZE        (4*1024*1024)
 #define BCV_DEFAULT_HTTPTIMEOUT 600  
+
+/* Default number of seconds the daemon keeps the open read transaction
+** of a client whose connection was lost, so that it can be resumed. */
+#define BCV_DEFAULT_RESUMETIMEOUT 30
 
 /* Size of local encryption keys in bytes. */
 #define BCV_LOCAL_KEYSIZE        16
@@ -526,6 +532,8 @@ void bcvContainerClose(BcvContainer*);
 
 int bcv_socket_is_valid(BCV_SOCKET_TYPE s);
 void bcv_close_socket(BCV_SOCKET_TYPE s);
+void bcv_socket_timeout(BCV_SOCKET_TYPE s, int ms);
+int bcv_socket_is_broken(BCV_SOCKET_TYPE s);
 void bcv_socket_init();
 
 void sqlite3_bcv_test_socket_api(
@@ -557,6 +565,10 @@ struct BcvHelloMsg {
   const char *zContainer;
   const char *zDatabase;
   int bPrefetch;
+  /* Optional trailing fields. A client that sends them can reconnect and
+  ** resume an open read transaction (see bdParkClient() in the daemon). */
+  u32 bCanResume;                 /* True if client supports session resume */
+  u64 iResume;                    /* Session to resume, or 0 */
 };
 
 struct BcvHelloReply {
@@ -569,6 +581,10 @@ struct BcvHelloReply {
   i64 iDbId;                      /* Database id */
   u32 szBlk;                      /* Block size in bytes */
   u32 bEncrypted;                 /* True for encrypted databases */
+  /* Optional trailing fields. Both are 0 if the daemon does not support
+  ** session resume. */
+  u64 iSession;                   /* Id to pass as HELLO.iResume later */
+  u32 bResumed;                   /* True if HELLO.iResume was resumed */
 };
 
 struct BcvPassMsg {
