@@ -8,12 +8,7 @@
     }
   ],
   "overrides": [
-<<<<<<< HEAD
     { "name": "libpng", "version": "1.6.58" },
-    { "name": "zlib", "version": "1.3.2#1" }
-=======
-    { "name": "libpng", "version": "1.6.59" },
     { "name": "zlib", "version": "1.4" }
->>>>>>> 72a9ce5 (Update zlib and minizip to 1.4 to resolve CVEs (#1720))
   ]
 }
