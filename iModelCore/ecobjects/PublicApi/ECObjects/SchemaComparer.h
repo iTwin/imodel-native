@@ -285,10 +285,10 @@ struct ECChangeArray final : public ECChange
         bool IsEmpty() const { return m_changes.empty(); }
         TArrayElement& operator[](size_t index) { return static_cast<TArrayElement&>(*m_changes[index]); }
 
-        RefCountedPtr<TArrayElement> const* begin() const { return reinterpret_cast<RefCountedPtr<TArrayElement> const*>(&*m_changes.begin()); }
-        RefCountedPtr<TArrayElement>* begin() { return reinterpret_cast<RefCountedPtr<TArrayElement>*>(&*m_changes.begin()); }
-        RefCountedPtr<TArrayElement> const* end() const { return reinterpret_cast<RefCountedPtr<TArrayElement> const*>(&*m_changes.end()); }
-        RefCountedPtr<TArrayElement>* end() { return reinterpret_cast<RefCountedPtr<TArrayElement>*>(&*m_changes.end()); }
+        RefCountedPtr<TArrayElement> const* begin() const { return reinterpret_cast<RefCountedPtr<TArrayElement> const*>(m_changes.data()); }
+        RefCountedPtr<TArrayElement>* begin() { return reinterpret_cast<RefCountedPtr<TArrayElement>*>(m_changes.data()); }
+        RefCountedPtr<TArrayElement> const* end() const { return begin() + m_changes.size(); }
+        RefCountedPtr<TArrayElement>* end() { return begin() + m_changes.size(); }
 
         RefCountedPtr<TArrayElement> CreateElement(OpCode opCode, Type elementType, Utf8CP name = nullptr) { return new TArrayElement(opCode, elementType, this, name); }
 

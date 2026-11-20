@@ -2719,9 +2719,10 @@ TEST_F(DgnElementTests, AutoHandledGeometryJsonRoundTrip)
 
     const auto AreAutoHandledPropsLoaded = [](DgnElementCR inElem)
         {
+        // Reads the protected member through a member pointer, inElem is not really of the derived type
         struct DgnElementExposeAutoHandledPropsLoaded : DgnElement
-            { bool AreAutoHandledPropsLoaded() const { return this->m_ecPropertyData != nullptr; } };
-        return reinterpret_cast<const DgnElementExposeAutoHandledPropsLoaded&>(inElem).AreAutoHandledPropsLoaded();
+            { static bool AreAutoHandledPropsLoaded(DgnElementCR el) { return el.*(&DgnElementExposeAutoHandledPropsLoaded::m_ecPropertyData) != nullptr; } };
+        return DgnElementExposeAutoHandledPropsLoaded::AreAutoHandledPropsLoaded(inElem);
         };
 
     DgnDbPtr db;

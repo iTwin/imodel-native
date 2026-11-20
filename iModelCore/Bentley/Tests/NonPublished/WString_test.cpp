@@ -313,7 +313,7 @@ TEST(WStringTest, ConstructorTest01)
 {
   typedef WString::size_type csize_type;
   typedef WString::iterator citerator;
-  csize_type npos = WString::npos;
+  [[maybe_unused]] csize_type npos = WString::npos;
   csize_type csz01;
 
   const wchar_t str_lit01[] = L"rodeo beach, marin";
@@ -343,37 +343,6 @@ TEST(WStringTest, ConstructorTest01)
   catch(...) {
     VERIFY( false );
   }
-
-#ifndef NO_CPP_EXCEPTION_HANDLERS
-  // basic_string(const wchar_t* s, size_type n, alloc)
-  csz01 = str01.max_size();
-  // NB: As strlen(str_lit01) != csz01, this test is undefined. It
-  // should not crash, but what gets constructed is a bit arbitrary.
-  try {
-    WString str03(str_lit01, csz01 + 1);
-    VERIFY( true );
-  }
-  catch(std::length_error&) {
-    VERIFY( true );
-  }
-  catch(...) {
-    VERIFY( false );
-  }
-
-  // NB: As strlen(str_lit01) != csz01, this test is undefined. It
-  // should not crash, but what gets constructed is a bit arbitrary.
-  // The "maverick's" of all string objects.
-  try {
-    WString str04(str_lit01, npos);
-    VERIFY( true );
-  }
-  catch(std::length_error&) {
-    VERIFY( true );
-  }
-  catch(...) {
-    VERIFY( false );
-  }
-#endif
 
 #if defined (BEIJING_WIP_WSTRING) // this will blow up unless we change allocator to throw
   // Build a maxsize - 1 lengthed string consisting of all A's

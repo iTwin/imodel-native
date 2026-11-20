@@ -2516,6 +2516,7 @@ TEST_F(BeSQLiteDbTests, GetColumnsQuotesTableName)
     ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("CREATE TABLE pragma_table_info(x)"));
     ASSERT_TRUE(m_db.GetColumns(columns, "TestTable1"));
     EXPECT_EQ(2, columns.size());
+    m_db.AbandonChanges();
     m_db.CloseDb();
     }
 
