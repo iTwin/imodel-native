@@ -273,7 +273,8 @@ int main(int argc, char **argv){
     sqlite3_prepare_v2(db, "SELECT name, value FROM bcv_stat WHERE name IN ('nqueryblock','nquerybyte','nqueryus')", -1, &pQStat, 0);
   }
   for(it=0; it<nIter; it++){
-    int nBad = 0; double maxMs = 0, t0 = now();
+    int nBad = 0, bCommitted = 0; double maxMs = 0, t0 = now();
+    const char *zAt = "";
     refreshRowPrefix(zPfxBuf, sizeof(zPfxBuf));
     if( pQStat ) checkQueryStats(pQStat, aPrevQStat, &nBad);
     rc = sqlite3_exec(db, "BEGIN", 0, 0, 0);
@@ -289,8 +290,15 @@ int main(int argc, char **argv){
       rc = sqlite3_step(pStat); if( rc==SQLITE_ROW || rc==SQLITE_DONE ) rc = SQLITE_OK;
       sqlite3_reset(pStat);
     }
+    if( rc==SQLITE_OK ){
+      /* A transaction only counts as ok if COMMIT succeeds too, so wrong rows
+      ** reported with committed=1 were returned without any error at all. */
+      rc = sqlite3_exec(db, "COMMIT", 0, 0, 0);
+      bCommitted = (rc==SQLITE_OK);
+      if( rc!=SQLITE_OK ) zAt = " at COMMIT";
+    }
     if( rc!=SQLITE_OK ){
-      printf("iter %d ERR rc=%d (%s) bad=%d\n", it, rc, sqlite3_errmsg(db), nBad);
+      printf("iter %d ERR rc=%d (%s)%s bad=%d\n", it, rc, sqlite3_errmsg(db), zAt, nBad);
       sqlite3_exec(db, "COMMIT", 0, 0, 0);
       nErr++;
       if( bReopenOnIoerr ){
@@ -313,7 +321,6 @@ int main(int argc, char **argv){
         }
       }
     }else{
-      sqlite3_exec(db, "COMMIT", 0, 0, 0);
       nOk++;
       if( pQStat ) checkQueryStats(pQStat, aPrevQStat, &nBad);
     }
@@ -328,7 +335,7 @@ int main(int argc, char **argv){
       sqlite3_reset(pContStat);
     }
     nBadTotal += nBad;
-    if( nBad ) printf("iter %d MISMATCH bad=%d\n", it, nBad);
+    if( nBad ) printf("iter %d MISMATCH bad=%d committed=%d\n", it, nBad, bCommitted);
     if( maxMs>500 ) printf("iter %d slow read %.0f ms (iter %.0f ms)\n", it, maxMs, (now()-t0)*1000);
     if( idleMs && it+1<nIter ) usleep(idleMs*1000);
   }

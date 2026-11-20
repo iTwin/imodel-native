@@ -143,8 +143,9 @@ struct BcvProxyFile {
 
 /* Reconnect timing. Each attempt has BCV_RECONNECT_TIMEOUT_MS to connect
 ** and receive the HELLO_REPLY. Attempts are separated by an exponential
-** backoff starting at BCV_RECONNECT_BACKOFF_MS. The total (~10s) must be
-** well below the daemon's -resumetimeout (default 30s).  */
+** backoff starting at BCV_RECONNECT_BACKOFF_MS. The total (at most 15.1s:
+** 6 x 2s of timeouts plus 3.1s of backoff) must be well below the daemon's
+** -resumetimeout (default 30s).  */
 #define BCV_RECONNECT_ATTEMPTS     6
 #define BCV_RECONNECT_TIMEOUT_MS   2000
 #define BCV_RECONNECT_BACKOFF_MS   100

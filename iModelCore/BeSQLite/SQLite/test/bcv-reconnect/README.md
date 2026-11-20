@@ -60,8 +60,12 @@ and cleanup targets only the newly created ID, without using Docker.
 connection drops mid read-transaction keeps reading the cache slots it mapped
 before the drop. The daemon released those slots' pins when it saw the
 disconnect and may already have reused them for other blocks, so the client
-returns **wrong rows with no error**. Against `origin/main` it reports
-`bad_rows=8` in some runs.
+returns **wrong rows with no error**. Against `origin/main` this scenario
+reported `MISMATCH bad=8 committed=1` in each of six runs (2026-11-20): all
+eight reread rows were wrong or missing, and every statement and the `COMMIT`
+returned `SQLITE_OK`. A transaction counts as `ok` only if its `COMMIT`
+succeeds, so `committed=1` on a `MISMATCH` line means no error was reported
+at all.
 
 The reader pauses inside its first transaction after reading the selected
 rows. The harness waits for the daemon to log that reader's disconnect,
