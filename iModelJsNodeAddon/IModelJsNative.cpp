@@ -8457,9 +8457,17 @@ static Napi::Value getTrueTypeFontMetadata(NapiInfoCR info) {
 }
 
 static Napi::Value isRscFontData(NapiInfoCR info) {
-    REQUIRE_ARGUMENT_ANY_OBJ(0, dataObj);
-    auto data = dataObj.As<Napi::Uint8Array>();
-    auto isRsc = dataObj.IsTypedArray() && RscFont::IsRscFontData(data.Data(), data.ElementLength());
+    if (info.Length() < 1 || !info[0].IsTypedArray())
+        {
+        THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "expect UInt8Array argument", IModelJsNativeErrorKey::BadArg);
+        }
+    Napi::TypedArray typedArray = info[0].As<Napi::TypedArray>();
+    if (typedArray.TypedArrayType() != napi_uint8_array)
+        {
+        THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "expect UInt8Array argument", IModelJsNativeErrorKey::BadArg);
+        }
+    Napi::Uint8Array uint8Array = typedArray.As<Napi::Uint8Array>();
+    bool isRsc = RscFont::IsRscFontData(uint8Array.Data(), uint8Array.ElementLength());
     return Napi::Boolean::New(info.Env(), isRsc);
 }
 
