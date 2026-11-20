@@ -120,6 +120,8 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParams const&) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR, CopyFromOptions const&) override;
+    DGNPLATFORM_EXPORT void _ToJson(BeJsValue out, BeJsConst opts) const override;
+    DGNPLATFORM_EXPORT void _FromJson(BeJsConst props) override;
     DgnDbStatus _OnDelete() const override { return GetDgnDb().IsPurgeOperationActive() ? T_Super::_OnDelete() : DgnDbStatus::DeletionProhibited; /* Must be "purged" */ }
     uint32_t _GetMemSize() const override { return (uint32_t)(m_description.size() + 1 + m_data.GetMemSize()); }
     DgnCode _GenerateDefaultCode() const override { return DgnCode(); }
@@ -127,6 +129,8 @@ protected:
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
 
 public:
+    BE_JSON_NAME(description)
+
     static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationTextStyle); }
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
 
