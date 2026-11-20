@@ -750,17 +750,48 @@ BulkDeleteElementsResult JsInterop::DeleteElements(DgnDbR dgndb, Napi::Array ele
 
 //=======================================================================================
 // Shared code for insertElementAspects, updateElementAspects and deleteElementAspects.
-// Each function processes its input in order and throws on the first problem. Aspects processed before the problem
-// stay written, so the caller must abandon the transaction when one of these functions throws.
+// Each function validates its input and calls the pre-handlers in input order, throwing on the first problem before
+// anything is written. Then each owning element is updated once, and its aspects are written from its _OnUpdated, like
+// DgnElement::Update writes the aspects staged on an element. The JS handlers may already have run, so the caller must
+// abandon the transaction when one of these functions throws.
 //=======================================================================================
 namespace {
 struct AspectBatch {
+    // Writes an aspect, returning false after recording the error with WriteFailed.
+    using Write = std::function<bool()>;
+
+    // Performs the queued aspect writes of an owning element while it is updated, at the point where DgnElement::Update
+    // writes the aspects staged on an element. This keeps the order of the changes in the txn and of the handlers.
+    struct PendingWrites : DgnElement::AppData {
+        static Key const& GetKey() { static Key s_key; return s_key; }
+        bvector<Write> m_writes;
+        bool m_failed = false;
+        DropMe _OnUpdated(DgnElementCR, DgnElementCR, bool isOriginal) override {
+            if (!isOriginal) {
+                for (auto& write : m_writes) {
+                    if (!write()) {
+                        m_failed = true;
+                        break;
+                    }
+                }
+            }
+            return DropMe::Yes;
+        }
+    };
+
+    struct Owner {
+        DgnElementId m_id;
+        bvector<Write> m_writes;
+    };
+
     DgnDbR m_db;
     Napi::Env m_env;
     Utf8CP m_functionName;
-    bvector<DgnElementId> m_owners;
-    bset<DgnElementId> m_ownerSet;
+    bvector<Owner> m_owners;
+    bmap<DgnElementId, size_t> m_ownerIndex;
     bvector<std::pair<DgnClassId, Napi::Object>> m_hookArgs;
+    DbResult m_writeRc = BE_SQLITE_OK;
+    Utf8String m_writeError;
 
     AspectBatch(DgnDbR db, Napi::Env env, Utf8CP functionName) : m_db(db), m_env(env), m_functionName(functionName) {}
 
@@ -822,13 +853,16 @@ struct AspectBatch {
     }
 
     // Returns the key of the unique aspect of aspectClass (or a subclass) on the element, or an invalid key.
-    ECInstanceKey FindUniqueAspect(ECClassCR aspectClass, DgnElementId elementId) {
-        CachedECSqlStatementPtr stmt = m_db.GetPreparedECSqlStatement(Utf8PrintfString("SELECT ECInstanceId,ECClassId FROM %s WHERE Element.Id=?", aspectClass.GetECSqlName().c_str()).c_str());
+    // Optionally returns the relationship class of its Element property.
+    ECInstanceKey FindUniqueAspect(ECClassCR aspectClass, DgnElementId elementId, ECClassId* relClassId = nullptr) {
+        CachedECSqlStatementPtr stmt = m_db.GetPreparedECSqlStatement(Utf8PrintfString("SELECT ECInstanceId,ECClassId,Element.RelECClassId FROM %s WHERE Element.Id=?", aspectClass.GetECSqlName().c_str()).c_str());
         if (!stmt.IsValid())
             Fail(DgnDbStatus::SQLiteError, Utf8PrintfString("failed to prepare the lookup of %s", aspectClass.GetFullName()));
         stmt->BindId(1, elementId);
         if (BE_SQLITE_ROW != stmt->Step())
             return ECInstanceKey();
+        if (nullptr != relClassId)
+            *relClassId = stmt->GetValueId<ECClassId>(2);
         return ECInstanceKey(stmt->GetValueId<ECClassId>(1), stmt->GetValueId<ECInstanceId>(0));
     }
 
@@ -838,24 +872,41 @@ struct AspectBatch {
         return arg;
     }
 
-    // Records the aspect so that its owner is updated once and its post-hook is called by Finish.
-    void Processed(DgnElementId ownerId, DgnClassId classId, Napi::Object hookArg) {
-        if (m_ownerSet.insert(ownerId).second)
-            m_owners.push_back(ownerId);
+    // Queues the write of the aspect so that it is performed when its owner is updated, once, by Finish.
+    void Processed(DgnElementId ownerId, DgnClassId classId, Napi::Object hookArg, Write write) {
+        auto found = m_ownerIndex.find(ownerId);
+        if (found == m_ownerIndex.end()) {
+            found = m_ownerIndex.Insert(ownerId, m_owners.size()).first;
+            m_owners.push_back(Owner{ownerId, {}});
+        }
+        m_owners[found->second].m_writes.push_back(std::move(write));
         m_hookArgs.push_back(std::make_pair(classId, hookArg));
     }
 
-    // Updates each owning element once, which records the aspect changes in the txn (e.g. LastMod) and calls the element handlers.
-    // Then calls the JS post-hooks in input order.
+    // Records the error of a queued write, which Finish throws once the owner update returns.
+    bool WriteFailed(DbResult rc, Utf8StringCR detail) {
+        m_writeRc = rc;
+        m_writeError = detail;
+        return false;
+    }
+
+    // Updates each owning element once, in the order of first appearance. Like the update of an element with staged aspects,
+    // the update writes the element, calls its onUpdated handler, writes its queued aspects, and then calls its parent's
+    // onChildUpdated handler. Then calls the JS post-hooks in input order.
     void Finish(Utf8CP postHook) {
-        for (auto ownerId : m_owners) {
-            DgnElementCPtr owner = m_db.Elements().GetElement(ownerId);
-            DgnElementPtr ownerEdit = owner.IsValid() ? owner->CopyForEdit() : nullptr;
+        for (auto& owner : m_owners) {
+            DgnElementCPtr original = m_db.Elements().GetElement(owner.m_id);
+            DgnElementPtr ownerEdit = original.IsValid() ? original->CopyForEdit() : nullptr;
             if (!ownerEdit.IsValid())
-                Fail(DgnDbStatus::NotFound, Utf8PrintfString("owning element %s no longer exists", ownerId.ToHexStr().c_str()));
+                Fail(DgnDbStatus::NotFound, Utf8PrintfString("owning element %s no longer exists", owner.m_id.ToHexStr().c_str()));
+            RefCountedPtr<PendingWrites> pending = new PendingWrites();
+            pending->m_writes = std::move(owner.m_writes);
+            ownerEdit->AddAppData(PendingWrites::GetKey(), pending.get());
             DgnDbStatus stat = ownerEdit->Update();
+            if (pending->m_failed)
+                FailSql(m_writeRc, m_writeError);
             if (DgnDbStatus::Success != stat)
-                Fail(stat, Utf8PrintfString("failed to update owning element %s", ownerId.ToHexStr().c_str()));
+                Fail(stat, Utf8PrintfString("failed to update owning element %s", owner.m_id.ToHexStr().c_str()));
         }
         for (auto& hook : m_hookArgs)
             m_db.CallJsHandlerMethod(hook.first, postHook, hook.second);
@@ -896,20 +947,7 @@ Napi::Array JsInterop::InsertElementAspects(DgnDbR db, Napi::Array input) {
         hookArg.Set("props", obj);
         db.CallJsHandlerMethod(aspectClass.GetId(), "onInsert", hookArg);
 
-        InstanceWriter::InsertOptions options;
-        options.UseJsNames(true);
-        AspectBatch::AcceptStringLongs(options);
         bool isUnique = aspectClass.Is(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementUniqueAspect);
-        if (isUnique) {
-            ECInstanceKey existing = batch.FindUniqueAspect(aspectClass, owner->GetElementId());
-            if (existing.IsValid()) {
-                DbResult rc = writer.Delete(existing, InstanceWriter::DeleteOptions());
-                if (BE_SQLITE_DONE != rc)
-                    batch.FailSql(rc, Utf8PrintfString("failed to replace aspect %s: %s", existing.GetInstanceId().ToHexStr().c_str(), writer.GetLastError().c_str()));
-                if (existing.GetClassId() == aspectClass.GetId())
-                    options.UseInstanceId(existing.GetInstanceId());
-            }
-        }
 
         // The writer binds a null relationship class unless the props supply one.
         Napi::Object row = obj;
@@ -921,24 +959,44 @@ Napi::Array JsInterop::InsertElementAspects(DgnDbR db, Napi::Array input) {
             row.Set(json_element(), element);
         }
 
-        ECInstanceKey key;
-        DbResult rc = writer.Insert(BeJsConst(row), options, key);
-        if (BE_SQLITE_DONE != rc)
-            batch.FailSql(rc, Utf8PrintfString("failed to insert props[%u]: %s", i, writer.GetLastError().c_str()));
+        // An existing unique aspect is looked up when the write is performed, so that the last of several inserts of the
+        // same element and class wins.
+        DgnElementId ownerId = owner->GetElementId();
+        ECClassCP aspectClassP = &aspectClass;
+        batch.Processed(ownerId, aspectClass.GetId(), hookArg, [&batch, &writer, &ids, aspectClassP, ownerId, isUnique, row, i]() {
+            InstanceWriter::InsertOptions options;
+            options.UseJsNames(true);
+            AspectBatch::AcceptStringLongs(options);
+            if (isUnique) {
+                ECInstanceKey existing = batch.FindUniqueAspect(*aspectClassP, ownerId);
+                if (existing.IsValid()) {
+                    DbResult rc = writer.Delete(existing, InstanceWriter::DeleteOptions());
+                    if (BE_SQLITE_DONE != rc)
+                        return batch.WriteFailed(rc, Utf8PrintfString("failed to replace aspect %s: %s", existing.GetInstanceId().ToHexStr().c_str(), writer.GetLastError().c_str()));
+                    if (existing.GetClassId() == aspectClassP->GetId())
+                        options.UseInstanceId(existing.GetInstanceId());
+                }
+            }
 
-        ids.Set(i, Napi::String::New(input.Env(), key.GetInstanceId().ToHexStr().c_str()));
-        batch.Processed(owner->GetElementId(), aspectClass.GetId(), hookArg);
+            ECInstanceKey key;
+            DbResult rc = writer.Insert(BeJsConst(row), options, key);
+            if (BE_SQLITE_DONE != rc)
+                return batch.WriteFailed(rc, Utf8PrintfString("failed to insert props[%u]: %s", i, writer.GetLastError().c_str()));
+            ids.Set(i, Napi::String::New(ids.Env(), key.GetInstanceId().ToHexStr().c_str()));
+            return true;
+        });
     }
     batch.Finish("onInserted");
     return ids;
 }
 
 /*---------------------------------------------------------------------------------**//**
-* Updates each aspect. Only the properties in the props are changed. A multi aspect is identified by its id, and a
-* unique aspect by its element and class (or a base class). The owning element cannot be changed.
+* Updates each aspect. With incremental, only the properties in the props are changed; otherwise every property that is
+* not in the props is set to null. A multi aspect is identified by its id, and a unique aspect by its element and class
+* (or a base class). The owning element cannot be changed.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsInterop::UpdateElementAspects(DgnDbR db, Napi::Array input) {
+void JsInterop::UpdateElementAspects(DgnDbR db, Napi::Array input, bool incremental) {
     AspectBatch batch(db, input.Env(), "updateElementAspects");
     auto& writer = db.GetInstanceWriter();
     for (uint32_t i = 0; i < input.Length(); ++i) {
@@ -950,18 +1008,21 @@ void JsInterop::UpdateElementAspects(DgnDbR db, Napi::Array input) {
         DgnElementCPtr owner = batch.GetOwner(related.m_id, i);
 
         ECInstanceKey stored;
+        ECClassId storedRelClassId;
         if (aspectClass.Is(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementMultiAspect)) {
             ECInstanceId aspectId(AspectBatch::ParseId(obj.Get(DgnElement::json_id())).GetValueUnchecked());
             if (!aspectId.IsValid())
                 batch.Fail(DgnDbStatus::InvalidId, Utf8PrintfString("props[%u].id is not a valid aspect id", i));
-            CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(Utf8PrintfString("SELECT ECClassId,Element.Id FROM %s WHERE ECInstanceId=?", aspectClass.GetECSqlName().c_str()).c_str());
+            CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(Utf8PrintfString("SELECT ECClassId,Element.Id,Element.RelECClassId FROM %s WHERE ECInstanceId=?", aspectClass.GetECSqlName().c_str()).c_str());
             if (!stmt.IsValid())
                 batch.Fail(DgnDbStatus::SQLiteError, Utf8PrintfString("failed to prepare the lookup of %s", aspectClass.GetFullName()));
             stmt->BindId(1, aspectId);
-            if (BE_SQLITE_ROW == stmt->Step() && stmt->GetValueId<DgnElementId>(1) == owner->GetElementId())
+            if (BE_SQLITE_ROW == stmt->Step() && stmt->GetValueId<DgnElementId>(1) == owner->GetElementId()) {
                 stored = ECInstanceKey(stmt->GetValueId<ECClassId>(0), aspectId);
+                storedRelClassId = stmt->GetValueId<ECClassId>(2);
+            }
         } else {
-            stored = batch.FindUniqueAspect(aspectClass, owner->GetElementId());
+            stored = batch.FindUniqueAspect(aspectClass, owner->GetElementId(), &storedRelClassId);
         }
         if (!stored.IsValid())
             batch.Fail(DgnDbStatus::NotFound, Utf8PrintfString("the aspect of props[%u] does not exist on element %s", i, owner->GetElementId().ToHexStr().c_str()));
@@ -970,23 +1031,30 @@ void JsInterop::UpdateElementAspects(DgnDbR db, Napi::Array input) {
         hookArg.Set("props", obj);
         db.CallJsHandlerMethod(aspectClass.GetId(), "onUpdate", hookArg);
 
-        // Write the stored aspect with its actual class, so that the incremental update keeps the properties that are not in the props.
+        // Write the stored aspect with its actual class and owner. The writer sets every property it is not given to null,
+        // unless the incremental update reads it from the stored aspect.
         ECClassCP storedClass = db.Schemas().GetClass(stored.GetClassId());
         if (nullptr == storedClass)
             batch.Fail(DgnDbStatus::BadSchema, Utf8PrintfString("the class of aspect %s is not found", stored.GetInstanceId().ToHexStr().c_str()));
         Napi::Object row = copyProps(obj, {json_element(), DgnElement::json_id(), DgnElement::json_classFullName(), "className"});
         row.Set(DgnElement::json_id(), Napi::String::New(input.Env(), stored.GetInstanceId().ToHexStr().c_str()));
         row.Set(DgnElement::json_classFullName(), Napi::String::New(input.Env(), storedClass->GetFullName()));
+        auto element = Napi::Object::New(input.Env());
+        element.Set("id", Napi::String::New(input.Env(), owner->GetElementId().ToHexStr().c_str()));
+        if (ECClassCP relClass = storedRelClassId.IsValid() ? db.Schemas().GetClass(storedRelClassId) : nullptr)
+            element.Set("relClassName", Napi::String::New(input.Env(), Utf8PrintfString("%s.%s", relClass->GetSchema().GetName().c_str(), relClass->GetName().c_str()).c_str()));
+        row.Set(json_element(), element);
 
-        InstanceWriter::UpdateOptions options;
-        options.UseJsNames(true);
-        options.UseIncrementalUpdate(true);
-        AspectBatch::AcceptStringLongs(options);
-        DbResult rc = writer.Update(BeJsConst(row), options);
-        if (BE_SQLITE_DONE != rc)
-            batch.FailSql(rc, Utf8PrintfString("failed to update props[%u]: %s", i, writer.GetLastError().c_str()));
-
-        batch.Processed(owner->GetElementId(), aspectClass.GetId(), hookArg);
+        batch.Processed(owner->GetElementId(), aspectClass.GetId(), hookArg, [&batch, &writer, incremental, row, i]() {
+            InstanceWriter::UpdateOptions options;
+            options.UseJsNames(true);
+            options.UseIncrementalUpdate(incremental);
+            AspectBatch::AcceptStringLongs(options);
+            DbResult rc = writer.Update(BeJsConst(row), options);
+            if (BE_SQLITE_DONE != rc)
+                return batch.WriteFailed(rc, Utf8PrintfString("failed to update props[%u]: %s", i, writer.GetLastError().c_str()));
+            return true;
+        });
     }
     batch.Finish("onUpdated");
 }
@@ -999,6 +1067,7 @@ void JsInterop::UpdateElementAspects(DgnDbR db, Napi::Array input) {
 void JsInterop::DeleteElementAspects(DgnDbR db, Napi::Array input) {
     AspectBatch batch(db, input.Env(), "deleteElementAspects");
     auto& writer = db.GetInstanceWriter();
+    bset<ECInstanceId> deleted;
     for (uint32_t i = 0; i < input.Length(); ++i) {
         ECInstanceId aspectId(AspectBatch::ParseId(input[i]).GetValueUnchecked());
         if (!aspectId.IsValid())
@@ -1015,17 +1084,21 @@ void JsInterop::DeleteElementAspects(DgnDbR db, Napi::Array input) {
             batch.Fail(DgnDbStatus::NotFound, Utf8PrintfString("aspect %s of ids[%u] does not exist", aspectId.ToHexStr().c_str(), i));
         DgnClassId classId = stmt->GetValueId<DgnClassId>(0);
         DgnElementCPtr owner = batch.GetOwner(stmt->GetValueId<DgnElementId>(1), i);
+        // The deletes are performed later, so an id that appears twice is still found by the lookup above.
+        if (!deleted.insert(aspectId).second)
+            batch.Fail(DgnDbStatus::NotFound, Utf8PrintfString("aspect %s of ids[%u] does not exist", aspectId.ToHexStr().c_str(), i));
 
         auto hookArg = batch.MakeHookArg(*owner);
         hookArg.Set("aspectId", Napi::String::New(input.Env(), aspectId.ToHexStr().c_str()));
         hookArg.Set("element", Napi::String::New(input.Env(), owner->GetElementId().ToHexStr().c_str()));
         db.CallJsHandlerMethod(classId, "onDelete", hookArg);
 
-        DbResult rc = writer.Delete(ECInstanceKey(classId, aspectId), InstanceWriter::DeleteOptions());
-        if (BE_SQLITE_DONE != rc)
-            batch.FailSql(rc, Utf8PrintfString("failed to delete aspect %s: %s", aspectId.ToHexStr().c_str(), writer.GetLastError().c_str()));
-
-        batch.Processed(owner->GetElementId(), classId, hookArg);
+        batch.Processed(owner->GetElementId(), classId, hookArg, [&batch, &writer, classId, aspectId]() {
+            DbResult rc = writer.Delete(ECInstanceKey(classId, aspectId), InstanceWriter::DeleteOptions());
+            if (BE_SQLITE_DONE != rc)
+                return batch.WriteFailed(rc, Utf8PrintfString("failed to delete aspect %s: %s", aspectId.ToHexStr().c_str(), writer.GetLastError().c_str()));
+            return true;
+        });
     }
     batch.Finish("onDeleted");
 }

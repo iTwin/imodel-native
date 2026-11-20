@@ -530,7 +530,7 @@ public:
     static DgnDbStatus SimplifyElementGeometry(DgnDbR db, Napi::Object simplifyArgs);
     static InlineGeometryPartsResult InlineGeometryParts(DgnDbR db);
     static Napi::Array InsertElementAspects(DgnDbR db, Napi::Array aspectProps);
-    static void UpdateElementAspects(DgnDbR db, Napi::Array aspectProps);
+    static void UpdateElementAspects(DgnDbR db, Napi::Array aspectProps, bool incremental);
     static void DeleteElementAspects(DgnDbR db, Napi::Array aspectIds);
 
     // Used by ExportGraphics, ExportPartGraphics, and GenerateElementMeshes.

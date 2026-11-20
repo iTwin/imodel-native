@@ -691,6 +691,7 @@ ECSqlStatus Impl::BindStructArrayProperty(BindContext& ctx, StructArrayECPropert
     auto& structType = prop.GetStructElementType();
     val.ForEachArrayMember([&](auto index, auto val) {
         if (val.isNull()) {
+            binder.AddArrayElement();
             return false;
         }
         if (!val.isObject()) {

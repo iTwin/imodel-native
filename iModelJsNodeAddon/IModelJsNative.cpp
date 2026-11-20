@@ -2254,9 +2254,9 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
 
     void UpdateElementAspects(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
-        if (ARGUMENT_IS_NOT_PRESENT(0) || !info[0].IsArray())
+        if (ARGUMENT_IS_NOT_PRESENT(0) || !info[0].IsArray() || (ARGUMENT_IS_PRESENT(1) && !info[1].IsUndefined() && !info[1].IsBoolean()))
             THROW_JS_TYPE_EXCEPTION("Invalid argument given to updateElementAspects");
-        JsInterop::UpdateElementAspects(db, info[0].As<Napi::Array>());
+        JsInterop::UpdateElementAspects(db, info[0].As<Napi::Array>(), ARGUMENT_IS_PRESENT(1) && info[1].IsBoolean() && info[1].As<Napi::Boolean>().Value());
     }
 
     void DeleteElementAspects(NapiInfoCR info) {

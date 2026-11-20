@@ -21,6 +21,9 @@ const testSchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
     <BaseClass>TestUniqueAspect</BaseClass>
     <ECProperty propertyName="DerivedProp" typeName="string"/>
   </ECEntityClass>
+  <ECStructClass typeName="TestStruct">
+    <ECProperty propertyName="Label" typeName="string"/>
+  </ECStructClass>
   <ECEntityClass typeName="TestMultiAspect">
     <BaseClass>bis:ElementMultiAspect</BaseClass>
     <ECProperty propertyName="StrProp" typeName="string"/>
@@ -28,6 +31,7 @@ const testSchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
     <ECProperty propertyName="LongProp" typeName="long"/>
     <ECProperty propertyName="BinProp" typeName="binary"/>
     <ECProperty propertyName="GuidProp" typeName="binary" extendedTypeName="BeGuid"/>
+    <ECStructArrayProperty propertyName="StructArr" typeName="TestStruct"/>
   </ECEntityClass>
   <ECEntityClass typeName="DerivedMultiAspect">
     <BaseClass>TestMultiAspect</BaseClass>
@@ -45,6 +49,7 @@ interface TestAspectProps extends ElementAspectProps {
   intProp?: number;
   derivedProp?: string;
   longProp?: number | string;
+  structArr?: Array<{ label: string } | null>;
 }
 
 interface HookCall {
@@ -53,8 +58,8 @@ interface HookCall {
   arg: any;
 }
 
-/** A mock JS IModelDb whose classes record every handler call, and throw from `throwIn`. */
-function makeMockJsDb(throwIn?: string) {
+/** A mock JS IModelDb whose classes record every handler call, pass it to `onCall`, and throw from `throwIn`. */
+function makeMockJsDb(throwIn?: string, onCall?: (call: HookCall) => void) {
   const calls: HookCall[] = [];
   const mockJsDb: any = {
     getJsClass: (className: string) => new Proxy({}, {
@@ -63,6 +68,7 @@ function makeMockJsDb(throwIn?: string) {
           return undefined;
         return (arg: any) => {
           calls.push({ className, method, arg });
+          onCall?.({ className, method, arg });
           if (throwIn === method)
             throw new Error(`${method} rejected`);
         };
@@ -191,7 +197,7 @@ describe("bulk element aspects", () => {
       expect(readAspect(twice[0])).to.deep.include({ strProp: "b" });
     });
 
-    it("throws on the first invalid props, keeping the aspects written before it", () => {
+    it("throws on the first invalid props, before writing any aspect", () => {
       const e1 = insertOwner();
       db.saveChanges();
       const expectThrows = (bad: any, message: RegExp) => {
@@ -203,7 +209,7 @@ describe("bulk element aspects", () => {
         while (DbResult.BE_SQLITE_ROW === stmt.step())
           values.push(stmt.getValue(0).getString());
         stmt.dispose();
-        expect(values).to.deep.equal(["ok"]);
+        expect(values).to.deep.equal([]);
         db.abandonChanges();
       };
       expectThrows(42, /insertElementAspects: props\[1\] is not an object/);
@@ -255,10 +261,37 @@ describe("bulk element aspects", () => {
       }
       stmt.dispose();
     });
+
+    it("keeps a null struct array entry as a null element", () => {
+      const e1 = insertOwner();
+      const props: TestAspectProps = { ...multiProps(e1, "m"), structArr: [{ label: "a" }, null, { label: "c" }] };
+      const [id] = db.insertElementAspects([props]);
+      const stmt = new iModelJsNative.ECSqlStatement();
+      expect(stmt.prepare(db, "SELECT StructArr FROM bat.TestMultiAspect WHERE ECInstanceId=?").status).to.equal(DbResult.BE_SQLITE_OK);
+      stmt.getBinder(1).bindId(id);
+      expect(stmt.step()).to.equal(DbResult.BE_SQLITE_ROW);
+      const labels: Array<string | null> = [];
+      const elements = stmt.getValue(0).getArrayIterator();
+      while (elements.moveNext()) {
+        const element = elements.getCurrent();
+        const members = element.getStructIterator();
+        labels.push(element.isNull() || !members.moveNext() ? null : members.getCurrent().getString());
+      }
+      stmt.dispose();
+      expect(labels).to.deep.equal(["a", null, "c"]);
+    });
   });
 
   describe("updateElementAspects", () => {
-    it("updates only the given properties of multi aspects (by id) and unique aspects (by element)", () => {
+    it("sets the properties that are not in the props to null and keeps the owner", () => {
+      const e1 = insertOwner();
+      const ids = db.insertElementAspects([uniqueProps(e1, "u1", 1), multiProps(e1, "m1", 2)]);
+      db.updateElementAspects([uniqueProps(e1, "u1-new"), { classFullName: multiClass, element: { id: e1 }, id: ids[1], intProp: 20 } as TestAspectProps]);
+      expect(readAspect(ids[0])).to.deep.equal({ className: uniqueClass, element: e1, relClassName: "BisCore:ElementOwnsUniqueAspect", strProp: "u1-new" });
+      expect(readAspect(ids[1])).to.deep.equal({ className: multiClass, element: e1, relClassName: "BisCore:ElementOwnsMultiAspects", intProp: 20 });
+    });
+
+    it("with incremental, updates only the given properties of multi aspects (by id) and unique aspects (by element)", () => {
       const e1 = insertOwner();
       const e2 = insertOwner();
       const ids = db.insertElementAspects([uniqueProps(e1, "u1", 1), multiProps(e1, "m1", 2), multiProps(e2, "m2", 3)]);
@@ -266,7 +299,7 @@ describe("bulk element aspects", () => {
         uniqueProps(e1, "u1-new"),
         { ...multiProps(e1, "m1-new"), id: ids[1] },
         { classFullName: multiClass, element: { id: e2 }, id: ids[2], intProp: 30 } as TestAspectProps,
-      ]);
+      ], true);
       expect(readAspect(ids[0])).to.deep.include({ strProp: "u1-new", intProp: 1 });
       expect(readAspect(ids[1])).to.deep.include({ strProp: "m1-new", intProp: 2 });
       expect(readAspect(ids[2])).to.deep.include({ strProp: "m2", intProp: 30 });
@@ -278,7 +311,7 @@ describe("bulk element aspects", () => {
         { ...uniqueProps(e1, "u", undefined, derivedUniqueClass), derivedProp: "du" } as TestAspectProps,
         { ...multiProps(e1, "m", undefined, derivedMultiClass), derivedProp: "dm" } as TestAspectProps,
       ]);
-      db.updateElementAspects([uniqueProps(e1, "u-new"), { ...multiProps(e1, "m-new"), id: ids[1] }]);
+      db.updateElementAspects([uniqueProps(e1, "u-new"), { ...multiProps(e1, "m-new"), id: ids[1] }], true);
       expect(readAspect(ids[0])).to.deep.include({ className: derivedUniqueClass, strProp: "u-new" });
       expect(readAspect(ids[1])).to.deep.include({ className: derivedMultiClass, strProp: "m-new" });
       expect(readDerivedProp(derivedUniqueClass, ids[0])).to.equal("du");
@@ -292,7 +325,7 @@ describe("bulk element aspects", () => {
       db.saveChanges();
       expect(() => db.updateElementAspects([{ ...multiProps(e1, "m1-new"), id: multiId }, uniqueProps(e1, "u1")]))
         .to.throw(/updateElementAspects: the aspect of props\[1\] does not exist on element/);
-      expect(readAspect(multiId)).to.deep.include({ strProp: "m1-new" }); // written before the failure; the caller must abandon the txn
+      expect(readAspect(multiId)).to.deep.include({ strProp: "m1" }); // nothing is written, but the pre-handlers ran, so the caller must abandon the txn
       db.abandonChanges();
 
       expect(() => db.updateElementAspects([{ ...multiProps(e2, "x"), id: multiId }])).to.throw(/the aspect of props\[0\] does not exist/);
@@ -317,7 +350,7 @@ describe("bulk element aspects", () => {
       const ids = db.insertElementAspects([multiProps(e1, "m1"), multiProps(e1, "m2")]);
       db.saveChanges();
       expect(() => db.deleteElementAspects([ids[0], ids[0]])).to.throw(new RegExp(`deleteElementAspects: aspect ${ids[0]} of ids\\[1\\] does not exist`));
-      expect(readAspect(ids[0])).to.be.undefined; // deleted before the failure; the caller must abandon the txn
+      expect(readAspect(ids[0])).to.not.be.undefined; // nothing is deleted, but the pre-handlers ran, so the caller must abandon the txn
       db.abandonChanges();
 
       for (const bad of [`${ids[1]}garbage`, `0x0${ids[1].slice(2)}`, "0x0", 42])
@@ -329,7 +362,7 @@ describe("bulk element aspects", () => {
   });
 
   describe("handlers", () => {
-    it("calls the pre-handlers while writing, then updates each owner once, then calls the post-handlers", () => {
+    it("calls the pre-handlers, then updates each owner once, then calls the post-handlers", () => {
       const e1 = insertOwner();
       const e2 = insertOwner();
       const { mockJsDb, calls } = makeMockJsDb();
@@ -356,6 +389,19 @@ describe("bulk element aspects", () => {
       db.deleteElementAspects([ids[2], ids[0]]);
       expect(relevant()).to.deep.equal([`${multiClass}.onDelete`, `${multiClass}.onDelete`, `${e1}.onUpdated`, `${multiClass}.onDeleted`, `${multiClass}.onDeleted`]);
       expect(calls.find((c) => c.method === "onDelete")!.arg).to.deep.include({ aspectId: ids[2], element: e1, model: "0x1" });
+    });
+
+    it("writes the aspects of an owner after its onUpdated handler, like the update of an element with staged aspects", () => {
+      const e1 = insertOwner();
+      const [id] = db.insertElementAspects([multiProps(e1, "old")]);
+      const seen: string[] = [];
+      const { mockJsDb } = makeMockJsDb(undefined, (c) => {
+        if (c.method === "onUpdated")
+          seen.push(`${c.className === "BisCore:Subject" ? "owner" : "aspect"}:${readAspect(id).strProp}`);
+      });
+      db.setIModelDb(mockJsDb);
+      db.updateElementAspects([{ ...multiProps(e1, "new"), id }]);
+      expect(seen).to.deep.equal(["owner:old", "aspect:new"]);
     });
 
     it("an exception from a pre-handler propagates and stops the operation", () => {

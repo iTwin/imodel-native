@@ -7,6 +7,10 @@ This document including important changes to syntax or file format.
 | Profile | `4.0.0.5` |
 | ECSQL   | `2.0.4.2` |
 
+## `11/19/2026`: `InstanceWriter` keeps `null` struct array elements
+* `InstanceWriter` now writes a `null` entry in a struct array as a null element. Previously, it skipped the entry, so `[{a}, null, {c}]` was stored as `[{a}, {c}]` and later elements moved to a lower index. This matches how `null` entries in primitive arrays are written and how the `ECInstance` based write path handles struct arrays.
+* Profile and ECSql versions are unchanged.
+
 ## `11/18/2026`: `InstanceWriter` accepts base64 strings for binary properties from JavaScript
 * `InstanceWriter` now accepts `"encoding=base64;..."` strings for binary properties, including `BeGuid` properties, when the instance comes from JavaScript through N-API. Previously, these strings were accepted only from native JSON documents. Instances from JavaScript failed with `Expected binary/base64 for property ...`, and `BeGuid` properties failed with `Failed to parse guid from string`.
 * GeometryStream properties are unchanged.

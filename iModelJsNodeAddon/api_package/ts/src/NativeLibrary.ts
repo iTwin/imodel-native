@@ -712,7 +712,7 @@ export declare namespace IModelJsNative {
     public deleteAllTxns(): void;
     public deleteElement(elemIdJson: string): void;
     public deleteElements(elementIds: Id64Array): BulkDeleteElementsResult;
-    /** Processes the input in order and throws on the first problem. Earlier entries stay written, so the caller must abandon the txn if this throws. */
+    /** Validates the input and calls the pre-handlers in order, and throws on the first problem before writing anything. Aspects are then written while each owner is updated. The caller must abandon the txn if this throws. */
     public deleteElementAspects(aspectIds: Id64Array): void;
     public deleteLinkTableRelationship(props: RelationshipProps): DbResult;
     public deleteLinkTableRelationships(props: ReadonlyArray<RelationshipProps>): DbResult;
@@ -798,7 +798,7 @@ export declare namespace IModelJsNative {
     public inlineGeometryPartReferences(): InlineGeometryPartsResult;
     public insertCodeSpec(name: string, jsonProperties: CodeSpecProperties): Id64String;
     public insertElement(elemProps: ElementProps, options?: { forceUseId?: boolean }): Id64String;
-    /** Processes the input in order and throws on the first problem. Earlier entries stay written, so the caller must abandon the txn if this throws. */
+    /** Validates the input and calls the pre-handlers in order, and throws on the first problem before writing anything. Aspects are then written while each owner is updated. The caller must abandon the txn if this throws. */
     public insertElementAspects(aspectProps: ReadonlyArray<ElementAspectProps>): Id64String[];
     public insertLinkTableRelationship(props: RelationshipProps): Id64String;
     public insertModel(modelProps: ModelProps): Id64String;
@@ -874,8 +874,10 @@ export declare namespace IModelJsNative {
     public updateElement(elemProps: Partial<ElementProps>): void;
     public changeElementParent(props: { id: Id64String, parentId: Id64String }): void;
     public changeElementModel(props: { id: Id64String, modelId: Id64String }): void;
-    /** Processes the input in order and throws on the first problem. Earlier entries stay written, so the caller must abandon the txn if this throws. */
-    public updateElementAspects(aspectProps: ReadonlyArray<ElementAspectProps>): void;
+    /** Validates the input and calls the pre-handlers in order, and throws on the first problem before writing anything. Aspects are then written while each owner is updated. The caller must abandon the txn if this throws.
+     * Unless `incremental` is true, every property of an aspect that is not in its props is set to null.
+     */
+    public updateElementAspects(aspectProps: ReadonlyArray<ElementAspectProps>, incremental?: boolean): void;
     public updateElementGeometryCache(props: ElementGeometryCacheRequestProps): Promise<ElementGeometryCacheResponseProps>;
     /** Throws for an invalid geographic coordinate system before changing any geolocation properties.
      * Custom vertical transforms are registered only after the entire replacement definition is valid.
