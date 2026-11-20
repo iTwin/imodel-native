@@ -563,9 +563,8 @@ typedef struct BcvVtabReply BcvVtabReply;
 typedef struct BcvPrefetchMsg BcvPrefetchMsg;
 typedef struct BcvPrefetchReply BcvPrefetchReply;
 
-#define BCV_HELLO_CANRESUME   0x01
-#define BCV_HELLO_WANTRESUME  0x02
-#define BCV_HELLO_LOCKVERSION 0x04
+#define BCV_HELLO_CANRESUME  0x01
+#define BCV_HELLO_WANTRESUME 0x02
 
 struct BcvHelloMsg {
   const char *zContainer;
@@ -573,9 +572,7 @@ struct BcvHelloMsg {
   int bPrefetch;
   /* Optional trailing fields. BCV_HELLO_CANRESUME announces support for
   ** session resume; BCV_HELLO_WANTRESUME asks to adopt iResume's open
-  ** read transaction (without it, any parked/live iResume is discarded);
-  ** BCV_HELLO_LOCKVERSION pins the connection to the current database
-  ** version when the client's local -shm file was unlinked. */
+  ** read transaction (without it, any parked/live iResume is discarded). */
   u32 bCanResume;                 /* Mask of BCV_HELLO_* flags */
   u64 iResume;                    /* Previous session id, or 0 */
 };
@@ -590,10 +587,10 @@ struct BcvHelloReply {
   i64 iDbId;                      /* Database id */
   u32 szBlk;                      /* Block size in bytes */
   u32 bEncrypted;                 /* True for encrypted databases */
-  /* Optional trailing fields (all 0 on an older daemon). */
+  /* Optional trailing fields. Both are 0 if the daemon does not support
+  ** session resume. */
   u64 iSession;                   /* Id to pass as HELLO.iResume later */
   u32 bResumed;                   /* True if HELLO.iResume was resumed */
-  u32 iDbVersion;                 /* ManifestDb.iVersion, or 0 */
 };
 
 struct BcvPassMsg {
@@ -705,6 +702,8 @@ struct BcvMessage {
 
 int bcvRecvMsg(BCV_SOCKET_TYPE fd, BcvMessage **ppMsg);
 int bcvSendMsg(BCV_SOCKET_TYPE fd, BcvMessage *pMsg);
+int bcvRecvMsgTimeout(BCV_SOCKET_TYPE fd, BcvMessage **ppMsg, i64 iDeadline);
+int bcvSendMsgTimeout(BCV_SOCKET_TYPE fd, BcvMessage *pMsg, i64 iDeadline);
 
 /* 
 ** Valid values for BcvMessage.

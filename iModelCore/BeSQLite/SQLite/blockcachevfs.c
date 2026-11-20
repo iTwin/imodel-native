@@ -128,12 +128,17 @@ struct BcvProxyFile {
   ** fdProxy is INVALID_SOCKET while disconnected. */
   u64 iSession;
   int bPoison;
-  u32 iDbVersion;
   int bShmUnlinked;
   u64 localDev;
   u64 localIno;
   u64 shmDev;
   u64 shmIno;
+  i64 baseQueryBlock;
+  i64 baseQueryByte;
+  i64 baseQueryUs;
+  i64 lastQueryBlock;
+  i64 lastQueryByte;
+  i64 lastQueryUs;
 };
 
 /* Reconnect timing. Each attempt has BCV_RECONNECT_TIMEOUT_MS to connect
@@ -1722,25 +1727,34 @@ static const char *bcvfsProxyGetAuth(int *pRc, BcvfsFile *pFile){
 ** called. If an error occurs within it, (*pRc) is set to an SQLite or
 ** HTTPS error code and NULL is returned.
 */
-static BcvMessage *bcvExchangeMessage(
+static BcvMessage *bcvExchangeMessageDeadline(
   int *pRc,                       /* IN/OUT: Error code */
   BCV_SOCKET_TYPE s,              /* Socket to communicate on */
-  BcvMessage *pSend               /* Message to send */
+  BcvMessage *pSend,              /* Message to send */
+  i64 iDeadline                   /* Monotonic deadline (us), or 0 */
 ){
   BcvMessage *pReply = 0;
   int rc = *pRc;
   if( rc==SQLITE_OK ){
-    rc = bcvSendMsg(s, pSend);
+    rc = bcvSendMsgTimeout(s, pSend, iDeadline);
     if( rc==SQLITE_OK ){
-      rc = bcvRecvMsg(s, &pReply);
+      rc = bcvRecvMsgTimeout(s, &pReply, iDeadline);
     }
   }
   *pRc = rc;
   return pReply;
 }
 
+static BcvMessage *bcvExchangeMessage(
+  int *pRc,                       /* IN/OUT: Error code */
+  BCV_SOCKET_TYPE s,              /* Socket to communicate on */
+  BcvMessage *pSend               /* Message to send */
+){
+  return bcvExchangeMessageDeadline(pRc, s, pSend, 0);
+}
+
 static int bcvfsProxyConnect(sqlite3_bcvfs*, const char*, const char*, int,
-    BCV_SOCKET_TYPE*, BcvMessage**, u32, u64, int);
+    BCV_SOCKET_TYPE*, BcvMessage**, int, u64, i64);
 
 static int bcvStatFileId(const char *zPath, u64 *piDev, u64 *piIno){
 #ifdef __WIN32__
@@ -1772,7 +1786,7 @@ static int bcvStatFileId(const char *zPath, u64 *piDev, u64 *piIno){
 ** unlinked or replaced since bcvfsOpen() opened pFile->pFile. SQLite's WAL
 ** layer keeps its original -shm mapping for the lifetime of the connection,
 ** so once unlinked it can no longer observe WalIndexHdr invalidations
-** written to a recreated -shm file.
+** written to a recreated -shm file and the handle must be reopened.
 */
 static void bcvfsProxyCheckLocalShm(BcvfsFile *pFile){
   if( pFile->zLocalPath && pFile->p.bShmUnlinked==0 ){
@@ -1781,14 +1795,10 @@ static void bcvfsProxyCheckLocalShm(BcvfsFile *pFile){
     if( zShm==0
      || bcvStatFileId(pFile->zLocalPath, &iDev, &iIno)!=0
      || iDev!=pFile->p.localDev || iIno!=pFile->p.localIno
+     || bcvStatFileId(zShm, &iDev, &iIno)!=0
+     || iDev!=pFile->p.shmDev || iIno!=pFile->p.shmIno
     ){
       pFile->p.bShmUnlinked = 1;
-    }else if( pFile->p.shmIno!=0 || pFile->p.shmDev!=0 ){
-      if( bcvStatFileId(zShm, &iDev, &iIno)!=0
-       || iDev!=pFile->p.shmDev || iIno!=pFile->p.shmIno
-      ){
-        pFile->p.bShmUnlinked = 1;
-      }
     }
     sqlite3_free(zShm);
   }
@@ -1861,7 +1871,7 @@ static void bcvfsProxyPoison(BcvfsFile *pFile){
 ** pMap==0 so the daemon can discard any stale parked session or half-open
 ** connection immediately.
 **
-** Return SQLITE_OK if a connection is established, or an error code 
+** Return SQLITE_OK if a connection is established, or an error code
 ** otherwise.
 */
 static int bcvfsProxyReconnect(BcvfsFile *pFile){
@@ -1878,54 +1888,46 @@ static int bcvfsProxyReconnect(BcvfsFile *pFile){
   bcv_close_socket(pFile->p.fdProxy);
   pFile->p.fdProxy = INVALID_SOCKET;
   bcvfsProxyCheckLocalShm(pFile);
+  if( pFile->p.bShmUnlinked ){
+    bcvfsProxyPoison(pFile);
+    return SQLITE_IOERR;
+  }
 
   for(iAttempt=0; iAttempt<BCV_RECONNECT_ATTEMPTS; iAttempt++){
     BCV_SOCKET_TYPE s = INVALID_SOCKET;
     BcvMessage *pReply = 0;
     int bRefused = 0;
-    int bSentLockVer = pFile->p.bShmUnlinked;
-    u32 helloFlags = (bWantResume ? BCV_HELLO_WANTRESUME : 0)
-        | (bSentLockVer ? BCV_HELLO_LOCKVERSION : 0);
+    i64 iDeadline;
     if( iAttempt>0 ){
       sqlite3_sleep(msBackoff);
       msBackoff *= 2;
     }
-    rc = bcvfsProxyConnect(pFs, pFile->pPath->zContainer, 
-        pFile->pPath->zDatabase, 0, &s, &pReply, helloFlags, iResume,
-        BCV_RECONNECT_TIMEOUT_MS
+    iDeadline = bcv_timestamp() + (i64)BCV_RECONNECT_TIMEOUT_MS * 1000;
+    rc = bcvfsProxyConnect(pFs, pFile->pPath->zContainer,
+        pFile->pPath->zDatabase, 0, &s, &pReply, bWantResume, iResume,
+        iDeadline
     );
     if( rc==SQLITE_OK ){
       if( pReply ){
         BcvHelloReply *pHello = &pReply->u.hello_r;
         bcvfsProxyCheckLocalShm(pFile);
         rc = pHello->errCode;
-        if( rc==SQLITE_OK 
-         && (pHello->iDbId!=pFile->iFileDbId
+        if( rc==SQLITE_OK
+         && (pFile->p.bShmUnlinked
+          || pHello->iDbId!=pFile->iFileDbId
           || (int)pHello->szBlk!=pFile->p.szBlk
           || bcvStrcmp(pHello->zStorage, pFile->p.zStorage)
           || bcvStrcmp(pHello->zAccount, pFile->p.zAccount)
           || bcvStrcmp(pHello->zContainer, pFile->p.zContainer)
-          || (pHello->bEncrypted!=0)!=(pFile->p.pKey!=0)
-          || (pFile->p.bShmUnlinked && pFile->pPath->zDatabase
-           && (pHello->iDbVersion==0 || pHello->iDbVersion!=pFile->p.iDbVersion)))
+          || (pHello->bEncrypted!=0)!=(pFile->p.pKey!=0))
         ){
-          /* The container or database has been replaced since it was opened,
-          ** or the local -shm file was unlinked across a database version
-          ** change so SQLite's page cache cannot be invalidated safely. */
+          /* The container, database, or local -shm file has been replaced
+          ** since this handle was opened; it must be reopened. */
           rc = SQLITE_IOERR;
-        }
-        if( rc==SQLITE_OK && !bSentLockVer && pFile->p.bShmUnlinked ){
-          rc = SQLITE_IOERR;
-          sqlite3_free(pReply);
-          bcv_close_socket(s);
-          continue;
         }
         if( rc!=SQLITE_OK ){
           bRefused = 1;
         }else{
-          if( !pFile->p.bShmUnlinked && pHello->iDbVersion ){
-            pFile->p.iDbVersion = pHello->iDbVersion;
-          }
           pFile->p.iSession = iResume = pHello->iSession;
           bResumed = (bWantResume && pHello->bResumed!=0);
           if( pFile->p.pMap && !bResumed ){
@@ -1940,7 +1942,7 @@ static int bcvfsProxyReconnect(BcvfsFile *pFile){
       }
       if( rc==SQLITE_OK && (pFile->zClientId || pReply==0) ){
         /* Also send BCV_CMD_CLIENT on "/" when zClientId is NULL so that
-        ** reconnecting verifies daemon reachability within the timeout
+        ** reconnecting verifies daemon reachability within the deadline
         ** before clearing SO_RCVTIMEO/SO_SNDTIMEO. */
         BcvMessage msg;
         BcvMessage *pFinal = 0;
@@ -1948,7 +1950,7 @@ static int bcvfsProxyReconnect(BcvfsFile *pFile){
         msg.eType = BCV_MESSAGE_CMD;
         msg.u.cmd.zAuth = pFile->zClientId;
         msg.u.cmd.eCmd = BCV_CMD_CLIENT;
-        pFinal = bcvExchangeMessage(&rc, s, &msg);
+        pFinal = bcvExchangeMessageDeadline(&rc, s, &msg, iDeadline);
         sqlite3_free(pFinal);
       }
       if( rc==SQLITE_OK ){
@@ -1960,6 +1962,15 @@ static int bcvfsProxyReconnect(BcvfsFile *pFile){
       bcv_close_socket(s);
       if( rc==SQLITE_OK || bRefused ) break;
     }
+  }
+
+  if( rc==SQLITE_OK && !bResumed ){
+    pFile->p.baseQueryBlock += pFile->p.lastQueryBlock;
+    pFile->p.baseQueryByte += pFile->p.lastQueryByte;
+    pFile->p.baseQueryUs += pFile->p.lastQueryUs;
+    pFile->p.lastQueryBlock = 0;
+    pFile->p.lastQueryByte = 0;
+    pFile->p.lastQueryUs = 0;
   }
 
   if( rc==SQLITE_OK && !bResumed && pFile->pCacheFile ){
@@ -1990,8 +2001,8 @@ static int bcvfsProxyReconnect(BcvfsFile *pFile){
 ** Send message pSend to the daemon on the proxy connection of pFile and
 ** return the reply. If the connection is closed, or the exchange fails
 ** because the connection is broken, reconnect (see bcvfsProxyReconnect())
-** and retry once. READ messages are retried without their MRU list, as 
-** the daemon's block map may have changed if the original READ was 
+** and retry once. READ messages are retried without their MRU list, as
+** the daemon's block map may have changed if the original READ was
 ** processed but its reply lost. A READ is not sent at all if reconnecting
 ** poisoned the transaction.
 */
@@ -2007,7 +2018,7 @@ static BcvMessage *bcvfsProxyExchange(
     int rc = SQLITE_OK;
     if( !bcv_socket_is_valid(pFile->p.fdProxy) || iTry>0 ){
       rc = bcvfsProxyReconnect(pFile);
-      if( rc==SQLITE_OK && pFile->p.bPoison 
+      if( rc==SQLITE_OK && pFile->p.bPoison
        && pSend->eType==BCV_MESSAGE_READ
       ){
         rc = SQLITE_IOERR;
@@ -2059,7 +2070,7 @@ static int bcvfsProxyOpenTransaction(BcvfsFile *pFile, int iBlk){
   int rc = SQLITE_OK;
 
   if( pFile->p.bPoison ) return SQLITE_IOERR;
-  if( pFile->p.pMap 
+  if( pFile->p.pMap
    && iBlk<pFile->p.pMap->u.read_r.nBlk
    && pFile->p.pMap->u.read_r.aBlk[iBlk]!=0
   ){
@@ -3613,15 +3624,26 @@ static int bcvfsProxyConnect(
   int bPrefetch,                  /* True for prefetch connection */
   BCV_SOCKET_TYPE *pS,            /* OUT: Open socket */
   BcvMessage **ppReply,           /* OUT: HELLO_REPLY message */
-  u32 helloFlags,                 /* Extra BCV_HELLO_* flags */
+  int bWantResume,                /* True to adopt parked iResume txn */
   u64 iResume,                    /* Previous session id, or 0 */
-  int msTimeout                   /* Socket timeout left set if >0, or 0 */
+  i64 iDeadline                   /* Monotonic deadline (us), or 0 */
 ){
   BCV_SOCKET_TYPE s = INVALID_SOCKET;
   int rc = SQLITE_OK;
   BcvMessage *pReply = 0;
+  int msTimeout = 0;
 
-  s = bcvConnectSocketTimeout(&rc, pFs->zPortnumber, 0, msTimeout);
+  if( iDeadline>0 ){
+    i64 iRemMs = (iDeadline - bcv_timestamp() + 999) / 1000;
+    if( iRemMs<=0 ){
+      rc = BCVFS_CANTOPEN;
+    }else{
+      msTimeout = (iRemMs>0x7fffffff ? 0x7fffffff : (int)iRemMs);
+    }
+  }
+  if( rc==SQLITE_OK ){
+    s = bcvConnectSocketTimeout(&rc, pFs->zPortnumber, 0, msTimeout);
+  }
   if( rc==SQLITE_OK && zCont ){
     BcvMessage hello;
     memset(&hello, 0, sizeof(BcvMessage));
@@ -3630,10 +3652,11 @@ static int bcvfsProxyConnect(
     hello.u.hello.zDatabase = zDb;
     hello.u.hello.bPrefetch = bPrefetch;
     if( zDb && !bPrefetch ){
-      hello.u.hello.bCanResume = BCV_HELLO_CANRESUME | helloFlags;
+      hello.u.hello.bCanResume = BCV_HELLO_CANRESUME
+          | (bWantResume ? BCV_HELLO_WANTRESUME : 0);
       hello.u.hello.iResume = iResume;
     }
-    pReply = bcvExchangeMessage(&rc, s, &hello);
+    pReply = bcvExchangeMessageDeadline(&rc, s, &hello, iDeadline);
   }
   if( rc!=SQLITE_OK ){
     assert( pReply==0 );
@@ -3667,7 +3690,6 @@ static int bcvfsOpenProxy(
       pFile->p.zContainer = bcvStrdupRc(&rc, pReply->u.hello_r.zContainer);
       pFile->p.szBlk = pReply->u.hello_r.szBlk;
       pFile->p.iSession = pReply->u.hello_r.iSession;
-      pFile->p.iDbVersion = pReply->u.hello_r.iDbVersion;
       pFile->iFileDbId = pReply->u.hello_r.iDbId;
 
       if( rc==SQLITE_OK && pReply->u.hello_r.bEncrypted ){
@@ -3810,11 +3832,14 @@ static int bcvfsOpen(
           }
           if( rc==SQLITE_OK && bDaemon && bIsMain ){
             char *zShm = sqlite3_mprintf("%s-shm", zLocal);
-            bcvStatFileId(zLocal, &pRet->p.localDev, &pRet->p.localIno);
-            if( zShm ){
-              bcvStatFileId(zShm, &pRet->p.shmDev, &pRet->p.shmIno);
-              sqlite3_free(zShm);
+            if( zShm==0 ){
+              rc = SQLITE_NOMEM;
+            }else if( bcvStatFileId(zLocal, &pRet->p.localDev, &pRet->p.localIno)!=0
+                   || bcvStatFileId(zShm, &pRet->p.shmDev, &pRet->p.shmIno)!=0
+            ){
+              rc = BCVFS_CANTOPEN;
             }
+            sqlite3_free(zShm);
           }
           pRet->pPath = pPath;
           pRet->zLocalPath = zLocal;
@@ -7165,6 +7190,31 @@ static BcvMessage *bcvVtabFetchData(
 
   pReply = bcvfsProxyExchange(pRc, pFile, &msg);
   assert( (pReply==0)==(*pRc!=SQLITE_OK) );
+  if( pReply && 0==bcvStrcmp(zVtab, "bcv_stat") ){
+    /* Keep per-handle nquery* counters cumulative across non-resumed
+    ** reconnects, matching BcvfsFile lifetime in local mode. */
+    VtabBlob blob;
+    blob.aData = pReply->u.vtab_r.aData;
+    blob.nData = pReply->u.vtab_r.nData;
+    blob.iData = 0;
+    while( blob.iData<blob.nData ){
+      const char *zName = bcvVtabExtractString(&blob);
+      int iValOff = blob.iData;
+      i64 iVal = (i64)bcvVtabExtractU64(&blob);
+      if( zName && iValOff+8<=blob.nData ){
+        if( 0==strcmp(zName, "nqueryblock") ){
+          pFile->p.lastQueryBlock = iVal;
+          bcvPutU64((u8*)&blob.aData[iValOff], (u64)(iVal + pFile->p.baseQueryBlock));
+        }else if( 0==strcmp(zName, "nquerybyte") ){
+          pFile->p.lastQueryByte = iVal;
+          bcvPutU64((u8*)&blob.aData[iValOff], (u64)(iVal + pFile->p.baseQueryByte));
+        }else if( 0==strcmp(zName, "nqueryus") ){
+          pFile->p.lastQueryUs = iVal;
+          bcvPutU64((u8*)&blob.aData[iValOff], (u64)(iVal + pFile->p.baseQueryUs));
+        }
+      }
+    }
+  }
 
   return pReply;
 }

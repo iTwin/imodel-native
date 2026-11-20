@@ -1140,11 +1140,10 @@ struct DClient {
   int bCanResume;
   u64 iSession;
   int bClosing;
-  int iLockVersion;
 };
 
 /*
-** A read transaction whose client connection was lost while the 
+** A read transaction whose client connection was lost while the
 ** transaction was open. The manifest snapshot and the cache-entry pins
 ** (apRef[]) are kept until either the client reconnects and resumes
 ** the session (HELLO.iResume==iSession), or the -resumetimeout expires.
@@ -1157,10 +1156,12 @@ struct DParked {
   i64 iExpire;                    /* bcv_timestamp() expiry time (us) */
   Container *pCont;
   i64 iDbId;
-  int iLockVersion;
   Manifest *pMan;
   ManifestDb *pManDb;
   CacheEntry **apRef;
+  i64 nQueryBlock;
+  i64 nQueryByte;
+  i64 nQueryUs;
   DParked *pNext;
 };
 
@@ -1577,7 +1578,7 @@ static void bdFreeParked(DParked *pPark){
 
 /*
 ** Client pClient is being disconnected. If it supports session resume
-** and has an open read transaction, move the transaction state to a 
+** and has an open read transaction, move the transaction state to a
 ** new DParked object. Return true if this is done, or false otherwise.
 */
 static int bdParkClient(DaemonCtx *p, DClient *pClient){
@@ -1597,10 +1598,12 @@ static int bdParkClient(DaemonCtx *p, DClient *pClient){
   pPark->iExpire = bcv_timestamp() + (i64)p->cmd.nResumeTimeout*1000000;
   pPark->pCont = pClient->pCont;
   pPark->iDbId = pClient->iDbId;
-  pPark->iLockVersion = pClient->iLockVersion;
   pPark->pMan = pClient->pMan;
   pPark->pManDb = pClient->pManDb;
   pPark->apRef = pClient->apRef;
+  pPark->nQueryBlock = pClient->nQueryBlock;
+  pPark->nQueryByte = pClient->nQueryByte;
+  pPark->nQueryUs = pClient->nQueryUs;
   pPark->pNext = p->pParkedList;
   p->pParkedList = pPark;
 
@@ -2204,12 +2207,7 @@ static void bdHandleHello(
     reply.u.hello_r.zErrMsg = zErr;
   }else{
     pClient->pCont = pCont;
-    if( pDb ){
-      pClient->iDbId = pDb->iDbId;
-      if( pMsg->u.hello.bCanResume & BCV_HELLO_LOCKVERSION ){
-        pClient->iLockVersion = pDb->iVersion;
-      }
-    }
+    if( pDb ) pClient->iDbId = pDb->iDbId;
     pCont->nClient++;
     if( (pMsg->u.hello.bCanResume & BCV_HELLO_CANRESUME)
      && p->cmd.nResumeTimeout>0
@@ -2222,8 +2220,6 @@ static void bdHandleHello(
         pPark = bdUnparkSession(p, pMsg->u.hello.iResume, pCont);
         if( bWant && pPark
          && pPark->iDbId==pClient->iDbId
-         && (pClient->iLockVersion==0
-          || pPark->pManDb->iVersion==pClient->iLockVersion)
          && pClient->prefetch.bPrefetch==0
         ){
           /* Adopt the parked transaction and keep its session id so a
@@ -2231,12 +2227,12 @@ static void bdHandleHello(
           ** The new connection already holds a pCont->nClient reference,
           ** so drop the parked one. */
           pClient->iSession = pPark->iSession;
-          if( pPark->iLockVersion ){
-            pClient->iLockVersion = pPark->iLockVersion;
-          }
           pClient->pMan = pPark->pMan;
           pClient->pManDb = pPark->pManDb;
           pClient->apRef = pPark->apRef;
+          pClient->nQueryBlock = pPark->nQueryBlock;
+          pClient->nQueryByte = pPark->nQueryByte;
+          pClient->nQueryUs = pPark->nQueryUs;
           pCont->nClient--;
           sqlite3_free(pPark);
           reply.u.hello_r.bResumed = 1;
@@ -2264,7 +2260,6 @@ static void bdHandleHello(
     reply.u.hello_r.zAccount = pCont->zAccount;
     reply.u.hello_r.zContainer = pCont->zContainer;
     reply.u.hello_r.iDbId = pClient->iDbId;
-    reply.u.hello_r.iDbVersion = pDb ? (u32)pDb->iVersion : 0;
     reply.u.hello_r.szBlk = pCont->pMan->szBlk;
     reply.u.hello_r.bEncrypted = (pCont->pKey!=0);
   }
@@ -2714,9 +2709,6 @@ static void bdHandleRead(
     if( pDb==0 ){
       zErr = sqlite3_mprintf("database has been deleted");
       rc = SQLITE_ERROR;
-    }else if( pClient->iLockVersion && pDb->iVersion!=pClient->iLockVersion ){
-      zErr = sqlite3_mprintf("database has been modified");
-      rc = SQLITE_IOERR;
     }else{
       int nByte = pDb->nBlkLocal * sizeof(CacheEntry*);
       bcvManifestRef(pMan);
@@ -2753,7 +2745,7 @@ static void bdHandleEnd(
 ){
   if( pClient->pMan==0 ){
     /* No transaction open on this connection. This happens if a client
-    ** reconnected after a lost connection and the session was not 
+    ** reconnected after a lost connection and the session was not
     ** resumed.  */
     sqlite3_free(pMsg);
     return;

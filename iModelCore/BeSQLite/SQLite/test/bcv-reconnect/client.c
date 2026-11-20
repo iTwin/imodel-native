@@ -33,6 +33,43 @@ static double now(void){ struct timespec t; clock_gettime(CLOCK_MONOTONIC,&t); r
 
 static int gMaxId = 40000;
 static const char *gRowPrefix = "";
+static const char *gRowPrefixFile = 0;
+
+static void refreshRowPrefix(char *zBuf, size_t nBuf){
+  if( gRowPrefixFile ){
+    FILE *f = fopen(gRowPrefixFile, "r");
+    zBuf[0] = '\0';
+    if( f ){
+      size_t n = fread(zBuf, 1, nBuf-1, f);
+      zBuf[n] = '\0';
+      fclose(f);
+    }
+    gRowPrefix = zBuf;
+  }
+}
+
+/* Verify that per-handle bcv_stat nquery* counters never go backwards. */
+static void checkQueryStats(sqlite3_stmt *pQStat, sqlite3_int64 aPrev[3], int *pnBad){
+  sqlite3_int64 aCur[3] = {-1, -1, -1};
+  int seen = 0;
+  while( sqlite3_step(pQStat)==SQLITE_ROW ){
+    const char *z = (const char*)sqlite3_column_text(pQStat, 0);
+    sqlite3_int64 v = sqlite3_column_int64(pQStat, 1);
+    if( z ){
+      if( strcmp(z, "nqueryblock")==0 ){ aCur[0] = v; seen |= 1; }
+      else if( strcmp(z, "nquerybyte")==0 ){ aCur[1] = v; seen |= 2; }
+      else if( strcmp(z, "nqueryus")==0 ){ aCur[2] = v; seen |= 4; }
+    }
+  }
+  sqlite3_reset(pQStat);
+  if( seen==7 ){
+    int j;
+    for(j=0; j<3; j++){
+      if( aCur[j]<0 || aCur[j]<aPrev[j] ) (*pnBad)++;
+      else aPrev[j] = aCur[j];
+    }
+  }
+}
 
 /* aId: if non-NULL and bReplay, read these ids; else if iBase>=0 read
 ** iBase..iBase+n-1; else pick random ids and record them into aId. */
@@ -66,7 +103,7 @@ static int readRows(sqlite3_stmt *pStmt, int n, int *pnBad, double *pMaxMs, int 
 int main(int argc, char **argv){
   sqlite3_bcvfs *pFs = 0;
   sqlite3 *db = 0, *dbRoot = 0, *dbCont = 0;
-  sqlite3_stmt *pStmt = 0, *pStat = 0, *pRootStat = 0, *pContStat = 0;
+  sqlite3_stmt *pStmt = 0, *pStat = 0, *pQStat = 0, *pRootStat = 0, *pContStat = 0;
   char *zErr = 0; int rc, it;
   const char *zDir = argv[1];
   int nIter = atoi(argv[2]), nRow = atoi(argv[3]), sleepMs = atoi(argv[4]);
@@ -79,20 +116,27 @@ int main(int argc, char **argv){
   int bPollOnly = getenv("POLL_ONLY")!=0;
   int bUploadV2 = getenv("UPLOAD_V2")!=0;
   int bRootOnly = getenv("ROOT_ONLY")!=0;
+  int bReopenOnIoerr = getenv("REOPEN_ON_IOERR")!=0;
   int idleMs = getenv("IDLE_SLEEP") ? atoi(getenv("IDLE_SLEEP")) : 0;
   const char *zCont = getenv("CONT") ? getenv("CONT") : "cont1";
-  const char *zMod = getenv("MODULE") ? getenv("MODULE") : "azure?emulator=127.0.0.1:10000";
+  const char *zAzPort = getenv("AZURITE_PORT") ? getenv("AZURITE_PORT") : "10099";
+  char zDefaultMod[128];
+  const char *zMod = 0;
   int attachFlags = SQLITE_BCV_ATTACH_IFNOT | (bSecure ? SQLITE_BCV_ATTACH_SECURE : 0);
   int *aId = calloc(nRow>0?nRow:1, sizeof(int));
-  int nOk = 0, nErr = 0, nBadTotal = 0;
-  char zUri[128], zContUri[128], zRootSql[192];
+  int nOk = 0, nErr = 0, nBadTotal = 0, nReopen = 0;
+  sqlite3_int64 aPrevQStat[3] = {0, 0, 0};
+  char zUri[128], zContUri[128], zRootSql[192], zPfxBuf[64];
   struct sigaction sa;
+  snprintf(zDefaultMod, sizeof(zDefaultMod), "azure?emulator=127.0.0.1:%s", zAzPort);
+  zMod = getenv("MODULE") ? getenv("MODULE") : zDefaultMod;
   memset(&sa, 0, sizeof(sa));
   sa.sa_handler = onUsr1;
   sigemptyset(&sa.sa_mask);
   sigaction(SIGUSR1, &sa, 0);
   if( getenv("MAX_ID") ) gMaxId = atoi(getenv("MAX_ID"));
   if( getenv("ROW_PREFIX") ) gRowPrefix = getenv("ROW_PREFIX");
+  gRowPrefixFile = getenv("ROW_PREFIX_FILE");
   setvbuf(stdout, 0, _IOLBF, 0);
   srand(getpid());
   rc = sqlite3_bcvfs_create(zDir, "bcv", &pFs, &zErr);
@@ -143,7 +187,7 @@ int main(int argc, char **argv){
   rc = sqlite3_open_v2(zUri, &db, SQLITE_OPEN_READONLY|SQLITE_OPEN_URI, "bcv");
   if( rc ){ printf("open: %d %s\n", rc, sqlite3_errmsg(db)); sqlite3_close(db); free(aId); sqlite3_bcvfs_destroy(pFs); return 1; }
   sqlite3_bcvfs_register_vtab(db);
-  sqlite3_exec(db, "PRAGMA bcv_client = 'test-client'", 0, 0, 0);
+  if( !bChurn ) sqlite3_exec(db, "PRAGMA bcv_client = 'test-client'", 0, 0, 0);
   if( bStat ){
     /* Exercise PRAGMA bcv_client on a disk-backed temp passthrough file
     ** (pPath==NULL, no proxy socket). */
@@ -211,9 +255,14 @@ int main(int argc, char **argv){
     return (nOk>0 ? 0 : 2);
   }
   sqlite3_prepare_v2(db, "SELECT v FROM t WHERE id=?", -1, &pStmt, 0);
-  if( bStat ) sqlite3_prepare_v2(db, "SELECT value FROM bcv_stat WHERE name='nclient'", -1, &pStat, 0);
+  if( bStat ){
+    sqlite3_prepare_v2(db, "SELECT value FROM bcv_stat WHERE name='nclient'", -1, &pStat, 0);
+    sqlite3_prepare_v2(db, "SELECT name, value FROM bcv_stat WHERE name IN ('nqueryblock','nquerybyte','nqueryus')", -1, &pQStat, 0);
+  }
   for(it=0; it<nIter; it++){
     int nBad = 0; double maxMs = 0, t0 = now();
+    refreshRowPrefix(zPfxBuf, sizeof(zPfxBuf));
+    if( pQStat ) checkQueryStats(pQStat, aPrevQStat, &nBad);
     rc = sqlite3_exec(db, "BEGIN", 0, 0, 0);
     if( rc==SQLITE_OK ) rc = readRows(pStmt, nRow, &nBad, &maxMs, aId, 0, bFixedHalf ? 0 : -1);
     if( rc==SQLITE_OK && sleepMs ) usleep(sleepMs*1000);
@@ -224,11 +273,32 @@ int main(int argc, char **argv){
     }
     if( rc!=SQLITE_OK ){
       printf("iter %d ERR rc=%d (%s) bad=%d\n", it, rc, sqlite3_errmsg(db), nBad);
+      sqlite3_exec(db, "COMMIT", 0, 0, 0);
       nErr++;
+      if( bReopenOnIoerr ){
+        sqlite3_finalize(pStmt); pStmt = 0;
+        sqlite3_finalize(pStat); pStat = 0;
+        sqlite3_finalize(pQStat); pQStat = 0;
+        sqlite3_close(db); db = 0;
+        memset(aPrevQStat, 0, sizeof(aPrevQStat));
+        if( sqlite3_open_v2(zUri, &db, SQLITE_OPEN_READONLY|SQLITE_OPEN_URI, "bcv")==SQLITE_OK ){
+          sqlite3_bcvfs_register_vtab(db);
+          sqlite3_exec(db, "PRAGMA bcv_client = 'test-client'", 0, 0, 0);
+          sqlite3_prepare_v2(db, "SELECT v FROM t WHERE id=?", -1, &pStmt, 0);
+          if( bStat ){
+            sqlite3_prepare_v2(db, "SELECT value FROM bcv_stat WHERE name='nclient'", -1, &pStat, 0);
+            sqlite3_prepare_v2(db, "SELECT name, value FROM bcv_stat WHERE name IN ('nqueryblock','nquerybyte','nqueryus')", -1, &pQStat, 0);
+          }
+          nReopen++;
+        }else{
+          nBad++;
+        }
+      }
     }else{
+      sqlite3_exec(db, "COMMIT", 0, 0, 0);
       nOk++;
+      if( pQStat ) checkQueryStats(pQStat, aPrevQStat, &nBad);
     }
-    sqlite3_exec(db, "COMMIT", 0, 0, 0);
     if( rc==SQLITE_OK && pRootStat ){
       int r2 = sqlite3_step(pRootStat);
       if( r2!=SQLITE_ROW || sqlite3_column_int(pRootStat, 0)!=1 ) nBad++;
@@ -244,9 +314,10 @@ int main(int argc, char **argv){
     if( maxMs>500 ) printf("iter %d slow read %.0f ms (iter %.0f ms)\n", it, maxMs, (now()-t0)*1000);
     if( idleMs && it+1<nIter ) usleep(idleMs*1000);
   }
+  if( nReopen ) printf("REOPENED count=%d\n", nReopen);
   printf("SUMMARY ok=%d err=%d bad_rows=%d\n", nOk, nErr, nBadTotal);
   free(aId);
-  sqlite3_finalize(pStmt); sqlite3_finalize(pStat);
+  sqlite3_finalize(pStmt); sqlite3_finalize(pStat); sqlite3_finalize(pQStat);
   sqlite3_finalize(pRootStat); sqlite3_finalize(pContStat);
   sqlite3_close(db); sqlite3_close(dbRoot); sqlite3_close(dbCont);
   sqlite3_bcvfs_destroy(pFs);

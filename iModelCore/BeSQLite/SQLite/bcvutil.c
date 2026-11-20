@@ -3902,6 +3902,34 @@ void sqlite3_bcv_test_socket_api(
   bcv_socket_api.xSend = xSend;
 }
 
+/*
+** Wait until socket fd is ready for reading (bWrite==0) or writing
+** (bWrite!=0), or until monotonic timestamp iDeadline (bcv_timestamp(), us)
+** is reached. Return SQLITE_OK if ready, or SQLITE_IOERR on timeout/error.
+*/
+static int bcv_socket_wait(BCV_SOCKET_TYPE fd, int bWrite, i64 iDeadline){
+  while( 1 ){
+    i64 iRemMs = (iDeadline - bcv_timestamp() + 999) / 1000;
+    struct pollfd pfd;
+    int res;
+    if( iRemMs<=0 ) return SQLITE_IOERR;
+    if( iRemMs>0x7fffffff ) iRemMs = 0x7fffffff;
+    memset(&pfd, 0, sizeof(pfd));
+    pfd.fd = fd;
+#ifdef __WIN32__
+    pfd.events = bWrite ? POLLWRNORM : POLLRDNORM;
+    res = WSAPoll(&pfd, 1, (int)iRemMs);
+    return (res>0 ? SQLITE_OK : SQLITE_IOERR);
+#else
+    pfd.events = bWrite ? POLLOUT : POLLIN;
+    res = poll(&pfd, 1, (int)iRemMs);
+    if( res>0 ) return SQLITE_OK;
+    if( res<0 && errno==EINTR ) continue;
+    return SQLITE_IOERR;
+#endif
+  }
+}
+
 static int bcv_recv(BCV_SOCKET_TYPE fd, void *aRead, int nRead){
   u8 *a = (u8*)aRead;
   int nDone = 0;
@@ -3915,12 +3943,76 @@ static int bcv_recv(BCV_SOCKET_TYPE fd, void *aRead, int nRead){
   return SQLITE_OK;
 }
 
+static int bcv_recv_deadline(
+  BCV_SOCKET_TYPE fd,
+  void *aRead,
+  int nRead,
+  i64 iDeadline
+){
+  u8 *a = (u8*)aRead;
+  int nDone = 0;
+  if( iDeadline<=0 || bcv_socket_api.xRecv!=bcvDefaultRecv ){
+    return bcv_recv(fd, aRead, nRead);
+  }
+  while( nDone<nRead ){
+    i64 iRemMs;
+    int res;
+    if( bcv_socket_wait(fd, 0, iDeadline)!=SQLITE_OK ){
+      return SQLITE_IOERR;
+    }
+    iRemMs = (iDeadline - bcv_timestamp() + 999) / 1000;
+    if( iRemMs<=0 ) return SQLITE_IOERR;
+    bcv_socket_timeout(fd, (int)iRemMs);
+    res = recv(fd, &a[nDone], nRead-nDone, 0);
+    if( res<=0 ){
+#ifndef __WIN32__
+      if( res<0 && errno==EINTR ) continue;
+#endif
+      return SQLITE_IOERR;
+    }
+    nDone += res;
+  }
+  return SQLITE_OK;
+}
+
 static int bcv_send(BCV_SOCKET_TYPE fd, void *aSend, int nSend){
   u8 *a = (u8*)aSend;
   int nDone = 0;
   while( nDone<nSend ){
     int res = bcv_socket_api.xSend(fd, &a[nDone], nSend-nDone);
     if( res<=0 ){
+      return SQLITE_IOERR;
+    }
+    nDone += res;
+  }
+  return SQLITE_OK;
+}
+
+static int bcv_send_deadline(
+  BCV_SOCKET_TYPE fd,
+  void *aSend,
+  int nSend,
+  i64 iDeadline
+){
+  u8 *a = (u8*)aSend;
+  int nDone = 0;
+  if( iDeadline<=0 || bcv_socket_api.xSend!=bcvDefaultSend ){
+    return bcv_send(fd, aSend, nSend);
+  }
+  while( nDone<nSend ){
+    i64 iRemMs;
+    int res;
+    if( bcv_socket_wait(fd, 1, iDeadline)!=SQLITE_OK ){
+      return SQLITE_IOERR;
+    }
+    iRemMs = (iDeadline - bcv_timestamp() + 999) / 1000;
+    if( iRemMs<=0 ) return SQLITE_IOERR;
+    bcv_socket_timeout(fd, (int)iRemMs);
+    res = send(fd, &a[nDone], nSend-nDone, MSG_NOSIGNAL);
+    if( res<=0 ){
+#ifndef __WIN32__
+      if( res<0 && errno==EINTR ) continue;
+#endif
       return SQLITE_IOERR;
     }
     nDone += res;
@@ -3966,7 +4058,7 @@ static void bcvBufferMsgU32Array(int *pRc, BcvBuffer *p, u32 *a, u32 n){
   bcvBufferAppendRc(pRc, p, a, sizeof(u32)*n);
 }
 
-int bcvSendMsg(BCV_SOCKET_TYPE fd, BcvMessage *pMsg){
+int bcvSendMsgTimeout(BCV_SOCKET_TYPE fd, BcvMessage *pMsg, i64 iDeadline){
   int rc = SQLITE_OK;
   BcvBuffer buf = {0,0,0};
 
@@ -4019,10 +4111,9 @@ int bcvSendMsg(BCV_SOCKET_TYPE fd, BcvMessage *pMsg){
       bcvBufferAppendU64(&rc, &buf, (u64)pMsg->u.hello_r.iDbId);
       bcvBufferAppendU32(&rc, &buf, pMsg->u.hello_r.szBlk);
       bcvBufferAppendU32(&rc, &buf, pMsg->u.hello_r.bEncrypted);
-      if( pMsg->u.hello_r.iSession || pMsg->u.hello_r.iDbVersion ){
+      if( pMsg->u.hello_r.iSession ){
         bcvBufferAppendU64(&rc, &buf, pMsg->u.hello_r.iSession);
         bcvBufferAppendU32(&rc, &buf, pMsg->u.hello_r.bResumed);
-        bcvBufferAppendU32(&rc, &buf, pMsg->u.hello_r.iDbVersion);
       }
       break;
     case BCV_MESSAGE_READ: 
@@ -4072,10 +4163,14 @@ int bcvSendMsg(BCV_SOCKET_TYPE fd, BcvMessage *pMsg){
   
   if( rc==SQLITE_OK ){
     bcvPutU32(&buf.aData[4], (u32)buf.nData-8);
-    rc = bcv_send(fd, buf.aData, buf.nData);
+    rc = bcv_send_deadline(fd, buf.aData, buf.nData, iDeadline);
   }
   bcvBufferZero(&buf);
   return rc;
+}
+
+int bcvSendMsg(BCV_SOCKET_TYPE fd, BcvMessage *pMsg){
+  return bcvSendMsgTimeout(fd, pMsg, 0);
 }
 
 static u64 bcvMsgGetU64(u8 **pa){
@@ -4114,16 +4209,17 @@ static u32 *bcvMsgGetU32Array(u8 **pa, u32 *pnEntry){
   return aRet;
 }
 
-int bcvRecvMsg(
-  BCV_SOCKET_TYPE fd, 
-  BcvMessage **ppMsg
+int bcvRecvMsgTimeout(
+  BCV_SOCKET_TYPE fd,
+  BcvMessage **ppMsg,
+  i64 iDeadline
 ){
   BcvMessage *pMsg = 0;
   int rc = SQLITE_OK;
   u8 aHdr[8];
 
   memset(aHdr, 0, sizeof(aHdr));
-  rc = bcv_recv(fd, aHdr, sizeof(aHdr));
+  rc = bcv_recv_deadline(fd, aHdr, sizeof(aHdr), iDeadline);
   if( rc==SQLITE_OK ){
     u32 eType = bcvGetU32(&aHdr[0]);
     u32 nByte = bcvGetU32(&aHdr[4]);
@@ -4131,7 +4227,7 @@ int bcvRecvMsg(
     pMsg = (BcvMessage*)bcvMallocRc(&rc,sizeof(BcvMessage)+nByte);
     if( rc==SQLITE_OK ){
       u8 *aBody = (u8*)&pMsg[1];
-      rc = bcv_recv(fd, aBody, nByte);
+      rc = bcv_recv_deadline(fd, aBody, nByte, iDeadline);
       if( rc==SQLITE_OK ){
         pMsg->eType = (int)eType;
         switch( eType ){
@@ -4197,9 +4293,6 @@ int bcvRecvMsg(
               pMsg->u.hello_r.iSession = bcvMsgGetU64(&aBody);
               pMsg->u.hello_r.bResumed = bcvMsgGetU32(&aBody);
             }
-            if( ((u8*)&pMsg[1] + nByte - aBody)>=4 ){
-              pMsg->u.hello_r.iDbVersion = bcvMsgGetU32(&aBody);
-            }
             break;
           }
 
@@ -4260,6 +4353,10 @@ int bcvRecvMsg(
 
   *ppMsg = pMsg;
   return rc;
+}
+
+int bcvRecvMsg(BCV_SOCKET_TYPE fd, BcvMessage **ppMsg){
+  return bcvRecvMsgTimeout(fd, ppMsg, 0);
 }
 
 struct BcvIntKey {

@@ -47,20 +47,22 @@ check(){  # name max_err min_total expected_clients expect_re -- run.sh args...
 check none          0 40 1 ""                  -- "$D" "$C" none
 check cut           0 40 1 "resumed session"   -- "$D" "$C" cut
 check hellodrop     0 40 1 "resumed session"   -- "$D" "$C" hellodrop
-check idlecut       0  4 1 "^read0_count=5$"   -- "$D" "$C" idlecut
+check idlecut       0  4 1 "^read0_count=13$"  -- "$D" "$C" idlecut
 check halfcut       0 40 1 "resumed session"   -- "$D" "$C" halfcut
 check clientcut     0 40 1 "supersedes"        -- "$D" "$C" clientcut
 check blackhole     0 40 1 "slow read"         -- "$D" "$C" blackhole
 check synblackhole  0 40 1 "slow read"         -- "$D" "$C" synblackhole
-check eintr         0 40 1 "resumed session"   -- "$D" "$C" eintr
+check eintr         0 40 1 "slow read"         -- "$D" "$C" eintr
 ROOT_ONLY=1 check rootblackhole 0 40 1 "slow read" -- "$D" "$C" blackhole
 check securecut     0 40 1 "resumed session"   -- "$D" "$C" securecut
 check secureauth    0  4 1 "\(http=403\)"      -- "$D" "$C" secureauth
 check cutmany       0 40 8 "8 resumed session" -- "$D" "$C" cutmany
 check restart       1 40 1 "ERR rc="           -- "$D" "$C" restart
-check wiperestart   1 40 1 "ERR rc="           -- "$D" "$C" wiperestart
-check wiperestartmod  2 3 1 "ERR rc="          -- "$D" "$C" wiperestartmod
-check wiperestartpoll 1 3 1 "ERR rc="          -- "$D" "$C" wiperestartpoll
+check cachewipe     1 40 1 "ERR rc="           -- "$D" "$C" cachewipe
+check cachewipepoll 0  3 1 ""                  -- "$D" "$C" cachewipepoll
+check wiperestart   1 40 1 "REOPENED count=1"  -- "$D" "$C" wiperestart
+check wiperestartmod      2 3 1 "ERR rc="      -- "$D" "$C" wiperestartmod
+check wiperestartrecreate 2 3 1 "ERR rc="      -- "$D" "$C" wiperestartrecreate
 check securerestart 1 40 1 "failed to resume"  -- "$D" "$C" securerestart
 T=1 check autoexit  0  1 1 "expired parked"    -- "$D" "$C" autoexit
 HALF_OPEN_SECS=4 DARGS="-resumetimeout 1" check expiry 1 40 1 "expired parked" -- "$D" "$C" halfcut

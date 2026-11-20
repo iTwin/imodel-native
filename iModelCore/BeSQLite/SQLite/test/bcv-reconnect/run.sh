@@ -10,14 +10,16 @@
 #   clientcut      client side RST now, daemon side kept open HALF_OPEN_SECS
 #                  (client reconnects before the daemon sees old connection die)
 #   restart        daemon killed with SIGKILL and restarted
-#   wiperestart    daemon SIGKILL + cache directory wiped + restarted + re-attached
-#   wiperestartmod wiperestart + remote db update (same iDbId, iVersion++)
-#   wiperestartpoll wiperestart (same version), then remote db update + bcv_poll
+#   cachewipe      daemon SIGKILL + cachefile/blocksdb wiped (-shm intact) + restart
+#   cachewipepoll  cachewipe + remote iVersion++ + bcv_poll on same open handle
+#   wiperestart    daemon SIGKILL + full dir wiped (-shm unlinked) + reopen db
+#   wiperestartmod full dir wiped + remote iVersion++ (unlinked -shm rejected)
+#   wiperestartrecreate full dir wiped + container recreated at iDbId=1,iVersion=1
 #   blackhole      cut, then new connections accepted but never served for BH s
 #   synblackhole   cut, then listen backlog saturated so connect() poll() times out
 #   hellodrop      cut + first reconnect HELLO_REPLY dropped mid-flight
 #   idlecut        cut while client is idle between transactions (no WAL_RETRY)
-#   eintr          SIGUSR1 storm + synblackhole (EINTR on poll/connect/recv)
+#   eintr          SIGUSR1 storm + BLACKHOLE (EINTR during timed HELLO recv)
 #   securecut      cut on a SQLITE_BCV_ATTACH_SECURE (AES-128-CTR) container
 #   securerestart  daemon restart + re-attach on a secure container (new key)
 #   secureauth     daemon restart + expired SAS 403 during PASS key refresh
@@ -32,32 +34,41 @@
 set -u
 HERE=$(cd "$(dirname "$0")" && pwd)
 D=$1; C=$2; SC=$3; CS=${4:-64M}; export HALF_OPEN_SECS=${HALF_OPEN_SECS:-3}
-W=$(mktemp -d "${RUNROOT:-${TMPDIR:-/tmp}}/bcv-reconnect-run.XXXX"); mkdir -p "$W/dir"
+export AZURITE_PORT=${AZURITE_PORT:-10099}
+W=$(mktemp -d "${RUNROOT:-${TMPDIR:-/tmp}}/bcv-reconnect-run.XXXX") || exit 1
+[ -n "$W" ] && [ -d "$W" ] || exit 1
+mkdir -p "$W/dir" || exit 1
 export BLACKHOLE=$W/blackhole
 export SYN_BLACKHOLE=$W/syn_blackhole
-case $SC in synblackhole|eintr) export SYN_BLACKHOLE_MODE=1 ;; esac
+[ "$SC" = synblackhole ] && export SYN_BLACKHOLE_MODE=1
 DP=$((22500 + RANDOM % 400)); PP=$((DP + 500))
 [ "$SC" = autoexit ] && DARGS="${DARGS:-} -autoexit -resumetimeout 1"
 BCV_KEY='Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=='
-BCV_SW=(-module 'azure?emulator=127.0.0.1:10000' -user devstoreaccount1 -auth "$BCV_KEY")
+BCV_SW=(-module "azure?emulator=127.0.0.1:$AZURITE_PORT" -user devstoreaccount1 -auth "$BCV_KEY")
 VCONT=
 make_versioned_cont(){
   VCONT="cont-${SC}-$$-$RANDOM"
   mkdir -p "$W/wdir"
-  python3 - "$W/test_v1.db" <<'PY'
+  python3 - "$W/test_v1.db" "$W/test_v2.db" <<'PY'
 import hashlib, sqlite3, sys
-c = sqlite3.connect(sys.argv[1])
-c.execute("pragma page_size=4096"); c.execute("pragma journal_mode=delete")
-c.execute("create table t(id integer primary key, v blob)")
-c.executemany("insert into t values(?,?)",
-    ((i, hashlib.sha256(f"{i}".encode()).digest()*30) for i in range(2000)))
-c.commit(); c.close()
+for path, pfx in ((sys.argv[1], ""), (sys.argv[2], "v2:")):
+    c = sqlite3.connect(path)
+    c.execute("pragma page_size=4096"); c.execute("pragma journal_mode=delete")
+    c.execute("create table t(id integer primary key, v blob)")
+    c.executemany("insert into t values(?,?)",
+        ((i, hashlib.sha256(f"{pfx}{i}".encode()).digest()*30) for i in range(2000)))
+    c.commit(); c.close()
 PY
   ASAN_OPTIONS=detect_leaks=0 $D create "${BCV_SW[@]}" -blocksize 64K "$VCONT" >>"$W/attach.log" 2>&1
   ASAN_OPTIONS=detect_leaks=0 $D upload "${BCV_SW[@]}" -container "$VCONT" "$W/test_v1.db" test.db >>"$W/attach.log" 2>&1
 }
 upload_v2_cont(){
   CONT="$VCONT" MAX_ID=2000 UPLOAD_V2=1 $C "$W/wdir" 0 0 0 >>"$W/attach.log" 2>&1
+}
+recreate_v2_cont(){
+  ASAN_OPTIONS=detect_leaks=0 $D destroy "${BCV_SW[@]}" "$VCONT" >>"$W/attach.log" 2>&1
+  ASAN_OPTIONS=detect_leaks=0 $D create "${BCV_SW[@]}" -blocksize 64K "$VCONT" >>"$W/attach.log" 2>&1
+  ASAN_OPTIONS=detect_leaks=0 $D upload "${BCV_SW[@]}" -container "$VCONT" "$W/test_v2.db" test.db >>"$W/attach.log" 2>&1
 }
 start_daemon(){
   rm -f "$W/dir/portnumber.bcv"
@@ -85,12 +96,15 @@ elif [ "$SC" = autoexit ]; then
   $C "$W/dir" 1 40 10000 >"$W/client1.log" 2>&1 & CP+=($!)
 elif [ "$SC" = idlecut ]; then
   T=${T:-0.4}
-  IDLE_SLEEP=${IDLE_SLEEP:-800} $C "$W/dir" ${ITER:-4} ${ROWS:-20} 0 >"$W/client1.log" 2>&1 & CP+=($!)
-elif [ "$SC" = wiperestartmod ] || [ "$SC" = wiperestartpoll ]; then
+  IDLE_SLEEP=${IDLE_SLEEP:-800} $C "$W/dir" ${ITER:-4} ${ROWS:-20} 0 stat >"$W/client1.log" 2>&1 & CP+=($!)
+elif [ "$SC" = wiperestartmod ] || [ "$SC" = wiperestartrecreate ] || [ "$SC" = cachewipepoll ]; then
   make_versioned_cont
+  : > "$W/row_prefix"
   T=${T:-0.6}
-  CONT="$VCONT" MAX_ID=2000 FIXED_FIRST_HALF=1 PCACHE=2000 IDLE_SLEEP=${IDLE_SLEEP:-2200} \
-    $C "$W/dir" ${ITER:-3} ${ROWS:-10} 0 >"$W/client1.log" 2>&1 & CP+=($!)
+  CONT="$VCONT" MAX_ID=2000 FIXED_FIRST_HALF=1 PCACHE=2000 ROW_PREFIX_FILE="$W/row_prefix" \
+    IDLE_SLEEP=${IDLE_SLEEP:-2400} $C "$W/dir" ${ITER:-3} ${ROWS:-10} 0 >"$W/client1.log" 2>&1 & CP+=($!)
+elif [ "$SC" = wiperestart ]; then
+  REOPEN_ON_IOERR=1 $C "$W/dir" ${ITER:-40} ${ROWS:-40} ${SLEEP:-150} stat >"$W/client1.log" 2>&1 & CP+=($!)
 elif [ "$SC" = eintr ]; then
   T=${T:-1.2}
   $C "$W/dir" ${ITER:-40} ${ROWS:-40} ${SLEEP:-120} stat >"$W/client1.log" 2>&1 & CP+=($!)
@@ -111,7 +125,7 @@ PY
 )"
   touch "$W/use_short_sas"
   T=${T:-1.2}
-  MODULE="azure?emulator=127.0.0.1:10000&sas=1" USE_SHORT_SAS_FILE="$W/use_short_sas" \
+  MODULE="azure?emulator=127.0.0.1:$AZURITE_PORT&sas=1" USE_SHORT_SAS_FILE="$W/use_short_sas" \
     SAS_SHORT="$SAS_SHORT" SAS_LONG="$SAS_LONG" SECURE=1 IDLE_SLEEP=3200 \
     $C "$W/dir" ${ITER:-4} ${ROWS:-40} 0 stat >"$W/client1.log" 2>&1 & CP+=($!)
 else
@@ -126,6 +140,7 @@ else
   done
 fi
 sleep ${T:-2.5}
+cut_line=$(wc -l < "$W/daemon.log")
 rc=0
 case $SC in
   cut|cutmany|stale|securecut|idlecut) kill -USR1 $PPID_ ;;
@@ -133,35 +148,47 @@ case $SC in
   halfcut) kill -USR2 $PPID_ ;;
   clientcut) kill -HUP $PPID_ ;;
   restart) kill -9 $DPID; sleep 0.5; start_daemon ;;
-  wiperestart)
+  cachewipe)
     touch "$BLACKHOLE"; kill -9 $DPID; wait $DPID 2>/dev/null
-    rm -rf "$W/dir"/*
+    rm -f "${W:?}/dir"/cachefile.bcv "${W:?}/dir"/blocksdb.bcv*
     start_daemon direct
     ATTACH_ONLY=1 $C "$W/dir" 0 0 0 >>"$W/attach.log" 2>&1 || rc=$?
     echo -n "127.0.0.1:$PP" > "$W/dir/portnumber.bcv"
     rm -f "$BLACKHOLE"
     ;;
-  wiperestartmod)
+  cachewipepoll)
     touch "$BLACKHOLE"; kill -9 $DPID; wait $DPID 2>/dev/null
+    rm -f "${W:?}/dir"/cachefile.bcv "${W:?}/dir"/blocksdb.bcv*
+    start_daemon direct
+    CONT="$VCONT" ATTACH_ONLY=1 $C "$W/dir" 0 0 0 >>"$W/attach.log" 2>&1 || rc=$?
     upload_v2_cont || rc=$?
-    rm -rf "$W/dir"/*
+    CONT="$VCONT" POLL_ONLY=1 $C "$W/dir" 0 0 0 >>"$W/attach.log" 2>&1 || rc=$?
+    echo -n "v2:" > "$W/row_prefix"
+    echo -n "127.0.0.1:$PP" > "$W/dir/portnumber.bcv"
+    rm -f "$BLACKHOLE"
+    ;;
+  wiperestart)
+    touch "$BLACKHOLE"; kill -9 $DPID; wait $DPID 2>/dev/null
+    rm -rf "${W:?}/dir"/*
+    start_daemon direct
+    ATTACH_ONLY=1 $C "$W/dir" 0 0 0 >>"$W/attach.log" 2>&1 || rc=$?
+    echo -n "127.0.0.1:$PP" > "$W/dir/portnumber.bcv"
+    rm -f "$BLACKHOLE"
+    ;;
+  wiperestartmod|wiperestartrecreate)
+    touch "$BLACKHOLE"; kill -9 $DPID; wait $DPID 2>/dev/null
+    if [ "$SC" = wiperestartmod ]; then
+      upload_v2_cont || rc=$?
+    else
+      recreate_v2_cont || rc=$?
+    fi
+    rm -rf "${W:?}/dir"/*
     start_daemon direct
     CONT="$VCONT" ATTACH_ONLY=1 $C "$W/dir" 0 0 0 >>"$W/attach.log" 2>&1 || rc=$?
     echo -n "127.0.0.1:$PP" > "$W/dir/portnumber.bcv"
     rm -f "$BLACKHOLE"
     CONT="$VCONT" MAX_ID=2000 ROW_PREFIX="v2:" $C "$W/dir" 2 10 0 >"$W/v2check.log" 2>&1 || rc=$?
     grep -q '^SUMMARY ok=2 err=0 bad_rows=0$' "$W/v2check.log" || { echo "V2_FRESH_OPEN_FAILED" >&2; rc=1; }
-    ;;
-  wiperestartpoll)
-    touch "$BLACKHOLE"; kill -9 $DPID; wait $DPID 2>/dev/null
-    rm -rf "$W/dir"/*
-    start_daemon direct
-    CONT="$VCONT" ATTACH_ONLY=1 $C "$W/dir" 0 0 0 >>"$W/attach.log" 2>&1 || rc=$?
-    echo -n "127.0.0.1:$PP" > "$W/dir/portnumber.bcv"
-    rm -f "$BLACKHOLE"
-    sleep 2.2
-    upload_v2_cont || rc=$?
-    CONT="$VCONT" POLL_ONLY=1 $C "$W/dir" 0 0 0 >>"$W/attach.log" 2>&1 || rc=$?
     ;;
   securerestart)
     touch "$BLACKHOLE"; kill -9 $DPID; wait $DPID 2>/dev/null
@@ -175,14 +202,14 @@ case $SC in
     rm -f "$W/use_short_sas"
     sleep 2.2
     start_daemon direct
-    MODULE="azure?emulator=127.0.0.1:10000&sas=1" SAS_SHORT="$SAS_LONG" SAS_LONG="$SAS_LONG" \
+    MODULE="azure?emulator=127.0.0.1:$AZURITE_PORT&sas=1" SAS_SHORT="$SAS_LONG" SAS_LONG="$SAS_LONG" \
       SECURE=1 ATTACH_ONLY=1 $C "$W/dir" 0 0 0 >>"$W/attach.log" 2>&1 || rc=$?
     echo -n "127.0.0.1:$PP" > "$W/dir/portnumber.bcv"
     rm -f "$BLACKHOLE"
     ;;
   blackhole) touch "$BLACKHOLE"; kill -USR1 $PPID_; sleep ${BH:-3}; rm -f "$BLACKHOLE" ;;
   synblackhole) touch "$SYN_BLACKHOLE"; sleep 0.15; kill -USR1 $PPID_; sleep ${BH:-2.4}; rm -f "$SYN_BLACKHOLE" ;;
-  eintr) touch "$SYN_BLACKHOLE"; sleep 0.15; kill -USR1 $PPID_; sleep ${BH:-1.2}; rm -f "$SYN_BLACKHOLE" ;;
+  eintr) touch "$BLACKHOLE"; kill -USR1 $PPID_; sleep ${BH:-1.2}; rm -f "$BLACKHOLE" ;;
   autoexit)
     kill -9 "${CP[0]}" 2>/dev/null; wait "${CP[0]}" 2>/dev/null; CP=()
     kill -USR1 $PPID_
@@ -203,14 +230,19 @@ for p in "${CP[@]}"; do wait $p || rc=$?; done
 [ -n "$SIGP" ] && { kill $SIGP 2>/dev/null; wait $SIGP 2>/dev/null; }
 if [ -n "$CHP" ]; then
   kill -TERM $CHP 2>/dev/null; wait $CHP || rc=$?
-  pcw=$(awk '/disconnect\.\./{d=1} d && /writing .* to cache slot/{n++} END{print n+0}' "$W/daemon.log")
-  [ "$pcw" -gt 0 ] || { echo "NO_POST_CUT_CHURN_WRITES" >&2; rc=1; }
+  pcw=$(tail -n +$((cut_line + 1)) "$W/daemon.log" | awk '
+    /disconnect\.\./ { d=1 }
+    d && /CMD\(client\)/ { exit }
+    d && /writing .* to cache slot/ { n++ }
+    END { print n+0 }
+  ')
+  [ "$pcw" -ge 32 ] || { echo "INSUFFICIENT_POST_CUT_PRE_REREAD_WRITES ($pcw)" >&2; rc=1; }
 fi
 kill $PPID_ $DPID 2>/dev/null; wait 2>/dev/null
 [ -n "$VCONT" ] && ASAN_OPTIONS=detect_leaks=0 $D destroy "${BCV_SW[@]}" "$VCONT" >>"$W/attach.log" 2>&1 || true
 echo "== $SC ($(basename "${D##* }")/$(basename "${C##* }")) workdir=$W exit=$rc"
 for f in "$W"/client*.log; do
-  grep -E 'ERR|MISMATCH|create|attach|open' "$f" | sed 's/^iter [0-9]* //' | sort | uniq -c | sort -rn | head -3
+  grep -E 'ERR|MISMATCH|create|attach|open|REOPENED' "$f" | sed 's/^iter [0-9]* //' | sort | uniq -c | sort -rn | head -4
   grep SUMMARY "$f"
 done
 [ -f "$W/churn.log" ] && grep SUMMARY "$W/churn.log"
