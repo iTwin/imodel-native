@@ -3443,7 +3443,8 @@ SchemaReadStatus ECSchema::ReadFromXmlFile(ECSchemaPtr& schemaOut, WCharCP ecSch
         Utf8String fileName(ecSchemaXmlFile);
         ReportFailedSchema(resolvedKey, fileName, status, schemaContext);
 
-        schemaContext.RemoveSchema(*schemaOut);
+        if (schemaOut.IsValid())
+            schemaContext.RemoveSchema(*schemaOut);
         schemaOut = nullptr;
         }
     else
@@ -3486,7 +3487,8 @@ SchemaReadStatus ECSchema::ReadFromXmlString(ECSchemaPtr& schemaOut, Utf8CP ecSc
         first200Bytes[200] = '\0';
         ReportFailedSchema(resolvedKey, first200Bytes, status, schemaContext);
 
-        schemaContext.RemoveSchema(*schemaOut);
+        if (schemaOut.IsValid())
+            schemaContext.RemoveSchema(*schemaOut);
         schemaOut = nullptr;
         }
     else
@@ -3539,7 +3541,8 @@ POP_DISABLE_DEPRECATION_WARNINGS
         Utf8String additionalInfo(first200Characters);
         ReportFailedSchema(resolvedKey, additionalInfo, status, schemaContext);
 
-        schemaContext.RemoveSchema(*schemaOut);
+        if (schemaOut.IsValid())
+            schemaContext.RemoveSchema(*schemaOut);
         schemaOut = nullptr;
         }
     else
