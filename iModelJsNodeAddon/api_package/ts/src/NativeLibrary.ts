@@ -713,7 +713,7 @@ export declare namespace IModelJsNative {
     public deleteElement(elemIdJson: string): void;
     public deleteElements(elementIds: Id64Array): BulkDeleteElementsResult;
     /** Validates the input and calls the pre-handlers in order, and throws on the first problem before writing anything. Aspects are then written while each owner is updated. The caller must abandon the txn if this throws. */
-    public deleteElementAspects(aspectIds: Id64Array): void;
+    public deleteElementAspects(aspectIds: Id64Array, lastModOnly?: boolean): void;
     public deleteLinkTableRelationship(props: RelationshipProps): DbResult;
     public deleteLinkTableRelationships(props: ReadonlyArray<RelationshipProps>): DbResult;
     public deleteLocalValue(name: string): void;
@@ -799,7 +799,7 @@ export declare namespace IModelJsNative {
     public insertCodeSpec(name: string, jsonProperties: CodeSpecProperties): Id64String;
     public insertElement(elemProps: ElementProps, options?: { forceUseId?: boolean }): Id64String;
     /** Validates the input and calls the pre-handlers in order, and throws on the first problem before writing anything. Aspects are then written while each owner is updated. The caller must abandon the txn if this throws. */
-    public insertElementAspects(aspectProps: ReadonlyArray<ElementAspectProps>): Id64String[];
+    public insertElementAspects(aspectProps: ReadonlyArray<ElementAspectProps>, lastModOnly?: boolean): Id64String[];
     public insertLinkTableRelationship(props: RelationshipProps): Id64String;
     public insertModel(modelProps: ModelProps): Id64String;
     public isChangeCacheAttached(): boolean;
@@ -877,7 +877,7 @@ export declare namespace IModelJsNative {
     /** Validates the input and calls the pre-handlers in order, and throws on the first problem before writing anything. Aspects are then written while each owner is updated. The caller must abandon the txn if this throws.
      * Unless `incremental` is true, every property of an aspect that is not in its props is set to null.
      */
-    public updateElementAspects(aspectProps: ReadonlyArray<ElementAspectProps>, incremental?: boolean): void;
+    public updateElementAspects(aspectProps: ReadonlyArray<ElementAspectProps>, incremental?: boolean, lastModOnly?: boolean): void;
     public updateElementGeometryCache(props: ElementGeometryCacheRequestProps): Promise<ElementGeometryCacheResponseProps>;
     /** Throws for an invalid geographic coordinate system before changing any geolocation properties.
      * Custom vertical transforms are registered only after the entire replacement definition is valid.

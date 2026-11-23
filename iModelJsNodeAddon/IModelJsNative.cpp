@@ -2245,25 +2245,27 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         return ret;
         }
 
+    static bool OptionalBool(NapiInfoCR info, int i) { return info.Length() > (size_t) i && info[i].IsBoolean() && info[i].As<Napi::Boolean>().Value(); }
+
     Napi::Value InsertElementAspects(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
         if (ARGUMENT_IS_NOT_PRESENT(0) || !info[0].IsArray())
             THROW_JS_TYPE_EXCEPTION("Invalid argument given to insertElementAspects");
-        return JsInterop::InsertElementAspects(db, info[0].As<Napi::Array>());
+        return JsInterop::InsertElementAspects(db, info[0].As<Napi::Array>(), OptionalBool(info, 1));
     }
 
     void UpdateElementAspects(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
         if (ARGUMENT_IS_NOT_PRESENT(0) || !info[0].IsArray() || (ARGUMENT_IS_PRESENT(1) && !info[1].IsUndefined() && !info[1].IsBoolean()))
             THROW_JS_TYPE_EXCEPTION("Invalid argument given to updateElementAspects");
-        JsInterop::UpdateElementAspects(db, info[0].As<Napi::Array>(), ARGUMENT_IS_PRESENT(1) && info[1].IsBoolean() && info[1].As<Napi::Boolean>().Value());
+        JsInterop::UpdateElementAspects(db, info[0].As<Napi::Array>(), OptionalBool(info, 1), OptionalBool(info, 2));
     }
 
     void DeleteElementAspects(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
         if (ARGUMENT_IS_NOT_PRESENT(0) || !info[0].IsArray())
             THROW_JS_TYPE_EXCEPTION("Invalid argument given to deleteElementAspects");
-        JsInterop::DeleteElementAspects(db, info[0].As<Napi::Array>());
+        JsInterop::DeleteElementAspects(db, info[0].As<Napi::Array>(), OptionalBool(info, 1));
     }
 
     Napi::Value ExportGraphics(NapiInfoCR info)
