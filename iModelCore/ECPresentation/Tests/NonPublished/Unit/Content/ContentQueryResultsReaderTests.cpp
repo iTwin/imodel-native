@@ -231,6 +231,42 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingFromMultipleClasses)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentQueryResultsReaderTests, CreatesClassSpecificFieldsWithoutSingleSelectClass)
+    {
+    ContentDescriptorPtr descriptor = CreateContentDescriptor();
+    descriptor->AddRootField(*new ContentDescriptor::ECPropertiesField(m_categorySupplier.CreateDefaultCategory(), "MyID",
+        ContentDescriptor::Property("", *m_widgetClass, *m_widgetClass->GetPropertyP("MyID"))));
+
+    RelatedClass path(*m_widgetClass, SelectClass<ECRelationshipClass>(*m_widgetHasGadgetsClass, "rel"), true, SelectClass<ECClass>(*m_gadgetClass, "gadget"));
+    descriptor->AddRootField(*new ContentDescriptor::RelatedContentField(m_categorySupplier.CreateDefaultCategory(), "related", "related", {path},
+        {
+        new ContentDescriptor::ECPropertiesField(m_categorySupplier.CreateDefaultCategory(), "nested",
+            ContentDescriptor::Property("", *m_gadgetClass, *m_gadgetClass->GetPropertyP("MyID"))),
+        }));
+
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
+    ContentQueryContractPtr withoutClass = CreateContract(0, *descriptor, nullptr, *query);
+    ContentQueryContractPtr matchingClass = CreateContract(1, *descriptor, m_widgetClass, *query);
+    ContentQueryContractPtr otherClass = CreateContract(2, *descriptor, m_gadgetClass, *query);
+
+    // Without a single select class, class-specific fields must not be discarded.
+    for (Utf8CP name : {"MyID", "/key/related", "nested"})
+        {
+        auto withoutClassField = withoutClass->GetField(name);
+        auto matchingField = matchingClass->GetField(name);
+        auto otherField = otherClass->GetField(name);
+        ASSERT_TRUE(withoutClassField.IsValid());
+        ASSERT_TRUE(matchingField.IsValid());
+        ASSERT_TRUE(otherField.IsValid());
+        EXPECT_STRNE("CAST(null AS TEXT)", matchingField->GetSelectClause().GetClause().c_str()) << name;
+        EXPECT_STRNE("CAST(null AS TEXT)", withoutClassField->GetSelectClause().GetClause().c_str()) << name;
+        EXPECT_STREQ("CAST(null AS TEXT)", otherField->GetSelectClause().GetClause().c_str()) << name;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ContentQueryResultsReaderTests, HandlesStructProperties)
     {
     ECEntityClassCP classI = s_project->GetECDbCR().Schemas().GetClass("RulesEngineTest", "ClassI")->GetEntityClassCP();
