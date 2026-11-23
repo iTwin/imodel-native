@@ -4,7 +4,7 @@ Libraries built in `iModelCore/libsrc/`.
 
 | Directory | Library | Version | vcpkg? |
 |-----------|---------|---------|--------|
-| `compress/zlib` | zlib | 1.3.2#3 (minizip 1.3.2) | Yes |
+| `compress/zlib` | zlib | 1.4 (minizip 1.4) | Yes |
 | `compress/lzma` | LZMA SDK | 26.04 | No |
 | `compress/snappy` | Google Snappy | 1.2.2 | No |
 | `crashpad` | Chromium Crashpad | 2024-04-11#13 | Yes |

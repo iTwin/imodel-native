@@ -1421,7 +1421,7 @@ public:
             {
             auto elem = *iter;
             int64_t curId = elem.GetValue();
-            int64_t curIncrement = curId - prevId;
+            int64_t curIncrement = static_cast<int64_t>(static_cast<uint64_t>(curId) - static_cast<uint64_t>(prevId));
             prevId = curId;
 
             if (0 == rangeLen)

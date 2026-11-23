@@ -3214,6 +3214,7 @@ TEST_F(SchemaCreationTest, CodifyAllowedNamelessItems)
 
     ECEntityClassP baseEntityClass;
     EXPECT_EQ(ECObjectsStatus::InvalidName, schema->CreateEntityClass(baseEntityClass, "")) << "cannot create an entity class with an empty name";
+    ASSERT_EQ(ECObjectsStatus::Success,     schema->CreateEntityClass(baseEntityClass, "baseEntityClass"));
 
     ECEntityClassP mixin;
     EXPECT_EQ(ECObjectsStatus::InvalidName, schema->CreateMixinClass(mixin, "", *baseEntityClass, *readCtx)) << "cannot create a mixin class with an empty name";

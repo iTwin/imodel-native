@@ -1071,6 +1071,8 @@ PolyfaceHeaderPtr tryValueToPolyfaceHeader (BeJsConst parentValue)
 
     // set numPerFace and required arrays, initialize inactive arrays
     PolyfaceHeaderPtr pf = PolyfaceHeader::CreateIndexedMeshSwap(numPerFace, points, pointIndices);
+    if (!pf.IsValid())
+        return nullptr;
 
     bool twoSided;
     derefBool(value, "twoSided", twoSided, true); // default value is true!
