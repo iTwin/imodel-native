@@ -794,8 +794,9 @@ struct AspectBatch {
     Utf8String m_writeError;
     bvector<std::pair<ECInstanceId, Utf8String>> m_targets;
     int64_t m_changesBeforeHandlers;
+    bool m_lastModOnly;
 
-    AspectBatch(DgnDbR db, Napi::Env env, Utf8CP functionName) : m_db(db), m_env(env), m_functionName(functionName), m_changesBeforeHandlers(db.GetTotalModifiedRowCount64()) {}
+    AspectBatch(DgnDbR db, Napi::Env env, Utf8CP functionName, bool lastModOnly) : m_db(db), m_env(env), m_functionName(functionName), m_changesBeforeHandlers(db.GetTotalModifiedRowCount64()), m_lastModOnly(lastModOnly) {}
 
     [[noreturn]] void Fail(DgnDbStatus status, Utf8StringCR detail) {
         Utf8PrintfString msg("%s: %s", m_functionName, detail.c_str());
@@ -916,6 +917,12 @@ struct AspectBatch {
                     Fail(DgnDbStatus::NotFound, Utf8PrintfString("aspect %s of %s no longer exists", target.first.ToHexStr().c_str(), target.second.c_str()));
             }
         }
+        if (m_lastModOnly) {
+            TouchOwners();
+            for (auto& hook : m_hookArgs)
+                m_db.CallJsHandlerMethod(hook.first, postHook, hook.second);
+            return;
+        }
         for (auto& owner : m_owners) {
             DgnElementCPtr original = m_db.Elements().GetElement(owner.m_id);
             DgnElementPtr ownerEdit = original.IsValid() ? original->CopyForEdit() : nullptr;
@@ -932,6 +939,31 @@ struct AspectBatch {
         }
         for (auto& hook : m_hookArgs)
             m_db.CallJsHandlerMethod(hook.first, postHook, hook.second);
+    }
+
+    // Writes the queued aspects, then sets LastMod of every owning element with one statement instead of updating each
+    // owner. The handlers of the owning elements and their parents are not called.
+    void TouchOwners() {
+        DgnElementIdSet ownerIds;
+        for (auto& owner : m_owners) {
+            for (auto& write : owner.m_writes) {
+                if (!write())
+                    FailSql(m_writeRc, m_writeError);
+            }
+            ownerIds.insert(owner.m_id);
+        }
+        if (ownerIds.empty())
+            return;
+        CachedStatementPtr stmt = m_db.GetCachedStatement("UPDATE " BIS_TABLE(BIS_CLASS_Element) " SET LastMod=julianday('now') WHERE InVirtualSet(?,Id)");
+        if (!stmt.IsValid())
+            Fail(DgnDbStatus::SQLiteError, "failed to prepare the update of the owning elements");
+        stmt->BindVirtualSet(1, ownerIds);
+        DbResult rc = stmt->Step();
+        if (BE_SQLITE_DONE != rc)
+            FailSql(rc, "failed to update the owning elements");
+        if ((size_t) m_db.GetModifiedRowCount() != ownerIds.size())
+            Fail(DgnDbStatus::NotFound, "an owning element no longer exists");
+        // Cached elements stay valid: LastMod is not cached, it is queried from the db.
     }
 };
 
@@ -953,8 +985,8 @@ Napi::Object copyProps(Napi::Object obj, std::initializer_list<Utf8CP> skip) {
 * when the existing aspect has exactly the same class, the new aspect keeps its id.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Napi::Array JsInterop::InsertElementAspects(DgnDbR db, Napi::Array input) {
-    AspectBatch batch(db, input.Env(), "insertElementAspects");
+Napi::Array JsInterop::InsertElementAspects(DgnDbR db, Napi::Array input, bool lastModOnly) {
+    AspectBatch batch(db, input.Env(), "insertElementAspects", lastModOnly);
     auto& writer = db.GetInstanceWriter();
     auto ids = Napi::Array::New(input.Env(), input.Length());
     for (uint32_t i = 0; i < input.Length(); ++i) {
@@ -1019,8 +1051,8 @@ Napi::Array JsInterop::InsertElementAspects(DgnDbR db, Napi::Array input) {
 * props name another element keeps its owner, and the element in the props is the one that is updated.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsInterop::UpdateElementAspects(DgnDbR db, Napi::Array input, bool incremental) {
-    AspectBatch batch(db, input.Env(), "updateElementAspects");
+void JsInterop::UpdateElementAspects(DgnDbR db, Napi::Array input, bool incremental, bool lastModOnly) {
+    AspectBatch batch(db, input.Env(), "updateElementAspects", lastModOnly);
     auto& writer = db.GetInstanceWriter();
     for (uint32_t i = 0; i < input.Length(); ++i) {
         Napi::Object obj = batch.GetProps(input, i);
@@ -1091,8 +1123,8 @@ void JsInterop::UpdateElementAspects(DgnDbR db, Napi::Array input, bool incremen
 * earlier in the same call.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsInterop::DeleteElementAspects(DgnDbR db, Napi::Array input) {
-    AspectBatch batch(db, input.Env(), "deleteElementAspects");
+void JsInterop::DeleteElementAspects(DgnDbR db, Napi::Array input, bool lastModOnly) {
+    AspectBatch batch(db, input.Env(), "deleteElementAspects", lastModOnly);
     auto& writer = db.GetInstanceWriter();
     bset<ECInstanceId> deleted;
     for (uint32_t i = 0; i < input.Length(); ++i) {
