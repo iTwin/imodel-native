@@ -2245,19 +2245,25 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         return ret;
         }
 
-    Napi::Value InsertElementAspect(NapiInfoCR info) {
-        REQUIRE_ARGUMENT_ANY_OBJ(0, aspectProps);
-        return JsInterop::InsertElementAspect(GetOpenedDb(info), aspectProps);
+    Napi::Value InsertElementAspects(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        if (ARGUMENT_IS_NOT_PRESENT(0) || !info[0].IsArray())
+            THROW_JS_TYPE_EXCEPTION("Invalid argument given to insertElementAspects");
+        return JsInterop::InsertElementAspects(db, info[0].As<Napi::Array>());
     }
 
-    void UpdateElementAspect(NapiInfoCR info)     {
-        REQUIRE_ARGUMENT_ANY_OBJ(0, aspectProps);
-        JsInterop::UpdateElementAspect(GetOpenedDb(info), aspectProps);
+    void UpdateElementAspects(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        if (ARGUMENT_IS_NOT_PRESENT(0) || !info[0].IsArray() || (ARGUMENT_IS_PRESENT(1) && !info[1].IsUndefined() && !info[1].IsBoolean()))
+            THROW_JS_TYPE_EXCEPTION("Invalid argument given to updateElementAspects");
+        JsInterop::UpdateElementAspects(db, info[0].As<Napi::Array>(), ARGUMENT_IS_PRESENT(1) && info[1].IsBoolean() && info[1].As<Napi::Boolean>().Value());
     }
 
-    void DeleteElementAspect(NapiInfoCR info) {
-        REQUIRE_ARGUMENT_STRING(0, aspectIdStr);
-        JsInterop::DeleteElementAspect(GetOpenedDb(info), aspectIdStr);
+    void DeleteElementAspects(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        if (ARGUMENT_IS_NOT_PRESENT(0) || !info[0].IsArray())
+            THROW_JS_TYPE_EXCEPTION("Invalid argument given to deleteElementAspects");
+        JsInterop::DeleteElementAspects(db, info[0].As<Napi::Array>());
     }
 
     Napi::Value ExportGraphics(NapiInfoCR info)
@@ -3609,7 +3615,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("deleteAllTxns", &NativeDgnDb::DeleteAllTxns),
             InstanceMethod("deleteElement", &NativeDgnDb::DeleteElement),
             InstanceMethod("deleteElements", &NativeDgnDb::DeleteElements),
-            InstanceMethod("deleteElementAspect", &NativeDgnDb::DeleteElementAspect),
+            InstanceMethod("deleteElementAspects", &NativeDgnDb::DeleteElementAspects),
             InstanceMethod("deleteLinkTableRelationship", &NativeDgnDb::DeleteLinkTableRelationship),
             InstanceMethod("deleteLinkTableRelationships", &NativeDgnDb::DeleteLinkTableRelationships),
             InstanceMethod("deleteLocalValue", &NativeDgnDb::DeleteLocalValue),
@@ -3688,7 +3694,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("inlineGeometryPartReferences", &NativeDgnDb::InlineGeometryPartReferences),
             InstanceMethod("insertCodeSpec", &NativeDgnDb::InsertCodeSpec),
             InstanceMethod("insertElement", &NativeDgnDb::InsertElement),
-            InstanceMethod("insertElementAspect", &NativeDgnDb::InsertElementAspect),
+            InstanceMethod("insertElementAspects", &NativeDgnDb::InsertElementAspects),
             InstanceMethod("insertLinkTableRelationship", &NativeDgnDb::InsertLinkTableRelationship),
             InstanceMethod("insertModel", &NativeDgnDb::InsertModel),
             InstanceMethod("isChangeCacheAttached", &NativeDgnDb::IsChangeCacheAttached),
@@ -3757,7 +3763,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("updateElement", &NativeDgnDb::UpdateElement),
             InstanceMethod("changeElementParent", &NativeDgnDb::ChangeElementParent),
             InstanceMethod("changeElementModel", &NativeDgnDb::ChangeElementModel),
-            InstanceMethod("updateElementAspect", &NativeDgnDb::UpdateElementAspect),
+            InstanceMethod("updateElementAspects", &NativeDgnDb::UpdateElementAspects),
             InstanceMethod("updateElementGeometryCache", &NativeDgnDb::UpdateElementGeometryCache),
             InstanceMethod("updateIModelProps", &NativeDgnDb::UpdateIModelProps),
             InstanceMethod("updateLinkTableRelationship", &NativeDgnDb::UpdateLinkTableRelationship),
