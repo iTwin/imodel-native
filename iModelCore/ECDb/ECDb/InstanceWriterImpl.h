@@ -116,6 +116,8 @@ struct InstanceWriter::Impl final {
     private:
         std::map<CacheKey, std::unique_ptr<CachedWriteStatement>> m_cache;
         std::vector<CacheKey> m_mru;
+        // Incremental update statements that set only some properties, by class and the indexes of their full-update binders.
+        std::map<std::pair<ECClassId, Utf8String>, std::unique_ptr<CachedWriteStatement>> m_partialCache;
         ECDbCR m_ecdb;
         BeMutex m_mutex;
         uint32_t m_maxCache;
@@ -137,6 +139,14 @@ struct InstanceWriter::Impl final {
         DbResult WithInsert(ECClassId classId, std::function<DbResult(CachedWriteStatement&)> fn);
         DbResult WithUpdate(ECClassId classId, std::function<DbResult(CachedWriteStatement&)> fn);
         DbResult WithDelete(ECClassId classId, std::function<DbResult(CachedWriteStatement&)> fn);
+        // The supplied values of a partial update: the binder index in the partial statement, and properties without a binder.
+        struct PartialValues final {
+            std::vector<std::pair<size_t, BeJsConst>> m_values;
+            std::vector<std::pair<Utf8String, BeJsConst>> m_unknown;
+        };
+        // Calls fn with a statement that updates only the properties of inst. Returns nullopt, without calling fn, when the
+        // instance supplies no property or a struct value that must be merged with the stored one.
+        std::optional<DbResult> WithPartialUpdate(ECClassId classId, BeJsConst inst, Options const& options, std::function<DbResult(CachedWriteStatement&, PartialValues const&)> fn);
     };
     //---------------------------------------------------------------------------------------
     // @bsistruct
