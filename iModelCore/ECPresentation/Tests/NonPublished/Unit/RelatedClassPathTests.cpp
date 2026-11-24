@@ -45,6 +45,76 @@ static RelatedClass WithTargetInstanceFilter(RelatedClass rc, Utf8String filter)
 //---------------------------------------------------------------------------------------
 // @betest
 //---------------------------------------------------------------------------------------
+DEFINE_SCHEMA(RelatedClassPathTests, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B" />
+    <ECRelationshipClass typeName="A_To_B" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="true">
+            <Class class="B"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RelatedClassPathTests, SourceAndRelationshipEqual_HandlesStepsWithoutRelationships)
+    {
+    Utf8CP schemaName = "RelatedClassPathTests";
+    ECClassCP classA = s_project->GetECDb().Schemas().GetClass(schemaName, "A");
+    ECClassCP classB = s_project->GetECDb().Schemas().GetClass(schemaName, "B");
+    ECRelationshipClassCP relAB = s_project->GetECDb().Schemas().GetClass(schemaName, "A_To_B")->GetRelationshipClassCP();
+
+    RelatedClass aToBById(*classA, SelectClass<ECClass>(*classB, "b"), {ECInstanceId((uint64_t)1)});
+    RelatedClass aToBByIdDifferentAlias(*classA, SelectClass<ECClass>(*classB, "other"), {ECInstanceId((uint64_t)1)});
+    RelatedClass aToBByRelationship(*classA, SelectClass<ECRelationshipClass>(*relAB, "r"), true, SelectClass<ECClass>(*classB, "b"));
+    RelatedClass bToBById(*classB, SelectClass<ECClass>(*classB, "b"), {ECInstanceId((uint64_t)1)});
+    RelatedClass aToAById(*classA, SelectClass<ECClass>(*classA, "a"), {ECInstanceId((uint64_t)1)});
+
+    // Both relationships are absent; aliases and target classes do not affect this comparison.
+    EXPECT_TRUE(aToBById.SourceAndRelationshipEqual(aToBByIdDifferentAlias));
+    EXPECT_TRUE(aToBById.SourceAndRelationshipEqual(aToAById));
+
+    // An absent relationship differs from a present one in either argument order.
+    EXPECT_FALSE(aToBById.SourceAndRelationshipEqual(aToBByRelationship));
+    EXPECT_FALSE(aToBByRelationship.SourceAndRelationshipEqual(aToBById));
+
+    EXPECT_FALSE(aToBById.SourceAndRelationshipEqual(bToBById));
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest
+//---------------------------------------------------------------------------------------
+TEST_F(RelatedClassPathTests, ClassesEqual_HandlesStepsWithoutRelationships)
+    {
+    Utf8CP schemaName = "RelatedClassPathTests";
+    ECClassCP classA = s_project->GetECDb().Schemas().GetClass(schemaName, "A");
+    ECClassCP classB = s_project->GetECDb().Schemas().GetClass(schemaName, "B");
+    ECRelationshipClassCP relAB = s_project->GetECDb().Schemas().GetClass(schemaName, "A_To_B")->GetRelationshipClassCP();
+
+    RelatedClass aToBById(*classA, SelectClass<ECClass>(*classB, "b"), {ECInstanceId((uint64_t)1)});
+    RelatedClass aToBByIdDifferentAlias(*classA, SelectClass<ECClass>(*classB, "other"), {ECInstanceId((uint64_t)1)});
+    RelatedClass aToBByRelationship(*classA, SelectClass<ECRelationshipClass>(*relAB, "r"), true, SelectClass<ECClass>(*classB, "b"));
+    RelatedClass bToBById(*classB, SelectClass<ECClass>(*classB, "b"), {ECInstanceId((uint64_t)1)});
+    RelatedClass aToAById(*classA, SelectClass<ECClass>(*classA, "a"), {ECInstanceId((uint64_t)1)});
+
+    // With no relationships, both source and target classes must match; aliases are ignored.
+    EXPECT_TRUE(aToBById.ClassesEqual(aToBByIdDifferentAlias));
+    EXPECT_FALSE(aToBById.ClassesEqual(bToBById));
+    EXPECT_FALSE(aToBById.ClassesEqual(aToAById));
+
+    EXPECT_FALSE(aToBById.ClassesEqual(aToBByRelationship));
+    EXPECT_FALSE(aToBByRelationship.ClassesEqual(aToBById));
+
+    // Compare multi-step paths with a relationship-less prefix.
+    RelatedClass bToAByRelationship(*classB, SelectClass<ECRelationshipClass>(*relAB, "r"), false, SelectClass<ECClass>(*classA, "a"));
+    RelatedClassPath path{aToBById, bToAByRelationship};
+    RelatedClassPath samePath{aToBByIdDifferentAlias, bToAByRelationship};
+    EXPECT_TRUE(path.ClassesEqual(samePath));
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest
+//---------------------------------------------------------------------------------------
 DEFINE_SCHEMA(Reverse_CorrectlyReversesSingleStepPath, R"*(
     <ECEntityClass typeName="A" />
     <ECEntityClass typeName="B" />

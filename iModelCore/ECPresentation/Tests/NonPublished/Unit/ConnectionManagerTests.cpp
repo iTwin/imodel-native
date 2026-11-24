@@ -6,6 +6,8 @@
 #include <folly/Executor.h>
 #include <UnitTests/ECPresentation/TestConnectionCache.h>
 #include "../Helpers/ECDbTestProject.h"
+#include <chrono>
+#include <future>
 
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_EC
@@ -122,10 +124,6 @@ TEST_F(ConnectionManagerTests, ReturnsProxyConnectionWhenRequestedByConnectionId
         }).join();
     }
 
-#define WAIT_UNTIL(beatomicBool) \
-    while (!beatomicBool) \
-        BeThreadUtilities::BeSleep(1);
-
 //---------------------------------------------------------------------------------------
 // @betest
 //---------------------------------------------------------------------------------------
@@ -135,46 +133,111 @@ TEST_F(ConnectionManagerTests, WaitsForProxyConnectionsToCloseBeforeClosingPrima
     IConnectionPtr primaryConnection = m_manager.GetConnection(s_project->GetECDb());
     ASSERT_TRUE(primaryConnection.IsValid());
 
-    BeAtomic<bool> didWorkerThreadStart(false);
-    BeAtomic<bool> didClosePrimaryECDb(false);
-    BeAtomic<bool> didWorkerThreadFinish(false);
-    std::thread([&]()
+    std::promise<bool> proxyCreated;
+    auto proxyCreatedFuture = proxyCreated.get_future();
+    std::promise<void> closeNotified;
+    auto closeNotifiedFuture = closeNotified.get_future();
+    std::promise<void> closeFinished;
+    auto closeFinishedFuture = closeFinished.get_future();
+    bool receivedCloseNotification = false;
+    bool closedBeforeProxyRelease = false;
+
+    TestConnectionsListener listener([&](ConnectionEvent const& event)
         {
-        // request a connection on a different thread
-        IConnectionPtr proxyConnection = m_manager.GetConnection(primaryConnection->GetId().c_str());
-        ASSERT_TRUE(proxyConnection.IsValid());
-        didWorkerThreadStart.store(true);
+        if (ConnectionEventType::Closed == event.GetEventType())
+            closeNotified.set_value();
+        });
+    m_manager.AddListener(listener);
 
-        // sleep for 100 ms before releasing the proxy connection to
-        // get the primary thread to block
-        BeThreadUtilities::BeSleep(100);
+    Utf8String connectionId = primaryConnection->GetId();
+    std::thread worker([&]()
+        {
+        IConnectionPtr proxyConnection = m_manager.GetConnection(connectionId.c_str());
+        proxyCreated.set_value(proxyConnection.IsValid());
+        if (proxyConnection.IsNull())
+            return;
+
+        // Keep the proxy until close has started, then check that close is still waiting for it.
+        receivedCloseNotification = (std::future_status::ready == closeNotifiedFuture.wait_for(std::chrono::seconds(5)));
+        if (receivedCloseNotification)
+            closedBeforeProxyRelease = (std::future_status::ready == closeFinishedFuture.wait_for(std::chrono::milliseconds(200)));
         proxyConnection = nullptr;
+        });
 
-        // wait for primary thread to finish closing the primary connection
-        WAIT_UNTIL(didClosePrimaryECDb);
-        didWorkerThreadFinish.store(true);
-        }).detach();
+    bool createdInTime = (std::future_status::ready == proxyCreatedFuture.wait_for(std::chrono::seconds(5)));
+    bool hasProxy = createdInTime && proxyCreatedFuture.get();
+    if (hasProxy)
+        s_project->GetECDb().CloseDb();
+    else
+        closeNotified.set_value();
+    closeFinished.set_value();
+    worker.join();
+    m_manager.DropListener(listener);
 
-    // wait for worker thread to create the proxy connection
-    WAIT_UNTIL(didWorkerThreadStart);
-
-    // the proxy connection is created, now attempt to close the primary ECDb
-    // this thread gets blocked until the proxy connection is not used anymore
-    s_project->GetECDb().CloseDb();
-    didClosePrimaryECDb.store(true);
-
-    // wait for worker thread to finish its verifications
-    WAIT_UNTIL(didWorkerThreadFinish);
-
-    // verify the primary connection is closed and removed from cache
+    ASSERT_TRUE(hasProxy);
+    EXPECT_TRUE(receivedCloseNotification);
+    EXPECT_FALSE(closedBeforeProxyRelease);
     EXPECT_FALSE(primaryConnection->IsOpen());
 
-    // verify we can't get another proxy connection
     std::thread([&]()
         {
-        IConnectionPtr proxyConnection = m_manager.GetConnection(primaryConnection->GetId().c_str());
+        IConnectionPtr proxyConnection = m_manager.GetConnection(connectionId.c_str());
         ASSERT_TRUE(proxyConnection.IsNull());
         }).join();
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest
+//---------------------------------------------------------------------------------------
+TEST_F(ConnectionManagerTests, ClosesWhenProxyIsReleasedDuringCloseNotification)
+    {
+    m_manager.NotifyConnectionOpened(s_project->GetECDb());
+    IConnectionPtr primaryConnection = m_manager.GetConnection(s_project->GetECDb());
+    ASSERT_TRUE(primaryConnection.IsValid());
+
+    std::promise<bool> proxyCreated;
+    auto proxyCreatedFuture = proxyCreated.get_future();
+    std::promise<void> releaseProxy;
+    auto releaseProxyFuture = releaseProxy.get_future();
+    std::promise<void> proxyReleased;
+    auto proxyReleasedFuture = proxyReleased.get_future();
+    bool releasedDuringNotification = false;
+
+    TestConnectionsListener listener([&](ConnectionEvent const& event)
+        {
+        if (ConnectionEventType::Closed != event.GetEventType())
+            return;
+
+        // Finish the release callback before close proceeds to the store's wait.
+        releaseProxy.set_value();
+        releasedDuringNotification = (std::future_status::ready == proxyReleasedFuture.wait_for(std::chrono::seconds(5)));
+        });
+    m_manager.AddListener(listener);
+
+    Utf8String connectionId = primaryConnection->GetId();
+    std::thread worker([&]()
+        {
+        IConnectionPtr proxy = m_manager.GetConnection(connectionId.c_str());
+        proxyCreated.set_value(proxy.IsValid());
+        if (proxy.IsNull() || std::future_status::ready != releaseProxyFuture.wait_for(std::chrono::seconds(5)))
+            return;
+
+        proxy = nullptr;
+        proxyReleased.set_value();
+        });
+
+    bool createdInTime = (std::future_status::ready == proxyCreatedFuture.wait_for(std::chrono::seconds(5)));
+    bool hasProxy = createdInTime && proxyCreatedFuture.get();
+    if (hasProxy)
+        s_project->GetECDb().CloseDb();
+    else
+        releaseProxy.set_value();
+    worker.join();
+    m_manager.DropListener(listener);
+
+    ASSERT_TRUE(hasProxy);
+    EXPECT_TRUE(releasedDuringNotification);
+    EXPECT_FALSE(primaryConnection->IsOpen());
     }
 
 //---------------------------------------------------------------------------------------

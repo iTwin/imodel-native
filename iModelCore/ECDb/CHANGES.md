@@ -7,6 +7,10 @@ This document including important changes to syntax or file format.
 | Profile | `4.0.0.5` |
 | ECSQL   | `2.0.4.2` |
 
+## `11/23/2026`: Schema upgrades safely map lazily loaded subclasses
+* Mapping a derived class during schema import can lazily load additional subclasses and grow the base class's derived-class list. The mapper now iterates a stable copy of that list, preventing an access violation during schema upgrades.
+* Profile and ECSql versions are unchanged.
+
 ## `11/16/2026`: ECSQL grammar is free of bison conflicts
 * `sqlbison.y` no longer has shift/reduce or reduce/reduce conflicts or other bison warnings. It declares `%expect 0`, and `BuildECSqlParser.sh`/`.bat` run bison with `-Wall`, so a new conflict is reported when the parser is regenerated.
 * A parenthesized operand can now start a comparison or predicate, for example `WHERE (I) = 1`, `WHERE (P2D.X) >= (P3D.X)`, `WHERE (I) IN (1, 2)` or `CASE WHEN (I) = 1 THEN ...`. These statements were previously rejected with a syntax error.
