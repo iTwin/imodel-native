@@ -50,6 +50,7 @@ public:
     protected:
         bool m_useJsName;
         bool m_convertClassIdsToClassNames = false;
+        ECN::ECClassId m_classId;
         UserPropertyHandler m_userPropertyHandler;
         CustomBindHandler m_customBindHandler;
         CanBindHanlder m_canBindHandler;
@@ -59,6 +60,12 @@ public:
         Options(WriterOp op) : m_useJsName(false), m_op(op) {}
         bool GetUseJsNames() const { return m_useJsName; }
         bool GetConvertClassIdsToClassNames() const { return m_convertClassIdsToClassNames; }
+        // When valid, the class to write, instead of the one named by the instance.
+        ECN::ECClassId GetClassId() const { return m_classId; }
+        Options& UseClassId(ECN::ECClassId v) {
+            m_classId = v;
+            return *this;
+        }
         CustomBindHandler GetCustomBindHandler() const { return m_customBindHandler; }
         CanBindHanlder GetCanBindHandler() const { return m_canBindHandler; }
         UserPropertyHandler GetUserPropertyHandler() const { return m_userPropertyHandler; }
@@ -102,10 +109,17 @@ public:
     struct UpdateOptions final : public Options {
     private:
         bool m_useIncrementalUpdate = false;
+        ECInstanceId m_instanceId;
 
     public:
         UpdateOptions() : Options(WriterOp::Update) {}
         bool GetUseIncrementalUpdate() const { return m_useIncrementalUpdate; }
+        // When valid, the id of the instance to update, instead of the one in the instance.
+        ECInstanceId GetInstanceId() const { return m_instanceId; }
+        UpdateOptions& UseInstanceId(ECInstanceId v) {
+            m_instanceId = v;
+            return *this;
+        }
         // This can cause slow performance as it will read the existing instance from the database override
         // the properties that are not specified in the input JSON.
         UpdateOptions& UseIncrementalUpdate(bool v) {
