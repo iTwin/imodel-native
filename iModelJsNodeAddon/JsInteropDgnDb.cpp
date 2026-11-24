@@ -935,16 +935,14 @@ struct AspectBatch {
     }
 };
 
-// Copies the own properties of obj except those in skip.
-Napi::Object copyProps(Napi::Object obj, std::initializer_list<Utf8CP> skip) {
-    auto copy = Napi::Object::New(obj.Env());
-    Napi::Array names = obj.GetPropertyNames();
-    for (uint32_t i = 0; i < names.Length(); ++i) {
-        Utf8String name = names.Get(i).ToString().Utf8Value();
-        if (std::none_of(skip.begin(), skip.end(), [&](Utf8CP s) { return name.Equals(s); }))
-            copy.Set(name.c_str(), obj.Get(name.c_str()));
-    }
-    return copy;
+// Binds the owner of an aspect to its Element navigation property, whatever the props say about it.
+InstanceWriter::Options::CustomBindHandler bindOwner(DgnElementId ownerId, ECClassId relClassId) {
+    return [ownerId, relClassId](ECPropertyCR prop, IECSqlBinder& binder, BeJsConst, BeJsConst, ECSqlStatus& rc) {
+        if (!prop.GetIsNavigation() || !prop.GetName().Equals("Element"))
+            return PropertyHandlerResult::Continue;
+        rc = binder.BindNavigation(ownerId, relClassId);
+        return PropertyHandlerResult::Handled;
+    };
 }
 }
 
@@ -973,22 +971,18 @@ Napi::Array JsInterop::InsertElementAspects(DgnDbR db, Napi::Array input) {
 
         // Write the owner with its relationship class, because the writer binds a null relationship class unless it is given
         // one. Like the single-aspect insert, the EC name "Element" is accepted for the owner and is not written.
-        Napi::Object row = copyProps(obj, {json_element(), "Element"});
-        auto element = Napi::Object::New(input.Env());
-        element.Set("id", Napi::String::New(input.Env(), related.m_id.ToHexStr().c_str()));
-        if (ECClassCP relClass = related.m_relClassId.IsValid() ? db.Schemas().GetClass(related.m_relClassId) : nullptr)
-            element.Set("relClassName", Napi::String::New(input.Env(), Utf8PrintfString("%s.%s", relClass->GetSchema().GetName().c_str(), relClass->GetName().c_str()).c_str()));
-        else
-            element.Set("relClassName", isUnique ? BIS_ECSCHEMA_NAME "." BIS_REL_ElementOwnsUniqueAspect : BIS_ECSCHEMA_NAME "." BIS_REL_ElementOwnsMultiAspects);
-        row.Set(json_element(), element);
+        ECClassId relClassId = related.m_relClassId.IsValid() && nullptr != db.Schemas().GetClass(related.m_relClassId) ? related.m_relClassId
+            : db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, isUnique ? BIS_REL_ElementOwnsUniqueAspect : BIS_REL_ElementOwnsMultiAspects);
 
         // An existing unique aspect is looked up when the write is performed, so that the last of several inserts of the
         // same element and class wins.
         DgnElementId ownerId = owner->GetElementId();
         ECClassCP aspectClassP = &aspectClass;
-        batch.Processed(ownerId, aspectClass.GetId(), hookArg, [&batch, &writer, &ids, aspectClassP, ownerId, isUnique, row, i]() {
+        batch.Processed(ownerId, aspectClass.GetId(), hookArg, [&batch, &writer, &ids, aspectClassP, ownerId, relClassId, isUnique, obj, i]() {
             InstanceWriter::InsertOptions options;
             options.UseJsNames(true);
+            options.UseClassId(aspectClassP->GetId());
+            options.SetCustomBindHandler(bindOwner(ownerId, relClassId));
             if (isUnique) {
                 ECInstanceKey existing = batch.FindUniqueAspect(*aspectClassP, ownerId);
                 if (existing.IsValid()) {
@@ -1001,7 +995,7 @@ Napi::Array JsInterop::InsertElementAspects(DgnDbR db, Napi::Array input) {
             }
 
             ECInstanceKey key;
-            DbResult rc = writer.Insert(BeJsConst(row), options, key);
+            DbResult rc = writer.Insert(BeJsConst(obj), options, key);
             if (BE_SQLITE_DONE != rc)
                 return batch.WriteFailed(rc, Utf8PrintfString("failed to insert props[%u]: %s", i, writer.GetLastError().c_str()));
             ids.Set(i, Napi::String::New(ids.Env(), key.GetInstanceId().ToHexStr().c_str()));
@@ -1061,23 +1055,17 @@ void JsInterop::UpdateElementAspects(DgnDbR db, Napi::Array input, bool incremen
 
         // Write the stored aspect with its actual class and owner. The writer sets every property it is not given to null,
         // unless the incremental update reads it from the stored aspect.
-        ECClassCP storedClass = db.Schemas().GetClass(stored.GetClassId());
-        if (nullptr == storedClass)
+        if (nullptr == db.Schemas().GetClass(stored.GetClassId()))
             batch.Fail(DgnDbStatus::BadSchema, Utf8PrintfString("the class of aspect %s is not found", stored.GetInstanceId().ToHexStr().c_str()));
-        Napi::Object row = copyProps(obj, {json_element(), "Element", DgnElement::json_id(), DgnElement::json_classFullName(), "className"});
-        row.Set(DgnElement::json_id(), Napi::String::New(input.Env(), stored.GetInstanceId().ToHexStr().c_str()));
-        row.Set(DgnElement::json_classFullName(), Napi::String::New(input.Env(), storedClass->GetFullName()));
-        auto element = Napi::Object::New(input.Env());
-        element.Set("id", Napi::String::New(input.Env(), storedOwnerId.ToHexStr().c_str()));
-        if (ECClassCP relClass = storedRelClassId.IsValid() ? db.Schemas().GetClass(storedRelClassId) : nullptr)
-            element.Set("relClassName", Napi::String::New(input.Env(), Utf8PrintfString("%s.%s", relClass->GetSchema().GetName().c_str(), relClass->GetName().c_str()).c_str()));
-        row.Set(json_element(), element);
 
-        batch.Processed(owner->GetElementId(), aspectClass.GetId(), hookArg, [&batch, &writer, incremental, row, i]() {
+        batch.Processed(owner->GetElementId(), aspectClass.GetId(), hookArg, [&batch, &writer, incremental, obj, stored, storedOwnerId, storedRelClassId, i]() {
             InstanceWriter::UpdateOptions options;
             options.UseJsNames(true);
             options.UseIncrementalUpdate(incremental);
-            DbResult rc = writer.Update(BeJsConst(row), options);
+            options.UseInstanceId(stored.GetInstanceId());
+            options.UseClassId(stored.GetClassId());
+            options.SetCustomBindHandler(bindOwner(storedOwnerId, storedRelClassId));
+            DbResult rc = writer.Update(BeJsConst(obj), options);
             if (BE_SQLITE_DONE != rc)
                 return batch.WriteFailed(rc, Utf8PrintfString("failed to update props[%u]: %s", i, writer.GetLastError().c_str()));
             return true;

@@ -1067,8 +1067,8 @@ DbResult Impl::Insert(BeJsConst inst, InstanceWriter::InsertOptions const& optio
         return BE_SQLITE_READONLY;
     }
 
-    ECClassId classId;
-    if (!TryGetECClassId(ctx, inst, classId)) {
+    ECClassId classId = options.GetClassId();
+    if (!classId.IsValid() && !TryGetECClassId(ctx, inst, classId)) {
         ctx.PrependError("Failed to get ECClassId/className/classFullName.");
         return BE_SQLITE_ERROR;
     }
@@ -1151,14 +1151,14 @@ DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& optio
         return BE_SQLITE_READONLY;
     }
 
-    ECInstanceId id;
-    ECClassId classId;
-    if (!TryGetECInstanceId(ctx, inst, id)) {
+    ECInstanceId id = options.GetInstanceId();
+    ECClassId classId = options.GetClassId();
+    if (!id.IsValid() && !TryGetECInstanceId(ctx, inst, id)) {
         ctx.PrependError("Failed to get ECInstanceId/id.");
         return BE_SQLITE_ERROR;
     }
 
-    if (!TryGetECClassId(ctx, inst, classId)) {
+    if (!classId.IsValid() && !TryGetECClassId(ctx, inst, classId)) {
         ctx.PrependError("Failed to get ECClassId/className/classFullName.");
         return BE_SQLITE_ERROR;
     }
