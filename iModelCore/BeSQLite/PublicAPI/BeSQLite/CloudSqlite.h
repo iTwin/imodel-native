@@ -51,6 +51,15 @@ struct CloudSqliteTiming : NonCopyableClass {
 };
 
 /**
+ * Compression algorithm configured for blocks stored in a CloudContainer.
+ */
+enum class CloudCompression : int {
+    Unsupported = -1, // format 4 container (compression not enabled)
+    None = 0,         // SQLITE_BCVCOMPRESS_NONE
+    Zlib = 1,         // SQLITE_BCVCOMPRESS_ZLIB
+};
+
+/**
  * the result status and error message for a CloudSqlite operation.
  */
 struct CloudResult {
@@ -85,6 +94,7 @@ struct CloudCache {
     std::vector<CloudContainer*> m_containers;
 
     BE_SQLITE_EXPORT CloudResult InitCache(Utf8StringCR name, Utf8StringCR rootDir, int64_t cacheSize = 0, int nRequest = 0, int httpTimeout = 0, bool verboseCurlLog = false);
+    BE_SQLITE_EXPORT CloudResult SetCompThreshold(int compThreshold);
     BE_SQLITE_EXPORT void SetLogMask(int logMask);
     BE_SQLITE_EXPORT Utf8String GetDatabaseHash(CloudContainer& container, Utf8StringCR dbName);
     BE_SQLITE_EXPORT int GetNumCleanupBlocks(CloudContainer& container);
@@ -189,10 +199,13 @@ public:
     virtual ~CloudUtil() { Close(); }
     BE_SQLITE_EXPORT void Close();
     BE_SQLITE_EXPORT CloudResult Init(CloudContainer const& container, int logLevel = 0, int nRequests = 0, int httpTimeout = 0);
+    BE_SQLITE_EXPORT CloudResult SetCompThreshold(int compThreshold);
     BE_SQLITE_EXPORT CloudResult InitializeContainer(int nameSize = 0, int blockSize = 0);
     BE_SQLITE_EXPORT CloudResult CleanDeletedBlocks(int deleteTime = 0, bool findOrphanedBlocks = true);
     BE_SQLITE_EXPORT CloudResult UploadDatabase(Utf8StringCR localFileName, Utf8StringCR dbName);
     BE_SQLITE_EXPORT CloudResult DownloadDatabase(Utf8StringCR dbName, Utf8StringCR localName);
+    BE_SQLITE_EXPORT CloudResult SetCompression(CloudCompression algorithm, bool compressAll = false);
+    BE_SQLITE_EXPORT CloudResult GetCompression(CloudCompression& algorithm);
 };
 
 END_BENTLEY_SQLITE_NAMESPACE

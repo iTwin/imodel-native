@@ -953,7 +953,12 @@ static int main_manifest(int argc, char **argv){
   cmd.zContainer = argv[argc-1];
   p = bcvFetchManifest(&cmd);
 
-  printf("Manifest version: %d\n", BCV_MANIFEST_VERSION);
+  if( p->eCompression<0 ){
+    printf("Manifest version: %d\n", BCV_MANIFEST_VERSION_V4);
+  }else{
+    printf("Manifest version: %d\n", BCV_MANIFEST_VERSION);
+    printf("Default compression: %d\n", p->eCompression);
+  }
   printf("Block size: %d\n", p->szBlk);
   printf("Database count: %d\n", p->nDb);
 
@@ -976,7 +981,11 @@ static int main_manifest(int argc, char **argv){
     for(j=0; j<pDb->nBlkLocal; j++){
       char aBuf[BCV_MAX_FSNAMEBYTES];
       bcvBlockidToText(NAMEBYTES(p), &pDb->aBlkLocal[j*NAMEBYTES(p)], aBuf);
-      printf("    %s\n", aBuf);
+      if( pDb->aBlkComp ){
+        printf("    %s (compression=0x%.2x)\n", aBuf, pDb->aBlkComp[j]);
+      }else{
+        printf("    %s\n", aBuf);
+      }
     }
   }
 
@@ -1144,7 +1153,8 @@ struct FetchCtx {
   DaemonCtx *pCtx;
   CacheEntry *pEntry;             /* Cache entry to populate (if any) */
   Container *pCont;
-  BcvIntKey *pKey;
+  BcvIntKey *pKey;                /* Encryption key (if any) */
+  u8 eComp;                       /* Compression byte of block (if any) */
 };
 
 static void daemon_usage(char *argv0){
@@ -2095,6 +2105,39 @@ static int bdWriteFile(
   return rc;
 }
 
+/*
+** The block requested by pDLCtx has been downloaded into buffer aData[]
+** (nData bytes in size). Uncompress it if required, then write it to the
+** cache file. Return SQLITE_OK if successful, or an SQLite error code
+** otherwise. If an error occurs, (*pzErr) may be set to point to an
+** error message that must be freed by the caller using sqlite3_free().
+*/
+static int bdWriteDownloadedBlock(
+  DaemonCtx *p,
+  FetchCtx *pDLCtx,
+  const u8 *aData, int nData,
+  char **pzErr
+){
+  CacheEntry *pEntry = pDLCtx->pEntry;
+  int szBlk = p->c.szBlk;
+  u8 *aBuf = 0;
+  const u8 *aBlock = 0;
+  int rc;
+
+  if( bcvCompIsCompressed(pDLCtx->eComp)==BCV_ISCOMPRESSED_OK ){
+    aBuf = (u8*)bdMalloc(szBlk);
+  }
+  rc = bcvBlockDecode(pEntry->nName, pEntry->aName, szBlk, 
+      pDLCtx->eComp, aData, nData, aBuf, &aBlock, pzErr
+  );
+  if( rc==SQLITE_OK ){
+    i64 iOff = ((i64)pEntry->iPos * szBlk);
+    rc = bdWriteFile(p->pCacheFile, pDLCtx->pKey, aBlock, szBlk, iOff);
+  }
+  sqlite3_free(aBuf);
+  return rc;
+}
+
 static void bdBlockDownloadCb(
   void *pCtx, 
   int errCode, 
@@ -2108,6 +2151,7 @@ static void bdBlockDownloadCb(
   DaemonCtx *p = pDLCtx->pCtx;
   CacheEntry *pEntry = pDLCtx->pEntry;
   int rc = errCode;
+  char *zErr = 0;
 
   if( rc==SQLITE_OK ){
     if( p->cmd.mLog & BCV_LOG_EVENT ){
@@ -2115,8 +2159,7 @@ static void bdBlockDownloadCb(
       bcvBlockidToText(pEntry->nName, pEntry->aName, zName);
       daemon_event_log(p, "writing %s to cache slot %d", zName, pEntry->iPos);
     }
-    i64 iOff = (pEntry->iPos * p->c.szBlk);
-    rc = bdWriteFile(p->pCacheFile, pDLCtx->pKey, aData, nData, iOff);
+    rc = bdWriteDownloadedBlock(p, pDLCtx, aData, nData, &zErr);
   }
 
   if( rc==SQLITE_OK ){
@@ -2129,7 +2172,7 @@ static void bdBlockDownloadCb(
     ** send an error reply to the client that initiated this request. Then
     ** mark the cache entry as unused.  */
     if( pClient ){
-      bdReadReplyError(pClient, errCode, zETag);
+      bdReadReplyError(pClient, rc, errCode==SQLITE_OK ? zErr : zETag);
       sqlite3_free(pClient->pMsg);
       pClient->pMsg = 0;
     }
@@ -2137,6 +2180,7 @@ static void bdBlockDownloadCb(
     bcvfsUnusedAdd(&p->c, pEntry);
   }
 
+  sqlite3_free(zErr);
   bdBlockDownloadFree(pDLCtx);
 }
 
@@ -2245,6 +2289,7 @@ static void bdHandleReadMsg(DaemonCtx *p, DClient *pClient){
     bcvfsHashAdd(&p->c, pEntry);
 
     pDLCtx = bdFetchCtx(pClient, pEntry);
+    pDLCtx->eComp = bcvManifestBlkComp(pClient->pManDb, iBlk);
     pClient->iWaitStart = bcv_timestamp();
     bcvfsBlockidToText(aName, nName, zName);
     bcvDispatchClientId(p->pDisp, pClient->zClientId);
@@ -2613,10 +2658,10 @@ static void bdPrefetchCb(
   DaemonCtx *p = pDLCtx->pCtx;
   CacheEntry *pEntry = pDLCtx->pEntry;
   int rc = errCode;
+  char *zErr = 0;
 
   if( rc==SQLITE_OK ){
-    i64 iOff = (pEntry->iPos * p->c.szBlk);
-    rc = bdWriteFile(p->pCacheFile, pDLCtx->pKey, aData, nData, iOff);
+    rc = bdWriteDownloadedBlock(p, pDLCtx, aData, nData, &zErr);
   }
 
   if( rc==SQLITE_OK ){
@@ -2634,7 +2679,9 @@ static void bdPrefetchCb(
 
     if( rc!=SQLITE_OK && pClient->prefetch.errCode==SQLITE_OK ){
       pClient->prefetch.errCode = rc;
-      pClient->prefetch.zErrMsg = sqlite3_mprintf("%s", zETag);
+      pClient->prefetch.zErrMsg = sqlite3_mprintf("%s", 
+          errCode==SQLITE_OK ? zErr : zETag
+      );
     }
 
     if( pClient->prefetch.bReply ){
@@ -2643,6 +2690,7 @@ static void bdPrefetchCb(
     }
   }
 
+  sqlite3_free(zErr);
   bdBlockDownloadFree(pDLCtx);
 }
 
@@ -2700,6 +2748,7 @@ static void bdHandlePrefetch(
       bcvDispatchLogmsg(p->pDisp, 
           "prefetch %d of %s", iBlk, pClient->pManDb->zDName
       );
+      pDL->eComp = bcvManifestBlkComp(pClient->pManDb, iBlk);
       bdDispatchFetch(p->pDisp, pBcv, zName, 0, 0, pDL, bdPrefetchCb);
       bcvDispatchClientId(p->pDisp, 0);
     }

@@ -150,6 +150,8 @@ export namespace NativeCloudSqlite {
     localFileName: LocalFileName;
   }
 
+  export type CompressionAlgorithm = "none" | "zlib";
+
   export type TransferDirection = "upload" | "download";
   export interface TransferProgress {
     /** a user-supplied progress function called during the transfer operation. Return a non-0 value to abort the transfer. */
@@ -161,6 +163,21 @@ export namespace NativeCloudSqlite {
     nRequests?: number;
     /** The time in seconds to wait without a response before considering a http request as timed out. Default is 60 seconds. */
     httpTimeout?: number;
+  }
+
+  export interface CompressContainerOptions extends CloudHttpProps, TransferProgress {
+    /** Compression algorithm to configure as the container default. Setting a non-"none" algorithm upgrades a format 4 container to format 5. */
+    algorithm: CompressionAlgorithm;
+    /** If true, recompress (or decompress) all existing blocks in the container. Passing `algorithm: "none"` with `compressAll: true` reverts a format 5 container to format 4.
+     * @default false
+     */
+    compressAll?: boolean;
+    /** Maximum acceptable compressed/uncompressed ratio as a percentage (default 100). Blocks that do not compress below this threshold are stored uncompressed. */
+    compThreshold?: number;
+    /** If enabled, outputs verbose logs about the compression operation.
+     * @default false
+     */
+    debugLogging?: boolean;
   }
 
   export interface PrefetchProps extends CloudHttpProps {
@@ -196,7 +213,10 @@ export namespace NativeCloudSqlite {
     onProgress?: (nDeleted: number, nTotalToDelete: number) => Promise<number>;
   }
 
-  export type TransferDbProps = DbProps & TransferProgress & CloudHttpProps;
+  export type TransferDbProps = DbProps & TransferProgress & CloudHttpProps & {
+    /** Maximum acceptable compressed/uncompressed ratio as a percentage when uploading to a compressed container (default 100). */
+    compThreshold?: number;
+  };
 
   /** Properties for creating a CloudCache. */
   export interface CacheProps extends CloudHttpProps {
@@ -208,6 +228,8 @@ export namespace NativeCloudSqlite {
     cacheSize?: string;
     /** turn on diagnostics for `curl` (outputs to stderr) */
     curlDiagnostics?: boolean;
+    /** Maximum acceptable compressed/uncompressed ratio as a percentage when uploading blocks to a compressed container (default 100). */
+    compThreshold?: number;
   }
 
   /** Properties for creating a new instance of a daemon process. */

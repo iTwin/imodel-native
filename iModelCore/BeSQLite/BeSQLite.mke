@@ -42,6 +42,9 @@ o = $(PartBuildDir)
 dirToSearch = $(BuildContext)VendorAPI/icu4c
 %include cincapnd.mki
 
+dirToSearch = $(BuildContext)VendorAPI/zlib
+%include cincapnd.mki
+
 dirToSearch = $(BuildContext)VendorAPI/
 %include cincapnd.mki
 

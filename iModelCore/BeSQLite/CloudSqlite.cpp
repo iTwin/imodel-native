@@ -352,6 +352,19 @@ CloudResult CloudCache::InitCache(Utf8StringCR name, Utf8StringCR rootDir, int64
     return CloudResult(m_cloudDb.Open("", name));
 }
 
+CloudResult CloudCache::SetCompThreshold(int compThreshold) {
+    if (compThreshold < 1 || compThreshold > 100)
+        return CloudResult(BE_SQLITE_RANGE, "compThreshold must be between 1 and 100");
+    if (nullptr == m_vfs)
+        return CloudResult(BE_SQLITE_MISUSE, "CloudCache is not initialized");
+    if (!IsDaemon()) {
+        int rc = sqlite3_bcvfs_config(m_vfs, SQLITE_BCV_COMP_THRESHOLD, compThreshold);
+        if (SQLITE_OK != rc)
+            return CloudResult(rc, "failed to configure compThreshold");
+    }
+    return CloudResult();
+}
+
 bool CloudCache::IsDaemon() {
     return m_vfs ? sqlite3_bcvfs_isdaemon(m_vfs) : false;
 }
@@ -652,6 +665,15 @@ CloudResult CloudUtil::Init(CloudContainer const& container, int logLevel, int n
     return CloudResult();
 }
 
+CloudResult CloudUtil::SetCompThreshold(int compThreshold) {
+    if (compThreshold < 1 || compThreshold > 100)
+        return CloudResult(BE_SQLITE_RANGE, "compThreshold must be between 1 and 100");
+    if (nullptr == m_handle)
+        return CloudResult(BE_SQLITE_MISUSE, "CloudUtil is not initialized");
+    int rc = sqlite3_bcv_config(m_handle, SQLITE_BCVCONFIG_COMP_THRESHOLD, compThreshold);
+    return CloudResult(rc, sqlite3_bcv_errmsg(m_handle));
+}
+
 /**
  * Initialize the cloud container for SQLite. Creates the "manifest" blob.
  */
@@ -691,5 +713,31 @@ CloudResult CloudUtil::DownloadDatabase(Utf8StringCR dbName, Utf8StringCR localN
     if (localName.empty() || dbName.empty())
         return CloudResult(BE_SQLITE_ERROR, "bad argument");
     auto stat = (DbResult)sqlite3_bcv_download(m_handle, dbName.c_str(), localName.c_str());
+    return CloudResult(stat, sqlite3_bcv_errmsg(m_handle));
+}
+
+static_assert((int)CloudCompression::None == SQLITE_BCVCOMPRESS_NONE, "CloudCompression::None must match SQLITE_BCVCOMPRESS_NONE");
+static_assert((int)CloudCompression::Zlib == SQLITE_BCVCOMPRESS_ZLIB, "CloudCompression::Zlib must match SQLITE_BCVCOMPRESS_ZLIB");
+
+/**
+ * Configure the default block compression algorithm for the container.
+ * @param algorithm compression algorithm to set
+ * @param compressAll if true, recompress (or decompress) all existing blocks in the container
+ */
+CloudResult CloudUtil::SetCompression(CloudCompression algorithm, bool compressAll) {
+    int flags = compressAll ? SQLITE_BCVCOMPRESS_ALL : 0;
+    auto stat = sqlite3_bcv_compression(m_handle, (int)algorithm, flags);
+    return CloudResult(stat, sqlite3_bcv_errmsg(m_handle));
+}
+
+/**
+ * Query the default block compression algorithm configured for the container.
+ * Sets algorithm to CloudCompression::Unsupported for format 4 containers.
+ */
+CloudResult CloudUtil::GetCompression(CloudCompression& algorithm) {
+    int eComp = -1;
+    auto stat = sqlite3_bcv_get_compression(m_handle, &eComp);
+    if (SQLITE_OK == stat)
+        algorithm = (CloudCompression)eComp;
     return CloudResult(stat, sqlite3_bcv_errmsg(m_handle));
 }
