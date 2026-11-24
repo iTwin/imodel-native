@@ -7,6 +7,10 @@ This document including important changes to syntax or file format.
 | Profile | `4.0.0.5` |
 | ECSQL   | `2.0.4.2` |
 
+## `11/23/2026`: Schema upgrades safely map lazily loaded subclasses
+* Mapping a derived class during schema import can lazily load additional subclasses and grow the base class's derived-class list. The mapper now iterates a stable copy of that list, preventing an access violation during schema upgrades.
+* Profile and ECSql versions are unchanged.
+
 ## `11/20/2026`: `InstanceWriter` accepts strings for longs and keeps omitted struct members on incremental update
 * `InstanceWriter` now accepts a string that is entirely a decimal or `"0x"` hex integer for a `long` property at any depth, including in structs and arrays. A JavaScript number cannot hold every 64-bit value exactly, for example an id. Any other string is still rejected with `Expected long for property ...`; `JsonECInstanceConverter` would silently write 0 or the leading digits.
 * An incremental update now keeps the members of a struct property that the instance does not supply, at every depth, like `JsonECInstanceConverter`. Previously, it set them to null. Arrays are still replaced, and a `null` member or struct still clears it. This also applies to `InstanceRepository::Update`, which uses incremental updates.

@@ -130,7 +130,9 @@ struct TestConnectionManager : IConnectionManager
         BeMutexHolder lock(m_mutex);
         RefCountedPtr<TestConnection> connection = new TestConnection(db);
         m_connections[connection->GetId()] = connection;
-        for (IConnectionsListener* listener : m_listeners)
+        auto listeners = m_listeners;
+        lock.unlock();
+        for (IConnectionsListener* listener : listeners)
             listener->NotifyConnectionEvent(ConnectionEvent(*connection, ConnectionEventType::Opened));
         return connection;
         }
@@ -156,14 +158,17 @@ struct TestConnectionManager : IConnectionManager
     RefCountedPtr<TestConnection> NotifyConnectionOpened(ECDbR db)
         {
         BeMutexHolder lock(m_mutex);
-        IConnection* existingConnection = nullptr;
-        if (nullptr != (existingConnection = GetConnection(db)))
+        RefCountedPtr<TestConnection> connection = dynamic_cast<TestConnection*>(GetConnection(db));
+        if (!connection.IsValid())
             {
-            for (IConnectionsListener* listener : m_listeners)
-                listener->NotifyConnectionEvent(ConnectionEvent(*existingConnection, ConnectionEventType::Opened));
-            return dynamic_cast<TestConnection*>(existingConnection);
+            connection = new TestConnection(db);
+            m_connections[connection->GetId()] = connection;
             }
-        return dynamic_cast<TestConnection*>(CreateConnection(db).get());
+        auto listeners = m_listeners;
+        lock.unlock();
+        for (IConnectionsListener* listener : listeners)
+            listener->NotifyConnectionEvent(ConnectionEvent(*connection, ConnectionEventType::Opened));
+        return connection;
         }
     void NotifyConnectionClosed(IConnectionCR connection)
         {
