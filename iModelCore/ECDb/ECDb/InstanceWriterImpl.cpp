@@ -272,13 +272,13 @@ ECSqlStatus MruStatementCache::PrepareInsert(CachedWriteStatement& cachedStmt) {
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-ECSqlStatus MruStatementCache::PrepareUpdate(CachedWriteStatement& cachedStmt) {
+ECSqlStatus MruStatementCache::PrepareUpdate(CachedWriteStatement& cachedStmt, bool exactClass) {
     Utf8String ecsql;
     std::vector<PropertyMap const*> props;
 
     const auto timestampPropName = cachedStmt.GetCurrentTimeStampProperty();
     auto& classMap = cachedStmt.GetClassMap();
-    ecsql.append("UPDATE ONLY ").append(cachedStmt.GetClass().GetECSqlName()).append(" SET ");
+    ecsql.append(exactClass ? "UPDATE ONLY " : "UPDATE ").append(cachedStmt.GetClass().GetECSqlName()).append(" SET ");
     bool isFirst = true;
     for (auto prop : classMap.GetPropertyMaps()) {
         if (prop->GetType() == PropertyMap::Type::ECClassId || prop->GetType() == PropertyMap::Type::ECInstanceId) {
@@ -319,9 +319,9 @@ ECSqlStatus MruStatementCache::PrepareUpdate(CachedWriteStatement& cachedStmt) {
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-ECSqlStatus MruStatementCache::PrepareDelete(CachedWriteStatement& cachedStmt) {
+ECSqlStatus MruStatementCache::PrepareDelete(CachedWriteStatement& cachedStmt, bool exactClass) {
     Utf8String ecsql;
-    ecsql.append("DELETE FROM ONLY ").append(cachedStmt.GetClass().GetECSqlName()).append(" WHERE [ECInstanceId] = ?");
+    ecsql.append(exactClass ? "DELETE FROM ONLY " : "DELETE FROM ").append(cachedStmt.GetClass().GetECSqlName()).append(" WHERE [ECInstanceId] = ?");
 
     auto crudWriteToken = m_ecdb.GetImpl().GetSettingsManager().GetCrudWriteToken();
     auto rc = cachedStmt.GetStatement().Prepare(m_ecdb, ecsql.c_str(), crudWriteToken);
@@ -350,9 +350,9 @@ std::unique_ptr<CachedWriteStatement> MruStatementCache::Prepare(CacheKey key) {
     if (key.GetOp() == WriterOp::Insert) {
         rc = PrepareInsert(*cachedStmt);
     } else if (key.GetOp() == WriterOp::Update) {
-        rc = PrepareUpdate(*cachedStmt);
+        rc = PrepareUpdate(*cachedStmt, key.GetExactClass());
     } else if (key.GetOp() == WriterOp::Delete) {
-        rc = PrepareDelete(*cachedStmt);
+        rc = PrepareDelete(*cachedStmt, key.GetExactClass());
     };
 
     if (!rc.IsSuccess()) {
@@ -406,9 +406,9 @@ DbResult MruStatementCache::WithInsert(ECClassId classId, std::function<DbResult
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-DbResult MruStatementCache::WithUpdate(ECClassId classId, std::function<DbResult(CachedWriteStatement&)> fn) {
+DbResult MruStatementCache::WithUpdate(ECClassId classId, bool exactClass, std::function<DbResult(CachedWriteStatement&)> fn) {
     BeMutexHolder _(m_mutex);
-    auto cachedStmt = TryGet(CacheKey(classId, WriterOp::Update));
+    auto cachedStmt = TryGet(CacheKey(classId, WriterOp::Update, exactClass));
     if (cachedStmt == nullptr) {
         LOG.errorv("Failed to prepare update statement for class: %s", classId.ToHexStr().c_str());
         return BE_SQLITE_ERROR;
@@ -419,9 +419,9 @@ DbResult MruStatementCache::WithUpdate(ECClassId classId, std::function<DbResult
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-DbResult MruStatementCache::WithDelete(ECClassId classId, std::function<DbResult(CachedWriteStatement&)> fn) {
+DbResult MruStatementCache::WithDelete(ECClassId classId, bool exactClass, std::function<DbResult(CachedWriteStatement&)> fn) {
     BeMutexHolder _(m_mutex);
-    auto cachedStmt = TryGet(CacheKey(classId, WriterOp::Delete));
+    auto cachedStmt = TryGet(CacheKey(classId, WriterOp::Delete, exactClass));
     if (cachedStmt == nullptr) {
         LOG.errorv("Failed to prepare delete statement for class: %s", classId.ToHexStr().c_str());
         return BE_SQLITE_ERROR;
@@ -441,9 +441,9 @@ void MruStatementCache::Reset() {
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-std::optional<DbResult> MruStatementCache::WithPartialUpdate(ECClassId classId, BeJsConst inst, Options const& options, std::function<DbResult(CachedWriteStatement&, PartialValues const&)> fn) {
+std::optional<DbResult> MruStatementCache::WithPartialUpdate(ECClassId classId, bool exactClass, BeJsConst inst, std::function<DbResult(CachedWriteStatement&, PartialValues const&)> fn) {
     BeMutexHolder _(m_mutex);
-    auto full = TryGet(CacheKey(classId, WriterOp::Update));
+    auto full = TryGet(CacheKey(classId, WriterOp::Update, exactClass));
     if (full == nullptr)
         return std::nullopt;
 
@@ -452,20 +452,14 @@ std::optional<DbResult> MruStatementCache::WithPartialUpdate(ECClassId classId, 
     bool mustMerge = false;
     inst.ForEachProperty([&](auto prop, auto val) {
         auto binder = full->FindBinder(prop);
-        if (binder == nullptr) {
-            values.m_unknown.emplace_back(prop, val);
+        if (binder == nullptr)
             return FOREACH_CONTINUE;
-        }
         if (binder->GetProperty().GetIsStruct() && val.isObject()) {
             mustMerge = true;
             return FOREACH_ABORT;
         }
-        if (auto canBind = options.GetCanBindHandler()) {
-            if (!canBind(binder->GetProperty()))
-                return FOREACH_CONTINUE;
-        }
         size_t index = binder - full->GetBinders().data();
-        values.m_values.emplace_back(index, val);
+        values.emplace_back(index, val);
         fullIndexes.push_back(index);
         return FOREACH_CONTINUE;
     });
@@ -474,19 +468,19 @@ std::optional<DbResult> MruStatementCache::WithPartialUpdate(ECClassId classId, 
 
     std::sort(fullIndexes.begin(), fullIndexes.end());
     fullIndexes.erase(std::unique(fullIndexes.begin(), fullIndexes.end()), fullIndexes.end());
-    for (auto& value : values.m_values)
+    for (auto& value : values)
         value.first = std::lower_bound(fullIndexes.begin(), fullIndexes.end(), value.first) - fullIndexes.begin();
 
     Utf8String key;
     for (auto index : fullIndexes)
         key.append(std::to_string(index).c_str()).append(",");
-    auto cacheKey = std::make_pair(classId, key);
+    auto cacheKey = std::make_tuple(classId, exactClass, key);
     auto it = m_partialCache.find(cacheKey);
     if (it == m_partialCache.end()) {
         if (m_partialCache.size() >= (size_t)m_maxCache)
             m_partialCache.clear();
         auto stmt = std::make_unique<CachedWriteStatement>(full->GetClassMap());
-        Utf8String ecsql("UPDATE ONLY ");
+        Utf8String ecsql(exactClass ? "UPDATE ONLY " : "UPDATE ");
         ecsql.append(stmt->GetClass().GetECSqlName()).append(" SET ");
         for (size_t i = 0; i < fullIndexes.size(); ++i) {
             if (i > 0)
@@ -1235,20 +1229,16 @@ DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& optio
         return BE_SQLITE_ERROR;
     }
 
-    // An incremental update sets only the supplied properties, so the stored ones need not be read.
-    if (options.GetUseIncrementalUpdate()) {
-        auto partialRc = m_cache.WithPartialUpdate(classId, inst, options, [&](CachedWriteStatement& stmt, MruStatementCache::PartialValues const& values) {
+    // An incremental update sets only the supplied properties, so the stored ones need not be read. Handlers that can see or
+    // skip properties need the full statement and the stored values.
+    if (options.GetUseIncrementalUpdate() && options.GetUserPropertyHandler() == nullptr && options.GetCanBindHandler() == nullptr) {
+        auto partialRc = m_cache.WithPartialUpdate(classId, options.GetExactClass(), inst, [&](CachedWriteStatement& stmt, MruStatementCache::PartialValues const& values) {
             ECSqlStatus bindStatus = ECSqlStatus::Success;
-            for (auto& unknown : values.m_unknown) {
-                bindStatus = ctx.NotifyUserProperty(unknown.first.c_str(), unknown.second, stmt);
-                if (!bindStatus.IsSuccess())
-                    break;
-            }
-            for (auto& value : values.m_values) {
-                if (!bindStatus.IsSuccess())
-                    break;
+            for (auto& value : values) {
                 auto& binder = stmt.GetBinders()[value.first];
                 bindStatus = BindRootProperty(ctx, binder.GetPropertyMap(), binder.GetBinder(), value.second);
+                if (!bindStatus.IsSuccess())
+                    break;
             }
             if (!bindStatus.IsSuccess()) {
                 ctx.PrependError("Failed to bind property.");
@@ -1268,7 +1258,7 @@ DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& optio
             return partialRc.value();
     }
 
-    auto rc = m_cache.WithUpdate(classId, [&](CachedWriteStatement& stmt) {
+    auto rc = m_cache.WithUpdate(classId, options.GetExactClass(), [&](CachedWriteStatement& stmt) {
         ECSqlStatus bindStatus = ECSqlStatus::Success;
         // Stored values of the struct properties that the instance supplies, whose omitted members are kept.
         BeJsDocument storedStructs;
@@ -1365,7 +1355,7 @@ DbResult Impl::Delete(ECInstanceKeyCR key, InstanceWriter::DeleteOptions const& 
         ctx.SetError("Connection is readonly");
         return BE_SQLITE_READONLY;
     }
-    auto rc = m_cache.WithDelete(key.GetClassId(), [&](CachedWriteStatement& stmt) {
+    auto rc = m_cache.WithDelete(key.GetClassId(), options.GetExactClass(), [&](CachedWriteStatement& stmt) {
         auto& binder = stmt.GetStatement().GetBinder(1);
         binder.BindId(key.GetInstanceId());
         auto rc = stmt.GetStatement().Step();

@@ -986,7 +986,7 @@ Napi::Array JsInterop::InsertElementAspects(DgnDbR db, Napi::Array input) {
             if (isUnique) {
                 ECInstanceKey existing = batch.FindUniqueAspect(*aspectClassP, ownerId);
                 if (existing.IsValid()) {
-                    DbResult rc = writer.Delete(existing, InstanceWriter::DeleteOptions());
+                    DbResult rc = writer.Delete(existing, InstanceWriter::DeleteOptions().UseExactClass(true));
                     if (BE_SQLITE_DONE != rc)
                         return batch.WriteFailed(rc, Utf8PrintfString("failed to replace aspect %s: %s", existing.GetInstanceId().ToHexStr().c_str(), writer.GetLastError().c_str()));
                     if (existing.GetClassId() == aspectClassP->GetId())
@@ -1054,7 +1054,7 @@ void JsInterop::UpdateElementAspects(DgnDbR db, Napi::Array input, bool incremen
         db.CallJsHandlerMethod(aspectClass.GetId(), "onUpdate", hookArg);
 
         // Write the stored aspect with its actual class and owner. The writer sets every property it is not given to null,
-        // unless the incremental update reads it from the stored aspect.
+        // unless the update is incremental.
         if (nullptr == db.Schemas().GetClass(stored.GetClassId()))
             batch.Fail(DgnDbStatus::BadSchema, Utf8PrintfString("the class of aspect %s is not found", stored.GetInstanceId().ToHexStr().c_str()));
 
@@ -1064,6 +1064,7 @@ void JsInterop::UpdateElementAspects(DgnDbR db, Napi::Array input, bool incremen
             options.UseIncrementalUpdate(incremental);
             options.UseInstanceId(stored.GetInstanceId());
             options.UseClassId(stored.GetClassId());
+            options.UseExactClass(true);
             options.SetCustomBindHandler(bindOwner(storedOwnerId, storedRelClassId));
             DbResult rc = writer.Update(BeJsConst(obj), options);
             if (BE_SQLITE_DONE != rc)
@@ -1104,7 +1105,7 @@ void JsInterop::DeleteElementAspects(DgnDbR db, Napi::Array input) {
         db.CallJsHandlerMethod(classId, "onDelete", hookArg);
 
         batch.Processed(owner->GetElementId(), classId, hookArg, [&batch, &writer, classId, aspectId]() {
-            DbResult rc = writer.Delete(ECInstanceKey(classId, aspectId), InstanceWriter::DeleteOptions());
+            DbResult rc = writer.Delete(ECInstanceKey(classId, aspectId), InstanceWriter::DeleteOptions().UseExactClass(true));
             if (BE_SQLITE_DONE != rc)
                 return batch.WriteFailed(rc, Utf8PrintfString("failed to delete aspect %s: %s", aspectId.ToHexStr().c_str(), writer.GetLastError().c_str()));
             return true;

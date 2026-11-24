@@ -7,6 +7,12 @@ This document including important changes to syntax or file format.
 | Profile | `4.0.0.5` |
 | ECSQL   | `2.0.4.2` |
 
+## `11/24/2026`: `InstanceWriter` can skip class lookups and polymorphic filters, and incremental updates set only supplied properties
+* `InstanceWriter::Options::UseClassId` and `InstanceWriter::UpdateOptions::UseInstanceId` set the class and id to write. The instance then need not supply `ECClassId`/`className`/`classFullName` or `ECInstanceId`/`id`, and the class is not looked up by name for each instance.
+* `UpdateOptions::UseExactClass` and `DeleteOptions::UseExactClass` write with `UPDATE ONLY`/`DELETE FROM ONLY`, which avoids filtering by the class hierarchy. Only an instance of exactly the given class is written; an instance of a subclass is left unchanged and no error is returned. The option is off by default, so updates and deletes stay polymorphic, including `InstanceRepository::Update` and `Delete`.
+* An incremental update now sets only the supplied properties and no longer reads the stored instance, unless a `UserPropertyHandler` or `CanBindHandler` is set or a struct object is supplied, which needs merging. A `CustomBindHandler` is then called only for the supplied properties. The stored values and the recorded changeset are unchanged.
+* Profile and ECSql versions are unchanged.
+
 ## `11/20/2026`: `InstanceWriter` accepts strings for longs and keeps omitted struct members on incremental update
 * `InstanceWriter` now accepts a string that is entirely a decimal or `"0x"` hex integer for a `long` property at any depth, including in structs and arrays. A JavaScript number cannot hold every 64-bit value exactly, for example an id. Any other string is still rejected with `Expected long for property ...`; `JsonECInstanceConverter` would silently write 0 or the leading digits.
 * An incremental update now keeps the members of a struct property that the instance does not supply, at every depth, like `JsonECInstanceConverter`. Previously, it set them to null. Arrays are still replaced, and a `null` member or struct still clears it. This also applies to `InstanceRepository::Update`, which uses incremental updates.

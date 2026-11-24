@@ -60,7 +60,8 @@ public:
         Options(WriterOp op) : m_useJsName(false), m_op(op) {}
         bool GetUseJsNames() const { return m_useJsName; }
         bool GetConvertClassIdsToClassNames() const { return m_convertClassIdsToClassNames; }
-        // When valid, the class to write, instead of the one named by the instance.
+        //! When valid, the class to write. The ECClassId, className or classFullName of the instance are then ignored and
+        //! need not be supplied. This avoids looking up the class by name for each instance.
         ECN::ECClassId GetClassId() const { return m_classId; }
         Options& UseClassId(ECN::ECClassId v) {
             m_classId = v;
@@ -109,21 +110,35 @@ public:
     struct UpdateOptions final : public Options {
     private:
         bool m_useIncrementalUpdate = false;
+        bool m_exactClass = false;
         ECInstanceId m_instanceId;
 
     public:
         UpdateOptions() : Options(WriterOp::Update) {}
         bool GetUseIncrementalUpdate() const { return m_useIncrementalUpdate; }
-        // When valid, the id of the instance to update, instead of the one in the instance.
+        //! When valid, the id of the instance to update. The ECInstanceId or id of the instance is then ignored and need not be supplied.
         ECInstanceId GetInstanceId() const { return m_instanceId; }
         UpdateOptions& UseInstanceId(ECInstanceId v) {
             m_instanceId = v;
             return *this;
         }
-        // This can cause slow performance as it will read the existing instance from the database override
-        // the properties that are not specified in the input JSON.
+        //! When true, only the properties that the instance supplies are changed, and the others keep their stored values.
+        //! Otherwise, every property that the instance does not supply is set to null.
+        //! A supplied struct object is merged with the stored struct, so that its omitted members are kept.
+        //! @remarks When no UserPropertyHandler or CanBindHandler is set and no struct object is supplied, the update sets
+        //! only the supplied properties and does not read the stored instance, and a CustomBindHandler is called only for
+        //! the supplied properties. Otherwise, the update reads the stored instance and writes every property, and a
+        //! CustomBindHandler is also called for the stored values that are written back.
         UpdateOptions& UseIncrementalUpdate(bool v) {
             m_useIncrementalUpdate = v;
+            return *this;
+        }
+        bool GetExactClass() const { return m_exactClass; }
+        //! When true, only an instance of exactly the class to write is updated, using UPDATE ONLY. This is faster, because
+        //! it does not filter by the class hierarchy. The caller must know that the class is the class of the instance:
+        //! an instance of a subclass is not updated, and no error is returned.
+        UpdateOptions& UseExactClass(bool v) {
+            m_exactClass = v;
             return *this;
         }
     };
@@ -149,8 +164,19 @@ public:
     };
 
     struct DeleteOptions final : public Options {
+    private:
+        bool m_exactClass = false;
+
     public:
         DeleteOptions() : Options(WriterOp::Delete) {}
+        bool GetExactClass() const { return m_exactClass; }
+        //! When true, only an instance of exactly the class to delete is deleted, using DELETE FROM ONLY. This is faster,
+        //! because it does not filter by the class hierarchy. The caller must know that the class is the class of the
+        //! instance: an instance of a subclass is not deleted, and no error is returned.
+        DeleteOptions& UseExactClass(bool v) {
+            m_exactClass = v;
+            return *this;
+        }
     };
     struct Impl;
 

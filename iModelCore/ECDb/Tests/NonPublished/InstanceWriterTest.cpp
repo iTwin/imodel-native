@@ -1732,4 +1732,325 @@ TEST_F(InstanceWriterFixture, StringLongsAndIncrementalStructMembers) {
     EXPECT_TRUE(actual["st"]["x"].isNull());
     EXPECT_STREQ("y2", actual["st"]["y"].asCString());
 }
+
+//---------------------------------------------------------------------------------------
+// Schema for the tests of the class and instance id options and of incremental updates.
+//---------------------------------------------------------------------------------------
+static Utf8CP s_writerOptionsSchemaXml = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+        <ECStructClass typeName="ST">
+            <ECProperty propertyName="x" typeName="string" />
+            <ECProperty propertyName="y" typeName="string" />
+        </ECStructClass>
+        <ECEntityClass typeName="Base">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+            </ECCustomAttributes>
+            <ECProperty propertyName="a" typeName="string" />
+            <ECProperty propertyName="b" typeName="int" />
+            <ECProperty propertyName="c" typeName="double" />
+            <ECStructProperty propertyName="st" typeName="ST" />
+            <ECArrayProperty propertyName="arr" typeName="int" />
+        </ECEntityClass>
+        <ECEntityClass typeName="Derived">
+            <BaseClass>Base</BaseClass>
+            <ECProperty propertyName="d" typeName="string" />
+        </ECEntityClass>
+    </ECSchema>)xml";
+
+//---------------------------------------------------------------------------------------
+// The class and instance id options replace the class and id of the instance, which need not be supplied.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceWriterFixture, ClassIdAndInstanceIdOptions) {
+    ASSERT_EQ(SUCCESS, SetupECDb(BeTest::GetNameOfCurrentTest(), SchemaItem(s_writerOptionsSchemaXml)));
+    const ECClassId baseId = m_ecdb.Schemas().GetClassId("TestSchema", "Base");
+    const ECClassId derivedId = m_ecdb.Schemas().GetClassId("TestSchema", "Derived");
+    ASSERT_TRUE(baseId.IsValid());
+    ASSERT_TRUE(derivedId.IsValid());
+
+    ECInstanceKey key;
+    {
+        // The class option wins over the class named by the instance.
+        BeJsDocument doc;
+        doc.Parse(R"json({ "className": "TestSchema.Base", "a": "a0", "b": 1, "d": "d0" })json");
+        InstanceWriter::InsertOptions opt;
+        opt.UseJsNames(true);
+        opt.UseClassId(derivedId);
+        ASSERT_EQ(BE_SQLITE_DONE, InsertInstance(m_ecdb, doc, opt, key)) << m_ecdb.GetInstanceWriter().GetLastError().c_str();
+        EXPECT_EQ(derivedId, key.GetClassId());
+    }
+
+    const auto readRow = [&]() {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECClassId, a, b, d FROM ts.Derived WHERE ECInstanceId = ?"));
+        stmt.BindId(1, key.GetInstanceId());
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        return Utf8PrintfString("%s|%s|%d|%s", stmt.GetValueId<ECClassId>(0).ToHexStr().c_str(), stmt.GetValueText(1), stmt.GetValueInt(2), stmt.GetValueText(3));
+    };
+    const Utf8String derivedHex = derivedId.ToHexStr();
+    EXPECT_STREQ((derivedHex + "|a0|1|d0").c_str(), readRow().c_str());
+
+    // Neither the class nor the id is supplied by the instance.
+    for (bool incremental : {true, false}) {
+        BeJsDocument doc;
+        doc.Parse(incremental ? R"json({ "a": "a1" })json" : R"json({ "a": "a2", "d": "d2" })json");
+        InstanceWriter::UpdateOptions opt;
+        opt.UseJsNames(true);
+        opt.UseIncrementalUpdate(incremental);
+        opt.UseClassId(derivedId);
+        opt.UseInstanceId(key.GetInstanceId());
+        ASSERT_EQ(BE_SQLITE_DONE, UpdateInstance(m_ecdb, doc, opt)) << m_ecdb.GetInstanceWriter().GetLastError().c_str();
+        EXPECT_STREQ(incremental ? (derivedHex + "|a1|1|d0").c_str() : (derivedHex + "|a2|0|d2").c_str(), readRow().c_str());
+    }
+
+    // The options win over the class and id of the instance.
+    {
+        BeJsDocument doc;
+        doc.Parse(R"json({ "id": "0x999", "className": "TestSchema.Base", "b": 3 })json");
+        InstanceWriter::UpdateOptions opt;
+        opt.UseJsNames(true);
+        opt.UseIncrementalUpdate(true);
+        opt.UseClassId(derivedId);
+        opt.UseInstanceId(key.GetInstanceId());
+        ASSERT_EQ(BE_SQLITE_DONE, UpdateInstance(m_ecdb, doc, opt)) << m_ecdb.GetInstanceWriter().GetLastError().c_str();
+        EXPECT_STREQ((derivedHex + "|a2|3|d2").c_str(), readRow().c_str());
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// By default, updates and deletes are polymorphic. With the exact class option, they only write an instance of exactly
+// the given class.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceWriterFixture, ExactClassUpdateAndDelete) {
+    ASSERT_EQ(SUCCESS, SetupECDb(BeTest::GetNameOfCurrentTest(), SchemaItem(s_writerOptionsSchemaXml)));
+    const ECClassId baseId = m_ecdb.Schemas().GetClassId("TestSchema", "Base");
+    const ECClassId derivedId = m_ecdb.Schemas().GetClassId("TestSchema", "Derived");
+    ASSERT_TRUE(baseId.IsValid());
+    ASSERT_TRUE(derivedId.IsValid());
+
+    const auto insertRow = [&]() {
+        BeJsDocument doc;
+        doc.Parse(R"json({ "className": "TestSchema.Derived", "a": "a0", "b": 1, "d": "d0" })json");
+        InstanceWriter::InsertOptions opt;
+        opt.UseJsNames(true);
+        ECInstanceKey key;
+        EXPECT_EQ(BE_SQLITE_DONE, InsertInstance(m_ecdb, doc, opt, key)) << m_ecdb.GetInstanceWriter().GetLastError().c_str();
+        return key;
+    };
+    const auto readA = [&](ECInstanceId id) -> Utf8String {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT a FROM ts.Base WHERE ECInstanceId = ?"));
+        stmt.BindId(1, id);
+        if (BE_SQLITE_ROW != stmt.Step())
+            return "<deleted>";
+        return stmt.IsValueNull(0) ? "<null>" : stmt.GetValueText(0);
+    };
+    const auto updateRow = [&](ECClassId classId, ECInstanceId id, Utf8CP a, bool incremental, bool exactClass) {
+        BeJsDocument doc;
+        doc.Parse(Utf8PrintfString(R"json({ "a": "%s", "b": 2, "d": "d1" })json", a));
+        InstanceWriter::UpdateOptions opt;
+        opt.UseJsNames(true);
+        opt.UseIncrementalUpdate(incremental);
+        opt.UseClassId(classId);
+        opt.UseInstanceId(id);
+        opt.UseExactClass(exactClass);
+        return UpdateInstance(m_ecdb, doc, opt);
+    };
+    const auto deleteRow = [&](ECClassId classId, ECInstanceId id, bool exactClass) {
+        return m_ecdb.GetInstanceWriter().Delete(ECInstanceKey(classId, id), InstanceWriter::DeleteOptions().UseExactClass(exactClass));
+    };
+
+    const ECInstanceKey key = insertRow();
+    for (bool incremental : {true, false}) {
+        // A base class with the id of a derived instance writes nothing with the exact class option. It is not an error.
+        EXPECT_EQ(BE_SQLITE_DONE, updateRow(baseId, key.GetInstanceId(), "exactBase", incremental, true)) << m_ecdb.GetInstanceWriter().GetLastError().c_str();
+        EXPECT_STREQ("a0", readA(key.GetInstanceId()).c_str());
+
+        // Without it, the same class and id update the instance. The statements are cached separately.
+        EXPECT_EQ(BE_SQLITE_DONE, updateRow(baseId, key.GetInstanceId(), "polymorphic", incremental, false)) << m_ecdb.GetInstanceWriter().GetLastError().c_str();
+        EXPECT_STREQ("polymorphic", readA(key.GetInstanceId()).c_str());
+
+        // The exact class of the instance updates it.
+        EXPECT_EQ(BE_SQLITE_DONE, updateRow(derivedId, key.GetInstanceId(), "a0", incremental, true)) << m_ecdb.GetInstanceWriter().GetLastError().c_str();
+        EXPECT_STREQ("a0", readA(key.GetInstanceId()).c_str());
+    }
+
+    EXPECT_EQ(BE_SQLITE_DONE, deleteRow(baseId, key.GetInstanceId(), true)) << m_ecdb.GetInstanceWriter().GetLastError().c_str();
+    EXPECT_STREQ("a0", readA(key.GetInstanceId()).c_str());
+    EXPECT_EQ(BE_SQLITE_DONE, deleteRow(baseId, key.GetInstanceId(), false)) << m_ecdb.GetInstanceWriter().GetLastError().c_str();
+    EXPECT_STREQ("<deleted>", readA(key.GetInstanceId()).c_str());
+
+    const ECInstanceKey key2 = insertRow();
+    EXPECT_EQ(BE_SQLITE_DONE, deleteRow(derivedId, key2.GetInstanceId(), true)) << m_ecdb.GetInstanceWriter().GetLastError().c_str();
+    EXPECT_STREQ("<deleted>", readA(key2.GetInstanceId()).c_str());
+}
+
+//---------------------------------------------------------------------------------------
+// An incremental update changes only the supplied properties. Handlers that can see or skip properties still get the
+// stored values, and a custom bind handler is called only for the supplied properties.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceWriterFixture, IncrementalUpdateSetsOnlySuppliedProperties) {
+    ASSERT_EQ(SUCCESS, SetupECDb(BeTest::GetNameOfCurrentTest(), SchemaItem(s_writerOptionsSchemaXml)));
+
+    ECInstanceKey key;
+    {
+        BeJsDocument doc;
+        doc.Parse(R"json({ "className": "TestSchema.Derived", "a": "a0", "b": 1, "c": 1.5, "st": { "x": "x0", "y": "y0" }, "arr": [1, 2], "d": "d0" })json");
+        InstanceWriter::InsertOptions opt;
+        opt.UseJsNames(true);
+        ASSERT_EQ(BE_SQLITE_DONE, InsertInstance(m_ecdb, doc, opt, key)) << m_ecdb.GetInstanceWriter().GetLastError().c_str();
+    }
+
+    const auto readRow = [&]() {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT a, b, c, st.x, st.y, d FROM ts.Derived WHERE ECInstanceId = ?"));
+        stmt.BindId(1, key.GetInstanceId());
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        Utf8String out;
+        for (int i = 0; i < stmt.GetColumnCount(); ++i)
+            out.append(i > 0 ? "|" : "").append(stmt.IsValueNull(i) ? "<null>" : stmt.GetValueText(i));
+        return out;
+    };
+    const auto updateRow = [&](Utf8CP props, InstanceWriter::UpdateOptions opt) {
+        BeJsDocument doc;
+        doc.Parse(Utf8PrintfString(R"json({ "id": "%s", "className": "TestSchema.Derived" %s })json", key.GetInstanceId().ToHexStr().c_str(), props));
+        opt.UseJsNames(true);
+        opt.UseIncrementalUpdate(true);
+        return UpdateInstance(m_ecdb, doc, opt);
+    };
+
+    EXPECT_STREQ("a0|1|1.5|x0|y0|d0", readRow().c_str());
+
+    ASSERT_EQ(BE_SQLITE_DONE, updateRow(R"json(, "b": 2)json", InstanceWriter::UpdateOptions())) << m_ecdb.GetInstanceWriter().GetLastError().c_str();
+    EXPECT_STREQ("a0|2|1.5|x0|y0|d0", readRow().c_str());
+
+    // null clears a property, including a struct.
+    ASSERT_EQ(BE_SQLITE_DONE, updateRow(R"json(, "a": null, "st": null)json", InstanceWriter::UpdateOptions())) << m_ecdb.GetInstanceWriter().GetLastError().c_str();
+    EXPECT_STREQ("<null>|2|1.5|<null>|<null>|d0", readRow().c_str());
+
+    // No property changes nothing.
+    ASSERT_EQ(BE_SQLITE_DONE, updateRow("", InstanceWriter::UpdateOptions())) << m_ecdb.GetInstanceWriter().GetLastError().c_str();
+    EXPECT_STREQ("<null>|2|1.5|<null>|<null>|d0", readRow().c_str());
+
+    // A struct object is merged with the stored struct.
+    ASSERT_EQ(BE_SQLITE_DONE, updateRow(R"json(, "st": { "x": "x1" }, "a": "a1")json", InstanceWriter::UpdateOptions())) << m_ecdb.GetInstanceWriter().GetLastError().c_str();
+    EXPECT_STREQ("a1|2|1.5|x1|<null>|d0", readRow().c_str());
+    ASSERT_EQ(BE_SQLITE_DONE, updateRow(R"json(, "st": { "y": "y1" })json", InstanceWriter::UpdateOptions())) << m_ecdb.GetInstanceWriter().GetLastError().c_str();
+    EXPECT_STREQ("a1|2|1.5|x1|y1|d0", readRow().c_str());
+
+    // A user property handler can bind a property that the instance does not supply.
+    {
+        InstanceWriter::UpdateOptions opt;
+        opt.SetUserPropertyHandler([](Utf8CP name, BeJsConst val, PropertyBinder::Finder finder, ECSqlStatus& rc) {
+            if (0 != strcmp(name, "alias"))
+                return PropertyHandlerResult::Continue;
+            auto binder = finder("a");
+            if (!binder.has_value())
+                return PropertyHandlerResult::Continue;
+            rc = binder->GetBinder().BindText(val.asCString(), IECSqlBinder::MakeCopy::Yes);
+            return PropertyHandlerResult::Handled;
+        });
+        ASSERT_EQ(BE_SQLITE_DONE, updateRow(R"json(, "alias": "fromAlias", "b": 3)json", opt)) << m_ecdb.GetInstanceWriter().GetLastError().c_str();
+        EXPECT_STREQ("fromAlias|3|1.5|x1|y1|d0", readRow().c_str());
+    }
+
+    // A custom bind handler is called only for the supplied properties.
+    {
+        InstanceWriter::UpdateOptions opt;
+        opt.SetCustomBindHandler([](ECPropertyCR prop, IECSqlBinder& binder, BeJsConst, BeJsConst, ECSqlStatus& rc) {
+            if (!prop.GetName().Equals("b"))
+                return PropertyHandlerResult::Continue;
+            rc = binder.BindInt(100);
+            return PropertyHandlerResult::Handled;
+        });
+        ASSERT_EQ(BE_SQLITE_DONE, updateRow(R"json(, "a": "a2")json", opt)) << m_ecdb.GetInstanceWriter().GetLastError().c_str();
+        EXPECT_STREQ("a2|3|1.5|x1|y1|d0", readRow().c_str());
+        ASSERT_EQ(BE_SQLITE_DONE, updateRow(R"json(, "b": 4)json", opt)) << m_ecdb.GetInstanceWriter().GetLastError().c_str();
+        EXPECT_STREQ("a2|100|1.5|x1|y1|d0", readRow().c_str());
+    }
+
+    // An invalid value is still rejected.
+    EXPECT_EQ(BE_SQLITE_ERROR, updateRow(R"json(, "arr": ["notAnInt"])json", InstanceWriter::UpdateOptions()));
+    EXPECT_STREQ("a2|100|1.5|x1|y1|d0", readRow().c_str());
+}
+
+//---------------------------------------------------------------------------------------
+// An incremental update records the same changeset as a full update that supplies every property with the same values.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceWriterFixture, IncrementalUpdateChangesetMatchesFullUpdate) {
+    struct Tracker : BeSQLite::ChangeTracker {
+        Tracker(BeSQLite::DbR db) { SetDb(&db); }
+        OnCommitStatus _OnCommit(bool, Utf8CP) override { return OnCommitStatus::Commit; }
+    };
+    struct Changes : BeSQLite::ChangeSet {
+        ConflictResolution _OnConflict(ConflictCause, BeSQLite::Changes::Change) override { return ConflictResolution::Skip; }
+        bvector<Byte> GetBytes() const {
+            bvector<Byte> bytes;
+            for (auto& chunk : m_data.m_chunks)
+                bytes.insert(bytes.end(), chunk.begin(), chunk.end());
+            return bytes;
+        }
+    };
+
+    ASSERT_EQ(SUCCESS, SetupECDb(BeTest::GetNameOfCurrentTest(), SchemaItem(s_writerOptionsSchemaXml)));
+    ECInstanceKey key;
+    {
+        BeJsDocument doc;
+        doc.Parse(R"json({ "className": "TestSchema.Derived", "a": "a0", "b": 1, "c": 1.5, "st": { "x": "x0", "y": "y0" }, "arr": [1, 2], "d": "d0" })json");
+        InstanceWriter::InsertOptions opt;
+        opt.UseJsNames(true);
+        ASSERT_EQ(BE_SQLITE_DONE, InsertInstance(m_ecdb, doc, opt, key)) << m_ecdb.GetInstanceWriter().GetLastError().c_str();
+    }
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+
+    auto stored = ReadInstance(m_ecdb, key, true);
+    ASSERT_TRUE(stored.has_value());
+
+    const auto record = [&](BeJsConst inst, bool incremental) {
+        Tracker tracker(m_ecdb);
+        tracker.EnableTracking(true);
+        InstanceWriter::UpdateOptions opt;
+        opt.UseJsNames(true);
+        opt.UseIncrementalUpdate(incremental);
+        EXPECT_EQ(BE_SQLITE_DONE, UpdateInstance(m_ecdb, inst, opt)) << m_ecdb.GetInstanceWriter().GetLastError().c_str();
+        Changes changes;
+        EXPECT_EQ(BE_SQLITE_OK, changes.FromChangeTrack(tracker));
+        tracker.EndTracking();
+        EXPECT_EQ(BE_SQLITE_OK, m_ecdb.AbandonChanges());
+        m_ecdb.GetInstanceReader().Reset();
+        return changes.GetBytes();
+    };
+
+    for (Utf8CP prop : {"a", "b", "arr"}) {
+        BeJsDocument partial;
+        partial["id"] = key.GetInstanceId().ToHexStr();
+        partial["className"] = "TestSchema.Derived";
+        BeJsDocument full;
+        full.Parse(stored.value());
+        for (BeJsDocument* doc : {&partial, &full}) {
+            if (0 == strcmp(prop, "a")) {
+                (*doc)["a"] = "a1";
+            } else if (0 == strcmp(prop, "b")) {
+                (*doc)["b"] = 2;
+            } else {
+                auto arr = (*doc)["arr"];
+                arr.SetEmptyArray();
+                arr.appendValue() = 3;
+                arr.appendValue() = 4;
+                arr.appendValue() = 5;
+            }
+        }
+
+        auto fullChanges = record(full, false);
+        auto incrementalChanges = record(partial, true);
+        EXPECT_FALSE(incrementalChanges.empty()) << prop;
+        EXPECT_TRUE(incrementalChanges == fullChanges) << prop;
+    }
+}
 END_ECDBUNITTESTS_NAMESPACE

@@ -11,6 +11,7 @@
 #include <ECDb/ECSqlStatement.h>
 #include <ECDb/IECSqlBinder.h>
 #include <ECDb/InstanceWriter.h>
+#include <tuple>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
@@ -33,37 +34,28 @@ struct InstanceWriter::Impl final {
         private:
             ECClassId m_classId;
             WriterOp m_op;
+            bool m_exactClass;
+
+            std::tuple<ECClassId, int, bool> AsTuple() const { return std::make_tuple(m_classId, (int)m_op, m_exactClass); }
 
         public:
-            CacheKey(ECClassId classId, WriterOp op) : m_classId(classId), m_op(op) {}
+            CacheKey(ECClassId classId, WriterOp op, bool exactClass = false) : m_classId(classId), m_op(op), m_exactClass(exactClass) {}
             CacheKey(CacheKey const&) = default;
             CacheKey(CacheKey&&) = default;
             CacheKey& operator=(CacheKey const&) = default;
             CacheKey& operator=(CacheKey&&) = default;
             ECClassId GetClassId() const { return m_classId; }
             WriterOp GetOp() const { return m_op; }
+            // True when the statement writes only instances of exactly the class, using UPDATE ONLY or DELETE FROM ONLY.
+            bool GetExactClass() const { return m_exactClass; }
 
-            bool operator()(CacheKey const& rhs) const {
-                return m_classId < rhs.m_classId || (m_classId == rhs.m_classId && (int)m_op < (int)rhs.m_op);
-            }
-            bool operator<(CacheKey const& rhs) const {
-                return m_classId < rhs.m_classId || (m_classId == rhs.m_classId && (int)m_op < (int)rhs.m_op);
-            }
-            bool operator>(CacheKey const& rhs) const {
-                return m_classId > rhs.m_classId || (m_classId == rhs.m_classId && (int)m_op > (int)rhs.m_op);
-            }
-            bool operator==(CacheKey const& rhs) const {
-                return m_classId == rhs.m_classId && m_op == rhs.m_op;
-            }
-            bool operator<=(CacheKey const& rhs) const {
-                return *this < rhs || *this == rhs;
-            }
-            bool operator>=(CacheKey const& rhs) const {
-                return *this > rhs || *this == rhs;
-            }
-            bool operator!=(CacheKey const& rhs) const {
-                return !(*this == rhs);
-            }
+            bool operator()(CacheKey const& rhs) const { return *this < rhs; }
+            bool operator<(CacheKey const& rhs) const { return AsTuple() < rhs.AsTuple(); }
+            bool operator>(CacheKey const& rhs) const { return AsTuple() > rhs.AsTuple(); }
+            bool operator==(CacheKey const& rhs) const { return AsTuple() == rhs.AsTuple(); }
+            bool operator<=(CacheKey const& rhs) const { return AsTuple() <= rhs.AsTuple(); }
+            bool operator>=(CacheKey const& rhs) const { return AsTuple() >= rhs.AsTuple(); }
+            bool operator!=(CacheKey const& rhs) const { return AsTuple() != rhs.AsTuple(); }
         };
         //---------------------------------------------------------------------------------------
         // @bsistruct
@@ -116,15 +108,15 @@ struct InstanceWriter::Impl final {
     private:
         std::map<CacheKey, std::unique_ptr<CachedWriteStatement>> m_cache;
         std::vector<CacheKey> m_mru;
-        // Incremental update statements that set only some properties, by class and the indexes of their full-update binders.
-        std::map<std::pair<ECClassId, Utf8String>, std::unique_ptr<CachedWriteStatement>> m_partialCache;
+        // Incremental update statements that set only some properties, by class, exact class and the indexes of their full-update binders.
+        std::map<std::tuple<ECClassId, bool, Utf8String>, std::unique_ptr<CachedWriteStatement>> m_partialCache;
         ECDbCR m_ecdb;
         BeMutex m_mutex;
         uint32_t m_maxCache;
         bool m_addSupportForJsName = true;
         ECSqlStatus PrepareInsert(CachedWriteStatement& cachedStmt);
-        ECSqlStatus PrepareUpdate(CachedWriteStatement& cachedStmt);
-        ECSqlStatus PrepareDelete(CachedWriteStatement& cachedStmt);
+        ECSqlStatus PrepareUpdate(CachedWriteStatement& cachedStmt, bool exactClass);
+        ECSqlStatus PrepareDelete(CachedWriteStatement& cachedStmt, bool exactClass);
         std::unique_ptr<CachedWriteStatement> Prepare(CacheKey key);
         CachedWriteStatement* TryGet(CacheKey key);
         SnappyToBlob m_snappyToBlob;
@@ -137,16 +129,14 @@ struct InstanceWriter::Impl final {
         void Reset();
         ECDbCR GetECDb() const { return m_ecdb; }
         DbResult WithInsert(ECClassId classId, std::function<DbResult(CachedWriteStatement&)> fn);
-        DbResult WithUpdate(ECClassId classId, std::function<DbResult(CachedWriteStatement&)> fn);
-        DbResult WithDelete(ECClassId classId, std::function<DbResult(CachedWriteStatement&)> fn);
-        // The supplied values of a partial update: the binder index in the partial statement, and properties without a binder.
-        struct PartialValues final {
-            std::vector<std::pair<size_t, BeJsConst>> m_values;
-            std::vector<std::pair<Utf8String, BeJsConst>> m_unknown;
-        };
-        // Calls fn with a statement that updates only the properties of inst. Returns nullopt, without calling fn, when the
-        // instance supplies no property or a struct value that must be merged with the stored one.
-        std::optional<DbResult> WithPartialUpdate(ECClassId classId, BeJsConst inst, Options const& options, std::function<DbResult(CachedWriteStatement&, PartialValues const&)> fn);
+        DbResult WithUpdate(ECClassId classId, bool exactClass, std::function<DbResult(CachedWriteStatement&)> fn);
+        DbResult WithDelete(ECClassId classId, bool exactClass, std::function<DbResult(CachedWriteStatement&)> fn);
+        // The supplied values of a partial update, by the index of their binder in the partial statement.
+        using PartialValues = std::vector<std::pair<size_t, BeJsConst>>;
+        // Calls fn with a statement that updates only the properties that inst supplies. Returns nullopt, without calling fn,
+        // when the instance supplies no property or a struct object that must be merged with the stored struct.
+        // Properties without a binder are ignored, so this must not be used with a UserPropertyHandler.
+        std::optional<DbResult> WithPartialUpdate(ECClassId classId, bool exactClass, BeJsConst inst, std::function<DbResult(CachedWriteStatement&, PartialValues const&)> fn);
     };
     //---------------------------------------------------------------------------------------
     // @bsistruct
