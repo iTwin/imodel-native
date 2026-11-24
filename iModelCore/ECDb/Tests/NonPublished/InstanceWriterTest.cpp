@@ -1732,4 +1732,110 @@ TEST_F(InstanceWriterFixture, StringLongsAndIncrementalStructMembers) {
     EXPECT_TRUE(actual["st"]["x"].isNull());
     EXPECT_STREQ("y2", actual["st"]["y"].asCString());
 }
+
+//---------------------------------------------------------------------------------------
+// A null entry in a struct array is written as a null element, so the later entries keep their index.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceWriterFixture, NullStructArrayEntries) {
+    const auto schemaXml = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECStructClass typeName="S">
+                <ECProperty propertyName="label" typeName="string" />
+            </ECStructClass>
+            <ECEntityClass typeName="P">
+                <ECStructArrayProperty propertyName="arr" typeName="S" />
+            </ECEntityClass>
+        </ECSchema>)xml";
+    ASSERT_EQ(SUCCESS, SetupECDb(BeTest::GetNameOfCurrentTest(), SchemaItem(schemaXml)));
+
+    ECInstanceKey key;
+    const auto readLabels = [&]() {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT arr FROM ts.P WHERE ECInstanceId=?"));
+        stmt.BindId(1, key.GetInstanceId());
+        bvector<Utf8String> labels;
+        if (BE_SQLITE_ROW != stmt.Step())
+            return labels;
+        for (IECSqlValue const& entry : stmt.GetValue(0).GetArrayIterable())
+            labels.push_back(entry.IsNull() || entry["label"].IsNull() ? "<null>" : entry["label"].GetText());
+        return labels;
+    };
+
+    {
+        BeJsDocument doc;
+        doc.Parse(R"json({ "className": "TestSchema.P", "arr": [{ "label": "a" }, null, { "label": "c" }] })json");
+        InstanceWriter::InsertOptions opt;
+        opt.UseJsNames(true);
+        ASSERT_EQ(BE_SQLITE_DONE, InsertInstance(m_ecdb, doc, opt, key)) << m_ecdb.GetInstanceWriter().GetLastError().c_str();
+    }
+    EXPECT_EQ(bvector<Utf8String>({"a", "<null>", "c"}), readLabels());
+
+    {
+        BeJsDocument doc;
+        doc.Parse(Utf8PrintfString(R"json({ "id": "%s", "className": "TestSchema.P", "arr": [null, { "label": "b" }] })json", key.GetInstanceId().ToHexStr().c_str()));
+        InstanceWriter::UpdateOptions opt;
+        opt.UseJsNames(true);
+        ASSERT_EQ(BE_SQLITE_DONE, UpdateInstance(m_ecdb, doc, opt)) << m_ecdb.GetInstanceWriter().GetLastError().c_str();
+    }
+    EXPECT_EQ(bvector<Utf8String>({"<null>", "b"}), readLabels());
+}
+
+//---------------------------------------------------------------------------------------
+// A string for a long must be entirely a decimal integer or a "0x" hex integer that fits in 64 bits.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceWriterFixture, LongStringBoundaries) {
+    const auto schemaXml = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="P">
+                <ECProperty propertyName="l" typeName="long" />
+            </ECEntityClass>
+        </ECSchema>)xml";
+    ASSERT_EQ(SUCCESS, SetupECDb(BeTest::GetNameOfCurrentTest(), SchemaItem(schemaXml)));
+
+    ECInstanceKey key;
+    {
+        BeJsDocument doc;
+        doc.Parse(R"json({ "className": "TestSchema.P", "l": "12" })json");
+        InstanceWriter::InsertOptions opt;
+        opt.UseJsNames(true);
+        ASSERT_EQ(BE_SQLITE_DONE, InsertInstance(m_ecdb, doc, opt, key)) << m_ecdb.GetInstanceWriter().GetLastError().c_str();
+    }
+    const auto readLong = [&]() {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT l FROM ts.P WHERE ECInstanceId=?"));
+        stmt.BindId(1, key.GetInstanceId());
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        return stmt.GetValueInt64(0);
+    };
+    const auto update = [&](Utf8CP value) {
+        BeJsDocument doc;
+        doc.Parse(Utf8PrintfString(R"json({ "id": "%s", "className": "TestSchema.P", "l": "%s" })json", key.GetInstanceId().ToHexStr().c_str(), value));
+        InstanceWriter::UpdateOptions opt;
+        opt.UseJsNames(true);
+        return UpdateInstance(m_ecdb, doc, opt);
+    };
+    EXPECT_EQ(12, readLong());
+
+    const std::pair<Utf8CP, int64_t> accepted[] = {
+        {"9223372036854775807", std::numeric_limits<int64_t>::max()},
+        {"-9223372036854775808", std::numeric_limits<int64_t>::min()},
+        {"007", 7},
+        {"0x7fffffffffffffff", std::numeric_limits<int64_t>::max()},
+        {"0x8000000000000000", std::numeric_limits<int64_t>::min()},
+        {"0xffffffffffffffff", -1},
+        {"0X1f", 31},
+    };
+    for (auto const& [value, expected] : accepted) {
+        EXPECT_EQ(BE_SQLITE_DONE, update(value)) << value << ": " << m_ecdb.GetInstanceWriter().GetLastError().c_str();
+        EXPECT_EQ(expected, readLong()) << value;
+    }
+
+    // Decimal values outside int64 are rejected, even those that fit in 64 bits in hex.
+    for (Utf8CP value : {"9223372036854775808", "-9223372036854775809", "18446744073709551615", "0x10000000000000000",
+                         "", "+1", " 1", "1 ", "1.5", "1e3", "-0x1", "0x", "0xg", "-"}) {
+        EXPECT_EQ(BE_SQLITE_ERROR, update(value)) << value;
+        EXPECT_NE(Utf8String::npos, m_ecdb.GetInstanceWriter().GetLastError().find("Expected long")) << value << ": " << m_ecdb.GetInstanceWriter().GetLastError().c_str();
+        EXPECT_EQ(31, readLong()) << value;
+    }
+}
 END_ECDBUNITTESTS_NAMESPACE
