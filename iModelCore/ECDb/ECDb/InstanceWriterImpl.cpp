@@ -435,6 +435,78 @@ void MruStatementCache::Reset() {
     BeMutexHolder _(m_mutex);
     m_cache.clear();
     m_mru.clear();
+    m_partialCache.clear();
+}
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+std::optional<DbResult> MruStatementCache::WithPartialUpdate(ECClassId classId, BeJsConst inst, Options const& options, std::function<DbResult(CachedWriteStatement&, PartialValues const&)> fn) {
+    BeMutexHolder _(m_mutex);
+    auto full = TryGet(CacheKey(classId, WriterOp::Update));
+    if (full == nullptr)
+        return std::nullopt;
+
+    PartialValues values;
+    std::vector<size_t> fullIndexes;
+    bool mustMerge = false;
+    inst.ForEachProperty([&](auto prop, auto val) {
+        auto binder = full->FindBinder(prop);
+        if (binder == nullptr) {
+            values.m_unknown.emplace_back(prop, val);
+            return FOREACH_CONTINUE;
+        }
+        if (binder->GetProperty().GetIsStruct() && val.isObject()) {
+            mustMerge = true;
+            return FOREACH_ABORT;
+        }
+        if (auto canBind = options.GetCanBindHandler()) {
+            if (!canBind(binder->GetProperty()))
+                return FOREACH_CONTINUE;
+        }
+        size_t index = binder - full->GetBinders().data();
+        values.m_values.emplace_back(index, val);
+        fullIndexes.push_back(index);
+        return FOREACH_CONTINUE;
+    });
+    if (mustMerge || fullIndexes.empty())
+        return std::nullopt;
+
+    std::sort(fullIndexes.begin(), fullIndexes.end());
+    fullIndexes.erase(std::unique(fullIndexes.begin(), fullIndexes.end()), fullIndexes.end());
+    for (auto& value : values.m_values)
+        value.first = std::lower_bound(fullIndexes.begin(), fullIndexes.end(), value.first) - fullIndexes.begin();
+
+    Utf8String key;
+    for (auto index : fullIndexes)
+        key.append(std::to_string(index).c_str()).append(",");
+    auto cacheKey = std::make_pair(classId, key);
+    auto it = m_partialCache.find(cacheKey);
+    if (it == m_partialCache.end()) {
+        if (m_partialCache.size() >= (size_t)m_maxCache)
+            m_partialCache.clear();
+        auto stmt = std::make_unique<CachedWriteStatement>(full->GetClassMap());
+        Utf8String ecsql("UPDATE ONLY ");
+        ecsql.append(stmt->GetClass().GetECSqlName()).append(" SET ");
+        for (size_t i = 0; i < fullIndexes.size(); ++i) {
+            if (i > 0)
+                ecsql.append(", ");
+            ecsql.append("[").append(full->GetBinders()[fullIndexes[i]].GetPropertyMap().GetName()).append("] = ?");
+        }
+        ecsql.append(" WHERE [ECInstanceId] = ?");
+        auto crudWriteToken = m_ecdb.GetImpl().GetSettingsManager().GetCrudWriteToken();
+        if (!stmt->GetStatement().Prepare(m_ecdb, ecsql.c_str(), crudWriteToken).IsSuccess())
+            return std::nullopt;
+        int i = 1;
+        for (auto index : fullIndexes)
+            stmt->GetBinders().emplace_back(full->GetBinders()[index].GetPropertyMap(), stmt->GetStatement().GetBinder(i++));
+        stmt->m_instanceIdIndex = i;
+        stmt->BuildPropertyIndexMap(m_addSupportForJsName);
+        it = m_partialCache.insert({cacheKey, std::move(stmt)}).first;
+    }
+    it->second->GetStatement().ClearBindings();
+    it->second->GetStatement().Reset();
+    return fn(*it->second, values);
 }
 
 //******************************Impl********************************
@@ -1161,6 +1233,39 @@ DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& optio
     if (!classId.IsValid() && !TryGetECClassId(ctx, inst, classId)) {
         ctx.PrependError("Failed to get ECClassId/className/classFullName.");
         return BE_SQLITE_ERROR;
+    }
+
+    // An incremental update sets only the supplied properties, so the stored ones need not be read.
+    if (options.GetUseIncrementalUpdate()) {
+        auto partialRc = m_cache.WithPartialUpdate(classId, inst, options, [&](CachedWriteStatement& stmt, MruStatementCache::PartialValues const& values) {
+            ECSqlStatus bindStatus = ECSqlStatus::Success;
+            for (auto& unknown : values.m_unknown) {
+                bindStatus = ctx.NotifyUserProperty(unknown.first.c_str(), unknown.second, stmt);
+                if (!bindStatus.IsSuccess())
+                    break;
+            }
+            for (auto& value : values.m_values) {
+                if (!bindStatus.IsSuccess())
+                    break;
+                auto& binder = stmt.GetBinders()[value.first];
+                bindStatus = BindRootProperty(ctx, binder.GetPropertyMap(), binder.GetBinder(), value.second);
+            }
+            if (!bindStatus.IsSuccess()) {
+                ctx.PrependError("Failed to bind property.");
+                return BE_SQLITE_ERROR;
+            }
+            stmt.GetStatement().GetBinder(stmt.GetInstanceIdParameterIndex()).BindId(id);
+            auto rc = stmt.GetStatement().Step();
+            if (rc != BE_SQLITE_DONE) {
+                ctx.SetError(m_cache.GetECDb().GetLastError().c_str());
+                if (!ctx.HasError())
+                    ctx.SetError("Failed to update instance");
+            }
+            m_cache.GetECDb().GetInstanceReader().InvalidateSeekPos(ECInstanceKey(classId, id));
+            return rc;
+        });
+        if (partialRc.has_value())
+            return partialRc.value();
     }
 
     auto rc = m_cache.WithUpdate(classId, [&](CachedWriteStatement& stmt) {
