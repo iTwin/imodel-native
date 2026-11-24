@@ -1044,26 +1044,36 @@ Napi::Value JsInterop::UpdateInstance(ECDbR db, NapiInfoCR info) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-Napi::Value JsInterop::DeleteInstance(ECDbR db, NapiInfoCR info) {
-    REQUIRE_ARGUMENT_ANY_OBJ(0, keyObj);
-    REQUIRE_ARGUMENT_ANY_OBJ(1, argsObj);
-
-    auto& repo = db.GetInstanceRepository();
-    auto key = BeJsValue(keyObj);
-    auto args = BeJsValue(argsObj);
-
+static DbResult DeleteInstanceFromJs(ECDbR db, BeJsConst key, BeJsConst args, std::vector<Utf8String>& conflictingProperties) {
     auto fmt = JsFormat::Standard;
     if (args.isBoolMember("useJsNames") && args.asBool(false)){
         fmt = JsFormat::JsName;
     }
+    return db.GetInstanceRepository().Delete(key, args, fmt, conflictingProperties);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+static Utf8String GetDeleteInstanceErrorMessage(ECDbR db) {
+    auto const& lastError = db.GetInstanceRepository().GetLastError();
+    return lastError.empty() ? Utf8String("Failed to delete instance") : lastError;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Napi::Value JsInterop::DeleteInstance(ECDbR db, NapiInfoCR info) {
+    REQUIRE_ARGUMENT_ANY_OBJ(0, keyObj);
+    REQUIRE_ARGUMENT_ANY_OBJ(1, argsObj);
+
+    auto key = BeJsValue(keyObj);
+    auto args = BeJsValue(argsObj);
 
     std::vector<Utf8String> conflictingProperties;
-    auto rc = repo.Delete(key, args, fmt, conflictingProperties);
+    auto rc = DeleteInstanceFromJs(db, key, args, conflictingProperties);
     if (rc != BE_SQLITE_DONE) {
-        if (repo.GetLastError().empty()) {
-            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to delete instance", rc);
-        }
-        THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), repo.GetLastError().c_str(), rc);
+        THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), GetDeleteInstanceErrorMessage(db).c_str(), rc);
     }
     bool deleted = db.GetModifiedRowCount() > 0;
     if (args.isObjectMember("expectedOldValues")) {
@@ -1076,6 +1086,174 @@ Napi::Value JsInterop::DeleteInstance(ECDbR db, NapiInfoCR info) {
         return result;
     }
     return Napi::Value::From(info.Env(), deleted);
+}
+
+//---------------------------------------------------------------------------------------
+// Manages a raw SQLite savepoint nested inside the TxnManager's open transaction, with "PRAGMA defer_foreign_keys" on.
+// A BeSQLite::Savepoint can't be used: BeSQLite refuses to start a nested Savepoint while a ChangeTracker (TxnManager)
+// is active, and would route its Commit/Cancel through the tracker. Rolled-back changes don't leak into the TxnManager's
+// changeset because the sqlite session extension diffs recorded rows against the current database content.
+// Turning defer_foreign_keys off resets SQLite's deferred-violation counters, silently discarding pending violations, so
+// deferral is only ever turned off when SQLite reports no deferred violations. If deferral was already on when the scope
+// began, it is left on. The destructor cleans up after any exit path (including exceptions) that did not complete
+// explicitly; if the rollback fails there, the savepoint is not released, so the deletions are never merged into the
+// enclosing transaction.
+// @bsiclass
+//---------------------------------------------------------------------------------------
+namespace {
+struct DeferredForeignKeyDeletionScope {
+private:
+    ECDbR m_db;
+    bool m_savepointActive = false;
+    bool m_deferring = false;
+    bool m_wasDeferring = false;
+
+    DbResult Exec(Utf8CP sql) const { return m_db.TryExecuteSql(sql); }
+
+    // Elements and models cached in memory may reflect the rolled-back deletions.
+    void ClearCachesAfterRollback() {
+        auto dgndb = dynamic_cast<DgnDbP>(&m_db);
+        if (nullptr != dgndb) {
+            dgndb->Elements().ClearCache();
+            dgndb->Models().ClearCache();
+        }
+    }
+
+public:
+    explicit DeferredForeignKeyDeletionScope(ECDbR db) : m_db(db) {}
+    DeferredForeignKeyDeletionScope(DeferredForeignKeyDeletionScope const&) = delete;
+    DeferredForeignKeyDeletionScope& operator=(DeferredForeignKeyDeletionScope const&) = delete;
+
+    ~DeferredForeignKeyDeletionScope() {
+        if (m_savepointActive && BE_SQLITE_OK == RollbackToSavepoint())
+            ReleaseSavepoint();
+        if (m_deferring)
+            StopDeferring();
+        if (m_savepointActive || m_deferring) {
+            NativeLogging::CategoryLogger("JsInterop").errorv(
+                "deleteInstancesDeferringForeignKeys: failed to clean up (savepoint active: %d, foreign keys deferred: %d)",
+                (int)m_savepointActive, (int)m_deferring);
+        }
+    }
+
+    DbResult Begin() {
+        Statement stmt;
+        auto rc = stmt.TryPrepare(m_db, "PRAGMA defer_foreign_keys");
+        if (BE_SQLITE_OK != rc)
+            return rc;
+        if (BE_SQLITE_ROW != stmt.Step())
+            return BE_SQLITE_ERROR;
+        m_wasDeferring = 0 != stmt.GetValueInt(0);
+        stmt.Finalize();
+
+        rc = Exec("SAVEPOINT \"deleteInstancesDeferringForeignKeys\"");
+        if (BE_SQLITE_OK != rc)
+            return rc;
+        m_savepointActive = true;
+
+        rc = Exec("PRAGMA defer_foreign_keys = true");
+        if (BE_SQLITE_OK != rc)
+            return rc;
+        m_deferring = true;
+        return BE_SQLITE_OK;
+    }
+
+    // Restores the database content and SQLite's deferred-violation counters to their state when the savepoint was opened.
+    DbResult RollbackToSavepoint() {
+        auto rc = Exec("ROLLBACK TO \"deleteInstancesDeferringForeignKeys\"");
+        if (BE_SQLITE_OK == rc)
+            ClearCachesAfterRollback();
+        return rc;
+    }
+
+    DbResult ReleaseSavepoint() {
+        auto rc = Exec("RELEASE \"deleteInstancesDeferringForeignKeys\"");
+        if (BE_SQLITE_OK == rc)
+            m_savepointActive = false;
+        return rc;
+    }
+
+    DbResult StopDeferring() {
+        if (m_db.HasDeferredForeignKeyViolations())
+            return BE_SQLITE_CONSTRAINT_FOREIGNKEY;
+        if (!m_wasDeferring) {
+            auto rc = Exec("PRAGMA defer_foreign_keys = false");
+            if (BE_SQLITE_OK != rc)
+                return rc;
+        }
+        m_deferring = false;
+        return BE_SQLITE_OK;
+    }
+};
+} // namespace
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Napi::Value JsInterop::DeleteInstancesDeferringForeignKeys(ECDbR db, NapiInfoCR info) {
+    REQUIRE_ARGUMENT_ARRAY(0, keysArray);
+    REQUIRE_ARGUMENT_ANY_OBJ(1, argsObj);
+
+    auto env = info.Env();
+    for (uint32_t i = 0; i < keysArray.Length(); ++i) {
+        if (!keysArray.Get(i).IsObject())
+            THROW_JS_TYPE_EXCEPTION("Argument 0 must be an array of objects")
+    }
+
+    auto args = BeJsValue(argsObj);
+    // A conflict makes the delete a silent no-op, which the result has no way to report.
+    if (args.isObjectMember("expectedOldValues"))
+        THROW_JS_TYPE_EXCEPTION("deleteInstancesDeferringForeignKeys does not support expectedOldValues")
+
+    auto makeResult = [&](Utf8CP status) {
+        auto result = Napi::Object::New(env);
+        result.Set("status", Napi::String::New(env, status));
+        return result;
+    };
+
+    // Pending violations from earlier work would be discarded when we turn deferral off, so don't touch anything.
+    if (db.HasDeferredForeignKeyViolations())
+        return makeResult("pending-violations");
+
+    // Without an open transaction, releasing our savepoint would commit, which BeSQLite forbids.
+    if (!db.IsTransactionActive())
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "deleteInstancesDeferringForeignKeys requires an active transaction", BE_SQLITE_ERROR);
+
+    auto throwOnError = [&](DbResult rc, Utf8CP operation) {
+        if (BE_SQLITE_OK != rc)
+            THROW_JS_BE_SQLITE_EXCEPTION(env, Utf8PrintfString("deleteInstancesDeferringForeignKeys: failed to %s", operation).c_str(), rc);
+    };
+
+    DeferredForeignKeyDeletionScope scope(db);
+    throwOnError(scope.Begin(), "begin savepoint with deferred foreign keys");
+
+    for (uint32_t i = 0; i < keysArray.Length(); ++i) {
+        Napi::Object keyObj = keysArray.Get(i).As<Napi::Object>();
+        auto key = BeJsValue(keyObj);
+        std::vector<Utf8String> conflictingProperties;
+        auto rc = DeleteInstanceFromJs(db, key, args, conflictingProperties);
+        if (rc != BE_SQLITE_DONE) {
+            auto message = GetDeleteInstanceErrorMessage(db);
+            throwOnError(scope.RollbackToSavepoint(), "roll back savepoint after delete failure");
+            if (db.HasDeferredForeignKeyViolations())
+                throwOnError(BE_SQLITE_CONSTRAINT_FOREIGNKEY, "clear deferred foreign key violations after delete failure");
+            throwOnError(scope.ReleaseSavepoint(), "release savepoint after delete failure");
+            throwOnError(scope.StopDeferring(), "stop deferring foreign keys after delete failure");
+            THROW_JS_BE_SQLITE_EXCEPTION(env, message.c_str(), rc);
+        }
+    }
+
+    // Must be checked while deferral is still on: turning it off resets the counters.
+    if (!db.HasDeferredForeignKeyViolations()) {
+        throwOnError(scope.ReleaseSavepoint(), "release savepoint");
+        throwOnError(scope.StopDeferring(), "stop deferring foreign keys");
+        return makeResult("deleted");
+    }
+
+    throwOnError(scope.RollbackToSavepoint(), "roll back savepoint after foreign key violation");
+    throwOnError(scope.ReleaseSavepoint(), "release savepoint after foreign key violation");
+    throwOnError(scope.StopDeferring(), "stop deferring foreign keys after foreign key violation");
+    return makeResult("violation");
 }
 
 namespace {

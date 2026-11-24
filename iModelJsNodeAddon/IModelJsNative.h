@@ -565,6 +565,7 @@ public:
     static Napi::Value InsertInstance(ECDbR db, NapiInfoCR info);
     static Napi::Value UpdateInstance(ECDbR db, NapiInfoCR info);
     static Napi::Value DeleteInstance(ECDbR db, NapiInfoCR info);
+    static Napi::Value DeleteInstancesDeferringForeignKeys(ECDbR db, NapiInfoCR info);
     static Napi::Value ImportCSVData(ECDbR db, NapiInfoCR info);
     static Napi::Value ImportCSVFile(ECDbR db, NapiInfoCR info);
     static Napi::Value PatchJsonProperties(NapiInfoCR info);

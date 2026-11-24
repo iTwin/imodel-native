@@ -2775,6 +2775,10 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         auto& db = GetWritableDb(info);
         return JsInterop::DeleteInstance(db, info);
     }
+    Napi::Value DeleteInstancesDeferringForeignKeys(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        return JsInterop::DeleteInstancesDeferringForeignKeys(db, info);
+    }
     void ResetBriefcaseId(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_INTEGER(0, newId);
@@ -3412,6 +3416,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("insertInstance", &NativeDgnDb::InsertInstance),
             InstanceMethod("updateInstance", &NativeDgnDb::UpdateInstance),
             InstanceMethod("deleteInstance", &NativeDgnDb::DeleteInstance),
+            InstanceMethod("deleteInstancesDeferringForeignKeys", &NativeDgnDb::DeleteInstancesDeferringForeignKeys),
             InstanceMethod("executeSql", &NativeDgnDb::ExecuteSql),
             InstanceMethod("getFilePath", &NativeDgnDb::GetFilePath),
             InstanceMethod("getGeoCoordinatesFromIModelCoordinates", &NativeDgnDb::GetGeoCoordsFromIModelCoords),

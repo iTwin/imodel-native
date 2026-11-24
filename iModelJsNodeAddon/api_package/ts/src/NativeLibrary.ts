@@ -719,6 +719,15 @@ export declare namespace IModelJsNative {
     /** Throws on failure. A UNIQUE constraint violation additionally carries a [[UniqueConstraintConflictDetail]] as `conflictDetail`. */
     public updateInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean | { updated: boolean, conflictingProperties: string[] };
     public deleteInstance(key: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean | { deleted: boolean, conflictingProperties: string[] };
+    /** Delete the instances identified by `keys` (each `{ id, classFullName }`), in order, with foreign key checks deferred
+     * within a savepoint nested in the current transaction. `args` is applied to each deletion as for [[deleteInstance]],
+     * except that `expectedOldValues` is not supported.
+     * - "deleted": all instances were deleted and no foreign key violations remain.
+     * - "violation": the deletions would violate a foreign key constraint, so all of them were rolled back.
+     * - "pending-violations": the transaction already had deferred foreign key violations, so nothing was done.
+     * Throws (after rolling back all of the deletions) if any individual deletion fails for another reason.
+     */
+    public deleteInstancesDeferringForeignKeys(keys: NodeJS.Dict<any>[], args: NodeJS.Dict<any>): { status: "deleted" | "violation" | "pending-violations" };
     public patchJsonProperties(jsonProps: string): string;
     public newBeGuid(): GuidString;
 

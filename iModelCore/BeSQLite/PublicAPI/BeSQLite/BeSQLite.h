@@ -3181,6 +3181,13 @@ public:
     //! @see sqlite3_total_changes
     BE_SQLITE_EXPORT int64_t GetTotalModifiedRowCount64() const;
 
+    //! @return true if this Db has outstanding foreign key constraint violations that are deferred until commit
+    //! (either because the constraint is DEFERRABLE or because "PRAGMA defer_foreign_keys" is on). Also returns
+    //! true if the status could not be determined.
+    //! @note Turning "PRAGMA defer_foreign_keys" off discards these pending violations without checking them.
+    //! @see sqlite3_db_status, SQLITE_DBSTATUS_DEFERRED_FKS
+    BE_SQLITE_EXPORT bool HasDeferredForeignKeyViolations() const;
+
     //! @return The last error message for this Db.
     //! @param[out] lastResult The last error code for this Db.
     //! @see sqlite3_errmsg, sqlite3_errcode
