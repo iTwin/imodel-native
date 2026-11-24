@@ -278,7 +278,7 @@ ECSqlStatus MruStatementCache::PrepareUpdate(CachedWriteStatement& cachedStmt) {
 
     const auto timestampPropName = cachedStmt.GetCurrentTimeStampProperty();
     auto& classMap = cachedStmt.GetClassMap();
-    ecsql.append("UPDATE ").append(cachedStmt.GetClass().GetECSqlName()).append(" SET ");
+    ecsql.append("UPDATE ONLY ").append(cachedStmt.GetClass().GetECSqlName()).append(" SET ");
     bool isFirst = true;
     for (auto prop : classMap.GetPropertyMaps()) {
         if (prop->GetType() == PropertyMap::Type::ECClassId || prop->GetType() == PropertyMap::Type::ECInstanceId) {
@@ -321,7 +321,7 @@ ECSqlStatus MruStatementCache::PrepareUpdate(CachedWriteStatement& cachedStmt) {
 //+---------------+---------------+---------------+---------------+---------------+-
 ECSqlStatus MruStatementCache::PrepareDelete(CachedWriteStatement& cachedStmt) {
     Utf8String ecsql;
-    ecsql.append("DELETE FROM ").append(cachedStmt.GetClass().GetECSqlName()).append(" WHERE [ECInstanceId] = ?");
+    ecsql.append("DELETE FROM ONLY ").append(cachedStmt.GetClass().GetECSqlName()).append(" WHERE [ECInstanceId] = ?");
 
     auto crudWriteToken = m_ecdb.GetImpl().GetSettingsManager().GetCrudWriteToken();
     auto rc = cachedStmt.GetStatement().Prepare(m_ecdb, ecsql.c_str(), crudWriteToken);
