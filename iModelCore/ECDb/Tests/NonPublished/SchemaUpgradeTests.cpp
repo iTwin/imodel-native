@@ -19503,4 +19503,145 @@ TEST_F(SchemaUpgradeExtendedTests, TooManyColumnsInResultSetAbstractClass)
       }
     }
 
+//---------------------------------------------------------------------------------------
+// Mapping a subclass during schema upgrade can lazily load further subclasses of the
+// base class whose derived-class list is being iterated by MapDerivedClasses. That must
+// not invalidate the iteration (it used to read freed memory and crash).
+// Here, updating Child1 loads Ext:Grand (subclass of Child1), whose navigation properties
+// load Ext:Other1..N, which are further subclasses of Root. N is large enough that Root's
+// derived-class list must reallocate regardless of the vector growth policy.
+// Existing instances are inserted before the upgrade and verified afterwards.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, LazyLoadedSubclassDuringMapDerivedClasses)
+    {
+    auto baseSchemaXml = [] (bool addProperty)
+        {
+        return Utf8PrintfString(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="Base" alias="b" version="01.00.%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Root">
+              <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                  <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00.00">
+                  <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                </ShareColumns>
+              </ECCustomAttributes>
+              <ECProperty propertyName="RootProp" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Child1">
+              <BaseClass>Root</BaseClass>
+              <ECProperty propertyName="C1" typeName="string" />
+              %s
+            </ECEntityClass>
+            <ECEntityClass typeName="Child2">
+              <BaseClass>Root</BaseClass>
+              <ECProperty propertyName="C2" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Child3">
+              <BaseClass>Root</BaseClass>
+              <ECProperty propertyName="C3" typeName="string" />
+            </ECEntityClass>
+        </ECSchema>)xml", addProperty ? "01" : "00", addProperty ? R"xml(<ECProperty propertyName="C1New" typeName="string" />)xml" : "");
+        };
+
+    const int otherCount = 8;
+    Utf8String otherClasses, navProps, relClasses;
+    for (int i = 1; i <= otherCount; i++)
+        {
+        otherClasses.append(Utf8PrintfString(R"xml(
+            <ECEntityClass typeName="Other%d">
+              <BaseClass>b:Root</BaseClass>
+              <ECProperty propertyName="OtherProp" typeName="string" />
+            </ECEntityClass>)xml", i));
+        navProps.append(Utf8PrintfString(R"xml(
+              <ECNavigationProperty propertyName="Other%d" relationshipName="GrandRefersToOther%d" direction="Forward" />)xml", i, i));
+        relClasses.append(Utf8PrintfString(R"xml(
+            <ECRelationshipClass typeName="GrandRefersToOther%d" strength="referencing" modifier="Sealed">
+              <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
+                <Class class="Grand"/>
+              </Source>
+              <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="true">
+                <Class class="Other%d"/>
+              </Target>
+            </ECRelationshipClass>)xml", i, i));
+        }
+
+    ASSERT_EQ(SUCCESS, SetupECDb("LazyLoadedSubclassDuringMapDerivedClasses.ecdb", SchemaItem(baseSchemaXml(false))));
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(Utf8PrintfString(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="Ext" alias="ext" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="Base" version="01.00.00" alias="b"/>
+            %s
+            <ECEntityClass typeName="Grand">
+              <BaseClass>b:Child1</BaseClass>
+              <ECProperty propertyName="GrandProp" typeName="string" />
+              %s
+            </ECEntityClass>
+            %s
+        </ECSchema>)xml", otherClasses.c_str(), navProps.c_str(), relClasses.c_str()))));
+
+    // Existing data that must survive the upgrade.
+    bvector<ECInstanceId> otherIds;
+    Utf8String navCols, navVals;
+    for (int i = 1; i <= otherCount; i++)
+        {
+        ECInstanceKey key;
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(key, Utf8PrintfString("INSERT INTO ext.Other%d(RootProp,OtherProp) VALUES('r%d','o%d')", i, i, i).c_str()));
+        otherIds.push_back(key.GetInstanceId());
+        navCols.append(Utf8PrintfString(",Other%d.Id", i));
+        navVals.append(Utf8PrintfString(",%s", key.GetInstanceId().ToString().c_str()));
+        }
+    ECInstanceKey oldGrandKey, child2Key;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(oldGrandKey, Utf8PrintfString("INSERT INTO ext.Grand(RootProp,C1,GrandProp%s) VALUES('rg','c1old','gold'%s)", navCols.c_str(), navVals.c_str()).c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(child2Key, "INSERT INTO b.Child2(RootProp,C2) VALUES('r2','c2')"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+
+    // Start from an empty schema cache so Ext classes are only loaded lazily while mapping.
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(baseSchemaXml(true))));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+
+    auto verifyGrand = [&] (ECInstanceKey const& grandKey, Utf8CP expectedC1, Utf8CP expectedC1New, Utf8CP expectedGrandProp)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT C1,C1New,GrandProp%s FROM ext.Grand WHERE ECInstanceId=?", navCols.c_str()).c_str()));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, grandKey.GetInstanceId()));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_STREQ(expectedC1, stmt.GetValueText(0));
+        if (expectedC1New == nullptr)
+            EXPECT_TRUE(stmt.IsValueNull(1));
+        else
+            EXPECT_STREQ(expectedC1New, stmt.GetValueText(1));
+        EXPECT_STREQ(expectedGrandProp, stmt.GetValueText(2));
+        for (int i = 0; i < otherCount; i++)
+            EXPECT_EQ(otherIds[i], stmt.GetValueId<ECInstanceId>(3 + i)) << "Other" << (i + 1);
+        };
+
+    verifyGrand(oldGrandKey, "c1old", nullptr, "gold");
+    for (int i = 1; i <= otherCount; i++)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT RootProp,OtherProp FROM ext.Other%d WHERE ECInstanceId=?", i).c_str()));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, otherIds[i - 1]));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_STREQ(Utf8PrintfString("r%d", i).c_str(), stmt.GetValueText(0));
+        EXPECT_STREQ(Utf8PrintfString("o%d", i).c_str(), stmt.GetValueText(1));
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT RootProp,C2 FROM b.Child2 WHERE ECInstanceId=?"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, child2Key.GetInstanceId()));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_STREQ("r2", stmt.GetValueText(0));
+        EXPECT_STREQ("c2", stmt.GetValueText(1));
+        }
+
+    // New data using the added property.
+    ECInstanceKey newGrandKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(newGrandKey, Utf8PrintfString("INSERT INTO ext.Grand(C1,C1New,GrandProp%s) VALUES('c1','new','g'%s)", navCols.c_str(), navVals.c_str()).c_str()));
+    verifyGrand(newGrandKey, "c1", "new", "g");
+    }
+
 END_ECDBUNITTESTS_NAMESPACE

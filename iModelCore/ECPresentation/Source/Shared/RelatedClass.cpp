@@ -229,8 +229,7 @@ static ECClassCP GetNearestCommonRelationshipEndClass(ECClassCR lhsClass, ECClas
 bool RelatedClass::ClassesEqual(RelatedClassCR other) const
     {
     return &GetTargetClass().GetClass() == &other.GetTargetClass().GetClass()
-        && GetSourceClass() == other.GetSourceClass()
-        && &GetRelationship().GetClass() == &other.GetRelationship().GetClass();
+        && SourceAndRelationshipEqual(other);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -239,7 +238,8 @@ bool RelatedClass::ClassesEqual(RelatedClassCR other) const
 bool RelatedClass::SourceAndRelationshipEqual(RelatedClassCR other) const
     {
     return GetSourceClass() == other.GetSourceClass()
-        && &GetRelationship().GetClass() == &other.GetRelationship().GetClass();
+        && GetRelationship().IsValid() == other.GetRelationship().IsValid()
+        && (!GetRelationship().IsValid() || &GetRelationship().GetClass() == &other.GetRelationship().GetClass());
     }
 
 /*---------------------------------------------------------------------------------**//**
