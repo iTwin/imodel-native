@@ -26,7 +26,6 @@
         <SubPart PartName="RunGtest" PartFile="iModelCore/Units/Units" />
         <SubPart PartName="RunGtest" PartFile="iModelCore/GeoCoord/GeoCoord" />
         <SubPart PartName="RunGtest" PartFile="iModelCore/BRepCore/BRepCore" Repository="imodel-native-internal" />
-        <SubPart PartName="RunGtest" PartFile="iModelCore/AppModel/AppModel" Repository="imodel-native-internal" />
         <!--
             IModelEvolution tests take too long to run, IModelEvolutionTest BuildStrategy is used to run.
          -->
