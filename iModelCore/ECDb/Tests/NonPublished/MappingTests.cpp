@@ -19,8 +19,12 @@ struct MappingTests : SchemaUpdateTestFixture
                 <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
                 <ECEntityClass typeName="Base">
                     <ECCustomAttributes>
-                        <ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap>
-                        <ShareColumns xmlns="ECDbMap.02.00.00"><MaxSharedColumnsBeforeOverflow>2</MaxSharedColumnsBeforeOverflow></ShareColumns>
+                        <ClassMap xmlns="ECDbMap.02.00.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                        <ShareColumns xmlns="ECDbMap.02.00.00">
+                            <MaxSharedColumnsBeforeOverflow>2</MaxSharedColumnsBeforeOverflow>
+                        </ShareColumns>
                     </ECCustomAttributes>
                     <ECProperty propertyName="B1" typeName="string" />
                     <ECProperty propertyName="B2" typeName="string" />
@@ -40,8 +44,12 @@ struct MappingTests : SchemaUpdateTestFixture
                 <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
                 <ECEntityClass typeName="Base">
                     <ECCustomAttributes>
-                        <ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap>
-                        <ShareColumns xmlns="ECDbMap.02.00.00"><MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow></ShareColumns>
+                        <ClassMap xmlns="ECDbMap.02.00.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                        <ShareColumns xmlns="ECDbMap.02.00.00">
+                            <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>
+                        </ShareColumns>
                     </ECCustomAttributes>
                     <ECProperty propertyName="B1" typeName="string" />
                     <ECProperty propertyName="B2" typeName="string" />
@@ -67,8 +75,13 @@ struct MappingTests : SchemaUpdateTestFixture
                 <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
                 <ECEntityClass typeName="Element">
                     <ECCustomAttributes>
-                        <ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap>
-                        <ShareColumns xmlns="ECDbMap.02.00.00"><MaxSharedColumnsBeforeOverflow>2</MaxSharedColumnsBeforeOverflow><ApplyToSubclassesOnly>True</ApplyToSubclassesOnly></ShareColumns>
+                        <ClassMap xmlns="ECDbMap.02.00.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                        <ShareColumns xmlns="ECDbMap.02.00.00">
+                            <MaxSharedColumnsBeforeOverflow>2</MaxSharedColumnsBeforeOverflow>
+                            <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                        </ShareColumns>
                         <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00.00"/>
                     </ECCustomAttributes>
                     <ECProperty propertyName="Code" typeName="string" />
@@ -93,7 +106,9 @@ struct MappingTests : SchemaUpdateTestFixture
                 <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
                 <ECEntityClass typeName="Base">
                     <ECCustomAttributes>
-                        <ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap>
+                        <ClassMap xmlns="ECDbMap.02.00.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
                     </ECCustomAttributes>
                     <ECProperty propertyName="Name" typeName="string" />
                 </ECEntityClass>
@@ -117,7 +132,9 @@ struct MappingTests : SchemaUpdateTestFixture
                 <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
                 <ECEntityClass typeName="Base">
                     <ECCustomAttributes>
-                        <ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap>
+                        <ClassMap xmlns="ECDbMap.02.00.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
                     </ECCustomAttributes>
                     <ECProperty propertyName="Name" typeName="string" />
                 </ECEntityClass>
@@ -141,8 +158,13 @@ struct MappingTests : SchemaUpdateTestFixture
                 <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
                 <ECEntityClass typeName="Root">
                     <ECCustomAttributes>
-                        <ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap>
-                        <ShareColumns xmlns="ECDbMap.02.00.00"><MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow><ApplyToSubclassesOnly>True</ApplyToSubclassesOnly></ShareColumns>
+                        <ClassMap xmlns="ECDbMap.02.00.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                        <ShareColumns xmlns="ECDbMap.02.00.00">
+                            <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>
+                            <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                        </ShareColumns>
                     </ECCustomAttributes>
                     <ECProperty propertyName="Name" typeName="string" />
                 </ECEntityClass>
@@ -163,7 +185,9 @@ struct MappingTests : SchemaUpdateTestFixture
                 <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
                 <ECEntityClass typeName="Base">
                     <ECCustomAttributes>
-                        <ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap>
+                        <ClassMap xmlns="ECDbMap.02.00.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
                     </ECCustomAttributes>
                     <ECProperty propertyName="Name" typeName="string" />
                 </ECEntityClass>
@@ -222,8 +246,12 @@ struct MappingTests : SchemaUpdateTestFixture
                     <ECStructClass typeName="Big">%s</ECStructClass>
                     <ECEntityClass typeName="Base">
                         <ECCustomAttributes>
-                            <ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap>
-                            <ShareColumns xmlns="ECDbMap.02.00.00"><MaxSharedColumnsBeforeOverflow>200</MaxSharedColumnsBeforeOverflow></ShareColumns>
+                            <ClassMap xmlns="ECDbMap.02.00.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                            <ShareColumns xmlns="ECDbMap.02.00.00">
+                                <MaxSharedColumnsBeforeOverflow>200</MaxSharedColumnsBeforeOverflow>
+                            </ShareColumns>
                         </ECCustomAttributes>
                         <ECProperty propertyName="Name" typeName="string" />
                     </ECEntityClass>
@@ -255,8 +283,12 @@ struct MappingTests : SchemaUpdateTestFixture
                     <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
                     <ECEntityClass typeName="Base">
                         <ECCustomAttributes>
-                            <ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap>
-                            <ShareColumns xmlns="ECDbMap.02.00.00"><MaxSharedColumnsBeforeOverflow>2</MaxSharedColumnsBeforeOverflow></ShareColumns>
+                            <ClassMap xmlns="ECDbMap.02.00.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                            <ShareColumns xmlns="ECDbMap.02.00.00">
+                                <MaxSharedColumnsBeforeOverflow>2</MaxSharedColumnsBeforeOverflow>
+                            </ShareColumns>
                         </ECCustomAttributes>
                         <ECProperty propertyName="Name" typeName="string" />
                     </ECEntityClass>
@@ -275,8 +307,12 @@ struct MappingTests : SchemaUpdateTestFixture
                 <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
                 <ECEntityClass typeName="Base">
                     <ECCustomAttributes>
-                        <ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap>
-                        <ShareColumns xmlns="ECDbMap.02.00.00"><ApplyToSubclassesOnly>True</ApplyToSubclassesOnly></ShareColumns>
+                        <ClassMap xmlns="ECDbMap.02.00.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                        <ShareColumns xmlns="ECDbMap.02.00.00">
+                            <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                        </ShareColumns>
                     </ECCustomAttributes>
                     <ECProperty propertyName="Name" typeName="string" />
                 </ECEntityClass>
@@ -284,12 +320,97 @@ struct MappingTests : SchemaUpdateTestFixture
                     <BaseClass>Base</BaseClass>
                     <ECProperty propertyName="SourceId" typeName="string">
                         <ECCustomAttributes>
-                            <PropertyMap xmlns="ECDbMap.02.00.00"><IsNullable>False</IsNullable><IsUnique>True</IsUnique></PropertyMap>
+                            <PropertyMap xmlns="ECDbMap.02.00.00">
+                                <IsNullable>False</IsNullable>
+                                <IsUnique>True</IsUnique>
+                            </PropertyMap>
                         </ECCustomAttributes>
                     </ECProperty>
                 </ECEntityClass>
             </ECSchema>)xml");
         return s_baseline;
+        }
+
+    //! Subclass property with a unique index via DbIndexList, in a shared column. Sibling for column reuse.
+    static SchemaUpdateBaseline const& GetIndexedBaseline()
+        {
+        static SchemaUpdateBaseline s_baseline("MappingGap_Indexed", R"xml(<?xml version="1.0" encoding="utf-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+                <ECEntityClass typeName="Base">
+                    <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.02.00.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                        <ShareColumns xmlns="ECDbMap.02.00.00">
+                            <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                        </ShareColumns>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="Name" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Sub">
+                    <BaseClass>Base</BaseClass>
+                    <ECCustomAttributes>
+                        <DbIndexList xmlns="ECDbMap.02.00.00">
+                            <Indexes>
+                                <DbIndex>
+                                    <Name>uix_sub_sourceid</Name>
+                                    <IsUnique>True</IsUnique>
+                                    <Properties>
+                                        <string>SourceId</string>
+                                    </Properties>
+                                </DbIndex>
+                            </Indexes>
+                        </DbIndexList>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="SourceId" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Other">
+                    <BaseClass>Base</BaseClass>
+                    <ECProperty propertyName="Tag" typeName="string" />
+                </ECEntityClass>
+            </ECSchema>)xml");
+        return s_baseline;
+        }
+
+    //! Two schemas: the TPH root lives in the base schema, the subclass with its own property in a dependent schema.
+    static SchemaUpdateBaseline const& GetCrossSchemaBaseline()
+        {
+        static SchemaUpdateBaseline s_baseline("MappingGap_CrossSchema", bvector<Utf8String>{
+            R"xml(<?xml version="1.0" encoding="utf-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+                <ECEntityClass typeName="Base">
+                    <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.02.00.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                        <ShareColumns xmlns="ECDbMap.02.00.00">
+                            <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                        </ShareColumns>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="Name" typeName="string" />
+                </ECEntityClass>
+            </ECSchema>)xml",
+            R"xml(<?xml version="1.0" encoding="utf-8"?>
+            <ECSchema schemaName="DomainSchema" alias="ds" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECSchemaReference name="TestSchema" version="01.00.00" alias="ts"/>
+                <ECEntityClass typeName="Sub">
+                    <BaseClass>ts:Base</BaseClass>
+                    <ECProperty propertyName="Code" typeName="string" />
+                </ECEntityClass>
+            </ECSchema>)xml"});
+        return s_baseline;
+        }
+
+    //! True if a SQLite index of that name exists.
+    bool IndexExists(Utf8CP indexName) const
+        {
+        Statement stmt;
+        if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, "SELECT 1 FROM sqlite_master WHERE type='index' AND name=?"))
+            return false;
+        stmt.BindText(1, indexName, Statement::MakeCopy::No);
+        return stmt.Step() == BE_SQLITE_ROW;
         }
 
     //! Expects the import to be rejected with the given issue, then verifies that nothing changed.
@@ -729,6 +850,71 @@ TEST_F(MappingTests, PropertyMapCollationOnSharedColumnIsRejected)
             <ECCustomAttributes><PropertyMap xmlns="ECDbMap.02.00.00"><Collation>NoCase</Collation></PropertyMap></ECCustomAttributes>
         </ECProperty>)xml");
     ExpectRejected(schemaXml, "ECDb_0042");
+    }
+
+//---------------------------------------------------------------------------------------
+// J1. An abstract class is inserted between the JoinedTablePerDirectSubclass root and its direct
+// subclass. The joined table would now belong to the inserted class. RESULT: assertion failure
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(MappingTests, DISABLED_InsertBaseClassDirectlyUnderJoinedTableRoot)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetJoinedTableBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    ReplaceInClass(schemaXml, "Geometric", "<BaseClass>Element</BaseClass>", "<BaseClass>Spatial</BaseClass>");
+    AppendToSchema(schemaXml, R"xml(<ECEntityClass typeName="Spatial" modifier="Abstract">
+                    <BaseClass>Element</BaseClass>
+                    <ECProperty propertyName="Origin" typeName="string" />
+                </ECEntityClass>)xml");
+    const BentleyStatus stat = UpdateSchema(schemaXml);
+    LogOutcomeAndAcknowledgeRejection(stat);
+    if (stat != SUCCESS)
+        {
+        EXPECT_FALSE(GetLastUpdateIssues().empty()) << "J1 BUG: import failed by assertion without reporting an issue.";
+        if (!GetLastUpdateIssues().empty())
+            VerifyData();
+        return;
+        }
+
+    // Release path (check in PropertyMapContainer::Insert is debug-only): where did Geometric end up?
+    printf("J1 accepted. Geometric.G1 -> %s, Spatial.Origin -> %s, Element.Name -> %s\n",
+           Mapping("Geometric", "G1").c_str(), Mapping("Spatial", "Origin").c_str(), Mapping("Element", "Name").c_str());
+    printf("J1 ts_Geometric rows: %d, ts_Spatial rows: %d\n", CountRows("ts_Geometric"), CountRows("ts_Spatial"));
+    printf("J1 SELECT G1 FROM Pipe: %s\n", Dump("SELECT ECInstanceId, G1 FROM ts.Pipe").c_str());
+    EXPECT_STRNE("ts_Geometric.js1", Mapping("Geometric", "G1").c_str()) << "J1: G1 still mapped to the old joined table although Geometric no longer owns one.";
+    EXPECT_EQ((int) BE_SQLITE_DONE, Exec("UPDATE ts.Pipe SET Origin='o'")) << "J1: new property of the inserted class not writable for existing Pipe rows.";
+    m_ecdb.AbandonChanges();
+    VerifyData();
+    }
+
+//---------------------------------------------------------------------------------------
+// J2. B1b through base-class insertion: Coded(Code string) is inserted above B whose own Code is
+// int in a physical column (ts_Base.Code1). RESULT: accepted, B.Code reads NULL for all existing
+// instances. Complements the test DISABLED_MovePropertyUpWithoutSharedColumns_SiblingsDifferInType.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(MappingTests, DISABLED_InsertBaseClassWithSameNamedPropertyOverPhysicalColumn)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetPhysicalColumnsMixedTypeBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    ReplaceInClass(schemaXml, "B", "<BaseClass>Base</BaseClass>", "<BaseClass>Coded</BaseClass>");
+    ReplaceInClass(schemaXml, "B", R"xml(<ECProperty propertyName="Code" typeName="int" />)xml", "");
+    AppendToSchema(schemaXml, R"xml(<ECEntityClass typeName="Coded" modifier="Abstract">
+                    <BaseClass>Base</BaseClass>
+                    <ECProperty propertyName="Code" typeName="string" />
+                </ECEntityClass>)xml");
+    const BentleyStatus stat = UpdateSchema(schemaXml, SchemaVersionChange::Major);
+    LogOutcomeAndAcknowledgeRejection(stat);
+    if (stat != SUCCESS)
+        {
+        VerifyData();
+        return;
+        }
+
+    EXPECT_EQ(0, CountWhere("B", "Code IS NULL")) << "J2: accepted, but B's int Code values were not carried over to Coded.Code.";
+    VerifyData(ExpectedDataChanges().ConvertValuesOf("TestSchema:B", "Code", [] (Utf8StringCR v) { return Utf8String("\"") + v + "\""; }));
     }
 
 END_ECDBUNITTESTS_NAMESPACE
