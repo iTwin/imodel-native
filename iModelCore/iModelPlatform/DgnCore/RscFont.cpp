@@ -90,10 +90,11 @@ struct RscGlyphElementIterator {
 private:
     RscGlyphElement const* m_curr;
     size_t m_numRemaining;
+    size_t m_size;
 
 public:
-    RscGlyphElementIterator(RscGlyphElement const* curr, size_t numRemaining) : m_curr(curr), m_numRemaining(numRemaining - 1) {}
-    bool IsValid() const { return (NULL != m_curr); }
+    RscGlyphElementIterator(RscGlyphElement const* curr, size_t numRemaining, size_t size) : m_curr(curr), m_numRemaining(numRemaining - 1), m_size(size) {}
+    bool IsValid() const { return (nullptr != m_curr && m_size >= sizeof(RscGlyphElement) && m_size >= (sizeof(RscGlyphElement) + sizeof(RscFontPoint2d) * (m_curr->numVerts - 1))); }
     RscGlyphElement const* operator->() const { return m_curr; }
     RscGlyphElementIterator ToNext();
 };
@@ -103,10 +104,14 @@ public:
 //---------------------------------------------------------------------------------------
 RscGlyphElementIterator RscGlyphElementIterator::ToNext() {
     if (0 == m_numRemaining)
-        return RscGlyphElementIterator(NULL, 0);
+        return RscGlyphElementIterator(nullptr, 0, 0);
 
-    RscGlyphElement const* next = (RscGlyphElement const*)((Byte const*)m_curr + sizeof(RscGlyphElement) + (sizeof(RscFontPoint2d) * (m_curr->numVerts - 1)));
-    return RscGlyphElementIterator(next, m_numRemaining);
+    size_t nextSize = sizeof(RscGlyphElement) + sizeof(RscFontPoint2d) * (m_curr->numVerts - 1);
+    if (nextSize > m_size)
+        return RscGlyphElementIterator(nullptr, 0, 0);
+
+    auto next = (RscGlyphElement const*)((Byte const*)m_curr + nextSize);
+    return RscGlyphElementIterator(next, m_numRemaining, m_size - nextSize);
 }
 
 //---------------------------------------------------------------------------------------
@@ -171,8 +176,8 @@ CurveVectorPtr RscGlyph::GetCurveVector() const {
         return nullptr;
 
     bvector<Byte> glyphDataBuffer;
-    glyphDataBuffer.reserve(m_glyphDataOffset.size);
-    if (SUCCESS != m_font.ReadGlyphData(glyphDataBuffer, (size_t)m_glyphDataOffset.offset, (size_t)m_glyphDataOffset.size))
+    if (SUCCESS != m_font.ReadGlyphData(glyphDataBuffer, (size_t)m_glyphDataOffset.offset, (size_t)m_glyphDataOffset.size) ||
+        glyphDataBuffer.size() < sizeof(RscGlyphData))
         return nullptr;
 
     RscGlyphData const* glyphData = (RscGlyphData const*)glyphDataBuffer.data();
@@ -182,12 +187,14 @@ CurveVectorPtr RscGlyph::GetCurveVector() const {
     bool hasPolys = false;
 
     bvector<DPoint2d> tPts;
-    for (RscGlyphElementIterator curr((RscGlyphElement const*)(glyphData + 1), (size_t)glyphData->numElems); curr.IsValid(); curr = curr.ToNext()) {
+    for (RscGlyphElementIterator curr((RscGlyphElement const*)(glyphData + 1), (size_t)glyphData->numElems, glyphDataBuffer.size() - sizeof(RscGlyphData)); curr.IsValid(); curr = curr.ToNext()) {
         size_t nPts = (size_t)curr->numVerts;
         RscFontPoint2d const* glyphPoint = curr->vertice;
         RscFontPoint2d const* glyphEnd = (glyphPoint + nPts);
 
         tPts.clear();
+        if (tPts.capacity() < nPts)
+            tPts.reserve(nPts);
         for (; glyphPoint < glyphEnd; ++glyphPoint)
             tPts.push_back(DPoint2d::From(glyphPoint->x * m_ascenderScaleFactor, glyphPoint->y * m_ascenderScaleFactor));
 
@@ -241,7 +248,7 @@ void RscFont::LoadGlyphs() {
     GetReader();
 
     bvector<Byte> fontHeaderBuffer;
-    if (SUCCESS != ReadFontHeader(fontHeaderBuffer))
+    if (SUCCESS != ReadFontHeader(fontHeaderBuffer) || fontHeaderBuffer.size() < sizeof(RscFontHeader))
         return;
 
     bvector<Byte> glyphHeadersBuffer;
@@ -253,6 +260,9 @@ void RscFont::LoadGlyphs() {
         return;
 
     RscFontHeader const& fontHeader = *(RscFontHeader const*)fontHeaderBuffer.data();
+    if (glyphHeadersBuffer.size() < (fontHeader.totalChars * sizeof(RscGlyphHeader)) ||
+        glyphOffsetsBuffer.size() < (fontHeader.totalChars * sizeof(RscGlyphDataOffset)))
+       return;
     RscGlyphHeader const* glyphHeaders = (RscGlyphHeader const*)glyphHeadersBuffer.data();
     RscGlyphDataOffset const* glyphOffsets = (RscGlyphDataOffset const*)glyphOffsetsBuffer.data();
 
@@ -295,7 +305,7 @@ RscFont::T_Id RscFont::FindFractionGlyphCode(uint8_t numerator, uint8_t denomina
     FontManager::FlagHolder loadedFractions(m_hasLoadedFractions);
     if (!loadedFractions) {
         bvector<Byte> fontHeaderBuffer;
-        if (SUCCESS != ReadFontHeader(fontHeaderBuffer))
+        if (SUCCESS != ReadFontHeader(fontHeaderBuffer) || fontHeaderBuffer.size() < sizeof(RscFontHeader))
             return 0;
 
         RscFontHeader& fontHeader = *reinterpret_cast<RscFontHeader*>(fontHeaderBuffer.data());
@@ -307,7 +317,7 @@ RscFont::T_Id RscFont::FindFractionGlyphCode(uint8_t numerator, uint8_t denomina
             return 0;
 
         RscFontFraction const* fractions = (RscFontFraction const*)fractionsBuffer.data();
-        for (size_t iFract = 0; iFract < MAX_FRACTION_MAP_COUNT; ++iFract) {
+        for (size_t iFract = 0; iFract < MAX_FRACTION_MAP_COUNT && ((iFract + 1) * sizeof(RscFontFraction)) <= fractionsBuffer.size(); ++iFract) {
             if (0 == fractions[iFract].denominator)
                 break;
 
@@ -601,14 +611,39 @@ bool RscFont::IsRscFontData(uint8_t const* data, size_t dataSize) {
 
     // Verify also necessary font data
     auto rscFontHeader = rscFontData->header();
-    auto rscFontGlyphData = rscFontData->glyphData();
+    if (nullptr == rscFontHeader || rscFontHeader->size() < sizeof(RscFontHeader))
+        return false;
+
+    auto fontHeader = (RscFontHeader const*) rscFontHeader->data();
+
     auto rscFontGlyphHeaders = rscFontData->glyphHeaders();
     auto rscFontGlyphDataOffsets = rscFontData->glyphDataOffsets();
+    if (nullptr == rscFontGlyphHeaders || rscFontGlyphHeaders->size() < (fontHeader->totalChars * sizeof(RscGlyphHeader)) ||
+        nullptr == rscFontGlyphDataOffsets || rscFontGlyphDataOffsets->size() < (fontHeader->totalChars * sizeof(RscGlyphDataOffset)))
+        return false;
 
-    return (nullptr != rscFontHeader && rscFontHeader->size() >= sizeof(RscFontHeader) &&
-            nullptr != rscFontGlyphData && rscFontGlyphData->size() >= sizeof(RscGlyphData) &&
-            nullptr != rscFontGlyphHeaders && rscFontGlyphHeaders->size() >= sizeof(RscGlyphHeader) &&
-            nullptr != rscFontGlyphDataOffsets && rscFontGlyphDataOffsets->size() >=sizeof(RscGlyphDataOffset));
+    auto glyphDataOffsets = (RscGlyphDataOffset const*) rscFontGlyphDataOffsets->data();
+    auto rscFontGlyphData = rscFontData->glyphData();
+    for (size_t iGlyph = 0; iGlyph < fontHeader->totalChars; ++iGlyph)
+        {
+        if (glyphDataOffsets[iGlyph].offset < 0 || glyphDataOffsets[iGlyph].size <= sizeof(RscGlyphData))
+            continue;
+
+        if (nullptr == rscFontGlyphData || glyphDataOffsets[iGlyph].offset >= rscFontGlyphData->size() || glyphDataOffsets[iGlyph].size > (rscFontGlyphData->size() - glyphDataOffsets[iGlyph].offset))
+            return false;
+
+        auto glyphData = (RscGlyphData const*) (rscFontGlyphData->data() + glyphDataOffsets[iGlyph].offset);
+        if (glyphData->numElems <= 0)
+            continue;
+
+        int32_t validElems = 0;
+        for (RscGlyphElementIterator curr((RscGlyphElement const*) (glyphData + 1), (size_t) glyphData->numElems, (size_t) glyphDataOffsets[iGlyph].size - sizeof(RscGlyphData)); curr.IsValid(); curr = curr.ToNext())
+            validElems++;
+        if (glyphData->numElems != validElems)
+            return false;
+        }
+
+    return true;
 }
 
 //---------------------------------------------------------------------------------------
@@ -639,10 +674,10 @@ BentleyStatus RscFont::ReadGlyphData(bvector<Byte>& buffer, size_t offset, size_
         return ERROR;
 
     auto rscFontGlyphData = rscFontData->glyphData();
-    if (nullptr == rscFontGlyphData || (offset + size) > (size_t) rscFontGlyphData->size())
+    if (nullptr == rscFontGlyphData || offset >= rscFontGlyphData->size() || size > (rscFontGlyphData->size() - offset))
         return ERROR;
 
-    buffer.assign(rscFontGlyphData->begin() + offset, rscFontGlyphData->begin() + offset + size);
+    buffer.assign(rscFontGlyphData->begin() + (flatbuffers::uoffset_t) offset, rscFontGlyphData->begin() + (flatbuffers::uoffset_t) (offset + size));
     return SUCCESS;
 }
 
