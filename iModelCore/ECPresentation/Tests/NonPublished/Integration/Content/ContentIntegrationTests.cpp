@@ -14882,6 +14882,165 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ReturnsCorrectContentSetSiz
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(ReturnsRecursivelyRelatedContentForEachInputWhenCustomizingDerivedClasses, R"*(
+    <ECEntityClass typeName="X" />
+    <ECEntityClass typeName="A">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="B">
+        <BaseClass>A</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="C">
+        <BaseClass>B</BaseClass>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="X_To_A" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="true">
+            <Class class="X"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="A"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, ReturnsRecursivelyRelatedContentForEachInputWhenCustomizingDerivedClasses)
+    {
+    // set up the dataset: x1 owns a, b and c; x2 owns only another c
+    ECClassCP classX = GetClass("X");
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+    ECRelationshipClassCP rel = GetClass("X_To_A")->GetRelationshipClassCP();
+
+    IECInstancePtr x1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classX);
+    IECInstancePtr x2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classX);
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr c1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+    IECInstancePtr c2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *x1, *a);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *x1, *b);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *x1, *c1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *x2, *c2);
+
+    // set up ruleset
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRule* rule = new ContentRule();
+    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, "", {new RepeatableRelationshipPathSpecification(
+        {
+        new RepeatableRelationshipStepSpecification(rel->GetFullName(), RequiredRelationDirection_Forward, "", 0)
+        })}));
+    rules->AddPresentationRule(*rule);
+    // Both modifiers trigger path splitting: B splits to C recursively, while C also splits directly from A.
+    rules->AddPresentationRule(*new ContentModifier(classB->GetSchema().GetName(), classB->GetName()));
+    rules->AddPresentationRule(*new ContentModifier(classC->GetSchema().GetName(), classC->GetName()));
+
+    // request content for both inputs - recursive paths to C are built separately for x1 and x2 and must not
+    // be merged as duplicates, otherwise content of one of the inputs is lost
+    KeySetPtr inputs = KeySet::Create(bvector<IECInstancePtr>{x1, x2});
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::IncludeInputKeys, *inputs)));
+    ASSERT_TRUE(descriptor.IsValid());
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    ASSERT_TRUE(content.IsValid());
+    RulesEngineTestHelpers::ValidateContentSet({
+        InstanceInputAndResult(*x1, *a),
+        InstanceInputAndResult(*x1, *b),
+        InstanceInputAndResult(*x1, *c1),
+        InstanceInputAndResult(*x2, *c2),
+        }, *content);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(ReturnsRecursivelyRelatedContentForEachRelationshipPathWhenCustomizingDerivedClasses, R"*(
+    <ECEntityClass typeName="X" />
+    <ECEntityClass typeName="A">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="B">
+        <BaseClass>A</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="C">
+        <BaseClass>B</BaseClass>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="X_To_A_1" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="true">
+            <Class class="X"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="A"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="X_To_A_2" strength="referencing" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="references" polymorphic="true">
+            <Class class="X"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is referenced by" polymorphic="true">
+            <Class class="A"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, ReturnsRecursivelyRelatedContentForEachRelationshipPathWhenCustomizingDerivedClasses)
+    {
+    // set up the dataset: x owns a, b and c1 through X_To_A_1, and references c2 through X_To_A_2
+    ECClassCP classX = GetClass("X");
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+    ECRelationshipClassCP rel1 = GetClass("X_To_A_1")->GetRelationshipClassCP();
+    ECRelationshipClassCP rel2 = GetClass("X_To_A_2")->GetRelationshipClassCP();
+
+    IECInstancePtr x = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classX);
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr c1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+    IECInstancePtr c2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel1, *x, *a);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel1, *x, *b);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel1, *x, *c1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel2, *x, *c2);
+
+    // set up ruleset with two recursive relationship paths
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRule* rule = new ContentRule();
+    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, "", {
+        new RepeatableRelationshipPathSpecification({new RepeatableRelationshipStepSpecification(rel1->GetFullName(), RequiredRelationDirection_Forward, "", 0)}),
+        new RepeatableRelationshipPathSpecification({new RepeatableRelationshipStepSpecification(rel2->GetFullName(), RequiredRelationDirection_Forward, "", 0)}),
+        }));
+    rules->AddPresentationRule(*rule);
+    // Both modifiers trigger path splitting: B splits to C recursively, while C also splits directly from A.
+    rules->AddPresentationRule(*new ContentModifier(classB->GetSchema().GetName(), classB->GetName()));
+    rules->AddPresentationRule(*new ContentModifier(classC->GetSchema().GetName(), classC->GetName()));
+
+    // request content - each relationship path produces a path to C with a different set of target ids, and
+    // those paths must not be merged as duplicates, otherwise content of one of the relationships is lost
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::IncludeInputKeys, *KeySet::Create(*x))));
+    ASSERT_TRUE(descriptor.IsValid());
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    ASSERT_TRUE(content.IsValid());
+    RulesEngineTestHelpers::ValidateContentSet({
+        InstanceInputAndResult(*x, *a),
+        InstanceInputAndResult(*x, *b),
+        InstanceInputAndResult(*x, *c1),
+        InstanceInputAndResult(*x, *c2),
+        }, *content);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(ReturnsCorrectContentWhenUsingRulesetVariables, R"*(
     <ECEntityClass typeName="X" />
 )*");
