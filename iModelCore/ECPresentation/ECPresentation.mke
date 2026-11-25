@@ -59,6 +59,10 @@ DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
 DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
 
+%if $(TARGET_PLATFORM) == "Windows" && defined (CREATE_STATIC_LIBRARIES)
+    LIB_PDB_SOURCE_DIR = $(PchOutputDir)
+%endif
+
 LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)iTwinBentley$(stlibext)
 LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)iTwinGeom$(stlibext)
 LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)iTwinSQLite$(stlibext)

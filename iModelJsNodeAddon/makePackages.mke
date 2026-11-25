@@ -8,6 +8,11 @@ ProductDir = $(OutputRootDir)Product/
 o = $(OutputRootDir)imodeljsnodeaddon_pkgs/
 baseDir = $(_MakeFilePath)
 
+%if defined (IMODELJS_WINDOWS_PRIVATE_LIBS)
+    o = $(OutputRootDir)imodeljsnodeaddon_windows_private_pkgs/
+    PackageProduct = iModelJsNative-WindowsPrivate
+%endif
+
 %if $(TARGET_PROCESSOR_ARCHITECTURE) != "x64" && $(TARGET_PROCESSOR_ARCHITECTURE) != "LinuxX64" && $(TARGET_PROCESSOR_ARCHITECTURE) != "LinuxARM64" && $(TARGET_PROCESSOR_ARCHITECTURE) != "MacOSX64" && $(TARGET_PROCESSOR_ARCHITECTURE) != "MacOSARM64"
     %error iModelJsNodeAddon is not available for this platform ($(TARGET_PROCESSOR_ARCHITECTURE))
 %endif
@@ -23,11 +28,14 @@ baseDir = $(_MakeFilePath)
 always:
     |-- Making package imodeljs-$(NodeOS)-$(NodeCPU) --
     -@$(rmdirRecursiveCmd) $(o)
-    $(BBPYTHONCMD) $(_MakeFilePath)makePackages.py $(ProductDir) $(o) $(baseDir)package_version.txt $(baseDir) $(TARGET_PROCESSOR_ARCHITECTURE)
+    $(BBPYTHONCMD) $(_MakeFilePath)makePackages.py $(ProductDir) $(o) $(baseDir)package_version.txt $(baseDir) $(TARGET_PROCESSOR_ARCHITECTURE) $(PackageProduct)
 
 %if defined (IS_VERACODE_BUILD)
     veracodeDir = ${OutputRootDir}/Veracode/bin/
-    dllDir = ${OutputRootDir}/imodeljsnodeaddon_pkgs/imodeljs-win32-x64/
+    %if defined (IMODELJS_WINDOWS_PRIVATE_LIBS)
+        veracodeDir = ${OutputRootDir}/Veracode-WindowsPrivate/bin/
+    %endif
+    dllDir = $(o)imodeljs-win32-x64/
 
     always:
         ~mkdir $(veracodeDir)

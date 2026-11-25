@@ -63,6 +63,29 @@ Update .ts files in imodeljs-core/core/backend as necessary to react to changes 
 
 Run TypeScript tests and sample apps.
 
+## Checking a privately linked Windows x64 package
+
+In an initialized Windows x64 BentleyBuild shell, select the opt-in strategy:
+
+```powershell
+bb -s imodel-native-internal:build/strategies/iModelJsNodeAddon.WindowsPrivate build
+```
+
+This stages the candidate under `Winx64\imodeljsnodeaddon_windows_private_pkgs\imodeljs-win32-x64`
+in your output root without changing the existing release strategy or its packages.
+The strategy uses VS2022 to link with the
+[explicit export list](./IModelJsNative-WindowsPrivate.def). The candidate retains
+the external Node-API shim. From the repository root, with `llvm-readobj` on `PATH`,
+check that the shim is the only iTwin DLL imported or delivered and the addon
+exports only its registration entry point:
+
+```powershell
+python .\TestingScripts\ValidateWindowsAddonPackage.py 'D:\path\to\Winx64\imodeljsnodeaddon_windows_private_pkgs\imodeljs-win32-x64' --external-napi --export _register_iModelJsNative_
+```
+
+Use `--export` once per intended PE export. The validator does not replace a Node
+smoke test or the separate test of both addon load orders.
+
 # Adopting a New Version of the Native Platform packages
 
 After the native platform packages have been built by PRG and published, you can update imodeljs-backend to depend on the new version.

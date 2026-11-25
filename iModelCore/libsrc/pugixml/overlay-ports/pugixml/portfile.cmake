@@ -20,11 +20,12 @@ vcpkg_replace_string(
 [[#define HEADER_PUGICONFIG_HPP
 
 // Bentley: export the pugi API from iTwinPugixml. dllexport while building the library
-// (__PUGIXML_BUILD__ is defined via PUGIXML_BUILD_DEFINES), dllimport for consumers.
+// (__PUGIXML_BUILD__ is defined via PUGIXML_BUILD_DEFINES), dllimport only for
+// consumers linking the DLL.
 #if defined (_WIN32)
     #ifdef __PUGIXML_BUILD__
         #define PUGIXML_API __declspec(dllexport)
-    #else
+    #elif !defined (CREATE_STATIC_LIBRARIES)
         #define PUGIXML_API __declspec(dllimport)
     #endif
 #endif]]

@@ -130,13 +130,14 @@ def generate_imodeljs_native_platform_api(outdirParent, parentSourceDir, package
 #
 if __name__ == '__main__':
     if len(sys.argv) < 6:
-        print ("Syntax: " + sys.argv[0] + " inputproductdir outputpackageparentdir packageversionfilename sourceDir platform")
+        print ("Syntax: " + sys.argv[0] + " inputproductdir outputpackageparentdir packageversionfilename sourceDir platform [productname]")
         exit(1)
 
     platform = sys.argv[5].lower()
 
     productDirParent = os.path.normpath(sys.argv[1])
-    productDir = os.path.join(productDirParent, 'iModelJsNative-' + SUPPORTED_PLATFORMS[platform]['Platform'])
+    productName = sys.argv[6] if len(sys.argv) > 6 else 'iModelJsNative-' + SUPPORTED_PLATFORMS[platform]['Platform']
+    productDir = os.path.join(productDirParent, productName)
 
     outdirParent = os.path.normpath(sys.argv[2])
     packageVersionFileName = sys.argv[3]

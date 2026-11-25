@@ -4,6 +4,11 @@
 #---------------------------------------------------------------------------------------------
 BUILD_WITH_C20=1
 
+%if defined (CREATE_STATIC_LIBRARIES)
+    appName = iTwinECPresentation
+    CCompPDBName =% $(appName)
+%endif
+
 # Building the ECPresentation library
 nameToDefine = __ECPRESENTATION_DLL_BUILD__
 %include cdefapnd.mki
