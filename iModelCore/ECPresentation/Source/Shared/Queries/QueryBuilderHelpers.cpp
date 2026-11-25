@@ -1335,21 +1335,20 @@ bvector<SelectClassSplitResult> QueryBuilderHelpers::ProcessSelectClassesBasedOn
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool RelationshipPathsEqualOrDifferOnlyByTarget(RelatedClassPathCR lhs, RelatedClassPathCR rhs)
     {
-    if (lhs.size() != rhs.size())
+    if (lhs.size() != rhs.size() || lhs.GetInputKey() != rhs.GetInputKey())
         return false;
     if (lhs.size() == 0)
         return true;
 
     for (size_t i = 0; i < lhs.size() - 1; ++i)
         {
-        if (!lhs[i].ClassesEqual(rhs[i]))
+        if (!lhs[i].ClassesEqual(rhs[i]) || lhs[i].GetTargetIds() != rhs[i].GetTargetIds())
             return false;
         }
 
     RelatedClassCR lhsLast = lhs.back();
     RelatedClassCR rhsLast = rhs.back();
-    return lhsLast.GetSourceClass() == rhsLast.GetSourceClass()
-        && &lhsLast.GetRelationship().GetClass() == &rhsLast.GetRelationship().GetClass();
+    return lhsLast.SourceAndRelationshipEqual(rhsLast) && lhsLast.GetTargetIds() == rhsLast.GetTargetIds();
     }
 
 /*---------------------------------------------------------------------------------**//**

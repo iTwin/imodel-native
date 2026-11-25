@@ -138,6 +138,8 @@ struct ProxyConnection : IConnection
 {
 private:
     IProxyConnectionsTracker* m_tracker;
+    // Keep the proxy alive through release callbacks and tracker detachment.
+    mutable BeMutex m_trackerMutex;
     PrimaryConnection const& m_primaryConnection;
     mutable ECDb m_db;
     mutable BeAtomic<uint32_t> m_refCount;
@@ -245,7 +247,11 @@ public:
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+-----------+------*/
-    void SetTracker(IProxyConnectionsTracker* tracker) {m_tracker = tracker;}
+    void SetTracker(IProxyConnectionsTracker* tracker)
+        {
+        BeMutexHolder lock(m_trackerMutex);
+        m_tracker = tracker;
+        }
 
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod
@@ -253,6 +259,7 @@ public:
     uint32_t AddRef() const override
         {
         auto result = m_refCount.IncrementAtomicPre(std::memory_order_relaxed);
+        BeMutexHolder lock(m_trackerMutex);
         if (nullptr != m_tracker)
             m_tracker->OnProxyConnectionAcquire(const_cast<ProxyConnection&>(*this));
         return result;
@@ -263,10 +270,16 @@ public:
     +---------------+---------------+---------------+---------------+-----------+------*/
     uint32_t Release() const override
         {
-        uint32_t countWas = m_refCount.DecrementAtomicPost(std::memory_order_release);
-        REFCOUNT_RELEASE_CHECK(countWas);
-        if (nullptr != m_tracker)
-            m_tracker->OnProxyConnectionRelease(const_cast<ProxyConnection&>(*this));
+        uint32_t countWas;
+        {
+            BeMutexHolder lock(m_trackerMutex);
+            // The store watches this count to know when its reference is the only one.
+            // Keep the decrement and callback together so teardown can't detach the tracker mid-release.
+            countWas = m_refCount.DecrementAtomicPost(std::memory_order_release);
+            REFCOUNT_RELEASE_CHECK(countWas);
+            if (nullptr != m_tracker)
+                m_tracker->OnProxyConnectionRelease(const_cast<ProxyConnection&>(*this));
+        }
         if (1 == countWas)
             {
             std::atomic_thread_fence(std::memory_order_acquire);
@@ -461,6 +474,8 @@ public:
         {
         if (0 == proxy.GetRefCount())
             m_primaryConnection->NotifyProxyConnectionClosed(proxy);
+        // Use the wait mutex so notification cannot land between the predicate check and sleep.
+        BeMutexHolder lock(m_proxyConnectionsCV.GetMutex());
         m_proxyConnectionsCV.notify_all();
         }
 

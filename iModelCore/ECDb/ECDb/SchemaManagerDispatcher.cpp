@@ -1867,7 +1867,11 @@ ClassMappingStatus MainSchemaManager::MapDerivedClasses(SchemaImportContext& ctx
     {
     const bool baseClassIsMixin = baseClass.IsEntityClass() && baseClass.GetEntityClassCP()->IsMixin();
 
-    for (ECClassCP derivedClass : baseClass.GetDerivedClasses())
+    // Iterate a copy: mapping a derived class can lazily load more subclasses of baseClass
+    // (e.g. via navigation property relationship constraints), which appends to and may
+    // reallocate baseClass's derived class list.
+    const ECDerivedClassesList derivedClasses = baseClass.GetDerivedClasses();
+    for (ECClassCP derivedClass : derivedClasses)
         {
         const bool derivedIsMixin = derivedClass->IsEntityClass() && derivedClass->GetEntityClassCP()->IsMixin();
         //Only map mixin hierarchy but stop if you find a non-mixin class.
