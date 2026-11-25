@@ -5837,7 +5837,7 @@ void sqlite3_bcvfs_prefetch_destroy(sqlite3_prefetch *p){
 **   3. Install the old manifest (read from the blocksdb file).
 */ 
 int sqlite3_bcvfs_revert(sqlite3_bcvfs *pFs, const char *zCont, char **pzErr){
-  const char *zSql = "SELECT manifest, etag FROM container WHERE container=?";
+  const char *zSql = "SELECT manifest, etag FROM container WHERE name=?";
   int rc = SQLITE_OK;
   char *zErr = 0;
 

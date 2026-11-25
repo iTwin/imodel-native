@@ -324,7 +324,6 @@ NumericFormatSpecCR NumericFormatSpec::DefaultFormat()
 Utf8String NumericFormatSpec::GetFormatTraitsString() const
     {
     Utf8String ret;
-    bvector<Utf8String> strings;
     if (GetTraitBit(FormatTraits::TrailingZeroes))
         ret += FormatConstant::FPN_TrailZeroes() + "|";
     if (GetTraitBit(FormatTraits::KeepSingleZero))
@@ -345,8 +344,8 @@ Utf8String NumericFormatSpec::GetFormatTraitsString() const
         ret += FormatConstant::FPN_Use1000Separator() + "|";
     if (GetTraitBit(FormatTraits::ExponenentOnlyNegative))
         ret += FormatConstant::FPN_ExponentOnlyNegative() + "|";
-    if ('|' == *(ret.end() - 1))
-        ret = ret.substr(0, ret.size()-1);
+    if (!ret.empty() && '|' == ret.back())
+        ret.pop_back();
 
     return ret;
     }
