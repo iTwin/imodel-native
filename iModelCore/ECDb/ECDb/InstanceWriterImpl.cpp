@@ -33,6 +33,69 @@ namespace {
             return std::isxdigit(static_cast<unsigned char>(c));
         });
     }
+
+    // Parses a string that is entirely a decimal integer, optionally negative, or a "0x" hex integer of up to 64 bits.
+    bool TryParseInt64(Utf8CP str, int64_t& value) {
+        const auto isDigits = [](Utf8CP s, int (*pred)(int)) {
+            if (*s == '\0')
+                return false;
+            for (; *s != '\0'; ++s) {
+                if (!pred(static_cast<unsigned char>(*s)))
+                    return false;
+            }
+            return true;
+        };
+        if (BeStringUtilities::HasHexPrefix(str)) {
+            if (!isDigits(str + 2, ::isxdigit) || strlen(str + 2) > 16)
+                return false;
+            BentleyStatus status;
+            value = static_cast<int64_t>(BeStringUtilities::ParseHex(str, &status));
+            return SUCCESS == status;
+        }
+        if (!isDigits(*str == '-' ? str + 1 : str, ::isdigit))
+            return false;
+        errno = 0;
+        value = std::strtoll(str, nullptr, 10);
+        return errno != ERANGE;
+    }
+
+    // Writes to out the stored value of a struct with the members in provided replacing those of stored, like
+    // JsonECInstanceConverter updating an instance. Nested structs are merged the same way; any other member, including an
+    // array or null, replaces the stored one.
+    void MergeStruct(BeJsValue out, ECStructClassCR structClass, BeJsConst stored, BeJsConst provided) {
+        out.SetEmptyObject();
+        bset<ECPropertyCP> providedProps;
+        provided.ForEachProperty([&](Utf8CP name, BeJsConst) {
+            if (ECPropertyCP prop = structClass.GetPropertyP(name))
+                providedProps.insert(prop);
+            return FOREACH_CONTINUE
+        });
+        stored.ForEachProperty([&](Utf8CP name, BeJsConst val) {
+            ECPropertyCP prop = structClass.GetPropertyP(name);
+            if (nullptr != prop && providedProps.end() == providedProps.find(prop))
+                out[name].From(val);
+            return FOREACH_CONTINUE
+        });
+        provided.ForEachProperty([&](Utf8CP name, BeJsConst val) {
+            ECPropertyCP prop = structClass.GetPropertyP(name);
+            if (nullptr == prop)
+                return FOREACH_CONTINUE
+            bool merged = false;
+            StructECPropertyCP structProp = prop->GetAsStructProperty();
+            if (nullptr != structProp && val.isObject()) {
+                stored.ForEachProperty([&](Utf8CP storedName, BeJsConst storedVal) {
+                    if (structClass.GetPropertyP(storedName) != prop || !storedVal.isObject())
+                        return FOREACH_CONTINUE
+                    MergeStruct(out[name], structProp->GetType(), storedVal, val);
+                    merged = true;
+                    return FOREACH_ABORT
+                });
+            }
+            if (!merged)
+                out[name].From(val);
+            return FOREACH_CONTINUE
+        });
+    }
 }
 
 //******************************BindContext**************************************
@@ -409,14 +472,20 @@ ECSqlStatus Impl::BindPrimitive(BindContext& ctx, PrimitiveType type, IECSqlBind
         }
         return binder.BindDouble(val.asDouble());
     } else if (type == ECN::PRIMITIVETYPE_Long) {
+        // Accepts a decimal or "0x" hex string, e.g. an id, which a JS number cannot hold exactly. Unlike JsonECInstanceConverter, rejects any other string.
+        int64_t parsed = 0;
+        if (val.isString() && TryParseInt64(val.asCString(), parsed))
+            return binder.BindInt64(parsed);
         if (!val.isNumeric()) {
             ctx.SetError("Expected long for property %s, got %s", propertyName, val.Stringify().c_str());
             return ECSqlStatus(BE_SQLITE_ERROR);
         }
         return binder.BindInt64(val.asInt64());
     } else if (type == ECN::PRIMITIVETYPE_Binary) {
+        // N-API values report isBinary() only for typed arrays and ArrayBuffers, but GetBinary() also decodes "encoding=base64;" strings.
+        const bool isBinary = val.isBinary() || (val.isString() && 0 == strncmp(val.asCString(), JsValueRef::base64Header, JsValueRef::base64HeaderLen));
 
-        if (ExtendedTypeHelper::GetExtendedType(extendType) == ExtendedTypeHelper::ExtendedType::BeGuid && val.isString() && !val.isBinary()) {
+        if (ExtendedTypeHelper::GetExtendedType(extendType) == ExtendedTypeHelper::ExtendedType::BeGuid && val.isString() && !isBinary) {
             BeGuid guid;
             if (guid.FromString(val.asCString()) != SUCCESS) {
                 ctx.SetError("Failed to parse guid from string: %s", val.asCString());
@@ -437,7 +506,7 @@ ECSqlStatus Impl::BindPrimitive(BindContext& ctx, PrimitiveType type, IECSqlBind
             });
         }
 
-        if (!val.isBinary()) {
+        if (!isBinary) {
             ctx.SetError("Expected binary/base64 for property %s, got %s", propertyName, val.Stringify().c_str());
             return ECSqlStatus(BE_SQLITE_ERROR);
         }
@@ -689,6 +758,7 @@ ECSqlStatus Impl::BindStructArrayProperty(BindContext& ctx, StructArrayECPropert
     auto& structType = prop.GetStructElementType();
     val.ForEachArrayMember([&](auto index, auto val) {
         if (val.isNull()) {
+            binder.AddArrayElement();
             return false;
         }
         if (!val.isObject()) {
@@ -1095,6 +1165,8 @@ DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& optio
 
     auto rc = m_cache.WithUpdate(classId, [&](CachedWriteStatement& stmt) {
         ECSqlStatus bindStatus = ECSqlStatus::Success;
+        // Stored values of the struct properties that the instance supplies, whose omitted members are kept.
+        BeJsDocument storedStructs;
         // m_cache.GetECDb().GetInstanceRepository().Read(ECInstanceKey(classId, id), )
         if (options.GetUseIncrementalUpdate()) {
             // bind any properties missing in the provided instance by reading it from db
@@ -1109,6 +1181,11 @@ DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& optio
                 param.SetUseClassFullNameInsteadofClassName(options.GetUseJsNames());
                 row.GetJson(param).ForEachProperty([&](auto prop, auto val) {
                     if (inst.hasMember(prop)) {
+                        if (val.isObject() && inst[prop].isObject()) {
+                            auto binder = stmt.FindBinder(prop);
+                            if (binder != nullptr && binder->GetProperty().GetIsStruct())
+                                storedStructs[prop].From(val);
+                        }
                         return FOREACH_CONTINUE
                     }
 
@@ -1141,7 +1218,13 @@ DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& optio
                     }
                 }
 
-                bindStatus = BindRootProperty(ctx, binder->GetPropertyMap(), binder->GetBinder(), val);
+                if (val.isObject() && storedStructs.isMember(prop)) {
+                    BeJsDocument merged;
+                    MergeStruct(merged, binder->GetProperty().GetAsStructProperty()->GetType(), storedStructs[prop], val);
+                    bindStatus = BindRootProperty(ctx, binder->GetPropertyMap(), binder->GetBinder(), merged);
+                } else {
+                    bindStatus = BindRootProperty(ctx, binder->GetPropertyMap(), binder->GetBinder(), val);
+                }
                 if (!bindStatus.IsSuccess()) {
                     return FOREACH_ABORT;
                 }
