@@ -247,9 +247,17 @@ SchemaImportResult SchemaWriter::ImportSchemas(bvector<ECN::ECSchemaCP>& schemas
         return SchemaImportResult::ERROR;
         }
 
+    // ReloadSchemas replaces the schemas in the context with the ones read back from the file.
+    const bvector<ECSchemaCP> importedSchemas = ctx.GetSchemasToImport();
     if (SUCCESS != ReloadSchemas(ctx))
         {
         LOG.debug("SchemaWriter::ImportSchemas - Failed to ReloadSchemas");
+        return SchemaImportResult::ERROR;
+        }
+
+    if (ctx.ShouldVerifyPersistedSchemas() && SUCCESS != VerifyPersistedSchemas(ctx, importedSchemas))
+        {
+        LOG.debug("SchemaWriter::ImportSchemas - Persisted schemas differ from the imported ones");
         return SchemaImportResult::ERROR;
         }
 
@@ -5839,6 +5847,50 @@ BentleyStatus SchemaWriter::ReloadSchemas(Context& ctx)
         }
 
     return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------------
+* Compares the imported schemas with the ones read back from the file after ReloadSchemas.
+* A difference means the import accepted a change it did not store, or stored something else.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus SchemaWriter::VerifyPersistedSchemas(Context& ctx, bvector<ECSchemaCP> const& importedSchemas)
+    {
+    SchemaDiff diff;
+    if (SUCCESS != SchemaComparer().Compare(diff, importedSchemas, ctx.GetSchemasToImport()))
+        {
+        ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0754,
+            "Schema import failed. Failed to compare the persisted schemas with the imported ones.");
+        return ERROR;
+        }
+
+    BentleyStatus status = SUCCESS;
+    for (size_t i = 0; i < diff.Changes().Count(); i++)
+        {
+        SchemaChange& schemaChange = diff.Changes()[i];
+        // ECDb stores a schema reference by name. If the file holds a newer version of a referenced schema,
+        // the reference points to that version, see UpdateSchemaReferences.
+        for (size_t j = 0; j < schemaChange.References().Count(); j++)
+            {
+            StringChange& referenceChange = schemaChange.References()[j];
+            SchemaKey importedReference, persistedReference;
+            if (referenceChange.GetOpCode() == ECChange::OpCode::Modified &&
+                ECObjectsStatus::Success == SchemaKey::ParseSchemaFullName(importedReference, referenceChange.GetOld().Value().c_str()) &&
+                ECObjectsStatus::Success == SchemaKey::ParseSchemaFullName(persistedReference, referenceChange.GetNew().Value().c_str()) &&
+                importedReference.LessThan(persistedReference, SchemaMatchType::Exact))
+                referenceChange.Set(Nullable<Utf8String>(), Nullable<Utf8String>());
+            }
+
+        if (!schemaChange.IsChanged())
+            continue;
+
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0754,
+            "Schema import failed. ECSchema %s was not persisted as imported. Differences from the imported to the persisted schema:\n%s",
+            schemaChange.GetChangeName(), schemaChange.ToString().c_str());
+        status = ERROR;
+        }
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------------

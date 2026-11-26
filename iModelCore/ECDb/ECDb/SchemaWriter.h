@@ -168,6 +168,7 @@ struct SchemaWriter final
             bool AreMajorSchemaVersionChangesAllowed() const { return !Enum::Contains(m_importCtx.GetOptions(), SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade); }
             bool IsMajorSchemaVersionChangeAllowedForDynamicSchemas() const { return Enum::Contains(m_importCtx.GetOptions(), SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas); }
             bool IgnoreIllegalDeletionsAndModifications() const { return Enum::Contains(m_importCtx.GetOptions(), SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications); }
+            bool ShouldVerifyPersistedSchemas() const { return Enum::Contains(m_importCtx.GetOptions(), SchemaManager::SchemaImportOptions::VerifyPersistedSchemas) && !IgnoreIllegalDeletionsAndModifications(); }
             bool IsMajorSchemaVersionChange(ECN::ECSchemaId schemaId) const { return m_schemasWithMajorVersionChange.find(schemaId) != m_schemasWithMajorVersionChange.end(); }
             bool IsEC32AvailableInFile() const { return m_ec32AvailableInFile; }
             void AddSchemaWithMajorVersionChange(ECN::ECSchemaId schemaId) { m_schemasWithMajorVersionChange.insert(schemaId); }
@@ -258,6 +259,7 @@ struct SchemaWriter final
 
         static BentleyStatus CompareSchemas(Context& ctx, bvector<ECN::ECSchemaCP> const& primarySchemasOrderedByDependencies);
         static BentleyStatus ReloadSchemas(Context& ctx);
+        static BentleyStatus VerifyPersistedSchemas(Context& ctx, bvector<ECN::ECSchemaCP> const& importedSchemas);
 
     public:
         static SchemaImportResult ImportSchemas(bvector<ECN::ECSchemaCP>& schemasToMap, SchemaImportContext&, bvector<ECN::ECSchemaCP> const& primarySchemasOrderedByDependencies);
