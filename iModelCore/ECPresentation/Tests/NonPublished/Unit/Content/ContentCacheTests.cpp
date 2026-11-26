@@ -21,12 +21,12 @@ struct ContentCacheTests : ECPresentationTest
     ECExpressionsCache m_ecexpressionsCache;
     RelatedPathsCache m_relatedPathsCache;
     IConnectionPtr m_connection;
-    TestNodesFactory m_nodesFactory;
+    std::unique_ptr<TestNodesFactory> m_nodesFactory;
 
     ContentCache m_cache;
 
     ContentCacheTests()
-        : m_connection(nullptr), m_nodesFactory(*m_connection, "spec-id", "test"), m_categorySupplier(ContentDescriptor::Category("a", "b", "c", 0))
+        : m_categorySupplier(ContentDescriptor::Category("a", "b", "c", 0))
         {
         m_nodesLocater = std::make_shared<TestNodeLocater>();
         }
@@ -36,7 +36,7 @@ struct ContentCacheTests : ECPresentationTest
         PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance("test");
         ContentProviderContextPtr context = ContentProviderContext::Create(*ruleset, "", 0, *NavNodeKeyListContainer::Create(),
             m_nodesLocater, m_categorySupplier, std::make_unique<RulesetVariables>(variables), m_ecexpressionsCache, m_relatedPathsCache,
-            m_nodesFactory, nullptr, nullptr);
+            *m_nodesFactory, nullptr, nullptr);
         context->GetUsedVariablesListener().OnVariableUsed(TEST_RELATED_SETTING);
         return SpecificationContentProvider::Create(*context, ContentRuleInstanceKeysContainer());
         }
@@ -88,6 +88,7 @@ struct ContentCacheTests : ECPresentationTest
     void SetUp() override
         {
         m_connection = new TestConnection(s_project->GetECDb());
+        m_nodesFactory = std::make_unique<TestNodesFactory>(*m_connection, "spec-id", "test");
         }
     };
 std::unique_ptr<ECDbTestProject> ContentCacheTests::s_project(nullptr);

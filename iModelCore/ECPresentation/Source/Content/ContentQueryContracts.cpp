@@ -284,11 +284,11 @@ bool ContentQueryContract::ShouldHandleRelatedContentField(ContentDescriptor::Re
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassCR ContentQueryContract::GetSelectClass(ContentDescriptor::RelatedContentField const* parentField) const
+ECClassCP ContentQueryContract::GetSelectClass(ContentDescriptor::RelatedContentField const* parentField) const
     {
     if (parentField)
-        return parentField->IsRelationshipField() ? parentField->GetRelationshipClass() : parentField->GetContentClass();
-    return m_relationshipClass ? *m_relationshipClass : *m_class;
+        return parentField->IsRelationshipField() ? &parentField->GetRelationshipClass() : &parentField->GetContentClass();
+    return m_relationshipClass ? m_relationshipClass : m_class;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -301,14 +301,15 @@ bool ContentQueryContract::CreateContractFields(
     bool skipFields
 ) const
     {
-    ECClassCR selectClass = GetSelectClass(parentField);
+    // A union contract may not have a single select class to filter its fields against.
+    ECClassCP selectClass = GetSelectClass(parentField);
     bool didCreateNonNullField = false;
     for (ContentDescriptor::Field const* descriptorField : fields)
         {
         PresentationQueryContractFieldCPtr contractField;
         if (descriptorField->IsCalculatedPropertyField())
             {
-            if (!skipFields && (nullptr == descriptorField->AsCalculatedPropertyField()->GetClass() || selectClass.Is(descriptorField->AsCalculatedPropertyField()->GetClass())))
+            if (!skipFields && (nullptr == descriptorField->AsCalculatedPropertyField()->GetClass() || nullptr == selectClass || selectClass->Is(descriptorField->AsCalculatedPropertyField()->GetClass())))
                 {
                 Utf8String prefix;
                 if (parentField)
@@ -325,7 +326,7 @@ bool ContentQueryContract::CreateContractFields(
         else if (descriptorField->IsPropertiesField())
             {
             ContentDescriptor::ECPropertiesField const& propertiesField = *descriptorField->AsPropertiesField();
-            ContentDescriptor::Property const* fieldPropertyForThisContract = !skipFields ? FindMatchingProperty(propertiesField, &selectClass) : nullptr;
+            ContentDescriptor::Property const* fieldPropertyForThisContract = !skipFields ? FindMatchingProperty(propertiesField, selectClass) : nullptr;
             if (propertiesField.IsCompositePropertiesField() && m_skipCompositePropertyFields)
                 {
                 didCreateNonNullField = (nullptr != fieldPropertyForThisContract);
@@ -356,7 +357,7 @@ bool ContentQueryContract::CreateContractFields(
             if (!ShouldHandleRelatedContentField(relatedContentField))
                 continue;
 
-            auto shouldSkipThisField = skipFields || !selectClass.Is(relatedContentField.GetPathFromSelectToContentClass().front().GetSourceClass());
+            auto shouldSkipThisField = skipFields || (selectClass && !selectClass->Is(relatedContentField.GetPathFromSelectToContentClass().front().GetSourceClass()));
 
             Utf8PrintfString keyFieldName("/key/%s", relatedContentField.GetUniqueName().c_str());
             Utf8PrintfString displayLabelFieldName("/DisplayLabel/%s", relatedContentField.GetUniqueName().c_str());
