@@ -185,6 +185,7 @@ struct BcvfsFile {
   ** sqlite3_bcvfs_upload(). */
   CacheEntry *pEntry;
   int rc;
+  u8 eFetchComp;                  /* Compression byte of block being fetched */
 
   /* Statistics for blocks downloaded by queries on this connection.
   ** Reported by the "nqueryblock", "nquerybyte" and "nqueryus" rows of
@@ -231,6 +232,7 @@ struct sqlite3_bcvfs {
   char *zCacheFile;               /* Full path to cache file */
   int nRequest;                   /* SQLITE_BCV_NREQUEST value */
   int nHttpTimeout;               /* SQLITE_BCV_HTTPTIMEOUT value */
+  int nCompThreshold;             /* SQLITE_BCV_COMP_THRESHOLD value */
 
   i64 iNextLocalId;
   BcvfsFile *pFileList;
@@ -615,6 +617,41 @@ void bcvfsBlockidToText(const u8 *pBlk, int nBlk, char *aBuf){
 }
 
 /*
+** Block pEntry, compression byte eComp, has been downloaded from cloud
+** storage into buffer aData[] (size nData bytes). Uncompress it if 
+** required and write it to the cache file opened by file-handle pCacheFile.
+** Return SQLITE_OK if successful, or an SQLite error code otherwise. If
+** an error occurs and pzErr is not NULL, (*pzErr) may be set to point
+** to an error message that must be freed using sqlite3_free().
+*/
+static int bcvfsWriteDownloadedBlock(
+  sqlite3_file *pCacheFile,
+  int szBlk,
+  CacheEntry *pEntry,
+  u8 eComp,
+  const u8 *aData, int nData,
+  char **pzErr
+){
+  int rc = SQLITE_OK;
+  u8 *aBuf = 0;
+  const u8 *aBlock = 0;
+  if( bcvCompIsCompressed(eComp)==BCV_ISCOMPRESSED_OK ){
+    aBuf = (u8*)bcvMallocRc(&rc, szBlk);
+  }
+  if( rc==SQLITE_OK ){
+    rc = bcvBlockDecode(pEntry->nName, pEntry->aName, szBlk, 
+        eComp, aData, nData, aBuf, &aBlock, pzErr
+    );
+  }
+  if( rc==SQLITE_OK ){
+    i64 iOff = ((i64)pEntry->iPos * szBlk);
+    rc = bcvWritefile(pCacheFile, aBlock, szBlk, iOff);
+  }
+  sqlite3_free(aBuf);
+  return rc;
+}
+
+/*
 ** Fetch callback used by bcvfsFetchBlock().
 */
 static void bcvfsFetchBlockCb(
@@ -625,8 +662,9 @@ static void bcvfsFetchBlockCb(
 ){
   BcvfsFile *pFile = (BcvfsFile*)pCtx;
   if( rc==SQLITE_OK ){
-    i64 iOff = (pFile->pEntry->iPos * pFile->pFs->c.szBlk);
-    rc = bcvWritefile(pFile->pCacheFile, aData, nData, iOff);
+    rc = bcvfsWriteDownloadedBlock(pFile->pCacheFile, pFile->pFs->c.szBlk,
+        pFile->pEntry, pFile->eFetchComp, aData, nData, 0
+    );
     if( rc==SQLITE_OK ){
       pFile->nQueryByte += nData;
       pFile->pEntry->nByte = nData;
@@ -639,7 +677,8 @@ static void bcvfsFetchBlockCb(
 
 /*
 ** Download the block specified by pEntry->aName to cache-file slot
-** pEntry->iPos. Return SQLITE_OK if successful, or an error code 
+** pEntry->iPos. Parameter eComp is the compression byte for the block 
+** from the manifest. Return SQLITE_OK if successful, or an error code 
 ** otherwise.
 */
 static int bcvfsFetchBlock(
@@ -647,7 +686,8 @@ static int bcvfsFetchBlock(
   BcvDispatch *pDisp, 
   BcvContainer *pBcv, 
   int iBlk,
-  CacheEntry *pEntry
+  CacheEntry *pEntry,
+  u8 eComp
 ){
   sqlite3_bcvfs *pFs = pFile->pFs;
   int rc = SQLITE_OK;
@@ -656,6 +696,7 @@ static int bcvfsFetchBlock(
 
   pFile->pEntry = pEntry;
   pFile->rc = SQLITE_OK;
+  pFile->eFetchComp = eComp;
   bcvfsBlockidToText(pEntry->aName, pEntry->nName, aName);
 
   ENTER_VFS_MUTEX; {
@@ -1509,6 +1550,7 @@ static int bcvfsReadWriteDatabase(
   CacheEntry *pEntry = 0;
   BcvContainer *pBcv = 0;
   BcvDispatch *pDisp = 0;
+  u8 eComp = 0;                   /* Compression byte for block to fetch */
 
   /* When it opens a database, SQLite attempts to read the 100 byte 
   ** database header without first taking a read-lock. This is an 
@@ -1548,6 +1590,7 @@ static int bcvfsReadWriteDatabase(
       assert( iBlk<pFile->pManDb->nBlkLocal || bWrite );
       rc = bcvfsContainerGetBcv(pFs, pFile->pCont, &pDisp, &pBcv, 0);
       bcvDispatchClientId(pDisp, pFile->zClientId);
+      eComp = bcvManifestBlkComp(pFile->pManDb, iBlk);
     }
   } LEAVE_VFS_MUTEX;
 
@@ -1556,7 +1599,7 @@ static int bcvfsReadWriteDatabase(
   ** fields here, it may not be set following a successful download.
   ** pEntry->bValid may not be set until the VFS mutex is held again.  */
   if( pBcv ){
-    rc = bcvfsFetchBlock(pFile, pDisp, pBcv, iBlk, pEntry);
+    rc = bcvfsFetchBlock(pFile, pDisp, pBcv, iBlk, pEntry, eComp);
     bWriteBlock = 1;
   }
 
@@ -2687,7 +2730,7 @@ int bcvManifestUpdate(
         rc = bcvMHashBuild(pMan, 0, 0, &pHash);
         if( rc==SQLITE_OK ){
           for(ii=0; ii<pOldDb->nBlkOrig; ii++){
-            if( bcvMHashQuery(pHash, &pOldDb->aBlkOrig[ii*nName], nName)==0 ){
+            if( bcvMHashQuery(pHash, &pOldDb->aBlkOrig[ii*nName], nName,0)==0 ){
               bFail = 1;
             }
           }
@@ -2770,6 +2813,7 @@ int bcvManifestUpdate(
       }else if( pOldDb->nBlkLocal==0 ){
         pNewDb->nBlkOrig = pNewDb->nBlkLocal = 0;
         pNewDb->aBlkOrig = pNewDb->aBlkLocal = 0;
+        pNewDb->aBlkComp = 0;
       }
     }
 
@@ -2792,9 +2836,7 @@ int bcvManifestUpdate(
       ManifestDb *pNewDb = &pMan->aDb[pMan->nDb++];
 
       assert( pOldDb->nBlkOrigAlloc || pOldDb->aBlkOrig==0 );
-      pNewDb->aBlkOrig = bcvMallocCopy(&rc, 
-          pOldDb->aBlkOrig, nName*pOldDb->nBlkOrig
-      );
+      bcvManifestDbCopyBlocks(&rc, nName, pNewDb, pOldDb, pOldDb->nBlkOrig);
       pNewDb->nBlkOrigAlloc = pNewDb->nBlkOrig = pOldDb->nBlkOrig;
       if( pOldDb->nBlkLocalAlloc ){
         pNewDb->aBlkLocal = bcvMallocCopy(&rc, 
@@ -4007,6 +4049,7 @@ int sqlite3_bcvfs_create(
     sqlite3 *db = bcvOpenAndInitDb(&rc, zFullDir, 0);
     pFs->nRequest = BCV_DEFAULT_NREQUEST;
     pFs->nHttpTimeout = BCV_DEFAULT_HTTPTIMEOUT;
+    pFs->nCompThreshold = BCV_DEFAULT_COMP_THRESHOLD;
 
     pFs->c.pLog = bcvLogNew();
     if( pFs->c.pLog==0 ){
@@ -4095,6 +4138,9 @@ int sqlite3_bcvfs_config(sqlite3_bcvfs *pFs, int op, sqlite3_int64 iVal){
         case SQLITE_BCV_HTTPLOG_NENTRY:
         case SQLITE_BCV_HTTPLOG_TIMEOUT:
           bcvLogConfig(pFs->c.pLog, op, iVal);
+          break;
+        case SQLITE_BCV_COMP_THRESHOLD:
+          pFs->nCompThreshold = iVal;
           break;
         default:
           rc = SQLITE_NOTFOUND;
@@ -4649,6 +4695,7 @@ struct UploadDb {
   i64 iDbId;
   sqlite3 *db;
   ManifestDb *pDb;
+  u8 *aComp;                      /* Compression bytes for pDb->aBlkLocal[] */
 };
 
 typedef struct UploadBlockCtx UploadBlockCtx;
@@ -4667,6 +4714,8 @@ struct UploadCtx2 {
   Manifest *pMan;                 /* Copy of the manifest */
   UploadDb *aDb;                  /* Array of databases to upload */
   int nDb;                        /* Number of entries in aDb[] */
+
+  int nCompThreshold;             /* SQLITE_BCV_COMP_THRESHOLD value */
 
   int iDb;                        /* Current entry in aDb */
   int iBlk;                       /* Last block in aDb[iDb].pDb uploaded */
@@ -4720,7 +4769,7 @@ static void bcvfsUploadDeleteBlockIf(UploadCtx2 *pCtx, int iBlk){
   ManifestDb *pDb = pCtx->aDb[pCtx->iDb].pDb;
   u8 *aOrig = &pDb->aBlkOrig[nName*iBlk];
 
-  if( bcvMHashQuery(pCtx->pMHash, aOrig, nName)==0 ){
+  if( bcvMHashQuery(pCtx->pMHash, aOrig, nName, 0)==0 ){
     sqlite3_bcvfs *pFs = pCtx->pFs;
     Manifest *pMan = pCtx->pMan;
     u8 *pDel = &pMan->aDelBlk[pMan->nDelBlk*GCENTRYBYTES(pMan)];
@@ -4783,7 +4832,9 @@ static void bcvfsUploadOneBlockTry(UploadCtx2 *pCtx, int *pbRetry){
   if( pDb && rc==SQLITE_OK ){
     CacheEntry *pEntry;
     u8 *aName = &pDb->aBlkLocal[nName*pCtx->iBlk];
+    u8 *aComp = pCtx->aDb[pCtx->iDb].aComp;
     int nBuf = pMan->szBlk;
+    int nEncode = bcvEncodeBufferSize(pMan->eCompression, nBuf);
     UploadBlockCtx *p = 0;
 
     ENTER_VFS_MUTEX; {
@@ -4791,18 +4842,21 @@ static void bcvfsUploadOneBlockTry(UploadCtx2 *pCtx, int *pbRetry){
     } LEAVE_VFS_MUTEX;
     assert( pEntry );
 
-    p = (UploadBlockCtx*)bcvMallocRc(&rc, sizeof(UploadBlockCtx) + nBuf);
+    p = (UploadBlockCtx*)bcvMallocRc(&rc, 
+        sizeof(UploadBlockCtx) + nBuf + nEncode
+    );
     if( p ){
       int bSkip = 0;              /* True if no upload required */
       u8 aNew[BCV_MAX_NAMEBYTES]; /* New name for block */
       u8 *aBuf = (u8*)&p[1];      /* Buffer to load block data into */
+      u8 eComp = 0;               /* Compression byte for block */
 
       rc = bcvReadfile(pCtx->pCacheFile, aBuf, nBuf, (i64)nBuf*pEntry->iPos);
       memcpy(aNew, aName, nName);
       if( nName>=BCV_MIN_MD5_NAMEBYTES ){
         u8 *aAlt = 0;
         MD5(aBuf, nBuf, aNew);
-        aAlt = bcvMHashQuery(pCtx->pMHash, aNew, MD5_DIGEST_LENGTH);
+        aAlt = bcvMHashQuery(pCtx->pMHash, aNew, MD5_DIGEST_LENGTH, &eComp);
         if( aAlt ){
           memcpy(aNew, aAlt, nName);
           *pbRetry = bSkip = 1;
@@ -4812,11 +4866,18 @@ static void bcvfsUploadOneBlockTry(UploadCtx2 *pCtx, int *pbRetry){
       memcpy(aName, aNew, nName);
       if( rc==SQLITE_OK && bSkip==0 ){
         char zFile[BCV_MAX_FSNAMEBYTES];
-        bcvBlockidToText(NAMEBYTES(pCtx->pMan), aNew, zFile);
-        p->pCtx = pCtx;
-        rc = bcvDispatchPut(pCtx->pDisp, pCtx->pBcv,
-            zFile, 0, aBuf, nBuf, (void*)p, bcvfsUploadBlockDone
+        const u8 *aPut = 0;       /* Buffer to upload */
+        int nPut = 0;             /* Size of aPut[] in bytes */
+        rc = bcvBlockEncode(pMan->eCompression, pCtx->nCompThreshold,
+            aBuf, nBuf, &aBuf[nBuf], &aPut, &nPut, &eComp
         );
+        if( rc==SQLITE_OK ){
+          bcvBlockidToText(NAMEBYTES(pCtx->pMan), aNew, zFile);
+          p->pCtx = pCtx;
+          rc = bcvDispatchPut(pCtx->pDisp, pCtx->pBcv,
+              zFile, 0, aPut, nPut, (void*)p, bcvfsUploadBlockDone
+          );
+        }
         if( rc==SQLITE_OK ){
           rc = pCtx->rc;
         }else{
@@ -4825,6 +4886,7 @@ static void bcvfsUploadOneBlockTry(UploadCtx2 *pCtx, int *pbRetry){
       }else{
         sqlite3_free(p);
       }
+      if( aComp ) aComp[pCtx->iBlk] = eComp;
       if( rc==SQLITE_OK && pCtx->iBlk<pDb->nBlkOrig ){
         bcvfsUploadDeleteBlockIf(pCtx, pCtx->iBlk);
       }
@@ -4955,6 +5017,7 @@ static int bcvfsUpload(
         Manifest *pMan = pCont->pMan;
         int nDb;
         bcvfsEnterState(pFs, pCont, CONTAINER_STATE_UPLOAD);
+        ctx.nCompThreshold = pFs->nCompThreshold;
 
         nDb = pMan->nDb;
         ctx.aDb = bcvMallocRc(&rc, sizeof(UploadDb) * nDb);
@@ -5040,6 +5103,23 @@ static int bcvfsUpload(
       ctx.aDb[iDb].pDb = bcvfsFindDatabaseById(ctx.pMan, ctx.aDb[iDb].iDbId);
     }
 
+    /* If the container uses a version 5 manifest, allocate an array of
+    ** compression bytes for each database that will be uploaded. Populate
+    ** it with a copy of the aBlkComp[] array. Entries for blocks
+    ** that have been modified locally are overwritten as each block is 
+    ** uploaded.  */
+    for(iDb=0; rc==SQLITE_OK && iDb<ctx.nDb; iDb++){
+      ManifestDb *pDb = ctx.aDb[iDb].pDb;
+      if( ctx.pMan->eCompression>=0 && pDb->nBlkLocal>0 ){
+        u8 *aComp = (u8*)bcvMallocRc(&rc, pDb->nBlkLocal);
+        if( aComp && pDb->aBlkComp ){
+          int nCopy = MIN(pDb->nBlkLocal, pDb->nBlkOrig);
+          memcpy(aComp, pDb->aBlkComp, nCopy);
+        }
+        ctx.aDb[iDb].aComp = aComp;
+      }
+    }
+
     if( rc==SQLITE_OK && ctx.nDb>0 ){
 
       /* Extend the Manifest.aDelBlk[] array so that it is guaranteed to
@@ -5077,11 +5157,28 @@ static int bcvfsUpload(
           pDb->iDbId = ++ctx.pMan->iMaxDbId;
         }
         if( pDb->nBlkLocalAlloc ){
+          u8 *aComp = ctx.aDb[iDb].aComp;
           assert( pDb->nBlkOrigAlloc );
-          sqlite3_free(pDb->aBlkOrig);
-          pDb->aBlkOrig = pDb->aBlkLocal;
+          if( aComp ){
+            /* Version 5 manifest. */
+            int nName = NAMEBYTES(ctx.pMan);
+            i64 nBlk = pDb->nBlkLocal;
+            u8 *aNew = (u8*)bcvMallocRc(&rc, nBlk*(nName+1));
+            if( aNew==0 ) break;
+            memcpy(aNew, pDb->aBlkLocal, nBlk*nName);
+            memcpy(&aNew[nBlk*nName], aComp, nBlk);
+            sqlite3_free(pDb->aBlkLocal);
+            sqlite3_free(pDb->aBlkOrig);
+            pDb->aBlkOrig = pDb->aBlkLocal = aNew;
+            pDb->aBlkComp = &aNew[nBlk*nName];
+            pDb->nBlkOrigAlloc = pDb->nBlkLocal;
+          }else{
+            sqlite3_free(pDb->aBlkOrig);
+            pDb->aBlkOrig = pDb->aBlkLocal;
+            pDb->aBlkComp = 0;
+            pDb->nBlkOrigAlloc = pDb->nBlkLocalAlloc;
+          }
           pDb->nBlkOrig = pDb->nBlkLocal;
-          pDb->nBlkOrigAlloc = pDb->nBlkLocalAlloc;
           pDb->nBlkLocalAlloc = 0;
           pDb->iVersion++;
         }
@@ -5169,6 +5266,7 @@ static int bcvfsUpload(
         if( dbPragma==0 ) sqlite3_close(db);
       }
       sqlite3_free(ctx.aDb[iDb].zPath);
+      sqlite3_free(ctx.aDb[iDb].aComp);
     }
     bcvMHashFree(ctx.pMHash);
     bcvCloseLocal(ctx.pCacheFile);
@@ -5251,8 +5349,6 @@ int sqlite3_bcvfs_copy(
         Manifest *pMan = 0;       /* Manifest of container pCont */
         ManifestDb *pFrom = 0;    /* Copy from this db */
         ManifestDb *pTo = 0;      /* Copy to this db */
-        u8 *aBlkOrig = 0;         /* Deep copy of pFrom->aBlkOrig */
-        int nCopy;
   
         bcvfsEnterState(pFs, pCont, CONTAINER_STATE_COPY);
   
@@ -5277,18 +5373,22 @@ int sqlite3_bcvfs_copy(
           rc = bcvManifestDup(pMan, &pMan);
         }
         if( rc==SQLITE_OK ){
+          /* Copy the block ids and compression bytes (if any). This 
+          ** sets pTo->aBlkOrig, aBlkComp, nBlkOrig and 
+          ** nBlkOrigAlloc. */
           pFrom = bcvfsFindDatabase(pMan, zFrom, -1);
-          nCopy = pFrom->nBlkOrig * NAMEBYTES(pMan);
-          aBlkOrig = (u8*)bcvMallocRc(&rc, nCopy);
+          pTo = &pMan->aDb[pMan->nDb];
+          bcvManifestDbCopyBlocks(
+              &rc, NAMEBYTES(pMan), pTo, pFrom, pFrom->nBlkOrig
+          );
         }
         if( rc==SQLITE_OK ){
-          memcpy(aBlkOrig, pFrom->aBlkOrig, nCopy);
-          pTo = &pMan->aDb[pMan->nDb++];
+          pMan->nDb++;
           pTo->iDbId = pFs->iNextLocalId++;
           pTo->iParentId = pFrom->iDbId;
           memcpy(pTo->zDName, zTo, bcvStrlen(zTo));
           pTo->iVersion = 1;
-          pTo->aBlkLocal = pTo->aBlkOrig = aBlkOrig;
+          pTo->aBlkLocal = pTo->aBlkOrig;
           pTo->nBlkLocal = pTo->nBlkOrig = pFrom->nBlkOrig;
           pTo->nBlkOrigAlloc = pFrom->nBlkOrig;
         }
@@ -5495,6 +5595,7 @@ typedef struct PrefetchCtx PrefetchCtx;
 struct PrefetchCtx {
   sqlite3_prefetch *p;
   CacheEntry *pEntry;
+  u8 eComp;                       /* Compression byte for block */
 };
 
 /*
@@ -5590,8 +5691,9 @@ static void bcvfsPrefetchCb(
   }
 
   if( p->rc==SQLITE_OK ){
-    i64 iOff = (pEntry->iPos * pFs->c.szBlk);
-    p->rc = bcvWritefile(p->pCacheFile, aData, nData, iOff);
+    p->rc = bcvfsWriteDownloadedBlock(p->pCacheFile, pFs->c.szBlk,
+        pEntry, pCtx->eComp, aData, nData, &p->zErr
+    );
   }
 
   ENTER_VFS_MUTEX; {
@@ -5631,10 +5733,14 @@ void bcvfsPrefetchRun(
     }else{
       CacheEntry *pEntry = 0;
       u8 *pBlk = &pManDb->aBlkLocal[nNameBytes * iBlk];
+      u8 eComp = 0;
 
       ENTER_VFS_MUTEX; {
         if( 0==bcvfsHashFind(&pFs->c, pBlk, nNameBytes) ){
           rc = bcvfsFindBlockForIO(pFs, 0, pManDb, nNameBytes, iBlk, &pEntry);
+          if( iBlk<pManDb->nBlkOrig ){
+            eComp = bcvManifestBlkComp(pManDb, iBlk);
+          }
         }
       } LEAVE_VFS_MUTEX;
 
@@ -5649,6 +5755,7 @@ void bcvfsPrefetchRun(
         if( rc==SQLITE_OK ){
           pCtx->pEntry = pEntry;
           pCtx->p = p;
+          pCtx->eComp = eComp;
           rc = bcvDispatchFetch(
               p->pDisp, p->pBcv, zName, 0, 0, (void*)pCtx, bcvfsPrefetchCb
           );

@@ -46,6 +46,29 @@ static int64_t parseCacheSize(Utf8CP zSize) {
     return zSize[i] ? -1 : ret;
 }
 
+static Utf8String nonEmptyError(CloudResult const& stat) {
+    return stat.m_error.empty() ? Utf8PrintfString("CloudSqlite error (%d)", stat.m_status) : stat.m_error;
+}
+
+static int getOptionalCompThreshold(Napi::Object args, Napi::Env env) {
+    if (!args.Has(JSON_NAME(compThreshold)))
+        return 0;
+    auto val = args.Get(JSON_NAME(compThreshold));
+    if (val.IsUndefined())
+        return 0;
+    if (!val.IsNumber()) {
+        THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "compThreshold must be an integer between 1 and 100", IModelJsNativeErrorKey::BadArg);
+        return 0;
+    }
+    double num = val.As<Napi::Number>().DoubleValue();
+    int threshold = (int)num;
+    if ((double)threshold != num || threshold < 1 || threshold > 100) {
+        THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "compThreshold must be an integer between 1 and 100", IModelJsNativeErrorKey::BadArg);
+        return 0;
+    }
+    return threshold;
+}
+
 /**
  * JavaScript wrapper for SQLite::CloudCache
  */
@@ -67,7 +90,10 @@ struct JsCloudCache : CloudCache, Napi::ObjectWrap<JsCloudCache> {
                 THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "illegal cache size", DbResult::BE_SQLITE_MISUSE);
         }
         bool curlDiagnostics = boolMember(args, JSON_NAME(curlDiagnostics), false);
+        int compThreshold = getOptionalCompThreshold(args, info.Env());
         auto stat = InitCache(name, rootDir, cacheSize, intMember(args, JSON_NAME(nRequests), 0), intMember(args, JSON_NAME(httpTimeout), 0), curlDiagnostics);
+        if (stat.IsSuccess() && compThreshold > 0)
+            stat = SetCompThreshold(compThreshold);
         if (!stat.IsSuccess()) {
             if (stat.m_status == BE_SQLITE_CANTOPEN)
                 stat.m_error = "Cannot create CloudCache: invalid cache directory or directory does not exist";
@@ -138,9 +164,57 @@ struct CloudSqliteWorker : Napi::AsyncWorker {
 
 static Utf8CP writeLockName = "writeLock";
 
+static CloudCompression parseCloudCompression(Utf8StringCR name, Napi::Env env) {
+    if (name.EqualsI("none"))
+        return CloudCompression::None;
+    if (name.EqualsI("zlib"))
+        return CloudCompression::Zlib;
+    THROW_JS_IMODEL_NATIVE_EXCEPTION(env, Utf8PrintfString("invalid compression algorithm: %s", name.c_str()).c_str(), IModelJsNativeErrorKey::BadArg);
+    return CloudCompression::None;
+}
+
+static Napi::Value cloudCompressionToJs(Napi::Env env, CloudCompression algo) {
+    switch (algo) {
+    case CloudCompression::None:
+        return Napi::String::New(env, "none");
+    case CloudCompression::Zlib:
+        return Napi::String::New(env, "zlib");
+    default:
+        return env.Undefined();
+    }
+}
+
 /** supplies logging for CloudUtil functions from JavaScript */
 struct JsCloudUtil : CloudUtil {
     virtual void _Log(Utf8CP message) override { NativeLogging::Logging::LogMessage("CloudSqlite", NativeLogging::SEVERITY::LOG_INFO, message); }
+};
+
+struct GetCompressionWorker : Napi::AsyncWorker {
+    Napi::Promise::Deferred m_promise;
+    Napi::ObjectReference m_promiseRef;
+    JsCloudUtil m_util;
+    CloudResult m_result;
+    CloudCompression m_algorithm = CloudCompression::Unsupported;
+
+    GetCompressionWorker(Napi::Env env, CloudContainer const& container) : Napi::AsyncWorker(env), m_promise(Napi::Promise::Deferred::New(env)) {
+        m_result = m_util.Init(container);
+        m_promiseRef.Reset(m_promise.Promise(), 1);
+    }
+
+    ~GetCompressionWorker() { m_promiseRef.Reset(); }
+    void Execute() override {
+        if (m_result.IsSuccess())
+            m_result = m_util.GetCompression(m_algorithm);
+        if (!m_result.IsSuccess())
+            SetError(nonEmptyError(m_result));
+    }
+    void OnOK() override {
+        m_promise.Resolve(cloudCompressionToJs(Env(), m_algorithm));
+    }
+    void OnError(Napi::Error const& e) override {
+        e.Value()[JSON_NAME(errorNumber)] = m_result.m_status;
+        m_promise.Reject(e.Value());
+    }
 };
 
 /**
@@ -519,14 +593,28 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
 
     void InitializeContainer(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, opts);
+        auto compressionStr = stringMember(opts, JSON_NAME(compression));
+        CloudCompression compression = CloudCompression::None;
+        bool hasCompression = !compressionStr.empty();
+        if (hasCompression)
+            compression = parseCloudCompression(compressionStr, Env());
+
         JsCloudUtil handle;
         auto result = handle.Init(*this);
         if (result.IsSuccess()) {
             bool checksumName = boolMember(opts, JSON_NAME(checksumBlockNames), false);
             result = handle.InitializeContainer(checksumName ? 24 : 16, requireInt(opts, JSON_NAME(blockSize)));
+            if (result.IsSuccess() && hasCompression && compression != CloudCompression::None)
+                result = handle.SetCompression(compression, false);
         }
         if (result.m_status != BE_SQLITE_OK)
             THROW_JS_BE_SQLITE_EXCEPTION(Env(), result.m_error.c_str(), (DbResult)result.m_status);
+    }
+
+    Napi::Value GetCompression(NapiInfoCR info) {
+        auto worker = new GetCompressionWorker(info.Env(), *this);
+        worker->Queue();
+        return worker->m_promise.Promise();
     }
 
     Napi::Value GetWriteLockExpiryTime(NapiInfoCR) {
@@ -764,6 +852,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
             InstanceMethod<&JsCloudContainer::CopyDatabase>("copyDatabase"),
             InstanceMethod<&JsCloudContainer::DeleteDatabase>("deleteDatabase"),
             InstanceMethod<&JsCloudContainer::Disconnect>("disconnect"),
+            InstanceMethod<&JsCloudContainer::GetCompression>("getCompression"),
             InstanceMethod<&JsCloudContainer::InitializeContainer>("initializeContainer"),
             InstanceMethod<&JsCloudContainer::PollManifest>("checkForChanges"),
             InstanceMethod<&JsCloudContainer::QueryDatabase>("queryDatabase"),
@@ -787,7 +876,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
 struct CancellableCloudSqliteJob : Napi::ObjectWrap<CancellableCloudSqliteJob> {
     // Async Worker that does download on another thread.
     struct Worker : Napi::AsyncWorker {
-        enum JobType { Upload = 0, Download = 1, Cleanup = 2 };
+        enum JobType { Upload = 0, Download = 1, Cleanup = 2, Compress = 3 };
         struct JsDownloadJob : JsCloudUtil { // runs on AsyncWorker thread
             mutable BeMutex m_mutex;
             uint64_t m_nDone = 0;
@@ -803,25 +892,42 @@ struct CancellableCloudSqliteJob : Napi::ObjectWrap<CancellableCloudSqliteJob> {
         };
 
         Napi::ObjectReference m_request;
+        Napi::ObjectReference m_containerRef;
         JobType m_jobType;
         JsDownloadJob m_job;
         Utf8String m_dbName;
         Utf8String m_localFile;
-        int m_nSeconds;
-        bool m_findOrphanedBlocks;
+        int m_nSeconds = 0;
+        bool m_findOrphanedBlocks = false;
+        CloudCompression m_compression = CloudCompression::None;
+        bool m_compressAll = false;
 
         void Execute() override { // worker thread
-            auto stat = m_jobType == JobType::Upload ? m_job.UploadDatabase(m_localFile, m_dbName) 
-            : m_jobType == JobType::Download ? m_job.DownloadDatabase(m_dbName, m_localFile)
-            : m_job.CleanDeletedBlocks(m_nSeconds, m_findOrphanedBlocks);
+            auto stat = m_jobType == JobType::Upload ? m_job.UploadDatabase(m_localFile, m_dbName)
+                : m_jobType == JobType::Download ? m_job.DownloadDatabase(m_dbName, m_localFile)
+                : m_jobType == JobType::Compress ? m_job.SetCompression(m_compression, m_compressAll)
+                : m_job.CleanDeletedBlocks(m_nSeconds, m_findOrphanedBlocks);
             if (stat.m_status == BE_SQLITE_ABORT)
                 SetError("cancelled");
             else if (stat.m_status != BE_SQLITE_OK)
-                SetError(stat.m_error);
+                SetError(nonEmptyError(stat));
         }
 
         void OnOK() override { // main thread
             auto* request = CancellableCloudSqliteJob::Unwrap(m_request.Value());
+            if (m_jobType == JobType::Compress && !m_containerRef.IsEmpty()) {
+                auto* container = Napi::ObjectWrap<JsCloudContainer>::Unwrap(m_containerRef.Value());
+                if (container->IsContainerConnected()) {
+                    auto pollStat = container->CloudContainer::PollManifest();
+                    if (!pollStat.IsSuccess()) {
+                        auto err = Napi::Error::New(Env(), nonEmptyError(pollStat).c_str());
+                        err.Value()[JSON_NAME(errorNumber)] = pollStat.m_status;
+                        request->m_promise.Reject(err.Value());
+                        request->m_pending = nullptr;
+                        return;
+                    }
+                }
+            }
             request->m_promise.Resolve(Napi::Number::New(Env(), 0));
             request->m_pending = nullptr;
         }
@@ -832,10 +938,14 @@ struct CancellableCloudSqliteJob : Napi::ObjectWrap<CancellableCloudSqliteJob> {
             request->m_pending = nullptr;
         }
 
-        Worker(JobType jobType, JsCloudContainer& container, Napi::Object args, CancellableCloudSqliteJob const& request) : Napi::AsyncWorker(args.Env()) {
-            if (jobType == JobType::Upload || jobType == JobType::Cleanup)
+        Worker(JobType jobType, JsCloudContainer& container, Napi::Object jsContainer, Napi::Object args, CancellableCloudSqliteJob const& request) : Napi::AsyncWorker(args.Env()) {
+            if (jobType == JobType::Upload || jobType == JobType::Cleanup || jobType == JobType::Compress)
                 container.RequireWriteLock();
+            if (jobType == JobType::Compress && container.HasLocalChanges())
+                THROW_JS_BE_SQLITE_EXCEPTION(args.Env(), "cannot change compression with uncommitted local changes", BE_SQLITE_BUSY);
             m_request.Reset(request.Value(), 1);
+            if (jobType == JobType::Compress)
+                m_containerRef.Reset(jsContainer, 1);
             m_jobType = jobType;
             bool debugLogging = false;
             if (m_jobType == JobType::Upload || m_jobType == JobType::Download) {
@@ -847,13 +957,24 @@ struct CancellableCloudSqliteJob : Napi::ObjectWrap<CancellableCloudSqliteJob> {
                 m_nSeconds = requireInt(args, JSON_NAME(nSeconds));
                 debugLogging = requireBool(args, JSON_NAME(debugLogging));
             }
+            else if (m_jobType == JobType::Compress) {
+                m_compression = parseCloudCompression(requireString(args, JSON_NAME(algorithm)), args.Env());
+                m_compressAll = boolMember(args, JSON_NAME(compressAll), false);
+                debugLogging = boolMember(args, JSON_NAME(debugLogging), false);
+            }
 
+            int compThreshold = getOptionalCompThreshold(args, args.Env());
             auto stat = m_job.Init(container, debugLogging ? 1 : 0, intMember(args, JSON_NAME(nRequests), 0), intMember(args, JSON_NAME(httpTimeout), 0));
+            if (stat.IsSuccess() && compThreshold > 0)
+                stat = m_job.SetCompThreshold(compThreshold);
             if (!stat.IsSuccess())
                 THROW_JS_BE_SQLITE_EXCEPTION(Env(), stat.m_error.c_str(), (DbResult)stat.m_status);
         }
 
-        ~Worker() { m_request.Reset(); }
+        ~Worker() {
+            m_request.Reset();
+            m_containerRef.Reset();
+        }
     };
 
     DEFINE_CONSTRUCTOR;
@@ -878,6 +999,7 @@ struct CancellableCloudSqliteJob : Napi::ObjectWrap<CancellableCloudSqliteJob> {
     // Cancel a previous request for a upload/download
     void CancelTransfer(NapiInfoCR info) {
         CheckStillPending(info.Env());
+        BeMutexHolder holder(m_pending->m_job.m_mutex);
         m_pending->m_job.m_abort = true;
     }
 
@@ -885,6 +1007,7 @@ struct CancellableCloudSqliteJob : Napi::ObjectWrap<CancellableCloudSqliteJob> {
     // For uploads and downloads this will abort the transfer without saving.
     void StopAndSaveProgress(NapiInfoCR info) {
         CheckStillPending(info.Env());
+        BeMutexHolder holder(m_pending->m_job.m_mutex);
         m_pending->m_job.m_stopAndSaveProgress = true;
     }
 
@@ -907,11 +1030,21 @@ struct CancellableCloudSqliteJob : Napi::ObjectWrap<CancellableCloudSqliteJob> {
         auto container = Napi::ObjectWrap<JsCloudContainer>::Unwrap(jsContainer);
 
         REQUIRE_ARGUMENT_ANY_OBJ(2, args);
-        if (direction == "cleanup") {
+        Worker::JobType jobType = Worker::JobType::Cleanup;
+        if (direction.Equals("upload")) {
+            jobType = Worker::JobType::Upload;
+        } else if (direction.Equals("download")) {
+            jobType = Worker::JobType::Download;
+        } else if (direction.Equals("cleanup")) {
             handleDefaultArgsForCleanupJob(info);
+            jobType = Worker::JobType::Cleanup;
+        } else if (direction.Equals("compress")) {
+            jobType = Worker::JobType::Compress;
+        } else {
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(Env(), Utf8PrintfString("invalid job direction: %s", direction.c_str()).c_str(), IModelJsNativeErrorKey::BadArg);
         }
         Value().Set(JSON_NAME(promise), m_promise.Promise()); // holds a reference to the promise to keep it alive
-        m_pending = new Worker(direction.Equals("upload") ? Worker::JobType::Upload : direction.Equals("download") ? Worker::JobType::Download : Worker::JobType::Cleanup, *container, args, *this);
+        m_pending = new Worker(jobType, *container, jsContainer, args, *this);
         m_pending->Queue(); // takes ownership of m_pending, deletes on completion
     }
 

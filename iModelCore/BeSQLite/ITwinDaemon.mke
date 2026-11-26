@@ -13,6 +13,9 @@ SubpartLibs = $(BuildContext)SubParts/Libs/
 DEBUG_INFO_IN_OBJ=
 o = $(PartBuildDir)
 
+dirToSearch = $(BuildContext)VendorAPI/zlib
+%include cincapnd.mki
+
 appName = iTwinDaemon
 CCompPDBName = $(appName)
 

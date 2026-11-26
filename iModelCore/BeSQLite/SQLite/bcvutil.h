@@ -112,7 +112,11 @@ int sqlite3_bcv_config(sqlite3_bcv*, int eOp, ...);
 **   For a sqlite3_bcv_download() call, the callback is invoked after each
 **   block has been downloaded. The three arguments are similar to those 
 **   for _upload() - a copy of the (void*), the number of bytes downloaded 
-**   so far, and the total bytes that will be downloaded.
+**   so far, and the total bytes that will be downloaded. Within a call to
+**   sqlite3_bcv_compression() with the SQLITE_BCVCOMPRESS_ALL flag set,
+**   the callback is invoked after each block has been recompressed. In
+**   this case nDone and nTotal are the number of bytes of block data
+**   processed so far and the total that will be processed.
 **
 **   If the progress callback returns 0, the operation continues. If it
 **   returns a non-zero value, the operation is abandoned and error code
@@ -174,15 +178,29 @@ int sqlite3_bcv_config(sqlite3_bcv*, int eOp, ...);
 **   for deletion. Orphaned blocks are created when a client abruptly halts,
 **   is disconnected or encounters an error while uploading a change.
 **   
+** SQLITE_BCVCONFIG_COMP_THRESHOLD:
+**   This option requires a single argument of type int. It sets the
+**   maximum acceptable compression ratio as a percentage used when compressing
+**   a block within sqlite3_bcv_upload() or sqlite3_bcv_compression(). If the
+**   configured compression ratio is not achieved, then the block is
+**   stored in cloud storage uncompressed instead. Specifically,
+**   if the following is true:
+**
+**       100 * (compressed size) >= (configured value) * (uncompressed size) 
+**
+**   then the block is stored without compression. The default value of 
+**   this parameter is 100 - so that blocks are stored uncompressed if
+**   the compressed version is as large or larger than the original.
 */
-#define SQLITE_BCVCONFIG_VERBOSE     1      /* (int) */
-#define SQLITE_BCVCONFIG_PROGRESS    2      /* (void*,xProgress) */
-#define SQLITE_BCVCONFIG_LOG         3      /* (void*,xLog) */
-#define SQLITE_BCVCONFIG_NREQUEST    4      /* (int) */
-#define SQLITE_BCVCONFIG_LOGLEVEL    5      /* (int) */
-#define SQLITE_BCVCONFIG_TESTNOKV    6      /* (int) */
-#define SQLITE_BCVCONFIG_HTTPTIMEOUT 7      /* (int) */
-#define SQLITE_BCVCONFIG_FINDORPHANS 8      /* (int) */
+#define SQLITE_BCVCONFIG_VERBOSE        1   /* (int) */
+#define SQLITE_BCVCONFIG_PROGRESS       2   /* (void*,xProgress) */
+#define SQLITE_BCVCONFIG_LOG            3   /* (void*,xLog) */
+#define SQLITE_BCVCONFIG_NREQUEST       4   /* (int) */
+#define SQLITE_BCVCONFIG_LOGLEVEL       5   /* (int) */
+#define SQLITE_BCVCONFIG_TESTNOKV       6   /* (int) */
+#define SQLITE_BCVCONFIG_HTTPTIMEOUT    7   /* (int) */
+#define SQLITE_BCVCONFIG_FINDORPHANS    8   /* (int) */
+#define SQLITE_BCVCONFIG_COMP_THRESHOLD 9   /* (int) */
 
 /*
 ** Delete an sqlite3_bcv handle obtained via an earlier call to
@@ -326,6 +344,82 @@ int sqlite3_bcv_destroy(sqlite3_bcv *p);
 ** integers smaller than 256.
 */
 int sqlite3_bcv_cleanup(sqlite3_bcv *p, int nSecond);
+
+/*
+** Each cloud storage container may use either the old storage format 4, or
+** the newer storage format 5, which supports compressed blocks. This 
+** function is used to switch a container between formats 4 and 5, and to 
+** set the compression algorithm for a container.
+**
+** A successful call to this function sets the compression algorithm for
+** the container to eCompression, which must be one of the 
+** SQLITE_BCVCOMPRESS_XXX constants defined below. If the container does
+** not already use format 5 and the compression algorithm is not
+** SQLITE_BCVCOMPRESS_NONE, it is upgraded to format 5 at the same time as the
+** compression algorithm is set.
+**
+** Usually, setting a container's compression algorithm has no effect on
+** existing blocks. But, if the SQLITE_BCVCOMPRESS_ALL flag is passed
+** as part of the third parameter to this function, then all existing
+** blocks are compressed according to the new compression algorithm before
+** the function returns. In this case, if the new compression algorithm
+** is SQLITE_BCVCOMPRESS_NONE, then the container also reverts to format 4
+** at this point.
+**
+** It is an error if the eCompression parameter is not one of the
+** SQLITE_BCVCOMPRESS_XXX symbols defined below, or if the flags parameter
+** has any unrecognized bits set.
+**
+** If the cloud storage container is being written simultaneously by some
+** other client anywhere on the network, this function may return HTTPS
+** error 412 (pre-condition failed).
+**
+** If the operation is successful, SQLITE_OK is returned. Or, if
+** an HTTPS request made to the cloud storage system fails, an HTTP 
+** response code is returned. Or, if some other error occurs (for example, 
+** a failed memory allocation), a non-extended SQLite error code is 
+** returned. All HTTP response codes that may be returned are greater
+** than or equal to 400. All non-extended SQLite error codes are positive
+** integers smaller than 256.
+*/
+int sqlite3_bcv_compression(sqlite3_bcv *p, int eCompression, int flags);
+
+/*
+** This function is used to query the default compression method of a 
+** cloud storage container. If successful, and if the container uses
+** format 5, then output variable (*peCompression) is set to the 
+** SQLITE_BCVCOMPRESS_XXX value that corresponds to the container's
+** default compression method. Or, if the container uses format 4 and
+** does not support compression, the output variable is set to -1.
+**
+** If the operation is successful, SQLITE_OK is returned. Or, if
+** an HTTPS request made to the cloud storage system fails, an HTTP 
+** response code is returned. Or, if some other error occurs (for example, 
+** a failed memory allocation), a non-extended SQLite error code is 
+** returned. All HTTP response codes that may be returned are greater
+** than or equal to 400. All non-extended SQLite error codes are positive
+** integers smaller than 256. If an error does occur, then the final
+** value of (*peCompression) is undefined.
+*/
+int sqlite3_bcv_get_compression(sqlite3_bcv *p, int *peCompression);
+
+/*
+** Currently defined compression types. The file format restricts any 
+** compression types added in the future must be less than or equal to 127.
+**
+** SQLITE_BCVCOMPRESS_NONE:
+**   No compression.
+**
+** SQLITE_BCVCOMPRESS_ZLIB:
+**   Blocks are compressed using zlib according to RFC 1950.
+*/
+#define SQLITE_BCVCOMPRESS_NONE   0
+#define SQLITE_BCVCOMPRESS_ZLIB   1
+
+/*
+** Currently defined flags for sqlite3_bcv_compression().
+*/
+#define SQLITE_BCVCOMPRESS_ALL    0x01
 
 #ifdef __cplusplus
 } /* end of the extern "C" block */

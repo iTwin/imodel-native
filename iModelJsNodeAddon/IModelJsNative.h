@@ -414,6 +414,7 @@ struct JsInterop {
 
     BE_JSON_NAME(accessToken)
     BE_JSON_NAME(addClientInformation)
+    BE_JSON_NAME(algorithm)
     BE_JSON_NAME(alias)
     BE_JSON_NAME(baseUri)
     BE_JSON_NAME(blob)
@@ -427,7 +428,10 @@ struct JsInterop {
     BE_JSON_NAME(codeScope)
     BE_JSON_NAME(codeSpecId)
     BE_JSON_NAME(columnName)
+    BE_JSON_NAME(compThreshold)
     BE_JSON_NAME(compress)
+    BE_JSON_NAME(compressAll)
+    BE_JSON_NAME(compression)
     BE_JSON_NAME(containerId)
     BE_JSON_NAME(curlDiagnostics)
     BE_JSON_NAME(data)

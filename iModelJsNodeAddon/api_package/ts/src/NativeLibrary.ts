@@ -1434,7 +1434,13 @@ export declare namespace IModelJsNative {
      * initialize a cloud blob-store container to be used as a new Sqlite CloudContainer. This creates the manifest, and should be
      * performed on an empty container. If an existing manifest is present, it is destroyed and a new one is created (essentially emptying the container.)
      */
-    public initializeContainer(opts: { checksumBlockNames?: boolean, blockSize: number }): void;
+    public initializeContainer(opts: { checksumBlockNames?: boolean, blockSize: number, compression?: NativeCloudSqlite.CompressionAlgorithm }): void;
+
+    /**
+     * Query the default block compression algorithm configured for this container.
+     * Resolves to `undefined` if the container uses format 4 (compression not enabled).
+     */
+    public getCompression(): Promise<NativeCloudSqlite.CompressionAlgorithm | undefined>;
 
     /**
      * Attempt to acquire the write lock for this CloudContainer. For this to succeed:
@@ -1559,11 +1565,11 @@ export declare namespace IModelJsNative {
    */
   class CancellableCloudSqliteJob {
     /** create an instance of a transfer. The operation begins immediately when the object is created.
-     * @param direction either "upload" or "download"
+     * @param direction one of "upload", "download", "cleanup", or "compress"
      * @param container the container holding the database. Does *not* require that the container be connected to a CloudCache.
-     * @param args The properties for the source and target of the transfer.
+     * @param args The properties for the operation.
      */
-    constructor(direction: NativeCloudSqlite.TransferDirection | "cleanup", container: CloudContainer, args: NativeCloudSqlite.TransferDbProps | NativeCloudSqlite.CleanDeletedBlocksOptions);
+    constructor(direction: NativeCloudSqlite.TransferDirection | "cleanup" | "compress", container: CloudContainer, args: NativeCloudSqlite.TransferDbProps | NativeCloudSqlite.CleanDeletedBlocksOptions | NativeCloudSqlite.CompressContainerOptions);
 
     /** Cancel a currently pending transfer and cause the promise to be rejected with a Cancelled status.
      * @throws exception if the operation has already completed.

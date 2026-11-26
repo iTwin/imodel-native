@@ -65,8 +65,10 @@ typedef unsigned short u16;
     3*4+BCV_DBID_SIZE+BCV_DBNAME_SIZE   \
 )
 
-/* Current version of manifest file format */
-#define BCV_MANIFEST_VERSION 4
+/* Manifest file format versions. Version 4 is the default. Version 5 is 
+** used if the container has been configured with a compression algorithm. */
+#define BCV_MANIFEST_VERSION    5
+#define BCV_MANIFEST_VERSION_V4 4
 
 /* Block identifiers must be between 12 and 32 bytes in size. Between
 ** 96 and 256 bits of content-hash/random-values to guarantee uniqueness.  */
@@ -121,12 +123,21 @@ typedef struct BcvLog BcvLog;
 
 
 
+/*
+** eCompression:
+**  For version 4 manifests, this is set to -1. For version 5 manifests,
+**  to the value of the default compression algorithm (one of the
+**  SQLITE_BCVCOMPRESS_XXX symbols defined in bcvutil.h).
+**
+*/
 struct Manifest {
   int nRef;                       /* Number of pointers to this object */
   int nDb;                        /* Number of databases */
   int szBlk;                      /* Block size */
   int nNamebytes;                 /* Bytes in each block name */
   u32 iMaxDbId;                   /* Largest dbid ever assigned */
+  int eCompression;               /* Compression algorithm */ 
+
   ManifestDb *aDb;                /* Array of nDb databases */
 
   int bDelFree;                   /* If true, aDelBlk must be freed */
@@ -146,6 +157,21 @@ struct Manifest {
 **   is non-zero, then aBlkOrig[] must be freed using sqlite3_free when this
 **   object is deallocated.
 **
+** aBlkComp:
+**   An array nBlkOrig bytes in size. The lower 7 bits of each byte contains 
+**   the compression algorithm used by the corresponding block in cloud 
+**   storage. If the MSB is set, then the block is not actually compressed.
+**   This happens when an attempt was made to compress it using the algorithm
+**   identified by the lower 7 bits, but it did not compress well and so was
+**   stored uncompressed. This state is used under some circumstances to avoid
+**   unnecessary attempts to compress data that has already been found to be
+**   uncompressable.
+**
+**   This is NULL for a version 4 container.
+**
+**   If it is not NULL, then aBlkComp is part of the same allocation
+**   as aBlkOrig. So it never needs to be freed.
+**
 ** aBlkLocal, nBlkLocal, nBlkLocalAlloc:
 */
 struct ManifestDb {
@@ -158,6 +184,7 @@ struct ManifestDb {
   u8 *aBlkOrig;
   int nBlkOrig;
   int nBlkOrigAlloc;
+  u8 *aBlkComp;
 
   /* Current block array */
   u8 *aBlkLocal;
@@ -313,10 +340,11 @@ struct BcvBuffer {
 struct ManifestHash {
   int nHash;
   u8 **aHash;
+  u8 *aComp;                      /* Compression byte for each aHash[] entry */
 };
 
 int bcvMHashBuild(Manifest*, int, ManifestDb*, ManifestHash**);
-u8 *bcvMHashQuery(ManifestHash *pHash, u8 *aBlk, int nBlk);
+u8 *bcvMHashQuery(ManifestHash *pHash, u8 *aBlk, int nBlk, u8 *peComp);
 void bcvMHashFree(ManifestHash *pHash);
 
 
@@ -745,3 +773,34 @@ void bcvTimeToString(i64 iTime, char *zBuf);
 void bcvLogConfig(BcvLog *pLog, int op, i64 iVal);
 
 int bcvDeleteBlocks(Manifest *pMan, int iDb);
+
+#define BCV_ISCOMPRESSED_NONE     0
+#define BCV_ISCOMPRESSED_OK       1
+#define BCV_ISCOMPRESSED_UNKNOWN  2
+
+int bcvCompIsCompressed(u8 eComp);
+int bcvCompBound(u8 eComp, int nByte);
+int bcvCompCompress(u8 eComp, u8 *aDest, int *pnDest, const u8 *aSrc, int nSrc);
+int bcvCompUncompress(u8 eComp, u8 *aDest, int nDest, const u8 *aSrc, int nSrc);
+
+/*
+** Return the compression byte for block iBlk of database pDb. This is
+** 0x00 (SQLITE_BCVCOMPRESS_NONE) if pDb->aBlkComp is NULL.
+*/
+#define bcvManifestBlkComp(pDb, iBlk) \
+  ((pDb)->aBlkComp ? (pDb)->aBlkComp[iBlk] : 0)
+
+#define BCV_DEFAULT_COMP_THRESHOLD 100
+
+int bcvEncodeBufferSize(int eDefault, int szBlk);
+int bcvBlockEncode(int eDefault, int nThreshold, const u8 *aRaw, int nRaw,
+    u8 *aBuf, const u8 **paOut, int *pnOut, u8 *peComp
+);
+int bcvBlockDecode(int nName, const u8 *aBlk, int szBlk, u8 eComp,
+    const u8 *aData, int nData, u8 *aBuf, const u8 **paOut, char **pzErr
+);
+void bcvManifestDbCopyBlocks(int*, int nName, ManifestDb*, ManifestDb*, int);
+
+int bcvTestFetchFile(sqlite3_bcv*, const char *zFile, u8 **paData, int *pnData);
+int bcvTestPutFile(sqlite3_bcv*, const char *zFile, const u8 *aData, int nData);
+

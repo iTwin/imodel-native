@@ -383,6 +383,18 @@ int sqlite3_bcvfs_config(sqlite3_bcvfs *pFs, int op, sqlite3_int64 iVal);
 **   The maximum number of entries that the bcv_http_log table may contain.
 **   A value less than 0 means there is no limit on the number of entries.
 **   The default value is -1.
+**
+** SQLITE_BCV_COMP_THRESHOLD:
+**   This is used when the VFS uploads a block to a cloud storage container
+**   with a default compression algorithm configured. It is a minimum 
+**   acceptable compression ratio, expressed as a percentage. If, when a
+**   block is compressed, it is compressed less than the minimum ratio, the
+**   block is stored in raw format in cloud storage. Specifically, a block
+**   is stored uncompressed if:
+**
+**       100 * (compressed size) >= (ratio) * (uncompressed size)
+**
+**   The default value is 100.
 */
 #define SQLITE_BCV_CACHESIZE   1
 #define SQLITE_BCV_NREQUEST    2
@@ -390,6 +402,7 @@ int sqlite3_bcvfs_config(sqlite3_bcvfs *pFs, int op, sqlite3_int64 iVal);
 #define SQLITE_BCV_CURLVERBOSE 4
 #define SQLITE_BCV_HTTPLOG_TIMEOUT 5
 #define SQLITE_BCV_HTTPLOG_NENTRY  6
+#define SQLITE_BCV_COMP_THRESHOLD  7
 
 /*
 ** Return true if this VFS is connected to a daemon process. Or false if

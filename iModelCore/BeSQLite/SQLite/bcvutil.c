@@ -113,6 +113,7 @@ struct sqlite3_bcv {
 
   int bTestNoKv;                  /* SQLITE_BCVCONFIG_TESTNOKV option */
   int bFindOrphans;               /* SQLITE_BCVCONFIG_FINDORPHANS option */
+  int nCompThreshold;             /* SQLITE_BCVCONFIG_COMP_THRESHOLD option */
 
   bcv_log_cb xBcvLog;
   void *pBcvLogCtx;
@@ -458,15 +459,17 @@ static int bcvMHashBucket(ManifestHash *pHash, u8 *aBlk){
 }
 
 /*
-** Add aBlk to the hash passed as the first argument.
+** Add aBlk to the hash passed as the first argument. eComp is the
+** compression byte associated with the block.
 */
-void bcvMHashAdd(ManifestHash *pHash, u8 *aBlk, int nBlk){
+static void bcvMHashAdd(ManifestHash *pHash, u8 *aBlk, int nBlk, u8 eComp){
   int iBucket = bcvMHashBucket(pHash, aBlk);
   while( pHash->aHash[iBucket] ){
     if( 0==memcmp(pHash->aHash[iBucket], aBlk, nBlk) ) return;
     iBucket = (iBucket+1) % pHash->nHash;
   }
   pHash->aHash[iBucket] = aBlk;
+  pHash->aComp[iBucket] = eComp;
 }
 
 /*
@@ -476,14 +479,22 @@ void bcvMHashFree(ManifestHash *pHash){
   sqlite3_free(pHash);
 }
 
+
 /*
-** Query the hash table for an entry with nBlk byte prefix aBlk.
+** Query the hash table for an entry with nBlk byte prefix aBlk. If one
+** is found, return a pointer to the full block-id and, if peComp is not
+** NULL, set (*peComp) to the compression byte associated with the block.
+** Or, if there is no such entry, return NULL.
+**
+** Block-ids added to the hash from the delete-list have compression
+** byte 0x00.
 */
-u8 *bcvMHashQuery(ManifestHash *pHash, u8 *aBlk, int nBlk){
+u8 *bcvMHashQuery(ManifestHash *pHash, u8 *aBlk, int nBlk, u8 *peComp){
   u8 *aEntry;
   int iBucket = bcvMHashBucket(pHash, aBlk);
   while( (aEntry = pHash->aHash[iBucket]) ){
     if( memcmp(aBlk, aEntry, nBlk)==0 ){
+      if( peComp ) *peComp = pHash->aComp[iBucket];
       return aEntry;
     }
     iBucket = (iBucket+1) % pHash->nHash;
@@ -543,24 +554,25 @@ int bcvMHashBuild(
   }
 
   /* Allocate and populate the hash table */
-  nAlloc = sizeof(ManifestHash) + nHash*sizeof(u8*);
+  nAlloc = sizeof(ManifestHash) + nHash*(sizeof(u8*) + sizeof(u8));
   pHash = (ManifestHash*)bcvMallocRc(&rc, nAlloc);
   if( rc==SQLITE_OK ){
     int iBlk;
     pHash->nHash = nHash;
     pHash->aHash = (u8**)&pHash[1];
+    pHash->aComp = (u8*)&pHash->aHash[nHash];
     for(ii=0; ii<pMan->nDb; ii++){
       ManifestDb *pDb = &pMan->aDb[ii];
       if( pDb==pExclude ) continue;
       for(iBlk=0; iBlk<pDb->nBlkOrig; iBlk++){
         u8 *pBlk = &pDb->aBlkOrig[iBlk*nName];
-        bcvMHashAdd(pHash, pBlk, nName);
+        bcvMHashAdd(pHash, pBlk, nName, bcvManifestBlkComp(pDb, iBlk));
       }
     }
     if( bDeleteList ){
       for(iBlk=0; iBlk<pMan->nDelBlk; iBlk++){
         u8 *pBlk = &pMan->aDelBlk[iBlk*nGCName];
-        bcvMHashAdd(pHash, pBlk, nName);
+        bcvMHashAdd(pHash, pBlk, nName, 0);
       }
     }
   }
@@ -597,7 +609,7 @@ ManifestDb *bcvManifestDbidToDb(Manifest *p, i64 iDbId){
 }
 
 /*
-** MANIFEST FILE FORMAT VERSION 4
+** MANIFEST FILE FORMAT VERSION 4/5
 **
 ** The manifest file format is an ad-hoc binary design. It does not use
 ** XML or any other formatting convention. This is to keep it as compact 
@@ -608,12 +620,13 @@ ManifestDb *bcvManifestDbidToDb(Manifest *p, i64 iDbId){
 **
 ** Part 1: Manifest Header
 **
-**     Manifest format version:    32-bit integer. (currently set to 3).
+**     Manifest format version:    32-bit integer. (4 or 5).
 **     Block size in bytes:        32-bit integer.
 **     Number of databases:        32-bit integer.
 **     Number of delete entries:   32-bit integer.
 **     Name-size in bytes:         32-bit integer.  (between 12 and 32)
 **     Largest db id assigned:     32-bit integer.
+**     Default compression:        32-bit integer.  (version 5 only)
 **     Then, for each database:
 **         Database id:            32-bit integer.  (1 or greater)
 **         Parent id:              32-bit integer.  (0 means no parent)
@@ -641,16 +654,49 @@ ManifestDb *bcvManifestDbidToDb(Manifest *p, i64 iDbId){
 **   in the header.
 **
 **   There are two formats for a block-list, depending on whether or not
-**   the parent id in the header is set to 0 or not. If it is set to 0, then
-**   the block-list contains tightly packed block-ids, one for each block
-**   in the database. Or, if the parent id is non-zero, each entry consists
-**   of:
+**   the parent id in the header is set to 0 or not. And two variants
+**   of each, for format 4 and format 5 manifests. As follows:
 **
-**     Block offset:               32-bit integer.
-**     Block id:                   name-size bytes.
+**   parent-id==0, version 4:
 **
+**     Tightly packed array of block ids - (name-size * nblock) bytes,
+**     where nblock is the number of blocks in the db.
+**
+**   parent-id!=0, version 4:
+**
+**     An array of entries, one for each block that is not shared with
+**     the parent database. Each entry consists of:
+**
+**       Block offset:               32-bit integer.
+**       Block id:                   name-size bytes.
+**
+**   parent-id==0, version 5:
+**
+**     Tightly packed array of block ids - (name-size * nblock) bytes.
+**     Followed by an array of nblock 1 byte values, each representing
+**     the compression algorithm of the corresponding block. The
+**     lower 7 bits of each value stores the compression algorithm used
+**     to compress the block (as defined in bcvutil.h). The MSB is set if
+**     the block is actually stored uncompressed. This happens when 
+**     compressing the block using the compression algorithm described by 
+**     the lower 7 bits achieved a very poor compression ratio, and so
+**     the block was stored uncompressed.
+**
+**   parent-id!=0, version 5:
+**
+**     Like (parent-id!=0, version 4), except that each entry consists of:
+**
+**       Block offset:               32-bit integer.
+**       Compression algorithm:      8-bit field.
+**       Block id:                   name-size bytes.
+**
+**     The format of the "compression algorithm" field is as described for
+**     the array entries for (parent-id==0, version 5).
 */
-#define MANIFEST_HDR_SIZE   (6*sizeof(u32))
+#define MANIFEST_HDR_SIZE_V4 (6*sizeof(u32))
+#define MANIFEST_HDR_SIZE_V5 (7*sizeof(u32))
+#define MANIFEST_HDR_SIZE(iVersion) \
+  ((iVersion)==BCV_MANIFEST_VERSION_V4?MANIFEST_HDR_SIZE_V4:MANIFEST_HDR_SIZE_V5)
 #define MANIFEST_DBHDR_SIZE (6*sizeof(u32)+128)
 
 /*
@@ -666,6 +712,8 @@ int bcvManifestParse(
   Manifest *pRet = 0;
   int iDb;
   int rc = SQLITE_OK;
+  int nHdr = 0;                   /* Size of manifest header in bytes */
+  int bV5 = 0;                    /* True for a version 5 manifest */
 
   /* Header fields */
   u32 iVersion;
@@ -674,6 +722,7 @@ int bcvManifestParse(
   u32 nDelete;
   u32 nNamesize;
   u32 iMaxDbId;
+  int eCompression = -1;
 
   iVersion = bcvGetU32(&a[0]);
   nBlocksize = bcvGetU32(&a[4]);
@@ -682,12 +731,18 @@ int bcvManifestParse(
   nNamesize = bcvGetU32(&a[16]);
   iMaxDbId = bcvGetU32(&a[20]);
 
-  if( iVersion!=BCV_MANIFEST_VERSION ){
+  if( iVersion!=BCV_MANIFEST_VERSION_V4 && iVersion!=BCV_MANIFEST_VERSION ){
     *pzErr = bcvMprintf(
-        "bad manifest version - expected %d, found %d.",
-        BCV_MANIFEST_VERSION, iVersion
+        "bad manifest version - expected %d or %d, found %d",
+        BCV_MANIFEST_VERSION_V4, BCV_MANIFEST_VERSION, iVersion
     );
     rc = SQLITE_ERROR;
+  }else{
+    nHdr = MANIFEST_HDR_SIZE(iVersion);
+    if( iVersion==BCV_MANIFEST_VERSION ){
+      bV5 = 1;
+      eCompression = (int)bcvGetU32(&a[24]);
+    }
   }
 
   /* Allocate Manifest object */
@@ -699,17 +754,18 @@ int bcvManifestParse(
       pRet->szBlk = nBlocksize;
       pRet->nNamebytes = nNamesize;
       pRet->iMaxDbId = iMaxDbId;
+      pRet->eCompression = eCompression;
       pRet->zETag = zETag;
       pRet->pFree = a;
       pRet->aDb = (ManifestDb*)&pRet[1];
-      pRet->aDelBlk = &a[MANIFEST_HDR_SIZE + MANIFEST_DBHDR_SIZE*nDb];
+      pRet->aDelBlk = &a[nHdr + MANIFEST_DBHDR_SIZE*nDb];
       pRet->nDelBlk = nDelete;
     }
   }
 
   for(iDb=0; rc==SQLITE_OK && iDb<nDb; iDb++){
     ManifestDb *pDb = &pRet->aDb[iDb];
-    int iDbOff = MANIFEST_HDR_SIZE + MANIFEST_DBHDR_SIZE*iDb;
+    int iDbOff = nHdr + MANIFEST_DBHDR_SIZE*iDb;
     int iOff;
     int nEntry;
     int bDel = 0;
@@ -728,24 +784,40 @@ int bcvManifestParse(
 
     if( pDb->nBlkOrig ){
       if( pDb->iParentId ){
+        /* Allocate space for the block and compression byte arrays. */
+        i64 nAlloc = (i64)pDb->nBlkOrig * (nNamesize + bV5);
         pDb->nBlkOrigAlloc = pDb->nBlkOrig;
-        pDb->aBlkOrig = (u8*)bcvMallocRc(&rc, pDb->nBlkOrig*NAMEBYTES(pRet));
+        pDb->aBlkOrig = (u8*)bcvMallocRc(&rc, nAlloc);
         if( pDb->aBlkOrig ){
           int ii;
           ManifestDb *pPar = bcvManifestDbidToDb(pRet, pDb->iParentId);
+          if( bV5 ){
+            pDb->aBlkComp = &pDb->aBlkOrig[pDb->nBlkOrig*nNamesize];
+          }
           if( pPar ){
-            int nCopy = MIN(pPar->nBlkOrig, pDb->nBlkOrig) * nNamesize;
-            memcpy(pDb->aBlkOrig, pPar->aBlkOrig, nCopy);
+            int nCopy = MIN(pPar->nBlkOrig, pDb->nBlkOrig);
+            memcpy(pDb->aBlkOrig, pPar->aBlkOrig, nCopy*nNamesize);
+            if( bV5 ){
+              memcpy(pDb->aBlkComp, pPar->aBlkComp, nCopy);
+            }
           }
           for(ii=0; ii<nEntry; ii++){
             u32 iBlk = bcvGetU32(&a[iOff]);
-            memcpy(&pDb->aBlkOrig[nNamesize*iBlk], &a[iOff+4], nNamesize);
-            iOff += 4 + nNamesize;
+            iOff += 4;
+            if( bV5 ){
+              pDb->aBlkComp[iBlk] = a[iOff];
+              iOff++;
+            }
+            memcpy(&pDb->aBlkOrig[nNamesize*iBlk], &a[iOff], nNamesize);
+            iOff += nNamesize;
           }
         }
         assert( iDb!=nDb-1 || iOff==n );
       }else{
         pDb->aBlkOrig = &a[iOff];
+        if( bV5 ){
+          pDb->aBlkComp = &a[iOff + pDb->nBlkOrig*nNamesize];
+        }
       }
     }
 
@@ -815,37 +887,55 @@ int bcvManifestParseCopy(
   return rc;
 }
 
+/*
+** Serialize manifest object p. If successful, return a pointer to a buffer
+** containing the serialized manifest and set (*pnOut) to its size in bytes.
+** It is the responsibility of the caller to eventually free the buffer
+** using sqlite3_free(). Or, if an OOM error occurs, return NULL.
+**
+** A version 4 manifest is written if p->eCompression is less than zero.
+** Otherwise, a version 5 manifest. If writing a version 5 manifest and
+** the aBlkComp array of a database is NULL, all blocks in that
+** database are written as if they are uncompressed (compression byte 0x00).
+*/
 u8 *bcvManifestCompose(Manifest *p, int *pnOut){
   int rc = SQLITE_OK;             /* Return Code */
   int iDb;
   u8 *aOut = 0;
-  int nOut = 0;
-  int nAlloc = 0;
+  i64 nOut = 0;
+  i64 nAlloc = 0;
+  const int bV5 = (p->eCompression>=0);
+  const int iVersion = bV5 ? BCV_MANIFEST_VERSION : BCV_MANIFEST_VERSION_V4;
+  const int nHdr = MANIFEST_HDR_SIZE(iVersion);
+  const int nName = NAMEBYTES(p);
 
   /* Write the db header */
   nAlloc = 1024*1024;
-  aOut = sqlite3_malloc(nAlloc);
+  aOut = sqlite3_malloc64(nAlloc);
   if( aOut==0 ){
     rc = SQLITE_NOMEM;
   }else{
-    bcvPutU32(&aOut[0], 4);
+    bcvPutU32(&aOut[0], iVersion);
     bcvPutU32(&aOut[4], p->szBlk);
     bcvPutU32(&aOut[8], p->nDb);
     bcvPutU32(&aOut[12], p->nDelBlk);
     bcvPutU32(&aOut[16], p->nNamebytes);
     bcvPutU32(&aOut[20], p->iMaxDbId);
+    if( bV5 ){
+      bcvPutU32(&aOut[24], (u32)p->eCompression);
+    }
   }
 
   /* Write the delete block array */
   if( rc==SQLITE_OK ){
-    int iOff = MANIFEST_HDR_SIZE + p->nDb * MANIFEST_DBHDR_SIZE;
-    int nReq = (p->nNamebytes + sizeof(u64))*p->nDelBlk;
+    i64 iOff = nHdr + (i64)p->nDb * MANIFEST_DBHDR_SIZE;
+    i64 nReq = (i64)(nName + sizeof(u64))*p->nDelBlk;
 
     nOut = iOff + nReq;
     if( nOut>nAlloc ){
       u8 *aNew = 0;
       while( nOut>nAlloc ) nAlloc = nAlloc*2;
-      aNew = sqlite3_realloc(aOut, nAlloc);
+      aNew = sqlite3_realloc64(aOut, nAlloc);
       if( aNew==0 ){
         rc = SQLITE_NOMEM;
       }else{
@@ -860,22 +950,22 @@ u8 *bcvManifestCompose(Manifest *p, int *pnOut){
   /* Write the db header and array of blocks for each database. */
   for(iDb=0; rc==SQLITE_OK && iDb<p->nDb; iDb++){
     int nEntry = 0;
-    int iHdrOff = MANIFEST_HDR_SIZE + iDb*MANIFEST_DBHDR_SIZE;
+    int iHdrOff = nHdr + iDb*MANIFEST_DBHDR_SIZE;
     ManifestDb *pDb = &p->aDb[iDb];
     ManifestDb *pPar = 0;
-    int nMax;
-    int iDbOff = nOut;
+    i64 nMax;
+    i64 iDbOff = nOut;
     u32 nBlkOrig = pDb->nBlkOrig | (pDb->nBlkLocal==0 ? 0x80000000 : 0);
 
     if( pDb->iParentId ){
       pPar = bcvManifestDbidToDb(p, pDb->iParentId);
     }
 
-    nMax = nOut + pDb->nBlkOrig * (NAMEBYTES(p) + (pPar ? 4 : 0));
+    nMax = nOut + (i64)pDb->nBlkOrig * (nName + (pPar ? 4 : 0) + bV5);
     if( nMax>nAlloc ){
       u8 *aNew = 0;
       while( nMax>nAlloc ) nAlloc = nAlloc*2;
-      aNew = sqlite3_realloc(aOut, nAlloc);
+      aNew = sqlite3_realloc64(aOut, nAlloc);
       if( aNew==0 ){
         rc = SQLITE_NOMEM;
         break;
@@ -887,26 +977,40 @@ u8 *bcvManifestCompose(Manifest *p, int *pnOut){
     if( pPar ){
       int iBlk;
       for(iBlk=0; iBlk<pDb->nBlkOrig; iBlk++){
-        int iBOff = iBlk*NAMEBYTES(p);
+        int iBOff = iBlk*nName;
+        u8 eComp = bcvManifestBlkComp(pDb, iBlk);
         if( iBlk>=pPar->nBlkOrig 
-         || memcmp(&pDb->aBlkOrig[iBOff], &pPar->aBlkOrig[iBOff], NAMEBYTES(p))
+         || memcmp(&pDb->aBlkOrig[iBOff], &pPar->aBlkOrig[iBOff], nName)
+         || (bV5 && eComp!=bcvManifestBlkComp(pPar, iBlk))
         ){
           bcvPutU32(&aOut[nOut], iBlk);
-          memcpy(&aOut[nOut+4], &pDb->aBlkOrig[iBOff], NAMEBYTES(p));
+          nOut += 4;
+          if( bV5 ){
+            aOut[nOut++] = eComp;
+          }
+          memcpy(&aOut[nOut], &pDb->aBlkOrig[iBOff], nName);
+          nOut += nName;
           nEntry++;
-          nOut += 4 + NAMEBYTES(p);
         }
       }
     }else{
-      int nByte = NAMEBYTES(p) * pDb->nBlkOrig;
+      i64 nByte = (i64)nName * pDb->nBlkOrig;
       memcpy(&aOut[nOut], pDb->aBlkOrig, nByte);
       nOut += nByte;
+      if( bV5 ){
+        if( pDb->aBlkComp ){
+          memcpy(&aOut[nOut], pDb->aBlkComp, pDb->nBlkOrig);
+        }else{
+          memset(&aOut[nOut], 0, pDb->nBlkOrig);
+        }
+        nOut += pDb->nBlkOrig;
+      }
     }
 
     bcvPutU32(&aOut[iHdrOff+0], pDb->iDbId);
     bcvPutU32(&aOut[iHdrOff+4], (pPar ? pDb->iParentId : 0));
     bcvPutU32(&aOut[iHdrOff+8], pDb->iVersion);
-    bcvPutU32(&aOut[iHdrOff+12], iDbOff);
+    bcvPutU32(&aOut[iHdrOff+12], (u32)iDbOff);
     bcvPutU32(&aOut[iHdrOff+16], nBlkOrig);
     bcvPutU32(&aOut[iHdrOff+20], nEntry);
     memset(&aOut[iHdrOff+24], 0, 128);
@@ -918,7 +1022,7 @@ u8 *bcvManifestCompose(Manifest *p, int *pnOut){
     nOut = 0;
     aOut = 0;
   }
-  *pnOut = nOut;
+  *pnOut = (int)nOut;
   return aOut;
 }
 
@@ -978,6 +1082,33 @@ void bcvManifestExpand(int *pRc, Manifest **ppMan, int nExtra){
 }
 
 /*
+** Set the aBlkOrig and aBlkComp arrays of database pTo to copies of 
+** the first nBlk entries of the same arrays of database pFrom.
+*/
+void bcvManifestDbCopyBlocks(
+  int *pRc, 
+  int nName, 
+  ManifestDb *pTo, 
+  ManifestDb *pFrom,
+  int nBlk
+){
+  if( *pRc==SQLITE_OK && nBlk>0 ){
+    int bComp = (pFrom->aBlkComp!=0);
+    u8 *aNew = (u8*)bcvMallocRc(pRc, (i64)nBlk * (nName + bComp));
+    if( aNew ){
+      memcpy(aNew, pFrom->aBlkOrig, (i64)nBlk*nName);
+      pTo->aBlkOrig = aNew;
+      pTo->aBlkComp = 0;
+      if( bComp ){
+        pTo->aBlkComp = &aNew[(i64)nBlk*nName];
+        memcpy(pTo->aBlkComp, pFrom->aBlkComp, nBlk);
+      }
+      pTo->nBlkOrig = pTo->nBlkOrigAlloc = nBlk;
+    }
+  }
+}
+
+/*
 ** Make a copy of the Manifest object passed as the only argument.
 */
 int bcvManifestDup(Manifest *p, Manifest **ppNew){
@@ -993,6 +1124,7 @@ int bcvManifestDup(Manifest *p, Manifest **ppNew){
     pNew->szBlk = p->szBlk;
     pNew->nNamebytes = p->nNamebytes;
     pNew->iMaxDbId = p->iMaxDbId;
+    pNew->eCompression = p->eCompression;
     pNew->aDb = (ManifestDb*)&pNew[1];
     for(i=0; rc==SQLITE_OK && i<pNew->nDb; i++){
       ManifestDb *pNewDb = &pNew->aDb[i];
@@ -1007,14 +1139,9 @@ int bcvManifestDup(Manifest *p, Manifest **ppNew){
            || pOldDb->aBlkLocal==pOldDb->aBlkOrig
       );
       pNewDb->nBlkOrig = pOldDb->nBlkOrig;
-      if( pOldDb->nBlkOrig>0 ){
-        int nByte = pOldDb->nBlkOrig*NAMEBYTES(p);
-        pNewDb->aBlkOrig = (u8*)bcvMallocRc(&rc, nByte);
-        if( rc==SQLITE_OK ){
-          memcpy(pNewDb->aBlkOrig, pOldDb->aBlkOrig, nByte);
-          pNewDb->nBlkOrigAlloc = pNewDb->nBlkOrig = pOldDb->nBlkOrig;
-        }
-      }
+      bcvManifestDbCopyBlocks(
+          &rc, NAMEBYTES(p), pNewDb, pOldDb, pOldDb->nBlkOrig
+      );
       if( pOldDb->nBlkLocalAlloc ){
         int nByte = pOldDb->nBlkLocal*NAMEBYTES(p);
         pNewDb->aBlkLocal = (u8*)bcvMallocRc(&rc, nByte);
@@ -1217,6 +1344,7 @@ int sqlite3_bcv_open(
     pNew->nRequest = 1;
     pNew->nHttpTimeout = BCV_DEFAULT_HTTPTIMEOUT;
     pNew->bFindOrphans = BCV_DEFAULT_FINDORPHANS;
+    pNew->nCompThreshold = BCV_DEFAULT_COMP_THRESHOLD;
     pNew->errCode = bcvContainerOpen(
         zMod, zUser, zKey, zCont, &pNew->pCont, &pNew->zErrmsg
     );
@@ -1320,6 +1448,10 @@ int sqlite3_bcv_config(sqlite3_bcv *p, int eOp, ...){
         p->bFindOrphans = va_arg(ap, int);
         break;
       }
+      case SQLITE_BCVCONFIG_COMP_THRESHOLD: {
+        p->nCompThreshold = va_arg(ap, int);
+        break;
+      }
       default:
         rc = SQLITE_MISUSE;
         break;
@@ -1327,6 +1459,189 @@ int sqlite3_bcv_config(sqlite3_bcv *p, int eOp, ...){
   }
 
   va_end(ap);
+  return rc;
+}
+
+/*
+** Return the size of the buffer required by bcvBlockEncode() to compress
+** blocks for a container with default compression algorithm eDefault
+** (Manifest.eCompression), and blocks of szBlk bytes. Or, if blocks will 
+** not be compressed when they are uploaded to the container, return 0.
+*/
+int bcvEncodeBufferSize(int eDefault, int szBlk){
+  if( eDefault>0 && eDefault<=0x7F
+   && bcvCompIsCompressed((u8)eDefault)==BCV_ISCOMPRESSED_OK
+  ){
+    return bcvCompBound((u8)eDefault, szBlk);
+  }
+  return 0;
+}
+
+/*
+** Prepare the nRaw byte block in buffer aRaw[] for upload to a container
+** with default compression algorithm eDefault (Manifest.eCompression).
+** Buffer aBuf[] must be at least bcvEncodeBufferSize(eDefault, nRaw) bytes
+** in size.
+**
+** If successful, SQLITE_OK is returned, (*paOut) and (*pnOut) are set to
+** point to the buffer to upload, and (*peComp) set to the compression byte
+** to store in the manifest for the block. (*paOut) is set to either aRaw
+** or aBuf. If an error occurs, an SQLite error code is returned.
+**
+** If the container's default compression algorithm is not supported,
+** the block is stored uncompressed with compression byte 0x00. If the
+** block is compressed, but the compressed size is not less than nThreshold
+** percent of the uncompressed size, then it is stored uncompressed with 
+** the MSB of the compression byte set.
+*/
+int bcvBlockEncode(
+  int eDefault,                   /* Container default compression */
+  int nThreshold,                 /* Compression threshold (percent) */
+  const u8 *aRaw, int nRaw,       /* Uncompressed block */
+  u8 *aBuf,                       /* Buffer to use for compressed data */
+  const u8 **paOut, int *pnOut,   /* OUT: Buffer to upload */
+  u8 *peComp                      /* OUT: Compression byte for manifest */
+){
+  int nBuf = bcvEncodeBufferSize(eDefault, nRaw);
+
+  *paOut = aRaw;
+  *pnOut = nRaw;
+  *peComp = SQLITE_BCVCOMPRESS_NONE;
+  if( nBuf>0 ){
+    u8 eComp = (u8)eDefault;
+    int nComp = nBuf;
+    int rc = bcvCompCompress(eComp, aBuf, &nComp, aRaw, nRaw);
+    if( rc!=SQLITE_OK ) return rc;
+    if( ((i64)100 * nComp)>=((i64)nThreshold * nRaw) ){
+      *peComp = 0x80 | eComp;
+    }else{
+      *paOut = aBuf;
+      *pnOut = nComp;
+      *peComp = eComp;
+    }
+  }
+  return SQLITE_OK;
+}
+
+/*
+** Wrapper around bcvBlockEncode() that uses the compression threshold
+** configured for handle p, and leaves an error message in p if an error
+** occurs.
+*/
+static int bcvHandleBlockEncode(
+  sqlite3_bcv *p,                 /* For threshold and error messages */
+  int eDefault,                   /* Container default compression */
+  const u8 *aRaw, int nRaw,       /* Uncompressed block */
+  u8 *aBuf,                       /* Buffer to use for compressed data */
+  const u8 **paOut, int *pnOut,   /* OUT: Buffer to upload */
+  u8 *peComp                      /* OUT: Compression byte for manifest */
+){
+  int rc = bcvBlockEncode(
+      eDefault, p->nCompThreshold, aRaw, nRaw, aBuf, paOut, pnOut, peComp
+  );
+  if( rc!=SQLITE_OK ){
+    bcvApiError(p, rc, "failed to compress block (%d)", rc);
+  }
+  return rc;
+}
+
+/*
+** Buffer aData[], size nData bytes, contains block aBlk (nName bytes) as 
+** downloaded from cloud storage. eComp is the compression byte for the 
+** block from the manifest. This function checks that the block is the 
+** expected size (szBlk bytes) and uncompresses it if required.
+**
+** If successful, SQLITE_OK is returned and (*paOut) set to point to a
+** buffer containing the szBlk byte uncompressed block. This is either 
+** aData, or aBuf, which must be at least szBlk bytes in size. 
+**
+** Or, if an error occurs, an SQLite error code is returned. In this case, 
+** if pzErr is not NULL, (*pzErr) may be set to point to an English language
+** error message, which it is the responsibility of the caller to eventually
+** free using sqlite3_free(). The error codes returned are:
+**
+**   SQLITE_CORRUPT: block is the wrong size, or cannot be uncompressed.
+**   SQLITE_ERROR:   block uses an unsupported compression algorithm.
+**   SQLITE_NOMEM:   OOM error.
+*/
+int bcvBlockDecode(
+  int nName, const u8 *aBlk,      /* Block id (for error messages) */
+  int szBlk,                      /* Expected uncompressed size */
+  u8 eComp,                       /* Compression byte from manifest */
+  const u8 *aData, int nData,     /* Block as downloaded */
+  u8 *aBuf,                       /* Buffer for uncompressed data */
+  const u8 **paOut,               /* OUT: Uncompressed block */
+  char **pzErr                    /* OUT: Error message (or NULL) */
+){
+  char zName[BCV_MAX_FSNAMEBYTES];
+  char *zErr = 0;
+  int rc = SQLITE_OK;
+  switch( bcvCompIsCompressed(eComp) ){
+    case BCV_ISCOMPRESSED_NONE:
+      if( nData!=szBlk ){
+        rc = SQLITE_CORRUPT;
+        bcvBlockidToText(nName, aBlk, zName);
+        zErr = sqlite3_mprintf("block %s is %d bytes in size - expected %d", 
+            zName, nData, szBlk
+        );
+      }
+      *paOut = aData;
+      break;
+
+    case BCV_ISCOMPRESSED_OK:
+      rc = bcvCompUncompress(eComp, aBuf, szBlk, aData, nData);
+      if( rc!=SQLITE_OK ){
+        if( rc==SQLITE_ERROR ) rc = SQLITE_CORRUPT;
+        if( rc==SQLITE_CORRUPT ){
+          bcvBlockidToText(nName, aBlk, zName);
+          zErr = sqlite3_mprintf("failed to uncompress block %s", zName);
+        }
+      }
+      *paOut = aBuf;
+      break;
+
+    default:
+      rc = SQLITE_ERROR;
+      bcvBlockidToText(nName, aBlk, zName);
+      zErr = sqlite3_mprintf(
+          "block %s uses unsupported compression algorithm %d", 
+          zName, (int)(eComp & 0x7F)
+      );
+      break;
+  }
+  if( pzErr ){
+    *pzErr = zErr;
+  }else{
+    sqlite3_free(zErr);
+  }
+  return rc;
+}
+
+/*
+** Wrapper around bcvBlockDecode() that leaves an error message in handle
+** p if an error occurs.
+*/
+static int bcvHandleBlockDecode(
+  sqlite3_bcv *p,                 /* For error messages */
+  Manifest *pMan,                 /* Manifest (for block and name sizes) */
+  const u8 *aBlk,                 /* Block id (for error messages) */
+  u8 eComp,                       /* Compression byte from manifest */
+  const u8 *aData, int nData,     /* Block as downloaded */
+  u8 *aBuf,                       /* Buffer for uncompressed data */
+  const u8 **paOut                /* OUT: Uncompressed block */
+){
+  char *zErr = 0;
+  int rc = bcvBlockDecode(NAMEBYTES(pMan), aBlk, pMan->szBlk, 
+      eComp, aData, nData, aBuf, paOut, &zErr
+  );
+  if( rc!=SQLITE_OK ){
+    if( zErr ){
+      bcvApiError(p, rc, "%s", zErr);
+    }else{
+      bcvApiError(p, rc, "out of memory");
+    }
+  }
+  sqlite3_free(zErr);
   return rc;
 }
 
@@ -1343,11 +1658,13 @@ struct BcvUpload {
   Manifest *pMan;                 /* Manifest to update */
   ManifestDb *pDb;                /* Manifest db being uploaded */
   ManifestHash *pMHash;           /* Hash of existing blocks (or NULL) */
+  int nEncode;                    /* bcvEncodeBufferSize() for this upload */
 };
 
 struct BcvUploadJob {
   BcvUpload *pUpload;             /* Upload context */
   u8 *aSpace;                     /* szBlock bytes of space for this job */
+  u8 *aEncode;                    /* nEncode bytes of space for this job */
 };
 
 static void bcvUploadOneBlock(BcvUploadJob *pJob);
@@ -1372,6 +1689,13 @@ static void bcvUploadOneBlockCb(void *pApp, int rc, char *zErr){
   }
 }
 
+/*
+** Start uploading a block using job pJob. If it turns out that the block 
+** selected for upload does not need to be uploaded (because an existing
+** block can be shared instead) and no upload is started, set (*pbRetry)
+** to true before returning. Or, if an upload is actually started or
+** an error occurs, set (*pbRetry) to 0.
+*/
 static void bcvUploadOneBlockRetry(BcvUploadJob *pJob, int *pbRetry){
   BcvUpload *p = pJob->pUpload;
   sqlite3_bcv *pBcv = p->pBcv;
@@ -1384,15 +1708,18 @@ static void bcvUploadOneBlockRetry(BcvUploadJob *pJob, int *pbRetry){
     int nByte;                         /* Bytes to read from file */
     int rc;
     u8 *aBlk;
+    const u8 *aPut = 0;                /* Buffer to upload */
+    int nPut = 0;                      /* Size of aPut[] in bytes */
+    u8 eComp = 0;                      /* Compression byte for block */
     i64 iBlk = (i64)(p->iNextBlock++);
     i64 iReadOff;                      /* Offset to read block from */
 
     /* If all blocks have either been uploaded or are being uploaded. */
     if( iBlk>=p->nBlock ) return;
 
-    aBlk = &pDb->aBlkLocal[iBlk * NAMEBYTES(pMan)];
-
-    /* Read the block of data from the file into a buffer */ 
+    /* Read the block of data from the file into a buffer. If this is the
+    ** last block of the file and the file-size is not an exact multiple
+    ** of the block-size, pad the block with zeroes.  */ 
     nByte = pMan->szBlk;
     iReadOff = iBlk*pMan->szBlk;
     if( iReadOff+nByte>p->szFile ){
@@ -1410,13 +1737,18 @@ static void bcvUploadOneBlockRetry(BcvUploadJob *pJob, int *pbRetry){
     }
 
     /* Check if an existing block can be used. */
+    aBlk = &pDb->aBlkLocal[iBlk * NAMEBYTES(pMan)];
     if( NAMEBYTES(pMan)>=BCV_MIN_MD5_NAMEBYTES ){
       u8 *pMatch;
       assert( MD5_DIGEST_LENGTH==16 );
       MD5(aSpace, pMan->szBlk, aBlk);
-      pMatch = bcvMHashQuery(p->pMHash, aBlk, MD5_DIGEST_LENGTH);
+      pMatch = bcvMHashQuery(p->pMHash, aBlk, MD5_DIGEST_LENGTH, &eComp);
       if( pMatch ){
+        /* An existing block with the same content. Reuse it, along with
+        ** its compression byte - which may not match the container 
+        ** default.  */
         memcpy(aBlk, pMatch, NAMEBYTES(pMan));
+        if( pDb->aBlkComp ) pDb->aBlkComp[iBlk] = eComp;
         *pbRetry = 1;
         return;
       }else{
@@ -1428,9 +1760,16 @@ static void bcvUploadOneBlockRetry(BcvUploadJob *pJob, int *pbRetry){
       sqlite3_randomness(NAMEBYTES(pMan), aBlk);
     }
 
+    /* Compress the block, if required. */
+    rc = bcvHandleBlockEncode(pBcv, pMan->eCompression, 
+        aSpace, pMan->szBlk, pJob->aEncode, &aPut, &nPut, &eComp
+    );
+    if( rc!=SQLITE_OK ) return;
+    if( pDb->aBlkComp ) pDb->aBlkComp[iBlk] = eComp;
+
     bcvBlockidToText(NAMEBYTES(pMan), aBlk, aBuf);
     rc = bcvDispatchPut(
-        pBcv->pDisp, pBcv->pCont, aBuf, 0, aSpace, pMan->szBlk, 
+        pBcv->pDisp, pBcv->pCont, aBuf, 0, aPut, nPut, 
         pJob, bcvUploadOneBlockCb
     );
     if( rc!=SQLITE_OK ){
@@ -1533,20 +1872,34 @@ int sqlite3_bcv_upload(
   pDb->iDbId = iDbId;
   memcpy(pDb->zDName, zRemote, nRemote);
   if( up.nBlock>0 ){
+    /* For a version 5 container, the array of compression bytes is
+    ** allocated as part of the same buffer as the array of block ids. */
+    int bV5 = (pMan->eCompression>=0);
     assert( pDb->nBlkLocalAlloc==0 );
     pDb->nBlkLocal = pDb->nBlkLocalAlloc = up.nBlock;
-    pDb->aBlkLocal = (u8*)bcvMalloc(up.nBlock * NAMEBYTES(pMan));
+    pDb->aBlkLocal = (u8*)bcvMallocRc(&rc, 
+        (i64)up.nBlock * (NAMEBYTES(pMan) + bV5)
+    );
+    if( pDb->aBlkLocal && bV5 ){
+      pDb->aBlkComp = &pDb->aBlkLocal[up.nBlock * NAMEBYTES(pMan)];
+    }
   }
-  if( NAMEBYTES(pMan)>=BCV_MIN_MD5_NAMEBYTES ){
+  up.nEncode = bcvEncodeBufferSize(pMan->eCompression, pMan->szBlk);
+  if( rc==SQLITE_OK && NAMEBYTES(pMan)>=BCV_MIN_MD5_NAMEBYTES ){
     rc = bcvMHashBuild(pMan, 0, 0, &up.pMHash);
   }
 
   if( rc==SQLITE_OK ){
-    int nByte = (sizeof(BcvUploadJob)+pMan->szBlk) *nJob;
-    aJob = (BcvUploadJob*)bcvMallocZero(nByte);
+    i64 nPerJob = (i64)pMan->szBlk + up.nEncode;
+    i64 nByte = (sizeof(BcvUploadJob)+nPerJob) * nJob;
+    aJob = (BcvUploadJob*)bcvMallocRc(&rc, nByte);
+  }
+  if( rc==SQLITE_OK ){
+    i64 nPerJob = (i64)pMan->szBlk + up.nEncode;
     for(i=0; i<nJob; i++){
       aJob[i].pUpload = &up;
-      aJob[i].aSpace = &((u8*)&aJob[nJob])[pMan->szBlk*i];
+      aJob[i].aSpace = &((u8*)&aJob[nJob])[nPerJob*i];
+      aJob[i].aEncode = &aJob[i].aSpace[pMan->szBlk];
       bcvUploadOneBlock(&aJob[i]);
     }
 
@@ -1607,7 +1960,7 @@ int bcvDeleteBlocks(Manifest *pMan, int iDb){
 
     for(i=0; i<pDb->nBlkOrig; i++){
       u8 *pDel = &pDb->aBlkOrig[i*nName];
-      if( 0==bcvMHashQuery(pMH, pDel, nName) ){
+      if( 0==bcvMHashQuery(pMH, pDel, nName, 0) ){
         assert( GCENTRYBYTES(pMan)==nName+8 );
         memcpy(&aGC[(pMan->nDelBlk+iGC)*GCENTRYBYTES(pMan)], pDel, nName);
         memcpy(&aGC[(pMan->nDelBlk+iGC)*GCENTRYBYTES(pMan)+nName], aTime, 8);
@@ -1664,13 +2017,16 @@ int sqlite3_bcv_copy(
       pTo->iDbId = ++pMan->iMaxDbId;
       memcpy(pTo->zDName, zTo, bcvStrlen(zTo));
 
-      pTo->nBlkOrigAlloc = pTo->nBlkLocal = pTo->nBlkOrig = pFrom->nBlkOrig;
-      pTo->aBlkOrig = (u8*)bcvMallocZero(pTo->nBlkOrig*NAMEBYTES(pMan));
+      bcvManifestDbCopyBlocks(
+          &p->errCode, NAMEBYTES(pMan), pTo, pFrom, pFrom->nBlkOrig
+      );
+      pTo->nBlkLocal = pTo->nBlkOrig;
       pTo->aBlkLocal = pTo->aBlkOrig;
-      memcpy(pTo->aBlkOrig, pFrom->aBlkOrig, pTo->nBlkOrig*NAMEBYTES(pMan));
       pTo->iVersion++;
       pTo->iParentId = pFrom->iDbId;
-      bcvManifestUploadParsed(p, pMan);
+      if( p->errCode==SQLITE_OK ){
+        bcvManifestUploadParsed(p, pMan);
+      }
     }
   }
 
@@ -1688,6 +2044,7 @@ struct BcvDownload {
   int iNextBlock;                 /* Next block to upload */
   int nDone;                      /* Total blocks finished */
   u8 *aSpace;                     /* Buffer large enough for one block */
+  u8 *aDecode;                    /* Buffer for uncompressed blocks */
   Manifest *pMan;
   ManifestDb *pDb;                /* Manifest db being downloaded */
 };
@@ -1727,8 +2084,8 @@ static void bcvDownloadProgress(BcvDownload *p){
   }
 }
 
-static void bcvDownloadOneFile(BcvDownloadJob *);
-static void bcvDownloadOneFileCb(
+static void bcvDownloadOneBlock(BcvDownloadJob *);
+static void bcvDownloadOneBlockCb(
   void *pApp, 
   int errCode, 
   char *zETag, 
@@ -1745,22 +2102,43 @@ static void bcvDownloadOneFileCb(
     if( errCode==HTTP_PRECONDITION_FAILED ){
       assert( p->szInit>=iOff+nData );
       bcvDownloadProgress(p);
-      bcvDownloadOneFile(pJob);
+      bcvDownloadOneBlock(pJob);
     }else if( errCode!=SQLITE_OK ){
       bcvApiError(pBcv, errCode, "%s", zETag);
     }else{
-      int rc = bcvWritefile(p->pFd, aData, nData, iOff);
+      ManifestDb *pDb = p->pDb;
+      Manifest *pMan = p->pMan;
+      const u8 *aBlk = &pDb->aBlkLocal[NAMEBYTES(pMan)*pJob->iBlk];
+      u8 eComp = bcvManifestBlkComp(pDb, pJob->iBlk);
+      const u8 *aWrite = 0;
+      int rc = SQLITE_OK;
+
+      if( bcvCompIsCompressed(eComp)==BCV_ISCOMPRESSED_OK 
+       && p->aDecode==0 
+      ){
+        p->aDecode = (u8*)bcvMallocRc(&rc, pMan->szBlk);
+        if( rc!=SQLITE_OK ){
+          bcvApiError(pBcv, rc, "out of memory");
+          return;
+        }
+      }
+      rc = bcvHandleBlockDecode(
+          pBcv, pMan, aBlk, eComp, aData, nData, p->aDecode, &aWrite
+      );
+      if( rc!=SQLITE_OK ) return;
+
+      rc = bcvWritefile(p->pFd, aWrite, pMan->szBlk, iOff);
       if( rc!=SQLITE_OK ){
         bcvApiError(pBcv, rc&0xFF, "");
       }else{
         bcvDownloadProgress(p);
-        bcvDownloadOneFile(pJob);
+        bcvDownloadOneBlock(pJob);
       }
     }
   }
 }
 
-static void bcvDownloadOneFile(BcvDownloadJob *pJob){
+static void bcvDownloadOneBlock(BcvDownloadJob *pJob){
   BcvDownload *p = pJob->pDownload;
   sqlite3_bcv *pBcv = p->pBcv;
   Manifest *pMan = p->pMan;          /* Manifest to download from */
@@ -1771,10 +2149,25 @@ static void bcvDownloadOneFile(BcvDownloadJob *pJob){
   u8 aMd5[MD5_DIGEST_LENGTH];
   const void *pMd5 = 0;
 
+  /* This block sets iBlk and, optionally, pMd5.
+  **
+  ** Set iBlk to the index of the next block to download. If there is
+  ** no next block to download, return early. Also, if the file being
+  ** clobbered is already large enough to contain data for this block,
+  ** load the data into memory and compute the MD5 sum of it. If
+  ** comparing it to the name of the block shows that the content already
+  ** in the file is the same as that in cloud storage, move on to the
+  ** next block.
+  **
+  ** Or, if the block name cannot be used to check its content (because
+  ** it is too small), leave pMd5 pointed to the buffer containing the
+  ** MD5 sum so that it can be checked against the cloud storage content 
+  ** as part of the GET request below. */
   while( pBcv->errCode==SQLITE_OK ){
     iBlk = p->iNextBlock++;
     if( iBlk>=p->pDb->nBlkLocal ) return;
     aBlk = &p->pDb->aBlkLocal[NAMEBYTES(pMan)*iBlk];
+    pMd5 = 0;
 
     if( (iBlk+1)*szBlk<=p->szInit ){
       if( p->aSpace==0 ){
@@ -1810,10 +2203,26 @@ static void bcvDownloadOneFile(BcvDownloadJob *pJob){
 
   if( pBcv->errCode==SQLITE_OK ){
     char aBuf[BCV_MAX_FSNAMEBYTES];
+    u8 eComp = bcvManifestBlkComp(p->pDb, iBlk);
+    switch( bcvCompIsCompressed(eComp) ){
+      case BCV_ISCOMPRESSED_OK:
+        /* The MD5 of a compressed block in cloud storage is not the MD5 of 
+        ** the uncompressed data in the local file. So the conditional 
+        ** request cannot be used.  */
+        pMd5 = 0;
+        break;
+      case BCV_ISCOMPRESSED_UNKNOWN:
+        bcvBlockidToText(NAMEBYTES(pMan), aBlk, aBuf);
+        bcvApiError(pBcv, SQLITE_ERROR, 
+            "block %s uses unsupported compression algorithm %d", 
+            aBuf, (int)(eComp & 0x7F)
+        );
+        return;
+    }
     bcvBlockidToText(NAMEBYTES(pMan), aBlk, aBuf);
     pJob->iBlk = iBlk;
     rc = bcvDispatchFetch(
-        pBcv->pDisp, pBcv->pCont, aBuf, 0, pMd5, pJob, bcvDownloadOneFileCb
+        pBcv->pDisp, pBcv->pCont, aBuf, 0, pMd5, pJob, bcvDownloadOneBlockCb
     );
     if( rc!=SQLITE_OK ){
       pBcv->errCode = rc;
@@ -1878,7 +2287,7 @@ int sqlite3_bcv_download(
   for(i=0; i<nJob; i++){
     aJob[i].pDownload = &dl;
     aJob[i].iBlk = -1;
-    bcvDownloadOneFile(&aJob[i]);
+    bcvDownloadOneBlock(&aJob[i]);
   }
 
   rc = bcvDispatchRunAll(p->pDisp);
@@ -1889,6 +2298,7 @@ int sqlite3_bcv_download(
 download_out:
   sqlite3_free(aJob);
   sqlite3_free(dl.aSpace);
+  sqlite3_free(dl.aDecode);
   bcvCloseLocal(dl.pFd);
   bcvManifestFree(pMan);
   return p->errCode;
@@ -2078,7 +2488,7 @@ static int bcvfsListCb(void *pArg, int rc, char *zFile){
 
       /* Set eBlock */
       eBlock = !bcvfsNameToBlockid(pCtx->pMan, zFile, aBlk);
-      if( eBlock && bcvMHashQuery(pCtx->pHash, aBlk, nName)==0 ){
+      if( eBlock && bcvMHashQuery(pCtx->pHash, aBlk, nName, 0)==0 ){
         eBlock = 2;
       }
       bcvExtraLog(pCtx->p, "cleanup: file \"%s\" is %s", zFile,
@@ -2348,6 +2758,7 @@ int sqlite3_bcv_create(sqlite3_bcv *p, int szName, int szBlock){
   memset(&man, 0, sizeof(man));
   man.szBlk = szBlock;
   man.nNamebytes = szName;
+  man.eCompression = -1;          /* Always create version 4 containers */
 
   /* First just try to upload the manifest. If that fails for any reason,
   ** assume the container does not exist and attempt to create it. If that
@@ -2391,6 +2802,552 @@ int sqlite3_bcv_create(sqlite3_bcv *p, int szName, int szBlock){
   }
 
   return p->errCode;
+}
+
+/*
+** There is one instance of this structure for each distinct block still
+** in use by a manifest at the start of an sqlite3_bcv_compression(ALL) 
+** operation.
+**
+**   aOld:
+**     Copy of the original name of the block.
+**
+**   aNew:
+**     Name of the block to use after it has been downloaded, recompressed,
+**     and uploaded. Or, if this is the same as aOld[], it indicates that the
+**     block itself does not need to be downloaded and transformed. All that
+**     needs to be done in this case is to update the compression byte for 
+**     the block.
+**
+**   eOld:
+**     Old value of the compression byte.
+**
+**   eNew:
+**     New value of the compression byte.
+*/
+typedef struct BcvRecompressBlk BcvRecompressBlk;
+struct BcvRecompressBlk {
+  u8 aOld[BCV_MAX_NAMEBYTES];     /* Old block id */
+  u8 aNew[BCV_MAX_NAMEBYTES];     /* New block id (or copy of aOld[]) */
+  u8 eOld;                        /* Old compression byte */
+  u8 eNew;                        /* New compression byte */
+};
+
+/*
+** Context object for a single COMPRESS_ALL operation.
+*/
+typedef struct BcvRecompress BcvRecompress;
+struct BcvRecompress {
+  sqlite3_bcv *pBcv;              /* BCV handle */
+  Manifest *pMan;                 /* Manifest being updated */
+  int eTarget;                    /* New compression algorithm */
+  int nBlk;                       /* Number of entries in aBlk[] */
+  BcvRecompressBlk *aBlk;         /* Blocks that may need to be rewritten */
+  int nHash;                      /* Number of slots in aHash[] */
+  int *aHash;                     /* Hash of aBlk[] (indexes + 1) by aOld */
+  int iNext;                      /* Next entry of aBlk[] to process */
+  int nDone;                      /* Number of entries in aBlk[] processed */
+};
+
+/*
+** One instance of the following structure for each allowed concurrent
+** download/upload.
+*/
+typedef struct BcvRecompressJob BcvRecompressJob;
+struct BcvRecompressJob {
+  BcvRecompress *pRe;             /* Context object */
+  BcvRecompressBlk *pBlk;         /* Block currently being processed */
+  u8 *aRaw;                       /* szBlk bytes of space for raw data */
+  u8 *aEncode;                    /* Space for compressed data */
+};
+
+/*
+** Search the hash table of BcvRecompress object p for block aBlk. Return
+** a pointer to the hash slot that either contains the entry for aBlk, or
+** is empty and would contain it if it were added.
+*/
+static int *bcvRecompressHashSlot(BcvRecompress *p, const u8 *aBlk){
+  int nName = NAMEBYTES(p->pMan);
+  int iSlot = bcvGetU32(&aBlk[4]) % p->nHash;
+  while( p->aHash[iSlot] ){
+    BcvRecompressBlk *pBlk = &p->aBlk[p->aHash[iSlot]-1];
+    if( memcmp(pBlk->aOld, aBlk, nName)==0 ) break;
+    iSlot = (iSlot+1) % p->nHash;
+  }
+  return &p->aHash[iSlot];
+}
+
+/*
+** Return true if a block with compression byte eComp must be downloaded
+** and processed in order for it to use compression algorithm eTarget.
+** If the block is compressed using an unsupported algorithm, return -1.
+*/
+static int bcvRecompressRequired(u8 eComp, int eTarget){
+  int eIs = bcvCompIsCompressed(eComp);
+  if( eTarget==SQLITE_BCVCOMPRESS_NONE ){
+    /* Blocks that are already stored uncompressed (either because they 
+    ** are 0x00, or because they have the MSB set) do not need to be
+    ** modified. */
+    if( eIs==BCV_ISCOMPRESSED_NONE ) return 0;
+  }else{
+    /* If the lower 7 bits of the compression byte match the target, then
+    ** do not recompress the block.  */
+    if( (eComp & 0x7F)==eTarget ) return 0;
+  }
+  if( eIs==BCV_ISCOMPRESSED_UNKNOWN ) return -1;
+  return 1;
+}
+
+static void bcvRecompressNext(BcvRecompressJob *pJob);
+
+/*
+** Invoke the progress-handler callback, if any, for a COMPRESS_ALL 
+** operation.
+*/
+static void bcvRecompressProgress(BcvRecompress *p){
+  sqlite3_bcv *pBcv = p->pBcv;
+  p->nDone++;
+  if( pBcv->xProgress && pBcv->errCode==SQLITE_OK ){
+    i64 nByte = (i64)p->nDone * p->pMan->szBlk;
+    i64 nTotal = (i64)p->nBlk * p->pMan->szBlk;
+    if( pBcv->xProgress(pBcv->pProgressCtx, nByte, nTotal) ){
+      bcvApiError(pBcv, SQLITE_ABORT, "abort requested by progress callback");
+    }
+  }
+}
+
+/*
+** Callback invoked when a transformed block has been uploaded.
+*/
+static void bcvRecompressPutCb(void *pApp, int rc, char *zErr){
+  BcvRecompressJob *pJob = (BcvRecompressJob*)pApp;
+  sqlite3_bcv *pBcv = pJob->pRe->pBcv;
+  if( pBcv->errCode==SQLITE_OK ){
+    if( rc!=SQLITE_OK ){
+      bcvApiError(pBcv, rc, "%s", zErr);
+    }else{
+      bcvRecompressProgress(pJob->pRe);
+      bcvRecompressNext(pJob);
+    }
+  }
+}
+
+/*
+** Callback invoked when a block that may need to be transformed has
+** been downloaded.
+*/
+static void bcvRecompressFetchCb(
+  void *pApp, 
+  int errCode, 
+  char *zETag, 
+  const u8 *aData,
+  int nData,
+  const u8 *aHdrs, int nHdrs
+){
+  BcvRecompressJob *pJob = (BcvRecompressJob*)pApp;
+  BcvRecompress *p = pJob->pRe;
+  sqlite3_bcv *pBcv = p->pBcv;
+  Manifest *pMan = p->pMan;
+  BcvRecompressBlk *pBlk = pJob->pBlk;
+  const u8 *aRaw = 0;
+  const u8 *aPut = 0;
+  int nPut = 0;
+  u8 eNew = 0;
+  int rc;
+
+  if( pBcv->errCode!=SQLITE_OK ) return;
+  if( errCode!=SQLITE_OK ){
+    bcvApiError(pBcv, errCode, "%s", zETag);
+    return;
+  }
+
+  /* Uncompress the block, if necessary. Then copy it into the aRaw buffer
+  ** (if it is not already there), as aData is only valid for the duration
+  ** of this callback.  */
+  rc = bcvHandleBlockDecode(
+      pBcv, pMan, pBlk->aOld, pBlk->eOld, aData, nData, pJob->aRaw, &aRaw
+  );
+  if( rc!=SQLITE_OK ) return;
+  if( aRaw!=pJob->aRaw ) memcpy(pJob->aRaw, aRaw, pMan->szBlk);
+
+  /* Compress the block using the target algorithm. */
+  rc = bcvHandleBlockEncode(pBcv, p->eTarget, 
+      pJob->aRaw, pMan->szBlk, pJob->aEncode, &aPut, &nPut, &eNew
+  );
+  if( rc!=SQLITE_OK ) return;
+  pBlk->eNew = eNew;
+
+  if( aPut==pJob->aRaw 
+   && bcvCompIsCompressed(pBlk->eOld)==BCV_ISCOMPRESSED_NONE 
+  ){
+    /* The block was already stored uncompressed, and the new algorithm 
+    ** does not compress it well enough to be worthwhile. So the block 
+    ** itself does not need to be rewritten. Only its compression byte 
+    ** changes.  */
+    bcvRecompressProgress(p);
+    bcvRecompressNext(pJob);
+  }else{
+    char zName[BCV_MAX_FSNAMEBYTES];
+    int nName = NAMEBYTES(pMan);
+
+    /* Generate a new block id. aNew[] currently holds a copy of the old
+    ** id. If the manifest uses names large enough for md5 hashes, the
+    ** first 16 bytes of the old id are the md5 hash of the uncompressed
+    ** block, which has not changed. So retain them and randomize the
+    ** remainder. Otherwise, the entire new block id is random.  */
+    int nMd5 = (nName>=BCV_MIN_MD5_NAMEBYTES ? MD5_DIGEST_LENGTH : 0);
+    sqlite3_randomness(nName - nMd5, &pBlk->aNew[nMd5]);
+
+    bcvBlockidToText(nName, pBlk->aNew, zName);
+    rc = bcvDispatchPut(pBcv->pDisp, pBcv->pCont, 
+        zName, 0, aPut, nPut, (void*)pJob, bcvRecompressPutCb
+    );
+    if( rc!=SQLITE_OK ){
+      bcvApiError(pBcv, rc, "failed to upload block %s", zName);
+    }
+  }
+}
+
+/*
+** Start processing the next block in the BcvRecompress.aBlk[] array, if 
+** there is one.
+*/
+static void bcvRecompressNext(BcvRecompressJob *pJob){
+  BcvRecompress *p = pJob->pRe;
+  sqlite3_bcv *pBcv = p->pBcv;
+  if( pBcv->errCode==SQLITE_OK && p->iNext<p->nBlk ){
+    char zName[BCV_MAX_FSNAMEBYTES];
+    int rc;
+    pJob->pBlk = &p->aBlk[p->iNext++];
+    bcvBlockidToText(NAMEBYTES(p->pMan), pJob->pBlk->aOld, zName);
+    rc = bcvDispatchFetch(pBcv->pDisp, pBcv->pCont, 
+        zName, 0, 0, (void*)pJob, bcvRecompressFetchCb
+    );
+    if( rc!=SQLITE_OK ){
+      bcvApiError(pBcv, rc, "failed to download block %s", zName);
+    }
+  }
+}
+
+/*
+** Ensure that the aBlkComp[] array of database pDb is not NULL. 
+*/
+static void bcvManifestDbEnsureComp(int *pRc, Manifest *pMan, ManifestDb *pDb){
+  if( *pRc==SQLITE_OK && pDb->aBlkComp==0 && pDb->nBlkOrig>0 ){
+    i64 nName = (i64)pDb->nBlkOrig * NAMEBYTES(pMan);
+    u8 *aNew = (u8*)bcvMallocRc(pRc, nName + pDb->nBlkOrig);
+    if( aNew ){
+      memcpy(aNew, pDb->aBlkOrig, nName);
+      assert( pDb->nBlkLocalAlloc==0 && pDb->aBlkLocal==pDb->aBlkOrig );
+      if( pDb->nBlkOrigAlloc ) sqlite3_free(pDb->aBlkOrig);
+      pDb->aBlkLocal = pDb->aBlkOrig = aNew;
+      pDb->aBlkComp = &aNew[nName];
+      pDb->nBlkOrigAlloc = pDb->nBlkOrig;
+    }
+  }
+}
+
+/*
+** Implementation of sqlite3_bcv_compression() when the 
+** SQLITE_BCVCOMPRESS_ALL flag is specified. The manifest has already
+** been downloaded and parsed into object pMan. Any error code and message
+** are left in handle p. The approach is as follows:
+**
+**   1. Allocate and populate an array of BcvRecompressBlk structures, one
+**      for each distinct block in the manifest. Also build a hash table
+**      mapping from (original-name -> BcvRecompressBlk structure).
+**
+**   2. Download all blocks that require compression, compress, and
+**      upload the new versions.
+**
+**   3a. Update the block array of each ManifestDb object in the manifest
+**       to use the new blocks.
+**
+**   3b. Add all now unused blocks to the manifest delete list with the 
+**       current timestamp.
+*/
+static void bcvRecompressAll(sqlite3_bcv *p, Manifest *pMan, int eTarget){
+  BcvRecompress re;
+  BcvRecompressJob *aJob = 0;
+  int nJob = p->nRequest;
+  int nName = NAMEBYTES(pMan);
+  int nEncode = bcvEncodeBufferSize(eTarget, pMan->szBlk);
+  int eNewComp = eTarget;
+  int bModified = 0;
+  i64 nTotal = 0;
+  int rc = SQLITE_OK;
+  int iDb;
+  int ii;
+
+  memset(&re, 0, sizeof(re));
+  re.pBcv = p;
+  re.pMan = pMan;
+  re.eTarget = eTarget;
+
+  /* Once all blocks are uncompressed, the container reverts to format 4. */
+  if( eTarget==SQLITE_BCVCOMPRESS_NONE ) eNewComp = -1;
+
+  /* Allocate the aBlk[] array and hash table. The number of distinct 
+  ** blocks is not known in advance, so allocate enough space for one 
+  ** entry for each block in each database.  */
+  for(iDb=0; iDb<pMan->nDb; iDb++){
+    nTotal += pMan->aDb[iDb].nBlkOrig;
+  }
+  if( nTotal>0 ){
+    re.nHash = 1;
+    while( re.nHash<nTotal*2 ) re.nHash = re.nHash*2;
+    re.aBlk = (BcvRecompressBlk*)bcvMallocRc(&rc, 
+        nTotal*sizeof(BcvRecompressBlk) + re.nHash*sizeof(int)
+    );
+    if( re.aBlk ) re.aHash = (int*)&re.aBlk[nTotal];
+  }
+
+  /* Populate aBlk[] with each distinct block that needs processing. */
+  for(iDb=0; rc==SQLITE_OK && iDb<pMan->nDb; iDb++){
+    ManifestDb *pDb = &pMan->aDb[iDb];
+    for(ii=0; rc==SQLITE_OK && ii<pDb->nBlkOrig; ii++){
+      u8 eComp = bcvManifestBlkComp(pDb, ii);
+      const u8 *aBlk = &pDb->aBlkOrig[ii*nName];
+      int bReq = bcvRecompressRequired(eComp, eTarget);
+      if( bReq<0 ){
+        char zName[BCV_MAX_FSNAMEBYTES];
+        bcvBlockidToText(nName, aBlk, zName);
+        rc = bcvApiError(p, SQLITE_ERROR, 
+            "block %s uses unsupported compression algorithm %d",
+            zName, (int)(eComp & 0x7F)
+        );
+      }else if( bReq ){
+        int *piSlot = bcvRecompressHashSlot(&re, aBlk);
+        if( *piSlot==0 ){
+          BcvRecompressBlk *pBlk = &re.aBlk[re.nBlk++];
+          memcpy(pBlk->aOld, aBlk, nName);
+          memcpy(pBlk->aNew, aBlk, nName);
+          pBlk->eOld = eComp;
+          *piSlot = re.nBlk;
+        }
+      }
+    }
+  }
+
+  /* Download, transform, and if required upload each block. */
+  if( rc==SQLITE_OK && re.nBlk>0 ){
+    i64 nPerJob = (i64)pMan->szBlk + nEncode;
+    if( nJob>re.nBlk ) nJob = re.nBlk;
+    aJob = (BcvRecompressJob*)bcvMallocRc(&rc, 
+        (sizeof(BcvRecompressJob) + nPerJob) * nJob
+    );
+    if( aJob ){
+      for(ii=0; ii<nJob; ii++){
+        aJob[ii].pRe = &re;
+        aJob[ii].aRaw = &((u8*)&aJob[nJob])[nPerJob*ii];
+        aJob[ii].aEncode = &aJob[ii].aRaw[pMan->szBlk];
+        bcvRecompressNext(&aJob[ii]);
+      }
+      rc = bcvDispatchRunAll(p->pDisp);
+      if( rc==SQLITE_OK ) rc = p->errCode;
+    }
+  }
+  if( rc!=SQLITE_OK && p->errCode==SQLITE_OK ) p->errCode = rc;
+
+  /* Update the in-memory manifest. For each database, for each block 
+  ** that has been processed, set the new compression byte and, if the
+  ** block was uploaded with a new id, the new block id.
+  **
+  ** If any block ids of a database are changed, also increment its
+  ** version number. This tells VFS clients that have local changes to
+  ** the database, which are based on the old block ids, that the 
+  ** database has been modified remotely. Databases for which only the
+  ** compression bytes have changed are not considered modified.  */
+  if( p->errCode==SQLITE_OK && re.nBlk>0 ){
+    for(iDb=0; rc==SQLITE_OK && iDb<pMan->nDb; iDb++){
+      ManifestDb *pDb = &pMan->aDb[iDb];
+      int bNewIds = 0;
+      if( eNewComp>=0 ) bcvManifestDbEnsureComp(&rc, pMan, pDb);
+      for(ii=0; rc==SQLITE_OK && ii<pDb->nBlkOrig; ii++){
+        u8 *aBlk = &pDb->aBlkOrig[ii*nName];
+        int iEntry = *bcvRecompressHashSlot(&re, aBlk);
+        if( iEntry ){
+          BcvRecompressBlk *pBlk = &re.aBlk[iEntry-1];
+          if( memcmp(aBlk, pBlk->aNew, nName) ){
+            memcpy(aBlk, pBlk->aNew, nName);
+            bNewIds = 1;
+          }
+          if( pDb->aBlkComp ) pDb->aBlkComp[ii] = pBlk->eNew;
+          bModified = 1;
+        }
+      }
+      if( bNewIds ) pDb->iVersion++;
+    }
+
+    /* Add the old ids of any blocks that were rewritten to the delete
+    ** list. As all references to them have been updated, they are no
+    ** longer used by any database.  */
+    if( rc==SQLITE_OK ){
+      int nDel = 0;
+      for(ii=0; ii<re.nBlk; ii++){
+        if( memcmp(re.aBlk[ii].aOld, re.aBlk[ii].aNew, nName) ) nDel++;
+      }
+      if( nDel>0 ){
+        int nGC = GCENTRYBYTES(pMan);
+        u8 *aGC = (u8*)bcvMallocRc(&rc, (i64)(pMan->nDelBlk + nDel) * nGC);
+        if( aGC ){
+          u8 aTime[8];
+          int iGC = pMan->nDelBlk;
+          bcvPutU64(aTime, sqlite_timestamp());
+          if( pMan->nDelBlk ){
+            memcpy(aGC, pMan->aDelBlk, (i64)pMan->nDelBlk * nGC);
+          }
+          if( pMan->bDelFree ) sqlite3_free(pMan->aDelBlk);
+          for(ii=0; ii<re.nBlk; ii++){
+            if( memcmp(re.aBlk[ii].aOld, re.aBlk[ii].aNew, nName) ){
+              memcpy(&aGC[iGC*nGC], re.aBlk[ii].aOld, nName);
+              memcpy(&aGC[iGC*nGC + nName], aTime, 8);
+              iGC++;
+            }
+          }
+          pMan->aDelBlk = aGC;
+          pMan->nDelBlk = iGC;
+          pMan->bDelFree = 1;
+        }
+      }
+    }
+    if( rc!=SQLITE_OK ) bcvApiError(p, rc, "out of memory");
+  }
+
+  /* Upload the new manifest, if anything has changed. */
+  if( p->errCode==SQLITE_OK && (bModified || eNewComp!=pMan->eCompression) ){
+    pMan->eCompression = eNewComp;
+    bcvManifestUploadParsed(p, pMan);
+  }
+
+  sqlite3_free(aJob);
+  sqlite3_free(re.aBlk);
+}
+
+/*
+** sqlite3_bcv_compression() API.
+*/
+int sqlite3_bcv_compression(sqlite3_bcv *p, int eCompression, int flags){
+  Manifest *pMan = 0;
+
+  /* If sqlite3_bcv_open() failed */
+  if( p->pCont==0 ) return p->errCode;
+  bcvApiErrorClear(p);
+
+  if( eCompression!=SQLITE_BCVCOMPRESS_NONE 
+   && eCompression!=SQLITE_BCVCOMPRESS_ZLIB 
+  ){
+    return bcvApiError(p, SQLITE_RANGE, 
+        "unsupported compression algorithm: %d", eCompression
+    );
+  }
+  if( flags & ~SQLITE_BCVCOMPRESS_ALL ){
+    return bcvApiError(p, SQLITE_RANGE, "unsupported flags: 0x%x", flags);
+  }
+
+  /* Download the manifest file. */
+  if( bcvManifestFetchParsed(p, &pMan) ){
+    return p->errCode;
+  }
+
+  if( flags & SQLITE_BCVCOMPRESS_ALL ){
+    bcvRecompressAll(p, pMan, eCompression);
+  }else{
+    int eNew = eCompression;
+
+    /* Setting the compression algorithm of a format 4 container to NONE
+    ** does not upgrade it to format 5.  */
+    if( pMan->eCompression<0 && eCompression==SQLITE_BCVCOMPRESS_NONE ){
+      eNew = -1;
+    }
+    if( eNew!=pMan->eCompression ){
+      pMan->eCompression = eNew;
+      bcvManifestUploadParsed(p, pMan);
+    }
+  }
+
+  bcvManifestFree(pMan);
+  return p->errCode;
+}
+
+/*
+** sqlite3_bcv_get_compression() API.
+*/
+int sqlite3_bcv_get_compression(sqlite3_bcv *p, int *peCompression){
+  Manifest *pMan = 0;
+
+  /* If sqlite3_bcv_open() failed */
+  if( p->pCont==0 ) return p->errCode;
+  bcvApiErrorClear(p);
+
+  if( bcvManifestFetchParsed(p, &pMan)==SQLITE_OK ){
+    *peCompression = pMan->eCompression;
+    bcvManifestFree(pMan);
+  }
+  return p->errCode;
+}
+
+/*
+** Upload the nData byte buffer aData[] to the container that handle p is 
+** open on as file zFile, overwriting any existing file of the same name.
+** Return SQLITE_OK if successful, or an error code otherwise. This is used
+** by test code only.
+*/
+int bcvTestPutFile(
+  sqlite3_bcv *p, 
+  const char *zFile, 
+  const u8 *aData, 
+  int nData
+){
+  int rc;
+  if( p->pCont==0 ) return p->errCode;
+  bcvApiErrorClear(p);
+  rc = bcvDispatchPut(
+      p->pDisp, p->pCont, zFile, 0, aData, nData, (void*)p, bcvCollectError
+  );
+  if( rc==SQLITE_OK ){
+    rc = bcvDispatchRunAll(p->pDisp);
+  }
+  if( rc!=SQLITE_OK ) p->errCode = rc;
+  return p->errCode;
+}
+
+/*
+** Download file zFile from the container that handle p is open on. If
+** successful, set (*paData) to point to a buffer containing the file 
+** contents and (*pnData) to its size in bytes. It is the responsibility
+** of the caller to eventually free the buffer using sqlite3_free(). This
+** is used by test code only.
+*/
+int bcvTestFetchFile(
+  sqlite3_bcv *p, 
+  const char *zFile, 
+  u8 **paData, 
+  int *pnData
+){
+  BcvFetchParsed dl;
+  int rc;
+
+  if( p->pCont==0 ) return p->errCode;
+  bcvApiErrorClear(p);
+  memset(&dl, 0, sizeof(dl));
+  rc = bcvDispatchFetch(p->pDisp, p->pCont, zFile, 0, 0, &dl, xFetchParsed);
+  if( rc==SQLITE_OK ){
+    rc = bcvDispatchRunAll(p->pDisp);
+  }
+  if( rc==SQLITE_OK && dl.rc!=SQLITE_OK ){
+    rc = dl.rc;
+    p->zErrmsg = bcvMprintf("download %s failed (%d)", zFile, rc);
+  }
+  p->errCode = rc;
+  if( rc==SQLITE_OK ){
+    *paData = dl.buf.aData;
+    *pnData = dl.buf.nData;
+    dl.buf.aData = 0;
+  }
+  sqlite3_free(dl.buf.aData);
+  sqlite3_free(dl.zETag);
+  return rc;
 }
 
 sqlite3_bcv_request *sqlite3_bcv_job_request(
@@ -4172,3 +5129,98 @@ int bcvIntEncrypt(
   return bcvEncrypt(pKey->pKey, (const u8*)aLocal, aData, nData);
 }
 
+/*************************************************************************
+** Begin implementation of compression algorithms.
+*/
+
+#include <zlib.h>
+
+/*
+** Parameter eComp is in the format of a manifest file compression type.
+** Specifically, the lower 7 bits contain the compression type identifier
+** and the MSB is set if the specific block to which this applies is
+** not actually compressed.
+**
+** This function returns BCV_ISCOMPRESSED_NONE if eComp indicates that
+** the block is not compressed at all. It returns BCV_ISCOMPRESSED_OK
+** if it is compressed and the caller should use bcvCompUncompress() to
+** uncompress it, or BCV_ISCOMPRESSED_UNKNOWN if the block is compressed,
+** but using an unsupported compression algorithm.
+*/
+int bcvCompIsCompressed(u8 eComp){
+  int res = BCV_ISCOMPRESSED_UNKNOWN;
+  if( (eComp & 0x7F)==SQLITE_BCVCOMPRESS_NONE || (eComp & 0x80) ){
+    res = BCV_ISCOMPRESSED_NONE;
+  }else if( eComp==SQLITE_BCVCOMPRESS_ZLIB ){
+    res = BCV_ISCOMPRESSED_OK;
+  }
+  return res;
+}
+
+/*
+** Return the maximum possible size in bytes of an nByte buffer compressed
+** using compression algorithm eComp.
+*/
+int bcvCompBound(u8 eComp, int nByte){
+  assert( eComp==SQLITE_BCVCOMPRESS_ZLIB );
+  return (int)compressBound((uLong)nByte);
+}
+
+/*
+** Compress nSrc byte buffer aSrc[] according to compression algorithm
+** eComp into output buffer aDest, which is guaranteed to be at least
+** bcvCompBound(eComp, nSrc) bytes in size. When this function is called, 
+** (*pnDest) is set to the size of the output buffer in bytes.
+**
+** If successful, this function returns SQLITE_OK and sets (*pnDest) to the
+** number of bytes written to the output buffer. If an error occurs, an
+** SQLite error code is returned and the final value of (*pnDest) is 
+** undefined.
+*/
+int bcvCompCompress(
+  u8 eComp, 
+  u8 *aDest, int *pnDest, 
+  const u8 *aSrc, int nSrc
+){
+  int rc = SQLITE_ERROR;
+  uLongf nOut = (uLongf)(*pnDest);
+  int zrc;
+
+  assert( eComp==SQLITE_BCVCOMPRESS_ZLIB );
+  zrc = compress(aDest, &nOut, aSrc, (uLong)nSrc);
+  if( zrc==Z_OK ){
+    *pnDest = (int)nOut;
+    rc = SQLITE_OK;
+  }else if( zrc==Z_MEM_ERROR ){
+    rc = SQLITE_NOMEM;
+  }
+  return rc;
+}
+
+/*
+** Uncompress nSrc byte buffer aSrc[] according to compression algorithm
+** eComp into output buffer aDest, size nDest bytes.
+**
+** If successful, this function returns SQLITE_OK. It is an error if the
+** uncompressed size is not exactly nDest bytes, or if the input buffer cannot
+** be uncompressed. In these cases SQLITE_ERROR is returned. If some other
+** error occurs, an SQLite error code is returned.
+*/
+int bcvCompUncompress(
+  u8 eComp, 
+  u8 *aDest, int nDest, 
+  const u8 *aSrc, int nSrc
+){
+  int rc = SQLITE_ERROR;
+  uLongf nOut = (uLongf)nDest;
+  int zrc;
+
+  assert( eComp==SQLITE_BCVCOMPRESS_ZLIB );
+  zrc = uncompress(aDest, &nOut, aSrc, (uLong)nSrc);
+  if( zrc==Z_OK ){
+    if( nOut==(uLongf)nDest ) rc = SQLITE_OK;
+  }else if( zrc==Z_MEM_ERROR ){
+    rc = SQLITE_NOMEM;
+  }
+  return rc;
+}
