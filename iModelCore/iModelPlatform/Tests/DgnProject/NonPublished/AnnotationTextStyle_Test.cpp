@@ -328,3 +328,140 @@ TEST_F(AnnotationTextStyleTest, FlatBuffersSerialization)
     EXPECT_EQ(14, fbStyleSettersCount) << "14 of 15 AnnotationTextStyleProperty filled setters are expected";
     VERIFY_DATA_1(testStyle);
     }
+
+//---------------------------------------------------------------------------------------
+// Creates and inserts an element the same way JS does: from its JSON props.
+//---------------------------------------------------------------------------------------
+static AnnotationTextStyleCPtr insertTextStyleFromJson(DgnDbR db, BeJsConst props)
+    {
+    DgnElement::CreateParams params(db, props);
+    if (!params.m_classId.IsValid())
+        return nullptr;
+
+    ElementHandlerP handler = dgn_ElementHandler::Element::FindHandler(db, params.m_classId);
+    if (nullptr == handler)
+        return nullptr;
+
+    DgnElementPtr el = handler->Create(params);
+    if (!el.IsValid())
+        return nullptr;
+
+    el->FromJson(props);
+    DgnElementCPtr inserted = db.Elements().Insert(*el);
+    if (!inserted.IsValid())
+        return nullptr;
+
+    return AnnotationTextStyle::Get(db, inserted->GetElementId());
+    }
+
+//---------------------------------------------------------------------------------------
+// Reads Description from the database rather than from the element cache.
+//---------------------------------------------------------------------------------------
+static Utf8String queryStoredDescription(DgnDbR db, DgnElementId id)
+    {
+    BeSQLite::EC::ECSqlStatement stmt;
+    if (BeSQLite::EC::ECSqlStatus::Success != stmt.Prepare(db, "SELECT Description FROM " BIS_SCHEMA(BIS_CLASS_AnnotationTextStyle) " WHERE ECInstanceId=?"))
+        return "<prepare failed>";
+
+    stmt.BindId(1, id);
+    if (BeSQLite::BE_SQLITE_ROW != stmt.Step())
+        return "<not found>";
+
+    return stmt.IsValueNull(0) ? "" : stmt.GetValueText(0);
+    }
+
+//---------------------------------------------------------------------------------------
+// Description is custom-handled, so it must be read from JSON props on insert.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(AnnotationTextStyleTest, InsertFromJson)
+    {
+    DgnDbR project = *GetDgnDb();
+    DefinitionModelR dictionary = project.GetDictionaryModel();
+
+    AnnotationTextStylePtr codeSource = AnnotationTextStyle::Create(dictionary);
+    codeSource->SetName("JsonStyle");
+
+    BeJsDocument props;
+    props.toObject();
+    props[DgnElement::json_classFullName()] = "BisCore:AnnotationTextStyle";
+    props[DgnElement::json_model()] = dictionary.GetModelId().ToHexStr();
+    codeSource->GetCode().ToJson(props[DgnElement::json_code()]);
+    props[AnnotationTextStyle::json_description()] = "A described style";
+
+    AnnotationTextStyleCPtr style = insertTextStyleFromJson(project, props);
+    ASSERT_TRUE(style.IsValid());
+    EXPECT_STREQ("A described style", style->GetDescription().c_str());
+    EXPECT_STREQ("A described style", queryStoredDescription(project, style->GetElementId()).c_str());
+
+    BeJsDocument outProps;
+    style->ToJson(outProps);
+    EXPECT_STREQ("A described style", outProps[AnnotationTextStyle::json_description()].asCString());
+    }
+
+//---------------------------------------------------------------------------------------
+// Copying a style by inserting its JSON props (as the transformer does) keeps its description.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(AnnotationTextStyleTest, JsonRoundTrip)
+    {
+    DgnDbR project = *GetDgnDb();
+    DefinitionModelR dictionary = project.GetDictionaryModel();
+
+    AnnotationTextStylePtr source = AnnotationTextStyle::Create(dictionary);
+    source->SetName("SourceStyle");
+    source->SetDescription("Copied description");
+    ASSERT_TRUE(source->Insert().IsValid());
+
+    BeJsDocument props;
+    source->ToJson(props);
+    ASSERT_TRUE(props.hasMember(AnnotationTextStyle::json_description()));
+    EXPECT_STREQ("Copied description", props[AnnotationTextStyle::json_description()].asCString());
+
+    AnnotationTextStylePtr codeSource = AnnotationTextStyle::Create(dictionary);
+    codeSource->SetName("CopiedStyle");
+    codeSource->GetCode().ToJson(props[DgnElement::json_code()]);
+    props.removeMember(DgnElement::json_id());
+    props.removeMember(DgnElement::json_federationGuid());
+
+    AnnotationTextStyleCPtr copy = insertTextStyleFromJson(project, props);
+    ASSERT_TRUE(copy.IsValid());
+    EXPECT_TRUE(source->GetElementId() != copy->GetElementId());
+    EXPECT_STREQ("Copied description", copy->GetDescription().c_str());
+    EXPECT_STREQ("Copied description", queryStoredDescription(project, copy->GetElementId()).c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// An empty description is omitted from JSON, and FromJson only changes it when the member is present.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(AnnotationTextStyleTest, JsonDescriptionPartialUpdate)
+    {
+    DgnDbR project = *GetDgnDb();
+
+    AnnotationTextStylePtr style = AnnotationTextStyle::Create(project.GetDictionaryModel());
+    style->SetName("PartialUpdateStyle");
+
+    BeJsDocument emptyOut;
+    style->ToJson(emptyOut);
+    EXPECT_FALSE(emptyOut.hasMember(AnnotationTextStyle::json_description()));
+
+    style->SetDescription("Original");
+
+    BeJsDocument noDescription;
+    noDescription.toObject();
+    style->FromJson(noDescription);
+    EXPECT_STREQ("Original", style->GetDescription().c_str());
+
+    BeJsDocument newDescription;
+    newDescription.toObject();
+    newDescription[AnnotationTextStyle::json_description()] = "Updated";
+    style->FromJson(newDescription);
+    EXPECT_STREQ("Updated", style->GetDescription().c_str());
+
+    BeJsDocument nullDescription;
+    nullDescription.toObject();
+    nullDescription[AnnotationTextStyle::json_description()].SetNull();
+    style->FromJson(nullDescription);
+    EXPECT_TRUE(style->GetDescription().empty());
+    }
