@@ -32,6 +32,8 @@ typedef unsigned short u16;
 # include <sys/socket.h> 
 # include <arpa/inet.h> 
 # include <netinet/tcp.h>
+# include <poll.h>
+# include <sys/time.h>
 # define BCV_SOCKET_TYPE int
 # define O_BINARY 0
 # define INVALID_SOCKET -1
@@ -88,6 +90,10 @@ typedef unsigned short u16;
 #define BCV_DEFAULT_NAMEBYTES        16
 #define BCV_DEFAULT_BLOCKSIZE        (4*1024*1024)
 #define BCV_DEFAULT_HTTPTIMEOUT 600  
+
+/* Default number of seconds the daemon keeps the open read transaction
+** of a client whose connection was lost, so that it can be resumed. */
+#define BCV_DEFAULT_RESUMETIMEOUT 30
 
 /* Size of local encryption keys in bytes. */
 #define BCV_LOCAL_KEYSIZE        16
@@ -153,6 +159,7 @@ struct ManifestDb {
   i64 iParentId;                  /* Id of parent database, if any */
   char zDName[BCV_DBNAME_SIZE];   /* Database display name */
   int iVersion;                   /* Database version */
+  int bShmInit;                   /* True once daemon initialized -shm hdr */
 
   /* Original block array (as it exists or existed in cloud storage). */
   u8 *aBlkOrig;
@@ -415,7 +422,7 @@ void bcvfsLruAddIf(BcvCommon *p, CacheEntry *pEntry);
 int bcvfsNameToBlockid(Manifest *p, const char *zName, u8 *aBlk);
 u8 *bcvEmptyKV(int *pRc, int *pnData);
 
-int bcvfsCreateLocalDb(BcvCommon*, const char*, const char*, sqlite3_file**);
+int bcvfsCreateLocalDb(BcvCommon*, const char*, const char*, int, sqlite3_file**);
 
 /*
 ** Below here should be eventually moved back to blockcachevfsd. 
@@ -526,6 +533,9 @@ void bcvContainerClose(BcvContainer*);
 
 int bcv_socket_is_valid(BCV_SOCKET_TYPE s);
 void bcv_close_socket(BCV_SOCKET_TYPE s);
+int bcv_socket_connect(BCV_SOCKET_TYPE s, const struct sockaddr*, int, int);
+void bcv_socket_timeout(BCV_SOCKET_TYPE s, int ms);
+int bcv_socket_is_broken(BCV_SOCKET_TYPE s);
 void bcv_socket_init();
 
 void sqlite3_bcv_test_socket_api(
@@ -553,10 +563,18 @@ typedef struct BcvVtabReply BcvVtabReply;
 typedef struct BcvPrefetchMsg BcvPrefetchMsg;
 typedef struct BcvPrefetchReply BcvPrefetchReply;
 
+#define BCV_HELLO_CANRESUME  0x01
+#define BCV_HELLO_WANTRESUME 0x02
+
 struct BcvHelloMsg {
   const char *zContainer;
   const char *zDatabase;
   int bPrefetch;
+  /* Optional trailing fields. BCV_HELLO_CANRESUME announces support for
+  ** session resume; BCV_HELLO_WANTRESUME asks to adopt iResume's open
+  ** read transaction (without it, any parked/live iResume is discarded). */
+  u32 bCanResume;                 /* Mask of BCV_HELLO_* flags */
+  u64 iResume;                    /* Previous session id, or 0 */
 };
 
 struct BcvHelloReply {
@@ -569,6 +587,10 @@ struct BcvHelloReply {
   i64 iDbId;                      /* Database id */
   u32 szBlk;                      /* Block size in bytes */
   u32 bEncrypted;                 /* True for encrypted databases */
+  /* Optional trailing fields. Both are 0 if the daemon does not support
+  ** session resume. */
+  u64 iSession;                   /* Id to pass as HELLO.iResume later */
+  u32 bResumed;                   /* True if HELLO.iResume was resumed */
 };
 
 struct BcvPassMsg {
@@ -680,6 +702,8 @@ struct BcvMessage {
 
 int bcvRecvMsg(BCV_SOCKET_TYPE fd, BcvMessage **ppMsg);
 int bcvSendMsg(BCV_SOCKET_TYPE fd, BcvMessage *pMsg);
+int bcvRecvMsgTimeout(BCV_SOCKET_TYPE fd, BcvMessage **ppMsg, i64 iDeadline);
+int bcvSendMsgTimeout(BCV_SOCKET_TYPE fd, BcvMessage *pMsg, i64 iDeadline);
 
 /* 
 ** Valid values for BcvMessage.

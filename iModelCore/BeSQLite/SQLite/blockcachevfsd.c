@@ -86,6 +86,8 @@ struct CommandSwitches {
 
   int nHttpLogTimeout;            /* Value of --httplogtimeout option */
   int nHttpLogNentry;             /* Value of --httplognentry option */
+  int nResumeTimeout;             /* Value of -resumetimeout option */
+  int bResumeTimeout;             /* True if -resumetimeout was specified */
 };
 
 #define BCV_LOG_MESSAGE   0x01
@@ -357,6 +359,7 @@ static int parse_integer(const char *zInt){
 #define COMMANDLINE_HTTPTIMEOUT  40
 #define COMMANDLINE_HTTPLOGTIMEOUT 41
 #define COMMANDLINE_HTTPLOGNENTRY  42
+#define COMMANDLINE_RESUMETIMEOUT  43
 
 #define COMMAND_ALL              0xFFFFFFFF
 #define COMMAND_DAEMON           0x40000000
@@ -398,6 +401,7 @@ static void parse_more_switches(
     { "-httptimeout",    COMMAND_DAEMON         , COMMANDLINE_HTTPTIMEOUT  },
     { "-httplogtimeout", COMMAND_DAEMON         , COMMANDLINE_HTTPLOGTIMEOUT },
     { "-httplognentry",  COMMAND_DAEMON         , COMMANDLINE_HTTPLOGNENTRY  },
+    { "-resumetimeout",  COMMAND_DAEMON         , COMMANDLINE_RESUMETIMEOUT  },
     { 0, 0 }
   };
 
@@ -438,6 +442,7 @@ static void parse_more_switches(
       case COMMANDLINE_HTTPTIMEOUT:
       case COMMANDLINE_HTTPLOGTIMEOUT:
       case COMMANDLINE_HTTPLOGNENTRY:
+      case COMMANDLINE_RESUMETIMEOUT:
         i++;
         if( i==nArg ){
           fatal_error("option requires an argument: %s\n", azArg[i-1]);
@@ -599,6 +604,10 @@ static void parse_more_switches(
         break;
       case COMMANDLINE_HTTPLOGTIMEOUT:
         pCmd->nHttpLogTimeout = parse_seconds(azArg[i]);
+        break;
+      case COMMANDLINE_RESUMETIMEOUT:
+        pCmd->nResumeTimeout = parse_seconds(azArg[i]);
+        pCmd->bResumeTimeout = 1;
         break;
       case COMMANDLINE_HTTPLOGNENTRY:
         pCmd->nHttpLogNentry = parse_integer(azArg[i]);
@@ -1123,6 +1132,37 @@ struct DClient {
   ** of this client, some other client, or a prefetch. Or 0 if it is not
   ** waiting on any download.  */
   i64 iWaitStart;
+
+  /* Session resume. bCanResume is set if the client sent the optional
+  ** BCV_HELLO_CANRESUME flag. iSession is the id sent to it in HELLO_REPLY.
+  ** bClosing marks a client whose send() failed or that was superseded, to
+  ** be disconnected at the end of the main-loop iteration.  */
+  int bCanResume;
+  u64 iSession;
+  int bClosing;
+};
+
+/*
+** A read transaction whose client connection was lost while the
+** transaction was open. The manifest snapshot and the cache-entry pins
+** (apRef[]) are kept until either the client reconnects and resumes
+** the session (HELLO.iResume==iSession), or the -resumetimeout expires.
+** While parked, the session still counts towards pCont->nClient, so the
+** container cannot be detached out from under it.
+*/
+typedef struct DParked DParked;
+struct DParked {
+  u64 iSession;
+  i64 iExpire;                    /* bcv_timestamp() expiry time (us) */
+  Container *pCont;
+  i64 iDbId;
+  Manifest *pMan;
+  ManifestDb *pManDb;
+  CacheEntry **apRef;
+  i64 nQueryBlock;
+  i64 nQueryByte;
+  i64 nQueryUs;
+  DParked *pNext;
 };
 
 struct DaemonCtx {
@@ -1135,6 +1175,7 @@ struct DaemonCtx {
 
   DClient *pClientList;           /* List of connected clients */
   int iNextId;                    /* Next client or encryption id */
+  DParked *pParkedList;           /* Parked read transactions */
 
   sqlite3_file *pCacheFile;
 };
@@ -1505,17 +1546,111 @@ static void bdLogSendMsg(DaemonCtx *p, DClient *pClient, BcvMessage *pMsg){
   }
 }
 
-static void bdReleaseEntryRefs(DClient *pClient){
-  int nRef = pClient->pManDb->nBlkLocal;
+static void bdReleaseRefArray(ManifestDb *pManDb, CacheEntry **apRef){
+  int nRef = pManDb->nBlkLocal;
   int ii;
   for(ii=0; ii<nRef; ii++){
-    CacheEntry *pEntry = pClient->apRef[ii];
+    CacheEntry *pEntry = apRef[ii];
     if( pEntry ){
       assert( pEntry->nRef>0 );
       pEntry->nRef--;
     }
   }
-  memset(pClient->apRef, 0, sizeof(CacheEntry*) * nRef);
+  memset(apRef, 0, sizeof(CacheEntry*) * nRef);
+}
+
+static void bdReleaseEntryRefs(DClient *pClient){
+  bdReleaseRefArray(pClient->pManDb, pClient->apRef);
+}
+
+/*
+** Release all resources held by a parked session and free it. The
+** caller must already have removed it from DaemonCtx.pParkedList.
+*/
+static void bdFreeParked(DParked *pPark){
+  bdReleaseRefArray(pPark->pManDb, pPark->apRef);
+  sqlite3_free(pPark->apRef);
+  bcvManifestDeref(pPark->pMan);
+  assert( pPark->pCont->nClient>0 );
+  pPark->pCont->nClient--;
+  sqlite3_free(pPark);
+}
+
+/*
+** Client pClient is being disconnected. If it supports session resume
+** and has an open read transaction, move the transaction state to a
+** new DParked object. Return true if this is done, or false otherwise.
+*/
+static int bdParkClient(DaemonCtx *p, DClient *pClient){
+  DParked *pPark;
+  if( p->cmd.nResumeTimeout<=0
+   || pClient->bCanResume==0
+   || pClient->iSession==0
+   || pClient->prefetch.bPrefetch
+   || pClient->pMan==0
+   || pClient->apRef==0
+   || pClient->pCont==0
+  ){
+    return 0;
+  }
+  pPark = (DParked*)bdMallocZero(sizeof(DParked));
+  pPark->iSession = pClient->iSession;
+  pPark->iExpire = bcv_timestamp() + (i64)p->cmd.nResumeTimeout*1000000;
+  pPark->pCont = pClient->pCont;
+  pPark->iDbId = pClient->iDbId;
+  pPark->pMan = pClient->pMan;
+  pPark->pManDb = pClient->pManDb;
+  pPark->apRef = pClient->apRef;
+  pPark->nQueryBlock = pClient->nQueryBlock;
+  pPark->nQueryByte = pClient->nQueryByte;
+  pPark->nQueryUs = pClient->nQueryUs;
+  pPark->pNext = p->pParkedList;
+  p->pParkedList = pPark;
+
+  /* The parked session now owns these, including one pCont->nClient. */
+  pClient->pCont = 0;
+  pClient->pMan = 0;
+  pClient->pManDb = 0;
+  pClient->apRef = 0;
+
+  daemon_event_log(p, "parked session of client %d (timeout %ds)",
+      pClient->iClientId, p->cmd.nResumeTimeout
+  );
+  return 1;
+}
+
+/*
+** Free any parked sessions that have expired, or all of them if bAll.
+*/
+static void bdExpireParked(DaemonCtx *p, int bAll){
+  DParked **pp = &p->pParkedList;
+  i64 iNow = bcv_timestamp();
+  while( *pp ){
+    DParked *pPark = *pp;
+    if( bAll || pPark->iExpire<=iNow ){
+      *pp = pPark->pNext;
+      daemon_event_log(p, "expired parked session");
+      bdFreeParked(pPark);
+    }else{
+      pp = &pPark->pNext;
+    }
+  }
+}
+
+/*
+** Remove the parked session with id iSession on container pCont from the
+** parked list and return it. Or return NULL if there is no such session.
+*/
+static DParked *bdUnparkSession(DaemonCtx *p, u64 iSession, Container *pCont){
+  DParked **pp;
+  for(pp=&p->pParkedList; *pp; pp=&(*pp)->pNext){
+    if( (*pp)->iSession==iSession && (*pp)->pCont==pCont ){
+      DParked *pRet = *pp;
+      *pp = pRet->pNext;
+      return pRet;
+    }
+  }
+  return 0;
 }
 
 static void bdClientDecrRefcount(DClient *pClient){
@@ -1534,6 +1669,12 @@ static void bdDisconnectClient(
   Container *pCont = pClient->pCont;
 
   daemon_msg_log(p, "%d->D: disconnect.. (%s)", pClient->iClientId, zWhy);
+
+  /* If the client has an open read transaction and supports session
+  ** resume, park the transaction instead of releasing it. This clears
+  ** pClient->pCont, pMan, pManDb and apRef.  */
+  bdParkClient(p, pClient);
+  pCont = pClient->pCont;
 
   /* Decrement the ref-count on a container, if this client was associated
   ** with one.  */
@@ -1578,16 +1719,23 @@ static void bdDisconnectClient(
 }
 
 static void bdSendMsg(DaemonCtx *p, DClient *pClient, BcvMessage *pMsg){
-  int rc;
-  bdLogSendMsg(p, pClient, pMsg);
-  rc = bcvSendMsg(pClient->fd, pMsg);
-  if( rc!=SQLITE_OK ){
-    bdDisconnectClient(p, pClient, "send() failure");
+  if( pClient->bClosing==0 ){
+    int rc;
+    bdLogSendMsg(p, pClient, pMsg);
+    rc = bcvSendMsg(pClient->fd, pMsg);
+    if( rc!=SQLITE_OK ){
+      /* Callers continue to use pClient after this returns, so it must not
+      ** be freed here. Mark it for disconnect at the end of the main-loop
+      ** iteration instead.  */
+      daemon_msg_log(p, "%d->D: send() failure", pClient->iClientId);
+      pClient->bClosing = 1;
+    }
   }
 }
 
 static DClient *bdFetchClient(FetchCtx *pDLCtx){
-  return pDLCtx->pClient->fd==INVALID_SOCKET ? 0 : pDLCtx->pClient;
+  DClient *pClient = pDLCtx->pClient;
+  return (pClient->fd==INVALID_SOCKET || pClient->bClosing) ? 0 : pClient;
 }
 
 static void bdBlockDownloadFree(FetchCtx *p){
@@ -1835,6 +1983,7 @@ static void bcvProxyClientCount(
   int *pnReader
 ){
   DClient *pClient = 0;
+  DParked *pPark = 0;
   DaemonCtx *p = 0;
   int nClient = 0;
   int nPrefetch = 0;
@@ -1842,13 +1991,22 @@ static void bcvProxyClientCount(
 
   p = (DaemonCtx*)&((u8*)pCommon)[-offsetof(DaemonCtx, c)];
   for(pClient=p->pClientList; pClient; pClient=pClient->pNext){
-    if( pClient->pCont==pCont && pClient->iDbId==iDbId ){
+    if( pClient->bClosing==0
+     && pClient->pCont==pCont
+     && pClient->iDbId==iDbId
+    ){
       if( pClient->prefetch.bPrefetch ){
         nPrefetch++;
       }else{
         nClient++;
         if( pClient->apRef ) nReader++;
       }
+    }
+  }
+  for(pPark=p->pParkedList; pPark; pPark=pPark->pNext){
+    if( pPark->pCont==pCont && pPark->iDbId==iDbId ){
+      nClient++;
+      if( pPark->apRef ) nReader++;
     }
   }
 
@@ -1893,12 +2051,14 @@ static u8 *bdExtraVtabData(
   i64 nManifest = 0;
   i64 nArray = 0;
   DClient *pClient = 0;
+  DParked *pPark = 0;
 
   BcvBuffer buf;
   buf.aData = aData;
   buf.nData = buf.nAlloc = *pnData;
 
   for(pClient = p->pClientList; pClient; pClient=pClient->pNext){
+    if( pClient->bClosing ) continue;
     if( pClient->pMan && pClient->pMan!=pClient->pCont->pMan ){
       assert( pClient->pMan->nRef>=1 );
       nManifest += bcvManifestSize(pClient->pMan) / pClient->pMan->nRef;
@@ -1906,6 +2066,16 @@ static u8 *bdExtraVtabData(
     if( pClient->apRef ){
       assert( pClient->pManDb );
       nArray += (pClient->pManDb->nBlkLocal * sizeof(CacheEntry*));
+    }
+  }
+  for(pPark = p->pParkedList; pPark; pPark=pPark->pNext){
+    if( pPark->pMan && pPark->pMan!=pPark->pCont->pMan ){
+      assert( pPark->pMan->nRef>=1 );
+      nManifest += bcvManifestSize(pPark->pMan) / pPark->pMan->nRef;
+    }
+    if( pPark->apRef ){
+      assert( pPark->pManDb );
+      nArray += (pPark->pManDb->nBlkLocal * sizeof(CacheEntry*));
     }
   }
 
@@ -1963,6 +2133,35 @@ static void bdHandleVtab(
 }
 
 /*
+** A client is reconnecting from previous session iSession. If the old
+** connection is still in pClientList (e.g. a proxy between the client and
+** daemon closed only the client side), optionally park its transaction
+** (when bPark is true) and mark the old DClient for disconnect at the end
+** of the main-loop iteration.
+*/
+static void bdSupersedeClient(
+  DaemonCtx *p,
+  DClient *pNew,
+  u64 iSession,
+  int bPark
+){
+  DClient *pOld;
+  for(pOld=p->pClientList; pOld; pOld=pOld->pNext){
+    if( pOld!=pNew && pOld->iSession==iSession && pOld->pCont==pNew->pCont ){
+      daemon_event_log(p, "client %d supersedes client %d",
+          pNew->iClientId, pOld->iClientId
+      );
+      sqlite3_free(pOld->pMsg);
+      pOld->pMsg = 0;
+      if( bPark ) bdParkClient(p, pOld);
+      pOld->iSession = 0;
+      pOld->bClosing = 1;
+      break;
+    }
+  }
+}
+
+/*
 ** Handle a message of type BCV_MESSAGE_HELLO from client pClient.
 */
 static void bdHandleHello(
@@ -1987,12 +2186,16 @@ static void bdHandleHello(
     }
 
     if( pCont ){
-      int rc = bcvfsCreateLocalDb(&p->c, zCont, zDb, &pClient->pCloseFd);
+      int rc = bcvfsCreateLocalDb(
+          &p->c, zCont, zDb, pDb->bShmInit==0, &pClient->pCloseFd
+      );
       if( rc!=SQLITE_OK ){
         zErr = bcvMprintf(
             "failed to create database files: /%s/%s", zCont, zDb
         );
         pCont = 0;
+      }else{
+        pDb->bShmInit = 1;
       }
     }
   }
@@ -2006,6 +2209,52 @@ static void bdHandleHello(
     pClient->pCont = pCont;
     if( pDb ) pClient->iDbId = pDb->iDbId;
     pCont->nClient++;
+    if( (pMsg->u.hello.bCanResume & BCV_HELLO_CANRESUME)
+     && p->cmd.nResumeTimeout>0
+    ){
+      int bWant = (pMsg->u.hello.bCanResume & BCV_HELLO_WANTRESUME)!=0;
+      pClient->bCanResume = 1;
+      if( pMsg->u.hello.iResume ){
+        DParked *pPark;
+        bdSupersedeClient(p, pClient, pMsg->u.hello.iResume, bWant);
+        pPark = bdUnparkSession(p, pMsg->u.hello.iResume, pCont);
+        if( bWant && pPark
+         && pPark->iDbId==pClient->iDbId
+         && pClient->prefetch.bPrefetch==0
+        ){
+          /* Adopt the parked transaction and keep its session id so a
+          ** retry if HELLO_REPLY is lost can still find and resume it.
+          ** The new connection already holds a pCont->nClient reference,
+          ** so drop the parked one. */
+          pClient->iSession = pPark->iSession;
+          pClient->pMan = pPark->pMan;
+          pClient->pManDb = pPark->pManDb;
+          pClient->apRef = pPark->apRef;
+          pClient->nQueryBlock = pPark->nQueryBlock;
+          pClient->nQueryByte = pPark->nQueryByte;
+          pClient->nQueryUs = pPark->nQueryUs;
+          pCont->nClient--;
+          sqlite3_free(pPark);
+          reply.u.hello_r.bResumed = 1;
+          daemon_event_log(p, "client %d resumed session", pClient->iClientId);
+        }else{
+          if( pPark ) bdFreeParked(pPark);
+          if( bWant ){
+            daemon_event_log(p, "client %d failed to resume session",
+                pClient->iClientId
+            );
+          }else if( pPark ){
+            daemon_event_log(p, "client %d discarded parked session",
+                pClient->iClientId
+            );
+          }
+        }
+      }
+      while( pClient->iSession==0 ){
+        sqlite3_randomness(sizeof(pClient->iSession), &pClient->iSession);
+      }
+      reply.u.hello_r.iSession = pClient->iSession;
+    }
     reply.u.hello_r.szBlk = pCont->pMan->szBlk;
     reply.u.hello_r.zStorage = pCont->zStorage;
     reply.u.hello_r.zAccount = pCont->zAccount;
@@ -2425,14 +2674,17 @@ static void bdProcessMRUList(
   int nMru
 ){
   CacheEntry **apRef = pClient->apRef;
+  int nBlk = pClient->pManDb->nBlkLocal;
   int ii;
   for(ii=nMru-1; ii>=0; ii--){
-    CacheEntry *pEntry = apRef[ aMru[ii] ];
-    assert( (int)aMru[ii]<pClient->pManDb->nBlkLocal && pEntry );
-    assert( pEntry->bValid && pEntry->bDirty==0 );
+    u32 iBlk = aMru[ii];
+    if( iBlk<(u32)nBlk && apRef[iBlk] ){
+      CacheEntry *pEntry = apRef[iBlk];
+      assert( pEntry->bValid && pEntry->bDirty==0 );
 
-    bcvfsLruRemoveIf(&p->c, pEntry);
-    bcvfsLruAddIf(&p->c, pEntry);
+      bcvfsLruRemoveIf(&p->c, pEntry);
+      bcvfsLruAddIf(&p->c, pEntry);
+    }
   }
 }
 
@@ -2477,7 +2729,8 @@ static void bdHandleRead(
     pClient->pMsg = pMsg;
     pClient->iWaitStart = 0;
   }else{
-    bdReadReplyError(pClient, SQLITE_ERROR, 0);
+    bdReadReplyError(pClient, rc, zErr);
+    sqlite3_free(zErr);
     sqlite3_free(pMsg);
   }
 }
@@ -2490,6 +2743,13 @@ static void bdHandleEnd(
   DClient *pClient, 
   BcvMessage *pMsg
 ){
+  if( pClient->pMan==0 ){
+    /* No transaction open on this connection. This happens if a client
+    ** reconnected after a lost connection and the session was not
+    ** resumed.  */
+    sqlite3_free(pMsg);
+    return;
+  }
   bdProcessMRUList(p, pClient, pMsg->u.end.aMru, pMsg->u.end.nMru);
   bdReleaseEntryRefs(pClient);
   sqlite3_free(pClient->apRef);
@@ -2514,6 +2774,7 @@ static void bdPassCb(
   DaemonCtx *p = pDLCtx->pCtx;
 
   bdBlockDownloadFree(pDLCtx);
+  if( pClient==0 ) return;
 
   memset(&reply, 0, sizeof(reply));
   reply.eType = BCV_MESSAGE_PASS_REPLY;
@@ -2809,16 +3070,17 @@ static void bdMainloop(DaemonCtx *p){
 
     /* Run the dispatcher. This will execute callbacks for any completed
     ** network requests.  */
-    rc = bcvDispatchRun(p->pDisp, aWait, nFd, 10000);
+    rc = bcvDispatchRun(p->pDisp, aWait, nFd, p->pParkedList ? 1000 : 10000);
     if( rc!=SQLITE_OK ){
       fatal_error("bcvDispatchRun() failed - %d", rc);
     }
+    if( p->pParkedList ) bdExpireParked(p, 0);
 
     /* Check for client messages */
     i = 1;
     for(pClient=p->pClientList; pClient; pClient=pNextClient){
       pNextClient = pClient->pNext;
-      if( aWait[i].revents ){
+      if( pClient->bClosing==0 && aWait[i].revents ){
         bdHandleClientMessage(p, pClient, &bClient);
       }
       i++;
@@ -2833,7 +3095,7 @@ static void bdMainloop(DaemonCtx *p){
     for(pClient=p->pClientList; pClient; pClient=pNextClient){
       BcvMessage *pMsg = pClient->pMsg;
       pNextClient = pClient->pNext;
-      if( pMsg ){
+      if( pMsg && pClient->bClosing==0 ){
         assert( pMsg->eType==BCV_MESSAGE_READ
              || pMsg->eType==BCV_MESSAGE_CMD
              || pMsg->eType==BCV_MESSAGE_ATTACH
@@ -2847,9 +3109,17 @@ static void bdMainloop(DaemonCtx *p){
       }
     }
 
+    /* Disconnect any clients whose send() failed or that were superseded. */
+    for(pClient=p->pClientList; pClient; pClient=pNextClient){
+      pNextClient = pClient->pNext;
+      if( pClient->bClosing ){
+        bdDisconnectClient(p, pClient, "closed");
+      }
+    }
+
     /* Check if it is time to bail out (due to -autoexit option) */ 
     sqlite3_free(aWait);
-    if( p->cmd.bAutoexit && bClient && p->pClientList==0 ){
+    if( p->cmd.bAutoexit && bClient && p->pClientList==0 && p->pParkedList==0 ){
       break;
     }
   }
@@ -2885,6 +3155,7 @@ static void bdWritePortNumber(DaemonCtx *pCtx, const char *zDir){
 }
 
 static void bdCleanup(DaemonCtx *p){
+  bdExpireParked(p, 1);
   bcvCommonDestroy(&p->c);
   bcvCloseLocal(p->pCacheFile);
   bcvDispatchFree(p->pDisp);
@@ -2913,6 +3184,7 @@ static int main_daemon(int argc, char **argv){
   parse_switches(pCmd, &argv[2], argc-3, 0, COMMAND_DAEMON|COMMAND_NREQUEST);
   if( pCmd->szCache<=0 ) pCmd->szCache = BCV_DEFAULT_CACHEFILE_SIZE;
   if( pCmd->nHttpTimeout<=0 ) pCmd->nHttpTimeout = BCV_DEFAULT_HTTPTIMEOUT;
+  if( pCmd->bResumeTimeout==0 ) pCmd->nResumeTimeout = BCV_DEFAULT_RESUMETIMEOUT;
 
   /* Open the listen socket */
   bdListen(p);
